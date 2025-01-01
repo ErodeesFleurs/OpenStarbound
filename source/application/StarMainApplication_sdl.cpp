@@ -245,6 +245,7 @@ public:
     }
 
 #if SDL_VERSION_ATLEAST(2, 0, 18)
+    SDL_SetHint(SDL_HINT_IME_INTERNAL_EDITING, "1");
     SDL_SetHint(SDL_HINT_IME_SHOW_UI, "1");
 #endif
 
