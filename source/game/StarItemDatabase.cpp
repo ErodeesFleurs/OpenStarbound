@@ -215,7 +215,7 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
 
 Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
   auto const& data = itemData(itemName);
-  return itemData(itemName).assetsConfig
+  return itemData(itemName).assetsConfig;
 }
 
 ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
