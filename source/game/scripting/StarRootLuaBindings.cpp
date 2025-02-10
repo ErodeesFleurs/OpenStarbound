@@ -117,7 +117,7 @@ LuaCallbacks LuaBindings::makeRootCallbacks() {
     });
 
   callbacks.registerCallback("itemFile", [root](LuaEngine& engine, String const& itemName) -> Maybe<String> {
-      return root->itemDatabase()->itemFile(itemName)
+      return root->itemDatabase()->itemFile(itemName);
     });
 
   callbacks.registerCallback("materialConfig", [root](String const& materialName) -> Json {
