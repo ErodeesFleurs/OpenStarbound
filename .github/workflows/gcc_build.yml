@@ -2,7 +2,11 @@ name: GCC Build
 
 on:
   workflow_dispatch:
-
+    inputs:
+      linux:
+        type: boolean
+        description: Linux
+        default: true
   push:
     paths:
       - 'assets/**'
