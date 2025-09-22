@@ -21,6 +21,7 @@ LuaCallbacks LuaBindings::makeUniverseServerCallbacks(UniverseServer* universe) 
   callbacks.registerCallbackWithSignature<void, ConnectionId, bool>("setPvp", bind(UniverseServerCallbacks::setPvp, universe, _1, _2));
   callbacks.registerCallbackWithSignature<bool, String>("isWorldActive", bind(UniverseServerCallbacks::isWorldActive, universe, _1));
   callbacks.registerCallbackWithSignature<StringList>("activeWorlds", bind(UniverseServerCallbacks::activeWorlds, universe));
+  callbacks.registerCallbackWithSignature<bool, String, Maybe<float>>("loadWorld", bind(UniverseServerCallbacks::loadWorld, universe, _1, _2));
   callbacks.registerCallbackWithSignature<RpcThreadPromise<Json>, String, String, LuaVariadic<Json>>("sendWorldMessage", bind(UniverseServerCallbacks::sendWorldMessage, universe, _1, _2, _3));
   callbacks.registerCallbackWithSignature<bool, ConnectionId, String, Json>("sendPacket", bind(UniverseServerCallbacks::sendPacket, universe, _1, _2, _3));
   callbacks.registerCallbackWithSignature<String, ConnectionId>("clientWorld", bind(UniverseServerCallbacks::clientWorld, universe, _1));
@@ -128,6 +129,10 @@ bool LuaBindings::UniverseServerCallbacks::isWorldActive(UniverseServer* univers
 
 StringList LuaBindings::UniverseServerCallbacks::activeWorlds(UniverseServer* universe) {
   return universe->activeWorlds().transformed(printWorldId);
+}
+
+bool LuaBindings::UniverseServerCallbacks::loadWorld(UniverseServer* universe, String const& worldId, Maybe<float> expiryTime) {
+  return universe->loadWorld(parseWorldId(worldId), expiryTime.value(5.0f));
 }
 
 RpcThreadPromise<Json> LuaBindings::UniverseServerCallbacks::sendWorldMessage(UniverseServer* universe, String const& worldId, String const& message, LuaVariadic<Json> args) {

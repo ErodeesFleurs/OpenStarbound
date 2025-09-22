@@ -53,6 +53,7 @@ public:
 
   List<WorldId> activeWorlds() const;
   bool isWorldActive(WorldId const& worldId) const;
+  bool loadWorld(WorldId const& worldId, float expiryTime = 5.0f);
 
   List<ConnectionId> clientIds() const;
   List<pair<ConnectionId, int64_t>> clientIdsAndCreationTime() const;

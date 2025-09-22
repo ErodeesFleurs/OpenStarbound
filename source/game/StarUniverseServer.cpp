@@ -173,6 +173,19 @@ bool UniverseServer::isWorldActive(WorldId const& worldId) const {
   return m_worlds.contains(worldId);
 }
 
+bool UniverseServer::loadWorld(WorldId const& worldId, float expiryTime) {
+  RecursiveMutexLocker locker(m_mainLock);
+  if (auto maybeWorld = triggerWorldCreation(worldId)) {
+    if (maybeWorld.value()) {
+      maybeWorld.value()->executeAction([&](WorldServerThread*, WorldServer* worldServer) {
+        worldServer->setExpiryTime(expiryTime);
+      });
+      return true;
+    }
+  }
+  return false;
+}
+
 List<ConnectionId> UniverseServer::clientIds() const {
   ReadLocker clientsLocker(m_clientsLock);
   return m_clients.keys();
