@@ -4,6 +4,7 @@
 #include "StarPlayerInventory.hpp"
 #include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarTime.hpp"
