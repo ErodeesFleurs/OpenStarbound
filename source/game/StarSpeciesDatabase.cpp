@@ -55,6 +55,11 @@ StringMap<SpeciesDefinitionPtr> SpeciesDatabase::allSpecies() const {
   return m_species;
 }
 
+bool SpeciesDatabase::contains(String const& kind) const {
+  auto k = kind.toLower();
+  return m_species.contains(k);
+}
+
 Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config) const {
   auto speciesDef = species(identity.species);
   if (speciesDef->m_buildScripts.size() > 0) {

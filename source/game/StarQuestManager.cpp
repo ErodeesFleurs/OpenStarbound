@@ -419,8 +419,9 @@ void QuestManager::update(float dt) {
 }
 
 void QuestManager::startInitialQuests() {
+  auto species = Root::singleton().speciesDatabase()->contains(m_player->species()) ? m_player->species() : "human";
   auto startingQuests =
-      Root::singleton().assets()->json(strf("/quests/quests.config:initialquests.{}", m_player->species())).toArray();
+      Root::singleton().assets()->json(strf("/quests/quests.config:initialquests.{}", species)).toArray();
   for (auto const& questArcJson : startingQuests) {
     QuestArcDescriptor quest = QuestArcDescriptor::fromJson(questArcJson);
     if (canStart(quest))

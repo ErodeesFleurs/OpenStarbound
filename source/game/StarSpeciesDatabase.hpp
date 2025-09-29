@@ -108,6 +108,7 @@ public:
 
   SpeciesDefinitionPtr species(String const& kind) const;
   StringMap<SpeciesDefinitionPtr> allSpecies() const;
+  bool contains(String const& kind) const;
 
   Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
   CharacterCreationResult createHumanoid(String name, String speciesChoice, size_t genderChoice, size_t bodyColor, size_t alty, size_t hairChoice, size_t heady, size_t shirtChoice, size_t shirtColor, size_t pantsChoice, size_t pantsColor, size_t personality, LuaVariadic<LuaValue> ext = {}) const;
