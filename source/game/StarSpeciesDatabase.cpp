@@ -43,8 +43,11 @@ SpeciesDatabase::SpeciesDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
 
 SpeciesDefinitionPtr SpeciesDatabase::species(String const& kind) const {
   auto k = kind.toLower();
-  if (!m_species.contains(k))
+  if (!m_species.contains(k)) {
+    if (m_species.contains("human"))
+      return m_species.get("human");
     throw StarException(strf("Unknown species kind '{}'.", kind));
+  }
   return m_species.get(k);
 }
 
