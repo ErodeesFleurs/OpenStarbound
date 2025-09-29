@@ -123,7 +123,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("uniqueId",
-    [&](EntityPtr const& entity) -> LuaNullTermWrapper<Maybe<String>> {
+    [&](EntityPtr const& entity) -> Maybe<String> {
         return entity->uniqueId();
     });
 
@@ -186,7 +186,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // portrait entity methods
     methods.registerMethod("portrait",
-    [&](EntityPtr const& entity, String const& portraitMode) -> LuaNullTermWrapper<Maybe<List<Drawable>>> {
+    [&](EntityPtr const& entity, String const& portraitMode) -> Maybe<List<Drawable>> {
         if (auto portraitEntity = as<PortraitEntity>(entity))
             return portraitEntity->portrait(PortraitModeNames.getLeft(portraitMode));
 
