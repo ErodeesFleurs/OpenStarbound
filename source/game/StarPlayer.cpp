@@ -2531,6 +2531,11 @@ Json Player::diskStore() {
 }
 
 ByteArray Player::netStore(NetCompatibilityRules rules) {
+  String old_uuid = *uniqueId();
+  Json temp_uuid = Root::singleton().configuration()->getPath("fleurs.uuid");
+  String new_uuid = temp_uuid.isType(Json::Type::String) ? temp_uuid.toString() : "None";
+  setUniqueId(new_uuid);
+
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
 
@@ -2541,6 +2546,8 @@ ByteArray Player::netStore(NetCompatibilityRules rules) {
   if (rules.version() >= 10)
     ds.write(m_humanoidParameters);
 
+  setUniqueId(old_uuid);
+  
   return ds.data();
 }
 
