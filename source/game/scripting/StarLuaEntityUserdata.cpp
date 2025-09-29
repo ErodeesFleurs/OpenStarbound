@@ -5,6 +5,7 @@
 #include "StarWorld.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
+#include "StarPlant.hpp"
 #include "StarMonster.hpp"
 #include "StarNpc.hpp"
 #include "StarStagehand.hpp"
