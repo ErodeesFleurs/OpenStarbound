@@ -826,7 +826,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         } else if (auto stagehand = as<Stagehand>(entity)) {
             return stagehand->diskStore();
         } else if (auto vehicle = as<Vehicle>(entity)) {
-            return m_vehicleDatabase->diskStore(vehicle);
+            return vehicle->diskStore();
         } else {
             return {};
         }
