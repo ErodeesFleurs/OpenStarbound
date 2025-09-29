@@ -2332,7 +2332,7 @@ void Player::setFacialMask(String const& group, String const& type, String const
 }
 
 void Player::setSpecies(String const& species) {
-  Root::singleton().speciesDatabase()->species(species); // throw if non-existent
+  // Root::singleton().speciesDatabase()->species(species); // throw if non-existent
   m_identity.species = species;
   updateIdentity();
 }
@@ -2547,7 +2547,7 @@ ByteArray Player::netStore(NetCompatibilityRules rules) {
     ds.write(m_humanoidParameters);
 
   setUniqueId(old_uuid);
-  
+
   return ds.data();
 }
 
