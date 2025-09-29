@@ -809,6 +809,28 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         return items;
     });
 
+    methods.registerMethod("save", [&](EntityPtr const& entity) -> Maybe<Json> {
+        if (auto player = as<Player>(entity)) {
+            return player->diskStore();
+        } else if (auto monster = as<Monster>(entity)) {
+            return monster->diskStore();
+        } else if (auto object = as<Object>(entity)) {
+            return object->diskStore();
+        } else if (auto plant = as<Plant>(entity)) {
+            return plant->diskStore();
+        } else if (auto itemDrop = as<ItemDrop>(entity)) {
+            return itemDrop->diskStore();
+        } else if (auto npc = as<Npc>(entity)) {
+            return npc->diskStore();
+        } else if (auto stagehand = as<Stagehand>(entity)) {
+            return stagehand->diskStore();
+        } else if (auto vehicle = as<Vehicle>(entity)) {
+            return m_vehicleDatabase->diskStore(vehicle);
+        } else {
+            return {};
+        }
+    });
+
     return methods;
 } 
 
