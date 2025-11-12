@@ -674,9 +674,17 @@ void UniverseServer::processUniverseFlags() {
 void UniverseServer::sendPendingChat() {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
+  
+  // Batch chat messages per client for better performance
   for (auto const& p : m_clients) {
-    for (auto const& message : m_chatProcessor->pullPendingMessages(p.first))
-      m_connectionServer->sendPackets(p.first, {make_shared<ChatReceivePacket>(message)});
+    auto messages = m_chatProcessor->pullPendingMessages(p.first);
+    if (!messages.empty()) {
+      List<PacketPtr> chatPackets;
+      chatPackets.reserve(messages.size());
+      for (auto const& message : messages)
+        chatPackets.append(make_shared<ChatReceivePacket>(message));
+      m_connectionServer->sendPackets(p.first, std::move(chatPackets));
+    }
   }
 }
 
@@ -765,8 +773,10 @@ void UniverseServer::sendClockUpdates() {
 
   int64_t currentTime = Time::monotonicMilliseconds();
   if (currentTime > m_lastClockUpdateSent + Root::singleton().assets()->json("/universe_server.config:clockUpdatePacketInterval").toInt()) {
+    // Create the packet once and reuse it for all clients
+    auto timePacket = make_shared<UniverseTimeUpdatePacket>(m_universeClock->time());
     for (auto clientId : m_clients.keys())
-      m_connectionServer->sendPackets(clientId, {make_shared<UniverseTimeUpdatePacket>(m_universeClock->time())});
+      m_connectionServer->sendPackets(clientId, {timePacket});
     m_lastClockUpdateSent = currentTime;
   }
 }
@@ -781,8 +791,18 @@ void UniverseServer::sendClientContextUpdates() {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
 
-  for (auto const& p : m_clients)
-    sendClientContextUpdate(p.second);
+  // Batch context updates for better performance
+  // Prepare all updates before sending to reduce lock contention
+  HashMap<ConnectionId, ByteArray> contextUpdates;
+  for (auto const& p : m_clients) {
+    auto clientContextData = p.second->writeUpdate();
+    if (!clientContextData.empty())
+      contextUpdates[p.first] = std::move(clientContextData);
+  }
+  
+  // Send all updates in batch
+  for (auto& update : contextUpdates)
+    m_connectionServer->sendPackets(update.first, {make_shared<ClientContextUpdatePacket>(std::move(update.second))});
 }
 
 void UniverseServer::kickErroredPlayers() {
