@@ -18,5 +18,11 @@
     "op" : "add",
     "path" : "/scriptContexts",
     "value" : {}
+  },
+  {
+    "op" : "add",
+    "path" : "/networkWorkerThreads",
+    "value" : 0,
+    "comment" : "Number of network I/O worker threads (0 = auto-detect based on CPU cores)"
   }
 ]

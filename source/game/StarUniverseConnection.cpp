@@ -1,5 +1,7 @@
 #include "StarUniverseConnection.hpp"
 #include "StarLogging.hpp"
+#include "StarFormat.hpp"
+#include <thread>
 
 namespace Star {
 
@@ -121,9 +123,19 @@ Maybe<PacketStats> UniverseConnection::outgoingStats() const {
   return m_packetSocket->outgoingStats();
 }
 
-UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetReceiver)
+UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetReceiver, size_t numWorkerThreads)
   : m_packetReceiver(std::move(packetReceiver)), m_shutdown(false) {
-  m_processingLoop = Thread::invoke("UniverseConnectionServer::processingLoop", [this]() {
+  // Use multiple worker threads for better parallelism
+  // If numWorkerThreads is 0, auto-detect based on CPU cores
+  if (numWorkerThreads == 0)
+    m_numWorkerThreads = max<size_t>(2, std::thread::hardware_concurrency() / 4);
+  else
+    m_numWorkerThreads = numWorkerThreads;
+  
+  Logger::info("UniverseConnectionServer: Starting {} network worker threads", m_numWorkerThreads);
+  
+  for (size_t i = 0; i < m_numWorkerThreads; ++i) {
+    m_processingThreads.append(Thread::invoke(strf("UniverseConnectionServer::worker_{}", i), [this, i]() {
       RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
       try {
         while (!m_shutdown) {
@@ -132,7 +144,12 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
           connectionsLocker.unlock();
 
           bool dataTransmitted = false;
+          
+          // Each worker thread processes connections assigned to it
           for (auto& p : connections) {
+            if (p.second->workerIndex != i)
+              continue;
+              
             MutexLocker connectionLocker(p.second->mutex);
             if (!p.second->packetSocket || !p.second->packetSocket->isOpen())
               continue;
@@ -166,17 +183,21 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
             Thread::sleep(PacketSocketPollSleep);
         }
       } catch (std::exception const& e) {
-        Logger::error("Exception caught in UniverseConnectionServer::remoteProcessLoop, closing all remote connections: {}", e.what());
+        Logger::error("Exception caught in UniverseConnectionServer::worker_{}, closing assigned connections: {}", i, e.what());
         connectionsLocker.lock();
-        for (auto& p : m_connections)
-          p.second->packetSocket->close();
+        for (auto& p : m_connections) {
+          if (p.second->workerIndex == i)
+            p.second->packetSocket->close();
+        }
       }
-    });
+    }));
+  }
 }
 
 UniverseConnectionServer::~UniverseConnectionServer() {
   m_shutdown = true;
-  m_processingLoop.finish();
+  for (auto& thread : m_processingThreads)
+    thread.finish();
   removeAllConnections();
 }
 
@@ -221,6 +242,8 @@ void UniverseConnectionServer::addConnection(ConnectionId clientId, UniverseConn
   connection->sendQueue = std::move(uc.m_sendQueue);
   connection->receiveQueue = std::move(uc.m_receiveQueue);
   connection->lastActivityTime = Time::monotonicMilliseconds();
+  // Distribute connections across worker threads using round-robin based on clientId
+  connection->workerIndex = clientId % m_numWorkerThreads;
   m_connections.add(clientId, std::move(connection));
 }
 

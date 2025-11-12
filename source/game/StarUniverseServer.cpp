@@ -85,7 +85,12 @@ UniverseServer::UniverseServer(String const& storageDir)
 
   m_teamManager = make_shared<TeamManager>();
   m_workerPool.start(universeConfig.getUInt("workerPoolThreads"));
-  m_connectionServer = make_shared<UniverseConnectionServer>(bind(&UniverseServer::packetsReceived, this, _1, _2, _3));
+  
+  // Get network worker threads configuration (0 = auto-detect)
+  size_t networkWorkerThreads = universeConfig.optUInt("networkWorkerThreads").value(0);
+  m_connectionServer = make_shared<UniverseConnectionServer>(
+    bind(&UniverseServer::packetsReceived, this, _1, _2, _3), 
+    networkWorkerThreads);
 
   m_pause = make_shared<atomic<bool>>(false);
 }

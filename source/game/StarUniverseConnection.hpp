@@ -69,7 +69,7 @@ private:
 };
 
 // Manage a set of UniverseConnections cheaply and in an asynchronous way.
-// Uses a single background thread to handle remote sending and receiving.
+// Uses multiple background threads to handle remote sending and receiving for improved parallelism.
 class UniverseConnectionServer {
 public:
   // The packet receive callback is called asynchronously on every packet group
@@ -79,7 +79,7 @@ public:
   // that client is complete.
   typedef function<void(UniverseConnectionServer*, ConnectionId, List<PacketPtr>)> PacketReceiveCallback;
 
-  UniverseConnectionServer(PacketReceiveCallback packetReceiver);
+  UniverseConnectionServer(PacketReceiveCallback packetReceiver, size_t numWorkerThreads = 0);
   ~UniverseConnectionServer();
 
   bool hasConnection(ConnectionId clientId) const;
@@ -100,6 +100,7 @@ private:
     List<PacketPtr> sendQueue;
     Deque<PacketPtr> receiveQueue;
     int64_t lastActivityTime;
+    size_t workerIndex;  // Which worker thread handles this connection
   };
 
   PacketReceiveCallback const m_packetReceiver;
@@ -107,8 +108,9 @@ private:
   mutable RecursiveMutex m_connectionsMutex;
   HashMap<ConnectionId, shared_ptr<Connection>> m_connections;
 
-  ThreadFunction<void> m_processingLoop;
+  List<ThreadFunction<void>> m_processingThreads;
   atomic<bool> m_shutdown;
+  size_t m_numWorkerThreads;
 };
 
 }
