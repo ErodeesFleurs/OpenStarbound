@@ -84,7 +84,20 @@ UniverseServer::UniverseServer(String const& storageDir)
     m_speciesShips[pair.first] = jsonToStringList(pair.second);
 
   m_teamManager = make_shared<TeamManager>();
-  m_workerPool.start(universeConfig.getUInt("workerPoolThreads"));
+  
+  // Optimize worker pool thread count for better multi-core utilization
+  unsigned workerThreads = universeConfig.getUInt("workerPoolThreads");
+  unsigned numCores = Thread::numberOfProcessors();
+  
+  // If workerPoolThreads is low (like default 2-4), scale it up based on available cores
+  // Use at least numCores/2 threads, but cap at numCores to avoid oversubscription
+  if (workerThreads < numCores / 2) {
+    workerThreads = max(workerThreads, numCores / 2);
+    Logger::info("UniverseServer: Scaling worker threads from {} to {} based on {} CPU cores", 
+                 universeConfig.getUInt("workerPoolThreads"), workerThreads, numCores);
+  }
+  
+  m_workerPool.start(workerThreads);
   m_connectionServer = make_shared<UniverseConnectionServer>(bind(&UniverseServer::packetsReceived, this, _1, _2, _3));
 
   m_pause = make_shared<atomic<bool>>(false);
@@ -760,8 +773,27 @@ void UniverseServer::sendClockUpdates() {
 
   int64_t currentTime = Time::monotonicMilliseconds();
   if (currentTime > m_lastClockUpdateSent + Root::singleton().assets()->json("/universe_server.config:clockUpdatePacketInterval").toInt()) {
-    for (auto clientId : m_clients.keys())
-      m_connectionServer->sendPackets(clientId, {make_shared<UniverseTimeUpdatePacket>(m_universeClock->time())});
+    auto clientKeys = m_clients.keys();
+    auto timePacket = make_shared<UniverseTimeUpdatePacket>(m_universeClock->time());
+    
+    // Parallel clock updates for better multi-core utilization with many clients
+    if (clientKeys.size() < 8) {
+      // Sequential for small number of clients
+      for (auto clientId : clientKeys)
+        m_connectionServer->sendPackets(clientId, {timePacket});
+    } else {
+      // Parallel packet sending for many clients
+      List<WorkerPoolHandle> sendHandles;
+      for (auto clientId : clientKeys) {
+        sendHandles.append(m_workerPool.addWork([this, clientId, timePacket]() {
+          m_connectionServer->sendPackets(clientId, {timePacket});
+        }));
+      }
+      // Wait for all sends to complete
+      for (auto& handle : sendHandles)
+        handle.finish();
+    }
+    
     m_lastClockUpdateSent = currentTime;
   }
 }
@@ -776,18 +808,55 @@ void UniverseServer::sendClientContextUpdates() {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
 
-  for (auto const& p : m_clients)
-    sendClientContextUpdate(p.second);
+  // Parallel processing for client context updates to improve multi-core utilization
+  // For small numbers of clients (< 4), sequential processing is fine
+  if (m_clients.size() < 4) {
+    for (auto const& p : m_clients)
+      sendClientContextUpdate(p.second);
+  } else {
+    // Process client updates in parallel for better performance with many clients
+    List<WorkerPoolHandle> updateHandles;
+    for (auto const& p : m_clients) {
+      auto clientContext = p.second;
+      updateHandles.append(m_workerPool.addWork([this, clientContext]() {
+        sendClientContextUpdate(clientContext);
+      }));
+    }
+    // Wait for all updates to complete
+    for (auto& handle : updateHandles)
+      handle.finish();
+  }
 }
 
 void UniverseServer::kickErroredPlayers() {
   RecursiveMutexLocker locker(m_mainLock);
-  for (auto const& worldId : m_worlds.keys()) {
-    if (auto world = getWorld(worldId)) {
-      locker.unlock();
-      auto erroredClients = world->erroredClients();
-      locker.lock();
-      for (auto clientId : erroredClients)
+  auto worldKeys = m_worlds.keys();
+  
+  // Parallel processing for checking errored players across multiple worlds
+  if (worldKeys.size() < 3) {
+    // For small number of worlds, sequential is fine
+    for (auto const& worldId : worldKeys) {
+      if (auto world = getWorld(worldId)) {
+        locker.unlock();
+        auto erroredClients = world->erroredClients();
+        locker.lock();
+        for (auto clientId : erroredClients)
+          m_pendingDisconnections[clientId] = "Incoming client packet has caused exception";
+      }
+    }
+  } else {
+    // Process worlds in parallel for better multi-core utilization
+    List<WorkerPoolPromise<List<ConnectionId>>> errorPromises;
+    for (auto const& worldId : worldKeys) {
+      if (auto world = getWorld(worldId)) {
+        errorPromises.append(m_workerPool.addProducer<List<ConnectionId>>([world]() {
+          return world->erroredClients();
+        }));
+      }
+    }
+    // Collect results
+    for (auto& promise : errorPromises) {
+      for (auto clientId : promise.get())
         m_pendingDisconnections[clientId] = "Incoming client packet has caused exception";
     }
   }
