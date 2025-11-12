@@ -682,9 +682,27 @@ void UniverseServer::processUniverseFlags() {
 void UniverseServer::sendPendingChat() {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
-  for (auto const& p : m_clients) {
-    for (auto const& message : m_chatProcessor->pullPendingMessages(p.first))
-      m_connectionServer->sendPackets(p.first, {make_shared<ChatReceivePacket>(message)});
+  
+  // Parallel processing for sending chat messages to improve multi-core utilization
+  if (m_clients.size() < 6) {
+    // Sequential for small number of clients
+    for (auto const& p : m_clients) {
+      for (auto const& message : m_chatProcessor->pullPendingMessages(p.first))
+        m_connectionServer->sendPackets(p.first, {make_shared<ChatReceivePacket>(message)});
+    }
+  } else {
+    // Process clients in parallel for better performance
+    List<WorkerPoolHandle> chatHandles;
+    for (auto const& p : m_clients) {
+      auto clientId = p.first;
+      chatHandles.append(m_workerPool.addWork([this, clientId]() {
+        for (auto const& message : m_chatProcessor->pullPendingMessages(clientId))
+          m_connectionServer->sendPackets(clientId, {make_shared<ChatReceivePacket>(message)});
+      }));
+    }
+    // Wait for all chat sends to complete
+    for (auto& handle : chatHandles)
+      handle.finish();
   }
 }
 
@@ -1174,18 +1192,54 @@ void UniverseServer::respondToCelestialRequests() {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
 
-  for (auto& p : m_pendingCelestialRequests) {
-    List<CelestialResponse> responses;
-    eraseWhere(p.second, [&responses](WorkerPoolPromise<CelestialResponse> const& request) {
-        if (request.poll()) {
-          responses.append(request.get());
-          return true;
+  // Parallel processing for collecting celestial responses
+  if (m_pendingCelestialRequests.size() < 4) {
+    // Sequential for small number of pending requests
+    for (auto& p : m_pendingCelestialRequests) {
+      List<CelestialResponse> responses;
+      eraseWhere(p.second, [&responses](WorkerPoolPromise<CelestialResponse> const& request) {
+          if (request.poll()) {
+            responses.append(request.get());
+            return true;
+          }
+          return false;
+        });
+      if (m_clients.contains(p.first))
+        m_connectionServer->sendPackets(p.first, {make_shared<CelestialResponsePacket>(std::move(responses))});
+    }
+  } else {
+    // Process requests in parallel
+    List<WorkerPoolPromise<pair<ConnectionId, List<CelestialResponse>>>> responsePromises;
+    for (auto& p : m_pendingCelestialRequests) {
+      auto clientId = p.first;
+      auto& requests = p.second;
+      responsePromises.append(m_workerPool.addProducer<pair<ConnectionId, List<CelestialResponse>>>([clientId, &requests]() {
+        List<CelestialResponse> responses;
+        for (auto& request : requests) {
+          if (request.poll())
+            responses.append(request.get());
         }
-        return false;
+        return make_pair(clientId, std::move(responses));
+      }));
+    }
+    
+    // Collect results and send packets
+    for (auto& promise : responsePromises) {
+      auto result = promise.get();
+      auto clientId = result.first;
+      auto& responses = result.second;
+      if (!responses.empty() && m_clients.contains(clientId))
+        m_connectionServer->sendPackets(clientId, {make_shared<CelestialResponsePacket>(std::move(responses))});
+    }
+    
+    // Clean up completed requests
+    for (auto& p : m_pendingCelestialRequests) {
+      eraseWhere(p.second, [](WorkerPoolPromise<CelestialResponse> const& request) {
+        return request.done();
       });
-    if (m_clients.contains(p.first))
-      m_connectionServer->sendPackets(p.first, {make_shared<CelestialResponsePacket>(std::move(responses))});
+    }
   }
+  
   eraseWhere(m_pendingCelestialRequests, [](auto const& p) {
       return p.second.empty();
     });
