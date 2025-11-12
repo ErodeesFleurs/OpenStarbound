@@ -92,6 +92,11 @@ public:
   List<UniverseConnection> removeAllConnections();
 
   void sendPackets(ConnectionId clientId, List<PacketPtr> packets);
+  
+  // Get total packets processed across all worker threads
+  uint64_t totalPacketsProcessed() const;
+  // Get number of worker threads
+  size_t numWorkerThreads() const;
 
 private:
   struct Connection {
@@ -103,12 +108,20 @@ private:
     size_t workerIndex;  // Which worker thread handles this connection
   };
 
+  struct WorkerStats {
+    atomic<uint64_t> packetsProcessed{0};
+    atomic<uint64_t> bytesReceived{0};
+    atomic<uint64_t> bytesSent{0};
+    atomic<uint64_t> connectionsHandled{0};
+  };
+
   PacketReceiveCallback const m_packetReceiver;
 
   mutable RecursiveMutex m_connectionsMutex;
   HashMap<ConnectionId, shared_ptr<Connection>> m_connections;
 
   List<ThreadFunction<void>> m_processingThreads;
+  List<WorkerStats> m_workerStats;
   atomic<bool> m_shutdown;
   size_t m_numWorkerThreads;
 };

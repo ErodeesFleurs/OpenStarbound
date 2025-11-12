@@ -134,6 +134,9 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
   
   Logger::info("UniverseConnectionServer: Starting {} network worker threads", m_numWorkerThreads);
   
+  // Initialize worker stats
+  m_workerStats.resize(m_numWorkerThreads);
+  
   for (size_t i = 0; i < m_numWorkerThreads; ++i) {
     m_processingThreads.append(Thread::invoke(strf("UniverseConnectionServer::worker_{}", i), [this, i]() {
       RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
@@ -146,10 +149,12 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
           bool dataTransmitted = false;
           
           // Each worker thread processes connections assigned to it
+          size_t handledCount = 0;
           for (auto& p : connections) {
             if (p.second->workerIndex != i)
               continue;
-              
+            
+            handledCount++;
             MutexLocker connectionLocker(p.second->mutex);
             if (!p.second->packetSocket || !p.second->packetSocket->isOpen())
               continue;
@@ -161,6 +166,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
             List<PacketPtr> receivePackets = p.second->packetSocket->receivePackets();
             if (!receivePackets.empty()) {
               p.second->lastActivityTime = Time::monotonicMilliseconds();
+              m_workerStats[i].packetsProcessed += receivePackets.size();
               p.second->receiveQueue.appendAll(take(receivePackets));
             }
 
@@ -178,6 +184,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
               }
             }
           }
+          m_workerStats[i].connectionsHandled = handledCount;
 
           if (!dataTransmitted)
             Thread::sleep(PacketSocketPollSleep);
@@ -285,6 +292,17 @@ void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<PacketPtr
   } else {
     throw UniverseConnectionException::format("No such client '{}' in UniverseConnectionServer::sendPackets", clientId);
   }
+}
+
+uint64_t UniverseConnectionServer::totalPacketsProcessed() const {
+  uint64_t total = 0;
+  for (auto const& stats : m_workerStats)
+    total += stats.packetsProcessed.load();
+  return total;
+}
+
+size_t UniverseConnectionServer::numWorkerThreads() const {
+  return m_numWorkerThreads;
 }
 
 }

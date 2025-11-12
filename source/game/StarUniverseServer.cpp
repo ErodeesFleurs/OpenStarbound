@@ -71,6 +71,7 @@ UniverseServer::UniverseServer(String const& storageDir)
   loadSettings();
   loadTempWorldIndex();
   m_lastClockUpdateSent = 0.0;
+  m_lastStatsLogTime = 0;
   m_stop = false;
   m_tcpState = TcpState::No;
   m_storageTriggerDeadline = 0;
@@ -598,6 +599,17 @@ void UniverseServer::run() {
       handleWorldMessages();
       shutdownInactiveWorlds();
       doTriggeredStorage();
+      
+      // Log network performance stats periodically (every 5 minutes)
+      int64_t currentTime = Time::monotonicMilliseconds();
+      if (currentTime - m_lastStatsLogTime > 300000) {
+        ReadLocker clientsLocker(m_clientsLock);
+        Logger::info("UniverseServer: Network Stats - {} worker threads, {} active clients, {} packets processed",
+          m_connectionServer->numWorkerThreads(),
+          m_clients.size(),
+          m_connectionServer->totalPacketsProcessed());
+        m_lastStatsLogTime = currentTime;
+      }
     } catch (std::exception const& e) {
       Logger::error("UniverseServer: exception caught: {}", outputException(e, true));
     }

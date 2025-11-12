@@ -230,6 +230,7 @@ private:
   int64_t m_storageTriggerDeadline;
   int64_t m_clearBrokenWorldsDeadline;
   int64_t m_lastClockUpdateSent;
+  int64_t m_lastStatsLogTime;
   atomic<bool> m_stop;
   atomic<TcpState> m_tcpState;
 
