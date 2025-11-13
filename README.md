@@ -71,6 +71,15 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 * Invalid character inventories are updated when loading in, allowing players to swap inventory mods with pre-existing characters.
 * Fix vanilla world file size bloating issue.
 * Modifying a single status property no longer re-networks every status property on the entity (server and client must be running at least OpenStarbound 0.15)
+
+### Server Performance
+**The server now automatically utilizes multi-core CPUs for significantly better performance.**
+  * Worker pool threads automatically scale based on CPU cores (75% utilization, 2-16 threads)
+  * Parallel world loading and celestial database queries
+  * Real-time performance monitoring via LogMap
+  * See [doc/server_performance.md](doc/server_performance.md) for configuration and tuning guide
+  * See [doc/threading_architecture.md](doc/threading_architecture.md) for technical details
+
 ### Misc
 * Player functions for saving/loading, modifying the humanoid identity, manipulating the inventory. [Documentation](https://github.com/OpenStarbound/OpenStarbound/tree/main/doc/lua/openstarbound)
 * Character swapping (rewrite from StarExtensions, currently command-only: `/swap name` case-insensitive, only substring required)
