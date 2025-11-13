@@ -80,7 +80,53 @@ impl PacketType {
             14 => Ok(PacketType::ClientDisconnectRequest),
             15 => Ok(PacketType::HandshakeResponse),
             18 => Ok(PacketType::ChatSend),
+            21 => Ok(PacketType::WorldStart),
+            22 => Ok(PacketType::WorldStop),
             _ => Err(ProtocolError::InvalidPacketType(value)),
+        }
+    }
+}
+
+/// Compression and decompression functions using Zstd
+pub mod compression {
+    use super::ProtocolError;
+    use std::io;
+
+    /// Compress data using Zstd
+    pub fn compress_data(data: &[u8]) -> Result<Vec<u8>, ProtocolError> {
+        zstd::bulk::compress(data, 3)
+            .map_err(|e| ProtocolError::Io(io::Error::new(io::ErrorKind::Other, e)))
+    }
+
+    /// Decompress data using Zstd
+    pub fn decompress_data(data: &[u8], max_size: usize) -> Result<Vec<u8>, ProtocolError> {
+        let decompressed = zstd::bulk::decompress(data, max_size)
+            .map_err(|e| ProtocolError::Io(io::Error::new(io::ErrorKind::Other, e)))?;
+        
+        if decompressed.len() > max_size {
+            return Err(ProtocolError::PacketTooLarge(decompressed.len()));
+        }
+        
+        Ok(decompressed)
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn test_compression_round_trip() {
+            let original = b"Hello, World! This is a test of Zstd compression.";
+            let compressed = compress_data(original).unwrap();
+            let decompressed = decompress_data(&compressed, 1024).unwrap();
+            assert_eq!(original.as_ref(), decompressed.as_slice());
+        }
+
+        #[test]
+        fn test_compression_reduces_size() {
+            let original = vec![b'A'; 1000]; // Highly compressible data
+            let compressed = compress_data(&original).unwrap();
+            assert!(compressed.len() < original.len());
         }
     }
 }
@@ -605,6 +651,234 @@ impl Packet for ServerInfoPacket {
     }
 }
 
+/// World Start Packet - sent by server when client enters a world
+#[derive(Debug, Clone)]
+pub struct WorldStartPacket {
+    pub template_data: String,  // JSON string
+    pub sky_data: Vec<u8>,
+    pub weather_data: Vec<u8>,
+    pub player_start: (f32, f32),
+    pub player_respawn: (f32, f32),
+    pub respawn_in_world: bool,
+    pub world_properties: String,  // JSON string
+    pub client_id: u16,
+    pub local_interpolation_mode: bool,
+}
+
+impl Packet for WorldStartPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::WorldStart
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        // Write template data (JSON string)
+        let template_bytes = self.template_data.as_bytes();
+        VLQ::write_unsigned(buf, template_bytes.len() as u64);
+        buf.put_slice(template_bytes);
+        
+        // Write sky data
+        VLQ::write_unsigned(buf, self.sky_data.len() as u64);
+        buf.put_slice(&self.sky_data);
+        
+        // Write weather data
+        VLQ::write_unsigned(buf, self.weather_data.len() as u64);
+        buf.put_slice(&self.weather_data);
+        
+        // Write player start position
+        buf.put_f32(self.player_start.0);
+        buf.put_f32(self.player_start.1);
+        
+        // Write player respawn position
+        buf.put_f32(self.player_respawn.0);
+        buf.put_f32(self.player_respawn.1);
+        
+        // Write respawn in world flag
+        buf.put_u8(if self.respawn_in_world { 1 } else { 0 });
+        
+        // Write dungeon gravity map (simplified - empty for MVP)
+        VLQ::write_unsigned(buf, 0);
+        
+        // Write dungeon breathable map (simplified - empty for MVP)
+        VLQ::write_unsigned(buf, 0);
+        
+        // Write protected dungeon IDs (simplified - empty for MVP)
+        VLQ::write_unsigned(buf, 0);
+        
+        // Write world properties (JSON string)
+        let props_bytes = self.world_properties.as_bytes();
+        VLQ::write_unsigned(buf, props_bytes.len() as u64);
+        buf.put_slice(props_bytes);
+        
+        // Write client ID
+        buf.put_u16(self.client_id);
+        
+        // Write local interpolation mode
+        buf.put_u8(if self.local_interpolation_mode { 1 } else { 0 });
+        
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        // Read template data
+        let template_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < template_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for template data",
+            )));
+        }
+        let mut template_bytes = vec![0u8; template_len];
+        buf.copy_to_slice(&mut template_bytes);
+        let template_data = String::from_utf8_lossy(&template_bytes).to_string();
+        
+        // Read sky data
+        let sky_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < sky_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for sky data",
+            )));
+        }
+        let mut sky_data = vec![0u8; sky_len];
+        buf.copy_to_slice(&mut sky_data);
+        
+        // Read weather data
+        let weather_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < weather_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for weather data",
+            )));
+        }
+        let mut weather_data = vec![0u8; weather_len];
+        buf.copy_to_slice(&mut weather_data);
+        
+        // Read player start position
+        if buf.remaining() < 8 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for player start",
+            )));
+        }
+        let player_start = (buf.get_f32(), buf.get_f32());
+        
+        // Read player respawn position
+        if buf.remaining() < 8 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for player respawn",
+            )));
+        }
+        let player_respawn = (buf.get_f32(), buf.get_f32());
+        
+        // Read respawn in world flag
+        if !buf.has_remaining() {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for respawn flag",
+            )));
+        }
+        let respawn_in_world = buf.get_u8() != 0;
+        
+        // Skip dungeon gravity map
+        let gravity_count = VLQ::read_unsigned(buf)? as usize;
+        for _ in 0..gravity_count {
+            buf.get_u16(); // dungeon ID
+            buf.get_f32(); // gravity value
+        }
+        
+        // Skip dungeon breathable map
+        let breathable_count = VLQ::read_unsigned(buf)? as usize;
+        for _ in 0..breathable_count {
+            buf.get_u16(); // dungeon ID
+            buf.get_u8();  // breathable flag
+        }
+        
+        // Skip protected dungeon IDs
+        let protected_count = VLQ::read_unsigned(buf)? as usize;
+        for _ in 0..protected_count {
+            buf.get_u16(); // dungeon ID
+        }
+        
+        // Read world properties
+        let props_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < props_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for world properties",
+            )));
+        }
+        let mut props_bytes = vec![0u8; props_len];
+        buf.copy_to_slice(&mut props_bytes);
+        let world_properties = String::from_utf8_lossy(&props_bytes).to_string();
+        
+        // Read client ID
+        if buf.remaining() < 2 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for client ID",
+            )));
+        }
+        let client_id = buf.get_u16();
+        
+        // Read local interpolation mode
+        if !buf.has_remaining() {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for interpolation mode",
+            )));
+        }
+        let local_interpolation_mode = buf.get_u8() != 0;
+        
+        Ok(Self {
+            template_data,
+            sky_data,
+            weather_data,
+            player_start,
+            player_respawn,
+            respawn_in_world,
+            world_properties,
+            client_id,
+            local_interpolation_mode,
+        })
+    }
+}
+
+/// World Stop Packet - sent by server when client leaves a world
+#[derive(Debug, Clone)]
+pub struct WorldStopPacket {
+    pub reason: String,
+}
+
+impl Packet for WorldStopPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::WorldStop
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        let reason_bytes = self.reason.as_bytes();
+        VLQ::write_unsigned(buf, reason_bytes.len() as u64);
+        buf.put_slice(reason_bytes);
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        let reason_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < reason_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for reason",
+            )));
+        }
+        
+        let mut reason_bytes = vec![0u8; reason_len];
+        buf.copy_to_slice(&mut reason_bytes);
+        let reason = String::from_utf8_lossy(&reason_bytes).to_string();
+        
+        Ok(Self { reason })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -737,5 +1011,52 @@ mod tests {
         
         assert_eq!(decoded.players, 5);
         assert_eq!(decoded.max_players, 8);
+    }
+
+    #[test]
+    fn test_world_start_packet() {
+        let packet = WorldStartPacket {
+            template_data: r#"{"type":"test"}"#.to_string(),
+            sky_data: vec![1, 2, 3, 4],
+            weather_data: vec![5, 6, 7, 8],
+            player_start: (100.0, 200.0),
+            player_respawn: (150.0, 250.0),
+            respawn_in_world: true,
+            world_properties: r#"{"gravity":10}"#.to_string(),
+            client_id: 1,
+            local_interpolation_mode: false,
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = WorldStartPacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.template_data, r#"{"type":"test"}"#);
+        assert_eq!(decoded.sky_data, vec![1, 2, 3, 4]);
+        assert_eq!(decoded.weather_data, vec![5, 6, 7, 8]);
+        assert_eq!(decoded.player_start, (100.0, 200.0));
+        assert_eq!(decoded.player_respawn, (150.0, 250.0));
+        assert_eq!(decoded.respawn_in_world, true);
+        assert_eq!(decoded.client_id, 1);
+        assert_eq!(decoded.local_interpolation_mode, false);
+    }
+
+    #[test]
+    fn test_world_stop_packet() {
+        let packet = WorldStopPacket {
+            reason: "Player disconnected".to_string(),
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = WorldStopPacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.reason, "Player disconnected");
     }
 }

@@ -14,7 +14,7 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
 
 ## Features
 
-### Implemented (Phase 1 & 2)
+### Implemented (Phase 1, 2 & 3)
 - ✅ TCP server listening on configurable port
 - ✅ Protocol version handshake
 - ✅ VLQ (Variable Length Quantity) encoding/decoding
@@ -31,10 +31,19 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
   - `/nick <name>` - Change nickname
   - `/broadcast <message>` - Server broadcast
   - `/info` - Server information
+- ✅ **Packet compression** (Phase 3)
+  - Zstd compression/decompression
+  - Automatic compression for packets > 64 bytes
+  - Binary compatible with C++ implementation
+- ✅ **World packet support** (Phase 3)
+  - WorldStart packet (world initialization)
+  - WorldStop packet (world cleanup)
+  - Template data, sky data, weather data
+  - Player spawn and respawn positions
+  - World properties
 
 ### To Be Implemented (Future Work)
-- ⬜ Packet compression (Zstd) (Phase 3)
-- ⬜ World management (Phase 3)
+- ⬜ World file loading and management (Phase 4)
 - ⬜ Entity systems (Phase 4)
 - ⬜ Player state management (Phase 4)
 - ⬜ Universe coordination (Phase 5)

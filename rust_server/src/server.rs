@@ -281,6 +281,14 @@ impl StarboundServer {
     }
 
     async fn write_packet<P: Packet>(stream: &mut TcpStream, packet: &P) -> Result<()> {
+        Self::write_packet_with_compression(stream, packet, true).await
+    }
+
+    async fn write_packet_with_compression<P: Packet>(
+        stream: &mut TcpStream,
+        packet: &P,
+        auto_compress: bool,
+    ) -> Result<()> {
         let mut buf = BytesMut::new();
         
         // Write packet type
@@ -290,18 +298,39 @@ impl StarboundServer {
         let mut packet_buf = BytesMut::new();
         packet.write(&mut packet_buf)?;
         
-        // Write packet size (VLQ signed integer, positive = uncompressed)
-        let size = packet_buf.len() as i64;
-        Self::write_vlq_signed(&mut buf, size);
+        // Decide whether to compress
+        // Auto-compress if packet is > 64 bytes (matches C++ logic)
+        let should_compress = auto_compress && packet_buf.len() > 64;
         
-        // Write packet data
-        buf.put_slice(&packet_buf);
+        if should_compress {
+            // Try to compress
+            match compression::compress_data(&packet_buf) {
+                Ok(compressed) if compressed.len() < packet_buf.len() => {
+                    // Compression helped, use it
+                    debug!("Compressed packet from {} to {} bytes", packet_buf.len(), compressed.len());
+                    let size = -(compressed.len() as i64);
+                    Self::write_vlq_signed(&mut buf, size);
+                    buf.put_slice(&compressed);
+                }
+                _ => {
+                    // Compression didn't help or failed, send uncompressed
+                    let size = packet_buf.len() as i64;
+                    Self::write_vlq_signed(&mut buf, size);
+                    buf.put_slice(&packet_buf);
+                }
+            }
+        } else {
+            // Write uncompressed
+            let size = packet_buf.len() as i64;
+            Self::write_vlq_signed(&mut buf, size);
+            buf.put_slice(&packet_buf);
+        }
         
         // Send to stream
         stream.write_all(&buf).await?;
         stream.flush().await?;
         
-        debug!("Sent packet type {:?}, size {} bytes", packet.packet_type(), packet_buf.len());
+        debug!("Sent packet type {:?}", packet.packet_type());
         
         Ok(())
     }
@@ -331,11 +360,13 @@ impl StarboundServer {
         let mut packet_data = vec![0u8; actual_size];
         stream.read_exact(&mut packet_data).await?;
 
-        // For MVP, we don't handle compression yet
-        if compressed {
-            warn!("Compressed packets not yet supported in MVP");
-            return Err(anyhow::anyhow!("Compressed packets not supported"));
-        }
+        // Decompress if needed
+        let packet_data = if compressed {
+            debug!("Decompressing packet ({} bytes)", actual_size);
+            compression::decompress_data(&packet_data, MAX_PACKET_SIZE)?
+        } else {
+            packet_data
+        };
 
         Ok((packet_type, packet_data))
     }
