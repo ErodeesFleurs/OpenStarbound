@@ -42,6 +42,7 @@ struct Client {
     addr: SocketAddr,
     stream: Arc<Mutex<TcpStream>>,
     authenticated: bool,
+    nick: String,
 }
 
 /// The main Starbound server
@@ -124,6 +125,8 @@ impl StarboundServer {
 
         info!("Client {} connected as ID {}", addr, client_id);
 
+        let stream_arc = Arc::new(Mutex::new(stream));
+        
         // Register client
         {
             let mut clients_lock = clients.write().await;
@@ -132,15 +135,59 @@ impl StarboundServer {
                 Client {
                     id: client_id,
                     addr,
-                    stream: Arc::new(Mutex::new(stream)),
+                    stream: stream_arc.clone(),
                     authenticated: false,
+                    nick: format!("Player{}", client_id),
                 },
             );
         }
 
-        // TODO: Main client loop - handle incoming packets
-        // For MVP, we just keep the connection alive
-        tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+        // Send server info packet
+        {
+            let client_count = clients.read().await.len() as u16;
+            let server_info = ServerInfoPacket {
+                players: client_count,
+                max_players: config.max_clients as u16,
+            };
+            let mut stream_lock = stream_arc.lock().await;
+            let _ = Self::write_packet(&mut *stream_lock, &server_info).await;
+        }
+
+        // Main client loop - handle incoming packets
+        loop {
+            let packet_result = {
+                let mut stream_lock = stream_arc.lock().await;
+                Self::read_packet_type(&mut *stream_lock).await
+            };
+
+            match packet_result {
+                Ok((packet_type, packet_data)) => {
+                    match packet_type {
+                        PacketType::ChatSend => {
+                            if let Err(e) = Self::handle_chat_send(
+                                client_id,
+                                &packet_data,
+                                &clients,
+                                &config,
+                            ).await {
+                                error!("Error handling chat send: {}", e);
+                            }
+                        }
+                        PacketType::ClientDisconnectRequest => {
+                            info!("Client {} requested disconnect", client_id);
+                            break;
+                        }
+                        _ => {
+                            debug!("Unhandled packet type: {:?}", packet_type);
+                        }
+                    }
+                }
+                Err(e) => {
+                    warn!("Error reading packet from client {}: {}", client_id, e);
+                    break;
+                }
+            }
+        }
 
         // Cleanup
         {
@@ -256,6 +303,218 @@ impl StarboundServer {
         
         debug!("Sent packet type {:?}, size {} bytes", packet.packet_type(), packet_buf.len());
         
+        Ok(())
+    }
+
+    async fn read_packet_type(stream: &mut TcpStream) -> Result<(PacketType, Vec<u8>)> {
+        // Read packet type (1 byte)
+        let packet_type = stream.read_u8().await?;
+        let packet_type = PacketType::from_u8(packet_type)?;
+        
+        debug!("Reading packet type: {:?}", packet_type);
+
+        // Read packet size (VLQ signed integer)
+        let size = Self::read_vlq_signed(stream).await?;
+        let (actual_size, compressed) = if size < 0 {
+            ((-size) as usize, true)
+        } else {
+            (size as usize, false)
+        };
+
+        if actual_size > MAX_PACKET_SIZE {
+            return Err(ProtocolError::PacketTooLarge(actual_size).into());
+        }
+
+        debug!("Packet size: {} bytes (compressed: {})", actual_size, compressed);
+
+        // Read packet data
+        let mut packet_data = vec![0u8; actual_size];
+        stream.read_exact(&mut packet_data).await?;
+
+        // For MVP, we don't handle compression yet
+        if compressed {
+            warn!("Compressed packets not yet supported in MVP");
+            return Err(anyhow::anyhow!("Compressed packets not supported"));
+        }
+
+        Ok((packet_type, packet_data))
+    }
+
+    async fn handle_chat_send(
+        client_id: u16,
+        packet_data: &[u8],
+        clients: &Arc<RwLock<HashMap<u16, Client>>>,
+        config: &ServerConfig,
+    ) -> Result<()> {
+        // Parse the chat send packet
+        let mut cursor = Cursor::new(packet_data);
+        let chat_packet = ChatSendPacket::read(&mut cursor)?;
+        
+        info!("Chat from client {}: {}", client_id, chat_packet.text);
+
+        // Check for admin commands
+        if chat_packet.text.starts_with('/') {
+            Self::handle_admin_command(client_id, &chat_packet.text, clients, config).await?;
+            return Ok(());
+        }
+
+        // Get sender nick
+        let sender_nick = {
+            let clients_lock = clients.read().await;
+            clients_lock.get(&client_id)
+                .map(|c| c.nick.clone())
+                .unwrap_or_else(|| format!("Player{}", client_id))
+        };
+
+        // Create chat receive message
+        let chat_receive = ChatReceivePacket {
+            received_message: ChatReceivedMessage {
+                context: MessageContext::new(match chat_packet.send_mode {
+                    ChatSendMode::Broadcast => MessageContextMode::Broadcast,
+                    ChatSendMode::Local => MessageContextMode::Local,
+                    ChatSendMode::Party => MessageContextMode::Party,
+                }),
+                from_connection: client_id,
+                from_nick: sender_nick,
+                portrait: String::new(),
+                text: chat_packet.text,
+            },
+        };
+
+        // Broadcast to all clients
+        Self::broadcast_packet(clients, &chat_receive).await?;
+
+        Ok(())
+    }
+
+    async fn handle_admin_command(
+        client_id: u16,
+        command: &str,
+        clients: &Arc<RwLock<HashMap<u16, Client>>>,
+        config: &ServerConfig,
+    ) -> Result<()> {
+        let parts: Vec<&str> = command.split_whitespace().collect();
+        if parts.is_empty() {
+            return Ok(());
+        }
+
+        let cmd = parts[0].to_lowercase();
+        let response_text = match cmd.as_str() {
+            "/help" => {
+                "Available commands:\n\
+                 /help - Show this help\n\
+                 /players - List connected players\n\
+                 /nick <name> - Change your nickname\n\
+                 /broadcast <message> - Broadcast a message (alias: /bc)\n\
+                 /info - Show server information"
+            }
+            "/players" => {
+                let clients_lock = clients.read().await;
+                let player_list: Vec<String> = clients_lock.values()
+                    .map(|c| format!("{} (ID: {})", c.nick, c.id))
+                    .collect();
+                return Self::send_command_result(
+                    client_id,
+                    &format!("Connected players ({}):\n{}", 
+                        clients_lock.len(), 
+                        player_list.join("\n")),
+                    clients,
+                ).await;
+            }
+            "/nick" if parts.len() > 1 => {
+                let new_nick = parts[1..].join(" ");
+                {
+                    let mut clients_lock = clients.write().await;
+                    if let Some(client) = clients_lock.get_mut(&client_id) {
+                        let old_nick = client.nick.clone();
+                        client.nick = new_nick.clone();
+                        return Self::broadcast_system_message(
+                            &format!("{} is now known as {}", old_nick, new_nick),
+                            clients,
+                        ).await;
+                    }
+                }
+                "Failed to change nickname"
+            }
+            "/broadcast" | "/bc" if parts.len() > 1 => {
+                let message = parts[1..].join(" ");
+                return Self::broadcast_system_message(&message, clients).await;
+            }
+            "/info" => {
+                let clients_lock = clients.read().await;
+                return Self::send_command_result(
+                    client_id,
+                    &format!(
+                        "Server: {}\nPlayers: {}/{}\nProtocol Version: {}",
+                        config.server_name,
+                        clients_lock.len(),
+                        config.max_clients,
+                        PROTOCOL_VERSION
+                    ),
+                    clients,
+                ).await;
+            }
+            _ => "Unknown command. Type /help for available commands."
+        };
+
+        Self::send_command_result(client_id, response_text, clients).await
+    }
+
+    async fn send_command_result(
+        client_id: u16,
+        message: &str,
+        clients: &Arc<RwLock<HashMap<u16, Client>>>,
+    ) -> Result<()> {
+        let packet = ChatReceivePacket {
+            received_message: ChatReceivedMessage {
+                context: MessageContext::new(MessageContextMode::CommandResult),
+                from_connection: 0,
+                from_nick: "Server".to_string(),
+                portrait: String::new(),
+                text: message.to_string(),
+            },
+        };
+
+        // Send only to the requesting client
+        let clients_lock = clients.read().await;
+        if let Some(client) = clients_lock.get(&client_id) {
+            let mut stream_lock = client.stream.lock().await;
+            Self::write_packet(&mut *stream_lock, &packet).await?;
+        }
+
+        Ok(())
+    }
+
+    async fn broadcast_system_message(
+        message: &str,
+        clients: &Arc<RwLock<HashMap<u16, Client>>>,
+    ) -> Result<()> {
+        let packet = ChatReceivePacket {
+            received_message: ChatReceivedMessage {
+                context: MessageContext::new(MessageContextMode::Broadcast),
+                from_connection: 0,
+                from_nick: "Server".to_string(),
+                portrait: String::new(),
+                text: message.to_string(),
+            },
+        };
+
+        Self::broadcast_packet(clients, &packet).await
+    }
+
+    async fn broadcast_packet<P: Packet>(
+        clients: &Arc<RwLock<HashMap<u16, Client>>>,
+        packet: &P,
+    ) -> Result<()> {
+        let clients_lock = clients.read().await;
+        
+        for client in clients_lock.values() {
+            let mut stream_lock = client.stream.lock().await;
+            if let Err(e) = Self::write_packet(&mut *stream_lock, packet).await {
+                warn!("Failed to send packet to client {}: {}", client.id, e);
+            }
+        }
+
         Ok(())
     }
 

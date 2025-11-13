@@ -14,23 +14,31 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
 
 ## Features
 
-### Implemented
+### Implemented (Phase 1 & 2)
 - ✅ TCP server listening on configurable port
 - ✅ Protocol version handshake
 - ✅ VLQ (Variable Length Quantity) encoding/decoding
 - ✅ Basic packet serialization/deserialization
 - ✅ Client connection management
 - ✅ Protocol version validation
+- ✅ **Chat system** (Phase 2)
+  - ChatSend/ChatReceive packets
+  - Message broadcasting
+  - Multiple chat modes (Broadcast, Local, Party)
+- ✅ **Admin commands** (Phase 2)
+  - `/help` - Show available commands
+  - `/players` - List connected players
+  - `/nick <name>` - Change nickname
+  - `/broadcast <message>` - Server broadcast
+  - `/info` - Server information
 
 ### To Be Implemented (Future Work)
-- ⬜ Full packet type support (currently only handshake packets)
-- ⬜ Packet compression (Zstd)
-- ⬜ World management
-- ⬜ Entity systems
-- ⬜ Player state management
-- ⬜ Chat system
-- ⬜ Universe coordination
-- ⬜ Persistence layer
+- ⬜ Packet compression (Zstd) (Phase 3)
+- ⬜ World management (Phase 3)
+- ⬜ Entity systems (Phase 4)
+- ⬜ Player state management (Phase 4)
+- ⬜ Universe coordination (Phase 5)
+- ⬜ Persistence layer (Phase 5)
 
 ## Building
 
@@ -65,6 +73,44 @@ The server can be configured via environment variables:
 Example:
 ```bash
 SERVER_BIND="0.0.0.0:21025" SERVER_NAME="My Rust Server" cargo run
+```
+
+## Using the Chat System
+
+Once connected, players can use the following commands:
+
+### Player Commands
+- **Send a chat message**: Type normally and press enter
+- **Change nickname**: `/nick <new_name>`
+- **List players**: `/players`
+- **Get server info**: `/info`
+- **Get help**: `/help`
+
+### Admin Commands
+- **Broadcast message**: `/broadcast <message>` or `/bc <message>`
+
+### Chat Modes
+- **Broadcast**: Message sent to all players (default)
+- **Local**: Message sent to nearby players only
+- **Party**: Message sent to party members only
+
+Example session:
+```
+> Hello everyone!
+[Broadcast] Player1: Hello everyone!
+
+> /nick Alice
+Server: Player1 is now known as Alice
+
+> /players
+Server: Connected players (2):
+Alice (ID: 1)
+Bob (ID: 2)
+
+> /info
+Server: Server: OpenStarbound Rust Server
+Players: 2/8
+Protocol Version: 747
 ```
 
 ## Protocol Details

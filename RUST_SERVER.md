@@ -114,31 +114,51 @@ The protocol handshake matches the C++ implementation:
 
 ## Current Implementation Status
 
-### ✅ Implemented Features
+### ✅ Implemented Features (Phase 1 & 2)
 
+**Phase 1: Protocol Foundation** ✅
 - **TCP Server**: Async TCP server using Tokio
 - **Protocol Handshake**: Full protocol version negotiation
 - **VLQ Encoding/Decoding**: Complete implementation with tests
-- **Basic Packets**: ProtocolRequest, ProtocolResponse
+- **Basic Packets**: ProtocolRequest, ProtocolResponse, ServerDisconnect, ConnectSuccess
 - **Client Management**: Connection tracking and lifecycle
 - **Configuration**: Environment variable configuration
 - **Logging**: Structured logging with env_logger
 - **Graceful Shutdown**: Ctrl+C handling
 
+**Phase 2: Chat & Admin Commands** ✅
+- **Chat System**: Full message handling and broadcasting
+  - ChatSendPacket (client → server)
+  - ChatReceivePacket (server → client)
+  - Multiple chat modes: Broadcast, Local, Party
+  - Message context types: Whisper, CommandResult, RadioMessage, World
+- **Admin Commands**: Server administration via chat
+  - `/help` - Show available commands
+  - `/players` - List connected players with IDs
+  - `/nick <name>` - Change player nickname
+  - `/broadcast <msg>` - Server-wide broadcast (alias: `/bc`)
+  - `/info` - Display server information (name, player count, protocol version)
+- **ServerInfoPacket**: Server status updates (player count, max players)
+- **Nickname Management**: Players can change their display names
+- **System Messages**: Server announcements and command results
+
 ### ⬜ Not Yet Implemented (Future Work)
 
-This MVP implementation focuses on protocol compatibility. Full game functionality requires:
-
+**Phase 3: Compression & Basic World Support**
 - **Packet Compression**: Zstd compression/decompression
-- **All Packet Types**: ~50+ packet types for full game support
-- **World Management**: Loading, saving, and simulating worlds
-- **Entity System**: Players, NPCs, monsters, objects
+- **World Loading**: Basic world file reading
+- **World Parameters**: World configuration packets
+
+**Phase 4: Entity System**
+- **Entity Packets**: ~30+ entity-related packet types
+- **Player Entities**: Player state management
+- **NPCs and Monsters**: Basic entity support
 - **Physics**: Collision detection and movement
+
+**Phase 5: Full Feature Parity**
 - **Celestial Database**: Universe/planet generation
-- **Chat System**: Message handling and broadcast
 - **Authentication**: Player account validation
 - **Persistence**: Save/load player and world data
-- **Admin Commands**: Server administration
 - **Query Protocol**: Server browser integration
 - **RCON**: Remote console access
 
@@ -299,13 +319,41 @@ Additional security features to implement:
 
 Suggested approach for full migration:
 
-1. **Phase 1 (Current)**: Protocol compatibility and handshake ✅
-2. **Phase 2**: Basic packet types (chat, admin commands)
-3. **Phase 3**: World loading and basic entity support
-4. **Phase 4**: Full entity system and physics
-5. **Phase 5**: Persistence and state management
-6. **Phase 6**: Feature parity with C++ server
-7. **Phase 7**: Rust-specific optimizations and features
+1. **Phase 1 (Complete)**: Protocol compatibility and handshake ✅
+   - TCP server with async I/O
+   - Protocol version negotiation
+   - VLQ encoding/decoding
+   - Basic packet infrastructure
+
+2. **Phase 2 (Complete)**: Basic packet types (chat, admin commands) ✅
+   - Chat message sending and receiving
+   - Message broadcasting to all clients
+   - Admin command system (/help, /players, /nick, /broadcast, /info)
+   - ServerInfoPacket for status updates
+   - Player nickname management
+
+3. **Phase 3 (Next)**: Compression and World Loading
+   - Zstd packet compression/decompression
+   - World file loading from disk
+   - WorldStart/WorldStop packets
+   - Basic world parameters
+
+4. **Phase 4**: Entity System
+   - Entity packet types
+   - Player entity management
+   - NPC and monster support
+   - Basic physics and collision
+
+5. **Phase 5**: Persistence and Full Features
+   - Player save/load
+   - World persistence
+   - Universe coordination
+   - Feature parity with C++ server
+
+6. **Phase 6**: Rust-specific optimizations
+   - Performance tuning
+   - Advanced async patterns
+   - Memory optimizations
 
 Each phase maintains backward compatibility with C++ clients.
 

@@ -74,11 +74,203 @@ impl PacketType {
             3 => Ok(PacketType::ConnectSuccess),
             4 => Ok(PacketType::ConnectFailure),
             5 => Ok(PacketType::HandshakeChallenge),
+            6 => Ok(PacketType::ChatReceive),
+            12 => Ok(PacketType::ServerInfo),
             13 => Ok(PacketType::ClientConnect),
             14 => Ok(PacketType::ClientDisconnectRequest),
             15 => Ok(PacketType::HandshakeResponse),
+            18 => Ok(PacketType::ChatSend),
             _ => Err(ProtocolError::InvalidPacketType(value)),
         }
+    }
+}
+
+/// Chat send mode as defined in StarChatTypes.hpp
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ChatSendMode {
+    Broadcast = 0,
+    Local = 1,
+    Party = 2,
+}
+
+impl ChatSendMode {
+    pub fn from_u8(value: u8) -> Result<Self, ProtocolError> {
+        match value {
+            0 => Ok(ChatSendMode::Broadcast),
+            1 => Ok(ChatSendMode::Local),
+            2 => Ok(ChatSendMode::Party),
+            _ => Err(ProtocolError::InvalidPacketType(value)),
+        }
+    }
+}
+
+/// Message context mode as defined in StarChatTypes.hpp
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MessageContextMode {
+    Local = 0,
+    Party = 1,
+    Broadcast = 2,
+    Whisper = 3,
+    CommandResult = 4,
+    RadioMessage = 5,
+    World = 6,
+}
+
+impl MessageContextMode {
+    pub fn from_u8(value: u8) -> Result<Self, ProtocolError> {
+        match value {
+            0 => Ok(MessageContextMode::Local),
+            1 => Ok(MessageContextMode::Party),
+            2 => Ok(MessageContextMode::Broadcast),
+            3 => Ok(MessageContextMode::Whisper),
+            4 => Ok(MessageContextMode::CommandResult),
+            5 => Ok(MessageContextMode::RadioMessage),
+            6 => Ok(MessageContextMode::World),
+            _ => Err(ProtocolError::InvalidPacketType(value)),
+        }
+    }
+}
+
+/// Message context structure
+#[derive(Debug, Clone)]
+pub struct MessageContext {
+    pub mode: MessageContextMode,
+    pub channel_name: String,
+}
+
+impl MessageContext {
+    pub fn new(mode: MessageContextMode) -> Self {
+        Self {
+            mode,
+            channel_name: String::new(),
+        }
+    }
+
+    pub fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        if !buf.has_remaining() {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for message context mode",
+            )));
+        }
+        let mode = MessageContextMode::from_u8(buf.get_u8())?;
+        
+        // Read channel name for Local and Party modes
+        let channel_name = if matches!(mode, MessageContextMode::Local | MessageContextMode::Party) {
+            let len = VLQ::read_unsigned(buf)? as usize;
+            if buf.remaining() < len {
+                return Err(ProtocolError::Io(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "Not enough bytes for channel name",
+                )));
+            }
+            let mut bytes = vec![0u8; len];
+            buf.copy_to_slice(&mut bytes);
+            String::from_utf8_lossy(&bytes).to_string()
+        } else {
+            String::new()
+        };
+        
+        Ok(Self { mode, channel_name })
+    }
+
+    pub fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        buf.put_u8(self.mode as u8);
+        if matches!(self.mode, MessageContextMode::Local | MessageContextMode::Party) {
+            let name_bytes = self.channel_name.as_bytes();
+            VLQ::write_unsigned(buf, name_bytes.len() as u64);
+            buf.put_slice(name_bytes);
+        }
+        Ok(())
+    }
+}
+
+/// Chat received message structure
+#[derive(Debug, Clone)]
+pub struct ChatReceivedMessage {
+    pub context: MessageContext,
+    pub from_connection: u16,
+    pub from_nick: String,
+    pub portrait: String,
+    pub text: String,
+}
+
+impl ChatReceivedMessage {
+    pub fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        let context = MessageContext::read(buf)?;
+        
+        if buf.remaining() < 2 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for connection ID",
+            )));
+        }
+        let from_connection = buf.get_u16();
+        
+        // Read from_nick
+        let nick_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < nick_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for nick",
+            )));
+        }
+        let mut nick_bytes = vec![0u8; nick_len];
+        buf.copy_to_slice(&mut nick_bytes);
+        let from_nick = String::from_utf8_lossy(&nick_bytes).to_string();
+        
+        // Read portrait
+        let portrait_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < portrait_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for portrait",
+            )));
+        }
+        let mut portrait_bytes = vec![0u8; portrait_len];
+        buf.copy_to_slice(&mut portrait_bytes);
+        let portrait = String::from_utf8_lossy(&portrait_bytes).to_string();
+        
+        // Read text
+        let text_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < text_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for text",
+            )));
+        }
+        let mut text_bytes = vec![0u8; text_len];
+        buf.copy_to_slice(&mut text_bytes);
+        let text = String::from_utf8_lossy(&text_bytes).to_string();
+        
+        Ok(Self {
+            context,
+            from_connection,
+            from_nick,
+            portrait,
+            text,
+        })
+    }
+
+    pub fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        self.context.write(buf)?;
+        buf.put_u16(self.from_connection);
+        
+        let nick_bytes = self.from_nick.as_bytes();
+        VLQ::write_unsigned(buf, nick_bytes.len() as u64);
+        buf.put_slice(nick_bytes);
+        
+        let portrait_bytes = self.portrait.as_bytes();
+        VLQ::write_unsigned(buf, portrait_bytes.len() as u64);
+        buf.put_slice(portrait_bytes);
+        
+        let text_bytes = self.text.as_bytes();
+        VLQ::write_unsigned(buf, text_bytes.len() as u64);
+        buf.put_slice(text_bytes);
+        
+        Ok(())
     }
 }
 
@@ -313,6 +505,106 @@ impl Packet for ConnectSuccessPacket {
     }
 }
 
+/// Chat Send Packet - sent by client to send a chat message
+#[derive(Debug, Clone)]
+pub struct ChatSendPacket {
+    pub text: String,
+    pub send_mode: ChatSendMode,
+}
+
+impl Packet for ChatSendPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::ChatSend
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        let text_bytes = self.text.as_bytes();
+        VLQ::write_unsigned(buf, text_bytes.len() as u64);
+        buf.put_slice(text_bytes);
+        buf.put_u8(self.send_mode as u8);
+        // Note: Not writing data JsonObject for now (requires stream version >= 5)
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        let text_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < text_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for text",
+            )));
+        }
+        
+        let mut text_bytes = vec![0u8; text_len];
+        buf.copy_to_slice(&mut text_bytes);
+        let text = String::from_utf8_lossy(&text_bytes).to_string();
+        
+        if !buf.has_remaining() {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for send mode",
+            )));
+        }
+        let send_mode = ChatSendMode::from_u8(buf.get_u8())?;
+        
+        Ok(Self { text, send_mode })
+    }
+}
+
+/// Chat Receive Packet - sent by server to deliver a chat message
+#[derive(Debug, Clone)]
+pub struct ChatReceivePacket {
+    pub received_message: ChatReceivedMessage,
+}
+
+impl Packet for ChatReceivePacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::ChatReceive
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        self.received_message.write(buf)
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        let received_message = ChatReceivedMessage::read(buf)?;
+        Ok(Self { received_message })
+    }
+}
+
+/// Server Info Packet - sent by server to provide server information
+#[derive(Debug, Clone)]
+pub struct ServerInfoPacket {
+    pub players: u16,
+    pub max_players: u16,
+}
+
+impl Packet for ServerInfoPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::ServerInfo
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        buf.put_u16(self.players);
+        buf.put_u16(self.max_players);
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        if buf.remaining() < 4 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for server info",
+            )));
+        }
+        
+        let players = buf.get_u16();
+        let max_players = buf.get_u16();
+        
+        Ok(Self { players, max_players })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -385,5 +677,65 @@ mod tests {
         
         assert_eq!(decoded.allowed, true);
         assert_eq!(decoded.info, r#"{"version":"test"}"#);
+    }
+
+    #[test]
+    fn test_chat_send_packet() {
+        let packet = ChatSendPacket {
+            text: "Hello, world!".to_string(),
+            send_mode: ChatSendMode::Broadcast,
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = ChatSendPacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.text, "Hello, world!");
+        assert_eq!(decoded.send_mode, ChatSendMode::Broadcast);
+    }
+
+    #[test]
+    fn test_chat_receive_packet() {
+        let packet = ChatReceivePacket {
+            received_message: ChatReceivedMessage {
+                context: MessageContext::new(MessageContextMode::Broadcast),
+                from_connection: 1,
+                from_nick: "TestPlayer".to_string(),
+                portrait: "".to_string(),
+                text: "Hello!".to_string(),
+            },
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = ChatReceivePacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.received_message.from_connection, 1);
+        assert_eq!(decoded.received_message.from_nick, "TestPlayer");
+        assert_eq!(decoded.received_message.text, "Hello!");
+    }
+
+    #[test]
+    fn test_server_info_packet() {
+        let packet = ServerInfoPacket {
+            players: 5,
+            max_players: 8,
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = ServerInfoPacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.players, 5);
+        assert_eq!(decoded.max_players, 8);
     }
 }
