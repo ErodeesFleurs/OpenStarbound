@@ -183,4 +183,47 @@ size_t WorkerPool::waitingThreadCount() const {
   return waiting;
 }
 
+bool WorkerPool::resize(unsigned newThreadCount) {
+  MutexLocker threadLock(m_threadMutex);
+  
+  size_t currentCount = m_workerThreads.size();
+  if (currentCount == newThreadCount)
+    return false;
+  
+  if (newThreadCount > currentCount) {
+    // Add new threads
+    for (size_t i = currentCount; i < newThreadCount; ++i)
+      m_workerThreads.append(make_unique<WorkerThread>(this));
+    return true;
+  } else {
+    // Remove excess threads (they will stop after finishing current work)
+    size_t toRemove = currentCount - newThreadCount;
+    for (size_t i = 0; i < toRemove && !m_workerThreads.empty(); ++i) {
+      m_workerThreads.last()->shouldStop = true;
+    }
+    m_workCondition.broadcast();
+    
+    // Clean up stopped threads
+    eraseWhere(m_workerThreads, [](auto const& thread) {
+      return thread->shouldStop && !thread->isRunning();
+    });
+    return true;
+  }
+}
+
+float WorkerPool::utilization() const {
+  MutexLocker threadLock(m_threadMutex);
+  
+  if (m_workerThreads.empty())
+    return 0.0f;
+  
+  size_t activeThreads = 0;
+  for (auto const& thread : m_workerThreads) {
+    if (!thread->waiting && !thread->shouldStop)
+      ++activeThreads;
+  }
+  
+  return (float)activeThreads / (float)m_workerThreads.size();
+}
+
 }

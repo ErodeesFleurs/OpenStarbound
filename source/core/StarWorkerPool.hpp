@@ -129,6 +129,13 @@ public:
   
   // Get the number of threads currently waiting for work
   size_t waitingThreadCount() const;
+  
+  // Dynamically resize the thread pool based on current load
+  // Returns true if resize was performed
+  bool resize(unsigned newThreadCount);
+  
+  // Get the utilization percentage (0.0 to 1.0)
+  float utilization() const;
 
 private:
   class WorkerThread : public Thread {

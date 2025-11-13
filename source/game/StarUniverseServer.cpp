@@ -592,9 +592,49 @@ void UniverseServer::run() {
     LogMap::set("universe_time", m_universeClock->time());
     
     // Log worker pool statistics for performance monitoring
-    LogMap::set("worker_pool_threads", m_workerPool.threadCount());
-    LogMap::set("worker_pool_pending", m_workerPool.pendingWorkCount());
-    LogMap::set("worker_pool_idle", m_workerPool.waitingThreadCount());
+    size_t currentThreads = m_workerPool.threadCount();
+    size_t pendingWork = m_workerPool.pendingWorkCount();
+    size_t idleThreads = m_workerPool.waitingThreadCount();
+    float utilization = m_workerPool.utilization();
+    
+    LogMap::set("worker_pool_threads", currentThreads);
+    LogMap::set("worker_pool_pending", pendingWork);
+    LogMap::set("worker_pool_idle", idleThreads);
+    LogMap::set("worker_pool_utilization", strf("{:4.1f}%", utilization * 100.0f));
+    
+    // Adaptive load balancing: adjust thread pool size based on utilization
+    // Only adjust if not manually configured
+    static int64_t lastResizeTime = 0;
+    int64_t currentTime = Time::monotonicMilliseconds();
+    int64_t resizeInterval = 30000; // 30 seconds between adjustments
+    
+    auto& universeConfig = Root::singleton().assets()->json("/universe_server.config");
+    bool autoResize = !universeConfig.optUInt("workerPoolThreads").isValid();
+    
+    if (autoResize && (currentTime - lastResizeTime) > resizeInterval) {
+      unsigned hwThreads = std::thread::hardware_concurrency();
+      if (hwThreads == 0) hwThreads = 4;
+      unsigned maxThreads = clamp<unsigned>((hwThreads * 3) / 4, 2, 16);
+      
+      // Scale up if utilization is high and we have pending work
+      if (utilization > 0.85f && pendingWork > currentThreads && currentThreads < maxThreads) {
+        unsigned newThreads = min<unsigned>(currentThreads + 2, maxThreads);
+        if (m_workerPool.resize(newThreads)) {
+          Logger::info("UniverseServer: Scaled up worker pool to {} threads (utilization: {:4.1f}%)", 
+            newThreads, utilization * 100.0f);
+          lastResizeTime = currentTime;
+        }
+      }
+      // Scale down if utilization is consistently low
+      else if (utilization < 0.25f && currentThreads > 2 && pendingWork == 0) {
+        unsigned newThreads = max<unsigned>(currentThreads - 1, 2);
+        if (m_workerPool.resize(newThreads)) {
+          Logger::info("UniverseServer: Scaled down worker pool to {} threads (utilization: {:4.1f}%)", 
+            newThreads, utilization * 100.0f);
+          lastResizeTime = currentTime;
+        }
+      }
+    }
 
     try {
       updateLua();
