@@ -14,7 +14,7 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
 
 ## Features
 
-### Implemented (Phase 1, 2 & 3)
+### Implemented (Phase 1, 2, 3 & 4)
 - ✅ TCP server listening on configurable port
 - ✅ Protocol version handshake
 - ✅ VLQ (Variable Length Quantity) encoding/decoding
@@ -41,13 +41,19 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
   - Template data, sky data, weather data
   - Player spawn and respawn positions
   - World properties
+- ✅ **Entity system foundation** (Phase 4)
+  - EntityType enum (Plant, Object, Vehicle, ItemDrop, Monster, NPC, Player, etc.)
+  - EntityCreatePacket (entity spawning)
+  - EntityUpdateSetPacket (entity state updates)
+  - EntityDestroyPacket (entity removal)
+  - Binary compatible with C++ entity system
 
 ### To Be Implemented (Future Work)
-- ⬜ World file loading and management (Phase 4)
-- ⬜ Entity systems (Phase 4)
-- ⬜ Player state management (Phase 4)
-- ⬜ Universe coordination (Phase 5)
-- ⬜ Persistence layer (Phase 5)
+- ⬜ World file loading and simulation (Phase 5)
+- ⬜ Entity behavior and AI (Phase 5)
+- ⬜ Complete player state management (Phase 5)
+- ⬜ Universe coordination (Phase 6)
+- ⬜ Persistence layer (Phase 6)
 
 ## Building
 

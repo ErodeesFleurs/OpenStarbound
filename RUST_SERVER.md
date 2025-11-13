@@ -114,7 +114,7 @@ The protocol handshake matches the C++ implementation:
 
 ## Current Implementation Status
 
-### ✅ Implemented Features (Phase 1, 2 & 3)
+### ✅ Implemented Features (Phase 1, 2, 3 & 4)
 
 **Phase 1: Protocol Foundation** ✅
 - **TCP Server**: Async TCP server using Tokio
@@ -154,19 +154,26 @@ The protocol handshake matches the C++ implementation:
   - Full packet serialization matching C++ wire format
 - **Compression Tests**: Round-trip and size reduction validation
 
+**Phase 4: Entity System Foundation** ✅
+- **Entity Types**: Complete EntityType enum
+  - Plant, Object, Vehicle, ItemDrop, PlantDrop, Projectile
+  - Stagehand, Monster, Npc, Player
+  - Binary-compatible with C++ EntityType enum
+- **Core Entity Packets**: Infrastructure for entity management
+  - EntityCreatePacket: Spawn entities with type, store data, initial state
+  - EntityUpdateSetPacket: Batch entity state updates with deltas
+  - EntityDestroyPacket: Remove entities with final state and death flag
+  - All packets binary-compatible with C++ implementation
+- **Entity Tests**: Serialization tests for all entity packets
+
 ### ⬜ Not Yet Implemented (Future Work)
 
-**Phase 4: World Management & Entities**
+**Phase 5: World & Entity Integration**
 - **World Loading**: World file reading from disk
 - **World Simulation**: Basic world tick and updates
-- **Entity Packets**: ~30+ entity-related packet types
-- **Player Entities**: Player state management
-
-**Phase 4: Entity System**
-- **Entity Packets**: ~30+ entity-related packet types
-- **Player Entities**: Player state management
-- **NPCs and Monsters**: Basic entity support
-- **Physics**: Collision detection and movement
+- **Entity Behavior**: Entity AI and behavior systems
+- **Player State**: Complete player entity management
+- **Additional Entity Packets**: EntityInteract, HitRequest, DamageRequest, etc.
 
 **Phase 5: Full Feature Parity**
 - **Celestial Database**: Universe/planet generation
@@ -352,15 +359,21 @@ Suggested approach for full migration:
    - World initialization infrastructure
    - Binary protocol compatibility for compression
 
-4. **Phase 4 (Next)**: World Management & Entity System
+4. **Phase 4 (Complete)**: Entity System Foundation ✅
+   - EntityType enum (10 entity types)
+   - EntityCreatePacket (entity spawning)
+   - EntityUpdateSetPacket (batch state updates)
+   - EntityDestroyPacket (entity removal)
+   - Binary protocol compatibility for all entity packets
+
+5. **Phase 5 (Next)**: World & Entity Integration
    - World file loading from disk
    - Basic world simulation and updates
-   - Entity packet types
+   - Entity behavior and AI systems
    - Player entity management
-   - NPC and monster support
-   - Basic physics and collision
+   - Additional entity packets (Interact, Hit, Damage)
 
-5. **Phase 5**: Persistence and Full Features
+6. **Phase 6**: Persistence and Full Features
    - Player save/load
    - World persistence
    - Universe coordination

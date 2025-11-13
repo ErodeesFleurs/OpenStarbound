@@ -62,6 +62,14 @@ pub enum PacketType {
     // World Server -> Client packets
     WorldStart = 21,
     WorldStop = 22,
+    // ... more world packets ...
+    
+    // Bidirectional entity packets
+    EntityCreate = 94,
+    EntityUpdateSet = 95,
+    EntityDestroy = 96,
+    EntityInteract = 97,
+    EntityInteractResult = 98,
     // ... and many more packet types
 }
 
@@ -82,10 +90,55 @@ impl PacketType {
             18 => Ok(PacketType::ChatSend),
             21 => Ok(PacketType::WorldStart),
             22 => Ok(PacketType::WorldStop),
+            94 => Ok(PacketType::EntityCreate),
+            95 => Ok(PacketType::EntityUpdateSet),
+            96 => Ok(PacketType::EntityDestroy),
+            97 => Ok(PacketType::EntityInteract),
+            98 => Ok(PacketType::EntityInteractResult),
             _ => Err(ProtocolError::InvalidPacketType(value)),
         }
     }
 }
+
+/// Entity types as defined in StarEntity.hpp
+#[repr(u8)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EntityType {
+    Plant = 0,
+    Object = 1,
+    Vehicle = 2,
+    ItemDrop = 3,
+    PlantDrop = 4,
+    Projectile = 5,
+    Stagehand = 6,
+    Monster = 7,
+    Npc = 8,
+    Player = 9,
+}
+
+impl EntityType {
+    pub fn from_u8(value: u8) -> Result<Self, ProtocolError> {
+        match value {
+            0 => Ok(EntityType::Plant),
+            1 => Ok(EntityType::Object),
+            2 => Ok(EntityType::Vehicle),
+            3 => Ok(EntityType::ItemDrop),
+            4 => Ok(EntityType::PlantDrop),
+            5 => Ok(EntityType::Projectile),
+            6 => Ok(EntityType::Stagehand),
+            7 => Ok(EntityType::Monster),
+            8 => Ok(EntityType::Npc),
+            9 => Ok(EntityType::Player),
+            _ => Err(ProtocolError::InvalidPacketType(value)),
+        }
+    }
+}
+
+/// Entity ID type
+pub type EntityId = i32;
+
+/// Connection ID type (already used elsewhere but defining here for entities)
+pub type ConnectionId = u16;
 
 /// Compression and decompression functions using Zstd
 pub mod compression {
@@ -879,6 +932,226 @@ impl Packet for WorldStopPacket {
     }
 }
 
+/// Entity Create Packet - sent when a new entity is created in the world
+#[derive(Debug, Clone)]
+pub struct EntityCreatePacket {
+    pub entity_type: EntityType,
+    pub store_data: Vec<u8>,      // Entity storage data (serialized entity state)
+    pub first_net_state: Vec<u8>,  // Initial network state
+    pub entity_id: EntityId,
+}
+
+impl Packet for EntityCreatePacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::EntityCreate
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        // Write entity type
+        buf.put_u8(self.entity_type as u8);
+        
+        // Write store data length and data
+        VLQ::write_unsigned(buf, self.store_data.len() as u64);
+        buf.put_slice(&self.store_data);
+        
+        // Write first net state length and data
+        VLQ::write_unsigned(buf, self.first_net_state.len() as u64);
+        buf.put_slice(&self.first_net_state);
+        
+        // Write entity ID
+        buf.put_i32(self.entity_id);
+        
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        // Read entity type
+        if !buf.has_remaining() {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for entity type",
+            )));
+        }
+        let entity_type = EntityType::from_u8(buf.get_u8())?;
+        
+        // Read store data
+        let store_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < store_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for store data",
+            )));
+        }
+        let mut store_data = vec![0u8; store_len];
+        buf.copy_to_slice(&mut store_data);
+        
+        // Read first net state
+        let state_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < state_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for first net state",
+            )));
+        }
+        let mut first_net_state = vec![0u8; state_len];
+        buf.copy_to_slice(&mut first_net_state);
+        
+        // Read entity ID
+        if buf.remaining() < 4 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for entity ID",
+            )));
+        }
+        let entity_id = buf.get_i32();
+        
+        Ok(Self {
+            entity_type,
+            store_data,
+            first_net_state,
+            entity_id,
+        })
+    }
+}
+
+/// Entity Update Set Packet - sent when entities need to update their state
+#[derive(Debug, Clone)]
+pub struct EntityUpdateSetPacket {
+    pub for_connection: ConnectionId,
+    pub deltas: std::collections::HashMap<EntityId, Vec<u8>>,
+}
+
+impl Packet for EntityUpdateSetPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::EntityUpdateSet
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        // Write connection ID
+        buf.put_u16(self.for_connection);
+        
+        // Write number of deltas
+        VLQ::write_unsigned(buf, self.deltas.len() as u64);
+        
+        // Write each delta
+        for (entity_id, delta) in &self.deltas {
+            buf.put_i32(*entity_id);
+            VLQ::write_unsigned(buf, delta.len() as u64);
+            buf.put_slice(delta);
+        }
+        
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        // Read connection ID
+        if buf.remaining() < 2 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for connection ID",
+            )));
+        }
+        let for_connection = buf.get_u16();
+        
+        // Read number of deltas
+        let delta_count = VLQ::read_unsigned(buf)? as usize;
+        
+        // Read each delta
+        let mut deltas = std::collections::HashMap::new();
+        for _ in 0..delta_count {
+            if buf.remaining() < 4 {
+                return Err(ProtocolError::Io(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "Not enough bytes for entity ID",
+                )));
+            }
+            let entity_id = buf.get_i32();
+            
+            let delta_len = VLQ::read_unsigned(buf)? as usize;
+            if buf.remaining() < delta_len {
+                return Err(ProtocolError::Io(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "Not enough bytes for delta",
+                )));
+            }
+            let mut delta = vec![0u8; delta_len];
+            buf.copy_to_slice(&mut delta);
+            
+            deltas.insert(entity_id, delta);
+        }
+        
+        Ok(Self {
+            for_connection,
+            deltas,
+        })
+    }
+}
+
+/// Entity Destroy Packet - sent when an entity is removed from the world
+#[derive(Debug, Clone)]
+pub struct EntityDestroyPacket {
+    pub entity_id: EntityId,
+    pub final_net_state: Vec<u8>,
+    pub death: bool,  // True if removed due to death, false if just out of range
+}
+
+impl Packet for EntityDestroyPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::EntityDestroy
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        // Write entity ID
+        buf.put_i32(self.entity_id);
+        
+        // Write final net state
+        VLQ::write_unsigned(buf, self.final_net_state.len() as u64);
+        buf.put_slice(&self.final_net_state);
+        
+        // Write death flag
+        buf.put_u8(if self.death { 1 } else { 0 });
+        
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        // Read entity ID
+        if buf.remaining() < 4 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for entity ID",
+            )));
+        }
+        let entity_id = buf.get_i32();
+        
+        // Read final net state
+        let state_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < state_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for final net state",
+            )));
+        }
+        let mut final_net_state = vec![0u8; state_len];
+        buf.copy_to_slice(&mut final_net_state);
+        
+        // Read death flag
+        if !buf.has_remaining() {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for death flag",
+            )));
+        }
+        let death = buf.get_u8() != 0;
+        
+        Ok(Self {
+            entity_id,
+            final_net_state,
+            death,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1058,5 +1331,71 @@ mod tests {
         let decoded = WorldStopPacket::read(&mut cursor).unwrap();
         
         assert_eq!(decoded.reason, "Player disconnected");
+    }
+
+    #[test]
+    fn test_entity_create_packet() {
+        let packet = EntityCreatePacket {
+            entity_type: EntityType::Player,
+            store_data: vec![1, 2, 3, 4, 5],
+            first_net_state: vec![10, 20, 30],
+            entity_id: 12345,
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = EntityCreatePacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.entity_type, EntityType::Player);
+        assert_eq!(decoded.store_data, vec![1, 2, 3, 4, 5]);
+        assert_eq!(decoded.first_net_state, vec![10, 20, 30]);
+        assert_eq!(decoded.entity_id, 12345);
+    }
+
+    #[test]
+    fn test_entity_update_set_packet() {
+        let mut deltas = std::collections::HashMap::new();
+        deltas.insert(100, vec![1, 2, 3]);
+        deltas.insert(200, vec![4, 5, 6]);
+        
+        let packet = EntityUpdateSetPacket {
+            for_connection: 1,
+            deltas,
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = EntityUpdateSetPacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.for_connection, 1);
+        assert_eq!(decoded.deltas.len(), 2);
+        assert!(decoded.deltas.contains_key(&100));
+        assert!(decoded.deltas.contains_key(&200));
+    }
+
+    #[test]
+    fn test_entity_destroy_packet() {
+        let packet = EntityDestroyPacket {
+            entity_id: 54321,
+            final_net_state: vec![99, 88, 77],
+            death: true,
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = EntityDestroyPacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.entity_id, 54321);
+        assert_eq!(decoded.final_net_state, vec![99, 88, 77]);
+        assert_eq!(decoded.death, true);
     }
 }
