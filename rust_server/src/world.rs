@@ -3,8 +3,9 @@
 /// This module implements basic world management, entity tracking, and world simulation.
 
 use crate::protocol::*;
-use std::collections::HashMap;
+use std::collections::{HashMap, BinaryHeap, HashSet};
 use std::sync::Arc;
+use std::cmp::Ordering;
 use tokio::sync::RwLock;
 
 /// World structure representing a game world
@@ -536,6 +537,398 @@ impl CollisionSystem {
     }
 }
 
+// ==================== Phase 8: AI and Pathfinding ====================
+
+/// A* pathfinding node for priority queue
+#[derive(Clone, Eq, PartialEq)]
+struct PathNode {
+    position: (i32, i32),
+    g_cost: i32,  // Cost from start
+    h_cost: i32,  // Heuristic cost to goal
+    parent: Option<(i32, i32)>,
+}
+
+impl PathNode {
+    fn f_cost(&self) -> i32 {
+        self.g_cost + self.h_cost
+    }
+}
+
+impl Ord for PathNode {
+    fn cmp(&self, other: &Self) -> Ordering {
+        // Reverse ordering for min-heap
+        other.f_cost().cmp(&self.f_cost())
+    }
+}
+
+impl PartialOrd for PathNode {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+/// A* pathfinding implementation
+pub struct Pathfinder {
+    /// Map of walkable tiles
+    walkable_map: HashSet<(i32, i32)>,
+}
+
+impl Pathfinder {
+    pub fn new() -> Self {
+        Self {
+            walkable_map: HashSet::new(),
+        }
+    }
+    
+    /// Set a tile as walkable
+    pub fn set_walkable(&mut self, x: i32, y: i32) {
+        self.walkable_map.insert((x, y));
+    }
+    
+    /// Set a tile as blocked
+    pub fn set_blocked(&mut self, x: i32, y: i32) {
+        self.walkable_map.remove(&(x, y));
+    }
+    
+    /// Check if a position is walkable
+    pub fn is_walkable(&self, x: i32, y: i32) -> bool {
+        self.walkable_map.contains(&(x, y))
+    }
+    
+    /// Manhattan distance heuristic
+    fn heuristic(pos: (i32, i32), goal: (i32, i32)) -> i32 {
+        (pos.0 - goal.0).abs() + (pos.1 - goal.1).abs()
+    }
+    
+    /// Get neighboring positions (4-directional)
+    fn neighbors(pos: (i32, i32)) -> Vec<(i32, i32)> {
+        vec![
+            (pos.0 + 1, pos.1),
+            (pos.0 - 1, pos.1),
+            (pos.0, pos.1 + 1),
+            (pos.0, pos.1 - 1),
+        ]
+    }
+    
+    /// Find path from start to goal using A*
+    pub fn find_path(&self, start: (i32, i32), goal: (i32, i32)) -> Option<Vec<(i32, i32)>> {
+        if !self.is_walkable(start.0, start.1) || !self.is_walkable(goal.0, goal.1) {
+            return None;
+        }
+        
+        let mut open_set = BinaryHeap::new();
+        let mut closed_set = HashSet::new();
+        let mut came_from = HashMap::new();
+        let mut g_scores = HashMap::new();
+        
+        g_scores.insert(start, 0);
+        open_set.push(PathNode {
+            position: start,
+            g_cost: 0,
+            h_cost: Self::heuristic(start, goal),
+            parent: None,
+        });
+        
+        while let Some(current) = open_set.pop() {
+            if current.position == goal {
+                // Reconstruct path
+                let mut path = vec![goal];
+                let mut current_pos = goal;
+                
+                while let Some(&parent) = came_from.get(&current_pos) {
+                    path.push(parent);
+                    current_pos = parent;
+                }
+                
+                path.reverse();
+                return Some(path);
+            }
+            
+            if closed_set.contains(&current.position) {
+                continue;
+            }
+            
+            closed_set.insert(current.position);
+            
+            for neighbor in Self::neighbors(current.position) {
+                if !self.is_walkable(neighbor.0, neighbor.1) || closed_set.contains(&neighbor) {
+                    continue;
+                }
+                
+                let tentative_g = current.g_cost + 1;
+                
+                if tentative_g < *g_scores.get(&neighbor).unwrap_or(&i32::MAX) {
+                    came_from.insert(neighbor, current.position);
+                    g_scores.insert(neighbor, tentative_g);
+                    
+                    open_set.push(PathNode {
+                        position: neighbor,
+                        g_cost: tentative_g,
+                        h_cost: Self::heuristic(neighbor, goal),
+                        parent: Some(current.position),
+                    });
+                }
+            }
+        }
+        
+        None
+    }
+}
+
+/// Behavior tree node result
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BehaviorStatus {
+    Success,
+    Failure,
+    Running,
+}
+
+/// Behavior tree node trait
+pub trait BehaviorNode: Send + Sync {
+    fn execute(&mut self, entity: &mut Entity, world_tick: u64) -> BehaviorStatus;
+}
+
+/// Sequence node - runs children until one fails
+pub struct SequenceNode {
+    children: Vec<Box<dyn BehaviorNode>>,
+    current_child: usize,
+}
+
+impl SequenceNode {
+    pub fn new(children: Vec<Box<dyn BehaviorNode>>) -> Self {
+        Self {
+            children,
+            current_child: 0,
+        }
+    }
+}
+
+impl BehaviorNode for SequenceNode {
+    fn execute(&mut self, entity: &mut Entity, world_tick: u64) -> BehaviorStatus {
+        while self.current_child < self.children.len() {
+            match self.children[self.current_child].execute(entity, world_tick) {
+                BehaviorStatus::Success => {
+                    self.current_child += 1;
+                }
+                BehaviorStatus::Failure => {
+                    self.current_child = 0;
+                    return BehaviorStatus::Failure;
+                }
+                BehaviorStatus::Running => {
+                    return BehaviorStatus::Running;
+                }
+            }
+        }
+        
+        self.current_child = 0;
+        BehaviorStatus::Success
+    }
+}
+
+/// Selector node - runs children until one succeeds
+pub struct SelectorNode {
+    children: Vec<Box<dyn BehaviorNode>>,
+    current_child: usize,
+}
+
+impl SelectorNode {
+    pub fn new(children: Vec<Box<dyn BehaviorNode>>) -> Self {
+        Self {
+            children,
+            current_child: 0,
+        }
+    }
+}
+
+impl BehaviorNode for SelectorNode {
+    fn execute(&mut self, entity: &mut Entity, world_tick: u64) -> BehaviorStatus {
+        while self.current_child < self.children.len() {
+            match self.children[self.current_child].execute(entity, world_tick) {
+                BehaviorStatus::Success => {
+                    self.current_child = 0;
+                    return BehaviorStatus::Success;
+                }
+                BehaviorStatus::Failure => {
+                    self.current_child += 1;
+                }
+                BehaviorStatus::Running => {
+                    return BehaviorStatus::Running;
+                }
+            }
+        }
+        
+        self.current_child = 0;
+        BehaviorStatus::Failure
+    }
+}
+
+/// Simple action: move towards target
+pub struct MoveTowardsNode {
+    target: (f32, f32),
+    speed: f32,
+}
+
+impl MoveTowardsNode {
+    pub fn new(target: (f32, f32), speed: f32) -> Self {
+        Self { target, speed }
+    }
+}
+
+impl BehaviorNode for MoveTowardsNode {
+    fn execute(&mut self, entity: &mut Entity, _world_tick: u64) -> BehaviorStatus {
+        let dx = self.target.0 - entity.position.0;
+        let dy = self.target.1 - entity.position.1;
+        let distance = (dx * dx + dy * dy).sqrt();
+        
+        if distance < 1.0 {
+            return BehaviorStatus::Success;
+        }
+        
+        let move_x = (dx / distance) * self.speed;
+        let move_y = (dy / distance) * self.speed;
+        
+        entity.position.0 += move_x;
+        entity.position.1 += move_y;
+        
+        BehaviorStatus::Running
+    }
+}
+
+/// Simple action: wait for a duration
+pub struct WaitNode {
+    duration: u64,
+    start_tick: Option<u64>,
+}
+
+impl WaitNode {
+    pub fn new(duration: u64) -> Self {
+        Self {
+            duration,
+            start_tick: None,
+        }
+    }
+}
+
+impl BehaviorNode for WaitNode {
+    fn execute(&mut self, _entity: &mut Entity, world_tick: u64) -> BehaviorStatus {
+        if self.start_tick.is_none() {
+            self.start_tick = Some(world_tick);
+        }
+        
+        if world_tick - self.start_tick.unwrap() >= self.duration {
+            self.start_tick = None;
+            return BehaviorStatus::Success;
+        }
+        
+        BehaviorStatus::Running
+    }
+}
+
+/// AI Controller for managing entity behavior
+pub struct AIController {
+    behavior_tree: Box<dyn BehaviorNode>,
+}
+
+impl AIController {
+    pub fn new(behavior_tree: Box<dyn BehaviorNode>) -> Self {
+        Self { behavior_tree }
+    }
+    
+    pub fn update(&mut self, entity: &mut Entity, world_tick: u64) -> BehaviorStatus {
+        self.behavior_tree.execute(entity, world_tick)
+    }
+}
+
+/// Monster AI behavior
+pub struct MonsterAI {
+    target_position: Option<(f32, f32)>,
+    wander_timer: u64,
+    last_wander_tick: u64,
+}
+
+impl MonsterAI {
+    pub fn new() -> Self {
+        Self {
+            target_position: None,
+            wander_timer: 120,  // Wander every 120 ticks
+            last_wander_tick: 0,
+        }
+    }
+    
+    pub fn set_target(&mut self, target: (f32, f32)) {
+        self.target_position = Some(target);
+    }
+    
+    pub fn clear_target(&mut self) {
+        self.target_position = None;
+    }
+    
+    pub fn update(&mut self, entity: &mut Entity, world_tick: u64) {
+        if let Some(target) = self.target_position {
+            // Move towards target
+            let dx = target.0 - entity.position.0;
+            let dy = target.1 - entity.position.1;
+            let distance = (dx * dx + dy * dy).sqrt();
+            
+            if distance > 1.0 {
+                let speed = 2.0;
+                entity.position.0 += (dx / distance) * speed;
+                entity.position.1 += (dy / distance) * speed;
+            }
+        } else {
+            // Wander behavior
+            if world_tick - self.last_wander_tick >= self.wander_timer {
+                self.last_wander_tick = world_tick;
+                
+                // Random wander (simplified)
+                let wander_x = ((world_tick % 100) as f32 - 50.0) / 10.0;
+                let wander_y = ((world_tick % 50) as f32 - 25.0) / 10.0;
+                
+                entity.position.0 += wander_x;
+                entity.position.1 += wander_y;
+            }
+        }
+    }
+}
+
+/// NPC AI behavior
+pub struct NpcAI {
+    idle_position: (f32, f32),
+    conversation_active: bool,
+}
+
+impl NpcAI {
+    pub fn new(idle_position: (f32, f32)) -> Self {
+        Self {
+            idle_position,
+            conversation_active: false,
+        }
+    }
+    
+    pub fn start_conversation(&mut self) {
+        self.conversation_active = true;
+    }
+    
+    pub fn end_conversation(&mut self) {
+        self.conversation_active = false;
+    }
+    
+    pub fn update(&mut self, entity: &mut Entity, _world_tick: u64) {
+        if !self.conversation_active {
+            // Return to idle position
+            let dx = self.idle_position.0 - entity.position.0;
+            let dy = self.idle_position.1 - entity.position.1;
+            let distance = (dx * dx + dy * dy).sqrt();
+            
+            if distance > 1.0 {
+                let speed = 1.0;
+                entity.position.0 += (dx / distance) * speed;
+                entity.position.1 += (dy / distance) * speed;
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -708,5 +1101,162 @@ mod tests {
         
         // Cleanup
         let _ = tokio::fs::remove_file(&world_path.with_extension("json")).await;
+    }
+
+    #[test]
+    fn test_pathfinder() {
+        let mut pathfinder = Pathfinder::new();
+        
+        // Create a simple grid
+        for x in 0..10 {
+            for y in 0..10 {
+                pathfinder.set_walkable(x, y);
+            }
+        }
+        
+        // Block some tiles to create an obstacle
+        pathfinder.set_blocked(5, 3);
+        pathfinder.set_blocked(5, 4);
+        pathfinder.set_blocked(5, 5);
+        
+        // Find path around obstacle
+        let path = pathfinder.find_path((0, 4), (9, 4));
+        assert!(path.is_some());
+        
+        let path = path.unwrap();
+        assert!(path.len() > 10); // Should go around the obstacle
+        assert_eq!(path.first(), Some(&(0, 4)));
+        assert_eq!(path.last(), Some(&(9, 4)));
+    }
+
+    #[test]
+    fn test_pathfinder_no_path() {
+        let mut pathfinder = Pathfinder::new();
+        
+        // Create two separate walkable areas
+        pathfinder.set_walkable(0, 0);
+        pathfinder.set_walkable(1, 0);
+        pathfinder.set_walkable(9, 9);
+        pathfinder.set_walkable(8, 9);
+        
+        // No path between disconnected areas
+        let path = pathfinder.find_path((0, 0), (9, 9));
+        assert!(path.is_none());
+    }
+
+    #[test]
+    fn test_behavior_tree_sequence() {
+        let mut entity = Entity::new_player(1, (0.0, 0.0));
+        
+        let children: Vec<Box<dyn BehaviorNode>> = vec![
+            Box::new(WaitNode::new(5)),
+            Box::new(MoveTowardsNode::new((10.0, 10.0), 2.0)),
+        ];
+        
+        let mut sequence = SequenceNode::new(children);
+        
+        // First execution should run wait
+        let status = sequence.execute(&mut entity, 0);
+        assert_eq!(status, BehaviorStatus::Running);
+        
+        // After wait completes, should move to MoveTowards
+        let status = sequence.execute(&mut entity, 5);
+        assert_eq!(status, BehaviorStatus::Running);
+    }
+
+    #[test]
+    fn test_behavior_tree_selector() {
+        let mut entity = Entity::new_player(1, (0.0, 0.0));
+        
+        let children: Vec<Box<dyn BehaviorNode>> = vec![
+            Box::new(MoveTowardsNode::new((1.0, 1.0), 2.0)),
+            Box::new(WaitNode::new(5)),
+        ];
+        
+        let mut selector = SelectorNode::new(children);
+        
+        // Should start with first child (MoveTowards)
+        let status = selector.execute(&mut entity, 0);
+        assert_eq!(status, BehaviorStatus::Running);
+    }
+
+    #[test]
+    fn test_move_towards_node() {
+        let mut entity = Entity::new_player(1, (0.0, 0.0));
+        let mut node = MoveTowardsNode::new((10.0, 0.0), 2.0);
+        
+        // Move towards target
+        let status = node.execute(&mut entity, 0);
+        assert_eq!(status, BehaviorStatus::Running);
+        assert!(entity.position.0 > 0.0);
+        
+        // Eventually reaches target
+        entity.position = (9.5, 0.0);
+        let status = node.execute(&mut entity, 1);
+        assert_eq!(status, BehaviorStatus::Success);
+    }
+
+    #[test]
+    fn test_wait_node() {
+        let mut entity = Entity::new_player(1, (0.0, 0.0));
+        let mut node = WaitNode::new(10);
+        
+        // Should be running initially
+        let status = node.execute(&mut entity, 0);
+        assert_eq!(status, BehaviorStatus::Running);
+        
+        // Still running before duration
+        let status = node.execute(&mut entity, 5);
+        assert_eq!(status, BehaviorStatus::Running);
+        
+        // Success after duration
+        let status = node.execute(&mut entity, 10);
+        assert_eq!(status, BehaviorStatus::Success);
+    }
+
+    #[test]
+    fn test_monster_ai() {
+        let mut entity = Entity::new(1, EntityType::Monster);
+        entity.position = (0.0, 0.0);
+        let mut ai = MonsterAI::new();
+        
+        // Set target
+        ai.set_target((10.0, 10.0));
+        ai.update(&mut entity, 0);
+        
+        // Should move towards target
+        assert!(entity.position.0 > 0.0);
+        assert!(entity.position.1 > 0.0);
+        
+        // Clear target for wander
+        ai.clear_target();
+        let old_pos = entity.position;
+        ai.update(&mut entity, 120);
+        
+        // Should have wandered
+        assert_ne!(entity.position, old_pos);
+    }
+
+    #[test]
+    fn test_npc_ai() {
+        let mut entity = Entity::new(1, EntityType::Npc);
+        entity.position = (10.0, 10.0);
+        let mut ai = NpcAI::new((5.0, 5.0));
+        
+        // Should return to idle position
+        ai.update(&mut entity, 0);
+        assert!(entity.position.0 < 10.0 || entity.position.1 < 10.0);
+        
+        // During conversation, should stay put
+        entity.position = (10.0, 10.0);
+        ai.start_conversation();
+        let old_pos = entity.position;
+        ai.update(&mut entity, 1);
+        assert_eq!(entity.position, old_pos);
+        
+        // After conversation, return to idle
+        ai.end_conversation();
+        ai.update(&mut entity, 2);
+        assert!(entity.position.0 < 10.0 || entity.position.1 < 10.0);
     }
 }

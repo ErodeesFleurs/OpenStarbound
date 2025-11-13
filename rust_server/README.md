@@ -14,7 +14,7 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
 
 ## Features
 
-### Implemented (Phase 1, 2, 3, 4, 5, 6 & 7)
+### Implemented (Phase 1-8)
 - ✅ TCP server listening on configurable port
 - ✅ Protocol version handshake
 - ✅ VLQ (Variable Length Quantity) encoding/decoding
@@ -68,11 +68,18 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
   - DamageRequest/DamageNotification packets
   - CollisionBox and CollisionSystem
   - Collision detection (AABB)
+- ✅ **Advanced AI & Pathfinding** (Phase 8)
+  - A* pathfinding algorithm
+  - Behavior tree system (Sequence, Selector nodes)
+  - AIController for behavior execution
+  - MonsterAI (chase and wander)
+  - NpcAI (idle position and conversation states)
+  - MoveTowards and Wait action nodes
 
 ### To Be Implemented (Future Work)
-- ⬜ Advanced entity AI and pathfinding (Phase 8)
+- ⬜ Advanced physics simulation (Phase 9)
 - ⬜ Universe coordination (Phase 9)
-- ⬜ Persistence layer (Phase 9)
+- ⬜ Enhanced persistence layer (Phase 9)
 
 ## Building
 
