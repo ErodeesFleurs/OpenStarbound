@@ -243,6 +243,49 @@ Each thread consumes stack memory:
 4. **Profile** before optimizing
 5. **Test** on various CPU configurations
 
+## Adaptive Load Balancing
+
+**Status: Implemented ✅**
+
+The server now includes dynamic thread pool resizing based on real-time load:
+
+### How It Works
+
+1. **Utilization Monitoring**
+   - Calculates active threads / total threads
+   - Sampled every main loop iteration
+   - Logged as `worker_pool_utilization`
+
+2. **Scaling Logic**
+   ```
+   IF utilization > 85% AND pending_work > thread_count:
+     Scale up by 2 threads (max: 75% of CPU cores, capped at 16)
+   
+   IF utilization < 25% AND pending_work == 0:
+     Scale down by 1 thread (min: 2 threads)
+   ```
+
+3. **Adjustment Frequency**
+   - Checks every 30 seconds
+   - Prevents rapid oscillation
+   - Only active when `workerPoolThreads` not manually set
+
+### Benefits
+
+- **Automatic adaptation** to varying server load
+- **Resource efficiency** during low activity
+- **Increased capacity** during high demand
+- **No configuration** required
+
+### Example Behavior
+
+**8-core system (max 6 worker threads):**
+- Idle server: Scales down to 2 threads
+- Light load (40% util): Maintains 2-3 threads
+- Medium load (60% util): Scales to 4 threads
+- Heavy load (90% util): Scales to 6 threads
+- Load decreases: Gradually scales back down
+
 ## Future Improvements
 
 Potential areas for further optimization:
@@ -251,21 +294,19 @@ Potential areas for further optimization:
    - Partition entities by spatial regions
    - Update non-interacting entities in parallel
    - Requires careful synchronization
+   - **Status**: Research phase - high complexity
 
 2. **Sector-Level Parallelization:**
    - Process world sectors independently
    - Parallel liquid simulation
    - Concurrent tile updates
+   - **Status**: Under investigation - liquid engine already optimized
 
-3. **Load Balancing:**
-   - Dynamic thread pool resizing
-   - Work stealing algorithms
-   - Adaptive fidelity based on load
-
-4. **NUMA Awareness:**
+3. **NUMA Awareness:**
    - Thread affinity for large systems
    - Memory locality optimization
    - Core pinning for consistent performance
+   - **Status**: Would require new dependencies (hwloc/libnuma)
 
 ## References
 

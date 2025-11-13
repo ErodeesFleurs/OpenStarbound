@@ -10,6 +10,7 @@ The server automatically detects available CPU cores and configures thread pools
 
 ### Worker Pool Threads
 - **Automatic sizing**: Uses 75% of available CPU cores (minimum 2, maximum 16)
+- **Adaptive scaling**: Dynamically adjusts based on real-time load (NEW!)
 - **Purpose**: Handles world creation, celestial database queries, and background tasks
 - **Manual override**: Set `workerPoolThreads` in `universe_server.config`
 
@@ -19,6 +20,8 @@ Example:
   "workerPoolThreads": 8
 }
 ```
+
+**Note**: When manually set, adaptive scaling is disabled.
 
 ### Network Worker Threads  
 - **Automatic sizing**: Uses hardware_concurrency() / 4 (minimum 2)
@@ -54,7 +57,36 @@ For optimal performance:
    ```
    UniverseServer: Starting worker pool with 6 threads
    UniverseConnectionServer: Starting 2 network worker threads
+   UniverseServer: Scaled up worker pool to 8 threads (utilization: 92.3%)
    ```
+
+## Adaptive Load Balancing
+
+**NEW**: The worker pool automatically scales based on real-time load!
+
+### How It Works
+
+When `workerPoolThreads` is not manually configured:
+- **Scales up** when utilization > 85% with pending work
+- **Scales down** when utilization < 25% with no work
+- Adjusts every 30 seconds to prevent oscillation
+- Respects min (2) and max (75% of cores, capped at 16) limits
+
+### Example Behavior
+
+On an 8-core system (max 6 worker threads):
+```
+Idle:        2 threads (utilization: 10%)
+Light load:  3 threads (utilization: 45%)
+Medium load: 4 threads (utilization: 65%)
+Heavy load:  6 threads (utilization: 95%)
+```
+
+Log entries show scaling:
+```
+UniverseServer: Scaled up worker pool to 6 threads (utilization: 92.3%)
+UniverseServer: Scaled down worker pool to 3 threads (utilization: 18.5%)
+```
 
 ## Background Processing
 
@@ -64,6 +96,7 @@ The server uses parallel processing for:
 - **World loading**: Multiple worlds can be loaded simultaneously
 - **Celestial queries**: Star system and planet queries processed in parallel
 - **Network I/O**: Packet processing distributed across network threads
+- **Dynamic scaling**: Worker pool adapts to varying server load
 
 ## Troubleshooting
 
@@ -77,9 +110,11 @@ If the server is using excessive CPU:
 ### Server response is slow
 
 If the server feels sluggish:
-1. Increase `workerPoolThreads` if you have spare CPU cores
-2. Increase `networkWorkerThreads` to improve packet processing
-3. Check that `serverFidelity` is not set to "minimum"
+1. Check `worker_pool_utilization` in logs - if consistently >90%, consider manual override with more threads
+2. Verify adaptive scaling is working (should see scale-up messages in logs)
+3. Increase `networkWorkerThreads` to improve packet processing
+4. Check that `serverFidelity` is not set to "minimum"
+5. If using manual `workerPoolThreads`, try removing it to enable adaptive scaling
 
 ### Out of Memory Errors
 
