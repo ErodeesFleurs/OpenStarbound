@@ -114,7 +114,7 @@ The protocol handshake matches the C++ implementation:
 
 ## Current Implementation Status
 
-### ✅ Implemented Features (Phase 1, 2, 3, 4 & 5)
+### ✅ Implemented Features (Phase 1, 2, 3, 4, 5 & 6)
 
 **Phase 1: Protocol Foundation** ✅
 - **TCP Server**: Async TCP server using Tokio
@@ -186,15 +186,32 @@ The protocol handshake matches the C++ implementation:
   - WorldStart packet generation from world state
 - **Tests**: World creation, entity management, world manager tests
 
+**Phase 6: Entity Behavior & Player State** ✅
+- **World Metadata**: World file format structure
+  - WorldMetadata with name, size, spawn point
+  - Gravity, breathable atmosphere, biome
+  - JSON parsing support (simplified for MVP)
+- **Entity Behavior System**: Trait-based behavior framework
+  - EntityBehavior trait with update and should_remove methods
+  - StaticBehavior for non-moving entities
+  - ProjectileBehavior with velocity and lifetime
+  - PlayerBehavior for client-controlled entities
+- **Player State Management**: Complete player state tracking
+  - PlayerState with health, max_health, energy, max_energy
+  - Position and velocity tracking
+  - Facing direction
+  - Damage and healing methods
+  - Position/velocity updates
+- **Tests**: Metadata, player state, and behavior tests
+
 ### ⬜ Not Yet Implemented (Future Work)
 
-**Phase 6: World Files & Entity Behavior**
-- **World Loading**: World file reading from disk
-- **Entity Behavior**: Entity AI and behavior systems
-- **Player State**: Complete player entity management
+**Phase 7: World Files & Advanced AI**
+- **World File I/O**: World file reading from disk
+- **Advanced Entity AI**: Pathfinding, decision trees
 - **Additional Entity Packets**: EntityInteract, HitRequest, DamageRequest, etc.
 
-**Phase 7: Full Feature Parity**
+**Phase 8: Full Feature Parity**
 - **Celestial Database**: Universe/planet generation
 - **Authentication**: Player account validation
 - **Persistence**: Save/load player and world data
@@ -393,19 +410,25 @@ Suggested approach for full migration:
    - Entity lifecycle management
    - Async operations with RwLock
 
-6. **Phase 6 (Next)**: World Files & Entity Behavior
-   - World file loading from disk
-   - Entity behavior and AI systems
-   - Player entity management
+6. **Phase 6 (Complete)**: Entity Behavior & Player State ✅
+   - WorldMetadata structure (world file format)
+   - EntityBehavior trait system
+   - StaticBehavior, ProjectileBehavior, PlayerBehavior
+   - PlayerState with health, energy, position, velocity
+   - Damage, healing, and state update methods
+
+7. **Phase 7 (Next)**: World Files & Advanced AI
+   - World file I/O from disk
+   - Advanced entity AI and pathfinding
    - Additional entity packets (Interact, Hit, Damage)
 
-7. **Phase 7**: Persistence and Full Features
+8. **Phase 8**: Persistence and Full Features
    - Player save/load
    - World persistence
    - Universe coordination
    - Feature parity with C++ server
 
-6. **Phase 6**: Rust-specific optimizations
+9. **Phase 9**: Rust-specific optimizations
    - Performance tuning
    - Advanced async patterns
    - Memory optimizations

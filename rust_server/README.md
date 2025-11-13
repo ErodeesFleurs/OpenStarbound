@@ -14,7 +14,7 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
 
 ## Features
 
-### Implemented (Phase 1, 2, 3, 4 & 5)
+### Implemented (Phase 1, 2, 3, 4, 5 & 6)
 - ✅ TCP server listening on configurable port
 - ✅ Protocol version handshake
 - ✅ VLQ (Variable Length Quantity) encoding/decoding
@@ -54,13 +54,19 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
   - World simulation tick infrastructure
   - Entity lifecycle management (add/remove)
   - Async world operations with RwLock
+- ✅ **Entity behavior & Player state** (Phase 6)
+  - WorldMetadata structure (world file format)
+  - EntityBehavior trait system
+  - PlayerState with health, energy, position
+  - StaticBehavior (non-moving entities)
+  - ProjectileBehavior (moving projectiles)
+  - PlayerBehavior (client-controlled)
 
 ### To Be Implemented (Future Work)
-- ⬜ World file loading from disk (Phase 6)
-- ⬜ Entity behavior and AI (Phase 6)
-- ⬜ Complete player state management (Phase 6)
-- ⬜ Universe coordination (Phase 7)
-- ⬜ Persistence layer (Phase 7)
+- ⬜ World file I/O from disk (Phase 7)
+- ⬜ Advanced entity AI (Phase 7)
+- ⬜ Universe coordination (Phase 8)
+- ⬜ Persistence layer (Phase 8)
 
 ## Building
 
