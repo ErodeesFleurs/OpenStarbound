@@ -1,5 +1,6 @@
 mod protocol;
 mod server;
+mod world;
 
 use server::{ServerConfig, StarboundServer};
 use log::info;
