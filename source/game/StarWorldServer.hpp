@@ -330,6 +330,9 @@ private:
   // of ticks since the last run.
   Maybe<unsigned> shouldRunThisStep(String const& timingConfiguration);
 
+  // Parallel entity updates: partition entities by spatial regions and update in parallel
+  void updateEntitiesParallel(float dt, uint64_t currentStep, bool doBreakChecks, List<EntityId>& toRemove);
+
   TileModificationList doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection = false, bool updateNeighbors = true);
 
   // Queues pending (step based) updates to the given player

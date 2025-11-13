@@ -1,3 +1,7 @@
 {
-  "scriptContexts" : { "OpenStarbound" : ["/scripts/opensb/worldserver/worldserver.lua"] }
+  "scriptContexts" : { "OpenStarbound" : ["/scripts/opensb/worldserver/worldserver.lua"] },
+  
+  "__comment_parallel_entities" : "Parallel entity updates: Partition entities by spatial regions for multi-core processing",
+  "enableParallelEntityUpdates" : true,
+  "parallelEntityThreshold" : 100
 }
