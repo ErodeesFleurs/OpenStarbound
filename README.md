@@ -99,6 +99,16 @@ Note: Not every function from [StarExtensions](https://github.com/StarExtensions
 
 [Discord](https://discord.gg/f8B5bWy3bA)
 
+## Rust Server
+
+OpenStarbound now includes an experimental Rust server implementation that maintains protocol compatibility with the C++ client. See [RUST_SERVER.md](RUST_SERVER.md) for details.
+
+Quick start:
+```bash
+cd rust_server
+cargo build --release
+cargo run --release
+```
 
 ## Building
 Note: Some of these [texts](## "hi :3") are just tooltips rather than links. 

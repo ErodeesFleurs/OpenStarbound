@@ -48,3 +48,7 @@ _deps
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+# Rust build artifacts
+/rust_server/target/
+/rust_server/Cargo.lock
