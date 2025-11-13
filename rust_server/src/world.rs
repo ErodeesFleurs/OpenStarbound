@@ -929,6 +929,285 @@ impl NpcAI {
     }
 }
 
+// ============================================================================
+// Phase 9: Advanced Physics & Spatial Optimization
+// ============================================================================
+
+/// Physics component for entities with velocity and acceleration
+#[derive(Debug, Clone)]
+pub struct PhysicsBody {
+    pub velocity: (f32, f32),
+    pub acceleration: (f32, f32),
+    pub mass: f32,
+    pub friction: f32,
+    pub bounciness: f32,
+}
+
+impl PhysicsBody {
+    pub fn new(mass: f32) -> Self {
+        Self {
+            velocity: (0.0, 0.0),
+            acceleration: (0.0, 0.0),
+            mass,
+            friction: 0.1,
+            bounciness: 0.3,
+        }
+    }
+    
+    pub fn apply_force(&mut self, force_x: f32, force_y: f32) {
+        self.acceleration.0 += force_x / self.mass;
+        self.acceleration.1 += force_y / self.mass;
+    }
+    
+    pub fn apply_gravity(&mut self, gravity: f32) {
+        self.acceleration.1 += gravity;
+    }
+    
+    pub fn update(&mut self, delta_time: f32) {
+        // Update velocity with acceleration
+        self.velocity.0 += self.acceleration.0 * delta_time;
+        self.velocity.1 += self.acceleration.1 * delta_time;
+        
+        // Apply friction
+        self.velocity.0 *= 1.0 - self.friction;
+        self.velocity.1 *= 1.0 - self.friction;
+        
+        // Reset acceleration
+        self.acceleration = (0.0, 0.0);
+    }
+    
+    pub fn get_position_delta(&self, delta_time: f32) -> (f32, f32) {
+        (
+            self.velocity.0 * delta_time,
+            self.velocity.1 * delta_time,
+        )
+    }
+}
+
+/// Spatial hash grid for efficient spatial queries
+pub struct SpatialGrid {
+    cell_size: f32,
+    grid: HashMap<(i32, i32), Vec<EntityId>>,
+}
+
+impl SpatialGrid {
+    pub fn new(cell_size: f32) -> Self {
+        Self {
+            cell_size,
+            grid: HashMap::new(),
+        }
+    }
+    
+    fn get_cell(&self, pos: (f32, f32)) -> (i32, i32) {
+        (
+            (pos.0 / self.cell_size).floor() as i32,
+            (pos.1 / self.cell_size).floor() as i32,
+        )
+    }
+    
+    pub fn insert(&mut self, entity_id: EntityId, position: (f32, f32)) {
+        let cell = self.get_cell(position);
+        self.grid.entry(cell).or_insert_with(Vec::new).push(entity_id);
+    }
+    
+    pub fn remove(&mut self, entity_id: EntityId, position: (f32, f32)) {
+        let cell = self.get_cell(position);
+        if let Some(entities) = self.grid.get_mut(&cell) {
+            entities.retain(|&id| id != entity_id);
+        }
+    }
+    
+    pub fn query_radius(&self, center: (f32, f32), radius: f32) -> Vec<EntityId> {
+        let min_cell = self.get_cell((center.0 - radius, center.1 - radius));
+        let max_cell = self.get_cell((center.0 + radius, center.1 + radius));
+        
+        let mut results = Vec::new();
+        for x in min_cell.0..=max_cell.0 {
+            for y in min_cell.1..=max_cell.1 {
+                if let Some(entities) = self.grid.get(&(x, y)) {
+                    results.extend_from_slice(entities);
+                }
+            }
+        }
+        results
+    }
+    
+    pub fn clear(&mut self) {
+        self.grid.clear();
+    }
+}
+
+/// Universe coordinator for managing multiple celestial objects
+#[derive(Debug, Clone)]
+pub struct CelestialCoordinate {
+    pub sector_x: i32,
+    pub sector_y: i32,
+    pub system: i32,
+    pub planet: i32,
+    pub satellite: Option<i32>,
+}
+
+impl CelestialCoordinate {
+    pub fn new(sector_x: i32, sector_y: i32, system: i32, planet: i32) -> Self {
+        Self {
+            sector_x,
+            sector_y,
+            system,
+            planet,
+            satellite: None,
+        }
+    }
+    
+    pub fn to_world_id(&self) -> String {
+        if let Some(sat) = self.satellite {
+            format!("CelestialWorld:{}:{}:{}:{}:{}", 
+                self.sector_x, self.sector_y, self.system, self.planet, sat)
+        } else {
+            format!("CelestialWorld:{}:{}:{}:{}", 
+                self.sector_x, self.sector_y, self.system, self.planet)
+        }
+    }
+    
+    pub fn from_world_id(world_id: &str) -> Option<Self> {
+        let parts: Vec<&str> = world_id.split(':').collect();
+        if parts.len() < 5 || parts[0] != "CelestialWorld" {
+            return None;
+        }
+        
+        Some(Self {
+            sector_x: parts[1].parse().ok()?,
+            sector_y: parts[2].parse().ok()?,
+            system: parts[3].parse().ok()?,
+            planet: parts[4].parse().ok()?,
+            satellite: if parts.len() > 5 { parts[5].parse().ok() } else { None },
+        })
+    }
+}
+
+/// Universe manager for coordinating multiple worlds
+pub struct UniverseManager {
+    worlds: Arc<RwLock<HashMap<String, Arc<RwLock<World>>>>>,
+    player_locations: Arc<RwLock<HashMap<EntityId, String>>>,
+}
+
+impl UniverseManager {
+    pub fn new() -> Self {
+        Self {
+            worlds: Arc::new(RwLock::new(HashMap::new())),
+            player_locations: Arc::new(RwLock::new(HashMap::new())),
+        }
+    }
+    
+    pub async fn get_or_create_world(&self, world_id: String) -> Arc<RwLock<World>> {
+        let mut worlds = self.worlds.write().await;
+        
+        if let Some(world) = worlds.get(&world_id) {
+            return Arc::clone(world);
+        }
+        
+        let world = Arc::new(RwLock::new(World::new(world_id.clone())));
+        worlds.insert(world_id, Arc::clone(&world));
+        world
+    }
+    
+    pub async fn transfer_entity(&self, entity_id: EntityId, from_world: &str, to_world: &str) -> Result<(), String> {
+        // Get both worlds
+        let from = self.get_or_create_world(from_world.to_string()).await;
+        let to = self.get_or_create_world(to_world.to_string()).await;
+        
+        // Get entity from source world first
+        let entity = {
+            let from_lock = from.read().await;
+            from_lock.entities.get_entity(entity_id).cloned()
+        };
+        
+        if let Some(entity) = entity {
+            // Remove from source world
+            {
+                let mut from_lock = from.write().await;
+                from_lock.entities.remove_entity(entity_id, false);
+            }
+            
+            // Add entity to destination world
+            let mut to_lock = to.write().await;
+            to_lock.add_entity(entity);
+            
+            // Update player location tracking
+            let mut locations = self.player_locations.write().await;
+            locations.insert(entity_id, to_world.to_string());
+            
+            Ok(())
+        } else {
+            Err(format!("Entity {} not found in world {}", entity_id, from_world))
+        }
+    }
+    
+    pub async fn get_player_world(&self, entity_id: EntityId) -> Option<String> {
+        let locations = self.player_locations.read().await;
+        locations.get(&entity_id).cloned()
+    }
+    
+    pub async fn list_worlds(&self) -> Vec<String> {
+        let worlds = self.worlds.read().await;
+        worlds.keys().cloned().collect()
+    }
+    
+    pub async fn unload_world(&self, world_id: &str) -> bool {
+        let mut worlds = self.worlds.write().await;
+        worlds.remove(world_id).is_some()
+    }
+}
+
+/// Planet generation parameters
+#[derive(Debug, Clone)]
+pub struct PlanetParams {
+    pub seed: u64,
+    pub size: (u32, u32),
+    pub biome: String,
+    pub threat_level: u8,
+    pub has_atmosphere: bool,
+    pub temperature: f32,
+}
+
+impl PlanetParams {
+    pub fn generate(coordinate: &CelestialCoordinate) -> Self {
+        // Simple deterministic generation based on coordinates
+        let seed = ((coordinate.sector_x as u64) << 48) 
+                 | ((coordinate.sector_y as u64) << 32)
+                 | ((coordinate.system as u64) << 16)
+                 | (coordinate.planet as u64);
+        
+        // Simple pseudo-random generation
+        let size = (1000 + (seed % 3000) as u32, 600 + (seed % 400) as u32);
+        let biome_idx = (seed % 10) as usize;
+        let biomes = ["forest", "desert", "tundra", "volcanic", "ocean", 
+                     "toxic", "alien", "midnight", "savannah", "jungle"];
+        let biome = biomes[biome_idx].to_string();
+        
+        Self {
+            seed,
+            size,
+            biome,
+            threat_level: ((seed % 10) as u8) + 1,
+            has_atmosphere: (seed % 3) != 0,
+            temperature: ((seed % 100) as f32 - 50.0) * 2.0,
+        }
+    }
+    
+    pub fn to_world(&self, world_id: String) -> World {
+        let mut world = World::new(world_id);
+        world.template_data = format!(
+            r#"{{"biome":"{}","seed":{},"threatLevel":{}}}"#,
+            self.biome, self.seed, self.threat_level
+        );
+        world.properties = format!(
+            r#"{{"gravity":9.8,"breathable":{},"temperature":{}}}"#,
+            self.has_atmosphere, self.temperature
+        );
+        world
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1258,5 +1537,142 @@ mod tests {
         ai.end_conversation();
         ai.update(&mut entity, 2);
         assert!(entity.position.0 < 10.0 || entity.position.1 < 10.0);
+    }
+
+    #[test]
+    fn test_physics_body() {
+        let mut body = PhysicsBody::new(1.0);
+        
+        // Apply force
+        body.apply_force(10.0, 0.0);
+        body.update(0.1);
+        
+        // Should have velocity
+        assert!(body.velocity.0 > 0.0);
+        
+        // Apply gravity
+        body.apply_gravity(-9.8);
+        body.update(0.1);
+        
+        // Should have negative Y velocity
+        assert!(body.velocity.1 < 0.0);
+    }
+
+    #[test]
+    fn test_spatial_grid() {
+        let mut grid = SpatialGrid::new(10.0);
+        
+        // Insert entities
+        grid.insert(1, (5.0, 5.0));
+        grid.insert(2, (15.0, 15.0));
+        grid.insert(3, (35.0, 35.0));
+        
+        // Query radius - returns entities in cells within radius
+        // (5, 5) and (15, 15) are in cells 0 and 1, within radius
+        // (35, 35) is in cell 3, which should be outside query range
+        let results = grid.query_radius((5.0, 5.0), 15.0);
+        assert!(results.contains(&1));
+        assert!(results.contains(&2));
+        // Note: Spatial grid uses cell-based queries for efficiency
+        // so it may return entities in nearby cells even if slightly outside radius
+    }
+
+    #[test]
+    fn test_celestial_coordinate() {
+        let coord = CelestialCoordinate::new(1, 2, 3, 4);
+        let world_id = coord.to_world_id();
+        assert_eq!(world_id, "CelestialWorld:1:2:3:4");
+        
+        // Parse back
+        let parsed = CelestialCoordinate::from_world_id(&world_id);
+        assert!(parsed.is_some());
+        let parsed = parsed.unwrap();
+        assert_eq!(parsed.sector_x, 1);
+        assert_eq!(parsed.sector_y, 2);
+        assert_eq!(parsed.system, 3);
+        assert_eq!(parsed.planet, 4);
+    }
+
+    #[tokio::test]
+    async fn test_universe_manager() {
+        let universe = UniverseManager::new();
+        
+        // Create worlds
+        let world1 = universe.get_or_create_world("world1".to_string()).await;
+        let world2 = universe.get_or_create_world("world2".to_string()).await;
+        
+        // Add entity to world1
+        {
+            let mut w1 = world1.write().await;
+            let entity_id = w1.entities.allocate_id();
+            let entity = Entity::new_player(entity_id, (0.0, 0.0));
+            w1.add_entity(entity);
+        }
+        
+        // Transfer entity
+        let result = universe.transfer_entity(1, "world1", "world2").await;
+        assert!(result.is_ok());
+        
+        // Check player location
+        let location = universe.get_player_world(1).await;
+        assert_eq!(location, Some("world2".to_string()));
+    }
+
+    #[test]
+    fn test_planet_generation() {
+        let coord = CelestialCoordinate::new(0, 0, 1, 1);
+        let params = PlanetParams::generate(&coord);
+        
+        // Should generate deterministic parameters
+        assert!(params.size.0 >= 1000);
+        assert!(params.size.1 >= 600);
+        assert!(params.threat_level >= 1 && params.threat_level <= 10);
+        
+        // Same coordinates should generate same planet
+        let params2 = PlanetParams::generate(&coord);
+        assert_eq!(params.seed, params2.seed);
+        assert_eq!(params.biome, params2.biome);
+    }
+
+    #[test]
+    fn test_planet_to_world() {
+        let coord = CelestialCoordinate::new(1, 2, 3, 4);
+        let params = PlanetParams::generate(&coord);
+        let world = params.to_world(coord.to_world_id());
+        
+        // Should have generated properties
+        assert!(world.template_data.contains("biome"));
+        assert!(world.properties.contains("gravity"));
+    }
+
+    #[test]
+    fn test_spatial_grid_remove() {
+        let mut grid = SpatialGrid::new(10.0);
+        
+        grid.insert(1, (5.0, 5.0));
+        grid.insert(2, (5.0, 5.0));
+        
+        let results = grid.query_radius((5.0, 5.0), 5.0);
+        assert_eq!(results.len(), 2);
+        
+        grid.remove(1, (5.0, 5.0));
+        let results = grid.query_radius((5.0, 5.0), 5.0);
+        assert_eq!(results.len(), 1);
+        assert!(results.contains(&2));
+    }
+
+    #[test]
+    fn test_physics_friction() {
+        let mut body = PhysicsBody::new(1.0);
+        body.velocity = (10.0, 0.0);
+        
+        // Update multiple times
+        for _ in 0..10 {
+            body.update(0.1);
+        }
+        
+        // Velocity should decrease due to friction
+        assert!(body.velocity.0 < 10.0);
+        assert!(body.velocity.0 > 0.0);
     }
 }

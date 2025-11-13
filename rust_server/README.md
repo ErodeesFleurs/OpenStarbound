@@ -14,7 +14,7 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
 
 ## Features
 
-### Implemented (Phase 1-8)
+### Implemented (Phase 1-9)
 - ✅ TCP server listening on configurable port
 - ✅ Protocol version handshake
 - ✅ VLQ (Variable Length Quantity) encoding/decoding
@@ -75,11 +75,17 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
   - MonsterAI (chase and wander)
   - NpcAI (idle position and conversation states)
   - MoveTowards and Wait action nodes
+- ✅ **Advanced Physics & Spatial Optimization** (Phase 9)
+  - PhysicsBody with velocity, acceleration, mass, friction
+  - SpatialGrid for efficient spatial queries
+  - UniverseManager for multi-world coordination
+  - CelestialCoordinate system for universe navigation
+  - PlanetParams for deterministic planet generation
+  - Entity transfer between worlds
 
 ### To Be Implemented (Future Work)
-- ⬜ Advanced physics simulation (Phase 9)
-- ⬜ Universe coordination (Phase 9)
-- ⬜ Enhanced persistence layer (Phase 9)
+- ⬜ Enhanced persistence layer (Phase 10)
+- ⬜ Full feature parity with C++ server (Phase 10+)
 
 ## Building
 
