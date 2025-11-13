@@ -22,6 +22,16 @@
   {
     "op" : "add",
     "path" : "/networkWorkerThreads",
-    "value": 0,
+    "value": 0
+  },
+  {
+    "op" : "add",
+    "path" : "/__comment_workerPoolThreads",
+    "value" : "workerPoolThreads: If not set or 0, automatically uses 75% of CPU cores (min 2, max 16). Set to a specific value to override."
+  },
+  {
+    "op" : "add",
+    "path" : "/__comment_networkWorkerThreads",
+    "value" : "networkWorkerThreads: If 0, automatically uses hardware_concurrency()/4 (min 2). Set to a specific value to override."
   }
 ]

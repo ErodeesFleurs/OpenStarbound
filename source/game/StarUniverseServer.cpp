@@ -20,6 +20,8 @@
 #include "StarVersioningDatabase.hpp"
 #include "StarWorldTemplate.hpp"
 
+#include <thread>
+
 namespace Star {
 
 UniverseServer::UniverseServer(String const& storageDir)
@@ -84,7 +86,22 @@ UniverseServer::UniverseServer(String const& storageDir)
     m_speciesShips[pair.first] = jsonToStringList(pair.second);
 
   m_teamManager = make_shared<TeamManager>();
-  m_workerPool.start(universeConfig.getUInt("workerPoolThreads"));
+  
+  // Optimize worker pool thread count based on available CPU cores
+  size_t workerPoolThreads;
+  if (auto configuredThreads = universeConfig.optUInt("workerPoolThreads")) {
+    workerPoolThreads = *configuredThreads;
+  } else {
+    // Automatic CPU detection: use hardware_concurrency() with sensible bounds
+    // Reserve some cores for main thread, network threads, and world threads
+    unsigned hwThreads = std::thread::hardware_concurrency();
+    if (hwThreads == 0) hwThreads = 4; // Fallback if detection fails
+    
+    // Use 75% of available cores for worker pool, with min of 2 and max of 16
+    workerPoolThreads = clamp<size_t>((hwThreads * 3) / 4, 2, 16);
+  }
+  Logger::info("UniverseServer: Starting worker pool with {} threads", workerPoolThreads);
+  m_workerPool.start(workerPoolThreads);
 
   size_t networkWorkerThreads = universeConfig.optUInt("networkWorkerThreads").value(0);
   m_connectionServer = make_shared<UniverseConnectionServer>(
