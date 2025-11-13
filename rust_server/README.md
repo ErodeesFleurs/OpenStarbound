@@ -14,7 +14,7 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
 
 ## Features
 
-### Implemented (Phase 1, 2, 3, 4, 5 & 6)
+### Implemented (Phase 1, 2, 3, 4, 5, 6 & 7)
 - ✅ TCP server listening on configurable port
 - ✅ Protocol version handshake
 - ✅ VLQ (Variable Length Quantity) encoding/decoding
@@ -61,12 +61,18 @@ This is a minimal viable implementation of the Starbound server rewritten in Rus
   - StaticBehavior (non-moving entities)
   - ProjectileBehavior (moving projectiles)
   - PlayerBehavior (client-controlled)
+- ✅ **World Files & Advanced Interactions** (Phase 7)
+  - World file loading/saving (async I/O)
+  - EntityInteract/EntityInteractResult packets
+  - HitRequest packet
+  - DamageRequest/DamageNotification packets
+  - CollisionBox and CollisionSystem
+  - Collision detection (AABB)
 
 ### To Be Implemented (Future Work)
-- ⬜ World file I/O from disk (Phase 7)
-- ⬜ Advanced entity AI (Phase 7)
-- ⬜ Universe coordination (Phase 8)
-- ⬜ Persistence layer (Phase 8)
+- ⬜ Advanced entity AI and pathfinding (Phase 8)
+- ⬜ Universe coordination (Phase 9)
+- ⬜ Persistence layer (Phase 9)
 
 ## Building
 

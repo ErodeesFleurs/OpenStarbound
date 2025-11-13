@@ -204,12 +204,30 @@ The protocol handshake matches the C++ implementation:
   - Position/velocity updates
 - **Tests**: Metadata, player state, and behavior tests
 
+**Phase 7: World Files & Advanced Interactions** ✅
+- **World File I/O**: World loading/saving infrastructure
+  - Async file operations with Tokio
+  - JSON metadata format
+  - World save/load from disk
+- **Additional Entity Packets**: Interaction and combat packets
+  - EntityInteractPacket (client → server)
+  - EntityInteractResultPacket (server → client)
+  - HitRequestPacket (combat initiation)
+  - DamageRequestPacket (damage application)
+  - DamageNotificationPacket (damage confirmation)
+- **Collision Detection System**: Basic AABB collision
+  - CollisionBox structure
+  - CollisionSystem for entity collision tracking
+  - Box-box intersection tests
+  - Point-in-box tests
+- **Tests**: World I/O, collision detection, interaction packets (7 new tests, 29 total)
+
 ### ⬜ Not Yet Implemented (Future Work)
 
-**Phase 7: World Files & Advanced AI**
-- **World File I/O**: World file reading from disk
-- **Advanced Entity AI**: Pathfinding, decision trees
-- **Additional Entity Packets**: EntityInteract, HitRequest, DamageRequest, etc.
+**Phase 8: Advanced AI & Pathfinding**
+- **Advanced Entity AI**: Behavior trees, decision systems
+- **Pathfinding**: A* pathfinding for NPCs and monsters
+- **Entity behaviors**: Monster AI, NPC behaviors
 
 **Phase 8: Full Feature Parity**
 - **Celestial Database**: Universe/planet generation
@@ -417,12 +435,18 @@ Suggested approach for full migration:
    - PlayerState with health, energy, position, velocity
    - Damage, healing, and state update methods
 
-7. **Phase 7 (Next)**: World Files & Advanced AI
-   - World file I/O from disk
-   - Advanced entity AI and pathfinding
-   - Additional entity packets (Interact, Hit, Damage)
+7. **Phase 7 (Complete)**: World Files & Advanced Interactions ✅
+   - World file I/O from disk (load/save)
+   - Additional entity packets (Interact, InteractResult, Hit, Damage, DamageNotification)
+   - Collision detection system (AABB)
+   - 29 tests total (7 new)
 
-8. **Phase 8**: Persistence and Full Features
+8. **Phase 8 (Next)**: Advanced AI & Pathfinding
+   - Advanced entity AI (behavior trees)
+   - A* pathfinding for NPCs
+   - Monster and NPC behavior systems
+
+9. **Phase 9**: Persistence and Full Features
    - Player save/load
    - World persistence
    - Universe coordination

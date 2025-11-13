@@ -247,7 +247,7 @@ impl WorldManager {
 }
 
 /// World file metadata structure
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct WorldMetadata {
     pub name: String,
     pub size: (u32, u32),  // Width, height in tiles
@@ -257,9 +257,8 @@ pub struct WorldMetadata {
     pub biome: String,
 }
 
-impl WorldMetadata {
-    /// Create default world metadata
-    pub fn default() -> Self {
+impl Default for WorldMetadata {
+    fn default() -> Self {
         Self {
             name: "Default World".to_string(),
             size: (1000, 1000),
@@ -269,9 +268,11 @@ impl WorldMetadata {
             biome: "forest".to_string(),
         }
     }
-    
+}
+
+impl WorldMetadata {
     /// Create world metadata from JSON string
-    pub fn from_json(json: &str) -> Result<Self, String> {
+    pub fn from_json(_json: &str) -> Result<Self, String> {
         // Simplified JSON parsing for MVP
         // Full implementation would use serde_json
         Ok(Self::default())
@@ -406,6 +407,135 @@ impl EntityBehavior for PlayerBehavior {
     }
 }
 
+/// World file I/O operations
+impl World {
+    /// Load a world from a file path (simplified implementation)
+    /// In a real implementation, this would parse Starbound's world file format
+    pub async fn load_from_file(path: &std::path::Path) -> Result<Self, std::io::Error> {
+        use tokio::fs;
+        
+        // For MVP, we'll create a basic structure
+        // Real implementation would parse binary world format
+        let filename = path.file_stem()
+            .and_then(|s| s.to_str())
+            .unwrap_or("unknown");
+        
+        // Try to read metadata file if it exists
+        let metadata_path = path.with_extension("json");
+        let metadata = if metadata_path.exists() {
+            let content = fs::read_to_string(&metadata_path).await?;
+            serde_json::from_str::<WorldMetadata>(&content).unwrap_or_default()
+        } else {
+            WorldMetadata::default()
+        };
+        
+        Ok(Self {
+            id: filename.to_string(),
+            template_data: format!(r#"{{"name":"{}","biome":"{}"}}"#, metadata.name, metadata.biome),
+            sky_data: Vec::new(),
+            weather_data: Vec::new(),
+            spawn_position: metadata.spawn_point,
+            properties: format!(
+                r#"{{"gravity":{},"breathable":{}}}"#,
+                metadata.gravity, metadata.breathable
+            ),
+            entities: EntityManager::new(),
+            tick: 0,
+        })
+    }
+    
+    /// Save world to a file (simplified implementation)
+    pub async fn save_to_file(&self, path: &std::path::Path) -> Result<(), std::io::Error> {
+        use tokio::fs;
+        
+        // Save metadata as JSON
+        let metadata = WorldMetadata {
+            name: self.id.clone(),
+            size: (1000, 1000),  // Would be determined from actual world data
+            spawn_point: self.spawn_position,
+            gravity: 9.8,
+            breathable: true,
+            biome: "forest".to_string(),
+        };
+        
+        let metadata_path = path.with_extension("json");
+        let json = serde_json::to_string_pretty(&metadata).unwrap();
+        fs::write(&metadata_path, json).await?;
+        
+        Ok(())
+    }
+}
+
+/// Collision detection for entities
+#[derive(Debug, Clone)]
+pub struct CollisionBox {
+    pub x: f32,
+    pub y: f32,
+    pub width: f32,
+    pub height: f32,
+}
+
+impl CollisionBox {
+    pub fn new(x: f32, y: f32, width: f32, height: f32) -> Self {
+        Self { x, y, width, height }
+    }
+    
+    /// Check if this box intersects with another
+    pub fn intersects(&self, other: &CollisionBox) -> bool {
+        self.x < other.x + other.width
+            && self.x + self.width > other.x
+            && self.y < other.y + other.height
+            && self.y + self.height > other.y
+    }
+    
+    /// Check if a point is inside this box
+    pub fn contains_point(&self, x: f32, y: f32) -> bool {
+        x >= self.x && x <= self.x + self.width
+            && y >= self.y && y <= self.y + self.height
+    }
+}
+
+/// Collision system for entities
+pub struct CollisionSystem {
+    entity_boxes: HashMap<EntityId, CollisionBox>,
+}
+
+impl CollisionSystem {
+    pub fn new() -> Self {
+        Self {
+            entity_boxes: HashMap::new(),
+        }
+    }
+    
+    /// Register an entity's collision box
+    pub fn register_entity(&mut self, entity_id: EntityId, collision_box: CollisionBox) {
+        self.entity_boxes.insert(entity_id, collision_box);
+    }
+    
+    /// Unregister an entity
+    pub fn unregister_entity(&mut self, entity_id: EntityId) {
+        self.entity_boxes.remove(&entity_id);
+    }
+    
+    /// Find all entities that collide with a given box
+    pub fn find_collisions(&self, test_box: &CollisionBox) -> Vec<EntityId> {
+        self.entity_boxes
+            .iter()
+            .filter(|(_, box_)| test_box.intersects(box_))
+            .map(|(id, _)| *id)
+            .collect()
+    }
+    
+    /// Check if an entity at a position would collide with anything
+    pub fn check_collision(&self, entity_id: EntityId, position: (f32, f32), size: (f32, f32)) -> bool {
+        let test_box = CollisionBox::new(position.0, position.1, size.0, size.1);
+        
+        self.entity_boxes
+            .iter()
+            .any(|(id, box_)| *id != entity_id && test_box.intersects(box_))
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -451,7 +581,7 @@ mod tests {
         let manager = WorldManager::new();
         
         let world1 = manager.get_or_create_world("world1".to_string()).await;
-        let world2 = manager.get_or_create_world("world2".to_string()).await;
+        let _world2 = manager.get_or_create_world("world2".to_string()).await;
         
         assert_eq!(manager.world_count().await, 2);
         
@@ -525,5 +655,58 @@ mod tests {
         
         behavior.update(&mut entity, 5);
         assert_eq!(behavior.last_update, 5);
+    }
+
+    #[test]
+    fn test_collision_box() {
+        let box1 = CollisionBox::new(0.0, 0.0, 10.0, 10.0);
+        let box2 = CollisionBox::new(5.0, 5.0, 10.0, 10.0);
+        let box3 = CollisionBox::new(20.0, 20.0, 10.0, 10.0);
+        
+        // Test intersection
+        assert!(box1.intersects(&box2));
+        assert!(box2.intersects(&box1));
+        assert!(!box1.intersects(&box3));
+        
+        // Test point containment
+        assert!(box1.contains_point(5.0, 5.0));
+        assert!(!box1.contains_point(15.0, 15.0));
+    }
+
+    #[test]
+    fn test_collision_system() {
+        let mut system = CollisionSystem::new();
+        
+        // Register entities
+        system.register_entity(1, CollisionBox::new(0.0, 0.0, 10.0, 10.0));
+        system.register_entity(2, CollisionBox::new(20.0, 0.0, 10.0, 10.0));
+        
+        // Test collision detection
+        let test_box = CollisionBox::new(5.0, 0.0, 10.0, 10.0);
+        let collisions = system.find_collisions(&test_box);
+        
+        assert_eq!(collisions.len(), 1);
+        assert!(collisions.contains(&1));
+        
+        // Test position check
+        assert!(system.check_collision(3, (5.0, 5.0), (5.0, 5.0)));
+        assert!(!system.check_collision(3, (50.0, 50.0), (5.0, 5.0)));
+    }
+
+    #[tokio::test]
+    async fn test_world_save_load() {
+        let temp_dir = std::env::temp_dir();
+        let world_path = temp_dir.join("test_world.dat");
+        
+        // Create and save a world
+        let world = World::new("test_save_world".to_string());
+        world.save_to_file(&world_path).await.unwrap();
+        
+        // Load it back
+        let loaded = World::load_from_file(&world_path).await.unwrap();
+        assert_eq!(loaded.id, "test_world");
+        
+        // Cleanup
+        let _ = tokio::fs::remove_file(&world_path.with_extension("json")).await;
     }
 }

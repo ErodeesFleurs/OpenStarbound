@@ -70,6 +70,9 @@ pub enum PacketType {
     EntityDestroy = 96,
     EntityInteract = 97,
     EntityInteractResult = 98,
+    HitRequest = 99,
+    DamageRequest = 100,
+    DamageNotification = 101,
     // ... and many more packet types
 }
 
@@ -95,6 +98,9 @@ impl PacketType {
             96 => Ok(PacketType::EntityDestroy),
             97 => Ok(PacketType::EntityInteract),
             98 => Ok(PacketType::EntityInteractResult),
+            99 => Ok(PacketType::HitRequest),
+            100 => Ok(PacketType::DamageRequest),
+            101 => Ok(PacketType::DamageNotification),
             _ => Err(ProtocolError::InvalidPacketType(value)),
         }
     }
@@ -1152,6 +1158,270 @@ impl Packet for EntityDestroyPacket {
     }
 }
 
+/// Entity Interact Packet - sent when a client interacts with an entity
+#[derive(Debug, Clone)]
+pub struct EntityInteractPacket {
+    pub entity_id: EntityId,
+    pub request_id: u32,
+    pub request_data: Vec<u8>,
+}
+
+impl Packet for EntityInteractPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::EntityInteract
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        buf.put_i32(self.entity_id);
+        buf.put_u32(self.request_id);
+        VLQ::write_unsigned(buf, self.request_data.len() as u64);
+        buf.put_slice(&self.request_data);
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        if buf.remaining() < 8 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for entity interact",
+            )));
+        }
+        
+        let entity_id = buf.get_i32();
+        let request_id = buf.get_u32();
+        
+        let data_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < data_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for request data",
+            )));
+        }
+        
+        let mut request_data = vec![0u8; data_len];
+        buf.copy_to_slice(&mut request_data);
+        
+        Ok(Self {
+            entity_id,
+            request_id,
+            request_data,
+        })
+    }
+}
+
+/// Entity Interact Result Packet - server response to entity interaction
+#[derive(Debug, Clone)]
+pub struct EntityInteractResultPacket {
+    pub request_id: u32,
+    pub success: bool,
+    pub result_data: Vec<u8>,
+}
+
+impl Packet for EntityInteractResultPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::EntityInteractResult
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        buf.put_u32(self.request_id);
+        buf.put_u8(if self.success { 1 } else { 0 });
+        VLQ::write_unsigned(buf, self.result_data.len() as u64);
+        buf.put_slice(&self.result_data);
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        if buf.remaining() < 5 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for interact result",
+            )));
+        }
+        
+        let request_id = buf.get_u32();
+        let success = buf.get_u8() != 0;
+        
+        let data_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < data_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for result data",
+            )));
+        }
+        
+        let mut result_data = vec![0u8; data_len];
+        buf.copy_to_slice(&mut result_data);
+        
+        Ok(Self {
+            request_id,
+            success,
+            result_data,
+        })
+    }
+}
+
+/// Hit Request Packet - sent when a client attempts to hit an entity
+#[derive(Debug, Clone)]
+pub struct HitRequestPacket {
+    pub source_entity_id: EntityId,
+    pub target_entity_id: EntityId,
+    pub hit_type: u8,  // 0 = melee, 1 = projectile, etc.
+}
+
+impl Packet for HitRequestPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::HitRequest
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        buf.put_i32(self.source_entity_id);
+        buf.put_i32(self.target_entity_id);
+        buf.put_u8(self.hit_type);
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        if buf.remaining() < 9 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for hit request",
+            )));
+        }
+        
+        let source_entity_id = buf.get_i32();
+        let target_entity_id = buf.get_i32();
+        let hit_type = buf.get_u8();
+        
+        Ok(Self {
+            source_entity_id,
+            target_entity_id,
+            hit_type,
+        })
+    }
+}
+
+/// Damage Request Packet - sent when an entity should take damage
+#[derive(Debug, Clone)]
+pub struct DamageRequestPacket {
+    pub target_entity_id: EntityId,
+    pub damage_amount: f32,
+    pub damage_type: String,  // "physical", "fire", "electric", etc.
+    pub source_entity_id: Option<EntityId>,
+}
+
+impl Packet for DamageRequestPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::DamageRequest
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        buf.put_i32(self.target_entity_id);
+        buf.put_f32(self.damage_amount);
+        
+        let type_bytes = self.damage_type.as_bytes();
+        VLQ::write_unsigned(buf, type_bytes.len() as u64);
+        buf.put_slice(type_bytes);
+        
+        buf.put_u8(if self.source_entity_id.is_some() { 1 } else { 0 });
+        if let Some(source_id) = self.source_entity_id {
+            buf.put_i32(source_id);
+        }
+        
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        if buf.remaining() < 8 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for damage request",
+            )));
+        }
+        
+        let target_entity_id = buf.get_i32();
+        let damage_amount = buf.get_f32();
+        
+        let type_len = VLQ::read_unsigned(buf)? as usize;
+        if buf.remaining() < type_len {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for damage type",
+            )));
+        }
+        
+        let mut type_bytes = vec![0u8; type_len];
+        buf.copy_to_slice(&mut type_bytes);
+        let damage_type = String::from_utf8_lossy(&type_bytes).to_string();
+        
+        if !buf.has_remaining() {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for source flag",
+            )));
+        }
+        
+        let has_source = buf.get_u8() != 0;
+        let source_entity_id = if has_source {
+            if buf.remaining() < 4 {
+                return Err(ProtocolError::Io(io::Error::new(
+                    io::ErrorKind::UnexpectedEof,
+                    "Not enough bytes for source entity ID",
+                )));
+            }
+            Some(buf.get_i32())
+        } else {
+            None
+        };
+        
+        Ok(Self {
+            target_entity_id,
+            damage_amount,
+            damage_type,
+            source_entity_id,
+        })
+    }
+}
+
+/// Damage Notification Packet - server notifies about damage dealt
+#[derive(Debug, Clone)]
+pub struct DamageNotificationPacket {
+    pub target_entity_id: EntityId,
+    pub damage_amount: f32,
+    pub killed: bool,
+}
+
+impl Packet for DamageNotificationPacket {
+    fn packet_type(&self) -> PacketType {
+        PacketType::DamageNotification
+    }
+    
+    fn write(&self, buf: &mut BytesMut) -> Result<(), ProtocolError> {
+        buf.put_i32(self.target_entity_id);
+        buf.put_f32(self.damage_amount);
+        buf.put_u8(if self.killed { 1 } else { 0 });
+        Ok(())
+    }
+    
+    fn read(buf: &mut Cursor<&[u8]>) -> Result<Self, ProtocolError> {
+        if buf.remaining() < 9 {
+            return Err(ProtocolError::Io(io::Error::new(
+                io::ErrorKind::UnexpectedEof,
+                "Not enough bytes for damage notification",
+            )));
+        }
+        
+        let target_entity_id = buf.get_i32();
+        let damage_amount = buf.get_f32();
+        let killed = buf.get_u8() != 0;
+        
+        Ok(Self {
+            target_entity_id,
+            damage_amount,
+            killed,
+        })
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -1397,5 +1667,87 @@ mod tests {
         assert_eq!(decoded.entity_id, 54321);
         assert_eq!(decoded.final_net_state, vec![99, 88, 77]);
         assert_eq!(decoded.death, true);
+    }
+
+    #[test]
+    fn test_entity_interact_packet() {
+        let packet = EntityInteractPacket {
+            entity_id: 123,
+            request_id: 456,
+            request_data: vec![1, 2, 3, 4],
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = EntityInteractPacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.entity_id, 123);
+        assert_eq!(decoded.request_id, 456);
+        assert_eq!(decoded.request_data, vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn test_hit_request_packet() {
+        let packet = HitRequestPacket {
+            source_entity_id: 100,
+            target_entity_id: 200,
+            hit_type: 1,
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = HitRequestPacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.source_entity_id, 100);
+        assert_eq!(decoded.target_entity_id, 200);
+        assert_eq!(decoded.hit_type, 1);
+    }
+
+    #[test]
+    fn test_damage_request_packet() {
+        let packet = DamageRequestPacket {
+            target_entity_id: 300,
+            damage_amount: 50.5,
+            damage_type: "fire".to_string(),
+            source_entity_id: Some(400),
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = DamageRequestPacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.target_entity_id, 300);
+        assert_eq!(decoded.damage_amount, 50.5);
+        assert_eq!(decoded.damage_type, "fire");
+        assert_eq!(decoded.source_entity_id, Some(400));
+    }
+
+    #[test]
+    fn test_damage_notification_packet() {
+        let packet = DamageNotificationPacket {
+            target_entity_id: 500,
+            damage_amount: 25.0,
+            killed: true,
+        };
+        
+        let mut buf = BytesMut::new();
+        packet.write(&mut buf).unwrap();
+        
+        let bytes = buf.freeze();
+        let mut cursor = Cursor::new(bytes.as_ref());
+        let decoded = DamageNotificationPacket::read(&mut cursor).unwrap();
+        
+        assert_eq!(decoded.target_entity_id, 500);
+        assert_eq!(decoded.damage_amount, 25.0);
+        assert_eq!(decoded.killed, true);
     }
 }
