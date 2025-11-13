@@ -121,6 +121,15 @@ public:
   template <typename ResultType>
   WorkerPoolPromise<ResultType> addProducer(function<ResultType()> producer);
 
+  // Get the number of threads in the pool
+  size_t threadCount() const;
+  
+  // Get the number of pending work items
+  size_t pendingWorkCount() const;
+  
+  // Get the number of threads currently waiting for work
+  size_t waitingThreadCount() const;
+
 private:
   class WorkerThread : public Thread {
   public:

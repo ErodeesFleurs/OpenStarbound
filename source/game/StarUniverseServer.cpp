@@ -590,6 +590,11 @@ void UniverseServer::run() {
     }
 
     LogMap::set("universe_time", m_universeClock->time());
+    
+    // Log worker pool statistics for performance monitoring
+    LogMap::set("worker_pool_threads", m_workerPool.threadCount());
+    LogMap::set("worker_pool_pending", m_workerPool.pendingWorkCount());
+    LogMap::set("worker_pool_idle", m_workerPool.waitingThreadCount());
 
     try {
       updateLua();

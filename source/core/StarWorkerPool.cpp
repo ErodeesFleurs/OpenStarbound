@@ -163,4 +163,24 @@ void WorkerPool::queueWork(function<void()> work) {
   m_workCondition.signal();
 }
 
+size_t WorkerPool::threadCount() const {
+  MutexLocker threadLock(m_threadMutex);
+  return m_workerThreads.size();
+}
+
+size_t WorkerPool::pendingWorkCount() const {
+  MutexLocker workLock(m_workMutex);
+  return m_pendingWork.size();
+}
+
+size_t WorkerPool::waitingThreadCount() const {
+  MutexLocker threadLock(m_threadMutex);
+  size_t waiting = 0;
+  for (auto const& thread : m_workerThreads) {
+    if (thread->waiting)
+      ++waiting;
+  }
+  return waiting;
+}
+
 }
