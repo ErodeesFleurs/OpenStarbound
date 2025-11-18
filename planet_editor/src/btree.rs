@@ -172,6 +172,24 @@ fn read_node(
     Ok(())
 }
 
+/// Read a VLQ (Variable Length Quantity) unsigned integer
+fn read_vlq_u64<R: Read>(reader: &mut R) -> Result<u64> {
+    let mut result = 0u64;
+    for i in 0..10 {
+        let byte = reader.read_u8()?;
+        // Take lower 7 bits and shift into result
+        result = (result << 7) | ((byte & 0x7F) as u64);
+        // If MSB is 0, we're done
+        if (byte & 0x80) == 0 {
+            return Ok(result);
+        }
+        if i == 9 {
+            anyhow::bail!("VLQ integer too long (>10 bytes)");
+        }
+    }
+    unreachable!()
+}
+
 fn read_leaf_entries(
     file: &mut File,
     header: &BTreeHeader,
@@ -210,8 +228,8 @@ fn read_leaf_entries(
     // Now parse the concatenated data
     let mut cursor = Cursor::new(&data);
     
-    // Read count (u32)
-    let count = cursor.read_u32::<BigEndian>().context("Failed to read entry count from leaf")? as usize;
+    // Read count (VLQ encoded)
+    let count = read_vlq_u64(&mut cursor).context("Failed to read entry count from leaf")? as usize;
     
     // Validate count is reasonable
     if count > 100000 {
@@ -225,8 +243,8 @@ fn read_leaf_entries(
         cursor.read_exact(&mut key)
             .with_context(|| format!("Failed to read key for entry {} of {}", i, count))?;
         
-        // Read value (ByteArray format: u32 length + data)
-        let value_len = cursor.read_u32::<BigEndian>()
+        // Read value (ByteArray format: VLQ length + data)
+        let value_len = read_vlq_u64(&mut cursor)
             .with_context(|| format!("Failed to read value length for entry {} of {}", i, count))? as usize;
         
         // Validate value_len is reasonable
