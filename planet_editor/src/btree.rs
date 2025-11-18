@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use byteorder::{LittleEndian, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt};
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::{Cursor, Read, Seek, SeekFrom};
@@ -32,8 +32,8 @@ pub fn read_header(file: &mut File) -> Result<BTreeHeader> {
             String::from_utf8_lossy(&magic));
     }
     
-    // Read block size (4 bytes)
-    let block_size = file.read_u32::<LittleEndian>()?;
+    // Read block size (4 bytes) - BigEndian as per Starbound's DataStream default
+    let block_size = file.read_u32::<BigEndian>()?;
     
     // Read content identifier (16 bytes)
     let mut content_id_bytes = [0u8; 16];
@@ -42,8 +42,8 @@ pub fn read_header(file: &mut File) -> Result<BTreeHeader> {
         .trim_end_matches('\0')
         .to_string();
     
-    // Read key size (4 bytes)
-    let key_size = file.read_u32::<LittleEndian>()?;
+    // Read key size (4 bytes) - BigEndian
+    let key_size = file.read_u32::<BigEndian>()?;
     
     // Validate key_size is reasonable (between 1 and 256 bytes)
     if key_size == 0 || key_size > 256 {
@@ -62,13 +62,13 @@ pub fn read_header(file: &mut File) -> Result<BTreeHeader> {
     file.seek(SeekFrom::Start(root_info_offset))?;
     
     // Skip head free index block (4 bytes)
-    file.read_u32::<LittleEndian>()?;
+    file.read_u32::<BigEndian>()?;
     
     // Skip device size (8 bytes)
-    file.read_u64::<LittleEndian>()?;
+    file.read_u64::<BigEndian>()?;
     
     // Read root block index (4 bytes)
-    let root_node = file.read_u32::<LittleEndian>()?;
+    let root_node = file.read_u32::<BigEndian>()?;
     
     // Read root is leaf flag (1 byte)
     let is_leaf = file.read_u8()? != 0;
@@ -141,17 +141,17 @@ fn read_node(
         let children_are_leaves = level == 0;
         
         // Count (u32)
-        let count = cursor.read_u32::<LittleEndian>()? as usize;
+        let count = cursor.read_u32::<BigEndian>()? as usize;
         
         // Begin pointer (u32)
-        let begin_pointer = cursor.read_u32::<LittleEndian>()?;
+        let begin_pointer = cursor.read_u32::<BigEndian>()?;
         
         // Read keys and pointers
         let mut pointers = Vec::new();
         for _ in 0..count {
             let mut key = vec![0u8; header.key_size as usize];
             cursor.read_exact(&mut key)?;
-            let pointer = cursor.read_u32::<LittleEndian>()?;
+            let pointer = cursor.read_u32::<BigEndian>()?;
             pointers.push(pointer);
         }
         
@@ -197,7 +197,7 @@ fn read_leaf_entries(
         
         // Read next block pointer
         cursor.set_position(data_end as u64);
-        let next_block = cursor.read_u32::<LittleEndian>()?;
+        let next_block = cursor.read_u32::<BigEndian>()?;
         
         if next_block == INVALID_BLOCK {
             break;
@@ -210,7 +210,7 @@ fn read_leaf_entries(
     let mut cursor = Cursor::new(&data);
     
     // Read count (u32)
-    let count = cursor.read_u32::<LittleEndian>()? as usize;
+    let count = cursor.read_u32::<BigEndian>()? as usize;
     
     // Read each entry
     for _ in 0..count {
@@ -219,7 +219,7 @@ fn read_leaf_entries(
         cursor.read_exact(&mut key)?;
         
         // Read value (ByteArray format: u32 length + data)
-        let value_len = cursor.read_u32::<LittleEndian>()? as usize;
+        let value_len = cursor.read_u32::<BigEndian>()? as usize;
         let mut value = vec![0u8; value_len];
         cursor.read_exact(&mut value)?;
         

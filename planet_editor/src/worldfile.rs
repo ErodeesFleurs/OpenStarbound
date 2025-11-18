@@ -1,5 +1,5 @@
 use anyhow::{Context, Result};
-use byteorder::{LittleEndian, ReadBytesExt};
+use byteorder::{BigEndian, ReadBytesExt};
 use flate2::read::ZlibDecoder;
 use std::collections::HashMap;
 use std::fs::File;
@@ -123,14 +123,14 @@ impl WorldFile {
         
         let mut cursor = Cursor::new(decompressed);
         
-        // Read world size
-        let width = cursor.read_u32::<LittleEndian>()?;
-        let height = cursor.read_u32::<LittleEndian>()?;
+        // Read world size (BigEndian as per Starbound's DataStream)
+        let width = cursor.read_u32::<BigEndian>()?;
+        let height = cursor.read_u32::<BigEndian>()?;
         
         // Try to read JSON metadata (optional)
         let metadata_json = if cursor.position() < cursor.get_ref().len() as u64 {
             // There's more data - try to parse JSON
-            let json_len = cursor.read_u32::<LittleEndian>()? as usize;
+            let json_len = cursor.read_u32::<BigEndian>()? as usize;
             if json_len > 0 && json_len < 1024 * 1024 {
                 let mut json_bytes = vec![0u8; json_len];
                 cursor.read_exact(&mut json_bytes).ok();
@@ -154,10 +154,10 @@ impl WorldFile {
         
         for (key, value) in entries {
             if key.len() == 5 && key[0] == StoreType::TileSector as u8 {
-                // Parse sector coordinates from key
+                // Parse sector coordinates from key (BigEndian)
                 let mut cursor = Cursor::new(&key[1..]);
-                let sector_x = cursor.read_u16::<LittleEndian>()?;
-                let sector_y = cursor.read_u16::<LittleEndian>()?;
+                let sector_x = cursor.read_u16::<BigEndian>()?;
+                let sector_y = cursor.read_u16::<BigEndian>()?;
                 
                 // Decompress tile data
                 let mut decoder = ZlibDecoder::new(Cursor::new(value));
@@ -222,20 +222,20 @@ fn read_varint<R: Read>(reader: &mut R) -> Result<u64> {
 fn read_tile<R: Read>(reader: &mut R) -> Result<Tile> {
     let mut tile = Tile::default();
     
-    // Read foreground material
-    tile.foreground = reader.read_u16::<LittleEndian>()?;
+    // Read foreground material (BigEndian as per Starbound's DataStream)
+    tile.foreground = reader.read_u16::<BigEndian>()?;
     
     // Read foreground hue shift
-    tile.foreground_mod = reader.read_u16::<LittleEndian>()?;
+    tile.foreground_mod = reader.read_u16::<BigEndian>()?;
     
     // Read foreground color variant
     let _foreground_variant = reader.read_u8()?;
     
     // Read background material
-    tile.background = reader.read_u16::<LittleEndian>()?;
+    tile.background = reader.read_u16::<BigEndian>()?;
     
     // Read background hue shift
-    tile.background_mod = reader.read_u16::<LittleEndian>()?;
+    tile.background_mod = reader.read_u16::<BigEndian>()?;
     
     // Read background color variant
     let _background_variant = reader.read_u8()?;
@@ -244,21 +244,21 @@ fn read_tile<R: Read>(reader: &mut R) -> Result<Tile> {
     tile.liquid = reader.read_u8()?;
     
     // Read liquid level
-    tile.liquid_level = reader.read_f32::<LittleEndian>()?;
+    tile.liquid_level = reader.read_f32::<BigEndian>()?;
     
     // Read liquid pressure (if liquid exists)
     if tile.liquid != 0 {
-        tile.liquid_pressure = reader.read_f32::<LittleEndian>()?;
+        tile.liquid_pressure = reader.read_f32::<BigEndian>()?;
     }
     
     // Read collision (4 bytes)
-    let _collision = reader.read_u32::<LittleEndian>()?;
+    let _collision = reader.read_u32::<BigEndian>()?;
     
     // Read block biome index (2 bytes)
-    let _block_biome = reader.read_u16::<LittleEndian>()?;
+    let _block_biome = reader.read_u16::<BigEndian>()?;
     
     // Read environment biome index (2 bytes)
-    let _env_biome = reader.read_u16::<LittleEndian>()?;
+    let _env_biome = reader.read_u16::<BigEndian>()?;
     
     // Read indestructible flag
     let _indestructible = reader.read_u8()?;
