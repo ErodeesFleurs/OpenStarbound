@@ -112,7 +112,22 @@ impl WorldFile {
         // Metadata key is: [StoreType::Metadata, 0, 0, 0, 0]
         let metadata_key = vec![StoreType::Metadata as u8, 0, 0, 0, 0];
         
+        // Debug: print first few keys to understand format
+        if entries.is_empty() {
+            anyhow::bail!("No entries found in BTree database");
+        }
+        
+        // Try to find metadata by checking different key formats
         let metadata_data = entries.get(&metadata_key)
+            .or_else(|| {
+                // Debug: show what keys we have
+                eprintln!("Metadata key {:?} not found. Found {} entries.", metadata_key, entries.len());
+                eprintln!("First 5 keys:");
+                for (i, key) in entries.keys().take(5).enumerate() {
+                    eprintln!("  Key {}: {:?} (len={})", i, key, key.len());
+                }
+                None
+            })
             .context("World metadata not found")?;
         
         // Decompress
