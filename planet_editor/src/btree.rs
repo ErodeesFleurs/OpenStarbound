@@ -2,10 +2,13 @@ use anyhow::{Context, Result};
 use byteorder::{LittleEndian, ReadBytesExt};
 use std::collections::HashMap;
 use std::fs::File;
-use std::io::{Read, Seek, SeekFrom};
+use std::io::{Cursor, Read, Seek, SeekFrom};
 
 const HEADER_SIZE: u64 = 512;
 const VERSION_MAGIC: &[u8; 8] = b"BTreeDB5";
+const INDEX_MAGIC: &[u8; 2] = b"II";
+const LEAF_MAGIC: &[u8; 2] = b"LL";
+const INVALID_BLOCK: u32 = u32::MAX;
 
 /// BTreeDatabase header information
 #[derive(Debug)]
@@ -15,19 +18,21 @@ pub struct BTreeHeader {
     pub block_size: u32,
     pub root_node: u32,
     pub is_leaf: bool,
-    pub free_block_count: u32,
 }
 
 /// Reads BTree database header
 pub fn read_header(file: &mut File) -> Result<BTreeHeader> {
     file.seek(SeekFrom::Start(0))?;
     
-    // Read magic
+    // Read magic (8 bytes)
     let mut magic = [0u8; 8];
     file.read_exact(&mut magic)?;
     if &magic != VERSION_MAGIC {
         anyhow::bail!("Invalid BTree magic: expected BTreeDB5");
     }
+    
+    // Read block size (4 bytes)
+    let block_size = file.read_u32::<LittleEndian>()?;
     
     // Read content identifier (16 bytes)
     let mut content_id_bytes = [0u8; 16];
@@ -36,24 +41,28 @@ pub fn read_header(file: &mut File) -> Result<BTreeHeader> {
         .trim_end_matches('\0')
         .to_string();
     
-    // Read key size
+    // Read key size (4 bytes)
     let key_size = file.read_u32::<LittleEndian>()?;
     
-    // Skip unused bytes (4 bytes)
+    // Seek to root selector bit (offset 32)
+    file.seek(SeekFrom::Start(32))?;
+    let using_alt_root = file.read_u8()? != 0;
+    
+    // Seek to root info (offset 33 + (using_alt_root ? 17 : 0))
+    let root_info_offset = if using_alt_root { 33 + 17 } else { 33 };
+    file.seek(SeekFrom::Start(root_info_offset))?;
+    
+    // Skip head free index block (4 bytes)
     file.read_u32::<LittleEndian>()?;
     
-    // Read block size
-    let block_size = file.read_u32::<LittleEndian>()?;
+    // Skip device size (8 bytes)
+    file.read_u64::<LittleEndian>()?;
     
-    // Read root node
+    // Read root block index (4 bytes)
     let root_node = file.read_u32::<LittleEndian>()?;
     
-    // Read is_leaf flag
+    // Read root is leaf flag (1 byte)
     let is_leaf = file.read_u8()? != 0;
-    
-    // Skip to free block count (at offset 45)
-    file.seek(SeekFrom::Start(45))?;
-    let free_block_count = file.read_u32::<LittleEndian>()?;
     
     Ok(BTreeHeader {
         content_identifier,
@@ -61,7 +70,6 @@ pub fn read_header(file: &mut File) -> Result<BTreeHeader> {
         block_size,
         root_node,
         is_leaf,
-        free_block_count,
     })
 }
 
@@ -69,7 +77,7 @@ pub fn read_header(file: &mut File) -> Result<BTreeHeader> {
 pub fn read_all_entries(file: &mut File, header: &BTreeHeader) -> Result<HashMap<Vec<u8>, Vec<u8>>> {
     let mut entries = HashMap::new();
     
-    if header.root_node == u32::MAX {
+    if header.root_node == INVALID_BLOCK {
         // Empty database
         return Ok(entries);
     }
@@ -80,6 +88,16 @@ pub fn read_all_entries(file: &mut File, header: &BTreeHeader) -> Result<HashMap
     Ok(entries)
 }
 
+fn read_block(file: &mut File, header: &BTreeHeader, block_index: u32) -> Result<Vec<u8>> {
+    let block_pos = HEADER_SIZE + (block_index as u64 * header.block_size as u64);
+    file.seek(SeekFrom::Start(block_pos))?;
+    
+    let mut block = vec![0u8; header.block_size as usize];
+    file.read_exact(&mut block)?;
+    
+    Ok(block)
+}
+
 fn read_node(
     file: &mut File,
     header: &BTreeHeader,
@@ -87,56 +105,116 @@ fn read_node(
     is_leaf: bool,
     entries: &mut HashMap<Vec<u8>, Vec<u8>>,
 ) -> Result<()> {
-    // Calculate block position
-    let block_pos = HEADER_SIZE + (block_index as u64 * header.block_size as u64);
-    file.seek(SeekFrom::Start(block_pos))?;
+    let block = read_block(file, header, block_index)?;
+    let mut cursor = Cursor::new(&block);
     
-    // Read block type (0 = index, 1 = leaf)
-    let block_type = file.read_u8()?;
+    // Read magic (2 bytes)
+    let mut magic = [0u8; 2];
+    cursor.read_exact(&mut magic)?;
     
-    // Read entry count
-    let count = file.read_u32::<LittleEndian>()? as usize;
-    
-    if block_type == 1 || is_leaf {
-        // Leaf node - read key-value pairs
-        for _ in 0..count {
-            // Read key
-            let mut key = vec![0u8; header.key_size as usize];
-            file.read_exact(&mut key)?;
-            
-            // Read value size
-            let value_size = file.read_u32::<LittleEndian>()? as usize;
-            
-            // Read value
-            let mut value = vec![0u8; value_size];
-            file.read_exact(&mut value)?;
-            
-            entries.insert(key, value);
-        }
-    } else {
-        // Index node - recursively read child nodes
-        // Read keys
-        let mut keys = Vec::new();
-        for _ in 0..count {
-            let mut key = vec![0u8; header.key_size as usize];
-            file.read_exact(&mut key)?;
-            keys.push(key);
+    if is_leaf {
+        // Verify leaf magic
+        if &magic != LEAF_MAGIC {
+            anyhow::bail!("Invalid leaf magic at block {}", block_index);
         }
         
-        // Read child pointers (count + 1)
-        let mut children = Vec::new();
-        for _ in 0..=count {
-            let child_block = file.read_u32::<LittleEndian>()?;
-            let child_is_leaf = file.read_u8()? != 0;
-            children.push((child_block, child_is_leaf));
+        // Read leaf entries - they can span multiple blocks
+        read_leaf_entries(file, header, block_index, entries)?;
+    } else {
+        // Verify index magic
+        if &magic != INDEX_MAGIC {
+            anyhow::bail!("Invalid index magic at block {}", block_index);
+        }
+        
+        // Read index node
+        // Level (u8) - if 0, children are leaves
+        let level = cursor.read_u8()?;
+        let children_are_leaves = level == 0;
+        
+        // Count (u32)
+        let count = cursor.read_u32::<LittleEndian>()? as usize;
+        
+        // Begin pointer (u32)
+        let begin_pointer = cursor.read_u32::<LittleEndian>()?;
+        
+        // Read keys and pointers
+        let mut pointers = Vec::new();
+        for _ in 0..count {
+            let mut key = vec![0u8; header.key_size as usize];
+            cursor.read_exact(&mut key)?;
+            let pointer = cursor.read_u32::<LittleEndian>()?;
+            pointers.push(pointer);
         }
         
         // Recursively read children
-        for (child_block, child_is_leaf) in children {
-            if child_block != u32::MAX {
-                read_node(file, header, child_block, child_is_leaf, entries)?;
+        // First child is begin_pointer
+        if begin_pointer != INVALID_BLOCK {
+            read_node(file, header, begin_pointer, children_are_leaves, entries)?;
+        }
+        
+        // Then read each keyed child
+        for pointer in pointers {
+            if pointer != INVALID_BLOCK {
+                read_node(file, header, pointer, children_are_leaves, entries)?;
             }
         }
+    }
+    
+    Ok(())
+}
+
+fn read_leaf_entries(
+    file: &mut File,
+    header: &BTreeHeader,
+    start_block: u32,
+    entries: &mut HashMap<Vec<u8>, Vec<u8>>,
+) -> Result<()> {
+    let mut current_block = start_block;
+    let mut data = Vec::new();
+    
+    // Read all blocks in the leaf chain
+    loop {
+        let block = read_block(file, header, current_block)?;
+        let mut cursor = Cursor::new(&block);
+        
+        // Skip magic (2 bytes)
+        cursor.set_position(2);
+        
+        // Read data up to the pointer position (last 4 bytes)
+        let data_end = (header.block_size as usize) - 4;
+        let mut chunk = vec![0u8; data_end - 2];
+        cursor.read_exact(&mut chunk)?;
+        data.extend_from_slice(&chunk);
+        
+        // Read next block pointer
+        cursor.set_position(data_end as u64);
+        let next_block = cursor.read_u32::<LittleEndian>()?;
+        
+        if next_block == INVALID_BLOCK {
+            break;
+        }
+        
+        current_block = next_block;
+    }
+    
+    // Now parse the concatenated data
+    let mut cursor = Cursor::new(&data);
+    
+    // Read count (u32)
+    let count = cursor.read_u32::<LittleEndian>()? as usize;
+    
+    // Read each entry
+    for _ in 0..count {
+        // Read key
+        let mut key = vec![0u8; header.key_size as usize];
+        cursor.read_exact(&mut key)?;
+        
+        // Read value (ByteArray format: u32 length + data)
+        let value_len = cursor.read_u32::<LittleEndian>()? as usize;
+        let mut value = vec![0u8; value_len];
+        cursor.read_exact(&mut value)?;
+        
+        entries.insert(key, value);
     }
     
     Ok(())
