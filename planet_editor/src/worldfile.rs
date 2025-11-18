@@ -81,14 +81,16 @@ impl WorldFile {
         // Validate it's a world file
         if header.content_identifier != "World4" {
             anyhow::bail!(
-                "Invalid world file: expected World4, got {}",
+                "Not a Starbound world file: content identifier is '{}', expected 'World4'. \
+                This may be a different type of BTree database.",
                 header.content_identifier
             );
         }
         
         if header.key_size != 5 {
             anyhow::bail!(
-                "Invalid world file: expected key size 5, got {}",
+                "Incompatible world file format: key size is {}, expected 5. \
+                This world file may be from an older or newer version of Starbound.",
                 header.key_size
             );
         }

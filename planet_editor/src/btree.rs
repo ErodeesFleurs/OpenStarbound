@@ -28,7 +28,8 @@ pub fn read_header(file: &mut File) -> Result<BTreeHeader> {
     let mut magic = [0u8; 8];
     file.read_exact(&mut magic)?;
     if &magic != VERSION_MAGIC {
-        anyhow::bail!("Invalid BTree magic: expected BTreeDB5");
+        anyhow::bail!("Invalid BTree magic: expected BTreeDB5, got {:?}", 
+            String::from_utf8_lossy(&magic));
     }
     
     // Read block size (4 bytes)
@@ -43,6 +44,14 @@ pub fn read_header(file: &mut File) -> Result<BTreeHeader> {
     
     // Read key size (4 bytes)
     let key_size = file.read_u32::<LittleEndian>()?;
+    
+    // Validate key_size is reasonable (between 1 and 256 bytes)
+    if key_size == 0 || key_size > 256 {
+        anyhow::bail!(
+            "Invalid key size: {} (expected 1-256). File may be corrupted or not a valid BTreeDatabase.",
+            key_size
+        );
+    }
     
     // Seek to root selector bit (offset 32)
     file.seek(SeekFrom::Start(32))?;
