@@ -2,7 +2,7 @@ use anyhow::{Context, Result};
 use image::{Rgb, RgbImage};
 use std::path::Path;
 
-use crate::world::PlanetMap;
+use crate::worldfile::{WorldFile, SECTOR_SIZE};
 
 /// Convert a material ID to a color for visualization
 fn material_to_color(material: u16, mod_value: u16) -> Rgb<u8> {
@@ -51,35 +51,59 @@ fn hsv_to_rgb(h: f32, s: f32, v: f32) -> Rgb<u8> {
     Rgb([r, g, b])
 }
 
-/// Render the planet map to an image file
-pub fn render_to_image<P: AsRef<Path>>(map: &PlanetMap, output_path: P) -> Result<()> {
-    let mut img = RgbImage::new(map.width, map.height);
+/// Render the world file to an image file
+pub fn render_to_image<P: AsRef<Path>>(world: &WorldFile, output_path: P) -> Result<()> {
+    let width = world.metadata.width;
+    let height = world.metadata.height;
     
-    for y in 0..map.height {
-        for x in 0..map.width {
-            let tile = map.get_tile(x, y)
-                .ok_or_else(|| anyhow::anyhow!("Invalid tile coordinates"))?;
-            
-            let color = if tile.foreground != 0 {
-                // Foreground material - red-based color
-                let mut c = material_to_color(tile.foreground, tile.foreground_mod);
-                // Tint towards red
-                c[0] = c[0].saturating_add(50);
-                c
-            } else if tile.background != 0 {
-                // Background material - darker color (cave)
-                let mut c = material_to_color(tile.background, tile.background_mod);
-                // Make it darker
-                c[0] = c[0] / 2;
-                c[1] = c[1] / 2;
-                c[2] = c[2] / 2;
-                c
-            } else {
-                // Empty space - black
-                Rgb([0, 0, 0])
-            };
-            
-            img.put_pixel(x, y, color);
+    // Create image
+    let mut img = RgbImage::new(width, height);
+    
+    // Fill with black (empty)
+    for y in 0..height {
+        for x in 0..width {
+            img.put_pixel(x, y, Rgb([0, 0, 0]));
+        }
+    }
+    
+    // Render each loaded sector
+    for ((sector_x, sector_y), sector) in &world.sectors {
+        let base_x = *sector_x as u32 * SECTOR_SIZE as u32;
+        let base_y = *sector_y as u32 * SECTOR_SIZE as u32;
+        
+        for sy in 0..SECTOR_SIZE {
+            for sx in 0..SECTOR_SIZE {
+                let x = base_x + sx as u32;
+                let y = base_y + sy as u32;
+                
+                // Check bounds
+                if x >= width || y >= height {
+                    continue;
+                }
+                
+                let tile = sector.tiles[sy][sx];
+                
+                let color = if tile.foreground != 0 {
+                    // Foreground material - red-based color
+                    let mut c = material_to_color(tile.foreground, tile.foreground_mod);
+                    // Tint towards red
+                    c[0] = c[0].saturating_add(50);
+                    c
+                } else if tile.background != 0 {
+                    // Background material - darker color (cave)
+                    let mut c = material_to_color(tile.background, tile.background_mod);
+                    // Make it darker
+                    c[0] = c[0] / 2;
+                    c[1] = c[1] / 2;
+                    c[2] = c[2] / 2;
+                    c
+                } else {
+                    // Empty space - black
+                    Rgb([0, 0, 0])
+                };
+                
+                img.put_pixel(x, y, color);
+            }
         }
     }
     
