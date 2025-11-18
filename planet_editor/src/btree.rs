@@ -191,7 +191,8 @@ fn read_leaf_entries(
         
         // Read data up to the pointer position (last 4 bytes)
         let data_end = (header.block_size as usize) - 4;
-        let mut chunk = vec![0u8; data_end - 2];
+        let chunk_size = data_end - 2;
+        let mut chunk = vec![0u8; chunk_size];
         cursor.read_exact(&mut chunk)?;
         data.extend_from_slice(&chunk);
         
@@ -210,18 +211,33 @@ fn read_leaf_entries(
     let mut cursor = Cursor::new(&data);
     
     // Read count (u32)
-    let count = cursor.read_u32::<BigEndian>()? as usize;
+    let count = cursor.read_u32::<BigEndian>().context("Failed to read entry count from leaf")? as usize;
+    
+    // Validate count is reasonable
+    if count > 100000 {
+        anyhow::bail!("Unreasonable entry count in leaf: {} (may indicate corruption)", count);
+    }
     
     // Read each entry
-    for _ in 0..count {
+    for i in 0..count {
         // Read key
         let mut key = vec![0u8; header.key_size as usize];
-        cursor.read_exact(&mut key)?;
+        cursor.read_exact(&mut key)
+            .with_context(|| format!("Failed to read key for entry {} of {}", i, count))?;
         
         // Read value (ByteArray format: u32 length + data)
-        let value_len = cursor.read_u32::<BigEndian>()? as usize;
+        let value_len = cursor.read_u32::<BigEndian>()
+            .with_context(|| format!("Failed to read value length for entry {} of {}", i, count))? as usize;
+        
+        // Validate value_len is reasonable
+        if value_len > 10 * 1024 * 1024 {
+            anyhow::bail!("Unreasonable value length for entry {}: {} bytes (may indicate corruption)", i, value_len);
+        }
+        
         let mut value = vec![0u8; value_len];
-        cursor.read_exact(&mut value)?;
+        cursor.read_exact(&mut value)
+            .with_context(|| format!("Failed to read value data for entry {} of {} (expected {} bytes, {} bytes remaining)", 
+                i, count, value_len, data.len() - cursor.position() as usize))?;
         
         entries.insert(key, value);
     }
