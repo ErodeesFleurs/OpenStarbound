@@ -88,11 +88,16 @@ pub fn read_all_entries(file: &mut File, header: &BTreeHeader) -> Result<HashMap
     
     if header.root_node == INVALID_BLOCK {
         // Empty database
+        eprintln!("DEBUG: Root node is INVALID_BLOCK");
         return Ok(entries);
     }
     
+    eprintln!("DEBUG: Reading BTree from root node {} (is_leaf={})", header.root_node, header.is_leaf);
+    
     // Read the root node
     read_node(file, header, header.root_node, header.is_leaf, &mut entries)?;
+    
+    eprintln!("DEBUG: Finished reading BTree, found {} entries", entries.len());
     
     Ok(entries)
 }
@@ -114,6 +119,8 @@ fn read_node(
     is_leaf: bool,
     entries: &mut HashMap<Vec<u8>, Vec<u8>>,
 ) -> Result<()> {
+    eprintln!("DEBUG: read_node block={} is_leaf={}", block_index, is_leaf);
+    
     let block = read_block(file, header, block_index)?;
     let mut cursor = Cursor::new(&block);
     
@@ -121,18 +128,24 @@ fn read_node(
     let mut magic = [0u8; 2];
     cursor.read_exact(&mut magic)?;
     
+    eprintln!("DEBUG: Magic bytes: {:?}", magic);
+    
     if is_leaf {
         // Verify leaf magic
         if &magic != LEAF_MAGIC {
-            anyhow::bail!("Invalid leaf magic at block {}", block_index);
+            anyhow::bail!("Invalid leaf magic at block {}: expected {:?}, got {:?}", 
+                block_index, LEAF_MAGIC, magic);
         }
         
+        eprintln!("DEBUG: Reading leaf at block {}", block_index);
         // Read leaf entries - they can span multiple blocks
         read_leaf_entries(file, header, block_index, entries)?;
+        eprintln!("DEBUG: Leaf at block {} had {} total entries so far", block_index, entries.len());
     } else {
         // Verify index magic
         if &magic != INDEX_MAGIC {
-            anyhow::bail!("Invalid index magic at block {}", block_index);
+            anyhow::bail!("Invalid index magic at block {}: expected {:?}, got {:?}", 
+                block_index, INDEX_MAGIC, magic);
         }
         
         // Read index node
@@ -146,6 +159,8 @@ fn read_node(
         // Begin pointer (u32)
         let begin_pointer = cursor.read_u32::<BigEndian>()?;
         
+        eprintln!("DEBUG: Index node level={} count={} begin_pointer={}", level, count, begin_pointer);
+        
         // Read keys and pointers
         let mut pointers = Vec::new();
         for _ in 0..count {
@@ -155,16 +170,20 @@ fn read_node(
             pointers.push(pointer);
         }
         
+        eprintln!("DEBUG: Index has {} child pointers", pointers.len());
+        
         // Recursively read children
         // First child is begin_pointer
         if begin_pointer != INVALID_BLOCK {
+            eprintln!("DEBUG: Reading begin_pointer child");
             read_node(file, header, begin_pointer, children_are_leaves, entries)?;
         }
         
         // Then read each keyed child
-        for pointer in pointers {
-            if pointer != INVALID_BLOCK {
-                read_node(file, header, pointer, children_are_leaves, entries)?;
+        for (i, pointer) in pointers.iter().enumerate() {
+            if *pointer != INVALID_BLOCK {
+                eprintln!("DEBUG: Reading keyed child {}", i);
+                read_node(file, header, *pointer, children_are_leaves, entries)?;
             }
         }
     }
