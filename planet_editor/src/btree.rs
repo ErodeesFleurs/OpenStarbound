@@ -217,38 +217,51 @@ fn read_leaf_entries(
 ) -> Result<()> {
     let mut current_block = start_block;
     let mut data = Vec::new();
+    let mut is_first_block = true;
     
     // Read all blocks in the leaf chain
     loop {
         let block = read_block(file, header, current_block)?;
         let mut cursor = Cursor::new(&block);
         
-        // Skip magic (2 bytes)
+        // Skip magic (2 bytes) - only on first block OR continuation blocks
+        // In C++, continuation blocks also have magic that gets skipped
         cursor.set_position(2);
         
         // Read data up to the pointer position (last 4 bytes)
         let data_end = (header.block_size as usize) - 4;
-        let chunk_size = data_end - 2;
+        let chunk_size = data_end - 2;  // -2 for the magic bytes we skipped
         let mut chunk = vec![0u8; chunk_size];
         cursor.read_exact(&mut chunk)?;
         data.extend_from_slice(&chunk);
         
+        eprintln!("DEBUG: Leaf block {} - read {} bytes, total data now {} bytes", 
+            current_block, chunk_size, data.len());
+        
         // Read next block pointer
         cursor.set_position(data_end as u64);
         let next_block = cursor.read_u32::<BigEndian>()?;
+        
+        eprintln!("DEBUG: Next block pointer: {}", next_block);
         
         if next_block == INVALID_BLOCK {
             break;
         }
         
         current_block = next_block;
+        is_first_block = false;
     }
+    
+    eprintln!("DEBUG: Total concatenated data: {} bytes", data.len());
+    eprintln!("DEBUG: First 20 bytes: {:?}", &data[..data.len().min(20)]);
     
     // Now parse the concatenated data
     let mut cursor = Cursor::new(&data);
     
     // Read count (VLQ encoded)
     let count = read_vlq_u64(&mut cursor).context("Failed to read entry count from leaf")? as usize;
+    
+    eprintln!("DEBUG: Entry count from VLQ: {}", count);
     
     // Validate count is reasonable
     if count > 100000 {
