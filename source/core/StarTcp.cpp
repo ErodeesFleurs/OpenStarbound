@@ -60,6 +60,22 @@ void TcpSocket::setNoDelay(bool noDelay) {
   m_impl->setSockOpt(IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
 }
 
+void TcpSocket::setSendBufferSize(size_t size) {
+  ReadLocker locker(m_mutex);
+  checkOpen("TcpSocket::setSendBufferSize");
+
+  int bufferSize = (int)size;
+  m_impl->setSockOpt(SOL_SOCKET, SO_SNDBUF, (char*)&bufferSize, sizeof(bufferSize));
+}
+
+void TcpSocket::setReceiveBufferSize(size_t size) {
+  ReadLocker locker(m_mutex);
+  checkOpen("TcpSocket::setReceiveBufferSize");
+
+  int bufferSize = (int)size;
+  m_impl->setSockOpt(SOL_SOCKET, SO_RCVBUF, (char*)&bufferSize, sizeof(bufferSize));
+}
+
 size_t TcpSocket::receive(char* data, size_t size) {
   ReadLocker locker(m_mutex);
   checkOpen("TcpSocket::receive");

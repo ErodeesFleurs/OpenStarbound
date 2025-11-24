@@ -18,6 +18,10 @@ public:
 
   // Must be called after connect.  Sets TCP_NODELAY option.
   void setNoDelay(bool noDelay);
+  
+  // Set socket send/receive buffer sizes for better throughput
+  void setSendBufferSize(size_t size);
+  void setReceiveBufferSize(size_t size);
 
   size_t receive(char* data, size_t len);
   size_t send(char const* data, size_t len);

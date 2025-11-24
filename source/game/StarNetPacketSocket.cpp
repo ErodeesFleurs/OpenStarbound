@@ -135,6 +135,10 @@ LocalPacketSocket::LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pip
 TcpPacketSocketUPtr TcpPacketSocket::open(TcpSocketPtr socket) {
   socket->setNoDelay(true);
   socket->setNonBlocking(true);
+  // Increase socket buffer sizes for better throughput (default is often 8KB-64KB)
+  // Setting to 256KB provides better performance for high-bandwidth connections
+  socket->setSendBufferSize(262144);    // 256 KB
+  socket->setReceiveBufferSize(262144); // 256 KB
   return TcpPacketSocketUPtr(new TcpPacketSocket(std::move(socket)));
 }
 

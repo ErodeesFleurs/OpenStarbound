@@ -5,6 +5,8 @@
 
 namespace Star {
 
+// Sleep time when polling for network activity (in milliseconds)
+// 1ms provides good balance between latency and CPU usage
 static const int PacketSocketPollSleep = 1;
 
 UniverseConnection::UniverseConnection(PacketSocketUPtr packetSocket)
