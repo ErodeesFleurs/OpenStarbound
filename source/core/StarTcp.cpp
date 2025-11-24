@@ -1,6 +1,7 @@
 #include "StarTcp.hpp"
 #include "StarLogging.hpp"
 #include "StarNetImpl.hpp"
+#include <climits>
 
 namespace Star {
 
@@ -64,7 +65,8 @@ void TcpSocket::setSendBufferSize(size_t size) {
   ReadLocker locker(m_mutex);
   checkOpen("TcpSocket::setSendBufferSize");
 
-  int bufferSize = (int)size;
+  // Socket options use int, clamp to max int value to avoid overflow
+  int bufferSize = size > INT_MAX ? INT_MAX : (int)size;
   m_impl->setSockOpt(SOL_SOCKET, SO_SNDBUF, (char*)&bufferSize, sizeof(bufferSize));
 }
 
@@ -72,7 +74,8 @@ void TcpSocket::setReceiveBufferSize(size_t size) {
   ReadLocker locker(m_mutex);
   checkOpen("TcpSocket::setReceiveBufferSize");
 
-  int bufferSize = (int)size;
+  // Socket options use int, clamp to max int value to avoid overflow
+  int bufferSize = size > INT_MAX ? INT_MAX : (int)size;
   m_impl->setSockOpt(SOL_SOCKET, SO_RCVBUF, (char*)&bufferSize, sizeof(bufferSize));
 }
 
