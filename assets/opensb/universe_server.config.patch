@@ -22,6 +22,7 @@
   {
     "op" : "add",
     "path" : "/networkWorkerThreads",
-    "value": 0
+    "value": 0,
+    "comment": "Number of network worker threads (0 = auto: hardware_concurrency / 4, min 2)"
   }
 ]

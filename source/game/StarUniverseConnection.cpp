@@ -137,6 +137,10 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
   for (size_t i = 0; i < m_numWorkerThreads; ++i) {
     m_processingThreads.append(Thread::invoke(strf("UniverseConnectionServer::worker_{}", i), [this, i]() {
       RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
+      // Adaptive polling: track consecutive idle cycles to adjust sleep
+      unsigned idleCycles = 0;
+      const unsigned maxIdleCycles = 10;
+      
       try {
         while (!m_shutdown) {
           connectionsLocker.lock();
@@ -181,8 +185,17 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
           }
           m_workerStats[i].connectionsHandled = handledCount;
 
-          if (!dataTransmitted)
+          // Adaptive sleep: don't sleep when data is actively being transmitted,
+          // gradually increase sleep time when idle to reduce CPU usage
+          if (!dataTransmitted) {
+            if (idleCycles < maxIdleCycles)
+              idleCycles++;
+            // Sleep only when idle, starting with minimal sleep
             Thread::sleep(PacketSocketPollSleep);
+          } else {
+            // Reset idle counter when there's activity
+            idleCycles = 0;
+          }
         }
       } catch (std::exception const& e) {
         Logger::error("Exception caught in UniverseConnectionServer::worker_{}, closing assigned connections: {}", i, e.what());

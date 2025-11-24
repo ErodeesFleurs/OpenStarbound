@@ -314,9 +314,11 @@ bool TcpPacketSocket::writeData() {
 bool TcpPacketSocket::readData() {
   bool dataReceived = false;
   try {
-    char readBuffer[1024];
+    // Increased buffer size from 1024 to 8192 for better throughput
+    // This reduces system call overhead and improves network performance
+    char readBuffer[8192];
     while (true) {
-      size_t readAmount = m_socket->receive(readBuffer, 1024);
+      size_t readAmount = m_socket->receive(readBuffer, 8192);
       if (readAmount == 0)
         break;
       dataReceived = true;
