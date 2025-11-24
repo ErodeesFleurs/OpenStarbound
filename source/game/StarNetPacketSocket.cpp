@@ -181,7 +181,8 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
 
       ByteArray compressedPackets;
       bool mustCompress = currentCompressionMode == PacketCompressionMode::Enabled;
-      bool perhapsCompress = currentCompressionMode == PacketCompressionMode::Automatic && packetBuffer.size() > 64;
+      // Increased threshold from 64 to 256 bytes - compression overhead not worth it for smaller packets
+      bool perhapsCompress = currentCompressionMode == PacketCompressionMode::Automatic && packetBuffer.size() > 256;
       if (mustCompress || perhapsCompress)
         compressedPackets = compressData(packetBuffer.data());
 
@@ -314,9 +315,10 @@ bool TcpPacketSocket::writeData() {
 bool TcpPacketSocket::readData() {
   bool dataReceived = false;
   try {
-    char readBuffer[1024];
+    // Increased buffer size from 1024 to 8192 bytes for better throughput
+    char readBuffer[8192];
     while (true) {
-      size_t readAmount = m_socket->receive(readBuffer, 1024);
+      size_t readAmount = m_socket->receive(readBuffer, 8192);
       if (readAmount == 0)
         break;
       dataReceived = true;
@@ -344,7 +346,12 @@ Maybe<PacketStats> TcpPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 
-TcpPacketSocket::TcpPacketSocket(TcpSocketPtr socket) : m_socket(std::move(socket)) {}
+TcpPacketSocket::TcpPacketSocket(TcpSocketPtr socket) : m_socket(std::move(socket)) {
+  // Pre-allocate buffers to reduce memory allocations during network I/O
+  m_outputBuffer.reserve(8192);
+  m_inputBuffer.reserve(8192);
+  m_compressedOutputBuffer.reserve(8192);
+}
 
 P2PPacketSocketUPtr P2PPacketSocket::open(P2PSocketUPtr socket) {
   return P2PPacketSocketUPtr(new P2PPacketSocket(std::move(socket)));
@@ -394,7 +401,8 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
 
       ByteArray compressedPackets;
       bool mustCompress = currentCompressionMode == PacketCompressionMode::Enabled;
-      bool perhapsCompress = currentCompressionMode == PacketCompressionMode::Automatic && packetBuffer.size() > 64;
+      // Increased threshold from 64 to 256 bytes - compression overhead not worth it for smaller packets
+      bool perhapsCompress = currentCompressionMode == PacketCompressionMode::Automatic && packetBuffer.size() > 256;
       if (mustCompress || perhapsCompress)
         compressedPackets = compressData(packetBuffer.data());
 
