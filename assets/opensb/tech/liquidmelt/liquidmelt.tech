@@ -1,0 +1,21 @@
+{
+  "name": "liquidmelt",
+  "type": "Body",
+
+  "scripts": ["/tech/liquidmelt/liquidmelt.lua"],
+  "animator": "/tech/liquidmelt/liquidmelt.animation",
+
+  "description": "^cyan;按下激活键，玩家像液体一样融化到地下，然后在鼠标位置附近重新出现。^reset;\nMelt into the ground like a liquid and reform at your cursor position. Press Special 1 (F) to activate.",
+  "shortDescription": "Liquid Melt",
+  "rarity": "Rare",
+  "icon": "/opensb/modicon.png",
+
+  "chipCost": 8,
+  "animationParts": {},
+
+  "meltDuration": 0.5,
+  "reformDuration": 0.5,
+  "cooldown": 2.0,
+  "maxTeleportDistance": 30.0,
+  "energyCost": 50.0
+}
