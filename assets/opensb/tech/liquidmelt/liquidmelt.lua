@@ -7,6 +7,8 @@ function init()
   self.cooldown = config.getParameter("cooldown", 2.0)
   self.maxTeleportDistance = config.getParameter("maxTeleportDistance", 30.0)
   self.energyCost = config.getParameter("energyCost", 50.0)
+  self.showGhostPreview = config.getParameter("showGhostPreview", true)
+  self.ghostColor = config.getParameter("ghostColor", {100, 180, 255, 120})
   
   self.state = "idle"
   self.timer = 0
@@ -21,6 +23,8 @@ function uninit()
   tech.setParentHidden(false)
   tech.setParentDirectives()
   tech.setToolUsageSuppressed(false)
+  -- Clear ghost preview
+  clearGhostPreview()
 end
 
 function update(args)
@@ -32,10 +36,18 @@ function update(args)
   end
   
   if self.state == "idle" then
+    -- Update ghost preview when idle and not on cooldown
+    if self.showGhostPreview and self.cooldownTimer <= 0 then
+      updateGhostPreview()
+    else
+      clearGhostPreview()
+    end
+    
     -- Check for activation (special1 key bound to tech activation)
     if args.moves["special1"] and self.cooldownTimer <= 0 then
       -- Check if player has enough energy
       if status.overConsumeResource("energy", self.energyCost) then
+        clearGhostPreview()
         startMelt(args)
       end
     end
@@ -63,8 +75,7 @@ function startMelt(args)
     local distanceVec = world.distance(self.targetPosition, self.startPosition)
     local distance = vec2.mag(distanceVec)
     if distance > self.maxTeleportDistance then
-      local direction = world.distance(self.targetPosition, self.startPosition)
-      direction = vec2.norm(direction)
+      local direction = vec2.norm(distanceVec)
       self.targetPosition = vec2.add(self.startPosition, vec2.mul(direction, self.maxTeleportDistance))
       self.targetPosition = findNearestGround(self.targetPosition) or self.startPosition
     end
@@ -236,4 +247,60 @@ function vec2.norm(v)
     return {v[1] / m, v[2] / m}
   end
   return {0, 0}
+end
+
+-- Ghost preview functions
+function updateGhostPreview()
+  local aimPos = tech.aimPosition()
+  local playerPos = mcontroller.position()
+  local targetPos = findNearestGround(aimPos)
+  
+  if not targetPos then
+    clearGhostPreview()
+    return
+  end
+  
+  -- Limit teleport distance
+  local distanceVec = world.distance(targetPos, playerPos)
+  local distance = vec2.mag(distanceVec)
+  if distance > self.maxTeleportDistance then
+    local direction = vec2.norm(distanceVec)
+    targetPos = vec2.add(playerPos, vec2.mul(direction, self.maxTeleportDistance))
+    targetPos = findNearestGround(targetPos)
+    if not targetPos then
+      clearGhostPreview()
+      return
+    end
+  end
+  
+  -- Get player portrait as drawables
+  local playerId = entity.id()
+  local portrait = world.entityPortrait(playerId, "full")
+  
+  if portrait and #portrait > 0 then
+    -- Calculate the offset from current player position to target position
+    local offset = world.distance(targetPos, playerPos)
+    
+    -- Create ghost drawables with transparency and blue tint
+    local ghostDrawables = {}
+    for _, drawable in ipairs(portrait) do
+      local ghostDrawable = {
+        image = drawable.image,
+        position = {offset[1] + (drawable.position and drawable.position[1] or 0), 
+                    offset[2] + (drawable.position and drawable.position[2] or 0)},
+        color = self.ghostColor,
+        fullbright = true
+      }
+      table.insert(ghostDrawables, ghostDrawable)
+    end
+    
+    -- Set the ghost drawables on the ghost part
+    animator.setPartDrawables("ghost", ghostDrawables)
+  else
+    clearGhostPreview()
+  end
+end
+
+function clearGhostPreview()
+  animator.setPartDrawables("ghost", {})
 end

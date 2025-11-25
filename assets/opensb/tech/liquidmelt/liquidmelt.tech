@@ -5,7 +5,7 @@
   "scripts": ["liquidmelt.lua"],
   "animator": "liquidmelt.animation",
 
-  "description": "^cyan;按下激活键，玩家像液体一样融化到地下，然后在鼠标位置附近重新出现。^reset;\nMelt into the ground like a liquid and reform at your cursor position. Press Special 1 (F) to activate.",
+  "description": "^cyan;按下激活键，玩家像液体一样融化到地下，然后在鼠标位置附近重新出现。鼠标位置会显示一个半透明的玩家虚影来预览传送目的地。^reset;\nMelt into the ground like a liquid and reform at your cursor position. A ghost preview shows the teleport destination. Press Special 1 (F) to activate.",
   "shortDescription": "Liquid Melt",
   "rarity": "Rare",
   "icon": "/opensb/modicon.png",
@@ -17,5 +17,7 @@
   "reformDuration": 0.5,
   "cooldown": 2.0,
   "maxTeleportDistance": 30.0,
-  "energyCost": 50.0
+  "energyCost": 50.0,
+  "showGhostPreview": true,
+  "ghostColor": [100, 180, 255, 120]
 }
