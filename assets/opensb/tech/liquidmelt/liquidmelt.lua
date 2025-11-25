@@ -60,7 +60,8 @@ function startMelt(args)
     self.targetPosition = self.startPosition
   else
     -- Limit teleport distance
-    local distance = world.magnitude(self.startPosition, self.targetPosition)
+    local distanceVec = world.distance(self.targetPosition, self.startPosition)
+    local distance = vec2.mag(distanceVec)
     if distance > self.maxTeleportDistance then
       local direction = world.distance(self.targetPosition, self.startPosition)
       direction = vec2.norm(direction)
@@ -200,48 +201,12 @@ end
 
 function spawnMeltParticles(progress)
   if math.random() < 0.4 then
-    local pos = mcontroller.position()
-    local particle = {
-      type = "ember",
-      size = 1.0 + math.random() * 0.5,
-      color = {100, 150, 255, 200},
-      light = {30, 50, 80},
-      fullbright = true,
-      destructionTime = 0.3,
-      destructionAction = "fade",
-      fade = 0.9,
-      position = {pos[1] + (math.random() - 0.5) * 1.5, pos[2] - progress * 1.5 + (math.random() - 0.5) * 0.5},
-      velocity = {(math.random() - 0.5) * 3, -2 - math.random() * 2},
-      finalVelocity = {0, -4},
-      approach = {5, 10},
-      timeToLive = 0.3 + math.random() * 0.2,
-      layer = "front",
-      collidesForeground = false
-    }
     animator.burstParticleEmitter("meltParticles")
   end
 end
 
 function spawnReformParticles(progress)
   if math.random() < 0.5 then
-    local pos = mcontroller.position()
-    local particle = {
-      type = "ember",
-      size = 1.0 + math.random() * 0.5,
-      color = {100, 150, 255, 200},
-      light = {30, 50, 80},
-      fullbright = true,
-      destructionTime = 0.3,
-      destructionAction = "fade",
-      fade = 0.9,
-      position = {pos[1] + (math.random() - 0.5) * 2, pos[2] - 0.5},
-      velocity = {(math.random() - 0.5) * 4, 2 + math.random() * 3},
-      finalVelocity = {0, 0},
-      approach = {5, 10},
-      timeToLive = 0.3 + math.random() * 0.2,
-      layer = "front",
-      collidesForeground = false
-    }
     animator.burstParticleEmitter("reformParticles")
   end
 end
