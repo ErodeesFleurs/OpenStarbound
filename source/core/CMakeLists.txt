@@ -8,6 +8,12 @@ SET (star_core_HEADERS
     StarAlgorithm.hpp
     StarArray.hpp
     StarAssetPath.hpp
+    ecs/StarEcs.hpp
+    ecs/StarEcsTypes.hpp
+    ecs/StarEcsComponent.hpp
+    ecs/StarEcsSystem.hpp
+    ecs/StarEcsView.hpp
+    ecs/StarEcsWorld.hpp
     StarAtomicSharedPtr.hpp
     StarAudio.hpp
     StarIODeviceCallbacks.hpp
@@ -194,6 +200,7 @@ SET (star_core_SOURCES
     StarUuid.cpp
     StarWorkerPool.cpp
     StarZSTDCompression.cpp
+    ecs/StarEcsWorld.cpp
     scripting/StarUtilityLuaBindings.cpp
   )
 
