@@ -290,6 +290,8 @@ SET (star_game_HEADERS
     ecs/adapters/StarItemDropAdapter.hpp
     ecs/adapters/StarPlantDropAdapter.hpp
     ecs/adapters/StarProjectileAdapter.hpp
+    ecs/adapters/StarPlantAdapter.hpp
+    ecs/adapters/StarStagehandAdapter.hpp
   )
 
 SET (star_game_SOURCES
@@ -543,6 +545,8 @@ SET (star_game_SOURCES
     ecs/adapters/StarItemDropAdapter.cpp
     ecs/adapters/StarPlantDropAdapter.cpp
     ecs/adapters/StarProjectileAdapter.cpp
+    ecs/adapters/StarPlantAdapter.cpp
+    ecs/adapters/StarStagehandAdapter.cpp
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
