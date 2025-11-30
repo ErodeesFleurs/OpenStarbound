@@ -298,6 +298,7 @@ SET (star_game_HEADERS
     ecs/adapters/StarNpcAdapter.hpp
     ecs/adapters/StarPlayerAdapter.hpp
     ecs/StarEcsWorldIntegration.hpp
+    ecs/StarEcsMigrationBridge.hpp
   )
 
 SET (star_game_SOURCES
@@ -559,6 +560,7 @@ SET (star_game_SOURCES
     ecs/adapters/StarNpcAdapter.cpp
     ecs/adapters/StarPlayerAdapter.cpp
     ecs/StarEcsWorldIntegration.cpp
+    ecs/StarEcsMigrationBridge.cpp
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})

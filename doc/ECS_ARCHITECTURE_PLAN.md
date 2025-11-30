@@ -821,3 +821,125 @@ Key success factors:
 4. Regular integration with main branch
 
 The estimated timeline of 6-9 months is realistic for a complete migration, though useful improvements can be delivered much sooner through the phased approach.
+
+---
+
+## Implementation Progress
+
+### ✅ Phase 1: Foundation (Complete)
+- Core ECS framework (`source/core/ecs/`)
+  - `StarEcsTypes.hpp` - Entity ID with generation counters
+  - `StarEcsComponent.hpp` - Sparse set component storage
+  - `StarEcsSystem.hpp` - System base class
+  - `StarEcsView.hpp` - Multi-component entity queries
+  - `StarEcsWorld.hpp/cpp` - World container
+- Unit tests (`source/test/ecs_test.cpp`)
+
+### ✅ Phase 2: Component Definitions (Complete)
+- Game-specific components (`source/game/ecs/components/`)
+  - `StarTransformComponents.hpp` - Position, velocity, bounds
+  - `StarPhysicsComponents.hpp` - Physics body, collision, movement
+  - `StarCombatComponents.hpp` - Health, energy, damage, protection
+  - `StarVisualComponents.hpp` - Sprites, animations, lights
+  - `StarAIComponents.hpp` - AI behavior, pathfinding, scripting
+  - `StarPlayerComponents.hpp` - Player identity, input, tech
+  - `StarNetworkComponents.hpp` - Network sync, interpolation
+
+### ✅ Phase 3: System Implementation (Complete)
+- Core game systems (`source/game/ecs/systems/`)
+  - `StarMovementSystem` - Physics and movement processing
+  - `StarDamageSystem` - Damage calculation and application
+  - `StarStatusEffectSystem` - Status effects and regeneration
+  - `StarRenderSystem` - Sprite and light collection
+
+### ✅ Phase 4: Entity Adapters (Complete)
+- Entity adapters (`source/game/ecs/adapters/`)
+  - `StarEntityAdapter` - Base adapter class
+  - `StarItemDropAdapter` - ItemDrop entity
+  - `StarPlantDropAdapter` - PlantDrop entity
+  - `StarProjectileAdapter` - Projectile entity
+  - `StarPlantAdapter` - Plant entity
+  - `StarStagehandAdapter` - Stagehand entity
+  - `StarObjectAdapter` - Object entity
+  - `StarVehicleAdapter` - Vehicle entity
+  - `StarMonsterAdapter` - Monster entity
+  - `StarNpcAdapter` - Npc entity
+  - `StarPlayerAdapter` - Player entity
+
+### ✅ Phase 5: Incremental Migration (Complete)
+All 10 entity types have ECS adapters:
+- ✅ ItemDrop
+- ✅ PlantDrop
+- ✅ Projectile
+- ✅ Plant
+- ✅ Stagehand
+- ✅ Object
+- ✅ Vehicle
+- ✅ Monster
+- ✅ Npc
+- ✅ Player
+
+### ✅ Phase 6: Cleanup and Integration (Complete)
+- World integration utilities (`source/game/ecs/`)
+  - `StarEcsWorldIntegration.hpp/cpp` - Bridge between Star::World and ECS::World
+  - `StarEcsMigrationBridge.hpp/cpp` - Migration configuration and entity factory wrapper
+- Integration features:
+  - `EcsEntityFactory` - Factory wrapper that creates ECS or legacy entities
+  - `MigrationConfig` - Per-entity-type ECS toggle
+  - `BatchMigration` - Bulk entity migration utility
+  - `ComponentPoolOptimizer` - Memory optimization
+  - `SystemScheduler` - Dependency-based system execution
+  - `EntityArchetype` - Fast entity creation templates
+  - Event system (EntityCreated, EntityDestroyed, EntityDamaged, EntityMoved)
+
+---
+
+## Migration Usage
+
+### Enable ECS for Specific Entity Types
+
+```cpp
+#include "ecs/StarEcsMigrationBridge.hpp"
+
+// Get global config
+auto& config = Star::ECS::globalMigrationConfig();
+
+// Enable ECS for simple entities only (recommended initial setup)
+config.useEcsForItemDrop = true;
+config.useEcsForPlantDrop = true;
+config.useEcsForProjectile = true;
+config.ecsEnabled = true;
+
+// Or enable for all entity types
+config.useEcsForMonster = true;
+config.useEcsForNpc = true;
+config.useEcsForPlayer = true;
+
+// Enable migration logging
+config.logMigrations = true;
+```
+
+### Create ECS-Aware Entity Factory
+
+```cpp
+// In WorldServer or WorldClient initialization
+auto legacyFactory = Root::singleton().entityFactory();
+auto ecsFactory = make_shared<Star::ECS::EcsEntityFactory>(legacyFactory);
+
+// Set up world integration
+Star::ECS::WorldIntegration worldIntegration;
+worldIntegration.init(this);
+ecsFactory->setWorldIntegration(&worldIntegration);
+
+// Use factory to create entities (automatically uses ECS or legacy based on config)
+EntityPtr entity = ecsFactory->netLoadEntity(EntityType::Monster, netStore);
+```
+
+### Migration Statistics
+
+```cpp
+// Get statistics
+auto& stats = ecsFactory->stats();
+Logger::info("ECS entities: {}, Legacy entities: {}, Failures: {}",
+  stats.ecsEntitiesCreated, stats.legacyEntitiesCreated, stats.migrationFailures);
+```
