@@ -9,6 +9,8 @@
 #include "StarProjectileAdapter.hpp"
 #include "StarPlantAdapter.hpp"
 #include "StarStagehandAdapter.hpp"
+#include "StarObjectAdapter.hpp"
+#include "StarVehicleAdapter.hpp"
 
 namespace Star {
 namespace ECS {
@@ -41,9 +43,20 @@ public:
       return make_shared<StagehandAdapter>(ecsWorld, ecsEntity);
     }
     
+    if (ecsWorld->hasComponent<ObjectTag>(ecsEntity)) {
+      return make_shared<ObjectAdapter>(ecsWorld, ecsEntity);
+    }
+    
+    if (ecsWorld->hasComponent<VehicleTag>(ecsEntity)) {
+      return make_shared<VehicleAdapter>(ecsWorld, ecsEntity);
+    }
+    
     // Add more adapter types here as they are implemented:
     // if (ecsWorld->hasComponent<MonsterTag>(ecsEntity)) {
     //   return make_shared<MonsterAdapter>(ecsWorld, ecsEntity);
+    // }
+    // if (ecsWorld->hasComponent<NpcTag>(ecsEntity)) {
+    //   return make_shared<NpcAdapter>(ecsWorld, ecsEntity);
     // }
     // if (ecsWorld->hasComponent<PlayerTag>(ecsEntity)) {
     //   return make_shared<PlayerAdapter>(ecsWorld, ecsEntity);
@@ -64,6 +77,8 @@ inline bool canMigrateToEcs(EntityType type) {
     case EntityType::Projectile:
     case EntityType::Plant:
     case EntityType::Stagehand:
+    case EntityType::Object:
+    case EntityType::Vehicle:
       return true;
     // Add more types as adapters are implemented
     default:

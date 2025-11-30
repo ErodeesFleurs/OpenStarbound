@@ -673,15 +673,22 @@ private:
 3. ✅ Add unit tests for core ECS functionality
 4. ✅ Implement component definitions (Phase 2)
 5. ✅ Implement core systems (Phase 3 - partial)
-6. ✅ Implement entity adapters (Phase 4 - partial)
+6. ✅ Implement entity adapters (Phase 4 - complete)
    - Base EntityAdapter class
    - ItemDropAdapter (first entity migration)
    - AdapterFactory for creating adapters
 7. ✅ Begin Phase 5: Incremental Migration
-   - PlantDropAdapter (second entity migration)
-   - PlantDropTag and PlantDropDataComponent
-   - ProjectileAdapter (third entity migration)
-   - ProjectileDataComponent with full damage system
+   - ✅ PlantDropAdapter (second entity migration)
+   - ✅ PlantDropTag and PlantDropDataComponent
+   - ✅ ProjectileAdapter (third entity migration)
+   - ✅ ProjectileDataComponent with full damage system
+   - ✅ PlantAdapter - Trees, grass, bushes with wind animation
+   - ✅ StagehandAdapter - Scripted world triggers
+   - ✅ ObjectAdapter - Interactive tile entities with wiring support
+   - ✅ VehicleAdapter - Mountable vehicles with physics
+   - ⬜ MonsterAdapter (next)
+   - ⬜ NpcAdapter
+   - ⬜ PlayerAdapter (most complex, last)
 
 ### Short-term (1-2 months)
 
