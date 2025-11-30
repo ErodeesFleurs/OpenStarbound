@@ -271,6 +271,20 @@ SET (star_game_HEADERS
     terrain/StarRidgeBlocksSelector.hpp
     terrain/StarRotateSelector.hpp
     terrain/StarWormCave.hpp
+
+    ecs/components/StarGameComponents.hpp
+    ecs/components/StarTransformComponents.hpp
+    ecs/components/StarPhysicsComponents.hpp
+    ecs/components/StarCombatComponents.hpp
+    ecs/components/StarVisualComponents.hpp
+    ecs/components/StarAIComponents.hpp
+    ecs/components/StarPlayerComponents.hpp
+    ecs/components/StarNetworkComponents.hpp
+    ecs/systems/StarEcsSystems.hpp
+    ecs/systems/StarMovementSystem.hpp
+    ecs/systems/StarDamageSystem.hpp
+    ecs/systems/StarStatusEffectSystem.hpp
+    ecs/systems/StarRenderSystem.hpp
   )
 
 SET (star_game_SOURCES
@@ -515,6 +529,11 @@ SET (star_game_SOURCES
     terrain/StarRidgeBlocksSelector.cpp
     terrain/StarRotateSelector.cpp
     terrain/StarWormCave.cpp
+
+    ecs/systems/StarMovementSystem.cpp
+    ecs/systems/StarDamageSystem.cpp
+    ecs/systems/StarStatusEffectSystem.cpp
+    ecs/systems/StarRenderSystem.cpp
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
