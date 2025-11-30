@@ -7,7 +7,9 @@
 #include "StarString.hpp"
 #include "StarUuid.hpp"
 #include "StarJson.hpp"
+#include "StarColor.hpp"
 #include "StarPlayerTypes.hpp"
+#include "StarGameTypes.hpp"
 
 namespace Star {
 namespace ECS {

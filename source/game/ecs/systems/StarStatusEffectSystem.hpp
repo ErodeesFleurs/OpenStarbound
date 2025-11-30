@@ -6,24 +6,6 @@
 namespace Star {
 namespace ECS {
 
-// Status effects component for entities that can have status effects
-struct StatusEffectsComponent {
-  List<EphemeralStatusEffect> ephemeralEffects = {};
-  List<PersistentStatusEffect> persistentEffects = {};
-  
-  void addEphemeralEffect(EphemeralStatusEffect effect) {
-    ephemeralEffects.append(std::move(effect));
-  }
-  
-  void addPersistentEffect(PersistentStatusEffect effect) {
-    persistentEffects.append(std::move(effect));
-  }
-  
-  void clearEphemeralEffects() {
-    ephemeralEffects.clear();
-  }
-};
-
 // Status effect system - manages status effects on entities
 // Priority: 70 (runs after damage but before rendering)
 class StatusEffectSystem : public System {

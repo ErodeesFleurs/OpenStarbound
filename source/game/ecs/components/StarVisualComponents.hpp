@@ -29,6 +29,8 @@ struct SpriteComponent {
   bool centered = true;
   float scale = 1.0f;
   Color color = Color::White;
+  float animationTimer = 0.0f;
+  int currentFrame = 0;
 };
 
 // Animation component for animated entities

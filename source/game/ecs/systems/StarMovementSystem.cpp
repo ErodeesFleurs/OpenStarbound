@@ -72,8 +72,9 @@ void MovementSystem::updatePosition(TransformComponent& transform, VelocityCompo
 
 void MovementSystem::applySpeedLimits(VelocityComponent& velocity, PhysicsBodyComponent const& physics) {
   float speed = vmag(velocity.velocity);
-  if (speed > m_maxSpeed) {
-    velocity.velocity = vnorm(velocity.velocity) * m_maxSpeed;
+  float maxSpeed = physics.maxSpeed > 0 ? physics.maxSpeed : m_maxSpeed;
+  if (speed > maxSpeed) {
+    velocity.velocity = vnorm(velocity.velocity) * maxSpeed;
   }
 }
 

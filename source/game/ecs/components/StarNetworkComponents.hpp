@@ -5,6 +5,8 @@
 
 #include "StarVector.hpp"
 #include "StarByteArray.hpp"
+#include "StarGameTypes.hpp"
+#include "interfaces/StarEntity.hpp"
 
 namespace Star {
 namespace ECS {

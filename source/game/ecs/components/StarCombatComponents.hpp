@@ -8,6 +8,7 @@
 #include "StarMaybe.hpp"
 #include "StarList.hpp"
 #include "StarDamage.hpp"
+#include "StarStatusTypes.hpp"
 
 namespace Star {
 namespace ECS {
@@ -186,6 +187,33 @@ struct AggroComponent {
   
   bool hasTarget() const {
     return currentTarget != 0;
+  }
+};
+
+// Status effects component for entities that can have status effects
+struct StatusEffectsComponent {
+  List<EphemeralStatusEffect> ephemeralEffects = {};
+  List<PersistentStatusEffect> persistentEffects = {};
+  
+  void addEphemeralEffect(EphemeralStatusEffect effect) {
+    ephemeralEffects.append(std::move(effect));
+  }
+  
+  void addPersistentEffect(PersistentStatusEffect effect) {
+    persistentEffects.append(std::move(effect));
+  }
+  
+  void clearEphemeralEffects() {
+    ephemeralEffects.clear();
+  }
+  
+  void clearPersistentEffects() {
+    persistentEffects.clear();
+  }
+  
+  void clearAllEffects() {
+    ephemeralEffects.clear();
+    persistentEffects.clear();
   }
 };
 

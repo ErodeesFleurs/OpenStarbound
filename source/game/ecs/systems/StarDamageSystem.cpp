@@ -83,9 +83,11 @@ bool DamageSystem::canDamage(Entity source, DamageSourceComponent const& sourceC
   auto const& targetTeam = targetComp.team;
   
   // Same team entities typically don't damage each other (friendly fire check)
+  // Friendly entities on the same team should not damage each other
   if (sourceTeam.type == targetTeam.type && sourceTeam.team == targetTeam.team) {
-    // Allow self-damage for special cases but not team damage
-    if (sourceTeam.type != EntityDamageTeam::Type::Friendly) {
+    // Allow self-damage for special cases, but prevent friendly fire on same team
+    // Only block if both are on the same team AND the type is Friendly
+    if (sourceTeam.type == EntityDamageTeam::Type::Friendly) {
       return false;
     }
   }

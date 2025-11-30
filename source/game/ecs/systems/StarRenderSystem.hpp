@@ -2,29 +2,9 @@
 
 #include "ecs/StarEcs.hpp"
 #include "StarGameComponents.hpp"
-#include "StarDrawable.hpp"
 
 namespace Star {
 namespace ECS {
-
-// Sprite component for simple sprite rendering
-struct SpriteComponent {
-  String imagePath = "";
-  Directives directives = {};
-  float animationTimer = 0.0f;
-  int currentFrame = 0;
-  bool visible = true;
-  float zLevel = 0.0f;
-  bool fullbright = false;
-};
-
-// Animation component for animated entities
-struct AnimationComponent {
-  String animationState = "idle";
-  float animationTime = 0.0f;
-  bool animationLooping = true;
-  float animationSpeed = 1.0f;
-};
 
 // Render system - prepares render data for all visible entities
 // Priority: 10 (runs late, after game logic)
