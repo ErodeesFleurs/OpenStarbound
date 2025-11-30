@@ -677,6 +677,9 @@ private:
    - Base EntityAdapter class
    - ItemDropAdapter (first entity migration)
    - AdapterFactory for creating adapters
+7. ✅ Begin Phase 5: Incremental Migration
+   - PlantDropAdapter (second entity migration)
+   - PlantDropTag and PlantDropDataComponent
 
 ### Short-term (1-2 months)
 

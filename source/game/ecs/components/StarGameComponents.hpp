@@ -89,6 +89,9 @@ struct VehicleTag {};
 // Mark entity as a plant
 struct PlantTag {};
 
+// Mark entity as a plant drop
+struct PlantDropTag {};
+
 // Mark entity as an item drop
 struct ItemDropTag {};
 

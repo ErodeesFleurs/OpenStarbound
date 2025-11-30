@@ -5,6 +5,7 @@
 
 #include "StarEntityAdapter.hpp"
 #include "StarItemDropAdapter.hpp"
+#include "StarPlantDropAdapter.hpp"
 
 namespace Star {
 namespace ECS {
@@ -19,6 +20,10 @@ public:
     // Check entity type component to determine adapter type
     if (ecsWorld->hasComponent<ItemDropTag>(ecsEntity)) {
       return make_shared<ItemDropAdapter>(ecsWorld, ecsEntity);
+    }
+    
+    if (ecsWorld->hasComponent<PlantDropTag>(ecsEntity)) {
+      return make_shared<PlantDropAdapter>(ecsWorld, ecsEntity);
     }
     
     // Add more adapter types here as they are implemented:
@@ -40,9 +45,9 @@ public:
 inline bool canMigrateToEcs(EntityType type) {
   switch (type) {
     case EntityType::ItemDrop:
+    case EntityType::PlantDrop:
       return true;
     // Add more types as adapters are implemented
-    // case EntityType::PlantDrop:
     // case EntityType::Projectile:
     //   return true;
     default:
