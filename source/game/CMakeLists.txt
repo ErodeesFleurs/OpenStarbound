@@ -285,6 +285,9 @@ SET (star_game_HEADERS
     ecs/systems/StarDamageSystem.hpp
     ecs/systems/StarStatusEffectSystem.hpp
     ecs/systems/StarRenderSystem.hpp
+    ecs/adapters/StarEcsAdapters.hpp
+    ecs/adapters/StarEntityAdapter.hpp
+    ecs/adapters/StarItemDropAdapter.hpp
   )
 
 SET (star_game_SOURCES
@@ -534,6 +537,8 @@ SET (star_game_SOURCES
     ecs/systems/StarDamageSystem.cpp
     ecs/systems/StarStatusEffectSystem.cpp
     ecs/systems/StarRenderSystem.cpp
+    ecs/adapters/StarEntityAdapter.cpp
+    ecs/adapters/StarItemDropAdapter.cpp
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})

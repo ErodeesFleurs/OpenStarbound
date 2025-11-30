@@ -673,6 +673,10 @@ private:
 3. ✅ Add unit tests for core ECS functionality
 4. ✅ Implement component definitions (Phase 2)
 5. ✅ Implement core systems (Phase 3 - partial)
+6. ✅ Implement entity adapters (Phase 4 - partial)
+   - Base EntityAdapter class
+   - ItemDropAdapter (first entity migration)
+   - AdapterFactory for creating adapters
 
 ### Short-term (1-2 months)
 
