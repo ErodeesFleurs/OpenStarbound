@@ -295,6 +295,8 @@ SET (star_game_HEADERS
     ecs/adapters/StarObjectAdapter.hpp
     ecs/adapters/StarVehicleAdapter.hpp
     ecs/adapters/StarMonsterAdapter.hpp
+    ecs/adapters/StarNpcAdapter.hpp
+    ecs/adapters/StarPlayerAdapter.hpp
   )
 
 SET (star_game_SOURCES
@@ -553,6 +555,8 @@ SET (star_game_SOURCES
     ecs/adapters/StarObjectAdapter.cpp
     ecs/adapters/StarVehicleAdapter.cpp
     ecs/adapters/StarMonsterAdapter.cpp
+    ecs/adapters/StarNpcAdapter.cpp
+    ecs/adapters/StarPlayerAdapter.cpp
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})

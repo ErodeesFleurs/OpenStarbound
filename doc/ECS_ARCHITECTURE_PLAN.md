@@ -677,7 +677,7 @@ private:
    - Base EntityAdapter class
    - ItemDropAdapter (first entity migration)
    - AdapterFactory for creating adapters
-7. ✅ Begin Phase 5: Incremental Migration
+7. ✅ **Phase 5: Incremental Migration - COMPLETE**
    - ✅ PlantDropAdapter (second entity migration)
    - ✅ PlantDropTag and PlantDropDataComponent
    - ✅ ProjectileAdapter (third entity migration)
@@ -687,8 +687,9 @@ private:
    - ✅ ObjectAdapter - Interactive tile entities with wiring support
    - ✅ VehicleAdapter - Mountable vehicles with physics
    - ✅ MonsterAdapter - AI + combat with scripting support
-   - ⬜ NpcAdapter (next)
-   - ⬜ PlayerAdapter (most complex, last)
+   - ✅ NpcAdapter - AI + dialogue + interactions + humanoid
+   - ✅ PlayerAdapter - Full player implementation with all systems
+8. ⬜ **Phase 6: Cleanup** - Ready to begin
 
 ### Short-term (1-2 months)
 
