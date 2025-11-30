@@ -30,6 +30,8 @@ Entity World::createEntity() {
     m_entityGenerations[index] = generation;
   }
   
+  // Track living entity
+  m_livingEntityIndices.insert(index);
   ++m_livingEntities;
   
   return packEntity({index, generation});
@@ -53,6 +55,9 @@ void World::destroyEntity(Entity entity) {
   // Recycle the index
   m_freeIndices.push(version.index);
   
+  // Remove from living entities set
+  m_livingEntityIndices.erase(version.index);
+  
   --m_livingEntities;
 }
 
@@ -74,26 +79,10 @@ List<Entity> World::entities() const {
   List<Entity> result;
   result.reserve(m_livingEntities);
   
-  for (uint32_t i = 1; i < m_entityGenerations.size(); ++i) {
-    Entity entity = packEntity({i, m_entityGenerations[i]});
-    
-    // Check if this index is not in the free list
-    // (Simple check: if generation matches and not recycled)
-    // This is a simplified check - a more robust implementation
-    // would track living entities explicitly
-    bool isFree = false;
-    std::queue<uint32_t> tempQueue = m_freeIndices;
-    while (!tempQueue.empty()) {
-      if (tempQueue.front() == i) {
-        isFree = true;
-        break;
-      }
-      tempQueue.pop();
-    }
-    
-    if (!isFree) {
-      result.append(entity);
-    }
+  // Efficiently iterate over living entity indices
+  for (uint32_t index : m_livingEntityIndices) {
+    Entity entity = packEntity({index, m_entityGenerations[index]});
+    result.append(entity);
   }
   
   return result;
@@ -122,6 +111,7 @@ void World::clear() {
   // Reset entity management
   m_entityGenerations.clear();
   m_freeIndices = std::queue<uint32_t>();
+  m_livingEntityIndices.clear();
   m_nextIndex = 1;
   m_livingEntities = 0;
 }

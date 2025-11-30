@@ -1,4 +1,5 @@
 #include "ecs/StarEcs.hpp"
+#include "StarString.hpp"
 
 #include "gtest/gtest.h"
 

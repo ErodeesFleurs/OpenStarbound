@@ -202,6 +202,9 @@ public:
   }
 
 private:
+  // InvalidIndex is set to max uint32_t value to represent an unallocated slot
+  // in the sparse array. This allows using 0 as a valid index while ensuring
+  // the sentinel value is unlikely to conflict with actual indices.
   static constexpr uint32_t InvalidIndex = std::numeric_limits<uint32_t>::max();
   
   // Sparse array: maps entity index to dense array index

@@ -8,6 +8,7 @@
 #include "StarRect.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
+#include "StarString.hpp"
 #include "StarGameTypes.hpp"
 #include "StarDamage.hpp"
 #include "StarLightSource.hpp"

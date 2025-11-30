@@ -10,9 +10,15 @@
 #include <memory>
 #include <algorithm>
 #include <queue>
+#include <unordered_set>
 
 namespace Star {
 namespace ECS {
+
+// Error messages for consistent error reporting
+namespace EcsErrors {
+  constexpr const char* kDeadEntityComponent = "Cannot add component to dead entity";
+}
 
 // The World is the main container for all entities, components, and systems
 class World {
@@ -43,7 +49,7 @@ public:
   template<typename T, typename... Args>
   T& addComponent(Entity entity, Args&&... args) {
     if (!isAlive(entity)) {
-      throw EcsException("Cannot add component to dead entity");
+      throw EcsException(EcsErrors::kDeadEntityComponent);
     }
     
     ComponentArray<T>* array = getOrCreateComponentArray<T>();
@@ -55,7 +61,7 @@ public:
   template<typename T>
   T& setComponent(Entity entity, T component) {
     if (!isAlive(entity)) {
-      throw EcsException("Cannot add component to dead entity");
+      throw EcsException(EcsErrors::kDeadEntityComponent);
     }
     
     ComponentArray<T>* array = getOrCreateComponentArray<T>();
@@ -198,6 +204,7 @@ private:
   // Entity management
   std::vector<uint32_t> m_entityGenerations; // Generation counter per entity index
   std::queue<uint32_t> m_freeIndices; // Recycled entity indices
+  std::unordered_set<uint32_t> m_livingEntityIndices; // Set of living entity indices for O(1) lookup
   uint32_t m_nextIndex = 1; // Start at 1 so 0 can be NullEntity
   size_t m_livingEntities = 0;
   
@@ -209,14 +216,17 @@ private:
 };
 
 // View implementation
+// NOTE: This basic implementation iterates over all entities and filters by component.
+// For better performance with many entities, consider implementing:
+// - Archetype-based storage (groups entities by component signatures)
+// - Component-based iteration (iterate smallest component array first)
+// - Bitset-based filtering for fast archetype matching
+// These optimizations can be added in Phase 3 of the ECS migration.
 
 template<typename... Components>
 View<Components...>::View(World* world) : m_world(world) {
-  // Get the smallest component array to iterate over
-  // This is an optimization to reduce iterations
-  
-  // For now, just get all entities
-  // A more sophisticated implementation would use the smallest set
+  // Get all entities for filtering
+  // TODO: Optimize by using smallest component array for iteration
   m_entities = world->entities();
 }
 
