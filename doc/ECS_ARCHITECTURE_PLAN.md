@@ -680,6 +680,8 @@ private:
 7. ✅ Begin Phase 5: Incremental Migration
    - PlantDropAdapter (second entity migration)
    - PlantDropTag and PlantDropDataComponent
+   - ProjectileAdapter (third entity migration)
+   - ProjectileDataComponent with full damage system
 
 ### Short-term (1-2 months)
 
