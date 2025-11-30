@@ -686,8 +686,8 @@ private:
    - ✅ StagehandAdapter - Scripted world triggers
    - ✅ ObjectAdapter - Interactive tile entities with wiring support
    - ✅ VehicleAdapter - Mountable vehicles with physics
-   - ⬜ MonsterAdapter (next)
-   - ⬜ NpcAdapter
+   - ✅ MonsterAdapter - AI + combat with scripting support
+   - ⬜ NpcAdapter (next)
    - ⬜ PlayerAdapter (most complex, last)
 
 ### Short-term (1-2 months)
