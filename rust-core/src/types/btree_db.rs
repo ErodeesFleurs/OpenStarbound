@@ -696,14 +696,24 @@ impl SyncBTreeDatabase {
         }
     }
 
-    /// Get read access
+    /// Get read access, recovering from poisoned lock
     pub fn read(&self) -> std::sync::RwLockReadGuard<'_, BTreeDatabase> {
-        self.inner.read().unwrap()
+        self.inner.read().unwrap_or_else(|poisoned| poisoned.into_inner())
     }
 
-    /// Get write access
+    /// Get write access, recovering from poisoned lock
     pub fn write(&self) -> std::sync::RwLockWriteGuard<'_, BTreeDatabase> {
-        self.inner.write().unwrap()
+        self.inner.write().unwrap_or_else(|poisoned| poisoned.into_inner())
+    }
+
+    /// Try to get read access
+    pub fn try_read(&self) -> Option<std::sync::RwLockReadGuard<'_, BTreeDatabase>> {
+        self.inner.read().ok()
+    }
+
+    /// Try to get write access
+    pub fn try_write(&self) -> Option<std::sync::RwLockWriteGuard<'_, BTreeDatabase>> {
+        self.inner.write().ok()
     }
 }
 

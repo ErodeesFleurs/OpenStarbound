@@ -126,7 +126,8 @@ impl WorkerPool {
                 break;
             }
 
-            thread::yield_now();
+            // Sleep briefly to avoid busy waiting
+            thread::sleep(std::time::Duration::from_micros(100));
         }
     }
 
@@ -154,8 +155,14 @@ impl Default for WorkerPool {
 
 impl Drop for WorkerPool {
     fn drop(&mut self) {
+        // Signal shutdown to all workers
         self.shutdown.store(true, Ordering::Release);
         self.condvar.notify_all();
+        
+        // Wait for all workers to finish
+        for worker in self.workers.drain(..) {
+            let _ = worker.join();
+        }
     }
 }
 

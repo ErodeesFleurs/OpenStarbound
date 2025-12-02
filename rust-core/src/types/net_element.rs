@@ -276,7 +276,12 @@ impl NetElementInt {
                 self.target_value = None;
             } else {
                 let current = self.interpolated_value.unwrap_or(self.value);
-                let t = dt / self.interpolation_time.max(dt);
+                // Use safe division avoiding potential overflow
+                let t = if self.interpolation_time > 0.0 {
+                    (dt / self.interpolation_time).min(1.0)
+                } else {
+                    1.0
+                };
                 let interp = current + ((target - current) as f32 * t) as i64;
                 self.interpolated_value = Some(interp);
             }
