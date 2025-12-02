@@ -7,7 +7,8 @@ mod data_stream;
 
 pub use data_stream::{DataReader, DataWriter};
 
-use std::io::Cursor;
+use crate::error::Result;
+use std::io::{Cursor, Read, Write};
 
 /// Type alias for DataReader with a byte slice
 pub type ByteDataReader<'a> = DataReader<&'a [u8]>;
@@ -17,6 +18,16 @@ pub type CursorDataReader = DataReader<Cursor<Vec<u8>>>;
 
 /// Type alias for DataWriter with a Vec
 pub type VecDataWriter = DataWriter<Vec<u8>>;
+
+/// Trait for types that can be read from a DataReader
+pub trait Readable: Sized {
+    fn read<R: Read>(reader: &mut DataReader<R>) -> Result<Self>;
+}
+
+/// Trait for types that can be written to a DataWriter
+pub trait Writable {
+    fn write<W: Write>(&self, writer: &mut DataWriter<W>) -> Result<()>;
+}
 
 /// VLQ (Variable Length Quantity) encoding used by Starbound
 pub mod vlq {

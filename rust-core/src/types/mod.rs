@@ -6,7 +6,9 @@ pub mod asset_path;
 pub mod bimap;
 pub mod btree_db;
 mod byte_array;
+pub mod celestial;
 mod color;
+pub mod collision;
 pub mod compression;
 pub mod damage_types;
 pub mod either;
@@ -15,10 +17,13 @@ pub mod file;
 pub mod game_types;
 mod host_address;
 pub mod image;
+pub mod item_descriptor;
 mod json;
+pub mod liquid_types;
 pub mod logging;
 pub mod lru_cache;
 pub mod lua;
+pub mod material_types;
 pub mod net_element;
 pub mod option_parser;
 mod perlin;
@@ -83,6 +88,32 @@ pub use time::{
 };
 pub use uuid::{Uuid, UUID_SIZE};
 pub use worker_pool::{AsyncWorkerPool, TaskHandle, WorkerPool};
+
+// New game system types
+pub use celestial::{
+    CelestialBaseInformation, CelestialChunk, CelestialConstellation, CelestialCoordinate,
+    CelestialOrbitRegion, CelestialParameters, CelestialPlanet, CelestialRequest, CelestialResponse,
+    CelestialSystemObjects,
+};
+pub use collision::{
+    is_colliding, is_solid_colliding, max_collision, CollisionBlock, CollisionKind, CollisionSet,
+    TileCollisionOverride,
+};
+pub use item_descriptor::ItemDescriptor;
+pub use liquid_types::{
+    byte_to_float, float_to_byte, LiquidId, LiquidLevel, LiquidNetUpdate, LiquidStore,
+    EMPTY_LIQUID_ID,
+};
+pub use material_types::{
+    is_biome_material, is_biome_mod, is_connectable_material, is_real_material, is_real_mod,
+    material_hue_from_degrees, material_hue_to_degrees, MaterialColorVariant, MaterialHue,
+    MaterialId, ModId, BIOME1_MATERIAL_ID, BIOME2_MATERIAL_ID, BIOME3_MATERIAL_ID,
+    BIOME4_MATERIAL_ID, BIOME5_MATERIAL_ID, BIOME_MATERIAL_ID, BIOME_MOD_ID, BOUNDARY_MATERIAL_ID,
+    DEFAULT_MATERIAL_COLOR_VARIANT, EMPTY_MATERIAL_ID, FIRST_ENGINE_META_MATERIAL_ID,
+    FIRST_META_MATERIAL_ID, FIRST_META_MOD, MAX_MATERIAL_COLOR_VARIANT, NO_MOD_ID,
+    NULL_MATERIAL_ID, OBJECT_PLATFORM_MATERIAL_ID, OBJECT_SOLID_MATERIAL_ID, STRUCTURE_MATERIAL_ID,
+    UNDERGROUND_BIOME_MOD_ID,
+};
 
 /// Global random number functions
 pub mod global_random {

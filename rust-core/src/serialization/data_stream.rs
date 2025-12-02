@@ -219,6 +219,66 @@ impl<R: Read> DataReader<R> {
         let a = self.read_u8()?;
         Ok(crate::types::Color::from_rgba_u8(r, g, b, a))
     }
+
+    /// Read a value of type T using the Readable trait
+    pub fn read<T: crate::serialization::Readable>(&mut self) -> Result<T> {
+        T::read(self)
+    }
+
+    /// Read a VLQ-encoded unsigned 32-bit integer
+    pub fn read_var_u32(&mut self) -> Result<u32> {
+        Ok(self.read_vlq_u64()? as u32)
+    }
+
+    /// Read a VLQ-encoded signed 32-bit integer
+    pub fn read_var_i32(&mut self) -> Result<i32> {
+        Ok(self.read_vlq_i64()? as i32)
+    }
+
+    /// Read a VLQ-encoded unsigned 64-bit integer
+    pub fn read_var_u64(&mut self) -> Result<u64> {
+        self.read_vlq_u64()
+    }
+
+    /// Read a VLQ-encoded signed 64-bit integer
+    pub fn read_var_i64(&mut self) -> Result<i64> {
+        self.read_vlq_i64()
+    }
+
+    /// Read a f32 (little-endian)
+    pub fn read_f32(&mut self) -> Result<f32> {
+        self.read_f32_le()
+    }
+
+    /// Read a f64 (little-endian)
+    pub fn read_f64(&mut self) -> Result<f64> {
+        self.read_f64_le()
+    }
+
+    /// Read a u64 (little-endian)
+    pub fn read_u64(&mut self) -> Result<u64> {
+        self.read_u64_le()
+    }
+
+    /// Read a u32 (little-endian)
+    pub fn read_u32(&mut self) -> Result<u32> {
+        self.read_u32_le()
+    }
+
+    /// Read a i32 (little-endian)
+    pub fn read_i32(&mut self) -> Result<i32> {
+        self.read_i32_le()
+    }
+
+    /// Read a u16 (little-endian)
+    pub fn read_u16(&mut self) -> Result<u16> {
+        self.read_u16_le()
+    }
+
+    /// Read a i16 (little-endian)
+    pub fn read_i16(&mut self) -> Result<i16> {
+        self.read_i16_le()
+    }
 }
 
 /// Data stream writer for binary serialization
@@ -329,6 +389,61 @@ impl<W: Write> DataWriter<W> {
         self.writer.write_all(&bytes).map_err(|e| Error::Io(e.to_string()))
     }
 
+    /// Write a VLQ-encoded unsigned 32-bit integer
+    pub fn write_var_u32(&mut self, value: u32) -> Result<()> {
+        self.write_vlq_u64(value as u64)
+    }
+
+    /// Write a VLQ-encoded signed 32-bit integer
+    pub fn write_var_i32(&mut self, value: i32) -> Result<()> {
+        self.write_vlq_i64(value as i64)
+    }
+
+    /// Write a VLQ-encoded unsigned 64-bit integer
+    pub fn write_var_u64(&mut self, value: u64) -> Result<()> {
+        self.write_vlq_u64(value)
+    }
+
+    /// Write a VLQ-encoded signed 64-bit integer
+    pub fn write_var_i64(&mut self, value: i64) -> Result<()> {
+        self.write_vlq_i64(value)
+    }
+
+    /// Write a f32 (little-endian)
+    pub fn write_f32(&mut self, value: f32) -> Result<()> {
+        self.write_f32_le(value)
+    }
+
+    /// Write a f64 (little-endian)
+    pub fn write_f64(&mut self, value: f64) -> Result<()> {
+        self.write_f64_le(value)
+    }
+
+    /// Write a u64 (little-endian)
+    pub fn write_u64(&mut self, value: u64) -> Result<()> {
+        self.write_u64_le(value)
+    }
+
+    /// Write a u32 (little-endian)
+    pub fn write_u32(&mut self, value: u32) -> Result<()> {
+        self.write_u32_le(value)
+    }
+
+    /// Write a i32 (little-endian)
+    pub fn write_i32(&mut self, value: i32) -> Result<()> {
+        self.write_i32_le(value)
+    }
+
+    /// Write a u16 (little-endian)
+    pub fn write_u16(&mut self, value: u16) -> Result<()> {
+        self.write_u16_le(value)
+    }
+
+    /// Write a i16 (little-endian)
+    pub fn write_i16(&mut self, value: i16) -> Result<()> {
+        self.write_i16_le(value)
+    }
+
     /// Write a length-prefixed string
     pub fn write_string(&mut self, value: &str) -> Result<()> {
         self.write_vlq_u64(value.len() as u64)?;
@@ -386,6 +501,11 @@ impl<W: Write> DataWriter<W> {
     /// Flush the writer
     pub fn flush(&mut self) -> Result<()> {
         self.writer.flush().map_err(|e| Error::Io(e.to_string()))
+    }
+
+    /// Get the inner writer
+    pub fn into_inner(self) -> W {
+        self.writer
     }
 }
 

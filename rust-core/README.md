@@ -35,6 +35,11 @@ This crate provides fundamental data structures that are binary-compatible with 
 - **Option Parser**: Command line argument parsing compatible with C++ `Star::OptionParser`
 - **Game Types**: Core game enums and constants compatible with C++ `Star::GameTypes`
 - **Damage Types**: Combat damage types compatible with C++ `Star::DamageTypes`
+- **Material Types**: Tile material constants compatible with C++ `Star::MaterialTypes`
+- **Liquid Types**: Liquid level and store types compatible with C++ `Star::LiquidTypes`
+- **Collision Types**: Physics collision types compatible with C++ `Star::CollisionBlock`
+- **Item Descriptor**: Item specification compatible with C++ `Star::ItemDescriptor`
+- **Celestial Types**: Star system types compatible with C++ `Star::CelestialTypes`
 - **Serialization**: Binary serialization compatible with C++ `StarDataStream` format
 - **Error Handling**: Comprehensive error types mirroring C++ exception hierarchy
 
