@@ -21,6 +21,10 @@ This crate provides fundamental data structures that are binary-compatible with 
 - **BiMap**: Bidirectional map matching C++ `Star::BiMap`
 - **Either**: Left/Right container matching C++ `Star::Either`
 - **String Utilities**: String manipulation matching C++ `Star::String`
+- **Threading**: Thread utilities, locks, and synchronization primitives matching C++ `Star::Thread`
+- **Sockets**: TCP and UDP socket types matching C++ `Star::TcpSocket` and `Star::UdpSocket`
+- **Image**: Image manipulation matching C++ `Star::Image`
+- **File I/O**: File and buffer operations matching C++ `Star::File` and `Star::IODevice`
 - **Serialization**: Binary serialization compatible with C++ `StarDataStream` format
 - **Error Handling**: Comprehensive error types mirroring C++ exception hierarchy
 
@@ -30,7 +34,8 @@ This crate provides fundamental data structures that are binary-compatible with 
 use starbound_core::{
     Vec2F, Vec3F, Color, RectF, Json, Uuid, ByteArray, 
     RandomSource, Perlin, AssetPath, HostAddress, HostAddressWithPort,
-    hex_encode, base64_encode, sha256, sha256_hex
+    hex_encode, base64_encode, sha256, sha256_hex,
+    Thread, TcpSocket, UdpSocket, Image, FileSystem
 };
 
 // Vector operations
@@ -82,6 +87,14 @@ let hash = sha256_hex(b"data");
 // Network addresses
 let addr = HostAddressWithPort::parse("127.0.0.1:8080").unwrap();
 println!("{}", addr);
+
+// Threading
+Thread::sleep(100);
+let num_cores = Thread::number_of_processors();
+
+// File operations
+let content = FileSystem::read_to_string("config.json")?;
+FileSystem::write("output.txt", b"Hello, World!")?;
 ```
 
 ## Binary Compatibility
@@ -102,7 +115,7 @@ cargo test
 
 ## Test Coverage
 
-- **152 unit tests** covering all core functionality
+- **190 unit tests** covering all core functionality
 - Math operations (vectors, rectangles)
 - Color conversions (RGB, HSV, hex)
 - JSON parsing and serialization
@@ -118,6 +131,10 @@ cargo test
 - BiMap (bidirectional mapping)
 - Either (left/right container)
 - String utilities (case sensitivity, escaping)
+- Threading (locks, condition variables, spin locks)
+- Sockets (TCP, UDP)
+- Image manipulation (pixel formats, blending)
+- File I/O (read, write, buffers)
 - Binary serialization roundtrips
 
 ## Migration Strategy
@@ -137,11 +154,15 @@ This crate is part of a phased migration plan:
    - Compression (zlib)
    - BiMap, Either
    - String utilities
+   - Threading utilities
+   - TCP/UDP sockets
+   - Image type
+   - File I/O
    - DataReader/DataWriter
 
-2. **Phase 2** (Next): Network layer, asset loading, Lua bindings
+2. **Phase 2** (Next): Lua bindings (mlua), asset loading, world storage
 3. **Phase 3**: World generation, entity system
-4. **Phase 4**: Renderer, UI, audio
+4. **Phase 4**: Renderer (wgpu), UI, audio
 
 ## License
 
