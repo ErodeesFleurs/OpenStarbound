@@ -14,13 +14,20 @@ This crate provides fundamental data structures that are binary-compatible with 
 - **RandomSource**: Deterministic PRNG matching C++ `Star::RandomSource`
 - **Perlin Noise**: Coherent noise generation matching C++ `Star::Perlin`
 - **AssetPath**: Asset path parsing matching C++ `Star::AssetPath`
+- **Encoding**: Hex and Base64 encoding/decoding matching C++ `Star::Encode`
+- **SHA-256**: Cryptographic hashing matching C++ `Star::Sha256`
+- **Network**: Host address types matching C++ `Star::HostAddress`
 - **Serialization**: Binary serialization compatible with C++ `StarDataStream` format
 - **Error Handling**: Comprehensive error types mirroring C++ exception hierarchy
 
 ## Usage
 
 ```rust
-use starbound_core::{Vec2F, Vec3F, Color, RectF, Json, Uuid, ByteArray, RandomSource, Perlin, AssetPath};
+use starbound_core::{
+    Vec2F, Vec3F, Color, RectF, Json, Uuid, ByteArray, 
+    RandomSource, Perlin, AssetPath, HostAddress, HostAddressWithPort,
+    hex_encode, base64_encode, sha256, sha256_hex
+};
 
 // Vector operations
 let v1 = Vec2F::new(1.0, 2.0);
@@ -55,11 +62,22 @@ let random_int = rng.rand_int_range(1, 100);
 
 // Perlin noise
 let noise = Perlin::new(4, 1.0, 1.0, 0.0, 2.0, 2.0, 12345);
-let terrain_height = noise.get2(x, y);
+let terrain_height = noise.get2(1.5, 2.5);
 
 // Asset paths
 let path = AssetPath::split("/assets/image.png:frame1?scale=2");
 println!("{}", path.base_path); // "/assets/image.png"
+
+// Encoding
+let hex = hex_encode(&[0xDE, 0xAD]);
+let b64 = base64_encode(b"Hello");
+
+// Hashing
+let hash = sha256_hex(b"data");
+
+// Network addresses
+let addr = HostAddressWithPort::parse("127.0.0.1:8080").unwrap();
+println!("{}", addr);
 ```
 
 ## Binary Compatibility
@@ -80,7 +98,7 @@ cargo test
 
 ## Test Coverage
 
-- **97 unit tests** covering all core functionality
+- **122 unit tests** covering all core functionality
 - Math operations (vectors, rectangles)
 - Color conversions (RGB, HSV, hex)
 - JSON parsing and serialization
@@ -89,6 +107,9 @@ cargo test
 - Random number generation (determinism, distributions)
 - Perlin noise (continuity, different noise types)
 - Asset path parsing
+- Encoding (hex, base64)
+- SHA-256 hashing (standard test vectors)
+- Network addresses (IPv4, IPv6)
 - Binary serialization roundtrips
 
 ## Migration Strategy
@@ -102,6 +123,9 @@ This crate is part of a phased migration plan:
    - UUID, ByteArray
    - RandomSource, Perlin noise
    - AssetPath
+   - Hex/Base64 encoding
+   - SHA-256 hashing
+   - HostAddress, HostAddressWithPort
    - DataReader/DataWriter
 
 2. **Phase 2** (Next): Network layer, asset loading, Lua bindings
