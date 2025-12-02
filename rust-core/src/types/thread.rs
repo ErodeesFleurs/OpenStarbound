@@ -181,10 +181,17 @@ impl SpinLock {
     where
         F: FnOnce() -> R,
     {
+        // Use a guard pattern to ensure unlock even on panic
+        struct SpinLockGuard<'a>(&'a SpinLock);
+        impl<'a> Drop for SpinLockGuard<'a> {
+            fn drop(&mut self) {
+                self.0.unlock();
+            }
+        }
+        
         self.lock();
-        let result = f();
-        self.unlock();
-        result
+        let _guard = SpinLockGuard(self);
+        f()
     }
 }
 

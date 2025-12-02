@@ -337,10 +337,12 @@ impl Image {
 
     /// Fast pixel set for 32-bit formats.
     ///
-    /// No bounds checking or format conversion is performed.
+    /// # Panics
+    /// Panics in debug mode if coordinates are out of bounds or format is not 32-bit.
     #[inline]
     pub fn set32(&mut self, x: u32, y: u32, color: Vec4B) {
         debug_assert!(self.bytes_per_pixel() == 4);
+        debug_assert!(x < self.width && y < self.height, "Pixel coordinates out of bounds");
         let offset = (y as usize * self.width as usize + x as usize) * 4;
         self.data[offset] = color.x();
         self.data[offset + 1] = color.y();
@@ -350,10 +352,12 @@ impl Image {
 
     /// Fast pixel get for 32-bit formats.
     ///
-    /// No bounds checking or format conversion is performed.
+    /// # Panics
+    /// Panics in debug mode if coordinates are out of bounds or format is not 32-bit.
     #[inline]
     pub fn get32(&self, x: u32, y: u32) -> Vec4B {
         debug_assert!(self.bytes_per_pixel() == 4);
+        debug_assert!(x < self.width && y < self.height, "Pixel coordinates out of bounds");
         let offset = (y as usize * self.width as usize + x as usize) * 4;
         Vec4::new(
             self.data[offset],

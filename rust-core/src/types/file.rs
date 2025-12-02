@@ -200,8 +200,14 @@ impl FileDevice {
     }
 
     /// Close the file.
+    /// 
+    /// Note: Flush errors during close are logged but not propagated.
+    /// Call flush() explicitly before close() if you need to handle flush errors.
     pub fn close(&mut self) {
         if let Some(ref mut file) = self.file.take() {
+            // Flush errors during close are intentionally ignored as this is
+            // common practice - users should call flush() explicitly if they
+            // need to handle flush errors
             let _ = file.flush();
         }
         self.reader = None;

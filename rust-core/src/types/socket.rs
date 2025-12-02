@@ -582,7 +582,7 @@ impl UdpServer {
 
         match self.socket.receive(buffer) {
             Ok(result) => Ok(Some(result)),
-            Err(Error::Network(msg)) if msg.contains("timed out") => Ok(None),
+            Err(Error::Network(msg)) if msg.contains("timed out") || msg.contains("WouldBlock") => Ok(None),
             Err(e) => Err(e),
         }
     }
