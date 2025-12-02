@@ -4,6 +4,7 @@
 
 pub mod asset_path;
 pub mod bimap;
+pub mod biome;
 pub mod btree_db;
 mod byte_array;
 pub mod celestial;
@@ -13,6 +14,7 @@ pub mod compression;
 pub mod damage_types;
 pub mod either;
 mod encode;
+pub mod entity_types;
 pub mod file;
 pub mod game_types;
 mod host_address;
@@ -32,9 +34,11 @@ mod sha256;
 pub mod socket;
 pub mod string_util;
 pub mod thread;
+pub mod tile_damage;
 pub mod time;
 mod uuid;
 pub mod worker_pool;
+pub mod world_tiles;
 
 pub use asset_path::AssetPath;
 pub use bimap::BiMap;
@@ -113,6 +117,28 @@ pub use material_types::{
     FIRST_META_MATERIAL_ID, FIRST_META_MOD, MAX_MATERIAL_COLOR_VARIANT, NO_MOD_ID,
     NULL_MATERIAL_ID, OBJECT_PLATFORM_MATERIAL_ID, OBJECT_SOLID_MATERIAL_ID, STRUCTURE_MATERIAL_ID,
     UNDERGROUND_BIOME_MOD_ID,
+};
+
+// Biome types
+pub use biome::{
+    AmbientNoisesDescription, Biome, BiomeDatabase, BiomeEntry, BiomeItemDistribution,
+    BiomePlaceables, BiomePlacement, SpawnGroup, SpawnProfile, TreeVariant,
+};
+
+// Entity types
+pub use entity_types::{
+    ClientEntityMode, EntityFactory, EntityState, EntityType, MessageReceiver, Renderable,
+};
+
+// Tile damage types
+pub use tile_damage::{
+    tile_area_brush, TileDamage, TileDamageParameters, TileDamageStatus, TileDamageType,
+};
+
+// World tile types
+pub use world_tiles::{
+    BiomeIndex, ClientTile, NetTile, PredictedTile, RenderTile, ServerTile, WorldTile,
+    CURRENT_SERVER_TILE_VERSION, MAX_COLLISIONS_PER_SPACE,
 };
 
 /// Global random number functions
