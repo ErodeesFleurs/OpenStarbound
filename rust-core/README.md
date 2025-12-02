@@ -25,6 +25,11 @@ This crate provides fundamental data structures that are binary-compatible with 
 - **Sockets**: TCP and UDP socket types matching C++ `Star::TcpSocket` and `Star::UdpSocket`
 - **Image**: Image manipulation matching C++ `Star::Image`
 - **File I/O**: File and buffer operations matching C++ `Star::File` and `Star::IODevice`
+- **Lua Bindings**: Lua scripting engine compatible with C++ `Star::Lua`
+- **BTree Database**: Persistent key-value storage compatible with C++ `Star::BTreeDatabase`
+- **NetElement**: Network synchronization primitives compatible with C++ `Star::NetElement`
+- **LRU Cache**: Least-recently-used cache compatible with C++ `Star::LruCache`
+- **Worker Pool**: Thread pool for parallel execution compatible with C++ `Star::WorkerPool`
 - **Serialization**: Binary serialization compatible with C++ `StarDataStream` format
 - **Error Handling**: Comprehensive error types mirroring C++ exception hierarchy
 
@@ -35,7 +40,9 @@ use starbound_core::{
     Vec2F, Vec3F, Color, RectF, Json, Uuid, ByteArray, 
     RandomSource, Perlin, AssetPath, HostAddress, HostAddressWithPort,
     hex_encode, base64_encode, sha256, sha256_hex,
-    Thread, TcpSocket, UdpSocket, Image, FileSystem
+    Thread, TcpSocket, UdpSocket, Image, FileSystem,
+    LuaEngine, LuaValue, BTreeDatabase, NetElementVersion,
+    LruCache, WorkerPool
 };
 
 // Vector operations
@@ -95,6 +102,19 @@ let num_cores = Thread::number_of_processors();
 // File operations
 let content = FileSystem::read_to_string("config.json")?;
 FileSystem::write("output.txt", b"Hello, World!")?;
+
+// LRU Cache
+let mut cache = LruCache::new(100);
+cache.insert("key", "value");
+
+// Worker Pool
+let pool = WorkerPool::new(4);
+pool.submit(|| println!("Hello from worker thread!"));
+pool.wait();
+
+// Lua Engine
+let mut engine = LuaEngine::new(true);
+let context = engine.create_context();
 ```
 
 ## Binary Compatibility
@@ -115,7 +135,7 @@ cargo test
 
 ## Test Coverage
 
-- **190 unit tests** covering all core functionality
+- **252 unit tests** covering all core functionality
 - Math operations (vectors, rectangles)
 - Color conversions (RGB, HSV, hex)
 - JSON parsing and serialization
@@ -135,13 +155,18 @@ cargo test
 - Sockets (TCP, UDP)
 - Image manipulation (pixel formats, blending)
 - File I/O (read, write, buffers)
+- Lua scripting engine
+- BTree database operations
+- Network element synchronization
+- LRU cache eviction
+- Worker pool parallel execution
 - Binary serialization roundtrips
 
 ## Migration Strategy
 
 This crate is part of a phased migration plan:
 
-1. **Phase 1** (Complete): Core data types, serialization
+1. **Phase 1+** (Complete): Core data types, serialization, utilities
    - Vec2, Vec3, Vec4, Rect, Box
    - Color with HSV support
    - JSON value type
@@ -159,9 +184,14 @@ This crate is part of a phased migration plan:
    - Image type
    - File I/O
    - DataReader/DataWriter
+   - Lua scripting engine
+   - BTree database
+   - NetElement synchronization
+   - LRU cache
+   - Worker pool
 
-2. **Phase 2** (Next): Lua bindings (mlua), asset loading, world storage
-3. **Phase 3**: World generation, entity system
+2. **Phase 2** (Next): Asset loading system, world storage, Lua script integration
+3. **Phase 3**: World generation, entity system, physics
 4. **Phase 4**: Renderer (wgpu), UI, audio
 
 ## License

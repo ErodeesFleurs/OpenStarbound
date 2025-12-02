@@ -27,7 +27,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 1];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(buf[0])
     }
 
@@ -41,7 +41,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 2];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(u16::from_le_bytes(buf))
     }
 
@@ -50,7 +50,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 2];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(u16::from_be_bytes(buf))
     }
 
@@ -59,7 +59,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 2];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(i16::from_le_bytes(buf))
     }
 
@@ -68,7 +68,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 4];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(u32::from_le_bytes(buf))
     }
 
@@ -77,7 +77,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 4];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(u32::from_be_bytes(buf))
     }
 
@@ -86,7 +86,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 4];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(i32::from_le_bytes(buf))
     }
 
@@ -95,7 +95,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 8];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(u64::from_le_bytes(buf))
     }
 
@@ -104,7 +104,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 8];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(i64::from_le_bytes(buf))
     }
 
@@ -113,7 +113,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 4];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(f32::from_le_bytes(buf))
     }
 
@@ -122,7 +122,7 @@ impl<R: Read> DataReader<R> {
         let mut buf = [0u8; 8];
         self.reader
             .read_exact(&mut buf)
-            .map_err(|e| Error::Io(e))?;
+            .map_err(|e| Error::Io(e.to_string()))?;
         Ok(f64::from_le_bytes(buf))
     }
 
@@ -163,14 +163,14 @@ impl<R: Read> DataReader<R> {
     pub fn read_string(&mut self) -> Result<String> {
         let len = self.read_vlq_u64()? as usize;
         let mut buf = vec![0u8; len];
-        self.reader.read_exact(&mut buf).map_err(|e| Error::Io(e))?;
+        self.reader.read_exact(&mut buf).map_err(|e| Error::Io(e.to_string()))?;
         String::from_utf8(buf).map_err(|e| Error::Serialization(e.to_string()))
     }
 
     /// Read exact number of bytes
     pub fn read_bytes(&mut self, len: usize) -> Result<Vec<u8>> {
         let mut buf = vec![0u8; len];
-        self.reader.read_exact(&mut buf).map_err(|e| Error::Io(e))?;
+        self.reader.read_exact(&mut buf).map_err(|e| Error::Io(e.to_string()))?;
         Ok(buf)
     }
 
@@ -234,7 +234,7 @@ impl<W: Write> DataWriter<W> {
 
     /// Write a single byte
     pub fn write_u8(&mut self, value: u8) -> Result<()> {
-        self.writer.write_all(&[value]).map_err(|e| Error::Io(e))
+        self.writer.write_all(&[value]).map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a signed 8-bit integer
@@ -246,70 +246,70 @@ impl<W: Write> DataWriter<W> {
     pub fn write_u16_le(&mut self, value: u16) -> Result<()> {
         self.writer
             .write_all(&value.to_le_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a big-endian u16
     pub fn write_u16_be(&mut self, value: u16) -> Result<()> {
         self.writer
             .write_all(&value.to_be_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a little-endian i16
     pub fn write_i16_le(&mut self, value: i16) -> Result<()> {
         self.writer
             .write_all(&value.to_le_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a little-endian u32
     pub fn write_u32_le(&mut self, value: u32) -> Result<()> {
         self.writer
             .write_all(&value.to_le_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a big-endian u32
     pub fn write_u32_be(&mut self, value: u32) -> Result<()> {
         self.writer
             .write_all(&value.to_be_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a little-endian i32
     pub fn write_i32_le(&mut self, value: i32) -> Result<()> {
         self.writer
             .write_all(&value.to_le_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a little-endian u64
     pub fn write_u64_le(&mut self, value: u64) -> Result<()> {
         self.writer
             .write_all(&value.to_le_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a little-endian i64
     pub fn write_i64_le(&mut self, value: i64) -> Result<()> {
         self.writer
             .write_all(&value.to_le_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a little-endian f32
     pub fn write_f32_le(&mut self, value: f32) -> Result<()> {
         self.writer
             .write_all(&value.to_le_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a little-endian f64
     pub fn write_f64_le(&mut self, value: f64) -> Result<()> {
         self.writer
             .write_all(&value.to_le_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a boolean
@@ -320,13 +320,13 @@ impl<W: Write> DataWriter<W> {
     /// Write a VLQ-encoded unsigned integer
     pub fn write_vlq_u64(&mut self, value: u64) -> Result<()> {
         let bytes = vlq::encode_unsigned(value);
-        self.writer.write_all(&bytes).map_err(|e| Error::Io(e))
+        self.writer.write_all(&bytes).map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a VLQ-encoded signed integer
     pub fn write_vlq_i64(&mut self, value: i64) -> Result<()> {
         let bytes = vlq::encode_signed(value);
-        self.writer.write_all(&bytes).map_err(|e| Error::Io(e))
+        self.writer.write_all(&bytes).map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a length-prefixed string
@@ -334,12 +334,12 @@ impl<W: Write> DataWriter<W> {
         self.write_vlq_u64(value.len() as u64)?;
         self.writer
             .write_all(value.as_bytes())
-            .map_err(|e| Error::Io(e))
+            .map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write bytes
     pub fn write_bytes(&mut self, bytes: &[u8]) -> Result<()> {
-        self.writer.write_all(bytes).map_err(|e| Error::Io(e))
+        self.writer.write_all(bytes).map_err(|e| Error::Io(e.to_string()))
     }
 
     /// Write a length-prefixed byte array
@@ -385,7 +385,7 @@ impl<W: Write> DataWriter<W> {
 
     /// Flush the writer
     pub fn flush(&mut self) -> Result<()> {
-        self.writer.flush().map_err(|e| Error::Io(e))
+        self.writer.flush().map_err(|e| Error::Io(e.to_string()))
     }
 }
 

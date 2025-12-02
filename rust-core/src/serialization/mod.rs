@@ -7,6 +7,17 @@ mod data_stream;
 
 pub use data_stream::{DataReader, DataWriter};
 
+use std::io::Cursor;
+
+/// Type alias for DataReader with a byte slice
+pub type ByteDataReader<'a> = DataReader<&'a [u8]>;
+
+/// Type alias for DataReader with a Cursor over bytes
+pub type CursorDataReader = DataReader<Cursor<Vec<u8>>>;
+
+/// Type alias for DataWriter with a Vec
+pub type VecDataWriter = DataWriter<Vec<u8>>;
+
 /// VLQ (Variable Length Quantity) encoding used by Starbound
 pub mod vlq {
     /// Encode a u64 value as VLQ bytes

@@ -145,6 +145,21 @@ impl Json {
             .map_err(|e| crate::error::Error::Json(e))
     }
 
+    /// Get a reference to the inner serde_json::Value
+    pub fn as_value(&self) -> &serde_json::Value {
+        &self.0
+    }
+
+    /// Get a mutable reference to the inner serde_json::Value
+    pub fn as_value_mut(&mut self) -> &mut serde_json::Value {
+        &mut self.0
+    }
+
+    /// Convert into the inner serde_json::Value
+    pub fn into_value(self) -> serde_json::Value {
+        self.0
+    }
+
     // Type checking
 
     /// Get the type of this value

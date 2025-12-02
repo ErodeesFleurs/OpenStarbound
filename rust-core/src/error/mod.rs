@@ -31,13 +31,21 @@ pub enum Error {
     #[error("Network error: {0}")]
     Network(String),
 
+    /// Lua scripting error
+    #[error("Lua error: {0}")]
+    Lua(String),
+
+    /// Database error
+    #[error("Database error: {0}")]
+    Database(String),
+
     /// JSON parsing error
     #[error("JSON error: {0}")]
     Json(#[from] serde_json::Error),
 
     /// I/O error
     #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
+    Io(String),
 }
 
 impl Error {
@@ -53,7 +61,23 @@ impl Error {
 
     /// Create an I/O error from a message
     pub fn io<S: Into<String>>(msg: S) -> Self {
-        Error::Star(msg.into())
+        Error::Io(msg.into())
+    }
+
+    /// Create a Lua error
+    pub fn lua<S: Into<String>>(msg: S) -> Self {
+        Error::Lua(msg.into())
+    }
+
+    /// Create a database error
+    pub fn database<S: Into<String>>(msg: S) -> Self {
+        Error::Database(msg.into())
+    }
+}
+
+impl From<std::io::Error> for Error {
+    fn from(err: std::io::Error) -> Self {
+        Error::Io(err.to_string())
     }
 }
 
