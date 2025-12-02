@@ -11,13 +11,16 @@ This crate provides fundamental data structures that are binary-compatible with 
 - **JSON**: JSON value type compatible with C++ `Star::Json` (wraps serde_json)
 - **UUID**: Universal unique identifier matching C++ `Star::Uuid`
 - **ByteArray**: Binary data container matching C++ `Star::ByteArray`
+- **RandomSource**: Deterministic PRNG matching C++ `Star::RandomSource`
+- **Perlin Noise**: Coherent noise generation matching C++ `Star::Perlin`
+- **AssetPath**: Asset path parsing matching C++ `Star::AssetPath`
 - **Serialization**: Binary serialization compatible with C++ `StarDataStream` format
 - **Error Handling**: Comprehensive error types mirroring C++ exception hierarchy
 
 ## Usage
 
 ```rust
-use starbound_core::{Vec2F, Vec3F, Color, RectF, Json, Uuid, ByteArray};
+use starbound_core::{Vec2F, Vec3F, Color, RectF, Json, Uuid, ByteArray, RandomSource, Perlin, AssetPath};
 
 // Vector operations
 let v1 = Vec2F::new(1.0, 2.0);
@@ -44,6 +47,19 @@ println!("{}", uuid.to_string_formatted());
 // ByteArray operations
 let data = ByteArray::from_slice(&[0xDE, 0xAD, 0xBE, 0xEF]);
 println!("{}", data.to_hex()); // "deadbeef"
+
+// Random number generation
+let mut rng = RandomSource::with_seed(12345);
+let random_float = rng.randf();
+let random_int = rng.rand_int_range(1, 100);
+
+// Perlin noise
+let noise = Perlin::new(4, 1.0, 1.0, 0.0, 2.0, 2.0, 12345);
+let terrain_height = noise.get2(x, y);
+
+// Asset paths
+let path = AssetPath::split("/assets/image.png:frame1?scale=2");
+println!("{}", path.base_path); // "/assets/image.png"
 ```
 
 ## Binary Compatibility
@@ -64,12 +80,15 @@ cargo test
 
 ## Test Coverage
 
-- **70 unit tests** covering all core functionality
+- **97 unit tests** covering all core functionality
 - Math operations (vectors, rectangles)
 - Color conversions (RGB, HSV, hex)
 - JSON parsing and serialization
 - UUID generation and formatting
 - ByteArray operations (bitwise, slicing)
+- Random number generation (determinism, distributions)
+- Perlin noise (continuity, different noise types)
+- Asset path parsing
 - Binary serialization roundtrips
 
 ## Migration Strategy
@@ -81,6 +100,8 @@ This crate is part of a phased migration plan:
    - Color with HSV support
    - JSON value type
    - UUID, ByteArray
+   - RandomSource, Perlin noise
+   - AssetPath
    - DataReader/DataWriter
 
 2. **Phase 2** (Next): Network layer, asset loading, Lua bindings
