@@ -30,6 +30,11 @@ This crate provides fundamental data structures that are binary-compatible with 
 - **NetElement**: Network synchronization primitives compatible with C++ `Star::NetElement`
 - **LRU Cache**: Least-recently-used cache compatible with C++ `Star::LruCache`
 - **Worker Pool**: Thread pool for parallel execution compatible with C++ `Star::WorkerPool`
+- **Time**: Clock and timer utilities compatible with C++ `Star::Time`, `Star::Clock`, `Star::Timer`
+- **Logging**: Multi-sink logging system compatible with C++ `Star::Logger`
+- **Option Parser**: Command line argument parsing compatible with C++ `Star::OptionParser`
+- **Game Types**: Core game enums and constants compatible with C++ `Star::GameTypes`
+- **Damage Types**: Combat damage types compatible with C++ `Star::DamageTypes`
 - **Serialization**: Binary serialization compatible with C++ `StarDataStream` format
 - **Error Handling**: Comprehensive error types mirroring C++ exception hierarchy
 
@@ -42,7 +47,8 @@ use starbound_core::{
     hex_encode, base64_encode, sha256, sha256_hex,
     Thread, TcpSocket, UdpSocket, Image, FileSystem,
     LuaEngine, LuaValue, BTreeDatabase, NetElementVersion,
-    LruCache, WorkerPool
+    LruCache, WorkerPool, Clock, Timer, Logger, LogLevel,
+    OptionParser, Direction, Gender, Rarity, DamageType, TeamType
 };
 
 // Vector operations
@@ -112,6 +118,32 @@ let pool = WorkerPool::new(4);
 pool.submit(|| println!("Hello from worker thread!"));
 pool.wait();
 
+// Clock and Timer
+let clock = Clock::new(true);
+std::thread::sleep(std::time::Duration::from_millis(100));
+println!("Elapsed: {} ms", clock.milliseconds());
+
+let timer = Timer::with_time(5.0, true);
+println!("Time left: {}", timer.time_left(false));
+
+// Logging
+Logger::info("Application started");
+Logger::debug("Debug message");
+
+// Option Parser
+let mut parser = OptionParser::new();
+parser.set_command_name("myapp");
+parser.add_switch("v", "Verbose mode");
+parser.add_parameter("o", "file", RequirementMode::Required, "Output file");
+
+// Game Types
+let direction = Direction::Right;
+let rarity = Rarity::Legendary;
+
+// Damage Types
+let team = EntityDamageTeam::from_type(TeamType::Friendly);
+let can_hit = team.can_damage(EntityDamageTeam::from_type(TeamType::Enemy), false);
+
 // Lua Engine
 let mut engine = LuaEngine::new(true);
 let context = engine.create_context();
@@ -135,7 +167,7 @@ cargo test
 
 ## Test Coverage
 
-- **252 unit tests** covering all core functionality
+- **304 unit tests** covering all core functionality
 - Math operations (vectors, rectangles)
 - Color conversions (RGB, HSV, hex)
 - JSON parsing and serialization
@@ -160,6 +192,11 @@ cargo test
 - Network element synchronization
 - LRU cache eviction
 - Worker pool parallel execution
+- Clock and timer operations
+- Logging system
+- Option parser
+- Game type enums
+- Damage type calculations
 - Binary serialization roundtrips
 
 ## Migration Strategy
@@ -189,6 +226,11 @@ This crate is part of a phased migration plan:
    - NetElement synchronization
    - LRU cache
    - Worker pool
+   - Clock and Timer
+   - Logging system
+   - Option parser
+   - Game types (Direction, Gender, Rarity, etc.)
+   - Damage types (DamageType, TeamType, EntityDamageTeam)
 
 2. **Phase 2** (Next): Asset loading system, world storage, Lua script integration
 3. **Phase 3**: World generation, entity system, physics
