@@ -40,6 +40,9 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 
+# Rust build artifacts
+/rust-core/target/
+/rust-core/Cargo.lock
 
 .vscode/
 
