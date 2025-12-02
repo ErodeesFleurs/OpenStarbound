@@ -3,7 +3,7 @@
 //! This module provides a Color type that matches the binary layout
 //! and functionality of the C++ implementation.
 
-use crate::math::{Vec3, Vec3F, Vec4, Vec4B, Vec4F};
+use crate::math::{Vec3, Vec3F, Vec4B, Vec4F};
 use serde::{Deserialize, Serialize};
 use std::fmt;
 use std::str::FromStr;

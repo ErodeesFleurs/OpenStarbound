@@ -50,6 +50,11 @@ impl Error {
     pub fn network<S: Into<String>>(msg: S) -> Self {
         Error::Network(msg.into())
     }
+
+    /// Create an I/O error from a message
+    pub fn io<S: Into<String>>(msg: S) -> Self {
+        Error::Star(msg.into())
+    }
 }
 
 /// Result type alias for Starbound Core operations

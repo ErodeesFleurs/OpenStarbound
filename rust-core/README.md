@@ -17,6 +17,10 @@ This crate provides fundamental data structures that are binary-compatible with 
 - **Encoding**: Hex and Base64 encoding/decoding matching C++ `Star::Encode`
 - **SHA-256**: Cryptographic hashing matching C++ `Star::Sha256`
 - **Network**: Host address types matching C++ `Star::HostAddress`
+- **Compression**: Zlib compress/uncompress matching C++ `Star::Compression`
+- **BiMap**: Bidirectional map matching C++ `Star::BiMap`
+- **Either**: Left/Right container matching C++ `Star::Either`
+- **String Utilities**: String manipulation matching C++ `Star::String`
 - **Serialization**: Binary serialization compatible with C++ `StarDataStream` format
 - **Error Handling**: Comprehensive error types mirroring C++ exception hierarchy
 
@@ -98,7 +102,7 @@ cargo test
 
 ## Test Coverage
 
-- **122 unit tests** covering all core functionality
+- **152 unit tests** covering all core functionality
 - Math operations (vectors, rectangles)
 - Color conversions (RGB, HSV, hex)
 - JSON parsing and serialization
@@ -110,6 +114,10 @@ cargo test
 - Encoding (hex, base64)
 - SHA-256 hashing (standard test vectors)
 - Network addresses (IPv4, IPv6)
+- Compression (zlib, multiple levels)
+- BiMap (bidirectional mapping)
+- Either (left/right container)
+- String utilities (case sensitivity, escaping)
 - Binary serialization roundtrips
 
 ## Migration Strategy
@@ -126,6 +134,9 @@ This crate is part of a phased migration plan:
    - Hex/Base64 encoding
    - SHA-256 hashing
    - HostAddress, HostAddressWithPort
+   - Compression (zlib)
+   - BiMap, Either
+   - String utilities
    - DataReader/DataWriter
 
 2. **Phase 2** (Next): Network layer, asset loading, Lua bindings

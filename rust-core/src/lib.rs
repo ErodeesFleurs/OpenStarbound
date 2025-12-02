@@ -20,10 +20,11 @@ pub mod types;
 pub use error::{Error, Result};
 pub use math::{Rect, RectF, RectI, Vec2, Vec2F, Vec2I, Vec3, Vec3F, Vec3I, Vec4, Vec4B, Vec4F};
 pub use types::{
-    base64_decode, base64_encode, global_random, hex_decode, hex_encode, sha256, sha256_hex,
-    sha256_str, AssetPath, ByteArray, Color, HostAddress, HostAddressWithPort, Json, JsonType,
-    NetworkMode, Perlin, PerlinF, PerlinType, RandomSource, Sha256Hasher, Uuid, SHA256_SIZE,
-    UUID_SIZE,
+    base64_decode, base64_encode, compress, global_random, hex_decode, hex_encode, sha256,
+    sha256_hex, sha256_str, uncompress, AssetPath, BiMap, ByteArray, CaseSensitivity, Color,
+    CompressionLevel, Either, HostAddress, HostAddressWithPort, Json, JsonType, NetworkMode,
+    Perlin, PerlinF, PerlinType, RandomSource, Sha256Hasher, Uuid, HIGH_COMPRESSION,
+    LOW_COMPRESSION, MEDIUM_COMPRESSION, SHA256_SIZE, UUID_SIZE,
 };
 
 /// Version information for compatibility checking
