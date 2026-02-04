@@ -120,6 +120,37 @@ SET (star_frontend_SOURCES
 
 ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
 
+TARGET_INCLUDE_DIRECTORIES(star_frontend PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/core
+    ${PROJECT_SOURCE_DIR}/base
+    ${PROJECT_SOURCE_DIR}/game
+    ${PROJECT_SOURCE_DIR}/game/interfaces
+    ${PROJECT_SOURCE_DIR}/game/scripting
+    ${PROJECT_SOURCE_DIR}/rendering
+    ${PROJECT_SOURCE_DIR}/windowing
+    ${PROJECT_SOURCE_DIR}/platform
+    ${PROJECT_SOURCE_DIR}/application
+    ${PROJECT_SOURCE_DIR}/extern
+    ${PROJECT_SOURCE_DIR}/extern/fmt
+    ${PROJECT_SOURCE_DIR}/extern/lua
+)
+
+TARGET_INCLUDE_DIRECTORIES(star_frontend SYSTEM PRIVATE
+    ${SDL2_INCLUDE_DIRS}
+    ${OPUS_INCLUDE_DIRS}
+)
+
+TARGET_LINK_LIBRARIES(star_frontend PUBLIC
+    star_windowing
+    star_application
+    star_rendering
+    star_game
+    star_base
+    star_core
+    star_extern
+)
+
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_frontend REUSE_FROM star_core)
 ENDIF()

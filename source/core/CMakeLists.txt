@@ -1,8 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-  )
-
 SET (star_core_HEADERS
     StarAStar.hpp
     StarAlgorithm.hpp
@@ -199,7 +194,7 @@ SET (star_core_SOURCES
     scripting/StarUtilityLuaBindings.cpp
   )
 
-IF (STAR_SYSTEM_FAMILY_UNIX)
+IF (UNIX)
   SET (star_core_SOURCES ${star_core_SOURCES}
       StarDynamicLib_unix.cpp
       StarException_unix.cpp
@@ -210,7 +205,7 @@ IF (STAR_SYSTEM_FAMILY_UNIX)
       StarThread_unix.cpp
       StarTime_unix.cpp
     )
-ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
+ELSEIF (WIN32)
   SET (star_core_HEADERS ${star_core_HEADERS}
       StarString_windows.hpp
     )
@@ -231,7 +226,24 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
 ENDIF ()
 
 CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
-ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
+
+ADD_LIBRARY (star_core OBJECT
+    ${star_core_SOURCES}
+    ${star_core_HEADERS}
+    ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp
+)
+
+TARGET_INCLUDE_DIRECTORIES(star_core PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/extern
+    ${PROJECT_SOURCE_DIR}/extern/fmt
+    ${PROJECT_SOURCE_DIR}/extern/lua
+)
+
+TARGET_LINK_LIBRARIES(star_core PUBLIC
+    star_extern
+    ${STAR_EXT_LIBS}
+)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)

@@ -1,11 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-  )
-
 SET (star_game_HEADERS
     StarActorMovementController.hpp
     StarAiDatabase.hpp
@@ -520,6 +512,29 @@ SET (star_game_SOURCES
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
+
+TARGET_INCLUDE_DIRECTORIES(star_game PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/interfaces
+    ${CMAKE_CURRENT_SOURCE_DIR}/items
+    ${CMAKE_CURRENT_SOURCE_DIR}/objects
+    ${CMAKE_CURRENT_SOURCE_DIR}/scripting
+    ${CMAKE_CURRENT_SOURCE_DIR}/terrain
+    ${PROJECT_SOURCE_DIR}/core
+    ${PROJECT_SOURCE_DIR}/core/scripting
+    ${PROJECT_SOURCE_DIR}/base
+    ${PROJECT_SOURCE_DIR}/base/scripting
+    ${PROJECT_SOURCE_DIR}/platform
+    ${PROJECT_SOURCE_DIR}/extern
+    ${PROJECT_SOURCE_DIR}/extern/fmt
+    ${PROJECT_SOURCE_DIR}/extern/lua
+)
+
+TARGET_LINK_LIBRARIES(star_game PUBLIC
+    star_core
+    star_base
+    star_extern
+)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_game REUSE_FROM star_core)

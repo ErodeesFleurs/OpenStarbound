@@ -1,9 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    fmt
-    lua
-  )
-
 SET (star_extern_HEADERS
     curve25519/include/curve25519_dh.h
     curve25519/include/ed25519_signature.h
@@ -74,15 +68,18 @@ SET (star_extern_SOURCES
     lua/lzio.c
   )
 
-  
+
 IF (STAR_USE_RPMALLOC)
-  SET(star_extern_HEADERS ${star_extern_HEADERS}
-    rpmalloc.h
-    rpnew.h
-  )
-  SET(star_extern_SOURCES ${star_extern_SOURCES}
-    rpmalloc.c
-  )
+    LIST(APPEND star_extern_HEADERS rpmalloc.h rpnew.h)
+    LIST(APPEND star_extern_SOURCES rpmalloc.c)
 ENDIF()
 
-ADD_LIBRARY (star_extern OBJECT ${star_extern_SOURCES} ${star_extern_HEADERS})
+ADD_LIBRARY(star_extern OBJECT ${star_extern_SOURCES} ${star_extern_HEADERS})
+
+TARGET_INCLUDE_DIRECTORIES(star_extern PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/lua
+    ${CMAKE_CURRENT_SOURCE_DIR}/curve25519/include
+)
+
+SET_TARGET_PROPERTIES(star_extern PROPERTIES C_VISIBILITY_PRESET hidden)

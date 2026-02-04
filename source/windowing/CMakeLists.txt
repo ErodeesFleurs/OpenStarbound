@@ -1,14 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_APPLICATION_INCLUDES}
-    ${STAR_RENDERING_INCLUDES}
-    ${STAR_WINDOWING_INCLUDES}
-  )
-
 SET (star_windowing_HEADERS
         StarButtonGroup.hpp
         StarButtonWidget.hpp
@@ -76,3 +65,32 @@ SET (star_windowing_SOURCES
     )
 
 ADD_LIBRARY (star_windowing OBJECT ${star_windowing_SOURCES} ${star_windowing_HEADERS})
+
+TARGET_INCLUDE_DIRECTORIES(star_windowing PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/application
+    ${PROJECT_SOURCE_DIR}/core
+    ${PROJECT_SOURCE_DIR}/base
+    ${PROJECT_SOURCE_DIR}/base/scripting
+    ${PROJECT_SOURCE_DIR}/game
+    ${PROJECT_SOURCE_DIR}/game/interfaces
+    ${PROJECT_SOURCE_DIR}/game/scripting
+    ${PROJECT_SOURCE_DIR}/rendering
+    ${PROJECT_SOURCE_DIR}/platform
+    ${PROJECT_SOURCE_DIR}/extern
+    ${PROJECT_SOURCE_DIR}/extern/fmt
+    ${PROJECT_SOURCE_DIR}/extern/lua
+)
+
+TARGET_LINK_LIBRARIES(star_windowing PUBLIC
+    star_application
+    star_game
+    star_rendering
+    star_base
+    star_core
+    star_extern
+)
+
+IF(STAR_PRECOMPILED_HEADERS)
+  TARGET_PRECOMPILE_HEADERS (star_windowing REUSE_FROM star_core)
+ENDIF()

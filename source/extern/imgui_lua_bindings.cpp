@@ -10,9 +10,13 @@ extern "C" {
 
 #include "imgui_lua_bindings.hpp"
 
-#ifdef STAR_COMPILER_CLANG
-#pragma clang diagnostic ignored "-Wunused-variable"
-#pragma clang diagnostic ignored "-Wformat-security"
+#if defined(__clang__)
+  #pragma clang diagnostic ignored "-Wunused-variable"
+  #pragma clang diagnostic ignored "-Wformat-security"
+  #pragma clang diagnostic ignored "-Wunused-parameter"
+#elif defined(__GNUC__)
+  #pragma GCC diagnostic ignored "-Wunused-parameter"
+  #pragma GCC diagnostic ignored "-Wformat-security"
 #endif
 
 // THIS IS FOR LUA 5.3 although you can make a few changes for other versions
@@ -50,7 +54,7 @@ static void ImEndStack(int type);
 // returns NULL on success and error string on error
 const char * RunString(
 #if LUA_BINDINGS_LOCAL_STATE
-    lua_State* lState, 
+    lua_State* lState,
 #endif
     const char* szLua) {
   if (!lState) {

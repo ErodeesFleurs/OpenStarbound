@@ -1,40 +1,54 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-  )
+SET(UTILITY_INCLUDES
+    ${PROJECT_SOURCE_DIR}/core
+    ${PROJECT_SOURCE_DIR}/base
+    ${PROJECT_SOURCE_DIR}/base/scripting
+    ${PROJECT_SOURCE_DIR}/game
+    ${PROJECT_SOURCE_DIR}/game/interfaces
+    ${PROJECT_SOURCE_DIR}/game/scripting
+    ${PROJECT_SOURCE_DIR}/extern
+    ${PROJECT_SOURCE_DIR}/extern/fmt
+    ${PROJECT_SOURCE_DIR}/extern/lua
+)
 
-ADD_EXECUTABLE (asset_packer
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
-  asset_packer.cpp)
-TARGET_LINK_LIBRARIES (asset_packer ${STAR_EXT_LIBS})
+macro(configure_star_utility NAME)
+    TARGET_INCLUDE_DIRECTORIES(${NAME} PRIVATE ${UTILITY_INCLUDES})
+    TARGET_LINK_LIBRARIES(${NAME} PRIVATE
+    $<TARGET_OBJECTS:star_game>
+    $<TARGET_OBJECTS:star_base>
+    $<TARGET_OBJECTS:star_core>
+    $<TARGET_OBJECTS:star_extern>
+    ${STAR_EXT_LIBS}
+    z pthread dl
+    )
 
-ADD_EXECUTABLE (asset_unpacker
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
-  asset_unpacker.cpp)
-TARGET_LINK_LIBRARIES (asset_unpacker ${STAR_EXT_LIBS})
+    if(NOT MSVC)
+        target_compile_options(${NAME} PRIVATE -Wno-nan-infinity-disabled)
+    endif()
 
-ADD_EXECUTABLE (btree_repacker
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
-  btree_repacker.cpp)
-TARGET_LINK_LIBRARIES (btree_repacker ${STAR_EXT_LIBS})
+    if(STAR_PRECOMPILED_HEADERS)
+        TARGET_PRECOMPILE_HEADERS(${NAME} REUSE_FROM star_core)
+    endif()
+endmacro()
 
-ADD_EXECUTABLE (dump_versioned_json
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-  dump_versioned_json.cpp)
-TARGET_LINK_LIBRARIES (dump_versioned_json ${STAR_EXT_LIBS})
+ADD_EXECUTABLE(asset_packer asset_packer.cpp ${UTILITY_INCLUDES})
+configure_star_utility(asset_packer)
+
+ADD_EXECUTABLE(asset_unpacker asset_unpacker.cpp ${UTILITY_INCLUDES})
+configure_star_utility(asset_unpacker)
+
+ADD_EXECUTABLE(btree_repacker btree_repacker.cpp ${UTILITY_INCLUDES})
+configure_star_utility(btree_repacker)
+
+ADD_EXECUTABLE(dump_versioned_json dump_versioned_json.cpp ${UTILITY_INCLUDES})
+configure_star_utility(dump_versioned_json)
+
+ADD_EXECUTABLE(make_versioned_json make_versioned_json.cpp ${UTILITY_INCLUDES})
+configure_star_utility(make_versioned_json)
 
 #ADD_EXECUTABLE (game_repl
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
 #  game_repl.cpp)
 #TARGET_LINK_LIBRARIES (game_repl ${STAR_EXT_LIBS})
-
-ADD_EXECUTABLE (make_versioned_json
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-  make_versioned_json.cpp)
-TARGET_LINK_LIBRARIES (make_versioned_json ${STAR_EXT_LIBS})
 
 #ADD_EXECUTABLE (planet_mapgen
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>

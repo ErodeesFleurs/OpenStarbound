@@ -1,9 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-  )
-
 SET (star_base_HEADERS
     StarAnimatedPartSet.hpp
     StarAssets.hpp
@@ -40,6 +34,21 @@ SET (star_base_SOURCES
   )
 
 ADD_LIBRARY (star_base OBJECT ${star_base_SOURCES} ${star_base_HEADERS})
+
+TARGET_INCLUDE_DIRECTORIES(star_base PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/scripting
+    ${PROJECT_SOURCE_DIR}/core
+    ${PROJECT_SOURCE_DIR}/core/scripting
+    ${PROJECT_SOURCE_DIR}/extern
+    ${PROJECT_SOURCE_DIR}/extern/fmt
+)
+
+TARGET_LINK_LIBRARIES(star_base PUBLIC
+    star_core
+    star_extern
+    ${STAR_EXT_LIBS}
+)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_base REUSE_FROM star_core)

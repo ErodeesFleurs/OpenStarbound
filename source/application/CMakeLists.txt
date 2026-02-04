@@ -1,10 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_APPLICATION_INCLUDES}
-  )
-
 SET (star_application_HEADERS
     StarApplication.hpp
     StarApplicationController.hpp
@@ -63,6 +56,33 @@ IF (STAR_ENABLE_DISCORD_INTEGRATION)
 ENDIF ()
 
 ADD_LIBRARY (star_application OBJECT ${star_application_SOURCES} ${star_application_HEADERS})
+
+TARGET_INCLUDE_DIRECTORIES(star_application PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${PROJECT_SOURCE_DIR}/core
+    ${PROJECT_SOURCE_DIR}/base
+    ${PROJECT_SOURCE_DIR}/game
+    ${PROJECT_SOURCE_DIR}/rendering
+    ${PROJECT_SOURCE_DIR}/platform
+    ${PROJECT_SOURCE_DIR}/extern
+    ${PROJECT_SOURCE_DIR}/extern/fmt
+    ${PROJECT_SOURCE_DIR}/extern/lua
+    ${CMAKE_CURRENT_SOURCE_DIR}/discord
+)
+
+TARGET_INCLUDE_DIRECTORIES(star_application SYSTEM PRIVATE
+    ${SDL2_INCLUDE_DIRS}
+    ${OPENGL_INCLUDE_DIR}
+    ${GLEW_INCLUDE_DIRS}
+)
+
+TARGET_LINK_LIBRARIES(star_application PUBLIC
+    star_rendering
+    star_game
+    star_platform
+    star_core
+    star_extern
+)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_application REUSE_FROM star_core)
