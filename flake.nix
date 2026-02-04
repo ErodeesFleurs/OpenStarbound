@@ -24,14 +24,11 @@
       {
         devShells.default = pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } {
           nativeBuildInputs = with pkgs; [
-            rust-analyzer
-            rustc
-            cargo
             pkg-config
-            clang
             cmake
             ninja
             vcpkg
+            clang-tools
           ];
 
           buildInputs = with pkgs; [
@@ -54,8 +51,6 @@
           ];
 
           env = {
-            CC = "clang";
-            CXX = "clang++";
           };
         };
 
