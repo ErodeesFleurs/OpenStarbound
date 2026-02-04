@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarMathCommon.hpp"
+#include "StarMaybe.hpp"
 
 namespace Star {
 

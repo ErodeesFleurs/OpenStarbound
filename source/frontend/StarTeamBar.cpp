@@ -1,4 +1,5 @@
 #include "StarTeamBar.hpp"
+#include "StarClientContext.hpp" // IWYU pragma: keep
 #include "StarMainInterface.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"

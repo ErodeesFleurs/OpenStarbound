@@ -3,7 +3,7 @@
 #include "StarRootLuaBindings.hpp"
 #include "StarScriptableThread.hpp"
 #include "StarRpcThreadPromise.hpp"
-#include "StarLuaGameConverters.hpp"
+#include "StarLuaGameConverters.hpp" // IWYU pragma: keep
 
 namespace Star {
 
@@ -163,7 +163,7 @@ bool LuaBaseComponent::checkInitialization() {
 
 LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
   LuaCallbacks callbacks;
-  
+
   callbacks.registerCallback("create", [this](Json parameters) {
     auto name = parameters.getString("name");
     if (m_threads.contains(name)) {
@@ -189,7 +189,7 @@ LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
     m_threads.get(threadName)->passMessage({ message, args, pair.second });
     return pair.first;
   });
-  
+
   return callbacks;
 }
 

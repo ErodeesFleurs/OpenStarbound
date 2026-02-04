@@ -80,7 +80,7 @@ public:
   // Behaves like tileEach, but gathers the results of calling the function into
   // a MultiArray
   template <typename Function>
-  MultiArray<std::result_of_t<Function(Vec2I, Tile)>, 2> tileEachResult(RectI const& region, Function&& function) const;
+  MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> tileEachResult(RectI const& region, Function&& function) const;
 
   // Fastest way to copy data from the tile array to a given target array.
   // Takes a multi-array and a region and a function, resizes the multi-array
@@ -317,8 +317,8 @@ void TileSectorArray<Tile, SectorSize>::tileEach(RectI const& region, Function&&
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-MultiArray<std::result_of_t<Function(Vec2I, Tile)>, 2> TileSectorArray<Tile, SectorSize>::tileEachResult(RectI const& region, Function&& function) const {
-  MultiArray<std::result_of_t<Function(Vec2I, Tile)>, 2> res;
+MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> TileSectorArray<Tile, SectorSize>::tileEachResult(RectI const& region, Function&& function) const {
+  MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> res;
   tileEachTo(res, region, [&](auto& res, Vec2I const& pos, Tile const& tile) { res = function(pos, tile); });
   return res;
 }

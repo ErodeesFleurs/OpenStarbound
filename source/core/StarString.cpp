@@ -1,6 +1,5 @@
 #include "StarString.hpp"
 #include "StarStringView.hpp"
-#include "StarBytes.hpp"
 #include "StarFormat.hpp"
 
 #include <cctype>
@@ -1131,7 +1130,3 @@ size_t hash<StringList>::operator()(StringList const& sl) const {
 }
 
 }
-
-fmt::appender fmt::formatter<Star::String>::format(Star::String const& s, format_context& ctx) const {
-  return formatter<std::string>::format(s.utf8(), ctx);
-};

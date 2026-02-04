@@ -1,4 +1,4 @@
 CompileFlags:
-  Add: [-std=c++26, -fmodules, -Wall, -Wextra, -Werror]
+  Add: [-std=c++26, -fmodules, -Wall, -Wextra, -Werror, -ferror-limit=0]
   Remove: ["-Werror"]
   Compiler: clang++

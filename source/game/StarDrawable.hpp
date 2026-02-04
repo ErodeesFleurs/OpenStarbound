@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarString.hpp"
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"

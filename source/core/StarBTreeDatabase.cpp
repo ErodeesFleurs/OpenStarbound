@@ -1,7 +1,9 @@
+#include "StarDataStreamDevices.hpp"
 #include "StarBTreeDatabase.hpp"
 #include "StarSha256.hpp"
 #include "StarVlqEncoding.hpp"
 #include "StarLogging.hpp"
+#include "StarTime.hpp"
 
 namespace Star {
 
@@ -1121,8 +1123,8 @@ void BTreeDatabase::doCommit() {
     }
   }
 
-  
-  commitWrites(); 
+
+  commitWrites();
   writeRoot();
   m_uncommitted.clear();
 }
@@ -1138,7 +1140,7 @@ void BTreeDatabase::commitWrites() {
 bool BTreeDatabase::tryFlatten() {
   if (m_headFreeIndexBlock == InvalidBlockIndex || m_rootIsLeaf || !m_device->isWritable())
     return false;
-  
+
   BlockIndex freeBlockCount = 0;
   BlockIndex indexBlockIndex = m_headFreeIndexBlock;
   while (indexBlockIndex != InvalidBlockIndex) {

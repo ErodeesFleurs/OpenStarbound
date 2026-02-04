@@ -7,20 +7,19 @@
 #include "StarMemoryAssetSource.hpp"
 #include "StarJsonBuilder.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarJsonPatch.hpp"
 #include "StarIterator.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarLogging.hpp"
-#include "StarRandom.hpp"
 #include "StarFont.hpp"
 #include "StarAudio.hpp"
 #include "StarCasting.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarSha256.hpp"
 #include "StarDataStreamDevices.hpp"
+#include "StarJsonPatch.hpp"
 #include "StarLua.hpp"
 #include "StarImageLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+#include <string_view>
 
 namespace Star {
 
@@ -65,7 +64,7 @@ static const char* validateBasePath(std::string_view const& basePath) {
 static bool validatePath(AssetPath const& components, bool canContainSubPath, bool canContainDirectives, bool throwing = true) {
   if (auto error = validateBasePath(components.basePath.utf8())) {
     if (throwing)
-      throw AssetException::format(error, components.basePath.utf8());
+      throw AssetException::vformat(error, components.basePath.utf8());
     else
       return false;
   }
@@ -85,14 +84,14 @@ static bool validatePath(AssetPath const& components, bool canContainSubPath, bo
   return true;
 }
 
-static bool validatePath(StringView path, bool canContainSubPath, bool canContainDirectives, bool throwing = true) {
+[[maybe_unused]]static bool validatePath(StringView path, [[maybe_unused]]bool  canContainSubPath, bool canContainDirectives, bool throwing = true) {
   std::string_view const& str = path.utf8();
 
   size_t end = str.find_first_of(":?");
   auto basePath = str.substr(0, end);
   if (auto error = validateBasePath(basePath)) {
     if (throwing)
-      throw AssetException::format(error, basePath);
+      throw AssetException::vformat(error, basePath);
     else
       return false;
   }
@@ -104,19 +103,19 @@ static bool validatePath(StringView path, bool canContainSubPath, bool canContai
       end = str.find_first_of('?', beg);
       if (end == NPos && beg + 1 != str.size())
         subPath = true;
-      else if (size_t len = end - beg)
+      else if (size_t _ = end - beg)
         subPath = true;
     }
   }
 
   if (subPath) {
     if (throwing)
-      throw AssetException::format("Path '{}' cannot contain sub-path", path);
+      throw AssetException::format(std::string_view("Path '{}' cannot contain sub-path"), path);
     else
       return false;
   } else if (end != NPos && str[end] == '?' && !canContainDirectives) {
     if (throwing)
-      throw AssetException::format("Path '{}' cannot contain directives", path);
+      throw AssetException::format(std::string_view("Path '{}' cannot contain directives"), path);
     else
       return false;
   }
@@ -315,7 +314,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
                   if (patch.isType(Json::Type::String))
                     p->patchSources.append({patch.toString(), source});
                   else
-                    p->patchSources.append({strf("{}:[{}].patches[{}]", filename, patchIndex, i), source});
+                    p->patchSources.append({strf(std::string_view("{}:[{}].patches[{}]"), filename, patchIndex, i), source});
                 }
               }
             }
@@ -344,11 +343,11 @@ Assets::Assets(Settings settings, StringList assetSources) {
     auto metadata = source->metadata();
     if (auto scripts = metadata.ptr("scripts")) {
       if (auto scriptGroup = scripts->optArray(groupName)) {
-        auto memoryName = strf("{}::{}", metadata.value("name", File::baseName(sourcePath)), groupName);
+        auto memoryName = strf(std::string_view("{}::{}"), metadata.value("name", File::baseName(sourcePath)), groupName);
         JsonObject memoryMetadata{ {"name", memoryName} };
         auto memoryAssets = make_shared<MemoryAssetSource>(memoryName, memoryMetadata);
         auto now = Time::monotonicTime();
-        Logger::info("Running {} scripts {}", groupName, *scriptGroup);
+        Logger::info(std::string_view("Running {} scripts {}"), groupName, *scriptGroup);
         try {
           auto context = luaEngine->createContext();
           decorateLuaContext(context, memoryAssets);
@@ -358,11 +357,11 @@ Assets::Assets(Settings settings, StringList assetSources) {
             context.load(script, path);
           }
         } catch (LuaException const& e) {
-          Logger::error("Exception while running {} scripts from asset source '{}': {}", groupName, sourcePath, e.what());
+          Logger::error(std::string_view("Exception while running {} scripts from asset source '{}': {}"), groupName, sourcePath, e.what());
         }
-        Logger::info("Took {} seconds to run {} scripts {}", Time::monotonicTime() - now, groupName, *scriptGroup);
+        Logger::info(std::string_view("Took {} seconds to run {} scripts {}"), Time::monotonicTime() - now, groupName, *scriptGroup);
         if (!memoryAssets->empty())
-          addSource(strf("{}::{}", sourcePath, groupName), memoryAssets);
+          addSource(strf(std::string_view("{}::{}"), sourcePath, groupName), memoryAssets);
       }
     }
     // clear any caching that may have been trigered by load scripts as they may no longer be valid
@@ -373,7 +372,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
   List<pair<String, AssetSourcePtr>> sources;
 
   for (auto& sourcePath : m_assetSources) {
-    Logger::info("Loading assets from: '{}'", sourcePath);
+    Logger::info(std::string_view("Loading assets from: '{}'"), sourcePath);
     AssetSourcePtr source;
     if (File::isDirectory(sourcePath))
       source = std::make_shared<DirectoryAssetSource>(sourcePath, m_settings.pathIgnore);
@@ -420,7 +419,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
 
   // preload.config contains an array of files which will be loaded and then told to persist
   Json preload = json("/preload.config");
-  Logger::info("Preloading assets");
+  Logger::info(std::string_view("Preloading assets"));
   for (auto script : preload.iterateArray()) {
     auto type = AssetTypeNames.getLeft(script.getString("type"));
     auto path = script.getString("path");
@@ -483,7 +482,7 @@ String Assets::assetSource(String const& path) const {
   MutexLocker assetsLocker(m_assetsMutex);
   if (auto p = m_files.ptr(path))
     return m_assetSourcePaths.getLeft(p->source);
-  throw AssetException(strf("No such asset '{}'", path));
+  throw AssetException(strf(std::string_view("No such asset '{}'"), path));
 }
 
 Maybe<String> Assets::assetSourcePath(AssetSourcePtr const& source) const {
@@ -702,23 +701,23 @@ size_t Assets::AssetIdHash::operator()(AssetId const& id) const {
 }
 
 bool Assets::JsonData::shouldPersist() const {
-  return forcePersist || !json.unique();
+  return forcePersist || json.unique();
 }
 
 bool Assets::ImageData::shouldPersist() const {
-  return forcePersist || (!alias && !image.unique());
+  return forcePersist || (!alias && image.use_count() != 1);
 }
 
 bool Assets::AudioData::shouldPersist() const {
-  return forcePersist || !audio.unique();
+  return forcePersist || audio.use_count() != 1;
 }
 
 bool Assets::FontData::shouldPersist() const {
-  return forcePersist || !font.unique();
+  return forcePersist || font.use_count() != 1;
 }
 
 bool Assets::BytesData::shouldPersist() const {
-  return forcePersist || !bytes.unique();
+  return forcePersist || bytes.use_count() != 1;
 }
 
 FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, String path) {
@@ -732,7 +731,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
       RectU rect = RectU(jsonToRectI(pair.second));
       if (rect.isEmpty())
         throw AssetException(
-            strf("Empty rect in frame specification in image {} frame {}", framesSpecification.framesFile, frameName));
+            strf(std::string_view("Empty rect in frame specification in image {} frame {}"), framesSpecification.framesFile, frameName));
       else
         framesSpecification.frames[frameName] = rect;
     }
@@ -746,13 +745,13 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
     Vec2U dimensions(jsonToVec2I(grid.get("dimensions")));
 
     if (dimensions[0] == 0 || dimensions[1] == 0)
-      throw AssetException(strf("Image {} \"dimensions\" in frameGrid cannot be zero", framesSpecification.framesFile));
+      throw AssetException(strf(std::string_view("Image {} \"dimensions\" in frameGrid cannot be zero"), framesSpecification.framesFile));
 
     if (grid.contains("names")) {
       auto nameList = grid.get("names");
       for (size_t y = 0; y < nameList.size(); ++y) {
         if (y >= dimensions[1])
-          throw AssetException(strf("Image {} row {} is out of bounds for y-dimension {}",
+          throw AssetException(strf(std::string_view("Image {} row {} is out of bounds for y-dimension {}"),
               framesSpecification.framesFile,
               y + 1,
               dimensions[1]));
@@ -761,7 +760,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
           continue;
         for (unsigned x = 0; x < rowList.size(); ++x) {
           if (x >= dimensions[0])
-            throw AssetException(strf("Image {} column {} is out of bounds for x-dimension {}",
+            throw AssetException(strf(std::string_view("Image {} column {} is out of bounds for x-dimension {}"),
                 framesSpecification.framesFile,
                 x + 1,
                 dimensions[0]));
@@ -797,7 +796,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
         auto it = aliases->find(value);
         if (it != aliases->end()) {
           if (i == aliases->size())
-            throw AssetException(strf("Infinite alias loop detected for alias '{}'", key));
+            throw AssetException(strf(std::string_view("Infinite alias loop detected for alias '{}'"), key));
 
           value = it->second.toString();
         } else {
@@ -806,7 +805,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
       }
 
       if (!framesSpecification.frames.contains(value))
-        throw AssetException(strf("No such frame '{}' found for alias '{}'", value, key));
+        throw AssetException(strf(std::string_view("No such frame '{}' found for alias '{}'"), value, key));
       framesSpecification.aliases[key] = std::move(value);
     }
   }
@@ -844,7 +843,7 @@ shared_ptr<Assets::AssetData> Assets::tryAsset(AssetId const& id) const {
       freshen(i->second);
       return i->second;
     } else {
-      throw AssetException::format("Error loading asset {}", id.path);
+      throw AssetException::format(std::string_view("Error loading asset {}"), id.path);
     }
   } else {
     auto j = m_queue.find(id);
@@ -867,7 +866,7 @@ shared_ptr<Assets::AssetData> Assets::getAsset(AssetId const& id) const {
         freshen(asset);
         return asset;
       } else {
-        throw AssetException::format("Error loading asset {}", id.path);
+        throw AssetException::format(std::string_view("Error loading asset {}"), id.path);
       }
     } else {
       // Try to load the asset in-thread, if we cannot, then the asset has been
@@ -1004,13 +1003,13 @@ FramesSpecificationConstPtr Assets::bestFramesSpecification(String const& image)
 IODevicePtr Assets::open(String const& path) const {
   if (auto p = m_files.ptr(path))
     return p->source->open(p->sourceName);
-  throw AssetException(strf("No such asset '{}'", path));
+  throw AssetException(strf(std::string_view("No such asset '{}'"), path));
 }
 
 ByteArray Assets::read(String const& path) const {
   if (auto p = m_files.ptr(path))
     return p->source->read(p->sourceName);
-  throw AssetException(strf("No such asset '{}'", path));
+  throw AssetException(strf(std::string_view("No such asset '{}'"), path));
 }
 
 ImageConstPtr Assets::readImage(String const& path) const {
@@ -1026,7 +1025,7 @@ ImageConstPtr Assets::readImage(String const& path) const {
     }
     return image;
   }
-  throw AssetException(strf("No such asset '{}'", path));
+  throw AssetException(strf(std::string_view("No such asset '{}'"), path));
 }
 
 ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path, List<pair<String, AssetSourcePtr>> patches) const {
@@ -1052,14 +1051,14 @@ ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path,
           if (ud->is<Image>())
             result = std::move(newResult);
           else
-            Logger::warn("Patch '{}' for image '{}' returned a non-Image userdata value, ignoring");
+            Logger::warn("Patch '{}' for image '{}' returned a non-Image userdata value, ignoring", patchPath, path);
         } else {
-          Logger::warn("Patch '{}' for image '{}' returned a non-Image value, ignoring");
+          Logger::warn("Patch '{}' for image '{}' returned a non-Image value, ignoring", patchPath, path);
         }
       }
       luaLocker.unlock();
     } else {
-      Logger::warn("Patch '{}' for image '{}' isn't a Lua script, ignoring", patchPath, path);
+      Logger::warn(std::string_view("Patch '{}' for image '{}' isn't a Lua script, ignoring"), patchPath, path);
     }
   }
   return make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
@@ -1074,9 +1073,9 @@ Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, J
         try {
           newResult = checkPatchArray(path, source, newResult, patch.toArray(), externalRef);
         } catch (JsonPatchTestFail const& e) {
-          Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
+          Logger::debug(std::string_view("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}"), path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
         } catch (JsonPatchException const& e) {
-          Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
+          Logger::error(std::string_view("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}"), path, source->metadata().value("name", ""), m_assetSourcePaths.getLeft(source), e.what());
         }
         break;
       case Json::Type::Object: // if its an object, check for operations, or for if an external file is needed for patches to reference
@@ -1086,11 +1085,11 @@ Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, J
         try {
           externalRef = json(patch.toString());
         } catch (...) {
-          throw JsonPatchTestFail(strf("Unable to load reference asset: {}", patch.toString()));
+          throw JsonPatchTestFail(strf(std::string_view("Unable to load reference asset: {}"), patch.toString()));
         }
         break;
       default:
-        throw JsonPatchException(strf("Patch data is wrong type: {}", Json::typeName(patch.type())));
+        throw JsonPatchException(strf(std::string_view("Patch data is wrong type: {}"), Json::typeName(patch.type())));
         break;
     }
   }
@@ -1102,7 +1101,7 @@ Json Assets::readJson(String const& path) const {
   try {
     return applyJsonPatches(inputUtf8Json(streamData.begin(), streamData.end(), JsonParseType::Top), path, m_files.get(path).patchSources);
   } catch (std::exception const& e) {
-    throw JsonParsingException(strf("Cannot parse json file: {}", path), e);
+    throw JsonParsingException(strf(std::string_view("Cannot parse json file: {}"), path), e);
   }
 }
 
@@ -1135,15 +1134,15 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<S
           try {
             result = checkPatchArray(pair.first, patchSource, result, patchData, {});
           } catch (JsonPatchTestFail const& e) {
-            Logger::debug("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            Logger::debug(std::string_view("Patch test failure from file {} in source: '{}' at '{}'. Caused by: {}"), pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
           } catch (JsonPatchException const& e) {
-            Logger::error("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}", pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
+            Logger::error(std::string_view("Could not apply patch from file {} in source: '{}' at '{}'.  Caused by: {}"), pair.first, patchSource->metadata().value("name", ""), m_assetSourcePaths.getLeft(patchSource), e.what());
           }
         } else if (patchJson.isType(Json::Type::Object)) {
           result = jsonMergeNulling(result, patchJson.toObject());
         }
       } catch (std::exception const& e) {
-        throw JsonParsingException(strf("Cannot parse json patch file: {} in source {}", patchBasePath, patchSource->metadata().value("name", "")), e);
+        throw JsonParsingException(strf(std::string_view("Cannot parse json patch file: {} in source {}"), patchBasePath, patchSource->metadata().value("name", "")), e);
       }
     }
   }
@@ -1156,9 +1155,9 @@ bool Assets::doLoad(AssetId const& id) const {
     // data.
     return (bool)loadAsset(id);
   } catch (std::exception const& e) {
-    Logger::error("Exception caught loading asset: {}, {}", id.path, outputException(e, true));
+    Logger::error(std::string_view("Exception caught loading asset: {}, {}"), id.path, outputException(e, true));
   } catch (...) {
-    Logger::error("Unknown exception caught loading asset: {}", id.path);
+    Logger::error(std::string_view("Unknown exception caught loading asset: {}"), id.path);
   }
 
   // There was an exception, remove the asset from the queue and fill the cache
@@ -1176,9 +1175,9 @@ bool Assets::doPost(AssetId const& id) const {
     if (id.type == AssetType::Audio)
       assetData = postProcessAudio(assetData);
   } catch (std::exception const& e) {
-    Logger::error("Exception caught post-processing asset: {}, {}", id.path, outputException(e, true));
+    Logger::error(std::string_view("Exception caught post-processing asset: {}, {}"), id.path, outputException(e, true));
   } catch (...) {
-    Logger::error("Unknown exception caught post-processing asset: {}", id.path);
+    Logger::error(std::string_view("Unknown exception caught post-processing asset: {}"), id.path);
   }
 
   m_queue.remove(id);
@@ -1218,10 +1217,10 @@ shared_ptr<Assets::AssetData> Assets::loadAsset(AssetId const& id) const {
 
     } catch (StarException const& e) {
       if (id.type == AssetType::Image && m_settings.missingImage) {
-        Logger::error("Could not load image asset '{}', using placeholder default.\n{}", id.path, outputException(e, false));
+        Logger::error(std::string_view("Could not load image asset '{}', using placeholder default.\n{}"), id.path, outputException(e, false));
         assetData = loadImage({*m_settings.missingImage, {}, {}});
       } else if (id.type == AssetType::Audio && m_settings.missingAudio) {
-        Logger::error("Could not load audio asset '{}', using placeholder default.\n{}", id.path, outputException(e, false));
+        Logger::error(std::string_view("Could not load audio asset '{}', using placeholder default.\n{}"), id.path, outputException(e, false));
         assetData = loadAudio({*m_settings.missingAudio, {}, {}});
       } else {
         throw;
@@ -1270,7 +1269,7 @@ shared_ptr<Assets::AssetData> Assets::loadJson(AssetPath const& path) const {
       newData->json = topJson->json.query(*path.subPath);
       return newData;
     } catch (StarException const& e) {
-      throw AssetException(strf("Could not read JSON value {}", path), e);
+      throw AssetException(strf(std::string_view("Could not read JSON value {}"), path), e);
     }
   } else {
     return unlockDuring([&]() {
@@ -1279,7 +1278,7 @@ shared_ptr<Assets::AssetData> Assets::loadJson(AssetPath const& path) const {
         newData->json = readJson(path.basePath);
         return newData;
       } catch (StarException const& e) {
-        throw AssetException(strf("Could not read JSON asset {}", path), e);
+        throw AssetException(strf(std::string_view("Could not read JSON asset {}"), path), e);
       }
     });
   }
@@ -1326,7 +1325,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
 
     // Base image must have frames data associated with it.
     if (!imageData->frames)
-      throw AssetException::format("No associated frames file found for image '{}' while resolving image frame '{}'", path.basePath, path);
+      throw AssetException::format(std::string_view("No associated frames file found for image '{}' while resolving image frame '{}'"), path.basePath, path);
 
     if (auto alias = imageData->frames->aliases.ptr(*path.subPath)) {
       imageData = as<ImageData>(loadAsset(AssetId{AssetType::Image, {path.basePath, *alias, path.directives}}));
@@ -1341,7 +1340,7 @@ shared_ptr<Assets::AssetData> Assets::loadImage(AssetPath const& path) const {
     } else {
       auto frameRect = imageData->frames->frames.ptr(*path.subPath);
       if (!frameRect)
-        throw AssetException(strf("No such frame {} in frames spec {}", *path.subPath, imageData->frames->framesFile));
+        throw AssetException(strf(std::string_view("No such frame {} in frames spec {}"), *path.subPath, imageData->frames->framesFile));
 
       return unlockDuring([&]() {
         // Need to flip frame coordinates because frame configs assume top

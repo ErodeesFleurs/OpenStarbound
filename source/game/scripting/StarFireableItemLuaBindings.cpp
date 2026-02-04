@@ -1,7 +1,6 @@
 #include "StarFireableItemLuaBindings.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarLuaGameConverters.hpp"
-#include "StarCasting.hpp"
+#include "StarLuaConverters.hpp" // IWYU pragma: keep
+#include "StarLuaGameConverters.hpp" // IWYU pragma: keep
 #include "StarFireableItem.hpp"
 
 namespace Star {

@@ -317,3 +317,9 @@ HashSetMixin<BaseMap> HashSetMixin<BaseMap>::combination(HashSetMixin const& s) 
 }
 
 }
+
+template <typename BaseSet>
+struct std::formatter<Star::SetMixin<BaseSet>> : Star::ostream_formatter {};
+
+template <typename BaseSet>
+struct std::formatter<Star::HashSetMixin<BaseSet>> : Star::ostream_formatter {};

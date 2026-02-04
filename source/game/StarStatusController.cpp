@@ -1,7 +1,9 @@
 #include "StarStatusController.hpp"
-#include "StarDataStreamExtra.hpp"
+#include "StarDataStreamExtra.hpp" // IWYU pragma: keep
 #include "StarJsonExtra.hpp"
-#include "StarLuaGameConverters.hpp"
+#include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
+#include "StarLuaConverters.hpp" // IWYU pragma: keep
+#include "StarLuaGameConverters.hpp" // IWYU pragma: keep
 #include "StarWorld.hpp"
 #include "StarWorldLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
@@ -10,7 +12,6 @@
 #include "StarEntityLuaBindings.hpp"
 #include "StarStatusEffectDatabase.hpp"
 #include "StarStatusEffectEntity.hpp"
-#include "StarLiquidsDatabase.hpp"
 
 namespace Star {
 

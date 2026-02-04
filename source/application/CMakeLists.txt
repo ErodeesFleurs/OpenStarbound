@@ -24,12 +24,12 @@ SET (star_application_SOURCES ${star_application_SOURCES}
   )
 
 IF (STAR_ENABLE_STEAM_INTEGRATION)
-  SET (star_application_HEADERS ${star_application_HEADERS}
+    SET (star_application_HEADERS ${star_application_HEADERS}
       StarDesktopService_pc_steam.hpp
       StarStatisticsService_pc_steam.hpp
       StarUserGeneratedContentService_pc_steam.hpp
     )
-  SET (star_application_SOURCES ${star_application_SOURCES}
+    SET (star_application_SOURCES ${star_application_SOURCES}
       StarDesktopService_pc_steam.cpp
       StarStatisticsService_pc_steam.cpp
       StarUserGeneratedContentService_pc_steam.cpp
@@ -37,7 +37,7 @@ IF (STAR_ENABLE_STEAM_INTEGRATION)
 ENDIF ()
 
 IF (STAR_ENABLE_DISCORD_INTEGRATION)
-  SET (star_application_SOURCES ${star_application_SOURCES}
+    SET (star_application_SOURCES ${star_application_SOURCES}
       discord/core.cpp
       discord/image_manager.cpp
       discord/lobby_manager.cpp
@@ -65,7 +65,6 @@ TARGET_INCLUDE_DIRECTORIES(star_application PRIVATE
     ${PROJECT_SOURCE_DIR}/rendering
     ${PROJECT_SOURCE_DIR}/platform
     ${PROJECT_SOURCE_DIR}/extern
-    ${PROJECT_SOURCE_DIR}/extern/fmt
     ${PROJECT_SOURCE_DIR}/extern/lua
     ${CMAKE_CURRENT_SOURCE_DIR}/discord
 )
@@ -85,5 +84,5 @@ TARGET_LINK_LIBRARIES(star_application PUBLIC
 )
 
 IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_application REUSE_FROM star_core)
+    TARGET_PRECOMPILE_HEADERS (star_application REUSE_FROM star_core)
 ENDIF()

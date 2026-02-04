@@ -12,10 +12,10 @@
 #include "StarVehicle.hpp"
 #include "StarContainerObject.hpp"
 #include "StarFarmableObject.hpp"
-#include "StarLoungeableObject.hpp"
+#include "StarLoungeableObject.hpp" // IWYU pragma: keep
 #include "StarProjectile.hpp"
 #include "StarItemDrop.hpp"
-#include "StarItemDatabase.hpp"
+#include "StarItemDatabase.hpp" // IWYU pragma: keep
 #include "StarItem.hpp"
 #include "StarRoot.hpp"
 
@@ -39,10 +39,10 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     [&](EntityPtr const& entity, EntityId const& otherId) -> bool {
         if (entity->inWorld()) {
             auto other = entity->world()->entity(otherId);
-            
+
             if (!other || !entity->getTeam().canDamage(other->getTeam(), false))
-            return false;
-            
+                return false;
+
             return true;
         }
         return false;
@@ -68,7 +68,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("typeName",
-    [&](EntityPtr const& entity, LuaEngine& engine) -> Maybe<String> {
+    [&](EntityPtr const& entity, [[maybe_unused]]LuaEngine& engine) -> Maybe<String> {
         if (auto monster = as<Monster>(entity))
             return monster->typeName();
         if (auto npc = as<Npc>(entity))
@@ -131,7 +131,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("getParameter",
     [&](EntityPtr const& entity, String const& parameterName, Maybe<Json> const& defaultValue) -> Json {
         Json val = Json();
-        
+
         bool handled = true;
         if (auto objectEntity = as<Object>(entity)) {
             val = objectEntity->configValue(parameterName);
@@ -449,7 +449,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidMovement();
         return {};
-    }); 
+    });
 
     // tool user entity methods
     methods.registerMethod("handItem",
@@ -829,6 +829,6 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     return methods;
-} 
+}
 
 }

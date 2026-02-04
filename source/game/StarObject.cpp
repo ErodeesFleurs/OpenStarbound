@@ -1,8 +1,9 @@
 #include "StarObject.hpp"
-#include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLuaConverters.hpp"  // IWYU pragma: keep
+#include "StarLuaGameConverters.hpp" // IWYU pragma: keep
+#include "StarMaterialDatabase.hpp" // IWYU pragma: keep
 #include "StarWorld.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
 #include "StarDamageManager.hpp"
@@ -17,9 +18,6 @@
 #include "StarEntityLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
-#include "StarLuaGameConverters.hpp"
-#include "StarParticleDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
 
 namespace Star {
@@ -70,12 +68,12 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
 
   auto inputNodes = configValue("inputNodes", JsonArray());
   auto inputNodeConfigs = configValue("inputNodesConfig", JsonArray());
-  for (auto i = 0; i != inputNodes.size(); i++)
+  for (auto i = 0u; i != inputNodes.size(); i++)
     m_inputNodes.append(InputNode(inputNodes.get(i), inputNodeConfigs.get(i, JsonObject())));
 
   auto outputNodes = configValue("outputNodes", JsonArray());
   auto outputNodeConfigs = configValue("outputNodesConfig", JsonArray());
-  for (auto i = 0; i != outputNodes.size(); i++)
+  for (auto i = 0u; i != outputNodes.size(); i++)
     m_outputNodes.append(OutputNode(outputNodes.get(i), outputNodeConfigs.get(i, JsonObject())));
 
   m_offeredQuests.set(configValue("offeredQuests", JsonArray()).toArray().transformed(&QuestArcDescriptor::fromJson));

@@ -1,12 +1,11 @@
 #include "StarUtilityLuaBindings.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarLuaConverters.hpp" // IWYU pragma: keep
 #include "StarUuid.hpp"
 #include "StarRandom.hpp"
 #include "StarPerlin.hpp"
 #include "StarXXHash.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
-#include "StarLuaConverters.hpp"
 #include "StarText.hpp"
 
 namespace Star {

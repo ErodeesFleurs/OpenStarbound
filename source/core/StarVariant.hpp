@@ -1,10 +1,12 @@
 #pragma once
 
+#include <algorithm>
+#include <cstddef>
+
 #include <type_traits>
 #include <utility>
 #include <initializer_list>
 
-#include "StarAlgorithm.hpp"
 #include "StarMaybe.hpp"
 
 namespace Star {
@@ -203,7 +205,7 @@ private:
   template <typename First, typename Second, typename... Rest>
   void doMakeType(VariantTypeIndex typeIndex);
 
-  typename std::aligned_union<0, FirstType, RestTypes...>::type m_buffer;
+  alignas(std::max({alignof(FirstType), alignof(RestTypes)...})) std::byte m_buffer[std::max({sizeof(FirstType), sizeof(RestTypes)...})];
   VariantTypeIndex m_typeIndex = InvalidVariantType;
 };
 
@@ -953,4 +955,4 @@ void MVariant<Types...>::ConstRefCaller<Function>::operator()(T const& t) {
 }
 
 template <typename FirstType, typename... RestTypes>
-struct fmt::formatter<Star::Variant<FirstType, RestTypes...>> : ostream_formatter {};
+struct std::formatter<Star::Variant<FirstType, RestTypes...>> : Star::ostream_formatter {};

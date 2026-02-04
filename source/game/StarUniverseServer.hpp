@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarCelestialDatabase.hpp"
 #include "StarLockFile.hpp"
 #include "StarIdMap.hpp"
 #include "StarWorkerPool.hpp"

@@ -3,9 +3,9 @@
 #include "StarWorld.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarDataStreamExtra.hpp"
+#include "StarDataStreamExtra.hpp" // IWYU pragma: keep
 #include "StarMaterialDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
+#include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
 #include "StarMonster.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarDamageDatabase.hpp"
@@ -724,7 +724,7 @@ void Projectile::processAction(Json const& action) {
     }
     projectile->setSourceEntity(m_sourceEntity, false);
     projectile->setPowerMultiplier(m_powerMultiplier);
-    
+
     // if the entity no longer exists and no explicit damage team is set, inherit damage team
     if (!projectile->m_damageTeam && !world()->entity(m_sourceEntity))
       projectile->setTeam(getTeam());
@@ -775,7 +775,7 @@ void Projectile::processAction(Json const& action) {
     unsigned harvestLevel = parameters.getUInt("harvestLevel", 0);
     Vec2F explosionPosition = position();
 
-    doWithDelay(parameters.getUInt("delaySteps", 0), [=](World* world) {
+    doWithDelay(parameters.getUInt("delaySteps", 0), [=, this](World* world) {
         world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
             TileLayer::Foreground,
             explosionPosition,

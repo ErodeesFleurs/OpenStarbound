@@ -92,4 +92,4 @@ private:
 
 }
 
-template <> struct fmt::formatter<Star::CelestialCoordinate> : ostream_formatter {};
+template <> struct std::formatter<Star::CelestialCoordinate> : Star::ostream_formatter {};

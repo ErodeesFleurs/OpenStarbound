@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarOstreamFormatter.hpp"
 #include "StarArray.hpp"
 #include "StarMathCommon.hpp"
 #include "StarAlgorithm.hpp"
@@ -919,3 +920,6 @@ T operator^(Vector<T, 2> const& v1, Vector<T, 2> const& v2) {
 }
 
 }
+
+template <typename T, size_t N>
+struct std::formatter<Star::Vector<T, N>> : Star::ostream_formatter {};

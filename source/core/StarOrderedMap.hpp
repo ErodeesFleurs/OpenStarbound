@@ -654,4 +654,4 @@ std::ostream& operator<<(std::ostream& os, OrderedMapWrapper<Map, Key, Value, Al
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-struct fmt::formatter<Star::OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>> : ostream_formatter {};
+struct std::formatter<Star::OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>> : Star::ostream_formatter {};

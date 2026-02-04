@@ -1,11 +1,8 @@
 #pragma once
 
-#include "StarSet.hpp"
-#include "StarJsonRpc.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarDrawable.hpp"
-#include "StarCelestialCoordinate.hpp"
-#include "StarThread.hpp"
+#include "StarSystemWorld.hpp"
 #include "StarQuestDescriptor.hpp"
 #include "StarQuestTemplateDatabase.hpp"
 #include "StarLuaComponents.hpp"

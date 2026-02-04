@@ -1,6 +1,17 @@
 #pragma once
 
-#include "StarPch.hpp"
+#include <cstddef>
+#include <cstdint>
+#include <cstring>
+#include <memory>
+#include <utility>
+#include <functional>
+#include <atomic>
+#include <initializer_list>
+#include <tuple>
+#include <string_view>
+#include <algorithm>
+#include <iterator>
 
 namespace Star {
 

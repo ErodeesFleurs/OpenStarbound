@@ -667,14 +667,14 @@ size_t RandomAccessListMixin<BaseList>::lastIndexOf(const_reference e, size_t ti
 template <typename BaseList>
 auto RandomAccessListMixin<BaseList>::at(size_t n) const -> const_reference {
   if (n >= Base::size())
-    throw OutOfRangeException(strf("out of range list::at({})", n));
+    throw OutOfRangeException(strf(std::string_view("out of range list::at({})"), n));
   return operator[](n);
 }
 
 template <typename BaseList>
 auto RandomAccessListMixin<BaseList>::at(size_t n) -> reference {
   if (n >= Base::size())
-    throw OutOfRangeException(strf("out of range list::at({})", n));
+    throw OutOfRangeException(strf(std::string_view("out of range list::at({})"), n));
   return operator[](n);
 }
 
@@ -1135,4 +1135,4 @@ typename ListEnumerateTypes<Container>::Result enumerate(Container&& container) 
 }
 
 template <typename BaseList>
-struct fmt::formatter<Star::ListMixin<BaseList>> : ostream_formatter {};
+struct std::formatter<Star::ListMixin<BaseList>> : Star::ostream_formatter {};

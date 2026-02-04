@@ -1,15 +1,13 @@
 #include "StarCelestialDatabase.hpp"
-#include "StarLexicalCast.hpp"
-#include "StarCasting.hpp"
 #include "StarRandom.hpp"
 #include "StarCompression.hpp"
 #include "StarFile.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarVersioningDatabase.hpp"
 #include "StarIterator.hpp"
+#include "StarDataStreamDevices.hpp"
+#include "StarDataStreamExtra.hpp" // IWYU pragma: keep
 
 namespace Star {
 

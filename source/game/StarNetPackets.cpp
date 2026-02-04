@@ -1,5 +1,4 @@
 #include "StarNetPackets.hpp"
-#include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {

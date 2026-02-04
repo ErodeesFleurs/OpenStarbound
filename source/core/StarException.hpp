@@ -1,20 +1,21 @@
 #pragma once
 
-#include "StarMemory.hpp"
 #include "StarOutputProxy.hpp"
+#include "StarStrf.hpp"
 
 #include <string>
-#include <sstream>
+#include <string_view>
+#include <format>
+#include <functional>
 
 namespace Star {
-
-template <typename... T>
-std::string strf(fmt::format_string<T...> fmt, T&&... args);
 
 class StarException : public std::exception {
 public:
   template <typename... Args>
-  static StarException format(fmt::format_string<Args...> fmt, Args const&... args);
+  static StarException format(std::format_string<Args...> fmt, Args&&... args);
+  template <typename... Args>
+  static StarException vformat(std::string_view fmt, Args&&... args);
 
   StarException() noexcept;
   virtual ~StarException() noexcept;
@@ -39,7 +40,7 @@ private:
   // Takes the ostream to print to, whether to print the full stacktrace.  Must
   // not bind 'this', may outlive the exception in the case of chained
   // exception causes.
-  function<void(std::ostream&, bool)> m_printException;
+  std::function<void(std::ostream&, bool)> m_printException;
 
   // m_printException will be called without the stack-trace to print
   // m_whatBuffer, if the what() method is invoked.
@@ -78,8 +79,12 @@ void fatalException(std::exception const& e, bool showStackTrace);
   class ClassName : public BaseName {                                                                                             \
   public:                                                                                                                         \
     template <typename... Args>                                                                                                   \
-    static ClassName format(fmt::format_string<Args...> fmt, Args const&... args) {                                               \
-      return ClassName(strf(fmt, args...));                                                                                       \
+    static ClassName format(std::format_string<Args...> fmt, Args&&... args) {                                                    \
+      return ClassName(strf(fmt, std::forward<Args>(args)...));                                                                   \
+    }                                                                                                                             \
+    template <typename... Args>                                                                                                   \
+    static ClassName vformat(std::string_view fmt, Args&&... args) {                                                               \
+      return ClassName(vstrf(fmt, std::forward<Args>(args)...));                                                                   \
     }                                                                                                                             \
     ClassName() : BaseName(#ClassName, std::string()) {}                                                                          \
     explicit ClassName(std::string message, bool genStackTrace = true) : BaseName(#ClassName, std::move(message), genStackTrace) {} \
@@ -97,8 +102,13 @@ STAR_EXCEPTION(IOException, StarException);
 STAR_EXCEPTION(MemoryException, StarException);
 
 template <typename... Args>
-StarException StarException::format(fmt::format_string<Args...> fmt, Args const&... args) {
-  return StarException(strf(fmt, args...));
+StarException StarException::format(std::format_string<Args...> fmt, Args&&... args) {
+  return StarException(strf(fmt, std::forward<Args>(args)...));
+}
+
+template <typename... Args>
+StarException StarException::vformat(std::string_view fmt, Args&&... args) {
+  return StarException(vstrf(fmt, std::forward<Args>(args)...));
 }
 
 }

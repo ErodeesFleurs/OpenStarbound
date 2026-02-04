@@ -4,6 +4,7 @@
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
 #include "StarAStar.hpp"
+#include "StarFormat.hpp"
 
 namespace Star {
 namespace PlatformerAStar {
@@ -97,21 +98,36 @@ inline bool operator==(Node const& a, Node const& b) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, Node const& node) {
-  return os << strf("Node{position = {}, velocity = {}}", node.position, node.velocity);
+  return os << strf("Node{{position = {}, velocity = {}}}", node.position, node.velocity);
 }
+}
+}
+template <> struct std::formatter<Star::PlatformerAStar::Node> : Star::ostream_formatter {};
+namespace Star {
+namespace PlatformerAStar {
 
 inline std::ostream& operator<<(std::ostream& os, Action action) {
   return os << ActionNames.getRight(action);
 }
+}
+}
+template <> struct std::formatter<Star::PlatformerAStar::Action> : Star::ostream_formatter {};
+namespace Star {
+namespace PlatformerAStar {
 
 inline std::ostream& operator<<(std::ostream& os, Edge const& edge) {
-  return os << strf("Edge{cost = %f, action = {}, jumpVelocity = {}, source = {}, target = {}}",
+  return os << strf("Edge{{cost = {}, action = {}, jumpVelocity = {}, source = {}, target = {}}}",
           edge.cost,
           edge.action,
           edge.jumpVelocity,
           edge.source,
           edge.target);
 }
+}
+}
+template <> struct std::formatter<Star::PlatformerAStar::Edge> : Star::ostream_formatter {};
+namespace Star {
+namespace PlatformerAStar {
 
 inline bool Node::operator<(Node const& other) const {
   if (position == other.position)
@@ -145,7 +161,3 @@ inline bool operator!=(Parameters const& lhs, Parameters const& rhs) {
 
 }
 }
-
-template <> struct fmt::formatter<Star::PlatformerAStar::Node> : ostream_formatter {};
-template <> struct fmt::formatter<Star::PlatformerAStar::Action> : ostream_formatter {};
-template <> struct fmt::formatter<Star::PlatformerAStar::Edge> : ostream_formatter {};

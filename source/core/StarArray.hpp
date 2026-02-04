@@ -2,6 +2,7 @@
 
 #include <array>
 
+#include "StarOstreamFormatter.hpp"
 #include "StarHash.hpp"
 
 namespace Star {
@@ -249,3 +250,6 @@ size_t hash<Array<DataT, SizeT>>::operator()(Array<DataT, SizeT> const& a) const
 }
 
 }
+
+template <typename Element, size_t Size>
+struct std::formatter<Star::Array<Element, Size>> : Star::ostream_formatter {};

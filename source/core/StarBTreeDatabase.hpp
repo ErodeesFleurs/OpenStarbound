@@ -3,8 +3,8 @@
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
 #include "StarLruCache.hpp"
-#include "StarDataStreamDevices.hpp"
 #include "StarThread.hpp"
+#include "StarIODevice.hpp"
 
 namespace Star {
 

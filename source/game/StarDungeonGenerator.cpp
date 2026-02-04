@@ -2,12 +2,10 @@
 #include "StarCasting.hpp"
 #include "StarRandom.hpp"
 #include "StarLogging.hpp"
-#include "StarAssets.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarMaterialDatabase.hpp"
+#include "StarMaterialDatabase.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
-#include "StarLiquidsDatabase.hpp"
+#include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
 #include "StarDungeonImagePart.hpp"
 #include "StarDungeonTMXPart.hpp"
 
@@ -908,7 +906,7 @@ namespace Dungeon {
   bool WorldGenMustContainAirRule::checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const {
     return writer->checkOpen(position, layer);
   }
-  
+
   bool WorldGenMustContainLiquidRule::checkTileCanPlace(Vec2I position, DungeonGeneratorWriter * writer) const {
     return writer->checkLiquid(position);
   }
@@ -1433,7 +1431,10 @@ Maybe<pair<List<RectI>, Set<Vec2I>>> DungeonGenerator::generate(DungeonGenerator
   try {
     Dungeon::DungeonGeneratorWriter writer(facade, markSurfaceAndTerrain ? position[1] : Maybe<int>(), m_def->extendSurfaceFreeSpace());
 
-    Logger::debug(forcePlacement ? "Forcing generation of dungeon {}" : "Generating dungeon {}", name);
+    if (forcePlacement)
+      Logger::debug("Forcing generation of dungeon {}", name);
+    else
+      Logger::debug("Generating dungeon {}", name);
 
     Dungeon::PartConstPtr anchor = pickAnchor();
     if (!anchor) {

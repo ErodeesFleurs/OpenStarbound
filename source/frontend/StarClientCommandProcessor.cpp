@@ -2,6 +2,7 @@
 #include "StarItem.hpp"
 #include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
+#include "StarJsonRpc.hpp" // IWYU pragma: keep
 #include "StarPlayer.hpp"
 #include "StarPlayerTech.hpp"
 #include "StarPlayerInventory.hpp"
@@ -432,7 +433,7 @@ String ClientCommandProcessor::swap(String const& argumentsString) {
 String ClientCommandProcessor::respawnInWorld(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
   auto worldClient = m_universeClient->worldClient();
-  
+
   if (arguments.size() == 0)
     return strf("Respawn in this world is currently {}", worldClient->respawnInWorld() ? "true" : "false");
 

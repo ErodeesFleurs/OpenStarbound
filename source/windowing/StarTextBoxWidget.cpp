@@ -1,7 +1,7 @@
 #include "StarTextBoxWidget.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
+#include "StarTime.hpp"
 
 namespace Star {
 
@@ -38,7 +38,7 @@ void TextBoxWidget::renderImpl() {
     blueRate = 0.2f;
   else
     blueRate = 0.0f;
-  
+
   float cursorOffset = (float)getCursorDrawOffset() / context()->interfaceScale();
   Vec2F pos(screenPosition());
   if (m_hAnchor == HorizontalAnchor::HMidAnchor)

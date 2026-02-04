@@ -3,6 +3,8 @@
 #include <typeindex>
 #include <type_traits>
 #include <lua.hpp>
+#include <functional>
+#include <memory>
 
 #include "StarLexicalCast.hpp"
 #include "StarString.hpp"
@@ -462,7 +464,7 @@ struct LuaProfileEntry {
   // Total time taken within this function or sub functions
   int64_t totalTime;
   // Calls from this function
-  HashMap<tuple<String, unsigned>, shared_ptr<LuaProfileEntry>> calls;
+  HashMap<tuple<String, unsigned>, std::shared_ptr<LuaProfileEntry>> calls;
 };
 
 // This class represents one execution engine in lua, holding a single
@@ -743,7 +745,7 @@ private:
   unsigned m_recursionLevel;
   unsigned m_recursionLimit;
   int m_nullTerminated;
-  HashMap<tuple<String, unsigned>, shared_ptr<LuaProfileEntry>> m_profileEntries;
+  HashMap<tuple<String, unsigned>, std::shared_ptr<LuaProfileEntry>> m_profileEntries;
   lua_Debug m_debugInfo;
 };
 
@@ -1438,7 +1440,7 @@ namespace LuaDetail {
   template <typename Key, typename Value>
   struct TableIteratorWrapper<bool, Key, Value> {
     template <typename Function>
-    static function<bool(LuaValue, LuaValue)> wrap(LuaEngine& engine, Function&& func) {
+    static std::function<bool(LuaValue, LuaValue)> wrap(LuaEngine& engine, Function&& func) {
       return [&engine, func = std::move(func)](LuaValue key, LuaValue value) -> bool {
         return func(engine.luaTo<Key>(std::move(key)), engine.luaTo<Value>(std::move(value)));
       };
@@ -1448,7 +1450,7 @@ namespace LuaDetail {
   template <typename Key, typename Value>
   struct TableIteratorWrapper<void, Key, Value> {
     template <typename Function>
-    static function<bool(LuaValue, LuaValue)> wrap(LuaEngine& engine, Function&& func) {
+    static std::function<bool(LuaValue, LuaValue)> wrap(LuaEngine& engine, Function&& func) {
       return [&engine, func = std::move(func)](LuaValue key, LuaValue value) -> bool {
         func(engine.luaTo<Key>(std::move(key)), engine.luaTo<Value>(std::move(value)));
         return true;
@@ -1457,7 +1459,7 @@ namespace LuaDetail {
   };
 
   template <typename Return, typename... Args, typename Function>
-  function<bool(LuaValue, LuaValue)> wrapTableIteratorWithSignature(LuaEngine& engine, Function&& func) {
+  std::function<bool(LuaValue, LuaValue)> wrapTableIteratorWithSignature(LuaEngine& engine, Function&& func) {
     return TableIteratorWrapper<Return, typename std::decay<Args>::type...>::wrap(engine, std::forward<Function>(func));
   }
 
@@ -1799,20 +1801,20 @@ T& LuaUserData::get() const {
 template <typename Function>
 void LuaCallbacks::registerCallback(String name, Function&& func) {
   if (!m_callbacks.insert(name, LuaDetail::wrapFunction(std::forward<Function>(func))).second)
-    throw LuaException::format("Lua callback '{}' was registered twice", name);
+    throw LuaException::format(std::string_view("Lua callback '{}' was registered twice"), name);
 }
 
 template <typename Return, typename... Args, typename Function>
 void LuaCallbacks::registerCallbackWithSignature(String name, Function&& func) {
   if (!m_callbacks.insert(name, LuaDetail::wrapFunctionWithSignature<Return, Args...>(std::forward<Function>(func))).second)
-    throw LuaException::format("Lua callback '{}' was registered twice", name);
+    throw LuaException::format(std::string_view("Lua callback '{}' was registered twice"), name);
 }
 
 template <typename T>
 template <typename Function>
 void LuaMethods<T>::registerMethod(String name, Function&& func) {
   if (!m_methods.insert(name, LuaDetail::wrapMethod(std::forward<Function>(std::move(func)))).second)
-    throw LuaException::format("Lua method '{}' was registered twice", name);
+    throw LuaException::format(std::string_view("Lua method '{}' was registered twice"), name);
 }
 
 template <typename T>
@@ -1820,7 +1822,7 @@ template <typename Return, typename... Args, typename Function>
 void LuaMethods<T>::registerMethodWithSignature(String name, Function&& func) {
   if (!m_methods.insert(name, LuaDetail::wrapMethodWithSignature<Return, Args...>(std::forward<Function>(std::move(func))))
            .second)
-    throw LuaException::format("Lua method '{}' was registered twice", name);
+    throw LuaException::format(std::string_view("Lua method '{}' was registered twice"), name);
 }
 
 template <typename T>
@@ -1848,7 +1850,7 @@ Ret LuaContext::invokePath(String const& key, Args const&... args) const {
   auto p = getPath(key);
   if (auto f = p.ptr<LuaFunction>())
     return f->invoke<Ret>(args...);
-  throw LuaException::format("invokePath called on path '{}' which is not function type", key);
+  throw LuaException::format(std::string_view("invokePath called on path '{}' which is not function type"), key);
 }
 
 template <typename T>
@@ -2171,7 +2173,7 @@ template <typename T>
 T* LuaEngine::getUserData(int handleIndex) {
   int typeRef = m_registeredUserDataTypes.value(typeid(T), LUA_NOREF);
   if (typeRef == LUA_NOREF)
-    throw LuaException::format("Cannot convert userdata type of {}, not registered", typeid(T).name());
+    throw LuaException::format(std::string_view("Cannot convert userdata type of {}, not registered"), typeid(T).name());
 
   lua_checkstack(m_state, 3);
 
@@ -2185,7 +2187,7 @@ T* LuaEngine::getUserData(int handleIndex) {
   lua_rawgeti(m_state, LUA_REGISTRYINDEX, typeRef);
   if (!lua_rawequal(m_state, -1, -2)) {
     lua_pop(m_state, 3);
-    throw LuaException::format("Improper conversion from userdata to type {}", typeid(T).name());
+    throw LuaException::format(std::string_view("Improper conversion from userdata to type {}"), typeid(T).name());
   }
 
   lua_pop(m_state, 3);
@@ -2242,4 +2244,4 @@ size_t LuaEngine::pushArguments(lua_State* state, Args const&... args) {
 
 }
 
-template <> struct fmt::formatter<Star::LuaValue> : ostream_formatter {};
+template <> struct std::formatter<Star::LuaValue> : Star::ostream_formatter {};

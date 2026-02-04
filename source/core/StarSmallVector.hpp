@@ -1,6 +1,10 @@
 #pragma once
 
+#include <cstddef>
+
+#include "StarMemory.hpp"
 #include "StarAlgorithm.hpp"
+#include "StarException.hpp"
 
 namespace Star {
 
@@ -29,7 +33,7 @@ public:
   template <class Iterator>
   SmallVector(Iterator first, Iterator last);
   SmallVector(size_t size, Element const& value = Element());
-  SmallVector(initializer_list<Element> list);
+  SmallVector(std::initializer_list<Element> list);
   ~SmallVector();
 
   SmallVector& operator=(SmallVector const& other);
@@ -69,7 +73,7 @@ public:
   iterator insert(iterator pos, Element e);
   template <typename Iterator>
   iterator insert(iterator pos, Iterator begin, Iterator end);
-  iterator insert(iterator pos, initializer_list<Element> list);
+  iterator insert(iterator pos, std::initializer_list<Element> list);
 
   template <typename... Args>
   void emplace(iterator pos, Args&&... args);
@@ -87,7 +91,7 @@ public:
   bool operator<(SmallVector const& other) const;
 
 private:
-  typename std::aligned_storage<MaxStackSize * sizeof(Element), alignof(Element)>::type m_stackElements;
+  alignas(Element) std::byte m_stackElements[MaxStackSize * sizeof(Element)];
 
   bool isHeapAllocated() const;
 
@@ -98,7 +102,7 @@ private:
 
 template <typename Element, size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector() {
-  m_begin = (Element*)&m_stackElements;
+  m_begin = reinterpret_cast<Element*>(m_stackElements);
   m_end = m_begin;
   m_capacity = m_begin + MaxStackSize;
 }
@@ -146,7 +150,7 @@ SmallVector<Element, MaxStackSize>::SmallVector(size_t size, Element const& valu
 }
 
 template <typename Element, size_t MaxStackSize>
-SmallVector<Element, MaxStackSize>::SmallVector(initializer_list<Element> list)
+SmallVector<Element, MaxStackSize>::SmallVector(std::initializer_list<Element> list)
   : SmallVector() {
     for (auto const& e : list)
       emplace_back(e);
@@ -205,7 +209,7 @@ template <typename Element, size_t MaxStackSize>
 void SmallVector<Element, MaxStackSize>::reserve(size_t newCapacity) {
   size_t oldCapacity = m_capacity - m_begin;
   if (newCapacity > oldCapacity) {
-    newCapacity = max(oldCapacity * 2, newCapacity);
+    newCapacity = std::max(oldCapacity * 2, newCapacity);
     auto newMem = (Element*)Star::malloc(newCapacity * sizeof(Element));
     if (!newMem)
       throw MemoryException::format("Could not set new SmallVector capacity {}\n", newCapacity);
@@ -438,7 +442,7 @@ bool SmallVector<Element, MaxStackSize>::operator<(SmallVector const& other) con
 
 template <typename Element, size_t MaxStackSize>
 bool SmallVector<Element, MaxStackSize>::isHeapAllocated() const {
-  return m_begin != (Element*)&m_stackElements;
+  return m_begin != reinterpret_cast<Element const*>(m_stackElements);
 }
 
 }

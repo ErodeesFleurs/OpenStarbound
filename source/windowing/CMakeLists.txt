@@ -78,7 +78,6 @@ TARGET_INCLUDE_DIRECTORIES(star_windowing PRIVATE
     ${PROJECT_SOURCE_DIR}/rendering
     ${PROJECT_SOURCE_DIR}/platform
     ${PROJECT_SOURCE_DIR}/extern
-    ${PROJECT_SOURCE_DIR}/extern/fmt
     ${PROJECT_SOURCE_DIR}/extern/lua
 )
 
@@ -92,5 +91,5 @@ TARGET_LINK_LIBRARIES(star_windowing PUBLIC
 )
 
 IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_windowing REUSE_FROM star_core)
+    TARGET_PRECOMPILE_HEADERS (star_windowing REUSE_FROM star_core)
 ENDIF()

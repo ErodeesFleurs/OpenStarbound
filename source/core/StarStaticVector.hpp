@@ -1,7 +1,8 @@
 #pragma once
 
+#include <cstddef>
+
 #include "StarException.hpp"
-#include "StarFormat.hpp"
 
 namespace Star {
 
@@ -35,7 +36,7 @@ public:
   template <class Iterator>
   StaticVector(Iterator first, Iterator last);
   StaticVector(size_t size, Element const& value = Element());
-  StaticVector(initializer_list<Element> list);
+  StaticVector(std::initializer_list<Element> list);
   ~StaticVector();
 
   StaticVector& operator=(StaticVector const& other);
@@ -74,7 +75,7 @@ public:
   iterator insert(iterator pos, Element e);
   template <typename Iterator>
   iterator insert(iterator pos, Iterator begin, Iterator end);
-  iterator insert(iterator pos, initializer_list<Element> list);
+  iterator insert(iterator pos, std::initializer_list<Element> list);
 
   template <typename... Args>
   void emplace(iterator pos, Args&&... args);
@@ -93,7 +94,7 @@ public:
 
 private:
   size_t m_size;
-  typename std::aligned_storage<MaxSize * sizeof(Element), alignof(Element)>::type m_elements;
+  alignas(Element) std::byte m_elements[MaxSize * sizeof(Element)];
 };
 
 template <typename Element, size_t MaxSize>
@@ -140,7 +141,7 @@ StaticVector<Element, MaxSize>::StaticVector(size_t size, Element const& value)
 }
 
 template <typename Element, size_t MaxSize>
-StaticVector<Element, MaxSize>::StaticVector(initializer_list<Element> list)
+StaticVector<Element, MaxSize>::StaticVector(std::initializer_list<Element> list)
   : StaticVector() {
   for (auto const& e : list)
     emplace_back(e);
@@ -188,7 +189,7 @@ bool StaticVector<Element, MaxSize>::empty() const {
 template <typename Element, size_t MaxSize>
 void StaticVector<Element, MaxSize>::resize(size_t size, Element const& e) {
   if (size > MaxSize)
-    throw StaticVectorSizeException::format("StaticVector::resize({}) out of range {}", m_size + size, MaxSize);
+    throw StaticVectorSizeException::format(std::string_view("StaticVector::resize({}) out of range {}"), m_size + size, MaxSize);
 
   for (size_t i = m_size; i > size; --i)
     pop_back();
@@ -199,14 +200,14 @@ void StaticVector<Element, MaxSize>::resize(size_t size, Element const& e) {
 template <typename Element, size_t MaxSize>
 auto StaticVector<Element, MaxSize>::at(size_t i) -> reference {
   if (i >= m_size)
-    throw OutOfRangeException::format("out of range in StaticVector::at({})", i);
+    throw OutOfRangeException::format(std::string_view("out of range in StaticVector::at({})"), i);
   return ptr()[i];
 }
 
 template <typename Element, size_t MaxSize>
 auto StaticVector<Element, MaxSize>::at(size_t i) const -> const_reference {
   if (i >= m_size)
-    throw OutOfRangeException::format("out of range in StaticVector::at({})", i);
+    throw OutOfRangeException::format(std::string_view("out of range in StaticVector::at({})"), i);
   return ptr()[i];
 }
 
@@ -264,12 +265,12 @@ auto StaticVector<Element, MaxSize>::rend() -> reverse_iterator {
 
 template <typename Element, size_t MaxSize>
 Element const* StaticVector<Element, MaxSize>::ptr() const {
-  return (Element const*)&m_elements;
+  return reinterpret_cast<Element const*>(m_elements);
 }
 
 template <typename Element, size_t MaxSize>
 Element* StaticVector<Element, MaxSize>::ptr() {
-  return (Element*)&m_elements;
+  return reinterpret_cast<Element*>(m_elements);
 }
 
 template <typename Element, size_t MaxSize>
@@ -311,7 +312,7 @@ auto StaticVector<Element, MaxSize>::insert(iterator pos, Iterator begin, Iterat
 }
 
 template <typename Element, size_t MaxSize>
-auto StaticVector<Element, MaxSize>::insert(iterator pos, initializer_list<Element> list) -> iterator {
+auto StaticVector<Element, MaxSize>::insert(iterator pos, std::initializer_list<Element> list) -> iterator {
   return insert(pos, list.begin(), list.end());
 }
 
@@ -329,7 +330,7 @@ template <typename Element, size_t MaxSize>
 template <typename... Args>
 void StaticVector<Element, MaxSize>::emplace_back(Args&&... args) {
   if (m_size + 1 > MaxSize)
-    throw StaticVectorSizeException::format("StaticVector::emplace_back would extend StaticVector beyond size {}", MaxSize);
+    throw StaticVectorSizeException::format(std::string_view("StaticVector::emplace_back would extend StaticVector beyond size {}"), MaxSize);
 
   m_size += 1;
   new (ptr() + m_size - 1) Element(std::forward<Args>(args)...);

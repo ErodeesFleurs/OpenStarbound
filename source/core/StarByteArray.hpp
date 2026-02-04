@@ -167,7 +167,7 @@ inline size_t ByteArray::capacity() const {
 }
 
 inline void ByteArray::copyTo(char* data, size_t len) const {
-  len = min(m_size, len);
+  len = std::min(m_size, len);
   std::memcpy(data, m_data, len);
 }
 
@@ -179,7 +179,7 @@ inline void ByteArray::copyTo(char* data, size_t pos, size_t len) const {
   if (len == 0 || pos >= m_size)
     return;
 
-  len = min(m_size - pos, len);
+  len = std::min(m_size - pos, len);
   std::memcpy(data, m_data + pos, len);
 }
 
@@ -255,4 +255,4 @@ inline size_t hash<ByteArray>::operator()(ByteArray const& b) const {
 
 }
 
-template <> struct fmt::formatter<Star::ByteArray> : ostream_formatter {};
+template <> struct std::formatter<Star::ByteArray> : Star::ostream_formatter {};

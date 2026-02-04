@@ -198,7 +198,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool borderless = configuration->get("borderless").toBool();
   bool maximized = configuration->get("maximized").toBool();
   m_controllerInput = configuration->get("controllerInput").optBool().value();
-  
+
   if (fullscreen)
     appController->setFullscreenWindow(fullscreenSize);
   else if (borderless)
@@ -223,15 +223,15 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   // Must be called before anything that can invoke an asset load.
   loadMods();
-  
+
   AudioFormat audioFormat = appController->enableAudio();
   m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels);
   m_mainMixer->setVolume(0.5);
-  
+
   m_worldPainter = make_shared<WorldPainter>();
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController);
   m_input = make_shared<Input>();
-  m_voice = make_shared<Voice>(appController);  
+  m_voice = make_shared<Voice>(appController);
 
   auto assets = m_root->assets();
 
@@ -249,11 +249,11 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toFloat();
   m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toFloat();
   m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
-  
+
   appController->setApplicationTitle(assets->json("/client.config:windowTitle").toString());
   appController->setMaxFrameSkip(assets->json("/client.config:maxFrameSkip").toUInt());
   appController->setUpdateTrackWindow(assets->json("/client.config:updateTrackWindow").toFloat());
-  
+
   if (auto jVoice = configuration->get("voice"))
     m_voice->loadJson(jVoice.toObject(), true);
 
@@ -372,7 +372,7 @@ void ClientApplication::update() {
         m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{join.takeValue(), {}, {}, false};
         changeState(MainAppState::Title);
       }
-      
+
       if (auto req = p2pNetworkingService->pullJoinRequest())
         m_mainInterface->queueJoinRequest(*req);
 
@@ -405,7 +405,7 @@ void ClientApplication::update() {
     updateTitle(dt);
   else if (m_state > MainAppState::Title)
     updateRunning(dt);
-  
+
   // Swallow leftover encoded voice data if we aren't in-game to allow mic read to continue for settings.
   if (m_state <= MainAppState::Title) {
     DataStreamBuffer ext;
@@ -448,15 +448,15 @@ void ClientApplication::render() {
       renderer->switchEffectConfig("world");
       auto clientStart = totalStart;
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
-      LogMap::set("client_render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - clientStart));
+      LogMap::set("client_render_world_client", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - clientStart));
 
       auto paintStart = Time::monotonicMicroseconds();
       m_worldPainter->render(m_renderData, [&]() -> bool {
         return worldClient->waitForLighting(&m_renderData);
       });
-      LogMap::set("client_render_world_painter", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - paintStart));
-      LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
-      
+      LogMap::set("client_render_world_painter", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - paintStart));
+      LogMap::set("client_render_world_total", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
+
       auto size = Vec2F(renderer->screenSize());
       auto quad = renderFlatRect(RectF::withSize(size / -2, size), Vec4B::filled(0), 0.0f);
       for (auto& layer : m_postProcessLayers) {
@@ -475,7 +475,7 @@ void ClientApplication::render() {
     m_mainInterface->renderInWorldElements();
     m_mainInterface->render();
     m_cinematicOverlay->render();
-    LogMap::set("client_render_interface", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+    LogMap::set("client_render_interface", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
   }
 
   if (!m_errorScreen->accepted())
@@ -520,16 +520,16 @@ void ClientApplication::renderReload() {
   };
 
   renderer->loadConfig(assets->json("/rendering/opengl.config"));
-  
+
   loadEffectConfig("world");
-  
+
   // define post process groups and set them to be enabled/disabled based on config
-  
+
   auto config = m_root->configuration();
   if (!config->get(postProcessGroupsRoot).isType(Json::Type::Object))
     config->set(postProcessGroupsRoot, JsonObject());
   auto groupsConfig = config->get(postProcessGroupsRoot);
-  
+
   m_postProcessGroups.clear();
   auto postProcessGroups = assets->json("/client.config:postProcessGroups").toObject();
   for (auto& pair : postProcessGroups) {
@@ -540,7 +540,7 @@ void ClientApplication::renderReload() {
       config->setPath(strf("{}.{}", postProcessGroupsRoot, name),JsonObject());
     m_postProcessGroups.add(name,PostProcessGroup{ groupConfig ? groupConfig.value().getBool("enabled", def) : def });
   }
-  
+
   // define post process layers and optionally assign them to groups
   m_postProcessLayers.clear();
   m_labelledPostProcessLayers.clear();
@@ -816,7 +816,7 @@ void ClientApplication::changeState(MainAppState newState) {
       const auto paneManager = mainInterface->paneManager();
       const auto httpTrustDialog = paneManager->registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
 
-      httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool remember) {
+      httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, [[maybe_unused]]bool remember) {
         const bool allowed = (reply == HttpTrustReply::Allow);
         LuaBindings::handleHttpTrustReply(domain, allowed);
       });
@@ -836,7 +836,7 @@ void ClientApplication::changeState(MainAppState newState) {
 }
 
 void ClientApplication::setError(String const& error) {
-  Logger::error(error.utf8Ptr());
+  Logger::error("{}", error);
   m_errorScreen->setMessage(error);
   m_titleScreen->resetState();
   changeState(MainAppState::Title);
@@ -890,7 +890,7 @@ void ClientApplication::updateMods(float dt) {
       Logger::info("Checking for user generated content updates...");
       m_loggedUGCCheck = true;
     }
-    
+
     if (ugcService->triggerContentDownload() == UserGeneratedContentService::UGCState::NoDownload) {
       changeState(MainAppState::Splash);
     } else {
@@ -1067,7 +1067,7 @@ void ClientApplication::updateRunning(float dt) {
         }
       }
     }
-    
+
     if (p2pNetworkingService) {
       auto getActivityDetail = [&](String const& tag) -> String {
         if (tag == "playerName")
@@ -1252,7 +1252,7 @@ void ClientApplication::updateRunning(float dt) {
           auto signature = Curve25519::sign(voiceData.ptr(), voiceData.size());
           std::string_view signatureView((char*)signature.data(), signature.size());
           std::string_view audioDataView(voiceData.ptr(), voiceData.size());
-          auto broadcast = strf("data\0voice\0{}{}"s, signatureView, audioDataView);
+          std::string broadcast = "data"s + '\0' + "voice"s + '\0' +signatureView + audioDataView;
           worldClient->sendSecretBroadcast(broadcast, true, false); // Already compressed by Opus.
         }
         if (auto mainPlayer = m_universeClient->mainPlayer()) {

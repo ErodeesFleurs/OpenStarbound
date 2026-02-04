@@ -178,4 +178,4 @@ shared_ptr<WidgetType> Widget::findChild(String const& name) {
 
 }
 
-template <> struct fmt::formatter<Star::Widget> : ostream_formatter {};
+template <> struct std::formatter<Star::Widget> : Star::ostream_formatter {};

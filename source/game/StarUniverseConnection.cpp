@@ -1,6 +1,7 @@
 #include "StarUniverseConnection.hpp"
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
+#include "StarTime.hpp"
 #include <thread>
 
 namespace Star {

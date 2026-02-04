@@ -80,6 +80,20 @@ DataStream& operator>>(DataStream& ds, MultiArray<ElementT, RankN>& array) {
   return ds;
 }
 
+template <typename T, size_t N>
+DataStream& operator<<(DataStream& ds, Vector<T, N> const& vector) {
+  for (size_t i = 0; i < N; ++i)
+    ds << vector[i];
+  return ds;
+}
+
+template <typename T, size_t N>
+DataStream& operator>>(DataStream& ds, Vector<T, N>& vector) {
+  for (size_t i = 0; i < N; ++i)
+    ds >> vector[i];
+  return ds;
+}
+
 inline DataStream& operator<<(DataStream& ds, Color const& color) {
   ds << color.toRgbaF();
   return ds;

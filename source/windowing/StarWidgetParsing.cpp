@@ -1,7 +1,7 @@
 #include "StarWidgetParsing.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarImageMetadataDatabase.hpp"
+#include "StarImageMetadataDatabase.hpp" // IWYU pragma: keep
 #include "StarPane.hpp"
 #include "StarButtonGroup.hpp"
 #include "StarButtonWidget.hpp"
@@ -19,7 +19,6 @@
 #include "StarSliderBar.hpp"
 #include "StarStackWidget.hpp"
 #include "StarScrollArea.hpp"
-#include "StarAssets.hpp"
 #include "StarFlowLayout.hpp"
 #include "StarVerticalLayout.hpp"
 #include "StarTabSet.hpp"
@@ -33,18 +32,18 @@ WidgetConstructResult::WidgetConstructResult(WidgetPtr obj, String const& name, 
 
 WidgetParser::WidgetParser() {
   // only the non-interactive ones by default
-  m_constructors["widget"] = [=](String const& name, Json const& config) { return widgetHandler(name, config); };
-  m_constructors["canvas"] = [=](String const& name, Json const& config) { return canvasHandler(name, config); };
-  m_constructors["image"] = [=](String const& name, Json const& config) { return imageHandler(name, config); };
-  m_constructors["imageStretch"] = [=](String const& name, Json const& config) { return imageStretchHandler(name, config); };
-  m_constructors["label"] = [=](String const& name, Json const& config) { return labelHandler(name, config); };
-  m_constructors["portrait"] = [=](String const& name, Json const& config) { return portraitHandler(name, config); };
-  m_constructors["fuelGauge"] = [=](String const& name, Json const& config) { return fuelGaugeHandler(name, config); };
-  m_constructors["progress"] = [=](String const& name, Json const& config) { return progressHandler(name, config); };
-  m_constructors["largeCharPlate"] = [=](
+  m_constructors["widget"] = [=, this](String const& name, Json const& config) { return widgetHandler(name, config); };
+  m_constructors["canvas"] = [=, this](String const& name, Json const& config) { return canvasHandler(name, config); };
+  m_constructors["image"] = [=, this](String const& name, Json const& config) { return imageHandler(name, config); };
+  m_constructors["imageStretch"] = [=, this](String const& name, Json const& config) { return imageStretchHandler(name, config); };
+  m_constructors["label"] = [=, this](String const& name, Json const& config) { return labelHandler(name, config); };
+  m_constructors["portrait"] = [=, this](String const& name, Json const& config) { return portraitHandler(name, config); };
+  m_constructors["fuelGauge"] = [=, this](String const& name, Json const& config) { return fuelGaugeHandler(name, config); };
+  m_constructors["progress"] = [=, this](String const& name, Json const& config) { return progressHandler(name, config); };
+  m_constructors["largeCharPlate"] = [=, this](
       String const& name, Json const& config) { return largeCharPlateHandler(name, config); };
-  m_constructors["container"] = [=](String const& name, Json const& config) { return containerHandler(name, config); };
-  m_constructors["layout"] = [=](String const& name, Json const& config) { return layoutHandler(name, config); };
+  m_constructors["container"] = [=, this](String const& name, Json const& config) { return containerHandler(name, config); };
+  m_constructors["layout"] = [=, this](String const& name, Json const& config) { return layoutHandler(name, config); };
 
   m_callbacks["null"] = [](Widget*) {};
 }
@@ -522,7 +521,7 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
   } catch (MapException const& e) {
     throw WidgetParserException::format("Malformed gui json, missing a required value in the map. {}", outputException(e, false));
   }
-  
+
   String callback = config.getString("callback", name);
   String rightClickCallback = callback.equals("null") ? callback : callback + ".right";
   rightClickCallback = config.getString("rightClickCallback", rightClickCallback);
@@ -542,7 +541,7 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
     itemGrid->setCallback(*leftClickCallback);
   else
     throw WidgetParserException::format("Failed to find ItemGrid callback named: '{}'", callback);
-  
+
   if (auto callback = m_callbacks.ptr(rightClickCallback))
     itemGrid->setRightClickCallback(*callback);
   else
@@ -826,7 +825,7 @@ ImageStretchSet WidgetParser::parseImageStretchSet(Json const& config) {
   } else if (type == "stretch") {
     res.type = ImageStretchSet::ImageStretchType::Stretch;
   } else {
-    throw WidgetParserException(strf("Could not parse Image Stretch Set, unknown type: {}"));
+    throw WidgetParserException(strf("Could not parse Image Stretch Set, unknown type: {}", type));
   }
 
   return res;

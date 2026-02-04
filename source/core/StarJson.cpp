@@ -2,9 +2,6 @@
 #include "StarJsonBuilder.hpp"
 #include "StarJsonPath.hpp"
 #include "StarFormat.hpp"
-#include "StarLexicalCast.hpp"
-#include "StarIterator.hpp"
-#include "StarFile.hpp"
 
 namespace Star {
 
@@ -76,11 +73,11 @@ bool Json::operator!=(const Json& v) const {
 
 bool Json::unique() const {
   if (m_data.is<StringConstPtr>())
-    return m_data.get<StringConstPtr>().unique();
+    return m_data.get<StringConstPtr>().use_count() == 1;
   else if (m_data.is<JsonArrayConstPtr>())
-    return m_data.get<JsonArrayConstPtr>().unique();
+    return m_data.get<JsonArrayConstPtr>().use_count() == 1;
   else if (m_data.is<JsonObjectConstPtr>())
-    return m_data.get<JsonObjectConstPtr>().unique();
+    return m_data.get<JsonObjectConstPtr>().use_count() == 1;
   else
     return true;
 }

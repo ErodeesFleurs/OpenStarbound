@@ -286,4 +286,4 @@ struct hash<Line<T, N>> {
 }
 
 template <typename T, size_t N>
-struct fmt::formatter<Star::Line<T, N>> : ostream_formatter {};
+struct std::formatter<Star::Line<T, N>> : Star::ostream_formatter {};

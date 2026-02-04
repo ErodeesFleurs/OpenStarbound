@@ -85,5 +85,5 @@ struct hash<HostAddressWithPort> {
 
 }
 
-template <> struct fmt::formatter<Star::HostAddress> : ostream_formatter {};
-template <> struct fmt::formatter<Star::HostAddressWithPort> : ostream_formatter {};
+template <> struct std::formatter<Star::HostAddress> : Star::ostream_formatter {};
+template <> struct std::formatter<Star::HostAddressWithPort> : Star::ostream_formatter {};

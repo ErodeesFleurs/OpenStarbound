@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarException.hpp"
 #include "StarString.hpp"
 
 //#define STAR_MUTEX_LOG

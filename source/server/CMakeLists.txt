@@ -36,16 +36,15 @@ TARGET_INCLUDE_DIRECTORIES(starbound_server PRIVATE
     ${PROJECT_SOURCE_DIR}/game/scripting
     ${PROJECT_SOURCE_DIR}/platform
     ${PROJECT_SOURCE_DIR}/extern
-    ${PROJECT_SOURCE_DIR}/extern/fmt
     ${PROJECT_SOURCE_DIR}/extern/lua
 )
 
 IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (starbound_server REUSE_FROM star_core)
+    TARGET_PRECOMPILE_HEADERS (starbound_server REUSE_FROM star_core)
 ENDIF()
 
 IF(STAR_SYSTEM_MACOS)
-  SET_TARGET_PROPERTIES (starbound_server PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
+    SET_TARGET_PROPERTIES (starbound_server PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
 ELSEIF (UNIX)
     SET_TARGET_PROPERTIES(starbound_server PROPERTIES
         INSTALL_RPATH "$ORIGIN"

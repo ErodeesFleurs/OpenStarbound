@@ -2,6 +2,7 @@
 #include "StarIterator.hpp"
 #include "StarCompression.hpp"
 #include "StarLogging.hpp"
+#include "StarTime.hpp"
 
 namespace Star {
 

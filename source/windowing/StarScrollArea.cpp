@@ -1,6 +1,6 @@
 #include "StarScrollArea.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarTime.hpp"
 
 namespace Star {
 
@@ -390,7 +390,7 @@ void ScrollArea::update(float dt) {
 
   if (!m_visible)
     return;
-  
+
   auto maxScroll = maxScrollPosition();
 
   // keep vertical scroll bars same distance from the *top* on resize

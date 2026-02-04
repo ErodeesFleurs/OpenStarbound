@@ -1,6 +1,7 @@
 #pragma once
 
-#include "StarException.hpp"
+#include <algorithm>
+#include <functional>
 
 namespace Star {
 
@@ -397,7 +398,7 @@ public:
   typedef void pointer;
   typedef void reference;
 
-  typedef typename std::result_of<NullaryFunction()>::type FunctionReturnType;
+  typedef std::invoke_result_t<NullaryFunction> FunctionReturnType;
 
   explicit FunctionInputIterator(NullaryFunction f = {})
     : m_function(std::move(f)) {}
@@ -534,7 +535,7 @@ void tupleCallFunctionCaller(Tuple&& t, Function&& function) {
 }
 
 template <typename Tuple, typename Function, typename... T>
-void tupleCallFunctionExpander(Tuple&& t, Function&& function, tuple<T...> const&) {
+void tupleCallFunctionExpander(Tuple&& t, Function&& function, std::tuple<T...> const&) {
   tupleCallFunctionCaller<Tuple, Function, T...>(std::forward<Tuple>(t), std::forward<Function>(function));
 }
 
@@ -614,13 +615,13 @@ struct FunctionTraits<ReturnType(ArgsTypes...)> {
   typedef ReturnType Return;
 
   typedef VariadicTypedef<ArgsTypes...> Args;
-  typedef tuple<ArgsTypes...> ArgTuple;
+  typedef std::tuple<ArgsTypes...> ArgTuple;
 
   template <size_t i>
   struct Arg {
     // the i-th argument is equivalent to the i-th tuple element of a tuple
     // composed of those arguments.
-    typedef typename tuple_element<i, ArgTuple>::type type;
+    typedef typename std::tuple_element<i, ArgTuple>::type type;
   };
 };
 

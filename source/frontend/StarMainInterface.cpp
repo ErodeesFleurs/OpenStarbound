@@ -15,7 +15,7 @@
 #include "StarConfirmationDialog.hpp"
 #include "StarHttpTrustDialog.hpp"
 #include "StarJoinRequestDialog.hpp"
-#include "StarImageMetadataDatabase.hpp"
+#include "StarImageMetadataDatabase.hpp" // IWYU pragma: keep
 #include "StarGuiReader.hpp"
 #include "StarPaneManager.hpp"
 #include "StarClientCommandProcessor.hpp"
@@ -174,7 +174,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   m_paneManager.registerPane(MainInterfacePanes::PlanetText, PaneLayer::Hud, planetName);
 
   auto charSelectionMenu = make_shared<CharSelectionPane>(m_client->playerStorage(), [=]() {},
-    [=](PlayerPtr mainPlayer) {
+    [=, this](PlayerPtr mainPlayer) {
       m_client->switchPlayer(mainPlayer->uuid());
       auto configuration = Root::singleton().configuration();
       if (configuration->get("characterSwapMovesToFront", false).toBool())
@@ -567,7 +567,7 @@ void MainInterface::update(float dt) {
   // update mouseover target
   EntityId newMouseOverTarget = NullEntityId;
   m_stickyTargetingTimer.tick(dt);
-  auto mouseoverEntities = m_client->worldClient()->query<DamageBarEntity>(RectF::withCenter(cursorWorldPos, Vec2F(1, 1)), [=](shared_ptr<DamageBarEntity> const& entity) {
+  auto mouseoverEntities = m_client->worldClient()->query<DamageBarEntity>(RectF::withCenter(cursorWorldPos, Vec2F(1, 1)), [=, this](shared_ptr<DamageBarEntity> const& entity) {
       return entity != player
         && entity->damageBar() == DamageBarType::Default
         && (entity->getTeam().type == TeamType::Enemy || entity->getTeam().type == TeamType::PVP)
@@ -754,7 +754,7 @@ void MainInterface::update(float dt) {
 
         if (!worldName.empty()) {
           m_planetText->parent()->setPosition(m_config->planetNameOffset * (2.f / interfaceScale()));
-          m_planetText->setText(strf(m_config->planetNameFormatString.utf8Ptr(), worldName));
+          m_planetText->setText(vstrf(m_config->planetNameFormatString.utf8Ptr(), worldName));
           m_paneManager.displayRegisteredPane(MainInterfacePanes::PlanetText);
         }
       }

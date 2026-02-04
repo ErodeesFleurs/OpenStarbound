@@ -397,4 +397,4 @@ size_t hash<Maybe<T>>::operator()(Maybe<T> const& m) const {
 }
 
 template <typename T>
-struct fmt::formatter<Star::Maybe<T>> : ostream_formatter {};
+struct std::formatter<Star::Maybe<T>> : Star::ostream_formatter {};

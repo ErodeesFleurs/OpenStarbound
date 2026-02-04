@@ -92,12 +92,12 @@ static void GLAPIENTRY GlMessageCallback(GLenum, GLenum type, GLuint, GLenum, GL
 OpenGlRenderer::OpenGlRenderer() {
   auto glewResult = glewInit();
   if (glewResult != GLEW_OK && glewResult != GLEW_ERROR_NO_GLX_DISPLAY)
-    throw RendererException::format("Could not initialize GLEW: {}", (char*)glewGetErrorString(glewResult));
+    throw RendererException::vformat("Could not initialize GLEW: {}", (char*)glewGetErrorString(glewResult));
 
   if (!GLEW_VERSION_2_0)
     throw RendererException("OpenGL 2.0 not available!");
 
-  Logger::info("OpenGL version: '{}' vendor: '{}' renderer: '{}' shader: '{}'",
+  Logger::info(std::string_view("OpenGL version: '{}' vendor: '{}' renderer: '{}' shader: '{}'"),
       (const char*)glGetString(GL_VERSION),
       (const char*)glGetString(GL_VENDOR),
       (const char*)glGetString(GL_RENDERER),
@@ -206,7 +206,7 @@ void OpenGlRenderer::loadConfig(Json const& config) {
   for (auto& pair : config.getObject("frameBuffers", {})) {
     Json config = pair.second;
     config = config.set("multisample", m_multiSampling);
-    Logger::info("Creating framebuffer {}", pair.first);
+    Logger::info(std::string_view("Creating framebuffer {}"), pair.first);
     m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(config);
 
   }
@@ -216,7 +216,7 @@ void OpenGlRenderer::loadConfig(Json const& config) {
 
 void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConfig, StringMap<String> const& shaders) {
   if (auto effect = m_effects.ptr(name)) {
-    Logger::info("Reloading OpenGL effect {}", name);
+    Logger::info(std::string_view("Reloading OpenGL effect {}"), name);
     glDeleteProgram(effect->program);
     m_effects.erase(name);
   }
@@ -236,7 +236,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (!status) {
       glGetShaderInfoLog(shader, sizeof(logBuffer), NULL, logBuffer);
-      throw RendererException(strf("Failed to compile {} shader: {}\n", name, logBuffer));
+      throw RendererException(strf(std::string_view("Failed to compile {} shader: {}\n"), name, logBuffer));
     }
 
     return shader;
@@ -248,7 +248,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     fragmentShader = compileShader(GL_FRAGMENT_SHADER, "fragment");
   }
   catch (RendererException const& e) {
-    Logger::error("Shader compile error, using default: {}", e.what());
+    Logger::error(std::string_view("Shader compile error, using default: {}"), e.what());
     if (vertexShader) glDeleteShader(vertexShader);
     if (fragmentShader) glDeleteShader(fragmentShader);
     vertexShader = compileShader(GL_VERTEX_SHADER, DefaultVertexShader);
@@ -272,7 +272,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
   if (!status) {
     glGetProgramInfoLog(program, sizeof(logBuffer), NULL, logBuffer);
     glDeleteProgram(program);
-    throw RendererException(strf("Failed to link program: {}\n", logBuffer));
+    throw RendererException(strf(std::string_view("Failed to link program: {}\n"), logBuffer));
   }
 
   glUseProgram(m_program = program);
@@ -289,7 +289,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
 
     effectParameter.parameterUniform = glGetUniformLocation(m_program, p.second.getString("uniform").utf8Ptr());
     if (effectParameter.parameterUniform == -1) {
-      Logger::warn("OpenGL20 effect parameter '{}' in effect '{}' has no associated uniform, skipping", p.first, name);
+      Logger::warn(std::string_view("OpenGL20 effect parameter '{}' in effect '{}' has no associated uniform, skipping"), p.first, name);
     } else {
       String type = p.second.getString("type");
       if (type == "bool") {
@@ -305,7 +305,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
       } else if (type == "vec4") {
         effectParameter.parameterType = RenderEffectParameter::typeIndexOf<Vec4F>();
       } else {
-        throw RendererException::format("Unrecognized effect parameter type '{}'", type);
+        throw RendererException::format(std::string_view("Unrecognized effect parameter type '{}'"), type);
       }
 
       if (p.second.getBool("scriptable",false)) {
@@ -355,7 +355,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     EffectTexture effectTexture;
     effectTexture.textureUniform = glGetUniformLocation(m_program, p.second.getString("textureUniform").utf8Ptr());
     if (effectTexture.textureUniform == -1) {
-      Logger::warn("OpenGL20 effect parameter '{}' has no associated uniform, skipping", p.first);
+      Logger::warn(std::string_view("OpenGL20 effect parameter '{}' has no associated uniform, skipping"), p.first);
     } else {
         effectTexture.textureUnit = parameterTextureUnit++;
         glUniform1i(effectTexture.textureUniform, effectTexture.textureUnit);
@@ -365,7 +365,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
         if (auto tsu = p.second.optString("textureSizeUniform")) {
           effectTexture.textureSizeUniform = glGetUniformLocation(m_program, tsu->utf8Ptr());
           if (effectTexture.textureSizeUniform == -1)
-            Logger::warn("OpenGL20 effect parameter '{}' has textureSizeUniform '{}' with no associated uniform", p.first, *tsu);
+            Logger::warn(std::string_view("OpenGL20 effect parameter '{}' has textureSizeUniform '{}' with no associated uniform"), p.first, *tsu);
         }
 
       effect.textures[p.first] = effectTexture;
@@ -382,7 +382,7 @@ void OpenGlRenderer::setEffectParameter(String const& parameterName, RenderEffec
     return;
 
   if (ptr->parameterType != value.typeIndex())
-    throw RendererException::format("OpenGlRenderer::setEffectParameter '{}' parameter type mismatch", parameterName);
+    throw RendererException::format(std::string_view("OpenGlRenderer::setEffectParameter '{}' parameter type mismatch"), parameterName);
 
   flushImmediatePrimitives();
 
@@ -408,13 +408,13 @@ void OpenGlRenderer::setEffectScriptableParameter(String const& effectName, Stri
     return;
 
   Effect& effect = find->second;
-  
+
   auto ptr = effect.scriptables.ptr(parameterName);
   if (!ptr || (ptr->parameterValue && *ptr->parameterValue == value))
     return;
 
   if (ptr->parameterType != value.typeIndex())
-    throw RendererException::format("OpenGlRenderer::setEffectScriptableParameter '{}' parameter type mismatch", parameterName);
+    throw RendererException::format(std::string_view("OpenGlRenderer::setEffectScriptableParameter '{}' parameter type mismatch"), parameterName);
 
   ptr->parameterValue = value;
 }
@@ -429,7 +429,7 @@ Maybe<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParameter(String
   auto ptr = effect.scriptables.ptr(parameterName);
   if (!ptr)
     return {};
-  
+
   return ptr->parameterValue;
 }
 Maybe<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) {
@@ -442,7 +442,7 @@ Maybe<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String 
   auto ptr = effect.scriptables.ptr(parameterName);
   if (!ptr)
     return {};
-  
+
   return ptr->parameterType;
 }
 
@@ -501,7 +501,7 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
         auto textureUniform = fbt.getString("texture");
         auto ptr = m_currentEffect->textures.ptr(textureUniform);
         if (ptr) {
-          if (!ptr->textureValue || ptr->textureValue->textureId == 0) {  
+          if (!ptr->textureValue || ptr->textureValue->textureId == 0) {
             auto texture = getGlFrameBuffer(*frameBufferId)->texture;
             ptr->textureValue = texture;
             if (ptr->textureSizeUniform != -1) {
@@ -576,7 +576,7 @@ TextureGroupPtr OpenGlRenderer::createTextureGroup(TextureGroupSize textureSize,
   else // TextureGroupSize::Small
     atlasNumCells = 64;
 
-  Logger::info("detected supported OpenGL texture size {}, using atlasNumCells {}", maxTextureSize, atlasNumCells);
+  Logger::info(std::string_view("detected supported OpenGL texture size {}, using atlasNumCells {}"), maxTextureSize, atlasNumCells);
 
   auto glTextureGroup = make_shared<GlTextureGroup>(atlasNumCells);
   glTextureGroup->textureAtlasSet.textureFiltering = filtering;
@@ -625,7 +625,7 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
 void OpenGlRenderer::startFrame() {
   if (m_scissorRect)
     glDisable(GL_SCISSOR_TEST);
-  
+
   for (auto& frameBuffer : m_frameBuffers) {
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer.second->id);
     glClear(GL_COLOR_BUFFER_BIT);
@@ -650,7 +650,7 @@ void OpenGlRenderer::finishFrame() {
   filter(m_liveTextureGroups, [](auto const& p) {
         unsigned const CompressionsPerFrame = 1;
 
-        if (!p.unique() || p->textureAtlasSet.totalTextures() > 0) {
+        if (p.use_count() != 1 || p->textureAtlasSet.totalTextures() > 0) {
           p->textureAtlasSet.compressionPass(CompressionsPerFrame);
           return true;
         }
@@ -960,24 +960,24 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
 
 bool OpenGlRenderer::logGlErrorSummary(String prefix) {
   if (GLenum error = glGetError()) {
-    Logger::error("{}: ", prefix);
+    Logger::error(std::string_view("{}: "), prefix);
     do {
       if (error == GL_INVALID_ENUM) {
-        Logger::error("GL_INVALID_ENUM");
+        Logger::error(std::string_view("GL_INVALID_ENUM"));
       } else if (error == GL_INVALID_VALUE) {
-        Logger::error("GL_INVALID_VALUE");
+        Logger::error(std::string_view("GL_INVALID_VALUE"));
       } else if (error == GL_INVALID_OPERATION) {
-        Logger::error("GL_INVALID_OPERATION");
+        Logger::error(std::string_view("GL_INVALID_OPERATION"));
       } else if (error == GL_INVALID_FRAMEBUFFER_OPERATION) {
-        Logger::error("GL_INVALID_FRAMEBUFFER_OPERATION");
+        Logger::error(std::string_view("GL_INVALID_FRAMEBUFFER_OPERATION"));
       } else if (error == GL_OUT_OF_MEMORY) {
-        Logger::error("GL_OUT_OF_MEMORY");
+        Logger::error(std::string_view("GL_OUT_OF_MEMORY"));
       } else if (error == GL_STACK_UNDERFLOW) {
-        Logger::error("GL_STACK_UNDERFLOW");
+        Logger::error(std::string_view("GL_STACK_UNDERFLOW"));
       } else if (error == GL_STACK_OVERFLOW) {
-        Logger::error("GL_STACK_OVERFLOW");
+        Logger::error(std::string_view("GL_STACK_OVERFLOW"));
       } else {
-        Logger::error("<UNRECOGNIZED GL ERROR>");
+        Logger::error(std::string_view("<UNRECOGNIZED GL ERROR>"));
       }
     } while ((error = glGetError()));
     return true;
@@ -1112,8 +1112,8 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
   m_textureSizeUniforms.clear();
   if (effect.includeVBTextures) {
     for (size_t i = 0; i < MultiTextureCount; ++i) {
-      m_textureUniforms.append(effect.getUniform(strf("texture{}", i).c_str()));
-      m_textureSizeUniforms.append(effect.getUniform(strf("textureSize{}", i).c_str()));
+      m_textureUniforms.append(effect.getUniform(strf(std::string_view("texture{}"), i).c_str()));
+      m_textureSizeUniforms.append(effect.getUniform(strf(std::string_view("textureSize{}"), i).c_str()));
     }
   }
   m_screenSizeUniform = effect.getUniform("screenSize");
@@ -1125,7 +1125,7 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
   }
 
   glUniform2f(m_screenSizeUniform, screenSize[0], screenSize[1]);
-  
+
   for (auto& param : effect.scriptables) {
     auto ptr = &param.second;
     auto mvalue = ptr->parameterValue;
@@ -1151,7 +1151,7 @@ RefPtr<OpenGlRenderer::GlFrameBuffer> OpenGlRenderer::getGlFrameBuffer(String co
   if (auto ptr = m_frameBuffers.ptr(id))
     return *ptr;
   else
-    throw RendererException::format("Frame buffer '{}' does not exist", id);
+    throw RendererException::format(std::string_view("Frame buffer '{}' does not exist"), id);
 }
 
 void OpenGlRenderer::blitGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer) {

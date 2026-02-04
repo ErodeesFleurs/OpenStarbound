@@ -1,12 +1,10 @@
 #include "StarHumanoid.hpp"
+#include "StarParticleDatabase.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
 #include "StarArmors.hpp"
-#include "StarParticleDatabase.hpp"
-#include "StarAssets.hpp"
-#include "StarSpeciesDatabase.hpp"
 #include "StarDanceDatabase.hpp"
+#include "StarSpeciesDatabase.hpp" // IWYU pragma: keep
 
 namespace Star {
 
@@ -2333,7 +2331,7 @@ void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   NetElementSyncGroup::netLoad(ds, rules);
 }
 
-void NetHumanoid::netElementsNeedLoad(bool initial) {
+void NetHumanoid::netElementsNeedLoad([[maybe_unused]]bool initial) {
 }
 
 void NetHumanoid::netElementsNeedStore() {

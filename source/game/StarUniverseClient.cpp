@@ -1,27 +1,23 @@
 #include "StarUniverseClient.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
-#include "StarVersion.hpp"
+#include "StarPlayerLog.hpp" // IWYU pragma: keep
+#include "StarPlayerStorage.hpp" // IWYU pragma: keep
+#include "StarPlayerUniverseMap.hpp" // IWYU pragma: keep
+#include "StarProjectile.hpp"
+#include "StarProjectileDatabase.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
-#include "StarProjectileDatabase.hpp"
-#include "StarPlayerStorage.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerLog.hpp"
 #include "StarAssets.hpp"
 #include "StarTime.hpp"
 #include "StarNetPackets.hpp"
-#include "StarTcp.hpp"
 #include "StarWorldClient.hpp"
 #include "StarSystemWorldClient.hpp"
 #include "StarClientContext.hpp"
 #include "StarTeamClient.hpp"
 #include "StarSha256.hpp"
-#include "StarEncode.hpp"
 #include "StarPlayerCodexes.hpp"
 #include "StarQuestManager.hpp"
-#include "StarPlayerUniverseMap.hpp"
 #include "StarWorldTemplate.hpp"
 
 namespace Star {
@@ -291,7 +287,10 @@ void UniverseClient::update(float dt) {
   for (auto& result : m_teamClient->pullInviteResults()) {
     String printout;
     if (auto pair = result.ptr<std::pair<String, bool>>()) {
-      printout = strf(pair->second ? "Invited {}" : "Couldn't find anyone to invite named {}", pair->first);
+        if (pair->second)
+            printout = strf("Invited {}", pair->first);
+        else
+            printout = strf("Couldn't find anyone to invite named {}", pair->first);
     } else if (auto invited = result.ptr<StringList>()) {
       printout = "";
       for (size_t i = 0; i != invited->size(); ++i) {

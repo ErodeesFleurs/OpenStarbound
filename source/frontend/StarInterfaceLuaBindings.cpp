@@ -1,4 +1,5 @@
 #include "StarInterfaceLuaBindings.hpp"
+#include "StarClientContext.hpp" // IWYU pragma: keep
 #include "StarWidgetLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLuaGameConverters.hpp"
@@ -24,13 +25,13 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
     return {};
   });
 
-  
+
   callbacks.registerCallback("bindRegisteredPane", [mainInterface](String const& registeredPaneName) -> Maybe<LuaCallbacks> {
     if (auto pane = mainInterface->paneManager()->maybeRegisteredPane(MainInterfacePanesNames.getLeft(registeredPaneName)))
       return pane->makePaneCallbacks();
     return {};
   });
-  
+
   callbacks.registerCallback("displayRegisteredPane", [mainInterface](String const& registeredPaneName) {
     auto pane = MainInterfacePanesNames.getLeft(registeredPaneName);
     auto paneManager = mainInterface->paneManager();

@@ -1,9 +1,10 @@
 #pragma once
 
+#include "StarException.hpp"
+
 #include <type_traits>
 #include <limits>
-
-#include "StarMaybe.hpp"
+#include <cmath>
 
 namespace Star {
 

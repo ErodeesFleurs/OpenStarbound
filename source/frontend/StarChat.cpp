@@ -29,7 +29,7 @@ Chat::Chat(UniverseClientPtr client, Json const& baseConfig) : BaseScriptPane(ba
   m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks((World*)m_client->worldClient().get()));
   m_chatPrevIndex = 0;
   m_historyOffset = 0;
-  
+
   auto assets = Root::singleton().assets();
   auto config = baseConfig.get("config");
   m_timeChatLastActive = Time::monotonicMilliseconds();
@@ -57,12 +57,12 @@ Chat::Chat(UniverseClientPtr client, Json const& baseConfig) : BaseScriptPane(ba
   m_colorCodes[MessageContext::RadioMessage] = config.query("colors.radioMessage").toString();
   m_colorCodes[MessageContext::World] = config.query("colors.world").toString();
   if (!m_scripted) {
-    m_reader->registerCallback("textBox", [=](Widget*) { startChat(); });
-    m_reader->registerCallback("upButton", [=](Widget*) { scrollUp(); });
-    m_reader->registerCallback("downButton", [=](Widget*) { scrollDown(); });
-    m_reader->registerCallback("bottomButton", [=](Widget*) { scrollBottom(); });
+    m_reader->registerCallback("textBox", [=, this](Widget*) { startChat(); });
+    m_reader->registerCallback("upButton", [=, this](Widget*) { scrollUp(); });
+    m_reader->registerCallback("downButton", [=, this](Widget*) { scrollDown(); });
+    m_reader->registerCallback("bottomButton", [=, this](Widget*) { scrollBottom(); });
 
-    m_reader->registerCallback("filterGroup", [=](Widget* widget) {
+    m_reader->registerCallback("filterGroup", [=, this](Widget* widget) {
       Json data = as<ButtonWidget>(widget)->data();
       auto filter = data.getArray("filter", {});
       m_modeFilter.clear();
@@ -229,7 +229,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     guiContext.setTextStyle(m_chatTextStyle);
     StringList lines;
     if (message.fromNick != "" && message.portrait == "")
-      lines = guiContext.wrapInterfaceText(strf(m_chatFormatString.utf8Ptr(), message.fromNick, message.text), wrapWidth);
+      lines = guiContext.wrapInterfaceText(vstrf(m_chatFormatString.utf8Ptr(), message.fromNick, message.text), wrapWidth);
     else
       lines = guiContext.wrapInterfaceText(message.text, wrapWidth);
 
@@ -417,7 +417,7 @@ bool Chat::sendEvent(InputEvent const& event) {
 }
 
 void Chat::scrollUp() {
-  auto shownMessages = m_receivedMessages.filtered([=](LogMessage msg) {
+  auto shownMessages = m_receivedMessages.filtered([=, this](LogMessage msg) {
       return (m_modeFilter.empty() || m_modeFilter.contains(msg.mode));
     });
 

@@ -78,4 +78,4 @@ struct hash<ItemDescriptor> {
 
 }
 
-template <> struct fmt::formatter<Star::ItemDescriptor> : ostream_formatter {};
+template <> struct std::formatter<Star::ItemDescriptor> : Star::ostream_formatter {};

@@ -1,9 +1,11 @@
 #pragma once
 
+#include "StarCelestialTypes.hpp"
 #include "StarDataStream.hpp"
+#include "StarPlayerTypes.hpp"
+#include "StarWorldStorage.hpp"
 #include "StarWorldTiles.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarCelestialDatabase.hpp"
 #include "StarDamageManager.hpp"
 #include "StarChatTypes.hpp"
 #include "StarUuid.hpp"
@@ -12,7 +14,6 @@
 #include "StarInteractionTypes.hpp"
 #include "StarWarping.hpp"
 #include "StarWiring.hpp"
-#include "StarClientContext.hpp"
 #include "StarSystemWorld.hpp"
 #include "StarNetCompatibility.hpp"
 

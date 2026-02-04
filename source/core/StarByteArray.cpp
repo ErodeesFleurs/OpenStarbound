@@ -1,5 +1,6 @@
 #include "StarByteArray.hpp"
 #include "StarEncode.hpp"
+#include <string_view>
 
 namespace Star {
 
@@ -85,14 +86,14 @@ void ByteArray::reserve(size_t newCapacity) {
     if (!m_data) {
       auto newMem = (char*)Star::malloc(newCapacity);
       if (!newMem)
-        throw MemoryException::format("Could not set new ByteArray capacity {}\n", newCapacity);
+        throw MemoryException::format(std::string_view("Could not set new ByteArray capacity {}\n"), newCapacity);
       m_data = newMem;
       m_capacity = newCapacity;
     } else {
       newCapacity = max({m_capacity * 2, newCapacity, (size_t)8});
       auto newMem = (char*)Star::realloc(m_data, newCapacity);
       if (!newMem)
-        throw MemoryException::format("Could not set new ByteArray capacity {}\n", newCapacity);
+        throw MemoryException::format(std::string_view("Could not set new ByteArray capacity {}\n"), newCapacity);
       m_data = newMem;
       m_capacity = newCapacity;
     }

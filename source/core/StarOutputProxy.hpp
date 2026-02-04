@@ -1,16 +1,17 @@
 #pragma once
 
-#include "StarMemory.hpp"
 
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include "StarOstreamFormatter.hpp"
+
+#include <format>
+#include <functional>
 
 namespace Star {
 
 namespace OutputAnyDetail {
   template<typename T, typename CharT, typename Traits>
   std::basic_string<CharT, Traits> string(T const& t) {
-    return fmt::format("<type {} at address: {}>", typeid(T).name(), (void*)&t);
+    return std::format("<type {} at address: {}>", typeid(T).name(), (void*)&t);
   }
 
   template<typename T, typename CharT, typename Traits>
@@ -45,7 +46,7 @@ OutputAnyDetail::Wrapper<T> outputAny(T const& t) {
 }
 
 struct OutputProxy {
-  typedef function<void(std::ostream&)> PrintFunction;
+    typedef std::function<void(std::ostream&)> PrintFunction;
 
   OutputProxy(PrintFunction p)
     : print(std::move(p)) {}
@@ -61,5 +62,5 @@ inline std::ostream& operator<<(std::ostream& os, OutputProxy const& p) {
 }
 
 template <typename T>
-struct fmt::formatter<Star::OutputAnyDetail::Wrapper<T>> : ostream_formatter {};
-template <> struct fmt::formatter<Star::OutputProxy> : ostream_formatter {};
+struct std::formatter<Star::OutputAnyDetail::Wrapper<T>> : Star::ostream_formatter {};
+template <> struct std::formatter<Star::OutputProxy> : Star::ostream_formatter {};

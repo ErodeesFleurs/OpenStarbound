@@ -1,10 +1,11 @@
 #include "StarStagehand.hpp"
-#include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarBehaviorLuaBindings.hpp"
-#include "StarLuaGameConverters.hpp"
+#include "StarDataStreamExtra.hpp" // IWYU pragma: keep
+#include "StarLuaConverters.hpp" // IWYU pragma: keep
+#include "StarLuaGameConverters.hpp" // IWYU pragma: keep
 
 namespace Star {
 
@@ -138,7 +139,7 @@ Stagehand::Stagehand() {
 void Stagehand::readConfig(Json config) {
   m_config = config;
   m_scripted = m_config.contains("scripts");
-  
+
   m_clientEntityMode = ClientEntityModeNames.getLeft(config.getString("clientEntityMode", "ClientSlaveOnly"));
 
   if (m_config.contains("position")) {
@@ -146,7 +147,7 @@ void Stagehand::readConfig(Json config) {
     m_xPosition.set(pos[0]);
     m_yPosition.set(pos[1]);
   }
-  
+
   Maybe<RectF> broadcastArea = jsonToMaybe<RectF>(config.opt("broadcastArea").value(Json()), jsonToRectF);
   if (broadcastArea && (broadcastArea->size()[0] < 0.0 || broadcastArea->size()[1] < 0.0))
     broadcastArea.reset();

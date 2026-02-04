@@ -1,4 +1,5 @@
 #include "StarSignalHandler.hpp"
+#include "StarException.hpp"
 
 #include <signal.h>
 

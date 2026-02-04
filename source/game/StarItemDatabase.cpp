@@ -1,5 +1,6 @@
+#include "StarCodexDatabase.hpp" // IWYU pragma: keep
+#include "StarString.hpp"
 #include "StarItemDatabase.hpp"
-#include "StarCodexDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -146,7 +147,7 @@ void ItemDatabase::cleanup() {
   {
     MutexLocker locker(m_cacheMutex);
     m_itemCache.cleanup([](ItemCacheEntry const&, ItemPtr const& item) {
-      return !item.unique();
+      return item.use_count() != 1;
     });
   }
 }
@@ -537,7 +538,7 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
           Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
           result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
         } else {
-          Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
+          Logger::error(std::string_view("Could not instantiate item '{}'. {}"), descriptor, outputException(e, false));
           result = createItem(m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
             {"genericItemStorage", descriptor.toJson()},
             {"shortdescription", descriptor.name()},
@@ -611,7 +612,7 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
   JsonObject customConfig = objectConfig.toObject();
   if (!customConfig.contains("inventoryIcon")) {
     customConfig["inventoryIcon"] = assets->json("/objects/defaultParameters.config:missingIcon");
-    Logger::warn(strf("Missing inventoryIcon for {}, using default", data.name).c_str());
+    Logger::warn("Missing inventoryIcon for {}, using default", data.name);
   }
   customConfig["itemName"] = data.name;
   if (!customConfig.contains("tooltipKind"))

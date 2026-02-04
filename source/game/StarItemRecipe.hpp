@@ -34,4 +34,4 @@ struct hash<ItemRecipe> {
 std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);
 }
 
-template <> struct fmt::formatter<Star::ItemRecipe> : ostream_formatter {};
+template <> struct std::formatter<Star::ItemRecipe> : Star::ostream_formatter {};

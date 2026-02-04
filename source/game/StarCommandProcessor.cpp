@@ -1,26 +1,25 @@
 #include "StarCommandProcessor.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarNpc.hpp"
+#include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
+#include "StarNpc.hpp" // IWYU pragma: keep
+#include "StarNpcDatabase.hpp" // IWYU pragma: keep
+#include "StarVehicleDatabase.hpp" // IWYU pragma: keep
+#include "StarItemDatabase.hpp" // IWYU pragma: keep
 #include "StarWorldServer.hpp"
+#include "StarCelestialDatabase.hpp"
 #include "StarUniverseServer.hpp"
-#include "StarUniverseSettings.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarConfiguration.hpp"
 #include "StarItemDrop.hpp"
-#include "StarTreasure.hpp"
 #include "StarLogging.hpp"
 #include "StarPlayer.hpp"
 #include "StarMonster.hpp"
 #include "StarStagehand.hpp"
-#include "StarVehicleDatabase.hpp"
 #include "StarStagehandDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarChatProcessor.hpp"
 #include "StarAssets.hpp"
 #include "StarWorldLuaBindings.hpp"
 #include "StarUniverseServerLuaBindings.hpp"
+#include "StarItem.hpp"
 
 namespace Star {
 
@@ -73,20 +72,20 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
     };
 
   String basicHelpFormat = assets->json("/help.config:basicHelpText").toString();
-  res = res + strf(basicHelpFormat.utf8Ptr(), commandDescriptions(basicCommands));
+  res = res + vstrf(basicHelpFormat.utf8Ptr(), commandDescriptions(basicCommands));
 
   String openSbHelpFormat = assets->json("/help.config:openSbHelpText").toString();
-  res = res + "\n" + strf(openSbHelpFormat.utf8Ptr(), commandDescriptions(openSbCommands));
+  res = res + "\n" + vstrf(openSbHelpFormat.utf8Ptr(), commandDescriptions(openSbCommands));
 
   if (!adminCheck(connectionId, "")) {
     String adminHelpFormat = assets->json("/help.config:adminHelpText").toString();
-    res = res + "\n" + strf(adminHelpFormat.utf8Ptr(), commandDescriptions(adminCommands));
+    res = res + "\n" + vstrf(adminHelpFormat.utf8Ptr(), commandDescriptions(adminCommands));
 
     String debugHelpFormat = assets->json("/help.config:debugHelpText").toString();
-    res = res + "\n" + strf(debugHelpFormat.utf8Ptr(), commandDescriptions(debugCommands));
+    res = res + "\n" + vstrf(debugHelpFormat.utf8Ptr(), commandDescriptions(debugCommands));
 
     String openSbDebugHelpFormat = assets->json("/help.config:openSbDebugHelpText").toString();
-    res = res + "\n" + strf(openSbDebugHelpFormat.utf8Ptr(), commandDescriptions(openSbDebugCommands));
+    res = res + "\n" + vstrf(openSbDebugHelpFormat.utf8Ptr(), commandDescriptions(openSbDebugCommands));
   }
 
   res = res + "\n" + basicCommands.getString("help");

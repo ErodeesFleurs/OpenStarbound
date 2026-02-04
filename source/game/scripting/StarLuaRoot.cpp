@@ -1,5 +1,6 @@
 #include "StarLuaRoot.hpp"
 #include "StarAssets.hpp"
+#include "StarTime.hpp"
 
 namespace Star {
 

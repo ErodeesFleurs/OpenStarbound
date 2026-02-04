@@ -2,7 +2,6 @@
 
 #include "StarStringView.hpp"
 #include "StarVector.hpp"
-#include "StarFormat.hpp"
 
 namespace Star {
 
@@ -169,4 +168,4 @@ inline Vec4B Color::v4fToByte(Vec4F const& f, bool doClamp) {
 
 }
 
-template <> struct fmt::formatter<Star::Color> : ostream_formatter {};
+template <> struct std::formatter<Star::Color> : Star::ostream_formatter {};

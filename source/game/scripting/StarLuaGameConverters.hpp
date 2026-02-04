@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarPhysicsEntity.hpp"
-#include "StarLuaConverters.hpp"
 #include "StarInventoryTypes.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarPlatformerAStar.hpp"
@@ -9,9 +8,9 @@
 #include "StarDamage.hpp"
 #include "StarCollectionDatabase.hpp"
 #include "StarBehaviorState.hpp"
-#include "StarSystemWorld.hpp"
 #include "StarDrawable.hpp"
 #include "StarRpcThreadPromise.hpp"
+#include "StarLuaConverters.hpp" // IWYU pragma: keep
 #include "StarEntity.hpp"
 
 namespace Star {

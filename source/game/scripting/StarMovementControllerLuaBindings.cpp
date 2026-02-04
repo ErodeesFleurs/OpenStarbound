@@ -1,6 +1,7 @@
 #include "StarMovementControllerLuaBindings.hpp"
 #include "StarMovementController.hpp"
-#include "StarLuaGameConverters.hpp"
+#include "StarLuaConverters.hpp" // IWYU pragma: keep
+#include "StarLuaGameConverters.hpp" // IWYU pragma: keep
 
 namespace Star {
 

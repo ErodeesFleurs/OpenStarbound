@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarFormat.hpp"
 #include "StarString.hpp"
 #include "StarStringView.hpp"
 #include "StarMaybe.hpp"
@@ -52,7 +51,7 @@ Type lexicalCast(const char* first, const char* last) {
   auto res = fast_float::from_chars(first, last, result);
   if ((res.ec != std::errc() && res.ec != std::errc::result_out_of_range) || res.ptr != last)
     throwLexicalCastError(res.ec, first, last);
-  
+
   return result;
 }
 

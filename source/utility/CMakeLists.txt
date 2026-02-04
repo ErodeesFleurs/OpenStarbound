@@ -6,7 +6,6 @@ SET(UTILITY_INCLUDES
     ${PROJECT_SOURCE_DIR}/game/interfaces
     ${PROJECT_SOURCE_DIR}/game/scripting
     ${PROJECT_SOURCE_DIR}/extern
-    ${PROJECT_SOURCE_DIR}/extern/fmt
     ${PROJECT_SOURCE_DIR}/extern/lua
 )
 

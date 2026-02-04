@@ -1,11 +1,14 @@
 #pragma once
 
+#include <format>
+#include <string_view>
+#include <utility>
+
 #include "StarThread.hpp"
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
-#include "StarTime.hpp"
 #include "StarFile.hpp"
 
 namespace Star {
@@ -69,16 +72,26 @@ public:
   static void log(LogLevel level, char const* msg);
 
   template <typename... Args>
-  static void logf(LogLevel level, char const* msg, Args const&... args);
+  static void logf(LogLevel level, std::format_string<Args...> msg, Args&&... args);
+  template <typename... Args>
+  static void vlogf(LogLevel level, std::string_view msg, Args&&... args);
 
   template <typename... Args>
-  static void debug(char const* msg, Args const&... args);
+  static void debug(std::format_string<Args...> msg, Args&&... args);
   template <typename... Args>
-  static void info(char const* msg, Args const&... args);
+  static void vdebug(std::string_view msg, Args&&... args);
   template <typename... Args>
-  static void warn(char const* msg, Args const&... args);
+  static void info(std::format_string<Args...> msg, Args&&... args);
   template <typename... Args>
-  static void error(char const* msg, Args const&... args);
+  static void vinfo(std::string_view msg, Args&&... args);
+  template <typename... Args>
+  static void warn(std::format_string<Args...> msg, Args&&... args);
+  template <typename... Args>
+  static void vwarn(std::string_view msg, Args&&... args);
+  template <typename... Args>
+  static void error(std::format_string<Args...> msg, Args&&... args);
+  template <typename... Args>
+  static void verror(std::string_view msg, Args&&... args);
 
   static bool loggable(LogLevel level);
   static void refreshLoggable();
@@ -158,9 +171,9 @@ private:
 };
 
 template <typename... Args>
-void Logger::logf(LogLevel level, char const* msg, Args const&... args) {
+void Logger::logf(LogLevel level, std::format_string<Args...> msg, Args&&... args) {
   if (loggable(level)) {
-    std::string output = strf(msg, args...);
+    std::string output = strf(msg, std::forward<Args>(args)...);
     MutexLocker locker(s_mutex);
     for (auto const& l : s_sinks) {
       if (l->level() <= level) {
@@ -171,23 +184,56 @@ void Logger::logf(LogLevel level, char const* msg, Args const&... args) {
 }
 
 template <typename... Args>
-void Logger::debug(char const* msg, Args const&... args) {
-  logf(LogLevel::Debug, msg, args...);
+void Logger::vlogf(LogLevel level, std::string_view msg, Args&&... args) {
+  if (loggable(level)) {
+    std::string output = vstrf(msg, std::forward<Args>(args)...);
+    MutexLocker locker(s_mutex);
+    for (auto const& l : s_sinks) {
+      if (l->level() <= level) {
+        l->log(output.c_str(), level);
+      }
+    }
+  }
 }
 
 template <typename... Args>
-void Logger::info(char const* msg, Args const&... args) {
-  logf(LogLevel::Info, msg, args...);
+void Logger::debug(std::format_string<Args...> msg, Args&&... args) {
+  logf(LogLevel::Debug, msg, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void Logger::warn(char const* msg, Args const&... args) {
-  logf(LogLevel::Warn, msg, args...);
+void Logger::vdebug(std::string_view msg, Args&&... args) {
+  logf(LogLevel::Debug, msg, std::forward<Args>(args)...);
 }
 
 template <typename... Args>
-void Logger::error(char const* msg, Args const&... args) {
-  logf(LogLevel::Error, msg, args...);
+void Logger::info(std::format_string<Args...> msg, Args&&... args) {
+  logf(LogLevel::Info, msg, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+void Logger::vinfo(std::string_view msg, Args&&... args) {
+  logf(LogLevel::Info, msg, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+void Logger::warn(std::format_string<Args...> msg, Args&&... args) {
+  logf(LogLevel::Warn, msg, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+void Logger::vwarn(std::string_view msg, Args&&... args) {
+  logf(LogLevel::Warn, msg, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+void Logger::error(std::format_string<Args...> msg, Args&&... args) {
+  logf(LogLevel::Error, msg, std::forward<Args>(args)...);
+}
+
+template <typename... Args>
+void Logger::verror(std::string_view msg, Args&&... args) {
+  logf(LogLevel::Error, msg, std::forward<Args>(args)...);
 }
 
 template <typename T>

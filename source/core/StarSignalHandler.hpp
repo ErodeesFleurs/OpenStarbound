@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarException.hpp"
+#include "StarConfig.hpp"
 
 namespace Star {
 

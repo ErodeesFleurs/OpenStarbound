@@ -233,12 +233,12 @@ void TitleScreen::initMainMenu() {
   auto config = assets->json("/interface/windowconfig/title.config");
 
   StringMap<WidgetCallbackFunc> buttonCallbacks;
-  buttonCallbacks["singleplayer"] = [=](Widget*) { switchState(TitleState::SinglePlayerSelectCharacter); };
-  buttonCallbacks["multiplayer"] = [=](Widget*) { switchState(TitleState::MultiPlayerSelectCharacter); };
-  buttonCallbacks["options"] = [=](Widget*) { switchState(TitleState::Options); };
-  buttonCallbacks["quit"] = [=](Widget*) { switchState(TitleState::Quit); };
-  buttonCallbacks["back"] = [=](Widget*) { back(); };
-  buttonCallbacks["mods"] = [=](Widget*) { switchState(TitleState::Mods); };
+  buttonCallbacks["singleplayer"] = [=, this](Widget*) { switchState(TitleState::SinglePlayerSelectCharacter); };
+  buttonCallbacks["multiplayer"] = [=, this](Widget*) { switchState(TitleState::MultiPlayerSelectCharacter); };
+  buttonCallbacks["options"] = [=, this](Widget*) { switchState(TitleState::Options); };
+  buttonCallbacks["quit"] = [=, this](Widget*) { switchState(TitleState::Quit); };
+  buttonCallbacks["back"] = [=, this](Widget*) { back(); };
+  buttonCallbacks["mods"] = [=, this](Widget*) { switchState(TitleState::Mods); };
 
   for (auto buttonConfig : config.getArray("mainMenuButtons")) {
     String key = buttonConfig.getString("key");
@@ -266,7 +266,7 @@ void TitleScreen::initMainMenu() {
   backMenu->determineSizeFromChildren();
   backMenu->setAnchor(PaneAnchor::BottomLeft);
   backMenu->lockPosition();
-  
+
   m_backgroundMenu = make_shared<Pane>();
   m_backgroundMenu->setAnchor(PaneAnchor::BottomLeft);
   m_backgroundMenu->lockPosition();
@@ -289,17 +289,17 @@ void TitleScreen::initCharSelectionMenu() {
 
   GuiReader reader;
 
-  reader.registerCallback("delete", [=](Widget*) { deleteDialog->dismiss(); });
-  reader.registerCallback("cancel", [=](Widget*) { deleteDialog->dismiss(); });
+  reader.registerCallback("delete", [deleteDialog](Widget*) { deleteDialog->dismiss(); });
+  reader.registerCallback("cancel", [deleteDialog](Widget*) { deleteDialog->dismiss(); });
 
   reader.construct(Root::singleton().assets()->json("/interface/windowconfig/deletedialog.config"), deleteDialog.get());
 
-  auto charSelectionMenu = make_shared<CharSelectionPane>(m_playerStorage, [=]() {
+  auto charSelectionMenu = make_shared<CharSelectionPane>(m_playerStorage, [=, this]() {
       if (m_titleState == TitleState::SinglePlayerSelectCharacter)
         switchState(TitleState::SinglePlayerCreateCharacter);
       else if (m_titleState == TitleState::MultiPlayerSelectCharacter)
         switchState(TitleState::MultiPlayerCreateCharacter);
-    }, [=](PlayerPtr mainPlayer) {
+    }, [=, this](PlayerPtr mainPlayer) {
       m_mainAppPlayer = mainPlayer;
       m_playerStorage->moveToFront(m_mainAppPlayer->uuid());
       if (m_titleState == TitleState::SinglePlayerSelectCharacter) {
@@ -310,9 +310,9 @@ void TitleScreen::initCharSelectionMenu() {
           else
             switchState(TitleState::MultiPlayerConnect);
         }
-    }, [=](Uuid playerUuid) {
+    }, [=, this](Uuid playerUuid) {
       auto deleteDialog = m_paneManager.registeredPane("deleteDialog");
-      deleteDialog->fetchChild<ButtonWidget>("delete")->setCallback([=](Widget*) {
+      deleteDialog->fetchChild<ButtonWidget>("delete")->setCallback([=, this](Widget*) {
         m_playerStorage->deletePlayer(playerUuid);
         deleteDialog->dismiss();
       });
@@ -328,7 +328,7 @@ void TitleScreen::initCharSelectionMenu() {
 }
 
 void TitleScreen::initCharCreationMenu() {
-  auto charCreationMenu = make_shared<CharCreationPane>([=](PlayerPtr newPlayer) {
+  auto charCreationMenu = make_shared<CharCreationPane>([=, this](PlayerPtr newPlayer) {
     if (newPlayer) {
       m_mainAppPlayer = newPlayer;
       m_playerStorage->savePlayer(m_mainAppPlayer);
@@ -368,7 +368,7 @@ void TitleScreen::initMultiPlayerMenu() {
 
   auto assets = Root::singleton().assets();
 
-  readerServer.registerCallback("saveServer", [=](Widget*) {
+  readerServer.registerCallback("saveServer", [=, this](Widget*) {
     Json serverData = JsonObject{
       {"address", multiPlayerAddress()},
       {"account", multiPlayerAccount()},
@@ -393,8 +393,8 @@ void TitleScreen::initMultiPlayerMenu() {
 
 
   auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
-  
-  serverList->registerMemberCallback("delete", [=](Widget*) {
+
+  serverList->registerMemberCallback("delete", [=, this](Widget*) {
     if (auto const pos = serverList->selectedItem(); pos != NPos) {
       m_serverList = m_serverList.eraseIndex(pos);
     }
@@ -402,7 +402,7 @@ void TitleScreen::initMultiPlayerMenu() {
     Root::singleton().configuration()->set("serverList", m_serverList);
   });
 
-  serverList->setCallback([=](Widget*) {
+  serverList->setCallback([=, this](Widget*) {
     if (auto selectedItem = serverList->selectedWidget()) {
       if (selectedItem->findChild<ButtonWidget>("delete")->isHovered())
         return;
@@ -418,28 +418,28 @@ void TitleScreen::initMultiPlayerMenu() {
     }
   });
 
-  readerConnect.registerCallback("address", [=](Widget* obj) {
+  readerConnect.registerCallback("address", [=, this](Widget* obj) {
       m_connectionAddress = convert<TextBoxWidget>(obj)->getText().trim();
       m_serverSelectPane->fetchChild<ButtonWidget>("save")->setVisibility(multiPlayerAddress().length() > 0);
     });
 
-  readerConnect.registerCallback("port", [=](Widget* obj) {
+  readerConnect.registerCallback("port", [=, this](Widget* obj) {
       m_connectionPort = convert<TextBoxWidget>(obj)->getText().trim();
     });
 
-  readerConnect.registerCallback("account", [=](Widget* obj) {
+  readerConnect.registerCallback("account", [=, this](Widget* obj) {
       m_account = convert<TextBoxWidget>(obj)->getText().trim();
     });
 
-  readerConnect.registerCallback("password", [=](Widget* obj) {
+  readerConnect.registerCallback("password", [=, this](Widget* obj) {
       m_password = convert<TextBoxWidget>(obj)->getText().trim();
     });
-  
-  readerConnect.registerCallback("legacyCheckbox", [=](Widget* obj) {
+
+  readerConnect.registerCallback("legacyCheckbox", [=, this](Widget* obj) {
       m_forceLegacy = convert<ButtonWidget>(obj)->isChecked();
     });
 
-  readerConnect.registerCallback("connect", [=](Widget*) {
+  readerConnect.registerCallback("connect", [=, this](Widget*) {
     switchState(TitleState::StartMultiPlayer);
     });
 

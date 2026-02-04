@@ -1,4 +1,5 @@
 #include "StarLogging.hpp"
+#include "StarTime.hpp"
 
 namespace Star {
 

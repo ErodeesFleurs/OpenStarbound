@@ -1,5 +1,4 @@
 #include "StarBuffer.hpp"
-#include "StarMathCommon.hpp"
 #include "StarIODevice.hpp"
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
@@ -282,7 +281,7 @@ IODevicePtr Buffer::clone() {
 }
 
 IODevicePtr ExternalBuffer::clone() {
-  Logger::info("Cloning ExternalBuffer from position {}");
+  Logger::info("Cloning ExternalBuffer from position {}", m_pos);
   return make_shared<ExternalBuffer>(*this);
 }
 

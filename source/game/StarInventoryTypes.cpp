@@ -1,6 +1,5 @@
 #include "StarInventoryTypes.hpp"
 #include "StarFormat.hpp"
-#include "StarJsonExtra.hpp"
 
 namespace Star {
 
@@ -66,11 +65,11 @@ std::ostream& operator<<(std::ostream& ostream, InventorySlot const& slot) {
   Json location = json.get("location", {});
 
   if (location.isNull())
-    format(ostream, "InventorySlot{type: {}}", type);
+    format(ostream, "InventorySlot{{type: {}}}", type);
   if (location.isType(Json::Type::String))
-    format(ostream, "InventorySlot{type: {}, location: {}}", type, location.toString());
+    format(ostream, "InventorySlot{{type: {}, location: {}}}", type, location.toString());
   else
-    format(ostream, "InventorySlot{type: {}, location: {}}", type, location.toInt());
+    format(ostream, "InventorySlot{{type: {}, location: {}}}", type, location.toInt());
 
   return ostream;
 }

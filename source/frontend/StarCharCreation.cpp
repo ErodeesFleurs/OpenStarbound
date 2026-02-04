@@ -27,7 +27,7 @@ CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFu
 
   GuiReader guiReader;
   guiReader.registerCallback("cancel", [=](Widget*) { requestCloseFunc({}); });
-  guiReader.registerCallback("saveChar", [=](Widget*) {
+  guiReader.registerCallback("saveChar", [=, this](Widget*) {
       if (fetchChild<ButtonWidget>("btnSkipIntro")->isChecked())
         m_previewPlayer->log()->setIntroComplete(true);
       requestCloseFunc(m_previewPlayer);
@@ -36,96 +36,96 @@ CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFu
       randomizeName();
     });
 
-  guiReader.registerCallback("mainSkinColor.up", [=](Widget*) {
+  guiReader.registerCallback("mainSkinColor.up", [=, this](Widget*) {
       m_bodyColor++;
       changed();
     });
-  guiReader.registerCallback("mainSkinColor.down", [=](Widget*) {
+  guiReader.registerCallback("mainSkinColor.down", [=, this](Widget*) {
       m_bodyColor--;
       changed();
     });
-  guiReader.registerCallback("alty.up", [=](Widget*) {
+  guiReader.registerCallback("alty.up", [=, this](Widget*) {
       m_alty++;
       changed();
     });
-  guiReader.registerCallback("alty.down", [=](Widget*) {
+  guiReader.registerCallback("alty.down", [=, this](Widget*) {
       m_alty--;
       changed();
     });
-  guiReader.registerCallback("hairStyle.up", [=](Widget*) {
+  guiReader.registerCallback("hairStyle.up", [=, this](Widget*) {
       m_hairChoice++;
       changed();
     });
-  guiReader.registerCallback("hairStyle.down", [=](Widget*) {
+  guiReader.registerCallback("hairStyle.down", [=, this](Widget*) {
       m_hairChoice--;
       changed();
     });
-  guiReader.registerCallback("shirt.up", [=](Widget*) {
+  guiReader.registerCallback("shirt.up", [=, this](Widget*) {
       m_shirtChoice++;
       fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
       changed();
     });
-  guiReader.registerCallback("shirt.down", [=](Widget*) {
+  guiReader.registerCallback("shirt.down", [=, this](Widget*) {
       m_shirtChoice--;
       fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
       changed();
     });
-  guiReader.registerCallback("pants.up", [=](Widget*) {
+  guiReader.registerCallback("pants.up", [=, this](Widget*) {
       m_pantsChoice++;
       fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
       changed();
     });
-  guiReader.registerCallback("pants.down", [=](Widget*) {
+  guiReader.registerCallback("pants.down", [=, this](Widget*) {
       m_pantsChoice--;
       fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
       changed();
     });
-  guiReader.registerCallback("heady.up", [=](Widget*) {
+  guiReader.registerCallback("heady.up", [=, this](Widget*) {
       m_heady++;
       changed();
     });
-  guiReader.registerCallback("heady.down", [=](Widget*) {
+  guiReader.registerCallback("heady.down", [=, this](Widget*) {
       m_heady--;
       changed();
     });
-  guiReader.registerCallback("shirtColor.up", [=](Widget*) {
+  guiReader.registerCallback("shirtColor.up", [=, this](Widget*) {
       m_shirtColor++;
       fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
       changed();
     });
-  guiReader.registerCallback("shirtColor.down", [=](Widget*) {
+  guiReader.registerCallback("shirtColor.down", [=, this](Widget*) {
       m_shirtColor--;
       fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
       changed();
     });
-  guiReader.registerCallback("pantsColor.up", [=](Widget*) {
+  guiReader.registerCallback("pantsColor.up", [=, this](Widget*) {
       m_pantsColor++;
       fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
       changed();
     });
-  guiReader.registerCallback("pantsColor.down", [=](Widget*) {
+  guiReader.registerCallback("pantsColor.down", [=, this](Widget*) {
       m_pantsColor--;
       fetchChild<ButtonWidget>("btnToggleClothing")->setChecked(true);
       changed();
     });
-  guiReader.registerCallback("personality.up", [=](Widget*) {
+  guiReader.registerCallback("personality.up", [=, this](Widget*) {
       m_personality++;
       changed();
     });
-  guiReader.registerCallback("personality.down", [=](Widget*) {
+  guiReader.registerCallback("personality.down", [=, this](Widget*) {
       m_personality--;
       changed();
     });
-  guiReader.registerCallback("toggleClothing", [=](Widget*) {
+  guiReader.registerCallback("toggleClothing", [=, this](Widget*) {
       changed();
     });
 
-  guiReader.registerCallback("randomName", [=](Widget*) { randomizeName(); });
-  guiReader.registerCallback("randomize", [=](Widget*) { randomize(); });
+  guiReader.registerCallback("randomName", [=, this](Widget*) { randomizeName(); });
+  guiReader.registerCallback("randomize", [=, this](Widget*) { randomize(); });
 
-  guiReader.registerCallback("name", [=](Widget* object) { nameBoxCallback(object); });
+  guiReader.registerCallback("name", [=, this](Widget* object) { nameBoxCallback(object); });
 
-  guiReader.registerCallback("species", [=](Widget* button) {
+  guiReader.registerCallback("species", [=, this](Widget* button) {
       size_t speciesChoice = convert<ButtonWidget>(button)->buttonGroupId();
       if (speciesChoice < m_speciesList.size() && speciesChoice != m_speciesChoice) {
         m_speciesChoice = speciesChoice;
@@ -133,12 +133,12 @@ CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFu
         randomizeName();
       }
     });
-  guiReader.registerCallback("gender", [=](Widget* button) {
+  guiReader.registerCallback("gender", [=, this](Widget* button) {
       m_genderChoice = convert<ButtonWidget>(button)->buttonGroupId();
       changed();
     });
 
-  guiReader.registerCallback("mode", [=](Widget* button) {
+  guiReader.registerCallback("mode", [=, this](Widget* button) {
       m_modeChoice = convert<ButtonWidget>(button)->buttonGroupId();
       changed();
     });

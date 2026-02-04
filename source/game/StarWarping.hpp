@@ -91,8 +91,8 @@ DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
 
 }
 
-template <> struct fmt::formatter<Star::CelestialWorldId> : ostream_formatter {};
-template <> struct fmt::formatter<Star::ClientShipWorldId> : ostream_formatter {};
-template <> struct fmt::formatter<Star::InstanceWorldId> : ostream_formatter {};
-template <> struct fmt::formatter<Star::WorldId> : ostream_formatter {};
-template <> struct fmt::formatter<Star::WarpToWorld> : ostream_formatter {};
+template <> struct std::formatter<Star::CelestialWorldId> : Star::ostream_formatter {};
+template <> struct std::formatter<Star::ClientShipWorldId> : Star::ostream_formatter {};
+template <> struct std::formatter<Star::InstanceWorldId> : Star::ostream_formatter {};
+template <> struct std::formatter<Star::WorldId> : Star::ostream_formatter {};
+template <> struct std::formatter<Star::WarpToWorld> : Star::ostream_formatter {};

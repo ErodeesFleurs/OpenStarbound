@@ -85,7 +85,7 @@ AtomicSharedPtr<T>::operator bool() const {
 template <typename T>
 bool AtomicSharedPtr<T>::unique() const {
   SpinLocker locker(m_lock);
-  return m_ptr.unique();
+  return m_ptr.use_count() == 1;
 }
 
 template <typename T>

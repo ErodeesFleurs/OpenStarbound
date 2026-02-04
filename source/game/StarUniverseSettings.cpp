@@ -1,6 +1,5 @@
 #include "StarUniverseSettings.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {

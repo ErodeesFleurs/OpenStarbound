@@ -1,24 +1,20 @@
 #include "StarWorldClient.hpp"
-#include "StarIterator.hpp"
+#include "StarClientContext.hpp" // IWYU pragma: keep
+#include "StarEntityFactory.hpp" // IWYU pragma: keep
 #include "StarLogging.hpp"
 #include "StarBiome.hpp"
-#include "StarMaterialRenderProfile.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarDamageDatabase.hpp"
-#include "StarParticleDatabase.hpp"
 #include "StarParticleManager.hpp"
+#include "StarStoredFunctions.hpp" // IWYU pragma: keep
+#include "StarItemDatabase.hpp" // IWYU pragma: keep
 #include "StarWorldImpl.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerLog.hpp"
-#include "StarAggressiveEntity.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarItemDrop.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarObject.hpp"
-#include "StarEntityFactory.hpp"
 #include "StarWorldTemplate.hpp"
-#include "StarStoredFunctions.hpp"
 #include "StarInspectableEntity.hpp"
 #include "StarCurve25519.hpp"
 
@@ -359,9 +355,9 @@ TileModificationList WorldClient::validTileModifications(TileModificationList co
 TileModificationList WorldClient::applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) {
   if (!inWorld())
     return {};
-  
+
   // thanks to new prediction: do each one by one so that previous modifications affect placeability
-  
+
   TileModificationList success, failures, temp;
   TileModificationList const* list = &modificationList;
 
@@ -398,12 +394,12 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
 TileModificationList WorldClient::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage) {
   if (!inWorld())
     return {};
-  
+
   // Tell client it can't send a replace packet
   auto netRules = m_clientState.netCompatibilityRules();
   if (netRules.isLegacy() || netRules.version() <= 3)
     return modificationList;
-  
+
   TileModificationList success, failures;
   for (auto pair : modificationList) {
     if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second))
@@ -547,7 +543,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       try { entity->render(&renderCallback); }
       catch (StarException const& e) {
         if (entity->isMaster()) // this is YOUR problem!!
-          throw e; 
+          throw e;
         else { // this is THEIR problem!!
           auto issue = printException(e, true);
           auto hash = hashOf(issue);
@@ -565,7 +561,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
           renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
         }
       }
-      
+
 
       EntityDrawables ed;
       for (auto& p : renderCallback.drawables) {
@@ -599,7 +595,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         for (auto& p : renderCallback.particles)
           p.directives.append(directives->get(directiveIndex));
       }
-      
+
       m_particles->addParticles(std::move(renderCallback.particles));
       m_samples.appendAll(std::move(renderCallback.audios));
       m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
@@ -943,7 +939,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
               p.foregroundColorVariant.reset();
             else
               p.backgroundColorVariant.reset();
-          } else if (auto placeLiquid = modification.second.ptr<PlaceLiquid>()) {
+          } else if (auto _ = modification.second.ptr<PlaceLiquid>()) {
             p.liquid.reset();
           }
 
@@ -1121,7 +1117,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
     } else if (auto pongPacket = as<PongPacket>(packet)) {
       if (pongPacket->time)
         m_latency = Time::monotonicMilliseconds() - pongPacket->time;
-      else if (m_pingTime) 
+      else if (m_pingTime)
         m_latency = Time::monotonicMilliseconds() - m_pingTime.take();
 
     } else {
@@ -1601,9 +1597,9 @@ void WorldClient::handleDamageNotifications() {
       // default to normal hit
       HitType effectHitType = damageKind.effects.get(material).contains(damageNotification.hitType) ? damageNotification.hitType : HitType::Hit;
       m_samples.appendAll(soundsFromDefinition(damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
-      
+
       auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position);
-      
+
       const List<Directives>* directives = nullptr;
       if (auto& worldTemplate = m_worldTemplate) {
         if (const auto& parameters = worldTemplate->worldParameters())
@@ -1615,7 +1611,7 @@ void WorldClient::handleDamageNotifications() {
         for (auto& p : hitParticles)
           p.directives.append(directives->get(directiveIndex));
       }
-      
+
       m_particles->addParticles(hitParticles);
     }
   }
@@ -1727,7 +1723,7 @@ void WorldClient::lightingTileGather() {
       m_lightingCalculator.setCellIndex(baseIndex + y, light, !tile.foregroundLightTransparent);
     }
   });
-  LogMap::set("client_render_world_async_light_gather", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+  LogMap::set("client_render_world_async_light_gather", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
 }
 
 void WorldClient::lightingCalc() {
@@ -1789,7 +1785,7 @@ void WorldClient::lightingMain() {
 
     int64_t start = Time::monotonicMicroseconds();
     lightingCalc();
-    LogMap::set("client_render_world_async_light_calc", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+    LogMap::set("client_render_world_async_light_calc", strf("{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
   }
 }
 
@@ -1857,7 +1853,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_lightIntensityCalculator.setParameters(assets->json("/lighting.config:intensity"));
 
   m_inWorld = true;
-  
+
   if (!m_mainPlayer->isDead()) {
     m_mainPlayer->init(this, m_entityMap->reserveEntityId(), EntityMode::Master);
     m_entityMap->addEntity(m_mainPlayer);

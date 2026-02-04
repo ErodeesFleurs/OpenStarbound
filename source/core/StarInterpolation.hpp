@@ -3,6 +3,7 @@
 #include "StarMathCommon.hpp"
 #include "StarArray.hpp"
 #include "StarAlgorithm.hpp"
+#include "StarMaybe.hpp"
 
 namespace Star {
 

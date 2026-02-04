@@ -441,15 +441,15 @@ String Widget::toStringImpl(int indentLevel) const {
   for (auto child : m_members) {
     childrenString.append(child->toStringImpl(indentLevel + 4));
   }
-  String output = strf(R"OUTPUT({}{} : {
+  String output = strf(R"OUTPUT({}{} : {{
 {}  address : %p,
 {}  visible : {},
 {}  position : {},
 {}  size : {},
-{}  children : {
+{}  children : {{
 {}
-{}  }
-{}}
+{}  }}
+{}}}
 )OUTPUT",
       leader,
       m_name,

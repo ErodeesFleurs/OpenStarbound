@@ -1,10 +1,12 @@
 #pragma once
 
 #include <array>
-#include <vector>
-#include <unordered_map>
+#include <cstddef>
 #include <limits>
+#include <memory>
+#include <type_traits>
 #include <typeindex>
+#include <unordered_map>
 
 #include "StarException.hpp"
 
@@ -79,7 +81,9 @@ private:
     ChunkIndex next;
   };
 
-  typedef std::aligned_union_t<0, T, Unallocated> Chunk;
+  struct alignas(T) alignas(Unallocated) Chunk {
+    std::byte data[sizeof(T) > sizeof(Unallocated) ? sizeof(T) : sizeof(Unallocated)];
+  };
 
   struct Block {
     T* allocate();
@@ -96,22 +100,22 @@ private:
   };
 
   struct Data {
-    std::vector<unique_ptr<Block>> blocks;
+    std::vector<std::unique_ptr<Block>> blocks;
     Block* unfilledBlock;
     std::allocator<T> multiAllocator;
   };
 
-  typedef std::unordered_map<std::type_index, shared_ptr<void>> BlockAllocatorFamily;
+  typedef std::unordered_map<std::type_index, std::shared_ptr<void>> BlockAllocatorFamily;
 
   static Data* getAllocatorData(BlockAllocatorFamily& family);
 
-  shared_ptr<BlockAllocatorFamily> m_family;
+  std::shared_ptr<BlockAllocatorFamily> m_family;
   Data* m_data;
 };
 
 template <typename T, size_t BlockSize>
 BlockAllocator<T, BlockSize>::BlockAllocator() {
-  m_family = make_shared<BlockAllocatorFamily>();
+  m_family = std::make_shared<BlockAllocatorFamily>();
   m_data = getAllocatorData(*m_family);
   m_data->blocks.reserve(32);
   m_data->unfilledBlock = nullptr;
