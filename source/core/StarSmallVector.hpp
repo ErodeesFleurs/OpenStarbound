@@ -227,7 +227,7 @@ void SmallVector<Element, MaxStackSize>::reserve(size_t newCapacity) {
     m_end = m_begin + size;
     m_capacity = m_begin + newCapacity;
 
-    auto freeOldMem = finally([=]() {
+    auto freeOldMem = finally([=, this]() {
       if (oldHeapAllocated)
           Star::free(oldMem, oldCapacity * sizeof(Element));
     });

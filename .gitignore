@@ -56,3 +56,6 @@ build-ninja/
 .ninja_deps
 .ninja_log
 build.ninja
+
+*.a
+StarVersion.cpp

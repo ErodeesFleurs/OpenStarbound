@@ -1,13 +1,9 @@
 #include "StarGraphicsMenu.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarConfiguration.hpp"
 #include "StarGuiReader.hpp"
-#include "StarListWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarSliderBar.hpp"
 #include "StarButtonWidget.hpp"
-#include "StarOrderedSet.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarShadersMenu.hpp"
 
@@ -25,87 +21,87 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager,UniverseClientPtr client)
         apply();
         applyWindowSettings();
       });
-  reader.registerCallback("resSlider", [=](Widget*) {
+  reader.registerCallback("resSlider", [=, this](Widget*) {
       Vec2U res = m_resList[fetchChild<SliderBarWidget>("resSlider")->val()];
       m_localChanges.set("fullscreenResolution", jsonFromVec2U(res));
       syncGui();
     });
-  reader.registerCallback("interfaceScaleSlider", [=](Widget*) {
+  reader.registerCallback("interfaceScaleSlider", [=, this](Widget*) {
       auto interfaceScaleSlider = fetchChild<SliderBarWidget>("interfaceScaleSlider");
       m_localChanges.set("interfaceScale", m_interfaceScaleList[interfaceScaleSlider->val()]);
       syncGui();
     });
-  reader.registerCallback("zoomSlider", [=](Widget*) {
+  reader.registerCallback("zoomSlider", [=, this](Widget*) {
       auto zoomSlider = fetchChild<SliderBarWidget>("zoomSlider");
       m_localChanges.set("zoomLevel", m_zoomList[zoomSlider->val()]);
       Root::singleton().configuration()->set("zoomLevel", m_zoomList[zoomSlider->val()]);
       syncGui();
     });
-  reader.registerCallback("cameraSpeedSlider", [=](Widget*) {
+  reader.registerCallback("cameraSpeedSlider", [=, this](Widget*) {
       auto cameraSpeedSlider = fetchChild<SliderBarWidget>("cameraSpeedSlider");
       m_localChanges.set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
       Root::singleton().configuration()->set("cameraSpeedFactor", m_cameraSpeedList[cameraSpeedSlider->val()]);
       syncGui();
     });
-  reader.registerCallback("speechBubbleCheckbox", [=](Widget*) {
+  reader.registerCallback("speechBubbleCheckbox", [=, this](Widget*) {
       auto button = fetchChild<ButtonWidget>("speechBubbleCheckbox");
       m_localChanges.set("speechBubbles", button->isChecked());
       Root::singleton().configuration()->set("speechBubbles", button->isChecked());
       syncGui();
     });
-  reader.registerCallback("interactiveHighlightCheckbox", [=](Widget*) {
+  reader.registerCallback("interactiveHighlightCheckbox", [=, this](Widget*) {
       auto button = fetchChild<ButtonWidget>("interactiveHighlightCheckbox");
       m_localChanges.set("interactiveHighlight", button->isChecked());
       Root::singleton().configuration()->set("interactiveHighlight", button->isChecked());
       syncGui();
     });
-  reader.registerCallback("fullscreenCheckbox", [=](Widget*) {
+  reader.registerCallback("fullscreenCheckbox", [=, this](Widget*) {
       bool checked = fetchChild<ButtonWidget>("fullscreenCheckbox")->isChecked();
       m_localChanges.set("fullscreen", checked);
       if (checked)
         m_localChanges.set("borderless", !checked);
       syncGui();
     });
-  reader.registerCallback("borderlessCheckbox", [=](Widget*) {
+  reader.registerCallback("borderlessCheckbox", [=, this](Widget*) {
       bool checked = fetchChild<ButtonWidget>("borderlessCheckbox")->isChecked();
       m_localChanges.set("borderless", checked);
       if (checked)
         m_localChanges.set("fullscreen", !checked);
       syncGui();
     });
-  reader.registerCallback("textureLimitCheckbox", [=](Widget*) {
+  reader.registerCallback("textureLimitCheckbox", [=, this](Widget*) {
       m_localChanges.set("limitTextureAtlasSize", fetchChild<ButtonWidget>("textureLimitCheckbox")->isChecked());
       syncGui();
     });
-  reader.registerCallback("multiTextureCheckbox", [=](Widget*) {
+  reader.registerCallback("multiTextureCheckbox", [=, this](Widget*) {
       m_localChanges.set("useMultiTexturing", fetchChild<ButtonWidget>("multiTextureCheckbox")->isChecked());
       syncGui();
     });
-  reader.registerCallback("antiAliasingCheckbox", [=](Widget*) {
+  reader.registerCallback("antiAliasingCheckbox", [=, this](Widget*) {
     bool checked = fetchChild<ButtonWidget>("antiAliasingCheckbox")->isChecked();
     m_localChanges.set("antiAliasing", checked);
     Root::singleton().configuration()->set("antiAliasing", checked);
     syncGui();
   });
-  reader.registerCallback("hardwareCursorCheckbox", [=](Widget*) {
+  reader.registerCallback("hardwareCursorCheckbox", [=, this](Widget*) {
     bool checked = fetchChild<ButtonWidget>("hardwareCursorCheckbox")->isChecked();
     m_localChanges.set("hardwareCursor", checked);
     Root::singleton().configuration()->set("hardwareCursor", checked);
     GuiContext::singleton().applicationController()->setCursorHardware(checked);
   });
-  reader.registerCallback("monochromeCheckbox", [=](Widget*) {
+  reader.registerCallback("monochromeCheckbox", [=, this](Widget*) {
       bool checked = fetchChild<ButtonWidget>("monochromeCheckbox")->isChecked();
       m_localChanges.set("monochromeLighting", checked);
       Root::singleton().configuration()->set("monochromeLighting", checked);
       syncGui();
     });
-  reader.registerCallback("newLightingCheckbox", [=](Widget*) {
+  reader.registerCallback("newLightingCheckbox", [=, this](Widget*) {
     bool checked = fetchChild<ButtonWidget>("newLightingCheckbox")->isChecked();
     m_localChanges.set("newLighting", checked);
     Root::singleton().configuration()->set("newLighting", checked);
     syncGui();
   });
-  reader.registerCallback("showShadersMenu", [=](Widget*) {
+  reader.registerCallback("showShadersMenu", [=, this](Widget*) {
       displayShaders();
     });
 
@@ -128,7 +124,7 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager,UniverseClientPtr client)
 
   initConfig();
   syncGui();
-  
+
   m_shadersMenu = make_shared<ShadersMenu>(assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client);
 }
 
@@ -142,7 +138,7 @@ void GraphicsMenu::dismissed() {
   Pane::dismissed();
 }
 
-void GraphicsMenu::toggleFullscreen() {  
+void GraphicsMenu::toggleFullscreen() {
   bool fullscreen = m_localChanges.get("fullscreen").toBool();
   bool borderless = m_localChanges.get("borderless").toBool();
 

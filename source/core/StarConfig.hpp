@@ -11,6 +11,7 @@
 #include <tuple>
 #include <string_view>
 #include <algorithm>
+#include <string> // IWYU pragma: keep
 #include <iterator>
 
 namespace Star {

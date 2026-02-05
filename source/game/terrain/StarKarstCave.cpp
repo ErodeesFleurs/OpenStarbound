@@ -1,9 +1,4 @@
 #include "StarKarstCave.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarRandom.hpp"
-#include "StarInterpolation.hpp"
-#include "StarGameTypes.hpp"
-#include "StarLogging.hpp"
 
 namespace Star {
 
@@ -31,7 +26,7 @@ KarstCaveSelector::KarstCaveSelector(Json const& config, TerrainSelectorParamete
 
 float KarstCaveSelector::get(int x, int y) const {
   Vec2I key = Vec2I(x - pmod(x, m_sectorSize), y - pmod(y, m_sectorSize));
-  return m_sectorCache.get(key, [=](Vec2I const& key) {
+  return m_sectorCache.get(key, [=, this](Vec2I const& key) {
       return Sector(this, key);
     }).get(x, y);
 }

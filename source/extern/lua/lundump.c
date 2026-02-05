@@ -241,7 +241,7 @@ static void fchecksize (LoadState *S, size_t size, const char *tname) {
 #define checksize(S,t)	fchecksize(S,sizeof(t),#t)
 
 static void checkHeader (LoadState *S) {
-  checkliteral(S, LUA_SIGNATURE + 1, "not a");  /* 1st char already checked */
+  checkliteral(S, &LUA_SIGNATURE[1], "not a");  /* 1st char already checked */
   if (LoadByte(S) != LUAC_VERSION)
     error(S, "version mismatch in");
   if (LoadByte(S) != LUAC_FORMAT)
@@ -284,4 +284,3 @@ LClosure *luaU_undump(lua_State *L, ZIO *Z, const char *name) {
   luai_verifycode(L, buff, cl->p);
   return cl;
 }
-

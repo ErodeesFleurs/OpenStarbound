@@ -42,7 +42,7 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
   for (uint8_t i = 0; i < EssentialItemCount; ++i)
     reader.registerCallback(strf("essentialBar{}", i + 1), bind(&ActionBar::essentialBarClick, this, i));
 
-  reader.registerCallback("pickupToActionBar", [=](Widget* widget) {
+  reader.registerCallback("pickupToActionBar", [](Widget* widget) {
       auto button = as<ButtonWidget>(widget);
       Root::singleton().configuration()->setPath("inventory.pickupToActionBar", button->isChecked());
     });

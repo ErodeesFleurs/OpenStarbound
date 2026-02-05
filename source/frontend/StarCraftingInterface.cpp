@@ -2,6 +2,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
+#include "StarPlayerLog.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarPlayer.hpp"
@@ -9,7 +10,6 @@
 #include "StarWorldClient.hpp"
 #include "StarPlayerBlueprints.hpp"
 #include "StarButtonWidget.hpp"
-#include "StarPaneManager.hpp"
 #include "StarPortraitWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarTextBoxWidget.hpp"
@@ -17,13 +17,9 @@
 #include "StarListWidget.hpp"
 #include "StarImageStretchWidget.hpp"
 #include "StarItemSlotWidget.hpp"
-#include "StarConfiguration.hpp"
-#include "StarObjectItem.hpp"
-#include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarPlayerLog.hpp"
 #include "StarMixer.hpp"
 
 namespace Star {
@@ -38,14 +34,14 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
   auto assets = Root::singleton().assets();
   // get the config data for this crafting pane, default to "bare hands" crafting
   auto baseConfig = settings.get("config", "/interface/windowconfig/crafting.config");
-  m_settings = jsonMerge(assets->json("/interface/windowconfig/crafting.config:default"), 
+  m_settings = jsonMerge(assets->json("/interface/windowconfig/crafting.config:default"),
                jsonMerge(assets->fetchJson(baseConfig), settings));
 
   m_filter = StringSet::from(jsonToStringList(m_settings.get("filter", JsonArray())));
   m_maxSpinCount = m_settings.getUInt("maxSpinCount", 1000);
 
   GuiReader reader;
-  reader.registerCallback("spinCount.up", [=](Widget*) {
+  reader.registerCallback("spinCount.up", [=, this](Widget*) {
       if (m_count < maxCraft())
         m_count++;
       else
@@ -53,7 +49,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
       countChanged();
     });
 
-  reader.registerCallback("spinCount.down", [=](Widget*) {
+  reader.registerCallback("spinCount.down", [=, this](Widget*) {
       if (m_count > 1)
         m_count--;
       else
@@ -61,25 +57,25 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
       countChanged();
     });
 
-  reader.registerCallback("tbSpinCount", [=](Widget*) { countTextChanged(); });
+  reader.registerCallback("tbSpinCount", [=, this](Widget*) { countTextChanged(); });
 
-  reader.registerCallback("close", [=](Widget*) { dismiss(); });
+  reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
 
-  reader.registerCallback("btnCraft", [=](Widget*) { toggleCraft(); });
-  reader.registerCallback("btnStopCraft", [=](Widget*) { toggleCraft(); });
+  reader.registerCallback("btnCraft", [=, this](Widget*) { toggleCraft(); });
+  reader.registerCallback("btnStopCraft", [=, this](Widget*) { toggleCraft(); });
 
-  reader.registerCallback("btnFilterHaveMaterials", [=](Widget*) {
+  reader.registerCallback("btnFilterHaveMaterials", [=, this](Widget*) {
       Root::singleton().configuration()->setPath("crafting.filterHaveMaterials", m_filterHaveMaterials->isChecked());
       updateAvailableRecipes();
     });
 
-  reader.registerCallback("filter", [=](Widget*) { updateAvailableRecipes(); });
+  reader.registerCallback("filter", [=, this](Widget*) { updateAvailableRecipes(); });
 
-  reader.registerCallback("categories", [=](Widget*) { updateAvailableRecipes(); });
+  reader.registerCallback("categories", [=, this](Widget*) { updateAvailableRecipes(); });
 
-  reader.registerCallback("rarities", [=](Widget*) { updateAvailableRecipes(); });
+  reader.registerCallback("rarities", [=, this](Widget*) { updateAvailableRecipes(); });
 
-  reader.registerCallback("btnUpgrade", [=](Widget*) { upgradeTable(); });
+  reader.registerCallback("btnUpgrade", [=, this](Widget*) { upgradeTable(); });
 
   // this is where the GUI gets built and the buttons begin to have existence.
   // all possible callbacks must exist by this point

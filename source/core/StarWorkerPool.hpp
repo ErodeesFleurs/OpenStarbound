@@ -2,6 +2,8 @@
 
 #include "StarThread.hpp"
 
+#include <exception>
+
 namespace Star {
 
 STAR_EXCEPTION(WorkerPoolException, StarException);

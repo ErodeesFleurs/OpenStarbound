@@ -7,7 +7,6 @@
 #include "StarItemGridWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
-#include "StarPaneManager.hpp"
 #include "StarFuelWidget.hpp"
 #include "StarPlayer.hpp"
 #include "StarItemDatabase.hpp"
@@ -77,49 +76,49 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   };
 
   m_reader.registerCallback("close", [this](Widget*) { dismiss(); });
-  m_reader.registerCallback("itemGrid", [=](Widget* paneObj) {
+  m_reader.registerCallback("itemGrid", [=, this](Widget* paneObj) {
       if (auto itemGrid = as<ItemGridWidget>(paneObj))
         swapSlot(itemGrid);
       else
         throw GuiException("Invalid object type, expected ItemGridWidget.");
     });
-  m_reader.registerCallback("itemGrid.right", [=](Widget* paneObj) {
+  m_reader.registerCallback("itemGrid.right", [rightClickCallback](Widget* paneObj) {
       if (auto itemGrid = as<ItemGridWidget>(paneObj))
         rightClickCallback(itemGrid->selectedIndex());
       else
         throw GuiException("Invalid object type, expected ItemGridWidget.");
     });
 
-  m_reader.registerCallback("itemGrid2", [=](Widget* paneObj) {
+  m_reader.registerCallback("itemGrid2", [=, this](Widget* paneObj) {
       if (auto itemGrid = as<ItemGridWidget>(paneObj))
         swapSlot(itemGrid);
       else
         throw GuiException("Invalid object type, expected ItemGridWidget.");
     });
-  m_reader.registerCallback("itemGrid2.right", [=](Widget* paneObj) {
+  m_reader.registerCallback("itemGrid2.right", [rightClickCallback](Widget* paneObj) {
       if (auto itemGrid = as<ItemGridWidget>(paneObj))
         rightClickCallback(itemGrid->selectedIndex());
       else
         throw GuiException("Invalid object type, expected ItemGridWidget.");
     });
 
-  m_reader.registerCallback("outputItemGrid", [=](Widget* paneObj) {
+  m_reader.registerCallback("outputItemGrid", [=, this](Widget* paneObj) {
       if (auto itemGrid = as<ItemGridWidget>(paneObj))
         swapSlot(itemGrid);
       else
         throw GuiException("Invalid object type, expected ItemGridWidget.");
     });
-  m_reader.registerCallback("outputItemGrid.right", [=](Widget* paneObj) {
+  m_reader.registerCallback("outputItemGrid.right", [rightClickCallback](Widget* paneObj) {
       if (auto itemGrid = as<ItemGridWidget>(paneObj))
         rightClickCallback(itemGrid->selectedIndex());
       else
         throw GuiException("Invalid object type, expected ItemGridWidget.");
     });
 
-  m_reader.registerCallback("toggleCrafting", [=](Widget*) { toggleCrafting(); });
+  m_reader.registerCallback("toggleCrafting", [=, this](Widget*) { toggleCrafting(); });
 
-  m_reader.registerCallback("clear", [=](Widget*) { clear(); });
-  m_reader.registerCallback("burn", [=](Widget*) { burn(); });
+  m_reader.registerCallback("clear", [=, this](Widget*) { clear(); });
+  m_reader.registerCallback("burn", [=, this](Widget*) { burn(); });
 
   for (auto const& callbackName : jsonToStringList(guiConfig.get("scriptWidgetCallbacks", JsonArray{}))) {
     m_reader.registerCallback(callbackName, [this, callbackName](Widget* widget) {
@@ -298,7 +297,7 @@ void ContainerPane::update(float dt) {
         fuelGauge->setPotentialFuelAmount(totalFuelAmount);
         fuelGauge->setRequestedFuelAmount(0);
       }
-   
+
       if (input.bindDown("opensb", "takeAll")) {
         m_containerInteractor->clearContainer();
       }

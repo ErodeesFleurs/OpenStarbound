@@ -1,7 +1,7 @@
 #include "StarMerchantInterface.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
 #include "StarLexicalCast.hpp"
+#include "StarQuestManager.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
 #include "StarItemTooltip.hpp"
 #include "StarPlayer.hpp"
@@ -13,11 +13,8 @@
 #include "StarItemGridWidget.hpp"
 #include "StarListWidget.hpp"
 #include "StarTabSet.hpp"
-#include "StarAssets.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarItemBag.hpp"
-#include "StarQuestManager.hpp"
 
 namespace Star {
 
@@ -41,7 +38,7 @@ MerchantPane::MerchantPane(
   m_maxBuyCount = m_settings.getUInt("maxSpinCount", assets->json("/interface/windowconfig/crafting.config:default").getUInt("maxSpinCount", 1000));
 
   GuiReader reader;
-  reader.registerCallback("spinCount.up", [=](Widget*) {
+  reader.registerCallback("spinCount.up", [=, this](Widget*) {
       if (m_selectedIndex != NPos) {
         if (m_buyCount < maxBuyCount())
           m_buyCount++;
@@ -53,7 +50,7 @@ MerchantPane::MerchantPane(
       countChanged();
     });
 
-  reader.registerCallback("spinCount.down", [=](Widget*) {
+  reader.registerCallback("spinCount.down", [=, this](Widget*) {
       if (m_selectedIndex != NPos) {
         if (m_buyCount > 1)
           m_buyCount--;
@@ -65,17 +62,17 @@ MerchantPane::MerchantPane(
       countChanged();
     });
 
-  reader.registerCallback("countChanged", [=](Widget*) { countChanged(); });
-  reader.registerCallback("parseCountText", [=](Widget*) { countTextChanged(); });
+  reader.registerCallback("countChanged", [=, this](Widget*) { countChanged(); });
+  reader.registerCallback("parseCountText", [=, this](Widget*) { countTextChanged(); });
 
-  reader.registerCallback("buy", [=](Widget*) { buy(); });
+  reader.registerCallback("buy", [=, this](Widget*) { buy(); });
 
-  reader.registerCallback("sell", [=](Widget*) { sell(); });
+  reader.registerCallback("sell", [=, this](Widget*) { sell(); });
 
-  reader.registerCallback("close", [=](Widget*) { dismiss(); });
+  reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
 
   reader.registerCallback("itemGrid",
-      [=](Widget*) {
+      [=, this](Widget*) {
         swapSlot();
         updateSellTotal();
       });

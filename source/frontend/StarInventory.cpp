@@ -1,24 +1,22 @@
 #include "StarInventory.hpp"
 #include "StarGuiReader.hpp"
 #include "StarItemTooltip.hpp"
+#include "StarPlayerCompanions.hpp" // IWYU pragma: keep
 #include "StarSimpleTooltip.hpp"
 #include "StarRoot.hpp"
+#include "StarStatistics.hpp" // IWYU pragma: keep
 #include "StarUniverseClient.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarPortraitWidget.hpp"
-#include "StarPaneManager.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarPlayerCompanions.hpp"
 #include "StarWorldClient.hpp"
-#include "StarAssets.hpp"
 #include "StarItem.hpp"
 #include "StarMainInterface.hpp"
 #include "StarMerchantInterface.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarStatistics.hpp"
 #include "StarAugmentItem.hpp"
 #include "StarObjectItem.hpp"
 #include "StarInteractionTypes.hpp"
@@ -105,7 +103,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   };
 
   auto middleClickCallback = [this](String const& bagType, Widget* widget) {
-    if (!m_player->inWorld()) 
+    if (!m_player->inWorld())
       return;
 
     auto itemGrid = convert<ItemGridWidget>(widget);
@@ -136,11 +134,11 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
     invWindowReader.registerCallback(itemGrid + ".middle", bind(middleClickCallback, name, _1));
   }
 
-  invWindowReader.registerCallback("close", [=](Widget*) {
+  invWindowReader.registerCallback("close", [=, this](Widget*) {
       dismiss();
     });
 
-  invWindowReader.registerCallback("sort", [=](Widget*) {
+  invWindowReader.registerCallback("sort", [=, this](Widget*) {
       m_player->inventory()->condenseBagStacks(m_selectedTab);
       m_player->inventory()->sortBag(m_selectedTab);
       // Don't show sorted items as new items
@@ -148,19 +146,19 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
       m_itemGrids[m_selectedTab]->clearChangedSlots();
     });
 
-  invWindowReader.registerCallback("gridModeSelector", [=](Widget* widget) {
+  invWindowReader.registerCallback("gridModeSelector", [=, this](Widget* widget) {
       auto selected = convert<ButtonWidget>(widget)->data().toString();
       selectTab(m_tabButtonData.keyOf(selected));
     });
 
   auto registerSlotCallbacks = [&](String name, InventorySlot slot) {
-    invWindowReader.registerCallback(name, [=](Widget* paneObj) {
+    invWindowReader.registerCallback(name, [=, this](Widget* paneObj) {
         if (as<ItemSlotWidget>(paneObj))
           m_player->inventory()->shiftSwap(slot);
         else
           throw GuiException("Invalid object type, expected ItemSlotWidget");
       });
-    invWindowReader.registerCallback(name + ".right", [=](Widget* paneObj) {
+    invWindowReader.registerCallback(name + ".right", [rightClickCallback,slot](Widget* paneObj) {
         if (as<ItemSlotWidget>(paneObj))
           rightClickCallback(slot);
         else
@@ -171,7 +169,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   for (auto const p : EquipmentSlotNames) {
     EquipmentSlot slot = p.first;
     registerSlotCallbacks(p.second, slot);
-    invWindowReader.registerCallback(p.second + ".middle", [slot, this](Widget* paneObj) {
+    invWindowReader.registerCallback(p.second + ".middle", [slot, this]([[maybe_unused]]Widget* paneObj) {
       auto inventory = m_player->inventory();
       inventory->setEquipmentVisibility(slot, !inventory->equipmentVisibility(slot));
     });

@@ -253,7 +253,7 @@ namespace JsonPath {
 
   template <typename Jsonlike>
   JsonOp<Jsonlike> genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp) {
-    return [=](Jsonlike const& parent, Maybe<String> const& key) -> Jsonlike {
+    return [emptyPathOp, arrayOp, objectOp, path](Jsonlike const& parent, Maybe<String> const& key) -> Jsonlike {
       if (key.isNothing())
         return emptyPathOp(parent);
       if (parent.type() == Json::Type::Array) {

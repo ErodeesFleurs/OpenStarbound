@@ -3,7 +3,6 @@
 #include "StarRoot.hpp"
 #include "StarLargeCharPlateWidget.hpp"
 #include "StarTextBoxWidget.hpp"
-#include "StarAssets.hpp"
 #include "StarRandom.hpp"
 #include "StarInputEvent.hpp"
 
@@ -24,22 +23,22 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
 
   GuiReader guiReader;
 
-  guiReader.registerCallback("playerUpButton", [=](Widget*) { shiftCharacters(-1); });
-  guiReader.registerCallback("playerDownButton", [=](Widget*) { shiftCharacters(1); });
-  guiReader.registerCallback("charSelector1", [=](Widget*) { selectCharacter(0); });
-  guiReader.registerCallback("charSelector2", [=](Widget*) { selectCharacter(1); });
-  guiReader.registerCallback("charSelector3", [=](Widget*) { selectCharacter(2); });
-  guiReader.registerCallback("charSelector4", [=](Widget*) { selectCharacter(3); });
-  guiReader.registerCallback("createCharButton", [=](Widget*) { m_createCallback(); });
-  guiReader.registerCallback("searchCharacter", [=](Widget* obj) { 
+  guiReader.registerCallback("playerUpButton", [=, this](Widget*) { shiftCharacters(-1); });
+  guiReader.registerCallback("playerDownButton", [=, this](Widget*) { shiftCharacters(1); });
+  guiReader.registerCallback("charSelector1", [=, this](Widget*) { selectCharacter(0); });
+  guiReader.registerCallback("charSelector2", [=, this](Widget*) { selectCharacter(1); });
+  guiReader.registerCallback("charSelector3", [=, this](Widget*) { selectCharacter(2); });
+  guiReader.registerCallback("charSelector4", [=, this](Widget*) { selectCharacter(3); });
+  guiReader.registerCallback("createCharButton", [=, this](Widget*) { m_createCallback(); });
+  guiReader.registerCallback("searchCharacter", [=, this](Widget* obj) {
     m_downScroll = 0;
     m_search = convert<TextBoxWidget>(obj)->getText().trim().toLower();
     updateCharacterPlates();
   });
-  guiReader.registerCallback("clearSearch", [=](Widget*) {
+  guiReader.registerCallback("clearSearch", [=, this](Widget*) {
     fetchChild<TextBoxWidget>("searchCharacter")->setText("");
   });
-  guiReader.registerCallback("toggleDismissCheckbox", [=](Widget* widget) {
+  guiReader.registerCallback("toggleDismissCheckbox", [](Widget* widget) {
     auto configuration = Root::singleton().configuration();
     configuration->set("characterSwapDismisses", as<ButtonWidget>(widget)->isChecked());
   });

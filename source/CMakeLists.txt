@@ -1,4 +1,7 @@
-cmake_minimum_required(VERSION 3.23)
+cmake_minimum_required(VERSION 4.1.2)
+
+set(CMAKE_EXPERIMENTAL_CXX_IMPORT_STD "d0edc3af-4c50-42ea-a356-e2862fe7a444")
+
 project(openstarbound LANGUAGES C CXX)
 
 # cache and global build options
@@ -14,13 +17,17 @@ else()
     set(STAR_PRECOMPILED_HEADERS TRUE)
 endif()
 
+set(CMAKE_C_STANDARD 23)
+set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 26)
+set(CMAKE_CXX_MODULE_STD ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 
 # Define build types
-set(CMAKE_CONFIGURATION_TYPES Debug RelWithAsserts RelWithDebInfo Release CACHE STRING "" FORCE)
+set(CMAKE_CONFIGURATION_TYPES
+    Debug RelWithAsserts RelWithDebInfo Release CACHE STRING "" FORCE)
 
 # Set output directory for all build types to ../dist
 set(OUTPUT_DIR "${PROJECT_SOURCE_DIR}/../dist")
@@ -51,14 +58,19 @@ endif()
 
 if(MSVC)
     add_compile_options(/nologo /MP /EHsc /bigobj /DNOMINMAX
-            /wd4996 /wd4244 /wd4267 /wd4351 /wd4503 /wd4624)
+            /wd4996 /wd4244 /wd4267 /wd4351 /wd4503 /wd4624
+    )
     add_definitions(UNICODE _UNICODE)
-    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /largeaddressaware /OPT:REF /OPT:ICF /PDBCompress")
+    set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /largeaddressaware
+        /OPT:REF /OPT:ICF /PDBCompress")
 
     set(CMAKE_CXX_FLAGS_RELEASE "/Ox /fp:fast /GA /GS- /Gy /DNDEBUG")
     set(CMAKE_CXX_FLAGS_RELWITHASSERTS "${CMAKE_CXX_FLAGS_RELEASE} /Z7")
 else()
-    add_compile_options(-Wall -Wextra -Wno-unused -Wno-implicit-fallthrough)
+    add_compile_options(-stdlib=libstdc++)
+    add_compile_options(-Wall -Wextra -Wno-unused -Wno-implicit-fallthrough
+        -Wunused-command-line-argument)
+    add_link_options(-stdlib=libstdc++)
     add_link_options(-rdynamic)
     if(NOT APPLE)
         add_compile_options(-pthread)
@@ -94,9 +106,10 @@ find_package(re2 REQUIRED)
 find_package(imgui REQUIRED)
 
 list(APPEND STAR_EXT_LIBS
-    ZLIB::ZLIB PNG::PNG cpr::cpr re2::re2 imgui::imgui ${VORBIS_LIBRARIES} ${OGG_LIBRARIES}
-    $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
-    $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
+    ZLIB::ZLIB PNG::PNG cpr::cpr re2::re2
+    imgui::imgui ${VORBIS_LIBRARIES} ${OGG_LIBRARIES}
+    zstd::libzstd_shared
+    Freetype::Freetype
 )
 
 smart_find_package(Opus opus)
@@ -144,9 +157,18 @@ endif()
 # Include all the relevant source directories, based on build settings...
 set(BUILD_SHARED_LIBS OFF)
 
-set(STAR_CORE_INCLUDES ${PROJECT_SOURCE_DIR}/core ${PROJECT_SOURCE_DIR}/core/scripting)
-set(STAR_BASE_INCLUDES ${PROJECT_SOURCE_DIR}/base ${PROJECT_SOURCE_DIR}/base/scripting)
-set(STAR_GAME_INCLUDES ${PROJECT_SOURCE_DIR}/game ${PROJECT_SOURCE_DIR}/game/interfaces ${PROJECT_SOURCE_DIR}/game/items)
+set(STAR_CORE_INCLUDES ${PROJECT_SOURCE_DIR}/core
+    ${PROJECT_SOURCE_DIR}/core/scripting
+)
+set(STAR_BASE_INCLUDES
+    ${PROJECT_SOURCE_DIR}/base
+    ${PROJECT_SOURCE_DIR}/base/scripting
+)
+set(STAR_GAME_INCLUDES
+    ${PROJECT_SOURCE_DIR}/game
+    ${PROJECT_SOURCE_DIR}/game/interfaces
+    ${PROJECT_SOURCE_DIR}/game/items
+)
 
 add_subdirectory(extern)
 add_subdirectory(core)

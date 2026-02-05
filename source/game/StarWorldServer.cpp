@@ -1,8 +1,10 @@
 #include "StarWorldServer.hpp"
+#include "StarBiomeDatabase.hpp" // IWYU pragma: keep
+#include "StarEntityFactory.hpp" // IWYU pragma: keep
+#include "StarItem.hpp" // IWYU pragma: keep
+#include "StarProjectile.hpp" // IWYU pragma: keep
 #include "StarLogging.hpp"
 #include "StarIterator.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarBiome.hpp"
 #include "StarWireProcessor.hpp"
 #include "StarWireEntity.hpp"
 #include "StarWorldImpl.hpp"
@@ -11,14 +13,7 @@
 #include "StarItemDrop.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarObject.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarContainerEntity.hpp"
-#include "StarItemBag.hpp"
-#include "StarPhysicsEntity.hpp"
-#include "StarProjectile.hpp"
 #include "StarPlayer.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarBiomeDatabase.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarFallingBlocksAgent.hpp"
 #include "StarWarpTargetEntity.hpp"
@@ -904,7 +899,7 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
 
   if (!WorldImpl::validateTileReplacement(modification))
     return false;
-  
+
   if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
     if (!isTileConnectable(pos, placeMaterial->layer, true))
       return false;
@@ -917,7 +912,7 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
 
       for (auto drop : destroyBlock(placeMaterial->layer, pos, harvested, !tileDamageIsPenetrating(damage.damageType()), false))
         addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
-      
+
       return true;
     }
   }
@@ -953,13 +948,13 @@ TileModificationList WorldServer::replaceTiles(TileModificationList const& modif
         success.append(pair);
         continue;
       }
-      
+
       failures.append(pair);
     }
 
     if (!toDamage.empty())
       damageTiles(toDamage, layer, Vec2F(), tileDamage, Maybe<EntityId>());
-    
+
   } else {
     for (auto pair : modificationList) {
       if (replaceTile(pair.first, pair.second, tileDamage))
@@ -1065,7 +1060,7 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
           }
         } else if (layer == TileLayer::Background && isRealMaterial(tile->background)) {
           tile->backgroundDamage.damage(damageParameters, sourcePosition, tileDamage);
-          
+
           // if the tile is broken, send a message back to the source entity with position and whether the tile was harvested
             if (sourceEntity.isValid() && tile->backgroundDamage.dead()) {
               sendEntityMessage(*sourceEntity, "tileBroken", {
@@ -1317,7 +1312,7 @@ void WorldServer::setTileProtection(DungeonId dungeonId, bool isProtected) {
   if (updated) {
     for (auto const& pair : m_clientInfo)
       pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
-  
+
     Logger::info("Protected dungeonIds for world set to {}", m_protectedDungeonIds);
   }
 }
@@ -1412,7 +1407,7 @@ void WorldServer::init(bool firstTime) {
 
   m_entityMessageResponses = {};
 
-  m_collisionGenerator.init([=](int x, int y) {
+  m_collisionGenerator.init([=, this](int x, int y) {
       return m_tileArray->tile({x, y}).getCollision();
     });
 

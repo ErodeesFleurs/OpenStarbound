@@ -14,6 +14,7 @@
 #include <locale.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <time.h>
 
 #include "lua.h"
@@ -128,7 +129,14 @@ static time_t l_checktime (lua_State *L, int arg) {
 
 /* ISO C definitions */
 #define LUA_TMPNAMBUFSIZE	L_tmpnam
-#define lua_tmpnam(b,e)		{ e = (tmpnam(b) == NULL); }
+#define lua_tmpnam(b, e) do { \
+    strcpy(b, "/tmp/lua_XXXXXX"); \
+    int fd = mkstemp(b); \
+    if (fd != -1) { \
+        close(fd); \
+        e = 0; \
+    } else { e = 1; } \
+} while (0)
 
 #endif				/* } */
 
@@ -163,7 +171,7 @@ static int os_rename (lua_State *L) {
 }
 
 
-static int os_tmpname (lua_State *L) {
+static int os_tmpname ([[maybe_unused]]lua_State *L) {
   char buff[LUA_TMPNAMBUFSIZE];
   int err;
   lua_tmpnam(buff, err);
@@ -406,4 +414,3 @@ LUAMOD_API int luaopen_os (lua_State *L) {
   luaL_newlib(L, syslib);
   return 1;
 }
-

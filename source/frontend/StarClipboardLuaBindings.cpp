@@ -1,5 +1,5 @@
 #include "StarClipboardLuaBindings.hpp"
-#include "StarLuaConverters.hpp"
+#include "StarLuaConverters.hpp" // IWYU pragma: keep
 #include "StarInput.hpp"
 #include "StarBuffer.hpp"
 #include "StarRootBase.hpp"
@@ -9,31 +9,31 @@ namespace Star {
 LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appController, bool alwaysAllow) {
   LuaCallbacks callbacks;
 
-  auto available = [=]() { return alwaysAllow || (appController->isFocused() && Input::singleton().clipboardAllowed()); };
+  auto available = [alwaysAllow, appController]() { return alwaysAllow || (appController->isFocused() && Input::singleton().clipboardAllowed()); };
 
-  callbacks.registerCallback("available", [=]() -> bool {
+  callbacks.registerCallback("available", [available]() -> bool {
     return available();
   });
 
-  callbacks.registerCallback("hasText", [=]() -> bool {
+  callbacks.registerCallback("hasText", [available, appController]() -> bool {
     return available() && appController->hasClipboard();
   });
 
-  callbacks.registerCallback("getText", [=]() -> Maybe<String> {
+  callbacks.registerCallback("getText", [available, appController]() -> Maybe<String> {
     if (!available())
       return {};
     else
       return appController->getClipboard();
   });
 
-  callbacks.registerCallback("setText", [=](String const& text) -> bool {
+  callbacks.registerCallback("setText", [appController](String const& text) -> bool {
     if (appController->isFocused()) {
       return appController->setClipboard(text);
     }
     return false;
   });
 
-  callbacks.registerCallback("setData", [=](LuaTable const& data) -> bool {
+  callbacks.registerCallback("setData", [appController](LuaTable const& data) -> bool {
     if (appController->isFocused()) {
       StringMap<ByteArray> clipboardData;
       data.iterate([&](LuaValue const& key, LuaValue const& value) {
@@ -45,7 +45,7 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appCon
     return false;
   });
 
-  callbacks.registerCallback("setImage", [=](LuaValue const& imgOrPath) -> bool {
+  callbacks.registerCallback("setImage", [appController](LuaValue const& imgOrPath) -> bool {
     if (appController->isFocused()) {
       auto buffer = make_shared<Buffer>();
       if (imgOrPath.is<LuaUserData>() && imgOrPath.get<LuaUserData>().is<Image>()) {

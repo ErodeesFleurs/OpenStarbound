@@ -1,11 +1,8 @@
 #include "StarOptionsMenu.hpp"
 #include "StarRoot.hpp"
 #include "StarGuiReader.hpp"
-#include "StarLexicalCast.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarSliderBar.hpp"
 #include "StarLabelWidget.hpp"
-#include "StarAssets.hpp"
 #include "StarKeybindingsMenu.hpp"
 #include "StarVoiceSettingsMenu.hpp"
 #include "StarBindingsMenu.hpp"
@@ -21,52 +18,52 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client)
 
   GuiReader reader;
 
-  reader.registerCallback("instrumentSlider", [=](Widget*) {
+  reader.registerCallback("instrumentSlider", [=, this](Widget*) {
     updateInstrumentVol();
     });
-  reader.registerCallback("sfxSlider", [=](Widget*) {
+  reader.registerCallback("sfxSlider", [=, this](Widget*) {
       updateSFXVol();
     });
-  reader.registerCallback("musicSlider", [=](Widget*) {
+  reader.registerCallback("musicSlider", [=, this](Widget*) {
       updateMusicVol();
     });
-  reader.registerCallback("acceptButton", [=](Widget*) {
+  reader.registerCallback("acceptButton", [=, this](Widget*) {
       for (auto k : ConfigKeys)
         root->configuration()->set(k, m_localChanges.get(k));
 
       dismiss();
     });
-  reader.registerCallback("tutorialMessagesCheckbox", [=](Widget*) {
+  reader.registerCallback("tutorialMessagesCheckbox", [=, this](Widget*) {
       updateTutorialMessages();
     });
-  reader.registerCallback("clientIPJoinableCheckbox", [=](Widget*) {
+  reader.registerCallback("clientIPJoinableCheckbox", [=, this](Widget*) {
       updateClientIPJoinable();
     });
-  reader.registerCallback("clientP2PJoinableCheckbox", [=](Widget*) {
+  reader.registerCallback("clientP2PJoinableCheckbox", [=, this](Widget*) {
       updateClientP2PJoinable();
     });
-  reader.registerCallback("allowAssetsMismatchCheckbox", [=](Widget*) {
+  reader.registerCallback("allowAssetsMismatchCheckbox", [=, this](Widget*) {
       updateAllowAssetsMismatch();
     });
-  reader.registerCallback("headRotationCheckbox", [=](Widget*) {
+  reader.registerCallback("headRotationCheckbox", [=, this](Widget*) {
       updateHeadRotation();
     });
-  reader.registerCallback("backButton", [=](Widget*) {
+  reader.registerCallback("backButton", [=, this](Widget*) {
       dismiss();
     });
-  reader.registerCallback("showKeybindings", [=](Widget*) {
+  reader.registerCallback("showKeybindings", [=, this](Widget*) {
       displayControls();
     });
-  reader.registerCallback("showVoiceSettings", [=](Widget*) {
+  reader.registerCallback("showVoiceSettings", [=, this](Widget*) {
       displayVoiceSettings();
     });
-  reader.registerCallback("showVoicePlayers", [=](Widget*) {
+  reader.registerCallback("showVoicePlayers", [](Widget*) {
 
     });
-  reader.registerCallback("showModBindings", [=](Widget*) {
+  reader.registerCallback("showModBindings", [=, this](Widget*) {
       displayModBindings();
     });
-  reader.registerCallback("showGraphics", [=](Widget*) {
+  reader.registerCallback("showGraphics", [=, this](Widget*) {
       displayGraphics();
     });
 

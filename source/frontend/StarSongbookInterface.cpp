@@ -5,7 +5,6 @@
 #include "StarLabelWidget.hpp"
 #include "StarTextBoxWidget.hpp"
 #include "StarPlayer.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -18,14 +17,14 @@ SongbookInterface::SongbookInterface(PlayerPtr player) {
 
   GuiReader reader;
 
-  reader.registerCallback("close", [=](Widget*) { dismiss(); });
+  reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
   reader.registerCallback("btnPlay",
-      [=](Widget*) {
+      [=, this](Widget*) {
         if (play())
           dismiss();
       });
-  reader.registerCallback("group", [=](Widget*) {});
-  reader.registerCallback("search", [=](Widget*) {});
+  reader.registerCallback("group", [](Widget*) {});
+  reader.registerCallback("search", [](Widget*) {});
 
   reader.construct(assets->json("/interface/windowconfig/songbook.config:paneLayout"), this);
 

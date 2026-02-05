@@ -1,6 +1,6 @@
 #include "StarWidgetLuaBindings.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarLuaGameConverters.hpp"
+#include "StarJsonExtra.hpp" // IWYU pragma: keep
+#include "StarLuaGameConverters.hpp" // IWYU pragma: keep
 #include "StarGuiReader.hpp"
 #include "StarCanvasWidget.hpp"
 #include "StarLabelWidget.hpp"
@@ -12,7 +12,7 @@
 #include "StarSliderBar.hpp"
 #include "StarItemGridWidget.hpp"
 #include "StarItemSlotWidget.hpp"
-#include "StarItemDatabase.hpp"
+#include "StarItemDatabase.hpp" // IWYU pragma: keep
 #include "StarFlowLayout.hpp"
 #include "StarImageStretchWidget.hpp"
 #include "StarScrollArea.hpp"
@@ -38,7 +38,7 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
   });
 
   methods.registerMethod("drawJsonDrawable", [](CanvasWidgetPtr canvasWidget, Json drawable, Maybe<Vec2F> screenPos) {
-    canvasWidget->drawDrawable(std::move(Drawable(drawable)), screenPos.value(Vec2F()));
+    canvasWidget->drawDrawable(Drawable(drawable), screenPos.value(Vec2F()));
   });
 
   methods.registerMethod("drawJsonDrawables", [](CanvasWidgetPtr canvasWidget, JsonArray drawables, Maybe<Vec2F> screenPos) {

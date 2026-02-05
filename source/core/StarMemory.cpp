@@ -1,4 +1,5 @@
 #include "StarMemory.hpp"
+#include <cstdlib>
 
 #ifdef STAR_USE_JEMALLOC
 #include "jemalloc/jemalloc.h"
@@ -157,4 +158,4 @@ void operator delete[](void* ptr, std::size_t size) noexcept {
   Star::free(ptr, size);
 }
 
-#endif 
+#endif

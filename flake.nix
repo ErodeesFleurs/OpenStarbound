@@ -22,7 +22,7 @@
         };
       in
       {
-        devShells.default = pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } {
+        devShells.default = pkgs.mkShell.override { stdenv = pkgs.libcxxStdenv; } {
           nativeBuildInputs = with pkgs; [
             pkg-config
             cmake
@@ -36,11 +36,11 @@
             zstd
             libpng
             freetype
-            libcpr
             libopus
             libvorbis
             sdl3
-            re2
+            pkgsLLVM.libcpr
+            pkgsLLVM.re2
             cpptrace
             wayland
             libxkbcommon
@@ -50,7 +50,18 @@
             fleurs-nur.packages.${pkgs.stdenv.hostPlatform.system}.imgui
           ];
 
+          hardeningDisable = [
+            "all"
+          ];
+
           env = {
+            NIX_CFLAGS_COMPILE = toString [
+              "-stdlib=libc++"
+              "-Wno-unused-command-line-argument"
+              "-B${pkgs.lib.getLib pkgs.libcxx}/lib"
+              "-isystem ${pkgs.lib.getDev pkgs.libcxx}/include/c++/v1"
+            ];
+
           };
         };
 

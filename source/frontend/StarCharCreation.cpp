@@ -1,8 +1,10 @@
 #include "StarCharCreation.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarGuiReader.hpp"
-#include "StarNameGenerator.hpp"
 #include "StarLogging.hpp"
+#include "StarNameGenerator.hpp" // IWYU pragma: keep
+#include "StarPlayerInventory.hpp" // IWYU pragma: keep
+#include "StarPlayerLog.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
 #include "StarWorldClient.hpp"
 #include "StarSpeciesDatabase.hpp"
@@ -11,12 +13,7 @@
 #include "StarTextBoxWidget.hpp"
 #include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
-#include "StarArmors.hpp"
-#include "StarAssets.hpp"
 #include "StarPlayerFactory.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarPlayerInventory.hpp"
-#include "StarPlayerLog.hpp"
 
 namespace Star {
 
@@ -26,7 +23,7 @@ CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFu
   m_speciesList = jsonToStringList(root.assets()->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
 
   GuiReader guiReader;
-  guiReader.registerCallback("cancel", [=](Widget*) { requestCloseFunc({}); });
+  guiReader.registerCallback("cancel", [requestCloseFunc](Widget*) { requestCloseFunc({}); });
   guiReader.registerCallback("saveChar", [=, this](Widget*) {
       if (fetchChild<ButtonWidget>("btnSkipIntro")->isChecked())
         m_previewPlayer->log()->setIntroComplete(true);

@@ -1,5 +1,4 @@
 #include "StarWorld.hpp"
-#include "StarScriptedEntity.hpp"
 
 namespace Star {
 
@@ -85,7 +84,7 @@ TileDamageResult World::damageTile(Vec2I const& tilePosition, TileLayer layer, V
 }
 
 EntityPtr World::closestEntityInSight(Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilter selector) const {
-  return closestEntity(center, radius, [=](EntityPtr const& entity) {
+  return closestEntity(center, radius, [=, this](EntityPtr const& entity) {
       return selector(entity) && !lineTileCollision(center, entity->position(), collisionSet);
     });
 }

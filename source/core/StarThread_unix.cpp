@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <dlfcn.h>
 #include <dirent.h>
+#include <exception>
 #include <pthread.h>
 #ifdef STAR_SYSTEM_FREEBSD
 #include <pthread_np.h>
