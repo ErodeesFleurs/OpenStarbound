@@ -1,11 +1,8 @@
 #include "StarPane.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
 #include "StarWidgetLuaBindings.hpp"
-#include "StarLuaConverters.hpp"
 #include "StarImageWidget.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarGuiReader.hpp"
 
 namespace Star {
@@ -344,11 +341,11 @@ PanePtr Pane::createTooltip(Vec2I const&) {
   return {};
 }
 
-Maybe<String> Pane::cursorOverride(Vec2I const&) {
+std::optional<String> Pane::cursorOverride(Vec2I const&) {
   return {};
 }
 
-Maybe<ItemPtr> Pane::shiftItemFromInventory(ItemPtr const&) {
+std::optional<ItemPtr> Pane::shiftItemFromInventory(ItemPtr const&) {
   return {};
 }
 
@@ -362,18 +359,18 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("dismiss", [this]() { dismiss(); });
 
   callbacks.registerCallback("playSound",
-    [this](String const& audio, Maybe<int> loops, Maybe<float> volume) {
+    [this](String const& audio, std::optional<int> loops, std::optional<float> volume) {
       auto assets = Root::singleton().assets();
       auto config = Root::singleton().configuration();
       auto audioInstance = make_shared<AudioInstance>(*assets->audio(audio));
-      audioInstance->setVolume(volume.value(1.0));
-      audioInstance->setLoops(loops.value(0));
+      audioInstance->setVolume(volume.value_or(1.0));
+      audioInstance->setLoops(loops.value_or(0));
       auto& guiContext = GuiContext::singleton();
       guiContext.playAudio(audioInstance);
       m_playingSounds.append({audio, std::move(audioInstance)});
     });
 
-  callbacks.registerCallback("stopAllSounds", [this](Maybe<String> const& audio) {
+  callbacks.registerCallback("stopAllSounds", [this](std::optional<String> const& audio) {
       m_playingSounds.filter([audio](pair<String, AudioInstancePtr> const& p) {
         if (!audio || p.first == *audio) {
           p.second->stop();
@@ -397,8 +394,8 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("getSize", [this]() -> Vec2I         {  return size();  });
   callbacks.registerCallback("setSize", [this](Vec2I const& size) { setSize(size);   });
 
-  callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, Maybe<String> const& newWidgetName) -> LuaCallbacks {
-      String name = newWidgetName.value(toString(Random::randu64()));
+  callbacks.registerCallback("addWidget", [this](Json const& newWidgetConfig, std::optional<String> const& newWidgetName) -> LuaCallbacks {
+      String name = newWidgetName.value_or(toString(Random::randu64()));
       WidgetPtr newWidget = reader()->makeSingle(name, newWidgetConfig);
       this->addChild(name, newWidget);
       return LuaBindings::makeWidgetCallbacks(newWidget.get(), reader());

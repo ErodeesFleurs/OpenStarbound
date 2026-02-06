@@ -1,4 +1,5 @@
 #include "StarLuaComponents.hpp"
+#include "StarRoot.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarScriptableThread.hpp"
@@ -123,18 +124,18 @@ void LuaBaseComponent::uninit() {
 }
 
 bool LuaBaseComponent::initialized() const {
-  return m_context.isValid();
+  return m_context.has_value();
 }
 
-Maybe<String> const& LuaBaseComponent::error() const {
+std::optional<String> const& LuaBaseComponent::error() const {
   return m_error;
 }
 
-Maybe<LuaContext> const& LuaBaseComponent::context() const {
+std::optional<LuaContext> const& LuaBaseComponent::context() const {
   return m_context;
 }
 
-Maybe<LuaContext>& LuaBaseComponent::context() {
+std::optional<LuaContext>& LuaBaseComponent::context() {
   return m_context;
 }
 

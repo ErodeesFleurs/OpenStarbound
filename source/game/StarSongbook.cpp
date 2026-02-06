@@ -698,11 +698,11 @@ bool Songbook::instrumentPlaying() const {
   return false;
 }
 
-Maybe<String> Songbook::timeSource() const {
+std::optional<String> Songbook::timeSource() const {
   return m_timeSource;
 }
 
-Maybe<String> Songbook::instrument() const {
+std::optional<String> Songbook::instrument() const {
   return m_instrument;
 }
 

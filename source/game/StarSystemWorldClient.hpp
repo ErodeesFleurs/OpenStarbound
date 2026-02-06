@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarCelestialParameters.hpp"
 #include "StarCelestialCoordinate.hpp"
 #include "StarSystemWorld.hpp"
@@ -19,7 +21,7 @@ public:
 
   CelestialCoordinate currentSystem() const;
 
-  Maybe<Vec2F> shipPosition() const;
+  std::optional<Vec2F> shipPosition() const;
   SystemLocation shipLocation() const;
   SystemLocation shipDestination() const;
   bool flying() const;
@@ -33,7 +35,7 @@ public:
   List<SystemClientShipPtr> ships() const;
   SystemClientShipPtr getShip(Uuid const& uuid) const;
 
-  Uuid spawnObject(String typeName, Maybe<Vec2F> position = {}, Maybe<Uuid> const& uuid = {}, JsonObject parameters = {});
+  Uuid spawnObject(String typeName, std::optional<Vec2F> position = {}, std::optional<Uuid> const& uuid = {}, JsonObject parameters = {});
 
   // returns whether the packet was handled
   bool handleIncomingPacket(PacketPtr packet);

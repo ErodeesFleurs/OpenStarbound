@@ -67,7 +67,7 @@ public:
   friend DataStream& operator<<(DataStream& ds, EpochTimer const& et);
 
 private:
-  Maybe<double> m_lastSeenEpochTime;
+  std::optional<double> m_lastSeenEpochTime;
   double m_elapsedTime;
 };
 

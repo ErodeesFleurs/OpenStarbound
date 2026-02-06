@@ -38,7 +38,7 @@ ItemBagConstPtr ItemGridWidget::bag() const {
 
 ItemPtr ItemGridWidget::itemAt(Vec2I const& position) const {
   auto pos = bagLocationAt(position);
-  if (pos != NPos && m_bag)
+  if (pos != std::numeric_limits<std::size_t>::max() && m_bag)
     return m_bag->at(pos);
 
   return {};
@@ -56,7 +56,7 @@ ItemPtr ItemGridWidget::selectedItem() const {
 
 ItemSlotWidgetPtr ItemGridWidget::itemWidgetAt(Vec2I const& position) const {
   auto pos = bagLocationAt(position);
-  if (pos != NPos)
+  if (pos != std::numeric_limits<std::size_t>::max())
     return m_slots[pos];
   return {};
 }
@@ -96,7 +96,7 @@ size_t ItemGridWidget::bagLocationAt(Vec2I const& position) const {
     }
   }
 
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 Vec2I ItemGridWidget::positionOfSlot(size_t slotNumber) {

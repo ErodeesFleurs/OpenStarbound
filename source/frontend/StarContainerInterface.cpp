@@ -29,10 +29,10 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   auto container = m_containerInteractor->openContainer();
   auto guiConfig = container->containerGuiConfig();
 
-  if (auto scripts = guiConfig.opt("scripts").apply(jsonToStringList)) {
+  if (auto scripts = guiConfig.opt("scripts")) {
     if (!m_script) {
       m_script.emplace();
-      m_script->setScripts(*scripts);
+      m_script->setScripts(jsonToStringList(*scripts));
     }
     m_script->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(this));
     m_script->addCallbacks("config", LuaBindings::makeConfigCallbacks( [guiConfig](String const& name, Json const& def) {
@@ -42,7 +42,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
     m_script->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_player->statusController()));
 
     LuaCallbacks containerPaneCallbacks;
-    containerPaneCallbacks.registerCallback("containerEntityId", [this]() -> Maybe<EntityId> {
+    containerPaneCallbacks.registerCallback("containerEntityId", [this]() -> std::optional<EntityId> {
         return m_containerInteractor->openContainerId();
       });
     containerPaneCallbacks.registerCallback("playerEntityId", [this]() { return m_player->entityId(); });

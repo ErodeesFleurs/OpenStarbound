@@ -1,6 +1,5 @@
 #include "StarActiveItem.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarItemLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
@@ -9,7 +8,6 @@
 #include "StarPlayerLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarEmoteEntity.hpp"
 
@@ -222,11 +220,11 @@ bool ActiveItem::holdingItem() const {
   return m_holdingItem.get();
 }
 
-Maybe<String> ActiveItem::backArmFrame() const {
+std::optional<String> ActiveItem::backArmFrame() const {
   return m_backArmFrame.get();
 }
 
-Maybe<String> ActiveItem::frontArmFrame() const {
+std::optional<String> ActiveItem::frontArmFrame() const {
   return m_frontArmFrame.get();
 }
 
@@ -246,7 +244,7 @@ float ActiveItem::armAngle() const {
   return m_armAngle.get();
 }
 
-Maybe<Direction> ActiveItem::facingDirection() const {
+std::optional<Direction> ActiveItem::facingDirection() const {
   return m_facingDirection.get();
 }
 
@@ -260,7 +258,7 @@ List<Drawable> ActiveItem::handDrawables() const {
   }
 }
 
-List<pair<Drawable, Maybe<EntityRenderLayer>>> ActiveItem::entityDrawables() const {
+List<pair<Drawable, std::optional<EntityRenderLayer>>> ActiveItem::entityDrawables() const {
   return m_scriptedAnimator.drawables();
 }
 
@@ -316,18 +314,18 @@ List<Particle> ActiveItem::pullNewParticles() {
   return result;
 }
 
-Maybe<String> ActiveItem::cursor() const {
+std::optional<String> ActiveItem::cursor() const {
   return m_cursor;
 }
 
-Maybe<Json> ActiveItem::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::optional<Json> ActiveItem::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   return m_script.handleMessage(message, localMessage, args);
 }
 
 float ActiveItem::durabilityStatus() {
   auto durability = instanceValue("durability").optFloat();
   if (durability) {
-    auto durabilityHit = instanceValue("durabilityHit").optFloat().value(*durability);
+    auto durabilityHit = instanceValue("durabilityHit").optFloat().value_or(*durability);
     return durabilityHit / *durability;
   }
   return 1.0;
@@ -361,7 +359,7 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
   callbacks.registerCallback("hand", [this]() {
       return ToolHandNames.getRight(hand());
     });
-  callbacks.registerCallback("handPosition", [this](Maybe<Vec2F> offset) {
+  callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) {
       return handPosition(offset.value());
     });
 
@@ -416,11 +414,11 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       m_holdingItem.set(holdingItem);
     });
 
-  callbacks.registerCallback("setBackArmFrame", [this](Maybe<String> armFrame) {
+  callbacks.registerCallback("setBackArmFrame", [this](std::optional<String> armFrame) {
       m_backArmFrame.set(armFrame);
     });
 
-  callbacks.registerCallback("setFrontArmFrame", [this](Maybe<String> armFrame) {
+  callbacks.registerCallback("setFrontArmFrame", [this](std::optional<String> armFrame) {
       m_frontArmFrame.set(armFrame);
     });
 
@@ -444,37 +442,37 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       m_facingDirection.set(directionOf(direction));
     });
 
-  callbacks.registerCallback("setDamageSources", [this](Maybe<JsonArray> const& damageSources) {
+  callbacks.registerCallback("setDamageSources", [this](std::optional<JsonArray> const& damageSources) {
       m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
     });
 
-  callbacks.registerCallback("setItemDamageSources", [this](Maybe<JsonArray> const& damageSources) {
+  callbacks.registerCallback("setItemDamageSources", [this](std::optional<JsonArray> const& damageSources) {
       m_itemDamageSources.set(damageSources.value().transformed(construct<DamageSource>()));
     });
 
-  callbacks.registerCallback("setShieldPolys", [this](Maybe<List<PolyF>> const& shieldPolys) {
+  callbacks.registerCallback("setShieldPolys", [this](std::optional<List<PolyF>> const& shieldPolys) {
       m_shieldPolys.set(shieldPolys.value());
     });
 
-  callbacks.registerCallback("setItemShieldPolys", [this](Maybe<List<PolyF>> const& shieldPolys) {
+  callbacks.registerCallback("setItemShieldPolys", [this](std::optional<List<PolyF>> const& shieldPolys) {
       m_itemShieldPolys.set(shieldPolys.value());
     });
 
-  callbacks.registerCallback("setForceRegions", [this](Maybe<JsonArray> const& forceRegions) {
+  callbacks.registerCallback("setForceRegions", [this](std::optional<JsonArray> const& forceRegions) {
       if (forceRegions)
         m_forceRegions.set(forceRegions->transformed(jsonToPhysicsForceRegion));
       else
         m_forceRegions.set({});
     });
 
-  callbacks.registerCallback("setItemForceRegions", [this](Maybe<JsonArray> const& forceRegions) {
+  callbacks.registerCallback("setItemForceRegions", [this](std::optional<JsonArray> const& forceRegions) {
       if (forceRegions)
         m_itemForceRegions.set(forceRegions->transformed(jsonToPhysicsForceRegion));
       else
         m_itemForceRegions.set({});
     });
 
-  callbacks.registerCallback("setCursor", [this](Maybe<String> cursor) {
+  callbacks.registerCallback("setCursor", [this](std::optional<String> cursor) {
       m_cursor = std::move(cursor);
     });
 
@@ -506,9 +504,9 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       }));
     } else if (secondaryIcon.type() == Json::Type::String) {
       auto image = AssetPath::relativeTo(directory(), secondaryIcon.toString());
-      setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
+      setSecondaryIconDrawables(std::optional<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
     } else {
-      setSecondaryIconDrawables(Maybe<List<Drawable>>());
+      setSecondaryIconDrawables(std::optional<List<Drawable>>());
     }
   });
 
@@ -524,8 +522,8 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       return LuaValue();
     });
 
-  callbacks.registerCallback("interact", [this](String const& type, Json const& configData, Maybe<EntityId> const& sourceEntityId) {
-      owner()->interact(InteractAction(type, sourceEntityId.value(NullEntityId), configData));
+  callbacks.registerCallback("interact", [this](String const& type, Json const& configData, std::optional<EntityId> const& sourceEntityId) {
+      owner()->interact(InteractAction(type, sourceEntityId.value_or(NullEntityId), configData));
     });
 
   callbacks.registerCallback("emote", [this](String const& emoteName) {
@@ -534,7 +532,7 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
         entity->playEmote(emote);
     });
 
-  callbacks.registerCallback("setCameraFocusEntity", [this](Maybe<EntityId> const& cameraFocusEntity) {
+  callbacks.registerCallback("setCameraFocusEntity", [this](std::optional<EntityId> const& cameraFocusEntity) {
       owner()->setCameraFocusEntity(cameraFocusEntity);
     });
 
@@ -564,7 +562,7 @@ LuaCallbacks ActiveItem::makeScriptedAnimationCallbacks() {
   callbacks.registerCallback("ownerFacingDirection", [this]() {
       return numericalDirection(owner()->facingDirection());
     });
-  callbacks.registerCallback("handPosition", [this](Maybe<Vec2F> offset) {
+  callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) {
       return handPosition(offset.value());
     });
   return callbacks;

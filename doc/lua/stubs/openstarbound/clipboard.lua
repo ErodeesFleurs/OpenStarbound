@@ -13,7 +13,7 @@ function clipboard.available() end
 function clipboard.hasText() end
 
 --- Returns the clipboard text when access is available, or `nil` otherwise. ---
----@return Maybe<String>
+---@return Optional<string>
 function clipboard.getText() end
 
 --- Replaces the clipboard contents with the supplied UTF-8 text. Returns `false` if the game window is unfocused or the operation is blocked. ---

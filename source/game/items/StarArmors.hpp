@@ -1,8 +1,9 @@
 #pragma once
 
+#include <optional>
+
 #include "StarGameTypes.hpp"
 #include "StarItem.hpp"
-#include "StarStatusEffectItem.hpp"
 #include "StarEffectSourceItem.hpp"
 #include "StarPreviewableItem.hpp"
 #include "StarSwingableItem.hpp"
@@ -52,7 +53,7 @@ public:
   bool hideBody() const;
   bool bypassNude() const;
 
-  Maybe<String> const& techModule() const;
+  std::optional<String> const& techModule() const;
 
 private:
   void refreshIconDrawables();
@@ -62,15 +63,15 @@ private:
   List<PersistentStatusEffect> m_statusEffects;
   StringSet m_effectSources;
   Directives m_directives;
-  Maybe<Directives> m_flipDirectives;
+  std::optional<Directives> m_flipDirectives;
   bool m_hideBody;
   bool m_bypassNude;
   bool m_hideInVanillaSlots;
   bool m_statusEffectsInCosmeticSlot;
   bool m_fullbright;
   List<PersistentStatusEffect> m_cosmeticStatusEffects;
-  Maybe<HashSet<ArmorType>> m_armorTypesToHide;
-  Maybe<String> m_techModule;
+  std::optional<HashSet<ArmorType>> m_armorTypesToHide;
+  std::optional<String> m_techModule;
 };
 
 class HeadArmor : public ArmorItem, public PreviewableItem {

@@ -1,17 +1,19 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
 #include "StarJson.hpp"
+#include "StarImage.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(Image);
+using ImageOperationException = ExceptionDerived<"ImageOperationException">;
 
-STAR_EXCEPTION(ImageOperationException, StarException);
-
-StringList colorDirectivesFromConfig(JsonArray const& directives);
-String paletteSwapDirectivesFromConfig(Json const& swaps);
+auto colorDirectivesFromConfig(JsonArray const& directives) -> StringList;
+auto paletteSwapDirectivesFromConfig(Json const& swaps) -> String;
 
 struct NullImageOperation {
   bool unloaded = false;
@@ -23,7 +25,7 @@ struct ErrorImageOperation {
 
 struct HueShiftImageOperation {
   // Specify hue shift angle as -360 to 360 rather than -1 to 1
-  static HueShiftImageOperation hueShiftDegrees(float degrees);
+  static auto hueShiftDegrees(float degrees) -> HueShiftImageOperation;
 
   // value here is normalized to 1.0
   float hueShiftAmount;
@@ -31,7 +33,7 @@ struct HueShiftImageOperation {
 
 struct SaturationShiftImageOperation {
   // Specify saturation shift as amount normalized to 100
-  static SaturationShiftImageOperation saturationShift100(float amount);
+  static auto saturationShift100(float amount) -> SaturationShiftImageOperation;
 
   // value here is normalized to 1.0
   float saturationShiftAmount;
@@ -40,7 +42,7 @@ struct SaturationShiftImageOperation {
 struct BrightnessMultiplyImageOperation {
   // Specify brightness multiply as amount where 0 means "no change" and 100
   // means "x2" and -100 means "x0"
-  static BrightnessMultiplyImageOperation brightnessMultiply100(float amount);
+  static auto brightnessMultiply100(float amount) -> BrightnessMultiplyImageOperation;
 
   float brightnessMultiply;
 };
@@ -52,9 +54,9 @@ struct FadeToColorImageOperation {
   Vec3B color;
   float amount;
 
-  Array<uint8_t, 256> rTable;
-  Array<uint8_t, 256> gTable;
-  Array<uint8_t, 256> bTable;
+  Array<std::uint8_t, 256> rTable;
+  Array<std::uint8_t, 256> gTable;
+  Array<std::uint8_t, 256> bTable;
 };
 
 // Applies two FadeToColor operations in alternating rows to produce a scanline effect
@@ -68,7 +70,7 @@ struct SetColorImageOperation {
   Vec3B color;
 };
 
-typedef HashMap<Vec4B, Vec4B> ColorReplaceMap;
+using ColorReplaceMap = HashMap<Vec4B, Vec4B>;
 
 struct ColorReplaceImageOperation {
   ColorReplaceMap colorReplaceMap;
@@ -132,30 +134,30 @@ struct FlipImageOperation {
   Mode mode;
 };
 
-typedef Variant<NullImageOperation, ErrorImageOperation, HueShiftImageOperation, SaturationShiftImageOperation, BrightnessMultiplyImageOperation, FadeToColorImageOperation,
+using ImageOperation = Variant<NullImageOperation, ErrorImageOperation, HueShiftImageOperation, SaturationShiftImageOperation, BrightnessMultiplyImageOperation, FadeToColorImageOperation,
   ScanLinesImageOperation, SetColorImageOperation, ColorReplaceImageOperation, AlphaMaskImageOperation, BlendImageOperation,
-  MultiplyImageOperation, BorderImageOperation, ScaleImageOperation, CropImageOperation, FlipImageOperation> ImageOperation;
+  MultiplyImageOperation, BorderImageOperation, ScaleImageOperation, CropImageOperation, FlipImageOperation>;
 
-ImageOperation imageOperationFromString(StringView string);
-String imageOperationToString(ImageOperation const& operation);
+auto imageOperationFromString(StringView string) -> ImageOperation;
+auto imageOperationToString(ImageOperation const& operation) -> String;
 
-void parseImageOperations(StringView params, function<void(ImageOperation&&)> outputter);
+void parseImageOperations(StringView params, std::function<void(ImageOperation&&)> outputter);
 
 // Each operation is assumed to be separated by '?', with parameters
 // separated by ';' or '='
-List<ImageOperation> parseImageOperations(StringView params);
+auto parseImageOperations(StringView params) -> List<ImageOperation>;
 
 // Each operation separated by '?', returns string with leading '?'
-String printImageOperations(List<ImageOperation> const& operations);
+auto printImageOperations(List<ImageOperation> const& operations) -> String;
 
 void addImageOperationReferences(ImageOperation const& operation, StringList& out);
 
-StringList imageOperationReferences(List<ImageOperation> const& operations);
+auto imageOperationReferences(List<ImageOperation> const& operations) -> StringList;
 
-typedef function<Image const*(String const& refName)> ImageReferenceCallback;
+using ImageReferenceCallback = std::function<Image const*(String const& refName)>;
 
 void processImageOperation(ImageOperation const& operation, Image& input, ImageReferenceCallback refCallback = {});
 
-Image processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {});
+auto processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {}) -> Image;
 
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarPlatformServices_pc.hpp"
 
 namespace Star {
@@ -11,7 +13,7 @@ public:
   SteamUserGeneratedContentService(PcPlatformServicesStatePtr state);
 
   StringList subscribedContentIds() const override;
-  Maybe<String> contentDownloadDirectory(String const& contentId) const override;
+  std::optional<String> contentDownloadDirectory(String const& contentId) const override;
   UserGeneratedContentService::UGCState triggerContentDownload() override;
 
 private:

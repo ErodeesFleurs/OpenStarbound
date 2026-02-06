@@ -77,7 +77,6 @@ TenantPtr TenantDatabase::readTenant(String const& path) {
       if (spawn == "monster") {
         return TenantMonsterSpawnable{json.getString("type"), json.optFloat("level"), json.opt("overrides")};
       } else {
-        starAssert(json.getString("spawn") == "npc");
 
         Json speciesJson = json.get("species");
         List<String> species;
@@ -90,7 +89,7 @@ TenantPtr TenantDatabase::readTenant(String const& path) {
       }
     });
 
-    Maybe<TenantRent> rent = config.opt("rent").apply([](Json const& json) {
+    std::optional<TenantRent> rent = config.opt("rent").transform([](Json const& json) {
       return TenantRent{jsonToVec2F(json.get("periodRange")), json.getString("pool")};
     });
 

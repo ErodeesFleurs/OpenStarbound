@@ -39,7 +39,6 @@ DynamicLibUPtr DynamicLib::loadLibrary(String const& libraryName) {
 
 DynamicLibUPtr DynamicLib::currentExecutable() {
   void* handle = dlopen(NULL, 0);
-  starAssert(handle);
   return make_unique<PrivateDynLib>(handle);
 }
 

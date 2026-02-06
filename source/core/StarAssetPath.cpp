@@ -1,23 +1,22 @@
 #include "StarAssetPath.hpp"
-#include "StarLexicalCast.hpp"
 
 namespace Star {
 
 // The filename is everything after the last slash (excluding directives) and
 // up to the first directive marker.
-static Maybe<pair<size_t, size_t>> findFilenameRange(std::string const& pathUtf8) {
-  size_t firstDirectiveOrSubPath = pathUtf8.find_first_of(":?");
-  size_t filenameStart = 0;
+static std::optional<std::pair<std::size_t, std::size_t>> findFilenameRange(std::string const& pathUtf8) {
+  std::size_t firstDirectiveOrSubPath = pathUtf8.find_first_of(":?");
+  std::size_t filenameStart = 0;
   while (true) {
-    size_t find = pathUtf8.find('/', filenameStart);
+    std::size_t find = pathUtf8.find('/', filenameStart);
     if (find >= firstDirectiveOrSubPath)
       break;
     filenameStart = find + 1;
   }
 
-  if (filenameStart == NPos) {
-    return {};
-  } else if (firstDirectiveOrSubPath == NPos) {
+  if (filenameStart == std::numeric_limits<std::size_t>::max()) {
+    return std::nullopt;
+  } else if (firstDirectiveOrSubPath == std::numeric_limits<std::size_t>::max()) {
     return {{filenameStart, pathUtf8.size()}};
   } else {
     return {{filenameStart, firstDirectiveOrSubPath}};
@@ -33,7 +32,7 @@ AssetPath AssetPath::split(String const& path) {
   size_t end = str.find_first_of(":?");
   components.basePath = str.substr(0, end);
 
-  if (end == NPos)
+  if (end == std::numeric_limits<std::size_t>::max())
     return components;
 
   // Sub-paths must immediately follow base paths and must start with a ':',
@@ -42,14 +41,14 @@ AssetPath AssetPath::split(String const& path) {
     size_t beg = end + 1;
     if (beg != str.size()) {
       end = str.find_first_of('?', beg);
-      if (end == NPos && beg + 1 != str.size())
+      if (end == std::numeric_limits<std::size_t>::max() && beg + 1 != str.size())
         components.subPath.emplace(str.substr(beg));
       else if (size_t len = end - beg)
         components.subPath.emplace(str.substr(beg, len));
     }
   }
 
-  if (end == NPos)
+  if (end == std::numeric_limits<std::size_t>::max())
     return components;
 
   // Directives must follow the base path and optional sub-path, and each
@@ -78,7 +77,7 @@ String AssetPath::removeSubPath(String const& path) {
 
 String AssetPath::getDirectives(String const& path) {
   size_t firstDirective = path.find('?');
-  if (firstDirective == NPos)
+  if (firstDirective == std::numeric_limits<std::size_t>::max())
     return {};
   return path.substr(firstDirective + 1);
 }
@@ -89,7 +88,7 @@ String AssetPath::addDirectives(String const& path, String const& directives) {
 
 String AssetPath::removeDirectives(String const& path) {
   size_t firstDirective = path.find('?');
-  if (firstDirective == NPos)
+  if (firstDirective == std::numeric_limits<std::size_t>::max())
     return path;
   return path.substr(0, firstDirective);
 }
@@ -113,7 +112,7 @@ String AssetPath::filename(String const& path) {
 String AssetPath::extension(String const& path) {
   auto file = filename(path);
   auto lastDot = file.findLast(".");
-  if (lastDot == NPos)
+  if (lastDot == std::numeric_limits<std::size_t>::max())
     return "";
 
   return file.substr(lastDot + 1);
@@ -141,13 +140,13 @@ AssetPath::AssetPath(String const& path) {
   *this = AssetPath::split(path);
 }
 
-AssetPath::AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives) {
+AssetPath::AssetPath(String&& basePath, std::optional<String>&& subPath, DirectivesGroup&& directives) {
   this->basePath = std::move(basePath);
   this->subPath = std::move(subPath);
   this->directives = std::move(directives);
 }
 
-AssetPath::AssetPath(String const& basePath, Maybe<String> const& subPath, DirectivesGroup const& directives) {
+AssetPath::AssetPath(String const& basePath, const std::optional<String>& subPath, DirectivesGroup const& directives) {
   this->basePath = basePath;
   this->subPath = subPath;
   this->directives = directives;

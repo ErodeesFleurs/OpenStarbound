@@ -1,44 +1,42 @@
 #pragma once
 
-#include <typeindex>
-#include <type_traits>
-#include <lua.hpp>
-#include <functional>
-#include <memory>
+#include "lua.h"
 
-#include "StarLexicalCast.hpp"
+#include "StarException.hpp"
 #include "StarString.hpp"
 #include "StarJson.hpp"
 #include "StarRefPtr.hpp"
 #include "StarDirectives.hpp"
 
+import std;
+
 namespace Star {
 
 class LuaEngine;
-typedef RefPtr<LuaEngine> LuaEnginePtr;
+using LuaEnginePtr = RefPtr<LuaEngine>;
 
 // Basic unspecified lua exception
-STAR_EXCEPTION(LuaException, StarException);
+using LuaException = ExceptionDerived<"LuaException">;
 
 // Thrown when trying to parse an incomplete statement, useful for implementing
 // REPL loops, uses the incomplete statement marker '<eof>' as the standard lua
 // repl does.
-STAR_EXCEPTION(LuaIncompleteStatementException, LuaException);
+using LuaIncompleteStatementException = ExceptionDerived<"LuaIncompleteStatementException", LuaException>;
 
 // Thrown when the instruction limit is reached, if the instruction limit is
 // set.
-STAR_EXCEPTION(LuaInstructionLimitReached, LuaException);
+using LuaInstructionLimitReached = ExceptionDerived<"LuaInstructionLimitReached", LuaException>;
 
 // Thrown when the engine recursion limit is reached, if the recursion limit is
 // set.
-STAR_EXCEPTION(LuaRecursionLimitReached, LuaException);
+using LuaRecursionLimitReached = ExceptionDerived<"LuaRecursionLimitReached", LuaException>;
 
 // Thrown when an incorrect lua type is passed to something in C++ expecting a
 // different type.
-STAR_EXCEPTION(LuaConversionException, LuaException);
+using LuaConversionException = ExceptionDerived<"LuaConversionException", LuaException>;
 
-typedef Empty LuaNilType;
-typedef bool LuaBoolean;
+using LuaNilType = Empty;
+using LuaBoolean = bool;
 typedef lua_Integer LuaInt;
 typedef lua_Number LuaFloat;
 class LuaString;
@@ -46,7 +44,7 @@ class LuaTable;
 class LuaFunction;
 class LuaThread;
 class LuaUserData;
-typedef Variant<LuaNilType, LuaBoolean, LuaInt, LuaFloat, LuaString, LuaTable, LuaFunction, LuaThread, LuaUserData> LuaValue;
+using LuaValue = Variant<LuaNilType, LuaBoolean, LuaInt, LuaFloat, LuaString, LuaTable, LuaFunction, LuaThread, LuaUserData>;
 
 // Used to wrap multiple return values from calling a lua function or to pass
 // multiple values as arguments to a lua function from a container.  If this is
@@ -210,7 +208,7 @@ public:
   template <typename Return, typename... Args, typename Function>
   void iterateWithSignature(Function&& func) const;
 
-  Maybe<LuaTable> getMetatable() const;
+  std::optional<LuaTable> getMetatable() const;
   void setMetatable(LuaTable const& table) const;
 
   template <typename T = LuaValue, typename K>
@@ -246,7 +244,7 @@ public:
   // Will return a value if the thread has yielded a value, and nothing if the
   // thread has finished execution
   template <typename Ret = LuaValue, typename... Args>
-  Maybe<Ret> resume(Args const&... args) const;
+  std::optional<Ret> resume(Args const&... args);
   void pushFunction(LuaFunction const& func) const;
   Status status() const;
 };
@@ -360,9 +358,9 @@ public:
   template <typename T>
   LuaValue luaFrom(T const& t);
   template <typename T>
-  Maybe<T> luaMaybeTo(LuaValue&& v);
+  std::optional<T> luaMaybeTo(LuaValue const& v);
   template <typename T>
-  Maybe<T> luaMaybeTo(LuaValue const& v);
+  std::optional<T> luaMaybeTo(LuaValue&& v);
   template <typename T>
   T luaTo(LuaValue const& v);
   template <typename T>
@@ -429,7 +427,7 @@ private:
 // this template and provide static to and from methods on it.  The method
 // signatures will be called like:
 //   LuaValue from(LuaEngine& engine, T t);
-//   Maybe<T> to(LuaEngine& engine, LuaValue v);
+//   std::optional<T> to(LuaEngine& engine, LuaValue v);
 // The methods can also take 'T const&' or 'LuaValue const&' as parameters, and
 // the 'to' method can also return a bare T if conversion cannot fail.
 template <typename T>
@@ -447,7 +445,7 @@ struct LuaUserDataMethods {
 template <typename T>
 struct LuaUserDataConverter {
   static LuaValue from(LuaEngine& engine, T t);
-  static Maybe<T> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<T> to(LuaEngine& engine, LuaValue const& v);
 };
 
 struct LuaProfileEntry {
@@ -456,9 +454,9 @@ struct LuaProfileEntry {
   // Line number in the chunk of the beginning of the function definition
   unsigned sourceLine;
   // Name of the function, if it can be determined
-  Maybe<String> name;
+  std::optional<String> name;
   // Scope of the function, if it can be determined
-  Maybe<String> nameScope;
+  std::optional<String> nameScope;
   // Time taken within this function itself
   int64_t selfTime;
   // Total time taken within this function or sub functions
@@ -538,9 +536,9 @@ public:
   template <typename T>
   LuaValue luaFrom(T const& t);
   template <typename T>
-  Maybe<T> luaMaybeTo(LuaValue&& v);
+  std::optional<T> luaMaybeTo(LuaValue const& v);
   template <typename T>
-  Maybe<T> luaMaybeTo(LuaValue const& v);
+  std::optional<T> luaMaybeTo(LuaValue&& v);
 
   // Wraps luaMaybeTo, throws an exception if conversion fails.
   template <typename T>
@@ -600,7 +598,7 @@ public:
   void setGlobal(char const* key, T value);
 
   // Perform either a full or incremental garbage collection.
-  void collectGarbage(Maybe<unsigned> steps = {});
+  void collectGarbage(std::optional<unsigned> steps = {});
 
   // Stop / start automatic garbage collection
   void setAutoGarbageCollection(bool autoGarbageColleciton);
@@ -664,14 +662,14 @@ private:
 
   void tableIterate(int handleIndex, function<bool(LuaValue, LuaValue)> iterator);
 
-  Maybe<LuaTable> tableGetMetatable(int handleIndex);
+  std::optional<LuaTable> tableGetMetatable(int handleIndex);
   void tableSetMetatable(int handleIndex, LuaTable const& table);
 
   template <typename... Args>
   LuaDetail::LuaFunctionReturn callFunction(int handleIndex, Args const&... args);
 
   template <typename... Args>
-  Maybe<LuaDetail::LuaFunctionReturn> resumeThread(int handleIndex, Args const&... args);
+  std::optional<LuaDetail::LuaFunctionReturn> resumeThread(int handleIndex, Args const&... args);
   void threadPushFunction(int threadIndex, int functionIndex);
   LuaThread::Status threadStatus(int handleIndex);
 
@@ -757,7 +755,7 @@ struct LuaConverter<bool> {
     return v;
   }
 
-  static Maybe<bool> to(LuaEngine&, LuaValue const& v) {
+  static std::optional<bool> to([[maybe_unused]] LuaEngine& engine, LuaValue const& v) {
     if (auto b = v.ptr<LuaBoolean>())
       return *b;
     if (v == LuaNil)
@@ -772,18 +770,18 @@ struct LuaIntConverter {
     return LuaInt(v);
   }
 
-  static Maybe<T> to(LuaEngine&, LuaValue const& v) {
+  static std::optional<T> to(LuaEngine&, LuaValue const& v) {
     if (auto n = v.ptr<LuaInt>())
-      return *n;
+      return (T)*n;
     if (auto n = v.ptr<LuaFloat>())
-      return *n;
+      return (T)*n;
     if (auto s = v.ptr<LuaString>()) {
       if (auto n = maybeLexicalCast<LuaInt>(s->ptr()))
-        return *n;
+        return (T)*n;
       if (auto n = maybeLexicalCast<LuaFloat>(s->ptr()))
-        return *n;
+        return (T)*n;
     }
-    return {};
+    return std::nullopt;
   }
 };
 
@@ -823,18 +821,18 @@ struct LuaFloatConverter {
     return LuaFloat(v);
   }
 
-  static Maybe<T> to(LuaEngine&, LuaValue const& v) {
+  static std::optional<T> to(LuaEngine&, LuaValue const& v) {
     if (auto n = v.ptr<LuaFloat>())
-      return *n;
+      return (T)*n;
     if (auto n = v.ptr<LuaInt>())
-      return *n;
+      return (T)*n;
     if (auto s = v.ptr<LuaString>()) {
       if (auto n = maybeLexicalCast<LuaFloat>(s->ptr()))
-        return *n;
+        return (T)*n;
       if (auto n = maybeLexicalCast<LuaInt>(s->ptr()))
-        return *n;
+        return (T)*n;
     }
-    return {};
+    return std::nullopt;
   }
 };
 
@@ -850,7 +848,7 @@ struct LuaConverter<String> {
     return engine.createString(v);
   }
 
-  static Maybe<String> to(LuaEngine&, LuaValue const& v) {
+  static std::optional<String> to([[maybe_unused]]LuaEngine& engine, LuaValue const& v) {
     if (v.is<LuaString>())
       return v.get<LuaString>().toString();
     if (v.is<LuaInt>())
@@ -867,7 +865,7 @@ struct LuaConverter<std::string> {
     return engine.createString(v);
   }
 
-  static Maybe<std::string> to(LuaEngine& engine, LuaValue v) {
+  static std::optional<std::string> to(LuaEngine& engine, LuaValue const& v) {
     return engine.luaTo<String>(std::move(v)).takeUtf8();
   }
 };
@@ -902,7 +900,7 @@ struct LuaConverter<LuaString> {
     return LuaValue(std::move(v));
   }
 
-  static Maybe<LuaString> to(LuaEngine& engine, LuaValue v) {
+  static std::optional<LuaString> to(LuaEngine& engine, LuaValue const& v) {
     if (v.is<LuaString>())
       return LuaString(std::move(v.get<LuaString>()));
     if (v.is<LuaInt>())
@@ -919,11 +917,11 @@ struct LuaValueConverter {
     return v;
   }
 
-  static Maybe<T> to(LuaEngine&, LuaValue v) {
+  static std::optional<T> to(LuaEngine&, LuaValue v) {
     if (auto p = v.ptr<T>()) {
       return std::move(*p);
     }
-    return {};
+    return std::nullopt;
   }
 };
 
@@ -951,40 +949,40 @@ struct LuaConverter<LuaValue> {
 };
 
 template <typename T>
-struct LuaConverter<Maybe<T>> {
-  static LuaValue from(LuaEngine& engine, Maybe<T> const& v) {
+struct LuaConverter<std::optional<T>> {
+  static LuaValue from(LuaEngine& engine, std::optional<T> const& v) {
     if (v)
       return engine.luaFrom<T>(*v);
     else
       return LuaNil;
   }
 
-  static LuaValue from(LuaEngine& engine, Maybe<T>&& v) {
+  static LuaValue from(LuaEngine& engine, std::optional<T>&& v) {
     if (v)
-      return engine.luaFrom<T>(v.take());
+      return engine.luaFrom<T>(std::move(*v));
     else
       return LuaNil;
   }
 
-  static Maybe<Maybe<T>> to(LuaEngine& engine, LuaValue const& v) {
+  static std::optional<std::optional<T>> to(LuaEngine& engine, LuaValue const& v) {
     if (v != LuaNil) {
       if (auto conv = engine.luaMaybeTo<T>(v))
         return conv;
       else
-        return {};
+        return std::nullopt;
     } else {
-      return Maybe<T>();
+      return std::optional<T>();
     }
   }
 
-  static Maybe<Maybe<T>> to(LuaEngine& engine, LuaValue&& v) {
+  static std::optional<std::optional<T>> to(LuaEngine& engine, LuaValue&& v) {
     if (v != LuaNil) {
       if (auto conv = engine.luaMaybeTo<T>(std::move(v)))
         return conv;
       else
-        return {};
+        return std::nullopt;
     } else {
-      return Maybe<T>();
+      return std::optional<T>();
     }
   }
 };
@@ -995,7 +993,7 @@ struct LuaMapConverter {
     return engine.createTable(v);
   }
 
-  static Maybe<T> to(LuaEngine& engine, LuaValue const& v) {
+  static std::optional<T> to(LuaEngine& engine, LuaValue const& v) {
     auto table = v.ptr<LuaTable>();
     if (!table)
       return {};
@@ -1009,7 +1007,7 @@ struct LuaMapConverter {
           failed = true;
           return false;
         }
-        result[contKey.take()] = contValue.take();
+        result[std::move(*contKey)] = std::move(*contValue);
         return true;
       });
 
@@ -1026,7 +1024,7 @@ struct LuaContainerConverter {
     return engine.createArrayTable(v);
   }
 
-  static Maybe<T> to(LuaEngine& engine, LuaValue const& v) {
+  static std::optional<T> to(LuaEngine& engine, LuaValue const& v) {
     auto table = v.ptr<LuaTable>();
     if (!table)
       return {};
@@ -1043,7 +1041,7 @@ struct LuaContainerConverter {
           failed = true;
           return false;
         }
-        result.insert(result.end(), contVal.take());
+        result.insert(result.end(), std::move(*contVal));
         return true;
       });
 
@@ -1084,19 +1082,19 @@ struct LuaConverter<HashMap<Key, Value, Hash, Equals, Allocator>> : LuaMapConver
 template <>
 struct LuaConverter<Json> {
   static LuaValue from(LuaEngine& engine, Json const& v);
-  static Maybe<Json> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<Json> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<JsonObject> {
   static LuaValue from(LuaEngine& engine, JsonObject v);
-  static Maybe<JsonObject> to(LuaEngine& engine, LuaValue v);
+  static std::optional<JsonObject> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<JsonArray> {
   static LuaValue from(LuaEngine& engine, JsonArray v);
-  static Maybe<JsonArray> to(LuaEngine& engine, LuaValue v);
+  static std::optional<JsonArray> to(LuaEngine& engine, LuaValue const& v);
 };
 
 namespace LuaDetail {
@@ -1499,7 +1497,7 @@ namespace LuaDetail {
   // Uses the table contents, as well as any hint entries if the table was
   // created originally from a Json, to determine whether a JsonArray or
   // JsonObject is more appropriate.
-  Maybe<Json> tableToJsonContainer(LuaTable const& t);
+  std::optional<Json> tableToJsonContainer(LuaTable const& table);
 
   // Special lua functions to operate on our custom jarray / jobject container
   // types.  Should always do some "sensible" action if given a regular lua
@@ -1511,9 +1509,9 @@ namespace LuaDetail {
   Json jobjectCreate();
 
   // Adds the Json array metatable to a Lua table or creates one.
-  LuaTable jarray(LuaEngine& engine, Maybe<LuaTable> table);
+  LuaTable jarray(LuaEngine& engine, std::optional<LuaTable> table);
   // Adds the Json object metatable to a Lua table or creates one.
-  LuaTable jobject(LuaEngine& engine, Maybe<LuaTable> table);
+  LuaTable jobject(LuaEngine& engine, std::optional<LuaTable> table);
 
   // *Really* remove an entry from a JsonList or JsonMap container table,
   // including removing it from the __nils table.  If the given table is not a
@@ -1533,7 +1531,7 @@ namespace LuaDetail {
   // Coerces a values (strings, floats, ints) into an integer, but fails if the
   // number looks fractional (does not parse as int, float is not an exact
   // integer)
-  Maybe<LuaInt> asInteger(LuaValue const& v);
+  std::optional<LuaInt> asInteger(LuaValue const& v);
 }
 
 template <typename Container>
@@ -1773,11 +1771,11 @@ Ret LuaFunction::invoke(Args const&... args) const {
 }
 
 template <typename Ret, typename... Args>
-Maybe<Ret> LuaThread::resume(Args const&... args) const {
+std::optional<Ret> LuaThread::resume(Args const&... args) {
   auto res = engine().resumeThread(handleIndex(), args...);
-  if (!res)
-    return {};
-  return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), res.take());
+  if (res)
+    return engine().luaTo<Ret>(std::move(*res));
+  return std::nullopt;
 }
 
 inline void LuaThread::pushFunction(LuaFunction const& func) const {
@@ -1864,12 +1862,12 @@ LuaValue LuaContext::luaFrom(T const& t) {
 }
 
 template <typename T>
-Maybe<T> LuaContext::luaMaybeTo(LuaValue&& v) {
+std::optional<T> LuaContext::luaMaybeTo(LuaValue&& v) {
   return engine().luaFrom(std::move(v));
 }
 
 template <typename T>
-Maybe<T> LuaContext::luaMaybeTo(LuaValue const& v) {
+std::optional<T> LuaContext::luaMaybeTo(LuaValue const& v) {
   return engine().luaFrom(v);
 }
 
@@ -1919,7 +1917,7 @@ LuaValue LuaUserDataConverter<T>::from(LuaEngine& engine, T t) {
 }
 
 template <typename T>
-Maybe<T> LuaUserDataConverter<T>::to(LuaEngine&, LuaValue const& v) {
+std::optional<T> LuaUserDataConverter<T>::to([[maybe_unused]]LuaEngine& engine, LuaValue const& v) {
   if (auto ud = v.ptr<LuaUserData>()) {
     if (ud->is<T>())
       return ud->get<T>();
@@ -1938,26 +1936,26 @@ LuaValue LuaEngine::luaFrom(T const& t) {
 }
 
 template <typename T>
-Maybe<T> LuaEngine::luaMaybeTo(LuaValue&& v) {
+std::optional<T> LuaEngine::luaMaybeTo(LuaValue&& v) {
   return LuaConverter<T>::to(*this, std::move(v));
 }
 
 template <typename T>
-Maybe<T> LuaEngine::luaMaybeTo(LuaValue const& v) {
+std::optional<T> LuaEngine::luaMaybeTo(LuaValue const& v) {
   return LuaConverter<T>::to(*this, v);
 }
 
 template <typename T>
 T LuaEngine::luaTo(LuaValue&& v) {
   if (auto res = luaMaybeTo<T>(std::move(v)))
-    return res.take();
+    return std::move(*res);
   throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
 }
 
 template <typename T>
 T LuaEngine::luaTo(LuaValue const& v) {
   if (auto res = luaMaybeTo<T>(v))
-    return res.take();
+    return std::move(*res);
   throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
 }
 
@@ -2018,7 +2016,7 @@ LuaDetail::LuaFunctionReturn LuaEngine::callFunction(int handleIndex, Args const
 }
 
 template <typename... Args>
-Maybe<LuaDetail::LuaFunctionReturn> LuaEngine::resumeThread(int handleIndex, Args const&... args) {
+std::optional<LuaDetail::LuaFunctionReturn> LuaEngine::resumeThread(int handleIndex, Args const&... args) {
   lua_checkstack(m_state, 1);
 
   pushHandle(m_state, handleIndex);
@@ -2040,7 +2038,7 @@ Maybe<LuaDetail::LuaFunctionReturn> LuaEngine::resumeThread(int handleIndex, Arg
 
   int returnValues = lua_gettop(threadState);
   if (returnValues == 0) {
-    return LuaDetail::LuaFunctionReturn();
+    return std::optional<LuaDetail::LuaFunctionReturn>(std::in_place);
   } else if (returnValues == 1) {
     return LuaDetail::LuaFunctionReturn(popLuaValue(threadState));
   } else {

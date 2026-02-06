@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarMathCommon.hpp"
-#include "StarMaybe.hpp"
+#include <optional>
 
 namespace Star {
 
@@ -27,7 +27,7 @@ struct LiquidNetUpdate {
 
 struct LiquidStore : LiquidLevel {
   // Returns a LiquidStore of the given liquid
-  static LiquidStore filled(LiquidId liquid, float level, Maybe<float> pressure = {});
+  static LiquidStore filled(LiquidId liquid, float level, std::optional<float> pressure = {});
   // Returns a LiquidStore source liquid block
   static LiquidStore endless(LiquidId liquid, float pressure);
 
@@ -36,7 +36,7 @@ struct LiquidStore : LiquidLevel {
 
   LiquidNetUpdate netUpdate() const;
 
-  Maybe<LiquidNetUpdate> update(LiquidId liquid, float level, float pressure);
+  std::optional<LiquidNetUpdate> update(LiquidId liquid, float level, float pressure);
 
   LiquidLevel take(float amount);
 

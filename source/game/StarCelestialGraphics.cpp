@@ -22,7 +22,7 @@ List<pair<String, float>> CelestialGraphics::drawSystemCentralBody(CelestialPara
 }
 
 List<pair<String, float>> CelestialGraphics::drawWorld(
-    CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& overrideShadowParameters) {
+    CelestialParameters const& celestialParameters, std::optional<CelestialParameters> const& overrideShadowParameters) {
   auto& root = Root::singleton();
   auto assets = root.assets();
   auto liquidsDatabase = root.liquidsDatabase();
@@ -252,13 +252,13 @@ List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabase
 
 List<pair<String, float>> CelestialGraphics::drawSystemPlanetaryObject(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {
   if (auto params = celestialDatabase->parameters(coordinate))
-    return drawSystemPlanetaryObject(params.take());
+    return drawSystemPlanetaryObject(std::move(*params));
   return {};
 }
 
 List<pair<String, float>> CelestialGraphics::drawSystemCentralBody(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {
   if (auto params = celestialDatabase->parameters(coordinate))
-    return drawSystemCentralBody(params.take());
+    return drawSystemCentralBody(std::move(*params));
   return {};
 }
 
@@ -268,20 +268,20 @@ List<pair<String, float>> CelestialGraphics::drawWorld(CelestialDatabasePtr cele
     return {};
 
   if (coordinate.isSatelliteBody())
-    return drawWorld(params.take(), celestialDatabase->parameters(coordinate.parent()));
+    return drawWorld(std::move(*params), celestialDatabase->parameters(coordinate.parent()));
   else
-    return drawWorld(params.take());
+    return drawWorld(std::move(*params));
 }
 
 List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {
   if (auto params = celestialDatabase->parameters(coordinate))
-    return worldHorizonImages(params.take());
+    return worldHorizonImages(std::move(*params));
   return {};
 }
 
 int CelestialGraphics::worldRadialPosition(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {
   if (auto params = celestialDatabase->parameters(coordinate))
-    return worldRadialPosition(params.take());
+    return worldRadialPosition(std::move(*params));
   return 0;
 }
 

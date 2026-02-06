@@ -1,12 +1,12 @@
 #pragma once
 
-#include <algorithm>
-
 #include "StarException.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(IteratorException, StarException);
+using IteratorException = ExceptionDerived<"IteratorException">;
 
 // Provides java style iterators for bidirectional list-like containers
 // (SIterator and SMutableIterator) and forward only map-like containers
@@ -14,8 +14,8 @@ STAR_EXCEPTION(IteratorException, StarException);
 template <typename Container>
 class SIterator {
 public:
-  typedef typename Container::const_iterator iterator;
-  typedef decltype(*iterator()) value_ref;
+  using iterator = typename Container::const_iterator;
+  using value_ref = decltype(*iterator());
 
   SIterator(Container const& c) : cont(c) {
     toFront();
@@ -31,15 +31,15 @@ public:
     direction = 0;
   }
 
-  bool hasNext() const {
+  [[nodiscard]] auto hasNext() const -> bool {
     return curr != cont.end();
   }
 
-  bool hasPrevious() const {
+  [[nodiscard]] auto hasPrevious() const -> bool {
     return curr != cont.begin();
   }
 
-  value_ref value() const {
+  auto value() const -> value_ref {
     if (direction == 1) {
       if (curr != cont.end() && cont.size() != 0)
         return *curr;
@@ -57,7 +57,7 @@ public:
     }
   }
 
-  value_ref next() {
+  auto next() -> value_ref {
     if (hasNext()) {
       direction = -1;
       return *(curr++);
@@ -65,7 +65,7 @@ public:
     throw IteratorException("next() called on end");
   }
 
-  value_ref previous() {
+  auto previous() -> value_ref {
     if (hasPrevious()) {
       direction = 1;
       return *(--curr);
@@ -73,26 +73,26 @@ public:
     throw IteratorException("prev() called on beginning");
   }
 
-  value_ref peekNext() const {
+  auto peekNext() const -> value_ref {
     SIterator t = *this;
     return t.next();
   }
 
-  value_ref peekPrevious() const {
+  auto peekPrevious() const -> value_ref {
     SIterator t = *this;
     return t.previous();
   }
 
-  size_t distFront() const {
+  [[nodiscard]] auto distFront() const -> std::size_t {
     return std::distance(cont.begin(), curr);
   }
 
-  size_t distBack() const {
+  [[nodiscard]] auto distBack() const -> std::size_t {
     return std::distance(curr, cont.end());
   }
 
 private:
-  SIterator& operator=(iterator const& i) {
+  auto operator=(iterator const& i) -> SIterator& {
     return iterator::operator=(i);
   }
   Container const& cont;
@@ -102,16 +102,16 @@ private:
 };
 
 template <typename Container>
-SIterator<Container> makeSIterator(Container const& c) {
+auto makeSIterator(Container const& c) -> SIterator<Container> {
   return SIterator<Container>(c);
 }
 
 template <typename Container>
 class SMutableIterator {
 public:
-  typedef typename Container::value_type value_type;
-  typedef typename Container::iterator iterator;
-  typedef decltype(*iterator()) value_ref;
+  using value_type = typename Container::value_type;
+  using iterator = typename Container::iterator;
+  using value_ref = decltype(*iterator());
 
   SMutableIterator(Container& c) : cont(c) {
     toFront();
@@ -127,11 +127,11 @@ public:
     direction = 0;
   }
 
-  bool hasNext() const {
+  [[nodiscard]] auto hasNext() const -> bool {
     return curr != cont.end();
   }
 
-  bool hasPrevious() const {
+  [[nodiscard]] auto hasPrevious() const -> bool {
     return curr != cont.begin();
   }
 
@@ -158,7 +158,7 @@ public:
     }
   }
 
-  value_ref value() const {
+  auto value() const -> value_ref {
     if (direction == 1) {
       if (curr != cont.end() && cont.size() != 0)
         return *curr;
@@ -180,40 +180,40 @@ public:
     value() = std::move(v);
   }
 
-  value_ref next() {
+  auto next() -> value_ref {
     if (curr == cont.end())
       throw IteratorException("next() called on end");
     direction = -1;
     return *curr++;
   }
 
-  value_ref previous() {
+  auto previous() -> value_ref {
     if (curr == cont.begin())
       throw IteratorException("previous() called on begin");
     direction = 1;
     return *--curr;
   }
 
-  value_ref peekNext() const {
+  auto peekNext() const -> value_ref {
     SMutableIterator n = *this;
     return n.next();
   }
 
-  value_ref peekPrevious() const {
+  auto peekPrevious() const -> value_ref {
     SMutableIterator n = *this;
     return n.previous();
   }
 
-  size_t distFront() const {
+  [[nodiscard]] auto distFront() const -> std::size_t {
     return std::distance(cont.begin(), curr);
   }
 
-  size_t distBack() const {
+  [[nodiscard]] auto distBack() const -> std::size_t {
     return std::distance(curr, cont.end());
   }
 
 private:
-  SMutableIterator& operator=(iterator const& i) {
+  auto operator=(iterator const& i) -> SMutableIterator& {
     return iterator::operator=(i);
   }
 
@@ -226,18 +226,18 @@ private:
 };
 
 template <typename Container>
-SMutableIterator<Container> makeSMutableIterator(Container& c) {
+auto makeSMutableIterator(Container& c) -> SMutableIterator<Container> {
   return SMutableIterator<Container>(c);
 }
 
 template <typename Container>
 class SMapIterator {
 public:
-  typedef typename Container::key_type key_type;
-  typedef typename Container::mapped_type mapped_type;
+  using key_type = typename Container::key_type;
+  using mapped_type = typename Container::mapped_type;
 
-  typedef typename Container::const_iterator iterator;
-  typedef decltype(*iterator()) value_ref;
+  using iterator = typename Container::const_iterator;
+  using value_ref = decltype(*iterator());
 
   SMapIterator(Container const& c) : cont(c) {
     toFront();
@@ -253,7 +253,7 @@ public:
       --curr;
   }
 
-  bool hasNext() const {
+  [[nodiscard]] auto hasNext() const -> bool {
     iterator end = cont.end();
     if (curr == end)
       return cont.begin() != end;
@@ -261,7 +261,7 @@ public:
       return ++iterator(curr) != end;
   }
 
-  key_type const& key() const {
+  auto key() const -> key_type const& {
     if (curr != cont.end()) {
       return curr->first;
     } else {
@@ -269,7 +269,7 @@ public:
     }
   }
 
-  mapped_type const& value() const {
+  auto value() const -> mapped_type const& {
     if (curr != cont.end()) {
       return curr->second;
     } else {
@@ -277,7 +277,7 @@ public:
     }
   }
 
-  value_ref const& next() {
+  auto next() -> value_ref const& {
     if (hasNext()) {
       if (curr == cont.end())
         curr = cont.begin();
@@ -288,21 +288,21 @@ public:
     throw IteratorException("next() called on end");
   }
 
-  value_ref peekNext() const {
+  auto peekNext() const -> value_ref {
     SMapIterator t = *this;
     return t.next();
   }
 
-  size_t distFront() const {
+  [[nodiscard]] auto distFront() const -> std::size_t {
     return std::distance(cont.begin(), curr);
   }
 
-  size_t distBack() const {
+  [[nodiscard]] auto distBack() const -> std::size_t {
     return std::distance(curr, cont.end()) - 1;
   }
 
 protected:
-  SMapIterator& operator=(iterator const& i) {
+  auto operator=(iterator const& i) -> SMapIterator& {
     return iterator::operator=(i);
   }
   Container const& cont;
@@ -310,18 +310,18 @@ protected:
 };
 
 template <typename Container>
-SMapIterator<Container> makeSMapIterator(Container const& c) {
+auto makeSMapIterator(Container const& c) -> SMapIterator<Container> {
   return SMapIterator<Container>(c);
 }
 
 template <typename Container>
 class SMutableMapIterator {
 public:
-  typedef typename Container::key_type key_type;
-  typedef typename Container::mapped_type mapped_type;
+  using key_type = typename Container::key_type;
+  using mapped_type = typename Container::mapped_type;
 
-  typedef typename Container::iterator iterator;
-  typedef decltype(*iterator()) value_ref;
+  using iterator = typename Container::iterator;
+  using value_ref = decltype(*iterator());
 
   SMutableMapIterator(Container& c) : cont(c) {
     toFront();
@@ -338,7 +338,7 @@ public:
       --curr;
   }
 
-  bool hasNext() const {
+  [[nodiscard]] auto hasNext() const -> bool {
     iterator end = cont.end();
     if (curr == end)
       return cont.begin() != end && !remCalled;
@@ -348,7 +348,7 @@ public:
       return ++iterator(curr) != end;
   }
 
-  key_type const& key() const {
+  auto key() const -> key_type const& {
     if (remCalled)
       throw IteratorException("key() called after remove()");
     else if (curr != cont.end())
@@ -357,7 +357,7 @@ public:
       throw IteratorException("key() called on begin()");
   }
 
-  mapped_type& value() const {
+  auto value() const -> mapped_type& {
     if (remCalled)
       throw IteratorException("value() called after remove()");
     else if (curr != cont.end())
@@ -366,7 +366,7 @@ public:
       throw IteratorException("value() called on begin()");
   }
 
-  value_ref next() {
+  auto next() -> value_ref {
     if (hasNext()) {
       if (curr == cont.end())
         curr = cont.begin();
@@ -381,7 +381,7 @@ public:
     }
   }
 
-  value_ref peekNext() const {
+  auto peekNext() const -> value_ref {
     SMutableMapIterator t = *this;
     return t.next();
   }
@@ -402,14 +402,14 @@ public:
     }
   }
 
-  size_t distFront() const {
+  [[nodiscard]] auto distFront() const -> std::size_t {
     if (curr == cont.end())
       return 0;
     else
       return std::distance(cont.begin(), curr) - (remCalled ? 1 : 0);
   }
 
-  size_t distBack() const {
+  [[nodiscard]] auto distBack() const -> std::size_t {
     if (curr == cont.end())
       return cont.size();
     else
@@ -417,7 +417,7 @@ public:
   }
 
 private:
-  SMutableMapIterator& operator=(iterator const& i) {
+  auto operator=(iterator const& i) -> SMutableMapIterator& {
     return iterator::operator=(i);
   }
 
@@ -427,7 +427,7 @@ private:
 };
 
 template <typename Container>
-SMutableMapIterator<Container> makeSMutableMapIterator(Container& c) {
+auto makeSMutableMapIterator(Container& c) -> SMutableMapIterator<Container> {
   return SMutableMapIterator<Container>(c);
 }
 

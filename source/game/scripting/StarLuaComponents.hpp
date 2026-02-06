@@ -6,6 +6,8 @@
 #include "StarWorld.hpp"
 #include "StarWorldLuaBindings.hpp"
 
+#include <optional>
+
 namespace Star {
 
 STAR_EXCEPTION(LuaComponentException, LuaException);
@@ -73,17 +75,17 @@ public:
   bool initialized() const;
 
   template <typename Ret = LuaValue, typename... V>
-  Maybe<Ret> invoke(String const& name, V&&... args);
+  std::optional<Ret> invoke(String const& name, V&&... args);
 
   template <typename Ret = LuaValue>
-  Maybe<LuaValue> eval(String const& code);
+  std::optional<LuaValue> eval(String const& code);
 
   // Returns last error, if there has been an error.  Errors can only be
   // cleared by re-initializing the context.
-  Maybe<String> const& error() const;
+  std::optional<String> const& error() const;
 
-  Maybe<LuaContext> const& context() const;
-  Maybe<LuaContext>& context();
+  std::optional<LuaContext> const& context() const;
+  std::optional<LuaContext>& context();
 
 protected:
   virtual void contextSetup();
@@ -97,14 +99,14 @@ protected:
 
 private:
   LuaCallbacks makeThreadsCallbacks();
-  
+
   StringList m_scripts;
   StringMap<LuaCallbacks> m_callbacks;
   LuaRootPtr m_luaRoot;
   TrackerListenerPtr m_reloadTracker;
-  Maybe<LuaContext> m_context;
-  Maybe<String> m_error;
-  
+  std::optional<LuaContext> m_context;
+  std::optional<String> m_error;
+
   StringMap<shared_ptr<ScriptableThread>> m_threads;
   mutable RecursiveMutex m_threadLock;
 };
@@ -144,7 +146,7 @@ public:
   bool updateReady() const;
 
   template <typename Ret = LuaValue, typename... V>
-  Maybe<Ret> update(V&&... args);
+  std::optional<Ret> update(V&&... args);
 
 private:
   Periodic m_updatePeriodic;
@@ -172,14 +174,14 @@ class LuaMessageHandlingComponent : public Base {
 public:
   LuaMessageHandlingComponent();
 
-  Maybe<Json> handleMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<Json> handleMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 protected:
   virtual void contextShutdown() override;
 
 private:
   struct MessageHandler {
-    Maybe<LuaFunction> function;
+    std::optional<LuaFunction> function;
     String name;
     bool passName = true;
     bool localOnly = false;
@@ -189,14 +191,14 @@ private:
 };
 
 template <typename Ret, typename... V>
-Maybe<Ret> LuaBaseComponent::invoke(String const& name, V&&... args) {
+std::optional<Ret> LuaBaseComponent::invoke(String const& name, V&&... args) {
   if (!checkInitialization())
-    return {};
+    return std::nullopt;
 
   try {
     auto method = m_context->getPath(name);
     if (method == LuaNil)
-      return {};
+      return std::nullopt;
     return m_context->luaTo<LuaFunction>(std::move(method)).invoke<Ret>(std::forward<V>(args)...);
   } catch (LuaException const& e) {
     Logger::error("Exception while invoking lua function '{}'. {}", name, outputException(e, true));
@@ -206,15 +208,15 @@ Maybe<Ret> LuaBaseComponent::invoke(String const& name, V&&... args) {
 }
 
 template <typename Ret>
-Maybe<LuaValue> LuaBaseComponent::eval(String const& code) {
+std::optional<LuaValue> LuaBaseComponent::eval(String const& code) {
   if (!checkInitialization())
-    return {};
+    return std::nullopt;
 
   try {
     return m_context->eval<Ret>(code);
   } catch (LuaException const& e) {
     Logger::error("Exception while evaluating lua in context: {}", outputException(e, true));
-    return {};
+    return std::nullopt;
   }
 }
 
@@ -291,9 +293,9 @@ bool LuaUpdatableComponent<Base>::updateReady() const {
 
 template <typename Base>
 template <typename Ret, typename... V>
-Maybe<Ret> LuaUpdatableComponent<Base>::update(V&&... args) {
+std::optional<Ret> LuaUpdatableComponent<Base>::update(V&&... args) {
   if (!m_updatePeriodic.tick())
-    return {};
+    return std::nullopt;
 
   return Base::template invoke<Ret>("update", std::forward<V>(args)...);
 }
@@ -317,7 +319,7 @@ void LuaWorldComponent<Base>::uninit() {
 template <typename Base>
 LuaMessageHandlingComponent<Base>::LuaMessageHandlingComponent() {
   LuaCallbacks scriptCallbacks;
-  scriptCallbacks.registerCallback("setHandler", [this](Variant<String, Json> message, Maybe<LuaFunction> handler) {
+  scriptCallbacks.registerCallback("setHandler", [this](Variant<String, Json> message, std::optional<LuaFunction> handler) {
       MessageHandler handlerInfo = {};
 
       if (Json* config = message.ptr<Json>()) {
@@ -331,7 +333,7 @@ LuaMessageHandlingComponent<Base>::LuaMessageHandlingComponent() {
       }
 
       if (handler) {
-        handlerInfo.function.emplace(handler.take());
+        handlerInfo.function = std::move(handler);
         m_messageHandlers.set(handlerInfo.name, handlerInfo);
       }
       else
@@ -342,16 +344,16 @@ LuaMessageHandlingComponent<Base>::LuaMessageHandlingComponent() {
 }
 
 template <typename Base>
-Maybe<Json> LuaMessageHandlingComponent<Base>::handleMessage(
+std::optional<Json> LuaMessageHandlingComponent<Base>::handleMessage(
     String const& message, bool localMessage, JsonArray const& args) {
   if (!Base::initialized())
-    return {};
+    return std::nullopt;
 
   if (auto handler = m_messageHandlers.ptr(message)) {
     try {
       if (handler->localOnly) {
         if (!localMessage)
-          return {};
+          return std::nullopt;
         else if (handler->passName)
           return handler->function->template invoke<Json>(message, luaUnpack(args));
         else
@@ -367,7 +369,7 @@ Maybe<Json> LuaMessageHandlingComponent<Base>::handleMessage(
       Base::setError(String(printException(e, false)));
     }
   }
-  return {};
+  return std::nullopt;
 }
 
 template <typename Base>

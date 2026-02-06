@@ -74,7 +74,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F cons
 ItemDrop::ItemDrop(ItemPtr item)
   : ItemDrop() {
   m_item = std::move(item);
-  
+
   m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
 
   updateCollisionPoly();
@@ -233,7 +233,7 @@ void ItemDrop::update(float dt, uint64_t) {
 
   if (isMaster()) {
     m_scriptComponent.update(m_scriptComponent.updateDt(dt));
-    
+
     if (m_owningEntity.get() != NullEntityId) {
       updateTaken(true);
     } else {
@@ -280,8 +280,8 @@ void ItemDrop::update(float dt, uint64_t) {
       m_mode.set(Mode::Dead);
     if (m_mode.get() == Mode::Taken && m_dropAge.elapsedTime() > m_afterTakenLife)
       m_mode.set(Mode::Dead);
-    
-    
+
+
     if (m_overrideMode) {
       m_mode.set(*m_overrideMode);
     }
@@ -450,7 +450,7 @@ EnumMap<ItemDrop::Mode> const ItemDrop::ModeNames{
     {ItemDrop::Mode::Available, "Available"},
     {ItemDrop::Mode::Taken, "Taken"},
     {ItemDrop::Mode::Dead, "Dead"}};
-    
+
 Json ItemDrop::configValue(String const& name, Json const& def) const {
   return m_parameters.query(name, m_config.query(name, def));
 }
@@ -542,19 +542,19 @@ void ItemDrop::updateTaken(bool master) {
   m_movementController.applyParameters(parameters);
 }
 
-Maybe<LuaValue> ItemDrop::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> ItemDrop::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> ItemDrop::evalScript(String const& code) {
+std::optional<LuaValue> ItemDrop::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
 LuaCallbacks ItemDrop::makeItemDropCallbacks() {
   LuaCallbacks callbacks;
-  callbacks.registerCallback("takingEntity", [this]() -> Maybe<EntityId> {
+  callbacks.registerCallback("takingEntity", [this]() -> std::optional<EntityId> {
       if (m_owningEntity.get() == NullEntityId)
-        return {};
+        return std::nullopt;
       else
         return m_owningEntity.get();
   });
@@ -562,17 +562,17 @@ LuaCallbacks ItemDrop::makeItemDropCallbacks() {
   callbacks.registerCallback("eternal", [this]() -> bool { return m_eternal; });
   callbacks.registerCallback("setIntangibleTime", [this](float const& intangibleTime) { setIntangibleTime(intangibleTime); });
   callbacks.registerCallback("intangibleTime", [this]() -> float { return m_intangibleTimer.timer; });
-  callbacks.registerCallback("setOverrideMode", [this](Maybe<String> const& mode) {
+  callbacks.registerCallback("setOverrideMode", [this](std::optional<String> const& mode) {
     if (mode)
       m_overrideMode = ModeNames.getLeft(*mode);
     else
-      m_overrideMode = {};
+      m_overrideMode = std::nullopt;
   });
-  callbacks.registerCallback("overrideMode", [this]() -> Maybe<String> {
+  callbacks.registerCallback("overrideMode", [this]() -> std::optional<String> {
     if (m_overrideMode)
       return ModeNames.getRight(*m_overrideMode);
     else
-      return {};
+      return std::nullopt;
   });
   return callbacks;
 }

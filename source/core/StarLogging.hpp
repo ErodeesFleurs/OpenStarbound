@@ -1,15 +1,14 @@
 #pragma once
 
-#include <format>
-#include <string_view>
-#include <utility>
-
 #include "StarThread.hpp"
 #include "StarSet.hpp"
 #include "StarString.hpp"
 #include "StarPoly.hpp"
 #include "StarBiMap.hpp"
 #include "StarFile.hpp"
+#include "StarConfig.hpp"
+
+import std;
 
 namespace Star {
 
@@ -21,8 +20,6 @@ enum class LogLevel {
 };
 extern EnumMap<LogLevel> const LogLevelNames;
 
-STAR_CLASS(LogSink);
-
 // A sink for Logger messages.
 class LogSink {
 public:
@@ -32,15 +29,15 @@ public:
   virtual void log(char const* msg, LogLevel level) = 0;
 
   void setLevel(LogLevel level);
-  LogLevel level();
+  auto level() -> LogLevel;
 
 private:
-  atomic<LogLevel> m_level;
+  std::atomic<LogLevel> m_level;
 };
 
 class StdoutLogSink : public LogSink {
 public:
-  virtual void log(char const* msg, LogLevel level);
+  void log(char const* msg, LogLevel level) override;
 
 private:
   Mutex m_logMutex;
@@ -50,10 +47,10 @@ class FileLogSink : public LogSink {
 public:
   FileLogSink(String const& filename, LogLevel level, bool truncate);
 
-  virtual void log(char const* msg, LogLevel level);
+  void log(char const* msg, LogLevel level) override;
 
 private:
-  FilePtr m_output;
+  Ptr<File> m_output;
   Mutex m_logMutex;
 };
 
@@ -61,11 +58,11 @@ private:
 // Info, Warn, and Error logging levels.  By default logs to stdout.
 class Logger {
 public:
-  static void addSink(LogSinkPtr s);
-  static void removeSink(LogSinkPtr s);
+  static void addSink(Ptr<LogSink> s);
+  static void removeSink(Ptr<LogSink> s);
 
   // Default LogSink that outputs to stdout.
-  static LogSinkPtr stdoutSink();
+  static auto stdoutSink() -> Ptr<LogSink>;
   // Don't use the stdout sink.
   static void removeStdoutSink();
 
@@ -93,12 +90,12 @@ public:
   template <typename... Args>
   static void verror(std::string_view msg, Args&&... args);
 
-  static bool loggable(LogLevel level);
+  static auto loggable(LogLevel level) -> bool;
   static void refreshLoggable();
 private:
 
-  static shared_ptr<StdoutLogSink> s_stdoutSink;
-  static HashSet<LogSinkPtr> s_sinks;
+  static std::shared_ptr<StdoutLogSink> s_stdoutSink;
+  static HashSet<Ptr<LogSink>> s_sinks;
   static Array<bool, 4> s_loggable;
   static Mutex s_mutex;
 };
@@ -107,14 +104,14 @@ private:
 // be displayed every frame, or in a debug output window, etc.
 class LogMap {
 public:
-  static String getValue(String const& key);
+  static auto getValue(String const& key) -> String;
   static void setValue(String const& key, String const& value);
 
   // Shorthand, converts given type to string using std::ostream.
   template <typename T>
   static void set(String const& key, T const& t);
 
-  static Map<String, String> getValues();
+  static auto getValues() -> Map<String, String>;
   static void clear();
 
 private:
@@ -153,13 +150,13 @@ public:
   static void logPoint(char const* space, Vec2F const& position, Vec4B const& color);
   static void logText(char const* space, String text, Vec2F const& position, Vec4B const& color);
 
-  static Deque<Line> getLines(char const* space, bool andClear);
-  static Deque<Point> getPoints(char const* space, bool andClear);
-  static Deque<LogText> getText(char const* space, bool andClear);
+  static auto getLines(char const* space, bool andClear) -> Deque<Line>;
+  static auto getPoints(char const* space, bool andClear) -> Deque<Point>;
+  static auto getText(char const* space, bool andClear) -> Deque<LogText>;
 
   static void clear();
 
-  static bool observed();
+  static auto observed() -> bool;
   static void setObserved(bool observed);
 
 private:

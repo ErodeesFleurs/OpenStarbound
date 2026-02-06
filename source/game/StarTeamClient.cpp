@@ -1,13 +1,11 @@
 #include "StarTeamClient.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarWorldTemplate.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerLog.hpp"
+#include "StarPlayerLog.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarClientContext.hpp"
+#include "StarTime.hpp"
 #include "StarWorldClient.hpp"
-#include "StarJsonRpc.hpp"
 
 namespace Star {
 
@@ -75,7 +73,7 @@ void TeamClient::acceptInvitation(Uuid const& inviterUuid) {
   invokeRemote("team.acceptInvitation", request, [this](Json) { forceUpdate(); });
 }
 
-Maybe<Uuid> TeamClient::currentTeam() const {
+std::optional<Uuid> TeamClient::currentTeam() const {
   return m_teamUuid;
 }
 
@@ -156,7 +154,7 @@ void TeamClient::pullFullUpdate() {
   invokeRemote("team.fetchTeamStatus", request, [this](Json response) {
       m_fullUpdateRunning = false;
 
-      m_teamUuid = response.optString("teamUuid").apply(construct<Uuid>());
+      m_teamUuid = response.optString("teamUuid").transform(construct<Uuid>());
 
       if (m_teamUuid) {
         m_teamLeader = Uuid(response.getString("leader"));

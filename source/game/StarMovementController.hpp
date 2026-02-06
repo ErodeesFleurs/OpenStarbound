@@ -1,8 +1,9 @@
 #pragma once
 
+#include <optional>
+
 #include "StarJson.hpp"
-#include "StarMaybe.hpp"
-#include "StarNetElementSystem.hpp"
+
 #include "StarWorld.hpp"
 #include "StarPhysicsEntity.hpp"
 
@@ -29,44 +30,44 @@ struct MovementParameters {
 
   Json toJson() const;
 
-  Maybe<float> mass;
-  Maybe<float> gravityMultiplier;
-  Maybe<float> liquidBuoyancy;
-  Maybe<float> airBuoyancy;
-  Maybe<float> bounceFactor;
+  std::optional<float> mass;
+  std::optional<float> gravityMultiplier;
+  std::optional<float> liquidBuoyancy;
+  std::optional<float> airBuoyancy;
+  std::optional<float> bounceFactor;
   // If set to true, during an update that has more than one internal movement
   // step, the movement will stop on the first bounce.
-  Maybe<bool> stopOnFirstBounce;
+  std::optional<bool> stopOnFirstBounce;
   // Cheat when sliding on the ground, by trying to correct upwards before
   // other directions (within a set limit).  Allows smooth sliding along
   // horizontal ground without losing horizontal speed.
-  Maybe<bool> enableSurfaceSlopeCorrection;
-  Maybe<float> slopeSlidingFactor;
-  Maybe<float> maxMovementPerStep;
-  Maybe<float> maximumCorrection;
-  Maybe<float> speedLimit;
-  Maybe<float> discontinuityThreshold;
+  std::optional<bool> enableSurfaceSlopeCorrection;
+  std::optional<float> slopeSlidingFactor;
+  std::optional<float> maxMovementPerStep;
+  std::optional<float> maximumCorrection;
+  std::optional<float> speedLimit;
+  std::optional<float> discontinuityThreshold;
 
-  Maybe<PolyF> collisionPoly;
+  std::optional<PolyF> collisionPoly;
 
-  Maybe<bool> stickyCollision;
-  Maybe<float> stickyForce;
+  std::optional<bool> stickyCollision;
+  std::optional<float> stickyForce;
 
-  Maybe<float> airFriction;
-  Maybe<float> liquidFriction;
-  Maybe<float> groundFriction;
+  std::optional<float> airFriction;
+  std::optional<float> liquidFriction;
+  std::optional<float> groundFriction;
 
-  Maybe<bool> collisionEnabled;
-  Maybe<bool> frictionEnabled;
-  Maybe<bool> gravityEnabled;
+  std::optional<bool> collisionEnabled;
+  std::optional<bool> frictionEnabled;
+  std::optional<bool> gravityEnabled;
 
-  Maybe<bool> ignorePlatformCollision;
-  Maybe<float> maximumPlatformCorrection;
-  Maybe<float> maximumPlatformCorrectionVelocityFactor;
+  std::optional<bool> ignorePlatformCollision;
+  std::optional<float> maximumPlatformCorrection;
+  std::optional<float> maximumPlatformCorrectionVelocityFactor;
 
-  Maybe<StringSet> physicsEffectCategories;
+  std::optional<StringSet> physicsEffectCategories;
 
-  Maybe<int> restDuration;
+  std::optional<int> restDuration;
 };
 
 DataStream& operator>>(DataStream& ds, MovementParameters& movementParameters);
@@ -127,7 +128,7 @@ public:
   bool isCollisionStuck() const;
 
   // If this body is sticking, this is the angle toward the surface it's stuck to
-  Maybe<float> stickingDirection() const;
+  std::optional<float> stickingDirection() const;
 
   // From 0.0 to 1.0, the amount of the collision body (or if the collision
   // body is null, just the center position) that is in liquid.
@@ -217,7 +218,7 @@ private:
   struct CollisionResult {
     Vec2F movement;
     Vec2F correction;
-    Maybe<MovingCollisionId> surfaceMovingCollisionId;
+    std::optional<MovingCollisionId> surfaceMovingCollisionId;
     bool isStuck;
     bool onGround;
     Vec2F groundSlope;
@@ -227,7 +228,7 @@ private:
   struct CollisionSeparation {
     Vec2F correction;
     bool solutionFound;
-    Maybe<MovingCollisionId> movingCollisionId;
+    std::optional<MovingCollisionId> movingCollisionId;
     CollisionKind collisionKind;
   };
 
@@ -235,7 +236,7 @@ private:
     PolyF poly;
     RectF polyBounds;
     Vec2F sortPosition;
-    Maybe<MovingCollisionId> movingCollisionId;
+    std::optional<MovingCollisionId> movingCollisionId;
     CollisionKind collisionKind;
     float sortDistance;
   };
@@ -270,14 +271,14 @@ private:
   NetElementBool m_colliding;
   NetElementBool m_collisionStuck;
   NetElementBool m_nullColliding;
-  NetElementData<Maybe<float>> m_stickingDirection;
+  NetElementData<std::optional<float>> m_stickingDirection;
   NetElementBool m_onGround;
   NetElementBool m_zeroG;
 
   float m_liquidPercentage;
   LiquidId m_liquidId;
 
-  NetElementData<Maybe<MovingCollisionId>> m_surfaceMovingCollision;
+  NetElementData<std::optional<MovingCollisionId>> m_surfaceMovingCollision;
   NetElementFloat m_xRelativeSurfaceMovingCollisionPosition;
   NetElementFloat m_yRelativeSurfaceMovingCollisionPosition;
 

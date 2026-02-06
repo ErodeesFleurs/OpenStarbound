@@ -36,7 +36,7 @@ public:
   bool errorOccurred();
   bool shouldExpire();
 
-  // 
+  //
   void passMessage(Message&& message);
 
 protected:
@@ -44,16 +44,16 @@ protected:
 
 private:
   void update();
-  Maybe<Json> receiveMessage(String const& message, JsonArray const& args);
+  std::optional<Json> receiveMessage(String const& message, JsonArray const& args);
 
   mutable RecursiveMutex m_mutex;
-  
+
   LuaRootPtr m_luaRoot;
   StringMap<ScriptComponentPtr> m_scriptContexts;
-  
+
   Json m_parameters;
   String m_name;
-  
+
   float m_timestep;
 
   mutable RecursiveMutex m_messageMutex;
@@ -63,7 +63,7 @@ private:
   atomic<bool> m_pause;
   mutable atomic<bool> m_errorOccurred;
   mutable atomic<bool> m_shouldExpire;
-  
+
   LuaCallbacks makeThreadCallbacks();
   Json configValue(String const& name, Json def) const;
 };

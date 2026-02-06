@@ -1,9 +1,12 @@
+#include "StarRoot.hpp"
 #include "StarStatistics.hpp"
-#include "StarStatisticsDatabase.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarStatisticsDatabase.hpp" // IWYU pragma: keep
 #include "StarStatisticsService.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+#include "StarVersioningDatabase.hpp"
 
 namespace Star {
 
@@ -40,7 +43,7 @@ Json Statistics::stat(String const& name, Json def) const {
   return def;
 }
 
-Maybe<String> Statistics::statType(String const& name) const {
+std::optional<String> Statistics::statType(String const& name) const {
   if (m_stats.contains(name))
     return m_stats.get(name).type;
   return {};
@@ -148,7 +151,7 @@ bool Statistics::checkAchievement(String const& achievementName) {
   if (achievementUnlocked(achievement->name))
     return true;
 
-  Maybe<bool> result = runStatScript<bool>(achievement->scripts, achievement->config, "check", achievementName);
+  std::optional<bool> result = runStatScript<bool>(achievement->scripts, achievement->config, "check", achievementName);
   return result && *result;
 }
 
@@ -206,7 +209,7 @@ LuaCallbacks Statistics::makeStatisticsCallbacks() {
 
   callbacks.registerCallbackWithSignature<Json, String, Json>("stat", bind(&Statistics::stat, this, _1, _2));
 
-  callbacks.registerCallbackWithSignature<Maybe<String>, String>("statType", bind(&Statistics::statType, this, _1));
+  callbacks.registerCallbackWithSignature<std::optional<String>, String>("statType", bind(&Statistics::statType, this, _1));
 
   callbacks.registerCallbackWithSignature<bool, String>("achievementUnlocked", bind(&Statistics::achievementUnlocked, this, _1));
 
@@ -218,7 +221,7 @@ LuaCallbacks Statistics::makeStatisticsCallbacks() {
 }
 
 template <typename Result, typename... V>
-Maybe<Result> Statistics::runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args) {
+std::optional<Result> Statistics::runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args) {
   LuaBaseComponent script;
   script.setLuaRoot(m_luaRoot);
   script.setScripts(scripts);
@@ -227,7 +230,7 @@ Maybe<Result> Statistics::runStatScript(StringList const& scripts, Json const& c
     }));
   script.addCallbacks("statistics", makeStatisticsCallbacks());
   script.init();
-  Maybe<Result> result = script.invoke<Result>(functionName, args...);
+  std::optional<Result> result = script.invoke<Result>(functionName, args...);
   script.uninit();
   return result;
 }

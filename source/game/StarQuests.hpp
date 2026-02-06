@@ -41,15 +41,15 @@ public:
   void init(Player* player, World* world, UniverseClient* client);
   void uninit();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args);
+  std::optional<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args);
   void update(float dt);
 
   void offer();
   void declineOffer();
   void cancelOffer();
   void start();
-  void complete(Maybe<size_t> followupIndex = {});
+  void complete(std::optional<size_t> followupIndex = {});
   void fail();
   void abandon();
 
@@ -73,19 +73,19 @@ public:
   void setEntityParameter(String const& paramName, EntityConstPtr const& entity);
   void setParameter(String const& paramName, QuestParam const& paramValue);
 
-  Maybe<List<Drawable>> portrait(String const& portraitName) const;
-  Maybe<String> portraitTitle(String const& portraitName) const;
+  std::optional<List<Drawable>> portrait(String const& portraitName) const;
+  std::optional<String> portraitTitle(String const& portraitName) const;
 
   QuestDescriptor questDescriptor() const;
   QuestArcDescriptor questArcDescriptor() const;
   size_t questArcPosition() const;
 
-  Maybe<WorldId> worldId() const;
-  Maybe<pair<Vec3I, SystemLocation>> location() const;
-  Maybe<Uuid> serverUuid() const;
-  void setWorldId(Maybe<WorldId> worldId);
-  void setLocation(Maybe<pair<Vec3I, SystemLocation>> location);
-  void setServerUuid(Maybe<Uuid> serverUuid);
+  std::optional<WorldId> worldId() const;
+  std::optional<pair<Vec3I, SystemLocation>> location() const;
+  std::optional<Uuid> serverUuid() const;
+  void setWorldId(std::optional<WorldId> worldId);
+  void setLocation(std::optional<pair<Vec3I, SystemLocation>> location);
+  void setServerUuid(std::optional<Uuid> serverUuid);
 
   String title() const;
   String text() const;
@@ -105,17 +105,17 @@ public:
   String questReceiverIndicator() const;
 
   // The String returned by this method is an image path, not a reference to a configured indicator
-  Maybe<String> customIndicator(EntityPtr const& entity) const;
+  std::optional<String> customIndicator(EntityPtr const& entity) const;
 
-  Maybe<JsonArray> objectiveList() const;
-  Maybe<float> progress() const;
-  Maybe<float> compassDirection() const;
+  std::optional<JsonArray> objectiveList() const;
+  std::optional<float> progress() const;
+  std::optional<float> compassDirection() const;
 
-  void setObjectiveList(Maybe<JsonArray> const& objectiveList);
-  void setProgress(Maybe<float> const& progress);
-  void setCompassDirection(Maybe<float> const& compassDirection);
+  void setObjectiveList(std::optional<JsonArray> const& objectiveList);
+  void setProgress(std::optional<float> const& progress);
+  void setCompassDirection(std::optional<float> const& compassDirection);
 
-  Maybe<String> completionCinema() const;
+  std::optional<String> completionCinema() const;
   bool canBeAbandoned() const;
   bool ephemeral() const;
   bool showInLog() const;
@@ -159,9 +159,9 @@ private:
   size_t m_arcPos;
   StringMap<QuestParam> m_parameters;
   DisplayParameters m_displayParameters;
-  Maybe<WorldId> m_worldId;
-  Maybe<pair<Vec3I, SystemLocation>> m_location;
-  Maybe<Uuid> m_serverUuid;
+  std::optional<WorldId> m_worldId;
+  std::optional<pair<Vec3I, SystemLocation>> m_location;
+  std::optional<Uuid> m_serverUuid;
   size_t m_money;
   List<ItemConstPtr> m_rewards;
   int64_t m_lastUpdatedOn;
@@ -179,9 +179,9 @@ private:
   StringMap<List<Drawable>> m_portraits;
   StringMap<String> m_portraitTitles;
 
-  Maybe<JsonArray> m_objectiveList;
-  Maybe<float> m_progress;
-  Maybe<float> m_compassDirection;
+  std::optional<JsonArray> m_objectiveList;
+  std::optional<float> m_progress;
+  std::optional<float> m_compassDirection;
 
   LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>>
       m_scriptComponent;

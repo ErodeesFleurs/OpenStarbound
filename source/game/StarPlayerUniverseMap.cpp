@@ -1,5 +1,4 @@
 #include "StarPlayerUniverseMap.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
@@ -59,7 +58,7 @@ Json PlayerUniverseMap::toJson() const {
 }
 
 List<pair<Vec3I, OrbitBookmark>> PlayerUniverseMap::orbitBookmarks() const {
-  if (m_serverUuid.isNothing())
+  if (!m_serverUuid)
     return {};
 
   List<pair<Vec3I, OrbitBookmark>> bookmarks;
@@ -102,7 +101,7 @@ void PlayerUniverseMap::invalidateWarpAction(WarpAction const& warpAction) {
     removeTeleportBookmark({ {warpToWorld->world, warpToWorld->target}, "", "", ""});
 }
 
-Maybe<OrbitBookmark> PlayerUniverseMap::worldBookmark(CelestialCoordinate const& world) const {
+std::optional<OrbitBookmark> PlayerUniverseMap::worldBookmark(CelestialCoordinate const& world) const {
   if (auto systemMap = universeMap().systems.ptr(world.location())) {
     for (auto& bookmark : systemMap->bookmarks) {
       if (bookmark.target == world)
@@ -158,7 +157,7 @@ void PlayerUniverseMap::addMappedCoordinate(CelestialCoordinate const& coordinat
     systemMap.mappedPlanets.add(coordinate.planet());
 }
 
-void PlayerUniverseMap::addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, Maybe<CelestialOrbit> const& orbit, JsonObject parameters) {
+void PlayerUniverseMap::addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, std::optional<CelestialOrbit> const& orbit, JsonObject parameters) {
   MappedObject object {
     typeName,
     orbit,
@@ -185,7 +184,7 @@ void PlayerUniverseMap::filterMappedObjects(CelestialCoordinate const& system, L
   }
 }
 
-void PlayerUniverseMap::setServerUuid(Maybe<Uuid> serverUuid) {
+void PlayerUniverseMap::setServerUuid(std::optional<Uuid> serverUuid) {
   m_serverUuid = std::move(serverUuid);
   if (m_serverUuid && !m_universeMaps.contains(*m_serverUuid))
     m_universeMaps.set(*m_serverUuid, UniverseMap());
@@ -272,7 +271,7 @@ Json PlayerUniverseMap::UniverseMap::toJson() const {
 }
 
 PlayerUniverseMap::UniverseMap const& PlayerUniverseMap::universeMap() const {
-  if (m_serverUuid.isNothing())
+  if (!m_serverUuid)
     throw StarException("Cannot get universe map of null server uuid");
 
   return m_universeMaps.get(*m_serverUuid);

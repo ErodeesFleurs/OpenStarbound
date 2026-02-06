@@ -1,6 +1,7 @@
 #pragma once
 
-#include "StarBiMap.hpp"
+#include <optional>
+
 #include "StarAStar.hpp"
 #include "StarWorld.hpp"
 #include "StarActorMovementController.hpp"
@@ -23,8 +24,8 @@ namespace PlatformerAStar {
     PathFinder(PathFinder const& rhs);
     PathFinder& operator=(PathFinder const& rhs);
 
-    Maybe<bool> explore(Maybe<unsigned> maxExploreNodes = {});
-    Maybe<Path> const& result() const;
+    std::optional<bool> explore(std::optional<unsigned> maxExploreNodes = {});
+    std::optional<Path> const& result() const;
 
   private:
     enum class BoundBoxKind { Full, Drop, Stand };
@@ -71,7 +72,7 @@ namespace PlatformerAStar {
     Vec2F m_searchTo;
     ActorMovementParameters m_movementParams;
     Parameters m_searchParams;
-    Maybe<AStar::Search<Edge, Node>> m_astar;
+    std::optional<AStar::Search<Edge, Node>> m_astar;
   };
 }
 }

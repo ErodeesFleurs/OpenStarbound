@@ -8,7 +8,7 @@ namespace Star {
 LuaCallbacks LuaBindings::makeFireableItemCallbacks(FireableItem* fireableItem) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<void, Maybe<String>>("fire", bind(FireableItemCallbacks::fire, fireableItem, _1));
+  callbacks.registerCallbackWithSignature<void, std::optional<String>>("fire", bind(FireableItemCallbacks::fire, fireableItem, _1));
   callbacks.registerCallbackWithSignature<void>("triggerCooldown", bind(FireableItemCallbacks::triggerCooldown, fireableItem));
   callbacks.registerCallbackWithSignature<void, float>("setCooldown", bind(FireableItemCallbacks::setCooldown, fireableItem, _1));
   callbacks.registerCallbackWithSignature<void>("endCooldown", bind(FireableItemCallbacks::endCooldown, fireableItem));
@@ -35,7 +35,7 @@ LuaCallbacks LuaBindings::makeFireableItemCallbacks(FireableItem* fireableItem) 
 // @param[opt] fireMode fireMode to trigger; should be 'Primary' or 'Alt'
 // (defaults to Primary)
 // @return nil
-void LuaBindings::FireableItemCallbacks::fire(FireableItem* fireableItem, Maybe<String> const& mode) {
+void LuaBindings::FireableItemCallbacks::fire(FireableItem* fireableItem, std::optional<String> const& mode) {
   auto fireMode = FireMode::Primary;
   if (mode) {
     if (mode->equalsIgnoreCase("Alt"))

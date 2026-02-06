@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarBTreeDatabase.hpp"
 #include "StarVersioningDatabase.hpp"
 #include "StarEntity.hpp"
@@ -16,7 +18,7 @@ STAR_CLASS(EntityMap);
 STAR_STRUCT(WorldGeneratorFacade);
 STAR_CLASS(WorldStorage);
 
-typedef HashMap<ByteArray, Maybe<ByteArray>> WorldChunks;
+typedef HashMap<ByteArray, std::optional<ByteArray>> WorldChunks;
 
 enum class SectorLoadLevel : uint8_t {
   None = 0,
@@ -70,7 +72,7 @@ struct WorldGeneratorFacade {
 
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at
-  virtual RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, Maybe<DungeonId> id) = 0;
+  virtual RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, std::optional<DungeonId> id) = 0;
 };
 
 // Handles paging entity and tile data in / out of disk backed storage for
@@ -108,14 +110,14 @@ public:
   ServerTileSectorArrayPtr const& tileArray() const;
   EntityMapPtr const& entityMap() const;
 
-  Maybe<Sector> sectorForPosition(Vec2I const& position) const;
+  std::optional<Sector> sectorForPosition(Vec2I const& position) const;
   List<Sector> sectorsForRegion(RectI const& region) const;
-  Maybe<RectI> regionForSector(Sector sector) const;
+  std::optional<RectI> regionForSector(Sector sector) const;
 
   SectorLoadLevel sectorLoadLevel(Sector sector) const;
   // Returns the sector generation level if it is currently loaded, nothing
   // otherwise.
-  Maybe<SectorGenerationLevel> sectorGenerationLevel(Sector sector) const;
+  std::optional<SectorGenerationLevel> sectorGenerationLevel(Sector sector) const;
   // Returns true if the sector is both loaded and fully generated.
   bool sectorActive(Sector) const;
 
@@ -135,19 +137,19 @@ public:
 
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at
-  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, Maybe<DungeonId> id);
+  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> placements, std::optional<DungeonId> id);
 
   // Return the remaining time to live for a sector, if loaded.  A sector's
   // time to live is reset when loaded or generated, and when the time to live
   // reaches zero, the sector is automatically unloaded.
-  Maybe<float> sectorTimeToLive(Sector sector) const;
+  std::optional<float> sectorTimeToLive(Sector sector) const;
   // Set the given sector's time to live, if it is loaded at all.  Returns
   // false if the sector was not loaded so no action was taken.
   bool setSectorTimeToLive(Sector sector, float newTimeToLive);
 
   // Returns the position for a given unique entity if it exists in this world,
   // loaded or not.
-  Maybe<Vec2F> findUniqueEntity(String const& uniqueId);
+  std::optional<Vec2F> findUniqueEntity(String const& uniqueId);
 
   // If the given unique entity is not loaded, loads its sector and then if the
   // unique entity is found, returns the entity id, otherwise NullEntityId.
@@ -157,7 +159,7 @@ public:
   // increases of SectorGenerationLevel by the sectorGenerationLevelLimit, if
   // given.  If sectorOrdering is given, then it will be used to prioritize the
   // queued sectors.
-  void generateQueue(Maybe<size_t> sectorGenerationLevelLimit, function<bool(Sector, Sector)> sectorOrdering = {});
+  void generateQueue(std::optional<size_t> sectorGenerationLevelLimit, function<bool(Sector, Sector)> sectorOrdering = {});
   // Ticks down the TTL on sectors and generation queue entries, stores old
   // sectors, expires old generation queue entries, and unloads any zombie
   // entities.
@@ -256,7 +258,7 @@ private:
   // given sector was fully generated, and the total number of generation
   // levels increased.  If any sector's generation level is brought up at all,
   // it will also reset the TTL for that sector.
-  pair<bool, size_t> generateSectorToLevel(Sector const& sector, SectorGenerationLevel targetGenerationLevel, size_t sectorGenerationLevelLimit = NPos);
+  pair<bool, size_t> generateSectorToLevel(Sector const& sector, SectorGenerationLevel targetGenerationLevel, size_t sectorGenerationLevelLimit = std::numeric_limits<std::size_t>::max());
 
   // Bring the sector up to the given load level, and all surrounding sectors
   // as appropriate.  If the load level is brought up, also resets the TTL.
@@ -282,7 +284,7 @@ private:
   // Merge the stored sector uniques for this sector with the given set
   void mergeSectorUniques(Sector const& sector, UniqueIndexStore const& sectorUniques);
 
-  Maybe<SectorAndPosition> getUniqueIndexEntry(String const& uniqueId);
+  std::optional<SectorAndPosition> getUniqueIndexEntry(String const& uniqueId);
   void setUniqueIndexEntry(String const& uniqueId, SectorAndPosition const& sectorAndPosition);
   // Remove the index entry for this unique id, if the index entry found points
   // to the given sector

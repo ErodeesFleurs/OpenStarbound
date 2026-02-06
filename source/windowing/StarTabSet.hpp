@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarButtonGroup.hpp"
 
 namespace Star {
@@ -42,7 +44,7 @@ private:
   FlowLayoutPtr m_tabBar;
   StackWidgetPtr m_stack;
   WidgetCallbackFunc m_callback;
-  Maybe<size_t> m_lastSelected;
+  std::optional<size_t> m_lastSelected;
 };
 
 }

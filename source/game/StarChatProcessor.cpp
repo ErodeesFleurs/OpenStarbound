@@ -58,7 +58,7 @@ bool ChatProcessor::hasClient(ConnectionId clientId) const {
   return m_clients.contains(clientId);
 }
 
-Maybe<ConnectionId> ChatProcessor::findNick(String const& nick) const {
+std::optional<ConnectionId> ChatProcessor::findNick(String const& nick) const {
   RecursiveMutexLocker locker(m_mutex);
   if (auto m = m_nicks.maybe(nick))
     return m;

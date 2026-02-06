@@ -121,11 +121,11 @@ void StatCollection::resetAllResources() {
     resetResource(resourceName);
 }
 
-Maybe<float> StatCollection::resourceMax(String const& resourceName) const {
+std::optional<float> StatCollection::resourceMax(String const& resourceName) const {
   return m_stats.resourceMaxValue(resourceName);
 }
 
-Maybe<float> StatCollection::resourcePercentage(String const& resourceName) const {
+std::optional<float> StatCollection::resourcePercentage(String const& resourceName) const {
   return m_stats.resourcePercentage(resourceName);
 }
 

@@ -16,43 +16,39 @@ function sb.makeUuid() end
 
 --- Logs the specified formatted string, optionally using the formatted replacement values, to the log file and console with the Info log level. ---
 ---@param formatString string
----@param formatValues LuaValue
----@return void
+---@param formatValues ...any
 function sb.logInfo(formatString, formatValues) end
 
 --- Logs the specified formatted string, optionally using the formatted replacement values, to the log file and console with the Warn log level. ---
 ---@param formatString string
----@param formatValues LuaValue
----@return void
+---@param formatValues ...any
 function sb.logWarn(formatString, formatValues) end
 
 --- Logs the specified formatted string, optionally using the formatted replacement values, to the log file and console with the Error log level. ---
 ---@param formatString string
----@param formatValues LuaValue
----@return void
-function sb.logError(formatString, formatValues) end
+---@param ... any
+function sb.logError(formatString, ...) end
 
 --- Sets an entry in the debug log map (visible while in debug mode) using the specified format string and optional formatted replacement values. ---
 ---@param key string
 ---@param formatString string
----@param formatValues LuaValue
----@return void
+---@param formatValues ...any
 function sb.setLogMap(key, formatString, formatValues) end
 
 --- Returns a human-readable string representation of the specified JSON value. If pretty is `true`, objects and arrays will have whitespace added for readability. ---
----@param value Json
----@param pretty boolean
+---@param value Json?
+---@param pretty integer?
 ---@return string
 function sb.printJson(value, pretty) end
 
 --- Returns a human-readable string representation of the specified `LuaValue`. ---
----@param value LuaValue
+---@param value any
 ---@return string
 function sb.print(value) end
 
 --- Returns an interpolated `Vec2F` or `double` between the two specified values using a sin ease function. ---
 ---@param offset number
----@return Variant<Vec2F, double>
+---@return Vec2F, number
 function sb.interpolateSinEase(offset) end
 
 --- Replaces all tags in the specified string with the specified tag replacement values. ---
@@ -61,9 +57,9 @@ function sb.interpolateSinEase(offset) end
 function sb.replaceTags(string) end
 
 --- Returns the result of merging the contents of b on top of a. ---
----@param a Json
----@param b Json
----@return Json
+---@param a table
+---@param b table
+---@return table
 function sb.jsonMerge(a, b) end
 
 --- Attempts to extract the value in the specified content at the specified path, and returns the found value or the specified default if no such value exists. ---
@@ -74,31 +70,31 @@ function sb.jsonMerge(a, b) end
 function sb.jsonQuery(content, path, default) end
 
 --- Returns a statically randomized 32-bit signed integer based on the given list of seed values. ---
----@param hashValues LuaValue
+---@param hashValues any
 ---@return number
 function sb.staticRandomI32(hashValues) end
 
 --- Returns a statically randomized 32-bit signed integer within the specified range based on the given list of seed values. ---
 ---@param min number
 ---@param max number
----@param hashValues LuaValue
+---@param hashValues any
 ---@return number
 function sb.staticRandomI32Range(min, max, hashValues) end
 
 --- Returns a statically randomized `double` based on the given list of seed values. ---
----@param hashValues LuaValue
+---@param hashValues any
 ---@return number
 function sb.staticRandomDouble(hashValues) end
 
 --- Returns a statically randomized `double` within the specified range based on the given list of seed values. ---
 ---@param min number
 ---@param max number
----@param hashValues LuaValue
+---@param hashValues any
 ---@return number
 function sb.staticRandomDoubleRange(min, max, hashValues) end
 
 --- Creates and returns a Lua UserData value which can be used as a random source, initialized with the specified seed. The `RandomSource` has the following methods:
----@param seed unsigned
+---@param seed integer
 ---@return RandomSource
 function sb.makeRandomSource(seed) end
 
@@ -110,21 +106,19 @@ function sb.makePerlinSource(config) end
 --- Global functions
 
 --- Reinitializes the random source, optionally using the specified seed.
----@param seed unsigned
----@return void
+---@param seed integer
 function init(seed) end
 
 --- Adds entropy to the random source, optionally using the specified seed.
----@param seed unsigned
----@return void
+---@param seed integer
 function addEntropy(seed) end
 
 --- Returns a random 32-bit unsigned integer value.
----@return unsigned
+---@return integer
 function randu32() end
 
 --- Returns a random 64-bit unsigned integer value.
----@return unsigned
+---@return integer
 function randu64() end
 
 --- Returns a random 32-bit signed integer value.
@@ -148,9 +142,9 @@ function randf(min, max) end
 function randf(min, max) end
 
 --- Returns a random unsigned integer value between minOrMax and max, or between 0 and minOrMax if no max is specified.
----@param minOrMax unsigned
----@param max unsigned
----@return unsigned
+---@param minOrMax integer
+---@param max integer
+---@return integer
 function randf(minOrMax, max) end
 
 --- Returns a random signed integer value between minOrMax and max, or between 0 and minOrMax if no max is specified.

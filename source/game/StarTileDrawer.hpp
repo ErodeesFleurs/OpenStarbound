@@ -3,7 +3,8 @@
 #include "StarTtlCache.hpp"
 #include "StarWorldRenderData.hpp"
 #include "StarMaterialRenderProfile.hpp"
-#include "StarDrawable.hpp"
+
+import std;
 
 namespace Star {
 
@@ -30,7 +31,7 @@ public:
   ~TileDrawer();
 
   bool produceTerrainDrawables(Drawables& drawables, TerrainLayer terrainLayer, Vec2I const& pos,
-    WorldRenderData const& renderData, float scale = 1.0f, Vec2I variantOffset = {}, Maybe<TerrainLayer> variantLayer = {});
+    WorldRenderData const& renderData, float scale = 1.0f, Vec2I variantOffset = {}, std::optional<TerrainLayer> variantLayer = {});
 
   WorldRenderData& renderData();
   MutexLocker lockRenderData();

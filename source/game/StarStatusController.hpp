@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarObserverStream.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarNetElementExt.hpp"
 #include "StarStatCollection.hpp"
 #include "StarStatusEffectDatabase.hpp"
@@ -51,8 +50,8 @@ public:
   void resetResource(String const& resourceName);
   void resetAllResources();
 
-  Maybe<float> resourceMax(String const& resourceName) const;
-  Maybe<float> resourcePercentage(String const& resourceName) const;
+  std::optional<float> resourceMax(String const& resourceName) const;
+  std::optional<float> resourcePercentage(String const& resourceName) const;
   float setResourcePercentage(String const& resourceName, float resourcePercentage);
   float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
 
@@ -63,8 +62,8 @@ public:
   void clearPersistentEffects(String const& statEffectCategory);
   void clearAllPersistentEffects();
 
-  void addEphemeralEffect(EphemeralStatusEffect const& effect, Maybe<EntityId> sourceEntityId = {});
-  void addEphemeralEffects(List<EphemeralStatusEffect> const& effectList, Maybe<EntityId> sourceEntityId = {});
+  void addEphemeralEffect(EphemeralStatusEffect const& effect, std::optional<EntityId> sourceEntityId = {});
+  void addEphemeralEffects(List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId = {});
   // Will have no effect if the unique effect is not applied ephemerally
   bool removeEphemeralEffect(UniqueStatusEffect const& uniqueEffect);
   void clearEphemeralEffects();
@@ -128,13 +127,13 @@ public:
   List<AudioInstancePtr> pullNewAudios();
   List<Particle> pullNewParticles();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
   typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> StatScript;
 
   struct EffectAnimator : public NetElement {
-    EffectAnimator(Maybe<String> animationConfig = {});
+    EffectAnimator(std::optional<String> animationConfig = {});
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -149,7 +148,7 @@ private:
     void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 
-    Maybe<String> animationConfig;
+    std::optional<String> animationConfig;
     NetworkedAnimator animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
   };
@@ -157,24 +156,24 @@ private:
 
   struct UniqueEffectMetadata : public NetElementSyncGroup {
     UniqueEffectMetadata();
-    UniqueEffectMetadata(UniqueStatusEffect effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId);
+    UniqueEffectMetadata(UniqueStatusEffect effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId);
 
     void netElementsNeedLoad(bool full) override;
     void netElementsNeedStore() override;
 
     UniqueStatusEffect effect;
-    Maybe<float> duration;
+    std::optional<float> duration;
     NetElementFloat durationNetState;
     NetElementFloat maxDuration;
 
     // If the sourceEntityId is not set here, this implies that the cause of
     // the unique effect was the owning entity.
-    NetElementData<Maybe<EntityId>> sourceEntityId;
+    NetElementData<std::optional<EntityId>> sourceEntityId;
   };
   typedef NetElementDynamicGroup<UniqueEffectMetadata> UniqueEffectMetadataGroup;
 
   struct PersistentEffectCategory {
-    Maybe<StatModifierGroupId> modifierEffectsGroupId;
+    std::optional<StatModifierGroupId> modifierEffectsGroupId;
     List<StatModifier> statModifiers;
     HashSet<UniqueStatusEffect> uniqueEffects;
   };
@@ -193,7 +192,7 @@ private:
   void updatePersistentUniqueEffects();
 
   float defaultUniqueEffectDuration(UniqueStatusEffect const& name) const;
-  bool addUniqueEffect(UniqueStatusEffect const& effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId);
+  bool addUniqueEffect(UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId);
   void removeUniqueEffect(UniqueStatusEffect const& name);
 
   void initPrimaryScript();
@@ -227,7 +226,7 @@ private:
   bool m_appliesWeatherStatusEffects;
   GameTimer m_environmentStatusEffectUpdateTimer;
 
-  Maybe<String> m_primaryAnimationConfig;
+  std::optional<String> m_primaryAnimationConfig;
   StatScript m_primaryScript;
   Directives m_primaryDirectives;
   EffectAnimatorGroup::ElementId m_primaryAnimatorId;

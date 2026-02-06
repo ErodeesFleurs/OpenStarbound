@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "StarQuestInterface.hpp"
 #include "StarQuestManager.hpp"
 #include "StarCinematic.hpp"
@@ -55,12 +57,12 @@ QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, 
   auto sideQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.sideQuestList");
   mainQuestList->setCallback([sideQuestList](Widget* widget) {
       auto listWidget = as<ListWidget>(widget);
-      if (listWidget->selectedItem() != NPos)
+      if (listWidget->selectedItem() != std::numeric_limits<std::size_t>::max())
         sideQuestList->clearSelected();
     });
   sideQuestList->setCallback([mainQuestList](Widget* widget) {
       auto listWidget = as<ListWidget>(widget);
-      if (listWidget->selectedItem() != NPos)
+      if (listWidget->selectedItem() != std::numeric_limits<std::size_t>::max())
         mainQuestList->clearSelected();
     });
   mainQuestList->disableScissoring();
@@ -124,8 +126,8 @@ void QuestLogInterface::tick(float dt) {
     auto imagePortrait = quest->portrait(portraitName);
     if (imagePortrait) {
       auto portraitTitleLabel = fetchChild<LabelWidget>("lblPortraitTitle");
-      String portraitTitle = quest->portraitTitle(portraitName).value("");
-      Maybe<unsigned> charLimit = portraitTitleLabel->getTextCharLimit();
+      String portraitTitle = quest->portraitTitle(portraitName).value_or("");
+      std::optional<unsigned> _ = portraitTitleLabel->getTextCharLimit();
       portraitTitleLabel->setText(portraitTitle);
 
       Drawable::scaleAll(*imagePortrait, Vec2F(-1, 1));
@@ -200,14 +202,14 @@ WidgetPtr QuestLogInterface::getSelected() {
 void QuestLogInterface::setSelected(WidgetPtr selected) {
   auto mainQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.mainQuestList");
   auto mainQuestListPos = mainQuestList->itemPosition(selected);
-  if (mainQuestListPos != NPos) {
+  if (mainQuestListPos != std::numeric_limits<std::size_t>::max()) {
     mainQuestList->setSelected(mainQuestListPos);
     return;
   }
 
   auto sideQuestList = fetchChild<ListWidget>("scrollArea.verticalLayout.sideQuestList");
   auto sideQuestListPos = sideQuestList->itemPosition(selected);
-  if (sideQuestListPos != NPos) {
+  if (sideQuestListPos != std::numeric_limits<std::size_t>::max()) {
     sideQuestList->setSelected(sideQuestListPos);
     return;
   }
@@ -277,7 +279,7 @@ void QuestLogInterface::showQuests(List<QuestPtr> quests) {
     }
     entry->fetchChild<ImageWidget>("imgCurrent")->setVisibility(currentWorld);
 
-    entry->fetchChild<ImageWidget>("imgPortrait")->setDrawables(quest->portrait("QuestStarted").value({}));
+    entry->fetchChild<ImageWidget>("imgPortrait")->setDrawables(quest->portrait("QuestStarted").value_or({}));
     entry->show();
     if (quest->questId() == selectedQuest)
       setSelected(entry);
@@ -303,14 +305,14 @@ void QuestPane::commonSetup(Json config, String bodyText, String const& portrait
     bodyLabel->setText(bodyText);
 
   if (auto portraitImage = fetchChild<ImageWidget>("portraitImage")) {
-    Maybe<List<Drawable>> portrait = m_quest->portrait(portraitName);
-    portraitImage->setDrawables(portrait.value({}));
+    std::optional<List<Drawable>> portrait = m_quest->portrait(portraitName);
+    portraitImage->setDrawables(portrait.value_or({}));
   }
 
   if (auto portraitTitleLabel = fetchChild<LabelWidget>("portraitTitle")) {
-    Maybe<String> portraitTitle = m_quest->portraitTitle(portraitName);
-    String text = m_quest->portraitTitle(portraitName).value("");
-    Maybe<unsigned> charLimit = portraitTitleLabel->getTextCharLimit();
+    std::optional<String> portraitTitle = m_quest->portraitTitle(portraitName);
+    String text = m_quest->portraitTitle(portraitName).value_or("");
+    std::optional<unsigned> _ = portraitTitleLabel->getTextCharLimit();
     portraitTitleLabel->setText(text);
   }
 
@@ -355,7 +357,7 @@ NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr co
   : QuestPane(quest, std::move(player)), m_manager(manager), m_decision(QuestDecision::Cancelled) {
   auto assets = Root::singleton().assets();
 
-  List<Drawable> objectivePortrait = m_quest->portrait("Objective").value({});
+  List<Drawable> objectivePortrait = m_quest->portrait("Objective").value_or({});
   bool shortDialog = objectivePortrait.size() == 0;
 
   String configFile;
@@ -378,7 +380,7 @@ NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr co
       Drawable::scaleAll(objectivePortrait, Vec2F(-1, 1));
       objectivePortraitImage->setDrawables(objectivePortrait);
 
-      String objectivePortraitTitle = m_quest->portraitTitle("Objective").value("");
+      String objectivePortraitTitle = m_quest->portraitTitle("Objective").value_or("");
       auto portraitLabel = fetchChild<LabelWidget>("objectivePortraitTitle");
       portraitLabel->setText(objectivePortraitTitle);
       portraitLabel->setVisibility(objectivePortrait.size() > 0);

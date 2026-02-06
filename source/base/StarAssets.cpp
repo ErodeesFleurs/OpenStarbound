@@ -101,7 +101,7 @@ static bool validatePath(AssetPath const& components, bool canContainSubPath, bo
     size_t beg = end + 1;
     if (beg != str.size()) {
       end = str.find_first_of('?', beg);
-      if (end == NPos && beg + 1 != str.size())
+      if (end == std::numeric_limits<std::size_t>::max() && beg + 1 != str.size())
         subPath = true;
       else if (size_t _ = end - beg)
         subPath = true;
@@ -113,7 +113,7 @@ static bool validatePath(AssetPath const& components, bool canContainSubPath, bo
       throw AssetException::format(std::string_view("Path '{}' cannot contain sub-path"), path);
     else
       return false;
-  } else if (end != NPos && str[end] == '?' && !canContainDirectives) {
+  } else if (end != std::numeric_limits<std::size_t>::max() && str[end] == '?' && !canContainDirectives) {
     if (throwing)
       throw AssetException::format(std::string_view("Path '{}' cannot contain directives"), path);
     else
@@ -123,7 +123,7 @@ static bool validatePath(AssetPath const& components, bool canContainSubPath, bo
   return true;
 }
 
-Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
+std::optional<RectU> FramesSpecification::getRect(String const& frame) const {
   if (auto alias = aliases.ptr(frame)) {
     return frames.get(*alias);
   } else {
@@ -163,7 +163,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
     callbacks.registerCallbackWithSignature<Json, String>("json", bind(&Assets::json, this, _1));
     callbacks.registerCallbackWithSignature<bool, String>("exists", bind(&Assets::assetExists, this, _1));
 
-    callbacks.registerCallback("sourcePaths", [this](LuaEngine& engine, Maybe<bool> withMetaData) -> LuaTable {
+    callbacks.registerCallback("sourcePaths", [this](LuaEngine& engine, std::optional<bool> withMetaData) -> LuaTable {
       auto assetSources = this->assetSources();
       auto table = engine.createTable(assetSources.size(), 0);
       if (withMetaData.value()) {
@@ -178,13 +178,13 @@ Assets::Assets(Settings settings, StringList assetSources) {
       return table;
     });
 
-    callbacks.registerCallback("sourceMetadata", [this](String const& sourcePath) -> Maybe<JsonObject> {
+    callbacks.registerCallback("sourceMetadata", [this](String const& sourcePath) -> std::optional<JsonObject> {
       if (auto assetSource = m_assetSourcePaths.rightPtr(sourcePath))
         return (*assetSource)->metadata();
       return {};
     });
 
-    callbacks.registerCallback("origin", [this](String const& path) -> Maybe<String> {
+    callbacks.registerCallback("origin", [this](String const& path) -> std::optional<String> {
       if (auto descriptor = this->assetDescriptor(path))
         return this->assetSourcePath(descriptor->source);
       return {};
@@ -209,7 +209,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
       return Json();
     });
 
-    callbacks.registerCallback("scan", [this](Maybe<String> const& a, Maybe<String> const& b) -> StringList {
+    callbacks.registerCallback("scan", [this](std::optional<String> const& a, std::optional<String> const& b) -> StringList {
       return b ? scan(a.value(), *b) : scan(a.value());
     });
     return callbacks;
@@ -473,7 +473,7 @@ bool Assets::assetExists(String const& path) const {
   return m_files.contains(path);
 }
 
-Maybe<Assets::AssetFileDescriptor> Assets::assetDescriptor(String const& path) const {
+std::optional<Assets::AssetFileDescriptor> Assets::assetDescriptor(String const& path) const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_files.maybe(path);
 }
@@ -485,7 +485,7 @@ String Assets::assetSource(String const& path) const {
   throw AssetException(strf(std::string_view("No such asset '{}'"), path));
 }
 
-Maybe<String> Assets::assetSourcePath(AssetSourcePtr const& source) const {
+std::optional<String> Assets::assetSourcePath(AssetSourcePtr const& source) const {
   MutexLocker assetsLocker(m_assetsMutex);
   return m_assetSourcePaths.maybeLeft(source);
 }
@@ -964,7 +964,7 @@ FramesSpecificationConstPtr Assets::bestFramesSpecification(String const& image)
         return dirsplit[0] + "/";
     };
 
-    Maybe<String> foundFramesFile;
+    std::optional<String> foundFramesFile;
 
     // look for <full-path-minus-extension>.frames or default.frames up to root
     while (!searchPath.empty()) {
@@ -984,7 +984,7 @@ FramesSpecificationConstPtr Assets::bestFramesSpecification(String const& image)
     }
 
     if (foundFramesFile) {
-      framesFile = foundFramesFile.take();
+      framesFile = std::move(*foundFramesFile);
       m_bestFramesFiles[image] = framesFile;
 
     } else {
@@ -1064,7 +1064,7 @@ ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path,
   return make_shared<Image>(std::move(result.get<LuaUserData>().get<Image>()));
 }
 
-Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const {
+Json Assets::checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, std::optional<Json> const external) const {
   auto externalRef = external.value();
   auto newResult = result;
   for (auto const& patch : patchData) {

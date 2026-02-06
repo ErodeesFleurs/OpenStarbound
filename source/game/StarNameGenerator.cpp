@@ -117,7 +117,7 @@ bool PatternedNameGenerator::isProfane(String const& name) const {
   for (auto& naughtyWord : m_profanityFilter) {
     for (auto& matchName : matchNames) {
       auto find = matchName.find(naughtyWord);
-      if (find != NPos && (find == 0 || naughtyWord.size() + 1 >= matchName.size()))
+      if (find != std::numeric_limits<std::size_t>::max() && (find == 0 || naughtyWord.size() + 1 >= matchName.size()))
         return true;
     }
   }

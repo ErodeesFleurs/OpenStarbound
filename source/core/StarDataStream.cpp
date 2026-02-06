@@ -2,7 +2,7 @@
 #include "StarBytes.hpp"
 #include "StarVlqEncoding.hpp"
 
-#include <string.h>
+import std;
 
 namespace Star {
 
@@ -13,7 +13,7 @@ DataStream::DataStream()
     m_nullTerminatedStrings(false),
     m_streamCompatibilityVersion(CurrentStreamVersion) {}
 
-ByteOrder DataStream::byteOrder() const {
+auto DataStream::byteOrder() const -> ByteOrder {
   return m_byteOrder;
 }
 
@@ -21,7 +21,7 @@ void DataStream::setByteOrder(ByteOrder byteOrder) {
   m_byteOrder = byteOrder;
 }
 
-bool DataStream::nullTerminatedStrings() const {
+auto DataStream::nullTerminatedStrings() const -> bool {
   return m_nullTerminatedStrings;
 }
 
@@ -29,7 +29,7 @@ void DataStream::setNullTerminatedStrings(bool nullTerminatedStrings) {
   m_nullTerminatedStrings = nullTerminatedStrings;
 }
 
-unsigned DataStream::streamCompatibilityVersion() const {
+auto DataStream::streamCompatibilityVersion() const -> unsigned {
   return m_streamCompatibilityVersion;
 }
 
@@ -41,7 +41,7 @@ void DataStream::setStreamCompatibilityVersion(NetCompatibilityRules const& rule
   m_streamCompatibilityVersion = rules.version();
 }
 
-ByteArray DataStream::readBytes(size_t len) {
+auto DataStream::readBytes(size_t len) -> ByteArray {
   ByteArray ba;
   ba.resize(len);
   readData(ba.ptr(), len);
@@ -52,229 +52,229 @@ void DataStream::writeBytes(ByteArray const& ba) {
   writeData(ba.ptr(), ba.size());
 }
 
-DataStream& DataStream::operator<<(bool d) {
-  operator<<((uint8_t)d);
+auto DataStream::operator<<(bool d) -> DataStream& {
+  operator<<((std::uint8_t)d);
   return *this;
 }
 
-DataStream& DataStream::operator<<(char c) {
+auto DataStream::operator<<(char c) -> DataStream& {
   writeData(&c, 1);
   return *this;
 }
 
-DataStream& DataStream::operator<<(int8_t d) {
+auto DataStream::operator<<(std::int8_t d) -> DataStream& {
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(uint8_t d) {
+auto DataStream::operator<<(std::uint8_t d) -> DataStream& {
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(int16_t d) {
+auto DataStream::operator<<(std::int16_t d) -> DataStream& {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(uint16_t d) {
+auto DataStream::operator<<(std::uint16_t d) -> DataStream& {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(int32_t d) {
+auto DataStream::operator<<(std::int32_t d) -> DataStream& {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(uint32_t d) {
+auto DataStream::operator<<(std::uint32_t d) -> DataStream& {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(int64_t d) {
+auto DataStream::operator<<(std::int64_t d) -> DataStream& {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(uint64_t d) {
+auto DataStream::operator<<(std::uint64_t d) -> DataStream& {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(float d) {
+auto DataStream::operator<<(float d) -> DataStream& {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator<<(double d) {
+auto DataStream::operator<<(double d) -> DataStream& {
   d = toByteOrder(m_byteOrder, d);
   writeData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator>>(bool& d) {
-  uint8_t bu;
+auto DataStream::operator>>(bool& d) -> DataStream& {
+  std::uint8_t bu;
   readData((char*)&bu, sizeof(bu));
   d = (bool)bu;
   return *this;
 }
 
-DataStream& DataStream::operator>>(char& c) {
+auto DataStream::operator>>(char& c) -> DataStream& {
   readData(&c, 1);
   return *this;
 }
 
-DataStream& DataStream::operator>>(int8_t& d) {
+auto DataStream::operator>>(std::int8_t& d) -> DataStream& {
   readData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator>>(uint8_t& d) {
+auto DataStream::operator>>(std::uint8_t& d) -> DataStream& {
   readData((char*)&d, sizeof(d));
   return *this;
 }
 
-DataStream& DataStream::operator>>(int16_t& d) {
-  readData((char*)&d, sizeof(d));
-  d = fromByteOrder(m_byteOrder, d);
-  return *this;
-}
-
-DataStream& DataStream::operator>>(uint16_t& d) {
+auto DataStream::operator>>(std::int16_t& d) -> DataStream& {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-DataStream& DataStream::operator>>(int32_t& d) {
+auto DataStream::operator>>(std::uint16_t& d) -> DataStream& {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-DataStream& DataStream::operator>>(uint32_t& d) {
+auto DataStream::operator>>(std::int32_t& d) -> DataStream& {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-DataStream& DataStream::operator>>(int64_t& d) {
+auto DataStream::operator>>(std::uint32_t& d) -> DataStream& {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-DataStream& DataStream::operator>>(uint64_t& d) {
+auto DataStream::operator>>(std::int64_t& d) -> DataStream& {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-DataStream& DataStream::operator>>(float& d) {
+auto DataStream::operator>>(std::uint64_t& d) -> DataStream& {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-DataStream& DataStream::operator>>(double& d) {
+auto DataStream::operator>>(float& d) -> DataStream& {
   readData((char*)&d, sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
-size_t DataStream::writeVlqU(uint64_t i) {
-  return Star::writeVlqU(i, makeFunctionOutputIterator([this](uint8_t b) { *this << b; }));
+auto DataStream::operator>>(double& d) -> DataStream& {
+  readData((char*)&d, sizeof(d));
+  d = fromByteOrder(m_byteOrder, d);
+  return *this;
 }
 
-size_t DataStream::writeVlqI(int64_t i) {
-  return Star::writeVlqI(i, makeFunctionOutputIterator([this](uint8_t b) { *this << b; }));
+auto DataStream::writeVlqU(std::uint64_t i) -> std::size_t {
+  return Star::writeVlqU(i, makeFunctionOutputIterator([this](std::uint8_t b) -> void { *this << b; }));
 }
 
-size_t DataStream::writeVlqS(size_t i) {
-  uint64_t i64;
-  if (i == NPos)
+auto DataStream::writeVlqI(std::int64_t i) -> std::size_t {
+  return Star::writeVlqI(i, makeFunctionOutputIterator([this](std::uint8_t b) -> void { *this << b; }));
+}
+
+auto DataStream::writeVlqS(std::size_t i) -> std::size_t {
+  std::uint64_t i64;
+  if (i == std::numeric_limits<std::size_t>::max())
     i64 = 0;
   else
     i64 = i + 1;
   return writeVlqU(i64);
 }
 
-size_t DataStream::readVlqU(uint64_t& i) {
-  size_t bytesRead = Star::readVlqU(i, makeFunctionInputIterator([this]() { return this->read<uint8_t>(); }));
+auto DataStream::readVlqU(std::uint64_t& i) -> std::size_t {
+  std::size_t bytesRead = Star::readVlqU(i, makeFunctionInputIterator([this]() -> unsigned char { return this->read<std::uint8_t>(); }));
 
-  if (bytesRead == NPos)
+  if (bytesRead == std::numeric_limits<std::size_t>::max())
     throw DataStreamException("Error reading VLQ encoded integer!");
 
   return bytesRead;
 }
 
-size_t DataStream::readVlqI(int64_t& i) {
-  size_t bytesRead = Star::readVlqI(i, makeFunctionInputIterator([this]() { return this->read<uint8_t>(); }));
+auto DataStream::readVlqI(std::int64_t& i) -> std::size_t {
+  std::size_t bytesRead = Star::readVlqI(i, makeFunctionInputIterator([this]() -> unsigned char { return this->read<std::uint8_t>(); }));
 
-  if (bytesRead == NPos)
+  if (bytesRead == std::numeric_limits<std::size_t>::max())
     throw DataStreamException("Error reading VLQ encoded integer!");
 
   return bytesRead;
 }
 
-size_t DataStream::readVlqS(size_t& i) {
-  uint64_t i64;
-  size_t res = readVlqU(i64);
+auto DataStream::readVlqS(size_t& i) -> std::size_t {
+  std::uint64_t i64;
+  std::size_t res = readVlqU(i64);
   if (i64 == 0)
-    i = NPos;
+    i = std::numeric_limits<std::size_t>::max();
   else
     i = (size_t)(i64 - 1);
   return res;
 }
 
-uint64_t DataStream::readVlqU() {
-  uint64_t i;
+auto DataStream::readVlqU() -> std::uint64_t {
+  std::uint64_t i;
   readVlqU(i);
   return i;
 }
 
-int64_t DataStream::readVlqI() {
-  int64_t i;
+auto DataStream::readVlqI() -> std::int64_t {
+  std::int64_t i;
   readVlqI(i);
   return i;
 }
 
-size_t DataStream::readVlqS() {
-  size_t i;
+auto DataStream::readVlqS() -> std::size_t {
+  std::size_t i;
   readVlqS(i);
   return i;
 }
 
-DataStream& DataStream::operator<<(char const* s) {
-  writeStringData(s, strlen(s));
+auto DataStream::operator<<(char const* s) -> DataStream& {
+  writeStringData(s, std::strlen(s));
   return *this;
 }
 
-DataStream& DataStream::operator<<(std::string const& d) {
+auto DataStream::operator<<(std::string const& d) -> DataStream& {
   writeStringData(d.c_str(), d.size());
   return *this;
 }
 
-DataStream& DataStream::operator<<(const ByteArray& d) {
+auto DataStream::operator<<(const ByteArray& d) -> DataStream& {
   writeVlqU(d.size());
   writeData(d.ptr(), d.size());
   return *this;
 }
 
-DataStream& DataStream::operator<<(const String& s) {
+auto DataStream::operator<<(const String& s) -> DataStream& {
   writeStringData(s.utf8Ptr(), s.utf8Size());
   return *this;
 }
 
-DataStream& DataStream::operator>>(std::string& d) {
+auto DataStream::operator>>(std::string& d) -> DataStream& {
   if (m_nullTerminatedStrings) {
     d.clear();
     char c;
@@ -285,19 +285,19 @@ DataStream& DataStream::operator>>(std::string& d) {
       d.push_back(c);
     }
   } else {
-    d.resize((size_t)readVlqU());
+    d.resize((std::size_t)readVlqU());
     readData(&d[0], d.size());
   }
   return *this;
 }
 
-DataStream& DataStream::operator>>(ByteArray& d) {
-  d.resize((size_t)readVlqU());
+auto DataStream::operator>>(ByteArray& d) -> DataStream& {
+  d.resize((std::size_t)readVlqU());
   readData(d.ptr(), d.size());
   return *this;
 }
 
-DataStream& DataStream::operator>>(String& s) {
+auto DataStream::operator>>(String& s) -> DataStream& {
   std::string string;
   operator>>(string);
   s = std::move(string);
@@ -307,7 +307,7 @@ DataStream& DataStream::operator>>(String& s) {
 void DataStream::writeStringData(char const* data, size_t len) {
   if (m_nullTerminatedStrings) {
     writeData(data, len);
-    operator<<((uint8_t)0x00);
+    operator<<((std::uint8_t)0x00);
   } else {
     writeVlqU(len);
     writeData(data, len);

@@ -30,7 +30,7 @@ public:
   // either floating or integral ranges.
   Json randomizeParameterRange(String const& name, int32_t mix = 0) const;
   // Same function, but if you want to specify the range from an external source
-  Json randomizeParameterRange(JsonArray const& range, int32_t mix = 0, Maybe<String> const& name = {}) const;
+  Json randomizeParameterRange(JsonArray const& range, int32_t mix = 0, std::optional<String> const& name = {}) const;
 
   // Not all worlds are visitable, if the world is not visitable its
   // visitableParameters will be empty.

@@ -5,6 +5,7 @@
 #include "StarBiMap.hpp"
 #include "StarAnimation.hpp"
 #include "StarAssetPath.hpp"
+#include <optional>
 
 namespace Star {
 
@@ -112,7 +113,7 @@ struct Particle {
 
   bool trail;
 
-  Maybe<Animation> animation;
+  std::optional<Animation> animation;
 };
 
 DataStream& operator<<(DataStream& ds, Particle const& particle);

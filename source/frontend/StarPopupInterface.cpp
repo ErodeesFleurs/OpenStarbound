@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "StarPopupInterface.hpp"
 #include "StarGuiReader.hpp"
 #include "StarRoot.hpp"
@@ -18,11 +20,11 @@ PopupInterface::PopupInterface() {
   reader.construct(assets->json("/interface/windowconfig/popup.config:paneLayout"), this);
 }
 
-void PopupInterface::displayMessage(String const& message, String const& title, String const& subtitle, Maybe<String> const& onShowSound) {
+void PopupInterface::displayMessage(String const& message, String const& title, String const& subtitle, std::optional<String> const& onShowSound) {
   setTitleString(title, subtitle);
   fetchChild<LabelWidget>("message")->setText(message);
   show();
-  auto sound = onShowSound.value(Random::randValueFrom(Root::singleton().assets()->json("/interface/windowconfig/popup.config:onShowSound").toArray(), "").toString());
+  auto sound = onShowSound.value_or(Random::randValueFrom(Root::singleton().assets()->json("/interface/windowconfig/popup.config:onShowSound").toArray(), "").toString());
   if (!sound.empty())
     context()->playAudio(sound);
 }

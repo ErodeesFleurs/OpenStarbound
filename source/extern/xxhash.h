@@ -467,6 +467,7 @@ XXH_PUBLIC_API XXH_CONSTF unsigned XXH_versionNumber (void);
 *  Common basic types
 ******************************/
 #include <stddef.h>   /* size_t */
+
 /*!
  * @brief Exit code for the streaming API.
  */

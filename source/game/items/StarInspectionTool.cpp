@@ -1,8 +1,11 @@
 #include "StarInspectionTool.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
+#include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
+#include "StarLogging.hpp"
+#include "StarMaterialDatabase.hpp" // IWYU pragma: keep
+#include "StarRoot.hpp"
+
+#include <optional>
 
 namespace Star {
 
@@ -134,7 +137,7 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
 
   // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level
   // is above the minimum threshold
-  auto check = [&](InspectableEntityPtr entity) -> Maybe<InspectionTool::InspectionResult> {
+  auto check = [&](InspectableEntityPtr entity) -> std::optional<InspectionTool::InspectionResult> {
     if (m_inspectableTypeFilter && !m_inspectableTypeFilter->contains(entity->entityType()))
       return {};
     if (entity->inspectable() && inspectionLevel(entity) >= m_minimumInspectionLevel) {

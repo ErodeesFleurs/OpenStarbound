@@ -1,6 +1,7 @@
 #pragma once
 
-#include "StarNetElementSystem.hpp"
+#include <optional>
+
 #include "StarNetworkedAnimator.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
@@ -67,7 +68,7 @@ public:
   void tickMaster(float dt);
   void tickSlave(float dt);
 
-  Maybe<ParentState> parentState() const;
+  std::optional<ParentState> parentState() const;
   DirectivesGroup const& parentDirectives() const;
   Vec2F parentOffset() const;
   bool toolUsageSuppressed() const;
@@ -82,11 +83,11 @@ public:
   List<AudioInstancePtr> pullNewAudios();
   List<Particle> pullNewParticles();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
 private:
   struct TechAnimator : public NetElement {
-    TechAnimator(Maybe<String> animationConfig = {});
+    TechAnimator(std::optional<String> animationConfig = {});
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -105,7 +106,7 @@ private:
     void setVisible(bool visible);
     bool isVisible() const;
 
-    Maybe<String> animationConfig;
+    std::optional<String> animationConfig;
     NetworkedAnimator animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
     NetElementBool visible;
@@ -137,7 +138,7 @@ private:
 
   LuaCallbacks makeTechCallbacks(TechModule& techModule);
 
-  Maybe<StringList> m_overriddenTech;
+  std::optional<StringList> m_overriddenTech;
   LinkedList<TechModule> m_techModules;
   TechAnimatorGroup m_techAnimators;
 
@@ -159,7 +160,7 @@ private:
 
   Vec2F m_aimPosition;
 
-  NetElementData<Maybe<ParentState>> m_parentState;
+  NetElementData<std::optional<ParentState>> m_parentState;
   NetElementData<DirectivesGroup> m_parentDirectives;
   NetElementFloat m_xParentOffset;
   NetElementFloat m_yParentOffset;

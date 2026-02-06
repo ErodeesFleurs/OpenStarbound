@@ -5,6 +5,8 @@
 #include "StarLogging.hpp"
 #include "StarTime.hpp"
 
+import std;
+
 namespace Star {
 
 BTreeDatabase::BTreeDatabase() {
@@ -31,29 +33,29 @@ BTreeDatabase::~BTreeDatabase() {
   close();
 }
 
-uint32_t BTreeDatabase::blockSize() const {
+auto BTreeDatabase::blockSize() const -> std::uint32_t {
   ReadLocker readLocker(m_lock);
   return m_blockSize;
 }
 
-void BTreeDatabase::setBlockSize(uint32_t blockSize) {
+void BTreeDatabase::setBlockSize(std::uint32_t blockSize) {
   WriteLocker writeLocker(m_lock);
   checkIfOpen("setBlockSize", false);
   m_blockSize = blockSize;
 }
 
-uint32_t BTreeDatabase::keySize() const {
+auto BTreeDatabase::keySize() const -> std::uint32_t {
   ReadLocker readLocker(m_lock);
   return m_keySize;
 }
 
-void BTreeDatabase::setKeySize(uint32_t keySize) {
+void BTreeDatabase::setKeySize(std::uint32_t keySize) {
   WriteLocker writeLocker(m_lock);
   checkIfOpen("setKeySize", false);
   m_keySize = keySize;
 }
 
-String BTreeDatabase::contentIdentifier() const {
+auto BTreeDatabase::contentIdentifier() const -> String {
   ReadLocker readLocker(m_lock);
   return m_contentIdentifier;
 }
@@ -64,17 +66,17 @@ void BTreeDatabase::setContentIdentifier(String contentIdentifier) {
   m_contentIdentifier = std::move(contentIdentifier);
 }
 
-uint32_t BTreeDatabase::indexCacheSize() const {
+auto BTreeDatabase::indexCacheSize() const -> std::uint32_t {
   SpinLocker lock(m_indexCacheSpinLock);
   return m_indexCache.maxSize();
 }
 
-void BTreeDatabase::setIndexCacheSize(uint32_t indexCacheSize) {
+void BTreeDatabase::setIndexCacheSize(std::uint32_t indexCacheSize) {
   SpinLocker lock(m_indexCacheSpinLock);
   m_indexCache.setMaxSize(indexCacheSize);
 }
 
-bool BTreeDatabase::autoCommit() const {
+auto BTreeDatabase::autoCommit() const -> bool {
   ReadLocker readLocker(m_lock);
   return m_autoCommit;
 }
@@ -86,23 +88,23 @@ void BTreeDatabase::setAutoCommit(bool autoCommit) {
     doCommit();
 }
 
-IODevicePtr BTreeDatabase::ioDevice() const {
+auto BTreeDatabase::ioDevice() const -> Ptr<IODevice> {
   ReadLocker readLocker(m_lock);
   return m_device;
 }
 
-void BTreeDatabase::setIODevice(IODevicePtr device) {
+void BTreeDatabase::setIODevice(Ptr<IODevice> device) {
   WriteLocker writeLocker(m_lock);
   checkIfOpen("setIODevice", false);
   m_device = std::move(device);
 }
 
-bool BTreeDatabase::isOpen() const {
+auto BTreeDatabase::isOpen() const -> bool {
   ReadLocker readLocker(m_lock);
   return m_open;
 }
 
-bool BTreeDatabase::open() {
+auto BTreeDatabase::open() -> bool {
   WriteLocker writeLocker(m_lock);
   if (m_open)
     return false;
@@ -123,12 +125,12 @@ bool BTreeDatabase::open() {
     if (magic != ByteArray::fromCString(VersionMagic))
       throw DBException("Device is not a valid BTreeDatabase file");
 
-    m_blockSize = ds.read<uint32_t>();
+    m_blockSize = ds.read<std::uint32_t>();
 
     auto contentIdentifier = ds.readBytes(ContentIdentifierStringSize);
     contentIdentifier.appendByte('\0');
     m_contentIdentifier = String(contentIdentifier.ptr());
-    m_keySize = ds.read<uint32_t>();
+    m_keySize = ds.read<std::uint32_t>();
 
     readRoot();
 
@@ -146,7 +148,7 @@ bool BTreeDatabase::open() {
     ds.seek(0);
 
     ds.writeData(VersionMagic, VersionMagicSize);
-    ds.write<uint32_t>(m_blockSize);
+    ds.write<std::uint32_t>(m_blockSize);
 
     if (m_contentIdentifier.empty())
       throw DBException("Opening new database and no content identifier set!");
@@ -168,71 +170,71 @@ bool BTreeDatabase::open() {
   }
 }
 
-bool BTreeDatabase::contains(ByteArray const& k) {
+auto BTreeDatabase::contains(ByteArray const& k) -> bool {
   ReadLocker readLocker(m_lock);
   checkKeySize(k);
   return m_impl.contains(k);
 }
 
-Maybe<ByteArray> BTreeDatabase::find(ByteArray const& k) {
+auto BTreeDatabase::find(ByteArray const& k) -> std::optional<ByteArray> {
   ReadLocker readLocker(m_lock);
   checkKeySize(k);
   return m_impl.find(k);
 }
 
-List<pair<ByteArray, ByteArray>> BTreeDatabase::find(ByteArray const& lower, ByteArray const& upper) {
+auto BTreeDatabase::find(ByteArray const& lower, ByteArray const& upper) -> List<std::pair<ByteArray, ByteArray>> {
   ReadLocker readLocker(m_lock);
   checkKeySize(lower);
   checkKeySize(upper);
   return m_impl.find(lower, upper);
 }
 
-void BTreeDatabase::forEach(ByteArray const& lower, ByteArray const& upper, function<void(ByteArray, ByteArray)> v) {
+void BTreeDatabase::forEach(ByteArray const& lower, ByteArray const& upper, std::function<void(ByteArray, ByteArray)> v) {
   ReadLocker readLocker(m_lock);
   checkKeySize(lower);
   checkKeySize(upper);
   m_impl.forEach(lower, upper, std::move(v));
 }
 
-void BTreeDatabase::forAll(function<void(ByteArray, ByteArray)> v) {
+void BTreeDatabase::forAll(std::function<void(ByteArray, ByteArray)> v) {
   ReadLocker readLocker(m_lock);
   m_impl.forAll(std::move(v));
 }
 
-void BTreeDatabase::recoverAll(function<void(ByteArray, ByteArray)> v, function<void(String const&, std::exception const&)> e) {
+void BTreeDatabase::recoverAll(std::function<void(ByteArray, ByteArray)> v, std::function<void(String const&, std::exception const&)> e) {
   ReadLocker readLocker(m_lock);
   m_impl.recoverAll(std::move(v), std::move(e));
 }
 
-bool BTreeDatabase::insert(ByteArray const& k, ByteArray const& data) {
+auto BTreeDatabase::insert(ByteArray const& k, ByteArray const& data) -> bool {
   WriteLocker writeLocker(m_lock);
   checkKeySize(k);
   return m_impl.insert(k, data);
 }
 
-bool BTreeDatabase::remove(ByteArray const& k) {
+auto BTreeDatabase::remove(ByteArray const& k) -> bool {
   WriteLocker writeLocker(m_lock);
   checkKeySize(k);
   return m_impl.remove(k);
 }
 
-uint64_t BTreeDatabase::recordCount() {
+auto BTreeDatabase::recordCount() -> std::uint64_t {
   ReadLocker readLocker(m_lock);
   return m_impl.recordCount();
 }
 
-uint8_t BTreeDatabase::indexLevels() {
+auto BTreeDatabase::indexLevels() -> std::uint8_t {
   ReadLocker readLocker(m_lock);
   return m_impl.indexLevels();
 }
 
-uint32_t BTreeDatabase::totalBlockCount() {
+auto BTreeDatabase::totalBlockCount() -> std::uint32_t {
   ReadLocker readLocker(m_lock);
   checkIfOpen("totalBlockCount", true);
   return (m_device->size() - HeaderSize) / m_blockSize;
 }
 
-uint32_t BTreeDatabase::freeBlockCount() {
+auto BTreeDatabase::freeBlockCount() -> std::uint32_t {
   ReadLocker readLocker(m_lock);
   checkIfOpen("freeBlockCount", true);
 
@@ -254,23 +256,23 @@ uint32_t BTreeDatabase::freeBlockCount() {
   return count;
 }
 
-uint32_t BTreeDatabase::indexBlockCount() {
+auto BTreeDatabase::indexBlockCount() -> std::uint32_t {
   ReadLocker readLocker(m_lock);
   checkIfOpen("indexBlockCount", true);
   // Indexes are simply one index per block
   return m_impl.indexCount();
 }
 
-uint32_t BTreeDatabase::leafBlockCount() {
+auto BTreeDatabase::leafBlockCount() -> std::uint32_t {
   WriteLocker writeLocker(m_lock);
   checkIfOpen("leafBlockCount", true);
 
   struct LeafBlocksVisitor {
-    bool operator()(shared_ptr<IndexNode> const&) {
+    auto operator()(std::shared_ptr<IndexNode> const&) -> bool {
       return true;
     }
 
-    bool operator()(shared_ptr<LeafNode> const& leaf) {
+    auto operator()(std::shared_ptr<LeafNode> const& leaf) -> bool {
       leafBlockCount += 1 + parent->leafTailBlocks(leaf->self).size();
       return true;
     }
@@ -320,9 +322,9 @@ void BTreeDatabase::close(bool closeDevice) {
 }
 
 BTreeDatabase::BlockIndex const BTreeDatabase::InvalidBlockIndex;
-uint32_t const BTreeDatabase::HeaderSize;
+std::uint32_t const BTreeDatabase::HeaderSize;
 char const* const BTreeDatabase::VersionMagic = "BTreeDB5";
-uint32_t const BTreeDatabase::VersionMagicSize;
+std::uint32_t const BTreeDatabase::VersionMagicSize;
 char const* const BTreeDatabase::IndexMagic = "II";
 char const* const BTreeDatabase::LeafMagic = "LL";
 char const* const BTreeDatabase::FreeIndexMagic = "FF";
@@ -330,7 +332,7 @@ size_t const BTreeDatabase::BTreeRootSelectorBit;
 size_t const BTreeDatabase::BTreeRootInfoStart;
 size_t const BTreeDatabase::BTreeRootInfoSize;
 
-size_t BTreeDatabase::IndexNode::pointerCount() const {
+auto BTreeDatabase::IndexNode::pointerCount() const -> size_t {
   // If no begin pointer is set then the index is simply uninitialized.
   if (!beginPointer)
     return 0;
@@ -352,7 +354,7 @@ void BTreeDatabase::IndexNode::updatePointer(size_t i, BlockIndex p) {
     pointers.at(i - 1).pointer = p;
 }
 
-ByteArray const& BTreeDatabase::IndexNode::keyBefore(size_t i) const {
+auto BTreeDatabase::IndexNode::keyBefore(size_t i) const -> ByteArray const& {
   return pointers.at(i - 1).key;
 }
 
@@ -370,14 +372,14 @@ void BTreeDatabase::IndexNode::removeBefore(size_t i) {
 }
 
 void BTreeDatabase::IndexNode::insertAfter(size_t i, ByteArray k, BlockIndex p) {
-  pointers.insertAt(i, Element{k, p});
+  pointers.insertAt(i, Element{.key=k, .pointer=p});
 }
 
-uint8_t BTreeDatabase::IndexNode::indexLevel() const {
+auto BTreeDatabase::IndexNode::indexLevel() const -> std::uint8_t {
   return level;
 }
 
-void BTreeDatabase::IndexNode::setIndexLevel(uint8_t indexLevel) {
+void BTreeDatabase::IndexNode::setIndexLevel(std::uint8_t indexLevel) {
   level = indexLevel;
 }
 
@@ -387,9 +389,9 @@ void BTreeDatabase::IndexNode::shiftLeft(ByteArray const& mid, IndexNode& right,
   if (count == 0)
     return;
 
-  pointers.append(Element{mid, *right.beginPointer});
+  pointers.append(Element{.key=mid, .pointer=*right.beginPointer});
 
-  ElementList::iterator s = right.pointers.begin();
+  auto s = right.pointers.begin();
   std::advance(s, count - 1);
   pointers.insert(pointers.end(), right.pointers.begin(), s);
 
@@ -409,9 +411,9 @@ void BTreeDatabase::IndexNode::shiftRight(ByteArray const& mid, IndexNode& left,
     return;
   --count;
 
-  pointers.insert(pointers.begin(), Element{mid, *beginPointer});
+  pointers.insert(pointers.begin(), Element{.key=mid, .pointer=*beginPointer});
 
-  ElementList::iterator s = left.pointers.begin();
+  auto s = left.pointers.begin();
   std::advance(s, left.pointers.size() - count);
   pointers.insert(pointers.begin(), s, left.pointers.end());
 
@@ -420,12 +422,12 @@ void BTreeDatabase::IndexNode::shiftRight(ByteArray const& mid, IndexNode& left,
     beginPointer = left.pointers.at(left.pointers.size() - 1).pointer;
     left.pointers.eraseAt(left.pointers.size() - 1);
   } else {
-    beginPointer = left.beginPointer.take();
+    beginPointer = std::move(*left.beginPointer);
   }
 }
 
-ByteArray BTreeDatabase::IndexNode::split(IndexNode& right, size_t i) {
-  ElementList::iterator s = pointers.begin();
+auto BTreeDatabase::IndexNode::split(IndexNode& right, size_t i) -> ByteArray {
+  auto s = pointers.begin();
   std::advance(s, i - 1);
 
   right.beginPointer = s->pointer;
@@ -441,20 +443,20 @@ ByteArray BTreeDatabase::IndexNode::split(IndexNode& right, size_t i) {
   return midKey;
 }
 
-size_t BTreeDatabase::LeafNode::count() const {
+auto BTreeDatabase::LeafNode::count() const -> size_t {
   return elements.size();
 }
 
-ByteArray const& BTreeDatabase::LeafNode::key(size_t i) const {
+auto BTreeDatabase::LeafNode::key(size_t i) const -> ByteArray const& {
   return elements.at(i).key;
 }
 
-ByteArray const& BTreeDatabase::LeafNode::data(size_t i) const {
+auto BTreeDatabase::LeafNode::data(size_t i) const -> ByteArray const& {
   return elements.at(i).data;
 }
 
 void BTreeDatabase::LeafNode::insert(size_t i, ByteArray k, ByteArray d) {
-  elements.insertAt(i, Element{std::move(k), std::move(d)});
+  elements.insertAt(i, Element{.key=std::move(k), .data=std::move(d)});
 }
 
 void BTreeDatabase::LeafNode::remove(size_t i) {
@@ -467,7 +469,7 @@ void BTreeDatabase::LeafNode::shiftLeft(LeafNode& right, size_t count) {
   if (count == 0)
     return;
 
-  ElementList::iterator s = right.elements.begin();
+  auto s = right.elements.begin();
   std::advance(s, count);
 
   elements.insert(elements.end(), right.elements.begin(), s);
@@ -480,7 +482,7 @@ void BTreeDatabase::LeafNode::shiftRight(LeafNode& left, size_t count) {
   if (count == 0)
     return;
 
-  ElementList::iterator s = left.elements.begin();
+  auto s = left.elements.begin();
   std::advance(s, left.elements.size() - count);
 
   elements.insert(elements.begin(), s, left.elements.end());
@@ -488,7 +490,7 @@ void BTreeDatabase::LeafNode::shiftRight(LeafNode& left, size_t count) {
 }
 
 void BTreeDatabase::LeafNode::split(LeafNode& right, size_t i) {
-  ElementList::iterator s = elements.begin();
+  auto s = elements.begin();
   std::advance(s, i);
 
   right.elements.insert(right.elements.begin(), s, elements.end());
@@ -499,7 +501,7 @@ auto BTreeDatabase::BTreeImpl::rootPointer() -> Pointer {
   return parent->m_root;
 }
 
-bool BTreeDatabase::BTreeImpl::rootIsLeaf() {
+auto BTreeDatabase::BTreeImpl::rootIsLeaf() -> bool {
   return parent->m_rootIsLeaf;
 }
 
@@ -512,7 +514,7 @@ void BTreeDatabase::BTreeImpl::setNewRoot(Pointer pointer, bool isLeaf) {
 }
 
 auto BTreeDatabase::BTreeImpl::createIndex(Pointer beginPointer) -> Index {
-  auto index = make_shared<IndexNode>();
+  auto index = std::make_shared<IndexNode>();
   index->self = InvalidBlockIndex;
   index->level = 0;
   index->beginPointer = beginPointer;
@@ -525,7 +527,7 @@ auto BTreeDatabase::BTreeImpl::loadIndex(Pointer pointer) -> Index {
     return *index;
   lock.unlock();
 
-  auto index = make_shared<IndexNode>();
+  auto index = std::make_shared<IndexNode>();
 
   DataStreamBuffer buffer(parent->readBlock(pointer));
 
@@ -534,11 +536,11 @@ auto BTreeDatabase::BTreeImpl::loadIndex(Pointer pointer) -> Index {
 
   index->self = pointer;
 
-  index->level = buffer.read<uint8_t>();
-  uint32_t s = buffer.read<uint32_t>();
+  index->level = buffer.read<std::uint8_t>();
+  auto s = buffer.read<std::uint32_t>();
   index->beginPointer = buffer.read<BlockIndex>();
   index->pointers.resize(s);
-  for (uint32_t i = 0; i < s; ++i) {
+  for (std::uint32_t i = 0; i < s; ++i) {
     auto& e = index->pointers[i];
     e.key = buffer.readBytes(parent->m_keySize);
     e.pointer = buffer.read<BlockIndex>();
@@ -549,11 +551,11 @@ auto BTreeDatabase::BTreeImpl::loadIndex(Pointer pointer) -> Index {
   return index;
 }
 
-bool BTreeDatabase::BTreeImpl::indexNeedsShift(Index const& index) {
+auto BTreeDatabase::BTreeImpl::indexNeedsShift(Index const& index) -> bool {
   return index->pointerCount() < (parent->maxIndexPointers() + 1) / 2;
 }
 
-bool BTreeDatabase::BTreeImpl::indexShift(Index const& left, Key const& mid, Index const& right) {
+auto BTreeDatabase::BTreeImpl::indexShift(Index const& left, Key const& mid, Index const& right) -> bool {
   if (left->pointerCount() + right->pointerCount() <= parent->maxIndexPointers()) {
     left->shiftLeft(mid, *right, right->pointerCount());
     return true;
@@ -570,11 +572,11 @@ bool BTreeDatabase::BTreeImpl::indexShift(Index const& left, Key const& mid, Ind
   }
 }
 
-auto BTreeDatabase::BTreeImpl::indexSplit(Index const& index) -> Maybe<pair<Key, Index>> {
+auto BTreeDatabase::BTreeImpl::indexSplit(Index const& index) -> std::optional<std::pair<Key, Index>> {
   if (index->pointerCount() <= parent->maxIndexPointers())
     return {};
 
-  auto right = make_shared<IndexNode>();
+  auto right = std::make_shared<IndexNode>();
   right->self = InvalidBlockIndex;
   Key k = index->split(*right, (index->pointerCount() + 1) / 2);
   return make_pair(k, right);
@@ -595,13 +597,12 @@ auto BTreeDatabase::BTreeImpl::storeIndex(Index index) -> Pointer {
   DataStreamBuffer buffer(parent->m_blockSize);
   buffer.writeData(IndexMagic, 2);
 
-  buffer.write<uint8_t>(index->level);
-  buffer.write<uint32_t>(index->pointers.size());
+  buffer.write<std::uint8_t>(index->level);
+  buffer.write<std::uint32_t>(index->pointers.size());
   buffer.write<BlockIndex>(*index->beginPointer);
-  for (auto i = index->pointers.begin(); i != index->pointers.end(); ++i) {
-    starAssert(i->key.size() == parent->m_keySize);
-    buffer.writeBytes(i->key);
-    buffer.write<BlockIndex>(i->pointer);
+  for (auto & pointer : index->pointers) {
+    buffer.writeBytes(pointer.key);
+    buffer.write<BlockIndex>(pointer.pointer);
   }
 
   parent->updateBlock(index->self, buffer.data());
@@ -616,13 +617,13 @@ void BTreeDatabase::BTreeImpl::deleteIndex(Index index) {
 }
 
 auto BTreeDatabase::BTreeImpl::createLeaf() -> Leaf {
-  auto leaf = make_shared<LeafNode>();
+  auto leaf = std::make_shared<LeafNode>();
   leaf->self = InvalidBlockIndex;
   return leaf;
 }
 
 auto BTreeDatabase::BTreeImpl::loadLeaf(Pointer pointer) -> Leaf {
-  auto leaf = make_shared<LeafNode>();
+  auto leaf = std::make_shared<LeafNode>();
   leaf->self = pointer;
 
   BlockIndex currentLeafBlock = leaf->self;
@@ -667,9 +668,9 @@ auto BTreeDatabase::BTreeImpl::loadLeaf(Pointer pointer) -> Leaf {
       return len;
     }, {});
 
-  uint32_t count = leafInput.read<uint32_t>();
+  auto count = leafInput.read<std::uint32_t>();
   leaf->elements.resize(count);
-  for (uint32_t i = 0; i < count; ++i) {
+  for (std::uint32_t i = 0; i < count; ++i) {
     auto& element = leaf->elements[i];
     element.key = leafInput.readBytes(parent->m_keySize);
     element.data = leafInput.read<ByteArray>();
@@ -678,11 +679,11 @@ auto BTreeDatabase::BTreeImpl::loadLeaf(Pointer pointer) -> Leaf {
   return leaf;
 }
 
-bool BTreeDatabase::BTreeImpl::leafNeedsShift(Leaf const& l) {
+auto BTreeDatabase::BTreeImpl::leafNeedsShift(Leaf const& l) -> bool {
   return parent->leafSize(l) < parent->m_blockSize / 2;
 }
 
-bool BTreeDatabase::BTreeImpl::leafShift(Leaf& left, Leaf& right) {
+auto BTreeDatabase::BTreeImpl::leafShift(Leaf& left, Leaf& right) -> bool {
   if (left->count() == 0) {
     left->shiftLeft(*right, right->count());
     return true;
@@ -691,8 +692,8 @@ bool BTreeDatabase::BTreeImpl::leafShift(Leaf& left, Leaf& right) {
   if (right->count() == 0)
     return true;
 
-  uint32_t leftSize = parent->leafSize(left);
-  uint32_t rightSize = parent->leafSize(right);
+  std::uint32_t leftSize = parent->leafSize(left);
+  std::uint32_t rightSize = parent->leafSize(right);
   if (leftSize + rightSize < parent->m_blockSize) {
     left->shiftLeft(*right, right->count());
     return true;
@@ -700,8 +701,8 @@ bool BTreeDatabase::BTreeImpl::leafShift(Leaf& left, Leaf& right) {
 
   // TODO: Shifting algorithm is bad, could potentially want to shift more
   // than one element here.
-  uint32_t rightBeginSize = parent->m_keySize + parent->dataSize(right->elements[0].data);
-  uint32_t leftEndSize = parent->m_keySize + parent->dataSize(left->elements[left->elements.size() - 1].data);
+  std::uint32_t rightBeginSize = parent->m_keySize + parent->dataSize(right->elements[0].data);
+  std::uint32_t leftEndSize = parent->m_keySize + parent->dataSize(left->elements[left->elements.size() - 1].data);
   if (leftSize < rightSize - rightBeginSize && leftSize + rightBeginSize < parent->m_blockSize) {
     left->shiftLeft(*right, 1);
     return true;
@@ -713,14 +714,14 @@ bool BTreeDatabase::BTreeImpl::leafShift(Leaf& left, Leaf& right) {
   return false;
 }
 
-auto BTreeDatabase::BTreeImpl::leafSplit(Leaf& leaf) -> Maybe<Leaf> {
+auto BTreeDatabase::BTreeImpl::leafSplit(Leaf& leaf) -> std::optional<Leaf> {
   if (leaf->elements.size() < 2)
     return {};
 
-  uint32_t size = 6;
+  std::uint32_t size = 6;
   bool boundaryFound = false;
-  uint32_t boundary = 0;
-  for (uint32_t i = 0; i < leaf->elements.size(); ++i) {
+  std::uint32_t boundary = 0;
+  for (std::uint32_t i = 0; i < leaf->elements.size(); ++i) {
     size += parent->m_keySize;
     size += parent->dataSize(leaf->elements[i].data);
     if (size > parent->m_blockSize - sizeof(BlockIndex) && !boundaryFound) {
@@ -734,7 +735,7 @@ auto BTreeDatabase::BTreeImpl::leafSplit(Leaf& leaf) -> Maybe<Leaf> {
   if (size < parent->m_blockSize * 2 - 2 * sizeof(BlockIndex) - 4) {
     return {};
   } else {
-    auto right = make_shared<LeafNode>();
+    auto right = std::make_shared<LeafNode>();
     right->self = InvalidBlockIndex;
     leaf->split(*right, boundary);
     return right;
@@ -744,8 +745,8 @@ auto BTreeDatabase::BTreeImpl::leafSplit(Leaf& leaf) -> Maybe<Leaf> {
 auto BTreeDatabase::BTreeImpl::storeLeaf(Leaf leaf) -> Pointer {
   if (leaf->self != InvalidBlockIndex) {
     List<BlockIndex> tailBlocks = parent->leafTailBlocks(leaf->self);
-    for (uint32_t i = 0; i < tailBlocks.size(); ++i)
-      parent->freeBlock(tailBlocks[i]);
+    for (unsigned int tailBlock : tailBlocks)
+      parent->freeBlock(tailBlock);
 
     if (!parent->m_uncommitted.contains(leaf->self)) {
       parent->freeBlock(leaf->self);
@@ -792,12 +793,11 @@ auto BTreeDatabase::BTreeImpl::storeLeaf(Leaf leaf) -> Pointer {
       return len;
     });
 
-  leafOutput.write<uint32_t>(leaf->elements.size());
+  leafOutput.write<std::uint32_t>(leaf->elements.size());
 
-  for (LeafNode::ElementList::iterator i = leaf->elements.begin(); i != leaf->elements.end(); ++i) {
-    starAssert(i->key.size() == parent->m_keySize);
-    leafOutput.writeBytes(i->key);
-    leafOutput.write(i->data);
+  for (auto & element : leaf->elements) {
+    leafOutput.writeBytes(element.key);
+    leafOutput.write(element.data);
   }
 
   leafBuffer.seek(parent->m_blockSize - sizeof(BlockIndex));
@@ -809,13 +809,13 @@ auto BTreeDatabase::BTreeImpl::storeLeaf(Leaf leaf) -> Pointer {
 
 void BTreeDatabase::BTreeImpl::deleteLeaf(Leaf leaf) {
   List<BlockIndex> tailBlocks = parent->leafTailBlocks(leaf->self);
-  for (uint32_t i = 0; i < tailBlocks.size(); ++i)
-    parent->freeBlock(tailBlocks[i]);
+  for (unsigned int tailBlock : tailBlocks)
+    parent->freeBlock(tailBlock);
 
   parent->freeBlock(leaf->self);
 }
 
-size_t BTreeDatabase::BTreeImpl::indexPointerCount(Index const& index) {
+auto BTreeDatabase::BTreeImpl::indexPointerCount(Index const& index) -> size_t {
   return index->pointerCount();
 }
 
@@ -843,7 +843,7 @@ void BTreeDatabase::BTreeImpl::indexInsertAfter(Index& index, size_t i, Key k, P
   index->insertAfter(i, k, p);
 }
 
-size_t BTreeDatabase::BTreeImpl::indexLevel(Index const& index) {
+auto BTreeDatabase::BTreeImpl::indexLevel(Index const& index) -> size_t {
   return index->indexLevel();
 }
 
@@ -851,7 +851,7 @@ void BTreeDatabase::BTreeImpl::setIndexLevel(Index& index, size_t indexLevel) {
   index->setIndexLevel(indexLevel);
 }
 
-size_t BTreeDatabase::BTreeImpl::leafElementCount(Leaf const& leaf) {
+auto BTreeDatabase::BTreeImpl::leafElementCount(Leaf const& leaf) -> size_t {
   return leaf->count();
 }
 
@@ -871,18 +871,18 @@ void BTreeDatabase::BTreeImpl::leafRemove(Leaf& leaf, size_t i) {
   leaf->remove(i);
 }
 
-auto BTreeDatabase::BTreeImpl::nextLeaf(Leaf const&) -> Maybe<Pointer> {
+auto BTreeDatabase::BTreeImpl::nextLeaf(Leaf const&) -> std::optional<Pointer> {
   return {};
 }
 
-void BTreeDatabase::BTreeImpl::setNextLeaf(Leaf&, Maybe<Pointer>) {}
+void BTreeDatabase::BTreeImpl::setNextLeaf(Leaf&, std::optional<Pointer>) {}
 
 void BTreeDatabase::readBlock(BlockIndex blockIndex, size_t blockOffset, char* block, size_t size) const {
   checkBlockIndex(blockIndex);
   rawReadBlock(blockIndex, blockOffset, block, size);
 }
 
-ByteArray BTreeDatabase::readBlock(BlockIndex blockIndex) const {
+auto BTreeDatabase::readBlock(BlockIndex blockIndex) const -> ByteArray {
   ByteArray block(m_blockSize, 0);
   readBlock(blockIndex, 0, block.ptr(), m_blockSize);
   return block;
@@ -903,7 +903,7 @@ void BTreeDatabase::rawReadBlock(BlockIndex blockIndex, size_t blockOffset, char
   if (auto buffer = m_uncommittedWrites.ptr(blockIndex))
     buffer->copyTo(block, blockOffset, size);
   else
-    m_device->readFullAbsolute(HeaderSize + blockIndex * (StreamOffset)m_blockSize + blockOffset, block, size);
+    m_device->readFullAbsolute(HeaderSize + blockIndex * (std::int64_t)m_blockSize + blockOffset, block, size);
 }
 
 void BTreeDatabase::rawWriteBlock(BlockIndex blockIndex, size_t blockOffset, char const* block, size_t size) {
@@ -913,7 +913,7 @@ void BTreeDatabase::rawWriteBlock(BlockIndex blockIndex, size_t blockOffset, cha
   if (size <= 0)
     return;
 
-  StreamOffset blockStart = HeaderSize + blockIndex * (StreamOffset)m_blockSize;
+  std::int64_t blockStart = HeaderSize + blockIndex * (std::int64_t)m_blockSize;
   auto buffer = m_uncommittedWrites.find(blockIndex);
   if (buffer == m_uncommittedWrites.end())
     buffer = m_uncommittedWrites.emplace(blockIndex, m_device->readBytesAbsolute(blockStart, m_blockSize)).first;
@@ -930,7 +930,7 @@ auto BTreeDatabase::readFreeIndexBlock(BlockIndex blockIndex) -> FreeIndexBlock 
     throw DBException::format("Internal exception! block {} missing free index block marker!", blockIndex);
 
   FreeIndexBlock freeIndexBlock;
-  DataStreamBuffer buffer(max(sizeof(BlockIndex), (size_t)4));
+  DataStreamBuffer buffer(std::max(sizeof(BlockIndex), (std::size_t)4));
 
   rawReadBlock(blockIndex, 2, buffer.ptr(), sizeof(BlockIndex));
   buffer.seek(0);
@@ -938,9 +938,9 @@ auto BTreeDatabase::readFreeIndexBlock(BlockIndex blockIndex) -> FreeIndexBlock 
 
   rawReadBlock(blockIndex, 2 + sizeof(BlockIndex), buffer.ptr(), 4);
   buffer.seek(0);
-  size_t numFree = buffer.read<uint32_t>();
+  std::size_t numFree = buffer.read<std::uint32_t>();
 
-  for (size_t i = 0; i < numFree; ++i) {
+  for (std::size_t i = 0; i < numFree; ++i) {
     rawReadBlock(blockIndex, 6 + sizeof(BlockIndex) + sizeof(BlockIndex) * i, buffer.ptr(), sizeof(BlockIndex));
     buffer.seek(0);
     freeIndexBlock.freeBlocks.append(buffer.read<BlockIndex>());
@@ -953,39 +953,39 @@ void BTreeDatabase::writeFreeIndexBlock(BlockIndex blockIndex, FreeIndexBlock in
   checkBlockIndex(blockIndex);
 
   rawWriteBlock(blockIndex, 0, FreeIndexMagic, 2);
-  DataStreamBuffer buffer(max(sizeof(BlockIndex), (size_t)4));
+  DataStreamBuffer buffer(std::max(sizeof(BlockIndex), (std::size_t)4));
 
   buffer.seek(0);
   buffer.write<BlockIndex>(indexBlock.nextFreeBlock);
   rawWriteBlock(blockIndex, 2, buffer.ptr(), sizeof(BlockIndex));
 
   buffer.seek(0);
-  buffer.write<uint32_t>(indexBlock.freeBlocks.size());
+  buffer.write<std::uint32_t>(indexBlock.freeBlocks.size());
   rawWriteBlock(blockIndex, 2 + sizeof(BlockIndex), buffer.ptr(), 4);
 
-  for (size_t i = 0; i < indexBlock.freeBlocks.size(); ++i) {
+  for (std::size_t i = 0; i < indexBlock.freeBlocks.size(); ++i) {
     buffer.seek(0);
     buffer.write<BlockIndex>(indexBlock.freeBlocks[i]);
     rawWriteBlock(blockIndex, 6 + sizeof(BlockIndex) + sizeof(BlockIndex) * i, buffer.ptr(), sizeof(BlockIndex));
   }
 }
 
-uint32_t BTreeDatabase::leafSize(shared_ptr<LeafNode> const& leaf) const {
+auto BTreeDatabase::leafSize(std::shared_ptr<LeafNode> const& leaf) const -> std::uint32_t {
   size_t s = 6;
-  for (LeafNode::ElementList::iterator i = leaf->elements.begin(); i != leaf->elements.end(); ++i) {
+  for (auto & element : leaf->elements) {
     s += m_keySize;
-    s += dataSize(i->data);
+    s += dataSize(element.data);
   }
   return s;
 }
 
-uint32_t BTreeDatabase::maxIndexPointers() const {
+auto BTreeDatabase::maxIndexPointers() const -> std::uint32_t {
   // 2 for magic, 1 byte for level, sizeof(BlockIndex) for beginPointer, 4
   // for size.
   return (m_blockSize - 2 - 1 - sizeof(BlockIndex) - 4) / (m_keySize + sizeof(BlockIndex)) + 1;
 }
 
-uint32_t BTreeDatabase::dataSize(ByteArray const& d) const {
+auto BTreeDatabase::dataSize(ByteArray const& d) const -> std::uint32_t {
   return vlqUSize(d.size()) + d.size();
 }
 
@@ -1047,7 +1047,7 @@ void BTreeDatabase::writeRoot() {
   // First write the root info to whichever section we are not currently using
   ds.seek(BTreeRootInfoStart + (m_usingAltRoot ? 0 : BTreeRootInfoSize));
   ds.write<BlockIndex>(m_headFreeIndexBlock);
-  ds.write<StreamOffset>(m_deviceSize);
+  ds.write<std::int64_t>(m_deviceSize);
   ds.write<BlockIndex>(m_root);
   ds.write<bool>(m_rootIsLeaf);
 
@@ -1071,7 +1071,7 @@ void BTreeDatabase::readRoot() {
 
   ds.seek(BTreeRootInfoStart + (m_usingAltRoot ? BTreeRootInfoSize : 0));
   m_headFreeIndexBlock = ds.read<BlockIndex>();
-  m_deviceSize = ds.read<StreamOffset>();
+  m_deviceSize = ds.read<std::int64_t>();
   m_root = ds.read<BlockIndex>();
   m_rootIsLeaf = ds.read<bool>();
 }
@@ -1082,7 +1082,7 @@ void BTreeDatabase::doCommit() {
 
   if (!m_availableBlocks.empty()) {
     // First, read the existing head FreeIndexBlock, if it exists
-    FreeIndexBlock indexBlock = FreeIndexBlock{InvalidBlockIndex, {}};
+    FreeIndexBlock indexBlock = FreeIndexBlock{.nextFreeBlock=InvalidBlockIndex, .freeBlocks={}};
 
     auto newBlock = [&]() -> BlockIndex {
       if (!m_availableBlocks.empty())
@@ -1131,13 +1131,13 @@ void BTreeDatabase::doCommit() {
 
 void BTreeDatabase::commitWrites() {
   for (auto& write : m_uncommittedWrites)
-    m_device->writeFullAbsolute(HeaderSize + write.first * (StreamOffset)m_blockSize, write.second.ptr(), m_blockSize);
+    m_device->writeFullAbsolute(HeaderSize + write.first * (std::int64_t)m_blockSize, write.second.ptr(), m_blockSize);
 
   m_device->sync();
   m_uncommittedWrites.clear();
 }
 
-bool BTreeDatabase::tryFlatten() {
+auto BTreeDatabase::tryFlatten() -> bool {
   if (m_headFreeIndexBlock == InvalidBlockIndex || m_rootIsLeaf || !m_device->isWritable())
     return false;
 
@@ -1183,7 +1183,7 @@ bool BTreeDatabase::tryFlatten() {
   }
 
   m_availableBlocks.clear();
-  m_device->resize(m_deviceSize = HeaderSize + (StreamOffset)m_blockSize * count);
+  m_device->resize(m_deviceSize = HeaderSize + (std::int64_t)m_blockSize * count);
 
   m_indexCache.clear();
   commitWrites();
@@ -1194,7 +1194,7 @@ bool BTreeDatabase::tryFlatten() {
   return true;
 }
 
-bool BTreeDatabase::flattenVisitor(BTreeImpl::Index& index, BlockIndex& count) {
+auto BTreeDatabase::flattenVisitor(BTreeImpl::Index& index, BlockIndex& count) -> bool {
   auto pointerCount = index->pointerCount();
   count += pointerCount;
   bool canStore = !m_availableBlocks.empty();
@@ -1257,7 +1257,7 @@ void BTreeDatabase::checkKeySize(ByteArray const& k) const {
     throw DBException::format("Wrong key size {}", k.size());
 }
 
-uint32_t BTreeDatabase::maxFreeIndexLength() const {
+auto BTreeDatabase::maxFreeIndexLength() const -> std::uint32_t {
   return (m_blockSize / sizeof(BlockIndex)) - 2 - sizeof(BlockIndex) - 4;
 }
 
@@ -1270,35 +1270,35 @@ BTreeSha256Database::BTreeSha256Database(String const& contentIdentifier) {
   setContentIdentifier(contentIdentifier);
 }
 
-bool BTreeSha256Database::contains(ByteArray const& key) {
+auto BTreeSha256Database::contains(ByteArray const& key) -> bool {
   return BTreeDatabase::contains(sha256(key));
 }
 
-Maybe<ByteArray> BTreeSha256Database::find(ByteArray const& key) {
+auto BTreeSha256Database::find(ByteArray const& key) -> std::optional<ByteArray> {
   return BTreeDatabase::find(sha256(key));
 }
 
-bool BTreeSha256Database::insert(ByteArray const& key, ByteArray const& value) {
+auto BTreeSha256Database::insert(ByteArray const& key, ByteArray const& value) -> bool {
   return BTreeDatabase::insert(sha256(key), value);
 }
 
-bool BTreeSha256Database::remove(ByteArray const& key) {
+auto BTreeSha256Database::remove(ByteArray const& key) -> bool {
   return BTreeDatabase::remove(sha256(key));
 }
 
-bool BTreeSha256Database::contains(String const& key) {
+auto BTreeSha256Database::contains(String const& key) -> bool {
   return BTreeDatabase::contains(sha256(key));
 }
 
-Maybe<ByteArray> BTreeSha256Database::find(String const& key) {
+auto BTreeSha256Database::find(String const& key) -> std::optional<ByteArray> {
   return BTreeDatabase::find(sha256(key));
 }
 
-bool BTreeSha256Database::insert(String const& key, ByteArray const& value) {
+auto BTreeSha256Database::insert(String const& key, ByteArray const& value) -> bool {
   return BTreeDatabase::insert(sha256(key), value);
 }
 
-bool BTreeSha256Database::remove(String const& key) {
+auto BTreeSha256Database::remove(String const& key) -> bool {
   return BTreeDatabase::remove(sha256(key));
 }
 

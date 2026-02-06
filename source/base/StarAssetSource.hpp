@@ -2,12 +2,13 @@
 
 #include "StarIODevice.hpp"
 #include "StarJson.hpp"
+#include "StarException.hpp"
 
 namespace Star {
 
-STAR_CLASS(AssetSource);
-
 STAR_EXCEPTION(AssetSourceException, StarException);
+
+using AssetSourceException = ExceptionDerived<"AssetSourceException">
 
 // An asset source could be a directory on a filesystem, where assets are
 // pulled directly from files, or a single pak-like file containing all assets,

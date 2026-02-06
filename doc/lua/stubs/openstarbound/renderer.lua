@@ -8,7 +8,6 @@ renderer = {}
 ---@param group string
 ---@param enabled boolean
 ---@param save boolean
----@return void
 function renderer.setPostProcessGroupEnabled(group, enabled, save) end
 
 --- Returns true if the specified post process group is enabled. ---
@@ -17,7 +16,7 @@ function renderer.setPostProcessGroupEnabled(group, enabled, save) end
 function renderer.postProcessGroupEnabled(group) end
 
 --- Returns every post process group. Identical to grabbing them from client.config with root.assetJson. ---
----@return Json
+---@return table<string,table>
 function renderer.postProcessGroups() end
 
 --- Sets the specified scriptable parameter of the specified shader effect to the provided value. This is accessed from the shader as a uniform and must be defined in the effect's configuration. ---
@@ -32,3 +31,7 @@ function renderer.setEffectParameter(effectName, parameterName, value) end
 ---@param parameterName string
 ---@return Json
 function renderer.getEffectParameter(effectName, parameterName) end
+
+---@param layer string
+---@param passes integer
+function renderer.setPostProcessLayerPasses(layer, passes) end

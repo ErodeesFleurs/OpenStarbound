@@ -1,10 +1,13 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarVariant.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(EitherException, StarException);
+using EitherException = ExceptionDerived<"EitherException">;
 
 template <typename Value>
 struct EitherLeftValue {
@@ -17,10 +20,10 @@ struct EitherRightValue {
 };
 
 template <typename Value>
-EitherLeftValue<Value> makeLeft(Value value);
+auto makeLeft(Value value) -> EitherLeftValue<Value>;
 
 template <typename Value>
-EitherRightValue<Value> makeRight(Value value);
+auto makeRight(Value value) -> EitherRightValue<Value>;
 
 // Container that contains exactly one of either Left or Right.
 template <typename Left, typename Right>
@@ -41,59 +44,59 @@ public:
   Either(Either const& rhs);
   Either(Either&& rhs);
 
-  Either& operator=(Either const& rhs);
-  Either& operator=(Either&& rhs);
+  auto operator=(Either const& rhs) -> Either&;
+  auto operator=(Either&& rhs) -> Either&;
 
   template <typename T>
-  Either& operator=(EitherLeftValue<T> left);
+  auto operator=(EitherLeftValue<T> left) -> Either&;
 
   template <typename T>
-  Either& operator=(EitherRightValue<T> right);
+  auto operator=(EitherRightValue<T> right) -> Either&;
 
-  bool isLeft() const;
-  bool isRight() const;
+  [[nodiscard]] auto isLeft() const -> bool;
+  [[nodiscard]] auto isRight() const -> bool;
 
   void setLeft(Left left);
   void setRight(Right left);
 
   // left() and right() throw EitherException on invalid access
 
-  Left const& left() const;
-  Right const& right() const;
+  auto left() const -> Left const&;
+  auto right() const -> Right const&;
 
-  Left& left();
-  Right& right();
+  auto left() -> Left&;
+  auto right() -> Right&;
 
-  Maybe<Left> maybeLeft() const;
-  Maybe<Right> maybeRight() const;
+  auto maybeLeft() const -> std::optional<Left>;
+  auto maybeRight() const -> std::optional<Right>;
 
   // leftPtr() and rightPtr() do not throw on invalid access
 
-  Left const* leftPtr() const;
-  Right const* rightPtr() const;
+  auto leftPtr() const -> Left const*;
+  auto rightPtr() const -> Right const*;
 
-  Left* leftPtr();
-  Right* rightPtr();
+  auto leftPtr() -> Left*;
+  auto rightPtr() -> Right*;
 
 private:
-  typedef EitherLeftValue<Left> LeftType;
-  typedef EitherRightValue<Right> RightType;
+  using LeftType = EitherLeftValue<Left>;
+  using RightType = EitherRightValue<Right>;
 
   Variant<LeftType, RightType> m_value;
 };
 
 template <typename Value>
-EitherLeftValue<Value> makeLeft(Value value) {
+auto makeLeft(Value value) -> EitherLeftValue<Value> {
   return {std::move(value)};
 }
 
 template <typename Value>
-EitherRightValue<Value> makeRight(Value value) {
+auto makeRight(Value value) -> EitherRightValue<Value> {
   return {std::move(value)};
 }
 
 template <typename Left, typename Right>
-Either<Left, Right>::Either() {}
+Either<Left, Right>::Either() = default;
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(EitherLeftValue<Left> left)
@@ -122,38 +125,35 @@ Either<Left, Right>::Either(Either&& rhs)
   : m_value(std::move(rhs.m_value)) {}
 
 template <typename Left, typename Right>
-Either<Left, Right>& Either<Left, Right>::operator=(Either const& rhs) {
-  m_value = rhs.m_value;
-  return *this;
-}
+auto Either<Left, Right>::operator=(Either const& rhs) -> Either<Left, Right>& = default;
 
 template <typename Left, typename Right>
-Either<Left, Right>& Either<Left, Right>::operator=(Either&& rhs) {
+auto Either<Left, Right>::operator=(Either&& rhs) -> Either<Left, Right>& {
   m_value = std::move(rhs.m_value);
   return *this;
 }
 
 template <typename Left, typename Right>
 template <typename T>
-Either<Left, Right>& Either<Left, Right>::operator=(EitherLeftValue<T> left) {
+auto Either<Left, Right>::operator=(EitherLeftValue<T> left) -> Either<Left, Right>& {
   m_value = LeftType{std::move(left.value)};
   return *this;
 }
 
 template <typename Left, typename Right>
 template <typename T>
-Either<Left, Right>& Either<Left, Right>::operator=(EitherRightValue<T> right) {
+auto Either<Left, Right>::operator=(EitherRightValue<T> right) -> Either<Left, Right>& {
   m_value = RightType{std::move(right.value)};
   return *this;
 }
 
 template <typename Left, typename Right>
-bool Either<Left, Right>::isLeft() const {
+auto Either<Left, Right>::isLeft() const -> bool {
   return m_value.template is<LeftType>();
 }
 
 template <typename Left, typename Right>
-bool Either<Left, Right>::isRight() const {
+auto Either<Left, Right>::isRight() const -> bool {
   return m_value.template is<RightType>();
 }
 
@@ -168,70 +168,70 @@ void Either<Left, Right>::setRight(Right right) {
 }
 
 template <typename Left, typename Right>
-Left const& Either<Left, Right>::left() const {
+auto Either<Left, Right>::left() const -> Left const& {
   if (auto l = leftPtr())
     return *l;
   throw EitherException("Improper access of left side of Either");
 }
 
 template <typename Left, typename Right>
-Right const& Either<Left, Right>::right() const {
+auto Either<Left, Right>::right() const -> Right const& {
   if (auto r = rightPtr())
     return *r;
   throw EitherException("Improper access of right side of Either");
 }
 
 template <typename Left, typename Right>
-Left& Either<Left, Right>::left() {
+auto Either<Left, Right>::left() -> Left& {
   if (auto l = leftPtr())
     return *l;
   throw EitherException("Improper access of left side of Either");
 }
 
 template <typename Left, typename Right>
-Right& Either<Left, Right>::right() {
+auto Either<Left, Right>::right() -> Right& {
   if (auto r = rightPtr())
     return *r;
   throw EitherException("Improper access of right side of Either");
 }
 
 template <typename Left, typename Right>
-Maybe<Left> Either<Left, Right>::maybeLeft() const {
+auto Either<Left, Right>::maybeLeft() const -> std::optional<Left> {
   if (auto l = leftPtr())
     return *l;
-  return {};
+  return std::nullopt;
 }
 
 template <typename Left, typename Right>
-Maybe<Right> Either<Left, Right>::maybeRight() const {
+auto Either<Left, Right>::maybeRight() const -> std::optional<Right> {
   if (auto r = rightPtr())
     return *r;
-  return {};
+  return std::nullopt;
 }
 
 template <typename Left, typename Right>
-Left const* Either<Left, Right>::leftPtr() const {
+auto Either<Left, Right>::leftPtr() const -> Left const* {
   if (auto l = m_value.template ptr<LeftType>())
     return &l->value;
   return nullptr;
 }
 
 template <typename Left, typename Right>
-Right const* Either<Left, Right>::rightPtr() const {
+auto Either<Left, Right>::rightPtr() const -> Right const* {
   if (auto r = m_value.template ptr<RightType>())
     return &r->value;
   return nullptr;
 }
 
 template <typename Left, typename Right>
-Left* Either<Left, Right>::leftPtr() {
+auto Either<Left, Right>::leftPtr() -> Left* {
   if (auto l = m_value.template ptr<LeftType>())
     return &l->value;
   return nullptr;
 }
 
 template <typename Left, typename Right>
-Right* Either<Left, Right>::rightPtr() {
+auto Either<Left, Right>::rightPtr() -> Right* {
   if (auto r = m_value.template ptr<RightType>())
     return &r->value;
   return nullptr;

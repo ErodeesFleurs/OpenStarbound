@@ -224,7 +224,6 @@ template <typename LightTraits>
 void CellularLightArray<LightTraits>::begin(size_t newWidth, size_t newHeight) {
   m_spreadLights.clear();
   m_pointLights.clear();
-  starAssert(newWidth > 0 && newHeight > 0);
 
   if (!m_cells || newWidth != m_width || newHeight != m_height) {
     m_width = newWidth;
@@ -269,25 +268,21 @@ bool CellularLightArray<LightTraits>::getObstacle(size_t x, size_t y) const {
 
 template <typename LightTraits>
 auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) const -> Cell const & {
-  starAssert(x < m_width && y < m_height);
   return m_cells[x * m_height + y];
 }
 
 template <typename LightTraits>
 auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) -> Cell & {
-  starAssert(x < m_width && y < m_height);
   return m_cells[x * m_height + y];
 }
 
 template <typename LightTraits>
 auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) const -> Cell const & {
-  starAssert(index < m_width * m_height);
   return m_cells[index];
 }
 
 template <typename LightTraits>
 auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) -> Cell & {
-  starAssert(index < m_width * m_height);
   return m_cells[index];
 }
 
@@ -338,7 +333,6 @@ void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
 
 template <typename LightTraits>
 void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t yMin, size_t xMax, size_t yMax) {
-  starAssert(m_width > 0 && m_height > 0);
 
   float dropoffAir = 1.0f / m_spreadMaxAir;
   float dropoffObstacle = 1.0f / m_spreadMaxObstacle;

@@ -1,12 +1,17 @@
 #pragma once
 
+#include "StarNetElementBasicFields.hpp"
+#include "StarNetElementContainers.hpp"
+#include "StarNetElementFloatFields.hpp"
+#include "StarNetElementSignal.hpp"
+#include "StarNetElementSyncGroup.hpp"
 #include "StarPeriodicFunction.hpp"
 #include "StarAnimatedPartSet.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarDrawable.hpp"
 #include "StarParticle.hpp"
 #include "StarLightSource.hpp"
 #include "StarMixer.hpp"
+#include <optional>
 
 namespace Star {
 
@@ -88,10 +93,10 @@ public:
   float stateTimer(String const& stateType) const;
   bool stateReverse(String const& stateType) const;
 
-  float stateCycle(String const& stateType, Maybe<String> state) const;
-  int stateFrames(String const& stateType, Maybe<String> state) const;
+  float stateCycle(String const& stateType, std::optional<String> state) const;
+  int stateFrames(String const& stateType, std::optional<String> state) const;
 
-  bool hasState(String const& stateType, Maybe<String> const& state = {}) const;
+  bool hasState(String const& stateType, std::optional<String> const& state = std::nullopt) const;
 
   StringMap<AnimatedPartSet::Part> const& constParts() const;
   StringMap<AnimatedPartSet::Part>& parts();
@@ -100,9 +105,9 @@ public:
   // Queries, if it exists, a property value from the underlying
   // AnimatedPartSet for the given state or part.  If the property does not
   // exist, returns null.
-  Json stateProperty(String const& stateType, String const& propertyName, Maybe<String> state = {}, Maybe<int> frame = {}) const;
+  Json stateProperty(String const& stateType, String const& propertyName, std::optional<String> state = std::nullopt, std::optional<int> frame = std::nullopt) const;
   Json stateNextProperty(String const& stateType, String const& propertyName) const;
-  Json partProperty(String const& partName, String const& propertyName, Maybe<String> stateType = {}, Maybe<String> state = {}, Maybe<int> frame = {}) const;
+  Json partProperty(String const& partName, String const& propertyName, std::optional<String> stateType = std::nullopt, std::optional<String> state = std::nullopt, std::optional<int> frame = std::nullopt) const;
   Json partNextProperty(String const & partName, String const & propertyName) const;
 
   // Returns the transformation from flipping and zooming that is applied to
@@ -121,18 +126,18 @@ public:
   // partPoint / partPoly takes a propertyName and looks up the associated part
   // property and interprets is a Vec2F or a PolyF, then applies the final part
   // transformation and returns it.
-  Maybe<Vec2F> partPoint(String const& partName, String const& propertyName) const;
-  Maybe<PolyF> partPoly(String const& partName, String const& propertyName) const;
+  std::optional<Vec2F> partPoint(String const& partName, String const& propertyName) const;
+  std::optional<PolyF> partPoly(String const& partName, String const& propertyName) const;
 
   // Every part image can have one or more <tag> directives in it, which if set
   // here will be replaced by the tag value when constructing Drawables.  All
   // Drawables can also have a <frame> tag which will be set to whatever the
   // current state frame is (1 indexed, so the first frame is 1).
-  void setGlobalTag(String tagName, Maybe<String> tagValue = {});
+  void setGlobalTag(String tagName, std::optional<String> tagValue = std::nullopt);
   void removeGlobalTag(String const& tagName);
   String const* globalTagPtr(String const& tagName) const;
-  void setPartTag(String const& partType, String tagName, Maybe<String> tagValue = {});
-  void setLocalTag(String tagName, Maybe<String> tagValue = {});
+  void setPartTag(String const& partType, String tagName, std::optional<String> tagValue = std::nullopt);
+  void setLocalTag(String tagName, std::optional<String> tagValue = std::nullopt);
 
   void setPartDrawables(String const& partName, List<Drawable> drawables);
   void addPartDrawables(String const& partName, List<Drawable> drawables);
@@ -286,10 +291,10 @@ private:
     NetElementFloat emissionRate;
     float emissionRateVariance;
     NetElementData<RectF> offsetRegion;
-    Maybe<String> anchorPart;
+    std::optional<String> anchorPart;
     StringList transformationGroups;
-    Maybe<String> rotationGroup;
-    Maybe<Vec2F> rotationCenter;
+    std::optional<String> rotationGroup;
+    std::optional<Vec2F> rotationCenter;
 
     List<ParticleConfig> particleList;
 
@@ -307,12 +312,12 @@ private:
     NetElementFloat yPosition;
     NetElementData<Color> color;
     NetElementFloat pointAngle;
-    Maybe<String> anchorPart;
+    std::optional<String> anchorPart;
     StringList transformationGroups;
-    Maybe<String> rotationGroup;
-    Maybe<Vec2F> rotationCenter;
+    std::optional<String> rotationGroup;
+    std::optional<Vec2F> rotationCenter;
 
-    Maybe<PeriodicFunction<float>> flicker;
+    std::optional<PeriodicFunction<float>> flicker;
     bool pointLight;
     float pointBeam;
     float beamAmbience;

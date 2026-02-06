@@ -1,16 +1,13 @@
 #include "StarToolUser.hpp"
+#include "StarItemDatabase.hpp" // IWYU pragma: keep
+#include "StarRenderableItem.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarLiquidItem.hpp"
-#include "StarMaterialItem.hpp"
-#include "StarObject.hpp"
 #include "StarTools.hpp"
 #include "StarActivatableItem.hpp"
 #include "StarObjectItem.hpp"
-#include "StarAssets.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarWorld.hpp"
 #include "StarActiveItem.hpp"
@@ -155,7 +152,7 @@ List<PersistentStatusEffect> ToolUser::statusEffects() const {
   return statusEffects;
 }
 
-Maybe<float> ToolUser::toolRadius() const {
+std::optional<float> ToolUser::toolRadius() const {
   if (m_suppress.get())
     return {};
   else if (is<BeamItem>(m_primaryHandItem.get()) || is<BeamItem>(m_altHandItem.get()))
@@ -212,15 +209,15 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
   return {};
 }
 
-Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const {
+std::optional<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F position, Vec2F aimPosition) const {
   if (m_suppress.get() || !m_user) {
     humanoid.setHandParameters(ToolHand::Primary, false, 0.0f, 0.0f, false, false, false);
     humanoid.setHandParameters(ToolHand::Alt, false, 0.0f, 0.0f, false, false, false);
     return {};
   }
 
-  auto inner = [&](bool primary) -> Maybe<Direction> {
-    Maybe<Direction> overrideFacingDirection;
+  auto inner = [&](bool primary) -> std::optional<Direction> {
+    std::optional<Direction> overrideFacingDirection;
 
     auto setRotation = [&](bool holdingItem, float angle, float itemAngle, bool twoHanded, bool recoil, bool outsideOfHand) {
       ToolHand hand = primary || twoHanded ? ToolHand::Primary : ToolHand::Alt;
@@ -260,12 +257,12 @@ Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F posi
     return overrideFacingDirection;
   };
 
-  Maybe<Direction> overrideFacingDirection;
-  overrideFacingDirection = overrideFacingDirection.orMaybe(inner(true));
+  std::optional<Direction> overrideFacingDirection = inner(true);
   if (itemSafeTwoHanded(m_primaryHandItem.get()))
     humanoid.setHandParameters(ToolHand::Alt, false, 0.0f, 0.0f, false, false, false);
   else
-    overrideFacingDirection = overrideFacingDirection.orMaybe(inner(false));
+    if (!overrideFacingDirection)
+        overrideFacingDirection = inner(false);
 
   return overrideFacingDirection;
 }
@@ -548,7 +545,7 @@ void ToolUser::render(RenderCallback* renderCallback, bool, bool shifting, Entit
   for (auto item : {m_primaryHandItem.get(), m_altHandItem.get()}) {
     if (auto activeItem = as<ActiveItem>(item)) {
       for (auto drawablePair : activeItem->entityDrawables())
-        renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer));
+        renderCallback->addDrawable(drawablePair.first, drawablePair.second.value_or(renderLayer));
       renderCallback->addAudios(activeItem->pullNewAudios());
       renderCallback->addParticles(activeItem->pullNewParticles());
     }
@@ -595,8 +592,8 @@ void ToolUser::suppressItems(bool suppress) {
   m_suppress.set(suppress);
 }
 
-Maybe<Json> ToolUser::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  Maybe<Json> result;
+std::optional<Json> ToolUser::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  std::optional<Json> result;
   for (auto item : {m_primaryHandItem.get(), m_altHandItem.get()}) {
     if (auto activeItem = as<ActiveItem>(item))
       result = activeItem->receiveMessage(message, localMessage, args);

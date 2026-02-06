@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarRect.hpp"
 #include "StarImage.hpp"
 #include "StarCasting.hpp"
@@ -61,7 +63,7 @@ public:
   // re-adds it to the AtlasSet.  It does this up to textureCount textures,
   // until it finds a texture where re-adding it to the texture atlas simply
   // moves the texture into the same atlas, at which point it stops.
-  void compressionPass(size_t textureCount = NPos);
+  void compressionPass(size_t textureCount = std::numeric_limits<std::size_t>::max());
 
   // The number of atlases that the AtlasSet will attempt to fit a texture in
   // before giving up and creating a new atlas.  Tries in order of least full
@@ -110,7 +112,7 @@ private:
 
   void setAtlasRegionUsed(TextureAtlas* extureAtlas, RectU const& region, bool used) const;
 
-  Maybe<AtlasPlacement> addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels);
+  std::optional<AtlasPlacement> addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels);
   void sortAtlases();
 
   unsigned m_atlasCellSize;
@@ -334,11 +336,9 @@ void TextureAtlasSet<AtlasTextureHandle>::setAtlasRegionUsed(TextureAtlas* textu
       bool oldVal = val;
       val = used;
       if (oldVal && !val) {
-        starAssert(textureAtlas->usedCellCount != 0);
         textureAtlas->usedCellCount -= 1;
       } else if (!oldVal && used) {
         textureAtlas->usedCellCount += 1;
-        starAssert(textureAtlas->usedCellCount <= square(m_atlasNumCells));
       }
     }
   }
@@ -352,7 +352,7 @@ void TextureAtlasSet<AtlasTextureHandle>::sortAtlases() {
 }
 
 template <typename AtlasTextureHandle>
-auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels) -> Maybe<AtlasPlacement> {
+auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels) -> std::optional<AtlasPlacement> {
   bool found = false;
   // Minimum cell indexes where this texture fits in this atlas.
   unsigned fitCellX = 0;

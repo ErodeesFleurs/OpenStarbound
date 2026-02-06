@@ -77,7 +77,7 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
 
   projectileConfig->description = config.getString("description", "");
 
-  projectileConfig->boundBox = config.opt("boundBox").apply(jsonToRectF).value({-5, -5, 5, 5});
+  projectileConfig->boundBox = config.opt("boundBox").transform(jsonToRectF).value_or(RectF{-5, -5, 5, 5});
 
   auto physicsType = config.getString("physics", "default");
   JsonObject movementSettings = config.getObject("movementSettings", JsonObject());

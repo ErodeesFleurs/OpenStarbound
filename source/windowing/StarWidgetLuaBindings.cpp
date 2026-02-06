@@ -17,6 +17,8 @@
 #include "StarImageStretchWidget.hpp"
 #include "StarScrollArea.hpp"
 
+#include <optional>
+
 namespace Star {
 
 LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
@@ -27,36 +29,36 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
 
   methods.registerMethodWithSignature<void, CanvasWidgetPtr>("clear", mem_fn(&CanvasWidget::clear));
 
-  methods.registerMethod("drawDrawable", [](CanvasWidgetPtr canvasWidget, Drawable drawable, Maybe<Vec2F> screenPos) {
-    canvasWidget->drawDrawable(std::move(drawable), screenPos.value(Vec2F()));
+  methods.registerMethod("drawDrawable", [](CanvasWidgetPtr canvasWidget, Drawable drawable, std::optional<Vec2F> screenPos) {
+    canvasWidget->drawDrawable(std::move(drawable), screenPos.value_or(Vec2F()));
   });
 
-  methods.registerMethod("drawDrawables", [](CanvasWidgetPtr canvasWidget, List<Drawable> drawables, Maybe<Vec2F> screenPos) {
-    Vec2F pos = screenPos.value(Vec2F());
+  methods.registerMethod("drawDrawables", [](CanvasWidgetPtr canvasWidget, List<Drawable> drawables, std::optional<Vec2F> screenPos) {
+    Vec2F pos = screenPos.value_or(Vec2F());
     for (auto& drawable : drawables)
       canvasWidget->drawDrawable(std::move(drawable), pos);
   });
 
-  methods.registerMethod("drawJsonDrawable", [](CanvasWidgetPtr canvasWidget, Json drawable, Maybe<Vec2F> screenPos) {
-    canvasWidget->drawDrawable(Drawable(drawable), screenPos.value(Vec2F()));
+  methods.registerMethod("drawJsonDrawable", [](CanvasWidgetPtr canvasWidget, Json drawable, std::optional<Vec2F> screenPos) {
+    canvasWidget->drawDrawable(Drawable(drawable), screenPos.value_or(Vec2F()));
   });
 
-  methods.registerMethod("drawJsonDrawables", [](CanvasWidgetPtr canvasWidget, JsonArray drawables, Maybe<Vec2F> screenPos) {
-    Vec2F pos = screenPos.value(Vec2F());
+  methods.registerMethod("drawJsonDrawables", [](CanvasWidgetPtr canvasWidget, JsonArray drawables, std::optional<Vec2F> screenPos) {
+    Vec2F pos = screenPos.value_or(Vec2F());
     for (auto& drawable : drawables)
       canvasWidget->drawDrawable(Drawable(drawable), pos);
   });
 
   methods.registerMethod("drawImage",
-      [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, Maybe<float> scale, Maybe<Color> color, Maybe<bool> centered) {
+      [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, std::optional<float> scale, std::optional<Color> color, std::optional<bool> centered) {
         if (centered && *centered)
-          canvasWidget->drawImageCentered(image, position, scale.value(1.0f), color.value(Color::White).toRgba());
+          canvasWidget->drawImageCentered(image, position, scale.value_or(1.0f), color.value_or(Color::White).toRgba());
         else
-          canvasWidget->drawImage(image, position, scale.value(1.0f), color.value(Color::White).toRgba());
+          canvasWidget->drawImage(image, position, scale.value_or(1.0f), color.value_or(Color::White).toRgba());
       });
   methods.registerMethod("drawImageDrawable",
-      [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, MVariant<Vec2F, float> scale, Maybe<Color> color, Maybe<float> rotation) {
-        auto drawable = Drawable::makeImage(image, 1.0, true, {0.0, 0.0}, color.value(Color::White));
+      [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, MVariant<Vec2F, float> scale, std::optional<Color> color, std::optional<float> rotation) {
+        auto drawable = Drawable::makeImage(image, 1.0, true, {0.0, 0.0}, color.value_or(Color::White));
         if (auto s = scale.maybe<Vec2F>())
           drawable.transform(Mat3F::scaling(*s));
         else if(auto s = scale.maybe<float>())
@@ -66,37 +68,37 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
         canvasWidget->drawDrawable(drawable, position);
       });
   methods.registerMethod("drawImageRect",
-      [](CanvasWidgetPtr canvasWidget, String image, RectF texCoords, RectF screenCoords, Maybe<Color> color) {
-        canvasWidget->drawImageRect(image, texCoords, screenCoords, color.value(Color::White).toRgba());
+      [](CanvasWidgetPtr canvasWidget, String image, RectF texCoords, RectF screenCoords, std::optional<Color> color) {
+        canvasWidget->drawImageRect(image, texCoords, screenCoords, color.value_or(Color::White).toRgba());
       });
   methods.registerMethod("drawTiledImage",
-      [](CanvasWidgetPtr canvasWidget, String image, Vec2D offset, RectF screenCoords, Maybe<float> scale, Maybe<Color> color) {
-        canvasWidget->drawTiledImage(image, scale.value(1.0f), offset, screenCoords, color.value(Color::White).toRgba());
+      [](CanvasWidgetPtr canvasWidget, String image, Vec2D offset, RectF screenCoords, std::optional<float> scale, std::optional<Color> color) {
+        canvasWidget->drawTiledImage(image, scale.value_or(1.0f), offset, screenCoords, color.value_or(Color::White).toRgba());
       });
   methods.registerMethod("drawLine",
-      [](CanvasWidgetPtr canvasWidget, Vec2F begin, Vec2F end, Maybe<Color> color, Maybe<float> lineWidth) {
-        canvasWidget->drawLine(begin, end, color.value(Color::White).toRgba(), lineWidth.value(1.0f));
+      [](CanvasWidgetPtr canvasWidget, Vec2F begin, Vec2F end, std::optional<Color> color, std::optional<float> lineWidth) {
+        canvasWidget->drawLine(begin, end, color.value_or(Color::White).toRgba(), lineWidth.value_or(1.0f));
       });
   methods.registerMethod("drawRect",
-      [](CanvasWidgetPtr canvasWidget, RectF rect, Maybe<Color> color) {
-        canvasWidget->drawRect(rect, color.value(Color::White).toRgba());
+      [](CanvasWidgetPtr canvasWidget, RectF rect, std::optional<Color> color) {
+        canvasWidget->drawRect(rect, color.value_or(Color::White).toRgba());
       });
   methods.registerMethod("drawPoly",
-      [](CanvasWidgetPtr canvasWidget, PolyF poly, Maybe<Color> color, Maybe<float> lineWidth) {
-        canvasWidget->drawPoly(poly, color.value(Color::White).toRgba(), lineWidth.value(1.0f));
+      [](CanvasWidgetPtr canvasWidget, PolyF poly, std::optional<Color> color, std::optional<float> lineWidth) {
+        canvasWidget->drawPoly(poly, color.value_or(Color::White).toRgba(), lineWidth.value_or(1.0f));
       });
   methods.registerMethod("drawTriangles",
-      [](CanvasWidgetPtr canvasWidget, List<PolyF> triangles, Maybe<Color> color) {
+      [](CanvasWidgetPtr canvasWidget, List<PolyF> triangles, std::optional<Color> color) {
         auto tris = triangles.transformed([](PolyF const& poly) {
             if (poly.sides() != 3)
               throw StarException("Triangle must have exactly 3 sides");
             return tuple<Vec2F, Vec2F, Vec2F>(poly.vertex(0), poly.vertex(1), poly.vertex(2));
           });
-        canvasWidget->drawTriangles(tris, color.value(Color::White).toRgba());
+        canvasWidget->drawTriangles(tris, color.value_or(Color::White).toRgba());
       });
   methods.registerMethod("drawText",
-      [](CanvasWidgetPtr canvasWidget, String text, Json tp, unsigned fontSize, Maybe<Color> color, Maybe<float> lineSpacing, Maybe<String> font, Maybe<String> directives) {
-        canvasWidget->drawText(text, TextPositioning(tp), fontSize, color.value(Color::White).toRgba(), FontMode::Normal, lineSpacing.value(DefaultLineSpacing), font.value(""), directives.value(""));
+      [](CanvasWidgetPtr canvasWidget, String text, Json tp, unsigned fontSize, std::optional<Color> color, std::optional<float> lineSpacing, std::optional<String> font, std::optional<String> directives) {
+        canvasWidget->drawText(text, TextPositioning(tp), fontSize, color.value_or(Color::White).toRgba(), FontMode::Normal, lineSpacing.value_or(DefaultLineSpacing), font.value_or(""), directives.value_or(""));
       });
 
   return methods;
@@ -111,13 +113,13 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
   // a bit miscellaneous, but put this here since widgets have access to gui context
 
   callbacks.registerCallback("playSound",
-      [parentWidget](String const& audio, Maybe<int> loops, Maybe<float> volume) {
-        parentWidget->context()->playAudio(audio, loops.value(0), volume.value(1.0f));
+      [parentWidget](String const& audio, std::optional<int> loops, std::optional<float> volume) {
+        parentWidget->context()->playAudio(audio, loops.value_or(0), volume.value_or(1.0f));
       });
 
   // widget userdata methods
 
-  callbacks.registerCallback("bindCanvas", [parentWidget](String const& widgetName) -> Maybe<CanvasWidgetPtr> {
+  callbacks.registerCallback("bindCanvas", [parentWidget](String const& widgetName) -> std::optional<CanvasWidgetPtr> {
       if (auto canvas = parentWidget->fetchChild<CanvasWidget>(widgetName))
         return canvas;
       return {};
@@ -125,7 +127,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
 
   // generic widget callbacks
 
-  callbacks.registerCallback("getPosition", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+  callbacks.registerCallback("getPosition", [parentWidget](String const& widgetName) -> std::optional<Vec2I> {
       if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
         return widget->relativePosition();
       return {};
@@ -135,7 +137,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         widget->setPosition(position);
     });
 
-  callbacks.registerCallback("getSize", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+  callbacks.registerCallback("getSize", [parentWidget](String const& widgetName) -> std::optional<Vec2I> {
       if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
         return widget->size();
       return {};
@@ -150,7 +152,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         widget->setVisibility(visible);
     });
 
-  callbacks.registerCallback("active", [parentWidget](String const& widgetName) -> Maybe<bool> {
+  callbacks.registerCallback("active", [parentWidget](String const& widgetName) -> std::optional<bool> {
       if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
         return widget->active();
       return {};
@@ -161,7 +163,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         widget->focus();
     });
 
-  callbacks.registerCallback("hasFocus", [parentWidget](String const& widgetName) -> Maybe<bool> {
+  callbacks.registerCallback("hasFocus", [parentWidget](String const& widgetName) -> std::optional<bool> {
       if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
         return widget->hasFocus();
       return {};
@@ -183,25 +185,25 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         widget->setData(data);
     });
 
-  callbacks.registerCallback("getChildAt", [parentWidget](Vec2I const& screenPosition) -> Maybe<String> {
+  callbacks.registerCallback("getChildAt", [parentWidget](Vec2I const& screenPosition) -> std::optional<String> {
       if (auto widget = parentWidget->getChildAt(screenPosition))
         return widget->fullName();
       else
         return{};
     });
 
-  callbacks.registerCallback("inMember", [parentWidget](String const& widgetName, Vec2I const& screenPosition) -> Maybe<bool> {
+  callbacks.registerCallback("inMember", [parentWidget](String const& widgetName, Vec2I const& screenPosition) -> std::optional<bool> {
       if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
         return widget->inMember(screenPosition);
       else
         return {};
     });
 
-  callbacks.registerCallback("addChild", [parentWidget, reader](String const& widgetName, Json const& newChildConfig, Maybe<String> const& newChildName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName)) {
-        String name = newChildName.value(toString(Random::randu64()));
+  callbacks.registerCallback("addChild", [parentWidget, reader](String const& widgetName, Json const& newChildConfig, std::optional<String> const& newChildName) {
+      if (auto parent = parentWidget->fetchChild(widgetName)) {
+        String name = newChildName.value_or(toString(Random::randu64()));
         WidgetPtr newChild = reader->makeSingle(name, newChildConfig);
-        widget->addChild(name, newChild);
+        parent->addChild(name, newChild);
       }
     });
 
@@ -224,7 +226,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
     }
   });
 
-  callbacks.registerCallback("getHint", [parentWidget](String const& widgetName) -> Maybe<String> {
+  callbacks.registerCallback("getHint", [parentWidget](String const& widgetName) -> std::optional<String> {
     if (auto widget = parentWidget->fetchChild(widgetName)) {
       if (auto textBox = as<TextBoxWidget>(widget))
         return textBox->getHint();
@@ -239,7 +241,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
     }
   });
 
-  callbacks.registerCallback("getCursorPosition", [parentWidget](String const& widgetName) -> Maybe<int> {
+  callbacks.registerCallback("getCursorPosition", [parentWidget](String const& widgetName) -> std::optional<int> {
     if (auto widget = parentWidget->fetchChild(widgetName)) {
       if (auto textBox = as<TextBoxWidget>(widget))
         return textBox->getCursorPosition();
@@ -247,7 +249,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
     return {};
   });
 
-  callbacks.registerCallback("getText", [parentWidget](String const& widgetName) -> Maybe<String> {
+  callbacks.registerCallback("getText", [parentWidget](String const& widgetName) -> std::optional<String> {
       if (auto widget = parentWidget->fetchChild(widgetName)) {
         if (auto label = as<LabelWidget>(widget))
           return label->text();
@@ -321,7 +323,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         button->setOverlayImage(overlayImage);
     });
 
-  callbacks.registerCallback("getChecked", [parentWidget](String const& widgetName) -> Maybe<bool> {
+  callbacks.registerCallback("getChecked", [parentWidget](String const& widgetName) -> std::optional<bool> {
       if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
         return button->isChecked();
       return {};
@@ -332,7 +334,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         button->setChecked(checked);
     });
 
-  callbacks.registerCallback("getSelectedOption", [parentWidget](String const& widgetName) -> Maybe<int> {
+  callbacks.registerCallback("getSelectedOption", [parentWidget](String const& widgetName) -> std::optional<int> {
       if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName))
         return buttonGroup->checkedId();
       return {};
@@ -346,9 +348,9 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
       return {};
     });
 
-  callbacks.registerCallback("setSelectedOption", [parentWidget](String const& widgetName, Maybe<int> index) {
+  callbacks.registerCallback("setSelectedOption", [parentWidget](String const& widgetName, std::optional<int> index) {
       if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName))
-        buttonGroup->select(index.value(ButtonGroup::NoButton));
+        buttonGroup->select(index.value_or(ButtonGroup::NoButton));
     });
 
   callbacks.registerCallback("setOptionEnabled", [parentWidget](String const& widgetName, int index, bool enabled) {
@@ -375,7 +377,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         slider->setEnabled(enabled);
     });
 
-  callbacks.registerCallback("getSliderValue", [parentWidget](String const& widgetName) -> Maybe<int> {
+  callbacks.registerCallback("getSliderValue", [parentWidget](String const& widgetName) -> std::optional<int> {
       if (auto slider = parentWidget->fetchChild<SliderBarWidget>(widgetName))
         return slider->val();
       return {};
@@ -386,9 +388,9 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         return slider->setVal(newValue);
     });
 
-  callbacks.registerCallback("setSliderRange", [parentWidget](String const& widgetName, int newMin, int newMax, Maybe<int> newDelta) {
+  callbacks.registerCallback("setSliderRange", [parentWidget](String const& widgetName, int newMin, int newMax, std::optional<int> newDelta) {
       if (auto slider = parentWidget->fetchChild<SliderBarWidget>(widgetName))
-        return slider->setRange(newMin, newMax, newDelta.value(1));
+        slider->setRange(newMin, newMax, newDelta.value_or(1));
     });
 
   callbacks.registerCallback("clearListItems", [parentWidget](String const& widgetName) {
@@ -396,7 +398,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         list->clear();
     });
 
-  callbacks.registerCallback("addListItem", [parentWidget](String const& widgetName) -> Maybe<String> {
+  callbacks.registerCallback("addListItem", [parentWidget](String const& widgetName) -> std::optional<String> {
       if (auto list = parentWidget->fetchChild<ListWidget>(widgetName)) {
         auto newItem = list->addItem();
         return newItem->name();
@@ -409,9 +411,9 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         list->removeItem(at);
     });
 
-  callbacks.registerCallback("getListSelected", [parentWidget](String const& widgetName) -> Maybe<String> {
+  callbacks.registerCallback("getListSelected", [parentWidget](String const& widgetName) -> std::optional<String> {
       if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
-        if (list->selectedItem() != NPos)
+        if (list->selectedItem() != std::numeric_limits<std::size_t>::max())
           return list->selectedWidget()->name();
       return {};
     });
@@ -436,7 +438,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
       return Json();
     });
 
-  callbacks.registerCallback("itemSlotItem", [parentWidget](String const& widgetName) -> Maybe<Json> {
+  callbacks.registerCallback("itemSlotItem", [parentWidget](String const& widgetName) -> std::optional<Json> {
       if (auto itemSlot = parentWidget->fetchChild<ItemSlotWidget>(widgetName)) {
         if (itemSlot->item())
           return itemSlot->item()->descriptor().toJson();
@@ -470,7 +472,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
       }
     });
 
-  callbacks.registerCallback("getScrollOffset", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+  callbacks.registerCallback("getScrollOffset", [parentWidget](String const& widgetName) -> std::optional<Vec2I> {
     if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
         return scrollArea->scrollOffset();
       return {};
@@ -481,7 +483,7 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
         scrollArea->scrollAreaBy(offset - scrollArea->scrollOffset());
   });
 
-  callbacks.registerCallback("getMaxScrollPosition", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+  callbacks.registerCallback("getMaxScrollPosition", [parentWidget](String const& widgetName) -> std::optional<Vec2I> {
     if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
         return scrollArea->maxScrollPosition();
       return {};

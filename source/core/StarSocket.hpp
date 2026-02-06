@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarHostAddress.hpp"
 #include "StarThread.hpp"
 
@@ -45,7 +47,7 @@ public:
   // ready for I/O or have had error events occur on them within the timeout,
   // nothing otherwise.  If socket hangup occurs during this call, this will
   // automatically shut down the socket.
-  static Maybe<SocketPollResult> poll(SocketPollQuery const& query, unsigned timeout);
+  static std::optional<SocketPollResult> poll(SocketPollQuery const& query, unsigned timeout);
 
   ~Socket();
 

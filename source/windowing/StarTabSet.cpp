@@ -82,7 +82,7 @@ void TabSetWidget::tabSelect(size_t page) {
 }
 
 size_t TabSetWidget::selectedTab() const {
-  return m_lastSelected.value(NPos);
+  return m_lastSelected.value_or(std::numeric_limits<std::size_t>::max());
 }
 
 void TabSetWidget::setCallback(WidgetCallbackFunc callback) {

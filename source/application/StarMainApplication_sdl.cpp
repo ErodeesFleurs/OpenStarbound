@@ -6,8 +6,9 @@
 #include "StarTtlCache.hpp"
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
+#include "StarApplicationController.hpp"
 
-#include "SDL3/SDL.h"
+#include "SDL3/SDL.h" // IWYU pragma: keep
 #include "StarPlatformServices_pc.hpp"
 
 #ifdef STAR_SYSTEM_WINDOWS
@@ -109,7 +110,7 @@ static bool copyFileToClipboard(String const& path) {
 }
 #endif
 
-Maybe<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
+std::optional<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
   static HashMap<int, Key> KeyCodeMap{
     {SDLK_BACKSPACE, Key::Backspace},
     {SDLK_TAB, Key::Tab},
@@ -353,7 +354,7 @@ public:
 #ifdef STAR_SYSTEM_LINUX
     SDL_SetHint(SDL_HINT_VIDEO_WAYLAND_SCALE_TO_DISPLAY, "1");
 #endif
-    
+
     Logger::info("Application: Initializing SDL Video");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
       throw ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError()));
@@ -425,7 +426,7 @@ public:
         XdgIconsPath = String::joinWith("", XdgDataHome, "/icons");
       } else if (Home && Home[0] != '\0') {
         XdgIconsPath = String::joinWith("", Home, "/.local/share/icons");
-      } 
+      }
 
       // Install Icon if not Installed
       if (!XdgIconsPath.empty() && File::isDirectory(XdgIconsPath)) {
@@ -436,7 +437,7 @@ public:
         }
       }
     }
-    
+
     SDL_SetHint(SDL_HINT_AUDIO_DEVICE_APP_ICON_NAME, "openstarbound");
     SDL_SetHint(SDL_HINT_AUDIO_DEVICE_STREAM_NAME, "Audio");
 #endif
@@ -676,8 +677,8 @@ private:
       return SDL_HasClipboardText();
     }
 
-    Maybe<String> getClipboard() override {
-      Maybe<String> string;
+    std::optional<String> getClipboard() override {
+      std::optional<String> string;
       if (SDL_HasClipboardText()) {
         if (auto text = SDL_GetClipboardText()) {
           if (*text != '\0')
@@ -850,7 +851,7 @@ private:
       }
     }
 
-    void setTextArea(Maybe<pair<RectI, int>> area) override {
+    void setTextArea(std::optional<pair<RectI, int>> area) override {
       if (parent->m_textInputArea == area)
         return;
       parent->m_textInputArea = area;
@@ -932,7 +933,7 @@ private:
     while (SDL_PollEvent(&event)) {
       SDL_ConvertEventToRenderCoordinates(SDL_GetRenderer(m_sdlWindow), &event);
       ImGui_ImplSDL3_ProcessEvent(&event);
-      Maybe<InputEvent> starEvent;
+      std::optional<InputEvent> starEvent;
       if (event.type == SDL_EVENT_WINDOW_MAXIMIZED || event.type == SDL_EVENT_WINDOW_RESTORED) {
         auto windowFlags = SDL_GetWindowFlags(m_sdlWindow);
 
@@ -954,35 +955,35 @@ private:
       else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
         if (!event.key.repeat) {
           if (auto key = keyFromSdlKeyCode(event.key.key))
-            starEvent.set(KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)});
+            starEvent = KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)};
         }
       } else if (event.type == SDL_EVENT_KEY_UP) {
         if (auto key = keyFromSdlKeyCode(event.key.key))
-          starEvent.set(KeyUpEvent{*key});
+          starEvent = KeyUpEvent{*key};
       } else if (event.type == SDL_EVENT_TEXT_INPUT && !io.WantTextInput) {
-        starEvent.set(TextInputEvent{String(event.text.text)});
+        starEvent = TextInputEvent{String(event.text.text)};
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
-        starEvent.set(MouseMoveEvent{
-            {event.motion.xrel, -event.motion.yrel}, {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
+        starEvent = MouseMoveEvent{
+            {event.motion.xrel, -event.motion.yrel}, {event.motion.x, (int)m_windowSize[1] - event.motion.y}};
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
-        starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
-            {event.button.x, (int)m_windowSize[1] - event.button.y}});
+        starEvent = MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
+            {event.button.x, (int)m_windowSize[1] - event.button.y}};
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
-        starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
-            {event.button.x, (int)m_windowSize[1] - event.button.y}});
+        starEvent = MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
+            {event.button.x, (int)m_windowSize[1] - event.button.y}};
       } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
-        starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
-          {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}});
+        starEvent = MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
+          {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}};
       } else if (event.type == SDL_EVENT_GAMEPAD_AXIS_MOTION) {
-        starEvent.set(ControllerAxisEvent{
+        starEvent = ControllerAxisEvent{
           (ControllerId)event.gaxis.which,
           controllerAxisFromSdlControllerAxis(event.gaxis.axis),
           (float)event.gaxis.value / 32768.0f
-        });
+        };
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
-        starEvent.set(ControllerButtonDownEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
+        starEvent = ControllerButtonDownEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) };
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
-        starEvent.set(ControllerButtonUpEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
+        starEvent = ControllerButtonUpEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) };
       } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
         auto insertion = m_SdlControllers.insert_or_assign(event.gdevice.which, SDLGameControllerUPtr(SDL_OpenGamepad(event.gdevice.which), SDL_CloseGamepad));
         if (SDL_Gamepad* controller = insertion.first->second.get())
@@ -1000,7 +1001,7 @@ private:
       }
 
       if (starEvent)
-        inputEvents.append(starEvent.take());
+        inputEvents.append(std::move(*starEvent));
     }
 
     return inputEvents;
@@ -1160,7 +1161,7 @@ private:
   AudioCallback m_audioInputCallback;
   std::vector<uint8_t> m_audioInputData;
   std::vector<uint8_t> m_audioOutputData;
-  Maybe<pair<RectI, int>> m_textInputArea;
+  std::optional<pair<RectI, int>> m_textInputArea;
 
   typedef std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)> SDLGameControllerUPtr;
   StableHashMap<int, SDLGameControllerUPtr> m_SdlControllers;

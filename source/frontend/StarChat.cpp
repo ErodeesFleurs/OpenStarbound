@@ -20,6 +20,8 @@
 #include "StarCelestialLuaBindings.hpp"
 #include "StarLuaGameConverters.hpp"
 
+#include <optional>
+
 namespace Star {
 
 Chat::Chat(UniverseClientPtr client, Json const& baseConfig) : BaseScriptPane(baseConfig, false) {
@@ -89,7 +91,8 @@ Chat::Chat(UniverseClientPtr client, Json const& baseConfig) : BaseScriptPane(ba
     } else
       m_chatLogPadding = Vec2I();
 
-    m_chatHistory.appendAll(m_client->playerStorage()->getMetadata("chatHistory").opt().apply(jsonToStringList).value());
+    if (auto history = m_client->playerStorage()->getMetadata("chatHistory").opt())
+      m_chatHistory.appendAll(jsonToStringList(*history));
   } else {
     m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_client->mainPlayer().get()));
     m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
@@ -145,7 +148,7 @@ void Chat::startCommand() {
 
 bool Chat::hasFocus() const {
   if (m_scripted)
-    return m_script.invoke<bool>("hasFocus").value();
+    return m_script.invoke<bool>("hasFocus").value_or(false);
   return m_textBox->hasFocus();
 }
 
@@ -161,13 +164,13 @@ void Chat::stopChat() {
 
 String Chat::currentChat() const {
   if (m_scripted)
-    return m_script.invoke<String>("currentChat").value();
+    return m_script.invoke<String>("currentChat").value_or("");
   return m_textBox->getText();
 }
 
 bool Chat::setCurrentChat(String const& chat, bool moveCursor) {
   if (m_scripted)
-    return m_script.invoke<bool>("setCurrentChat").value();
+    return m_script.invoke<bool>("setCurrentChat").value_or(false);
   return m_textBox->setText(chat, true, moveCursor);
 }
 
@@ -182,7 +185,7 @@ void Chat::clearCurrentChat() {
 
 ChatSendMode Chat::sendMode() const {
   if (m_scripted)
-    return ChatSendModeNames.getLeft(m_script.invoke<String>("sendMode").value());
+    return ChatSendModeNames.getLeft(m_script.invoke<String>("sendMode").value_or(""));
   return m_sendMode;
 }
 
@@ -222,7 +225,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
   GuiContext& guiContext = GuiContext::singleton();
 
   for (auto const& message : messages) {
-    Maybe<unsigned> wrapWidth;
+    std::optional<unsigned> wrapWidth;
     if (message.portrait.empty())
       wrapWidth = m_chatLog->size()[0] - m_chatLogPadding[0] * 2;
 
@@ -359,7 +362,7 @@ void Chat::hide() {
 
 float Chat::visible() const {
   if (m_scripted)
-    return m_script.invoke<float>("visible").value(1.0f);
+    return m_script.invoke<float>("visible").value_or(1.0f);
 
   double difference = (Time::monotonicMilliseconds() - m_timeChatLastActive) / 1000.0;
   if (difference < m_chatVisTime)

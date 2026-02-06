@@ -104,7 +104,7 @@ bool ArmorItem::fullbright() const {
 }
 
 bool ArmorItem::flipping() const {
-  return m_flipDirectives.isValid();
+  return m_flipDirectives.has_value();
 }
 
 bool ArmorItem::visible(bool extraCosmetic) const {
@@ -128,7 +128,7 @@ bool ArmorItem::bypassNude() const {
 }
 
 
-Maybe<String> const& ArmorItem::techModule() const {
+std::optional<String> const& ArmorItem::techModule() const {
   return m_techModule;
 }
 

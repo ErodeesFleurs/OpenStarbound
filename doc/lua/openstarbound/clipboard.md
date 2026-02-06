@@ -18,7 +18,7 @@ Returns `true` if textual data is available on the clipboard and the script may 
 
 ---
 
-#### `Maybe<String>` clipboard.getText()
+#### `std::optional<String>` clipboard.getText()
 
 Returns the clipboard text when access is available, or `nil` otherwise.
 

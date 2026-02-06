@@ -11,6 +11,8 @@
 #include "StarParticle.hpp"
 #include "StarLuaComponents.hpp"
 
+#include <optional>
+
 namespace Star {
 
 STAR_CLASS(World);
@@ -62,10 +64,10 @@ public:
   void render(RenderCallback* renderCallback) override;
   void renderLightSources(RenderCallback* renderCallback) override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  std::optional<LuaValue> evalScript(String const& code) override;
 
   String projectileType() const;
   
@@ -83,7 +85,7 @@ public:
   // Overrides internal "speed" parameter
   void setInitialVelocity(Vec2F const& velocity);
 
-  void setReferenceVelocity(Maybe<Vec2F> const& velocity);
+  void setReferenceVelocity(std::optional<Vec2F> const& velocity);
 
   float powerMultiplier() const;
   void setPowerMultiplier(float multiplier);
@@ -99,7 +101,7 @@ public:
 
   List<PhysicsForceRegion> forceRegions() const override;
   size_t movingCollisionCount() const override;
-  Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  std::optional<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
 
   using Entity::setTeam;
 
@@ -133,7 +135,7 @@ private:
   Json m_parameters;
 
   // used when projectiles are fired from a moving entity and should include its velocity
-  Maybe<Vec2F> m_referenceVelocity;
+  std::optional<Vec2F> m_referenceVelocity;
 
   // Individual projectile parameters.  Defaults come from m_config, but can be
   // overridden by parameters.
@@ -146,15 +148,15 @@ private:
   Json m_damageTeam;
   String m_damageKind;
   DamageType m_damageType;
-  Maybe<String> m_damageRepeatGroup;
-  Maybe<float> m_damageRepeatTimeout;
+  std::optional<String> m_damageRepeatGroup;
+  std::optional<float> m_damageRepeatTimeout;
 
   bool m_rayCheckToSource;
   bool m_falldown;
   bool m_hydrophobic;
   bool m_onlyHitTerrain;
 
-  Maybe<String> m_collisionSound;
+  std::optional<String> m_collisionSound;
   String m_persistentAudioFile;
   AudioInstancePtr m_persistentAudio;
 

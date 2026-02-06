@@ -98,7 +98,7 @@ void GuiContext::setInterfaceScale(float interfaceScale) {
   m_interfaceScale = interfaceScale;
 }
 
-Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event, float pixelRatio) const {
+std::optional<Vec2I> GuiContext::mousePosition(InputEvent const& event, float pixelRatio) const {
   auto getInterfacePosition = [pixelRatio](Vec2F pos) {
     return Vec2I(pos / pixelRatio);
   };
@@ -115,7 +115,7 @@ Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event, float pixelRatio
     return {};
 }
 
-Maybe<Vec2I> GuiContext::mousePosition(InputEvent const& event) const {
+std::optional<Vec2I> GuiContext::mousePosition(InputEvent const& event) const {
   return mousePosition(event, interfaceScale());
 }
 
@@ -289,14 +289,12 @@ void GuiContext::drawImageStretchSet(ImageStretchSet const& imageSet, RectF cons
     int position = 0;
     auto texSize = Vec2F(textureSize(imageSet.inner));
     if (direction == GuiDirection::Horizontal) {
-      starAssert(texSize[0] > 0);
       while (position < inner.width()) {
         RectF partialImage = RectF::withSize(Vec2F(), Vec2F(std::min(inner.width() - position, texSize[0]), texSize[1]));
         drawInterfaceQuad(imageSet.inner, partialImage, RectF::withSize(inner.min() + Vec2F(position, 0), partialImage.size()), color);
         position += partialImage.size()[0];
       }
     } else {
-      starAssert(texSize[1] > 0);
       while (position < inner.height()) {
         RectF partialImage = RectF::withSize(
             Vec2F(0, max(0.0f, texSize[1] - (inner.height() - position))),
@@ -413,11 +411,11 @@ int GuiContext::stringInterfaceWidth(String const& s) {
   return 0;
 }
 
-StringList GuiContext::wrapText(String const& s, Maybe<unsigned> wrapWidth) {
-  return textPainter()->wrapText(s, wrapWidth);
+StringList GuiContext::wrapText(String const& s, std::optional<unsigned> wrapWidth) {
+  return m_textPainter->wrapText(s, wrapWidth);
 }
 
-StringList GuiContext::wrapInterfaceText(String const& s, Maybe<unsigned> wrapWidth) {
+StringList GuiContext::wrapInterfaceText(String const& s, std::optional<unsigned> wrapWidth) {
   if (wrapWidth)
     *wrapWidth *= interfaceScale();
   return wrapText(s, wrapWidth);

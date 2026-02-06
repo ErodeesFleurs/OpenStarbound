@@ -12,6 +12,8 @@
 #include "StarAssets.hpp"
 #include "StarLuaConverters.hpp"
 
+#include <optional>
+
 namespace Star {
 
 STAR_EXCEPTION(LuaAnimationComponentException, LuaComponentException);
@@ -23,7 +25,7 @@ class LuaAnimationComponent : public Base {
 public:
   LuaAnimationComponent();
 
-  List<pair<Drawable, Maybe<EntityRenderLayer>>> const& drawables();
+  List<pair<Drawable, std::optional<EntityRenderLayer>>> const& drawables();
   List<LightSource> const& lightSources();
 
   List<Particle> pullNewParticles();
@@ -38,30 +40,30 @@ private:
   List<AudioInstancePtr> m_pendingAudios;
   List<AudioInstancePtr> m_activeAudio;
 
-  List<pair<Drawable, Maybe<EntityRenderLayer>>> m_drawables;
+  List<pair<Drawable, std::optional<EntityRenderLayer>>> m_drawables;
   List<LightSource> m_lightSources;
 };
 
 template <typename Base>
 LuaAnimationComponent<Base>::LuaAnimationComponent() {
   LuaCallbacks animationCallbacks;
-  animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) {
+  animationCallbacks.registerCallback("playAudio", [this](String const& sound, std::optional<int> loops, std::optional<float> volume) {
       auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(sound));
-      audio->setLoops(loops.value(0));
-      audio->setVolume(volume.value(1.0f));
+      audio->setLoops(loops.value_or(0));
+      audio->setVolume(volume.value_or(1.0f));
       m_pendingAudios.append(audio);
       m_activeAudio.append(audio);
     });
-  animationCallbacks.registerCallback("spawnParticle", [this](Json const& particleConfig, Maybe<Vec2F> const& position) {
+  animationCallbacks.registerCallback("spawnParticle", [this](Json const& particleConfig, std::optional<Vec2F> const& position) {
       auto particle = Root::singleton().particleDatabase()->particle(particleConfig);
-      particle.translate(position.value());
+      particle.translate(position.value_or(Vec2F()));
       m_pendingParticles.append(particle);
     });
   animationCallbacks.registerCallback("clearDrawables", [this]() {
       m_drawables.clear();
     });
-  animationCallbacks.registerCallback("addDrawable", [this](Drawable drawable, Maybe<String> renderLayerName) {
-      Maybe<EntityRenderLayer> renderLayer;
+  animationCallbacks.registerCallback("addDrawable", [this](Drawable drawable, std::optional<String> renderLayerName) {
+      std::optional<EntityRenderLayer> renderLayer;
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
 
@@ -70,8 +72,8 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
 
       m_drawables.append({std::move(drawable), renderLayer});
     });
-  animationCallbacks.registerCallback("addJsonDrawable", [this](Json drawableConfig, Maybe<String> renderLayerName) {
-      Maybe<EntityRenderLayer> renderLayer;
+  animationCallbacks.registerCallback("addJsonDrawable", [this](Json drawableConfig, std::optional<String> renderLayerName) {
+      std::optional<EntityRenderLayer> renderLayer;
       Drawable drawable(drawableConfig);
       if (renderLayerName)
         renderLayer = parseRenderLayer(*renderLayerName);
@@ -89,17 +91,17 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
       m_lightSources.append({
           lightSourceTable.get<Vec2F>("position"),
           lightSourceTable.get<Color>("color").toRgbF(),
-          (LightType)lightSourceTable.get<Maybe<bool>>("pointLight").value(),
-          lightSourceTable.get<Maybe<float>>("pointBeam").value(),
-          lightSourceTable.get<Maybe<float>>("beamAngle").value(),
-          lightSourceTable.get<Maybe<float>>("beamAmbience").value()
+          (LightType)lightSourceTable.get<std::optional<bool>>("pointLight").value_or(false),
+          lightSourceTable.get<std::optional<float>>("pointBeam").value_or(0.0f),
+          lightSourceTable.get<std::optional<float>>("beamAngle").value_or(0.0f),
+          lightSourceTable.get<std::optional<float>>("beamAmbience").value_or(0.0f)
         });
     });
   Base::addCallbacks("localAnimator", std::move(animationCallbacks));
 }
 
 template <typename Base>
-List<pair<Drawable, Maybe<EntityRenderLayer>>> const& LuaAnimationComponent<Base>::drawables() {
+List<pair<Drawable, std::optional<EntityRenderLayer>>> const& LuaAnimationComponent<Base>::drawables() {
   return m_drawables;
 }
 

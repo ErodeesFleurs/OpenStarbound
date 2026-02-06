@@ -1,4 +1,25 @@
 CompileFlags:
-  Add: [-std=c++26, -fmodules, -Wall, -Wextra, -Werror, -ferror-limit=0]
-  Remove: ["-Werror"]
+  Add:
+    [
+      -std=gnu++26,
+      -fmodules,
+      -fmodule-file=std=/home/fleurs/Code/OpenStarbound/build/CMakeFiles/__cmake_cxx26.dir/std.pcm,
+      -Wall,
+      -Wextra,
+      -Werror,
+      -ferror-limit=0,
+      -stdlib=libc++,
+    ]
+  Remove: [-Werror, -isystem, /nix/store/*]
   Compiler: clang++
+  CompilationDatabase: "../build"
+
+Index:
+  Background: Build
+  StandardLibrary: true
+  External:
+    File: /home/fleurs/Code/OpenStarbound/.clangd-index
+
+Diagnostics:
+  ClangTidy:
+    Add: modernize*

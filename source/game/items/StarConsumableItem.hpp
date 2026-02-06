@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarItem.hpp"
 #include "StarGameTypes.hpp"
 #include "StarSwingableItem.hpp"
@@ -26,7 +28,7 @@ private:
   void maybeConsume();
 
   StringSet m_blockingEffects;
-  Maybe<float> m_foodValue;
+  std::optional<float> m_foodValue;
   StringSet m_emitters;
   String m_emote;
   bool m_consuming;

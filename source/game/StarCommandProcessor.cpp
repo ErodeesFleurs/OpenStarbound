@@ -57,9 +57,12 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
   auto openSbDebugCommands = assets->json("/help.config:openSbDebugCommands");
 
   if (arguments.size()) {
-    if (arguments.size() >= 1) {
-      if (auto helpText = basicCommands.optString(arguments[0]).orMaybe(openSbCommands.optString(arguments[0])).orMaybe(adminCommands.optString(arguments[0])).orMaybe(debugCommands.optString(arguments[0])).orMaybe(openSbDebugCommands.optString(arguments[0])))
-        return *helpText;
+    auto const& cmdName = arguments[0];
+    for (auto* cmdSet : { &basicCommands, &openSbCommands, &adminCommands,
+                          &debugCommands, &openSbDebugCommands }) {
+        if (auto helpText = cmdSet->optString(cmdName)) {
+            return *helpText; // 一旦找到，立刻返回
+        }
     }
   }
 
@@ -156,7 +159,7 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
 
 	Vec2I size = {2, 2};
 	auto& celestialDatabase = m_universe->celestialDatabase();
-	Maybe<CelestialCoordinate> target = {};
+	std::optional<CelestialCoordinate> target = {};
 
 	auto validPlanet = [&celestialDatabase, &typeName](CelestialCoordinate const& p) {
 			if (auto celestialParams = celestialDatabase.parameters(p)) {
@@ -168,7 +171,7 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
 			return false;
 		};
 
-	while (target.isNothing()) {
+	while (!target) {
 		RectI region = RectI::withSize(Vec2I(Random::randi32(), Random::randi32()), size);
 
 		while (!celestialDatabase.scanRegionFullyLoaded(region)) {
@@ -179,7 +182,7 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
 			for (auto planet : celestialDatabase.children(s)) {
 				if (validPlanet(planet))
 					target = planet;
-				if (target.isNothing()) {
+				if (!target) {
 					for (auto moon : celestialDatabase.children(planet)) {
 						if (validPlanet(moon)) {
 							target = moon;
@@ -336,8 +339,8 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
     String kind = arguments.at(0);
     Json parameters = JsonObject();
     unsigned amount = 1;
-    Maybe<float> level;
-    Maybe<uint64_t> seed;
+    std::optional<float> level;
+    std::optional<uint64_t> seed;
 
     if (arguments.size() >= 2)
       amount = lexicalCast<unsigned>(arguments.at(1));
@@ -641,7 +644,7 @@ String CommandProcessor::ban(ConnectionId connectionId, String const& argumentSt
     }
   }
 
-  Maybe<int> banTime;
+  std::optional<int> banTime;
   if (arguments.size() == 4) {
     try {
       banTime = lexicalCast<int>(arguments[3]);
@@ -804,7 +807,7 @@ String CommandProcessor::placeDungeon(ConnectionId connectionId, String const& a
   auto arguments = m_parser.tokenizeToStringList(argumentString);
   String dungeonName = arguments.at(0);
 
-  Maybe<Vec2I> targetPosition;
+  std::optional<Vec2I> targetPosition;
   if (arguments.size() > 1) {
     auto pos = arguments.at(1).split(",", 1);
     targetPosition = Vec2I(lexicalCast<int>(pos.at(0)), lexicalCast<int>(pos.at(1)));
@@ -812,7 +815,7 @@ String CommandProcessor::placeDungeon(ConnectionId connectionId, String const& a
 
   bool done = m_universe->executeForClient(connectionId,
       [dungeonName, targetPosition](WorldServer* world, PlayerPtr const& player) {
-        world->placeDungeon(dungeonName, targetPosition.value(Vec2I::floor(player->aimPosition())), true);
+        world->placeDungeon(dungeonName, targetPosition.value_or(Vec2I::floor(player->aimPosition())), true);
       });
 
   return done ? "" : "Unable to place dungeon " + dungeonName;
@@ -940,7 +943,7 @@ String CommandProcessor::setEnvironmentBiome(ConnectionId connectionId, String c
   return done ? "set environment biome for world layer" : "failed to set environment biome";
 }
 
-Maybe<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player, UniverseServer* universe) {
+std::optional<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player, UniverseServer* universe) {
   char const* const UsernamePrefix = "@";
   char const* const CidPrefix = "$";
   char const* const UUIDPrefix = "$$";
@@ -956,7 +959,7 @@ Maybe<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player,
     }
   } else if (player.beginsWith(CidPrefix)) {
     auto cidString = player.substr(strlen(CidPrefix));
-    auto cid = maybeLexicalCast<ConnectionId>(cidString).value(ServerConnectionId);
+    auto cid = maybeLexicalCast<ConnectionId>(cidString).value_or(ServerConnectionId);
     if (universe->isConnectedClient(cid))
       return cid;
   }
@@ -1053,7 +1056,7 @@ String CommandProcessor::handleCommand(ConnectionId connectionId, String const& 
   }
 }
 
-Maybe<String> CommandProcessor::adminCheck(ConnectionId connectionId, String const& commandDescription) const {
+std::optional<String> CommandProcessor::adminCheck(ConnectionId connectionId, String const& commandDescription) const {
   if (connectionId == ServerConnectionId)
     return {};
 
@@ -1068,7 +1071,7 @@ Maybe<String> CommandProcessor::adminCheck(ConnectionId connectionId, String con
   return {};
 }
 
-Maybe<String> CommandProcessor::localCheck(ConnectionId connectionId, String const& commandDescription) const {
+std::optional<String> CommandProcessor::localCheck(ConnectionId connectionId, String const& commandDescription) const {
   if (connectionId == ServerConnectionId)
     return {};
 
@@ -1080,7 +1083,7 @@ Maybe<String> CommandProcessor::localCheck(ConnectionId connectionId, String con
 
 LuaCallbacks CommandProcessor::makeCommandCallbacks() {
   LuaCallbacks callbacks;
-  callbacks.registerCallbackWithSignature<Maybe<String>, ConnectionId, String>(
+  callbacks.registerCallbackWithSignature<std::optional<String>, ConnectionId, String>(
       "adminCheck", bind(&CommandProcessor::adminCheck, this, _1, _2));
   return callbacks;
 }

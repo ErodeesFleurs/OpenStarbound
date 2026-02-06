@@ -1,6 +1,4 @@
 #include "StarConfiguration.hpp"
-#include "StarFile.hpp"
-#include "StarLogging.hpp"
 
 namespace Star {
 

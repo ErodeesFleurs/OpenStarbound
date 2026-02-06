@@ -86,7 +86,7 @@ HumanoidIdentity::HumanoidIdentity(Json config) {
   hairDirectives = config.getString("hairDirectives", "");
   bodyDirectives = config.getString("bodyDirectives", "");
   if (auto jEmoteDirectives = config.optString("emoteDirectives")) // Passing Directives as a default arg would be inefficient
-    emoteDirectives = jEmoteDirectives.take();
+    emoteDirectives = std::move(*jEmoteDirectives);
   else
     emoteDirectives = bodyDirectives;
 
@@ -261,9 +261,9 @@ EnumMap<Humanoid::State> const Humanoid::StateNames{
 
 // gross, but I don't want to make config calls more than I need to
 bool& Humanoid::globalHeadRotation() {
-  static Maybe<bool> s_headRotation;
+  static std::optional<bool> s_headRotation;
   if (!s_headRotation)
-    s_headRotation = Root::singleton().configuration()->get("humanoidHeadRotation").optBool().value(true);
+    s_headRotation = Root::singleton().configuration()->get("humanoidHeadRotation").optBool().value_or(true);
   return *s_headRotation;
 };
 
@@ -417,7 +417,7 @@ bool Humanoid::loadConfig(Json merger, bool forceRefresh) {
   m_particleEmitters = config.get("particleEmitters");
 
   Json newMovementParameters = config.get("movementParameters");
-  Maybe<Json> newPlayerMovementParameters = config.opt("playerMovementParameters");
+  std::optional<Json> newPlayerMovementParameters = config.opt("playerMovementParameters");
   bool movementParametersChanged = m_defaultMovementParameters != newMovementParameters || m_playerMovementParameters != newPlayerMovementParameters;
 
   m_defaultMovementParameters = newMovementParameters;
@@ -433,7 +433,7 @@ bool Humanoid::loadConfig(Json merger, bool forceRefresh) {
 
 void Humanoid::loadAnimation() {
   auto animationConfig = m_baseConfig.opt("animation");
-  m_useAnimation = animationConfig.isValid();
+  m_useAnimation = animationConfig.has_value();
 
   m_animationScripts = jsonToStringList(m_baseConfig.getArray("animationScripts", JsonArray()));
 
@@ -442,7 +442,7 @@ void Humanoid::loadAnimation() {
   m_emoteAnimationStates.clear();
   m_portraitAnimationStates.clear();
 
-  String animationPath = ("/humanoid/" + m_identity.imagePath.value(m_identity.species) + "/");
+  String animationPath = ("/humanoid/" + m_identity.imagePath.value_or(m_identity.species) + "/");
   m_networkedAnimator = m_useAnimation ? NetworkedAnimator(*animationConfig, animationPath) : NetworkedAnimator();
 
   if (m_useAnimation) {
@@ -793,10 +793,10 @@ void Humanoid::setEmoteState(HumanoidEmote state) {
   }
 }
 
-void Humanoid::setDance(Maybe<String> const& dance) {
+void Humanoid::setDance(std::optional<String> const& dance) {
   if (m_dance != dance) {
     m_danceTimer = 0.0f;
-    if (m_useAnimation && dance.isValid() && m_networkedAnimator.hasState("dance", dance.value()))
+    if (m_useAnimation && dance.has_value() && m_networkedAnimator.hasState("dance", dance.value()))
       m_networkedAnimator.setLocalState("dance", dance.value());
   }
   m_dance = dance;
@@ -840,7 +840,7 @@ HumanoidEmote Humanoid::emoteState() const {
   return m_emoteState;
 }
 
-Maybe<String> Humanoid::dance() const {
+std::optional<String> Humanoid::dance() const {
   return m_dance;
 }
 
@@ -878,10 +878,10 @@ void Humanoid::setHandFrameOverrides(ToolHand hand, StringView back, StringView 
   // some users stick directives in these?? better make sure they don't break with custom clothing
   size_t  backEnd =  back.utf8().find('?');
   size_t frontEnd = front.utf8().find('?');
-  Directives  backDirectives =  backEnd == NPos ? Directives() : Directives( back.utf8().substr( backEnd));
-  Directives frontDirectives = frontEnd == NPos ? Directives() : Directives(front.utf8().substr(frontEnd));
-  if ( backEnd != NPos)  back =  back.utf8().substr(0,  backEnd);
-  if (frontEnd != NPos) front = front.utf8().substr(0, frontEnd);
+  Directives  backDirectives =  backEnd == std::numeric_limits<std::size_t>::max() ? Directives() : Directives( back.utf8().substr( backEnd));
+  Directives frontDirectives = frontEnd == std::numeric_limits<std::size_t>::max() ? Directives() : Directives(front.utf8().substr(frontEnd));
+  if ( backEnd != std::numeric_limits<std::size_t>::max())  back =  back.utf8().substr(0,  backEnd);
+  if (frontEnd != std::numeric_limits<std::size_t>::max()) front = front.utf8().substr(0, frontEnd);
   handInfo. backFrame = ! back.empty() ? std::move( back) : "rotation";
   handInfo.frontFrame = !front.empty() ? std::move(front) : "rotation";
   handInfo. backDirectives = ! backDirectives.empty() ? std::move( backDirectives) : Directives();
@@ -935,9 +935,9 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
   int bodyStateSeq = getBodyStateSequence();
   int emoteStateSeq = getEmoteStateSequence();
   float bobYOffset = getBobYOffset();
-  Maybe<DancePtr> dance = getDance();
-  Maybe<DanceStep> danceStep = {};
-  if (dance.isValid()) {
+  std::optional<DancePtr> dance = getDance();
+  std::optional<DanceStep> danceStep = std::nullopt;
+  if (dance.has_value()) {
     if (!(*dance)->states.contains(StateNames.getRight(m_state)))
       dance = {};
     else
@@ -991,9 +991,9 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     m_networkedAnimator.setPartDrawables(m_frontItemPart, {});
     m_networkedAnimator.resetLocalTransformationGroup("frontArmRotation");
 
-    if (dance.isValid()) {
+    if (dance.has_value()) {
 
-      if (danceStep->bodyFrame.isValid()) {
+      if (danceStep->bodyFrame.has_value()) {
         auto danceFrame = danceStep->bodyFrame.value();
         m_networkedAnimator.setLocalTag("bodyDanceFrame", danceFrame);
         m_networkedAnimator.setLocalState("bodyDance", m_networkedAnimator.hasState("bodyDance", danceFrame) ? danceFrame : "dance");
@@ -1004,7 +1004,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
       m_networkedAnimator.translateLocalTransformationGroup("backArmRotation", danceStep->backArmOffset / TilePixels);
       m_networkedAnimator.rotateLocalTransformationGroup("backArmRotation", danceStep->backArmRotation);
-      if (danceStep->backArmFrame.isValid()) {
+      if (danceStep->backArmFrame.has_value()) {
         auto danceFrame = danceStep->backArmFrame.value();
         m_networkedAnimator.setLocalTag("backArmDanceFrame", danceFrame);
         m_networkedAnimator.setLocalState("backArmDance", m_networkedAnimator.hasState("backArmDance", danceFrame) ? danceFrame : "dance");
@@ -1016,7 +1016,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
       m_networkedAnimator.translateLocalTransformationGroup("frontArmRotation", danceStep->frontArmOffset / TilePixels);
       m_networkedAnimator.rotateLocalTransformationGroup("frontArmRotation", danceStep->frontArmRotation);
-      if (danceStep->frontArmFrame.isValid()) {
+      if (danceStep->frontArmFrame.has_value()) {
         auto danceFrame = danceStep->frontArmFrame.value();
         m_networkedAnimator.setLocalTag("frontArmDanceFrame", danceFrame);
         m_networkedAnimator.setLocalState("frontArmDance", m_networkedAnimator.hasState("frontArmDance", danceFrame) ? danceFrame : "dance");
@@ -1100,7 +1100,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     };
 
     Vec2F headPosition(0, bobYOffset);
-    if (dance.isValid())
+    if (dance.has_value())
       headPosition += danceStep->headOffset / TilePixels;
     else if (m_state == Idle)
       headPosition += m_identity.personality.headOffset / TilePixels;
@@ -1137,7 +1137,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         if (m_movingBackwards && (m_state == State::Run))
           frameGroup = "runbackwards";
         String image;
-        if (dance.isValid() && danceStep->bodyFrame)
+        if (dance.has_value() && danceStep->bodyFrame)
           image = strf("{}:{}{}", back.frameset, *danceStep->bodyFrame, prefix);
         else if (m_state == Idle)
           image = strf("{}:{}{}", back.frameset, m_identity.personality.idle, prefix);
@@ -1160,7 +1160,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         String image;
         Vec2F position;
         auto prefix = bodyDirectives.prefix();
-        if (dance.isValid() && danceStep->backArmFrame) {
+        if (dance.has_value() && danceStep->backArmFrame) {
           image = strf("{}:{}{}", m_backArmFrameset, *danceStep->backArmFrame, prefix);
           position = danceStep->backArmOffset / TilePixels;
         } else if (m_state == Idle) {
@@ -1170,7 +1170,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
           image = strf("{}:{}.{}{}", m_backArmFrameset, frameBase(m_state), armStateSeq, prefix);
         auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
         drawable.imagePart().addDirectives(bodyDirectives, true);
-        if (dance.isValid())
+        if (dance.has_value())
           drawable.rotate(danceStep->backArmRotation);
         addDrawable(std::move(drawable), m_bodyFullbright);
       }
@@ -1185,7 +1185,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
             String image;
             Vec2F position;
             auto prefix = chest->directives.prefix();
-            if (dance.isValid() && danceStep->backArmFrame) {
+            if (dance.has_value() && danceStep->backArmFrame) {
               image = strf("{}:{}{}", chest->backSleeveFrameset, *danceStep->backArmFrame, prefix);
               position = danceStep->backArmOffset / TilePixels;
             } else if (m_state == Idle) {
@@ -1195,7 +1195,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
               image = strf("{}:{}.{}{}", chest->backSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
             auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
             drawable.imagePart().addDirectives(chest->directives, true);
-            if (dance.isValid())
+            if (dance.has_value())
               drawable.rotate(danceStep->backArmRotation);
             addDrawable(std::move(drawable), chest->fullbright);
           }
@@ -1203,7 +1203,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       }
     };
 
-    if (backHand.holdingItem && !dance.isValid() && withItems) {
+    if (backHand.holdingItem && !dance.has_value() && withItems) {
       auto drawItem = [&]() {
         for (auto& backHandItem : backHand.itemDrawables) {
           backHandItem.translate(m_frontHandPosition + backArmFrameOffset + m_backArmOffset);
@@ -1256,7 +1256,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       auto bodyDirectives = getBodyDirectives();
       auto prefix = bodyDirectives.prefix();
       String frameName;
-      if (dance.isValid() && danceStep->bodyFrame)
+      if (dance.has_value() && danceStep->bodyFrame)
         frameName = strf("{}{}", *danceStep->bodyFrame, prefix);
       else if (m_state == Idle)
         frameName = strf("{}{}", m_identity.personality.idle, prefix);
@@ -1289,7 +1289,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       if (legs && !legs->frameset.empty()) {
         String image;
         auto prefix = legs->directives.prefix();
-        if (dance.isValid() && danceStep->bodyFrame)
+        if (dance.has_value() && danceStep->bodyFrame)
           image = strf("{}:{}{}", legs->frameset, *danceStep->bodyFrame, prefix);
         else if (m_state == Idle)
           image = strf("{}:{}{}", legs->frameset, m_identity.personality.idle, prefix);
@@ -1304,7 +1304,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
           String image;
           Vec2F position;
           auto prefix = chest->directives.prefix();
-          if (dance.isValid() && danceStep->bodyFrame)
+          if (dance.has_value() && danceStep->bodyFrame)
             image = strf("{}:{}{}", chest->frameset, *danceStep->bodyFrame, prefix);
           else if (m_state == Run)
             image = strf("{}:run{}", chest->frameset, prefix);
@@ -1369,7 +1369,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         String image;
         Vec2F position;
         auto prefix = bodyDirectives.prefix();
-        if (dance.isValid() && danceStep->frontArmFrame) {
+        if (dance.has_value() && danceStep->frontArmFrame) {
           image = strf("{}:{}{}", m_frontArmFrameset, *danceStep->frontArmFrame, prefix);
           position = danceStep->frontArmOffset / TilePixels;
         } else if (m_state == Idle) {
@@ -1379,7 +1379,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
           image = strf("{}:{}.{}{}", m_frontArmFrameset, frameBase(m_state), armStateSeq, prefix);
         auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
         drawable.imagePart().addDirectives(bodyDirectives, true);
-        if (dance.isValid())
+        if (dance.has_value())
           drawable.rotate(danceStep->frontArmRotation);
         addDrawable(drawable, m_bodyFullbright);
       }
@@ -1394,7 +1394,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
             String image;
             Vec2F position;
             auto prefix = chest->directives.prefix();
-            if (dance.isValid() && danceStep->frontArmFrame) {
+            if (dance.has_value() && danceStep->frontArmFrame) {
               image = strf("{}:{}{}", chest->frontSleeveFrameset, *danceStep->frontArmFrame, prefix);
               position = danceStep->frontArmOffset / TilePixels;
             } else if (m_state == Idle) {
@@ -1404,7 +1404,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
               image = strf("{}:{}.{}{}", chest->frontSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
             auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, position);
             drawable.imagePart().addDirectives(chest->directives, true);
-            if (dance.isValid())
+            if (dance.has_value())
               drawable.rotate(danceStep->frontArmRotation);
             addDrawable(drawable, chest->fullbright);
           }
@@ -1412,7 +1412,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       }
     };
 
-    if (frontHand.holdingItem && !dance.isValid() && withItems) {
+    if (frontHand.holdingItem && !dance.has_value() && withItems) {
       auto drawItem = [&]() {
         for (auto& frontHandItem : frontHand.itemDrawables) {
           frontHandItem.translate(m_frontHandPosition + frontArmFrameOffset);
@@ -1783,7 +1783,7 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
     // but rather parts that the arms are parented to with anchors, so I'm not accounting for that here
     auto mat = Mat3F::identity();
     auto i = transformationGroups.indexOf(rotationTransformGroup);
-    if (i != NPos) {
+    if (i != std::numeric_limits<std::size_t>::max()) {
       if (i > 0)
         mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i-1));
       auto rotated = Mat3F::identity();
@@ -1850,7 +1850,7 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
     // but rather parts that the arms are parented to with anchors, so I'm not accounting for that here
     auto mat = Mat3F::identity();
     auto i = transformationGroups.indexOf(rotationTransformGroup);
-    if (i != NPos) {
+    if (i != std::numeric_limits<std::size_t>::max()) {
       if (i > 0)
         mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i-1));
       auto rotated = Mat3F::identity();
@@ -2105,9 +2105,9 @@ int Humanoid::getBodyStateSequence() const {
   return bodyStateSeq;
 }
 
-Maybe<DancePtr> Humanoid::getDance() const {
-  if (m_dance.isNothing())
-    return {};
+std::optional<DancePtr> Humanoid::getDance() const {
+  if (!m_dance.has_value())
+    return std::nullopt;
 
   auto danceDatabase = Root::singleton().danceDatabase();
   return danceDatabase->getDance(*m_dance);
@@ -2157,7 +2157,7 @@ Vec2F Humanoid::mouthOffset(bool ignoreAdjustments) const {
     return (m_mouthOffset).rotate(m_rotation);
   } else {
     if (m_useAnimation)
-      return m_networkedAnimator.partPoint(m_mouthOffsetPoint.first, m_mouthOffsetPoint.second).value(m_mouthOffset).rotate(m_rotation);
+      return m_networkedAnimator.partPoint(m_mouthOffsetPoint.first, m_mouthOffsetPoint.second).value_or(m_mouthOffset).rotate(m_rotation);
 
     Vec2F headPosition(0, getBobYOffset());
     if (m_state == Idle)
@@ -2179,13 +2179,13 @@ Vec2F Humanoid::mouthOffset(bool ignoreAdjustments) const {
 
 Vec2F Humanoid::feetOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_feetOffsetPoint.first, m_feetOffsetPoint.second).value(m_feetOffset).rotate(m_rotation);
+    return m_networkedAnimator.partPoint(m_feetOffsetPoint.first, m_feetOffsetPoint.second).value_or(m_feetOffset).rotate(m_rotation);
   return m_feetOffset.rotate(m_rotation);
 }
 
 Vec2F Humanoid::headArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_headArmorOffsetPoint.first, m_headArmorOffsetPoint.second).value(m_headArmorOffset).rotate(m_rotation);
+    return m_networkedAnimator.partPoint(m_headArmorOffsetPoint.first, m_headArmorOffsetPoint.second).value_or(m_headArmorOffset).rotate(m_rotation);
 
   Vec2F headPosition(0, getBobYOffset());
   if (m_state == Idle)
@@ -2206,7 +2206,7 @@ Vec2F Humanoid::headArmorOffset() const {
 
 Vec2F Humanoid::chestArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_chestArmorOffsetPoint.first, m_chestArmorOffsetPoint.second).value(m_chestArmorOffset).rotate(m_rotation);
+    return m_networkedAnimator.partPoint(m_chestArmorOffsetPoint.first, m_chestArmorOffsetPoint.second).value_or(m_chestArmorOffset).rotate(m_rotation);
 
   Vec2F position(0, getBobYOffset());
   return (m_chestArmorOffset + position).rotate(m_rotation);
@@ -2214,13 +2214,13 @@ Vec2F Humanoid::chestArmorOffset() const {
 
 Vec2F Humanoid::legsArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_legsArmorOffsetPoint.first, m_legsArmorOffsetPoint.second).value(m_legsArmorOffset).rotate(m_rotation);
+    return m_networkedAnimator.partPoint(m_legsArmorOffsetPoint.first, m_legsArmorOffsetPoint.second).value_or(m_legsArmorOffset).rotate(m_rotation);
   return m_legsArmorOffset.rotate(m_rotation);
 }
 
 Vec2F Humanoid::backArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_backArmorOffsetPoint.first, m_backArmorOffsetPoint.second).value(m_backArmorOffset).rotate(m_rotation);
+    return m_networkedAnimator.partPoint(m_backArmorOffsetPoint.first, m_backArmorOffsetPoint.second).value_or(m_backArmorOffset).rotate(m_rotation);
   Vec2F position(0, getBobYOffset());
   return (m_backArmorOffset + position).rotate(m_rotation);
 }
@@ -2244,7 +2244,7 @@ List<Particle> Humanoid::particles(String const& name) const {
 Json const& Humanoid::defaultMovementParameters() const {
   return m_defaultMovementParameters;
 }
-Maybe<Json> const& Humanoid::playerMovementParameters() const {
+std::optional<Json> const& Humanoid::playerMovementParameters() const {
   return m_playerMovementParameters;
 }
 
@@ -2254,16 +2254,16 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
 
   List<Directives::Entry const*> entries;
   size_t toReserve = 0;
-  Maybe<Vec2F> scale;
+  std::optional<Vec2F> scale;
 
   for (auto& entry : directives->entries) {
     auto string = entry.string(*directives);
     const ScaleImageOperation* op = nullptr;
-    if (string.beginsWith("scalenearest") && string.utf8().find("skip") == NPos)
+    if (string.beginsWith("scalenearest") && string.utf8().find("skip") == std::numeric_limits<std::size_t>::max())
       op = entry.loadOperation(*directives).ptr<ScaleImageOperation>();
 
     if (op)
-      scale = scale.value(Vec2F::filled(1.f)).piecewiseMultiply(op->scale);
+      scale = scale.value_or(Vec2F::filled(1.f)).piecewiseMultiply(op->scale);
     else {
       entries.emplace_back(&entry);
       toReserve += string.utf8Size() + 1;

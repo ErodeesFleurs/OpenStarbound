@@ -12,11 +12,11 @@ class ScriptedEntity : public virtual Entity {
 public:
   // Call a script function directly with the given arguments, should return
   // nothing only on failure.
-  virtual Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) = 0;
+  virtual std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) = 0;
 
   // Execute the given code directly in the underlying context, return nothing
   // on failure.
-  virtual Maybe<LuaValue> evalScript(String const& code) = 0;
+  virtual std::optional<LuaValue> evalScript(String const& code) = 0;
 };
 
 }

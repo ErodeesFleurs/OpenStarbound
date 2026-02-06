@@ -1,30 +1,27 @@
 #include "StarWorldGeneration.hpp"
+#include "StarNpc.hpp" // IWYU pragma: keep
+#include "StarMonster.hpp" // IWYU pragma: keep
+#include "StarStagehand.hpp" // IWYU pragma: keep
+#include "StarContainerObject.hpp" // IWYU pragma: keep
+#include "StarNpcDatabase.hpp" // IWYU pragma: keep
+#include "StarSky.hpp" // IWYU pragma: keep
+#include "StarStagehandDatabase.hpp" // IWYU pragma: keep
+#include "StarVehicleDatabase.hpp" // IWYU pragma: keep
+#include "StarMonsterDatabase.hpp" // IWYU pragma: keep
 #include "StarWorldServer.hpp"
-#include "StarMaterialItem.hpp"
 #include "StarMaterialDatabase.hpp"
-#include "StarNpcDatabase.hpp"
-#include "StarMonsterDatabase.hpp"
-#include "StarNpc.hpp"
 #include "StarBiome.hpp"
-#include "StarSky.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarBiomePlacement.hpp"
 #include "StarWireEntity.hpp"
 #include "StarItemDrop.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarProjectileDatabase.hpp"
-#include "StarProjectile.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarObject.hpp"
-#include "StarContainerObject.hpp"
-#include "StarMonster.hpp"
 #include "StarEntityMap.hpp"
 #include "StarPlant.hpp"
 #include "StarLiquidsDatabase.hpp"
-#include "StarStagehand.hpp"
-#include "StarVehicleDatabase.hpp"
 
 namespace Star {
 
@@ -96,7 +93,7 @@ void LiquidWorld::setFlow(Vec2I const& location, CellularLiquidFlowCell<LiquidId
 }
 
 void LiquidWorld::liquidInteraction(Vec2I const& a, LiquidId aLiquid, Vec2I const& b, LiquidId bLiquid) {
-  auto handleInteraction = [this](Vec2I const& target, Maybe<LiquidInteractionResult> interaction) {
+  auto handleInteraction = [this](Vec2I const& target, std::optional<LiquidInteractionResult> interaction) {
     if (interaction) {
       if (interaction->isLeft()) {
         m_worldServer->modifyTile(target, PlaceMaterial{TileLayer::Foreground, interaction->left(), 0}, false);
@@ -256,7 +253,7 @@ void DungeonGeneratorWorld::placeVehicle(Vec2F const& pos, String const& vehicle
   m_worldServer->signalRegion(RectI::withSize(Vec2I(pos), {1, 1}));
 
   auto vehicleDatabase = Root::singleton().vehicleDatabase();
-  auto vehicle = vehicleDatabase->create(vehicleName, parameters.opt().value(JsonObject{}).set("persistent", true));
+  auto vehicle = vehicleDatabase->create(vehicleName, parameters.opt().value_or(JsonObject{}).set("persistent", true));
   vehicle->setPosition(pos);
   m_worldServer->addEntity(vehicle);
 }
@@ -432,7 +429,6 @@ void DungeonGeneratorWorld::spawnStagehand(Vec2F const& position, Json const& de
 
 void DungeonGeneratorWorld::setLiquid(Vec2I const& pos, LiquidStore const& liquid) {
   ServerTile* tile = m_worldServer->modifyServerTile(pos);
-  starAssert(tile);
   if (tile)
     tile->liquid = liquid;
 }
@@ -699,7 +695,7 @@ bool WorldGenerator::entityPersistent(WorldStorage*, EntityPtr const& entity) co
   return entity->isMaster() && entity->persistent();
 }
 
-RpcPromise<Vec2I> WorldGenerator::enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) {
+RpcPromise<Vec2I> WorldGenerator::enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id) {
   auto promise = RpcPromise<Vec2I>::createPair();
   m_queuedPlacements.append(QueuedPlacement {
     std::move(distributions),
@@ -766,7 +762,6 @@ void WorldGenerator::prepareTiles(WorldStorage* worldStorage, ServerTileSectorAr
     for (int y = sectorRegion.yMin(); y < sectorRegion.yMax(); ++y) {
       Vec2I pos(x, y);
       ServerTile* tile = tileArray->modifyTile(pos);
-      starAssert(tile);
       if (!tile)
         continue;
 
@@ -844,8 +839,7 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
     if (placement.item.is<MicroDungeonNames>()) {
       auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
       auto const& dungeonName = staticRandomFrom(placement.item.get<MicroDungeonNames>(), seed);
-      Maybe<DungeonId> dungeonId;
-      starAssert(!dungeonName.empty());
+      std::optional<DungeonId> dungeonId;
       if (auto generateResult = m_microDungeonFactory->generate(bounds, dungeonName, placement.position, seed, m_worldServer->threatLevel(), facade)) {
         if (queued) {
           dungeonId = queued->dungeonId;
@@ -855,13 +849,13 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
         for (auto position : generateResult->second) {
           if (ServerTile* tile = m_worldServer->modifyServerTile(position)) {
             replaceBiomeBlocks(tile);
-            tile->dungeonId = dungeonId.value(tile->dungeonId);
+            tile->dungeonId = dungeonId.value_or(tile->dungeonId);
           }
         }
       }
     }
   }
-  
+
   m_queuedPlacements = m_queuedPlacements.filtered([&](QueuedPlacement& p) {
       return !p.fulfilled;
     });
@@ -914,7 +908,6 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
     if (badNodes.contains(position))
       return;
     auto tile = tileArray->tile(wrapCoords(position));
-    starAssert(tile.foreground != NullMaterialId);
     if (tile.foreground != EmptyMaterialId) {
       // Not sure why this doesn't poison solid materials, but it does (occasionally) encounter that case
       if (!BlockCollisionSet.contains(materialDatabase->materialCollisionKind(tile.foreground)))
@@ -948,7 +941,6 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
       return;
     visitedNodes.add(position);
     auto tile = tileArray->tile(wrapCoords(position));
-    starAssert(tile.foreground != NullMaterialId);
     if (tile.foreground != EmptyMaterialId)
       return;
     badNodes.add(position);
@@ -967,7 +959,6 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
 
   auto solids = [&](Vec2I position) {
     auto tile = tileArray->tile(wrapCoords(position));
-    starAssert(tile.foreground != NullMaterialId);
     if (tile.foreground != EmptyMaterialId)
       solidSurroundings.add(position);
   };
@@ -983,7 +974,6 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
   Map<Vec2I, float> drops = determineLiquidLevel(candidateNodes, solidSurroundings);
   for (auto iter = drops.begin(); iter != drops.end(); ++iter) {
     auto tile = tileArray->modifyTile(wrapCoords(iter->first));
-    starAssert(tile);
     if (!tile)
       continue;
     if (iter->second)
@@ -1003,10 +993,8 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       Vec2I position(x, y);
       ServerTile* tile = tileArray->modifyTile(position);
-      starAssert(tile);
       if (!tile)
         continue;
-      starAssert(tile->foreground != NullMaterialId);
 
       if (tile->liquid.source) {
         auto blockInfo = planet->blockInfo(position[0], position[1]);
@@ -1180,7 +1168,6 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       Vec2I position(x, y);
       ServerTile* tile = m_worldServer->modifyServerTile(position);
-      starAssert(tile);
       if (!tile)
         continue;
 

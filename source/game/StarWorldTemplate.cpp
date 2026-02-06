@@ -69,7 +69,7 @@ WorldTemplate::WorldTemplate(Json const& store) : WorldTemplate() {
   m_seed = store.getUInt("seed");
   m_geometry = WorldGeometry(jsonToVec2U(store.get("size")));
   if (auto regionData = store.opt("regionData"))
-    m_layout = make_shared<WorldLayout>(regionData.take());
+    m_layout = make_shared<WorldLayout>(std::move(*regionData));
 
   m_customTerrainRegions = store.getArray("customTerrainRegions", JsonArray()).transformed([](Json const& config) {
       CustomTerrainRegion ctr = {jsonToPolyF(config.get("region")), {}, config.getBool("solid")};
@@ -94,7 +94,7 @@ Json WorldTemplate::store() const {
   };
 }
 
-Maybe<CelestialParameters> const& WorldTemplate::celestialParameters() const {
+std::optional<CelestialParameters> const& WorldTemplate::celestialParameters() const {
   return m_celestialParameters;
 }
 
@@ -158,7 +158,7 @@ bool WorldTemplate::inSurfaceLayer(Vec2I const& position) const {
   return false;
 }
 
-Maybe<Vec2I> WorldTemplate::findSensiblePlayerStart() const {
+std::optional<Vec2I> WorldTemplate::findSensiblePlayerStart() const {
   if (!m_layout)
     return {};
 
@@ -457,9 +457,9 @@ bool WorldTemplate::breathable(int, int) const {
   return true;
 }
 
-void WorldTemplate::addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, Maybe<BiomePlacementMode> mode) const {
+void WorldTemplate::addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, std::optional<BiomePlacementMode> mode) const {
   for (auto const& itemDistribution : distributions) {
-    auto placeMode = mode.value(itemDistribution.mode());
+    auto placeMode = mode.value_or(itemDistribution.mode());
 
     if (area == BiomePlacementArea::Surface) {
       if (placeMode == itemDistribution.mode() && placeMode == BiomePlacementMode::Floor) {
@@ -503,7 +503,7 @@ WorldTemplate::PotentialBiomeItems WorldTemplate::potentialBiomeItemsAt(int x, i
   auto lowerBlockBiome = blockBiome(x, y - 1);
   auto upperBlockBiome = blockBiome(x, y + 1);
   auto thisBlockBiome = blockBiome(x, y);
-  
+
   PotentialBiomeItems potentialBiomeItems;
   // surface floor, surface ocean
   if (lowerBlockBiome)

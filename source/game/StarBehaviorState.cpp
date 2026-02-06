@@ -30,20 +30,20 @@ void Blackboard::set(NodeParameterType type, String const& key, LuaValue value) 
   else
     m_board.get(type).set(key, value);
 
-  for (auto& input : m_input.get(type).maybe(key).value({})) {
+  for (auto& input : m_input.get(type).maybe(key).value_or({})) {
     m_parameters.get(input.first).set(input.second, value);
   }
 
   // dumb special case for setting number outputs to vec2 inputs
   if (type == NodeParameterType::Number) {
-    for (pair<uint64_t, LuaTable>& input : m_vectorNumberInput.maybe(key).value()) {
+    for (pair<uint64_t, LuaTable>& input : m_vectorNumberInput.maybe(key).value_or({})) {
       input.second.set(input.first, value);
     }
   }
 }
 
 LuaValue Blackboard::get(NodeParameterType type, String const& key) const {
-  return m_board.get(type).maybe(key).value(LuaNil);
+  return m_board.get(type).maybe(key).value_or(LuaNil);
 }
 
 LuaTable Blackboard::parameters(StringMap<NodeParameter> const& parameters, uint64_t nodeId) {
@@ -131,7 +131,7 @@ CompositeState::CompositeState(size_t childCount, size_t begin) : CompositeState
   index = begin;
 }
 
-BehaviorState::BehaviorState(BehaviorTreeConstPtr tree, LuaTable context, Maybe<BlackboardWeakPtr> blackboard) : m_tree(tree), m_luaContext(std::move(context)) {
+BehaviorState::BehaviorState(BehaviorTreeConstPtr tree, LuaTable context, std::optional<BlackboardWeakPtr> blackboard) : m_tree(tree), m_luaContext(std::move(context)) {
   if (blackboard)
     m_board = *blackboard;
   else
@@ -149,7 +149,7 @@ NodeStatus BehaviorState::run(float dt) {
   m_lastDt = dt;
   NodeStatus status;
 
-  auto ephemeral = m_board.maybe<BlackboardPtr>().apply([](auto const& b) { return b->takeEphemerals(); });
+  auto ephemeral = m_board.maybe<BlackboardPtr>().transform([](auto const& b) { return b->takeEphemerals(); });
 
   status = runNode(*m_tree->root, m_rootState);
 
@@ -178,7 +178,7 @@ BlackboardPtr BehaviorState::board() {
 }
 
 LuaThread BehaviorState::nodeLuaThread(String const& funcName) {
-  LuaThread thread = m_threads.maybeTakeLast().value(m_luaContext.engine().createThread());
+  LuaThread thread = m_threads.maybeTakeLast().value_or(m_luaContext.engine().createThread());
   thread.pushFunction(m_functions.get(funcName));
   return thread;
 }
@@ -204,23 +204,23 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
   uint64_t id = (uint64_t)&node;
 
   auto result = ActionReturn(NodeStatus::Invalid, LuaNil);
-  if (state.isNothing()) {
+  if (!state) {
     LuaTable parameters = board()->parameters(node.parameters, id);
     LuaThread thread = nodeLuaThread(node.name);
     try {
-      result = thread.resume<ActionReturn>(parameters, blackboardPtr(), id, m_lastDt).value(ActionReturn(NodeStatus::Invalid, LuaNil));
+      result = thread.resume<ActionReturn>(parameters, blackboardPtr(), id, m_lastDt).value_or(ActionReturn(NodeStatus::Invalid, LuaNil));
     } catch (LuaException const& e) {
       throw StarException(strf("Lua Exception caught running action node {} in behavior {}: {}", node.name, m_tree->name, outputException(e, false)));
     }
 
     auto status = get<0>(result);
     if (status != NodeStatus::Success && status != NodeStatus::Failure)
-      state.set(ActionState{thread});
+      state = ActionState{thread};
   } else {
     LuaThread const& thread = state->get<ActionState>().thread;
 
     try {
-      result = thread.resume<ActionReturn>(m_lastDt).value(ActionReturn(NodeStatus::Invalid, LuaNil));
+      result = thread.resume<ActionReturn>(m_lastDt).value_or(ActionReturn(NodeStatus::Invalid, LuaNil));
     } catch (LuaException const& e) {
       throw StarException(strf("Lua Exception caught resuming action node {} in behavior {}: {}", node.name, m_tree->name, outputException(e, false)));
     }
@@ -239,19 +239,19 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
 NodeStatus BehaviorState::runDecorator(DecoratorNode const& node, NodeState& state) {
   uint64_t id = (uint64_t)&node;
   NodeStatus status = NodeStatus::Running;
-  if (state.isNothing()) {
+  if (!state) {
     auto parameters = board()->parameters(node.parameters, id);
 
     LuaThread thread = nodeLuaThread(node.name);
     try {
-      status = thread.resume<NodeStatus>(parameters, blackboardPtr(), id).value(NodeStatus::Invalid);
+      status = thread.resume<NodeStatus>(parameters, blackboardPtr(), id).value_or(NodeStatus::Invalid);
     } catch (LuaException const& e) {
       throw StarException(strf("Lua Exception caught initializing decorator node {} in behavior {}: {}", node.name, m_tree->name, outputException(e, false)));
     }
     if (status == NodeStatus::Success || status == NodeStatus::Failure)
       return status;
 
-    state.set(DecoratorState(thread));
+    state = DecoratorState(thread);
   }
 
   DecoratorState& decorator = state->get<DecoratorState>();
@@ -260,7 +260,7 @@ NodeStatus BehaviorState::runDecorator(DecoratorNode const& node, NodeState& sta
     auto childStatus = runNode(*node.child, *decorator.child);
     if (childStatus == NodeStatus::Success || childStatus == NodeStatus::Failure) {
       try {
-        status = decorator.thread.resume<NodeStatus>(childStatus).value(NodeStatus::Invalid);
+        status = decorator.thread.resume<NodeStatus>(childStatus).value_or(NodeStatus::Invalid);
       } catch (LuaException const& e) {
         throw StarException(strf("Lua Exception caught resuming decorator node {} in behavior {}: {}", node.name, m_tree->name, outputException(e, false)));
       }
@@ -293,8 +293,8 @@ NodeStatus BehaviorState::runComposite(CompositeNode const& node, NodeState& sta
 }
 
 NodeStatus BehaviorState::runSequence(SequenceNode const& node, NodeState& state) {
-  if (state.isNothing())
-    state.set(CompositeState(node.children.size()));
+  if (!state)
+    state = CompositeState(node.children.size());
 
   CompositeState& composite = state->get<CompositeState>();
   while (composite.index < node.children.size()) {
@@ -311,8 +311,8 @@ NodeStatus BehaviorState::runSequence(SequenceNode const& node, NodeState& state
 }
 
 NodeStatus BehaviorState::runSelector(SelectorNode const& node, NodeState& state) {
-  if (state.isNothing())
-    state.set(CompositeState(node.children.size()));
+  if (!state)
+    state = CompositeState(node.children.size());
 
   CompositeState& composite = state->get<CompositeState>();
   while (composite.index < node.children.size()) {
@@ -328,8 +328,8 @@ NodeStatus BehaviorState::runSelector(SelectorNode const& node, NodeState& state
 }
 
 NodeStatus BehaviorState::runParallel(ParallelNode const& node, NodeState& state) {
-  if (state.isNothing())
-    state.set(CompositeState(node.children.size()));
+  if (!state)
+    state = CompositeState(node.children.size());
 
   CompositeState& composite = state->get<CompositeState>();
 
@@ -351,8 +351,8 @@ NodeStatus BehaviorState::runParallel(ParallelNode const& node, NodeState& state
 }
 
 NodeStatus BehaviorState::runDynamic(DynamicNode const& node, NodeState& state) {
-  if (state.isNothing())
-    state.set(CompositeState(node.children.size()));
+  if (!state)
+    state = CompositeState(node.children.size());
 
   CompositeState& composite = state->get<CompositeState>();
   for (size_t i = 0; i <= composite.index; i++) {
@@ -375,8 +375,8 @@ NodeStatus BehaviorState::runDynamic(DynamicNode const& node, NodeState& state) 
 }
 
 NodeStatus BehaviorState::runRandomize(RandomizeNode const& node, NodeState& state) {
-  if (state.isNothing())
-    state.set(CompositeState(node.children.size(), Random::randUInt(node.children.size() - 1)));
+  if (!state)
+    state = CompositeState(node.children.size(), Random::randUInt(node.children.size() - 1));
 
   CompositeState& composite = state->get<CompositeState>();
   auto child = node.children.get(composite.index);

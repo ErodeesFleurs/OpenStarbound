@@ -91,7 +91,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
 
   // all of these are defaults and won't include the correct humanoid config for the species
   m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
-  auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters)));
+  auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value_or(m_config->movementParameters)));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"player"});
   m_movementController = make_shared<ActorMovementController>(movementParameters);
@@ -220,7 +220,7 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
 
   m_netHumanoid.clearNetElements();
   m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value_or(m_config->movementParameters))));
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 }
 
@@ -268,7 +268,7 @@ void Player::diskLoad(Json const& diskStore) {
 
   m_netHumanoid.clearNetElements();
   m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value_or(m_config->movementParameters))));
   m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 
@@ -286,7 +286,7 @@ void Player::diskLoad(Json const& diskStore) {
     script.second->setScriptStorage({});
 
   for (auto& p : diskStore.get("genericScriptStorage", JsonObject{}).toObject()) {
-    if (auto script = m_genericScriptContexts.maybe(p.first).value({})) {
+    if (auto script = m_genericScriptContexts.maybe(p.first).value_or({})) {
       script->setScriptStorage(p.second.toObject());
     }
   }
@@ -559,9 +559,9 @@ RectF Player::metaBoundBox() const {
   return m_config->metaBoundBox;
 }
 
-Maybe<HitType> Player::queryHit(DamageSource const& source) const {
+std::optional<HitType> Player::queryHit(DamageSource const& source) const {
   if (!inWorld() || isDead() || m_isAdmin || isTeleporting() || m_statusController->statPositive("invulnerable"))
-    return {};
+    return std::nullopt;
 
   if (m_tools->queryShieldHit(source))
     return HitType::ShieldHit;
@@ -569,10 +569,10 @@ Maybe<HitType> Player::queryHit(DamageSource const& source) const {
   if (source.intersectsWithPoly(world()->geometry(), m_movementController->collisionBody()))
     return HitType::Hit;
 
-  return {};
+  return std::nullopt;
 }
 
-Maybe<PolyF> Player::hitPoly() const {
+std::optional<PolyF> Player::hitPoly() const {
   return m_movementController->collisionBody();
 }
 
@@ -642,7 +642,7 @@ void Player::destroy(RenderCallback* renderCallback) {
   m_songbook->stop();
 }
 
-Maybe<EntityAnchorState> Player::loungingIn() const {
+std::optional<EntityAnchorState> Player::loungingIn() const {
   if (is<LoungeAnchor>(m_movementController->entityAnchor()))
     return m_movementController->anchorState();
   return {};
@@ -813,7 +813,7 @@ void Player::dropItem() {
   }
 }
 
-Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
+std::optional<Json> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   bool localMessage = fromConnection == world()->connection();
   if (message == "queueRadioMessage" && args.size() > 0) {
     float delay = 0;
@@ -822,7 +822,7 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
 
     queueRadioMessage(args.get(0), delay);
   } else if (message == "warp") {
-    Maybe<String> animation;
+    std::optional<String> animation;
     if (args.size() > 1)
       animation = args.get(1).toString();
 
@@ -846,12 +846,12 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
       trackList = jsonToStringList(args.get(0).toArray());
     else
       trackList = StringList();
-    m_pendingAltMusic = pair<Maybe<pair<StringList, int>>, float>(make_pair(trackList, loops), fadeTime);
+    m_pendingAltMusic = pair<std::optional<pair<StringList, int>>, float>(make_pair(trackList, loops), fadeTime);
   } else if (message == "stopAltMusic") {
     float fadeTime = 0;
     if (args.size() > 0)
       fadeTime = args.get(0).toFloat();
-    m_pendingAltMusic = pair<Maybe<pair<StringList, int>>, float>({}, fadeTime);
+    m_pendingAltMusic = pair<std::optional<pair<StringList, int>>, float>({}, fadeTime);
   } else if (message == "recordEvent") {
     statistics()->recordEvent(args.at(0).toString(), args.at(1));
   } else if (message == "addCollectable") {
@@ -860,7 +860,7 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
     if (Root::singleton().collectionDatabase()->hasCollectable(collection, collectable))
       addCollectable(collection, collectable);
   } else {
-    Maybe<Json> result = m_tools->receiveMessage(message, localMessage, args);
+    std::optional<Json> result = m_tools->receiveMessage(message, localMessage, args);
     if (!result)
       result = m_statusController->receiveMessage(message, localMessage, args);
     if (!result)
@@ -879,7 +879,7 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
     return result;
   }
 
-  return {};
+  return std::nullopt;
 }
 
 void Player::update(float dt, uint64_t) {
@@ -1396,7 +1396,7 @@ void Player::refreshArmor() {
 void Player::refreshHumanoid() const {
   try {
     if (m_armor->setupHumanoid(*humanoid(), forceNude())) {
-      m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+      m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value_or(m_config->movementParameters))));
     }
   }
   catch (std::exception const&) {
@@ -1464,7 +1464,7 @@ PlayerTechPtr Player::techs() const {
   return m_techs;
 }
 
-void Player::overrideTech(Maybe<StringList> const& techModules) {
+void Player::overrideTech(std::optional<StringList> const& techModules) {
   if (techModules)
     m_techController->setOverrideTech(*techModules);
   else
@@ -1575,7 +1575,7 @@ Vec2F Player::armAdjustment() const {
   return humanoid()->armAdjustment();
 }
 
-void Player::setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) {
+void Player::setCameraFocusEntity(std::optional<EntityId> const& cameraFocusEntity) {
   m_cameraFocusEntity = cameraFocusEntity;
 }
 
@@ -1587,7 +1587,7 @@ bool Player::canUseTool() const {
   bool canUse = !isDead() && !isTeleporting() && !m_techController->toolUsageSuppressed() && !m_statusController->toolUsageSuppressed();
   if (canUse) {
     if (auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor()))
-      if (loungeAnchor->suppressTools.value(loungeAnchor->controllable))
+      if (loungeAnchor->suppressTools.value_or(loungeAnchor->controllable))
         return false;
   }
   return canUse;
@@ -1642,7 +1642,7 @@ List<InteractAction> Player::pullInteractActions() {
   List<InteractAction> results;
   eraseWhere(m_pendingInteractActions, [&results](auto& promise) {
       if (auto res = promise.result())
-        results.append(res.take());
+        results.append(std::move(*res));
       return promise.finished();
     });
   return results;
@@ -2234,8 +2234,8 @@ void Player::setName(String const& name) {
   updateIdentity();
 }
 
-Maybe<String> Player::statusText() const {
-  return {};
+std::optional<String> Player::statusText() const {
+  return std::nullopt;
 }
 
 bool Player::displayNametag() const {
@@ -2258,7 +2258,7 @@ String Player::nametag() const {
     return name();
 }
 
-void Player::setNametag(Maybe<String> nametag) {
+void Player::setNametag(std::optional<String> nametag) {
   setSecretProperty("nametag", nametag ? Json(*nametag) : Json());
 }
 
@@ -2272,8 +2272,8 @@ void Player::updateIdentity() {
   }
 }
 
-void Player::setHumanoidParameter(String key, Maybe<Json> value) {
-  if (value.isValid())
+void Player::setHumanoidParameter(String key, std::optional<Json> value) {
+  if (value.has_value())
     m_humanoidParameters.set(key, value.value());
   else
     m_humanoidParameters.erase(key);
@@ -2281,7 +2281,7 @@ void Player::setHumanoidParameter(String key, Maybe<Json> value) {
   m_netHumanoid.netElements().last()->setHumanoidParameters(m_humanoidParameters);
 }
 
-Maybe<Json> Player::getHumanoidParameter(String key) {
+std::optional<Json> Player::getHumanoidParameter(String key) {
   return m_humanoidParameters.maybe(key);
 }
 
@@ -2373,7 +2373,7 @@ void Player::setPersonality(Personality const& personality) {
   updateIdentity();
 }
 
-void Player::setImagePath(Maybe<String> const& imagePath) {
+void Player::setImagePath(std::optional<String> const& imagePath) {
   m_identity.imagePath = imagePath;
   updateIdentity();
 }
@@ -2413,24 +2413,21 @@ void Player::queueItemPickupMessage(ItemPtr const& item) {
 }
 
 void Player::addChatMessage(String const& message, Json const& config) {
-  starAssert(!isSlave());
   m_chatMessage = message;
   m_chatMessageUpdated = true;
   m_chatMessageChanged = true;
   m_pendingChatActions.append(SayChatAction{entityId(), message, mouthPosition(), config});
 }
 
-void Player::addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown) {
-  starAssert(!isSlave());
+void Player::addEmote(HumanoidEmote const& emote, std::optional<float> emoteCooldown) {
   m_emoteState = emote;
-  m_emoteCooldownTimer = GameTimer(emoteCooldown.value(m_emoteCooldown));
+  m_emoteCooldownTimer = GameTimer(emoteCooldown.value_or(m_emoteCooldown));
 }
-void Player::setDance(Maybe<String> const& danceName) {
-  starAssert(!isSlave());
+void Player::setDance(std::optional<String> const& danceName) {
   assert(!isSlave());
   m_dance = danceName;
 
-  if (danceName.isValid()) {
+  if (danceName.has_value()) {
     auto danceDatabase = Root::singleton().danceDatabase();
     DancePtr dance = danceDatabase->getDance(*danceName);
     m_danceCooldownTimer = GameTimer(dance->duration);
@@ -2449,16 +2446,16 @@ List<ChatAction> Player::pullPendingChatActions() {
   return take(m_pendingChatActions);
 }
 
-Maybe<String> Player::inspectionLogName() const {
+std::optional<String> Player::inspectionLogName() const {
   auto identifier = uniqueId();
-  if (String* str = identifier.ptr()) {
+  if (String* str = (identifier ? &*identifier : nullptr)) {
     auto hash = XXH3_128bits(str->utf8Ptr(), str->utf8Size());
     return String("Player #") + hexEncode((const char*)&hash, sizeof(hash));
   }
   return identifier;
 }
 
-Maybe<String> Player::inspectionDescription(String const&) const {
+std::optional<String> Player::inspectionDescription(String const&) const {
   return m_description;
 }
 
@@ -2476,12 +2473,10 @@ void Player::instrumentEquipped(String const& instrumentKind) {
 }
 
 void Player::interact(InteractAction const& action) {
-  starAssert(!isSlave());
   m_pendingInteractActions.append(RpcPromise<InteractAction>::createFulfilled(action));
 }
 
 void Player::addEffectEmitters(StringSet const& emitters) {
-  starAssert(!isSlave());
   m_effectEmitter->addEffectSources("normal", emitters);
 }
 
@@ -2653,13 +2648,13 @@ bool Player::interruptRadioMessage() {
   return false;
 }
 
-Maybe<RadioMessage> Player::pullPendingRadioMessage() {
+std::optional<RadioMessage> Player::pullPendingRadioMessage() {
   if (m_pendingRadioMessages.count()) {
     if (m_pendingRadioMessages.at(0).unique)
       m_log->addRadioMessage(m_pendingRadioMessages.at(0).messageId);
     return m_pendingRadioMessages.takeFirst();
   }
-  return {};
+  return std::nullopt;
 }
 
 void Player::queueRadioMessage(Json const& messageConfig, float delay) {
@@ -2721,7 +2716,7 @@ void Player::queueRadioMessage(RadioMessage message) {
   }
 }
 
-Maybe<Json> Player::pullPendingCinematic() {
+std::optional<Json> Player::pullPendingCinematic() {
   if (m_pendingCinematic && m_pendingCinematic->isType(Json::Type::String))
     m_log->addCinematic(m_pendingCinematic->toString());
   return take(m_pendingCinematic);
@@ -2740,26 +2735,22 @@ void Player::setInCinematic(bool inCinematic) {
     m_statusController->setPersistentEffects("cinematic", {});
 }
 
-Maybe<pair<Maybe<pair<StringList, int>>, float>> Player::pullPendingAltMusic() {
-  if (m_pendingAltMusic)
-    return m_pendingAltMusic.take();
-  return {};
+std::optional<pair<std::optional<pair<StringList, int>>, float>> Player::pullPendingAltMusic() {
+  return take(m_pendingAltMusic);
 }
 
-Maybe<PlayerWarpRequest> Player::pullPendingWarp() {
-  if (m_pendingWarp)
-    return m_pendingWarp.take();
-  return {};
+std::optional<PlayerWarpRequest> Player::pullPendingWarp() {
+  return take(m_pendingWarp);
 }
 
-void Player::setPendingWarp(String const& action, Maybe<String> const& animation, bool deploy) {
+void Player::setPendingWarp(String const& action, std::optional<String> const& animation, bool deploy) {
   m_pendingWarp = PlayerWarpRequest{action, animation, deploy};
 }
 
-Maybe<pair<Json, RpcPromiseKeeper<Json>>> Player::pullPendingConfirmation() {
+std::optional<pair<Json, RpcPromiseKeeper<Json>>> Player::pullPendingConfirmation() {
   if (m_pendingConfirmations.count() > 0)
     return m_pendingConfirmations.takeFirst();
-  return {};
+  return std::nullopt;
 }
 
 void Player::queueConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> const& resultPromise) {
@@ -2828,7 +2819,7 @@ NetworkedAnimatorPtr Player::effectsAnimator() {
 
 const String secretProprefix = "\0JsonProperty\0"s;
 
-Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
+std::optional<StringView> Player::getSecretPropertyView(String const& name) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
     auto& view = tag->utf8();
     DataStreamExternalBuffer buffer(view.data(), view.size());
@@ -2894,7 +2885,7 @@ void Player::refreshHumanoidParameters() {
   m_armor->diskLoad(armor);
   m_armor->setupHumanoid(*humanoid(), forceNude());
 
-  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
+  m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value_or(m_config->movementParameters))));
 
   if (inWorld()) {
     if (isMaster()) {

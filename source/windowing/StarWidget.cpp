@@ -2,7 +2,6 @@
 #include "StarPane.hpp"
 
 #include "StarLabelWidget.hpp"
-#include "StarFlowLayout.hpp"
 
 namespace Star {
 
@@ -146,7 +145,7 @@ KeyboardCaptureMode Widget::keyboardCaptureMode() const {
   return KeyboardCaptureMode::None;
 }
 
-Maybe<pair<RectI, int>> Widget::keyboardCaptureArea() const {
+std::optional<pair<RectI, int>> Widget::keyboardCaptureArea() const {
   return {};
 }
 

@@ -8,6 +8,8 @@
 #include "StarStagehandDatabase.hpp"
 #include "StarRoot.hpp"
 
+#include <optional>
+
 namespace Star {
 
 STAR_CLASS(Stagehand);
@@ -42,14 +44,14 @@ public:
   
   ClientEntityMode clientEntityMode() const override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  std::optional<LuaValue> evalScript(String const& code) override;
 
   String typeName() const;
   
   Json configValue(String const& name, Json const& def = Json()) const;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   using Entity::setUniqueId;
 
@@ -73,7 +75,7 @@ private:
   NetElementFloat m_xPosition;
   NetElementFloat m_yPosition;
 
-  NetElementData<Maybe<String>> m_uniqueIdNetState;
+  NetElementData<std::optional<String>> m_uniqueIdNetState;
 
   bool m_scripted = false;
   List<BehaviorStatePtr> m_behaviors;

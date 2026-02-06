@@ -22,7 +22,7 @@ function<Vec2F(Vec2F, Vec2F)> WorldGeometry::diffFunction() const {
   }
 }
 
-function<float(float, float, float)> WorldGeometry::xLerpFunction(Maybe<float> discontinuityThreshold) const {
+function<float(float, float, float)> WorldGeometry::xLerpFunction(std::optional<float> discontinuityThreshold) const {
   if (m_size[0] == 0) {
     return [](float, float min, float) -> float { return min; };
   } else {
@@ -36,7 +36,7 @@ function<float(float, float, float)> WorldGeometry::xLerpFunction(Maybe<float> d
   }
 }
 
-function<Vec2F(float, Vec2F, Vec2F)> WorldGeometry::lerpFunction(Maybe<float> discontinuityThreshold) const {
+function<Vec2F(float, Vec2F, Vec2F)> WorldGeometry::lerpFunction(std::optional<float> discontinuityThreshold) const {
   if (m_size[0] == 0) {
     return [](float, Vec2F const& min, Vec2F const&) -> Vec2F { return min; };
   } else {
@@ -58,7 +58,6 @@ StaticList<RectF, 2> WorldGeometry::splitRect(RectF const& bbox) const {
   RectF bboxWrap = RectF(minWrap, minWrap + bbox.size());
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(bbox.xMax() - bbox.xMin() <= (float)m_size[0]);
 
   // Since min is wrapped, we're only checking to see if max is on the other
   // side of the wrap point
@@ -83,7 +82,6 @@ StaticList<RectI, 2> WorldGeometry::splitRect(RectI const bbox) const {
   RectI bboxWrap = RectI(minWrap, minWrap + bbox.size());
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(bbox.xMax() - bbox.xMin() <= (int)m_size[0]);
 
   // Since min is wrapped, we're only checking to see if max is on the other
   // side of the wrap point
@@ -195,10 +193,8 @@ StaticList<Vec2I, 2> WorldGeometry::splitXRegion(Vec2I const& xRegion) const {
   if (m_size[0] == 0)
     return {xRegion};
 
-  starAssert(xRegion[1] >= xRegion[0]);
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(xRegion[1] - xRegion[0] <= (int)m_size[0]);
 
   int x1 = xwrap(xRegion[0]);
   int x2 = x1 + xRegion[1] - xRegion[0];
@@ -214,10 +210,8 @@ StaticList<Vec2F, 2> WorldGeometry::splitXRegion(Vec2F const& xRegion) const {
   if (m_size[0] == 0)
     return {xRegion};
 
-  starAssert(xRegion[1] >= xRegion[0]);
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(xRegion[1] - xRegion[0] <= (float)m_size[0]);
 
   float x1 = xwrap(xRegion[0]);
   float x2 = x1 + xRegion[1] - xRegion[0];
@@ -322,7 +316,7 @@ bool WorldGeometry::lineIntersectsCircle(Line2F const& line, Vec2F const& center
   return false;
 }
 
-Maybe<Vec2F> WorldGeometry::lineIntersectsPolyAt(Line2F const& line, PolyF const& poly) const {
+std::optional<Vec2F> WorldGeometry::lineIntersectsPolyAt(Line2F const& line, PolyF const& poly) const {
   for (auto a : splitLine(line, true)) {
     for (auto b : splitPoly(poly)) {
       if (auto intersection = b.lineIntersection(a))

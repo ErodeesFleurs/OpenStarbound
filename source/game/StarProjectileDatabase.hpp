@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 #include "StarEntityRenderingTypes.hpp"
@@ -77,8 +79,8 @@ struct ProjectileConfig {
   String damageKind;
   String damageType;
   Json damageTeam;
-  Maybe<String> damageRepeatGroup;
-  Maybe<float> damageRepeatTimeout;
+  std::optional<String> damageRepeatGroup;
+  std::optional<float> damageRepeatTimeout;
 
   List<EphemeralStatusEffect> statusEffects;
 

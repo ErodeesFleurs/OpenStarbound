@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarRect.hpp"
 #include "StarTtlCache.hpp"
 #include "StarWeightedPool.hpp"
@@ -33,10 +35,10 @@ public:
   // The following methods are allowed to return no information even in the
   // case of valid coordinates, due to delayed loading.
 
-  virtual Maybe<CelestialParameters> parameters(CelestialCoordinate const& coordinate) = 0;
-  virtual Maybe<String> name(CelestialCoordinate const& coordinate) = 0;
+  virtual std::optional<CelestialParameters> parameters(CelestialCoordinate const& coordinate) = 0;
+  virtual std::optional<String> name(CelestialCoordinate const& coordinate) = 0;
 
-  virtual Maybe<bool> hasChildren(CelestialCoordinate const& coordinate) = 0;
+  virtual std::optional<bool> hasChildren(CelestialCoordinate const& coordinate) = 0;
   virtual List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) = 0;
   virtual List<int> childOrbits(CelestialCoordinate const& coordinate) = 0;
 
@@ -44,7 +46,7 @@ public:
   // are guaranteed to have unique x/y coordinates, and are meant to be viewed
   // from the top in 2d.  The z-coordinate is there simpy as a validation
   // parameter.
-  virtual List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) = 0;
+  virtual List<CelestialCoordinate> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) = 0;
   virtual List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) = 0;
 
   // Returns false if part or all of the specified region is not loaded.  This
@@ -71,7 +73,7 @@ protected:
 
 class CelestialMasterDatabase : public CelestialDatabase {
 public:
-  CelestialMasterDatabase(Maybe<String> databaseFile = {});
+  CelestialMasterDatabase(std::optional<String> databaseFile = {});
 
   CelestialBaseInformation baseInformation() const;
   CelestialResponse respondToRequest(CelestialRequest const& requests);
@@ -86,20 +88,20 @@ public:
   // Find a planetary or satellite object randomly throughout the entire
   // celestial space that satisfies the given parameters.  May fail to find
   // anything, though with the defaults this is vanishingly unlikely.
-  Maybe<CelestialCoordinate> findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
-      function<bool(CelestialCoordinate)> filter = {}, Maybe<uint64_t> seed = {});
+  std::optional<CelestialCoordinate> findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
+      function<bool(CelestialCoordinate)> filter = {}, std::optional<uint64_t> seed = {});
 
   // CelestialMasterDatabase always returns actual data, as it does just in
   // time generation.
 
-  Maybe<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
-  Maybe<String> name(CelestialCoordinate const& coordinate) override;
+  std::optional<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
+  std::optional<String> name(CelestialCoordinate const& coordinate) override;
 
-  Maybe<bool> hasChildren(CelestialCoordinate const& coordinate) override;
+  std::optional<bool> hasChildren(CelestialCoordinate const& coordinate) override;
   List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) override;
   List<int> childOrbits(CelestialCoordinate const& coordinate) override;
 
-  List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) override;
+  List<CelestialCoordinate> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) override;
   List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
 
   bool scanRegionFullyLoaded(RectI const& region) override;
@@ -158,14 +160,14 @@ protected:
     WeightedPool<String> systemSuffixNames;
   };
 
-  static Maybe<CelestialOrbitRegion> orbitRegion(
+  static std::optional<CelestialOrbitRegion> orbitRegion(
       List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber);
 
   typedef std::function<void(std::function<void()>&&)>&& UnlockDuringFunction;
   CelestialChunk const& getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {});
 
   CelestialChunk produceChunk(Vec2I const& chunkLocation) const;
-  Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> produceSystem(
+  std::optional<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> produceSystem(
       RandomSource& random, Vec3I const& location) const;
   List<CelestialConstellation> produceConstellations(
       RandomSource& random, List<Vec2I> const& constellationCandidates) const;
@@ -200,14 +202,14 @@ public:
   // Unload data that has not been used in the configured TTL time.
   void cleanup();
 
-  Maybe<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
-  Maybe<String> name(CelestialCoordinate const& coordinate) override;
+  std::optional<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
+  std::optional<String> name(CelestialCoordinate const& coordinate) override;
 
-  Maybe<bool> hasChildren(CelestialCoordinate const& coordinate) override;
+  std::optional<bool> hasChildren(CelestialCoordinate const& coordinate) override;
   List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) override;
   List<int> childOrbits(CelestialCoordinate const& coordinate) override;
 
-  List<CelestialCoordinate> scanSystems(RectI const& region, Maybe<StringSet> const& includedTypes = {}) override;
+  List<CelestialCoordinate> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) override;
   List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
 
   bool scanRegionFullyLoaded(RectI const& region) override;

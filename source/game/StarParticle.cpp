@@ -70,7 +70,7 @@ Particle::Particle(Json const& config, String const& path) {
 
   if (type == Type::Animated) {
     auto pathEnd = string.find('?');
-    if (pathEnd == NPos)
+    if (pathEnd == std::numeric_limits<std::size_t>::max())
       directives.clear();
     else
       directives = string.substr(pathEnd);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarObject.hpp"
 #include "StarLoungingEntities.hpp"
 
@@ -28,10 +30,10 @@ private:
   bool m_flipImages;
   List<PersistentStatusEffect> m_sitStatusEffects;
   StringSet m_sitEffectEmitters;
-  Maybe<String> m_sitEmote;
-  Maybe<String> m_sitDance;
+  std::optional<String> m_sitEmote;
+  std::optional<String> m_sitDance;
   JsonObject m_sitArmorCosmeticOverrides;
-  Maybe<String> m_sitCursorOverride;
+  std::optional<String> m_sitCursorOverride;
 };
 
 }

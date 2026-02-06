@@ -1,21 +1,22 @@
 #include "StarByteArray.hpp"
 #include "StarEncode.hpp"
-#include <string_view>
+
+import std;
 
 namespace Star {
 
-ByteArray ByteArray::fromCString(char const* str) {
-  return ByteArray(str, strlen(str));
+auto ByteArray::fromCString(char const* str) -> ByteArray {
+  return {str, std::strlen(str)};
 }
 
-ByteArray ByteArray::fromCStringWithNull(char const* str) {
-  size_t len = strlen(str);
+auto ByteArray::fromCStringWithNull(char const* str) -> ByteArray {
+  size_t len = std::strlen(str);
   ByteArray ba(str, len + 1);
   ba[len] = 0;
   return ba;
 }
 
-ByteArray ByteArray::withReserve(size_t capacity) {
+auto ByteArray::withReserve(size_t capacity) -> ByteArray {
   ByteArray bytes;
   bytes.reserve(capacity);
   return bytes;
@@ -51,7 +52,7 @@ ByteArray::~ByteArray() {
   reset();
 }
 
-ByteArray& ByteArray::operator=(ByteArray const& b) {
+auto ByteArray::operator=(ByteArray const& b) -> ByteArray& {
   if (&b != this) {
     clear();
     append(b);
@@ -60,7 +61,7 @@ ByteArray& ByteArray::operator=(ByteArray const& b) {
   return *this;
 }
 
-ByteArray& ByteArray::operator=(ByteArray&& b) noexcept {
+auto ByteArray::operator=(ByteArray&& b) noexcept -> ByteArray& {
   if (&b != this) {
     reset();
 
@@ -90,7 +91,7 @@ void ByteArray::reserve(size_t newCapacity) {
       m_data = newMem;
       m_capacity = newCapacity;
     } else {
-      newCapacity = max({m_capacity * 2, newCapacity, (size_t)8});
+      newCapacity = std::max({m_capacity * 2, newCapacity, (size_t)8});
       auto newMem = (char*)Star::realloc(m_data, newCapacity);
       if (!newMem)
         throw MemoryException::format(std::string_view("Could not set new ByteArray capacity {}\n"), newCapacity);
@@ -111,29 +112,29 @@ void ByteArray::resize(size_t size, char f) {
 }
 
 void ByteArray::fill(size_t s, char c) {
-  if (s != NPos)
+  if (s != std::numeric_limits<std::size_t>::max())
     resize(s);
 
-  memset(m_data, c, m_size);
+  std::memset(m_data, c, m_size);
 }
 
 void ByteArray::fill(char c) {
-  fill(NPos, c);
+  fill(std::numeric_limits<std::size_t>::max(), c);
 }
 
-ByteArray ByteArray::sub(size_t b, size_t s) const {
+auto ByteArray::sub(size_t b, size_t s) const -> ByteArray {
   if (b == 0 && s >= m_size) {
-    return ByteArray(*this);
+    return {*this};
   } else {
-    return ByteArray(m_data + b, min(m_size, b + s));
+    return {m_data + b, std::min(m_size, b + s)};
   }
 }
 
-ByteArray ByteArray::left(size_t s) const {
+auto ByteArray::left(size_t s) const -> ByteArray {
   return sub(0, s);
 }
 
-ByteArray ByteArray::right(size_t s) const {
+auto ByteArray::right(size_t s) const -> ByteArray {
   if (s > m_size)
     s = 0;
   else
@@ -158,8 +159,8 @@ void ByteArray::trimRight(size_t s) {
     resize(m_size - s);
 }
 
-size_t ByteArray::diffChar(const ByteArray& b) const {
-  size_t s = min(m_size, b.size());
+auto ByteArray::diffChar(const ByteArray& b) const -> size_t {
+  size_t s = std::min(m_size, b.size());
   char* ac = m_data;
   char* bc = b.m_data;
   size_t i;
@@ -171,7 +172,7 @@ size_t ByteArray::diffChar(const ByteArray& b) const {
   return i;
 }
 
-int ByteArray::compare(const ByteArray& b) const {
+auto ByteArray::compare(const ByteArray& b) const -> int {
   if (m_size == 0 && b.m_size == 0)
     return 0;
 
@@ -208,27 +209,26 @@ int ByteArray::compare(const ByteArray& b) const {
   }
 }
 
-ByteArray ByteArray::andWith(ByteArray const& rhs, bool extend) {
-  return combineWith([](char a, char b) { return a & b; }, rhs, extend);
+auto ByteArray::andWith(ByteArray const& rhs, bool extend) -> ByteArray {
+  return combineWith([](char a, char b) -> int { return a & b; }, rhs, extend);
 }
 
-ByteArray ByteArray::orWith(ByteArray const& rhs, bool extend) {
-  return combineWith([](char a, char b) { return a | b; }, rhs, extend);
+auto ByteArray::orWith(ByteArray const& rhs, bool extend) -> ByteArray {
+  return combineWith([](char a, char b) -> int { return a | b; }, rhs, extend);
 }
 
-ByteArray ByteArray::xorWith(ByteArray const& rhs, bool extend) {
-  return combineWith([](char a, char b) { return a ^ b; }, rhs, extend);
+auto ByteArray::xorWith(ByteArray const& rhs, bool extend) -> ByteArray {
+  return combineWith([](char a, char b) -> int { return a ^ b; }, rhs, extend);
 }
 
 void ByteArray::insert(size_t pos, char byte) {
-  starAssert(pos <= m_size);
   resize(m_size + 1);
   for (size_t i = m_size - 1; i > pos; --i)
     m_data[i] = m_data[i - 1];
   m_data[pos] = byte;
 }
 
-ByteArray::iterator ByteArray::insert(const_iterator pos, char byte) {
+auto ByteArray::insert(const_iterator pos, char byte) -> ByteArray::iterator {
   size_t d = pos - begin();
   insert(d, byte);
   return begin() + d + 1;
@@ -239,19 +239,19 @@ void ByteArray::push_back(char byte) {
   m_data[m_size - 1] = byte;
 }
 
-bool ByteArray::operator<(const ByteArray& b) const {
+auto ByteArray::operator<(const ByteArray& b) const -> bool {
   return compare(b) < 0;
 }
 
-bool ByteArray::operator==(const ByteArray& b) const {
+auto ByteArray::operator==(const ByteArray& b) const -> bool {
   return compare(b) == 0;
 }
 
-bool ByteArray::operator!=(const ByteArray& b) const {
+auto ByteArray::operator!=(const ByteArray& b) const -> bool {
   return compare(b) != 0;
 }
 
-std::ostream& operator<<(std::ostream& os, const ByteArray& b) {
+auto operator<<(std::ostream& os, const ByteArray& b) -> std::ostream& {
   os << "0x" << hexEncode(b);
   return os;
 }

@@ -253,7 +253,7 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
   auto& templateData = worldStartPacket->templateData = m_worldTemplate->store();
   // this makes it possible to use custom InstanceWorlds without clients having the mod that adds their dungeon:
   if (templateData.optQueryString("worldParameters.primaryDungeon")
-    && Root::singletonPtr()->configuration()->getPath("compatibility.customDungeonWorld").optBool().value(false))
+    && Root::singletonPtr()->configuration()->getPath("compatibility.customDungeonWorld").optBool().value_or(false))
     worldStartPacket->templateData = worldStartPacket->templateData.setPath("worldParameters.primaryDungeon", "testarena");
 
   tie(worldStartPacket->skyData, clientInfo->skyNetVersion) = m_sky->writeUpdate(0, netRules);
@@ -422,7 +422,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       auto targetEntityConnection = connectionForEntity(entityInteract->interactRequest.targetId);
       if (targetEntityConnection == ServerConnectionId) {
         auto interactResult = interact(entityInteract->interactRequest).result();
-        clientInfo->outgoingPackets.append(make_shared<EntityInteractResultPacket>(interactResult.take(), entityInteract->requestId, entityInteract->interactRequest.sourceId));
+        clientInfo->outgoingPackets.append(make_shared<EntityInteractResultPacket>(std::move(*interactResult), entityInteract->requestId, entityInteract->interactRequest.sourceId));
       } else {
         auto const& forwardClientInfo = m_clientInfo.get(targetEntityConnection);
         forwardClientInfo->outgoingPackets.append(entityInteract);
@@ -455,7 +455,6 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
           EntityId entityId = entity->entityId();
           if (connectionForEntity(entityId) == clientId) {
-            starAssert(entity->isSlave());
             entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime, clientInfo->clientState.netCompatibilityRules());
           }
         });
@@ -504,7 +503,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         if (entity->isMaster()) {
           auto response = entity->receiveMessage(clientId, entityMessagePacket->message, entityMessagePacket->args);
           if (response)
-            clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(response.take()), entityMessagePacket->uuid));
+            clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(std::move(*response)), entityMessagePacket->uuid));
           else
             clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
         } else if (auto const& clientInfo = m_clientInfo.value(connectionForEntity(entity->entityId()))) {
@@ -570,8 +569,8 @@ bool WorldServer::sendPacket(ConnectionId clientId, PacketPtr const& packet) {
   return false;
 }
 
-Maybe<Json> WorldServer::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
-  Maybe<Json> result;
+std::optional<Json> WorldServer::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
+  std::optional<Json> result;
   for (auto& p : m_scriptContexts) {
     result = p.second->handleMessage(message, fromConnection == ServerConnectionId, args);
     if (result)
@@ -816,7 +815,6 @@ void WorldServer::forEachCollisionBlock(RectI const& region, function<void(Colli
       if (tile.getCollision() == CollisionKind::Null) {
         iterator(CollisionBlock::nullBlock(pos));
       } else {
-        starAssert(!tile.collisionCacheDirty);
         for (auto const& block : tile.collisionCache)
           iterator(block);
       }
@@ -835,7 +833,7 @@ bool WorldServer::lineTileCollision(Vec2F const& begin, Vec2F const& end, Collis
   return WorldImpl::lineTileCollision(m_geometry, m_tileArray, begin, end, collisionSet);
 }
 
-Maybe<pair<Vec2F, Vec2I>> WorldServer::lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) const {
+std::optional<pair<Vec2F, Vec2I>> WorldServer::lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) const {
   return WorldImpl::lineTileCollisionPoint(m_geometry, m_tileArray, begin, end, collisionSet);
 }
 
@@ -953,7 +951,7 @@ TileModificationList WorldServer::replaceTiles(TileModificationList const& modif
     }
 
     if (!toDamage.empty())
-      damageTiles(toDamage, layer, Vec2F(), tileDamage, Maybe<EntityId>());
+      damageTiles(toDamage, layer, Vec2F(), tileDamage, std::optional<EntityId>());
 
   } else {
     for (auto pair : modificationList) {
@@ -979,7 +977,7 @@ bool WorldServer::damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDama
   return WorldImpl::damageWouldDestroy(m_tileArray, pos, layer, tileDamage);
 }
 
-TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& damage, Maybe<EntityId> sourceEntity) {
+TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& damage, std::optional<EntityId> sourceEntity) {
   Set<Vec2I> positionSet;
   for (auto const& pos : positions)
     positionSet.add(m_geometry.xwrap(pos));
@@ -1010,7 +1008,7 @@ TileDamageResult WorldServer::damageTiles(List<Vec2I> const& positions, TileLaye
 
             bool broken = entity->damageTiles(entitySpacesSet.intersection(damagePositionSet).values(), sourcePosition, tileDamage);
             if (sourceEntity.isValid() && broken) {
-              Maybe<String> name;
+              std::optional<String> name;
               if (auto object = as<Object>(entity))
                 name = object->name();
               sendEntityMessage(*sourceEntity, "tileEntityBroken", {
@@ -1141,7 +1139,7 @@ ItemDescriptor WorldServer::collectLiquid(List<Vec2I> const& tilePositions, Liqu
   return ItemDescriptor();
 }
 
-bool WorldServer::placeDungeon(String const& dungeonName, Vec2I const& position, Maybe<DungeonId> dungeonId, bool forcePlacement) {
+bool WorldServer::placeDungeon(String const& dungeonName, Vec2I const& position, std::optional<DungeonId> dungeonId, bool forcePlacement) {
   m_generatingDungeon = true;
   m_tileProtectionEnabled = false;
 
@@ -1283,10 +1281,10 @@ StringList WorldServer::weatherList() const {
   return m_weather.weatherList();
 }
 
-Maybe<pair<String, String>> WorldServer::pullNewPlanetType() {
+std::optional<pair<String, String>> WorldServer::pullNewPlanetType() {
   if (m_newPlanetType)
-    return m_newPlanetType.take();
-  return {};
+    return std::move(*m_newPlanetType);
+  return std::nullopt;
 }
 
 bool WorldServer::isTileProtected(Vec2I const& pos) const {
@@ -1352,8 +1350,8 @@ void WorldServer::setDungeonId(RectI const& tileArea, DungeonId dungeonId) {
   }
 }
 
-void WorldServer::setDungeonGravity(DungeonId dungeonId, Maybe<float> gravity) {
-  Maybe<float> current = m_dungeonIdGravity.maybe(dungeonId);
+void WorldServer::setDungeonGravity(DungeonId dungeonId, std::optional<float> gravity) {
+  std::optional<float> current = m_dungeonIdGravity.maybe(dungeonId);
   if (gravity != current) {
     if (gravity)
       m_dungeonIdGravity[dungeonId] = *gravity;
@@ -1472,7 +1470,7 @@ void WorldServer::init(bool firstTime) {
     }
 
     if (m_adjustPlayerStart)
-      m_playerStart = findPlayerStart(firstTime ? Maybe<Vec2F>() : m_playerStart);
+      m_playerStart = findPlayerStart(firstTime ? std::optional<Vec2F>() : m_playerStart);
 
     generateRegion(RectI::integral(RectF(m_playerStart, m_playerStart)).padded(m_serverConfig.getInt("playerStartInitialGenRadius")));
 
@@ -1486,11 +1484,11 @@ void WorldServer::init(bool firstTime) {
   }
 }
 
-Maybe<unsigned> WorldServer::shouldRunThisStep(String const& timingConfiguration) {
+std::optional<unsigned> WorldServer::shouldRunThisStep(String const& timingConfiguration) {
   Vec2U timing = jsonToVec2U(m_fidelityConfig.get(timingConfiguration));
   if ((m_currentStep + timing[1]) % timing[0] == 0)
     return timing[0];
-  return {};
+  return std::nullopt;
 }
 
 TileModificationList WorldServer::doApplyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap, bool ignoreTileProtection, bool updateNeighbors) {
@@ -1772,7 +1770,7 @@ WorldServer::ScriptComponentPtr WorldServer::scriptContext(String const& context
     return nullptr;
 }
 
-RpcPromise<Vec2I> WorldServer::enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) {
+RpcPromise<Vec2I> WorldServer::enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id) {
   return m_worldStorage->enqueuePlacement(std::move(distributions), id);
 }
 
@@ -2231,8 +2229,8 @@ float WorldServer::lightLevel(Vec2F const& pos) const {
   return WorldImpl::lightLevel(m_tileArray, m_entityMap, m_geometry, m_worldTemplate, m_sky, m_lightIntensityCalculator, pos);
 }
 
-void WorldServer::setDungeonBreathable(DungeonId dungeonId, Maybe<bool> breathable) {
-  Maybe<bool> current = m_dungeonIdBreathable.maybe(dungeonId);
+void WorldServer::setDungeonBreathable(DungeonId dungeonId, std::optional<bool> breathable) {
+  std::optional<bool> current = m_dungeonIdBreathable.maybe(dungeonId);
   if (breathable != current) {
     if (breathable)
       m_dungeonIdBreathable[dungeonId] = *breathable;
@@ -2395,7 +2393,7 @@ void WorldServer::setPlayerStart(Vec2F const& startPosition, bool respawnInWorld
     pair.second->outgoingPackets.append(make_shared<SetPlayerStartPacket>(m_playerStart, m_respawnInWorld));
 }
 
-Vec2F WorldServer::findPlayerStart(Maybe<Vec2F> firstTry) {
+Vec2F WorldServer::findPlayerStart(std::optional<Vec2F> firstTry) {
   Vec2F spawnRectSize = jsonToVec2F(m_serverConfig.get("playerStartRegionSize"));
   auto maximumVerticalSearch = m_serverConfig.getInt("playerStartRegionMaximumVerticalSearch");
   auto maximumTries = m_serverConfig.getInt("playerStartRegionMaximumTries");
@@ -2532,7 +2530,7 @@ WorldServer::ClientInfo::ClientInfo(ConnectionId clientId, InterpolationTracker 
   : clientId(clientId), skyNetVersion(0), weatherNetVersion(0), pendingForward(false), started(false), local(false), admin(false), interpolationTracker(trackerInit) {}
 
 List<RectI> WorldServer::ClientInfo::monitoringRegions(EntityMapPtr const& entityMap) const {
-  return clientState.monitoringRegions([entityMap](EntityId entityId) -> Maybe<RectI> {
+  return clientState.monitoringRegions([entityMap](EntityId entityId) -> std::optional<RectI> {
     if (auto entity = entityMap->entity(entityId))
       return RectI::integral(entity->metaBoundBox().translated(entity->position()));
     return {};

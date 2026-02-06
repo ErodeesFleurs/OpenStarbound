@@ -1,8 +1,6 @@
 #include "StarTechController.hpp"
 #include "StarStatusController.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarLuaGameConverters.hpp"
 #include "StarWorldLuaBindings.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
@@ -11,7 +9,6 @@
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
 #include "StarRoot.hpp"
-#include "StarScriptedEntity.hpp"
 #include "StarLoungingEntities.hpp"
 #include "StarWorld.hpp"
 #include "StarLogging.hpp"
@@ -252,7 +249,7 @@ void TechController::tickSlave(float dt) {
   updateAnimators(dt);
 }
 
-Maybe<TechController::ParentState> TechController::parentState() const {
+std::optional<TechController::ParentState> TechController::parentState() const {
   return m_parentState.get();
 }
 
@@ -339,7 +336,7 @@ List<Particle> TechController::pullNewParticles() {
   return newParticles;
 }
 
-Maybe<Json> TechController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::optional<Json> TechController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   for (auto& module : m_techModules) {
     if (auto res = module.scriptComponent.handleMessage(message, localMessage, args))
       return res;
@@ -347,7 +344,7 @@ Maybe<Json> TechController::receiveMessage(String const& message, bool localMess
   return {};
 }
 
-TechController::TechAnimator::TechAnimator(Maybe<String> ac) {
+TechController::TechAnimator::TechAnimator(std::optional<String> ac) {
   animationConfig = std::move(ac);
   animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
   netGroup.addNetElement(&animator);
@@ -502,14 +499,14 @@ LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
       techModule.visible = visible;
     });
 
-  callbacks.registerCallback("setParentState", [this](Maybe<String> const& state) {
+  callbacks.registerCallback("setParentState", [this](std::optional<String> const& state) {
       if (state)
         m_parentState.set(ParentStateNames.getLeft(*state));
       else
         m_parentState.set({});
     });
 
-  callbacks.registerCallback("setParentDirectives", [this, &techModule](Maybe<String> const& directives) {
+  callbacks.registerCallback("setParentDirectives", [this, &techModule](std::optional<String> const& directives) {
       techModule.parentDirectives = directives.value();
 
       DirectivesGroup newParentDirectives;
@@ -529,7 +526,7 @@ LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
 
   callbacks.registerCallback("parentLounging", [this]() {
       if (auto loungingEntity = as<LoungingEntity>(m_parentEntity))
-        return loungingEntity->loungingIn().isValid();
+        return loungingEntity->loungingIn().has_value();
       return false;
     });
 

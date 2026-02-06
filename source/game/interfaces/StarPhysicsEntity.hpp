@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarPoly.hpp"
-#include "StarVariant.hpp"
 #include "StarJson.hpp"
 #include "StarEntity.hpp"
 #include "StarForceRegions.hpp"
@@ -52,7 +51,7 @@ public:
   virtual List<PhysicsForceRegion> forceRegions() const;
 
   virtual size_t movingCollisionCount() const;
-  virtual Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const;
+  virtual std::optional<PhysicsMovingCollision> movingCollision(size_t positionIndex) const;
 };
 
 }

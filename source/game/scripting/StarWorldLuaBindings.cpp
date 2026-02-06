@@ -345,7 +345,7 @@ namespace LuaBindings {
 
         return {};
       });
-      
+
 
     callbacks.registerCallback("dungeonId", [world](Vec2I position) -> DungeonId {
         if (auto serverWorld = as<WorldServer>(world)) {
@@ -508,11 +508,11 @@ namespace LuaBindings {
           else
             return {};
         });
-    
+
     callbacks.registerCallbackWithSignature<EntityPtr, EntityId>("entity", [world](EntityId entityId) -> EntityPtr {
       return world->entity(entityId);
     });
-    
+
     callbacks.registerCallbackWithSignature<bool, int>("entityExists", bind(WorldEntityCallbacks::entityExists, world, _1));
     callbacks.registerCallbackWithSignature<bool, int, int>("entityCanDamage", bind(WorldEntityCallbacks::entityCanDamage, world, _1, _2));
     callbacks.registerCallbackWithSignature<Json, EntityId>("entityDamageTeam", bind(WorldEntityCallbacks::entityDamageTeam, world, _1));
@@ -1129,7 +1129,7 @@ namespace LuaBindings {
   }
 
   RectI ClientWorldCallbacks::clientWindow(WorldClient* world) {
-    return world->clientWindow();	
+    return world->clientWindow();
   }
 
   String ServerWorldCallbacks::id(WorldServer* world) {
@@ -2024,7 +2024,7 @@ namespace LuaBindings {
 
     std::string layerName = arg2.utf8();
     auto split = layerName.find_first_of('+');
-    if (split != NPos) {
+    if (split != std::numeric_limits<std::size_t>::max()) {
       auto overrideName = layerName.substr(split + 1);
       layerName = layerName.substr(0, split);
       if (overrideName == "empty" || overrideName == "none")
@@ -2068,7 +2068,7 @@ namespace LuaBindings {
 
     std::string layerName = layer.utf8();
     auto split = layerName.find_first_of('+');
-    if (split != NPos) {
+    if (split != std::numeric_limits<std::size_t>::max()) {
       auto overrideName = layerName.substr(split + 1);
       layerName = layerName.substr(0, split);
       if (overrideName == "empty" || overrideName == "none")

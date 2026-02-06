@@ -108,11 +108,11 @@ bool Stagehand::shouldDestroy() const {
   return m_dead;
 }
 
-Maybe<LuaValue> Stagehand::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> Stagehand::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> Stagehand::evalScript(String const& code) {
+std::optional<LuaValue> Stagehand::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
@@ -148,10 +148,10 @@ void Stagehand::readConfig(Json config) {
     m_yPosition.set(pos[1]);
   }
 
-  Maybe<RectF> broadcastArea = jsonToMaybe<RectF>(config.opt("broadcastArea").value(Json()), jsonToRectF);
+  std::optional<RectF> broadcastArea = jsonToMaybe<RectF>(config.opt("broadcastArea").value_or(Json()), jsonToRectF);
   if (broadcastArea && (broadcastArea->size()[0] < 0.0 || broadcastArea->size()[1] < 0.0))
     broadcastArea.reset();
-  m_boundBox = broadcastArea.value(RectF(-5.0, -5.0, 5.0, 5.0));
+  m_boundBox = broadcastArea.value_or(RectF(-5.0, -5.0, 5.0, 5.0));
 
   if (m_scripted) {
     m_scriptComponent.setScripts(jsonToStringList(m_config.getArray("scripts", JsonArray())));
@@ -187,7 +187,7 @@ LuaCallbacks Stagehand::makeStagehandCallbacks() {
       return typeName();
     });
 
-  callbacks.registerCallback("setUniqueId", [this](Maybe<String> const& uniqueId) {
+  callbacks.registerCallback("setUniqueId", [this](std::optional<String> const& uniqueId) {
       setUniqueId(uniqueId);
     });
 
@@ -202,7 +202,7 @@ String Stagehand::typeName() const {
   return m_config.getString("type");
 }
 
-Maybe<Json> Stagehand::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+std::optional<Json> Stagehand::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
 }
 

@@ -29,9 +29,9 @@ private:
   void push(FormattedJson const& v);
   FormattedJson pop();
   FormattedJson& current();
-  void putValue(Json const& value, Maybe<String> formatting = {});
+  void putValue(Json const& value, std::optional<String> formatting = {});
 
-  Maybe<FormattedJson> m_root;
+  std::optional<FormattedJson> m_root;
   List<FormattedJson> m_stack;
 };
 
@@ -107,8 +107,8 @@ FormattedJson FormattedJson::get(String const& key) const {
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call get with key on FormattedJson type {}, must be Object type", typeName());
 
-  Maybe<pair<ElementLocation, ElementLocation>> entry = m_objectEntryLocations.maybe(key);
-  if (entry.isNothing())
+  std::optional<pair<ElementLocation, ElementLocation>> entry = m_objectEntryLocations.maybe(key);
+  if (!entry)
     throw JsonException::format("No such key in FormattedJson::get(\"{}\")", key);
 
   return getFormattedJson(entry->second);
@@ -138,7 +138,7 @@ FormattedJson::ElementLocation indexOf(FormattedJson::ElementList const& element
     if (elements[pos].is<ElementType>())
       return pos;
   }
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 template <class ElementType>
@@ -149,7 +149,7 @@ FormattedJson::ElementLocation lastIndexOf(
     if (elements[pos].is<ElementType>())
       return pos;
   }
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 String concatWhitespace(FormattedJson::ElementList const& elements, FormattedJson::ElementLocation from,
@@ -168,15 +168,15 @@ WhitespaceStyle detectWhitespace(FormattedJson::ElementList const& elements,
 
   // Find a nearby value as a reference location to learn whitespace from.
   FormattedJson::ElementLocation valueLoc = lastIndexOf<ValueElement>(elements, insertLoc);
-  if (valueLoc == NPos)
+  if (valueLoc == std::numeric_limits<std::size_t>::max())
     valueLoc = indexOf<ValueElement>(elements, insertLoc);
 
-  if (valueLoc == NPos) {
+  if (valueLoc == std::numeric_limits<std::size_t>::max()) {
     // This object/array is empty. Pre-key/value whitespace will be the total of
     // the whitespace already present, plus some guessed indentation if it
     // contained a newline.
     String beforeValue = concatWhitespace(elements, 0, elements.size());
-    if (beforeValue.find('\n') != NPos)
+    if (beforeValue.find('\n') != std::numeric_limits<std::size_t>::max())
       beforeValue += "  ";
     if (array)
       return WhitespaceStyle{"", "", beforeValue, ""};
@@ -184,27 +184,25 @@ WhitespaceStyle detectWhitespace(FormattedJson::ElementList const& elements,
   }
 
   FormattedJson::ElementLocation commaLoc = indexOf<CommaElement>(elements, valueLoc);
-  if (commaLoc != NPos) {
+  if (commaLoc != std::numeric_limits<std::size_t>::max()) {
     style.beforeComma = concatWhitespace(elements, valueLoc + 1, commaLoc);
   }
 
   FormattedJson::ElementLocation colonLoc = lastIndexOf<ColonElement>(elements, valueLoc);
-  starAssert((colonLoc == NPos) == array);
-  if (colonLoc != NPos) {
+  if (colonLoc != std::numeric_limits<std::size_t>::max()) {
     style.beforeValue = concatWhitespace(elements, colonLoc + 1, valueLoc);
 
     FormattedJson::ElementLocation keyLoc = lastIndexOf<ObjectKeyElement>(elements, colonLoc);
-    starAssert(keyLoc != NPos);
     style.beforeColon = concatWhitespace(elements, keyLoc + 1, colonLoc);
 
     FormattedJson::ElementLocation prevValueLoc = lastIndexOf<ValueElement>(elements, keyLoc);
-    if (prevValueLoc == NPos)
+    if (prevValueLoc == std::numeric_limits<std::size_t>::max())
       prevValueLoc = 0;
     style.beforeKey = concatWhitespace(elements, prevValueLoc, keyLoc);
 
   } else {
     FormattedJson::ElementLocation prevValueLoc = lastIndexOf<ValueElement>(elements, valueLoc);
-    if (prevValueLoc == NPos)
+    if (prevValueLoc == std::numeric_limits<std::size_t>::max())
       prevValueLoc = 0;
     style.beforeValue = concatWhitespace(elements, prevValueLoc, valueLoc);
   }
@@ -235,11 +233,11 @@ void insertWithCommaAndFormatting(FormattedJson::ElementList& destination, Forma
     bool array, FormattedJson::ElementList const& elements) {
   // Find the previous value we're inserting after, if any.
   at = lastIndexOf<ValueElement>(destination, at);
-  if (at == NPos)
+  if (at == std::numeric_limits<std::size_t>::max())
     at = 0;
   else
     at += 1;
-  bool empty = lastIndexOf<ValueElement>(destination, destination.size()) == NPos;
+  bool empty = lastIndexOf<ValueElement>(destination, destination.size()) == std::numeric_limits<std::size_t>::max();
   bool appendComma = at == 0 && !empty;
   bool prependComma = !appendComma && !empty;
 
@@ -289,13 +287,13 @@ void removeValueFromArray(List<JsonElement>& elements, size_t loc) {
   // If it's the last value, it removes the value, and the preceding whitespace
   // and comma.
   size_t commaLoc = elements.indexOf(CommaElement{}, loc);
-  if (commaLoc != NPos) {
+  if (commaLoc != std::numeric_limits<std::size_t>::max()) {
     elements.eraseAt(loc, commaLoc + 1);
     while (loc < elements.size() && elements.at(loc).is<WhitespaceElement>())
       elements.eraseAt(loc);
   } else {
     commaLoc = elements.lastIndexOf(CommaElement{}, loc);
-    if (commaLoc == NPos)
+    if (commaLoc == std::numeric_limits<std::size_t>::max())
       commaLoc = 0;
     elements.eraseAt(commaLoc, loc + 1);
   }
@@ -305,8 +303,8 @@ FormattedJson FormattedJson::eraseKey(String const& key) const {
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call erase with key on FormattedJson type {}, must be Object type", typeName());
 
-  Maybe<pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
-  if (maybeEntry.isNothing())
+  std::optional<pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
+  if (!maybeEntry)
     return *this;
 
   ElementLocation loc = maybeEntry->first;
@@ -391,7 +389,7 @@ String FormattedJson::typeName() const {
 String FormattedJson::toFormattedDouble() const {
   if (!isType(Json::Type::Float))
     throw JsonException::format("Cannot call toFormattedDouble on Json type {}, must be Float", typeName());
-  if (m_formatting.isValid())
+  if (m_formatting.has_value())
     return *m_formatting;
   return toJson().repr();
 }
@@ -399,13 +397,13 @@ String FormattedJson::toFormattedDouble() const {
 String FormattedJson::toFormattedInt() const {
   if (!isType(Json::Type::Int))
     throw JsonException::format("Cannot call toFormattedInt on Json type {}, must be Int", typeName());
-  if (m_formatting.isValid())
+  if (m_formatting.has_value())
     return *m_formatting;
   return toJson().repr();
 }
 
 String FormattedJson::repr() const {
-  if (m_formatting.isValid())
+  if (m_formatting.has_value())
     return *m_formatting;
   String result;
   outputUtf32Json<std::back_insert_iterator<String>, FormattedJson>(*this, std::back_inserter(result), 0, false);
@@ -456,8 +454,8 @@ FormattedJson FormattedJson::objectInsert(String const& key, FormattedJson const
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call set with key on FormattedJson type {}, must be Object type", typeName());
 
-  Maybe<pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
-  if (maybeEntry.isValid()) {
+  std::optional<pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
+  if (maybeEntry) {
     ElementList elements = m_elements;
     elements.at(maybeEntry->second) = ValueElement{value};
     return object(elements);
@@ -473,14 +471,12 @@ void FormattedJson::appendElement(JsonElement const& elem) {
   m_elements.append(elem);
 
   if (elem.is<ObjectKeyElement>()) {
-    starAssert(isType(Json::Type::Object));
     m_lastKey = loc;
 
   } else if (elem.is<ValueElement>()) {
     m_lastValue = loc;
 
-    if (m_lastKey.isValid()) {
-      starAssert(isType(Json::Type::Object));
+    if (m_lastKey.has_value()) {
       String key = m_elements[*m_lastKey].get<ObjectKeyElement>().key;
 
       m_objectEntryLocations[key] = make_pair(*m_lastKey, loc);
@@ -488,7 +484,6 @@ void FormattedJson::appendElement(JsonElement const& elem) {
 
       m_lastKey = {};
     } else {
-      starAssert(isType(Json::Type::Array));
       m_arrayElementLocations.append(loc);
 
       m_jsonValue = m_jsonValue.append(elemToJson(elem));
@@ -501,7 +496,6 @@ FormattedJson const& FormattedJson::getFormattedJson(ElementLocation loc) const 
 }
 
 FormattedJson FormattedJson::formattedAs(String const& formatting) const {
-  starAssert(Json::parse(formatting) == toJson());
   FormattedJson json = *this;
   json.m_formatting = formatting;
   return json;
@@ -575,7 +569,7 @@ void FormattedJsonBuilderStream::putComma() {
 }
 
 FormattedJson FormattedJsonBuilderStream::takeTop() {
-  return m_root.take();
+  return std::move(*m_root);
 }
 
 void FormattedJsonBuilderStream::push(FormattedJson const& v) {
@@ -592,9 +586,9 @@ FormattedJson& FormattedJsonBuilderStream::current() {
   return m_stack.back();
 }
 
-void FormattedJsonBuilderStream::putValue(Json const& value, Maybe<String> formatting) {
+void FormattedJsonBuilderStream::putValue(Json const& value, std::optional<String> formatting) {
   FormattedJson formattedValue = value;
-  if (formatting.isValid())
+  if (formatting)
     formattedValue = formattedValue.formattedAs(*formatting);
 
   if (m_stack.size() > 0)
@@ -663,7 +657,6 @@ std::ostream& operator<<(std::ostream& os, JsonElement const& elem) {
     return os << "ColonElement{}";
   if (elem.is<CommaElement>())
     return os << "CommaElement{}";
-  starAssert(false);
   return os;
 }
 

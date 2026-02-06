@@ -12,9 +12,9 @@ TEST(StringTest, substr) {
 
 TEST(StringTest, find) {
   EXPECT_EQ(String("xxFooxx").find("Foo"), 2u);
-  EXPECT_EQ(String("xxFooxx").find("foo"), NPos);
+  EXPECT_EQ(String("xxFooxx").find("foo"), std::numeric_limits<std::size_t>::max());
   EXPECT_EQ(String("xxFooxx").find("foo", 0, String::CaseInsensitive), 2u);
-  EXPECT_EQ(String("xxFooxx").find("bar", 0, String::CaseInsensitive), NPos);
+  EXPECT_EQ(String("xxFooxx").find("bar", 0, String::CaseInsensitive), std::numeric_limits<std::size_t>::max());
   EXPECT_EQ(String("BAR baz baf BAR").find("bar", 1, String::CaseInsensitive), 12u);
   EXPECT_EQ(String("\0asdf", 5).find("df"), 3u);
 }

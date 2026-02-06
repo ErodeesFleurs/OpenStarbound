@@ -85,8 +85,8 @@ namespace Dungeon {
       connector.forwardOnly = tile.contains("connectForwardOnly") && tile.get("connectForwardOnly").toBool();
 
       Json connectorValue = tile.get("value");
-      if (Maybe<Json> value = tile.maybe("connector-value"))
-        connectorValue = value.take();
+      if (std::optional<Json> value = tile.maybe("connector-value"))
+        connectorValue = std::move(*value);
 
       if (connectorValue.isType(Json::Type::String))
         connector.value = connectorValue.toString();
@@ -119,7 +119,6 @@ namespace Dungeon {
 
   unsigned ImageTileset::colorAsInt(Vec4B color) const {
     if ((color[3] != 0) && (color[3] != 255)) {
-      starAssert(false);
       return 0;
     }
     if (color[3] == 0)

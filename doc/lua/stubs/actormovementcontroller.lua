@@ -69,7 +69,7 @@ function mcontroller.stickingDirection() end
 function mcontroller.liquidPercentage() end
 
 --- Returns the liquid ID of the liquid that the movement controller is currently submerged in. If this is several liquids this returns the most plentiful one. ---
----@return LiquidId
+---@return integer
 function mcontroller.liquidId() end
 
 --- Returns whether the movement controller is currently on ground. ---
@@ -86,57 +86,46 @@ function mcontroller.zeroG() end
 function mcontroller.atWorldLimit(bottomOnly) end
 
 --- Anchors the movement controller to an anchorable entity at the given anchor index. ---
----@param anchorableEntity EntityId
----@return void
+---@param anchorableEntity integer
 function mcontroller.setAnchorState(anchorableEntity) end
 
 --- Reset the anchor state. ---
----@return void
 function mcontroller.resetAnchorState() end
 
 --- Sets the position of the movement controller. ---
 ---@param position Vec2F
----@return void
 function mcontroller.setPosition(position) end
 
 --- Sets the horizontal position of the movement controller. ---
 ---@param x number
----@return void
 function mcontroller.setXPosition(x) end
 
 --- Sets the vertical position of the movement controller. ---
 ---@param y number
----@return void
 function mcontroller.setYPosition(y) end
 
 --- Moves the movement controller by the vector provided. ---
 ---@param direction Vec2F
----@return void
 function mcontroller.translate(direction) end
 
 --- Sets the velocity of the movement controller. ---
 ---@param velocity Vec2F
----@return void
 function mcontroller.setVelocity(velocity) end
 
 --- Sets the horizontal velocity of the movement controller. ---
 ---@param xVelocity Vec2F
----@return void
 function mcontroller.setXVelocity(xVelocity) end
 
 --- Sets the vertical velocity of the movement controller. ---
 ---@param yVelocity Vec2F
----@return void
 function mcontroller.setYVelocity(yVelocity) end
 
 --- Adds (momentum / mass) velocity to the movement controller. ---
 ---@param momentum Vec2F
----@return void
 function mcontroller.addMomentum(momentum) end
 
 --- Sets the rotation of the movement controller. Angle is in radians. ---
 ---@param angle number
----@return void
 function mcontroller.setRotation(angle) end
 
 --- Returns the base movement parameters. ---
@@ -189,22 +178,18 @@ function mcontroller.liquidMovement() end
 
 --- Rotates the controller. Each control adds to the previous one. ---
 ---@param rotation number
----@return void
 function mcontroller.controlRotation(rotation) end
 
 --- Controls acceleration. Each control adds to the previous one. ---
 ---@param acceleration Vec2F
----@return void
 function mcontroller.controlAcceleration(acceleration) end
 
 --- Controls force. Each control adds to the previous one. ---
----@return void
 function mcontroller.controlForce() end
 
 --- Approaches the targetVelocity using the force provided. If the current velocity is higher than the provided targetVelocity, the targetVelocity will still be approached, effectively slowing down the entity. Each control overrides the previous one. ---
 ---@param targetVelocity Vec2F
 ---@param maxControlForce number
----@return void
 function mcontroller.controlApproachVelocity(targetVelocity, maxControlForce) end
 
 --- Approaches the targetVelocity but only along the provided angle, not affecting velocity in the perpendicular axis. If positiveOnly, then it will not slow down the movementController if it is already moving faster than targetVelocity. Each control overrides the previous one. ---
@@ -212,61 +197,49 @@ function mcontroller.controlApproachVelocity(targetVelocity, maxControlForce) en
 ---@param targetVelocity number
 ---@param maxControlForce number
 ---@param positiveOnly boolean
----@return void
 function mcontroller.controlApproachVelocityAlongAngle(angle, targetVelocity, maxControlForce, positiveOnly) end
 
 --- Approaches an X velocity. Same as using approachVelocityAlongAngle with angle 0. Each control overrides the previous one. ---
 ---@param targetVelocity number
 ---@param maxControlForce number
----@return void
 function mcontroller.controlApproachXVelocity(targetVelocity, maxControlForce) end
 
 --- Approaches a Y velocity. Same as using approachVelocityAlongAngle with angle (Pi / 2). Each control overrides the previous one. ---
 ---@param targetVelocity number
 ---@param maxControlForce number
----@return void
 function mcontroller.controlApproachYVelocity(targetVelocity, maxControlForce) end
 
 --- Changes movement parameters. Parameters are merged into the base parameters. Each control is merged into the previous one. ---
 ---@param parameters ActorMovementParameters
----@return void
 function mcontroller.controlParameters(parameters) end
 
 --- Changes movement modifiers. Modifiers are merged into the base modifiers. Each control is merged into the previous one. ---
 ---@param modifiers ActorMovementModifiers
----@return void
 function mcontroller.controlModifiers(modifiers) end
 
 --- Controls movement in a direction. Each control replaces the previous one. ---
 ---@param direction number
 ---@param run boolean
----@return void
 function mcontroller.controlMove(direction, run) end
 
 --- Controls the facing direction. Each control replaces the previous one. ---
 ---@param direction number
----@return void
 function mcontroller.controlFace(direction) end
 
 --- Controls dropping through platforms. ---
----@return void
 function mcontroller.controlDown() end
 
 --- Controls crouching. ---
----@return void
 function mcontroller.controlCrouch() end
 
 --- Controls starting a jump. Only has an effect if canJump is true. ---
----@return void
 function mcontroller.controlJump() end
 
 --- Keeps holding jump. Will not trigger a new jump, and can be held in the air. ---
----@return void
 function mcontroller.controlHoldJump() end
 
 --- Controls flying in the specified direction (or {0, 0} to stop) with the configured flightSpeed parameter. Each control overrides the previous one. ---
 ---@param direction Vec2F
----@return void
 function mcontroller.controlFly(direction) end
 
 --- Returns whether the controller is currently set to auto clear controls before each script update. ---
@@ -275,9 +248,7 @@ function mcontroller.autoClearControls() end
 
 --- Set whether to automatically clear controls before each script update. ---
 ---@param enabled boolean
----@return void
 function mcontroller.setAutoClearControls(enabled) end
 
 --- Manually clear all controls.
----@return void
 function mcontroller.clearControls() end

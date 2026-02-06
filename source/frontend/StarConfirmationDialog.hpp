@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarPane.hpp"
 #include "StarRpcPromise.hpp"
 
@@ -16,7 +18,7 @@ public:
   void displayConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> resultPromise);
   void displayConfirmation(Json const& dialogConfig, WidgetCallbackFunc okCallback, WidgetCallbackFunc cancelCallback);
   
-  Maybe<EntityId> sourceEntityId();
+  std::optional<EntityId> sourceEntityId();
 
   void dismissed() override;
 
@@ -27,9 +29,9 @@ private:
   WidgetCallbackFunc m_cancelCallback;
   bool m_confirmed;
 
-  Maybe<EntityId> m_sourceEntityId;
+  std::optional<EntityId> m_sourceEntityId;
 
-  Maybe<RpcPromiseKeeper<Json>> m_resultPromise;
+  std::optional<RpcPromiseKeeper<Json>> m_resultPromise;
 };
 
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarPane.hpp"
 #include "StarInventoryTypes.hpp"
 #include "StarItemDescriptor.hpp"
@@ -63,7 +65,7 @@ private:
   StringList m_putDownSounds;
   StringList m_someUpSounds;
   StringList m_someDownSounds;
-  Maybe<ItemDescriptor> m_currentSwapSlotItem;
+  std::optional<ItemDescriptor> m_currentSwapSlotItem;
 
   List<ImageWidgetPtr> m_disabledTechOverlays;
 };

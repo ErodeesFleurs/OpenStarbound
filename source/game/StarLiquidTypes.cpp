@@ -16,10 +16,10 @@ LiquidLevel LiquidLevel::take(float amount) {
   return taken;
 }
 
-LiquidStore LiquidStore::filled(LiquidId liquid, float level, Maybe<float> pressure) {
+LiquidStore LiquidStore::filled(LiquidId liquid, float level, std::optional<float> pressure) {
   if (liquid == EmptyLiquidId)
     return LiquidStore();
-  return LiquidStore(liquid, level, pressure.value(level), false);
+  return LiquidStore(liquid, level, pressure.value_or(level), false);
 }
 
 LiquidStore LiquidStore::endless(LiquidId liquid, float pressure) {
@@ -37,7 +37,7 @@ LiquidNetUpdate LiquidStore::netUpdate() const {
   return LiquidNetUpdate{liquid, floatToByte(level, true)};
 }
 
-Maybe<LiquidNetUpdate> LiquidStore::update(LiquidId liquid, float level, float pressure) {
+std::optional<LiquidNetUpdate> LiquidStore::update(LiquidId liquid, float level, float pressure) {
   if (source) {
     if (this->liquid != liquid)
       return {};

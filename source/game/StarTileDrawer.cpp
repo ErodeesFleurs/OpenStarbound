@@ -2,39 +2,38 @@
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
+#include "StarException.hpp"
 #include "StarAssets.hpp"
 #include "StarRoot.hpp"
 
 namespace Star {
 
 RenderTile TileDrawer::DefaultRenderTile{
-    NullMaterialId,
-    NoModId,
-    NullMaterialId,
-    NoModId,
-    0,
-    0,
-    DefaultMaterialColorVariant,
-    TileDamageType::Protected,
-    0,
-    0,
-    0,
-    DefaultMaterialColorVariant,
-    TileDamageType::Protected,
-    0,
-    EmptyLiquidId,
-    0
+    .foreground=NullMaterialId,
+    .foregroundMod=NoModId,
+    .background=NullMaterialId,
+    .backgroundMod=NoModId,
+    .foregroundHueShift=0,
+    .foregroundModHueShift=0,
+    .foregroundColorVariant=DefaultMaterialColorVariant,
+    .foregroundDamageType=TileDamageType::Protected,
+    .foregroundDamageLevel=0,
+    .backgroundHueShift=0,
+    .backgroundModHueShift=0,
+    .backgroundColorVariant=DefaultMaterialColorVariant,
+    .backgroundDamageType=TileDamageType::Protected,
+    .backgroundDamageLevel=0,
+    .liquidId=EmptyLiquidId,
+    .liquidLevel=0
 };
 
 TileDrawer* TileDrawer::s_singleton;
 
-TileDrawer* TileDrawer::singletonPtr() {
+auto TileDrawer::singletonPtr() -> TileDrawer* {
   return s_singleton;
 }
 
-TileDrawer& TileDrawer::singleton() {
+auto TileDrawer::singleton() -> TileDrawer& {
   if (!s_singleton)
     throw StarException("TileDrawer::singleton() called with no TileDrawer instance available");
   else
@@ -56,7 +55,7 @@ TileDrawer::~TileDrawer() {
 }
 
 bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
-  TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, Maybe<TerrainLayer> variantLayer) {
+  TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, std::optional<TerrainLayer> variantLayer) {
   auto& root = Root::singleton();
   auto assets = Root::singleton().assets();
   auto materialDatabase = root.materialDatabase();
@@ -117,7 +116,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   if (materialRenderProfile) {
     occlude = materialRenderProfile->occludesBehind;
     auto materialColorVariant = materialRenderProfile->colorVariants > 0 ? colorVariant % materialRenderProfile->colorVariants : 0;
-    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]) + offset[0], pos[1] + offset[1], (int)variantLayer.value(terrainLayer), "main");
+    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]) + offset[0], pos[1] + offset[1], (int)variantLayer.value_or(terrainLayer), "main");
     auto& drawList = drawables[materialZLevel(materialRenderProfile->zLevel, material, materialHue, materialColorVariant)];
 
     MaterialPieceResultList pieces;
@@ -138,7 +137,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
 
   if (modRenderProfile) {
     auto modColorVariant = modRenderProfile->colorVariants > 0 ? colorVariant % modRenderProfile->colorVariants : 0;
-    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)variantLayer.value(terrainLayer), "mod");
+    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)variantLayer.value_or(terrainLayer), "mod");
     auto& drawList = drawables[modZLevel(modRenderProfile->zLevel, mod, modHue, modColorVariant)];
 
     MaterialPieceResultList pieces;
@@ -307,7 +306,7 @@ bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bo
   for (auto const& match : matchList) {
     if (matchSetMatches(match)) {
       if (match->occlude)
-        *occlude = match->occlude.get();
+        *occlude = *match->occlude;
 
       subMatchResult = true;
 

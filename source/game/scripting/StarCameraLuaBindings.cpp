@@ -1,5 +1,4 @@
 #include "StarCameraLuaBindings.hpp"
-#include "StarLuaConverters.hpp"
 #include "StarWorldCamera.hpp"
 #include "StarRoot.hpp"
 
@@ -10,7 +9,7 @@ LuaCallbacks LuaBindings::makeCameraCallbacks(WorldCamera* camera) {
 
   callbacks.registerCallbackWithSignature<Vec2F>("position", bind(&WorldCamera::centerWorldPosition, camera));
   callbacks.registerCallbackWithSignature<float>("pixelRatio", bind(&WorldCamera::pixelRatio, camera));
-  callbacks.registerCallback("setPixelRatio", [camera](float pixelRatio, Maybe<bool> smooth) {
+  callbacks.registerCallback("setPixelRatio", [camera](float pixelRatio, std::optional<bool> smooth) {
     if (smooth.value())
       camera->setTargetPixelRatio(pixelRatio);
     else

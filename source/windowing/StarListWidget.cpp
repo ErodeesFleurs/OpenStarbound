@@ -9,14 +9,14 @@
 namespace Star {
 
 ListWidget::ListWidget(Json const& schema) : m_schema(schema) {
-  m_selectedItem = NPos;
+  m_selectedItem = std::numeric_limits<std::size_t>::max();
   m_columns = 1;
   setSchema(m_schema);
   updateSizeAndPosition();
 }
 
 ListWidget::ListWidget() {
-  m_selectedItem = NPos;
+  m_selectedItem = std::numeric_limits<std::size_t>::max();
   m_columns = 1;
   updateSizeAndPosition();
 }
@@ -81,7 +81,7 @@ WidgetPtr ListWidget::addItem(size_t at) {
   addChildAt(toString(Random::randu64()), newItem, at);
   updateSizeAndPosition();
 
-  if (m_selectedItem != NPos && at <= m_selectedItem)
+  if (m_selectedItem != std::numeric_limits<std::size_t>::max() && at <= m_selectedItem)
     setSelected(m_selectedItem + 1);
 
   return newItem;
@@ -125,7 +125,7 @@ void ListWidget::updateSizeAndPosition() {
 }
 
 void ListWidget::setEnabled(size_t pos, bool enabled) {
-  if (pos != NPos && pos < listSize()) {
+  if (pos != std::numeric_limits<std::size_t>::max() && pos < listSize()) {
     if (enabled) {
       m_disabledItems.remove(pos);
       if (auto bgWidget = itemAt(pos)->fetchChild<ImageWidget>("background"))
@@ -155,7 +155,7 @@ void ListWidget::setHovered(size_t pos, bool hovered) {
 }
 
 void ListWidget::setSelected(size_t pos) {
-  if ((m_selectedItem != NPos) && (m_selectedItem < listSize())) {
+  if ((m_selectedItem != std::numeric_limits<std::size_t>::max()) && (m_selectedItem < listSize())) {
     if (auto bgWidget = selectedWidget()->fetchChild<ImageWidget>("background"))
       bgWidget->setImage(m_unselectedBG);
   }
@@ -166,20 +166,20 @@ void ListWidget::setSelected(size_t pos) {
       m_callback(this);
   }
 
-  if (m_selectedItem != NPos) {
+  if (m_selectedItem != std::numeric_limits<std::size_t>::max()) {
     if (auto bgWidget = selectedWidget()->fetchChild<ImageWidget>("background"))
       bgWidget->setImage(m_selectedBG);
   }
 }
 
 void ListWidget::clearSelected() {
-  setSelected(NPos);
+  setSelected(std::numeric_limits<std::size_t>::max());
 }
 
 void ListWidget::setSelectedWidget(WidgetPtr selected) {
   auto offset = itemPosition(selected);
 
-  if (offset == NPos) {
+  if (offset == std::numeric_limits<std::size_t>::max()) {
     throw GuiException("Attempted to select item not in list.");
   }
 
@@ -201,8 +201,8 @@ void ListWidget::setColumns(uint64_t columns) {
 void ListWidget::removeItem(size_t at) {
   removeChildAt(at);
   if (m_selectedItem == at)
-    setSelected(NPos);
-  else if (m_selectedItem != NPos && m_selectedItem > at)
+    setSelected(std::numeric_limits<std::size_t>::max());
+  else if (m_selectedItem != std::numeric_limits<std::size_t>::max() && m_selectedItem > at)
     setSelected(m_selectedItem - 1);
 
   updateSizeAndPosition();
@@ -211,7 +211,7 @@ void ListWidget::removeItem(size_t at) {
 void ListWidget::removeItem(WidgetPtr item) {
   auto offset = itemPosition(item);
 
-  if (offset == NPos) {
+  if (offset == std::numeric_limits<std::size_t>::max()) {
     throw GuiException("Attempted to remove item not in list.");
   }
 
@@ -219,7 +219,7 @@ void ListWidget::removeItem(WidgetPtr item) {
 }
 
 void ListWidget::clear() {
-  setSelected(NPos);
+  setSelected(std::numeric_limits<std::size_t>::max());
   removeAllChildren();
   updateSizeAndPosition();
 }
@@ -229,7 +229,7 @@ size_t ListWidget::selectedItem() const {
 }
 
 size_t ListWidget::itemPosition(WidgetPtr item) const {
-  size_t offset = NPos;
+  size_t offset = std::numeric_limits<std::size_t>::max();
   for (size_t i = 0; i < m_members.size(); ++i) {
     if (m_members[i] == item) {
       offset = i;

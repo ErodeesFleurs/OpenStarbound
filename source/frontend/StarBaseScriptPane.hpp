@@ -24,15 +24,15 @@ public:
   void tick(float dt) override;
 
   bool sendEvent(InputEvent const& event) override;
-  
+
   Json const& config() const;
   Json const& rawConfig() const;
 
   bool interactive() const override;
 
   PanePtr createTooltip(Vec2I const& screenPosition) override;
-  Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
-  Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input) override;
+  std::optional<String> cursorOverride(Vec2I const& screenPosition) override;
+  std::optional<ItemPtr> shiftItemFromInventory(ItemPtr const& input) override;
 
 protected:
   virtual GuiReaderPtr reader() override;

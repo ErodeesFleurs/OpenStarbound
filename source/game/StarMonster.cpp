@@ -1,9 +1,9 @@
 #include "StarMonster.hpp"
+#include "StarStoredFunctions.hpp" // IWYU pragma: keep
 #include "StarWorld.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarDamageManager.hpp"
-#include "StarDamageDatabase.hpp"
 #include "StarTreasure.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -14,15 +14,12 @@
 #include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarBehaviorLuaBindings.hpp"
-#include "StarStoredFunctions.hpp"
 #include "StarItemDrop.hpp"
-#include "StarAssets.hpp"
-#include "StarTime.hpp"
 #include "StarStatusController.hpp"
 
 namespace Star {
 
-Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {
+Monster::Monster(MonsterVariant const& monsterVariant, std::optional<float> level) {
   m_monsterLevel = level;
 
   m_damageOnTouch = false;
@@ -43,13 +40,13 @@ Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {
   for (auto const& pair : m_monsterVariant.animatorPartTags)
     m_networkedAnimator.setPartTag(pair.first, "partImage", pair.second);
   m_networkedAnimator.setZoom(m_monsterVariant.animatorZoom);
-  auto colorSwap = m_monsterVariant.colorSwap.value(Root::singleton().monsterDatabase()->colorSwap(m_monsterVariant.parameters.getString("colors", "default"), m_monsterVariant.seed));
+  auto colorSwap = m_monsterVariant.colorSwap.value_or(Root::singleton().monsterDatabase()->colorSwap(m_monsterVariant.parameters.getString("colors", "default"), m_monsterVariant.seed));
   if (!colorSwap.empty())
     m_networkedAnimator.setProcessingDirectives(imageOperationToString(ColorReplaceImageOperation{colorSwap}));
 
   m_statusController = make_shared<StatusController>(m_monsterVariant.statusSettings);
 
-  m_scriptComponent.setScripts(m_monsterVariant.parameters.optArray("scripts").apply(jsonToStringList).value(m_monsterVariant.scripts));
+  m_scriptComponent.setScripts(m_monsterVariant.parameters.optArray("scripts").transform(jsonToStringList).value_or(m_monsterVariant.scripts));
   m_scriptComponent.setUpdateDelta(m_monsterVariant.initialScriptDelta);
 
   auto movementParameters = ActorMovementParameters::sensibleDefaults().merge(ActorMovementParameters(monsterVariant.movementSettings));
@@ -227,24 +224,24 @@ void Monster::disableInterpolation() {
 }
 
 String Monster::name() const {
-  return m_name.get().orMaybe(m_monsterVariant.shortDescription).value("");
+  return m_name.get().or_else([&] { return m_monsterVariant.shortDescription; }).value_or("");
 }
 
 String Monster::description() const {
-  return m_monsterVariant.description.value("Some indescribable horror");
+  return m_monsterVariant.description.value_or("Some indescribable horror");
 }
 
-Maybe<HitType> Monster::queryHit(DamageSource const& source) const {
+std::optional<HitType> Monster::queryHit(DamageSource const& source) const {
   if (!inWorld() || m_knockedOut || m_statusController->statPositive("invulnerable"))
     return {};
 
-  if (source.intersectsWithPoly(world()->geometry(), hitPoly().get()))
+  if (source.intersectsWithPoly(world()->geometry(), *hitPoly()))
     return HitType::Hit;
 
   return {};
 }
 
-Maybe<PolyF> Monster::hitPoly() const {
+std::optional<PolyF> Monster::hitPoly() const {
   PolyF hitBody = m_monsterVariant.selfDamagePoly;
   hitBody.rotate(m_movementController->rotation());
   hitBody.translate(position());
@@ -318,7 +315,7 @@ List<DamageSource> Monster::damageSources() const {
     List<DamageSource> partSources;
     if (auto line = ds.damageArea.maybe<Line2F>()) {
       if (pair.second.getBool("checkLineCollision", false)) {
-        Line2F worldLine = line.value().translated(position());
+        Line2F worldLine = line->translated(position());
         float length = worldLine.length();
 
         auto bounces = pair.second.getInt("bounces", 0);
@@ -507,7 +504,7 @@ void Monster::render(RenderCallback* renderCallback) {
   m_effectEmitter.render(renderCallback);
 
   for (auto drawablePair : m_scriptedAnimator.drawables())
-    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(m_monsterVariant.renderLayer));
+    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value_or(m_monsterVariant.renderLayer));
   renderCallback->addAudios(m_scriptedAnimator.pullNewAudios());
   renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
 }
@@ -522,8 +519,8 @@ void Monster::setPosition(Vec2F const& pos) {
   m_movementController->setPosition(pos);
 }
 
-Maybe<Json> Monster::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  Maybe<Json> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
+std::optional<Json> Monster::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+  std::optional<Json> result = m_scriptComponent.handleMessage(message, world()->connection() == sendingConnection, args);
   if (!result)
     result = m_statusController->receiveMessage(message, world()->connection() == sendingConnection, args);
   return result;
@@ -580,8 +577,8 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       m_damageOnTouch = arg1;
     });
 
-  callbacks.registerCallback("setDamageSources", [this](Maybe<JsonArray> const& damageSources) {
-      m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
+  callbacks.registerCallback("setDamageSources", [this](std::optional<JsonArray> const& damageSources) {
+      m_damageSources.set(damageSources.value_or(JsonArray()).transformed(construct<DamageSource>()));
     });
 
   callbacks.registerCallback("setDamageParts", [this](StringSet const& parts) {
@@ -592,8 +589,8 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       m_aggressive = arg1;
     });
 
-  callbacks.registerCallback("setActiveSkillName", [this](Maybe<String> const& activeSkillName) {
-      m_activeSkillName = activeSkillName.value();
+  callbacks.registerCallback("setActiveSkillName", [this](std::optional<String> const& activeSkillName) {
+      m_activeSkillName = activeSkillName.value_or("");
     });
 
   callbacks.registerCallback("setDropPool", [this](Json dropPool) {
@@ -615,12 +612,12 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       m_movementController->controlFly(world()->geometry().diff(arg1, position()));
     });
 
-  callbacks.registerCallback("setDeathParticleBurst", [this](Maybe<String> const& arg1) {
-      m_deathParticleBurst = arg1.value();
+  callbacks.registerCallback("setDeathParticleBurst", [this](std::optional<String> const& arg1) {
+      m_deathParticleBurst = arg1.value_or("");
     });
 
-  callbacks.registerCallback("setDeathSound", [this](Maybe<String> const& arg1) {
-      m_deathSound = arg1.value();
+  callbacks.registerCallback("setDeathSound", [this](std::optional<String> const& arg1) {
+      m_deathSound = arg1.value_or("");
     });
 
   callbacks.registerCallback("setPhysicsForces", [this](JsonArray const& forces) {
@@ -634,7 +631,7 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       m_displayNametag.set(display);
     });
 
-  callbacks.registerCallback("say", [this](String line, Maybe<StringMap<String>> const& tags) {
+  callbacks.registerCallback("say", [this](String line, std::optional<StringMap<String>> const& tags) {
       if (tags)
         line = line.replaceTags(*tags, false);
 
@@ -646,7 +643,7 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       return false;
     });
 
-  callbacks.registerCallback("sayPortrait", [this](String line, String portrait, Maybe<StringMap<String>> const& tags) {
+  callbacks.registerCallback("sayPortrait", [this](String line, String portrait, std::optional<StringMap<String>> const& tags) {
       if (tags)
         line = line.replaceTags(*tags, false);
 
@@ -662,7 +659,7 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
       setTeam(EntityDamageTeam(team));
     });
 
-  callbacks.registerCallback("setUniqueId", [this](Maybe<String> uniqueId) {
+  callbacks.registerCallback("setUniqueId", [this](std::optional<String> uniqueId) {
       setUniqueId(uniqueId);
     });
 
@@ -802,7 +799,7 @@ MonsterVariant Monster::monsterVariant() const {
   return m_monsterVariant;
 }
 
-Maybe<String> Monster::statusText() const {
+std::optional<String> Monster::statusText() const {
   return {};
 }
 
@@ -826,11 +823,11 @@ bool Monster::aggressive() const {
   return m_aggressive;
 }
 
-Maybe<LuaValue> Monster::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> Monster::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> Monster::evalScript(String const& code) {
+std::optional<LuaValue> Monster::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 

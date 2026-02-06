@@ -60,7 +60,7 @@ void UniverseSettings::setFlag(String const& flag) {
   }
 }
 
-Maybe<List<UniverseFlagAction>> UniverseSettings::pullPendingFlagActions() {
+std::optional<List<UniverseFlagAction>> UniverseSettings::pullPendingFlagActions() {
   if (!m_pendingFlagActions.empty())
     return take(m_pendingFlagActions);
   return {};
@@ -78,7 +78,7 @@ List<UniverseFlagAction> UniverseSettings::currentFlagActions() const {
 List<UniverseFlagAction> UniverseSettings::currentFlagActionsForInstanceWorld(String const& instanceName) const {
   List<UniverseFlagAction> res;
   for (String flag : m_flags) {
-    for (auto flagAction : m_flagActions.maybe(flag).value()) {
+    for (auto flagAction : m_flagActions.maybe(flag).value_or(List<UniverseFlagAction>())) {
       if (flagAction.is<PlaceDungeonFlagAction>() && flagAction.get<PlaceDungeonFlagAction>().targetInstance == instanceName)
         res.append(flagAction);
     }

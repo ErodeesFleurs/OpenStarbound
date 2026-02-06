@@ -10,11 +10,9 @@ function mcontroller.parameters() end
 
 --- Applies the given parameters to the movement controller. The provided parameters are merged into the current movement parameters. ---
 ---@param parameters Json
----@return void
 function mcontroller.applyParameters(parameters) end
 
 --- Resets movement parameters to their original state. ---
----@return void
 function mcontroller.resetParameters() end
 
 --- Returns the configured mass of the movement controller. ---
@@ -86,7 +84,7 @@ function mcontroller.stickingDirection() end
 function mcontroller.liquidPercentage() end
 
 --- Returns the liquid ID of the liquid that the movement controller is currently submerged in. If this is several liquids this returns the most plentiful one. ---
----@return LiquidId
+---@return integer
 function mcontroller.liquidId() end
 
 --- Returns whether the movement controller is currently on ground. ---
@@ -104,68 +102,55 @@ function mcontroller.atWorldLimit(bottomOnly) end
 
 --- Sets the position of the movement controller. ---
 ---@param position Vec2F
----@return void
 function mcontroller.setPosition(position) end
 
 --- Sets the horizontal position of the movement controller. ---
 ---@param x number
----@return void
 function mcontroller.setXPosition(x) end
 
 --- Sets the vertical position of the movement controller. ---
 ---@param y number
----@return void
 function mcontroller.setYPosition(y) end
 
 --- Moves the movement controller by the vector provided. ---
 ---@param direction Vec2F
----@return void
 function mcontroller.translate(direction) end
 
 --- Sets the velocity of the movement controller. ---
 ---@param velocity Vec2F
----@return void
 function mcontroller.setVelocity(velocity) end
 
 --- Sets the horizontal velocity of the movement controller. ---
 ---@param xVelocity Vec2F
----@return void
 function mcontroller.setXVelocity(xVelocity) end
 
 --- Sets the vertical velocity of the movement controller. ---
 ---@param yVelocity Vec2F
----@return void
 function mcontroller.setYVelocity(yVelocity) end
 
 --- Adds (momentum / mass) velocity to the movement controller. ---
 ---@param momentum Vec2F
----@return void
 function mcontroller.addMomentum(momentum) end
 
 --- Sets the rotation of the movement controller. Angle is in radians. ---
 ---@param angle number
----@return void
 function mcontroller.setRotation(angle) end
 
 --- Rotates the movement controller by an angle relative to its current angle. Angle is in radians. ---
 ---@param angle number
----@return void
 function mcontroller.rotate(angle) end
 
 --- Accelerates the movement controller by the given acceleration for one tick. ---
 ---@param acceleration Vec2F
----@return void
 function mcontroller.accelerate(acceleration) end
 
 --- Accelerates the movement controller by (force / mass) for one tick. ---
 ---@param force Vec2F
----@return void
 function mcontroller.force(force) end
 
 --- Approaches the targetVelocity using the force provided. If the current velocity is higher than the provided targetVelocity, the targetVelocity will still be approached, effectively slowing down the entity. ---
 ---@param targetVelocity Vec2F
 ---@param maxControlForce number
----@return void
 function mcontroller.approachVelocity(targetVelocity, maxControlForce) end
 
 --- Approaches the targetVelocity but only along the provided angle, not affecting velocity in the perpendicular axis. If positiveOnly, then it will not slow down the movementController if it is already moving faster than targetVelocity. ---
@@ -173,17 +158,14 @@ function mcontroller.approachVelocity(targetVelocity, maxControlForce) end
 ---@param targetVelocity number
 ---@param maxControlForce number
 ---@param positiveOnly boolean
----@return void
 function mcontroller.approachVelocityAlongAngle(angle, targetVelocity, maxControlForce, positiveOnly) end
 
 --- Approaches an X velocity. Same as using approachVelocityAlongAngle with angle 0. ---
 ---@param targetVelocity number
 ---@param maxControlForce number
----@return void
 function mcontroller.approachXVelocity(targetVelocity, maxControlForce) end
 
 --- Approaches a Y velocity. Same as using approachVelocityAlongAngle with angle (Pi / 2).
 ---@param targetVelocity number
 ---@param maxControlForce number
----@return void
 function mcontroller.approachYVelocity(targetVelocity, maxControlForce) end

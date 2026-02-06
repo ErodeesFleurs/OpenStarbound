@@ -68,7 +68,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("typeName",
-    [&](EntityPtr const& entity, [[maybe_unused]]LuaEngine& engine) -> Maybe<String> {
+    [&](EntityPtr const& entity, [[maybe_unused]]LuaEngine& engine) -> std::optional<String> {
         if (auto monster = as<Monster>(entity))
             return monster->typeName();
         if (auto npc = as<Npc>(entity))
@@ -95,7 +95,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("velocity",
-    [&](EntityPtr const& entity) -> Maybe<Vec2F> {
+    [&](EntityPtr const& entity) -> std::optional<Vec2F> {
         if (auto monsterEntity = as<Monster>(entity))
             return monsterEntity->velocity();
         else if (auto toolUserEntity = as<ToolUserEntity>(entity))
@@ -114,7 +114,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("description",
-    [&](EntityPtr const& entity, Maybe<String> const& species) -> Maybe<String> {
+    [&](EntityPtr const& entity, std::optional<String> const& species) -> std::optional<String> {
         if (auto inspectableEntity = as<InspectableEntity>(entity)) {
             if (species)
             return inspectableEntity->inspectionDescription(*species);
@@ -124,12 +124,12 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("uniqueId",
-    [&](EntityPtr const& entity) -> LuaNullTermWrapper<Maybe<String>> {
+    [&](EntityPtr const& entity) -> LuaNullTermWrapper<std::optional<String>> {
         return entity->uniqueId();
     });
 
     methods.registerMethod("getParameter",
-    [&](EntityPtr const& entity, String const& parameterName, Maybe<Json> const& defaultValue) -> Json {
+    [&](EntityPtr const& entity, String const& parameterName, std::optional<Json> const& defaultValue) -> Json {
         Json val = Json();
 
         bool handled = true;
@@ -160,7 +160,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // scripted entity methods
     methods.registerMethod("callScript",
-    [&](EntityPtr const& entity, String const& function, LuaVariadic<LuaValue> const& args) -> Maybe<LuaValue> {
+    [&](EntityPtr const& entity, String const& function, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> {
         auto scrEntity = as<ScriptedEntity>(entity);
         if (!scrEntity || !scrEntity->isMaster() || !entity->inWorld())
             throw StarException::format("Entity {} does not exist or is not a local master scripted entity", entity->entityId());
@@ -169,7 +169,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // nametag entity methods
     methods.registerMethod("nametag",
-    [&](EntityPtr const& entity) -> Maybe<Json> {
+    [&](EntityPtr const& entity) -> std::optional<Json> {
         Json result;
         if (auto nametagEntity = as<NametagEntity>(entity)) {
             result = JsonObject{
@@ -187,7 +187,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // portrait entity methods
     methods.registerMethod("portrait",
-    [&](EntityPtr const& entity, String const& portraitMode) -> LuaNullTermWrapper<Maybe<List<Drawable>>> {
+    [&](EntityPtr const& entity, String const& portraitMode) -> LuaNullTermWrapper<std::optional<List<Drawable>>> {
         if (auto portraitEntity = as<PortraitEntity>(entity))
             return portraitEntity->portrait(PortraitModeNames.getLeft(portraitMode));
 
@@ -197,7 +197,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // damage bar entity methods
     methods.registerMethod("health",
-    [&](EntityPtr const& entity) -> Maybe<Vec2F> {
+    [&](EntityPtr const& entity) -> std::optional<Vec2F> {
         if (auto dmgEntity = as<DamageBarEntity>(entity)) {
             return Vec2F(dmgEntity->health(), dmgEntity->maxHealth());
         }
@@ -206,7 +206,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // interactive entity methods
     methods.registerMethod("isInteractive",
-    [&](EntityPtr const& entity) -> Maybe<bool> {
+    [&](EntityPtr const& entity) -> std::optional<bool> {
         if (auto interactEntity = as<InteractiveEntity>(entity))
             return interactEntity->isInteractive();
         return {};
@@ -214,7 +214,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // chatty entity methods
     methods.registerMethod("mouthPosition",
-    [&](EntityPtr const& entity) -> Maybe<Vec2F> {
+    [&](EntityPtr const& entity) -> std::optional<Vec2F> {
         if (auto chatty = as<ChattyEntity>(entity))
             return chatty->mouthPosition();
         return {};
@@ -223,64 +223,64 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     // actor entity methods
 
     // status controller methods, they're networked anyway so might as well make them available to read
-    methods.registerMethod("statusProperty", [&](EntityPtr entity, String name, Json const& def = Json()) -> Maybe<Json> {
+    methods.registerMethod("statusProperty", [&](EntityPtr entity, String name, Json const& def = Json()) -> std::optional<Json> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->statusProperty(name, def);
         return {};
     });
-    methods.registerMethod("stat", [&](EntityPtr entity, String name) -> Maybe<float> {
+    methods.registerMethod("stat", [&](EntityPtr entity, String name) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->stat(name);
         return {};
     });
-    methods.registerMethod("statPositive", [&](EntityPtr entity, String name) -> Maybe<bool> {
+    methods.registerMethod("statPositive", [&](EntityPtr entity, String name) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->statPositive(name);
         return {};
     });
-    methods.registerMethod("resourceNames", [&](EntityPtr entity) -> Maybe<StringList> {
+    methods.registerMethod("resourceNames", [&](EntityPtr entity) -> std::optional<StringList> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourceNames();
         return {};
     });
-    methods.registerMethod("resource", [&](EntityPtr entity, String name) -> Maybe<float> {
+    methods.registerMethod("resource", [&](EntityPtr entity, String name) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resource(name);
         return {};
     });
-    methods.registerMethod("isResource", [&](EntityPtr entity, String name) -> Maybe<bool> {
+    methods.registerMethod("isResource", [&](EntityPtr entity, String name) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->isResource(name);
         return {};
     });
-    methods.registerMethod("resourcePositive", [&](EntityPtr entity, String name) -> Maybe<bool> {
+    methods.registerMethod("resourcePositive", [&](EntityPtr entity, String name) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourcePositive(name);
         return {};
     });
-    methods.registerMethod("resourceLocked", [&](EntityPtr entity, String name) -> Maybe<bool> {
+    methods.registerMethod("resourceLocked", [&](EntityPtr entity, String name) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourceLocked(name);
         return {};
     });
-    methods.registerMethod("resourceMax", [&](EntityPtr entity, String name) -> Maybe<float> {
+    methods.registerMethod("resourceMax", [&](EntityPtr entity, String name) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourceMax(name);
         return {};
     });
-    methods.registerMethod("resourcePercentage", [&](EntityPtr entity, String name) -> Maybe<float> {
+    methods.registerMethod("resourcePercentage", [&](EntityPtr entity, String name) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->resourcePercentage(name);
         return {};
     });
-    methods.registerMethod("getPersistentEffects", [&](EntityPtr entity, String name) -> Maybe<JsonArray> {
+    methods.registerMethod("getPersistentEffects", [&](EntityPtr entity, String name) -> std::optional<JsonArray> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->getPersistentEffects(name).transformed(jsonFromPersistentStatusEffect);
         return {};
     });
-    methods.registerMethod("activeUniqueStatusEffectSummary", [&](EntityPtr entity) -> Maybe<List<JsonArray>> {
+    methods.registerMethod("activeUniqueStatusEffectSummary", [&](EntityPtr entity) -> std::optional<List<JsonArray>> {
         if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](pair<UniqueStatusEffect, Maybe<float>> effect) {
+            return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](pair<UniqueStatusEffect, std::optional<float>> effect) {
             JsonArray effectJson = {effect.first};
             if (effect.second)
                 effectJson.append(*effect.second);
@@ -288,7 +288,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
             });;
         return {};
     });
-    methods.registerMethod("uniqueStatusEffectActive", [&](EntityPtr entity, String name) -> Maybe<bool> {
+    methods.registerMethod("uniqueStatusEffectActive", [&](EntityPtr entity, String name) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->statusController()->uniqueStatusEffectActive(name);
         return {};
@@ -296,82 +296,82 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // movement controller methods, they're networked anyway so might as well make them available to read
 
-    methods.registerMethod("mass", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("mass", [&](EntityPtr entity) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->mass();
         return {};
     });
-    methods.registerMethod("boundBox", [&](EntityPtr entity) -> Maybe<RectF> {
+    methods.registerMethod("boundBox", [&](EntityPtr entity) -> std::optional<RectF> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->collisionPoly().boundBox();
         return {};
     });
-    methods.registerMethod("collisionPoly", [&](EntityPtr entity) -> Maybe<PolyF> {
+    methods.registerMethod("collisionPoly", [&](EntityPtr entity) -> std::optional<PolyF> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->collisionPoly();
         return {};
     });
-    methods.registerMethod("collisionBody", [&](EntityPtr entity) -> Maybe<PolyF> {
+    methods.registerMethod("collisionBody", [&](EntityPtr entity) -> std::optional<PolyF> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->collisionBody();
         return {};
     });
-    methods.registerMethod("collisionBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
+    methods.registerMethod("collisionBoundBox", [&](EntityPtr entity) -> std::optional<RectF> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->collisionBody().boundBox();
         return {};
     });
-    methods.registerMethod("localBoundBox", [&](EntityPtr entity) -> Maybe<RectF> {
+    methods.registerMethod("localBoundBox", [&](EntityPtr entity) -> std::optional<RectF> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->localBoundBox();
         return {};
     });
-    methods.registerMethod("rotation", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("rotation", [&](EntityPtr entity) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->rotation();
         return {};
     });
-    methods.registerMethod("isColliding", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("isColliding", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->isColliding();
         return {};
     });
-    methods.registerMethod("isNullColliding", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("isNullColliding", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->isNullColliding();
         return {};
     });
-    methods.registerMethod("isCollisionStuck", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("isCollisionStuck", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->isCollisionStuck();
         return {};
     });
-    methods.registerMethod("stickingDirection", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("stickingDirection", [&](EntityPtr entity) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->stickingDirection();
         return {};
     });
-    methods.registerMethod("liquidPercentage", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("liquidPercentage", [&](EntityPtr entity) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidPercentage();
         return {};
     });
-    methods.registerMethod("liquidId", [&](EntityPtr entity) -> Maybe<float> {
+    methods.registerMethod("liquidId", [&](EntityPtr entity) -> std::optional<float> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidId();
         return {};
     });
-    methods.registerMethod("onGround", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("onGround", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->onGround();
         return {};
     });
-    methods.registerMethod("zeroG", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("zeroG", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->zeroG();
         return {};
     });
-    methods.registerMethod("atWorldLimit", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("atWorldLimit", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->atWorldLimit();
         return {};
@@ -383,69 +383,69 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
         return LuaVariadic<LuaValue>();
     });
     // slightly inconsistent for the sake of being more clear what the function is
-    methods.registerMethod("baseMovementParameters", [&](EntityPtr entity) -> Maybe<Json> {
+    methods.registerMethod("baseMovementParameters", [&](EntityPtr entity) -> std::optional<Json> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->baseParameters().toJson();
         return {};
     });
     // slightly inconsistent for the sake of being more clear what the function is
-    methods.registerMethod("movementParameters", [&](EntityPtr entity) -> Maybe<Json> {
+    methods.registerMethod("movementParameters", [&](EntityPtr entity) -> std::optional<Json> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->parameters().toJson();
         return {};
     });
 
-    methods.registerMethod("walking", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("walking", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->walking();
         return {};
     });
-    methods.registerMethod("running", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("running", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->running();
         return {};
     });
-    methods.registerMethod("movingDirection", [&](EntityPtr entity) -> Maybe<int> {
+    methods.registerMethod("movingDirection", [&](EntityPtr entity) -> std::optional<int> {
         if (auto actor = as<ActorEntity>(entity))
             return numericalDirection(actor->movementController()->movingDirection());
         return {};
     });
-    methods.registerMethod("facingDirection", [&](EntityPtr entity) -> Maybe<int> {
+    methods.registerMethod("facingDirection", [&](EntityPtr entity) -> std::optional<int> {
         if (auto actor = as<ActorEntity>(entity))
             return numericalDirection(actor->movementController()->facingDirection());
         return {};
     });
-    methods.registerMethod("crouching", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("crouching", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->crouching();
         return {};
     });
-    methods.registerMethod("flying", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("flying", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->flying();
         return {};
     });
-    methods.registerMethod("falling", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("falling", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->falling();
         return {};
     });
-    methods.registerMethod("canJump", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("canJump", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->canJump();
         return {};
     });
-    methods.registerMethod("jumping", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("jumping", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->jumping();
         return {};
     });
-    methods.registerMethod("groundMovement", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("groundMovement", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->groundMovement();
         return {};
     });
-    methods.registerMethod("liquidMovement", [&](EntityPtr entity) -> Maybe<bool> {
+    methods.registerMethod("liquidMovement", [&](EntityPtr entity) -> std::optional<bool> {
         if (auto actor = as<ActorEntity>(entity))
             return actor->movementController()->liquidMovement();
         return {};
@@ -453,7 +453,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // tool user entity methods
     methods.registerMethod("handItem",
-    [&](EntityPtr const& entity, String const& handName) -> Maybe<String> {
+    [&](EntityPtr const& entity, String const& handName) -> std::optional<String> {
         ToolHand toolHand;
         if (handName == "primary") {
             toolHand = ToolHand::Primary;
@@ -493,7 +493,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("aimPosition",
-    [&](EntityPtr const& entity) -> Maybe<Vec2F> {
+    [&](EntityPtr const& entity) -> std::optional<Vec2F> {
         if (auto toolUser = as<ToolUserEntity>(entity))
             return toolUser->aimPosition();
         return {};
@@ -502,7 +502,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // humanoid entity methods
     methods.registerMethod("species",
-    [&](EntityPtr const& entity) -> Maybe<String> {
+    [&](EntityPtr const& entity) -> std::optional<String> {
         if (auto player = as<Player>(entity)) {
             return player->species();
         } else if (auto npc = as<Npc>(entity)) {
@@ -513,7 +513,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("gender",
-    [&](EntityPtr const& entity) -> Maybe<String> {
+    [&](EntityPtr const& entity) -> std::optional<String> {
         if (auto player = as<Player>(entity)) {
             return GenderNames.getRight(player->gender());
         } else if (auto npc = as<Npc>(entity)) {
@@ -525,7 +525,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // player methods
     methods.registerMethod("currency",
-    [&](EntityPtr const& entity, String const& currencyType) -> Maybe<uint64_t> {
+    [&](EntityPtr const& entity, String const& currencyType) -> std::optional<uint64_t> {
         if (auto player = as<Player>(entity)) {
             return player->currency(currencyType);
         }
@@ -533,16 +533,16 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("hasCountOfItem",
-    [&](EntityPtr const& entity, Json descriptor, Maybe<bool> exactMatch) -> Maybe<uint64_t> {
+    [&](EntityPtr const& entity, Json descriptor, std::optional<bool> exactMatch) -> std::optional<uint64_t> {
         if (auto player = as<Player>(entity)) {
-            return player->inventory()->hasCountOfItem(ItemDescriptor(descriptor), exactMatch.value(false));
+            return player->inventory()->hasCountOfItem(ItemDescriptor(descriptor), exactMatch.value_or(false));
         }
         return {};
     });
 
     // loungeable entity methods
     methods.registerMethod("loungingEntities",
-    [&](EntityPtr const& entity, Maybe<size_t> anchorIndex) -> Maybe<List<EntityId>> {
+    [&](EntityPtr const& entity, std::optional<size_t> anchorIndex) -> std::optional<List<EntityId>> {
         if (!entity->inWorld())
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))
@@ -551,7 +551,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("loungeableOccupied",
-    [&](EntityPtr const& entity, Maybe<size_t> anchorIndex) -> Maybe<bool> {
+    [&](EntityPtr const& entity, std::optional<size_t> anchorIndex) -> std::optional<bool> {
         if (!entity->inWorld())
             return {};
         auto loungeable = as<LoungeableEntity>(entity);
@@ -562,7 +562,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("loungeableAnchorCount",
-    [&](EntityPtr const& entity) -> Maybe<size_t> {
+    [&](EntityPtr const& entity) -> std::optional<size_t> {
         if (!entity->inWorld())
             return {};
         if (auto loungeable = as<LoungeableEntity>(entity))
@@ -580,7 +580,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // farmables
     methods.registerMethod("farmableStage",
-    [&](EntityPtr const& entity) -> Maybe<int> {
+    [&](EntityPtr const& entity) -> std::optional<int> {
         if (auto farmable = as<FarmableObject>(entity)) {
             return farmable->stage();
         }
@@ -590,7 +590,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     // containers
     methods.registerMethod("containerSize",
-    [&](EntityPtr const& entity) -> Maybe<int> {
+    [&](EntityPtr const& entity) -> std::optional<int> {
         if (auto container = as<ContainerObject>(entity))
             return container->containerSize();
 
@@ -644,7 +644,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerConsume",
-    [&](EntityPtr const& entity, Json const& items) -> Maybe<bool> {
+    [&](EntityPtr const& entity, Json const& items) -> std::optional<bool> {
         if (auto container = as<ContainerObject>(entity)) {
             auto toConsume = ItemDescriptor(items);
             return container->consumeItems(toConsume).result();
@@ -654,7 +654,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerConsumeAt",
-    [&](EntityPtr const& entity, size_t offset, int count) -> Maybe<bool> {
+    [&](EntityPtr const& entity, size_t offset, int count) -> std::optional<bool> {
         if (auto container = as<ContainerObject>(entity)) {
             if (offset < container->containerSize()) {
                 return container->consumeItems(offset, count).result();
@@ -665,7 +665,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerAvailable",
-    [&](EntityPtr const& entity, Json const& items) -> Maybe<size_t> {
+    [&](EntityPtr const& entity, Json const& items) -> std::optional<size_t> {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemBag = container->itemBag();
             auto toCheck = ItemDescriptor(items);
@@ -717,7 +717,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("containerItemsCanFit",
-    [&](EntityPtr const& entity, Json const& items) -> Maybe<size_t> {
+    [&](EntityPtr const& entity, Json const& items) -> std::optional<size_t> {
         if (auto container = as<ContainerObject>(entity)) {
             auto itemDb = Root::singleton().itemDatabase();
             auto itemBag = container->itemBag();
@@ -820,7 +820,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("movingCollision",
-    [&](EntityPtr const& entity, size_t index) -> Maybe<PhysicsMovingCollision> {
+    [&](EntityPtr const& entity, size_t index) -> std::optional<PhysicsMovingCollision> {
         if (auto phys = as<PhysicsEntity>(entity)) {
             return phys->movingCollision(index);
         }

@@ -3,22 +3,24 @@
 #include "StarString.hpp"
 #include "StarByteArray.hpp"
 
+import std;
+
 namespace Star {
 
-size_t hexEncode(char const* data, size_t len, char* output, size_t outLen = NPos);
-size_t hexDecode(char const* src, size_t len, char* output, size_t outLen = NPos);
-size_t nibbleDecode(char const* src, size_t len, char* output, size_t outLen = NPos);
+auto hexEncode(char const* data, std::size_t len, char* output, std::size_t outLen = std::numeric_limits<std::size_t>::max()) -> std::size_t;
+auto hexDecode(char const* src, std::size_t len, char* output, std::size_t outLen = std::numeric_limits<std::size_t>::max()) -> std::size_t;
+auto nibbleDecode(char const* src, std::size_t len, char* output, std::size_t outLen = std::numeric_limits<std::size_t>::max()) -> std::size_t;
 
-size_t base64Encode(char const* data, size_t len, char* output, size_t outLen = NPos);
-size_t base64Decode(char const* src, size_t len, char* output, size_t outLen = NPos);
+auto base64Encode(char const* data, std::size_t len, char* output, std::size_t outLen = std::numeric_limits<std::size_t>::max()) -> std::size_t;
+auto base64Decode(char const* src, std::size_t len, char* output, std::size_t outLen = std::numeric_limits<std::size_t>::max()) -> std::size_t;
 
-String hexEncode(char const* data, size_t len);
-String base64Encode(char const* data, size_t len);
+auto hexEncode(char const* data, std::size_t len) -> String;
+auto base64Encode(char const* data, std::size_t len) -> String;
 
-String hexEncode(ByteArray const& data);
-ByteArray hexDecode(String const& encodedData);
+auto hexEncode(ByteArray const& data) -> String;
+auto hexDecode(String const& encodedData) -> ByteArray;
 
-String base64Encode(ByteArray const& data);
-ByteArray base64Decode(String const& encodedData);
+auto base64Encode(ByteArray const& data) -> String;
+auto base64Decode(String const& encodedData) -> ByteArray;
 
 }

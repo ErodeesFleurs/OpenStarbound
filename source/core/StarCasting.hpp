@@ -1,59 +1,60 @@
 #pragma once
 
-#include "StarConfig.hpp"
 #include "StarException.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(PointerConvertException, StarException);
+using PointerConvertException = ExceptionDerived<"PointerConvertException">;
 
 template <typename Type1, typename Type2>
-bool is(Type2* p) {
+auto is(Type2* p) -> bool {
   return (bool)dynamic_cast<Type1*>(p);
 }
 
 template <typename Type1, typename Type2>
-bool is(Type2 const* p) {
+auto is(Type2 const* p) -> bool {
   return (bool)dynamic_cast<Type1 const*>(p);
 }
 
 template <typename Type1, typename Type2>
-bool is(shared_ptr<Type2> const& p) {
+auto is(std::shared_ptr<Type2> const& p) -> bool {
   return (bool)dynamic_cast<Type1*>(p.get());
 }
 
 template <typename Type1, typename Type2>
-bool is(shared_ptr<Type2 const> const& p) {
+auto is(std::shared_ptr<Type2 const> const& p) -> bool {
   return (bool)dynamic_cast<Type1 const*>(p.get());
 }
 
 template <typename Type1, typename Type2>
-bool ris(Type2& r) {
+auto ris(Type2& r) -> bool {
   return (bool)dynamic_cast<Type1*>(&r);
 }
 
 template <typename Type1, typename Type2>
-bool ris(Type2 const& r) {
+auto ris(Type2 const& r) -> bool {
   return (bool)dynamic_cast<Type1 const*>(&r);
 }
 
 template <typename Type1, typename Type2>
-Type1* as(Type2* p) {
+auto as(Type2* p) -> Type1* {
   return dynamic_cast<Type1*>(p);
 }
 
 template <typename Type1, typename Type2>
-Type1 const* as(Type2 const* p) {
+auto as(Type2 const* p) -> Type1 const* {
   return dynamic_cast<Type1 const*>(p);
 }
 
 template <typename Type1, typename Type2>
-shared_ptr<Type1> as(shared_ptr<Type2> const& p) {
+auto as(std::shared_ptr<Type2> const& p) -> std::shared_ptr<Type1> {
   return dynamic_pointer_cast<Type1>(p);
 }
 
 template <typename Type1, typename Type2>
-shared_ptr<Type1 const> as(shared_ptr<Type2 const> const& p) {
+auto as(std::shared_ptr<Type2 const> const& p) -> std::shared_ptr<Type1 const> {
   return dynamic_pointer_cast<Type1 const>(p);
 }
 
@@ -68,22 +69,22 @@ auto convert(Ptr const& p) -> decltype(as<Type>(p)) {
 }
 
 template <typename Type1, typename Type2>
-Type1& rconvert(Type2& r) {
+auto rconvert(Type2& r) -> Type1& {
   return *dynamic_cast<Type1*>(&r);
 }
 
 template <typename Type1, typename Type2>
-Type1 const& rconvert(Type2 const& r) {
+auto rconvert(Type2 const& r) -> Type1 const& {
   return *dynamic_cast<Type1 const*>(&r);
 }
 
 template <typename Type>
-weak_ptr<Type> asWeak(shared_ptr<Type> const& p) {
+auto asWeak(std::shared_ptr<Type> const& p) -> std::weak_ptr<Type> {
   return weak_ptr<Type>(p);
 }
 
 template <typename Type>
-weak_ptr<Type const> asWeak(shared_ptr<Type const> const& p) {
+auto asWeak(std::shared_ptr<Type const> const& p) -> std::weak_ptr<Type const> {
   return weak_ptr<Type>(p);
 }
 

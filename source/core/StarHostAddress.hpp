@@ -1,13 +1,14 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarString.hpp"
 #include "StarEither.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_EXCEPTION(NetworkException, IOException);
-
-STAR_CLASS(HostAddress);
+using NetworkException = ExceptionDerived<"IOException">;
 
 enum class NetworkMode {
   IPv4,
@@ -16,71 +17,71 @@ enum class NetworkMode {
 
 class HostAddress {
 public:
-  static HostAddress localhost(NetworkMode mode = NetworkMode::IPv4);
+  static auto localhost(NetworkMode mode = NetworkMode::IPv4) -> HostAddress;
 
   // Returns either error or valid HostAddress
-  static Either<String, HostAddress> lookup(String const& address);
+  static auto lookup(String const& address) -> Either<String, HostAddress>;
 
   // If address is nullptr, constructs the zero address.
-  HostAddress(NetworkMode mode = NetworkMode::IPv4, uint8_t* address = nullptr);
+  HostAddress(NetworkMode mode = NetworkMode::IPv4, std::uint8_t* address = nullptr);
   // Throws if address is not valid
   explicit HostAddress(String const& address);
 
-  NetworkMode mode() const;
-  uint8_t const* bytes() const;
-  uint8_t octet(size_t i) const;
-  size_t size() const;
+  [[nodiscard]] auto mode() const -> NetworkMode;
+  [[nodiscard]] auto bytes() const -> std::uint8_t const*;
+  [[nodiscard]] auto octet(std::size_t i) const -> std::uint8_t;
+  [[nodiscard]] auto size() const -> std::size_t;
 
-  bool isLocalHost() const;
-  bool isZero() const;
+  [[nodiscard]] auto isLocalHost() const -> bool;
+  [[nodiscard]] auto isZero() const -> bool;
 
-  bool operator==(HostAddress const& a) const;
+  auto operator==(HostAddress const& a) const -> bool;
 
 private:
   void set(String const& address);
-  void set(NetworkMode mode, uint8_t const* addr);
+  void set(NetworkMode mode, std::uint8_t const* addr);
 
   NetworkMode m_mode;
-  uint8_t m_address[16];
+  std::array<std::uint8_t, 16> m_address;
 };
 
-std::ostream& operator<<(std::ostream& os, HostAddress const& address);
+auto operator<<(std::ostream& os, HostAddress const& address) -> std::ostream&;
 
 template <>
 struct hash<HostAddress> {
-  size_t operator()(HostAddress const& address) const;
+  auto operator()(HostAddress const& address) const -> size_t;
 };
 
 class HostAddressWithPort {
 public:
   // Returns either error or valid HostAddressWithPort
-  static Either<String, HostAddressWithPort> lookup(String const& address, uint16_t port);
+  static auto lookup(String const& address, std::uint16_t port) -> Either<String, HostAddressWithPort>;
   // Format may have [] brackets around address or not, to distinguish address
   // portion from port portion.
-  static Either<String, HostAddressWithPort> lookupWithPort(String const& address);
+  static auto lookupWithPort(String const& address) -> Either<String, HostAddressWithPort>;
 
   HostAddressWithPort();
-  HostAddressWithPort(HostAddress const& address, uint16_t port);
-  HostAddressWithPort(NetworkMode mode, uint8_t* address, uint16_t port);
+  HostAddressWithPort(HostAddress const& address, std::uint16_t port);
+  HostAddressWithPort(NetworkMode mode, std::uint8_t* address, std::uint16_t port);
   // Throws if address or port is not valid
-  HostAddressWithPort(String const& address, uint16_t port);
+  HostAddressWithPort(String const& address, std::uint16_t port);
   explicit HostAddressWithPort(String const& address);
 
-  HostAddress address() const;
-  uint16_t port() const;
+  [[nodiscard]] auto address() const -> HostAddress;
+  [[nodiscard]] auto port() const -> std::uint16_t;
 
-  bool operator==(HostAddressWithPort const& a) const;
+  auto operator==(HostAddressWithPort const& a) const -> bool;
 
 private:
   HostAddress m_address;
-  uint16_t m_port;
+  std::uint16_t m_port;
 };
 
-std::ostream& operator<<(std::ostream& os, HostAddressWithPort const& address);
+auto operator<<(std::ostream& os, HostAddressWithPort const& address) -> std::ostream&;
 
 template <>
 struct hash<HostAddressWithPort> {
-  size_t operator()(HostAddressWithPort const& address) const;
+  auto operator()(HostAddressWithPort const& address) const -> size_t;
 };
 
 }

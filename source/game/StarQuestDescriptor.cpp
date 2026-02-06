@@ -54,7 +54,7 @@ QuestParamDetail questParamDetailFromJson(Json const& json) {
     return QuestEntity{
         json.optString("uniqueId"),
         json.optString("species"),
-        json.optString("gender").apply([](String const& gender) { return GenderNames.getLeft(gender); })
+        json.optString("gender").transform([](String const& gender) { return GenderNames.getLeft(gender); })
       };
 
   } else if (type == "location") {
@@ -128,7 +128,7 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
         {"type", "entity"},
         {"uniqueId", jsonFromMaybe(entity.uniqueId)},
         {"species", jsonFromMaybe(entity.species)},
-        {"gender", jsonFromMaybe(entity.gender.apply([](Gender gender) { return GenderNames.getRight(gender); }))}
+        {"gender", jsonFromMaybe(entity.gender.transform([](Gender gender) { return GenderNames.getRight(gender); }))}
       };
 
   } else if (detail.is<QuestLocation>()) {
@@ -164,7 +164,6 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
     return detail.get<QuestJson>().set("type", "json");
 
   } else {
-    starAssert(detail.empty());
     return JsonObject{{"type", "noDetail"}};
   }
 }

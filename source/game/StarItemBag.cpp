@@ -199,7 +199,6 @@ bool ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) {
   for (auto loc : consumeLocations) {
     bool res = consumeItems(loc.first, loc.second);
     _unused(res);
-    starAssert(res);
   }
 
   return true;
@@ -244,7 +243,7 @@ auto ItemBag::itemsFitWhere(ItemConstPtr const& items, uint64_t max) const -> It
     size_t slot = bestSlotAvailable(items, false, [&](size_t i) {
       return !taken.contains(i);
     });
-    if (slot == NPos)
+    if (slot == std::numeric_limits<std::size_t>::max())
       break;
     else {
       slots.append(slot);
@@ -267,7 +266,7 @@ ItemPtr ItemBag::addItems(ItemPtr items) {
 
   while (true) {
     size_t slot = bestSlotAvailable(items, false);
-    if (slot == NPos)
+    if (slot == std::numeric_limits<std::size_t>::max())
       return items;
 
     auto& storedItem = at(slot);
@@ -288,7 +287,7 @@ ItemPtr ItemBag::stackItems(ItemPtr items) {
 
   while (true) {
     size_t slot = bestSlotAvailable(items, true);
-    if (slot == NPos)
+    if (slot == std::numeric_limits<std::size_t>::max())
       return items;
 
     auto& storedItem = at(slot);
@@ -373,7 +372,7 @@ size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std
     }
   }
 
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const {

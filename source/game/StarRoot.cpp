@@ -1,28 +1,22 @@
 #include "StarRoot.hpp"
-#include "StarIterator.hpp"
+#include "StarAiDatabase.hpp" // IWYU pragma: keep
 #include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
 #include "StarEncode.hpp"
 #include "StarConfiguration.hpp"
 #include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
+#include "StarMonsterDatabase.hpp"
 #include "StarMaterialDatabase.hpp"
+#include "StarNpcDatabase.hpp"
 #include "StarTerrainDatabase.hpp"
 #include "StarBiomeDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarStatusEffectDatabase.hpp"
 #include "StarDamageDatabase.hpp"
 #include "StarParticleDatabase.hpp"
-#include "StarProjectile.hpp"
-#include "StarMonster.hpp"
-#include "StarNpc.hpp"
 #include "StarObject.hpp"
-#include "StarPlant.hpp"
-#include "StarPlantDrop.hpp"
 #include "StarStagehandDatabase.hpp"
-#include "StarVehicleDatabase.hpp"
-#include "StarPlayer.hpp"
-#include "StarItemDrop.hpp"
 #include "StarEffectSourceDatabase.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarTreasure.hpp"
@@ -39,10 +33,9 @@
 #include "StarEntityFactory.hpp"
 #include "StarDirectoryAssetSource.hpp"
 #include "StarPackedAssetSource.hpp"
-#include "StarJsonBuilder.hpp"
 #include "StarQuestTemplateDatabase.hpp"
-#include "StarAiDatabase.hpp"
 #include "StarTechDatabase.hpp"
+#include "StarVehicleDatabase.hpp" // IWYU pragma: keep
 #include "StarWorkerPool.hpp"
 #include "StarCodexDatabase.hpp"
 #include "StarBehaviorDatabase.hpp"
@@ -81,8 +74,8 @@ Root::Root(Settings settings) : RootBase() {
     File::makeDirectory(m_settings.storageDirectory);
 
   if (m_settings.logFile) {
-    String logFile = File::relativeTo(m_settings.logDirectory.value(m_settings.storageDirectory), *m_settings.logFile);
-    String oldLogDirectory = m_settings.logDirectory.value(File::relativeTo(m_settings.storageDirectory, "logs"));
+    String logFile = File::relativeTo(m_settings.logDirectory.value_or(m_settings.storageDirectory), *m_settings.logFile);
+    String oldLogDirectory = m_settings.logDirectory.value_or(File::relativeTo(m_settings.storageDirectory, "logs"));
     if (!File::isDirectory(oldLogDirectory))
       File::makeDirectory(oldLogDirectory);
 
@@ -303,13 +296,13 @@ void Root::reload() {
 }
 
 void Root::loadMods(StringList modDirectories, bool _reload) {
-  // Need to clear mod directories because there was an update for UGC, which have been added already as it assumes an update isn't needed.  
+  // Need to clear mod directories because there was an update for UGC, which have been added already as it assumes an update isn't needed.
   if (_reload)
     m_modDirectories.clear();
 
   MutexLocker locker(m_modsMutex);
   m_modDirectories = std::move(modDirectories);
-  
+
   if (_reload)
     reload();
 }
@@ -595,8 +588,8 @@ Root::Settings& Root::settings() {
 StringList Root::scanForAssetSources(StringList const& directories, StringList const& manual) {
   struct AssetSource {
     String path;
-    Maybe<String> name;
-    Maybe<String> version;
+    std::optional<String> name;
+    std::optional<String> version;
     float priority;
     StringList requires_;
     StringList includes;
@@ -623,8 +616,8 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
 
     auto assetSource = make_shared<AssetSource>();
     assetSource->path = sourcePath;
-    assetSource->name = metadata.maybe("name").apply(mem_fn(&Json::toString));
-    assetSource->version = metadata.maybe("version").apply(mem_fn(&Json::printString));
+    assetSource->name = metadata.maybe("name").transform(mem_fn(&Json::toString));
+    assetSource->version = metadata.maybe("version").transform(mem_fn(&Json::printString));
     assetSource->priority = metadata.value("priority", 0.0f).toFloat();
     assetSource->requires_ = jsonToStringList(metadata.value("requires", JsonArray{}));
     assetSource->includes = jsonToStringList(metadata.value("includes", JsonArray{}));
@@ -679,9 +672,9 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   // priority ones
 
   assetSources.sort([](auto const& a, auto const& b) {
-      return 
-        a->priority == b->priority ? 
-          a->name.value(a->path) < b->name.value(b->path) : 
+      return
+        a->priority == b->priority ?
+          a->name.value(a->path) < b->name.value(b->path) :
           a->priority < b->priority;
     });
 

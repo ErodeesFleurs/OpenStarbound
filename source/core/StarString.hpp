@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarUnicode.hpp"
 #include "StarHash.hpp"
 #include "StarByteArray.hpp"
@@ -8,13 +9,15 @@
 #include "StarSet.hpp"
 #include "StarFormat.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(StringList);
-STAR_CLASS(String);
-STAR_CLASS(StringView);
+class StringList;
+class StringView;
 
-STAR_EXCEPTION(StringException, StarException);
+
+using StringException = ExceptionDerived<"StringException">;
 
 // A Unicode string class, which is a basic UTF-8 aware wrapper around
 // std::string.  Provides methods for accessing UTF-32 "Char" type, which
@@ -28,15 +31,15 @@ STAR_EXCEPTION(StringException, StarException);
 // not for general strings.
 class String {
 public:
-  typedef Utf32Type Char;
+  using Char = Utf32Type;
 
   // std::basic_string equivalent that guarantees const access time for
   // operator[], etc
-  typedef std::basic_string<Char> WideString;
+  using WideString = std::basic_string<Char>;
 
-  typedef U8ToU32Iterator<std::string::const_iterator> const_iterator;
-  typedef Char value_type;
-  typedef value_type const& const_reference;
+  using const_iterator = U8ToU32Iterator<std::string::const_iterator>;
+  using value_type = Char;
+  using const_reference = value_type const&;
 
   enum CaseSensitivity {
     CaseSensitive,
@@ -44,15 +47,15 @@ public:
   };
 
   // Space, horizontal tab, newline, carriage return, and BOM / ZWNBSP
-  static bool isSpace(Char c);
-  static bool isAsciiNumber(Char c);
-  static bool isAsciiLetter(Char c);
+  static auto isSpace(Char c) -> bool;
+  static auto isAsciiNumber(Char c) -> bool;
+  static auto isAsciiLetter(Char c) -> bool;
 
   // These methods only actually work on unicode characters below 127, i.e.
   // ASCII subset.
-  static Char toLower(Char c);
-  static Char toUpper(Char c);
-  static bool charEqual(Char c1, Char c2, CaseSensitivity cs);
+  static auto toLower(Char c) -> Char;
+  static auto toUpper(Char c) -> Char;
+  static auto charEqual(Char c1, Char c2, CaseSensitivity cs) -> bool;
 
   // Join two strings together with a joiner, so that only one instance of the
   // joiner is in between the left and right strings.  For example, joins "foo"
@@ -60,9 +63,9 @@ public:
   // "foo?" and "?bar" with "?" also becomes "foo?bar".  Also, if left or right
   // is empty, does not add a joiner, for example "" and "baz" joined with "?"
   // produces "baz".
-  static String joinWith(String const& join, String const& left, String const& right);
+  static auto joinWith(String const& join, String const& left, String const& right) -> String;
   template <typename... StringType>
-  static String joinWith(String const& join, String const& first, String const& second, String const& third, StringType const&... rest);
+  static auto joinWith(String const& join, String const& first, String const& second, String const& third, StringType const&... rest) -> String;
 
   String();
   String(String const& s);
@@ -82,94 +85,94 @@ public:
   explicit String(Char c);
 
   // const& to internal utf8 data
-  std::string const& utf8() const;
-  std::string takeUtf8();
-  ByteArray utf8Bytes() const;
+  [[nodiscard]] auto utf8() const -> std::string const&;
+  auto takeUtf8() -> std::string;
+  [[nodiscard]] auto utf8Bytes() const -> ByteArray;
   // Pointer to internal utf8 data, null-terminated.
-  char const* utf8Ptr() const;
-  size_t utf8Size() const;
+  [[nodiscard]] auto utf8Ptr() const -> char const*;
+  [[nodiscard]] auto utf8Size() const -> size_t;
 
-  std::wstring wstring() const;
-  WideString wideString() const;
+  [[nodiscard]] auto wstring() const -> std::wstring;
+  [[nodiscard]] auto wideString() const -> WideString;
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] auto begin() const -> const_iterator;
+  [[nodiscard]] auto end() const -> const_iterator;
 
-  size_t size() const;
-  size_t length() const;
+  [[nodiscard]] auto size() const -> size_t;
+  [[nodiscard]] auto length() const -> size_t;
 
   void clear();
   void reserve(size_t n);
-  bool empty() const;
+  [[nodiscard]] auto empty() const -> bool;
 
-  Char operator[](size_t i) const;
+  auto operator[](size_t i) const -> Char;
   // Throws StringException if i out of range.
-  Char at(size_t i) const;
+  [[nodiscard]] auto at(size_t i) const -> Char;
 
-  String toUpper() const;
-  String toLower() const;
-  String titleCase() const;
+  [[nodiscard]] auto toUpper() const -> String;
+  [[nodiscard]] auto toLower() const -> String;
+  [[nodiscard]] auto titleCase() const -> String;
 
-  bool endsWith(String const& end, CaseSensitivity cs = CaseSensitive) const;
-  bool endsWith(Char end, CaseSensitivity cs = CaseSensitive) const;
-  bool beginsWith(String const& beg, CaseSensitivity cs = CaseSensitive) const;
-  bool beginsWith(Char beg, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] auto endsWith(String const& end, CaseSensitivity cs = CaseSensitive) const -> bool;
+  [[nodiscard]] auto endsWith(Char end, CaseSensitivity cs = CaseSensitive) const -> bool;
+  [[nodiscard]] auto beginsWith(String const& beg, CaseSensitivity cs = CaseSensitive) const -> bool;
+  [[nodiscard]] auto beginsWith(Char beg, CaseSensitivity cs = CaseSensitive) const -> bool;
 
-  String reverse() const;
+  [[nodiscard]] auto reverse() const -> String;
 
-  String rot13() const;
+  [[nodiscard]] auto rot13() const -> String;
 
-  StringList split(Char c, size_t maxSplit = NPos) const;
-  StringList split(String const& pattern, size_t maxSplit = NPos) const;
-  StringList rsplit(Char c, size_t maxSplit = NPos) const;
-  StringList rsplit(String const& pattern, size_t maxSplit = NPos) const;
+  [[nodiscard]] auto split(Char c, size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto split(String const& pattern, size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto rsplit(Char c, size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto rsplit(String const& pattern, size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
 
   // Splits on any number of contiguous instances of any of the given
   // characters.  Behaves differently than regular split in that leading and
   // trailing instances of the characters are also ignored, and in general no
   // empty strings will be in the resulting split list.  If chars is empty,
   // then splits on any whitespace.
-  StringList splitAny(String const& chars = "", size_t maxSplit = NPos) const;
-  StringList rsplitAny(String const& chars = "", size_t maxSplit = NPos) const;
+  [[nodiscard]] auto splitAny(String const& chars = "", size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto rsplitAny(String const& chars = "", size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
 
   // Split any with '\n\r'
-  StringList splitLines(size_t maxSplit = NPos) const;
+  [[nodiscard]] auto splitLines(size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
   // Shorthand for splitAny("");
-  StringList splitWhitespace(size_t maxSplit = NPos) const;
+  [[nodiscard]] auto splitWhitespace(size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
 
   // Splits a string once based on the given characters (defaulting to
   // whitespace), and returns the first part.  This string is set to the
   // second part.
-  String extract(String const& chars = "");
-  String rextract(String const& chars = "");
+  auto extract(String const& chars = "") -> String;
+  auto rextract(String const& chars = "") -> String;
 
-  bool hasChar(Char c) const;
+  [[nodiscard]] auto hasChar(Char c) const -> bool;
   // Identical to hasChar, except, if string is empty, tests if c is
   // whitespace.
-  bool hasCharOrWhitespace(Char c) const;
+  [[nodiscard]] auto hasCharOrWhitespace(Char c) const -> bool;
 
-  String replace(String const& rplc, String const& val, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] auto replace(String const& rplc, String const& val, CaseSensitivity cs = CaseSensitive) const -> String;
 
-  String trimEnd(String const& chars = "") const;
-  String trimBeg(String const& chars = "") const;
-  String trim(String const& chars = "") const;
+  [[nodiscard]] auto trimEnd(String const& chars = "") const -> String;
+  [[nodiscard]] auto trimBeg(String const& chars = "") const -> String;
+  [[nodiscard]] auto trim(String const& chars = "") const -> String;
 
-  size_t find(Char c, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
-  size_t find(String const& s, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const;
-  size_t findLast(Char c, CaseSensitivity cs = CaseSensitive) const;
-  size_t findLast(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] auto find(Char c, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const -> size_t;
+  [[nodiscard]] auto find(String const& s, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const -> size_t;
+  [[nodiscard]] auto findLast(Char c, CaseSensitivity cs = CaseSensitive) const -> size_t;
+  [[nodiscard]] auto findLast(String const& s, CaseSensitivity cs = CaseSensitive) const -> size_t;
 
   // If pattern is empty, finds first whitespace
-  size_t findFirstOf(String const& chars = "", size_t beg = 0) const;
+  [[nodiscard]] auto findFirstOf(String const& chars = "", size_t beg = 0) const -> size_t;
 
   // If pattern is empty, finds first non-whitespace
-  size_t findFirstNotOf(String const& chars = "", size_t beg = 0) const;
+  [[nodiscard]] auto findFirstNotOf(String const& chars = "", size_t beg = 0) const -> size_t;
 
   // finds the the start of the next 'boundary' in a string.  used for quickly
   // scanning a string
-  size_t findNextBoundary(size_t index, bool backwards = false) const;
+  [[nodiscard]] auto findNextBoundary(size_t index, bool backwards = false) const -> size_t;
 
-  String slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]] auto slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const -> String;
 
   void append(String const& s);
   void append(std::string const& s);
@@ -190,122 +193,122 @@ public:
   void push_back(Char c);
   void push_front(Char c);
 
-  bool contains(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] auto contains(String const& s, CaseSensitivity cs = CaseSensitive) const -> bool;
 
   // Does this string match the given regular expression?
-  bool regexMatch(String const& regex, bool full = true, bool caseSensitive = true) const;
+  [[nodiscard]] auto regexMatch(String const& regex, bool full = true, bool caseSensitive = true) const -> bool;
 
-  int compare(String const& s, CaseSensitivity cs = CaseSensitive) const;
-  bool equals(String const& s, CaseSensitivity cs = CaseSensitive) const;
+  [[nodiscard]] auto compare(String const& s, CaseSensitivity cs = CaseSensitive) const -> int;
+  [[nodiscard]] auto equals(String const& s, CaseSensitivity cs = CaseSensitive) const -> bool;
   // Synonym for equals(s, String::CaseInsensitive)
-  bool equalsIgnoreCase(String const& s) const;
+  [[nodiscard]] auto equalsIgnoreCase(String const& s) const -> bool;
 
-  String substr(size_t position, size_t n = NPos) const;
-  void erase(size_t pos = 0, size_t n = NPos);
+  [[nodiscard]] auto substr(size_t position, size_t n = std::numeric_limits<std::size_t>::max()) const -> String;
+  void erase(size_t pos = 0, size_t n = std::numeric_limits<std::size_t>::max());
 
-  String padLeft(size_t size, String const& filler) const;
-  String padRight(size_t size, String const& filler) const;
+  [[nodiscard]] auto padLeft(size_t size, String const& filler) const -> String;
+  [[nodiscard]] auto padRight(size_t size, String const& filler) const -> String;
 
   // Replace angle bracket tags in the string with values given by the given
   // lookup function.  Will be called as:
   // String lookup(String const& key);
   template <typename Lookup>
-  String lookupTags(Lookup&& lookup) const;
+  auto lookupTags(Lookup&& lookup) const -> String;
 
   // StringView variant
   template <typename Lookup>
-  Maybe<String> maybeLookupTagsView(Lookup&& lookup) const;
+  auto maybeLookupTagsView(Lookup&& lookup) const -> std::optional<String>;
 
   template <typename Lookup>
-  String lookupTagsView(Lookup&& lookup) const;
+  auto lookupTagsView(Lookup&& lookup) const -> String;
 
   // Replace angle bracket tags in the string with values given by the tags
   // map.  If replaceWithDefault is true, then values that are not found in the
   // tags map are replace with the default string.  If replaceWithDefault is
   // false, tags that are not found are not replaced at all.
   template <typename MapType>
-  String replaceTags(MapType const& tags, bool replaceWithDefault = false, String defaultValue = "") const;
+  auto replaceTags(MapType const& tags, bool replaceWithDefault = false, String defaultValue = "") const -> String;
 
-  String& operator=(String const& s);
-  String& operator=(String&& s);
+  auto operator=(String const& s) -> String&;
+  auto operator=(String&& s) -> String&;
 
-  String& operator+=(String const& s);
-  String& operator+=(std::string const& s);
-  String& operator+=(Char const* s);
-  String& operator+=(char const* s);
-  String& operator+=(Char c);
+  auto operator+=(String const& s) -> String&;
+  auto operator+=(std::string const& s) -> String&;
+  auto operator+=(Char const* s) -> String&;
+  auto operator+=(char const* s) -> String&;
+  auto operator+=(Char c) -> String&;
 
-  friend bool operator==(String const& s1, String const& s2);
-  friend bool operator==(String const& s1, std::string const& s2);
-  friend bool operator==(String const& s1, Char const* s2);
-  friend bool operator==(String const& s1, char const* s2);
-  friend bool operator==(std::string const& s1, String const& s2);
-  friend bool operator==(Char const* s1, String const& s2);
-  friend bool operator==(char const* s1, String const& s2);
+  friend auto operator==(String const& s1, String const& s2) -> bool;
+  friend auto operator==(String const& s1, std::string const& s2) -> bool;
+  friend auto operator==(String const& s1, Char const* s2) -> bool;
+  friend auto operator==(String const& s1, char const* s2) -> bool;
+  friend auto operator==(std::string const& s1, String const& s2) -> bool;
+  friend auto operator==(Char const* s1, String const& s2) -> bool;
+  friend auto operator==(char const* s1, String const& s2) -> bool;
 
-  friend bool operator!=(String const& s1, String const& s2);
-  friend bool operator!=(String const& s1, std::string const& s2);
-  friend bool operator!=(String const& s1, Char const* s2);
-  friend bool operator!=(String const& s1, char const* c);
-  friend bool operator!=(std::string const& s1, String const& s2);
-  friend bool operator!=(Char const* s1, String const& s2);
-  friend bool operator!=(char const* s1, String const& s2);
+  friend auto operator!=(String const& s1, String const& s2) -> bool;
+  friend auto operator!=(String const& s1, std::string const& s2) -> bool;
+  friend auto operator!=(String const& s1, Char const* s2) -> bool;
+  friend auto operator!=(String const& s1, char const* c) -> bool;
+  friend auto operator!=(std::string const& s1, String const& s2) -> bool;
+  friend auto operator!=(Char const* s1, String const& s2) -> bool;
+  friend auto operator!=(char const* s1, String const& s2) -> bool;
 
-  friend bool operator<(String const& s1, String const& s2);
-  friend bool operator<(String const& s1, std::string const& s2);
-  friend bool operator<(String const& s1, Char const* s2);
-  friend bool operator<(String const& s1, char const* s2);
-  friend bool operator<(std::string const& s1, String const& s2);
-  friend bool operator<(Char const* s1, String const& s2);
-  friend bool operator<(char const* s1, String const& s2);
+  friend auto operator<(String const& s1, String const& s2) -> bool;
+  friend auto operator<(String const& s1, std::string const& s2) -> bool;
+  friend auto operator<(String const& s1, Char const* s2) -> bool;
+  friend auto operator<(String const& s1, char const* s2) -> bool;
+  friend auto operator<(std::string const& s1, String const& s2) -> bool;
+  friend auto operator<(Char const* s1, String const& s2) -> bool;
+  friend auto operator<(char const* s1, String const& s2) -> bool;
 
-  friend String operator+(String s1, String const& s2);
-  friend String operator+(String s1, std::string const& s2);
-  friend String operator+(String s1, Char const* s2);
-  friend String operator+(String s1, char const* s2);
-  friend String operator+(std::string const& s1, String const& s2);
-  friend String operator+(Char const* s1, String const& s2);
-  friend String operator+(char const* s1, String const& s2);
+  friend auto operator+(String s1, String const& s2) -> String;
+  friend auto operator+(String s1, std::string const& s2) -> String;
+  friend auto operator+(String s1, Char const* s2) -> String;
+  friend auto operator+(String s1, char const* s2) -> String;
+  friend auto operator+(std::string const& s1, String const& s2) -> String;
+  friend auto operator+(Char const* s1, String const& s2) -> String;
+  friend auto operator+(char const* s1, String const& s2) -> String;
 
-  friend String operator+(String s, Char c);
-  friend String operator+(Char c, String const& s);
+  friend auto operator+(String s, Char c) -> String;
+  friend auto operator+(Char c, String const& s) -> String;
 
-  friend String operator*(String const& s, unsigned times);
-  friend String operator*(unsigned times, String const& s);
+  friend auto operator*(String const& s, unsigned times) -> String;
+  friend auto operator*(unsigned times, String const& s) -> String;
 
-  friend std::ostream& operator<<(std::ostream& os, String const& s);
-  friend std::istream& operator>>(std::istream& is, String& s);
+  friend auto operator<<(std::ostream& os, String const& s) -> std::ostream&;
+  friend auto operator>>(std::istream& is, String& s) -> std::istream&;
 
   // String view functions
   String(StringView s);
   String(std::string_view s);
 
-  String& operator+=(StringView s);
-  String& operator+=(std::string_view s);
+  auto operator+=(StringView s) -> String&;
+  auto operator+=(std::string_view s) -> String&;
 
 private:
-  int compare(size_t selfOffset,
+  [[nodiscard]] auto compare(size_t selfOffset,
       size_t selfLen,
       String const& other,
       size_t otherOffset,
       size_t otherLen,
-      CaseSensitivity cs) const;
+      CaseSensitivity cs) const -> int;
 
   std::string m_string;
 };
 
 class StringList : public List<String> {
 public:
-  typedef List<String> Base;
+  using Base = List<String>;
 
-  typedef Base::iterator iterator;
-  typedef Base::const_iterator const_iterator;
-  typedef Base::value_type value_type;
-  typedef Base::reference reference;
-  typedef Base::const_reference const_reference;
+  using iterator = Base::iterator;
+  using const_iterator = Base::const_iterator;
+  using value_type = Base::value_type;
+  using reference = Base::reference;
+  using const_reference = Base::const_reference;
 
   template <typename Container>
-  static StringList from(Container const& m);
+  static auto from(Container const& m) -> StringList;
 
   StringList();
   StringList(Base const& l);
@@ -321,45 +324,45 @@ public:
   StringList(InputIterator beg, InputIterator end)
     : Base(beg, end) {}
 
-  StringList& operator=(Base const& rhs);
-  StringList& operator=(Base&& rhs);
-  StringList& operator=(StringList const& rhs);
-  StringList& operator=(StringList&& rhs);
-  StringList& operator=(initializer_list<String> list);
+  auto operator=(Base const& rhs) -> StringList&;
+  auto operator=(Base&& rhs) -> StringList&;
+  auto operator=(StringList const& rhs) -> StringList&;
+  auto operator=(StringList&& rhs) -> StringList&;
+  auto operator=(std::initializer_list<String> list) -> StringList&;
 
-  bool contains(String const& s, String::CaseSensitivity cs = String::CaseSensitive) const;
-  StringList trimAll(String const& chars = "") const;
-  String join(String const& separator = "") const;
+  [[nodiscard]] auto contains(String const& s, String::CaseSensitivity cs = String::CaseSensitive) const -> bool;
+  [[nodiscard]] auto trimAll(String const& chars = "") const -> StringList;
+  [[nodiscard]] auto join(String const& separator = "") const -> String;
 
-  StringList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  [[nodiscard]] auto slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const -> StringList;
 
   template <typename Filter>
-  StringList filtered(Filter&& filter) const;
+  auto filtered(Filter&& filter) const -> StringList;
 
   template <typename Comparator>
-  StringList sorted(Comparator&& comparator) const;
+  auto sorted(Comparator&& comparator) const -> StringList;
 
-  StringList sorted() const;
+  [[nodiscard]] auto sorted() const -> StringList;
 };
 
-std::ostream& operator<<(std::ostream& os, StringList const& list);
+auto operator<<(std::ostream& os, StringList const& list) -> std::ostream&;
 
 template <>
 struct hash<String> {
-  size_t operator()(String const& s) const;
+  auto operator()(String const& s) const -> size_t;
 };
 
 struct CaseInsensitiveStringHash {
-  size_t operator()(String const& s) const;
+  auto operator()(String const& s) const -> size_t;
 };
 
 struct CaseInsensitiveStringCompare {
-  bool operator()(String const& lhs, String const& rhs) const;
+  auto operator()(String const& lhs, String const& rhs) const -> bool;
 };
 
-typedef HashSet<String> StringSet;
+using StringSet = HashSet<String>;
 
-typedef HashSet<String, CaseInsensitiveStringHash, CaseInsensitiveStringCompare> CaseInsensitiveStringSet;
+using CaseInsensitiveStringSet = HashSet<String, CaseInsensitiveStringHash, CaseInsensitiveStringCompare>;
 
 template <typename MappedT, typename HashT = hash<String>, typename ComparatorT = std::equal_to<String>>
 using StringMap = HashMap<String, MappedT, HashT, ComparatorT>;
@@ -372,21 +375,21 @@ using CaseInsensitiveStringMap = StringMap<MappedT, CaseInsensitiveStringHash, C
 
 template <>
 struct hash<StringList> {
-  size_t operator()(StringList const& s) const;
+  auto operator()(StringList const& s) const -> size_t;
 };
 
 template <typename... StringType>
-String String::joinWith(
-    String const& join, String const& first, String const& second, String const& third, StringType const&... rest) {
+auto String::joinWith(
+    String const& join, String const& first, String const& second, String const& third, StringType const&... rest) -> String {
   return joinWith(join, joinWith(join, first, second), third, rest...);
 }
 
 template <typename Lookup>
-String String::lookupTags(Lookup&& lookup) const {
+auto String::lookupTags(Lookup&& lookup) const -> String {
   // Operates directly on the utf8 representation of the strings, rather than
   // using unicode find / replace methods
 
-  auto substrInto = [](std::string const& ref, size_t position, size_t n, std::string& result) {
+  auto substrInto = [](std::string const& ref, size_t position, size_t n, std::string& result) -> auto {
     auto len = ref.size();
     if (position > len)
       throw OutOfRangeException(strf("out of range in substrInto: {}", position));
@@ -417,7 +420,7 @@ String String::lookupTags(Lookup&& lookup) const {
 
     size_t beginTag = m_string.find("<", start);
     size_t endTag = m_string.find(">", beginTag);
-    if (beginTag != NPos && endTag != NPos) {
+    if (beginTag != std::numeric_limits<std::size_t>::max() && endTag != std::numeric_limits<std::size_t>::max()) {
       substrInto(m_string, beginTag + 1, endTag - beginTag - 1, key.m_string);
       substrInto(m_string, start, beginTag - start, finalString);
       finalString += lookup(key).m_string;
@@ -425,7 +428,7 @@ String String::lookupTags(Lookup&& lookup) const {
       start = endTag + 1;
 
     } else {
-      substrInto(m_string, start, NPos, finalString);
+      substrInto(m_string, start, std::numeric_limits<std::size_t>::max(), finalString);
       break;
     }
   }
@@ -434,7 +437,7 @@ String String::lookupTags(Lookup&& lookup) const {
 }
 
 template <typename Lookup>
-Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
+auto String::maybeLookupTagsView(Lookup&& lookup) const -> std::optional<String> {
   List<std::string_view> finalViews = {};
   std::string_view view(utf8());
 
@@ -444,11 +447,11 @@ Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
       break;
 
     size_t beginTag = view.find_first_of('<', start);
-    if (beginTag == NPos && !start)
-      return Maybe<String>();
+    if (beginTag == std::numeric_limits<std::size_t>::max() && !start)
+      return std::nullopt;
 
     size_t endTag = view.find_first_of('>', beginTag);
-    if (beginTag != NPos && endTag != NPos) {
+    if (beginTag != std::numeric_limits<std::size_t>::max() && endTag != std::numeric_limits<std::size_t>::max()) {
       finalViews.append(view.substr(start, beginTag - start));
       finalViews.append(lookup(view.substr(beginTag + 1, endTag - beginTag - 1)).takeUtf8());
       start = endTag + 1;
@@ -472,13 +475,13 @@ Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
 }
 
 template <typename Lookup>
-String String::lookupTagsView(Lookup&& lookup) const {
+auto String::lookupTagsView(Lookup&& lookup) const -> String {
   auto result = maybeLookupTagsView(lookup);
-  return result ? std::move(result.take()) : String();
+  return result ? std::move(*result) : String();
 }
 
 template <typename MapType>
-String String::replaceTags(MapType const& tags, bool replaceWithDefault, String defaultValue) const {
+auto String::replaceTags(MapType const& tags, bool replaceWithDefault, String defaultValue) const -> String {
   return lookupTags([&](String const& key) -> String {
     auto i = tags.find(key);
     if (i == tags.end()) {
@@ -492,7 +495,7 @@ String String::replaceTags(MapType const& tags, bool replaceWithDefault, String 
   });
 }
 
-inline size_t hash<String>::operator()(String const& s) const {
+inline auto hash<String>::operator()(String const& s) const -> size_t {
   PLHasher hash;
   for (auto c : s.utf8())
     hash.put(c);
@@ -500,19 +503,19 @@ inline size_t hash<String>::operator()(String const& s) const {
 }
 
 template <typename Container>
-StringList StringList::from(Container const& m) {
+auto StringList::from(Container const& m) -> StringList {
   return StringList(m.begin(), m.end());
 }
 
 template <typename Filter>
-StringList StringList::filtered(Filter&& filter) const {
+auto StringList::filtered(Filter&& filter) const -> StringList {
   StringList l;
   l.filter(forward<Filter>(filter));
   return l;
 }
 
 template <typename Comparator>
-StringList StringList::sorted(Comparator&& comparator) const {
+auto StringList::sorted(Comparator&& comparator) const -> StringList {
   StringList l;
   l.sort(forward<Comparator>(comparator));
   return l;

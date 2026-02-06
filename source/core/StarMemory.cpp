@@ -1,5 +1,4 @@
 #include "StarMemory.hpp"
-#include <cstdlib>
 
 #ifdef STAR_USE_JEMALLOC
 #include "jemalloc/jemalloc.h"
@@ -7,6 +6,8 @@
 #include "mimalloc.h"
 #elif STAR_USE_RPMALLOC
 #include "rpnew.h"
+
+import std;
 
 bool rpm_linker_ref() {
   rpmalloc_linker_reference();

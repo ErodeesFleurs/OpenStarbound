@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarOrderedSet.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarAnimation.hpp"
@@ -34,8 +36,8 @@ struct AiSpeciesMissionText {
 struct AiMission {
   String missionName;
   String missionUniqueWorld;
-  Maybe<String> warpAnimation;
-  Maybe<bool> warpDeploy;
+  std::optional<String> warpAnimation;
+  std::optional<bool> warpDeploy;
   String icon;
   StringMap<AiSpeciesMissionText> speciesText;
 };

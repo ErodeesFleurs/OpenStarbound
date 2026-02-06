@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "StarActorMovementController.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
@@ -39,15 +41,15 @@ Json ActorJumpProfile::toJson() const {
 ActorJumpProfile ActorJumpProfile::merge(ActorJumpProfile const& rhs) const {
   ActorJumpProfile merged;
 
-  merged.jumpSpeed = rhs.jumpSpeed.orMaybe(jumpSpeed);
-  merged.jumpControlForce = rhs.jumpControlForce.orMaybe(jumpControlForce);
-  merged.jumpInitialPercentage = rhs.jumpInitialPercentage.orMaybe(jumpInitialPercentage);
-  merged.jumpHoldTime = rhs.jumpHoldTime.orMaybe(jumpHoldTime);
-  merged.jumpTotalHoldTime = rhs.jumpTotalHoldTime.orMaybe(jumpTotalHoldTime);
-  merged.multiJump = rhs.multiJump.orMaybe(multiJump);
-  merged.reJumpDelay = rhs.reJumpDelay.orMaybe(reJumpDelay);
-  merged.autoJump = rhs.autoJump.orMaybe(autoJump);
-  merged.collisionCancelled = rhs.collisionCancelled.orMaybe(collisionCancelled);
+  merged.jumpSpeed = rhs.jumpSpeed ? rhs.jumpSpeed : jumpSpeed;
+  merged.jumpControlForce = rhs.jumpControlForce ? rhs.jumpControlForce : jumpControlForce;
+  merged.jumpInitialPercentage = rhs.jumpInitialPercentage ? rhs.jumpInitialPercentage : jumpInitialPercentage;
+  merged.jumpHoldTime = rhs.jumpHoldTime ? rhs.jumpHoldTime : jumpHoldTime;
+  merged.jumpTotalHoldTime = rhs.jumpTotalHoldTime ? rhs.jumpTotalHoldTime : jumpTotalHoldTime;
+  merged.multiJump = rhs.multiJump ? rhs.multiJump : multiJump;
+  merged.reJumpDelay = rhs.reJumpDelay ? rhs.reJumpDelay : reJumpDelay;
+  merged.autoJump = rhs.autoJump ? rhs.autoJump : autoJump;
+  merged.collisionCancelled = rhs.collisionCancelled ? rhs.collisionCancelled : collisionCancelled;
 
   return merged;
 }
@@ -201,53 +203,53 @@ Json ActorMovementParameters::toJson() const {
 ActorMovementParameters ActorMovementParameters::merge(ActorMovementParameters const& rhs) const {
   ActorMovementParameters merged;
 
-  merged.mass = rhs.mass.orMaybe(mass);
-  merged.gravityMultiplier = rhs.gravityMultiplier.orMaybe(gravityMultiplier);
-  merged.liquidBuoyancy = rhs.liquidBuoyancy.orMaybe(liquidBuoyancy);
-  merged.airBuoyancy = rhs.airBuoyancy.orMaybe(airBuoyancy);
-  merged.bounceFactor = rhs.bounceFactor.orMaybe(bounceFactor);
-  merged.stopOnFirstBounce = rhs.stopOnFirstBounce.orMaybe(stopOnFirstBounce);
-  merged.enableSurfaceSlopeCorrection = rhs.enableSurfaceSlopeCorrection.orMaybe(enableSurfaceSlopeCorrection);
-  merged.slopeSlidingFactor = rhs.slopeSlidingFactor.orMaybe(slopeSlidingFactor);
-  merged.maxMovementPerStep = rhs.maxMovementPerStep.orMaybe(maxMovementPerStep);
-  merged.maximumCorrection = rhs.maximumCorrection.orMaybe(maximumCorrection);
-  merged.speedLimit = rhs.speedLimit.orMaybe(speedLimit);
-  merged.standingPoly = rhs.standingPoly.orMaybe(standingPoly);
-  merged.crouchingPoly = rhs.crouchingPoly.orMaybe(crouchingPoly);
-  merged.stickyCollision = rhs.stickyCollision.orMaybe(stickyCollision);
-  merged.stickyForce = rhs.stickyForce.orMaybe(stickyForce);
-  merged.walkSpeed = rhs.walkSpeed.orMaybe(walkSpeed);
-  merged.runSpeed = rhs.runSpeed.orMaybe(runSpeed);
-  merged.flySpeed = rhs.flySpeed.orMaybe(flySpeed);
-  merged.airFriction = rhs.airFriction.orMaybe(airFriction);
-  merged.liquidFriction = rhs.liquidFriction.orMaybe(liquidFriction);
-  merged.minimumLiquidPercentage = rhs.minimumLiquidPercentage.orMaybe(minimumLiquidPercentage);
-  merged.liquidImpedance = rhs.liquidImpedance.orMaybe(liquidImpedance);
-  merged.normalGroundFriction = rhs.normalGroundFriction.orMaybe(normalGroundFriction);
-  merged.ambulatingGroundFriction = rhs.ambulatingGroundFriction.orMaybe(ambulatingGroundFriction);
-  merged.groundForce = rhs.groundForce.orMaybe(groundForce);
-  merged.airForce = rhs.airForce.orMaybe(airForce);
-  merged.liquidForce = rhs.liquidForce.orMaybe(liquidForce);
+  merged.mass = rhs.mass ? rhs.mass : mass;
+  merged.gravityMultiplier = rhs.gravityMultiplier ? rhs.gravityMultiplier : gravityMultiplier;
+  merged.liquidBuoyancy = rhs.liquidBuoyancy ? rhs.liquidBuoyancy : liquidBuoyancy;
+  merged.airBuoyancy = rhs.airBuoyancy ? rhs.airBuoyancy : airBuoyancy;
+  merged.bounceFactor = rhs.bounceFactor ? rhs.bounceFactor : bounceFactor;
+  merged.stopOnFirstBounce = rhs.stopOnFirstBounce ? rhs.stopOnFirstBounce : stopOnFirstBounce;
+  merged.enableSurfaceSlopeCorrection = rhs.enableSurfaceSlopeCorrection ? rhs.enableSurfaceSlopeCorrection : enableSurfaceSlopeCorrection;
+  merged.slopeSlidingFactor = rhs.slopeSlidingFactor ? rhs.slopeSlidingFactor : slopeSlidingFactor;
+  merged.maxMovementPerStep = rhs.maxMovementPerStep ? rhs.maxMovementPerStep : maxMovementPerStep;
+  merged.maximumCorrection = rhs.maximumCorrection ? rhs.maximumCorrection : maximumCorrection;
+  merged.speedLimit = rhs.speedLimit ? rhs.speedLimit : speedLimit;
+  merged.standingPoly = rhs.standingPoly ? rhs.standingPoly : standingPoly;
+  merged.crouchingPoly = rhs.crouchingPoly ? rhs.crouchingPoly : crouchingPoly;
+  merged.stickyCollision = rhs.stickyCollision ? rhs.stickyCollision : stickyCollision;
+  merged.stickyForce = rhs.stickyForce ? rhs.stickyForce : stickyForce;
+  merged.walkSpeed = rhs.walkSpeed ? rhs.walkSpeed : walkSpeed;
+  merged.runSpeed = rhs.runSpeed ? rhs.runSpeed : runSpeed;
+  merged.flySpeed = rhs.flySpeed ? rhs.flySpeed : flySpeed;
+  merged.airFriction = rhs.airFriction ? rhs.airFriction : airFriction;
+  merged.liquidFriction = rhs.liquidFriction ? rhs.liquidFriction : liquidFriction;
+  merged.minimumLiquidPercentage = rhs.minimumLiquidPercentage ? rhs.minimumLiquidPercentage : minimumLiquidPercentage;
+  merged.liquidImpedance = rhs.liquidImpedance ? rhs.liquidImpedance : liquidImpedance;
+  merged.normalGroundFriction = rhs.normalGroundFriction ? rhs.normalGroundFriction : normalGroundFriction;
+  merged.ambulatingGroundFriction = rhs.ambulatingGroundFriction ? rhs.ambulatingGroundFriction : ambulatingGroundFriction;
+  merged.groundForce = rhs.groundForce ? rhs.groundForce : groundForce;
+  merged.airForce = rhs.airForce ? rhs.airForce : airForce;
+  merged.liquidForce = rhs.liquidForce ? rhs.liquidForce : liquidForce;
 
   merged.airJumpProfile = airJumpProfile.merge(rhs.airJumpProfile);
   merged.liquidJumpProfile = liquidJumpProfile.merge(rhs.liquidJumpProfile);
 
-  merged.fallStatusSpeedMin = rhs.fallStatusSpeedMin.orMaybe(fallStatusSpeedMin);
-  merged.fallThroughSustainFrames = rhs.fallThroughSustainFrames.orMaybe(fallThroughSustainFrames);
-  merged.maximumPlatformCorrection = rhs.maximumPlatformCorrection.orMaybe(maximumPlatformCorrection);
-  merged.maximumPlatformCorrectionVelocityFactor = rhs.maximumPlatformCorrectionVelocityFactor.orMaybe(maximumPlatformCorrectionVelocityFactor);
+  merged.fallStatusSpeedMin = rhs.fallStatusSpeedMin ? rhs.fallStatusSpeedMin : fallStatusSpeedMin;
+  merged.fallThroughSustainFrames = rhs.fallThroughSustainFrames ? rhs.fallThroughSustainFrames : fallThroughSustainFrames;
+  merged.maximumPlatformCorrection = rhs.maximumPlatformCorrection ? rhs.maximumPlatformCorrection : maximumPlatformCorrection;
+  merged.maximumPlatformCorrectionVelocityFactor = rhs.maximumPlatformCorrectionVelocityFactor ? rhs.maximumPlatformCorrectionVelocityFactor : maximumPlatformCorrectionVelocityFactor;
 
-  merged.physicsEffectCategories = rhs.physicsEffectCategories.orMaybe(physicsEffectCategories);
+  merged.physicsEffectCategories = rhs.physicsEffectCategories ? rhs.physicsEffectCategories : physicsEffectCategories;
 
-  merged.groundMovementMinimumSustain = rhs.groundMovementMinimumSustain.orMaybe(groundMovementMinimumSustain);
-  merged.groundMovementMaximumSustain = rhs.groundMovementMaximumSustain.orMaybe(groundMovementMaximumSustain);
-  merged.groundMovementCheckDistance = rhs.groundMovementCheckDistance.orMaybe(groundMovementCheckDistance);
+  merged.groundMovementMinimumSustain = rhs.groundMovementMinimumSustain ? rhs.groundMovementMinimumSustain : groundMovementMinimumSustain;
+  merged.groundMovementMaximumSustain = rhs.groundMovementMaximumSustain ? rhs.groundMovementMaximumSustain : groundMovementMaximumSustain;
+  merged.groundMovementCheckDistance = rhs.groundMovementCheckDistance ? rhs.groundMovementCheckDistance : groundMovementCheckDistance;
 
-  merged.collisionEnabled = rhs.collisionEnabled.orMaybe(collisionEnabled);
-  merged.frictionEnabled = rhs.frictionEnabled.orMaybe(frictionEnabled);
-  merged.gravityEnabled = rhs.gravityEnabled.orMaybe(gravityEnabled);
+  merged.collisionEnabled = rhs.collisionEnabled ? rhs.collisionEnabled : collisionEnabled;
+  merged.frictionEnabled = rhs.frictionEnabled ? rhs.frictionEnabled : frictionEnabled;
+  merged.gravityEnabled = rhs.gravityEnabled ? rhs.gravityEnabled : gravityEnabled;
 
-  merged.pathExploreRate = rhs.pathExploreRate.orMaybe(pathExploreRate);
+  merged.pathExploreRate = rhs.pathExploreRate ? rhs.pathExploreRate : pathExploreRate;
 
   return merged;
 }
@@ -503,7 +505,7 @@ void ActorMovementController::resetAnchorState() {
   doSetAnchorState({});
 }
 
-Maybe<EntityAnchorState> ActorMovementController::anchorState() const {
+std::optional<EntityAnchorState> ActorMovementController::anchorState() const {
   return m_anchorState.get();
 }
 
@@ -639,15 +641,15 @@ void ActorMovementController::controlFly(Vec2F const& velocity) {
   m_controlFly = velocity;
 }
 
-Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position, bool, Maybe<PlatformerAStar::Parameters> const& parameters) {
+std::optional<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position, bool, std::optional<PlatformerAStar::Parameters> const& parameters) {
   if (!m_pathController)
     m_pathController = make_shared<PathController>(world());
 
   // set new parameters if they have changed
-  if (m_pathController->targetPosition().isNothing() || (parameters && m_pathController->parameters() != *parameters)) {
+  if (!m_pathController->targetPosition() || (parameters && m_pathController->parameters() != *parameters)) {
     if (parameters)
       m_pathController->setParameters(*parameters);
-    m_pathMoveResult = m_pathController->findPath(*this, position).apply([position](bool result) { return pair<Vec2F, bool>(position, result); });
+    m_pathMoveResult = m_pathController->findPath(*this, position).transform([position](bool result) { return pair<Vec2F, bool>(position, result); });
   }
 
   // update target position if it has changed
@@ -663,10 +665,10 @@ Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position
   return take(m_pathMoveResult);
 }
 
-Maybe<pair<Vec2F, bool>> ActorMovementController::controlPathMove(Vec2F const& position, bool run, Maybe<PlatformerAStar::Parameters> const& parameters) {
+std::optional<pair<Vec2F, bool>> ActorMovementController::controlPathMove(Vec2F const& position, bool run, std::optional<PlatformerAStar::Parameters> const& parameters) {
   auto result = pathMove(position, run, parameters);
 
-  if (result.isNothing())
+  if (!result)
     m_controlPathMove = pair<Vec2F, bool>(position, run);
 
   return result;
@@ -778,9 +780,9 @@ void ActorMovementController::tickMaster(float dt) {
           m_walking.set(false);
           m_running.set(false);
         }
-        auto facing = m_controlFace.orMaybe(m_pathController->facing()).value(m_facingDirection.get());
+        auto facing = (m_controlFace ? m_controlFace : m_pathController->facing()).value_or(m_facingDirection.get());
         m_facingDirection.set(facing);
-        m_movingDirection.set(m_pathController->facing().value(m_facingDirection.get()));
+        m_movingDirection.set(m_pathController->facing().value_or(m_facingDirection.get()));
 
         applyMCParameters(activeParameters);
 
@@ -826,7 +828,7 @@ void ActorMovementController::tickMaster(float dt) {
     m_liquidMovement.set(liquidPercentage() >= *activeParameters.minimumLiquidPercentage);
     float liquidImpedance = *activeParameters.liquidImpedance * liquidPercentage();
 
-    Maybe<Direction> updatedMovingDirection;
+    std::optional<Direction> updatedMovingDirection;
     bool running = m_controlRun && !activeModifiers.runningSuppressed;
 
     if (m_controlFly) {
@@ -1061,7 +1063,7 @@ void ActorMovementController::applyMCParameters(ActorMovementParameters const& p
   MovementController::applyParameters(mcParameters);
 }
 
-void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorState) {
+void ActorMovementController::doSetAnchorState(std::optional<EntityAnchorState> anchorState) {
   EntityAnchorConstPtr entityAnchor;
   if (anchorState) {
     auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId));
@@ -1111,22 +1113,22 @@ bool PathController::pathfinding() const {
   return m_path.isNothing();
 }
 
-Maybe<Vec2F> PathController::targetPosition() const {
+std::optional<Vec2F> PathController::targetPosition() const {
   return m_targetPosition;
 }
 
-Maybe<Direction> PathController::facing() const {
+std::optional<Direction> PathController::facing() const {
   return m_controlFace;
 }
 
-Maybe<PlatformerAStar::Action> PathController::curAction() const {
+std::optional<PlatformerAStar::Action> PathController::curAction() const {
   if (m_path && m_edgeIndex < m_path->size()) {
     return m_path->at(m_edgeIndex).action;
   }
   return {};
 }
 
-Maybe<bool> PathController::findPath(ActorMovementController& movementController, Vec2F const& targetPosition) {
+std::optional<bool> PathController::findPath(ActorMovementController& movementController, Vec2F const& targetPosition) {
   using namespace PlatformerAStar;
 
   // reached the end of the last path and we have a new target position to move toward
@@ -1245,7 +1247,7 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
   return {};
 }
 
-Maybe<bool> PathController::move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt) {
+std::optional<bool> PathController::move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt) {
   using namespace PlatformerAStar;
 
   // pathfind to a new target position in the background while moving on the current path
@@ -1329,7 +1331,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
     //   SpatialLogger::logLine("world", debugEdge.source.position, debugEdge.target.position, Color::Blue.toRgba());
 
     //   if (i == m_edgeIndex) {
-    //     Vec2F velocity = debugEdge.source.velocity.orMaybe(debugEdge.target.velocity).value({ 0.0, 0.0 });
+    //     Vec2F velocity = (debugEdge.source.velocity ? debugEdge.source.velocity : debugEdge.target.velocity).value_or(Vec2F{ 0.0, 0.0 });
     //     SpatialLogger::logPoint("world", debugEdge.source.position, Color::Yellow.toRgba());
     //     SpatialLogger::logLine("world", debugEdge.source.position, debugEdge.target.position, Color::Yellow.toRgba());
     //     SpatialLogger::logText("world", strf("{} {}", ActionNames.getRight(debugEdge.action), curVelocity), debugEdge.source.position, Color::Yellow.toRgba());

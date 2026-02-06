@@ -3,6 +3,8 @@
 #include "StarBuffer.hpp"
 #include "StarDataStream.hpp"
 
+import std;
+
 namespace Star {
 
 // Implements DataStream using function objects as implementations of read/write.
@@ -10,31 +12,31 @@ class DataStreamFunctions : public DataStream {
 public:
   // Either reader or writer can be unset, if unset then the readData/writeData
   // implementations will throw DataStreamException as unimplemented.
-  DataStreamFunctions(function<size_t(char*, size_t)> reader, function<size_t(char const*, size_t)> writer);
+  DataStreamFunctions(std::function<std::size_t(char*, std::size_t)> reader, std::function<std::size_t(char const*, std::size_t)> writer);
 
   void readData(char* data, size_t len) override;
   void writeData(char const* data, size_t len) override;
 
 private:
-  function<size_t(char*, size_t)> m_reader;
-  function<size_t(char const*, size_t)> m_writer;
+  std::function<size_t(char*, size_t)> m_reader;
+  std::function<size_t(char const*, size_t)> m_writer;
 };
 
 class DataStreamIODevice : public DataStream {
 public:
-  DataStreamIODevice(IODevicePtr device);
+  DataStreamIODevice(Ptr<IODevice> device);
 
-  IODevicePtr const& device() const;
+  [[nodiscard]] auto device() const -> Ptr<IODevice> const&;
 
   void seek(size_t pos, IOSeek seek = IOSeek::Absolute);
-  bool atEnd() override;
-  StreamOffset pos();
+  auto atEnd() -> bool override;
+  auto pos() -> std::int64_t;
 
   void readData(char* data, size_t len) override;
   void writeData(char const* data, size_t len) override;
 
 private:
-  IODevicePtr m_device;
+  Ptr<IODevice> m_device;
 };
 
 class DataStreamBuffer : public DataStream {
@@ -43,19 +45,19 @@ public:
   // having to construct a temporary DataStreamBuffer to do it
 
   template <typename T>
-  static ByteArray serialize(T const& t);
+  static auto serialize(T const& t) -> ByteArray;
 
   template <typename T>
-  static ByteArray serializeContainer(T const& t);
+  static auto serializeContainer(T const& t) -> ByteArray;
 
   template <typename T, typename WriteFunction>
-  static ByteArray serializeContainer(T const& t, WriteFunction writeFunction);
+  static auto serializeContainer(T const& t, WriteFunction writeFunction) -> ByteArray;
 
   template <typename T>
-  static ByteArray serializeMapContainer(T const& t);
+  static auto serializeMapContainer(T const& t) -> ByteArray;
 
   template <typename T, typename WriteFunction>
-  static ByteArray serializeMapContainer(T const& t, WriteFunction writeFunction);
+  static auto serializeMapContainer(T const& t, WriteFunction writeFunction) -> ByteArray;
 
   template <typename T>
   static void deserialize(T& t, ByteArray data);
@@ -73,19 +75,19 @@ public:
   static void deserializeMapContainer(T& t, ByteArray data, ReadFunction readFunction);
 
   template <typename T>
-  static T deserialize(ByteArray data);
+  static auto deserialize(ByteArray data) -> T;
 
   template <typename T>
-  static T deserializeContainer(ByteArray data);
+  static auto deserializeContainer(ByteArray data) -> T;
 
   template <typename T, typename ReadFunction>
-  static T deserializeContainer(ByteArray data, ReadFunction readFunction);
+  static auto deserializeContainer(ByteArray data, ReadFunction readFunction) -> T;
 
   template <typename T>
-  static T deserializeMapContainer(ByteArray data);
+  static auto deserializeMapContainer(ByteArray data) -> T;
 
   template <typename T, typename ReadFunction>
-  static T deserializeMapContainer(ByteArray data, ReadFunction readFunction);
+  static auto deserializeMapContainer(ByteArray data, ReadFunction readFunction) -> T;
 
   DataStreamBuffer();
   DataStreamBuffer(size_t initialSize);
@@ -96,21 +98,21 @@ public:
   void reserve(size_t size);
   void clear();
 
-  ByteArray& data();
-  ByteArray const& data() const;
-  ByteArray takeData();
+  auto data() -> ByteArray&;
+  [[nodiscard]] auto data() const -> ByteArray const&;
+  auto takeData() -> ByteArray;
 
-  char* ptr();
-  char const* ptr() const;
+  auto ptr() -> char*;
+  [[nodiscard]] auto ptr() const -> char const*;
 
-  BufferPtr const& device() const;
+  [[nodiscard]] auto device() const -> Ptr<Buffer> const&;
 
-  size_t size() const;
-  bool empty() const;
+  [[nodiscard]] auto size() const -> size_t;
+  [[nodiscard]] auto empty() const -> bool;
 
   void seek(size_t pos, IOSeek seek = IOSeek::Absolute);
-  bool atEnd() override;
-  size_t pos();
+  auto atEnd() -> bool override;
+  auto pos() -> size_t;
 
   // Set new buffer.
   void reset(size_t newSize);
@@ -120,7 +122,7 @@ public:
   void writeData(char const* data, size_t len) override;
 
 private:
-  BufferPtr m_buffer;
+  Ptr<Buffer> m_buffer;
 };
 
 class DataStreamExternalBuffer : public DataStream {
@@ -132,15 +134,15 @@ public:
   DataStreamExternalBuffer(DataStreamExternalBuffer const& buffer) = default;
   DataStreamExternalBuffer(char const* externalData, size_t len);
 
-  char const* ptr() const;
+  auto ptr() const -> char const*;
 
-  size_t size() const;
-  bool empty() const;
+  auto size() const -> size_t;
+  auto empty() const -> bool;
 
   void seek(size_t pos, IOSeek mode = IOSeek::Absolute);
-  bool atEnd() override;
-  size_t pos();
-  size_t remaining();
+  auto atEnd() -> bool override;
+  auto pos() -> size_t;
+  auto remaining() -> size_t;
 
   void reset(char const* externalData, size_t len);
 
@@ -152,35 +154,35 @@ private:
 };
 
 template <typename T>
-ByteArray DataStreamBuffer::serialize(T const& t) {
+auto DataStreamBuffer::serialize(T const& t) -> ByteArray {
   DataStreamBuffer ds;
   ds.write(t);
   return ds.takeData();
 }
 
 template <typename T>
-ByteArray DataStreamBuffer::serializeContainer(T const& t) {
+auto DataStreamBuffer::serializeContainer(T const& t) -> ByteArray {
   DataStreamBuffer ds;
   ds.writeContainer(t);
   return ds.takeData();
 }
 
 template <typename T, typename WriteFunction>
-ByteArray DataStreamBuffer::serializeContainer(T const& t, WriteFunction writeFunction) {
+auto DataStreamBuffer::serializeContainer(T const& t, WriteFunction writeFunction) -> ByteArray {
   DataStreamBuffer ds;
   ds.writeContainer(t, writeFunction);
   return ds.takeData();
 }
 
 template <typename T>
-ByteArray DataStreamBuffer::serializeMapContainer(T const& t) {
+auto DataStreamBuffer::serializeMapContainer(T const& t) -> ByteArray {
   DataStreamBuffer ds;
   ds.writeMapContainer(t);
   return ds.takeData();
 }
 
 template <typename T, typename WriteFunction>
-ByteArray DataStreamBuffer::serializeMapContainer(T const& t, WriteFunction writeFunction) {
+auto DataStreamBuffer::serializeMapContainer(T const& t, WriteFunction writeFunction) -> ByteArray {
   DataStreamBuffer ds;
   ds.writeMapContainer(t, writeFunction);
   return ds.takeData();
@@ -217,35 +219,35 @@ void DataStreamBuffer::deserializeMapContainer(T& t, ByteArray data, ReadFunctio
 }
 
 template <typename T>
-T DataStreamBuffer::deserialize(ByteArray data) {
+auto DataStreamBuffer::deserialize(ByteArray data) -> T {
   T t;
   deserialize(t, std::move(data));
   return t;
 }
 
 template <typename T>
-T DataStreamBuffer::deserializeContainer(ByteArray data) {
+auto DataStreamBuffer::deserializeContainer(ByteArray data) -> T {
   T t;
   deserializeContainer(t, std::move(data));
   return t;
 }
 
 template <typename T, typename ReadFunction>
-T DataStreamBuffer::deserializeContainer(ByteArray data, ReadFunction readFunction) {
+auto DataStreamBuffer::deserializeContainer(ByteArray data, ReadFunction readFunction) -> T {
   T t;
   deserializeContainer(t, std::move(data), readFunction);
   return t;
 }
 
 template <typename T>
-T DataStreamBuffer::deserializeMapContainer(ByteArray data) {
+auto DataStreamBuffer::deserializeMapContainer(ByteArray data) -> T {
   T t;
   deserializeMapContainer(t, std::move(data));
   return t;
 }
 
 template <typename T, typename ReadFunction>
-T DataStreamBuffer::deserializeMapContainer(ByteArray data, ReadFunction readFunction) {
+auto DataStreamBuffer::deserializeMapContainer(ByteArray data, ReadFunction readFunction) -> T {
   T t;
   deserializeMapContainer(t, std::move(data), readFunction);
   return t;

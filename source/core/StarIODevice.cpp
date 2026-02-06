@@ -12,7 +12,7 @@ IODevice::~IODevice() {
   close();
 }
 
-void IODevice::resize(StreamOffset) {
+void IODevice::resize(std::int64_t) {
   throw IOException("resize not supported");
 }
 
@@ -59,11 +59,11 @@ bool IODevice::atEnd() {
   return pos() >= size();
 }
 
-StreamOffset IODevice::size() {
+std::int64_t IODevice::size() {
   try {
-    StreamOffset storedPos = pos();
+    std::int64_t storedPos = pos();
     seek(0, IOSeek::End);
-    StreamOffset size = pos();
+    std::int64_t size = pos();
     seek(storedPos);
     return size;
   } catch (IOException const& e) {
@@ -71,23 +71,23 @@ StreamOffset IODevice::size() {
   }
 }
 
-size_t IODevice::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
-  StreamOffset storedPos = pos();
+size_t IODevice::readAbsolute(std::int64_t readPosition, char* data, size_t len) {
+  std::int64_t storedPos = pos();
   seek(readPosition);
   size_t ret = read(data, len);
   seek(storedPos);
   return ret;
 }
 
-size_t IODevice::writeAbsolute(StreamOffset writePosition, char const* data, size_t len) {
-  StreamOffset storedPos = pos();
+size_t IODevice::writeAbsolute(std::int64_t writePosition, char const* data, size_t len) {
+  std::int64_t storedPos = pos();
   seek(writePosition);
   size_t ret = write(data, len);
   seek(storedPos);
   return ret;
 }
 
-void IODevice::readFullAbsolute(StreamOffset readPosition, char* data, size_t len) {
+void IODevice::readFullAbsolute(std::int64_t readPosition, char* data, size_t len) {
   while (len > 0) {
     size_t r = readAbsolute(readPosition, data, len);
     if (r == 0)
@@ -98,7 +98,7 @@ void IODevice::readFullAbsolute(StreamOffset readPosition, char* data, size_t le
   }
 }
 
-void IODevice::writeFullAbsolute(StreamOffset writePosition, char const* data, size_t len) {
+void IODevice::writeFullAbsolute(std::int64_t writePosition, char const* data, size_t len) {
   while (len > 0) {
     size_t r = writeAbsolute(writePosition, data, len);
     if (r == 0)
@@ -123,7 +123,7 @@ void IODevice::writeBytes(ByteArray const& p) {
   writeFull(p.ptr(), p.size());
 }
 
-ByteArray IODevice::readBytesAbsolute(StreamOffset readPosition, size_t size) {
+ByteArray IODevice::readBytesAbsolute(std::int64_t readPosition, size_t size) {
   if (!size)
     return {};
 
@@ -133,7 +133,7 @@ ByteArray IODevice::readBytesAbsolute(StreamOffset readPosition, size_t size) {
   return p;
 }
 
-void IODevice::writeBytesAbsolute(StreamOffset writePosition, ByteArray const& p) {
+void IODevice::writeBytesAbsolute(std::int64_t writePosition, ByteArray const& p) {
   writeFullAbsolute(writePosition, p.ptr(), p.size());
 }
 

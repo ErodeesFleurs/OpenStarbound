@@ -85,7 +85,7 @@ void Star::PcP2PNetworkingService::setActivityData(
   [[maybe_unused]] const char* title,
   [[maybe_unused]] const char* details,
   [[maybe_unused]] int64_t startTime,
-  [[maybe_unused]] Maybe<pair<uint16_t, uint16_t>> party) {
+  [[maybe_unused]] std::optional<pair<uint16_t, uint16_t>> party) {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   MutexLocker discordLocker(m_state->discordMutex);
 #endif
@@ -153,7 +153,7 @@ MVariant<P2PNetworkingPeerId, HostAddressWithPort> PcP2PNetworkingService::pullP
   return take(m_pendingJoin);
 }
 
-Maybe<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> Star::PcP2PNetworkingService::pullJoinRequest() {
+std::optional<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> Star::PcP2PNetworkingService::pullJoinRequest() {
   MutexLocker serviceLocker(m_mutex);
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
@@ -284,7 +284,7 @@ bool PcP2PNetworkingService::SteamP2PSocket::sendMessage(ByteArray const& messag
   return true;
 }
 
-Maybe<ByteArray> PcP2PNetworkingService::SteamP2PSocket::receiveMessage() {
+std::optional<ByteArray> PcP2PNetworkingService::SteamP2PSocket::receiveMessage() {
   MutexLocker socketLocker(mutex);
   if (!incoming.empty())
     return incoming.takeFirst();
@@ -401,7 +401,7 @@ bool PcP2PNetworkingService::DiscordP2PSocket::sendMessage(ByteArray const& mess
   return true;
 }
 
-Maybe<ByteArray> PcP2PNetworkingService::DiscordP2PSocket::receiveMessage() {
+std::optional<ByteArray> PcP2PNetworkingService::DiscordP2PSocket::receiveMessage() {
   MutexLocker socketLocker(mutex);
   if (!incoming.empty())
     return incoming.takeFirst();

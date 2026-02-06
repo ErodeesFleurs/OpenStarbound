@@ -23,7 +23,7 @@ public:
   // Specify the shadowing parameters in order to use the shadowing
   // information from that body instead of the primary one.
   static List<pair<String, float>> drawWorld(
-      CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& shadowingParameters = {});
+      CelestialParameters const& celestialParameters, std::optional<CelestialParameters> const& shadowingParameters = {});
   static List<pair<String, String>> worldHorizonImages(CelestialParameters const& celestialParameters);
   static int worldRadialPosition(CelestialParameters const& celestialParameters);
 

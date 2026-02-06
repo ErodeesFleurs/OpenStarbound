@@ -1,8 +1,8 @@
 #include "StarDirectives.hpp"
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarXXHash.hpp"
-#include "StarLogging.hpp"
+
+import std;
 
 namespace Star {
 
@@ -24,7 +24,7 @@ Directives::Entry::Entry(Entry const& other) {
   length = other.length;
 }
 
-ImageOperation const& Directives::Entry::loadOperation(Shared const& parent) const {
+auto Directives::Entry::loadOperation(Shared const& parent) const -> ImageOperation const& {
   if (operation.is<NullImageOperation>()) {
     try
       { operation = imageOperationFromString(string(parent)); }
@@ -34,25 +34,31 @@ ImageOperation const& Directives::Entry::loadOperation(Shared const& parent) con
   return operation;
 }
 
-StringView Directives::Entry::string(Shared const& parent) const {
+auto Directives::Entry::string(Shared const& parent) const -> StringView {
   StringView result = parent.string;
   result = result.utf8().substr(begin, length);
   return result;
 }
 
-bool Directives::Shared::empty() const {
+auto Directives::Shared::empty() const -> bool {
   return entries.empty();
 }
 
-Directives::Shared::Shared() {}
+Directives::Shared::Shared() = default;
 
 Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString) {
   entries = std::move(givenEntries);
   string = std::move(givenString);
-  hash = string.empty() ? 0 : XXH3_64bits(string.utf8Ptr(), string.utf8Size());
+
+  if (string.empty()) {
+          hash = 0;
+    } else {
+        std::string_view sv(string.utf8Ptr(), string.utf8Size());
+        hash = std::hash<std::string_view>{}(sv);
+    }
 }
 
-Directives::Directives() {}
+Directives::Directives() = default;
 
 Directives::Directives(String const& directives) {
   parse(String(directives));
@@ -74,9 +80,9 @@ Directives::Directives(Directives const& directives) {
   *this = directives;
 }
 
-Directives::~Directives() {}
+Directives::~Directives() = default;
 
-Directives& Directives::operator=(String const& s) {
+auto Directives::operator=(String const& s) -> Directives& {
   if (m_shared && m_shared->string == s)
     return *this;
 
@@ -84,7 +90,7 @@ Directives& Directives::operator=(String const& s) {
   return *this;
 }
 
-Directives& Directives::operator=(String&& s) {
+auto Directives::operator=(String&& s) -> Directives& {
   if (m_shared && m_shared->string == s) {
     s.clear();
     return *this;
@@ -94,7 +100,7 @@ Directives& Directives::operator=(String&& s) {
   return *this;
 }
 
-Directives& Directives::operator=(const char* s) {
+auto Directives::operator=(const char* s) -> Directives& {
   if (m_shared && m_shared->string.utf8().compare(s) == 0)
     return *this;
 
@@ -102,15 +108,12 @@ Directives& Directives::operator=(const char* s) {
   return *this;
 }
 
-Directives& Directives::operator=(Directives&& other) noexcept {
+auto Directives::operator=(Directives&& other) noexcept -> Directives& {
   m_shared = std::move(other.m_shared);
   return *this;
 }
 
-Directives& Directives::operator=(Directives const& other) {
-  m_shared = other.m_shared;
-  return *this;
-}
+auto Directives::operator=(Directives const& other) -> Directives& = default;
 
 void Directives::loadOperations() const {
   if (!m_shared)
@@ -131,7 +134,7 @@ void Directives::parse(String&& directives) {
 
   List<Entry> entries;
   StringView view(directives);
-  view.forEachSplitView("?", [&](StringView split, size_t beg, size_t end) {
+  view.forEachSplitView("?", [&](StringView split, size_t beg, size_t end) -> void {
     if (!split.empty()) {
       ImageOperation operation = NullImageOperation();
       if (beg == 0) {
@@ -156,7 +159,7 @@ void Directives::parse(String&& directives) {
   }
 }
 
-StringView Directives::prefix() const {
+auto Directives::prefix() const -> StringView {
   if (!m_shared)
     return "";
   else if (m_shared->empty())
@@ -167,14 +170,14 @@ StringView Directives::prefix() const {
     return m_shared->entries.front().string(*m_shared);
 }
 
-String Directives::string() const {
+auto Directives::string() const -> String {
   if (!m_shared)
     return "";
   else
     return m_shared->string;
 }
 
-String const* Directives::stringPtr() const {
+auto Directives::stringPtr() const -> String const* {
   if (!m_shared)
     return nullptr;
   else
@@ -182,7 +185,7 @@ String const* Directives::stringPtr() const {
 }
 
 
-String Directives::buildString() const {
+auto Directives::buildString() const -> String {
   if (m_shared) {
     String built;
     for (auto& entry : m_shared->entries) {
@@ -194,24 +197,24 @@ String Directives::buildString() const {
     return built;
   }
 
-  return String();
+  return {};
 }
 
-String& Directives::addToString(String& out) const {
+auto Directives::addToString(String& out) const -> String& {
   if (!empty())
     out += m_shared->string;
   return out;
 }
 
-size_t Directives::hash() const {
+auto Directives::hash() const -> size_t {
   return m_shared ? m_shared->hash : 0;
 }
 
-size_t Directives::size() const {
+auto Directives::size() const -> size_t {
   return m_shared ? m_shared->entries.size() : 0;
 }
 
-bool Directives::empty() const {
+auto Directives::empty() const -> bool {
   return !m_shared || m_shared->empty();
 }
 
@@ -219,32 +222,32 @@ Directives::operator bool() const {
   return !empty();
 }
 
-bool Directives::equals(Directives const& other) const {
+auto Directives::equals(Directives const& other) const -> bool {
   return hash() == other.hash();
 }
 
-bool Directives::equals(String const& string) const {
+auto Directives::equals(String const& string) const -> bool {
   auto directiveString = stringPtr();
   return directiveString ? string == *directiveString : string.empty();
 }
 
-bool Directives::operator==(Directives const& other) const {
+auto Directives::operator==(Directives const& other) const -> bool {
   return equals(other);
 }
 
-bool Directives::operator==(String const& string) const {
+auto Directives::operator==(String const& string) const -> bool {
   return equals(string);
 }
 
-bool Directives::operator!=(Directives const& other) const {
+auto Directives::operator!=(Directives const& other) const -> bool {
   return !equals(other);
 }
 
-bool Directives::operator!=(String const& string) const {
+auto Directives::operator!=(String const& string) const -> bool {
   return !equals(string);
 }
 
-DataStream& operator>>(DataStream& ds, Directives& directives) {
+auto operator>>(DataStream& ds, Directives& directives) -> DataStream& {
   String string;
   ds.read(string);
 
@@ -253,7 +256,7 @@ DataStream& operator>>(DataStream& ds, Directives& directives) {
   return ds;
 }
 
-DataStream& operator<<(DataStream & ds, Directives const& directives) {
+auto operator<<(DataStream & ds, Directives const& directives) -> DataStream& {
   if (directives)
     ds.write(directives->string);
   else
@@ -262,20 +265,20 @@ DataStream& operator<<(DataStream & ds, Directives const& directives) {
   return ds;
 }
 
-bool operator==(Directives const& d1, Directives const& d2) {
+auto operator==(Directives const& d1, Directives const& d2) -> bool {
   return d1.equals(d2);
 }
 
-bool operator==(String const& string, Directives const& directives) {
+auto operator==(String const& string, Directives const& directives) -> bool {
   return directives.equals(string);
 }
 
-bool operator==(Directives const& directives, String const& string) {
+auto operator==(Directives const& directives, String const& string) -> bool {
   return directives.equals(string);
 }
 
-DirectivesGroup::DirectivesGroup() : m_count(0) {}
-DirectivesGroup::DirectivesGroup(String const& directives) : m_count(0) {
+DirectivesGroup::DirectivesGroup() = default;
+DirectivesGroup::DirectivesGroup(String const& directives) {
   if (directives.empty())
     return;
 
@@ -285,7 +288,7 @@ DirectivesGroup::DirectivesGroup(String const& directives) : m_count(0) {
     m_count = m_directives.back().size();
   }
 }
-DirectivesGroup::DirectivesGroup(String&& directives) : m_count(0) {
+DirectivesGroup::DirectivesGroup(String&& directives) {
   if (directives.empty()) {
     directives.clear();
     return;
@@ -298,7 +301,7 @@ DirectivesGroup::DirectivesGroup(String&& directives) : m_count(0) {
   }
 }
 
-bool DirectivesGroup::empty() const {
+auto DirectivesGroup::empty() const -> bool {
   return m_count == 0;
 }
 
@@ -306,7 +309,7 @@ DirectivesGroup::operator bool() const {
   return empty();
 }
 
-bool DirectivesGroup::compare(DirectivesGroup const& other) const {
+auto DirectivesGroup::compare(DirectivesGroup const& other) const -> bool {
   if (m_count != other.m_count)
     return false;
 
@@ -326,12 +329,12 @@ void DirectivesGroup::clear() {
   m_count = 0;
 }
 
-DirectivesGroup& DirectivesGroup::operator+=(Directives const& other) {
+auto DirectivesGroup::operator+=(Directives const& other) -> DirectivesGroup& {
   append(other);
   return *this;
 }
 
-String DirectivesGroup::toString() const {
+auto DirectivesGroup::toString() const -> String {
   String string;
   addToString(string);
   return string;
@@ -356,7 +359,7 @@ void DirectivesGroup::forEach(DirectivesCallback callback) const {
   }
 }
 
-bool DirectivesGroup::forEachAbortable(AbortableDirectivesCallback callback) const {
+auto DirectivesGroup::forEachAbortable(AbortableDirectivesCallback callback) const -> bool {
   for (auto& directives : m_directives) {
     if (directives) {
       for (auto& entry : directives->entries) {
@@ -369,7 +372,7 @@ bool DirectivesGroup::forEachAbortable(AbortableDirectivesCallback callback) con
   return true;
 }
 
-Image DirectivesGroup::applyNewImage(Image const& image, ImageReferenceCallback refCallback) const {
+auto DirectivesGroup::applyNewImage(Image const& image, ImageReferenceCallback refCallback) const -> Image {
   Image result = image;
   applyExistingImage(result, refCallback);
   return result;
@@ -377,7 +380,7 @@ Image DirectivesGroup::applyNewImage(Image const& image, ImageReferenceCallback 
 
 void DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback refCallback) const {
   bool first = true;
-  forEach([&](Directives::Entry const& entry, Directives const& directives) {
+  forEach([&](Directives::Entry const& entry, Directives const& directives) -> void {
     ImageOperation const& operation = entry.loadOperation(*directives);
     if (auto error = operation.ptr<ErrorImageOperation>())
       if (auto string = error->cause.ptr<std::string>())
@@ -392,29 +395,27 @@ void DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback re
   });
 }
 
-size_t DirectivesGroup::hash() const {
-  XXHash3 hasher;
-  for (auto& directives : m_directives) {
-    size_t hash = directives.hash();
-    hasher.push((const char*)&hash, sizeof(hash));
-  }
-
-  return hasher.digest();
+auto DirectivesGroup::hash() const -> size_t {
+    size_t seed = 233;
+    for (auto const& directives : m_directives) {
+        hashCombine(seed, directives.hash());
+    }
+    return seed;
 }
 
-const List<Directives>& DirectivesGroup::list() const {
+auto DirectivesGroup::list() const -> const List<Directives>& {
   return m_directives;
 }
 
-bool operator==(DirectivesGroup const& a, DirectivesGroup const& b) {
+auto operator==(DirectivesGroup const& a, DirectivesGroup const& b) -> bool {
   return a.compare(b);
 }
 
-bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b) {
+auto operator!=(DirectivesGroup const& a, DirectivesGroup const& b) -> bool {
   return !a.compare(b);
 }
 
-DataStream& operator>>(DataStream& ds, DirectivesGroup& directivesGroup) {
+auto operator>>(DataStream& ds, DirectivesGroup& directivesGroup) -> DataStream& {
   String string;
   ds.read(string);
 
@@ -423,13 +424,13 @@ DataStream& operator>>(DataStream& ds, DirectivesGroup& directivesGroup) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, DirectivesGroup const& directivesGroup) {
+auto operator<<(DataStream& ds, DirectivesGroup const& directivesGroup) -> DataStream& {
   ds.write(directivesGroup.toString());
 
   return ds;
 }
 
-size_t hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const {
+auto hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const -> size_t {
   return s.hash();
 }
 

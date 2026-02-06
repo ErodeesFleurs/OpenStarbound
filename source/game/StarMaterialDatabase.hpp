@@ -5,6 +5,7 @@
 #include "StarMaterialRenderProfile.hpp"
 #include "StarTileDamage.hpp"
 #include "StarItemDescriptor.hpp"
+#include <optional>
 
 namespace Star {
 
@@ -35,8 +36,8 @@ public:
   bool isValidMaterialId(MaterialId material) const;
   MaterialId materialId(String const& materialName) const;
   String materialName(MaterialId materialId) const;
-  Maybe<String> materialPath(MaterialId materialId) const;
-  Maybe<Json> materialConfig(MaterialId materialId) const;
+  std::optional<String> materialPath(MaterialId materialId) const;
+  std::optional<Json> materialConfig(MaterialId materialId) const;
   String materialDescription(MaterialId materialId, String const& species) const;
   String materialDescription(MaterialId materialId) const;
   String materialShortDescription(MaterialId materialId) const;
@@ -47,8 +48,8 @@ public:
   bool isValidModId(ModId mod) const;
   ModId modId(String const& modName) const;
   String const& modName(ModId modId) const;
-  Maybe<String> modPath(ModId modId) const;
-  Maybe<Json> modConfig(ModId modId) const;
+  std::optional<String> modPath(ModId modId) const;
+  std::optional<Json> modConfig(ModId modId) const;
   String modDescription(ModId modId, String const& species) const;
   String modDescription(ModId modId) const;
   String modShortDescription(ModId modId) const;
@@ -95,8 +96,8 @@ public:
 
   // Returns the amount of liquid to consume, and optionally the material / mod
   // to transform to (may be NullMaterialId / NullModId)
-  Maybe<LiquidMaterialInteraction> liquidMaterialInteraction(LiquidId liquid, MaterialId materialId) const;
-  Maybe<LiquidModInteraction> liquidModInteraction(LiquidId liquid, ModId modId) const;
+  std::optional<LiquidMaterialInteraction> liquidMaterialInteraction(LiquidId liquid, MaterialId materialId) const;
+  std::optional<LiquidModInteraction> liquidModInteraction(LiquidId liquid, ModId modId) const;
 
 private:
   struct MetaMaterialInfo {
@@ -266,12 +267,12 @@ inline bool MaterialDatabase::blocksLiquidFlow(MaterialId materialId) const {
 
 }
 
-inline Maybe<LiquidMaterialInteraction> MaterialDatabase::liquidMaterialInteraction(
+inline std::optional<LiquidMaterialInteraction> MaterialDatabase::liquidMaterialInteraction(
     LiquidId liquid, MaterialId materialId) const {
   return m_liquidMaterialInteractions.maybe({liquid, materialId});
 }
 
-inline Maybe<LiquidModInteraction> MaterialDatabase::liquidModInteraction(LiquidId liquid, ModId modId) const {
+inline std::optional<LiquidModInteraction> MaterialDatabase::liquidModInteraction(LiquidId liquid, ModId modId) const {
   return m_liquidModInteractions.maybe({liquid, modId});
 }
 }

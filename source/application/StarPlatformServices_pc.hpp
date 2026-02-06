@@ -39,7 +39,7 @@ struct PcPlatformServicesState {
 
   unique_ptr<discord::Core> discordCore;
   
-  Maybe<discord::User> discordCurrentUser;
+  std::optional<discord::User> discordCurrentUser;
   ThreadFunction<void> discordEventThread;
   atomic<bool> discordEventShutdown;
 #endif

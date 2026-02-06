@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarWorldPainter.hpp"
 #include "StarWorldClient.hpp"
 #include "StarItemRecipe.hpp"
@@ -78,7 +80,7 @@ private:
   EntityId m_sourceEntityId;
   Json m_settings;
 
-  Maybe<ItemRecipe> m_upgradeRecipe;
+  std::optional<ItemRecipe> m_upgradeRecipe;
 };
 
 }

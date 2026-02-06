@@ -1,9 +1,6 @@
 #include "StarPhysicsObject.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarInterpolation.hpp"
-#include "StarRoot.hpp"
 #include "StarObjectDatabase.hpp"
-#include "StarLuaConverters.hpp"
 
 namespace Star {
 
@@ -102,7 +99,7 @@ size_t PhysicsObject::movingCollisionCount() const {
   return m_physicsCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> PhysicsObject::movingCollision(size_t positionIndex) const {
+std::optional<PhysicsMovingCollision> PhysicsObject::movingCollision(size_t positionIndex) const {
   auto const& collisionConfig = m_physicsCollisions.valueAt(positionIndex);
   if (!collisionConfig.enabled.get())
     return {};

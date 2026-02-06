@@ -1,4 +1,5 @@
 #include "StarStatusController.hpp"
+#include "StarRoot.hpp"
 #include "StarDataStreamExtra.hpp" // IWYU pragma: keep
 #include "StarJsonExtra.hpp"
 #include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
@@ -214,11 +215,11 @@ void StatusController::resetAllResources() {
   m_statCollection.resetAllResources();
 }
 
-Maybe<float> StatusController::resourceMax(String const& resourceName) const {
+std::optional<float> StatusController::resourceMax(String const& resourceName) const {
   return m_statCollection.resourceMax(resourceName);
 }
 
-Maybe<float> StatusController::resourcePercentage(String const& resourceName) const {
+std::optional<float> StatusController::resourcePercentage(String const& resourceName) const {
   return m_statCollection.resourcePercentage(resourceName);
 }
 
@@ -287,12 +288,12 @@ void StatusController::clearAllPersistentEffects() {
     clearPersistentEffects(effectCategory);
 }
 
-void StatusController::addEphemeralEffect(EphemeralStatusEffect const& effect, Maybe<EntityId> sourceEntityId) {
+void StatusController::addEphemeralEffect(EphemeralStatusEffect const& effect, std::optional<EntityId> sourceEntityId) {
   addEphemeralEffects({effect}, sourceEntityId);
 }
 
 void StatusController::addEphemeralEffects(
-    List<EphemeralStatusEffect> const& effectList, Maybe<EntityId> sourceEntityId) {
+    List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId) {
   for (auto const& effect : effectList) {
     if (auto existingEffect = m_uniqueEffects.ptr(effect.uniqueEffect)) {
       auto metadata = m_uniqueEffectMetadata.getNetElement(existingEffect->metadataId);
@@ -301,7 +302,7 @@ void StatusController::addEphemeralEffects(
       // the
       // duration to the max
       if (metadata->duration) {
-        auto newDuration = effect.duration.value(defaultUniqueEffectDuration(effect.uniqueEffect));
+        auto newDuration = effect.duration.value_or(defaultUniqueEffectDuration(effect.uniqueEffect));
         if (newDuration > *metadata->duration) {
           // Only overwrite the sourceEntityId if the duration is *extended*
           metadata->sourceEntityId.set(sourceEntityId);
@@ -311,7 +312,7 @@ void StatusController::addEphemeralEffects(
       }
     } else {
       addUniqueEffect(
-          effect.uniqueEffect, effect.duration.value(defaultUniqueEffectDuration(effect.uniqueEffect)), sourceEntityId);
+          effect.uniqueEffect, effect.duration.value_or(defaultUniqueEffectDuration(effect.uniqueEffect)), sourceEntityId);
     }
   }
 }
@@ -373,7 +374,7 @@ List<DamageNotification> StatusController::applyDamageRequest(DamageRequest cons
   if (auto damageNotifications = m_primaryScript.invoke<List<DamageNotification>>("applyDamageRequest", damageRequest)) {
     for (auto const& dn : *damageNotifications)
       m_recentDamageTaken.add(dn);
-    return damageNotifications.take();
+    return std::move(*damageNotifications);
   }
   return {};
 }
@@ -594,14 +595,14 @@ List<Particle> StatusController::pullNewParticles() {
   return newParticles;
 }
 
-Maybe<Json> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
-  Maybe<Json> result = m_primaryScript.handleMessage(message, localMessage, args);
+std::optional<Json> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+  std::optional<Json> result = m_primaryScript.handleMessage(message, localMessage, args);
   for (auto& p : m_uniqueEffects)
-    result = result.orMaybe(p.second.script.handleMessage(message, localMessage, args));
+    result = result.or_else([&]{return p.second.script.handleMessage(message, localMessage, args);});
   return result;
 }
 
-StatusController::EffectAnimator::EffectAnimator(Maybe<String> config) {
+StatusController::EffectAnimator::EffectAnimator(std::optional<String> config) {
   animationConfig = std::move(config);
   animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
 }
@@ -655,7 +656,7 @@ StatusController::UniqueEffectMetadata::UniqueEffectMetadata() {
   durationNetState.setInterpolator(lerp<float, float>);
 }
 
-StatusController::UniqueEffectMetadata::UniqueEffectMetadata(UniqueStatusEffect effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId)
+StatusController::UniqueEffectMetadata::UniqueEffectMetadata(UniqueStatusEffect effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId)
   : UniqueEffectMetadata() {
   this->effect = std::move(effect);
   this->duration = std::move(duration);
@@ -664,7 +665,7 @@ StatusController::UniqueEffectMetadata::UniqueEffectMetadata(UniqueStatusEffect 
 }
 
 void StatusController::UniqueEffectMetadata::netElementsNeedLoad(bool) {
-  duration = durationNetState.get() >= 0.0f ? Maybe<float>(durationNetState.get()) : Maybe<float>();
+  duration = durationNetState.get() >= 0.0f ? std::optional<float>(durationNetState.get()) : std::optional<float>();
 }
 
 void StatusController::UniqueEffectMetadata::netElementsNeedStore() {
@@ -717,7 +718,7 @@ float StatusController::defaultUniqueEffectDuration(UniqueStatusEffect const& ef
 }
 
 bool StatusController::addUniqueEffect(
-    UniqueStatusEffect const& effect, Maybe<float> duration, Maybe<EntityId> sourceEntityId) {
+    UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId) {
   auto statusEffectDatabase = Root::singleton().statusEffectDatabase();
   if (statusEffectDatabase->isUniqueEffect(effect)) {
     auto effectConfig = statusEffectDatabase->uniqueEffectConfig(effect);
@@ -838,7 +839,7 @@ LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& u
       if (metadata->duration)
         metadata->duration = 0.0f;
     });
-  callbacks.registerCallback("sourceEntity", [this, &uniqueEffect]() -> Maybe<EntityId> {
+  callbacks.registerCallback("sourceEntity", [this, &uniqueEffect]() -> std::optional<EntityId> {
       auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
       auto sourceEntityId = metadata->sourceEntityId.get();
       if (!sourceEntityId)
@@ -847,7 +848,7 @@ LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& u
         return {};
       return sourceEntityId;
     });
-  callbacks.registerCallback("setParentDirectives", [&uniqueEffect](Maybe<String> const& directives) {
+  callbacks.registerCallback("setParentDirectives", [&uniqueEffect](std::optional<String> const& directives) {
       uniqueEffect.parentDirectives = directives.value();
     });
   callbacks.registerCallback("getParameter", [&uniqueEffect](String const& name, Json const& def) -> Json {

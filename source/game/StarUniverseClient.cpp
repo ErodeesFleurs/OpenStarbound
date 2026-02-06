@@ -9,6 +9,7 @@
 #include "StarRoot.hpp"
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
+#include "StarStatistics.hpp"
 #include "StarTime.hpp"
 #include "StarNetPackets.hpp"
 #include "StarWorldClient.hpp"
@@ -61,7 +62,7 @@ PlayerPtr UniverseClient::mainPlayer() const {
   return m_mainPlayer;
 }
 
-Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account, String const& password, bool const& forceLegacy) {
+std::optional<String> UniverseClient::connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account, String const& password, bool const& forceLegacy) {
   auto& root = Root::singleton();
   auto assets = root.assets();
 
@@ -201,7 +202,7 @@ void UniverseClient::disconnect() {
   m_mainPlayer = {};
 }
 
-Maybe<String> UniverseClient::disconnectReason() const {
+std::optional<String> UniverseClient::disconnectReason() const {
   return m_disconnectReason;
 }
 
@@ -221,7 +222,7 @@ void UniverseClient::update(float dt) {
 
   if (!m_warping && !m_pendingWarp) {
     if (auto playerWarp = m_mainPlayer->pullPendingWarp())
-      warpPlayer(parseWarpAction(playerWarp->action), (bool)playerWarp->animation, playerWarp->animation.value("default"), playerWarp->deploy);
+      warpPlayer(parseWarpAction(playerWarp->action), (bool)playerWarp->animation, playerWarp->animation.value_or("default"), playerWarp->deploy);
   }
 
   if (m_pendingWarp) {
@@ -366,7 +367,7 @@ void UniverseClient::update(float dt) {
   }
 }
 
-Maybe<BeamUpRule> UniverseClient::beamUpRule() const {
+std::optional<BeamUpRule> UniverseClient::beamUpRule() const {
   if (auto worldTemplate = currentTemplate())
     if (auto parameters = worldTemplate->worldParameters())
       return parameters->beamUpRule;
@@ -510,8 +511,8 @@ bool UniverseClient::flying() const {
   return false;
 }
 
-void UniverseClient::sendChat(String const& text, ChatSendMode sendMode, Maybe<bool> speak, Maybe<JsonObject> data) {
-  if (speak.value(!text.beginsWith("/")))
+void UniverseClient::sendChat(String const& text, ChatSendMode sendMode, std::optional<bool> speak, std::optional<JsonObject> data) {
+  if (speak.value_or(!text.beginsWith("/")))
     m_mainPlayer->addChatMessage(text);
   auto packet = make_shared<ChatSendPacket>(text, sendMode);
   if (data)
@@ -524,11 +525,11 @@ List<ChatReceivedMessage> UniverseClient::pullChatMessages() {
 }
 
 uint16_t UniverseClient::players() {
-  return m_serverInfo.apply([](auto const& info) { return info.players; }).value(1);
+  return m_serverInfo.transform([](auto const& info) { return info.players; }).value_or(1);
 }
 
 uint16_t UniverseClient::maxPlayers() {
-  return m_serverInfo.apply([](auto const& info) { return info.maxPlayers; }).value(1);
+  return m_serverInfo.transform([](auto const& info) { return info.maxPlayers; }).value_or(1);
 }
 
 void UniverseClient::setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
@@ -712,7 +713,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
   for (auto const& packet : packets) {
     try {
       bool skip = false;
-      Maybe<Json> packetJson;
+      std::optional<Json> packetJson;
       auto functionName = strf("on{}Packet", PacketTypeNames.getRight(packet->type()));
       for (auto& context : m_scriptContexts) {
         auto& luaContext = *context.second->context();

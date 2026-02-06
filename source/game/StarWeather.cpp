@@ -1,18 +1,16 @@
 #include "StarWeather.hpp"
+#include "StarBiomeDatabase.hpp" // IWYU pragma: keep
 #include "StarIterator.hpp"
-#include "StarDataStreamExtra.hpp"
+#include "StarProjectileDatabase.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
 #include "StarTime.hpp"
-#include "StarAssets.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarProjectile.hpp"
-#include "StarBiomeDatabase.hpp"
 
 namespace Star {
 
 ServerWeather::ServerWeather() {
   m_undergroundLevel = 0.0f;
-  m_currentWeatherIndex = NPos;
+  m_currentWeatherIndex = std::numeric_limits<std::size_t>::max();
   m_currentWeatherIntensity = 0.0f;
   m_currentWind = 0.0f;
   m_forceWeather = false;
@@ -36,7 +34,7 @@ void ServerWeather::setup(WeatherPool weatherPool, float undergroundLevel, World
   m_worldGeometry = worldGeometry;
   m_weatherEffectsActiveQuery = weatherEffectsActiveQuery;
 
-  m_currentWeatherIndex = NPos;
+  m_currentWeatherIndex = std::numeric_limits<std::size_t>::max();
   m_currentWeatherType = {};
 
   m_currentTime = 0.0;
@@ -90,7 +88,7 @@ void ServerWeather::update(double dt) {
 
     if (m_currentTime >= m_nextWeatherChangeTime) {
       m_currentWeatherIndex = m_weatherPool.selectIndex();
-      if (m_currentWeatherIndex == NPos)
+      if (m_currentWeatherIndex == std::numeric_limits<std::size_t>::max())
         m_currentWeatherType = {};
       else
         m_currentWeatherType = Root::singleton().biomeDatabase()->weatherType(m_weatherPool.item(m_currentWeatherIndex));
@@ -106,7 +104,7 @@ void ServerWeather::update(double dt) {
         clamp((m_nextWeatherChangeTime - m_currentTime) / weatherCooldownTime, 0.0, 1.0));
 
   } else {
-    m_currentWeatherIndex = NPos;
+    m_currentWeatherIndex = std::numeric_limits<std::size_t>::max();
     m_currentWeatherType = {};
   }
 }
@@ -137,7 +135,7 @@ StringList ServerWeather::weatherList() const {
 }
 
 void ServerWeather::setWeather(String const& weatherName, bool force) {
-  size_t index = NPos;
+  size_t index = std::numeric_limits<std::size_t>::max();
   for (size_t i = 0; i < m_weatherPool.size(); ++i) {
     if (m_weatherPool.item(i) == weatherName) {
       index = i;
@@ -150,8 +148,8 @@ void ServerWeather::setWeather(String const& weatherName, bool force) {
 
 void ServerWeather::setWeatherIndex(size_t weatherIndex, bool force) {
   m_forceWeather = force;
-  if (weatherIndex == NPos || weatherIndex >= m_weatherPool.size()) {
-    m_currentWeatherIndex = NPos;
+  if (weatherIndex == std::numeric_limits<std::size_t>::max() || weatherIndex >= m_weatherPool.size()) {
+    m_currentWeatherIndex = std::numeric_limits<std::size_t>::max();
     m_currentWeatherType = {};
     m_currentWeatherIntensity = 0.0f;
     m_currentWind = 0.0f;
@@ -302,7 +300,7 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
 
 ClientWeather::ClientWeather() {
   m_undergroundLevel = 0.0f;
-  m_currentWeatherIndex = NPos;
+  m_currentWeatherIndex = std::numeric_limits<std::size_t>::max();
   m_currentWeatherIntensity = 0.0f;
   m_currentWind = 0.0f;
   m_currentTime = 0.0;
@@ -334,7 +332,7 @@ void ClientWeather::setVisibleRegion(RectI visibleRegion) {
 void ClientWeather::update(double dt) {
   m_currentTime += dt;
 
-  if (m_currentWeatherIndex == NPos) {
+  if (m_currentWeatherIndex == std::numeric_limits<std::size_t>::max()) {
     m_currentWeatherType = {};
   } else {
     if (m_visibleRegion.yMax() > m_undergroundLevel)

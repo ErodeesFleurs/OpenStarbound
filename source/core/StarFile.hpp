@@ -3,9 +3,9 @@
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(File);
+namespace Star {
 
 // All file methods are thread safe.
 class File : public IODevice {
@@ -13,11 +13,11 @@ public:
   // Converts the passed in path to use the platform specific directory
   // separators only (Windows supports '/' just fine, this is mostly for
   // uniform appearance).  Does *nothing else* (no validity checks, etc).
-  static String convertDirSeparators(String const& path);
+  static auto convertDirSeparators(String const& path) -> String;
 
   // All static file operations here throw IOException on error.
   // get the current working directory
-  static String currentDirectory();
+  static auto currentDirectory() -> String;
   // set the current working directory.
   static void changeDirectory(String const& dirName);
   static void makeDirectory(String const& dirName);
@@ -25,42 +25,42 @@ public:
 
   // List all files or directories under given directory.  skipDots skips the
   // special '.' and '..' entries.  Bool value is true for directories.
-  static List<pair<String, bool>> dirList(String const& dirName, bool skipDots = true);
+  static auto dirList(String const& dirName, bool skipDots = true) -> List<std::pair<String, bool>>;
 
   // Returns the final component of the given path with no directory separators
-  static String baseName(String const& fileName);
+  static auto baseName(String const& fileName) -> String;
   // All components of the given path minus the final component, separated by
   // the directory separator
-  static String dirName(String const& fileName);
+  static auto dirName(String const& fileName) -> String;
 
   // Resolve a path relative to another path.  If the given path is absolute,
   // then the given path is returned unmodified.
-  static String relativeTo(String const& relativeTo, String const& path);
+  static auto relativeTo(String const& relativeTo, String const& path) -> String;
 
   // Resolve the given possibly relative path into an absolute path.
-  static String fullPath(String const& path);
+  static auto fullPath(String const& path) -> String;
 
-  static String temporaryFileName();
+  static auto temporaryFileName() -> String;
 
   // Creates and opens a new ReadWrite temporary file with a real path that can
   // be closed and re-opened.  Will not be removed automatically.
-  static FilePtr temporaryFile();
+  static auto temporaryFile() -> Ptr<File>;
 
   // Creates and opens new ReadWrite temporary file and opens it.  This file
   // has no filename and will be removed on close.
-  static FilePtr ephemeralFile();
+  static auto ephemeralFile() -> Ptr<File>;
 
   // Creates a new temporary directory and reutrns the path.  Will not be
   // removed automatically.
-  static String temporaryDirectory();
+  static auto temporaryDirectory() -> String;
 
-  static bool exists(String const& path);
+  static auto exists(String const& path) -> bool;
 
   // Does the file exist and is it a regular file (not a directory or special
   // file)?
-  static bool isFile(String const& path);
+  static auto isFile(String const& path) -> bool;
   // Is the file a directory?
-  static bool isDirectory(String const& path);
+  static auto isDirectory(String const& path) -> bool;
 
   static void remove(String const& filename);
   static void removeDirectoryRecursive(String const& filename);
@@ -73,9 +73,9 @@ public:
   // already exists.
   static void copy(String const& source, String const& target);
 
-  static ByteArray readFile(String const& filename);
-  static String readFileString(String const& filename);
-  static StreamOffset fileSize(String const& filename);
+  static auto readFile(String const& filename) -> ByteArray;
+  static auto readFileString(String const& filename) -> String;
+  static auto fileSize(String const& filename) -> std::int64_t;
 
   static void writeFile(char const* data, size_t len, String const& filename);
   static void writeFile(ByteArray const& data, String const& filename);
@@ -93,54 +93,54 @@ public:
   static void backupFileInSequence(String const& initialFile, String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix = ".");
   static void backupFileInSequence(String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix = ".");
 
-  static FilePtr open(String const& filename, IOMode mode);
+  static auto open(String const& filename, IOMode mode) -> Ptr<File>;
 
   File();
   File(String filename);
-  virtual ~File();
+  ~File() override;
 
-  String fileName() const;
+  auto fileName() const -> String;
   void setFilename(String filename);
 
   // File is closed before removal.
   void remove();
 
-  StreamOffset pos() override;
-  void seek(StreamOffset pos, IOSeek seek = IOSeek::Absolute) override;
-  void resize(StreamOffset size) override;
-  StreamOffset size() override;
-  bool atEnd() override;
-  size_t read(char* data, size_t len) override;
-  size_t write(char const* data, size_t len) override;
+  auto pos() -> std::int64_t override;
+  void seek(std::int64_t pos, IOSeek seek = IOSeek::Absolute) override;
+  void resize(std::int64_t size) override;
+  auto size() -> std::int64_t override;
+  auto atEnd() -> bool override;
+  auto read(char* data, size_t len) -> size_t override;
+  auto write(char const* data, size_t len) -> size_t override;
 
   // Do an immediate read / write of an absolute location in the file, without
   // modifying the current file cursor.  Safe to call in a threaded context
   // with other reads and writes, but not safe vs changing the File state like
   // open and close.
-  size_t readAbsolute(StreamOffset readPosition, char* data, size_t len) override;
-  size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len) override;
+  auto readAbsolute(std::int64_t readPosition, char* data, size_t len) -> size_t override;
+  auto writeAbsolute(std::int64_t writePosition, char const* data, size_t len) -> size_t override;
 
   void open(IOMode mode) override;
   void close() override;
 
   void sync() override;
 
-  String deviceName() const override;
+  auto deviceName() const -> String override;
 
-  IODevicePtr clone() override;
+  auto clone() -> Ptr<IODevice> override;
 
 private:
-  static void* fopen(char const* filename, IOMode mode);
-  static void fseek(void* file, StreamOffset offset, IOSeek seek);
-  static StreamOffset ftell(void* file);
-  static size_t fread(void* file, char* data, size_t len);
-  static size_t fwrite(void* file, char const* data, size_t len);
+  static auto fopen(char const* filename, IOMode mode) -> void*;
+  static void fseek(void* file, std::int64_t offset, IOSeek seek);
+  static auto ftell(void* file) -> std::int64_t;
+  static auto fread(void* file, char* data, size_t len) -> size_t;
+  static auto fwrite(void* file, char const* data, size_t len) -> size_t;
   static void fsync(void* file);
   static void fclose(void* file);
-  static StreamOffset fsize(void* file);
-  static size_t pread(void* file, char* data, size_t len, StreamOffset absPosition);
-  static size_t pwrite(void* file, char const* data, size_t len, StreamOffset absPosition);
-  static void resize(void* file, StreamOffset size);
+  static auto fsize(void* file) -> std::int64_t;
+  static auto pread(void* file, char* data, size_t len, std::int64_t absPosition) -> size_t;
+  static auto pwrite(void* file, char const* data, size_t len, std::int64_t absPosition) -> size_t;
+  static void resize(void* file, std::int64_t size);
 
   String m_filename;
   void* m_file;

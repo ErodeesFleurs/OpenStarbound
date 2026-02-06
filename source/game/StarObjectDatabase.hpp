@@ -12,6 +12,8 @@
 #include "StarEntityRendering.hpp"
 #include "StarTileEntity.hpp"
 
+#include <optional>
+
 namespace Star {
 
 STAR_CLASS(World);
@@ -33,7 +35,7 @@ struct ObjectOrientation {
     Vec2I position;
     bool tilled;
     bool soil;
-    Maybe<MaterialId> material;
+    std::optional<MaterialId> material;
   };
 
   struct ParticleEmissionEntry {
@@ -70,7 +72,7 @@ struct ObjectOrientation {
 
   // Allow an orientation to override the metaboundbox in case you don't want to
   // specify spaces
-  Maybe<RectF> metaBoundBox;
+  std::optional<RectF> metaBoundBox;
 
   // Anchors of the object to place it in the world
   // For background tiles set in order for the object to
@@ -83,20 +85,20 @@ struct ObjectOrientation {
   // otherwise all anchors must be valid
   bool anchorAny;
 
-  Maybe<Direction> directionAffinity;
+  std::optional<Direction> directionAffinity;
 
   // Optional list of material spaces
   List<MaterialSpace> materialSpaces;
 
   // optionally override the default spaces used for interaction
-  Maybe<List<Vec2I>> interactiveSpaces;
+  std::optional<List<Vec2I>> interactiveSpaces;
 
   Vec2F lightPosition;
   float beamAngle;
 
   List<ParticleEmissionEntry> particleEmitters;
 
-  Maybe<PolyF> statusEffectArea;
+  std::optional<PolyF> statusEffectArea;
   Json touchDamageConfig;
 
   static ParticleEmissionEntry parseParticleEmitter(String const& path, Json const& config);
@@ -111,8 +113,8 @@ struct ObjectOrientation {
 // by instance values at various levels. This whole system needs reevaluation.
 struct ObjectConfig {
   // Returns the index of the best valid orientation.  If no orientations are
-  // valid, returns NPos
-  size_t findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity = Maybe<Direction>()) const;
+  // valid, returns std::numeric_limits<std::size_t>::max()
+  size_t findValidOrientation(World const* world, Vec2I const& position, std::optional<Direction> directionAffinity = std::nullopt) const;
 
   String path;
   // The JSON values that were used to configure this Object
@@ -136,7 +138,7 @@ struct ObjectConfig {
   LightType lightType;
   float pointBeam;
   float beamAmbience;
-  Maybe<PeriodicFunction<float>> lightFlickering;
+  std::optional<PeriodicFunction<float>> lightFlickering;
 
   String soundEffect;
   float soundEffectRangeMultiplier;
@@ -164,8 +166,8 @@ struct ObjectConfig {
 
   EntityDamageTeam damageTeam;
 
-  Maybe<float> minimumLiquidLevel;
-  Maybe<float> maximumLiquidLevel;
+  std::optional<float> minimumLiquidLevel;
+  std::optional<float> maximumLiquidLevel;
   float liquidCheckInterval;
 
   float health;

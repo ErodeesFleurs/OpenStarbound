@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarPane.hpp"
 #include "StarMainInterfaceTypes.hpp"
 
@@ -22,7 +24,7 @@ protected:
 private:
   struct StatusEffectIndicator {
     String icon;
-    Maybe<float> durationPercentage;
+    std::optional<float> durationPercentage;
     String label;
     RectF screenRect;
   };

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarObject.hpp"
 #include "StarPhysicsEntity.hpp"
 
@@ -22,7 +24,7 @@ public:
   List<PhysicsForceRegion> forceRegions() const override;
 
   size_t movingCollisionCount() const override;
-  Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  std::optional<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
 
 private:
   struct PhysicsForceConfig {

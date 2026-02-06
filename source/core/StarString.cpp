@@ -229,7 +229,7 @@ bool String::endsWith(String const& end, CaseSensitivity cs) const {
   if (endsize > mysize)
     return false;
 
-  return compare(mysize - endsize, NPos, end, 0, NPos, cs) == 0;
+  return compare(mysize - endsize, std::numeric_limits<std::size_t>::max(), end, 0, std::numeric_limits<std::size_t>::max(), cs) == 0;
 }
 
 bool String::endsWith(Char end, CaseSensitivity cs) const {
@@ -248,7 +248,7 @@ bool String::beginsWith(String const& beg, CaseSensitivity cs) const {
   if (begSize > mysize)
     return false;
 
-  return compare(0, begSize, beg, 0, NPos, cs) == 0;
+  return compare(0, begSize, beg, 0, std::numeric_limits<std::size_t>::max(), cs) == 0;
 }
 
 bool String::beginsWith(Char beg, CaseSensitivity cs) const {
@@ -299,7 +299,7 @@ StringList String::split(String const& pattern, size_t maxSplit) const {
     }
 
     size_t end = m_string.find(pattern.m_string, beg);
-    if (end == NPos) {
+    if (end == std::numeric_limits<std::size_t>::max()) {
       ret.append(m_string.substr(beg));
       break;
     }
@@ -307,7 +307,6 @@ StringList String::split(String const& pattern, size_t maxSplit) const {
     beg = end + pattern.m_string.size();
   }
 
-  starAssert(maxSplit == NPos || ret.size() <= maxSplit + 1);
   return ret;
 }
 
@@ -417,7 +416,7 @@ String String::replace(String const& rplc, String const& val, CaseSensitivity cs
     return *this;
 
   index = find(rplc, 0, cs);
-  if (index == NPos)
+  if (index == std::numeric_limits<std::size_t>::max())
     return *this;
 
   auto it = begin();
@@ -478,7 +477,7 @@ size_t String::find(Char c, size_t pos, CaseSensitivity cs) const {
     ++it;
   }
 
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 size_t String::find(String const& str, size_t pos, CaseSensitivity cs) const {
@@ -510,13 +509,13 @@ size_t String::find(String const& str, size_t pos, CaseSensitivity cs) const {
     mit = ++it;
   }
 
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 size_t String::findLast(Char c, CaseSensitivity cs) const {
   auto it = begin();
 
-  size_t found = NPos;
+  size_t found = std::numeric_limits<std::size_t>::max();
   size_t pos = 0;
   while (it != end()) {
     if (charEqual(c, *it, cs))
@@ -534,7 +533,7 @@ size_t String::findLast(String const& str, CaseSensitivity cs) const {
 
   size_t pos = 0;
   auto it = begin();
-  size_t result = NPos;
+  size_t result = std::numeric_limits<std::size_t>::max();
   const_iterator sit = str.begin();
   const_iterator mit = it;
   while (it != end()) {
@@ -570,7 +569,7 @@ size_t String::findFirstOf(String const& pattern, size_t beg) const {
     ++it;
     ++i;
   }
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 size_t String::findFirstNotOf(String const& pattern, size_t beg) const {
@@ -585,11 +584,10 @@ size_t String::findFirstNotOf(String const& pattern, size_t beg) const {
     ++it;
     ++i;
   }
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 size_t String::findNextBoundary(size_t index, bool backwards) const {
-  starAssert(index <= size());
   if (!backwards && (index == size()))
     return index;
   if (backwards) {
@@ -708,7 +706,7 @@ void String::push_front(Char c) {
 }
 
 bool String::contains(String const& s, CaseSensitivity cs) const {
-  return find(s, 0, cs) != NPos;
+  return find(s, 0, cs) != std::numeric_limits<std::size_t>::max();
 }
 
 bool String::regexMatch(String const& regex, bool full, bool caseSensitive) const {
@@ -724,7 +722,7 @@ int String::compare(String const& s, CaseSensitivity cs) const {
   if (cs == CaseSensitive)
     return m_string.compare(s.m_string);
   else
-    return compare(0, NPos, s, 0, NPos, cs);
+    return compare(0, std::numeric_limits<std::size_t>::max(), s, 0, std::numeric_limits<std::size_t>::max(), cs);
 }
 
 bool String::equals(String const& s, CaseSensitivity cs) const {

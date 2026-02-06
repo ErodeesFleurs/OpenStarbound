@@ -1,8 +1,8 @@
 #pragma once
 
+#include "StarListener.hpp"
 #include "StarThread.hpp"
 #include "StarLua.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -33,7 +33,7 @@ public:
   LuaContext createContext(String const& script);
   LuaContext createContext(StringList const& scriptPaths = {});
 
-  void collectGarbage(Maybe<unsigned> steps = {});
+  void collectGarbage(std::optional<unsigned> steps = {});
   void setAutoGarbageCollection(bool autoGarbageColleciton);
   void tuneAutoGarbageCollection(float pause, float stepMultiplier);
   size_t luaMemoryUsage() const;

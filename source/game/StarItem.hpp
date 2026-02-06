@@ -1,9 +1,10 @@
 #pragma once
 
-#include "StarSet.hpp"
+#include <optional>
+
 #include "StarDrawable.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarQuests.hpp"
+#include "StarQuestDescriptor.hpp"
 
 namespace Star {
 
@@ -67,7 +68,7 @@ public:
 
   // Take as many of this item as possible up to the given max (default is all)
   // and return the new set.  Implementation uses clone() method.
-  ItemPtr take(uint64_t max = NPos);
+  ItemPtr take(uint64_t max = std::numeric_limits<std::size_t>::max());
 
   // count() is 0
   bool empty() const;
@@ -82,7 +83,7 @@ public:
   uint64_t price() const;
 
   virtual List<Drawable> iconDrawables() const;
-  virtual Maybe<List<Drawable>> secondaryDrawables() const;
+  virtual std::optional<List<Drawable>> secondaryDrawables() const;
   virtual bool hasSecondaryDrawables() const;
 
   virtual List<Drawable> dropDrawables() const;
@@ -128,7 +129,7 @@ protected:
   void setPrice(uint64_t price);
   // icon drawables are pixels, not tile, based
   void setIconDrawables(List<Drawable> drawables);
-  void setSecondaryIconDrawables(Maybe<List<Drawable>> drawables);
+  void setSecondaryIconDrawables(std::optional<List<Drawable>> drawables);
   void setTwoHanded(bool twoHanded);
   void setTimeToLive(float timeToLive);
 
@@ -149,7 +150,7 @@ private:
   String m_description;
   Rarity m_rarity;
   List<Drawable> m_iconDrawables;
-  Maybe<List<Drawable>> m_secondaryIconDrawables;
+  std::optional<List<Drawable>> m_secondaryIconDrawables;
   bool m_twoHanded;
   float m_timeToLive;
   uint64_t m_price;

@@ -1,8 +1,7 @@
 #pragma once
 
-#include "StarVersioningDatabase.hpp"
-#include "StarStatisticsDatabase.hpp"
-#include "StarLuaComponents.hpp"
+#include "StarLua.hpp"
+#include "StarLuaRoot.hpp"
 #include "StarStatisticsService.hpp"
 
 namespace Star {
@@ -16,7 +15,7 @@ public:
   void writeStatistics();
 
   Json stat(String const& name, Json def = {}) const;
-  Maybe<String> statType(String const& name) const;
+  std::optional<String> statType(String const& name) const;
   bool achievementUnlocked(String const& name) const;
 
   void recordEvent(String const& name, Json const& fields);
@@ -47,7 +46,7 @@ private:
   LuaCallbacks makeStatisticsCallbacks();
 
   template <typename Result = LuaValue, typename... V>
-  Maybe<Result> runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args);
+  std::optional<Result> runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args);
 
   StatisticsServicePtr m_service;
   String m_storageDirectory;

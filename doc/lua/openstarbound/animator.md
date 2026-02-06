@@ -30,19 +30,19 @@ Returns the animation rate.
 
 ---
 
-#### `void` animator.setGlobalTag(`String` tagName, `Maybe<String>` tagValue)
+#### `void` animator.setGlobalTag(`String` tagName, `std::optional<String>` tagValue)
 
 Sets a global animator tag. A global tag replaces any tag <tagName> with the specified tagValue across all animation parts.
 
 If tagValue is nothing, then the tag will be removed, empty global tags default to `default`.
 
-#### `void` animator.setPartTag(`String` partType, `String` tagName, `Maybe<String>` tagValue)
+#### `void` animator.setPartTag(`String` partType, `String` tagName, `std::optional<String>` tagValue)
 
 Sets a local animator tag. A part tag replaces any tag <tagName> with the specified tagValue in the partType animation part only.
 
 If tagValue is nothing, then the tag will be removed, therefore reverting back to inheriting the global tag, empty global tags default to `default`.
 
-#### `void` animator.setLocalTag(`String` tagName, `Maybe<String>` tagValue)
+#### `void` animator.setLocalTag(`String` tagName, `std::optional<String>` tagValue)
 
 Sets an animator tag. A tag replaces any tag <tagName> with the specified tagValue across all animation parts.
 
@@ -58,7 +58,7 @@ Returns the input string with the animation tags for the specified part applied 
 
 ---
 
-#### `Json` animator.animationStateProperty(`String` stateType, `String` propertyName, `Maybe<String>` state, `Maybe<int>` frame)
+#### `Json` animator.animationStateProperty(`String` stateType, `String` propertyName, `std::optional<String>` state, `std::optional<int>` frame)
 
 Returns the value of the specified property for a state type.
 
@@ -70,7 +70,7 @@ Returns the value of the specified property of the next frame for a state type.
 
 ---
 
-#### `Json` animator.partProperty(`String` partName, `String` propertyName, `Maybe<String>` stateType, `Maybe<String>` state, `Maybe<int>` frame)
+#### `Json` animator.partProperty(`String` partName, `String` propertyName, `std::optional<String>` stateType, `std::optional<String>` state, `std::optional<int>` frame)
 
 Returns an animation part property without applying any transformations.
 
@@ -128,7 +128,7 @@ Returns true if the stateType is playing in reverse.
 
 ---
 
-#### `bool` animator.hasState(`String` stateType, `Maybe<String>` state)
+#### `bool` animator.hasState(`String` stateType, `std::optional<String>` state)
 
 Returns true if the animator has the stateType.
 
@@ -136,13 +136,13 @@ If **state** is valid, then it will only return true if the state also exists.
 
 ---
 
-#### `float` animator.stateCycle(`String` stateType, `Maybe<String>` state)
+#### `float` animator.stateCycle(`String` stateType, `std::optional<String>` state)
 
 Returns the animation cycle of the current animation for stateType.
 
 If **state** is valid, then it will return the animation cycle of that state instead.
 
-#### `int` animator.stateFrames(`String` stateType, `Maybe<String>` state)
+#### `int` animator.stateFrames(`String` stateType, `std::optional<String>` state)
 
 Returns the number of frames of the current animation for stateType.
 

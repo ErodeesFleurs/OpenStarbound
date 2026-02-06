@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarVersionOptionParser.hpp"
 #include "StarRoot.hpp"
 
@@ -37,7 +39,7 @@ public:
 
     // Name of the log file that should be written, if any, relative to the
     // storage directory
-    Maybe<String> logFile;
+    std::optional<String> logFile;
 
     // The minimum log level to write to any log sink
     LogLevel logLevel;
@@ -48,7 +50,7 @@ public:
 
     // If given, will write changed configuration to the given file within the
     // storage directory.
-    Maybe<String> runtimeConfigFile;
+    std::optional<String> runtimeConfigFile;
   };
 
   RootLoader(Defaults defaults);

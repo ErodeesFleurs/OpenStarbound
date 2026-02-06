@@ -64,7 +64,7 @@ Replaces the current table of humanoid parameters that overwrite values in the h
 
 ---
 
-#### `Maybe<Json>` player.getHumanoidParameter(`String` key)
+#### `std::optional<Json>` player.getHumanoidParameter(`String` key)
 
 Gets a humanoid parameter.
 
@@ -478,7 +478,7 @@ Returns the codex ID of the newest codex not read and `nil` otherwise.
 
 ---
 
-#### `Maybe<LuaValue>` player.callQuest(`String` questId, `String` functionName, `LuaVariadic` args)
+#### `std::optional<LuaValue>` player.callQuest(`String` questId, `String` functionName, `LuaVariadic` args)
 
 Calls a function in the specified quest script.
 
@@ -490,13 +490,13 @@ Returns `true` if the player can turn in the specified quest.
 
 ---
 
-#### `Maybe<Json>` player.currentQuest()
+#### `std::optional<Json>` player.currentQuest()
 
 Returns the current quest as JSON, or `nil` if no quest is active.
 
 ---
 
-#### `Maybe<String>` player.currentQuestId()
+#### `std::optional<String>` player.currentQuestId()
 
 Returns the current quest ID, or `nil` if no quest is active.
 

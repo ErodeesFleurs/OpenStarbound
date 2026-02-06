@@ -54,8 +54,8 @@ public:
   // Packet stats for the most recent one second window of activity incoming
   // and outgoing.  Will only return valid stats if the underlying PacketSocket
   // implements stat collection.
-  Maybe<PacketStats> incomingStats() const;
-  Maybe<PacketStats> outgoingStats() const;
+  std::optional<PacketStats> incomingStats() const;
+  std::optional<PacketStats> outgoingStats() const;
 
 private:
   friend class UniverseConnectionServer;

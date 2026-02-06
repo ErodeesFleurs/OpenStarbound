@@ -1,17 +1,18 @@
 #include "StarImageProcessing.hpp"
 #include "StarImageScaling.hpp"
-#include "StarMatrix3.hpp"
-#include "StarInterpolation.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarColor.hpp"
 #include "StarImage.hpp"
 #include "StarStringView.hpp"
 #include "StarEncode.hpp"
 #include "StarLogging.hpp"
+#include "StarList.hpp"
+
+import std;
 
 namespace Star {
 
-StringList colorDirectivesFromConfig(JsonArray const& directives) {
+auto colorDirectivesFromConfig(JsonArray const& directives) -> StringList {
   List<String> result;
 
   for (auto entry : directives) {
@@ -26,22 +27,22 @@ StringList colorDirectivesFromConfig(JsonArray const& directives) {
   return result;
 }
 
-String paletteSwapDirectivesFromConfig(Json const& swaps) {
+auto paletteSwapDirectivesFromConfig(Json const& swaps) -> String {
   ColorReplaceImageOperation paletteSwaps;
   for (auto const& swap : swaps.iterateObject())
     paletteSwaps.colorReplaceMap[Color::fromHex(swap.first).toRgba()] = Color::fromHex(swap.second.toString()).toRgba();
   return "?" + imageOperationToString(paletteSwaps);
 }
 
-HueShiftImageOperation HueShiftImageOperation::hueShiftDegrees(float degrees) {
+auto HueShiftImageOperation::hueShiftDegrees(float degrees) -> HueShiftImageOperation {
   return HueShiftImageOperation{degrees / 360.0f};
 }
 
-SaturationShiftImageOperation SaturationShiftImageOperation::saturationShift100(float amount) {
+auto SaturationShiftImageOperation::saturationShift100(float amount) -> SaturationShiftImageOperation {
   return SaturationShiftImageOperation{amount / 100.0f};
 }
 
-BrightnessMultiplyImageOperation BrightnessMultiplyImageOperation::brightnessMultiply100(float amount) {
+auto BrightnessMultiplyImageOperation::brightnessMultiply100(float amount) -> BrightnessMultiplyImageOperation {
   return BrightnessMultiplyImageOperation{amount / 100.0f + 1.0f};
 }
 
@@ -58,7 +59,7 @@ FadeToColorImageOperation::FadeToColorImageOperation(Vec3B color, float amount) 
   }
 }
 
-ImageOperation imageOperationFromString(StringView string) {
+auto imageOperationFromString(StringView string) -> ImageOperation {
   try {
     std::string_view view = string.utf8();
     //double time = view.size() > 10000 ? Time::monotonicTime() : 0.0;
@@ -76,7 +77,7 @@ ImageOperation imageOperationFromString(StringView string) {
       char const* ptr = bits.data();
       char const* end = ptr + bits.size();
 
-      char a[4]{}, b[4]{};
+      std::array<char, 4> a{}, b{};
       bool which = true;
 
       while (true) {
@@ -84,7 +85,7 @@ ImageOperation imageOperationFromString(StringView string) {
 
         if (ch == '=' || ch == ';' || ptr == end) {
           if (hexLen != 0) {
-            char* c = which ? a : b;
+            char* c = which ? a.data() : b.data();
 
             if (hexLen == 3) {
               nibbleDecode(hexPtr, 3, c, 4);
@@ -111,7 +112,7 @@ ImageOperation imageOperationFromString(StringView string) {
                 return ErrorImageOperation{strf("Improper size for hex string '{}'", StringView(hexPtr, hexLen))};
             else // we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an error if B is also there.
                 return operation;
-              
+
             if ((which = !which))
               operation.colorReplaceMap[*(Vec4B*)&a] = *(Vec4B*)&b;
 
@@ -132,7 +133,7 @@ ImageOperation imageOperationFromString(StringView string) {
 
     List<StringView> bits;
 
-    string.forEachSplitAnyView("=;", [&](StringView split, size_t, size_t) {
+    string.forEachSplitAnyView("=;", [&](StringView split, size_t, size_t) -> void {
       if (!split.empty())
         bits.emplace_back(split);
     });
@@ -153,8 +154,8 @@ ImageOperation imageOperationFromString(StringView string) {
 
     } else if (type == "scanlines") {
       return ScanLinesImageOperation{
-          FadeToColorImageOperation(Color::fromHex(bits.at(1)).toRgb(), lexicalCast<float>(bits.at(2))),
-          FadeToColorImageOperation(Color::fromHex(bits.at(3)).toRgb(), lexicalCast<float>(bits.at(4)))};
+          .fade1=FadeToColorImageOperation(Color::fromHex(bits.at(1)).toRgb(), lexicalCast<float>(bits.at(2))),
+          .fade2=FadeToColorImageOperation(Color::fromHex(bits.at(3)).toRgb(), lexicalCast<float>(bits.at(4)))};
 
     } else if (type == "setcolor") {
       return SetColorImageOperation{Color::fromHex(bits.at(1)).toRgb()};
@@ -232,7 +233,7 @@ ImageOperation imageOperationFromString(StringView string) {
       else
         mode = ScaleImageOperation::Bilinear;
 
-      return ScaleImageOperation{mode, scale};
+      return ScaleImageOperation{.mode=mode, .scale=scale};
 
     } else if (type == "crop") {
       return CropImageOperation{RectI(lexicalCast<float>(bits.at(1)), lexicalCast<float>(bits.at(2)),
@@ -259,7 +260,7 @@ ImageOperation imageOperationFromString(StringView string) {
   }
 }
 
-String imageOperationToString(ImageOperation const& operation) {
+auto imageOperationToString(ImageOperation const& operation) -> String {
   if (auto op = operation.ptr<HueShiftImageOperation>()) {
     return strf("hueshift={}", op->hueShiftAmount * 360.0f);
   } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
@@ -319,16 +320,16 @@ String imageOperationToString(ImageOperation const& operation) {
   return "";
 }
 
-void parseImageOperations(StringView params, function<void(ImageOperation&&)> outputter) {
-  params.forEachSplitView("?", [&](StringView op, size_t, size_t) {
+void parseImageOperations(StringView params, std::function<void(ImageOperation&&)> outputter) {
+  params.forEachSplitView("?", [&](StringView op, size_t, size_t) -> void {
     if (!op.empty())
       outputter(imageOperationFromString(op));
   });
 }
 
-List<ImageOperation> parseImageOperations(StringView params) {
+auto parseImageOperations(StringView params) -> List<ImageOperation> {
   List<ImageOperation> operations;
-  params.forEachSplitView("?", [&](StringView op, size_t, size_t) {
+  params.forEachSplitView("?", [&](StringView op, size_t, size_t) -> void {
     if (!op.empty())
       operations.append(imageOperationFromString(op));
     });
@@ -336,7 +337,7 @@ List<ImageOperation> parseImageOperations(StringView params) {
   return operations;
 }
 
-String printImageOperations(List<ImageOperation> const& list) {
+auto printImageOperations(List<ImageOperation> const& list) -> String {
   return StringList(list.transformed(imageOperationToString)).join("?");
 }
 
@@ -347,19 +348,15 @@ void addImageOperationReferences(ImageOperation const& operation, StringList& ou
     out.appendAll(op->blendImages);
 }
 
-StringList imageOperationReferences(List<ImageOperation> const& operations) {
+auto imageOperationReferences(List<ImageOperation> const& operations) -> StringList {
   StringList references;
   for (auto const& operation : operations)
     addImageOperationReferences(operation, references);
   return references;
 }
 
-#ifdef STAR_COMPILER_CLANG
-#pragma GCC push_options
-#pragma GCC optimize("-fno-fast-math", "-fassociative-math", "-freciprocal-math")
-#endif
 static void processSaturationShift(Image& image, SaturationShiftImageOperation const* op) {
-  image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+  image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) -> void {
     if (pixel[3] != 0) {
       Color color = Color::rgba(pixel);
       color.setSaturation(clamp(color.saturation() + op->saturationShiftAmount, 0.0f, 1.0f));
@@ -367,11 +364,6 @@ static void processSaturationShift(Image& image, SaturationShiftImageOperation c
     }
   });
 }
-#ifdef STAR_COMPILER_CLANG
-#pragma GCC pop_options
-#endif
-
-
 
 void processImageOperation(ImageOperation const& operation, Image& image, ImageReferenceCallback refCallback) {
   if (image.bytesPerPixel() == 3) {
@@ -379,14 +371,14 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     image = image.convert(image.pixelFormat() == PixelFormat::BGR24 ? PixelFormat::BGRA32 : PixelFormat::RGBA32);
   }
   if (auto op = operation.ptr<HueShiftImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) -> void {
       if (pixel[3] != 0)
         pixel = Color::hueShiftVec4B(pixel, op->hueShiftAmount);
     });
   } else if (auto op = operation.ptr<SaturationShiftImageOperation>()) {
     processSaturationShift(image, op);
   } else if (auto op = operation.ptr<BrightnessMultiplyImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) -> void {
       if (pixel[3] != 0) {
         Color color = Color::rgba(pixel);
         color.setValue(clamp(color.value() * op->brightnessMultiply, 0.0f, 1.0f));
@@ -394,13 +386,13 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       }
     });
   } else if (auto op = operation.ptr<FadeToColorImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) -> void {
       pixel[0] = op->rTable[pixel[0]];
       pixel[1] = op->gTable[pixel[1]];
       pixel[2] = op->bTable[pixel[2]];
     });
   } else if (auto op = operation.ptr<ScanLinesImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned y, Vec4B& pixel) {
+    image.forEachPixel([&op](unsigned, unsigned y, Vec4B& pixel) -> void {
       if (y % 2 == 0) {
         pixel[0] = op->fade1.rTable[pixel[0]];
         pixel[1] = op->fade1.gTable[pixel[1]];
@@ -412,13 +404,13 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
       }
     });
   } else if (auto op = operation.ptr<SetColorImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) -> void {
       pixel[0] = op->color[0];
       pixel[1] = op->color[1];
       pixel[2] = op->color[2];
     });
   } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) -> void {
       if (auto m = op->colorReplaceMap.maybe(pixel))
         pixel = *m;
     });
@@ -434,8 +426,8 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     for (auto const& reference : op->maskImages)
       maskImages.append(refCallback(reference));
 
-    image.forEachPixel([&op, &maskImages](unsigned x, unsigned y, Vec4B& pixel) {
-      uint8_t maskAlpha = 0;
+    image.forEachPixel([&op, &maskImages](unsigned x, unsigned y, Vec4B& pixel) -> void {
+      std::uint8_t maskAlpha = 0;
       Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
       for (auto mask : maskImages) {
         if (pos[0] < mask->width() && pos[1] < mask->height()) {
@@ -466,7 +458,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     for (auto const& reference : op->blendImages)
       blendImages.append(refCallback(reference));
 
-    image.forEachPixel([&op, &blendImages](unsigned x, unsigned y, Vec4B& pixel) {
+    image.forEachPixel([&op, &blendImages](unsigned x, unsigned y, Vec4B& pixel) -> void {
       Vec2U pos = Vec2U(Vec2I(x, y) + op->offset);
       Vec4F fpixel = Color::v4bToFloat(pixel);
       for (auto blend : blendImages) {
@@ -482,9 +474,9 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     });
 
   } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
-    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
-      pixel = pixel.combine(op->color, [](uint8_t a, uint8_t b) -> uint8_t {
-          return (uint8_t)(((int)a * (int)b) / 255);
+    image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) -> void {
+      pixel = pixel.combine(op->color, [](std::uint8_t a, std::uint8_t b) -> std::uint8_t {
+          return (std::uint8_t)(((int)a * (int)b) / 255);
         });
     });
 
@@ -493,7 +485,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     borderImage.copyInto(Vec2U::filled(op->pixels), image);
     Vec2I borderImageSize = Vec2I(borderImage.size());
 
-    borderImage.forEachPixel([&op, &image, &borderImageSize](int x, int y, Vec4B& pixel) {
+    borderImage.forEachPixel([&op, &image, &borderImageSize](int x, int y, Vec4B& pixel) -> void {
       int pixels = op->pixels;
       bool includeTransparent = op->includeTransparent;
       if (pixel[3] == 0 || (includeTransparent && pixel[3] != 255)) {
@@ -503,7 +495,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
             if (i + x >= pixels && j + y >= pixels && i + x < borderImageSize[0] - pixels && j + y < borderImageSize[1] - pixels) {
               Vec4B remotePixel = image.get(i + x - pixels, j + y - pixels);
               if (remotePixel[3] != 0) {
-                dist = std::min(dist, abs(i) + abs(j));
+                dist = std::min(dist, std::abs(i) + std::abs(j));
                 if (dist == 1) // Early out, if dist is 1 it ain't getting shorter
                   break;
               }
@@ -517,7 +509,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
             Color color = Color::rgba(op->startColor).mix(Color::rgba(op->endColor), percent);
             if (op->outlineOnly) {
               float pixelA = byteToFloat(pixel[3]);
-              color.setAlphaF((1.0f - pixelA) * fminf(pixelA, 0.5f) * 2.0f);
+              color.setAlphaF((1.0f - pixelA) * std::fminf(pixelA, 0.5f) * 2.0f);
             }
             else {
               Color pixelF = Color::rgba(pixel);
@@ -588,7 +580,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
   }
 }
 
-Image processImageOperations(List<ImageOperation> const& operations, Image image, ImageReferenceCallback refCallback) {
+auto processImageOperations(List<ImageOperation> const& operations, Image image, ImageReferenceCallback refCallback) -> Image {
   for (auto const& operation : operations)
     processImageOperation(operation, image, refCallback);
 

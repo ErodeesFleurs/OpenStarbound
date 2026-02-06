@@ -1,11 +1,14 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarStaticRandom.hpp"
 #include "StarByteArray.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_EXCEPTION(RandomException, StarException);
+using RandomException = ExceptionDerived<"RandomException">;
 
 // Deterministic random number source.  Uses multiply-with-carry algorithm.
 // Much higher quality than the predictable random number generators.  Not
@@ -15,72 +18,72 @@ class RandomSource {
 public:
   // Generates a RandomSource with a seed from Random::randu64()
   RandomSource();
-  RandomSource(uint64_t seed);
+  RandomSource(std::uint64_t seed);
 
   // Re-initializes the random number generator using the given seed.  It is
   // exactly equivalent to constructing a new RandomSource, just using the same
   // buffer.
   void init();
-  void init(uint64_t seed);
+  void init(std::uint64_t seed);
 
   void addEntropy();
-  void addEntropy(uint64_t seed);
+  void addEntropy(std::uint64_t seed);
 
-  uint32_t randu32();
-  uint64_t randu64();
+  auto randu32() -> std::uint32_t;
+  auto randu64() -> std::uint64_t;
 
-  int32_t randi32();
-  int64_t randi64();
+  auto randi32() -> std::int32_t;
+  auto randi64() -> std::int64_t;
 
   // Generates values in the range [0.0, 1.0]
-  float randf();
+  auto randf() -> float;
   // Generates values in the range [0.0, 1.0]
-  double randd();
+  auto randd() -> double;
 
   // Random integer from [0, max], max must be >= 0
-  int64_t randInt(int64_t max);
-  uint64_t randUInt(uint64_t max);
+  auto randInt(std::int64_t max) -> std::int64_t;
+  auto randUInt(std::uint64_t max) -> std::uint64_t;
 
   // Random integer from [min, max]
-  int64_t randInt(int64_t min, int64_t max);
-  uint64_t randUInt(uint64_t min, uint64_t max);
+  auto randInt(std::int64_t min, std::int64_t max) -> std::int64_t;
+  auto randUInt(std::uint64_t min, std::uint64_t max) -> std::uint64_t;
 
-  float randf(float min, float max);
-  double randd(double min, double max);
+  auto randf(float min, float max) -> float;
+  auto randd(double min, double max) -> double;
 
-  bool randb();
+  auto randb() -> bool;
 
   // Generates values via normal distribution with box-muller algorithm
-  float nrandf(float stddev = 1.0f, float mean = 0.0f);
-  double nrandd(double stddev = 1.0, double mean = 0.0);
+  auto nrandf(float stddev = 1.0f, float mean = 0.0f) -> float;
+  auto nrandd(double stddev = 1.0, double mean = 0.0) -> double;
 
   // Round a fractional value statistically towards the floor or ceiling.  For
   // example, if a value is 5.2, 80% of the time it will round to 5, but 20% of
   // the time it will round to 6.
-  int64_t stochasticRound(double val);
+  auto stochasticRound(double val) -> std::int64_t;
 
   void randBytes(char* buf, size_t len);
-  ByteArray randBytes(size_t len);
+  auto randBytes(size_t len) -> ByteArray;
 
   // Pick a random value out of a container
   template <typename Container>
-  typename Container::value_type const& randFrom(Container const& container);
+  auto randFrom(Container const& container) -> typename Container::value_type const&;
   template <typename Container>
-  typename Container::value_type& randFrom(Container& container);
+  auto randFrom(Container& container) -> typename Container::value_type&;
   template <typename Container>
-  typename Container::value_type randValueFrom(Container const& container);
+  auto randValueFrom(Container const& container) -> typename Container::value_type;
   template <typename Container>
-  typename Container::value_type randValueFrom(Container const& container, typename Container::value_type const& defaultVal);
+  auto randValueFrom(Container const& container, typename Container::value_type const& defaultVal) -> typename Container::value_type;
 
   template <typename Container>
   void shuffle(Container& container);
 
 private:
-  uint32_t gen32();
+  auto gen32() -> std::uint32_t;
 
-  uint32_t m_data[256];
-  uint32_t m_carry;
-  uint8_t m_index;
+  std::array<std::uint32_t, 256> m_data;
+  std::uint32_t m_carry;
+  std::uint8_t m_index;
 };
 
 // Global static versions of the methods in RandomSource.  It is not necessary
@@ -88,48 +91,48 @@ private:
 // initialized with a random seed on first use if it is not already initialized.
 namespace Random {
   void init();
-  void init(uint64_t seed);
+  void init(std::uint64_t seed);
 
   void addEntropy();
-  void addEntropy(uint64_t seed);
+  void addEntropy(std::uint64_t seed);
 
-  uint32_t randu32();
-  uint64_t randu64();
-  int32_t randi32();
-  int64_t randi64();
-  float randf();
-  double randd();
-  long long randInt(long long max);
-  unsigned long long randUInt(unsigned long long max);
-  long long randInt(long long min, long long max);
-  unsigned long long randUInt(unsigned long long min, unsigned long long max);
-  float randf(float min, float max);
-  double randd(double min, double max);
-  bool randb();
+  auto randu32() -> std::uint32_t;
+  auto randu64() -> std::uint64_t;
+  auto randi32() -> std::int32_t;
+  auto randi64() -> std::int64_t;
+  auto randf() -> float;
+  auto randd() -> double;
+  auto randInt(long long max) -> long long;
+  auto randUInt(unsigned long long max) -> unsigned long long;
+  auto randInt(long long min, long long max) -> long long;
+  auto randUInt(unsigned long long min, unsigned long long max) -> unsigned long long;
+  auto randf(float min, float max) -> float;
+  auto randd(double min, double max) -> double;
+  auto randb() -> bool;
 
-  float nrandf(float stddev = 1.0f, float mean = 0.0f);
-  double nrandd(double stddev = 1.0, double mean = 0.0);
+  auto nrandf(float stddev = 1.0f, float mean = 0.0f) -> float;
+  auto nrandd(double stddev = 1.0, double mean = 0.0) -> double;
 
-  int64_t stochasticRound(double val);
+  auto stochasticRound(double val) -> std::int64_t;
 
   void randBytes(char* buf, size_t len);
-  ByteArray randBytes(size_t len);
+  auto randBytes(size_t len) -> ByteArray;
 
   template <typename Container>
-  typename Container::value_type const& randFrom(Container const& container);
+  auto randFrom(Container const& container) -> typename Container::value_type const&;
   template <typename Container>
-  typename Container::value_type& randFrom(Container& container);
+  auto randFrom(Container& container) -> typename Container::value_type&;
   template <typename Container>
-  typename Container::value_type randValueFrom(Container const& container);
+  auto randValueFrom(Container const& container) -> typename Container::value_type;
   template <typename Container>
-  typename Container::value_type randValueFrom(Container const& container, typename Container::value_type const& defaultVal);
+  auto randValueFrom(Container const& container, typename Container::value_type const& defaultVal) -> typename Container::value_type;
 
   template <typename Container>
   void shuffle(Container& container);
 }
 
 template <typename Container>
-typename Container::value_type const& RandomSource::randFrom(Container const& container) {
+auto RandomSource::randFrom(Container const& container) -> typename Container::value_type const& {
   if (container.empty())
     throw RandomException("Empty container in randFrom");
 
@@ -139,7 +142,7 @@ typename Container::value_type const& RandomSource::randFrom(Container const& co
 }
 
 template <typename Container>
-typename Container::value_type& RandomSource::randFrom(Container& container) {
+auto RandomSource::randFrom(Container& container) -> typename Container::value_type& {
   if (container.empty())
     throw RandomException("Empty container in randFrom");
 
@@ -149,7 +152,7 @@ typename Container::value_type& RandomSource::randFrom(Container& container) {
 }
 
 template <typename Container>
-typename Container::value_type const& Random::randFrom(Container const& container) {
+auto Random::randFrom(Container const& container) -> typename Container::value_type const& {
   if (container.empty())
     throw RandomException("Empty container in randFrom");
 
@@ -159,7 +162,7 @@ typename Container::value_type const& Random::randFrom(Container const& containe
 }
 
 template <typename Container>
-typename Container::value_type& Random::randFrom(Container& container) {
+auto Random::randFrom(Container& container) -> typename Container::value_type& {
   if (container.empty())
     throw RandomException("Empty container in randFrom");
 
@@ -169,13 +172,13 @@ typename Container::value_type& Random::randFrom(Container& container) {
 }
 
 template <typename Container>
-typename Container::value_type RandomSource::randValueFrom(Container const& container) {
+auto RandomSource::randValueFrom(Container const& container) -> typename Container::value_type {
   return randValueFrom(container, typename Container::value_type());
 }
 
 template <typename Container>
-typename Container::value_type RandomSource::randValueFrom(
-    Container const& container, typename Container::value_type const& defaultVal) {
+auto RandomSource::randValueFrom(
+    Container const& container, typename Container::value_type const& defaultVal) -> typename Container::value_type {
   if (container.empty())
     return defaultVal;
 
@@ -187,17 +190,17 @@ typename Container::value_type RandomSource::randValueFrom(
 template <typename Container>
 void RandomSource::shuffle(Container& container) {
   size_t max = container.size();
-  std::shuffle(container.begin(), container.end(), URBG<size_t>([this, max]() { return randUInt(max - 1); }));
+  std::shuffle(container.begin(), container.end(), URBG<size_t>([this, max]() -> auto { return randUInt(max - 1); }));
 }
 
 template <typename Container>
-typename Container::value_type Random::randValueFrom(Container const& container) {
+auto Random::randValueFrom(Container const& container) -> typename Container::value_type {
   return randValueFrom(container, typename Container::value_type());
 }
 
 template <typename Container>
-typename Container::value_type Random::randValueFrom(
-    Container const& container, typename Container::value_type const& defaultVal) {
+auto Random::randValueFrom(
+    Container const& container, typename Container::value_type const& defaultVal) -> typename Container::value_type {
   if (container.empty())
     return defaultVal;
 
@@ -209,7 +212,7 @@ typename Container::value_type Random::randValueFrom(
 template <typename Container>
 void Random::shuffle(Container& container) {
   RandomSource random;
-  std::shuffle(container.begin(), container.end(), URBG<size_t>([&]() { return static_cast<size_t>(random.randu64()); }));
+  std::shuffle(container.begin(), container.end(), URBG<size_t>([&]() -> auto { return static_cast<size_t>(random.randu64()); }));
 }
 
 }

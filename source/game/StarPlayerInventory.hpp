@@ -1,9 +1,12 @@
 #pragma once
 
+#include <optional>
+
 #include "StarInventoryTypes.hpp"
 #include "StarMultiArray.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarNetElementBasicFields.hpp"
+#include "StarNetElementSyncGroup.hpp"
 
 namespace Star {
 
@@ -138,10 +141,10 @@ public:
   // will simply be cleared.  If a primary slot is set to a two handed item, it
   // will clear the secondary slot.  Any secondary slot that is set must be a
   // one handed item.
-  Maybe<InventorySlot> customBarPrimarySlot(CustomBarIndex customBarIndex) const;
-  Maybe<InventorySlot> customBarSecondarySlot(CustomBarIndex customBarIndex) const;
-  void setCustomBarPrimarySlot(CustomBarIndex customBarIndex, Maybe<InventorySlot> slot);
-  void setCustomBarSecondarySlot(CustomBarIndex customBarIndex, Maybe<InventorySlot> slot);
+  std::optional<InventorySlot> customBarPrimarySlot(CustomBarIndex customBarIndex) const;
+  std::optional<InventorySlot> customBarSecondarySlot(CustomBarIndex customBarIndex) const;
+  void setCustomBarPrimarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
+  void setCustomBarSecondarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
 
   // Add the given slot to a free place in the custom bar if one is available.
   void addToCustomBar(InventorySlot slot);
@@ -168,8 +171,8 @@ public:
 
   // If the primary / secondary held items are valid manageable slots, returns
   // them.
-  Maybe<InventorySlot> primaryHeldSlot() const;
-  Maybe<InventorySlot> secondaryHeldSlot() const;
+  std::optional<InventorySlot> primaryHeldSlot() const;
+  std::optional<InventorySlot> secondaryHeldSlot() const;
 
   List<ItemPtr> pullOverflow();
   void setEquipmentVisibility(EquipmentSlot slot, bool visible);
@@ -193,7 +196,7 @@ public:
   void cleanup();
 
 private:
-  typedef pair<Maybe<InventorySlot>, Maybe<InventorySlot>> CustomBarLink;
+  typedef pair<std::optional<InventorySlot>, std::optional<InventorySlot>> CustomBarLink;
 
   static bool checkInventoryFilter(ItemPtr const& items, String const& filterName);
 
@@ -209,7 +212,7 @@ private:
   Map<EquipmentSlot, ItemPtr> m_equipment;
   Map<String, ItemBagPtr> m_bags;
   ItemPtr m_swapSlot;
-  Maybe<InventorySlot> m_swapReturnSlot;
+  std::optional<InventorySlot> m_swapReturnSlot;
   ItemPtr m_trashSlot;
   Map<EssentialItem, ItemPtr> m_essential;
   StringMap<uint64_t> m_currencies;

@@ -27,7 +27,7 @@ Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
   m_slaveControlTimeout = configValue("slaveControlTimeout").toFloat();
   m_receiveExtraControls = configValue("receiveExtraControls", false).toBool();
   m_slaveHeartbeatTimer = GameTimer(configValue("slaveControlHeartbeat").toFloat());
-  m_damageTeam.set(configValue("damageTeam").opt().apply(construct<EntityDamageTeam>()).value());
+  m_damageTeam.set(configValue("damageTeam").opt().transform(construct<EntityDamageTeam>()).value());
   m_interactive.set(configValue("interactive", true).toBool());
   m_baseRenderLayer = parseRenderLayer(configValue("baseRenderLayer","Vehicle").toString());
   if (!configValue("overrideRenderLayer").isNull()) {
@@ -41,7 +41,7 @@ Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
     auto& loungePosition = m_loungePositions[pair.first];
     loungePosition.part = pair.second.getString("part");
     loungePosition.partAnchor = pair.second.getString("partAnchor");
-    loungePosition.exitBottomOffset = pair.second.opt("exitBottomOffset").apply(jsonToVec2F);
+    loungePosition.exitBottomOffset = pair.second.opt("exitBottomOffset").transform(jsonToVec2F);
     loungePosition.armorCosmeticOverrides = pair.second.getObject("armorCosmeticOverrides", JsonObject());
     loungePosition.cursorOverride = pair.second.optString("cursorOverride");
     loungePosition.cameraFocus = pair.second.getBool("cameraFocus", false);
@@ -162,14 +162,14 @@ ClientEntityMode Vehicle::clientEntityMode() const {
   return m_clientEntityMode;
 }
 
-Maybe<HitType> Vehicle::queryHit(DamageSource const& source) const {
+std::optional<HitType> Vehicle::queryHit(DamageSource const& source) const {
   if (source.intersectsWithPoly(world()->geometry(), m_movementController.collisionBody()))
     return HitType::Hit;
 
   return {};
 }
 
-Maybe<PolyF> Vehicle::hitPoly() const {
+std::optional<PolyF> Vehicle::hitPoly() const {
   return m_movementController.collisionBody();
 }
 
@@ -374,7 +374,7 @@ void Vehicle::destroy(RenderCallback* renderCallback) {
   }
 }
 
-Maybe<Json> Vehicle::receiveMessage(ConnectionId connectionId, String const& message, JsonArray const& args) {
+std::optional<Json> Vehicle::receiveMessage(ConnectionId connectionId, String const& message, JsonArray const& args) {
   m_aliveMasterConnections[connectionId] = GameTimer(m_slaveControlTimeout);
   if (message.equalsIgnoreCase("control_on")) {
     auto& loungePosition = m_loungePositions.valueAt(args.at(0).toUInt());
@@ -425,7 +425,7 @@ InteractAction Vehicle::interact(InteractRequest const& request) {
   else if (!result.isNull())
     return InteractAction(result.getString(0), entityId(), result.get(1));
 
-  Maybe<size_t> index;
+  std::optional<size_t> index;
   for (size_t i = 0; i < m_loungePositions.size(); ++i) {
     if (!index) {
       index = i;
@@ -544,7 +544,7 @@ size_t Vehicle::movingCollisionCount() const {
   return m_movingCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> Vehicle::movingCollision(size_t positionIndex) const {
+std::optional<PhysicsMovingCollision> Vehicle::movingCollision(size_t positionIndex) const {
   auto const& collisionConfig = m_movingCollisions.valueAt(positionIndex);
   if (!collisionConfig.enabled.get())
     return {};
@@ -566,11 +566,11 @@ Maybe<PhysicsMovingCollision> Vehicle::movingCollision(size_t positionIndex) con
   return collision;
 }
 
-Maybe<LuaValue> Vehicle::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> Vehicle::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> Vehicle::evalScript(String const& code) {
+std::optional<LuaValue> Vehicle::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
@@ -623,17 +623,17 @@ LuaCallbacks Vehicle::makeVehicleCallbacks() {
       m_loungePositions.get(name).orientation.set(LoungeOrientationNames.getLeft(orientation));
     });
 
-  callbacks.registerCallback("setLoungeEmote", [this](String const& name, Maybe<String> emote) {
-      m_loungePositions.get(name).emote.set(std::move(emote));
-    });
+  callbacks.registerCallback("setLoungeEmote", [this](String const& name, std::optional<String> emote) {
+    m_loungePositions.get(name).emote.set(std::move(emote));
+  });
 
-  callbacks.registerCallback("setLoungeDance", [this](String const& name, Maybe<String> dance) {
-      m_loungePositions.get(name).dance.set(std::move(dance));
-    });
+  callbacks.registerCallback("setLoungeDance", [this](String const& name, std::optional<String> dance) {
+    m_loungePositions.get(name).dance.set(std::move(dance));
+  });
 
-  callbacks.registerCallback("setLoungeDirectives", [this](String const& name, Maybe<String> directives) {
-      m_loungePositions.get(name).directives.set(std::move(directives));
-    });
+  callbacks.registerCallback("setLoungeDirectives", [this](String const& name, std::optional<String> directives) {
+    m_loungePositions.get(name).directives.set(std::move(directives));
+  });
 
   callbacks.registerCallback("setLoungeStatusEffects", [this](String const& name, JsonArray const& statusEffects) {
       m_loungePositions.get(name).statusEffects.set(statusEffects.transformed(jsonToPersistentStatusEffect));

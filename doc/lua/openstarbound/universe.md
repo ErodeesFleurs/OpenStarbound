@@ -6,7 +6,7 @@ processor).
 
 ---
 
-#### `Maybe<String>` universe.uuidForClient(`ConnectionId` clientId)
+#### `std::optional<String>` universe.uuidForClient(`ConnectionId` clientId)
 
 Returns the UUID for the given client connection, or `nil` if the client is unknown.
 
@@ -36,7 +36,7 @@ Returns the nickname associated with the client.
 
 ---
 
-#### `Maybe<ConnectionId>` universe.findNick(`String` nick)
+#### `std::optional<ConnectionId>` universe.findNick(`String` nick)
 
 Returns the client ID for the supplied nickname if that player is connected.
 

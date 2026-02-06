@@ -1,3 +1,4 @@
+#include <optional>
 #include "StarClipboardLuaBindings.hpp"
 #include "StarLuaConverters.hpp" // IWYU pragma: keep
 #include "StarInput.hpp"
@@ -19,7 +20,7 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appCon
     return available() && appController->hasClipboard();
   });
 
-  callbacks.registerCallback("getText", [available, appController]() -> Maybe<String> {
+  callbacks.registerCallback("getText", [available, appController]() -> std::optional<String> {
     if (!available())
       return {};
     else

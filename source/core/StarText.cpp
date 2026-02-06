@@ -26,7 +26,7 @@ TextStyle& TextStyle::loadJson(Json const& config) {
     directives = *jDirectives;
   if (auto jBackDirectives = config.optString("backDirectives"))
     backDirectives = *jBackDirectives;
-  
+
   return *this;
 }
 
@@ -47,11 +47,11 @@ namespace Text {
     std::string_view str = text.utf8();
     while (true) {
       size_t escape = str.find_first_of(AllEsc);
-      if (escape != NPos) {
+      if (escape != std::numeric_limits<std::size_t>::max()) {
         escape = str.find_first_not_of(AllEsc, escape) - 1; // jump to the last ^
 
         size_t end = str.find_first_of(EndEsc, escape);
-        if (end != NPos) {
+        if (end != std::numeric_limits<std::size_t>::max()) {
           if (escape && !textFunc(str.substr(0, escape)))
             return false;
           if (commandsFunc) {

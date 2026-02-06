@@ -4,7 +4,7 @@ These are functions that aren't in any specific table.
 
 ---
 
-#### `Maybe<LuaFunction>, Maybe<String>` loadstring(`String` source, [`String` name, [`LuaValue` env]])
+#### `std::optional<LuaFunction>, std::optional<String>` loadstring(`String` source, [`String` name, [`LuaValue` env]])
 
 Compiles the provided **source** and returns it as a callable function.
 If there are any syntax errors, returns `nil` and the error as a string instead.

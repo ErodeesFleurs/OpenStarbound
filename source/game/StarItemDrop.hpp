@@ -8,6 +8,7 @@
 #include "StarScriptedEntity.hpp"
 #include "StarDrawable.hpp"
 #include "StarLuaComponents.hpp"
+#include <optional>
 
 namespace Star {
 
@@ -85,12 +86,12 @@ public:
 
   Vec2F velocity() const;
   void setVelocity(Vec2F const& position);
-  
+
   Json configValue(String const& name, Json const& def = Json()) const;
-  
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
-  
+
+  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  std::optional<LuaValue> evalScript(String const& code) override;
+
   ClientEntityMode clientEntityMode() const override;
 
 private:
@@ -104,7 +105,7 @@ private:
   void updateCollisionPoly();
 
   void updateTaken(bool master);
-  
+
   LuaCallbacks makeItemDropCallbacks();
 
   Json m_config;
@@ -138,12 +139,12 @@ private:
 
   bool m_drawRarityBeam;
   bool m_overForeground;
-  Maybe<List<Drawable>> m_drawables;
-  
+  std::optional<List<Drawable>> m_drawables;
+
   ClientEntityMode m_clientEntityMode;
-  
+
   mutable LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptComponent;
-  Maybe<Mode> m_overrideMode;
+  std::optional<Mode> m_overrideMode;
 };
 
 }

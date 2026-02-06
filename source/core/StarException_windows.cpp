@@ -178,7 +178,7 @@ const char* StarException::what() const throw() {
 
 StarException::StarException(char const* type, std::string message, bool genStackTrace) noexcept {
   auto printException = [](
-      std::ostream& os, bool fullStacktrace, char const* type, std::string message, Maybe<StackCapture> stack) {
+      std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::optional<StackCapture> stack) {
     os << "(" << type << ")";
     if (!message.empty())
       os << " " << message;
@@ -189,7 +189,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
     }
   };
 
-  m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
+  m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureStack() : std::optional<StackCapture>());
 }
 
 StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept

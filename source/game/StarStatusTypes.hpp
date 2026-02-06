@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarJson.hpp"
-#include "StarStrongTypedef.hpp"
 #include "StarDataStream.hpp"
 #include "StarIdMap.hpp"
 
@@ -60,7 +59,7 @@ typedef String UniqueStatusEffect;
 
 // Second element here is *percentage* of duration remaining, based on the
 // highest duration that the effect has had
-typedef List<pair<UniqueStatusEffect, Maybe<float>>> ActiveUniqueStatusEffectSummary;
+typedef List<pair<UniqueStatusEffect, std::optional<float>>> ActiveUniqueStatusEffectSummary;
 
 // Persistent status effects can either be a modifier effect or unique effect
 typedef MVariant<StatModifier, UniqueStatusEffect> PersistentStatusEffect;
@@ -73,7 +72,7 @@ Json jsonFromPersistentStatusEffect(PersistentStatusEffect const& effect);
 // duration in their config or optionally the default
 struct EphemeralStatusEffect {
   UniqueStatusEffect uniqueEffect;
-  Maybe<float> duration;
+  std::optional<float> duration;
 
   bool operator==(EphemeralStatusEffect const& rhs) const;
 };

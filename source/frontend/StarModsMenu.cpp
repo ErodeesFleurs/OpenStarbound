@@ -62,7 +62,7 @@ void ModsMenu::update(float dt) {
   Pane::update(dt);
 
   size_t selectedItem = m_modList->selectedItem();
-  if (selectedItem == NPos) {
+  if (selectedItem == std::numeric_limits<std::size_t>::max()) {
     m_modName->setText("");
     m_modAuthor->setText("");
     m_modVersion->setText("");
@@ -99,7 +99,7 @@ String ModsMenu::bestModName(JsonObject const& metadata, String const& sourcePat
 
 void ModsMenu::openLink() {
   size_t selectedItem = m_modList->selectedItem();
-  if (selectedItem == NPos)
+  if (selectedItem == std::numeric_limits<std::size_t>::max())
     return;
 
   String assetsSource = m_assetsSources.at(selectedItem);

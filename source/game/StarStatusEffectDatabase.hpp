@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarThread.hpp"
 #include "StarStatusTypes.hpp"
 
 namespace Star {
@@ -12,16 +11,16 @@ STAR_CLASS(StatusEffectDatabase);
 // Named, unique, unstackable scripted effects.
 struct UniqueStatusEffectConfig {
   String name;
-  Maybe<String> blockingStat;
+  std::optional<String> blockingStat;
   Json effectConfig;
   float defaultDuration;
   StringList scripts;
   unsigned scriptDelta;
-  Maybe<String> animationConfig;
+  std::optional<String> animationConfig;
 
   String label;
   String description;
-  Maybe<String> icon;
+  std::optional<String> icon;
 
   JsonObject toJson();
 };

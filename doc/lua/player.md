@@ -326,7 +326,7 @@ Returns `true` if the player has a completed quest with the specified quest id a
 
 ---
 
-#### `Maybe<WorldId>` player.currentQuestWorld()
+#### `std::optional<WorldId>` player.currentQuestWorld()
 
 If the player's currently tracked quest has an associated world, returns the id of that world.
 
@@ -338,7 +338,7 @@ Returns a list of world ids for worlds relevant to the player's current quests, 
 
 ---
 
-#### `Maybe<Json>` player.currentQuestLocation()
+#### `std::optional<Json>` player.currentQuestLocation()
 
 If the player's currently tracked quest has an associated location (CelestialCoordinate, system orbit, UUID, or system position) returns that location.
 

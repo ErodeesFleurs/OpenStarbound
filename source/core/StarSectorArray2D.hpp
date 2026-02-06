@@ -120,13 +120,11 @@ SectorArray2D<ElementT, SectorSize>::Array::Array(Element const& def) {
 
 template <typename ElementT, size_t SectorSize>
 ElementT const& SectorArray2D<ElementT, SectorSize>::Array::operator()(size_t x, size_t y) const {
-  starAssert(x < SectorSize && y < SectorSize);
   return elements[x * SectorSize + y];
 }
 
 template <typename ElementT, size_t SectorSize>
 ElementT& SectorArray2D<ElementT, SectorSize>::Array::operator()(size_t x, size_t y) {
-  starAssert(x < SectorSize && y < SectorSize);
   return elements[x * SectorSize + y];
 }
 
@@ -180,7 +178,6 @@ Vec2S SectorArray2D<ElementT, SectorSize>::sectorCorner(Sector const& id) const 
 
 template <typename ElementT, size_t SectorSize>
 bool SectorArray2D<ElementT, SectorSize>::hasSector(Sector const& id) const {
-  starAssert(id[0] < m_sectors.size(0) && id[1] < m_sectors.size(1));
   return (bool)m_sectors(id[0], id[1]);
 }
 

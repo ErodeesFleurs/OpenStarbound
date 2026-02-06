@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarQuests.hpp"
 
 namespace Star {
@@ -38,30 +40,30 @@ public:
   bool isActive(String const& questId) const;
   bool isCurrent(String const& questId) const;
   bool isTracked(String const& questId) const;
-  void setAsTracked(Maybe<String> const& questId);
+  void setAsTracked(std::optional<String> const& questId);
   void markAsRead(String const& questId);
   bool hasCompleted(String const& questId) const;
   bool canTurnIn(String const& questId) const;
 
-  Maybe<QuestPtr> getFirstNewQuest();
-  Maybe<QuestPtr> getFirstCompletableQuest();
-  Maybe<QuestPtr> getFirstFailableQuest();
-  Maybe<QuestPtr> getFirstMainQuest();
+  std::optional<QuestPtr> getFirstNewQuest();
+  std::optional<QuestPtr> getFirstCompletableQuest();
+  std::optional<QuestPtr> getFirstFailableQuest();
+  std::optional<QuestPtr> getFirstMainQuest();
 
   List<QuestPtr> listActiveQuests() const;
   List<QuestPtr> listCompletedQuests() const;
   List<QuestPtr> listFailedQuests() const;
 
-  Maybe<String> currentQuestId() const;
-  Maybe<QuestPtr> currentQuest() const;
-  Maybe<String> trackedQuestId() const;
-  Maybe<QuestPtr> trackedQuest() const;
-  Maybe<QuestIndicator> getQuestIndicator(EntityPtr const& entity) const;
+  std::optional<String> currentQuestId() const;
+  std::optional<QuestPtr> currentQuest() const;
+  std::optional<String> trackedQuestId() const;
+  std::optional<QuestPtr> trackedQuest() const;
+  std::optional<QuestIndicator> getQuestIndicator(EntityPtr const& entity) const;
 
   // Handled at this level to allow multiple active quests to specify interestingObjects
   StringSet interestingObjects();
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   void update(float dt);
 
 private:
@@ -75,9 +77,9 @@ private:
 
   StringMap<QuestPtr> m_quests;
 
-  Maybe<String> m_trackedQuestId;
+  std::optional<String> m_trackedQuestId;
   bool m_trackOnWorldQuests;
-  Maybe<String> m_onWorldQuestId;
+  std::optional<String> m_onWorldQuestId;
 };
 
 }

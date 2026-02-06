@@ -3,9 +3,10 @@
 #include "StarJson.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
-#include "StarSet.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarDirectives.hpp"
+
+import std;
 
 namespace Star {
 
@@ -294,24 +295,24 @@ Json jsonFromMap(MapType const& map) {
 }
 
 template <typename T, typename Converter>
-Json jsonFromMaybe(Maybe<T> const& m, Converter&& converter) {
-  return m.apply(converter).value();
+Json jsonFromMaybe(std::optional<T> const& m, Converter&& converter) {
+  return m.transform(converter).value_or(Json());
 }
 
 template <typename T>
-Json jsonFromMaybe(Maybe<T> const& m) {
+Json jsonFromMaybe(std::optional<T> const& m) {
   return jsonFromMaybe(m, construct<Json>());
 }
 
 template <typename T, typename Converter>
-Maybe<T> jsonToMaybe(Json v, Converter&& converter) {
+std::optional<T> jsonToMaybe(Json v, Converter&& converter) {
   if (v.isNull())
     return {};
   return converter(v);
 }
 
 template <typename T>
-Maybe<T> jsonToMaybe(Json const& v) {
+std::optional<T> jsonToMaybe(Json const& v) {
   return jsonToMaybe<T>(v, construct<T>());
 }
 

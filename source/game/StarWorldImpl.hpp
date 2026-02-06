@@ -1,18 +1,19 @@
 #pragma once
 
+#include <optional>
+
+
 #include "StarIterator.hpp"
 #include "StarEntityMap.hpp"
+#include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
+#include "StarMaterialDatabase.hpp" // IWYU pragma: keep
+#include "StarWorld.hpp"
 #include "StarWorldTiles.hpp"
 #include "StarBlocksAlongLine.hpp"
-#include "StarBiome.hpp"
 #include "StarSky.hpp"
 #include "StarWorldTemplate.hpp"
-#include "StarLiquidsDatabase.hpp"
 #include "StarCellularLighting.hpp"
 #include "StarRoot.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarAssets.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarTileModification.hpp"
 
 namespace Star {
@@ -33,7 +34,7 @@ namespace WorldImpl {
   bool lineTileCollision(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
-  Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
+  std::optional<pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray, Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet);
 
   template <typename TileSectorArray>
   List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
@@ -42,7 +43,7 @@ namespace WorldImpl {
   inline TileDamageParameters tileDamageParameters(WorldTile* tile, TileLayer layer, TileDamage const& tileDamage);
   template <typename TileSectorArray>
   bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage);
-  
+
   template <typename GetTileFunction>
   bool canPlaceMaterial(EntityMapPtr const& entityMap,
       Vec2I const& pos, TileLayer layer, MaterialId material, bool allowEntityOverlap, bool allowTileOverlap, GetTileFunction& getTile);
@@ -118,9 +119,9 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
+  std::optional<pair<Vec2F, Vec2I>> lineTileCollisionPoint(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) {
-    Maybe<Vec2I> collidingBlock;
+    std::optional<Vec2I> collidingBlock;
     auto clear = forBlocksAlongLine<float>(begin, worldGeometry.diff(end, begin), [=, &collidingBlock](int x, int y) -> bool {
         if (tileSectorArray->tile({x, y}).isColliding(collisionSet)) {
           collidingBlock = Vec2I(x, y);
@@ -237,7 +238,7 @@ namespace WorldImpl {
 
     if (materialDatabase->modBreaksWithTile(mod))
       return materialDatabase->modDamageParameters(mod).sum(materialDatabase->materialDamageParameters(target));
-    
+
     return materialDatabase->modDamageParameters(mod);
   }
 
@@ -365,7 +366,7 @@ namespace WorldImpl {
   pair<bool, bool> validateTileModification(EntityMapPtr const& entityMap, Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap, GetTileFunction& getTile) {
     bool good = false;
     bool perhaps = false;
-    
+
     if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
       bool allowTileOverlap = placeMaterial->collisionOverride != TileCollisionOverride::None && collisionKindFromOverride(placeMaterial->collisionOverride) < CollisionKind::Dynamic;
       perhaps = WorldImpl::perhapsCanPlaceMaterial(entityMap, pos, placeMaterial->layer, placeMaterial->material, allowEntityOverlap, allowTileOverlap, getTile);
@@ -388,11 +389,11 @@ namespace WorldImpl {
     if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
       if (!isRealMaterial(placeMaterial->material))
         return false;
-      
+
       auto materialDatabase = Root::singleton().materialDatabase();
       if (!materialDatabase->canPlaceInLayer(placeMaterial->material, placeMaterial->layer))
         return false;
-      
+
       return true;
     }
 

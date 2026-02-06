@@ -40,8 +40,8 @@ public:
   void setOnEnterKeyCallback(WidgetCallbackFunc onEnterKey);
   void setOnEscapeKeyCallback(WidgetCallbackFunc onEscapeKey);
 
-  void setNextFocus(Maybe<String> nextFocus);
-  void setPrevFocus(Maybe<String> prevFocus);
+  void setNextFocus(std::optional<String> nextFocus);
+  void setPrevFocus(std::optional<String> prevFocus);
 
   bool sendEvent(InputEvent const& event) override;
 
@@ -56,7 +56,7 @@ public:
   virtual void blur() override;
 
   virtual KeyboardCaptureMode keyboardCaptureMode() const override;
-  virtual Maybe<pair<RectI, int>> keyboardCaptureArea() const override;
+  virtual std::optional<pair<RectI, int>> keyboardCaptureArea() const override;
 
 protected:
   virtual void renderImpl() override;
@@ -83,8 +83,8 @@ private:
   WidgetCallbackFunc m_onBlur;
   WidgetCallbackFunc m_onEnterKey;
   WidgetCallbackFunc m_onEscapeKey;
-  Maybe<String> m_nextFocus;
-  Maybe<String> m_prevFocus;
+  std::optional<String> m_nextFocus;
+  std::optional<String> m_prevFocus;
   bool m_drawBorder;
   Vec2I m_cursorHoriz;
   Vec2I m_cursorVert;

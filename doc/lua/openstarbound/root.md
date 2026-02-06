@@ -55,7 +55,7 @@ Returns the raw data of an asset.
 
 ---
 
-#### `String, Maybe<LuaTable>` root.assetOrigin(`String` path, [`bool` getPatches])
+#### `String, std::optional<LuaTable>` root.assetOrigin(`String` path, [`bool` getPatches])
 
 Returns the asset source path of an asset, or nil if the asset doesn't exist. If you specify getPatches as true then also returns the patches for the asset as an array, each element containing the source path and patch path in indexes 1 and 2 respectively.
 
@@ -138,7 +138,7 @@ Returns the config for the species.
 
 ---
 
-#### `LuaTupleReturn<Json, JsonObject, JsonObject>` root.generateHumanoidIdentity(`String` species, `Maybe<uint64_t>` seed, `Maybe<String>` gender)
+#### `LuaTupleReturn<Json, JsonObject, JsonObject>` root.generateHumanoidIdentity(`String` species, `std::optional<uint64_t>` seed, `std::optional<String>` gender)
 
 Generates a random humanoid identity for the given species. Optionally supply a seed and or predetermined gender.
 

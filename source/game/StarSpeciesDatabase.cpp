@@ -189,10 +189,10 @@ CharacterCreationResult SpeciesDatabase::createHumanoid(
   return result;
 }
 
-CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, int64_t seed, Maybe<Gender> gender) const {
+CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, int64_t seed, std::optional<Gender> gender) const {
   RandomSource randSource(seed);
   auto speciesDefinition = species(speciesChoice);
-  auto chosenGender = gender.value(randSource.randb() ? Gender::Male : Gender::Female);
+  auto chosenGender = gender.value_or(randSource.randb() ? Gender::Male : Gender::Female);
   return createHumanoid(
     Root::singleton().nameGenerator()->generateName(speciesDefinition->nameGen(chosenGender), randSource),
     speciesChoice,

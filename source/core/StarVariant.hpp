@@ -1,21 +1,15 @@
 #pragma once
 
-#include <algorithm>
-#include <cstddef>
-#include <exception>
-#include <type_traits>
-#include <utility>
-#include <initializer_list>
+#include "StarException.hpp"
 
-#include "StarMaybe.hpp"
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(BadVariantCast, StarException);
-STAR_EXCEPTION(BadVariantType, StarException);
+using BadVariantCast = ExceptionDerived<"BadVariantCast">;
+using BadVariantType = ExceptionDerived<"BadVariantType">;
 
-typedef uint8_t VariantTypeIndex;
-VariantTypeIndex const InvalidVariantType = 255;
+std::uint8_t const InvalidVariantType = 255;
 
 namespace detail {
   template <typename T, typename... Args>
@@ -26,7 +20,7 @@ namespace detail {
 
   template <typename T, typename Head, typename... Args>
   struct HasType<T, Head, Args...> {
-    static constexpr bool value = std::is_same<T, Head>::value || HasType<T, Args...>::value;
+    static constexpr bool value = std::is_same_v<T, Head> || HasType<T, Args...>::value;
   };
 
   template <typename... Args>
@@ -37,7 +31,7 @@ namespace detail {
 
   template <typename Head, typename... Args>
   struct IsNothrowMoveConstructible<Head, Args...> {
-    static constexpr bool value = std::is_nothrow_move_constructible<Head>::value && IsNothrowMoveConstructible<Args...>::value;
+    static constexpr bool value = std::is_nothrow_move_constructible_v<Head> && IsNothrowMoveConstructible<Args...>::value;
   };
 
   template <typename... Args>
@@ -48,7 +42,7 @@ namespace detail {
 
   template <typename Head, typename... Args>
   struct IsNothrowMoveAssignable<Head, Args...> {
-    static constexpr bool value = std::is_nothrow_move_assignable<Head>::value && IsNothrowMoveAssignable<Args...>::value;
+    static constexpr bool value = std::is_nothrow_move_assignable_v<Head> && IsNothrowMoveAssignable<Args...>::value;
   };
 }
 
@@ -58,10 +52,10 @@ template <typename FirstType, typename... RestTypes>
 class Variant {
 public:
   template <typename T>
-  using ValidateType = typename std::enable_if<detail::HasType<T, FirstType, RestTypes...>::value, void>::type;
+  using ValidateType =  std::enable_if_t<detail::HasType<T, FirstType, RestTypes...>::value, void>;
 
   template <typename T, typename = ValidateType<T>>
-  static constexpr VariantTypeIndex typeIndexOf();
+  static constexpr auto typeIndexOf() -> std::uint8_t;
 
   // If the first type has a default constructor, constructs an Variant which
   // contains a default constructed value of that type.
@@ -72,18 +66,14 @@ public:
   template <typename T, typename = ValidateType<T>>
   Variant(T&& x);
 
-  template <typename T, typename = ValidateType<T>, typename... Args,
-    typename std::enable_if< std::is_constructible<T, Args...>::value, int >::type = 0
-  >
-  Variant(std::in_place_type_t<T>, Args&&... args) {
+  template <typename T, typename = ValidateType<T>, typename... Args>
+  Variant(std::in_place_type_t<T>, Args&&... args) requires std::is_constructible_v<T, Args...> {
     new (&m_buffer) T(std::forward<Args>(args)...);
     m_typeIndex = TypeIndex<T>::value;
   }
 
-  template <typename T, typename U, typename = ValidateType<T>, typename... Args,
-    typename std::enable_if< std::is_constructible<T, std::initializer_list<U>&, Args...>::value, int >::type = 0
-  >
-  Variant(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args) {
+  template <typename T, typename U, typename = ValidateType<T>, typename... Args>
+  Variant(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args) requires std::is_constructible_v<T, std::initializer_list<U>&, Args...> {
     new (&m_buffer) T(il, std::forward<Args>(args)...);
     m_typeIndex = TypeIndex<T>::value;
   }
@@ -95,94 +85,94 @@ public:
 
   // Implementations of operator= may invalidate the Variant if the copy or
   // move constructor of the assigned value throws.
-  Variant& operator=(Variant const& x);
-  Variant& operator=(Variant&& x) noexcept(detail::IsNothrowMoveAssignable<FirstType, RestTypes...>::value);
+  auto operator=(Variant const& x) -> Variant&;
+  auto operator=(Variant&& x) noexcept(detail::IsNothrowMoveAssignable<FirstType, RestTypes...>::value) -> Variant&;
   template <typename T, typename = ValidateType<T>>
-  Variant& operator=(T const& x);
+  auto operator=(T const& x) -> Variant&;
   template <typename T, typename = ValidateType<T>>
-  Variant& operator=(T&& x);
+  auto operator=(T&& x) -> Variant&;
 
   // Returns true if this Variant contains the given type.
   template <typename T, typename = ValidateType<T>>
-  bool is() const;
+  [[nodiscard]] auto is() const -> bool;
 
   // get throws BadVariantCast on bad casts
 
   template <typename T, typename = ValidateType<T>>
-  T const& get() const;
+  auto get() const -> T const&;
 
   template <typename T, typename = ValidateType<T>>
-  T& get();
+  auto get() -> T&;
 
   template <typename T, typename = ValidateType<T>>
-  Maybe<T> maybe() const;
+  auto maybe() const -> std::optional<T>;
 
   // ptr() does not throw if this Variant does not hold the given type, instead
   // simply returns nullptr.
 
   template <typename T, typename = ValidateType<T>>
-  T const* ptr() const;
+  auto ptr() const -> T const*;
 
   template <typename T, typename = ValidateType<T>>
-  T* ptr();
+  auto ptr() -> T*;
 
   // Calls the given function with the type currently being held, and returns
   // the value returned by that function.  Will throw if this Variant has been
   // invalidated.
   template <typename Function>
-  decltype(auto) call(Function&& function);
+  auto call(Function&& function) -> decltype(auto);
   template <typename Function>
-  decltype(auto) call(Function&& function) const;
+  auto call(Function&& function) const -> decltype(auto);
 
   // Returns an index for the held type, which can be passed into makeType to
   // make this Variant hold a specific type.  Returns InvalidVariantType if
   // invalidated.
-  VariantTypeIndex typeIndex() const;
+  [[nodiscard]] auto typeIndex() const -> std::uint8_t;
 
   // Make this Variant hold a new default constructed type of the given type
   // index.  Can only be used if every alternative type has a default
   // constructor.  Throws if given an out of range type index or
   // InvalidVariantType.
-  void makeType(VariantTypeIndex typeIndex);
+  void makeType(std::uint8_t typeIndex);
 
   // True if this Variant has been invalidated.  If the copy or move
   // constructor of a type throws an exception during assignment, there is no
   // *good* way to ensure that the Variant has a valid type, so it may become
   // invalidated.  It is not possible to directly construct an invalidated
   // Variant.
-  bool invalid() const;
+  [[nodiscard]] auto invalid() const -> bool;
 
   // Requires that every type included in this Variant has operator==
-  bool operator==(Variant const& x) const;
-  bool operator!=(Variant const& x) const;
+  auto operator==(Variant const& x) const -> bool;
+  auto operator!=(Variant const& x) const -> bool;
 
   // Requires that every type included in this Variant has operator<
-  bool operator<(Variant const& x) const;
+  auto operator<(Variant const& x) const -> bool;
 
   template <typename T, typename = ValidateType<T>>
-  bool operator==(T const& x) const;
+  auto operator==(T const& x) const -> bool;
   template <typename T, typename = ValidateType<T>>
-  bool operator!=(T const& x) const;
+  auto operator!=(T const& x) const -> bool;
   template <typename T, typename = ValidateType<T>>
-  bool operator<(T const& x) const;
+  auto operator<(T const& x) const -> bool;
 
 private:
-  template <typename MatchType, VariantTypeIndex Index, typename... Rest>
+  template <typename MatchType, std::uint8_t Index, typename... Rest>
   struct LookupTypeIndex;
 
-  template <typename MatchType, VariantTypeIndex Index>
+  template <typename MatchType, std::uint8_t Index>
   struct LookupTypeIndex<MatchType, Index> {
-    static VariantTypeIndex const value = InvalidVariantType;
+    static std::uint8_t const value = InvalidVariantType;
   };
 
-  template <typename MatchType, VariantTypeIndex Index, typename Head, typename... Rest>
+  template <typename MatchType, std::uint8_t Index, typename Head, typename... Rest>
   struct LookupTypeIndex<MatchType, Index, Head, Rest...> {
-    static VariantTypeIndex const value = std::is_same<MatchType, Head>::value ? Index : LookupTypeIndex<MatchType, Index + 1, Rest...>::value;
+    static std::uint8_t const value = std::is_same_v<MatchType, Head> ? Index : LookupTypeIndex<MatchType, Index + 1, Rest...>::value;
   };
 
   template <typename MatchType>
   struct TypeIndex {
-    static VariantTypeIndex const value = LookupTypeIndex<MatchType, 0, FirstType, RestTypes...>::value;
+    static std::uint8_t const value = LookupTypeIndex<MatchType, 0, FirstType, RestTypes...>::value;
   };
 
   void destruct();
@@ -191,22 +181,25 @@ private:
   void assign(T&& x);
 
   template <typename Function, typename T>
-  decltype(auto) doCall(Function&& function);
+  auto doCall(Function&& function) -> decltype(auto);
   template <typename Function, typename T1, typename T2, typename... TL>
-  decltype(auto) doCall(Function&& function);
+  auto doCall(Function&& function) -> decltype(auto);
 
   template <typename Function, typename T>
-  decltype(auto) doCall(Function&& function) const;
+  auto doCall(Function&& function) const -> decltype(auto);
   template <typename Function, typename T1, typename T2, typename... TL>
-  decltype(auto) doCall(Function&& function) const;
+  auto doCall(Function&& function) const -> decltype(auto);
 
   template <typename First>
-  void doMakeType(VariantTypeIndex);
+  void doMakeType(std::uint8_t);
   template <typename First, typename Second, typename... Rest>
-  void doMakeType(VariantTypeIndex typeIndex);
+  void doMakeType(std::uint8_t typeIndex);
 
-  alignas(std::max({alignof(FirstType), alignof(RestTypes)...})) std::byte m_buffer[std::max({sizeof(FirstType), sizeof(RestTypes)...})];
-  VariantTypeIndex m_typeIndex = InvalidVariantType;
+  static constexpr std::size_t BufferAlignment = std::max({alignof(FirstType), alignof(RestTypes)...});
+  static constexpr std::size_t BufferSize = std::max({sizeof(FirstType), sizeof(RestTypes)...});
+
+  alignas(BufferAlignment) std::array<std::byte, BufferSize> m_buffer;
+  std::uint8_t m_typeIndex = InvalidVariantType;
 };
 
 // A version of Variant that has always has a default "empty" state, useful
@@ -216,10 +209,10 @@ template <typename... Types>
 class MVariant {
 public:
   template <typename T>
-  using ValidateType = typename std::enable_if<detail::HasType<T, Types...>::value, void>::type;
+  using ValidateType =  std::enable_if_t<detail::HasType<T, Types...>::value, void>;
 
   template <typename T, typename = ValidateType<T>>
-  static constexpr VariantTypeIndex typeIndexOf();
+  static constexpr auto typeIndexOf() -> std::uint8_t;
 
   MVariant();
   MVariant(MVariant const& x);
@@ -230,17 +223,13 @@ public:
   template <typename T, typename = ValidateType<T>>
   MVariant(T&& x);
 
-  template <typename T, typename = ValidateType<T>, typename... Args,
-    typename std::enable_if< std::is_constructible<T, Args...>::value, int >::type = 0
-  >
+  template <typename T, typename = ValidateType<T>, typename... Args>
   MVariant(std::in_place_type_t<T>, Args&&... args)
-    : m_variant(std::in_place_type<T>, std::forward<Args>(args)...) {}
+    requires std::is_constructible_v<T, Args...> : m_variant(std::in_place_type<T>, std::forward<Args>(args)...) {}
 
-  template <typename T, typename U, typename = ValidateType<T>, typename... Args,
-    typename std::enable_if< std::is_constructible<T, std::initializer_list<U>&, Args...>::value, int >::type = 0
-  >
+  template <typename T, typename U, typename = ValidateType<T>, typename... Args>
   MVariant(std::in_place_type_t<T>, std::initializer_list<U> il, Args&&... args)
-      : m_variant(std::in_place_type<T>, il, std::forward<Args>(args)...) {}
+      requires std::is_constructible_v<T, std::initializer_list<U>&, Args...> : m_variant(std::in_place_type<T>, il, std::forward<Args>(args)...) {}
 
   MVariant(Variant<Types...> const& x);
   MVariant(Variant<Types...>&& x);
@@ -249,67 +238,67 @@ public:
 
   // MVariant::operator= will never invalidate the MVariant, instead it will
   // just become empty.
-  MVariant& operator=(MVariant const& x);
-  MVariant& operator=(MVariant&& x);
+  auto operator=(MVariant const& x) -> MVariant&;
+  auto operator=(MVariant&& x) -> MVariant&;
 
   template <typename T, typename = ValidateType<T>>
-  MVariant& operator=(T const& x);
+  auto operator=(T const& x) -> MVariant&;
   template <typename T, typename = ValidateType<T>>
-  MVariant& operator=(T&& x);
+  auto operator=(T&& x) -> MVariant&;
 
-  MVariant& operator=(Variant<Types...> const& x);
-  MVariant& operator=(Variant<Types...>&& x);
+  auto operator=(Variant<Types...> const& x) -> MVariant&;
+  auto operator=(Variant<Types...>&& x) -> MVariant&;
 
   // Requires that every type included in this MVariant has operator==
-  bool operator==(MVariant const& x) const;
-  bool operator!=(MVariant const& x) const;
+  auto operator==(MVariant const& x) const -> bool;
+  auto operator!=(MVariant const& x) const -> bool;
 
   // Requires that every type included in this MVariant has operator<
-  bool operator<(MVariant const& x) const;
+  auto operator<(MVariant const& x) const -> bool;
 
   template <typename T, typename = ValidateType<T>>
-  bool operator==(T const& x) const;
+  auto operator==(T const& x) const -> bool;
   template <typename T, typename = ValidateType<T>>
-  bool operator!=(T const& x) const;
+  auto operator!=(T const& x) const -> bool;
   template <typename T, typename = ValidateType<T>>
-  bool operator<(T const& x) const;
+  auto operator<(T const& x) const -> bool;
 
   // get throws BadVariantCast on bad casts
 
   template <typename T, typename = ValidateType<T>>
-  T const& get() const;
+  auto get() const -> T const&;
 
   template <typename T, typename = ValidateType<T>>
-  T& get();
+  auto get() -> T&;
 
   // maybe() and ptr() do not throw if this MVariant does not hold the given
   // type, instead simply returns Nothing / nullptr.
 
   template <typename T, typename = ValidateType<T>>
-  Maybe<T> maybe() const;
+  auto maybe() const -> std::optional<T>;
 
   template <typename T, typename = ValidateType<T>>
-  T const* ptr() const;
+  auto ptr() const -> T const*;
 
   template <typename T, typename = ValidateType<T>>
-  T* ptr();
+  auto ptr() -> T*;
 
   template <typename T, typename = ValidateType<T>>
-  bool is() const;
+  [[nodiscard]] auto is() const -> bool;
 
   // Takes the given value out and leaves this empty
   template <typename T, typename = ValidateType<T>>
-  T take();
+  auto take() -> T;
 
   // Returns a Variant of all the allowed types if non-empty, throws
   // BadVariantCast if empty.
-  Variant<Types...> value() const;
+  auto value() const -> Variant<Types...>;
 
   // Moves the contents of this MVariant into the given Variant if non-empty,
   // throws BadVariantCast if empty.
-  Variant<Types...> takeValue();
+  auto takeValue() -> Variant<Types...>;
 
-  bool empty() const;
+  [[nodiscard]] auto empty() const -> bool;
   void reset();
 
   // Equivalent to !empty()
@@ -327,17 +316,17 @@ public:
   // make this MVariant hold a specific type.  Types are always indexed in the
   // order they are specified starting from 1.  A type index of 0 indicates an
   // empty MVariant.
-  VariantTypeIndex typeIndex() const;
+  [[nodiscard]] auto typeIndex() const -> std::uint8_t;
 
   // Make this MVariant hold a new default constructed type of the given type
   // index.  Can only be used if every alternative type has a default
   // constructor.
-  void makeType(VariantTypeIndex typeIndex);
+  void makeType(std::uint8_t typeIndex);
 
 private:
   struct MVariantEmpty {
-    bool operator==(MVariantEmpty const& rhs) const;
-    bool operator<(MVariantEmpty const& rhs) const;
+    auto operator==(MVariantEmpty const& rhs) const -> bool;
+    auto operator<(MVariantEmpty const& rhs) const -> bool;
   };
 
   template <typename Function>
@@ -369,7 +358,7 @@ private:
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-constexpr VariantTypeIndex Variant<FirstType, RestTypes...>::typeIndexOf() {
+constexpr auto Variant<FirstType, RestTypes...>::typeIndexOf() -> std::uint8_t {
   return TypeIndex<T>::value;
 }
 
@@ -391,7 +380,7 @@ Variant<FirstType, RestTypes...>::Variant(T&& x) {
 
 template <typename FirstType, typename... RestTypes>
 Variant<FirstType, RestTypes...>::Variant(Variant const& x) {
-  x.call([&](auto const& t) {
+  x.call([&](auto const& t) -> auto {
       assign(t);
     });
 }
@@ -399,7 +388,7 @@ Variant<FirstType, RestTypes...>::Variant(Variant const& x) {
 template <typename FirstType, typename... RestTypes>
 Variant<FirstType, RestTypes...>::Variant(Variant&& x)
   noexcept(detail::IsNothrowMoveConstructible<FirstType, RestTypes...>::value) {
-  x.call([&](auto& t) {
+  x.call([&](auto& t) -> auto {
       assign(std::move(t));
     });
 }
@@ -410,11 +399,11 @@ Variant<FirstType, RestTypes...>::~Variant() {
 }
 
 template <typename FirstType, typename... RestTypes>
-Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Variant const& x) {
+auto Variant<FirstType, RestTypes...>::operator=(Variant const& x) -> Variant<FirstType, RestTypes...>& {
   if (&x == this)
     return *this;
 
-  x.call([&](auto const& t) {
+  x.call([&](auto const& t) -> auto {
       assign(t);
     });
 
@@ -422,12 +411,12 @@ Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Va
 }
 
 template <typename FirstType, typename... RestTypes>
-Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Variant&& x)
-  noexcept(detail::IsNothrowMoveAssignable<FirstType, RestTypes...>::value) {
+auto Variant<FirstType, RestTypes...>::operator=(Variant&& x)
+  noexcept(detail::IsNothrowMoveAssignable<FirstType, RestTypes...>::value) -> Variant<FirstType, RestTypes...>& {
   if (&x == this)
     return *this;
 
-  x.call([&](auto& t) {
+  x.call([&](auto& t) -> auto {
       assign(std::move(t));
     });
 
@@ -436,21 +425,21 @@ Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(Va
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(T const& x) {
+auto Variant<FirstType, RestTypes...>::operator=(T const& x) -> Variant<FirstType, RestTypes...>& {
   assign(x);
   return *this;
 }
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-Variant<FirstType, RestTypes...>& Variant<FirstType, RestTypes...>::operator=(T&& x) {
+auto Variant<FirstType, RestTypes...>::operator=(T&& x) -> Variant<FirstType, RestTypes...>& {
   assign(std::forward<T>(x));
   return *this;
 }
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-T const& Variant<FirstType, RestTypes...>::get() const {
+auto Variant<FirstType, RestTypes...>::get() const -> T const& {
   if (!is<T>())
     throw BadVariantCast();
   return *(T*)(&m_buffer);
@@ -458,7 +447,7 @@ T const& Variant<FirstType, RestTypes...>::get() const {
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-T& Variant<FirstType, RestTypes...>::get() {
+auto Variant<FirstType, RestTypes...>::get() -> T& {
   if (!is<T>())
     throw BadVariantCast();
   return *(T*)(&m_buffer);
@@ -466,23 +455,15 @@ T& Variant<FirstType, RestTypes...>::get() {
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-Maybe<T> Variant<FirstType, RestTypes...>::maybe() const {
-  if (!is<T>())
-    return {};
-  return *(T*)(&m_buffer);
+auto Variant<FirstType, RestTypes...>::maybe() const -> std::optional<T> {
+  if (is<T>())
+    return get<T>();
+  return std::nullopt;
 }
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-T const* Variant<FirstType, RestTypes...>::ptr() const {
-  if (!is<T>())
-    return nullptr;
-  return (T*)(&m_buffer);
-}
-
-template <typename FirstType, typename... RestTypes>
-template <typename T, typename>
-T* Variant<FirstType, RestTypes...>::ptr() {
+auto Variant<FirstType, RestTypes...>::ptr() const -> T const* {
   if (!is<T>())
     return nullptr;
   return (T*)(&m_buffer);
@@ -490,58 +471,66 @@ T* Variant<FirstType, RestTypes...>::ptr() {
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-bool Variant<FirstType, RestTypes...>::is() const {
+auto Variant<FirstType, RestTypes...>::ptr() -> T* {
+  if (!is<T>())
+    return nullptr;
+  return (T*)(&m_buffer);
+}
+
+template <typename FirstType, typename... RestTypes>
+template <typename T, typename>
+auto Variant<FirstType, RestTypes...>::is() const -> bool {
   return m_typeIndex == TypeIndex<T>::value;
 }
 
 template <typename FirstType, typename... RestTypes>
 template <typename Function>
-decltype(auto) Variant<FirstType, RestTypes...>::call(Function&& function) {
+auto Variant<FirstType, RestTypes...>::call(Function&& function) -> decltype(auto) {
   return doCall<Function, FirstType, RestTypes...>(std::forward<Function>(function));
 }
 
 template <typename FirstType, typename... RestTypes>
 template <typename Function>
-decltype(auto) Variant<FirstType, RestTypes...>::call(Function&& function) const {
+auto Variant<FirstType, RestTypes...>::call(Function&& function) const -> decltype(auto) {
   return doCall<Function, FirstType, RestTypes...>(std::forward<Function>(function));
 }
 
 template <typename FirstType, typename... RestTypes>
-VariantTypeIndex Variant<FirstType, RestTypes...>::typeIndex() const {
+auto Variant<FirstType, RestTypes...>::typeIndex() const -> std::uint8_t {
   return m_typeIndex;
 }
 
 template <typename FirstType, typename... RestTypes>
-void Variant<FirstType, RestTypes...>::makeType(VariantTypeIndex typeIndex) {
+void Variant<FirstType, RestTypes...>::makeType(std::uint8_t typeIndex) {
   return doMakeType<FirstType, RestTypes...>(typeIndex);
 }
 
 template <typename FirstType, typename... RestTypes>
-bool Variant<FirstType, RestTypes...>::invalid() const {
+auto Variant<FirstType, RestTypes...>::invalid() const -> bool {
   return m_typeIndex == InvalidVariantType;
 }
 
 template <typename FirstType, typename... RestTypes>
-bool Variant<FirstType, RestTypes...>::operator==(Variant const& x) const {
+auto Variant<FirstType, RestTypes...>::operator==(Variant const& x) const -> bool {
   if (this == &x) {
     return true;
   } else if (typeIndex() != x.typeIndex()) {
     return false;
   } else {
-    return call([&x](auto const& t) {
-        typedef typename std::decay<decltype(t)>::type T;
+    return call([&x](auto const& t) -> auto {
+        using T =  std::decay_t<decltype(t)>;
         return t == x.template get<T>();
       });
   }
 }
 
 template <typename FirstType, typename... RestTypes>
-bool Variant<FirstType, RestTypes...>::operator!=(Variant const& x) const {
+auto Variant<FirstType, RestTypes...>::operator!=(Variant const& x) const -> bool {
   return !operator==(x);
 }
 
 template <typename FirstType, typename... RestTypes>
-bool Variant<FirstType, RestTypes...>::operator<(Variant const& x) const {
+auto Variant<FirstType, RestTypes...>::operator<(Variant const& x) const -> bool {
   if (this == &x) {
     return false;
   } else {
@@ -550,8 +539,8 @@ bool Variant<FirstType, RestTypes...>::operator<(Variant const& x) const {
     if (sti != xti) {
       return sti < xti;
     } else {
-      return call([&x](auto const& t) {
-          typedef typename std::decay<decltype(t)>::type T;
+      return call([&x](auto const& t) -> auto {
+          using T =  std::decay_t<decltype(t)>;
           return t < x.template get<T>();
         });
     }
@@ -560,7 +549,7 @@ bool Variant<FirstType, RestTypes...>::operator<(Variant const& x) const {
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-bool Variant<FirstType, RestTypes...>::operator==(T const& x) const {
+auto Variant<FirstType, RestTypes...>::operator==(T const& x) const -> bool {
   if (auto p = ptr<T>())
     return *p == x;
   return false;
@@ -568,13 +557,13 @@ bool Variant<FirstType, RestTypes...>::operator==(T const& x) const {
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-bool Variant<FirstType, RestTypes...>::operator!=(T const& x) const {
+auto Variant<FirstType, RestTypes...>::operator!=(T const& x) const -> bool {
   return !operator==(x);
 }
 
 template <typename FirstType, typename... RestTypes>
 template <typename T, typename>
-bool Variant<FirstType, RestTypes...>::operator<(T const& x) const {
+auto Variant<FirstType, RestTypes...>::operator<(T const& x) const -> bool {
   if (auto p = ptr<T>())
     return *p == x;
   return m_typeIndex < TypeIndex<T>::value;
@@ -584,8 +573,8 @@ template <typename FirstType, typename... RestTypes>
 void Variant<FirstType, RestTypes...>::destruct() {
   if (m_typeIndex != InvalidVariantType) {
     try {
-      call([](auto& t) {
-          typedef typename std::decay<decltype(t)>::type T;
+      call([](auto& t) -> auto {
+          using T =  std::decay_t<decltype(t)>;
           t.~T();
         });
       m_typeIndex = InvalidVariantType;
@@ -599,7 +588,7 @@ void Variant<FirstType, RestTypes...>::destruct() {
 template <typename FirstType, typename... RestTypes>
 template <typename T>
 void Variant<FirstType, RestTypes...>::assign(T&& x) {
-  typedef typename std::decay<T>::type AssignType;
+  using AssignType =  std::decay_t<T>;
   if (auto p = ptr<AssignType>()) {
     *p = std::forward<T>(x);
   } else {
@@ -611,7 +600,7 @@ void Variant<FirstType, RestTypes...>::assign(T&& x) {
 
 template <typename FirstType, typename... RestTypes>
 template <typename Function, typename T>
-decltype(auto) Variant<FirstType, RestTypes...>::doCall(Function&& function) {
+auto Variant<FirstType, RestTypes...>::doCall(Function&& function) -> decltype(auto) {
   if (T* p = ptr<T>())
     return function(*p);
   else
@@ -620,7 +609,7 @@ decltype(auto) Variant<FirstType, RestTypes...>::doCall(Function&& function) {
 
 template <typename FirstType, typename... RestTypes>
 template <typename Function, typename T1, typename T2, typename... TL>
-decltype(auto) Variant<FirstType, RestTypes...>::doCall(Function&& function) {
+auto Variant<FirstType, RestTypes...>::doCall(Function&& function) -> decltype(auto) {
   if (T1* p = ptr<T1>())
     return function(*p);
   else
@@ -629,7 +618,7 @@ decltype(auto) Variant<FirstType, RestTypes...>::doCall(Function&& function) {
 
 template <typename FirstType, typename... RestTypes>
 template <typename Function, typename T>
-decltype(auto) Variant<FirstType, RestTypes...>::doCall(Function&& function) const {
+auto Variant<FirstType, RestTypes...>::doCall(Function&& function) const -> decltype(auto) {
   if (T const* p = ptr<T>())
     return function(*p);
   else
@@ -638,7 +627,7 @@ decltype(auto) Variant<FirstType, RestTypes...>::doCall(Function&& function) con
 
 template <typename FirstType, typename... RestTypes>
 template <typename Function, typename T1, typename T2, typename... TL>
-decltype(auto) Variant<FirstType, RestTypes...>::doCall(Function&& function) const {
+auto Variant<FirstType, RestTypes...>::doCall(Function&& function) const -> decltype(auto) {
   if (T1 const* p = ptr<T1>())
     return function(*p);
   else
@@ -647,7 +636,7 @@ decltype(auto) Variant<FirstType, RestTypes...>::doCall(Function&& function) con
 
 template <typename FirstType, typename... RestTypes>
 template <typename First>
-void Variant<FirstType, RestTypes...>::doMakeType(VariantTypeIndex typeIndex) {
+void Variant<FirstType, RestTypes...>::doMakeType(std::uint8_t typeIndex) {
   if (typeIndex == 0)
     *this = First();
   else
@@ -656,7 +645,7 @@ void Variant<FirstType, RestTypes...>::doMakeType(VariantTypeIndex typeIndex) {
 
 template <typename FirstType, typename... RestTypes>
 template <typename First, typename Second, typename... Rest>
-void Variant<FirstType, RestTypes...>::doMakeType(VariantTypeIndex typeIndex) {
+void Variant<FirstType, RestTypes...>::doMakeType(std::uint8_t typeIndex) {
   if (typeIndex == 0)
     *this = First();
   else
@@ -665,12 +654,12 @@ void Variant<FirstType, RestTypes...>::doMakeType(VariantTypeIndex typeIndex) {
 
 template <typename... Types>
 template <typename T, typename>
-constexpr VariantTypeIndex MVariant<Types...>::typeIndexOf() {
+constexpr auto MVariant<Types...>::typeIndexOf() -> std::uint8_t {
   return Variant<MVariantEmpty, Types...>::template typeIndexOf<T>();
 }
 
 template <typename... Types>
-MVariant<Types...>::MVariant() {}
+MVariant<Types...>::MVariant() = default;
 
 template <typename... Types>
 MVariant<Types...>::MVariant(MVariant const& x)
@@ -703,10 +692,10 @@ MVariant<Types...>::MVariant(T&& x)
   : m_variant(std::forward<T>(x)) {}
 
 template <typename... Types>
-MVariant<Types...>::~MVariant() {}
+MVariant<Types...>::~MVariant() = default;
 
 template <typename... Types>
-MVariant<Types...>& MVariant<Types...>::operator=(MVariant const& x) {
+auto MVariant<Types...>::operator=(MVariant const& x) -> MVariant<Types...>& {
   try {
     m_variant = x.m_variant;
   } catch (...) {
@@ -718,7 +707,7 @@ MVariant<Types...>& MVariant<Types...>::operator=(MVariant const& x) {
 }
 
 template <typename... Types>
-MVariant<Types...>& MVariant<Types...>::operator=(MVariant&& x) {
+auto MVariant<Types...>::operator=(MVariant&& x) -> MVariant<Types...>& {
   try {
     m_variant = std::move(x.m_variant);
   } catch (...) {
@@ -731,7 +720,7 @@ MVariant<Types...>& MVariant<Types...>::operator=(MVariant&& x) {
 
 template <typename... Types>
 template <typename T, typename>
-MVariant<Types...>& MVariant<Types...>::operator=(T const& x) {
+auto MVariant<Types...>::operator=(T const& x) -> MVariant<Types...>& {
   try {
     m_variant = x;
   } catch (...) {
@@ -744,7 +733,7 @@ MVariant<Types...>& MVariant<Types...>::operator=(T const& x) {
 
 template <typename... Types>
 template <typename T, typename>
-MVariant<Types...>& MVariant<Types...>::operator=(T&& x) {
+auto MVariant<Types...>::operator=(T&& x) -> MVariant<Types...>& {
   try {
     m_variant = std::forward<T>(x);
   } catch (...) {
@@ -756,117 +745,117 @@ MVariant<Types...>& MVariant<Types...>::operator=(T&& x) {
 }
 
 template <typename... Types>
-MVariant<Types...>& MVariant<Types...>::operator=(Variant<Types...> const& x) {
-  x.call([this](auto const& t) {
+auto MVariant<Types...>::operator=(Variant<Types...> const& x) -> MVariant<Types...>& {
+  x.call([this](auto const& t) -> auto {
       *this = t;
     });
   return *this;
 }
 
 template <typename... Types>
-MVariant<Types...>& MVariant<Types...>::operator=(Variant<Types...>&& x) {
-  x.call([this](auto& t) {
+auto MVariant<Types...>::operator=(Variant<Types...>&& x) -> MVariant<Types...>& {
+  x.call([this](auto& t) -> auto {
       *this = std::move(t);
     });
   return *this;
 }
 
 template <typename... Types>
-bool MVariant<Types...>::operator==(MVariant const& x) const {
+auto MVariant<Types...>::operator==(MVariant const& x) const -> bool {
   return m_variant == x.m_variant;
 }
 
 template <typename... Types>
-bool MVariant<Types...>::operator!=(MVariant const& x) const {
+auto MVariant<Types...>::operator!=(MVariant const& x) const -> bool {
   return m_variant != x.m_variant;
 }
 
 template <typename... Types>
-bool MVariant<Types...>::operator<(MVariant const& x) const {
+auto MVariant<Types...>::operator<(MVariant const& x) const -> bool {
   return m_variant < x.m_variant;
 }
 
 template <typename... Types>
 template <typename T, typename>
-bool MVariant<Types...>::operator==(T const& x) const {
+auto MVariant<Types...>::operator==(T const& x) const -> bool {
   return m_variant == x;
 }
 
 template <typename... Types>
 template <typename T, typename>
-bool MVariant<Types...>::operator!=(T const& x) const {
+auto MVariant<Types...>::operator!=(T const& x) const -> bool {
   return m_variant != x;
 }
 
 template <typename... Types>
 template <typename T, typename>
-bool MVariant<Types...>::operator<(T const& x) const {
+auto MVariant<Types...>::operator<(T const& x) const -> bool {
   return m_variant < x;
 }
 
 template <typename... Types>
 template <typename T, typename>
-T const& MVariant<Types...>::get() const {
+auto MVariant<Types...>::get() const -> T const& {
   return m_variant.template get<T>();
 }
 
 template <typename... Types>
 template <typename T, typename>
-T& MVariant<Types...>::get() {
+auto MVariant<Types...>::get() -> T& {
   return m_variant.template get<T>();
 }
 
 template <typename... Types>
 template <typename T, typename>
-Maybe<T> MVariant<Types...>::maybe() const {
+auto MVariant<Types...>::maybe() const -> std::optional<T> {
   return m_variant.template maybe<T>();
 }
 
 template <typename... Types>
 template <typename T, typename>
-T const* MVariant<Types...>::ptr() const {
+auto MVariant<Types...>::ptr() const -> T const* {
   return m_variant.template ptr<T>();
 }
 
 template <typename... Types>
 template <typename T, typename>
-T* MVariant<Types...>::ptr() {
+auto MVariant<Types...>::ptr() -> T* {
   return m_variant.template ptr<T>();
 }
 
 template <typename... Types>
 template <typename T, typename>
-bool MVariant<Types...>::is() const {
+auto MVariant<Types...>::is() const -> bool {
   return m_variant.template is<T>();
 }
 
 template <typename... Types>
 template <typename T, typename>
-T MVariant<Types...>::take() {
+auto MVariant<Types...>::take() -> T {
   T t = std::move(m_variant.template get<T>());
   m_variant = MVariantEmpty();
   return t;
 }
 
 template <typename... Types>
-Variant<Types...> MVariant<Types...>::value() const {
+auto MVariant<Types...>::value() const -> Variant<Types...> {
   if (empty())
     throw BadVariantCast();
 
   Variant<Types...> r;
-  call([&r](auto const& v) {
+  call([&r](auto const& v) -> auto {
       r = v;
     });
   return r;
 }
 
 template <typename... Types>
-Variant<Types...> MVariant<Types...>::takeValue() {
+auto MVariant<Types...>::takeValue() -> Variant<Types...> {
   if (empty())
     throw BadVariantCast();
 
   Variant<Types...> r;
-  call([&r](auto& v) {
+  call([&r](auto& v) -> auto {
       r = std::move(v);
     });
   m_variant = MVariantEmpty();
@@ -874,7 +863,7 @@ Variant<Types...> MVariant<Types...>::takeValue() {
 }
 
 template <typename... Types>
-bool MVariant<Types...>::empty() const {
+auto MVariant<Types...>::empty() const -> bool {
   return m_variant.template is<MVariantEmpty>();
 }
 
@@ -901,22 +890,22 @@ void MVariant<Types...>::call(Function&& function) const {
 }
 
 template <typename... Types>
-VariantTypeIndex MVariant<Types...>::typeIndex() const {
+auto MVariant<Types...>::typeIndex() const -> std::uint8_t {
   return m_variant.typeIndex();
 }
 
 template <typename... Types>
-void MVariant<Types...>::makeType(VariantTypeIndex typeIndex) {
+void MVariant<Types...>::makeType(std::uint8_t typeIndex) {
   m_variant.makeType(typeIndex);
 }
 
 template <typename... Types>
-bool MVariant<Types...>::MVariantEmpty::operator==(MVariantEmpty const&) const {
+auto MVariant<Types...>::MVariantEmpty::operator==(MVariantEmpty const&) const -> bool {
   return true;
 }
 
 template <typename... Types>
-bool MVariant<Types...>::MVariantEmpty::operator<(MVariantEmpty const&) const {
+auto MVariant<Types...>::MVariantEmpty::operator<(MVariantEmpty const&) const -> bool {
   return false;
 }
 

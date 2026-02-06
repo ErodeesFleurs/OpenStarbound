@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarToolUserEntity.hpp"
-#include "StarPhysicsEntity.hpp"
 
 namespace Star {
 
@@ -40,7 +39,7 @@ public:
 
 private:
   ToolUserEntity* m_owner;
-  Maybe<ToolHand> m_hand;
+  std::optional<ToolHand> m_hand;
 };
 
 }

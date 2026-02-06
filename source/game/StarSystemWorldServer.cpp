@@ -50,7 +50,7 @@ SystemLocation SystemWorldServer::clientShipLocation(ConnectionId clientId) cons
   return m_ships.get(m_clientShips.get(clientId))->systemLocation();
 }
 
-Maybe<pair<WarpAction, WarpMode>> SystemWorldServer::clientWarpAction(ConnectionId clientId) const {
+std::optional<pair<WarpAction, WarpMode>> SystemWorldServer::clientWarpAction(ConnectionId clientId) const {
   auto ship = m_ships.get(m_clientShips.get(clientId));
   if (auto objectUuid = ship->systemLocation().maybe<Uuid>()) {
     if (auto action = objectWarpAction(*objectUuid)) {
@@ -129,12 +129,12 @@ List<SystemClientShipPtr> SystemWorldServer::shipsAtLocation(SystemLocation cons
 
 List<InstanceWorldId> SystemWorldServer::activeInstanceWorlds() const {
   // Find the warp actions for all ships located at objects
-  List<Maybe<WarpAction>> warpActions = m_clientShips.keys().transformed([this](ConnectionId const& clientId) -> Maybe<WarpAction> {
-      return clientWarpAction(clientId).apply([](auto const& p) { return p.first; });
+  List<std::optional<WarpAction>> warpActions = m_clientShips.keys().transformed([this](ConnectionId const& clientId) -> std::optional<WarpAction> {
+      return clientWarpAction(clientId).transform([](auto const& p) { return p.first; });
     });
   // Return a list of the ones which lead to instance worlds
-  return warpActions.filtered([](Maybe<WarpAction> const& action) {
-      if (action.isNothing())
+  return warpActions.filtered([](std::optional<WarpAction> const& action) {
+      if (!action.has_value())
         return false;
 
       if (auto warpToWorld = action->maybe<WarpToWorld>()) {
@@ -142,7 +142,7 @@ List<InstanceWorldId> SystemWorldServer::activeInstanceWorlds() const {
           return true;
       }
       return false;
-  }).transformed([](Maybe<WarpAction> const& action) { return action->get<WarpToWorld>().world.get<InstanceWorldId>(); });
+  }).transformed([](std::optional<WarpAction> const& action) { return action->get<WarpToWorld>().world.get<InstanceWorldId>(); });
 
 }
 
@@ -287,9 +287,9 @@ void SystemWorldServer::queueUpdatePackets() {
 void SystemWorldServer::handleIncomingPacket(ConnectionId, PacketPtr packet) {
   if (auto objectSpawn = as<SystemObjectSpawnPacket>(packet)) {
     RandomSource rand = RandomSource();
-    Vec2F position = objectSpawn->position.value(randomObjectSpawnPosition(rand));
+    Vec2F position = objectSpawn->position.value_or(randomObjectSpawnPosition(rand));
     auto object = make_shared<SystemObject>(systemObjectConfig(objectSpawn->typeName, objectSpawn->uuid), objectSpawn->uuid, position, time(), objectSpawn->parameters);
-    addObject(object, objectSpawn->position.isValid());
+    addObject(object, objectSpawn->position.has_value());
   }
 }
 

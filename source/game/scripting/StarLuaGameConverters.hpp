@@ -9,28 +9,29 @@
 #include "StarCollectionDatabase.hpp"
 #include "StarBehaviorState.hpp"
 #include "StarDrawable.hpp"
-#include "StarRpcThreadPromise.hpp"
 #include "StarLuaConverters.hpp" // IWYU pragma: keep
 #include "StarEntity.hpp"
+
+import std;
 
 namespace Star {
 
 template <>
 struct LuaConverter<InventorySlot> {
   static LuaValue from(LuaEngine& engine, InventorySlot k);
-  static Maybe<InventorySlot> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<InventorySlot> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<CollisionKind> {
   static LuaValue from(LuaEngine& engine, CollisionKind k);
-  static Maybe<CollisionKind> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<CollisionKind> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<CollisionSet> {
   static LuaValue from(LuaEngine& engine, CollisionSet const& s);
-  static Maybe<CollisionSet> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<CollisionSet> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <typename T>
@@ -64,61 +65,61 @@ struct LuaUserDataMethods<PlatformerAStar::PathFinder> {
 
 template <>
 struct LuaConverter<PlatformerAStar::Parameters> {
-  static Maybe<PlatformerAStar::Parameters> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<PlatformerAStar::Parameters> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<ActorJumpProfile> {
   static LuaValue from(LuaEngine& engine, ActorJumpProfile const& v);
-  static Maybe<ActorJumpProfile> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<ActorJumpProfile> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<ActorMovementParameters> {
   static LuaValue from(LuaEngine& engine, ActorMovementParameters const& v);
-  static Maybe<ActorMovementParameters> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<ActorMovementParameters> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<ActorMovementModifiers> {
   static LuaValue from(LuaEngine& engine, ActorMovementModifiers const& v);
-  static Maybe<ActorMovementModifiers> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<ActorMovementModifiers> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<StatModifier> {
   static LuaValue from(LuaEngine& engine, StatModifier const& v);
-  static Maybe<StatModifier> to(LuaEngine& engine, LuaValue v);
+  static std::optional<StatModifier> to(LuaEngine& engine, LuaValue v);
 };
 
 template <>
 struct LuaConverter<EphemeralStatusEffect> {
   static LuaValue from(LuaEngine& engine, EphemeralStatusEffect const& v);
-  static Maybe<EphemeralStatusEffect> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<EphemeralStatusEffect> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<DamageRequest> {
   static LuaValue from(LuaEngine& engine, DamageRequest const& v);
-  static Maybe<DamageRequest> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<DamageRequest> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<DamageNotification> {
   static LuaValue from(LuaEngine& engine, DamageNotification const& v);
-  static Maybe<DamageNotification> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<DamageNotification> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<LiquidLevel> {
   static LuaValue from(LuaEngine& engine, LiquidLevel const& v);
-  static Maybe<LiquidLevel> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<LiquidLevel> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<Drawable> {
   static LuaValue from(LuaEngine& engine, Drawable const& v);
-  static Maybe<Drawable> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<Drawable> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <typename T>
@@ -126,8 +127,8 @@ LuaMethods<RpcPromise<T>> LuaUserDataMethods<RpcPromise<T>>::make() {
   LuaMethods<RpcPromise<T>> methods;
   methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("finished", mem_fn(&RpcPromise<T>::finished));
   methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("succeeded", mem_fn(&RpcPromise<T>::succeeded));
-  methods.template registerMethodWithSignature<Maybe<T>, RpcPromise<T>&>("result", mem_fn(&RpcPromise<T>::result));
-  methods.template registerMethodWithSignature<Maybe<String>, RpcPromise<T>&>("error", mem_fn(&RpcPromise<T>::error));
+  methods.template registerMethodWithSignature<std::optional<T>, RpcPromise<T>&>("result", mem_fn(&RpcPromise<T>::result));
+  methods.template registerMethodWithSignature<std::optional<String>, RpcPromise<T>&>("error", mem_fn(&RpcPromise<T>::error));
   return methods;
 }
 
@@ -136,21 +137,21 @@ LuaMethods<RpcThreadPromise<T>> LuaUserDataMethods<RpcThreadPromise<T>>::make() 
   LuaMethods<RpcThreadPromise<T>> methods;
   methods.template registerMethodWithSignature<bool, RpcThreadPromise<T>&>("finished", mem_fn(&RpcThreadPromise<T>::finished));
   methods.template registerMethodWithSignature<bool, RpcThreadPromise<T>&>("succeeded", mem_fn(&RpcThreadPromise<T>::succeeded));
-  methods.template registerMethodWithSignature<Maybe<T>, RpcThreadPromise<T>&>("result", mem_fn(&RpcThreadPromise<T>::result));
-  methods.template registerMethodWithSignature<Maybe<String>, RpcThreadPromise<T>&>("error", mem_fn(&RpcThreadPromise<T>::error));
+  methods.template registerMethodWithSignature<std::optional<T>, RpcThreadPromise<T>&>("result", mem_fn(&RpcThreadPromise<T>::result));
+  methods.template registerMethodWithSignature<std::optional<String>, RpcThreadPromise<T>&>("error", mem_fn(&RpcThreadPromise<T>::error));
   return methods;
 }
 
 template <>
 struct LuaConverter<Collection> {
   static LuaValue from(LuaEngine& engine, Collection const& c);
-  static Maybe<Collection> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<Collection> to(LuaEngine& engine, LuaValue const& v);
 };
 
 template <>
 struct LuaConverter<Collectable> {
   static LuaValue from(LuaEngine& engine, Collectable const& c);
-  static Maybe<Collectable> to(LuaEngine& engine, LuaValue const& v);
+  static std::optional<Collectable> to(LuaEngine& engine, LuaValue const& v);
 };
 
 // BehaviorState contains Lua references, putting it in a UserData violates

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarPeriodic.hpp"
 #include "StarPeriodicFunction.hpp"
 #include "StarNetElementSystem.hpp"
@@ -55,8 +57,8 @@ public:
   virtual String description() const override;
 
   virtual bool inspectable() const override;
-  virtual Maybe<String> inspectionLogName() const override;
-  virtual Maybe<String> inspectionDescription(String const& species) const override;
+  virtual std::optional<String> inspectionLogName() const override;
+  virtual std::optional<String> inspectionDescription(String const& species) const override;
 
   virtual List<LightSource> lightSources() const override;
 
@@ -99,8 +101,8 @@ public:
 
   virtual List<DamageSource> damageSources() const override;
 
-  virtual Maybe<HitType> queryHit(DamageSource const& source) const override;
-  Maybe<PolyF> hitPoly() const override;
+  virtual std::optional<HitType> queryHit(DamageSource const& source) const override;
+  std::optional<PolyF> hitPoly() const override;
 
   virtual List<DamageNotification> applyDamage(DamageRequest const& damage) override;
 
@@ -113,8 +115,8 @@ public:
   virtual InteractAction interact(InteractRequest const& request) override;
   List<Vec2I> interactiveSpaces() const override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  std::optional<LuaValue> evalScript(String const& code) override;
 
   virtual Vec2F mouthPosition() const override;
   virtual Vec2F mouthPosition(bool ignoreAdjustments) const override;
@@ -139,7 +141,7 @@ public:
   virtual StringSet turnInQuests() const override;
   virtual Vec2F questIndicatorPosition() const override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
   // Check, in order, the passed in object parameters, the config parameters,
   // and then the orientation parameters for the given key.  Returns 'def' if
@@ -223,10 +225,10 @@ private:
   GameTimer m_liquidCheckTimer;
 
   ObjectConfigConstPtr m_config;
-  Maybe<List<ObjectOrientationPtr>> m_orientations;
+  std::optional<List<ObjectOrientationPtr>> m_orientations;
   NetElementHashMap<String, Json> m_parameters;
 
-  NetElementData<Maybe<String>> m_uniqueIdNetState;
+  NetElementData<std::optional<String>> m_uniqueIdNetState;
 
   NetElementInt m_xTilePosition;
   NetElementInt m_yTilePosition;
@@ -238,7 +240,7 @@ private:
   Directives m_colorDirectives;
   String m_colorSuffix;
 
-  Maybe<PeriodicFunction<float>> m_lightFlickering;
+  std::optional<PeriodicFunction<float>> m_lightFlickering;
 
   EntityTileDamageStatusPtr m_tileDamageStatus;
 
@@ -270,7 +272,7 @@ private:
   NetElementString m_chatPortrait;
   NetElementData<Json> m_chatConfig;
 
-  mutable Maybe<pair<size_t, List<Drawable>>> m_orientationDrawablesCache;
+  mutable std::optional<pair<size_t, List<Drawable>>> m_orientationDrawablesCache;
 
   List<InputNode> m_inputNodes;
   List<OutputNode> m_outputNodes;

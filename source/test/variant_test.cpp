@@ -1,5 +1,5 @@
 #include "StarVariant.hpp"
-#include "StarMaybe.hpp"
+#include <optional>
 
 #include "gtest/gtest.h"
 
@@ -48,25 +48,25 @@ TEST(VariantTest, All) {
   EXPECT_TRUE(mv.empty());
 }
 
-TEST(MaybeTest, All) {
-  struct MaybeTester {
+TEST(OptionalTest, All) {
+  struct OptionalTester {
     shared_ptr<int> intptr;
   };
 
-  Maybe<MaybeTester> a, b;
+  std::optional<OptionalTester> a, b;
 
-  EXPECT_FALSE(a.isValid());
+  EXPECT_FALSE(a.has_value());
 
   shared_ptr<int> intptr = make_shared<int>(42);
-  a = MaybeTester{intptr};
-  b = MaybeTester{intptr};
-  EXPECT_TRUE(a.isValid());
+  a = OptionalTester{intptr};
+  b = OptionalTester{intptr};
+  EXPECT_TRUE(a.has_value());
   a = b;
   a = a;
   b = std::move(a);
   a = std::move(b);
   EXPECT_EQ(intptr.use_count(), 2);
-  a = {};
-  EXPECT_FALSE(a.isValid());
+  a = std::nullopt;
+  EXPECT_FALSE(a.has_value());
   EXPECT_EQ(intptr.use_count(), 1);
 }

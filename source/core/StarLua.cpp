@@ -1,7 +1,7 @@
 #include "StarLua.hpp"
 #include "StarArray.hpp"
-#include "StarTime.hpp"
 #include "imgui_lua_bindings.hpp"
+#include <optional>
 
 namespace Star {
 
@@ -49,7 +49,7 @@ LuaInt LuaTable::length() const {
   return engine().tableLength(false, handleIndex());
 }
 
-Maybe<LuaTable> LuaTable::getMetatable() const {
+std::optional<LuaTable> LuaTable::getMetatable() const {
   return engine().tableGetMetatable(handleIndex());
 }
 
@@ -150,7 +150,7 @@ LuaValue LuaConverter<Json>::from(LuaEngine& engine, Json const& v) {
   }
 }
 
-Maybe<Json> LuaConverter<Json>::to(LuaEngine&, LuaValue const& v) {
+std::optional<Json> LuaConverter<Json>::to([[maybe_unused]]LuaEngine& engine, LuaValue const& v) {
   if (v == LuaNil)
     return Json();
 
@@ -176,34 +176,34 @@ LuaValue LuaConverter<JsonObject>::from(LuaEngine& engine, JsonObject v) {
   return engine.luaFrom<Json>(Json(std::move(v)));
 }
 
-Maybe<JsonObject> LuaConverter<JsonObject>::to(LuaEngine& engine, LuaValue v) {
+std::optional<JsonObject> LuaConverter<JsonObject>::to(LuaEngine& engine, LuaValue const& v) {
   auto j = engine.luaTo<Json>(std::move(v));
   if (j.type() == Json::Type::Object) {
     return j.toObject();
   } else if (j.type() == Json::Type::Array) {
     auto list = j.arrayPtr();
     if (list->empty())
-      return JsonObject();
+      return JsonObject{};
   }
 
-  return {};
+  return std::nullopt;
 }
 
 LuaValue LuaConverter<JsonArray>::from(LuaEngine& engine, JsonArray v) {
   return engine.luaFrom<Json>(Json(std::move(v)));
 }
 
-Maybe<JsonArray> LuaConverter<JsonArray>::to(LuaEngine& engine, LuaValue v) {
+std::optional<JsonArray> LuaConverter<JsonArray>::to(LuaEngine& engine, LuaValue const& v) {
   auto j = engine.luaTo<Json>(std::move(v));
   if (j.type() == Json::Type::Array) {
     return j.toArray();
   } else if (j.type() == Json::Type::Object) {
     auto map = j.objectPtr();
     if (map->empty())
-      return JsonArray();
+      return JsonArray{};
   }
 
-  return {};
+  return std::nullopt;
 }
 
 LuaEnginePtr LuaEngine::create(bool safe) {
@@ -393,7 +393,6 @@ LuaEnginePtr LuaEngine::create(bool safe) {
 
 LuaEngine::~LuaEngine() {
   // If we've had a stack space leak, this will not be zero
-  starAssert(lua_gettop(m_state) == 0);
   lua_close(m_state);
 }
 
@@ -551,7 +550,7 @@ LuaContext LuaEngine::createContext() {
   auto context = LuaContext(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
   // Add loadstring
   auto handleIndex = context.handleIndex();
-  context.set("loadstring", createFunction([this, handleIndex](String const& source, Maybe<String> const& name, Maybe<LuaTable> const& env) -> LuaFunction {
+  context.set("loadstring", createFunction([this, handleIndex](String const& source, std::optional<String> const& name, std::optional<LuaTable> const& env) -> LuaFunction {
     String functionName = name ? strf("loadstring: {}", *name) : "loadstring";
     return createFunctionFromSource(env ? env->handleIndex() : handleIndex, source.utf8Ptr(), source.utf8Size(), functionName.utf8Ptr());
   }));
@@ -560,7 +559,7 @@ LuaContext LuaEngine::createContext() {
   return context;
 }
 
-void LuaEngine::collectGarbage(Maybe<unsigned> steps) {
+void LuaEngine::collectGarbage(std::optional<unsigned> steps) {
   for (auto handleIndex : take(m_handleFree)) {
     lua_pushnil(m_handleThread);
     lua_replace(m_handleThread, handleIndex);
@@ -608,7 +607,6 @@ LuaEngine* LuaEngine::luaEnginePtr(lua_State* state) {
 }
 
 void LuaEngine::countHook(lua_State* state, lua_Debug* ar) {
-  starAssert(ar->event == LUA_HOOKCOUNT);
   lua_checkstack(state, 4);
 
   auto self = luaEnginePtr(state);
@@ -893,7 +891,7 @@ void LuaEngine::tableIterate(int handleIndex, function<bool(LuaValue key, LuaVal
   lua_pop(m_state, 1);
 }
 
-Maybe<LuaTable> LuaEngine::tableGetMetatable(int handleIndex) {
+std::optional<LuaTable> LuaEngine::tableGetMetatable(int handleIndex) {
   lua_checkstack(m_state, 2);
 
   pushHandle(m_state, handleIndex);
@@ -1227,7 +1225,6 @@ LuaValue LuaEngine::popLuaValue(lua_State* state) {
   lua_checkstack(state, 1);
 
   LuaValue result;
-  starAssert(!lua_isnone(state, -1));
   switch (lua_type(state, -1)) {
     case LUA_TNIL: {
       lua_pop(state, 1);
@@ -1296,7 +1293,6 @@ void LuaEngine::incrementRecursionLevel() {
 }
 
 void LuaEngine::decrementRecursionLevel() {
-  starAssert(m_recursionLevel != 0);
   --m_recursionLevel;
 }
 
@@ -1400,16 +1396,16 @@ LuaTable LuaDetail::jsonContainerToTable(LuaEngine& engine, Json const& containe
   return table;
 }
 
-Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
+std::optional<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
   JsonObject stringEntries;
   Map<unsigned, Json> intEntries;
   int typeHint = 0;
 
   if (auto mt = table.getMetatable()) {
-    if (auto th = mt->get<Maybe<int>>("__typehint"))
+    if (auto th = mt->get<std::optional<int>>("__typehint"))
       typeHint = *th;
 
-    if (auto nils = mt->get<Maybe<LuaTable>>("__nils")) {
+    if (auto nils = mt->get<std::optional<LuaTable>>("__nils")) {
       bool failedConversion = false;
       // Nil entries just have a garbage integer as their value
       nils->iterate([&](LuaValue const& key, LuaValue const&) {
@@ -1417,7 +1413,7 @@ Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
           intEntries[*i] = Json();
         } else {
           if (auto str = table.engine().luaMaybeTo<String>(key)) {
-            stringEntries[str.take()] = Json();
+            stringEntries[std::move(*str)] = Json();
           } else {
             failedConversion = true;
             return false;
@@ -1426,7 +1422,7 @@ Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
         return true;
       });
       if (failedConversion)
-        return {};
+        return std::nullopt;
     }
   }
 
@@ -1439,7 +1435,7 @@ Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
       }
 
       if (auto i = asInteger(key)) {
-        intEntries[*i] = jsonValue.take();
+        intEntries[*i] = std::move(*jsonValue);
       } else {
         auto stringKey = table.engine().luaMaybeTo<String>(std::move(key));
         if (!stringKey) {
@@ -1447,14 +1443,14 @@ Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
           return false;
         }
 
-        stringEntries[stringKey.take()] = jsonValue.take();
+        stringEntries[std::move(*stringKey)] = std::move(*jsonValue);
       }
 
       return true;
     });
 
   if (failedConversion)
-    return {};
+    return std::nullopt;
 
   bool interpretAsList = stringEntries.empty()
       && (typeHint == 1 || (typeHint != 2 && !intEntries.empty() && prev(intEntries.end())->first == intEntries.size()));
@@ -1478,19 +1474,19 @@ Json LuaDetail::jobjectCreate() {
   return JsonObject();
 }
 
-LuaTable LuaDetail::jarray(LuaEngine& engine, Maybe<LuaTable> table) {
-  if (auto t = table.ptr()) {
-    insertJsonMetatable(engine, *t, Json::Type::Array);
-    return *t;
+LuaTable LuaDetail::jarray(LuaEngine& engine, std::optional<LuaTable> table) {
+  if (table) {
+    insertJsonMetatable(engine, *table, Json::Type::Array);
+    return *table;
   } else {
     return jsonContainerToTable(engine, JsonArray());
   }
 }
 
-LuaTable LuaDetail::jobject(LuaEngine& engine, Maybe<LuaTable> table) {
-  if (auto t = table.ptr()) {
-    insertJsonMetatable(engine, *t, Json::Type::Object);
-    return *t;
+LuaTable LuaDetail::jobject(LuaEngine& engine, std::optional<LuaTable> table) {
+  if (table) {
+    insertJsonMetatable(engine, *table, Json::Type::Object);
+    return *table;
   } else {
     return jsonContainerToTable(engine, JsonObject());
   }
@@ -1499,7 +1495,7 @@ LuaTable LuaDetail::jobject(LuaEngine& engine, Maybe<LuaTable> table) {
 
 void LuaDetail::jcontRemove(LuaTable const& table, LuaValue const& key) {
   if (auto mt = table.getMetatable()) {
-    if (auto nils = mt->rawGet<Maybe<LuaTable>>("__nils"))
+    if (auto nils = mt->rawGet<std::optional<LuaTable>>("__nils"))
       nils->rawSet(key, LuaNil);
   }
 
@@ -1512,10 +1508,10 @@ size_t LuaDetail::jcontSize(LuaTable const& table) {
   bool hintList = false;
 
   if (auto mt = table.getMetatable()) {
-    if (mt->rawGet<Maybe<int>>("__typehint") == 1)
+    if (mt->rawGet<std::optional<int>>("__typehint") == 1)
       hintList = true;
 
-    if (auto nils = mt->rawGet<Maybe<LuaTable>>("__nils")) {
+    if (auto nils = mt->rawGet<std::optional<LuaTable>>("__nils")) {
       nils->iterate([&](LuaValue const& key, LuaValue const&) {
         auto i = asInteger(key);
         if (i && *i >= 0)
@@ -1544,7 +1540,7 @@ size_t LuaDetail::jcontSize(LuaTable const& table) {
 
 void LuaDetail::jcontResize(LuaTable const& table, size_t targetSize) {
   if (auto mt = table.getMetatable()) {
-    if (auto nils = mt->rawGet<Maybe<LuaTable>>("__nils")) {
+    if (auto nils = mt->rawGet<std::optional<LuaTable>>("__nils")) {
       nils->iterate([&](LuaValue const& key, LuaValue const&) {
         auto i = asInteger(key);
         if (i && *i > 0 && (size_t)*i > targetSize)
@@ -1562,7 +1558,7 @@ void LuaDetail::jcontResize(LuaTable const& table, size_t targetSize) {
   table.set(targetSize, table.get(targetSize));
 }
 
-Maybe<LuaInt> LuaDetail::asInteger(LuaValue const& v) {
+std::optional<LuaInt> LuaDetail::asInteger(LuaValue const& v) {
   if (v.is<LuaInt>())
     return v.get<LuaInt>();
   if (v.is<LuaFloat>()) {

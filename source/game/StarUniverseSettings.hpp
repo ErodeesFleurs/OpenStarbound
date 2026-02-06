@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarThread.hpp"
 #include "StarJson.hpp"
 #include "StarUuid.hpp"
@@ -29,7 +31,7 @@ public:
   Uuid uuid() const;
   StringSet flags() const;
   void setFlag(String const& flag);
-  Maybe<List<UniverseFlagAction>> pullPendingFlagActions();
+  std::optional<List<UniverseFlagAction>> pullPendingFlagActions();
   List<UniverseFlagAction> currentFlagActions() const;
   List<UniverseFlagAction> currentFlagActionsForInstanceWorld(String const& instanceName) const;
   void resetFlags();

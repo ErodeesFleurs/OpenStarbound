@@ -10,7 +10,7 @@
 
 namespace Star {
 
-ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
+ServerClientContext::ServerClientContext(ConnectionId clientId, std::optional<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
     String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks)
   : m_clientId(clientId),
     m_remoteAddress(remoteAddress),
@@ -77,7 +77,7 @@ ConnectionId ServerClientContext::clientId() const {
   return m_clientId;
 }
 
-Maybe<HostAddress> const& ServerClientContext::remoteAddress() const {
+std::optional<HostAddress> const& ServerClientContext::remoteAddress() const {
   return m_remoteAddress;
 }
 
@@ -131,14 +131,14 @@ void ServerClientContext::setShipLocation(SystemLocation location) {
   m_shipSystemLocation = location;
 }
 
-Maybe<pair<WarpAction, WarpMode>> ServerClientContext::orbitWarpAction() const {
+std::optional<pair<WarpAction, WarpMode>> ServerClientContext::orbitWarpAction() const {
   RecursiveMutexLocker locker(m_mutex);
   return m_orbitWarpActionNetState.get();
 }
 
-void ServerClientContext::setOrbitWarpAction(Maybe<pair<WarpAction, WarpMode>> warpAction) {
+void ServerClientContext::setOrbitWarpAction(std::optional<pair<WarpAction, WarpMode>> warpAction) {
   RecursiveMutexLocker locker(m_mutex);
-  m_orbitWarpActionNetState.set(warpAction);
+  m_orbitWarpActionNetState.set(std::move(warpAction));
 }
 
 bool ServerClientContext::isAdmin() const {

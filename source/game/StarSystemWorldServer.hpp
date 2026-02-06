@@ -1,5 +1,9 @@
 #pragma once
 
+#include <optional>
+
+#include "StarGameTypes.hpp"
+#include "StarRandom.hpp"
 #include "StarSystemWorld.hpp"
 #include "StarUuid.hpp"
 
@@ -22,7 +26,7 @@ public:
   // planet coordinates while orbiting a planet
   SystemClientShipPtr clientShip(ConnectionId clientId) const;
   SystemLocation clientShipLocation(ConnectionId clientId) const;
-  Maybe<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId) const;
+  std::optional<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId) const;
   SkyParameters clientSkyParameters(ConnectionId clientId) const;
 
   List<ConnectionId> clients() const;
@@ -68,7 +72,7 @@ private:
 
   // setting this to true asynchronously triggers storage from the server thread
   bool m_triggerStorage;
-  
+
   double m_lastSpawn;
   double m_objectSpawnTime;
 

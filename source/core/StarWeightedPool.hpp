@@ -167,7 +167,7 @@ size_t WeightedPool<Item>::selectIndex(uint64_t seed) const {
 template <typename Item>
 size_t WeightedPool<Item>::selectIndex(double target) const {
   if (m_items.empty())
-    return NPos;
+    return std::numeric_limits<std::size_t>::max();
 
   // Test a randomly generated target against each weighted item in turn, and
   // see if that weighted item's weight value crosses the target.  This way, a

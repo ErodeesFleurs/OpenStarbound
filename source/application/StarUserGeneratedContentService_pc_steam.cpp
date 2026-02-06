@@ -15,7 +15,7 @@ StringList SteamUserGeneratedContentService::subscribedContentIds() const {
     });
 }
 
-Maybe<String> SteamUserGeneratedContentService::contentDownloadDirectory(String const& contentId) const {
+std::optional<String> SteamUserGeneratedContentService::contentDownloadDirectory(String const& contentId) const {
   PublishedFileId_t id = lexicalCast<PublishedFileId_t>(contentId);
   uint32 itemState = SteamUGC()->GetItemState(id);
   if (itemState & k_EItemStateInstalled) {

@@ -1,39 +1,38 @@
 #pragma once
 
 #include "StarDataStream.hpp"
+#include "StarException.hpp"
 #include "StarVariant.hpp"
 #include "StarString.hpp"
-#include "StarXXHash.hpp"
+#include "StarConfig.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(JsonException, StarException);
-STAR_EXCEPTION(JsonParsingException, StarException);
+class Json;
 
-STAR_CLASS(Json);
+using JsonException = ExceptionDerived<"JsonException">;
+using JsonTypeException = ExceptionDerived<"JsonTypeException">;
 
-typedef List<Json> JsonArray;
-typedef shared_ptr<JsonArray const> JsonArrayConstPtr;
-
-typedef StringMap<Json> JsonObject;
-typedef shared_ptr<JsonObject const> JsonObjectConstPtr;
-
+using JsonArray = List<Json>;
+using JsonObject = StringMap<Json>;
 // Class for holding representation of JSON data.  Immutable and implicitly
 // shared.
 class Json {
 public:
   template <typename Container>
   struct IteratorWrapper {
-    typedef typename Container::const_iterator const_iterator;
-    typedef const_iterator iterator;
+    using const_iterator = typename Container::const_iterator;
+    using iterator = const_iterator;
 
-    const_iterator begin() const;
-    const_iterator end() const;
+    auto begin() const -> const_iterator;
+    auto end() const -> const_iterator;
 
-    shared_ptr<Container const> ptr;
+    std::shared_ptr<Container const> ptr;
   };
 
-  enum class Type : uint8_t {
+  enum class Type : std::uint8_t {
     Null = 0,
     Float = 1,
     Bool = 2,
@@ -43,20 +42,20 @@ public:
     Object = 6
   };
 
-  static String typeName(Type t);
-  static Type typeFromName(String const& t);
+  static auto typeName(Type t) -> String;
+  static auto typeFromName(String const& t) -> Type;
 
-  static Json ofType(Type t);
+  static auto ofType(Type t) -> Json;
 
   // Parses JSON or JSON sub-type
-  static Json parse(String const& string);
+  static auto parse(String const& string) -> Json;
 
   // Parses JSON sequence
-  static Json parseSequence(String const& sequence);
+  static auto parseSequence(String const& sequence) -> Json;
 
   // Parses JSON object or array only (the only top level types allowed by
   // JSON)
-  static Json parseJson(String const& json);
+  static auto parseJson(String const& json) -> Json;
 
   // Constructs type Null
   Json();
@@ -85,209 +84,209 @@ public:
   // Bools, Strings, Arrays, Objects, and Null are not automatically
   // convertible to any other type.
 
-  double toDouble() const;
-  float toFloat() const;
-  bool toBool() const;
-  int64_t toInt() const;
-  uint64_t toUInt() const;
-  String toString() const;
-  JsonArray toArray() const;
-  JsonObject toObject() const;
+  [[nodiscard]] auto toDouble() const -> double;
+  [[nodiscard]] auto toFloat() const -> float;
+  [[nodiscard]] auto toBool() const -> bool;
+  [[nodiscard]] auto toInt() const -> std::int64_t;
+  [[nodiscard]] auto toUInt() const -> std::uint64_t;
+  [[nodiscard]] auto toString() const -> String;
+  [[nodiscard]] auto toArray() const -> JsonArray;
+  [[nodiscard]] auto toObject() const -> JsonObject;
 
   // Internally, String, JsonArray, and JsonObject are shared via shared_ptr
   // since this class is immutable.  Use these methods to get at this pointer
   // without causing a copy.
-  StringConstPtr stringPtr() const;
-  JsonArrayConstPtr arrayPtr() const;
-  JsonObjectConstPtr objectPtr() const;
+  [[nodiscard]] auto stringPtr() const -> ConstPtr<String>;
+  [[nodiscard]] auto arrayPtr() const -> ConstPtr<JsonArray>;
+  [[nodiscard]] auto objectPtr() const -> ConstPtr<JsonObject>;
 
   // As a convenience, make it easy to safely and quickly iterate over a
   // JsonArray or JsonObject contents by holding the container pointer.
-  IteratorWrapper<JsonArray> iterateArray() const;
-  IteratorWrapper<JsonObject> iterateObject() const;
+  [[nodiscard]] auto iterateArray() const -> IteratorWrapper<JsonArray>;
+  [[nodiscard]] auto iterateObject() const -> IteratorWrapper<JsonObject>;
 
   // opt* methods work like this, if the json is null, it returns none.  If the
   // json is convertible, it returns the converted type, otherwise an exception
   // occurrs.
-  Maybe<Json> opt() const;
-  Maybe<double> optDouble() const;
-  Maybe<float> optFloat() const;
-  Maybe<bool> optBool() const;
-  Maybe<int64_t> optInt() const;
-  Maybe<uint64_t> optUInt() const;
-  Maybe<String> optString() const;
-  Maybe<JsonArray> optArray() const;
-  Maybe<JsonObject> optObject() const;
+  [[nodiscard]] auto opt() const -> std::optional<Json>;
+  [[nodiscard]] auto optDouble() const -> std::optional<double>;
+  [[nodiscard]] auto optFloat() const -> std::optional<float>;
+  [[nodiscard]] auto optBool() const -> std::optional<bool>;
+  [[nodiscard]] auto optInt() const -> std::optional<std::int64_t>;
+  [[nodiscard]] auto optUInt() const -> std::optional<std::uint64_t>;
+  [[nodiscard]] auto optString() const -> std::optional<String>;
+  [[nodiscard]] auto optArray() const -> std::optional<JsonArray>;
+  [[nodiscard]] auto optObject() const -> std::optional<JsonObject>;
 
   // Size of array / object type json
-  size_t size() const;
+  [[nodiscard]] auto size() const -> std::size_t;
 
   // If this json is array type, get the value at the given index
-  Json get(size_t index) const;
-  double getDouble(size_t index) const;
-  float getFloat(size_t index) const;
-  bool getBool(size_t index) const;
-  int64_t getInt(size_t index) const;
-  uint64_t getUInt(size_t index) const;
-  String getString(size_t index) const;
-  JsonArray getArray(size_t index) const;
-  JsonObject getObject(size_t index) const;
+  [[nodiscard]] auto get(std::size_t index) const -> Json;
+  [[nodiscard]] auto getDouble(std::size_t index) const -> double;
+  [[nodiscard]] auto getFloat(std::size_t index) const -> float;
+  [[nodiscard]] auto getBool(std::size_t index) const -> bool;
+  [[nodiscard]] auto getInt(std::size_t index) const -> std::int64_t;
+  [[nodiscard]] auto getUInt(std::size_t index) const -> std::uint64_t;
+  [[nodiscard]] auto getString(std::size_t index) const -> String;
+  [[nodiscard]] auto getArray(std::size_t index) const -> JsonArray;
+  [[nodiscard]] auto getObject(std::size_t index) const -> JsonObject;
 
   // These versions of get* return default value if the index is out of range,
   // or if the value pointed to is null.
-  Json get(size_t index, Json def) const;
-  double getDouble(size_t index, double def) const;
-  float getFloat(size_t index, float def) const;
-  bool getBool(size_t index, bool def) const;
-  int64_t getInt(size_t index, int64_t def) const;
-  uint64_t getUInt(size_t index, int64_t def) const;
-  String getString(size_t index, String def) const;
-  JsonArray getArray(size_t index, JsonArray def) const;
-  JsonObject getObject(size_t index, JsonObject def) const;
+  [[nodiscard]] auto get(std::size_t index, Json def) const -> Json;
+  [[nodiscard]] auto getDouble(std::size_t index, double def) const -> double;
+  [[nodiscard]] auto getFloat(std::size_t index, float def) const -> float;
+  [[nodiscard]] auto getBool(std::size_t index, bool def) const -> bool;
+  [[nodiscard]] auto getInt(std::size_t index, std::int64_t def) const -> std::int64_t;
+  [[nodiscard]] auto getUInt(std::size_t index, std::int64_t def) const -> std::uint64_t;
+  [[nodiscard]] auto getString(std::size_t index, String def) const -> String;
+  [[nodiscard]] auto getArray(std::size_t index, JsonArray def) const -> JsonArray;
+  [[nodiscard]] auto getObject(std::size_t index, JsonObject def) const -> JsonObject;
 
   // If object type, whether object contains key
-  bool contains(String const& key) const;
+  [[nodiscard]] auto contains(String const& key) const -> bool;
 
   // If this json is object type, get the value for the given key
-  Json get(String const& key) const;
-  double getDouble(String const& key) const;
-  float getFloat(String const& key) const;
-  bool getBool(String const& key) const;
-  int64_t getInt(String const& key) const;
-  uint64_t getUInt(String const& key) const;
-  String getString(String const& key) const;
-  JsonArray getArray(String const& key) const;
-  JsonObject getObject(String const& key) const;
+  [[nodiscard]] auto get(String const& key) const -> Json;
+  [[nodiscard]] auto getDouble(String const& key) const -> double;
+  [[nodiscard]] auto getFloat(String const& key) const -> float;
+  [[nodiscard]] auto getBool(String const& key) const -> bool;
+  [[nodiscard]] auto getInt(String const& key) const -> std::int64_t;
+  [[nodiscard]] auto getUInt(String const& key) const -> std::uint64_t;
+  [[nodiscard]] auto getString(String const& key) const -> String;
+  [[nodiscard]] auto getArray(String const& key) const -> JsonArray;
+  [[nodiscard]] auto getObject(String const& key) const -> JsonObject;
 
   // These versions of get* return the default if the key is missing or the
   // value is null.
-  Json get(String const& key, Json def) const;
-  double getDouble(String const& key, double def) const;
-  float getFloat(String const& key, float def) const;
-  bool getBool(String const& key, bool def) const;
-  int64_t getInt(String const& key, int64_t def) const;
-  uint64_t getUInt(String const& key, int64_t def) const;
-  String getString(String const& key, String def) const;
-  JsonArray getArray(String const& key, JsonArray def) const;
-  JsonObject getObject(String const& key, JsonObject def) const;
+  [[nodiscard]] auto get(String const& key, Json def) const -> Json;
+  [[nodiscard]] auto getDouble(String const& key, double def) const -> double;
+  [[nodiscard]] auto getFloat(String const& key, float def) const -> float;
+  [[nodiscard]] auto getBool(String const& key, bool def) const -> bool;
+  [[nodiscard]] auto getInt(String const& key, std::int64_t def) const -> std::int64_t;
+  [[nodiscard]] auto getUInt(String const& key, std::int64_t def) const -> std::uint64_t;
+  [[nodiscard]] auto getString(String const& key, String def) const -> String;
+  [[nodiscard]] auto getArray(String const& key, JsonArray def) const -> JsonArray;
+  [[nodiscard]] auto getObject(String const& key, JsonObject def) const -> JsonObject;
 
   // Works the same way as opt methods above.  Will never return a null value,
-  // if there is a null entry it will just return an empty Maybe.
-  Maybe<Json> opt(String const& key) const;
-  Maybe<double> optDouble(String const& key) const;
-  Maybe<float> optFloat(String const& key) const;
-  Maybe<bool> optBool(String const& key) const;
-  Maybe<int64_t> optInt(String const& key) const;
-  Maybe<uint64_t> optUInt(String const& key) const;
-  Maybe<String> optString(String const& key) const;
-  Maybe<JsonArray> optArray(String const& key) const;
-  Maybe<JsonObject> optObject(String const& key) const;
+  // if there is a null entry it will just return an empty optional.
+  [[nodiscard]] auto opt(String const& key) const -> std::optional<Json>;
+  [[nodiscard]] auto optDouble(String const& key) const -> std::optional<double>;
+  [[nodiscard]] auto optFloat(String const& key) const -> std::optional<float>;
+  [[nodiscard]] auto optBool(String const& key) const -> std::optional<bool>;
+  [[nodiscard]] auto optInt(String const& key) const -> std::optional<std::int64_t>;
+  [[nodiscard]] auto optUInt(String const& key) const -> std::optional<std::uint64_t>;
+  [[nodiscard]] auto optString(String const& key) const -> std::optional<String>;
+  [[nodiscard]] auto optArray(String const& key) const -> std::optional<JsonArray>;
+  [[nodiscard]] auto optObject(String const& key) const -> std::optional<JsonObject>;
 
   // Combines gets recursively in friendly expressions.  For
   // example, call like this: json.query("path.to.array[3][4]")
-  Json query(String const& path) const;
-  double queryDouble(String const& path) const;
-  float queryFloat(String const& path) const;
-  bool queryBool(String const& path) const;
-  int64_t queryInt(String const& path) const;
-  uint64_t queryUInt(String const& path) const;
-  String queryString(String const& path) const;
-  JsonArray queryArray(String const& path) const;
-  JsonObject queryObject(String const& path) const;
+  [[nodiscard]] auto query(String const& path) const -> Json;
+  [[nodiscard]] auto queryDouble(String const& path) const -> double;
+  [[nodiscard]] auto queryFloat(String const& path) const -> float;
+  [[nodiscard]] auto queryBool(String const& path) const -> bool;
+  [[nodiscard]] auto queryInt(String const& path) const -> std::int64_t;
+  [[nodiscard]] auto queryUInt(String const& path) const -> std::uint64_t;
+  [[nodiscard]] auto queryString(String const& path) const -> String;
+  [[nodiscard]] auto queryArray(String const& path) const -> JsonArray;
+  [[nodiscard]] auto queryObject(String const& path) const -> JsonObject;
 
   // These versions of get* do not throw on missing / null keys anywhere in the
   // query path.
-  Json query(String const& path, Json def) const;
-  double queryDouble(String const& path, double def) const;
-  float queryFloat(String const& path, float def) const;
-  bool queryBool(String const& path, bool def) const;
-  int64_t queryInt(String const& path, int64_t def) const;
-  uint64_t queryUInt(String const& path, uint64_t def) const;
-  String queryString(String const& path, String const& def) const;
-  JsonArray queryArray(String const& path, JsonArray def) const;
-  JsonObject queryObject(String const& path, JsonObject def) const;
+  [[nodiscard]] auto query(String const& path, Json def) const -> Json;
+  [[nodiscard]] auto queryDouble(String const& path, double def) const -> double;
+  [[nodiscard]] auto queryFloat(String const& path, float def) const -> float;
+  [[nodiscard]] auto queryBool(String const& path, bool def) const -> bool;
+  [[nodiscard]] auto queryInt(String const& path, std::int64_t def) const -> std::int64_t;
+  [[nodiscard]] auto queryUInt(String const& path, std::uint64_t def) const -> std::uint64_t;
+  [[nodiscard]] auto queryString(String const& path, String const& def) const -> String;
+  [[nodiscard]] auto queryArray(String const& path, JsonArray def) const -> JsonArray;
+  [[nodiscard]] auto queryObject(String const& path, JsonObject def) const -> JsonObject;
 
   // Returns none on on missing / null keys anywhere in the query path.  Will
-  // never return a null value, just an empty Maybe.
-  Maybe<Json> optQuery(String const& path) const;
-  Maybe<double> optQueryDouble(String const& path) const;
-  Maybe<float> optQueryFloat(String const& path) const;
-  Maybe<bool> optQueryBool(String const& path) const;
-  Maybe<int64_t> optQueryInt(String const& path) const;
-  Maybe<uint64_t> optQueryUInt(String const& path) const;
-  Maybe<String> optQueryString(String const& path) const;
-  Maybe<JsonArray> optQueryArray(String const& path) const;
-  Maybe<JsonObject> optQueryObject(String const& path) const;
+  // never return a null value, just an empty optional.
+  [[nodiscard]] auto optQuery(String const& path) const -> std::optional<Json>;
+  [[nodiscard]] auto optQueryDouble(String const& path) const -> std::optional<double>;
+  [[nodiscard]] auto optQueryFloat(String const& path) const -> std::optional<float>;
+  [[nodiscard]] auto optQueryBool(String const& path) const -> std::optional<bool>;
+  [[nodiscard]] auto optQueryInt(String const& path) const -> std::optional<std::int64_t>;
+  [[nodiscard]] auto optQueryUInt(String const& path) const -> std::optional<std::uint64_t>;
+  [[nodiscard]] auto optQueryString(String const& path) const -> std::optional<String>;
+  [[nodiscard]] auto optQueryArray(String const& path) const -> std::optional<JsonArray>;
+  [[nodiscard]] auto optQueryObject(String const& path) const -> std::optional<JsonObject>;
 
   // Returns a *new* object with the given values set/erased.  Throws if not an
   // object.
-  Json set(String key, Json value) const;
-  Json setPath(String path, Json value) const;
-  Json setAll(JsonObject values) const;
-  Json eraseKey(String key) const;
-  Json erasePath(String path) const;
+  [[nodiscard]] auto set(String key, Json value) const -> Json;
+  [[nodiscard]] auto setPath(String path, Json value) const -> Json;
+  [[nodiscard]] auto setAll(JsonObject values) const -> Json;
+  [[nodiscard]] auto eraseKey(String key) const -> Json;
+  [[nodiscard]] auto erasePath(String path) const -> Json;
 
   // Returns a *new* array with the given values set/inserted/appended/erased.
   // Throws if not an array.
-  Json set(size_t index, Json value) const;
-  Json insert(size_t index, Json value) const;
-  Json append(Json value) const;
-  Json eraseIndex(size_t index) const;
+  [[nodiscard]] auto set(size_t index, Json value) const -> Json;
+  [[nodiscard]] auto insert(size_t index, Json value) const -> Json;
+  [[nodiscard]] auto append(Json value) const -> Json;
+  [[nodiscard]] auto eraseIndex(size_t index) const -> Json;
 
-  Type type() const;
-  String typeName() const;
-  Json convert(Type u) const;
+  [[nodiscard]] auto type() const -> Type;
+  [[nodiscard]] auto typeName() const -> String;
+  [[nodiscard]] auto convert(Type u) const -> Json;
 
-  bool isType(Type type) const;
-  bool canConvert(Type type) const;
+  [[nodiscard]] auto isType(Type type) const -> bool;
+  [[nodiscard]] auto canConvert(Type type) const -> bool;
 
   // isNull returns true when the type of the Json is null.  operator bool() is
   // the opposite of isNull().
-  bool isNull() const;
+  [[nodiscard]] auto isNull() const -> bool;
   explicit operator bool() const;
 
   // Prints JSON or JSON sub-type.  If sort is true, then any object anywhere
   // inside this value will be sorted alphanumerically before being written,
   // resulting in a known *unique* textual representation of the Json that is
   // cross-platform.
-  String repr(int pretty = 0, bool sort = false) const;
+  [[nodiscard]] auto repr(int pretty = 0, bool sort = false) const -> String;
   // Prints JSON object or array only (only top level types allowed by JSON)
-  String printJson(int pretty = 0, bool sort = false) const;
+  [[nodiscard]] auto printJson(int pretty = 0, bool sort = false) const -> String;
   // Same but avoids quotation marks if this is a string
-  String printString() const;
+  [[nodiscard]] auto printString() const -> String;
 
   // operator== and operator!= compare for exact equality with all types, and
   // additionally equality with numeric conversion with Int <-> Float
-  bool operator==(Json const& v) const;
-  bool operator!=(Json const& v) const;
+  auto operator==(Json const& v) const -> bool;
+  auto operator!=(Json const& v) const -> bool;
 
   // Does this Json not share its storage with any other Json?
-  bool unique() const;
+  [[nodiscard]] auto unique() const -> bool;
 
-  void getHash(XXHash3& hasher) const;
+  auto getHash(std::size_t& seed) const -> void;
 
 private:
-  Json const* ptr(size_t index) const;
-  Json const* ptr(String const& key) const;
+  [[nodiscard]] auto ptr(size_t index) const -> Json const*;
+  [[nodiscard]] auto ptr(String const& key) const -> Json const*;
 
-  Variant<Empty, double, bool, int64_t, StringConstPtr, JsonArrayConstPtr, JsonObjectConstPtr> m_data;
+  Variant<Empty, double, bool, std::int64_t, ConstPtr<String>, ConstPtr<JsonArray>, ConstPtr<JsonObject>> m_data;
 };
 
-std::ostream& operator<<(std::ostream& os, Json const& v);
+auto operator<<(std::ostream& os, Json const& v) -> std::ostream&;
 
 // Fixes ambiguity with OrderedHashMap operator<<
-std::ostream& operator<<(std::ostream& os, JsonObject const& v);
+auto operator<<(std::ostream& os, JsonObject const& v) -> std::ostream&;
 
 // Serialize json to DataStream.  Strings are stored as UTF-8, ints are stored
 // as VLQ, doubles as 64 bit.
-DataStream& operator<<(DataStream& ds, Json const& v);
-DataStream& operator>>(DataStream& ds, Json& v);
+auto operator<<(DataStream& ds, Json const& v) -> DataStream&;
+auto operator>>(DataStream& ds, Json& v) -> DataStream&;
 
 // Convenience methods for Json containers
-DataStream& operator<<(DataStream& ds, JsonArray const& l);
-DataStream& operator>>(DataStream& ds, JsonArray& l);
-DataStream& operator<<(DataStream& ds, JsonObject const& m);
-DataStream& operator>>(DataStream& ds, JsonObject& m);
+auto operator<<(DataStream& ds, JsonArray const& l) -> DataStream&;
+auto operator>>(DataStream& ds, JsonArray& l) -> DataStream&;
+auto operator<<(DataStream& ds, JsonObject const& m) -> DataStream&;
+auto operator>>(DataStream& ds, JsonObject& m) -> DataStream&;
 
 // Merges the two given json values and returns the result, by the following
 // rules (applied in order):  If the base value is null, returns the merger.
@@ -295,26 +294,26 @@ DataStream& operator>>(DataStream& ds, JsonObject& m);
 // returns the merger.  If both values are objects, then the resulting object
 // is the combination of both objects, but for each repeated key jsonMerge is
 // called recursively on both values to determine the result.
-Json jsonMerge(Json const& base, Json const& merger);
+auto jsonMerge(Json const& base, Json const& merger) -> Json;
 // Same as above, but applies null mergers.
-Json jsonMergeNulling(Json const& base, Json const& merger);
+auto jsonMergeNulling(Json const& base, Json const& merger) -> Json;
 
 template <typename... T>
-Json jsonMerge(Json const& base, Json const& merger, T const&... rest);
+auto jsonMerge(Json const& base, Json const& merger, T const&... rest) -> Json;
 
 // Similar to jsonMerge, but query only for a single key.  Gets a value equal
 // to jsonMerge(jsons...).query(key, Json()), but much faster than doing an
 // entire merge operation.
 template <typename... T>
-Json jsonMergeQuery(String const& key, Json const& first, T const&... rest);
+auto jsonMergeQuery(String const& key, Json const& first, T const&... rest) -> Json;
 
 // jsonMergeQuery with a default.
 template <typename... T>
-Json jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&... rest);
+auto jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&... rest) -> Json;
 
 template <>
 struct hash<Json> {
-  size_t operator()(Json const& v) const;
+  auto operator()(Json const& v) const -> size_t;
 };
 
 template <typename Container>
@@ -328,22 +327,22 @@ auto Json::IteratorWrapper<Container>::end() const -> const_iterator {
 }
 
 template <typename... T>
-Json jsonMerge(Json const& base, Json const& merger, T const&... rest) {
+auto jsonMerge(Json const& base, Json const& merger, T const&... rest) -> Json {
   return jsonMerge(jsonMerge(base, merger), rest...);
 }
 
 template <typename... T>
-Json jsonMergeQuery(String const&, Json def) {
+auto jsonMergeQuery(String const&, Json def) -> Json {
   return def;
 }
 
 template <typename... T>
-Json jsonMergeQueryImpl(String const& key, Json const& json) {
+auto jsonMergeQueryImpl(String const& key, Json const& json) -> Json {
   return json.query(key, {});
 }
 
 template <typename... T>
-Json jsonMergeQueryImpl(String const& key, Json const& base, Json const& first, T const&... rest) {
+auto jsonMergeQueryImpl(String const& key, Json const& base, Json const& first, T const&... rest) -> Json {
   Json value = jsonMergeQueryImpl(key, first, rest...);
   if (value && !value.isType(Json::Type::Object))
     return value;
@@ -351,12 +350,12 @@ Json jsonMergeQueryImpl(String const& key, Json const& base, Json const& first, 
 }
 
 template <typename... T>
-Json jsonMergeQuery(String const& key, Json const& first, T const&... rest) {
+auto jsonMergeQuery(String const& key, Json const& first, T const&... rest) -> Json {
   return jsonMergeQueryImpl(key, first, rest...);
 }
 
 template <typename... T>
-Json jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&... rest) {
+auto jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&... rest) -> Json {
   if (auto v = jsonMergeQueryImpl(key, first, rest...))
     return v;
   return def;

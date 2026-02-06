@@ -19,7 +19,7 @@ MicroDungeonFactory::MicroDungeonFactory() {
     m_placementshifts.push_back(-i);
 }
 
-Maybe<pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& bounds,
+std::optional<pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& bounds,
     String const& dungeonName,
     Vec2I const& position,
     uint64_t seed,

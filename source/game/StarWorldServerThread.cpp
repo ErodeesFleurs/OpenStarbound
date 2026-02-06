@@ -1,10 +1,8 @@
 #include "StarWorldServerThread.hpp"
+#include "StarPlayer.hpp" // IWYU pragma: keep
 #include "StarTickRateMonitor.hpp"
-#include "StarNpc.hpp"
 #include "StarRoot.hpp"
 #include "StarLogging.hpp"
-#include "StarAssets.hpp"
-#include "StarPlayer.hpp"
 
 namespace Star {
 
@@ -142,27 +140,27 @@ List<PacketPtr> WorldServerThread::pullOutgoingPackets(ConnectionId clientId) {
   return take(m_outgoingPacketQueue[clientId]);
 }
 
-Maybe<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) const {
+std::optional<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) const {
   try {
     RecursiveMutexLocker locker(m_mutex);
     if (auto player = m_worldServer->clientPlayer(clientId))
       return player->position() + player->feetOffset();
-    return {};
+    return std::nullopt;
   } catch (std::exception const& e) {
     Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
-    return {};
+    return std::nullopt;
   }
 }
 
-Maybe<pair<String, String>> WorldServerThread::pullNewPlanetType() {
+std::optional<pair<String, String>> WorldServerThread::pullNewPlanetType() {
   try {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->pullNewPlanetType();
   } catch (std::exception const& e) {
     Logger::error("WorldServerThread exception caught: {}", outputException(e, true));
     m_errorOccurred = true;
-    return {};
+    return std::nullopt;
   }
 }
 
@@ -210,7 +208,7 @@ void WorldServerThread::run() {
     double fidelityIncrementScore = root.assets()->json("/universe_server.config:fidelityIncrementScore").toDouble();
 
     String serverFidelityMode = root.configuration()->get("serverFidelity").toString();
-    Maybe<WorldServerFidelity> lockedFidelity;
+    std::optional<WorldServerFidelity> lockedFidelity;
     if (!serverFidelityMode.equalsIgnoreCase("automatic"))
       lockedFidelity = WorldServerFidelityNames.getLeft(serverFidelityMode);
 
@@ -222,7 +220,7 @@ void WorldServerThread::run() {
     WorldServerFidelity automaticFidelity = WorldServerFidelity::Medium;
 
     while (!m_stop && !m_errorOccurred) {
-      auto fidelity = lockedFidelity.value(automaticFidelity);
+      auto fidelity = lockedFidelity.value_or(automaticFidelity);
       LogMap::set(strf("server_{}_fidelity", m_worldId), WorldServerFidelityNames.getRight(fidelity));
       LogMap::set(strf("server_{}_update", m_worldId), strf("{:4.2f}Hz", tickApproacher.rate()));
 

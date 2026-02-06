@@ -36,14 +36,14 @@ DancePtr DanceDatabase::readDance(String const& path) {
   float duration = config.getFloat("duration");
   List<DanceStep> steps = config.getArray("steps").transformed([](Json const& step) {
     if (step.isType(Json::Type::Object)) {
-      Maybe<String> bodyFrame = step.optString("bodyFrame");
-      Maybe<String> frontArmFrame = step.optString("frontArmFrame");
-      Maybe<String> backArmFrame = step.optString("backArmFrame");
-      Vec2F headOffset = step.opt("headOffset").apply(jsonToVec2F).value(Vec2F());
-      Vec2F frontArmOffset = step.opt("frontArmOffset").apply(jsonToVec2F).value(Vec2F());
-      Vec2F backArmOffset = step.opt("backArmOffset").apply(jsonToVec2F).value(Vec2F());
-      float frontArmRotation = step.optFloat("frontArmRotation").value(0.0f);
-      float backArmRotation = step.optFloat("frontArmRotation").value(0.0f);
+      std::optional<String> bodyFrame = step.optString("bodyFrame");
+      std::optional<String> frontArmFrame = step.optString("frontArmFrame");
+      std::optional<String> backArmFrame = step.optString("backArmFrame");
+      Vec2F headOffset = step.opt("headOffset").transform(jsonToVec2F).value_or(Vec2F());
+      Vec2F frontArmOffset = step.opt("frontArmOffset").transform(jsonToVec2F).value_or(Vec2F());
+      Vec2F backArmOffset = step.opt("backArmOffset").transform(jsonToVec2F).value_or(Vec2F());
+      float frontArmRotation = step.optFloat("frontArmRotation").value_or(0.0f);
+      float backArmRotation = step.optFloat("frontArmRotation").value_or(0.0f);
       return DanceStep{bodyFrame,
           frontArmFrame,
           backArmFrame,
@@ -53,12 +53,12 @@ DancePtr DanceDatabase::readDance(String const& path) {
           frontArmRotation,
           backArmRotation};
     } else {
-      Maybe<String> bodyFrame = step.get(0).optString();
-      Maybe<String> frontArmFrame = step.get(1).optString();
-      Maybe<String> backArmFrame = step.get(2).optString();
-      Vec2F headOffset = step.get(3).opt().apply(jsonToVec2F).value(Vec2F());
-      Vec2F frontArmOffset = step.get(4).opt().apply(jsonToVec2F).value(Vec2F());
-      Vec2F backArmOffset = step.get(5).opt().apply(jsonToVec2F).value(Vec2F());
+      std::optional<String> bodyFrame = step.get(0).optString();
+      std::optional<String> frontArmFrame = step.get(1).optString();
+      std::optional<String> backArmFrame = step.get(2).optString();
+      Vec2F headOffset = step.get(3).opt().transform(jsonToVec2F).value_or(Vec2F());
+      Vec2F frontArmOffset = step.get(4).opt().transform(jsonToVec2F).value_or(Vec2F());
+      Vec2F backArmOffset = step.get(5).opt().transform(jsonToVec2F).value_or(Vec2F());
       return DanceStep{bodyFrame, frontArmFrame, backArmFrame, headOffset, frontArmOffset, backArmOffset, 0.0f, 0.0f};
     }
   });

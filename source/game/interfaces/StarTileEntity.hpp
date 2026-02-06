@@ -1,9 +1,7 @@
 #pragma once
 
-#include "StarEntity.hpp"
 #include "StarTileDamage.hpp"
 #include "StarInteractiveEntity.hpp"
-#include "StarCollisionBlock.hpp"
 
 namespace Star {
 
@@ -48,7 +46,7 @@ public:
   // TileEntities may register some of their occupied spaces with metamaterials
   // to generate collidable regions
   virtual List<MaterialSpace> materialSpaces() const;
-  
+
   // Returns whether the entity was destroyed
   virtual bool damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePosition, TileDamage const& tileDamage);
   virtual bool canBeDamaged() const;

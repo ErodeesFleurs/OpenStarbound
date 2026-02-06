@@ -20,7 +20,6 @@ function chat.command(command) end
 --- Adds the specified message to the chat log. The following keys are available in the `config` JSON object: - `String` __mode__ - The mode of the message. Can be one of the followgin: - `"Broadcast"` - `"Local"` - `"Party"` - `"Whisper"` - `"CommandResult"` - `"RadioMessage"` - `"World"` - `String` __channelName__ - The name of the channel to send the message to. - `String` __fromNick__ - The name of the sender of the message. - `String` __portrait__ - message portrait. - `bool` __showPane__ - If false, the chat pane will not be triggered. ---
 ---@param text string
 ---@param config Json
----@return void
 function chat.addMessage(text, config) end
 
 --- Returns the current chat input text. ---
@@ -34,8 +33,8 @@ function chat.input() end
 function chat.setInput(text, moveCursor) end
 
 --- Clears the chat input text. If `count` is provided, it will clear the last `count` messages, all otherwise.
----@return void
 function chat.clear() end
 
----@return LuaVariadic<Json>
-function chat.parseArguments() end
+---@param text string
+---@return ... string
+function chat.parseArguments(text) end

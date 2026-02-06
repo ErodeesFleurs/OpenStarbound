@@ -6,7 +6,7 @@ namespace Star {
 
 size_t jsonToSize(Json const& v) {
   if (v.isNull())
-    return NPos;
+    return std::numeric_limits<std::size_t>::max();
 
   if (!v.canConvert(Json::Type::Int))
     throw JsonException("Json not an int in jsonToSize");
@@ -15,7 +15,7 @@ size_t jsonToSize(Json const& v) {
 }
 
 Json jsonFromSize(size_t s) {
-  if (s == NPos)
+  if (s == std::numeric_limits<std::size_t>::max())
     return Json();
   return Json(s);
 }

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "StarEither.hpp"
+#include <optional>
+
 #include "StarString.hpp"
 
 namespace Star {
@@ -42,11 +43,11 @@ public:
 
   // Returns the result of the rpc call on success, nothing on failure or when
   // not yet finished.
-  Maybe<Result> const& result() const;
+  std::optional<Result> const& result() const;
 
   // Returns the error of a failed rpc call.  Returns nothing if the call is
   // successful or not yet finished.
-  Maybe<Error> const& error() const;
+  std::optional<Error> const& error() const;
 
   // Wrap this RpcPromise into another promise which returns instead the result
   // of this function when fulfilled
@@ -58,8 +59,8 @@ private:
   friend class RpcPromise;
 
   struct Value {
-    Maybe<Result> result;
-    Maybe<Error> error;
+    std::optional<Result> result;
+    std::optional<Error> error;
   };
 
   RpcPromise() = default;
@@ -133,21 +134,21 @@ bool RpcPromise<Result, Error>::finished() const {
 
 template <typename Result, typename Error>
 bool RpcPromise<Result, Error>::succeeded() const {
-  return m_getValue()->result.isValid();
+  return m_getValue()->result.has_value();
 }
 
 template <typename Result, typename Error>
 bool RpcPromise<Result, Error>::failed() const {
-  return m_getValue()->error.isValid();
+  return m_getValue()->error.has_value();
 }
 
 template <typename Result, typename Error>
-Maybe<Result> const& RpcPromise<Result, Error>::result() const {
+std::optional<Result> const& RpcPromise<Result, Error>::result() const {
   return m_getValue()->result;
 }
 
 template <typename Result, typename Error>
-Maybe<Error> const& RpcPromise<Result, Error>::error() const {
+std::optional<Error> const& RpcPromise<Result, Error>::error() const {
   return m_getValue()->error;
 }
 
@@ -160,9 +161,9 @@ decltype(auto) RpcPromise<Result, Error>::wrap(Function function) {
     if (!valuePtr->result && !valuePtr->error) {
       auto otherValue = otherGetValue();
       if (otherValue->result)
-        valuePtr->result.set(wrapper(*otherValue->result));
+        valuePtr->result = wrapper(*otherValue->result);
       else if (otherValue->error)
-        valuePtr->error.set(*otherValue->error);
+        valuePtr->error = *otherValue->error;
     }
     return valuePtr.get();
   };

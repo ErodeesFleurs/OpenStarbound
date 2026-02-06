@@ -4,7 +4,7 @@
 
 namespace Star {
 
-Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned timeout) {
+std::optional<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned timeout) {
   if (query.empty())
     return {};
 

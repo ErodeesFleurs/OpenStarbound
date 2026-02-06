@@ -1047,7 +1047,6 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
 }
 
 Vec2I Plant::baseDamagePosition(List<Vec2I> const& positions) const {
-  starAssert(positions.size());
   auto res = positions.at(0);
 
   for (auto const& piece : m_pieces) {

@@ -1,11 +1,9 @@
 #include "StarSpawner.hpp"
+#include "StarMonster.hpp" // IWYU pragma: keep
 #include "StarSpawnTypeDatabase.hpp"
+#include "StarMonsterDatabase.hpp"
 #include "StarRandom.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarPlayer.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarMonster.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarLogging.hpp"
 
@@ -124,7 +122,7 @@ RectF Spawner::cellRegion(Vec2I const& cellIndex) const {
   return RectF::withSize(Vec2F(cellIndex) * m_spawnCellSize, Vec2F::filled(m_spawnCellSize));
 }
 
-Maybe<SpawnParameters> Spawner::spawnParametersForCell(Vec2I const& cellIndex) const {
+std::optional<SpawnParameters> Spawner::spawnParametersForCell(Vec2I const& cellIndex) const {
   unsigned emptyCount = 0;
   unsigned nearSurfaceCount = 0;
   unsigned nearCeilingCount = 0;
@@ -207,7 +205,7 @@ Maybe<SpawnParameters> Spawner::spawnParametersForCell(Vec2I const& cellIndex) c
   return SpawnParameters(spawnAreas, spawnRegion, spawnTime);
 }
 
-Maybe<Vec2F> Spawner::adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const {
+std::optional<Vec2F> Spawner::adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const {
   auto checkPosition = [&](Vec2F const& position) -> bool {
     RectF region = RectF(boundBox).translated(position);
 

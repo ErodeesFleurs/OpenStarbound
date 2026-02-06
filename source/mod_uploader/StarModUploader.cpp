@@ -150,13 +150,13 @@ void ModUploader::loadDirectory() {
   progress.show();
 
   if (m_modDirectory && !File::isDirectory(*m_modDirectory))
-    m_modDirectory.reset();
+    m_modDirectory = std::nullopt;
 
   if (!m_modDirectory) {
     m_reloadButton->setEnabled(false);
     m_directoryLabel->setText("");
     m_editorSection->setEnabled(false);
-    m_assetSource.reset();
+    m_assetSource = std::nullopt;
     return;
   }
 
@@ -270,8 +270,8 @@ void ModUploader::uploadToSteam() {
     return;
   }
 
-  m_steamItemCreateResult = {};
-  m_steamItemSubmitResult = {};
+  m_steamItemCreateResult = std::nullopt;
+  m_steamItemSubmitResult = std::nullopt;
 
   JsonObject metadata = m_assetSource->metadata();
   String modIdString = metadata.value("steamContentId", "").toString();

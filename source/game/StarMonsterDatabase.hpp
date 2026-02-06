@@ -7,6 +7,7 @@
 #include "StarStatusTypes.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarEntityRenderingTypes.hpp"
+#include <optional>
 
 namespace Star {
 
@@ -23,8 +24,8 @@ struct MonsterVariant {
   uint64_t seed;
   Json uniqueParameters;
 
-  Maybe<String> shortDescription;
-  Maybe<String> description;
+  std::optional<String> shortDescription;
+  std::optional<String> description;
 
   Json animatorConfig;
   StringMap<String> animatorPartTags;
@@ -77,14 +78,14 @@ struct MonsterVariant {
 
   PolyF selfDamagePoly;
 
-  Maybe<String> portraitIcon;
+  std::optional<String> portraitIcon;
 
   float damageReceivedAggressiveDuration;
   float onDamagedOthersAggressiveDuration;
   float onFireAggressiveDuration;
 
   Vec3B nametagColor;
-  Maybe<ColorReplaceMap> colorSwap;
+  std::optional<ColorReplaceMap> colorSwap;
 };
 
 class MonsterDatabase {
@@ -106,7 +107,7 @@ public:
 
   // If level is 0, then the monster will start with the threat level of
   // whatever world they're spawned in.
-  MonsterPtr createMonster(MonsterVariant monsterVariant, Maybe<float> level = {}, Json uniqueParameters = {}) const;
+  MonsterPtr createMonster(MonsterVariant monsterVariant, std::optional<float> level = {}, Json uniqueParameters = {}) const;
   MonsterPtr diskLoadMonster(Json const& diskStore) const;
   MonsterPtr netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
@@ -122,8 +123,8 @@ public:
 private:
   struct MonsterType {
     String typeName;
-    Maybe<String> shortDescription;
-    Maybe<String> description;
+    std::optional<String> shortDescription;
+    std::optional<String> description;
 
     StringList categories;
     StringList partTypes;

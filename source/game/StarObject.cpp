@@ -43,7 +43,7 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
 
   m_tileDamageStatus = make_shared<EntityTileDamageStatus>();
 
-  m_orientationIndex = NPos;
+  m_orientationIndex = std::numeric_limits<std::size_t>::max();
 
   m_interactive.set(!configValue("interactAction", Json()).isNull());
 
@@ -156,7 +156,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
   // Only try and find a new orientation if we do not already have one,
   // otherwise we may have a valid orientation that depends on non-tile data
   // that is not loaded yet.
-  if (m_orientationIndex == NPos) {
+  if (m_orientationIndex == std::numeric_limits<std::size_t>::max()) {
     updateOrientation();
   } else if (auto orientation = currentOrientation()) {
     // update direction in case orientation config direction has changed
@@ -170,10 +170,10 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
   // This is stupid and we should only have to deal with the new directives parameter, but blah blah backwards compatibility.
   auto colorName = configValue("color", "default").toString().takeUtf8();
   auto colorEnd = colorName.find('?');
-  if (colorEnd != NPos) {
+  if (colorEnd != std::numeric_limits<std::size_t>::max()) {
     size_t suffixBegin = colorName.rfind('?');
     String colorDirectives;
-    std::string colorSuffix = suffixBegin == NPos ? "" : colorName.substr(suffixBegin);
+    std::string colorSuffix = suffixBegin == std::numeric_limits<std::size_t>::max() ? "" : colorName.substr(suffixBegin);
     if (colorSuffix.empty() && colorSuffix.rfind("?replace", 0) != 0)
       colorDirectives = colorName.substr(colorEnd);
     else
@@ -311,7 +311,7 @@ RectF Object::metaBoundBox() const {
   if (auto orientation = currentOrientation()) {
     // default metaboundbox extends the bounding box of the orientation's
     // spaces by one block
-    return orientation->metaBoundBox.value(RectF(Vec2F(orientation->boundBox.min()) - Vec2F(1, 1), Vec2F(orientation->boundBox.max()) + Vec2F(2, 2)));
+    return orientation->metaBoundBox.value_or(RectF(Vec2F(orientation->boundBox.min()) - Vec2F(1, 1), Vec2F(orientation->boundBox.max()) + Vec2F(2, 2)));
   } else {
     return RectF(-1, -1, 1, 1);
   }
@@ -443,12 +443,12 @@ void Object::render(RenderCallback* renderCallback) {
   if (m_networkedAnimator->constParts().size() > 0) {
     renderCallback->addDrawables(m_networkedAnimator->drawables(position() + m_animationPosition + damageShake()), renderLayer());
   } else {
-    if (m_orientationIndex != NPos)
+    if (m_orientationIndex != std::numeric_limits<std::size_t>::max())
       renderCallback->addDrawables(orientationDrawables(m_orientationIndex), renderLayer(), position());
   }
 
   for (auto drawablePair : m_scriptedAnimator.drawables())
-    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer()));
+    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value_or(renderLayer()));
   renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
   renderCallback->addAudios(m_scriptedAnimator.pullNewAudios());
 }
@@ -582,14 +582,14 @@ bool Object::inspectable() const {
   return m_config->scannable;
 }
 
-Maybe<String> Object::inspectionLogName() const {
-  return configValue("inspectionLogName").optString().value(m_config->name);
+std::optional<String> Object::inspectionLogName() const {
+  return configValue("inspectionLogName").optString().value_or(m_config->name);
 }
 
-Maybe<String> Object::inspectionDescription(String const& species) const {
+std::optional<String> Object::inspectionDescription(String const& species) const {
   return configValue("inspectionDescription").optString()
-    .orMaybe(configValue(strf("{}Description", species)).optString())
-    .value(description());
+    .or_else([&]{return configValue(strf("{}Description", species)).optString();})
+    .value_or(description());
 }
 
 String Object::category() const {
@@ -597,7 +597,7 @@ String Object::category() const {
 }
 
 ObjectOrientationPtr Object::currentOrientation() const {
-  if (m_orientationIndex != NPos)
+  if (m_orientationIndex != std::numeric_limits<std::size_t>::max())
     return const_cast<ObjectOrientationPtr&>(getOrientations().at(m_orientationIndex));
   else
     return {};
@@ -612,7 +612,7 @@ List<Drawable> Object::cursorHintDrawables() const {
         1.0 / TilePixels, false, jsonToVec2F(configValue("placementImagePosition", jsonFromVec2F(Vec2F()))) / TilePixels);
     return {imageDrawable};
   } else {
-    if (m_orientationIndex != NPos) {
+    if (m_orientationIndex != std::numeric_limits<std::size_t>::max()) {
       return orientationDrawables(m_orientationIndex);
     } else {
       // If we aren't in a valid orientation, still need to draw something at
@@ -682,7 +682,7 @@ Vec2F Object::questIndicatorPosition() const {
   }
 }
 
-Maybe<Json> Object::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+std::optional<Json> Object::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
 }
 
@@ -946,8 +946,8 @@ LuaCallbacks Object::makeObjectCallbacks() {
       m_interactive.set(interactive);
     });
 
-  callbacks.registerCallbackWithSignature<Maybe<String>>("uniqueId", bind(&Object::uniqueId, this));
-  callbacks.registerCallbackWithSignature<void, Maybe<String>>("setUniqueId", bind(&Object::setUniqueId, this, _1));
+  callbacks.registerCallbackWithSignature<std::optional<String>>("uniqueId", bind(&Object::uniqueId, this));
+  callbacks.registerCallbackWithSignature<void, std::optional<String>>("setUniqueId", bind(&Object::setUniqueId, this, _1));
 
   callbacks.registerCallback("boundBox", [this]() {
       return metaBoundBox().translated(position());
@@ -965,8 +965,8 @@ LuaCallbacks Object::makeObjectCallbacks() {
       m_soundEffectEnabled.set(soundEffectEnabled);
     });
 
-  callbacks.registerCallback("smash", [this](Maybe<bool> smash) {
-      breakObject(smash.value(false));
+  callbacks.registerCallback("smash", [this](std::optional<bool> smash) {
+      breakObject(smash.value_or(false));
     });
 
   callbacks.registerCallback("level", [this]() {
@@ -977,7 +977,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
       return p + position();
     });
 
-  callbacks.registerCallback("say", [this](String line, Maybe<StringMap<String>> const& tags, Json const& config) {
+  callbacks.registerCallback("say", [this](String line, std::optional<StringMap<String>> const& tags, Json const& config) {
       if (tags)
         line = line.replaceTags(*tags, false);
 
@@ -989,7 +989,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
       return false;
     });
 
-  callbacks.registerCallback("sayPortrait", [this](String line, String portrait, Maybe<StringMap<String>> const& tags, Json const& config) {
+  callbacks.registerCallback("sayPortrait", [this](String line, String portrait, std::optional<StringMap<String>> const& tags, Json const& config) {
       if (tags)
         line = line.replaceTags(*tags, false);
 
@@ -1074,11 +1074,11 @@ LuaCallbacks Object::makeObjectCallbacks() {
         out.state.set(l);
     });
 
-  callbacks.registerCallback("setOfferedQuests", [this](Maybe<JsonArray> const& offeredQuests) {
+  callbacks.registerCallback("setOfferedQuests", [this](std::optional<JsonArray> const& offeredQuests) {
       m_offeredQuests.set(offeredQuests.value().transformed(&QuestArcDescriptor::fromJson));
     });
 
-  callbacks.registerCallback("setTurnInQuests", [this](Maybe<StringList> const& turnInQuests) {
+  callbacks.registerCallback("setTurnInQuests", [this](std::optional<StringList> const& turnInQuests) {
       m_turnInQuests.set(StringSet::from(turnInQuests.value()));
     });
 
@@ -1090,7 +1090,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
       m_scriptedAnimationParameters.set(std::move(key), std::move(value));
     });
 
-  callbacks.registerCallback("setMaterialSpaces", [this](Maybe<JsonArray> const& newSpaces) {
+  callbacks.registerCallback("setMaterialSpaces", [this](std::optional<JsonArray> const& newSpaces) {
       List<MaterialSpace> materialSpaces;
       auto materialDatabase = Root::singleton().materialDatabase();
       for (auto space : newSpaces.value())
@@ -1098,7 +1098,7 @@ LuaCallbacks Object::makeObjectCallbacks() {
       m_materialSpaces.set(materialSpaces);
     });
 
-  callbacks.registerCallback("setDamageSources", [this](Maybe<JsonArray> damageSources) {
+  callbacks.registerCallback("setDamageSources", [this](std::optional<JsonArray> damageSources) {
       m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
     });
 
@@ -1154,22 +1154,22 @@ List<PersistentStatusEffect> Object::statusEffects() const {
 PolyF Object::statusEffectArea() const {
   if (auto orientation = currentOrientation()) {
     if (orientation->statusEffectArea)
-      return orientation->statusEffectArea.get();
+      return orientation->statusEffectArea.value();
   }
   return volume();
 }
 
-Maybe<HitType> Object::queryHit(DamageSource const& source) const {
+std::optional<HitType> Object::queryHit(DamageSource const& source) const {
   if (!m_config->smashable || !inWorld() || m_health.get() <= 0.0f || m_unbreakable)
     return {};
 
-  if (source.intersectsWithPoly(world()->geometry(), hitPoly().get()))
+  if (source.intersectsWithPoly(world()->geometry(), *hitPoly()))
     return HitType::Hit;
 
   return {};
 }
 
-Maybe<PolyF> Object::hitPoly() const {
+std::optional<PolyF> Object::hitPoly() const {
   auto poly = volume();
   poly.translate(position());
   return poly;
@@ -1246,11 +1246,11 @@ List<Vec2I> Object::interactiveSpaces() const {
   return spaces();
 }
 
-Maybe<LuaValue> Object::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> Object::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> Object::evalScript(String const& code) {
+std::optional<LuaValue> Object::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
@@ -1292,7 +1292,7 @@ void Object::addChatMessage(String const& message, Json const& config, String co
 }
 
 List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
-  if (orientationIndex == NPos)
+  if (orientationIndex == std::numeric_limits<std::size_t>::max())
     return {};
 
   auto& orientation = getOrientations().at(orientationIndex);
@@ -1312,8 +1312,8 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
 
         // backwards compatibility for this is really annoying, need to append text after the <color> tag to the last directive for a rare use-case
         auto& image = imagePath.utf8();
-        size_t suffix = NPos;
-        if (!m_colorSuffix.empty() && (suffix = image.rfind("<color>")) != NPos)
+        size_t suffix = std::numeric_limits<std::size_t>::max();
+        if (!m_colorSuffix.empty() && (suffix = image.rfind("<color>")) != std::numeric_limits<std::size_t>::max())
           imagePart.image = String(image.substr(0, (suffix += 7))).replaceTags(m_imageKeys, true, "default");
         else
           imagePart.image = imagePath.replaceTags(m_imageKeys, true, "default");
@@ -1323,7 +1323,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
         imagePart.image.directives = layer.imagePart().image.directives;
         if (m_colorDirectives)
           imagePart.addDirectives(m_colorDirectives);
-        if (suffix != NPos)
+        if (suffix != std::numeric_limits<std::size_t>::max())
           imagePart.addDirectives(m_colorSuffix + String(image.substr(suffix)).replaceTags(m_imageKeys, true, "default"));
       }
       else {

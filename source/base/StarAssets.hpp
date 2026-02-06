@@ -8,16 +8,12 @@
 #include "StarAssetSource.hpp"
 #include "StarAssetPath.hpp"
 #include "StarRefPtr.hpp"
+#include "StarConfig.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(Font);
-STAR_CLASS(Audio);
-STAR_CLASS(Image);
-STAR_STRUCT(FramesSpecification);
-STAR_CLASS(Assets);
-
-STAR_CLASS(LuaContext);
 
 STAR_EXCEPTION(AssetException, StarException);
 
@@ -26,7 +22,7 @@ STAR_EXCEPTION(AssetException, StarException);
 struct FramesSpecification {
   // Get the target sub-rect of a given frame name (which can be an alias).
   // Returns nothing if the frame name is not found.
-  Maybe<RectU> getRect(String const& frame) const;
+  std::optional<RectU> getRect(String const& frame) const;
   // Converts to Json.
   Json toJson() const;
   // The full path to the .frames file from which this was loaded.
@@ -57,10 +53,10 @@ public:
 
     // If given, if an image is unable to load, will log the error and load
     // this path instead
-    Maybe<String> missingImage;
+    std::optional<String> missingImage;
 
     // Same, but for audio
-    Maybe<String> missingAudio;
+    std::optional<String> missingAudio;
 
     // When loading assets from a directory, will automatically ignore any
     // files whose asset paths matching any of the given patterns.
@@ -120,11 +116,11 @@ public:
   struct ImageData : AssetData {
     bool shouldPersist() const override;
 
-    ImageConstPtr image;
+    ConstPtr<Image> image;
 
     // *Optional* sub-frames data for this image, only will exist when the
     // image is a top-level image and has an associated frames file.
-    FramesSpecificationConstPtr frames;
+    ConstPtr<FramesSpecification> frames;
 
     // If this image aliases another asset entry, this will be true and
     // shouldPersist will never be true (to ensure that this alias and its
@@ -135,19 +131,19 @@ public:
   struct AudioData : AssetData {
     bool shouldPersist() const override;
 
-    AudioConstPtr audio;
+    ConstPtr<Audio> audio;
   };
 
   struct FontData : AssetData {
     bool shouldPersist() const override;
 
-    FontConstPtr font;
+    ConstPtr<Font> font;
   };
 
   struct BytesData : AssetData {
     bool shouldPersist() const override;
 
-    ByteArrayConstPtr bytes;
+    ConstPtr<ByteArray> bytes;
   };
 
   struct AssetFileDescriptor {
@@ -179,12 +175,12 @@ public:
   // sub-paths or directives.
   bool assetExists(String const& path) const;
 
-  Maybe<AssetFileDescriptor> assetDescriptor(String const& path) const;
+  std::optional<AssetFileDescriptor> assetDescriptor(String const& path) const;
 
   // The name of the asset source within which the path exists.
   String assetSource(String const& path) const;
 
-  Maybe<String> assetSourcePath(AssetSourcePtr const& source) const;
+  std::optional<String> assetSourcePath(AssetSourcePtr const& source) const;
 
   // Scans for all assets with the given suffix in any directory.
   StringList scan(String const& suffix) const;
@@ -215,36 +211,36 @@ public:
   // sub-rects of the image.  If the given path has a ':' sub-path, then the
   // assets system will look for an associated .frames named either
   // <full-path-minus-extension>.frames or default.frames, going up to assets
-  // root.  May return the same ImageConstPtr for different paths if the paths
+  // root.  May return the same ConstPtr<Image> for different paths if the paths
   // are equivalent or they are aliases of other image paths.
-  ImageConstPtr image(AssetPath const& path) const;
+  ConstPtr<Image> image(AssetPath const& path) const;
   // Load images using background processing
   void queueImages(StringList const& paths) const;
   void queueImages(CaseInsensitiveStringSet const& paths) const;
   // Return the given image *if* it is already loaded, otherwise queue it for
   // loading.
-  ImageConstPtr tryImage(AssetPath const& path) const;
+  ConstPtr<Image> tryImage(AssetPath const& path) const;
 
   // Returns the best associated FramesSpecification for a given image path, if
   // it exists.  The given path must not contain sub-paths or directives, and
   // this function may return nullptr if no frames file is associated with the
   // given image path.
-  FramesSpecificationConstPtr imageFrames(String const& path) const;
+  ConstPtr<FramesSpecification> imageFrames(String const& path) const;
 
   // Returns a pointer to a shared audio asset;
-  AudioConstPtr audio(String const& path) const;
+  ConstPtr<Audio> audio(String const& path) const;
   // Load audios using background processing
   void queueAudios(StringList const& paths) const;
   void queueAudios(CaseInsensitiveStringSet const& paths) const;
   // Return the given audio *if* it is already loaded, otherwise queue it for
   // loading.
-  AudioConstPtr tryAudio(String const& path) const;
+  ConstPtr<Audio> tryAudio(String const& path) const;
 
   // Returns pointer to shared font asset
-  FontConstPtr font(String const& path) const;
+  ConstPtr<Font> font(String const& path) const;
 
   // Returns a bytes asset (Reads asset as an opaque binary blob)
-  ByteArrayConstPtr bytes(String const& path) const;
+  ConstPtr<ByteArray> bytes(String const& path) const;
 
   // Bypass asset caching and open an asset file directly.
   IODevicePtr openFile(String const& basePath) const;
@@ -269,8 +265,8 @@ private:
   void queueAssets(List<AssetId> const& assetIds) const;
   //Lock before calling!
   void queueAsset(AssetId const& assetId) const;
-  shared_ptr<AssetData> tryAsset(AssetId const& id) const;
-  shared_ptr<AssetData> getAsset(AssetId const& id) const;
+  std::shared_ptr<AssetData> tryAsset(AssetId const& id) const;
+  std::shared_ptr<AssetData> getAsset(AssetId const& id) const;
 
   void workerMain();
 
@@ -283,16 +279,16 @@ private:
   decltype(auto) unlockDuring(Function f) const;
 
   // Returns the best frames specification for the given image path, if it exists.
-  FramesSpecificationConstPtr bestFramesSpecification(String const& basePath) const;
+  ConstPtr<FramesSpecification> bestFramesSpecification(String const& basePath) const;
 
   IODevicePtr open(String const& basePath) const;
   ByteArray read(String const& basePath) const;
-  ImageConstPtr readImage(String const& path) const;
-  ImageConstPtr applyImagePatches(ImageConstPtr image, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
+  ConstPtr<Image> readImage(String const& path) const;
+  ConstPtr<Image> applyImagePatches(ConstPtr<Image> image, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
 
   Json readJson(String const& basePath) const;
   Json applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
-  Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, Maybe<Json> const external) const;
+  Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, std::optional<Json> const external) const;
 
   // Load / post process an asset and log any exception.  Returns true if the
   // work was performed (whether successful or not), false if the work is
@@ -305,18 +301,18 @@ private:
   // methods to call recursively.  If there is an error loading the asset, this
   // method will throw.  If, and only if, the asset is blocking on another busy
   // asset, this method will return null.
-  shared_ptr<AssetData> loadAsset(AssetId const& id) const;
+  std::shared_ptr<AssetData> loadAsset(AssetId const& id) const;
 
-  shared_ptr<AssetData> loadJson(AssetPath const& path) const;
-  shared_ptr<AssetData> loadImage(AssetPath const& path) const;
-  shared_ptr<AssetData> loadAudio(AssetPath const& path) const;
-  shared_ptr<AssetData> loadFont(AssetPath const& path) const;
-  shared_ptr<AssetData> loadBytes(AssetPath const& path) const;
+  std::shared_ptr<AssetData> loadJson(AssetPath const& path) const;
+  std::shared_ptr<AssetData> loadImage(AssetPath const& path) const;
+  std::shared_ptr<AssetData> loadAudio(AssetPath const& path) const;
+  std::shared_ptr<AssetData> loadFont(AssetPath const& path) const;
+  std::shared_ptr<AssetData> loadBytes(AssetPath const& path) const;
 
-  shared_ptr<AssetData> postProcessAudio(shared_ptr<AssetData> const& original) const;
+  std::shared_ptr<AssetData> postProcessAudio(std::shared_ptr<AssetData> const& original) const;
 
   // Updates time on the given asset (with smearing).
-  void freshen(shared_ptr<AssetData> const& asset) const;
+  void freshen(std::shared_ptr<AssetData> const& asset) const;
 
   Settings m_settings;
 
@@ -326,10 +322,10 @@ private:
   mutable OrderedHashMap<AssetId, QueuePriority, AssetIdHash> m_queue;
 
   mutable ConditionVariable m_assetsDone;
-  mutable HashMap<AssetId, shared_ptr<AssetData>, AssetIdHash> m_assetsCache;
+  mutable HashMap<AssetId, std::shared_ptr<AssetData>, AssetIdHash> m_assetsCache;
 
   mutable StringMap<String> m_bestFramesFiles;
-  mutable StringMap<FramesSpecificationConstPtr> m_framesSpecifications;
+  mutable StringMap<ConstPtr<FramesSpecification>> m_framesSpecifications;
 
   // Lua
   RefPtr<RefCounter> m_luaEngine; // dumb but to avoid including Lua.hpp in here...

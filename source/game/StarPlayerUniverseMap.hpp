@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarJson.hpp"
 #include "StarWarping.hpp"
 #include "StarCelestialCoordinate.hpp"
@@ -43,7 +45,7 @@ class PlayerUniverseMap {
 public:
   struct MappedObject {
     String typeName;
-    Maybe<CelestialOrbit> orbit;
+    std::optional<CelestialOrbit> orbit;
     JsonObject parameters;
   };
 
@@ -61,7 +63,7 @@ public:
   bool removeTeleportBookmark(TeleportBookmark const& bookmark);
   void invalidateWarpAction(WarpAction const& bookmark);
 
-  Maybe<OrbitBookmark> worldBookmark(CelestialCoordinate const& world) const;
+  std::optional<OrbitBookmark> worldBookmark(CelestialCoordinate const& world) const;
   List<OrbitBookmark> systemBookmarks(CelestialCoordinate const& system) const;
   List<OrbitBookmark> planetBookmarks(CelestialCoordinate const& planet) const;
 
@@ -69,11 +71,11 @@ public:
   HashMap<Uuid, MappedObject> mappedObjects(CelestialCoordinate const& system);
 
   void addMappedCoordinate(CelestialCoordinate const& coordinate);
-  void addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, Maybe<CelestialOrbit> const& orbit = {}, JsonObject parameters = {});
+  void addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, std::optional<CelestialOrbit> const& orbit = {}, JsonObject parameters = {});
   void removeMappedObject(CelestialCoordinate const& system, Uuid const& uuid);
   void filterMappedObjects(CelestialCoordinate const& system, List<Uuid> const& allowed);
 
-  void setServerUuid(Maybe<Uuid> serverUuid);
+  void setServerUuid(std::optional<Uuid> serverUuid);
 
 private:
   struct SystemMap {
@@ -95,7 +97,7 @@ private:
   UniverseMap const& universeMap() const;
   UniverseMap& universeMap();
 
-  Maybe<Uuid> m_serverUuid;
+  std::optional<Uuid> m_serverUuid;
   HashMap<Uuid, UniverseMap> m_universeMaps;
 };
 

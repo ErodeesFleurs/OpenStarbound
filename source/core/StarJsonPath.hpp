@@ -1,39 +1,42 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJson.hpp"
 
-namespace Star {
+import std;
 
-namespace JsonPath {
+
+
+namespace Star::JsonPath {
   enum class TypeHint {
     Array,
     Object
   };
 
-  typedef function<TypeHint(String&, String const&, String::const_iterator&, String::const_iterator)> PathParser;
+  using PathParser = std::function<TypeHint(String&, String const&, String::const_iterator&, String::const_iterator)>;
 
-  STAR_EXCEPTION(ParsingException, JsonException);
-  STAR_EXCEPTION(TraversalException, JsonException);
+  using ParsingException = ExceptionDerived<"ParsingException", JsonException>;
+  using TraversalException = ExceptionDerived<"TraversalException", JsonException>;
 
   // Parses RFC 6901 JSON Pointers, e.g. /foo/bar/4/baz
-  TypeHint parsePointer(String& outputBuffer, String const& path, String::const_iterator& iterator, String::const_iterator end);
+  auto parsePointer(String& outputBuffer, String const& path, String::const_iterator& iterator, String::const_iterator end) -> TypeHint;
 
   // Parses JavaScript-like paths, e.g. foo.bar[4].baz
-  TypeHint parseQueryPath(String& outputBuffer, String const& path, String::const_iterator& iterator, String::const_iterator end);
+  auto parseQueryPath(String& outputBuffer, String const& path, String::const_iterator& iterator, String::const_iterator end) -> TypeHint;
 
   // Retrieves the portion of the Json document referred to by the given path.
   template <typename Jsonlike>
-  Jsonlike pathGet(Jsonlike base, PathParser parser, String const& path);
+  auto pathGet(Jsonlike base, PathParser parser, String const& path) -> Jsonlike;
 
   // Find a given portion of the JSON document, if it exists.  Instead of
   // throwing a TraversalException if a portion of the path is invalid, simply
   // returns nothing.
   template <typename Jsonlike>
-  Maybe<Jsonlike> pathFind(Jsonlike base, PathParser parser, String const& path);
+  auto pathFind(Jsonlike base, PathParser parser, String const& path) -> std::optional<Jsonlike>;
 
   template <typename Jsonlike>
-  using JsonOp = function<Jsonlike(Jsonlike const&, Maybe<String> const&)>;
+  using JsonOp = std::function<Jsonlike(Jsonlike const&, std::optional<String> const&)>;
 
   // Applies a function to the portion of the Json document referred to by the
   // given path, returning the resulting new document.  If the end of the path
@@ -42,76 +45,72 @@ namespace JsonPath {
   // returns None, it is erased.  This is not as well-optimized as pathGet, but
   // also not on the critical path for anything.
   template <typename Jsonlike>
-  Jsonlike pathApply(Jsonlike const& base, PathParser parser, String const& path, JsonOp<Jsonlike> op);
+  auto pathApply(Jsonlike const& base, PathParser parser, String const& path, JsonOp<Jsonlike> op) -> Jsonlike;
 
   // Sets a value on a Json document at the location referred to by path,
   // returning the resulting new document.
   template <typename Jsonlike>
-  Jsonlike pathSet(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value);
+  auto pathSet(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value) -> Jsonlike;
 
   // Erases the location referred to by the path from the document
   template <typename Jsonlike>
-  Jsonlike pathRemove(Jsonlike const& base, PathParser parser, String const& path);
+  auto pathRemove(Jsonlike const& base, PathParser parser, String const& path) -> Jsonlike;
 
   // Performs RFC6902 (JSON Patching) add operation. Inserts into arrays, or
   // appends if the last path segment is "-". On objects, does the same as
   // pathSet.
   template <typename Jsonlike>
-  Jsonlike pathAdd(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value);
+  auto pathAdd(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value) -> Jsonlike;
 
   template <typename Jsonlike>
-  using EmptyPathOp = function<Jsonlike(Jsonlike const&)>;
+  using EmptyPathOp = std::function<Jsonlike(Jsonlike const&)>;
   template <typename Jsonlike>
-  using ObjectOp = function<Jsonlike(Jsonlike const&, String const&)>;
+  using ObjectOp = std::function<Jsonlike(Jsonlike const&, String const&)>;
   template <typename Jsonlike>
-  using ArrayOp = function<Jsonlike(Jsonlike const&, Maybe<size_t>)>;
+  using ArrayOp = std::function<Jsonlike(Jsonlike const&, std::optional<size_t>)>;
 
   template <typename Jsonlike>
-  JsonOp<Jsonlike> genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp);
-
-  STAR_CLASS(Path);
-  STAR_CLASS(Pointer);
-  STAR_CLASS(QueryPath);
+  auto genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp) -> JsonOp<Jsonlike>;
 
   class Path {
   public:
-    Path(PathParser parser, String const& path) : m_parser(parser), m_path(path) {}
+    Path(PathParser parser, String  path) : m_parser(std::move(parser)), m_path(std::move(path)) {}
 
     template <typename Jsonlike>
-    Jsonlike get(Jsonlike const& base) {
+    auto get(Jsonlike const& base) -> Jsonlike {
       return pathGet(base, m_parser, m_path);
     }
 
     template <typename Jsonlike>
-    Jsonlike apply(Jsonlike const& base, JsonOp<Jsonlike> op) {
+    auto apply(Jsonlike const& base, JsonOp<Jsonlike> op) -> Jsonlike {
       return pathApply(base, m_parser, m_path, op);
     }
 
     template <typename Jsonlike>
-    Jsonlike apply(Jsonlike const& base,
+    auto apply(Jsonlike const& base,
         EmptyPathOp<Jsonlike> emptyPathOp,
         ObjectOp<Jsonlike> objectOp,
-        ArrayOp<Jsonlike> arrayOp) {
+        ArrayOp<Jsonlike> arrayOp) -> Jsonlike {
       JsonOp<Jsonlike> combinedOp = genericObjectArrayOp(m_path, emptyPathOp, objectOp, arrayOp);
       return pathApply(base, m_parser, m_path, combinedOp);
     }
 
     template <typename Jsonlike>
-    Jsonlike set(Jsonlike const& base, Jsonlike const& value) {
+    auto set(Jsonlike const& base, Jsonlike const& value) -> Jsonlike {
       return pathSet(base, m_parser, m_path, value);
     }
 
     template <typename Jsonlike>
-    Jsonlike remove(Jsonlike const& base) {
+    auto remove(Jsonlike const& base) -> Jsonlike {
       return pathRemove(base, m_parser, m_path);
     }
 
     template <typename Jsonlike>
-    Jsonlike add(Jsonlike const& base, Jsonlike const& value) {
+    auto add(Jsonlike const& base, Jsonlike const& value) -> Jsonlike {
       return pathAdd(base, m_parser, m_path, value);
     }
 
-    String const& path() const {
+    [[nodiscard]] auto path() const -> String const& {
       return m_path;
     }
 
@@ -131,7 +130,7 @@ namespace JsonPath {
   };
 
   template <typename Jsonlike>
-  Jsonlike pathGet(Jsonlike value, PathParser parser, String const& path) {
+  auto pathGet(Jsonlike value, PathParser parser, String const& path) -> Jsonlike {
     String buffer;
     buffer.reserve(path.size());
 
@@ -143,7 +142,7 @@ namespace JsonPath {
       if (value.type() == Json::Type::Array) {
         if (buffer == "-")
           throw TraversalException::format("Tried to get key '{}' in non-object type in pathGet(\"{}\")", buffer, path);
-        Maybe<size_t> i = maybeLexicalCast<size_t>(buffer);
+        std::optional<size_t> i = maybeLexicalCast<size_t>(buffer);
         if (!i)
           throw TraversalException::format("Cannot parse '{}' as index in pathGet(\"{}\")", buffer, path);
 
@@ -166,7 +165,7 @@ namespace JsonPath {
   }
 
   template <typename Jsonlike>
-  Maybe<Jsonlike> pathFind(Jsonlike value, PathParser parser, String const& path) {
+  auto pathFind(Jsonlike value, PathParser parser, String const& path) -> std::optional<Jsonlike> {
     String buffer;
     buffer.reserve(path.size());
 
@@ -177,9 +176,9 @@ namespace JsonPath {
 
       if (value.type() == Json::Type::Array) {
         if (buffer == "-")
-          return {};
+          return std::nullopt;
 
-        Maybe<size_t> i = maybeLexicalCast<size_t>(buffer);
+        std::optional<size_t> i = maybeLexicalCast<size_t>(buffer);
         if (i && *i < value.size())
           value = value.get(*i);
         else
@@ -189,24 +188,24 @@ namespace JsonPath {
         if (value.contains(buffer))
           value = value.get(buffer);
         else
-          return {};
+          return std::nullopt;
 
       } else {
-        return {};
+        return std::nullopt;
       }
     }
     return value;
   }
 
   template <typename Jsonlike>
-  Jsonlike pathApply(String& buffer,
+  auto pathApply(String& buffer,
       Jsonlike const& value,
       PathParser parser,
       String const& path,
       String::const_iterator const current,
-      JsonOp<Jsonlike> op) {
+      JsonOp<Jsonlike> op) -> Jsonlike {
     if (current == path.end())
-      return op(value, {});
+      return op(value, std::nullopt);
 
     String::const_iterator iterator = current;
     parser(buffer, path, iterator, path.end());
@@ -215,7 +214,7 @@ namespace JsonPath {
       if (iterator == path.end()) {
         return op(value, buffer);
       } else {
-        Maybe<size_t> i = maybeLexicalCast<size_t>(buffer);
+        std::optional<size_t> i = maybeLexicalCast<size_t>(buffer);
         if (!i)
           throw TraversalException::format("Cannot parse '{}' as index in pathApply(\"{}\")", buffer, path);
 
@@ -246,26 +245,26 @@ namespace JsonPath {
   }
 
   template <typename Jsonlike>
-  Jsonlike pathApply(Jsonlike const& base, PathParser parser, String const& path, JsonOp<Jsonlike> op) {
+  auto pathApply(Jsonlike const& base, PathParser parser, String const& path, JsonOp<Jsonlike> op) -> Jsonlike {
     String buffer;
     return pathApply(buffer, base, parser, path, path.begin(), op);
   }
 
   template <typename Jsonlike>
-  JsonOp<Jsonlike> genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp) {
-    return [emptyPathOp, arrayOp, objectOp, path](Jsonlike const& parent, Maybe<String> const& key) -> Jsonlike {
-      if (key.isNothing())
+  auto genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp) -> JsonOp<Jsonlike> {
+    return [emptyPathOp, arrayOp, objectOp, path](Jsonlike const& parent, std::optional<String> const& key) -> Jsonlike {
+      if (!key.has_value())
         return emptyPathOp(parent);
       if (parent.type() == Json::Type::Array) {
         if (*key == "-")
-          return arrayOp(parent, {});
-        Maybe<size_t> i = maybeLexicalCast<size_t>(*key);
+          return arrayOp(parent, std::nullopt);
+        std::optional<size_t> i = maybeLexicalCast<size_t>(*key);
         if (!i)
           throw TraversalException::format("Cannot parse '{}' as index in Json path \"{}\"", *key, path);
         if (i && *i > parent.size())
           throw TraversalException::format("Index {} out of range in Json path \"{}\"", *key, path);
         if (i && *i == parent.size())
-          i = {};
+          i = std::nullopt;
         return arrayOp(parent, i);
       } else if (parent.type() == Json::Type::Object) {
         return objectOp(parent, *key);
@@ -276,15 +275,15 @@ namespace JsonPath {
   }
 
   template <typename Jsonlike>
-  Jsonlike pathSet(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value) {
-    EmptyPathOp<Jsonlike> emptyPathOp = [&value](Jsonlike const&) {
+  auto pathSet(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value) -> Jsonlike {
+    EmptyPathOp<Jsonlike> emptyPathOp = [&value](Jsonlike const&) -> auto {
       return value;
     };
-    ObjectOp<Jsonlike> objectOp = [&value](Jsonlike const& object, String const& key) {
+    ObjectOp<Jsonlike> objectOp = [&value](Jsonlike const& object, String const& key) -> auto {
       return object.set(key, value);
     };
-    ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, Maybe<size_t> i) {
-      if (i.isValid())
+    ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, std::optional<size_t> i) -> auto {
+      if (i.has_value())
         return array.set(*i, value);
       return array.append(value);
     };
@@ -292,15 +291,15 @@ namespace JsonPath {
   }
 
   template <typename Jsonlike>
-  Jsonlike pathRemove(Jsonlike const& base, PathParser parser, String const& path) {
-    EmptyPathOp<Jsonlike> emptyPathOp = [](Jsonlike const&) { return Json{}; };
-    ObjectOp<Jsonlike> objectOp = [](Jsonlike const& object, String const& key) {
+  auto pathRemove(Jsonlike const& base, PathParser parser, String const& path) -> Jsonlike {
+    EmptyPathOp<Jsonlike> emptyPathOp = [](Jsonlike const&) -> auto { return Json{}; };
+    ObjectOp<Jsonlike> objectOp = [](Jsonlike const& object, String const& key) -> auto {
       if (!object.contains(key))
         throw TraversalException::format("Could not find \"{}\" to remove", key);
       return object.eraseKey(key);
     };
-    ArrayOp<Jsonlike> arrayOp = [](Jsonlike const& array, Maybe<size_t> i) {
-      if (i.isValid())
+    ArrayOp<Jsonlike> arrayOp = [](Jsonlike const& array, std::optional<size_t> i) -> auto {
+      if (i.has_value())
         return array.eraseIndex(*i);
       throw TraversalException("Could not remove element after end of array");
     };
@@ -308,22 +307,20 @@ namespace JsonPath {
   }
 
   template <typename Jsonlike>
-  Jsonlike pathAdd(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value) {
-    EmptyPathOp<Jsonlike> emptyPathOp = [&value](Jsonlike const& document) {
+  auto pathAdd(Jsonlike const& base, PathParser parser, String const& path, Jsonlike const& value) -> Jsonlike {
+    EmptyPathOp<Jsonlike> emptyPathOp = [&value](Jsonlike const& document) -> auto {
       if (document.type() == Json::Type::Null)
         return value;
       throw JsonException("Cannot add a value to the entire document, it is not empty.");
     };
-    ObjectOp<Jsonlike> objectOp = [&value](Jsonlike const& object, String const& key) {
+    ObjectOp<Jsonlike> objectOp = [&value](Jsonlike const& object, String const& key) -> auto {
       return object.set(key, value);
     };
-    ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, Maybe<size_t> i) {
-      if (i.isValid())
+    ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, std::optional<size_t> i) -> auto {
+      if (i.has_value())
         return array.insert(*i, value);
       return array.append(value);
     };
     return pathApply(base, parser, path, genericObjectArrayOp(path, emptyPathOp, objectOp, arrayOp));
   }
-}
-
 }

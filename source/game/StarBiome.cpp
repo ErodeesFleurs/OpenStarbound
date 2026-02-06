@@ -30,7 +30,7 @@ Json BiomePlaceables::toJson() const {
   };
 }
 
-Maybe<TreeVariant> BiomePlaceables::firstTreeType() const {
+std::optional<TreeVariant> BiomePlaceables::firstTreeType() const {
   for (auto const& itemDistribution : itemDistributions) {
     for (auto const& biomeItem : itemDistribution.allItems()) {
       if (biomeItem.is<TreePair>())

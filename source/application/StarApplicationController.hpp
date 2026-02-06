@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarApplication.hpp"
 #include "StarStatisticsService.hpp"
 #include "StarP2PNetworkingService.hpp"
@@ -45,7 +47,7 @@ public:
   virtual void setCursorHardware(bool cursorHardware) = 0;
   virtual bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) = 0;
   virtual void setAcceptingTextInput(bool acceptingTextInput) = 0;
-  virtual void setTextArea(Maybe<pair<RectI, int>> area = {}) = 0;
+  virtual void setTextArea(std::optional<pair<RectI, int>> area = {}) = 0;
 
 
   virtual AudioFormat enableAudio() = 0;
@@ -60,7 +62,7 @@ public:
   virtual bool setClipboardData(StringMap<ByteArray>) = 0;
   virtual bool setClipboardImage(Image const& image, ByteArray* png = {}, String const* path = nullptr) = 0;
   virtual bool setClipboardFile(String const& path) = 0;
-  virtual Maybe<String> getClipboard() = 0;
+  virtual std::optional<String> getClipboard() = 0;
 
   virtual bool isFocused() const = 0;
 

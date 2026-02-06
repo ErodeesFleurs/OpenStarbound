@@ -1,9 +1,9 @@
 #include "StarCelestialLuaBindings.hpp"
+#include "StarBiomeDatabase.hpp" // IWYU pragma: keep
+#include "StarRoot.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarSystemWorldClient.hpp"
-#include "StarLuaGameConverters.hpp"
 #include "StarCelestialGraphics.hpp"
-#include "StarBiomeDatabase.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
@@ -37,7 +37,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
   callbacks.registerCallback("flying", [systemWorld]() {
       return systemWorld->flying();
     });
-  callbacks.registerCallback("shipSystemPosition", [systemWorld]() -> Maybe<Vec2F> {
+  callbacks.registerCallback("shipSystemPosition", [systemWorld]() -> std::optional<Vec2F> {
       return systemWorld->shipPosition();
     });
   callbacks.registerCallback("shipDestination", [systemWorld]() -> Json {
@@ -70,13 +70,13 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
       }
       return {};
     });
-  callbacks.registerCallback("planetName", [celestialDatabase](Json const& coords) -> Maybe<String> {
+  callbacks.registerCallback("planetName", [celestialDatabase](Json const& coords) -> std::optional<String> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       if (auto parameters = celestialDatabase->parameters(coordinate))
         return parameters->name();
       return {};
     });
-  callbacks.registerCallback("planetSeed", [celestialDatabase](Json const& coords) -> Maybe<uint64_t> {
+  callbacks.registerCallback("planetSeed", [celestialDatabase](Json const& coords) -> std::optional<uint64_t> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       if (auto parameters = celestialDatabase->parameters(coordinate))
         return parameters->seed();
@@ -115,7 +115,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
       return planetOres.values();
     });
 
-  callbacks.registerCallback("systemPosition", [systemWorld](Json const& l) -> Maybe<Vec2F> {
+  callbacks.registerCallback("systemPosition", [systemWorld](Json const& l) -> std::optional<Vec2F> {
       auto location = jsonToSystemLocation(l);
       return systemWorld->systemLocationPosition(location);
     });
@@ -126,7 +126,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
   callbacks.registerCallback("systemObjects", [systemWorld]() -> List<String> {
       return systemWorld->objects().transformed([](SystemObjectPtr object) { return object->uuid().hex(); });
     });
-  callbacks.registerCallback("objectType", [systemWorld](String const& uuid) -> Maybe<String> {
+  callbacks.registerCallback("objectType", [systemWorld](String const& uuid) -> std::optional<String> {
       if (auto object = systemWorld->getObject(Uuid(uuid)))
         return object->name();
       else
@@ -138,9 +138,9 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
       else
         return {};
     });
-  callbacks.registerCallback("objectWarpActionWorld", [systemWorld](String const& uuid) -> Maybe<String> {
-      if (Maybe<WarpAction> action = systemWorld->objectWarpAction((Uuid(uuid)))) {
-        return action.get().maybe<WarpToWorld>().apply([](WarpToWorld const& warp) { return printWorldId(warp.world); });
+  callbacks.registerCallback("objectWarpActionWorld", [systemWorld](String const& uuid) -> std::optional<String> {
+      if (std::optional<WarpAction> action = systemWorld->objectWarpAction((Uuid(uuid)))) {
+        return action.value().maybe<WarpToWorld>().transform([](WarpToWorld const& warp) { return printWorldId(warp.world); });
       } else {
         return {};
       }
@@ -151,7 +151,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
       else
         return {};
     });
-  callbacks.registerCallback("objectPosition", [systemWorld](String const& uuid) -> Maybe<Vec2F> {
+  callbacks.registerCallback("objectPosition", [systemWorld](String const& uuid) -> std::optional<Vec2F> {
       if (auto object = systemWorld->getObject(Uuid(uuid)))
         return object->position();
       else
@@ -160,22 +160,22 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
   callbacks.registerCallback("objectTypeConfig", [](String const& typeName) -> Json {
       return SystemWorld::systemObjectTypeConfig(typeName);
     });
-  callbacks.registerCallback("systemSpawnObject", [systemWorld](String const& typeName, Maybe<Vec2F> const& position, Maybe<String> uuidHex, Maybe<JsonObject> parameters) -> String {
-      Maybe<Uuid> uuid = uuidHex.apply([](auto const& u) { return Uuid(u); });
-      return systemWorld->spawnObject(typeName, position, uuid, parameters.value({})).hex();
+  callbacks.registerCallback("systemSpawnObject", [systemWorld](String const& typeName, std::optional<Vec2F> const& position, std::optional<String> uuidHex, std::optional<JsonObject> parameters) -> String {
+      std::optional<Uuid> uuid = uuidHex.transform([](auto const& u) { return Uuid(u); });
+      return systemWorld->spawnObject(typeName, position, uuid, parameters.value_or({})).hex();
     });
 
   callbacks.registerCallback("playerShips", [systemWorld]() -> List<String> {
       return systemWorld->ships().transformed([](SystemClientShipPtr ship) { return ship->uuid().hex(); });
     });
-  callbacks.registerCallback("playerShipPosition", [systemWorld](String const& uuid) -> Maybe<Vec2F> {
+  callbacks.registerCallback("playerShipPosition", [systemWorld](String const& uuid) -> std::optional<Vec2F> {
       if (auto ship = systemWorld->getShip(Uuid(uuid)))
         return ship->position();
       else
         return {};
     });
 
-  callbacks.registerCallback("hasChildren", [celestialDatabase](Json const& coords) -> Maybe<bool> {
+  callbacks.registerCallback("hasChildren", [celestialDatabase](Json const& coords) -> std::optional<bool> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       return celestialDatabase->hasChildren(coordinate);
     });
@@ -186,7 +186,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
   callbacks.registerCallback("childOrbits", [celestialDatabase](Json const& coords) -> List<int> {
       return celestialDatabase->childOrbits(CelestialCoordinate(coords));
     });
-  callbacks.registerCallback("scanSystems", [celestialDatabase](RectI const& region, Maybe<StringSet> const& includedTypes) -> List<Json> {
+  callbacks.registerCallback("scanSystems", [celestialDatabase](RectI const& region, std::optional<StringSet> const& includedTypes) -> List<Json> {
       return celestialDatabase->scanSystems(region, includedTypes).transformed([](CelestialCoordinate const& c) { return c.toJson(); });
     });
   callbacks.registerCallback("scanConstellationLines", [celestialDatabase](RectI const& region) -> List<pair<Vec2I, Vec2I>> {

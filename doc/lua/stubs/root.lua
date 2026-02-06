@@ -6,7 +6,7 @@ root = {}
 
 --- Returns the contents of the specified JSON asset file. ---
 ---@param assetPath string
----@return Json
+---@return table<string, any>
 function root.assetJson(assetPath) end
 
 --- Returns a versioned JSON representation of the given JSON content with the given identifier and the most recent version as specified in `versioning.config`. ---
@@ -61,7 +61,7 @@ function root.npcConfig(npcType) end
 ---@param species string
 ---@param npcType string
 ---@param level number
----@param seed unsigned
+---@param seed integer
 ---@param parameters Json
 ---@return Json
 function root.npcVariant(species, npcType, level, seed, parameters) end
@@ -85,7 +85,7 @@ function root.itemDescriptorsMatch(descriptor1, descriptor2, exactMatch) end
 
 --- Returns a list of JSON configurations of all recipes which output the given item. ---
 ---@param itemName string
----@return JsonArray
+---@return Json[]
 function root.recipesForItem(itemName) end
 
 --- Returns the item type name for the specified item. ---
@@ -95,7 +95,7 @@ function root.itemType(itemName) end
 
 --- Returns a list of the tags applied to the specified item. ---
 ---@param itemName string
----@return JsonArray
+---@return Json[]
 function root.itemTags(itemName) end
 
 --- Returns true if the given item's tags include the specified tag and false otherwise. ---
@@ -106,15 +106,15 @@ function root.itemHasTag(itemName, tagName) end
 
 --- Generates an item from the specified descriptor, level and seed and returns a JSON object containing the `directory`, `config` and `parameters` for that item. ---
 ---@param descriptor ItemDescriptor
----@param level number
----@param seed unsigned
+---@param level number?
+---@param seed integer?
 ---@return Json
 function root.itemConfig(descriptor, level, seed) end
 
 --- Generates an item from the specified descriptor, level and seed and returns a new item descriptor for the resulting item. ---
 ---@param descriptor ItemDescriptor
 ---@param level number
----@param seed unsigned
+---@param seed integer
 ---@return ItemDescriptor
 function root.createItem(descriptor, level, seed) end
 
@@ -124,17 +124,17 @@ function root.createItem(descriptor, level, seed) end
 function root.tenantConfig(tenantName) end
 
 --- Returns an array of JSON configurations of tenants matching the given map of colony tags and corresponding object counts. ---
----@return JsonArray
+---@return Json[]
 function root.getMatchingTenants() end
 
 --- Returns an array of status effects applied by the given liquid. ---
----@param liquid LiquidId
----@return JsonArray
+---@param liquid integer
+---@return Json[]
 function root.liquidStatusEffects(liquid) end
 
 --- Returns a randomly generated name using the specified name gen config and seed. ---
 ---@param assetPath string
----@param seed unsigned
+---@param seed integer
 ---@return string
 function root.generateName(assetPath, seed) end
 
@@ -148,15 +148,15 @@ function root.questConfig(questTemplateId) end
 ---@param species string
 ---@param npcType string
 ---@param level number
----@param seed unsigned
+---@param seed integer
 ---@param parameters Json
----@return JsonArray
+---@return Json[]
 function root.npcPortrait(portraitMode, species, npcType, level, seed, parameters) end
 
 --- Generates a monster of the given type with the given parameters and returns its portrait as a list of drawables. ---
 ---@param typeName string
 ---@param parameters Json
----@return JsonArray
+---@return Json[]
 function root.monsterPortrait(typeName, parameters) end
 
 --- Returns true if the given treasure pool exists and false otherwise. Can be used to guard against errors attempting to generate invalid treasure. ---
@@ -167,8 +167,8 @@ function root.isTreasurePool(poolName) end
 --- Generates an instance of the specified treasure pool, level and seed and returns the contents as a list of item descriptors. ---
 ---@param poolName string
 ---@param level number
----@param seed unsigned
----@return JsonArray
+---@param seed integer
+---@return Json[]
 function root.createTreasure(poolName, level, seed) end
 
 --- Returns the path of the mining sound asset for the given material and mod combination, or `nil` if no mining sound is set. ---
@@ -198,7 +198,7 @@ function root.materialConfig(materialName) end
 ---@return Json
 function root.modConfig(modName) end
 
----@param liquidId LiquidId
+---@param liquidId integer
 ---@return Json
 function root.liquidConfig(liquidId) end
 
@@ -208,13 +208,13 @@ function root.liquidConfig(liquidId) end
 function root.liquidConfig(liquidName) end
 
 --- Returns the string name of the liquid with the given ID. ---
----@param liquidId LiquidId
+---@param liquidId integer
 ---@return string
 function root.liquidName(liquidId) end
 
 --- Returns the numeric ID of the liquid with the given name. ---
 ---@param liquidName string
----@return LiquidId
+---@return integer
 function root.liquidId(liquidName) end
 
 --- Returns the value of the specified parameter for the specified monster skill. ---
@@ -235,7 +235,7 @@ function root.monsterMovementSettings(monsterType) end
 
 --- Generates a biome with the specified name, seed, vertical midpoint and threat level, and returns a JSON object containing the configuration for the generated biome. ---
 ---@param biomeName string
----@param seed unsigned
+---@param seed integer
 ---@param verticalMidPoint number
 ---@param threatLevel number
 ---@return Json
@@ -287,7 +287,7 @@ function root.elementalResistance(elementalType) end
 function root.dungeonMetadata(dungeonName) end
 
 --- Loads a behavior and returns the behavior state as userdata. context is the current lua context called from, in almost all cases _ENV. config can be either the `String` name of a behavior tree, or an entire behavior tree configuration to be built. parameters is overrides for parameters for the behavior tree. BehaviorState contains 2 methods: behavior:init(_ENV) -- initializes the behavior, loads required scripts, and returns a new behavior state behavior:run(state, dt) -- runs the behavior, takes a behavior state for the first argument behavior:clear(state) -- resets the internal state of the behavior Example: ```lua function init() self.behavior = root.behavior("monster", {}) self.behaviorState = self.behavior:init(_ENV) end function update(dt) self.behavior:run(self.behaviorState, dt) end ```
----@param context LuaTable
+---@param context table
 ---@param config Json
 ---@param parameters JsonObject
 ---@return BehaviorState

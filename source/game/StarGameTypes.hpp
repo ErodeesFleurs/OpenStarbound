@@ -6,6 +6,8 @@
 #include "StarLiquidTypes.hpp"
 #include "StarMaterialTypes.hpp"
 
+import std;
+
 namespace Star {
 
 enum class Direction : uint8_t {
@@ -20,7 +22,7 @@ inline Direction operator-(Direction dir) {
   return Direction::Left;
 }
 
-inline int numericalDirection(Maybe<Direction> direction) {
+inline int numericalDirection(std::optional<Direction> direction) {
   if (!direction)
     return 0;
   else
@@ -28,9 +30,9 @@ inline int numericalDirection(Maybe<Direction> direction) {
 }
 
 template <typename NumType>
-inline Maybe<Direction> directionOf(NumType const& n) {
+inline std::optional<Direction> directionOf(NumType const& n) {
   if (n == 0)
-    return {};
+    return std::nullopt;
   else
     return n < 0 ? Direction::Left : Direction::Right;
 }

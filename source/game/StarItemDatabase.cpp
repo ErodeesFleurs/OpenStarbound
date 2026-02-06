@@ -194,7 +194,7 @@ StringSet ItemDatabase::itemTags(String const& itemName) const {
   return itemData(itemName).itemTags;
 }
 
-ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json parameters, Maybe<float> level, Maybe<uint64_t> seed) const {
+ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json parameters, std::optional<float> level, std::optional<uint64_t> seed) const {
   auto const& data = itemData(itemName);
 
   ItemConfig itemConfig;
@@ -216,7 +216,7 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
   return itemConfig;
 }
 
-Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
+std::optional<String> ItemDatabase::itemFile(String const& itemName) const {
   if (!hasItem(itemName)) {
     return {};
   }
@@ -224,7 +224,7 @@ Maybe<String> ItemDatabase::itemFile(String const& itemName) const {
   return data.directory + data.filename;
 }
 
-ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed) const {
+ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, std::optional<float> level, std::optional<uint64_t> seed) const {
   if (!descriptor)
     return {};
 
@@ -243,7 +243,7 @@ ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, 
   }
 }
 
-ItemPtr ItemDatabase::item(ItemDescriptor descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
+ItemPtr ItemDatabase::item(ItemDescriptor descriptor, std::optional<float> level, std::optional<uint64_t> seed, bool ignoreInvalid) const {
   if (!descriptor)
     return {};
   else
@@ -408,13 +408,13 @@ ItemPtr ItemDatabase::applyAugment(ItemPtr const item, AugmentItem* augment) con
     script.addCallbacks("item", LuaBindings::makeItemCallbacks(augment));
     script.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, augment, _1, _2)));
     script.init();
-    auto luaResult = script.invoke<LuaTupleReturn<Json, Maybe<uint64_t>>>("apply", item->descriptor().toJson());
+    auto luaResult = script.invoke<LuaTupleReturn<Json, std::optional<uint64_t>>>("apply", item->descriptor().toJson());
     script.uninit();
     locker.unlock();
 
     if (luaResult) {
       if (!get<0>(*luaResult).isNull()) {
-        augment->take(get<1>(*luaResult).value(1));
+        augment->take(get<1>(*luaResult).value_or(1));
         return ItemDatabase::item(ItemDescriptor(get<0>(*luaResult)));
       }
     }
@@ -510,7 +510,7 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
   }
 }
 
-ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level, Maybe<uint64_t> seed, bool ignoreInvalid) const {
+ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, std::optional<float> level, std::optional<uint64_t> seed, bool ignoreInvalid) const {
   ItemPtr result;
   ItemDescriptor newDescriptor = descriptor;
 
@@ -581,8 +581,8 @@ void ItemDatabase::addItemSet(ItemType type, String const& extension) {
       data.assetsConfig = file;
       data.name = config.get("itemName").toString();
       data.friendlyName = config.getString("shortdescription", {});
-      data.itemTags = config.opt("itemTags").apply(jsonToStringSet).value();
-      data.agingScripts = config.opt("itemAgingScripts").apply(jsonToStringList).value();
+      data.itemTags = config.opt("itemTags").transform(jsonToStringSet).value_or(StringSet());
+      data.agingScripts = config.opt("itemAgingScripts").transform(jsonToStringList).value_or(StringList());
       data.directory = AssetPath::directory(file);
       data.filename = AssetPath::filename(file);
 
@@ -605,8 +605,8 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
   data.type = ItemType::ObjectItem;
   data.name = objectConfig.get("objectName").toString();
   data.friendlyName = objectConfig.getString("shortdescription", {});
-  data.itemTags = objectConfig.opt("itemTags").apply(jsonToStringSet).value();
-  data.agingScripts = objectConfig.opt("itemAgingScripts").apply(jsonToStringList).value();
+  data.itemTags = objectConfig.opt("itemTags").transform(jsonToStringSet).value_or(StringSet());
+  data.agingScripts = objectConfig.opt("itemAgingScripts").transform(jsonToStringList).value_or(StringList());
   data.directory = AssetPath::directory(objectPath);
   data.filename = AssetPath::filename(objectPath);
   JsonObject customConfig = objectConfig.toObject();

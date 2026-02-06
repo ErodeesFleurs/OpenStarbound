@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarCelestialDatabase.hpp"
 #include "StarLockFile.hpp"
 #include "StarIdMap.hpp"
@@ -64,10 +66,10 @@ public:
   String clientDescriptor(ConnectionId clientId) const;
 
   String clientNick(ConnectionId clientId) const;
-  Maybe<ConnectionId> findNick(String const& nick) const;
+  std::optional<ConnectionId> findNick(String const& nick) const;
 
-  Maybe<Uuid> uuidForClient(ConnectionId clientId) const;
-  Maybe<ConnectionId> clientForUuid(Uuid const& uuid) const;
+  std::optional<Uuid> uuidForClient(ConnectionId clientId) const;
+  std::optional<ConnectionId> clientForUuid(Uuid const& uuid) const;
 
   void adminBroadcast(String const& text);
   void adminWhisper(ConnectionId clientId, String const& text);
@@ -100,7 +102,7 @@ public:
   // an invalid connection state.
   bool executeForClient(ConnectionId clientId, function<void(WorldServer*, PlayerPtr)> action);
   void disconnectClient(ConnectionId clientId, String const& reason);
-  void banUser(ConnectionId clientId, String const& reason, pair<bool, bool> banType, Maybe<int> timeout);
+  void banUser(ConnectionId clientId, String const& reason, pair<bool, bool> banType, std::optional<int> timeout);
   bool unbanIp(String const& addressString);
   bool unbanUuid(String const& uuidString);
 
@@ -119,8 +121,8 @@ private:
   struct TimeoutBan {
     int64_t banExpiry;
     String reason;
-    Maybe<HostAddress> ip;
-    Maybe<Uuid> uuid;
+    std::optional<HostAddress> ip;
+    std::optional<Uuid> uuid;
   };
 
   enum class TcpState : uint8_t { No, Yes, Fuck };
@@ -155,13 +157,13 @@ private:
   // Either returns the default configured starter world, or a new randomized
   // starter world, or if a randomized world is not yet available, starts a job
   // to find a randomized starter world and returns nothing until it is ready.
-  Maybe<CelestialCoordinate> nextStarterWorld();
+  std::optional<CelestialCoordinate> nextStarterWorld();
 
   void loadTempWorldIndex();
   void saveTempWorldIndex();
   String tempWorldFile(InstanceWorldId const& worldId) const;
 
-  Maybe<String> isBannedUser(Maybe<HostAddress> hostAddress, Uuid playerUuid) const;
+  std::optional<String> isBannedUser(std::optional<HostAddress> hostAddress, Uuid playerUuid) const;
   void doTempBan(ConnectionId clientId, String const& reason, pair<bool, bool> banType, int timeout);
   void doPermBan(ConnectionId clientId, String const& reason, pair<bool, bool> banType);
   void removeTimedBan();
@@ -172,7 +174,7 @@ private:
   void systemWorldUpdated(SystemWorldServerThread* systemWorldServer);
   void packetsReceived(UniverseConnectionServer* connectionServer, ConnectionId clientId, List<PacketPtr> packets);
 
-  void acceptConnection(UniverseConnection connection, Maybe<HostAddress> remoteAddress);
+  void acceptConnection(UniverseConnection connection, std::optional<HostAddress> remoteAddress);
 
   // Main lock and clients read lock must be held when calling
   WarpToWorld resolveWarpAction(WarpAction warpAction, ConnectionId clientId, bool deploy) const;
@@ -180,7 +182,7 @@ private:
   void doDisconnection(ConnectionId clientId, String const& reason);
 
   // Clients read lock must be held when calling
-  Maybe<ConnectionId> getClientForUuid(Uuid const& uuid) const;
+  std::optional<ConnectionId> getClientForUuid(Uuid const& uuid) const;
 
   // Get the world only if it is already loaded, Main lock must be held when
   // calling.
@@ -193,14 +195,14 @@ private:
   // Trigger off-thread world creation, returns a value when the creation is
   // finished, either successfully or with an error.  Main lock and Clients
   // read lock must be held when calling.
-  Maybe<WorldServerThreadPtr> triggerWorldCreation(WorldId const& worldId);
+  std::optional<WorldServerThreadPtr> triggerWorldCreation(WorldId const& worldId);
 
   // Main lock and clients read lock must be held when calling world promise
   // generators
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> makeWorldPromise(WorldId const& worldId);
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> shipWorldPromise(ClientShipWorldId const& uuid);
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> celestialWorldPromise(CelestialWorldId const& coordinate);
-  Maybe<WorkerPoolPromise<WorldServerThreadPtr>> instanceWorldPromise(InstanceWorldId const& instanceWorld);
+  std::optional<WorkerPoolPromise<WorldServerThreadPtr>> makeWorldPromise(WorldId const& worldId);
+  std::optional<WorkerPoolPromise<WorldServerThreadPtr>> shipWorldPromise(ClientShipWorldId const& uuid);
+  std::optional<WorkerPoolPromise<WorldServerThreadPtr>> celestialWorldPromise(CelestialWorldId const& coordinate);
+  std::optional<WorkerPoolPromise<WorldServerThreadPtr>> instanceWorldPromise(InstanceWorldId const& instanceWorld);
 
   // If the system world is not created, initialize it, otherwise return the
   // already initialized one
@@ -221,7 +223,7 @@ private:
 
   String m_storageDirectory;
   ByteArray m_assetsDigest;
-  Maybe<LockFile> m_storageDirectoryLock;
+  std::optional<LockFile> m_storageDirectoryLock;
   StringMap<StringList> m_speciesShips;
   CelestialMasterDatabasePtr m_celestialDatabase;
   ClockPtr m_universeClock;
@@ -239,7 +241,7 @@ private:
   IdMap<ConnectionId, ServerClientContextPtr> m_clients;
 
   shared_ptr<atomic<bool>> m_pause;
-  Map<WorldId, Maybe<WorkerPoolPromise<WorldServerThreadPtr>>> m_worlds;
+  Map<WorldId, std::optional<WorkerPoolPromise<WorldServerThreadPtr>>> m_worlds;
   Map<InstanceWorldId, pair<int64_t, int64_t>> m_tempWorldIndex;
   Map<Vec3I, SystemWorldServerThreadPtr> m_systemWorlds;
   UniverseConnectionServerPtr m_connectionServer;
@@ -253,14 +255,14 @@ private:
   TeamManagerPtr m_teamManager;
 
   HashMap<ConnectionId, pair<WarpAction, bool>> m_pendingPlayerWarps;
-  HashMap<ConnectionId, pair<tuple<Vec3I, SystemLocation, Json>, Maybe<double>>> m_queuedFlights;
+  HashMap<ConnectionId, pair<tuple<Vec3I, SystemLocation, Json>, std::optional<double>>> m_queuedFlights;
   HashMap<ConnectionId, tuple<Vec3I, SystemLocation, Json>> m_pendingFlights;
   HashMap<ConnectionId, CelestialCoordinate> m_pendingArrivals;
   HashMap<ConnectionId, String> m_pendingDisconnections;
   HashMap<ConnectionId, List<WorkerPoolPromise<CelestialResponse>>> m_pendingCelestialRequests;
   List<pair<WorldId, UniverseFlagAction>> m_pendingFlagActions;
   HashMap<ConnectionId, List<tuple<String, ChatSendMode, JsonObject>>> m_pendingChat;
-  Maybe<WorkerPoolPromise<CelestialCoordinate>> m_nextRandomizedStarterWorld;
+  std::optional<WorkerPoolPromise<CelestialCoordinate>> m_nextRandomizedStarterWorld;
   Map<WorldId, List<WorldServerThread::Message>> m_pendingWorldMessages;
 
   List<TimeoutBan> m_tempBans;

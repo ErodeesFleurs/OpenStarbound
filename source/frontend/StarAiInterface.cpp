@@ -243,7 +243,7 @@ void AiInterface::showMissions() {
 void AiInterface::selectMission() {
   size_t selectedItem = m_missionListWidget->selectedItem();
 
-  Maybe<String> mission = {};
+  std::optional<String> mission = {};
   if (selectedItem < m_availableMissions.size())
     mission = m_availableMissions.at(selectedItem);
   else if (selectedItem < m_availableMissions.size() + m_completedMissions.size())
@@ -298,12 +298,12 @@ void AiInterface::selectRecruit() {
   if (m_selectedRecruit) {
     m_currentPage = AiPages::CrewPage;
 
-    auto speech = m_selectedRecruit->description().value(m_defaultRecruitDescription);
+    auto speech = m_selectedRecruit->description().value_or(m_defaultRecruitDescription);
     setCurrentSpeech("recruitText", {m_aiDatabase->defaultAnimation(), speech, 1.0f});
-    m_recruitNameLabel->setText(m_selectedRecruit->name().value(m_defaultRecruitName));
+    m_recruitNameLabel->setText(m_selectedRecruit->name().value_or(m_defaultRecruitName));
     m_recruitIcon->setDrawables(m_selectedRecruit->portrait());
 
-    m_itemBreadcrumbWidget->setText(recruit->name().value(m_defaultRecruitName));
+    m_itemBreadcrumbWidget->setText(recruit->name().value_or(m_defaultRecruitName));
 
     m_crewStack->showPage(2);
 
@@ -333,7 +333,7 @@ void AiInterface::populateMissions() {
     auto const& missionText = mission.speciesText.value(m_species, mission.speciesText.value("default"));
     label->setText(missionText.repeatButtonText);
   }
-  m_missionListWidget->setSelected(NPos);
+  m_missionListWidget->setSelected(std::numeric_limits<std::size_t>::max());
 }
 
 void AiInterface::startMission() {
@@ -342,8 +342,8 @@ void AiInterface::startMission() {
     m_client->warpPlayer(
       WarpToWorld{InstanceWorldId(mission.missionUniqueWorld, m_client->teamUuid()), {}},
       true,
-      mission.warpAnimation.value("default"),
-      mission.warpDeploy.value(false));
+      mission.warpAnimation.value_or("default"),
+      mission.warpDeploy.value_or(false));
     dismiss();
   }
 }
@@ -356,9 +356,9 @@ void AiInterface::populateCrew() {
     auto icon = widget->fetchChild<ImageWidget>("itemIcon");
 
     icon->setDrawables(recruit->portrait());
-    label->setText(recruit->name().value(m_defaultRecruitName));
+    label->setText(recruit->name().value_or(m_defaultRecruitName));
   }
-  m_crewListWidget->setSelected(NPos);
+  m_crewListWidget->setSelected(std::numeric_limits<std::size_t>::max());
 }
 
 void AiInterface::dismissRecruit() {

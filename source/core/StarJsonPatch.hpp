@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarJson.hpp"
 
 namespace Star {
@@ -13,7 +15,7 @@ Json jsonPatch(Json const& base, JsonArray const& patch);
 
 namespace JsonPatching {
   // Applies the given single operation
-  Json applyOperation(Json const& base, Json const& op, Maybe<Json> const& external = {});
+  Json applyOperation(Json const& base, Json const& op, std::optional<Json> const& external = {});
 
   // Tests for "value" at "path"
   // Returns base or throws JsonPatchException

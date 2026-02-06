@@ -3,7 +3,6 @@
 #include "StarUuid.hpp"
 #include "StarRandom.hpp"
 #include "StarPerlin.hpp"
-#include "StarXXHash.hpp"
 #include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
 #include "StarText.hpp"
@@ -18,9 +17,9 @@ struct LuaUserDataMethods<RandomSource> {
   static LuaMethods<RandomSource> make() {
     LuaMethods<RandomSource> methods;
 
-    methods.registerMethod("init", [](RandomSource& randomSource, Maybe<uint64_t> seed)
+    methods.registerMethod("init", [](RandomSource& randomSource, std::optional<uint64_t> seed)
       { seed ? randomSource.init(*seed) : randomSource.init(); });
-    methods.registerMethod("addEntropy", [](RandomSource& randomSource, Maybe<uint64_t> seed)
+    methods.registerMethod("addEntropy", [](RandomSource& randomSource, std::optional<uint64_t> seed)
       { seed ? randomSource.addEntropy(*seed) : randomSource.addEntropy(); });
 
     methods.registerMethodWithSignature<uint32_t, RandomSource&>("randu32", mem_fn(&RandomSource::randu32));
@@ -28,17 +27,17 @@ struct LuaUserDataMethods<RandomSource> {
     methods.registerMethodWithSignature<int32_t, RandomSource&>("randi32", mem_fn(&RandomSource::randi32));
     methods.registerMethodWithSignature<int64_t, RandomSource&>("randi64", mem_fn(&RandomSource::randi64));
 
-    methods.registerMethod("randf", [](RandomSource& randomSource, Maybe<float> arg1, Maybe<float> arg2)
+    methods.registerMethod("randf", [](RandomSource& randomSource, std::optional<float> arg1, std::optional<float> arg2)
       { return (arg1 && arg2) ? randomSource.randf(*arg1, *arg2) : randomSource.randf(); });
-    methods.registerMethod("randd", [](RandomSource& randomSource, Maybe<double> arg1, Maybe<double> arg2)
+    methods.registerMethod("randd", [](RandomSource& randomSource, std::optional<double> arg1, std::optional<double> arg2)
       { return (arg1 && arg2) ? randomSource.randd(*arg1, *arg2) : randomSource.randd(); });
 
     methods.registerMethodWithSignature<bool, RandomSource&>("randb", mem_fn(&RandomSource::randb));
 
-    methods.registerMethod("randInt", [](RandomSource& randomSource, int64_t arg1, Maybe<int64_t> arg2)
+    methods.registerMethod("randInt", [](RandomSource& randomSource, int64_t arg1, std::optional<int64_t> arg2)
       { return arg2 ? randomSource.randInt(arg1, *arg2) : randomSource.randInt(arg1); });
 
-    methods.registerMethod("randUInt", [](RandomSource& randomSource, uint64_t arg1, Maybe<uint64_t> arg2)
+    methods.registerMethod("randUInt", [](RandomSource& randomSource, uint64_t arg1, std::optional<uint64_t> arg2)
       { return arg2 ? randomSource.randUInt(arg1, *arg2) : randomSource.randUInt(arg1); });
 
     return methods;
@@ -54,7 +53,7 @@ struct LuaUserDataMethods<PerlinF> {
     LuaMethods<PerlinF> methods;
 
     methods.registerMethod("get",
-        [](PerlinF& perlinF, float x, Maybe<float> y, Maybe<float> z) {
+        [](PerlinF& perlinF, float x, std::optional<float> y, std::optional<float> z) {
           if (y && z)
             return perlinF.get(x, *y, *z);
           else if (y)
@@ -123,7 +122,7 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
   callbacks.registerCallback("jsonMerge", [](Json const& a, Json const& b) { return jsonMerge(a, b); });
   callbacks.registerCallback("jsonEqual", [](Json const& a, Json const& b) { return a == b; });
   callbacks.registerCallback("jsonQuery", [](Json const& json, String const& path, Json const& def) { return json.query(path, def); });
-  callbacks.registerCallback("makeRandomSource", [](Maybe<uint64_t> seed) { return seed ? RandomSource(*seed) : RandomSource(); });
+  callbacks.registerCallback("makeRandomSource", [](std::optional<uint64_t> seed) { return seed ? RandomSource(*seed) : RandomSource(); });
   callbacks.registerCallback("makePerlinSource", [](Json const& config) { return PerlinF(config); });
 
   callbacks.copyCallback("parseJson", "jsonFromString"); // SE compat
@@ -173,8 +172,8 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
   return callbacks;
 }
 
-double LuaBindings::UtilityCallbacks::nrand(Maybe<double> const& stdev, Maybe<double> const& mean) {
-  return Random::nrandd(stdev.value(1.0), mean.value(0));
+double LuaBindings::UtilityCallbacks::nrand(std::optional<double> const& stdev, std::optional<double> const& mean) {
+  return Random::nrandd(stdev.value_or(1.0), mean.value_or(0));
 }
 
 String LuaBindings::UtilityCallbacks::makeUuid() {
@@ -201,8 +200,8 @@ Json LuaBindings::UtilityCallbacks::parseJson(String const& str) {
   return Json::parse(str);
 }
 
-String LuaBindings::UtilityCallbacks::printJson(Json const& arg, Maybe<int> pretty) {
-  return arg.repr(pretty.value());
+String LuaBindings::UtilityCallbacks::printJson(Json const& arg, std::optional<int> pretty) {
+  return arg.repr(pretty.value_or(0));
 }
 
 String LuaBindings::UtilityCallbacks::print(LuaValue const& value) {

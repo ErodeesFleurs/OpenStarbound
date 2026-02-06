@@ -1,11 +1,12 @@
 #pragma once
 
-#include "StarThread.hpp"
 #include "StarHumanoid.hpp"
 #include "StarDamageTypes.hpp"
 #include "StarStatusTypes.hpp"
 #include "StarEntitySplash.hpp"
 #include "StarItemDescriptor.hpp"
+
+#include <optional>
 
 namespace Star {
 
@@ -28,7 +29,7 @@ struct NpcVariant {
   unsigned initialScriptDelta;
   Json scriptConfig;
 
-  Maybe<String> description;
+  std::optional<String> description;
 
   HumanoidIdentity humanoidIdentity;
   Json humanoidConfig;

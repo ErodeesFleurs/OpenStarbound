@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarWorldClientState.hpp"
 #include "StarNetPackets.hpp"
 #include "StarWorldRenderData.hpp"
@@ -71,10 +73,10 @@ public:
   bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const override;
   bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
   bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
+  std::optional<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
   List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const override;
   bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const override;
-  TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) override;
+  TileDamageResult damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {}) override;
   InteractiveEntityPtr getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const override;
   bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const override;
   RpcPromise<InteractAction> interact(InteractRequest const& request) override;
@@ -301,7 +303,7 @@ private:
   CollisionGenerator m_collisionGenerator;
 
   WorldClientState m_clientState;
-  Maybe<ConnectionId> m_clientId;
+  std::optional<ConnectionId> m_clientId;
 
   PlayerPtr m_mainPlayer;
 
@@ -322,7 +324,7 @@ private:
   ParallaxPtr m_currentParallax;
   ParallaxPtr m_nextParallax;
 
-  Maybe<float> m_overrideGravity;
+  std::optional<float> m_overrideGravity;
 
   ClientWeather m_weather;
   ParticleManagerPtr m_particles;
@@ -336,7 +338,7 @@ private:
   GameTimer m_entityUpdateTimer;
 
   List<PacketPtr> m_outgoingPackets;
-  Maybe<int64_t> m_pingTime;
+  std::optional<int64_t> m_pingTime;
   int64_t m_latency;
 
   Set<EntityId> m_requestedDrops;

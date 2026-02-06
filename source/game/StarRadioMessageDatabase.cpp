@@ -31,11 +31,11 @@ RadioMessageDatabase::RadioMessageDatabase() {
 
 RadioMessage RadioMessageDatabase::radioMessage(String const& messageName) const {
   if (auto message = m_radioMessages.maybe(messageName))
-    return message.take();
+    return *message;
   throw RadioMessageDatabaseException(strf("Unknown radio message {}", messageName));
 }
 
-RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config,  Maybe<String> const& messageId) const {
+RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config, std::optional<String> const& messageId) const {
   if (config.isType(Json::Type::String)) {
     return radioMessage(config.toString());
   } else if (config.isType(Json::Type::Object)) {
@@ -43,7 +43,7 @@ RadioMessage RadioMessageDatabase::createRadioMessage(Json const& config,  Maybe
     auto mergedConfig = jsonMerge(defaults, config);
 
     RadioMessage message;
-    message.messageId = messageId.value(mergedConfig.getString("messageId", ""));
+    message.messageId = messageId.value_or(mergedConfig.getString("messageId", ""));
     if (message.messageId.empty())
       throw RadioMessageDatabaseException("Custom radio messages must specify a messageId!");
     message.type = RadioMessageTypeNames.getLeft(mergedConfig.getString("type"));

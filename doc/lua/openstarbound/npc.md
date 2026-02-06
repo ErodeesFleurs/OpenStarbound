@@ -60,7 +60,7 @@ Replaces the current table of humanoid parameters that overwrite values in the h
 
 ---
 
-#### `Maybe<Json>` npc.getHumanoidParameter(`String` key)
+#### `std::optional<Json>` npc.getHumanoidParameter(`String` key)
 
 Gets a humanoid parameter.
 

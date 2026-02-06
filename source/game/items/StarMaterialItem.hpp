@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarItem.hpp"
 #include "StarFireableItem.hpp"
 #include "StarBeamItem.hpp"
@@ -61,14 +63,14 @@ private:
   bool m_shifting;
   bool m_multiplace;
   StringList m_placeSounds;
-  Maybe<Vec2F> m_lastAimPosition;
+  std::optional<Vec2F> m_lastAimPosition;
   TileCollisionOverride m_collisionOverride;
 
   mutable Vec2F m_lastTileAreaOriginCache;
   mutable float m_lastTileAreaRadiusCache;
   mutable List<Vec2I> m_tileAreasCache;
 
-  mutable Maybe<List<Drawable>> m_generatedPreviewCache;
+  mutable std::optional<List<Drawable>> m_generatedPreviewCache;
 };
 
 }

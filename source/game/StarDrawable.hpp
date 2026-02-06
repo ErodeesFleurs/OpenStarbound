@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
@@ -12,7 +14,7 @@ struct Drawable {
   struct LinePart {
     Line2F line;
     float width;
-    Maybe<Color> endColor;
+    std::optional<Color> endColor;
   };
 
   struct PolyPart {

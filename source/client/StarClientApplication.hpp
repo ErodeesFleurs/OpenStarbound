@@ -1,16 +1,16 @@
 #pragma once
 
+#include <optional>
+
 #include "StarUniverseServer.hpp"
 #include "StarUniverseClient.hpp"
 #include "StarWorldPainter.hpp"
-#include "StarGameTypes.hpp"
 #include "StarMainInterface.hpp"
 #include "StarMainMixer.hpp"
 #include "StarTitleScreen.hpp"
 #include "StarErrorScreen.hpp"
 #include "StarCinematic.hpp"
 #include "StarKeyBindings.hpp"
-#include "StarMainApplication.hpp"
 
 namespace Star {
 
@@ -20,7 +20,7 @@ STAR_CLASS(Voice);
 class ClientApplication : public Application {
 public:
   void setPostProcessLayerPasses(String const& layer, unsigned const& passes);
-  void setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save);
+  void setPostProcessGroupEnabled(String const& group, bool const& enabled, std::optional<bool> const& save);
   bool postProcessGroupEnabled(String const& group);
   Json postProcessGroups();
   virtual unsigned framesSkipped() const override;
@@ -61,11 +61,11 @@ private:
     String password;
     bool forceLegacy;
   };
-  
+
   struct PostProcessGroup {
     bool enabled;
   };
-  
+
   struct PostProcessLayer {
     List<String> effects;
     unsigned passes;
@@ -119,7 +119,7 @@ private:
   WorldPainterPtr m_worldPainter;
   WorldRenderData m_renderData;
   MainInterfacePtr m_mainInterface;
-  
+
   StringMap<PostProcessGroup> m_postProcessGroups;
   List<PostProcessLayer> m_postProcessLayers;
   StringMap<size_t> m_labelledPostProcessLayers;
@@ -146,8 +146,8 @@ private:
   List<KeyDownEvent> m_heldKeyEvents;
   List<KeyDownEvent> m_edgeKeyEvents;
 
-  Maybe<PendingMultiPlayerConnection> m_pendingMultiPlayerConnection;
-  Maybe<HostAddressWithPort> m_currentRemoteJoin;
+  std::optional<PendingMultiPlayerConnection> m_pendingMultiPlayerConnection;
+  std::optional<HostAddressWithPort> m_currentRemoteJoin;
   int64_t m_timeSinceJoin = 0;
 
   ByteArray m_immediateFont;

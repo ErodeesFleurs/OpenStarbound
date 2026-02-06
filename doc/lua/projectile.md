@@ -62,6 +62,6 @@ Immediately performs the specified action. Action should be specified in a forma
 
 ---
 
-#### 'void' projectile.setReferenceVelocity(Maybe<`Vec2F`> velocity)
+#### 'void' projectile.setReferenceVelocity(std::optional<`Vec2F`> velocity)
 
 Sets the projectile's reference velocity (a base velocity to which movement is relative)

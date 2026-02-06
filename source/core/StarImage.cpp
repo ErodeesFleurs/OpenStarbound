@@ -1,7 +1,10 @@
 #include "StarImage.hpp"
+#include "StarConfig.hpp"
 #include "StarLogging.hpp"
 
 #include <png.h>
+
+import std;
 
 namespace Star {
 
@@ -17,16 +20,16 @@ void readPngData(png_structp pngPtr, png_bytep data, png_size_t length) {
   ((IODevice*)png_get_io_ptr(pngPtr))->readFull((char*)data, length);
 };
 
-bool Image::isPng(IODevicePtr device) {
-  png_byte header[8]{};
-  return !png_sig_cmp(header, 0, device->readAbsolute(0, (char*)header, sizeof(header)));
+auto Image::isPng(Ptr<IODevice> device) -> bool {
+  std::array<png_byte, 8> header{};
+  return !png_sig_cmp(header.data(), 0, device->readAbsolute(0, (char*)header.data(), header.size()));
 }
 
-Image Image::readPng(IODevicePtr device) {
-  png_byte header[8]{};
-  device->readFull((char*)header, sizeof(header));
+auto Image::readPng(Ptr<IODevice> device) -> Image {
+  std::array<png_byte, 8> header{};
+  device->readFull((char*)header.data(), header.size());
 
-  if (png_sig_cmp(header, 0, sizeof(header)))
+  if (png_sig_cmp(header.data(), 0, header.size()))
     throw ImageException(strf("File {} is not a png image!", device->deviceName()));
 
   png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -118,11 +121,11 @@ Image Image::readPng(IODevicePtr device) {
   return image;
 }
 
-tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
-  png_byte header[8];
-  device->readFull((char*)header, sizeof(header));
+std::tuple<Vec2U, PixelFormat> Image::readPngMetadata(Ptr<IODevice> device) {
+  std::array<png_byte, 8> header{};
+  device->readFull((char*)header.data(), header.size());
 
-  if (png_sig_cmp(header, 0, sizeof(header)))
+  if (png_sig_cmp(header.data(), 0, header.size()))
     throw ImageException(strf("File {} is not a png image!", device->deviceName()));
 
   png_structp png_ptr = png_create_read_struct(PNG_LIBPNG_VER_STRING, nullptr, nullptr, nullptr);
@@ -197,7 +200,7 @@ tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
   return make_tuple(imageSize, pixelFormat);
 }
 
-Image Image::filled(Vec2U size, Vec4B color, PixelFormat pf) {
+auto Image::filled(Vec2U size, Vec4B color, PixelFormat pf) -> Image {
   Image image(size, pf);
   image.fill(color);
   return image;
@@ -227,13 +230,13 @@ Image::Image(Image&& image) : Image() {
   operator=(std::move(image));
 }
 
-Image& Image::operator=(Image const& image) {
+auto Image::operator=(Image const& image) -> Image& {
   reset(image.m_width, image.m_height, image.m_pixelFormat);
-  memcpy(data(), image.data(), m_width * m_height * bytesPerPixel());
+  std::memcpy(data(), image.data(), m_width * m_height * bytesPerPixel());
   return *this;
 }
 
-Image& Image::operator=(Image&& image) {
+auto Image::operator=(Image&& image) -> Image& {
   reset(0, 0, m_pixelFormat);
 
   m_data = take(image.m_data);
@@ -243,11 +246,11 @@ Image& Image::operator=(Image&& image) {
   return *this;
 }
 
-void Image::reset(Vec2U size, Maybe<PixelFormat> pf) {
+void Image::reset(Vec2U size, std::optional<PixelFormat> pf) {
   reset(size[0], size[1], pf);
 }
 
-void Image::reset(unsigned width, unsigned height, Maybe<PixelFormat> pf) {
+void Image::reset(unsigned width, unsigned height, std::optional<PixelFormat> pf) {
   if (!pf)
     pf = m_pixelFormat;
 
@@ -261,17 +264,17 @@ void Image::reset(unsigned width, unsigned height, Maybe<PixelFormat> pf) {
       m_data = nullptr;
     }
   } else {
-    uint8_t* newData = nullptr;
+    std::uint8_t* newData = nullptr;
     if (!m_data)
-      newData = (uint8_t*)Star::malloc(imageSize);
+      newData = (std::uint8_t*)Star::malloc(imageSize);
     else
-      newData = (uint8_t*)Star::realloc(m_data, imageSize);
+      newData = (std::uint8_t*)Star::realloc(m_data, imageSize);
 
     if (!newData)
       throw MemoryException::format("Could not allocate memory for new Image size {}\n", imageSize);
 
     m_data = newData;
-    memset(m_data, 0, imageSize);
+    std::memset(m_data, 0, imageSize);
   }
 
   m_pixelFormat = *pf;
@@ -349,7 +352,7 @@ void Image::set(Vec2U const& pos, Vec3B const& c) {
   }
 }
 
-Vec4B Image::get(Vec2U const& pos) const {
+auto Image::get(Vec2U const& pos) const -> Vec4B {
   Vec4B c;
   if (pos[0] >= m_width || pos[1] >= m_height) {
     throw ImageException(strf("{} out of range in Image::get", pos));
@@ -383,7 +386,7 @@ void Image::setrgb(Vec2U const& pos, Vec3B const& c) {
     set(pos, c);
 }
 
-Vec4B Image::getrgb(Vec2U const& pos) const {
+auto Image::getrgb(Vec2U const& pos) const -> Vec4B {
   auto c = get(pos);
   if (m_pixelFormat == PixelFormat::BGR24 || m_pixelFormat == PixelFormat::BGRA32)
     return Vec4B{c[2], c[1], c[0], c[3]};
@@ -391,10 +394,10 @@ Vec4B Image::getrgb(Vec2U const& pos) const {
     return c;
 }
 
-Vec4B Image::clamp(Vec2I const& pos) const {
+auto Image::clamp(Vec2I const& pos) const -> Vec4B {
   Vec4B c;
-  unsigned x = (unsigned)Star::clamp<int>(pos[0], 0, m_width - 1);
-  unsigned y = (unsigned)Star::clamp<int>(pos[1], 0, m_height - 1);
+  auto x = (unsigned)Star::clamp<int>(pos[0], 0, m_width - 1);
+  auto y = (unsigned)Star::clamp<int>(pos[1], 0, m_height - 1);
   if (m_width == 0 || m_height == 0) {
     return {0, 0, 0, 0};
   } else if (bytesPerPixel() == 4) {
@@ -413,7 +416,7 @@ Vec4B Image::clamp(Vec2I const& pos) const {
   return c;
 }
 
-Vec4B Image::clamprgb(Vec2I const& pos) const {
+auto Image::clamprgb(Vec2I const& pos) const -> Vec4B {
   auto c = clamp(pos);
   if (m_pixelFormat == PixelFormat::BGR24 || m_pixelFormat == PixelFormat::BGRA32)
     return Vec4B{c[2], c[1], c[0], c[3]};
@@ -421,7 +424,7 @@ Vec4B Image::clamprgb(Vec2I const& pos) const {
     return c;
 }
 
-Image Image::subImage(Vec2U const& pos, Vec2U const& size) const {
+auto Image::subImage(Vec2U const& pos, Vec2U const& size) const -> Image {
   if (pos[0] + size[0] > m_width || pos[1] + size[1] > m_height)
     throw ImageException(strf("call to subImage with pos {} size {} out of image bounds ({}, {})", pos, size, m_width, m_height));
 
@@ -465,19 +468,19 @@ void Image::drawInto(Vec2U const& min, Image const& image) {
   }
 }
 
-Image Image::convert(PixelFormat pixelFormat) const {
+auto Image::convert(PixelFormat pixelFormat) const -> Image {
   Image converted(m_width, m_height, pixelFormat);
   converted.copyInto(Vec2U(), *this);
   return converted;
 }
 
-void Image::writePng(IODevicePtr device) const {
-  auto writePngData = [](png_structp pngPtr, png_bytep data, png_size_t length) {
-    IODevice* device = (IODevice*)png_get_io_ptr(pngPtr);
+void Image::writePng(Ptr<IODevice> device) const {
+  auto writePngData = [](png_structp pngPtr, png_bytep data, png_size_t length) -> void {
+    auto* device = (IODevice*)png_get_io_ptr(pngPtr);
     device->writeFull((char*)data, length);
   };
 
-  auto flushPngData = [](png_structp) {};
+  auto flushPngData = [](png_structp) -> void {};
 
   png_structp png_ptr = nullptr;
   png_infop info_ptr = nullptr;
@@ -509,7 +512,7 @@ void Image::writePng(IODevicePtr device) const {
       PNG_COMPRESSION_TYPE_DEFAULT,
       PNG_FILTER_TYPE_DEFAULT);
 
-  unique_ptr<png_bytep[]> row_ptrs(new png_bytep[m_height]);
+  std::vector<png_bytep> row_ptrs(m_height);
   size_t stride = m_width * 8 * channels / 8;
   for (size_t i = 0; i < m_height; ++i) {
     size_t q = (m_height - i - 1) * stride;
@@ -517,7 +520,7 @@ void Image::writePng(IODevicePtr device) const {
   }
 
   png_set_write_fn(png_ptr, device.get(), writePngData, flushPngData);
-  png_set_rows(png_ptr, info_ptr, row_ptrs.get());
+  png_set_rows(png_ptr, info_ptr, row_ptrs.data());
   png_write_png(png_ptr, info_ptr, PNG_TRANSFORM_IDENTITY, nullptr);
 
   png_destroy_write_struct(&png_ptr, &info_ptr);

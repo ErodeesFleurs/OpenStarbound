@@ -1,6 +1,8 @@
 #include "StarSystemWorldServerThread.hpp"
 #include "StarTickRateMonitor.hpp"
 #include "StarNetPackets.hpp"
+#include "StarLogging.hpp"
+#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -138,7 +140,7 @@ SystemLocation SystemWorldServerThread::clientShipLocation(ConnectionId clientId
   return m_clientShipLocations.get(clientId).first;
 }
 
-Maybe<pair<WarpAction, WarpMode>> SystemWorldServerThread::clientWarpAction(ConnectionId clientId) {
+std::optional<pair<WarpAction, WarpMode>> SystemWorldServerThread::clientWarpAction(ConnectionId clientId) {
   ReadLocker locker(m_queueMutex);
   if (m_clientShipDestinations.contains(clientId))
     return {};

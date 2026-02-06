@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include "StarGameTypes.hpp"
 #include "StarShellParser.hpp"
 #include "StarLuaComponents.hpp"
@@ -18,7 +19,7 @@ public:
   String userCommand(ConnectionId clientId, String const& command, String const& argumentString);
 
 private:
-  static Maybe<ConnectionId> playerCidFromCommand(String const& player, UniverseServer* universe);
+  static std::optional<ConnectionId> playerCidFromCommand(String const& player, UniverseServer* universe);
 
   String help(ConnectionId connectionId, String const& argumentString);
   String admin(ConnectionId connectionId, String const& argumentString);
@@ -64,8 +65,8 @@ private:
   mutable Mutex m_mutex;
 
   String handleCommand(ConnectionId connectionId, String const& command, String const& argumentString);
-  Maybe<String> adminCheck(ConnectionId connectionId, String const& commandDescription) const;
-  Maybe<String> localCheck(ConnectionId connectionId, String const& commandDescription) const;
+  std::optional<String> adminCheck(ConnectionId connectionId, String const& commandDescription) const;
+  std::optional<String> localCheck(ConnectionId connectionId, String const& commandDescription) const;
   LuaCallbacks makeCommandCallbacks();
 
   UniverseServer* m_universe;

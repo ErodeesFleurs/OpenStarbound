@@ -40,7 +40,7 @@ Returns the JSON contents of a JSON asset file. Similar to `root.assetJson`.
 
 ---
 
-#### Maybe<`String`> assets.origin(`String` path)
+#### std::optional<`String`> assets.origin(`String` path)
 
 Returns the sourcePath for the specified asset or `nil` if the asset doesn't exist. Similar to `root.assetOrigin`.
 
@@ -95,6 +95,6 @@ If withMetadata is true, returns a map of all asset source paths to the contents
 
 ---
 
-#### Maybe<`JsonObject`> assets.sourceMetadata(`String` sourcePath)
+#### std::optional<`JsonObject`> assets.sourceMetadata(`String` sourcePath)
 
 Returns the metadata of the specified sourcePath, an empty table if the sourcePath lacks a metadata, or `nil` if it doesn't exist.

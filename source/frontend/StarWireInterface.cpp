@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "StarWireInterface.hpp"
 #include "StarGuiReader.hpp"
 #include "StarRoot.hpp"
@@ -212,7 +214,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
   RectF bounds = {pos - Vec2F(16, 16), pos + Vec2F(16, 16)};
 
   if (mode == FireMode::Primary) {
-    Maybe<WireConnection> matchNode;
+    std::optional<WireConnection> matchNode;
     WireDirection matchDirection = WireDirection::Output;
     float bestDist = 10000;
     for (auto entity : m_worldClient->query<WireEntity>(bounds)) {
@@ -276,8 +278,8 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
   } else {
     m_connecting = false;
 
-    Maybe<WireNode> matchNode;
-    Maybe<Vec2I> matchPosition;
+    std::optional<WireNode> matchNode;
+    std::optional<Vec2I> matchPosition;
     float bestDist = 10000;
     for (auto entity : m_worldClient->query<WireEntity>(bounds)) {
       for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {

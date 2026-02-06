@@ -2,10 +2,9 @@
 
 #include "StarString.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(StringView);
-STAR_CLASS(String);
+namespace Star {
 
 // This is a StringView version of Star::String
 // I literally just copy-pasted it all from there
@@ -26,13 +25,13 @@ public:
 
   // These assume utf8 input
   StringView(char const* s);
-  StringView(char const* s, size_t n);
+  StringView(char const* s, std::size_t n);
   StringView(std::string_view const& s);
   StringView(std::string_view&& s) noexcept;
   StringView(std::string const& s);
 
   StringView(Char const* s);
-  StringView(Char const* s, size_t n);
+  StringView(Char const* s, std::size_t n);
 
   // const& to internal utf8 data
   std::string_view const& utf8() const;
@@ -40,26 +39,26 @@ public:
   ByteArray utf8Bytes() const;
   // Pointer to internal utf8 data, null-terminated.
   char const* utf8Ptr() const;
-  size_t utf8Size() const;
+  std::size_t utf8Size() const;
 
   const_iterator begin() const;
   const_iterator end() const;
 
-  size_t size() const;
-  size_t length() const;
+  std::size_t size() const;
+  std::size_t length() const;
 
   bool empty() const;
 
-  Char operator[](size_t index) const;
+  Char operator[](std::size_t index) const;
   // Throws StringException if i out of range.
-  Char at(size_t i) const;
+  Char at(std::size_t i) const;
 
   bool endsWith(StringView end, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
   bool endsWith(Char end, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
   bool beginsWith(StringView beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
   bool beginsWith(Char beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
 
-  typedef function<void(StringView, size_t, size_t)> SplitCallback;
+  using SplitCallback = std::function<void(StringView, std::size_t, std::size_t)>;
   void forEachSplitAnyView(StringView pattern, SplitCallback) const;
   void forEachSplitView(StringView pattern, SplitCallback) const;
 
@@ -90,7 +89,7 @@ public:
   // Synonym for equals(s, String::CaseInsensitive)
   bool equalsIgnoreCase(StringView s) const;
 
-  StringView substr(size_t position, size_t n = NPos) const;
+  StringView substr(std::size_t position, std::size_t n = std::numeric_limits<std::size_t>::max()) const;
 
   StringView& operator=(StringView s);
 
@@ -104,11 +103,11 @@ public:
   friend std::ostream& operator<<(std::ostream& os, StringView const& s);
 
 private:
-  int compare(size_t selfOffset,
-      size_t selfLen,
+  int compare(std::size_t selfOffset,
+      std::size_t selfLen,
       StringView other,
-      size_t otherOffset,
-      size_t otherLen,
+      std::size_t otherOffset,
+      std::size_t otherLen,
       CaseSensitivity cs) const;
 
   std::string_view m_view;

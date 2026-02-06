@@ -1,18 +1,22 @@
 #pragma once
 
+#include "StarException.hpp"
+#include "StarLruCache.hpp"
 #include "StarSet.hpp"
 #include "StarBTree.hpp"
-#include "StarLruCache.hpp"
 #include "StarThread.hpp"
 #include "StarIODevice.hpp"
+#include "StarConfig.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(DBException, IOException);
+using DBException = ExceptionDerived<"DBException",IOException>;
 
 class BTreeDatabase {
 public:
-  uint32_t const ContentIdentifierStringSize = 16;
+  std::uint32_t const ContentIdentifierStringSize = 16;
 
   BTreeDatabase();
   BTreeDatabase(String const& contentIdentifier, size_t keySize);
@@ -23,67 +27,67 @@ public:
   // before they need to be split, but it also means that more space is wasted
   // for index or leaf nodes that are not completely full.  Cannot be changed
   // once the database is opened.  Defaults to 2048.
-  uint32_t blockSize() const;
-  void setBlockSize(uint32_t blockSize);
+  auto blockSize() const -> std::uint32_t;
+  void setBlockSize(std::uint32_t blockSize);
 
   // Constant size of the database keys.  Should be much smaller than the block
   // size, cannot be changed once a database is opened.  Defaults zero, which
   // is invalid, so must be set if opening a new database.
-  uint32_t keySize() const;
-  void setKeySize(uint32_t keySize);
+  auto keySize() const -> std::uint32_t;
+  void setKeySize(std::uint32_t keySize);
 
   // Must be no greater than ContentIdentifierStringSize large.  May not be
   // called when the database is opened.
-  String contentIdentifier() const;
+  auto contentIdentifier() const -> String;
   void setContentIdentifier(String contentIdentifier);
 
   // Cache size for index nodes, defaults to 64
-  uint32_t indexCacheSize() const;
-  void setIndexCacheSize(uint32_t indexCacheSize);
+  auto indexCacheSize() const -> std::uint32_t;
+  void setIndexCacheSize(std::uint32_t indexCacheSize);
 
   // If true, very write operation will immediately result in a commit.
   // Defaults to true.
-  bool autoCommit() const;
+  auto autoCommit() const -> bool;
   void setAutoCommit(bool autoCommit);
 
-  IODevicePtr ioDevice() const;
-  void setIODevice(IODevicePtr device);
+  auto ioDevice() const -> Ptr<IODevice>;
+  void setIODevice(Ptr<IODevice> device);
 
   // If an existing database is opened, this will update the key size, block
   // size, and content identifier with those from the opened database.
   // Otherwise, it will use the currently set values.  Returns true if a new
   // database was created, false if an existing database was found and opened.
-  bool open();
+  auto open() -> bool;
 
-  bool isOpen() const;
+  auto isOpen() const -> bool;
 
-  bool contains(ByteArray const& k);
+  auto contains(ByteArray const& k) -> bool;
 
-  Maybe<ByteArray> find(ByteArray const& k);
-  List<pair<ByteArray, ByteArray>> find(ByteArray const& lower, ByteArray const& upper);
+  auto find(ByteArray const& k) -> std::optional<ByteArray>;
+  auto find(ByteArray const& lower, ByteArray const& upper) -> List<std::pair<ByteArray, ByteArray>>;
 
-  void forEach(ByteArray const& lower, ByteArray const& upper, function<void(ByteArray, ByteArray)> v);
-  void forAll(function<void(ByteArray, ByteArray)> v);
-  void recoverAll(function<void(ByteArray, ByteArray)> v, function<void(String const&, std::exception const&)> e);
+  void forEach(ByteArray const& lower, ByteArray const& upper, std::function<void(ByteArray, ByteArray)> v);
+  void forAll(std::function<void(ByteArray, ByteArray)> v);
+  void recoverAll(std::function<void(ByteArray, ByteArray)> v, std::function<void(String const&, std::exception const&)> e);
 
   // Returns true if a value was overwritten
-  bool insert(ByteArray const& k, ByteArray const& data);
+  auto insert(ByteArray const& k, ByteArray const& data) -> bool;
 
   // Returns true if the element was found and removed
-  bool remove(ByteArray const& k);
+  auto remove(ByteArray const& k) -> bool;
 
   // Remove all elements in the given range, returns keys removed.
-  List<ByteArray> remove(ByteArray const& lower, ByteArray const& upper);
+  auto remove(ByteArray const& lower, ByteArray const& upper) -> List<ByteArray>;
 
-  uint64_t recordCount();
+  auto recordCount() -> std::uint64_t;
 
   // The depth of the index nodes in this database
-  uint8_t indexLevels();
+  auto indexLevels() -> std::uint8_t;
 
-  uint32_t totalBlockCount();
-  uint32_t freeBlockCount();
-  uint32_t indexBlockCount();
-  uint32_t leafBlockCount();
+  auto totalBlockCount() -> std::uint32_t;
+  auto freeBlockCount() -> std::uint32_t;
+  auto indexBlockCount() -> std::uint32_t;
+  auto leafBlockCount() -> std::uint32_t;
 
   void commit();
   void rollback();
@@ -91,21 +95,21 @@ public:
   void close(bool closeDevice = false);
 
 private:
-  typedef uint32_t BlockIndex;
+  using BlockIndex = std::uint32_t;
   static BlockIndex const InvalidBlockIndex = (BlockIndex)(-1);
-  static uint32_t const HeaderSize = 512;
+  static std::uint32_t const HeaderSize = 512;
 
   // 8 byte magic file identifier
   static char const* const VersionMagic;
-  static uint32_t const VersionMagicSize = 8;
+  static std::uint32_t const VersionMagicSize = 8;
   // 2 byte leaf and index start markers.
   static char const* const FreeIndexMagic;
   static char const* const IndexMagic;
   static char const* const LeafMagic;
   // static uint32_t const BlockMagicSize = 2;
-  static size_t const BTreeRootSelectorBit = 32;
-  static size_t const BTreeRootInfoStart = 33;
-  static size_t const BTreeRootInfoSize = 17;
+  static std::size_t const BTreeRootSelectorBit = 32;
+  static std::size_t const BTreeRootInfoStart = 33;
+  static std::size_t const BTreeRootInfoSize = 17;
 
   struct FreeIndexBlock {
     BlockIndex nextFreeBlock;
@@ -113,45 +117,45 @@ private:
   };
 
   struct IndexNode {
-    size_t pointerCount() const;
-    BlockIndex pointer(size_t i) const;
-    void updatePointer(size_t i, BlockIndex p);
+    [[nodiscard]] auto pointerCount() const -> std::size_t;
+    [[nodiscard]] auto pointer(std::size_t i) const -> BlockIndex;
+    void updatePointer(std::size_t i, BlockIndex p);
 
-    ByteArray const& keyBefore(size_t i) const;
-    void updateKeyBefore(size_t i, ByteArray k);
+    [[nodiscard]] auto keyBefore(std::size_t i) const -> ByteArray const&;
+    void updateKeyBefore(std::size_t i, ByteArray k);
 
-    void removeBefore(size_t i);
-    void insertAfter(size_t i, ByteArray k, BlockIndex p);
+    void removeBefore(std::size_t i);
+    void insertAfter(std::size_t i, ByteArray k, BlockIndex p);
 
-    uint8_t indexLevel() const;
-    void setIndexLevel(uint8_t indexLevel);
+    [[nodiscard]] auto indexLevel() const -> std::uint8_t;
+    void setIndexLevel(std::uint8_t indexLevel);
 
     // count is number of elements to shift left *including* right's beginPointer
-    void shiftLeft(ByteArray const& mid, IndexNode& right, size_t count);
+    void shiftLeft(ByteArray const& mid, IndexNode& right, std::size_t count);
 
     // count is number of elements to shift right
-    void shiftRight(ByteArray const& mid, IndexNode& left, size_t count);
+    void shiftRight(ByteArray const& mid, IndexNode& left, std::size_t count);
 
     // i should be index of pointer that will be the new beginPointer of right
     // node (cannot be 0).
-    ByteArray split(IndexNode& right, size_t i);
+    auto split(IndexNode& right, std::size_t i) -> ByteArray;
 
     struct Element {
       ByteArray key;
       BlockIndex pointer;
     };
-    typedef List<Element> ElementList;
+    using ElementList = List<Element>;
 
     BlockIndex self;
-    uint8_t level;
-    Maybe<BlockIndex> beginPointer;
+    std::uint8_t level;
+    std::optional<BlockIndex> beginPointer;
     ElementList pointers;
   };
 
   struct LeafNode {
-    size_t count() const;
-    ByteArray const& key(size_t i) const;
-    ByteArray const& data(size_t i) const;
+    [[nodiscard]] auto count() const -> std::size_t;
+    [[nodiscard]] auto key(size_t i) const -> ByteArray const&;
+    [[nodiscard]] auto data(size_t i) const -> ByteArray const&;
 
     void insert(size_t i, ByteArray k, ByteArray d);
     void remove(size_t i);
@@ -170,106 +174,106 @@ private:
       ByteArray key;
       ByteArray data;
     };
-    typedef List<Element> ElementList;
+    using ElementList = List<Element>;
 
     BlockIndex self;
     ElementList elements;
   };
 
   struct BTreeImpl {
-    typedef ByteArray Key;
-    typedef ByteArray Data;
-    typedef BlockIndex Pointer;
+    using Key = ByteArray;
+    using Data = ByteArray;
+    using Pointer = BlockIndex;
 
-    typedef shared_ptr<IndexNode> Index;
-    typedef shared_ptr<LeafNode> Leaf;
+    using Index = std::shared_ptr<IndexNode>;
+    using Leaf = std::shared_ptr<LeafNode>;
 
-    Pointer rootPointer();
-    bool rootIsLeaf();
+    auto rootPointer() -> Pointer;
+    auto rootIsLeaf() -> bool;
     void setNewRoot(Pointer pointer, bool isLeaf);
 
-    Index createIndex(Pointer beginPointer);
-    Index loadIndex(Pointer pointer);
-    bool indexNeedsShift(Index const& index);
-    bool indexShift(Index const& left, Key const& mid, Index const& right);
-    Maybe<pair<Key, Index>> indexSplit(Index const& index);
-    Pointer storeIndex(Index index);
+    auto createIndex(Pointer beginPointer) -> Index;
+    auto loadIndex(Pointer pointer) -> Index;
+    auto indexNeedsShift(Index const& index) -> bool;
+    auto indexShift(Index const& left, Key const& mid, Index const& right) -> bool;
+    auto indexSplit(Index const& index) -> std::optional<std::pair<Key, Index>>;
+    auto storeIndex(Index index) -> Pointer;
     void deleteIndex(Index index);
 
-    Leaf createLeaf();
-    Leaf loadLeaf(Pointer pointer);
-    bool leafNeedsShift(Leaf const& l);
-    bool leafShift(Leaf& left, Leaf& right);
-    Maybe<Leaf> leafSplit(Leaf& leaf);
-    Pointer storeLeaf(Leaf leaf);
+    auto createLeaf() -> Leaf;
+    auto loadLeaf(Pointer pointer) -> Leaf;
+    auto leafNeedsShift(Leaf const& l) -> bool;
+    auto leafShift(Leaf& left, Leaf& right) -> bool;
+    auto leafSplit(Leaf& leaf) -> std::optional<Leaf>;
+    auto storeLeaf(Leaf leaf) -> Pointer;
     void deleteLeaf(Leaf leaf);
 
-    size_t indexPointerCount(Index const& index);
-    Pointer indexPointer(Index const& index, size_t i);
-    void indexUpdatePointer(Index& index, size_t i, Pointer p);
-    Key indexKeyBefore(Index const& index, size_t i);
-    void indexUpdateKeyBefore(Index& index, size_t i, Key k);
-    void indexRemoveBefore(Index& index, size_t i);
-    void indexInsertAfter(Index& index, size_t i, Key k, Pointer p);
-    size_t indexLevel(Index const& index);
-    void setIndexLevel(Index& index, size_t indexLevel);
+    auto indexPointerCount(Index const& index) -> size_t;
+    auto indexPointer(Index const& index, std::size_t i) -> Pointer;
+    void indexUpdatePointer(Index& index, std::size_t i, Pointer p);
+    auto indexKeyBefore(Index const& index, std::size_t i) -> Key;
+    void indexUpdateKeyBefore(Index& index, std::size_t i, Key k);
+    void indexRemoveBefore(Index& index, std::size_t i);
+    void indexInsertAfter(Index& index, std::size_t i, Key k, Pointer p);
+    auto indexLevel(Index const& index) -> std::size_t;
+    void setIndexLevel(Index& index, std::size_t indexLevel);
 
-    size_t leafElementCount(Leaf const& leaf);
-    Key leafKey(Leaf const& leaf, size_t i);
-    Data leafData(Leaf const& leaf, size_t i);
-    void leafInsert(Leaf& leaf, size_t i, Key k, Data d);
-    void leafRemove(Leaf& leaf, size_t i);
-    Maybe<Pointer> nextLeaf(Leaf const& leaf);
-    void setNextLeaf(Leaf& leaf, Maybe<Pointer> n);
+    auto leafElementCount(Leaf const& leaf) -> std::size_t;
+    auto leafKey(Leaf const& leaf, std::size_t i) -> Key;
+    auto leafData(Leaf const& leaf, std::size_t i) -> Data;
+    void leafInsert(Leaf& leaf, std::size_t i, Key k, Data d);
+    void leafRemove(Leaf& leaf, std::size_t i);
+    auto nextLeaf(Leaf const& leaf) -> std::optional<Pointer>;
+    void setNextLeaf(Leaf& leaf, std::optional<Pointer> n);
 
     BTreeDatabase* parent;
   };
 
-  void readBlock(BlockIndex blockIndex, size_t blockOffset, char* block, size_t size) const;
-  ByteArray readBlock(BlockIndex blockIndex) const;
+  void readBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const;
+  auto readBlock(BlockIndex blockIndex) const -> ByteArray;
   void updateBlock(BlockIndex blockIndex, ByteArray const& block);
 
-  void rawReadBlock(BlockIndex blockIndex, size_t blockOffset, char* block, size_t size) const;
-  void rawWriteBlock(BlockIndex blockIndex, size_t blockOffset, char const* block, size_t size);
+  void rawReadBlock(BlockIndex blockIndex, std::size_t blockOffset, char* block, std::size_t size) const;
+  void rawWriteBlock(BlockIndex blockIndex, std::size_t blockOffset, char const* block, std::size_t size);
 
   void updateHeadFreeIndexBlock(BlockIndex newHead);
 
-  FreeIndexBlock readFreeIndexBlock(BlockIndex blockIndex);
+  auto readFreeIndexBlock(BlockIndex blockIndex) -> FreeIndexBlock;
   void writeFreeIndexBlock(BlockIndex blockIndex, FreeIndexBlock indexBlock);
 
-  uint32_t leafSize(shared_ptr<LeafNode> const& leaf) const;
-  uint32_t maxIndexPointers() const;
+  auto leafSize(std::shared_ptr<LeafNode> const& leaf) const -> std::uint32_t;
+  auto maxIndexPointers() const -> std::uint32_t;
 
-  uint32_t dataSize(ByteArray const& d) const;
-  List<BlockIndex> leafTailBlocks(BlockIndex leafPointer);
+  auto dataSize(ByteArray const& d) const -> std::uint32_t;
+  auto leafTailBlocks(BlockIndex leafPointer) -> List<BlockIndex>;
 
   void freeBlock(BlockIndex b);
-  BlockIndex reserveBlock();
-  BlockIndex makeEndBlock();
+  auto reserveBlock() -> BlockIndex;
+  auto makeEndBlock() -> BlockIndex;
 
   void dirty();
   void writeRoot();
   void readRoot();
   void doCommit();
   void commitWrites();
-  bool tryFlatten();
-  bool flattenVisitor(BTreeImpl::Index& index, BlockIndex& count);
+  auto tryFlatten() -> bool;
+  auto flattenVisitor(BTreeImpl::Index& index, BlockIndex& count) -> bool;
 
   void checkIfOpen(char const* methodName, bool shouldBeOpen) const;
-  void checkBlockIndex(size_t blockIndex) const;
+  void checkBlockIndex(std::size_t blockIndex) const;
   void checkKeySize(ByteArray const& k) const;
-  uint32_t maxFreeIndexLength() const;
+  auto maxFreeIndexLength() const -> std::uint32_t;
 
   mutable ReadersWriterMutex m_lock;
 
   BTreeMixin<BTreeImpl> m_impl;
 
-  IODevicePtr m_device;
+  Ptr<IODevice> m_device;
   bool m_open;
 
-  uint32_t m_blockSize;
+  std::uint32_t m_blockSize;
   String m_contentIdentifier;
-  uint32_t m_keySize;
+  std::uint32_t m_keySize;
 
   bool m_autoCommit;
 
@@ -278,10 +282,10 @@ private:
   // NOT holding the main writer lock, because if the main writer lock is held
   // then no other method would be loading an index anyway.
   mutable SpinLock m_indexCacheSpinLock;
-  LruCache<BlockIndex, shared_ptr<IndexNode>> m_indexCache;
+  LruCache<BlockIndex, std::shared_ptr<IndexNode>> m_indexCache;
 
   BlockIndex m_headFreeIndexBlock;
-  StreamOffset m_deviceSize;
+  std::int64_t m_deviceSize;
   BlockIndex m_root;
   bool m_rootIsLeaf;
   bool m_usingAltRoot;
@@ -306,17 +310,17 @@ public:
   BTreeSha256Database(String const& contentIdentifier);
 
   // Keys can be arbitrary size, actual key is the SHA-256 checksum of the key.
-  bool contains(ByteArray const& key);
-  Maybe<ByteArray> find(ByteArray const& key);
-  bool insert(ByteArray const& key, ByteArray const& value);
-  bool remove(ByteArray const& key);
+  auto contains(ByteArray const& key) -> bool;
+  auto find(ByteArray const& key) -> std::optional<ByteArray>;
+  auto insert(ByteArray const& key, ByteArray const& value) -> bool;
+  auto remove(ByteArray const& key) -> bool;
 
   // Convenience string versions of access methods.  Equivalent to the utf8
   // bytes of the string minus the null terminator.
-  bool contains(String const& key);
-  Maybe<ByteArray> find(String const& key);
-  bool insert(String const& key, ByteArray const& value);
-  bool remove(String const& key);
+  auto contains(String const& key) -> bool;
+  auto find(String const& key) -> std::optional<ByteArray>;
+  auto insert(String const& key, ByteArray const& value) -> bool;
+  auto remove(String const& key) -> bool;
 
   using BTreeDatabase::ContentIdentifierStringSize;
   using BTreeDatabase::blockSize;

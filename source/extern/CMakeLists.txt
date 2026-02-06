@@ -4,7 +4,6 @@ SET (star_extern_HEADERS
     curve25519/include/external_calls.h
     imgui_iterator.inl
 
-    fast_float.h
     imgui_lua_bindings.hpp
     lauxlib.h
     lua.h
@@ -60,12 +59,6 @@ SET (star_extern_SOURCES
     lua/lvm.c
     lua/lzio.c
   )
-
-
-IF (STAR_USE_RPMALLOC)
-    LIST(APPEND star_extern_HEADERS rpmalloc.h rpnew.h)
-    LIST(APPEND star_extern_SOURCES rpmalloc.c)
-ENDIF()
 
 ADD_LIBRARY(star_extern OBJECT ${star_extern_SOURCES} ${star_extern_HEADERS})
 

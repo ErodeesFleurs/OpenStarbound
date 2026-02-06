@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarLuaComponents.hpp"
 #include "StarLuaAnimationComponent.hpp"
 #include "StarWorld.hpp"
@@ -26,7 +28,7 @@ public:
   void uninit();
 
   void teleportOut();
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   void update(float dt);
 
   void render(RenderCallback* renderCallback, Vec2F const& position);

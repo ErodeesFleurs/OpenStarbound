@@ -3,7 +3,6 @@
 namespace Star {
 
 void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpolation) {
-  starAssert(!m_elements.any([element](auto p) { return p.first == element; }));
 
   element->initNetVersion(m_version);
   if (m_interpolationEnabled && propagateInterpolation)
@@ -70,7 +69,7 @@ void NetElementGroup::tickNetInterpolation(float dt) {
 bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
 
-  auto expectedSize = m_elementCounts.maybe(rules.version()).value(m_elements.size());
+  auto expectedSize = m_elementCounts.maybe(rules.version()).value_or(m_elements.size());
 
   if (expectedSize == 0) {
     return false;
@@ -109,7 +108,7 @@ void NetElementGroup::readNetDelta(DataStream& ds, float interpolationTime, NetC
   if (!checkWithRules(rules))
     return;
 
-  auto expectedSize = m_elementCounts.maybe(rules.version()).value(m_elements.size());
+  auto expectedSize = m_elementCounts.maybe(rules.version()).value_or(m_elements.size());
 
   if (expectedSize == 0) {
     throw IOException("readNetDelta called on empty NetElementGroup");

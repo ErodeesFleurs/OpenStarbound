@@ -40,9 +40,9 @@ Item::Item(Json config, String directory, Json parameters) {
     }));
   } else if (secondaryIcon.type() == Json::Type::String) {
     auto image = AssetPath::relativeTo(m_directory, secondaryIcon.toString());
-    setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
+    setSecondaryIconDrawables(std::optional<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
   } else {
-    setSecondaryIconDrawables(Maybe<List<Drawable>>());
+    setSecondaryIconDrawables(std::optional<List<Drawable>>());
   }
 
   auto assets = Root::singleton().assets();
@@ -169,12 +169,12 @@ List<Drawable> Item::iconDrawables() const {
   return m_iconDrawables;
 }
 
-Maybe<List<Drawable>> Item::secondaryDrawables() const {
+std::optional<List<Drawable>> Item::secondaryDrawables() const {
   return m_secondaryIconDrawables;
 }
 
 bool Item::hasSecondaryDrawables() const {
-  return m_secondaryIconDrawables.isValid();
+  return m_secondaryIconDrawables.has_value();
 }
 
 List<Drawable> Item::dropDrawables() const {
@@ -247,9 +247,9 @@ void Item::setIconDrawables(List<Drawable> drawables) {
   }
 }
 
-void Item::setSecondaryIconDrawables(Maybe<List<Drawable>> drawables) {
+void Item::setSecondaryIconDrawables(std::optional<List<Drawable>> drawables) {
   m_secondaryIconDrawables = std::move(drawables);
-  if (m_secondaryIconDrawables.isNothing())
+  if (!m_secondaryIconDrawables)
     return;
 
   auto boundBox = Drawable::boundBoxAll(*m_secondaryIconDrawables, true);

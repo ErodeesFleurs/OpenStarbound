@@ -424,10 +424,8 @@ Element* MultiArray<Element, Rank>::data() {
 template <typename Element, size_t Rank>
 size_t MultiArray<Element, Rank>::storageIndex(IndexArray const& index) const {
   size_t loc = index[0];
-  starAssert(index[0] < m_shape[0]);
   for (size_t i = 1; i < Rank; ++i) {
     loc = loc * m_shape[i] + index[i];
-    starAssert(index[i] < m_shape[i]);
   }
   return loc;
 }

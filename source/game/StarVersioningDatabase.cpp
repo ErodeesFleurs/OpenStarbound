@@ -1,18 +1,14 @@
 #include "StarVersioningDatabase.hpp"
-#include "StarDataStreamExtra.hpp"
+#include "StarDataStreamDevices.hpp"
 #include "StarFormat.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
-#include "StarWorldLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarAssets.hpp"
-#include "StarStoredFunctions.hpp"
-#include "StarNpcDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarCelestialDatabase.hpp"
-#include "StarJsonExtra.hpp"
 
 namespace Star {
 
@@ -80,9 +76,9 @@ VersionedJson VersionedJson::fromJson(Json const& source) {
   // Old versions of VersionedJson used '__' to distinguish between actual
   // content and versioned content, but this is no longer necessary or
   // relevant.
-  auto id = source.optString("id").orMaybe(source.optString("__id"));
-  auto version = source.optUInt("version").orMaybe(source.optUInt("__version"));
-  auto content = source.opt("content").orMaybe(source.opt("__content"));
+  auto id = source.optString("id").or_else([&]{return source.optString("__id");});
+  auto version = source.optUInt("version").or_else([&]{return source.optUInt("__version");});
+  auto content = source.opt("content").or_else([&]{return source.opt("__content");});
   StringMap<VersionNumber> subVersions;
   for (auto const& p : source.getObject("subVersions", JsonObject()))
     subVersions[p.first] = p.second.toUInt();
@@ -105,7 +101,7 @@ DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
   // This is a holdover from when the verison number was optional in
   // VersionedJson.  We should convert versioned json binary files and the
   // celestial chunk database and world storage to a new format eventually
-  versionedJson.version = ds.read<Maybe<VersionNumber>>().value();
+  versionedJson.version = ds.read<std::optional<VersionNumber>>().value();
   ds.read(versionedJson.content);
 
   // this is a holdover from when sub versions were smuggled into content without realizing this caused issues, can potentially be removed later
@@ -119,7 +115,7 @@ DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson) {
 
 DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson) {
   ds.write(versionedJson.identifier);
-  ds.write(Maybe<VersionNumber>(versionedJson.version));
+  ds.write(std::optional<VersionNumber>(versionedJson.version));
   ds.write(versionedJson.content);
   return ds;
 }
@@ -204,7 +200,7 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
   CelestialMasterDatabase celestialDatabase;
 
   VersionedJson result = versionedJson;
-  Maybe<VersionNumber> targetVersion = m_currentVersions.maybe(versionedJson.identifier);
+  std::optional<VersionNumber> targetVersion = m_currentVersions.maybe(versionedJson.identifier);
   if (!targetVersion)
     throw VersioningDatabaseException::format("Versioned JSON has an unregistered identifier '{}'", versionedJson.identifier);
 

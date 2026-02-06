@@ -3,38 +3,40 @@
 #include "StarJsonParser.hpp"
 #include "StarJson.hpp"
 
+import std;
+
 namespace Star {
 
 class JsonBuilderStream : public JsonStream {
 public:
-  virtual void beginObject();
-  virtual void objectKey(char32_t const* s, size_t len);
-  virtual void endObject();
+  void beginObject() override;
+  void objectKey(char32_t const* s, size_t len) override;
+  void endObject() override;
 
-  virtual void beginArray();
-  virtual void endArray();
+  void beginArray() override;
+  void endArray() override;
 
-  virtual void putString(char32_t const* s, size_t len);
-  virtual void putDouble(char32_t const* s, size_t len);
-  virtual void putInteger(char32_t const* s, size_t len);
-  virtual void putBoolean(bool b);
-  virtual void putNull();
+  void putString(char32_t const* s, size_t len) override;
+  void putDouble(char32_t const* s, size_t len) override;
+  void putInteger(char32_t const* s, size_t len) override;
+  void putBoolean(bool b) override;
+  void putNull() override;
 
-  virtual void putWhitespace(char32_t const* s, size_t len);
-  virtual void putColon();
-  virtual void putComma();
+  void putWhitespace(char32_t const* s, size_t len) override;
+  void putColon() override;
+  void putComma() override;
 
-  size_t stackSize();
-  Json takeTop();
+  auto stackSize() -> size_t;
+  auto takeTop() -> Json;
 
 private:
   void push(Json v);
-  Json pop();
+  auto pop() -> Json;
   void set(Json v);
   void pushSentry();
-  bool isSentry();
+  auto isSentry() -> bool;
 
-  List<Maybe<Json>> m_stack;
+  List<std::optional<Json>> m_stack;
 };
 
 template <typename Jsonlike>
@@ -50,9 +52,9 @@ public:
 };
 
 template <typename InputIterator>
-Json inputUtf8Json(InputIterator begin, InputIterator end, JsonParseType parseType) {
-  typedef U8ToU32Iterator<InputIterator> Utf32Input;
-  typedef JsonParser<Utf32Input> Parser;
+auto inputUtf8Json(InputIterator begin, InputIterator end, JsonParseType parseType) -> Json {
+  using Utf32Input = U8ToU32Iterator<InputIterator>;
+  using Parser = JsonParser<Utf32Input>;
 
   JsonBuilderStream stream;
   Parser parser(stream);
@@ -70,14 +72,14 @@ Json inputUtf8Json(InputIterator begin, InputIterator end, JsonParseType parseTy
 
 template <typename OutputIterator>
 void outputUtf8Json(Json const& val, OutputIterator out, int pretty, bool sort) {
-  typedef Utf8OutputIterator<OutputIterator> Utf8Output;
-  typedef JsonWriter<Utf8Output> Writer;
+  using Utf8Output = Utf8OutputIterator<OutputIterator>;
+  using Writer = JsonWriter<Utf8Output>;
   Writer writer(Utf8Output(out), pretty);
   JsonStreamer<Json>::toJsonStream(val, writer, sort);
 }
 
 template <typename InputIterator, typename Stream = JsonBuilderStream, typename Jsonlike = Json>
-Jsonlike inputUtf32Json(InputIterator begin, InputIterator end, JsonParseType parseType) {
+auto inputUtf32Json(InputIterator begin, InputIterator end, JsonParseType parseType) -> Jsonlike {
   Stream stream;
   JsonParser<InputIterator> parser(stream);
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "StarCelestialParameters.hpp"
+#include <optional>
+
 #include "StarCelestialCoordinate.hpp"
 #include "StarUuid.hpp"
 #include "StarWarping.hpp"
@@ -90,9 +91,9 @@ public:
   float clusterSize(CelestialCoordinate const& planet) const;
   float planetSize(CelestialCoordinate const& planet) const;
   Vec2F planetPosition(CelestialCoordinate const& planet) const;
-  Maybe<Vec2F> systemLocationPosition(SystemLocation const& position) const;
+  std::optional<Vec2F> systemLocationPosition(SystemLocation const& position) const;
   Vec2F randomArrivalPosition() const;
-  Maybe<WarpAction> objectWarpAction(Uuid const& uuid) const;
+  std::optional<WarpAction> objectWarpAction(Uuid const& uuid) const;
 
   virtual List<SystemObjectPtr> objects() const = 0;
   virtual List<Uuid> objectKeys() const = 0;
@@ -122,7 +123,7 @@ struct SystemObjectConfig {
   bool permanent;
 
   WarpAction warpAction;
-  Maybe<float> threatLevel;
+  std::optional<float> threatLevel;
   SkyParameters skyParameters;
   StringMap<String> generatedParameters;
   JsonObject parameters;
@@ -142,15 +143,15 @@ public:
   Vec2F position() const;
 
   WarpAction warpAction() const;
-  Maybe<float> threatLevel() const;
+  std::optional<float> threatLevel() const;
   SkyParameters skyParameters() const;
   JsonObject parameters() const;
 
   bool shouldDestroy() const;
 
   void enterOrbit(CelestialCoordinate const& target, Vec2F const& targetPosition, double time);
-  Maybe<CelestialCoordinate> orbitTarget() const;
-  Maybe<CelestialOrbit> orbit() const;
+  std::optional<CelestialCoordinate> orbitTarget() const;
+  std::optional<CelestialOrbit> orbit() const;
 
   void clientUpdate(float dt);
   void serverUpdate(SystemWorldServer* system, float dt);
@@ -169,14 +170,14 @@ private:
   double m_spawnTime;
   JsonObject m_parameters;
 
-  Maybe<CelestialCoordinate> m_approach;
+  std::optional<CelestialCoordinate> m_approach;
 
   bool m_shouldDestroy;
 
   NetElementTopGroup m_netGroup;
   NetElementFloat m_xPosition;
   NetElementFloat m_yPosition;
-  NetElementData<Maybe<CelestialOrbit>> m_orbit;
+  NetElementData<std::optional<CelestialOrbit>> m_orbit;
 };
 
 class SystemClientShip {
@@ -217,7 +218,7 @@ private:
   float m_departTimer;
   float m_speed;
 
-  Maybe<CelestialOrbit> m_orbit;
+  std::optional<CelestialOrbit> m_orbit;
 
   NetElementTopGroup m_netGroup;
   NetElementData<SystemLocation> m_systemLocation;

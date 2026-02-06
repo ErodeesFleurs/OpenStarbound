@@ -36,7 +36,7 @@ public:
 
   virtual RpcPromise<ItemPtr> addItems(ItemPtr const& items) = 0;
   virtual RpcPromise<ItemPtr> putItems(size_t slot, ItemPtr const& items) = 0;
-  virtual RpcPromise<ItemPtr> takeItems(size_t slot, size_t count = NPos) = 0;
+  virtual RpcPromise<ItemPtr> takeItems(size_t slot, size_t count = std::numeric_limits<std::size_t>::max()) = 0;
   virtual RpcPromise<ItemPtr> swapItems(size_t slot, ItemPtr const& items, bool tryCombine = true) = 0;
   virtual RpcPromise<ItemPtr> applyAugment(size_t slot, ItemPtr const& augment) = 0;
   virtual RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) = 0;

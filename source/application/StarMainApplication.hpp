@@ -1,8 +1,6 @@
 #pragma once
 
 #include "StarApplication.hpp"
-#include "StarApplicationController.hpp"
-#include "StarRenderer.hpp"
 
 namespace Star {
   int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs);

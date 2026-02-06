@@ -134,7 +134,7 @@ Parallax::Parallax(String const& assetFile,
     uint64_t seed,
     float verticalOrigin,
     float hueShift,
-    Maybe<TreeVariant> parallaxTreeVariant) {
+    std::optional<TreeVariant> parallaxTreeVariant) {
   m_seed = seed;
   m_verticalOrigin = verticalOrigin;
   m_parallaxTreeVariant = parallaxTreeVariant;

@@ -45,7 +45,7 @@ MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, Rule
     else if (!subMatches.isNull())
       match->subMatches = parseMaterialRenderMatchList(subMatches, ruleMap, pieceMap, matchMap);
 
-    match->requiredLayer = matchConfig.optString("requiredLayer").apply(bind(&EnumMap<TileLayer>::getLeft, &TileLayerNames, _1));
+    match->requiredLayer = matchConfig.optString("requiredLayer").transform(bind(&EnumMap<TileLayer>::getLeft, &TileLayerNames, _1));
     match->haltOnMatch = matchConfig.getBool("haltOnMatch", false);
     match->haltOnSubMatch = matchConfig.getBool("haltOnSubMatch", false);
 

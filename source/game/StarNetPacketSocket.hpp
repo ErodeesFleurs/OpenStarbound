@@ -73,8 +73,8 @@ public:
 
   // Should return incoming / outgoing packet stats, if they are tracked.
   // Default implementations return nothing.
-  virtual Maybe<PacketStats> incomingStats() const;
-  virtual Maybe<PacketStats> outgoingStats() const;
+  virtual std::optional<PacketStats> incomingStats() const;
+  virtual std::optional<PacketStats> outgoingStats() const;
 
   virtual void setNetRules(NetCompatibilityRules netRules);
   virtual NetCompatibilityRules netRules() const;
@@ -142,8 +142,8 @@ public:
   bool writeData() override;
   bool readData() override;
 
-  Maybe<PacketStats> incomingStats() const override;
-  Maybe<PacketStats> outgoingStats() const override;
+  std::optional<PacketStats> incomingStats() const override;
+  std::optional<PacketStats> outgoingStats() const override;
 private:
   TcpPacketSocket(TcpSocketPtr socket);
 
@@ -172,8 +172,8 @@ public:
   bool writeData() override;
   bool readData() override;
 
-  Maybe<PacketStats> incomingStats() const override;
-  Maybe<PacketStats> outgoingStats() const override;
+  std::optional<PacketStats> incomingStats() const override;
+  std::optional<PacketStats> outgoingStats() const override;
 
 private:
   P2PPacketSocket(P2PSocketPtr socket);

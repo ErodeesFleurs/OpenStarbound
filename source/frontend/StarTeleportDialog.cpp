@@ -117,7 +117,7 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
     }
   }
 
-  fetchChild<ButtonWidget>("btnTeleport")->setEnabled(destList->selectedItem() != NPos);
+  fetchChild<ButtonWidget>("btnTeleport")->setEnabled(destList->selectedItem() != std::numeric_limits<std::size_t>::max());
 }
 
 void TeleportDialog::tick(float) {
@@ -127,12 +127,12 @@ void TeleportDialog::tick(float) {
 
 void TeleportDialog::selectDestination() {
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
-  fetchChild<ButtonWidget>("btnTeleport")->setEnabled(destList->selectedItem() != NPos);
+  fetchChild<ButtonWidget>("btnTeleport")->setEnabled(destList->selectedItem() != std::numeric_limits<std::size_t>::max());
 }
 
 void TeleportDialog::teleport() {
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
-  if (destList->selectedItem() != NPos) {
+  if (destList->selectedItem() != std::numeric_limits<std::size_t>::max()) {
     auto& destination = m_destinations[destList->selectedItem()];
     auto warpAction = destination.first;
     bool deploy = destination.second;
@@ -156,7 +156,7 @@ void TeleportDialog::teleport() {
 
 void TeleportDialog::editBookmark() {
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
-  if (destList->selectedItem() != NPos) {
+  if (destList->selectedItem() != std::numeric_limits<std::size_t>::max()) {
     size_t selectedItem = destList->selectedItem();
     auto bookmarks = m_client->mainPlayer()->universeMap()->teleportBookmarks();
     bookmarks.sort([](auto const& a, auto const& b) { return a.bookmarkName.toLower() < b.bookmarkName.toLower(); });

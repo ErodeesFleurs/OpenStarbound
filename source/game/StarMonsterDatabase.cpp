@@ -1,12 +1,10 @@
 #include "StarMonsterDatabase.hpp"
 #include "StarMonster.hpp"
-#include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarRootLuaBindings.hpp"
-#include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
 
 namespace Star {
@@ -208,7 +206,7 @@ MonsterVariant MonsterDatabase::readMonsterVariantFromJson(Json const& variant) 
 }
 
 MonsterPtr MonsterDatabase::createMonster(
-    MonsterVariant monsterVariant, Maybe<float> level, Json uniqueParameters) const {
+    MonsterVariant monsterVariant, std::optional<float> level, Json uniqueParameters) const {
   if (uniqueParameters) {
     monsterVariant.uniqueParameters = jsonMerge(monsterVariant.uniqueParameters, uniqueParameters);
     monsterVariant.parameters = jsonMerge(monsterVariant.parameters, monsterVariant.uniqueParameters);
@@ -248,7 +246,7 @@ List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) c
   for (auto const& pair : variant.animatorPartTags)
     animator.setPartTag(pair.first, "partImage", pair.second);
   animator.setZoom(variant.animatorZoom);
-  auto colorSwap = variant.colorSwap.value(this->colorSwap(variant.parameters.getString("colors", "default"), variant.seed));
+  auto colorSwap = variant.colorSwap.value_or(this->colorSwap(variant.parameters.getString("colors", "default"), variant.seed));
   if (!colorSwap.empty())
     animator.setProcessingDirectives(imageOperationToString(ColorReplaceImageOperation{colorSwap}));
   auto drawables = animator.drawables();
@@ -359,53 +357,55 @@ Json MonsterDatabase::mergeFinalParameters(JsonArray const& parameters) {
 }
 
 void MonsterDatabase::readCommonParameters(MonsterVariant& variant) {
-  variant.shortDescription = variant.parameters.optString("shortdescription").orMaybe(variant.shortDescription);
-  variant.dropPoolConfig = variant.parameters.get("dropPools", variant.dropPoolConfig);
-  variant.scripts = jsonToStringList(variant.parameters.get("scripts"));
-  variant.animationScripts = jsonToStringList(variant.parameters.getArray("animationScripts", {}));
-  variant.animatorConfig = jsonMerge(variant.animatorConfig, variant.parameters.get("animationCustom", JsonObject()));
-  variant.initialScriptDelta = variant.parameters.getUInt("initialScriptDelta", 5);
-  variant.metaBoundBox = jsonToRectF(variant.parameters.get("metaBoundBox"));
-  variant.renderLayer = variant.parameters.optString("renderLayer").apply(parseRenderLayer).value(RenderLayerMonster);
-  variant.scale = variant.parameters.getFloat("scale");
-  variant.movementSettings = ActorMovementParameters(variant.parameters.get("movementSettings", {}));
-  variant.walkMultiplier = variant.parameters.getFloat("walkMultiplier", 1.0f);
-  variant.runMultiplier = variant.parameters.getFloat("runMultiplier", 1.0f);
-  variant.jumpMultiplier = variant.parameters.getFloat("jumpMultiplier", 1.0f);
-  variant.weightMultiplier = variant.parameters.getFloat("weightMultiplier", 1.0f);
-  variant.healthMultiplier = variant.parameters.getFloat("healthMultiplier", 1.0f);
-  variant.touchDamageMultiplier = variant.parameters.getFloat("touchDamageMultiplier", 1.0f);
-  variant.touchDamageConfig = variant.parameters.get("touchDamage", {});
-  variant.animationDamageParts = variant.parameters.getObject("animationDamageParts", {});
-  variant.statusSettings = variant.parameters.get("statusSettings");
-  variant.mouthOffset = jsonToVec2F(variant.parameters.get("mouthOffset")) / TilePixels;
-  variant.feetOffset = jsonToVec2F(variant.parameters.get("feetOffset")) / TilePixels;
-  variant.powerLevelFunction = variant.parameters.getString("powerLevelFunction", "monsterLevelPowerMultiplier");
-  variant.healthLevelFunction = variant.parameters.getString("healthLevelFunction", "monsterLevelHealthMultiplier");
-  variant.clientEntityMode = ClientEntityModeNames.getLeft(variant.parameters.getString("clientEntityMode", "ClientSlaveOnly"));
-  variant.persistent = variant.parameters.getBool("persistent", false);
-  variant.damageTeamType = TeamTypeNames.getLeft(variant.parameters.getString("damageTeamType", "enemy"));
-  variant.damageTeam = variant.parameters.getUInt("damageTeam", 2);
+    if (auto newDesc = variant.parameters.optString("shortdescription")) {
+        variant.shortDescription = std::move(newDesc);
+    }
+    variant.dropPoolConfig = variant.parameters.get("dropPools", variant.dropPoolConfig);
+    variant.scripts = jsonToStringList(variant.parameters.get("scripts"));
+    variant.animationScripts = jsonToStringList(variant.parameters.getArray("animationScripts", {}));
+    variant.animatorConfig = jsonMerge(variant.animatorConfig, variant.parameters.get("animationCustom", JsonObject()));
+    variant.initialScriptDelta = variant.parameters.getUInt("initialScriptDelta", 5);
+    variant.metaBoundBox = jsonToRectF(variant.parameters.get("metaBoundBox"));
+    variant.renderLayer = variant.parameters.optString("renderLayer").transform(parseRenderLayer).value_or(RenderLayerMonster);
+    variant.scale = variant.parameters.getFloat("scale");
+    variant.movementSettings = ActorMovementParameters(variant.parameters.get("movementSettings", {}));
+    variant.walkMultiplier = variant.parameters.getFloat("walkMultiplier", 1.0f);
+    variant.runMultiplier = variant.parameters.getFloat("runMultiplier", 1.0f);
+    variant.jumpMultiplier = variant.parameters.getFloat("jumpMultiplier", 1.0f);
+    variant.weightMultiplier = variant.parameters.getFloat("weightMultiplier", 1.0f);
+    variant.healthMultiplier = variant.parameters.getFloat("healthMultiplier", 1.0f);
+    variant.touchDamageMultiplier = variant.parameters.getFloat("touchDamageMultiplier", 1.0f);
+    variant.touchDamageConfig = variant.parameters.get("touchDamage", {});
+    variant.animationDamageParts = variant.parameters.getObject("animationDamageParts", {});
+    variant.statusSettings = variant.parameters.get("statusSettings");
+    variant.mouthOffset = jsonToVec2F(variant.parameters.get("mouthOffset")) / TilePixels;
+    variant.feetOffset = jsonToVec2F(variant.parameters.get("feetOffset")) / TilePixels;
+    variant.powerLevelFunction = variant.parameters.getString("powerLevelFunction", "monsterLevelPowerMultiplier");
+    variant.healthLevelFunction = variant.parameters.getString("healthLevelFunction", "monsterLevelHealthMultiplier");
+    variant.clientEntityMode = ClientEntityModeNames.getLeft(variant.parameters.getString("clientEntityMode", "ClientSlaveOnly"));
+    variant.persistent = variant.parameters.getBool("persistent", false);
+    variant.damageTeamType = TeamTypeNames.getLeft(variant.parameters.getString("damageTeamType", "enemy"));
+    variant.damageTeam = variant.parameters.getUInt("damageTeam", 2);
 
-  if (auto sdp = variant.parameters.get("selfDamagePoly", {}))
-    variant.selfDamagePoly = jsonToPolyF(sdp);
-  else
-    variant.selfDamagePoly = *variant.movementSettings.standingPoly;
+    if (auto sdp = variant.parameters.get("selfDamagePoly", {}))
+        variant.selfDamagePoly = jsonToPolyF(sdp);
+    else
+        variant.selfDamagePoly = *variant.movementSettings.standingPoly;
 
-  variant.portraitIcon = variant.parameters.optString("portraitIcon");
-  variant.damageReceivedAggressiveDuration = variant.parameters.getFloat("damageReceivedAggressiveDuration", 1.0f);
-  variant.onDamagedOthersAggressiveDuration = variant.parameters.getFloat("onDamagedOthersAggressiveDuration", 5.0f);
-  variant.onFireAggressiveDuration = variant.parameters.getFloat("onFireAggressiveDuration", 5.0f);
+    variant.portraitIcon = variant.parameters.optString("portraitIcon");
+    variant.damageReceivedAggressiveDuration = variant.parameters.getFloat("damageReceivedAggressiveDuration", 1.0f);
+    variant.onDamagedOthersAggressiveDuration = variant.parameters.getFloat("onDamagedOthersAggressiveDuration", 5.0f);
+    variant.onFireAggressiveDuration = variant.parameters.getFloat("onFireAggressiveDuration", 5.0f);
 
-  variant.nametagColor = jsonToVec3B(variant.parameters.get("nametagColor", JsonArray{255, 255, 255}));
+    variant.nametagColor = jsonToVec3B(variant.parameters.get("nametagColor", JsonArray{255, 255, 255}));
 
-  variant.colorSwap = variant.parameters.optObject("colorSwap").apply([](JsonObject const& json) -> ColorReplaceMap {
-      ColorReplaceMap swaps;
-      for (auto pair : json) {
-        swaps.insert(Color::fromHex(pair.first).toRgba(), Color::fromHex(pair.second.toString()).toRgba());
-      }
-      return swaps;
-    });
+    variant.colorSwap = variant.parameters.optObject("colorSwap").transform([](JsonObject const& json) -> ColorReplaceMap {
+        ColorReplaceMap swaps;
+        for (auto pair : json) {
+            swaps.insert(Color::fromHex(pair.first).toRgba(), Color::fromHex(pair.second.toString()).toRgba());
+        }
+        return swaps;
+        });
 }
 
 MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const {
@@ -529,8 +529,8 @@ pair<Json, Json> MonsterDatabase::chooseSkills(
 Json MonsterDatabase::MonsterType::toJson() const {
   return JsonObject{
     {"type", typeName},
-    {"shortdescription", shortDescription.value()},
-    {"description", description.value()},
+    {"shortdescription", shortDescription.value_or("")},
+    {"description", description.value_or("")},
     {"categories", jsonFromStringList(categories)},
     {"parts", jsonFromStringList(partTypes)},
     {"animation", animationConfigPath},

@@ -1,9 +1,9 @@
 #pragma once
 
+#include "StarBiMap.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarUuid.hpp"
 #include "StarCelestialCoordinate.hpp"
-#include "StarGameTypes.hpp"
 
 namespace Star {
 
@@ -17,11 +17,11 @@ extern EnumMap<WarpMode> WarpModeNames;
 
 struct InstanceWorldId {
   String instance;
-  Maybe<Uuid> uuid;
-  Maybe<float> level;
+  std::optional<Uuid> uuid;
+  std::optional<float> level;
 
   InstanceWorldId();
-  InstanceWorldId(String instance, Maybe<Uuid> uuid = {}, Maybe<float> level = {});
+  InstanceWorldId(String instance, std::optional<Uuid> uuid = {}, std::optional<float> level = {});
 
   bool operator==(InstanceWorldId const& rhs) const;
   bool operator<(InstanceWorldId const& rhs) const;

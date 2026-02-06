@@ -22,7 +22,7 @@ public:
 
   TeamNumber getPvpTeam(Uuid const& playerUuid);
   HashMap<Uuid, TeamNumber> getPvpTeams();
-  Maybe<Uuid> getTeam(Uuid const& playerUuid) const;
+  std::optional<Uuid> getTeam(Uuid const& playerUuid) const;
 
 private:
   struct TeamMember {

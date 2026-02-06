@@ -10,12 +10,12 @@ LuaValue LuaConverter<Color>::from(LuaEngine& engine, Color const& c) {
     return engine.createArrayTable(initializer_list<uint8_t>{c.red(), c.green(), c.blue(), c.alpha()});
 }
 
-Maybe<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
+std::optional<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
   if (auto t = v.ptr<LuaTable>()) {
     Color c = Color::rgba(0, 0, 0, 255);
-    Maybe<int> r = engine.luaMaybeTo<int>(t->get(1));
-    Maybe<int> g = engine.luaMaybeTo<int>(t->get(2));
-    Maybe<int> b = engine.luaMaybeTo<int>(t->get(3));
+    std::optional<int> r = engine.luaMaybeTo<int>(t->get(1));
+    std::optional<int> g = engine.luaMaybeTo<int>(t->get(2));
+    std::optional<int> b = engine.luaMaybeTo<int>(t->get(3));
     if (!r || !g || !b)
       return {};
 
@@ -23,7 +23,7 @@ Maybe<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
     c.setGreen(*g);
     c.setBlue(*b);
 
-    if (Maybe<int> a = engine.luaMaybeTo<int>(t->get(4))) {
+    if (std::optional<int> a = engine.luaMaybeTo<int>(t->get(4))) {
       if (!a)
         return {};
       c.setAlpha(*a);
@@ -47,7 +47,7 @@ LuaValue LuaConverter<LuaCallbacks>::from(LuaEngine& engine, LuaCallbacks const&
   return table;
 }
 
-Maybe<LuaCallbacks> LuaConverter<LuaCallbacks>::to(LuaEngine&, LuaValue const&) {
+std::optional<LuaCallbacks> LuaConverter<LuaCallbacks>::to(LuaEngine&, LuaValue const&) {
   return {};
 }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <type_traits>
 
 #include "StarNetElement.hpp"
@@ -19,7 +20,7 @@ public:
   // a float, it is transmitted as a VLQ of the value divided by the fixed
   // point base.  Any NetElementFloating that is transmitted to must also have
   // the same fixed point base set.
-  void setFixedPointBase(Maybe<T> fixedPointBase = {});
+  void setFixedPointBase(std::optional<T> fixedPointBase = {});
 
   // If interpolation is enabled on the NetStepStates parent, and an
   // interpolator is set, then on steps in between data points this will be
@@ -49,14 +50,14 @@ private:
 
   T interpolate() const;
 
-  Maybe<T> m_fixedPointBase;
+  std::optional<T> m_fixedPointBase;
   NetElementVersion const* m_netVersion = nullptr;
   uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
 
   function<T(T, T, T)> m_interpolator;
   float m_extrapolation = 0.0f;
-  Maybe<Deque<pair<float, T>>> m_interpolationDataPoints;
+  std::optional<Deque<pair<float, T>>> m_interpolationDataPoints;
 };
 
 typedef NetElementFloating<float> NetElementFloat;
@@ -85,7 +86,7 @@ void NetElementFloating<T>::set(T value) {
 }
 
 template <typename T>
-void NetElementFloating<T>::setFixedPointBase(Maybe<T> fixedPointBase) {
+void NetElementFloating<T>::setFixedPointBase(std::optional<T> fixedPointBase) {
   m_fixedPointBase = fixedPointBase;
 }
 

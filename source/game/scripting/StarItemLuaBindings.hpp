@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarLua.hpp"
 #include "StarVector.hpp"
 
@@ -15,7 +17,7 @@ namespace LuaBindings {
     size_t count(Item* item);
     size_t setCount(Item* item, size_t count);
     size_t maxStack(Item* item);
-    bool matches(Item* item, Json const& descriptor, Maybe<bool> exactMatch);
+    bool matches(Item* item, Json const& descriptor, std::optional<bool> exactMatch);
     Json matchingDescriptors(Item* item);
     bool consume(Item* item, size_t count);
     bool empty(Item* item);

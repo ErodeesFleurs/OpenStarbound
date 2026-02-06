@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarThread.hpp"
 #include "StarParametricFunction.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarItemDescriptor.hpp"

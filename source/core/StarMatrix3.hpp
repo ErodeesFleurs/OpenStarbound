@@ -2,6 +2,8 @@
 
 #include "StarVector.hpp"
 
+import std;
+
 namespace Star {
 
 template <typename T>
@@ -39,8 +41,8 @@ public:
   Matrix3& operator=(Matrix3<T2> const& m);
 
   // Row-major indexing
-  Vec3& operator[](size_t const i);
-  Vec3 const& operator[](size_t const i) const;
+  Vec3& operator[](std::size_t const i);
+  Vec3 const& operator[](std::size_t const i) const;
 
   // Gives pointer to row major storage
   EnableIfContiguousStorage<T*> ptr();
@@ -49,13 +51,13 @@ public:
   // Copy to an existing array
   void copy(T* loc) const;
 
-  Vec3 row(size_t i) const;
+  Vec3 row(std::size_t i) const;
   template <typename T2>
-  void setRow(size_t i, Vector<T2, 3> const& v);
+  void setRow(std::size_t i, Vector<T2, 3> const& v);
 
-  Vec3 col(size_t i);
+  Vec3 col(std::size_t i);
   template <typename T2>
-  void setCol(size_t i, Vector<T2, 3> const& v);
+  void setCol(std::size_t i, Vector<T2, 3> const& v);
 
   T determinant() const;
   Vec3 trace() const;
@@ -175,12 +177,12 @@ Matrix3<T>& Matrix3<T>::operator=(const Matrix3<T2>& m) {
 }
 
 template <typename T>
-auto Matrix3<T>::operator[](const size_t i) -> Vec3 & {
+auto Matrix3<T>::operator[](const std::size_t i) -> Vec3 & {
   return m_rows[i];
 }
 
 template <typename T>
-auto Matrix3<T>::operator[](const size_t i) const -> Vec3 const & {
+auto Matrix3<T>::operator[](const std::size_t i) const -> Vec3 const & {
   return m_rows[i];
 }
 
@@ -202,24 +204,24 @@ void Matrix3<T>::copy(T* loc) const {
 }
 
 template <typename T>
-auto Matrix3<T>::row(size_t i) const -> Vec3 {
+auto Matrix3<T>::row(std::size_t i) const -> Vec3 {
   return operator[](i);
 }
 
 template <typename T>
 template <typename T2>
-void Matrix3<T>::setRow(size_t i, const Vector<T2, 3>& v) {
+void Matrix3<T>::setRow(std::size_t i, const Vector<T2, 3>& v) {
   operator[](i) = Vec3(v);
 }
 
 template <typename T>
-auto Matrix3<T>::col(size_t i) -> Vec3 {
+auto Matrix3<T>::col(std::size_t i) -> Vec3 {
   return Vec3(m_rows[0][i], m_rows[1][i], m_rows[2][i]);
 }
 
 template <typename T>
 template <typename T2>
-void Matrix3<T>::setCol(size_t i, const Vector<T2, 3>& v) {
+void Matrix3<T>::setCol(std::size_t i, const Vector<T2, 3>& v) {
   m_rows[0][i] = T(v[0]);
   m_rows[1][i] = T(v[1]);
   m_rows[2][i] = T(v[2]);

@@ -2,52 +2,32 @@
 
 #include "StarException.hpp"
 
-#include <type_traits>
-#include <limits>
-#include <cmath>
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(MathException, StarException);
+using MathException = ExceptionDerived<"MathException">;
 
 namespace Constants {
-  double constexpr pi = 3.14159265358979323846;
+  double constexpr pi = std::numbers::pi;
   double constexpr rad2deg = 57.2957795130823208768;
   double constexpr deg2rad = 1 / rad2deg;
-  double constexpr sqrt2 = 1.41421356237309504880;
-  double constexpr log2e = 1.44269504088896340736;
+  double constexpr sqrt2 = std::numbers::sqrt2;
+  double constexpr log2e = std::numbers::log2e;
 }
 
-// Really common std namespace includes, and replacements for std libraries
-// that don't provide them
 
-using std::abs;
-using std::fabs;
-using std::sqrt;
-using std::floor;
-using std::ceil;
-using std::round;
-using std::fmod;
-using std::sin;
-using std::cos;
-using std::tan;
-using std::pow;
-using std::atan2;
-using std::log;
-using std::log10;
-using std::copysign;
-
-inline float log2(float f) {
-  return log(f) * (float)Constants::log2e;
+inline auto log2(float f) -> float {
+  return std::log(f) * (float)Constants::log2e;
 }
 
-inline double log2(double d) {
-  return log(d) * Constants::log2e;
+inline auto log2(double d) -> double {
+  return std::log(d) * Constants::log2e;
 }
 
 // Count the number of '1' bits in the given unsigned integer
 template <typename Int>
-typename std::enable_if<std::is_integral<Int>::value && std::is_unsigned<Int>::value, unsigned>::type countSetBits(Int value) {
+auto countSetBits(Int value) -> unsigned requires (std::is_integral_v<Int> && std::is_unsigned_v<Int>) {
   unsigned count = 0;
   while (value != 0) {
     value &= (value - 1);
@@ -57,88 +37,88 @@ typename std::enable_if<std::is_integral<Int>::value && std::is_unsigned<Int>::v
 }
 
 template <typename T, typename T2>
-typename std::enable_if<!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) >= sizeof(T2), bool>::type
-nearEqual(T x, T2 y, unsigned ulp) {
+auto
+nearEqual(T x, T2 y, unsigned ulp) -> bool requires (!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) >= sizeof(T2)) {
   auto epsilon = std::numeric_limits<T>::epsilon();
   return abs(x - y) <= epsilon * max(abs(x), (T)abs(y)) * ulp;
 }
 
 template <typename T, typename T2>
-typename std::enable_if<!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) < sizeof(T2), bool>::type
-nearEqual(T x, T2 y, unsigned ulp) {
+auto
+nearEqual(T x, T2 y, unsigned ulp) -> bool requires (!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) < sizeof(T2)) {
   return nearEqual(y, x, ulp);
 }
 
 template <typename T, typename T2>
-typename std::enable_if<std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer, bool>::type
-nearEqual(T x, T2 y, unsigned ulp) {
+auto
+nearEqual(T x, T2 y, unsigned ulp) -> bool requires (std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer) {
   return nearEqual((double)x, y, ulp);
 }
 
 template <typename T, typename T2>
-typename std::enable_if<!std::numeric_limits<T>::is_integer && std::numeric_limits<T2>::is_integer, bool>::type
-nearEqual(T x, T2 y, unsigned ulp) {
+auto
+nearEqual(T x, T2 y, unsigned ulp) -> bool requires (!std::numeric_limits<T>::is_integer && std::numeric_limits<T2>::is_integer) {
   return nearEqual(x, (double)y, ulp);
 }
 
 template <typename T, typename T2>
-typename std::enable_if<std::numeric_limits<T>::is_integer && std::numeric_limits<T2>::is_integer, bool>::type
-nearEqual(T x, T2 y, unsigned) {
+auto
+nearEqual(T x, T2 y, unsigned) -> bool requires (std::numeric_limits<T>::is_integer && std::numeric_limits<T2>::is_integer) {
   return x == y;
 }
 
 template <typename T, typename T2>
-bool nearEqual(T x, T2 y) {
+auto nearEqual(T x, T2 y) -> bool {
   return nearEqual(x, y, 1);
 }
 
 template <typename T>
-typename std::enable_if<!std::numeric_limits<T>::is_integer, bool>::type nearZero(T x, unsigned ulp = 2) {
+auto nearZero(T x, unsigned ulp = 2) -> bool requires (!std::numeric_limits<T>::is_integer) {
   return abs(x) <= std::numeric_limits<T>::min() * ulp;
 }
 
 template <typename T>
-typename std::enable_if<std::numeric_limits<T>::is_integer, bool>::type nearZero(T x) {
+auto nearZero(T x) -> bool requires std::numeric_limits<T>::is_integer {
   return x == 0;
 }
 
 template <typename T>
-constexpr T lowest() {
+constexpr auto lowest() -> T {
   return std::numeric_limits<T>::lowest();
 }
 
 template <typename T>
-constexpr T highest() {
+constexpr auto highest() -> T {
   return std::numeric_limits<T>::max();
 }
 
 template <typename T>
-constexpr T square(T const& x) {
+constexpr auto square(T const& x) -> T {
   return x * x;
 }
 
 template <typename T>
-constexpr T cube(T const& x) {
+constexpr auto cube(T const& x) -> T {
   return x * x * x;
 }
 
 template <typename Float>
-int ipart(Float f) {
-  return (int)floor(f);
+auto ipart(Float f) -> int {
+  return (int)std::floor(f);
 }
 
 template <typename Float>
-Float fpart(Float f) {
+auto fpart(Float f) -> Float {
   return f - ipart(f);
 }
 
 template <typename Float>
-Float rfpart(Float f) {
+auto rfpart(Float f) -> Float {
   return 1.0 - fpart(f);
 }
 
 template <typename T, typename T2>
-T clampMagnitude(T const& v, T2 const& mag) {
+auto clampMagnitude(T const& v, T2 const& mag) -> T {
   if (v > mag)
     return mag;
   else if (v < -mag)
@@ -148,18 +128,17 @@ T clampMagnitude(T const& v, T2 const& mag) {
 }
 
 template <typename T>
-T clamp(T const val, T const min, T const max) {
+auto clamp(T const val, T const min, T const max) -> T {
   return std::min(std::max(val, min), max);
 }
 
 template <typename T>
-T clampDynamic(T const val, T const a, T const b) {
+auto clampDynamic(T const val, T const a, T const b) -> T {
   return std::min(std::max(val, std::min(a, b)), std::max(a, b));
 }
 
 template <typename IntType, typename PowType>
-IntType intPow(IntType i, PowType p) {
-  starAssert(p >= 0);
+auto intPow(IntType i, PowType p) -> IntType {
 
   if (p == 0)
     return 1;
@@ -174,13 +153,13 @@ IntType intPow(IntType i, PowType p) {
 }
 
 template <typename Int>
-bool isPowerOf2(Int x) {
+auto isPowerOf2(Int x) -> bool {
   if (x < 1)
     return false;
   return (x & (x - 1)) == 0;
 }
 
-inline uint64_t ceilPowerOf2(uint64_t v) {
+inline auto ceilPowerOf2(std::uint64_t v) -> std::uint64_t {
   v--;
   v |= v >> 1;
   v |= v >> 2;
@@ -193,25 +172,25 @@ inline uint64_t ceilPowerOf2(uint64_t v) {
 }
 
 template <typename Float>
-Float sigmoid(Float x) {
+auto sigmoid(Float x) -> Float {
   return 1 / (1 + std::exp(-x));
 }
 
 // returns a % m such that the answer is always positive.
 // For example, -1 mod 10 is 9.
 template <typename IntType>
-IntType pmod(IntType a, IntType m) {
+auto pmod(IntType a, IntType m) -> IntType {
   IntType r = a % m;
   return r < 0 ? r + m : r;
 }
 
 // Same as pmod but for float like values.
 template <typename Float>
-Float pfmod(Float a, Float m) {
+auto pfmod(Float a, Float m) -> Float {
   if (m == 0)
     return a;
 
-  return a - m * floor(a / m);
+  return a - m * std::floor(a / m);
 }
 
 // Finds the *smallest* distance (in absolute value terms) from b to a (a - b)
@@ -220,7 +199,7 @@ Float pfmod(Float a, Float m) {
 // hand, wrapDiff(10, 111) would return -1, because 111 is congruent to the
 // point 11.
 template <typename Type>
-Type wrapDiff(Type a, Type b, Type size) {
+auto wrapDiff(Type a, Type b, Type size) -> Type {
   a = pmod(a, size);
   b = pmod(b, size);
 
@@ -235,7 +214,7 @@ Type wrapDiff(Type a, Type b, Type size) {
 
 // Sampe as wrapDiff but for float like values
 template <typename Type>
-Type wrapDiffF(Type a, Type b, Type size) {
+auto wrapDiffF(Type a, Type b, Type size) -> Type {
   a = pfmod(a, size);
   b = pfmod(b, size);
 
@@ -251,13 +230,13 @@ Type wrapDiffF(Type a, Type b, Type size) {
 // like std::pow, except ignores sign, and the return value will match the sign
 // of the value passed in.  ppow(-2, 2) == -4
 template <typename Float>
-Float ppow(Float val, Float pow) {
+auto ppow(Float val, Float pow) -> Float {
   return copysign(std::pow(std::fabs(val), pow), val);
 }
 
 // Returns angle wrapped around to the range [-pi, pi).
 template <typename Float>
-Float constrainAngle(Float angle) {
+auto constrainAngle(Float angle) -> Float {
   angle = fmod((Float)(angle + Constants::pi), (Float)(Constants::pi * 2));
   if (angle < 0)
     angle += Constants::pi * 2;
@@ -267,7 +246,7 @@ Float constrainAngle(Float angle) {
 // Returns the closest angle movement to go from the given angle to the target
 // angle, in radians.
 template <typename Float>
-Float angleDiff(Float angle, Float targetAngle) {
+auto angleDiff(Float angle, Float targetAngle) -> Float {
   double diff = fmod((Float)(targetAngle - angle + Constants::pi), (Float)(Constants::pi * 2));
   if (diff < 0)
     diff += Constants::pi * 2;
@@ -277,7 +256,7 @@ Float angleDiff(Float angle, Float targetAngle) {
 // Approach the given goal value from the current value, at a maximum rate of
 // change.  Rate should always be a positive value. (T must be signed).
 template <typename T>
-T approach(T goal, T current, T rate) {
+auto approach(T goal, T current, T rate) -> T {
   if (goal < current) {
     return max(current - rate, goal);
   } else if (goal > current) {
@@ -290,25 +269,25 @@ T approach(T goal, T current, T rate) {
 // Same as approach, specialied for angles, and always approaches from the
 // closest absolute direction.
 template <typename T>
-T approachAngle(T goal, T current, T rate) {
+auto approachAngle(T goal, T current, T rate) -> T {
   return constrainAngle(current + clampMagnitude<T>(angleDiff(current, goal), rate));
 }
 
-// Used in color conversion from floating point to uint8_t
-inline uint8_t floatToByte(float val, bool doClamp = false) {
+// Used in color conversion from floating point to std::uint8_t
+inline auto floatToByte(float val, bool doClamp = false) -> std::uint8_t {
   if (doClamp)
     val = clamp(val, 0.0f, 1.0f);
-  return (uint8_t)(val * 255.0f);
+  return (std::uint8_t)(val * 255.0f);
 }
 
-// Used in color conversion from uint8_t to normalized float.
-inline float byteToFloat(uint8_t val) {
+// Used in color conversion from std::uint8_t to normalized float.
+inline auto byteToFloat(std::uint8_t val) -> float {
   return val / 255.0f;
 }
 
 // Turn a randomized floating point value from [0.0, 1.0] to [-1.0, 1.0]
 template <typename Float>
-Float randn(Float val) {
+auto randn(Float val) -> Float {
   return val * 2 - 1;
 }
 
@@ -316,7 +295,7 @@ Float randn(Float val) {
 // it would be incremented beyond max.  If the value is outside of the range,
 // the next increment will start at min.
 template <typename Integer>
-Integer cycleIncrement(Integer val, Integer min, Integer max) {
+auto cycleIncrement(Integer val, Integer min, Integer max) -> Integer {
   if (val < min || val >= max)
     return min;
   else

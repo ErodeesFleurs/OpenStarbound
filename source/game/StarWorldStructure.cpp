@@ -1,11 +1,9 @@
 #include "StarWorldStructure.hpp"
+#include "StarImage.hpp" // IWYU pragma: keep
+#include "StarImageMetadataDatabase.hpp" // IWYU pragma: keep
+#include "StarMaterialDatabase.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarImageMetadataDatabase.hpp"
-#include "StarImage.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -98,7 +96,7 @@ WorldStructure::WorldStructure(String const& configPath) {
     blockKeys[jsonToColor(blockKeyConfig.get("value")).toRgba()] = std::move(blockKey);
   }
 
-  Maybe<Vec2I> anchorPosition;
+  std::optional<Vec2I> anchorPosition;
   if (settings.contains("blockImage")) {
     auto blocksImage = assets->image(AssetPath::relativeTo(configPath, settings.getString("blockImage")));
     const BlockKey defaultBlockKey = {false,

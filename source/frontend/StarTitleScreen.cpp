@@ -33,7 +33,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage, MixerPtr mixer, Univers
   m_celestialDatabase = make_shared<CelestialMasterDatabase>();
   auto randomWorld = m_celestialDatabase->findRandomWorld(10, 50, [this](CelestialCoordinate const& coordinate) {
       return is<TerrestrialWorldParameters>(m_celestialDatabase->parameters(coordinate)->visitableParameters());
-    }).take();
+    }).value();
 
   if (auto name = m_celestialDatabase->name(randomWorld))
     Logger::info("Title world is {} @ CelestialWorld:{}", Text::stripEscapeCodes(*name), randomWorld);
@@ -378,7 +378,7 @@ void TitleScreen::initMultiPlayerMenu() {
     };
 
     auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
-    if (auto const pos = serverList->selectedItem(); pos != NPos) { // Edit existing
+    if (auto const pos = serverList->selectedItem(); pos != std::numeric_limits<std::size_t>::max()) { // Edit existing
       m_serverList = m_serverList.set(pos, serverData);
     } else { // Save new
       m_serverList = m_serverList.insert(0, serverData);
@@ -395,7 +395,7 @@ void TitleScreen::initMultiPlayerMenu() {
   auto serverList = m_serverSelectPane->fetchChild<ListWidget>("serverSelectArea.serverList");
 
   serverList->registerMemberCallback("delete", [=, this](Widget*) {
-    if (auto const pos = serverList->selectedItem(); pos != NPos) {
+    if (auto const pos = serverList->selectedItem(); pos != std::numeric_limits<std::size_t>::max()) {
       m_serverList = m_serverList.eraseIndex(pos);
     }
     populateServerList(serverList);

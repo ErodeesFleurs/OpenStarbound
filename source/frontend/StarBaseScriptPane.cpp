@@ -122,15 +122,15 @@ PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
   }
 }
 
-Maybe<String> BaseScriptPane::cursorOverride(Vec2I const& screenPosition) {
-  auto result = m_script.invoke<Maybe<String>>("cursorOverride", screenPosition);
+std::optional<String> BaseScriptPane::cursorOverride(Vec2I const& screenPosition) {
+  auto result = m_script.invoke<std::optional<String>>("cursorOverride", screenPosition);
   if (result)
     return *result;
   else
     return {};
 }
 
-Maybe<ItemPtr> BaseScriptPane::shiftItemFromInventory(ItemPtr const& input) {
+std::optional<ItemPtr> BaseScriptPane::shiftItemFromInventory(ItemPtr const& input) {
   auto result = m_script.invoke<Json>("shiftItemFromInventory", input->descriptor().toJson());
   if (!result || result->isNull())
     return {};

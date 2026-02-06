@@ -1,28 +1,27 @@
 #pragma once
 
-#include <vector>
-#include <deque>
-#include <list>
-
+#include "StarHash.hpp"
 #include "StarException.hpp"
 #include "StarStaticVector.hpp"
 #include "StarSmallVector.hpp"
 #include "StarPythonic.hpp"
-#include "StarMaybe.hpp"
 #include "StarFormat.hpp"
+#include <limits>
+
+import std;
 
 namespace Star {
 
 template <typename BaseList>
 class ListMixin : public BaseList {
 public:
-  typedef BaseList Base;
+  using Base = BaseList;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   ListMixin();
   ListMixin(Base const& list);
@@ -31,7 +30,7 @@ public:
   template <typename InputIterator>
   ListMixin(InputIterator beg, InputIterator end);
   explicit ListMixin(size_t len, const_reference s1 = value_type());
-  ListMixin(initializer_list<value_type> list);
+  ListMixin(std::initializer_list<value_type> list);
 
   void append(value_type e);
 
@@ -39,31 +38,31 @@ public:
   void appendAll(Container&& list);
 
   template <class... Args>
-  reference emplaceAppend(Args&&... args);
+  auto emplaceAppend(Args&&... args) -> reference;
 
-  reference first();
-  const_reference first() const;
+  auto first() -> reference;
+  auto first() const -> const_reference;
 
-  reference last();
-  const_reference last() const;
+  auto last() -> reference;
+  auto last() const -> const_reference;
 
-  Maybe<value_type> maybeFirst();
-  Maybe<value_type> maybeLast();
+  auto maybeFirst() -> std::optional<value_type>;
+  auto maybeLast() -> std::optional<value_type>;
 
   void removeLast();
-  value_type takeLast();
+  auto takeLast() -> value_type;
 
-  Maybe<value_type> maybeTakeLast();
+  auto maybeTakeLast() -> std::optional<value_type>;
 
   // Limit the size of the list by removing elements from the back until the
   // size is the maximumSize or less.
   void limitSizeBack(size_t maximumSize);
 
-  size_t count() const;
+  [[nodiscard]] auto count() const -> size_t;
 
-  bool contains(const_reference e) const;
+  auto contains(const_reference e) const -> bool;
   // Remove all equal to element, returns number removed.
-  size_t remove(const_reference e);
+  auto remove(const_reference e) -> size_t;
 
   template <typename Filter>
   void filter(Filter&& filter);
@@ -74,8 +73,8 @@ public:
 
   // Returns true if this *sorted* list contains the given element.
   template <typename Comparator>
-  bool containsSorted(value_type const& e, Comparator&& comparator);
-  bool containsSorted(value_type e);
+  auto containsSorted(value_type const& e, Comparator&& comparator) -> bool;
+  auto containsSorted(value_type e) -> bool;
 
   template <typename Function>
   void exec(Function&& function);
@@ -87,18 +86,18 @@ public:
   void transform(Function&& function);
 
   template <typename Function>
-  bool any(Function&& function) const;
-  bool any() const;
+  auto any(Function&& function) const -> bool;
+  [[nodiscard]] auto any() const -> bool;
 
   template <typename Function>
-  bool all(Function&& function) const;
-  bool all() const;
+  auto all(Function&& function) const -> bool;
+  [[nodiscard]] auto all() const -> bool;
 };
 
 template <typename List>
 class ListHasher {
 public:
-  size_t operator()(List const& l) const;
+  auto operator()(List const& l) const -> size_t;
 
 private:
   hash<typename List::value_type> elemHasher;
@@ -107,13 +106,13 @@ private:
 template <typename BaseList>
 class RandomAccessListMixin : public BaseList {
 public:
-  typedef BaseList Base;
+  using Base = BaseList;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   using Base::Base;
 
@@ -123,29 +122,29 @@ public:
 
   void reverse();
 
-  // Returns first index of given element, NPos if not found.
-  size_t indexOf(const_reference e, size_t from = 0) const;
-  // Returns last index of given element, NPos if not found.
-  size_t lastIndexOf(const_reference e, size_t til = NPos) const;
+  // Returns first index of given element, std::numeric_limits<std::size_t>::max() if not found.
+  auto indexOf(const_reference e, size_t from = 0) const -> size_t;
+  // Returns last index of given element, std::numeric_limits<std::size_t>::max() if not found.
+  auto lastIndexOf(const_reference e, size_t til = std::numeric_limits<std::size_t>::max()) const -> size_t;
 
-  const_reference at(size_t n) const;
-  reference at(size_t n);
+  auto at(size_t n) const -> const_reference;
+  auto at(size_t n) -> reference;
 
-  const_reference operator[](size_t n) const;
-  reference operator[](size_t n);
+  auto operator[](size_t n) const -> const_reference;
+  auto operator[](size_t n) -> reference;
 
   // Does not throw if n is beyond end of list, instead returns def
-  value_type get(size_t n, value_type def = value_type()) const;
+  auto get(size_t n, value_type def = value_type()) const -> value_type;
 
-  value_type takeAt(size_t i);
+  auto takeAt(size_t i) -> value_type;
 
   // Same as at, but wraps around back to the beginning
   // (throws if list is empty)
-  const_reference wrap(size_t n) const;
-  reference wrap(size_t n);
+  auto wrap(size_t n) const -> const_reference;
+  auto wrap(size_t n) -> reference;
 
   // Does not throw if list is empty
-  value_type wrap(size_t n, value_type def) const;
+  auto wrap(size_t n, value_type def) const -> value_type;
 
   void eraseAt(size_t index);
   // Erases region from begin to end, not including end.
@@ -167,13 +166,13 @@ public:
 template <typename BaseList>
 class FrontModifyingListMixin : public BaseList {
 public:
-  typedef BaseList Base;
+  using Base = BaseList;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   using Base::Base;
 
@@ -183,10 +182,10 @@ public:
   void prependAll(Container&& list);
 
   template <class... Args>
-  reference emplacePrepend(Args&&... args);
+  auto emplacePrepend(Args&&... args) -> reference;
 
   void removeFirst();
-  value_type takeFirst();
+  auto takeFirst() -> value_type;
 
   // Limit the size of the list by removing elements from the front until the
   // size is the maximumSize or less.
@@ -196,31 +195,31 @@ public:
 template <typename Element, typename Allocator = std::allocator<Element>>
 class List : public RandomAccessListMixin<ListMixin<std::vector<Element, Allocator>>> {
 public:
-  typedef RandomAccessListMixin<ListMixin<std::vector<Element, Allocator>>> Base;
+  using Base = RandomAccessListMixin<ListMixin<std::vector<Element, Allocator>>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   template <typename Container>
-  static List from(Container const& c);
+  static auto from(Container const& c) -> List;
 
   using Base::Base;
 
   // Pointer to contiguous storage, returns nullptr if empty
-  value_type* ptr();
-  value_type const* ptr() const;
+  auto ptr() -> value_type*;
+  auto ptr() const -> value_type const*;
 
-  List slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  auto slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const -> List;
 
   template <typename Filter>
-  List filtered(Filter&& filter) const;
+  auto filtered(Filter&& filter) const -> List;
 
   template <typename Comparator>
-  List sorted(Comparator&& comparator) const;
-  List sorted() const;
+  auto sorted(Comparator&& comparator) const -> List;
+  auto sorted() const -> List;
 
   template <typename Function>
   auto transformed(Function&& function);
@@ -235,27 +234,27 @@ struct hash<List<Element, Allocator>> : public ListHasher<List<Element, Allocato
 template <typename Element, size_t MaxSize>
 class StaticList : public RandomAccessListMixin<ListMixin<StaticVector<Element, MaxSize>>> {
 public:
-  typedef RandomAccessListMixin<ListMixin<StaticVector<Element, MaxSize>>> Base;
+  using Base = RandomAccessListMixin<ListMixin<StaticVector<Element, MaxSize>>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   template <typename Container>
-  static StaticList from(Container const& c);
+  static auto from(Container const& c) -> StaticList;
 
   using Base::Base;
 
-  StaticList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  auto slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const -> StaticList;
 
   template <typename Filter>
-  StaticList filtered(Filter&& filter) const;
+  auto filtered(Filter&& filter) const -> StaticList;
 
   template <typename Comparator>
-  StaticList sorted(Comparator&& comparator) const;
-  StaticList sorted() const;
+  auto sorted(Comparator&& comparator) const -> StaticList;
+  auto sorted() const -> StaticList;
 
   template <typename Function>
   auto transformed(Function&& function);
@@ -270,27 +269,27 @@ struct hash<StaticList<Element, MaxStackSize>> : public ListHasher<StaticList<El
 template <typename Element, size_t MaxStackSize>
 class SmallList : public RandomAccessListMixin<ListMixin<SmallVector<Element, MaxStackSize>>> {
 public:
-  typedef RandomAccessListMixin<ListMixin<SmallVector<Element, MaxStackSize>>> Base;
+  using Base = RandomAccessListMixin<ListMixin<SmallVector<Element, MaxStackSize>>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   template <typename Container>
-  static SmallList from(Container const& c);
+  static auto from(Container const& c) -> SmallList;
 
   using Base::Base;
 
-  SmallList slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  auto slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const -> SmallList;
 
   template <typename Filter>
-  SmallList filtered(Filter&& filter) const;
+  auto filtered(Filter&& filter) const -> SmallList;
 
   template <typename Comparator>
-  SmallList sorted(Comparator&& comparator) const;
-  SmallList sorted() const;
+  auto sorted(Comparator&& comparator) const -> SmallList;
+  auto sorted() const -> SmallList;
 
   template <typename Function>
   auto transformed(Function&& function);
@@ -305,27 +304,27 @@ struct hash<SmallList<Element, MaxStackSize>> : public ListHasher<SmallList<Elem
 template <typename Element, typename Allocator = std::allocator<Element>>
 class Deque : public FrontModifyingListMixin<RandomAccessListMixin<ListMixin<std::deque<Element, Allocator>>>> {
 public:
-  typedef FrontModifyingListMixin<RandomAccessListMixin<ListMixin<std::deque<Element, Allocator>>>> Base;
+  using Base = FrontModifyingListMixin<RandomAccessListMixin<ListMixin<std::deque<Element, Allocator>>>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   template <typename Container>
-  static Deque from(Container const& c);
+  static auto from(Container const& c) -> Deque;
 
   using Base::Base;
 
-  Deque slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const;
+  auto slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const -> Deque;
 
   template <typename Filter>
-  Deque filtered(Filter&& filter) const;
+  auto filtered(Filter&& filter) const -> Deque;
 
   template <typename Comparator>
-  Deque sorted(Comparator&& comparator) const;
-  Deque sorted() const;
+  auto sorted(Comparator&& comparator) const -> Deque;
+  auto sorted() const -> Deque;
 
   template <typename Function>
   auto transformed(Function&& function);
@@ -340,16 +339,16 @@ struct hash<Deque<Element, Allocator>> : public ListHasher<Deque<Element, Alloca
 template <typename Element, typename Allocator = std::allocator<Element>>
 class LinkedList : public FrontModifyingListMixin<ListMixin<std::list<Element, Allocator>>> {
 public:
-  typedef FrontModifyingListMixin<ListMixin<std::list<Element, Allocator>>> Base;
+  using Base = FrontModifyingListMixin<ListMixin<std::list<Element, Allocator>>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   template <typename Container>
-  static LinkedList from(Container const& c);
+  static auto from(Container const& c) -> LinkedList;
 
   using Base::Base;
 
@@ -362,11 +361,11 @@ public:
   void prependAll(Container&& list);
 
   template <typename Filter>
-  LinkedList filtered(Filter&& filter) const;
+  auto filtered(Filter&& filter) const -> LinkedList;
 
   template <typename Comparator>
-  LinkedList sorted(Comparator&& comparator) const;
-  LinkedList sorted() const;
+  auto sorted(Comparator&& comparator) const -> LinkedList;
+  auto sorted() const -> LinkedList;
 
   template <typename Function>
   auto transformed(Function&& function);
@@ -379,25 +378,25 @@ template <typename Element, typename Allocator>
 struct hash<LinkedList<Element, Allocator>> : public ListHasher<LinkedList<Element, Allocator>> {};
 
 template <typename BaseList>
-std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list);
+auto operator<<(std::ostream& os, ListMixin<BaseList> const& list) -> std::ostream&;
 
 template <typename... Containers>
 struct ListZipTypes {
-  typedef tuple<typename std::decay<Containers>::type::value_type...> Tuple;
-  typedef List<Tuple> Result;
+  using Tuple = std::tuple<typename std::decay<Containers>::type::value_type...>;
+  using Result = List<Tuple>;
 };
 
 template <typename... Containers>
-typename ListZipTypes<Containers...>::Result zip(Containers&&... args);
+auto zip(Containers&&... args) -> typename ListZipTypes<Containers...>::Result;
 
 template <typename Container>
 struct ListEnumerateTypes {
-  typedef pair<typename std::decay<Container>::type::value_type, size_t> Pair;
-  typedef List<Pair> Result;
+    using Pair = std::pair<typename std::decay<Container>::type::value_type, size_t>;
+    using Result = List<Pair> ;
 };
 
 template <typename Container>
-typename ListEnumerateTypes<Container>::Result enumerate(Container&& container);
+auto enumerate(Container&& container) -> typename ListEnumerateTypes<Container>::Result;
 
 template <typename BaseList>
 ListMixin<BaseList>::ListMixin()
@@ -425,7 +424,7 @@ ListMixin<BaseList>::ListMixin(InputIterator beg, InputIterator end)
   : Base(beg, end) {}
 
 template <typename BaseList>
-ListMixin<BaseList>::ListMixin(initializer_list<value_type> list) {
+ListMixin<BaseList>::ListMixin(std::initializer_list<value_type> list) {
   // In case underlying class type doesn't support initializer_list
   for (auto& e : list)
     append(std::move(e));
@@ -440,7 +439,7 @@ template <typename BaseList>
 template <typename Container>
 void ListMixin<BaseList>::appendAll(Container&& list) {
   for (auto& e : list) {
-    if (std::is_rvalue_reference<Container&&>::value)
+    if (std::is_rvalue_reference_v<Container&&>)
       Base::push_back(std::move(e));
     else
       Base::push_back(e);
@@ -483,17 +482,17 @@ auto ListMixin<BaseList>::last() const -> const_reference {
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::maybeFirst() -> Maybe<value_type> {
+auto ListMixin<BaseList>::maybeFirst() -> std::optional<value_type> {
   if (Base::empty())
-    return {};
-  return *Base::begin();
+    return std::nullopt;
+  return Base::front();
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::maybeLast() -> Maybe<value_type> {
+auto ListMixin<BaseList>::maybeLast() -> std::optional<value_type> {
   if (Base::empty())
-    return {};
-  return *prev(Base::end());
+    return std::nullopt;
+  return Base::back();
 }
 
 template <typename BaseList>
@@ -511,10 +510,10 @@ auto ListMixin<BaseList>::takeLast() -> value_type {
 }
 
 template <typename BaseList>
-auto ListMixin<BaseList>::maybeTakeLast() -> Maybe<value_type> {
+auto ListMixin<BaseList>::maybeTakeLast() -> std::optional<value_type> {
   if (Base::empty())
-    return {};
-  value_type e = std::move(last());
+    return std::nullopt;
+  value_type e = std::move(Base::back());
   Base::pop_back();
   return e;
 }
@@ -526,12 +525,12 @@ void ListMixin<BaseList>::limitSizeBack(size_t maximumSize) {
 }
 
 template <typename BaseList>
-size_t ListMixin<BaseList>::count() const {
+auto ListMixin<BaseList>::count() const -> size_t {
   return Base::size();
 }
 
 template <typename BaseList>
-bool ListMixin<BaseList>::contains(const_reference e) const {
+auto ListMixin<BaseList>::contains(const_reference e) const -> bool {
   for (auto const& r : *this) {
     if (r == e)
       return true;
@@ -540,7 +539,7 @@ bool ListMixin<BaseList>::contains(const_reference e) const {
 }
 
 template <typename BaseList>
-size_t ListMixin<BaseList>::remove(const_reference e) {
+auto ListMixin<BaseList>::remove(const_reference e) -> size_t {
   size_t removed = 0;
   auto i = Base::begin();
   while (i != Base::end()) {
@@ -575,13 +574,13 @@ void ListMixin<BaseList>::insertSorted(value_type e) {
 
 template <typename BaseList>
 template <typename Comparator>
-bool ListMixin<BaseList>::containsSorted(value_type const& e, Comparator&& comparator) {
+auto ListMixin<BaseList>::containsSorted(value_type const& e, Comparator&& comparator) -> bool {
   auto range = std::equal_range(Base::begin(), Base::end(), e, std::forward<Comparator>(comparator));
   return range.first != range.second;
 }
 
 template <typename BaseList>
-bool ListMixin<BaseList>::containsSorted(value_type e) {
+auto ListMixin<BaseList>::containsSorted(value_type e) -> bool {
   auto range = std::equal_range(Base::begin(), Base::end(), e);
   return range.first != range.second;
 }
@@ -609,23 +608,23 @@ void ListMixin<BaseList>::transform(Function&& function) {
 
 template <typename BaseList>
 template <typename Function>
-bool ListMixin<BaseList>::any(Function&& function) const {
+auto ListMixin<BaseList>::any(Function&& function) const -> bool {
   return Star::any(*this, std::forward<Function>(function));
 }
 
 template <typename BaseList>
-bool ListMixin<BaseList>::any() const {
+auto ListMixin<BaseList>::any() const -> bool {
   return Star::any(*this);
 }
 
 template <typename BaseList>
 template <typename Function>
-bool ListMixin<BaseList>::all(Function&& function) const {
+auto ListMixin<BaseList>::all(Function&& function) const -> bool {
   return Star::all(*this, std::forward<Function>(function));
 }
 
 template <typename BaseList>
-bool ListMixin<BaseList>::all() const {
+auto ListMixin<BaseList>::all() const -> bool {
   return Star::all(*this);
 }
 
@@ -646,16 +645,16 @@ void RandomAccessListMixin<BaseList>::reverse() {
 }
 
 template <typename BaseList>
-size_t RandomAccessListMixin<BaseList>::indexOf(const_reference e, size_t from) const {
+auto RandomAccessListMixin<BaseList>::indexOf(const_reference e, size_t from) const -> size_t {
   for (size_t i = from; i < Base::size(); ++i)
     if (operator[](i) == e)
       return i;
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 template <typename BaseList>
-size_t RandomAccessListMixin<BaseList>::lastIndexOf(const_reference e, size_t til) const {
-  size_t index = NPos;
+auto RandomAccessListMixin<BaseList>::lastIndexOf(const_reference e, size_t til) const -> size_t {
+  size_t index = std::numeric_limits<std::size_t>::max();
   size_t end = std::min(Base::size(), til);
   for (size_t i = 0; i < end; ++i) {
     if (operator[](i) == e)
@@ -680,13 +679,11 @@ auto RandomAccessListMixin<BaseList>::at(size_t n) -> reference {
 
 template <typename BaseList>
 auto RandomAccessListMixin<BaseList>::operator[](size_t n) const -> const_reference {
-  starAssert(n < Base::size());
   return Base::operator[](n);
 }
 
 template <typename BaseList>
 auto RandomAccessListMixin<BaseList>::operator[](size_t n) -> reference {
-  starAssert(n < Base::size());
   return Base::operator[](n);
 }
 
@@ -730,26 +727,22 @@ auto RandomAccessListMixin<BaseList>::wrap(size_t n, value_type def) const -> va
 
 template <typename BaseList>
 void RandomAccessListMixin<BaseList>::eraseAt(size_t i) {
-  starAssert(i < Base::size());
   Base::erase(Base::begin() + i);
 }
 
 template <typename BaseList>
 void RandomAccessListMixin<BaseList>::eraseAt(size_t b, size_t e) {
-  starAssert(b < Base::size() && e <= Base::size());
   Base::erase(Base::begin() + b, Base::begin() + e);
 }
 
 template <typename BaseList>
 void RandomAccessListMixin<BaseList>::insertAt(size_t pos, value_type e) {
-  starAssert(pos <= Base::size());
   Base::insert(Base::begin() + pos, std::move(e));
 }
 
 template <typename BaseList>
 template <typename Container>
 void RandomAccessListMixin<BaseList>::insertAllAt(size_t pos, Container const& l) {
-  starAssert(pos <= Base::size());
   Base::insert(Base::begin() + pos, l.begin(), l.end());
 }
 
@@ -779,7 +772,7 @@ template <typename BaseList>
 template <typename Container>
 void FrontModifyingListMixin<BaseList>::prependAll(Container&& list) {
   for (auto i = std::rbegin(list); i != std::rend(list); ++i) {
-    if (std::is_rvalue_reference<Container&&>::value)
+    if (std::is_rvalue_reference_v<Container&&>)
       Base::push_front(std::move(*i));
     else
       Base::push_front(*i);
@@ -815,7 +808,7 @@ void FrontModifyingListMixin<BaseList>::limitSizeFront(size_t maximumSize) {
 
 template <typename Element, typename Allocator>
 template <typename Container>
-List<Element, Allocator> List<Element, Allocator>::from(Container const& c) {
+auto List<Element, Allocator>::from(Container const& c) -> List<Element, Allocator> {
   return List(c.begin(), c.end());
 }
 
@@ -851,7 +844,7 @@ auto List<Element, Allocator>::sorted(Comparator&& comparator) const -> List {
 }
 
 template <typename Element, typename Allocator>
-List<Element, Allocator> List<Element, Allocator>::sorted() const {
+auto List<Element, Allocator>::sorted() const -> List<Element, Allocator> {
   List list(*this);
   list.sort();
   return list;
@@ -860,7 +853,7 @@ List<Element, Allocator> List<Element, Allocator>::sorted() const {
 template <typename Element, typename Allocator>
 template <typename Function>
 auto List<Element, Allocator>::transformed(Function&& function) {
-  List<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type> res;
+  List< std::decay_t<decltype(std::declval<Function>()(std::declval<reference>()))>> res;
   res.reserve(Base::size());
   transformInto(res, *this, std::forward<Function>(function));
   return res;
@@ -869,7 +862,7 @@ auto List<Element, Allocator>::transformed(Function&& function) {
 template <typename Element, typename Allocator>
 template <typename Function>
 auto List<Element, Allocator>::transformed(Function&& function) const {
-  List<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type> res;
+  List< std::decay_t<decltype(std::declval<Function>()(std::declval<const_reference>()))>> res;
   res.reserve(Base::size());
   transformInto(res, *this, std::forward<Function>(function));
   return res;
@@ -877,7 +870,7 @@ auto List<Element, Allocator>::transformed(Function&& function) const {
 
 template <typename Element, size_t MaxSize>
 template <typename Container>
-StaticList<Element, MaxSize> StaticList<Element, MaxSize>::from(Container const& c) {
+auto StaticList<Element, MaxSize>::from(Container const& c) -> StaticList<Element, MaxSize> {
   return StaticList(c.begin(), c.end());
 }
 
@@ -903,7 +896,7 @@ auto StaticList<Element, MaxSize>::sorted(Comparator&& comparator) const -> Stat
 }
 
 template <typename Element, size_t MaxSize>
-StaticList<Element, MaxSize> StaticList<Element, MaxSize>::sorted() const {
+auto StaticList<Element, MaxSize>::sorted() const -> StaticList<Element, MaxSize> {
   StaticList list(*this);
   list.sort();
   return list;
@@ -912,7 +905,7 @@ StaticList<Element, MaxSize> StaticList<Element, MaxSize>::sorted() const {
 template <typename Element, size_t MaxSize>
 template <typename Function>
 auto StaticList<Element, MaxSize>::transformed(Function&& function) {
-  StaticList<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type, MaxSize> res;
+  StaticList< std::decay_t<decltype(std::declval<Function>()(std::declval<reference>()))>, MaxSize> res;
   transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
@@ -920,14 +913,14 @@ auto StaticList<Element, MaxSize>::transformed(Function&& function) {
 template <typename Element, size_t MaxSize>
 template <typename Function>
 auto StaticList<Element, MaxSize>::transformed(Function&& function) const {
-  StaticList<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type, MaxSize> res;
+  StaticList< std::decay_t<decltype(std::declval<Function>()(std::declval<const_reference>()))>, MaxSize> res;
   transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
 
 template <typename Element, size_t MaxStackSize>
 template <typename Container>
-SmallList<Element, MaxStackSize> SmallList<Element, MaxStackSize>::from(Container const& c) {
+auto SmallList<Element, MaxStackSize>::from(Container const& c) -> SmallList<Element, MaxStackSize> {
   return SmallList(c.begin(), c.end());
 }
 
@@ -953,7 +946,7 @@ auto SmallList<Element, MaxStackSize>::sorted(Comparator&& comparator) const -> 
 }
 
 template <typename Element, size_t MaxStackSize>
-SmallList<Element, MaxStackSize> SmallList<Element, MaxStackSize>::sorted() const {
+auto SmallList<Element, MaxStackSize>::sorted() const -> SmallList<Element, MaxStackSize> {
   SmallList list(*this);
   list.sort();
   return list;
@@ -962,7 +955,7 @@ SmallList<Element, MaxStackSize> SmallList<Element, MaxStackSize>::sorted() cons
 template <typename Element, size_t MaxStackSize>
 template <typename Function>
 auto SmallList<Element, MaxStackSize>::transformed(Function&& function) {
-  SmallList<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type, MaxStackSize> res;
+  SmallList< std::decay_t<decltype(std::declval<Function>()(std::declval<reference>()))>, MaxStackSize> res;
   transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
@@ -970,25 +963,25 @@ auto SmallList<Element, MaxStackSize>::transformed(Function&& function) {
 template <typename Element, size_t MaxStackSize>
 template <typename Function>
 auto SmallList<Element, MaxStackSize>::transformed(Function&& function) const {
-  SmallList<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type, MaxStackSize> res;
+  SmallList< std::decay_t<decltype(std::declval<Function>()(std::declval<const_reference>()))>, MaxStackSize> res;
   transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
 
 template <typename Element, typename Allocator>
 template <typename Container>
-Deque<Element, Allocator> Deque<Element, Allocator>::from(Container const& c) {
+auto Deque<Element, Allocator>::from(Container const& c) -> Deque<Element, Allocator> {
   return Deque(c.begin(), c.end());
 }
 
 template <typename Element, typename Allocator>
-Deque<Element, Allocator> Deque<Element, Allocator>::slice(SliceIndex a, SliceIndex b, int i) const {
+auto Deque<Element, Allocator>::slice(SliceIndex a, SliceIndex b, int i) const -> Deque<Element, Allocator> {
   return Star::slice(*this, a, b, i);
 }
 
 template <typename Element, typename Allocator>
 template <typename Filter>
-Deque<Element, Allocator> Deque<Element, Allocator>::filtered(Filter&& filter) const {
+auto Deque<Element, Allocator>::filtered(Filter&& filter) const -> Deque<Element, Allocator> {
   Deque l(*this);
   l.filter(std::forward<Filter>(filter));
   return l;
@@ -996,14 +989,14 @@ Deque<Element, Allocator> Deque<Element, Allocator>::filtered(Filter&& filter) c
 
 template <typename Element, typename Allocator>
 template <typename Comparator>
-Deque<Element, Allocator> Deque<Element, Allocator>::sorted(Comparator&& comparator) const {
+auto Deque<Element, Allocator>::sorted(Comparator&& comparator) const -> Deque<Element, Allocator> {
   Deque l(*this);
   l.sort(std::forward<Comparator>(comparator));
   return l;
 }
 
 template <typename Element, typename Allocator>
-Deque<Element, Allocator> Deque<Element, Allocator>::sorted() const {
+auto Deque<Element, Allocator>::sorted() const -> Deque<Element, Allocator> {
   Deque l(*this);
   l.sort();
   return l;
@@ -1023,7 +1016,7 @@ auto Deque<Element, Allocator>::transformed(Function&& function) const {
 
 template <typename Element, typename Allocator>
 template <typename Container>
-LinkedList<Element, Allocator> LinkedList<Element, Allocator>::from(Container const& c) {
+auto LinkedList<Element, Allocator>::from(Container const& c) -> LinkedList<Element, Allocator> {
   return LinkedList(c.begin(), c.end());
 }
 
@@ -1041,7 +1034,7 @@ template <typename Element, typename Allocator>
 template <typename Container>
 void LinkedList<Element, Allocator>::appendAll(Container&& list) {
   for (auto& e : list) {
-    if (std::is_rvalue_reference<Container&&>::value)
+    if (std::is_rvalue_reference_v<Container&&>)
       Base::push_back(std::move(e));
     else
       Base::push_back(e);
@@ -1052,7 +1045,7 @@ template <typename Element, typename Allocator>
 template <typename Container>
 void LinkedList<Element, Allocator>::prependAll(Container&& list) {
   for (auto i = std::rbegin(list); i != std::rend(list); ++i) {
-    if (std::is_rvalue_reference<Container&&>::value)
+    if (std::is_rvalue_reference_v<Container&&>)
       Base::push_front(std::move(*i));
     else
       Base::push_front(*i);
@@ -1061,7 +1054,7 @@ void LinkedList<Element, Allocator>::prependAll(Container&& list) {
 
 template <typename Element, typename Allocator>
 template <typename Filter>
-LinkedList<Element, Allocator> LinkedList<Element, Allocator>::filtered(Filter&& filter) const {
+auto LinkedList<Element, Allocator>::filtered(Filter&& filter) const -> LinkedList<Element, Allocator> {
   LinkedList list(*this);
   list.filter(std::forward<Filter>(filter));
   return list;
@@ -1069,14 +1062,14 @@ LinkedList<Element, Allocator> LinkedList<Element, Allocator>::filtered(Filter&&
 
 template <typename Element, typename Allocator>
 template <typename Comparator>
-LinkedList<Element, Allocator> LinkedList<Element, Allocator>::sorted(Comparator&& comparator) const {
+auto LinkedList<Element, Allocator>::sorted(Comparator&& comparator) const -> LinkedList<Element, Allocator> {
   LinkedList l(*this);
   l.sort(std::forward<Comparator>(comparator));
   return l;
 }
 
 template <typename Element, typename Allocator>
-LinkedList<Element, Allocator> LinkedList<Element, Allocator>::sorted() const {
+auto LinkedList<Element, Allocator>::sorted() const -> LinkedList<Element, Allocator> {
   LinkedList l(*this);
   l.sort();
   return l;
@@ -1095,7 +1088,7 @@ auto LinkedList<Element, Allocator>::transformed(Function&& function) const {
 }
 
 template <typename BaseList>
-std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list) {
+auto operator<<(std::ostream& os, ListMixin<BaseList> const& list) -> std::ostream& {
   os << "(";
   for (auto i = list.begin(); i != list.end(); ++i) {
     if (i != list.begin())
@@ -1107,7 +1100,7 @@ std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list) {
 }
 
 template <typename List>
-size_t ListHasher<List>::operator()(List const& l) const {
+auto ListHasher<List>::operator()(List const& l) const -> size_t {
   size_t h = 0;
   for (auto const& e : l)
     hashCombine(h, elemHasher(e));
@@ -1115,7 +1108,7 @@ size_t ListHasher<List>::operator()(List const& l) const {
 }
 
 template <typename... Containers>
-typename ListZipTypes<Containers...>::Result zip(Containers&&... args) {
+auto zip(Containers&&... args) -> typename ListZipTypes<Containers...>::Result {
   typename ListZipTypes<Containers...>::Result res;
   for (auto el : zipIterator(args...))
     res.push_back(std::move(el));
@@ -1124,7 +1117,7 @@ typename ListZipTypes<Containers...>::Result zip(Containers&&... args) {
 }
 
 template <typename Container>
-typename ListEnumerateTypes<Container>::Result enumerate(Container&& container) {
+auto enumerate(Container&& container) -> typename ListEnumerateTypes<Container>::Result {
   typename ListEnumerateTypes<Container>::Result res;
   for (auto el : enumerateIterator(container))
     res.push_back(std::move(el));

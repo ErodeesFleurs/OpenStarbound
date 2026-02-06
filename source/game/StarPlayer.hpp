@@ -126,8 +126,8 @@ public:
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;
 
-  virtual Maybe<HitType> queryHit(DamageSource const& source) const override;
-  Maybe<PolyF> hitPoly() const override;
+  virtual std::optional<HitType> queryHit(DamageSource const& source) const override;
+  std::optional<PolyF> hitPoly() const override;
 
   List<DamageNotification> applyDamage(DamageRequest const& damage) override;
   List<DamageNotification> selfDamageNotifications() override;
@@ -140,7 +140,7 @@ public:
   bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
-  Maybe<EntityAnchorState> loungingIn() const override;
+  std::optional<EntityAnchorState> loungingIn() const override;
   bool lounge(EntityId loungeableEntityId, size_t anchorIndex);
   void stopLounging();
 
@@ -201,7 +201,7 @@ public:
   Direction walkingDirection() const override;
   Direction facingDirection() const override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
 
   void update(float dt, uint64_t currentStep) override;
 
@@ -253,7 +253,7 @@ public:
   PlayerCodexesPtr codexes() const;
 
   PlayerTechPtr techs() const;
-  void overrideTech(Maybe<StringList> const& techModules);
+  void overrideTech(std::optional<StringList> const& techModules);
   bool techOverridden() const;
 
   PlayerCompanionsPtr companions() const;
@@ -275,7 +275,7 @@ public:
 
   Vec2F armAdjustment() const override;
 
-  void setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) override;
+  void setCameraFocusEntity(std::optional<EntityId> const& cameraFocusEntity) override;
 
   void playEmote(HumanoidEmote emote) override;
 
@@ -315,17 +315,17 @@ public:
   String name() const override;
   void setName(String const& name);
 
-  Maybe<String> statusText() const override;
+  std::optional<String> statusText() const override;
   bool displayNametag() const override;
   Vec3B nametagColor() const override;
   Vec2F nametagOrigin() const override;
   String nametag() const override;
-  void setNametag(Maybe<String> nametag);
+  void setNametag(std::optional<String> nametag);
 
   void updateIdentity();
 
-  void setHumanoidParameter(String key, Maybe<Json> value);
-  Maybe<Json> getHumanoidParameter(String key);
+  void setHumanoidParameter(String key, std::optional<Json> value);
+  std::optional<Json> getHumanoidParameter(String key);
   void setHumanoidParameters(JsonObject parameters);
   JsonObject getHumanoidParameters();
   void refreshHumanoidParameters();
@@ -354,7 +354,7 @@ public:
   Gender gender() const;
   void setGender(Gender const& gender);
   void setPersonality(Personality const& personality);
-  void setImagePath(Maybe<String> const& imagePath);
+  void setImagePath(std::optional<String> const& imagePath);
 
   HumanoidPtr humanoid();
   HumanoidPtr humanoid() const;
@@ -412,16 +412,16 @@ public:
   void queueItemPickupMessage(ItemPtr const& item);
 
   void addChatMessage(String const& message, Json const& config = {});
-  void addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown = {});
-  void setDance(Maybe<String> const & danceName);
+  void addEmote(HumanoidEmote const& emote, std::optional<float> emoteCooldown = {});
+  void setDance(std::optional<String> const& danceName);
   pair<HumanoidEmote, float> currentEmote() const;
 
   State currentState() const;
 
   List<ChatAction> pullPendingChatActions() override;
 
-  Maybe<String> inspectionLogName() const override;
-  Maybe<String> inspectionDescription(String const& species) const override;
+  std::optional<String> inspectionLogName() const override;
+  std::optional<String> inspectionDescription(String const& species) const override;
 
   float beamGunRadius() const override;
 
@@ -460,23 +460,23 @@ public:
   bool isPermaDead() const;
 
   bool interruptRadioMessage();
-  Maybe<RadioMessage> pullPendingRadioMessage();
+  std::optional<RadioMessage> pullPendingRadioMessage();
   void queueRadioMessage(Json const& messageConfig, float delay = 0);
   void queueRadioMessage(RadioMessage message);
 
   // If a cinematic should play, returns it and clears it.  May stop cinematics
   // by returning a null Json.
-  Maybe<Json> pullPendingCinematic();
+  std::optional<Json> pullPendingCinematic();
   void setPendingCinematic(Json const& cinematic, bool unique = false);
 
   void setInCinematic(bool inCinematic);
 
-  Maybe<pair<Maybe<pair<StringList, int>>, float>> pullPendingAltMusic();
+  std::optional<pair<std::optional<pair<StringList, int>>, float>> pullPendingAltMusic();
 
-  Maybe<PlayerWarpRequest> pullPendingWarp();
-  void setPendingWarp(String const& action, Maybe<String> const& animation = {}, bool deploy = false);
+  std::optional<PlayerWarpRequest> pullPendingWarp();
+  void setPendingWarp(String const& action, std::optional<String> const& animation = {}, bool deploy = false);
 
-  Maybe<pair<Json, RpcPromiseKeeper<Json>>> pullPendingConfirmation();
+  std::optional<pair<Json, RpcPromiseKeeper<Json>>> pullPendingConfirmation();
   void queueConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> const& resultPromise);
 
   AiState const& aiState() const;
@@ -509,7 +509,7 @@ public:
   // I call this a 'secret property'.
 
   // If the secret property exists as a serialized Json string, returns a view to it without deserializing.
-  Maybe<StringView> getSecretPropertyView(String const& name) const;
+  std::optional<StringView> getSecretPropertyView(String const& name) const;
   String const* getSecretPropertyPtr(String const& name) const;
   // Gets a secret Json property. It will be de-serialized.
   Json getSecretProperty(String const& name, Json defaultValue = Json()) const;
@@ -546,7 +546,7 @@ private:
   HumanoidEmote detectEmotes(String const& chatter);
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
-  NetElementData<Maybe<String>> m_deathParticleBurst;
+  NetElementData<std::optional<String>> m_deathParticleBurst;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
@@ -575,7 +575,7 @@ private:
   State m_state;
   HumanoidEmote m_emoteState;
 
-  Maybe<String> m_dance;
+  std::optional<String> m_dance;
   GameTimer m_danceCooldownTimer;
 
   float m_footstepTimer;
@@ -621,7 +621,7 @@ private:
 
   Vec2F m_aimPosition;
 
-  Maybe<EntityId> m_cameraFocusEntity;
+  std::optional<EntityId> m_cameraFocusEntity;
 
   ActorMovementControllerPtr m_movementController;
   TechControllerPtr m_techController;
@@ -656,9 +656,9 @@ private:
   bool m_interruptRadioMessage;
   List<pair<GameTimer, RadioMessage>> m_delayedRadioMessages;
   Deque<RadioMessage> m_pendingRadioMessages;
-  Maybe<Json> m_pendingCinematic;
-  Maybe<pair<Maybe<pair<StringList, int>>, float>> m_pendingAltMusic;
-  Maybe<PlayerWarpRequest> m_pendingWarp;
+  std::optional<Json> m_pendingCinematic;
+  std::optional<pair<std::optional<pair<StringList, int>>, float>> m_pendingAltMusic;
+  std::optional<PlayerWarpRequest> m_pendingWarp;
   Deque<pair<Json, RpcPromiseKeeper<Json>>> m_pendingConfirmations;
 
   AiState m_aiState;
@@ -688,7 +688,7 @@ private:
   NetElementString m_chatMessageNetState;
   NetElementEvent m_newChatMessageNetState;
   NetElementString m_emoteNetState;
-  NetElementData<Maybe<String>> m_humanoidDanceNetState;
+  NetElementData<std::optional<String>> m_humanoidDanceNetState;
 };
 
 }

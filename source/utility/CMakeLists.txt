@@ -17,15 +17,11 @@ macro(configure_star_utility NAME)
     $<TARGET_OBJECTS:star_core>
     $<TARGET_OBJECTS:star_extern>
     ${STAR_EXT_LIBS}
-    z pthread dl
+    z dl
     )
 
     if(NOT MSVC)
         target_compile_options(${NAME} PRIVATE -Wno-nan-infinity-disabled)
-    endif()
-
-    if(STAR_PRECOMPILED_HEADERS)
-        TARGET_PRECOMPILE_HEADERS(${NAME} REUSE_FROM star_core)
     endif()
 endmacro()
 

@@ -44,7 +44,7 @@ namespace JsonPatching {
       {"merge", std::bind(applyMergeOperation, _1, _2)},
   };
 
-  Json applyOperation(Json const& base, Json const& op, Maybe<Json> const&) {
+  Json applyOperation(Json const& base, Json const& op, std::optional<Json> const&) {
     try {
       auto operation = op.getString("op");
       return JsonPatching::functionMap.get(operation)(base, op);

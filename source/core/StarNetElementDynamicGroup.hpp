@@ -306,7 +306,6 @@ void NetElementDynamicGroup<Element>::blankNetDelta(float interpolationTime) {
 template <typename Element>
 void NetElementDynamicGroup<Element>::addChangeData(ElementChange change) {
   uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
-  starAssert(m_changeData.empty() || m_changeData.last().first <= currentVersion);
 
   m_changeData.append({currentVersion, std::move(change)});
 

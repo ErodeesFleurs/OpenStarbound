@@ -7,6 +7,7 @@
 #include "StarGameTypes.hpp"
 #include "StarTileDamage.hpp"
 #include "StarDirectives.hpp"
+#include <optional>
 
 namespace Star {
 
@@ -69,8 +70,8 @@ struct MaterialRenderMatch {
   // Positions here are in TilePixels
   List<pair<MaterialRenderPieceConstPtr, Vec2F>> resultingPieces;
   MaterialRenderMatchList subMatches;
-  Maybe<TileLayer> requiredLayer;
-  Maybe<bool> occlude;
+  std::optional<TileLayer> requiredLayer;
+  std::optional<bool> occlude;
   bool haltOnMatch;
   bool haltOnSubMatch;
 };

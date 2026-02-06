@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarNetElementBasicFields.hpp"
 #include "StarNetElementFloatFields.hpp"
 #include "StarItem.hpp"
@@ -37,25 +39,25 @@ public:
   List<PhysicsForceRegion> forceRegions() const override;
 
   bool holdingItem() const;
-  Maybe<String> backArmFrame() const;
-  Maybe<String> frontArmFrame() const;
+  std::optional<String> backArmFrame() const;
+  std::optional<String> frontArmFrame() const;
   bool twoHandedGrip() const;
   bool recoil() const;
   bool outsideOfHand() const;
 
   float armAngle() const;
-  Maybe<Direction> facingDirection() const;
+  std::optional<Direction> facingDirection() const;
 
   // Hand drawables are in hand-space, everything else is in world space.
   List<Drawable> handDrawables() const;
-  List<pair<Drawable, Maybe<EntityRenderLayer>>> entityDrawables() const;
+  List<pair<Drawable, std::optional<EntityRenderLayer>>> entityDrawables() const;
   List<LightSource> lights() const;
   List<AudioInstancePtr> pullNewAudios();
   List<Particle> pullNewParticles();
 
-  Maybe<String> cursor() const;
+  std::optional<String> cursor() const;
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
 
   float durabilityStatus() override;
 
@@ -76,16 +78,16 @@ private:
   HashMap<AudioInstancePtr, Vec2F> m_activeAudio;
 
   FireMode m_currentFireMode;
-  Maybe<String> m_cursor;
+  std::optional<String> m_cursor;
 
   NetElementBool m_holdingItem;
-  NetElementData<Maybe<String>> m_backArmFrame;
-  NetElementData<Maybe<String>> m_frontArmFrame;
+  NetElementData<std::optional<String>> m_backArmFrame;
+  NetElementData<std::optional<String>> m_frontArmFrame;
   NetElementBool m_twoHandedGrip;
   NetElementBool m_recoil;
   NetElementBool m_outsideOfHand;
   NetElementFloat m_armAngle;
-  NetElementData<Maybe<Direction>> m_facingDirection;
+  NetElementData<std::optional<Direction>> m_facingDirection;
   NetElementData<List<DamageSource>> m_damageSources;
   NetElementData<List<DamageSource>> m_itemDamageSources;
   NetElementData<List<PolyF>> m_shieldPolys;

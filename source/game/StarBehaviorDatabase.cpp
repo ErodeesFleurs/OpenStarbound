@@ -40,7 +40,7 @@ NodeParameter jsonToNodeParameter(Json const& json) {
   if (auto key = json.optString("key"))
     return {type, *key};
   else
-    return {type, json.opt("value").value(Json())};
+    return {type, json.opt("value").value_or(Json())};
 }
 
 Json nodeOutputToJson(NodeOutput const& output) {
@@ -54,7 +54,7 @@ Json nodeOutputToJson(NodeOutput const& output) {
 NodeOutput jsonToNodeOutput(Json const& json) {
   return {
     NodeParameterTypeNames.getLeft(json.getString("type")),
-    {jsonToMaybe<String>(json.get("key"), [](Json const& j) { return j.toString(); }), json.optBool("ephemeral").value(false)}
+    {jsonToMaybe<String>(json.get("key"), [](Json const& j) { return j.toString(); }), json.optBool("ephemeral").value_or(false)}
   };
 }
 
@@ -81,7 +81,7 @@ void applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<Nod
 }
 
 NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters) {
-  Maybe<String> strVal = parameter.maybe<String>();
+  std::optional<String> strVal = parameter.maybe<String>();
   if (!strVal && parameter.get<Json>().isType(Json::Type::String))
     strVal = parameter.get<Json>().toString();
   if (strVal) {
@@ -99,7 +99,7 @@ NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, Strin
   return parameter;
 }
 
-Maybe<String> replaceOutputBehaviorTag(Maybe<String> const& output, StringMap<NodeParameterValue> const& treeParameters) {
+std::optional<String> replaceOutputBehaviorTag(std::optional<String> const& output, StringMap<NodeParameterValue> const& treeParameters) {
   if (auto out = output) {
     if (out->beginsWith('<') && out->endsWith('>')) {
       if (auto replace = treeParameters.maybe(out->substr(1, out->size() - 2))) {
@@ -120,7 +120,7 @@ Maybe<String> replaceOutputBehaviorTag(Maybe<String> const& output, StringMap<No
 // TODO: This is temporary until BehaviorState can handle valueType:value pairs
 void parseNodeParameters(JsonObject& parameters) {
   for (auto& p : parameters)
-    p.second = p.second.opt("key").orMaybe(p.second.opt("value")).value(Json());
+    p.second = p.second.opt("key").or_else([&]() { return p.second.opt("value"); }).value_or(Json());
 }
 
 ActionNode::ActionNode(String name, StringMap<NodeParameter> parameters, StringMap<NodeOutput> output)
@@ -134,10 +134,10 @@ SequenceNode::SequenceNode(List<BehaviorNodeConstPtr> children) : children(child
 SelectorNode::SelectorNode(List<BehaviorNodeConstPtr> children) : children(children) { }
 
 ParallelNode::ParallelNode(StringMap<NodeParameter> parameters, List<BehaviorNodeConstPtr> children) : children(children) {
-  int s = parameters.get("success").second.get<Json>().optInt().value(-1);
+  int s = parameters.get("success").second.get<Json>().optInt().value_or(-1);
   succeed = s == -1 ? children.size() : s;
 
-  int f = parameters.get("fail").second.get<Json>().optInt().value(-1);
+  int f = parameters.get("fail").second.get<Json>().optInt().value_or(-1);
   fail = f == -1 ? children.size() : f;
 }
 
@@ -271,7 +271,7 @@ BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<
 
   StringMap<NodeParameter> parameters = m_nodeParameters.get(name);
   for (auto& p : parameters)
-    p.second.second = parameterConfig.maybe(p.first).apply(nodeParameterValueFromJson).value(p.second.second);
+    p.second.second = parameterConfig.maybe(p.first).transform(nodeParameterValueFromJson).value_or(p.second.second);
   applyTreeParameters(parameters, treeParameters);
 
   if (type == BehaviorNodeType::Action) {
@@ -280,7 +280,7 @@ BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<
     Json outputConfig = json.getObject("output", {});
     StringMap<NodeOutput> output = m_nodeOutput.get(name);
     for (auto& p : output)
-      p.second.second.first = replaceOutputBehaviorTag(outputConfig.optString(p.first).orMaybe(p.second.second.first), treeParameters);
+      p.second.second.first = replaceOutputBehaviorTag(outputConfig.optString(p.first).or_else([&]() { return p.second.second.first; }), treeParameters);
 
     return make_shared<BehaviorNode>(ActionNode(name, parameters, output));
   } else if (type == BehaviorNodeType::Decorator) {

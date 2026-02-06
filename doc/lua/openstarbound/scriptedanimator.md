@@ -19,7 +19,7 @@ Returns the animation rate.
 
 ---
 
-#### `void` animationConfig.setLocalTag(`String` tagName, `Maybe<String>` tagValue)
+#### `void` animationConfig.setLocalTag(`String` tagName, `std::optional<String>` tagValue)
 
 Sets an animator tag. A tag replaces any tag <tagName> with the specified tagValue across all animation parts.
 
@@ -37,7 +37,7 @@ Returns the input string with the animation tags for the specified part applied 
 
 ---
 
-#### `Json` animationConfig.animationStateProperty(`String` stateType, `String` propertyName, `Maybe<String>` state, `Maybe<int>` frame)
+#### `Json` animationConfig.animationStateProperty(`String` stateType, `String` propertyName, `std::optional<String>` state, `std::optional<int>` frame)
 
 Returns the value of the specified property for a state type.
 
@@ -51,7 +51,7 @@ Returns the value of the specified property of the next frame for a state type.
 
 ---
 
-#### `Json` animationConfig.partProperty(`String` partName, `String` propertyName, `Maybe<String>` stateType, `Maybe<String>` state, `Maybe<int>` frame)
+#### `Json` animationConfig.partProperty(`String` partName, `String` propertyName, `std::optional<String>` stateType, `std::optional<String>` state, `std::optional<int>` frame)
 
 Returns an animation part property without applying any transformations.
 
@@ -123,7 +123,7 @@ Returns true if the stateType is playing in reverse.
 
 ---
 
-#### `bool` animationConfig.hasState(`String` stateType, `Maybe<String>` state)
+#### `bool` animationConfig.hasState(`String` stateType, `std::optional<String>` state)
 
 Returns true if the animator has the stateType.
 
@@ -137,7 +137,7 @@ Returns whether the animator contains the specified transformation group.
 
 ---
 
-#### `float` animationConfig.stateCycle(`String` stateType, `Maybe<String>` state)
+#### `float` animationConfig.stateCycle(`String` stateType, `std::optional<String>` state)
 
 Returns the animation cycle of the current animation for stateType.
 
@@ -145,7 +145,7 @@ If **state** is valid, then it will return the animation cycle of that state ins
 
 ---
 
-#### `int` animationConfig.stateFrames(`String` stateType, `Maybe<String>` state)
+#### `int` animationConfig.stateFrames(`String` stateType, `std::optional<String>` state)
 
 Returns the number of frames of the current animation for stateType.
 

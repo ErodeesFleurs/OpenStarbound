@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarRoot.hpp"
 #include "StarVersioningDatabase.hpp"
 #include "StarEntity.hpp"
 

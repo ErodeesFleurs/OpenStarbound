@@ -1,22 +1,22 @@
 #include "StarProjectile.hpp"
+#include "StarEntityRendering.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarMixer.hpp"
+#include "StarMonster.hpp" // IWYU pragma: keep
+#include "StarParticleDatabase.hpp" // IWYU pragma: keep
+#include "StarMonsterDatabase.hpp" // IWYU pragma: keep
 #include "StarWorld.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
 #include "StarDataStreamExtra.hpp" // IWYU pragma: keep
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
-#include "StarMonster.hpp"
-#include "StarStoredFunctions.hpp"
-#include "StarDamageDatabase.hpp"
 #include "StarProjectileDatabase.hpp"
-#include "StarAssets.hpp"
 #include "StarItemDrop.hpp"
 #include "StarIterator.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
-#include "StarParticleDatabase.hpp"
 
 namespace Star {
 
@@ -84,7 +84,7 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
   }
 
   if (isMaster()) {
-    auto parameterScripts = m_parameters.optArray("scripts").apply(jsonToStringList);
+    auto parameterScripts = m_parameters.optArray("scripts").transform(jsonToStringList);
     auto scripts = parameterScripts ? parameterScripts.value() : m_config->scripts;
     if (!scripts.empty()) {
       m_scriptComponent.setScripts(scripts);
@@ -100,7 +100,7 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
   m_travelLine = Line2F(position(), position());
 
   if (auto referenceVelocity = m_parameters.opt("referenceVelocity"))
-    setReferenceVelocity(referenceVelocity.apply(jsonToVec2F));
+    setReferenceVelocity(referenceVelocity.transform(jsonToVec2F));
 
   if (world->isClient() && !m_persistentAudioFile.empty()) {
     m_persistentAudio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_persistentAudioFile));
@@ -115,7 +115,7 @@ void Projectile::uninit() {
     m_persistentAudio->stop();
   m_movementController->uninit();
   if (isMaster()) {
-    auto scripts = configValue("scripts").optArray().apply(jsonToStringList);
+    auto scripts = configValue("scripts").optArray().transform(jsonToStringList);
     if (scripts && !(*scripts).empty()) {
       m_scriptComponent.uninit();
       m_scriptComponent.removeCallbacks("projectile");
@@ -396,15 +396,15 @@ void Projectile::renderLightSources(RenderCallback* renderCallback) {
   renderCallback->addLightSource({position(), m_config->lightColor.toRgbF(), m_config->lightType, 0.0f, 0.0f, 0.0f});
 }
 
-Maybe<Json> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+std::optional<Json> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
 }
 
-Maybe<LuaValue> Projectile::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+std::optional<LuaValue> Projectile::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   return m_scriptComponent.invoke(func, args);
 }
 
-Maybe<LuaValue> Projectile::evalScript(String const& code) {
+std::optional<LuaValue> Projectile::evalScript(String const& code) {
   return m_scriptComponent.eval(code);
 }
 
@@ -412,11 +412,11 @@ String Projectile::projectileType() const {
   return m_config->typeName;
 }
 
-void Projectile::setReferenceVelocity(Maybe<Vec2F> const& velocity) {
-  m_movementController->setVelocity(m_movementController->velocity() - m_referenceVelocity.value());
+void Projectile::setReferenceVelocity(std::optional<Vec2F> const& velocity) {
+  m_movementController->setVelocity(m_movementController->velocity() - m_referenceVelocity.value_or(Vec2F()));
   m_referenceVelocity = velocity;
-  m_movementController->setVelocity(m_movementController->velocity() + velocity.value());
-  m_effectEmitter->setBaseVelocity(velocity.value());
+  m_movementController->setVelocity(m_movementController->velocity() + m_referenceVelocity.value_or(Vec2F()));
+  m_effectEmitter->setBaseVelocity(m_referenceVelocity.value_or(Vec2F()));
 }
 
 float Projectile::initialSpeed() const {
@@ -492,12 +492,12 @@ size_t Projectile::movingCollisionCount() const {
   return m_physicsCollisions.size();
 }
 
-Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) const {
-  auto const& mc = m_physicsCollisions.valueAt(positionIndex);
+std::optional<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) const {
+  auto& mc = m_physicsCollisions.values().at(positionIndex);
   if (!mc.enabled.get())
-    return {};
+    return std::nullopt;
   PhysicsMovingCollision collision = mc.movingCollision;
-  collision.translate(position());
+  collision.position += position();
   return collision;
 }
 
@@ -623,8 +623,8 @@ void Projectile::processAction(Json const& action) {
       return;
 
     auto materialDatabase = Root::singleton().materialDatabase();
-    Maybe<ModId> previousMod =
-        parameters.optString("previousMod").apply(bind(&MaterialDatabase::modId, materialDatabase, _1));
+    std::optional<ModId> previousMod =
+        parameters.optString("previousMod").transform(bind(&MaterialDatabase::modId, materialDatabase, _1));
     ModId newMod = materialDatabase->modId(parameters.getString("newMod"));
     int radius = parameters.getInt("radius", 0);
     float chance = parameters.getFloat("chance", 1.0f);
@@ -918,7 +918,7 @@ void Projectile::setup() {
   { // it is possible to shove a frame name in processing. I hope nobody actually does this but account for it...
     String processing = m_parameters.getString("processing", "");
     auto begin = processing.utf8().find_first_of('?');
-    if (begin == NPos) {
+    if (begin == std::numeric_limits<std::size_t>::max()) {
       m_imageDirectives = "";
       m_imageSuffix = std::move(processing);
     }
@@ -941,8 +941,10 @@ void Projectile::setup() {
     m_damageTeam = damageTeam;
     setTeam(EntityDamageTeam(damageTeam));
   }
-  m_damageRepeatGroup = m_parameters.optString("damageRepeatGroup").orMaybe(m_config->damageRepeatGroup);
-  m_damageRepeatTimeout = m_parameters.optFloat("damageRepeatTimeout").orMaybe(m_config->damageRepeatTimeout);
+  m_damageRepeatGroup = m_parameters.optString("damageRepeatGroup")
+                                   .or_else([&]{ return m_config->damageRepeatGroup; });
+  m_damageRepeatTimeout = m_parameters.optFloat("damageRepeatTimeout")
+                                     .or_else([&]{ return m_config->damageRepeatTimeout; });
 
   m_falldown = m_parameters.getBool("falldown", m_config->falldown);
 
@@ -1000,7 +1002,7 @@ LuaCallbacks Projectile::makeProjectileCallbacks() {
       return configValue(name,def);
     });
   callbacks.registerCallback("die", [this]() { m_timeToLive = 0.0f; });
-  callbacks.registerCallback("sourceEntity", [this]() -> Maybe<EntityId> {
+  callbacks.registerCallback("sourceEntity", [this]() -> std::optional<EntityId> {
       if (m_sourceEntity == NullEntityId)
         return {};
       else
@@ -1013,7 +1015,7 @@ LuaCallbacks Projectile::makeProjectileCallbacks() {
   callbacks.registerCallback("processAction", [this](Json const& action) { processAction(action); });
   callbacks.registerCallback("power", [this]() { return m_power; });
   callbacks.registerCallback("setPower", [this](float const& power) { m_power = power; });
-  callbacks.registerCallback("setReferenceVelocity", [this](Maybe<Vec2F> const& referenceVelocity) { setReferenceVelocity(referenceVelocity); });
+  callbacks.registerCallback("setReferenceVelocity", [this](std::optional<Vec2F> const& referenceVelocity) { setReferenceVelocity(referenceVelocity); });
   return callbacks;
 }
 

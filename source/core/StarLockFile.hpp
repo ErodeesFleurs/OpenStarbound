@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarMaybe.hpp"
+#include <optional>
 #include "StarString.hpp"
 
 namespace Star {
@@ -10,7 +10,7 @@ public:
   // Convenience function, tries to acquire a lock, and if succesfull returns an
   // already locked
   // LockFile.
-  static Maybe<LockFile> acquireLock(String const& filename, int64_t lockTimeout = 1000);
+  static std::optional<LockFile> acquireLock(String const& filename, int64_t lockTimeout = 1000);
 
   LockFile(String const& filename);
   LockFile(LockFile&& lockFile);

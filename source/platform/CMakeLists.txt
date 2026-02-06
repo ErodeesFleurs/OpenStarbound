@@ -16,7 +16,3 @@ TARGET_LINK_LIBRARIES(star_platform PUBLIC
     star_core
     star_extern
 )
-
-IF(STAR_PRECOMPILED_HEADERS)
-    TARGET_PRECOMPILE_HEADERS (star_platform REUSE_FROM star_core)
-ENDIF()

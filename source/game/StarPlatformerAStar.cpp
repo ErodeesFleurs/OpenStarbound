@@ -67,11 +67,11 @@ namespace PlatformerAStar {
     return *this;
   }
 
-  Maybe<bool> PathFinder::explore(Maybe<unsigned> maxExploreNodes) {
+  std::optional<bool> PathFinder::explore(std::optional<unsigned> maxExploreNodes) {
     return m_astar->explore(maxExploreNodes);
   }
 
-  Maybe<Path> const& PathFinder::result() const {
+  std::optional<Path> const& PathFinder::result() const {
     return m_astar->result();
   }
 
@@ -80,13 +80,13 @@ namespace PlatformerAStar {
       return heuristicCost(fromNode.position, toNode.position);
     };
     auto goalReachedFn = [this](Node const& node) -> bool {
-      if (m_searchParams.mustEndOnGround && (!onGround(node.position) || node.velocity.isValid()))
+      if (m_searchParams.mustEndOnGround && (!onGround(node.position) || node.velocity.has_value()))
         return false;
       return distance(node.position, m_searchTo) < NodeGranularity;
     };
     auto neighborsFn = [this](Node const& node, List<Edge>& result) {
       auto neighborFilter = [this](Edge const& edge) -> bool {
-        return distance(edge.source.position, m_searchFrom) <= m_searchParams.maxDistance.value(DefaultMaxDistance);
+        return distance(edge.source.position, m_searchFrom) <= m_searchParams.maxDistance.value_or(DefaultMaxDistance);
       };
       neighbors(node, result);
       result.filter(neighborFilter);
@@ -127,7 +127,7 @@ namespace PlatformerAStar {
   }
 
   void PathFinder::neighbors(Node const& node, List<Edge>& neighbors) const {
-    if (node.velocity.isValid()) {
+    if (node.velocity.has_value()) {
       // Follow the current trajectory. Most of the time, this will only produce
       // one neighbor to avoid massive search space explosion, however one
       // change of X velocity is allowed at the peak of a jump.
@@ -162,7 +162,7 @@ namespace PlatformerAStar {
     // directly on solid surfaces. So if there is solid ground below the
     // platform, don't allow dropping through the platform:
     if (!onSolidGround(dropPosition)) {
-      float dropCost = m_searchParams.dropCost.value(DefaultDropCost);
+      float dropCost = m_searchParams.dropCost.value_or(DefaultDropCost);
       float acc = acceleration(node.position)[1];
       float dropSpeed = acc * sqrt(2.0 / abs(acc));
       neighbors.append(Edge{dropCost, Action::Drop, Vec2F(0, 0), node, Node{dropPosition, Vec2F(0, dropSpeed)}});
@@ -204,8 +204,8 @@ namespace PlatformerAStar {
       }
     });
 
-    Maybe<float> walkSpeed = m_movementParams.walkSpeed;
-    Maybe<float> runSpeed = m_movementParams.runSpeed;
+    std::optional<float> walkSpeed = m_movementParams.walkSpeed;
+    std::optional<float> runSpeed = m_movementParams.runSpeed;
 
     // Check if it's possible to walk up a block like a ramp first
     if (slopeUp && onGround(forwardAndUp) && validPosition(forwardAndUp)) {
@@ -222,9 +222,9 @@ namespace PlatformerAStar {
       bounds = m_movementParams.standingPoly->boundBox();
       float back = direction > 0 ? bounds.xMin() : bounds.xMax();
       forward[0] -= (1 - fmod(abs(back), 1.0f)) * direction;
-      if (walkSpeed.isValid())
+      if (walkSpeed.has_value())
         addNode(Node{forward, Vec2F{copysign(*walkSpeed, direction), 0.0f}});
-      if (runSpeed.isValid())
+      if (runSpeed.has_value())
         addNode(Node{forward, Vec2F{copysign(*runSpeed, direction), 0.0f}});
     }
   }
@@ -244,16 +244,17 @@ namespace PlatformerAStar {
   }
 
   void PathFinder::getJumpingNeighbors(Node const& node, List<Edge>& neighbors) const {
-    if (Maybe<float> jumpSpeed = m_movementParams.airJumpProfile.jumpSpeed) {
-      float jumpCost = m_searchParams.jumpCost.value(DefaultJumpCost);
+    if (auto jumpSpeed = m_movementParams.airJumpProfile.jumpSpeed) {
+      float jumpCost = m_searchParams.jumpCost.value_or(DefaultJumpCost);
       if (inLiquid(node.position))
-        jumpCost = m_searchParams.liquidJumpCost.value(DefaultLiquidJumpCost);
+        jumpCost = m_searchParams.liquidJumpCost.value_or(DefaultLiquidJumpCost);
+
       auto addVel = [jumpCost, &node, &neighbors](Vec2F const& vel) {
         neighbors.append(Edge{jumpCost, Action::Jump, vel, node, node.withVelocity(vel)});
       };
 
       forEachArcVelocity(*jumpSpeed, addVel);
-      forEachArcVelocity(*jumpSpeed * m_searchParams.smallJumpMultiplier.value(DefaultSmallJumpMultiplier), addVel);
+      forEachArcVelocity(*jumpSpeed * m_searchParams.smallJumpMultiplier.value_or(DefaultSmallJumpMultiplier), addVel);
     }
   }
 
@@ -274,7 +275,7 @@ namespace PlatformerAStar {
     neighbors.transform([this](Edge& edge) -> Edge& {
       if (edge.action == Action::Fly)
         edge.action = Action::Swim;
-      edge.cost *= m_searchParams.swimCost.value(DefaultSwimCost);
+      edge.cost *= m_searchParams.swimCost.value_or(DefaultSwimCost);
       return edge;
     });
   }
@@ -306,15 +307,15 @@ namespace PlatformerAStar {
   }
 
   void PathFinder::forEachArcVelocity(float yVelocity, function<void(Vec2F)> func) const {
-    Maybe<float> walkSpeed = m_movementParams.walkSpeed;
-    Maybe<float> runSpeed = m_movementParams.runSpeed;
+    std::optional<float> walkSpeed = m_movementParams.walkSpeed;
+    std::optional<float> runSpeed = m_movementParams.runSpeed;
 
     func(Vec2F(0, yVelocity));
-    if (m_searchParams.enableWalkSpeedJumps && walkSpeed.isValid()) {
+    if (m_searchParams.enableWalkSpeedJumps && walkSpeed.has_value()) {
       func(Vec2F(*walkSpeed, yVelocity));
       func(Vec2F(-*walkSpeed, yVelocity));
     }
-    if (runSpeed.isValid()) {
+    if (runSpeed.has_value()) {
       func(Vec2F(*runSpeed, yVelocity));
       func(Vec2F(-*runSpeed, yVelocity));
     }
@@ -330,10 +331,10 @@ namespace PlatformerAStar {
 
   Vec2F PathFinder::acceleration(Vec2F pos) const {
     auto const& parameters = m_movementParams;
-    float gravity = m_world->gravity(pos) * parameters.gravityMultiplier.value(1.0f);
-    if (!parameters.gravityEnabled.value(true) || parameters.mass.value(0.0f) == 0.0f)
+    float gravity = m_world->gravity(pos) * parameters.gravityMultiplier.value_or(1.0f);
+    if (!parameters.gravityEnabled.value_or(true) || parameters.mass.value_or(0.0f) == 0.0f)
       gravity = 0.0f;
-    float buoyancy = parameters.airBuoyancy.value(0.0f);
+    float buoyancy = parameters.airBuoyancy.value_or(0.0f);
     return Vec2F(0, -gravity * (1.0f - buoyancy));
   }
 
@@ -348,7 +349,7 @@ namespace PlatformerAStar {
       return newPosition;
     } else {
       collidedX = collidedY = true;
-      
+
       if (validPosition(Vec2F(newPosition[0], position[1]))) {
         collidedX = false;
         position[0] = newPosition[0];
@@ -365,8 +366,8 @@ namespace PlatformerAStar {
     Vec2F position = node.position;
     Vec2F velocity = *node.velocity;
     bool jumping = velocity[1] > 0.0f;
-    float maxLandingVelocity = m_searchParams.maxLandingVelocity.value(DefaultMaxLandingVelocity);
-    
+    float maxLandingVelocity = m_searchParams.maxLandingVelocity.value_or(DefaultMaxLandingVelocity);
+
     Vec2F acc = acceleration(position);
     if (acc[1] == 0.0f)
       return;
@@ -415,14 +416,14 @@ namespace PlatformerAStar {
       if (jumping && velocity[1] <= 0.0f) {
         // We've reached a peak in the jump and the entity can now choose to
         // change direction.
-        Maybe<float> runSpeed = m_movementParams.runSpeed;
-        Maybe<float> walkSpeed = m_movementParams.walkSpeed;
-        float crawlMultiplier = m_searchParams.jumpDropXMultiplier.value(DefaultJumpDropXMultiplier);
+        std::optional<float> runSpeed = m_movementParams.runSpeed;
+        std::optional<float> walkSpeed = m_movementParams.walkSpeed;
+        float crawlMultiplier = m_searchParams.jumpDropXMultiplier.value_or(DefaultJumpDropXMultiplier);
 
         if ((*node.velocity)[0] != 0.0f || m_searchParams.enableVerticalJumpAirControl) {
-          if (runSpeed.isValid())
+          if (runSpeed.has_value())
             func(Node{position, Vec2F{copysign(*runSpeed, velocity[0]), 0.0f}}, false);
-          if (m_searchParams.enableWalkSpeedJumps && walkSpeed.isValid()) {
+          if (m_searchParams.enableWalkSpeedJumps && walkSpeed.has_value()) {
             func(Node{position, Vec2F{copysign(*walkSpeed, velocity[0]), 0.0f}}, false);
             func(Node{position, Vec2F{copysign(*walkSpeed * crawlMultiplier, velocity[0]), 0.0f}}, false);
           }
@@ -446,7 +447,6 @@ namespace PlatformerAStar {
       }
     }
 
-    starAssert(velocity[1] != 0.0f);
     func(Node{position, velocity}, false);
     return;
   }
@@ -476,7 +476,7 @@ namespace PlatformerAStar {
 
   bool PathFinder::inLiquid(Vec2F pos) const {
     RectF box = boundBox(pos);
-    return m_world->liquidLevel(box).level >= m_movementParams.minimumLiquidPercentage.value(0.5f);
+    return m_world->liquidLevel(box).level >= m_movementParams.minimumLiquidPercentage.value_or(0.5f);
   }
 
   RectF PathFinder::boundBox(Vec2F pos, BoundBoxKind boundKind) const {
@@ -485,7 +485,7 @@ namespace PlatformerAStar {
       boundBox = *m_searchParams.droppingBoundBox;
     } else if (boundKind == BoundBoxKind::Stand && m_searchParams.standingBoundBox) {
       boundBox = *m_searchParams.standingBoundBox;
-    } else if (m_searchParams.boundBox.isValid()) {
+    } else if (m_searchParams.boundBox.has_value()) {
       boundBox = *m_searchParams.boundBox;
     } else {
       boundBox = m_movementParams.standingPoly->boundBox();
@@ -520,7 +520,7 @@ namespace PlatformerAStar {
     // paths through gaps that are *just* tall enough for the entity to fit
     // through.
     RectF boundBox;
-    if (m_searchParams.boundBox.isValid()) {
+    if (m_searchParams.boundBox.has_value()) {
       boundBox = *m_searchParams.boundBox;
     } else {
       boundBox = m_movementParams.standingPoly->boundBox();

@@ -185,11 +185,11 @@ void StatSet::setResourceLocked(String const& resourceName, bool locked) {
   getResource(resourceName).locked = locked;
 }
 
-Maybe<float> StatSet::resourceMaxValue(String const& resourceName) const {
+std::optional<float> StatSet::resourceMaxValue(String const& resourceName) const {
   return getResource(resourceName).maxValue;
 }
 
-Maybe<float> StatSet::resourcePercentage(String const& resourceName) const {
+std::optional<float> StatSet::resourcePercentage(String const& resourceName) const {
   auto const& resource = getResource(resourceName);
   if (!resource.maxValue)
     return {};
@@ -263,7 +263,7 @@ void StatSet::update(float dt) {
   // after updating the stats.
 
   for (auto& p : m_resources) {
-    Maybe<float> newMaxValue;
+    std::optional<float> newMaxValue;
     if (p.second.max.is<String>())
       newMaxValue = statEffectiveValue(p.second.max.get<String>());
     else if (p.second.max.is<float>())

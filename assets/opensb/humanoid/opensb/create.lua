@@ -1,21 +1,41 @@
 -- these are just the names of the variables internally and how they're used on the creation screen, do whatever you want with them here!
 -- but probably put name species and gender as the ones supplied, thats probably a good idea
 -- I've supplied the bare minimum as a template here, do with it what you will
-function create(name, species, genderIndex, bodyColor, alty, hairChoice, heady, shirtChoice, shirtColor, pantsChoice, pantsColor, personality, ...)
+--- comment
+--- @param name any
+--- @param species any
+--- @param genderIndex any
+--- @param bodyColor any
+--- @param alty any
+--- @param hairChoice any
+--- @param heady any
+--- @param shirtChoice any
+--- @param shirtColor any
+--- @param pantsChoice any
+--- @param pantsColor any
+--- @param personality any
+--- @param ... unknown
+--- @return table
+--- @return table
+--- @return table
+function create(name, species, genderIndex, bodyColor, alty, hairChoice, heady, shirtChoice, shirtColor, pantsChoice,
+                pantsColor, personality, ...)
     -- these values are zero indexed!
 
     local speciesConfig = root.speciesConfig(species)
-    local humanoidConfig = sb.jsonMerge(root.assetJson(speciesConfig.humanoidConfig or "/humanoid.config"), speciesConfig.humanoidOverrides or {})
+    local humanoidConfig = sb.jsonMerge(root.assetJson(speciesConfig.humanoidConfig or "/humanoid.config"),
+        speciesConfig.humanoidOverrides or {})
 
     genderIndex = math.fmod(genderIndex, #speciesConfig.genders)
     personality = math.fmod(personality, #humanoidConfig.personalities)
 
-    local personalityIdle, personalityArmIdle, personalityHeadOffset, personalityArmOffset = table.unpack(humanoidConfig.personalities[personality+1])
+    local personalityIdle, personalityArmIdle, personalityHeadOffset, personalityArmOffset = table.unpack(humanoidConfig
+        .personalities[personality + 1])
 
     local identity = {
         name = name,
         species = species,
-        gender = speciesConfig.genders[genderIndex+1].name,
+        gender = speciesConfig.genders[genderIndex + 1].name,
         hairGroup = "",
         hairType = "",
         hairDirectives = "",
@@ -31,7 +51,7 @@ function create(name, species, genderIndex, bodyColor, alty, hairChoice, heady, 
         personalityArmIdle = personalityArmIdle,
         personalityHeadOffset = personalityHeadOffset,
         personalityArmOffset = personalityArmOffset,
-        color = {51, 117, 237, 255},
+        color = { 51, 117, 237, 255 },
     }
     local parameters = {
         choices = { genderIndex, bodyColor, alty, hairChoice, heady, shirtChoice, shirtColor, pantsChoice, pantsColor, personality, ... },

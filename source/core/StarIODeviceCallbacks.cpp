@@ -1,30 +1,32 @@
 #include "StarIODeviceCallbacks.hpp"
 #include "vorbis/vorbisfile.h"
 
+import std;
+
 namespace Star {
 
-IODeviceCallbacks::IODeviceCallbacks(IODevicePtr device) 
+IODeviceCallbacks::IODeviceCallbacks(Ptr<IODevice> device)
   : m_device(std::move(device)) {
   if (!m_device->isOpen())
     m_device->open(IOMode::Read);
 }
 
-IODevicePtr const& IODeviceCallbacks::device() const {
+auto IODeviceCallbacks::device() const -> Ptr<IODevice> const& {
   return m_device;
 }
 
-size_t IODeviceCallbacks::readFunc(void* ptr, size_t size, size_t nmemb, void* datasource) {
+auto IODeviceCallbacks::readFunc(void* ptr, size_t size, size_t nmemb, void* datasource) -> size_t {
   auto* callbacks = static_cast<IODeviceCallbacks*>(datasource);
   return callbacks->m_device->read((char*)ptr, size * nmemb) / size;
 }
 
-int IODeviceCallbacks::seekFunc(void* datasource, ogg_int64_t offset, int whence) {
+auto IODeviceCallbacks::seekFunc(void* datasource, ogg_int64_t offset, int whence) -> int {
   auto* callbacks = static_cast<IODeviceCallbacks*>(datasource);
   callbacks->m_device->seek(offset, (IOSeek)whence);
   return 0;
 }
 
-long int IODeviceCallbacks::tellFunc(void* datasource) {
+auto IODeviceCallbacks::tellFunc(void* datasource) -> long int {
   auto* callbacks = static_cast<IODeviceCallbacks*>(datasource);
   return (long int)callbacks->m_device->pos();
 }

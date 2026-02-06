@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarEntity.hpp"
 #include "StarParticle.hpp"
 #include "StarStatusTypes.hpp"
 #include "StarInteractionTypes.hpp"
@@ -93,7 +92,7 @@ public:
   virtual void addParticles(List<Particle> const& particles) = 0;
   virtual void addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) = 0;
 
-  virtual void setCameraFocusEntity(Maybe<EntityId> const& cameraFocusEntity) = 0;
+  virtual void setCameraFocusEntity(std::optional<EntityId> const& cameraFocusEntity) = 0;
 };
 
 }

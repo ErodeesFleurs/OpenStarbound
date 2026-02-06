@@ -1,5 +1,8 @@
 #pragma once
 
+#include <optional>
+
+
 #include "StarItemBag.hpp"
 #include "StarObject.hpp"
 #include "StarWeightedPool.hpp"
@@ -22,7 +25,7 @@ public:
   void destroy(RenderCallback* renderCallback) override;
   InteractAction interact(InteractRequest const& request) override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   Json containerGuiConfig() const override;
   String containerDescription() const override;
@@ -43,7 +46,7 @@ public:
 
   RpcPromise<ItemPtr> addItems(ItemPtr const& items) override;
   RpcPromise<ItemPtr> putItems(size_t slot, ItemPtr const& items) override;
-  RpcPromise<ItemPtr> takeItems(size_t slot, size_t count = NPos) override;
+  RpcPromise<ItemPtr> takeItems(size_t slot, size_t count = std::numeric_limits<std::size_t>::max()) override;
   RpcPromise<ItemPtr> swapItems(size_t slot, ItemPtr const& items, bool tryCombine = true) override;
   RpcPromise<ItemPtr> applyAugment(size_t slot, ItemPtr const& augment) override;
   RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) override;
@@ -66,7 +69,7 @@ private:
   ItemPtr doAddItems(ItemPtr const& items);
   ItemPtr doStackItems(ItemPtr const& items);
   ItemPtr doPutItems(size_t slot, ItemPtr const& items);
-  ItemPtr doTakeItems(size_t slot, size_t count = NPos);
+  ItemPtr doTakeItems(size_t slot, size_t count = std::numeric_limits<std::size_t>::max());
   ItemPtr doSwapItems(size_t slot, ItemPtr const& items, bool tryCombine = true);
   ItemPtr doApplyAugment(size_t slot, ItemPtr const& augment);
   bool doConsumeItems(ItemDescriptor const& descriptor);

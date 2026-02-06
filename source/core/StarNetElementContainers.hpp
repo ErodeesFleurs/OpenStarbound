@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include "StarMap.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarNetElement.hpp"
@@ -64,7 +65,7 @@ public:
   const_iterator erase(const_iterator i);
 
   mapped_type take(key_type const& k);
-  Maybe<mapped_type> maybeTake(key_type const& k);
+  std::optional<mapped_type> maybeTake(key_type const& k);
 
   void clear();
 
@@ -347,13 +348,13 @@ auto NetElementMapWrapper<BaseMap>::take(key_type const& k) -> mapped_type {
 }
 
 template <typename BaseMap>
-auto NetElementMapWrapper<BaseMap>::maybeTake(key_type const& k) -> Maybe<mapped_type> {
+auto NetElementMapWrapper<BaseMap>::maybeTake(key_type const& k) -> std::optional<mapped_type> {
   auto i = BaseMap::find(k);
   if (i == BaseMap::end())
     return {};
   auto m = std::move(i->second);
   erase(i);
-  return Maybe<mapped_type>(std::move(m));
+  return std::optional<mapped_type>(std::move(m));
 }
 
 template <typename BaseMap>
@@ -442,7 +443,6 @@ auto NetElementMapWrapper<BaseMap>::readChange(DataStream& ds) -> ElementChange 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::addChangeData(ElementChange change) {
   uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
-  starAssert(m_changeData.empty() || m_changeData.last().first <= currentVersion);
 
   m_changeData.append({currentVersion, std::move(change)});
 

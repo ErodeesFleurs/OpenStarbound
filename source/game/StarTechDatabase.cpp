@@ -1,7 +1,6 @@
 #include "StarTechDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -45,8 +44,8 @@ TechConfig TechDatabase::parseTech(Json const& config, String const& path) const
 
     tech.type = TechTypeNames.getLeft(config.getString("type"));
 
-    tech.scripts = jsonToStringList(config.get("scripts")).transformed(bind(AssetPath::relativeTo, path, _1));
-    tech.animationConfig = config.optString("animator").apply(bind(&AssetPath::relativeTo, path, _1));
+    tech.scripts = jsonToStringList(config.get("scripts")).transformed([&path](String const& s) { return AssetPath::relativeTo(path, s); });
+    tech.animationConfig = config.optString("animator").transform([&path](String const& s) { return AssetPath::relativeTo(path, s); });
 
     tech.description = config.getString("description");
     tech.shortDescription = config.getString("shortDescription");

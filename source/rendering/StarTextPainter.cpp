@@ -134,7 +134,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
   unsigned lines = 0;
   auto lineStartIterator = iterator, splitIterator = end;
   unsigned linePixelWidth = 0, splitPixelWidth = 0;
-  size_t commandStart = NPos, commandEnd = NPos;
+  size_t commandStart = std::numeric_limits<std::size_t>::max(), commandEnd = std::numeric_limits<std::size_t>::max();
   bool finished = true;
 
   auto slice = [](StringView::const_iterator a, StringView::const_iterator b) -> StringView {
@@ -144,12 +144,12 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
   while (iterator != end) {
     auto character = *iterator;
     finished = false; // assume at least one character if we get here
-    bool noMoreCommands = commandStart != NPos && commandEnd == NPos;
+    bool noMoreCommands = commandStart != std::numeric_limits<std::size_t>::max() && commandEnd == std::numeric_limits<std::size_t>::max();
     if (!noMoreCommands && Text::isEscapeCode(character)) {
       size_t index = &*iterator.base() - text.utf8Ptr();
-      if (commandStart == NPos) {
+      if (commandStart == std::numeric_limits<std::size_t>::max()) {
         for (size_t escOrEnd = commandStart = index;
-        (escOrEnd = text.utf8().find_first_of(Text::AllEscEnd, escOrEnd + 1)) != NPos;) {
+        (escOrEnd = text.utf8().find_first_of(Text::AllEscEnd, escOrEnd + 1)) != std::numeric_limits<std::size_t>::max();) {
           if (text.utf8().at(escOrEnd) != Text::EndEsc)
             commandStart = escOrEnd;
           else {
@@ -158,7 +158,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
           }
         }
       }
-      if (commandStart == index && commandEnd != NPos) {
+      if (commandStart == index && commandEnd != std::numeric_limits<std::size_t>::max()) {
         const char* commandStr = text.utf8Ptr() + ++commandStart;
         StringView inner(commandStr, commandEnd - commandStart);
         inner.forEachSplitView(",", [&](StringView command, size_t, size_t) {
@@ -172,7 +172,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
         });
         // jump the iterator to the character after the command
         iterator = text.utf8().begin() + commandEnd + 1;
-        commandStart = commandEnd = NPos;
+        commandStart = commandEnd = std::numeric_limits<std::size_t>::max();
         continue;
       }
     }
@@ -211,7 +211,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
           if (!textFunc(slice(lineStartIterator, iterator), lines++))
             return false;
           // include that character on the next line
-          lineStartIterator = iterator;  
+          lineStartIterator = iterator;
           linePixelWidth = characterWidth;
           finished = false;
         }
@@ -495,7 +495,7 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
     if (hasBackDirectives)
       renderGlyph(c, pos, m_backPrimitives, m_renderSettings.fontSize, 1, m_renderSettings.color, &m_renderSettings.backDirectives);
 
-    auto& output = (hasShadow || hasBackDirectives) ? m_frontPrimitives : m_renderer->immediatePrimitives(); 
+    auto& output = (hasShadow || hasBackDirectives) ? m_frontPrimitives : m_renderer->immediatePrimitives();
     renderGlyph(c, pos, output, m_renderSettings.fontSize, 1, m_renderSettings.color, directives);
   }
 

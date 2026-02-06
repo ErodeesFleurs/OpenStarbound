@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarBiMap.hpp"
 #include "StarJson.hpp"
 
@@ -35,7 +37,7 @@ public:
   RadioMessageDatabase();
 
   RadioMessage radioMessage(String const& messageName) const;
-  RadioMessage createRadioMessage(Json const& config, Maybe<String> const& uniqueId = {}) const;
+  RadioMessage createRadioMessage(Json const& config, std::optional<String> const& uniqueId = {}) const;
 
 private:
   StringMap<RadioMessage> m_radioMessages;

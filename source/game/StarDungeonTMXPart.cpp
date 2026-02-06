@@ -79,7 +79,6 @@ namespace Dungeon {
       return false;
     }
 
-    starAssert(m_kind == ObjectKind::Polyline);
     // Used for wiring. Treat each vertex in the polyline as a tile with the
     // wire brush.
     for (Vec2I point : m_polyline) {
@@ -146,7 +145,6 @@ namespace Dungeon {
       return callback(pos, tile());
     }
 
-    starAssert(m_kind == ObjectKind::Polyline);
     for (Vec2I point : m_polyline) {
       Vec2I pointPos(m_rect.min().x() + point.x(), map->height() - 1 - m_rect.min().y() - point.y());
       if (pos == pointPos && callback(pos, tile()))
@@ -235,7 +233,7 @@ namespace Dungeon {
     //  /tilesets/packed/materials.json
 
     size_t i = relativePath.findLast("/tilesets/", String::CaseInsensitive);
-    if (i == NPos)
+    if (i == std::numeric_limits<std::size_t>::max())
       // Couldn't extract the right path, try the one we were given in the Json.
       return relativePath;
     return relativePath.slice(i);
@@ -282,11 +280,11 @@ namespace Dungeon {
     return a.firstGid > b.firstGid;
   }
 
-  TMXObject::TMXObject(Maybe<Json> const& groupProperties, Json const& tmx, TMXTilesetsPtr tilesets) {
+  TMXObject::TMXObject(std::optional<Json> const& groupProperties, Json const& tmx, TMXTilesetsPtr tilesets) {
     m_objectId = tmx.getUInt("id");
 
     // convert object properties in array format to object format
-    Maybe<Json> objectProperties = tmx.opt("properties").apply([](Json const& properties) -> Json {
+    std::optional<Json> objectProperties = tmx.opt("properties").transform([](Json const& properties) -> Json {
         if (properties.type() == Json::Type::Array) {
           JsonObject objectProperties;
           for (auto& p : properties.toArray())
@@ -299,7 +297,7 @@ namespace Dungeon {
 
     m_layer = getLayer(groupProperties, objectProperties);
 
-    Maybe<TileObjectInfo> tileObjectInfo = getTileObjectInfo(tmx, tilesets, m_layer);
+    std::optional<TileObjectInfo> tileObjectInfo = getTileObjectInfo(tmx, tilesets, m_layer);
 
     // Merge properties in this order:
     //   Object
@@ -330,12 +328,12 @@ namespace Dungeon {
       computedProperties["broadcastArea"] = jsonFromRectI(broadcastArea).repr();
     }
 
-    Maybe<float> rotation = tmx.optFloat("rotation");
-    if (rotation.isValid() && *rotation != 0.0f)
+    std::optional<float> rotation = tmx.optFloat("rotation");
+    if (rotation.has_value() && *rotation != 0.0f)
       throw tmxObjectError(tmx, "object is rotated, which is not supported");
 
-    Maybe<JsonArray> polyline = tmx.optArray("polyline");
-    if (polyline.isValid()) {
+    std::optional<JsonArray> polyline = tmx.optArray("polyline");
+    if (polyline.has_value()) {
       for (Json const& point : *polyline)
         m_polyline.append(getPos(point));
       computedProperties["wire"] = "_polylineWire" + toString(m_objectId);
@@ -359,7 +357,7 @@ namespace Dungeon {
     return Vec2I(x, -y);
   }
 
-  ObjectKind TMXObject::getObjectKind(Json const& tmx, Maybe<Json> const& objectProperties) {
+  ObjectKind TMXObject::getObjectKind(Json const& tmx, std::optional<Json> const& objectProperties) {
     if (objectProperties && objectProperties->contains("stagehand"))
       return ObjectKind::Stagehand;
     else if (tmx.contains("gid"))
@@ -377,10 +375,10 @@ namespace Dungeon {
       return ObjectKind::Rectangle;
   }
 
-  Maybe<TMXObject::TileObjectInfo> TMXObject::getTileObjectInfo(
+  std::optional<TMXObject::TileObjectInfo> TMXObject::getTileObjectInfo(
       Json const& tmx, TMXTilesetsPtr tilesets, TileLayer layer) {
-    Maybe<unsigned> optGid = tmx.optUInt("gid");
-    if (optGid.isNothing())
+    std::optional<unsigned> optGid = tmx.optUInt("gid");
+    if (!optGid)
       return {};
 
     unsigned flipBits = *optGid & TileFlip::AllBits;
@@ -393,8 +391,8 @@ namespace Dungeon {
     return TileObjectInfo{gidTile.properties, flipBits};
   }
 
-  TileLayer TMXObject::getLayer(Maybe<Json> const& groupProperties, Maybe<Json> const& objectProperties) {
-    if (objectProperties.isValid() && objectProperties->contains("layer"))
+  TileLayer TMXObject::getLayer(std::optional<Json> const& groupProperties, std::optional<Json> const& objectProperties) {
+    if (objectProperties.has_value() && objectProperties->contains("layer"))
       return Tiled::LayerNames.getLeft(objectProperties->getString("layer"));
     if (groupProperties.isValid() && groupProperties->contains("layer"))
       return Tiled::LayerNames.getLeft(groupProperties->getString("layer"));
@@ -412,9 +410,9 @@ namespace Dungeon {
 
   TMXObjectGroup::TMXObjectGroup(Json const& tmx, TMXTilesetsPtr tilesets) {
     m_name = tmx.getString("name");
-    
+
     // convert group properties in array format to object format
-    Maybe<JsonObject> groupProperties = tmx.opt("properties").apply([](Json const& properties) {
+    std::optional<JsonObject> groupProperties = tmx.opt("properties").transform([](Json const& properties) {
         if (properties.type() == Json::Type::Array) {
           JsonObject objectProperties;
           for (auto& p : properties.toArray())

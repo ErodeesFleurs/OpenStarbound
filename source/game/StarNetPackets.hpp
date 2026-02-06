@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarCelestialTypes.hpp"
 #include "StarDataStream.hpp"
 #include "StarPlayerTypes.hpp"
@@ -154,7 +156,7 @@ struct Packet {
 };
 
 PacketPtr createPacket(PacketType type);
-PacketPtr createPacket(PacketType type, Maybe<Json> const& args);
+PacketPtr createPacket(PacketType type, std::optional<Json> const& args);
 
 template <PacketType PacketT>
 struct PacketBase : public Packet {
@@ -562,7 +564,7 @@ struct UpdateTileProtectionPacket : PacketBase<PacketType::UpdateTileProtection>
 
 struct SetDungeonGravityPacket : PacketBase<PacketType::SetDungeonGravity> {
   SetDungeonGravityPacket();
-  SetDungeonGravityPacket(DungeonId dungeonId, Maybe<float> gravity);
+  SetDungeonGravityPacket(DungeonId dungeonId, std::optional<float> gravity);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -571,12 +573,12 @@ struct SetDungeonGravityPacket : PacketBase<PacketType::SetDungeonGravity> {
   Json writeJson() const override;
 
   DungeonId dungeonId;
-  Maybe<float> gravity;
+  std::optional<float> gravity;
 };
 
 struct SetDungeonBreathablePacket : PacketBase<PacketType::SetDungeonBreathable> {
   SetDungeonBreathablePacket();
-  SetDungeonBreathablePacket(DungeonId dungeonId, Maybe<bool> breathable);
+  SetDungeonBreathablePacket(DungeonId dungeonId, std::optional<bool> breathable);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -585,7 +587,7 @@ struct SetDungeonBreathablePacket : PacketBase<PacketType::SetDungeonBreathable>
   Json writeJson() const override;
 
   DungeonId dungeonId;
-  Maybe<bool> breathable;
+  std::optional<bool> breathable;
 };
 
 struct SetPlayerStartPacket : PacketBase<PacketType::SetPlayerStart> {
@@ -604,13 +606,13 @@ struct SetPlayerStartPacket : PacketBase<PacketType::SetPlayerStart> {
 
 struct FindUniqueEntityResponsePacket : PacketBase<PacketType::FindUniqueEntityResponse> {
   FindUniqueEntityResponsePacket();
-  FindUniqueEntityResponsePacket(String uniqueEntityId, Maybe<Vec2F> entityPosition);
+  FindUniqueEntityResponsePacket(String uniqueEntityId, std::optional<Vec2F> entityPosition);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
   String uniqueEntityId;
-  Maybe<Vec2F> entityPosition;
+  std::optional<Vec2F> entityPosition;
 };
 
 struct PongPacket : PacketBase<PacketType::Pong> {
@@ -648,7 +650,7 @@ struct ReplaceTileListPacket : PacketBase<PacketType::ReplaceTileList> {
 
 struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
   DamageTileGroupPacket();
-  DamageTileGroupPacket(List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, Maybe<EntityId> sourceEntity);
+  DamageTileGroupPacket(List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, std::optional<EntityId> sourceEntity);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -657,7 +659,7 @@ struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
   TileLayer layer;
   Vec2F sourcePosition;
   TileDamage tileDamage;
-  Maybe<EntityId> sourceEntity;
+  std::optional<EntityId> sourceEntity;
 };
 
 struct CollectLiquidPacket : PacketBase<PacketType::CollectLiquid> {
@@ -962,14 +964,14 @@ struct SystemShipDestroyPacket : PacketBase<PacketType::SystemShipDestroy> {
 
 struct SystemObjectSpawnPacket : PacketBase<PacketType::SystemObjectSpawn> {
   SystemObjectSpawnPacket();
-  SystemObjectSpawnPacket(String typeName, Uuid uuid, Maybe<Vec2F> position, JsonObject parameters);
+  SystemObjectSpawnPacket(String typeName, Uuid uuid, std::optional<Vec2F> position, JsonObject parameters);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
   String typeName;
   Uuid uuid;
-  Maybe<Vec2F> position;
+  std::optional<Vec2F> position;
   JsonObject parameters;
 };
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarGameTypes.hpp"
 #include "StarSkyTypes.hpp"
 #include "StarWeatherTypes.hpp"
@@ -56,8 +58,8 @@ struct VisitableWorldParameters {
   bool airless{false};
   WeatherPool weatherPool;
   StringList environmentStatusEffects;
-  Maybe<StringList> overrideTech;
-  Maybe<List<Directives>> globalDirectives;
+  std::optional<StringList> overrideTech;
+  std::optional<List<Directives>> globalDirectives;
   BeamUpRule beamUpRule;
   bool disableDeathDrops{false};
   bool terraformed{false};
@@ -169,11 +171,11 @@ struct FloatingDungeonWorldParameters : VisitableWorldParameters {
   int dungeonUndergroundLevel;
   String primaryDungeon;
   Color ambientLightLevel;
-  Maybe<String> biome;
-  Maybe<String> dayMusicTrack;
-  Maybe<String> nightMusicTrack;
-  Maybe<String> dayAmbientNoises;
-  Maybe<String> nightAmbientNoises;
+  std::optional<String> biome;
+  std::optional<String> dayMusicTrack;
+  std::optional<String> nightMusicTrack;
+  std::optional<String> dayAmbientNoises;
+  std::optional<String> nightAmbientNoises;
 };
 
 Json diskStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters);

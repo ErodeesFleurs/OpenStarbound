@@ -1,5 +1,5 @@
 {
-  description = "Rust devShell";
+  description = "C++ devShell";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -22,7 +22,7 @@
         };
       in
       {
-        devShells.default = pkgs.mkShell.override { stdenv = pkgs.libcxxStdenv; } {
+        devShells.default = pkgs.mkShell.override { stdenv = pkgs.llvmPackages.libcxxStdenv; } {
           nativeBuildInputs = with pkgs; [
             pkg-config
             cmake
@@ -32,14 +32,15 @@
           ];
 
           buildInputs = with pkgs; [
+            curl
             zlib
             zstd
+            xxHash
             libpng
             freetype
             libopus
             libvorbis
             sdl3
-            pkgsLLVM.libcpr
             pkgsLLVM.re2
             cpptrace
             wayland

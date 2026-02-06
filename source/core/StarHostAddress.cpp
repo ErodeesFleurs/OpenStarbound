@@ -2,21 +2,23 @@
 #include "StarLexicalCast.hpp"
 #include "StarNetImpl.hpp"
 
+import std;
+
 namespace Star {
 
-HostAddress HostAddress::localhost(NetworkMode mode) {
+auto HostAddress::localhost(NetworkMode mode) -> HostAddress {
   if (mode == NetworkMode::IPv4) {
-    uint8_t addr[4] = {127, 0, 0, 1};
-    return HostAddress(mode, addr);
+    std::array<std::uint8_t, 4> addr{127, 0, 0, 1};
+    return {mode, addr.data()};
   } else if (mode == NetworkMode::IPv6) {
-    uint8_t addr[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
-    return HostAddress(mode, addr);
+    std::array<std::uint8_t, 16> addr{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+    return {mode, addr.data()};
   }
 
-  return HostAddress();
+  return {};
 }
 
-Either<String, HostAddress> HostAddress::lookup(String const& address) {
+auto HostAddress::lookup(String const& address) -> Either<String, HostAddress> {
   try {
     HostAddress ha;
     ha.set(address);
@@ -38,19 +40,19 @@ HostAddress::HostAddress(String const& address) {
     *this = std::move(a.right());
 }
 
-NetworkMode HostAddress::mode() const {
+auto HostAddress::mode() const -> NetworkMode {
   return m_mode;
 }
 
-uint8_t const* HostAddress::bytes() const {
-  return m_address;
+auto HostAddress::bytes() const -> uint8_t const* {
+  return m_address.data();
 }
 
-uint8_t HostAddress::octet(size_t i) const {
+auto HostAddress::octet(size_t i) const -> uint8_t {
   return m_address[i];
 }
 
-bool HostAddress::isLocalHost() const {
+auto HostAddress::isLocalHost() const -> bool {
   if (m_mode == NetworkMode::IPv4) {
     return (m_address[0] == 127 && m_address[1] == 0 && m_address[2] == 0 && m_address[3] == 1);
 
@@ -64,7 +66,7 @@ bool HostAddress::isLocalHost() const {
   }
 }
 
-bool HostAddress::isZero() const {
+auto HostAddress::isZero() const -> bool {
   if (mode() == NetworkMode::IPv4)
     return m_address[0] == 0 && m_address[1] == 0 && m_address[2] == 0 && m_address[3] == 0;
 
@@ -79,7 +81,7 @@ bool HostAddress::isZero() const {
   return false;
 }
 
-size_t HostAddress::size() const {
+auto HostAddress::size() const -> size_t {
   switch (m_mode) {
     case NetworkMode::IPv4:
       return 4;
@@ -90,7 +92,7 @@ size_t HostAddress::size() const {
   }
 }
 
-bool HostAddress::operator==(HostAddress const& a) const {
+auto HostAddress::operator==(HostAddress const& a) const -> bool {
   if (m_mode != a.m_mode)
     return false;
 
@@ -108,21 +110,19 @@ void HostAddress::set(String const& address) {
     return;
 
   if (address.compare("*") == 0 || address.compare("0.0.0.0") == 0) {
-    uint8_t inaddr_any[4];
-    memset(inaddr_any, 0, sizeof(inaddr_any));
-    set(NetworkMode::IPv4, inaddr_any);
+    std::array<std::uint8_t, 4> inaddr_any{};
+    set(NetworkMode::IPv4, inaddr_any.data());
   } else if (address.compare("::") == 0) {
     // NOTE: This will likely bind to both IPv6 and IPv4, but it does depending
     // on the OS settings
-    uint8_t inaddr_any[16];
-    memset(inaddr_any, 0, sizeof(inaddr_any));
-    set(NetworkMode::IPv6, inaddr_any);
+    std::array<std::uint8_t, 16> inaddr_any{};
+    set(NetworkMode::IPv6, inaddr_any.data());
   } else {
-    struct addrinfo* result = NULL;
-    struct addrinfo* ptr = NULL;
+    struct addrinfo* result = nullptr;
+    struct addrinfo* ptr = nullptr;
     struct addrinfo hints;
 
-    memset(&hints, 0, sizeof(hints));
+    std::memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
     // Eliminate duplicates being returned one for each socket type.
     // As we're not using the return socket type or protocol this doesn't effect
@@ -132,10 +132,10 @@ void HostAddress::set(String const& address) {
     // Request only usable addresses e.g. IPv6 only if IPv6 is available
     hints.ai_flags = AI_ADDRCONFIG;
 
-    if (::getaddrinfo(address.utf8Ptr(), NULL, &hints, &result) != 0)
+    if (::getaddrinfo(address.utf8Ptr(), nullptr, &hints, &result) != 0)
       throw NetworkException(strf("Failed to determine address for '{}' ({})", address, netErrorString()));
 
-    for (ptr = result; ptr != NULL; ptr = ptr->ai_next) {
+    for (ptr = result; ptr != nullptr; ptr = ptr->ai_next) {
       NetworkMode mode;
       switch (ptr->ai_family) {
         case AF_INET:
@@ -148,10 +148,10 @@ void HostAddress::set(String const& address) {
           continue;
       }
       if (mode == NetworkMode::IPv4) {
-        struct sockaddr_in* info = (struct sockaddr_in*)ptr->ai_addr;
+        auto* info = (struct sockaddr_in*)ptr->ai_addr;
         set(mode, (uint8_t*)(&info->sin_addr));
       } else {
-        struct sockaddr_in6* info = (struct sockaddr_in6*)ptr->ai_addr;
+        auto* info = (struct sockaddr_in6*)ptr->ai_addr;
         set(mode, (uint8_t*)(&info->sin6_addr));
       }
       break;
@@ -163,12 +163,12 @@ void HostAddress::set(String const& address) {
 void HostAddress::set(NetworkMode mode, uint8_t const* addr) {
   m_mode = mode;
   if (addr)
-    memcpy(m_address, addr, size());
+    std::memcpy(m_address.data(), addr, size());
   else
-    memset(m_address, 0, 16);
+    std::memset(m_address.data(), 0, 16);
 }
 
-std::ostream& operator<<(std::ostream& os, HostAddress const& address) {
+auto operator<<(std::ostream& os, HostAddress const& address) -> std::ostream& {
   switch (address.mode()) {
     case NetworkMode::IPv4:
       format(os, "{}.{}.{}.{}", address.octet(0), address.octet(1), address.octet(2), address.octet(3));
@@ -201,14 +201,14 @@ std::ostream& operator<<(std::ostream& os, HostAddress const& address) {
   return os;
 }
 
-size_t hash<HostAddress>::operator()(HostAddress const& address) const {
+auto hash<HostAddress>::operator()(HostAddress const& address) const -> size_t {
   PLHasher hash;
   for (size_t i = 0; i < address.size(); ++i)
     hash.put(address.octet(i));
   return hash.hash();
 }
 
-Either<String, HostAddressWithPort> HostAddressWithPort::lookup(String const& address, uint16_t port) {
+auto HostAddressWithPort::lookup(String const& address, uint16_t port) -> Either<String, HostAddressWithPort> {
   auto hostAddress = HostAddress::lookup(address);
   if (hostAddress.isLeft())
     return makeLeft(std::move(hostAddress.left()));
@@ -216,7 +216,7 @@ Either<String, HostAddressWithPort> HostAddressWithPort::lookup(String const& ad
     return makeRight(HostAddressWithPort(std::move(hostAddress.right()), port));
 }
 
-Either<String, HostAddressWithPort> HostAddressWithPort::lookupWithPort(String const& address) {
+auto HostAddressWithPort::lookupWithPort(String const& address) -> Either<String, HostAddressWithPort> {
   String host = address;
   String port = host.rextract(":");
   if (host.beginsWith("[") && host.endsWith("]"))
@@ -257,24 +257,24 @@ HostAddressWithPort::HostAddressWithPort(String const& address) {
   *this = std::move(a.right());
 }
 
-HostAddress HostAddressWithPort::address() const {
+auto HostAddressWithPort::address() const -> HostAddress {
   return m_address;
 }
 
-uint16_t HostAddressWithPort::port() const {
+auto HostAddressWithPort::port() const -> uint16_t {
   return m_port;
 }
 
-bool HostAddressWithPort::operator==(HostAddressWithPort const& rhs) const {
-  return tie(m_address, m_port) == tie(rhs.m_address, rhs.m_port);
+auto HostAddressWithPort::operator==(HostAddressWithPort const& rhs) const -> bool {
+  return std::tie(m_address, m_port) == std::tie(rhs.m_address, rhs.m_port);
 }
 
-std::ostream& operator<<(std::ostream& os, HostAddressWithPort const& addressWithPort) {
+auto operator<<(std::ostream& os, HostAddressWithPort const& addressWithPort) -> std::ostream& {
   os << addressWithPort.address() << ":" << addressWithPort.port();
   return os;
 }
 
-size_t hash<HostAddressWithPort>::operator()(HostAddressWithPort const& addressWithPort) const {
+auto hash<HostAddressWithPort>::operator()(HostAddressWithPort const& addressWithPort) const -> size_t {
   return hashOf(addressWithPort.address(), addressWithPort.port());
 }
 

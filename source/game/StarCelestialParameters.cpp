@@ -104,7 +104,7 @@ Json CelestialParameters::randomizeParameterRange(String const& name, int32_t mi
 }
 
 Json CelestialParameters::randomizeParameterRange(
-    JsonArray const& range, int32_t mix, Maybe<String> const& name) const {
+    JsonArray const& range, int32_t mix, std::optional<String> const& name) const {
   if (range[0].type() == Json::Type::Int) {
     int64_t min = range[0].toInt();
     int64_t max = range[1].toInt();

@@ -113,7 +113,7 @@ OverheadBar::OverheadBar(Json const& json) {
   detailOnly = json.getBool("detailOnly", false);
 }
 
-OverheadBar::OverheadBar(Maybe<String> icon, float percentage, Color color, bool detailOnly)
+OverheadBar::OverheadBar(std::optional<String> icon, float percentage, Color color, bool detailOnly)
   : icon(std::move(icon)), percentage(percentage), color(std::move(color)), detailOnly(detailOnly) {}
 
 EnumMap<EntityHighlightEffectType> const EntityHighlightEffectTypeNames{

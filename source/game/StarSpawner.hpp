@@ -1,10 +1,7 @@
 #pragma once
 
-#include "StarPeriodic.hpp"
-#include "StarIdMap.hpp"
-#include "StarTtlCache.hpp"
+#include "StarEntity.hpp"
 #include "StarWorldGeometry.hpp"
-#include "StarMonsterDatabase.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarSpawnTypeDatabase.hpp"
@@ -73,11 +70,11 @@ private:
   RectF cellRegion(Vec2I const& cellIndex) const;
 
   // Is the cell spawnable, and if so, what are the valid spawn parameters for it?
-  Maybe<SpawnParameters> spawnParametersForCell(Vec2I const& cellIndex) const;
+  std::optional<SpawnParameters> spawnParametersForCell(Vec2I const& cellIndex) const;
 
   // Finds a position for the given bounding box inside the given spawn cell
   // which matches the given spawn parameters.
-  Maybe<Vec2F> adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const;
+  std::optional<Vec2F> adjustSpawnRegion(RectF const& spawnRegion, RectF const& boundBox, SpawnParameters const& spawnParameters) const;
 
   // Spawns monsters in a newly active cell
   void spawnInCell(Vec2I const& cell);

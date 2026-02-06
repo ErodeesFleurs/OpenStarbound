@@ -27,7 +27,6 @@ function celestial.skyInHyperspace() end
 --- Flies the player ship to the specified SystemLocation in the specified system. SystemLocation is either of the following types: Null, CelestialCoordinate, Object, Vec2F The locations are specified as a pair of type and value ``` local system = celestial.currentSystem().location local location = nil -- Null location = {"coordinate", {location = system, planet = 1, satellite = 0}} -- CelestialCoordinate location = {"object", "11112222333344445555666677778888"} -- Object (UUID) location = {0.0, 0.0} -- Vec2F (position in space) celestial.flyShip(system, location) ``` ---
 ---@param system Vec3I
 ---@param destination SystemLocation
----@return void
 function celestial.flyShip(system, destination) end
 
 --- Returns whether the player ship is flying ---
@@ -77,7 +76,7 @@ function celestial.planetName(planet) end
 
 --- Returns the seed for the specified planet. ---
 ---@param planet CelestialCoordinate
----@return uint64_t
+---@return integer
 function celestial.planetSeed(planet) end
 
 --- Returns the diameter of the specified planet and its orbiting moons. ---
@@ -87,7 +86,7 @@ function celestial.clusterSize(planet) end
 
 --- Returns a list of ores available on the specified planet. ---
 ---@param planet CelestialCoordinate
----@return List<String>
+---@return string[]
 function celestial.planetOres(planet) end
 
 --- Returns the position of the specified location in the *current system*. ---
@@ -101,32 +100,32 @@ function celestial.systemPosition(location) end
 function celestial.orbitPosition(orbit) end
 
 --- Returns a list of the Uuids for objects in the current system. ---
----@return List<Uuid>
+---@return string[]
 function celestial.systemObjects() end
 
 --- Returns the type of the specified object. ---
----@param uuid Uuid
+---@param uuid string
 ---@return string
 function celestial.objectType(uuid) end
 
 --- Returns the parameters for the specified object. ---
----@param uuid Uuid
+---@param uuid string
 ---@return Json
 function celestial.objectParameters(uuid) end
 
 --- Returns the warp action world ID for the specified object. ---
----@param uuid Uuid
----@return WorldId
+---@param uuid string
+---@return string
 function celestial.objectWarpActionWorld(uuid) end
 
 --- Returns the orbit of the specified object, if any. ---
----@param uuid Uuid
+---@param uuid string
 ---@return Json
 function celestial.objectOrbit(uuid) end
 
 --- Returns the position of the specified object, if any. ---
----@param uuid Uuid
----@return Maybe<Vec2F>
+---@param uuid string
+---@return Optional<Vec2F>
 function celestial.objectPosition(uuid) end
 
 --- Returns the configuration of the specified object type. ---
@@ -137,44 +136,44 @@ function celestial.objectTypeConfig(typeName) end
 --- Spawns an object of typeName at position. Optionally with the specified UUID and parameters. If no position is specified, one is automatically chosen in a spawnable range. Objects are limited to be spawned outside a distance of  `/systemworld.config:clientSpawnObjectPadding` from any planet surface (including moons), star surface, planetary orbit (including moons), or permanent objects orbits, and at most within `clientSpawnObjectPadding` from the outermost orbit. ---
 ---@param typeName string
 ---@param position Vec2F
----@param uuid Uuid
+---@param uuid string
 ---@param parameters Json
----@return Uuid
+---@return string
 function celestial.systemSpawnObject(typeName, position, uuid, parameters) end
 
 --- Returns a list of the player ships in the current system. ---
----@return List<Uuid>
+---@return string[]
 function celestial.playerShips() end
 
 --- Returns the position of the specified player ship. ---
----@param uuid Uuid
+---@param uuid string
 ---@return playerShipPosition
 function celestial.playerShipPosition(uuid) end
 
 --- Returns definitively whether the coordinate has orbiting children. `nil` return means the coordinate is not loaded. ---
 ---@param coordinate CelestialCoordinate
----@return Maybe<bool>
+---@return Optional<boolean>
 function celestial.hasChildren(coordinate) end
 
 --- Returns the children for the specified celestial coordinate. For systems, return planets, for planets, return moons. ---
 ---@param coordinate CelestialCoordinate
----@return List<CelestialCoordinate>
+---@return CelestialCoordinate[]
 function celestial.children(coordinate) end
 
 --- Returns the child orbits for the specified celestial coordinate. ---
 ---@param coordinate CelestialCoordinate
----@return List<int>
+---@return integer[]
 function celestial.childOrbits(coordinate) end
 
 --- Returns a list of systems in the given region. If includedTypes is specified, this will return only systems whose typeName parameter is included in the set. This scans for systems asynchronously, meaning it may not return all systems if they have not been generated or sent to the client. Use `scanRegionFullyLoaded` to see if this is the case. ---
 ---@param region RectI
----@param includedTypes Set<String>
----@return List<CelestialCoordinate>
+---@param includedTypes string[]
+---@return CelestialCoordinate[]
 function celestial.scanSystems(region, includedTypes) end
 
 --- Returns the constellation lines for the specified universe region. ---
 ---@param region RectI
----@return List<pair<Vec2I, Vec2I>>
+---@return [Vec2I, Vec2I][]
 function celestial.scanConstellationLines(region) end
 
 --- Returns whether the specified universe region has been fully loaded. ---
@@ -184,21 +183,21 @@ function celestial.scanRegionFullyLoaded(region) end
 
 --- Returns the images with scales for the central body (star) for the specified system coordinate. ---
 ---@param system CelestialCoordinate
----@return List<pair<String, float>>
+---@return [string, number][]
 function celestial.centralBodyImages(system) end
 
 --- Returns the smallImages with scales for the specified planet or moon. ---
 ---@param coordinate CelestialCoordinate
----@return List<pair<String, float>>
+---@return [string, number][]
 function celestial.planetaryObjectImages(coordinate) end
 
 --- Returns the generated world images with scales for the specified planet or moon. ---
 ---@param coordinate CelestialCoordinate
----@return List<pair<String, float>>
+---@return [string, number][]
 function celestial.worldImages(coordinate) end
 
 --- Returns the star image for the specified system. Requires a twinkle time to provide the correct image frame.
 ---@param system CelestialCoordinate
 ---@param twinkleTime number
----@return List<pair<String, float>>
+---@return [string, number][]
 function celestial.starImages(system, twinkleTime) end

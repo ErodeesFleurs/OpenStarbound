@@ -6,12 +6,12 @@ namespace Star {
 
 STAR_CLASS(SteamStatisticsService);
 
-class SteamStatisticsService : public StatisticsService {
+class SteamStatisticsSeSTEAM_CALLBACKrvice : public StatisticsService {
 public:
   SteamStatisticsService(PcPlatformServicesStatePtr state);
 
   bool initialized() const override;
-  Maybe<String> error() const override;
+  std::optional<String> error() const override;
 
   bool setStat(String const& name, String const& type, Json const& value) override;
   Json getStat(String const& name, String const& type, Json def = {}) const override;
@@ -32,7 +32,7 @@ private:
 
   uint64_t m_appId;
   bool m_initialized;
-  Maybe<String> m_error;
+  std::optional<String> m_error;
 };
 
 }

@@ -1,9 +1,10 @@
 #include "StarCurve25519.hpp"
 #include "StarRandom.hpp"
-#include "StarLogging.hpp"
 
 #include "curve25519/include/curve25519_dh.h"
 #include "curve25519/include/ed25519_signature.h"
+
+import std;
 
 namespace Star::Curve25519 {
 
@@ -23,7 +24,7 @@ struct KeySet {
   }
 };
 
-static KeySet const& staticKeys() {
+static auto staticKeys() -> KeySet const& {
   static KeySet keys;
 
   return keys;
@@ -33,13 +34,13 @@ PrivateKey const& privateKey() { return staticKeys().privateKey; }
 
 
 
-Signature sign(void* data, size_t len) {
+auto sign(void* data, std::size_t len) -> Signature {
   Signature signature;
   ed25519_SignMessage(signature.data(), privateKey().data(), nullptr, (unsigned char*)data, len);
   return signature;
 }
 
-bool verify(uint8_t const* signature, uint8_t const* publicKey, void* data, size_t len) {
+auto verify(std::uint8_t const* signature, std::uint8_t const* publicKey, void* data, std::size_t len) -> bool {
   return ed25519_VerifySignature(signature, publicKey, (unsigned char*)data, len);
 }
 

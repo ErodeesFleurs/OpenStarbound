@@ -18,10 +18,10 @@ public:
   void setJoinUnavailable() override;
   void setJoinLocal(uint32_t capacity) override;
   void setJoinRemote(HostAddressWithPort location) override;
-  void setActivityData(const char* title, const char* details, int64_t startTime, Maybe<pair<uint16_t, uint16_t>>) override;
+  void setActivityData(const char* title, const char* details, int64_t startTime, std::optional<pair<uint16_t, uint16_t>>) override;
 
   MVariant<P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() override;
-  Maybe<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
+  std::optional<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
 
   void setAcceptingP2PConnections(bool acceptingP2PConnections) override;
   List<P2PSocketUPtr> acceptP2PConnections() override;
@@ -47,7 +47,7 @@ private:
 
     bool isOpen() override;
     bool sendMessage(ByteArray const& message) override;
-    Maybe<ByteArray> receiveMessage() override;
+    std::optional<ByteArray> receiveMessage() override;
 
     Mutex mutex;
     PcP2PNetworkingService* parent = nullptr;
@@ -81,7 +81,7 @@ private:
 
     bool isOpen() override;
     bool sendMessage(ByteArray const& message) override;
-    Maybe<ByteArray> receiveMessage() override;
+    std::optional<ByteArray> receiveMessage() override;
 
     Mutex mutex;
     PcP2PNetworkingService* parent = nullptr;
@@ -127,10 +127,10 @@ private:
   String m_discordActivityTitle;
   String m_discordActivityDetails;
   int64_t m_discordActivityStartTime = 0;
-  Maybe<pair<uint16_t, uint16_t>> m_discordPartySize;
+  std::optional<pair<uint16_t, uint16_t>> m_discordPartySize;
   bool m_discordForceUpdateActivity = false;
   bool m_discordUpdatingActivity = false;
-  Maybe<pair<discord::LobbyId, String>> m_discordServerLobby = {};
+  std::optional<pair<discord::LobbyId, String>> m_discordServerLobby = {};
 
   int m_discordOnActivityJoinToken = 0;
   int m_discordOnActivityRequestToken = 0;

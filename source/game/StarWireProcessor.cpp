@@ -1,6 +1,6 @@
 #include "StarWireProcessor.hpp"
+#include "StarEntityMap.hpp" // IWYU pragma: keep
 #include "StarWorldStorage.hpp"
-#include "StarEntityMap.hpp"
 #include "StarWireEntity.hpp"
 #include "StarLogging.hpp"
 
@@ -63,7 +63,7 @@ void WireProcessor::populateWorking(WireEntity* wireEntity) {
 
 void WireProcessor::loadNetwork(Vec2I tilePosition) {
   HashSet<WorldStorage::Sector> networkSectors;
-  Maybe<float> highestTtl;
+  std::optional<float> highestTtl;
 
   // Recursively load a given WireEntity at the given position.  Returns true
   // if that wire entity was found.

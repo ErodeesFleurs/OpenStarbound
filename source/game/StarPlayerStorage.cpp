@@ -1,12 +1,9 @@
 #include "StarPlayerStorage.hpp"
+#include "StarEntityFactory.hpp" // IWYU pragma: keep
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
 #include "StarIterator.hpp"
-#include "StarTime.hpp"
-#include "StarConfiguration.hpp"
 #include "StarPlayer.hpp"
-#include "StarAssets.hpp"
-#include "StarEntityFactory.hpp"
 #include "StarRoot.hpp"
 #include "StarText.hpp"
 
@@ -104,7 +101,7 @@ size_t PlayerStorage::playerCount() const {
   return m_savedPlayersCache.size();
 }
 
-Maybe<Uuid> PlayerStorage::playerUuidAt(size_t index) {
+std::optional<Uuid> PlayerStorage::playerUuidAt(size_t index) {
   RecursiveMutexLocker locker(m_mutex);
   if (index < m_savedPlayersCache.size())
     return m_savedPlayersCache.keyAt(index);
@@ -112,9 +109,9 @@ Maybe<Uuid> PlayerStorage::playerUuidAt(size_t index) {
     return {};
 }
 
-Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name, Maybe<Uuid> except) {
+std::optional<Uuid> PlayerStorage::playerUuidByName(String const& name, std::optional<Uuid> except) {
   String cleanMatch = Text::stripEscapeCodes(name).toLower();
-  Maybe<Uuid> uuid;
+  std::optional<Uuid> uuid;
 
   RecursiveMutexLocker locker(m_mutex);
 
@@ -135,7 +132,7 @@ Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name, Maybe<Uuid> exce
   return uuid;
 }
 
-List<Uuid> PlayerStorage::playerUuidListByName(String const& name, Maybe<Uuid> except) {
+List<Uuid> PlayerStorage::playerUuidListByName(String const& name, std::optional<Uuid> except) {
   String cleanMatch = Text::stripEscapeCodes(name).toLower();
   List<Uuid> list = {};
 
@@ -146,7 +143,7 @@ List<Uuid> PlayerStorage::playerUuidListByName(String const& name, Maybe<Uuid> e
       continue;
     else if (auto name = cache.second.optQueryString("identity.name")) {
       auto cleanName = Text::stripEscapeCodes(*name).toLower();
-      if (cleanMatch == "" || cleanName.utf8().rfind(cleanMatch.utf8()) != NPos) {
+      if (cleanMatch == "" || cleanName.utf8().rfind(cleanMatch.utf8()) != std::numeric_limits<std::size_t>::max()) {
         list.append(cache.first);
       }
     }
@@ -178,7 +175,7 @@ Json PlayerStorage::savePlayer(PlayerPtr const& player) {
   return newPlayerData;
 }
 
-Maybe<Json> PlayerStorage::maybeGetPlayerData(Uuid const& uuid) {
+std::optional<Json> PlayerStorage::maybeGetPlayerData(Uuid const& uuid) {
   RecursiveMutexLocker locker(m_mutex);
   if (auto cache = m_savedPlayersCache.ptr(uuid))
     return *cache;

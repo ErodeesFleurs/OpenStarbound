@@ -8,6 +8,8 @@
 #include <QPushButton>
 #include <QCheckBox>
 
+#include <optional>
+
 #include "steam/steam_api.h"
 
 #include "StarDirectoryAssetSource.hpp"
@@ -45,12 +47,12 @@ private:
   QWidget* m_editorSection;
   HashMap<String, QCheckBox*> m_categorySelectors;
 
-  Maybe<String> m_modDirectory;
-  Maybe<DirectoryAssetSource> m_assetSource;
+  std::optional<String> m_modDirectory;
+  std::optional<DirectoryAssetSource> m_assetSource;
   QImage m_modPreview;
 
-  Maybe<pair<CreateItemResult_t, bool>> m_steamItemCreateResult;
-  Maybe<pair<SubmitItemUpdateResult_t, bool>> m_steamItemSubmitResult;
+  std::optional<pair<CreateItemResult_t, bool>> m_steamItemCreateResult;
+  std::optional<pair<SubmitItemUpdateResult_t, bool>> m_steamItemSubmitResult;
 };
 
 }

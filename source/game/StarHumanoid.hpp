@@ -5,7 +5,6 @@
 #include "StarDrawable.hpp"
 #include "StarParticle.hpp"
 #include "StarNetworkedAnimator.hpp"
-#include "StarNetElement.hpp"
 
 namespace Star {
 
@@ -98,7 +97,7 @@ struct HumanoidIdentity {
   Personality personality;
   Vec4B color;
 
-  Maybe<String> imagePath;
+  std::optional<String> imagePath;
 
 };
 
@@ -223,7 +222,7 @@ public:
 
   void setState(State state);
   void setEmoteState(HumanoidEmote state);
-  void setDance(Maybe<String> const& dance);
+  void setDance(std::optional<String> const& dance);
   void setFacingDirection(Direction facingDirection);
   void setMovingBackwards(bool movingBackwards);
   void setHeadRotation(float headRotation);
@@ -234,7 +233,7 @@ public:
 
   State state() const;
   HumanoidEmote emoteState() const;
-  Maybe<String> dance() const;
+  std::optional<String> dance() const;
   bool danceCyclicOrEnded() const;
   Direction facingDirection() const;
   bool movingBackwards() const;
@@ -300,7 +299,7 @@ public:
   List<Particle> particles(String const& name) const;
 
   Json const& defaultMovementParameters() const;
-  Maybe<Json> const& playerMovementParameters() const;
+  std::optional<Json> const& playerMovementParameters() const;
 
   String getHeadFromIdentity() const;
   String getBodyFromIdentity() const;
@@ -358,7 +357,7 @@ private:
   int getArmStateSequence() const;
   int getBodyStateSequence() const;
 
-  Maybe<DancePtr> getDance() const;
+  std::optional<DancePtr> getDance() const;
 
   void refreshAnimationState(bool startNew = false);
 
@@ -423,7 +422,7 @@ private:
 
   State m_state;
   HumanoidEmote m_emoteState;
-  Maybe<String> m_dance;
+  std::optional<String> m_dance;
   Direction m_facingDirection;
   bool m_movingBackwards;
   float m_headRotation;
@@ -448,7 +447,7 @@ private:
   String m_defaultDeathParticles;
 
   Json m_defaultMovementParameters;
-  Maybe<Json> m_playerMovementParameters;
+  std::optional<Json> m_playerMovementParameters;
   bool m_useAnimation;
 
   NetworkedAnimator m_networkedAnimator;

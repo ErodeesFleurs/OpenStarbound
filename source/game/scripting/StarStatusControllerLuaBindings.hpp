@@ -1,7 +1,7 @@
 #pragma once
 
+#include "StarGameTypes.hpp"
 #include "StarLua.hpp"
-#include "StarEntity.hpp"
 
 namespace Star {
 
@@ -28,8 +28,8 @@ namespace LuaBindings {
     void setResourceLocked(StatusController* statController, String const& arg1, bool arg2);
     void resetResource(StatusController* statController, String const& arg1);
     void resetAllResources(StatusController* statController);
-    Maybe<float> resourceMax(StatusController* statController, String const& arg1);
-    Maybe<float> resourcePercentage(StatusController* statController, String const& arg1);
+    std::optional<float> resourceMax(StatusController* statController, String const& arg1);
+    std::optional<float> resourcePercentage(StatusController* statController, String const& arg1);
     float setResourcePercentage(StatusController* statController, String const& arg1, float arg2);
     float modifyResourcePercentage(StatusController* statController, String const& arg1, float arg2);
     JsonArray getPersistentEffects(StatusController* statController, String const& arg1);
@@ -40,15 +40,15 @@ namespace LuaBindings {
     void clearAllPersistentEffects(StatusController* statController);
     void addEphemeralEffect(StatusController* statController,
         String const& uniqueEffect,
-        Maybe<float> duration,
-        Maybe<EntityId> sourceEntityId);
-    void addEphemeralEffects(StatusController* statController, JsonArray const& arg1, Maybe<EntityId> sourceEntityId);
+        std::optional<float> duration,
+        std::optional<EntityId> sourceEntityId);
+    void addEphemeralEffects(StatusController* statController, JsonArray const& arg1, std::optional<EntityId> sourceEntityId);
     void removeEphemeralEffect(StatusController* statController, String const& arg1);
     void clearEphemeralEffects(StatusController* statController);
-    LuaTupleReturn<List<Json>, uint64_t> damageTakenSince(StatusController* statController, Maybe<uint64_t> timestep);
-    LuaTupleReturn<List<Json>, uint64_t> inflictedHitsSince(StatusController* statController, Maybe<uint64_t> timestep);
+    LuaTupleReturn<List<Json>, uint64_t> damageTakenSince(StatusController* statController, std::optional<uint64_t> timestep);
+    LuaTupleReturn<List<Json>, uint64_t> inflictedHitsSince(StatusController* statController, std::optional<uint64_t> timestep);
     LuaTupleReturn<List<Json>, uint64_t> inflictedDamageSince(
-        StatusController* statController, Maybe<uint64_t> timestep);
+        StatusController* statController, std::optional<uint64_t> timestep);
     List<JsonArray> activeUniqueStatusEffectSummary(StatusController* statController);
     bool uniqueStatusEffectActive(StatusController* statController, String const& effectName);
   }

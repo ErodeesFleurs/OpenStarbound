@@ -82,7 +82,7 @@ bool ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) 
   return anyValid;
 }
 
-size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& position, Maybe<Direction> directionAffinity) const {
+size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& position, std::optional<Direction> directionAffinity) const {
   // If we are given a direction affinity, try and find an orientation with a
   // matching affinity *first*
   if (directionAffinity) {
@@ -101,7 +101,7 @@ size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& posit
       return i;
   }
 
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 Json ObjectDatabase::parseTouchDamage(String const& path, Json const& config) {
@@ -219,7 +219,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
 
     bool tilled = orientationSettings.getBool("requireTilledAnchors", false);
     bool soil = orientationSettings.getBool("requireSoilAnchors", false);
-    Maybe<MaterialId> anchorMaterial;
+    std::optional<MaterialId> anchorMaterial;
     if (auto anchorMaterialName = orientationSettings.optString("anchorMaterial"))
       anchorMaterial = materialDatabase->materialId(*anchorMaterialName);
 
@@ -436,7 +436,7 @@ ObjectPtr ObjectDatabase::netLoadObject(ByteArray const& netStore, NetCompatibil
 }
 
 bool ObjectDatabase::canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const {
-  return getConfig(objectName)->findValidOrientation(world, position) != NPos;
+  return getConfig(objectName)->findValidOrientation(world, position) != std::numeric_limits<std::size_t>::max();
 }
 
 ObjectPtr ObjectDatabase::createForPlacement(World const* world, String const& objectName, Vec2I const& position,
@@ -614,7 +614,7 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
         1.0 / TilePixels, false, Vec2F(position) + jsonToVec2F(mergeConfig.get("placementImagePosition")) / TilePixels)};
   } else {
     size_t orientationIndex = config->findValidOrientation(world, position, direction);
-    if (orientationIndex == NPos) {
+    if (orientationIndex == std::numeric_limits<std::size_t>::max()) {
       // If we aren't in a valid orientation, still need to draw something at
       // the cursor.  Draw the first orientation whose direction affinity
       // matches our current direction, or if that fails just the first
@@ -624,7 +624,7 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
         if (config->orientations[i]->directionAffinity == direction)
           orientationIndex = i;
       }
-      if (orientationIndex == NPos)
+      if (orientationIndex == std::numeric_limits<std::size_t>::max())
         orientationIndex = 0;
     }
 

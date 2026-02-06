@@ -18,7 +18,7 @@
 
 namespace Star {
 
-OVERLAPPED makeOverlapped(StreamOffset offset) {
+OVERLAPPED makeOverlapped(std::int64_t offset) {
   OVERLAPPED overlapped = {};
   overlapped.Offset = offset;
   overlapped.OffsetHigh = offset >> 32;
@@ -295,7 +295,7 @@ void* File::fopen(char const* filename, IOMode mode) {
   return (void*)file;
 }
 
-void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {
+void File::fseek(void* f, std::int64_t offset, IOSeek seekMode) {
   HANDLE file = (HANDLE)f;
 
   LARGE_INTEGER loffset;
@@ -309,7 +309,7 @@ void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {
     SetFilePointerEx(file, loffset, nullptr, FILE_END);
 }
 
-StreamOffset File::ftell(void* f) {
+std::int64_t File::ftell(void* f) {
   HANDLE file = (HANDLE)f;
   LARGE_INTEGER pos;
   LARGE_INTEGER szero;
@@ -363,7 +363,7 @@ void File::fclose(void* f) {
   CloseHandle(file);
 }
 
-StreamOffset File::fsize(void* f) {
+std::int64_t File::fsize(void* f) {
   HANDLE file = (HANDLE)f;
   LARGE_INTEGER size;
   if (GetFileSizeEx(file, &size) == 0)
@@ -371,12 +371,12 @@ StreamOffset File::fsize(void* f) {
   return size.QuadPart;
 }
 
-size_t File::pread(void* f, char* data, size_t len, StreamOffset position) {
+size_t File::pread(void* f, char* data, size_t len, std::int64_t position) {
   HANDLE file = (HANDLE)f;
   DWORD numRead = 0;
   OVERLAPPED overlapped = makeOverlapped(position);
   int ret = ReadFile(file, data, len, &numRead, &overlapped);
-  fseek(f, -(StreamOffset)numRead, IOSeek::Relative);
+  fseek(f, -(std::int64_t)numRead, IOSeek::Relative);
   if (ret == 0) {
     auto err = GetLastError();
     if (err != ERROR_IO_PENDING)
@@ -386,12 +386,12 @@ size_t File::pread(void* f, char* data, size_t len, StreamOffset position) {
   return numRead;
 }
 
-size_t File::pwrite(void* f, char const* data, size_t len, StreamOffset position) {
+size_t File::pwrite(void* f, char const* data, size_t len, std::int64_t position) {
   HANDLE file = (HANDLE)f;
   DWORD numWritten = 0;
   OVERLAPPED overlapped = makeOverlapped(position);
   int ret = WriteFile(file, data, len, &numWritten, &overlapped);
-  fseek(f, -(StreamOffset)numWritten, IOSeek::Relative);
+  fseek(f, -(std::int64_t)numWritten, IOSeek::Relative);
   if (ret == 0) {
     auto err = GetLastError();
     if (err != ERROR_IO_PENDING)
@@ -401,7 +401,7 @@ size_t File::pwrite(void* f, char const* data, size_t len, StreamOffset position
   return numWritten;
 }
 
-void File::resize(void* f, StreamOffset size) {
+void File::resize(void* f, std::int64_t size) {
   HANDLE file = (HANDLE)f;
   LARGE_INTEGER s;
   s.QuadPart = size;

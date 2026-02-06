@@ -27,7 +27,7 @@ public:
   // orbiting.
   CelestialCoordinate shipCoordinate() const;
 
-  Maybe<pair<WarpAction, WarpMode>> orbitWarpAction() const;
+  std::optional<pair<WarpAction, WarpMode>> orbitWarpAction() const;
 
   // The current world id of the player
   WorldId playerWorldId() const;
@@ -58,7 +58,7 @@ private:
   JsonRpcPtr m_rpc;
 
   NetElementTopGroup m_netGroup;
-  NetElementData<Maybe<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
+  NetElementData<std::optional<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
   NetElementData<WorldId> m_playerWorldIdNetState;
   NetElementBool m_isAdminNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;

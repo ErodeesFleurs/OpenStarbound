@@ -1,0 +1,17 @@
+{
+    "diagnostics.globals": [
+        "update",
+        "selectCategory",
+        "bindsToString",
+        "setButtonsEnabled",
+        "snareFinished",
+        "eraseBind",
+        "resetBind",
+        "build",
+        "create",
+        "patch"
+    ],
+    "diagnostics.disable": [
+        "unknown-diag-code"
+    ]
+}

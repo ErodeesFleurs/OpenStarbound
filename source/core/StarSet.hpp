@@ -1,107 +1,106 @@
 #pragma once
 
-#include <set>
-#include <unordered_set>
-
 #include "StarFlatHashSet.hpp"
 #include "StarList.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_EXCEPTION(SetException, StarException);
+using SetException = ExceptionDerived<"SetException">;
 
 template <typename BaseSet>
 class SetMixin : public BaseSet {
 public:
-  typedef BaseSet Base;
+  using Base = BaseSet;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
 
-  typedef typename Base::value_type value_type;
+  using value_type = typename Base::value_type;
 
   using Base::Base;
 
-  List<value_type> values() const;
+  auto values() const -> List<value_type>;
 
-  bool contains(value_type const& v) const;
+  auto contains(value_type const& v) const -> bool;
 
-  bool add(value_type const& v);
+  auto add(value_type const& v) -> bool;
 
   // Like add, but always adds new value, potentially replacing another equal
   // (comparing equal, may not be actually equal) value.  Returns whether an
   // existing value was replaced.
-  bool replace(value_type v);
+  auto replace(value_type v) -> bool;
 
   template <typename Container>
   void addAll(Container const& s);
 
-  bool remove(value_type const& v);
+  auto remove(value_type const& v) -> bool;
 
   template <typename Container>
   void removeAll(Container const& s);
 
-  value_type first();
-  Maybe<value_type> maybeFirst();
-  value_type takeFirst();
-  Maybe<value_type> maybeTakeFirst();
+  auto first() -> value_type;
+  auto maybeFirst() -> std::optional<value_type>;
+  auto takeFirst() -> value_type;
+  auto maybeTakeFirst() -> std::optional<value_type>;
 
-  value_type last();
-  Maybe<value_type> maybeLast();
-  value_type takeLast();
-  Maybe<value_type> maybeTakeLast();
+  auto last() -> value_type;
+  auto maybeLast() -> std::optional<value_type>;
+  auto takeLast() -> value_type;
+  auto maybeTakeLast() -> std::optional<value_type>;
 
-  bool hasIntersection(SetMixin const& s) const;
+  auto hasIntersection(SetMixin const& s) const -> bool;
 };
 
 template <typename BaseSet>
-std::ostream& operator<<(std::ostream& os, SetMixin<BaseSet> const& set);
+auto operator<<(std::ostream& os, SetMixin<BaseSet> const& set) -> std::ostream&;
 
 template <typename Value, typename Compare = std::less<Value>, typename Allocator = std::allocator<Value>>
 class Set : public SetMixin<std::set<Value, Compare, Allocator>> {
 public:
-  typedef SetMixin<std::set<Value, Compare, Allocator>> Base;
+  using Base = SetMixin<std::set<Value, Compare, Allocator>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
 
-  typedef typename Base::value_type value_type;
+  using value_type = typename Base::value_type;
 
   template <typename Container>
-  static Set from(Container const& c);
+  static auto from(Container const& c) -> Set;
 
   using Base::Base;
 
   // Returns set of elements that are in this set and the given set.
-  Set intersection(Set const& s) const;
-  Set intersection(Set const& s, std::function<bool(Value const&, Value const&)> compare) const;
+  auto intersection(Set const& s) const -> Set;
+  auto intersection(Set const& s, std::function<bool(Value const&, Value const&)> compare) const -> Set;
 
   // Returns elements in this set that are not in the given set
-  Set difference(Set const& s) const;
-  Set difference(Set const& s, std::function<bool(Value const&, Value const&)> compare) const;
+  auto difference(Set const& s) const -> Set;
+  auto difference(Set const& s, std::function<bool(Value const&, Value const&)> compare) const -> Set;
 
   // Returns elements in either this set or the given set
-  Set combination(Set const& s) const;
+  auto combination(Set const& s) const -> Set;
 };
 
 template <typename BaseSet>
 class HashSetMixin : public SetMixin<BaseSet> {
 public:
-  typedef SetMixin<BaseSet> Base;
+  using Base = SetMixin<BaseSet>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
 
-  typedef typename Base::value_type value_type;
+  using value_type = typename Base::value_type;
 
   template <typename Container>
-  static HashSetMixin from(Container const& c);
+  static auto from(Container const& c) -> HashSetMixin;
 
   using Base::Base;
 
-  HashSetMixin intersection(HashSetMixin const& s) const;
-  HashSetMixin difference(HashSetMixin const& s) const;
-  HashSetMixin combination(HashSetMixin const& s) const;
+  auto intersection(HashSetMixin const& s) const -> HashSetMixin;
+  auto difference(HashSetMixin const& s) const -> HashSetMixin;
+  auto combination(HashSetMixin const& s) const -> HashSetMixin;
 };
 
 template <typename Value, typename Hash = hash<Value>, typename Equals = std::equal_to<Value>, typename Allocator = std::allocator<Value>>
@@ -116,17 +115,17 @@ auto SetMixin<BaseSet>::values() const -> List<value_type> {
 }
 
 template <typename BaseSet>
-bool SetMixin<BaseSet>::contains(value_type const& v) const {
+auto SetMixin<BaseSet>::contains(value_type const& v) const -> bool {
   return Base::find(v) != Base::end();
 }
 
 template <typename BaseSet>
-bool SetMixin<BaseSet>::add(value_type const& v) {
+auto SetMixin<BaseSet>::add(value_type const& v) -> bool {
   return Base::insert(v).second;
 }
 
 template <typename BaseSet>
-bool SetMixin<BaseSet>::replace(value_type v) {
+auto SetMixin<BaseSet>::replace(value_type v) -> bool {
   bool replaced = remove(v);
   Base::insert(std::move(v));
   return replaced;
@@ -139,7 +138,7 @@ void SetMixin<BaseSet>::addAll(Container const& s) {
 }
 
 template <typename BaseSet>
-bool SetMixin<BaseSet>::remove(value_type const& v) {
+auto SetMixin<BaseSet>::remove(value_type const& v) -> bool {
   return Base::erase(v) != 0;
 }
 
@@ -158,9 +157,9 @@ auto SetMixin<BaseSet>::first() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeFirst() -> Maybe<value_type> {
+auto SetMixin<BaseSet>::maybeFirst() -> std::optional<value_type> {
   if (Base::empty())
-    return {};
+    return std::nullopt;
   return *Base::begin();
 }
 
@@ -175,13 +174,13 @@ auto SetMixin<BaseSet>::takeFirst() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeTakeFirst() -> Maybe<value_type> {
+auto SetMixin<BaseSet>::maybeTakeFirst() -> std::optional<value_type> {
   if (Base::empty())
-    return {};
+    return std::nullopt;
   auto i = Base::begin();
   value_type v = std::move(*i);
   Base::erase(i);
-  return std::move(v);
+  return v;
 }
 
 template <typename BaseSet>
@@ -192,9 +191,9 @@ auto SetMixin<BaseSet>::last() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeLast() -> Maybe<value_type> {
+auto SetMixin<BaseSet>::maybeLast() -> std::optional<value_type> {
   if (Base::empty())
-    return {};
+    return std::nullopt;
   return *prev(Base::end());
 }
 
@@ -209,17 +208,17 @@ auto SetMixin<BaseSet>::takeLast() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeTakeLast() -> Maybe<value_type> {
+auto SetMixin<BaseSet>::maybeTakeLast() -> std::optional<value_type> {
   if (Base::empty())
-    return {};
+    return std::nullopt;
   auto i = prev(Base::end());
   value_type v = std::move(*i);
   Base::erase(i);
-  return std::move(v);
+  return v;
 }
 
 template <typename BaseSet>
-bool SetMixin<BaseSet>::hasIntersection(SetMixin const& s) const {
+auto SetMixin<BaseSet>::hasIntersection(SetMixin const& s) const -> bool {
   for (auto const& v : s) {
     if (contains(v)) {
       return true;
@@ -229,7 +228,7 @@ bool SetMixin<BaseSet>::hasIntersection(SetMixin const& s) const {
 }
 
 template <typename BaseSet>
-std::ostream& operator<<(std::ostream& os, SetMixin<BaseSet> const& set) {
+auto operator<<(std::ostream& os, SetMixin<BaseSet> const& set) -> std::ostream& {
   os << "(";
   for (auto i = set.begin(); i != set.end(); ++i) {
     if (i != set.begin())
@@ -242,40 +241,40 @@ std::ostream& operator<<(std::ostream& os, SetMixin<BaseSet> const& set) {
 
 template <typename Value, typename Compare, typename Allocator>
 template <typename Container>
-Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::from(Container const& c) {
+auto Set<Value, Compare, Allocator>::from(Container const& c) -> Set<Value, Compare, Allocator> {
   return Set(c.begin(), c.end());
 }
 
 template <typename Value, typename Compare, typename Allocator>
-Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::intersection(Set const& s) const {
+auto Set<Value, Compare, Allocator>::intersection(Set const& s) const -> Set<Value, Compare, Allocator> {
   Set res;
   std::set_intersection(Base::begin(), Base::end(), s.begin(), s.end(), std::inserter(res, res.end()));
   return res;
 }
 
 template <typename Value, typename Compare, typename Allocator>
-Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::intersection(Set const& s, std::function<bool(Value const&, Value const&)> compare) const {
+auto Set<Value, Compare, Allocator>::intersection(Set const& s, std::function<bool(Value const&, Value const&)> compare) const -> Set<Value, Compare, Allocator> {
   Set res;
   std::set_intersection(Base::begin(), Base::end(), s.begin(), s.end(), std::inserter(res, res.end()), compare);
   return res;
 }
 
 template <typename Value, typename Compare, typename Allocator>
-Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::difference(Set const& s) const {
+auto Set<Value, Compare, Allocator>::difference(Set const& s) const -> Set<Value, Compare, Allocator> {
   Set res;
   std::set_difference(Base::begin(), Base::end(), s.begin(), s.end(), std::inserter(res, res.end()));
   return res;
 }
 
 template <typename Value, typename Compare, typename Allocator>
-Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::difference(Set const& s, std::function<bool(Value const&, Value const&)> compare) const {
+auto Set<Value, Compare, Allocator>::difference(Set const& s, std::function<bool(Value const&, Value const&)> compare) const -> Set<Value, Compare, Allocator> {
   Set res;
   std::set_difference(Base::begin(), Base::end(), s.begin(), s.end(), std::inserter(res, res.end()), compare);
   return res;
 }
 
 template <typename Value, typename Compare, typename Allocator>
-Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::combination(Set const& s) const {
+auto Set<Value, Compare, Allocator>::combination(Set const& s) const -> Set<Value, Compare, Allocator> {
   Set ret(*this);
   ret.addAll(s);
   return ret;
@@ -283,12 +282,12 @@ Set<Value, Compare, Allocator> Set<Value, Compare, Allocator>::combination(Set c
 
 template <typename BaseMap>
 template <typename Container>
-HashSetMixin<BaseMap> HashSetMixin<BaseMap>::from(Container const& c) {
+auto HashSetMixin<BaseMap>::from(Container const& c) -> HashSetMixin<BaseMap> {
   return HashSetMixin(c.begin(), c.end());
 }
 
 template <typename BaseMap>
-HashSetMixin<BaseMap> HashSetMixin<BaseMap>::intersection(HashSetMixin const& s) const {
+auto HashSetMixin<BaseMap>::intersection(HashSetMixin const& s) const -> HashSetMixin<BaseMap> {
   // Can't use std::set_intersection, since not sorted, naive version is fine.
   HashSetMixin ret;
   for (auto const& e : s) {
@@ -299,7 +298,7 @@ HashSetMixin<BaseMap> HashSetMixin<BaseMap>::intersection(HashSetMixin const& s)
 }
 
 template <typename BaseMap>
-HashSetMixin<BaseMap> HashSetMixin<BaseMap>::difference(HashSetMixin const& s) const {
+auto HashSetMixin<BaseMap>::difference(HashSetMixin const& s) const -> HashSetMixin<BaseMap> {
   // Can't use std::set_difference, since not sorted, naive version is fine.
   HashSetMixin ret;
   for (auto const& e : *this) {
@@ -310,7 +309,7 @@ HashSetMixin<BaseMap> HashSetMixin<BaseMap>::difference(HashSetMixin const& s) c
 }
 
 template <typename BaseMap>
-HashSetMixin<BaseMap> HashSetMixin<BaseMap>::combination(HashSetMixin const& s) const {
+auto HashSetMixin<BaseMap>::combination(HashSetMixin const& s) const -> HashSetMixin<BaseMap> {
   HashSetMixin ret(*this);
   ret.addAll(s);
   return ret;

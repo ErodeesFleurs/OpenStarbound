@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarInventoryTypes.hpp"
 #include "StarMainInterfaceTypes.hpp"
 
@@ -23,7 +25,7 @@ public:
 
   void update(float dt) override;
 
-  Maybe<String> cursorOverride(Vec2I const& screenPosition) override;
+  std::optional<String> cursorOverride(Vec2I const& screenPosition) override;
 
 private:
   struct CustomBarEntry {
@@ -52,7 +54,7 @@ private:
   ImageWidgetPtr m_essentialSelectedWidget;
 
   SelectedActionBarLocation m_emptyHandsPreviousActionBarLocation;
-  Maybe<pair<CustomBarIndex, bool>> m_customBarHover;
+  std::optional<pair<CustomBarIndex, bool>> m_customBarHover;
 };
 
 }

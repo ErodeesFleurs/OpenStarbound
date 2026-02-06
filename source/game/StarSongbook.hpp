@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarThread.hpp"
 #include "StarJson.hpp"
 #include "StarNetElementSystem.hpp"
@@ -31,8 +33,8 @@ public:
   bool active() const;
   bool instrumentPlaying() const;
 
-  Maybe<String> timeSource() const;
-  Maybe<String> instrument() const;
+  std::optional<String> timeSource() const;
+  std::optional<String> instrument() const;
   Json song() const;
 
 private:

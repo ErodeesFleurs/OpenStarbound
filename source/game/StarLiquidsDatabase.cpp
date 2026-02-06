@@ -131,7 +131,7 @@ String LiquidsDatabase::liquidDescription(LiquidId liquidId) const {
   throw LiquidException::format("invalid liquid id {}", liquidId);
 }
 
-Maybe<String> LiquidsDatabase::liquidPath(LiquidId liquidId) const {
+std::optional<String> LiquidsDatabase::liquidPath(LiquidId liquidId) const {
   if (liquidId == EmptyLiquidId)
     return {};
   else if (auto settings = liquidSettings(liquidId))
@@ -139,7 +139,7 @@ Maybe<String> LiquidsDatabase::liquidPath(LiquidId liquidId) const {
   return {};
 }
 
-Maybe<Json> LiquidsDatabase::liquidConfig(LiquidId liquidId) const {
+std::optional<Json> LiquidsDatabase::liquidConfig(LiquidId liquidId) const {
   if (liquidId == EmptyLiquidId)
     return {};
   else if (auto settings = liquidSettings(liquidId))
@@ -147,7 +147,7 @@ Maybe<Json> LiquidsDatabase::liquidConfig(LiquidId liquidId) const {
   return {};
 }
 
-Maybe<LiquidInteractionResult> LiquidsDatabase::interact(LiquidId target, LiquidId other) const {
+std::optional<LiquidInteractionResult> LiquidsDatabase::interact(LiquidId target, LiquidId other) const {
   if (auto settings = liquidSettings(target))
     return settings->interactions.value(other);
   return {};

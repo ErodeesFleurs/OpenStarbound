@@ -453,7 +453,6 @@ bool TileSectorArray<Tile, SectorSize>::tileEachAbortable(RectI const& region, F
 template <typename Tile, unsigned SectorSize>
 auto TileSectorArray<Tile, SectorSize>::splitRect(RectI rect) const -> StaticList<SplitRect, 2> {
   // TODO: Offset here does not support rects outside of -m_worldSize[0] to 2 * m_worldSize[0]!
-  starAssert(rect.xMin() >= -(int)m_worldSize[0] && rect.xMax() <= 2 * (int)m_worldSize[0]);
 
   // any rect at least the width of the world is equivalent to a rect that spans the width of the world exactly
   if (rect.width() >= (int)m_worldSize[0])

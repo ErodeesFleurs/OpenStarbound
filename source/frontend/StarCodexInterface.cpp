@@ -55,7 +55,7 @@ void CodexInterface::tick(float) {
 }
 
 void CodexInterface::showSelectedContents() {
-  if (m_bookList->selectedItem() == NPos || m_bookList->selectedItem() >= m_codexList.size())
+  if (m_bookList->selectedItem() == std::numeric_limits<std::size_t>::max() || m_bookList->selectedItem() >= m_codexList.size())
     return;
 
   showContents(m_codexList[m_bookList->selectedItem()].first);

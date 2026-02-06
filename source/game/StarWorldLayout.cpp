@@ -375,11 +375,11 @@ Json WorldLayout::toJson() const {
   };
 }
 
-Maybe<WorldLayout::BlockNoise> const& WorldLayout::blockNoise() const {
+std::optional<WorldLayout::BlockNoise> const& WorldLayout::blockNoise() const {
   return m_blockNoise;
 }
 
-Maybe<PerlinF> const& WorldLayout::blendNoise() const {
+std::optional<PerlinF> const& WorldLayout::blendNoise() const {
   return m_blendNoise;
 }
 
@@ -709,9 +709,6 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
 
     // Logger::info("before expansion:\ntarget cells are: {}\nother cells are: {}", printRegionCells(targetCells), printRegionCells(otherCells));
 
-    starAssert(targetCells.size() > 0);
-    starAssert(targetCells.size() < 3);
-
     // check the current width to see how much (if any) to expand
     int currentWidth = 0;
     for (auto regionCell : targetCells)
@@ -793,7 +790,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
 
 BiomeIndex WorldLayout::registerBiome(BiomeConstPtr biome) {
   size_t foundIndex = m_biomes.indexOf(biome);
-  if (foundIndex != NPos)
+  if (foundIndex != std::numeric_limits<std::size_t>::max())
     return foundIndex + 1;
 
   m_biomes.append(biome);
@@ -802,7 +799,7 @@ BiomeIndex WorldLayout::registerBiome(BiomeConstPtr biome) {
 
 TerrainSelectorIndex WorldLayout::registerTerrainSelector(TerrainSelectorConstPtr terrainSelector) {
   size_t foundIndex = m_terrainSelectors.indexOf(terrainSelector);
-  if (foundIndex != NPos)
+  if (foundIndex != std::numeric_limits<std::size_t>::max())
     return foundIndex + 1;
 
   m_terrainSelectors.append(terrainSelector);

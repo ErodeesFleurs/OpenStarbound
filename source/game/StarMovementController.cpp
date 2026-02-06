@@ -47,32 +47,32 @@ MovementParameters::MovementParameters(Json const& config) {
 MovementParameters MovementParameters::merge(MovementParameters const& rhs) const {
   MovementParameters merged;
 
-  merged.mass = rhs.mass.orMaybe(mass);
-  merged.gravityMultiplier = rhs.gravityMultiplier.orMaybe(gravityMultiplier);
-  merged.liquidBuoyancy = rhs.liquidBuoyancy.orMaybe(liquidBuoyancy);
-  merged.airBuoyancy = rhs.airBuoyancy.orMaybe(airBuoyancy);
-  merged.bounceFactor = rhs.bounceFactor.orMaybe(bounceFactor);
-  merged.stopOnFirstBounce = rhs.stopOnFirstBounce.orMaybe(stopOnFirstBounce);
-  merged.enableSurfaceSlopeCorrection = rhs.enableSurfaceSlopeCorrection.orMaybe(enableSurfaceSlopeCorrection);
-  merged.slopeSlidingFactor = rhs.slopeSlidingFactor.orMaybe(slopeSlidingFactor);
-  merged.maxMovementPerStep = rhs.maxMovementPerStep.orMaybe(maxMovementPerStep);
-  merged.maximumCorrection = rhs.maximumCorrection.orMaybe(maximumCorrection);
-  merged.speedLimit = rhs.speedLimit.orMaybe(speedLimit);
-  merged.discontinuityThreshold = rhs.discontinuityThreshold.orMaybe(discontinuityThreshold);
-  merged.collisionPoly = rhs.collisionPoly.orMaybe(collisionPoly);
-  merged.stickyCollision = rhs.stickyCollision.orMaybe(stickyCollision);
-  merged.stickyForce = rhs.stickyForce.orMaybe(stickyForce);
-  merged.airFriction = rhs.airFriction.orMaybe(airFriction);
-  merged.liquidFriction = rhs.liquidFriction.orMaybe(liquidFriction);
-  merged.groundFriction = rhs.groundFriction.orMaybe(groundFriction);
-  merged.collisionEnabled = rhs.collisionEnabled.orMaybe(collisionEnabled);
-  merged.frictionEnabled = rhs.frictionEnabled.orMaybe(frictionEnabled);
-  merged.gravityEnabled = rhs.gravityEnabled.orMaybe(gravityEnabled);
-  merged.ignorePlatformCollision = rhs.ignorePlatformCollision.orMaybe(ignorePlatformCollision);
-  merged.maximumPlatformCorrection = rhs.maximumPlatformCorrection.orMaybe(maximumPlatformCorrection);
-  merged.maximumPlatformCorrectionVelocityFactor = rhs.maximumPlatformCorrectionVelocityFactor.orMaybe(maximumPlatformCorrectionVelocityFactor);
-  merged.physicsEffectCategories = rhs.physicsEffectCategories.orMaybe(physicsEffectCategories);
-  merged.restDuration = rhs.restDuration.orMaybe(restDuration);
+  merged.mass = rhs.mass ? rhs.mass : mass;
+  merged.gravityMultiplier = rhs.gravityMultiplier ? rhs.gravityMultiplier : gravityMultiplier;
+  merged.liquidBuoyancy = rhs.liquidBuoyancy ? rhs.liquidBuoyancy : liquidBuoyancy;
+  merged.airBuoyancy = rhs.airBuoyancy ? rhs.airBuoyancy : airBuoyancy;
+  merged.bounceFactor = rhs.bounceFactor ? rhs.bounceFactor : bounceFactor;
+  merged.stopOnFirstBounce = rhs.stopOnFirstBounce ? rhs.stopOnFirstBounce : stopOnFirstBounce;
+  merged.enableSurfaceSlopeCorrection = rhs.enableSurfaceSlopeCorrection ? rhs.enableSurfaceSlopeCorrection : enableSurfaceSlopeCorrection;
+  merged.slopeSlidingFactor = rhs.slopeSlidingFactor ? rhs.slopeSlidingFactor : slopeSlidingFactor;
+  merged.maxMovementPerStep = rhs.maxMovementPerStep ? rhs.maxMovementPerStep : maxMovementPerStep;
+  merged.maximumCorrection = rhs.maximumCorrection ? rhs.maximumCorrection : maximumCorrection;
+  merged.speedLimit = rhs.speedLimit ? rhs.speedLimit : speedLimit;
+  merged.discontinuityThreshold = rhs.discontinuityThreshold ? rhs.discontinuityThreshold : discontinuityThreshold;
+  merged.collisionPoly = rhs.collisionPoly ? rhs.collisionPoly : collisionPoly;
+  merged.stickyCollision = rhs.stickyCollision ? rhs.stickyCollision : stickyCollision;
+  merged.stickyForce = rhs.stickyForce ? rhs.stickyForce : stickyForce;
+  merged.airFriction = rhs.airFriction ? rhs.airFriction : airFriction;
+  merged.liquidFriction = rhs.liquidFriction ? rhs.liquidFriction : liquidFriction;
+  merged.groundFriction = rhs.groundFriction ? rhs.groundFriction : groundFriction;
+  merged.collisionEnabled = rhs.collisionEnabled ? rhs.collisionEnabled : collisionEnabled;
+  merged.frictionEnabled = rhs.frictionEnabled ? rhs.frictionEnabled : frictionEnabled;
+  merged.gravityEnabled = rhs.gravityEnabled ? rhs.gravityEnabled : gravityEnabled;
+  merged.ignorePlatformCollision = rhs.ignorePlatformCollision ? rhs.ignorePlatformCollision : ignorePlatformCollision;
+  merged.maximumPlatformCorrection = rhs.maximumPlatformCorrection ? rhs.maximumPlatformCorrection : maximumPlatformCorrection;
+  merged.maximumPlatformCorrectionVelocityFactor = rhs.maximumPlatformCorrectionVelocityFactor ? rhs.maximumPlatformCorrectionVelocityFactor : maximumPlatformCorrectionVelocityFactor;
+  merged.physicsEffectCategories = rhs.physicsEffectCategories ? rhs.physicsEffectCategories : physicsEffectCategories;
+  merged.restDuration = rhs.restDuration ? rhs.restDuration : restDuration;
 
   return merged;
 }
@@ -307,7 +307,7 @@ bool MovementController::isCollisionStuck() const {
   return m_collisionStuck.get();
 }
 
-Maybe<float> MovementController::stickingDirection() const {
+std::optional<float> MovementController::stickingDirection() const {
   return m_stickingDirection.get();
 }
 
@@ -480,7 +480,7 @@ void MovementController::tickMaster(float dt) {
 
   m_zeroG.set(!*m_parameters.gravityEnabled || *m_parameters.gravityMultiplier == 0 || world()->gravity(position()) == 0);
 
-  Maybe<PhysicsMovingCollision> surfaceCollision;
+  std::optional<PhysicsMovingCollision> surfaceCollision;
   if (auto movingCollisionId = m_surfaceMovingCollision.get()) {
     if (auto physicsEntity = world()->get<PhysicsEntity>(movingCollisionId->physicsEntityId))
       surfaceCollision = physicsEntity->movingCollision(movingCollisionId->collisionIndex);
@@ -865,7 +865,7 @@ MovementController::CollisionResult MovementController::collisionMove(List<Colli
   PolyF checkBody = translatedBody;
   Vec2F totalCorrection = Vec2F();
   CollisionKind maxCollided = CollisionKind::None;
-  Maybe<MovingCollisionId> surfaceMovingCollisionId;
+  std::optional<MovingCollisionId> surfaceMovingCollisionId;
 
   CollisionSeparation separation = {};
 

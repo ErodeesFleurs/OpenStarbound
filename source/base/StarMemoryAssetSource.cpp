@@ -29,7 +29,7 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
     }
 
     size_t read(char* data, size_t len) override {
-      len = min<StreamOffset>(len, StreamOffset(assetSize) - assetPos);
+      len = min<std::int64_t>(len, std::int64_t(assetSize) - assetPos);
       memcpy(data, assetData + assetPos, len);
       assetPos += len;
       return len;
@@ -39,22 +39,22 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
       throw IOException("Assets IODevices are read-only");
     }
 
-    StreamOffset size() override { return assetSize; }
-    StreamOffset pos() override { return assetPos; }
+    std::int64_t size() override { return assetSize; }
+    std::int64_t pos() override { return assetPos; }
 
     String deviceName() const override { return name; }
 
     bool atEnd() override {
-      return assetPos >= (StreamOffset)assetSize;
+      return assetPos >= (std::int64_t)assetSize;
     }
 
-    void seek(StreamOffset p, IOSeek mode) override {
+    void seek(std::int64_t p, IOSeek mode) override {
       if (mode == IOSeek::Absolute)
         assetPos = p;
       else if (mode == IOSeek::Relative)
-        assetPos = clamp<StreamOffset>(assetPos + p, 0, assetSize);
+        assetPos = clamp<std::int64_t>(assetPos + p, 0, assetSize);
       else
-        assetPos = clamp<StreamOffset>(assetPos - p, 0, assetSize);
+        assetPos = clamp<std::int64_t>(assetPos - p, 0, assetSize);
     }
 
     IODevicePtr clone() override {
@@ -65,7 +65,7 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
 
     char* assetData;
     size_t assetSize;
-    StreamOffset assetPos = 0;
+    std::int64_t assetPos = 0;
     String name;
   };
 

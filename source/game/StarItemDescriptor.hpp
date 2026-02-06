@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarJson.hpp"
 #include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
@@ -61,14 +63,14 @@ public:
   friend struct hash<ItemDescriptor>;
 
 private:
-  ItemDescriptor(String name, uint64_t count, Json parameters, Maybe<size_t> parametersHash);
+  ItemDescriptor(String name, uint64_t count, Json parameters, std::optional<size_t> parametersHash);
 
   size_t parametersHash() const;
 
   String m_name;
   uint64_t m_count;
   Json m_parameters;
-  mutable Maybe<size_t> m_parametersHash;
+  mutable std::optional<size_t> m_parametersHash;
 };
 
 template <>

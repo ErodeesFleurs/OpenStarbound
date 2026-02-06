@@ -281,7 +281,6 @@ void WorldClient::forEachCollisionBlock(RectI const& region, function<void(Colli
       if (tile.getCollision() == CollisionKind::Null) {
         iterator(CollisionBlock::nullBlock(pos));
       } else {
-        starAssert(!tile.collisionCacheDirty);
         for (auto const& block : tile.collisionCache)
           iterator(block);
       }
@@ -309,7 +308,7 @@ bool WorldClient::lineTileCollision(Vec2F const& begin, Vec2F const& end, Collis
   return WorldImpl::lineTileCollision(m_geometry, m_tileArray, begin, end, collisionSet);
 }
 
-Maybe<pair<Vec2F, Vec2I>> WorldClient::lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) const {
+std::optional<pair<Vec2F, Vec2I>> WorldClient::lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet) const {
   if (!inWorld())
     return {};
 
@@ -846,7 +845,6 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
           EntityId entityId = entity->entityId();
           if (connectionForEntity(entityId) == entityUpdateSet->forConnection) {
-            starAssert(entity->isSlave());
             entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime, m_clientState.netCompatibilityRules());
           }
         });
@@ -982,7 +980,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       static const size_t FULL_SIZE = SECRET_BROADCAST_PREFIX.size() + Curve25519::SignatureSize;
       static const std::string LEGACY_VOICE_PREFIX = "data\0voice\0"s;
 
-      if (view.size() >= FULL_SIZE && view.rfind(SECRET_BROADCAST_PREFIX, 0) != NPos) {
+      if (view.size() >= FULL_SIZE && view.rfind(SECRET_BROADCAST_PREFIX, 0) != std::numeric_limits<std::size_t>::max()) {
         // this is actually a secret broadcast!!
         if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
           if (auto publicKey = player->getSecretPropertyView(SECRET_BROADCAST_PUBLIC_KEY)) {
@@ -1002,7 +1000,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
           }
         }
       }
-      else if (view.size() > 75 && view.rfind(LEGACY_VOICE_PREFIX, 0) != NPos) {
+      else if (view.size() > 75 && view.rfind(LEGACY_VOICE_PREFIX, 0) != std::numeric_limits<std::size_t>::max()) {
         // this is a StarExtensions voice packet
         // (remove this and stop transmitting like this once most SE features are ported over)
         if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
@@ -1118,7 +1116,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       if (pongPacket->time)
         m_latency = Time::monotonicMilliseconds() - pongPacket->time;
       else if (m_pingTime)
-        m_latency = Time::monotonicMilliseconds() - m_pingTime.take();
+        m_latency = Time::monotonicMilliseconds() - (*take(m_pingTime));
 
     } else {
       Logger::error("Improper packet type {} received by client", (int)packet->type());
@@ -1292,7 +1290,7 @@ void WorldClient::update(float dt) {
 
   queueUpdatePackets(m_entityUpdateTimer.wrapTick(dt));
 
-  if ((!m_clientState.netCompatibilityRules().isLegacy() && m_currentStep % 3 == 0) || m_pingTime.isNothing()) {
+  if ((!m_clientState.netCompatibilityRules().isLegacy() && m_currentStep % 3 == 0) || !m_pingTime.has_value()) {
     m_pingTime = Time::monotonicMilliseconds();
     m_outgoingPackets.append(make_shared<PingPacket>(*m_pingTime));
   }
@@ -1301,7 +1299,7 @@ void WorldClient::update(float dt) {
 
   // Remove active sectors that are outside of the current monitoring region
   Set<ClientTileSectorArray::Sector> neededSectors;
-  auto monitoredRegions = m_clientState.monitoringRegions([this](EntityId entityId) -> Maybe<RectI> {
+  auto monitoredRegions = m_clientState.monitoringRegions([this](EntityId entityId) -> std::optional<RectI> {
       if (auto entity = this->entity(entityId))
         return RectI::integral(entity->metaBoundBox().translated(entity->position()));
       return {};
@@ -1393,7 +1391,7 @@ void WorldClient::addEntity(EntityPtr const& entity, EntityId entityId) {
   }
 }
 
-TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity) {
+TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity) {
   if (!inWorld())
     return TileDamageResult::None;
 
@@ -1410,7 +1408,7 @@ TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer laye
   if (toDing.size()) {
     auto dingDamage = tileDamage;
     dingDamage.type = TileDamageType::Protected;
-    m_outgoingPackets.append(make_shared<DamageTileGroupPacket>(std::move(toDing), layer, sourcePosition, dingDamage, Maybe<EntityId>()));
+    m_outgoingPackets.append(make_shared<DamageTileGroupPacket>(std::move(toDing), layer, sourcePosition, dingDamage, std::optional<EntityId>()));
     res = TileDamageResult::Protected;
   }
 
@@ -1681,7 +1679,6 @@ RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request)
     if (targetEntity->isMaster()) {
       // client-side-master entities need to be handled here rather than over network
       auto interactiveTarget = as<InteractiveEntity>(targetEntity);
-      starAssert(interactiveTarget);
 
       return RpcPromise<InteractAction>::createFulfilled(interactiveTarget->interact(request));
     }
@@ -1736,7 +1733,7 @@ void WorldClient::lightingCalc() {
   List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_pendingParticleLights);
   auto& root = Root::singleton();
   auto configuration = root.configuration();
-  bool newLighting = configuration->get("newLighting").optBool().value(true);
+  bool newLighting = configuration->get("newLighting").optBool().value_or(true);
   bool monochrome = configuration->get("monochromeLighting").toBool();
   m_lightingCalculator.setParameters(root.assets()->json("/lighting.config:lighting").set("pointAdditive", newLighting));
   m_lightingCalculator.setMonochrome(monochrome);

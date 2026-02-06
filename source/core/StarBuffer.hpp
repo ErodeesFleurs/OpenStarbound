@@ -3,72 +3,71 @@
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(Buffer);
-STAR_CLASS(ExternalBuffer);
+namespace Star {
 
 // Wraps a ByteArray to an IODevice
 class Buffer : public IODevice {
 public:
   // Constructs buffer open ReadWrite
   Buffer();
-  Buffer(size_t initialSize);
+  Buffer(std::size_t initialSize);
   Buffer(ByteArray b);
   Buffer(Buffer const& buffer);
   Buffer(Buffer&& buffer);
 
-  StreamOffset pos() override;
-  void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;
-  void resize(StreamOffset size) override;
-  bool atEnd() override;
+  auto pos() -> std::int64_t override;
+  void seek(std::int64_t pos, IOSeek mode = IOSeek::Absolute) override;
+  void resize(std::int64_t size) override;
+  auto atEnd() -> bool override;
 
-  size_t read(char* data, size_t len) override;
-  size_t write(char const* data, size_t len) override;
+  auto read(char* data, std::size_t len) -> std::size_t override;
+  auto write(char const* data, std::size_t len) -> std::size_t override;
 
-  size_t readAbsolute(StreamOffset readPosition, char* data, size_t len) override;
-  size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len) override;
+  auto readAbsolute(std::int64_t readPosition, char* data, std::size_t len) -> std::size_t override;
+  auto writeAbsolute(std::int64_t writePosition, char const* data, std::size_t len) -> std::size_t override;
 
   void open(IOMode mode) override;
 
-  String deviceName() const override;
+  auto deviceName() const -> String override;
 
-  StreamOffset size() override;
-  
-  IODevicePtr clone() override;
+  auto size() -> std::int64_t override;
 
-  ByteArray& data();
-  ByteArray const& data() const;
+  auto clone() -> Ptr<IODevice> override;
+
+  auto data() -> ByteArray&;
+  auto data() const -> ByteArray const&;
 
   // If this class holds the underlying data, then this method is cheap, and
   // will move the data out of this class into the returned array, otherwise,
   // this will incur a copy.  Afterwards, this Buffer will be left empty.
-  ByteArray takeData();
+  auto takeData() -> ByteArray;
 
   // Returns a pointer to the beginning of the Buffer.
-  char* ptr();
-  char const* ptr() const;
+  auto ptr() -> char*;
+  auto ptr() const -> char const*;
 
   // Same thing as size(), just size_t type (since this is in-memory)
-  size_t dataSize() const;
-  void reserve(size_t size);
+  auto dataSize() const -> std::size_t;
+  void reserve(std::size_t size);
 
   // Clears buffer, moves position to 0.
   void clear();
-  bool empty() const;
+  auto empty() const -> bool;
 
   // Reset buffer with new contents, moves position to 0.
-  void reset(size_t newSize);
+  void reset(std::size_t newSize);
   void reset(ByteArray b);
 
-  Buffer& operator=(Buffer const& buffer);
-  Buffer& operator=(Buffer&& buffer);
+  auto operator=(Buffer const& buffer) -> Buffer&;
+  auto operator=(Buffer&& buffer) -> Buffer&;
 
 private:
-  size_t doRead(size_t pos, char* data, size_t len);
-  size_t doWrite(size_t pos, char const* data, size_t len);
+  auto doRead(std::size_t pos, char* data, std::size_t len) -> std::size_t;
+  auto doWrite(std::size_t pos, char const* data, std::size_t len) -> std::size_t;
 
-  size_t m_pos;
+  std::size_t m_pos;
   ByteArray m_bytes;
 };
 
@@ -79,47 +78,47 @@ public:
   ExternalBuffer();
   // Constructs a ReadOnly ExternalBuffer pointing to the given external data, which
   // must be valid for the lifetime of the ExternalBuffer.
-  ExternalBuffer(char const* externalData, size_t len);
+  ExternalBuffer(char const* externalData, std::size_t len);
 
   ExternalBuffer(ExternalBuffer const& buffer) = default;
-  ExternalBuffer& operator=(ExternalBuffer const& buffer) = default;
+  auto operator=(ExternalBuffer const& buffer) -> ExternalBuffer& = default;
 
-  StreamOffset pos() override;
-  void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) override;
-  bool atEnd() override;
+  auto pos() -> std::int64_t override;
+  void seek(std::int64_t pos, IOSeek mode = IOSeek::Absolute) override;
+  auto atEnd() -> bool override;
 
-  size_t read(char* data, size_t len) override;
-  size_t write(char const* data, size_t len) override;
+  auto read(char* data, std::size_t len) -> std::size_t override;
+  auto write(char const* data, std::size_t len) -> std::size_t override;
 
-  size_t readAbsolute(StreamOffset readPosition, char* data, size_t len) override;
-  size_t writeAbsolute(StreamOffset writePosition, char const* data, size_t len) override;
+  auto readAbsolute(std::int64_t readPosition, char* data, std::size_t len) -> std::size_t override;
+  auto writeAbsolute(std::int64_t writePosition, char const* data, std::size_t len) -> std::size_t override;
 
-  String deviceName() const override;
+  auto deviceName() const -> String override;
 
-  StreamOffset size() override;
-  
-  IODevicePtr clone() override;
+  auto size() -> std::int64_t override;
+
+  auto clone() -> Ptr<IODevice> override;
 
   // Returns a pointer to the beginning of the Buffer.
-  char const* ptr() const;
+  auto ptr() const -> char const*;
 
-  // Same thing as size(), just size_t type (since this is in-memory)
-  size_t dataSize() const;
+  // Same thing as size(), just std::size_t type (since this is in-memory)
+  auto dataSize() const -> std::size_t;
 
   // Clears buffer, moves position to 0.
-  bool empty() const;
+  auto empty() const -> bool;
 
   operator bool() const;
 
   // Reset buffer with new contents, moves position to 0.
-  void reset(char const* externalData, size_t len);
+  void reset(char const* externalData, std::size_t len);
 
 private:
-  size_t doRead(size_t pos, char* data, size_t len);
+  auto doRead(std::size_t pos, char* data, std::size_t len) -> std::size_t;
 
-  size_t m_pos;
+  std::size_t m_pos;
   char const* m_bytes;
-  size_t m_size;
+  std::size_t m_size;
 };
 
 }

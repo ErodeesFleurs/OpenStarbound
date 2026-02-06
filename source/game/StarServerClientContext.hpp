@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarNetElementSystem.hpp"
+#include <optional>
 #include "StarThread.hpp"
 #include "StarUuid.hpp"
 #include "StarJsonRpc.hpp"
@@ -19,11 +20,11 @@ STAR_CLASS(ServerClientContext);
 
 class ServerClientContext {
 public:
-  ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
+  ServerClientContext(ConnectionId clientId, std::optional<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
       String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks);
 
   ConnectionId clientId() const;
-  Maybe<HostAddress> const& remoteAddress() const;
+  std::optional<HostAddress> const& remoteAddress() const;
   Uuid const& playerUuid() const;
   String const& playerName() const;
   String const& shipSpecies() const;
@@ -44,8 +45,8 @@ public:
 
   // Warp action and warp mode to the planet the player is currently orbiting
   // valid when the player is on any ship world orbiting a location
-  Maybe<pair<WarpAction, WarpMode>> orbitWarpAction() const;
-  void setOrbitWarpAction(Maybe<pair<WarpAction, WarpMode>> warpAction);
+  std::optional<pair<WarpAction, WarpMode>> orbitWarpAction() const;
+  void setOrbitWarpAction(std::optional<pair<WarpAction, WarpMode>> warpAction);
 
   bool isAdmin() const;
   void setAdmin(bool admin);
@@ -90,7 +91,7 @@ public:
 
 private:
   ConnectionId const m_clientId;
-  Maybe<HostAddress> const m_remoteAddress;
+  std::optional<HostAddress> const m_remoteAddress;
   NetCompatibilityRules m_netRules;
   Uuid const m_playerUuid;
   String const m_playerName;
@@ -114,7 +115,7 @@ private:
   uint64_t m_netVersion = 0;
   int64_t m_creationTime;
 
-  NetElementData<Maybe<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
+  NetElementData<std::optional<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
   NetElementData<WorldId> m_playerWorldIdNetState;
   NetElementBool m_isAdminNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;

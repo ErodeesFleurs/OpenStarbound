@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarString.hpp"
 #include "StarEncode.hpp"
 #include "StarBytes.hpp"
@@ -41,7 +43,7 @@ private:
 
   String word();
   Char parseBackslash();
-  Char parseUnicodeEscapeSequence(Maybe<Char> previousCodepoint = {});
+  Char parseUnicodeEscapeSequence(std::optional<Char> previousCodepoint = {});
 
   bool isSpace(Char letter) const;
   bool isQuote(Char letter) const;
@@ -49,9 +51,9 @@ private:
   bool inQuotedString() const;
   bool notDone() const;
 
-  Maybe<Char> current() const;
-  Maybe<Char> next();
-  Maybe<Char> previous();
+  std::optional<Char> current() const;
+  std::optional<Char> next();
+  std::optional<Char> previous();
 
   String::const_iterator m_begin;
   String::const_iterator m_current;

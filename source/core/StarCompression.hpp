@@ -2,10 +2,9 @@
 
 #include "StarIODevice.hpp"
 #include "StarString.hpp"
+#include "StarConfig.hpp"
 
 namespace Star {
-
-STAR_CLASS(CompressedFile);
 
 // Zlib compression level, ranges from 0 to 9
 typedef int CompressionLevel;
@@ -25,7 +24,7 @@ ByteArray uncompressData(ByteArray const& in, size_t limit = 0);
 // Random access to a (potentially) compressed file.
 class CompressedFile : public IODevice {
 public:
-  static CompressedFilePtr open(String const& filename, IOMode mode, CompressionLevel comp = MediumCompression);
+  static Ptr<CompressedFile> open(String const& filename, IOMode mode, CompressionLevel comp = MediumCompression);
 
   CompressedFile();
   CompressedFile(String filename);
@@ -34,10 +33,10 @@ public:
   void setFilename(String filename);
   void setCompression(CompressionLevel compression);
 
-  StreamOffset pos() override;
+  std::int64_t pos() override;
   // Only seek forward is supported on writes.  Seek is emulated *slowly* on
   // reads.
-  void seek(StreamOffset pos, IOSeek seek = IOSeek::Absolute) override;
+  void seek(std::int64_t pos, IOSeek seek = IOSeek::Absolute) override;
   bool atEnd() override;
   size_t read(char* data, size_t len) override;
   size_t write(char const* data, size_t len) override;
@@ -49,7 +48,7 @@ public:
   void sync() override;
   void close() override;
 
-  IODevicePtr clone() override;
+  Ptr<IODevice> clone() override;
 
 private:
   String m_filename;

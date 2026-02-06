@@ -42,7 +42,7 @@ private:
   Set<pair<NodeParameterType, String>> m_ephemeral;
 };
 
-typedef Maybe<Variant<ActionState,DecoratorState,CompositeState>> NodeState;
+typedef std::optional<Variant<ActionState,DecoratorState,CompositeState>> NodeState;
 typedef shared_ptr<NodeState> NodeStatePtr;
 
 typedef pair<LuaFunction, LuaThread> Coroutine;
@@ -75,7 +75,7 @@ struct CompositeState {
 
 class BehaviorState {
 public:
-  BehaviorState(BehaviorTreeConstPtr tree, LuaTable context, Maybe<BlackboardWeakPtr> blackboard = {});
+  BehaviorState(BehaviorTreeConstPtr tree, LuaTable context, std::optional<BlackboardWeakPtr> blackboard = {});
 
   NodeStatus run(float dt);
   void clear();

@@ -1,9 +1,10 @@
 #pragma once
 
-#include "StarDrawable.hpp"
 #include "StarAnchorableEntity.hpp"
 #include "StarStatusTypes.hpp"
 #include "StarEntityRenderingTypes.hpp"
+
+#include <optional>
 
 namespace Star {
 
@@ -25,12 +26,12 @@ struct LoungeAnchor : EntityAnchor {
   bool controllable;
   List<PersistentStatusEffect> statusEffects;
   StringSet effectEmitters;
-  Maybe<String> emote;
-  Maybe<String> dance;
-  Maybe<Directives> directives;
+  std::optional<String> emote;
+  std::optional<String> dance;
+  std::optional<Directives> directives;
   JsonObject armorCosmeticOverrides;
-  Maybe<String> cursorOverride;
-  Maybe<bool> suppressTools;
+  std::optional<String> cursorOverride;
+  std::optional<bool> suppressTools;
   bool cameraFocus;
 };
 
@@ -60,7 +61,7 @@ public:
 // in the same spot.
 class LoungingEntity : public virtual Entity {
 public:
-  virtual Maybe<EntityAnchorState> loungingIn() const = 0;
+  virtual std::optional<EntityAnchorState> loungingIn() const = 0;
   // Returns true if the entity is in a lounge achor, but other entities are
   // also reporting being in that lounge anchor.
   bool inConflictingLoungeAnchor() const;

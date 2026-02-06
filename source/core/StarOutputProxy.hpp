@@ -3,8 +3,7 @@
 
 #include "StarOstreamFormatter.hpp"
 
-#include <format>
-#include <functional>
+import std;
 
 namespace Star {
 

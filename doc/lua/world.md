@@ -66,7 +66,7 @@ Returns `true` if the tile at the specified point matches any of the specified c
 
 ---
 
-#### `Tuple<Maybe<Vec2F>, Maybe<Vec2F>>` world.lineCollision(`Vec2F` startPoint, `Vec2F` endPoint, [`CollisionSet` collisionKinds])
+#### `Tuple<std::optional<Vec2F>, std::optional<Vec2F>>` world.lineCollision(`Vec2F` startPoint, `Vec2F` endPoint, [`CollisionSet` collisionKinds])
 
 If the line between the specified points overlaps any generated collision geometry of the specified collision kinds, returns the point at which the line collides, or `nil` if the line does not collide. If intersecting a side of the poly, also returns the normal of the intersected side as a second return.
 
@@ -78,7 +78,7 @@ Returns `true` if the line between the specified points overlaps any tiles of th
 
 ---
 
-#### `Maybe<pair<Vec2F, Vec2F>>` world.lineTileCollisionPoint(`Vec2F` startPoint, `Vec2F` endPoint, [`CollisionSet` collisionKinds])
+#### `std::optional<pair<Vec2F, Vec2F>>` world.lineTileCollisionPoint(`Vec2F` startPoint, `Vec2F` endPoint, [`CollisionSet` collisionKinds])
 
 Returns a table of {`position`, `normal`} where `position` is the position that the line intersects the first collidable tile, and `normal` is the collision normal. Returns `nil` if no tile is intersected.
 
@@ -585,7 +585,7 @@ Returns the item descriptor of an item drop's contents.
 
 ---
 
-### `Maybe<List<MaterialId>>` world.biomeBlocksAt(`Vec2I` position)
+### `std::optional<List<MaterialId>>` world.biomeBlocksAt(`Vec2I` position)
 
 Returns the list of biome specific blocks that can place in the biome at the specified position.
 
@@ -1009,12 +1009,12 @@ Sets the planet type of the current world to `planetType` with primary biome `pr
 
 ---
 
-#### `void` world.setDungeonGravity(`DungeonId` dungeonId, `Maybe<float>` gravity)
+#### `void` world.setDungeonGravity(`DungeonId` dungeonId, `std::optional<float>` gravity)
 
 Sets the overriding gravity for the specified dungeon id, or returns it to the world default if unspecified.
 
 ---
 
-#### `void` world.setDungeonBreathable(`DungeonId` dungeonId, `Maybe<bool>` breathable)
+#### `void` world.setDungeonBreathable(`DungeonId` dungeonId, `std::optional<bool>` breathable)
 
 Sets the overriding breathability for the specified dungeon id, or returns it to the world default if unspecified.

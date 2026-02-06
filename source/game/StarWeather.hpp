@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarNetElementSystem.hpp"
 #include "StarWeatherTypes.hpp"
 #include "StarWorldGeometry.hpp"
@@ -33,7 +35,7 @@ public:
 
   void update(double dt);
 
-  // Immediately sets the active weather index. If the index is NPos or out of
+  // Immediately sets the active weather index. If the index is std::numeric_limits<std::size_t>::max() or out of
   // range, weather is cleared.  If force is true, weather will not automatically
   // change until setWeatherIndex/SetWeather is called again.
   void setWeatherIndex(size_t weatherIndex, bool force = false);
@@ -67,14 +69,14 @@ private:
   List<RectI> m_clientVisibleRegions;
 
   size_t m_currentWeatherIndex;
-  Maybe<WeatherType> m_currentWeatherType;
+  std::optional<WeatherType> m_currentWeatherType;
   float m_currentWeatherIntensity;
   float m_currentWind;
 
   bool m_forceWeather;
 
   ClockConstPtr m_referenceClock;
-  Maybe<double> m_clockTrackingTime;
+  std::optional<double> m_clockTrackingTime;
 
   double m_currentTime;
   double m_lastWeatherChangeTime;
@@ -121,7 +123,7 @@ private:
   WeatherEffectsActiveQuery m_weatherEffectsActiveQuery;
 
   size_t m_currentWeatherIndex;
-  Maybe<WeatherType> m_currentWeatherType;
+  std::optional<WeatherType> m_currentWeatherType;
   float m_currentWeatherIntensity;
   float m_currentWind;
 

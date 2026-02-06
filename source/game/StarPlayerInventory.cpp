@@ -2,13 +2,9 @@
 #include "StarRoot.hpp"
 #include "StarCurrency.hpp"
 #include "StarArmors.hpp"
-#include "StarLiquidItem.hpp"
 #include "StarMaterialItem.hpp"
-#include "StarObjectItem.hpp"
 #include "StarItemDatabase.hpp"
-#include "StarPointableItem.hpp"
 #include "StarItemBag.hpp"
-#include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
@@ -342,7 +338,6 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
     if (quantity > 0) {
       auto res = pair.second->consumeItems(one.multiply(quantity), exactMatch);
       _unused(res);
-      starAssert(res);
       leftoverCount -= quantity;
     }
   }
@@ -356,12 +351,10 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
         auto toConsume = min(p.second->count(), quantity);
         auto res = p.second->consume(toConsume);
         _unused(res);
-        starAssert(res);
 
         leftoverQuantity -= toConsume;
       }
     }
-    starAssert(leftoverQuantity == 0);
     leftoverCount -= quantity;
   }
 
@@ -371,10 +364,8 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
       auto toConsume = std::min(m_swapSlot->count(), quantity);
       auto res = m_swapSlot->consume(toConsume);
       _unused(res);
-      starAssert(res);
 
       quantity -= toConsume;
-      starAssert(quantity == 0);
     }
     leftoverCount -= std::min(leftoverCount, consumeFromSwap);
   }
@@ -385,15 +376,12 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
       auto toConsume = std::min(m_trashSlot->count(), quantity);
       auto res = m_trashSlot->consume(toConsume);
       _unused(res);
-      starAssert(res);
 
       quantity -= toConsume;
-      starAssert(quantity == 0);
     }
     leftoverCount -= std::min(leftoverCount, consumeFromTrash);
   }
 
-  starAssert(leftoverCount == 0);
   return true;
 }
 
@@ -590,7 +578,7 @@ bool PlayerInventory::clearSwap() {
   };
 
   if (m_swapReturnSlot)
-    trySlot(m_swapReturnSlot.take());
+    trySlot(take(*m_swapReturnSlot));
 
   trySlot(EquipmentSlot::Head);
   trySlot(EquipmentSlot::Chest);
@@ -650,15 +638,15 @@ bool PlayerInventory::consumeCurrency(String const& currencyType, uint64_t amoun
   }
 }
 
-Maybe<InventorySlot> PlayerInventory::customBarPrimarySlot(CustomBarIndex customBarIndex) const {
-  return m_customBar.at(m_customBarGroup, customBarIndex).first;
+std::optional<InventorySlot> PlayerInventory::customBarPrimarySlot(CustomBarIndex customBarIndex) const {
+  return m_customBar(m_customBarGroup, customBarIndex).first;
 }
 
-Maybe<InventorySlot> PlayerInventory::customBarSecondarySlot(CustomBarIndex customBarIndex) const {
-  return m_customBar.at(m_customBarGroup, customBarIndex).second;
+std::optional<InventorySlot> PlayerInventory::customBarSecondarySlot(CustomBarIndex customBarIndex) const {
+  return m_customBar(m_customBarGroup, customBarIndex).second;
 }
 
-void PlayerInventory::setCustomBarPrimarySlot(CustomBarIndex customBarIndex, Maybe<InventorySlot> slot) {
+void PlayerInventory::setCustomBarPrimarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot) {
   // The primary slot is not allowed to point to an empty item.
   if (slot) {
     if (!itemsAt(*slot))
@@ -675,7 +663,7 @@ void PlayerInventory::setCustomBarPrimarySlot(CustomBarIndex customBarIndex, May
   }
 }
 
-void PlayerInventory::setCustomBarSecondarySlot(CustomBarIndex customBarIndex, Maybe<InventorySlot> slot) {
+void PlayerInventory::setCustomBarSecondarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot) {
   auto& cbl = m_customBar.at(m_customBarGroup, customBarIndex);
   // The secondary slot is not allowed to point to an empty item or a two
   // handed item.
@@ -700,7 +688,7 @@ void PlayerInventory::addToCustomBar(InventorySlot slot) {
   for (size_t j = 0; j < m_customBar.size(1); ++j) {
     auto& cbl = m_customBar.at(m_customBarGroup, j);
     if (!cbl.first && !cbl.second) {
-      cbl.first.set(slot);
+      cbl.first = slot;
       break;
     }
   }
@@ -761,7 +749,7 @@ ItemPtr PlayerInventory::secondaryHeldItem() const {
   return {};
 }
 
-Maybe<InventorySlot> PlayerInventory::primaryHeldSlot() const {
+std::optional<InventorySlot> PlayerInventory::primaryHeldSlot() const {
   if (m_swapSlot)
     return InventorySlot(SwapSlot());
   if (m_selectedActionBar.is<CustomBarIndex>())
@@ -769,7 +757,7 @@ Maybe<InventorySlot> PlayerInventory::primaryHeldSlot() const {
   return {};
 }
 
-Maybe<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
+std::optional<InventorySlot> PlayerInventory::secondaryHeldSlot() const {
   if (m_swapSlot || itemSafeTwoHanded(primaryHeldItem()))
     return {};
   if (m_selectedActionBar.is<CustomBarIndex>())
@@ -825,7 +813,7 @@ void PlayerInventory::load(Json const& store) {
   for (size_t i = 0; i < m_customBar.size(0); ++i) {
     for (size_t j = 0; j < m_customBar.size(1); ++j) {
       Json cbl = store.get("customBar").get(i, JsonArray()).get(j, JsonArray());
-      auto validateLink = [this](Maybe<InventorySlot> link) -> Maybe<InventorySlot> {
+      auto validateLink = [this](std::optional<InventorySlot> link) -> std::optional<InventorySlot> {
         if (link && link->is<BagSlot>()) {
           auto& slot = link->get<BagSlot>();
           if (m_bags.contains(slot.first) && size_t(slot.second) < m_bags[slot.first]->size())
@@ -850,7 +838,7 @@ void PlayerInventory::load(Json const& store) {
   m_essential[EssentialItem::PaintTool] = itemDatabase->diskLoad(store.get("paintTool"));
   m_essential[EssentialItem::InspectionTool] = itemDatabase->diskLoad(store.get("inspectionTool"));
 
-  m_equipmentVisibilityMask = (unsigned)store.optUInt("equipmentVisibilityMask").value(0xFFFFFFFF);
+  m_equipmentVisibilityMask = (unsigned)store.optUInt("equipmentVisibilityMask").value_or(0xFFFFFFFF);
 }
 
 Json PlayerInventory::store() const {

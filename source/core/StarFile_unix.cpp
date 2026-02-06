@@ -210,7 +210,7 @@ void* File::fopen(char const* filename, IOMode mode) {
   return handleFromFd(fd);
 }
 
-void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {
+void File::fseek(void* f, std::int64_t offset, IOSeek seekMode) {
   auto fd = fdFromHandle(f);
   int retCode;
   if (seekMode == IOSeek::Relative)
@@ -224,7 +224,7 @@ void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {
     throw IOException::format("Seek error: {}", strerror(errno));
 }
 
-StreamOffset File::ftell(void* f) {
+std::int64_t File::ftell(void* f) {
   return lseek(fdFromHandle(f), 0, SEEK_CUR);
 }
 
@@ -272,22 +272,22 @@ void File::fclose(void* file) {
     throw IOException::format("Close error: {}", strerror(errno));
 }
 
-StreamOffset File::fsize(void* file) {
-  StreamOffset pos = ftell(file);
-  StreamOffset size = lseek(fdFromHandle(file), 0, SEEK_END);
+std::int64_t File::fsize(void* file) {
+  std::int64_t pos = ftell(file);
+  std::int64_t size = lseek(fdFromHandle(file), 0, SEEK_END);
   lseek(fdFromHandle(file), pos, SEEK_SET);
   return size;
 }
 
-size_t File::pread(void* file, char* data, size_t len, StreamOffset position) {
+size_t File::pread(void* file, char* data, size_t len, std::int64_t position) {
   return ::pread(fdFromHandle(file), data, len, position);
 }
 
-size_t File::pwrite(void* file, char const* data, size_t len, StreamOffset position) {
+size_t File::pwrite(void* file, char const* data, size_t len, std::int64_t position) {
   return ::pwrite(fdFromHandle(file), data, len, position);
 }
 
-void File::resize(void* f, StreamOffset size) {
+void File::resize(void* f, std::int64_t size) {
   if (::ftruncate(fdFromHandle(f), size) < 0)
     throw IOException::format("resize error: {}", strerror(errno));
 }

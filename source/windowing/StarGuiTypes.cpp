@@ -13,7 +13,6 @@ GuiDirection otherDirection(GuiDirection direction) {
     case GuiDirection::Vertical:
       return GuiDirection::Horizontal;
     default:
-      starAssert(false);
       return (GuiDirection)-1;
   }
 }

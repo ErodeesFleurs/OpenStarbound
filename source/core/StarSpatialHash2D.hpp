@@ -5,6 +5,8 @@
 #include "StarSet.hpp"
 #include "StarBlockAllocator.hpp"
 
+#include <optional>
+
 namespace Star {
 
 // Dual-map based on key and 2 dimensional bounding rectangle.  Implements a 2d
@@ -69,7 +71,7 @@ public:
   template <typename RectCollection>
   void set(Key const& key, RectCollection const& rects, Value value);
 
-  Maybe<Value> remove(Key const& key);
+  std::optional<Value> remove(Key const& key);
 
   // Recalculates every item in sector map
   void setSectorSize(Scalar const& sectorSize);
@@ -255,13 +257,13 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key con
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::remove(Key const& key) -> Maybe<Value> {
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::remove(Key const& key) -> std::optional<Value> {
   auto iter = m_entryMap.find(key);
   if (iter == m_entryMap.end())
-    return {};
+    return std::nullopt;
 
   removeSpatial(&iter->second);
-  Maybe<Value> val = std::move(iter->second.value);
+  std::optional<Value> val = std::move(iter->second.value);
   m_entryMap.erase(iter);
   return val;
 }

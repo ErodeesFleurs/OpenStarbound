@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarAiTypes.hpp"
 #include "StarUuid.hpp"
 #include "StarDrawable.hpp"
@@ -17,15 +19,15 @@ public:
   Json toJson() const;
 
   Uuid podUuid() const;
-  Maybe<String> name() const;
-  Maybe<String> description() const;
+  std::optional<String> name() const;
+  std::optional<String> description() const;
 
   List<Drawable> portrait() const;
 
-  Maybe<float> resource(String const& resourceName) const;
-  Maybe<float> resourceMax(String const& resourceName) const;
+  std::optional<float> resource(String const& resourceName) const;
+  std::optional<float> resourceMax(String const& resourceName) const;
 
-  Maybe<float> stat(String const& statName) const;
+  std::optional<float> stat(String const& statName) const;
 
 private:
   Json m_json;
@@ -46,7 +48,7 @@ public:
 
   void dismissCompanion(String const& category, Uuid const& podUuid);
 
-  Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  std::optional<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
   void update(float dt);
 
 private:

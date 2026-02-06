@@ -4,6 +4,8 @@
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
 
+import std;
+
 namespace Star {
 
 // Asset paths are not filesystem paths.  '/' is always the directory separator,
@@ -55,10 +57,10 @@ struct AssetPath {
   AssetPath() = default;
   AssetPath(const char* path);
   AssetPath(String const& path);
-  AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives);
-  AssetPath(const String& basePath, const Maybe<String>& subPath, const DirectivesGroup& directives);
+  AssetPath(String&& basePath, std::optional<String>&& subPath, DirectivesGroup&& directives);
+  AssetPath(const String& basePath, const std::optional<String>& subPath, const DirectivesGroup& directives);
   String basePath;
-  Maybe<String> subPath;
+  std::optional<String> subPath;
   DirectivesGroup directives;
 
   bool operator==(AssetPath const& rhs) const;

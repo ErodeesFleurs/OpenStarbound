@@ -1,6 +1,8 @@
 #pragma once
 
 
+#include <optional>
+
 #include "StarJson.hpp"
 
 namespace Star {
@@ -117,9 +119,9 @@ private:
   Json m_jsonValue;
   ElementList m_elements;
   // Used to preserve the formatting of numbers, i.e. -0 vs 0, 1.0 vs 1:
-  Maybe<String> m_formatting;
+  std::optional<String> m_formatting;
 
-  Maybe<ElementLocation> m_lastKey, m_lastValue;
+  std::optional<ElementLocation> m_lastKey, m_lastValue;
   Map<String, pair<ElementLocation, ElementLocation>> m_objectEntryLocations;
   List<ElementLocation> m_arrayElementLocations;
 };

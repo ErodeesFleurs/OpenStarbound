@@ -49,7 +49,7 @@ CelestialCoordinate ClientContext::shipCoordinate() const {
   return m_shipCoordinate.get();
 }
 
-Maybe<pair<WarpAction, WarpMode>> ClientContext::orbitWarpAction() const {
+std::optional<pair<WarpAction, WarpMode>> ClientContext::orbitWarpAction() const {
   return m_orbitWarpActionNetState.get();
 }
 

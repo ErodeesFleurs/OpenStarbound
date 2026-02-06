@@ -115,7 +115,7 @@ EntityMapPtr const& WorldStorage::entityMap() const {
   return m_entityMap;
 }
 
-Maybe<WorldStorage::Sector> WorldStorage::sectorForPosition(Vec2I const& position) const {
+std::optional<WorldStorage::Sector> WorldStorage::sectorForPosition(Vec2I const& position) const {
   auto s = m_tileArray->sectorFor(position);
   if (m_tileArray->sectorValid(s))
     return s;
@@ -126,7 +126,7 @@ List<WorldStorage::Sector> WorldStorage::sectorsForRegion(RectI const& region) c
   return m_tileArray->validSectorsFor(region);
 }
 
-Maybe<RectI> WorldStorage::regionForSector(Sector sector) const {
+std::optional<RectI> WorldStorage::regionForSector(Sector sector) const {
   if (m_tileArray->sectorValid(sector))
     return m_tileArray->sectorRegion(sector);
   return {};
@@ -136,7 +136,7 @@ SectorLoadLevel WorldStorage::sectorLoadLevel(Sector sector) const {
   return m_sectorMetadata.value(sector).loadLevel;
 }
 
-Maybe<SectorGenerationLevel> WorldStorage::sectorGenerationLevel(Sector sector) const {
+std::optional<SectorGenerationLevel> WorldStorage::sectorGenerationLevel(Sector sector) const {
   if (auto p = m_sectorMetadata.ptr(sector))
     return p->generationLevel;
   return {};
@@ -202,11 +202,11 @@ void WorldStorage::triggerTerraformSector(Sector sector) {
   }
 }
 
-RpcPromise<Vec2I> WorldStorage::enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) {
+RpcPromise<Vec2I> WorldStorage::enqueuePlacement(List<BiomeItemDistribution> placements, std::optional<DungeonId> id) {
   return m_generatorFacade->enqueuePlacement(std::move(distributions), id);
 }
 
-Maybe<float> WorldStorage::sectorTimeToLive(Sector sector) const {
+std::optional<float> WorldStorage::sectorTimeToLive(Sector sector) const {
   if (auto p = m_sectorMetadata.ptr(sector))
     return p->timeToLive;
   return {};
@@ -220,7 +220,7 @@ bool WorldStorage::setSectorTimeToLive(Sector sector, float newTimeToLive) {
   return false;
 }
 
-Maybe<Vec2F> WorldStorage::findUniqueEntity(String const& uniqueId) {
+std::optional<Vec2F> WorldStorage::findUniqueEntity(String const& uniqueId) {
   if (auto entity = m_entityMap->entity(m_entityMap->uniqueEntityId(uniqueId)))
     return entity->position();
 
@@ -248,7 +248,7 @@ EntityId WorldStorage::loadUniqueEntity(String const& uniqueId) {
   return {};
 }
 
-void WorldStorage::generateQueue(Maybe<size_t> sectorGenerationLevelLimit, function<bool(Sector, Sector)> sectorOrdering) {
+void WorldStorage::generateQueue(std::optional<size_t> sectorGenerationLevelLimit, function<bool(Sector, Sector)> sectorOrdering) {
   try {
     if (sectorOrdering) {
       m_generationQueue.sort([&sectorOrdering](auto const& a, auto const& b) {
@@ -260,7 +260,7 @@ void WorldStorage::generateQueue(Maybe<size_t> sectorGenerationLevelLimit, funct
       if (sectorGenerationLevelLimit && *sectorGenerationLevelLimit == 0)
         break;
 
-      auto p = generateSectorToLevel(m_generationQueue.firstKey(), SectorGenerationLevel::Complete, sectorGenerationLevelLimit.value(NPos));
+      auto p = generateSectorToLevel(m_generationQueue.firstKey(), SectorGenerationLevel::Complete, sectorGenerationLevelLimit.value(std::numeric_limits<std::size_t>::max()));
       if (p.first)
         m_generationQueue.removeFirst();
       if (sectorGenerationLevelLimit)
@@ -539,7 +539,6 @@ ByteArray WorldStorage::writeTileSector(TileSectorStore const& store) {
   DataStreamBuffer ds;
   ds.vuwrite(store.generationLevel);
   ds.vuwrite(store.tileSerializationVersion);
-  starAssert(store.tiles);
   for (size_t y = 0; y < WorldSectorSize; ++y) {
     for (size_t x = 0; x < WorldSectorSize; ++x)
       (*store.tiles)(x, y).write(ds);
@@ -891,8 +890,8 @@ void WorldStorage::mergeSectorUniques(Sector const& sector, UniqueIndexStore con
     m_db.insert(sectorUniqueKey(sector), writeSectorUniqueStore(sectorUniqueStore));
 }
 
-auto WorldStorage::getUniqueIndexEntry(String const& uniqueId) -> Maybe<SectorAndPosition> {
-  if (auto uniqueIndex = m_db.find(uniqueIndexKey(uniqueId)).apply(readUniqueIndexStore))
+auto WorldStorage::getUniqueIndexEntry(String const& uniqueId) -> std::optional<SectorAndPosition> {
+  if (auto uniqueIndex = m_db.find(uniqueIndexKey(uniqueId)).transform(readUniqueIndexStore))
     return uniqueIndex->maybe(uniqueId);
   return {};
 }

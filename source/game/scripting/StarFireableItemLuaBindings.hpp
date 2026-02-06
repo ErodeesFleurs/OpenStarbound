@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarLua.hpp"
 
 namespace Star {
@@ -10,7 +12,7 @@ namespace LuaBindings {
   LuaCallbacks makeFireableItemCallbacks(FireableItem* fireableItem);
 
   namespace FireableItemCallbacks {
-    void fire(FireableItem* fireableItem, Maybe<String> const& mode);
+    void fire(FireableItem* fireableItem, std::optional<String> const& mode);
     void triggerCooldown(FireableItem* fireableItem);
     void setCooldown(FireableItem* fireableItem, float cooldownTime);
     void endCooldown(FireableItem* fireableItem);

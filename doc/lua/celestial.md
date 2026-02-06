@@ -159,7 +159,7 @@ Returns the warp action world ID for the specified object.
 Returns the orbit of the specified object, if any.
 ---
 
-#### `Maybe<Vec2F>` celestial.objectPosition(`Uuid` uuid)
+#### `std::optional<Vec2F>` celestial.objectPosition(`Uuid` uuid)
 
 Returns the position of the specified object, if any.
 ---
@@ -188,7 +188,7 @@ Returns a list of the player ships in the current system.
 Returns the position of the specified player ship.
 ---
 
-#### `Maybe<bool>` celestial.hasChildren(`CelestialCoordinate` coordinate)
+#### `std::optional<bool>` celestial.hasChildren(`CelestialCoordinate` coordinate)
 
 Returns definitively whether the coordinate has orbiting children. `nil` return means the coordinate is not loaded.
 ---

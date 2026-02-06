@@ -2,15 +2,9 @@
 
 #include "StarString.hpp"
 
-//#define STAR_MUTEX_LOG
+import std;
 
 namespace Star {
-
-STAR_STRUCT(ThreadImpl);
-STAR_STRUCT(ThreadFunctionImpl);
-STAR_STRUCT(MutexImpl);
-STAR_STRUCT(ConditionVariableImpl);
-STAR_STRUCT(RecursiveMutexImpl);
 
 template <typename Return>
 class ThreadFunction;
@@ -19,54 +13,60 @@ class Thread {
 public:
   // Implementations of this method should sleep for at least the given amount
   // of time, but may sleep for longer due to scheduling.
-  static void sleep(unsigned millis);
+  static void sleep(unsigned millis) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(millis));
+  }
 
   // Sleep a more precise amount of time, but uses more resources to do so.
   // Should be less likely to sleep much longer than the given amount of time.
   static void sleepPrecise(unsigned millis);
 
   // Yield this thread, offering the opportunity to reschedule.
-  static void yield();
+  static void yield() {
+    std::this_thread::yield();
+  }
 
-  static unsigned numberOfProcessors();
+  static auto numberOfProcessors() -> unsigned {
+    unsigned n = std::thread::hardware_concurrency();
+    return n > 0 ? n : 1;
+  }
 
   template <typename Function, typename... Args>
-  static ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> invoke(String const& name, Function&& f, Args&&... args);
+  static auto invoke(String const& name, Function&& f, Args&&... args) -> ThreadFunction<std::invoke_result_t<Function, Args...>>;
 
   Thread(String const& name);
-  Thread(Thread&&);
+  Thread(Thread&&) noexcept;
   // Will not automatically join!  ALL implementations of this class MUST call
   // join() in their most derived constructors, or not rely on the destructor
   // joining.
   virtual ~Thread();
 
-  Thread& operator=(Thread&&);
+  auto operator=(Thread&&) noexcept -> Thread&;
 
   // Start a thread that is currently in the joined state.  Returns true if the
   // thread was joined and is now started, false if the thread was not joined.
-  bool start();
+  auto start() -> bool;
 
   // Wait for a thread to finish and re-join with the thread, on completion
-  // isJoined() will be false.  Returns true if the thread was joinable, and is
+  // isJoined() will be true.  Returns true if the thread was joinable, and is
   // now joined, false if the thread was already joined.
-  bool join();
+  auto join() -> bool;
 
-  // Returns false when this thread been started without being joined.  This is
-  // subtlely different than "!isRunning()", in that the thread could have
-  // completed its work, but a thread *must* be joined before being restarted.
-  bool isJoined() const;
+  // Returns false when this thread has been started without being joined.
+  [[nodiscard]] auto isJoined() const -> bool;
 
   // Returns false before start() has been called, true immediately after
   // start() has been called, and false once the run() method returns.
-  bool isRunning() const;
+  [[nodiscard]] auto isRunning() const -> bool;
 
-  String name();
+  [[nodiscard]] auto name() const -> String;
 
 protected:
   virtual void run() = 0;
 
 private:
-  unique_ptr<ThreadImpl> m_impl;
+  struct ThreadImpl;
+  std::unique_ptr<ThreadImpl> m_impl;
 };
 
 // Wraps a function call and calls in another thread, very nice lightweight
@@ -77,11 +77,11 @@ template <>
 class ThreadFunction<void> {
 public:
   ThreadFunction();
-  ThreadFunction(ThreadFunction&&);
+  ThreadFunction(ThreadFunction&&) noexcept;
 
   // Automatically starts the given function, ThreadFunction can also be
   // constructed with Thread::invoke, which is a shorthand.
-  ThreadFunction(function<void()> function, String const& name);
+  ThreadFunction(std::function<void()> function, String const& name);
 
   // Automatically calls finish, though BEWARE that often times this is quite
   // dangerous, and this is here mostly as a fallback.  The natural destructor
@@ -89,7 +89,7 @@ public:
   // since this destructor calls finish it will throw.
   ~ThreadFunction();
 
-  ThreadFunction& operator=(ThreadFunction&&);
+  auto operator=(ThreadFunction&&) noexcept -> ThreadFunction&;
 
   // Waits on function finish if function is assigned and started, otherwise
   // does nothing.  If the function threw an exception, it will be re-thrown
@@ -99,121 +99,128 @@ public:
   // Returns whether the ThreadFunction::finish method been called and the
   // ThreadFunction has stopped.  Also returns true when the ThreadFunction has
   // been default constructed.
-  bool isFinished() const;
+  [[nodiscard]] auto isFinished() const -> bool;
   // Returns false if the thread function has stopped running, whether or not
   // finish() has been called.
-  bool isRunning() const;
+  [[nodiscard]] auto isRunning() const -> bool;
 
   // Equivalent to !isFinished()
   explicit operator bool() const;
 
-  String name();
+  [[nodiscard]] auto name() const -> String;
 
 private:
-  unique_ptr<ThreadFunctionImpl> m_impl;
+  struct ThreadFunctionImpl;
+  std::unique_ptr<ThreadFunctionImpl> m_impl;
 };
 
 template <typename Return>
 class ThreadFunction {
 public:
-  ThreadFunction();
-  ThreadFunction(ThreadFunction&&);
-  ThreadFunction(function<Return()> function, String const& name);
+  ThreadFunction() = default;
+  ThreadFunction(ThreadFunction&&) noexcept = default;
+  ThreadFunction(std::function<Return()> function, String const& name);
 
   ~ThreadFunction();
 
-  ThreadFunction& operator=(ThreadFunction&&);
+  auto operator=(ThreadFunction&&) noexcept -> ThreadFunction& = default;
 
   // Finishes the thread, moving and returning the final value of the function.
   // If the function threw an exception, finish() will rethrow that exception.
-  // May only be called once, otherwise will throw InvalidMaybeAccessException.
-  Return finish();
+  // May only be called once, otherwise will throw runtime_error.
+  auto finish() -> Return;
 
-  bool isFinished() const;
-  bool isRunning() const;
+  [[nodiscard]] auto isFinished() const -> bool;
+  [[nodiscard]] auto isRunning() const -> bool;
 
   explicit operator bool() const;
 
-  String name();
+  [[nodiscard]] auto name() const -> String;
 
 private:
   ThreadFunction<void> m_function;
-  shared_ptr<Maybe<Return>> m_return;
+  std::shared_ptr<std::optional<Return>> m_return;
 };
 
 // *Non* recursive mutex lock, for use with ConditionVariable
 class Mutex {
 public:
-  Mutex();
-  Mutex(Mutex&&);
-  ~Mutex();
+  Mutex() : m_mutex(std::make_unique<std::mutex>()) {}
+  Mutex(Mutex const&) = delete;
+  Mutex(Mutex&&) noexcept = default;
+  ~Mutex() = default;
 
-  Mutex& operator=(Mutex&&);
+  auto operator=(Mutex const&) -> Mutex& = delete;
+  auto operator=(Mutex&&) noexcept -> Mutex& = default;
 
-  void lock();
+  void lock() { m_mutex->lock(); }
 
   // Attempt to acquire the mutex without blocking.
-  bool tryLock();
+  auto tryLock() -> bool { return m_mutex->try_lock(); }
 
-  void unlock();
+  void unlock() { m_mutex->unlock(); }
 
 private:
-  friend struct ConditionVariableImpl;
-  unique_ptr<MutexImpl> m_impl;
+  friend class ConditionVariable;
+  std::unique_ptr<std::mutex> m_mutex;
 };
 
 class ConditionVariable {
 public:
-  ConditionVariable();
-  ConditionVariable(ConditionVariable&&);
-  ~ConditionVariable();
+  ConditionVariable() : m_cv(std::make_unique<std::condition_variable>()) {}
+  ConditionVariable(ConditionVariable const&) = delete;
+  ConditionVariable(ConditionVariable&&) noexcept = default;
+  ~ConditionVariable() = default;
 
-  ConditionVariable& operator=(ConditionVariable&&);
+  auto operator=(ConditionVariable const&) -> ConditionVariable& = delete;
+  auto operator=(ConditionVariable&&) noexcept -> ConditionVariable& = default;
 
   // Atomically unlocks the mutex argument and waits on the condition.  On
   // acquiring the condition, atomically returns and re-locks the mutex.  Must
   // lock the mutex before calling.  If millis is given, waits for a maximum of
   // the given milliseconds only.
-  void wait(Mutex& mutex, Maybe<unsigned> millis = {});
+  void wait(Mutex& mutex, std::optional<unsigned> millis = {}) {
+    std::unique_lock<std::mutex> lock(*mutex.m_mutex, std::adopt_lock);
+    if (millis)
+      m_cv->wait_for(lock, std::chrono::milliseconds(*millis));
+    else
+      m_cv->wait(lock);
+    lock.release(); // Return ownership to caller as per Starbound API
+  }
 
   // Wake one waiting thread.  The calling thread for is allowed to either hold
   // or not hold the mutex that the threads waiting on the condition are using,
   // both will work and result in slightly different scheduling.
-  void signal();
+  void signal() { m_cv->notify_one(); }
 
   // Wake all threads, policy for holding the mutex is the same for signal().
-  void broadcast();
+  void broadcast() { m_cv->notify_all(); }
 
 private:
-  unique_ptr<ConditionVariableImpl> m_impl;
+  std::unique_ptr<std::condition_variable> m_cv;
 };
 
 // Recursive mutex lock.  lock() may be called many times freely by the same
 // thread, but unlock() must be called an equal number of times to unlock it.
 class RecursiveMutex {
 public:
-  RecursiveMutex();
-  RecursiveMutex(RecursiveMutex&&);
-  ~RecursiveMutex();
+  RecursiveMutex() : m_mutex(std::make_unique<std::recursive_mutex>()) {}
+  RecursiveMutex(RecursiveMutex const&) = delete;
+  RecursiveMutex(RecursiveMutex&&) noexcept = default;
+  ~RecursiveMutex() = default;
 
-  RecursiveMutex& operator=(RecursiveMutex&&);
+  auto operator=(RecursiveMutex const&) -> RecursiveMutex& = delete;
+  auto operator=(RecursiveMutex&&) noexcept -> RecursiveMutex& = default;
 
-  #ifdef STAR_MUTEX_LOG
-  void setLogged(bool logged);
-  #endif
-
-  void lock();
+  void lock() { m_mutex->lock(); }
 
   // Attempt to acquire the mutex without blocking.
-  bool tryLock();
+  auto tryLock() -> bool { return m_mutex->try_lock(); }
 
-  void unlock();
+  void unlock() { m_mutex->unlock(); }
 
 private:
-  unique_ptr<RecursiveMutexImpl> m_impl;
-  #ifdef STAR_MUTEX_LOG
-  bool m_log = false;
-  #endif
+  std::unique_ptr<std::recursive_mutex> m_mutex;
 };
 
 // RAII for mutexes.  Locking and unlocking are always safe, MLocker will never
@@ -226,154 +233,184 @@ template <typename MutexType>
 class MLocker {
 public:
   // Pass false to lock to start unlocked
-  MLocker(MutexType& ref, bool lock = true);
-  ~MLocker();
+  explicit MLocker(MutexType& ref, bool lock = true)
+    : m_mutex(ref)  {
+    if (lock)
+      this->lock();
+  }
+
+  ~MLocker() {
+    unlock();
+  }
 
   MLocker(MLocker const&) = delete;
-  MLocker& operator=(MLocker const&) = delete;
+  auto operator=(MLocker const&) -> MLocker& = delete;
 
-  MutexType& mutex();
+  auto mutex() -> MutexType& { return m_mutex; }
 
-  void unlock();
-  void lock();
-  bool tryLock();
+  void unlock() {
+    if (m_locked) {
+      m_mutex.unlock();
+      m_locked = false;
+    }
+  }
+
+  void lock() {
+    if (!m_locked) {
+      m_mutex.lock();
+      m_locked = true;
+    }
+  }
+
+  auto tryLock() -> bool {
+    if (!m_locked) {
+      if (m_mutex.tryLock())
+        m_locked = true;
+    }
+
+    return m_locked;
+  }
+
+  [[nodiscard]] auto isLocked() const -> bool { return m_locked; }
 
 private:
   MutexType& m_mutex;
-  bool m_locked;
+  bool m_locked{};
 };
-typedef MLocker<Mutex> MutexLocker;
-typedef MLocker<RecursiveMutex> RecursiveMutexLocker;
+using MutexLocker = MLocker<Mutex>;
+using RecursiveMutexLocker = MLocker<RecursiveMutex>;
 
 class ReadersWriterMutex {
 public:
-  ReadersWriterMutex();
+  ReadersWriterMutex() : m_mutex(std::make_unique<std::shared_mutex>()) {}
+  ReadersWriterMutex(ReadersWriterMutex const&) = delete;
+  ReadersWriterMutex(ReadersWriterMutex&&) noexcept = default;
 
-  void readLock();
-  bool tryReadLock();
-  void readUnlock();
+  auto operator=(ReadersWriterMutex const&) -> ReadersWriterMutex& = delete;
+  auto operator=(ReadersWriterMutex&&) noexcept -> ReadersWriterMutex& = default;
 
-  void writeLock();
-  bool tryWriteLock();
-  void writeUnlock();
+  void readLock() { m_mutex->lock_shared(); }
+  auto tryReadLock() -> bool { return m_mutex->try_lock_shared(); }
+  void readUnlock() { m_mutex->unlock_shared(); }
+
+  void writeLock() { m_mutex->lock(); }
+  auto tryWriteLock() -> bool { return m_mutex->try_lock(); }
+  void writeUnlock() { m_mutex->unlock(); }
 
 private:
-  Mutex m_mutex;
-  ConditionVariable m_readCond;
-  ConditionVariable m_writeCond;
-  unsigned m_readers;
-  unsigned m_writers;
-  unsigned m_readWaiters;
-  unsigned m_writeWaiters;
+  std::unique_ptr<std::shared_mutex> m_mutex;
 };
 
 class ReadLocker {
 public:
-  ReadLocker(ReadersWriterMutex& rwlock, bool startLocked = true);
-  ~ReadLocker();
+  explicit ReadLocker(ReadersWriterMutex& rwlock, bool startLocked = true)
+    : m_lock(rwlock) {
+    if (startLocked)
+      lock();
+  }
+  ~ReadLocker() { unlock(); }
 
   ReadLocker(ReadLocker const&) = delete;
-  ReadLocker& operator=(ReadLocker const&) = delete;
+  auto operator=(ReadLocker const&) -> ReadLocker& = delete;
 
-  void unlock();
-  void lock();
-  bool tryLock();
+  void unlock() {
+    if (m_locked) {
+      m_lock.readUnlock();
+      m_locked = false;
+    }
+  }
+
+  void lock() {
+    if (!m_locked) {
+      m_lock.readLock();
+      m_locked = true;
+    }
+  }
+
+  auto tryLock() -> bool;
+
+  [[nodiscard]] auto isLocked() const -> bool { return m_locked; }
 
 private:
   ReadersWriterMutex& m_lock;
-  bool m_locked;
+  bool m_locked{};
 };
 
 class WriteLocker {
 public:
-  WriteLocker(ReadersWriterMutex& rwlock, bool startLocked = true);
-  ~WriteLocker();
+  explicit WriteLocker(ReadersWriterMutex& rwlock, bool startLocked = true)
+    : m_lock(rwlock)  {
+    if (startLocked)
+      lock();
+  }
+  ~WriteLocker() { unlock(); }
 
   WriteLocker(WriteLocker const&) = delete;
-  WriteLocker& operator=(WriteLocker const&) = delete;
+  auto operator=(WriteLocker const&) -> WriteLocker& = delete;
 
-  void unlock();
-  void lock();
-  bool tryLock();
+  void unlock() {
+    if (m_locked) {
+      m_lock.writeUnlock();
+      m_locked = false;
+    }
+  }
+
+  void lock() {
+    if (!m_locked) {
+      m_lock.writeLock();
+      m_locked = true;
+    }
+  }
+
+  auto tryLock() -> bool {
+    if (!m_locked)
+      m_locked = m_lock.tryWriteLock();
+    return m_locked;
+  }
+
+  [[nodiscard]] auto isLocked() const -> bool { return m_locked; }
 
 private:
   ReadersWriterMutex& m_lock;
-  bool m_locked;
+  bool m_locked{};
 };
 
 class SpinLock {
 public:
-  SpinLock();
+  SpinLock() = default;
 
-  void lock();
-  bool tryLock();
-  void unlock();
+  void lock() {
+    while (m_lock.test_and_set(std::memory_order::acquire)) {
+      m_lock.wait(true, std::memory_order::relaxed);
+    }
+  }
+
+  auto tryLock() -> bool {
+    return !m_lock.test_and_set(std::memory_order::acquire);
+  }
+
+  void unlock() {
+    m_lock.clear(std::memory_order::release);
+    m_lock.notify_one();
+  }
 
 private:
-  atomic_flag m_lock;
+  std::atomic_flag m_lock{};
 };
-typedef MLocker<SpinLock> SpinLocker;
-
-template <typename MutexType>
-MLocker<MutexType>::MLocker(MutexType& ref, bool l)
-  : m_mutex(ref), m_locked(false) {
-  if (l)
-    lock();
-}
-
-template <typename MutexType>
-MLocker<MutexType>::~MLocker() {
-  unlock();
-}
-
-template <typename MutexType>
-MutexType& MLocker<MutexType>::mutex() {
-  return m_mutex;
-}
-
-template <typename MutexType>
-void MLocker<MutexType>::unlock() {
-  if (m_locked) {
-    m_mutex.unlock();
-    m_locked = false;
-  }
-}
-
-template <typename MutexType>
-void MLocker<MutexType>::lock() {
-  if (!m_locked) {
-    m_mutex.lock();
-    m_locked = true;
-  }
-}
-
-template <typename MutexType>
-bool MLocker<MutexType>::tryLock() {
-  if (!m_locked) {
-    if (m_mutex.tryLock())
-      m_locked = true;
-  }
-
-  return m_locked;
-}
+using SpinLocker = MLocker<SpinLock>;
 
 template <typename Function, typename... Args>
-ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> Thread::invoke(String const& name, Function&& f, Args&&... args) {
-  return {bind(std::forward<Function>(f), std::forward<Args>(args)...), name};
+auto Thread::invoke(String const& name, Function&& f, Args&&... args) -> ThreadFunction<std::invoke_result_t<Function, Args...>> {
+  using Return = std::invoke_result_t<Function, Args...>;
+  return ThreadFunction<Return>(std::bind_front(std::forward<Function>(f), std::forward<Args>(args)...), name);
 }
 
 template <typename Return>
-ThreadFunction<Return>::ThreadFunction() {}
-
-template <typename Return>
-ThreadFunction<Return>::ThreadFunction(ThreadFunction&&) = default;
-
-template <typename Return>
-ThreadFunction<Return>::ThreadFunction(function<Return()> function, String const& name) {
-  m_return = make_shared<Maybe<Return>>();
-  m_function = ThreadFunction<void>([function = std::move(function), retValue = m_return]() {
-      *retValue = function();
-    }, name);
+ThreadFunction<Return>::ThreadFunction(std::function<Return()> function, String const& name) {
+  m_return = std::make_shared<std::optional<Return>>();
+  m_function = ThreadFunction<void>([function = std::move(function), retValue = m_return]() -> auto {
+    *retValue = function();
+  }, name);
 }
 
 template <typename Return>
@@ -382,21 +419,22 @@ ThreadFunction<Return>::~ThreadFunction() {
 }
 
 template <typename Return>
-ThreadFunction<Return>& ThreadFunction<Return>::operator=(ThreadFunction&&) = default;
-
-template <typename Return>
-Return ThreadFunction<Return>::finish() {
+auto ThreadFunction<Return>::finish() -> Return {
   m_function.finish();
-  return m_return->take();
+  if (!m_return->has_value())
+    throw std::runtime_error("ThreadFunction::finish called but no return value available");
+  Return ret = std::move(**m_return);
+  m_return->reset();
+  return ret;
 }
 
 template <typename Return>
-bool ThreadFunction<Return>::isFinished() const {
+auto ThreadFunction<Return>::isFinished() const -> bool {
   return m_function.isFinished();
 }
 
 template <typename Return>
-bool ThreadFunction<Return>::isRunning() const {
+auto ThreadFunction<Return>::isRunning() const -> bool {
   return m_function.isRunning();
 }
 
@@ -406,25 +444,12 @@ ThreadFunction<Return>::operator bool() const {
 }
 
 template <typename Return>
-String ThreadFunction<Return>::name() {
+auto ThreadFunction<Return>::name() const -> String {
   return m_function.name();
 }
 
-inline SpinLock::SpinLock() {
-  m_lock.clear();
-}
-
-inline void SpinLock::lock() {
-  while (m_lock.test_and_set(std::memory_order_acquire))
-    ;
-}
-
-inline void SpinLock::unlock() {
-  m_lock.clear(std::memory_order_release);
-}
-
-inline bool SpinLock::tryLock() {
-  return !m_lock.test_and_set(std::memory_order_acquire);
+inline ThreadFunction<void>::operator bool() const {
+  return !isFinished();
 }
 
 }

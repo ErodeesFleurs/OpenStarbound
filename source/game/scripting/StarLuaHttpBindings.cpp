@@ -82,22 +82,22 @@ bool isTrustedDomain(String const& domain) {
 
 String extractDomain(String const& url) {
   const size_t end = url.find("://");
-  if (end == NPos)
+  if (end == std::numeric_limits<std::size_t>::max())
     return url;
 
   const size_t domainStart = end + 3;
   const size_t pathStart = url.find('/', domainStart);
   const size_t portStart = url.find(':', domainStart);
 
-  size_t domainEnd = NPos;
-  if (pathStart != NPos && portStart != NPos)
+  size_t domainEnd = std::numeric_limits<std::size_t>::max();
+  if (pathStart != std::numeric_limits<std::size_t>::max() && portStart != std::numeric_limits<std::size_t>::max())
     domainEnd = std::min(pathStart, portStart);
-  else if (pathStart != NPos)
+  else if (pathStart != std::numeric_limits<std::size_t>::max())
     domainEnd = pathStart;
-  else if (portStart != NPos)
+  else if (portStart != std::numeric_limits<std::size_t>::max())
     domainEnd = portStart;
 
-  if (domainEnd == NPos)
+  if (domainEnd == std::numeric_limits<std::size_t>::max())
     return url.substr(domainStart);
   return url.substr(domainStart, domainEnd - domainStart);
 }

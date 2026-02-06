@@ -82,12 +82,12 @@ pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList co
   size_t minimumArguments = 0;
   size_t maximumArguments = 0;
   for (auto const& argument : m_arguments) {
-    if ((argument.requirementMode == Optional || argument.requirementMode == Required) && maximumArguments != NPos)
+    if ((argument.requirementMode == Optional || argument.requirementMode == Required) && maximumArguments != std::numeric_limits<std::size_t>::max())
       ++maximumArguments;
     if (argument.requirementMode == Required)
       ++minimumArguments;
     if (argument.requirementMode == Multiple)
-      maximumArguments = NPos;
+      maximumArguments = std::numeric_limits<std::size_t>::max();
   }
   if (result.arguments.size() < minimumArguments)
     errors.append(strf(

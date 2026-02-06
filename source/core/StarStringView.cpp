@@ -96,7 +96,7 @@ bool StringView::endsWith(StringView end, CaseSensitivity cs) const {
   if (endsize > mysize)
     return false;
 
-  return compare(mysize - endsize, NPos, end, 0, NPos, cs) == 0;
+  return compare(mysize - endsize, std::numeric_limits<std::size_t>::max(), end, 0, std::numeric_limits<std::size_t>::max(), cs) == 0;
 }
 bool StringView::endsWith(Char end, CaseSensitivity cs) const {
   if (m_view.empty())
@@ -119,7 +119,7 @@ bool StringView::beginsWith(StringView beg, CaseSensitivity cs) const {
     it++;
   }
 
-  return compare(0, begSize, beg, 0, NPos, cs) == 0;
+  return compare(0, begSize, beg, 0, std::numeric_limits<std::size_t>::max(), cs) == 0;
 }
 
 bool StringView::beginsWith(Char beg, CaseSensitivity cs) const {
@@ -136,7 +136,7 @@ void StringView::forEachSplitAnyView(StringView chars, SplitCallback callback) c
   size_t beg = 0;
   while (true) {
     size_t end = m_view.find_first_of(chars.m_view, beg);
-    if (end == NPos) {
+    if (end == std::numeric_limits<std::size_t>::max()) {
       callback(m_view.substr(beg), beg, m_view.size() - beg);
       break;
     }
@@ -152,7 +152,7 @@ void StringView::forEachSplitView(StringView pattern, SplitCallback callback) co
   size_t beg = 0;
   while (true) {
     size_t end = m_view.find(pattern.m_view, beg);
-    if (end == NPos) {
+    if (end == std::numeric_limits<std::size_t>::max()) {
       callback(m_view.substr(beg), beg, m_view.size() - beg);
       break;
     }
@@ -187,7 +187,7 @@ size_t StringView::find(Char c, size_t pos, CaseSensitivity cs) const {
     ++it;
   }
 
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 size_t StringView::find(StringView str, size_t pos, CaseSensitivity cs) const {
@@ -219,13 +219,13 @@ size_t StringView::find(StringView str, size_t pos, CaseSensitivity cs) const {
     mit = ++it;
   }
 
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 size_t StringView::findLast(Char c, CaseSensitivity cs) const {
   auto it = begin();
 
-  size_t found = NPos;
+  size_t found = std::numeric_limits<std::size_t>::max();
   size_t pos = 0;
   while (it != end()) {
     if (String::charEqual(c, *it, cs))
@@ -243,7 +243,7 @@ size_t StringView::findLast(StringView str, CaseSensitivity cs) const {
 
   size_t pos = 0;
   auto it = begin();
-  size_t result = NPos;
+  size_t result = std::numeric_limits<std::size_t>::max();
   const_iterator sit = str.begin();
   const_iterator mit = it;
   while (it != end()) {
@@ -279,7 +279,7 @@ size_t StringView::findFirstOf(StringView pattern, size_t beg) const {
     ++it;
     ++i;
   }
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 size_t StringView::findFirstNotOf(StringView pattern, size_t beg) const {
@@ -294,13 +294,12 @@ size_t StringView::findFirstNotOf(StringView pattern, size_t beg) const {
     ++it;
     ++i;
   }
-  return NPos;
+  return std::numeric_limits<std::size_t>::max();
 }
 
 size_t StringView::findNextBoundary(size_t index, bool backwards) const {
   //TODO: Make this faster.
   size_t mySize = size();
-  starAssert(index <= mySize);
   if (!backwards && (index == mySize))
     return index;
   if (backwards) {
@@ -331,14 +330,14 @@ size_t StringView::findNextBoundary(size_t index, bool backwards) const {
 }
 
 bool StringView::contains(StringView s, CaseSensitivity cs) const {
-  return find(s, 0, cs) != NPos;
+  return find(s, 0, cs) != std::numeric_limits<std::size_t>::max();
 }
 
 int StringView::compare(StringView s, CaseSensitivity cs) const {
   if (cs == CaseSensitivity::CaseSensitive)
     return m_view.compare(s.m_view);
   else
-    return compare(0, NPos, s, 0, NPos, cs);
+    return compare(0, std::numeric_limits<std::size_t>::max(), s, 0, std::numeric_limits<std::size_t>::max(), cs);
 }
 
 bool StringView::equals(StringView s, CaseSensitivity cs) const {
@@ -449,4 +448,3 @@ std::ostream& operator<<(std::ostream& os, StringView const& s) {
 }
 
 }
-

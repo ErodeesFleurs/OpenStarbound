@@ -1,19 +1,16 @@
 #include "StarNpcDatabase.hpp"
-#include "StarEncode.hpp"
+#include "StarInventoryTypes.hpp"
+#include "StarNameGenerator.hpp" // IWYU pragma: keep
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarNpc.hpp"
 #include "StarRoot.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarSpeciesDatabase.hpp"
-#include "StarNameGenerator.hpp"
-#include "StarStoredFunctions.hpp"
-#include "StarAssets.hpp"
-#include "StarEncode.hpp"
 #include "StarArmors.hpp"
 #include "StarRootLuaBindings.hpp"
-#include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
+#include "StarStoredFunctions.hpp" // IWYU pragma: keep
 
 namespace Star {
 
@@ -288,8 +285,8 @@ Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
     {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)},
     {"humanoidParameters", variant.humanoidParameters}
   };
-  if (variant.description.isValid())
-    store.set("description", variant.description.value());
+  if (variant.description)
+    store.set("description", *variant.description);
   return store;
 }
 

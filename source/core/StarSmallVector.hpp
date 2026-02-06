@@ -254,13 +254,11 @@ auto SmallVector<Element, MaxStackSize>::at(size_t i) const -> const_reference {
 
 template <typename Element, size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator[](size_t i) -> reference {
-  starAssert(i < size());
   return m_begin[i];
 }
 
 template <typename Element, size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator[](size_t i) const -> const_reference {
-  starAssert(i < size());
   return m_begin[i];
 }
 
@@ -353,7 +351,7 @@ auto SmallVector<Element, MaxStackSize>::insert(iterator pos, Iterator begin, It
 }
 
 template <typename Element, size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::insert(iterator pos, initializer_list<Element> list) -> iterator {
+auto SmallVector<Element, MaxStackSize>::insert(iterator pos, std::initializer_list<Element> list) -> iterator {
   return insert(pos, list.begin(), list.end());
 }
 

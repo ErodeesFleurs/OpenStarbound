@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarStatusTypes.hpp"
 
 namespace Star {
@@ -104,9 +106,9 @@ public:
   void setResourceLocked(String const& resourceName, bool locked);
 
   // If a resource has a maximum value, this will return it.
-  Maybe<float> resourceMaxValue(String const& resourceName) const;
+  std::optional<float> resourceMaxValue(String const& resourceName) const;
   // Returns the resource percentage if the resource has a max value.
-  Maybe<float> resourcePercentage(String const& resourceName) const;
+  std::optional<float> resourcePercentage(String const& resourceName) const;
   // If the resource has a max value, then modifies the value percentage,
   // otherwise this is nonsense so throws.
   float setResourcePercentage(String const& resourceName, float resourcePercentage);
@@ -129,7 +131,7 @@ private:
     MVariant<String, float> delta;
     bool locked;
     float value;
-    Maybe<float> maxValue;
+    std::optional<float> maxValue;
 
     // Sets value and clamps between [0.0, maxStatValue] or just >= 0.0 if
     // maxStatValue is not given.

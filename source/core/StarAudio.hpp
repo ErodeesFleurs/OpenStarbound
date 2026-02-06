@@ -1,24 +1,26 @@
 #pragma once
 
+#include "StarConfig.hpp"
+#include "StarException.hpp"
 #include "StarIODevice.hpp"
-//#define STAR_STREAM_AUDIO
+
+import std;
 
 namespace Star {
 
 extern float const DefaultPerceptualRangeDb;
 extern float const DefaultPerceptualBoostRangeDb;
 
-float perceptualToAmplitude(float perceptual, float normalizedMax = 1.f,
-  float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb);
+auto perceptualToAmplitude(float perceptual, float normalizedMax = 1.f,
+  float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb) -> float;
 
-float amplitudeToPerceptual(float amp, float normalizedMax = 1.f,
-  float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb);
+auto amplitudeToPerceptual(float amp, float normalizedMax = 1.f,
+  float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb) -> float;
 
-STAR_CLASS(CompressedAudioImpl);
-STAR_CLASS(UncompressedAudioImpl);
-STAR_CLASS(Audio);
+class CompressedAudioImpl;
+class UncompressedAudioImpl;
 
-STAR_EXCEPTION(AudioException, StarException);
+using AudioException = ExceptionDerived<"AudioException">;
 
 // Simple class for reading audio files in ogg/vorbis and wav format.
 // Reads and allows for decompression of a limited subset of ogg/vorbis.  Does
@@ -27,30 +29,30 @@ STAR_EXCEPTION(AudioException, StarException);
 // instances is not expensive.
 class Audio {
 public:
-  explicit Audio(IODevicePtr device, String name = "");
+  explicit Audio(Ptr<IODevice> device, String name = "");
   Audio(Audio const& audio);
   Audio(Audio&& audio);
 
-  Audio& operator=(Audio const& audio);
-  Audio& operator=(Audio&& audio);
+  auto operator=(Audio const& audio) -> Audio&;
+  auto operator=(Audio&& audio) -> Audio&;
 
   // This function returns the number of channels that this file has.  Channels
   // are static throughout file.
-  unsigned channels() const;
+  [[nodiscard]] auto channels() const -> unsigned;
 
   // This function returns the sample rate that this file has.  Sample rates
   // are static throughout file.
-  unsigned sampleRate() const;
+  [[nodiscard]] auto sampleRate() const -> unsigned;
 
   // This function returns the playtime duration of the file.
-  double totalTime() const;
+  [[nodiscard]] auto totalTime() const -> double;
 
   // This function returns total number of samples in this file.
-  uint64_t totalSamples() const;
+  [[nodiscard]] auto totalSamples() const -> std::uint64_t;
 
   // This function returns true when the datastream or file being read from is
   // a vorbis compressed file.  False otherwise.
-  bool compressed() const;
+  [[nodiscard]] auto compressed() const -> bool;
 
   // If compressed, permanently uncompresses audio for faster reading.  The
   // uncompressed buffer is shared with all further copies of Audio, and this
@@ -61,24 +63,24 @@ public:
   void seekTime(double time);
 
   // This function seeks the data stream to the given sample number
-  void seekSample(uint64_t sample);
+  void seekSample(std::uint64_t sample);
 
   // This function converts the current offset of the file to the time value of
   // that offset in seconds.
-  double currentTime() const;
+  [[nodiscard]] auto currentTime() const -> double;
 
   // This function converts the current offset of the file to the current
   // sample number.
-  uint64_t currentSample() const;
+  [[nodiscard]] auto currentSample() const -> std::uint64_t;
 
   // Reads into 16 bit signed buffer with channels interleaved.  Returns total
   // number of samples read (counting each channel individually).  0 indicates
   // end of stream.
-  size_t readPartial(int16_t* buffer, size_t bufferSize);
+  auto readPartial(std::int16_t* buffer, std::size_t bufferSize) -> std::size_t;
 
   // Same as readPartial, but repeats read attempting to fill buffer as much as
   // possible
-  size_t read(int16_t* buffer, size_t bufferSize);
+  auto read(std::int16_t* buffer, size_t bufferSize) -> size_t;
 
   // Read into a given buffer, while also converting into the given number of
   // channels at the given sample rate and playback velocity.  If the number of
@@ -87,17 +89,17 @@ public:
   // fill the buffer as much as possible up to end of stream.  May fail to fill
   // an entire buffer depending on the destinationSampleRate / velocity /
   // available samples.
-  size_t resample(unsigned destinationChannels, unsigned destinationSampleRate,
-      int16_t* destinationBuffer, size_t destinationBufferSize,
-      double velocity = 1.0);
+  auto resample(unsigned destinationChannels, unsigned destinationSampleRate,
+      std::int16_t* destinationBuffer, size_t destinationBufferSize,
+      double velocity = 1.0) -> std::size_t;
 
-  String const& name() const;
+  [[nodiscard]] auto name() const -> String const&;
   void setName(String name);
 
 private:
   // If audio is uncompressed, this will be null.
-  CompressedAudioImplPtr m_compressed;
-  UncompressedAudioImplPtr m_uncompressed;
+  Ptr<CompressedAudioImpl> m_compressed;
+  Ptr<UncompressedAudioImpl> m_uncompressed;
 
   ByteArray m_workingBuffer;
   String m_name;

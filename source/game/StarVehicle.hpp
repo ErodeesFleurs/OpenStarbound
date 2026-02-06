@@ -30,8 +30,8 @@ public:
   ClientEntityMode clientEntityMode() const override;
 
   List<DamageSource> damageSources() const override;
-  Maybe<HitType> queryHit(DamageSource const& source) const override;
-  Maybe<PolyF> hitPoly() const override;
+  std::optional<HitType> queryHit(DamageSource const& source) const override;
+  std::optional<PolyF> hitPoly() const override;
 
   List<DamageNotification> applyDamage(DamageRequest const& damage) override;
   List<DamageNotification> selfDamageNotifications() override;
@@ -61,7 +61,7 @@ public:
   bool shouldDestroy() const override;
   void destroy(RenderCallback* renderCallback) override;
 
-  Maybe<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
 
   RectF interactiveBoundBox() const override;
   bool isInteractive() const override;
@@ -74,10 +74,10 @@ public:
 
   List<PhysicsForceRegion> forceRegions() const override;
   size_t movingCollisionCount() const override;
-  Maybe<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  std::optional<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
 
-  Maybe<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  Maybe<LuaValue> evalScript(String const& code) override;
+  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
+  std::optional<LuaValue> evalScript(String const& code) override;
 
   void setPosition(Vec2F const& position);
 
@@ -92,17 +92,17 @@ private:
     // lounge position.
     String part;
     String partAnchor;
-    Maybe<Vec2F> exitBottomOffset;
+    std::optional<Vec2F> exitBottomOffset;
     JsonObject armorCosmeticOverrides;
-    Maybe<String> cursorOverride;
-    Maybe<bool> suppressTools;
+    std::optional<String> cursorOverride;
+    std::optional<bool> suppressTools;
     bool cameraFocus;
 
     NetElementBool enabled;
     NetElementEnum<LoungeOrientation> orientation;
-    NetElementData<Maybe<String>> emote;
-    NetElementData<Maybe<String>> dance;
-    NetElementData<Maybe<String>> directives;
+    NetElementData<std::optional<String>> emote;
+    NetElementData<std::optional<String>> dance;
+    NetElementData<std::optional<String>> directives;
     NetElementData<List<PersistentStatusEffect>> statusEffects;
 
     Map<LoungeControl, MasterControlState> masterControlState;
@@ -116,19 +116,19 @@ private:
 
   struct MovingCollisionConfig {
     PhysicsMovingCollision movingCollision;
-    Maybe<String> attachToPart;
+    std::optional<String> attachToPart;
     NetElementBool enabled;
   };
 
   struct ForceRegionConfig {
     PhysicsForceRegion forceRegion;
-    Maybe<String> attachToPart;
+    std::optional<String> attachToPart;
     NetElementBool enabled;
   };
 
   struct DamageSourceConfig {
     DamageSource damageSource;
-    Maybe<String> attachToPart;
+    std::optional<String> attachToPart;
     NetElementBool enabled;
   };
 
@@ -168,7 +168,7 @@ private:
   OrderedHashMap<String, DamageSourceConfig> m_damageSources;
 
   EntityRenderLayer m_baseRenderLayer;
-  Maybe<EntityRenderLayer> m_overrideRenderLayer;
+  std::optional<EntityRenderLayer> m_overrideRenderLayer;
   
   GameTimer m_slaveHeartbeatTimer;
 };

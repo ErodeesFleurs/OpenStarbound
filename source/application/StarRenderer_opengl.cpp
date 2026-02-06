@@ -419,7 +419,7 @@ void OpenGlRenderer::setEffectScriptableParameter(String const& effectName, Stri
   ptr->parameterValue = value;
 }
 
-Maybe<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParameter(String const& effectName, String const& parameterName) {
+std::optional<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParameter(String const& effectName, String const& parameterName) {
   auto find = m_effects.find(effectName);
   if (find == m_effects.end())
     return {};
@@ -432,7 +432,7 @@ Maybe<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParameter(String
 
   return ptr->parameterValue;
 }
-Maybe<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) {
+std::optional<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) {
   auto find = m_effects.find(effectName);
   if (find == m_effects.end())
     return {};
@@ -516,7 +516,7 @@ bool OpenGlRenderer::switchEffectConfig(String const& name) {
   return true;
 }
 
-void OpenGlRenderer::setScissorRect(Maybe<RectI> const& scissorRect) {
+void OpenGlRenderer::setScissorRect(std::optional<RectI> const& scissorRect) {
   if (scissorRect == m_scissorRect)
     return;
 
@@ -777,7 +777,6 @@ void OpenGlRenderer::GlGroupedTexture::incrementBufferUseCount() {
 }
 
 void OpenGlRenderer::GlGroupedTexture::decrementBufferUseCount() {
-  starAssert(bufferUseCount != 0);
   if (bufferUseCount == 1)
     parentAtlasTexture->setLocked(false);
   --bufferUseCount;
@@ -878,7 +877,7 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
     GLuint glTextureId = glTexture->glTextureId();
 
     auto textureIndex = currentTextures.indexOf(glTextureId);
-    if (textureIndex == NPos) {
+    if (textureIndex == std::numeric_limits<std::size_t>::max()) {
       if (currentTextures.size() >= textureCount)
         finishCurrentBuffer();
 
@@ -988,7 +987,7 @@ bool OpenGlRenderer::logGlErrorSummary(String prefix) {
 void OpenGlRenderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uint8_t const* data) {
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
 
-  Maybe<GLenum> internalFormat;
+  std::optional<GLenum> internalFormat;
   GLenum format;
   GLenum type = GL_UNSIGNED_BYTE;
   if (pixelFormat == PixelFormat::RGB24)
@@ -1011,7 +1010,7 @@ void OpenGlRenderer::uploadTextureImage(PixelFormat pixelFormat, Vec2U size, uin
       throw RendererException("Unsupported texture format in OpenGlRenderer::uploadTextureImage");
   }
 
-  glTexImage2D(GL_TEXTURE_2D, 0, internalFormat.value(format), size[0], size[1], 0, format, type, data);
+  glTexImage2D(GL_TEXTURE_2D, 0, internalFormat.value_or(format), size[0], size[1], 0, format, type, data);
 }
 
 void OpenGlRenderer::flushImmediatePrimitives(Mat3F const& transformation) {
@@ -1130,7 +1129,7 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
     auto ptr = &param.second;
     auto mvalue = ptr->parameterValue;
     if (mvalue) {
-      RenderEffectParameter value = mvalue.value();
+      RenderEffectParameter value = *mvalue;
       if (auto v = value.ptr<bool>())
         glUniform1i(ptr->parameterUniform, *v);
       else if (auto v = value.ptr<int>())

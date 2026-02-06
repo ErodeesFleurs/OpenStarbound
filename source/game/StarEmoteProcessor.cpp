@@ -47,7 +47,7 @@ HumanoidEmote EmoteProcessor::detectEmotes(String const& chatter) const {
 
   for (auto option : m_emoteBindings) {
     auto p = chatter.find(option.text);
-    if (p == NPos)
+    if (p == std::numeric_limits<std::size_t>::max())
       continue;
     float r = p + (float)option.text.length() * 0.01f;
     if (r > bestMatch) {

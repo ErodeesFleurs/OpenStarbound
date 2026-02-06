@@ -71,7 +71,7 @@ layout.
 
 ### ScrollArea helpers
 
-#### `Maybe<Vec2I>` widget.getScrollOffset(`String` widgetName)
+#### `std::optional<Vec2I>` widget.getScrollOffset(`String` widgetName)
 
 Gets the current scroll offset of a ScrollArea widget. Returns `nil` if the widget is not a ScrollArea.
 

@@ -140,7 +140,7 @@ Returns whether the npc is currently lounging.
 
 ---
 
-#### `Maybe<EntityId>` npc.loungingIn()
+#### `std::optional<EntityId>` npc.loungingIn()
 
 Returns the EntityId of the loungeable the NPC is currently lounging in. Returns nil if not lounging.
 

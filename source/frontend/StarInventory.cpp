@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "StarInventory.hpp"
 #include "StarGuiReader.hpp"
 #include "StarItemTooltip.hpp"
@@ -50,7 +52,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
         } else {
           for (PanePtr& pane : m_parent->paneManager()->getAllPanes()) {
             auto remainder = pane->shiftItemFromInventory(inventory->itemsAt(inventorySlot));
-            if (remainder.isValid()) {
+            if (remainder.has_value()) {
               inventory->setItem(inventorySlot, remainder.value());
               break;
             }
@@ -483,8 +485,8 @@ void InventoryPane::update(float dt) {
 
     if (containsChild("companionHealthBar")) {
       auto healthBar = fetchChild<ProgressWidget>("companionHealthBar");
-      Maybe<float> health = pet->resource("health");
-      Maybe<float> healthMax = pet->resourceMax("health");
+      std::optional<float> health = pet->resource("health");
+      std::optional<float> healthMax = pet->resourceMax("health");
       if (health && healthMax) {
         healthBar->setCurrentProgressLevel(*health);
         healthBar->setMaxProgressLevel(*healthMax);

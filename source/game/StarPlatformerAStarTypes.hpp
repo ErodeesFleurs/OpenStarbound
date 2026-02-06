@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarVector.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
@@ -17,7 +19,7 @@ struct Node {
   bool operator<(Node const& other) const;
 
   Vec2F position;
-  Maybe<Vec2F> velocity; // Only valid when jumping/falling
+  std::optional<Vec2F> velocity; // Only valid when jumping/falling
 };
 
 enum class Action { Walk, Jump, Arc, Drop, Swim, Fly, Land };
@@ -36,7 +38,7 @@ typedef AStar::Path<Edge> Path;
 struct Parameters {
   // Maximum distance from the start node to search for a path to the target
   // node
-  Maybe<float> maxDistance;
+  std::optional<float> maxDistance;
   // If true, returns the path to the closest node to the target found, if a
   // path to the target itself could not be found.
   // Otherwise, findPath will return a None value.
@@ -51,43 +53,43 @@ struct Parameters {
   bool enableVerticalJumpAirControl;
   // Multiplies the cost of edges going through liquids. Can be used to
   // penalize or promote paths involving swiming.
-  Maybe<float> swimCost;
+  std::optional<float> swimCost;
   // The cost of jump edges.
-  Maybe<float> jumpCost;
+  std::optional<float> jumpCost;
   // The cost of jump edges that start in liquids.
-  Maybe<float> liquidJumpCost;
+  std::optional<float> liquidJumpCost;
   // The cost of dropping through a platform.
-  Maybe<float> dropCost;
+  std::optional<float> dropCost;
   // If set, will be the default bounding box, otherwise will use
   // movementParameters.standingPoly.
-  Maybe<RectF> boundBox;
+  std::optional<RectF> boundBox;
   // The bound box used for checking if the entity can stand at a position
   // Should be thinner than the full bound box
-  Maybe<RectF> standingBoundBox;
+  std::optional<RectF> standingBoundBox;
   // The bound box used for checking if the entity can drop at a position
   // Should be wider than the full bound box
-  Maybe<RectF> droppingBoundBox;
+  std::optional<RectF> droppingBoundBox;
   // Pathing simulates jump arcs for two Y velocities: 1.0 * jumpSpeed and
   // smallJumpMultiplier * jumpSpeed. This value should be in the range
   // 0 < smallJumpMultiplier < 1.0
-  Maybe<float> smallJumpMultiplier;
+  std::optional<float> smallJumpMultiplier;
   // Mid-jump, at the peak, entities can choose to change horizontal velocity.
   // The velocities they can switch to are runSpeed, walkSpeed, and
   // (walkSpeed * jumpDropXMultiplier). The purpose of the latter option is to
   // make a vertical drop (if 0) or disable dropping (if 1). Inbetween values
   // can be used to make less angular-looking arcs.
-  Maybe<float> jumpDropXMultiplier;
+  std::optional<float> jumpDropXMultiplier;
   // If provided, the following fields can be supplied to put a limit on how
   // long findPath calls can take:
-  Maybe<double> maxFScore;
-  Maybe<unsigned> maxNodesToSearch;
+  std::optional<double> maxFScore;
+  std::optional<unsigned> maxNodesToSearch;
   // Upper bound on the (negative) velocity that entities can land on
   // platforms
   // and ledges with. This is used to ensure there is a small amount of
   // clearance
   // over ledges to improve the scripts' chances of landing the same way we
   // simulated the jump.
-  Maybe<float> maxLandingVelocity;
+  std::optional<float> maxLandingVelocity;
 };
 
 bool operator==(Parameters const& lhs, Parameters const& rhs);

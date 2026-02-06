@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarItem.hpp"
 #include "StarWorld.hpp"
 #include "StarSwingableItem.hpp"
@@ -22,9 +24,9 @@ protected:
   void fireTriggered() override;
 
 private:
-  Maybe<String> m_sectorUnlock;
-  Maybe<String> m_tierRecipesUnlock;
-  Maybe<unsigned> m_shipUpgrade;
+  std::optional<String> m_sectorUnlock;
+  std::optional<String> m_tierRecipesUnlock;
+  std::optional<unsigned> m_shipUpgrade;
   String m_unlockMessage;
   List<Drawable> m_drawables;
 };

@@ -11,8 +11,6 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #endif
-#include <errno.h>
-#include <string.h>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -29,6 +27,8 @@
 #define AI_ADDRCONFIG 0
 #endif
 
+import std;
+
 namespace Star {
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
@@ -42,7 +42,7 @@ struct WindowsSocketInitializer {
 static WindowsSocketInitializer g_windowsSocketInitializer;
 #endif
 
-inline String netErrorString() {
+inline auto netErrorString() -> String {
 #ifdef STAR_SYSTEM_WINDOWS
   LPWSTR lpMsgBuf = NULL;
   int error = WSAGetLastError();
@@ -67,7 +67,7 @@ inline String netErrorString() {
 #endif
 }
 
-inline bool netErrorConnectionReset() {
+inline auto netErrorConnectionReset() -> bool {
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
   return WSAGetLastError() == WSAECONNRESET || WSAGetLastError() == WSAENETRESET;
 #else
@@ -75,7 +75,7 @@ inline bool netErrorConnectionReset() {
 #endif
 }
 
-inline bool netErrorInterrupt() {
+inline auto netErrorInterrupt() -> bool {
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
   return WSAGetLastError() == WSAEINTR || WSAGetLastError() == WSAEWOULDBLOCK;
 #else
@@ -86,12 +86,12 @@ inline bool netErrorInterrupt() {
 inline void setAddressFromNative(HostAddressWithPort& addressWithPort, NetworkMode mode, struct sockaddr_storage* sockAddr) {
   switch (mode) {
     case NetworkMode::IPv4: {
-      struct sockaddr_in* addr4 = (struct sockaddr_in*)sockAddr;
+      auto* addr4 = (struct sockaddr_in*)sockAddr;
       addressWithPort = HostAddressWithPort(mode, (uint8_t*)&(addr4->sin_addr.s_addr), ntohs(addr4->sin_port));
       break;
     }
     case NetworkMode::IPv6: {
-      struct sockaddr_in6* addr6 = (struct sockaddr_in6*)sockAddr;
+      auto* addr6 = (struct sockaddr_in6*)sockAddr;
       addressWithPort = HostAddressWithPort(mode, (uint8_t*)&addr6->sin6_addr.s6_addr, ntohs(addr6->sin6_port));
       break;
     }

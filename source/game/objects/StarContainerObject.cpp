@@ -1,11 +1,8 @@
 #include "StarContainerObject.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarTreasure.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarItemDrop.hpp"
-#include "StarLogging.hpp"
 #include "StarWorld.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarMixer.hpp"
@@ -153,7 +150,7 @@ void ContainerObject::destroy(RenderCallback* renderCallback) {
   }
 }
 
-Maybe<Json> ContainerObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+std::optional<Json> ContainerObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
   auto itemDb = Root::singleton().itemDatabase();
 
   if (message.equalsIgnoreCase("startCrafting")) {
@@ -178,7 +175,7 @@ Maybe<Json> ContainerObject::receiveMessage(ConnectionId sendingConnection, Stri
     return itemSafeDescriptor(doTakeItems(args.at(0).toUInt(), args.at(1).toUInt())).toJson();
 
   } else if (message.equalsIgnoreCase("swapItems")) {
-    return itemSafeDescriptor(doSwapItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)), args.get(2).optBool().value(true))).toJson();
+    return itemSafeDescriptor(doSwapItems(args.at(0).toUInt(), itemDb->fromJson(args.at(1)), args.get(2).optBool().value_or(true))).toJson();
 
   } else if (message.equalsIgnoreCase("applyAugment")) {
     return itemSafeDescriptor(doApplyAugment(args.at(0).toUInt(), itemDb->fromJson(args.at(1)))).toJson();
@@ -381,7 +378,6 @@ void ContainerObject::burnContainerContents() {
           auto itemsToConsume = min<uint64_t>((leftToFill + fuelSingle - 1) / fuelSingle, item->count());
           level = min(maxLevel, level + fuelSingle * itemsToConsume);
           auto consumed = item->consume(itemsToConsume);
-          starAssert(consumed);
           _unused(consumed);
         }
       }
@@ -443,7 +439,7 @@ ItemRecipe ContainerObject::recipeForMaterials(List<ItemPtr> const& inputItems) 
   if (!recipeGroup.isNull())
     return itemDatabase->getPreciseRecipeForMaterials(recipeGroup.toString(), inputItems, {});
 
-  Maybe<Json> result = m_scriptComponent.invoke<Json>("craftingRecipe", inputItems.filtered([](ItemPtr const& item) {
+  std::optional<Json> result = m_scriptComponent.invoke<Json>("craftingRecipe", inputItems.filtered([](ItemPtr const& item) {
       return (bool)item;
     }).transformed([](ItemPtr const& item) {
       return item->descriptor().toJson();
@@ -485,7 +481,6 @@ void ContainerObject::tickCrafting(float dt) {
     for (auto const& input : m_goalRecipe.inputs) {
       bool consumed = m_items->consumeItems(input);
       _unused(consumed);
-      starAssert(consumed);
     }
     ItemPtr overflow =
         m_items->putItems(m_items->size() - 1, Root::singleton().itemDatabase()->item(m_goalRecipe.output));

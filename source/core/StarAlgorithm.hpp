@@ -1,7 +1,6 @@
 #pragma once
 
-#include <algorithm>
-#include <functional>
+import std;
 
 namespace Star {
 
@@ -232,15 +231,15 @@ template <typename Container, typename Getter>
 void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable = false) {
   typedef typename Container::value_type ContainerValue;
   typedef decltype(valueGetter(ContainerValue())) ComputedValue;
-  typedef std::pair<ComputedValue, size_t> ComputedPair;
+  typedef std::pair<ComputedValue, std::size_t> ComputedPair;
 
-  size_t containerSize = container.size();
+  std::size_t containerSize = container.size();
 
   if (containerSize <= 1)
     return;
 
   std::vector<ComputedPair> work(containerSize);
-  for (size_t i = 0; i < containerSize; ++i)
+  for (std::size_t i = 0; i < containerSize; ++i)
     work[i] = {valueGetter(container[i]), i};
 
   auto compare = [](ComputedPair const& a, ComputedPair const& b) { return a.first < b.first; };
@@ -252,7 +251,7 @@ void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable
     sort(work, compare);
 
   Container result(containerSize);
-  for (size_t i = 0; i < containerSize; ++i)
+  for (std::size_t i = 0; i < containerSize; ++i)
     swap(result[i], container[work[i].second]);
 
   swap(container, result);
@@ -483,20 +482,20 @@ FinallyGuard<typename std::decay<Functor>::type> finally(Functor&& f) {
 
 // Generates compile time sequences of indexes from MinIndex to MaxIndex
 
-template <size_t...>
+template <std::size_t...>
 struct IndexSequence {};
 
-template <size_t Min, size_t N, size_t... S>
+template <std::size_t Min, std::size_t N, std::size_t... S>
 struct GenIndexSequence : GenIndexSequence<Min, N - 1, N - 1, S...> {};
 
-template <size_t Min, size_t... S>
+template <std::size_t Min, std::size_t... S>
 struct GenIndexSequence<Min, Min, S...> {
   typedef IndexSequence<S...> type;
 };
 
 // Apply a tuple as individual arguments to a function
 
-template <typename Function, typename Tuple, size_t... Indexes>
+template <typename Function, typename Tuple, std::size_t... Indexes>
 decltype(auto) tupleUnpackFunctionIndexes(Function&& function, Tuple&& args, IndexSequence<Indexes...> const&) {
   return function(get<Indexes>(std::forward<Tuple>(args))...);
 }
@@ -510,7 +509,7 @@ decltype(auto) tupleUnpackFunction(Function&& function, Tuple&& args) {
 // Apply a function to every element of a tuple.  This will NOT happen in a
 // predictable order!
 
-template <typename Function, typename Tuple, size_t... Indexes>
+template <typename Function, typename Tuple, std::size_t... Indexes>
 decltype(auto) tupleApplyFunctionIndexes(Function&& function, Tuple&& args, IndexSequence<Indexes...> const&) {
   return make_tuple(function(get<Indexes>(std::forward<Tuple>(args)))...);
 }
@@ -546,17 +545,17 @@ void tupleCallFunction(Tuple&& t, Function&& function) {
 
 // Get a subset of a tuple
 
-template <typename Tuple, size_t... Indexes>
+template <typename Tuple, std::size_t... Indexes>
 decltype(auto) subTupleIndexes(Tuple&& t, IndexSequence<Indexes...> const&) {
   return make_tuple(get<Indexes>(std::forward<Tuple>(t))...);
 }
 
-template <size_t Min, size_t Size, typename Tuple>
+template <std::size_t Min, std::size_t Size, typename Tuple>
 decltype(auto) subTuple(Tuple&& t) {
   return subTupleIndexes(std::forward<Tuple>(t), GenIndexSequence<Min, Size>::type());
 }
 
-template <size_t Trim, typename Tuple>
+template <std::size_t Trim, typename Tuple>
 decltype(auto) trimTuple(Tuple&& t) {
   return subTupleIndexes(std::forward<Tuple>(t), typename GenIndexSequence<Trim, std::tuple_size<typename std::decay<Tuple>::type>::value>::type());
 }
@@ -610,14 +609,14 @@ struct FunctionTraits : public FunctionTraits<decltype(&T::operator())> {};
 template <typename ReturnType, typename... ArgsTypes>
 struct FunctionTraits<ReturnType(ArgsTypes...)> {
   // arity is the number of arguments.
-  static constexpr size_t Arity = sizeof...(ArgsTypes);
+  static constexpr std::size_t Arity = sizeof...(ArgsTypes);
 
   typedef ReturnType Return;
 
   typedef VariadicTypedef<ArgsTypes...> Args;
   typedef std::tuple<ArgsTypes...> ArgTuple;
 
-  template <size_t i>
+  template <std::size_t i>
   struct Arg {
     // the i-th argument is equivalent to the i-th tuple element of a tuple
     // composed of those arguments.

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarEither.hpp"
+#include <optional>
 #include "StarString.hpp"
 #include "StarThread.hpp"
 
@@ -41,11 +41,11 @@ public:
 
   // Returns the result of the rpc call on success, nothing on failure or when
   // not yet finished.
-  Maybe<Result> result() const;
+  std::optional<Result> result() const;
 
   // Returns the error of a failed rpc call.  Returns nothing if the call is
   // successful or not yet finished.
-  Maybe<Error> error() const;
+  std::optional<Error> error() const;
 
 private:
   template <typename ResultT, typename ErrorT>
@@ -54,8 +54,8 @@ private:
   struct Value {
     Mutex mutex;
 
-    Maybe<Result> result;
-    Maybe<Error> error;
+    std::optional<Result> result;
+    std::optional<Error> error;
   };
 
   RpcThreadPromise() = default;
@@ -145,14 +145,14 @@ bool RpcThreadPromise<Result, Error>::failed() const {
 }
 
 template <typename Result, typename Error>
-Maybe<Result> RpcThreadPromise<Result, Error>::result() const {
+std::optional<Result> RpcThreadPromise<Result, Error>::result() const {
   auto val = m_getValue();
   MutexLocker lock(val->mutex);
   return val->result;
 }
 
 template <typename Result, typename Error>
-Maybe<Error> RpcThreadPromise<Result, Error>::error() const {
+std::optional<Error> RpcThreadPromise<Result, Error>::error() const {
   auto val = m_getValue();
   MutexLocker lock(val->mutex);
   return val->error;

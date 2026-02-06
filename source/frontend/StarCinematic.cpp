@@ -2,7 +2,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarWorldClient.hpp"
-#include "StarAssets.hpp"
 #include "StarGuiContext.hpp"
 #include "StarPlayer.hpp"
 
@@ -46,7 +45,7 @@ void Cinematic::load(Json const& definition) {
     panel->text = panelDefinition.getString("text", "");
     panel->textPosition = TextPositioning(panelDefinition.get("textPosition", JsonObject()));
     panel->textStyle = panelDefinition.get("textStyle", Json());
-    panel->textStyle.color = panelDefinition.opt("fontColor").apply(jsonToVec4B).value(panel->textStyle.color);
+    panel->textStyle.color = panelDefinition.opt("fontColor").transform(jsonToVec4B).value_or(panel->textStyle.color);
     panel->textStyle.fontSize = panelDefinition.getUInt("fontSize", panel->textStyle.fontSize);
     panel->avatar = panelDefinition.getString("avatar", "");
     panel->startTime = panelDefinition.getFloat("startTime", 0);
@@ -150,7 +149,7 @@ void Cinematic::render() {
   }
 
   if (m_backgroundColor) {
-    Vec4B backgroundColor = m_backgroundColor.get();
+    Vec4B backgroundColor = m_backgroundColor.value();
     backgroundColor[3] *= fadeFactor;
     renderer->render(renderFlatRect(RectF::withSize(Vec2F(0, 0), m_windowSize), backgroundColor, 0.0f));
   }
@@ -282,7 +281,6 @@ void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2
         upperLeft,  Vec2F{0, size[1]},
         drawableColor, 0.0f);
   } else {
-    starAssert(drawable.part.empty());
   }
 }
 
@@ -541,7 +539,8 @@ bool Cinematic::handleInputEvent(InputEvent const& event) {
     return false;
   if (event.is<KeyDownEvent>()) {
     if (m_currentTimeSkip) {
-      setTime(m_currentTimeSkip.take().skipToTime);
+      setTime(std::move(*m_currentTimeSkip).skipToTime);
+      m_currentTimeSkip.reset();
       return true;
     } else if (m_skippable && GuiContext::singleton().actions(event).contains(InterfaceAction::CinematicSkip)) {
       stop();

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarMaybe.hpp"
+#include <optional>
 #include "StarHostAddress.hpp"
 #include "StarGameTimers.hpp"
 #include "StarCelestialParameters.hpp"
@@ -41,10 +41,10 @@ public:
   PlayerPtr mainPlayer() const;
 
   // Returns error if connection failed
-  Maybe<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
+  std::optional<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
   bool isConnected() const;
   void disconnect();
-  Maybe<String> disconnectReason() const;
+  std::optional<String> disconnectReason() const;
 
   // WorldClient may be null if the UniverseClient is not connected.
   WorldClientPtr worldClient() const;
@@ -54,7 +54,7 @@ public:
   // commands.
   void update(float dt);
 
-  Maybe<BeamUpRule> beamUpRule() const;
+  std::optional<BeamUpRule> beamUpRule() const;
   bool canBeamUp() const;
   bool canBeamDown(bool deploy = false) const;
   bool canBeamToTeamShip() const;
@@ -80,7 +80,7 @@ public:
   SkyConstPtr currentSky() const;
   bool flying() const;
 
-  void sendChat(String const& text, ChatSendMode sendMode, Maybe<bool> speak = {}, Maybe<JsonObject> data = {});
+  void sendChat(String const& text, ChatSendMode sendMode, std::optional<bool> speak = {}, std::optional<JsonObject> data = {});
   List<ChatReceivedMessage> pullChatMessages();
 
   uint16_t players();
@@ -132,8 +132,8 @@ private:
   ClockPtr m_universeClock;
   WorldClientPtr m_worldClient;
   SystemWorldClientPtr m_systemWorldClient;
-  Maybe<UniverseConnection> m_connection;
-  Maybe<ServerInfo> m_serverInfo;
+  std::optional<UniverseConnection> m_connection;
+  std::optional<ServerInfo> m_serverInfo;
 
   CelestialSlaveDatabasePtr m_celestialDatabase;
   ClientContextPtr m_clientContext;
@@ -143,9 +143,9 @@ private:
 
   WarpAction m_pendingWarp;
   GameTimer m_warpDelay;
-  Maybe<GameTimer> m_warpCinemaCancelTimer;
+  std::optional<GameTimer> m_warpCinemaCancelTimer;
 
-  Maybe<WarpAction> m_warping;
+  std::optional<WarpAction> m_warping;
   bool m_respawning;
   GameTimer m_respawnTimer;
 
@@ -153,7 +153,7 @@ private:
 
   List<ChatReceivedMessage> m_pendingMessages;
 
-  Maybe<String> m_disconnectReason;
+  std::optional<String> m_disconnectReason;
 
   LuaRootPtr m_luaRoot;
 

@@ -3,6 +3,8 @@
 #include "StarAssetSource.hpp"
 #include "StarString.hpp"
 
+import std;
+
 namespace Star {
 
 STAR_CLASS(DirectoryAssetSource);
@@ -30,7 +32,7 @@ private:
 
   String m_baseDirectory;
   List<String> m_ignorePatterns;
-  Maybe<String> m_metadataFile;
+  std::optional<String> m_metadataFile;
   JsonObject m_metadata;
   StringList m_assetPaths;
 };

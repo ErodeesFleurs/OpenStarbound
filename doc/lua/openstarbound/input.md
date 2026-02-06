@@ -4,7 +4,7 @@ The new `input` table allows access to user input from most clientside Lua scrip
 
 ---
 
-#### `Maybe<unsigned>` input.bindDown(`String` categoryId, `String` bindId)
+#### `std::optional<unsigned>` input.bindDown(`String` categoryId, `String` bindId)
 
 If this bind was pressed this frame, returns how many times it has been pressed. Returns `nil` otherwise.
 
@@ -16,13 +16,13 @@ Returns `true` if this bind is currently held.
 
 ---
 
-#### `Maybe<unsigned>` input.bindDown(`String` categoryId, `String` bindId)
+#### `std::optional<unsigned>` input.bindDown(`String` categoryId, `String` bindId)
 
 If this bind was released this frame, returns how many times it has been released. Returns `nil` otherwise.
 
 ---
 
-#### `Maybe<unsigned>` input.keyDown(`String` keyName, [`StringList` modNames])
+#### `std::optional<unsigned>` input.keyDown(`String` keyName, [`StringList` modNames])
 
 If this key was pressed this frame, returns how many times it has been pressed. Returns `nil` otherwise or if the specified modifier keys are not held.
 
@@ -40,13 +40,13 @@ Same as `input.keyHeld`.
 
 ---
 
-#### `Maybe<unsigned>` input.keyUp(`String` keyName, [`StringList` modNames])
+#### `std::optional<unsigned>` input.keyUp(`String` keyName, [`StringList` modNames])
 
 If this key was released this frame, returns how many times it has been released. Returns `nil` otherwise or if the specified modifier keys are not held.
 
 ---
 
-#### `Maybe<unsigned>` input.mouseDown(`String` buttonName)
+#### `std::optional<unsigned>` input.mouseDown(`String` buttonName)
 
 If this mouse button was pressed this frame, returns how many times it has been pressed. Returns `nil` otherwise.
 
@@ -64,7 +64,7 @@ Same as `input.mouseHeld`.
 
 ---
 
-#### `Maybe<unsigned>` input.mouseUp(`String` buttonName)
+#### `std::optional<unsigned>` input.mouseUp(`String` buttonName)
 
 If this mouse button was released this frame, returns how many times it has been released. Returns `nil` otherwise.
 

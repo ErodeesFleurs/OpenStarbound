@@ -34,7 +34,7 @@ StringMap<CodexConstPtr> CodexDatabase::codexes() const {
 
 CodexConstPtr CodexDatabase::codex(String const& codexId) const {
   if (auto codex = m_codexes.maybe(codexId))
-    return codex.take();
+    return std::move(*codex);
   return {};
 }
 

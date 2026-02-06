@@ -4,7 +4,8 @@
 #include "StarCasting.hpp"
 #include "StarInputEvent.hpp"
 #include "StarGuiContext.hpp"
-#include "StarText.hpp"
+
+#include <optional>
 
 namespace Star {
 
@@ -119,7 +120,7 @@ public:
 
   virtual WidgetPtr keyboardCapturer() const;
   virtual KeyboardCaptureMode keyboardCaptureMode() const;
-  virtual Maybe<pair<RectI, int>> keyboardCaptureArea() const;
+  virtual std::optional<pair<RectI, int>> keyboardCaptureArea() const;
 
   void setData(Json const& data);
   Json const& data();

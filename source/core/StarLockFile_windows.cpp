@@ -10,7 +10,7 @@ namespace Star {
 
 int64_t const LockFile::MaximumSleepMillis;
 
-Maybe<LockFile> LockFile::acquireLock(String const& filename, int64_t lockTimeout) {
+std::optional<LockFile> LockFile::acquireLock(String const& filename, int64_t lockTimeout) {
   LockFile lock(std::move(filename));
   if (lock.lock(lockTimeout))
     return std::move(lock);

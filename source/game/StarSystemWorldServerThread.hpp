@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarSystemWorldServer.hpp"
 #include "StarThread.hpp"
 #include "StarNetPackets.hpp"
@@ -31,7 +33,7 @@ public:
   void executeClientShipAction(ConnectionId clientId, ClientShipAction action);
 
   SystemLocation clientShipLocation(ConnectionId clientId);
-  Maybe<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId);
+  std::optional<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId);
   SkyParameters clientSkyParameters(ConnectionId clientId);
 
   List<InstanceWorldId> activeInstanceWorlds() const;

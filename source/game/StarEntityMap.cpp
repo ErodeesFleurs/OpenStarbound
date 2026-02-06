@@ -27,7 +27,7 @@ EntityId EntityMap::reserveEntityId() {
   return id;
 }
 
-Maybe<EntityId> EntityMap::maybeReserveEntityId(EntityId entityId) {
+std::optional<EntityId> EntityMap::maybeReserveEntityId(EntityId entityId) {
   if (m_spatialMap.size() >= (size_t)(m_endIdSpace - m_beginIdSpace))
     throw EntityMapException("No more entity id space in EntityMap::reserveEntityId");
 
@@ -76,7 +76,7 @@ void EntityMap::addEntity(EntityPtr entity) {
 EntityPtr EntityMap::removeEntity(EntityId entityId) {
   if (auto entity = m_spatialMap.remove(entityId)) {
     m_uniqueMap.removeRight(entityId);
-    return entity.take();
+    return std::move(*entity);
   }
   return {};
 }
@@ -143,12 +143,11 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(
 }
 
 EntityId EntityMap::uniqueEntityId(String const& uniqueId) const {
-  return m_uniqueMap.maybeRight(uniqueId).value(NullEntityId);
+  return m_uniqueMap.maybeRight(uniqueId).value_or(NullEntityId);
 }
 
 EntityPtr EntityMap::entity(EntityId entityId) const {
   auto entity = m_spatialMap.value(entityId);
-  starAssert(!entity || entity->entityId() == entityId);
   return entity;
 }
 

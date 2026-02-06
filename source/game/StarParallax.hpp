@@ -1,6 +1,6 @@
 #pragma once
 
-#include "StarMaybe.hpp"
+#include <optional>
 #include "StarColor.hpp"
 #include "StarPlantDatabase.hpp"
 #include "StarDirectives.hpp"
@@ -27,8 +27,8 @@ struct ParallaxLayer {
   float alpha;
   Vec2F parallaxValue;
   Vec2B repeat;
-  Maybe<float> tileLimitTop;
-  Maybe<float> tileLimitBottom;
+  std::optional<float> tileLimitTop;
+  std::optional<float> tileLimitBottom;
   float verticalOrigin;
   float zLevel;
   Vec2F parallaxOffset;
@@ -50,7 +50,7 @@ public:
       uint64_t seed,
       float verticalOrigin,
       float hueShift,
-      Maybe<TreeVariant> parallaxTreeVariant = {});
+      std::optional<TreeVariant> parallaxTreeVariant = {});
   Parallax(Json const& store);
 
   Json store() const;
@@ -64,7 +64,7 @@ private:
 
   uint64_t m_seed;
   float m_verticalOrigin;
-  Maybe<TreeVariant> m_parallaxTreeVariant;
+  std::optional<TreeVariant> m_parallaxTreeVariant;
   float m_hueShift;
 
   String m_imageDirectory;

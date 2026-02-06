@@ -1,9 +1,10 @@
 #pragma once
 
+#include <optional>
+
 #include "StarItem.hpp"
 #include "StarPointableItem.hpp"
 #include "StarToolUserItem.hpp"
-#include "StarEntityRendering.hpp"
 #include "StarInspectableEntity.hpp"
 
 namespace Star {
@@ -18,8 +19,8 @@ public:
 
   struct InspectionResult {
     String message;
-    Maybe<String> objectName = {};
-    Maybe<EntityId> entityId = {};
+    std::optional<String> objectName = {};
+    std::optional<EntityId> entityId = {};
   };
 
   InspectionTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
@@ -64,7 +65,7 @@ private:
   float m_ambientInspectionRadius;
   size_t m_fullInspectionSpaces;
   float m_minimumInspectionLevel;
-  Maybe<HashSet<EntityType>> m_inspectableTypeFilter;
+  std::optional<HashSet<EntityType>> m_inspectableTypeFilter;
 
   FireMode m_lastFireMode;
   List<InspectionResult> m_inspectionResults;

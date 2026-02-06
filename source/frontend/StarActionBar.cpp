@@ -52,7 +52,7 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player) {
     });
 
   auto configuration = Root::singleton().configuration();
-  bool bottomBar = configuration->getPath("inventory.bottomActionBar").optBool().value(false);
+  bool bottomBar = configuration->getPath("inventory.bottomActionBar").optBool().value_or(false);
   if (bottomBar)
     m_config = jsonMerge(m_config, assets->json("/interface/windowconfig/actionbarbottom.config"));
 
@@ -300,7 +300,7 @@ void ActionBar::update(float) {
   fetchChild<ButtonWidget>("swapCustomBar")->setChecked(m_player->inventory()->customBarGroup() != 0);
 }
 
-Maybe<String> ActionBar::cursorOverride(Vec2I const&) {
+std::optional<String> ActionBar::cursorOverride(Vec2I const&) {
   if (m_customBarHover && m_player->inventory()->swapSlotItem())
     return m_config.getString("linkCursor");
   return {};

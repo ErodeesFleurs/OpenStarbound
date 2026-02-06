@@ -1,33 +1,33 @@
 #pragma once
 
-#include <vector>
-
 #include "StarUnicode.hpp"
+
+import std;
 
 namespace Star {
 
 struct JsonStream {
-  virtual ~JsonStream() {}
+  virtual ~JsonStream() = default;
 
   virtual void beginObject() = 0;
-  virtual void objectKey(char32_t const*, size_t) = 0;
+  virtual void objectKey(char32_t const*, std::size_t) = 0;
   virtual void endObject() = 0;
 
   virtual void beginArray() = 0;
   virtual void endArray() = 0;
 
-  virtual void putString(char32_t const*, size_t) = 0;
-  virtual void putDouble(char32_t const*, size_t) = 0;
-  virtual void putInteger(char32_t const*, size_t) = 0;
+  virtual void putString(char32_t const*, std::size_t) = 0;
+  virtual void putDouble(char32_t const*, std::size_t) = 0;
+  virtual void putInteger(char32_t const*, std::size_t) = 0;
   virtual void putBoolean(bool) = 0;
   virtual void putNull() = 0;
 
-  virtual void putWhitespace(char32_t const*, size_t) = 0;
+  virtual void putWhitespace(char32_t const*, std::size_t) = 0;
   virtual void putColon() = 0;
   virtual void putComma() = 0;
 };
 
-enum class JsonParseType : uint8_t {
+enum class JsonParseType : std::uint8_t {
   Top, // Top-level Object or Array
   Value, // Any singular Json value
   Sequence // Like an array, but without needing the [] or commas.
@@ -39,13 +39,13 @@ template <typename InputIterator>
 class JsonParser {
 public:
   JsonParser(JsonStream& stream)
-    : m_line(0), m_column(0), m_error(nullptr), m_stream(stream) {}
-  virtual ~JsonParser() {}
+    : m_stream(stream) {}
+  virtual ~JsonParser() = default;
 
   // Does not throw.  On error, returned iterator will not be equal to end, and
   // error() will be non-null.  Set fragment to true to parse any JSON type
   // rather than just object or array.
-  InputIterator parse(InputIterator begin, InputIterator end, JsonParseType parseType = JsonParseType::Top) {
+  auto parse(InputIterator begin, InputIterator end, JsonParseType parseType = JsonParseType::Top) -> InputIterator {
     init(begin, end);
 
     try {
@@ -64,20 +64,20 @@ public:
   }
 
   // Human readable parsing error, does not include line or column info.
-  char const* error() const {
+  [[nodiscard]] auto error() const -> char const* {
     return m_error;
   }
 
-  size_t line() const {
+  [[nodiscard]] auto line() const -> std::size_t {
     return m_line + 1;
   }
 
-  size_t column() const {
+  [[nodiscard]] auto column() const -> std::size_t {
     return m_column + 1;
   }
 
 private:
-  typedef std::basic_string<char32_t> CharArray;
+  using CharArray = std::basic_string<char32_t>;
 
   // Thrown internally to abort parsing.
   class ParsingException {};
@@ -305,7 +305,7 @@ private:
         next();
       }
     }
-    
+
     if (seq && m_char != 0 && !isSpace(m_char))
       error("unexpected character after number");
 
@@ -361,7 +361,7 @@ private:
     }
   }
 
-  CharArray parseString() {
+  auto parseString() -> CharArray {
     if (m_char != '"')
       error("bad string, should be '\"'");
     next();
@@ -538,7 +538,7 @@ private:
     throw ParsingException();
   }
 
-  bool isSpace(char32_t c) {
+  auto isSpace(char32_t c) -> bool {
     // Only whitespace allowed by JSON
     return c == 0x20 || // space
            c == 0x09 || // horizontal tab
@@ -550,9 +550,9 @@ private:
   char32_t m_char;
   InputIterator m_current;
   InputIterator m_end;
-  size_t m_line;
-  size_t m_column;
-  const char* m_error;
+  std::size_t m_line{};
+  std::size_t m_column{};
+  const char* m_error{};
   JsonStream& m_stream;
 };
 
@@ -563,13 +563,13 @@ public:
   JsonWriter(OutputIterator out, unsigned pretty = 0)
     : m_out(out), m_pretty(pretty) {}
 
-  void beginObject() {
+  void beginObject() override {
     startValue();
     pushState(Object);
     write('{');
   }
 
-  void objectKey(char32_t const* s, size_t len) {
+  void objectKey(char32_t const* s, std::size_t len) override {
     if (currentState() == ObjectElement) {
       if (m_pretty)
         write('\n');
@@ -593,7 +593,7 @@ public:
       write(' ');
   }
 
-  void endObject() {
+  void endObject() override {
     bool isNotEmpty = currentState() == ObjectElement;
     popState(Object);
     if (isNotEmpty) {
@@ -604,18 +604,18 @@ public:
     write('}');
   }
 
-  void beginArray() {
+  void beginArray() override {
     startValue();
     pushState(Array);
     write('[');
   }
 
-  void endArray() {
+  void endArray() override {
     popState(Array);
     write(']');
   }
 
-  void putString(char32_t const* s, size_t len) {
+  void putString(char32_t const* s, std::size_t len) override {
     startValue();
 
     write('"');
@@ -684,19 +684,19 @@ public:
     write('"');
   }
 
-  void putDouble(char32_t const* s, size_t len) {
+  void putDouble(char32_t const* s, std::size_t len) override {
     startValue();
-    for (size_t i = 0; i < len; ++i)
+    for (std::size_t i = 0; i < len; ++i)
       write(s[i]);
   }
 
-  void putInteger(char32_t const* s, size_t len) {
+  void putInteger(char32_t const* s, std::size_t len) override {
     startValue();
-    for (size_t i = 0; i < len; ++i)
+    for (std::size_t i = 0; i < len; ++i)
       write(s[i]);
   }
 
-  void putBoolean(bool b) {
+  void putBoolean(bool b) override {
     startValue();
     if (b) {
       write('t');
@@ -712,7 +712,7 @@ public:
     }
   }
 
-  void putNull() {
+  void putNull() override {
     startValue();
     write('n');
     write('u');
@@ -720,19 +720,19 @@ public:
     write('l');
   }
 
-  void putWhitespace(char32_t const* s, size_t len) {
+  void putWhitespace(char32_t const* s, std::size_t len) override {
     // If m_pretty is true, extra spurious whitespace will be inserted.
-    for (size_t i = 0; i < len; ++i)
+    for (std::size_t i = 0; i < len; ++i)
       write(s[i]);
   }
 
-  void putColon() {
+  void putColon() override {
     write(':');
     if (m_pretty)
       write(' ');
   }
 
-  void putComma() {
+  void putComma() override {
     write(',');
   }
 
@@ -781,7 +781,7 @@ private:
     }
   }
 
-  State currentState() {
+  auto currentState() -> State {
     if (m_state.empty())
       return Top;
     else
@@ -794,7 +794,7 @@ private:
   }
 
   // Only chars that are unescaped according to JSON spec.
-  bool isPrintable(char32_t c) {
+  auto isPrintable(char32_t c) -> bool {
     return (c >= 0x20 && c <= 0x21) || (c >= 0x23 && c <= 0x5b) || (c >= 0x5d && c <= 0x10ffff);
   }
 

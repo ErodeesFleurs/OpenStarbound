@@ -2,6 +2,8 @@
 #include "StarVersion.hpp"
 #include "StarHash.hpp"
 
+import std;
+
 namespace Star {
 
 extern VersionNumber const OpenProtocolVersion;
@@ -12,7 +14,7 @@ constexpr VersionNumber LegacyVersion = 0;
 class NetCompatibilityRules {
 public:
   NetCompatibilityRules();
-  NetCompatibilityRules(uint64_t) = delete;
+  NetCompatibilityRules(std::uint64_t) = delete;
   NetCompatibilityRules(VersionNumber version);
 
   VersionNumber version() const;

@@ -275,7 +275,7 @@ Json SystemWorld::systemObjectTypeConfig(String const& name) {
   return Root::singleton().assets()->json(strf("/system_objects.config:{}", name));
 }
 
-Maybe<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location) const {
+std::optional<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location) const {
   if (auto coordinate = location.maybe<CelestialCoordinate>()) {
     return planetPosition(*coordinate);
   } else if (auto orbit = location.maybe<CelestialOrbit>()) {
@@ -296,15 +296,15 @@ Vec2F SystemWorld::randomArrivalPosition() const {
   return Vec2F::withAngle(angle, range);
 }
 
-Maybe<WarpAction> SystemWorld::objectWarpAction(Uuid const& uuid) const {
+std::optional<WarpAction> SystemWorld::objectWarpAction(Uuid const& uuid) const {
   if (auto object = getObject(uuid)) {
     WarpAction warpAction = object->warpAction();
     if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
       if (auto instanceWorldId = warpToWorld->world.ptr<InstanceWorldId>()) {
         instanceWorldId->uuid = object->uuid();
         if (auto parameters = m_celestialDatabase->parameters(CelestialCoordinate(m_location))) {
-          Maybe<float> systemThreatLevel = parameters->getParameter("spaceThreatLevel").optFloat();
-          instanceWorldId->level = object->threatLevel().orMaybe(systemThreatLevel);
+          std::optional<float> systemThreatLevel = parameters->getParameter("spaceThreatLevel").optFloat();
+          instanceWorldId->level = object->threatLevel() ? object->threatLevel() : systemThreatLevel;
         } else {
           return {};
         }
@@ -380,7 +380,7 @@ WarpAction SystemObject::warpAction() const {
   return m_config.warpAction;
 }
 
-Maybe<float> SystemObject::threatLevel() const {
+std::optional<float> SystemObject::threatLevel() const {
   return m_config.threatLevel;
 }
 
@@ -402,14 +402,14 @@ void SystemObject::enterOrbit(CelestialCoordinate const& target, Vec2F const& ta
   m_approach.reset();
 }
 
-Maybe<CelestialCoordinate> SystemObject::orbitTarget() const {
+std::optional<CelestialCoordinate> SystemObject::orbitTarget() const {
   if (m_orbit.get())
     return m_orbit.get()->target;
   else
     return {};
 }
 
-Maybe<CelestialOrbit> SystemObject::orbit() const {
+std::optional<CelestialOrbit> SystemObject::orbit() const {
   return m_orbit.get();
 }
 

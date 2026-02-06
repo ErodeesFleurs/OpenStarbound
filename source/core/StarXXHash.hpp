@@ -1,12 +1,16 @@
 #pragma once
 
+#define XXH_STATIC_LINKING_ONLY
+#define XXH_INLINE_ALL
+extern "C" {
+    #include "xxhash.h"
+    #include "xxh3.h"
+}
+
 #include "StarString.hpp"
 #include "StarByteArray.hpp"
 
-#define XXH_STATIC_LINKING_ONLY
-#define XXH_INLINE_ALL
-#include "xxhash.h"
-#include "xxh3.h"
+import std;
 
 namespace Star {
 

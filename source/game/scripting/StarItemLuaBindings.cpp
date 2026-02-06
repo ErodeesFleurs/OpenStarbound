@@ -1,9 +1,6 @@
 #include "StarItemLuaBindings.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarLuaGameConverters.hpp"
-#include "StarCasting.hpp"
 #include "StarItem.hpp"
-#include "StarToolUserItem.hpp"
 
 namespace Star {
 
@@ -14,7 +11,7 @@ LuaCallbacks LuaBindings::makeItemCallbacks(Item* item) {
   callbacks.registerCallbackWithSignature<size_t>("count", bind(ItemCallbacks::count, item));
   callbacks.registerCallbackWithSignature<size_t, size_t>("setCount", bind(ItemCallbacks::setCount, item, _1));
   callbacks.registerCallbackWithSignature<size_t>("maxStack", bind(ItemCallbacks::maxStack, item));
-  callbacks.registerCallbackWithSignature<bool, Json, Maybe<bool>>("matches", bind(ItemCallbacks::matches, item, _1, _2));
+  callbacks.registerCallbackWithSignature<bool, Json, std::optional<bool>>("matches", bind(ItemCallbacks::matches, item, _1, _2));
   callbacks.registerCallbackWithSignature<bool, size_t>("consume", bind(ItemCallbacks::consume, item, _1));
   callbacks.registerCallbackWithSignature<bool>("empty", bind(ItemCallbacks::empty, item));
   callbacks.registerCallbackWithSignature<Json>("descriptor", bind(ItemCallbacks::descriptor, item));
@@ -79,9 +76,9 @@ size_t LuaBindings::ItemCallbacks::maxStack(Item* item) {
 // @param descriptor A properly serialized item descriptor
 // @return A bool true if matches, false if not.
 //
-bool LuaBindings::ItemCallbacks::matches(Item* item, Json const& desc, Maybe<bool> exactMatch) {
+bool LuaBindings::ItemCallbacks::matches(Item* item, Json const& desc, std::optional<bool> exactMatch) {
   ItemDescriptor itemDesc = ItemDescriptor(desc);
-  return item->matches(itemDesc, exactMatch.value(false));
+  return item->matches(itemDesc, exactMatch.value_or(false));
 }
 
 // If the given number of this item is available, consumes that number and

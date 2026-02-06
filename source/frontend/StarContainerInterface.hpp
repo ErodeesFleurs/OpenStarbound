@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarPane.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarContainerInteractor.hpp"
@@ -52,7 +54,7 @@ private:
 
   GuiReader m_reader;
 
-  Maybe<LuaWorldComponent<LuaUpdatableComponent<LuaBaseComponent>>> m_script;
+  std::optional<LuaWorldComponent<LuaUpdatableComponent<LuaBaseComponent>>> m_script;
 };
 
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarThread.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarHumanoid.hpp"
@@ -112,7 +114,7 @@ public:
   Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
   CharacterCreationResult createHumanoid(String name, String speciesChoice, size_t genderChoice, size_t bodyColor, size_t alty, size_t hairChoice, size_t heady, size_t shirtChoice, size_t shirtColor, size_t pantsChoice, size_t pantsColor, size_t personality, LuaVariadic<LuaValue> ext = {}) const;
 
-  CharacterCreationResult generateHumanoid(String species, int64_t seed, Maybe<Gender> = {}) const;
+  CharacterCreationResult generateHumanoid(String species, int64_t seed, std::optional<Gender> = {}) const;
 
 private:
   StringMap<SpeciesDefinitionPtr> m_species;

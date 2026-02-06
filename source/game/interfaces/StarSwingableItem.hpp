@@ -27,7 +27,7 @@ protected:
   float m_swingStart;
   float m_swingFinish;
   float m_swingAimFactor;
-  Maybe<float> m_coolingDownAngle;
+  std::optional<float> m_coolingDownAngle;
 };
 
 }

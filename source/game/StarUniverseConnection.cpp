@@ -114,12 +114,12 @@ PacketSocket& UniverseConnection::packetSocket() {
   return *m_packetSocket;
 }
 
-Maybe<PacketStats> UniverseConnection::incomingStats() const {
+std::optional<PacketStats> UniverseConnection::incomingStats() const {
   MutexLocker locker(m_mutex);
   return m_packetSocket->incomingStats();
 }
 
-Maybe<PacketStats> UniverseConnection::outgoingStats() const {
+std::optional<PacketStats> UniverseConnection::outgoingStats() const {
   MutexLocker locker(m_mutex);
   return m_packetSocket->outgoingStats();
 }

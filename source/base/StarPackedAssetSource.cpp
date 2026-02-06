@@ -35,7 +35,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
   auto getOrderingValue = [&extensionOrdering](String const& asset) -> pair<size_t, String> {
     String extension;
     auto lastDot = asset.findLast(".");
-    if (lastDot != NPos)
+    if (lastDot != std::numeric_limits<std::size_t>::max())
       extension = asset.substr(lastDot + 1);
 
     if (auto i = extensionOrdering.indexOf(extension.toLower())) {
@@ -95,13 +95,13 @@ StringList PackedAssetSource::assetPaths() const {
 
 IODevicePtr PackedAssetSource::open(String const& path) {
   struct AssetReader : public IODevice {
-    AssetReader(FilePtr file, String path, StreamOffset offset, StreamOffset size)
+    AssetReader(FilePtr file, String path, std::int64_t offset, std::int64_t size)
       : file(file), path(path), fileOffset(offset), assetSize(size), assetPos(0) {
       setMode(IOMode::Read);
     }
 
     size_t read(char* data, size_t len) override {
-      len = min<StreamOffset>(len, assetSize - assetPos);
+      len = min<std::int64_t>(len, assetSize - assetPos);
       file->readFullAbsolute(fileOffset + assetPos, data, len);
       assetPos += len;
       return len;
@@ -111,11 +111,11 @@ IODevicePtr PackedAssetSource::open(String const& path) {
       throw IOException("Assets IODevices are read-only");
     }
 
-    StreamOffset size() override {
+    std::int64_t size() override {
       return assetSize;
     }
 
-    StreamOffset pos() override {
+    std::int64_t pos() override {
       return assetPos;
     }
 
@@ -127,13 +127,13 @@ IODevicePtr PackedAssetSource::open(String const& path) {
       return assetPos >= assetSize;
     }
 
-    void seek(StreamOffset p, IOSeek mode) override {
+    void seek(std::int64_t p, IOSeek mode) override {
       if (mode == IOSeek::Absolute)
         assetPos = p;
       else if (mode == IOSeek::Relative)
-        assetPos = clamp<StreamOffset>(assetPos + p, 0, assetSize);
+        assetPos = clamp<std::int64_t>(assetPos + p, 0, assetSize);
       else
-        assetPos = clamp<StreamOffset>(assetSize - p, 0, assetSize);
+        assetPos = clamp<std::int64_t>(assetSize - p, 0, assetSize);
     }
 
     IODevicePtr clone() override {
@@ -144,9 +144,9 @@ IODevicePtr PackedAssetSource::open(String const& path) {
 
     FilePtr file;
     String path;
-    StreamOffset fileOffset;
-    StreamOffset assetSize;
-    StreamOffset assetPos;
+    std::int64_t fileOffset;
+    std::int64_t assetSize;
+    std::int64_t assetPos;
   };
 
   auto p = m_index.ptr(path);

@@ -2,9 +2,11 @@
 
 #include "StarMatrix3.hpp"
 
+import std;
+
 namespace Star {
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 class Line {
 public:
   typedef Vector<T, N> VectorType;
@@ -133,7 +135,7 @@ public:
 
   // Line2
 
-  template <size_t P = N>
+  template <std::size_t P = N>
   typename std::enable_if<P == 2 && N == P, IntersectResult>::type intersection(
       Line const& line2, bool infinite = false) const {
     Line l1 = *this;
@@ -205,20 +207,20 @@ public:
     return isect;
   }
 
-  template <size_t P = N>
+  template <std::size_t P = N>
   typename std::enable_if<P == 2 && N == P, bool>::type intersects(Line const& l2, bool infinite = false) const {
     return intersection(l2, infinite).intersects;
   }
 
   // Returns t value for closest point on the line.  t value is *not* clamped
   // from 0.0 to 1.0
-  template <size_t P = N>
+  template <std::size_t P = N>
   typename std::enable_if<P == 2 && N == P, T>::type lineProjection(VectorType const& l2) const {
     VectorType d = diff();
     return ((l2[0] - min()[0]) * d[0] + (l2[1] - min()[1]) * d[1]) / d.magnitudeSquared();
   }
 
-  template <size_t P = N>
+  template <std::size_t P = N>
   typename std::enable_if<P == 2 && N == P, T>::type distanceTo(VectorType const& l, bool infinite = false) const {
     auto t = lineProjection(l);
     if (!infinite)
@@ -226,7 +228,7 @@ public:
     return vmag(l - eval(t));
   }
 
-  template <size_t P = N>
+  template <std::size_t P = N>
   typename std::enable_if<P == 2 && N == P, void>::type rotate(
       T angle, VectorType const& rotationCenter = VectorType()) {
     auto rotMatrix = Mat3F::rotation(angle, rotationCenter);
@@ -234,24 +236,24 @@ public:
     max() = rotMatrix.transformVec2(max());
   }
 
-  template <typename T2, size_t P = N>
+  template <typename T2, std::size_t P = N>
   typename std::enable_if<P == 2 && N == P, void>::type transform(Matrix3<T2> const& transform) {
     min() = transform.transformVec2(min());
     max() = transform.transformVec2(max());
   }
 
-  template <typename T2, size_t P = N>
+  template <typename T2, std::size_t P = N>
   typename std::enable_if<P == 2 && N == P, Line>::type transformed(Matrix3<T2> const& transform) const {
     return Line(transform.transformVec2(min()), transform.transformVec2(max()));
   }
 
-  template <size_t P = N>
+  template <std::size_t P = N>
   typename std::enable_if<P == 2 && N == P, void>::type flipHorizontal(T horizontalPos) {
     m_min[0] = horizontalPos + (horizontalPos - m_min[0]);
     m_max[0] = horizontalPos + (horizontalPos - m_max[0]);
   }
 
-  template <size_t P = N>
+  template <std::size_t P = N>
   typename std::enable_if<P == 2 && N == P, void>::type flipVertical(T verticalPos) {
     m_min[1] = verticalPos + (verticalPos - m_min[1]);
     m_max[1] = verticalPos + (verticalPos - m_max[1]);
@@ -266,16 +268,16 @@ typedef Line<float, 2> Line2F;
 typedef Line<double, 2> Line2D;
 typedef Line<int, 2> Line2I;
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 std::ostream& operator<<(std::ostream& os, Line<T, N> const& l) {
   os << '[' << l.min() << ", " << l.max() << ']';
   return os;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 struct hash<Line<T, N>> {
-  size_t operator()(Line<T, N> const& line) const {
-    size_t hashval = 0;
+  std::size_t operator()(Line<T, N> const& line) const {
+    std::size_t hashval = 0;
     hashCombine(hashval, vectorHasher(line.min()));
     hashCombine(hashval, vectorHasher(line.max()));
     return hashval;
@@ -285,5 +287,5 @@ struct hash<Line<T, N>> {
 
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 struct std::formatter<Star::Line<T, N>> : Star::ostream_formatter {};

@@ -9,16 +9,16 @@ item = {}
 function item.name() end
 
 --- Returns the stack count of the item. ---
----@return size_t
+---@return integer
 function item.count() end
 
 --- Sets the item count. Returns any overflow. ---
----@param count size_t
----@return size_t
+---@param count integer
+---@return integer
 function item.setCount(count) end
 
 --- Returns the max number of this item that will fit in a stack. ---
----@return size_t
+---@return integer
 function item.maxStack() end
 
 --- Returns whether the item matches the specified item. If exactMatch is `true` then both the items' names and parameters are compared, otherwise only the items' names. ---
@@ -28,7 +28,7 @@ function item.maxStack() end
 function item.matches(desc, exactMatch) end
 
 --- Consumes items from the stack. Returns whether the full count was successfuly consumed. ---
----@param count size_t
+---@param count integer
 ---@return boolean
 function item.consume(count) end
 
@@ -57,11 +57,11 @@ function item.rarity() end
 function item.rarityString() end
 
 --- Returns the item price. ---
----@return size_t
+---@return integer
 function item.price() end
 
 --- Returns the item fuel amount. ---
----@return unsigned
+---@return integer
 function item.fuelAmount() end
 
 --- Returns a list of the item's icon drawables. ---

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarButtonGroup.hpp"
 
 namespace Star {
@@ -136,7 +138,7 @@ private:
   HorizontalAnchor m_hTextAnchor;
   Color m_fontColor;
   Color m_fontColorDisabled;
-  Maybe<Color> m_fontColorChecked;
+  std::optional<Color> m_fontColorChecked;
 };
 
 }

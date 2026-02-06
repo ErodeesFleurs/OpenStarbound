@@ -1,16 +1,17 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarHash.hpp"
 #include "StarDataStream.hpp"
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(Directives);
-STAR_CLASS(DirectivesGroup);
-STAR_EXCEPTION(DirectivesException, StarException);
+using DirectivesException =  ExceptionDerived<"DirectivesException">;
 
 // Kae: My attempt at reducing memory allocation and per-frame string parsing for extremely long directives
 class Directives {
@@ -18,11 +19,11 @@ public:
   struct Shared;
   struct Entry {
     mutable ImageOperation operation;
-    size_t begin;
-    size_t length;
+    std::size_t begin;
+    std::size_t length;
 
-    ImageOperation const& loadOperation(Shared const& parent) const;
-    StringView string(Shared const& parent) const;
+    auto loadOperation(Shared const& parent) const -> ImageOperation const&;
+    auto string(Shared const& parent) const -> StringView;
     Entry(ImageOperation&& newOperation, size_t begin, size_t end);
     Entry(ImageOperation const& newOperation, size_t begin, size_t end);
     Entry(Entry const& other);
@@ -31,10 +32,10 @@ public:
   struct Shared {
     List<Entry> entries;
     String string;
-    size_t hash = 0;
+    std::size_t hash = 0;
     mutable Mutex mutex;
 
-    bool empty() const;
+    auto empty() const -> bool;
     Shared();
     Shared(List<Entry>&& givenEntries, String&& givenString);
   };
@@ -47,41 +48,37 @@ public:
   Directives(Directives&& directives) noexcept;
   ~Directives();
 
-  Directives& operator=(String const& s);
-  Directives& operator=(String&& s);
-  Directives& operator=(const char* s);
-  Directives& operator=(Directives&& other) noexcept;
-  Directives& operator=(Directives const& other);
+  auto operator=(String const& s) -> Directives&;
+  auto operator=(String&& s) -> Directives&;
+  auto operator=(const char* s) -> Directives&;
+  auto operator=(Directives&& other) noexcept -> Directives&;
+  auto operator=(Directives const& other) -> Directives&;
 
   void loadOperations() const;
   void parse(String&& directives);
-  StringView prefix() const;
-  String string() const;
-  String const* stringPtr() const;
-  String buildString() const;
-  String& addToString(String& out) const;
-  size_t hash() const;
-  size_t size() const;
-  bool empty() const;
+  [[nodiscard]] auto prefix() const -> StringView;
+  [[nodiscard]] auto string() const -> String;
+  [[nodiscard]] auto stringPtr() const -> String const*;
+  [[nodiscard]] auto buildString() const -> String;
+  auto addToString(String& out) const -> String&;
+  [[nodiscard]] auto hash() const -> size_t;
+  [[nodiscard]] auto size() const -> size_t;
+  [[nodiscard]] auto empty() const -> bool;
   operator bool() const;
 
-  Shared const& operator*() const;
-  Shared const* operator->() const;
+  auto operator*() const -> Shared const&;
+  auto operator->() const -> Shared const*;
 
-  bool equals(Directives const& other) const;
-  bool equals(String const& string) const;
+  [[nodiscard]] auto equals(Directives const& other) const -> bool;
+  [[nodiscard]] auto equals(String const& string) const -> bool;
 
-  bool operator==(Directives const& other) const;
-  bool operator==(String const& string) const;
-  bool operator!=(Directives const& other) const;
-  bool operator!=(String const& string) const;
+  auto operator==(Directives const& other) const -> bool;
+  auto operator==(String const& string) const -> bool;
+  auto operator!=(Directives const& other) const -> bool;
+  auto operator!=(String const& string) const -> bool;
 
-  friend DataStream& operator>>(DataStream& ds, Directives& directives);
-  friend DataStream& operator<<(DataStream& ds, Directives const& directives);
-
-  //friend bool operator==(Directives const& d1, String const& d2);
-  //friend bool operator==(Directives const& directives, String const& string);
-  //friend bool operator==(String const& string, Directives const& directives);
+  friend auto operator>>(DataStream& ds, Directives& directives) -> DataStream&;
+  friend auto operator<<(DataStream& ds, Directives const& directives) -> DataStream&;
 
   std::shared_ptr<Shared const> m_shared;
 };
@@ -92,34 +89,34 @@ public:
   DirectivesGroup(String const& directives);
   DirectivesGroup(String&& directives);
 
-  bool empty() const;
+  [[nodiscard]] auto empty() const -> bool;
   operator bool() const;
-  bool compare(DirectivesGroup const& other) const;
+  [[nodiscard]] auto compare(DirectivesGroup const& other) const -> bool;
   void append(Directives const& other);
   void clear();
 
-  DirectivesGroup& operator+=(Directives const& other);
+  auto operator+=(Directives const& other) -> DirectivesGroup&;
 
-  String toString() const;
+  [[nodiscard]] auto toString() const -> String;
   void addToString(String& string) const;
 
-  typedef function<void(Directives::Entry const&, Directives const&)> DirectivesCallback;
-  typedef function<bool(Directives::Entry const&, Directives const&)> AbortableDirectivesCallback;
+  using DirectivesCallback = std::function<void(Directives::Entry const&, Directives const&)>;
+  using AbortableDirectivesCallback = std::function<bool(Directives::Entry const&, Directives const&)>;
 
   void forEach(DirectivesCallback callback) const;
-  bool forEachAbortable(AbortableDirectivesCallback callback) const;
+  [[nodiscard]] auto forEachAbortable(AbortableDirectivesCallback callback) const -> bool;
 
-  Image applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const;
+  [[nodiscard]] auto applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const -> Image;
   void applyExistingImage(Image& image, ImageReferenceCallback refCallback = {}) const;
-  
-  size_t hash() const;
-  const List<Directives>& list() const;
 
-  friend bool operator==(DirectivesGroup const& a, DirectivesGroup const& b);
-  friend bool operator!=(DirectivesGroup const& a, DirectivesGroup const& b);
+  [[nodiscard]] auto hash() const -> size_t;
+  [[nodiscard]] auto list() const -> const List<Directives>&;
 
-  friend DataStream& operator>>(DataStream& ds, DirectivesGroup& directives);
-  friend DataStream& operator<<(DataStream& ds, DirectivesGroup const& directives);
+  friend auto operator==(DirectivesGroup const& a, DirectivesGroup const& b) -> bool;
+  friend auto operator!=(DirectivesGroup const& a, DirectivesGroup const& b) -> bool;
+
+  friend auto operator>>(DataStream& ds, DirectivesGroup& directives) -> DataStream&;
+  friend auto operator<<(DataStream& ds, DirectivesGroup const& directives) -> DataStream&;
 private:
   void buildString(String& string, const DirectivesGroup& directives) const;
 
@@ -129,15 +126,15 @@ private:
 
 template <>
 struct hash<DirectivesGroup> {
-  size_t operator()(DirectivesGroup const& s) const;
+  auto operator()(DirectivesGroup const& s) const -> size_t;
 };
 
-typedef DirectivesGroup ImageDirectives;
+using ImageDirectives = DirectivesGroup;
 
-inline Directives::Shared const& Directives::operator*() const {
+inline auto Directives::operator*() const -> Directives::Shared const& {
   return *m_shared;
 }
-inline Directives::Shared const* Directives::operator->() const {
+inline auto Directives::operator->() const -> Directives::Shared const* {
   if (!m_shared)
     throw DirectivesException("Directives::operator-> nullptr");
   return m_shared.get();

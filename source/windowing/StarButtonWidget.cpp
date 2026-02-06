@@ -100,7 +100,7 @@ void ButtonWidget::renderImpl() {
     if (m_disabled)
       guiContext.setFontColor(m_fontColorDisabled.toRgba());
     else if (m_fontColorChecked && m_checked)
-      guiContext.setFontColor(m_fontColorChecked.value().toRgba());
+      guiContext.setFontColor(m_fontColorChecked->toRgba());
     else
       guiContext.setFontColor(m_fontColor.toRgba());
     guiContext.renderInterfaceText(m_text, {textPosition, m_hTextAnchor, VerticalAnchor::VMidAnchor});

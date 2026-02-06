@@ -39,7 +39,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
   m_confirmed = false;
 
   String paneLayoutPath =
-      config.optString("paneLayout").value("/interface/windowconfig/confirmation.config:paneLayout");
+      config.optString("paneLayout").value_or("/interface/windowconfig/confirmation.config:paneLayout");
   reader.construct(assets->json(paneLayoutPath), this);
 
   ImageWidgetPtr titleIcon = {};
@@ -54,9 +54,12 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
   if (config.contains("cancelCaption"))
     fetchChild<ButtonWidget>("cancel")->setText(config.getString("cancelCaption"));
 
-  m_sourceEntityId = config.optInt("sourceEntityId");
+  if (auto sourceEntityId = config.optInt("sourceEntityId"))
+    m_sourceEntityId = (EntityId)*sourceEntityId;
+  else
+    m_sourceEntityId = std::nullopt;
 
-  for (auto image : config.optObject("images").value({})) {
+  for (auto image : config.optObject("images").value_or(JsonObject{})) {
     auto widget = fetchChild<ImageWidget>(image.first);
     if (image.second.isType(Json::Type::String))
       widget->setImage(image.second.toString());
@@ -64,7 +67,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
       widget->setDrawables(image.second.toArray().transformed(construct<Drawable>()));
   }
 
-  for (auto label : config.optObject("labels").value({})) {
+  for (auto label : config.optObject("labels").value_or(JsonObject{})) {
     auto widget = fetchChild<LabelWidget>(label.first);
     widget->setText(label.second.toString());
   }
@@ -76,7 +79,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
     context()->playAudio(sound);
 }
 
-Maybe<EntityId> ConfirmationDialog::sourceEntityId() {
+std::optional<EntityId> ConfirmationDialog::sourceEntityId() {
   return m_sourceEntityId;
 }
 

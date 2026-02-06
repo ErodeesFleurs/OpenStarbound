@@ -99,7 +99,7 @@ public:
   const_reverse_iterator rbegin() const;
   const_reverse_iterator rend() const;
 
-  Maybe<size_t> indexOf(value_type const& v) const;
+  std::optional<size_t> indexOf(value_type const& v) const;
 
   value_type const& at(size_t i) const;
   value_type& at(size_t i);
@@ -370,7 +370,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::rend() const -> const_re
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-Maybe<size_t> OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const& v) const {
+std::optional<size_t> OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const& v) const {
   auto i = m_map.find(v);
   if (i == m_map.end())
     return {};

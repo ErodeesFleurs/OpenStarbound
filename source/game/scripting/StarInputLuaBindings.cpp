@@ -1,5 +1,4 @@
 #include "StarInputLuaBindings.hpp"
-#include "StarLuaConverters.hpp"
 #include "StarInput.hpp"
 
 namespace Star {
@@ -9,14 +8,14 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
 
   auto input = Input::singletonPtr();
 
-  callbacks.registerCallbackWithSignature<Maybe<unsigned>, String, String>("bindDown", bind(mem_fn(&Input::bindDown), input, _1, _2));
+  callbacks.registerCallbackWithSignature<std::optional<unsigned>, String, String>("bindDown", bind(mem_fn(&Input::bindDown), input, _1, _2));
   callbacks.registerCallbackWithSignature<bool,            String, String>("bindHeld", bind(mem_fn(&Input::bindHeld), input, _1, _2));
   callbacks.registerCallbackWithSignature<bool,            String, String>("bind",     bind(mem_fn(&Input::bindHeld), input, _1, _2));
-  callbacks.registerCallbackWithSignature<Maybe<unsigned>, String, String>("bindUp",   bind(mem_fn(&Input::bindUp),   input, _1, _2));
+  callbacks.registerCallbackWithSignature<std::optional<unsigned>, String, String>("bindUp",   bind(mem_fn(&Input::bindUp),   input, _1, _2));
 
-  callbacks.registerCallback("keyDown", [input](String const& keyName, Maybe<StringList> const& modNames) -> Maybe<unsigned> {
+  callbacks.registerCallback("keyDown", [input](String const& keyName, std::optional<StringList> const& modNames) -> std::optional<unsigned> {
     Key key = KeyNames.getLeft(keyName);
-    Maybe<KeyMod> mod;
+    std::optional<KeyMod> mod;
     if (modNames) {
       mod = KeyMod::NoMod;
       for (auto& modName : *modNames)
@@ -27,15 +26,15 @@ LuaCallbacks LuaBindings::makeInputCallbacks() {
   auto keyHeld = [input](String const& keyName) -> bool { return input->keyHeld(KeyNames.getLeft(keyName)); };
   callbacks.registerCallback("keyHeld", keyHeld);
   callbacks.registerCallback("key",     keyHeld);
-  callbacks.registerCallback("keyUp",   [input](String const& keyName) -> Maybe<unsigned> { return input->keyUp(  KeyNames.getLeft(keyName)); });
+  callbacks.registerCallback("keyUp",   [input](String const& keyName) -> std::optional<unsigned> { return input->keyUp(  KeyNames.getLeft(keyName)); });
 
-  callbacks.registerCallback("mouseDown", [input](String const& buttonName) -> Maybe<List<Vec2F>>
+  callbacks.registerCallback("mouseDown", [input](String const& buttonName) -> std::optional<List<Vec2F>>
     { return input->mouseDown(MouseButtonNames.getLeft(buttonName)); });
-  
+
   auto mouseHeld = [input](String const& buttonName) -> bool { return input->mouseHeld(MouseButtonNames.getLeft(buttonName)); };
   callbacks.registerCallback("mouseHeld", mouseHeld);
   callbacks.registerCallback("mouse",     mouseHeld);
-  callbacks.registerCallback("mouseUp",   [input](String const& buttonName) -> Maybe<List<Vec2F>>
+  callbacks.registerCallback("mouseUp",   [input](String const& buttonName) -> std::optional<List<Vec2F>>
     { return input->mouseUp(  MouseButtonNames.getLeft(buttonName)); });
 
   callbacks.registerCallbackWithSignature<void, String, String>("resetBinds",      bind(mem_fn(&Input::resetBinds),      input, _1, _2));

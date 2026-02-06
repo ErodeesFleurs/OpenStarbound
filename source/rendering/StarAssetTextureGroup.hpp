@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarMaybe.hpp"
 #include "StarString.hpp"
 #include "StarBiMap.hpp"
 #include "StarListener.hpp"

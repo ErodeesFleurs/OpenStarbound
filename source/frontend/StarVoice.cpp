@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "StarVoice.hpp"
 #include "StarFormat.hpp"
 #include "StarJsonExtra.hpp"
@@ -474,7 +476,7 @@ void Voice::update(float, PositionalAttenuationFunction positionalAttenuationFun
 }
 
 
-void Voice::setDeviceName(Maybe<String> deviceName) {
+void Voice::setDeviceName(std::optional<String> deviceName) {
   if (m_deviceName == deviceName)
     return;
 

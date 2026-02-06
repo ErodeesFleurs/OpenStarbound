@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarOrderedMap.hpp"
 #include "StarJson.hpp"
 #include "StarMatrix3.hpp"
@@ -57,7 +59,7 @@ public:
   struct ActivePartInformation {
     String partName;
     // If a state match is found, this will be set.
-    Maybe<ActiveStateInformation> activeState;
+    std::optional<ActiveStateInformation> activeState;
     JsonObject properties;
     JsonObject nextProperties;
 

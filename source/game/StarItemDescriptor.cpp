@@ -121,7 +121,7 @@ Json ItemDescriptor::toJson() const {
   }
 }
 
-ItemDescriptor::ItemDescriptor(String name, uint64_t count, Json parameters, Maybe<size_t> parametersHash)
+ItemDescriptor::ItemDescriptor(String name, uint64_t count, Json parameters, std::optional<size_t> parametersHash)
   : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)), m_parametersHash(parametersHash) {}
 
 size_t ItemDescriptor::parametersHash() const {

@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -10,9 +9,9 @@ STAR_STRUCT(Dance);
 STAR_CLASS(DanceDatabase);
 
 struct DanceStep {
-  Maybe<String> bodyFrame;
-  Maybe<String> frontArmFrame;
-  Maybe<String> backArmFrame;
+  std::optional<String> bodyFrame;
+  std::optional<String> frontArmFrame;
+  std::optional<String> backArmFrame;
   Vec2F headOffset;
   Vec2F frontArmOffset;
   Vec2F backArmOffset;

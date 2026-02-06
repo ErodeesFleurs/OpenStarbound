@@ -1,12 +1,11 @@
 #pragma once
 
 #include "StarTime.hpp"
-#include "StarRenderer.hpp"
 #include "StarDrawable.hpp"
-#include "StarWorldCamera.hpp"
 #include "StarInputEvent.hpp"
 #include "StarTextPainter.hpp"
 #include "StarMixer.hpp"
+#include <optional>
 
 namespace Star {
 
@@ -98,7 +97,7 @@ private:
   PanelValues determinePanelValues(PanelPtr panel, float timecode);
 
   List<TimeSkip> m_timeSkips;
-  Maybe<TimeSkip> m_currentTimeSkip;
+  std::optional<TimeSkip> m_currentTimeSkip;
 
   List<CameraKeyFrame> m_cameraKeyFrames;
   List<PanelPtr> m_panels;
@@ -109,7 +108,7 @@ private:
   Clock m_timer;
   float m_completionTime{};
 
-  Maybe<Vec4B> m_backgroundColor;
+  std::optional<Vec4B> m_backgroundColor;
   float m_backgroundFadeTime{};
 
   float m_cameraZoom{1.0f};

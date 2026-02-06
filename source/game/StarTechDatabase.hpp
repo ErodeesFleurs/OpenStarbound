@@ -25,7 +25,7 @@ struct TechConfig {
   TechType type;
 
   StringList scripts;
-  Maybe<String> animationConfig;
+  std::optional<String> animationConfig;
 
   String description;
   String shortDescription;

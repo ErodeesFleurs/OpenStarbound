@@ -132,7 +132,6 @@ void DamageManager::pushRemoteHitRequest(RemoteHitRequest const& remoteHitReques
     throw StarException("RemoteDamageRequest routed to wrong DamageManager");
 
   if (auto causingEntity = m_world->entity(remoteHitRequest.causingEntityId)) {
-    starAssert(causingEntity->isMaster());
     causingEntity->hitOther(remoteHitRequest.targetEntityId, remoteHitRequest.damageRequest);
   }
 }
@@ -142,7 +141,6 @@ void DamageManager::pushRemoteDamageRequest(RemoteDamageRequest const& remoteDam
     throw StarException("RemoteDamageRequest routed to wrong DamageManager");
 
   if (auto targetEntity = m_world->entity(remoteDamageRequest.targetEntityId)) {
-    starAssert(targetEntity->isMaster());
     for (auto& damageNotification : targetEntity->applyDamage(remoteDamageRequest.damageRequest))
       addDamageNotification({remoteDamageRequest.damageRequest.sourceEntityId, std::move(damageNotification)});
   }

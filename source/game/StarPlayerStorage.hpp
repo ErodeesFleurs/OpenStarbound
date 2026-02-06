@@ -1,11 +1,12 @@
 #pragma once
 
+#include <optional>
+
 #include "StarOrderedMap.hpp"
 #include "StarUuid.hpp"
 #include "StarPlayerFactory.hpp"
 #include "StarThread.hpp"
 #include "StarWorldStorage.hpp"
-#include "StarStatistics.hpp"
 
 namespace Star {
 
@@ -16,16 +17,16 @@ public:
 
   size_t playerCount() const;
   // Returns nothing if index is out of bounds.
-  Maybe<Uuid> playerUuidAt(size_t index);
+  std::optional<Uuid> playerUuidAt(size_t index);
   // Returns nothing if name doesn't match a player.
-  Maybe<Uuid> playerUuidByName(String const& name, Maybe<Uuid> except = {});
+  std::optional<Uuid> playerUuidByName(String const& name, std::optional<Uuid> except = {});
   // Returns nothing if name doesn't match a player.
-  List<Uuid> playerUuidListByName(String const& name, Maybe<Uuid> except = {});
+  List<Uuid> playerUuidListByName(String const& name, std::optional<Uuid> except = {});
 
   // Also returns the diskStore Json if needed.
   Json savePlayer(PlayerPtr const& player);
 
-  Maybe<Json> maybeGetPlayerData(Uuid const& uuid);
+  std::optional<Json> maybeGetPlayerData(Uuid const& uuid);
   Json getPlayerData(Uuid const& uuid);
   PlayerPtr loadPlayer(Uuid const& uuid);
   void deletePlayer(Uuid const& uuid);

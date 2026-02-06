@@ -8,8 +8,8 @@ LabelWidget::LabelWidget(String text,
     Color const& color,
     HorizontalAnchor const& hAnchor,
     VerticalAnchor const& vAnchor,
-    Maybe<unsigned> wrapWidth,
-    Maybe<float> lineSpacing)
+    std::optional<unsigned> wrapWidth,
+    std::optional<float> lineSpacing)
   : m_hAnchor(hAnchor),
     m_vAnchor(vAnchor),
     m_wrapWidth(std::move(wrapWidth)) {
@@ -25,7 +25,7 @@ String const& LabelWidget::text() const {
   return m_text;
 }
 
-Maybe<unsigned> LabelWidget::getTextCharLimit() const {
+std::optional<unsigned> LabelWidget::getTextCharLimit() const {
   return m_textCharLimit;
 }
 
@@ -53,13 +53,13 @@ void LabelWidget::setAnchor(HorizontalAnchor hAnchor, VerticalAnchor vAnchor) {
   updateTextRegion();
 }
 
-void LabelWidget::setWrapWidth(Maybe<unsigned> wrapWidth) {
+void LabelWidget::setWrapWidth(std::optional<unsigned> wrapWidth) {
   m_wrapWidth = std::move(wrapWidth);
   updateTextRegion();
 }
 
-void LabelWidget::setLineSpacing(Maybe<float> lineSpacing) {
-  m_style.lineSpacing = lineSpacing.value(DefaultLineSpacing);
+void LabelWidget::setLineSpacing(std::optional<float> lineSpacing) {
+  m_style.lineSpacing = lineSpacing.value_or(DefaultLineSpacing);
   updateTextRegion();
 }
 
@@ -68,7 +68,7 @@ void LabelWidget::setDirectives(String const& directives) {
   updateTextRegion();
 }
 
-void LabelWidget::setTextCharLimit(Maybe<unsigned> charLimit) {
+void LabelWidget::setTextCharLimit(std::optional<unsigned> charLimit) {
   m_textCharLimit = charLimit;
   updateTextRegion();
 }

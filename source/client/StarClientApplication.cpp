@@ -2,6 +2,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarMainApplication.hpp"
 #include "StarPlayerLog.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
 #include "StarVersion.hpp"
@@ -215,7 +216,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   appController->setTargetUpdateRate(updateRate);
   appController->setVSyncEnabled(vsync);
-  appController->setCursorHardware(configuration->get("hardwareCursor").optBool().value(true));
+  appController->setCursorHardware(configuration->get("hardwareCursor").optBool().value_or(true));
 
   // Must be called before anything that can invoke an asset load.
   loadMods();
@@ -262,10 +263,10 @@ void ClientApplication::renderInit(RendererPtr renderer) {
   renderReload();
   m_root->registerReloadListener(m_reloadListener = make_shared<CallbackListener>([this]() { renderReload(); }));
 
-  if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value(false))
+  if (m_root->configuration()->get("limitTextureAtlasSize").optBool().value_or(false))
     renderer->setSizeLimitEnabled(true);
 
-  renderer->setMultiTexturingEnabled(m_root->configuration()->get("useMultiTexturing").optBool().value(true));
+  renderer->setMultiTexturingEnabled(m_root->configuration()->get("useMultiTexturing").optBool().value_or(true));
 
   m_guiContext->renderInit(renderer);
 
@@ -324,7 +325,7 @@ void ClientApplication::processInput(InputEvent const& event) {
       return keyEvent.key == keyUp->key;
     });
 
-    Maybe<KeyMod> modKey = KeyModNames.maybeLeft(KeyNames.getRight(keyUp->key));
+    std::optional<KeyMod> modKey = KeyModNames.maybeLeft(KeyNames.getRight(keyUp->key));
     if (modKey)
       m_heldKeyEvents.transform([&](auto& keyEvent) {
         return KeyDownEvent{keyEvent.key, keyEvent.mods & ~*modKey};
@@ -420,7 +421,7 @@ void ClientApplication::render() {
   auto assets = m_root->assets();
   auto& renderer = Application::renderer();
 
-  renderer->setMultiSampling(config->get("antiAliasing").optBool().value(false) ? 4 : 0);
+  renderer->setMultiSampling(config->get("antiAliasing").optBool().value_or(false) ? 4 : 0);
   renderer->switchEffectConfig("interface");
 
   if (auto interfaceScale = config->get("interfaceScale").optFloat().value(); interfaceScale != 0)
@@ -566,7 +567,7 @@ void ClientApplication::renderReload() {
 void ClientApplication::setPostProcessLayerPasses(String const& layer, unsigned const& passes) {
   m_postProcessLayers.at(m_labelledPostProcessLayers.get(layer)).passes = passes;
 }
-void ClientApplication::setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save) {
+void ClientApplication::setPostProcessGroupEnabled(String const& group, bool const& enabled, std::optional<bool> const& save) {
   m_postProcessGroups.get(group).enabled = enabled;
   if (save && save.value())
     m_root->configuration()->setPath(strf("{}.{}.enabled", postProcessGroupsRoot, group),enabled);
@@ -659,7 +660,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
     m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(app, alwaysAllow && alwaysAllow.toBool()));
-    const bool luaHttpEnabled = m_root->configuration()->getPath("safe.luaHttp.enabled").optBool().value(false);
+    const bool luaHttpEnabled = m_root->configuration()->getPath("safe.luaHttp.enabled").optBool().value_or(false);
 
     m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled));
 
@@ -697,7 +698,7 @@ void ClientApplication::changeState(MainAppState newState) {
         m_titleScreen->setMultiPlayerAddress(toString(address->address()));
         m_titleScreen->setMultiPlayerPort(toString(address->port()));
         m_titleScreen->setMultiPlayerAccount(configuration->getPath("title.multiPlayerAccount").toString());
-        m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value(false));
+        m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value_or(false));
         m_titleScreen->goToMultiPlayerSelectCharacter(false);
       } else {
         m_titleScreen->goToMultiPlayerSelectCharacter(true);
@@ -706,7 +707,7 @@ void ClientApplication::changeState(MainAppState newState) {
       m_titleScreen->setMultiPlayerAddress(configuration->getPath("title.multiPlayerAddress").toString());
       m_titleScreen->setMultiPlayerPort(configuration->getPath("title.multiPlayerPort").toString());
       m_titleScreen->setMultiPlayerAccount(configuration->getPath("title.multiPlayerAccount").toString());
-      m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value(false));
+      m_titleScreen->setMultiPlayerForceLegacy(configuration->getPath("title.multiPlayerForceLegacy").optBool().value_or(false));
     }
   }
 
@@ -742,7 +743,8 @@ void ClientApplication::changeState(MainAppState newState) {
     if (m_state == MainAppState::MultiPlayer) {
       PacketSocketUPtr packetSocket;
 
-      auto multiPlayerConnection = m_pendingMultiPlayerConnection.take();
+      auto multiPlayerConnection = std::move(*m_pendingMultiPlayerConnection);
+      m_pendingMultiPlayerConnection.reset();
 
       if (auto address = multiPlayerConnection.server.ptr<HostAddressWithPort>()) {
         try {
@@ -1041,7 +1043,7 @@ void ClientApplication::updateRunning(float dt) {
     auto p2pNetworkingService = app->p2pNetworkingService();
     bool clientIPJoinable = m_root->configuration()->get("clientIPJoinable").toBool();
     bool clientP2PJoinable = m_root->configuration()->get("clientP2PJoinable").toBool();
-    Maybe<pair<uint16_t, uint16_t>> party = make_pair(m_universeClient->players(), m_universeClient->maxPlayers());
+    std::optional<pair<uint16_t, uint16_t>> party = make_pair(m_universeClient->players(), m_universeClient->maxPlayers());
 
     if (m_state == MainAppState::MultiPlayer) {
       if (p2pNetworkingService) {
@@ -1231,7 +1233,7 @@ void ClientApplication::updateRunning(float dt) {
       if (!broadcastCallback) {
         broadcastCallback = [&](PlayerPtr player, StringView broadcast) -> bool {
           auto& view = broadcast.utf8();
-          if (view.rfind(VoiceBroadcastPrefix.utf8(), 0) != NPos) {
+          if (view.rfind(VoiceBroadcastPrefix.utf8(), 0) != std::numeric_limits<std::size_t>::max()) {
             auto entityId = player->entityId();
             auto speaker = m_voice->speaker(connectionForEntity(entityId));
             speaker->entityId = entityId;

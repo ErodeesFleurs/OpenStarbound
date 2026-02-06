@@ -117,7 +117,7 @@ EphemeralStatusEffect jsonToEphemeralStatusEffect(Json const& config) {
     return EphemeralStatusEffect{UniqueStatusEffect(config.toString()), {}};
   } else if (config.isType(Json::Type::Object)) {
     String effectName = config.getString("effect");
-    Maybe<float> duration = config.optFloat("duration");
+    std::optional<float> duration = config.optFloat("duration");
     return EphemeralStatusEffect{UniqueStatusEffect(effectName), duration};
   } else {
     throw JsonException("Json is wrong type for ephemeral stat effect config");

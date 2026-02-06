@@ -1,7 +1,8 @@
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
+#include "StarConfig.hpp"
 
-#include <fstream>
+import std;
 
 namespace Star {
 
@@ -39,37 +40,37 @@ void File::copy(String const& source, String const& target) {
 
   targetFile->resize(0);
 
-  char buf[1024];
+  std::array<char, 1024> buf;
   while (!sourceFile->atEnd()) {
-    size_t r = sourceFile->read(buf, 1024);
-    targetFile->writeFull(buf, r);
+    size_t r = sourceFile->read(buf.data(), 1024);
+    targetFile->writeFull(buf.data(), r);
   }
 }
 
-FilePtr File::open(const String& filename, IOMode mode) {
-  auto file = make_shared<File>(filename);
+auto File::open(const String& filename, IOMode mode) -> Ptr<File> {
+  auto file = std::make_shared<File>(filename);
   file->open(mode);
   return file;
 }
 
-ByteArray File::readFile(String const& filename) {
-  FilePtr file = File::open(filename, IOMode::Read);
+auto File::readFile(String const& filename) -> ByteArray {
+  Ptr<File> file = File::open(filename, IOMode::Read);
   ByteArray bytes;
   while (!file->atEnd()) {
-    char buffer[1024];
-    size_t r = file->read(buffer, 1024);
-    bytes.append(buffer, r);
+    std::array<char, 1024> buffer;
+    size_t r = file->read(buffer.data(), 1024);
+    bytes.append(buffer.data(), r);
   }
 
   return bytes;
 }
 
-String File::readFileString(String const& filename) {
-  FilePtr file = File::open(filename, IOMode::Read);
+auto File::readFileString(String const& filename) -> String {
+  Ptr<File> file = File::open(filename, IOMode::Read);
   std::string str;
   while (!file->atEnd()) {
-    char buffer[1024];
-    size_t r = file->read(buffer, 1024);
+    std::array<char, 1024> buffer;
+    size_t r = file->read(buffer.data(), 1024);
     for (size_t i = 0; i < r; ++i)
       str.push_back(buffer[i]);
   }
@@ -77,12 +78,12 @@ String File::readFileString(String const& filename) {
   return str;
 }
 
-StreamOffset File::fileSize(String const& filename) {
+auto File::fileSize(String const& filename) -> std::int64_t {
   return File::open(filename, IOMode::Read)->size();
 }
 
 void File::writeFile(char const* data, size_t len, String const& filename) {
-  FilePtr file = File::open(filename, IOMode::Write | IOMode::Truncate);
+  Ptr<File> file = File::open(filename, IOMode::Write | IOMode::Truncate);
   file->writeFull(data, len);
 }
 
@@ -120,42 +121,42 @@ void File::backupFileInSequence(String const& targetFile, unsigned maximumBackup
 
 File::File()
   : IODevice(IOMode::Closed) {
-  m_file = 0;
+  m_file = nullptr;
 }
 
 File::File(String filename)
-  : IODevice(IOMode::Closed), m_filename(std::move(filename)), m_file(0) {}
+  : IODevice(IOMode::Closed), m_filename(std::move(filename)), m_file(nullptr) {}
 
 File::~File() {
   close();
 }
 
-StreamOffset File::pos() {
+auto File::pos() -> std::int64_t {
   if (!m_file)
     throw IOException("pos called on closed File");
 
   return ftell(m_file);
 }
 
-void File::seek(StreamOffset offset, IOSeek seekMode) {
+void File::seek(std::int64_t offset, IOSeek seekMode) {
   if (!m_file)
     throw IOException("seek called on closed File");
 
   fseek(m_file, offset, seekMode);
 }
 
-StreamOffset File::size() {
+auto File::size() -> std::int64_t {
   return fsize(m_file);
 }
 
-bool File::atEnd() {
+auto File::atEnd() -> bool {
   if (!m_file)
     throw IOException("eof called on closed File");
 
   return ftell(m_file) >= fsize(m_file);
 }
 
-size_t File::read(char* data, size_t len) {
+auto File::read(char* data, size_t len) -> size_t {
   if (!m_file)
     throw IOException("read called on closed File");
 
@@ -165,7 +166,7 @@ size_t File::read(char* data, size_t len) {
   return fread(m_file, data, len);
 }
 
-size_t File::write(const char* data, size_t len) {
+auto File::write(const char* data, size_t len) -> size_t {
   if (!m_file)
     throw IOException("write called on closed File");
 
@@ -175,15 +176,15 @@ size_t File::write(const char* data, size_t len) {
   return fwrite(m_file, data, len);
 }
 
-size_t File::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
+auto File::readAbsolute(std::int64_t readPosition, char* data, size_t len) -> size_t {
   return pread(m_file, data, len, readPosition);
 }
 
-size_t File::writeAbsolute(StreamOffset writePosition, char const* data, size_t len) {
+auto File::writeAbsolute(std::int64_t writePosition, char const* data, size_t len) -> size_t {
   return pwrite(m_file, data, len, writePosition);
 }
 
-String File::fileName() const {
+auto File::fileName() const -> String {
   return m_filename;
 }
 
@@ -200,7 +201,7 @@ void File::remove() {
   remove(m_filename);
 }
 
-void File::resize(StreamOffset s) {
+void File::resize(std::int64_t s) {
   bool tempOpen = false;
   if (!isOpen()) {
     tempOpen = true;
@@ -232,19 +233,19 @@ void File::open(IOMode m) {
 void File::close() {
   if (m_file)
     fclose(m_file);
-  m_file = 0;
+  m_file = nullptr;
   setMode(IOMode::Closed);
 }
 
-String File::deviceName() const {
+auto File::deviceName() const -> String {
   if (m_filename.empty())
     return "<unnamed temp file>";
   else
     return m_filename;
 }
 
-IODevicePtr File::clone() {
-  auto cloned = make_shared<File>(m_filename);
+auto File::clone() -> Ptr<IODevice> {
+  auto cloned = std::make_shared<File>(m_filename);
   if (isOpen()) {
     // Open with same mode
     cloned->open(mode());

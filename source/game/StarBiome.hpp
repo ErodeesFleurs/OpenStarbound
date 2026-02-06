@@ -1,7 +1,7 @@
 #pragma once
 
 #include "StarBiomePlacement.hpp"
-#include "StarSpawner.hpp"
+#include "StarSpawnTypeDatabase.hpp"
 
 namespace Star {
 
@@ -18,7 +18,7 @@ struct BiomePlaceables {
 
   // If any of the item distributions contain trees, this returns the first
   // tree type.
-  Maybe<TreeVariant> firstTreeType() const;
+  std::optional<TreeVariant> firstTreeType() const;
 
   ModId grassMod;
   float grassModDensity;

@@ -118,7 +118,7 @@ R"JSON(
 
 RootLoader::RootLoader(Defaults defaults) {
   String baseConfigFile;
-  Maybe<String> userConfigFile;
+  std::optional<String> userConfigFile;
 
   addParameter("bootconfig", "bootconfig", Optional,
       strf("Boot time configuration file, defaults to sbinit.config"));
@@ -161,7 +161,7 @@ pair<RootUPtr, RootLoader::Options> RootLoader::commandInitOrDie(int argc, char*
 
 Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const {
   try {
-    String bootConfigFile = options.parameters.value("bootconfig").maybeFirst().value("sbinit.config");
+    String bootConfigFile = options.parameters.value("bootconfig").maybeFirst().value_or("sbinit.config");
     Json bootConfig = Json::parseJson(File::readFileString(bootConfigFile));
 
     Json assetsSettings = jsonMerge(
@@ -190,7 +190,9 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
 
     rootSettings.storageDirectory = bootConfig.getString("storageDirectory");
     rootSettings.logDirectory = bootConfig.optString("logDirectory");
-    rootSettings.logFile = options.parameters.value("logfile").maybeFirst().orMaybe(m_defaults.logFile);
+    rootSettings.logFile = options.parameters.value("logfile").maybeFirst();
+    if (!rootSettings.logFile)
+      rootSettings.logFile = m_defaults.logFile;
     rootSettings.logFileBackups = bootConfig.getUInt("logFileBackups", 10);
     rootSettings.includeUGC = bootConfig.getBool("includeUGC", true);
 

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarAiTypes.hpp"
 #include "StarGameTimers.hpp"
 #include "StarWarping.hpp"
@@ -126,12 +128,12 @@ private:
 
   StringList m_availableMissions;
   StringList m_completedMissions;
-  Maybe<String> m_selectedMission;
+  std::optional<String> m_selectedMission;
 
   List<CompanionPtr> m_crew;
   CompanionPtr m_selectedRecruit;
 
-  Maybe<AiSpeech> m_currentSpeech;
+  std::optional<AiSpeech> m_currentSpeech;
   float m_textLength;
   float m_textMaxLength;
 

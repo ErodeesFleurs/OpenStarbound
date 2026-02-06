@@ -1,7 +1,7 @@
 #pragma once
 
+#include "StarLiquidTypes.hpp"
 #include "StarRect.hpp"
-#include "StarGameTypes.hpp"
 #include "StarLua.hpp"
 
 namespace Star {
@@ -32,31 +32,31 @@ namespace LuaBindings {
     String itemType(Root* root, String const& itemName);
     Json itemTags(Root* root, String const& itemName);
     bool itemHasTag(Root* root, String const& itemName, String const& itemTag);
-    Json itemConfig(Root* root, Json const& descriptor, Maybe<float> const& level, Maybe<uint64_t> const& seed);
-    Json createItem(Root* root, Json const& descriptor, Maybe<float> const& level, Maybe<uint64_t> const& seed);
+    Json itemConfig(Root* root, Json const& descriptor, std::optional<float> const& level, std::optional<uint64_t> const& seed);
+    Json createItem(Root* root, Json const& descriptor, std::optional<float> const& level, std::optional<uint64_t> const& seed);
     Json tenantConfig(Root* root, String const& tenantName);
     JsonArray getMatchingTenants(Root* root, StringMap<unsigned> const& colonyTags);
     Json liquidStatusEffects(Root* root, LiquidId arg1);
-    String generateName(Root* root, String const& rulesAsset, Maybe<uint64_t> seed);
+    String generateName(Root* root, String const& rulesAsset, std::optional<uint64_t> seed);
     Json questConfig(Root* root, String const& templateId);
     JsonArray npcPortrait(Root* root,
         String const& portraitMode,
         String const& species,
         String const& typeName,
         float level,
-        Maybe<uint64_t> seed,
-        Maybe<JsonObject> const& parameters);
+        std::optional<uint64_t> seed,
+        std::optional<JsonObject> const& parameters);
     Json npcVariant(Root* root,
         String const& species,
         String const& typeName,
         float level,
-        Maybe<uint64_t> seed,
-        Maybe<JsonObject> const& parameters);
-    JsonArray monsterPortrait(Root* root, String const& typeName, Maybe<JsonObject> const& parameters);
+        std::optional<uint64_t> seed,
+        std::optional<JsonObject> const& parameters);
+    JsonArray monsterPortrait(Root* root, String const& typeName, std::optional<JsonObject> const& parameters);
     bool isTreasurePool(Root* root, String const& pool);
-    JsonArray createTreasure(Root* root, String const& pool, float level, Maybe<uint64_t> seed);
-    Maybe<String> materialMiningSound(Root* root, String const& materialName, Maybe<String> const& modName);
-    Maybe<String> materialFootstepSound(Root* root, String const& materialName, Maybe<String> const& modName);
+    JsonArray createTreasure(Root* root, String const& pool, float level, std::optional<uint64_t> seed);
+    std::optional<String> materialMiningSound(Root* root, String const& materialName, std::optional<String> const& modName);
+    std::optional<String> materialFootstepSound(Root* root, String const& materialName, std::optional<String> const& modName);
   }
 }
 }

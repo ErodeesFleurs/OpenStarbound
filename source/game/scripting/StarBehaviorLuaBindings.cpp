@@ -1,5 +1,4 @@
 #include "StarBehaviorLuaBindings.hpp"
-#include "StarLuaGameConverters.hpp"
 #include "StarRoot.hpp"
 
 namespace Star {
@@ -7,9 +6,9 @@ namespace Star {
 LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<BehaviorStatePtr>* list) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("behavior", [list](Json const& config, JsonObject const& parameters, LuaTable context, Maybe<LuaUserData> blackboard) -> BehaviorStateWeakPtr {
+  callbacks.registerCallback("behavior", [list](Json const& config, JsonObject const& parameters, LuaTable context, std::optional<LuaUserData> blackboard) -> BehaviorStateWeakPtr {
     auto behaviorDatabase = Root::singleton().behaviorDatabase();
-    Maybe<BlackboardWeakPtr> board = {};
+    std::optional<BlackboardWeakPtr> board = {};
     if (blackboard && blackboard->is<BlackboardWeakPtr>())
       board = blackboard->get<BlackboardWeakPtr>();
 

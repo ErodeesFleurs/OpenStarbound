@@ -16,7 +16,7 @@ void throwInvalidUtf32CodePoint(Utf32Type val) {
 }
 
 size_t utf8Length(const Utf8Type* utf8, size_t remain) {
-  bool stopOnNull = remain == NPos;
+  bool stopOnNull = remain == std::numeric_limits<std::size_t>::max();
   size_t length = 0;
 
   while (true) {
@@ -83,7 +83,7 @@ size_t utf8Length(const Utf8Type* utf8, size_t remain) {
 
 size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
   const Utf8Type* start = utf8;
-  bool stopOnNull = remain == NPos;
+  bool stopOnNull = remain == std::numeric_limits<std::size_t>::max();
 
   while (true) {
     if (remain == 0)
@@ -185,7 +185,7 @@ static const char32_t SURR_MASK = 0x3ff;
 static const char32_t MIN_PAIR = 0x10000;
 static const char32_t MAX_CODEPOINT = 0x10ffff;
 
-Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previousCodepoint) {
+Utf32Type hexStringToUtf32(std::string const& codepoint, std::optional<Utf32Type> previousCodepoint) {
   bool continuation = false;
   if (previousCodepoint && isUtf16LeadSurrogate(*previousCodepoint)) {
     continuation = true;
@@ -214,21 +214,17 @@ std::string hexStringFromUtf32(Utf32Type character) {
   if (character > MAX_CODEPOINT)
     throw UnicodeException("Codepoint too big in hexStringFromUtf32");
   Utf32Type lead;
-  Maybe<Utf32Type> trail;
+  std::optional<Utf32Type> trail;
   tie(lead, trail) = utf32ToUtf16SurrogatePair(character);
 
   char16_t leadOut = toBigEndian((char16_t)lead);
   auto leadHex = hexEncode(reinterpret_cast<char*>(&leadOut), sizeof(leadOut)).takeUtf8();
-
-  starAssert(leadHex.size() == 4);
 
   if (!trail)
     return leadHex;
 
   char16_t trailOut = toBigEndian((char16_t)*trail);
   auto trailHex = hexEncode(reinterpret_cast<char*>(&trailOut), sizeof(trailOut));
-
-  starAssert(trailHex.size() == 4);
 
   return (leadHex + trailHex).takeUtf8();
 }
@@ -255,7 +251,7 @@ Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) {
   return codepoint;
 }
 
-pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint) {
+pair<Utf32Type, std::optional<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint) {
   if (codepoint >= MIN_PAIR) {
     codepoint -= MIN_PAIR;
     Utf32Type lead = (codepoint >> 10) + MIN_LEAD;

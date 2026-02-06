@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarTtlCache.hpp"
@@ -14,14 +16,14 @@ STAR_EXCEPTION(TenantException, StarException);
 struct TenantNpcSpawnable {
   List<String> species;
   String type;
-  Maybe<float> level;
-  Maybe<Json> overrides;
+  std::optional<float> level;
+  std::optional<Json> overrides;
 };
 
 struct TenantMonsterSpawnable {
   String type;
-  Maybe<float> level;
-  Maybe<Json> overrides;
+  std::optional<float> level;
+  std::optional<Json> overrides;
 };
 
 typedef MVariant<TenantNpcSpawnable, TenantMonsterSpawnable> TenantSpawnable;
@@ -43,7 +45,7 @@ struct Tenant {
 
   List<TenantSpawnable> tenants;
 
-  Maybe<TenantRent> rent;
+  std::optional<TenantRent> rent;
 
   // The Json this tenant was parsed from
   Json config;

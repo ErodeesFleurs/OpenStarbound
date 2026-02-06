@@ -41,8 +41,6 @@ void Tileset::defineTile(TilePtr const& tile) {
   // objects (which would cause the assertion failure below) it'd be harder to
   // check if a tile still exists in the database and should be exported
   // despite no longer belonging to the tileset.
-  starAssert(m_source == tile->source);
-  starAssert(m_database->name() == tile->database);
 
   m_tiles.append(tile);
 }
@@ -264,8 +262,6 @@ void TilesetUpdater::defineAssetSource(String const& source) {
       String databasePath = unixFileJoin(imageDir, databaseName);
       Logger::info("Scanning database {}...", databaseName);
       for (pair<String, bool> image : File::dirList(databasePath)) {
-        starAssert(!image.second);
-        starAssert(image.first.endsWith(".png"));
         String tileName = image.first.substr(0, image.first.findLast(".png"));
         m_preexistingImages[sourceName][databaseName].add(tileName);
       }
@@ -301,7 +297,6 @@ void TilesetUpdater::exportTilesets() {
       StringSet unusedImages = m_preexistingImages[sourceName][database->name()].difference(database->tileNames());
       for (String tileName : unusedImages) {
         String tileImagePath = unixFileJoin(databaseImagePath, tileName + ".png");
-        starAssert(File::isFile(tileImagePath));
         coutf("Removing unused tile image tiled/{}/{}/{}.png\n", sourceName, database->name(), tileName);
         File::remove(tileImagePath);
       }

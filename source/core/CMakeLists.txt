@@ -88,7 +88,6 @@ SET (star_core_HEADERS
     StarOrderedSet.hpp
     StarOutputProxy.hpp
     StarParametricFunction.hpp
-    StarPch.hpp
     StarPeriodic.hpp
     StarPeriodicFunction.hpp
     StarPerlin.hpp
@@ -202,7 +201,6 @@ IF (UNIX)
       StarLockFile_unix.cpp
       StarSecureRandom_unix.cpp
       StarSignalHandler_unix.cpp
-      StarThread_unix.cpp
       StarTime_unix.cpp
     )
 ELSEIF (WIN32)
@@ -217,7 +215,6 @@ ELSEIF (WIN32)
       StarMiniDump_windows.cpp
       StarSignalHandler_windows.cpp
       StarString_windows.cpp
-      StarThread_windows.cpp
       StarTime_windows.cpp
       StarException_windows.cpp
       StarSecureRandom_windows.cpp
@@ -233,7 +230,7 @@ ADD_LIBRARY (star_core OBJECT
     ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp
 )
 
-TARGET_INCLUDE_DIRECTORIES(star_core PRIVATE
+TARGET_INCLUDE_DIRECTORIES(star_core PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${PROJECT_SOURCE_DIR}/extern
     ${PROJECT_SOURCE_DIR}/extern/lua
@@ -243,17 +240,3 @@ TARGET_LINK_LIBRARIES(star_core PUBLIC
     star_extern
     ${STAR_EXT_LIBS}
 )
-
-IF(STAR_PRECOMPILED_HEADERS)
-    TARGET_PRECOMPILE_HEADERS (star_core PUBLIC StarPch.hpp)
-ENDIF()
-
-IF(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
-    SET_SOURCE_FILES_PROPERTIES(StarColor.cpp PROPERTIES COMPILE_FLAGS "-fno-fast-math -fassociative-math -freciprocal-math")
-ENDIF()
-
-IF(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
-    SET_SOURCE_FILES_PROPERTIES(StarMemory.cpp PROPERTIES
-          COMPILE_DEFINITIONS STAR_JEMALLOC_IS_PREFIXED
-          )
-ENDIF()

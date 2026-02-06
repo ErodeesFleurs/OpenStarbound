@@ -61,7 +61,7 @@ bool BiomeItemPlacement::operator<(BiomeItemPlacement const& rhs) const {
   return priority < rhs.priority;
 }
 
-Maybe<BiomeItem> BiomeItemDistribution::createItem(Json const& config, RandomSource& rand, float biomeHueShift) {
+std::optional<BiomeItem> BiomeItemDistribution::createItem(Json const& config, RandomSource& rand, float biomeHueShift) {
   auto& root = Root::singleton();
 
   auto type = config.getString("type");
@@ -181,7 +181,7 @@ BiomeItemDistribution::BiomeItemDistribution(Json const& config, uint64_t seed, 
     m_blockSeed = rand.randu64();
     for (int i = 0; i < variants; ++i) {
       if (auto item = createItem(config, rand, biomeHueShift))
-        m_randomItems.append(item.take());
+        m_randomItems.append(std::move(*item));
     }
 
   } else if (m_distribution == DistributionType::Periodic) {
@@ -206,7 +206,7 @@ BiomeItemDistribution::BiomeItemDistribution(Json const& config, uint64_t seed, 
     for (int i = 0; i < variants; ++i) {
       if (auto item = createItem(config, rand, biomeHueShift)) {
         PerlinF weight(octaves, 1.0f / typePeriod, 1.0, 0.0, alpha, beta, rand.randu64());
-        m_weightedItems.append({item.take(), weight});
+        m_weightedItems.append({std::move(*item), weight});
       }
     }
   }
@@ -263,7 +263,7 @@ List<BiomeItem> BiomeItemDistribution::allItems() const {
   }
 }
 
-Maybe<BiomeItemPlacement> BiomeItemDistribution::itemToPlace(int x, int y) const {
+std::optional<BiomeItemPlacement> BiomeItemDistribution::itemToPlace(int x, int y) const {
   if (m_distribution == DistributionType::Random) {
     if (staticRandomFloat(x, y, m_blockSeed) <= m_blockProbability)
       return BiomeItemPlacement{staticRandomValueFrom(m_randomItems, x, y, m_blockSeed), Vec2I(x, y), m_priority};

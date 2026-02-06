@@ -1,23 +1,23 @@
 #pragma once
 
-#include "StarEncode.hpp"
-#include "StarByteArray.hpp"
 #include "StarArray.hpp"
+
+import std;
 
 namespace Star::Curve25519 {
 
-constexpr size_t PublicKeySize = 32;
-constexpr size_t SecretKeySize = 32;
-constexpr size_t PrivateKeySize = 64;
-constexpr size_t SignatureSize = 64;
+constexpr std::size_t PublicKeySize = 32;
+constexpr std::size_t SecretKeySize = 32;
+constexpr std::size_t PrivateKeySize = 64;
+constexpr std::size_t SignatureSize = 64;
 
-typedef Array<uint8_t, PublicKeySize> PublicKey;
-typedef Array<uint8_t, SecretKeySize> SecretKey;
-typedef Array<uint8_t, PrivateKeySize> PrivateKey;
-typedef Array<uint8_t, SignatureSize> Signature;
+using PublicKey = Array<std::uint8_t, PublicKeySize>;
+using SecretKey = Array<std::uint8_t, SecretKeySize>;
+using PrivateKey = Array<std::uint8_t, PrivateKeySize>;
+using Signature = Array<std::uint8_t, SignatureSize>;
 
-PublicKey const& publicKey();
-Signature sign(void* data, size_t len);
-bool verify(uint8_t const* signature, uint8_t const* publicKey, void* data, size_t len);
+auto publicKey() -> PublicKey const&;
+auto sign(void* data, std::size_t len) -> Signature;
+auto verify(std::uint8_t const* signature, std::uint8_t const* publicKey, void* data, std::size_t len) -> bool;
 
 }

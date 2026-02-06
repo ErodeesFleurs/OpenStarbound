@@ -56,11 +56,11 @@ void PacketStatCollector::calculate() {
   }
 }
 
-Maybe<PacketStats> PacketSocket::incomingStats() const {
+std::optional<PacketStats> PacketSocket::incomingStats() const {
   return {};
 }
 
-Maybe<PacketStats> PacketSocket::outgoingStats() const {
+std::optional<PacketStats> PacketSocket::outgoingStats() const {
   return {};
 }
 void PacketSocket::setNetRules(NetCompatibilityRules netRules) { m_netRules = netRules; }
@@ -178,7 +178,6 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
 
       // Packets must read and write actual data, because this is used to
       // determine packet count
-      starAssert(!packetBuffer.empty());
 
       ByteArray compressedPackets;
       bool mustCompress = currentCompressionMode == PacketCompressionMode::Enabled;
@@ -337,11 +336,11 @@ bool TcpPacketSocket::readData() {
   return dataReceived;
 }
 
-Maybe<PacketStats> TcpPacketSocket::incomingStats() const {
+std::optional<PacketStats> TcpPacketSocket::incomingStats() const {
   return m_incomingStats.stats();
 }
 
-Maybe<PacketStats> TcpPacketSocket::outgoingStats() const {
+std::optional<PacketStats> TcpPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 
@@ -391,7 +390,6 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
 
       // Packets must read and write actual data, because this is used to
       // determine packet count
-      starAssert(!packetBuffer.empty());
 
       ByteArray compressedPackets;
       bool mustCompress = currentCompressionMode == PacketCompressionMode::Enabled;
@@ -496,11 +494,11 @@ bool P2PPacketSocket::readData() {
   return workDone;
 }
 
-Maybe<PacketStats> P2PPacketSocket::incomingStats() const {
+std::optional<PacketStats> P2PPacketSocket::incomingStats() const {
   return m_incomingStats.stats();
 }
 
-Maybe<PacketStats> P2PPacketSocket::outgoingStats() const {
+std::optional<PacketStats> P2PPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 

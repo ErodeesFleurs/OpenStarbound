@@ -9,6 +9,6 @@ extern char const* const StarVersionString;
 extern char const* const StarSourceIdentifierString;
 extern char const* const StarArchitectureString;
 
-typedef uint32_t VersionNumber;
+using VersionNumber = std::uint32_t;
 
 }

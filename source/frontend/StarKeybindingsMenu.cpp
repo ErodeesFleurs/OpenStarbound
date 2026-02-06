@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "StarKeybindingsMenu.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
@@ -63,13 +65,13 @@ bool KeybindingsMenu::sendEvent(InputEvent const& event) {
       return true;
 
     if (auto keyUp = event.ptr<KeyUpEvent>()) {
-      if (Maybe<KeyMod> modKey = KeyChordMods.maybe(keyUp->key)) {
+      if (std::optional<KeyMod> modKey = KeyChordMods.maybe(keyUp->key)) {
         m_currentMods &= ~*modKey;
         setKeybinding(KeyChord{keyUp->key, m_currentMods});
         return true;
       }
     } else if (auto keyDown = event.ptr<KeyDownEvent>()) {
-      Maybe<KeyMod> modKey = KeyModNames.maybeLeft(KeyNames.getRight(keyDown->key));
+      std::optional<KeyMod> modKey = KeyModNames.maybeLeft(KeyNames.getRight(keyDown->key));
 
       if (modKey) {
         m_currentMods |= *modKey;

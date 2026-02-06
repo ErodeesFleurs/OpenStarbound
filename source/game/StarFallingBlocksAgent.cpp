@@ -31,7 +31,7 @@ void FallingBlocksAgent::update() {
       FallingBlockType thisBlock = m_facade->blockType(pos);
       FallingBlockType belowBlock = m_facade->blockType(belowPos);
 
-      Maybe<Vec2I> moveTo;
+      std::optional<Vec2I> moveTo;
 
       if (thisBlock == FallingBlockType::Falling) {
         if (belowBlock == FallingBlockType::Open)
@@ -73,7 +73,7 @@ void FallingBlocksAgent::visitLocation(Vec2I const& location) {
 
 void FallingBlocksAgent::visitRegion(RectI const& region) {
   for (int x = region.xMin() - 1; x <= region.xMax(); ++x) {
-    for (int y = region.yMin(); y <= region.yMax(); ++y) 
+    for (int y = region.yMin(); y <= region.yMax(); ++y)
       m_pending.add({x, y});
   }
 }

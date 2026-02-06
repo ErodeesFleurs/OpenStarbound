@@ -101,7 +101,7 @@ public:
 
   // Returns whether line intersects with any colliding tiles.
   virtual bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
-  virtual Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
+  virtual std::optional<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
 
   // Returns a list of all the collidable tiles along the given line.
   virtual List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const = 0;
@@ -112,7 +112,7 @@ public:
   // Damage multiple tiles, avoiding duplication (objects or plants that occupy
   // more than one tile
   // position are only damaged once)
-  virtual TileDamageResult damageTiles(List<Vec2I> const& tilePositions, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) = 0;
+  virtual TileDamageResult damageTiles(List<Vec2I> const& tilePositions, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {}) = 0;
 
   virtual InteractiveEntityPtr getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const = 0;
   // Can the target entity be reached from the given position within the given radius?
@@ -171,7 +171,7 @@ public:
   bool canModifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap) const;
   bool modifyTile(Vec2I const& pos, TileModification const& modification, bool allowEntityOverlap);
 
-  TileDamageResult damageTile(Vec2I const& tilePosition, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {});
+  TileDamageResult damageTile(Vec2I const& tilePosition, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity = {});
 
   // Returns closest entity for which lineCollision between the given center
   // position and the entity position returns false.
@@ -182,7 +182,7 @@ public:
 
   // Returns first point along line that collides with any collision geometry, along
   // with the normal of the intersected line, if any.
-  Maybe<pair<Vec2F, Maybe<Vec2F>>> lineCollision(Line2F const& line, CollisionSet const& collisionSet = DefaultCollisionSet) const;
+  std::optional<pair<Vec2F, std::optional<Vec2F>>> lineCollision(Line2F const& line, CollisionSet const& collisionSet = DefaultCollisionSet) const;
 
   // Returns whether poly collides with any collision geometry.
   bool polyCollision(PolyF const& poly, CollisionSet const& collisionSet = DefaultCollisionSet) const;

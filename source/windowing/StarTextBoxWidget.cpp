@@ -234,11 +234,11 @@ void TextBoxWidget::setOnEscapeKeyCallback(WidgetCallbackFunc onEscapeKey) {
   m_onEscapeKey = onEscapeKey;
 }
 
-void TextBoxWidget::setNextFocus(Maybe<String> nextFocus) {
+void TextBoxWidget::setNextFocus(std::optional<String> nextFocus) {
   m_nextFocus = nextFocus;
 }
 
-void TextBoxWidget::setPrevFocus(Maybe<String> prevFocus) {
+void TextBoxWidget::setPrevFocus(std::optional<String> prevFocus) {
   m_prevFocus = prevFocus;
 }
 
@@ -272,7 +272,7 @@ KeyboardCaptureMode TextBoxWidget::keyboardCaptureMode() const {
   return KeyboardCaptureMode::None;
 }
 
-Maybe<pair<RectI, int>> TextBoxWidget::keyboardCaptureArea() const {
+std::optional<pair<RectI, int>> TextBoxWidget::keyboardCaptureArea() const {
   if (active() && hasFocus()) {
     return make_pair(screenBoundRect().scaled(context()->interfaceScale()), getCursorDrawOffset());
   }

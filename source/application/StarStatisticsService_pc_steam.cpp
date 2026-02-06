@@ -15,7 +15,7 @@ bool SteamStatisticsService::initialized() const {
   return m_initialized;
 }
 
-Maybe<String> SteamStatisticsService::error() const {
+std::optional<String> SteamStatisticsService::error() const {
   return m_error;
 }
 

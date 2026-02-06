@@ -150,7 +150,3 @@ TARGET_LINK_LIBRARIES(star_frontend PUBLIC
     star_core
     star_extern
 )
-
-IF(STAR_PRECOMPILED_HEADERS)
-    TARGET_PRECOMPILE_HEADERS (star_frontend REUSE_FROM star_core)
-ENDIF()

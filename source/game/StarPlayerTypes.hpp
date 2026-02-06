@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarEither.hpp"
@@ -22,7 +24,7 @@ extern EnumMap<PlayerBusyState> const PlayerBusyStateNames;
 
 struct PlayerWarpRequest {
   String action;
-  Maybe<String> animation;
+  std::optional<String> animation;
   bool deploy;
 };
 

@@ -1,7 +1,5 @@
 #include "StarSystemWorldClient.hpp"
-#include "StarRoot.hpp"
 #include "StarCelestialDatabase.hpp"
-#include "StarClientContext.hpp"
 #include "StarPlayerUniverseMap.hpp"
 
 namespace Star {
@@ -13,7 +11,7 @@ CelestialCoordinate SystemWorldClient::currentSystem() const {
   return CelestialCoordinate(m_location);
 }
 
-Maybe<Vec2F> SystemWorldClient::shipPosition() const {
+std::optional<Vec2F> SystemWorldClient::shipPosition() const {
   if (m_ship)
     return m_ship->position();
   else
@@ -50,8 +48,6 @@ void SystemWorldClient::update(float dt) {
   auto location = m_ship->systemLocation();
   if (auto uuid = location.maybe<Uuid>()) {
     if (auto object = getObject(*uuid)) {
-      Maybe<CelestialOrbit> orbit;
-
       if (object->permanent())
         m_universeMap->addMappedObject(CelestialCoordinate(m_location), *uuid, object->name(), object->orbit(), object->parameters());
       else
@@ -88,7 +84,7 @@ List<Uuid> SystemWorldClient::objectKeys() const {
 }
 
 SystemObjectPtr SystemWorldClient::getObject(Uuid const& uuid) const {
-  return m_objects.maybe(uuid).value({});
+  return m_objects.maybe(uuid).value_or({});
 }
 
 List<SystemClientShipPtr> SystemWorldClient::ships() const
@@ -98,11 +94,11 @@ List<SystemClientShipPtr> SystemWorldClient::ships() const
 
 SystemClientShipPtr SystemWorldClient::getShip(Uuid const & uuid) const
 {
-  return m_clientShips.maybe(uuid).value({});
+  return m_clientShips.maybe(uuid).value_or({});
 }
 
-Uuid SystemWorldClient::spawnObject(String typeName, Maybe<Vec2F> position, Maybe<Uuid> const& uuid, JsonObject overrides) {
-  Uuid objectUuid = uuid.value(Uuid());
+Uuid SystemWorldClient::spawnObject(String typeName, std::optional<Vec2F> position, std::optional<Uuid> const& uuid, JsonObject overrides) {
+  Uuid objectUuid = uuid.value_or(Uuid());
   m_outgoingPackets.append(make_shared<SystemObjectSpawnPacket>(std::move(typeName), objectUuid, std::move(position), std::move(overrides)));
   return objectUuid;
 }

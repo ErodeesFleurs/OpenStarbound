@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarDungeonGenerator.hpp"
 #include "StarFallingBlocksAgent.hpp"
 #include "StarSpawner.hpp"
@@ -123,14 +125,14 @@ public:
   void destructEntity(WorldStorage* worldStorage, EntityPtr const& entity) override;
   bool entityKeepAlive(WorldStorage* worldStorage, EntityPtr const& entity) const override;
   bool entityPersistent(WorldStorage* worldStorage, EntityPtr const& entity) const override;
-  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) override;
+  RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, std::optional<DungeonId> id) override;
 
   void replaceBiomeBlocks(ServerTile* tile);
 
 private:
   struct QueuedPlacement {
     List<BiomeItemDistribution> distributions;
-    Maybe<DungeonId> dungeonId;
+    std::optional<DungeonId> dungeonId;
     RpcPromiseKeeper<Vec2I> promise;
     bool fulfilled;
   };

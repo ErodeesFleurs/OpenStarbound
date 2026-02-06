@@ -5,7 +5,6 @@
 thread = {}
 
 --- Stops the thread. This does not destroy the thread; the parent script still has to stop the thread itself to destroy it, so avoid using this too much as it can cause memory leaks.
----@return void
 function thread.stop() end
 
 --- threads API
@@ -20,17 +19,15 @@ function threads.create(parameters) end
 --- Pauses or unpauses a thread. ---
 ---@param name string
 ---@param paused boolean
----@return void
 function threads.setPause(name, paused) end
 
 --- Stops and destroys a thread. ---
 ---@param name string
----@return void
 function threads.stop(name) end
 
 --- Sends a message to the given thread. Note that the return value from this is currently the only way to get data from the thread. --- Threads have simple updateable scripts with access to only a few tables. They include: - the basic tables all scripts have access to (including `threads`) - `updateablescript` bindings - `message` - `config` - `thread` --- The `thread` table has only a single function.
 ---@param threadName string
 ---@param messageName string
----@param args LuaValue
+---@param args ...any
 ---@return RpcPromise<Json>
 function threads.sendMessage(threadName, messageName, args) end

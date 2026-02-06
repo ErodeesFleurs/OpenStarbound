@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 #include "StarTileDamage.hpp"
@@ -99,8 +100,8 @@ public:
   // Each stem / foliage set has its own patterns of shapes that must match up
   String treeStemShape(String const& stemName) const;
   String treeFoliageShape(String const& foliageName) const;
-  Maybe<String> treeStemDirectory(String const& stemName) const;
-  Maybe<String> treeFoliageDirectory(String const& foliageName) const;
+  std::optional<String> treeStemDirectory(String const& stemName) const;
+  std::optional<String> treeFoliageDirectory(String const& foliageName) const;
   // Throws an exception if stem shape and foliage shape do not match
   TreeVariant buildTreeVariant(String const& stemName, float stemHueShift, String const& foliageName, float foliageHueShift) const;
   // Build a foliage-less tree

@@ -28,8 +28,8 @@ namespace JsonPath {
         buffer.append(*iterator++);
     }
 
-    Maybe<size_t> index = maybeLexicalCast<size_t>(buffer);
-    if (index.isValid() || (buffer == "-" && iterator == end))
+    std::optional<size_t> index = maybeLexicalCast<size_t>(buffer);
+    if (index || (buffer == "-" && iterator == end))
       return TypeHint::Array;
     return TypeHint::Object;
   }

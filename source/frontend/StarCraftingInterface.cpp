@@ -86,7 +86,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
 
   if (auto upgradeButton = fetchChild<ButtonWidget>("btnUpgrade")) {
     upgradeButton->disable();
-    Maybe<JsonArray> recipeData = m_settings.optArray("upgradeMaterials");
+    std::optional<JsonArray> recipeData = m_settings.optArray("upgradeMaterials");
 
     // create a recipe out of the listed upgrade materials.
     // for ease of creating a tooltip later.
@@ -113,7 +113,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient, PlayerPtr player, Json co
   if (auto spinCountDown = fetchChild<ButtonWidget>("spinCount.down"))
     spinCountDown->disable();
 
-  m_displayedRecipe = NPos;
+  m_displayedRecipe = std::numeric_limits<std::size_t>::max();
   updateAvailableRecipes();
 
   m_crafting = false;
@@ -560,7 +560,7 @@ void CraftingPane::toggleCraft() {
 void CraftingPane::craft(int count) {
   auto& root = Root::singleton();
 
-  if (m_guiList->selectedItem() != NPos) {
+  if (m_guiList->selectedItem() != std::numeric_limits<std::size_t>::max()) {
     auto recipe = recipeFromSelectedWidget();
 
     if (!m_player->isAdmin() && !consumeIngredients(recipe, count)) {
@@ -752,7 +752,7 @@ int CraftingPane::maxCraft() {
     return m_maxSpinCount;
   auto itemDb = Root::singleton().itemDatabase();
   int res = 0;
-  if (m_guiList->selectedItem() != NPos && m_guiList->selectedItem() < m_recipes.size()) {
+  if (m_guiList->selectedItem() != std::numeric_limits<std::size_t>::max() && m_guiList->selectedItem() < m_recipes.size()) {
     HashMap<ItemDescriptor, uint64_t> normalizedBag = m_player->inventory()->availableItems();
     auto selectedRecipe = recipeFromSelectedWidget();
     res = itemDb->maxCraftableInBag(normalizedBag, m_player->inventory()->availableCurrencies(), selectedRecipe);

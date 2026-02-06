@@ -20,7 +20,7 @@ public:
 private:
   struct Nametag {
     String name;
-    Maybe<String> statusText;
+    std::optional<String> statusText;
     Vec3B color;
     float opacity;
     EntityId entityId;

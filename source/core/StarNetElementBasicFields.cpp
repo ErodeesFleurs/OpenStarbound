@@ -5,13 +5,13 @@ namespace Star {
 void NetElementSize::readData(DataStream& ds, size_t& v) const {
   uint64_t s = ds.readVlqU();
   if (s == 0)
-    v = NPos;
+    v = std::numeric_limits<std::size_t>::max();
   else
     v = s - 1;
 }
 
 void NetElementSize::writeData(DataStream& ds, size_t const& v) const {
-  if (v == NPos)
+  if (v == std::numeric_limits<std::size_t>::max())
     ds.writeVlqU(0);
   else
     ds.writeVlqU(v + 1);
@@ -31,7 +31,6 @@ void NetElementEvent::trigger() {
 
 uint64_t NetElementEvent::pullOccurrences() {
   uint64_t occurrences = get();
-  starAssert(occurrences >= m_pulledOccurrences);
   uint64_t unchecked = occurrences - m_pulledOccurrences;
   m_pulledOccurrences = occurrences;
   return unchecked;

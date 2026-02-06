@@ -18,28 +18,25 @@ function animator.animationRate() end
 
 --- Sets a global animator tag. A global tag replaces any tag <tagName> with the specified tagValue across all animation parts. If tagValue is nothing, then the tag will be removed, empty global tags default to `default`.
 ---@param tagName string
----@param tagValue Maybe<String>
----@return void
+---@param tagValue Optional<string>
 function animator.setGlobalTag(tagName, tagValue) end
 
 --- Sets a local animator tag. A part tag replaces any tag <tagName> with the specified tagValue in the partType animation part only. If tagValue is nothing, then the tag will be removed, therefore reverting back to inheriting the global tag, empty global tags default to `default`.
 ---@param partType string
 ---@param tagName string
----@param tagValue Maybe<String>
----@return void
+---@param tagValue Optional<string>
 function animator.setPartTag(partType, tagName, tagValue) end
 
 --- Sets an animator tag. A tag replaces any tag <tagName> with the specified tagValue across all animation parts. If tagValue is nothing, then the tag will be removed, inheriting from part and global tags again, empty global tags default to `default`. Local tags are not networked, they are intended for use in client animation scripts. --- ### `String` animator.applyPartTags(`String` part, `String` input) Returns the input string with the animation tags for the specified part applied to it. ---
 ---@param tagName string
----@param tagValue Maybe<String>
----@return void
+---@param tagValue Optional<string>
 function animator.setLocalTag(tagName, tagValue) end
 
 --- Returns the value of the specified property for a state type. If **state** and **frame** are supplied, the value for that specific state and frame is returned, even if that state is not active.
 ---@param stateType string
 ---@param propertyName string
----@param state Maybe<String>
----@param frame Maybe<int>
+---@param state Optional<string>
+---@param frame Optional<integer>
 ---@return Json
 function animator.animationStateProperty(stateType, propertyName, state, frame) end
 
@@ -52,9 +49,9 @@ function animator.animationStateNextProperty(stateType, propertyName) end
 --- Returns an animation part property without applying any transformations. If **stateType**, **state**, and **frame** are supplied, the value for that specific state and frame is returned, even if that state is not active.
 ---@param partName string
 ---@param propertyName string
----@param stateType Maybe<String>
----@param state Maybe<String>
----@param frame Maybe<int>
+---@param stateType Optional<string>
+---@param state Optional<string>
+---@param frame Optional<integer>
 ---@return Json
 function animator.partProperty(partName, propertyName, stateType, state, frame) end
 
@@ -117,33 +114,31 @@ function animator.animationStateReverse(stateType) end
 
 --- Returns true if the animator has the stateType. If **state** is valid, then it will only return true if the state also exists. ---
 ---@param stateType string
----@param state Maybe<String>
+---@param state Optional<string>
 ---@return boolean
 function animator.hasState(stateType, state) end
 
 --- Returns the animation cycle of the current animation for stateType. If **state** is valid, then it will return the animation cycle of that state instead.
 ---@param stateType string
----@param state Maybe<String>
+---@param state Optional<string>
 ---@return number
 function animator.stateCycle(stateType, state) end
 
 --- Returns the number of frames of the current animation for stateType. If **state** is valid, then it will return the number of frames of that state instead. ---
 ---@param stateType string
----@param state Maybe<String>
+---@param state Optional<string>
 ---@return number
 function animator.stateFrames(stateType, state) end
 
 --- Rotates the specified transformation group by the specified angle in degrees, optionally around the specified center point.
 ---@param transformationGroup string
 ---@param rotation number
----@param rotationCenter Vec2F
----@return void
+---@param rotationCenter [number, number]
 function animator.rotateDegreesTransformationGroup(transformationGroup, rotation, rotationCenter) end
 
 --- Overwrites the current Mat3F transformation with the supplied one.
 ---@param transformationGroup string
 ---@param transformation Mat3F
----@return void
 function animator.setTransformationGroup(transformationGroup, transformation) end
 
 --- Returns the current Mat3F transformation. ---
@@ -153,31 +148,26 @@ function animator.getTransformationGroup(transformationGroup) end
 
 ---@param transformationGroup string
 ---@param translate Vec2F
----@return void
 function animator.translateLocalTransformationGroup(transformationGroup, translate) end
 
 ---@param transformationGroup string
 ---@param rotation number
 ---@param rotationCenter Vec2F
----@return void
 function animator.rotateLocalTransformationGroup(transformationGroup, rotation, rotationCenter) end
 
 ---@param transformationGroup string
 ---@param rotation number
 ---@param rotationCenter Vec2F
----@return void
 function animator.rotateDegreesLocalTransformationGroup(transformationGroup, rotation, rotationCenter) end
 
 ---@param transformationGroup string
 ---@param scale number
 ---@param scaleCenter Vec2F
----@return void
 function animator.scaleLocalTransformationGroup(transformationGroup, scale, scaleCenter) end
 
 ---@param transformationGroup string
 ---@param scale Vec2F
 ---@param scaleCenter Vec2F
----@return void
 function animator.scaleLocalTransformationGroup(transformationGroup, scale, scaleCenter) end
 
 ---@param transformationGroup string
@@ -187,16 +177,13 @@ function animator.scaleLocalTransformationGroup(transformationGroup, scale, scal
 ---@param d number
 ---@param tx number
 ---@param ty number
----@return void
 function animator.transformLocalTransformationGroup(transformationGroup, a, b, c, d, tx, ty) end
 
 ---@param transformationGroup string
----@return void
 function animator.resetLocalTransformationGroup(transformationGroup) end
 
 ---@param transformationGroup string
 ---@param transformation Mat3F
----@return void
 function animator.setLocalTransformationGroup(transformationGroup, transformation) end
 
 --- Local transformations for a group are added onto the networked counterparts, they do not replace them. These are intended for client animation scripts. As when using the networked transformation groups, transformations often become visually desynced with the frame timing on clients. ---
@@ -206,12 +193,10 @@ function animator.getLocalTransformationGroup(transformationGroup) end
 
 --- Adds the list of drawables attached to the specified part. These drawables inherit all transformations from the part they are attached to. These are not networked, intended for use in client animation scripts.
 ---@param part string
----@param drawables List<Drawable>
----@return void
+---@param drawables Drawable[]
 function animator.addPartDrawables(part, drawables) end
 
 --- Overwrites the list of drawables attached to the specified part. These drawables inherit all transformations from the part they are attached to. These are not networked, intended for use in client animation scripts. ---
 ---@param part string
----@param drawables List<Drawable>
----@return void
+---@param drawables Drawable[]
 function animator.setPartDrawables(part, drawables) end

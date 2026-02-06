@@ -47,7 +47,7 @@ public:
     PerlinF weight;
   };
 
-  static Maybe<BiomeItem> createItem(Json const& itemSettings, RandomSource& rand, float biomeHueShift);
+  static std::optional<BiomeItem> createItem(Json const& itemSettings, RandomSource& rand, float biomeHueShift);
 
   BiomeItemDistribution();
   BiomeItemDistribution(Json const& config, uint64_t seed, float biomeHueShift = 0.0f);
@@ -60,7 +60,7 @@ public:
 
   // Returns the best BiomeItem for this position out of the weighted item set,
   // if the density function specifies that an item should go in this position.
-  Maybe<BiomeItemPlacement> itemToPlace(int x, int y) const;
+  std::optional<BiomeItemPlacement> itemToPlace(int x, int y) const;
 
 private:
   enum class DistributionType {

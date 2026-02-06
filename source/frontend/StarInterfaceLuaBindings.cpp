@@ -1,3 +1,4 @@
+#include <optional>
 #include "StarInterfaceLuaBindings.hpp"
 #include "StarClientContext.hpp" // IWYU pragma: keep
 #include "StarWidgetLuaBindings.hpp"
@@ -19,14 +20,14 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
   callbacks.registerCallbackWithSignature<void, bool>(
     "setHudVisible", bind(mem_fn(&MainInterface::setHudVisible), mainInterface, _1));
 
-  callbacks.registerCallback("bindCanvas", [mainInterface](String const& canvasName, Maybe<bool> ignoreInterfaceScale) -> Maybe<CanvasWidgetPtr> {
-    if (auto canvas = mainInterface->fetchCanvas(canvasName, ignoreInterfaceScale.value(false)))
+  callbacks.registerCallback("bindCanvas", [mainInterface](String const& canvasName, std::optional<bool> ignoreInterfaceScale) -> std::optional<CanvasWidgetPtr> {
+    if (auto canvas = mainInterface->fetchCanvas(canvasName, ignoreInterfaceScale.value_or(false)))
       return canvas;
     return {};
   });
 
 
-  callbacks.registerCallback("bindRegisteredPane", [mainInterface](String const& registeredPaneName) -> Maybe<LuaCallbacks> {
+  callbacks.registerCallback("bindRegisteredPane", [mainInterface](String const& registeredPaneName) -> std::optional<LuaCallbacks> {
     if (auto pane = mainInterface->paneManager()->maybeRegisteredPane(MainInterfacePanesNames.getLeft(registeredPaneName)))
       return pane->makePaneCallbacks();
     return {};
@@ -43,8 +44,8 @@ LuaCallbacks LuaBindings::makeInterfaceCallbacks(MainInterface* mainInterface) {
     return GuiContext::singleton().interfaceScale();
   });
 
-  callbacks.registerCallback("queueMessage", [mainInterface](String const& message, Maybe<float> cooldown, Maybe<float> springState) {
-    mainInterface->queueMessage(message, cooldown, springState.value(0));
+  callbacks.registerCallback("queueMessage", [mainInterface](String const& message, std::optional<float> cooldown, std::optional<float> springState) {
+    mainInterface->queueMessage(message, cooldown, springState.value_or(0));
   });
 
 
@@ -56,7 +57,7 @@ LuaCallbacks LuaBindings::makeChatCallbacks(MainInterface* mainInterface, Univer
 
   auto chat = as<Chat>(mainInterface->paneManager()->registeredPane(MainInterfacePanes::Chat).get());
 
-  callbacks.registerCallback("send", [client](String const& message, Maybe<String> modeName, Maybe<bool> speak, Maybe<JsonObject> data) {
+  callbacks.registerCallback("send", [client](String const& message, std::optional<String> modeName, std::optional<bool> speak, std::optional<JsonObject> data) {
     auto sendMode = modeName ? ChatSendModeNames.getLeft(*modeName) : ChatSendMode::Broadcast;
     client->sendChat(message, sendMode, speak, data);
   });
@@ -70,7 +71,7 @@ LuaCallbacks LuaBindings::makeChatCallbacks(MainInterface* mainInterface, Univer
     return mainInterface->commandProcessor()->handleCommand(command);
   });
 
-  callbacks.registerCallback("addMessage", [client, chat](String const& text, Maybe<Json> config) {
+  callbacks.registerCallback("addMessage", [client, chat](String const& text, std::optional<Json> config) {
     ChatReceivedMessage message({MessageContext::Mode::CommandResult, ""}, client->clientContext()->connectionId(), "", text);
     if (config) {
       if (auto mode = config->optString("mode"))
@@ -89,12 +90,12 @@ LuaCallbacks LuaBindings::makeChatCallbacks(MainInterface* mainInterface, Univer
     return chat->currentChat();
   });
 
-  callbacks.registerCallback("setInput", [chat](String const& text, Maybe<bool> moveCursor) -> bool {
-    return chat->setCurrentChat(text, moveCursor.value(false));
+  callbacks.registerCallback("setInput", [chat](String const& text, std::optional<bool> moveCursor) -> bool {
+    return chat->setCurrentChat(text, moveCursor.value_or(false));
   });
 
-  callbacks.registerCallback("clear", [chat](Maybe<size_t> count) {
-    chat->clear(count.value(std::numeric_limits<size_t>::max()));
+  callbacks.registerCallback("clear", [chat](std::optional<size_t> count) {
+    chat->clear(count.value_or(std::numeric_limits<size_t>::max()));
   });
 
   return callbacks;

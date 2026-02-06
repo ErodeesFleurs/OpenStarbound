@@ -1,10 +1,13 @@
 #pragma once
 
+#include "StarLuaRoot.hpp"
 #include "StarThread.hpp"
 #include "StarItemRecipe.hpp"
 #include "StarItem.hpp"
 #include "StarCasting.hpp"
 #include "StarTtlCache.hpp"
+
+#include <optional>
 
 namespace Star {
 
@@ -108,19 +111,19 @@ public:
   // Generate an item config for the given itemName, parameters, level and seed.
   // Level and seed are used by generation in some item types, and may be stored as part
   // of the unique item data or may be ignored.
-  ItemConfig itemConfig(String const& itemName, Json parameters, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
+  ItemConfig itemConfig(String const& itemName, Json parameters, std::optional<float> level = {}, std::optional<uint64_t> seed = {}) const;
 
   // Returns the path to the item's json file in the assets.
-  Maybe<String> itemFile(String const& itemName) const;
+  std::optional<String> itemFile(String const& itemName) const;
 
   // Generates the config for the given item descriptor and then loads the item
   // from the appropriate factory.  If there is a problem instantiating the
   // item, will return a default item instead.  If item is passed a null
   // ItemDescriptor, it will return a null pointer.
   // The returned item pointer will be shared. Either call ->clone() or use item() instead for a copy.
-  ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
+  ItemPtr itemShared(ItemDescriptor descriptor, std::optional<float> level = {}, std::optional<uint64_t> seed = {}) const;
   // Same as itemShared, but makes a copy instead. Does not cache.
-  ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
+  ItemPtr item(ItemDescriptor descriptor, std::optional<float> level = {}, std::optional<uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
 
   bool hasRecipeToMake(ItemDescriptor const& item) const;
@@ -156,14 +159,14 @@ private:
     String friendlyName;
     StringSet itemTags;
     StringList agingScripts;
-    Maybe<String> assetsConfig;
+    std::optional<String> assetsConfig;
     JsonObject customConfig;
     String directory;
     String filename;
   };
 
   static ItemPtr createItem(ItemType type, ItemConfig const& config);
-  ItemPtr tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
+  ItemPtr tryCreateItem(ItemDescriptor const& descriptor, std::optional<float> level = {}, std::optional<uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
   ItemData const& itemData(String const& name) const;
   ItemRecipe makeRecipe(List<ItemDescriptor> inputs, ItemDescriptor output, float duration, StringSet groups) const;
@@ -184,7 +187,7 @@ private:
   LuaRootPtr m_luaRoot;
   RebuilderPtr m_rebuilder;
 
-  typedef tuple<ItemDescriptor, Maybe<float>, Maybe<uint64_t>> ItemCacheEntry;
+  typedef tuple<ItemDescriptor, std::optional<float>, std::optional<uint64_t>> ItemCacheEntry;
 
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<ItemCacheEntry, ItemPtr> m_itemCache;

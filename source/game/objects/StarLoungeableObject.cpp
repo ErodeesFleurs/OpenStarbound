@@ -1,6 +1,5 @@
 #include "StarLoungeableObject.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarObjectDatabase.hpp"
 
 namespace Star {
@@ -28,7 +27,7 @@ void LoungeableObject::render(RenderCallback* renderCallback) {
 InteractAction LoungeableObject::interact(InteractRequest const& request) {
   auto res = Object::interact(request);
   if (res.type == InteractActionType::None && !m_sitPositions.empty()) {
-    Maybe<size_t> index;
+    std::optional<size_t> index;
     Vec2F interactOffset =
         direction() == Direction::Right ? position() - request.interactPosition : request.interactPosition - position();
     for (size_t i = 0; i < m_sitPositions.size(); ++i) {
@@ -83,7 +82,7 @@ LoungeAnchorConstPtr LoungeableObject::loungeAnchor(size_t positionIndex) const 
 
 void LoungeableObject::setOrientationIndex(size_t orientationIndex) {
   Object::setOrientationIndex(orientationIndex);
-  if (orientationIndex != NPos) {
+  if (orientationIndex != std::numeric_limits<std::size_t>::max()) {
     if (auto sp = configValue("sitPosition")) {
       m_sitPositions = {jsonToVec2F(configValue("sitPosition")) / TilePixels};
     } else if (auto sps = configValue("sitPositions")) {

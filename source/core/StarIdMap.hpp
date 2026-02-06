@@ -83,7 +83,6 @@ IdMapWrapper<BaseMap>::IdMapWrapper()
 template <typename BaseMap>
 IdMapWrapper<BaseMap>::IdMapWrapper(IdType min, IdType max)
   : m_min(min), m_max(max), m_nextId(m_min) {
-  starAssert(m_max > m_min);
 }
 
 template <typename BaseMap>

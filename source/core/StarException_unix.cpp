@@ -76,7 +76,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
 #ifdef STAR_USE_CPPTRACE
   auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::string stack) {
 #else
-  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, Maybe<StackCapture> stack) {
+  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::optional<StackCapture> stack) {
 #endif
     os << "(" << type << ")";
     if (!message.empty())
@@ -97,7 +97,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
 #ifdef STAR_USE_CPPTRACE
   m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureBacktrace() : std::string());
 #else
-  m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
+  m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureStack() : std::optional<StackCapture>());
 #endif
 }
 

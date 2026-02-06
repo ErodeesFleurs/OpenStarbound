@@ -4,7 +4,7 @@
 #include "StarMultiArray.hpp"
 #include "StarColor.hpp"
 #include "StarPoly.hpp"
-#include "StarMaybe.hpp"
+#include <optional>
 #include "StarEither.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
@@ -287,11 +287,11 @@ DataStream& operator>>(DataStream& ds, MVariant<AllowedTypes...>& mvariant) {
   return ds;
 }
 
-// Writes / reads a Maybe type if the underlying type has operator<< /
-// operator>> defined for DataStream
+// Writes / reads a std::optional type if the underlying type has
+// operator<< / operator>> defined for DataStream
 
 template <typename T, typename WriteFunction>
-void writeMaybe(DataStream& ds, Maybe<T> const& maybe, WriteFunction&& writeFunction) {
+void writeMaybe(DataStream& ds, T const& maybe, WriteFunction&& writeFunction) {
   if (maybe) {
     ds.write<bool>(true);
     writeFunction(ds, *maybe);
@@ -301,10 +301,11 @@ void writeMaybe(DataStream& ds, Maybe<T> const& maybe, WriteFunction&& writeFunc
 }
 
 template <typename T, typename ReadFunction>
-void readMaybe(DataStream& ds, Maybe<T>& maybe, ReadFunction&& readFunction) {
+void readMaybe(DataStream& ds, T& maybe, ReadFunction&& readFunction) {
   bool set = ds.read<bool>();
   if (set) {
-    T t;
+    using ValueType = std::decay_t<decltype(*maybe)>;
+    ValueType t;
     readFunction(ds, t);
     maybe = std::move(t);
   } else {
@@ -312,14 +313,16 @@ void readMaybe(DataStream& ds, Maybe<T>& maybe, ReadFunction&& readFunction) {
   }
 }
 
+
+
 template <typename T>
-DataStream& operator<<(DataStream& ds, Maybe<T> const& maybe) {
+DataStream& operator<<(DataStream& ds, std::optional<T> const& maybe) {
   writeMaybe(ds, maybe, [](DataStream& ds, T const& t) { ds << t; });
   return ds;
 }
 
 template <typename T>
-DataStream& operator>>(DataStream& ds, Maybe<T>& maybe) {
+DataStream& operator>>(DataStream& ds, std::optional<T>& maybe) {
   readMaybe(ds, maybe, [](DataStream& ds, T& t) { ds >> t; });
   return ds;
 }

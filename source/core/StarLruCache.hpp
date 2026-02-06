@@ -3,46 +3,48 @@
 #include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
 
+import std;
+
 namespace Star {
 
 template <typename OrderedMapType>
 class LruCacheBase {
 public:
-  typedef typename OrderedMapType::key_type Key;
-  typedef typename OrderedMapType::mapped_type Value;
+  using Key = typename OrderedMapType::key_type;
+  using Value = typename OrderedMapType::mapped_type;
 
-  typedef function<Value(Key const&)> ProducerFunction;
+  using ProducerFunction = std::function<Value(Key const&)>;
 
   LruCacheBase(size_t maxSize = 256);
 
   // Max size cannot be zero, it will be clamped to at least 1 in order to hold
   // the most recent element returned by get.
-  size_t maxSize() const;
+  [[nodiscard]] auto maxSize() const -> std::size_t;
   void setMaxSize(size_t maxSize);
 
-  size_t currentSize() const;
+  [[nodiscard]] auto currentSize() const -> std::size_t;
 
-  List<Key> keys() const;
-  List<Value> values() const;
+  auto keys() const -> List<Key>;
+  auto values() const -> List<Value>;
 
   // If the value is in the cache, returns a pointer to it and marks it as
   // accessed, otherwise returns nullptr.
-  Value* ptr(Key const& key);
+  auto ptr(Key const& key) -> Value*;
 
   // Put the given value into the cache.
   void set(Key const& key, Value value);
   // Removes the given value from the cache.  If found and removed, returns
   // true.
-  bool remove(Key const& key);
+  auto remove(Key const& key) -> bool;
 
   // Remove all key / value pairs matching a filter.
-  void removeWhere(function<bool(Key const&, Value&)> filter);
+  void removeWhere(std::function<bool(Key const&, Value&)> filter);
 
   // If the value for the key is not found in the cache, produce it with the
   // given producer.  Producer shold take the key as an argument and return the
   // value.
   template <typename Producer>
-  Value& get(Key const& key, Producer producer);
+  auto get(Key const& key, Producer producer) -> Value&;
 
   // Clear all cached entries.
   void clear();
@@ -52,10 +54,10 @@ private:
   size_t m_maxSize;
 };
 
-template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = BlockAllocator<pair<Key const, Value>, 1024>>
+template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = BlockAllocator<std::pair<Key const, Value>, 1024>>
 using LruCache = LruCacheBase<OrderedMap<Key, Value, Compare, Allocator>>;
 
-template <typename Key, typename Value, typename Hash = Star::hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = BlockAllocator<pair<Key const, Value>, 1024>>
+template <typename Key, typename Value, typename Hash = Star::hash<Key>, typename Equals = std::equal_to<Key>, typename Allocator = BlockAllocator<std::pair<Key const, Value>, 1024>>
 using HashLruCache = LruCacheBase<OrderedHashMap<Key, Value, Hash, Equals, Allocator>>;
 
 template <typename OrderedMapType>
@@ -64,20 +66,20 @@ LruCacheBase<OrderedMapType>::LruCacheBase(size_t maxSize) {
 }
 
 template <typename OrderedMapType>
-size_t LruCacheBase<OrderedMapType>::maxSize() const {
+auto LruCacheBase<OrderedMapType>::maxSize() const -> size_t {
   return m_maxSize;
 }
 
 template <typename OrderedMapType>
 void LruCacheBase<OrderedMapType>::setMaxSize(size_t maxSize) {
-  m_maxSize = max<size_t>(maxSize, 1);
+  m_maxSize = std::max<size_t>(maxSize, 1);
 
   while (m_map.size() > m_maxSize)
     m_map.removeFirst();
 }
 
 template <typename OrderedMapType>
-size_t LruCacheBase<OrderedMapType>::currentSize() const {
+auto LruCacheBase<OrderedMapType>::currentSize() const -> size_t {
   return m_map.size();
 }
 
@@ -112,13 +114,13 @@ void LruCacheBase<OrderedMapType>::set(Key const& key, Value value) {
 }
 
 template <typename OrderedMapType>
-bool LruCacheBase<OrderedMapType>::remove(Key const& key) {
+auto LruCacheBase<OrderedMapType>::remove(Key const& key) -> bool {
   return m_map.remove(key);
 }
 
 template <typename OrderedMapType>
-void LruCacheBase<OrderedMapType>::removeWhere(function<bool(Key const&, Value&)> filter) {
-  eraseWhere(m_map, [&filter](auto& p) {
+void LruCacheBase<OrderedMapType>::removeWhere(std::function<bool(Key const&, Value&)> filter) {
+  eraseWhere(m_map, [&filter](auto& p) -> auto {
       return filter(p.first, p.second);
     });
 }

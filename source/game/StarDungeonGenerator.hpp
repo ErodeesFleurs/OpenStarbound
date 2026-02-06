@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarImage.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarWorldGeometry.hpp"
@@ -66,11 +68,11 @@ namespace Dungeon {
 
   class DungeonGeneratorWriter {
   public:
-    DungeonGeneratorWriter(DungeonGeneratorWorldFacadePtr facade, Maybe<int> terrainMarkingSurfaceLevel, Maybe<int> terrainSurfaceSpaceExtends);
+    DungeonGeneratorWriter(DungeonGeneratorWorldFacadePtr facade, std::optional<int> terrainMarkingSurfaceLevel, std::optional<int> terrainSurfaceSpaceExtends);
 
     Vec2I wrapPosition(Vec2I const& pos) const;
 
-    void setMarkDungeonId(Maybe<DungeonId> markDungeonId = {});
+    void setMarkDungeonId(std::optional<DungeonId> markDungeonId = {});
 
     void requestLiquid(Vec2I const& pos, LiquidStore const& liquid);
     void setLiquid(Vec2I const& pos, LiquidStore const& liquid);
@@ -130,8 +132,8 @@ namespace Dungeon {
     };
 
     DungeonGeneratorWorldFacadePtr m_facade;
-    Maybe<int> m_terrainMarkingSurfaceLevel;
-    Maybe<int> m_terrainSurfaceSpaceExtends;
+    std::optional<int> m_terrainMarkingSurfaceLevel;
+    std::optional<int> m_terrainSurfaceSpaceExtends;
 
     Map<Vec2I, LiquidStore> m_pendingLiquids;
 
@@ -155,14 +157,14 @@ namespace Dungeon {
     List<Set<Vec2I>> m_localWires;
     StringMap<Set<Vec2I>> m_openLocalWires;
 
-    Maybe<DungeonId> m_markDungeonId;
+    std::optional<DungeonId> m_markDungeonId;
     RectI m_currentBounds;
     List<RectI> m_boundingBoxes;
   };
 
   class Rule {
   public:
-    static Maybe<RuleConstPtr> parse(Json const& rule);
+    static std::optional<RuleConstPtr> parse(Json const& config);
     static List<RuleConstPtr> readRules(Json const& rules);
 
     virtual ~Rule() {}
@@ -215,7 +217,7 @@ namespace Dungeon {
     WorldGenMustContainLiquidRule() {}
 
     virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
-    
+
     virtual bool requiresLiquid() const override {
       return true;
     }
@@ -340,7 +342,7 @@ namespace Dungeon {
 
   class FrontBrush : public Brush {
   public:
-    FrontBrush(String const& material, Maybe<String> mod, Maybe<float> hueshift, Maybe<float> modhueshift, Maybe<MaterialColorVariant> colorVariant);
+    FrontBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
@@ -348,13 +350,13 @@ namespace Dungeon {
     String m_material;
     MaterialHue m_materialHue;
     MaterialColorVariant m_materialColorVariant;
-    Maybe<String> m_mod;
+    std::optional<String> m_mod;
     MaterialHue m_modHue;
   };
 
   class BackBrush : public Brush {
   public:
-    BackBrush(String const& material, Maybe<String> mod, Maybe<float> hueshift, Maybe<float> modhueshift, Maybe<MaterialColorVariant> colorVariant);
+    BackBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
@@ -362,7 +364,7 @@ namespace Dungeon {
     String m_material;
     MaterialHue m_materialHue;
     MaterialColorVariant m_materialColorVariant;
-    Maybe<String> m_mod;
+    std::optional<String> m_mod;
     MaterialHue m_modHue;
   };
 
@@ -445,24 +447,24 @@ namespace Dungeon {
 
   class SurfaceBrush : public Brush {
   public:
-    SurfaceBrush(Maybe<int> variant, Maybe<String> mod);
+    SurfaceBrush(std::optional<int> variant, std::optional<String> mod);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     int m_variant;
-    Maybe<String> m_mod;
+    std::optional<String> m_mod;
   };
 
   class SurfaceBackgroundBrush : public Brush {
   public:
-    SurfaceBackgroundBrush(Maybe<int> variant, Maybe<String> mod);
+    SurfaceBackgroundBrush(std::optional<int> variant, std::optional<String> mod);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
     int m_variant;
-    Maybe<String> m_mod;
+    std::optional<String> m_mod;
   };
 
   class LiquidBrush : public Brush {
@@ -498,12 +500,12 @@ namespace Dungeon {
   // that represent objects that have been removed from the game.
   class InvalidBrush : public Brush {
   public:
-    InvalidBrush(Maybe<String> nameHint);
+    InvalidBrush(std::optional<String> nameHint);
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
   private:
-    Maybe<String> m_nameHint;
+    std::optional<String> m_nameHint;
   };
 
   enum class Direction : uint8_t {
@@ -568,8 +570,8 @@ namespace Dungeon {
     Vec2I anchorPoint() const;
     float chance() const;
     bool markDungeonId() const;
-    Maybe<float> minimumThreatLevel() const;
-    Maybe<float> maximumThreatLevel() const;
+    std::optional<float> minimumThreatLevel() const;
+    std::optional<float> maximumThreatLevel() const;
     bool clearAnchoredObjects() const;
     int placementLevelConstraint() const;
     bool ignoresPartMaximum() const;
@@ -602,8 +604,8 @@ namespace Dungeon {
     List<ConnectorConstPtr> m_connections;
     Vec2I m_anchorPoint;
     bool m_overrideAllowAlways;
-    Maybe<float> m_minimumThreatLevel;
-    Maybe<float> m_maximumThreatLevel;
+    std::optional<float> m_minimumThreatLevel;
+    std::optional<float> m_maximumThreatLevel;
     bool m_clearAnchoredObjects;
     Vec2U m_size;
     float m_chance;
@@ -628,7 +630,7 @@ namespace Dungeon {
 
     List<BrushConstPtr> brushes;
     List<RuleConstPtr> rules;
-    Maybe<TileConnector> connector;
+    std::optional<TileConnector> connector;
   };
 }
 
@@ -641,12 +643,12 @@ public:
   String name() const;
   String displayName() const;
   bool isProtected() const;
-  Maybe<float> gravity() const;
-  Maybe<bool> breathable() const;
+  std::optional<float> gravity() const;
+  std::optional<bool> breathable() const;
   StringMap<Dungeon::PartConstPtr> const& parts() const;
 
   List<String> const& anchors() const;
-  Maybe<Json> const& optTileset() const;
+  std::optional<Json> const& optTileset() const;
   int maxParts() const;
   int maxRadius() const;
   int extendSurfaceFreeSpace() const;
@@ -663,14 +665,14 @@ private:
   List<Dungeon::RuleConstPtr> m_rules;
   StringMap<Dungeon::PartConstPtr> m_parts;
   List<String> m_anchors;
-  Maybe<Json> m_tileset;
+  std::optional<Json> m_tileset;
 
   int m_maxRadius;
   int m_maxParts;
   int m_extendSurfaceFreeSpace;
 
-  Maybe<float> m_gravity;
-  Maybe<bool> m_breathable;
+  std::optional<float> m_gravity;
+  std::optional<bool> m_breathable;
 };
 
 class DungeonDefinitions {
@@ -690,9 +692,9 @@ private:
 
 class DungeonGenerator {
 public:
-  DungeonGenerator(String const& dungeonName, uint64_t seed, float threatLevel, Maybe<DungeonId> dungeonId);
+  DungeonGenerator(String const& dungeonName, uint64_t seed, float threatLevel, std::optional<DungeonId> dungeonId);
 
-  Maybe<pair<List<RectI>, Set<Vec2I>>> generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
+  std::optional<pair<List<RectI>, Set<Vec2I>>> generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
 
   pair<List<RectI>, Set<Vec2I>> buildDungeon(Dungeon::PartConstPtr anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement);
   Dungeon::PartConstPtr pickAnchor();
@@ -705,7 +707,7 @@ private:
 
   RandomSource m_rand;
   float m_threatLevel;
-  Maybe<DungeonId> m_dungeonId;
+  std::optional<DungeonId> m_dungeonId;
 };
 
 }

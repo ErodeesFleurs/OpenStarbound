@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarPane.hpp"
 
 namespace Star {
@@ -11,7 +13,7 @@ public:
 
   virtual ~PopupInterface() {}
 
-  void displayMessage(String const& message, String const& title, String const& subtitle, Maybe<String> const& onShowSound = {});
+  void displayMessage(String const& message, String const& title, String const& subtitle, std::optional<String> const& onShowSound = {});
 
 private:
 };

@@ -12,6 +12,8 @@
 #include "StarKeyBindings.hpp"
 #include "StarMixer.hpp"
 
+#include <optional>
+
 namespace Star {
 
 STAR_EXCEPTION(GuiContextException, StarException);
@@ -49,8 +51,8 @@ public:
   float interfaceScale() const;
   void setInterfaceScale(float interfaceScale);
 
-  Maybe<Vec2I> mousePosition(InputEvent const& event, float pixelRatio) const;
-  Maybe<Vec2I> mousePosition(InputEvent const& event) const;
+  std::optional<Vec2I> mousePosition(InputEvent const& event, float pixelRatio) const;
+  std::optional<Vec2I> mousePosition(InputEvent const& event) const;
 
   Set<InterfaceAction> actions(InputEvent const& event) const;
   // used to cancel chorded inputs on KeyUp
@@ -116,8 +118,8 @@ public:
   int stringWidth(String const& s);
   int stringInterfaceWidth(String const& s);
 
-  StringList wrapText(String const& s, Maybe<unsigned> wrapWidth);
-  StringList wrapInterfaceText(String const& s, Maybe<unsigned> wrapWidth);
+  StringList wrapText(String const& s, std::optional<unsigned> wrapWidth);
+  StringList wrapInterfaceText(String const& s, std::optional<unsigned> wrapWidth);
 
   void playAudio(AudioInstancePtr audioInstance);
   void playAudio(String const& audioAsset, int loops = 0, float volume = 1.0f, float pitch = 1.0f);

@@ -6,7 +6,7 @@
 #include "StarMap.hpp"
 #include "StarSet.hpp"
 #include "StarVector.hpp"
-#include "StarMaybe.hpp"
+#include <optional>
 
 namespace Star {
 
@@ -30,8 +30,8 @@ class AudioInstance {
 public:
   AudioInstance(Audio const& audio);
 
-  Maybe<Vec2F> position() const;
-  void setPosition(Maybe<Vec2F> position);
+  std::optional<Vec2F> position() const;
+  void setPosition(std::optional<Vec2F> position);
   // If the audio has no position, sets the position to zero before translating
   void translate(Vec2F const& distance);
 
@@ -59,8 +59,8 @@ public:
 
   // If set, uses wall clock time in milliseconds to set precise start and stop
   // times for the AudioInstance
-  void setClockStart(Maybe<int64_t> clockStartTime);
-  void setClockStop(Maybe<int64_t> clockStopTime, int64_t fadeOutTime = 0);
+  void setClockStart(std::optional<int64_t> clockStartTime);
+  void setClockStop(std::optional<int64_t> clockStopTime, int64_t fadeOutTime = 0);
 
   void stop(float rampTime = 0.0f);
   bool finished() const;
@@ -84,11 +84,11 @@ private:
   bool m_stopping;
   bool m_finished;
 
-  Maybe<Vec2F> m_position;
+  std::optional<Vec2F> m_position;
   float m_rangeMultiplier;
 
-  Maybe<int64_t> m_clockStart;
-  Maybe<int64_t> m_clockStop;
+  std::optional<int64_t> m_clockStart;
+  std::optional<int64_t> m_clockStop;
   int64_t m_clockStopFadeOut;
 };
 

@@ -5,7 +5,7 @@ The `itemDrop` table is accessible from scripted item drops.
 
 ---
 
-#### `Maybe<EntityId>` itemDrop.takingEntity()
+#### `std::optional<EntityId>` itemDrop.takingEntity()
 
 If the item drop is in the middle of being picked up, returns the entity it is being picked up by.
 
@@ -35,7 +35,7 @@ Sets the time before this item drop becomes tangible (can be picked up).
 
 ---
 
-#### `Maybe<String>` itemDrop.overrideMode()
+#### `std::optional<String>` itemDrop.overrideMode()
 
 Returns the mode override.
 Can be Intangible, Available, Taken, and Dead. Returns nil if there is no override.

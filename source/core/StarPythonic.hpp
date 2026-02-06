@@ -1,13 +1,14 @@
 #pragma once
 
-#include "StarAlgorithm.hpp"
+#include "StarException.hpp"
+import std;
 
 namespace Star {
 
 // any and all
 
 template <typename Iterator, typename Functor>
-bool any(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
+auto any(Iterator iterBegin, Iterator iterEnd, Functor const& f) -> bool {
   for (; iterBegin != iterEnd; iterBegin++)
     if (f(*iterBegin))
       return true;
@@ -15,26 +16,26 @@ bool any(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
 }
 
 template <typename Iterator>
-bool any(Iterator const& iterBegin, Iterator const& iterEnd) {
-  typedef typename std::iterator_traits<Iterator>::value_type IteratorValue;
+auto any(Iterator const& iterBegin, Iterator const& iterEnd) -> bool {
+  using IteratorValue = typename std::iterator_traits<Iterator>::value_type;
   std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
   return any(iterBegin, iterEnd, compare);
 }
 
 template <typename Iterable, typename Functor>
-bool any(Iterable const& iter, Functor const& f) {
+auto any(Iterable const& iter, Functor const& f) -> bool {
   return any(std::begin(iter), std::end(iter), f);
 }
 
 template <typename Iterable>
-bool any(Iterable const& iter) {
-  typedef decltype(*std::begin(iter)) IteratorValue;
-  std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
+auto any(Iterable const& iter) -> bool {
+  using IteratorValue = decltype(*std::begin(iter));
+  std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) -> auto { return (bool)i; };
   return any(std::begin(iter), std::end(iter), compare);
 }
 
 template <typename Iterator, typename Functor>
-bool all(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
+auto all(Iterator iterBegin, Iterator iterEnd, Functor const& f) -> bool {
   for (; iterBegin != iterEnd; iterBegin++)
     if (!f(*iterBegin))
       return false;
@@ -42,20 +43,20 @@ bool all(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
 }
 
 template <typename Iterator>
-bool all(Iterator const& iterBegin, Iterator const& iterEnd) {
-  typedef typename std::iterator_traits<Iterator>::value_type IteratorValue;
+auto all(Iterator const& iterBegin, Iterator const& iterEnd) -> bool {
+  using IteratorValue = typename std::iterator_traits<Iterator>::value_type;
   std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
   return all(iterBegin, iterEnd, compare);
 }
 
 template <typename Iterable, typename Functor>
-bool all(Iterable const& iter, Functor const& f) {
+auto all(Iterable const& iter, Functor const& f) -> bool {
   return all(std::begin(iter), std::end(iter), f);
 }
 
 template <typename Iterable>
-bool all(Iterable const& iter) {
-  typedef decltype(*std::begin(iter)) IteratorValue;
+auto all(Iterable const& iter) -> bool {
+  using IteratorValue = decltype(*std::begin(iter));
   std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
   return all(std::begin(iter), std::end(iter), compare);
 }
@@ -75,7 +76,7 @@ SliceIndex const SliceNil = SliceIndex();
 // T must have operator[](int), size(), and
 // push_back(typeof T::operator[](int()))
 template <typename Res, typename In>
-Res slice(In const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) {
+auto slice(In const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) -> Res {
   int size = (int)r.size();
   int start, end;
 
@@ -133,7 +134,7 @@ Res slice(In const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) {
 }
 
 template <typename T>
-T slice(T const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) {
+auto slice(T const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) -> T {
   return slice<T, T>(r, a, b, j);
 }
 
@@ -149,9 +150,9 @@ private:
   bool atEnd;
 
 public:
-  typedef IteratorT Iterator;
-  typedef decltype(*std::declval<Iterator>()) IteratorValue;
-  typedef tuple<IteratorValue> value_type;
+  using Iterator = IteratorT;
+  using IteratorValue = decltype(*std::declval<Iterator>());
+  using value_type = std::tuple<IteratorValue>;
 
   ZipWrapperIterator() : atEnd(true) {}
 
@@ -159,7 +160,7 @@ public:
     atEnd = current == last;
   }
 
-  ZipWrapperIterator operator++() {
+  auto operator++() -> ZipWrapperIterator {
     if (!atEnd) {
       ++current;
       atEnd = current == last;
@@ -168,15 +169,15 @@ public:
     return *this;
   }
 
-  value_type operator*() const {
+  auto operator*() const -> value_type {
     return std::tuple<IteratorValue>(*current);
   }
 
-  bool operator==(ZipWrapperIterator const& rhs) const {
+  auto operator==(ZipWrapperIterator const& rhs) const -> bool {
     return (atEnd && rhs.atEnd) || (!atEnd && !rhs.atEnd && current == rhs.current && last == rhs.last);
   }
 
-  bool operator!=(ZipWrapperIterator const& rhs) const {
+  auto operator!=(ZipWrapperIterator const& rhs) const -> bool {
     return !(*this == rhs);
   }
 
@@ -184,16 +185,16 @@ public:
     return !atEnd;
   }
 
-  ZipWrapperIterator begin() const {
+  auto begin() const -> ZipWrapperIterator {
     return *this;
   }
 
-  ZipWrapperIterator end() const {
+  auto end() const -> ZipWrapperIterator {
     return ZipWrapperIterator();
   }
 };
 template <typename IteratorT>
-ZipWrapperIterator<IteratorT> makeZipWrapperIterator(IteratorT current, IteratorT end) {
+auto makeZipWrapperIterator(IteratorT current, IteratorT end) -> ZipWrapperIterator<IteratorT> {
   return ZipWrapperIterator<IteratorT>(current, end);
 }
 
@@ -207,13 +208,13 @@ private:
   bool atEnd;
 
 public:
-  typedef TailIteratorT TailIterator;
-  typedef HeadIteratorT HeadIterator;
+  using TailIterator = TailIteratorT;
+  using HeadIterator = HeadIteratorT;
 
-  typedef decltype(*TailIterator()) TailType;
-  typedef decltype(*HeadIterator()) HeadType;
+  using TailType = decltype(*TailIterator());
+  using HeadType = decltype(*HeadIterator());
 
-  typedef decltype(std::tuple_cat(std::declval<TailType>(), std::declval<HeadType>())) value_type;
+  using value_type = decltype(std::tuple_cat(std::declval<TailType>(), std::declval<HeadType>()));
 
   ZipTupleIterator() : atEnd(true) {}
 
@@ -222,7 +223,7 @@ public:
     atEnd = tailIterator == TailIterator() || headIterator == HeadIterator();
   }
 
-  ZipTupleIterator operator++() {
+  auto operator++() -> ZipTupleIterator {
     if (!atEnd) {
       ++tailIterator;
       ++headIterator;
@@ -232,16 +233,16 @@ public:
     return *this;
   }
 
-  value_type operator*() const {
+  auto operator*() const -> value_type {
     return std::tuple_cat(*tailIterator, *headIterator);
   }
 
-  bool operator==(ZipTupleIterator const& rhs) const {
+  auto operator==(ZipTupleIterator const& rhs) const -> bool {
     return (atEnd && rhs.atEnd)
         || (!atEnd && !rhs.atEnd && tailIterator == rhs.tailIterator && headIterator == rhs.headIterator);
   }
 
-  bool operator!=(ZipTupleIterator const& rhs) const {
+  auto operator!=(ZipTupleIterator const& rhs) const -> bool {
     return !(*this == rhs);
   }
 
@@ -249,36 +250,36 @@ public:
     return !atEnd;
   }
 
-  ZipTupleIterator begin() const {
+  auto begin() const -> ZipTupleIterator {
     return *this;
   }
 
-  ZipTupleIterator end() const {
+  auto end() const -> ZipTupleIterator {
     return ZipTupleIterator();
   }
 };
 template <typename HeadIteratorT, typename TailIteratorT>
-ZipTupleIterator<HeadIteratorT, TailIteratorT> makeZipTupleIterator(HeadIteratorT head, TailIteratorT tail) {
+auto makeZipTupleIterator(HeadIteratorT head, TailIteratorT tail) -> ZipTupleIterator<HeadIteratorT, TailIteratorT> {
   return ZipTupleIterator<HeadIteratorT, TailIteratorT>(head, tail);
 }
 
 template <typename Container, typename... Rest>
 struct zipIteratorReturn {
-  typedef ZipTupleIterator<typename zipIteratorReturn<Container>::type, typename zipIteratorReturn<Rest...>::type> type;
+  using type = ZipTupleIterator<typename zipIteratorReturn<Container>::type, typename zipIteratorReturn<Rest...>::type>;
 };
 
 template <typename Container>
 struct zipIteratorReturn<Container> {
-  typedef ZipWrapperIterator<decltype(std::declval<Container>().begin())> type;
+  using type = ZipWrapperIterator<decltype(std::declval<Container>().begin())>;
 };
 
 template <typename Container>
-typename zipIteratorReturn<Container>::type zipIterator(Container& container) {
+auto zipIterator(Container& container) -> typename zipIteratorReturn<Container>::type {
   return makeZipWrapperIterator(container.begin(), container.end());
 }
 
 template <typename Container, typename... Rest>
-typename zipIteratorReturn<Container, Rest...>::type zipIterator(Container& container, Rest&... rest) {
+auto zipIterator(Container& container, Rest&... rest) -> typename zipIteratorReturn<Container, Rest...>::type {
   return makeZipTupleIterator(makeZipWrapperIterator(container.begin(), container.end()), zipIterator(rest...));
 }
 
@@ -289,17 +290,17 @@ typename zipIteratorReturn<Container, Rest...>::type zipIterator(Container& cont
 namespace RangeHelper {
 
   template <typename Diff>
-  typename std::enable_if<std::is_unsigned<Diff>::value, bool>::type checkIfDiffLessThanZero(Diff) {
+  auto checkIfDiffLessThanZero(Diff) -> bool requires std::is_unsigned_v<Diff> {
     return false;
   }
 
   template <typename Diff>
-  typename std::enable_if<!std::is_unsigned<Diff>::value, bool>::type checkIfDiffLessThanZero(Diff diff) {
+  auto checkIfDiffLessThanZero(Diff diff) -> bool requires (!std::is_unsigned_v<Diff>) {
     return diff < 0;
   }
 }
 
-STAR_EXCEPTION(RangeException, StarException);
+using RangeException = ExceptionDerived<"RangeException">;
 
 template <typename Value, typename Diff = int>
 class RangeIterator {
@@ -329,12 +330,12 @@ public:
     copy(rhs);
   }
 
-  RangeIterator& operator=(RangeIterator const& rhs) {
+  auto operator=(RangeIterator const& rhs) -> RangeIterator& {
     copy(rhs);
     return *this;
   }
 
-  RangeIterator& operator+=(Diff steps) {
+  auto operator+=(Diff steps) -> RangeIterator& {
     if ((applySteps(m_current, m_diff * steps) >= m_end) != (RangeHelper::checkIfDiffLessThanZero<Diff>(m_diff))) {
       if (!m_stop) {
         Diff stepsLeft = stepsBetween(m_current, m_end);
@@ -347,7 +348,7 @@ public:
     return *this;
   }
 
-  RangeIterator operator-=(Diff steps) {
+  auto operator-=(Diff steps) -> RangeIterator {
     m_stop = false;
     sanity();
 
@@ -359,97 +360,97 @@ public:
     return *this;
   }
 
-  Value operator*() const {
+  auto operator*() const -> Value {
     return m_current;
   }
 
-  Value const* operator->() const {
+  auto operator->() const -> Value const* {
     return &m_current;
   }
 
-  Value operator[](unsigned rhs) const {
+  auto operator[](unsigned rhs) const -> Value {
     // Should return at maximum, the value that this iterator will normally
     // reach when at end().
     rhs = std::min(rhs, stepsBetween(m_start, m_end) + 1);
     return m_start + rhs * m_diff;
   }
 
-  RangeIterator& operator++() {
+  auto operator++() -> RangeIterator& {
     return operator+=(1);
   }
 
-  RangeIterator& operator--() {
+  auto operator--() -> RangeIterator& {
     return operator-=(1);
   }
 
-  RangeIterator operator++(int) {
+  auto operator++(int) -> RangeIterator {
     RangeIterator tmp(*this);
     ++(*this);
     return tmp;
   }
 
-  RangeIterator operator--(int) {
+  auto operator--(int) -> RangeIterator {
     RangeIterator tmp(*this);
     --(*this);
     return tmp;
   }
 
-  RangeIterator operator+(Diff steps) const {
+  auto operator+(Diff steps) const -> RangeIterator {
     RangeIterator copy(*this);
     copy += steps;
     return copy;
   }
 
-  RangeIterator operator-(Diff steps) const {
+  auto operator-(Diff steps) const -> RangeIterator {
     RangeIterator copy(*this);
     copy -= steps;
     return copy;
   }
 
-  int operator-(RangeIterator const& rhs) const {
+  auto operator-(RangeIterator const& rhs) const -> int {
     if (!sameClass(rhs))
       throw RangeException("Attempted to subtract incompatible ranges.");
 
     return stepsBetween(rhs.m_current, m_current);
   }
 
-  friend RangeIterator operator+(Diff lhs, RangeIterator const& rhs) {
+  friend auto operator+(Diff lhs, RangeIterator const& rhs) -> RangeIterator {
     return rhs + lhs;
   }
 
-  friend RangeIterator operator-(Diff lhs, RangeIterator const& rhs) {
+  friend auto operator-(Diff lhs, RangeIterator const& rhs) -> RangeIterator {
     return rhs - lhs;
   }
 
-  bool operator==(RangeIterator const& rhs) const {
+  auto operator==(RangeIterator const& rhs) const -> bool {
     return (sameClass(rhs) && m_current == rhs.m_current && m_stop == rhs.m_stop);
   }
 
-  bool operator!=(RangeIterator const& rhs) const {
+  auto operator!=(RangeIterator const& rhs) const -> bool {
     return !(*this == rhs);
   }
 
-  bool operator<(RangeIterator const& rhs) const {
+  auto operator<(RangeIterator const& rhs) const -> bool {
     return std::tie(m_start, m_end, m_diff, m_current) < std::tie(rhs.m_start, rhs.m_end, rhs.m_diff, rhs.m_current);
   }
 
-  bool operator<=(RangeIterator const& rhs) const {
+  auto operator<=(RangeIterator const& rhs) const -> bool {
     return (*this == rhs) || (*this < rhs);
   }
 
-  bool operator>=(RangeIterator const& rhs) const {
+  auto operator>=(RangeIterator const& rhs) const -> bool {
     return !(*this < rhs);
   }
 
-  bool operator>(RangeIterator const& rhs) const {
+  auto operator>(RangeIterator const& rhs) const -> bool {
     return !(*this <= rhs);
   }
 
-  RangeIterator begin() const {
+  auto begin() const -> RangeIterator {
     return RangeIterator(m_start, m_end, m_diff);
   }
 
-  RangeIterator end() const {
+  auto end() const -> RangeIterator {
     Diff steps = stepsBetween(m_start, m_end);
     RangeIterator res(m_start, m_end, m_diff);
     res += steps;
@@ -480,15 +481,15 @@ private:
       m_stop = true;
   }
 
-  bool sameClass(RangeIterator const& rhs) const {
+  auto sameClass(RangeIterator const& rhs) const -> bool {
     return m_start == rhs.m_start && m_end == rhs.m_end && m_diff == rhs.m_diff;
   }
 
-  Diff stepsBetween(Value start, Value end) const {
+  auto stepsBetween(Value start, Value end) const -> Diff {
     return ((Diff)end - (Diff)start) / m_diff;
   }
 
-  Value applySteps(Value start, Diff travel) const {
+  auto applySteps(Value start, Diff travel) const -> Value {
     return (Value)((Diff)start + travel);
   }
 
@@ -502,32 +503,32 @@ private:
 };
 
 template <typename Numeric, typename Diff>
-RangeIterator<Numeric, Diff> range(Numeric min, Numeric max, Diff diff) {
+auto range(Numeric min, Numeric max, Diff diff) -> RangeIterator<Numeric, Diff> {
   return RangeIterator<Numeric, Diff>(min, max, diff);
 }
 
 template <typename Numeric, typename Diff = int>
-RangeIterator<Numeric, Diff> range(Numeric max) {
+auto range(Numeric max) -> RangeIterator<Numeric, Diff> {
   return RangeIterator<Numeric, Diff>(max);
 }
 
 template <typename Numeric, typename Diff = int>
-RangeIterator<Numeric, Diff> range(Numeric min, Numeric max) {
+auto range(Numeric min, Numeric max) -> RangeIterator<Numeric, Diff> {
   return RangeIterator<Numeric, Diff>(min, max);
 }
 
 template <typename Numeric, typename Diff>
-RangeIterator<Numeric, Diff> rangeInclusive(Numeric min, Numeric max, Diff diff) {
+auto rangeInclusive(Numeric min, Numeric max, Diff diff) -> RangeIterator<Numeric, Diff> {
   return RangeIterator<Numeric, Diff>(min, (Numeric)((Diff)max + 1), diff);
 }
 
 template <typename Numeric, typename Diff = int>
-RangeIterator<Numeric, Diff> rangeInclusive(Numeric max) {
+auto rangeInclusive(Numeric max) -> RangeIterator<Numeric, Diff> {
   return RangeIterator<Numeric, Diff>((Numeric)((Diff)max + 1));
 }
 
 template <typename Numeric, typename Diff = int>
-RangeIterator<Numeric, Diff> rangeInclusive(Numeric min, Numeric max) {
+auto rangeInclusive(Numeric min, Numeric max) -> RangeIterator<Numeric, Diff> {
   return RangeIterator<Numeric, Diff>(min, (Numeric)((Diff)max + 1));
 }
 
@@ -540,12 +541,12 @@ struct EnumerateIterator {
 private:
   Iterator current;
   Iterator last;
-  size_t index;
+  std::size_t index;
   bool atEnd;
 
 public:
-  typedef decltype(*std::declval<Iterator>()) IteratorValue;
-  typedef pair<IteratorValue&, size_t> value_type;
+  using IteratorValue = decltype(*std::declval<Iterator>());
+  using value_type = std::pair<IteratorValue&, std::size_t>;
 
   EnumerateIterator() : index(0), atEnd(true) {}
 
@@ -553,15 +554,15 @@ public:
     atEnd = current == last;
   }
 
-  EnumerateIterator begin() const {
+  auto begin() const -> EnumerateIterator {
     return *this;
   }
 
-  EnumerateIterator end() const {
+  auto end() const -> EnumerateIterator {
     return EnumerateIterator();
   }
 
-  EnumerateIterator operator++() {
+  auto operator++() -> EnumerateIterator {
     if (!atEnd) {
       ++current;
       ++index;
@@ -572,15 +573,15 @@ public:
     return *this;
   }
 
-  value_type operator*() const {
+  auto operator*() const -> value_type {
     return {*current, index};
   }
 
-  bool operator==(EnumerateIterator const& rhs) const {
+  auto operator==(EnumerateIterator const& rhs) const -> bool {
     return (atEnd && rhs.atEnd) || (!atEnd && !rhs.atEnd && current == rhs.current && last == rhs.last);
   }
 
-  bool operator!=(EnumerateIterator const& rhs) const {
+  auto operator!=(EnumerateIterator const& rhs) const -> bool {
     return !(*this == rhs);
   }
 
@@ -590,12 +591,12 @@ public:
 };
 
 template <typename Iterable>
-EnumerateIterator<decltype(std::declval<Iterable>().begin())> enumerateIterator(Iterable& list) {
+auto enumerateIterator(Iterable& list) -> EnumerateIterator<decltype(std::declval<Iterable>().begin())> {
   return EnumerateIterator<decltype(std::declval<Iterable>().begin())>(list.begin(), list.end());
 }
 
 template <typename ResultContainer, typename Iterable>
-ResultContainer enumerateConstruct(Iterable&& list) {
+auto enumerateConstruct(Iterable&& list) -> ResultContainer {
   ResultContainer res;
   for (auto el : enumerateIterator(list))
     res.push_back(std::move(el));

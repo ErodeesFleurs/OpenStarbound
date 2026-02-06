@@ -46,9 +46,9 @@ The animation transform property is an array of actions, which are themselves an
 These are the available actions
 - `["reset"]` resets the animation transform.
 - `["translate", Vec2F translation]` translates the animation transform
-- `["rotate", float rotation, Maybe<Vec2F> rotationCenter]`, rotates the animation transform in radians by the optional rotation center, falls back to the `rotationCenter` property of the state if it exists.
-- `["rotateDegrees", float rotation, Maybe<Vec2F> rotationCenter]`, rotates the animation transform in degrees by the optional rotation center, falls back to the `rotationCenter` property of the state if it exists.
-- `["scale", Vec2F scale, Maybe<Vec2F> scaleCenter]`, scales the animation transform by the optional scale center, falls back to the `scalingCenter` property of the state if it exists.
+- `["rotate", float rotation, std::optional<Vec2F> rotationCenter]`, rotates the animation transform in radians by the optional rotation center, falls back to the `rotationCenter` property of the state if it exists.
+- `["rotateDegrees", float rotation, std::optional<Vec2F> rotationCenter]`, rotates the animation transform in degrees by the optional rotation center, falls back to the `rotationCenter` property of the state if it exists.
+- `["scale", Vec2F scale, std::optional<Vec2F> scaleCenter]`, scales the animation transform by the optional scale center, falls back to the `scalingCenter` property of the state if it exists.
 - `["transform", float a, float b, float c, float d, float tx, float ty]`, transforms the animation transform.
 
 These are also available in part state `properties` and `frameProperties` by defining a `transforms` property, it can also be interpolated by setting the `interpolated` property on the part to true.

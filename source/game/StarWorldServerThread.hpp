@@ -55,10 +55,10 @@ public:
   void pushIncomingPackets(ConnectionId clientId, List<PacketPtr> packets);
   List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
 
-  Maybe<Vec2F> playerRevivePosition(ConnectionId clientId) const;
+  std::optional<Vec2F> playerRevivePosition(ConnectionId clientId) const;
 
   // Worlds use this to notify the universe server that their celestial type should change
-  Maybe<pair<String, String>> pullNewPlanetType();
+  std::optional<pair<String, String>> pullNewPlanetType();
 
   // Executes the given action on the world in a thread safe context.  This
   // does *not* catch exceptions thrown by the action or set the server error
@@ -69,7 +69,7 @@ public:
   // also in a thread safe context.
   void setUpdateAction(WorldServerAction updateAction);
 
-  // 
+  //
   void passMessages(List<Message>&& messages);
 
   void unloadAll(bool force = false);

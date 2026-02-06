@@ -89,7 +89,7 @@ void SongbookInterface::refresh(bool reloadFiles) {
         StringView song = m_files[i];
         song = song.substr(SongPathPrefix.size(), song.size() - (SongPathPrefix.size() + 4));
         auto find = song.find(search, 0, String::CaseInsensitive);
-        if (find != NPos) {
+        if (find != std::numeric_limits<std::size_t>::max()) {
           auto widget = songList->addItem();
           widget->setData(i);
           String text = "";
@@ -98,7 +98,7 @@ void SongbookInterface::refresh(bool reloadFiles) {
             text += strf("^#bbb;{}^#7f7;{}", song.substr(last, find - last), song.substr(find, search.size()));
             last = find + search.size();
             find = song.find(search, last, String::CaseInsensitive);
-          } while (find != NPos);
+          } while (find != std::numeric_limits<std::size_t>::max());
           auto songName = widget->fetchChild<LabelWidget>("songName");
           songName->setText(text + strf("^#bbb;{}", song.substr(last)));
           widget->show();

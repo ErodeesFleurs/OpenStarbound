@@ -2,7 +2,6 @@
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarText.hpp"
 
 namespace Star {
@@ -59,7 +58,7 @@ HashMap<Uuid, TeamNumber> TeamManager::getPvpTeams() {
   return result;
 }
 
-Maybe<Uuid> TeamManager::getTeam(Uuid const& playerUuid) const {
+std::optional<Uuid> TeamManager::getTeam(Uuid const& playerUuid) const {
   for (auto const& teamPair : m_teams) {
     if (teamPair.second.members.contains(playerUuid))
       return teamPair.first;

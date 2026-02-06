@@ -6,16 +6,16 @@ assets = {}
 
 --- Returns a set of every asset path with this extension. ---
 ---@param extension string
----@return StringSet
+---@return string[]
 function assets.byExtension(extension) end
 
 --- If `b` is not specified, `a` is a suffix. If both are specified, `a` is a prefix and `b` is a suffix. Returns a list of all asset paths with with the prefix, if specified, and the suffix, if specified. This is case insensitive. The prefix and suffix are checked against the entire path, including directories and extensions. If neither are specified, returns ALL asset paths. ---
 ---@param a string
 ---@param b string
----@return StringList
+---@return string[]
 function assets.scan(a, b) end
 
---- Returns the JSON contents of a JSON asset file. Similar to `root.assetJson`. --- #### Maybe<`String`> assets.origin(`String` path) Returns the sourcePath for the specified asset or `nil` if the asset doesn't exist. Similar to `root.assetOrigin`. ---
+--- Returns the JSON contents of a JSON asset file. Similar to `root.assetJson`. --- #### std::optional<`String`> assets.origin(`String` path) Returns the sourcePath for the specified asset or `nil` if the asset doesn't exist. Similar to `root.assetOrigin`. ---
 ---@param path string
 ---@return Json
 function assets.json(path) end
@@ -42,8 +42,7 @@ function assets.exists(path) end
 
 --- Adds a new asset at the specified path with the specified data. If an asset already exists here, it is overwritten. ---
 ---@param path string
----@param data LuaValue
----@return void
+---@param data any
 function assets.add(path, data) end
 
 --- Patches the specified asset with the specified patch file. Returns true if successful. ---
@@ -57,7 +56,7 @@ function assets.patch(path, patchPath) end
 ---@return boolean
 function assets.erase(path) end
 
---- If withMetadata is false or unspecified, returns a list of the paths of all asset sources relative to the game executables. If withMetadata is true, returns a map of all asset source paths to the contents of their metadatas or an empty table if the source has no metadata. --- #### Maybe<`JsonObject`> assets.sourceMetadata(`String` sourcePath) Returns the metadata of the specified sourcePath, an empty table if the sourcePath lacks a metadata, or `nil` if it doesn't exist.
+--- If withMetadata is false or unspecified, returns a list of the paths of all asset sources relative to the game executables. If withMetadata is true, returns a map of all asset source paths to the contents of their metadatas or an empty table if the source has no metadata. --- #### std::optional<`JsonObject`> assets.sourceMetadata(`String` sourcePath) Returns the metadata of the specified sourcePath, an empty table if the sourcePath lacks a metadata, or `nil` if it doesn't exist.
 ---@param withMetadata boolean
----@return LuaTable
+---@return table
 function assets.sourcePaths(withMetadata) end

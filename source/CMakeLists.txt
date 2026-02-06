@@ -11,19 +11,19 @@ if(LAUNCHER_PATH)
     set(CMAKE_CXX_COMPILER_LAUNCHER ${LAUNCHER_PATH})
     message(STATUS "Using Launcher: ${LAUNCHER_PATH}")
     set(STAR_CCACHE TRUE)
-    set(STAR_PRECOMPILED_HEADERS FALSE)
 else()
     set(STAR_CCACHE FALSE)
-    set(STAR_PRECOMPILED_HEADERS TRUE)
 endif()
 
 set(CMAKE_C_STANDARD 23)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_STANDARD 26)
 set(CMAKE_CXX_MODULE_STD ON)
+set(CMAKE_CXX_EXTENSIONS ON)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_COMPILE_COMMANDS_MODE ON)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
+set_property(GLOBAL PROPERTY CXX_EXTENSIONS OFF)
 
 # Define build types
 set(CMAKE_CONFIGURATION_TYPES
@@ -67,15 +67,15 @@ if(MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "/Ox /fp:fast /GA /GS- /Gy /DNDEBUG")
     set(CMAKE_CXX_FLAGS_RELWITHASSERTS "${CMAKE_CXX_FLAGS_RELEASE} /Z7")
 else()
-    add_compile_options(-stdlib=libstdc++)
-    add_compile_options(-Wall -Wextra -Wno-unused -Wno-implicit-fallthrough
-        -Wunused-command-line-argument)
-    add_link_options(-stdlib=libstdc++)
+    add_compile_options(
+        -Wall
+        -Wextra
+        -Wno-unused
+        -Wno-implicit-fallthrough
+        -Wunused-command-line-argument
+    )
+
     add_link_options(-rdynamic)
-    if(NOT APPLE)
-        add_compile_options(-pthread)
-        add_link_options(-pthread)
-    endif()
 
     set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
     set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
@@ -97,26 +97,28 @@ endmacro()
 
 set(STAR_EXT_LIBS "")
 find_package(ZLIB REQUIRED)
+find_package(xxHash REQUIRED)
 find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
-find_package(cpr REQUIRED)
-find_package(OggVorbis REQUIRED)
+find_package(CURL REQUIRED)
 find_package(zstd REQUIRED)
 find_package(re2 REQUIRED)
 find_package(imgui REQUIRED)
 
 list(APPEND STAR_EXT_LIBS
-    ZLIB::ZLIB PNG::PNG cpr::cpr re2::re2
-    imgui::imgui ${VORBIS_LIBRARIES} ${OGG_LIBRARIES}
+    ZLIB::ZLIB PNG::PNG CURL::libcurl re2::re2
+    xxHash::xxhash
+    imgui::imgui ${VORBIS_LIBRARIES}
     zstd::libzstd_shared
     Freetype::Freetype
 )
 
+smart_find_package(OggVorbis ogg)
 smart_find_package(Opus opus)
 smart_find_package(Vorbis vorbis)
 smart_find_package(VorbisFile vorbisfile)
 
-list(APPEND STAR_EXT_LIBS Opus::Opus Vorbis::Vorbis VorbisFile::VorbisFile)
+list(APPEND STAR_EXT_LIBS Opus::Opus Vorbis::Vorbis VorbisFile::VorbisFile ${OGG_LIBRARIES})
 
 option(STAR_USE_JEMALLOC "Use jemalloc" OFF)
 option(STAR_USE_MIMALLOC "Use mimalloc" OFF)

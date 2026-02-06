@@ -2,6 +2,8 @@
 
 #include "StarString.hpp"
 
+import std;
+
 namespace Star {
 
 // Bi-directional map of unique sets of elements with quick map access from
@@ -19,7 +21,7 @@ public:
   typedef LeftMapT LeftMap;
   typedef RightMapT RightMap;
 
-  typedef pair<Left, Right> value_type;
+  using value_type = std::pair<Left, Right>;
 
   struct BiMapIterator {
     BiMapIterator& operator++();
@@ -28,7 +30,7 @@ public:
     bool operator==(BiMapIterator const& rhs) const;
     bool operator!=(BiMapIterator const& rhs) const;
 
-    pair<Left const&, Right const&> operator*() const;
+    std::pair<Left const&, Right const&> operator*() const;
 
     typename LeftMap::const_iterator iterator;
   };
@@ -60,22 +62,22 @@ public:
   Right valueRight(Left const& left, Right const& def = Right()) const;
   Left valueLeft(Right const& right, Left const& def = Left()) const;
 
-  Maybe<Right> maybeRight(Left const& left) const;
+  std::optional<Right> maybeRight(Left const& left) const;
 
-  Maybe<Left> maybeLeft(Right const& right) const;
+  std::optional<Left> maybeLeft(Right const& right) const;
 
   Right takeRight(Left const& left);
   Left takeLeft(Right const& right);
 
-  Maybe<Right> maybeTakeRight(Left const& left);
-  Maybe<Left> maybeTakeLeft(Right const& right);
+  std::optional<Right> maybeTakeRight(Left const& left);
+  std::optional<Left> maybeTakeLeft(Right const& right);
 
   Right const* rightPtr(Left const& left) const;
   Left const* leftPtr(Right const& right) const;
 
   BiMap& operator=(BiMap const& map);
 
-  pair<iterator, bool> insert(value_type const& val);
+  std::pair<iterator, bool> insert(value_type const& val);
 
   // Returns true if value was inserted, false if either the left or right side
   // already existed.
@@ -148,7 +150,7 @@ bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMapIterator::operator!=(BiMapI
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-pair<LeftT const&, RightT const&> BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMapIterator::operator*() const {
+std::pair<LeftT const&, RightT const&> BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMapIterator::operator*() const {
   return {iterator->first, *iterator->second};
 }
 
@@ -222,63 +224,63 @@ LeftT const& BiMap<LeftT, RightT, LeftMapT, RightMapT>::getLeft(Right const& rig
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 RightT BiMap<LeftT, RightT, LeftMapT, RightMapT>::valueRight(Left const& left, Right const& def) const {
-  return maybeRight(left).value(def);
+  return maybeRight(left).value_or(def);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 LeftT BiMap<LeftT, RightT, LeftMapT, RightMapT>::valueLeft(Right const& right, Left const& def) const {
-  return maybeLeft(right).value(def);
+  return maybeLeft(right).value_or(def);
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-Maybe<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeRight(Left const& left) const {
+std::optional<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeRight(Left const& left) const {
   auto i = m_leftMap.find(left);
   if (i != m_leftMap.end())
     return *i->second;
-  return {};
+  return std::nullopt;
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-Maybe<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeLeft(Right const& right) const {
+std::optional<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeLeft(Right const& right) const {
   auto i = m_rightMap.find(right);
   if (i != m_rightMap.end())
     return *i->second;
-  return {};
+  return std::nullopt;
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 RightT BiMap<LeftT, RightT, LeftMapT, RightMapT>::takeRight(Left const& left) {
   if (auto right = maybeTakeRight(left))
-    return right.take();
+    return std::move(*right);
   throw MapException::format("No such key in BiMap::takeRight", outputAny(left));
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 LeftT BiMap<LeftT, RightT, LeftMapT, RightMapT>::takeLeft(Right const& right) {
   if (auto left = maybeTakeLeft(right))
-    return left.take();
+    return std::move(*left);
   throw MapException::format("No such key in BiMap::takeLeft", outputAny(right));
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-Maybe<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeTakeRight(Left const& left) {
-  if (auto rightPtr = m_leftMap.maybeTake(left).value()) {
+std::optional<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeTakeRight(Left const& left) {
+  if (auto rightPtr = m_leftMap.maybeTake(left).value_or(nullptr)) {
     Right right = *rightPtr;
     m_rightMap.remove(*rightPtr);
     return right;
   } else {
-    return {};
+    return std::nullopt;
   }
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-Maybe<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeTakeLeft(Right const& right) {
-  if (auto leftPtr = m_rightMap.maybeTake(right).value()) {
+std::optional<LeftT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::maybeTakeLeft(Right const& right) {
+  if (auto leftPtr = m_rightMap.maybeTake(right).value_or(nullptr)) {
     Left left = *leftPtr;
     m_leftMap.remove(*leftPtr);
     return left;
   } else {
-    return {};
+    return std::nullopt;
   }
 }
 
@@ -303,13 +305,12 @@ BiMap<LeftT, RightT, LeftMapT, RightMapT>& BiMap<LeftT, RightT, LeftMapT, RightM
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(value_type const& val) -> pair<iterator, bool> {
+auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(value_type const& val) -> std::pair<iterator, bool> {
   auto leftRes = m_leftMap.insert(make_pair(val.first, nullptr));
   if (!leftRes.second)
     return {BiMapIterator{leftRes.first}, false};
 
   auto rightRes = m_rightMap.insert(make_pair(val.second, nullptr));
-  starAssert(rightRes.second == true);
   leftRes.first->second = &rightRes.first->first;
   rightRes.first->second = &leftRes.first->first;
   return {BiMapIterator{leftRes.first}, true};

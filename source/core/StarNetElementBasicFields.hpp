@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <type_traits>
 
 #include "StarNetElement.hpp"
@@ -55,7 +56,7 @@ private:
   uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
   bool m_updated = false;
-  Maybe<Deque<pair<float, T>>> m_pendingInterpolatedValues;
+  std::optional<Deque<pair<float, T>>> m_pendingInterpolatedValues;
 };
 
 template <typename T>
@@ -68,7 +69,7 @@ protected:
 typedef NetElementIntegral<int64_t> NetElementInt;
 typedef NetElementIntegral<uint64_t> NetElementUInt;
 
-// Properly encodes NPos no matter the platform width of size_t NetElement
+// Properly encodes std::numeric_limits<std::size_t>::max() no matter the platform width of size_t NetElement
 // size_t values are NOT clamped when setting.
 class NetElementSize : public NetElementBasicField<size_t> {
 protected:

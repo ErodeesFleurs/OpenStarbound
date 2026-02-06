@@ -26,11 +26,11 @@ public:
 
   void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) override;
   void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) override;
-  Maybe<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) override;
-  Maybe<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) override;
+  std::optional<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) override;
+  std::optional<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) override;
   void setEffectTexture(String const& textureName, ImageView const& image) override;
 
-  void setScissorRect(Maybe<RectI> const& scissorRect) override;
+  void setScissorRect(std::optional<RectI> const& scissorRect) override;
 
   bool switchEffectConfig(String const& name) override;
 
@@ -164,7 +164,7 @@ private:
   struct EffectParameter {
     GLint parameterUniform = -1;
     VariantTypeIndex parameterType = 0;
-    Maybe<RenderEffectParameter> parameterValue;
+    std::optional<RenderEffectParameter> parameterValue;
   };
 
   struct EffectTexture {
@@ -246,7 +246,7 @@ private:
 
   RefPtr<GlTexture> m_whiteTexture;
 
-  Maybe<RectI> m_scissorRect;
+  std::optional<RectI> m_scissorRect;
 
   bool m_limitTextureGroupSize;
   bool m_useMultiTexturing;

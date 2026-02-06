@@ -35,7 +35,7 @@ extern EnumMap<NodeParameterType> const NodeParameterTypeNames;
 
 typedef Variant<String, Json> NodeParameterValue;
 typedef pair<NodeParameterType, NodeParameterValue> NodeParameter;
-typedef pair<NodeParameterType, pair<Maybe<String>, bool>> NodeOutput;
+typedef pair<NodeParameterType, pair<std::optional<String>, bool>> NodeOutput;
 
 NodeParameterValue nodeParameterValueFromJson(Json const& json);
 
@@ -64,7 +64,7 @@ extern EnumMap<CompositeType> const CompositeTypeNames;
 
 // replaces global tags in nodeParameters in place
 NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters);
-Maybe<String> replaceOutputBehaviorTag(Maybe<String> const& output, StringMap<NodeParameterValue> const& treeParameters);
+std::optional<String> replaceOutputBehaviorTag(std::optional<String> const& output, StringMap<NodeParameterValue> const& treeParameters);
 void applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<NodeParameterValue> const& treeParameters);
 
 struct ActionNode {

@@ -55,7 +55,7 @@ void WorldClientState::setClientPresenceEntities(List<EntityId> entities) {
   m_clientPresenceEntities.set(std::move(entities));
 }
 
-List<RectI> WorldClientState::monitoringRegions(function<Maybe<RectI>(EntityId)> entityBounds) const {
+List<RectI> WorldClientState::monitoringRegions(function<std::optional<RectI>(EntityId)> entityBounds) const {
   List<RectI> regions;
   
   auto windowRegion = window().padded(m_windowMonitoringBorder);

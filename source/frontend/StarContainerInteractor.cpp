@@ -7,7 +7,6 @@ void ContainerInteractor::openContainer(ContainerEntityPtr containerEntity) {
     m_openContainer->containerClose();
   m_openContainer = std::move(containerEntity);
   if (m_openContainer) {
-    starAssert(m_openContainer->inWorld());
     m_openContainer->containerOpen();
   }
 }
@@ -44,7 +43,7 @@ List<ContainerResult> ContainerInteractor::pullContainerResults() {
   List<List<ItemPtr>> results;
   eraseWhere(m_pendingResults, [&results](auto& promise) {
       if (auto res = promise.result())
-        results.append(res.take());
+        results.append(std::move(*res));
       return promise.finished();
     });
   return results;

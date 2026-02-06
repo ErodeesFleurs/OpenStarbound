@@ -1,8 +1,10 @@
 #pragma once
 
+#include "StarItem.hpp"
 #include "StarWidget.hpp"
 #include "StarBiMap.hpp"
-#include "StarItemDatabase.hpp"
+
+#include <optional>
 
 namespace Star {
 
@@ -90,8 +92,8 @@ public:
   // If a tooltip popup should be created at the given mouse position, return a
   // new pane to be used as the tooltip.
   virtual PanePtr createTooltip(Vec2I const& screenPosition);
-  virtual Maybe<String> cursorOverride(Vec2I const& screenPosition);
-  virtual Maybe<ItemPtr> shiftItemFromInventory(ItemPtr const& input);
+  virtual std::optional<String> cursorOverride(Vec2I const& screenPosition);
+  virtual std::optional<ItemPtr> shiftItemFromInventory(ItemPtr const& input);
 
   virtual LuaCallbacks makePaneCallbacks();
 protected:

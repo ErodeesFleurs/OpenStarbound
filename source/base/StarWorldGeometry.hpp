@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarPoly.hpp"
 
 namespace Star {
@@ -65,8 +67,8 @@ public:
 
   function<float(float, float)> xDiffFunction() const;
   function<Vec2F(Vec2F, Vec2F)> diffFunction() const;
-  function<float(float, float, float)> xLerpFunction(Maybe<float> discontinuityThreshold = {}) const;
-  function<Vec2F(float, Vec2F, Vec2F)> lerpFunction(Maybe<float> discontinuityThreshold = {}) const;
+  function<float(float, float, float)> xLerpFunction(std::optional<float> discontinuityThreshold = {}) const;
+  function<Vec2F(float, Vec2F, Vec2F)> lerpFunction(std::optional<float> discontinuityThreshold = {}) const;
 
   // Wrapping functions are not guaranteed to work for objects larger than
   // worldWidth / 2.  Bad things can happen.
@@ -103,7 +105,7 @@ public:
   bool rectIntersectsCircle(RectF const& rect, Vec2F const& center, float radius) const;
   bool lineIntersectsCircle(Line2F const& line, Vec2F const& center, float radius) const;
 
-  Maybe<Vec2F> lineIntersectsPolyAt(Line2F const& line, PolyF const& poly) const;
+  std::optional<Vec2F> lineIntersectsPolyAt(Line2F const& line, PolyF const& poly) const;
 
   // Returns the distance from a point to any part of the given poly
   float polyDistance(PolyF const& poly, Vec2F const& point) const;

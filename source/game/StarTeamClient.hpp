@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarUuid.hpp"
 #include "StarDrawable.hpp"
 #include "StarWarping.hpp"
@@ -30,7 +32,7 @@ public:
   void invitePlayer(String const& playerName);
   void acceptInvitation(Uuid const& inviterUuid);
 
-  Maybe<Uuid> currentTeam() const;
+  std::optional<Uuid> currentTeam() const;
 
   void makeLeader(Uuid const& playerUuid);
   void removeFromTeam(Uuid const& playerUuid);
@@ -64,7 +66,7 @@ private:
 
   PlayerPtr m_mainPlayer;
   ClientContextPtr m_clientContext;
-  Maybe<Uuid> m_teamUuid;
+  std::optional<Uuid> m_teamUuid;
 
   Uuid m_teamLeader;
 

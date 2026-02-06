@@ -57,7 +57,7 @@ void Sky::startFlying(bool enterHyperspace, bool startInWarp, Json settings) {
   }
 }
 
-void Sky::stopFlyingAt(Maybe<SkyParameters> dest) {
+void Sky::stopFlyingAt(std::optional<SkyParameters> dest) {
   m_destWorld = dest;
 }
 
@@ -179,13 +179,15 @@ void Sky::update(double dt) {
       if (m_warpPhase == WarpPhase::SpeedingUp && m_flyingTimer >= speedupTime()
           && !m_enterHyperspace
           && m_destWorld) {
-        jumpTo(m_destWorld.take());
+        jumpTo(std::move(*m_destWorld));
+        m_destWorld.reset();
         m_warpPhase = WarpPhase::SlowingDown;
       } else if (m_warpPhase == WarpPhase::SpeedingUp && m_flyingTimer >= speedupTime() && m_enterHyperspace) {
         m_warpPhase = WarpPhase::Maintain;
       } else if (m_warpPhase == WarpPhase::Maintain && m_flyingTimer >= m_settings.queryFloat("flyingTimer")
           && m_destWorld) {
-        jumpTo(m_destWorld.take());
+        jumpTo(std::move(*m_destWorld));
+        m_destWorld.reset();
         m_warpPhase = WarpPhase::SlowingDown;
       } else if (m_warpPhase == WarpPhase::SlowingDown && m_flyingTimer >= slowdownTime()) {
         m_flyingType = FlyingType::Arriving;

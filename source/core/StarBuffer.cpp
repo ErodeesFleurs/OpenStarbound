@@ -2,6 +2,9 @@
 #include "StarIODevice.hpp"
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
+#include "StarConfig.hpp"
+
+import std;
 
 namespace Star {
 
@@ -10,7 +13,7 @@ Buffer::Buffer()
   setMode(IOMode::ReadWrite);
 }
 
-Buffer::Buffer(size_t initialSize)
+Buffer::Buffer(std::size_t initialSize)
   : Buffer() {
   reset(initialSize);
 }
@@ -30,12 +33,12 @@ Buffer::Buffer(Buffer&& buffer)
   operator=(std::move(buffer));
 }
 
-StreamOffset Buffer::pos() {
+auto Buffer::pos() -> std::int64_t {
   return m_pos;
 }
 
-void Buffer::seek(StreamOffset pos, IOSeek mode) {
-  StreamOffset newPos = m_pos;
+void Buffer::seek(std::int64_t pos, IOSeek mode) {
+  std::int64_t newPos = m_pos;
   if (mode == IOSeek::Absolute)
     newPos = pos;
   else if (mode == IOSeek::Relative)
@@ -45,37 +48,37 @@ void Buffer::seek(StreamOffset pos, IOSeek mode) {
   m_pos = newPos;
 }
 
-void Buffer::resize(StreamOffset size) {
-  data().resize((size_t)size);
+void Buffer::resize(std::int64_t size) {
+  data().resize((std::size_t)size);
 }
 
-bool Buffer::atEnd() {
+auto Buffer::atEnd() -> bool {
   return m_pos >= m_bytes.size();
 }
 
-size_t Buffer::read(char* data, size_t len) {
-  size_t l = doRead(m_pos, data, len);
+auto Buffer::read(char* data, std::size_t len) -> std::size_t {
+  std::size_t l = doRead(m_pos, data, len);
   m_pos += l;
   return l;
 }
 
-size_t Buffer::write(char const* data, size_t len) {
-  size_t l = doWrite(m_pos, data, len);
+auto Buffer::write(char const* data, std::size_t len) -> std::size_t {
+  std::size_t l = doWrite(m_pos, data, len);
   m_pos += l;
   return l;
 }
 
-size_t Buffer::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
-  size_t rpos = readPosition;
-  if ((StreamOffset)rpos != readPosition)
+auto Buffer::readAbsolute(std::int64_t readPosition, char* data, std::size_t len) -> std::size_t {
+  std::size_t rpos = readPosition;
+  if ((std::int64_t)rpos != readPosition)
     throw IOException("Error, readPosition out of range");
 
   return doRead(rpos, data, len);
 }
 
-size_t Buffer::writeAbsolute(StreamOffset writePosition, char const* data, size_t len) {
-  size_t wpos = writePosition;
-  if ((StreamOffset)wpos != writePosition)
+auto Buffer::writeAbsolute(std::int64_t writePosition, char const* data, std::size_t len) -> std::size_t {
+  std::size_t wpos = writePosition;
+  if ((std::int64_t)wpos != writePosition)
     throw IOException("Error, writePosition out of range");
 
   return doWrite(wpos, data, len);
@@ -89,41 +92,41 @@ void Buffer::open(IOMode mode) {
     seek(0, IOSeek::End);
 }
 
-String Buffer::deviceName() const {
+auto Buffer::deviceName() const -> String {
   return strf("Buffer <{}>", (void*)this);
 }
 
-StreamOffset Buffer::size() {
+auto Buffer::size() -> std::int64_t {
   return m_bytes.size();
 }
 
-ByteArray& Buffer::data() {
+auto Buffer::data() -> ByteArray& {
   return m_bytes;
 }
 
-ByteArray const& Buffer::data() const {
+auto Buffer::data() const -> ByteArray const& {
   return m_bytes;
 }
 
-ByteArray Buffer::takeData() {
+auto Buffer::takeData() -> ByteArray {
   ByteArray ret = std::move(m_bytes);
   reset(0);
   return ret;
 }
 
-char* Buffer::ptr() {
+auto Buffer::ptr() -> char* {
   return data().ptr();
 }
 
-char const* Buffer::ptr() const {
+auto Buffer::ptr() const -> char const* {
   return m_bytes.ptr();
 }
 
-size_t Buffer::dataSize() const {
+auto Buffer::dataSize() const -> std::size_t {
   return m_bytes.size();
 }
 
-void Buffer::reserve(size_t size) {
+void Buffer::reserve(std::size_t size) {
   data().reserve(size);
 }
 
@@ -132,11 +135,11 @@ void Buffer::clear() {
   m_bytes.clear();
 }
 
-bool Buffer::empty() const {
+auto Buffer::empty() const -> bool {
   return m_bytes.empty();
 }
 
-void Buffer::reset(size_t newSize) {
+void Buffer::reset(std::size_t newSize) {
   m_pos = 0;
   m_bytes.fill(newSize, 0);
 }
@@ -146,14 +149,9 @@ void Buffer::reset(ByteArray b) {
   m_bytes = std::move(b);
 }
 
-Buffer& Buffer::operator=(Buffer const& buffer) {
-  IODevice::operator=(buffer);
-  m_pos = buffer.m_pos;
-  m_bytes = buffer.m_bytes;
-  return *this;
-}
+auto Buffer::operator=(Buffer const& buffer) -> Buffer& = default;
 
-Buffer& Buffer::operator=(Buffer&& buffer) {
+auto Buffer::operator=(Buffer&& buffer) -> Buffer& {
   IODevice::operator=(buffer);
   m_pos = buffer.m_pos;
   m_bytes = std::move(buffer.m_bytes);
@@ -164,7 +162,7 @@ Buffer& Buffer::operator=(Buffer&& buffer) {
   return *this;
 }
 
-size_t Buffer::doRead(size_t pos, char* data, size_t len) {
+auto Buffer::doRead(std::size_t pos, char* data, std::size_t len) -> std::size_t {
   if (len == 0)
     return 0;
 
@@ -174,12 +172,12 @@ size_t Buffer::doRead(size_t pos, char* data, size_t len) {
   if (pos >= m_bytes.size())
     return 0;
 
-  size_t l = min(m_bytes.size() - pos, len);
-  memcpy(data, m_bytes.ptr() + pos, l);
+  std::size_t l = std::min(m_bytes.size() - pos, len);
+  std::memcpy(data, m_bytes.ptr() + pos, l);
   return l;
 }
 
-size_t Buffer::doWrite(size_t pos, char const* data, size_t len) {
+auto Buffer::doWrite(std::size_t pos, char const* data, std::size_t len) -> std::size_t {
   if (len == 0)
     return 0;
 
@@ -189,7 +187,7 @@ size_t Buffer::doWrite(size_t pos, char const* data, size_t len) {
   if (pos + len > m_bytes.size())
     m_bytes.resize(pos + len);
 
-  memcpy(m_bytes.ptr() + pos, data, len);
+  std::memcpy(m_bytes.ptr() + pos, data, len);
   return len;
 }
 
@@ -198,16 +196,16 @@ ExternalBuffer::ExternalBuffer()
   setMode(IOMode::Read);
 }
 
-ExternalBuffer::ExternalBuffer(char const* externalData, size_t len) : ExternalBuffer() {
+ExternalBuffer::ExternalBuffer(char const* externalData, std::size_t len) : ExternalBuffer() {
   reset(externalData, len);
 }
 
-StreamOffset ExternalBuffer::pos() {
+auto ExternalBuffer::pos() -> std::int64_t {
   return m_pos;
 }
 
-void ExternalBuffer::seek(StreamOffset pos, IOSeek mode) {
-  StreamOffset newPos = m_pos;
+void ExternalBuffer::seek(std::int64_t pos, IOSeek mode) {
+  std::int64_t newPos = m_pos;
   if (mode == IOSeek::Absolute)
     newPos = pos;
   else if (mode == IOSeek::Relative)
@@ -217,49 +215,49 @@ void ExternalBuffer::seek(StreamOffset pos, IOSeek mode) {
   m_pos = newPos;
 }
 
-bool ExternalBuffer::atEnd() {
+auto ExternalBuffer::atEnd() -> bool {
   return m_pos >= m_size;
 }
 
-size_t ExternalBuffer::read(char* data, size_t len) {
-  size_t l = doRead(m_pos, data, len);
+auto ExternalBuffer::read(char* data, std::size_t len) -> std::size_t {
+  std::size_t l = doRead(m_pos, data, len);
   m_pos += l;
   return l;
 }
 
-size_t ExternalBuffer::write(char const*, size_t) {
+auto ExternalBuffer::write(char const*, std::size_t) -> std::size_t {
   throw IOException("Error, ExternalBuffer is not writable");
 }
 
-size_t ExternalBuffer::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
-  size_t rpos = readPosition;
-  if ((StreamOffset)rpos != readPosition)
+auto ExternalBuffer::readAbsolute(std::int64_t readPosition, char* data, std::size_t len) -> std::size_t {
+  std::size_t rpos = readPosition;
+  if ((std::int64_t)rpos != readPosition)
     throw IOException("Error, readPosition out of range");
 
   return doRead(rpos, data, len);
 }
 
-size_t ExternalBuffer::writeAbsolute(StreamOffset, char const*, size_t) {
+auto ExternalBuffer::writeAbsolute(std::int64_t, char const*, std::size_t) -> std::size_t {
   throw IOException("Error, ExternalBuffer is not writable");
 }
 
-String ExternalBuffer::deviceName() const {
+auto ExternalBuffer::deviceName() const -> String {
   return strf("ExternalBuffer <{}>", (void*)this);
 }
 
-StreamOffset ExternalBuffer::size() {
+auto ExternalBuffer::size() -> std::int64_t {
   return m_size;
 }
 
-char const* ExternalBuffer::ptr() const {
+auto ExternalBuffer::ptr() const -> char const* {
   return m_bytes;
 }
 
-size_t ExternalBuffer::dataSize() const {
+auto ExternalBuffer::dataSize() const -> std::size_t {
   return m_size;
 }
 
-bool ExternalBuffer::empty() const {
+auto ExternalBuffer::empty() const -> bool {
   return m_size == 0;
 }
 
@@ -267,25 +265,25 @@ ExternalBuffer::operator bool() const {
   return m_size == 0;
 }
 
-void ExternalBuffer::reset(char const* externalData, size_t len) {
+void ExternalBuffer::reset(char const* externalData, std::size_t len) {
   m_pos = 0;
   m_bytes = externalData;
   m_size = len;
 }
 
-IODevicePtr Buffer::clone() {
-  auto cloned = make_shared<Buffer>(*this);
+auto Buffer::clone() -> Ptr<IODevice> {
+  auto cloned = std::make_shared<Buffer>(*this);
   // Reset position to 0 while preserving mode and data
   cloned->seek(0);
   return cloned;
 }
 
-IODevicePtr ExternalBuffer::clone() {
+auto ExternalBuffer::clone() -> Ptr<IODevice> {
   Logger::info("Cloning ExternalBuffer from position {}", m_pos);
-  return make_shared<ExternalBuffer>(*this);
+  return std::make_shared<ExternalBuffer>(*this);
 }
 
-size_t ExternalBuffer::doRead(size_t pos, char* data, size_t len) {
+auto ExternalBuffer::doRead(std::size_t pos, char* data, std::size_t len) -> std::size_t {
   if (len == 0)
     return 0;
 
@@ -295,8 +293,8 @@ size_t ExternalBuffer::doRead(size_t pos, char* data, size_t len) {
   if (pos >= m_size)
     return 0;
 
-  size_t l = min(m_size - pos, len);
-  memcpy(data, m_bytes + pos, l);
+  std::size_t l = std::min(m_size - pos, len);
+  std::memcpy(data, m_bytes + pos, l);
   return l;
 }
 

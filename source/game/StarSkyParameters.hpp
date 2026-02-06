@@ -35,15 +35,15 @@ struct SkyParameters {
   void readVisitableParameters(VisitableWorldParametersConstPtr visitableParameters);
 
   uint64_t seed;
-  Maybe<float> dayLength;
-  Maybe<pair<List<pair<String, float>>, Vec2F>> nearbyPlanet;
+  std::optional<float> dayLength;
+  std::optional<pair<List<pair<String, float>>, Vec2F>> nearbyPlanet;
   List<pair<List<pair<String, float>>, Vec2F>> nearbyMoons;
   List<pair<String, String>> horizonImages;
   bool horizonClouds;
   SkyType skyType;
   Either<SkyColoring, Color> skyColoring;
-  Maybe<float> spaceLevel;
-  Maybe<float> surfaceLevel;
+  std::optional<float> spaceLevel;
+  std::optional<float> surfaceLevel;
   String sunType;
   Json settings;
 };

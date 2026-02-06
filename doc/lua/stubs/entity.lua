@@ -5,25 +5,25 @@
 entity = {}
 
 --- Returns the id number of the entity. ---
----@return EntityId
+---@return integer
 function entity.id() end
 
 --- Returns a table of the entity's damage team type and team number. Ex: {type = "enemy", team = 0} ---
----@return LuaTable
+---@return DamageTeam
 function entity.damageTeam() end
 
 --- Returns whether the provided entity is a valid target of the current entity. An entity is a valid target if they can be damaged, and in the case of monsters and NPCs if they are aggressive. ---
----@param entityId EntityId
+---@param entityId integer
 ---@return boolean
 function entity.isValidTarget(entityId) end
 
 --- Returns the vector distance from the current entity to the provided entity. ---
----@param entityId EntityId
+---@param entityId integer
 ---@return Vec2F
 function entity.distanceToEntity(entityId) end
 
 --- Returns whether the provided entity is in line of sight of the current entity. ---
----@param entityId EntityId
+---@param entityId integer
 ---@return boolean
 function entity.entityInSight(entityId) end
 

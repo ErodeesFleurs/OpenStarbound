@@ -39,7 +39,7 @@ MerchantPane::MerchantPane(
 
   GuiReader reader;
   reader.registerCallback("spinCount.up", [=, this](Widget*) {
-      if (m_selectedIndex != NPos) {
+      if (m_selectedIndex != std::numeric_limits<std::size_t>::max()) {
         if (m_buyCount < maxBuyCount())
           m_buyCount++;
         else
@@ -51,7 +51,7 @@ MerchantPane::MerchantPane(
     });
 
   reader.registerCallback("spinCount.down", [=, this](Widget*) {
-      if (m_selectedIndex != NPos) {
+      if (m_selectedIndex != std::numeric_limits<std::size_t>::max()) {
         if (m_buyCount > 1)
           m_buyCount--;
         else
@@ -263,7 +263,7 @@ void MerchantPane::updateSelection() {
   if (m_selectedIndex != m_itemGuiList->selectedItem()) {
     m_selectedIndex = m_itemGuiList->selectedItem();
 
-    if (m_selectedIndex != NPos) {
+    if (m_selectedIndex != std::numeric_limits<std::size_t>::max()) {
       auto itemConfig = m_itemList.get(m_selectedIndex);
       m_selectedItem = Root::singleton().itemDatabase()->itemShared(ItemDescriptor(itemConfig.get("item")));
       findChild<ButtonWidget>("spinCount.up")->enable();
@@ -289,7 +289,7 @@ void MerchantPane::updateBuyTotal() {
 
   m_buyTotalLabel->setText(toString(m_buyTotal));
 
-  if (m_selectedIndex != NPos && m_buyCount > 0)
+  if (m_selectedIndex != std::numeric_limits<std::size_t>::max() && m_buyCount > 0)
     m_buyButton->enable();
   else
     m_buyButton->disable();
@@ -372,7 +372,7 @@ void MerchantPane::countChanged() {
 }
 
 void MerchantPane::countTextChanged() {
-  if (m_selectedIndex == NPos) {
+  if (m_selectedIndex == std::numeric_limits<std::size_t>::max()) {
     m_buyCount = 0;
     countChanged();
   } else {

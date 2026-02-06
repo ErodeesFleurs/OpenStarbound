@@ -108,7 +108,7 @@ private:
   static uint64_t stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from);
 
   // Returns the slot that contains the item already and has the *highest*
-  // stack count but not full, or an empty slot, or NPos for no room.
+  // stack count but not full, or an empty slot, or std::numeric_limits<std::size_t>::max() for no room.
   size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const;
   size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const;
 

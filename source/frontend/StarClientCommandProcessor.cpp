@@ -1,3 +1,5 @@
+#include <optional>
+
 #include "StarClientCommandProcessor.hpp"
 #include "StarItem.hpp"
 #include "StarAssets.hpp"
@@ -66,7 +68,7 @@ bool ClientCommandProcessor::adminCommandAllowed() const {
 }
 
 String ClientCommandProcessor::previewQuestPane(StringList const& arguments, function<PanePtr(QuestPtr)> createPane) {
-  Maybe<String> templateId = {};
+  std::optional<String> templateId = {};
   templateId = arguments[0];
   if (auto quest = createPreviewQuest(*templateId, arguments.at(1), arguments.at(2), m_universeClient->mainPlayer().get())) {
     auto pane = createPane(quest);
@@ -77,9 +79,9 @@ String ClientCommandProcessor::previewQuestPane(StringList const& arguments, fun
 }
 
 StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool userInput) {
-  Maybe<Input::ClipboardUnlock> unlock;
+  std::optional<Input::ClipboardUnlock> unlock;
   if (userInput) // allow clipboard usage during this code
-    unlock = Input::singleton().unlockClipboard();
+    unlock.emplace(Input::singleton().unlockClipboard());
   try {
     if (!commandLine.beginsWith("/"))
       throw StarException("ClientCommandProcessor expected command, does not start with '/'");
@@ -460,7 +462,7 @@ String ClientCommandProcessor::render(String const& path) {
     auto first = args.maybeFirst().value().toLower();
     auto humanoid = player->humanoid();
     auto& identity = humanoid->identity();
-    auto species = identity.imagePath.value(identity.species);
+    auto species = identity.imagePath.value_or(identity.species);
     outputSheet = true;
     outputName = first;
     if (first.equals("hat")) {

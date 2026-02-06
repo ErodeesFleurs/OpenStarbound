@@ -36,12 +36,12 @@ AudioInstance::AudioInstance(Audio const& audio)
   m_clockStopFadeOut = 0.0f;
 }
 
-Maybe<Vec2F> AudioInstance::position() const {
+std::optional<Vec2F> AudioInstance::position() const {
   MutexLocker locker(m_mutex);
   return m_position;
 }
 
-void AudioInstance::setPosition(Maybe<Vec2F> position) {
+void AudioInstance::setPosition(std::optional<Vec2F> position) {
   MutexLocker locker(m_mutex);
   m_position = position;
 }
@@ -65,7 +65,6 @@ void AudioInstance::setRangeMultiplier(float rangeMultiplier) {
 }
 
 void AudioInstance::setVolume(float targetValue, float rampTime) {
-  starAssert(targetValue >= 0);
   MutexLocker locker(m_mutex);
 
   if (m_stopping)
@@ -82,7 +81,6 @@ void AudioInstance::setVolume(float targetValue, float rampTime) {
 }
 
 void AudioInstance::setPitchMultiplier(float targetValue, float rampTime) {
-  starAssert(targetValue >= 0);
   MutexLocker locker(m_mutex);
 
   if (m_stopping)
@@ -130,12 +128,12 @@ void AudioInstance::setMixerGroup(MixerGroup mixerGroup) {
   m_mixerGroup = mixerGroup;
 }
 
-void AudioInstance::setClockStart(Maybe<int64_t> clockStartTime) {
+void AudioInstance::setClockStart(std::optional<int64_t> clockStartTime) {
   MutexLocker locker(m_mutex);
   m_clockStart = clockStartTime;
 }
 
-void AudioInstance::setClockStop(Maybe<int64_t> clockStopTime, int64_t fadeOutTime) {
+void AudioInstance::setClockStop(std::optional<int64_t> clockStopTime, int64_t fadeOutTime) {
   MutexLocker locker(m_mutex);
   m_clockStop = clockStopTime;
   m_clockStopFadeOut = fadeOutTime;

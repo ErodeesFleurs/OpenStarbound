@@ -4,6 +4,8 @@
 #include "StarNetElementSystem.hpp"
 #include "StarStatSet.hpp"
 
+#include <optional>
+
 namespace Star {
 
 // Extension of StatSet that can easily be set up from config, and is network
@@ -38,8 +40,8 @@ public:
   void resetResource(String const& resourceName);
   void resetAllResources();
 
-  Maybe<float> resourceMax(String const& resourceName) const;
-  Maybe<float> resourcePercentage(String const& resourceName) const;
+  std::optional<float> resourceMax(String const& resourceName) const;
+  std::optional<float> resourcePercentage(String const& resourceName) const;
   float setResourcePercentage(String const& resourceName, float resourcePercentage);
   float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
 

@@ -47,7 +47,7 @@ void PlayerDeployment::init(Entity* player, World* world) {
 }
 
 bool PlayerDeployment::canDeploy() {
-  Maybe<bool> res = m_scriptComponent.invoke<bool>("canDeploy");
+  std::optional<bool> res = m_scriptComponent.invoke<bool>("canDeploy");
   return res && *res;
 }
 
@@ -76,7 +76,7 @@ void PlayerDeployment::teleportOut() {
   m_scriptComponent.invoke("teleportOut");
 }
 
-Maybe<Json> PlayerDeployment::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+std::optional<Json> PlayerDeployment::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
 
@@ -87,7 +87,7 @@ void PlayerDeployment::update(float dt) {
 void PlayerDeployment::render(RenderCallback* renderCallback, Vec2F const& position) {
   for (auto drawablePair : m_scriptComponent.drawables()) {
     drawablePair.first.translate(position);
-    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(RenderLayerPlayer));
+    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value_or(RenderLayerPlayer));
   }
   renderCallback->addParticles(m_scriptComponent.pullNewParticles());
   for (auto audio : m_scriptComponent.pullNewAudios()) {

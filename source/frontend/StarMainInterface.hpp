@@ -1,5 +1,7 @@
 #pragma once
 
+#include <optional>
+
 #include "StarInventory.hpp"
 #include "StarInteractionTypes.hpp"
 #include "StarItemDescriptor.hpp"
@@ -103,7 +105,7 @@ public:
 
   void doChat(String const& chat, bool addToHistory);
 
-  void queueMessage(String const& message, Maybe<float> cooldown, float spring);
+  void queueMessage(String const& message, std::optional<float> cooldown, float spring);
   void queueMessage(String const& message);
 
   void queueItemPickupText(ItemPtr const& item);
@@ -199,7 +201,7 @@ private:
   Vec2F m_cursorScreenPos{};
   Vec2I m_cursorScreenIPos{};
   ItemSlotWidgetPtr m_cursorItem;
-  Maybe<String> m_cursorTooltip;
+  std::optional<String> m_cursorTooltip;
 
   LabelWidgetPtr m_planetText;
   GameTimer m_planetNameTimer;
