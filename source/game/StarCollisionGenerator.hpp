@@ -3,11 +3,9 @@
 #include "StarCollisionBlock.hpp"
 #include "StarMultiArray.hpp"
 
-#include <functional>
+import std;
 
 namespace Star {
-
-STAR_CLASS(CollisionGenerator);
 
 // Turns cell geometry into "smoothed" polygonal geometry.  Used by World to
 // generate ramps and slopes based on tiles.
@@ -24,19 +22,19 @@ public:
   // Callback function to tell what kind of collision geometry is in a cell.
   // Will be called up to BlockInfluenceRadius outside of the given query
   // region.
-  typedef std::function<CollisionKind(int, int)> CollisionKindAccessor;
+  using CollisionKindAccessor = std::function<CollisionKind(int, int)>;
 
   void init(CollisionKindAccessor accessor);
 
   // Get collision geometry for the given block region.
-  List<CollisionBlock> getBlocks(RectI const& region) const;
+  auto getBlocks(RectI const& region) const -> List<CollisionBlock>;
 
 private:
   void getBlocksPlatforms(List<CollisionBlock>& output, RectI const& region, CollisionKind kind) const;
   void getBlocksMarchingSquares(List<CollisionBlock>& output, RectI const& region, CollisionKind kind) const;
 
   void populateCollisionBuffer(RectI const& region) const;
-  CollisionKind collisionKind(int x, int y) const;
+  auto collisionKind(int x, int y) const -> CollisionKind;
 
   CollisionKindAccessor m_accessor;
 
@@ -44,4 +42,4 @@ private:
   mutable MultiArray<CollisionKind, 2> m_collisionBuffer;
 };
 
-}
+}// namespace Star

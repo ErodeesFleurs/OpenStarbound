@@ -2,13 +2,15 @@
 
 #include "StarRandom.hpp"
 
+import std;
+
 namespace Star {
 
 template <typename Item>
 struct WeightedPool {
 public:
-  typedef pair<double, Item> ItemsType;
-  typedef List<ItemsType> ItemsList;
+  using ItemsType = std::pair<double, Item>;
+  using ItemsList = List<ItemsType>;
 
   WeightedPool();
 
@@ -18,34 +20,34 @@ public:
   void add(double weight, Item item);
   void clear();
 
-  ItemsList const& items() const;
+  auto items() const -> ItemsList const&;
 
-  size_t size() const;
-  pair<double, Item> const& at(size_t index) const;
-  double weight(size_t index) const;
-  Item const& item(size_t index) const;
-  bool empty() const;
+  [[nodiscard]] auto size() const -> std::size_t;
+  auto at(std::size_t index) const -> std::pair<double, Item> const&;
+  [[nodiscard]] auto weight(std::size_t index) const -> double;
+  auto item(std::size_t index) const -> Item const&;
+  [[nodiscard]] auto empty() const -> bool;
 
   // Return item using the given randomness source
-  Item select(RandomSource& rand) const;
+  auto select(RandomSource& rand) const -> Item;
   // Return item using the global randomness source
-  Item select() const;
+  auto select() const -> Item;
   // Return item using fast static randomness from the given seed
-  Item select(uint64_t seed) const;
+  auto select(std::uint64_t seed) const -> Item;
 
   // Return a list of n items which are selected uniquely (by index), where
   // n is the lesser of the desiredCount and the size of the pool.
   // This INFLUENCES PROBABILITIES so it should not be used where a
   // correct statistical distribution is required.
-  List<Item> selectUniques(size_t desiredCount) const;
-  List<Item> selectUniques(size_t desiredCount, uint64_t seed) const;
+  auto selectUniques(std::size_t desiredCount) const -> List<Item>;
+  auto selectUniques(std::size_t desiredCount, std::uint64_t seed) const -> List<Item>;
 
-  size_t selectIndex(RandomSource& rand) const;
-  size_t selectIndex() const;
-  size_t selectIndex(uint64_t seed) const;
+  auto selectIndex(RandomSource& rand) const -> std::size_t;
+  [[nodiscard]] auto selectIndex() const -> std::size_t;
+  [[nodiscard]] auto selectIndex(std::uint64_t seed) const -> std::size_t;
 
 private:
-  size_t selectIndex(double target) const;
+  [[nodiscard]] auto selectIndex(double target) const -> std::size_t;
 
   ItemsList m_items;
   double m_totalWeight;
@@ -53,12 +55,12 @@ private:
 
 template <typename Item>
 WeightedPool<Item>::WeightedPool()
-  : m_totalWeight(0.0) {}
+    : m_totalWeight(0.0) {}
 
 template <typename Item>
 template <typename Container>
 WeightedPool<Item>::WeightedPool(Container container)
-  : WeightedPool() {
+    : WeightedPool() {
   for (auto const& pair : container)
     add(get<0>(pair), get<1>(pair));
 }
@@ -79,37 +81,37 @@ void WeightedPool<Item>::clear() {
 }
 
 template <typename Item>
-auto WeightedPool<Item>::items() const -> ItemsList const & {
+auto WeightedPool<Item>::items() const -> ItemsList const& {
   return m_items;
 }
 
 template <typename Item>
-size_t WeightedPool<Item>::size() const {
+auto WeightedPool<Item>::size() const -> std::size_t {
   return m_items.count();
 }
 
 template <typename Item>
-pair<double, Item> const& WeightedPool<Item>::at(size_t index) const {
+auto WeightedPool<Item>::at(std::size_t index) const -> std::pair<double, Item> const& {
   return m_items.at(index);
 }
 
 template <typename Item>
-double WeightedPool<Item>::weight(size_t index) const {
+auto WeightedPool<Item>::weight(std::size_t index) const -> double {
   return at(index).first;
 }
 
 template <typename Item>
-Item const& WeightedPool<Item>::item(size_t index) const {
+auto WeightedPool<Item>::item(std::size_t index) const -> Item const& {
   return at(index).second;
 }
 
 template <typename Item>
-bool WeightedPool<Item>::empty() const {
+auto WeightedPool<Item>::empty() const -> bool {
   return m_items.empty();
 }
 
 template <typename Item>
-Item WeightedPool<Item>::select(RandomSource& rand) const {
+auto WeightedPool<Item>::select(RandomSource& rand) const -> Item {
   if (m_items.empty())
     return Item();
 
@@ -117,7 +119,7 @@ Item WeightedPool<Item>::select(RandomSource& rand) const {
 }
 
 template <typename Item>
-Item WeightedPool<Item>::select() const {
+auto WeightedPool<Item>::select() const -> Item {
   if (m_items.empty())
     return Item();
 
@@ -125,7 +127,7 @@ Item WeightedPool<Item>::select() const {
 }
 
 template <typename Item>
-Item WeightedPool<Item>::select(uint64_t seed) const {
+auto WeightedPool<Item>::select(std::uint64_t seed) const -> Item {
   if (m_items.empty())
     return Item();
 
@@ -133,39 +135,39 @@ Item WeightedPool<Item>::select(uint64_t seed) const {
 }
 
 template <typename Item>
-List<Item> WeightedPool<Item>::selectUniques(size_t desiredCount) const {
+auto WeightedPool<Item>::selectUniques(std::size_t desiredCount) const -> List<Item> {
   return selectUniques(desiredCount, Random::randu64());
 }
 
 template <typename Item>
-List<Item> WeightedPool<Item>::selectUniques(size_t desiredCount, uint64_t seed) const {
-  size_t targetCount = std::min(desiredCount, size());
-  Set<size_t> indices;
+auto WeightedPool<Item>::selectUniques(std::size_t desiredCount, std::uint64_t seed) const -> List<Item> {
+  std::size_t targetCount = std::min(desiredCount, size());
+  Set<std::size_t> indices;
   while (indices.size() < targetCount)
     indices.add(selectIndex(++seed));
   List<Item> result;
-  for (size_t i : indices)
+  for (std::size_t i : indices)
     result.append(m_items[i].second);
   return result;
 }
 
 template <typename Item>
-size_t WeightedPool<Item>::selectIndex(RandomSource& rand) const {
+auto WeightedPool<Item>::selectIndex(RandomSource& rand) const -> std::size_t {
   return selectIndex(rand.randd());
 }
 
 template <typename Item>
-size_t WeightedPool<Item>::selectIndex() const {
+auto WeightedPool<Item>::selectIndex() const -> std::size_t {
   return selectIndex(Random::randd());
 }
 
 template <typename Item>
-size_t WeightedPool<Item>::selectIndex(uint64_t seed) const {
+auto WeightedPool<Item>::selectIndex(std::uint64_t seed) const -> std::size_t {
   return selectIndex(staticRandomDouble(seed));
 }
 
 template <typename Item>
-size_t WeightedPool<Item>::selectIndex(double target) const {
+auto WeightedPool<Item>::selectIndex(double target) const -> std::size_t {
   if (m_items.empty())
     return std::numeric_limits<std::size_t>::max();
 
@@ -179,7 +181,7 @@ size_t WeightedPool<Item>::selectIndex(double target) const {
   // improvement.
 
   double accumulatedWeight = 0.0f;
-  for (size_t i = 0; i < m_items.size(); ++i) {
+  for (std::size_t i = 0; i < m_items.size(); ++i) {
     accumulatedWeight += m_items[i].first / m_totalWeight;
     if (target <= accumulatedWeight)
       return i;
@@ -190,4 +192,4 @@ size_t WeightedPool<Item>::selectIndex(double target) const {
   return m_items.size() - 1;
 }
 
-}
+}// namespace Star

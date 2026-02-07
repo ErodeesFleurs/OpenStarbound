@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarOstreamFormatter.hpp"
 #include "StarHash.hpp"
+#include "StarOstreamFormatter.hpp"
 
 import std;
 
@@ -12,23 +12,23 @@ namespace Star {
 template <typename ElementT, std::size_t SizeN>
 class Array : public std::array<ElementT, SizeN> {
 public:
-  typedef std::array<ElementT, SizeN> Base;
+  using Base = std::array<ElementT, SizeN>;
 
-  typedef ElementT Element;
+  using Element = ElementT;
   static std::size_t const ArraySize = SizeN;
 
-  typedef Element* iterator;
-  typedef Element const* const_iterator;
+  using iterator = Element*;
+  using const_iterator = Element const*;
 
-  typedef Element& reference;
-  typedef Element const& const_reference;
+  using reference = Element&;
+  using const_reference = Element const&;
 
-  typedef Element value_type;
+  using value_type = Element;
 
-  static Array filled(Element const& e);
+  static auto filled(Element const& e) -> Array;
 
   template <typename Iterator>
-  static Array copyFrom(Iterator p, std::size_t n = std::numeric_limits<std::size_t>::max());
+  static auto copyFrom(Iterator p, std::size_t n = std::numeric_limits<std::size_t>::max()) -> Array;
 
   Array();
 
@@ -41,26 +41,26 @@ public:
   explicit Array(Array<Element2, SizeN> const& a);
 
   template <std::size_t i>
-  reference get();
+  auto get() -> reference;
 
   template <std::size_t i>
-  const_reference get() const;
+  auto get() const -> const_reference;
 
   template <typename T2>
-  Array& operator=(Array<T2, SizeN> const& array);
+  auto operator=(Array<T2, SizeN> const& array) -> Array&;
 
-  Element* ptr();
-  Element const* ptr() const;
+  auto ptr() -> Element*;
+  auto ptr() const -> Element const*;
 
-  bool operator==(Array const& a) const;
-  bool operator!=(Array const& a) const;
-  bool operator<(Array const& a) const;
-  bool operator<=(Array const& a) const;
-  bool operator>(Array const& a) const;
-  bool operator>=(Array const& a) const;
+  auto operator==(Array const& a) const -> bool;
+  auto operator!=(Array const& a) const -> bool;
+  auto operator<(Array const& a) const -> bool;
+  auto operator<=(Array const& a) const -> bool;
+  auto operator>(Array const& a) const -> bool;
+  auto operator>=(Array const& a) const -> bool;
 
   template <std::size_t Size2>
-  Array<ElementT, Size2> toSize() const;
+  auto toSize() const -> Array<ElementT, Size2>;
 
 private:
   // Instead of {} array initialization, use recursive assignment to mimic old
@@ -72,30 +72,30 @@ private:
 
 template <typename DataT, std::size_t SizeT>
 struct hash<Array<DataT, SizeT>> {
-  std::size_t operator()(Array<DataT, SizeT> const& a) const;
+  auto operator()(Array<DataT, SizeT> const& a) const -> std::size_t;
   Star::hash<DataT> dataHasher;
 };
 
-typedef Array<int, 2> Array2I;
-typedef Array<std::size_t, 2> Array2S;
-typedef Array<unsigned, 2> Array2U;
-typedef Array<float, 2> Array2F;
-typedef Array<double, 2> Array2D;
+using Array2I = Array<int, 2>;
+using Array2S = Array<std::size_t, 2>;
+using Array2U = Array<unsigned, 2>;
+using Array2F = Array<float, 2>;
+using Array2D = Array<double, 2>;
 
-typedef Array<int, 3> Array3I;
-typedef Array<std::size_t, 3> Array3S;
-typedef Array<unsigned, 3> Array3U;
-typedef Array<float, 3> Array3F;
-typedef Array<double, 3> Array3D;
+using Array3I = Array<int, 3>;
+using Array3S = Array<std::size_t, 3>;
+using Array3U = Array<unsigned, 3>;
+using Array3F = Array<float, 3>;
+using Array3D = Array<double, 3>;
 
-typedef Array<int, 4> Array4I;
-typedef Array<std::size_t, 4> Array4S;
-typedef Array<unsigned, 4> Array4U;
-typedef Array<float, 4> Array4F;
-typedef Array<double, 4> Array4D;
+using Array4I = Array<int, 4>;
+using Array4S = Array<std::size_t, 4>;
+using Array4U = Array<unsigned, 4>;
+using Array4F = Array<float, 4>;
+using Array4D = Array<double, 4>;
 
 template <typename Element, std::size_t Size>
-Array<Element, Size> Array<Element, Size>::filled(Element const& e) {
+auto Array<Element, Size>::filled(Element const& e) -> Array<Element, Size> {
   Array a;
   a.fill(e);
   return a;
@@ -103,7 +103,7 @@ Array<Element, Size> Array<Element, Size>::filled(Element const& e) {
 
 template <typename Element, std::size_t Size>
 template <typename Iterator>
-Array<Element, Size> Array<Element, Size>::copyFrom(Iterator p, std::size_t n) {
+auto Array<Element, Size>::copyFrom(Iterator p, std::size_t n) -> Array<Element, Size> {
   Array a;
   for (std::size_t i = 0; i < n && i < Size; ++i)
     a[i] = *(p++);
@@ -112,7 +112,7 @@ Array<Element, Size> Array<Element, Size>::copyFrom(Iterator p, std::size_t n) {
 
 template <typename Element, std::size_t Size>
 Array<Element, Size>::Array()
-  : Base() {}
+    : Base() {}
 
 template <typename Element, std::size_t Size>
 Array<Element, Size>::Array(Element const& e1) {
@@ -149,23 +149,23 @@ auto Array<Element, Size>::get() const -> const_reference {
 
 template <typename Element, std::size_t Size>
 template <typename T2>
-Array<Element, Size>& Array<Element, Size>::operator=(Array<T2, Size> const& array) {
+auto Array<Element, Size>::operator=(Array<T2, Size> const& array) -> Array<Element, Size>& {
   std::copy(array.begin(), array.end(), Base::begin());
   return *this;
 }
 
 template <typename Element, std::size_t Size>
-Element* Array<Element, Size>::ptr() {
+auto Array<Element, Size>::ptr() -> Element* {
   return Base::data();
 }
 
 template <typename Element, std::size_t Size>
-Element const* Array<Element, Size>::ptr() const {
+auto Array<Element, Size>::ptr() const -> Element const* {
   return Base::data();
 }
 
 template <typename Element, std::size_t Size>
-bool Array<Element, Size>::operator==(Array const& a) const {
+auto Array<Element, Size>::operator==(Array const& a) const -> bool {
   for (std::size_t i = 0; i < Size; ++i)
     if ((*this)[i] != a[i])
       return false;
@@ -173,12 +173,12 @@ bool Array<Element, Size>::operator==(Array const& a) const {
 }
 
 template <typename Element, std::size_t Size>
-bool Array<Element, Size>::operator!=(Array const& a) const {
+auto Array<Element, Size>::operator!=(Array const& a) const -> bool {
   return !operator==(a);
 }
 
 template <typename Element, std::size_t Size>
-bool Array<Element, Size>::operator<(Array const& a) const {
+auto Array<Element, Size>::operator<(Array const& a) const -> bool {
   for (std::size_t i = 0; i < Size; ++i) {
     if ((*this)[i] < a[i])
       return true;
@@ -189,7 +189,7 @@ bool Array<Element, Size>::operator<(Array const& a) const {
 }
 
 template <typename Element, std::size_t Size>
-bool Array<Element, Size>::operator<=(Array const& a) const {
+auto Array<Element, Size>::operator<=(Array const& a) const -> bool {
   for (std::size_t i = 0; i < Size; ++i) {
     if ((*this)[i] < a[i])
       return true;
@@ -200,18 +200,18 @@ bool Array<Element, Size>::operator<=(Array const& a) const {
 }
 
 template <typename Element, std::size_t Size>
-bool Array<Element, Size>::operator>(Array const& a) const {
+auto Array<Element, Size>::operator>(Array const& a) const -> bool {
   return a < *this;
 }
 
 template <typename Element, std::size_t Size>
-bool Array<Element, Size>::operator>=(Array const& a) const {
+auto Array<Element, Size>::operator>=(Array const& a) const -> bool {
   return a <= *this;
 }
 
 template <typename Element, std::size_t Size>
 template <std::size_t Size2>
-Array<Element, Size2> Array<Element, Size>::toSize() const {
+auto Array<Element, Size>::toSize() const -> Array<Element, Size2> {
   Array<Element, Size2> r;
   std::size_t ns = std::min(Size2, Size);
   for (std::size_t i = 0; i < ns; ++i)
@@ -230,7 +230,7 @@ void Array<Element, Size>::set(T const& e, TL const&... rest) {
 }
 
 template <typename Element, std::size_t Size>
-std::ostream& operator<<(std::ostream& os, Array<Element, Size> const& a) {
+auto operator<<(std::ostream& os, Array<Element, Size> const& a) -> std::ostream& {
   os << '[';
   for (std::size_t i = 0; i < Size; ++i) {
     os << a[i];
@@ -242,14 +242,14 @@ std::ostream& operator<<(std::ostream& os, Array<Element, Size> const& a) {
 }
 
 template <typename DataT, std::size_t SizeT>
-std::size_t hash<Array<DataT, SizeT>>::operator()(Array<DataT, SizeT> const& a) const {
+auto hash<Array<DataT, SizeT>>::operator()(Array<DataT, SizeT> const& a) const -> std::size_t {
   std::size_t hashval = 0;
   for (std::size_t i = 0; i < SizeT; ++i)
     hashCombine(hashval, dataHasher(a[i]));
   return hashval;
 }
 
-}
+}// namespace Star
 
 template <typename Element, std::size_t Size>
 struct std::formatter<Star::Array<Element, Size>> : Star::ostream_formatter {};

@@ -1,12 +1,13 @@
 #pragma once
 
-#include "lua.h"
+#include "lua.hpp"// IWYU pragma: export
 
-#include "StarException.hpp"
-#include "StarString.hpp"
-#include "StarJson.hpp"
-#include "StarRefPtr.hpp"
 #include "StarDirectives.hpp"
+#include "StarException.hpp"
+#include "StarJson.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarRefPtr.hpp"
+#include "StarString.hpp"
 
 import std;
 
@@ -37,8 +38,8 @@ using LuaConversionException = ExceptionDerived<"LuaConversionException", LuaExc
 
 using LuaNilType = Empty;
 using LuaBoolean = bool;
-typedef lua_Integer LuaInt;
-typedef lua_Number LuaFloat;
+using LuaInt = lua_Integer;
+using LuaFloat = lua_Number;
 class LuaString;
 class LuaTable;
 class LuaFunction;
@@ -59,15 +60,15 @@ public:
 // Unpack a container and apply each of the arguments separately to a lua
 // function, similar to lua's unpack.
 template <typename Container>
-LuaVariadic<typename std::decay<Container>::type::value_type> luaUnpack(Container&& c);
+auto luaUnpack(Container&& c) -> LuaVariadic<typename std::decay<Container>::type::value_type>;
 
 // Similar to LuaVariadic, but a tuple type so automatic per-entry type
 // conversion is done.  This can only be used as the return value of a wrapped
 // c++ function, or as a type for the return value of calling a lua function.
 template <typename... Types>
-class LuaTupleReturn : public tuple<Types...> {
+class LuaTupleReturn : public std::tuple<Types...> {
 public:
-  typedef tuple<Types...> Base;
+  using Base = std::tuple<Types...>;
 
   explicit LuaTupleReturn(Types const&... args);
   template <typename... UTypes>
@@ -81,48 +82,48 @@ public:
   template <typename... UTypes>
   LuaTupleReturn(LuaTupleReturn<UTypes...>&& rhs);
 
-  LuaTupleReturn& operator=(LuaTupleReturn const& rhs);
-  LuaTupleReturn& operator=(LuaTupleReturn&& rhs);
+  auto operator=(LuaTupleReturn const& rhs) -> LuaTupleReturn&;
+  auto operator=(LuaTupleReturn&& rhs) -> LuaTupleReturn&;
   template <typename... UTypes>
-  LuaTupleReturn& operator=(LuaTupleReturn<UTypes...> const& rhs);
+  auto operator=(LuaTupleReturn<UTypes...> const& rhs) -> LuaTupleReturn&;
   template <typename... UTypes>
-  LuaTupleReturn& operator=(LuaTupleReturn<UTypes...>&& rhs);
+  auto operator=(LuaTupleReturn<UTypes...>&& rhs) -> LuaTupleReturn&;
 };
 
 // std::tie for LuaTupleReturn
 template <typename... Types>
-LuaTupleReturn<Types&...> luaTie(Types&... args);
+auto luaTie(Types&... args) -> LuaTupleReturn<Types&...>;
 
 // Constructs a LuaTupleReturn from the given arguments similar to make_tuple
 template <typename... Types>
-LuaTupleReturn<typename std::decay<Types>::type...> luaTupleReturn(Types&&... args);
+auto luaTupleReturn(Types&&... args) -> LuaTupleReturn<std::decay_t<Types>...>;
 
 namespace LuaDetail {
-  struct LuaHandle {
-    LuaHandle(LuaEnginePtr engine, int handleIndex);
-    ~LuaHandle();
+struct LuaHandle {
+  LuaHandle(LuaEnginePtr engine, int handleIndex);
+  ~LuaHandle();
 
-    LuaHandle(LuaHandle const& other);
-    LuaHandle(LuaHandle&& other);
+  LuaHandle(LuaHandle const& other);
+  LuaHandle(LuaHandle&& other);
 
-    LuaHandle& operator=(LuaHandle const& other);
-    LuaHandle& operator=(LuaHandle&& other);
+  auto operator=(LuaHandle const& other) -> LuaHandle&;
+  auto operator=(LuaHandle&& other) -> LuaHandle&;
 
-    LuaEnginePtr engine;
-    int handleIndex = 0;
-  };
+  LuaEnginePtr engine;
+  int handleIndex = 0;
+};
 
-  // Not meant to be used directly, exposes a raw interface for wrapped C++
-  // functions to be wrapped with the least amount of overhead.  Arguments are
-  // passed non-const so that they can be moved into wrapped functions that
-  // take values without copying.
-  typedef Variant<LuaValue, LuaVariadic<LuaValue>> LuaFunctionReturn;
-  typedef function<LuaFunctionReturn(LuaEngine&, size_t argc, LuaValue* argv)> LuaWrappedFunction;
-}
+// Not meant to be used directly, exposes a raw interface for wrapped C++
+// functions to be wrapped with the least amount of overhead.  Arguments are
+// passed non-const so that they can be moved into wrapped functions that
+// take values without copying.
+using LuaFunctionReturn = Variant<LuaValue, LuaVariadic<LuaValue>>;
+using LuaWrappedFunction = std::function<LuaFunctionReturn(LuaEngine&, size_t argc, LuaValue* argv)>;
+}// namespace LuaDetail
 
 // Prints the lua value similar to lua's print function, except it makes an
 // attempt at printing tables.
-std::ostream& operator<<(std::ostream& os, LuaValue const& value);
+auto operator<<(std::ostream& os, LuaValue const& value) -> std::ostream&;
 
 // Holds a reference to a LuaEngine and a value held internally inside the
 // registry of that engine.  The lifetime of the LuaEngine will be extended
@@ -132,16 +133,16 @@ public:
   LuaReference(LuaDetail::LuaHandle handle);
 
   LuaReference(LuaReference&&) = default;
-  LuaReference& operator=(LuaReference&&) = default;
+  auto operator=(LuaReference&&) -> LuaReference& = default;
 
   LuaReference(LuaReference const&) = default;
-  LuaReference& operator=(LuaReference const&) = default;
+  auto operator=(LuaReference const&) -> LuaReference& = default;
 
-  bool operator==(LuaReference const& rhs) const;
-  bool operator!=(LuaReference const& rhs) const;
+  auto operator==(LuaReference const& rhs) const -> bool;
+  auto operator!=(LuaReference const& rhs) const -> bool;
 
-  LuaEngine& engine() const;
-  int handleIndex() const;
+  [[nodiscard]] auto engine() const -> LuaEngine&;
+  [[nodiscard]] auto handleIndex() const -> int;
 
 private:
   LuaDetail::LuaHandle m_handle;
@@ -151,37 +152,37 @@ class LuaString : public LuaReference {
 public:
   using LuaReference::LuaReference;
 
-  char const* ptr() const;
-  size_t length() const;
+  [[nodiscard]] auto ptr() const -> char const*;
+  [[nodiscard]] auto length() const -> size_t;
 
-  String toString() const;
-  StringView view() const;
+  [[nodiscard]] auto toString() const -> String;
+  [[nodiscard]] auto view() const -> StringView;
 };
 
-bool operator==(LuaString const& s1, LuaString const& s2);
-bool operator==(LuaString const& s1, char const* s2);
-bool operator==(LuaString const& s1, std::string const& s2);
-bool operator==(LuaString const& s1, String const& s2);
-bool operator==(char const* s1, LuaString const& s2);
-bool operator==(std::string const& s1, LuaString const& s2);
-bool operator==(String const& s1, LuaString const& s2);
+auto operator==(LuaString const& s1, LuaString const& s2) -> bool;
+auto operator==(LuaString const& s1, char const* s2) -> bool;
+auto operator==(LuaString const& s1, std::string const& s2) -> bool;
+auto operator==(LuaString const& s1, String const& s2) -> bool;
+auto operator==(char const* s1, LuaString const& s2) -> bool;
+auto operator==(std::string const& s1, LuaString const& s2) -> bool;
+auto operator==(String const& s1, LuaString const& s2) -> bool;
 
-bool operator!=(LuaString const& s1, LuaString const& s2);
-bool operator!=(LuaString const& s1, char const* s2);
-bool operator!=(LuaString const& s1, std::string const& s2);
-bool operator!=(LuaString const& s1, String const& s2);
-bool operator!=(char const* s1, LuaString const& s2);
-bool operator!=(std::string const& s1, LuaString const& s2);
-bool operator!=(String const& s1, LuaString const& s2);
+auto operator!=(LuaString const& s1, LuaString const& s2) -> bool;
+auto operator!=(LuaString const& s1, char const* s2) -> bool;
+auto operator!=(LuaString const& s1, std::string const& s2) -> bool;
+auto operator!=(LuaString const& s1, String const& s2) -> bool;
+auto operator!=(char const* s1, LuaString const& s2) -> bool;
+auto operator!=(std::string const& s1, LuaString const& s2) -> bool;
+auto operator!=(String const& s1, LuaString const& s2) -> bool;
 
 class LuaTable : public LuaReference {
 public:
   using LuaReference::LuaReference;
 
   template <typename T = LuaValue, typename K>
-  T get(K key) const;
+  auto get(K key) const -> T;
   template <typename T = LuaValue>
-  T get(char const* key) const;
+  auto get(char const* key) const -> T;
 
   template <typename T, typename K>
   void set(K key, T t) const;
@@ -190,8 +191,8 @@ public:
 
   // Shorthand for get(path) != LuaNil
   template <typename K>
-  bool contains(K key) const;
-  bool contains(char const* key) const;
+  auto contains(K key) const -> bool;
+  auto contains(char const* key) const -> bool;
 
   // Shorthand for setting to LuaNil
   template <typename K>
@@ -199,7 +200,7 @@ public:
   void remove(char const* key) const;
 
   // Result of lua # operator
-  LuaInt length() const;
+  [[nodiscard]] auto length() const -> LuaInt;
 
   // If iteration function returns bool, returning false signals stopping.
   template <typename Function>
@@ -208,20 +209,20 @@ public:
   template <typename Return, typename... Args, typename Function>
   void iterateWithSignature(Function&& func) const;
 
-  std::optional<LuaTable> getMetatable() const;
+  [[nodiscard]] auto getMetatable() const -> std::optional<LuaTable>;
   void setMetatable(LuaTable const& table) const;
 
   template <typename T = LuaValue, typename K>
-  T rawGet(K key) const;
+  auto rawGet(K key) const -> T;
   template <typename T = LuaValue>
-  T rawGet(char const* key) const;
+  auto rawGet(char const* key) const -> T;
 
   template <typename T, typename K>
   void rawSet(K key, T t) const;
   template <typename T>
   void rawSet(char const* key, T t) const;
 
-  LuaInt rawLength() const;
+  [[nodiscard]] auto rawLength() const -> LuaInt;
 };
 
 class LuaFunction : public LuaReference {
@@ -229,7 +230,7 @@ public:
   using LuaReference::LuaReference;
 
   template <typename Ret = LuaValue, typename... Args>
-  Ret invoke(Args const&... args) const;
+  auto invoke(Args const&... args) const -> Ret;
 };
 
 class LuaThread : public LuaReference {
@@ -244,9 +245,9 @@ public:
   // Will return a value if the thread has yielded a value, and nothing if the
   // thread has finished execution
   template <typename Ret = LuaValue, typename... Args>
-  std::optional<Ret> resume(Args const&... args);
+  auto resume(Args const&... args) -> std::optional<Ret>;
   void pushFunction(LuaFunction const& func) const;
-  Status status() const;
+  [[nodiscard]] auto status() const -> Status;
 };
 
 // Keeping LuaReferences in LuaUserData will lead to circular references to
@@ -257,10 +258,10 @@ public:
   using LuaReference::LuaReference;
 
   template <typename T>
-  bool is() const;
+  [[nodiscard]] auto is() const -> bool;
 
   template <typename T>
-  T& get() const;
+  auto get() const -> T&;
 };
 
 LuaValue const LuaNil = LuaValue();
@@ -272,14 +273,14 @@ public:
   template <typename Function>
   void registerCallback(String name, Function&& func);
 
-  bool removeCallback(String name);
+  auto removeCallback(String name) -> bool;
 
   template <typename Return, typename... Args, typename Function>
   void registerCallbackWithSignature(String name, Function&& func);
 
-  LuaCallbacks& merge(LuaCallbacks const& callbacks);
+  auto merge(LuaCallbacks const& callbacks) -> LuaCallbacks&;
 
-  StringMap<LuaDetail::LuaWrappedFunction> const& callbacks() const;
+  [[nodiscard]] auto callbacks() const -> StringMap<LuaDetail::LuaWrappedFunction> const&;
 
 private:
   StringMap<LuaDetail::LuaWrappedFunction> m_callbacks;
@@ -294,7 +295,7 @@ public:
   template <typename Return, typename... Args, typename Function>
   void registerMethodWithSignature(String name, Function&& func);
 
-  StringMap<LuaDetail::LuaWrappedFunction> const& methods() const;
+  [[nodiscard]] auto methods() const -> StringMap<LuaDetail::LuaWrappedFunction> const&;
 
 private:
   StringMap<LuaDetail::LuaWrappedFunction> m_methods;
@@ -305,24 +306,24 @@ private:
 // LuaContext can (mostly) not affect any other.
 class LuaContext : protected LuaTable {
 public:
-  typedef function<void(LuaContext&, LuaString const&)> RequireFunction;
+  using RequireFunction = std::function<void(LuaContext&, LuaString const&)>;
 
   using LuaTable::LuaTable;
 
-  using LuaTable::get;
-  using LuaTable::set;
   using LuaTable::contains;
-  using LuaTable::remove;
   using LuaTable::engine;
+  using LuaTable::get;
   using LuaTable::handleIndex;
+  using LuaTable::remove;
+  using LuaTable::set;
 
   // Splits the path by '.' character, so can get / set values in tables inside
   // other tables.  If any table in the path is not a table but is accessed as
   // one, instead returns LuaNil.
   template <typename T = LuaValue>
-  T getPath(String path) const;
+  auto getPath(String path) const -> T;
   // Shorthand for getPath != LuaNil
-  bool containsPath(String path) const;
+  [[nodiscard]] auto containsPath(String path) const -> bool;
   // Will create new tables if the key contains paths that are nil
   template <typename T>
   void setPath(String path, T value);
@@ -336,7 +337,7 @@ public:
   // Evaluate a piece of lua code in this context, similar to the lua repl.
   // Can evaluate both expressions and statements.
   template <typename T = LuaValue>
-  T eval(String const& lua);
+  auto eval(String const& lua) -> T;
 
   // Override the built-in require function with the given function that takes
   // this LuaContext and the module name to load.
@@ -348,43 +349,43 @@ public:
   // to get a function, and then invoking it.
 
   template <typename Ret = LuaValue, typename... Args>
-  Ret invokePath(String const& key, Args const&... args) const;
+  auto invokePath(String const& key, Args const&... args) const -> Ret;
 
   // For convenience, calls to LuaEngine conversion / create functions are
   // duplicated here.
 
   template <typename T>
-  LuaValue luaFrom(T&& t);
+  auto luaFrom(T&& t) -> LuaValue;
   template <typename T>
-  LuaValue luaFrom(T const& t);
+  auto luaFrom(T const& t) -> LuaValue;
   template <typename T>
-  std::optional<T> luaMaybeTo(LuaValue const& v);
+  auto luaMaybeTo(LuaValue const& v) -> std::optional<T>;
   template <typename T>
-  std::optional<T> luaMaybeTo(LuaValue&& v);
+  auto luaMaybeTo(LuaValue&& v) -> std::optional<T>;
   template <typename T>
-  T luaTo(LuaValue const& v);
+  auto luaTo(LuaValue const& v) -> T;
   template <typename T>
-  T luaTo(LuaValue&& v);
+  auto luaTo(LuaValue&& v) -> T;
 
-  LuaString createString(String const& str);
-  LuaString createString(char const* str);
+  auto createString(String const& str) -> LuaString;
+  auto createString(char const* str) -> LuaString;
 
-  LuaTable createTable();
-
-  template <typename Container>
-  LuaTable createTable(Container const& map);
+  auto createTable() -> LuaTable;
 
   template <typename Container>
-  LuaTable createArrayTable(Container const& array);
+  auto createTable(Container const& map) -> LuaTable;
+
+  template <typename Container>
+  auto createArrayTable(Container const& array) -> LuaTable;
 
   template <typename Function>
-  LuaFunction createFunction(Function&& func);
+  auto createFunction(Function&& func) -> LuaFunction;
 
   template <typename Return, typename... Args, typename Function>
-  LuaFunction createFunctionWithSignature(Function&& func);
+  auto createFunctionWithSignature(Function&& func) -> LuaFunction;
 
   template <typename T>
-  LuaUserData createUserData(T t);
+  auto createUserData(T t) -> LuaUserData;
 };
 
 template <typename T>
@@ -397,17 +398,17 @@ struct LuaNullTermWrapper : T {
 
   using T::T;
 
-  LuaNullTermWrapper& operator=(LuaNullTermWrapper const& rhs) {
+  auto operator=(LuaNullTermWrapper const& rhs) -> LuaNullTermWrapper& {
     T::operator=(rhs);
     return *this;
   }
 
-  LuaNullTermWrapper& operator=(LuaNullTermWrapper&& rhs) {
+  auto operator=(LuaNullTermWrapper&& rhs) -> LuaNullTermWrapper& {
     T::operator=(std::move(rhs));
     return *this;
   }
 
-  LuaNullTermWrapper& operator=(T&& other) {
+  auto operator=(T&& other) -> LuaNullTermWrapper& {
     T::operator=(std::forward<T>(other));
     return *this;
   }
@@ -419,6 +420,7 @@ public:
   LuaNullEnforcer(LuaNullEnforcer const&) = delete;
   LuaNullEnforcer(LuaNullEnforcer&&);
   ~LuaNullEnforcer();
+
 private:
   LuaEngine* m_engine;
 };
@@ -437,15 +439,15 @@ struct LuaConverter;
 // template.
 template <typename T>
 struct LuaUserDataMethods {
-  static LuaMethods<T> make();
+  static auto make() -> LuaMethods<T>;
 };
 
 // Convenience converter that simply converts to/from LuaUserData, can be
 // derived from by a declared converter.
 template <typename T>
 struct LuaUserDataConverter {
-  static LuaValue from(LuaEngine& engine, T t);
-  static std::optional<T> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, T t) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<T>;
 };
 
 struct LuaProfileEntry {
@@ -458,11 +460,11 @@ struct LuaProfileEntry {
   // Scope of the function, if it can be determined
   std::optional<String> nameScope;
   // Time taken within this function itself
-  int64_t selfTime;
+  std::int64_t selfTime;
   // Total time taken within this function or sub functions
-  int64_t totalTime;
+  std::int64_t totalTime;
   // Calls from this function
-  HashMap<tuple<String, unsigned>, std::shared_ptr<LuaProfileEntry>> calls;
+  HashMap<std::tuple<String, unsigned>, std::shared_ptr<LuaProfileEntry>> calls;
 };
 
 // This class represents one execution engine in lua, holding a single
@@ -473,15 +475,15 @@ class LuaEngine : public RefCounter {
 public:
   // If 'safe' is true, then creates a lua engine with all builtin lua
   // functions that can affect the real world disabled.
-  static LuaEnginePtr create(bool safe = true);
+  static auto create(bool safe = true) -> LuaEnginePtr;
 
-  ~LuaEngine();
+  ~LuaEngine() override;
 
   LuaEngine(LuaEngine const&) = delete;
   LuaEngine(LuaEngine&&) = default;
 
-  LuaEngine& operator=(LuaEngine const&) = delete;
-  LuaEngine& operator=(LuaEngine&&) = default;
+  auto operator=(LuaEngine const&) -> LuaEngine& = delete;
+  auto operator=(LuaEngine&&) -> LuaEngine& = default;
 
   // Set the instruction limit for computation sequences in the engine.  During
   // any function invocation, thread resume, or code evaluation, an instruction
@@ -490,30 +492,30 @@ public:
   // count is only reset when the initial entry into LuaEngine is returned,
   // recursive entries into LuaEngine accumulate the same instruction counter.
   // 0 disables the instruction limit.
-  void setInstructionLimit(uint64_t instructionLimit = 0);
-  uint64_t instructionLimit() const;
+  void setInstructionLimit(std::uint64_t instructionLimit = 0);
+  [[nodiscard]] auto instructionLimit() const -> std::uint64_t;
 
   // If profiling is enabled, then every 'measureInterval' instructions, the
   // function call stack will be recorded, and a summary of function timing can
   // be printed using profileReport
   void setProfilingEnabled(bool profilingEnabled);
-  bool profilingEnabled() const;
+  [[nodiscard]] auto profilingEnabled() const -> bool;
 
   // Print a summary of the profiling data gathered since profiling was last
   // enabled.
-  List<LuaProfileEntry> getProfile();
+  auto getProfile() -> List<LuaProfileEntry>;
 
   // If an instruction limit is set or profiling is neabled, this field
   // describes the resolution of instruction count measurement, and affects the
   // accuracy of profiling and the instruction count limit.  Defaults to 1000
   void setInstructionMeasureInterval(unsigned measureInterval = 1000);
-  unsigned instructionMeasureInterval() const;
+  [[nodiscard]] auto instructionMeasureInterval() const -> unsigned;
 
   // Sets the LuaEngine recursion limit, limiting the number of times a
   // LuaEngine call may directly or inderectly trigger a call back into the
   // LuaEngine, preventing a C++ stack overflow.  0 disables the limit.
   void setRecursionLimit(unsigned recursionLimit = 0);
-  unsigned recursionLimit() const;
+  [[nodiscard]] auto recursionLimit() const -> unsigned;
 
   // Compile a given script into bytecode.  If name is given, then it will be
   // used as the internal name for the resulting chunk and will provide better
@@ -522,74 +524,74 @@ public:
   // Unfortunately the only way to completely ensure that a single script will
   // execute in two separate contexts and truly be isolated is to compile the
   // script to bytecode and load once in each context as a separate chunk.
-  ByteArray compile(char const* contents, size_t size, char const* name = nullptr);
-  ByteArray compile(String const& contents, String const& name = String());
-  ByteArray compile(ByteArray const& contents, String const& name = String());
+  auto compile(char const* contents, size_t size, char const* name = nullptr) -> ByteArray;
+  auto compile(String const& contents, String const& name = String()) -> ByteArray;
+  auto compile(ByteArray const& contents, String const& name = String()) -> ByteArray;
 
   // Returns the debug info of the state.
-  lua_Debug const& debugInfo(int level = 1, const char* what = "nSlu");
+  auto debugInfo(int level = 1, const char* what = "nSlu") -> lua_Debug const&;
 
   // Generic from/to lua conversion, calls template specialization of
   // LuaConverter for actual conversion.
   template <typename T>
-  LuaValue luaFrom(T&& t);
+  auto luaFrom(T&& t) -> LuaValue;
   template <typename T>
-  LuaValue luaFrom(T const& t);
+  auto luaFrom(T const& t) -> LuaValue;
   template <typename T>
-  std::optional<T> luaMaybeTo(LuaValue const& v);
+  auto luaMaybeTo(LuaValue const& v) -> std::optional<T>;
   template <typename T>
-  std::optional<T> luaMaybeTo(LuaValue&& v);
+  auto luaMaybeTo(LuaValue&& v) -> std::optional<T>;
 
   // Wraps luaMaybeTo, throws an exception if conversion fails.
   template <typename T>
-  T luaTo(LuaValue const& v);
+  auto luaTo(LuaValue const& v) -> T;
   template <typename T>
-  T luaTo(LuaValue&& v);
+  auto luaTo(LuaValue&& v) -> T;
 
-  LuaString createString(std::string const& str);
-  LuaString createString(String const& str);
-  LuaString createString(char const* str);
+  auto createString(std::string const& str) -> LuaString;
+  auto createString(String const& str) -> LuaString;
+  auto createString(char const* str) -> LuaString;
 
-  LuaTable createTable(int narr = 0, int nrec = 0);
-
-  template <typename Container>
-  LuaTable createTable(Container const& map);
+  auto createTable(int narr = 0, int nrec = 0) -> LuaTable;
 
   template <typename Container>
-  LuaTable createArrayTable(Container const& array);
+  auto createTable(Container const& map) -> LuaTable;
+
+  template <typename Container>
+  auto createArrayTable(Container const& array) -> LuaTable;
 
   // Creates a function and deduces the signature of the function using
   // FunctionTraits.  As a convenience, the given function may optionally take
   // a LuaEngine& parameter as the first parameter, and if it does, when called
   // the function will get a reference to the calling LuaEngine.
   template <typename Function>
-  LuaFunction createFunction(Function&& func);
+  auto createFunction(Function&& func) -> LuaFunction;
 
   // If the function signature is not deducible using FunctionTraits, you can
   // specify the return and argument types manually using this createFunction
   // version.
   template <typename Return, typename... Args, typename Function>
-  LuaFunction createFunctionWithSignature(Function&& func);
+  auto createFunctionWithSignature(Function&& func) -> LuaFunction;
 
-  LuaFunction createWrappedFunction(LuaDetail::LuaWrappedFunction function);
+  auto createWrappedFunction(LuaDetail::LuaWrappedFunction function) -> LuaFunction;
 
-  LuaFunction createRawFunction(lua_CFunction func);
+  auto createRawFunction(lua_CFunction func) -> LuaFunction;
 
-  LuaFunction createFunctionFromSource(int handleIndex, char const* contents, size_t size, char const* name);
+  auto createFunctionFromSource(int handleIndex, char const* contents, size_t size, char const* name) -> LuaFunction;
 
-  LuaThread createThread();
+  auto createThread() -> LuaThread;
 
   template <typename T>
-  LuaUserData createUserData(T t);
+  auto createUserData(T t) -> LuaUserData;
 
-  LuaContext createContext();
+  auto createContext() -> LuaContext;
 
   // Global environment changes only affect newly created contexts
 
   template <typename T = LuaValue, typename K>
-  T getGlobal(K key);
+  auto getGlobal(K key) -> T;
   template <typename T = LuaValue>
-  T getGlobal(char const* key);
+  auto getGlobal(char const* key) -> T;
 
   template <typename T, typename K>
   void setGlobal(K key, T value);
@@ -607,13 +609,14 @@ public:
   void tuneAutoGarbageCollection(float pause, float stepMultiplier);
 
   // Bytes in use by lua
-  size_t memoryUsage() const;
+  [[nodiscard]] auto memoryUsage() const -> std::size_t;
 
   // Enforce null-terminated string conversion as long as the returned enforcer object is in scope.
-  LuaNullEnforcer nullTerminate();
+  auto nullTerminate() -> LuaNullEnforcer;
   // Disables null-termination enforcement
   void setNullTerminated(bool nullTerminated);
   void addImGui();
+
 private:
   friend struct LuaDetail::LuaHandle;
   friend class LuaReference;
@@ -629,90 +632,90 @@ private:
 
   // Get the LuaEngine* out of the lua registry magic entry.  Uses 1 stack
   // space, and does not call lua_checkstack.
-  static LuaEngine* luaEnginePtr(lua_State* state);
+  static auto luaEnginePtr(lua_State* state) -> LuaEngine*;
   // Counts instructions when instruction limiting is enabled.
   static void countHook(lua_State* state, lua_Debug* ar);
 
-  static void* allocate(void* userdata, void* ptr, size_t oldSize, size_t newSize);
+  static auto allocate(void* userdata, void* ptr, size_t oldSize, size_t newSize) -> void*;
 
   // Pops lua error from stack and throws LuaException
   void handleError(lua_State* state, int res);
 
   // lua_pcall with a better message handler that includes a traceback.
-  int pcallWithTraceback(lua_State* state, int nargs, int nresults);
+  auto pcallWithTraceback(lua_State* state, int nargs, int nresults) -> int;
 
   // override for lua coroutine resume with traceback
-  static int coresumeWithTraceback(lua_State* state);
+  static auto coresumeWithTraceback(lua_State* state) -> int;
   // propagates errors from one state to another, i.e. past thread boundaries
   // pops error off the top of the from stack and pushes onto the to stack
   static void propagateErrorWithTraceback(lua_State* from, lua_State* to);
 
-  char const* stringPtr(int handleIndex);
-  size_t stringLength(int handleIndex);
-  String string(int handleIndex);
-  StringView stringView(int handleIndex);
+  auto stringPtr(int handleIndex) -> char const*;
+  auto stringLength(int handleIndex) -> size_t;
+  auto string(int handleIndex) -> String;
+  auto stringView(int handleIndex) -> StringView;
 
-  LuaValue tableGet(bool raw, int handleIndex, LuaValue const& key);
-  LuaValue tableGet(bool raw, int handleIndex, char const* key);
+  auto tableGet(bool raw, int handleIndex, LuaValue const& key) -> LuaValue;
+  auto tableGet(bool raw, int handleIndex, char const* key) -> LuaValue;
 
   void tableSet(bool raw, int handleIndex, LuaValue const& key, LuaValue const& value);
   void tableSet(bool raw, int handleIndex, char const* key, LuaValue const& value);
 
-  LuaInt tableLength(bool raw, int handleIndex);
+  auto tableLength(bool raw, int handleIndex) -> LuaInt;
 
-  void tableIterate(int handleIndex, function<bool(LuaValue, LuaValue)> iterator);
+  void tableIterate(int handleIndex, std::function<bool(LuaValue, LuaValue)> iterator);
 
-  std::optional<LuaTable> tableGetMetatable(int handleIndex);
+  auto tableGetMetatable(int handleIndex) -> std::optional<LuaTable>;
   void tableSetMetatable(int handleIndex, LuaTable const& table);
 
   template <typename... Args>
-  LuaDetail::LuaFunctionReturn callFunction(int handleIndex, Args const&... args);
+  auto callFunction(int handleIndex, Args const&... args) -> LuaDetail::LuaFunctionReturn;
 
   template <typename... Args>
-  std::optional<LuaDetail::LuaFunctionReturn> resumeThread(int handleIndex, Args const&... args);
+  auto resumeThread(int handleIndex, Args const&... args) -> std::optional<LuaDetail::LuaFunctionReturn>;
   void threadPushFunction(int threadIndex, int functionIndex);
-  LuaThread::Status threadStatus(int handleIndex);
+  auto threadStatus(int handleIndex) -> LuaThread::Status;
 
   template <typename T>
   void registerUserDataType();
 
   template <typename T>
-  bool userDataIsType(int handleIndex);
+  auto userDataIsType(int handleIndex) -> bool;
 
   template <typename T>
-  T* getUserData(int handleIndex);
+  auto getUserData(int handleIndex) -> T*;
 
   void setContextRequire(int handleIndex, LuaContext::RequireFunction requireFunction);
 
   void contextLoad(int handleIndex, char const* contents, size_t size, char const* name);
 
-  LuaDetail::LuaFunctionReturn contextEval(int handleIndex, String const& lua);
+  auto contextEval(int handleIndex, String const& lua) -> LuaDetail::LuaFunctionReturn;
 
-  LuaValue contextGetPath(int handleIndex, String path);
+  auto contextGetPath(int handleIndex, String path) -> LuaValue;
   void contextSetPath(int handleIndex, String path, LuaValue const& value);
 
-  int popHandle(lua_State* state);
+  auto popHandle(lua_State* state) -> int;
   void pushHandle(lua_State* state, int handleIndex);
-  int copyHandle(int handleIndex);
+  auto copyHandle(int handleIndex) -> int;
   void destroyHandle(int handleIndex);
 
-  int placeHandle();
+  auto placeHandle() -> int;
 
   void pushLuaValue(lua_State* state, LuaValue const& luaValue);
-  LuaValue popLuaValue(lua_State* state);
+  auto popLuaValue(lua_State* state) -> LuaValue;
 
   template <typename T>
-  size_t pushArgument(lua_State* state, T const& arg);
+  auto pushArgument(lua_State* state, T const& arg) -> std::size_t;
 
   template <typename T>
-  size_t pushArgument(lua_State* state, LuaVariadic<T> const& args);
+  auto pushArgument(lua_State* state, LuaVariadic<T> const& args) -> std::size_t;
 
-  size_t doPushArguments(lua_State*);
+  auto doPushArguments(lua_State*) -> std::size_t;
   template <typename First, typename... Rest>
-  size_t doPushArguments(lua_State* state, First const& first, Rest const&... rest);
+  auto doPushArguments(lua_State* state, First const& first, Rest const&... rest) -> std::size_t;
 
   template <typename... Args>
-  size_t pushArguments(lua_State* state, Args const&... args);
+  auto pushArguments(lua_State* state, Args const&... args) -> std::size_t;
 
   void incrementRecursionLevel();
   void decrementRecursionLevel();
@@ -736,14 +739,14 @@ private:
   int m_handleStackMax;
   List<int> m_handleFree;
 
-  uint64_t m_instructionLimit;
+  std::uint64_t m_instructionLimit;
   bool m_profilingEnabled;
   unsigned m_instructionMeasureInterval;
-  uint64_t m_instructionCount;
+  std::uint64_t m_instructionCount;
   unsigned m_recursionLevel;
   unsigned m_recursionLimit;
   int m_nullTerminated;
-  HashMap<tuple<String, unsigned>, std::shared_ptr<LuaProfileEntry>> m_profileEntries;
+  HashMap<std::tuple<String, unsigned>, std::shared_ptr<LuaProfileEntry>> m_profileEntries;
   lua_Debug m_debugInfo;
 };
 
@@ -751,11 +754,11 @@ private:
 
 template <>
 struct LuaConverter<bool> {
-  static LuaValue from(LuaEngine&, bool v) {
+  static auto from(LuaEngine&, bool v) -> LuaValue {
     return v;
   }
 
-  static std::optional<bool> to([[maybe_unused]] LuaEngine& engine, LuaValue const& v) {
+  static auto to([[maybe_unused]] LuaEngine& engine, LuaValue const& v) -> std::optional<bool> {
     if (auto b = v.ptr<LuaBoolean>())
       return *b;
     if (v == LuaNil)
@@ -766,11 +769,11 @@ struct LuaConverter<bool> {
 
 template <typename T>
 struct LuaIntConverter {
-  static LuaValue from(LuaEngine&, T v) {
+  static auto from(LuaEngine&, T v) -> LuaValue {
     return LuaInt(v);
   }
 
-  static std::optional<T> to(LuaEngine&, LuaValue const& v) {
+  static auto to(LuaEngine&, LuaValue const& v) -> std::optional<T> {
     if (auto n = v.ptr<LuaInt>())
       return (T)*n;
     if (auto n = v.ptr<LuaFloat>())
@@ -817,11 +820,11 @@ struct LuaConverter<unsigned long long> : LuaIntConverter<unsigned long long> {}
 
 template <typename T>
 struct LuaFloatConverter {
-  static LuaValue from(LuaEngine&, T v) {
+  static auto from(LuaEngine&, T v) -> LuaValue {
     return LuaFloat(v);
   }
 
-  static std::optional<T> to(LuaEngine&, LuaValue const& v) {
+  static auto to(LuaEngine&, LuaValue const& v) -> std::optional<T> {
     if (auto n = v.ptr<LuaFloat>())
       return (T)*n;
     if (auto n = v.ptr<LuaInt>())
@@ -844,11 +847,11 @@ struct LuaConverter<double> : LuaFloatConverter<double> {};
 
 template <>
 struct LuaConverter<String> {
-  static LuaValue from(LuaEngine& engine, String const& v) {
+  static auto from(LuaEngine& engine, String const& v) -> LuaValue {
     return engine.createString(v);
   }
 
-  static std::optional<String> to([[maybe_unused]]LuaEngine& engine, LuaValue const& v) {
+  static auto to([[maybe_unused]] LuaEngine& engine, LuaValue const& v) -> std::optional<String> {
     if (v.is<LuaString>())
       return v.get<LuaString>().toString();
     if (v.is<LuaInt>())
@@ -861,32 +864,32 @@ struct LuaConverter<String> {
 
 template <>
 struct LuaConverter<std::string> {
-  static LuaValue from(LuaEngine& engine, std::string const& v) {
+  static auto from(LuaEngine& engine, std::string const& v) -> LuaValue {
     return engine.createString(v);
   }
 
-  static std::optional<std::string> to(LuaEngine& engine, LuaValue const& v) {
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<std::string> {
     return engine.luaTo<String>(std::move(v)).takeUtf8();
   }
 };
 
 template <>
 struct LuaConverter<char const*> {
-  static LuaValue from(LuaEngine& engine, char const* v) {
+  static auto from(LuaEngine& engine, char const* v) -> LuaValue {
     return engine.createString(v);
   }
 };
 
 template <size_t s>
-struct LuaConverter<char[s]> {
-  static LuaValue from(LuaEngine& engine, char const v[s]) {
+struct LuaConverter<std::array<char, s>> {
+  static auto from(LuaEngine& engine, const std::array<char, s>& v) -> LuaValue {
     return engine.createString(v);
   }
 };
 
 template <>
 struct LuaConverter<Directives> {
-  static LuaValue from(LuaEngine& engine, Directives const& v) {
+  static auto from(LuaEngine& engine, Directives const& v) -> LuaValue {
     if (String const* ptr = v.stringPtr())
       return engine.createString(*ptr);
     else
@@ -896,11 +899,11 @@ struct LuaConverter<Directives> {
 
 template <>
 struct LuaConverter<LuaString> {
-  static LuaValue from(LuaEngine&, LuaString v) {
-    return LuaValue(std::move(v));
+  static auto from(LuaEngine&, LuaString v) -> LuaValue {
+    return {std::move(v)};
   }
 
-  static std::optional<LuaString> to(LuaEngine& engine, LuaValue const& v) {
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<LuaString> {
     if (v.is<LuaString>())
       return LuaString(std::move(v.get<LuaString>()));
     if (v.is<LuaInt>())
@@ -913,11 +916,11 @@ struct LuaConverter<LuaString> {
 
 template <typename T>
 struct LuaValueConverter {
-  static LuaValue from(LuaEngine&, T v) {
+  static auto from(LuaEngine&, T v) -> LuaValue {
     return v;
   }
 
-  static std::optional<T> to(LuaEngine&, LuaValue v) {
+  static auto to(LuaEngine&, LuaValue v) -> std::optional<T> {
     if (auto p = v.ptr<T>()) {
       return std::move(*p);
     }
@@ -939,32 +942,32 @@ struct LuaConverter<LuaUserData> : LuaValueConverter<LuaUserData> {};
 
 template <>
 struct LuaConverter<LuaValue> {
-  static LuaValue from(LuaEngine&, LuaValue v) {
+  static auto from(LuaEngine&, LuaValue v) -> LuaValue {
     return v;
   }
 
-  static LuaValue to(LuaEngine&, LuaValue v) {
+  static auto to(LuaEngine&, LuaValue v) -> LuaValue {
     return v;
   }
 };
 
 template <typename T>
 struct LuaConverter<std::optional<T>> {
-  static LuaValue from(LuaEngine& engine, std::optional<T> const& v) {
+  static auto from(LuaEngine& engine, std::optional<T> const& v) -> LuaValue {
     if (v)
       return engine.luaFrom<T>(*v);
     else
       return LuaNil;
   }
 
-  static LuaValue from(LuaEngine& engine, std::optional<T>&& v) {
+  static auto from(LuaEngine& engine, std::optional<T>&& v) -> LuaValue {
     if (v)
       return engine.luaFrom<T>(std::move(*v));
     else
       return LuaNil;
   }
 
-  static std::optional<std::optional<T>> to(LuaEngine& engine, LuaValue const& v) {
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<std::optional<T>> {
     if (v != LuaNil) {
       if (auto conv = engine.luaMaybeTo<T>(v))
         return conv;
@@ -975,7 +978,7 @@ struct LuaConverter<std::optional<T>> {
     }
   }
 
-  static std::optional<std::optional<T>> to(LuaEngine& engine, LuaValue&& v) {
+  static auto to(LuaEngine& engine, LuaValue&& v) -> std::optional<std::optional<T>> {
     if (v != LuaNil) {
       if (auto conv = engine.luaMaybeTo<T>(std::move(v)))
         return conv;
@@ -989,27 +992,27 @@ struct LuaConverter<std::optional<T>> {
 
 template <typename T>
 struct LuaMapConverter {
-  static LuaValue from(LuaEngine& engine, T const& v) {
+  static auto from(LuaEngine& engine, T const& v) -> LuaValue {
     return engine.createTable(v);
   }
 
-  static std::optional<T> to(LuaEngine& engine, LuaValue const& v) {
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<T> {
     auto table = v.ptr<LuaTable>();
     if (!table)
       return {};
 
     T result;
     bool failed = false;
-    table->iterate([&result, &failed, &engine](LuaValue key, LuaValue value) {
-        auto contKey = engine.luaMaybeTo<typename T::key_type>(std::move(key));
-        auto contValue = engine.luaMaybeTo<typename T::mapped_type>(std::move(value));
-        if (!contKey || !contValue) {
-          failed = true;
-          return false;
-        }
-        result[std::move(*contKey)] = std::move(*contValue);
-        return true;
-      });
+    table->iterate([&result, &failed, &engine](LuaValue key, LuaValue value) -> auto {
+      auto contKey = engine.luaMaybeTo<typename T::key_type>(std::move(key));
+      auto contValue = engine.luaMaybeTo<typename T::mapped_type>(std::move(value));
+      if (!contKey || !contValue) {
+        failed = true;
+        return false;
+      }
+      result[std::move(*contKey)] = std::move(*contValue);
+      return true;
+    });
 
     if (failed)
       return {};
@@ -1020,30 +1023,30 @@ struct LuaMapConverter {
 
 template <typename T>
 struct LuaContainerConverter {
-  static LuaValue from(LuaEngine& engine, T const& v) {
+  static auto from(LuaEngine& engine, T const& v) -> LuaValue {
     return engine.createArrayTable(v);
   }
 
-  static std::optional<T> to(LuaEngine& engine, LuaValue const& v) {
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<T> {
     auto table = v.ptr<LuaTable>();
     if (!table)
       return {};
 
     T result;
     bool failed = false;
-    table->iterate([&result, &failed, &engine](LuaValue key, LuaValue value) {
-        if (!key.is<LuaInt>()) {
-          failed = true;
-          return false;
-        }
-        auto contVal = engine.luaMaybeTo<typename T::value_type>(std::move(value));
-        if (!contVal) {
-          failed = true;
-          return false;
-        }
-        result.insert(result.end(), std::move(*contVal));
-        return true;
-      });
+    table->iterate([&result, &failed, &engine](LuaValue key, LuaValue value) -> auto {
+      if (!key.is<LuaInt>()) {
+        failed = true;
+        return false;
+      }
+      auto contVal = engine.luaMaybeTo<typename T::value_type>(std::move(value));
+      if (!contVal) {
+        failed = true;
+        return false;
+      }
+      result.insert(result.end(), std::move(*contVal));
+      return true;
+    });
 
     if (failed)
       return {};
@@ -1081,463 +1084,463 @@ struct LuaConverter<HashMap<Key, Value, Hash, Equals, Allocator>> : LuaMapConver
 
 template <>
 struct LuaConverter<Json> {
-  static LuaValue from(LuaEngine& engine, Json const& v);
-  static std::optional<Json> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, Json const& v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<Json>;
 };
 
 template <>
 struct LuaConverter<JsonObject> {
-  static LuaValue from(LuaEngine& engine, JsonObject v);
-  static std::optional<JsonObject> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, JsonObject v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<JsonObject>;
 };
 
 template <>
 struct LuaConverter<JsonArray> {
-  static LuaValue from(LuaEngine& engine, JsonArray v);
-  static std::optional<JsonArray> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, JsonArray v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<JsonArray>;
 };
 
 namespace LuaDetail {
-  inline LuaHandle::LuaHandle(LuaEnginePtr engine, int handleIndex)
+inline LuaHandle::LuaHandle(LuaEnginePtr engine, int handleIndex)
     : engine(std::move(engine)), handleIndex(handleIndex) {}
 
-  inline LuaHandle::~LuaHandle() {
-    if (engine)
-      engine->destroyHandle(handleIndex);
-  }
-
-  inline LuaHandle::LuaHandle(LuaHandle const& other) {
-    engine = other.engine;
-    if (engine)
-      handleIndex = engine->copyHandle(other.handleIndex);
-  }
-
-  inline LuaHandle::LuaHandle(LuaHandle&& other) {
-    engine = take(other.engine);
-    handleIndex = take(other.handleIndex);
-  }
-
-  inline LuaHandle& LuaHandle::operator=(LuaHandle const& other) {
-    if (engine)
-      engine->destroyHandle(handleIndex);
-
-    engine = other.engine;
-    if (engine)
-      handleIndex = engine->copyHandle(other.handleIndex);
-
-    return *this;
-  }
-
-  inline LuaHandle& LuaHandle::operator=(LuaHandle&& other) {
-    if (engine)
-      engine->destroyHandle(handleIndex);
-
-    engine = take(other.engine);
-    handleIndex = take(other.handleIndex);
-
-    return *this;
-  }
-
-  template <typename T>
-  struct FromFunctionReturn {
-    static T convert(LuaEngine& engine, LuaFunctionReturn const& ret) {
-      if (auto l = ret.ptr<LuaValue>()) {
-        return engine.luaTo<T>(*l);
-      } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
-        return engine.luaTo<T>(vec->at(0));
-      } else {
-        return engine.luaTo<T>(LuaNil);
-      }
-    }
-  };
-
-  template <typename T>
-  struct FromFunctionReturn<LuaVariadic<T>> {
-    static LuaVariadic<T> convert(LuaEngine& engine, LuaFunctionReturn const& ret) {
-      if (auto l = ret.ptr<LuaValue>()) {
-        return {engine.luaTo<T>(*l)};
-      } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
-        LuaVariadic<T> ret(vec->size());
-        for (size_t i = 0; i < vec->size(); ++i)
-          ret[i] = engine.luaTo<T>((*vec)[i]);
-        return ret;
-      } else {
-        return {};
-      }
-    }
-  };
-
-  template <typename ArgFirst, typename... ArgRest>
-  struct FromFunctionReturn<LuaTupleReturn<ArgFirst, ArgRest...>> {
-    static LuaTupleReturn<ArgFirst, ArgRest...> convert(LuaEngine& engine, LuaFunctionReturn const& ret) {
-      if (auto l = ret.ptr<LuaValue>()) {
-        return doConvertSingle(engine, *l, typename GenIndexSequence<0, sizeof...(ArgRest)>::type());
-      } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
-        return doConvertMulti(engine, *vec, typename GenIndexSequence<0, sizeof...(ArgRest)>::type());
-      } else {
-        return doConvertNone(engine, typename GenIndexSequence<0, sizeof...(ArgRest)>::type());
-      }
-    }
-
-    template <size_t... Indexes>
-    static LuaTupleReturn<ArgFirst, ArgRest...> doConvertSingle(
-        LuaEngine& engine, LuaValue const& single, IndexSequence<Indexes...> const&) {
-      return LuaTupleReturn<ArgFirst, ArgRest...>(engine.luaTo<ArgFirst>(single), engine.luaTo<ArgRest>(LuaNil)...);
-    }
-
-    template <size_t... Indexes>
-    static LuaTupleReturn<ArgFirst, ArgRest...> doConvertMulti(
-        LuaEngine& engine, LuaVariadic<LuaValue> const& multi, IndexSequence<Indexes...> const&) {
-      return LuaTupleReturn<ArgFirst, ArgRest...>(
-          engine.luaTo<ArgFirst>(multi.at(0)), engine.luaTo<ArgRest>(multi.get(Indexes + 1))...);
-    }
-
-    template <size_t... Indexes>
-    static LuaTupleReturn<ArgFirst, ArgRest...> doConvertNone(LuaEngine& engine, IndexSequence<Indexes...> const&) {
-      return LuaTupleReturn<ArgFirst, ArgRest...>(engine.luaTo<ArgFirst>(LuaNil), engine.luaTo<ArgRest>(LuaNil)...);
-    }
-  };
-
-  template <typename... Args, size_t... Indexes>
-  LuaVariadic<LuaValue> toVariadicReturn(
-      LuaEngine& engine, LuaTupleReturn<Args...> const& vals, IndexSequence<Indexes...> const&) {
-    return LuaVariadic<LuaValue>{engine.luaFrom(get<Indexes>(vals))...};
-  }
-
-  template <typename... Args>
-  LuaVariadic<LuaValue> toWrappedReturn(LuaEngine& engine, LuaTupleReturn<Args...> const& vals) {
-    return toVariadicReturn(engine, vals, typename GenIndexSequence<0, sizeof...(Args)>::type());
-  }
-
-  template <typename T>
-  LuaVariadic<LuaValue> toWrappedReturn(LuaEngine& engine, LuaVariadic<T> const& vals) {
-    LuaVariadic<LuaValue> ret(vals.size());
-    for (size_t i = 0; i < vals.size(); ++i)
-      ret[i] = engine.luaFrom(vals[i]);
-    return ret;
-  }
-
-  template <typename T>
-  LuaValue toWrappedReturn(LuaEngine& engine, T const& t) {
-    return engine.luaFrom(t);
-  }
-
-  template <typename T>
-  struct ArgGet {
-    static T get(LuaEngine& engine, size_t argc, LuaValue* argv, size_t index) {
-      if (index < argc)
-        return engine.luaTo<T>(std::move(argv[index]));
-      return engine.luaTo<T>(LuaNil);
-    }
-  };
-
-  template <typename T>
-  struct ArgGet<LuaVariadic<T>> {
-    static LuaVariadic<T> get(LuaEngine& engine, size_t argc, LuaValue* argv, size_t index) {
-      if (index >= argc)
-        return {};
-
-      LuaVariadic<T> subargs(argc - index);
-      for (size_t i = index; i < argc; ++i)
-        subargs[i - index] = engine.luaTo<T>(std::move(argv[i]));
-      return subargs;
-    }
-  };
-
-  template <typename Return, typename... Args>
-  struct FunctionWrapper {
-    template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
-        return toWrappedReturn(engine, (Return const&)func(ArgGet<Args>::get(engine, argc, argv, Indexes)...));
-      };
-    }
-
-    template <typename Function>
-    static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
-    }
-  };
-
-  template <typename... Args>
-  struct FunctionWrapper<void, Args...> {
-    template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
-        func(ArgGet<Args>::get(engine, argc, argv, Indexes)...);
-        return LuaFunctionReturn();
-      };
-    }
-
-    template <typename Function>
-    static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
-    }
-  };
-
-  template <typename Return, typename... Args>
-  struct FunctionWrapper<Return, LuaEngine, Args...> {
-    template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
-        return toWrappedReturn(engine, (Return const&)func(engine, ArgGet<Args>::get(engine, argc, argv, Indexes)...));
-      };
-    }
-
-    template <typename Function>
-    static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
-    }
-  };
-
-  template <typename... Args>
-  struct FunctionWrapper<void, LuaEngine, Args...> {
-    template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
-        func(engine, ArgGet<Args>::get(engine, argc, argv, Indexes)...);
-        return LuaFunctionReturn();
-      };
-    }
-
-    template <typename Function>
-    static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
-    }
-  };
-
-  template <typename Return, typename... Args, typename Function>
-  LuaWrappedFunction wrapFunctionWithSignature(Function&& func) {
-    return FunctionWrapper<Return, typename std::decay<Args>::type...>::wrap(std::forward<Function>(func));
-  }
-
-  template <typename Return, typename Function, typename... Args>
-  LuaWrappedFunction wrapFunctionArgs(Function&& func, VariadicTypedef<Args...> const&) {
-    return wrapFunctionWithSignature<Return, Args...>(std::forward<Function>(func));
-  }
-
-  template <typename Function>
-  LuaWrappedFunction wrapFunction(Function&& func) {
-    return wrapFunctionArgs<typename FunctionTraits<Function>::Return>(
-        std::forward<Function>(func), typename FunctionTraits<Function>::Args());
-  }
-
-  template <typename Return, typename T, typename... Args>
-  struct MethodWrapper {
-    template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) mutable {
-        if (argc == 0)
-          throw LuaException("No object argument passed to wrapped method");
-        return toWrappedReturn(engine,
-            (Return const&)func(argv[0].get<LuaUserData>().get<T>(), ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...));
-      };
-    }
-
-    template <typename Function>
-    static LuaWrappedFunction wrap(Function&& func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
-    }
-  };
-
-  template <typename T, typename... Args>
-  struct MethodWrapper<void, T, Args...> {
-    template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
-        if (argc == 0)
-          throw LuaException("No object argument passed to wrapped method");
-        func(argv[0].get<LuaUserData>().get<T>(), ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...);
-        return LuaFunctionReturn();
-      };
-    }
-
-    template <typename Function>
-    static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
-    }
-  };
-
-  template <typename Return, typename T, typename... Args>
-  struct MethodWrapper<Return, T, LuaEngine, Args...> {
-    template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
-        if (argc == 0)
-          throw LuaException("No object argument passed to wrapped method");
-        return toWrappedReturn(
-            engine,
-            (Return const&)func(argv[0].get<LuaUserData>().get<T>(), engine, ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...));
-      };
-    }
-
-    template <typename Function>
-    static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
-    }
-  };
-
-  template <typename T, typename... Args>
-  struct MethodWrapper<void, T, LuaEngine, Args...> {
-    template <typename Function, size_t... Indexes>
-    static LuaWrappedFunction wrapIndexes(Function func, IndexSequence<Indexes...> const&) {
-      return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) {
-        if (argc == 0)
-          throw LuaException("No object argument passed to wrapped method");
-        func(argv[0].get<LuaUserData>().get<T>(), engine, ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...);
-        return LuaValue();
-      };
-    }
-
-    template <typename Function>
-    static LuaWrappedFunction wrap(Function func) {
-      return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
-    }
-  };
-
-  template <typename Return, typename... Args, typename Function>
-  LuaWrappedFunction wrapMethodWithSignature(Function&& func) {
-    return MethodWrapper<Return, typename std::decay<Args>::type...>::wrap(std::forward<Function>(func));
-  }
-
-  template <typename Return, typename Function, typename... Args>
-  LuaWrappedFunction wrapMethodArgs(Function&& func, VariadicTypedef<Args...> const&) {
-    return wrapMethodWithSignature<Return, Args...>(std::forward<Function>(func));
-  }
-
-  template <typename Function>
-  LuaWrappedFunction wrapMethod(Function&& func) {
-    return wrapMethodArgs<typename FunctionTraits<Function>::Return>(
-        std::forward<Function>(func), typename FunctionTraits<Function>::Args());
-  }
-
-  template <typename Ret, typename... Args>
-  struct TableIteratorWrapper;
-
-  template <typename Key, typename Value>
-  struct TableIteratorWrapper<bool, LuaEngine&, Key, Value> {
-    template <typename Function>
-    static function<bool(LuaValue, LuaValue)> wrap(LuaEngine& engine, Function&& func) {
-      return [&engine, func = std::move(func)](LuaValue key, LuaValue value) -> bool {
-        return func(engine, engine.luaTo<Key>(std::move(key)), engine.luaTo<Value>(std::move(value)));
-      };
-    }
-  };
-
-  template <typename Key, typename Value>
-  struct TableIteratorWrapper<void, LuaEngine&, Key, Value> {
-    template <typename Function>
-    static function<bool(LuaValue, LuaValue)> wrap(LuaEngine& engine, Function&& func) {
-      return [&engine, func = std::move(func)](LuaValue key, LuaValue value) -> bool {
-        func(engine, engine.luaTo<Key>(std::move(key)), engine.luaTo<Value>(std::move(value)));
-        return true;
-      };
-    }
-  };
-
-  template <typename Key, typename Value>
-  struct TableIteratorWrapper<bool, Key, Value> {
-    template <typename Function>
-    static std::function<bool(LuaValue, LuaValue)> wrap(LuaEngine& engine, Function&& func) {
-      return [&engine, func = std::move(func)](LuaValue key, LuaValue value) -> bool {
-        return func(engine.luaTo<Key>(std::move(key)), engine.luaTo<Value>(std::move(value)));
-      };
-    }
-  };
-
-  template <typename Key, typename Value>
-  struct TableIteratorWrapper<void, Key, Value> {
-    template <typename Function>
-    static std::function<bool(LuaValue, LuaValue)> wrap(LuaEngine& engine, Function&& func) {
-      return [&engine, func = std::move(func)](LuaValue key, LuaValue value) -> bool {
-        func(engine.luaTo<Key>(std::move(key)), engine.luaTo<Value>(std::move(value)));
-        return true;
-      };
-    }
-  };
-
-  template <typename Return, typename... Args, typename Function>
-  std::function<bool(LuaValue, LuaValue)> wrapTableIteratorWithSignature(LuaEngine& engine, Function&& func) {
-    return TableIteratorWrapper<Return, typename std::decay<Args>::type...>::wrap(engine, std::forward<Function>(func));
-  }
-
-  template <typename Return, typename Function, typename... Args>
-  function<bool(LuaValue, LuaValue)> wrapTableIteratorArgs(
-      LuaEngine& engine, Function&& func, VariadicTypedef<Args...> const&) {
-    return wrapTableIteratorWithSignature<Return, Args...>(engine, std::forward<Function>(func));
-  }
-
-  template <typename Function>
-  function<bool(LuaValue, LuaValue)> wrapTableIterator(LuaEngine& engine, Function&& func) {
-    return wrapTableIteratorArgs<typename FunctionTraits<Function>::Return>(
-        engine, std::forward<Function>(func), typename FunctionTraits<Function>::Args());
-  }
-
-  // Like lua_setfield / lua_getfield but raw.
-  void rawSetField(lua_State* state, int index, char const* key);
-  void rawGetField(lua_State* state, int index, char const* key);
-
-  // Shallow copies a lua table at the given index into the table at the target
-  // index.
-  void shallowCopy(lua_State* state, int sourceIndex, int targetIndex);
-
-  LuaTable insertJsonMetatable(LuaEngine& engine, LuaTable const& table, Json::Type type);
-
-  // Creates a custom lua table from a JsonArray or JsonObject that has
-  // slightly different behavior than a standard lua table.  The table
-  // remembers nil entries, as well as whether it was initially constructed
-  // from a JsonArray or JsonObject as a hint on how to convert it back into a
-  // Json.  The custom containers are meant to act nearly identical to standard
-  // lua tables, so iterating over the table with pairs or ipairs works exactly
-  // like a standard lua table, so will skip over nil entries and in the case
-  // of ipairs, stop at the first nil entry.
-  LuaTable jsonContainerToTable(LuaEngine& engine, Json const& container);
-
-  // popJsonContainer must be called with a lua table on the top of the stack.
-  // Uses the table contents, as well as any hint entries if the table was
-  // created originally from a Json, to determine whether a JsonArray or
-  // JsonObject is more appropriate.
-  std::optional<Json> tableToJsonContainer(LuaTable const& table);
-
-  // Special lua functions to operate on our custom jarray / jobject container
-  // types.  Should always do some "sensible" action if given a regular lua
-  // table instead of a custom json container one.
-
-  // Create a JsonList container table
-  Json jarrayCreate();
-  // Create a JsonMap container table
-  Json jobjectCreate();
-
-  // Adds the Json array metatable to a Lua table or creates one.
-  LuaTable jarray(LuaEngine& engine, std::optional<LuaTable> table);
-  // Adds the Json object metatable to a Lua table or creates one.
-  LuaTable jobject(LuaEngine& engine, std::optional<LuaTable> table);
-
-  // *Really* remove an entry from a JsonList or JsonMap container table,
-  // including removing it from the __nils table.  If the given table is not a
-  // special container table, is equivalent to setting the key entry to nil.
-  void jcontRemove(LuaTable const& t, LuaValue const& key);
-
-  // Returns the element count of the lua table argument, or, in the case of a
-  // special JsonList container table, returns the "true" element count
-  // including any nil entries.
-  size_t jcontSize(LuaTable const& t);
-
-  // Resize the given lua table by removing any indexed entries greater than the
-  // target size, and in the case of a special JsonList container table, pads
-  // to the end of the new size with nil entries.
-  void jcontResize(LuaTable const& t, size_t size);
-
-  // Coerces a values (strings, floats, ints) into an integer, but fails if the
-  // number looks fractional (does not parse as int, float is not an exact
-  // integer)
-  std::optional<LuaInt> asInteger(LuaValue const& v);
+inline LuaHandle::~LuaHandle() {
+  if (engine)
+    engine->destroyHandle(handleIndex);
 }
 
+inline LuaHandle::LuaHandle(LuaHandle const& other) {
+  engine = other.engine;
+  if (engine)
+    handleIndex = engine->copyHandle(other.handleIndex);
+}
+
+inline LuaHandle::LuaHandle(LuaHandle&& other) {
+  engine = take(other.engine);
+  handleIndex = take(other.handleIndex);
+}
+
+inline auto LuaHandle::operator=(LuaHandle const& other) -> LuaHandle& {
+  if (engine)
+    engine->destroyHandle(handleIndex);
+
+  engine = other.engine;
+  if (engine)
+    handleIndex = engine->copyHandle(other.handleIndex);
+
+  return *this;
+}
+
+inline auto LuaHandle::operator=(LuaHandle&& other) -> LuaHandle& {
+  if (engine)
+    engine->destroyHandle(handleIndex);
+
+  engine = take(other.engine);
+  handleIndex = take(other.handleIndex);
+
+  return *this;
+}
+
+template <typename T>
+struct FromFunctionReturn {
+  static auto convert(LuaEngine& engine, LuaFunctionReturn const& ret) -> T {
+    if (auto l = ret.ptr<LuaValue>()) {
+      return engine.luaTo<T>(*l);
+    } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
+      return engine.luaTo<T>(vec->at(0));
+    } else {
+      return engine.luaTo<T>(LuaNil);
+    }
+  }
+};
+
+template <typename T>
+struct FromFunctionReturn<LuaVariadic<T>> {
+  static auto convert(LuaEngine& engine, LuaFunctionReturn const& ret) -> LuaVariadic<T> {
+    if (auto l = ret.ptr<LuaValue>()) {
+      return {engine.luaTo<T>(*l)};
+    } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
+      LuaVariadic<T> ret(vec->size());
+      for (size_t i = 0; i < vec->size(); ++i)
+        ret[i] = engine.luaTo<T>((*vec)[i]);
+      return ret;
+    } else {
+      return {};
+    }
+  }
+};
+
+template <typename ArgFirst, typename... ArgRest>
+struct FromFunctionReturn<LuaTupleReturn<ArgFirst, ArgRest...>> {
+  static auto convert(LuaEngine& engine, LuaFunctionReturn const& ret) -> LuaTupleReturn<ArgFirst, ArgRest...> {
+    if (auto l = ret.ptr<LuaValue>()) {
+      return doConvertSingle(engine, *l, typename GenIndexSequence<0, sizeof...(ArgRest)>::type());
+    } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
+      return doConvertMulti(engine, *vec, typename GenIndexSequence<0, sizeof...(ArgRest)>::type());
+    } else {
+      return doConvertNone(engine, typename GenIndexSequence<0, sizeof...(ArgRest)>::type());
+    }
+  }
+
+  template <size_t... Indexes>
+  static auto doConvertSingle(
+    LuaEngine& engine, LuaValue const& single, IndexSequence<Indexes...> const&) -> LuaTupleReturn<ArgFirst, ArgRest...> {
+    return LuaTupleReturn<ArgFirst, ArgRest...>(engine.luaTo<ArgFirst>(single), engine.luaTo<ArgRest>(LuaNil)...);
+  }
+
+  template <size_t... Indexes>
+  static auto doConvertMulti(
+    LuaEngine& engine, LuaVariadic<LuaValue> const& multi, IndexSequence<Indexes...> const&) -> LuaTupleReturn<ArgFirst, ArgRest...> {
+    return LuaTupleReturn<ArgFirst, ArgRest...>(
+      engine.luaTo<ArgFirst>(multi.at(0)), engine.luaTo<ArgRest>(multi.get(Indexes + 1))...);
+  }
+
+  template <size_t... Indexes>
+  static auto doConvertNone(LuaEngine& engine, IndexSequence<Indexes...> const&) -> LuaTupleReturn<ArgFirst, ArgRest...> {
+    return LuaTupleReturn<ArgFirst, ArgRest...>(engine.luaTo<ArgFirst>(LuaNil), engine.luaTo<ArgRest>(LuaNil)...);
+  }
+};
+
+template <typename... Args, size_t... Indexes>
+auto toVariadicReturn(
+  LuaEngine& engine, LuaTupleReturn<Args...> const& vals, IndexSequence<Indexes...> const&) -> LuaVariadic<LuaValue> {
+  return LuaVariadic<LuaValue>{engine.luaFrom(get<Indexes>(vals))...};
+}
+
+template <typename... Args>
+auto toWrappedReturn(LuaEngine& engine, LuaTupleReturn<Args...> const& vals) -> LuaVariadic<LuaValue> {
+  return toVariadicReturn(engine, vals, typename GenIndexSequence<0, sizeof...(Args)>::type());
+}
+
+template <typename T>
+auto toWrappedReturn(LuaEngine& engine, LuaVariadic<T> const& vals) -> LuaVariadic<LuaValue> {
+  LuaVariadic<LuaValue> ret(vals.size());
+  for (size_t i = 0; i < vals.size(); ++i)
+    ret[i] = engine.luaFrom(vals[i]);
+  return ret;
+}
+
+template <typename T>
+auto toWrappedReturn(LuaEngine& engine, T const& t) -> LuaValue {
+  return engine.luaFrom(t);
+}
+
+template <typename T>
+struct ArgGet {
+  static auto get(LuaEngine& engine, size_t argc, LuaValue* argv, size_t index) -> T {
+    if (index < argc)
+      return engine.luaTo<T>(std::move(argv[index]));
+    return engine.luaTo<T>(LuaNil);
+  }
+};
+
+template <typename T>
+struct ArgGet<LuaVariadic<T>> {
+  static auto get(LuaEngine& engine, size_t argc, LuaValue* argv, size_t index) -> LuaVariadic<T> {
+    if (index >= argc)
+      return {};
+
+    LuaVariadic<T> subargs(argc - index);
+    for (size_t i = index; i < argc; ++i)
+      subargs[i - index] = engine.luaTo<T>(std::move(argv[i]));
+    return subargs;
+  }
+};
+
+template <typename Return, typename... Args>
+struct FunctionWrapper {
+  template <typename Function, size_t... Indexes>
+  static auto wrapIndexes(Function func, IndexSequence<Indexes...> const&) -> LuaWrappedFunction {
+    return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) -> auto {
+      return toWrappedReturn(engine, (Return const&)func(ArgGet<Args>::get(engine, argc, argv, Indexes)...));
+    };
+  }
+
+  template <typename Function>
+  static auto wrap(Function func) -> LuaWrappedFunction {
+    return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+  }
+};
+
+template <typename... Args>
+struct FunctionWrapper<void, Args...> {
+  template <typename Function, size_t... Indexes>
+  static auto wrapIndexes(Function func, IndexSequence<Indexes...> const&) -> LuaWrappedFunction {
+    return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) -> auto {
+      func(ArgGet<Args>::get(engine, argc, argv, Indexes)...);
+      return LuaFunctionReturn();
+    };
+  }
+
+  template <typename Function>
+  static auto wrap(Function func) -> LuaWrappedFunction {
+    return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+  }
+};
+
+template <typename Return, typename... Args>
+struct FunctionWrapper<Return, LuaEngine, Args...> {
+  template <typename Function, size_t... Indexes>
+  static auto wrapIndexes(Function func, IndexSequence<Indexes...> const&) -> LuaWrappedFunction {
+    return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) -> auto {
+      return toWrappedReturn(engine, (Return const&)func(engine, ArgGet<Args>::get(engine, argc, argv, Indexes)...));
+    };
+  }
+
+  template <typename Function>
+  static auto wrap(Function func) -> LuaWrappedFunction {
+    return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+  }
+};
+
+template <typename... Args>
+struct FunctionWrapper<void, LuaEngine, Args...> {
+  template <typename Function, size_t... Indexes>
+  static auto wrapIndexes(Function func, IndexSequence<Indexes...> const&) -> LuaWrappedFunction {
+    return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) -> auto {
+      func(engine, ArgGet<Args>::get(engine, argc, argv, Indexes)...);
+      return LuaFunctionReturn();
+    };
+  }
+
+  template <typename Function>
+  static auto wrap(Function func) -> LuaWrappedFunction {
+    return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+  }
+};
+
+template <typename Return, typename... Args, typename Function>
+auto wrapFunctionWithSignature(Function&& func) -> LuaWrappedFunction {
+  return FunctionWrapper<Return, std::decay_t<Args>...>::wrap(std::forward<Function>(func));
+}
+
+template <typename Return, typename Function, typename... Args>
+auto wrapFunctionArgs(Function&& func, VariadicTypedef<Args...> const&) -> LuaWrappedFunction {
+  return wrapFunctionWithSignature<Return, Args...>(std::forward<Function>(func));
+}
+
+template <typename Function>
+auto wrapFunction(Function&& func) -> LuaWrappedFunction {
+  return wrapFunctionArgs<typename FunctionTraits<Function>::Return>(
+    std::forward<Function>(func), typename FunctionTraits<Function>::Args());
+}
+
+template <typename Return, typename T, typename... Args>
+struct MethodWrapper {
+  template <typename Function, size_t... Indexes>
+  static auto wrapIndexes(Function func, IndexSequence<Indexes...> const&) -> LuaWrappedFunction {
+    return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) mutable -> auto {
+      if (argc == 0)
+        throw LuaException("No object argument passed to wrapped method");
+      return toWrappedReturn(engine,
+                             (Return const&)func(argv[0].get<LuaUserData>().get<T>(), ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...));
+    };
+  }
+
+  template <typename Function>
+  static auto wrap(Function&& func) -> LuaWrappedFunction {
+    return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+  }
+};
+
+template <typename T, typename... Args>
+struct MethodWrapper<void, T, Args...> {
+  template <typename Function, size_t... Indexes>
+  static auto wrapIndexes(Function func, IndexSequence<Indexes...> const&) -> LuaWrappedFunction {
+    return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) -> auto {
+      if (argc == 0)
+        throw LuaException("No object argument passed to wrapped method");
+      func(argv[0].get<LuaUserData>().get<T>(), ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...);
+      return LuaFunctionReturn();
+    };
+  }
+
+  template <typename Function>
+  static auto wrap(Function func) -> LuaWrappedFunction {
+    return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+  }
+};
+
+template <typename Return, typename T, typename... Args>
+struct MethodWrapper<Return, T, LuaEngine, Args...> {
+  template <typename Function, size_t... Indexes>
+  static auto wrapIndexes(Function func, IndexSequence<Indexes...> const&) -> LuaWrappedFunction {
+    return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) -> auto {
+      if (argc == 0)
+        throw LuaException("No object argument passed to wrapped method");
+      return toWrappedReturn(
+        engine,
+        (Return const&)func(argv[0].get<LuaUserData>().get<T>(), engine, ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...));
+    };
+  }
+
+  template <typename Function>
+  static auto wrap(Function func) -> LuaWrappedFunction {
+    return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+  }
+};
+
+template <typename T, typename... Args>
+struct MethodWrapper<void, T, LuaEngine, Args...> {
+  template <typename Function, size_t... Indexes>
+  static auto wrapIndexes(Function func, IndexSequence<Indexes...> const&) -> LuaWrappedFunction {
+    return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) -> auto {
+      if (argc == 0)
+        throw LuaException("No object argument passed to wrapped method");
+      func(argv[0].get<LuaUserData>().get<T>(), engine, ArgGet<Args>::get(engine, argc - 1, argv + 1, Indexes)...);
+      return LuaValue();
+    };
+  }
+
+  template <typename Function>
+  static auto wrap(Function func) -> LuaWrappedFunction {
+    return wrapIndexes(std::forward<Function>(func), typename GenIndexSequence<0, sizeof...(Args)>::type());
+  }
+};
+
+template <typename Return, typename... Args, typename Function>
+auto wrapMethodWithSignature(Function&& func) -> LuaWrappedFunction {
+  return MethodWrapper<Return, std::decay_t<Args>...>::wrap(std::forward<Function>(func));
+}
+
+template <typename Return, typename Function, typename... Args>
+auto wrapMethodArgs(Function&& func, VariadicTypedef<Args...> const&) -> LuaWrappedFunction {
+  return wrapMethodWithSignature<Return, Args...>(std::forward<Function>(func));
+}
+
+template <typename Function>
+auto wrapMethod(Function&& func) -> LuaWrappedFunction {
+  return wrapMethodArgs<typename FunctionTraits<Function>::Return>(
+    std::forward<Function>(func), typename FunctionTraits<Function>::Args());
+}
+
+template <typename Ret, typename... Args>
+struct TableIteratorWrapper;
+
+template <typename Key, typename Value>
+struct TableIteratorWrapper<bool, LuaEngine&, Key, Value> {
+  template <typename Function>
+  static auto wrap(LuaEngine& engine, Function&& func) -> std::function<bool(LuaValue, LuaValue)> {
+    return [&engine, func = std::move(func)](LuaValue key, LuaValue value) -> bool {
+      return func(engine, engine.luaTo<Key>(std::move(key)), engine.luaTo<Value>(std::move(value)));
+    };
+  }
+};
+
+template <typename Key, typename Value>
+struct TableIteratorWrapper<void, LuaEngine&, Key, Value> {
+  template <typename Function>
+  static auto wrap(LuaEngine& engine, Function&& func) -> std::function<bool(LuaValue, LuaValue)> {
+    return [&engine, func = std::move(func)](LuaValue key, LuaValue value) -> bool {
+      func(engine, engine.luaTo<Key>(std::move(key)), engine.luaTo<Value>(std::move(value)));
+      return true;
+    };
+  }
+};
+
+template <typename Key, typename Value>
+struct TableIteratorWrapper<bool, Key, Value> {
+  template <typename Function>
+  static auto wrap(LuaEngine& engine, Function&& func) -> std::function<bool(LuaValue, LuaValue)> {
+    return [&engine, func = std::move(func)](LuaValue key, LuaValue value) -> bool {
+      return func(engine.luaTo<Key>(std::move(key)), engine.luaTo<Value>(std::move(value)));
+    };
+  }
+};
+
+template <typename Key, typename Value>
+struct TableIteratorWrapper<void, Key, Value> {
+  template <typename Function>
+  static auto wrap(LuaEngine& engine, Function&& func) -> std::function<bool(LuaValue, LuaValue)> {
+    return [&engine, func = std::move(func)](LuaValue key, LuaValue value) -> bool {
+      func(engine.luaTo<Key>(std::move(key)), engine.luaTo<Value>(std::move(value)));
+      return true;
+    };
+  }
+};
+
+template <typename Return, typename... Args, typename Function>
+auto wrapTableIteratorWithSignature(LuaEngine& engine, Function&& func) -> std::function<bool(LuaValue, LuaValue)> {
+  return TableIteratorWrapper<Return, std::decay_t<Args>...>::wrap(engine, std::forward<Function>(func));
+}
+
+template <typename Return, typename Function, typename... Args>
+auto wrapTableIteratorArgs(
+  LuaEngine& engine, Function&& func, VariadicTypedef<Args...> const&) -> std::function<bool(LuaValue, LuaValue)> {
+  return wrapTableIteratorWithSignature<Return, Args...>(engine, std::forward<Function>(func));
+}
+
+template <typename Function>
+auto wrapTableIterator(LuaEngine& engine, Function&& func) -> std::function<bool(LuaValue, LuaValue)> {
+  return wrapTableIteratorArgs<typename FunctionTraits<Function>::Return>(
+    engine, std::forward<Function>(func), typename FunctionTraits<Function>::Args());
+}
+
+// Like lua_setfield / lua_getfield but raw.
+void rawSetField(lua_State* state, int index, char const* key);
+void rawGetField(lua_State* state, int index, char const* key);
+
+// Shallow copies a lua table at the given index into the table at the target
+// index.
+void shallowCopy(lua_State* state, int sourceIndex, int targetIndex);
+
+auto insertJsonMetatable(LuaEngine& engine, LuaTable const& table, Json::Type type) -> LuaTable;
+
+// Creates a custom lua table from a JsonArray or JsonObject that has
+// slightly different behavior than a standard lua table.  The table
+// remembers nil entries, as well as whether it was initially constructed
+// from a JsonArray or JsonObject as a hint on how to convert it back into a
+// Json.  The custom containers are meant to act nearly identical to standard
+// lua tables, so iterating over the table with pairs or ipairs works exactly
+// like a standard lua table, so will skip over nil entries and in the case
+// of ipairs, stop at the first nil entry.
+auto jsonContainerToTable(LuaEngine& engine, Json const& container) -> LuaTable;
+
+// popJsonContainer must be called with a lua table on the top of the stack.
+// Uses the table contents, as well as any hint entries if the table was
+// created originally from a Json, to determine whether a JsonArray or
+// JsonObject is more appropriate.
+auto tableToJsonContainer(LuaTable const& table) -> std::optional<Json>;
+
+// Special lua functions to operate on our custom jarray / jobject container
+// types.  Should always do some "sensible" action if given a regular lua
+// table instead of a custom json container one.
+
+// Create a JsonList container table
+auto jarrayCreate() -> Json;
+// Create a JsonMap container table
+auto jobjectCreate() -> Json;
+
+// Adds the Json array metatable to a Lua table or creates one.
+auto jarray(LuaEngine& engine, std::optional<LuaTable> table) -> LuaTable;
+// Adds the Json object metatable to a Lua table or creates one.
+auto jobject(LuaEngine& engine, std::optional<LuaTable> table) -> LuaTable;
+
+// *Really* remove an entry from a JsonList or JsonMap container table,
+// including removing it from the __nils table.  If the given table is not a
+// special container table, is equivalent to setting the key entry to nil.
+void jcontRemove(LuaTable const& t, LuaValue const& key);
+
+// Returns the element count of the lua table argument, or, in the case of a
+// special JsonList container table, returns the "true" element count
+// including any nil entries.
+auto jcontSize(LuaTable const& t) -> size_t;
+
+// Resize the given lua table by removing any indexed entries greater than the
+// target size, and in the case of a special JsonList container table, pads
+// to the end of the new size with nil entries.
+void jcontResize(LuaTable const& t, size_t size);
+
+// Coerces a values (strings, floats, ints) into an integer, but fails if the
+// number looks fractional (does not parse as int, float is not an exact
+// integer)
+auto asInteger(LuaValue const& v) -> std::optional<LuaInt>;
+}// namespace LuaDetail
+
 template <typename Container>
-LuaVariadic<typename std::decay<Container>::type::value_type> luaUnpack(Container&& c) {
+auto luaUnpack(Container&& c) -> LuaVariadic<typename std::decay<Container>::type::value_type> {
   LuaVariadic<typename std::decay<Container>::type::value_type> ret;
-  if (std::is_rvalue_reference<Container&&>::value) {
+  if (std::is_rvalue_reference_v<Container&&>) {
     for (auto& e : c)
       ret.append(std::move(e));
   } else {
@@ -1549,169 +1552,169 @@ LuaVariadic<typename std::decay<Container>::type::value_type> luaUnpack(Containe
 
 template <typename... Types>
 LuaTupleReturn<Types...>::LuaTupleReturn(Types const&... args)
-  : Base(args...) {}
+    : Base(args...) {}
 
 template <typename... Types>
 template <typename... UTypes>
 LuaTupleReturn<Types...>::LuaTupleReturn(UTypes&&... args)
-  : Base(std::move(args)...) {}
+    : Base(std::move(args)...) {}
 
 template <typename... Types>
 template <typename... UTypes>
 LuaTupleReturn<Types...>::LuaTupleReturn(UTypes const&... args)
-  : Base(args...) {}
+    : Base(args...) {}
 
 template <typename... Types>
 LuaTupleReturn<Types...>::LuaTupleReturn(LuaTupleReturn const& rhs)
-  : Base(rhs) {}
+    : Base(rhs) {}
 
 template <typename... Types>
 LuaTupleReturn<Types...>::LuaTupleReturn(LuaTupleReturn&& rhs)
-  : Base(std::move(rhs)) {}
+    : Base(std::move(rhs)) {}
 
 template <typename... Types>
 template <typename... UTypes>
 LuaTupleReturn<Types...>::LuaTupleReturn(LuaTupleReturn<UTypes...> const& rhs)
-  : Base(rhs) {}
+    : Base(rhs) {}
 
 template <typename... Types>
 template <typename... UTypes>
 LuaTupleReturn<Types...>::LuaTupleReturn(LuaTupleReturn<UTypes...>&& rhs)
-  : Base(std::move(rhs)) {}
+    : Base(std::move(rhs)) {}
 
 template <typename... Types>
-LuaTupleReturn<Types...>& LuaTupleReturn<Types...>::operator=(LuaTupleReturn const& rhs) {
+auto LuaTupleReturn<Types...>::operator=(LuaTupleReturn const& rhs) -> LuaTupleReturn<Types...>& {
   Base::operator=(rhs);
   return *this;
 }
 
 template <typename... Types>
-LuaTupleReturn<Types...>& LuaTupleReturn<Types...>::operator=(LuaTupleReturn&& rhs) {
+auto LuaTupleReturn<Types...>::operator=(LuaTupleReturn&& rhs) -> LuaTupleReturn<Types...>& {
   Base::operator=(std::move(rhs));
   return *this;
 }
 
 template <typename... Types>
 template <typename... UTypes>
-LuaTupleReturn<Types...>& LuaTupleReturn<Types...>::operator=(LuaTupleReturn<UTypes...> const& rhs) {
-  Base::operator=((tuple<UTypes...> const&)rhs);
+auto LuaTupleReturn<Types...>::operator=(LuaTupleReturn<UTypes...> const& rhs) -> LuaTupleReturn<Types...>& {
+  Base::operator=((std::tuple<UTypes...> const&)rhs);
   return *this;
 }
 
 template <typename... Types>
 template <typename... UTypes>
-LuaTupleReturn<Types...>& LuaTupleReturn<Types...>::operator=(LuaTupleReturn<UTypes...>&& rhs) {
-  Base::operator=((tuple<UTypes...> && )std::move(rhs));
+auto LuaTupleReturn<Types...>::operator=(LuaTupleReturn<UTypes...>&& rhs) -> LuaTupleReturn<Types...>& {
+  Base::operator=((std::tuple<UTypes...>&&)std::move(rhs));
   return *this;
 }
 
 template <typename... Types>
-LuaTupleReturn<Types&...> luaTie(Types&... args) {
+auto luaTie(Types&... args) -> LuaTupleReturn<Types&...> {
   return LuaTupleReturn<Types&...>(args...);
 }
 
 template <typename... Types>
-LuaTupleReturn<typename std::decay<Types>::type...> luaTupleReturn(Types&&... args) {
-  return LuaTupleReturn<typename std::decay<Types>::type...>(std::forward<Types>(args)...);
+auto luaTupleReturn(Types&&... args) -> LuaTupleReturn<std::decay_t<Types>...> {
+  return LuaTupleReturn<std::decay_t<Types>...>(std::forward<Types>(args)...);
 }
 
 inline LuaReference::LuaReference(LuaDetail::LuaHandle handle) : m_handle(std::move(handle)) {}
 
-inline bool LuaReference::operator==(LuaReference const& rhs) const {
-  return tie(m_handle.engine, m_handle.handleIndex) == tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
+inline auto LuaReference::operator==(LuaReference const& rhs) const -> bool {
+  return std::tie(m_handle.engine, m_handle.handleIndex) == std::tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
 }
 
-inline bool LuaReference::operator!=(LuaReference const& rhs) const {
-  return tie(m_handle.engine, m_handle.handleIndex) != tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
+inline auto LuaReference::operator!=(LuaReference const& rhs) const -> bool {
+  return std::tie(m_handle.engine, m_handle.handleIndex) != std::tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
 }
 
-inline LuaEngine& LuaReference::engine() const {
+inline auto LuaReference::engine() const -> LuaEngine& {
   return *m_handle.engine;
 }
 
-inline int LuaReference::handleIndex() const {
+inline auto LuaReference::handleIndex() const -> int {
   return m_handle.handleIndex;
 }
 
-inline char const* LuaString::ptr() const {
+inline auto LuaString::ptr() const -> char const* {
   return engine().stringPtr(handleIndex());
 }
 
-inline size_t LuaString::length() const {
+inline auto LuaString::length() const -> size_t {
   return engine().stringLength(handleIndex());
 }
 
-inline String LuaString::toString() const {
+inline auto LuaString::toString() const -> String {
   return engine().string(handleIndex());
 }
 
-inline StringView LuaString::view() const {
+inline auto LuaString::view() const -> StringView {
   return engine().stringView(handleIndex());
 }
 
-inline bool operator==(LuaString const& s1, LuaString const& s2) {
+inline auto operator==(LuaString const& s1, LuaString const& s2) -> bool {
   return s1.view() == s2.view();
 }
 
-inline bool operator==(LuaString const& s1, char const* s2) {
+inline auto operator==(LuaString const& s1, char const* s2) -> bool {
   return s1.view() == s2;
 }
 
-inline bool operator==(LuaString const& s1, std::string const& s2) {
+inline auto operator==(LuaString const& s1, std::string const& s2) -> bool {
   return s1.view() == s2;
 }
 
-inline bool operator==(LuaString const& s1, String const& s2) {
+inline auto operator==(LuaString const& s1, String const& s2) -> bool {
   return s1.view() == s2;
 }
 
-inline bool operator==(char const* s1, LuaString const& s2) {
+inline auto operator==(char const* s1, LuaString const& s2) -> bool {
   return s2.view() == s1;
 }
 
-inline bool operator==(std::string const& s1, LuaString const& s2) {
+inline auto operator==(std::string const& s1, LuaString const& s2) -> bool {
   return s2.view() == s1;
 }
 
-inline bool operator==(String const& s1, LuaString const& s2) {
+inline auto operator==(String const& s1, LuaString const& s2) -> bool {
   return s2.view() == s1;
 }
 
-inline bool operator!=(LuaString const& s1, LuaString const& s2) {
+inline auto operator!=(LuaString const& s1, LuaString const& s2) -> bool {
   return !(s1 == s2);
 }
 
-inline bool operator!=(LuaString const& s1, char const* s2) {
+inline auto operator!=(LuaString const& s1, char const* s2) -> bool {
   return !(s1 == s2);
 }
 
-inline bool operator!=(LuaString const& s1, std::string const& s2) {
+inline auto operator!=(LuaString const& s1, std::string const& s2) -> bool {
   return !(s1 == s2);
 }
 
-inline bool operator!=(LuaString const& s1, String const& s2) {
+inline auto operator!=(LuaString const& s1, String const& s2) -> bool {
   return !(s1 == s2);
 }
 
-inline bool operator!=(char const* s1, LuaString const& s2) {
+inline auto operator!=(char const* s1, LuaString const& s2) -> bool {
   return !(s1 == s2);
 }
 
-inline bool operator!=(std::string const& s1, LuaString const& s2) {
+inline auto operator!=(std::string const& s1, LuaString const& s2) -> bool {
   return !(s1 == s2);
 }
 
-inline bool operator!=(String const& s1, LuaString const& s2) {
+inline auto operator!=(String const& s1, LuaString const& s2) -> bool {
   return !(s1 == s2);
 }
 
 template <typename T, typename K>
-T LuaTable::get(K key) const {
+auto LuaTable::get(K key) const -> T {
   return engine().luaTo<T>(engine().tableGet(false, handleIndex(), engine().luaFrom(std::move(key))));
 }
 
 template <typename T>
-T LuaTable::get(char const* key) const {
+auto LuaTable::get(char const* key) const -> T {
   return engine().luaTo<T>(engine().tableGet(false, handleIndex(), key));
 }
 
@@ -1726,7 +1729,7 @@ void LuaTable::set(char const* key, T value) const {
 }
 
 template <typename K>
-bool LuaTable::contains(K key) const {
+auto LuaTable::contains(K key) const -> bool {
   return engine().tableGet(false, handleIndex(), engine().luaFrom(std::move(key))) != LuaNil;
 }
 
@@ -1746,12 +1749,12 @@ void LuaTable::iterateWithSignature(Function&& func) const {
 }
 
 template <typename T, typename K>
-T LuaTable::rawGet(K key) const {
+auto LuaTable::rawGet(K key) const -> T {
   return engine().luaTo<T>(engine().tableGet(true, handleIndex(), engine().luaFrom(key)));
 }
 
 template <typename T>
-T LuaTable::rawGet(char const* key) const {
+auto LuaTable::rawGet(char const* key) const -> T {
   return engine().luaTo<T>(engine().tableGet(true, handleIndex(), key));
 }
 
@@ -1766,12 +1769,12 @@ void LuaTable::rawSet(char const* key, T value) const {
 }
 
 template <typename Ret, typename... Args>
-Ret LuaFunction::invoke(Args const&... args) const {
+auto LuaFunction::invoke(Args const&... args) const -> Ret {
   return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), engine().callFunction(handleIndex(), args...));
 }
 
 template <typename Ret, typename... Args>
-std::optional<Ret> LuaThread::resume(Args const&... args) {
+auto LuaThread::resume(Args const&... args) -> std::optional<Ret> {
   auto res = engine().resumeThread(handleIndex(), args...);
   if (res)
     return engine().luaTo<Ret>(std::move(*res));
@@ -1782,17 +1785,17 @@ inline void LuaThread::pushFunction(LuaFunction const& func) const {
   engine().threadPushFunction(handleIndex(), func.handleIndex());
 }
 
-inline LuaThread::Status LuaThread::status() const {
+inline auto LuaThread::status() const -> LuaThread::Status {
   return engine().threadStatus(handleIndex());
 }
 
 template <typename T>
-bool LuaUserData::is() const {
+auto LuaUserData::is() const -> bool {
   return engine().userDataIsType<T>(handleIndex());
 }
 
 template <typename T>
-T& LuaUserData::get() const {
+auto LuaUserData::get() const -> T& {
   return *engine().getUserData<T>(handleIndex());
 }
 
@@ -1819,17 +1822,17 @@ template <typename T>
 template <typename Return, typename... Args, typename Function>
 void LuaMethods<T>::registerMethodWithSignature(String name, Function&& func) {
   if (!m_methods.insert(name, LuaDetail::wrapMethodWithSignature<Return, Args...>(std::forward<Function>(std::move(func))))
-           .second)
+         .second)
     throw LuaException::format(std::string_view("Lua method '{}' was registered twice"), name);
 }
 
 template <typename T>
-StringMap<LuaDetail::LuaWrappedFunction> const& LuaMethods<T>::methods() const {
+auto LuaMethods<T>::methods() const -> StringMap<LuaDetail::LuaWrappedFunction> const& {
   return m_methods;
 }
 
 template <typename T>
-T LuaContext::getPath(String path) const {
+[[nodiscard]] auto LuaContext::getPath(String path) const -> T {
   return engine().luaTo<T>(engine().contextGetPath(handleIndex(), std::move(path)));
 }
 
@@ -1839,12 +1842,12 @@ void LuaContext::setPath(String key, T value) {
 }
 
 template <typename Ret>
-Ret LuaContext::eval(String const& lua) {
+auto LuaContext::eval(String const& lua) -> Ret {
   return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), engine().contextEval(handleIndex(), lua));
 }
 
 template <typename Ret, typename... Args>
-Ret LuaContext::invokePath(String const& key, Args const&... args) const {
+auto LuaContext::invokePath(String const& key, Args const&... args) const -> Ret {
   auto p = getPath(key);
   if (auto f = p.ptr<LuaFunction>())
     return f->invoke<Ret>(args...);
@@ -1852,72 +1855,72 @@ Ret LuaContext::invokePath(String const& key, Args const&... args) const {
 }
 
 template <typename T>
-LuaValue LuaContext::luaFrom(T&& t) {
+auto LuaContext::luaFrom(T&& t) -> LuaValue {
   return engine().luaFrom(std::forward<T>(t));
 }
 
 template <typename T>
-LuaValue LuaContext::luaFrom(T const& t) {
+auto LuaContext::luaFrom(T const& t) -> LuaValue {
   return engine().luaFrom(t);
 }
 
 template <typename T>
-std::optional<T> LuaContext::luaMaybeTo(LuaValue&& v) {
+auto LuaContext::luaMaybeTo(LuaValue&& v) -> std::optional<T> {
   return engine().luaFrom(std::move(v));
 }
 
 template <typename T>
-std::optional<T> LuaContext::luaMaybeTo(LuaValue const& v) {
+auto LuaContext::luaMaybeTo(LuaValue const& v) -> std::optional<T> {
   return engine().luaFrom(v);
 }
 
 template <typename T>
-T LuaContext::luaTo(LuaValue&& v) {
+auto LuaContext::luaTo(LuaValue&& v) -> T {
   return engine().luaTo<T>(std::move(v));
 }
 
 template <typename T>
-T LuaContext::luaTo(LuaValue const& v) {
+auto LuaContext::luaTo(LuaValue const& v) -> T {
   return engine().luaTo<T>(v);
 }
 
 template <typename Container>
-LuaTable LuaContext::createTable(Container const& map) {
+auto LuaContext::createTable(Container const& map) -> LuaTable {
   return engine().createTable(map);
 }
 
 template <typename Container>
-LuaTable LuaContext::createArrayTable(Container const& array) {
+auto LuaContext::createArrayTable(Container const& array) -> LuaTable {
   return engine().createArrayTable(array);
 }
 
 template <typename Function>
-LuaFunction LuaContext::createFunction(Function&& func) {
+auto LuaContext::createFunction(Function&& func) -> LuaFunction {
   return engine().createFunction(std::forward<Function>(func));
 }
 
 template <typename Return, typename... Args, typename Function>
-LuaFunction LuaContext::createFunctionWithSignature(Function&& func) {
+auto LuaContext::createFunctionWithSignature(Function&& func) -> LuaFunction {
   return engine().createFunctionWithSignature<Return, Args...>(std::forward<Function>(func));
 }
 
 template <typename T>
-LuaUserData LuaContext::createUserData(T t) {
+auto LuaContext::createUserData(T t) -> LuaUserData {
   return engine().createUserData(std::move(t));
 }
 
 template <typename T>
-LuaMethods<T> LuaUserDataMethods<T>::make() {
+auto LuaUserDataMethods<T>::make() -> LuaMethods<T> {
   return LuaMethods<T>();
 }
 
 template <typename T>
-LuaValue LuaUserDataConverter<T>::from(LuaEngine& engine, T t) {
+auto LuaUserDataConverter<T>::from(LuaEngine& engine, T t) -> LuaValue {
   return engine.createUserData(std::move(t));
 }
 
 template <typename T>
-std::optional<T> LuaUserDataConverter<T>::to([[maybe_unused]]LuaEngine& engine, LuaValue const& v) {
+auto LuaUserDataConverter<T>::to([[maybe_unused]] LuaEngine& engine, LuaValue const& v) -> std::optional<T> {
   if (auto ud = v.ptr<LuaUserData>()) {
     if (ud->is<T>())
       return ud->get<T>();
@@ -1926,41 +1929,41 @@ std::optional<T> LuaUserDataConverter<T>::to([[maybe_unused]]LuaEngine& engine, 
 }
 
 template <typename T>
-LuaValue LuaEngine::luaFrom(T&& t) {
-  return LuaConverter<typename std::decay<T>::type>::from(*this, std::forward<T>(t));
+auto LuaEngine::luaFrom(T&& t) -> LuaValue {
+  return LuaConverter<std::decay_t<T>>::from(*this, std::forward<T>(t));
 }
 
 template <typename T>
-LuaValue LuaEngine::luaFrom(T const& t) {
+auto LuaEngine::luaFrom(T const& t) -> LuaValue {
   return LuaConverter<T>::from(*this, t);
 }
 
 template <typename T>
-std::optional<T> LuaEngine::luaMaybeTo(LuaValue&& v) {
+auto LuaEngine::luaMaybeTo(LuaValue&& v) -> std::optional<T> {
   return LuaConverter<T>::to(*this, std::move(v));
 }
 
 template <typename T>
-std::optional<T> LuaEngine::luaMaybeTo(LuaValue const& v) {
+auto LuaEngine::luaMaybeTo(LuaValue const& v) -> std::optional<T> {
   return LuaConverter<T>::to(*this, v);
 }
 
 template <typename T>
-T LuaEngine::luaTo(LuaValue&& v) {
+auto LuaEngine::luaTo(LuaValue&& v) -> T {
   if (auto res = luaMaybeTo<T>(std::move(v)))
     return std::move(*res);
   throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
 }
 
 template <typename T>
-T LuaEngine::luaTo(LuaValue const& v) {
+auto LuaEngine::luaTo(LuaValue const& v) -> T {
   if (auto res = luaMaybeTo<T>(v))
     return std::move(*res);
   throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
 }
 
 template <typename Container>
-LuaTable LuaEngine::createTable(Container const& map) {
+auto LuaEngine::createTable(Container const& map) -> LuaTable {
   auto table = createTable(0, map.size());
   for (auto const& p : map)
     table.set(p.first, p.second);
@@ -1968,7 +1971,7 @@ LuaTable LuaEngine::createTable(Container const& map) {
 }
 
 template <typename Container>
-LuaTable LuaEngine::createArrayTable(Container const& array) {
+auto LuaEngine::createArrayTable(Container const& array) -> LuaTable {
   auto table = createTable(array.size(), 0);
   int i = 1;
   for (auto const& elem : array) {
@@ -1979,17 +1982,17 @@ LuaTable LuaEngine::createArrayTable(Container const& array) {
 }
 
 template <typename Function>
-LuaFunction LuaEngine::createFunction(Function&& func) {
+auto LuaEngine::createFunction(Function&& func) -> LuaFunction {
   return createWrappedFunction(LuaDetail::wrapFunction(std::forward<Function>(func)));
 }
 
 template <typename Return, typename... Args, typename Function>
-LuaFunction LuaEngine::createFunctionWithSignature(Function&& func) {
+auto LuaEngine::createFunctionWithSignature(Function&& func) -> LuaFunction {
   return createWrappedFunction(LuaDetail::wrapFunctionWithSignature<Return, Args...>(std::forward<Function>(func)));
 }
 
 template <typename... Args>
-LuaDetail::LuaFunctionReturn LuaEngine::callFunction(int handleIndex, Args const&... args) {
+auto LuaEngine::callFunction(int handleIndex, Args const&... args) -> LuaDetail::LuaFunctionReturn {
   lua_checkstack(m_state, 1);
 
   int stackSize = lua_gettop(m_state);
@@ -2004,7 +2007,7 @@ LuaDetail::LuaFunctionReturn LuaEngine::callFunction(int handleIndex, Args const
 
   int returnValues = lua_gettop(m_state) - stackSize;
   if (returnValues == 0) {
-    return LuaDetail::LuaFunctionReturn();
+    return {};
   } else if (returnValues == 1) {
     return popLuaValue(m_state);
   } else {
@@ -2016,7 +2019,7 @@ LuaDetail::LuaFunctionReturn LuaEngine::callFunction(int handleIndex, Args const
 }
 
 template <typename... Args>
-std::optional<LuaDetail::LuaFunctionReturn> LuaEngine::resumeThread(int handleIndex, Args const&... args) {
+auto LuaEngine::resumeThread(int handleIndex, Args const&... args) -> std::optional<LuaDetail::LuaFunctionReturn> {
   lua_checkstack(m_state, 1);
 
   pushHandle(m_state, handleIndex);
@@ -2062,10 +2065,10 @@ void LuaEngine::registerUserDataType() {
   lua_pushvalue(m_state, -1);
   LuaDetail::rawSetField(m_state, -2, "__index");
   lua_pushboolean(m_state, 0);
-  LuaDetail::rawSetField(m_state, -2, "__metatable"); // protect metatable
+  LuaDetail::rawSetField(m_state, -2, "__metatable");// protect metatable
 
   // Set the __gc function to the userdata destructor
-  auto gcFunction = [](lua_State* state) {
+  auto gcFunction = [](lua_State* state) -> auto {
     T& t = *(T*)(lua_touserdata(state, 1));
     t.~T();
     return 0;
@@ -2083,7 +2086,7 @@ void LuaEngine::registerUserDataType() {
 }
 
 template <typename T>
-LuaUserData LuaEngine::createUserData(T t) {
+auto LuaEngine::createUserData(T t) -> LuaUserData {
   registerUserDataType<T>();
 
   int typeMetatable = m_registeredUserDataTypes.get(typeid(T));
@@ -2095,11 +2098,11 @@ LuaUserData LuaEngine::createUserData(T t) {
   lua_rawgeti(m_state, LUA_REGISTRYINDEX, typeMetatable);
   lua_setmetatable(m_state, -2);
 
-  return LuaUserData(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state)));
+  return {LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(m_state))};
 }
 
 template <typename T, typename K>
-T LuaEngine::getGlobal(K key) {
+auto LuaEngine::getGlobal(K key) -> T {
   lua_checkstack(m_state, 1);
   lua_rawgeti(m_state, LUA_REGISTRYINDEX, m_scriptDefaultEnvRegistryId);
   pushLuaValue(m_state, luaFrom(std::move(key)));
@@ -2112,7 +2115,7 @@ T LuaEngine::getGlobal(K key) {
 }
 
 template <typename T>
-T LuaEngine::getGlobal(char const* key) {
+auto LuaEngine::getGlobal(char const* key) -> T {
   lua_checkstack(m_state, 1);
   lua_rawgeti(m_state, LUA_REGISTRYINDEX, m_scriptDefaultEnvRegistryId);
   lua_getfield(m_state, -1, key);
@@ -2147,7 +2150,7 @@ void LuaEngine::setGlobal(char const* key, T value) {
 }
 
 template <typename T>
-bool LuaEngine::userDataIsType(int handleIndex) {
+auto LuaEngine::userDataIsType(int handleIndex) -> bool {
   int typeRef = m_registeredUserDataTypes.value(typeid(T), LUA_NOREF);
   if (typeRef == LUA_NOREF)
     return false;
@@ -2168,7 +2171,7 @@ bool LuaEngine::userDataIsType(int handleIndex) {
 }
 
 template <typename T>
-T* LuaEngine::getUserData(int handleIndex) {
+auto LuaEngine::getUserData(int handleIndex) -> T* {
   int typeRef = m_registeredUserDataTypes.value(typeid(T), LUA_NOREF);
   if (typeRef == LUA_NOREF)
     throw LuaException::format(std::string_view("Cannot convert userdata type of {}, not registered"), typeid(T).name());
@@ -2202,13 +2205,13 @@ inline void LuaEngine::destroyHandle(int handleIndex) {
 }
 
 template <typename T>
-size_t LuaEngine::pushArgument(lua_State* state, T const& arg) {
+auto LuaEngine::pushArgument(lua_State* state, T const& arg) -> std::size_t {
   pushLuaValue(state, luaFrom(arg));
   return 1;
 }
 
 template <typename T>
-size_t LuaEngine::pushArgument(lua_State* state, LuaVariadic<T> const& args) {
+auto LuaEngine::pushArgument(lua_State* state, LuaVariadic<T> const& args) -> std::size_t {
   // If the argument list was empty then we've checked one extra space on the
   // stack, oh well.
   if (args.empty())
@@ -2224,22 +2227,23 @@ size_t LuaEngine::pushArgument(lua_State* state, LuaVariadic<T> const& args) {
   return args.size();
 }
 
-inline size_t LuaEngine::doPushArguments(lua_State*) {
+inline auto LuaEngine::doPushArguments(lua_State*) -> size_t {
   return 0;
 }
 
 template <typename First, typename... Rest>
-size_t LuaEngine::doPushArguments(lua_State* state, First const& first, Rest const&... rest) {
-  size_t s = pushArgument(state, first);
+auto LuaEngine::doPushArguments(lua_State* state, First const& first, Rest const&... rest) -> std::size_t {
+  std::size_t s = pushArgument(state, first);
   return s + doPushArguments(state, rest...);
 }
 
 template <typename... Args>
-size_t LuaEngine::pushArguments(lua_State* state, Args const&... args) {
+auto LuaEngine::pushArguments(lua_State* state, Args const&... args) -> std::size_t {
   lua_checkstack(state, sizeof...(args));
   return doPushArguments(state, args...);
 }
 
-}
+}// namespace Star
 
-template <> struct std::formatter<Star::LuaValue> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::LuaValue> : Star::ostream_formatter {};

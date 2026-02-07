@@ -190,158 +190,158 @@ auto RandomSource::gen32() -> std::uint32_t {
 }
 
 namespace Random {
-  static std::optional<RandomSource> g_randSource;
-  static Mutex g_randMutex;
+static std::optional<RandomSource> g_randSource;
+static Mutex g_randMutex;
 
-  static auto produceRandomSeed() -> std::uint64_t {
-    std::int64_t seed = Time::monotonicTicks();
-    seed *= 1099511628211;
-    seed ^= (((std::int64_t)std::rand()) << 32) | ((std::int64_t)std::rand());
-    return seed;
-  }
+static auto produceRandomSeed() -> std::uint64_t {
+  std::int64_t seed = Time::monotonicTicks();
+  seed *= 1099511628211;
+  seed ^= (((std::int64_t)std::rand()) << 32) | ((std::int64_t)std::rand());
+  return seed;
+}
 
-  void doInit(std::uint64_t seed) {
-    g_randSource = RandomSource(seed);
-    // Also set the C stdlib random seed
-    std::srand(seed);
-  }
+void doInit(std::uint64_t seed) {
+  g_randSource = RandomSource(seed);
+  // Also set the C stdlib random seed
+  std::srand(seed);
+}
 
-  void checkInit() {
-    // Mutex must already be held
-    if (!g_randSource) {
-      doInit(produceRandomSeed());
-    }
-  }
-
-  void init() {
-    MutexLocker locker(g_randMutex);
+void checkInit() {
+  // Mutex must already be held
+  if (!g_randSource) {
     doInit(produceRandomSeed());
   }
-
-  void init(std::uint64_t seed) {
-    MutexLocker locker(g_randMutex);
-    doInit(seed);
-  }
-
-  void addEntropy() {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    g_randSource->addEntropy(produceRandomSeed());
-  }
-
-  void addEntropy(std::uint64_t seed) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    g_randSource->addEntropy(seed);
-  }
-
-  auto randu32() -> std::uint32_t {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randu32();
-  }
-
-  auto randu64() -> std::uint64_t {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randu64();
-  }
-
-  auto randi32() -> std::int32_t {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randi32();
-  }
-
-  auto randi64() -> std::int64_t {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randi64();
-  }
-
-  auto randf() -> float {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randf();
-  }
-
-  auto randd() -> double {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randd();
-  }
-
-  auto randf(float min, float max) -> float {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randf(min, max);
-  }
-
-  auto randd(double min, double max) -> double {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randd(min, max);
-  }
-
-  auto randb() -> bool {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randb();
-  }
-
-  auto randInt(long long max) -> long long {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randInt(max);
-  }
-
-  auto randUInt(unsigned long long max) -> unsigned long long {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randUInt(max);
-  }
-
-  auto randInt(long long min, long long max) -> long long {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randInt(min, max);
-  }
-
-  auto randUInt(unsigned long long min, unsigned long long max) -> unsigned long long {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randUInt(min, max);
-  }
-
-  auto nrandf(float stddev, float mean) -> float {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->nrandf(stddev, mean);
-  }
-
-  auto nrandd(double stddev, double mean) -> double {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->nrandd(stddev, mean);
-  }
-
-  auto stochasticRound(double val) -> std::int64_t {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->stochasticRound(val);
-  }
-
-  void randBytes(char* buf, size_t len) {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    g_randSource->randBytes(buf, len);
-  }
-
-  auto randBytes(size_t len) -> ByteArray {
-    MutexLocker locker(g_randMutex);
-    checkInit();
-    return g_randSource->randBytes(len);
-  }
 }
 
+void init() {
+  MutexLocker locker(g_randMutex);
+  doInit(produceRandomSeed());
 }
+
+void init(std::uint64_t seed) {
+  MutexLocker locker(g_randMutex);
+  doInit(seed);
+}
+
+void addEntropy() {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  g_randSource->addEntropy(produceRandomSeed());
+}
+
+void addEntropy(std::uint64_t seed) {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  g_randSource->addEntropy(seed);
+}
+
+auto randu32() -> std::uint32_t {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randu32();
+}
+
+auto randu64() -> std::uint64_t {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randu64();
+}
+
+auto randi32() -> std::int32_t {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randi32();
+}
+
+auto randi64() -> std::int64_t {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randi64();
+}
+
+auto randf() -> float {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randf();
+}
+
+auto randd() -> double {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randd();
+}
+
+auto randf(float min, float max) -> float {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randf(min, max);
+}
+
+auto randd(double min, double max) -> double {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randd(min, max);
+}
+
+auto randb() -> bool {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randb();
+}
+
+auto randInt(long long max) -> long long {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randInt(max);
+}
+
+auto randUInt(unsigned long long max) -> unsigned long long {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randUInt(max);
+}
+
+auto randInt(long long min, long long max) -> long long {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randInt(min, max);
+}
+
+auto randUInt(unsigned long long min, unsigned long long max) -> unsigned long long {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randUInt(min, max);
+}
+
+auto nrandf(float stddev, float mean) -> float {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->nrandf(stddev, mean);
+}
+
+auto nrandd(double stddev, double mean) -> double {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->nrandd(stddev, mean);
+}
+
+auto stochasticRound(double val) -> std::int64_t {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->stochasticRound(val);
+}
+
+void randBytes(char* buf, size_t len) {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  g_randSource->randBytes(buf, len);
+}
+
+auto randBytes(size_t len) -> ByteArray {
+  MutexLocker locker(g_randMutex);
+  checkInit();
+  return g_randSource->randBytes(len);
+}
+}// namespace Random
+
+}// namespace Star

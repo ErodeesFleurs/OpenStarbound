@@ -1,56 +1,57 @@
 #include "StarDamageManager.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarIterator.hpp"
-#include "StarEntityMap.hpp"
-#include "StarLogging.hpp"
 #include "StarColor.hpp"
+#include "StarConfig.hpp"
+#include "StarIterator.hpp"
+#include "StarLogging.hpp"
 #include "StarWorld.hpp"
+
+import std;
 
 namespace Star {
 
-ConnectionId RemoteHitRequest::destinationConnection() const {
+auto RemoteHitRequest::destinationConnection() const -> ConnectionId {
   return connectionForEntity(causingEntityId);
 }
 
-DataStream& operator<<(DataStream& ds, RemoteHitRequest const& hitRequest) {
+auto operator<<(DataStream& ds, RemoteHitRequest const& hitRequest) -> DataStream& {
   ds << hitRequest.causingEntityId;
   ds << hitRequest.targetEntityId;
   ds << hitRequest.damageRequest;
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, RemoteHitRequest& hitRequest) {
+auto operator>>(DataStream& ds, RemoteHitRequest& hitRequest) -> DataStream& {
   ds >> hitRequest.causingEntityId;
   ds >> hitRequest.targetEntityId;
   ds >> hitRequest.damageRequest;
   return ds;
 }
 
-ConnectionId RemoteDamageRequest::destinationConnection() const {
+auto RemoteDamageRequest::destinationConnection() const -> ConnectionId {
   return connectionForEntity(targetEntityId);
 }
 
-DataStream& operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest) {
+auto operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest) -> DataStream& {
   ds << damageRequest.causingEntityId;
   ds << damageRequest.targetEntityId;
   ds << damageRequest.damageRequest;
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, RemoteDamageRequest& damageRequest) {
+auto operator>>(DataStream& ds, RemoteDamageRequest& damageRequest) -> DataStream& {
   ds >> damageRequest.causingEntityId;
   ds >> damageRequest.targetEntityId;
   ds >> damageRequest.damageRequest;
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, RemoteDamageNotification const& damageNotification) {
+auto operator<<(DataStream& ds, RemoteDamageNotification const& damageNotification) -> DataStream& {
   ds << damageNotification.sourceEntityId;
   ds << damageNotification.damageNotification;
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, RemoteDamageNotification& damageNotification) {
+auto operator>>(DataStream& ds, RemoteDamageNotification& damageNotification) -> DataStream& {
   ds >> damageNotification.sourceEntityId;
   ds >> damageNotification.damageNotification;
   return ds;
@@ -76,7 +77,7 @@ void DamageManager::update(float dt) {
       damageIt.remove();
   }
 
-  m_world->forAllEntities([&](EntityPtr const& causingEntity) {
+  m_world->forAllEntities([&](Ptr<Entity> const& causingEntity) -> void {
     for (auto& damageSource : causingEntity->damageSources()) {
       if (damageSource.trackSourceEntity)
         damageSource.translate(causingEntity->position());
@@ -105,25 +106,25 @@ void DamageManager::update(float dt) {
           }
         }
         if (allowDamage) {
-          float timeout = damageSource.damageRepeatTimeout.value(DefaultDamageTimeout);
+          float timeout = damageSource.damageRepeatTimeout.value_or(DefaultDamageTimeout);
           if (damageSource.damageRepeatGroup)
             eventList.append({*damageSource.damageRepeatGroup, timeout});
           else
             eventList.append({causingEntity->entityId(), timeout});
 
           auto damageRequest = DamageRequest(hitResultPair.second, damageSource.damageType, damageSource.damage,
-              damageSource.knockbackMomentum(m_world->geometry(), targetEntity->position()),
-              damageSource.sourceEntityId, damageSource.damageSourceKind, damageSource.statusEffects);
-          addHitRequest({causingEntity->entityId(), targetEntity->entityId(), damageRequest});
+                                             damageSource.knockbackMomentum(m_world->geometry(), targetEntity->position()),
+                                             damageSource.sourceEntityId, damageSource.damageSourceKind, damageSource.statusEffects);
+          addHitRequest({.causingEntityId = causingEntity->entityId(), .targetEntityId = targetEntity->entityId(), .damageRequest = damageRequest});
 
           if (damageSource.damageType != NoDamage)
-            addDamageRequest({causingEntity->entityId(), targetEntity->entityId(), std::move(damageRequest)});
+            addDamageRequest({.causingEntityId = causingEntity->entityId(), .targetEntityId = targetEntity->entityId(), .damageRequest = std::move(damageRequest)});
         }
       }
     }
 
     for (auto const& damageNotification : causingEntity->selfDamageNotifications())
-      addDamageNotification({causingEntity->entityId(), damageNotification});
+      addDamageNotification({.sourceEntityId = causingEntity->entityId(), .damageNotification = damageNotification});
   });
 }
 
@@ -142,7 +143,7 @@ void DamageManager::pushRemoteDamageRequest(RemoteDamageRequest const& remoteDam
 
   if (auto targetEntity = m_world->entity(remoteDamageRequest.targetEntityId)) {
     for (auto& damageNotification : targetEntity->applyDamage(remoteDamageRequest.damageRequest))
-      addDamageNotification({remoteDamageRequest.damageRequest.sourceEntityId, std::move(damageNotification)});
+      addDamageNotification({.sourceEntityId = remoteDamageRequest.damageRequest.sourceEntityId, .damageNotification = std::move(damageNotification)});
   }
 }
 
@@ -156,25 +157,25 @@ void DamageManager::pushRemoteDamageNotification(RemoteDamageNotification remote
   m_pendingNotifications.append(std::move(remoteDamageNotification.damageNotification));
 }
 
-List<RemoteHitRequest> DamageManager::pullRemoteHitRequests() {
+auto DamageManager::pullRemoteHitRequests() -> List<RemoteHitRequest> {
   return take(m_pendingRemoteHitRequests);
 }
 
-List<RemoteDamageRequest> DamageManager::pullRemoteDamageRequests() {
+auto DamageManager::pullRemoteDamageRequests() -> List<RemoteDamageRequest> {
   return take(m_pendingRemoteDamageRequests);
 }
 
-List<RemoteDamageNotification> DamageManager::pullRemoteDamageNotifications() {
+auto DamageManager::pullRemoteDamageNotifications() -> List<RemoteDamageNotification> {
   return take(m_pendingRemoteNotifications);
 }
 
-List<DamageNotification> DamageManager::pullPendingNotifications() {
+auto DamageManager::pullPendingNotifications() -> List<DamageNotification> {
   return take(m_pendingNotifications);
 }
 
-SmallList<pair<EntityId, HitType>, 4> DamageManager::queryHit(DamageSource const& source, EntityId causingId) const {
-  SmallList<pair<EntityId, HitType>, 4> resultList;
-  auto doQueryHit = [&source, &resultList, causingId, this](EntityPtr const& targetEntity) {
+auto DamageManager::queryHit(DamageSource const& source, EntityId causingId) const -> SmallList<std::pair<EntityId, HitType>, 4> {
+  SmallList<std::pair<EntityId, HitType>, 4> resultList;
+  auto doQueryHit = [&source, &resultList, causingId, this](Ptr<Entity> const& targetEntity) -> void {
     if (targetEntity->entityId() == causingId)
       return;
 
@@ -212,7 +213,7 @@ SmallList<pair<EntityId, HitType>, 4> DamageManager::queryHit(DamageSource const
   return resultList;
 }
 
-bool DamageManager::isAuthoritative(EntityPtr const& causingEntity, EntityPtr const& targetEntity) {
+auto DamageManager::isAuthoritative(Ptr<Entity> const& causingEntity, Ptr<Entity> const& targetEntity) -> bool {
   // Damage manager is authoritative if either one of the entities is
   // masterOnly, OR the manager is server-side and both entities are
   // server-side master entities, OR the damage manager is server-side and both
@@ -259,4 +260,4 @@ void DamageManager::addDamageNotification(RemoteDamageNotification remoteDamageN
   m_pendingRemoteNotifications.append(std::move(remoteDamageNotification));
 }
 
-}
+}// namespace Star

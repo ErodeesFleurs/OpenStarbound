@@ -28,9 +28,9 @@ struct JsonStream {
 };
 
 enum class JsonParseType : std::uint8_t {
-  Top, // Top-level Object or Array
-  Value, // Any singular Json value
-  Sequence // Like an array, but without needing the [] or commas.
+  Top,    // Top-level Object or Array
+  Value,  // Any singular Json value
+  Sequence// Like an array, but without needing the [] or commas.
 };
 
 // Will parse JSON and output to a given JsonStream.  Parses an *extension* to
@@ -39,7 +39,7 @@ template <typename InputIterator>
 class JsonParser {
 public:
   JsonParser(JsonStream& stream)
-    : m_stream(stream) {}
+      : m_stream(stream) {}
   virtual ~JsonParser() = default;
 
   // Does not throw.  On error, returned iterator will not be equal to end, and
@@ -84,38 +84,38 @@ private:
 
   void top() {
     switch (m_char) {
-      case '{':
-        object();
-        break;
-      case '[':
-        array();
-        break;
-      default:
-        error("expected JSON object or array at top level");
-        return;
+    case '{':
+      object();
+      break;
+    case '[':
+      array();
+      break;
+    default:
+      error("expected JSON object or array at top level");
+      return;
     }
   }
 
   void value() {
     switch (m_char) {
-      case '{':
-        object();
-        break;
-      case '[':
-        array();
-        break;
-      case '"':
-        string();
-        break;
-      case '-':
-        number();
-        break;
-      case 0:
-        error("unexpected end of stream parsing value");
-        return;
-      default:
-        m_char >= '0' && m_char <= '9' ? number() : word();
-        break;
+    case '{':
+      object();
+      break;
+    case '[':
+      array();
+      break;
+    case '"':
+      string();
+      break;
+    case '-':
+      number();
+      break;
+    case 0:
+      error("unexpected end of stream parsing value");
+      return;
+    default:
+      m_char >= '0' && m_char <= '9' ? number() : word();
+      break;
     }
   }
 
@@ -217,8 +217,7 @@ private:
         if (m_char >= '0' && m_char <= '9') {
           try {
             number(true);
-          }
-          catch (ParsingException const&) {
+          } catch (ParsingException const&) {
             m_current = begin;
             m_char = b_char;
           }
@@ -231,8 +230,7 @@ private:
         if (m_char == 't' || m_char == 'f' || m_char == 'n') {
           try {
             word(true);
-          }
-          catch (ParsingException const&) {
+          } catch (ParsingException const&) {
             m_current = begin;
             m_char = b_char;
           }
@@ -327,37 +325,37 @@ private:
   // true, false, or null
   void word(bool seq = false) {
     switch (m_char) {
-      case 't':
-        next();
-        check('r');
-        check('u');
-        check('e');
-        if (seq && m_char != 0 && !isSpace(m_char))
-          error("unexpected character after word");
-        m_stream.putBoolean(true);
-        break;
-      case 'f':
-        next();
-        check('a');
-        check('l');
-        check('s');
-        check('e');
-        if (seq && m_char != 0 && !isSpace(m_char))
-          error("unexpected character after word");
-        m_stream.putBoolean(false);
-        break;
-      case 'n':
-        next();
-        check('u');
-        check('l');
-        check('l');
-        if (seq && m_char != 0 && !isSpace(m_char))
-          error("unexpected character after word");
-        m_stream.putNull();
-        break;
-      default:
-        error("unexpected character parsing word");
-        return;
+    case 't':
+      next();
+      check('r');
+      check('u');
+      check('e');
+      if (seq && m_char != 0 && !isSpace(m_char))
+        error("unexpected character after word");
+      m_stream.putBoolean(true);
+      break;
+    case 'f':
+      next();
+      check('a');
+      check('l');
+      check('s');
+      check('e');
+      if (seq && m_char != 0 && !isSpace(m_char))
+        error("unexpected character after word");
+      m_stream.putBoolean(false);
+      break;
+    case 'n':
+      next();
+      check('u');
+      check('l');
+      check('l');
+      if (seq && m_char != 0 && !isSpace(m_char))
+        error("unexpected character after word");
+      m_stream.putNull();
+      break;
+    default:
+      error("unexpected character parsing word");
+      return;
     }
   }
 
@@ -392,33 +390,33 @@ private:
           str += codepoint;
         } else {
           switch (m_char) {
-            case '"':
-              str += '"';
-              break;
-            case '\\':
-              str += '\\';
-              break;
-            case '/':
-              str += '/';
-              break;
-            case 'b':
-              str += '\b';
-              break;
-            case 'f':
-              str += '\f';
-              break;
-            case 'n':
-              str += '\n';
-              break;
-            case 'r':
-              str += '\r';
-              break;
-            case 't':
-              str += '\t';
-              break;
-            default:
-              error("bad string escape character");
-              break;
+          case '"':
+            str += '"';
+            break;
+          case '\\':
+            str += '\\';
+            break;
+          case '/':
+            str += '/';
+            break;
+          case 'b':
+            str += '\b';
+            break;
+          case 'f':
+            str += '\f';
+            break;
+          case 'n':
+            str += '\n';
+            break;
+          case 'r':
+            str += '\r';
+            break;
+          case 't':
+            str += '\t';
+            break;
+          default:
+            error("bad string escape character");
+            break;
           }
           next();
         }
@@ -540,11 +538,11 @@ private:
 
   auto isSpace(char32_t c) -> bool {
     // Only whitespace allowed by JSON
-    return c == 0x20 || // space
-           c == 0x09 || // horizontal tab
-           c == 0x0a || // newline
-           c == 0x0d || // carriage return
-           c == 0xfeff; // BOM or ZWNBSP
+    return c == 0x20 ||// space
+      c == 0x09 ||     // horizontal tab
+      c == 0x0a ||     // newline
+      c == 0x0d ||     // carriage return
+      c == 0xfeff;     // BOM or ZWNBSP
   }
 
   char32_t m_char;
@@ -561,7 +559,7 @@ template <typename OutputIterator>
 class JsonWriter : public JsonStream {
 public:
   JsonWriter(OutputIterator out, unsigned pretty = 0)
-    : m_out(out), m_pretty(pretty) {}
+      : m_out(out), m_pretty(pretty) {}
 
   void beginObject() override {
     startValue();
@@ -623,57 +621,57 @@ public:
     while (len > 0) {
       if (!isPrintable(c)) {
         switch (c) {
-          case '"':
+        case '"':
+          write('\\');
+          write('"');
+          break;
+        case '\\':
+          write('\\');
+          write('\\');
+          break;
+        case '\b':
+          write('\\');
+          write('b');
+          break;
+        case '\f':
+          write('\\');
+          write('f');
+          break;
+        case '\n':
+          write('\\');
+          write('n');
+          break;
+        case '\r':
+          write('\\');
+          write('r');
+          break;
+        case '\t':
+          write('\\');
+          write('t');
+          break;
+        default:
+          auto hex = hexStringFromUtf32(c);
+          if (hex.size() == 4) {
             write('\\');
-            write('"');
-            break;
-          case '\\':
-            write('\\');
-            write('\\');
-            break;
-          case '\b':
-            write('\\');
-            write('b');
-            break;
-          case '\f':
-            write('\\');
-            write('f');
-            break;
-          case '\n':
-            write('\\');
-            write('n');
-            break;
-          case '\r':
-            write('\\');
-            write('r');
-            break;
-          case '\t':
-            write('\\');
-            write('t');
-            break;
-          default:
-            auto hex = hexStringFromUtf32(c);
-            if (hex.size() == 4) {
-              write('\\');
-              write('u');
-              for (auto c : hex) {
-                write(c);
-              }
-            } else if (hex.size() == 8) {
-              write('\\');
-              write('u');
-              for (auto c : hex.substr(0, 4)) {
-                write(c);
-              }
-              write('\\');
-              write('u');
-              for (auto c : hex.substr(4)) {
-                write(c);
-              }
-            } else {
-              throw UnicodeException("Internal Error: Received invalid unicode hex from hexStringFromUtf32.");
+            write('u');
+            for (auto c : hex) {
+              write(c);
             }
-            break;
+          } else if (hex.size() == 8) {
+            write('\\');
+            write('u');
+            for (auto c : hex.substr(0, 4)) {
+              write(c);
+            }
+            write('\\');
+            write('u');
+            for (auto c : hex.substr(4)) {
+              write(c);
+            }
+          } else {
+            throw UnicodeException("Internal Error: Received invalid unicode hex from hexStringFromUtf32.");
+          }
+          break;
         }
       } else {
         write(c);
@@ -803,4 +801,4 @@ private:
   std::vector<State> m_state;
 };
 
-}
+}// namespace Star

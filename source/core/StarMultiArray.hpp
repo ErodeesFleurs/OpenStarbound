@@ -1,11 +1,14 @@
 #pragma once
 
 #include "StarArray.hpp"
+#include "StarException.hpp"
 #include "StarList.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(MultiArrayException, StarException);
+using MultiArrayException = ExceptionDerived<"MultiArrayException">;
 
 // Multidimensional array class that wraps a vector as a simple contiguous N
 // dimensional array.  Values are stored so that the highest dimension is the
@@ -16,17 +19,17 @@ STAR_EXCEPTION(MultiArrayException, StarException);
 template <typename ElementT, size_t RankN>
 class MultiArray {
 public:
-  typedef List<ElementT> Storage;
+  using Storage = List<ElementT>;
 
-  typedef ElementT Element;
+  using Element = ElementT;
   static size_t const Rank = RankN;
 
-  typedef Array<size_t, Rank> IndexArray;
-  typedef Array<size_t, Rank> SizeArray;
+  using IndexArray = Array<size_t, Rank>;
+  using SizeArray = Array<size_t, Rank>;
 
-  typedef typename Storage::iterator iterator;
-  typedef typename Storage::const_iterator const_iterator;
-  typedef Element value_type;
+  using iterator = typename Storage::iterator;
+  using const_iterator = typename Storage::const_iterator;
+  using value_type = Element;
 
   MultiArray();
   template <typename... T>
@@ -34,8 +37,8 @@ public:
   explicit MultiArray(SizeArray const& shape);
   explicit MultiArray(SizeArray const& shape, Element const& c);
 
-  SizeArray const& size() const;
-  size_t size(size_t dimension) const;
+  auto size() const -> SizeArray const&;
+  [[nodiscard]] auto size(size_t dimension) const -> size_t;
 
   void clear();
 
@@ -55,28 +58,28 @@ public:
   template <typename... T>
   void setSize(size_t i, T... rest);
 
-  Element& operator()(IndexArray const& index);
-  Element const& operator()(IndexArray const& index) const;
+  auto operator()(IndexArray const& index) -> Element&;
+  auto operator()(IndexArray const& index) const -> Element const&;
 
   template <typename... T>
-  Element& operator()(size_t i1, T... rest);
+  auto operator()(size_t i1, T... rest) -> Element&;
   template <typename... T>
-  Element const& operator()(size_t i1, T... rest) const;
+  auto operator()(size_t i1, T... rest) const -> Element const&;
 
   // Throws exception if out of bounds
-  Element& at(IndexArray const& index);
-  Element const& at(IndexArray const& index) const;
+  auto at(IndexArray const& index) -> Element&;
+  auto at(IndexArray const& index) const -> Element const&;
 
   template <typename... T>
-  Element& at(size_t i1, T... rest);
+  auto at(size_t i1, T... rest) -> Element&;
   template <typename... T>
-  Element const& at(size_t i1, T... rest) const;
+  auto at(size_t i1, T... rest) const -> Element const&;
 
   // Throws an exception of out of bounds
   void set(IndexArray const& index, Element element);
 
   // Returns default element if out of bounds.
-  Element get(IndexArray const& index, Element def = Element());
+  auto get(IndexArray const& index, Element def = Element()) -> Element;
 
   // Auto-resizes array if out of bounds
   void setResize(IndexArray const& index, Element element);
@@ -104,16 +107,16 @@ public:
 
   // Api for more direct access to elements.
 
-  size_t count() const;
+  [[nodiscard]] auto count() const -> size_t;
 
-  Element const& atIndex(size_t index) const;
-  Element& atIndex(size_t index);
+  auto atIndex(size_t index) const -> Element const&;
+  auto atIndex(size_t index) -> Element&;
 
-  Element const* data() const;
-  Element* data();
+  auto data() const -> Element const*;
+  auto data() -> Element*;
 
 private:
-  size_t storageIndex(IndexArray const& index) const;
+  auto storageIndex(IndexArray const& index) const -> size_t;
 
   template <typename OStream>
   void subPrint(OStream& os, IndexArray index, size_t dim) const;
@@ -125,32 +128,32 @@ private:
   void subForEach(IndexArray const& min, SizeArray const& size, OpType&& op, IndexArray& index, size_t offset, size_t dim);
 
   void subCopy(MultiArray const& source, IndexArray const& sourceMin, IndexArray const& sourceMax,
-      IndexArray const& targetMin, IndexArray& sourceIndex, IndexArray& targetIndex, size_t dim);
+               IndexArray const& targetMin, IndexArray& sourceIndex, IndexArray& targetIndex, size_t dim);
 
   Storage m_data;
   SizeArray m_shape;
 };
 
-typedef MultiArray<int, 2> MultiArray2I;
-typedef MultiArray<size_t, 2> MultiArray2S;
-typedef MultiArray<unsigned, 2> MultiArray2U;
-typedef MultiArray<float, 2> MultiArray2F;
-typedef MultiArray<double, 2> MultiArray2D;
+using MultiArray2I = MultiArray<int, 2>;
+using MultiArray2S = MultiArray<size_t, 2>;
+using MultiArray2U = MultiArray<unsigned, 2>;
+using MultiArray2F = MultiArray<float, 2>;
+using MultiArray2D = MultiArray<double, 2>;
 
-typedef MultiArray<int, 3> MultiArray3I;
-typedef MultiArray<size_t, 3> MultiArray3S;
-typedef MultiArray<unsigned, 3> MultiArray3U;
-typedef MultiArray<float, 3> MultiArray3F;
-typedef MultiArray<double, 3> MultiArray3D;
+using MultiArray3I = MultiArray<int, 3>;
+using MultiArray3S = MultiArray<size_t, 3>;
+using MultiArray3U = MultiArray<unsigned, 3>;
+using MultiArray3F = MultiArray<float, 3>;
+using MultiArray3D = MultiArray<double, 3>;
 
-typedef MultiArray<int, 4> MultiArray4I;
-typedef MultiArray<size_t, 4> MultiArray4S;
-typedef MultiArray<unsigned, 4> MultiArray4U;
-typedef MultiArray<float, 4> MultiArray4F;
-typedef MultiArray<double, 4> MultiArray4D;
+using MultiArray4I = MultiArray<int, 4>;
+using MultiArray4S = MultiArray<size_t, 4>;
+using MultiArray4U = MultiArray<unsigned, 4>;
+using MultiArray4F = MultiArray<float, 4>;
+using MultiArray4D = MultiArray<double, 4>;
 
 template <typename Element, size_t Rank>
-std::ostream& operator<<(std::ostream& os, MultiArray<Element, Rank> const& array);
+auto operator<<(std::ostream& os, MultiArray<Element, Rank> const& array) -> std::ostream&;
 
 template <typename Element, size_t Rank>
 MultiArray<Element, Rank>::MultiArray() {
@@ -174,12 +177,12 @@ MultiArray<Element, Rank>::MultiArray(size_t i, T... rest) {
 }
 
 template <typename Element, size_t Rank>
-typename MultiArray<Element, Rank>::SizeArray const& MultiArray<Element, Rank>::size() const {
+auto MultiArray<Element, Rank>::size() const -> SizeArray const& {
   return m_shape;
 }
 
 template <typename Element, size_t Rank>
-size_t MultiArray<Element, Rank>::size(size_t dimension) const {
+auto MultiArray<Element, Rank>::size(size_t dimension) const -> size_t {
   return m_shape[dimension];
 }
 
@@ -265,29 +268,29 @@ void MultiArray<Element, Rank>::setSize(size_t i, T... rest) {
 }
 
 template <typename Element, size_t Rank>
-Element& MultiArray<Element, Rank>::operator()(IndexArray const& index) {
+auto MultiArray<Element, Rank>::operator()(IndexArray const& index) -> Element& {
   return m_data[storageIndex(index)];
 }
 
 template <typename Element, size_t Rank>
-Element const& MultiArray<Element, Rank>::operator()(IndexArray const& index) const {
+auto MultiArray<Element, Rank>::operator()(IndexArray const& index) const -> Element const& {
   return m_data[storageIndex(index)];
 }
 
 template <typename Element, size_t Rank>
 template <typename... T>
-Element& MultiArray<Element, Rank>::operator()(size_t i1, T... rest) {
+auto MultiArray<Element, Rank>::operator()(size_t i1, T... rest) -> Element& {
   return m_data[storageIndex(IndexArray(i1, rest...))];
 }
 
 template <typename Element, size_t Rank>
 template <typename... T>
-Element const& MultiArray<Element, Rank>::operator()(size_t i1, T... rest) const {
+auto MultiArray<Element, Rank>::operator()(size_t i1, T... rest) const -> Element const& {
   return m_data[storageIndex(IndexArray(i1, rest...))];
 }
 
 template <typename Element, size_t Rank>
-Element const& MultiArray<Element, Rank>::at(IndexArray const& index) const {
+auto MultiArray<Element, Rank>::at(IndexArray const& index) const -> Element const& {
   for (size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
       throw MultiArrayException(strf("Out of bounds on MultiArray::at({})", index));
@@ -297,7 +300,7 @@ Element const& MultiArray<Element, Rank>::at(IndexArray const& index) const {
 }
 
 template <typename Element, size_t Rank>
-Element& MultiArray<Element, Rank>::at(IndexArray const& index) {
+auto MultiArray<Element, Rank>::at(IndexArray const& index) -> Element& {
   for (size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
       throw MultiArrayException(strf("Out of bounds on MultiArray::at({})", index));
@@ -308,13 +311,13 @@ Element& MultiArray<Element, Rank>::at(IndexArray const& index) {
 
 template <typename Element, size_t Rank>
 template <typename... T>
-Element& MultiArray<Element, Rank>::at(size_t i1, T... rest) {
+auto MultiArray<Element, Rank>::at(size_t i1, T... rest) -> Element& {
   return at(IndexArray(i1, rest...));
 }
 
 template <typename Element, size_t Rank>
 template <typename... T>
-Element const& MultiArray<Element, Rank>::at(size_t i1, T... rest) const {
+auto MultiArray<Element, Rank>::at(size_t i1, T... rest) const -> Element const& {
   return at(IndexArray(i1, rest...));
 }
 
@@ -329,7 +332,7 @@ void MultiArray<Element, Rank>::set(IndexArray const& index, Element element) {
 }
 
 template <typename Element, size_t Rank>
-Element MultiArray<Element, Rank>::get(IndexArray const& index, Element def) {
+auto MultiArray<Element, Rank>::get(IndexArray const& index, Element def) -> Element {
   for (size_t i = Rank; i != 0; --i) {
     if (index[i - 1] >= m_shape[i - 1])
       return std::move(def);
@@ -397,32 +400,32 @@ void MultiArray<Element, Rank>::print(OStream& os) const {
 }
 
 template <typename Element, size_t Rank>
-size_t MultiArray<Element, Rank>::count() const {
+auto MultiArray<Element, Rank>::count() const -> size_t {
   return m_data.size();
 }
 
 template <typename Element, size_t Rank>
-Element const& MultiArray<Element, Rank>::atIndex(size_t index) const {
+auto MultiArray<Element, Rank>::atIndex(size_t index) const -> Element const& {
   return m_data[index];
 }
 
 template <typename Element, size_t Rank>
-Element& MultiArray<Element, Rank>::atIndex(size_t index) {
+auto MultiArray<Element, Rank>::atIndex(size_t index) -> Element& {
   return m_data[index];
 }
 
 template <typename Element, size_t Rank>
-Element const* MultiArray<Element, Rank>::data() const {
+auto MultiArray<Element, Rank>::data() const -> Element const* {
   return m_data.ptr();
 }
 
 template <typename Element, size_t Rank>
-Element* MultiArray<Element, Rank>::data() {
+auto MultiArray<Element, Rank>::data() -> Element* {
   return m_data.ptr();
 }
 
 template <typename Element, size_t Rank>
-size_t MultiArray<Element, Rank>::storageIndex(IndexArray const& index) const {
+auto MultiArray<Element, Rank>::storageIndex(IndexArray const& index) const -> size_t {
   size_t loc = index[0];
   for (size_t i = 1; i < Rank; ++i) {
     loc = loc * m_shape[i] + index[i];
@@ -478,7 +481,7 @@ void MultiArray<Element, Rank>::subForEach(IndexArray const& min, SizeArray cons
 
 template <typename Element, size_t Rank>
 void MultiArray<Element, Rank>::subCopy(MultiArray const& source, IndexArray const& sourceMin, IndexArray const& sourceMax,
-    IndexArray const& targetMin, IndexArray& sourceIndex, IndexArray& targetIndex, size_t dim) {
+                                        IndexArray const& targetMin, IndexArray& sourceIndex, IndexArray& targetIndex, size_t dim) {
   size_t w = sourceMax[dim] - sourceMin[dim];
   if (dim < Rank - 1) {
     for (size_t i = 0; i < w; ++i) {
@@ -497,12 +500,12 @@ void MultiArray<Element, Rank>::subCopy(MultiArray const& source, IndexArray con
 }
 
 template <typename Element, size_t Rank>
-std::ostream& operator<<(std::ostream& os, MultiArray<Element, Rank> const& array) {
+auto operator<<(std::ostream& os, MultiArray<Element, Rank> const& array) -> std::ostream& {
   array.print(os);
   return os;
 }
 
-}
+}// namespace Star
 
 template <typename Element, size_t Rank>
 struct std::formatter<Star::MultiArray<Element, Rank>> : Star::ostream_formatter {};

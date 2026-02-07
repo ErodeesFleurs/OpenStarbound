@@ -1,24 +1,28 @@
 #pragma once
 
 #include "StarAssets.hpp"
+#include "StarConfig.hpp"
+#include "StarConfiguration.hpp"
+#include "StarException.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(Configuration);
-
-STAR_EXCEPTION(RootException, StarException);
+using RootException = ExceptionDerived<"RootException">;
 
 class RootBase {
 public:
-  static RootBase* singletonPtr();
-  static RootBase& singleton();
+  static auto singletonPtr() -> RootBase*;
+  static auto singleton() -> RootBase&;
 
-  virtual AssetsConstPtr assets() = 0;
-  virtual ConfigurationPtr configuration() = 0;
+  virtual auto assets() -> ConstPtr<Assets> = 0;
+  virtual auto configuration() -> Ptr<Configuration> = 0;
+
 protected:
   RootBase();
 
-  static atomic<RootBase*> s_singleton;
+  static std::atomic<RootBase*> s_singleton;
 };
 
-}
+}// namespace Star

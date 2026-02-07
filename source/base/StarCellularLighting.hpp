@@ -1,17 +1,15 @@
 #pragma once
 
 #include "StarEither.hpp"
+#include "StarException.hpp"
 #include "StarRect.hpp"
 #include "StarImage.hpp"
 #include "StarJson.hpp"
-#include "StarColor.hpp"
-#include "StarInterpolation.hpp"
 #include "StarCellularLightArray.hpp"
-#include "StarThread.hpp"
 
 namespace Star {
 
-STAR_EXCEPTION(LightmapException, StarException);
+using LightmapException = ExceptionDerived<"LightmapException">;
 
 class Lightmap {
 public:
@@ -19,7 +17,7 @@ public:
   Lightmap(unsigned width, unsigned height);
   Lightmap(Lightmap const& lightMap);
   Lightmap(Lightmap&& lightMap) noexcept;
-  
+
   Lightmap& operator=(Lightmap const& lightMap);
   Lightmap& operator=(Lightmap&& lightMap) noexcept;
 

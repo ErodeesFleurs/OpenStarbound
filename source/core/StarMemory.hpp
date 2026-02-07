@@ -1,16 +1,15 @@
 #pragma once
 
-
-#include "StarConfig.hpp"
+import std;
 
 namespace Star {
 
 // Don't want to override global C allocation functions, as our API is
 // different.
 
-void* malloc(size_t size);
-void* realloc(void* ptr, size_t size);
+auto malloc(std::size_t size) -> void*;
+auto realloc(void* ptr, std::size_t size) -> void*;
 void free(void* ptr);
-void free(void* ptr, size_t size);
+void free(void* ptr, std::size_t size);
 
 }

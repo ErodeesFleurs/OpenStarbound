@@ -1,25 +1,25 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarJson.hpp"
 #include "StarByteArray.hpp"
 #include "StarRpcPromise.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(JsonRpcInterface);
-STAR_CLASS(JsonRpc);
+using JsonRpcException = ExceptionDerived<"JsonRpcException">;
 
-STAR_EXCEPTION(JsonRpcException, StarException);
+using JsonRpcRemoteFunction = std::function<Json(Json const&)>;
 
-typedef function<Json(Json const&)> JsonRpcRemoteFunction;
-
-typedef StringMap<JsonRpcRemoteFunction> JsonRpcHandlers;
+using JsonRpcHandlers = StringMap<JsonRpcRemoteFunction>;
 
 // Simple interface to just the method invocation part of JsonRpc.
 class JsonRpcInterface {
 public:
   virtual ~JsonRpcInterface();
-  virtual RpcPromise<Json> invokeRemote(String const& handler, Json const& arguments) = 0;
+  virtual auto invokeRemote(String const& handler, Json const& arguments) -> RpcPromise<Json> = 0;
 };
 
 // Simple class to handle remote methods based on Json types.  Does not
@@ -35,17 +35,17 @@ public:
   void removeHandler(String const& handler);
   void clearHandlers();
 
-  RpcPromise<Json> invokeRemote(String const& handler, Json const& arguments) override;
+  auto invokeRemote(String const& handler, Json const& arguments) -> RpcPromise<Json> override;
 
-  bool sendPending() const;
-  ByteArray send();
+  [[nodiscard]] auto sendPending() const -> bool;
+  auto send() -> ByteArray;
   void receive(ByteArray const& inbuffer);
 
 private:
   JsonRpcHandlers m_handlers;
-  Map<uint64_t, RpcPromiseKeeper<Json>> m_pendingResponse;
+  Map<std::uint64_t, RpcPromiseKeeper<Json>> m_pendingResponse;
   List<Json> m_pending;
-  uint64_t m_requestId;
+  std::uint64_t m_requestId;
 };
 
 }

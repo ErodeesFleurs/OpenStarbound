@@ -1,18 +1,20 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
+#include "StarException.hpp"
 #include "StarHostAddress.hpp"
 #include "StarThread.hpp"
+
+import std;
 
 namespace Star {
 
 // Thrown when some call on a socket failed because the socket is *either*
 // closed or shutdown, for other errors sockets will throw NetworkException
-STAR_EXCEPTION(SocketClosedException, NetworkException);
+using SocketClosedException = ExceptionDerived<"SocketClosedException", NetworkException>;
 
-STAR_STRUCT(SocketImpl);
-STAR_CLASS(Socket);
+struct SocketImpl;
+class Socket;
 
 enum class SocketMode {
   Closed,
@@ -37,8 +39,8 @@ struct SocketPollResultEntry {
   bool exception;
 };
 
-typedef Map<SocketPtr, SocketPollQueryEntry> SocketPollQuery;
-typedef Map<SocketPtr, SocketPollResultEntry> SocketPollResult;
+using SocketPollQuery = Map<Ptr<Socket>, SocketPollQueryEntry>;
+using SocketPollResult = Map<Ptr<Socket>, SocketPollResultEntry>;
 
 class Socket {
 public:
@@ -47,7 +49,7 @@ public:
   // ready for I/O or have had error events occur on them within the timeout,
   // nothing otherwise.  If socket hangup occurs during this call, this will
   // automatically shut down the socket.
-  static std::optional<SocketPollResult> poll(SocketPollQuery const& query, unsigned timeout);
+  static auto poll(SocketPollQuery const& query, unsigned timeout) -> std::optional<SocketPollResult>;
 
   ~Socket();
 
@@ -59,14 +61,14 @@ public:
   // Sockets default to 60 second timeout
   void setTimeout(unsigned millis);
 
-  NetworkMode networkMode() const;
-  SocketMode socketMode() const;
+  auto networkMode() const -> NetworkMode;
+  auto socketMode() const -> SocketMode;
 
   // Is the socketMode either Bound or Connected?
-  bool isActive() const;
+  auto isActive() const -> bool;
 
   // Is the socketMode not closed?
-  bool isOpen() const;
+  auto isOpen() const -> bool;
 
   // Shuts down the underlying socket only.
   void shutdown();
@@ -81,7 +83,7 @@ protected:
   };
 
   Socket(SocketType type, NetworkMode networkMode);
-  Socket(NetworkMode networkMode, SocketImplPtr impl, SocketMode socketMode);
+  Socket(NetworkMode networkMode, Ptr<SocketImpl> impl, SocketMode socketMode);
 
   void checkOpen(char const* methodName) const;
   void doShutdown();
@@ -89,9 +91,9 @@ protected:
 
   mutable ReadersWriterMutex m_mutex;
   NetworkMode m_networkMode;
-  SocketImplPtr m_impl;
-  atomic<SocketMode> m_socketMode;
+  Ptr<SocketImpl> m_impl;
+  std::atomic<SocketMode> m_socketMode;
   HostAddressWithPort m_localAddress;
 };
 
-}
+}// namespace Star

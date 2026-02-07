@@ -1,11 +1,11 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarSocket.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(UdpSocket);
-STAR_CLASS(UdpServer);
+namespace Star {
 
 // A Good default assumption for a maximum size of a UDP datagram without
 // fragmentation
@@ -15,8 +15,8 @@ class UdpSocket : public Socket {
 public:
   UdpSocket(NetworkMode networkMode);
 
-  size_t receive(HostAddressWithPort* address, char* data, size_t size);
-  size_t send(HostAddressWithPort const& address, char const* data, size_t size);
+  auto receive(HostAddressWithPort* address, char* data, std::size_t size) -> std::size_t;
+  auto send(HostAddressWithPort const& address, char const* data, std::size_t size) -> std::size_t;
 };
 
 class UdpServer {
@@ -25,14 +25,14 @@ public:
   ~UdpServer();
 
   void close();
-  bool isListening() const;
+  [[nodiscard]] auto isListening() const -> bool;
 
-  size_t receive(HostAddressWithPort* address, char* data, size_t size, unsigned timeout);
-  size_t send(HostAddressWithPort const& address, char const* data, size_t size);
+  auto receive(HostAddressWithPort* address, char* data, std::size_t size, unsigned timeout) -> std::size_t;
+  auto send(HostAddressWithPort const& address, char const* data, std::size_t size) -> std::size_t;
 
 private:
   HostAddressWithPort const m_hostAddress;
-  UdpSocketPtr m_listenSocket;
+  Ptr<UdpSocket> m_listenSocket;
 };
 
-}
+}// namespace Star

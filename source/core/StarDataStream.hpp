@@ -32,12 +32,12 @@ public:
   void setStreamCompatibilityVersion(unsigned streamCompatibilityVersion);
   void setStreamCompatibilityVersion(NetCompatibilityRules const& rules);
   // Do direct reads and writes
-  virtual void readData(char* data, size_t len) = 0;
-  virtual void writeData(char const* data, size_t len) = 0;
+  virtual void readData(char* data, std::size_t len) = 0;
+  virtual void writeData(char const* data, std::size_t len) = 0;
   virtual auto atEnd() -> bool { return false; };
 
   // These do not read / write sizes, they simply read / write directly.
-  auto readBytes(size_t len) -> ByteArray;
+  auto readBytes(std::size_t len) -> ByteArray;
   void writeBytes(ByteArray const& ba);
 
   auto operator<<(bool d) -> DataStream&;
@@ -68,7 +68,7 @@ public:
 
   // Writes and reads a VLQ encoded integer.  Can write / read anywhere from 1
   // to 10 bytes of data, with integers of smaller (absolute) value taking up
-  // fewer bytes.  size_t version can be used to portably write a size_t type,
+  // fewer bytes.  std::size_t version can be used to portably write a std::size_t type,
   // and portably and efficiently handles the case of std::numeric_limits<std::size_t>::max().
 
   auto writeVlqU(std::uint64_t i) -> std::size_t;
@@ -197,7 +197,7 @@ public:
   void readMapContainer(Container& container);
 
 private:
-  void writeStringData(char const* data, size_t len);
+  void writeStringData(char const* data, std::size_t len);
 
   ByteOrder m_byteOrder;
   bool m_nullTerminatedStrings;
@@ -262,7 +262,7 @@ void DataStream::viread(IntegralType& data) {
 
 template <typename IntegralType>
 void DataStream::vsread(IntegralType& data) {
-  size_t s = readVlqS();
+  std::size_t s = readVlqS();
   data = (IntegralType)s;
 }
 
@@ -338,8 +338,8 @@ void DataStream::writeContainer(Container const& container, WriteFunction functi
 template <typename Container, typename ReadFunction>
 void DataStream::readContainer(Container& container, ReadFunction function) {
   container.clear();
-  size_t size = readVlqU();
-  for (size_t i = 0; i < size; ++i) {
+  std::size_t size = readVlqU();
+  for (std::size_t i = 0; i < size; ++i) {
     typename Container::value_type elem;
     function(*this, elem);
     container.insert(container.end(), elem);
@@ -356,12 +356,12 @@ void DataStream::writeMapContainer(Container& map, WriteFunction function) {
 template <typename Container, typename ReadFunction>
 void DataStream::readMapContainer(Container& map, ReadFunction function) {
   map.clear();
-  size_t size = readVlqU();
-  for (size_t i = 0; i < size; ++i) {
+  std::size_t size = readVlqU();
+  for (std::size_t i = 0; i < size; ++i) {
     typename Container::key_type key;
     typename Container::mapped_type mapped;
     function(*this, key, mapped);
-    map.insert(make_pair(std::move(key), std::move(mapped)));
+    map.insert(std::make_pair(std::move(key), std::move(mapped)));
   }
 }
 

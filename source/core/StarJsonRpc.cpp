@@ -2,9 +2,11 @@
 #include "StarDataStreamDevices.hpp"
 #include "StarLogging.hpp"
 
+import std;
+
 namespace Star {
 
-JsonRpcInterface::~JsonRpcInterface() {}
+JsonRpcInterface::~JsonRpcInterface() = default;
 
 JsonRpc::JsonRpc() {
   m_requestId = 0;
@@ -32,8 +34,8 @@ void JsonRpc::clearHandlers() {
   m_handlers.clear();
 }
 
-RpcPromise<Json> JsonRpc::invokeRemote(String const& handler, Json const& arguments) {
-  uint64_t id = m_requestId++;
+auto JsonRpc::invokeRemote(String const& handler, Json const& arguments) -> RpcPromise<Json> {
+  std::uint64_t id = m_requestId++;
   JsonObject request;
   m_pending.append(JsonObject{
       {"command", "request"},
@@ -48,11 +50,11 @@ RpcPromise<Json> JsonRpc::invokeRemote(String const& handler, Json const& argume
   return pair.first;
 }
 
-bool JsonRpc::sendPending() const {
+auto JsonRpc::sendPending() const -> bool {
   return !m_pending.empty();
 }
 
-ByteArray JsonRpc::send() {
+auto JsonRpc::send() -> ByteArray {
   if (m_pending.empty())
     return {};
 

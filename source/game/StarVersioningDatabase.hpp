@@ -1,18 +1,16 @@
 #pragma once
 
-#include "StarJson.hpp"
 #include "StarDataStream.hpp"
+#include "StarException.hpp"
+#include "StarJson.hpp"
+#include "StarLuaRoot.hpp"
 #include "StarThread.hpp"
 #include "StarVersion.hpp"
-#include "StarLuaRoot.hpp"
 
 namespace Star {
 
-STAR_STRUCT(VersionedJson);
-STAR_CLASS(VersioningDatabase);
-
-STAR_EXCEPTION(VersionedJsonException, StarException);
-STAR_EXCEPTION(VersioningDatabaseException, StarException);
+using VersionedJsonException = ExceptionDerived<"VersionedJsonException">;
+using VersioningDatabaseException = ExceptionDerived<"VersioningDatabaseException">;
 
 struct VersionedJson {
   static char const* const Magic;
@@ -22,17 +20,17 @@ struct VersionedJson {
   // Writes and reads a binary file containing a versioned json with a magic
   // header marking it as a starbound versioned json file.  Writes using a
   // safe write/flush/swap.
-  static VersionedJson readFile(String const& filename);
+  static auto readFile(String const& filename) -> VersionedJson;
   static void writeFile(VersionedJson const& versionedJson, String const& filename);
   static void writeSubVersioning(DataStream& ds, VersionedJson const& versionedJson);
   static void readSubVersioning(DataStream& ds, VersionedJson& versionedJson);
 
   // Writes and reads a json containing a versioned json
   // This allows embedding versioned metadata within a file
-  static VersionedJson fromJson(Json const& source);
-  Json toJson() const;
+  static auto fromJson(Json const& source) -> VersionedJson;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  bool empty() const;
+  [[nodiscard]] auto empty() const -> bool;
 
   // If the identifier does not match the given identifier, throws a
   // VersionedJsonException.
@@ -44,8 +42,8 @@ struct VersionedJson {
   StringMap<VersionNumber> subVersions;
 };
 
-DataStream& operator>>(DataStream& ds, VersionedJson& versionedJson);
-DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson);
+auto operator>>(DataStream& ds, VersionedJson& versionedJson) -> DataStream&;
+auto operator<<(DataStream& ds, VersionedJson const& versionedJson) -> DataStream&;
 
 class VersioningDatabase {
 public:
@@ -54,20 +52,20 @@ public:
   // Converts the given content Json to a VersionedJson by marking it with the
   // given identifier and the current version configured in the versioning
   // config file.
-  VersionedJson makeCurrentVersionedJson(String const& identifier, Json const& content) const;
+  auto makeCurrentVersionedJson(String const& identifier, Json const& content) const -> VersionedJson;
 
   // Returns true if the version in this VersionedJson matches the configured
   // current version and does not need updating.
-  bool versionedJsonCurrent(VersionedJson const& versionedJson) const;
+  auto versionedJsonCurrent(VersionedJson const& versionedJson) const -> bool;
 
   // Brings the given versioned json up to the current configured latest
   // version using update scripts.  If successful, returns the up to date
   // VersionedJson, otherwise throws VersioningDatabaseException.
-  VersionedJson updateVersionedJson(VersionedJson const& versionedJson) const;
+  auto updateVersionedJson(VersionedJson const& versionedJson) const -> VersionedJson;
 
   // Convenience method, checkts the versionedJson expected identifier and then
   // brings the given versionedJson up to date and returns the content.
-  Json loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier) const;
+  auto loadVersionedJson(VersionedJson const& versionedJson, String const& expectedIdentifier) const -> Json;
 
 private:
   struct VersionUpdateScript {
@@ -76,7 +74,7 @@ private:
     VersionNumber toVersion;
   };
 
-  LuaCallbacks makeVersioningCallbacks() const;
+  auto makeVersioningCallbacks() const -> LuaCallbacks;
 
   mutable RecursiveMutex m_mutex;
   mutable LuaRoot m_luaRoot;
@@ -85,7 +83,7 @@ private:
   StringMap<List<VersionUpdateScript>> m_versionUpdateScripts;
 
   StringMap<StringMap<VersionNumber>> m_currentSubVersions;
-  StringMap<HashMap<VersionNumber,StringMap<List<VersionUpdateScript>>>> m_subVersionUpdateScripts;
+  StringMap<HashMap<VersionNumber, StringMap<List<VersionUpdateScript>>>> m_subVersionUpdateScripts;
 };
 
-}
+}// namespace Star

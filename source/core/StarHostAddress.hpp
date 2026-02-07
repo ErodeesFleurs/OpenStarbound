@@ -49,7 +49,7 @@ auto operator<<(std::ostream& os, HostAddress const& address) -> std::ostream&;
 
 template <>
 struct hash<HostAddress> {
-  auto operator()(HostAddress const& address) const -> size_t;
+  auto operator()(HostAddress const& address) const -> std::size_t;
 };
 
 class HostAddressWithPort {
@@ -81,7 +81,7 @@ auto operator<<(std::ostream& os, HostAddressWithPort const& address) -> std::os
 
 template <>
 struct hash<HostAddressWithPort> {
-  auto operator()(HostAddressWithPort const& address) const -> size_t;
+  auto operator()(HostAddressWithPort const& address) const -> std::size_t;
 };
 
 }

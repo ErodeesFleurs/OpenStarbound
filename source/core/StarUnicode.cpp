@@ -1,5 +1,8 @@
 #include "StarUnicode.hpp"
+#include "StarBytes.hpp"
 #include "StarEncode.hpp"
+
+import std;
 
 namespace Star {
 
@@ -12,10 +15,10 @@ void throwMissingUtf8End() {
 }
 
 void throwInvalidUtf32CodePoint(Utf32Type val) {
-  throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (int32_t)val);
+  throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (std::int32_t)val);
 }
 
-size_t utf8Length(const Utf8Type* utf8, size_t remain) {
+auto utf8Length(const Utf8Type* utf8, size_t remain) -> size_t {
   bool stopOnNull = remain == std::numeric_limits<std::size_t>::max();
   size_t length = 0;
 
@@ -81,7 +84,7 @@ size_t utf8Length(const Utf8Type* utf8, size_t remain) {
   return length;
 }
 
-size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
+auto utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) -> size_t {
   const Utf8Type* start = utf8;
   bool stopOnNull = remain == std::numeric_limits<std::size_t>::max();
 
@@ -124,7 +127,7 @@ size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
 
     if ((utf8[0] & 0xf8) == 0xf0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80 && (utf8[3] & 0xc0) == 0x80) {
       *utf32 =
-          ((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12) | ((utf8[2] & 0x3fL) << 6) | ((utf8[3] & 0x3fL) << 0);
+        ((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12) | ((utf8[2] & 0x3fL) << 6) | ((utf8[3] & 0x3fL) << 0);
       if (*utf32 >= 0x00010000L)
         return utf8 - start + 4;
       else
@@ -137,7 +140,7 @@ size_t utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) {
   return utf8 - start;
 }
 
-size_t utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, size_t len) {
+auto utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, size_t len) -> size_t {
   if (utf32 > 0x10FFFFu)
     throwInvalidUtf32CodePoint(utf32);
 
@@ -185,7 +188,7 @@ static const char32_t SURR_MASK = 0x3ff;
 static const char32_t MIN_PAIR = 0x10000;
 static const char32_t MAX_CODEPOINT = 0x10ffff;
 
-Utf32Type hexStringToUtf32(std::string const& codepoint, std::optional<Utf32Type> previousCodepoint) {
+auto hexStringToUtf32(std::string const& codepoint, std::optional<Utf32Type> previousCodepoint) -> Utf32Type {
   bool continuation = false;
   if (previousCodepoint && isUtf16LeadSurrogate(*previousCodepoint)) {
     continuation = true;
@@ -210,7 +213,7 @@ Utf32Type hexStringToUtf32(std::string const& codepoint, std::optional<Utf32Type
   return res;
 }
 
-std::string hexStringFromUtf32(Utf32Type character) {
+auto hexStringFromUtf32(Utf32Type character) -> std::string {
   if (character > MAX_CODEPOINT)
     throw UnicodeException("Codepoint too big in hexStringFromUtf32");
   Utf32Type lead;
@@ -229,15 +232,15 @@ std::string hexStringFromUtf32(Utf32Type character) {
   return (leadHex + trailHex).takeUtf8();
 }
 
-bool isUtf16LeadSurrogate(Utf32Type codepoint) {
+auto isUtf16LeadSurrogate(Utf32Type codepoint) -> bool {
   return codepoint >= MIN_LEAD && codepoint <= MAX_LEAD;
 }
 
-bool isUtf16TrailSurrogate(Utf32Type codepoint) {
+auto isUtf16TrailSurrogate(Utf32Type codepoint) -> bool {
   return codepoint >= MIN_TRAIL && codepoint <= MAX_TRAIL;
 }
 
-Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) {
+auto utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) -> Utf32Type {
   if (!isUtf16LeadSurrogate(lead))
     throw UnicodeException("Invalid lead surrogate passed to utf32FromUtf16SurrogatePair");
   if (!isUtf16TrailSurrogate(trail))
@@ -251,7 +254,7 @@ Utf32Type utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) {
   return codepoint;
 }
 
-pair<Utf32Type, std::optional<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint) {
+auto utf32ToUtf16SurrogatePair(Utf32Type codepoint) -> std::pair<Utf32Type, std::optional<Utf32Type>> {
   if (codepoint >= MIN_PAIR) {
     codepoint -= MIN_PAIR;
     Utf32Type lead = (codepoint >> 10) + MIN_LEAD;
@@ -266,4 +269,4 @@ pair<Utf32Type, std::optional<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type co
   return {codepoint, {}};
 }
 
-}
+}// namespace Star

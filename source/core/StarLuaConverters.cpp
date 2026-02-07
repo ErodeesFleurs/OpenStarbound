@@ -1,16 +1,18 @@
 #include "StarLuaConverters.hpp"
 #include "StarColor.hpp"
 
+import std;
+
 namespace Star {
 
-LuaValue LuaConverter<Color>::from(LuaEngine& engine, Color const& c) {
+auto LuaConverter<Color>::from(LuaEngine& engine, Color const& c) -> LuaValue {
   if (c.alpha() == 255)
-    return engine.createArrayTable(initializer_list<uint8_t>{c.red(), c.green(), c.blue()});
+    return engine.createArrayTable(std::initializer_list<std::uint8_t>{c.red(), c.green(), c.blue()});
   else
-    return engine.createArrayTable(initializer_list<uint8_t>{c.red(), c.green(), c.blue(), c.alpha()});
+    return engine.createArrayTable(std::initializer_list<std::uint8_t>{c.red(), c.green(), c.blue(), c.alpha()});
 }
 
-std::optional<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) {
+auto LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& v) -> std::optional<Color> {
   if (auto t = v.ptr<LuaTable>()) {
     Color c = Color::rgba(0, 0, 0, 255);
     std::optional<int> r = engine.luaMaybeTo<int>(t->get(1));
@@ -39,7 +41,7 @@ std::optional<Color> LuaConverter<Color>::to(LuaEngine& engine, LuaValue const& 
   return {};
 }
 
-LuaValue LuaConverter<LuaCallbacks>::from(LuaEngine& engine, LuaCallbacks const& c) {
+auto LuaConverter<LuaCallbacks>::from(LuaEngine& engine, LuaCallbacks const& c) -> LuaValue {
   auto table = engine.createTable(0, c.callbacks().size());
   for (auto& callback : c.callbacks())
     table.set(callback.first, engine.createWrappedFunction(callback.second));
@@ -47,7 +49,7 @@ LuaValue LuaConverter<LuaCallbacks>::from(LuaEngine& engine, LuaCallbacks const&
   return table;
 }
 
-std::optional<LuaCallbacks> LuaConverter<LuaCallbacks>::to(LuaEngine&, LuaValue const&) {
+auto LuaConverter<LuaCallbacks>::to(LuaEngine&, LuaValue const&) -> std::optional<LuaCallbacks> {
   return {};
 }
 

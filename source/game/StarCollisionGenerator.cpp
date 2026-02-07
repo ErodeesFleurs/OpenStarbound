@@ -1,12 +1,14 @@
 #include "StarCollisionGenerator.hpp"
 
+import std;
+
 namespace Star {
 
 void CollisionGenerator::init(CollisionKindAccessor accessor) {
   m_accessor = accessor;
 }
 
-List<CollisionBlock> CollisionGenerator::getBlocks(RectI const& region) const {
+auto CollisionGenerator::getBlocks(RectI const& region) const -> List<CollisionBlock> {
   if (region.isNull())
     return {};
 
@@ -29,7 +31,7 @@ void CollisionGenerator::getBlocksPlatforms(List<CollisionBlock>& list, RectI co
   for (int x = xMin; x < xMax; ++x) {
     for (int y = yMin; y < yMax; ++y) {
       if (collisionKind(x, y) == kind) {
-        auto addBlock = [&](PolyF::VertexList vertices) {
+        auto addBlock = [&](PolyF::VertexList vertices) -> void {
           CollisionBlock block;
           block.space = Vec2I(x, y);
           block.kind = kind;
@@ -100,7 +102,7 @@ void CollisionGenerator::getBlocksMarchingSquares(List<CollisionBlock>& list, Re
 
   // points spaced at 0.5 around the edge of a 1x1 square, clockwise from bottom left,
   // plus the center point for special cases
-  static Vec2F const msv[9] = {
+  static const std::array<Vec2F, 9> msv = {
     Vec2F(0.5, 0.5),
     Vec2F(0.5, 1.0),
     Vec2F(0.5, 1.5),
@@ -109,11 +111,10 @@ void CollisionGenerator::getBlocksMarchingSquares(List<CollisionBlock>& list, Re
     Vec2F(1.5, 1.0),
     Vec2F(1.5, 0.5),
     Vec2F(1.0, 0.5),
-    Vec2F(1.0, 1.0)
-  };
+    Vec2F(1.0, 1.0)};
 
   // refers to vertex offset indices in msv, with 8 being no vertex
-  static unsigned const msp[22][6] = {
+  static const std::array<std::array<unsigned, 6>, 22> msp = {{
     {9, 9, 9, 9, 9, 9},
     {1, 2, 3, 9, 9, 9},
     {3, 4, 5, 9, 9, 9},
@@ -131,16 +132,16 @@ void CollisionGenerator::getBlocksMarchingSquares(List<CollisionBlock>& list, Re
     {0, 1, 3, 4, 6, 9},
     {0, 2, 4, 6, 9, 9},
     // special cases for squared off top corners
-    {5, 6, 7, 8, 9, 9}, // top left corner
-    {0, 1, 8, 7, 9, 9}, // top right corner
+    {5, 6, 7, 8, 9, 9},// top left corner
+    {0, 1, 8, 7, 9, 9},// top right corner
     // special cases for hollowed out bottom corners
-    {0, 2, 3, 8, 9, 9}, // lower left corner part 1
-    {0, 8, 5, 6, 9, 9}, // lower left corner part 2
-    {0, 1, 8, 6, 9, 9}, // lower right corner part 1
+    {0, 2, 3, 8, 9, 9},// lower left corner part 1
+    {0, 8, 5, 6, 9, 9},// lower left corner part 2
+    {0, 1, 8, 6, 9, 9},// lower right corner part 1
     {6, 8, 3, 4, 9, 9} // lower right corner part 2
-  };
+  }};
 
-  auto addBlock = [&](int x, int y, uint8_t svi) {
+  auto addBlock = [&](int x, int y, std::uint8_t svi) -> void {
     CollisionBlock block;
     block.space = Vec2I(x, y);
     block.poly.clear();
@@ -161,7 +162,7 @@ void CollisionGenerator::getBlocksMarchingSquares(List<CollisionBlock>& list, Re
 
   for (int x = xMin; x < xMax; ++x) {
     for (int y = yMin; y < yMax; ++y) {
-      uint8_t neighborMask = 0;
+      std::uint8_t neighborMask = 0;
       if (collisionKind(x, y + 1) >= kind)
         neighborMask |= 1;
       if (collisionKind(x + 1, y + 1) >= kind)
@@ -172,34 +173,26 @@ void CollisionGenerator::getBlocksMarchingSquares(List<CollisionBlock>& list, Re
         neighborMask |= 8;
 
       if (neighborMask == 4) {
-        if (collisionKind(x + 2, y) >= kind &&
-            collisionKind(x + 2, y + 1) < kind &&
-            collisionKind(x, y - 1) < kind) {
+        if (collisionKind(x + 2, y) >= kind && collisionKind(x + 2, y + 1) < kind && collisionKind(x, y - 1) < kind) {
 
           addBlock(x, y, 16);
           continue;
         }
       } else if (neighborMask == 8) {
-        if (collisionKind(x - 1, y) >= kind &&
-            collisionKind(x - 1, y + 1) < kind &&
-            collisionKind(x + 1, y - 1) < kind) {
+        if (collisionKind(x - 1, y) >= kind && collisionKind(x - 1, y + 1) < kind && collisionKind(x + 1, y - 1) < kind) {
 
           addBlock(x, y, 17);
           continue;
         }
       } else if (neighborMask == 13) {
-        if (collisionKind(x, y + 2) >= kind &&
-            collisionKind(x + 1, y + 2) < kind &&
-            collisionKind(x + 2, y) >= kind) {
+        if (collisionKind(x, y + 2) >= kind && collisionKind(x + 1, y + 2) < kind && collisionKind(x + 2, y) >= kind) {
 
           addBlock(x, y, 18);
           addBlock(x, y, 19);
           continue;
         }
       } else if (neighborMask == 14) {
-        if (collisionKind(x, y + 2) < kind &&
-            collisionKind(x + 1, y + 2) >= kind &&
-            collisionKind(x - 1, y) >= kind) {
+        if (collisionKind(x, y + 2) < kind && collisionKind(x + 1, y + 2) >= kind && collisionKind(x - 1, y) >= kind) {
 
           addBlock(x, y, 20);
           addBlock(x, y, 21);
@@ -226,8 +219,8 @@ void CollisionGenerator::populateCollisionBuffer(RectI const& region) const {
       m_collisionBuffer(x - xmin, y - ymin) = m_accessor(x, y);
 }
 
-CollisionKind CollisionGenerator::collisionKind(int x, int y) const {
+auto CollisionGenerator::collisionKind(int x, int y) const -> CollisionKind {
   return m_collisionBuffer(x - m_collisionBufferCorner[0], y - m_collisionBufferCorner[1]);
 }
-  
-}
+
+}// namespace Star

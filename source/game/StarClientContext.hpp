@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarJsonRpc.hpp"
 #include "StarGameTypes.hpp"
@@ -9,45 +10,44 @@
 #include "StarWorldStorage.hpp"
 #include "StarPlayerTypes.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(CelestialLog);
-STAR_CLASS(ClientContext);
+namespace Star {
 
 class ClientContext {
 public:
   ClientContext(Uuid serverUuid, Uuid playerUuid);
 
-  Uuid serverUuid() const;
+  auto serverUuid() const -> Uuid;
   // The player Uuid can differ from the mainPlayer's Uuid
   //  if the player has swapped character - use this for ship saving.
-  Uuid playerUuid() const;
+  auto playerUuid() const -> Uuid;
 
   // The coordinate for the world which the player's ship is currently
   // orbiting.
-  CelestialCoordinate shipCoordinate() const;
+  auto shipCoordinate() const -> CelestialCoordinate;
 
-  std::optional<pair<WarpAction, WarpMode>> orbitWarpAction() const;
+  auto orbitWarpAction() const -> std::optional<std::pair<WarpAction, WarpMode>>;
 
   // The current world id of the player
-  WorldId playerWorldId() const;
+  auto playerWorldId() const -> WorldId;
 
-  bool isAdmin() const;
-  EntityDamageTeam team() const;
+  auto isAdmin() const -> bool;
+  auto team() const -> EntityDamageTeam;
 
-  JsonRpcInterfacePtr rpcInterface() const;
+  auto rpcInterface() const -> Ptr<JsonRpcInterface>;
 
-  WorldChunks newShipUpdates();
-  ShipUpgrades shipUpgrades() const;
+  auto newShipUpdates() -> WorldChunks;
+  auto shipUpgrades() const -> ShipUpgrades;
 
   void readUpdate(ByteArray data, NetCompatibilityRules rules);
-  ByteArray writeUpdate(NetCompatibilityRules rules);
+  auto writeUpdate(NetCompatibilityRules rules) -> ByteArray;
 
   void setConnectionId(ConnectionId connectionId);
-  ConnectionId connectionId() const;
+  auto connectionId() const -> ConnectionId;
 
   void setNetCompatibilityRules(NetCompatibilityRules netCompatibilityRules);
-  NetCompatibilityRules netCompatibilityRules() const;
+  auto netCompatibilityRules() const -> NetCompatibilityRules;
 
 private:
   Uuid m_serverUuid;
@@ -55,10 +55,10 @@ private:
   ConnectionId m_connectionId = 0;
   NetCompatibilityRules m_netCompatibilityRules;
 
-  JsonRpcPtr m_rpc;
+  Ptr<JsonRpc> m_rpc;
 
   NetElementTopGroup m_netGroup;
-  NetElementData<std::optional<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
+  NetElementData<std::optional<std::pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
   NetElementData<WorldId> m_playerWorldIdNetState;
   NetElementBool m_isAdminNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;

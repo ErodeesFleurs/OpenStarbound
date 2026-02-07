@@ -1,43 +1,44 @@
 #pragma once
 
-#include <optional>
-
+#include "StarException.hpp"
 #include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(JsonPatchException, JsonException);
-STAR_EXCEPTION(JsonPatchTestFail, StarException);
+using JsonPatchException = ExceptionDerived<"JsonPatchException", JsonException>;
+using JsonPatchTestFail = ExceptionDerived<"JsonPatchTestFail">;
 
 // Applies the given RFC6902 compliant patch to the base and returns the result
 // Throws JsonPatchException on patch failure.
-Json jsonPatch(Json const& base, JsonArray const& patch);
+auto jsonPatch(Json const& base, JsonArray const& patch) -> Json;
 
 namespace JsonPatching {
   // Applies the given single operation
-  Json applyOperation(Json const& base, Json const& op, std::optional<Json> const& external = {});
+  auto applyOperation(Json const& base, Json const& op, std::optional<Json> const& external = {}) -> Json;
 
   // Tests for "value" at "path"
   // Returns base or throws JsonPatchException
-  Json applyTestOperation(Json const& base, Json const& op);
+  auto applyTestOperation(Json const& base, Json const& op) -> Json;
 
   // Removes the value at "path"
-  Json applyRemoveOperation(Json const& base, Json const& op);
+  auto applyRemoveOperation(Json const& base, Json const& op) -> Json;
 
   // Adds "value" at "path"
-  Json applyAddOperation(Json const& base, Json const& op);
+  auto applyAddOperation(Json const& base, Json const& op) -> Json;
 
   // Replaces "path" with "value"
-  Json applyReplaceOperation(Json const& base, Json const& op);
+  auto applyReplaceOperation(Json const& base, Json const& op) -> Json;
 
   // Moves "from" to "path"
-  Json applyMoveOperation(Json const& base, Json const& op);
+  auto applyMoveOperation(Json const& base, Json const& op) -> Json;
 
   // Copies "from" to "path"
-  Json applyCopyOperation(Json const& base, Json const& op);
+  auto applyCopyOperation(Json const& base, Json const& op) -> Json;
 
   // Merges "value" at "path"
-  Json applyMergeOperation(Json const& base, Json const& op);
+  auto applyMergeOperation(Json const& base, Json const& op) -> Json;
   }
 
 }

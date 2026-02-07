@@ -1,79 +1,79 @@
 #pragma once
 
-#include <cstddef>
-
-#include "StarMemory.hpp"
 #include "StarAlgorithm.hpp"
 #include "StarException.hpp"
+#include "StarMemory.hpp"
+
+import std;
 
 namespace Star {
 
 // A vector that is stack allocated up to a maximum size, becoming heap
 // allocated when it grows beyond that size.  Always takes up stack space of
 // MaxStackSize * sizeof(Element).
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 class SmallVector {
 public:
-  typedef Element* iterator;
-  typedef Element const* const_iterator;
+  using iterator = Element*;
+  using const_iterator = Element const*;
 
-  typedef std::reverse_iterator<iterator> reverse_iterator;
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  typedef Element value_type;
+  using value_type = Element;
 
-  typedef Element& reference;
-  typedef Element const& const_reference;
+  using reference = Element&;
+  using const_reference = Element const&;
 
   SmallVector();
   SmallVector(SmallVector const& other);
   SmallVector(SmallVector&& other);
-  template <typename OtherElement, size_t OtherMaxStackSize>
+  template <typename OtherElement, std::size_t OtherMaxStackSize>
   SmallVector(SmallVector<OtherElement, OtherMaxStackSize> const& other);
   template <class Iterator>
   SmallVector(Iterator first, Iterator last);
-  SmallVector(size_t size, Element const& value = Element());
+  SmallVector(std::size_t size, Element const& value = Element());
   SmallVector(std::initializer_list<Element> list);
   ~SmallVector();
 
-  SmallVector& operator=(SmallVector const& other);
-  SmallVector& operator=(SmallVector&& other);
-  SmallVector& operator=(std::initializer_list<Element> list);
+  auto operator=(SmallVector const& other) -> SmallVector&;
+  auto operator=(SmallVector&& other) -> SmallVector&;
+  auto operator=(std::initializer_list<Element> list) -> SmallVector&;
 
-  size_t size() const;
-  bool empty() const;
-  void resize(size_t size, Element const& e = Element());
-  void reserve(size_t capacity);
+  [[nodiscard]] auto size() const -> std::size_t;
+  [[nodiscard]] auto empty() const -> bool;
+  void resize(std::size_t size, Element const& e = Element());
+  void reserve(std::size_t capacity);
 
-  reference at(size_t i);
-  const_reference at(size_t i) const;
+  auto at(std::size_t i) -> reference;
+  auto at(std::size_t i) const -> const_reference;
 
-  reference operator[](size_t i);
-  const_reference operator[](size_t i) const;
+  auto operator[](std::size_t i) -> reference;
+  auto operator[](std::size_t i) const -> const_reference;
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  auto begin() const -> const_iterator;
+  auto end() const -> const_iterator;
 
-  iterator begin();
-  iterator end();
+  auto begin() -> iterator;
+  auto end() -> iterator;
 
-  const_reverse_iterator rbegin() const;
-  const_reverse_iterator rend() const;
+  auto rbegin() const -> const_reverse_iterator;
+  auto rend() const -> const_reverse_iterator;
 
-  reverse_iterator rbegin();
-  reverse_iterator rend();
+  auto rbegin() -> reverse_iterator;
+  auto rend() -> reverse_iterator;
 
   // Pointer to internal data, always valid even if empty.
-  Element const* ptr() const;
-  Element* ptr();
+  auto ptr() const -> Element const*;
+  auto ptr() -> Element*;
 
   void push_back(Element e);
   void pop_back();
 
-  iterator insert(iterator pos, Element e);
+  auto insert(iterator pos, Element e) -> iterator;
   template <typename Iterator>
-  iterator insert(iterator pos, Iterator begin, Iterator end);
-  iterator insert(iterator pos, std::initializer_list<Element> list);
+  auto insert(iterator pos, Iterator begin, Iterator end) -> iterator;
+  auto insert(iterator pos, std::initializer_list<Element> list) -> iterator;
 
   template <typename... Args>
   void emplace(iterator pos, Args&&... args);
@@ -83,31 +83,31 @@ public:
 
   void clear();
 
-  iterator erase(iterator pos);
-  iterator erase(iterator begin, iterator end);
+  auto erase(iterator pos) -> iterator;
+  auto erase(iterator begin, iterator end) -> iterator;
 
-  bool operator==(SmallVector const& other) const;
-  bool operator!=(SmallVector const& other) const;
-  bool operator<(SmallVector const& other) const;
+  auto operator==(SmallVector const& other) const -> bool;
+  auto operator!=(SmallVector const& other) const -> bool;
+  auto operator<(SmallVector const& other) const -> bool;
 
 private:
-  alignas(Element) std::byte m_stackElements[MaxStackSize * sizeof(Element)];
+  alignas(Element) std::array<std::byte, MaxStackSize * sizeof(Element)> m_stackElements;
 
-  bool isHeapAllocated() const;
+  [[nodiscard]] auto isHeapAllocated() const -> bool;
 
   Element* m_begin;
   Element* m_end;
   Element* m_capacity;
 };
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector() {
   m_begin = reinterpret_cast<Element*>(m_stackElements);
   m_end = m_begin;
   m_capacity = m_begin + MaxStackSize;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::~SmallVector() {
   clear();
   if (isHeapAllocated()) {
@@ -115,111 +115,111 @@ SmallVector<Element, MaxStackSize>::~SmallVector() {
   }
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector(SmallVector const& other)
-  : SmallVector() {
+    : SmallVector() {
   insert(begin(), other.begin(), other.end());
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector(SmallVector&& other)
-  : SmallVector() {
-    for (auto& e : other)
-      emplace_back(std::move(e));
+    : SmallVector() {
+  for (auto& e : other)
+    emplace_back(std::move(e));
 }
 
-template <typename Element, size_t MaxStackSize>
-template <typename OtherElement, size_t OtherMaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
+template <typename OtherElement, std::size_t OtherMaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector(SmallVector<OtherElement, OtherMaxStackSize> const& other)
-  : SmallVector() {
-    for (auto const& e : other)
-      emplace_back(e);
+    : SmallVector() {
+  for (auto const& e : other)
+    emplace_back(e);
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 template <class Iterator>
 SmallVector<Element, MaxStackSize>::SmallVector(Iterator first, Iterator last)
-  : SmallVector() {
-    insert(begin(), first, last);
+    : SmallVector() {
+  insert(begin(), first, last);
 }
 
-template <typename Element, size_t MaxStackSize>
-SmallVector<Element, MaxStackSize>::SmallVector(size_t size, Element const& value)
-  : SmallVector() {
-    resize(size, value);
+template <typename Element, std::size_t MaxStackSize>
+SmallVector<Element, MaxStackSize>::SmallVector(std::size_t size, Element const& value)
+    : SmallVector() {
+  resize(size, value);
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector(std::initializer_list<Element> list)
-  : SmallVector() {
-    for (auto const& e : list)
-      emplace_back(e);
+    : SmallVector() {
+  for (auto const& e : list)
+    emplace_back(e);
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator=(SmallVector const& other) -> SmallVector& {
   if (this == &other)
     return *this;
 
   resize(other.size());
-  for (size_t i = 0; i < size(); ++i)
+  for (std::size_t i = 0; i < size(); ++i)
     operator[](i) = other[i];
 
   return *this;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator=(SmallVector&& other) -> SmallVector& {
   resize(other.size());
-  for (size_t i = 0; i < size(); ++i)
+  for (std::size_t i = 0; i < size(); ++i)
     operator[](i) = std::move(other[i]);
 
   return *this;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator=(std::initializer_list<Element> list) -> SmallVector& {
   resize(list.size());
-  for (size_t i = 0; i < size(); ++i)
+  for (std::size_t i = 0; i < size(); ++i)
     operator[](i) = std::move(list[i]);
   return *this;
 }
 
-template <typename Element, size_t MaxStackSize>
-size_t SmallVector<Element, MaxStackSize>::size() const {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::size() const -> std::size_t {
   return m_end - m_begin;
 }
 
-template <typename Element, size_t MaxStackSize>
-bool SmallVector<Element, MaxStackSize>::empty() const {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::empty() const -> bool {
   return m_begin == m_end;
 }
 
-template <typename Element, size_t MaxStackSize>
-void SmallVector<Element, MaxStackSize>::resize(size_t size, Element const& e) {
+template <typename Element, std::size_t MaxStackSize>
+void SmallVector<Element, MaxStackSize>::resize(std::size_t size, Element const& e) {
   reserve(size);
 
-  for (size_t i = this->size(); i > size; --i)
+  for (std::size_t i = this->size(); i > size; --i)
     pop_back();
-  for (size_t i = this->size(); i < size; ++i)
+  for (std::size_t i = this->size(); i < size; ++i)
     emplace_back(e);
 }
 
-template <typename Element, size_t MaxStackSize>
-void SmallVector<Element, MaxStackSize>::reserve(size_t newCapacity) {
-  size_t oldCapacity = m_capacity - m_begin;
+template <typename Element, std::size_t MaxStackSize>
+void SmallVector<Element, MaxStackSize>::reserve(std::size_t newCapacity) {
+  std::size_t oldCapacity = m_capacity - m_begin;
   if (newCapacity > oldCapacity) {
     newCapacity = std::max(oldCapacity * 2, newCapacity);
     auto newMem = (Element*)Star::malloc(newCapacity * sizeof(Element));
     if (!newMem)
       throw MemoryException::format("Could not set new SmallVector capacity {}\n", newCapacity);
 
-    size_t size = m_end - m_begin;
+    std::size_t size = m_end - m_begin;
     auto oldMem = m_begin;
     auto oldHeapAllocated = isHeapAllocated();
 
     // We assume that move constructors can never throw.
-    for (size_t i = 0; i < size; ++i) {
+    for (std::size_t i = 0; i < size; ++i) {
       new (&newMem[i]) Element(std::move(oldMem[i]));
     }
 
@@ -227,97 +227,97 @@ void SmallVector<Element, MaxStackSize>::reserve(size_t newCapacity) {
     m_end = m_begin + size;
     m_capacity = m_begin + newCapacity;
 
-    auto freeOldMem = finally([=, this]() {
+    auto freeOldMem = finally([=, this]() -> auto {
       if (oldHeapAllocated)
-          Star::free(oldMem, oldCapacity * sizeof(Element));
+        Star::free(oldMem, oldCapacity * sizeof(Element));
     });
 
-    for (size_t i = 0; i < size; ++i) {
+    for (std::size_t i = 0; i < size; ++i) {
       oldMem[i].~Element();
     }
   }
 }
 
-template <typename Element, size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::at(size_t i) -> reference {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::at(std::size_t i) -> reference {
   if (i >= size())
     throw OutOfRangeException::format("out of range in SmallVector::at({})", i);
   return m_begin[i];
 }
 
-template <typename Element, size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::at(size_t i) const -> const_reference {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::at(std::size_t i) const -> const_reference {
   if (i >= size())
     throw OutOfRangeException::format("out of range in SmallVector::at({})", i);
   return m_begin[i];
 }
 
-template <typename Element, size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::operator[](size_t i) -> reference {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::operator[](std::size_t i) -> reference {
   return m_begin[i];
 }
 
-template <typename Element, size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::operator[](size_t i) const -> const_reference {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::operator[](std::size_t i) const -> const_reference {
   return m_begin[i];
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::begin() const -> const_iterator {
   return m_begin;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::end() const -> const_iterator {
   return m_end;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::begin() -> iterator {
   return m_begin;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::end() -> iterator {
   return m_end;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::rbegin() const -> const_reverse_iterator {
-    return const_reverse_iterator(end());
+  return const_reverse_iterator(end());
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::rend() const -> const_reverse_iterator {
-    return const_reverse_iterator(begin());
+  return const_reverse_iterator(begin());
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::rbegin() -> reverse_iterator {
-    return reverse_iterator(end());
+  return reverse_iterator(end());
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::rend() -> reverse_iterator {
-    return reverse_iterator(begin());
+  return reverse_iterator(begin());
 }
 
-template <typename Element, size_t MaxStackSize>
-Element const* SmallVector<Element, MaxStackSize>::ptr() const {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::ptr() const -> Element const* {
   return m_begin;
 }
 
-template <typename Element, size_t MaxStackSize>
-Element* SmallVector<Element, MaxStackSize>::ptr() {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::ptr() -> Element* {
   return m_begin;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 void SmallVector<Element, MaxStackSize>::push_back(Element e) {
   emplace_back(std::move(e));
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 void SmallVector<Element, MaxStackSize>::pop_back() {
   if (m_begin == m_end)
     throw OutOfRangeException("SmallVector::pop_back called on empty SmallVector");
@@ -325,47 +325,47 @@ void SmallVector<Element, MaxStackSize>::pop_back() {
   m_end->~Element();
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::insert(iterator pos, Element e) -> iterator {
   emplace(pos, std::move(e));
   return pos;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 template <typename Iterator>
 auto SmallVector<Element, MaxStackSize>::insert(iterator pos, Iterator begin, Iterator end) -> iterator {
-  size_t toAdd = std::distance(begin, end);
-  size_t startIndex = pos - m_begin;
-  size_t endIndex = startIndex + toAdd;
-  size_t toShift = size() - startIndex;
+  std::size_t toAdd = std::distance(begin, end);
+  std::size_t startIndex = pos - m_begin;
+  std::size_t endIndex = startIndex + toAdd;
+  std::size_t toShift = size() - startIndex;
 
   resize(size() + toAdd);
 
-  for (size_t i = toShift; i != 0; --i)
+  for (std::size_t i = toShift; i != 0; --i)
     operator[](endIndex + i - 1) = std::move(operator[](startIndex + i - 1));
 
-  for (size_t i = 0; i != toAdd; ++i)
+  for (std::size_t i = 0; i != toAdd; ++i)
     operator[](startIndex + i) = *begin++;
 
   return pos;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::insert(iterator pos, std::initializer_list<Element> list) -> iterator {
   return insert(pos, list.begin(), list.end());
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 template <typename... Args>
 void SmallVector<Element, MaxStackSize>::emplace(iterator pos, Args&&... args) {
-  size_t index = pos - m_begin;
+  std::size_t index = pos - m_begin;
   emplace_back(Element());
-  for (size_t i = size() - 1; i != index; --i)
+  for (std::size_t i = size() - 1; i != index; --i)
     operator[](i) = std::move(operator[](i - 1));
   operator[](index) = Element(std::forward<Args>(args)...);
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 template <typename... Args>
 void SmallVector<Element, MaxStackSize>::emplace_back(Args&&... args) {
   if (m_end == m_capacity)
@@ -374,55 +374,55 @@ void SmallVector<Element, MaxStackSize>::emplace_back(Args&&... args) {
   ++m_end;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 void SmallVector<Element, MaxStackSize>::clear() {
   while (m_begin != m_end)
     pop_back();
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::erase(iterator pos) -> iterator {
-  size_t index = pos - ptr();
-  for (size_t i = index; i < size() - 1; ++i)
+  std::size_t index = pos - ptr();
+  for (std::size_t i = index; i < size() - 1; ++i)
     operator[](i) = std::move(operator[](i + 1));
   pop_back();
   return pos;
 }
 
-template <typename Element, size_t MaxStackSize>
+template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::erase(iterator begin, iterator end) -> iterator {
-  size_t startIndex = begin - ptr();
-  size_t endIndex = end - ptr();
-  size_t toRemove = endIndex - startIndex;
-  for (size_t i = endIndex; i < size(); ++i)
+  std::size_t startIndex = begin - ptr();
+  std::size_t endIndex = end - ptr();
+  std::size_t toRemove = endIndex - startIndex;
+  for (std::size_t i = endIndex; i < size(); ++i)
     operator[](startIndex + (i - endIndex)) = std::move(operator[](i));
   resize(size() - toRemove);
   return begin;
 }
 
-template <typename Element, size_t MaxStackSize>
-bool SmallVector<Element, MaxStackSize>::operator==(SmallVector const& other) const {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::operator==(SmallVector const& other) const -> bool {
   if (this == &other)
     return true;
 
   if (size() != other.size())
     return false;
 
-  for (size_t i = 0; i < size(); ++i) {
+  for (std::size_t i = 0; i < size(); ++i) {
     if (operator[](i) != other[i])
       return false;
   }
   return true;
 }
 
-template <typename Element, size_t MaxStackSize>
-bool SmallVector<Element, MaxStackSize>::operator!=(SmallVector const& other) const {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::operator!=(SmallVector const& other) const -> bool {
   return !operator==(other);
 }
 
-template <typename Element, size_t MaxStackSize>
-bool SmallVector<Element, MaxStackSize>::operator<(SmallVector const& other) const {
-  for (size_t i = 0; i < size(); ++i) {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::operator<(SmallVector const& other) const -> bool {
+  for (std::size_t i = 0; i < size(); ++i) {
     if (i >= other.size())
       return false;
 
@@ -438,9 +438,9 @@ bool SmallVector<Element, MaxStackSize>::operator<(SmallVector const& other) con
   return size() < other.size();
 }
 
-template <typename Element, size_t MaxStackSize>
-bool SmallVector<Element, MaxStackSize>::isHeapAllocated() const {
+template <typename Element, std::size_t MaxStackSize>
+auto SmallVector<Element, MaxStackSize>::isHeapAllocated() const -> bool {
   return m_begin != reinterpret_cast<Element const*>(m_stackElements);
 }
 
-}
+}// namespace Star

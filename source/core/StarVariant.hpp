@@ -9,6 +9,7 @@ namespace Star {
 using BadVariantCast = ExceptionDerived<"BadVariantCast">;
 using BadVariantType = ExceptionDerived<"BadVariantType">;
 
+using VariantTypeIndex = std::uint8_t;
 std::uint8_t const InvalidVariantType = 255;
 
 namespace detail {

@@ -1,11 +1,14 @@
 #pragma once
 
-#include "StarJson.hpp"
-#include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
-#include "StarStrongTypedef.hpp"
-#include "StarItemDescriptor.hpp"
 #include "StarCelestialCoordinate.hpp"
+#include "StarGameTypes.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarRect.hpp"
+#include "StarString.hpp"
+#include "StarStrongTypedef.hpp"
+
+import std;
 
 namespace Star {
 
@@ -15,22 +18,23 @@ namespace Star {
 // "any <bandage>", whereas the text for QuestItemList is always a list, e.g.
 // "<1 bandage, 3 apple>."
 struct QuestItem {
-  bool operator==(QuestItem const& rhs) const;
-  ItemDescriptor descriptor() const;
+  QuestItem(String itemName, Json parameters) : itemName(std::move(itemName)), parameters(std::move(parameters)) {}
+  auto operator==(QuestItem const& rhs) const -> bool;
+  [[nodiscard]] auto descriptor() const -> ItemDescriptor;
 
   String itemName;
   Json parameters;
 };
 
 // An item itemTag, indicating a set of possible items
-strong_typedef(String, QuestItemTag);
+using QuestItemTag = StrongTypedef<String>;
 
 // A collection of items
-strong_typedef(List<ItemDescriptor>, QuestItemList);
+using QuestItemList = StrongTypedef<List<ItemDescriptor>>;
 
 // The uniqueId of a specific entity
 struct QuestEntity {
-  bool operator==(QuestEntity const& rhs) const;
+  auto operator==(QuestEntity const& rhs) const -> bool;
 
   std::optional<String> uniqueId;
   std::optional<String> species;
@@ -39,46 +43,46 @@ struct QuestEntity {
 
 // A location within the world, which could represent a spawn point or a dungeon
 struct QuestLocation {
-  bool operator==(QuestLocation const& rhs) const;
+  auto operator==(QuestLocation const& rhs) const -> bool;
 
   std::optional<String> uniqueId;
   RectF region;
 };
 
 struct QuestMonsterType {
-  bool operator==(QuestMonsterType const& rhs) const;
+  auto operator==(QuestMonsterType const& rhs) const -> bool;
 
   String typeName;
   JsonObject parameters;
 };
 
 struct QuestNpcType {
-  bool operator==(QuestNpcType const& rhs) const;
+  auto operator==(QuestNpcType const& rhs) const -> bool;
 
   String species;
   String typeName;
   JsonObject parameters;
-  std::optional<uint64_t> seed;
+  std::optional<std::uint64_t> seed;
 };
 
 struct QuestCoordinate {
-  bool operator==(QuestCoordinate const& rhs) const;
+  auto operator==(QuestCoordinate const& rhs) const -> bool;
 
   CelestialCoordinate coordinate;
 };
 
-typedef Json QuestJson;
+using QuestJson = Json;
 
-typedef MVariant<QuestItem, QuestItemTag, QuestItemList, QuestEntity, QuestLocation, QuestMonsterType, QuestNpcType, QuestCoordinate, QuestJson> QuestParamDetail;
+using QuestParamDetail = MVariant<QuestItem, QuestItemTag, QuestItemList, QuestEntity, QuestLocation, QuestMonsterType, QuestNpcType, QuestCoordinate, QuestJson>;
 
 struct QuestParam {
-  static QuestParam fromJson(Json const& json);
-  static QuestParam diskLoad(Json const& json);
+  static auto fromJson(Json const& json) -> QuestParam;
+  static auto diskLoad(Json const& json) -> QuestParam;
 
-  Json toJson() const;
-  Json diskStore() const;
+  [[nodiscard]] auto toJson() const -> Json;
+  [[nodiscard]] auto diskStore() const -> Json;
 
-  bool operator==(QuestParam const& rhs) const;
+  auto operator==(QuestParam const& rhs) const -> bool;
 
   QuestParamDetail detail;
   std::optional<String> name;
@@ -87,55 +91,55 @@ struct QuestParam {
 };
 
 struct QuestDescriptor {
-  static QuestDescriptor fromJson(Json const& json);
-  static QuestDescriptor diskLoad(Json const& json);
+  static auto fromJson(Json const& json) -> QuestDescriptor;
+  static auto diskLoad(Json const& json) -> QuestDescriptor;
 
-  Json toJson() const;
-  Json diskStore() const;
+  [[nodiscard]] auto toJson() const -> Json;
+  [[nodiscard]] auto diskStore() const -> Json;
 
-  bool operator==(QuestDescriptor const& rhs) const;
+  auto operator==(QuestDescriptor const& rhs) const -> bool;
 
   String questId;
   String templateId;
   StringMap<QuestParam> parameters;
-  uint64_t seed;
+  std::uint64_t seed;
 };
 
 struct QuestArcDescriptor {
-  static QuestArcDescriptor fromJson(Json const& json);
-  static QuestArcDescriptor diskLoad(Json const& json);
+  static auto fromJson(Json const& json) -> QuestArcDescriptor;
+  static auto diskLoad(Json const& json) -> QuestArcDescriptor;
 
-  Json toJson() const;
-  Json diskStore() const;
+  [[nodiscard]] auto toJson() const -> Json;
+  [[nodiscard]] auto diskStore() const -> Json;
 
-  bool operator==(QuestArcDescriptor const& rhs) const;
+  auto operator==(QuestArcDescriptor const& rhs) const -> bool;
 
   List<QuestDescriptor> quests;
   std::optional<String> stagehandUniqueId;
 };
 
-String questParamText(QuestParam const& param);
-StringMap<String> questParamTags(StringMap<QuestParam> const& parameters);
+auto questParamText(QuestParam const& param) -> String;
+auto questParamTags(StringMap<QuestParam> const& parameters) -> StringMap<String>;
 
-StringMap<QuestParam> questParamsFromJson(Json const& json);
-StringMap<QuestParam> questParamsDiskLoad(Json const& json);
-Json questParamsToJson(StringMap<QuestParam> const& parameters);
-Json questParamsDiskStore(StringMap<QuestParam> const& parameters);
+auto questParamsFromJson(Json const& json) -> StringMap<QuestParam>;
+auto questParamsDiskLoad(Json const& json) -> StringMap<QuestParam>;
+auto questParamsToJson(StringMap<QuestParam> const& parameters) -> Json;
+auto questParamsDiskStore(StringMap<QuestParam> const& parameters) -> Json;
 
-DataStream& operator>>(DataStream& ds, QuestItem& param);
-DataStream& operator<<(DataStream& ds, QuestItem const& param);
-DataStream& operator>>(DataStream& ds, QuestEntity& param);
-DataStream& operator<<(DataStream& ds, QuestEntity const& param);
-DataStream& operator>>(DataStream& ds, QuestMonsterType& param);
-DataStream& operator<<(DataStream& ds, QuestMonsterType const& param);
-DataStream& operator>>(DataStream& ds, QuestNpcType& param);
-DataStream& operator<<(DataStream& ds, QuestNpcType const& param);
-DataStream& operator>>(DataStream& ds, QuestCoordinate& param);
-DataStream& operator<<(DataStream& ds, QuestCoordinate const& param);
-DataStream& operator>>(DataStream& ds, QuestParam& param);
-DataStream& operator<<(DataStream& ds, QuestParam const& param);
-DataStream& operator>>(DataStream& ds, QuestDescriptor& quest);
-DataStream& operator<<(DataStream& ds, QuestDescriptor const& quest);
-DataStream& operator>>(DataStream& ds, QuestArcDescriptor& questArc);
-DataStream& operator<<(DataStream& ds, QuestArcDescriptor const& questArc);
-}
+auto operator>>(DataStream& ds, QuestItem& param) -> DataStream&;
+auto operator<<(DataStream& ds, QuestItem const& param) -> DataStream&;
+auto operator>>(DataStream& ds, QuestEntity& param) -> DataStream&;
+auto operator<<(DataStream& ds, QuestEntity const& param) -> DataStream&;
+auto operator>>(DataStream& ds, QuestMonsterType& param) -> DataStream&;
+auto operator<<(DataStream& ds, QuestMonsterType const& param) -> DataStream&;
+auto operator>>(DataStream& ds, QuestNpcType& param) -> DataStream&;
+auto operator<<(DataStream& ds, QuestNpcType const& param) -> DataStream&;
+auto operator>>(DataStream& ds, QuestCoordinate& param) -> DataStream&;
+auto operator<<(DataStream& ds, QuestCoordinate const& param) -> DataStream&;
+auto operator>>(DataStream& ds, QuestParam& param) -> DataStream&;
+auto operator<<(DataStream& ds, QuestParam const& param) -> DataStream&;
+auto operator>>(DataStream& ds, QuestDescriptor& quest) -> DataStream&;
+auto operator<<(DataStream& ds, QuestDescriptor const& quest) -> DataStream&;
+auto operator>>(DataStream& ds, QuestArcDescriptor& questArc) -> DataStream&;
+auto operator<<(DataStream& ds, QuestArcDescriptor const& questArc) -> DataStream&;
+}// namespace Star

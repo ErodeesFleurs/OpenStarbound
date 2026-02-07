@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarWeightedPool.hpp"
 #include "StarParticle.hpp"
+#include "StarWeightedPool.hpp"
 
 namespace Star {
 
@@ -25,7 +25,7 @@ struct WeatherType {
   WeatherType();
   WeatherType(Json config, String path = String());
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   String name;
 
@@ -38,8 +38,8 @@ struct WeatherType {
   StringList weatherNoises;
 };
 
-typedef WeightedPool<String> WeatherPool;
+using WeatherPool = WeightedPool<String>;
 
-DataStream& operator>>(DataStream& ds, WeatherType& weatherType);
-DataStream& operator<<(DataStream& ds, WeatherType const& weatherType);
-}
+auto operator>>(DataStream& ds, WeatherType& weatherType) -> DataStream&;
+auto operator<<(DataStream& ds, WeatherType const& weatherType) -> DataStream&;
+}// namespace Star

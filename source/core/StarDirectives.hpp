@@ -1,9 +1,9 @@
 #pragma once
 
-#include "StarException.hpp"
-#include "StarImageProcessing.hpp"
-#include "StarHash.hpp"
 #include "StarDataStream.hpp"
+#include "StarException.hpp"
+#include "StarHash.hpp"
+#include "StarImageProcessing.hpp"
 #include "StarStringView.hpp"
 #include "StarThread.hpp"
 
@@ -11,7 +11,7 @@ import std;
 
 namespace Star {
 
-using DirectivesException =  ExceptionDerived<"DirectivesException">;
+using DirectivesException = ExceptionDerived<"DirectivesException">;
 
 // Kae: My attempt at reducing memory allocation and per-frame string parsing for extremely long directives
 class Directives {
@@ -24,8 +24,8 @@ public:
 
     auto loadOperation(Shared const& parent) const -> ImageOperation const&;
     auto string(Shared const& parent) const -> StringView;
-    Entry(ImageOperation&& newOperation, size_t begin, size_t end);
-    Entry(ImageOperation const& newOperation, size_t begin, size_t end);
+    Entry(ImageOperation&& newOperation, std::size_t begin, std::size_t end);
+    Entry(ImageOperation const& newOperation, std::size_t begin, std::size_t end);
     Entry(Entry const& other);
   };
 
@@ -61,8 +61,8 @@ public:
   [[nodiscard]] auto stringPtr() const -> String const*;
   [[nodiscard]] auto buildString() const -> String;
   auto addToString(String& out) const -> String&;
-  [[nodiscard]] auto hash() const -> size_t;
-  [[nodiscard]] auto size() const -> size_t;
+  [[nodiscard]] auto hash() const -> std::size_t;
+  [[nodiscard]] auto size() const -> std::size_t;
   [[nodiscard]] auto empty() const -> bool;
   operator bool() const;
 
@@ -109,7 +109,7 @@ public:
   [[nodiscard]] auto applyNewImage(const Image& image, ImageReferenceCallback refCallback = {}) const -> Image;
   void applyExistingImage(Image& image, ImageReferenceCallback refCallback = {}) const;
 
-  [[nodiscard]] auto hash() const -> size_t;
+  [[nodiscard]] auto hash() const -> std::size_t;
   [[nodiscard]] auto list() const -> const List<Directives>&;
 
   friend auto operator==(DirectivesGroup const& a, DirectivesGroup const& b) -> bool;
@@ -117,16 +117,17 @@ public:
 
   friend auto operator>>(DataStream& ds, DirectivesGroup& directives) -> DataStream&;
   friend auto operator<<(DataStream& ds, DirectivesGroup const& directives) -> DataStream&;
+
 private:
   void buildString(String& string, const DirectivesGroup& directives) const;
 
   List<Directives> m_directives;
-  size_t m_count = 0;
+  std::size_t m_count = 0;
 };
 
 template <>
 struct hash<DirectivesGroup> {
-  auto operator()(DirectivesGroup const& s) const -> size_t;
+  auto operator()(DirectivesGroup const& s) const -> std::size_t;
 };
 
 using ImageDirectives = DirectivesGroup;
@@ -140,4 +141,4 @@ inline auto Directives::operator->() const -> Directives::Shared const* {
   return m_shared.get();
 }
 
-}
+}// namespace Star

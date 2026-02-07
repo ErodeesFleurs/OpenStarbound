@@ -2,6 +2,8 @@
 
 #include "StarList.hpp"
 
+import std;
+
 namespace Star {
 
 // Holds a stream of values which separate observers can query and track
@@ -12,48 +14,48 @@ namespace Star {
 template <typename T>
 class ObserverStream {
 public:
-  ObserverStream(uint64_t historyLimit = 0);
+  ObserverStream(std::uint64_t historyLimit = 0);
 
   // If a history limit is set, then any entries with step values older than
   // the given limit will be discarded automatically.  A historyLimit of 0
   // means that no values will be forgotten.  The step value increases by one
   // with each entry added, or can be increased artificially by a call to
   // tickStep.
-  uint64_t historyLimit() const;
-  void setHistoryLimit(uint64_t historyLimit = 0);
+  [[nodiscard]] auto historyLimit() const -> std::uint64_t;
+  void setHistoryLimit(std::uint64_t historyLimit = 0);
 
   // Add a value to the end of the stream and increment the step value by 1.
   void add(T value);
 
   // Artificially tick the step by the given delta, which can be used to clear
   // older values.
-  void tick(uint64_t delta = 1);
+  void tick(std::uint64_t delta = 1);
 
   // Query values in the stream since the given step value.  Will return the
   // values in the stream, and a new since value to pass to query on the next
   // call.
-  pair<List<T>, uint64_t> query(uint64_t since = 0) const;
+  auto query(std::uint64_t since = 0) const -> std::pair<List<T>, std::uint64_t>;
 
   // Resets the step value to 0 and clears all values.
   void reset();
 
 private:
-  uint64_t m_historyLimit;
-  uint64_t m_nextStep;
-  Deque<pair<uint64_t, T>> m_values;
+  std::uint64_t m_historyLimit;
+  std::uint64_t m_nextStep{};
+  Deque<std::pair<std::uint64_t, T>> m_values;
 };
 
 template <typename T>
-ObserverStream<T>::ObserverStream(uint64_t historyLimit)
-  : m_historyLimit(historyLimit), m_nextStep(0) {}
+ObserverStream<T>::ObserverStream(std::uint64_t historyLimit)
+    : m_historyLimit(historyLimit) {}
 
 template <typename T>
-uint64_t ObserverStream<T>::historyLimit() const {
+auto ObserverStream<T>::historyLimit() const -> std::uint64_t {
   return m_historyLimit;
 }
 
 template <typename T>
-void ObserverStream<T>::setHistoryLimit(uint64_t historyLimit) {
+void ObserverStream<T>::setHistoryLimit(std::uint64_t historyLimit) {
   m_historyLimit = historyLimit;
   tick(0);
 }
@@ -65,20 +67,20 @@ void ObserverStream<T>::add(T value) {
 }
 
 template <typename T>
-void ObserverStream<T>::tick(uint64_t delta) {
+void ObserverStream<T>::tick(std::uint64_t delta) {
   m_nextStep += delta;
-  uint64_t removeBefore = m_nextStep - min(m_nextStep, m_historyLimit);
+  std::uint64_t removeBefore = m_nextStep - std::min(m_nextStep, m_historyLimit);
   while (!m_values.empty() && m_values.first().first < removeBefore)
     m_values.removeFirst();
 }
 
 template <typename T>
-pair<List<T>, uint64_t> ObserverStream<T>::query(uint64_t since) const {
+auto ObserverStream<T>::query(std::uint64_t since) const -> std::pair<List<T>, std::uint64_t> {
   List<T> res;
   auto i = std::lower_bound(m_values.begin(),
-      m_values.end(),
-      since,
-      [](pair<uint64_t, T> const& p, uint64_t step) { return p.first < step; });
+                            m_values.end(),
+                            since,
+                            [](std::pair<std::uint64_t, T> const& p, std::uint64_t step) -> auto { return p.first < step; });
   while (i != m_values.end()) {
     res.append(i->second);
     ++i;
@@ -92,4 +94,4 @@ void ObserverStream<T>::reset() {
   m_values.clear();
 }
 
-}
+}// namespace Star

@@ -1,5 +1,7 @@
 #include "StarAssetPath.hpp"
 
+import std;
+
 namespace Star {
 
 // The filename is everything after the last slash (excluding directives) and
@@ -23,13 +25,13 @@ static std::optional<std::pair<std::size_t, std::size_t>> findFilenameRange(std:
   }
 }
 
-AssetPath AssetPath::split(String const& path) {
+auto AssetPath::split(String const& path) -> AssetPath {
   AssetPath components;
 
   std::string const& str = path.utf8();
 
   //base paths cannot have any ':' or '?' characters, stop at the first one.
-  size_t end = str.find_first_of(":?");
+  std::size_t end = str.find_first_of(":?");
   components.basePath = str.substr(0, end);
 
   if (end == std::numeric_limits<std::size_t>::max())
@@ -38,12 +40,12 @@ AssetPath AssetPath::split(String const& path) {
   // Sub-paths must immediately follow base paths and must start with a ':',
   // after this point any further ':' characters are not special.
   if (str[end] == ':') {
-    size_t beg = end + 1;
+    std::size_t beg = end + 1;
     if (beg != str.size()) {
       end = str.find_first_of('?', beg);
       if (end == std::numeric_limits<std::size_t>::max() && beg + 1 != str.size())
         components.subPath.emplace(str.substr(beg));
-      else if (size_t len = end - beg)
+      else if (std::size_t len = end - beg)
         components.subPath.emplace(str.substr(beg, len));
     }
   }
@@ -59,53 +61,53 @@ AssetPath AssetPath::split(String const& path) {
   return components;
 }
 
-String AssetPath::join(AssetPath const& components) {
+auto AssetPath::join(AssetPath const& components) -> String {
   return toString(components);
 }
 
-String AssetPath::setSubPath(String const& path, String const& subPath) {
+auto AssetPath::setSubPath(String const& path, String const& subPath) -> String {
   auto components = split(path);
   components.subPath = subPath;
   return join(components);
 }
 
-String AssetPath::removeSubPath(String const& path) {
+auto AssetPath::removeSubPath(String const& path) -> String {
   auto components = split(path);
   components.subPath.reset();
   return join(components);
 }
 
-String AssetPath::getDirectives(String const& path) {
-  size_t firstDirective = path.find('?');
+auto AssetPath::getDirectives(String const& path) -> String {
+  std::size_t firstDirective = path.find('?');
   if (firstDirective == std::numeric_limits<std::size_t>::max())
     return {};
   return path.substr(firstDirective + 1);
 }
 
-String AssetPath::addDirectives(String const& path, String const& directives) {
+auto AssetPath::addDirectives(String const& path, String const& directives) -> String {
   return String::joinWith("?", path, directives);
 }
 
-String AssetPath::removeDirectives(String const& path) {
-  size_t firstDirective = path.find('?');
+auto AssetPath::removeDirectives(String const& path) -> String {
+  std::size_t firstDirective = path.find('?');
   if (firstDirective == std::numeric_limits<std::size_t>::max())
     return path;
   return path.substr(0, firstDirective);
 }
 
-String AssetPath::directory(String const& path) {
+auto AssetPath::directory(String const& path) -> String {
   if (auto p = findFilenameRange(path.utf8())) {
-    return String(path.utf8().substr(0, p->first));
+    return {path.utf8().substr(0, p->first)};
   } else {
-    return String();
+    return {};
   }
 }
 
-String AssetPath::filename(String const& path) {
+auto AssetPath::filename(String const& path) -> String {
   if (auto p = findFilenameRange(path.utf8())) {
     return String(path.utf8().substr(p->first, p->second));
   } else {
-    return String();
+    return {};
   }
 }
 
@@ -167,7 +169,7 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
   return os;
 }
 
-size_t hash<AssetPath>::operator()(AssetPath const& s) const {
+std::size_t hash<AssetPath>::operator()(AssetPath const& s) const {
   return hashOf(s.basePath, s.subPath, s.directives);
 }
 

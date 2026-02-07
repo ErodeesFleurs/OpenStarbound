@@ -1,5 +1,7 @@
 #include "StarNetElementSyncGroup.hpp"
 
+import std;
+
 namespace Star {
 
 void NetElementSyncGroup::enableNetInterpolation(float extrapolationHint) {
@@ -27,25 +29,29 @@ void NetElementSyncGroup::tickNetInterpolation(float dt) {
 }
 
 void NetElementSyncGroup::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   const_cast<NetElementSyncGroup*>(this)->netElementsNeedStore();
   return NetElementGroup::netStore(ds, rules);
 }
 
 void NetElementSyncGroup::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   NetElementGroup::netLoad(ds, rules);
   netElementsNeedLoad(true);
 }
 
-bool NetElementSyncGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return false;
+auto NetElementSyncGroup::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const -> bool {
+  if (!checkWithRules(rules))
+    return false;
   const_cast<NetElementSyncGroup*>(this)->netElementsNeedStore();
   return NetElementGroup::writeNetDelta(ds, fromVersion, rules);
 }
 
 void NetElementSyncGroup::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   NetElementGroup::readNetDelta(ds, interpolationTime, rules);
 
   m_hasRecentChanges = true;
@@ -71,11 +77,11 @@ void NetElementSyncGroup::netElementsNeedLoad(bool) {}
 
 void NetElementSyncGroup::netElementsNeedStore() {}
 
-void NetElementCallbackGroup::setNeedsLoadCallback(function<void(bool)> needsLoadCallback) {
+void NetElementCallbackGroup::setNeedsLoadCallback(std::function<void(bool)> needsLoadCallback) {
   m_netElementsNeedLoad = std::move(needsLoadCallback);
 }
 
-void NetElementCallbackGroup::setNeedsStoreCallback(function<void()> needsStoreCallback) {
+void NetElementCallbackGroup::setNeedsStoreCallback(std::function<void()> needsStoreCallback) {
   m_netElementsNeedStore = std::move(needsStoreCallback);
 }
 
@@ -89,4 +95,4 @@ void NetElementCallbackGroup::netElementsNeedStore() {
     m_netElementsNeedStore();
 }
 
-}
+}// namespace Star

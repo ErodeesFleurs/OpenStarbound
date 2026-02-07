@@ -1,23 +1,23 @@
 #pragma once
 
-#include <optional>
+#include "StarException.hpp"
 #include "StarJson.hpp"
-#include "StarThread.hpp"
 #include "StarTileDamage.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(Plant);
-STAR_CLASS(PlantDatabase);
+class Plant;
 
-STAR_EXCEPTION(PlantDatabaseException, StarException);
+using PlantDatabaseException = ExceptionDerived<"PlantDatabaseException">;
 
 // Configuration for a specific tree variant
 struct TreeVariant {
   TreeVariant();
   TreeVariant(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   String stemName;
   String foliageName;
@@ -46,7 +46,7 @@ struct GrassVariant {
   GrassVariant();
   GrassVariant(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   String name;
 
@@ -72,7 +72,7 @@ struct BushVariant {
   BushVariant();
   BushVariant(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   String bushName;
   String modName;
@@ -95,28 +95,28 @@ class PlantDatabase {
 public:
   PlantDatabase();
 
-  StringList treeStemNames(bool ceiling = false) const;
-  StringList treeFoliageNames() const;
+  [[nodiscard]] auto treeStemNames(bool ceiling = false) const -> StringList;
+  [[nodiscard]] auto treeFoliageNames() const -> StringList;
   // Each stem / foliage set has its own patterns of shapes that must match up
-  String treeStemShape(String const& stemName) const;
-  String treeFoliageShape(String const& foliageName) const;
-  std::optional<String> treeStemDirectory(String const& stemName) const;
-  std::optional<String> treeFoliageDirectory(String const& foliageName) const;
+  [[nodiscard]] auto treeStemShape(String const& stemName) const -> String;
+  [[nodiscard]] auto treeFoliageShape(String const& foliageName) const -> String;
+  [[nodiscard]] auto treeStemDirectory(String const& stemName) const -> std::optional<String>;
+  [[nodiscard]] auto treeFoliageDirectory(String const& foliageName) const -> std::optional<String>;
   // Throws an exception if stem shape and foliage shape do not match
-  TreeVariant buildTreeVariant(String const& stemName, float stemHueShift, String const& foliageName, float foliageHueShift) const;
+  [[nodiscard]] auto buildTreeVariant(String const& stemName, float stemHueShift, String const& foliageName, float foliageHueShift) const -> TreeVariant;
   // Build a foliage-less tree
-  TreeVariant buildTreeVariant(String const& stemName, float stemHueShift) const;
+  [[nodiscard]] auto buildTreeVariant(String const& stemName, float stemHueShift) const -> TreeVariant;
 
-  StringList grassNames(bool ceiling = false) const;
-  GrassVariant buildGrassVariant(String const& grassName, float hueShift) const;
+  [[nodiscard]] auto grassNames(bool ceiling = false) const -> StringList;
+  [[nodiscard]] auto buildGrassVariant(String const& grassName, float hueShift) const -> GrassVariant;
 
-  StringList bushNames(bool ceiling = false) const;
-  StringList bushMods(String const& bushName) const;
-  BushVariant buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const;
+  [[nodiscard]] auto bushNames(bool ceiling = false) const -> StringList;
+  [[nodiscard]] auto bushMods(String const& bushName) const -> StringList;
+  [[nodiscard]] auto buildBushVariant(String const& bushName, float baseHueShift, String const& modName, float modHueShift) const -> BushVariant;
 
-  PlantPtr createPlant(TreeVariant const& treeVariant, uint64_t seed) const;
-  PlantPtr createPlant(GrassVariant const& grassVariant, uint64_t seed) const;
-  PlantPtr createPlant(BushVariant const& bushVariant, uint64_t seed) const;
+  [[nodiscard]] auto createPlant(TreeVariant const& treeVariant, std::uint64_t seed) const -> Ptr<Plant>;
+  [[nodiscard]] auto createPlant(GrassVariant const& grassVariant, std::uint64_t seed) const -> Ptr<Plant>;
+  [[nodiscard]] auto createPlant(BushVariant const& bushVariant, std::uint64_t seed) const -> Ptr<Plant>;
 
 private:
   struct Config {
@@ -132,4 +132,4 @@ private:
   StringMap<Config> m_bushConfigs;
 };
 
-}
+}// namespace Star

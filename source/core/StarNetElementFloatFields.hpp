@@ -1,19 +1,19 @@
 #pragma once
 
-#include <optional>
-#include <type_traits>
-
-#include "StarNetElement.hpp"
+#include "StarException.hpp"
 #include "StarInterpolation.hpp"
+#include "StarNetElement.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(StepStreamException, StarException);
+using StepStreamException = ExceptionDerived<"StepStreamException">;
 
 template <typename T>
 class NetElementFloating : public NetElement {
 public:
-  T get() const;
+  auto get() const -> T;
   void set(T value);
 
   // If a fixed point base is given, then instead of transmitting the value as
@@ -27,7 +27,7 @@ public:
   // used to interpolate this value.  It is not necessary that senders and
   // receivers both have matching interpolation functions, or any interpolation
   // functions at all.
-  void setInterpolator(function<T(T, T, T)> interpolator);
+  void setInterpolator(std::function<T(T, T, T)> interpolator);
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -40,31 +40,31 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  auto writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const -> bool override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
 private:
   void writeValue(DataStream& ds, T t) const;
-  T readValue(DataStream& ds) const;
+  auto readValue(DataStream& ds) const -> T;
 
-  T interpolate() const;
+  auto interpolate() const -> T;
 
   std::optional<T> m_fixedPointBase;
   NetElementVersion const* m_netVersion = nullptr;
-  uint64_t m_latestUpdateVersion = 0;
+  std::uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
 
-  function<T(T, T, T)> m_interpolator;
+  std::function<T(T, T, T)> m_interpolator;
   float m_extrapolation = 0.0f;
-  std::optional<Deque<pair<float, T>>> m_interpolationDataPoints;
+  std::optional<Deque<std::pair<float, T>>> m_interpolationDataPoints;
 };
 
-typedef NetElementFloating<float> NetElementFloat;
-typedef NetElementFloating<double> NetElementDouble;
+using NetElementFloat = NetElementFloating<float>;
+using NetElementDouble = NetElementFloating<double>;
 
 template <typename T>
-T NetElementFloating<T>::get() const {
+auto NetElementFloating<T>::get() const -> T {
   return m_value;
 }
 
@@ -91,7 +91,7 @@ void NetElementFloating<T>::setFixedPointBase(std::optional<T> fixedPointBase) {
 }
 
 template <typename T>
-void NetElementFloating<T>::setInterpolator(function<T(T, T, T)> interpolator) {
+void NetElementFloating<T>::setInterpolator(std::function<T(T, T, T)> interpolator) {
   m_interpolator = std::move(interpolator);
 }
 
@@ -133,7 +133,8 @@ void NetElementFloating<T>::tickNetInterpolation(float dt) {
 
 template <typename T>
 void NetElementFloating<T>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   if (m_interpolationDataPoints)
     writeValue(ds, m_interpolationDataPoints->last().second);
   else
@@ -142,7 +143,8 @@ void NetElementFloating<T>::netStore(DataStream& ds, NetCompatibilityRules rules
 
 template <typename T>
 void NetElementFloating<T>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   m_value = readValue(ds);
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   if (m_interpolationDataPoints) {
@@ -152,8 +154,9 @@ void NetElementFloating<T>::netLoad(DataStream& ds, NetCompatibilityRules rules)
 }
 
 template <typename T>
-bool NetElementFloating<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return false;
+auto NetElementFloating<T>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const -> bool {
+  if (!checkWithRules(rules))
+    return false;
   if (m_latestUpdateVersion < fromVersion)
     return false;
 
@@ -166,8 +169,7 @@ bool NetElementFloating<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion, 
 }
 
 template <typename T>
-void NetElementFloating<T>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  _unused(rules);
+void NetElementFloating<T>::readNetDelta(DataStream& ds, float interpolationTime, [[maybe_unused]] NetCompatibilityRules rules) {
   T t = readValue(ds);
 
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
@@ -205,7 +207,7 @@ void NetElementFloating<T>::writeValue(DataStream& ds, T t) const {
 }
 
 template <typename T>
-T NetElementFloating<T>::readValue(DataStream& ds) const {
+auto NetElementFloating<T>::readValue(DataStream& ds) const -> T {
   T t;
   if (m_fixedPointBase)
     t = ds.readVlqI() * *m_fixedPointBase;
@@ -215,15 +217,10 @@ T NetElementFloating<T>::readValue(DataStream& ds) const {
 }
 
 template <typename T>
-T NetElementFloating<T>::interpolate() const {
+auto NetElementFloating<T>::interpolate() const -> T {
   auto& dataPoints = *m_interpolationDataPoints;
 
-  float ipos = inverseLinearInterpolateUpper(dataPoints.begin(), dataPoints.end(), 0.0f,
-      [](float lhs, auto const& rhs) {
-        return lhs < rhs.first;
-      }, [](auto const& dataPoint) {
-        return dataPoint.first;
-      });
+  float ipos = inverseLinearInterpolateUpper(dataPoints.begin(), dataPoints.end(), 0.0f, [](float lhs, auto const& rhs) -> auto { return lhs < rhs.first; }, [](auto const& dataPoint) -> auto { return dataPoint.first; });
   auto bound = getBound2(ipos, dataPoints.size(), BoundMode::Extrapolate);
 
   if (m_interpolator) {
@@ -245,4 +242,4 @@ T NetElementFloating<T>::interpolate() const {
   }
 }
 
-}
+}// namespace Star

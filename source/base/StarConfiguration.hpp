@@ -1,28 +1,26 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarJson.hpp"
 #include "StarThread.hpp"
-#include "StarVersion.hpp"
 
 namespace Star {
 
-STAR_CLASS(Configuration);
-
-STAR_EXCEPTION(ConfigurationException, StarException);
+using ConfigurationException = ExceptionDerived<"ConfigurationException">;
 
 class Configuration {
 public:
   Configuration(Json defaultConfiguration, Json currentConfiguration);
 
-  Json defaultConfiguration() const;
-  Json currentConfiguration() const;
-  String printConfiguration() const;
+  auto defaultConfiguration() const -> Json;
+  auto currentConfiguration() const -> Json;
+  auto printConfiguration() const -> String;
 
-  Json get(String const& key, Json def = {}) const;
-  Json getPath(String const& path, Json def = {}) const;
+  auto get(String const& key, Json def = {}) const -> Json;
+  auto getPath(String const& path, Json def = {}) const -> Json;
 
-  Json getDefault(String const& key) const;
-  Json getDefaultPath(String const& path) const;
+  auto getDefault(String const& key) const -> Json;
+  auto getDefaultPath(String const& path) const -> Json;
 
   void set(String const& key, Json const& value);
   void setPath(String const& path, Json const& value);
@@ -34,4 +32,4 @@ private:
   Json m_currentConfig;
 };
 
-}
+}// namespace Star

@@ -1,19 +1,29 @@
 #pragma once
 
-#include "StarVector.hpp"
 #include "StarDataStream.hpp"
-#include "StarJson.hpp"
 #include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-enum DamageType : uint8_t { NoDamage, Damage, IgnoresDef, Knockback, Environment, Status };
+enum DamageType : std::uint8_t { NoDamage,
+                                 Damage,
+                                 IgnoresDef,
+                                 Knockback,
+                                 Environment,
+                                 Status };
 extern EnumMap<DamageType> const DamageTypeNames;
 
-enum class HitType { Hit, StrongHit, WeakHit, ShieldHit, Kill };
+enum class HitType { Hit,
+                     StrongHit,
+                     WeakHit,
+                     ShieldHit,
+                     Kill };
 extern EnumMap<HitType> const HitTypeNames;
 
-enum class TeamType : uint8_t {
+enum class TeamType : std::uint8_t {
   Null,
   // non-PvP-enabled players and player allied NPCs
   Friendly,
@@ -35,24 +45,24 @@ enum class TeamType : uint8_t {
 };
 extern EnumMap<TeamType> const TeamTypeNames;
 
-typedef uint16_t TeamNumber;
+using TeamNumber = std::uint16_t;
 
 struct EntityDamageTeam {
   EntityDamageTeam();
   explicit EntityDamageTeam(TeamType type, TeamNumber team = 0);
   explicit EntityDamageTeam(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  bool canDamage(EntityDamageTeam victim, bool victimIsSelf) const;
+  [[nodiscard]] auto canDamage(EntityDamageTeam victim, bool victimIsSelf) const -> bool;
 
-  bool operator==(EntityDamageTeam const& rhs) const;
+  auto operator==(EntityDamageTeam const& rhs) const -> bool;
 
   TeamType type;
   TeamNumber team;
 };
-DataStream& operator<<(DataStream& ds, EntityDamageTeam const& team);
-DataStream& operator>>(DataStream& ds, EntityDamageTeam& team);
+auto operator<<(DataStream& ds, EntityDamageTeam const& team) -> DataStream&;
+auto operator>>(DataStream& ds, EntityDamageTeam& team) -> DataStream&;
 
-TeamNumber soloPvpTeam(ConnectionId clientId);
-}
+auto soloPvpTeam(ConnectionId clientId) -> TeamNumber;
+}// namespace Star

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "StarList.hpp"
-
 namespace Star {
 
 // Monitors the rate at which 'tick()' is called in wall-clock seconds.
@@ -11,16 +9,16 @@ public:
   // is not called, measured in seconds.
   TickRateMonitor(double window);
 
-  double window() const;
+  [[nodiscard]] auto window() const -> double;
 
   // Resets to a zero tick-rate state
   void reset();
 
   // Ticks the given number of times, returns the current rate.
-  double tick(unsigned count = 1);
+  auto tick(unsigned count = 1) -> double;
 
   // Returns the rate as of the *current* time, not the time of the last tick.
-  double rate() const;
+  [[nodiscard]] auto rate() const -> double;
 
 private:
   void dropOff(double currentTime);
@@ -40,36 +38,36 @@ public:
   // It should be chosen so that it is not so short that the actual target rate
   // drifts, but not too long so that the rate returns to normal quickly enough
   // with outliers.
-  double window() const;
+  [[nodiscard]] auto window() const -> double;
   // Setting the window to a new value will reset the TickRateApproacher
   void setWindow(double window);
 
-  double targetTickRate() const;
+  [[nodiscard]] auto targetTickRate() const -> double;
   void setTargetTickRate(double targetTickRate);
 
   // Resets such that the current tick rate is assumed to be perfectly at the
   // target.
   void reset();
 
-  double tick(unsigned count = 1);
-  double rate() const;
+  auto tick(unsigned count = 1) -> double;
+  [[nodiscard]] auto rate() const -> double;
 
   // How many ticks we currently should perform, so that if each tick happened
   // instantly, we would be as close to the target tick rate as possible.  If
   // we are ahead, may be negative.
-  double ticksBehind();
+  auto ticksBehind() -> double;
 
   // The negative of ticksBehind, is positive for how many ticks ahead we
   // currently are.
-  double ticksAhead();
+  auto ticksAhead() -> double;
 
   // How much spare time we have until the tick rate will begin to be behind
   // the target tick rate.
-  double spareTime();
+  auto spareTime() -> double;
 
 private:
   TickRateMonitor m_tickRateMonitor;
   double m_targetTickRate;
 };
 
-};
+};// namespace Star

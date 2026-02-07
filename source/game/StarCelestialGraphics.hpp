@@ -1,10 +1,13 @@
 #pragma once
 
 #include "StarCelestialDatabase.hpp"
+#include "StarConfig.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(CelestialDatabase);
+class CelestialDatabase;
 
 // Functions for generating and drawing worlds from a celestial database.
 // Guards against drawing unloaded celestial objects, will return empty if no
@@ -17,41 +20,42 @@ public:
   // Some static versions of drawing functions are given that do not require an
   // active CelestialDatabasePtr to draw.
 
-  static List<pair<String, float>> drawSystemPlanetaryObject(CelestialParameters const& celestialParameters);
-  static List<pair<String, float>> drawSystemCentralBody(CelestialParameters const& celestialParameters);
+  static auto drawSystemPlanetaryObject(CelestialParameters const& celestialParameters) -> List<std::pair<String, float>>;
+  static auto drawSystemCentralBody(CelestialParameters const& celestialParameters) -> List<std::pair<String, float>>;
 
   // Specify the shadowing parameters in order to use the shadowing
   // information from that body instead of the primary one.
-  static List<pair<String, float>> drawWorld(
-      CelestialParameters const& celestialParameters, std::optional<CelestialParameters> const& shadowingParameters = {});
-  static List<pair<String, String>> worldHorizonImages(CelestialParameters const& celestialParameters);
-  static int worldRadialPosition(CelestialParameters const& celestialParameters);
+  static auto drawWorld(
+    CelestialParameters const& celestialParameters, std::optional<CelestialParameters> const& shadowingParameters = {}) -> List<std::pair<String, float>>;
+  static auto worldHorizonImages(CelestialParameters const& celestialParameters) -> List<std::pair<String, String>>;
+  static auto worldRadialPosition(CelestialParameters const& celestialParameters) -> int;
 
   // Each orbiting body will occupy a unique orbital slot, but to give
   // graphical diversity, will also fit into exactly one radial slot for
   // display purposes.  The range of radial numbers is [0, RadialPosiitons)
-  static int planetRadialPositions();
-  static int satelliteRadialPositions();
+  static auto planetRadialPositions() -> int;
+  static auto satelliteRadialPositions() -> int;
 
-  static List<pair<String, float>> drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double twinkleTime);
+  static auto drawSystemTwinkle(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& system, double twinkleTime) -> List<std::pair<String, float>>;
 
   // Returns the small graphic for the given planetary object appropriate for a
   // system-level view.
-  static List<pair<String, float>> drawSystemPlanetaryObject(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
-  static List<pair<String, float>> drawSystemCentralBody(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
+  static auto drawSystemPlanetaryObject(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> List<std::pair<String, float>>;
+  static auto drawSystemCentralBody(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> List<std::pair<String, float>>;
 
   // Returns the graphics appropriate to draw an entire world (planetary object
   // or satellite object) in a map view.  Shadows the satellite the same as
   // its parent planetary object.
-  static List<pair<String, float>> drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
+  static auto drawWorld(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> List<std::pair<String, float>>;
 
-  // Draw all of the left and right image pairs for all the layers for the
+  // Draw all of the left and right image pairs
+  // for all the layers for the
   // world horizon.
-  static List<pair<String, String>> worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
+  static auto worldHorizonImages(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> List<std::pair<String, String>>;
 
-  static int worldRadialPosition(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate);
+  static int worldRadialPosition(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
 
 private:
 };
 
-}
+}// namespace Star

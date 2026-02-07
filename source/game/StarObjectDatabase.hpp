@@ -1,33 +1,26 @@
 #pragma once
 
-#include "StarPeriodicFunction.hpp"
-#include "StarTtlCache.hpp"
+#include "StarConfig.hpp"
+#include "StarDamageTypes.hpp"
+#include "StarEntityRenderingTypes.hpp"
+#include "StarException.hpp"
 #include "StarGameTypes.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarParticle.hpp"
-#include "StarSet.hpp"
-#include "StarTileDamage.hpp"
-#include "StarDamageTypes.hpp"
+#include "StarPeriodicFunction.hpp"
 #include "StarStatusTypes.hpp"
-#include "StarEntityRendering.hpp"
+#include "StarTileDamage.hpp"
 #include "StarTileEntity.hpp"
+#include "StarTtlCache.hpp"
 
-#include <optional>
+import std;
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(Image);
-STAR_CLASS(ItemDatabase);
-STAR_CLASS(RecipeDatabase);
-STAR_CLASS(Object);
-STAR_STRUCT(ObjectOrientation);
-STAR_STRUCT(ObjectConfig);
-STAR_CLASS(ObjectDatabase);
-STAR_CLASS(LuaRoot);
-STAR_CLASS(Rebuilder);
+class Object;
+class Rebuilder;
 
-STAR_EXCEPTION(ObjectException, StarException);
+using ObjectException = ExceptionDerived<"ObjectException">;
 
 struct ObjectOrientation {
   struct Anchor {
@@ -101,9 +94,9 @@ struct ObjectOrientation {
   std::optional<PolyF> statusEffectArea;
   Json touchDamageConfig;
 
-  static ParticleEmissionEntry parseParticleEmitter(String const& path, Json const& config);
-  bool placementValid(World const* world, Vec2I const& position) const;
-  bool anchorsValid(World const* world, Vec2I const& position) const;
+  static auto parseParticleEmitter(String const& path, Json const& config) -> ParticleEmissionEntry;
+  auto placementValid(World const* world, Vec2I const& position) const -> bool;
+  auto anchorsValid(World const* world, Vec2I const& position) const -> bool;
 };
 
 // TODO: This is used very strangely and inconsistently. We go to all the trouble of populating
@@ -114,7 +107,7 @@ struct ObjectOrientation {
 struct ObjectConfig {
   // Returns the index of the best valid orientation.  If no orientations are
   // valid, returns std::numeric_limits<std::size_t>::max()
-  size_t findValidOrientation(World const* world, Vec2I const& position, std::optional<Direction> directionAffinity = std::nullopt) const;
+  auto findValidOrientation(World const* world, Vec2I const& position, std::optional<Direction> directionAffinity = std::nullopt) const -> size_t;
 
   String path;
   // The JSON values that were used to configure this Object
@@ -174,7 +167,7 @@ struct ObjectConfig {
 
   Json animationConfig;
 
-  List<ObjectOrientationPtr> orientations;
+  List<Ptr<ObjectOrientation>> orientations;
 
   // If true, the object will root - it will prevent the blocks it is
   // anchored to from being destroyed directly, and damage from those
@@ -186,42 +179,42 @@ struct ObjectConfig {
 
 class ObjectDatabase {
 public:
-  static List<Vec2I> scanImageSpaces(ImageConstPtr const& image, Vec2F const& position, float fillLimit, bool flip = false);
-  static Json parseTouchDamage(String const& path, Json const& touchDamage);
-  static List<ObjectOrientationPtr> parseOrientations(String const& path, Json const& configList, Json const& baseConfig);
+  static auto scanImageSpaces(ConstPtr<Image> const& image, Vec2F const& position, float fillLimit, bool flip = false) -> List<Vec2I>;
+  static auto parseTouchDamage(String const& path, Json const& touchDamage) -> Json;
+  static auto parseOrientations(String const& path, Json const& configList, Json const& baseConfig) -> List<Ptr<ObjectOrientation>>;
 
   ObjectDatabase();
 
   void cleanup();
 
-  StringList allObjects() const;
-  bool isObject(String const& name) const;
+  auto allObjects() const -> StringList;
+  auto isObject(String const& name) const -> bool;
 
-  ObjectConfigPtr getConfig(String const& objectName) const;
-  List<ObjectOrientationPtr> const& getOrientations(String const& objectName) const;
+  auto getConfig(String const& objectName) const -> Ptr<ObjectConfig>;
+  auto getOrientations(String const& objectName) const -> List<Ptr<ObjectOrientation>> const&;
 
-  ObjectPtr createObject(String const& objectName, Json const& objectParameters = JsonObject()) const;
-  ObjectPtr diskLoadObject(Json const& diskStore) const;
-  ObjectPtr netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  auto createObject(String const& objectName, Json const& objectParameters = JsonObject()) const -> Ptr<Object>;
+  auto diskLoadObject(Json const& diskStore) const -> Ptr<Object>;
+  auto netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules = {}) const -> Ptr<Object>;
 
-  bool canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const;
+  auto canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const -> bool;
   // If the object is placeable in the given position, creates the given object
   // and sets its position and direction and returns it, otherwise returns
   // null.
-  ObjectPtr createForPlacement(World const* world, String const& objectName, Vec2I const& position,
-      Direction direction, Json const& parameters = JsonObject()) const;
+  auto createForPlacement(World const* world, String const& objectName, Vec2I const& position,
+                          Direction direction, Json const& parameters = JsonObject()) const -> Ptr<Object>;
 
-  List<Drawable> cursorHintDrawables(World const* world, String const& objectName, Vec2I const& position,
-      Direction direction, Json parameters = {}) const;
+  auto cursorHintDrawables(World const* world, String const& objectName, Vec2I const& position,
+                           Direction direction, Json parameters = {}) const -> List<Drawable>;
 
 private:
-  static ObjectConfigPtr readConfig(String const& path);
+  static auto readConfig(String const& path) -> Ptr<ObjectConfig>;
 
   StringMap<String> m_paths;
   mutable Mutex m_cacheMutex;
-  mutable HashTtlCache<String, ObjectConfigPtr> m_configCache;
+  mutable HashTtlCache<String, Ptr<ObjectConfig>> m_configCache;
 
-  RebuilderPtr m_rebuilder;
+  Ptr<Rebuilder> m_rebuilder;
 };
 
-}
+}// namespace Star

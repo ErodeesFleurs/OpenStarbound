@@ -4,14 +4,12 @@
 
 namespace Star {
 
-STAR_CLASS(Image);
-
 template <>
 struct LuaConverter<Image> : LuaUserDataConverter<Image> {};
 
 template <>
 struct LuaUserDataMethods<Image> {
-  static LuaMethods<Image> make();
+  static auto make() -> LuaMethods<Image>;
 };
 
 }

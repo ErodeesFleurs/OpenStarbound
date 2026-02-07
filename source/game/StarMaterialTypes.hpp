@@ -1,9 +1,11 @@
 #pragma once
 
+import std;
+
 namespace Star {
 
-typedef uint16_t MaterialId;
-typedef uint8_t MaterialHue;
+using MaterialId = std::uint16_t;
+using MaterialHue = std::uint8_t;
 
 // Empty and non-colliding.
 MaterialId const EmptyMaterialId = 65535;
@@ -38,11 +40,11 @@ MaterialId const FirstEngineMetaMaterialId = 65500;
 // to be used by tile entities or scripts
 MaterialId const FirstMetaMaterialId = 65000;
 
-typedef uint8_t MaterialColorVariant;
+using MaterialColorVariant = std::uint8_t;
 MaterialColorVariant const DefaultMaterialColorVariant = 0;
 MaterialColorVariant const MaxMaterialColorVariant = 8;
 
-typedef uint16_t ModId;
+using ModId = std::uint16_t;
 
 // Tile has no tilemod
 ModId const NoModId = 65535;
@@ -54,44 +56,44 @@ ModId const UndergroundBiomeModId = 65533;
 // The first mod id that is reserved for special hard-coded mod values.
 ModId const FirstMetaMod = 65520;
 
-float materialHueToDegrees(MaterialHue hue);
-MaterialHue materialHueFromDegrees(float degrees);
+auto materialHueToDegrees(MaterialHue hue) -> float;
+auto materialHueFromDegrees(float degrees) -> MaterialHue;
 
-bool isRealMaterial(MaterialId material);
-bool isConnectableMaterial(MaterialId material);
-bool isBiomeMaterial(MaterialId material);
+auto isRealMaterial(MaterialId material) -> bool;
+auto isConnectableMaterial(MaterialId material) -> bool;
+auto isBiomeMaterial(MaterialId material) -> bool;
 
-bool isRealMod(ModId mod);
-bool isBiomeMod(ModId mod);
+auto isRealMod(ModId mod) -> bool;
+auto isBiomeMod(ModId mod) -> bool;
 
-inline float materialHueToDegrees(MaterialHue hue) {
+inline auto materialHueToDegrees(MaterialHue hue) -> float {
   return hue * 360.0f / 255.0f;
 }
 
-inline MaterialHue materialHueFromDegrees(float degrees) {
-  return (MaterialHue)(fmod(degrees, 360.0f) * 255.0f / 360.0f);
+inline auto materialHueFromDegrees(float degrees) -> MaterialHue {
+  return (MaterialHue)(std::fmod(degrees, 360.0f) * 255.0f / 360.0f);
 }
 
-inline bool isRealMaterial(MaterialId material) {
+inline auto isRealMaterial(MaterialId material) -> bool {
   return material < FirstMetaMaterialId;
 }
 
 // TODO: metamaterials need more flexibility to define whether they're connectable,
 // but this is used in several performance intensive areas, some of which don't
 // and probably shouldn't use the material database
-inline bool isConnectableMaterial(MaterialId material) {
+inline auto isConnectableMaterial(MaterialId material) -> bool {
   return !(material == NullMaterialId || material == EmptyMaterialId || material == BoundaryMaterialId);
 }
 
-inline bool isBiomeMaterial(MaterialId material) {
+inline auto isBiomeMaterial(MaterialId material) -> bool {
   return (material == BiomeMaterialId) || ((material >= Biome1MaterialId) && (material <= Biome5MaterialId));
 }
 
-inline bool isRealMod(ModId mod) {
+inline auto isRealMod(ModId mod) -> bool {
   return mod < FirstMetaMod;
 }
 
-inline bool isBiomeMod(ModId mod) {
+inline auto isBiomeMod(ModId mod) -> bool {
   return mod == BiomeModId || mod == UndergroundBiomeModId;
 }
-}
+}// namespace Star

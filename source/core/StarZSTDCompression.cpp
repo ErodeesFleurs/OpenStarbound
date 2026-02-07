@@ -1,6 +1,8 @@
 #include "StarZSTDCompression.hpp"
 #include <zstd.h>
 
+import std;
+
 namespace Star {
 
 CompressionStream::CompressionStream() : m_cStream(ZSTD_createCStream()) {
@@ -18,7 +20,7 @@ void CompressionStream::compress(const char* in, size_t inLen, ByteArray& out) {
   out.resize(out.size() + cOutSize);
   bool finished = false;
   do {
-    ZSTD_outBuffer outBuffer = {out.ptr() + written, min(cOutSize, out.size() - written), 0};
+    ZSTD_outBuffer outBuffer = {out.ptr() + written, std::min(cOutSize, out.size() - written), 0};
     size_t ret = ZSTD_compressStream2(m_cStream, &outBuffer, &inBuffer, ZSTD_e_flush);
     if (ZSTD_isError(ret)) {
       throw IOException(strf("ZSTD compression error {}", ZSTD_getErrorName(ret)));
@@ -41,14 +43,13 @@ void CompressionStream::compress(ByteArray const& in, ByteArray& out) {
   return compress(in.ptr(), in.size(), out);
 }
 
-
-ByteArray CompressionStream::compress(const char* in, size_t inLen) {
+auto CompressionStream::compress(const char* in, size_t inLen) -> ByteArray {
   ByteArray out;
   compress(in, inLen, out);
   return out;
 }
 
-ByteArray CompressionStream::compress(ByteArray const& in) {
+auto CompressionStream::compress(ByteArray const& in) -> ByteArray {
   ByteArray out;
   compress(in.ptr(), in.size(), out);
   return out;
@@ -68,7 +69,7 @@ void DecompressionStream::decompress(const char* in, size_t inLen, ByteArray& ou
   out.resize(out.size() + dOutSize);
   bool finished = false;
   do {
-    ZSTD_outBuffer outBuffer = {out.ptr() + written, min(dOutSize, out.size() - written), 0};
+    ZSTD_outBuffer outBuffer = {out.ptr() + written, std::min(dOutSize, out.size() - written), 0};
     size_t ret = ZSTD_decompressStream(m_dStream, &outBuffer, &inBuffer);
     if (ZSTD_isError(ret)) {
       throw IOException(strf("ZSTD decompression error {}", ZSTD_getErrorName(ret)));
@@ -90,16 +91,16 @@ void DecompressionStream::decompress(ByteArray const& in, ByteArray& out) {
   return decompress(in.ptr(), in.size(), out);
 }
 
-ByteArray DecompressionStream::decompress(const char* in, size_t inLen) {
+auto DecompressionStream::decompress(const char* in, size_t inLen) -> ByteArray {
   ByteArray out;
   decompress(in, inLen, out);
   return out;
 }
 
-ByteArray DecompressionStream::decompress(ByteArray const& in) {
+auto DecompressionStream::decompress(ByteArray const& in) -> ByteArray {
   ByteArray out;
   decompress(in.ptr(), in.size(), out);
   return out;
 }
 
-}
+}// namespace Star

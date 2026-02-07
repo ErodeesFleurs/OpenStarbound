@@ -102,11 +102,10 @@ find_package(PNG REQUIRED)
 find_package(Freetype REQUIRED)
 find_package(CURL REQUIRED)
 find_package(zstd REQUIRED)
-find_package(re2 REQUIRED)
 find_package(imgui REQUIRED)
 
 list(APPEND STAR_EXT_LIBS
-    ZLIB::ZLIB PNG::PNG CURL::libcurl re2::re2
+    ZLIB::ZLIB PNG::PNG CURL::libcurl
     xxHash::xxhash
     imgui::imgui ${VORBIS_LIBRARIES}
     zstd::libzstd_shared
@@ -118,19 +117,8 @@ smart_find_package(Opus opus)
 smart_find_package(Vorbis vorbis)
 smart_find_package(VorbisFile vorbisfile)
 
-list(APPEND STAR_EXT_LIBS Opus::Opus Vorbis::Vorbis VorbisFile::VorbisFile ${OGG_LIBRARIES})
-
-option(STAR_USE_JEMALLOC "Use jemalloc" OFF)
-option(STAR_USE_MIMALLOC "Use mimalloc" OFF)
-if(STAR_USE_JEMALLOC)
-    smart_find_package(JEMALLOC jemalloc)
-    list(APPEND STAR_EXT_LIBS JEMALLOC::JEMALLOC)
-    add_compile_definitions(STAR_USE_JEMALLOC)
-elseif(STAR_USE_MIMALLOC)
-    find_package(mimalloc CONFIG REQUIRED)
-    list(APPEND STAR_EXT_LIBS mimalloc)
-    add_compile_definitions(STAR_USE_MIMALLOC)
-endif()
+list(APPEND STAR_EXT_LIBS Opus::Opus Vorbis::Vorbis VorbisFile::VorbisFile
+     ${OGG_LIBRARIES})
 
 # GUI build options
 
@@ -170,7 +158,12 @@ set(STAR_GAME_INCLUDES
     ${PROJECT_SOURCE_DIR}/game
     ${PROJECT_SOURCE_DIR}/game/interfaces
     ${PROJECT_SOURCE_DIR}/game/items
+    ${PROJECT_SOURCE_DIR}/game/objects
+    ${PROJECT_SOURCE_DIR}/game/scripting
+    ${PROJECT_SOURCE_DIR}/game/terrain
 )
+
+set(STAR_PLATFORM_INCLUDES ${PROJECT_SOURCE_DIR}/platform)
 
 add_subdirectory(extern)
 add_subdirectory(core)

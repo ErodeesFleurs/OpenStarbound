@@ -1,23 +1,26 @@
 #include "StarSystemWorld.hpp"
-#include "StarRoot.hpp"
+#include "StarCasting.hpp"
 #include "StarCelestialDatabase.hpp"
-#include "StarClientContext.hpp"
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarNameGenerator.hpp"// IWYU pragma: export
+#include "StarRoot.hpp"
 #include "StarSystemWorldServer.hpp"
-#include "StarNameGenerator.hpp"
+#include "StarVector.hpp"
+
+import std;
 
 namespace Star {
 
-CelestialOrbit CelestialOrbit::fromJson(Json const& json) {
-  return CelestialOrbit {
-    CelestialCoordinate(json.get("target")),
-    (int)json.getInt("direction"),
-    json.getDouble("enterTime"),
-    jsonToVec2F(json.get("enterPosition"))
-  };
+auto CelestialOrbit::fromJson(Json const& json) -> CelestialOrbit {
+  return CelestialOrbit{
+    .target = CelestialCoordinate(json.get("target")),
+    .direction = (int)json.getInt("direction"),
+    .enterTime = json.getDouble("enterTime"),
+    .enterPosition = jsonToVec2F(json.get("enterPosition"))};
 }
 
-Json CelestialOrbit::toJson() const {
+auto CelestialOrbit::toJson() const -> Json {
   JsonObject json;
   json.set("target", target.toJson());
   json.set("direction", direction);
@@ -40,24 +43,24 @@ void CelestialOrbit::read(DataStream& ds) {
   enterPosition = ds.read<Vec2F>();
 }
 
-bool CelestialOrbit::operator==(CelestialOrbit const& rhs) const {
+auto CelestialOrbit::operator==(CelestialOrbit const& rhs) const -> bool {
   return target == rhs.target
     && direction == rhs.direction
     && enterTime == rhs.enterTime
     && enterPosition == rhs.enterPosition;
 }
 
-DataStream& operator>>(DataStream& ds, CelestialOrbit& orbit) {
+auto operator>>(DataStream& ds, CelestialOrbit& orbit) -> DataStream& {
   orbit.read(ds);
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, CelestialOrbit const& orbit) {
+auto operator<<(DataStream& ds, CelestialOrbit const& orbit) -> DataStream& {
   orbit.write(ds);
   return ds;
 }
 
-SystemLocation jsonToSystemLocation(Json const& json) {
+auto jsonToSystemLocation(Json const& json) -> SystemLocation {
   if (auto location = json.optArray()) {
     if (location->get(0).type() == Json::Type::String) {
       String type = location->get(0).toString();
@@ -74,18 +77,18 @@ SystemLocation jsonToSystemLocation(Json const& json) {
   return {};
 }
 
-Json jsonFromSystemLocation(SystemLocation const& location) {
+auto jsonFromSystemLocation(SystemLocation const& location) -> Json {
   if (auto coordinate = location.maybe<CelestialCoordinate>())
     return JsonArray{"coordinate", coordinate->toJson()};
   else if (auto orbit = location.maybe<CelestialOrbit>())
     return JsonArray{"orbit", orbit->toJson()};
-  else if(auto uuid = location.maybe<Uuid>())
+  else if (auto uuid = location.maybe<Uuid>())
     return JsonArray{"object", uuid->hex()};
   else
     return jsonFromMaybe<Vec2F>(location.maybe<Vec2F>(), jsonFromVec2F);
 }
 
-SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
+auto SystemWorldConfig::fromJson(Json const& json) -> SystemWorldConfig {
   SystemWorldConfig config;
   config.starGravitationalConstant = json.getFloat("starGravitationalConstant");
   config.planetGravitationalConstant = json.getFloat("planetGravitationalConstant");
@@ -115,34 +118,34 @@ SystemWorldConfig SystemWorldConfig::fromJson(Json const& json) {
   return config;
 }
 
-SystemWorld::SystemWorld(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase)
-  : m_celestialDatabase(std::move(celestialDatabase)), m_universeClock(std::move(universeClock)) {
+SystemWorld::SystemWorld(ConstPtr<Clock> universeClock, Ptr<CelestialDatabase> celestialDatabase)
+    : m_celestialDatabase(std::move(celestialDatabase)), m_universeClock(std::move(universeClock)) {
   m_config = SystemWorldConfig::fromJson(Root::singleton().assets()->json("/systemworld.config"));
 }
 
-SystemWorldConfig const& SystemWorld::systemConfig() const {
+auto SystemWorld::systemConfig() const -> SystemWorldConfig const& {
   return m_config;
 }
 
-double SystemWorld::time() const {
+auto SystemWorld::time() const -> double {
   return m_universeClock->time();
 }
 
-Vec3I SystemWorld::location() const {
+auto SystemWorld::location() const -> Vec3I {
   return m_location;
 }
 
-List<CelestialCoordinate> SystemWorld::planets() const {
+auto SystemWorld::planets() const -> List<CelestialCoordinate> {
   return m_celestialDatabase->children(CelestialCoordinate(m_location));
 }
 
-uint64_t SystemWorld::coordinateSeed(CelestialCoordinate const& coordinate, String const& seedMix) const {
+auto SystemWorld::coordinateSeed(CelestialCoordinate const& coordinate, String const& seedMix) const -> uint64_t {
   auto satellite = coordinate.isSatelliteBody() ? coordinate.orbitNumber() : 0;
-  auto planet = coordinate.isSatelliteBody() ? coordinate.parent().orbitNumber() : (coordinate.isPlanetaryBody() && coordinate.orbitNumber()) || 0;
+  auto planet = coordinate.isSatelliteBody() ? coordinate.parent().orbitNumber() : (coordinate.isPlanetaryBody() && coordinate.orbitNumber()) || false;
   return staticRandomU64(coordinate.location()[0], coordinate.location()[1], coordinate.location()[2], planet, satellite, seedMix);
 }
 
-float SystemWorld::planetOrbitDistance(CelestialCoordinate const& coordinate) const {
+auto SystemWorld::planetOrbitDistance(CelestialCoordinate const& coordinate) const -> float {
   RandomSource random(coordinateSeed(coordinate, "PlanetOrbitDistance"));
 
   if (coordinate.isSystem() || coordinate.isNull())
@@ -164,23 +167,23 @@ float SystemWorld::planetOrbitDistance(CelestialCoordinate const& coordinate) co
   return distance;
 }
 
-float SystemWorld::orbitInterval(float distance, bool isMoon) const {
+auto SystemWorld::orbitInterval(float distance, bool isMoon) const -> float {
   float gravityConstant = isMoon ? m_config.planetGravitationalConstant : m_config.starGravitationalConstant;
-  float speed =  sqrt(gravityConstant / distance);
+  float speed = std::sqrt(gravityConstant / distance);
   return (distance * 2 * Constants::pi) / speed;
 }
 
-Vec2F SystemWorld::orbitPosition(CelestialOrbit const& orbit) const {
+auto SystemWorld::orbitPosition(CelestialOrbit const& orbit) const -> Vec2F {
   Vec2F targetPosition = orbit.target.isPlanetaryBody() || orbit.target.isSatelliteBody() ? planetPosition(orbit.target) : Vec2F(0, 0);
   float distance = orbit.enterPosition.magnitude();
   float interval = orbitInterval(distance, false);
 
-  float timeOffset = fmod(time() - orbit.enterTime, interval) / interval;
+  float timeOffset = std::fmod(time() - orbit.enterTime, interval) / interval;
   float angle = (orbit.enterPosition * -1).angle() + (orbit.direction * timeOffset * (Constants::pi * 2));
   return targetPosition + Vec2F::withAngle(angle, distance);
 }
 
-float SystemWorld::clusterSize(CelestialCoordinate const& coordinate) const {
+auto SystemWorld::clusterSize(CelestialCoordinate const& coordinate) const -> float {
   if (coordinate.isPlanetaryBody() && m_celestialDatabase->childOrbits(coordinate.parent()).contains(coordinate.orbitNumber())) {
     auto childOrbits = m_celestialDatabase->childOrbits(coordinate).sorted();
     if (childOrbits.size() > 0) {
@@ -194,7 +197,7 @@ float SystemWorld::clusterSize(CelestialCoordinate const& coordinate) const {
   }
 };
 
-float SystemWorld::planetSize(CelestialCoordinate const& coordinate) const {
+auto SystemWorld::planetSize(CelestialCoordinate const& coordinate) const -> float {
   if (coordinate.isNull())
     return 0;
 
@@ -223,7 +226,7 @@ float SystemWorld::planetSize(CelestialCoordinate const& coordinate) const {
   return m_config.unvisitablePlanetSize;
 }
 
-Vec2F SystemWorld::planetPosition(CelestialCoordinate const& coordinate) const {
+auto SystemWorld::planetPosition(CelestialCoordinate const& coordinate) const -> Vec2F {
   if (coordinate.isNull() || coordinate.isSystem())
     return {0.0, 0.0};
 
@@ -234,14 +237,14 @@ Vec2F SystemWorld::planetPosition(CelestialCoordinate const& coordinate) const {
   float interval = orbitInterval(distance, coordinate.isSatelliteBody());
 
   double start = random.randf();
-  double offset = (fmod(m_universeClock->time(), interval) / interval);
+  double offset = (std::fmod(m_universeClock->time(), interval) / interval);
   int direction = random.randf() > 0.5 ? 1 : -1;
   float angle = (start + direction * offset) * (Constants::pi * 2);
 
-  return parentPosition + Vec2F(cos(angle), sin(angle)) * distance;
+  return parentPosition + Vec2F(std::cos(angle), std::sin(angle)) * distance;
 }
 
-SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid const& uuid) const {
+auto SystemWorld::systemObjectConfig(String const& name, Uuid const& uuid) const -> SystemObjectConfig {
   RandomSource rand(staticRandomU64(uuid.hex()));
 
   SystemObjectConfig object;
@@ -271,11 +274,11 @@ SystemObjectConfig SystemWorld::systemObjectConfig(String const& name, Uuid cons
   return object;
 }
 
-Json SystemWorld::systemObjectTypeConfig(String const& name) {
+auto SystemWorld::systemObjectTypeConfig(String const& name) -> Json {
   return Root::singleton().assets()->json(strf("/system_objects.config:{}", name));
 }
 
-std::optional<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& location) const {
+auto SystemWorld::systemLocationPosition(SystemLocation const& location) const -> std::optional<Vec2F> {
   if (auto coordinate = location.maybe<CelestialCoordinate>()) {
     return planetPosition(*coordinate);
   } else if (auto orbit = location.maybe<CelestialOrbit>()) {
@@ -289,14 +292,14 @@ std::optional<Vec2F> SystemWorld::systemLocationPosition(SystemLocation const& l
   return {};
 }
 
-Vec2F SystemWorld::randomArrivalPosition() const {
+auto SystemWorld::randomArrivalPosition() const -> Vec2F {
   RandomSource rand;
   float range = m_config.arrivalRange[0] + (rand.randf() * (m_config.arrivalRange[1] - m_config.arrivalRange[0]));
   float angle = rand.randf() * Constants::pi * 2;
   return Vec2F::withAngle(angle, range);
 }
 
-std::optional<WarpAction> SystemWorld::objectWarpAction(Uuid const& uuid) const {
+auto SystemWorld::objectWarpAction(Uuid const& uuid) const -> std::optional<WarpAction> {
   if (auto object = getObject(uuid)) {
     WarpAction warpAction = object->warpAction();
     if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
@@ -317,13 +320,13 @@ std::optional<WarpAction> SystemWorld::objectWarpAction(Uuid const& uuid) const 
 }
 
 SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters)
-  : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(0.0f), m_parameters(std::move(parameters)) {
+    : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(0.0f), m_parameters(std::move(parameters)) {
   setPosition(position);
   init();
 }
 
 SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, JsonObject parameters)
-  : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(std::move(spawnTime)), m_parameters(std::move(parameters)) {
+    : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(std::move(spawnTime)), m_parameters(std::move(parameters)) {
   setPosition(position);
   for (auto p : m_config.generatedParameters) {
     if (!m_parameters.contains(p.first))
@@ -338,9 +341,9 @@ SystemObject::SystemObject(SystemWorld* system, Json const& diskStore) {
   m_config = system->systemObjectConfig(name, m_uuid);
   m_parameters = diskStore.getObject("parameters", {});
 
-  m_orbit.set(jsonToMaybe<CelestialOrbit>(diskStore.get("orbit"), [](Json const& json) {
-      return CelestialOrbit::fromJson(json);
-    }));
+  m_orbit.set(jsonToMaybe<CelestialOrbit>(diskStore.get("orbit"), [](Json const& json) -> CelestialOrbit {
+    return CelestialOrbit::fromJson(json);
+  }));
 
   m_spawnTime = diskStore.getDouble("spawnTime");
 
@@ -360,56 +363,56 @@ void SystemObject::init() {
   m_netGroup.addNetElement(&m_orbit);
 }
 
-Uuid SystemObject::uuid() const {
+auto SystemObject::uuid() const -> Uuid {
   return m_uuid;
 }
 
-String SystemObject::name() const {
+auto SystemObject::name() const -> String {
   return m_config.name;
 }
 
-bool SystemObject::permanent() const {
+auto SystemObject::permanent() const -> bool {
   return m_config.permanent;
 }
 
-Vec2F SystemObject::position() const {
-  return Vec2F(m_xPosition.get(), m_yPosition.get());
+auto SystemObject::position() const -> Vec2F {
+  return {m_xPosition.get(), m_yPosition.get()};
 }
 
-WarpAction SystemObject::warpAction() const {
+auto SystemObject::warpAction() const -> WarpAction {
   return m_config.warpAction;
 }
 
-std::optional<float> SystemObject::threatLevel() const {
+auto SystemObject::threatLevel() const -> std::optional<float> {
   return m_config.threatLevel;
 }
 
-SkyParameters SystemObject::skyParameters() const {
+auto SystemObject::skyParameters() const -> SkyParameters {
   return m_config.skyParameters;
 }
 
-JsonObject SystemObject::parameters() const {
+auto SystemObject::parameters() const -> JsonObject {
   return jsonMerge(m_config.parameters, m_parameters).toObject();
 }
 
-bool SystemObject::shouldDestroy() const {
+auto SystemObject::shouldDestroy() const -> bool {
   return m_shouldDestroy;
 }
 
 void SystemObject::enterOrbit(CelestialCoordinate const& target, Vec2F const& targetPosition, double time) {
-  int direction = Random::randf() > 0.5 ? 1 : -1; // random direction
-  m_orbit.set(CelestialOrbit{target, direction, time, targetPosition - position()});
+  int direction = Random::randf() > 0.5 ? 1 : -1;// random direction
+  m_orbit.set(CelestialOrbit{.target = target, .direction = direction, .enterTime = time, .enterPosition = targetPosition - position()});
   m_approach.reset();
 }
 
-std::optional<CelestialCoordinate> SystemObject::orbitTarget() const {
+auto SystemObject::orbitTarget() const -> std::optional<CelestialCoordinate> {
   if (m_orbit.get())
     return m_orbit.get()->target;
   else
     return {};
 }
 
-std::optional<CelestialOrbit> SystemObject::orbit() const {
+auto SystemObject::orbit() const -> std::optional<CelestialOrbit> {
   return m_orbit.get();
 }
 
@@ -443,17 +446,17 @@ void SystemObject::serverUpdate(SystemWorldServer* system, float dt) {
       enterOrbit(*m_approach, {0.0, 0.0}, system->time());
     }
   } else {
-    auto planets = system->planets().filtered([system](CelestialCoordinate const& p) {
-        auto objectsAtPlanet = system->objects().filtered([p](SystemObjectPtr const& o) { return o->orbitTarget() == p; });
-        return objectsAtPlanet.size() == 0;
-      });
+    auto planets = system->planets().filtered([system](CelestialCoordinate const& p) -> bool {
+      auto objectsAtPlanet = system->objects().filtered([p](Ptr<SystemObject> const& o) -> bool { return o->orbitTarget() == p; });
+      return objectsAtPlanet.size() == 0;
+    });
 
     if (planets.size() > 0)
       m_approach = Random::randFrom(planets);
   }
 }
 
-pair<ByteArray, uint64_t> SystemObject::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+auto SystemObject::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) -> std::pair<ByteArray, uint64_t> {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -461,7 +464,7 @@ void SystemObject::readNetState(ByteArray data, float interpolationTime, NetComp
   m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
-ByteArray SystemObject::netStore() const {
+auto SystemObject::netStore() const -> ByteArray {
   DataStreamBuffer ds;
   ds.write(m_uuid);
   ds.write(m_config.name);
@@ -470,13 +473,13 @@ ByteArray SystemObject::netStore() const {
   return ds.takeData();
 }
 
-Json SystemObject::diskStore() const {
+auto SystemObject::diskStore() const -> Json {
   JsonObject store;
   store.set("uuid", m_uuid.hex());
   store.set("name", m_config.name);
-  store.set("orbit", jsonFromMaybe<CelestialOrbit>(m_orbit.get(), [](CelestialOrbit const& o) {
-      return o.toJson();
-    }));
+  store.set("orbit", jsonFromMaybe<CelestialOrbit>(m_orbit.get(), [](CelestialOrbit const& o) -> Json {
+              return o.toJson();
+            }));
   store.set("spawnTime", m_spawnTime);
   store.set("position", jsonFromVec2F(position()));
   store.set("parameters", m_parameters);
@@ -489,17 +492,16 @@ void SystemObject::setPosition(Vec2F const& position) {
 }
 
 SystemClientShip::SystemClientShip(SystemWorld* system, Uuid uuid, float speed, SystemLocation const& location)
-  : m_uuid(std::move(uuid)) {
+    : m_uuid(std::move(uuid)) {
   m_systemLocation.set(location);
-  setPosition(system->systemLocationPosition(location).value({}));
+  setPosition(system->systemLocationPosition(location).value_or(Vec2F{0, 0}));
 
   // temporary
   auto shipConfig = Root::singleton().assets()->json("/systemworld.config:clientShip");
   m_config = ClientShipConfig{
-    shipConfig.getFloat("orbitDistance"),
-    shipConfig.getFloat("departTime"),
-    shipConfig.getFloat("spaceDepartTime")
-  };
+    .orbitDistance = shipConfig.getFloat("orbitDistance"),
+    .departTime = shipConfig.getFloat("departTime"),
+    .spaceDepartTime = shipConfig.getFloat("spaceDepartTime")};
   m_speed = speed;
   m_departTimer = 0.0f;
 
@@ -517,21 +519,21 @@ SystemClientShip::SystemClientShip(SystemWorld* system, Uuid uuid, float speed, 
 }
 
 SystemClientShip::SystemClientShip(SystemWorld* system, Uuid uuid, SystemLocation const& location)
-  : SystemClientShip(system, uuid, 0.0f, location) {}
+    : SystemClientShip(system, uuid, 0.0f, location) {}
 
-Uuid SystemClientShip::uuid() const {
+auto SystemClientShip::uuid() const -> Uuid {
   return m_uuid;
 }
 
-Vec2F SystemClientShip::position() const {
+auto SystemClientShip::position() const -> Vec2F {
   return {m_xPosition.get(), m_yPosition.get()};
 }
 
-SystemLocation SystemClientShip::systemLocation() const {
+auto SystemClientShip::systemLocation() const -> SystemLocation {
   return m_systemLocation.get();
 }
 
-SystemLocation SystemClientShip::destination() const {
+auto SystemClientShip::destination() const -> SystemLocation {
   return m_destination.get();
 }
 
@@ -539,7 +541,7 @@ void SystemClientShip::setDestination(SystemLocation const& destination) {
   auto location = m_systemLocation.get();
   if (location.is<CelestialCoordinate>() || location.is<Uuid>())
     m_departTimer = m_config.departTime;
-  else if(m_destination.get().empty())
+  else if (m_destination.get().empty())
     m_departTimer = m_config.spaceDepartTime;
   m_destination.set(destination);
   m_systemLocation.set({});
@@ -549,7 +551,7 @@ void SystemClientShip::setSpeed(float speed) {
   m_speed = speed;
 }
 
-bool SystemClientShip::flying() const {
+auto SystemClientShip::flying() const -> bool {
   return m_systemLocation.get().empty();
 }
 
@@ -562,21 +564,20 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
   if (auto orbit = m_destination.get().maybe<CelestialOrbit>())
     orbit->enterTime = system->time();
 
-  auto nearPlanetOrbit = [this,system](CelestialCoordinate const& planet) -> CelestialOrbit {
+  auto nearPlanetOrbit = [this, system](CelestialCoordinate const& planet) -> CelestialOrbit {
     Vec2F toShip = system->planetPosition(planet) - position();
-    return CelestialOrbit {
-      planet,
-      1,
-      system->time(),
-      Vec2F::withAngle(toShip.angle(), system->planetSize(planet) / 2.0 + m_config.orbitDistance)
-    };
+    return CelestialOrbit{
+      .target = planet,
+      .direction = 1,
+      .enterTime = system->time(),
+      .enterPosition = Vec2F::withAngle(toShip.angle(), system->planetSize(planet) / 2.0 + m_config.orbitDistance)};
   };
 
   if (auto coordinate = m_systemLocation.get().maybe<CelestialCoordinate>()) {
     if (!m_orbit || m_orbit->target != *coordinate)
       m_orbit = nearPlanetOrbit(*coordinate);
   } else if (m_systemLocation.get().empty()) {
-    m_departTimer = max(0.0f, m_departTimer - dt);
+    m_departTimer = std::max(0.0f, m_departTimer - dt);
     if (m_departTimer > 0.0f)
       return;
 
@@ -593,7 +594,7 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
       m_orbit->enterTime = system->time();
       destination = system->orbitPosition(*m_orbit);
     } else {
-      destination = system->systemLocationPosition(m_destination.get()).value(pos);
+      destination = system->systemLocationPosition(m_destination.get()).value_or(pos);
     }
 
     auto toTarget = destination - pos;
@@ -609,13 +610,13 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
   }
 
   if (m_orbit) {
-    setPosition(system->systemLocationPosition(*m_orbit).get());
+    setPosition(system->systemLocationPosition(*m_orbit).value());
   } else {
-    setPosition(system->systemLocationPosition(m_systemLocation.get()).get());
+    setPosition(system->systemLocationPosition(m_systemLocation.get()).value());
   }
 }
 
-pair<ByteArray, uint64_t> SystemClientShip::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+auto SystemClientShip::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) -> std::pair<ByteArray, std::uint64_t> {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -623,7 +624,7 @@ void SystemClientShip::readNetState(ByteArray data, float interpolationTime, Net
   m_netGroup.readNetState(data, interpolationTime, rules);
 }
 
-ByteArray SystemClientShip::netStore() const {
+auto SystemClientShip::netStore() const -> ByteArray {
   DataStreamBuffer ds;
   ds.write(m_uuid);
   ds.write(m_systemLocation.get());
@@ -635,4 +636,4 @@ void SystemClientShip::setPosition(Vec2F const& position) {
   m_yPosition.set(position[1]);
 }
 
-}
+}// namespace Star

@@ -4,10 +4,12 @@
 #include "StarMultiArray.hpp"
 #include "StarColor.hpp"
 #include "StarPoly.hpp"
-#include <optional>
 #include "StarEither.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
+#include "StarVariant.hpp"
+
+import std;
 
 namespace Star {
 
@@ -31,30 +33,30 @@ struct DataStreamReadFunctor {
   }
 };
 
-inline DataStream& operator<<(DataStream& ds, Empty const&) {
+inline auto operator<<(DataStream& ds, Empty const&) -> DataStream& {
   return ds;
 }
 
-inline DataStream& operator>>(DataStream& ds, Empty&) {
+inline auto operator>>(DataStream& ds, Empty&) -> DataStream& {
   return ds;
 }
 
 template <typename ElementT, size_t SizeN>
-DataStream& operator<<(DataStream& ds, Array<ElementT, SizeN> const& array) {
+auto operator<<(DataStream& ds, Array<ElementT, SizeN> const& array) -> DataStream& {
   for (size_t i = 0; i < SizeN; ++i)
     ds << array[i];
   return ds;
 }
 
 template <typename ElementT, size_t SizeN>
-DataStream& operator>>(DataStream& ds, Array<ElementT, SizeN>& array) {
+auto operator>>(DataStream& ds, Array<ElementT, SizeN>& array) -> DataStream& {
   for (size_t i = 0; i < SizeN; ++i)
     ds >> array[i];
   return ds;
 }
 
 template <typename ElementT, size_t RankN>
-DataStream& operator<<(DataStream& ds, MultiArray<ElementT, RankN> const& array) {
+auto operator<<(DataStream& ds, MultiArray<ElementT, RankN> const& array) -> DataStream& {
   auto size = array.size();
   for (size_t i = 0; i < RankN; ++i)
     ds.writeVlqU(size[i]);
@@ -67,7 +69,7 @@ DataStream& operator<<(DataStream& ds, MultiArray<ElementT, RankN> const& array)
 }
 
 template <typename ElementT, size_t RankN>
-DataStream& operator>>(DataStream& ds, MultiArray<ElementT, RankN>& array) {
+auto operator>>(DataStream& ds, MultiArray<ElementT, RankN>& array) -> DataStream& {
   typename MultiArray<ElementT, RankN>::SizeList size;
   for (size_t i = 0; i < RankN; ++i)
     size[i] = ds.readVlqU();
@@ -81,167 +83,167 @@ DataStream& operator>>(DataStream& ds, MultiArray<ElementT, RankN>& array) {
 }
 
 template <typename T, size_t N>
-DataStream& operator<<(DataStream& ds, Vector<T, N> const& vector) {
+auto operator<<(DataStream& ds, Vector<T, N> const& vector) -> DataStream& {
   for (size_t i = 0; i < N; ++i)
     ds << vector[i];
   return ds;
 }
 
 template <typename T, size_t N>
-DataStream& operator>>(DataStream& ds, Vector<T, N>& vector) {
+auto operator>>(DataStream& ds, Vector<T, N>& vector) -> DataStream& {
   for (size_t i = 0; i < N; ++i)
     ds >> vector[i];
   return ds;
 }
 
-inline DataStream& operator<<(DataStream& ds, Color const& color) {
+inline auto operator<<(DataStream& ds, Color const& color) -> DataStream& {
   ds << color.toRgbaF();
   return ds;
 }
 
-inline DataStream& operator>>(DataStream& ds, Color& color) {
+inline auto operator>>(DataStream& ds, Color& color) -> DataStream& {
   color = Color::rgbaf(ds.read<Vec4F>());
   return ds;
 }
 
 template <typename First, typename Second>
-DataStream& operator<<(DataStream& ds, pair<First, Second> const& pair) {
+auto operator<<(DataStream& ds, std::pair<First, Second> const& pair) -> DataStream& {
   ds << pair.first;
   ds << pair.second;
   return ds;
 }
 
 template <typename First, typename Second>
-DataStream& operator>>(DataStream& ds, pair<First, Second>& pair) {
+auto operator>>(DataStream& ds, std::pair<First, Second>& pair) -> DataStream& {
   ds >> pair.first;
   ds >> pair.second;
   return ds;
 }
 
 template <typename Element>
-DataStream& operator<<(DataStream& ds, std::shared_ptr<Element> const& ptr) {
+auto operator<<(DataStream& ds, std::shared_ptr<Element> const& ptr) -> DataStream& {
   ds.pwrite(ptr);
   return ds;
 }
 
 template <typename Element>
-DataStream& operator>>(DataStream& ds, std::shared_ptr<Element>& ptr) {
+auto operator>>(DataStream& ds, std::shared_ptr<Element>& ptr) -> DataStream& {
   ds.pread(ptr);
   return ds;
 }
 
 template <typename BaseList>
-DataStream& operator<<(DataStream& ds, ListMixin<BaseList> const& list) {
+auto operator<<(DataStream& ds, ListMixin<BaseList> const& list) -> DataStream& {
   ds.writeContainer(list);
   return ds;
 }
 
 template <typename BaseList>
-DataStream& operator>>(DataStream& ds, ListMixin<BaseList>& list) {
+auto operator>>(DataStream& ds, ListMixin<BaseList>& list) -> DataStream& {
   ds.readContainer(list);
   return ds;
 }
 
 template <typename BaseSet>
-DataStream& operator<<(DataStream& ds, SetMixin<BaseSet> const& set) {
+auto operator<<(DataStream& ds, SetMixin<BaseSet> const& set) -> DataStream& {
   ds.writeContainer(set);
   return ds;
 }
 
 template <typename BaseSet>
-DataStream& operator>>(DataStream& ds, SetMixin<BaseSet>& set) {
+auto operator>>(DataStream& ds, SetMixin<BaseSet>& set) -> DataStream& {
   ds.readContainer(set);
   return ds;
 }
 
 template <typename BaseMap>
-DataStream& operator<<(DataStream& ds, MapMixin<BaseMap> const& map) {
+auto operator<<(DataStream& ds, MapMixin<BaseMap> const& map) -> DataStream& {
   ds.writeMapContainer(map);
   return ds;
 }
 
 template <typename BaseMap>
-DataStream& operator>>(DataStream& ds, MapMixin<BaseMap>& map) {
+auto operator>>(DataStream& ds, MapMixin<BaseMap>& map) -> DataStream& {
   ds.readMapContainer(map);
   return ds;
 }
 
 template <typename Key, typename Value, typename Compare, typename Allocator>
-DataStream& operator>>(DataStream& ds, OrderedMap<Key, Value, Compare, Allocator>& map) {
+auto operator>>(DataStream& ds, OrderedMap<Key, Value, Compare, Allocator>& map) -> DataStream& {
   ds.readMapContainer(map);
   return ds;
 }
 
 template <typename Key, typename Value, typename Compare, typename Allocator>
-DataStream& operator<<(DataStream& ds, OrderedMap<Key, Value, Compare, Allocator> const& map) {
+auto operator<<(DataStream& ds, OrderedMap<Key, Value, Compare, Allocator> const& map) -> DataStream& {
   ds.writeMapContainer(map);
   return ds;
 }
 
 template <typename Key, typename Value, typename Hash, typename Equals, typename Allocator>
-DataStream& operator>>(DataStream& ds, OrderedHashMap<Key, Value, Hash, Equals, Allocator>& map) {
+auto operator>>(DataStream& ds, OrderedHashMap<Key, Value, Hash, Equals, Allocator>& map) -> DataStream& {
   ds.readMapContainer(map);
   return ds;
 }
 
 template <typename Key, typename Value, typename Hash, typename Equals, typename Allocator>
-DataStream& operator<<(DataStream& ds, OrderedHashMap<Key, Value, Hash, Equals, Allocator> const& map) {
+auto operator<<(DataStream& ds, OrderedHashMap<Key, Value, Hash, Equals, Allocator> const& map) -> DataStream& {
   ds.writeMapContainer(map);
   return ds;
 }
 
 template <typename Value, typename Compare, typename Allocator>
-DataStream& operator>>(DataStream& ds, OrderedSet<Value, Compare, Allocator>& set) {
+auto operator>>(DataStream& ds, OrderedSet<Value, Compare, Allocator>& set) -> DataStream& {
   ds.readContainer(set);
   return ds;
 }
 
 template <typename Value, typename Compare, typename Allocator>
-DataStream& operator<<(DataStream& ds, OrderedSet<Value, Compare, Allocator> const& set) {
+auto operator<<(DataStream& ds, OrderedSet<Value, Compare, Allocator> const& set) -> DataStream& {
   ds.writeContainer(set);
   return ds;
 }
 
 template <typename Value, typename Hash, typename Equals, typename Allocator>
-DataStream& operator>>(DataStream& ds, OrderedHashSet<Value, Hash, Equals, Allocator>& set) {
+auto operator>>(DataStream& ds, OrderedHashSet<Value, Hash, Equals, Allocator>& set) -> DataStream& {
   ds.readContainer(set);
   return ds;
 }
 
 template <typename Value, typename Hash, typename Equals, typename Allocator>
-DataStream& operator<<(DataStream& ds, OrderedHashSet<Value, Hash, Equals, Allocator> const& set) {
+auto operator<<(DataStream& ds, OrderedHashSet<Value, Hash, Equals, Allocator> const& set) -> DataStream& {
   ds.writeContainer(set);
   return ds;
 }
 
 template <typename DataT>
-DataStream& operator<<(DataStream& ds, Polygon<DataT> const& poly) {
+auto operator<<(DataStream& ds, Polygon<DataT> const& poly) -> DataStream& {
   ds.writeContainer(poly.vertexes());
   return ds;
 }
 
 template <typename DataT>
-DataStream& operator>>(DataStream& ds, Polygon<DataT>& poly) {
+auto operator>>(DataStream& ds, Polygon<DataT>& poly) -> DataStream& {
   ds.readContainer(poly.vertexes());
   return ds;
 }
 
 template <typename DataT, size_t Dimensions>
-DataStream& operator<<(DataStream& ds, Box<DataT, Dimensions> const& box) {
+auto operator<<(DataStream& ds, Box<DataT, Dimensions> const& box) -> DataStream& {
   ds.write(box.min());
   ds.write(box.max());
   return ds;
 }
 
 template <typename DataT, size_t Dimensions>
-DataStream& operator>>(DataStream& ds, Box<DataT, Dimensions>& box) {
+auto operator>>(DataStream& ds, Box<DataT, Dimensions>& box) -> DataStream& {
   ds.read(box.min());
   ds.read(box.max());
   return ds;
 }
 
 template <typename DataT>
-DataStream& operator<<(DataStream& ds, Matrix3<DataT> const& mat3) {
+auto operator<<(DataStream& ds, Matrix3<DataT> const& mat3) -> DataStream& {
   ds.write(mat3[0]);
   ds.write(mat3[1]);
   ds.write(mat3[2]);
@@ -249,7 +251,7 @@ DataStream& operator<<(DataStream& ds, Matrix3<DataT> const& mat3) {
 }
 
 template <typename DataT>
-DataStream& operator>>(DataStream& ds, Matrix3<DataT>& mat3) {
+auto operator>>(DataStream& ds, Matrix3<DataT>& mat3) -> DataStream& {
   ds.read(mat3[0]);
   ds.read(mat3[1]);
   ds.read(mat3[2]);
@@ -260,28 +262,28 @@ DataStream& operator>>(DataStream& ds, Matrix3<DataT>& mat3) {
 // defined for DataStream and if it is default constructible.
 
 template <typename FirstType, typename... RestTypes>
-DataStream& operator<<(DataStream& ds, Variant<FirstType, RestTypes...> const& variant) {
+auto operator<<(DataStream& ds, Variant<FirstType, RestTypes...> const& variant) -> DataStream& {
   ds.write<VariantTypeIndex>(variant.typeIndex());
   variant.call(DataStreamWriteFunctor{ds});
   return ds;
 }
 
 template <typename FirstType, typename... RestTypes>
-DataStream& operator>>(DataStream& ds, Variant<FirstType, RestTypes...>& variant) {
+auto operator>>(DataStream& ds, Variant<FirstType, RestTypes...>& variant) -> DataStream& {
   variant.makeType(ds.read<VariantTypeIndex>());
   variant.call(DataStreamReadFunctor{ds});
   return ds;
 }
 
 template <typename... AllowedTypes>
-DataStream& operator<<(DataStream& ds, MVariant<AllowedTypes...> const& mvariant) {
+auto operator<<(DataStream& ds, MVariant<AllowedTypes...> const& mvariant) -> DataStream& {
   ds.write<VariantTypeIndex>(mvariant.typeIndex());
   mvariant.call(DataStreamWriteFunctor{ds});
   return ds;
 }
 
 template <typename... AllowedTypes>
-DataStream& operator>>(DataStream& ds, MVariant<AllowedTypes...>& mvariant) {
+auto operator>>(DataStream& ds, MVariant<AllowedTypes...>& mvariant) -> DataStream& {
   mvariant.makeType(ds.read<VariantTypeIndex>());
   mvariant.call(DataStreamReadFunctor{ds});
   return ds;
@@ -316,14 +318,14 @@ void readMaybe(DataStream& ds, T& maybe, ReadFunction&& readFunction) {
 
 
 template <typename T>
-DataStream& operator<<(DataStream& ds, std::optional<T> const& maybe) {
-  writeMaybe(ds, maybe, [](DataStream& ds, T const& t) { ds << t; });
+auto operator<<(DataStream& ds, std::optional<T> const& maybe) -> DataStream& {
+  writeMaybe(ds, maybe, [](DataStream& ds, T const& t) -> auto { ds << t; });
   return ds;
 }
 
 template <typename T>
-DataStream& operator>>(DataStream& ds, std::optional<T>& maybe) {
-  readMaybe(ds, maybe, [](DataStream& ds, T& t) { ds >> t; });
+auto operator>>(DataStream& ds, std::optional<T>& maybe) -> DataStream& {
+  readMaybe(ds, maybe, [](DataStream& ds, T& t) -> auto { ds >> t; });
   return ds;
 }
 
@@ -331,22 +333,22 @@ DataStream& operator>>(DataStream& ds, std::optional<T>& maybe) {
 // value, or in edge cases, nothing.
 
 template <typename Left, typename Right>
-DataStream& operator<<(DataStream& ds, Either<Left, Right> const& either) {
+auto operator<<(DataStream& ds, Either<Left, Right> const& either) -> DataStream& {
   if (either.isLeft()) {
-    ds.write<uint8_t>(1);
+    ds.write<std::uint8_t>(1);
     ds.write(either.left());
   } else if (either.isRight()) {
-    ds.write<uint8_t>(2);
+    ds.write<std::uint8_t>(2);
     ds.write(either.right());
   } else {
-    ds.write<uint8_t>(0);
+    ds.write<std::uint8_t>(0);
   }
   return ds;
 }
 
 template <typename Left, typename Right>
-DataStream& operator>>(DataStream& ds, Either<Left, Right>& either) {
-  uint8_t m = ds.read<uint8_t>();
+auto operator>>(DataStream& ds, Either<Left, Right>& either) -> DataStream& {
+  auto m = ds.read<std::uint8_t>();
   if (m == 1)
     either = makeLeft(ds.read<Left>());
   else if (m == 2)
@@ -355,21 +357,21 @@ DataStream& operator>>(DataStream& ds, Either<Left, Right>& either) {
 }
 
 template <typename DataT, size_t Dimensions>
-DataStream& operator<<(DataStream& ds, Line<DataT, Dimensions> const& line) {
+auto operator<<(DataStream& ds, Line<DataT, Dimensions> const& line) -> DataStream& {
   ds.write(line.min());
   ds.write(line.max());
   return ds;
 }
 
 template <typename DataT, size_t Dimensions>
-DataStream& operator>>(DataStream& ds, Line<DataT, Dimensions>& line) {
+auto operator>>(DataStream& ds, Line<DataT, Dimensions>& line) -> DataStream& {
   ds.read(line.min());
   ds.read(line.max());
   return ds;
 }
 
 template <typename T>
-DataStream& operator<<(DataStream& ds, tuple<T> const& t) {
+auto operator<<(DataStream& ds, std::tuple<T> const& t) -> DataStream& {
   ds << get<0>(t);
   return ds;
 }
@@ -393,13 +395,13 @@ struct DataStreamWriter {
 };
 
 template <typename... T>
-DataStream& operator>>(DataStream& ds, tuple<T...>& t) {
+auto operator>>(DataStream& ds, std::tuple<T...>& t) -> DataStream& {
   tupleCallFunction(t, DataStreamReader{ds});
   return ds;
 }
 
 template <typename... T>
-DataStream& operator<<(DataStream& ds, tuple<T...> const& t) {
+auto operator<<(DataStream& ds, std::tuple<T...> const& t) -> DataStream& {
   tupleCallFunction(t, DataStreamWriter{ds});
   return ds;
 }

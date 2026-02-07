@@ -315,7 +315,7 @@ auto HashSetMixin<BaseMap>::combination(HashSetMixin const& s) const -> HashSetM
   return ret;
 }
 
-}
+}// namespace Star
 
 template <typename BaseSet>
 struct std::formatter<Star::SetMixin<BaseSet>> : Star::ostream_formatter {};

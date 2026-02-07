@@ -1,10 +1,13 @@
 #include "StarSocket.hpp"
+
 #include "StarLogging.hpp"
 #include "StarNetImpl.hpp"
 
+import std;
+
 namespace Star {
 
-std::optional<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned timeout) {
+auto Socket::poll(SocketPollQuery const& query, unsigned timeout) -> std::optional<SocketPollResult> {
   if (query.empty())
     return {};
 
@@ -66,7 +69,7 @@ std::optional<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsig
   }
 
 #else
-  unique_ptr<pollfd[]> pollfds(new pollfd[query.size()]);
+  std::unique_ptr<pollfd[]> pollfds(new pollfd[query.size()]);
   int ret = 0;
   for (auto p : enumerateIterator(query)) {
     if (p.first.first->isOpen()) {
@@ -179,21 +182,21 @@ void Socket::setNonBlocking(bool nonBlocking) {
 #endif
 }
 
-NetworkMode Socket::networkMode() const {
+auto Socket::networkMode() const -> NetworkMode {
   ReadLocker locker(m_mutex);
   return m_networkMode;
 }
 
-SocketMode Socket::socketMode() const {
+auto Socket::socketMode() const -> SocketMode {
   ReadLocker locker(m_mutex);
   return m_socketMode;
 }
 
-bool Socket::isActive() const {
+auto Socket::isActive() const -> bool {
   return m_socketMode > SocketMode::Shutdown;
 }
 
-bool Socket::isOpen() const {
+auto Socket::isOpen() const -> bool {
   return m_socketMode != SocketMode::Closed;
 }
 
@@ -209,7 +212,7 @@ void Socket::close() {
 }
 
 Socket::Socket(SocketType type, NetworkMode networkMode)
-  : m_networkMode(networkMode), m_impl(make_shared<SocketImpl>()), m_socketMode(SocketMode::Closed) {
+    : m_networkMode(networkMode), m_impl(std::make_shared<SocketImpl>()), m_socketMode(SocketMode::Closed) {
   if (m_networkMode == NetworkMode::IPv4)
     m_impl->socketDesc = ::socket(AF_INET, type == SocketType::Tcp ? SOCK_STREAM : SOCK_DGRAM, 0);
   else
@@ -223,8 +226,8 @@ Socket::Socket(SocketType type, NetworkMode networkMode)
   setNonBlocking(false);
 }
 
-Socket::Socket(NetworkMode networkMode, SocketImplPtr impl, SocketMode socketMode)
-  : m_networkMode(networkMode), m_impl(impl), m_socketMode(socketMode) {
+Socket::Socket(NetworkMode networkMode, Ptr<SocketImpl> impl, SocketMode socketMode)
+    : m_networkMode(networkMode), m_impl(std::move(impl)), m_socketMode(socketMode) {
   setTimeout(60000);
   setNonBlocking(false);
 }
@@ -269,4 +272,4 @@ void Socket::doClose() {
   }
 }
 
-}
+}// namespace Star

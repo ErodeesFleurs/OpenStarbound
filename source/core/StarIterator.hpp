@@ -431,4 +431,4 @@ auto makeSMutableMapIterator(Container& c) -> SMutableMapIterator<Container> {
   return SMutableMapIterator<Container>(c);
 }
 
-}
+}// namespace Star

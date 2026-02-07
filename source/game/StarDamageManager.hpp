@@ -1,43 +1,45 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarDamage.hpp"
-#include "StarDamageTypes.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(Entity);
-STAR_CLASS(DamageManager);
+class World;
+class Entity;
+// STAR_CLASS(DamageManager);
 
 struct RemoteHitRequest {
-  ConnectionId destinationConnection() const;
+  [[nodiscard]] auto destinationConnection() const -> ConnectionId;
 
   EntityId causingEntityId;
   EntityId targetEntityId;
   DamageRequest damageRequest;
 };
 
-DataStream& operator<<(DataStream& ds, RemoteHitRequest const& hitRequest);
-DataStream& operator>>(DataStream& ds, RemoteHitRequest& hitRequest);
+auto operator<<(DataStream& ds, RemoteHitRequest const& hitRequest) -> DataStream&;
+auto operator>>(DataStream& ds, RemoteHitRequest& hitRequest) -> DataStream&;
 
 struct RemoteDamageRequest {
-  ConnectionId destinationConnection() const;
+  [[nodiscard]] auto destinationConnection() const -> ConnectionId;
 
   EntityId causingEntityId;
   EntityId targetEntityId;
   DamageRequest damageRequest;
 };
 
-DataStream& operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest);
-DataStream& operator>>(DataStream& ds, RemoteDamageRequest& damageRequest);
+auto operator<<(DataStream& ds, RemoteDamageRequest const& damageRequest) -> DataStream&;
+auto operator>>(DataStream& ds, RemoteDamageRequest& damageRequest) -> DataStream&;
 
 struct RemoteDamageNotification {
   EntityId sourceEntityId;
   DamageNotification damageNotification;
 };
 
-DataStream& operator<<(DataStream& ds, RemoteDamageNotification const& damageNotification);
-DataStream& operator>>(DataStream& ds, RemoteDamageNotification& damageNotification);
+auto operator<<(DataStream& ds, RemoteDamageNotification const& damageNotification) -> DataStream&;
+auto operator>>(DataStream& ds, RemoteDamageNotification& damageNotification) -> DataStream&;
 
 // Right now, handles entity -> entity damage and ensures that no repeat damage
 // is applied within the damage cutoff time from the same causing entity.
@@ -56,13 +58,13 @@ public:
   void pushRemoteDamageRequest(RemoteDamageRequest const& remoteDamageRequest);
   void pushRemoteDamageNotification(RemoteDamageNotification remoteDamageNotification);
 
-  List<RemoteHitRequest> pullRemoteHitRequests();
-  List<RemoteDamageRequest> pullRemoteDamageRequests();
-  List<RemoteDamageNotification> pullRemoteDamageNotifications();
+  auto pullRemoteHitRequests() -> List<RemoteHitRequest>;
+  auto pullRemoteDamageRequests() -> List<RemoteDamageRequest>;
+  auto pullRemoteDamageNotifications() -> List<RemoteDamageNotification>;
 
   // Pending *local* notifications.  Sum of all notifications either generated
   // locally or recieved.
-  List<DamageNotification> pullPendingNotifications();
+  auto pullPendingNotifications() -> List<DamageNotification>;
 
 private:
   struct EntityDamageEvent {
@@ -72,9 +74,9 @@ private:
 
   // Searches for and queries for hit to any entity within range of the
   // damage source.  Skips over source.sourceEntityId, if set.
-  SmallList<pair<EntityId, HitType>, 4> queryHit(DamageSource const& source, EntityId causingId) const;
+  [[nodiscard]] auto queryHit(DamageSource const& source, EntityId causingId) const -> SmallList<std::pair<EntityId, HitType>, 4>;
 
-  bool isAuthoritative(EntityPtr const& causingEntity, EntityPtr const& targetEntity);
+  auto isAuthoritative(Ptr<Entity> const& causingEntity, Ptr<Entity> const& targetEntity) -> bool;
 
   void addHitRequest(RemoteHitRequest const& remoteHitRequest);
   void addDamageRequest(RemoteDamageRequest remoteDamageRequest);
@@ -93,4 +95,4 @@ private:
   List<DamageNotification> m_pendingNotifications;
 };
 
-}
+}// namespace Star

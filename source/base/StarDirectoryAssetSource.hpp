@@ -1,13 +1,12 @@
 #pragma once
 
 #include "StarAssetSource.hpp"
+#include "StarConfig.hpp"
 #include "StarString.hpp"
 
 import std;
 
 namespace Star {
-
-STAR_CLASS(DirectoryAssetSource);
 
 class DirectoryAssetSource : public AssetSource {
 public:
@@ -15,14 +14,14 @@ public:
   // 'ignorePatterns' is ignored.
   DirectoryAssetSource(String const& baseDirectory, StringList const& ignorePatterns = {});
 
-  JsonObject metadata() const override;
-  StringList assetPaths() const override;
+  [[nodiscard]] auto metadata() const -> JsonObject override;
+  [[nodiscard]] auto assetPaths() const -> StringList override;
 
-  IODevicePtr open(String const& path) override;
-  ByteArray read(String const& path) override;
+  auto open(String const& path) -> Ptr<IODevice> override;
+  auto read(String const& path) -> ByteArray override;
 
   // Converts an asset path to the path on the filesystem
-  String toFilesystem(String const& path) const;
+  [[nodiscard]] auto toFilesystem(String const& path) const -> String;
 
   // Update metadata file or add a new one.
   void setMetadata(JsonObject metadata);

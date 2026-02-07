@@ -1,13 +1,15 @@
 #pragma once
 
 #include "StarBiMap.hpp"
+#include "StarCelestialCoordinate.hpp"
 #include "StarStrongTypedef.hpp"
 #include "StarUuid.hpp"
-#include "StarCelestialCoordinate.hpp"
+
+import std;
 
 namespace Star {
 
-enum class WarpMode : uint8_t {
+enum class WarpMode : std::uint8_t {
   None,
   BeamOnly,
   DeployOnly,
@@ -23,40 +25,40 @@ struct InstanceWorldId {
   InstanceWorldId();
   InstanceWorldId(String instance, std::optional<Uuid> uuid = {}, std::optional<float> level = {});
 
-  bool operator==(InstanceWorldId const& rhs) const;
-  bool operator<(InstanceWorldId const& rhs) const;
+  auto operator==(InstanceWorldId const& rhs) const -> bool;
+  auto operator<(InstanceWorldId const& rhs) const -> bool;
 };
 
 template <>
 struct hash<InstanceWorldId> {
-  size_t operator()(InstanceWorldId const& id) const;
+  auto operator()(InstanceWorldId const& id) const -> size_t;
 };
 
-DataStream& operator>>(DataStream& ds, InstanceWorldId& missionWorldId);
-DataStream& operator<<(DataStream& ds, InstanceWorldId const& missionWorldId);
+auto operator>>(DataStream& ds, InstanceWorldId& missionWorldId) -> DataStream&;
+auto operator<<(DataStream& ds, InstanceWorldId const& missionWorldId) -> DataStream&;
 
-strong_typedef(CelestialCoordinate, CelestialWorldId);
-strong_typedef(Uuid, ClientShipWorldId);
-typedef MVariant<CelestialWorldId, ClientShipWorldId, InstanceWorldId> WorldId;
+using CelestialWorldId = StrongTypedef<CelestialCoordinate>;
+using ClientShipWorldId = StrongTypedef<Uuid>;
+using WorldId = MVariant<CelestialWorldId, ClientShipWorldId, InstanceWorldId>;
 
-String printWorldId(WorldId const& worldId);
-WorldId parseWorldId(String const& printedId);
+auto printWorldId(WorldId const& worldId) -> String;
+auto parseWorldId(String const& printedId) -> WorldId;
 
 // Same as outputting printWorldId
-std::ostream& operator<<(std::ostream& os, CelestialWorldId const& worldId);
-std::ostream& operator<<(std::ostream& os, ClientShipWorldId const& worldId);
-std::ostream& operator<<(std::ostream& os, InstanceWorldId const& worldId);
-std::ostream& operator<<(std::ostream& os, WorldId const& worldId);
+auto operator<<(std::ostream& os, CelestialWorldId const& worldId) -> std::ostream&;
+auto operator<<(std::ostream& os, ClientShipWorldId const& worldId) -> std::ostream&;
+auto operator<<(std::ostream& os, InstanceWorldId const& worldId) -> std::ostream&;
+auto operator<<(std::ostream& os, WorldId const& worldId) -> std::ostream&;
 
-strong_typedef(String, SpawnTargetUniqueEntity);
-strong_typedef(Vec2F, SpawnTargetPosition);
-strong_typedef_builtin(float, SpawnTargetX);
-typedef MVariant<SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX> SpawnTarget;
+using SpawnTargetUniqueEntity = StrongTypedef<String>;
+using SpawnTargetPosition = StrongTypedef<Vec2F>;
+using SpawnTargetX = StrongTypedefBuiltin<float>;
+using SpawnTarget = MVariant<SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX>;
 
-Json spawnTargetToJson(SpawnTarget spawnTarget);
-SpawnTarget spawnTargetFromJson(Json v);
+auto spawnTargetToJson(SpawnTarget spawnTarget) -> Json;
+auto spawnTargetFromJson(Json v) -> SpawnTarget;
 
-String printSpawnTarget(SpawnTarget spawnTarget);
+auto printSpawnTarget(SpawnTarget spawnTarget) -> String;
 
 struct WarpToWorld {
   WarpToWorld();
@@ -66,13 +68,13 @@ struct WarpToWorld {
   WorldId world;
   SpawnTarget target;
 
-  bool operator==(WarpToWorld const& rhs) const;
+  auto operator==(WarpToWorld const& rhs) const -> bool;
   explicit operator bool() const;
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 };
 
-strong_typedef(Uuid, WarpToPlayer);
+using WarpToPlayer = StrongTypedef<Uuid>;
 
 enum class WarpAlias {
   Return,
@@ -80,19 +82,24 @@ enum class WarpAlias {
   OwnShip
 };
 
-typedef MVariant<WarpToWorld, WarpToPlayer, WarpAlias> WarpAction;
+using WarpAction = MVariant<WarpToWorld, WarpToPlayer, WarpAlias>;
 
-WarpAction parseWarpAction(String const& warpString);
-String printWarpAction(WarpAction const& warpAction);
-JsonObject warpActionToJson(WarpAction const& warpAction);
+auto parseWarpAction(String const& warpString) -> WarpAction;
+auto printWarpAction(WarpAction const& warpAction) -> String;
+auto warpActionToJson(WarpAction const& warpAction) -> JsonObject;
 
-DataStream& operator>>(DataStream& ds, WarpToWorld& warpToWorld);
-DataStream& operator<<(DataStream& ds, WarpToWorld const& warpToWorld);
+auto operator>>(DataStream& ds, WarpToWorld& warpToWorld) -> DataStream&;
+auto operator<<(DataStream& ds, WarpToWorld const& warpToWorld) -> DataStream&;
 
-}
+}// namespace Star
 
-template <> struct std::formatter<Star::CelestialWorldId> : Star::ostream_formatter {};
-template <> struct std::formatter<Star::ClientShipWorldId> : Star::ostream_formatter {};
-template <> struct std::formatter<Star::InstanceWorldId> : Star::ostream_formatter {};
-template <> struct std::formatter<Star::WorldId> : Star::ostream_formatter {};
-template <> struct std::formatter<Star::WarpToWorld> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::CelestialWorldId> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::ClientShipWorldId> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::InstanceWorldId> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::WorldId> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::WarpToWorld> : Star::ostream_formatter {};

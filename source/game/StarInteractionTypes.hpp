@@ -1,11 +1,12 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
 
 namespace Star {
 
-STAR_EXCEPTION(InteractActionException, StarException);
+using InteractActionException = ExceptionDerived<"InteractActionException">;
 
 struct InteractRequest {
   EntityId sourceId;
@@ -14,8 +15,8 @@ struct InteractRequest {
   Vec2F interactPosition;
 };
 
-DataStream& operator>>(DataStream& ds, InteractRequest& ir);
-DataStream& operator<<(DataStream& ds, InteractRequest const& ir);
+auto operator>>(DataStream& ds, InteractRequest& ir) -> DataStream&;
+auto operator<<(DataStream& ds, InteractRequest const& ir) -> DataStream&;
 
 enum class InteractActionType {
   None,
@@ -45,7 +46,7 @@ struct InteractAction {
   Json data;
 };
 
-DataStream& operator>>(DataStream& ds, InteractAction& ir);
-DataStream& operator<<(DataStream& ds, InteractAction const& ir);
+auto operator>>(DataStream& ds, InteractAction& ir) -> DataStream&;
+auto operator<<(DataStream& ds, InteractAction const& ir) -> DataStream&;
 
 }

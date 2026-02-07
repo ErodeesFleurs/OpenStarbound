@@ -1,63 +1,62 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
 #include "StarGameTypes.hpp"
 #include "StarRandom.hpp"
 #include "StarSystemWorld.hpp"
 #include "StarUuid.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(SystemWorldServer);
-
-STAR_STRUCT(Packet);
+struct Packet;
 
 class SystemWorldServer : public SystemWorld {
 public:
   // create new system world server
-  SystemWorldServer(Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase);
+  SystemWorldServer(Vec3I location, ConstPtr<Clock> universeClock, Ptr<CelestialDatabase> celestialDatabase);
   // load system world server from storage
-  SystemWorldServer(Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase);
+  SystemWorldServer(Json const& diskStore, ConstPtr<Clock> universeClock, Ptr<CelestialDatabase> celestialDatabase);
 
   void setClientDestination(ConnectionId const& clientId, SystemLocation const& destination);
 
   // null while flying, system coordinate when in space or at a system object
   // planet coordinates while orbiting a planet
-  SystemClientShipPtr clientShip(ConnectionId clientId) const;
-  SystemLocation clientShipLocation(ConnectionId clientId) const;
-  std::optional<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId) const;
-  SkyParameters clientSkyParameters(ConnectionId clientId) const;
+  [[nodiscard]] auto clientShip(ConnectionId clientId) const -> Ptr<SystemClientShip>;
+  [[nodiscard]] auto clientShipLocation(ConnectionId clientId) const -> SystemLocation;
+  [[nodiscard]] auto clientWarpAction(ConnectionId clientId) const -> std::optional<std::pair<WarpAction, WarpMode>>;
+  [[nodiscard]] auto clientSkyParameters(ConnectionId clientId) const -> SkyParameters;
 
-  List<ConnectionId> clients() const;
+  [[nodiscard]] auto clients() const -> List<ConnectionId>;
   void addClientShip(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation location);
   void removeClientShip(ConnectionId clientId);
-  List<SystemClientShipPtr> shipsAtLocation(SystemLocation const& location) const;
-  List<InstanceWorldId> activeInstanceWorlds() const;
+  [[nodiscard]] auto shipsAtLocation(SystemLocation const& location) const -> List<Ptr<SystemClientShip>>;
+  [[nodiscard]] auto activeInstanceWorlds() const -> List<InstanceWorldId>;
 
   // removeObject queues up object for destruction, any ships at the location
   // are moved away
   void removeObject(Uuid objectUuid);
-  bool addObject(SystemObjectPtr object, bool doRangeCheck = false);
+  auto addObject(Ptr<SystemObject> object, bool doRangeCheck = false) -> bool;
 
   void update(float dt);
 
-  List<SystemObjectPtr> objects() const override;
-  List<Uuid> objectKeys() const override;
-  SystemObjectPtr getObject(Uuid const& uuid) const override;
+  [[nodiscard]] auto objects() const -> List<Ptr<SystemObject>> override;
+  [[nodiscard]] auto objectKeys() const -> List<Uuid> override;
+  [[nodiscard]] auto getObject(Uuid const& uuid) const -> Ptr<SystemObject> override;
 
-  List<ConnectionId> pullShipFlights();
+  auto pullShipFlights() -> List<ConnectionId>;
 
-  void handleIncomingPacket(ConnectionId clientId, PacketPtr packet);
-  List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
+  void handleIncomingPacket(ConnectionId clientId, Ptr<Packet> packet);
+  auto pullOutgoingPackets(ConnectionId clientId) -> List<Ptr<Packet>>;
 
-  bool triggeredStorage();
-  Json diskStore();
+  auto triggeredStorage() -> bool;
+  auto diskStore() -> Json;
 
 private:
   struct ClientNetVersions {
-    HashMap<Uuid, uint64_t> ships;
-    HashMap<Uuid, uint64_t> objects;
+    HashMap<Uuid, std::uint64_t> ships;
+    HashMap<Uuid, std::uint64_t> objects;
   };
 
   void queueUpdatePackets();
@@ -66,9 +65,9 @@ private:
   // random position for new ships entering the system
   void placeInitialObjects();
   void spawnObjects();
-  Vec2F randomObjectSpawnPosition(RandomSource& rand) const;
+  auto randomObjectSpawnPosition(RandomSource& rand) const -> Vec2F;
 
-  SkyParameters locationSkyParameters(SystemLocation const& location) const;
+  [[nodiscard]] auto locationSkyParameters(SystemLocation const& location) const -> SkyParameters;
 
   // setting this to true asynchronously triggers storage from the server thread
   bool m_triggerStorage;
@@ -83,13 +82,12 @@ private:
 
   HashMap<ConnectionId, ClientNetVersions> m_clientNetVersions;
   HashMap<ConnectionId, Uuid> m_clientShips;
-  HashMap<Uuid, SystemObjectPtr> m_objects;
-  HashMap<Uuid, SystemClientShipPtr> m_ships;
+  HashMap<Uuid, Ptr<SystemObject>> m_objects;
+  HashMap<Uuid, Ptr<SystemClientShip>> m_ships;
   // client ID and flight start position
   List<ConnectionId> m_shipFlights;
 
-  HashMap<ConnectionId, List<PacketPtr>> m_outgoingPackets;
+  HashMap<ConnectionId, List<Ptr<Packet>>> m_outgoingPackets;
 };
 
-
-}
+}// namespace Star

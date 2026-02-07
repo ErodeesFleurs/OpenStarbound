@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarException.hpp"
+
 import std;
 
 namespace Star {
@@ -219,7 +220,7 @@ public:
   ZipTupleIterator() : atEnd(true) {}
 
   ZipTupleIterator(TailIterator tailIterator, HeadIterator headIterator)
-    : tailIterator(tailIterator), headIterator(headIterator) {
+      : tailIterator(tailIterator), headIterator(headIterator) {
     atEnd = tailIterator == TailIterator() || headIterator == HeadIterator();
   }
 
@@ -239,7 +240,7 @@ public:
 
   auto operator==(ZipTupleIterator const& rhs) const -> bool {
     return (atEnd && rhs.atEnd)
-        || (!atEnd && !rhs.atEnd && tailIterator == rhs.tailIterator && headIterator == rhs.headIterator);
+      || (!atEnd && !rhs.atEnd && tailIterator == rhs.tailIterator && headIterator == rhs.headIterator);
   }
 
   auto operator!=(ZipTupleIterator const& rhs) const -> bool {
@@ -289,16 +290,20 @@ auto zipIterator(Container& container, Rest&... rest) -> typename zipIteratorRet
 
 namespace RangeHelper {
 
-  template <typename Diff>
-  auto checkIfDiffLessThanZero(Diff) -> bool requires std::is_unsigned_v<Diff> {
-    return false;
-  }
-
-  template <typename Diff>
-  auto checkIfDiffLessThanZero(Diff diff) -> bool requires (!std::is_unsigned_v<Diff>) {
-    return diff < 0;
-  }
+template <typename Diff>
+auto checkIfDiffLessThanZero(Diff) -> bool
+  requires std::is_unsigned_v<Diff>
+{
+  return false;
 }
+
+template <typename Diff>
+auto checkIfDiffLessThanZero(Diff diff) -> bool
+  requires(!std::is_unsigned_v<Diff>)
+{
+  return diff < 0;
+}
+}// namespace RangeHelper
 
 using RangeException = ExceptionDerived<"RangeException">;
 
@@ -314,7 +319,7 @@ public:
   RangeIterator() : m_start(), m_end(), m_diff(1), m_current(), m_stop(true) {}
 
   RangeIterator(Value min, Value max, Diff diff)
-    : m_start(min), m_end(max), m_diff(diff), m_current(min), m_stop(false) {
+      : m_start(min), m_end(max), m_diff(diff), m_current(min), m_stop(false) {
     sanity();
   }
 
@@ -604,4 +609,4 @@ auto enumerateConstruct(Iterable&& list) -> ResultContainer {
   return res;
 }
 
-}
+}// namespace Star

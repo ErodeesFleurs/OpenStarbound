@@ -1,16 +1,17 @@
 #pragma once
 
-#include "StarOrderedMap.hpp"
-#include "StarFile.hpp"
+#include "StarConfig.hpp"
 #include "StarDirectoryAssetSource.hpp"
+#include "StarFile.hpp"
+#include "StarOrderedMap.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(PackedAssetSource);
-
 class PackedAssetSource : public AssetSource {
 public:
-  typedef function<void(size_t, size_t, String, String)> BuildProgressCallback;
+  using BuildProgressCallback = std::function<void(size_t, size_t, String, String)>;
 
   // Build a packed asset file from the given DirectoryAssetSource.
   //
@@ -27,16 +28,16 @@ public:
 
   PackedAssetSource(String const& packedFileName);
 
-  JsonObject metadata() const override;
-  StringList assetPaths() const override;
+  [[nodiscard]] auto metadata() const -> JsonObject override;
+  [[nodiscard]] auto assetPaths() const -> StringList override;
 
-  IODevicePtr open(String const& path) override;
-  ByteArray read(String const& path) override;
+  auto open(String const& path) -> Ptr<IODevice> override;
+  auto read(String const& path) -> ByteArray override;
 
 private:
-  FilePtr m_packedFile;
+  Ptr<File> m_packedFile;
   JsonObject m_metadata;
-  OrderedHashMap<String, pair<uint64_t, uint64_t>> m_index;
+  OrderedHashMap<String, std::pair<std::uint64_t, std::uint64_t>> m_index;
 };
 
 }

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "StarMemory.hpp"
-
 import std;
 
 namespace Star {
@@ -12,7 +10,7 @@ namespace Star {
 // written most significant first. Returns number of octet written (writes a
 // maximum of a 64 bit integer, so a maximum of 10)
 template <typename OutputIterator>
-std::size_t writeVlqU(std::uint64_t x, OutputIterator out) {
+auto writeVlqU(std::uint64_t x, OutputIterator out) -> std::size_t {
   std::size_t i;
   for (i = 9; i > 0; --i) {
     if (x & ((std::uint64_t)(127) << (i * 7)))
@@ -26,7 +24,7 @@ std::size_t writeVlqU(std::uint64_t x, OutputIterator out) {
   return i + 1;
 }
 
-inline std::size_t vlqUSize(std::uint64_t x) {
+inline auto vlqUSize(std::uint64_t x) -> std::size_t {
   std::size_t i;
   for (i = 9; i > 0; --i) {
     if (x & ((std::uint64_t)(127) << (i * 7)))
@@ -40,7 +38,7 @@ inline std::size_t vlqUSize(std::uint64_t x) {
 // than 64 bit integer!  If no end marker is found within 'maxBytes' or 10
 // bytes, whichever is smaller, then will return std::numeric_limits<std::size_t>::max() to signal error.
 template <typename InputIterator>
-std::size_t readVlqU(std::uint64_t& x, InputIterator in, std::size_t maxBytes = 10) {
+auto readVlqU(std::uint64_t& x, InputIterator in, std::size_t maxBytes = 10) -> std::size_t {
   x = 0;
   for (std::size_t i = 0; i < std::min<std::size_t>(10, maxBytes); ++i) {
     std::uint8_t oct = *in++;
@@ -56,7 +54,7 @@ std::size_t readVlqU(std::uint64_t& x, InputIterator in, std::size_t maxBytes = 
 // making the sign bit the least significant bit in the integer.  Returns
 // number of bytes written.
 template <typename OutputIterator>
-std::size_t writeVlqI(std::int64_t v, OutputIterator out) {
+auto writeVlqI(std::int64_t v, OutputIterator out) -> std::size_t {
   std::uint64_t target;
 
   // If negative, then add 1 to properly encode -2^63
@@ -68,7 +66,7 @@ std::size_t writeVlqI(std::int64_t v, OutputIterator out) {
   return writeVlqU(target, out);
 }
 
-inline std::size_t vlqISize(std::int64_t v) {
+inline auto vlqISize(std::int64_t v) -> std::size_t {
   std::uint64_t target;
 
   // If negative, then add 1 to properly encode -2^63
@@ -85,7 +83,7 @@ inline std::size_t vlqISize(std::int64_t v) {
 // than 64 bit integer!  If no end marker is found within 'maxBytes' or 10
 // bytes, whichever is smaller, then will return std::numeric_limits<std::size_t>::max() to signal error.
 template <typename InputIterator>
-std::size_t readVlqI(std::int64_t& v, InputIterator in, std::size_t maxBytes = 10) {
+auto readVlqI(std::int64_t& v, InputIterator in, std::size_t maxBytes = 10) -> std::size_t {
   std::uint64_t source;
   std::size_t bytes = readVlqU(source, in, maxBytes);
   if (bytes == std::numeric_limits<std::size_t>::max())
@@ -102,4 +100,4 @@ std::size_t readVlqI(std::int64_t& v, InputIterator in, std::size_t maxBytes = 1
   return bytes;
 }
 
-}
+}// namespace Star

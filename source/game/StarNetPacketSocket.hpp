@@ -1,18 +1,13 @@
 #pragma once
 
-#include "StarTcp.hpp"
 #include "StarAtomicSharedPtr.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarNetPackets.hpp"
-#include "StarZSTDCompression.hpp"
 #include "StarNetCompatibility.hpp"
+#include "StarNetPackets.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarTcp.hpp"
+#include "StarZSTDCompression.hpp"
 
 namespace Star {
-
-STAR_CLASS(PacketSocket);
-STAR_CLASS(LocalPacketSocket);
-STAR_CLASS(TcpPacketSocket);
-STAR_CLASS(P2PPacketSocket);
 
 struct PacketStats {
   HashMap<PacketType, float> packetBytesPerSecond;
@@ -32,7 +27,7 @@ public:
 
   // Should always return packet statistics for the most recent completed
   // window of time
-  PacketStats stats() const;
+  [[nodiscard]] auto stats() const -> PacketStats;
 
 private:
   void calculate();
@@ -52,32 +47,32 @@ class PacketSocket {
 public:
   virtual ~PacketSocket() = default;
 
-  virtual bool isOpen() const = 0;
+  [[nodiscard]] virtual auto isOpen() const -> bool = 0;
   virtual void close() = 0;
 
   // Takes all packets from the given list and queues them for sending.
-  virtual void sendPackets(List<PacketPtr> packets) = 0;
+  virtual void sendPackets(List<Ptr<Packet>> packets) = 0;
   // Receives any packets from the incoming queue, if available
-  virtual List<PacketPtr> receivePackets() = 0;
+  virtual auto receivePackets() -> List<Ptr<Packet>> = 0;
 
   // Returns true if any sent packets on the queue are still not completely
   // written.
-  virtual bool sentPacketsPending() const = 0;
+  [[nodiscard]] virtual auto sentPacketsPending() const -> bool = 0;
 
   // Write all data possible without blocking, returns true if any data was
   // actually written.
-  virtual bool writeData() = 0;
+  virtual auto writeData() -> bool = 0;
   // Read all data available without blocking, returns true if any data was
   // actually received.
-  virtual bool readData() = 0;
+  virtual auto readData() -> bool = 0;
 
   // Should return incoming / outgoing packet stats, if they are tracked.
   // Default implementations return nothing.
-  virtual std::optional<PacketStats> incomingStats() const;
-  virtual std::optional<PacketStats> outgoingStats() const;
+  [[nodiscard]] virtual auto incomingStats() const -> std::optional<PacketStats>;
+  [[nodiscard]] virtual auto outgoingStats() const -> std::optional<PacketStats>;
 
   virtual void setNetRules(NetCompatibilityRules netRules);
-  virtual NetCompatibilityRules netRules() const;
+  [[nodiscard]] virtual auto netRules() const -> NetCompatibilityRules;
 
 private:
   NetCompatibilityRules m_netRules;
@@ -85,12 +80,14 @@ private:
 
 class CompressedPacketSocket : public PacketSocket {
 public:
-  virtual ~CompressedPacketSocket() = default;
+  ~CompressedPacketSocket() override = default;
 
   virtual void setCompressionStreamEnabled(bool enabled);
-  virtual bool compressionStreamEnabled() const;
+  [[nodiscard]] virtual auto compressionStreamEnabled() const -> bool;
+
 private:
   bool m_useCompressionStream = false;
+
 protected:
   CompressionStream m_compressionStream;
   DecompressionStream m_decompressionStream;
@@ -99,55 +96,56 @@ protected:
 // PacketSocket for local communication.
 class LocalPacketSocket : public PacketSocket {
 public:
-  static pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> openPair();
+  static auto openPair() -> std::pair<UPtr<LocalPacketSocket>, UPtr<LocalPacketSocket>>;
 
-  bool isOpen() const override;
+  auto isOpen() const -> bool override;
   void close() override;
 
-  void sendPackets(List<PacketPtr> packets) override;
-  List<PacketPtr> receivePackets() override;
+  void sendPackets(List<Ptr<Packet>> packets) override;
+  auto receivePackets() -> List<Ptr<Packet>> override;
 
-  bool sentPacketsPending() const override;
+  auto sentPacketsPending() const -> bool override;
 
   // write / read for local sockets is actually a no-op, sendPackets places
   // packets directly in the incoming queue of the paired local socket.
-  bool writeData() override;
-  bool readData() override;
+  auto writeData() -> bool override;
+  auto readData() -> bool override;
 
 private:
   struct Pipe {
     Mutex mutex;
-    Deque<PacketPtr> queue;
+    Deque<Ptr<Packet>> queue;
   };
 
-  LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe);
+  LocalPacketSocket(std::shared_ptr<Pipe> incomingPipe, std::weak_ptr<Pipe> outgoingPipe);
 
   AtomicSharedPtr<Pipe> m_incomingPipe;
-  weak_ptr<Pipe> m_outgoingPipe;
+  std::weak_ptr<Pipe> m_outgoingPipe;
 };
 
 // Wraps a TCP socket into a PacketSocket.
 class TcpPacketSocket : public CompressedPacketSocket {
 public:
-  static TcpPacketSocketUPtr open(TcpSocketPtr socket);
+  static auto open(Ptr<TcpSocket> socket) -> UPtr<TcpPacketSocket>;
 
-  bool isOpen() const override;
+  [[nodiscard]] auto isOpen() const -> bool override;
   void close() override;
 
-  void sendPackets(List<PacketPtr> packets) override;
-  List<PacketPtr> receivePackets() override;
+  void sendPackets(List<Ptr<Packet>> packets) override;
+  auto receivePackets() -> List<Ptr<Packet>> override;
 
-  bool sentPacketsPending() const override;
+  [[nodiscard]] auto sentPacketsPending() const -> bool override;
 
-  bool writeData() override;
-  bool readData() override;
+  auto writeData() -> bool override;
+  auto readData() -> bool override;
 
-  std::optional<PacketStats> incomingStats() const override;
-  std::optional<PacketStats> outgoingStats() const override;
+  [[nodiscard]] auto incomingStats() const -> std::optional<PacketStats> override;
+  [[nodiscard]] auto outgoingStats() const -> std::optional<PacketStats> override;
+
 private:
-  TcpPacketSocket(TcpSocketPtr socket);
+  TcpPacketSocket(Ptr<TcpSocket> socket);
 
-  TcpSocketPtr m_socket;
+  Ptr<TcpSocket> m_socket;
 
   PacketStatCollector m_incomingStats;
   PacketStatCollector m_outgoingStats;
@@ -159,26 +157,26 @@ private:
 // Wraps a P2PSocket into a PacketSocket
 class P2PPacketSocket : public CompressedPacketSocket {
 public:
-  static P2PPacketSocketUPtr open(P2PSocketUPtr socket);
+  static auto open(UPtr<P2PSocket> socket) -> UPtr<P2PPacketSocket>;
 
-  bool isOpen() const override;
+  [[nodiscard]] auto isOpen() const -> bool override;
   void close() override;
 
-  void sendPackets(List<PacketPtr> packets) override;
-  List<PacketPtr> receivePackets() override;
+  void sendPackets(List<Ptr<Packet>> packets) override;
+  auto receivePackets() -> List<Ptr<Packet>> override;
 
-  bool sentPacketsPending() const override;
+  [[nodiscard]] auto sentPacketsPending() const -> bool override;
 
-  bool writeData() override;
-  bool readData() override;
+  auto writeData() -> bool override;
+  auto readData() -> bool override;
 
-  std::optional<PacketStats> incomingStats() const override;
-  std::optional<PacketStats> outgoingStats() const override;
+  [[nodiscard]] auto incomingStats() const -> std::optional<PacketStats> override;
+  [[nodiscard]] auto outgoingStats() const -> std::optional<PacketStats> override;
 
 private:
-  P2PPacketSocket(P2PSocketPtr socket);
+  P2PPacketSocket(Ptr<P2PSocket> socket);
 
-  P2PSocketPtr m_socket;
+  Ptr<P2PSocket> m_socket;
 
   PacketStatCollector m_incomingStats;
   PacketStatCollector m_outgoingStats;
@@ -186,4 +184,4 @@ private:
   Deque<ByteArray> m_inputMessages;
 };
 
-}
+}// namespace Star

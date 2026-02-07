@@ -1,5 +1,10 @@
 #include "StarNetPackets.hpp"
+
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
+
+import std;
 
 namespace Star {
 
@@ -77,106 +82,104 @@ EnumMap<PacketType> const PacketTypeNames{
   {PacketType::SystemObjectSpawn, "SystemObjectSpawn"},
   // OpenStarbound packets
   {PacketType::ReplaceTileList, "ReplaceTileList"},
-  {PacketType::UpdateWorldTemplate, "UpdateWorldTemplate"}
-};
+  {PacketType::UpdateWorldTemplate, "UpdateWorldTemplate"}};
 
-EnumMap<NetCompressionMode> const NetCompressionModeNames {
+EnumMap<NetCompressionMode> const NetCompressionModeNames{
   {NetCompressionMode::None, "None"},
-  {NetCompressionMode::Zstd, "Zstd"}
-};
+  {NetCompressionMode::Zstd, "Zstd"}};
 
-Packet::~Packet() {}
+Packet::~Packet() = default;
 
-void Packet::read(DataStream& ds, NetCompatibilityRules netRules) { read(ds); _unused(netRules); }
-void Packet::read(DataStream& ds) { _unused(ds); }
-void Packet::write(DataStream& ds, NetCompatibilityRules netRules) const { write(ds); _unused(netRules); }
-void Packet::write(DataStream& ds) const { _unused(ds); }
-void Packet::readJson(Json const& json) { _unused(json); }
-Json Packet::writeJson() const  { return JsonObject{}; }
+void Packet::read(DataStream& ds, [[maybe_unused]] NetCompatibilityRules netRules) { read(ds); }
+void Packet::read([[maybe_unused]] DataStream& ds) {}
+void Packet::write(DataStream& ds, [[maybe_unused]] NetCompatibilityRules netRules) const { write(ds); }
+void Packet::write([[maybe_unused]] DataStream& ds) const {}
+void Packet::readJson([[maybe_unused]] Json const& json) {}
+auto Packet::writeJson() const -> Json { return JsonObject{}; }
 
-PacketCompressionMode Packet::compressionMode() const { return m_compressionMode; }
+auto Packet::compressionMode() const -> PacketCompressionMode { return m_compressionMode; }
 void Packet::setCompressionMode(PacketCompressionMode compressionMode) { m_compressionMode = compressionMode; }
 
-PacketPtr createPacket(PacketType type) {
+auto createPacket(PacketType type) -> Ptr<Packet> {
   switch (type) {
-    case PacketType::ProtocolRequest: return make_shared<ProtocolRequestPacket>();
-    case PacketType::ProtocolResponse: return make_shared<ProtocolResponsePacket>();
-    case PacketType::ServerDisconnect: return make_shared<ServerDisconnectPacket>();
-    case PacketType::ConnectSuccess: return make_shared<ConnectSuccessPacket>();
-    case PacketType::ConnectFailure: return make_shared<ConnectFailurePacket>();
-    case PacketType::HandshakeChallenge: return make_shared<HandshakeChallengePacket>();
-    case PacketType::ChatReceive: return make_shared<ChatReceivePacket>();
-    case PacketType::UniverseTimeUpdate: return make_shared<UniverseTimeUpdatePacket>();
-    case PacketType::CelestialResponse: return make_shared<CelestialResponsePacket>();
-    case PacketType::PlayerWarpResult: return make_shared<PlayerWarpResultPacket>();
-    case PacketType::PlanetTypeUpdate: return make_shared<PlanetTypeUpdatePacket>();
-    case PacketType::Pause: return make_shared<PausePacket>();
-    case PacketType::ServerInfo: return make_shared<ServerInfoPacket>();
-    case PacketType::ClientConnect: return make_shared<ClientConnectPacket>();
-    case PacketType::ClientDisconnectRequest: return make_shared<ClientDisconnectRequestPacket>();
-    case PacketType::HandshakeResponse: return make_shared<HandshakeResponsePacket>();
-    case PacketType::PlayerWarp: return make_shared<PlayerWarpPacket>();
-    case PacketType::FlyShip: return make_shared<FlyShipPacket>();
-    case PacketType::ChatSend: return make_shared<ChatSendPacket>();
-    case PacketType::CelestialRequest: return make_shared<CelestialRequestPacket>();
-    case PacketType::ClientContextUpdate: return make_shared<ClientContextUpdatePacket>();
-    case PacketType::WorldStart: return make_shared<WorldStartPacket>();
-    case PacketType::WorldStop: return make_shared<WorldStopPacket>();
-    case PacketType::WorldLayoutUpdate: return make_shared<WorldLayoutUpdatePacket>();
-    case PacketType::WorldParametersUpdate: return make_shared<WorldParametersUpdatePacket>();
-    case PacketType::CentralStructureUpdate: return make_shared<CentralStructureUpdatePacket>();
-    case PacketType::TileArrayUpdate: return make_shared<TileArrayUpdatePacket>();
-    case PacketType::TileUpdate: return make_shared<TileUpdatePacket>();
-    case PacketType::TileLiquidUpdate: return make_shared<TileLiquidUpdatePacket>();
-    case PacketType::TileDamageUpdate: return make_shared<TileDamageUpdatePacket>();
-    case PacketType::TileModificationFailure: return make_shared<TileModificationFailurePacket>();
-    case PacketType::GiveItem: return make_shared<GiveItemPacket>();
-    case PacketType::EnvironmentUpdate: return make_shared<EnvironmentUpdatePacket>();
-    case PacketType::UpdateTileProtection: return make_shared<UpdateTileProtectionPacket>();
-    case PacketType::SetDungeonGravity: return make_shared<SetDungeonGravityPacket>();
-    case PacketType::SetDungeonBreathable: return make_shared<SetDungeonBreathablePacket>();
-    case PacketType::SetPlayerStart: return make_shared<SetPlayerStartPacket>();
-    case PacketType::FindUniqueEntityResponse: return make_shared<FindUniqueEntityResponsePacket>();
-    case PacketType::Pong: return make_shared<PongPacket>();
-    case PacketType::ModifyTileList: return make_shared<ModifyTileListPacket>();
-    case PacketType::DamageTileGroup: return make_shared<DamageTileGroupPacket>();
-    case PacketType::CollectLiquid: return make_shared<CollectLiquidPacket>();
-    case PacketType::RequestDrop: return make_shared<RequestDropPacket>();
-    case PacketType::SpawnEntity: return make_shared<SpawnEntityPacket>();
-    case PacketType::ConnectWire: return make_shared<ConnectWirePacket>();
-    case PacketType::DisconnectAllWires: return make_shared<DisconnectAllWiresPacket>();
-    case PacketType::WorldClientStateUpdate: return make_shared<WorldClientStateUpdatePacket>();
-    case PacketType::FindUniqueEntity: return make_shared<FindUniqueEntityPacket>();
-    case PacketType::WorldStartAcknowledge: return make_shared<WorldStartAcknowledgePacket>();
-    case PacketType::Ping: return make_shared<PingPacket>();
-    case PacketType::EntityCreate: return make_shared<EntityCreatePacket>();
-    case PacketType::EntityUpdateSet: return make_shared<EntityUpdateSetPacket>();
-    case PacketType::EntityDestroy: return make_shared<EntityDestroyPacket>();
-    case PacketType::EntityInteract: return make_shared<EntityInteractPacket>();
-    case PacketType::EntityInteractResult: return make_shared<EntityInteractResultPacket>();
-    case PacketType::HitRequest: return make_shared<HitRequestPacket>();
-    case PacketType::DamageRequest: return make_shared<DamageRequestPacket>();
-    case PacketType::DamageNotification: return make_shared<DamageNotificationPacket>();
-    case PacketType::EntityMessage: return make_shared<EntityMessagePacket>();
-    case PacketType::EntityMessageResponse: return make_shared<EntityMessageResponsePacket>();
-    case PacketType::UpdateWorldProperties: return make_shared<UpdateWorldPropertiesPacket>();
-    case PacketType::StepUpdate: return make_shared<StepUpdatePacket>();
-    case PacketType::SystemWorldStart: return make_shared<SystemWorldStartPacket>();
-    case PacketType::SystemWorldUpdate: return make_shared<SystemWorldUpdatePacket>();
-    case PacketType::SystemObjectCreate: return make_shared<SystemObjectCreatePacket>();
-    case PacketType::SystemObjectDestroy: return make_shared<SystemObjectDestroyPacket>();
-    case PacketType::SystemShipCreate: return make_shared<SystemShipCreatePacket>();
-    case PacketType::SystemShipDestroy: return make_shared<SystemShipDestroyPacket>();
-    case PacketType::SystemObjectSpawn: return make_shared<SystemObjectSpawnPacket>();
-    // OpenStarbound
-    case PacketType::ReplaceTileList: return make_shared<ReplaceTileListPacket>();
-    case PacketType::UpdateWorldTemplate: return make_shared<UpdateWorldTemplatePacket>();
-    default:
-      throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
+  case PacketType::ProtocolRequest: return std::make_shared<ProtocolRequestPacket>();
+  case PacketType::ProtocolResponse: return std::make_shared<ProtocolResponsePacket>();
+  case PacketType::ServerDisconnect: return std::make_shared<ServerDisconnectPacket>();
+  case PacketType::ConnectSuccess: return std::make_shared<ConnectSuccessPacket>();
+  case PacketType::ConnectFailure: return std::make_shared<ConnectFailurePacket>();
+  case PacketType::HandshakeChallenge: return std::make_shared<HandshakeChallengePacket>();
+  case PacketType::ChatReceive: return std::make_shared<ChatReceivePacket>();
+  case PacketType::UniverseTimeUpdate: return std::make_shared<UniverseTimeUpdatePacket>();
+  case PacketType::CelestialResponse: return std::make_shared<CelestialResponsePacket>();
+  case PacketType::PlayerWarpResult: return std::make_shared<PlayerWarpResultPacket>();
+  case PacketType::PlanetTypeUpdate: return std::make_shared<PlanetTypeUpdatePacket>();
+  case PacketType::Pause: return std::make_shared<PausePacket>();
+  case PacketType::ServerInfo: return std::make_shared<ServerInfoPacket>();
+  case PacketType::ClientConnect: return std::make_shared<ClientConnectPacket>();
+  case PacketType::ClientDisconnectRequest: return std::make_shared<ClientDisconnectRequestPacket>();
+  case PacketType::HandshakeResponse: return std::make_shared<HandshakeResponsePacket>();
+  case PacketType::PlayerWarp: return std::make_shared<PlayerWarpPacket>();
+  case PacketType::FlyShip: return std::make_shared<FlyShipPacket>();
+  case PacketType::ChatSend: return std::make_shared<ChatSendPacket>();
+  case PacketType::CelestialRequest: return std::make_shared<CelestialRequestPacket>();
+  case PacketType::ClientContextUpdate: return std::make_shared<ClientContextUpdatePacket>();
+  case PacketType::WorldStart: return std::make_shared<WorldStartPacket>();
+  case PacketType::WorldStop: return std::make_shared<WorldStopPacket>();
+  case PacketType::WorldLayoutUpdate: return std::make_shared<WorldLayoutUpdatePacket>();
+  case PacketType::WorldParametersUpdate: return std::make_shared<WorldParametersUpdatePacket>();
+  case PacketType::CentralStructureUpdate: return std::make_shared<CentralStructureUpdatePacket>();
+  case PacketType::TileArrayUpdate: return std::make_shared<TileArrayUpdatePacket>();
+  case PacketType::TileUpdate: return std::make_shared<TileUpdatePacket>();
+  case PacketType::TileLiquidUpdate: return std::make_shared<TileLiquidUpdatePacket>();
+  case PacketType::TileDamageUpdate: return std::make_shared<TileDamageUpdatePacket>();
+  case PacketType::TileModificationFailure: return std::make_shared<TileModificationFailurePacket>();
+  case PacketType::GiveItem: return std::make_shared<GiveItemPacket>();
+  case PacketType::EnvironmentUpdate: return std::make_shared<EnvironmentUpdatePacket>();
+  case PacketType::UpdateTileProtection: return std::make_shared<UpdateTileProtectionPacket>();
+  case PacketType::SetDungeonGravity: return std::make_shared<SetDungeonGravityPacket>();
+  case PacketType::SetDungeonBreathable: return std::make_shared<SetDungeonBreathablePacket>();
+  case PacketType::SetPlayerStart: return std::make_shared<SetPlayerStartPacket>();
+  case PacketType::FindUniqueEntityResponse: return std::make_shared<FindUniqueEntityResponsePacket>();
+  case PacketType::Pong: return std::make_shared<PongPacket>();
+  case PacketType::ModifyTileList: return std::make_shared<ModifyTileListPacket>();
+  case PacketType::DamageTileGroup: return std::make_shared<DamageTileGroupPacket>();
+  case PacketType::CollectLiquid: return std::make_shared<CollectLiquidPacket>();
+  case PacketType::RequestDrop: return std::make_shared<RequestDropPacket>();
+  case PacketType::SpawnEntity: return std::make_shared<SpawnEntityPacket>();
+  case PacketType::ConnectWire: return std::make_shared<ConnectWirePacket>();
+  case PacketType::DisconnectAllWires: return std::make_shared<DisconnectAllWiresPacket>();
+  case PacketType::WorldClientStateUpdate: return std::make_shared<WorldClientStateUpdatePacket>();
+  case PacketType::FindUniqueEntity: return std::make_shared<FindUniqueEntityPacket>();
+  case PacketType::WorldStartAcknowledge: return std::make_shared<WorldStartAcknowledgePacket>();
+  case PacketType::Ping: return std::make_shared<PingPacket>();
+  case PacketType::EntityCreate: return std::make_shared<EntityCreatePacket>();
+  case PacketType::EntityUpdateSet: return std::make_shared<EntityUpdateSetPacket>();
+  case PacketType::EntityDestroy: return std::make_shared<EntityDestroyPacket>();
+  case PacketType::EntityInteract: return std::make_shared<EntityInteractPacket>();
+  case PacketType::EntityInteractResult: return std::make_shared<EntityInteractResultPacket>();
+  case PacketType::HitRequest: return std::make_shared<HitRequestPacket>();
+  case PacketType::DamageRequest: return std::make_shared<DamageRequestPacket>();
+  case PacketType::DamageNotification: return std::make_shared<DamageNotificationPacket>();
+  case PacketType::EntityMessage: return std::make_shared<EntityMessagePacket>();
+  case PacketType::EntityMessageResponse: return std::make_shared<EntityMessageResponsePacket>();
+  case PacketType::UpdateWorldProperties: return std::make_shared<UpdateWorldPropertiesPacket>();
+  case PacketType::StepUpdate: return std::make_shared<StepUpdatePacket>();
+  case PacketType::SystemWorldStart: return std::make_shared<SystemWorldStartPacket>();
+  case PacketType::SystemWorldUpdate: return std::make_shared<SystemWorldUpdatePacket>();
+  case PacketType::SystemObjectCreate: return std::make_shared<SystemObjectCreatePacket>();
+  case PacketType::SystemObjectDestroy: return std::make_shared<SystemObjectDestroyPacket>();
+  case PacketType::SystemShipCreate: return std::make_shared<SystemShipCreatePacket>();
+  case PacketType::SystemShipDestroy: return std::make_shared<SystemShipDestroyPacket>();
+  case PacketType::SystemObjectSpawn: return std::make_shared<SystemObjectSpawnPacket>();
+  // OpenStarbound
+  case PacketType::ReplaceTileList: return std::make_shared<ReplaceTileListPacket>();
+  case PacketType::UpdateWorldTemplate: return std::make_shared<UpdateWorldTemplatePacket>();
+  default:
+    throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
   }
 }
 
-PacketPtr createPacket(PacketType type, std::optional<Json> const& args) {
+auto createPacket(PacketType type, std::optional<Json> const& args) -> Ptr<Packet> {
   auto packet = createPacket(type);
 
   if (args && !args->isNull())
@@ -186,10 +189,10 @@ PacketPtr createPacket(PacketType type, std::optional<Json> const& args) {
 }
 
 ProtocolRequestPacket::ProtocolRequestPacket()
-  : requestProtocolVersion(0) {}
+    : requestProtocolVersion(0) {}
 
 ProtocolRequestPacket::ProtocolRequestPacket(VersionNumber requestProtocolVersion)
-  : requestProtocolVersion(requestProtocolVersion) {}
+    : requestProtocolVersion(requestProtocolVersion) {}
 
 void ProtocolRequestPacket::read(DataStream& ds) {
   ds.read(requestProtocolVersion);
@@ -200,7 +203,7 @@ void ProtocolRequestPacket::write(DataStream& ds) const {
 }
 
 ProtocolResponsePacket::ProtocolResponsePacket(bool allowed, Json info)
-  : allowed(allowed), info(info) {}
+    : allowed(allowed), info(std::move(info)) {}
 
 void ProtocolResponsePacket::read(DataStream& ds) {
   ds.read(allowed);
@@ -219,11 +222,11 @@ void ProtocolResponsePacket::write(DataStream& ds, NetCompatibilityRules netRule
     ds.write(info);
 }
 
-ConnectSuccessPacket::ConnectSuccessPacket() {}
+ConnectSuccessPacket::ConnectSuccessPacket() = default;
 
 ConnectSuccessPacket::ConnectSuccessPacket(
-    ConnectionId clientId, Uuid serverUuid, CelestialBaseInformation celestialInformation)
-  : clientId(clientId), serverUuid(std::move(serverUuid)), celestialInformation(std::move(celestialInformation)) {}
+  ConnectionId clientId, Uuid serverUuid, CelestialBaseInformation celestialInformation)
+    : clientId(clientId), serverUuid(std::move(serverUuid)), celestialInformation(std::move(celestialInformation)) {}
 
 void ConnectSuccessPacket::read(DataStream& ds) {
   ds.vuread(clientId);
@@ -237,7 +240,7 @@ void ConnectSuccessPacket::write(DataStream& ds) const {
   ds.write(celestialInformation);
 }
 
-ConnectFailurePacket::ConnectFailurePacket() {}
+ConnectFailurePacket::ConnectFailurePacket() = default;
 
 ConnectFailurePacket::ConnectFailurePacket(String reason) : reason(std::move(reason)) {}
 
@@ -249,9 +252,9 @@ void ConnectFailurePacket::write(DataStream& ds) const {
   ds.write(reason);
 }
 
-HandshakeChallengePacket::HandshakeChallengePacket() {}
+HandshakeChallengePacket::HandshakeChallengePacket() = default;
 
-HandshakeChallengePacket::HandshakeChallengePacket(ByteArray const& passwordSalt) : passwordSalt(passwordSalt) {}
+HandshakeChallengePacket::HandshakeChallengePacket(ByteArray const& passwordSalt) : passwordSalt(std::move(passwordSalt)) {}
 
 void HandshakeChallengePacket::read(DataStream& ds) {
   ds.read(passwordSalt);
@@ -261,9 +264,9 @@ void HandshakeChallengePacket::write(DataStream& ds) const {
   ds.write(passwordSalt);
 }
 
-ChatReceivePacket::ChatReceivePacket() {}
+ChatReceivePacket::ChatReceivePacket() = default;
 
-ChatReceivePacket::ChatReceivePacket(ChatReceivedMessage receivedMessage) : receivedMessage(receivedMessage) {}
+ChatReceivePacket::ChatReceivePacket(ChatReceivedMessage receivedMessage) : receivedMessage(std::move(receivedMessage)) {}
 
 void ChatReceivePacket::read(DataStream& ds) {
   ds.read(receivedMessage);
@@ -277,10 +280,9 @@ void ChatReceivePacket::readJson(Json const& json) {
   receivedMessage = ChatReceivedMessage(json.get("receivedMessage"));
 }
 
-Json ChatReceivePacket::writeJson() const {
+auto ChatReceivePacket::writeJson() const -> Json {
   return JsonObject{
-    {"receivedMessage", receivedMessage.toJson()}
-  };
+    {"receivedMessage", receivedMessage.toJson()}};
 }
 
 UniverseTimeUpdatePacket::UniverseTimeUpdatePacket() {
@@ -297,7 +299,7 @@ void UniverseTimeUpdatePacket::write(DataStream& ds) const {
   ds.vfwrite(universeTime, 0.05);
 }
 
-CelestialResponsePacket::CelestialResponsePacket() {}
+CelestialResponsePacket::CelestialResponsePacket() = default;
 
 CelestialResponsePacket::CelestialResponsePacket(List<CelestialResponse> responses) : responses(std::move(responses)) {}
 
@@ -312,7 +314,7 @@ void CelestialResponsePacket::write(DataStream& ds) const {
 PlayerWarpResultPacket::PlayerWarpResultPacket() : warpActionInvalid(false) {}
 
 PlayerWarpResultPacket::PlayerWarpResultPacket(bool success, WarpAction warpAction, bool warpActionInvalid)
-  : success(success), warpAction(std::move(warpAction)), warpActionInvalid(warpActionInvalid) {}
+    : success(success), warpAction(std::move(warpAction)), warpActionInvalid(warpActionInvalid) {}
 
 void PlayerWarpResultPacket::read(DataStream& ds) {
   ds.read(success);
@@ -326,10 +328,10 @@ void PlayerWarpResultPacket::write(DataStream& ds) const {
   ds.write(warpActionInvalid);
 }
 
-PlanetTypeUpdatePacket::PlanetTypeUpdatePacket() {}
+PlanetTypeUpdatePacket::PlanetTypeUpdatePacket() = default;
 
 PlanetTypeUpdatePacket::PlanetTypeUpdatePacket(CelestialCoordinate coordinate)
-  : coordinate(coordinate) {}
+    : coordinate(coordinate) {}
 
 void PlanetTypeUpdatePacket::read(DataStream& ds) {
   ds.read(coordinate);
@@ -339,7 +341,7 @@ void PlanetTypeUpdatePacket::write(DataStream& ds) const {
   ds.write(coordinate);
 }
 
-PausePacket::PausePacket() {}
+PausePacket::PausePacket() = default;
 
 PausePacket::PausePacket(bool pause, float timescale) : pause(pause), timescale(timescale) {}
 
@@ -362,27 +364,23 @@ void PausePacket::readJson(Json const& json) {
   timescale = json.getFloat("timescale", 1.0f);
 }
 
-Json PausePacket::writeJson() const {
+auto PausePacket::writeJson() const -> Json {
   return JsonObject{
     {"pause", pause},
-    {"timescale", timescale}
-  };
+    {"timescale", timescale}};
 }
 
-ServerInfoPacket::ServerInfoPacket() {}
+ServerInfoPacket::ServerInfoPacket() = default;
 
-ServerInfoPacket::ServerInfoPacket(uint16_t players, uint16_t maxPlayers) :
-  players(players),
-  maxPlayers(maxPlayers) {}
+ServerInfoPacket::ServerInfoPacket(uint16_t players, uint16_t maxPlayers) : players(players),
+                                                                            maxPlayers(maxPlayers) {}
 
-void ServerInfoPacket::read(DataStream& ds)
-{
+void ServerInfoPacket::read(DataStream& ds) {
   ds.read(players);
   ds.read(maxPlayers);
 }
 
-void ServerInfoPacket::write(DataStream& ds) const
-{
+void ServerInfoPacket::write(DataStream& ds) const {
   ds.write(players);
   ds.write(maxPlayers);
 }
@@ -392,22 +390,20 @@ void ServerInfoPacket::readJson(Json const& json) {
   maxPlayers = json.getUInt("maxPlayers");
 }
 
-Json ServerInfoPacket::writeJson() const {
+auto ServerInfoPacket::writeJson() const -> Json {
   return JsonObject{
     {"players", players},
-    {"maxPlayers", maxPlayers}
-  };
+    {"maxPlayers", maxPlayers}};
 }
 
-ClientConnectPacket::ClientConnectPacket() {}
+ClientConnectPacket::ClientConnectPacket() = default;
 
 ClientConnectPacket::ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid,
-    String playerName, String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades,
-    bool introComplete, String account, Json info)
-  : assetsDigest(std::move(assetsDigest)), allowAssetsMismatch(allowAssetsMismatch), playerUuid(std::move(playerUuid)),
-    playerName(std::move(playerName)), shipSpecies(std::move(shipSpecies)), shipChunks(std::move(shipChunks)),
-    shipUpgrades(std::move(shipUpgrades)), introComplete(std::move(introComplete)), account(std::move(account)), info(std::move(info)) {}
-
+                                         String playerName, String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades,
+                                         bool introComplete, String account, Json info)
+    : assetsDigest(std::move(assetsDigest)), allowAssetsMismatch(allowAssetsMismatch), playerUuid(std::move(playerUuid)),
+      playerName(std::move(playerName)), shipSpecies(std::move(shipSpecies)), shipChunks(std::move(shipChunks)),
+      shipUpgrades(std::move(shipUpgrades)), introComplete(std::move(introComplete)), account(std::move(account)), info(std::move(info)) {}
 
 void ClientConnectPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   ds.read(assetsDigest);
@@ -437,7 +433,7 @@ void ClientConnectPacket::write(DataStream& ds, NetCompatibilityRules netRules) 
     ds.write(info);
 }
 
-ClientDisconnectRequestPacket::ClientDisconnectRequestPacket() {}
+ClientDisconnectRequestPacket::ClientDisconnectRequestPacket() = default;
 
 void ClientDisconnectRequestPacket::read(DataStream& ds) {
   // Packets cannot be empty due to the way packet serialization is handled.
@@ -449,9 +445,9 @@ void ClientDisconnectRequestPacket::write(DataStream& ds) const {
   ds.write<uint8_t>(0);
 }
 
-HandshakeResponsePacket::HandshakeResponsePacket() {}
+HandshakeResponsePacket::HandshakeResponsePacket() = default;
 
-HandshakeResponsePacket::HandshakeResponsePacket(ByteArray const& passHash) : passHash(passHash) {}
+HandshakeResponsePacket::HandshakeResponsePacket(ByteArray const& passHash) : passHash(std::move(passHash)) {}
 
 void HandshakeResponsePacket::read(DataStream& ds) {
   ds.read(passHash);
@@ -461,7 +457,7 @@ void HandshakeResponsePacket::write(DataStream& ds) const {
   ds.write(passHash);
 }
 
-PlayerWarpPacket::PlayerWarpPacket() {}
+PlayerWarpPacket::PlayerWarpPacket() = default;
 
 PlayerWarpPacket::PlayerWarpPacket(WarpAction action, bool deploy) : action(std::move(action)), deploy(std::move(deploy)) {}
 
@@ -475,7 +471,7 @@ void PlayerWarpPacket::write(DataStream& ds) const {
   ds.write(deploy);
 }
 
-FlyShipPacket::FlyShipPacket() {}
+FlyShipPacket::FlyShipPacket() = default;
 
 FlyShipPacket::FlyShipPacket(Vec3I system, SystemLocation location, Json settings) : system(std::move(system)), location(std::move(location)), settings(std::move(settings)) {}
 
@@ -513,7 +509,7 @@ void ChatSendPacket::write(DataStream& ds) const {
     ds.write(data);
 }
 
-CelestialRequestPacket::CelestialRequestPacket() {}
+CelestialRequestPacket::CelestialRequestPacket() = default;
 
 CelestialRequestPacket::CelestialRequestPacket(List<CelestialRequest> requests) : requests(std::move(requests)) {}
 
@@ -525,7 +521,7 @@ void CelestialRequestPacket::write(DataStream& ds) const {
   ds.write(requests);
 }
 
-ClientContextUpdatePacket::ClientContextUpdatePacket() {}
+ClientContextUpdatePacket::ClientContextUpdatePacket() = default;
 
 ClientContextUpdatePacket::ClientContextUpdatePacket(ByteArray updateData) : updateData(std::move(updateData)) {}
 
@@ -569,9 +565,9 @@ void WorldStartPacket::write(DataStream& ds) const {
   ds.write(localInterpolationMode);
 }
 
-WorldStopPacket::WorldStopPacket() {}
+WorldStopPacket::WorldStopPacket() = default;
 
-WorldStopPacket::WorldStopPacket(String const& reason) : reason(reason) {}
+WorldStopPacket::WorldStopPacket(String const& reason) : reason(std::move(reason)) {}
 
 void WorldStopPacket::read(DataStream& ds) {
   ds.read(reason);
@@ -581,9 +577,9 @@ void WorldStopPacket::write(DataStream& ds) const {
   ds.write(reason);
 }
 
-WorldLayoutUpdatePacket::WorldLayoutUpdatePacket() {}
+WorldLayoutUpdatePacket::WorldLayoutUpdatePacket() = default;
 
-WorldLayoutUpdatePacket::WorldLayoutUpdatePacket(Json const& layoutData) : layoutData(layoutData) {}
+WorldLayoutUpdatePacket::WorldLayoutUpdatePacket(Json const& layoutData) : layoutData(std::move(layoutData)) {}
 
 void WorldLayoutUpdatePacket::read(DataStream& ds) {
   ds.read(layoutData);
@@ -593,9 +589,9 @@ void WorldLayoutUpdatePacket::write(DataStream& ds) const {
   ds.write(layoutData);
 }
 
-WorldParametersUpdatePacket::WorldParametersUpdatePacket() {}
+WorldParametersUpdatePacket::WorldParametersUpdatePacket() = default;
 
-WorldParametersUpdatePacket::WorldParametersUpdatePacket(ByteArray const& parametersData) : parametersData(parametersData) {}
+WorldParametersUpdatePacket::WorldParametersUpdatePacket(ByteArray const& parametersData) : parametersData(std::move(parametersData)) {}
 
 void WorldParametersUpdatePacket::read(DataStream& ds) {
   ds.read(parametersData);
@@ -605,7 +601,7 @@ void WorldParametersUpdatePacket::write(DataStream& ds) const {
   ds.write(parametersData);
 }
 
-CentralStructureUpdatePacket::CentralStructureUpdatePacket() {}
+CentralStructureUpdatePacket::CentralStructureUpdatePacket() = default;
 
 CentralStructureUpdatePacket::CentralStructureUpdatePacket(Json structureData) : structureData(std::move(structureData)) {}
 
@@ -617,7 +613,7 @@ void CentralStructureUpdatePacket::write(DataStream& ds) const {
   ds.write(structureData);
 }
 
-TileArrayUpdatePacket::TileArrayUpdatePacket() {}
+TileArrayUpdatePacket::TileArrayUpdatePacket() = default;
 
 void TileArrayUpdatePacket::read(DataStream& ds) {
   ds.viread(min[0]);
@@ -656,10 +652,10 @@ void TileUpdatePacket::write(DataStream& ds) const {
   ds.write(tile);
 }
 
-TileLiquidUpdatePacket::TileLiquidUpdatePacket() {}
+TileLiquidUpdatePacket::TileLiquidUpdatePacket() = default;
 
 TileLiquidUpdatePacket::TileLiquidUpdatePacket(Vec2I const& position, LiquidNetUpdate liquidUpdate)
-  : position(position), liquidUpdate(liquidUpdate) {}
+    : position(position), liquidUpdate(liquidUpdate) {}
 
 void TileLiquidUpdatePacket::read(DataStream& ds) {
   ds.viread(position[0]);
@@ -678,8 +674,8 @@ void TileLiquidUpdatePacket::write(DataStream& ds) const {
 TileDamageUpdatePacket::TileDamageUpdatePacket() : layer(TileLayer::Foreground) {}
 
 TileDamageUpdatePacket::TileDamageUpdatePacket(
-    Vec2I const& position, TileLayer layer, TileDamageStatus const& tileDamage)
-  : position(position), layer(layer), tileDamage(tileDamage) {}
+  Vec2I const& position, TileLayer layer, TileDamageStatus const& tileDamage)
+    : position(position), layer(layer), tileDamage(tileDamage) {}
 
 void TileDamageUpdatePacket::read(DataStream& ds) {
   ds.read(position);
@@ -693,10 +689,10 @@ void TileDamageUpdatePacket::write(DataStream& ds) const {
   ds.write(tileDamage);
 }
 
-TileModificationFailurePacket::TileModificationFailurePacket() {}
+TileModificationFailurePacket::TileModificationFailurePacket() = default;
 
 TileModificationFailurePacket::TileModificationFailurePacket(TileModificationList modifications)
-  : modifications(modifications) {}
+    : modifications(std::move(modifications)) {}
 
 void TileModificationFailurePacket::read(DataStream& ds) {
   ds.readContainer(modifications);
@@ -706,9 +702,9 @@ void TileModificationFailurePacket::write(DataStream& ds) const {
   ds.writeContainer(modifications);
 }
 
-GiveItemPacket::GiveItemPacket() {}
+GiveItemPacket::GiveItemPacket() = default;
 
-GiveItemPacket::GiveItemPacket(ItemDescriptor const& item) : item(item) {}
+GiveItemPacket::GiveItemPacket(ItemDescriptor const& item) : item(std::move(item)) {}
 
 void GiveItemPacket::read(DataStream& ds) {
   ds.read(item);
@@ -722,16 +718,15 @@ void GiveItemPacket::readJson(Json const& json) {
   item = ItemDescriptor(json.get("item"));
 }
 
-Json GiveItemPacket::writeJson() const {
+auto GiveItemPacket::writeJson() const -> Json {
   return JsonObject{
-    {"item", item.toJson()}
-  };
+    {"item", item.toJson()}};
 }
 
-EnvironmentUpdatePacket::EnvironmentUpdatePacket() {}
+EnvironmentUpdatePacket::EnvironmentUpdatePacket() = default;
 
 EnvironmentUpdatePacket::EnvironmentUpdatePacket(ByteArray skyDelta, ByteArray weatherDelta)
-  : skyDelta(std::move(skyDelta)), weatherDelta(std::move(weatherDelta)) {}
+    : skyDelta(std::move(skyDelta)), weatherDelta(std::move(weatherDelta)) {}
 
 void EnvironmentUpdatePacket::read(DataStream& ds) {
   ds.read(skyDelta);
@@ -746,7 +741,7 @@ void EnvironmentUpdatePacket::write(DataStream& ds) const {
 ModifyTileListPacket::ModifyTileListPacket() : allowEntityOverlap() {}
 
 ModifyTileListPacket::ModifyTileListPacket(TileModificationList modifications, bool allowEntityOverlap)
-  : modifications(modifications), allowEntityOverlap(allowEntityOverlap) {}
+    : modifications(std::move(modifications)), allowEntityOverlap(allowEntityOverlap) {}
 
 void ModifyTileListPacket::read(DataStream& ds) {
   ds.readContainer(modifications);
@@ -761,7 +756,7 @@ void ModifyTileListPacket::write(DataStream& ds) const {
 ReplaceTileListPacket::ReplaceTileListPacket() : applyDamage() {}
 
 ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage, bool applyDamage)
-  : modifications(modifications), tileDamage(std::move(tileDamage)), applyDamage(applyDamage) {}
+    : modifications(std::move(modifications)), tileDamage(std::move(tileDamage)), applyDamage(applyDamage) {}
 
 void ReplaceTileListPacket::read(DataStream& ds) {
   ds.readContainer(modifications);
@@ -782,8 +777,8 @@ void ReplaceTileListPacket::write(DataStream& ds) const {
 DamageTileGroupPacket::DamageTileGroupPacket() : layer(TileLayer::Foreground) {}
 
 DamageTileGroupPacket::DamageTileGroupPacket(
-    List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, std::optional<EntityId> sourceEntity)
-  : tilePositions(std::move(tilePositions)), layer(layer), sourcePosition(sourcePosition), tileDamage(std::move(tileDamage)), sourceEntity(std::move(sourceEntity)) {}
+  List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, std::optional<EntityId> sourceEntity)
+    : tilePositions(std::move(tilePositions)), layer(layer), sourcePosition(sourcePosition), tileDamage(std::move(tileDamage)), sourceEntity(std::move(sourceEntity)) {}
 
 void DamageTileGroupPacket::read(DataStream& ds) {
   ds.readContainer(tilePositions);
@@ -801,10 +796,10 @@ void DamageTileGroupPacket::write(DataStream& ds) const {
   ds.write(sourceEntity);
 }
 
-CollectLiquidPacket::CollectLiquidPacket() {}
+CollectLiquidPacket::CollectLiquidPacket() = default;
 
 CollectLiquidPacket::CollectLiquidPacket(List<Vec2I> tilePositions, LiquidId liquidId)
-  : tilePositions(std::move(tilePositions)), liquidId(liquidId) {}
+    : tilePositions(std::move(tilePositions)), liquidId(liquidId) {}
 
 void CollectLiquidPacket::read(DataStream& ds) {
   ds.readContainer(tilePositions);
@@ -830,10 +825,10 @@ void RequestDropPacket::write(DataStream& ds) const {
   ds.viwrite(dropEntityId);
 }
 
-SpawnEntityPacket::SpawnEntityPacket() {}
+SpawnEntityPacket::SpawnEntityPacket() = default;
 
 SpawnEntityPacket::SpawnEntityPacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState)
-  : entityType(entityType), storeData(std::move(storeData)), firstNetState(std::move(firstNetState)) {}
+    : entityType(entityType), storeData(std::move(storeData)), firstNetState(std::move(firstNetState)) {}
 
 void SpawnEntityPacket::read(DataStream& ds) {
   ds.read(entityType);
@@ -847,10 +842,10 @@ void SpawnEntityPacket::write(DataStream& ds) const {
   ds.write(firstNetState);
 }
 
-EntityInteractPacket::EntityInteractPacket() {}
+EntityInteractPacket::EntityInteractPacket() = default;
 
 EntityInteractPacket::EntityInteractPacket(InteractRequest interactRequest, Uuid requestId)
-  : interactRequest(interactRequest), requestId(requestId) {}
+    : interactRequest(interactRequest), requestId(requestId) {}
 
 void EntityInteractPacket::read(DataStream& ds) {
   ds.read(interactRequest);
@@ -862,10 +857,10 @@ void EntityInteractPacket::write(DataStream& ds) const {
   ds.write(requestId);
 }
 
-EntityInteractResultPacket::EntityInteractResultPacket() {}
+EntityInteractResultPacket::EntityInteractResultPacket() = default;
 
 EntityInteractResultPacket::EntityInteractResultPacket(InteractAction action, Uuid requestId, EntityId sourceEntityId)
-  : action(action), requestId(requestId), sourceEntityId(sourceEntityId) {}
+    : action(std::move(action)), requestId(requestId), sourceEntityId(sourceEntityId) {}
 
 void EntityInteractResultPacket::read(DataStream& ds) {
   ds.read(action);
@@ -883,7 +878,7 @@ EntityCreatePacket::EntityCreatePacket() {
   entityId = NullEntityId;
 }
 
-ServerDisconnectPacket::ServerDisconnectPacket() {}
+ServerDisconnectPacket::ServerDisconnectPacket() = default;
 
 ServerDisconnectPacket::ServerDisconnectPacket(String reason) : reason(std::move(reason)) {}
 
@@ -895,10 +890,10 @@ void ServerDisconnectPacket::write(DataStream& ds) const {
   ds.write(reason);
 }
 
-ConnectWirePacket::ConnectWirePacket() {}
+ConnectWirePacket::ConnectWirePacket() = default;
 
 ConnectWirePacket::ConnectWirePacket(WireConnection outputConnection, WireConnection inputConnection)
-  : outputConnection(outputConnection), inputConnection(inputConnection) {}
+    : outputConnection(outputConnection), inputConnection(inputConnection) {}
 
 void ConnectWirePacket::read(DataStream& ds) {
   ds.read(outputConnection);
@@ -910,10 +905,10 @@ void ConnectWirePacket::write(DataStream& ds) const {
   ds.write(inputConnection);
 }
 
-DisconnectAllWiresPacket::DisconnectAllWiresPacket() {}
+DisconnectAllWiresPacket::DisconnectAllWiresPacket() = default;
 
 DisconnectAllWiresPacket::DisconnectAllWiresPacket(Vec2I entityPosition, WireNode wireNode)
-  : entityPosition(entityPosition), wireNode(wireNode) {}
+    : entityPosition(entityPosition), wireNode(wireNode) {}
 
 void DisconnectAllWiresPacket::read(DataStream& ds) {
   ds.viread(entityPosition[0]);
@@ -927,10 +922,10 @@ void DisconnectAllWiresPacket::write(DataStream& ds) const {
   ds.write(wireNode);
 }
 
-WorldClientStateUpdatePacket::WorldClientStateUpdatePacket() {}
+WorldClientStateUpdatePacket::WorldClientStateUpdatePacket() = default;
 
 WorldClientStateUpdatePacket::WorldClientStateUpdatePacket(ByteArray const& worldClientStateDelta)
-  : worldClientStateDelta(worldClientStateDelta) {}
+    : worldClientStateDelta(std::move(worldClientStateDelta)) {}
 
 void WorldClientStateUpdatePacket::read(DataStream& ds) {
   ds.read(worldClientStateDelta);
@@ -940,10 +935,10 @@ void WorldClientStateUpdatePacket::write(DataStream& ds) const {
   ds.write(worldClientStateDelta);
 }
 
-FindUniqueEntityPacket::FindUniqueEntityPacket() {}
+FindUniqueEntityPacket::FindUniqueEntityPacket() = default;
 
 FindUniqueEntityPacket::FindUniqueEntityPacket(String uniqueEntityId)
-  : uniqueEntityId(std::move(uniqueEntityId)) {}
+    : uniqueEntityId(std::move(uniqueEntityId)) {}
 
 void FindUniqueEntityPacket::read(DataStream& ds) {
   ds.read(uniqueEntityId);
@@ -953,7 +948,7 @@ void FindUniqueEntityPacket::write(DataStream& ds) const {
   ds.write(uniqueEntityId);
 }
 
-WorldStartAcknowledgePacket::WorldStartAcknowledgePacket() {}
+WorldStartAcknowledgePacket::WorldStartAcknowledgePacket() = default;
 
 void WorldStartAcknowledgePacket::read(DataStream& ds) {
   // Packets can't be empty, read the trash data
@@ -965,7 +960,7 @@ void WorldStartAcknowledgePacket::write(DataStream& ds) const {
   ds.write<bool>(false);
 }
 
-PingPacket::PingPacket() {}
+PingPacket::PingPacket() = default;
 PingPacket::PingPacket(int64_t time) : time(time) {}
 
 void PingPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
@@ -988,7 +983,7 @@ void PingPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
 }
 
 EntityCreatePacket::EntityCreatePacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState, EntityId entityId)
-  : entityType(entityType), storeData(std::move(storeData)), firstNetState(std::move(firstNetState)), entityId(entityId) {}
+    : entityType(entityType), storeData(std::move(storeData)), firstNetState(std::move(firstNetState)), entityId(entityId) {}
 
 void EntityCreatePacket::read(DataStream& ds) {
   ds.read(entityType);
@@ -1009,18 +1004,18 @@ EntityUpdateSetPacket::EntityUpdateSetPacket(ConnectionId forConnection) : forCo
 void EntityUpdateSetPacket::read(DataStream& ds) {
   ds.vuread(forConnection);
   ds.readMapContainer(deltas,
-      [](DataStream& ds, EntityId& entityId, ByteArray& delta) {
-        ds.viread(entityId);
-        ds.read(delta);
-      });
+                      [](DataStream& ds, EntityId& entityId, ByteArray& delta) -> void {
+                        ds.viread(entityId);
+                        ds.read(delta);
+                      });
 }
 
 void EntityUpdateSetPacket::write(DataStream& ds) const {
   ds.vuwrite(forConnection);
-  ds.writeMapContainer(deltas, [](DataStream& ds, EntityId const& entityId, ByteArray const& delta) {
-      ds.viwrite(entityId);
-      ds.write(delta);
-    });
+  ds.writeMapContainer(deltas, [](DataStream& ds, EntityId const& entityId, ByteArray const& delta) -> void {
+    ds.viwrite(entityId);
+    ds.write(delta);
+  });
 }
 
 EntityDestroyPacket::EntityDestroyPacket() {
@@ -1029,7 +1024,7 @@ EntityDestroyPacket::EntityDestroyPacket() {
 }
 
 EntityDestroyPacket::EntityDestroyPacket(EntityId entityId, ByteArray finalNetState, bool death)
-  : entityId(entityId), finalNetState(std::move(finalNetState)), death(death) {}
+    : entityId(entityId), finalNetState(std::move(finalNetState)), death(death) {}
 
 void EntityDestroyPacket::read(DataStream& ds) {
   ds.viread(entityId);
@@ -1043,7 +1038,7 @@ void EntityDestroyPacket::write(DataStream& ds) const {
   ds.write(death);
 }
 
-HitRequestPacket::HitRequestPacket() {}
+HitRequestPacket::HitRequestPacket() = default;
 
 HitRequestPacket::HitRequestPacket(RemoteHitRequest remoteHitRequest) : remoteHitRequest(std::move(remoteHitRequest)) {}
 
@@ -1055,10 +1050,10 @@ void HitRequestPacket::write(DataStream& ds) const {
   ds.write(remoteHitRequest);
 }
 
-DamageRequestPacket::DamageRequestPacket() {}
+DamageRequestPacket::DamageRequestPacket() = default;
 
 DamageRequestPacket::DamageRequestPacket(RemoteDamageRequest remoteDamageRequest)
-  : remoteDamageRequest(std::move(remoteDamageRequest)) {}
+    : remoteDamageRequest(std::move(remoteDamageRequest)) {}
 
 void DamageRequestPacket::read(DataStream& ds) {
   ds.read(remoteDamageRequest);
@@ -1068,10 +1063,10 @@ void DamageRequestPacket::write(DataStream& ds) const {
   ds.write(remoteDamageRequest);
 }
 
-DamageNotificationPacket::DamageNotificationPacket() {}
+DamageNotificationPacket::DamageNotificationPacket() = default;
 
 DamageNotificationPacket::DamageNotificationPacket(RemoteDamageNotification remoteDamageNotification)
-  : remoteDamageNotification(std::move(remoteDamageNotification)) {}
+    : remoteDamageNotification(std::move(remoteDamageNotification)) {}
 
 void DamageNotificationPacket::read(DataStream& ds) {
   ds.read(remoteDamageNotification);
@@ -1081,10 +1076,10 @@ void DamageNotificationPacket::write(DataStream& ds) const {
   ds.write(remoteDamageNotification);
 }
 
-EntityMessagePacket::EntityMessagePacket() {}
+EntityMessagePacket::EntityMessagePacket() = default;
 
 EntityMessagePacket::EntityMessagePacket(Variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection)
-  : entityId(entityId), message(std::move(message)), args(std::move(args)), uuid(uuid), fromConnection(fromConnection) {}
+    : entityId(std::move(entityId)), message(std::move(message)), args(std::move(args)), uuid(uuid), fromConnection(fromConnection) {}
 
 void EntityMessagePacket::read(DataStream& ds) {
   ds.read(entityId);
@@ -1114,20 +1109,19 @@ void EntityMessagePacket::readJson(Json const& json) {
   fromConnection = json.getUInt("fromConnection");
 }
 
-Json EntityMessagePacket::writeJson() const {
+auto EntityMessagePacket::writeJson() const -> Json {
   return JsonObject{
     {"entityId", entityId.is<EntityId>() ? Json(entityId.get<EntityId>()) : Json(entityId.get<String>())},
     {"message", message},
     {"args", args},
     {"uuid", uuid.hex()},
-    {"fromConnection", fromConnection}
-  };
+    {"fromConnection", fromConnection}};
 }
 
-EntityMessageResponsePacket::EntityMessageResponsePacket() {}
+EntityMessageResponsePacket::EntityMessageResponsePacket() = default;
 
 EntityMessageResponsePacket::EntityMessageResponsePacket(Either<String, Json> response, Uuid uuid)
-  : response(std::move(response)), uuid(uuid) {}
+    : response(std::move(response)), uuid(uuid) {}
 
 void EntityMessageResponsePacket::read(DataStream& ds) {
   ds.read(response);
@@ -1139,10 +1133,10 @@ void EntityMessageResponsePacket::write(DataStream& ds) const {
   ds.write(uuid);
 }
 
-UpdateWorldPropertiesPacket::UpdateWorldPropertiesPacket() {}
+UpdateWorldPropertiesPacket::UpdateWorldPropertiesPacket() = default;
 
 UpdateWorldPropertiesPacket::UpdateWorldPropertiesPacket(JsonObject const& updatedProperties)
-  : updatedProperties(updatedProperties) {}
+    : updatedProperties(std::move(updatedProperties)) {}
 
 void UpdateWorldPropertiesPacket::read(DataStream& ds) {
   ds.readMapContainer(updatedProperties);
@@ -1152,21 +1146,20 @@ void UpdateWorldPropertiesPacket::write(DataStream& ds) const {
   ds.writeMapContainer(updatedProperties);
 }
 
-
 void UpdateWorldPropertiesPacket::readJson(Json const& json) {
   updatedProperties = json.getObject("updatedProperties");
 }
 
-Json UpdateWorldPropertiesPacket::writeJson() const {
+auto UpdateWorldPropertiesPacket::writeJson() const -> Json {
   return JsonObject{
     {"updatedProperties", updatedProperties},
   };
 }
 
-UpdateTileProtectionPacket::UpdateTileProtectionPacket() {}
+UpdateTileProtectionPacket::UpdateTileProtectionPacket() = default;
 
 UpdateTileProtectionPacket::UpdateTileProtectionPacket(DungeonId dungeonId, bool isProtected)
-  : dungeonId(dungeonId), isProtected(isProtected) {}
+    : dungeonId(dungeonId), isProtected(isProtected) {}
 
 void UpdateTileProtectionPacket::read(DataStream& ds) {
   ds.read(dungeonId);
@@ -1183,17 +1176,16 @@ void UpdateTileProtectionPacket::readJson(Json const& json) {
   isProtected = json.getBool("isProtected");
 }
 
-Json UpdateTileProtectionPacket::writeJson() const {
+auto UpdateTileProtectionPacket::writeJson() const -> Json {
   return JsonObject{
     {"dungeonId", dungeonId},
-    {"isProtected", isProtected}
-  };
+    {"isProtected", isProtected}};
 }
 
-SetDungeonGravityPacket::SetDungeonGravityPacket() {}
+SetDungeonGravityPacket::SetDungeonGravityPacket() = default;
 
 SetDungeonGravityPacket::SetDungeonGravityPacket(DungeonId dungeonId, std::optional<float> gravity)
-  : dungeonId(std::move(dungeonId)), gravity(std::move(gravity)) {}
+    : dungeonId(std::move(dungeonId)), gravity(std::move(gravity)) {}
 
 void SetDungeonGravityPacket::read(DataStream& ds) {
   ds.read(dungeonId);
@@ -1210,17 +1202,16 @@ void SetDungeonGravityPacket::readJson(Json const& json) {
   gravity = json.optFloat("gravity");
 }
 
-Json SetDungeonGravityPacket::writeJson() const {
+auto SetDungeonGravityPacket::writeJson() const -> Json {
   return JsonObject{
     {"dungeonId", dungeonId},
-    {"gravity", jsonFromMaybe<float>(gravity)}
-  };
+    {"gravity", jsonFromMaybe<float>(gravity)}};
 }
 
-SetDungeonBreathablePacket::SetDungeonBreathablePacket() {}
+SetDungeonBreathablePacket::SetDungeonBreathablePacket() = default;
 
 SetDungeonBreathablePacket::SetDungeonBreathablePacket(DungeonId dungeonId, std::optional<bool> breathable)
-  : dungeonId(std::move(dungeonId)), breathable(std::move(breathable)) {}
+    : dungeonId(std::move(dungeonId)), breathable(std::move(breathable)) {}
 
 void SetDungeonBreathablePacket::read(DataStream& ds) {
   ds.read(dungeonId);
@@ -1237,14 +1228,13 @@ void SetDungeonBreathablePacket::readJson(Json const& json) {
   breathable = json.optBool("breathable");
 }
 
-Json SetDungeonBreathablePacket::writeJson() const {
+auto SetDungeonBreathablePacket::writeJson() const -> Json {
   return JsonObject{
     {"dungeonId", dungeonId},
-    {"breathable", jsonFromMaybe<bool>(breathable)}
-  };
+    {"breathable", jsonFromMaybe<bool>(breathable)}};
 }
 
-SetPlayerStartPacket::SetPlayerStartPacket() {}
+SetPlayerStartPacket::SetPlayerStartPacket() = default;
 
 SetPlayerStartPacket::SetPlayerStartPacket(Vec2F playerStart, bool respawnInWorld) : playerStart(playerStart), respawnInWorld(respawnInWorld) {}
 
@@ -1263,17 +1253,16 @@ void SetPlayerStartPacket::readJson(Json const& json) {
   respawnInWorld = json.getBool("respawnInWorld");
 }
 
-Json SetPlayerStartPacket::writeJson() const {
+auto SetPlayerStartPacket::writeJson() const -> Json {
   return JsonObject{
     {"playerStart", jsonFromVec2F(playerStart)},
-    {"respawnInWorld", respawnInWorld}
-  };
+    {"respawnInWorld", respawnInWorld}};
 }
 
-FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket() {}
+FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket() = default;
 
 FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket(String uniqueEntityId, std::optional<Vec2F> entityPosition)
-  : uniqueEntityId(std::move(uniqueEntityId)), entityPosition(std::move(entityPosition)) {}
+    : uniqueEntityId(std::move(uniqueEntityId)), entityPosition(std::move(entityPosition)) {}
 
 void FindUniqueEntityResponsePacket::read(DataStream& ds) {
   ds.read(uniqueEntityId);
@@ -1285,9 +1274,8 @@ void FindUniqueEntityResponsePacket::write(DataStream& ds) const {
   ds.write(entityPosition);
 }
 
-PongPacket::PongPacket() {}
+PongPacket::PongPacket() = default;
 PongPacket::PongPacket(int64_t time) : time(time) {}
-
 
 void PongPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   if (netRules.isLegacy()) {
@@ -1297,7 +1285,6 @@ void PongPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   } else {
     ds.readVlqI(time);
   }
-
 }
 
 void PongPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
@@ -1313,7 +1300,6 @@ StepUpdatePacket::StepUpdatePacket() : remoteTime(0.0) {}
 
 StepUpdatePacket::StepUpdatePacket(double remoteTime) : remoteTime(remoteTime) {}
 
-
 void StepUpdatePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   if (netRules.isLegacy()) {
     auto steps = ds.readVlqU();
@@ -1325,16 +1311,16 @@ void StepUpdatePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
 
 void StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   if (netRules.isLegacy()) {
-    ds.writeVlqU((uint64_t)round(remoteTime * 60.0));
+    ds.writeVlqU((uint64_t)std::round(remoteTime * 60.0));
   } else {
     ds.write(remoteTime);
   }
 }
 
-SystemWorldStartPacket::SystemWorldStartPacket() {}
+SystemWorldStartPacket::SystemWorldStartPacket() = default;
 
-SystemWorldStartPacket::SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, pair<Uuid, SystemLocation> clientShip)
-  : location(std::move(location)), objectStores(std::move(objectStores)), shipStores(std::move(shipStores)), clientShip(std::move(clientShip)) {}
+SystemWorldStartPacket::SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, std::pair<Uuid, SystemLocation> clientShip)
+    : location(std::move(location)), objectStores(std::move(objectStores)), shipStores(std::move(shipStores)), clientShip(std::move(clientShip)) {}
 
 void SystemWorldStartPacket::read(DataStream& ds) {
   ds.read(location);
@@ -1350,10 +1336,10 @@ void SystemWorldStartPacket::write(DataStream& ds) const {
   ds.write(clientShip);
 }
 
-SystemWorldUpdatePacket::SystemWorldUpdatePacket() {}
+SystemWorldUpdatePacket::SystemWorldUpdatePacket() = default;
 
 SystemWorldUpdatePacket::SystemWorldUpdatePacket(HashMap<Uuid, ByteArray> objectUpdates, HashMap<Uuid, ByteArray> shipUpdates)
-  : objectUpdates(std::move(objectUpdates)), shipUpdates(std::move(shipUpdates)) {}
+    : objectUpdates(std::move(objectUpdates)), shipUpdates(std::move(shipUpdates)) {}
 
 void SystemWorldUpdatePacket::read(DataStream& ds) {
   ds.read(objectUpdates);
@@ -1365,7 +1351,7 @@ void SystemWorldUpdatePacket::write(DataStream& ds) const {
   ds.write(shipUpdates);
 }
 
-SystemObjectCreatePacket::SystemObjectCreatePacket() {}
+SystemObjectCreatePacket::SystemObjectCreatePacket() = default;
 
 SystemObjectCreatePacket::SystemObjectCreatePacket(ByteArray objectStore) : objectStore(std::move(objectStore)) {}
 
@@ -1377,7 +1363,7 @@ void SystemObjectCreatePacket::write(DataStream& ds) const {
   ds.write(objectStore);
 }
 
-SystemObjectDestroyPacket::SystemObjectDestroyPacket() {}
+SystemObjectDestroyPacket::SystemObjectDestroyPacket() = default;
 
 SystemObjectDestroyPacket::SystemObjectDestroyPacket(Uuid objectUuid) : objectUuid(std::move(objectUuid)) {}
 
@@ -1389,7 +1375,7 @@ void SystemObjectDestroyPacket::write(DataStream& ds) const {
   ds.write(objectUuid);
 }
 
-SystemShipCreatePacket::SystemShipCreatePacket() {}
+SystemShipCreatePacket::SystemShipCreatePacket() = default;
 
 SystemShipCreatePacket::SystemShipCreatePacket(ByteArray shipStore) : shipStore(std::move(shipStore)) {}
 
@@ -1401,7 +1387,7 @@ void SystemShipCreatePacket::write(DataStream& ds) const {
   ds.write(shipStore);
 }
 
-SystemShipDestroyPacket::SystemShipDestroyPacket() {}
+SystemShipDestroyPacket::SystemShipDestroyPacket() = default;
 
 SystemShipDestroyPacket::SystemShipDestroyPacket(Uuid shipUuid) : shipUuid(std::move(shipUuid)) {}
 
@@ -1413,10 +1399,10 @@ void SystemShipDestroyPacket::write(DataStream& ds) const {
   ds.write(shipUuid);
 }
 
-SystemObjectSpawnPacket::SystemObjectSpawnPacket() {}
+SystemObjectSpawnPacket::SystemObjectSpawnPacket() = default;
 
 SystemObjectSpawnPacket::SystemObjectSpawnPacket(String typeName, Uuid uuid, std::optional<Vec2F> position, JsonObject parameters)
-  : typeName(std::move(typeName)), uuid(std::move(uuid)), position(std::move(position)), parameters(std::move(parameters)) {}
+    : typeName(std::move(typeName)), uuid(std::move(uuid)), position(std::move(position)), parameters(std::move(parameters)) {}
 
 void SystemObjectSpawnPacket::read(DataStream& ds) {
   ds.read(typeName);
@@ -1432,7 +1418,7 @@ void SystemObjectSpawnPacket::write(DataStream& ds) const {
   ds.write(parameters);
 }
 
-UpdateWorldTemplatePacket::UpdateWorldTemplatePacket() {}
+UpdateWorldTemplatePacket::UpdateWorldTemplatePacket() = default;
 
 UpdateWorldTemplatePacket::UpdateWorldTemplatePacket(Json templateData) : templateData(std::move(templateData)) {}
 
@@ -1444,4 +1430,4 @@ void UpdateWorldTemplatePacket::write(DataStream& ds) const {
   ds.write(templateData);
 }
 
-}
+}// namespace Star

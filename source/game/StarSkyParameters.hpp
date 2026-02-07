@@ -1,17 +1,16 @@
 #pragma once
 
-#include "StarSkyTypes.hpp"
-#include "StarEither.hpp"
 #include "StarCelestialCoordinate.hpp"
+#include "StarConfig.hpp"
+#include "StarEither.hpp"
+#include "StarSkyTypes.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(CelestialParameters);
-STAR_CLASS(CelestialDatabase);
-
-STAR_STRUCT(SkyParameters);
-
-STAR_STRUCT(VisitableWorldParameters);
+class CelestialDatabase;
+class VisitableWorldParameters;
 
 // This struct is a stripped down version of CelestialParameters that only
 // contains the required inforamtion to generate a sky.  It's constructable
@@ -23,22 +22,22 @@ STAR_STRUCT(VisitableWorldParameters);
 // parameters, e.g. for terraforming
 struct SkyParameters {
   SkyParameters();
-  SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase);
-  SkyParameters(SkyParameters const& oldSkyParameters, VisitableWorldParametersConstPtr newVisitableParameters);
+  SkyParameters(CelestialCoordinate const& coordinate, Ptr<CelestialDatabase> const& celestialDatabase);
+  SkyParameters(SkyParameters const& oldSkyParameters, ConstPtr<VisitableWorldParameters> newVisitableParameters);
   explicit SkyParameters(Json const& config);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   void read(DataStream& ds);
   void write(DataStream& ds) const;
 
-  void readVisitableParameters(VisitableWorldParametersConstPtr visitableParameters);
+  void readVisitableParameters(ConstPtr<VisitableWorldParameters> visitableParameters);
 
-  uint64_t seed;
+  std::uint64_t seed;
   std::optional<float> dayLength;
-  std::optional<pair<List<pair<String, float>>, Vec2F>> nearbyPlanet;
-  List<pair<List<pair<String, float>>, Vec2F>> nearbyMoons;
-  List<pair<String, String>> horizonImages;
+  std::optional<std::pair<List<std::pair<String, float>>, Vec2F>> nearbyPlanet;
+  List<std::pair<List<std::pair<String, float>>, Vec2F>> nearbyMoons;
+  List<std::pair<String, String>> horizonImages;
   bool horizonClouds;
   SkyType skyType;
   Either<SkyColoring, Color> skyColoring;
@@ -48,6 +47,6 @@ struct SkyParameters {
   Json settings;
 };
 
-DataStream& operator>>(DataStream& ds, SkyParameters& sky);
-DataStream& operator<<(DataStream& ds, SkyParameters const& sky);
-}
+auto operator>>(DataStream& ds, SkyParameters& sky) -> DataStream&;
+auto operator<<(DataStream& ds, SkyParameters const& sky) -> DataStream&;
+}// namespace Star

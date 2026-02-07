@@ -1,12 +1,12 @@
 #pragma once
 
-#include "StarThread.hpp"
+#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+#include "StarFile.hpp"
+#include "StarPoly.hpp"
 #include "StarSet.hpp"
 #include "StarString.hpp"
-#include "StarPoly.hpp"
-#include "StarBiMap.hpp"
-#include "StarFile.hpp"
-#include "StarConfig.hpp"
+#include "StarThread.hpp"
 
 import std;
 
@@ -92,8 +92,8 @@ public:
 
   static auto loggable(LogLevel level) -> bool;
   static void refreshLoggable();
-private:
 
+private:
   static std::shared_ptr<StdoutLogSink> s_stdoutSink;
   static HashSet<Ptr<LogSink>> s_sinks;
   static Array<bool, 4> s_loggable;
@@ -123,9 +123,9 @@ private:
 class SpatialLogger {
 public:
   // Maximum count of objects stored per space
-  static size_t const MaximumLines = 200000;
-  static size_t const MaximumPoints = 200000;
-  static size_t const MaximumText = 10000;
+  static std::size_t const MaximumLines = 200000;
+  static std::size_t const MaximumPoints = 200000;
+  static std::size_t const MaximumText = 10000;
 
   struct Line {
     Vec2F begin;
@@ -238,4 +238,4 @@ void LogMap::set(String const& key, T const& t) {
   setValue(key, toString(t));
 }
 
-}
+}// namespace Star

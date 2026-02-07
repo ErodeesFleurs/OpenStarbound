@@ -1,11 +1,9 @@
 #pragma once
 
-#include <optional>
-
+#include "StarException.hpp"
 #include "StarString.hpp"
-#include "StarEncode.hpp"
-#include "StarBytes.hpp"
-#include "StarFormat.hpp"
+
+import std;
 
 namespace Star {
 
@@ -17,12 +15,12 @@ namespace Star {
 // and hexadecimal, because it's possible to construct invalid unicode code
 // points using them
 
-STAR_EXCEPTION(ShellParsingException, StarException);
+using ShellParsingException = ExceptionDerived<"ShellParsingException">;
 
 class ShellParser {
 public:
   ShellParser();
-  typedef String::Char Char;
+  using Char = String::Char;
 
   enum class TokenType {
     Word,
@@ -35,25 +33,25 @@ public:
     String token;
   };
 
-  List<Token> tokenize(String const& command);
-  StringList tokenizeToStringList(String const& command);
+  auto tokenize(String const& command) -> List<Token>;
+  auto tokenizeToStringList(String const& command) -> StringList;
 
 private:
   void init(String const& command);
 
-  String word();
-  Char parseBackslash();
-  Char parseUnicodeEscapeSequence(std::optional<Char> previousCodepoint = {});
+  auto word() -> String;
+  auto parseBackslash() -> Char;
+  auto parseUnicodeEscapeSequence(std::optional<Char> previousCodepoint = {}) -> Char;
 
-  bool isSpace(Char letter) const;
-  bool isQuote(Char letter) const;
+  auto isSpace(Char letter) const -> bool;
+  auto isQuote(Char letter) const -> bool;
 
-  bool inQuotedString() const;
-  bool notDone() const;
+  auto inQuotedString() const -> bool;
+  auto notDone() const -> bool;
 
-  std::optional<Char> current() const;
-  std::optional<Char> next();
-  std::optional<Char> previous();
+  auto current() const -> std::optional<Char>;
+  auto next() -> std::optional<Char>;
+  auto previous() -> std::optional<Char>;
 
   String::const_iterator m_begin;
   String::const_iterator m_current;

@@ -1,6 +1,6 @@
 #include "StarSha256.hpp"
-#include "StarFormat.hpp"
-#include "StarEncode.hpp"
+
+import std;
 
 namespace Star {
 
@@ -16,75 +16,75 @@ namespace Star {
 // Tom St Denis
 
 // the K array
-static const uint32_t K[64] = {0x428a2f98U,
-    0x71374491U,
-    0xb5c0fbcfU,
-    0xe9b5dba5U,
-    0x3956c25bU,
-    0x59f111f1U,
-    0x923f82a4U,
-    0xab1c5ed5U,
-    0xd807aa98U,
-    0x12835b01U,
-    0x243185beU,
-    0x550c7dc3U,
-    0x72be5d74U,
-    0x80deb1feU,
-    0x9bdc06a7U,
-    0xc19bf174U,
-    0xe49b69c1U,
-    0xefbe4786U,
-    0x0fc19dc6U,
-    0x240ca1ccU,
-    0x2de92c6fU,
-    0x4a7484aaU,
-    0x5cb0a9dcU,
-    0x76f988daU,
-    0x983e5152U,
-    0xa831c66dU,
-    0xb00327c8U,
-    0xbf597fc7U,
-    0xc6e00bf3U,
-    0xd5a79147U,
-    0x06ca6351U,
-    0x14292967U,
-    0x27b70a85U,
-    0x2e1b2138U,
-    0x4d2c6dfcU,
-    0x53380d13U,
-    0x650a7354U,
-    0x766a0abbU,
-    0x81c2c92eU,
-    0x92722c85U,
-    0xa2bfe8a1U,
-    0xa81a664bU,
-    0xc24b8b70U,
-    0xc76c51a3U,
-    0xd192e819U,
-    0xd6990624U,
-    0xf40e3585U,
-    0x106aa070U,
-    0x19a4c116U,
-    0x1e376c08U,
-    0x2748774cU,
-    0x34b0bcb5U,
-    0x391c0cb3U,
-    0x4ed8aa4aU,
-    0x5b9cca4fU,
-    0x682e6ff3U,
-    0x748f82eeU,
-    0x78a5636fU,
-    0x84c87814U,
-    0x8cc70208U,
-    0x90befffaU,
-    0xa4506cebU,
-    0xbef9a3f7U,
-    0xc67178f2UL};
+static const std::array<std::uint32_t, 64> K = {0x428a2f98U,
+                                                0x71374491U,
+                                                0xb5c0fbcfU,
+                                                0xe9b5dba5U,
+                                                0x3956c25bU,
+                                                0x59f111f1U,
+                                                0x923f82a4U,
+                                                0xab1c5ed5U,
+                                                0xd807aa98U,
+                                                0x12835b01U,
+                                                0x243185beU,
+                                                0x550c7dc3U,
+                                                0x72be5d74U,
+                                                0x80deb1feU,
+                                                0x9bdc06a7U,
+                                                0xc19bf174U,
+                                                0xe49b69c1U,
+                                                0xefbe4786U,
+                                                0x0fc19dc6U,
+                                                0x240ca1ccU,
+                                                0x2de92c6fU,
+                                                0x4a7484aaU,
+                                                0x5cb0a9dcU,
+                                                0x76f988daU,
+                                                0x983e5152U,
+                                                0xa831c66dU,
+                                                0xb00327c8U,
+                                                0xbf597fc7U,
+                                                0xc6e00bf3U,
+                                                0xd5a79147U,
+                                                0x06ca6351U,
+                                                0x14292967U,
+                                                0x27b70a85U,
+                                                0x2e1b2138U,
+                                                0x4d2c6dfcU,
+                                                0x53380d13U,
+                                                0x650a7354U,
+                                                0x766a0abbU,
+                                                0x81c2c92eU,
+                                                0x92722c85U,
+                                                0xa2bfe8a1U,
+                                                0xa81a664bU,
+                                                0xc24b8b70U,
+                                                0xc76c51a3U,
+                                                0xd192e819U,
+                                                0xd6990624U,
+                                                0xf40e3585U,
+                                                0x106aa070U,
+                                                0x19a4c116U,
+                                                0x1e376c08U,
+                                                0x2748774cU,
+                                                0x34b0bcb5U,
+                                                0x391c0cb3U,
+                                                0x4ed8aa4aU,
+                                                0x5b9cca4fU,
+                                                0x682e6ff3U,
+                                                0x748f82eeU,
+                                                0x78a5636fU,
+                                                0x84c87814U,
+                                                0x8cc70208U,
+                                                0x90befffaU,
+                                                0xa4506cebU,
+                                                0xbef9a3f7U,
+                                                0xc67178f2UL};
 
 // Various logical functions
 #define Ch(x, y, z) ((x & y) ^ (~x & z))
 #define Maj(x, y, z) ((x & y) ^ (x & z) ^ (y & z))
-#define S(x, n) (((x) >> ((n)&31)) | ((x) << (32 - ((n)&31))))
+#define S(x, n) (((x) >> ((n) & 31)) | ((x) << (32 - ((n) & 31))))
 #define R(x, n) ((x) >> (n))
 #define Sigma0(x) (S(x, 2) ^ S(x, 13) ^ S(x, 22))
 #define Sigma1(x) (S(x, 6) ^ S(x, 11) ^ S(x, 25))
@@ -93,7 +93,9 @@ static const uint32_t K[64] = {0x428a2f98U,
 
 // compress 512-bits
 static void sha_compress(sha_state* md) {
-  uint32_t S[8], W[64], t0, t1;
+  std::array<std::uint32_t, 8> S;
+  std::array<std::uint32_t, 64> W;
+  std::uint32_t t0, t1;
   int i;
 
   /* copy state into S */
@@ -102,8 +104,8 @@ static void sha_compress(sha_state* md) {
 
   /* copy the state into 512-bits into W[0..15] */
   for (i = 0; i < 16; i++)
-    W[i] = (((uint32_t)md->buf[(4 * i) + 0]) << 24) | (((uint32_t)md->buf[(4 * i) + 1]) << 16)
-        | (((uint32_t)md->buf[(4 * i) + 2]) << 8) | (((uint32_t)md->buf[(4 * i) + 3]));
+    W[i] = (((std::uint32_t)md->buf[(4 * i) + 0]) << 24) | (((std::uint32_t)md->buf[(4 * i) + 1]) << 16)
+      | (((std::uint32_t)md->buf[(4 * i) + 2]) << 8) | (((std::uint32_t)md->buf[(4 * i) + 3]));
 
   /* fill W[16..63] */
   for (i = 16; i < 64; i++)
@@ -141,7 +143,7 @@ static void sha_init(sha_state* md) {
   md->state[7] = 0x5BE0CD19U;
 }
 
-static void sha_process(sha_state* md, uint8_t* buf, int len) {
+static void sha_process(sha_state* md, std::uint8_t* buf, int len) {
   while (len--) {
     /* copy byte */
     md->buf[md->curlen++] = *buf++;
@@ -155,7 +157,7 @@ static void sha_process(sha_state* md, uint8_t* buf, int len) {
   }
 }
 
-static void sha_done(sha_state* md, uint8_t* hash) {
+static void sha_done(sha_state* md, std::uint8_t* hash) {
   int i;
 
   /* increase the length of the message */
@@ -203,7 +205,7 @@ void Sha256Hasher::push(char const* data, size_t length) {
     m_finished = false;
   }
 
-  sha_process(&m_state, (uint8_t*)data, length);
+  sha_process(&m_state, (std::uint8_t*)data, length);
 }
 
 void Sha256Hasher::push(String const& data) {
@@ -214,26 +216,26 @@ void Sha256Hasher::push(ByteArray const& data) {
   push(data.ptr(), data.size());
 }
 
-ByteArray Sha256Hasher::compute() {
+auto Sha256Hasher::compute() -> ByteArray {
   ByteArray dest(32, 0);
-  sha_done(&m_state, (uint8_t*)dest.ptr());
+  sha_done(&m_state, (std::uint8_t*)dest.ptr());
   m_finished = true;
   return dest;
 }
 
 void Sha256Hasher::compute(char* hashDestination) {
-  sha_done(&m_state, (uint8_t*)hashDestination);
+  sha_done(&m_state, (std::uint8_t*)hashDestination);
   m_finished = true;
 }
 
 void sha256(char const* source, size_t length, char* hashDestination) {
   sha_state state;
   sha_init(&state);
-  sha_process(&state, (uint8_t*)source, length);
-  sha_done(&state, (uint8_t*)hashDestination);
+  sha_process(&state, (std::uint8_t*)source, length);
+  sha_done(&state, (std::uint8_t*)hashDestination);
 }
 
-ByteArray sha256(char const* source, size_t length) {
+auto sha256(char const* source, size_t length) -> ByteArray {
   ByteArray dest(32, 0);
   sha256(source, length, dest.ptr());
   return dest;
@@ -249,12 +251,12 @@ void sha256(String const& in, ByteArray& out) {
   sha256(in.utf8Ptr(), in.utf8Size(), out.ptr());
 }
 
-ByteArray sha256(ByteArray const& in) {
+auto sha256(ByteArray const& in) -> ByteArray {
   return sha256(in.ptr(), in.size());
 }
 
-ByteArray sha256(String const& in) {
+auto sha256(String const& in) -> ByteArray {
   return sha256(in.utf8Ptr(), in.utf8Size());
 }
 
-}
+}// namespace Star

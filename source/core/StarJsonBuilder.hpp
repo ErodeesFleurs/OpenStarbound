@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarJsonParser.hpp"
 #include "StarJson.hpp"
+#include "StarJsonParser.hpp"
 
 import std;
 
@@ -100,4 +100,4 @@ void outputUtf32Json(Jsonlike const& val, OutputIterator out, int pretty, bool s
   JsonStreamer<Jsonlike>::toJsonStream(val, writer, sort);
 }
 
-}
+}// namespace Star

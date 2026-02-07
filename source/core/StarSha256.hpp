@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarString.hpp"
 #include "StarByteArray.hpp"
+#include "StarString.hpp"
 
 import std;
 
@@ -41,4 +41,4 @@ void sha256(String const& in, ByteArray& out);
 auto sha256(ByteArray const& in) -> ByteArray;
 auto sha256(String const& in) -> ByteArray;
 
-}
+}// namespace Star

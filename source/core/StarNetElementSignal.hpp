@@ -2,6 +2,8 @@
 
 #include "StarNetElement.hpp"
 
+import std;
+
 namespace Star {
 
 // NetElement that sends signals during delta writes that can be received by
@@ -23,15 +25,15 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  auto writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const -> bool override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void send(Signal signal);
-  List<Signal> receive();
+  auto receive() -> List<Signal>;
 
 private:
   struct SignalEntry {
-    uint64_t version;
+    std::uint64_t version;
     Signal signal;
     bool received;
   };
@@ -40,7 +42,7 @@ private:
   NetElementVersion const* m_netVersion = nullptr;
   bool m_netInterpolationEnabled = false;
   Deque<SignalEntry> m_signals;
-  Deque<pair<float, Signal>> m_pendingSignals;
+  Deque<std::pair<float, Signal>> m_pendingSignals;
 };
 
 template <typename Signal>
@@ -83,8 +85,9 @@ void NetElementSignal<Signal>::tickNetInterpolation(float dt) {
 }
 
 template <typename Signal>
-bool NetElementSignal<Signal>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return false;
+auto NetElementSignal<Signal>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const -> bool {
+  if (!checkWithRules(rules))
+    return false;
   size_t numToWrite = 0;
   for (auto const& p : m_signals) {
     if (p.version >= fromVersion)
@@ -105,7 +108,8 @@ bool NetElementSignal<Signal>::writeNetDelta(DataStream& ds, uint64_t fromVersio
 
 template <typename Signal>
 void NetElementSignal<Signal>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   size_t numToRead = ds.readVlqU();
   for (size_t i = 0; i < numToRead; ++i) {
     Signal s;
@@ -130,7 +134,7 @@ void NetElementSignal<Signal>::send(Signal signal) {
 }
 
 template <typename Signal>
-List<Signal> NetElementSignal<Signal>::receive() {
+auto NetElementSignal<Signal>::receive() -> List<Signal> {
   List<Signal> received;
   for (auto& p : m_signals) {
     if (!p.received) {
@@ -141,4 +145,4 @@ List<Signal> NetElementSignal<Signal>::receive() {
   return received;
 }
 
-}
+}// namespace Star

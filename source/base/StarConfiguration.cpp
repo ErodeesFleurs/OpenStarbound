@@ -1,40 +1,42 @@
 #include "StarConfiguration.hpp"
 
+import std;
+
 namespace Star {
 
 Configuration::Configuration(Json defaultConfiguration, Json currentConfiguration)
-  : m_defaultConfig(defaultConfiguration), m_currentConfig(currentConfiguration) {}
+    : m_defaultConfig(std::move(defaultConfiguration)), m_currentConfig(std::move(currentConfiguration)) {}
 
-Json Configuration::defaultConfiguration() const {
+auto Configuration::defaultConfiguration() const -> Json {
   return m_defaultConfig;
 }
 
-Json Configuration::currentConfiguration() const {
+auto Configuration::currentConfiguration() const -> Json {
   MutexLocker locker(m_mutex);
   return m_currentConfig;
 }
 
-String Configuration::printConfiguration() const {
+auto Configuration::printConfiguration() const -> String {
   MutexLocker locker(m_mutex);
   return m_currentConfig.printJson(2, true);
 }
 
-Json Configuration::get(String const& key, Json def) const {
+auto Configuration::get(String const& key, Json def) const -> Json {
   MutexLocker locker(m_mutex);
   return m_currentConfig.get(key, def);
 }
 
-Json Configuration::getPath(String const& path, Json def) const {
+auto Configuration::getPath(String const& path, Json def) const -> Json {
   MutexLocker locker(m_mutex);
   return m_currentConfig.query(path, def);
 }
 
-Json Configuration::getDefault(String const& key) const {
+auto Configuration::getDefault(String const& key) const -> Json {
   MutexLocker locker(m_mutex);
   return m_defaultConfig.get(key, {});
 }
 
-Json Configuration::getDefaultPath(String const& path) const {
+auto Configuration::getDefaultPath(String const& path) const -> Json {
   MutexLocker locker(m_mutex);
   return m_defaultConfig.query(path, {});
 }
@@ -61,4 +63,4 @@ void Configuration::setPath(String const& path, Json const& value) {
     m_currentConfig = m_currentConfig.erasePath(path);
 }
 
-}
+}// namespace Star

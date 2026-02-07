@@ -1,31 +1,29 @@
 #pragma once
 
-#include "StarInteractionTypes.hpp"
 #include "StarEntity.hpp"
+#include "StarInteractionTypes.hpp"
 #include "StarQuestDescriptor.hpp"
 
 namespace Star {
-
-STAR_CLASS(InteractiveEntity);
 
 class InteractiveEntity : public virtual Entity {
 public:
   // Interaction always takes place on the *server*, whether the interactive
   // entity is master or slave there.
-  virtual InteractAction interact(InteractRequest const& request) = 0;
+  virtual auto interact(InteractRequest const& request) -> InteractAction = 0;
 
   // Defaults to metaBoundBox
-  virtual RectF interactiveBoundBox() const;
+  [[nodiscard]] virtual auto interactiveBoundBox() const -> RectF;
 
   // Defaults to true
-  virtual bool isInteractive() const;
+  [[nodiscard]] virtual auto isInteractive() const -> bool;
 
   // Defaults to empty
-  virtual List<QuestArcDescriptor> offeredQuests() const;
-  virtual StringSet turnInQuests() const;
+  [[nodiscard]] virtual auto offeredQuests() const -> List<QuestArcDescriptor>;
+  [[nodiscard]] virtual auto turnInQuests() const -> StringSet;
 
   // Defaults to position()
-  virtual Vec2F questIndicatorPosition() const;
+  [[nodiscard]] virtual auto questIndicatorPosition() const -> Vec2F;
 };
 
-}
+}// namespace Star

@@ -2,17 +2,19 @@
 
 #include "StarDataStream.hpp"
 
+import std;
+
 namespace Star {
 
 // Monotonically increasing NetElementVersion shared between all NetElements in
 // a network.
 class NetElementVersion {
 public:
-  uint64_t current() const;
-  uint64_t increment();
+  [[nodiscard]] auto current() const -> std::uint64_t;
+  auto increment() -> std::uint64_t;
 
 private:
-  uint64_t m_version = 0;
+  std::uint64_t m_version = 0;
 };
 
 // Primary interface for the composable network synchronizable element system.
@@ -46,7 +48,7 @@ public:
   // the version at the time of the *last* call to writeDelta, + 1.  If
   // fromVersion is 0, this will always write the full state.  Should return
   // true if a delta was needed and was written to DataStream, false otherwise.
-  virtual bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const = 0;
+  virtual auto writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const -> bool = 0;
   // Read a delta written by writeNetDelta.  'interpolationTime' is the time in
   // the future that data from this delta should be delayed and smoothed into,
   // if interpolation is enabled.
@@ -55,14 +57,14 @@ public:
   // received even if no deltas are produced, so no extrapolation takes place.
   virtual void blankNetDelta(float interpolationTime);
 
-  VersionNumber compatibilityVersion() const;
+  [[nodiscard]] auto compatibilityVersion() const -> VersionNumber;
   void setCompatibilityVersion(VersionNumber version);
-  bool checkWithRules(NetCompatibilityRules const& rules) const;
+  [[nodiscard]] auto checkWithRules(NetCompatibilityRules const& rules) const -> bool;
 private:
   VersionNumber m_netCompatibilityVersion = AnyVersion;
 };
 
-inline VersionNumber NetElement::compatibilityVersion() const {
+inline auto NetElement::compatibilityVersion() const -> VersionNumber {
   return m_netCompatibilityVersion;
 }
 
@@ -70,7 +72,7 @@ inline void NetElement::setCompatibilityVersion(VersionNumber version) {
   m_netCompatibilityVersion = version;
 }
 
-inline bool NetElement::checkWithRules(NetCompatibilityRules const& rules) const {
+inline auto NetElement::checkWithRules(NetCompatibilityRules const& rules) const -> bool {
   if (m_netCompatibilityVersion != AnyVersion)
     return rules.version() >= m_netCompatibilityVersion;
   return true;

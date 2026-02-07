@@ -1,10 +1,12 @@
 #include "StarJsonExtra.hpp"
-#include "StarLogging.hpp"
 #include "StarRandom.hpp"
+#include "StarList.hpp"
+
+import std;
 
 namespace Star {
 
-size_t jsonToSize(Json const& v) {
+auto jsonToSize(Json const& v) -> size_t {
   if (v.isNull())
     return std::numeric_limits<std::size_t>::max();
 
@@ -14,89 +16,89 @@ size_t jsonToSize(Json const& v) {
   return v.toUInt();
 }
 
-Json jsonFromSize(size_t s) {
+auto jsonFromSize(size_t s) -> Json {
   if (s == std::numeric_limits<std::size_t>::max())
-    return Json();
-  return Json(s);
+    return {};
+  return {s};
 }
 
-Vec2D jsonToVec2D(Json const& v) {
+auto jsonToVec2D(Json const& v) -> Vec2D {
   if (v.type() != Json::Type::Array || v.size() != 2)
     throw JsonException("Json not an array of size 2 in jsonToVec2D");
 
-  return Vec2D(v.getDouble(0), v.getDouble(1));
+  return {v.getDouble(0), v.getDouble(1)};
 }
 
-Vec2F jsonToVec2F(Json const& v) {
+auto jsonToVec2F(Json const& v) -> Vec2F {
   if (v.type() != Json::Type::Array || v.size() != 2)
     throw JsonException("Json not an array of size 2 in jsonToVec2F");
 
-  return Vec2F(v.getFloat(0), v.getFloat(1));
+  return {v.getFloat(0), v.getFloat(1)};
 }
 
-Json jsonFromVec2F(Vec2F const& v) {
+auto jsonFromVec2F(Vec2F const& v) -> Json {
   return JsonArray{v[0], v[1]};
 }
 
-Vec2I jsonToVec2I(Json const& v) {
+auto jsonToVec2I(Json const& v) -> Vec2I {
   if (v.type() != Json::Type::Array || v.size() != 2)
     throw JsonException("Json not an array of size 2 in jsonToVec2I");
 
-  return Vec2I(v.getInt(0), v.getInt(1));
+  return {static_cast<std::int32_t>(v.getInt(0)), static_cast<std::int32_t>(v.getInt(1))};
 }
 
-Json jsonFromVec2I(Vec2I const& v) {
+auto jsonFromVec2I(Vec2I const& v) -> Json {
   return JsonArray{v[0], v[1]};
 }
 
-Vec2U jsonToVec2U(Json const& v) {
+auto jsonToVec2U(Json const& v) -> Vec2U {
   if (v.type() != Json::Type::Array || v.size() != 2)
     throw JsonException("Json not an array of size 2 in jsonToVec2I");
 
-  return Vec2U(v.getInt(0), v.getInt(1));
+  return {static_cast<std::uint32_t>(v.getInt(0)), static_cast<std::uint32_t>(v.getInt(1))};
 }
 
-Json jsonFromVec2U(Vec2U const& v) {
+auto jsonFromVec2U(Vec2U const& v) -> Json {
   return JsonArray{v[0], v[1]};
 }
 
-Vec2B jsonToVec2B(Json const& v) {
+auto jsonToVec2B(Json const& v) -> Vec2B {
   if (v.type() != Json::Type::Array || v.size() != 2)
     throw JsonException("Json not an array of size 2 in jsonToVec2B");
 
-  return Vec2B(v.getInt(0), v.getInt(1));
+  return {static_cast<bool>(v.getInt(0)), static_cast<bool>(v.getInt(1))};
 }
 
-Json jsonFromVec2B(Vec2B const& v) {
+auto jsonFromVec2B(Vec2B const& v) -> Json {
   return JsonArray{v[0], v[1]};
 }
 
-Vec3D jsonToVec3D(Json const& v) {
+auto jsonToVec3D(Json const& v) -> Vec3D {
   if (v.type() != Json::Type::Array || v.size() != 3)
     throw JsonException("Json not an array of size size 3 in jsonToVec3D");
 
-  return Vec3D(v.getDouble(0), v.getDouble(1), v.getDouble(2));
+  return {v.getDouble(0), v.getDouble(1), v.getDouble(2)};
 }
 
-Vec3F jsonToVec3F(Json const& v) {
+auto jsonToVec3F(Json const& v) -> Vec3F {
   if (v.type() != Json::Type::Array || v.size() != 3)
     throw JsonException("Json not an array of size 3 in jsonToVec3D");
 
-  return Vec3F(v.getFloat(0), v.getFloat(1), v.getFloat(2));
+  return {v.getFloat(0), v.getFloat(1), v.getFloat(2)};
 }
 
-Json jsonFromVec3F(Vec3F const& v) {
+auto jsonFromVec3F(Vec3F const& v) -> Json {
   return JsonArray{v[0], v[1], v[2]};
 }
 
-Vec3I jsonToVec3I(Json const& v) {
+auto jsonToVec3I(Json const& v) -> Vec3I {
   if (v.type() != Json::Type::Array || v.size() != 3)
     throw JsonException("Json not an array of size 3 in jsonToVec3I");
 
-  return Vec3I(v.getInt(0), v.getInt(1), v.getInt(2));
+  return {static_cast<std::int32_t>(v.getInt(0)), static_cast<std::int32_t>(v.getInt(1)), static_cast<std::int32_t>(v.getInt(2))};
 }
 
-Json jsonFromVec3I(Vec3I const& v) {
+auto jsonFromVec3I(Vec3I const& v) -> Json {
   JsonArray result;
   result.append(v[0]);
   result.append(v[1]);
@@ -104,35 +106,35 @@ Json jsonFromVec3I(Vec3I const& v) {
   return result;
 }
 
-Vec3B jsonToVec3B(Json const& v) {
+auto jsonToVec3B(Json const& v) -> Vec3B {
   if (v.type() != Json::Type::Array || v.size() != 3)
     throw JsonException("Json not an array of size 3 in jsonToVec3B");
 
-  return Vec3B(v.getInt(0), v.getInt(1), v.getInt(2));
+  return {static_cast<bool>(v.getInt(0)), static_cast<bool>(v.getInt(1)), static_cast<bool>(v.getInt(2))};
 }
 
-Vec4B jsonToVec4B(Json const& v) {
+auto jsonToVec4B(Json const& v) -> Vec4B {
   if (v.type() != Json::Type::Array || v.size() != 4)
     throw JsonException("Json not an array of size 4 in jsonToVec4B");
 
-  return Vec4B(v.getInt(0), v.getInt(1), v.getInt(2), v.getInt(3));
+  return {static_cast<bool>(v.getInt(0)), static_cast<bool>(v.getInt(1)), static_cast<bool>(v.getInt(2)), static_cast<bool>(v.getInt(3))};
 }
 
-Vec4I jsonToVec4I(Json const& v) {
+auto jsonToVec4I(Json const& v) -> Vec4I {
   if (v.type() != Json::Type::Array || v.size() != 4)
     throw JsonException("Json not an array of size 4 in jsonToVec4B");
 
-  return Vec4I(v.getInt(0), v.getInt(1), v.getInt(2), v.getInt(3));
+  return {static_cast<std::int32_t>(v.getInt(0)), static_cast<std::int32_t>(v.getInt(1)), static_cast<std::int32_t>(v.getInt(2)), static_cast<std::int32_t>(v.getInt(3))};
 }
 
-Vec4F jsonToVec4F(Json const& v) {
+auto jsonToVec4F(Json const& v) -> Vec4F {
   if (v.type() != Json::Type::Array || v.size() != 4)
     throw JsonException("Json not an array of size 4 in jsonToVec4B");
 
-  return Vec4F(v.getFloat(0), v.getFloat(1), v.getFloat(2), v.getFloat(3));
+  return {v.getFloat(0), v.getFloat(1), v.getFloat(2), v.getFloat(3)};
 }
 
-RectD jsonToRectD(Json const& v) {
+auto jsonToRectD(Json const& v) -> RectD {
   if (v.type() != Json::Type::Array)
     throw JsonException("Json not an array in jsonToRectD");
 
@@ -140,30 +142,30 @@ RectD jsonToRectD(Json const& v) {
     throw JsonException("Json not an array of proper size in jsonToRectD");
 
   if (v.size() == 4)
-    return RectD(v.getDouble(0), v.getDouble(1), v.getDouble(2), v.getDouble(3));
+    return {v.getDouble(0), v.getDouble(1), v.getDouble(2), v.getDouble(3)};
 
   try {
     auto lowerLeft = jsonToVec2D(v.get(0));
     auto upperRight = jsonToVec2D(v.get(1));
-    return RectD(lowerLeft, upperRight);
+    return {lowerLeft, upperRight};
   } catch (JsonException const& e) {
     throw JsonException(strf("Inner position not well formed in jsonToRectD: {}", outputException(e, true)));
   }
 }
 
-Json jsonFromRectD(RectD const& rect) {
+auto jsonFromRectD(RectD const& rect) -> Json {
   return JsonArray{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
 }
 
-RectF jsonToRectF(Json const& v) {
+auto jsonToRectF(Json const& v) -> RectF {
   return RectF(jsonToRectD(v));
 }
 
-Json jsonFromRectF(RectF const& rect) {
+auto jsonFromRectF(RectF const& rect) -> Json {
   return JsonArray{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
 }
 
-RectI jsonToRectI(Json const& v) {
+auto jsonToRectI(Json const& v) -> RectI {
   if (v.type() != Json::Type::Array)
     throw JsonException("Json not an array in jsonToRectI");
 
@@ -171,22 +173,22 @@ RectI jsonToRectI(Json const& v) {
     throw JsonException("Json not an array of proper size in jsonToRectI");
 
   if (v.size() == 4)
-    return RectI(v.getInt(0), v.getInt(1), v.getInt(2), v.getInt(3));
+    return {static_cast<std::int32_t>(v.getInt(0)), static_cast<std::int32_t>(v.getInt(1)), static_cast<std::int32_t>(v.getInt(2)), static_cast<std::int32_t>(v.getInt(3))};
 
   try {
     auto lowerLeft = jsonToVec2I(v.get(0));
     auto upperRight = jsonToVec2I(v.get(1));
-    return RectI(lowerLeft, upperRight);
+    return {lowerLeft, upperRight};
   } catch (JsonException const& e) {
     throw JsonException(strf("Inner position not well formed in jsonToRectI: {}", outputException(e, true)));
   }
 }
 
-Json jsonFromRectI(RectI const& rect) {
+auto jsonFromRectI(RectI const& rect) -> Json {
   return JsonArray{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
 }
 
-RectU jsonToRectU(Json const& v) {
+auto jsonToRectU(Json const& v) -> RectU {
   if (v.type() != Json::Type::Array)
     throw JsonException("Json not an array in jsonToRectU");
 
@@ -194,22 +196,22 @@ RectU jsonToRectU(Json const& v) {
     throw JsonException("Json not an array of proper size in jsonToRectU");
 
   if (v.size() == 4)
-    return RectU(v.getInt(0), v.getUInt(1), v.getUInt(2), v.getUInt(3));
+    return {static_cast<std::uint32_t>(v.getInt(0)), static_cast<std::uint32_t>(v.getUInt(1)), static_cast<std::uint32_t>(v.getUInt(2)), static_cast<std::uint32_t>(v.getUInt(3))};
 
   try {
     auto lowerLeft = jsonToVec2U(v.get(0));
     auto upperRight = jsonToVec2U(v.get(1));
-    return RectU(lowerLeft, upperRight);
+    return {lowerLeft, upperRight};
   } catch (JsonException const& e) {
     throw JsonException(strf("Inner position not well formed in jsonToRectU: {}", outputException(e, true)));
   }
 }
 
-Json jsonFromRectU(RectU const& rect) {
+auto jsonFromRectU(RectU const& rect) -> Json {
   return JsonArray{rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax()};
 }
 
-Color jsonToColor(Json const& v) {
+auto jsonToColor(Json const& v) -> Color {
   if (v.type() == Json::Type::Array) {
     if (v.type() != Json::Type::Array || (v.size() != 3 && v.size() != 4))
       throw JsonException("Json not an array of size 3 or 4 in jsonToColor");
@@ -229,7 +231,7 @@ Color jsonToColor(Json const& v) {
   }
 }
 
-Json jsonFromColor(Color const& color) {
+auto jsonFromColor(Color const& color) -> Json {
   JsonArray result;
   result.push_back(color.red());
   result.push_back(color.green());
@@ -239,7 +241,7 @@ Json jsonFromColor(Color const& color) {
   return result;
 }
 
-PolyD jsonToPolyD(Json const& v) {
+auto jsonToPolyD(Json const& v) -> PolyD {
   PolyD poly;
 
   for (Json const& vertex : v.iterateArray())
@@ -248,7 +250,7 @@ PolyD jsonToPolyD(Json const& v) {
   return fixInsideOutPoly(poly);
 }
 
-PolyF jsonToPolyF(Json const& v) {
+auto jsonToPolyF(Json const& v) -> PolyF {
   PolyF poly;
 
   for (Json const& vertex : v.iterateArray())
@@ -257,7 +259,7 @@ PolyF jsonToPolyF(Json const& v) {
   return fixInsideOutPoly(poly);
 }
 
-PolyI jsonToPolyI(Json const& v) {
+auto jsonToPolyI(Json const& v) -> PolyI {
   PolyI poly;
 
   for (Json const& vertex : v.iterateArray())
@@ -266,7 +268,7 @@ PolyI jsonToPolyI(Json const& v) {
   return fixInsideOutPoly(poly);
 }
 
-Json jsonFromPolyF(PolyF const& poly) {
+auto jsonFromPolyF(PolyF const& poly) -> Json {
   JsonArray vertexList;
   for (auto const& vertex : poly.vertexes())
     vertexList.append(JsonArray{vertex[0], vertex[1]});
@@ -274,107 +276,107 @@ Json jsonFromPolyF(PolyF const& poly) {
   return vertexList;
 }
 
-Line2F jsonToLine2F(Json const& v) {
-  return Line2F(jsonToVec2F(v.get(0)), jsonToVec2F(v.get(1)));
+auto jsonToLine2F(Json const& v) -> Line2F {
+  return {jsonToVec2F(v.get(0)), jsonToVec2F(v.get(1))};
 }
 
-Json jsonFromLine2F(Line2F const& line) {
+auto jsonFromLine2F(Line2F const& line) -> Json {
   return JsonArray{jsonFromVec2F(line.min()), jsonFromVec2F(line.max())};
 }
 
-Mat3F jsonToMat3F(Json const& v) {
-  return Mat3F(jsonToVec3F(v.get(0)), jsonToVec3F(v.get(1)), jsonToVec3F(v.get(2)));
+auto jsonToMat3F(Json const& v) -> Mat3F {
+  return {jsonToVec3F(v.get(0)), jsonToVec3F(v.get(1)), jsonToVec3F(v.get(2))};
 }
 
-Json jsonFromMat3F(Mat3F const& v) {
+auto jsonFromMat3F(Mat3F const& v) -> Json {
   return JsonArray{jsonFromVec3F(v[0]), jsonFromVec3F(v[1]), jsonFromVec3F(v[2])};
 }
 
-StringList jsonToStringList(Json const& v) {
+auto jsonToStringList(Json const& v) -> StringList {
   StringList result;
   for (auto const& entry : v.iterateArray())
     result.push_back(entry.toString());
   return result;
 }
 
-Json jsonFromStringList(List<String> const& v) {
+auto jsonFromStringList(List<String> const& v) -> Json {
   JsonArray result;
   for (auto& e : v)
     result.push_back(e);
   return result;
 }
 
-List<float> jsonToFloatList(Json const& v) {
+auto jsonToFloatList(Json const& v) -> List<float> {
   List<float> result;
   for (auto const& entry : v.iterateArray())
     result.push_back(entry.toFloat());
   return result;
 }
 
-StringSet jsonToStringSet(Json const& v) {
+auto jsonToStringSet(Json const& v) -> StringSet {
   StringSet result;
   for (auto const& entry : v.iterateArray())
     result.add(entry.toString());
   return result;
 }
 
-Json jsonFromStringSet(StringSet const& v) {
+auto jsonFromStringSet(StringSet const& v) -> Json {
   JsonArray result;
   for (auto& e : v)
     result.push_back(e);
   return result;
 }
 
-List<int> jsonToIntList(Json const& v) {
+auto jsonToIntList(Json const& v) -> List<int> {
   List<int> result;
   for (auto const& entry : v.iterateArray())
     result.push_back(entry.toInt());
   return result;
 }
 
-List<Vec2I> jsonToVec2IList(Json const& v) {
+auto jsonToVec2IList(Json const& v) -> List<Vec2I> {
   List<Vec2I> result;
   for (auto const& entry : v.iterateArray())
     result.append(jsonToVec2I(entry));
   return result;
 }
 
-List<Vec2U> jsonToVec2UList(Json const& v) {
+auto jsonToVec2UList(Json const& v) -> List<Vec2U> {
   List<Vec2U> result;
   for (auto const& entry : v.iterateArray())
     result.append(jsonToVec2U(entry));
   return result;
 }
 
-List<Vec2F> jsonToVec2FList(Json const& v) {
+auto jsonToVec2FList(Json const& v) -> List<Vec2F> {
   List<Vec2F> result;
   for (auto const& entry : v.iterateArray())
     result.append(jsonToVec2F(entry));
   return result;
 }
 
-List<Vec4B> jsonToVec4BList(Json const& v) {
+auto jsonToVec4BList(Json const& v) -> List<Vec4B> {
   List<Vec4B> result;
   for (auto const& entry : v.iterateArray())
     result.append(jsonToVec4B(entry));
   return result;
 }
 
-List<Color> jsonToColorList(Json const& v) {
+auto jsonToColorList(Json const& v) -> List<Color> {
   List<Color> result;
   for (auto const& entry : v.iterateArray())
     result.append(jsonToColor(entry));
   return result;
 }
 
-List<Directives> jsonToDirectivesList(Json const& v) {
+auto jsonToDirectivesList(Json const& v) -> List<Directives> {
   List<Directives> result;
   for (auto const& entry : v.iterateArray())
     result.append(entry.toString());
   return result;
 }
 
-Json jsonFromDirectivesList(List<Directives> const& v) {
+auto jsonFromDirectivesList(List<Directives> const& v) -> Json {
   JsonArray result;
   for (auto& e : v) {
     if (e)
@@ -383,12 +385,12 @@ Json jsonFromDirectivesList(List<Directives> const& v) {
   return result;
 }
 
-Json weightedChoiceFromJson(Json const& source, Json const& default_) {
+auto weightedChoiceFromJson(Json const& source, Json const& default_) -> Json {
   if (source.isNull())
     return default_;
   if (source.type() != Json::Type::Array)
     throw StarException("Json of array type expected.");
-  List<pair<float, Json>> options;
+  List<std::pair<float, Json>> options;
   float sum = 0;
   size_t idx = 0;
   while (idx < source.size()) {
@@ -400,10 +402,10 @@ Json weightedChoiceFromJson(Json const& source, Json const& default_) {
       if (idx >= source.size())
         throw StarException("Weighted companion cube cannot cry.");
       sum += weight;
-      options.append(pair<float, Json>{weight, source.get(idx)});
+      options.append(std::pair<float, Json>{weight, source.get(idx)});
     } else {
       sum += weight;
-      options.append(pair<float, Json>{weight, entry});
+      options.append(std::pair<float, Json>{weight, entry});
     }
     idx++;
   }
@@ -421,9 +423,9 @@ Json weightedChoiceFromJson(Json const& source, Json const& default_) {
   return options[options.size() - 1].second;
 }
 
-Json binnedChoiceFromJson(Json const& bins, float target, Json const& def) {
+auto binnedChoiceFromJson(Json const& bins, float target, Json const& def) -> Json {
   JsonArray binList = bins.toArray();
-  sortByComputedValue(binList, [](Json const& pair) { return -pair.getFloat(0); });
+  sortByComputedValue(binList, [](Json const& pair) -> float { return -pair.getFloat(0); });
   Json result = def;
   for (auto const& pair : binList) {
     if (pair.getFloat(0) <= target) {
@@ -435,38 +437,38 @@ Json binnedChoiceFromJson(Json const& bins, float target, Json const& def) {
 }
 
 template <>
-WeightedPool<int> jsonToWeightedPool(Json const& source) {
-  return jsonToWeightedPool<int>(source, [](Json const& v) { return v.toInt(); });
+auto jsonToWeightedPool(Json const& source) -> WeightedPool<int> {
+  return jsonToWeightedPool<int>(source, [](Json const& v) -> std::int64_t { return v.toInt(); });
 }
 
 template <>
-WeightedPool<unsigned> jsonToWeightedPool(Json const& source) {
-  return jsonToWeightedPool<unsigned>(source, [](Json const& v) { return v.toUInt(); });
+auto jsonToWeightedPool(Json const& source) -> WeightedPool<unsigned> {
+  return jsonToWeightedPool<unsigned>(source, [](Json const& v) -> std::uint64_t { return v.toUInt(); });
 }
 
 template <>
-WeightedPool<float> jsonToWeightedPool(Json const& source) {
-  return jsonToWeightedPool<float>(source, [](Json const& v) { return v.toFloat(); });
+auto jsonToWeightedPool(Json const& source) -> WeightedPool<float> {
+  return jsonToWeightedPool<float>(source, [](Json const& v) -> float { return v.toFloat(); });
 }
 
 template <>
-WeightedPool<double> jsonToWeightedPool(Json const& source) {
-  return jsonToWeightedPool<double>(source, [](Json const& v) { return v.toDouble(); });
+auto jsonToWeightedPool(Json const& source) -> WeightedPool<double> {
+  return jsonToWeightedPool<double>(source, [](Json const& v) -> double { return v.toDouble(); });
 }
 
 template <>
-WeightedPool<String> jsonToWeightedPool(Json const& source) {
-  return jsonToWeightedPool<String>(source, [](Json const& v) { return v.toString(); });
+auto jsonToWeightedPool(Json const& source) -> WeightedPool<String> {
+  return jsonToWeightedPool<String>(source, [](Json const& v) -> String { return v.toString(); });
 }
 
 template <>
-WeightedPool<JsonArray> jsonToWeightedPool(Json const& source) {
-  return jsonToWeightedPool<JsonArray>(source, [](Json const& v) { return v.toArray(); });
+auto jsonToWeightedPool(Json const& source) -> WeightedPool<JsonArray> {
+  return jsonToWeightedPool<JsonArray>(source, [](Json const& v) -> JsonArray { return v.toArray(); });
 }
 
 template <>
-WeightedPool<JsonObject> jsonToWeightedPool(Json const& source) {
-  return jsonToWeightedPool<JsonObject>(source, [](Json const& v) { return v.toObject(); });
+auto jsonToWeightedPool(Json const& source) -> WeightedPool<JsonObject> {
+  return jsonToWeightedPool<JsonObject>(source, [](Json const& v) -> JsonObject { return v.toObject(); });
 }
 
 }

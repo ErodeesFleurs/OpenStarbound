@@ -1,12 +1,13 @@
 #pragma once
 
+#include "StarCollisionGenerator.hpp"
 #include "StarGameTypes.hpp"
 #include "StarLiquidTypes.hpp"
+#include "StarMaterialTypes.hpp"
 #include "StarTileDamage.hpp"
 #include "StarTileSectorArray.hpp"
-#include "StarCollisionGenerator.hpp"
-#include "StarWorldLayout.hpp"
 #include "StarVersion.hpp"
+#include "StarWorldLayout.hpp"
 
 import std;
 
@@ -17,35 +18,35 @@ struct WorldTile {
 
   // Copy constructor and operator= do not preserve collision cache.
   WorldTile(WorldTile const& worldTile);
-  WorldTile& operator=(WorldTile const& worldTile);
+  auto operator=(WorldTile const& worldTile) -> WorldTile&;
 
-  MaterialId material(TileLayer layer) const;
-  ModId mod(TileLayer layer) const;
-  MaterialColorVariant materialColor(TileLayer layer) const;
-  CollisionKind getCollision() const;
-  tuple<MaterialId, MaterialHue, MaterialColorVariant> materialAndColor(TileLayer layer) const;
-  bool isConnectable(TileLayer layer, bool materialOnly) const;
-  bool isColliding(CollisionSet const& collisionSet) const;
+  [[nodiscard]] auto material(TileLayer layer) const -> MaterialId;
+  [[nodiscard]] auto mod(TileLayer layer) const -> ModId;
+  [[nodiscard]] auto materialColor(TileLayer layer) const -> MaterialColorVariant;
+  [[nodiscard]] auto getCollision() const -> CollisionKind;
+  [[nodiscard]] auto materialAndColor(TileLayer layer) const -> std::tuple<MaterialId, MaterialHue, MaterialColorVariant>;
+  [[nodiscard]] auto isConnectable(TileLayer layer, bool materialOnly) const -> bool;
+  [[nodiscard]] auto isColliding(CollisionSet const& collisionSet) const -> bool;
 
   MaterialId foreground;
-  MaterialHue foregroundHueShift;
+  MaterialHue foregroundHueShift{};
   ModId foregroundMod;
-  MaterialHue foregroundModHueShift;
+  MaterialHue foregroundModHueShift{};
   MaterialColorVariant foregroundColorVariant;
 
   MaterialId background;
-  MaterialHue backgroundHueShift;
+  MaterialHue backgroundHueShift{};
   ModId backgroundMod;
-  MaterialHue backgroundModHueShift;
+  MaterialHue backgroundModHueShift{};
   MaterialColorVariant backgroundColorVariant;
 
-  CollisionKind collision;
+  CollisionKind collision{};
 
-  bool collisionCacheDirty;
+  bool collisionCacheDirty{};
   StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace> collisionCache;
 
-  BiomeIndex blockBiomeIndex;
-  BiomeIndex environmentBiomeIndex;
+  BiomeIndex blockBiomeIndex{};
+  BiomeIndex environmentBiomeIndex{};
 
   bool biomeTransition;
 
@@ -54,7 +55,7 @@ struct WorldTile {
 
   // If block is part of a dungeon then that affects spawns/drops,
   // as well as governing block protection
-  DungeonId dungeonId;
+  DungeonId dungeonId{};
 };
 
 struct ServerTile : public WorldTile {
@@ -63,21 +64,21 @@ struct ServerTile : public WorldTile {
   ServerTile();
 
   ServerTile(ServerTile const& serverTile);
-  ServerTile& operator=(ServerTile const& serverTile);
+  auto operator=(ServerTile const& serverTile) -> ServerTile&;
 
-  bool isColliding(CollisionSet const& collisionSet) const;
+  [[nodiscard]] auto isColliding(CollisionSet const& collisionSet) const -> bool;
 
   void write(DataStream& ds) const;
   void read(DataStream& ds, VersionNumber serializationVersion);
 
   // Updates collision, clears cache, and if the collision kind does not
   // support liquid destroys it.
-  bool updateCollision(CollisionKind kind);
+  auto updateCollision(CollisionKind kind) -> bool;
   // Used for setting the second collision kind calculated by object material spaces.
-  bool updateObjectCollision(CollisionKind kind);
+  auto updateObjectCollision(CollisionKind kind) -> bool;
 
   // Calculates the actually-used collision kind based on the tile and object collision kinds.
-  CollisionKind getCollision() const;
+  [[nodiscard]] auto getCollision() const -> CollisionKind;
 
   LiquidStore liquid;
 
@@ -88,47 +89,47 @@ struct ServerTile : public WorldTile {
   // Do not serialize - calculated at runtime
   CollisionKind objectCollision;
 };
-typedef TileSectorArray<ServerTile, WorldSectorSize> ServerTileSectorArray;
-typedef shared_ptr<ServerTileSectorArray> ServerTileSectorArrayPtr;
+using ServerTileSectorArray = TileSectorArray<ServerTile, WorldSectorSize>;
+using ServerTileSectorArrayPtr = std::shared_ptr<ServerTileSectorArray>;
 
 struct ClientTile : public WorldTile {
   ClientTile();
 
   ClientTile(ClientTile const& clientTile);
-  ClientTile& operator=(ClientTile const& clientTile);
+  auto operator=(ClientTile const& clientTile) -> ClientTile&;
 
-  bool backgroundLightTransparent;
-  bool foregroundLightTransparent;
+  bool backgroundLightTransparent{};
+  bool foregroundLightTransparent{};
 
   LiquidLevel liquid;
 
-  float gravity;
+  float gravity{};
 };
-typedef TileSectorArray<ClientTile, WorldSectorSize> ClientTileSectorArray;
-typedef shared_ptr<ClientTileSectorArray> ClientTileSectorArrayPtr;
+using ClientTileSectorArray = TileSectorArray<ClientTile, WorldSectorSize>;
+using ClientTileSectorArrayPtr = std::shared_ptr<ClientTileSectorArray>;
 
 // Tile structure to transfer all data from client to server
 struct NetTile {
   NetTile();
 
   MaterialId background;
-  MaterialHue backgroundHueShift;
-  MaterialColorVariant backgroundColorVariant;
+  MaterialHue backgroundHueShift{};
+  MaterialColorVariant backgroundColorVariant{};
   ModId backgroundMod;
-  MaterialHue backgroundModHueShift;
+  MaterialHue backgroundModHueShift{};
   MaterialId foreground;
-  MaterialHue foregroundHueShift;
-  MaterialColorVariant foregroundColorVariant;
+  MaterialHue foregroundHueShift{};
+  MaterialColorVariant foregroundColorVariant{};
   ModId foregroundMod;
-  MaterialHue foregroundModHueShift;
-  CollisionKind collision;
-  BiomeIndex blockBiomeIndex;
-  BiomeIndex environmentBiomeIndex;
+  MaterialHue foregroundModHueShift{};
+  CollisionKind collision{};
+  BiomeIndex blockBiomeIndex{};
+  BiomeIndex environmentBiomeIndex{};
   LiquidNetUpdate liquid;
-  DungeonId dungeonId;
+  DungeonId dungeonId{};
 };
-DataStream& operator>>(DataStream& ds, NetTile& tile);
-DataStream& operator<<(DataStream& ds, NetTile const& tile);
+auto operator>>(DataStream& ds, NetTile& tile) -> DataStream&;
+auto operator<<(DataStream& ds, NetTile const& tile) -> DataStream&;
 
 // For storing predicted tile state.
 struct PredictedTile {
@@ -149,15 +150,23 @@ struct PredictedTile {
   operator bool() const;
   template <typename Tile>
   void apply(Tile& tile) {
-    if (foreground) tile.foreground = *foreground;
-    if (foregroundMod) tile.foregroundMod = *foregroundMod;
-    if (foregroundHueShift) tile.foregroundHueShift = *foregroundHueShift;
-    if (foregroundModHueShift) tile.foregroundModHueShift = *foregroundModHueShift;
+    if (foreground)
+      tile.foreground = *foreground;
+    if (foregroundMod)
+      tile.foregroundMod = *foregroundMod;
+    if (foregroundHueShift)
+      tile.foregroundHueShift = *foregroundHueShift;
+    if (foregroundModHueShift)
+      tile.foregroundModHueShift = *foregroundModHueShift;
 
-    if (background) tile.background = *background;
-    if (backgroundMod) tile.backgroundMod = *backgroundMod;
-    if (backgroundHueShift) tile.backgroundHueShift = *backgroundHueShift;
-    if (backgroundModHueShift) tile.backgroundModHueShift = *backgroundModHueShift;
+    if (background)
+      tile.background = *background;
+    if (backgroundMod)
+      tile.backgroundMod = *backgroundMod;
+    if (backgroundHueShift)
+      tile.backgroundHueShift = *backgroundHueShift;
+    if (backgroundModHueShift)
+      tile.backgroundModHueShift = *backgroundModHueShift;
   }
 };
 
@@ -192,33 +201,24 @@ struct RenderTile {
   template <typename Hasher>
   void hashPushLiquid(Hasher& hasher) const;
 };
-DataStream& operator>>(DataStream& ds, RenderTile& tile);
-DataStream& operator<<(DataStream& ds, RenderTile const& tile);
+auto operator>>(DataStream& ds, RenderTile& tile) -> DataStream&;
+auto operator<<(DataStream& ds, RenderTile const& tile) -> DataStream&;
 
-typedef MultiArray<RenderTile, 2> RenderTileArray;
+using RenderTileArray = MultiArray<RenderTile, 2>;
 
 inline WorldTile::WorldTile()
-  : foreground(NullMaterialId),
-    foregroundHueShift(),
-    foregroundMod(NoModId),
-    foregroundModHueShift(),
-    foregroundColorVariant(DefaultMaterialColorVariant),
-    background(NullMaterialId),
-    backgroundHueShift(),
-    backgroundMod(NoModId),
-    backgroundModHueShift(),
-    backgroundColorVariant(DefaultMaterialColorVariant),
-    collision(CollisionKind::Null),
-    collisionCacheDirty(true),
-    blockBiomeIndex(),
-    environmentBiomeIndex(),
-    dungeonId(NoDungeonId) {}
+    : foreground(NullMaterialId),
+      foregroundMod(NoModId),
+      foregroundColorVariant(DefaultMaterialColorVariant),
+      background(NullMaterialId),
+      backgroundMod(NoModId),
+      backgroundColorVariant(DefaultMaterialColorVariant) {}
 
 inline WorldTile::WorldTile(WorldTile const& worldTile) {
   *this = worldTile;
 }
 
-inline WorldTile& WorldTile::operator=(WorldTile const& worldTile) {
+inline auto WorldTile::operator=(WorldTile const& worldTile) -> WorldTile& {
   foreground = worldTile.foreground;
   foregroundHueShift = worldTile.foregroundHueShift;
   foregroundMod = worldTile.foregroundMod;
@@ -246,96 +246,77 @@ inline WorldTile& WorldTile::operator=(WorldTile const& worldTile) {
   return *this;
 }
 
-inline MaterialId WorldTile::material(TileLayer layer) const {
+inline auto WorldTile::material(TileLayer layer) const -> MaterialId {
   if (layer == TileLayer::Foreground)
     return foreground;
   else
     return background;
 }
 
-inline ModId WorldTile::mod(TileLayer layer) const {
+inline auto WorldTile::mod(TileLayer layer) const -> ModId {
   if (layer == TileLayer::Foreground)
     return foregroundMod;
   else
     return backgroundMod;
 }
 
-inline MaterialColorVariant WorldTile::materialColor(TileLayer layer) const {
+inline auto WorldTile::materialColor(TileLayer layer) const -> MaterialColorVariant {
   if (layer == TileLayer::Foreground)
     return foregroundColorVariant;
   else
     return backgroundColorVariant;
 }
 
-inline CollisionKind WorldTile::getCollision() const {
+inline auto WorldTile::getCollision() const -> CollisionKind {
   return collision;
 }
 
-inline tuple<MaterialId, MaterialHue, MaterialColorVariant> WorldTile::materialAndColor(TileLayer layer) const {
+inline auto WorldTile::materialAndColor(TileLayer layer) const -> std::tuple<MaterialId, MaterialHue, MaterialColorVariant> {
   if (layer == TileLayer::Foreground)
     return std::tuple<MaterialId, MaterialHue, MaterialColorVariant>{
-        foreground, foregroundHueShift, foregroundColorVariant};
+      foreground, foregroundHueShift, foregroundColorVariant};
   else
     return std::tuple<MaterialId, MaterialHue, MaterialColorVariant>{
-        background, backgroundHueShift, backgroundColorVariant};
+      background, backgroundHueShift, backgroundColorVariant};
 }
 
-inline ClientTile::ClientTile() : backgroundLightTransparent(true), foregroundLightTransparent(true), gravity() {}
+inline ClientTile::ClientTile() = default;
 
 inline ClientTile::ClientTile(ClientTile const& clientTile) : WorldTile() {
   *this = clientTile;
 }
 
-inline ClientTile& ClientTile::operator=(ClientTile const& clientTile) {
-  WorldTile::operator=(clientTile);
-
-  backgroundLightTransparent = clientTile.backgroundLightTransparent;
-  foregroundLightTransparent = clientTile.foregroundLightTransparent;
-  liquid = clientTile.liquid;
-  gravity = clientTile.gravity;
-
-  return *this;
-}
+inline auto ClientTile::operator=(ClientTile const& clientTile) -> ClientTile& = default;
 
 inline NetTile::NetTile()
-  : background(NullMaterialId),
-    backgroundHueShift(),
-    backgroundColorVariant(),
-    backgroundMod(NoModId),
-    backgroundModHueShift(),
-    foreground(NullMaterialId),
-    foregroundHueShift(),
-    foregroundColorVariant(),
-    foregroundMod(NoModId),
-    foregroundModHueShift(),
-    collision(),
-    blockBiomeIndex(),
-    environmentBiomeIndex(),
-    dungeonId(NoDungeonId) {}
+    : background(NullMaterialId),
+      backgroundMod(NoModId),
+      foreground(NullMaterialId),
+      foregroundMod(NoModId) {}
 
 template <typename Hasher>
 inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
   // Do the fast path hash if the last (terrain relevant) field is at byte 20, because that means
   // there are no padding bytes between any field and we can simply pass the
   // entire tile as one block of memory.
-  static size_t const TerrainEndOffset = offsetof(RenderTile, liquidId);
-  static size_t const TotalTerrainSize =
+  static constexpr std::size_t TerrainEndOffset = offsetof(RenderTile, liquidId);
+  static constexpr std::size_t TotalTerrainSize =
     sizeof(MaterialId) * 2 + sizeof(ModId) * 2 + sizeof(MaterialHue) * 4 + sizeof(MaterialColorVariant) * 2 * sizeof(TileDamageType) * 2 + 2;
 
 #ifdef STAR_DEBUG
-  static bool const FastHash = false;
+  static constexpr bool FastHash = false;
 #else
-  static bool const FastHash = TerrainEndOffset == TotalTerrainSize;
+  static constexpr bool FastHash = TerrainEndOffset == TotalTerrainSize;
 #endif
 
   if (FastHash) {
     hasher.push((char const*)this, TerrainEndOffset);
   } else {
-    char buffer[TotalTerrainSize];
+    std::array<char, TotalTerrainSize> buffer;
     size_t bufferSize = 0;
 
     auto hashTilePart = [&](void const* data, size_t size) {
-      memcpy(buffer + bufferSize, data, size);
+      memcpy(buffer.data() + bufferSize, data, size);
       bufferSize += size;
     };
 
@@ -363,12 +344,12 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
 
 template <typename Hasher>
 inline void RenderTile::hashPushLiquid(Hasher& hasher) const {
-  char buffer[sizeof(liquidLevel) + sizeof(liquidId)];
+  std::array<char, sizeof(liquidLevel) + sizeof(liquidId)> buffer;
 
-  memcpy(buffer, &liquidLevel, sizeof(liquidLevel));
-  memcpy(buffer + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
+  memcpy(buffer.data(), &liquidLevel, sizeof(liquidLevel));
+  memcpy(buffer.data() + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
 
   hasher.push(buffer, sizeof(liquidLevel) + sizeof(liquidId));
 }
 
-}
+}// namespace Star

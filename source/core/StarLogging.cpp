@@ -1,5 +1,8 @@
 #include "StarLogging.hpp"
+#include "StarConfig.hpp"
 #include "StarTime.hpp"
+
+import std;
 
 namespace Star {
 
@@ -13,14 +16,14 @@ EnumMap<LogLevel> const LogLevelNames{
 LogSink::LogSink()
   : m_level(LogLevel::Info) {}
 
-LogSink::~LogSink() {}
+LogSink::~LogSink() = default;
 
 void LogSink::setLevel(LogLevel level) {
   m_level = level;
   Logger::refreshLoggable();
 }
 
-LogLevel LogSink::level() {
+auto LogSink::level() -> LogLevel {
   return m_level;
 }
 
@@ -43,19 +46,19 @@ void FileLogSink::log(char const* msg, LogLevel level) {
   m_output->write(line.data(), line.size());
 }
 
-void Logger::addSink(LogSinkPtr s) {
+void Logger::addSink(Ptr<LogSink> s) {
   MutexLocker locker(s_mutex);
   s_sinks.insert(s);
   refreshLoggable();
 }
 
-void Logger::removeSink(LogSinkPtr s) {
+void Logger::removeSink(Ptr<LogSink> s) {
   MutexLocker locker(s_mutex);
   s_sinks.erase(s);
   refreshLoggable();
 }
 
-LogSinkPtr Logger::stdoutSink() {
+auto Logger::stdoutSink() -> Ptr<LogSink> {
   MutexLocker locker(s_mutex);
   return s_stdoutSink;
 }
@@ -76,7 +79,7 @@ void Logger::log(LogLevel level, char const* msg) {
   }
 }
 
-bool Logger::loggable(LogLevel level) {
+auto Logger::loggable(LogLevel level) -> bool {
   return s_loggable[(int)level];
 }
 
@@ -88,12 +91,12 @@ void Logger::refreshLoggable() {
   }
 }
 
-shared_ptr<StdoutLogSink> Logger::s_stdoutSink = make_shared<StdoutLogSink>();
-HashSet<LogSinkPtr> Logger::s_sinks{s_stdoutSink};
+std::shared_ptr<StdoutLogSink> Logger::s_stdoutSink = std::make_shared<StdoutLogSink>();
+HashSet<Ptr<LogSink>> Logger::s_sinks{s_stdoutSink};
 Array<bool, 4> Logger::s_loggable = Array<bool, 4>{false, true, true, true};
 Mutex Logger::s_mutex;
 
-String LogMap::getValue(String const& key) {
+auto LogMap::getValue(String const& key) -> String {
   MutexLocker locker(s_logMapMutex);
   return s_logMap.value(key);
 }
@@ -103,7 +106,7 @@ void LogMap::setValue(String const& key, String const& value) {
   s_logMap[key] = value;
 }
 
-Map<String, String> LogMap::getValues() {
+auto LogMap::getValues() -> Map<String, String> {
   MutexLocker locker(s_logMapMutex);
   return Map<String, String>::from(s_logMap);
 }
@@ -128,7 +131,7 @@ void SpatialLogger::logPoly(char const* space, PolyF const& poly, Vec4B const& c
 
   for (size_t i = 0; i < poly.sides(); ++i) {
     auto side = poly.side(i);
-    lines.append(Line{side.min(), side.max(), color});
+    lines.append(Line{.begin=side.min(), .end=side.max(), .color=color});
   }
 
   while (lines.size() > MaximumLines)
@@ -141,7 +144,7 @@ void SpatialLogger::logLine(char const* space, Line2F const& line, Vec4B const& 
   MutexLocker locker(s_mutex);
   auto& lines = s_lines[space];
 
-  lines.append(Line{line.min(), line.max(), color});
+  lines.append(Line{.begin=line.min(), .end=line.max(), .color=color});
 
   while (lines.size() > MaximumLines)
     lines.removeFirst();
@@ -153,7 +156,7 @@ void SpatialLogger::logLine(char const* space, Vec2F const& begin, Vec2F const& 
   MutexLocker locker(s_mutex);
   auto& lines = s_lines[space];
 
-  lines.append(Line{begin, end, color});
+  lines.append(Line{.begin=begin, .end=end, .color=color});
 
   while (lines.size() > MaximumLines)
     lines.removeFirst();
@@ -165,7 +168,7 @@ void SpatialLogger::logPoint(char const* space, Vec2F const& position, Vec4B con
   MutexLocker locker(s_mutex);
   auto& points = s_points[space];
 
-  points.append(Point{position, color});
+  points.append(Point{.position=position, .color=color});
 
   while (points.size() > MaximumPoints)
     points.removeFirst();
@@ -177,13 +180,13 @@ void SpatialLogger::logText(char const* space, String text, Vec2F const& positio
   MutexLocker locker(s_mutex);
   auto& texts = s_logText[space];
 
-  texts.append(LogText{text, position, color});
+  texts.append(LogText{.text=text, .position=position, .color=color});
 
   while (texts.size() > MaximumText)
     texts.removeFirst();
 }
 
-Deque<SpatialLogger::Line> SpatialLogger::getLines(char const* space, bool andClear) {
+auto SpatialLogger::getLines(char const* space, bool andClear) -> Deque<SpatialLogger::Line> {
   MutexLocker locker(s_mutex);
   if (andClear)
     return take(s_lines[space]);
@@ -191,7 +194,7 @@ Deque<SpatialLogger::Line> SpatialLogger::getLines(char const* space, bool andCl
     return s_lines[space];
 }
 
-Deque<SpatialLogger::Point> SpatialLogger::getPoints(char const* space, bool andClear) {
+auto SpatialLogger::getPoints(char const* space, bool andClear) -> Deque<SpatialLogger::Point> {
   MutexLocker locker(s_mutex);
   if (andClear)
     return take(s_points[space]);
@@ -199,7 +202,7 @@ Deque<SpatialLogger::Point> SpatialLogger::getPoints(char const* space, bool and
     return s_points[space];
 }
 
-Deque<SpatialLogger::LogText> SpatialLogger::getText(char const* space, bool andClear) {
+auto SpatialLogger::getText(char const* space, bool andClear) -> Deque<SpatialLogger::LogText> {
   MutexLocker locker(s_mutex);
   if (andClear)
     return take(s_logText[space]);
@@ -219,7 +222,7 @@ void SpatialLogger::clear() {
   } // Move while locked to deallocate contents while unlocked.
 }
 
-bool SpatialLogger::observed() {
+auto SpatialLogger::observed() -> bool {
   return s_observed;
 }
 

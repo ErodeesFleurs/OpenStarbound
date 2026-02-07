@@ -1,6 +1,10 @@
 #pragma once
 
+#include "StarAudio.hpp"
+#include "StarException.hpp"
+#include "StarFont.hpp"
 #include "StarJson.hpp"
+#include "StarLua.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
 #include "StarBiMap.hpp"
@@ -15,16 +19,16 @@ import std;
 namespace Star {
 
 
-STAR_EXCEPTION(AssetException, StarException);
+using AssetException = ExceptionDerived<"AssetException">;
 
 // The contents of an assets .frames file, which can be associated with one or
 // more images, and specifies named sub-rects of those images.
 struct FramesSpecification {
   // Get the target sub-rect of a given frame name (which can be an alias).
   // Returns nothing if the frame name is not found.
-  std::optional<RectU> getRect(String const& frame) const;
+  [[nodiscard]] auto getRect(String const& frame) const -> std::optional<RectU>;
   // Converts to Json.
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
   // The full path to the .frames file from which this was loaded.
   String framesFile;
   // Named sub-frames
@@ -86,11 +90,11 @@ public:
     AssetType type;
     AssetPath path;
 
-    bool operator==(AssetId const& assetId) const;
+    auto operator==(AssetId const& assetId) const -> bool;
   };
 
   struct AssetIdHash {
-    size_t operator()(AssetId const& id) const;
+    auto operator()(AssetId const& id) const -> size_t;
   };
 
   struct AssetData {
@@ -99,7 +103,7 @@ public:
     // Should return true if this asset is shared and still in use, so freeing
     // it from cache will not really free the resource, so it should persist in
     // the cache.
-    virtual bool shouldPersist() const = 0;
+    [[nodiscard]] virtual auto shouldPersist() const -> bool = 0;
 
     double time = 0.0;
     bool needsPostProcessing = false;
@@ -107,14 +111,14 @@ public:
   };
 
   struct JsonData : AssetData {
-    bool shouldPersist() const override;
+    [[nodiscard]] auto shouldPersist() const -> bool override;
 
     Json json;
   };
 
   // Image data for an image, sub-frame, or post-processed image.
   struct ImageData : AssetData {
-    bool shouldPersist() const override;
+    [[nodiscard]] auto shouldPersist() const -> bool override;
 
     ConstPtr<Image> image;
 
@@ -129,19 +133,19 @@ public:
   };
 
   struct AudioData : AssetData {
-    bool shouldPersist() const override;
+    [[nodiscard]] auto shouldPersist() const -> bool override;
 
     ConstPtr<Audio> audio;
   };
 
   struct FontData : AssetData {
-    bool shouldPersist() const override;
+    [[nodiscard]] auto shouldPersist() const -> bool override;
 
     ConstPtr<Font> font;
   };
 
   struct BytesData : AssetData {
-    bool shouldPersist() const override;
+    [[nodiscard]] auto shouldPersist() const -> bool override;
 
     ConstPtr<ByteArray> bytes;
   };
@@ -150,9 +154,9 @@ public:
     // The mixed case original source name;
     String sourceName;
     // The source that has the primary asset copy
-    AssetSourcePtr source;
+    Ptr<AssetSource> source;
     // List of source names and sources for patches to this file.
-    List<pair<String, AssetSourcePtr>> patchSources;
+    List<std::pair<String, Ptr<AssetSource>>> patchSources;
   };
 
   Assets(Settings settings, StringList assetSources);
@@ -161,46 +165,46 @@ public:
   void hotReload() const;
 
   // Returns a list of all the asset source paths used by Assets in load order.
-  StringList assetSources() const;
+  auto assetSources() const -> StringList;
 
   // Return metadata for the given loaded asset source path
-  JsonObject assetSourceMetadata(String const& sourcePath) const;
+  auto assetSourceMetadata(String const& sourcePath) const -> JsonObject;
 
   // An imperfect sha256 digest of the contents of all combined asset sources.
   // Useful for detecting if there are mismatched assets between a client and
   // server or if assets sources have changed from a previous load.
-  ByteArray digest() const;
+  auto digest() const -> ByteArray;
 
   // Is there an asset associated with the given path?  Path must not contain
   // sub-paths or directives.
-  bool assetExists(String const& path) const;
+  auto assetExists(String const& path) const -> bool;
 
-  std::optional<AssetFileDescriptor> assetDescriptor(String const& path) const;
+  auto assetDescriptor(String const& path) const -> std::optional<AssetFileDescriptor>;
 
   // The name of the asset source within which the path exists.
-  String assetSource(String const& path) const;
+  auto assetSource(String const& path) const -> String;
 
-  std::optional<String> assetSourcePath(AssetSourcePtr const& source) const;
+  auto assetSourcePath(Ptr<AssetSource> const& source) const -> std::optional<String>;
 
   // Scans for all assets with the given suffix in any directory.
-  StringList scan(String const& suffix) const;
+  auto scan(String const& suffix) const -> StringList;
   // Scans for all assets matching both prefix and suffix (prefix may be, for
   // example, a directory)
-  StringList scan(String const& prefix, String const& suffix) const;
+  auto scan(String const& prefix, String const& suffix) const -> StringList;
   // Scans all assets for files with the given extension, which is specially
   // indexed and much faster than a normal scan.  Extension may contain leading
   // '.' character or it may be omitted.
-  CaseInsensitiveStringSet const& scanExtension(String const& extension) const;
+  auto scanExtension(String const& extension) const -> CaseInsensitiveStringSet const&;
 
   // Get json asset with an optional sub-path.  The sub-path portion of the
   // path refers to a key in the top-level object, and may use dot notation
   // for deeper field access and [] notation for array access.  Example:
   // "/path/to/json:key1.key2.key3[4]".
-  Json json(String const& path) const;
+  auto json(String const& path) const -> Json;
 
   // Either returns the json v, or, if v is a string type, returns the json
   // pointed to by interpreting v as a string path.
-  Json fetchJson(Json const& v, String const& dir = "/") const;
+  auto fetchJson(Json const& v, String const& dir = "/") const -> Json;
 
   // Load all the given jsons using background processing.
   void queueJsons(StringList const& paths) const;
@@ -213,37 +217,37 @@ public:
   // <full-path-minus-extension>.frames or default.frames, going up to assets
   // root.  May return the same ConstPtr<Image> for different paths if the paths
   // are equivalent or they are aliases of other image paths.
-  ConstPtr<Image> image(AssetPath const& path) const;
+  auto image(AssetPath const& path) const -> ConstPtr<Image>;
   // Load images using background processing
   void queueImages(StringList const& paths) const;
   void queueImages(CaseInsensitiveStringSet const& paths) const;
   // Return the given image *if* it is already loaded, otherwise queue it for
   // loading.
-  ConstPtr<Image> tryImage(AssetPath const& path) const;
+  auto tryImage(AssetPath const& path) const -> ConstPtr<Image>;
 
   // Returns the best associated FramesSpecification for a given image path, if
   // it exists.  The given path must not contain sub-paths or directives, and
   // this function may return nullptr if no frames file is associated with the
   // given image path.
-  ConstPtr<FramesSpecification> imageFrames(String const& path) const;
+  auto imageFrames(String const& path) const -> ConstPtr<FramesSpecification>;
 
   // Returns a pointer to a shared audio asset;
-  ConstPtr<Audio> audio(String const& path) const;
+  auto audio(String const& path) const -> ConstPtr<Audio>;
   // Load audios using background processing
   void queueAudios(StringList const& paths) const;
   void queueAudios(CaseInsensitiveStringSet const& paths) const;
   // Return the given audio *if* it is already loaded, otherwise queue it for
   // loading.
-  ConstPtr<Audio> tryAudio(String const& path) const;
+  auto tryAudio(String const& path) const -> ConstPtr<Audio>;
 
   // Returns pointer to shared font asset
-  ConstPtr<Font> font(String const& path) const;
+  auto font(String const& path) const -> ConstPtr<Font>;
 
   // Returns a bytes asset (Reads asset as an opaque binary blob)
-  ConstPtr<ByteArray> bytes(String const& path) const;
+  auto bytes(String const& path) const -> ConstPtr<ByteArray>;
 
   // Bypass asset caching and open an asset file directly.
-  IODevicePtr openFile(String const& basePath) const;
+  auto openFile(String const& basePath) const -> Ptr<IODevice>;
 
   // Clear all cached assets that are not queued, persistent, or broken.
   void clearCache();
@@ -260,13 +264,13 @@ private:
       {AssetType::Bytes, "bytes"}
   };
 
-  static FramesSpecification parseFramesSpecification(Json const& frameConfig, String path);
+  static auto parseFramesSpecification(Json const& frameConfig, String path) -> FramesSpecification;
 
   void queueAssets(List<AssetId> const& assetIds) const;
   //Lock before calling!
   void queueAsset(AssetId const& assetId) const;
-  std::shared_ptr<AssetData> tryAsset(AssetId const& id) const;
-  std::shared_ptr<AssetData> getAsset(AssetId const& id) const;
+  auto tryAsset(AssetId const& id) const -> std::shared_ptr<AssetData>;
+  auto getAsset(AssetId const& id) const -> std::shared_ptr<AssetData>;
 
   void workerMain();
 
@@ -276,40 +280,40 @@ private:
   // assets mutex during it.  Unlocks the assets mutex while the function is in
   // progress and re-locks it on return or before exception is thrown.
   template <typename Function>
-  decltype(auto) unlockDuring(Function f) const;
+  auto unlockDuring(Function f) const -> decltype(auto);
 
   // Returns the best frames specification for the given image path, if it exists.
-  ConstPtr<FramesSpecification> bestFramesSpecification(String const& basePath) const;
+  auto bestFramesSpecification(String const& basePath) const -> ConstPtr<FramesSpecification>;
 
-  IODevicePtr open(String const& basePath) const;
-  ByteArray read(String const& basePath) const;
-  ConstPtr<Image> readImage(String const& path) const;
-  ConstPtr<Image> applyImagePatches(ConstPtr<Image> image, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
+  auto open(String const& basePath) const -> Ptr<IODevice>;
+  auto read(String const& basePath) const -> ByteArray;
+  auto readImage(String const& path) const -> ConstPtr<Image>;
+  auto applyImagePatches(ConstPtr<Image> image, String const& path, List<std::pair<String, Ptr<AssetSource>>> patches) const -> ConstPtr<Image>;
 
-  Json readJson(String const& basePath) const;
-  Json applyJsonPatches(Json const& input, String const& path, List<pair<String, AssetSourcePtr>> patches) const;
-  Json checkPatchArray(String const& path, AssetSourcePtr const& source, Json const result, JsonArray const patchData, std::optional<Json> const external) const;
+  auto readJson(String const& basePath) const -> Json;
+  auto applyJsonPatches(Json const& input, String const& path, List<std::pair<String, Ptr<AssetSource>>> patches) const -> Json;
+  auto checkPatchArray(String const& path, Ptr<AssetSource> const& source, Json const result, JsonArray const patchData, std::optional<Json> const external) const -> Json;
 
   // Load / post process an asset and log any exception.  Returns true if the
   // work was performed (whether successful or not), false if the work is
   // blocking on something.
-  bool doLoad(AssetId const& id) const;
-  bool doPost(AssetId const& id) const;
+  auto doLoad(AssetId const& id) const -> bool;
+  auto doPost(AssetId const& id) const -> bool;
 
   // Assets can recursively depend on other assets, so the main entry point for
   // loading assets is in this separate method, and is safe for other loading
   // methods to call recursively.  If there is an error loading the asset, this
   // method will throw.  If, and only if, the asset is blocking on another busy
   // asset, this method will return null.
-  std::shared_ptr<AssetData> loadAsset(AssetId const& id) const;
+  auto loadAsset(AssetId const& id) const -> std::shared_ptr<AssetData>;
 
-  std::shared_ptr<AssetData> loadJson(AssetPath const& path) const;
-  std::shared_ptr<AssetData> loadImage(AssetPath const& path) const;
-  std::shared_ptr<AssetData> loadAudio(AssetPath const& path) const;
-  std::shared_ptr<AssetData> loadFont(AssetPath const& path) const;
-  std::shared_ptr<AssetData> loadBytes(AssetPath const& path) const;
+  auto loadJson(AssetPath const& path) const -> std::shared_ptr<AssetData>;
+  auto loadImage(AssetPath const& path) const -> std::shared_ptr<AssetData>;
+  auto loadAudio(AssetPath const& path) const -> std::shared_ptr<AssetData>;
+  auto loadFont(AssetPath const& path) const -> std::shared_ptr<AssetData>;
+  auto loadBytes(AssetPath const& path) const -> std::shared_ptr<AssetData>;
 
-  std::shared_ptr<AssetData> postProcessAudio(std::shared_ptr<AssetData> const& original) const;
+  auto postProcessAudio(std::shared_ptr<AssetData> const& original) const -> std::shared_ptr<AssetData>;
 
   // Updates time on the given asset (with smearing).
   void freshen(std::shared_ptr<AssetData> const& asset) const;
@@ -329,14 +333,14 @@ private:
 
   // Lua
   RefPtr<RefCounter> m_luaEngine; // dumb but to avoid including Lua.hpp in here...
-  mutable HashMap<pair<AssetSource*, String>, LuaContextPtr> m_patchContexts;
+  mutable HashMap<std::pair<AssetSource*, String>, Ptr<LuaContext>> m_patchContexts;
   mutable RecursiveMutex m_luaMutex;
 
   // Paths of all used asset sources, in load order.
   StringList m_assetSources;
 
   // Maps an asset path to the loaded asset source and vice versa
-  BiMap<String, AssetSourcePtr> m_assetSourcePaths;
+  BiMap<String, Ptr<AssetSource>> m_assetSourcePaths;
 
   // Maps the source asset name to the source containing it
   CaseInsensitiveStringMap<AssetFileDescriptor> m_files;
@@ -346,7 +350,7 @@ private:
   ByteArray m_digest;
 
   List<ThreadFunction<void>> m_workerThreads;
-  atomic<bool> m_stopThreads;
+  std::atomic<bool> m_stopThreads;
 };
 
 }

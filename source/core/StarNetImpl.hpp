@@ -11,6 +11,7 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #endif
+#include <cerrno>
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -63,7 +64,7 @@ inline auto netErrorString() -> String {
 
   return result;
 #else
-  return strf("{} - {}", errno, strerror(errno));
+  return strf("{} - {}", errno, std::strerror(errno));
 #endif
 }
 
@@ -103,24 +104,24 @@ inline void setAddressFromNative(HostAddressWithPort& addressWithPort, NetworkMo
 inline void setNativeFromAddress(HostAddressWithPort const& addressWithPort, struct sockaddr_storage* sockAddr, socklen_t* sockAddrLen) {
   switch (addressWithPort.address().mode()) {
     case NetworkMode::IPv4: {
-      struct sockaddr_in* addr4 = (struct sockaddr_in*)sockAddr;
+      auto* addr4 = (struct sockaddr_in*)sockAddr;
       *sockAddrLen = sizeof(*addr4);
 
-      memset(addr4, 0, *sockAddrLen);
+      std::memset(addr4, 0, *sockAddrLen);
       addr4->sin_family = AF_INET;
       addr4->sin_port = htons(addressWithPort.port());
-      memcpy(((char*)&addr4->sin_addr.s_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
+      std::memcpy(((char*)&addr4->sin_addr.s_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
 
       break;
     }
     case NetworkMode::IPv6: {
-      struct sockaddr_in6* addr6 = (struct sockaddr_in6*)sockAddr;
+      auto* addr6 = (struct sockaddr_in6*)sockAddr;
       *sockAddrLen = sizeof(*addr6);
 
-      memset(addr6, 0, *sockAddrLen);
+      std::memset(addr6, 0, *sockAddrLen);
       addr6->sin6_family = AF_INET6;
       addr6->sin6_port = htons(addressWithPort.port());
-      memcpy(((char*)&addr6->sin6_addr.s6_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
+      std::memcpy(((char*)&addr6->sin6_addr.s6_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
       break;
     }
     default:
@@ -133,7 +134,7 @@ inline bool invalidSocketDescriptor(SOCKET socket) {
   return socket == INVALID_SOCKET;
 }
 #else
-inline bool invalidSocketDescriptor(int socket) {
+inline auto invalidSocketDescriptor(int socket) -> bool {
   return socket < 0;
 }
 #endif

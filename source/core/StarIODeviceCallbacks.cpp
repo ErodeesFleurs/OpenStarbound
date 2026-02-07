@@ -6,7 +6,7 @@ import std;
 namespace Star {
 
 IODeviceCallbacks::IODeviceCallbacks(Ptr<IODevice> device)
-  : m_device(std::move(device)) {
+    : m_device(std::move(device)) {
   if (!m_device->isOpen())
     m_device->open(IOMode::Read);
 }
@@ -38,4 +38,4 @@ void IODeviceCallbacks::setupOggCallbacks(ov_callbacks& callbacks) {
   callbacks.close_func = nullptr;
 }
 
-}
+}// namespace Star

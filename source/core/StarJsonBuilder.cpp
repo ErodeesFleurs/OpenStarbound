@@ -1,6 +1,8 @@
 #include "StarJsonBuilder.hpp"
 #include "StarLexicalCast.hpp"
 
+import std;
+
 namespace Star {
 
 void JsonBuilderStream::beginObject() {
@@ -69,22 +71,22 @@ void JsonBuilderStream::putColon() {}
 
 void JsonBuilderStream::putComma() {}
 
-size_t JsonBuilderStream::stackSize() {
+auto JsonBuilderStream::stackSize() -> size_t {
   return m_stack.size();
 }
 
-Json JsonBuilderStream::takeTop() {
+auto JsonBuilderStream::takeTop() -> Json {
   if (m_stack.size())
     return std::move(*m_stack.takeLast());
   else
-    return Json();
+    return {};
 }
 
 void JsonBuilderStream::push(Json v) {
   m_stack.append(std::move(v));
 }
 
-Json JsonBuilderStream::pop() {
+auto JsonBuilderStream::pop() -> Json {
   return std::move(*m_stack.takeLast());
 }
 
@@ -96,7 +98,7 @@ void JsonBuilderStream::pushSentry() {
   m_stack.append({});
 }
 
-bool JsonBuilderStream::isSentry() {
+auto JsonBuilderStream::isSentry() -> bool {
   return !m_stack.empty() && !m_stack.last();
 }
 
@@ -133,9 +135,9 @@ void JsonStreamer<Json>::toJsonStream(Json const& val, JsonStream& stream, bool 
       iterators.reserve(objectPtr->size());
       for (auto i = objectPtr->begin(); i != objectPtr->end(); ++i)
         iterators.append(i);
-      iterators.sort([](JsonObject::const_iterator a, JsonObject::const_iterator b) {
-          return a->first < b->first;
-        });
+      iterators.sort([](JsonObject::const_iterator a, JsonObject::const_iterator b) -> bool {
+        return a->first < b->first;
+      });
       bool first = true;
       for (auto const& i : iterators) {
         if (!first)
@@ -162,4 +164,4 @@ void JsonStreamer<Json>::toJsonStream(Json const& val, JsonStream& stream, bool 
   }
 }
 
-}
+}// namespace Star

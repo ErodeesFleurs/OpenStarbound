@@ -1,28 +1,25 @@
 #pragma once
 
-#include "StarString.hpp"
 #include "StarBiMap.hpp"
 #include "StarVector.hpp"
-#include "StarLiquidTypes.hpp"
-#include "StarMaterialTypes.hpp"
 
 import std;
 
 namespace Star {
 
-enum class Direction : uint8_t {
+enum class Direction : std::uint8_t {
   Left,
   Right
 };
 extern EnumMap<Direction> const DirectionNames;
 
-inline Direction operator-(Direction dir) {
+inline auto operator-(Direction dir) -> Direction {
   if (dir == Direction::Left)
     return Direction::Right;
   return Direction::Left;
 }
 
-inline int numericalDirection(std::optional<Direction> direction) {
+inline auto numericalDirection(std::optional<Direction> direction) -> int {
   if (!direction)
     return 0;
   else
@@ -30,39 +27,39 @@ inline int numericalDirection(std::optional<Direction> direction) {
 }
 
 template <typename NumType>
-inline std::optional<Direction> directionOf(NumType const& n) {
+inline auto directionOf(NumType const& n) -> std::optional<Direction> {
   if (n == 0)
     return std::nullopt;
   else
     return n < 0 ? Direction::Left : Direction::Right;
 }
 
-enum class Gender : uint8_t {
+enum class Gender : std::uint8_t {
   Male,
   Female
 };
 extern EnumMap<Gender> const GenderNames;
 
-enum class FireMode : uint8_t {
+enum class FireMode : std::uint8_t {
   None,
   Primary,
   Alt
 };
 extern EnumMap<FireMode> const FireModeNames;
 
-enum class ToolHand : uint8_t {
+enum class ToolHand : std::uint8_t {
   Primary,
   Alt
 };
 extern EnumMap<ToolHand> const ToolHandNames;
 
-enum class TileLayer : uint8_t {
+enum class TileLayer : std::uint8_t {
   Foreground,
   Background
 };
 extern EnumMap<TileLayer> const TileLayerNames;
 
-enum class MoveControlType : uint8_t {
+enum class MoveControlType : std::uint8_t {
   Left,
   Right,
   Down,
@@ -101,7 +98,7 @@ float const SystemWorldTimestep = 1.0f / 20.0f;
 
 size_t const WorldSectorSize = 32;
 
-typedef int32_t EntityId;
+using EntityId = std::int32_t;
 EntityId const NullEntityId = 0;
 EntityId const MinServerEntityId = 1;
 EntityId const MaxServerEntityId = highest<EntityId>();
@@ -114,18 +111,18 @@ enum class EntityMode {
   Slave
 };
 
-typedef uint16_t ConnectionId;
+using ConnectionId = std::uint16_t;
 ConnectionId const ServerConnectionId = 0;
 // Minimum and maximum valid client ids
 ConnectionId const MinClientConnectionId = 1;
 ConnectionId const MaxClientConnectionId = 32767;
 
 template <typename Vec2T>
-inline Vec2F centerOfTile(Vec2T const& tile) {
+inline auto centerOfTile(Vec2T const& tile) -> Vec2F {
   return Vec2F(tile.floor()) + Vec2F::filled(0.5);
 }
 
-typedef uint16_t DungeonId;
+using DungeonId = std::uint16_t;
 
 static const DungeonId NoDungeonId = 65535;
 static const DungeonId SpawnDungeonId = 65534;
@@ -142,24 +139,24 @@ static const DungeonId ProtectedZeroGDungeonId = 65524;
 // The first dungeon id that is reserved for special hard-coded dungeon values.
 DungeonId const FirstMetaDungeonId = 65520;
 
-inline bool isRealDungeon(DungeonId dungeon) {
+inline auto isRealDungeon(DungeonId dungeon) -> bool {
   return dungeon < FirstMetaDungeonId;
 }
 
 // Returns the inclusive beginning and end of the entity id space for the
 // given connection.  All client connection id spaces will be within the range
 // [-2^31, -1].
-pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId);
+auto connectionEntitySpace(ConnectionId connectionId) -> std::pair<EntityId, EntityId>;
 
-bool entityIdInSpace(EntityId entityId, ConnectionId connectionId);
+auto entityIdInSpace(EntityId entityId, ConnectionId connectionId) -> bool;
 
-ConnectionId connectionForEntity(EntityId entityId);
+auto connectionForEntity(EntityId entityId) -> ConnectionId;
 
 // Returns an angle in the range [-pi / 2, pi / 2], and the horizontal
 // hemisphere of the angle.  The angle is specified as positive being upward
 // rotation and negative being downward rotation, unless ccRotation is true, in
 // which case the angle is always positive == counter-clocwise.
-pair<float, Direction> getAngleSide(float angle, bool ccRotation = false);
+auto getAngleSide(float angle, bool ccRotation = false) -> std::pair<float, Direction>;
 
 enum class TileDamageResult {
   None = 0,
@@ -167,4 +164,4 @@ enum class TileDamageResult {
   Normal = 2,
 };
 
-}
+}// namespace Star

@@ -1,17 +1,13 @@
 #pragma once
 
-#include "StarOrderedMap.hpp"
-#include "StarRect.hpp"
-#include "StarEither.hpp"
 #include "StarCelestialParameters.hpp"
+#include "StarEither.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_STRUCT(CelestialSystemObjects);
-STAR_STRUCT(CelestialChunk);
-STAR_STRUCT(CelestialBaseInformation);
-
-typedef List<pair<Vec2I, Vec2I>> CelestialConstellation;
+using CelestialConstellation = List<std::pair<Vec2I, Vec2I>>;
 
 struct CelestialOrbitRegion {
   String regionName;
@@ -25,21 +21,21 @@ struct CelestialPlanet {
   CelestialParameters planetParameters;
   HashMap<int, CelestialParameters> satelliteParameters;
 };
-DataStream& operator>>(DataStream& ds, CelestialPlanet& planet);
-DataStream& operator<<(DataStream& ds, CelestialPlanet const& planet);
+auto operator>>(DataStream& ds, CelestialPlanet& planet) -> DataStream&;
+auto operator<<(DataStream& ds, CelestialPlanet const& planet) -> DataStream&;
 
 struct CelestialSystemObjects {
   Vec3I systemLocation;
   HashMap<int, CelestialPlanet> planets;
 };
-DataStream& operator>>(DataStream& ds, CelestialSystemObjects& systemObjects);
-DataStream& operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects);
+auto operator>>(DataStream& ds, CelestialSystemObjects& systemObjects) -> DataStream&;
+auto operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects) -> DataStream&;
 
 struct CelestialChunk {
   CelestialChunk();
   CelestialChunk(Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   Vec2I chunkIndex;
   List<CelestialConstellation> constellations;
@@ -50,11 +46,11 @@ struct CelestialChunk {
   // entire chunk the other for each set of sub objects for each system.
   HashMap<Vec3I, HashMap<int, CelestialPlanet>> systemObjects;
 };
-DataStream& operator>>(DataStream& ds, CelestialChunk& chunk);
-DataStream& operator<<(DataStream& ds, CelestialChunk const& chunk);
+auto operator>>(DataStream& ds, CelestialChunk& chunk) -> DataStream&;
+auto operator<<(DataStream& ds, CelestialChunk const& chunk) -> DataStream&;
 
-typedef Either<Vec2I, Vec3I> CelestialRequest;
-typedef Either<CelestialChunk, CelestialSystemObjects> CelestialResponse;
+using CelestialRequest = Either<Vec2I, Vec3I>;
+using CelestialResponse = Either<CelestialChunk, CelestialSystemObjects>;
 
 struct CelestialBaseInformation {
   int planetOrbitalLevels;
@@ -64,6 +60,6 @@ struct CelestialBaseInformation {
   Vec2I zCoordRange;
   bool enforceCoordRange;
 };
-DataStream& operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation);
-DataStream& operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation);
-}
+auto operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation) -> DataStream&;
+auto operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation) -> DataStream&;
+}// namespace Star

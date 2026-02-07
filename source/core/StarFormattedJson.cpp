@@ -2,33 +2,35 @@
 #include "StarJsonBuilder.hpp"
 #include "StarLexicalCast.hpp"
 
+import std;
+
 namespace Star {
 
 class FormattedJsonBuilderStream : public JsonStream {
 public:
-  virtual void beginObject();
-  virtual void objectKey(String::Char const* s, size_t len);
-  virtual void endObject();
+  void beginObject() override;
+  void objectKey(String::Char const* s, size_t len) override;
+  void endObject() override;
 
-  virtual void beginArray();
-  virtual void endArray();
+  void beginArray() override;
+  void endArray() override;
 
-  virtual void putString(String::Char const* s, size_t len);
-  virtual void putDouble(String::Char const* s, size_t len);
-  virtual void putInteger(String::Char const* s, size_t len);
-  virtual void putBoolean(bool b);
-  virtual void putNull();
+  void putString(String::Char const* s, size_t len) override;
+  void putDouble(String::Char const* s, size_t len) override;
+  void putInteger(String::Char const* s, size_t len) override;
+  void putBoolean(bool b) override;
+  void putNull() override;
 
-  virtual void putWhitespace(String::Char const* s, size_t len);
-  virtual void putComma();
-  virtual void putColon();
+  void putWhitespace(String::Char const* s, size_t len) override;
+  void putComma() override;
+  void putColon() override;
 
-  FormattedJson takeTop();
+  auto takeTop() -> FormattedJson;
 
 private:
   void push(FormattedJson const& v);
-  FormattedJson pop();
-  FormattedJson& current();
+  auto pop() -> FormattedJson;
+  auto current() -> FormattedJson&;
   void putValue(Json const& value, std::optional<String> formatting = {});
 
   std::optional<FormattedJson> m_root;
@@ -41,39 +43,35 @@ public:
   static void toJsonStream(FormattedJson const& val, JsonStream& stream, bool sort);
 };
 
-ValueElement::ValueElement(FormattedJson const& json) : value(make_shared<FormattedJson>(json)) {}
+ValueElement::ValueElement(FormattedJson const& json) : value(std::make_shared<FormattedJson>(json)) {}
 
-bool ValueElement::operator==(ValueElement const& v) const {
+auto ValueElement::operator==(ValueElement const& v) const -> bool {
   return *value == *v.value;
 }
 
-bool ObjectKeyElement::operator==(ObjectKeyElement const& v) const {
+auto ObjectKeyElement::operator==(ObjectKeyElement const& v) const -> bool {
   return key == v.key;
 }
 
-bool WhitespaceElement::operator==(WhitespaceElement const& v) const {
+auto WhitespaceElement::operator==(WhitespaceElement const& v) const -> bool {
   return whitespace == v.whitespace;
 }
 
-bool ColonElement::operator==(ColonElement const&) const {
+auto CommaElement::operator==(CommaElement const&) const -> bool {
   return true;
 }
 
-bool CommaElement::operator==(CommaElement const&) const {
-  return true;
-}
-
-FormattedJson FormattedJson::parse(String const& string) {
+auto FormattedJson::parse(String const& string) -> FormattedJson {
   return inputUtf32Json<String::const_iterator, FormattedJsonBuilderStream, FormattedJson>(
       string.begin(), string.end(), JsonParseType::Value);
 }
 
-FormattedJson FormattedJson::parseJson(String const& string) {
+auto FormattedJson::parseJson(String const& string) -> FormattedJson {
   return inputUtf32Json<String::const_iterator, FormattedJsonBuilderStream, FormattedJson>(
       string.begin(), string.end(), JsonParseType::Top);
 }
 
-FormattedJson FormattedJson::ofType(Json::Type type) {
+auto FormattedJson::ofType(Json::Type type) -> FormattedJson {
   FormattedJson json;
   json.m_jsonValue = Json::ofType(type);
   return json;
@@ -99,22 +97,22 @@ FormattedJson::FormattedJson(Json const& json)
   m_jsonValue = json;
 }
 
-Json const& FormattedJson::toJson() const {
+auto FormattedJson::toJson() const -> Json const& {
   return m_jsonValue;
 }
 
-FormattedJson FormattedJson::get(String const& key) const {
+auto FormattedJson::get(String const& key) const -> FormattedJson {
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call get with key on FormattedJson type {}, must be Object type", typeName());
 
-  std::optional<pair<ElementLocation, ElementLocation>> entry = m_objectEntryLocations.maybe(key);
+  std::optional<std::pair<ElementLocation, ElementLocation>> entry = m_objectEntryLocations.maybe(key);
   if (!entry)
     throw JsonException::format("No such key in FormattedJson::get(\"{}\")", key);
 
   return getFormattedJson(entry->second);
 }
 
-FormattedJson FormattedJson::get(size_t index) const {
+auto FormattedJson::get(size_t index) const -> FormattedJson {
   if (type() != Json::Type::Array)
     throw JsonException::format("Cannot call get with index on FormattedJson type {}, must be Array type", typeName());
 
@@ -126,6 +124,7 @@ FormattedJson FormattedJson::get(size_t index) const {
 }
 
 struct WhitespaceStyle {
+  WhitespaceStyle(String beforeKey, String beforeColon, String beforeValue, String beforeComma) : beforeKey(std::move(beforeKey)), beforeColon(std::move(beforeColon)), beforeValue(std::move(beforeValue)), beforeComma(std::move(beforeComma)) {}
   String beforeKey;
   String beforeColon;
   String beforeValue;
@@ -133,7 +132,7 @@ struct WhitespaceStyle {
 };
 
 template <class ElementType>
-FormattedJson::ElementLocation indexOf(FormattedJson::ElementList const& elements, FormattedJson::ElementLocation pos) {
+auto indexOf(FormattedJson::ElementList const& elements, FormattedJson::ElementLocation pos) -> FormattedJson::ElementLocation {
   for (; pos < elements.size(); ++pos) {
     if (elements[pos].is<ElementType>())
       return pos;
@@ -142,8 +141,8 @@ FormattedJson::ElementLocation indexOf(FormattedJson::ElementList const& element
 }
 
 template <class ElementType>
-FormattedJson::ElementLocation lastIndexOf(
-    FormattedJson::ElementList const& elements, FormattedJson::ElementLocation pos) {
+auto lastIndexOf(
+    FormattedJson::ElementList const& elements, FormattedJson::ElementLocation pos) -> FormattedJson::ElementLocation {
   while (pos > 0) {
     --pos;
     if (elements[pos].is<ElementType>())
@@ -152,8 +151,8 @@ FormattedJson::ElementLocation lastIndexOf(
   return std::numeric_limits<std::size_t>::max();
 }
 
-String concatWhitespace(FormattedJson::ElementList const& elements, FormattedJson::ElementLocation from,
-    FormattedJson::ElementLocation to) {
+auto concatWhitespace(FormattedJson::ElementList const& elements, FormattedJson::ElementLocation from,
+    FormattedJson::ElementLocation to) -> String {
   String whitespace;
   for (JsonElement const& elem : elements.slice(from, to)) {
     if (elem.is<WhitespaceElement>())
@@ -162,9 +161,9 @@ String concatWhitespace(FormattedJson::ElementList const& elements, FormattedJso
   return whitespace;
 }
 
-WhitespaceStyle detectWhitespace(FormattedJson::ElementList const& elements,
-    FormattedJson::ElementLocation insertLoc, bool array) {
-  WhitespaceStyle style;
+auto detectWhitespace(FormattedJson::ElementList const& elements,
+    FormattedJson::ElementLocation insertLoc, bool array) -> WhitespaceStyle {
+  WhitespaceStyle style{"", "", "", ""};
 
   // Find a nearby value as a reference location to learn whitespace from.
   FormattedJson::ElementLocation valueLoc = lastIndexOf<ValueElement>(elements, insertLoc);
@@ -255,29 +254,29 @@ void insertWithCommaAndFormatting(FormattedJson::ElementList& destination, Forma
   }
 }
 
-FormattedJson FormattedJson::prepend(String const& key, FormattedJson const& value) const {
+auto FormattedJson::prepend(String const& key, FormattedJson const& value) const -> FormattedJson {
   return objectInsert(key, value, 0);
 }
 
-FormattedJson FormattedJson::insertBefore(String const& key, FormattedJson const& value, String const& beforeKey) const {
+auto FormattedJson::insertBefore(String const& key, FormattedJson const& value, String const& beforeKey) const -> FormattedJson {
   if (!m_objectEntryLocations.contains(beforeKey))
     throw JsonException::format("Cannot insert before key \"{}\", which does not exist", beforeKey);
   ElementLocation loc = m_objectEntryLocations.get(beforeKey).first;
   return objectInsert(key, value, loc);
 }
 
-FormattedJson FormattedJson::insertAfter(String const& key, FormattedJson const& value, String const& afterKey) const {
+auto FormattedJson::insertAfter(String const& key, FormattedJson const& value, String const& afterKey) const -> FormattedJson {
   if (!m_objectEntryLocations.contains(afterKey))
     throw JsonException::format("Cannot insert after key \"{}\", which does not exist", afterKey);
   ElementLocation loc = m_objectEntryLocations.get(afterKey).second;
   return objectInsert(key, value, loc + 1);
 }
 
-FormattedJson FormattedJson::append(String const& key, FormattedJson const& value) const {
+auto FormattedJson::append(String const& key, FormattedJson const& value) const -> FormattedJson {
   return objectInsert(key, value, m_elements.size());
 }
 
-FormattedJson FormattedJson::set(String const& key, FormattedJson const& value) const {
+auto FormattedJson::set(String const& key, FormattedJson const& value) const -> FormattedJson {
   return objectInsert(key, value, m_elements.size());
 }
 
@@ -299,11 +298,11 @@ void removeValueFromArray(List<JsonElement>& elements, size_t loc) {
   }
 }
 
-FormattedJson FormattedJson::eraseKey(String const& key) const {
+auto FormattedJson::eraseKey(String const& key) const -> FormattedJson {
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call erase with key on FormattedJson type {}, must be Object type", typeName());
 
-  std::optional<pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
+  std::optional<std::pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
   if (!maybeEntry)
     return *this;
 
@@ -314,7 +313,7 @@ FormattedJson FormattedJson::eraseKey(String const& key) const {
   return object(elements);
 }
 
-FormattedJson FormattedJson::insert(size_t index, FormattedJson const& value) const {
+auto FormattedJson::insert(size_t index, FormattedJson const& value) const -> FormattedJson {
   if (type() != Json::Type::Array)
     throw JsonException::format(
         "Cannot call insert with index on FormattedJson type {}, must be Array type", typeName());
@@ -331,7 +330,7 @@ FormattedJson FormattedJson::insert(size_t index, FormattedJson const& value) co
   return array(elements);
 }
 
-FormattedJson FormattedJson::append(FormattedJson const& value) const {
+auto FormattedJson::append(FormattedJson const& value) const -> FormattedJson {
   if (type() != Json::Type::Array)
     throw JsonException::format("Cannot call append on FormattedJson type {}, must be Array type", typeName());
 
@@ -340,7 +339,7 @@ FormattedJson FormattedJson::append(FormattedJson const& value) const {
   return array(elements);
 }
 
-FormattedJson FormattedJson::set(size_t index, FormattedJson const& value) const {
+auto FormattedJson::set(size_t index, FormattedJson const& value) const -> FormattedJson {
   if (type() != Json::Type::Array)
     throw JsonException::format("Cannot call set with index on FormattedJson type {}, must be Array type", typeName());
 
@@ -353,7 +352,7 @@ FormattedJson FormattedJson::set(size_t index, FormattedJson const& value) const
   return array(elements);
 }
 
-FormattedJson FormattedJson::eraseIndex(size_t index) const {
+auto FormattedJson::eraseIndex(size_t index) const -> FormattedJson {
   if (type() != Json::Type::Array)
     throw JsonException::format("Cannot call set with index on FormattedJson type {}, must be Array type", typeName());
 
@@ -366,27 +365,27 @@ FormattedJson FormattedJson::eraseIndex(size_t index) const {
   return array(elements);
 }
 
-size_t FormattedJson::size() const {
+auto FormattedJson::size() const -> size_t {
   return m_jsonValue.size();
 }
 
-bool FormattedJson::contains(String const& key) const {
+auto FormattedJson::contains(String const& key) const -> bool {
   return m_jsonValue.contains(key);
 }
 
-Json::Type FormattedJson::type() const {
+auto FormattedJson::type() const -> Json::Type {
   return m_jsonValue.type();
 }
 
-bool FormattedJson::isType(Json::Type type) const {
+auto FormattedJson::isType(Json::Type type) const -> bool {
   return m_jsonValue.isType(type);
 }
 
-String FormattedJson::typeName() const {
+auto FormattedJson::typeName() const -> String {
   return m_jsonValue.typeName();
 }
 
-String FormattedJson::toFormattedDouble() const {
+auto FormattedJson::toFormattedDouble() const -> String {
   if (!isType(Json::Type::Float))
     throw JsonException::format("Cannot call toFormattedDouble on Json type {}, must be Float", typeName());
   if (m_formatting.has_value())
@@ -394,7 +393,7 @@ String FormattedJson::toFormattedDouble() const {
   return toJson().repr();
 }
 
-String FormattedJson::toFormattedInt() const {
+auto FormattedJson::toFormattedInt() const -> String {
   if (!isType(Json::Type::Int))
     throw JsonException::format("Cannot call toFormattedInt on Json type {}, must be Int", typeName());
   if (m_formatting.has_value())
@@ -402,7 +401,7 @@ String FormattedJson::toFormattedInt() const {
   return toJson().repr();
 }
 
-String FormattedJson::repr() const {
+auto FormattedJson::repr() const -> String {
   if (m_formatting.has_value())
     return *m_formatting;
   String result;
@@ -410,29 +409,29 @@ String FormattedJson::repr() const {
   return result;
 }
 
-String FormattedJson::printJson() const {
+auto FormattedJson::printJson() const -> String {
   if (type() != Json::Type::Object && type() != Json::Type::Array)
     throw JsonException("printJson called on non-top-level JSON type");
   return repr();
 }
 
-Json elemToJson(JsonElement const& elem) {
+auto elemToJson(JsonElement const& elem) -> Json {
   return elem.get<ValueElement>().value->toJson();
 }
 
-FormattedJson::ElementList const& FormattedJson::elements() const {
+auto FormattedJson::elements() const -> FormattedJson::ElementList const& {
   return m_elements;
 }
 
-bool FormattedJson::operator==(FormattedJson const& v) const {
+auto FormattedJson::operator==(FormattedJson const& v) const -> bool {
   return m_jsonValue == v.m_jsonValue;
 }
 
-bool FormattedJson::operator!=(FormattedJson const& v) const {
+auto FormattedJson::operator!=(FormattedJson const& v) const -> bool {
   return !(*this == v);
 }
 
-FormattedJson FormattedJson::object(ElementList const& elements) {
+auto FormattedJson::object(ElementList const& elements) -> FormattedJson {
   FormattedJson json = ofType(Json::Type::Object);
   for (JsonElement const& elem : elements) {
     json.appendElement(elem);
@@ -440,7 +439,7 @@ FormattedJson FormattedJson::object(ElementList const& elements) {
   return json;
 }
 
-FormattedJson FormattedJson::array(ElementList const& elements) {
+auto FormattedJson::array(ElementList const& elements) -> FormattedJson {
   FormattedJson json = ofType(Json::Type::Array);
   for (JsonElement const& elem : elements) {
     if (elem.is<ColonElement>() || elem.is<ObjectKeyElement>())
@@ -450,11 +449,11 @@ FormattedJson FormattedJson::array(ElementList const& elements) {
   return json;
 }
 
-FormattedJson FormattedJson::objectInsert(String const& key, FormattedJson const& value, ElementLocation loc) const {
+auto FormattedJson::objectInsert(String const& key, FormattedJson const& value, ElementLocation loc) const -> FormattedJson {
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call set with key on FormattedJson type {}, must be Object type", typeName());
 
-  std::optional<pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
+  std::optional<std::pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
   if (maybeEntry) {
     ElementList elements = m_elements;
     elements.at(maybeEntry->second) = ValueElement{value};
@@ -479,7 +478,7 @@ void FormattedJson::appendElement(JsonElement const& elem) {
     if (m_lastKey.has_value()) {
       String key = m_elements[*m_lastKey].get<ObjectKeyElement>().key;
 
-      m_objectEntryLocations[key] = make_pair(*m_lastKey, loc);
+      m_objectEntryLocations[key] = std::make_pair(*m_lastKey, loc);
       m_jsonValue = m_jsonValue.set(key, elemToJson(elem));
 
       m_lastKey = {};
@@ -491,11 +490,11 @@ void FormattedJson::appendElement(JsonElement const& elem) {
   }
 }
 
-FormattedJson const& FormattedJson::getFormattedJson(ElementLocation loc) const {
+auto FormattedJson::getFormattedJson(ElementLocation loc) const -> FormattedJson const& {
   return *m_elements[loc].get<ValueElement>().value;
 }
 
-FormattedJson FormattedJson::formattedAs(String const& formatting) const {
+auto FormattedJson::formattedAs(String const& formatting) const -> FormattedJson {
   FormattedJson json = *this;
   json.m_formatting = formatting;
   return json;
@@ -537,13 +536,13 @@ void FormattedJsonBuilderStream::putString(String::Char const* s, size_t len) {
 
 void FormattedJsonBuilderStream::putDouble(String::Char const* s, size_t len) {
   String formatted(s, len);
-  double d = lexicalCast<double>(formatted);
+  auto d = lexicalCast<double>(formatted);
   putValue(d, formatted);
 }
 
 void FormattedJsonBuilderStream::putInteger(String::Char const* s, size_t len) {
   String formatted(s, len);
-  long long d = lexicalCast<long long>(formatted);
+  auto d = lexicalCast<long long>(formatted);
   putValue(d, formatted);
 }
 
@@ -568,7 +567,7 @@ void FormattedJsonBuilderStream::putComma() {
   current().appendElement(CommaElement{});
 }
 
-FormattedJson FormattedJsonBuilderStream::takeTop() {
+auto FormattedJsonBuilderStream::takeTop() -> FormattedJson {
   return std::move(*m_root);
 }
 
@@ -576,13 +575,13 @@ void FormattedJsonBuilderStream::push(FormattedJson const& v) {
   m_stack.push_back(v);
 }
 
-FormattedJson FormattedJsonBuilderStream::pop() {
+auto FormattedJsonBuilderStream::pop() -> FormattedJson {
   FormattedJson result = m_stack.back();
   m_stack.pop_back();
   return result;
 }
 
-FormattedJson& FormattedJsonBuilderStream::current() {
+auto FormattedJsonBuilderStream::current() -> FormattedJson& {
   return m_stack.back();
 }
 
@@ -646,7 +645,7 @@ void JsonStreamer<FormattedJson>::toJsonStream(FormattedJson const& val, JsonStr
     stream.endArray();
 }
 
-std::ostream& operator<<(std::ostream& os, JsonElement const& elem) {
+auto operator<<(std::ostream& os, JsonElement const& elem) -> std::ostream& {
   if (elem.is<ValueElement>())
     return os << "ValueElement{" << elem.get<ValueElement>().value << "}";
   if (elem.is<ObjectKeyElement>())
@@ -660,7 +659,7 @@ std::ostream& operator<<(std::ostream& os, JsonElement const& elem) {
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os, FormattedJson const& json) {
+auto operator<<(std::ostream& os, FormattedJson const& json) -> std::ostream& {
   return os << json.repr();
 }
 

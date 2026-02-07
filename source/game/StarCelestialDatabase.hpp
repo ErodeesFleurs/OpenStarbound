@@ -1,27 +1,27 @@
 #pragma once
 
-#include <optional>
-
-#include "StarRect.hpp"
-#include "StarTtlCache.hpp"
-#include "StarWeightedPool.hpp"
-#include "StarThread.hpp"
 #include "StarBTreeDatabase.hpp"
 #include "StarCelestialTypes.hpp"
 #include "StarPerlin.hpp"
+#include "StarRect.hpp"
+#include "StarThread.hpp"
+#include "StarTtlCache.hpp"
+#include "StarWeightedPool.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(CelestialDatabase);
-STAR_CLASS(CelestialMasterDatabase);
-STAR_CLASS(CelestialSlaveDatabase);
+// STAR_CLASS(CelestialDatabase);
+// STAR_CLASS(CelestialMasterDatabase);
+// STAR_CLASS(CelestialSlaveDatabase);
 
 class CelestialDatabase {
 public:
   virtual ~CelestialDatabase();
 
   // The x/y region of usable worlds.
-  RectI xyRange() const;
+  [[nodiscard]] auto xyRange() const -> RectI;
 
   // The maximum number of bodies that can orbit a single system center /
   // planetary body.  Orbital numbers are up to this number of levels
@@ -29,42 +29,42 @@ public:
   // "0", in this system, would refer to the center of the planetary system
   // itself, e.g. a star.  In the same way, satellites around a planetary
   // object are numbered 1-N, and 0 refers to the planetary object itself.
-  int planetOrbitalLevels() const;
-  int satelliteOrbitalLevels() const;
+  [[nodiscard]] auto planetOrbitalLevels() const -> int;
+  [[nodiscard]] auto satelliteOrbitalLevels() const -> int;
 
   // The following methods are allowed to return no information even in the
   // case of valid coordinates, due to delayed loading.
 
-  virtual std::optional<CelestialParameters> parameters(CelestialCoordinate const& coordinate) = 0;
-  virtual std::optional<String> name(CelestialCoordinate const& coordinate) = 0;
+  virtual auto parameters(CelestialCoordinate const& coordinate) -> std::optional<CelestialParameters> = 0;
+  virtual auto name(CelestialCoordinate const& coordinate) -> std::optional<String> = 0;
 
-  virtual std::optional<bool> hasChildren(CelestialCoordinate const& coordinate) = 0;
-  virtual List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) = 0;
-  virtual List<int> childOrbits(CelestialCoordinate const& coordinate) = 0;
+  virtual auto hasChildren(CelestialCoordinate const& coordinate) -> std::optional<bool> = 0;
+  virtual auto children(CelestialCoordinate const& coordinate) -> List<CelestialCoordinate> = 0;
+  virtual auto childOrbits(CelestialCoordinate const& coordinate) -> List<int> = 0;
 
   // Return all valid system coordinates in the given x/y range.  All systems
   // are guaranteed to have unique x/y coordinates, and are meant to be viewed
   // from the top in 2d.  The z-coordinate is there simpy as a validation
   // parameter.
-  virtual List<CelestialCoordinate> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) = 0;
-  virtual List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) = 0;
+  virtual auto scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) -> List<CelestialCoordinate> = 0;
+  virtual auto scanConstellationLines(RectI const& region) -> List<std::pair<Vec2I, Vec2I>> = 0;
 
   // Returns false if part or all of the specified region is not loaded.  This
   // is only relevant for calls to scanSystems and scanConstellationLines, and
   // does not imply that each individual system in the given region is fully
   // loaded with all planets moons etc, only that scanSystem and
   // scanConstellationLines are not waiting on missing data.
-  virtual bool scanRegionFullyLoaded(RectI const& region) = 0;
+  virtual auto scanRegionFullyLoaded(RectI const& region) -> bool = 0;
 
 protected:
-  Vec2I chunkIndexFor(CelestialCoordinate const& coordinate) const;
-  Vec2I chunkIndexFor(Vec2I const& systemXY) const;
+  [[nodiscard]] auto chunkIndexFor(CelestialCoordinate const& coordinate) const -> Vec2I;
+  [[nodiscard]] auto chunkIndexFor(Vec2I const& systemXY) const -> Vec2I;
 
   // Returns the chunk indexes for the given region.
-  List<Vec2I> chunkIndexesFor(RectI const& region) const;
+  [[nodiscard]] auto chunkIndexesFor(RectI const& region) const -> List<Vec2I>;
 
   // Returns the region of the given chunk.
-  RectI chunkRegion(Vec2I const& chunkIndex) const;
+  [[nodiscard]] auto chunkRegion(Vec2I const& chunkIndex) const -> RectI;
 
   // m_baseInformation should only be modified in the constructor, as it is not
   // thread protected.
@@ -75,36 +75,36 @@ class CelestialMasterDatabase : public CelestialDatabase {
 public:
   CelestialMasterDatabase(std::optional<String> databaseFile = {});
 
-  CelestialBaseInformation baseInformation() const;
-  CelestialResponse respondToRequest(CelestialRequest const& requests);
+  auto baseInformation() const -> CelestialBaseInformation;
+  auto respondToRequest(CelestialRequest const& requests) -> CelestialResponse;
 
   // Unload data that has not been used in the configured TTL time, and
   // periodically commit to the underlying database if it is in use.
   void cleanupAndCommit();
 
   // Does this coordinate point to a valid existing object?
-  bool coordinateValid(CelestialCoordinate const& coordinate);
+  auto coordinateValid(CelestialCoordinate const& coordinate) -> bool;
 
   // Find a planetary or satellite object randomly throughout the entire
   // celestial space that satisfies the given parameters.  May fail to find
   // anything, though with the defaults this is vanishingly unlikely.
-  std::optional<CelestialCoordinate> findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
-      function<bool(CelestialCoordinate)> filter = {}, std::optional<uint64_t> seed = {});
+  auto findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
+                       std::function<bool(CelestialCoordinate)> filter = {}, std::optional<uint64_t> seed = {}) -> std::optional<CelestialCoordinate>;
 
   // CelestialMasterDatabase always returns actual data, as it does just in
   // time generation.
 
-  std::optional<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
-  std::optional<String> name(CelestialCoordinate const& coordinate) override;
+  auto parameters(CelestialCoordinate const& coordinate) -> std::optional<CelestialParameters> override;
+  auto name(CelestialCoordinate const& coordinate) -> std::optional<String> override;
 
-  std::optional<bool> hasChildren(CelestialCoordinate const& coordinate) override;
-  List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) override;
-  List<int> childOrbits(CelestialCoordinate const& coordinate) override;
+  auto hasChildren(CelestialCoordinate const& coordinate) -> std::optional<bool> override;
+  auto children(CelestialCoordinate const& coordinate) -> List<CelestialCoordinate> override;
+  auto childOrbits(CelestialCoordinate const& coordinate) -> List<int> override;
 
-  List<CelestialCoordinate> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) override;
-  List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
+  auto scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) -> List<CelestialCoordinate> override;
+  auto scanConstellationLines(RectI const& region) -> List<std::pair<Vec2I, Vec2I>> override;
 
-  bool scanRegionFullyLoaded(RectI const& region) override;
+  auto scanRegionFullyLoaded(RectI const& region) -> bool override;
 
   // overwrite the celestial parameters for the world at the given celestial coordinate
   void updateParameters(CelestialCoordinate const& coordinate, CelestialParameters const& parameters);
@@ -160,17 +160,17 @@ protected:
     WeightedPool<String> systemSuffixNames;
   };
 
-  static std::optional<CelestialOrbitRegion> orbitRegion(
-      List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber);
+  static auto orbitRegion(
+    List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber) -> std::optional<CelestialOrbitRegion>;
 
-  typedef std::function<void(std::function<void()>&&)>&& UnlockDuringFunction;
-  CelestialChunk const& getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {});
+  using UnlockDuringFunction = std::function<void(std::function<void()>&&)>&&;
+  auto getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {}) -> CelestialChunk const&;
 
-  CelestialChunk produceChunk(Vec2I const& chunkLocation) const;
-  std::optional<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> produceSystem(
-      RandomSource& random, Vec3I const& location) const;
-  List<CelestialConstellation> produceConstellations(
-      RandomSource& random, List<Vec2I> const& constellationCandidates) const;
+  auto produceChunk(Vec2I const& chunkLocation) const -> CelestialChunk;
+  auto produceSystem(
+    RandomSource& random, Vec3I const& location) const -> std::optional<std::pair<CelestialParameters, HashMap<int, CelestialPlanet>>>;
+  auto produceConstellations(
+    RandomSource& random, List<Vec2I> const& constellationCandidates) const -> List<CelestialConstellation>;
 
   GenerationInformation m_generationInformation;
 
@@ -196,23 +196,23 @@ public:
 
   // There is an internal activity time for chunk requests to live to prevent
   // repeatedly requesting the same set of chunks.
-  List<CelestialRequest> pullRequests();
+  auto pullRequests() -> List<CelestialRequest>;
   void pushResponses(List<CelestialResponse> responses);
 
   // Unload data that has not been used in the configured TTL time.
   void cleanup();
 
-  std::optional<CelestialParameters> parameters(CelestialCoordinate const& coordinate) override;
-  std::optional<String> name(CelestialCoordinate const& coordinate) override;
+  auto parameters(CelestialCoordinate const& coordinate) -> std::optional<CelestialParameters> override;
+  auto name(CelestialCoordinate const& coordinate) -> std::optional<String> override;
 
-  std::optional<bool> hasChildren(CelestialCoordinate const& coordinate) override;
-  List<CelestialCoordinate> children(CelestialCoordinate const& coordinate) override;
-  List<int> childOrbits(CelestialCoordinate const& coordinate) override;
+  auto hasChildren(CelestialCoordinate const& coordinate) -> std::optional<bool> override;
+  auto children(CelestialCoordinate const& coordinate) -> List<CelestialCoordinate> override;
+  auto childOrbits(CelestialCoordinate const& coordinate) -> List<int> override;
 
-  List<CelestialCoordinate> scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) override;
-  List<pair<Vec2I, Vec2I>> scanConstellationLines(RectI const& region) override;
+  auto scanSystems(RectI const& region, std::optional<StringSet> const& includedTypes = {}) -> List<CelestialCoordinate> override;
+  auto scanConstellationLines(RectI const& region) -> List<std::pair<Vec2I, Vec2I>> override;
 
-  bool scanRegionFullyLoaded(RectI const& region) override;
+  auto scanRegionFullyLoaded(RectI const& region) -> bool override;
 
   void invalidateCacheFor(CelestialCoordinate const& coordinate);
 
@@ -225,4 +225,4 @@ private:
   HashMap<Vec3I, Timer> m_pendingSystemRequests;
 };
 
-}
+}// namespace Star

@@ -10,11 +10,11 @@ namespace Star {
 // I literally just copy-pasted it all from there
 class StringView {
 public:
-  typedef String::Char Char;
+  using Char = String::Char;
 
-  typedef U8ToU32Iterator<std::string_view::const_iterator> const_iterator;
-  typedef Char value_type;
-  typedef value_type const& const_reference;
+  using const_iterator = U8ToU32Iterator<std::string_view::const_iterator>;
+  using value_type = Char;
+  using const_reference = value_type const&;
 
   using CaseSensitivity = String::CaseSensitivity;
 
@@ -34,86 +34,86 @@ public:
   StringView(Char const* s, std::size_t n);
 
   // const& to internal utf8 data
-  std::string_view const& utf8() const;
-  std::string_view takeUtf8();
-  ByteArray utf8Bytes() const;
+  [[nodiscard]] auto utf8() const -> std::string_view const&;
+  auto takeUtf8() -> std::string_view;
+  [[nodiscard]] auto utf8Bytes() const -> ByteArray;
   // Pointer to internal utf8 data, null-terminated.
-  char const* utf8Ptr() const;
-  std::size_t utf8Size() const;
+  [[nodiscard]] auto utf8Ptr() const -> char const*;
+  [[nodiscard]] auto utf8Size() const -> std::size_t;
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  [[nodiscard]] auto begin() const -> const_iterator;
+  [[nodiscard]] auto end() const -> const_iterator;
 
-  std::size_t size() const;
-  std::size_t length() const;
+  [[nodiscard]] auto size() const -> std::size_t;
+  [[nodiscard]] auto length() const -> std::size_t;
 
-  bool empty() const;
+  [[nodiscard]] auto empty() const -> bool;
 
-  Char operator[](std::size_t index) const;
+  auto operator[](std::size_t index) const -> Char;
   // Throws StringException if i out of range.
-  Char at(std::size_t i) const;
+  [[nodiscard]] auto at(std::size_t i) const -> Char;
 
-  bool endsWith(StringView end, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  bool endsWith(Char end, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  bool beginsWith(StringView beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  bool beginsWith(Char beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] auto endsWith(StringView end, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> bool;
+  [[nodiscard]] auto endsWith(Char end, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> bool;
+  [[nodiscard]] auto beginsWith(StringView beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> bool;
+  [[nodiscard]] auto beginsWith(Char beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> bool;
 
   using SplitCallback = std::function<void(StringView, std::size_t, std::size_t)>;
   void forEachSplitAnyView(StringView pattern, SplitCallback) const;
   void forEachSplitView(StringView pattern, SplitCallback) const;
 
-  bool hasChar(Char c) const;
+  [[nodiscard]] auto hasChar(Char c) const -> bool;
   // Identical to hasChar, except, if string is empty, tests if c is
   // whitespace.
-  bool hasCharOrWhitespace(Char c) const;
+  [[nodiscard]] auto hasCharOrWhitespace(Char c) const -> bool;
 
-  size_t find(Char c, size_t beg = 0, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  size_t find(StringView s, size_t beg = 0, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  size_t findLast(Char c, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  size_t findLast(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] auto find(Char c, std::size_t beg = 0, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> std::size_t;
+  [[nodiscard]] auto find(StringView s, std::size_t beg = 0, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> std::size_t;
+  [[nodiscard]] auto findLast(Char c, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> std::size_t;
+  [[nodiscard]] auto findLast(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> std::size_t;
 
   // If pattern is empty, finds first whitespace
-  size_t findFirstOf(StringView chars = "", size_t beg = 0) const;
+  [[nodiscard]] auto findFirstOf(StringView chars = "", std::size_t beg = 0) const -> std::size_t;
 
   // If pattern is empty, finds first non-whitespace
-  size_t findFirstNotOf(StringView chars = "", size_t beg = 0) const;
+  [[nodiscard]] auto findFirstNotOf(StringView chars = "", std::size_t beg = 0) const -> std::size_t;
 
   // finds the the start of the next 'boundary' in a string.  used for quickly
   // scanning a string
-  size_t findNextBoundary(size_t index, bool backwards = false) const;
+  [[nodiscard]] auto findNextBoundary(std::size_t index, bool backwards = false) const -> std::size_t;
 
-  bool contains(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] auto contains(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> bool;
 
-  int compare(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
-  bool equals(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
+  [[nodiscard]] auto compare(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> int;
+  [[nodiscard]] auto equals(StringView s, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const -> bool;
   // Synonym for equals(s, String::CaseInsensitive)
-  bool equalsIgnoreCase(StringView s) const;
+  [[nodiscard]] auto equalsIgnoreCase(StringView s) const -> bool;
 
-  StringView substr(std::size_t position, std::size_t n = std::numeric_limits<std::size_t>::max()) const;
+  [[nodiscard]] auto substr(std::size_t position, std::size_t n = std::numeric_limits<std::size_t>::max()) const -> StringView;
 
-  StringView& operator=(StringView s);
+  auto operator=(StringView s) -> StringView&;
 
-  friend bool operator==(StringView s1, const char* s2);
-  friend bool operator==(StringView s1, std::string const& s2);
-  friend bool operator==(StringView s1, String const& s2);
-  friend bool operator==(StringView s1, StringView s2);
-  friend bool operator!=(StringView s1, StringView s2);
-  friend bool operator<(StringView s1, StringView s2);
+  friend auto operator==(StringView s1, const char* s2) -> bool;
+  friend auto operator==(StringView s1, std::string const& s2) -> bool;
+  friend auto operator==(StringView s1, String const& s2) -> bool;
+  friend auto operator==(StringView s1, StringView s2) -> bool;
+  friend auto operator!=(StringView s1, StringView s2) -> bool;
+  friend auto operator<(StringView s1, StringView s2) -> bool;
 
-  friend std::ostream& operator<<(std::ostream& os, StringView const& s);
+  friend auto operator<<(std::ostream& os, StringView const& s) -> std::ostream&;
 
 private:
-  int compare(std::size_t selfOffset,
-      std::size_t selfLen,
-      StringView other,
-      std::size_t otherOffset,
-      std::size_t otherLen,
-      CaseSensitivity cs) const;
+  [[nodiscard]] auto compare(std::size_t selfOffset,
+                             std::size_t selfLen,
+                             StringView other,
+                             std::size_t otherOffset,
+                             std::size_t otherLen,
+                             CaseSensitivity cs) const -> int;
 
   std::string_view m_view;
 };
 
-}
+}// namespace Star
 
 template <>
 struct std::formatter<Star::StringView> : std::formatter<std::string_view> {

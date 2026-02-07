@@ -1,39 +1,39 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
+#include "StarException.hpp"
+#include "StarHash.hpp"
 #include "StarInputEvent.hpp"
 #include "StarJson.hpp"
 #include "StarListener.hpp"
-#include "StarHash.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(Input);
-STAR_EXCEPTION(InputException, StarException);
+using InputException = ExceptionDerived<"InputException">;
 
-typedef Variant<Key, MouseButton, ControllerButton> InputVariant;
+using InputVariant = Variant<Key, MouseButton, ControllerButton>;
 
 template <>
 struct hash<InputVariant> {
-  size_t operator()(InputVariant const& v) const;
+  auto operator()(InputVariant const& v) const -> size_t;
 };
 
 class Input {
 public:
-
-  static Json inputEventToJson(InputEvent const& event);
+  static auto inputEventToJson(InputEvent const& event) -> Json;
 
   struct KeyBind {
     Key key = Key::Zero;
     KeyMod mods = KeyMod::NoMod;
-    uint8_t priority = 0;
+    std::uint8_t priority = 0;
 
-    inline bool operator<(KeyBind const& rhs) const {
+    inline auto operator<(KeyBind const& rhs) const -> bool {
       return priority < rhs.priority;
     }
 
-    inline bool operator>(KeyBind const& rhs) const {
+    inline auto operator>(KeyBind const& rhs) const -> bool {
       return priority > rhs.priority;
     }
   };
@@ -41,7 +41,7 @@ public:
   struct MouseBind {
     MouseButton button = MouseButton::Left;
     KeyMod mods = KeyMod::NoMod;
-    uint8_t priority = 0;
+    std::uint8_t priority = 0;
   };
 
   struct ControllerBind {
@@ -49,10 +49,10 @@ public:
     ControllerButton button = ControllerButton::Invalid;
   };
 
-  typedef MVariant<KeyBind, MouseBind, ControllerBind> Bind;
+  using Bind = MVariant<KeyBind, MouseBind, ControllerBind>;
 
-  static Bind bindFromJson(Json const& json);
-  static Json bindToJson(Bind const& bind);
+  static auto bindFromJson(Json const& json) -> Bind;
+  static auto bindToJson(Bind const& bind) -> Json;
 
   struct BindCategory;
 
@@ -77,8 +77,8 @@ public:
 
   struct BindRef {
     KeyMod mods;
-    uint8_t priority = 0;  
-    BindEntry* entry = nullptr; // Invalidated on reload, careful!
+    std::uint8_t priority = 0;
+    BindEntry* entry = nullptr;// Invalidated on reload, careful!
 
     BindRef(BindEntry& bindEntry, KeyBind& keyBind);
     BindRef(BindEntry& bindEntry, MouseBind& mouseBind);
@@ -116,8 +116,14 @@ public:
       pressed = released = false;
     }
 
-    inline void press() { pressed = ++presses; held = true; }
-    inline void release() { released = ++releases; held = false; }
+    inline void press() {
+      pressed = ++presses;
+      held = true;
+    }
+    inline void release() {
+      released = ++releases;
+      held = false;
+    }
   };
 
   struct KeyInputState : InputState {
@@ -129,23 +135,23 @@ public:
     List<Vec2F> releasePositions;
   };
 
-  typedef InputState ControllerInputState;
+  using ControllerInputState = InputState;
 
   // Get pointer to the singleton Input instance, if it exists.  Otherwise,
   // returns nullptr.
-  static Input* singletonPtr();
+  static auto singletonPtr() -> Input*;
 
   // Gets reference to Input singleton, throws InputException if root
   // is not initialized.
-  static Input& singleton();
+  static auto singleton() -> Input&;
 
   Input();
   ~Input();
 
   Input(Input const&) = delete;
-  Input& operator=(Input const&) = delete;
+  auto operator=(Input const&) -> Input& = delete;
 
-  List<std::pair<InputEvent, bool>> const& inputEventsThisFrame() const;
+  [[nodiscard]] auto inputEventsThisFrame() const -> List<std::pair<InputEvent, bool>> const&;
 
   // Clears input state. Should be done at the very start or end of the client loop.
   void reset(bool clear = false);
@@ -153,7 +159,7 @@ public:
   void update();
 
   // Handles an input event.
-  bool handleInput(InputEvent const& input, bool gameProcessed);
+  auto handleInput(InputEvent const& input, bool gameProcessed) -> bool;
 
   void rebuildMappings();
 
@@ -162,26 +168,26 @@ public:
 
   void setTextInputActive(bool active);
 
-  std::optional<unsigned> bindDown(String const& categoryId, String const& bindId);
-  bool                    bindHeld(String const& categoryId, String const& bindId);
-  std::optional<unsigned> bindUp  (String const& categoryId, String const& bindId);
+  auto bindDown(String const& categoryId, String const& bindId) -> std::optional<unsigned>;
+  auto bindHeld(String const& categoryId, String const& bindId) -> bool;
+  auto bindUp(String const& categoryId, String const& bindId) -> std::optional<unsigned>;
 
-  std::optional<unsigned> keyDown(Key key, std::optional<KeyMod> keyMod);
-  bool                    keyHeld(Key key);
-  std::optional<unsigned> keyUp  (Key key);
+  auto keyDown(Key key, std::optional<KeyMod> keyMod) -> std::optional<unsigned>;
+  auto keyHeld(Key key) -> bool;
+  auto keyUp(Key key) -> std::optional<unsigned>;
 
-  std::optional<List<Vec2F>> mouseDown(MouseButton button);
-  bool                       mouseHeld(MouseButton button);
-  std::optional<List<Vec2F>> mouseUp  (MouseButton button);
+  auto mouseDown(MouseButton button) -> std::optional<List<Vec2F>>;
+  auto mouseHeld(MouseButton button) -> bool;
+  auto mouseUp(MouseButton button) -> std::optional<List<Vec2F>>;
 
-  Vec2F mousePosition() const;
+  [[nodiscard]] auto mousePosition() const -> Vec2F;
 
   void resetBinds(String const& categoryId, String const& bindId);
   void setBinds(String const& categoryId, String const& bindId, Json const& binds);
-  Json getDefaultBinds(String const& categoryId, String const& bindId); 
-  Json getBinds(String const& categoryId, String const& bindId);
+  auto getDefaultBinds(String const& categoryId, String const& bindId) -> Json;
+  auto getBinds(String const& categoryId, String const& bindId) -> Json;
 
-  unsigned getTag(String const& tagName) const;
+  [[nodiscard]] auto getTag(String const& tagName) const -> unsigned;
 
   class ClipboardUnlock {
   public:
@@ -194,17 +200,18 @@ public:
     Input* m_input;
   };
 
-  ClipboardUnlock unlockClipboard();
-  bool clipboardAllowed() const;
+  auto unlockClipboard() -> ClipboardUnlock;
+  [[nodiscard]] auto clipboardAllowed() const -> bool;
+
 private:
-  List<BindEntry*> filterBindEntries(List<BindRef> const& binds, KeyMod mods) const;
+  [[nodiscard]] auto filterBindEntries(List<BindRef> const& binds, KeyMod mods) const -> List<BindEntry*>;
 
-  BindEntry* bindEntryPtr(String const& categoryId, String const& bindId);
-  BindEntry& bindEntry(String const& categoryId, String const& bindId);
+  auto bindEntryPtr(String const& categoryId, String const& bindId) -> BindEntry*;
+  auto bindEntry(String const& categoryId, String const& bindId) -> BindEntry&;
 
-  InputState* bindStatePtr(String const& categoryId, String const& bindId);
+  auto bindStatePtr(String const& categoryId, String const& bindId) -> InputState*;
 
-  InputState& addBindState(BindEntry const* bindEntry);
+  auto addBindState(BindEntry const* bindEntry) -> InputState&;
 
   static Input* s_singleton;
 
@@ -213,7 +220,7 @@ private:
   // Contains raw pointers to bind entries in categories, so also regenerated on reload.
   HashMap<InputVariant, List<BindRef>> m_bindMappings;
 
-  ListenerPtr m_rootReloadListener;
+  Ptr<Listener> m_rootReloadListener;
 
   // Per-frame input event storage for Lua.
   List<std::pair<InputEvent, bool>> m_inputEvents;
@@ -234,4 +241,4 @@ private:
   unsigned m_clipboardAllowed = 0;
 };
 
-}
+}// namespace Star

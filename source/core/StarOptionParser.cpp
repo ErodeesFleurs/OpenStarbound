@@ -1,5 +1,8 @@
 #include "StarOptionParser.hpp"
+
 #include "StarIterator.hpp"
+
+import std;
 
 namespace Star {
 
@@ -16,20 +19,20 @@ void OptionParser::setAdditionalHelp(String help) {
 }
 
 void OptionParser::addSwitch(String const& flag, String description) {
-  if (!m_options.insert(flag, Switch{flag, std::move(description)}).second)
+  if (!m_options.insert(flag, Switch{.flag = flag, .description = std::move(description)}).second)
     throw OptionParserException::format("Duplicate switch '-{}' added", flag);
 }
 
 void OptionParser::addParameter(String const& flag, String argument, RequirementMode requirementMode, String description) {
-  if (!m_options.insert(flag, Parameter{flag, std::move(argument), requirementMode, std::move(description)}).second)
+  if (!m_options.insert(flag, Parameter{.flag = flag, .argument = std::move(argument), .requirementMode = requirementMode, .description = std::move(description)}).second)
     throw OptionParserException::format("Duplicate flag '-{}' added", flag);
 }
 
 void OptionParser::addArgument(String argument, RequirementMode requirementMode, String description) {
-  m_arguments.append(Argument{std::move(argument), requirementMode, std::move(description)});
+  m_arguments.append(Argument{.argumentName = std::move(argument), .requirementMode = requirementMode, .description = std::move(description)});
 }
 
-pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList const& arguments) const {
+auto OptionParser::parseOptions(StringList const& arguments) const -> std::pair<OptionParser::Options, StringList> {
   Options result;
   StringList errors;
   bool endOfFlags = false;
@@ -91,10 +94,10 @@ pair<OptionParser::Options, StringList> OptionParser::parseOptions(StringList co
   }
   if (result.arguments.size() < minimumArguments)
     errors.append(strf(
-        "Too few positional arguments given, expected at least {} got {}", minimumArguments, result.arguments.size()));
+      "Too few positional arguments given, expected at least {} got {}", minimumArguments, result.arguments.size()));
   if (result.arguments.size() > maximumArguments)
     errors.append(strf(
-        "Too many positional arguments given, expected at most {} got {}", maximumArguments, result.arguments.size()));
+      "Too many positional arguments given, expected at most {} got {}", maximumArguments, result.arguments.size()));
 
   return {std::move(result), std::move(errors)};
 }
@@ -159,4 +162,4 @@ void OptionParser::printHelp(std::ostream& os) const {
     format(os, "\n{}\n", m_additionalHelp);
 }
 
-}
+}// namespace Star

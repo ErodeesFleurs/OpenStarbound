@@ -1,44 +1,45 @@
 #include "StarWiring.hpp"
-#include "StarDataStreamExtra.hpp"
+
+import std;
 
 namespace Star {
 
-WireDirection otherWireDirection(WireDirection direction) {
+auto otherWireDirection(WireDirection direction) -> WireDirection {
   return direction == WireDirection::Input ? WireDirection::Output : WireDirection::Input;
 }
 
-bool WireConnection::operator==(WireConnection const& wireConnection) const {
+auto WireConnection::operator==(WireConnection const& wireConnection) const -> bool {
   return tie(entityLocation, nodeIndex) == tie(wireConnection.entityLocation, wireConnection.nodeIndex);
 }
 
-size_t hash<WireConnection>::operator()(WireConnection const& wireConnection) const {
+auto hash<WireConnection>::operator()(WireConnection const& wireConnection) const -> size_t {
   return hashOf(wireConnection.entityLocation, wireConnection.nodeIndex);
 }
 
-DataStream& operator>>(DataStream& ds, WireConnection& wireConnection) {
+auto operator>>(DataStream& ds, WireConnection& wireConnection) -> DataStream& {
   ds.viread(wireConnection.entityLocation[0]);
   ds.viread(wireConnection.entityLocation[1]);
   ds.vuread(wireConnection.nodeIndex);
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, WireConnection const& wireConnection) {
+auto operator<<(DataStream& ds, WireConnection const& wireConnection) -> DataStream& {
   ds.viwrite(wireConnection.entityLocation[0]);
   ds.viwrite(wireConnection.entityLocation[1]);
   ds.vuwrite(wireConnection.nodeIndex);
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, WireNode& wireNode) {
+auto operator>>(DataStream& ds, WireNode& wireNode) -> DataStream& {
   ds.read(wireNode.direction);
   ds.vuread(wireNode.nodeIndex);
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, WireNode const& wireNode) {
+auto operator<<(DataStream& ds, WireNode const& wireNode) -> DataStream& {
   ds.write(wireNode.direction);
   ds.vuwrite(wireNode.nodeIndex);
   return ds;
 }
 
-}
+}// namespace Star

@@ -12,14 +12,14 @@ void nothing(T&&...) {}
 template <typename ToType>
 struct construct {
   template <typename... FromTypes>
-  ToType operator()(FromTypes&&... fromTypes) const {
+  auto operator()(FromTypes&&... fromTypes) const -> ToType {
     return ToType(std::forward<FromTypes>(fromTypes)...);
   }
 };
 
 struct identity {
   template <typename U>
-  constexpr decltype(auto) operator()(U&& v) const {
+  constexpr auto operator()(U&& v) const -> decltype(auto) {
     return std::forward<U>(v);
   }
 };
@@ -35,16 +35,16 @@ struct SwallowReturn {
 };
 
 template <typename Func>
-SwallowReturn<Func> swallow(Func f) {
+auto swallow(Func f) -> SwallowReturn<Func> {
   return SwallowReturn<Func>{std::move(f)};
 }
 
 struct Empty {
-  bool operator==(Empty const) const {
+  auto operator==(Empty const) const -> bool {
     return true;
   }
 
-  bool operator<(Empty const) const {
+  auto operator<(Empty const) const -> bool {
     return false;
   }
 };
@@ -56,23 +56,23 @@ struct FunctionComposer {
   SecondFunction f2;
 
   template <typename... T>
-  decltype(auto) operator()(T&&... args) {
+  auto operator()(T&&... args) -> decltype(auto) {
     return f1(f2(std::forward<T>(args)...));
   }
 };
 
 template <typename FirstFunction, typename SecondFunction>
-decltype(auto) compose(FirstFunction&& firstFunction, SecondFunction&& secondFunction) {
+auto compose(FirstFunction&& firstFunction, SecondFunction&& secondFunction) -> decltype(auto) {
   return FunctionComposer<FirstFunction, SecondFunction>{std::move(std::forward<FirstFunction>(firstFunction)), std::move(std::forward<SecondFunction>(secondFunction))};
 }
 
 template <typename FirstFunction, typename SecondFunction, typename ThirdFunction, typename... RestFunctions>
-decltype(auto) compose(FirstFunction firstFunction, SecondFunction secondFunction, ThirdFunction thirdFunction, RestFunctions... restFunctions) {
+auto compose(FirstFunction firstFunction, SecondFunction secondFunction, ThirdFunction thirdFunction, RestFunctions... restFunctions) -> decltype(auto) {
   return compose(std::forward<FirstFunction>(firstFunction), compose(std::forward<SecondFunction>(secondFunction), compose(std::forward<ThirdFunction>(thirdFunction), std::forward<RestFunctions>(restFunctions)...)));
 }
 
 template <typename Container, typename Value, typename Function>
-Value fold(Container const& l, Value v, Function f) {
+auto fold(Container const& l, Value v, Function f) -> Value {
   auto i = l.begin();
   auto e = l.end();
   while (i != e) {
@@ -84,7 +84,7 @@ Value fold(Container const& l, Value v, Function f) {
 
 // Like fold, but returns default value when container is empty.
 template <typename Container, typename Function>
-typename Container::value_type fold1(Container const& l, Function f) {
+auto fold1(Container const& l, Function f) -> typename Container::value_type {
   typename Container::value_type res = {};
   typename Container::const_iterator i = l.begin();
   typename Container::const_iterator e = l.end();
@@ -103,14 +103,14 @@ typename Container::value_type fold1(Container const& l, Function f) {
 
 // Return intersection of sorted containers.
 template <typename Container>
-Container intersect(Container const& a, Container const& b) {
+auto intersect(Container const& a, Container const& b) -> Container {
   Container r;
   std::set_intersection(a.begin(), a.end(), b.begin(), b.end(), std::inserter(r, r.end()));
   return r;
 }
 
 template <typename MapType1, typename MapType2>
-bool mapMerge(MapType1& targetMap, MapType2 const& sourceMap, bool overwrite = false) {
+auto mapMerge(MapType1& targetMap, MapType2 const& sourceMap, bool overwrite = false) -> bool {
   bool noCommonKeys = true;
   for (auto i = sourceMap.begin(); i != sourceMap.end(); ++i) {
     auto res = targetMap.insert(*i);
@@ -124,7 +124,7 @@ bool mapMerge(MapType1& targetMap, MapType2 const& sourceMap, bool overwrite = f
 }
 
 template <typename MapType1, typename MapType2>
-bool mapsEqual(MapType1 const& m1, MapType2 const& m2) {
+auto mapsEqual(MapType1 const& m1, MapType2 const& m2) -> bool {
   if (&m1 == &m2)
     return true;
 
@@ -152,7 +152,7 @@ void filter(Container& container, Filter&& filter) {
 }
 
 template <typename OutContainer, typename InContainer, typename Filter>
-OutContainer filtered(InContainer const& input, Filter&& filter) {
+auto filtered(InContainer const& input, Filter&& filter) -> OutContainer {
   OutContainer out;
   auto p = std::begin(input);
   while (p != std::end(input)) {
@@ -195,28 +195,28 @@ void stableSort(Container& c) {
 }
 
 template <typename Container, typename Compare>
-Container sorted(Container const& c, Compare comp) {
+auto sorted(Container const& c, Compare comp) -> Container {
   auto c2 = c;
   sort(c2, comp);
   return c2;
 }
 
 template <typename Container, typename Compare>
-Container stableSorted(Container const& c, Compare comp) {
+auto stableSorted(Container const& c, Compare comp) -> Container {
   auto c2 = c;
   sort(c2, comp);
   return c2;
 }
 
 template <typename Container>
-Container sorted(Container const& c) {
+auto sorted(Container const& c) -> Container {
   auto c2 = c;
   sort(c2);
   return c2;
 }
 
 template <typename Container>
-Container stableSorted(Container const& c) {
+auto stableSorted(Container const& c) -> Container {
   auto c2 = c;
   sort(c2);
   return c2;
@@ -229,9 +229,9 @@ Container stableSorted(Container const& c) {
 // must be constructable with Container(size_t).
 template <typename Container, typename Getter>
 void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable = false) {
-  typedef typename Container::value_type ContainerValue;
-  typedef decltype(valueGetter(ContainerValue())) ComputedValue;
-  typedef std::pair<ComputedValue, std::size_t> ComputedPair;
+  using ContainerValue = typename Container::value_type;
+  using ComputedValue = decltype(valueGetter(ContainerValue()));
+  using ComputedPair = std::pair<ComputedValue, std::size_t>;
 
   std::size_t containerSize = container.size();
 
@@ -242,7 +242,7 @@ void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable
   for (std::size_t i = 0; i < containerSize; ++i)
     work[i] = {valueGetter(container[i]), i};
 
-  auto compare = [](ComputedPair const& a, ComputedPair const& b) { return a.first < b.first; };
+  auto compare = [](ComputedPair const& a, ComputedPair const& b) -> auto { return a.first < b.first; };
 
   // Sort the comptued values and the associated indexes
   if (stable)
@@ -252,9 +252,9 @@ void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable
 
   Container result(containerSize);
   for (std::size_t i = 0; i < containerSize; ++i)
-    swap(result[i], container[work[i].second]);
+    std::swap(result[i], container[work[i].second]);
 
-  swap(container, result);
+  std::swap(container, result);
 }
 
 template <typename Container, typename Getter>
@@ -268,30 +268,30 @@ void reverse(Container& c) {
 }
 
 template <typename Container>
-Container reverseCopy(Container c) {
+auto reverseCopy(Container c) -> Container {
   reverse(c);
   return c;
 }
 
 template <typename T>
-T copy(T c) {
+auto copy(T c) -> T {
   return c;
 }
 
 template <typename Container>
-typename Container::value_type sum(Container const& cont) {
+auto sum(Container const& cont) -> typename Container::value_type {
   return fold1(cont, std::plus<typename Container::value_type>());
 }
 
 template <typename Container>
-typename Container::value_type product(Container const& cont) {
+auto product(Container const& cont) -> typename Container::value_type {
   return fold1(cont, std::multiplies<typename Container::value_type>());
 }
 
 template <typename OutContainer, typename InContainer, typename Function>
 void transformInto(OutContainer& outContainer, InContainer&& inContainer, Function&& function) {
   for (auto&& elem : inContainer) {
-    if (std::is_rvalue_reference<InContainer&&>::value)
+    if (std::is_rvalue_reference_v<InContainer&&>)
       outContainer.insert(outContainer.end(), function(std::move(elem)));
     else
       outContainer.insert(outContainer.end(), function(elem));
@@ -299,14 +299,14 @@ void transformInto(OutContainer& outContainer, InContainer&& inContainer, Functi
 }
 
 template <typename OutContainer, typename InContainer, typename Function>
-OutContainer transform(InContainer&& container, Function&& function) {
+auto transform(InContainer&& container, Function&& function) -> OutContainer {
   OutContainer res;
   transformInto(res, std::forward<InContainer>(container), std::forward<Function>(function));
   return res;
 }
 
 template <typename OutputContainer, typename Function, typename Container1, typename Container2>
-OutputContainer zipWith(Function&& function, Container1 const& cont1, Container2 const& cont2) {
+auto zipWith(Function&& function, Container1 const& cont1, Container2 const& cont2) -> OutputContainer {
   auto it1 = cont1.begin();
   auto it2 = cont2.begin();
 
@@ -324,14 +324,14 @@ OutputContainer zipWith(Function&& function, Container1 const& cont1, Container2
 // a valid move constructor or not.  Always leaves the given value in its
 // default constructed state.
 template <typename T>
-T take(T& t) {
+auto take(T& t) -> T {
   T t2 = std::move(t);
   t = T();
   return t2;
 }
 
 template <typename Container1, typename Container2>
-bool containersEqual(Container1 const& cont1, Container2 const& cont2) {
+auto containersEqual(Container1 const& cont1, Container2 const& cont2) -> bool {
   if (cont1.size() != cont2.size())
     return false;
   else
@@ -342,11 +342,11 @@ bool containersEqual(Container1 const& cont1, Container2 const& cont2) {
 template <typename UnaryFunction>
 class FunctionOutputIterator {
 public:
-  typedef std::output_iterator_tag iterator_category;
-  typedef void value_type;
-  typedef void difference_type;
-  typedef void pointer;
-  typedef void reference;
+  using iterator_category = std::output_iterator_tag;
+  using value_type = void;
+  using difference_type = void;
+  using pointer = void;
+  using reference = void;
 
   class OutputProxy {
   public:
@@ -354,7 +354,7 @@ public:
       : m_function(f) {}
 
     template <typename T>
-    OutputProxy& operator=(T&& value) {
+    auto operator=(T&& value) -> OutputProxy& {
       m_function(std::forward<T>(value));
       return *this;
     }
@@ -366,15 +366,15 @@ public:
   explicit FunctionOutputIterator(UnaryFunction f = UnaryFunction())
     : m_function(std::move(f)) {}
 
-  OutputProxy operator*() {
+  auto operator*() -> OutputProxy {
     return OutputProxy(m_function);
   }
 
-  FunctionOutputIterator& operator++() {
+  auto operator++() -> FunctionOutputIterator& {
     return *this;
   }
 
-  FunctionOutputIterator operator++(int) {
+  auto operator++(int) -> FunctionOutputIterator {
     return *this;
   }
 
@@ -383,7 +383,7 @@ private:
 };
 
 template <typename UnaryFunction>
-FunctionOutputIterator<UnaryFunction> makeFunctionOutputIterator(UnaryFunction f) {
+auto makeFunctionOutputIterator(UnaryFunction f) -> FunctionOutputIterator<UnaryFunction> {
   return FunctionOutputIterator<UnaryFunction>(std::move(f));
 }
 
@@ -391,26 +391,26 @@ FunctionOutputIterator<UnaryFunction> makeFunctionOutputIterator(UnaryFunction f
 template <typename NullaryFunction>
 class FunctionInputIterator {
 public:
-  typedef std::output_iterator_tag iterator_category;
-  typedef void value_type;
-  typedef void difference_type;
-  typedef void pointer;
-  typedef void reference;
+  using iterator_category = std::output_iterator_tag;
+  using value_type = void;
+  using difference_type = void;
+  using pointer = void;
+  using reference = void;
 
-  typedef std::invoke_result_t<NullaryFunction> FunctionReturnType;
+  using FunctionReturnType = std::invoke_result_t<NullaryFunction>;
 
   explicit FunctionInputIterator(NullaryFunction f = {})
     : m_function(std::move(f)) {}
 
-  FunctionReturnType operator*() {
+  auto operator*() -> FunctionReturnType {
     return m_function();
   }
 
-  FunctionInputIterator& operator++() {
+  auto operator++() -> FunctionInputIterator& {
     return *this;
   }
 
-  FunctionInputIterator operator++(int) {
+  auto operator++(int) -> FunctionInputIterator {
     return *this;
   }
 
@@ -419,7 +419,7 @@ private:
 };
 
 template <typename NullaryFunction>
-FunctionInputIterator<NullaryFunction> makeFunctionInputIterator(NullaryFunction f) {
+auto makeFunctionInputIterator(NullaryFunction f) -> FunctionInputIterator<NullaryFunction> {
   return FunctionInputIterator<NullaryFunction>(std::move(f));
 }
 
@@ -431,30 +431,30 @@ private:
 public:
   ReverseWrapper(Iterable& iterable) : m_iterable(iterable) {}
 
-  decltype(auto) begin() const {
+  auto begin() const -> decltype(auto) {
     return std::rbegin(m_iterable);
   }
 
-  decltype(auto) end() const {
+  auto end() const -> decltype(auto) {
     return std::rend(m_iterable);
   }
 };
 
 template <typename Iterable>
-ReverseWrapper<Iterable> reverseIterate(Iterable& list) {
+auto reverseIterate(Iterable& list) -> ReverseWrapper<Iterable> {
   return ReverseWrapper<Iterable>(list);
 }
 
 template <typename Functor>
 class FinallyGuard {
 public:
-  FinallyGuard(Functor functor) : functor(std::move(functor)), dismiss(false) {}
+  FinallyGuard(Functor functor) : functor(std::move(functor)) {}
 
   FinallyGuard(FinallyGuard&& o) : functor(std::move(o.functor)), dismiss(o.dismiss) {
     o.cancel();
   }
 
-  FinallyGuard& operator=(FinallyGuard&& o) {
+  auto operator=(FinallyGuard&& o) -> FinallyGuard& {
     functor = std::move(o.functor);
     dismiss = o.dismiss;
     o.cancel();
@@ -472,11 +472,11 @@ public:
 
 private:
   Functor functor;
-  bool dismiss;
+  bool dismiss{};
 };
 
 template <typename Functor>
-FinallyGuard<typename std::decay<Functor>::type> finally(Functor&& f) {
+auto finally(Functor&& f) -> FinallyGuard< std::decay_t<Functor>> {
   return FinallyGuard<Functor>(std::forward<Functor>(f));
 }
 
@@ -490,34 +490,34 @@ struct GenIndexSequence : GenIndexSequence<Min, N - 1, N - 1, S...> {};
 
 template <std::size_t Min, std::size_t... S>
 struct GenIndexSequence<Min, Min, S...> {
-  typedef IndexSequence<S...> type;
+  using type = IndexSequence<S...>;
 };
 
 // Apply a tuple as individual arguments to a function
 
 template <typename Function, typename Tuple, std::size_t... Indexes>
-decltype(auto) tupleUnpackFunctionIndexes(Function&& function, Tuple&& args, IndexSequence<Indexes...> const&) {
+auto tupleUnpackFunctionIndexes(Function&& function, Tuple&& args, IndexSequence<Indexes...> const&) -> decltype(auto) {
   return function(get<Indexes>(std::forward<Tuple>(args))...);
 }
 
 template <typename Function, typename Tuple>
-decltype(auto) tupleUnpackFunction(Function&& function, Tuple&& args) {
+auto tupleUnpackFunction(Function&& function, Tuple&& args) -> decltype(auto) {
   return tupleUnpackFunctionIndexes<Function, Tuple>(std::forward<Function>(function), std::forward<Tuple>(args),
-      typename GenIndexSequence<0, std::tuple_size<typename std::decay<Tuple>::type>::value>::type());
+      typename GenIndexSequence<0, std::tuple_size_v< std::decay_t<Tuple>>>::type());
 }
 
 // Apply a function to every element of a tuple.  This will NOT happen in a
 // predictable order!
 
 template <typename Function, typename Tuple, std::size_t... Indexes>
-decltype(auto) tupleApplyFunctionIndexes(Function&& function, Tuple&& args, IndexSequence<Indexes...> const&) {
+auto tupleApplyFunctionIndexes(Function&& function, Tuple&& args, IndexSequence<Indexes...> const&) -> decltype(auto) {
   return make_tuple(function(get<Indexes>(std::forward<Tuple>(args)))...);
 }
 
 template <typename Function, typename Tuple>
-decltype(auto) tupleApplyFunction(Function&& function, Tuple&& args) {
+auto tupleApplyFunction(Function&& function, Tuple&& args) -> decltype(auto) {
   return tupleApplyFunctionIndexes<Function, Tuple>(std::forward<Function>(function), std::forward<Tuple>(args),
-      typename GenIndexSequence<0, std::tuple_size<typename std::decay<Tuple>::type>::value>::type());
+      typename GenIndexSequence<0, std::tuple_size_v< std::decay_t<Tuple>>>::type());
 }
 
 // Use this version if you do not care about the return value of the function
@@ -546,18 +546,18 @@ void tupleCallFunction(Tuple&& t, Function&& function) {
 // Get a subset of a tuple
 
 template <typename Tuple, std::size_t... Indexes>
-decltype(auto) subTupleIndexes(Tuple&& t, IndexSequence<Indexes...> const&) {
+auto subTupleIndexes(Tuple&& t, IndexSequence<Indexes...> const&) -> decltype(auto) {
   return make_tuple(get<Indexes>(std::forward<Tuple>(t))...);
 }
 
 template <std::size_t Min, std::size_t Size, typename Tuple>
-decltype(auto) subTuple(Tuple&& t) {
+auto subTuple(Tuple&& t) -> decltype(auto) {
   return subTupleIndexes(std::forward<Tuple>(t), GenIndexSequence<Min, Size>::type());
 }
 
 template <std::size_t Trim, typename Tuple>
-decltype(auto) trimTuple(Tuple&& t) {
-  return subTupleIndexes(std::forward<Tuple>(t), typename GenIndexSequence<Trim, std::tuple_size<typename std::decay<Tuple>::type>::value>::type());
+auto trimTuple(Tuple&& t) -> decltype(auto) {
+  return subTupleIndexes(std::forward<Tuple>(t), typename GenIndexSequence<Trim, std::tuple_size_v< std::decay_t<Tuple>>>::type());
 }
 
 // Unpack a parameter expansion into a container
@@ -572,7 +572,7 @@ void unpackVariadicImpl(Container& container, TFirst&& tfirst, TRest&&... trest)
 }
 
 template <typename Container, typename... T>
-Container unpackVariadic(T&&... t) {
+auto unpackVariadic(T&&... t) -> Container {
   Container c;
   unpackVariadicImpl(c, std::forward<T>(t)...);
   return c;
@@ -597,8 +597,8 @@ struct VariadicTypedef<> {};
 
 template <typename FirstT, typename... RestT>
 struct VariadicTypedef<FirstT, RestT...> {
-  typedef FirstT First;
-  typedef VariadicTypedef<RestT...> Rest;
+  using First = FirstT;
+  using Rest = VariadicTypedef<RestT...>;
 };
 
 // For generic types, directly use the result of the signature of its
@@ -611,16 +611,16 @@ struct FunctionTraits<ReturnType(ArgsTypes...)> {
   // arity is the number of arguments.
   static constexpr std::size_t Arity = sizeof...(ArgsTypes);
 
-  typedef ReturnType Return;
+  using Return = ReturnType;
 
-  typedef VariadicTypedef<ArgsTypes...> Args;
-  typedef std::tuple<ArgsTypes...> ArgTuple;
+  using Args = VariadicTypedef<ArgsTypes...>;
+  using ArgTuple = std::tuple<ArgsTypes...>;
 
   template <std::size_t i>
   struct Arg {
     // the i-th argument is equivalent to the i-th tuple element of a tuple
     // composed of those arguments.
-    typedef typename std::tuple_element<i, ArgTuple>::type type;
+    using type =  std::tuple_element_t<i, ArgTuple>;
   };
 };
 
@@ -632,12 +632,12 @@ struct FunctionTraits<std::function<FunctionType>> : public FunctionTraits<Funct
 
 template <typename ClassType, typename ReturnType, typename... Args>
 struct FunctionTraits<ReturnType (ClassType::*)(Args...)> : public FunctionTraits<ReturnType(Args...)> {
-  typedef ClassType& OwnerType;
+  using OwnerType = ClassType&;
 };
 
 template <typename ClassType, typename ReturnType, typename... Args>
 struct FunctionTraits<ReturnType (ClassType::*)(Args...) const> : public FunctionTraits<ReturnType(Args...)> {
-  typedef const ClassType& OwnerType;
+  using OwnerType = ClassType&;
 };
 
 template <typename T>

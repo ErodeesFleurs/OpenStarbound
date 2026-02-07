@@ -4,6 +4,8 @@
 #include "StarSet.hpp"
 #include "StarVector.hpp"
 
+import std;
+
 namespace Star {
 
 // Holds a sparse 2d array of data based on sector size.  Meant to be used as a
@@ -12,8 +14,8 @@ namespace Star {
 template <typename ElementT, size_t SectorSize>
 class SectorArray2D {
 public:
-  typedef ElementT Element;
-  typedef Vec2S Sector;
+  using Element = ElementT;
+  using Sector = Vec2S;
 
   struct SectorRange {
     // Lower left sector
@@ -26,14 +28,14 @@ public:
     Array();
     Array(Element const& def);
 
-    Element const& operator()(size_t x, size_t y) const;
-    Element& operator()(size_t x, size_t y);
+    auto operator()(size_t x, size_t y) const -> Element const&;
+    auto operator()(size_t x, size_t y) -> Element&;
 
-    Element elements[SectorSize * SectorSize];
+    std::array<Element, SectorSize * SectorSize> elements;
   };
-  typedef unique_ptr<Array> ArrayPtr;
+  using ArrayPtr = std::unique_ptr<Array>;
 
-  typedef MultiArray<Element, 2> DynamicArray;
+  using DynamicArray = MultiArray<Element, 2>;
 
   SectorArray2D();
   SectorArray2D(size_t numSectorsWide, size_t numSectorsHigh);
@@ -41,36 +43,36 @@ public:
   void init(size_t numSectorsWide, size_t numSectorsHigh);
 
   // Total size of array elements
-  size_t width() const;
-  size_t height() const;
+  [[nodiscard]] auto width() const -> std::size_t;
+  [[nodiscard]] auto height() const -> std::size_t;
 
   // Is sector within width() and heigh()
-  bool sectorValid(Sector const& sector) const;
+  [[nodiscard]] auto sectorValid(Sector const& sector) const -> bool;
 
   // Returns the sector that contains the given point
-  Sector sectorFor(size_t x, size_t y) const;
+  [[nodiscard]] auto sectorFor(size_t x, size_t y) const -> Sector;
   // Returns the sector range that contains the given rectangle
-  SectorRange sectorRange(size_t minX, size_t minY, size_t width, size_t height) const;
+  auto sectorRange(size_t minX, size_t minY, size_t width, size_t height) const -> SectorRange;
 
-  Vec2S sectorCorner(Sector const& id) const;
-  bool hasSector(Sector const& id) const;
+  [[nodiscard]] auto sectorCorner(Sector const& id) const -> Vec2S;
+  [[nodiscard]] auto hasSector(Sector const& id) const -> bool;
 
-  List<Sector> loadedSectors() const;
-  size_t loadedSectorCount() const;
-  bool sectorLoaded(Sector const& id) const;
+  [[nodiscard]] auto loadedSectors() const -> List<Sector>;
+  [[nodiscard]] auto loadedSectorCount() const -> size_t;
+  [[nodiscard]] auto sectorLoaded(Sector const& id) const -> bool;
 
   // Will return nullptr if sector is not loaded.
-  Array* sector(Sector const& id);
-  Array const* sector(Sector const& id) const;
+  auto sector(Sector const& id) -> Array*;
+  auto sector(Sector const& id) const -> Array const*;
 
   void loadSector(Sector const& id, ArrayPtr array);
-  ArrayPtr copySector(Sector const& id);
-  ArrayPtr takeSector(Sector const& id);
+  auto copySector(Sector const& id) -> ArrayPtr;
+  auto takeSector(Sector const& id) -> ArrayPtr;
   void discardSector(Sector const& id);
 
   // Will return nullptr if sector is not loaded.
-  Element const* get(size_t x, size_t y) const;
-  Element* get(size_t x, size_t y);
+  auto get(size_t x, size_t y) const -> Element const*;
+  auto get(size_t x, size_t y) -> Element*;
 
   // Fast evaluate of elements in the given range.  If evalEmpty is true, then
   // function will be called even for unloaded sectors (with null pointer).
@@ -78,9 +80,9 @@ public:
   // Given function should return true to continue, false to stop.  Returns
   // false if any evaled functions return false.
   template <typename Function>
-  bool eval(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const;
+  auto eval(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const -> bool;
   template <typename Function>
-  bool eval(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
+  auto eval(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) -> bool;
 
   // Individual sectors are stored column-major, so for speed, use this method
   // to get whole columns at a time.  If eval empty is true, function will be
@@ -91,18 +93,18 @@ public:
   // function should return true to continue, false to stop.  Returns false if
   // any evaled columns return false.
   template <typename Function>
-  bool evalColumns(
-      size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const;
+  auto evalColumns(
+    size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) const -> bool;
   template <typename Function>
-  bool evalColumns(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false);
+  auto evalColumns(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty = false) -> bool;
 
 private:
-  typedef MultiArray<ArrayPtr, 2> SectorArray;
+  using SectorArray = MultiArray<ArrayPtr, 2>;
 
   template <typename Function>
-  bool evalPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
+  auto evalPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) -> bool;
   template <typename Function>
-  bool evalColumnsPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty);
+  auto evalColumnsPriv(size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) -> bool;
 
   SectorArray m_sectors;
   HashSet<Sector> m_loadedSectors;
@@ -110,7 +112,7 @@ private:
 
 template <typename ElementT, size_t SectorSize>
 SectorArray2D<ElementT, SectorSize>::Array::Array()
-  : elements() {}
+    : elements() {}
 
 template <typename ElementT, size_t SectorSize>
 SectorArray2D<ElementT, SectorSize>::Array::Array(Element const& def) {
@@ -119,17 +121,17 @@ SectorArray2D<ElementT, SectorSize>::Array::Array(Element const& def) {
 }
 
 template <typename ElementT, size_t SectorSize>
-ElementT const& SectorArray2D<ElementT, SectorSize>::Array::operator()(size_t x, size_t y) const {
+auto SectorArray2D<ElementT, SectorSize>::Array::operator()(size_t x, size_t y) const -> ElementT const& {
   return elements[x * SectorSize + y];
 }
 
 template <typename ElementT, size_t SectorSize>
-ElementT& SectorArray2D<ElementT, SectorSize>::Array::operator()(size_t x, size_t y) {
+auto SectorArray2D<ElementT, SectorSize>::Array::operator()(size_t x, size_t y) -> ElementT& {
   return elements[x * SectorSize + y];
 }
 
 template <typename ElementT, size_t SectorSize>
-SectorArray2D<ElementT, SectorSize>::SectorArray2D() {}
+SectorArray2D<ElementT, SectorSize>::SectorArray2D() = default;
 
 template <typename ElementT, size_t SectorSize>
 SectorArray2D<ElementT, SectorSize>::SectorArray2D(size_t numSectorsWide, size_t numSectorsHigh) {
@@ -144,17 +146,17 @@ void SectorArray2D<ElementT, SectorSize>::init(size_t numSectorsWide, size_t num
 }
 
 template <typename ElementT, size_t SectorSize>
-size_t SectorArray2D<ElementT, SectorSize>::width() const {
+auto SectorArray2D<ElementT, SectorSize>::width() const -> size_t {
   return m_sectors.size(0) * SectorSize;
 }
 
 template <typename ElementT, size_t SectorSize>
-size_t SectorArray2D<ElementT, SectorSize>::height() const {
+auto SectorArray2D<ElementT, SectorSize>::height() const -> size_t {
   return m_sectors.size(1) * SectorSize;
 }
 
 template <typename ElementT, size_t SectorSize>
-bool SectorArray2D<ElementT, SectorSize>::sectorValid(Sector const& sector) const {
+auto SectorArray2D<ElementT, SectorSize>::sectorValid(Sector const& sector) const -> bool {
   return sector[0] < m_sectors.size(0) && sector[1] < m_sectors.size(1);
 }
 
@@ -167,17 +169,16 @@ template <typename ElementT, size_t SectorSize>
 auto SectorArray2D<ElementT, SectorSize>::sectorRange(size_t minX, size_t minY, size_t width, size_t height) const -> SectorRange {
   return {
     {minX / SectorSize, minY / SectorSize},
-    {(minX + width + SectorSize - 1) / SectorSize, (minY + height + SectorSize - 1) / SectorSize}
-  };
+    {(minX + width + SectorSize - 1) / SectorSize, (minY + height + SectorSize - 1) / SectorSize}};
 }
 
 template <typename ElementT, size_t SectorSize>
-Vec2S SectorArray2D<ElementT, SectorSize>::sectorCorner(Sector const& id) const {
-  return Vec2S(id[0] * SectorSize, id[1] * SectorSize);
+auto SectorArray2D<ElementT, SectorSize>::sectorCorner(Sector const& id) const -> Vec2S {
+  return {id[0] * SectorSize, id[1] * SectorSize};
 }
 
 template <typename ElementT, size_t SectorSize>
-bool SectorArray2D<ElementT, SectorSize>::hasSector(Sector const& id) const {
+auto SectorArray2D<ElementT, SectorSize>::hasSector(Sector const& id) const -> bool {
   return (bool)m_sectors(id[0], id[1]);
 }
 
@@ -187,22 +188,22 @@ auto SectorArray2D<ElementT, SectorSize>::loadedSectors() const -> List<Sector> 
 }
 
 template <typename ElementT, size_t SectorSize>
-size_t SectorArray2D<ElementT, SectorSize>::loadedSectorCount() const {
+auto SectorArray2D<ElementT, SectorSize>::loadedSectorCount() const -> size_t {
   return m_loadedSectors.size();
 }
 
 template <typename ElementT, size_t SectorSize>
-bool SectorArray2D<ElementT, SectorSize>::sectorLoaded(Sector const& id) const {
+auto SectorArray2D<ElementT, SectorSize>::sectorLoaded(Sector const& id) const -> bool {
   return m_loadedSectors.contains(id);
 }
 
 template <typename ElementT, size_t SectorSize>
-auto SectorArray2D<ElementT, SectorSize>::sector(Sector const& id) -> Array * {
+auto SectorArray2D<ElementT, SectorSize>::sector(Sector const& id) -> Array* {
   return m_sectors(id[0], id[1]).get();
 }
 
 template <typename ElementT, size_t SectorSize>
-auto SectorArray2D<ElementT, SectorSize>::sector(Sector const& id) const -> Array const * {
+auto SectorArray2D<ElementT, SectorSize>::sector(Sector const& id) const -> Array const* {
   return m_sectors(id[0], id[1]).get();
 }
 
@@ -217,8 +218,8 @@ void SectorArray2D<ElementT, SectorSize>::loadSector(Sector const& id, ArrayPtr 
 }
 
 template <typename ElementT, size_t SectorSize>
-typename SectorArray2D<ElementT, SectorSize>::ArrayPtr SectorArray2D<ElementT, SectorSize>::copySector(
-    Sector const& id) {
+auto SectorArray2D<ElementT, SectorSize>::copySector(
+  Sector const& id) -> typename SectorArray2D<ElementT, SectorSize>::ArrayPtr {
   if (auto const& array = m_sectors(id))
     return std::make_unique<Array>(*array);
   else
@@ -226,8 +227,8 @@ typename SectorArray2D<ElementT, SectorSize>::ArrayPtr SectorArray2D<ElementT, S
 }
 
 template <typename ElementT, size_t SectorSize>
-typename SectorArray2D<ElementT, SectorSize>::ArrayPtr SectorArray2D<ElementT, SectorSize>::takeSector(
-    Sector const& id) {
+auto SectorArray2D<ElementT, SectorSize>::takeSector(
+  Sector const& id) -> typename SectorArray2D<ElementT, SectorSize>::ArrayPtr {
   ArrayPtr ret;
   m_loadedSectors.remove(id);
   std::swap(m_sectors(id[0], id[1]), ret);
@@ -241,8 +242,8 @@ void SectorArray2D<ElementT, SectorSize>::discardSector(Sector const& id) {
 }
 
 template <typename ElementT, size_t SectorSize>
-typename SectorArray2D<ElementT, SectorSize>::Element const* SectorArray2D<ElementT, SectorSize>::get(
-    size_t x, size_t y) const {
+auto SectorArray2D<ElementT, SectorSize>::get(
+  size_t x, size_t y) const -> typename SectorArray2D<ElementT, SectorSize>::Element const* {
   Array* array = m_sectors(x / SectorSize, y / SectorSize).get();
   if (array) {
     return &(*array)(x % SectorSize, y % SectorSize);
@@ -252,7 +253,7 @@ typename SectorArray2D<ElementT, SectorSize>::Element const* SectorArray2D<Eleme
 }
 
 template <typename ElementT, size_t SectorSize>
-typename SectorArray2D<ElementT, SectorSize>::Element* SectorArray2D<ElementT, SectorSize>::get(size_t x, size_t y) {
+auto SectorArray2D<ElementT, SectorSize>::get(size_t x, size_t y) -> typename SectorArray2D<ElementT, SectorSize>::Element* {
   Array* array = m_sectors(x / SectorSize, y / SectorSize).get();
   if (array)
     return &(*array)(x % SectorSize, y % SectorSize);
@@ -262,42 +263,38 @@ typename SectorArray2D<ElementT, SectorSize>::Element* SectorArray2D<ElementT, S
 
 template <typename ElementT, size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::eval(
-    size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) const {
+auto SectorArray2D<ElementT, SectorSize>::eval(
+  size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) const -> bool {
   return const_cast<SectorArray2D*>(this)->evalPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::eval(
-    size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) {
+auto SectorArray2D<ElementT, SectorSize>::eval(
+  size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) -> bool {
   return evalPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalColumns(
-    size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) const {
+auto SectorArray2D<ElementT, SectorSize>::evalColumns(
+  size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) const -> bool {
   return const_cast<SectorArray2D*>(this)->evalColumnsPriv(
-      minX, minY, width, height, std::forward<Function>(function), evalEmpty);
+    minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalColumns(
-    size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) {
+auto SectorArray2D<ElementT, SectorSize>::evalColumns(
+  size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) -> bool {
   return evalColumnsPriv(minX, minY, width, height, std::forward<Function>(function), evalEmpty);
 }
 
 template <typename ElementT, size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalPriv(
-    size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) {
-  return evalColumnsPriv(minX,
-      minY,
-      width,
-      height,
-      [&function](size_t x, size_t y, Element* column, size_t columnSize) {
+auto SectorArray2D<ElementT, SectorSize>::evalPriv(
+  size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) -> bool {
+  return evalColumnsPriv(minX, minY, width, height, [&function](size_t x, size_t y, Element* column, size_t columnSize) -> auto {
         for (size_t i = 0; i < columnSize; ++i) {
           if (column) {
             if (!function(x, y + i, column + i))
@@ -307,15 +304,13 @@ bool SectorArray2D<ElementT, SectorSize>::evalPriv(
               return false;
           }
         }
-        return true;
-      },
-      evalEmpty);
+        return true; }, evalEmpty);
 }
 
 template <typename ElementT, size_t SectorSize>
 template <typename Function>
-bool SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
-    size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) {
+auto SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
+  size_t minX, size_t minY, size_t width, size_t height, Function&& function, bool evalEmpty) -> bool {
   if (width == 0 || height == 0)
     return true;
 
@@ -369,4 +364,4 @@ bool SectorArray2D<ElementT, SectorSize>::evalColumnsPriv(
   return true;
 }
 
-}
+}// namespace Star

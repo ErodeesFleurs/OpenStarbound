@@ -1,10 +1,10 @@
 #pragma once
 
-#include <optional>
-
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
 #include "StarEither.hpp"
+#include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
@@ -40,11 +40,11 @@ struct PlayerModeConfig {
 
 struct ShipUpgrades {
   explicit ShipUpgrades(Json config = {});
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  ShipUpgrades& apply(Json const& upgrades);
+  auto apply(Json const& upgrades) -> ShipUpgrades&;
 
-  bool operator==(ShipUpgrades const& rhs) const;
+  auto operator==(ShipUpgrades const& rhs) const -> bool;
 
   unsigned shipLevel;
   unsigned maxFuel;
@@ -54,7 +54,7 @@ struct ShipUpgrades {
   StringSet capabilities;
 };
 
-DataStream& operator>>(DataStream& ds, ShipUpgrades& upgrades);
-DataStream& operator<<(DataStream& ds, ShipUpgrades const& upgrades);
+auto operator>>(DataStream& ds, ShipUpgrades& upgrades) -> DataStream&;
+auto operator<<(DataStream& ds, ShipUpgrades const& upgrades) -> DataStream&;
 
-}
+}// namespace Star

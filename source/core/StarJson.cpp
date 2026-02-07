@@ -1,8 +1,8 @@
 #include "StarJson.hpp"
 #include "StarConfig.hpp"
+#include "StarFormat.hpp"
 #include "StarJsonBuilder.hpp"
 #include "StarJsonPath.hpp"
-#include "StarFormat.hpp"
 
 import std;
 
@@ -29,20 +29,20 @@ auto Json::typeFromName(String const& t) -> Json::Type {
 
 auto Json::typeName(Type t) -> String {
   switch (t) {
-    case Type::Float:
-      return "float";
-    case Type::Bool:
-      return "bool";
-    case Type::Int:
-      return "int";
-    case Type::String:
-      return "string";
-    case Type::Array:
-      return "array";
-    case Type::Object:
-      return "object";
-    default:
-      return "null";
+  case Type::Float:
+    return "float";
+  case Type::Bool:
+    return "bool";
+  case Type::Int:
+    return "int";
+  case Type::String:
+    return "string";
+  case Type::Array:
+    return "array";
+  case Type::Object:
+    return "object";
+  default:
+    return "null";
   }
 }
 
@@ -87,20 +87,20 @@ auto Json::unique() const -> bool {
 
 auto Json::ofType(Type t) -> Json {
   switch (t) {
-    case Type::Float:
-      return {0.0};
-    case Type::Bool:
-      return {false};
-    case Type::Int:
-      return {0};
-    case Type::String:
-      return {""};
-    case Type::Array:
-      return {JsonArray()};
-    case Type::Object:
-      return {JsonObject()};
-    default:
-      return {};
+  case Type::Float:
+    return {0.0};
+  case Type::Bool:
+    return {false};
+  case Type::Int:
+    return {0};
+  case Type::String:
+    return {""};
+  case Type::Array:
+    return {JsonArray()};
+  case Type::Object:
+    return {JsonObject()};
+  default:
+    return {};
   }
 }
 
@@ -811,22 +811,22 @@ auto Json::convert(Type u) const -> Json {
     return *this;
 
   switch (u) {
-    case Type::Null:
-      return {};
-    case Type::Float:
-      return toDouble();
-    case Type::Bool:
-      return toBool();
-    case Type::Int:
-      return toInt();
-    case Type::String:
-      return toString();
-    case Type::Array:
-      return toArray();
-    case Type::Object:
-      return toObject();
-    default:
-      throw JsonException::format("Improper conversion to type {}", typeName(u));
+  case Type::Null:
+    return {};
+  case Type::Float:
+    return toDouble();
+  case Type::Bool:
+    return toBool();
+  case Type::Int:
+    return toInt();
+  case Type::String:
+    return toString();
+  case Type::Array:
+    return toArray();
+  case Type::Object:
+    return toObject();
+  default:
+    throw JsonException::format("Improper conversion to type {}", typeName(u));
   }
 }
 
@@ -977,7 +977,7 @@ void Json::getHash(std::size_t& seed) const {
   hashCombine(seed, (int)type);
 
   if (type == Json::Type::Bool)
-      hashCombine(seed, m_data.get<bool>());
+    hashCombine(seed, m_data.get<bool>());
   else {
     if (type == Json::Type::Float)
       hashCombine(seed, *m_data.ptr<double>());
@@ -986,12 +986,10 @@ void Json::getHash(std::size_t& seed) const {
     else if (type == Json::Type::String) {
       const String& str = *m_data.get<ConstPtr<String>>();
       hashCombine(seed, std::string_view(str.utf8Ptr(), str.utf8Size()));
-    }
-    else if (type == Json::Type::Array) {
+    } else if (type == Json::Type::Array) {
       for (Json const& json : *m_data.get<ConstPtr<JsonArray>>())
         json.getHash(seed);
-    }
-    else if (type == Json::Type::Object) {
+    } else if (type == Json::Type::Object) {
       auto& object = *m_data.get<ConstPtr<JsonObject>>();
       List<JsonObject::const_iterator> iterators;
       iterators.reserve(object.size());
@@ -1009,9 +1007,9 @@ void Json::getHash(std::size_t& seed) const {
 }
 
 auto hash<Json>::operator()(Json const& v) const -> size_t {
-    size_t seed = 233;
-    v.getHash(seed);
-    return seed;
+  size_t seed = 233;
+  v.getHash(seed);
+  return seed;
 }
 
 auto Json::ptr(size_t index) const -> Json const* {
@@ -1096,4 +1094,4 @@ auto jsonPartialMatch(Json const& base, Json const& compare) -> bool {
   }
 }
 
-}
+}// namespace Star

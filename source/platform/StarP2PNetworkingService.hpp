@@ -2,14 +2,14 @@
 
 #include "StarEither.hpp"
 #include "StarHostAddress.hpp"
-#include "StarStrongTypedef.hpp"
 #include "StarRpcPromise.hpp"
+#include "StarString.hpp"
+#include "StarStrongTypedef.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(P2PSocket);
-STAR_CLASS(P2PNetworkingService);
-  
 enum class P2PJoinRequestReply {
   No,
   Yes,
@@ -25,12 +25,12 @@ class P2PSocket {
 public:
   virtual ~P2PSocket() = default;
 
-  virtual bool isOpen() = 0;
-  virtual bool sendMessage(ByteArray const& message) = 0;
-  virtual std::optional<ByteArray> receiveMessage() = 0;
+  virtual auto isOpen() -> bool = 0;
+  virtual auto sendMessage(ByteArray const& message) -> bool = 0;
+  virtual auto receiveMessage() -> std::optional<ByteArray> = 0;
 };
 
-strong_typedef(String, P2PNetworkingPeerId);
+using P2PNetworkingPeerId = StrongTypedef<String>;
 
 // API for platform specific peer to peer multiplayer services.
 class P2PNetworkingService {
@@ -40,23 +40,23 @@ public:
   // P2P friends cannot join this player
   virtual void setJoinUnavailable() = 0;
   // P2P friends can join this player's local game
-  virtual void setJoinLocal(uint32_t capacity) = 0;
+  virtual void setJoinLocal(std::uint32_t capacity) = 0;
   // P2P friends can join this player at the given remote server
   virtual void setJoinRemote(HostAddressWithPort location) = 0;
   // Updates rich presence activity info
-  virtual void setActivityData(const char* title, const char* details, int64_t startTime, std::optional<pair<uint16_t, uint16_t>>) = 0;
+  virtual void setActivityData(const char* title, const char* details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) = 0;
 
   // If this player joins another peer's game using the P2P UI, this will return
   // a pending join location
-  virtual MVariant<P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() = 0;
+  virtual auto pullPendingJoin() -> MVariant<P2PNetworkingPeerId, HostAddressWithPort> = 0;
   // This will return a username and a promise keeper to respond to the join request
-  virtual std::optional<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() = 0;
+  virtual auto pullJoinRequest() -> std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> = 0;
 
   virtual void setAcceptingP2PConnections(bool acceptingP2PConnections) = 0;
-  virtual List<P2PSocketUPtr> acceptP2PConnections() = 0;
+  virtual auto acceptP2PConnections() -> List<UPtr<P2PSocket>> = 0;
   virtual void update() = 0;
 
-  virtual Either<String, P2PSocketUPtr> connectToPeer(P2PNetworkingPeerId peerId) = 0;
+  virtual auto connectToPeer(P2PNetworkingPeerId peerId) -> Either<String, UPtr<P2PSocket>> = 0;
 };
 
-};
+};// namespace Star

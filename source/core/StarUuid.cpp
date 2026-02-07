@@ -1,7 +1,7 @@
 #include "StarUuid.hpp"
-#include "StarRandom.hpp"
-#include "StarFormat.hpp"
 #include "StarEncode.hpp"
+#include "StarFormat.hpp"
+#include "StarRandom.hpp"
 
 namespace Star {
 
@@ -16,57 +16,57 @@ Uuid::Uuid(ByteArray const& bytes) {
 
 Uuid::Uuid(String const& hex) : Uuid(hexDecode(hex)) {}
 
-char const* Uuid::ptr() const {
+auto Uuid::ptr() const -> char const* {
   return m_data.ptr();
 }
 
-ByteArray Uuid::bytes() const {
-  return ByteArray(m_data.ptr(), UuidSize);
+auto Uuid::bytes() const -> ByteArray {
+  return {m_data.ptr(), UuidSize};
 }
 
-String Uuid::hex() const {
+auto Uuid::hex() const -> String {
   return hexEncode(m_data.ptr(), UuidSize);
 }
 
-bool Uuid::operator==(Uuid const& u) const {
+auto Uuid::operator==(Uuid const& u) const -> bool {
   return m_data == u.m_data;
 }
 
-bool Uuid::operator!=(Uuid const& u) const {
+auto Uuid::operator!=(Uuid const& u) const -> bool {
   return m_data != u.m_data;
 }
 
-bool Uuid::operator<(Uuid const& u) const {
+auto Uuid::operator<(Uuid const& u) const -> bool {
   return m_data < u.m_data;
 }
 
-bool Uuid::operator<=(Uuid const& u) const {
+auto Uuid::operator<=(Uuid const& u) const -> bool {
   return m_data <= u.m_data;
 }
 
-bool Uuid::operator>(Uuid const& u) const {
+auto Uuid::operator>(Uuid const& u) const -> bool {
   return m_data > u.m_data;
 }
 
-bool Uuid::operator>=(Uuid const& u) const {
+auto Uuid::operator>=(Uuid const& u) const -> bool {
   return m_data >= u.m_data;
 }
 
-size_t hash<Uuid>::operator()(Uuid const& u) const {
+auto hash<Uuid>::operator()(Uuid const& u) const -> size_t {
   size_t hashval = 0;
   for (size_t i = 0; i < UuidSize; ++i)
     hashCombine(hashval, u.ptr()[i]);
   return hashval;
 }
 
-DataStream& operator>>(DataStream& ds, Uuid& uuid) {
+auto operator>>(DataStream& ds, Uuid& uuid) -> DataStream& {
   uuid = Uuid(ds.readBytes(UuidSize));
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, Uuid const& uuid) {
+auto operator<<(DataStream& ds, Uuid const& uuid) -> DataStream& {
   ds.writeData(uuid.ptr(), UuidSize);
   return ds;
 }
 
-}
+}// namespace Star

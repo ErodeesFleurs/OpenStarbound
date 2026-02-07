@@ -1,17 +1,15 @@
 #pragma once
 
 #include "StarAudio.hpp"
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
-#include "StarSet.hpp"
+#include "StarThread.hpp"
 #include "StarVector.hpp"
-#include <optional>
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(AudioInstance);
-STAR_CLASS(Mixer);
 
 struct RampedValue {
   float value;
@@ -19,7 +17,7 @@ struct RampedValue {
   float velocity;
 };
 
-enum class MixerGroup : uint8_t {
+enum class MixerGroup : std::uint8_t {
   Effects,
   Music,
   Cinematic,
@@ -30,40 +28,40 @@ class AudioInstance {
 public:
   AudioInstance(Audio const& audio);
 
-  std::optional<Vec2F> position() const;
+  auto position() const -> std::optional<Vec2F>;
   void setPosition(std::optional<Vec2F> position);
   // If the audio has no position, sets the position to zero before translating
   void translate(Vec2F const& distance);
 
-  float rangeMultiplier() const;
+  auto rangeMultiplier() const -> float;
   void setRangeMultiplier(float rangeMultiplier);
 
   void setVolume(float targetValue, float rampTime = 0.0f);
   void setPitchMultiplier(float targetValue, float rampTime = 0.0f);
 
   // Returns the currently remaining loops
-  int loops() const;
+  auto loops() const -> int;
   // Sets the remaining loops, set to 0 to stop looping
   void setLoops(int loops);
 
   // Returns the current audio playing time position
-  double currentTime() const;
+  auto currentTime() const -> double;
   // Total length of time of the audio in seconds
-  double totalTime() const;
+  auto totalTime() const -> double;
   // Seeks the audio to the current time in seconds
   void seekTime(double time);
 
   // The MixerGroup defaults to Effects
-  MixerGroup mixerGroup() const;
+  auto mixerGroup() const -> MixerGroup;
   void setMixerGroup(MixerGroup mixerGroup);
 
   // If set, uses wall clock time in milliseconds to set precise start and stop
   // times for the AudioInstance
-  void setClockStart(std::optional<int64_t> clockStartTime);
-  void setClockStop(std::optional<int64_t> clockStopTime, int64_t fadeOutTime = 0);
+  void setClockStart(std::optional<std::int64_t> clockStartTime);
+  void setClockStop(std::optional<std::int64_t> clockStopTime, std::int64_t fadeOutTime = 0);
 
   void stop(float rampTime = 0.0f);
-  bool finished() const;
+  auto finished() const -> bool;
 
 private:
   friend class Mixer;
@@ -87,33 +85,33 @@ private:
   std::optional<Vec2F> m_position;
   float m_rangeMultiplier;
 
-  std::optional<int64_t> m_clockStart;
-  std::optional<int64_t> m_clockStop;
-  int64_t m_clockStopFadeOut;
+  std::optional<std::int64_t> m_clockStart;
+  std::optional<std::int64_t> m_clockStop;
+  std::int64_t m_clockStopFadeOut;
 };
 
 // Thread safe mixer class with basic effects support.
 class Mixer {
 public:
-  typedef function<void(int16_t* buffer, size_t frames, unsigned channels)> ExtraMixFunction;
-  typedef function<void(int16_t* buffer, size_t frames, unsigned channels)> EffectFunction;
-  typedef function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
+  using ExtraMixFunction = std::function<void(std::int16_t* buffer, std::size_t frames, unsigned channels)>;
+  using EffectFunction = std::function<void(std::int16_t* buffer, std::size_t frames, unsigned channels)>;
+  using PositionalAttenuationFunction = std::function<float(unsigned, Vec2F, float)>;
 
   Mixer(unsigned sampleRate, unsigned channels);
 
-  unsigned sampleRate() const;
-  unsigned channels() const;
+  auto sampleRate() const -> unsigned;
+  auto channels() const -> unsigned;
 
   // Construct a really crappy low-pass filter based on averaging
-  EffectFunction lowpass(size_t avgSize) const;
+  auto lowpass(size_t avgSize) const -> EffectFunction;
   // Construct a very simple echo filter.
-  EffectFunction echo(float time, float dry, float wet) const;
+  auto echo(float time, float dry, float wet) const -> EffectFunction;
 
   // Adds / removes effects that affect all playback.
   void addEffect(String const& effectName, EffectFunction effectFunction, float rampTime);
   void removeEffect(String const& effectName, float rampTime);
-  StringList currentEffects();
-  bool hasEffect(String const& effectName);
+  auto currentEffects() -> StringList;
+  auto hasEffect(String const& effectName) -> bool;
 
   // Global speed
   void setSpeed(float speed);
@@ -124,13 +122,13 @@ public:
   // per mixer group volume
   void setGroupVolume(MixerGroup group, float targetValue, float rampTime = 0.0f);
 
-  void play(AudioInstancePtr sample);
+  void play(Ptr<AudioInstance> sample);
 
   void stopAll(float rampTime);
 
   // Reads pending audio data.  This is thread safe with the other Mixer
   // methods, but only one call to read may be active at a time.
-  void read(int16_t* samples, size_t frameCount, ExtraMixFunction extraMixFunction = {});
+  void read(std::int16_t* samples, size_t frameCount, ExtraMixFunction extraMixFunction = {});
 
   // Call within the main loop of the program using Mixer, calculates
   // positional attenuation of audio and does cleanup.
@@ -156,15 +154,15 @@ private:
 
   Mutex m_queueMutex;
 
-  HashMap<AudioInstancePtr, AudioState> m_audios;
+  HashMap<Ptr<AudioInstance>, AudioState> m_audios;
 
   Mutex m_effectsMutex;
-  StringMap<shared_ptr<EffectInfo>> m_effects;
+  StringMap<std::shared_ptr<EffectInfo>> m_effects;
 
-  List<int16_t> m_mixBuffer;
+  List<std::int16_t> m_mixBuffer;
 
   Map<MixerGroup, RampedValue> m_groupVolumes;
-  atomic<float> m_speed;
+  std::atomic<float> m_speed;
 };
 
-}
+}// namespace Star

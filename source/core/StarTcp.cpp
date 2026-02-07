@@ -1,23 +1,26 @@
 #include "StarTcp.hpp"
+#include "StarConfig.hpp"
 #include "StarLogging.hpp"
 #include "StarNetImpl.hpp"
 
+import std;
+
 namespace Star {
 
-TcpSocketPtr TcpSocket::connectTo(HostAddressWithPort const& addressWithPort) {
-  auto socket = TcpSocketPtr(new TcpSocket(addressWithPort.address().mode()));
+auto TcpSocket::connectTo(HostAddressWithPort const& addressWithPort) -> Ptr<TcpSocket> {
+  auto socket = Ptr<TcpSocket>(new TcpSocket(addressWithPort.address().mode()));
   socket->connect(addressWithPort);
   return socket;
 }
 
-TcpSocketPtr TcpSocket::listen(HostAddressWithPort const& addressWithPort) {
-  auto socket = TcpSocketPtr(new TcpSocket(addressWithPort.address().mode()));
+auto TcpSocket::listen(HostAddressWithPort const& addressWithPort) -> Ptr<TcpSocket> {
+  auto socket = Ptr<TcpSocket>(new TcpSocket(addressWithPort.address().mode()));
   socket->bind(addressWithPort);
   ((Socket&)(*socket)).listen(32);
   return socket;
 }
 
-TcpSocketPtr TcpSocket::accept() {
+auto TcpSocket::accept() -> Ptr<TcpSocket> {
   ReadLocker locker(m_mutex);
 
   if (m_socketMode != SocketMode::Bound)
@@ -34,7 +37,7 @@ TcpSocketPtr TcpSocket::accept() {
     throw NetworkException(strf("Cannot accept connection: {}", netErrorString()));
   }
 
-  auto socketImpl = make_shared<SocketImpl>();
+  auto socketImpl = std::make_shared<SocketImpl>();
   socketImpl->socketDesc = socketDesc;
 
 #if defined STAR_SYSTEM_MACOS || defined STAR_SYSTEM_FREEBSD
@@ -43,7 +46,7 @@ TcpSocketPtr TcpSocket::accept() {
   socketImpl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int));
 #endif
 
-  TcpSocketPtr sockPtr(new TcpSocket(m_localAddress.address().mode(), socketImpl));
+  Ptr<TcpSocket> sockPtr(new TcpSocket(m_localAddress.address().mode(), socketImpl));
 
   sockPtr->m_localAddress = m_localAddress;
   setAddressFromNative(sockPtr->m_remoteAddress, m_localAddress.address().mode(), &sockAddr);
@@ -60,7 +63,7 @@ void TcpSocket::setNoDelay(bool noDelay) {
   m_impl->setSockOpt(IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
 }
 
-size_t TcpSocket::receive(char* data, size_t size) {
+auto TcpSocket::receive(char* data, std::size_t size) -> std::size_t {
   ReadLocker locker(m_mutex);
   checkOpen("TcpSocket::receive");
 
@@ -90,7 +93,7 @@ size_t TcpSocket::receive(char* data, size_t size) {
   return r;
 }
 
-size_t TcpSocket::send(char const* data, size_t size) {
+auto TcpSocket::send(char const* data, std::size_t size) -> std::size_t {
   ReadLocker locker(m_mutex);
   checkOpen("TcpSocket::send");
 
@@ -120,19 +123,19 @@ size_t TcpSocket::send(char const* data, size_t size) {
   return w;
 }
 
-HostAddressWithPort TcpSocket::localAddress() const {
+auto TcpSocket::localAddress() const -> HostAddressWithPort {
   ReadLocker locker(m_mutex);
   return m_localAddress;
 }
 
-HostAddressWithPort TcpSocket::remoteAddress() const {
+auto TcpSocket::remoteAddress() const -> HostAddressWithPort {
   ReadLocker locker(m_mutex);
   return m_remoteAddress;
 }
 
 TcpSocket::TcpSocket(NetworkMode networkMode) : Socket(SocketType::Tcp, networkMode) {}
 
-TcpSocket::TcpSocket(NetworkMode networkMode, SocketImplPtr impl) : Socket(networkMode, impl, SocketMode::Connected) {}
+TcpSocket::TcpSocket(NetworkMode networkMode, Ptr<SocketImpl> impl) : Socket(networkMode, impl, SocketMode::Connected) {}
 
 void TcpSocket::connect(HostAddressWithPort const& addressWithPort) {
   WriteLocker locker(m_mutex);
@@ -176,13 +179,13 @@ void TcpServer::stop() {
   m_listenSocket->close();
 }
 
-bool TcpServer::isListening() const {
+auto TcpServer::isListening() const -> bool {
   return m_listenSocket->isActive();
 }
 
-TcpSocketPtr TcpServer::accept(unsigned timeout) {
+auto TcpServer::accept(unsigned timeout) -> Ptr<TcpSocket> {
   MutexLocker locker(m_mutex);
-  Socket::poll({{m_listenSocket, {true, false}}}, timeout);
+  Socket::poll({{m_listenSocket, {.readable = true, .writable = false}}}, timeout);
   try {
     return m_listenSocket->accept();
   } catch (SocketClosedException const&) {
@@ -194,28 +197,28 @@ void TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
   MutexLocker locker(m_mutex);
   m_callback = callback;
   if (m_listenSocket->isActive() && !m_callbackThread) {
-    m_callbackThread = Thread::invoke("TcpServer::acceptCallback", [this, timeout]() {
-        try {
-          while (true) {
-            TcpSocketPtr conn;
-            try {
-              conn = accept(timeout);
-            } catch (NetworkException const& e) {
-              Logger::error("TcpServer caught exception accepting connection {}", outputException(e, false));
-            }
-
-            if (conn)
-              m_callback(conn);
-
-            if (!m_listenSocket->isActive())
-              break;
+    m_callbackThread = Thread::invoke("TcpServer::acceptCallback", [this, timeout]() -> void {
+      try {
+        while (true) {
+          Ptr<TcpSocket> conn;
+          try {
+            conn = accept(timeout);
+          } catch (NetworkException const& e) {
+            Logger::error("TcpServer caught exception accepting connection {}", outputException(e, false));
           }
-        } catch (std::exception const& e) {
-          Logger::error("TcpServer will close, listener thread caught exception:  {}", outputException(e, true));
-          m_listenSocket->close();
+
+          if (conn)
+            m_callback(conn);
+
+          if (!m_listenSocket->isActive())
+            break;
         }
-      });
+      } catch (std::exception const& e) {
+        Logger::error("TcpServer will close, listener thread caught exception:  {}", outputException(e, true));
+        m_listenSocket->close();
+      }
+    });
   }
 }
 
-}
+}// namespace Star

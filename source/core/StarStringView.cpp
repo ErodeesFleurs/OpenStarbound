@@ -1,85 +1,87 @@
 #include "StarStringView.hpp"
 
+import std;
+
 namespace Star {
 // To string
 String::String(StringView s) : m_string(s.utf8()) {}
 String::String(std::string_view s) : m_string(s) {}
 
-String& String::operator+=(StringView s) {
+auto String::operator+=(StringView s) -> String& {
   m_string += s.utf8();
   return *this;
 }
 
-String& String::operator+=(std::string_view s) {
+auto String::operator+=(std::string_view s) -> String& {
   m_string += s;
   return *this;
 }
 
-StringView::StringView() {}
-StringView::StringView(StringView const& s) : m_view(s.m_view) {}
+StringView::StringView() = default;
+StringView::StringView(StringView const& s) = default;
 StringView::StringView(StringView&& s) noexcept : m_view(std::move(s.m_view)) {};
 StringView::StringView(String const& s) : m_view(s.utf8()) {};
 StringView::StringView(char const* s) : m_view(s) {};
-StringView::StringView(char const* s, size_t n) : m_view(s, n) {};
+StringView::StringView(char const* s, std::size_t n) : m_view(s, n) {};
 
 StringView::StringView(std::string_view const& s) : m_view(s) {};
 StringView::StringView(std::string_view&& s) noexcept : m_view(std::move(s)) {};
 StringView::StringView(std::string const& s) : m_view(s) {}
 
 StringView::StringView(Char const* s) : m_view((char const*)s, sizeof(*s)) {}
-StringView::StringView(Char const* s, size_t n) : m_view((char const*)s, n * sizeof(*s)) {};
+StringView::StringView(Char const* s, std::size_t n) : m_view((char const*)s, n * sizeof(*s)) {};
 
-std::string_view const& StringView::utf8() const {
+auto StringView::utf8() const -> std::string_view const& {
   return m_view;
 }
 
-std::string_view StringView::takeUtf8() {
+auto StringView::takeUtf8() -> std::string_view {
   return take(m_view);
 }
 
-ByteArray StringView::utf8Bytes() const {
-  return ByteArray(m_view.data(), m_view.size());
+auto StringView::utf8Bytes() const -> ByteArray {
+  return {m_view.data(), m_view.size()};
 }
 
-char const* StringView::utf8Ptr() const {
+auto StringView::utf8Ptr() const -> char const* {
   return m_view.data();
 }
 
-size_t StringView::utf8Size() const {
+auto StringView::utf8Size() const -> std::size_t {
   return m_view.size();
 }
 
-StringView::const_iterator StringView::begin() const {
-  return const_iterator(m_view.begin());
+auto StringView::begin() const -> StringView::const_iterator {
+  return {m_view.begin()};
 }
 
-StringView::const_iterator StringView::end() const {
-  return const_iterator(m_view.end());
+auto StringView::end() const -> StringView::const_iterator {
+  return {m_view.end()};
 }
 
-size_t StringView::size() const {
+auto StringView::size() const -> std::size_t {
   return utf8Length(m_view.data(), m_view.size());
 }
 
-size_t StringView::length() const {
+auto StringView::length() const -> std::size_t {
   return size();
 }
 
-bool StringView::empty() const {
+auto StringView::empty() const -> bool {
   return m_view.empty();
 }
 
-StringView::Char StringView::operator[](size_t index) const {
+auto StringView::operator[](std::size_t index) const -> StringView::Char {
   auto it = begin();
-  for (size_t i = 0; i < index; ++i)
+  for (std::size_t i = 0; i < index; ++i)
     ++it;
   return *it;
 }
 
-StringView::Char StringView::at(size_t index) const {
+auto StringView::at(std::size_t index) const -> StringView::Char {
   auto it = begin();
   auto itEnd = end();
-  for (size_t i = 0; i < index; ++i) {
+  for (std::size_t i = 0; i < index; ++i) {
     ++it;
     if (it == itEnd)
       throw OutOfRangeException(strf("Out of range in StringView::at({})", i));
@@ -87,7 +89,7 @@ StringView::Char StringView::at(size_t index) const {
   return *it;
 }
 
-bool StringView::endsWith(StringView end, CaseSensitivity cs) const {
+auto StringView::endsWith(StringView end, CaseSensitivity cs) const -> bool {
   auto endsize = end.size();
   if (endsize == 0)
     return true;
@@ -98,22 +100,21 @@ bool StringView::endsWith(StringView end, CaseSensitivity cs) const {
 
   return compare(mysize - endsize, std::numeric_limits<std::size_t>::max(), end, 0, std::numeric_limits<std::size_t>::max(), cs) == 0;
 }
-bool StringView::endsWith(Char end, CaseSensitivity cs) const {
+auto StringView::endsWith(Char end, CaseSensitivity cs) const -> bool {
   if (m_view.empty())
     return false;
 
   return String::charEqual(end, operator[](size() - 1), cs);
 }
 
-bool StringView::beginsWith(StringView beg, CaseSensitivity cs) const {
+auto StringView::beginsWith(StringView beg, CaseSensitivity cs) const -> bool {
   if (beg.m_view.empty())
     return true;
 
-  size_t begSize = beg.size();
+  std::size_t begSize = beg.size();
   auto it = begin();
   auto itEnd = end();
-  for (size_t i = 0; i != begSize; ++i)
-  {
+  for (std::size_t i = 0; i != begSize; ++i) {
     if (it == itEnd)
       return false;
     it++;
@@ -122,7 +123,7 @@ bool StringView::beginsWith(StringView beg, CaseSensitivity cs) const {
   return compare(0, begSize, beg, 0, std::numeric_limits<std::size_t>::max(), cs) == 0;
 }
 
-bool StringView::beginsWith(Char beg, CaseSensitivity cs) const {
+auto StringView::beginsWith(Char beg, CaseSensitivity cs) const -> bool {
   if (m_view.empty())
     return false;
 
@@ -133,9 +134,9 @@ void StringView::forEachSplitAnyView(StringView chars, SplitCallback callback) c
   if (chars.empty())
     return;
 
-  size_t beg = 0;
+  std::size_t beg = 0;
   while (true) {
-    size_t end = m_view.find_first_of(chars.m_view, beg);
+    std::size_t end = m_view.find_first_of(chars.m_view, beg);
     if (end == std::numeric_limits<std::size_t>::max()) {
       callback(m_view.substr(beg), beg, m_view.size() - beg);
       break;
@@ -149,9 +150,9 @@ void StringView::forEachSplitView(StringView pattern, SplitCallback callback) co
   if (pattern.empty())
     return;
 
-  size_t beg = 0;
+  std::size_t beg = 0;
   while (true) {
-    size_t end = m_view.find(pattern.m_view, beg);
+    std::size_t end = m_view.find(pattern.m_view, beg);
     if (end == std::numeric_limits<std::size_t>::max()) {
       callback(m_view.substr(beg), beg, m_view.size() - beg);
       break;
@@ -161,20 +162,20 @@ void StringView::forEachSplitView(StringView pattern, SplitCallback callback) co
   }
 }
 
-bool StringView::hasChar(Char c) const {
+auto StringView::hasChar(Char c) const -> bool {
   for (Char ch : *this)
     if (ch == c)
       return true;
   return false;
 }
 
-bool StringView::hasCharOrWhitespace(Char c) const {
+auto StringView::hasCharOrWhitespace(Char c) const -> bool {
   return empty() ? String::isSpace(c) : hasChar(c);
 }
 
-size_t StringView::find(Char c, size_t pos, CaseSensitivity cs) const {
+auto StringView::find(Char c, std::size_t pos, CaseSensitivity cs) const -> std::size_t {
   auto it = begin();
-  for (size_t i = 0; i < pos; ++i) {
+  for (std::size_t i = 0; i < pos; ++i) {
     if (it == end())
       break;
     ++it;
@@ -190,12 +191,12 @@ size_t StringView::find(Char c, size_t pos, CaseSensitivity cs) const {
   return std::numeric_limits<std::size_t>::max();
 }
 
-size_t StringView::find(StringView str, size_t pos, CaseSensitivity cs) const {
+auto StringView::find(StringView str, std::size_t pos, CaseSensitivity cs) const -> std::size_t {
   if (str.empty())
     return 0;
 
   auto it = begin();
-  for (size_t i = 0; i < pos; ++i) {
+  for (std::size_t i = 0; i < pos; ++i) {
     if (it == end())
       break;
     ++it;
@@ -222,11 +223,11 @@ size_t StringView::find(StringView str, size_t pos, CaseSensitivity cs) const {
   return std::numeric_limits<std::size_t>::max();
 }
 
-size_t StringView::findLast(Char c, CaseSensitivity cs) const {
+auto StringView::findLast(Char c, CaseSensitivity cs) const -> std::size_t {
   auto it = begin();
 
-  size_t found = std::numeric_limits<std::size_t>::max();
-  size_t pos = 0;
+  std::size_t found = std::numeric_limits<std::size_t>::max();
+  std::size_t pos = 0;
   while (it != end()) {
     if (String::charEqual(c, *it, cs))
       found = pos;
@@ -237,13 +238,13 @@ size_t StringView::findLast(Char c, CaseSensitivity cs) const {
   return found;
 }
 
-size_t StringView::findLast(StringView str, CaseSensitivity cs) const {
+auto StringView::findLast(StringView str, CaseSensitivity cs) const -> std::size_t {
   if (str.empty())
     return 0;
 
-  size_t pos = 0;
+  std::size_t pos = 0;
   auto it = begin();
-  size_t result = std::numeric_limits<std::size_t>::max();
+  std::size_t result = std::numeric_limits<std::size_t>::max();
   const_iterator sit = str.begin();
   const_iterator mit = it;
   while (it != end()) {
@@ -267,9 +268,9 @@ size_t StringView::findLast(StringView str, CaseSensitivity cs) const {
   return result;
 }
 
-size_t StringView::findFirstOf(StringView pattern, size_t beg) const {
+auto StringView::findFirstOf(StringView pattern, std::size_t beg) const -> std::size_t {
   auto it = begin();
-  size_t i;
+  std::size_t i;
   for (i = 0; i < beg; ++i)
     ++it;
 
@@ -282,9 +283,9 @@ size_t StringView::findFirstOf(StringView pattern, size_t beg) const {
   return std::numeric_limits<std::size_t>::max();
 }
 
-size_t StringView::findFirstNotOf(StringView pattern, size_t beg) const {
+auto StringView::findFirstNotOf(StringView pattern, std::size_t beg) const -> std::size_t {
   auto it = begin();
-  size_t i;
+  std::size_t i;
   for (i = 0; i < beg; ++i)
     ++it;
 
@@ -297,9 +298,9 @@ size_t StringView::findFirstNotOf(StringView pattern, size_t beg) const {
   return std::numeric_limits<std::size_t>::max();
 }
 
-size_t StringView::findNextBoundary(size_t index, bool backwards) const {
+auto StringView::findNextBoundary(std::size_t index, bool backwards) const -> std::size_t {
   //TODO: Make this faster.
-  size_t mySize = size();
+  std::size_t mySize = size();
   if (!backwards && (index == mySize))
     return index;
   if (backwards) {
@@ -329,31 +330,31 @@ size_t StringView::findNextBoundary(size_t index, bool backwards) const {
   return index;
 }
 
-bool StringView::contains(StringView s, CaseSensitivity cs) const {
+auto StringView::contains(StringView s, CaseSensitivity cs) const -> bool {
   return find(s, 0, cs) != std::numeric_limits<std::size_t>::max();
 }
 
-int StringView::compare(StringView s, CaseSensitivity cs) const {
+auto StringView::compare(StringView s, CaseSensitivity cs) const -> int {
   if (cs == CaseSensitivity::CaseSensitive)
     return m_view.compare(s.m_view);
   else
     return compare(0, std::numeric_limits<std::size_t>::max(), s, 0, std::numeric_limits<std::size_t>::max(), cs);
 }
 
-bool StringView::equals(StringView s, CaseSensitivity cs) const {
+auto StringView::equals(StringView s, CaseSensitivity cs) const -> bool {
   return compare(s, cs) == 0;
 }
 
-bool StringView::equalsIgnoreCase(StringView s) const {
+auto StringView::equalsIgnoreCase(StringView s) const -> bool {
   return compare(s, CaseSensitivity::CaseInsensitive) == 0;
 }
 
-StringView StringView::substr(size_t position, size_t n) const {
+auto StringView::substr(std::size_t position, std::size_t n) const -> StringView {
   StringView ret;
   auto itEnd = end();
   auto it = begin();
 
-  for (size_t i = 0; i != position; ++i) {
+  for (std::size_t i = 0; i != position; ++i) {
     if (it == itEnd)
       throw OutOfRangeException(strf("out of range in StringView::substr({}, {})", position, n));
     it++;
@@ -361,17 +362,17 @@ StringView StringView::substr(size_t position, size_t n) const {
 
   const auto itStart = it;
 
-  for (size_t i = 0; i != n; ++i) {
+  for (std::size_t i = 0; i != n; ++i) {
     if (it == itEnd)
       break;
     ++it;
   }
 
-  return StringView(&*itStart.base(), it.base() - itStart.base());
+  return {&*itStart.base(), static_cast<std::size_t>(it.base() - itStart.base())};
 }
 
-int StringView::compare(size_t selfOffset, size_t selfLen, StringView other,
-    size_t otherOffset, size_t otherLen, CaseSensitivity cs) const {
+auto StringView::compare(std::size_t selfOffset, std::size_t selfLen, StringView other,
+                         std::size_t otherOffset, std::size_t otherLen, CaseSensitivity cs) const -> int {
   auto selfIt = begin();
   auto otherIt = other.begin();
 
@@ -413,38 +414,38 @@ int StringView::compare(size_t selfOffset, size_t selfLen, StringView other,
   }
 }
 
-StringView& StringView::operator=(StringView s) {
+auto StringView::operator=(StringView s) -> StringView& {
   m_view = s.m_view;
   return *this;
 }
 
-bool operator==(StringView s1, const char* s2) {
+auto operator==(StringView s1, const char* s2) -> bool {
   return s1.m_view.compare(s2) == 0;
 }
 
-bool operator==(StringView s1, std::string const& s2) {
+auto operator==(StringView s1, std::string const& s2) -> bool {
   return s1.m_view.compare(s2) == 0;
 }
 
-bool operator==(StringView s1, String const& s2) {
+auto operator==(StringView s1, String const& s2) -> bool {
   return s1.m_view.compare(s2.utf8()) == 0;
 }
 
-bool operator==(StringView s1, StringView s2) {
+auto operator==(StringView s1, StringView s2) -> bool {
   return s1.m_view == s2.m_view;
 }
 
-bool operator!=(StringView s1, StringView s2) {
+auto operator!=(StringView s1, StringView s2) -> bool {
   return s1.m_view != s2.m_view;
 }
 
-bool operator<(StringView s1, StringView s2) {
+auto operator<(StringView s1, StringView s2) -> bool {
   return s1.m_view < s2.m_view;
 }
 
-std::ostream& operator<<(std::ostream& os, StringView const& s) {
+auto operator<<(std::ostream& os, StringView const& s) -> std::ostream& {
   os << s.utf8();
   return os;
 }
 
-}
+}// namespace Star

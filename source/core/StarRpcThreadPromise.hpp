@@ -1,15 +1,17 @@
 #pragma once
 
-#include <optional>
+#include "StarException.hpp"
 #include "StarString.hpp"
 #include "StarThread.hpp"
+
+import std;
 
 // A thread-safe version of RpcPromise.
 // This is just a copy-paste with a Mutex tacked on. I don't like that, but it's 11 PM.
 
 namespace Star {
 
-STAR_EXCEPTION(RpcThreadPromiseException, StarException);
+using RpcThreadPromiseException = ExceptionDerived<"RpcThreadPromiseException">;
 
 template <typename Result, typename Error = String>
 class RpcThreadPromiseKeeper {
@@ -21,31 +23,31 @@ private:
   template <typename ResultT, typename ErrorT>
   friend class RpcThreadPromise;
 
-  function<void(Result)> m_fulfill;
-  function<void(Error)> m_fail;
+  std::function<void(Result)> m_fulfill;
+  std::function<void(Error)> m_fail;
 };
 
 template <typename Result, typename Error = String>
 class RpcThreadPromise {
 public:
-  static pair<RpcThreadPromise, RpcThreadPromiseKeeper<Result, Error>> createPair();
-  static RpcThreadPromise createFulfilled(Result result);
-  static RpcThreadPromise createFailed(Error error);
+  static auto createPair() -> std::pair<RpcThreadPromise, RpcThreadPromiseKeeper<Result, Error>>;
+  static auto createFulfilled(Result result) -> RpcThreadPromise;
+  static auto createFailed(Error error) -> RpcThreadPromise;
 
   // Has the respoonse either failed or succeeded?
-  bool finished() const;
+  [[nodiscard]] auto finished() const -> bool;
   // Has the response finished with success?
-  bool succeeded() const;
+  [[nodiscard]] auto succeeded() const -> bool;
   // Has the response finished with failure?
-  bool failed() const;
+  [[nodiscard]] auto failed() const -> bool;
 
   // Returns the result of the rpc call on success, nothing on failure or when
   // not yet finished.
-  std::optional<Result> result() const;
+  auto result() const -> std::optional<Result>;
 
   // Returns the error of a failed rpc call.  Returns nothing if the call is
   // successful or not yet finished.
-  std::optional<Error> error() const;
+  auto error() const -> std::optional<Error>;
 
 private:
   template <typename ResultT, typename ErrorT>
@@ -60,7 +62,7 @@ private:
 
   RpcThreadPromise() = default;
 
-  function<Value*()> m_getValue;
+  std::function<Value*()> m_getValue;
 };
 
 template <typename Result, typename Error>
@@ -74,22 +76,22 @@ void RpcThreadPromiseKeeper<Result, Error>::fail(Error error) {
 }
 
 template <typename Result, typename Error>
-pair<RpcThreadPromise<Result, Error>, RpcThreadPromiseKeeper<Result, Error>> RpcThreadPromise<Result, Error>::createPair() {
+auto RpcThreadPromise<Result, Error>::createPair() -> std::pair<RpcThreadPromise<Result, Error>, RpcThreadPromiseKeeper<Result, Error>> {
   auto valuePtr = make_shared<Value>();
 
   RpcThreadPromise promise;
-  promise.m_getValue = [valuePtr]() {
+  promise.m_getValue = [valuePtr]() -> auto {
     return valuePtr.get();
   };
 
   RpcThreadPromiseKeeper<Result, Error> keeper;
-  keeper.m_fulfill = [valuePtr](Result result) {
+  keeper.m_fulfill = [valuePtr](Result result) -> auto {
     MutexLocker lock(valuePtr->mutex);
     if (valuePtr->result || valuePtr->error)
       throw RpcThreadPromiseException("fulfill called on already finished RpcThreadPromise");
     valuePtr->result = std::move(result);
   };
-  keeper.m_fail = [valuePtr](Error error) {
+  keeper.m_fail = [valuePtr](Error error) -> auto {
     MutexLocker lock(valuePtr->mutex);
     if (valuePtr->result || valuePtr->error)
       throw RpcThreadPromiseException("fail called on already finished RpcThreadPromise");
@@ -100,62 +102,62 @@ pair<RpcThreadPromise<Result, Error>, RpcThreadPromiseKeeper<Result, Error>> Rpc
 }
 
 template <typename Result, typename Error>
-RpcThreadPromise<Result, Error> RpcThreadPromise<Result, Error>::createFulfilled(Result result) {
+auto RpcThreadPromise<Result, Error>::createFulfilled(Result result) -> RpcThreadPromise<Result, Error> {
   auto valuePtr = make_shared<Value>();
   valuePtr->result = std::move(result);
 
   RpcThreadPromise<Result, Error> promise;
-  promise.m_getValue = [valuePtr]() {
+  promise.m_getValue = [valuePtr]() -> auto {
     return valuePtr.get();
   };
   return promise;
 }
 
 template <typename Result, typename Error>
-RpcThreadPromise<Result, Error> RpcThreadPromise<Result, Error>::createFailed(Error error) {
+auto RpcThreadPromise<Result, Error>::createFailed(Error error) -> RpcThreadPromise<Result, Error> {
   auto valuePtr = make_shared<Value>();
   valuePtr->error = std::move(error);
 
   RpcThreadPromise<Result, Error> promise;
-  promise.m_getValue = [valuePtr]() {
+  promise.m_getValue = [valuePtr]() -> auto {
     return valuePtr.get();
   };
   return promise;
 }
 
 template <typename Result, typename Error>
-bool RpcThreadPromise<Result, Error>::finished() const {
+auto RpcThreadPromise<Result, Error>::finished() const -> bool {
   auto val = m_getValue();
   MutexLocker lock(val->mutex);
   return val->result || val->error;
 }
 
 template <typename Result, typename Error>
-bool RpcThreadPromise<Result, Error>::succeeded() const {
+auto RpcThreadPromise<Result, Error>::succeeded() const -> bool {
   auto val = m_getValue();
   MutexLocker lock(val->mutex);
   return val->result.isValid();
 }
 
 template <typename Result, typename Error>
-bool RpcThreadPromise<Result, Error>::failed() const {
+auto RpcThreadPromise<Result, Error>::failed() const -> bool {
   auto val = m_getValue();
   MutexLocker lock(val->mutex);
   return val->error.isValid();
 }
 
 template <typename Result, typename Error>
-std::optional<Result> RpcThreadPromise<Result, Error>::result() const {
+auto RpcThreadPromise<Result, Error>::result() const -> std::optional<Result> {
   auto val = m_getValue();
   MutexLocker lock(val->mutex);
   return val->result;
 }
 
 template <typename Result, typename Error>
-std::optional<Error> RpcThreadPromise<Result, Error>::error() const {
+auto RpcThreadPromise<Result, Error>::error() const -> std::optional<Error> {
   auto val = m_getValue();
   MutexLocker lock(val->mutex);
   return val->error;
 }
 
-}
+}// namespace Star

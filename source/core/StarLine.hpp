@@ -9,7 +9,7 @@ namespace Star {
 template <typename T, std::size_t N>
 class Line {
 public:
-  typedef Vector<T, N> VectorType;
+  using VectorType = Vector<T, N>;
 
   struct IntersectResult {
     // Whether or not the two objects intersect
@@ -28,7 +28,7 @@ public:
     bool glances;
   };
 
-  Line() {}
+  Line() = default;
 
   template <typename T2>
   explicit Line(Line<T2, N> const& line)
@@ -37,27 +37,27 @@ public:
   Line(VectorType const& a, VectorType const& b)
     : m_min(a), m_max(b) {}
 
-  VectorType direction() const {
+  auto direction() const -> VectorType {
     return diff().normalized();
   }
 
-  T length() const {
+  auto length() const -> T {
     return diff().magnitude();
   }
 
-  T angle() const {
+  auto angle() const -> T {
     return diff().angle();
   }
 
-  VectorType eval(T t) const {
+  auto eval(T t) const -> VectorType {
     return m_min + diff() * t;
   }
 
-  VectorType diff() const {
+  auto diff() const -> VectorType {
     return (m_max - m_min);
   }
 
-  VectorType center() const {
+  auto center() const -> VectorType {
     return (m_min + m_max) / 2;
   }
 
@@ -65,27 +65,27 @@ public:
     return translate(c - center());
   }
 
-  VectorType& min() {
+  auto min() -> VectorType& {
     return m_min;
   }
 
-  VectorType& max() {
+  auto max() -> VectorType& {
     return m_max;
   }
 
-  VectorType const& min() const {
+  auto min() const -> VectorType const& {
     return m_min;
   }
 
-  VectorType const& max() const {
+  auto max() const -> VectorType const& {
     return m_max;
   }
 
-  VectorType midpoint() const {
+  auto midpoint() const -> VectorType {
     return (m_max + m_min) / 2;
   }
 
-  bool makePositive() {
+  auto makePositive() -> bool {
     bool changed = false;
     for (unsigned i = 0; i < N; i++) {
       if (m_min[i] < m_max[i]) {
@@ -103,7 +103,7 @@ public:
     std::swap(m_min, m_max);
   }
 
-  Line reversed() {
+  auto reversed() -> Line {
     return Line(m_max, m_min);
   }
 
@@ -112,7 +112,7 @@ public:
     m_max += trans;
   }
 
-  Line translated(VectorType const& trans) {
+  auto translated(VectorType const& trans) -> Line {
     return Line(m_min + trans, m_max + trans);
   }
 
@@ -125,19 +125,19 @@ public:
     scale(VectorType::filled(s), c);
   }
 
-  bool operator==(Line const& rhs) const {
+  auto operator==(Line const& rhs) const -> bool {
     return tie(m_min, m_max) == tie(rhs.m_min, rhs.m_max);
   }
 
-  bool operator<(Line const& rhs) const {
+  auto operator<(Line const& rhs) const -> bool {
     return tie(m_min, m_max) < tie(rhs.m_min, rhs.m_max);
   }
 
   // Line2
 
   template <std::size_t P = N>
-  typename std::enable_if<P == 2 && N == P, IntersectResult>::type intersection(
-      Line const& line2, bool infinite = false) const {
+  auto intersection(
+      Line const& line2, bool infinite = false) const -> IntersectResult requires (P == 2 && N == P) {
     Line l1 = *this;
     Line l2 = line2;
     // Warning to others, do not make the lines positive, because points of
@@ -208,20 +208,20 @@ public:
   }
 
   template <std::size_t P = N>
-  typename std::enable_if<P == 2 && N == P, bool>::type intersects(Line const& l2, bool infinite = false) const {
+  auto intersects(Line const& l2, bool infinite = false) const -> bool requires (P == 2 && N == P) {
     return intersection(l2, infinite).intersects;
   }
 
   // Returns t value for closest point on the line.  t value is *not* clamped
   // from 0.0 to 1.0
   template <std::size_t P = N>
-  typename std::enable_if<P == 2 && N == P, T>::type lineProjection(VectorType const& l2) const {
+  auto lineProjection(VectorType const& l2) const -> T requires (P == 2 && N == P) {
     VectorType d = diff();
     return ((l2[0] - min()[0]) * d[0] + (l2[1] - min()[1]) * d[1]) / d.magnitudeSquared();
   }
 
   template <std::size_t P = N>
-  typename std::enable_if<P == 2 && N == P, T>::type distanceTo(VectorType const& l, bool infinite = false) const {
+  auto distanceTo(VectorType const& l, bool infinite = false) const -> T requires (P == 2 && N == P) {
     auto t = lineProjection(l);
     if (!infinite)
       t = clamp<T>(t, 0, 1);
@@ -229,32 +229,32 @@ public:
   }
 
   template <std::size_t P = N>
-  typename std::enable_if<P == 2 && N == P, void>::type rotate(
-      T angle, VectorType const& rotationCenter = VectorType()) {
+  void rotate(
+      T angle, VectorType const& rotationCenter = VectorType()) requires (P == 2 && N == P) {
     auto rotMatrix = Mat3F::rotation(angle, rotationCenter);
     min() = rotMatrix.transformVec2(min());
     max() = rotMatrix.transformVec2(max());
   }
 
   template <typename T2, std::size_t P = N>
-  typename std::enable_if<P == 2 && N == P, void>::type transform(Matrix3<T2> const& transform) {
+  void transform(Matrix3<T2> const& transform) requires (P == 2 && N == P) {
     min() = transform.transformVec2(min());
     max() = transform.transformVec2(max());
   }
 
   template <typename T2, std::size_t P = N>
-  typename std::enable_if<P == 2 && N == P, Line>::type transformed(Matrix3<T2> const& transform) const {
+  auto transformed(Matrix3<T2> const& transform) const -> Line requires (P == 2 && N == P) {
     return Line(transform.transformVec2(min()), transform.transformVec2(max()));
   }
 
   template <std::size_t P = N>
-  typename std::enable_if<P == 2 && N == P, void>::type flipHorizontal(T horizontalPos) {
+  void flipHorizontal(T horizontalPos) requires (P == 2 && N == P) {
     m_min[0] = horizontalPos + (horizontalPos - m_min[0]);
     m_max[0] = horizontalPos + (horizontalPos - m_max[0]);
   }
 
   template <std::size_t P = N>
-  typename std::enable_if<P == 2 && N == P, void>::type flipVertical(T verticalPos) {
+  void flipVertical(T verticalPos) requires (P == 2 && N == P) {
     m_min[1] = verticalPos + (verticalPos - m_min[1]);
     m_max[1] = verticalPos + (verticalPos - m_max[1]);
   }
@@ -264,19 +264,19 @@ private:
   VectorType m_max;
 };
 
-typedef Line<float, 2> Line2F;
-typedef Line<double, 2> Line2D;
-typedef Line<int, 2> Line2I;
+using Line2F = Line<float, 2>;
+using Line2D = Line<double, 2>;
+using Line2I = Line<int, 2>;
 
 template <typename T, std::size_t N>
-std::ostream& operator<<(std::ostream& os, Line<T, N> const& l) {
+auto operator<<(std::ostream& os, Line<T, N> const& l) -> std::ostream& {
   os << '[' << l.min() << ", " << l.max() << ']';
   return os;
 }
 
 template <typename T, std::size_t N>
 struct hash<Line<T, N>> {
-  std::size_t operator()(Line<T, N> const& line) const {
+  auto operator()(Line<T, N> const& line) const -> std::size_t {
     std::size_t hashval = 0;
     hashCombine(hashval, vectorHasher(line.min()));
     hashCombine(hashval, vectorHasher(line.max()));

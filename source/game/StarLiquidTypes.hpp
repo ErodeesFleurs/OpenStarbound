@@ -1,18 +1,19 @@
 #pragma once
 
 #include "StarMathCommon.hpp"
-#include <optional>
+
+import std;
 
 namespace Star {
 
-typedef uint8_t LiquidId;
+using LiquidId = std::uint8_t;
 LiquidId const EmptyLiquidId = 0;
 
 struct LiquidLevel {
   LiquidLevel();
   LiquidLevel(LiquidId liquid, float level);
 
-  LiquidLevel take(float amount);
+  auto take(float amount) -> LiquidLevel;
 
   LiquidId liquid;
   float level;
@@ -20,25 +21,25 @@ struct LiquidLevel {
 
 struct LiquidNetUpdate {
   LiquidId liquid;
-  uint8_t level;
+  std::uint8_t level;
 
-  LiquidLevel liquidLevel() const;
+  [[nodiscard]] auto liquidLevel() const -> LiquidLevel;
 };
 
 struct LiquidStore : LiquidLevel {
   // Returns a LiquidStore of the given liquid
-  static LiquidStore filled(LiquidId liquid, float level, std::optional<float> pressure = {});
+  static auto filled(LiquidId liquid, float level, std::optional<float> pressure = {}) -> LiquidStore;
   // Returns a LiquidStore source liquid block
-  static LiquidStore endless(LiquidId liquid, float pressure);
+  static auto endless(LiquidId liquid, float pressure) -> LiquidStore;
 
   LiquidStore();
   LiquidStore(LiquidId liquid, float level, float pressure, bool source);
 
-  LiquidNetUpdate netUpdate() const;
+  [[nodiscard]] auto netUpdate() const -> LiquidNetUpdate;
 
-  std::optional<LiquidNetUpdate> update(LiquidId liquid, float level, float pressure);
+  auto update(LiquidId liquid, float level, float pressure) -> std::optional<LiquidNetUpdate>;
 
-  LiquidLevel take(float amount);
+  auto take(float amount) -> LiquidLevel;
 
   float pressure;
   bool source;
@@ -50,7 +51,7 @@ inline LiquidLevel::LiquidLevel()
 inline LiquidLevel::LiquidLevel(LiquidId liquid, float level)
   : liquid(liquid), level(level) {}
 
-inline LiquidLevel LiquidNetUpdate::liquidLevel() const {
+inline auto LiquidNetUpdate::liquidLevel() const -> LiquidLevel {
   return LiquidLevel{liquid, byteToFloat(level)};
 }
 

@@ -3,6 +3,8 @@
 #include "StarMathCommon.hpp"
 #include "StarRandom.hpp"
 
+import std;
+
 namespace Star {
 
 // Perform some action every X ticks.  Setting the tick count to 0 means never
@@ -11,9 +13,9 @@ namespace Star {
 class Periodic {
 public:
   Periodic(unsigned everyXSteps = 1)
-    : m_counter(0), m_everyXSteps(everyXSteps) {}
+      : m_everyXSteps(everyXSteps) {}
 
-  unsigned stepCount() const {
+  [[nodiscard]] auto stepCount() const -> unsigned {
     return m_everyXSteps;
   }
 
@@ -26,11 +28,11 @@ public:
   }
 
   // Will the next tick() return true?
-  bool ready() const {
+  [[nodiscard]] auto ready() const -> bool {
     return m_everyXSteps != 0 && m_counter == 0;
   }
 
-  bool tick() {
+  auto tick() -> bool {
     if (m_everyXSteps == 0)
       return false;
 
@@ -50,7 +52,7 @@ public:
   }
 
 private:
-  unsigned m_counter;
+  unsigned m_counter{};
   unsigned m_everyXSteps;
 };
 
@@ -59,19 +61,19 @@ private:
 class RatePeriodic {
 public:
   RatePeriodic(double period = 1, double noise = 0)
-    : m_period(period), m_noise(noise), m_counter(period + Random::randf(-noise, noise)), m_elapsed(0.0) {}
+      : m_period(period), m_noise(noise), m_counter(period + Random::randf(-noise, noise)) {}
 
-  double period() const {
+  [[nodiscard]] auto period() const -> double {
     return m_period;
   }
 
-  double noise() const {
+  [[nodiscard]] auto noise() const -> double {
     return m_noise;
   }
 
   template <typename Function>
   void update(double amount, Function&& function) {
-    double subAmount = min(amount, m_counter);
+    double subAmount = std::min(amount, m_counter);
     m_counter -= subAmount;
     amount -= subAmount;
     m_elapsed += subAmount;
@@ -89,7 +91,7 @@ private:
   double m_period;
   double m_noise;
   double m_counter;
-  double m_elapsed;
+  double m_elapsed{};
 };
 
-}
+}// namespace Star

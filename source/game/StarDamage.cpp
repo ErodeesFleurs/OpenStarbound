@@ -1,4 +1,5 @@
 #include "StarDamage.hpp"
+
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarRoot.hpp"

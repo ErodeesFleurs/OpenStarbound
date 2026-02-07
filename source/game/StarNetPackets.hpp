@@ -1,29 +1,29 @@
 #pragma once
 
-#include <optional>
-
 #include "StarCelestialTypes.hpp"
-#include "StarDataStream.hpp"
-#include "StarPlayerTypes.hpp"
-#include "StarWorldStorage.hpp"
-#include "StarWorldTiles.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarDamageManager.hpp"
 #include "StarChatTypes.hpp"
-#include "StarUuid.hpp"
-#include "StarTileModification.hpp"
+#include "StarConfig.hpp"
+#include "StarDamageManager.hpp"
+#include "StarDataStream.hpp"
 #include "StarEntity.hpp"
+#include "StarException.hpp"
 #include "StarInteractionTypes.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarNetCompatibility.hpp"
+#include "StarPlayerTypes.hpp"
+#include "StarSystemWorld.hpp"
+#include "StarTileModification.hpp"
+#include "StarUuid.hpp"
 #include "StarWarping.hpp"
 #include "StarWiring.hpp"
-#include "StarSystemWorld.hpp"
-#include "StarNetCompatibility.hpp"
+#include "StarWorldStorage.hpp"
+#include "StarWorldTiles.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_STRUCT(Packet);
-
-STAR_EXCEPTION(StarPacketException, IOException);
+using StarPacketException = ExceptionDerived<"StarPacketException">;
 
 extern VersionNumber const StarProtocolVersion;
 
@@ -139,7 +139,7 @@ enum class PacketCompressionMode : uint8_t {
 struct Packet {
   virtual ~Packet();
 
-  virtual PacketType type() const = 0;
+  [[nodiscard]] virtual auto type() const -> PacketType = 0;
 
   virtual void read(DataStream& ds, NetCompatibilityRules netRules);
   virtual void read(DataStream& ds);
@@ -147,22 +147,22 @@ struct Packet {
   virtual void write(DataStream& ds) const;
 
   virtual void readJson(Json const& json);
-  virtual Json writeJson() const;
+  [[nodiscard]] virtual auto writeJson() const -> Json;
 
-  PacketCompressionMode compressionMode() const;
+  [[nodiscard]] auto compressionMode() const -> PacketCompressionMode;
   void setCompressionMode(PacketCompressionMode compressionMode);
 
   PacketCompressionMode m_compressionMode = PacketCompressionMode::Automatic;
 };
 
-PacketPtr createPacket(PacketType type);
-PacketPtr createPacket(PacketType type, std::optional<Json> const& args);
+auto createPacket(PacketType type) -> Ptr<Packet>;
+auto createPacket(PacketType type, std::optional<Json> const& args) -> Ptr<Packet>;
 
 template <PacketType PacketT>
 struct PacketBase : public Packet {
   static PacketType const Type = PacketT;
 
-  PacketType type() const override { return Type; }
+  [[nodiscard]] auto type() const -> PacketType override { return Type; }
 };
 
 struct ProtocolRequestPacket : PacketBase<PacketType::ProtocolRequest> {
@@ -235,7 +235,7 @@ struct ChatReceivePacket : PacketBase<PacketType::ChatReceive> {
   void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] auto writeJson() const -> Json override;
 
   ChatReceivedMessage receivedMessage;
 };
@@ -291,7 +291,7 @@ struct PausePacket : PacketBase<PacketType::Pause> {
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] auto writeJson() const -> Json override;
 
   bool pause = false;
   float timescale = 1.0f;
@@ -305,7 +305,7 @@ struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {
   void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] auto writeJson() const -> Json override;
 
   uint16_t players;
   uint16_t maxPlayers;
@@ -314,8 +314,8 @@ struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {
 struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
   ClientConnectPacket();
   ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid, String playerName,
-      String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
-      String account, Json info = {});
+                      String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades, bool introComplete,
+                      String account, Json info = {});
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
@@ -470,7 +470,7 @@ struct CentralStructureUpdatePacket : PacketBase<PacketType::CentralStructureUpd
 };
 
 struct TileArrayUpdatePacket : PacketBase<PacketType::TileArrayUpdate> {
-  typedef MultiArray<NetTile, 2> TileArray;
+  using TileArray = MultiArray<NetTile, 2>;
 
   TileArrayUpdatePacket();
 
@@ -482,7 +482,7 @@ struct TileArrayUpdatePacket : PacketBase<PacketType::TileArrayUpdate> {
 };
 
 struct TileUpdatePacket : PacketBase<PacketType::TileUpdate> {
-  TileUpdatePacket() {}
+  TileUpdatePacket() = default;
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
@@ -532,7 +532,7 @@ struct GiveItemPacket : PacketBase<PacketType::GiveItem> {
   void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  auto writeJson() const -> Json override;
 
   ItemDescriptor item;
 };
@@ -556,7 +556,7 @@ struct UpdateTileProtectionPacket : PacketBase<PacketType::UpdateTileProtection>
   void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] auto writeJson() const -> Json override;
 
   DungeonId dungeonId;
   bool isProtected;
@@ -570,7 +570,7 @@ struct SetDungeonGravityPacket : PacketBase<PacketType::SetDungeonGravity> {
   void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] auto writeJson() const -> Json override;
 
   DungeonId dungeonId;
   std::optional<float> gravity;
@@ -584,7 +584,7 @@ struct SetDungeonBreathablePacket : PacketBase<PacketType::SetDungeonBreathable>
   void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] auto writeJson() const -> Json override;
 
   DungeonId dungeonId;
   std::optional<bool> breathable;
@@ -598,7 +598,7 @@ struct SetPlayerStartPacket : PacketBase<PacketType::SetPlayerStart> {
   void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] auto writeJson() const -> Json override;
 
   Vec2F playerStart;
   bool respawnInWorld;
@@ -855,7 +855,7 @@ struct EntityMessagePacket : PacketBase<PacketType::EntityMessage> {
   void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] auto writeJson() const -> Json override;
 
   Variant<EntityId, String> entityId;
   String message;
@@ -883,7 +883,7 @@ struct UpdateWorldPropertiesPacket : PacketBase<PacketType::UpdateWorldPropertie
   void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
-  Json writeJson() const override;
+  [[nodiscard]] auto writeJson() const -> Json override;
 
   JsonObject updatedProperties;
 };
@@ -900,7 +900,7 @@ struct StepUpdatePacket : PacketBase<PacketType::StepUpdate> {
 
 struct SystemWorldStartPacket : PacketBase<PacketType::SystemWorldStart> {
   SystemWorldStartPacket();
-  SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, pair<Uuid, SystemLocation> clientShip);
+  SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, std::pair<Uuid, SystemLocation> clientShip);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -908,7 +908,7 @@ struct SystemWorldStartPacket : PacketBase<PacketType::SystemWorldStart> {
   Vec3I location;
   List<ByteArray> objectStores;
   List<ByteArray> shipStores;
-  pair<Uuid, SystemLocation> clientShip;
+  std::pair<Uuid, SystemLocation> clientShip;
 };
 
 struct SystemWorldUpdatePacket : PacketBase<PacketType::SystemWorldUpdate> {
@@ -984,4 +984,4 @@ struct UpdateWorldTemplatePacket : PacketBase<PacketType::UpdateWorldTemplate> {
 
   Json templateData;
 };
-}
+}// namespace Star

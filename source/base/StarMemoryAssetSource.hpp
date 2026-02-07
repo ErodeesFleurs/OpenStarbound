@@ -1,38 +1,38 @@
 #pragma once
 
 #include "StarAssetSource.hpp"
+#include "StarConfig.hpp"
 #include "StarIODevice.hpp"
+#include "StarImage.hpp"
 
 namespace Star {
-
-STAR_CLASS(MemoryAssetSource);
-STAR_CLASS(Image);
 
 class MemoryAssetSource : public AssetSource {
 public:
   MemoryAssetSource(String const& name, JsonObject metadata = JsonObject());
 
-  String name() const;
-  JsonObject metadata() const override;
-  StringList assetPaths() const override;
+  [[nodiscard]] auto name() const -> String;
+  [[nodiscard]] auto metadata() const -> JsonObject override;
+  [[nodiscard]] auto assetPaths() const -> StringList override;
 
   // do not use the returned IODevice after the file is gone or bad things will happen
-  IODevicePtr open(String const& path) override;
+  auto open(String const& path) -> Ptr<IODevice> override;
 
-  bool empty() const;
-  bool contains(String const& path) const;
-  bool erase(String const& path);
+  [[nodiscard]] auto empty() const -> bool;
+  [[nodiscard]] auto contains(String const& path) const -> bool;
+  auto erase(String const& path) -> bool;
   void set(String const& path, ByteArray data);
   void set(String const& path, Image const& image);
   void set(String const& path, Image&& image);
-  ByteArray read(String const& path) override;
-  ImageConstPtr image(String const& path);
+  auto read(String const& path) -> ByteArray override;
+  auto image(String const& path) -> ConstPtr<Image>;
+
 private:
-  typedef Variant<ByteArray, ImagePtr> FileEntry;
+  using FileEntry = Variant<ByteArray, Ptr<Image>>;
 
   String m_name;
   JsonObject m_metadata;
   StringMap<FileEntry> m_files;
 };
 
-}
+}// namespace Star

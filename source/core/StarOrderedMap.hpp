@@ -17,9 +17,8 @@ public:
 
   using OrderType = LinkedList<value_type, Allocator>;
   using MapType = Map<
-      std::reference_wrapper<key_type const>, typename OrderType::iterator, MapArgs...,
-      typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<std::reference_wrapper<key_type const> const, typename OrderType::iterator>>
-    >;
+    std::reference_wrapper<key_type const>, typename OrderType::iterator, MapArgs...,
+    typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<std::reference_wrapper<key_type const> const, typename OrderType::iterator>>>;
 
   using iterator = typename OrderType::iterator;
   using const_iterator = typename OrderType::const_iterator;
@@ -27,7 +26,7 @@ public:
   using reverse_iterator = typename OrderType::reverse_iterator;
   using const_reverse_iterator = typename OrderType::const_reverse_iterator;
 
-  using mapped_ptr =  std::decay_t<mapped_type>*;
+  using mapped_ptr = std::decay_t<mapped_type>*;
   using mapped_const_ptr = typename std::decay<mapped_type>::type const*;
 
   template <typename Collection>
@@ -636,15 +635,15 @@ void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::sort(Compare com
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::sortByKey() {
   sort([](value_type const& a, value_type const& b) -> auto {
-      return a.first < b.first;
-    });
+    return a.first < b.first;
+  });
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::sortByValue() {
   sort([](value_type const& a, value_type const& b) -> auto {
-      return a.second < b.second;
-    });
+    return a.second < b.second;
+  });
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
@@ -653,7 +652,7 @@ auto operator<<(std::ostream& os, OrderedMapWrapper<Map, Key, Value, Allocator, 
   return os;
 }
 
-}
+}// namespace Star
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 struct std::formatter<Star::OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>> : Star::ostream_formatter {};

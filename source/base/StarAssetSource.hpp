@@ -1,14 +1,13 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarIODevice.hpp"
 #include "StarJson.hpp"
 #include "StarException.hpp"
 
 namespace Star {
 
-STAR_EXCEPTION(AssetSourceException, StarException);
-
-using AssetSourceException = ExceptionDerived<"AssetSourceException">
+using AssetSourceException = ExceptionDerived<"AssetSourceException">;
 
 // An asset source could be a directory on a filesystem, where assets are
 // pulled directly from files, or a single pak-like file containing all assets,
@@ -18,16 +17,16 @@ public:
   virtual ~AssetSource() = default;
 
   // An asset source can have arbitrary metadata attached.
-  virtual JsonObject metadata() const = 0;
+  [[nodiscard]] virtual auto metadata() const -> JsonObject = 0;
 
   // Should return all the available assets in this source
-  virtual StringList assetPaths() const = 0;
+  [[nodiscard]] virtual auto assetPaths() const -> StringList = 0;
 
   // Open the given path in this source and return an IODevicePtr to it.
-  virtual IODevicePtr open(String const& path) = 0;
+  virtual auto open(String const& path) -> Ptr<IODevice> = 0;
 
   // Read the entirety of the given path into a buffer.
-  virtual ByteArray read(String const& path) = 0;
+  virtual auto read(String const& path) -> ByteArray = 0;
 };
 
 }

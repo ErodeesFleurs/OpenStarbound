@@ -1,19 +1,17 @@
 #pragma once
 
-#include "StarCasting.hpp"
 #include "StarDamage.hpp"
+#include "StarException.hpp"
 #include "StarLightSource.hpp"
 
-#include <optional>
+import std;
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(World);
-STAR_STRUCT(DamageNotification);
-STAR_CLASS(Entity);
+class World;
+class RenderCallback;
 
-STAR_EXCEPTION(EntityException, StarException);
+using EntityException = ExceptionDerived<"EntityException">;
 
 // Specifies how the client should treat an entity created on the client,
 // whether it should always be sent to the server and be a slave on the client,
@@ -50,7 +48,7 @@ class Entity {
 public:
   virtual ~Entity();
 
-  virtual EntityType entityType() const = 0;
+  [[nodiscard]] virtual auto entityType() const -> EntityType = 0;
 
   // Called when an entity is first inserted into a World.  Calling base class
   // init sets the world pointer, entityId, and entityMode.
@@ -65,7 +63,7 @@ public:
   // uninitalized.  Should return the delta to be written to the slave, along
   // with the version to pass into writeDeltaState on the next call.  The first
   // delta written to a slave entity will always be the delta starting with 0.
-  virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  virtual auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t>;
   // Will be called with deltas written by writeDeltaState, including if the
   // delta is empty.  interpolationTime will be provided if interpolation is
   // enabled.
@@ -76,56 +74,56 @@ public:
 
   // Base position of this entity, bound boxes, drawables, and other entity
   // positions are relative to this.
-  virtual Vec2F position() const = 0;
+  [[nodiscard]] virtual auto position() const -> Vec2F = 0;
 
   // Largest bounding-box of this entity.  Any damage boxes / drawables / light
   // or sound *sources* must be contained within this bounding box.  Used for
   // all top-level spatial queries.
-  virtual RectF metaBoundBox() const = 0;
+  [[nodiscard]] virtual auto metaBoundBox() const -> RectF = 0;
 
   // By default returns a null rect, if non-null, it defines the area around
   // this entity where it is likely for the entity to physically collide with
   // collision geometry.
-  virtual RectF collisionArea() const;
+  [[nodiscard]] virtual auto collisionArea() const -> RectF;
 
   // Should this entity allow object / block placement over it, and can the
   // entity immediately be despawned without terribly bad effects?
-  virtual bool ephemeral() const;
+  [[nodiscard]] virtual auto ephemeral() const -> bool;
 
   // How should this entity be treated if created on the client?  Defaults to
   // ClientSlave.
-  virtual ClientEntityMode clientEntityMode() const;
+  [[nodiscard]] virtual auto clientEntityMode() const -> ClientEntityMode;
   // Should this entity only exist on the master side?
-  virtual bool masterOnly() const;
+  [[nodiscard]] virtual auto masterOnly() const -> bool;
 
-  virtual String name() const;
-  virtual String description() const;
+  [[nodiscard]] virtual auto name() const -> String;
+  [[nodiscard]] virtual auto description() const -> String;
 
   // Gameplay affecting light sources (separate from light sources added during
   // rendering)
-  virtual List<LightSource> lightSources() const;
+  [[nodiscard]] virtual auto lightSources() const -> List<LightSource>;
 
   // All damage sources for this frame.
-  virtual List<DamageSource> damageSources() const;
+  [[nodiscard]] virtual auto damageSources() const -> List<DamageSource>;
 
   // Return the damage that would result from being hit by the given damage
   // source.  Will be called on master and slave entities.  Culling based on
   // team damage and self damage will be done outside of this query.
-  virtual std::optional<HitType> queryHit(DamageSource const& source) const;
+  [[nodiscard]] virtual auto queryHit(DamageSource const& source) const -> std::optional<HitType>;
 
   // Return the polygonal area in which the entity can be hit. Not used for
   // actual hit computation, only for determining more precisely where a
   // hit intersection occurred (e.g. by projectiles)
-  virtual std::optional<PolyF> hitPoly() const;
+  [[nodiscard]] virtual auto hitPoly() const -> std::optional<PolyF>;
 
   // Apply a request to damage this entity. Will only be called on Master
   // entities. DamageRequest might be adjusted based on protection and other
   // effects
-  virtual List<DamageNotification> applyDamage(DamageRequest const& damage);
+  virtual auto applyDamage(DamageRequest const& damage) -> List<DamageNotification>;
 
   // Pull any pending damage notifications applied internally, only called on
   // Master entities.
-  virtual List<DamageNotification> selfDamageNotifications();
+  virtual auto selfDamageNotifications() -> List<DamageNotification>;
 
   // Called on master entities when a DamageRequest has been generated due to a
   // DamageSource from this entity being applied to another entity.  Will be
@@ -139,7 +137,7 @@ public:
 
   // Returning true here indicates that this entity should be removed from the
   // world, default returns false.
-  virtual bool shouldDestroy() const;
+  [[nodiscard]] virtual auto shouldDestroy() const -> bool;
   // Will be called once before removing the entity from the World on both
   // master and slave entities.
   virtual void destroy(RenderCallback* renderCallback);
@@ -149,7 +147,7 @@ public:
   // to messages.  If the message is NOT handled, should return Nothing,
   // otherwise should return some Json value.
   // This will only ever be called on master entities.
-  virtual std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args);
+  virtual auto receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) -> std::optional<Json>;
 
   virtual void update(float dt, uint64_t currentStep);
 
@@ -157,37 +155,37 @@ public:
 
   virtual void renderLightSources(RenderCallback* renderer);
 
-  EntityId entityId() const;
+  [[nodiscard]] auto entityId() const -> EntityId;
 
-  EntityDamageTeam getTeam() const;
+  [[nodiscard]] auto getTeam() const -> EntityDamageTeam;
 
   // Returns true if an entity is initialized in a world, and thus has a valid
   // world pointer, entity id, and entity mode.
-  bool inWorld() const;
+  [[nodiscard]] auto inWorld() const -> bool;
 
   // Throws an exception if not currently in a world.
-  World* world() const;
+  [[nodiscard]] auto world() const -> World*;
   // Returns nullptr if not currently in a world.
-  World* worldPtr() const;
+  [[nodiscard]] auto worldPtr() const -> World*;
 
   // Specifies if the entity is to be saved to disk alongside the sector or
   // despawned.
-  bool persistent() const;
+  [[nodiscard]] auto persistent() const -> bool;
 
   // Entity should keep any sector it is in alive.  Default implementation
   // returns false.
-  bool keepAlive() const;
+  [[nodiscard]] auto keepAlive() const -> bool;
 
   // If set, then the entity will be discoverable by its unique id and will be
   // indexed in the stored world.  Unique ids must be different across all
   // entities in a single world.
-  std::optional<String> uniqueId() const;
+  [[nodiscard]] auto uniqueId() const -> std::optional<String>;
 
   // EntityMode will only be set if the entity is initialized, if the entity is
   // uninitialized then isMaster and isSlave will both return false.
-  std::optional<EntityMode> entityMode() const;
-  bool isMaster() const;
-  bool isSlave() const;
+  [[nodiscard]] auto entityMode() const -> std::optional<EntityMode>;
+  [[nodiscard]] auto isMaster() const -> bool;
+  [[nodiscard]] auto isSlave() const -> bool;
 
 protected:
   Entity();
@@ -208,19 +206,19 @@ private:
 };
 
 template <typename EntityT>
-using EntityCallbackOf = function<void(shared_ptr<EntityT> const&)>;
+using EntityCallbackOf = std::function<void(std::shared_ptr<EntityT> const&)>;
 
 template <typename EntityT>
-using EntityFilterOf = function<bool(shared_ptr<EntityT> const&)>;
+using EntityFilterOf = std::function<bool(std::shared_ptr<EntityT> const&)>;
 
-typedef EntityCallbackOf<Entity> EntityCallback;
-typedef EntityFilterOf<Entity> EntityFilter;
+using EntityCallback = EntityCallbackOf<Entity>;
+using EntityFilter = EntityFilterOf<Entity>;
 
 // Filters based first on dynamic casting to the given type, then optionally on
 // the given derived type filter.
 template <typename EntityT>
-EntityFilter entityTypeFilter(function<bool(shared_ptr<EntityT> const&)> filter = {}) {
-  return [filter](EntityPtr const& e) -> bool {
+auto entityTypeFilter(std::function<bool(std::shared_ptr<EntityT> const&)> filter = {}) -> EntityFilter {
+  return [filter](Ptr<Entity> const& e) -> bool {
     if (auto entity = as<EntityT>(e)) {
       return !filter || filter(entity);
     } else {
@@ -228,4 +226,4 @@ EntityFilter entityTypeFilter(function<bool(shared_ptr<EntityT> const&)> filter 
     }
   };
 }
-}
+}// namespace Star

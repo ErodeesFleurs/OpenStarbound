@@ -1,6 +1,5 @@
 #pragma once
 
-#include "StarInterpolation.hpp"
 #include "StarRandom.hpp"
 
 namespace Star {
@@ -14,12 +13,12 @@ template <typename Float>
 class PeriodicFunction {
 public:
   PeriodicFunction(
-      Float period = 1, Float min = 0, Float max = 1, Float periodVariance = 0, Float magnitudeVariance = 0);
+    Float period = 1, Float min = 0, Float max = 1, Float periodVariance = 0, Float magnitudeVariance = 0);
 
   void update(Float delta);
 
   template <typename WeightOperator>
-  Float value(WeightOperator weightOperator) const;
+  auto value(WeightOperator weightOperator) const -> Float;
 
 private:
   Float m_halfPeriod;
@@ -37,7 +36,7 @@ private:
 
 template <typename Float>
 PeriodicFunction<Float>::PeriodicFunction(
-    Float period, Float min, Float max, Float periodVariance, Float magnitudeVariance) {
+  Float period, Float min, Float max, Float periodVariance, Float magnitudeVariance) {
   m_halfPeriod = period / 2;
   m_min = min;
   m_max = max;
@@ -69,11 +68,11 @@ void PeriodicFunction<Float>::update(Float delta) {
 
 template <typename Float>
 template <typename WeightOperator>
-Float PeriodicFunction<Float>::value(WeightOperator weightOperator) const {
+auto PeriodicFunction<Float>::value(WeightOperator weightOperator) const -> Float {
   // This is inverted, m_timer goes from m_timerMax to 0 as the value should go
   // from m_source to m_target
   auto wvec = weightOperator(m_timer / m_timerMax);
   return m_target * wvec[0] + m_source * wvec[1];
 }
 
-}
+}// namespace Star

@@ -5,7 +5,8 @@
 #include "StarBiMap.hpp"
 #include "StarAnimation.hpp"
 #include "StarAssetPath.hpp"
-#include <optional>
+
+import std;
 
 namespace Star {
 
@@ -43,14 +44,14 @@ struct Particle {
   // to the given asset path
   explicit Particle(Json const& config, String const& assetsPath = "/");
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   void translate(Vec2F const& pos);
 
   // Updates position, velocity, rotation, and timeToLive.
   void update(float dt, Vec2F const& wind = Vec2F());
 
-  bool dead() const;
+  [[nodiscard]] auto dead() const -> bool;
 
   // Apply random variance to this particle based on a "variance" particle that
   // contains the maximum amount of variance for each field.
@@ -116,10 +117,10 @@ struct Particle {
   std::optional<Animation> animation;
 };
 
-DataStream& operator<<(DataStream& ds, Particle const& particle);
-DataStream& operator>>(DataStream& ds, Particle& particle);
+auto operator<<(DataStream& ds, Particle const& particle) -> DataStream&;
+auto operator>>(DataStream& ds, Particle& particle) -> DataStream&;
 
-typedef function<Particle()> ParticleVariantCreator;
-ParticleVariantCreator makeParticleVariantCreator(Particle particle, Particle variance);
+using ParticleVariantCreator = std::function<Particle()>;
+auto makeParticleVariantCreator(Particle particle, Particle variance) -> ParticleVariantCreator;
 
 }

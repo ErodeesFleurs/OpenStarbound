@@ -1,12 +1,15 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarMap.hpp"
 #include "StarMathCommon.hpp"
 #include "StarDataStream.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_EXCEPTION(IdMapException, StarException);
+using IdMapException = ExceptionDerived<"IdMapException">;
 
 // Maps key ids to values with auto generated ids in a given id range.  Tries
 // to cycle through ids as new values are added and avoid re-using ids until
@@ -14,33 +17,33 @@ STAR_EXCEPTION(IdMapException, StarException);
 template <typename BaseMap>
 class IdMapWrapper : private BaseMap {
 public:
-  typedef typename BaseMap::iterator iterator;
-  typedef typename BaseMap::const_iterator const_iterator;
-  typedef typename BaseMap::key_type key_type;
-  typedef typename BaseMap::value_type value_type;
-  typedef typename BaseMap::mapped_type mapped_type;
+  using iterator = typename BaseMap::iterator;
+  using const_iterator = typename BaseMap::const_iterator;
+  using key_type = typename BaseMap::key_type;
+  using value_type = typename BaseMap::value_type;
+  using mapped_type = typename BaseMap::mapped_type;
 
-  typedef key_type IdType;
-  typedef value_type ValueType;
-  typedef mapped_type MappedType;
+  using IdType = key_type;
+  using ValueType = value_type;
+  using MappedType = mapped_type;
 
   IdMapWrapper();
   IdMapWrapper(IdType min, IdType max);
 
   // New valid id that does not exist in this map.  Tries not to immediately
   // recycle ids, to avoid temporally close id repeats.
-  IdType nextId();
+  auto nextId() -> IdType;
 
   // Throws exception if key already exists
   void add(IdType id, MappedType mappedType);
 
   // Add with automatically allocated id
-  IdType add(MappedType mappedType);
+  auto add(MappedType mappedType) -> IdType;
 
   void clear();
 
-  bool operator==(IdMapWrapper const& rhs) const;
-  bool operator!=(IdMapWrapper const& rhs) const;
+  auto operator==(IdMapWrapper const& rhs) const -> bool;
+  auto operator!=(IdMapWrapper const& rhs) const -> bool;
 
   using BaseMap::keys;
   using BaseMap::values;
@@ -60,9 +63,9 @@ public:
   using BaseMap::erase;
 
   template <typename Base>
-  friend DataStream& operator>>(DataStream& ds, IdMapWrapper<Base>& map);
+  friend auto operator>>(DataStream& ds, IdMapWrapper<Base>& map) -> DataStream&;
   template <typename Base>
-  friend DataStream& operator<<(DataStream& ds, IdMapWrapper<Base> const& map);
+  friend auto operator<<(DataStream& ds, IdMapWrapper<Base> const& map) -> DataStream&;
 
 private:
   IdType m_min;
@@ -117,17 +120,17 @@ void IdMapWrapper<BaseMap>::clear() {
 }
 
 template <typename BaseMap>
-bool IdMapWrapper<BaseMap>::operator==(IdMapWrapper const& rhs) const {
+auto IdMapWrapper<BaseMap>::operator==(IdMapWrapper const& rhs) const -> bool {
   return tie(m_min, m_max) == tie(rhs.m_min, rhs.m_max) && BaseMap::operator==(rhs);
 }
 
 template <typename BaseMap>
-bool IdMapWrapper<BaseMap>::operator!=(IdMapWrapper const& rhs) const {
+auto IdMapWrapper<BaseMap>::operator!=(IdMapWrapper const& rhs) const -> bool {
   return !operator==(rhs);
 }
 
 template <typename BaseMap>
-DataStream& operator>>(DataStream& ds, IdMapWrapper<BaseMap>& map) {
+auto operator>>(DataStream& ds, IdMapWrapper<BaseMap>& map) -> DataStream& {
   ds.readMapContainer((BaseMap&)map);
   ds.read(map.m_min);
   ds.read(map.m_max);
@@ -136,7 +139,7 @@ DataStream& operator>>(DataStream& ds, IdMapWrapper<BaseMap>& map) {
 }
 
 template <typename BaseMap>
-DataStream& operator<<(DataStream& ds, IdMapWrapper<BaseMap> const& map) {
+auto operator<<(DataStream& ds, IdMapWrapper<BaseMap> const& map) -> DataStream& {
   ds.writeMapContainer((BaseMap const&)map);
   ds.write(map.m_min);
   ds.write(map.m_max);

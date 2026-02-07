@@ -1,7 +1,5 @@
 #pragma once
 
-#include "StarMemory.hpp"
-
 import std;
 
 namespace Star {
@@ -12,10 +10,10 @@ enum class ByteOrder {
   NoConversion
 };
 
-ByteOrder platformByteOrder();
+auto platformByteOrder() -> ByteOrder;
 
 void swapByteOrder(void* ptr, std::size_t len);
-void swapByteOrder(void* dest, void const* src, size_t len);
+void swapByteOrder(void* dest, void const* src, std::size_t len);
 
 void toByteOrder(ByteOrder order, void* ptr, std::size_t len);
 void toByteOrder(ByteOrder order, void* dest, void const* src, std::size_t len);
@@ -23,40 +21,40 @@ void fromByteOrder(ByteOrder order, void* ptr, std::size_t len);
 void fromByteOrder(ByteOrder order, void* dest, void const* src, std::size_t len);
 
 template <typename T>
-T toByteOrder(ByteOrder order, T const& t) {
+auto toByteOrder(ByteOrder order, T const& t) -> T {
   T ret;
   toByteOrder(order, &ret, &t, sizeof(t));
   return ret;
 }
 
 template <typename T>
-T fromByteOrder(ByteOrder order, T const& t) {
+auto fromByteOrder(ByteOrder order, T const& t) -> T {
   T ret;
   fromByteOrder(order, &ret, &t, sizeof(t));
   return ret;
 }
 
 template <typename T>
-T toBigEndian(T const& t) {
+auto toBigEndian(T const& t) -> T {
   return toByteOrder(ByteOrder::BigEndian, t);
 }
 
 template <typename T>
-T fromBigEndian(T const& t) {
+auto fromBigEndian(T const& t) -> T {
   return fromByteOrder(ByteOrder::BigEndian, t);
 }
 
 template <typename T>
-T toLittleEndian(T const& t) {
+auto toLittleEndian(T const& t) -> T {
   return toByteOrder(ByteOrder::LittleEndian, t);
 }
 
 template <typename T>
-T fromLittleEndian(T const& t) {
+auto fromLittleEndian(T const& t) -> T {
   return fromByteOrder(ByteOrder::LittleEndian, t);
 }
 
-inline ByteOrder platformByteOrder() {
+inline auto platformByteOrder() -> ByteOrder {
 #if STAR_LITTLE_ENDIAN
   return ByteOrder::LittleEndian;
 #else
@@ -65,9 +63,9 @@ inline ByteOrder platformByteOrder() {
 }
 
 inline void swapByteOrder(void* ptr, std::size_t len) {
-  std::uint8_t* data = static_cast<std::uint8_t*>(ptr);
+  auto* data = static_cast<std::uint8_t*>(ptr);
   std::uint8_t spare;
-  for (size_t i = 0; i < len / 2; ++i) {
+  for (std::size_t i = 0; i < len / 2; ++i) {
     spare = data[len - 1 - i];
     data[len - 1 - i] = data[i];
     data[i] = spare;
@@ -75,9 +73,9 @@ inline void swapByteOrder(void* ptr, std::size_t len) {
 }
 
 inline void swapByteOrder(void* dest, const void* src, std::size_t len) {
-  const std::uint8_t* srcdata = reinterpret_cast<const std::uint8_t*>(src);
-  std::uint8_t* destdata = reinterpret_cast<std::uint8_t*>(dest);
-  for (size_t i = 0; i < len; ++i)
+  const auto* srcdata = reinterpret_cast<const std::uint8_t*>(src);
+  auto* destdata = reinterpret_cast<std::uint8_t*>(dest);
+  for (std::size_t i = 0; i < len; ++i)
     destdata[len - 1 - i] = srcdata[i];
 }
 
@@ -105,4 +103,4 @@ inline void fromByteOrder(ByteOrder order, void* dest, void const* src, std::siz
     std::memcpy(dest, src, len);
 }
 
-}
+}// namespace Star

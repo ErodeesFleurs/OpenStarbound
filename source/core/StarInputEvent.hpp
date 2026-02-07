@@ -5,9 +5,11 @@
 #include "StarVariant.hpp"
 #include "StarVector.hpp"
 
+import std;
+
 namespace Star {
 
-enum class Key : uint16_t {
+enum class Key : std::uint16_t {
   Backspace,
   Tab,
   Clear,
@@ -152,7 +154,7 @@ enum class Key : uint16_t {
 };
 extern EnumMap<Key> const KeyNames;
 
-enum class KeyMod : uint16_t {
+enum class KeyMod : std::uint16_t {
   NoMod = 0x0000,
   LShift = 0x0001,
   RShift = 0x0002,
@@ -169,13 +171,13 @@ enum class KeyMod : uint16_t {
 };
 extern EnumMap<KeyMod> const KeyModNames;
 
-KeyMod operator|(KeyMod a, KeyMod b);
-KeyMod operator&(KeyMod a, KeyMod b);
-KeyMod operator~(KeyMod a);
-KeyMod& operator|=(KeyMod& a, KeyMod b);
-KeyMod& operator&=(KeyMod& a, KeyMod b);
+auto operator|(KeyMod a, KeyMod b) -> KeyMod;
+auto operator&(KeyMod a, KeyMod b) -> KeyMod;
+auto operator~(KeyMod a) -> KeyMod;
+auto operator|=(KeyMod& a, KeyMod b) -> KeyMod&;
+auto operator&=(KeyMod& a, KeyMod b) -> KeyMod&;
 
-enum class MouseButton : uint8_t {
+enum class MouseButton : std::uint8_t {
   Left,
   Middle,
   Right,
@@ -184,15 +186,15 @@ enum class MouseButton : uint8_t {
 };
 extern EnumMap<MouseButton> const MouseButtonNames;
 
-enum class MouseWheel : uint8_t {
+enum class MouseWheel : std::uint8_t {
   Up,
   Down
 };
 extern EnumMap<MouseWheel> const MouseWheelNames;
 
-typedef uint32_t ControllerId;
+using ControllerId = std::uint32_t;
 
-enum class ControllerAxis : uint8_t {
+enum class ControllerAxis : std::uint8_t {
   LeftX,
   LeftY,
   RightX,
@@ -203,7 +205,7 @@ enum class ControllerAxis : uint8_t {
 };
 extern EnumMap<ControllerAxis> const ControllerAxisNames;
 
-enum class ControllerButton : uint8_t {
+enum class ControllerButton : std::uint8_t {
   A,
   B,
   X,
@@ -278,7 +280,7 @@ struct ControllerButtonUpEvent {
   ControllerButton controllerButton;
 };
 
-typedef Variant<
+using InputEvent = Variant<
     KeyDownEvent,
     KeyUpEvent,
     TextInputEvent,
@@ -288,31 +290,30 @@ typedef Variant<
     MouseWheelEvent,
     ControllerAxisEvent,
     ControllerButtonDownEvent,
-    ControllerButtonUpEvent>
-    InputEvent;
+    ControllerButtonUpEvent>;
 
-inline KeyMod operator|(KeyMod a, KeyMod b) {
-  return (KeyMod)((uint16_t)a | (uint16_t)b);
+inline auto operator|(KeyMod a, KeyMod b) -> KeyMod {
+  return (KeyMod)((std::uint16_t)a | (std::uint16_t)b);
 }
 
-inline KeyMod operator&(KeyMod a, KeyMod b) {
-  return (KeyMod)((uint16_t)a & (uint16_t)b);
+inline auto operator&(KeyMod a, KeyMod b) -> KeyMod {
+  return (KeyMod)((std::uint16_t)a & (std::uint16_t)b);
 }
 
-inline KeyMod operator~(KeyMod a) {
-  return (KeyMod) ~(uint16_t)a;
+inline auto operator~(KeyMod a) -> KeyMod {
+  return (KeyMod) ~(std::uint16_t)a;
 }
 
-inline KeyMod& operator|=(KeyMod& a, KeyMod b) {
-  uint16_t a_cast = (uint16_t)a;
-  a_cast |= (uint16_t)b;
+inline auto operator|=(KeyMod& a, KeyMod b) -> KeyMod& {
+  auto a_cast = (std::uint16_t)a;
+  a_cast |= (std::uint16_t)b;
   a = (KeyMod)a_cast;
   return a;
 }
 
-inline KeyMod& operator&=(KeyMod& a, KeyMod b) {
-  uint16_t a_cast = (uint16_t)a;
-  a_cast &= (uint16_t)b;
+inline auto operator&=(KeyMod& a, KeyMod b) -> KeyMod& {
+  auto a_cast = (std::uint16_t)a;
+  a_cast &= (std::uint16_t)b;
   a = (KeyMod)a_cast;
   return a;
 }

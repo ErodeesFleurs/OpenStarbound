@@ -1,6 +1,7 @@
 #include "StarDirectoryAssetSource.hpp"
 #include "StarFile.hpp"
-#include "StarJsonExtra.hpp"
+
+import std;
 
 namespace Star {
 
@@ -31,26 +32,26 @@ DirectoryAssetSource::DirectoryAssetSource(String const& baseDirectory, StringLi
   m_assetPaths.sort();
 }
 
-JsonObject DirectoryAssetSource::metadata() const {
+auto DirectoryAssetSource::metadata() const -> JsonObject {
   return m_metadata;
 }
 
-StringList DirectoryAssetSource::assetPaths() const {
+auto DirectoryAssetSource::assetPaths() const -> StringList {
   return m_assetPaths;
 }
 
-IODevicePtr DirectoryAssetSource::open(String const& path) {
-  auto file = make_shared<File>(toFilesystem(path));
+auto DirectoryAssetSource::open(String const& path) -> Ptr<IODevice> {
+  auto file = std::make_shared<File>(toFilesystem(path));
   file->open(IOMode::Read);
   return file;
 }
 
-ByteArray DirectoryAssetSource::read(String const& path) {
+auto DirectoryAssetSource::read(String const& path) -> ByteArray {
   auto device = open(path);
   return device->readBytes(device->size());
 }
 
-String DirectoryAssetSource::toFilesystem(String const& path) const {
+auto DirectoryAssetSource::toFilesystem(String const& path) const -> String {
   if (!path.beginsWith("/"))
     throw AssetSourceException::format("Asset path '{}' must be absolute in DirectoryAssetSource::toFilesystem", path);
   else
@@ -72,7 +73,7 @@ void DirectoryAssetSource::setMetadata(JsonObject metadata) {
 }
 
 void DirectoryAssetSource::scanAll(String const& assetDirectory, StringList& output) const {
-  auto shouldIgnore = [this](String const& assetPath) {
+  auto shouldIgnore = [this](String const& assetPath) -> bool {
     for (auto const& pattern : m_ignorePatterns) {
       if (assetPath.regexMatch(pattern, false, false))
         return true;

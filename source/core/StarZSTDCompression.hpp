@@ -1,11 +1,12 @@
 #pragma once
 #include "StarByteArray.hpp"
-#include "StarDataStreamDevices.hpp"
 
-typedef struct ZSTD_CCtx_s ZSTD_CCtx;
-typedef struct ZSTD_DCtx_s ZSTD_DCtx;
-typedef ZSTD_DCtx ZSTD_DStream;
-typedef ZSTD_CCtx ZSTD_CStream;
+using ZSTD_CCtx = struct ZSTD_CCtx_s;
+using ZSTD_DCtx = struct ZSTD_DCtx_s;
+using ZSTD_DStream = ZSTD_DCtx;
+using ZSTD_CStream = ZSTD_CCtx;
+
+import std;
 
 namespace Star {
 
@@ -14,10 +15,10 @@ public:
   CompressionStream();
   ~CompressionStream();
 
-  void compress(const char* in, size_t inLen, ByteArray& out);
+  void compress(const char* in, std::size_t inLen, ByteArray& out);
   void compress(ByteArray const& in, ByteArray& out);
-  ByteArray compress(const char* in, size_t inLen);
-  ByteArray compress(ByteArray const& in);
+  auto compress(const char* in, std::size_t inLen) -> ByteArray;
+  auto compress(ByteArray const& in) -> ByteArray;
 
 private:
   ZSTD_CStream* m_cStream;
@@ -28,13 +29,13 @@ public:
   DecompressionStream();
   ~DecompressionStream();
 
-  void decompress(const char* in, size_t inLen, ByteArray& out);
+  void decompress(const char* in, std::size_t inLen, ByteArray& out);
   void decompress(ByteArray const& in, ByteArray& out);
-  ByteArray decompress(const char* in, size_t inLen);
-  ByteArray decompress(ByteArray const& in);
+  auto decompress(const char* in, std::size_t inLen) -> ByteArray;
+  auto decompress(ByteArray const& in) -> ByteArray;
 
 private:
   ZSTD_DStream* m_dStream;
 };
 
-}
+}// namespace Star

@@ -2,6 +2,8 @@
 
 #include "StarMultiArrayInterpolator.hpp"
 
+import std;
+
 namespace Star {
 
 // Provides a method for storing, retrieving, and interpolating uneven
@@ -11,29 +13,29 @@ namespace Star {
 template <typename ElementT, typename PositionT, size_t RankN>
 class MultiTable {
 public:
-  typedef ElementT Element;
-  typedef PositionT Position;
+  using Element = ElementT;
+  using Position = PositionT;
   static size_t const Rank = RankN;
 
-  typedef Star::MultiArray<ElementT, RankN> MultiArray;
+  using MultiArray = Star::MultiArray<ElementT, RankN>;
 
-  typedef Star::MultiArrayInterpolator2<MultiArray, Position> Interpolator2;
-  typedef Star::MultiArrayInterpolator4<MultiArray, Position> Interpolator4;
-  typedef Star::MultiArrayPiecewiseInterpolator<MultiArray, Position> PiecewiseInterpolator;
+  using Interpolator2 = Star::MultiArrayInterpolator2<MultiArray, Position>;
+  using Interpolator4 = Star::MultiArrayInterpolator4<MultiArray, Position>;
+  using PiecewiseInterpolator = Star::MultiArrayPiecewiseInterpolator<MultiArray, Position>;
 
-  typedef Array<Position, Rank> PositionArray;
-  typedef Array<Position, 2> WeightArray2;
-  typedef Array<Position, 4> WeightArray4;
-  typedef typename MultiArray::SizeArray SizeArray;
-  typedef typename MultiArray::IndexArray IndexArray;
-  typedef List<Position> Range;
-  typedef Array<Range, Rank> RangeArray;
+  using PositionArray = Array<Position, Rank>;
+  using WeightArray2 = Array<Position, 2>;
+  using WeightArray4 = Array<Position, 4>;
+  using SizeArray = typename MultiArray::SizeArray;
+  using IndexArray = typename MultiArray::IndexArray;
+  using Range = List<Position>;
+  using RangeArray = Array<Range, Rank>;
 
-  typedef std::function<WeightArray2(Position)> WeightFunction2;
-  typedef std::function<WeightArray4(Position)> WeightFunction4;
-  typedef std::function<Element(PositionArray const&)> InterpolateFunction;
+  using WeightFunction2 = std::function<WeightArray2(Position)>;
+  using WeightFunction4 = std::function<WeightArray4(Position)>;
+  using InterpolateFunction = std::function<Element(PositionArray const&)>;
 
-  MultiTable() : m_interpolationMode(InterpolationMode::Linear), m_boundMode(BoundMode::Clamp) {}
+  MultiTable() = default;
 
   // Set input ranges on a particular dimension.  Will resize underlying storage
   // to fit range.
@@ -62,19 +64,19 @@ public:
   }
 
   // Get array element based on index.
-  Element const& get(IndexArray const& index) const {
+  auto get(IndexArray const& index) const -> Element const& {
     return m_array(index);
   }
 
-  MultiArray const& array() const {
+  auto array() const -> MultiArray const& {
     return m_array;
   }
 
-  MultiArray& array() {
+  auto array() -> MultiArray& {
     return m_array;
   }
 
-  InterpolationMode interpolationMode() const {
+  [[nodiscard]] auto interpolationMode() const -> InterpolationMode {
     return m_interpolationMode;
   }
 
@@ -82,7 +84,7 @@ public:
     m_interpolationMode = interpolationMode;
   }
 
-  BoundMode boundMode() const {
+  [[nodiscard]] auto boundMode() const -> BoundMode {
     return m_boundMode;
   }
 
@@ -90,7 +92,7 @@ public:
     m_boundMode = boundMode;
   }
 
-  Element interpolate(PositionArray const& coord) const {
+  auto interpolate(PositionArray const& coord) const -> Element {
     if (m_interpolationMode == InterpolationMode::HalfStep) {
       PiecewiseInterpolator piecewiseInterpolator(StepWeightOperator<Position>(), m_boundMode);
       return piecewiseInterpolator.interpolate(m_array, toIndexSpace(coord));
@@ -111,7 +113,7 @@ public:
   }
 
   // Synonym for inteprolate
-  Element operator()(PositionArray const& coord) const {
+  auto operator()(PositionArray const& coord) const -> Element {
     return interpolate(coord);
   }
 
@@ -123,7 +125,7 @@ public:
 
 private:
   template <typename Coordinate>
-  inline PositionArray toIndexSpace(Coordinate const& coord) const {
+  inline auto toIndexSpace(Coordinate const& coord) const -> PositionArray {
     PositionArray indexCoord;
     for (size_t i = 0; i < Rank; ++i)
       indexCoord[i] = inverseLinearInterpolateLower(m_ranges[i].begin(), m_ranges[i].end(), coord[i]);
@@ -133,7 +135,7 @@ private:
   template <typename OpType>
   struct EvalWrapper {
     EvalWrapper(OpType& o, MultiTable const& t)
-      : op(o), table(t) {}
+        : op(o), table(t) {}
 
     template <typename IndexArray>
     void operator()(IndexArray const& indexArray, Element& element) {
@@ -150,17 +152,17 @@ private:
 
   RangeArray m_ranges;
   MultiArray m_array;
-  InterpolationMode m_interpolationMode;
-  BoundMode m_boundMode;
+  InterpolationMode m_interpolationMode{};
+  BoundMode m_boundMode{};
 };
 
-typedef MultiTable<float, float, 2> MultiTable2F;
-typedef MultiTable<double, double, 2> MultiTable2D;
+using MultiTable2F = MultiTable<float, float, 2>;
+using MultiTable2D = MultiTable<double, double, 2>;
 
-typedef MultiTable<float, float, 3> MultiTable3F;
-typedef MultiTable<double, double, 3> MultiTable3D;
+using MultiTable3F = MultiTable<float, float, 3>;
+using MultiTable3D = MultiTable<double, double, 3>;
 
-typedef MultiTable<float, float, 4> MultiTable4F;
-typedef MultiTable<double, double, 4> MultiTable4D;
+using MultiTable4F = MultiTable<float, float, 4>;
+using MultiTable4D = MultiTable<double, double, 4>;
 
-}
+}// namespace Star

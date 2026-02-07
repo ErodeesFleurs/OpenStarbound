@@ -1,7 +1,8 @@
 #pragma once
 
-#include "StarException.hpp"
 #include "StarHash.hpp"
+
+import std;
 
 namespace Star {
 
@@ -11,7 +12,7 @@ namespace Star {
 template <typename T>
 class RefPtr {
 public:
-  typedef T element_type;
+  using element_type = T;
 
   RefPtr();
   explicit RefPtr(T* p, bool addRef = true);
@@ -26,21 +27,21 @@ public:
 
   ~RefPtr();
 
-  RefPtr& operator=(RefPtr const& r);
-  RefPtr& operator=(RefPtr&& r);
+  auto operator=(RefPtr const& r) -> RefPtr&;
+  auto operator=(RefPtr&& r) -> RefPtr&;
 
   template <typename T2>
-  RefPtr& operator=(RefPtr<T2> const& r);
+  auto operator=(RefPtr<T2> const& r) -> RefPtr&;
   template <typename T2>
-  RefPtr& operator=(RefPtr<T2>&& r);
+  auto operator=(RefPtr<T2>&& r) -> RefPtr&;
 
   void reset();
 
   void reset(T* r, bool addRef = true);
 
-  T& operator*() const;
-  T* operator->() const;
-  T* get() const;
+  auto operator*() const -> T&;
+  auto operator->() const -> T*;
+  auto get() const -> T*;
 
   explicit operator bool() const;
 
@@ -52,44 +53,44 @@ private:
 };
 
 template <typename T, typename U>
-bool operator==(RefPtr<T> const& a, RefPtr<U> const& b);
+auto operator==(RefPtr<T> const& a, RefPtr<U> const& b) -> bool;
 
 template <typename T, typename U>
-bool operator!=(RefPtr<T> const& a, RefPtr<U> const& b);
+auto operator!=(RefPtr<T> const& a, RefPtr<U> const& b) -> bool;
 
 template <typename T>
-bool operator==(RefPtr<T> const& a, T* b);
+auto operator==(RefPtr<T> const& a, T* b) -> bool;
 
 template <typename T>
-bool operator!=(RefPtr<T> const& a, T* b);
+auto operator!=(RefPtr<T> const& a, T* b) -> bool;
 
 template <typename T>
-bool operator==(T* a, RefPtr<T> const& b);
+auto operator==(T* a, RefPtr<T> const& b) -> bool;
 
 template <typename T>
-bool operator!=(T* a, RefPtr<T> const& b);
+auto operator!=(T* a, RefPtr<T> const& b) -> bool;
 
 template <typename T, typename U>
-bool operator<(RefPtr<T> const& a, RefPtr<U> const& b);
+auto operator<(RefPtr<T> const& a, RefPtr<U> const& b) -> bool;
 
 template <typename Type1, typename Type2>
-bool is(RefPtr<Type2> const& p);
+auto is(RefPtr<Type2> const& p) -> bool;
 
 template <typename Type1, typename Type2>
-bool is(RefPtr<Type2 const> const& p);
+auto is(RefPtr<Type2 const> const& p) -> bool;
 
 template <typename Type1, typename Type2>
-RefPtr<Type1> as(RefPtr<Type2> const& p);
+auto as(RefPtr<Type2> const& p) -> RefPtr<Type1>;
 
 template <typename Type1, typename Type2>
-RefPtr<Type1 const> as(RefPtr<Type2 const> const& p);
+auto as(RefPtr<Type2 const> const& p) -> RefPtr<Type1 const>;
 
 template <typename T, typename... Args>
-RefPtr<T> make_ref(Args&&... args);
+auto make_ref(Args&&... args) -> RefPtr<T>;
 
 template <typename T>
 struct hash<RefPtr<T>> {
-  size_t operator()(RefPtr<T> const& a) const;
+  auto operator()(RefPtr<T> const& a) const -> std::size_t;
 
   hash<T*> hasher;
 };
@@ -106,22 +107,22 @@ protected:
   virtual ~RefCounter() = default;
 
 private:
-  size_t m_refCounter;
+  std::size_t m_refCounter{};
 };
 
 template <typename T>
 RefPtr<T>::RefPtr()
-  : m_ptr(nullptr) {}
+    : m_ptr(nullptr) {}
 
 template <typename T>
 RefPtr<T>::RefPtr(T* p, bool addRef)
-  : m_ptr(nullptr) {
+    : m_ptr(nullptr) {
   reset(p, addRef);
 }
 
 template <typename T>
 RefPtr<T>::RefPtr(RefPtr const& r)
-  : RefPtr(r.m_ptr) {}
+    : RefPtr(r.m_ptr) {}
 
 template <typename T>
 RefPtr<T>::RefPtr(RefPtr&& r) {
@@ -132,7 +133,7 @@ RefPtr<T>::RefPtr(RefPtr&& r) {
 template <typename T>
 template <typename T2>
 RefPtr<T>::RefPtr(RefPtr<T2> const& r)
-  : RefPtr(r.m_ptr) {}
+    : RefPtr(r.m_ptr) {}
 
 template <typename T>
 template <typename T2>
@@ -148,13 +149,13 @@ RefPtr<T>::~RefPtr() {
 }
 
 template <typename T>
-RefPtr<T>& RefPtr<T>::operator=(RefPtr const& r) {
+auto RefPtr<T>::operator=(RefPtr const& r) -> RefPtr<T>& {
   reset(r.m_ptr);
   return *this;
 }
 
 template <typename T>
-RefPtr<T>& RefPtr<T>::operator=(RefPtr&& r) {
+auto RefPtr<T>::operator=(RefPtr&& r) -> RefPtr<T>& {
   if (m_ptr)
     refPtrDecRef(m_ptr);
 
@@ -165,14 +166,14 @@ RefPtr<T>& RefPtr<T>::operator=(RefPtr&& r) {
 
 template <typename T>
 template <typename T2>
-RefPtr<T>& RefPtr<T>::operator=(RefPtr<T2> const& r) {
+auto RefPtr<T>::operator=(RefPtr<T2> const& r) -> RefPtr<T>& {
   reset(r.m_ptr);
   return *this;
 }
 
 template <typename T>
 template <typename T2>
-RefPtr<T>& RefPtr<T>::operator=(RefPtr<T2>&& r) {
+auto RefPtr<T>::operator=(RefPtr<T2>&& r) -> RefPtr<T>& {
   if (m_ptr)
     refPtrDecRef(m_ptr);
 
@@ -201,17 +202,17 @@ void RefPtr<T>::reset(T* r, bool addRef) {
 }
 
 template <typename T>
-T& RefPtr<T>::operator*() const {
+auto RefPtr<T>::operator*() const -> T& {
   return *m_ptr;
 }
 
 template <typename T>
-T* RefPtr<T>::operator->() const {
+auto RefPtr<T>::operator->() const -> T* {
   return m_ptr;
 }
 
 template <typename T>
-T* RefPtr<T>::get() const {
+auto RefPtr<T>::get() const -> T* {
   return m_ptr;
 }
 
@@ -221,67 +222,67 @@ RefPtr<T>::operator bool() const {
 }
 
 template <typename T, typename U>
-bool operator==(RefPtr<T> const& a, RefPtr<U> const& b) {
+auto operator==(RefPtr<T> const& a, RefPtr<U> const& b) -> bool {
   return a.get() == b.get();
 }
 
 template <typename T, typename U>
-bool operator!=(RefPtr<T> const& a, RefPtr<U> const& b) {
+auto operator!=(RefPtr<T> const& a, RefPtr<U> const& b) -> bool {
   return a.get() != b.get();
 }
 
 template <typename T>
-bool operator==(RefPtr<T> const& a, T* b) {
+auto operator==(RefPtr<T> const& a, T* b) -> bool {
   return a.get() == b;
 }
 
 template <typename T>
-bool operator!=(RefPtr<T> const& a, T* b) {
+auto operator!=(RefPtr<T> const& a, T* b) -> bool {
   return a.get() != b;
 }
 
 template <typename T>
-bool operator==(T* a, RefPtr<T> const& b) {
+auto operator==(T* a, RefPtr<T> const& b) -> bool {
   return a == b.get();
 }
 
 template <typename T>
-bool operator!=(T* a, RefPtr<T> const& b) {
+auto operator!=(T* a, RefPtr<T> const& b) -> bool {
   return a != b.get();
 }
 
 template <typename T, typename U>
-bool operator<(RefPtr<T> const& a, RefPtr<U> const& b) {
+auto operator<(RefPtr<T> const& a, RefPtr<U> const& b) -> bool {
   return a.get() < b.get();
 }
 
 template <typename Type1, typename Type2>
-bool is(RefPtr<Type2> const& p) {
+auto is(RefPtr<Type2> const& p) -> bool {
   return (bool)dynamic_cast<Type1*>(p.get());
 }
 
 template <typename Type1, typename Type2>
-bool is(RefPtr<Type2 const> const& p) {
+auto is(RefPtr<Type2 const> const& p) -> bool {
   return (bool)dynamic_cast<Type1 const*>(p.get());
 }
 
 template <typename Type1, typename Type2>
-RefPtr<Type1> as(RefPtr<Type2> const& p) {
+auto as(RefPtr<Type2> const& p) -> RefPtr<Type1> {
   return RefPtr<Type1>(dynamic_cast<Type1*>(p.get()));
 }
 
 template <typename Type1, typename Type2>
-RefPtr<Type1 const> as(RefPtr<Type2 const> const& p) {
+auto as(RefPtr<Type2 const> const& p) -> RefPtr<Type1 const> {
   return RefPtr<Type1>(dynamic_cast<Type1 const*>(p.get()));
 }
 
 template <typename T, typename... Args>
-RefPtr<T> make_ref(Args&&... args) {
+auto make_ref(Args&&... args) -> RefPtr<T> {
   return RefPtr<T>(new T(std::forward<Args>(args)...));
 }
 
 template <typename T>
-size_t hash<RefPtr<T>>::operator()(RefPtr<T> const& a) const {
+auto hash<RefPtr<T>>::operator()(RefPtr<T> const& a) const -> std::size_t {
   return hasher(a.get());
 }
 
@@ -294,7 +295,6 @@ inline void refPtrDecRef(RefCounter* p) {
     delete p;
 }
 
-inline RefCounter::RefCounter()
-  : m_refCounter(0) {}
+inline RefCounter::RefCounter() = default;
 
-}
+}// namespace Star

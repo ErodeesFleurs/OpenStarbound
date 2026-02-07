@@ -1,9 +1,13 @@
 #pragma once
 
-#include "StarDataStream.hpp"
-#include "StarVariant.hpp"
-#include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
+#include "StarDataStream.hpp"
+#include "StarGameTypes.hpp"
+#include "StarLiquidTypes.hpp"
+#include "StarMaterialTypes.hpp"
+#include "StarVariant.hpp"
+
+import std;
 
 namespace Star {
 
@@ -15,8 +19,8 @@ struct PlaceMaterial {
   std::optional<MaterialHue> materialHueShift;
   TileCollisionOverride collisionOverride = TileCollisionOverride::None;
 };
-DataStream& operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement);
-DataStream& operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement);
+auto operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement) -> DataStream&;
+auto operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement) -> DataStream&;
 
 struct PlaceMod {
   TileLayer layer;
@@ -26,24 +30,24 @@ struct PlaceMod {
   // environment.
   std::optional<MaterialHue> modHueShift;
 };
-DataStream& operator>>(DataStream& ds, PlaceMod& tileModPlacement);
-DataStream& operator<<(DataStream& ds, PlaceMod const& tileModPlacement);
+auto operator>>(DataStream& ds, PlaceMod& tileModPlacement) -> DataStream&;
+auto operator<<(DataStream& ds, PlaceMod const& tileModPlacement) -> DataStream&;
 
 struct PlaceMaterialColor {
   TileLayer layer;
   MaterialColorVariant color;
 };
-DataStream& operator>>(DataStream& ds, PlaceMaterialColor& tileMaterialColorPlacement);
-DataStream& operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialColorPlacement);
+auto operator>>(DataStream& ds, PlaceMaterialColor& tileMaterialColorPlacement) -> DataStream&;
+auto operator<<(DataStream& ds, PlaceMaterialColor const& tileMaterialColorPlacement) -> DataStream&;
 
 struct PlaceLiquid {
   LiquidId liquid;
   float liquidLevel;
 };
-DataStream& operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement);
-DataStream& operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
+auto operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement) -> DataStream&;
+auto operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement) -> DataStream&;
 
-typedef MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid> TileModification;
-typedef List<pair<Vec2I, TileModification>> TileModificationList;
+using TileModification = MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid>;
+using TileModificationList = List<std::pair<Vec2I, TileModification>>;
 
-}
+}// namespace Star

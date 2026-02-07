@@ -1,38 +1,40 @@
 #pragma once
 
 #include "StarDamageTypes.hpp"
-#include "StarWorldGeometry.hpp"
 #include "StarStatusTypes.hpp"
+#include "StarWorldGeometry.hpp"
+
+import std;
 
 namespace Star {
 
 struct DamageSource {
-  typedef MVariant<PolyF, Line2F> DamageArea;
-  typedef MVariant<float, Vec2F> Knockback;
+  using DamageArea = MVariant<PolyF, Line2F>;
+  using Knockback = MVariant<float, Vec2F>;
 
   DamageSource();
   DamageSource(Json const& v);
   DamageSource(DamageType damageType,
-      DamageArea damageArea,
-      float damage,
-      bool trackSourceEntity,
-      EntityId sourceEntityId,
-      EntityDamageTeam team,
-      std::optional<String> damageRepeatGroup,
-      std::optional<float> damageRepeatTimeout,
-      String damageSourceKind,
-      List<EphemeralStatusEffect> statusEffects,
-      Knockback knockback,
-      bool rayCheck);
+               DamageArea damageArea,
+               float damage,
+               bool trackSourceEntity,
+               EntityId sourceEntityId,
+               EntityDamageTeam team,
+               std::optional<String> damageRepeatGroup,
+               std::optional<float> damageRepeatTimeout,
+               String damageSourceKind,
+               List<EphemeralStatusEffect> statusEffects,
+               Knockback knockback,
+               bool rayCheck);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  DamageSource& translate(Vec2F const& position);
+  auto translate(Vec2F const& position) -> DamageSource&;
 
-  bool intersectsWithPoly(WorldGeometry const& worldGeometry, PolyF const& poly) const;
-  Vec2F knockbackMomentum(WorldGeometry const& worldGeometry, Vec2F const& targetCenter) const;
+  [[nodiscard]] auto intersectsWithPoly(WorldGeometry const& worldGeometry, PolyF const& poly) const -> bool;
+  [[nodiscard]] auto knockbackMomentum(WorldGeometry const& worldGeometry, Vec2F const& targetCenter) const -> Vec2F;
 
-  bool operator==(DamageSource const& rhs) const;
+  auto operator==(DamageSource const& rhs) const -> bool;
 
   DamageType damageType;
   DamageArea damageArea;
@@ -62,21 +64,21 @@ struct DamageSource {
   bool rayCheck;
 };
 
-DataStream& operator<<(DataStream& ds, DamageSource const& damageSource);
-DataStream& operator>>(DataStream& ds, DamageSource& damageSource);
+auto operator<<(DataStream& ds, DamageSource const& damageSource) -> DataStream&;
+auto operator>>(DataStream& ds, DamageSource& damageSource) -> DataStream&;
 
 struct DamageRequest {
   DamageRequest();
   DamageRequest(Json const& v);
   DamageRequest(HitType hitType,
-      DamageType type,
-      float damage,
-      Vec2F const& knockbackMomentum,
-      EntityId sourceEntityId,
-      String const& damageSourceKind,
-      List<EphemeralStatusEffect> const& statusEffects);
+                DamageType type,
+                float damage,
+                Vec2F const& knockbackMomentum,
+                EntityId sourceEntityId,
+                String const& damageSourceKind,
+                List<EphemeralStatusEffect> const& statusEffects);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   HitType hitType;
   DamageType damageType;
@@ -89,22 +91,22 @@ struct DamageRequest {
   List<EphemeralStatusEffect> statusEffects;
 };
 
-DataStream& operator<<(DataStream& ds, DamageRequest const& damageRequest);
-DataStream& operator>>(DataStream& ds, DamageRequest& damageRequest);
+auto operator<<(DataStream& ds, DamageRequest const& damageRequest) -> DataStream&;
+auto operator>>(DataStream& ds, DamageRequest& damageRequest) -> DataStream&;
 
 struct DamageNotification {
   DamageNotification();
   DamageNotification(Json const& v);
   DamageNotification(EntityId sourceEntityId,
-      EntityId targetEntityId,
-      Vec2F position,
-      float damageDealt,
-      float healthLost,
-      HitType hitType,
-      String damageSourceKind,
-      String targetMaterialKind);
+                     EntityId targetEntityId,
+                     Vec2F position,
+                     float damageDealt,
+                     float healthLost,
+                     HitType hitType,
+                     String damageSourceKind,
+                     String targetMaterialKind);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   EntityId sourceEntityId;
   EntityId targetEntityId;
@@ -116,6 +118,6 @@ struct DamageNotification {
   String targetMaterialKind;
 };
 
-DataStream& operator<<(DataStream& ds, DamageNotification const& damageNotification);
-DataStream& operator>>(DataStream& ds, DamageNotification& damageNotification);
-}
+auto operator<<(DataStream& ds, DamageNotification const& damageNotification) -> DataStream&;
+auto operator>>(DataStream& ds, DamageNotification& damageNotification) -> DataStream&;
+}// namespace Star

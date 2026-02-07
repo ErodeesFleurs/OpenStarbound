@@ -1,39 +1,44 @@
 #pragma once
 
-#include "StarPerlin.hpp"
-#include "StarWeightedPool.hpp"
 #include "StarBiMap.hpp"
-#include "StarPlant.hpp"
-#include "StarTreasure.hpp"
+#include "StarException.hpp"
+#include "StarPerlin.hpp"
+#include "StarPlantDatabase.hpp"
+#include "StarString.hpp"
 #include "StarStrongTypedef.hpp"
+#include "StarWeightedPool.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(BiomeItemDistribution);
+using BiomeException = ExceptionDerived<"BiomeException">;
 
-STAR_EXCEPTION(BiomeException, StarException);
-
-typedef pair<TreeVariant, TreeVariant> TreePair;
+using TreePair = std::pair<TreeVariant, TreeVariant>;
 
 // Weighted pairs of object name / parameters.
-typedef WeightedPool<pair<String, Json>> ObjectPool;
+using ObjectPool = WeightedPool<std::pair<String, Json>>;
 
-strong_typedef(String, TreasureBoxSet);
-strong_typedef(StringSet, MicroDungeonNames);
+using TreasureBoxSet = StrongTypedef<String>;
+using MicroDungeonNames = StrongTypedef<StringSet>;
 
-typedef Variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames> BiomeItem;
-BiomeItem variantToBiomeItem(Json const& store);
-Json variantFromBiomeItem(BiomeItem const& biomeItem);
+using BiomeItem = Variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames>;
+auto variantToBiomeItem(Json const& store) -> BiomeItem;
+auto variantFromBiomeItem(BiomeItem const& biomeItem) -> Json;
 
-enum class BiomePlacementArea { Surface, Underground };
-enum class BiomePlacementMode { Floor, Ceiling, Background, Ocean };
+enum class BiomePlacementArea { Surface,
+                                Underground };
+enum class BiomePlacementMode { Floor,
+                                Ceiling,
+                                Background,
+                                Ocean };
 extern EnumMap<BiomePlacementMode> const BiomePlacementModeNames;
 
 struct BiomeItemPlacement {
   BiomeItemPlacement(BiomeItem item, Vec2I position, float priority);
 
   // Orders by priority
-  bool operator<(BiomeItemPlacement const& rhs) const;
+  auto operator<(BiomeItemPlacement const& rhs) const -> bool;
 
   BiomeItem item;
   Vec2I position;
@@ -47,20 +52,20 @@ public:
     PerlinF weight;
   };
 
-  static std::optional<BiomeItem> createItem(Json const& itemSettings, RandomSource& rand, float biomeHueShift);
+  static auto createItem(Json const& itemSettings, RandomSource& rand, float biomeHueShift) -> std::optional<BiomeItem>;
 
   BiomeItemDistribution();
-  BiomeItemDistribution(Json const& config, uint64_t seed, float biomeHueShift = 0.0f);
+  BiomeItemDistribution(Json const& config, std::uint64_t seed, float biomeHueShift = 0.0f);
   BiomeItemDistribution(Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  BiomePlacementMode mode() const;
-  List<BiomeItem> allItems() const;
+  [[nodiscard]] auto mode() const -> BiomePlacementMode;
+  [[nodiscard]] auto allItems() const -> List<BiomeItem>;
 
   // Returns the best BiomeItem for this position out of the weighted item set,
   // if the density function specifies that an item should go in this position.
-  std::optional<BiomeItemPlacement> itemToPlace(int x, int y) const;
+  [[nodiscard]] auto itemToPlace(int x, int y) const -> std::optional<BiomeItemPlacement>;
 
 private:
   enum class DistributionType {
@@ -79,7 +84,7 @@ private:
   // Used if the distribution type is Random
 
   float m_blockProbability;
-  uint64_t m_blockSeed;
+  std::uint64_t m_blockSeed;
   List<BiomeItem> m_randomItems;
 
   // Used if the distribution type is Periodic
@@ -93,7 +98,7 @@ private:
   // select one of the items (with the highest weight) out of a list of items,
   // causing items to be grouped spatially in a way determined by the shape of
   // each weight function.
-  List<pair<BiomeItem, PerlinF>> m_weightedItems;
+  List<std::pair<BiomeItem, PerlinF>> m_weightedItems;
 };
 
-}
+}// namespace Star

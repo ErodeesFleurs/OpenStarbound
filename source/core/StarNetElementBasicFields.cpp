@@ -1,9 +1,11 @@
 #include "StarNetElementBasicFields.hpp"
 
+import std;
+
 namespace Star {
 
 void NetElementSize::readData(DataStream& ds, size_t& v) const {
-  uint64_t s = ds.readVlqU();
+  std::uint64_t s = ds.readVlqU();
   if (s == 0)
     v = std::numeric_limits<std::size_t>::max();
   else
@@ -29,14 +31,14 @@ void NetElementEvent::trigger() {
   set(get() + 1);
 }
 
-uint64_t NetElementEvent::pullOccurrences() {
-  uint64_t occurrences = get();
-  uint64_t unchecked = occurrences - m_pulledOccurrences;
+auto NetElementEvent::pullOccurrences() -> std::uint64_t {
+  std::uint64_t occurrences = get();
+  std::uint64_t unchecked = occurrences - m_pulledOccurrences;
   m_pulledOccurrences = occurrences;
   return unchecked;
 }
 
-bool NetElementEvent::pullOccurred() {
+auto NetElementEvent::pullOccurred() -> bool {
   return pullOccurrences() != 0;
 }
 
@@ -60,4 +62,4 @@ void NetElementEvent::updated() {
     m_pulledOccurrences = get();
 }
 
-}
+}// namespace Star

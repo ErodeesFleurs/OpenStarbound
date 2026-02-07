@@ -1,20 +1,17 @@
 #pragma once
 
+#include "StarDataStream.hpp"
 #include "StarGameTypes.hpp"
 #include "StarWorldGeometry.hpp"
-#include "StarDataStream.hpp"
 
 namespace Star {
-
-STAR_CLASS(WireCoordinator);
-STAR_CLASS(WireConnector);
 
 enum class WireDirection {
   Input,
   Output
 };
 
-WireDirection otherWireDirection(WireDirection direction);
+auto otherWireDirection(WireDirection direction) -> WireDirection;
 
 // Identifier for a specific WireNode in a WireEntity, node indexes for input
 // and output nodes are separate.
@@ -23,8 +20,8 @@ struct WireNode {
   size_t nodeIndex;
 };
 
-DataStream& operator>>(DataStream& ds, WireNode& wireNode);
-DataStream& operator<<(DataStream& ds, WireNode const& wireNode);
+auto operator>>(DataStream& ds, WireNode& wireNode) -> DataStream&;
+auto operator<<(DataStream& ds, WireNode const& wireNode) -> DataStream&;
 
 // Connection from a given WireNode to another WireNode, the direction must be
 // implied based on the context.
@@ -32,22 +29,22 @@ struct WireConnection {
   Vec2I entityLocation;
   size_t nodeIndex;
 
-  bool operator==(WireConnection const& wireConnection) const;
+  auto operator==(WireConnection const& wireConnection) const -> bool;
 };
 
 template <>
 struct hash<WireConnection> {
-  size_t operator()(WireConnection const& wireConnection) const;
+  auto operator()(WireConnection const& wireConnection) const -> size_t;
 };
 
-DataStream& operator>>(DataStream& ds, WireConnection& wireConnection);
-DataStream& operator<<(DataStream& ds, WireConnection const& wireConnection);
+auto operator>>(DataStream& ds, WireConnection& wireConnection) -> DataStream&;
+auto operator<<(DataStream& ds, WireConnection const& wireConnection) -> DataStream&;
 
 class WireCoordinator {
 public:
-  virtual ~WireCoordinator() {}
+  virtual ~WireCoordinator() = default;
 
-  virtual bool readInputConnection(WireConnection const& connection) = 0;
+  virtual auto readInputConnection(WireConnection const& connection) -> bool = 0;
 };
 
 class WireConnector {
@@ -59,10 +56,10 @@ public:
     Nothing
   };
 
-  virtual ~WireConnector() {}
+  virtual ~WireConnector() = default;
 
-  virtual SwingResult swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) = 0;
-  virtual bool connecting() = 0;
+  virtual auto swing(WorldGeometry const& geometry, Vec2F position, FireMode mode) -> SwingResult = 0;
+  virtual auto connecting() -> bool = 0;
 };
 
-}
+}// namespace Star

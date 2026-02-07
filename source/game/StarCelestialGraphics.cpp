@@ -1,37 +1,36 @@
 #include "StarCelestialGraphics.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarLexicalCast.hpp"
+#include "StarCasting.hpp"
+#include "StarCelestialDatabase.hpp"
+#include "StarConfig.hpp"
 #include "StarFormat.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarCelestialDatabase.hpp"
-#include "StarParallax.hpp"
-#include "StarRoot.hpp"
-#include "StarBiomeDatabase.hpp"
-#include "StarTerrainDatabase.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarLiquidsDatabase.hpp"
-#include "StarAssets.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
-List<pair<String, float>> CelestialGraphics::drawSystemPlanetaryObject(CelestialParameters const& parameters) {
+auto CelestialGraphics::drawSystemPlanetaryObject(CelestialParameters const& parameters) -> List<std::pair<String, float>> {
   return {{parameters.getParameter("smallImage").toString(), parameters.getParameter("smallImageScale").toFloat()}};
 }
 
-List<pair<String, float>> CelestialGraphics::drawSystemCentralBody(CelestialParameters const& parameters) {
+auto CelestialGraphics::drawSystemCentralBody(CelestialParameters const& parameters) -> List<std::pair<String, float>> {
   return {{parameters.getParameter("image").toString(), parameters.getParameter("imageScale").toFloat()}};
 }
 
-List<pair<String, float>> CelestialGraphics::drawWorld(
-    CelestialParameters const& celestialParameters, std::optional<CelestialParameters> const& overrideShadowParameters) {
+auto CelestialGraphics::drawWorld(
+  CelestialParameters const& celestialParameters, std::optional<CelestialParameters> const& overrideShadowParameters) -> List<std::pair<String, float>> {
   auto& root = Root::singleton();
   auto assets = root.assets();
-  auto liquidsDatabase = root.liquidsDatabase();
+  ConstPtr<LiquidsDatabase> liquidsDatabase = root.liquidsDatabase();
 
-  CelestialParameters shadowParameters = overrideShadowParameters.value(celestialParameters);
+  CelestialParameters shadowParameters = overrideShadowParameters.value_or(celestialParameters);
 
   String type = celestialParameters.getParameter("worldType").toString();
 
-  List<pair<String, float>> layers;
+  List<std::pair<String, float>> layers;
 
   if (type == "Terrestrial") {
     auto terrestrialParameters = as<TerrestrialWorldParameters>(celestialParameters.visitableParameters());
@@ -39,7 +38,7 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
       return {};
 
     auto gfxConfig = jsonMerge(assets->json("/celestial.config:terrestrialGraphics").get("default"),
-        assets->json("/celestial.config:terrestrialGraphics").get(terrestrialParameters->typeName, JsonObject()));
+                               assets->json("/celestial.config:terrestrialGraphics").get(terrestrialParameters->typeName, JsonObject()));
 
     auto liquidImages = gfxConfig.getString("liquidImages", "");
     auto baseImages = gfxConfig.getString("baseImages", "");
@@ -55,8 +54,7 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
       layers.append({std::move(liquidBaseImage), imageScale});
     } else {
       if (baseCount > 0) {
-        String baseLayer = strf("{}?hueshift={}", baseImages.replace("<biome>",
-            terrestrialParameters->primaryBiome).replace("<num>", toString(baseCount)), terrestrialParameters->hueShift);
+        String baseLayer = strf("{}?hueshift={}", baseImages.replace("<biome>", terrestrialParameters->primaryBiome).replace("<num>", toString(baseCount)), terrestrialParameters->hueShift);
         layers.append({std::move(baseLayer), imageScale});
       }
     }
@@ -134,18 +132,18 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
   return layers;
 }
 
-List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParameters const& celestialParameters) {
+auto CelestialGraphics::worldHorizonImages(CelestialParameters const& celestialParameters) -> List<std::pair<String, String>> {
   auto& root = Root::singleton();
   auto assets = root.assets();
-  auto liquidsDatabase = root.liquidsDatabase();
+  ConstPtr<LiquidsDatabase> liquidsDatabase = root.liquidsDatabase();
 
-  auto getLR = [](String const& base) -> pair<String, String> {
-    return pair<String, String>(base.replace("<selector>", "l"), base.replace("<selector>", "r"));
+  auto getLR = [](String const& base) -> std::pair<String, String> {
+    return {base.replace("<selector>", "l"), base.replace("<selector>", "r")};
   };
 
   String type = celestialParameters.getParameter("worldType").toString();
 
-  List<pair<String, String>> res;
+  List<std::pair<String, String>> res;
 
   if (type == "Terrestrial") {
     auto terrestrialParameters = as<TerrestrialWorldParameters>(celestialParameters.visitableParameters());
@@ -153,7 +151,7 @@ List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParame
       return {};
 
     auto gfxConfig = jsonMerge(assets->json("/celestial.config:terrestrialHorizonGraphics").get("default"),
-        assets->json("/celestial.config:terrestrialHorizonGraphics").get(terrestrialParameters->typeName, JsonObject()));
+                               assets->json("/celestial.config:terrestrialHorizonGraphics").get(terrestrialParameters->typeName, JsonObject()));
 
     String baseImages = gfxConfig.getString("baseImages");
     String atmoTextures = gfxConfig.getString("atmosphereTextures");
@@ -188,9 +186,9 @@ List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParame
 
       String leftMask, rightMask;
       if (!planetMaskListL.empty())
-        leftMask = "?" + imageOperationToString(AlphaMaskImageOperation{AlphaMaskImageOperation::Additive, planetMaskListL, {0, 0}});
+        leftMask = "?" + imageOperationToString(AlphaMaskImageOperation{.mode = AlphaMaskImageOperation::Additive, .maskImages = planetMaskListL, .offset = {0, 0}});
       if (!planetMaskListR.empty())
-        rightMask = "?" + imageOperationToString(AlphaMaskImageOperation{AlphaMaskImageOperation::Additive, planetMaskListR, {0, 0}});
+        rightMask = "?" + imageOperationToString(AlphaMaskImageOperation{.mode = AlphaMaskImageOperation::Additive, .maskImages = planetMaskListR, .offset = {0, 0}});
 
       auto toAppend = getLR(baseImages + biomeHueShift);
       res.append({toAppend.first + leftMask, toAppend.second + rightMask});
@@ -216,7 +214,7 @@ List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParame
   return res;
 }
 
-int CelestialGraphics::worldRadialPosition(CelestialParameters const& parameters) {
+auto CelestialGraphics::worldRadialPosition(CelestialParameters const& parameters) -> int {
   if (parameters.coordinate().isPlanetaryBody())
     return staticRandomU32(parameters.seed(), "RadialNumber") % planetRadialPositions();
   if (parameters.coordinate().isSatelliteBody())
@@ -224,15 +222,15 @@ int CelestialGraphics::worldRadialPosition(CelestialParameters const& parameters
   return 0;
 }
 
-int CelestialGraphics::planetRadialPositions() {
+auto CelestialGraphics::planetRadialPositions() -> int {
   return Root::singleton().assets()->json("/celestial.config:planetRadialSlots").toInt();
 }
 
-int CelestialGraphics::satelliteRadialPositions() {
+auto CelestialGraphics::satelliteRadialPositions() -> int {
   return Root::singleton().assets()->json("/celestial.config:satelliteRadialSlots").toInt();
 }
 
-List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double time) {
+auto CelestialGraphics::drawSystemTwinkle(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& system, double time) -> List<std::pair<String, float>> {
   auto parameters = celestialDatabase->parameters(system);
   if (!parameters)
     return {};
@@ -250,19 +248,19 @@ List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabase
   return {{std::move(twinkleBackground), 1.0f}, {std::move(twinkleFrame), twinkleScale}};
 }
 
-List<pair<String, float>> CelestialGraphics::drawSystemPlanetaryObject(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {
+auto CelestialGraphics::drawSystemPlanetaryObject(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> List<std::pair<String, float>> {
   if (auto params = celestialDatabase->parameters(coordinate))
     return drawSystemPlanetaryObject(std::move(*params));
   return {};
 }
 
-List<pair<String, float>> CelestialGraphics::drawSystemCentralBody(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {
+auto CelestialGraphics::drawSystemCentralBody(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> List<std::pair<String, float>> {
   if (auto params = celestialDatabase->parameters(coordinate))
     return drawSystemCentralBody(std::move(*params));
   return {};
 }
 
-List<pair<String, float>> CelestialGraphics::drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {
+auto CelestialGraphics::drawWorld(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> List<std::pair<String, float>> {
   auto params = celestialDatabase->parameters(coordinate);
   if (!params)
     return {};
@@ -273,16 +271,16 @@ List<pair<String, float>> CelestialGraphics::drawWorld(CelestialDatabasePtr cele
     return drawWorld(std::move(*params));
 }
 
-List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {
+auto CelestialGraphics::worldHorizonImages(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> List<std::pair<String, String>> {
   if (auto params = celestialDatabase->parameters(coordinate))
     return worldHorizonImages(std::move(*params));
   return {};
 }
 
-int CelestialGraphics::worldRadialPosition(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate) {
+auto CelestialGraphics::worldRadialPosition(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> int {
   if (auto params = celestialDatabase->parameters(coordinate))
     return worldRadialPosition(std::move(*params));
   return 0;
 }
 
-}
+}// namespace Star

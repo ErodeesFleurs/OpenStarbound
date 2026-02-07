@@ -34,4 +34,4 @@ private:
   Ptr<IODevice> m_device;
 };
 
-}
+}// namespace Star

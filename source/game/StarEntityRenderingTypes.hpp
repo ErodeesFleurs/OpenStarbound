@@ -1,13 +1,16 @@
 #pragma once
 
+#include "StarBiMap.hpp"
 #include "StarJson.hpp"
 #include "StarColor.hpp"
-#include "StarDrawable.hpp"
-#include "StarGameTypes.hpp"
+#include "StarLiquidTypes.hpp"
+#include "StarMaterialTypes.hpp"
+
+import std;
 
 namespace Star {
 
-typedef uint32_t EntityRenderLayer;
+using EntityRenderLayer = std::uint32_t;
 
 unsigned const RenderLayerUpperBits = 5;
 unsigned const RenderLayerLowerBits = 32 - RenderLayerUpperBits;
@@ -36,7 +39,7 @@ EntityRenderLayer const RenderLayerForegroundOverlay = 20 << RenderLayerLowerBit
 EntityRenderLayer const RenderLayerFrontParticle = 21 << RenderLayerLowerBits;
 EntityRenderLayer const RenderLayerOverlay = 22 << RenderLayerLowerBits;
 
-EntityRenderLayer parseRenderLayer(String renderLayer);
+auto parseRenderLayer(String renderLayer) -> EntityRenderLayer;
 
 struct PreviewTile {
   PreviewTile();

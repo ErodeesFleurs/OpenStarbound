@@ -1,13 +1,11 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarThread.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(Listener);
-STAR_CLASS(CallbackListener);
-STAR_CLASS(TrackerListener);
-STAR_CLASS(ListenerGroup);
+namespace Star {
 
 class Listener {
 public:
@@ -17,32 +15,32 @@ public:
 
 class CallbackListener : public Listener {
 public:
-  CallbackListener(function<void()> callback);
+  CallbackListener(std::function<void()> callback);
 
 protected:
-  virtual void trigger() override;
+  void trigger() override;
 
 private:
-  function<void()> callback;
+  std::function<void()> callback;
 };
 
 class TrackerListener : public Listener {
 public:
   TrackerListener();
 
-  bool pullTriggered();
+  auto pullTriggered() -> bool;
 
 protected:
-  virtual void trigger() override;
+  void trigger() override;
 
 private:
-  atomic<bool> triggered;
+  std::atomic<bool> triggered;
 };
 
 class ListenerGroup {
 public:
-  void addListener(ListenerWeakPtr listener);
-  void removeListener(ListenerWeakPtr listener);
+  void addListener(WeakPtr<Listener> listener);
+  void removeListener(WeakPtr<Listener> listener);
   void clearExpiredListeners();
   void clearAllListeners();
 
@@ -50,10 +48,10 @@ public:
 
 private:
   Mutex m_mutex;
-  std::set<ListenerWeakPtr, std::owner_less<ListenerWeakPtr>> m_listeners;
+  std::set<WeakPtr<Listener>, std::owner_less<WeakPtr<Listener>>> m_listeners;
 };
 
-inline bool TrackerListener::pullTriggered() {
+inline auto TrackerListener::pullTriggered() -> bool {
   return triggered.exchange(false);
 }
 

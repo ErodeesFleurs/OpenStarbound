@@ -1,12 +1,11 @@
+#include "StarConfig.hpp"
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
 #include "StarRandom.hpp"
 #include "StarEncode.hpp"
 
-#include <errno.h>
-#include <string.h>
-#include <limits.h>
-#include <stdlib.h>
+#include <cstdlib>
+#include <cerrno>
 #include <dirent.h>
 #include <unistd.h>
 #include <libgen.h>
@@ -20,28 +19,30 @@
 #include <sys/sysctl.h>
 #endif
 
+import std;
+
 namespace Star {
 
 namespace {
-  int fdFromHandle(void* ptr) {
+  auto fdFromHandle(void* ptr) -> int {
     return (int)(intptr_t)ptr;
   }
 
-  void* handleFromFd(int handle) {
+  auto handleFromFd(int handle) -> void* {
     return (void*)(intptr_t)handle;
   }
 }
 
-String File::convertDirSeparators(String const& path) {
+auto File::convertDirSeparators(String const& path) -> String {
   return path.replace("\\", "/");
 }
 
-String File::currentDirectory() {
-  char buffer[PATH_MAX];
-  if (::getcwd(buffer, PATH_MAX) == NULL)
+auto File::currentDirectory() -> String {
+  std::array<char, PATH_MAX> buffer;
+  if (::getcwd(buffer.data(), PATH_MAX) == NULL)
     throw IOException("getcwd failed");
 
-  return String(buffer);
+  return {buffer.data()};
 }
 
 void File::changeDirectory(const String& dirName) {
@@ -51,13 +52,13 @@ void File::changeDirectory(const String& dirName) {
 
 void File::makeDirectory(String const& dirName) {
   if (::mkdir(dirName.utf8Ptr(), 0777) != 0)
-    throw IOException(strf("could not create directory '{}', {}", dirName, strerror(errno)));
+    throw IOException(strf("could not create directory '{}', {}", dirName, std::strerror(errno)));
 }
 
-List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
+auto File::dirList(const String& dirName, bool skipDots) -> List<std::pair<String, bool>> {
   List<std::pair<String, bool>> fileList;
   DIR* directory = ::opendir(dirName.utf8Ptr());
-  if (directory == NULL)
+  if (directory == nullptr)
     throw IOException::format("dirList failed on dir: '{}'", dirName);
 
   for (dirent* entry = ::readdir(directory); entry != NULL; entry = ::readdir(directory)) {
@@ -77,12 +78,12 @@ List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
   return fileList;
 }
 
-String File::baseName(const String& fileName) {
+auto File::baseName(const String& fileName) -> String {
   String ret;
 
   std::string file = fileName.utf8();
   char* fn = new char[file.size() + 1];
-  std::copy(file.begin(), file.end(), fn);
+  std::ranges::copy(file, fn);
   fn[file.size()] = 0;
   ret = String(::basename(fn));
   delete[] fn;
@@ -90,12 +91,12 @@ String File::baseName(const String& fileName) {
   return ret;
 }
 
-String File::dirName(const String& fileName) {
+auto File::dirName(const String& fileName) -> String {
   String ret;
 
   std::string file = fileName.utf8();
   char* fn = new char[file.size() + 1];
-  std::copy(file.begin(), file.end(), fn);
+  std::ranges::copy(file, fn);
   fn[file.size()] = 0;
   ret = String(::dirname(fn));
   delete[] fn;
@@ -103,16 +104,16 @@ String File::dirName(const String& fileName) {
   return ret;
 }
 
-String File::relativeTo(String const& relativeTo, String const& path) {
+auto File::relativeTo(String const& relativeTo, String const& path) -> String {
   if (path.beginsWith("/"))
     return path;
   return relativeTo.trimEnd("/") + '/' + path;
 }
 
-String File::fullPath(const String& fileName) {
+auto File::fullPath(const String& fileName) -> String {
   char buffer[PATH_MAX];
 
-  if (::realpath(fileName.utf8Ptr(), buffer) == NULL)
+  if (::realpath(fileName.utf8Ptr(), buffer) == nullptr)
     throw IOException::format("realpath failed on file: '{}' problem path was: '{}'", fileName, buffer);
 
   return String(buffer);
@@ -122,7 +123,7 @@ String File::temporaryFileName() {
   return relativeTo(P_tmpdir, strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
 }
 
-FilePtr File::temporaryFile() {
+auto File::temporaryFile() -> Ptr<File> {
   return open(temporaryFileName(), IOMode::ReadWrite);
 }
 

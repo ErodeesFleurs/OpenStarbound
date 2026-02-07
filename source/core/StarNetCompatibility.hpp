@@ -1,6 +1,6 @@
 #pragma once
-#include "StarVersion.hpp"
 #include "StarHash.hpp"
+#include "StarVersion.hpp"
 
 import std;
 
@@ -17,11 +17,11 @@ public:
   NetCompatibilityRules(std::uint64_t) = delete;
   NetCompatibilityRules(VersionNumber version);
 
-  VersionNumber version() const;
+  [[nodiscard]] auto version() const -> VersionNumber;
   void setVersion(VersionNumber version);
-  bool isLegacy() const;
+  [[nodiscard]] auto isLegacy() const -> bool;
 
-  bool operator==(NetCompatibilityRules const& a) const;
+  auto operator==(NetCompatibilityRules const& a) const -> bool;
 
 private:
   VersionNumber m_version = OpenProtocolVersion;
@@ -31,7 +31,7 @@ inline NetCompatibilityRules::NetCompatibilityRules() : m_version(OpenProtocolVe
 
 inline NetCompatibilityRules::NetCompatibilityRules(VersionNumber v) : m_version(v) {}
 
-inline VersionNumber NetCompatibilityRules::version() const {
+inline auto NetCompatibilityRules::version() const -> VersionNumber {
   return m_version;
 }
 
@@ -39,19 +39,19 @@ inline void NetCompatibilityRules::setVersion(VersionNumber version) {
   m_version = version;
 }
 
-inline bool NetCompatibilityRules::isLegacy() const {
+inline auto NetCompatibilityRules::isLegacy() const -> bool {
   return m_version == LegacyVersion;
 }
 
-inline bool NetCompatibilityRules::operator==(NetCompatibilityRules const& a) const {
+inline auto NetCompatibilityRules::operator==(NetCompatibilityRules const& a) const -> bool {
   return m_version == a.m_version;
 }
 
 template <>
 struct hash<NetCompatibilityRules> {
-  size_t operator()(NetCompatibilityRules const& s) const {
+  auto operator()(NetCompatibilityRules const& s) const -> std::size_t {
     return s.version();
   }
 };
 
-}
+}// namespace Star

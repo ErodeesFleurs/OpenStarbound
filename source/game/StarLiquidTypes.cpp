@@ -1,11 +1,13 @@
 #include "StarLiquidTypes.hpp"
 
+import std;
+
 namespace Star {
 
-LiquidLevel LiquidLevel::take(float amount) {
+auto LiquidLevel::take(float amount) -> LiquidLevel {
   if (liquid == EmptyLiquidId)
-    return LiquidLevel();
-  amount = min(amount, level);
+    return {};
+  amount = std::min(amount, level);
 
   LiquidLevel taken = {liquid, amount};
 
@@ -16,33 +18,33 @@ LiquidLevel LiquidLevel::take(float amount) {
   return taken;
 }
 
-LiquidStore LiquidStore::filled(LiquidId liquid, float level, std::optional<float> pressure) {
+auto LiquidStore::filled(LiquidId liquid, float level, std::optional<float> pressure) -> LiquidStore {
   if (liquid == EmptyLiquidId)
-    return LiquidStore();
-  return LiquidStore(liquid, level, pressure.value_or(level), false);
+    return {};
+  return {liquid, level, pressure.value_or(level), false};
 }
 
-LiquidStore LiquidStore::endless(LiquidId liquid, float pressure) {
+auto LiquidStore::endless(LiquidId liquid, float pressure) -> LiquidStore {
   if (liquid == EmptyLiquidId)
-    return LiquidStore();
-  return LiquidStore(liquid, 1.0f, pressure, true);
+    return {};
+  return {liquid, 1.0f, pressure, true};
 }
 
 LiquidStore::LiquidStore() : LiquidLevel(), pressure(0), source(false) {}
 
 LiquidStore::LiquidStore(LiquidId liquid, float level, float pressure, bool source)
-  : LiquidLevel(liquid, level), pressure(pressure), source(source) {}
+    : LiquidLevel(liquid, level), pressure(pressure), source(source) {}
 
-LiquidNetUpdate LiquidStore::netUpdate() const {
-  return LiquidNetUpdate{liquid, floatToByte(level, true)};
+auto LiquidStore::netUpdate() const -> LiquidNetUpdate {
+  return LiquidNetUpdate{.liquid = liquid, .level = floatToByte(level, true)};
 }
 
-std::optional<LiquidNetUpdate> LiquidStore::update(LiquidId liquid, float level, float pressure) {
+auto LiquidStore::update(LiquidId liquid, float level, float pressure) -> std::optional<LiquidNetUpdate> {
   if (source) {
     if (this->liquid != liquid)
       return {};
-    level = max(level, this->level);
-    pressure = max(pressure, this->pressure);
+    level = std::max(level, this->level);
+    pressure = std::max(pressure, this->pressure);
   }
 
   if (level <= 0.0f) {
@@ -57,14 +59,14 @@ std::optional<LiquidNetUpdate> LiquidStore::update(LiquidId liquid, float level,
   this->pressure = pressure;
 
   if (netUpdate)
-    return LiquidNetUpdate{liquid, floatToByte(level)};
+    return LiquidNetUpdate{.liquid = liquid, .level = floatToByte(level)};
   else
     return {};
 }
 
-LiquidLevel LiquidStore::take(float amount) {
+auto LiquidStore::take(float amount) -> LiquidLevel {
   if (source)
-    return LiquidLevel(liquid, amount);
+    return {liquid, amount};
 
   auto taken = LiquidLevel::take(amount);
   if (level == 0.0f)
@@ -72,4 +74,4 @@ LiquidLevel LiquidStore::take(float amount) {
   return taken;
 }
 
-}
+}// namespace Star

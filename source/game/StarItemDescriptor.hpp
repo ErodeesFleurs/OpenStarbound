@@ -1,83 +1,82 @@
 #pragma once
 
-#include <optional>
-
-#include "StarJson.hpp"
+#include "StarConfig.hpp"
 #include "StarDataStream.hpp"
-#include "StarBiMap.hpp"
+#include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(ItemDescriptor);
-STAR_CLASS(Item);
-STAR_STRUCT(VersionedJson);
+class Item;
 
 class ItemDescriptor {
 public:
   // Loads ItemDescriptor from store format.
-  static ItemDescriptor loadStore(Json const& store);
+  static auto loadStore(Json const& store) -> ItemDescriptor;
 
   ItemDescriptor();
-  ItemDescriptor(String name, uint64_t count, Json parameters = Json());
+  ItemDescriptor(String name, std::uint64_t count, Json parameters = Json());
 
   // Populate from a configuration JsonArray containing up to 3 elements, the
   // name, count, and then any item parameters.  If the json is a map, looks
   // for keys 'name', 'parameters', and 'count'.
   explicit ItemDescriptor(Json const& spec);
 
-  String const& name() const;
-  uint64_t count() const;
-  Json const& parameters() const;
+  auto name() const -> String const&;
+  auto count() const -> std::uint64_t;
+  auto parameters() const -> Json const&;
 
-  ItemDescriptor singular() const;
-  ItemDescriptor withCount(uint64_t count) const;
-  ItemDescriptor multiply(uint64_t count) const;
-  ItemDescriptor applyParameters(JsonObject const& parameters) const;
+  auto singular() const -> ItemDescriptor;
+  auto withCount(std::uint64_t count) const -> ItemDescriptor;
+  auto multiply(std::uint64_t count) const -> ItemDescriptor;
+  auto applyParameters(JsonObject const& parameters) const -> ItemDescriptor;
 
   // Descriptor is the default constructed ItemDescriptor()
-  bool isNull() const;
+  auto isNull() const -> bool;
 
   // Descriptor is not null
   explicit operator bool() const;
 
   // True if descriptor is null OR if descriptor is size 0
-  bool isEmpty() const;
+  auto isEmpty() const -> bool;
 
-  bool operator==(ItemDescriptor const& rhs) const;
-  bool operator!=(ItemDescriptor const& rhs) const;
+  auto operator==(ItemDescriptor const& rhs) const -> bool;
+  auto operator!=(ItemDescriptor const& rhs) const -> bool;
 
-  bool matches(ItemDescriptor const& other, bool exactMatch = false) const;
-  bool matches(ItemConstPtr const& other, bool exactMatch = false) const;
+  auto matches(ItemDescriptor const& other, bool exactMatch = false) const -> bool;
+  auto matches(ConstPtr<Item> const& other, bool exactMatch = false) const -> bool;
 
   // Stores ItemDescriptor to versioned structure not meant for human reading / writing.
-  Json diskStore() const;
+  auto diskStore() const -> Json;
 
   // Converts ItemDescriptor to spec format
-  Json toJson() const;
+  auto toJson() const -> Json;
 
-  friend DataStream& operator>>(DataStream& ds, ItemDescriptor& itemDescriptor);
-  friend DataStream& operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor);
+  friend auto operator>>(DataStream& ds, ItemDescriptor& itemDescriptor) -> DataStream&;
+  friend auto operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor) -> DataStream&;
 
-  friend std::ostream& operator<<(std::ostream& os, ItemDescriptor const& descriptor);
+  friend auto operator<<(std::ostream& os, ItemDescriptor const& descriptor) -> std::ostream&;
 
   friend struct hash<ItemDescriptor>;
 
 private:
-  ItemDescriptor(String name, uint64_t count, Json parameters, std::optional<size_t> parametersHash);
+  ItemDescriptor(String name, std::uint64_t count, Json parameters, std::optional<size_t> parametersHash);
 
-  size_t parametersHash() const;
+  auto parametersHash() const -> size_t;
 
   String m_name;
-  uint64_t m_count;
+  std::uint64_t m_count;
   Json m_parameters;
   mutable std::optional<size_t> m_parametersHash;
 };
 
 template <>
 struct hash<ItemDescriptor> {
-  size_t operator()(ItemDescriptor const& v) const;
+  auto operator()(ItemDescriptor const& v) const -> size_t;
 };
 
-}
+}// namespace Star
 
-template <> struct std::formatter<Star::ItemDescriptor> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::ItemDescriptor> : Star::ostream_formatter {};

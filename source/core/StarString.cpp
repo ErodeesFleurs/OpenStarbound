@@ -1,51 +1,48 @@
 #include "StarString.hpp"
-#include "StarStringView.hpp"
-#include "StarFormat.hpp"
 
-#include <cctype>
-#include <re2/re2.h>
+import re2_module;
+import std;
 
 namespace Star {
 
-bool String::isSpace(Char c) {
-  return
-    c == 0x20 || // space
-    c == 0x09 || // horizontal tab
-    c == 0x0a || // newline
-    c == 0x0d || // carriage return
-    c == 0xfeff; // BOM or ZWNBSP
+auto String::isSpace(Char c) -> bool {
+  return c == 0x20 ||// space
+    c == 0x09 ||     // horizontal tab
+    c == 0x0a ||     // newline
+    c == 0x0d ||     // carriage return
+    c == 0xfeff;     // BOM or ZWNBSP
 }
 
-bool String::isAsciiNumber(Char c) {
+auto String::isAsciiNumber(Char c) -> bool {
   return c >= '0' && c <= '9';
 }
 
-bool String::isAsciiLetter(Char c) {
+auto String::isAsciiLetter(Char c) -> bool {
   return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
 }
 
-String::Char String::toLower(Char c) {
+auto String::toLower(Char c) -> String::Char {
   if (c >= 'A' && c <= 'Z')
     return c + 32;
   else
     return c;
 }
 
-String::Char String::toUpper(Char c) {
+auto String::toUpper(Char c) -> String::Char {
   if (c >= 'a' && c <= 'z')
     return c - 32;
   else
     return c;
 }
 
-bool String::charEqual(Char c1, Char c2, CaseSensitivity cs) {
+auto String::charEqual(Char c1, Char c2, CaseSensitivity cs) -> bool {
   if (cs == CaseInsensitive)
     return toLower(c1) == toLower(c2);
   else
     return c1 == c2;
 }
 
-String String::joinWith(String const& join, String const& left, String const& right) {
+auto String::joinWith(String const& join, String const& left, String const& right) -> String {
   if (left.empty())
     return right;
   if (right.empty())
@@ -64,11 +61,11 @@ String String::joinWith(String const& join, String const& left, String const& ri
   }
 }
 
-String::String() {}
-String::String(String const& s) : m_string(s.m_string) {}
+String::String() = default;
+String::String(String const& s) = default;
 String::String(String&& s) : m_string(std::move(s.m_string)) {}
 String::String(char const* s) : m_string(s) {}
-String::String(char const* s, size_t n) : m_string(s, n) {}
+String::String(char const* s, std::size_t n) : m_string(s, n) {}
 String::String(std::string const& s) : m_string(s) {}
 String::String(std::string&& s) : m_string(std::move(s)) {}
 
@@ -85,17 +82,17 @@ String::String(Char const* s) {
   }
 }
 
-String::String(Char const* s, size_t n) {
+String::String(Char const* s, std::size_t n) {
   reserve(n);
-  for (size_t idx = 0; idx < n; ++idx) {
+  for (std::size_t idx = 0; idx < n; ++idx) {
     append(*s);
     ++s;
   }
 }
 
-String::String(Char c, size_t n) {
+String::String(Char c, std::size_t n) {
   reserve(n);
-  for (size_t i = 0; i < n; ++i)
+  for (std::size_t i = 0; i < n; ++i)
     append(c);
 }
 
@@ -103,34 +100,34 @@ String::String(Char c) {
   append(c);
 }
 
-std::string const& String::utf8() const {
+auto String::utf8() const -> std::string const& {
   return m_string;
 }
 
-std::string String::takeUtf8() {
+auto String::takeUtf8() -> std::string {
   return take(m_string);
 }
 
-ByteArray String::utf8Bytes() const {
-  return ByteArray(m_string.c_str(), m_string.size());
+auto String::utf8Bytes() const -> ByteArray {
+  return {m_string.c_str(), m_string.size()};
 }
 
-char const* String::utf8Ptr() const {
+auto String::utf8Ptr() const -> char const* {
   return m_string.c_str();
 }
 
-size_t String::utf8Size() const {
+auto String::utf8Size() const -> std::size_t {
   return m_string.size();
 }
 
-std::wstring String::wstring() const {
+auto String::wstring() const -> std::wstring {
   std::wstring string;
   for (Char c : *this)
     string.push_back(c);
   return string;
 }
 
-String::WideString String::wideString() const {
+auto String::wideString() const -> String::WideString {
   WideString string;
   string.reserve(m_string.size());
   for (Char c : *this)
@@ -138,19 +135,19 @@ String::WideString String::wideString() const {
   return string;
 }
 
-String::const_iterator String::begin() const {
-  return const_iterator(m_string.begin());
+auto String::begin() const -> String::const_iterator {
+  return {m_string.begin()};
 }
 
-String::const_iterator String::end() const {
-  return const_iterator(m_string.end());
+auto String::end() const -> String::const_iterator {
+  return {m_string.end()};
 }
 
-size_t String::size() const {
+auto String::size() const -> std::size_t {
   return utf8Length(m_string.c_str(), m_string.size());
 }
 
-size_t String::length() const {
+auto String::length() const -> std::size_t {
   return size();
 }
 
@@ -158,39 +155,39 @@ void String::clear() {
   m_string.clear();
 }
 
-void String::reserve(size_t n) {
+void String::reserve(std::size_t n) {
   m_string.reserve(n);
 }
 
-bool String::empty() const {
+auto String::empty() const -> bool {
   return m_string.empty();
 }
 
-String::Char String::operator[](size_t index) const {
+auto String::operator[](std::size_t index) const -> String::Char {
   auto it = begin();
-  for (size_t i = 0; i < index; ++i)
+  for (std::size_t i = 0; i < index; ++i)
     ++it;
   return *it;
 }
 
-size_t CaseInsensitiveStringHash::operator()(String const& s) const {
+auto CaseInsensitiveStringHash::operator()(String const& s) const -> std::size_t {
   PLHasher hash;
   for (auto c : s)
     hash.put(String::toLower(c));
   return hash.hash();
 }
 
-bool CaseInsensitiveStringCompare::operator()(String const& lhs, String const& rhs) const {
+auto CaseInsensitiveStringCompare::operator()(String const& lhs, String const& rhs) const -> bool {
   return lhs.equalsIgnoreCase(rhs);
 }
 
-String::Char String::at(size_t i) const {
+auto String::at(std::size_t i) const -> String::Char {
   if (i > size())
     throw OutOfRangeException(strf("Out of range in String::at({})", i));
   return operator[](i);
 }
 
-String String::toUpper() const {
+auto String::toUpper() const -> String {
   String s;
   s.reserve(m_string.length());
   for (Char c : *this)
@@ -198,7 +195,7 @@ String String::toUpper() const {
   return s;
 }
 
-String String::toLower() const {
+auto String::toLower() const -> String {
   String s;
   s.reserve(m_string.length());
   for (Char c : *this)
@@ -206,7 +203,7 @@ String String::toLower() const {
   return s;
 }
 
-String String::titleCase() const {
+auto String::titleCase() const -> String {
   String s;
   s.reserve(m_string.length());
   bool capNext = true;
@@ -220,7 +217,7 @@ String String::titleCase() const {
   return s;
 }
 
-bool String::endsWith(String const& end, CaseSensitivity cs) const {
+auto String::endsWith(String const& end, CaseSensitivity cs) const -> bool {
   auto endsize = end.size();
   if (endsize == 0)
     return true;
@@ -232,14 +229,14 @@ bool String::endsWith(String const& end, CaseSensitivity cs) const {
   return compare(mysize - endsize, std::numeric_limits<std::size_t>::max(), end, 0, std::numeric_limits<std::size_t>::max(), cs) == 0;
 }
 
-bool String::endsWith(Char end, CaseSensitivity cs) const {
+auto String::endsWith(Char end, CaseSensitivity cs) const -> bool {
   if (size() == 0)
     return false;
 
   return charEqual(end, operator[](size() - 1), cs);
 }
 
-bool String::beginsWith(String const& beg, CaseSensitivity cs) const {
+auto String::beginsWith(String const& beg, CaseSensitivity cs) const -> bool {
   auto begSize = beg.size();
   if (begSize == 0)
     return true;
@@ -251,14 +248,14 @@ bool String::beginsWith(String const& beg, CaseSensitivity cs) const {
   return compare(0, begSize, beg, 0, std::numeric_limits<std::size_t>::max(), cs) == 0;
 }
 
-bool String::beginsWith(Char beg, CaseSensitivity cs) const {
+auto String::beginsWith(Char beg, CaseSensitivity cs) const -> bool {
   if (size() == 0)
     return false;
 
   return charEqual(beg, operator[](0), cs);
 }
 
-String String::reverse() const {
+auto String::reverse() const -> String {
   String ret;
   ret.reserve(m_string.length());
   auto i = end();
@@ -269,7 +266,7 @@ String String::reverse() const {
   return ret;
 }
 
-String String::rot13() const {
+auto String::rot13() const -> String {
   String ret;
   ret.reserve(m_string.length());
   for (auto c : *this) {
@@ -282,23 +279,23 @@ String String::rot13() const {
   return ret;
 }
 
-StringList String::split(Char c, size_t maxSplit) const {
+auto String::split(Char c, std::size_t maxSplit) const -> StringList {
   return split(String(c), maxSplit);
 }
 
-StringList String::split(String const& pattern, size_t maxSplit) const {
+auto String::split(String const& pattern, std::size_t maxSplit) const -> StringList {
   StringList ret;
   if (pattern.empty())
     return StringList(1, *this);
 
-  size_t beg = 0;
+  std::size_t beg = 0;
   while (true) {
     if (ret.size() == maxSplit) {
       ret.append(m_string.substr(beg));
       break;
     }
 
-    size_t end = m_string.find(pattern.m_string, beg);
+    std::size_t end = m_string.find(pattern.m_string, beg);
     if (end == std::numeric_limits<std::size_t>::max()) {
       ret.append(m_string.substr(beg));
       break;
@@ -310,11 +307,11 @@ StringList String::split(String const& pattern, size_t maxSplit) const {
   return ret;
 }
 
-StringList String::rsplit(Char c, size_t maxSplit) const {
+auto String::rsplit(Char c, std::size_t maxSplit) const -> StringList {
   return rsplitAny(String(c), maxSplit);
 }
 
-StringList String::rsplit(String const& pattern, size_t maxSplit) const {
+auto String::rsplit(String const& pattern, std::size_t maxSplit) const -> StringList {
   // This is really inefficient!
   String v = reverse();
   String p = pattern.reverse();
@@ -326,7 +323,7 @@ StringList String::rsplit(String const& pattern, size_t maxSplit) const {
   return l;
 }
 
-StringList String::splitAny(String const& chars, size_t maxSplit) const {
+auto String::splitAny(String const& chars, std::size_t maxSplit) const -> StringList {
   StringList ret;
   String next;
   bool doneSplitting = false;
@@ -345,7 +342,7 @@ StringList String::splitAny(String const& chars, size_t maxSplit) const {
   return ret;
 }
 
-StringList String::rsplitAny(String const& chars, size_t maxSplit) const {
+auto String::rsplitAny(String const& chars, std::size_t maxSplit) const -> StringList {
   // This is really inefficient!
   String v = reverse();
   StringList l = v.splitAny(chars, maxSplit);
@@ -356,18 +353,18 @@ StringList String::rsplitAny(String const& chars, size_t maxSplit) const {
   return l;
 }
 
-StringList String::splitLines(size_t maxSplit) const {
+auto String::splitLines(std::size_t maxSplit) const -> StringList {
   return splitAny("\r\n", maxSplit);
 }
 
-StringList String::splitWhitespace(size_t maxSplit) const {
+auto String::splitWhitespace(std::size_t maxSplit) const -> StringList {
   return splitAny("", maxSplit);
 }
 
-String String::extract(String const& chars) {
+auto String::extract(String const& chars) -> String {
   StringList l = splitAny(chars, 1);
   if (l.size() == 0) {
-    return String();
+    return {};
   } else if (l.size() == 1) {
     clear();
     return l.at(0);
@@ -377,9 +374,9 @@ String String::extract(String const& chars) {
   }
 }
 
-String String::rextract(String const& chars) {
+auto String::rextract(String const& chars) -> String {
   if (empty())
-    return String();
+    return {};
 
   StringList l = rsplitAny(chars, 1);
   if (l.size() == 1) {
@@ -391,24 +388,24 @@ String String::rextract(String const& chars) {
   }
 }
 
-bool String::hasChar(Char c) const {
+auto String::hasChar(Char c) const -> bool {
   for (Char ch : *this)
     if (ch == c)
       return true;
   return false;
 }
 
-bool String::hasCharOrWhitespace(Char c) const {
+auto String::hasCharOrWhitespace(Char c) const -> bool {
   if (empty())
     return isSpace(c);
   else
     return hasChar(c);
 }
 
-String String::replace(String const& rplc, String const& val, CaseSensitivity cs) const {
-  size_t index;
-  size_t sz = size();
-  size_t rsz = rplc.size();
+auto String::replace(String const& rplc, String const& val, CaseSensitivity cs) const -> String {
+  std::size_t index;
+  std::size_t sz = size();
+  std::size_t rsz = rplc.size();
   String ret;
   ret.reserve(m_string.length());
 
@@ -420,17 +417,17 @@ String String::replace(String const& rplc, String const& val, CaseSensitivity cs
     return *this;
 
   auto it = begin();
-  for (size_t i = 0; i < index; ++i)
+  for (std::size_t i = 0; i < index; ++i)
     ret.append(*it++);
 
   while (index < sz) {
     ret.append(val);
     index += rsz;
-    for (size_t i = 0; i < rsz; ++i)
+    for (std::size_t i = 0; i < rsz; ++i)
       ++it;
 
-    size_t nindex = find(rplc, index, cs);
-    for (size_t i = index; i < nindex && i < sz; ++i)
+    std::size_t nindex = find(rplc, index, cs);
+    for (std::size_t i = index; i < nindex && i < sz; ++i)
       ret.append(*it++);
 
     index = nindex;
@@ -438,8 +435,8 @@ String String::replace(String const& rplc, String const& val, CaseSensitivity cs
   return ret;
 }
 
-String String::trimEnd(String const& pattern) const {
-  size_t end;
+auto String::trimEnd(String const& pattern) const -> String {
+  std::size_t end;
   for (end = size(); end > 0; --end) {
     Char ec = (*this)[end - 1];
     if (!pattern.hasCharOrWhitespace(ec))
@@ -448,8 +445,8 @@ String String::trimEnd(String const& pattern) const {
   return substr(0, end);
 }
 
-String String::trimBeg(String const& pattern) const {
-  size_t beg;
+auto String::trimBeg(String const& pattern) const -> String {
+  std::size_t beg;
   for (beg = 0; beg < size(); ++beg) {
     Char bc = (*this)[beg];
     if (!pattern.hasCharOrWhitespace(bc))
@@ -458,13 +455,13 @@ String String::trimBeg(String const& pattern) const {
   return substr(beg);
 }
 
-String String::trim(String const& pattern) const {
+auto String::trim(String const& pattern) const -> String {
   return trimEnd(pattern).trimBeg(pattern);
 }
 
-size_t String::find(Char c, size_t pos, CaseSensitivity cs) const {
+auto String::find(Char c, std::size_t pos, CaseSensitivity cs) const -> std::size_t {
   auto it = begin();
-  for (size_t i = 0; i < pos; ++i) {
+  for (std::size_t i = 0; i < pos; ++i) {
     if (it == end())
       break;
     ++it;
@@ -480,12 +477,12 @@ size_t String::find(Char c, size_t pos, CaseSensitivity cs) const {
   return std::numeric_limits<std::size_t>::max();
 }
 
-size_t String::find(String const& str, size_t pos, CaseSensitivity cs) const {
+auto String::find(String const& str, std::size_t pos, CaseSensitivity cs) const -> std::size_t {
   if (str.empty())
     return 0;
 
   auto it = begin();
-  for (size_t i = 0; i < pos; ++i) {
+  for (std::size_t i = 0; i < pos; ++i) {
     if (it == end())
       break;
     ++it;
@@ -512,11 +509,11 @@ size_t String::find(String const& str, size_t pos, CaseSensitivity cs) const {
   return std::numeric_limits<std::size_t>::max();
 }
 
-size_t String::findLast(Char c, CaseSensitivity cs) const {
+auto String::findLast(Char c, CaseSensitivity cs) const -> std::size_t {
   auto it = begin();
 
-  size_t found = std::numeric_limits<std::size_t>::max();
-  size_t pos = 0;
+  std::size_t found = std::numeric_limits<std::size_t>::max();
+  std::size_t pos = 0;
   while (it != end()) {
     if (charEqual(c, *it, cs))
       found = pos;
@@ -527,13 +524,13 @@ size_t String::findLast(Char c, CaseSensitivity cs) const {
   return found;
 }
 
-size_t String::findLast(String const& str, CaseSensitivity cs) const {
+auto String::findLast(String const& str, CaseSensitivity cs) const -> std::size_t {
   if (str.empty())
     return 0;
 
-  size_t pos = 0;
+  std::size_t pos = 0;
   auto it = begin();
-  size_t result = std::numeric_limits<std::size_t>::max();
+  std::size_t result = std::numeric_limits<std::size_t>::max();
   const_iterator sit = str.begin();
   const_iterator mit = it;
   while (it != end()) {
@@ -557,9 +554,9 @@ size_t String::findLast(String const& str, CaseSensitivity cs) const {
   return result;
 }
 
-size_t String::findFirstOf(String const& pattern, size_t beg) const {
+auto String::findFirstOf(String const& pattern, std::size_t beg) const -> std::size_t {
   auto it = begin();
-  size_t i;
+  std::size_t i;
   for (i = 0; i < beg; ++i)
     ++it;
 
@@ -572,9 +569,9 @@ size_t String::findFirstOf(String const& pattern, size_t beg) const {
   return std::numeric_limits<std::size_t>::max();
 }
 
-size_t String::findFirstNotOf(String const& pattern, size_t beg) const {
+auto String::findFirstNotOf(String const& pattern, std::size_t beg) const -> std::size_t {
   auto it = begin();
-  size_t i;
+  std::size_t i;
   for (i = 0; i < beg; ++i)
     ++it;
 
@@ -587,7 +584,7 @@ size_t String::findFirstNotOf(String const& pattern, size_t beg) const {
   return std::numeric_limits<std::size_t>::max();
 }
 
-size_t String::findNextBoundary(size_t index, bool backwards) const {
+auto String::findNextBoundary(std::size_t index, bool backwards) const -> std::size_t {
   if (!backwards && (index == size()))
     return index;
   if (backwards) {
@@ -617,10 +614,10 @@ size_t String::findNextBoundary(size_t index, bool backwards) const {
   return index;
 }
 
-String String::slice(SliceIndex a, SliceIndex b, int i) const {
+auto String::slice(SliceIndex a, SliceIndex b, int i) const -> String {
   auto wide = wideString();
   wide = Star::slice(wide, a, b, i);
-  return String(wide.c_str());
+  return {wide.c_str()};
 }
 
 void String::append(String const& string) {
@@ -636,8 +633,8 @@ void String::append(Char const* s) {
     append(*s++);
 }
 
-void String::append(Char const* s, size_t n) {
-  for (size_t i = 0; i < n; ++i)
+void String::append(Char const* s, std::size_t n) {
+  for (std::size_t i = 0; i < n; ++i)
     append(s[i]);
 }
 
@@ -645,14 +642,14 @@ void String::append(char const* s) {
   m_string.append(s);
 }
 
-void String::append(char const* s, size_t n) {
+void String::append(char const* s, std::size_t n) {
   m_string.append(s, n);
 }
 
 void String::append(Char c) {
-  char conv[6];
-  size_t size = utf8EncodeChar(conv, c, 6);
-  append(conv, size);
+  std::array<char, 6> conv;
+  std::size_t size = utf8EncodeChar(conv.data(), c, 6);
+  append(conv.data(), size);
 }
 
 void String::prepend(String const& s) {
@@ -673,7 +670,7 @@ void String::prepend(Char const* s) {
   *this = std::move(ns);
 }
 
-void String::prepend(Char const* s, size_t n) {
+void String::prepend(Char const* s, std::size_t n) {
   auto ns = String(s, n);
   ns.append(*this);
   *this = std::move(ns);
@@ -685,7 +682,7 @@ void String::prepend(char const* s) {
   *this = std::move(ns);
 }
 
-void String::prepend(char const* s, size_t n) {
+void String::prepend(char const* s, std::size_t n) {
   auto ns = String(s, n);
   ns.append(*this);
   *this = std::move(ns);
@@ -705,35 +702,36 @@ void String::push_front(Char c) {
   prepend(c);
 }
 
-bool String::contains(String const& s, CaseSensitivity cs) const {
+auto String::contains(String const& s, CaseSensitivity cs) const -> bool {
   return find(s, 0, cs) != std::numeric_limits<std::size_t>::max();
 }
 
-bool String::regexMatch(String const& regex, bool full, bool caseSensitive) const {
+auto String::regexMatch(String const& regex, bool full, bool caseSensitive) const -> bool {
   re2::RE2::Options options;
   options.set_case_sensitive(caseSensitive);
-  RE2 re(regex.utf8(), options);
+  re2::RE2 re(regex.utf8(), options);
   if (!re.ok())
     throw StringException::format("Invalid regex pattern '{}': {}", regex, re.error());
 
-  return full ? RE2::FullMatch(utf8(), re) : RE2::PartialMatch(utf8(), re);
+  return full ? re2::RE2::FullMatch(utf8(), re) : re2::RE2::PartialMatch(utf8(), re);
 }
-int String::compare(String const& s, CaseSensitivity cs) const {
+
+auto String::compare(String const& s, CaseSensitivity cs) const -> int {
   if (cs == CaseSensitive)
     return m_string.compare(s.m_string);
   else
     return compare(0, std::numeric_limits<std::size_t>::max(), s, 0, std::numeric_limits<std::size_t>::max(), cs);
 }
 
-bool String::equals(String const& s, CaseSensitivity cs) const {
+auto String::equals(String const& s, CaseSensitivity cs) const -> bool {
   return compare(s, cs) == 0;
 }
 
-bool String::equalsIgnoreCase(String const& s) const {
+auto String::equalsIgnoreCase(String const& s) const -> bool {
   return compare(s, CaseInsensitive) == 0;
 }
 
-String String::substr(size_t position, size_t n) const {
+auto String::substr(std::size_t position, std::size_t n) const -> String {
   auto len = size();
   if (position > len)
     throw OutOfRangeException(strf("out of range in String::substr({}, {})", position, n));
@@ -747,7 +745,7 @@ String String::substr(size_t position, size_t n) const {
   auto it = begin();
   std::advance(it, position);
 
-  for (size_t i = 0; i < n; ++i) {
+  for (std::size_t i = 0; i < n; ++i) {
     if (it == end())
       break;
     ret.append(*it);
@@ -757,13 +755,13 @@ String String::substr(size_t position, size_t n) const {
   return ret;
 }
 
-void String::erase(size_t pos, size_t n) {
+void String::erase(std::size_t pos, std::size_t n) {
   String ns;
   ns.reserve(m_string.size() - std::min(n, m_string.size()));
   auto it = begin();
-  for (size_t i = 0; i < pos; ++i)
+  for (std::size_t i = 0; i < pos; ++i)
     ns.append(*it++);
-  for (size_t i = 0; i < n; ++i) {
+  for (std::size_t i = 0; i < n; ++i) {
     if (it == end())
       break;
     ++it;
@@ -773,7 +771,7 @@ void String::erase(size_t pos, size_t n) {
   *this = ns;
 }
 
-String String::padLeft(size_t size, String const& filler) const {
+auto String::padLeft(std::size_t size, String const& filler) const -> String {
   if (!filler.length())
     return *this;
   String rs;
@@ -785,7 +783,7 @@ String String::padLeft(size_t size, String const& filler) const {
   return *this;
 }
 
-String String::padRight(size_t size, String const& filler) const {
+auto String::padRight(std::size_t size, String const& filler) const -> String {
   if (!filler.length())
     return *this;
   String rs = *this;
@@ -795,193 +793,190 @@ String String::padRight(size_t size, String const& filler) const {
   return rs;
 }
 
-String& String::operator=(String const& s) {
-  m_string = s.m_string;
-  return *this;
-}
+auto String::operator=(String const& s) -> String& = default;
 
-String& String::operator=(String&& s) {
+auto String::operator=(String&& s) -> String& {
   m_string = std::move(s.m_string);
   return *this;
 }
 
-String& String::operator+=(String const& s) {
+auto String::operator+=(String const& s) -> String& {
   append(s);
   return *this;
 }
 
-String& String::operator+=(std::string const& s) {
+auto String::operator+=(std::string const& s) -> String& {
   append(s);
   return *this;
 }
 
-String& String::operator+=(Char const* s) {
+auto String::operator+=(Char const* s) -> String& {
   append(s);
   return *this;
 }
 
-String& String::operator+=(char const* s) {
+auto String::operator+=(char const* s) -> String& {
   append(s);
   return *this;
 }
 
-String& String::operator+=(Char c) {
+auto String::operator+=(Char c) -> String& {
   append(c);
   return *this;
 }
 
-bool operator==(String const& s1, String const& s2) {
+auto operator==(String const& s1, String const& s2) -> bool {
   return s1.m_string == s2.m_string;
 }
 
-bool operator==(String const& s1, std::string const& s2) {
+auto operator==(String const& s1, std::string const& s2) -> bool {
   return s1.m_string == s2;
 }
 
-bool operator==(String const& s1, String::Char const* s2) {
+auto operator==(String const& s1, String::Char const* s2) -> bool {
   return s1 == String(s2);
 }
 
-bool operator==(String const& s1, char const* s2) {
+auto operator==(String const& s1, char const* s2) -> bool {
   return s1.m_string == s2;
 }
 
-bool operator==(std::string const& s1, String const& s2) {
+auto operator==(std::string const& s1, String const& s2) -> bool {
   return s1 == s2.m_string;
 }
 
-bool operator==(String::Char const* s1, String const& s2) {
+auto operator==(String::Char const* s1, String const& s2) -> bool {
   return String(s1) == s2;
 }
 
-bool operator==(char const* s1, String const& s2) {
+auto operator==(char const* s1, String const& s2) -> bool {
   return s1 == s2.m_string;
 }
 
-bool operator!=(String const& s1, String const& s2) {
+auto operator!=(String const& s1, String const& s2) -> bool {
   return s1.m_string != s2.m_string;
 }
 
-bool operator!=(String const& s1, std::string const& s2) {
+auto operator!=(String const& s1, std::string const& s2) -> bool {
   return s1.m_string != s2;
 }
 
-bool operator!=(String const& s1, String::Char const* s2) {
+auto operator!=(String const& s1, String::Char const* s2) -> bool {
   return s1 != String(s2);
 }
 
-bool operator!=(String const& s1, char const* s2) {
+auto operator!=(String const& s1, char const* s2) -> bool {
   return s1.m_string != s2;
 }
 
-bool operator!=(std::string const& s1, String const& s2) {
+auto operator!=(std::string const& s1, String const& s2) -> bool {
   return s1 != s2.m_string;
 }
 
-bool operator!=(String::Char const* s1, String const& s2) {
+auto operator!=(String::Char const* s1, String const& s2) -> bool {
   return String(s1) != s2;
 }
 
-bool operator!=(char const* s1, String const& s2) {
+auto operator!=(char const* s1, String const& s2) -> bool {
   return s1 != s2.m_string;
 }
 
-bool operator<(String const& s1, String const& s2) {
+auto operator<(String const& s1, String const& s2) -> bool {
   return s1.m_string < s2.m_string;
 }
 
-bool operator<(String const& s1, std::string const& s2) {
+auto operator<(String const& s1, std::string const& s2) -> bool {
   return s1.m_string < s2;
 }
 
-bool operator<(String const& s1, String::Char const* s2) {
+auto operator<(String const& s1, String::Char const* s2) -> bool {
   return s1 < String(s2);
 }
 
-bool operator<(String const& s1, char const* s2) {
+auto operator<(String const& s1, char const* s2) -> bool {
   return s1.m_string < s2;
 }
 
-bool operator<(std::string const& s1, String const& s2) {
+auto operator<(std::string const& s1, String const& s2) -> bool {
   return s1 < s2.m_string;
 }
 
-bool operator<(String::Char const* s1, String const& s2) {
+auto operator<(String::Char const* s1, String const& s2) -> bool {
   return String(s1) < s2;
 }
 
-bool operator<(char const* s1, String const& s2) {
+auto operator<(char const* s1, String const& s2) -> bool {
   return s1 < s2.m_string;
 }
 
-String operator+(String s1, String const& s2) {
+auto operator+(String s1, String const& s2) -> String {
   s1.append(s2);
   return s1;
 }
 
-String operator+(String s1, std::string const& s2) {
+auto operator+(String s1, std::string const& s2) -> String {
   s1.append(s2);
   return s1;
 }
 
-String operator+(String s1, String::Char const* s2) {
+auto operator+(String s1, String::Char const* s2) -> String {
   s1.append(s2);
   return s1;
 }
 
-String operator+(String s1, char const* s2) {
+auto operator+(String s1, char const* s2) -> String {
   s1.append(s2);
   return s1;
 }
 
-String operator+(std::string const& s1, String const& s2) {
+auto operator+(std::string const& s1, String const& s2) -> String {
   return s1 + s2.m_string;
 }
 
-String operator+(String::Char const* s1, String const& s2) {
+auto operator+(String::Char const* s1, String const& s2) -> String {
   return String(s1) + s2;
 }
 
-String operator+(char const* s1, String const& s2) {
+auto operator+(char const* s1, String const& s2) -> String {
   return s1 + s2.m_string;
 }
 
-String operator+(String s, String::Char c) {
+auto operator+(String s, String::Char c) -> String {
   s.append(c);
   return s;
 }
 
-String operator+(String::Char c, String const& s) {
+auto operator+(String::Char c, String const& s) -> String {
   String res(c);
   res.append(s);
   return res;
 }
 
-String operator*(String const& s, unsigned times) {
+auto operator*(String const& s, unsigned times) -> String {
   String res;
   for (unsigned i = 0; i < times; ++i)
     res.append(s);
   return res;
 }
 
-String operator*(unsigned times, String const& s) {
+auto operator*(unsigned times, String const& s) -> String {
   return s * times;
 }
 
-std::ostream& operator<<(std::ostream& os, String const& s) {
+auto operator<<(std::ostream& os, String const& s) -> std::ostream& {
   os << s.utf8();
   return os;
 }
 
-std::istream& operator>>(std::istream& is, String& s) {
+auto operator>>(std::istream& is, String& s) -> std::istream& {
   std::string temp;
   is >> temp;
   s = String(std::move(temp));
   return is;
 }
 
-int String::compare(size_t selfOffset, size_t selfLen, String const& other,
-    size_t otherOffset, size_t otherLen, CaseSensitivity cs) const {
+auto String::compare(std::size_t selfOffset, std::size_t selfLen, String const& other,
+                     std::size_t otherOffset, std::size_t otherLen, CaseSensitivity cs) const -> int {
   auto selfIt = begin();
   auto otherIt = other.begin();
 
@@ -1029,67 +1024,64 @@ StringList::StringList(Base const& l) : Base(l) {}
 
 StringList::StringList(Base&& l) : Base(std::move(l)) {}
 
-StringList::StringList(StringList const& l) : Base(l) {}
+StringList::StringList(StringList const& l) = default;
 
 StringList::StringList(StringList&& l) : Base(std::move(l)) {}
 
-StringList::StringList(size_t n, String::Char const* const* list) {
-  for (size_t i = 0; i < n; ++i)
+StringList::StringList(std::size_t n, String::Char const* const* list) {
+  for (std::size_t i = 0; i < n; ++i)
     append(String(list[i]));
 }
 
-StringList::StringList(size_t n, char const* const* list) {
-  for (size_t i = 0; i < n; ++i)
+StringList::StringList(std::size_t n, char const* const* list) {
+  for (std::size_t i = 0; i < n; ++i)
     append(String(list[i]));
 }
 
-StringList::StringList(size_t len, String const& s1) : Base(len, s1) {}
+StringList::StringList(std::size_t len, String const& s1) : Base(len, s1) {}
 
 StringList::StringList(std::initializer_list<String> list) : Base(list) {}
 
-StringList& StringList::operator=(Base const& rhs) {
+auto StringList::operator=(Base const& rhs) -> StringList& {
   Base::operator=(rhs);
   return *this;
 }
 
-StringList& StringList::operator=(Base&& rhs) {
+auto StringList::operator=(Base&& rhs) -> StringList& {
   Base::operator=(std::move(rhs));
   return *this;
 }
 
-StringList& StringList::operator=(StringList const& rhs) {
-  Base::operator=(rhs);
-  return *this;
-}
+auto StringList::operator=(StringList const& rhs) -> StringList& = default;
 
-StringList& StringList::operator=(StringList&& rhs) {
+auto StringList::operator=(StringList&& rhs) -> StringList& {
   Base::operator=(std::move(rhs));
   return *this;
 }
 
-StringList& StringList::operator=(initializer_list<String> list) {
+auto StringList::operator=(std::initializer_list<String> list) -> StringList& {
   Base::operator=(std::move(list));
   return *this;
 }
 
-bool StringList::contains(String const& s, String::CaseSensitivity cs) const {
-  for (const_iterator i = begin(); i != end(); ++i) {
-    if (s.compare(*i, cs) == 0)
+auto StringList::contains(String const& s, String::CaseSensitivity cs) const -> bool {
+  for (const auto& i : *this) {
+    if (s.compare(i, cs) == 0)
       return true;
   }
   return false;
 }
 
-StringList StringList::trimAll(String const& pattern) const {
+auto StringList::trimAll(String const& pattern) const -> StringList {
   StringList r;
   for (auto const& s : *this)
     r.append(s.trim(pattern));
   return r;
 }
 
-String StringList::join(String const& separator) const {
+auto StringList::join(String const& separator) const -> String {
   String joinedString;
-  for (const_iterator i = begin(); i != end(); ++i) {
+  for (auto i = begin(); i != end(); ++i) {
     if (i != begin())
       joinedString += separator;
     joinedString += *i;
@@ -1098,17 +1090,17 @@ String StringList::join(String const& separator) const {
   return joinedString;
 }
 
-StringList StringList::slice(SliceIndex a, SliceIndex b, int i) const {
+auto StringList::slice(SliceIndex a, SliceIndex b, int i) const -> StringList {
   return Star::slice(*this, a, b, i);
 }
 
-StringList StringList::sorted() const {
+auto StringList::sorted() const -> StringList {
   StringList l = *this;
   l.sort();
   return l;
 }
 
-std::ostream& operator<<(std::ostream& os, const StringList& list) {
+auto operator<<(std::ostream& os, const StringList& list) -> std::ostream& {
   os << "(";
   for (auto i = list.begin(); i != list.end(); ++i) {
     if (i != list.begin())
@@ -1120,11 +1112,11 @@ std::ostream& operator<<(std::ostream& os, const StringList& list) {
   return os;
 }
 
-size_t hash<StringList>::operator()(StringList const& sl) const {
-  size_t h = 0;
+auto hash<StringList>::operator()(StringList const& sl) const -> std::size_t {
+  std::size_t h = 0;
   for (auto const& s : sl)
     hashCombine(h, hashOf(s));
   return h;
 }
 
-}
+}// namespace Star

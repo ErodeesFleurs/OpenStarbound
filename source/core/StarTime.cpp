@@ -1,30 +1,30 @@
 #include "StarTime.hpp"
-#include "StarMathCommon.hpp"
-#include "StarLexicalCast.hpp"
+
+import std;
 
 namespace Star {
 
-double Time::timeSinceEpoch() {
+auto Time::timeSinceEpoch() -> double {
   return ticksToSeconds(epochTicks(), epochTickFrequency());
 }
 
-int64_t Time::millisecondsSinceEpoch() {
+auto Time::millisecondsSinceEpoch() -> std::int64_t {
   return ticksToMilliseconds(epochTicks(), epochTickFrequency());
 }
 
-double Time::monotonicTime() {
+auto Time::monotonicTime() -> double {
   return ticksToSeconds(monotonicTicks(), monotonicTickFrequency());
 }
 
-int64_t Time::monotonicMilliseconds() {
+auto Time::monotonicMilliseconds() -> std::int64_t {
   return ticksToMilliseconds(monotonicTicks(), monotonicTickFrequency());
 }
 
-int64_t Time::monotonicMicroseconds() {
+auto Time::monotonicMicroseconds() -> std::int64_t {
   return ticksToMicroseconds(monotonicTicks(), monotonicTickFrequency());
 }
 
-String Time::printDuration(double time) {
+auto Time::printDuration(double time) -> String {
   String hours;
   String minutes;
   String seconds;
@@ -43,39 +43,39 @@ String Time::printDuration(double time) {
     seconds = strf("{} second{}", numSeconds, numSeconds == 1 ? "" : "s");
   }
 
-  int numMilliseconds = round(fmod(time, 1.0) * 1000);
+  int numMilliseconds = std::round(std::fmod(time, 1.0) * 1000);
   milliseconds = strf("{} millisecond{}", numMilliseconds, numMilliseconds == 1 ? "" : "s");
 
   return String::joinWith(", ", hours, minutes, seconds, milliseconds);
 }
 
-String Time::printCurrentDateAndTime(String format) {
+auto Time::printCurrentDateAndTime(String format) -> String {
   return printDateAndTime(epochTicks(), format);
 }
 
-double Time::ticksToSeconds(int64_t ticks, int64_t tickFrequency) {
+auto Time::ticksToSeconds(std::int64_t ticks, std::int64_t tickFrequency) -> double {
   return ticks / (double)tickFrequency;
 }
 
-int64_t Time::ticksToMilliseconds(int64_t ticks, int64_t tickFrequency) {
-  int64_t ticksPerMs = (tickFrequency + 500) / 1000;
+auto Time::ticksToMilliseconds(std::int64_t ticks, std::int64_t tickFrequency) -> std::int64_t {
+  std::int64_t ticksPerMs = (tickFrequency + 500) / 1000;
   return (ticks + ticksPerMs / 2) / ticksPerMs;
 }
 
-int64_t Time::ticksToMicroseconds(int64_t ticks, int64_t tickFrequency) {
-  int64_t ticksPerUs = (tickFrequency + 500000) / 1000000;
+auto Time::ticksToMicroseconds(std::int64_t ticks, std::int64_t tickFrequency) -> std::int64_t {
+  std::int64_t ticksPerUs = (tickFrequency + 500000) / 1000000;
   return (ticks + ticksPerUs / 2) / ticksPerUs;
 }
 
-int64_t Time::secondsToTicks(double seconds, int64_t tickFrequency) {
-  return round(seconds * tickFrequency);
+auto Time::secondsToTicks(double seconds, std::int64_t tickFrequency) -> std::int64_t {
+  return std::round(seconds * tickFrequency);
 }
 
-int64_t Time::millisecondsToTicks(int64_t milliseconds, int64_t tickFrequency) {
+auto Time::millisecondsToTicks(std::int64_t milliseconds, std::int64_t tickFrequency) -> std::int64_t {
   return milliseconds * ((tickFrequency + 500) / 1000);
 }
 
-int64_t Time::microsecondsToTicks(int64_t microseconds, int64_t tickFrequency) {
+auto Time::microsecondsToTicks(std::int64_t microseconds, std::int64_t tickFrequency) -> std::int64_t {
   return microseconds * ((tickFrequency + 500000) / 1000000);
 }
 
@@ -90,7 +90,7 @@ Clock::Clock(Clock const& clock) {
   operator=(clock);
 }
 
-Clock& Clock::operator=(Clock const& clock) {
+auto Clock::operator=(Clock const& clock) -> Clock& {
   m_elapsedTicks = clock.m_elapsedTicks;
   m_lastTicks = clock.m_lastTicks;
   m_running = clock.m_running;
@@ -116,18 +116,18 @@ void Clock::start() {
   updateElapsed();
 }
 
-bool Clock::running() const {
+auto Clock::running() const -> bool {
   RecursiveMutexLocker locker(m_mutex);
   return m_running;
 }
 
-double Clock::time() const {
+auto Clock::time() const -> double {
   RecursiveMutexLocker locker(m_mutex);
   updateElapsed();
   return Time::ticksToSeconds(m_elapsedTicks, Time::monotonicTickFrequency());
 }
 
-int64_t Clock::milliseconds() const {
+auto Clock::milliseconds() const -> std::int64_t {
   RecursiveMutexLocker locker(m_mutex);
   updateElapsed();
   return Time::ticksToMilliseconds(m_elapsedTicks, Time::monotonicTickFrequency());
@@ -139,7 +139,7 @@ void Clock::setTime(double time) {
   m_elapsedTicks = Time::secondsToTicks(time, Time::monotonicTickFrequency());
 }
 
-void Clock::setMilliseconds(int64_t millis) {
+void Clock::setMilliseconds(std::int64_t millis) {
   RecursiveMutexLocker locker(m_mutex);
   updateElapsed();
   m_elapsedTicks = Time::millisecondsToTicks(millis, Time::monotonicTickFrequency());
@@ -147,10 +147,10 @@ void Clock::setMilliseconds(int64_t millis) {
 
 void Clock::adjustTime(double timeAdjustment) {
   RecursiveMutexLocker locker(m_mutex);
-  setTime(max<double>(0.0, time() + timeAdjustment));
+  setTime(std::max<double>(0.0, time() + timeAdjustment));
 }
 
-void Clock::adjustMilliseconds(int64_t millisAdjustment) {
+void Clock::adjustMilliseconds(std::int64_t millisAdjustment) {
   RecursiveMutexLocker locker(m_mutex);
   setMilliseconds(milliseconds() + millisAdjustment);
 }
@@ -159,7 +159,7 @@ void Clock::updateElapsed() const {
   if (!m_running)
     return;
 
-  int64_t currentTicks = Time::monotonicTicks();
+  std::int64_t currentTicks = Time::monotonicTicks();
 
   if (m_lastTicks)
     m_elapsedTicks += (currentTicks - *m_lastTicks);
@@ -167,7 +167,7 @@ void Clock::updateElapsed() const {
   m_lastTicks = currentTicks;
 }
 
-Timer Timer::withTime(double timeLeft, bool start) {
+auto Timer::withTime(double timeLeft, bool start) -> Timer {
   Timer timer;
   timer.setTime(-timeLeft);
   if (start)
@@ -175,7 +175,7 @@ Timer Timer::withTime(double timeLeft, bool start) {
   return timer;
 }
 
-Timer Timer::withMilliseconds(int64_t millis, bool start) {
+auto Timer::withMilliseconds(std::int64_t millis, bool start) -> Timer {
   Timer timer;
   timer.setMilliseconds(-millis);
   if (start)
@@ -187,39 +187,35 @@ Timer::Timer() : Clock(false) {
   setTime(0.0);
 }
 
-Timer::Timer(Timer const& timer)
-  : Clock(timer) {}
+Timer::Timer(Timer const& timer) = default;
 
-Timer& Timer::operator=(Timer const& timer) {
-  Clock::operator=(timer);
-  return *this;
-}
+auto Timer::operator=(Timer const& timer) -> Timer& = default;
 
 void Timer::restart(double timeLeft) {
   Clock::setTime(-timeLeft);
   Clock::start();
 }
 
-void Timer::restartWithMilliseconds(int64_t millisecondsLeft) {
+void Timer::restartWithMilliseconds(std::int64_t millisecondsLeft) {
   Clock::setMilliseconds(-millisecondsLeft);
   Clock::start();
 }
 
-double Timer::timeLeft(bool negative) const {
+auto Timer::timeLeft(bool negative) const -> double {
   double timeLeft = -Clock::time();
   if (!negative)
-    timeLeft = max(0.0, timeLeft);
+    timeLeft = std::max(0.0, timeLeft);
   return timeLeft;
 }
 
-int64_t Timer::millisecondsLeft(bool negative) const {
-  int64_t millisLeft = -Clock::milliseconds();
+auto Timer::millisecondsLeft(bool negative) const -> std::int64_t {
+  std::int64_t millisLeft = -Clock::milliseconds();
   if (!negative)
-    millisLeft = max<int64_t>(0, millisLeft);
+    millisLeft = std::max<std::int64_t>(0, millisLeft);
   return millisLeft;
 }
 
-bool Timer::timeUp() const {
+auto Timer::timeUp() const -> bool {
   return Clock::time() >= 0.0;
 }
 

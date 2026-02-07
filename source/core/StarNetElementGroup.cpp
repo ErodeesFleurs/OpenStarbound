@@ -1,5 +1,7 @@
 #include "StarNetElementGroup.hpp"
 
+import std;
+
 namespace Star {
 
 void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpolation) {
@@ -7,8 +9,7 @@ void NetElementGroup::addNetElement(NetElement* element, bool propagateInterpola
   element->initNetVersion(m_version);
   if (m_interpolationEnabled && propagateInterpolation)
     element->enableNetInterpolation(m_extrapolationHint);
-  m_elements.append(pair<NetElement*, bool>(element, propagateInterpolation));
-
+  m_elements.append(std::pair<NetElement*, bool>(element, propagateInterpolation));
 
   for (VersionNumber i = 0; i < (CurrentStreamVersion + 1); i++) {
     if (element->checkWithRules(NetCompatibilityRules(i)))
@@ -28,14 +29,16 @@ void NetElementGroup::initNetVersion(NetElementVersion const* version) {
 }
 
 void NetElementGroup::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   for (auto& p : m_elements)
     if (p.first->checkWithRules(rules))
       p.first->netStore(ds, rules);
 }
 
 void NetElementGroup::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   for (auto& p : m_elements)
     if (p.first->checkWithRules(rules))
       p.first->netLoad(ds, rules);
@@ -66,8 +69,9 @@ void NetElementGroup::tickNetInterpolation(float dt) {
   }
 }
 
-bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return false;
+auto NetElementGroup::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const -> bool {
+  if (!checkWithRules(rules))
+    return false;
 
   auto expectedSize = m_elementCounts.maybe(rules.version()).value_or(m_elements.size());
 
@@ -81,7 +85,7 @@ bool NetElementGroup::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
     }
   } else {
     bool deltaWritten = false;
-    uint64_t i = 0;
+    std::uint64_t i = 0;
     m_buffer.setStreamCompatibilityVersion(rules);
     for (auto& element : m_elements) {
       if (i > expectedSize)
@@ -119,9 +123,9 @@ void NetElementGroup::readNetDelta(DataStream& ds, float interpolationTime, NetC
         break;
       }
   } else {
-    uint64_t readIndex = ds.readVlqU();
-    uint64_t i = 0;
-    uint64_t offset = 0;
+    std::uint64_t readIndex = ds.readVlqU();
+    std::uint64_t i = 0;
+    std::uint64_t offset = 0;
     for (auto& element : m_elements) {
       if (i > expectedSize)
         break;
@@ -150,4 +154,4 @@ void NetElementGroup::blankNetDelta(float interpolationTime) {
   }
 }
 
-}
+}// namespace Star

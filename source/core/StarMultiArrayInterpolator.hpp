@@ -1,32 +1,34 @@
 #pragma once
 
-#include "StarMultiArray.hpp"
 #include "StarInterpolation.hpp"
+#include "StarMultiArray.hpp"
+
+import std;
 
 namespace Star {
 
 template <typename MultiArrayT, typename PositionT>
 struct MultiArrayInterpolator2 {
-  typedef MultiArrayT MultiArray;
-  typedef PositionT Position;
+  using MultiArray = MultiArrayT;
+  using Position = PositionT;
 
-  typedef typename MultiArray::Element Element;
+  using Element = typename MultiArray::Element;
   static size_t const Rank = MultiArray::Rank;
 
-  typedef Array<size_t, Rank> IndexList;
-  typedef Array<size_t, Rank> SizeList;
-  typedef Array<Position, Rank> PositionList;
-  typedef Array<Position, 2> WeightList;
+  using IndexList = Array<size_t, Rank>;
+  using SizeList = Array<size_t, Rank>;
+  using PositionList = Array<Position, Rank>;
+  using WeightList = Array<Position, 2>;
 
-  typedef std::function<WeightList(Position)> WeightFunction;
+  using WeightFunction = std::function<WeightList(Position)>;
 
   WeightFunction weightFunction;
   BoundMode boundMode;
 
   MultiArrayInterpolator2(WeightFunction wf, BoundMode b = BoundMode::Clamp)
-    : weightFunction(wf), boundMode(b) {}
+      : weightFunction(wf), boundMode(b) {}
 
-  Element interpolate(MultiArray const& array, PositionList const& coord) const {
+  auto interpolate(MultiArray const& array, PositionList const& coord) const -> Element {
     IndexList imin;
     IndexList imax;
     PositionList offset;
@@ -41,11 +43,11 @@ struct MultiArrayInterpolator2 {
     return interpolateSub(array, imin, imax, offset, IndexList(), 0);
   }
 
-  Element interpolateSub(
-      MultiArray const& array,
-      IndexList const& imin, IndexList const& imax,
-      PositionList const& offset, IndexList const& index,
-      size_t const dim) const {
+  auto interpolateSub(
+    MultiArray const& array,
+    IndexList const& imin, IndexList const& imax,
+    PositionList const& offset, IndexList const& index,
+    size_t const dim) const -> Element {
     IndexList minIndex = index;
     IndexList maxIndex = index;
 
@@ -57,35 +59,33 @@ struct MultiArrayInterpolator2 {
     if (dim == Rank - 1) {
       return weights[0] * array(minIndex) + weights[1] * array(maxIndex);
     } else {
-      return
-        weights[0] * interpolateSub(array, imin, imax, offset, minIndex, dim+1) +
-        weights[1] * interpolateSub(array, imin, imax, offset, maxIndex, dim+1);
+      return weights[0] * interpolateSub(array, imin, imax, offset, minIndex, dim + 1) + weights[1] * interpolateSub(array, imin, imax, offset, maxIndex, dim + 1);
     }
   }
 };
 
 template <typename MultiArrayT, typename PositionT>
 struct MultiArrayInterpolator4 {
-  typedef MultiArrayT MultiArray;
-  typedef PositionT Position;
+  using MultiArray = MultiArrayT;
+  using Position = PositionT;
 
-  typedef typename MultiArray::Element Element;
+  using Element = typename MultiArray::Element;
   static size_t const Rank = MultiArray::Rank;
 
-  typedef Array<size_t, Rank> IndexList;
-  typedef Array<size_t, Rank> SizeList;
-  typedef Array<Position, Rank> PositionList;
-  typedef Array<Position, 4> WeightList;
+  using IndexList = Array<size_t, Rank>;
+  using SizeList = Array<size_t, Rank>;
+  using PositionList = Array<Position, Rank>;
+  using WeightList = Array<Position, 4>;
 
-  typedef std::function<WeightList(Position)> WeightFunction;
+  using WeightFunction = std::function<WeightList(Position)>;
 
   WeightFunction weightFunction;
   BoundMode boundMode;
 
   MultiArrayInterpolator4(WeightFunction wf, BoundMode b = BoundMode::Clamp)
-    : weightFunction(wf), boundMode(b) {}
+      : weightFunction(wf), boundMode(b) {}
 
-  Element interpolate(MultiArray const& array, PositionList const& coord) const {
+  auto interpolate(MultiArray const& array, PositionList const& coord) const -> Element {
     IndexList index0;
     IndexList index1;
     IndexList index2;
@@ -104,12 +104,12 @@ struct MultiArrayInterpolator4 {
     return interpolateSub(array, index0, index1, index2, index3, offset, IndexList(), 0);
   }
 
-  Element interpolateSub(
-      MultiArray const& array,
-      IndexList const& i0, IndexList const& i1,
-      IndexList const& i2, IndexList const& i3,
-      PositionList const& offset, IndexList const& index,
-      size_t const dim) const {
+  auto interpolateSub(
+    MultiArray const& array,
+    IndexList const& i0, IndexList const& i1,
+    IndexList const& i2, IndexList const& i3,
+    PositionList const& offset, IndexList const& index,
+    size_t const dim) const -> Element {
     IndexList index0 = index;
     IndexList index1 = index;
     IndexList index2 = index;
@@ -123,69 +123,61 @@ struct MultiArrayInterpolator4 {
     WeightList weights = weightFunction(offset[dim]);
 
     if (dim == Rank - 1) {
-      return
-        weights[0] * array(index0) +
-        weights[1] * array(index1) +
-        weights[2] * array(index2) +
-        weights[3] * array(index3);
+      return weights[0] * array(index0) + weights[1] * array(index1) + weights[2] * array(index2) + weights[3] * array(index3);
     } else {
-      return
-        weights[0] * interpolateSub(array, i0, i1, i2, i3, offset, index0, dim+1) +
-        weights[1] * interpolateSub(array, i0, i1, i2, i3, offset, index1, dim+1) +
-        weights[2] * interpolateSub(array, i0, i1, i2, i3, offset, index2, dim+1) +
-        weights[3] * interpolateSub(array, i0, i1, i2, i3, offset, index3, dim+1);
+      return weights[0] * interpolateSub(array, i0, i1, i2, i3, offset, index0, dim + 1) + weights[1] * interpolateSub(array, i0, i1, i2, i3, offset, index1, dim + 1) + weights[2] * interpolateSub(array, i0, i1, i2, i3, offset, index2, dim + 1) + weights[3] * interpolateSub(array, i0, i1, i2, i3, offset, index3, dim + 1);
     }
   }
 };
 
 template <typename MultiArrayT, typename PositionT>
 struct MultiArrayPiecewiseInterpolator {
-  typedef MultiArrayT MultiArray;
-  typedef PositionT Position;
+  using MultiArray = MultiArrayT;
+  using Position = PositionT;
 
-  typedef typename MultiArray::Element Element;
+  using Element = typename MultiArray::Element;
   static size_t const Rank = MultiArray::Rank;
 
-  typedef Array<size_t, Rank> IndexList;
-  typedef Array<size_t, Rank> SizeList;
-  typedef Array<Position, Rank> PositionList;
-  typedef Array<Position, 2> WeightList;
+  using IndexList = Array<size_t, Rank>;
+  using SizeList = Array<size_t, Rank>;
+  using PositionList = Array<Position, Rank>;
+  using WeightList = Array<Position, 2>;
 
-  typedef std::function<WeightList(Position)> WeightFunction;
+  using WeightFunction = std::function<WeightList(Position)>;
 
   struct PiecewiseRange {
     size_t dim;
     Position offset;
 
-    bool operator<(PiecewiseRange const& pr) const {
+    auto operator<(PiecewiseRange const& pr) const -> bool {
       return pr.offset < offset;
     }
   };
-  typedef Array<PiecewiseRange, Rank> PiecewiseRangeList;
+  using PiecewiseRangeList = Array<PiecewiseRange, Rank>;
 
   WeightFunction weightFunction;
   BoundMode boundMode;
 
   MultiArrayPiecewiseInterpolator(WeightFunction wf, BoundMode b = BoundMode::Clamp)
-    : weightFunction(wf), boundMode(b) {}
+      : weightFunction(wf), boundMode(b) {}
 
   // O(n) for n-dimensions.
-  Element interpolate(MultiArray const& array, PositionList const& coord) const {
+  auto interpolate(MultiArray const& array, PositionList const& coord) const -> Element {
     PiecewiseRangeList piecewiseRangeList;
 
     IndexList minIndex;
     IndexList maxIndex;
 
     for (size_t i = 0; i < Rank; ++i) {
-        PiecewiseRange range;
-        range.dim = i;
+      PiecewiseRange range;
+      range.dim = i;
 
-        auto bound = getBound2(coord[i], array.size(i), boundMode);
-        minIndex[i] = bound.i0;
-        maxIndex[i] = bound.i1;
-        range.offset = bound.offset;
+      auto bound = getBound2(coord[i], array.size(i), boundMode);
+      minIndex[i] = bound.i0;
+      maxIndex[i] = bound.i1;
+      range.offset = bound.offset;
 
-        piecewiseRangeList[i] = range;
+      piecewiseRangeList[i] = range;
     }
 
     std::sort(piecewiseRangeList.begin(), piecewiseRangeList.end());
@@ -213,26 +205,26 @@ struct MultiArrayPiecewiseInterpolator {
 
 template <typename ElementT, typename PositionT>
 struct MultiArrayInterpolator2<MultiArray<ElementT, 2>, PositionT> {
-  typedef Star::MultiArray<ElementT, 2> MultiArray;
-  typedef PositionT Position;
+  using MultiArray = Star::MultiArray<ElementT, 2>;
+  using Position = PositionT;
 
-  typedef typename MultiArray::Element Element;
+  using Element = typename MultiArray::Element;
   static size_t const Rank = 2;
 
-  typedef Array<size_t, Rank> IndexList;
-  typedef Array<size_t, Rank> SizeList;
-  typedef Array<Position, Rank> PositionList;
-  typedef Array<Position, 2> WeightList;
+  using IndexList = Array<size_t, Rank>;
+  using SizeList = Array<size_t, Rank>;
+  using PositionList = Array<Position, Rank>;
+  using WeightList = Array<Position, 2>;
 
-  typedef std::function<WeightList(Position)> WeightFunction;
+  using WeightFunction = std::function<WeightList(Position)>;
 
   WeightFunction weightFunction;
   BoundMode boundMode;
 
   MultiArrayInterpolator2(WeightFunction wf, BoundMode b = BoundMode::Clamp)
-    : weightFunction(wf), boundMode(b) {}
+      : weightFunction(wf), boundMode(b) {}
 
-  Element interpolate(MultiArray const& array, PositionList const& coord) const {
+  auto interpolate(MultiArray const& array, PositionList const& coord) const -> Element {
     IndexList imin;
     IndexList imax;
     PositionList offset;
@@ -247,34 +239,32 @@ struct MultiArrayInterpolator2<MultiArray<ElementT, 2>, PositionT> {
     WeightList xweights = weightFunction(offset[0]);
     WeightList yweights = weightFunction(offset[1]);
 
-    return
-      xweights[0] * (yweights[0] * array(imin[0], imin[1]) + yweights[1] * array(imin[0], imax[1])) +
-      xweights[1] * (yweights[0] * array(imax[0], imin[1]) + yweights[1] * array(imax[0], imax[1]));
+    return xweights[0] * (yweights[0] * array(imin[0], imin[1]) + yweights[1] * array(imin[0], imax[1])) + xweights[1] * (yweights[0] * array(imax[0], imin[1]) + yweights[1] * array(imax[0], imax[1]));
   }
 };
 
 template <typename ElementT, typename PositionT>
 struct MultiArrayInterpolator4<MultiArray<ElementT, 2>, PositionT> {
-  typedef Star::MultiArray<ElementT, 2> MultiArray;
-  typedef PositionT Position;
+  using MultiArray = Star::MultiArray<ElementT, 2>;
+  using Position = PositionT;
 
-  typedef typename MultiArray::Element Element;
+  using Element = typename MultiArray::Element;
   static size_t const Rank = 2;
 
-  typedef Array<size_t, Rank> IndexList;
-  typedef Array<size_t, Rank> SizeList;
-  typedef Array<Position, Rank> PositionList;
-  typedef Array<Position, 4> WeightList;
+  using IndexList = Array<size_t, Rank>;
+  using SizeList = Array<size_t, Rank>;
+  using PositionList = Array<Position, Rank>;
+  using WeightList = Array<Position, 4>;
 
-  typedef std::function<WeightList(Position)> WeightFunction;
+  using WeightFunction = std::function<WeightList(Position)>;
 
   WeightFunction weightFunction;
   BoundMode boundMode;
 
   MultiArrayInterpolator4(WeightFunction wf, BoundMode b = BoundMode::Clamp)
-    : weightFunction(wf), boundMode(b) {}
+      : weightFunction(wf), boundMode(b) {}
 
-  Element interpolate(MultiArray const& array, PositionList const& coord) const {
+  auto interpolate(MultiArray const& array, PositionList const& coord) const -> Element {
     IndexList index0;
     IndexList index1;
     IndexList index2;
@@ -293,31 +283,7 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 2>, PositionT> {
     WeightList xweights = weightFunction(offset[0]);
     WeightList yweights = weightFunction(offset[1]);
 
-    return
-      xweights[0] * (
-          yweights[0] * array(index0[0], index0[1]) +
-          yweights[1] * array(index0[0], index1[1]) +
-          yweights[2] * array(index0[0], index2[1]) +
-          yweights[3] * array(index0[0], index3[1])
-        ) +
-      xweights[1] * (
-          yweights[0] * array(index1[0], index0[1]) +
-          yweights[1] * array(index1[0], index1[1]) +
-          yweights[2] * array(index1[0], index2[1]) +
-          yweights[3] * array(index1[0], index3[1])
-        ) +
-      xweights[2] * (
-          yweights[0] * array(index2[0], index0[1]) +
-          yweights[1] * array(index2[0], index1[1]) +
-          yweights[2] * array(index2[0], index2[1]) +
-          yweights[3] * array(index2[0], index3[1])
-        ) +
-      xweights[3] * (
-          yweights[0] * array(index3[0], index0[1]) +
-          yweights[1] * array(index3[0], index1[1]) +
-          yweights[2] * array(index3[0], index2[1]) +
-          yweights[3] * array(index3[0], index3[1])
-        );
+    return xweights[0] * (yweights[0] * array(index0[0], index0[1]) + yweights[1] * array(index0[0], index1[1]) + yweights[2] * array(index0[0], index2[1]) + yweights[3] * array(index0[0], index3[1])) + xweights[1] * (yweights[0] * array(index1[0], index0[1]) + yweights[1] * array(index1[0], index1[1]) + yweights[2] * array(index1[0], index2[1]) + yweights[3] * array(index1[0], index3[1])) + xweights[2] * (yweights[0] * array(index2[0], index0[1]) + yweights[1] * array(index2[0], index1[1]) + yweights[2] * array(index2[0], index2[1]) + yweights[3] * array(index2[0], index3[1])) + xweights[3] * (yweights[0] * array(index3[0], index0[1]) + yweights[1] * array(index3[0], index1[1]) + yweights[2] * array(index3[0], index2[1]) + yweights[3] * array(index3[0], index3[1]));
   }
 };
 
@@ -325,26 +291,26 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 2>, PositionT> {
 
 template <typename ElementT, typename PositionT>
 struct MultiArrayInterpolator2<MultiArray<ElementT, 3>, PositionT> {
-  typedef Star::MultiArray<ElementT, 3> MultiArray;
-  typedef PositionT Position;
+  using MultiArray = Star::MultiArray<ElementT, 3>;
+  using Position = PositionT;
 
-  typedef typename MultiArray::Element Element;
+  using Element = typename MultiArray::Element;
   static size_t const Rank = 3;
 
-  typedef Array<size_t, Rank> IndexList;
-  typedef Array<size_t, Rank> SizeList;
-  typedef Array<Position, Rank> PositionList;
-  typedef Array<Position, 2> WeightList;
+  using IndexList = Array<size_t, Rank>;
+  using SizeList = Array<size_t, Rank>;
+  using PositionList = Array<Position, Rank>;
+  using WeightList = Array<Position, 2>;
 
-  typedef std::function<WeightList(Position)> WeightFunction;
+  using WeightFunction = std::function<WeightList(Position)>;
 
   WeightFunction weightFunction;
   BoundMode boundMode;
 
   MultiArrayInterpolator2(WeightFunction wf, BoundMode b = BoundMode::Clamp)
-    : weightFunction(wf), boundMode(b) {}
+      : weightFunction(wf), boundMode(b) {}
 
-  Element interpolate(MultiArray const& array, PositionList const& coord) const {
+  auto interpolate(MultiArray const& array, PositionList const& coord) const -> Element {
     IndexList imin;
     IndexList imax;
     PositionList offset;
@@ -360,52 +326,32 @@ struct MultiArrayInterpolator2<MultiArray<ElementT, 3>, PositionT> {
     WeightList yweights = weightFunction(offset[1]);
     WeightList zweights = weightFunction(offset[2]);
 
-    return
-      xweights[0] * (
-            yweights[0] * (
-              zweights[0] * array(imin[0], imin[1], imin[2]) +
-              zweights[1] * array(imin[0], imin[1], imax[2])
-            ) +
-            yweights[1] * (
-              zweights[0] * array(imin[0], imax[1], imin[2]) +
-              zweights[1] * array(imin[0], imax[1], imax[2])
-            )
-          ) +
-      xweights[1] * (
-            yweights[0] * (
-              zweights[0] * array(imax[0], imin[1], imin[2]) +
-              zweights[1] * array(imax[0], imin[1], imax[2])
-            ) +
-            yweights[1] * (
-              zweights[0] * array(imax[0], imax[1], imin[2]) +
-              zweights[1] * array(imax[0], imax[1], imax[2])
-            )
-          );
+    return xweights[0] * (yweights[0] * (zweights[0] * array(imin[0], imin[1], imin[2]) + zweights[1] * array(imin[0], imin[1], imax[2])) + yweights[1] * (zweights[0] * array(imin[0], imax[1], imin[2]) + zweights[1] * array(imin[0], imax[1], imax[2]))) + xweights[1] * (yweights[0] * (zweights[0] * array(imax[0], imin[1], imin[2]) + zweights[1] * array(imax[0], imin[1], imax[2])) + yweights[1] * (zweights[0] * array(imax[0], imax[1], imin[2]) + zweights[1] * array(imax[0], imax[1], imax[2])));
   }
 };
 
 template <typename ElementT, typename PositionT>
 struct MultiArrayInterpolator4<MultiArray<ElementT, 3>, PositionT> {
-  typedef Star::MultiArray<ElementT, 3> MultiArray;
-  typedef PositionT Position;
+  using MultiArray = Star::MultiArray<ElementT, 3>;
+  using Position = PositionT;
 
-  typedef typename MultiArray::Element Element;
+  using Element = typename MultiArray::Element;
   static size_t const Rank = 3;
 
-  typedef Array<size_t, Rank> IndexList;
-  typedef Array<size_t, Rank> SizeList;
-  typedef Array<Position, Rank> PositionList;
-  typedef Array<Position, 4> WeightList;
+  using IndexList = Array<size_t, Rank>;
+  using SizeList = Array<size_t, Rank>;
+  using PositionList = Array<Position, Rank>;
+  using WeightList = Array<Position, 4>;
 
-  typedef std::function<WeightList(Position)> WeightFunction;
+  using WeightFunction = std::function<WeightList(Position)>;
 
   WeightFunction weightFunction;
   BoundMode boundMode;
 
   MultiArrayInterpolator4(WeightFunction wf, BoundMode b = BoundMode::Clamp)
-    : weightFunction(wf), boundMode(b) {}
+      : weightFunction(wf), boundMode(b) {}
 
-  Element interpolate(MultiArray const& array, PositionList const& coord) const {
+  auto interpolate(MultiArray const& array, PositionList const& coord) const -> Element {
     IndexList index0;
     IndexList index1;
     IndexList index2;
@@ -425,112 +371,8 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 3>, PositionT> {
     WeightList yweights = weightFunction(offset[1]);
     WeightList zweights = weightFunction(offset[2]);
 
-    return
-      xweights[0] * (
-            yweights[0] * (
-              zweights[0] * array(index0[0], index0[1], index0[2]) +
-              zweights[1] * array(index0[0], index0[1], index1[2]) +
-              zweights[2] * array(index0[0], index0[1], index2[2]) +
-              zweights[3] * array(index0[0], index0[1], index3[2])
-            ) +
-            yweights[1] * (
-              zweights[0] * array(index0[0], index1[1], index0[2]) +
-              zweights[1] * array(index0[0], index1[1], index1[2]) +
-              zweights[2] * array(index0[0], index1[1], index2[2]) +
-              zweights[3] * array(index0[0], index1[1], index3[2])
-            ) +
-            yweights[2] * (
-              zweights[0] * array(index0[0], index2[1], index0[2]) +
-              zweights[1] * array(index0[0], index2[1], index1[2]) +
-              zweights[2] * array(index0[0], index2[1], index2[2]) +
-              zweights[3] * array(index0[0], index2[1], index3[2])
-            ) +
-            yweights[3] * (
-              zweights[0] * array(index0[0], index3[1], index0[2]) +
-              zweights[1] * array(index0[0], index3[1], index1[2]) +
-              zweights[2] * array(index0[0], index3[1], index2[2]) +
-              zweights[3] * array(index0[0], index3[1], index3[2])
-            )
-          ) +
-      xweights[1] * (
-            yweights[0] * (
-              zweights[0] * array(index1[0], index0[1], index0[2]) +
-              zweights[1] * array(index1[0], index0[1], index1[2]) +
-              zweights[2] * array(index1[0], index0[1], index2[2]) +
-              zweights[3] * array(index1[0], index0[1], index3[2])
-            ) +
-            yweights[1] * (
-              zweights[0] * array(index1[0], index1[1], index0[2]) +
-              zweights[1] * array(index1[0], index1[1], index1[2]) +
-              zweights[2] * array(index1[0], index1[1], index2[2]) +
-              zweights[3] * array(index1[0], index1[1], index3[2])
-            ) +
-            yweights[2] * (
-              zweights[0] * array(index1[0], index2[1], index0[2]) +
-              zweights[1] * array(index1[0], index2[1], index1[2]) +
-              zweights[2] * array(index1[0], index2[1], index2[2]) +
-              zweights[3] * array(index1[0], index2[1], index3[2])
-            ) +
-            yweights[3] * (
-              zweights[0] * array(index1[0], index3[1], index0[2]) +
-              zweights[1] * array(index1[0], index3[1], index1[2]) +
-              zweights[2] * array(index1[0], index3[1], index2[2]) +
-              zweights[3] * array(index1[0], index3[1], index3[2])
-            )
-          ) +
-      xweights[2] * (
-            yweights[0] * (
-              zweights[0] * array(index2[0], index0[1], index0[2]) +
-              zweights[1] * array(index2[0], index0[1], index1[2]) +
-              zweights[2] * array(index2[0], index0[1], index2[2]) +
-              zweights[3] * array(index2[0], index0[1], index3[2])
-            ) +
-            yweights[1] * (
-              zweights[0] * array(index2[0], index1[1], index0[2]) +
-              zweights[1] * array(index2[0], index1[1], index1[2]) +
-              zweights[2] * array(index2[0], index1[1], index2[2]) +
-              zweights[3] * array(index2[0], index1[1], index3[2])
-            ) +
-            yweights[2] * (
-              zweights[0] * array(index2[0], index2[1], index0[2]) +
-              zweights[1] * array(index2[0], index2[1], index1[2]) +
-              zweights[2] * array(index2[0], index2[1], index2[2]) +
-              zweights[3] * array(index2[0], index2[1], index3[2])
-            ) +
-            yweights[3] * (
-              zweights[0] * array(index2[0], index3[1], index0[2]) +
-              zweights[1] * array(index2[0], index3[1], index1[2]) +
-              zweights[2] * array(index2[0], index3[1], index2[2]) +
-              zweights[3] * array(index2[0], index3[1], index3[2])
-            )
-          ) +
-      xweights[3] * (
-            yweights[0] * (
-              zweights[0] * array(index3[0], index0[1], index0[2]) +
-              zweights[1] * array(index3[0], index0[1], index1[2]) +
-              zweights[2] * array(index3[0], index0[1], index2[2]) +
-              zweights[3] * array(index3[0], index0[1], index3[2])
-            ) +
-            yweights[1] * (
-              zweights[0] * array(index3[0], index1[1], index0[2]) +
-              zweights[1] * array(index3[0], index1[1], index1[2]) +
-              zweights[2] * array(index3[0], index1[1], index2[2]) +
-              zweights[3] * array(index3[0], index1[1], index3[2])
-            ) +
-            yweights[2] * (
-              zweights[0] * array(index3[0], index2[1], index0[2]) +
-              zweights[1] * array(index3[0], index2[1], index1[2]) +
-              zweights[2] * array(index3[0], index2[1], index2[2]) +
-              zweights[3] * array(index3[0], index2[1], index3[2])
-            ) +
-            yweights[3] * (
-              zweights[0] * array(index3[0], index3[1], index0[2]) +
-              zweights[1] * array(index3[0], index3[1], index1[2]) +
-              zweights[2] * array(index3[0], index3[1], index2[2]) +
-              zweights[3] * array(index3[0], index3[1], index3[2])
-            )
-          );
+    return xweights[0] * (yweights[0] * (zweights[0] * array(index0[0], index0[1], index0[2]) + zweights[1] * array(index0[0], index0[1], index1[2]) + zweights[2] * array(index0[0], index0[1], index2[2]) + zweights[3] * array(index0[0], index0[1], index3[2])) + yweights[1] * (zweights[0] * array(index0[0], index1[1], index0[2]) + zweights[1] * array(index0[0], index1[1], index1[2]) + zweights[2] * array(index0[0], index1[1], index2[2]) + zweights[3] * array(index0[0], index1[1], index3[2])) + yweights[2] * (zweights[0] * array(index0[0], index2[1], index0[2]) + zweights[1] * array(index0[0], index2[1], index1[2]) + zweights[2] * array(index0[0], index2[1], index2[2]) + zweights[3] * array(index0[0], index2[1], index3[2])) + yweights[3] * (zweights[0] * array(index0[0], index3[1], index0[2]) + zweights[1] * array(index0[0], index3[1], index1[2]) + zweights[2] * array(index0[0], index3[1], index2[2]) + zweights[3] * array(index0[0], index3[1], index3[2]))) + xweights[1] * (yweights[0] * (zweights[0] * array(index1[0], index0[1], index0[2]) + zweights[1] * array(index1[0], index0[1], index1[2]) + zweights[2] * array(index1[0], index0[1], index2[2]) + zweights[3] * array(index1[0], index0[1], index3[2])) + yweights[1] * (zweights[0] * array(index1[0], index1[1], index0[2]) + zweights[1] * array(index1[0], index1[1], index1[2]) + zweights[2] * array(index1[0], index1[1], index2[2]) + zweights[3] * array(index1[0], index1[1], index3[2])) + yweights[2] * (zweights[0] * array(index1[0], index2[1], index0[2]) + zweights[1] * array(index1[0], index2[1], index1[2]) + zweights[2] * array(index1[0], index2[1], index2[2]) + zweights[3] * array(index1[0], index2[1], index3[2])) + yweights[3] * (zweights[0] * array(index1[0], index3[1], index0[2]) + zweights[1] * array(index1[0], index3[1], index1[2]) + zweights[2] * array(index1[0], index3[1], index2[2]) + zweights[3] * array(index1[0], index3[1], index3[2]))) + xweights[2] * (yweights[0] * (zweights[0] * array(index2[0], index0[1], index0[2]) + zweights[1] * array(index2[0], index0[1], index1[2]) + zweights[2] * array(index2[0], index0[1], index2[2]) + zweights[3] * array(index2[0], index0[1], index3[2])) + yweights[1] * (zweights[0] * array(index2[0], index1[1], index0[2]) + zweights[1] * array(index2[0], index1[1], index1[2]) + zweights[2] * array(index2[0], index1[1], index2[2]) + zweights[3] * array(index2[0], index1[1], index3[2])) + yweights[2] * (zweights[0] * array(index2[0], index2[1], index0[2]) + zweights[1] * array(index2[0], index2[1], index1[2]) + zweights[2] * array(index2[0], index2[1], index2[2]) + zweights[3] * array(index2[0], index2[1], index3[2])) + yweights[3] * (zweights[0] * array(index2[0], index3[1], index0[2]) + zweights[1] * array(index2[0], index3[1], index1[2]) + zweights[2] * array(index2[0], index3[1], index2[2]) + zweights[3] * array(index2[0], index3[1], index3[2]))) + xweights[3] * (yweights[0] * (zweights[0] * array(index3[0], index0[1], index0[2]) + zweights[1] * array(index3[0], index0[1], index1[2]) + zweights[2] * array(index3[0], index0[1], index2[2]) + zweights[3] * array(index3[0], index0[1], index3[2])) + yweights[1] * (zweights[0] * array(index3[0], index1[1], index0[2]) + zweights[1] * array(index3[0], index1[1], index1[2]) + zweights[2] * array(index3[0], index1[1], index2[2]) + zweights[3] * array(index3[0], index1[1], index3[2])) + yweights[2] * (zweights[0] * array(index3[0], index2[1], index0[2]) + zweights[1] * array(index3[0], index2[1], index1[2]) + zweights[2] * array(index3[0], index2[1], index2[2]) + zweights[3] * array(index3[0], index2[1], index3[2])) + yweights[3] * (zweights[0] * array(index3[0], index3[1], index0[2]) + zweights[1] * array(index3[0], index3[1], index1[2]) + zweights[2] * array(index3[0], index3[1], index2[2]) + zweights[3] * array(index3[0], index3[1], index3[2])));
   }
 };
 
-}
+}// namespace Star

@@ -1,10 +1,10 @@
 #include "StarClientContext.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
+
+import std;
 
 namespace Star {
 
-DataStream& operator>>(DataStream& ds, ShipUpgrades& upgrades) {
+auto operator>>(DataStream& ds, ShipUpgrades& upgrades) -> DataStream& {
   ds.read(upgrades.shipLevel);
   ds.read(upgrades.maxFuel);
   ds.read(upgrades.crewSize);
@@ -14,7 +14,7 @@ DataStream& operator>>(DataStream& ds, ShipUpgrades& upgrades) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, ShipUpgrades const& upgrades) {
+auto operator<<(DataStream& ds, ShipUpgrades const& upgrades) -> DataStream& {
   ds.write(upgrades.shipLevel);
   ds.write(upgrades.maxFuel);
   ds.write(upgrades.crewSize);
@@ -37,43 +37,43 @@ ClientContext::ClientContext(Uuid serverUuid, Uuid playerUuid) {
   m_netGroup.addNetElement(&m_shipCoordinate);
 }
 
-Uuid ClientContext::serverUuid() const {
+auto ClientContext::serverUuid() const -> Uuid {
   return m_serverUuid;
 }
 
-Uuid ClientContext::playerUuid() const {
+auto ClientContext::playerUuid() const -> Uuid {
   return m_playerUuid;
 }
 
-CelestialCoordinate ClientContext::shipCoordinate() const {
+auto ClientContext::shipCoordinate() const -> CelestialCoordinate {
   return m_shipCoordinate.get();
 }
 
-std::optional<pair<WarpAction, WarpMode>> ClientContext::orbitWarpAction() const {
+auto ClientContext::orbitWarpAction() const -> std::optional<std::pair<WarpAction, WarpMode>> {
   return m_orbitWarpActionNetState.get();
 }
 
-WorldId ClientContext::playerWorldId() const {
+auto ClientContext::playerWorldId() const -> WorldId {
   return m_playerWorldIdNetState.get();
 }
 
-bool ClientContext::isAdmin() const {
+auto ClientContext::isAdmin() const -> bool {
   return m_isAdminNetState.get();
 }
 
-EntityDamageTeam ClientContext::team() const {
+auto ClientContext::team() const -> EntityDamageTeam {
   return m_teamNetState.get();
 }
 
-JsonRpcInterfacePtr ClientContext::rpcInterface() const {
+auto ClientContext::rpcInterface() const -> Ptr<JsonRpcInterface> {
   return m_rpc;
 }
 
-WorldChunks ClientContext::newShipUpdates() {
+auto ClientContext::newShipUpdates() -> WorldChunks {
   return take(m_newShipUpdates);
 }
 
-ShipUpgrades ClientContext::shipUpgrades() const {
+auto ClientContext::shipUpgrades() const -> ShipUpgrades {
   return m_shipUpgrades.get();
 }
 
@@ -93,7 +93,7 @@ void ClientContext::readUpdate(ByteArray data, NetCompatibilityRules rules) {
   m_netGroup.readNetState(ds.read<ByteArray>(), 0.0f, rules);
 }
 
-ByteArray ClientContext::writeUpdate(NetCompatibilityRules) {
+auto ClientContext::writeUpdate(NetCompatibilityRules) -> ByteArray {
   return m_rpc->send();
 }
 
@@ -101,7 +101,7 @@ void ClientContext::setConnectionId(ConnectionId connectionId) {
   m_connectionId = connectionId;
 }
 
-ConnectionId ClientContext::connectionId() const {
+auto ClientContext::connectionId() const -> ConnectionId {
   return m_connectionId;
 }
 
@@ -109,8 +109,8 @@ void ClientContext::setNetCompatibilityRules(NetCompatibilityRules netCompatibil
   m_netCompatibilityRules = netCompatibilityRules;
 }
 
-NetCompatibilityRules ClientContext::netCompatibilityRules() const {
+auto ClientContext::netCompatibilityRules() const -> NetCompatibilityRules {
   return m_netCompatibilityRules;
 }
 
-}
+}// namespace Star

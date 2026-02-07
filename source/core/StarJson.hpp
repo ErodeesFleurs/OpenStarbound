@@ -14,6 +14,7 @@ class Json;
 
 using JsonException = ExceptionDerived<"JsonException">;
 using JsonTypeException = ExceptionDerived<"JsonTypeException">;
+using JsonParsingException = ExceptionDerived<"JsonParsingException", JsonException>;
 
 using JsonArray = List<Json>;
 using JsonObject = StringMap<Json>;
@@ -70,7 +71,7 @@ public:
   Json(unsigned long long);
   Json(char const*);
   Json(String::Char const*);
-  Json(String::Char const*, size_t);
+  Json(String::Char const*, std::size_t);
   Json(String);
   Json(std::string);
   Json(JsonArray);
@@ -228,10 +229,10 @@ public:
 
   // Returns a *new* array with the given values set/inserted/appended/erased.
   // Throws if not an array.
-  [[nodiscard]] auto set(size_t index, Json value) const -> Json;
-  [[nodiscard]] auto insert(size_t index, Json value) const -> Json;
+  [[nodiscard]] auto set(std::size_t index, Json value) const -> Json;
+  [[nodiscard]] auto insert(std::size_t index, Json value) const -> Json;
   [[nodiscard]] auto append(Json value) const -> Json;
-  [[nodiscard]] auto eraseIndex(size_t index) const -> Json;
+  [[nodiscard]] auto eraseIndex(std::size_t index) const -> Json;
 
   [[nodiscard]] auto type() const -> Type;
   [[nodiscard]] auto typeName() const -> String;
@@ -266,7 +267,7 @@ public:
   auto getHash(std::size_t& seed) const -> void;
 
 private:
-  [[nodiscard]] auto ptr(size_t index) const -> Json const*;
+  [[nodiscard]] auto ptr(std::size_t index) const -> Json const*;
   [[nodiscard]] auto ptr(String const& key) const -> Json const*;
 
   Variant<Empty, double, bool, std::int64_t, ConstPtr<String>, ConstPtr<JsonArray>, ConstPtr<JsonObject>> m_data;
@@ -313,7 +314,7 @@ auto jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&.
 
 template <>
 struct hash<Json> {
-  auto operator()(Json const& v) const -> size_t;
+  auto operator()(Json const& v) const -> std::size_t;
 };
 
 template <typename Container>
@@ -367,7 +368,7 @@ auto jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&.
 // each element in the second array must successfully compare with some
 // element of the first array, regardless of order or duplication.
 // For all other types, the values must be equal.
-bool jsonPartialMatch(Json const& base, Json const& compare);
+auto jsonPartialMatch(Json const& base, Json const& compare) -> bool;
 
 }
 

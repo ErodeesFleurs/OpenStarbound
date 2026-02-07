@@ -2,6 +2,8 @@
 
 #include "StarNetElementGroup.hpp"
 
+import std;
+
 namespace Star {
 
 // NetElementGroup class that works with NetElements that are not automatically
@@ -16,7 +18,7 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  auto writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const -> bool override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
@@ -37,15 +39,15 @@ private:
 // optional callback functions.
 class NetElementCallbackGroup : public NetElementSyncGroup {
 public:
-  void setNeedsLoadCallback(function<void(bool)> needsLoadCallback);
-  void setNeedsStoreCallback(function<void()> needsStoreCallback);
+  void setNeedsLoadCallback(std::function<void(bool)> needsLoadCallback);
+  void setNeedsStoreCallback(std::function<void()> needsStoreCallback);
 
 private:
   void netElementsNeedLoad(bool load) override;
   void netElementsNeedStore() override;
 
-  function<void(bool)> m_netElementsNeedLoad;
-  function<void()> m_netElementsNeedStore;
+  std::function<void(bool)> m_netElementsNeedLoad;
+  std::function<void()> m_netElementsNeedStore;
 };
 
-}
+}// namespace Star

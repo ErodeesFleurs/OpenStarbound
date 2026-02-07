@@ -1,8 +1,8 @@
 #pragma once
 
-#include "StarMathCommon.hpp"
-#include "StarArray.hpp"
 #include "StarAlgorithm.hpp"
+#include "StarArray.hpp"
+#include "StarMathCommon.hpp"
 
 import std;
 
@@ -21,30 +21,30 @@ enum class InterpolationMode {
 };
 
 template <typename T1, typename T2>
-T2 angleLerp(T1 const& offset, T2 const& f0, T2 const& f1) {
+auto angleLerp(T1 const& offset, T2 const& f0, T2 const& f1) -> T2 {
   return f0 + angleDiff(f0, f1) * offset;
 }
 
 template <typename T1, typename T2>
-T2 sinEase(T1 const& offset, T2 const& f0, T2 const& f1) {
+auto sinEase(T1 const& offset, T2 const& f0, T2 const& f1) -> T2 {
   T1 w = (sin(offset * Constants::pi - Constants::pi / 2) + 1) / 2;
   return f0 * (1 - w) + f1 * w;
 }
 
 template <typename T1, typename T2>
-T2 lerp(T1 const& offset, T2 const& f0, T2 const& f1) {
+auto lerp(T1 const& offset, T2 const& f0, T2 const& f1) -> T2 {
   return f0 * (1 - offset) + f1 * (offset);
 }
 
 template <typename T1, typename T2>
-T2 lerpWithLimit(std::optional<T2> const& limit, T1 const& offset, T2 const& f0, T2 const& f1) {
+auto lerpWithLimit(std::optional<T2> const& limit, T1 const& offset, T2 const& f0, T2 const& f1) -> T2 {
   if (limit && abs(f1 - f0) > *limit)
     return f1;
   return lerp(offset, f0, f1);
 }
 
 template <typename T1, typename T2>
-T2 step(T1 threshold, T1 x, T2 a, T2 b) {
+auto step(T1 threshold, T1 x, T2 a, T2 b) -> T2 {
   if (x < threshold)
     return a;
   else
@@ -52,7 +52,7 @@ T2 step(T1 threshold, T1 x, T2 a, T2 b) {
 }
 
 template <typename T1, typename T2>
-T2 halfStep(T1 x, T2 a, T2 b) {
+auto halfStep(T1 x, T2 a, T2 b) -> T2 {
   if (x < 0.5)
     return a;
   else
@@ -60,7 +60,7 @@ T2 halfStep(T1 x, T2 a, T2 b) {
 }
 
 template <typename T1, typename T2>
-T2 cubic4(T1 const& x, T2 const& f0, T2 const& f1, T2 const& f2, T2 const& f3) {
+auto cubic4(T1 const& x, T2 const& f0, T2 const& f1, T2 const& f2, T2 const& f3) -> T2 {
   // (-1/2 * f0 +  3/2 * f1 + -3/2 * f2 +  1/2 * f3) * x * x * x +
   // (   1 * f0 + -5/2 * f1 +    2 * f2 + -1/2 * f3) * x * x +
   // (-1/2 * f0 +    0 * f1 +  1/2 * f2 +    0 * f3) * x +
@@ -69,40 +69,40 @@ T2 cubic4(T1 const& x, T2 const& f0, T2 const& f1, T2 const& f2, T2 const& f3) {
 }
 
 template <typename T1, typename T2>
-T2 catmulRom4(T1 const& x, T2 const& f0, T2 const& f1, T2 const& f2, T2 const& f3) {
+auto catmulRom4(T1 const& x, T2 const& f0, T2 const& f1, T2 const& f2, T2 const& f3) -> T2 {
   return ((f1 * 2) + (-f0 + f2) * x + (f0 * 2 - f1 * 5 + f2 * 4 - f3) * x * x
-             + (-f0 + f1 * 3 - f2 * 3 + f3) * x * x * x)
-      * 0.5;
+          + (-f0 + f1 * 3 - f2 * 3 + f3) * x * x * x)
+    * 0.5;
 }
 
 template <typename T1, typename T2>
-T2 hermite2(T1 const& x, T2 const& a, T2 const& b) {
+auto hermite2(T1 const& x, T2 const& a, T2 const& b) -> T2 {
   return a + (b - a) * x * x * (3 - 2 * x);
 }
 
 template <typename T1, typename T2>
-T2 quintic2(T1 const& x, T2 const& a, T2 const& b) {
+auto quintic2(T1 const& x, T2 const& a, T2 const& b) -> T2 {
   return a + (b - a) * x * x * x * (x * (x * 6 - 15) + 10);
 }
 
 template <typename WeightT>
 struct LinearWeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 2> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 2>;
 
-  WeightVec operator()(Weight x) const {
+  auto operator()(Weight x) const -> WeightVec {
     return {1 - x, x};
   }
 };
 
 template <typename WeightT>
 struct StepWeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 2> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 2>;
 
   StepWeightOperator(Weight threshold = 0.5) : threshold(threshold) {}
 
-  WeightVec operator()(Weight x) const {
+  auto operator()(Weight x) const -> WeightVec {
     if (x < threshold)
       return {1, 0};
     else
@@ -114,10 +114,10 @@ struct StepWeightOperator {
 
 template <typename WeightT>
 struct SinWeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 2> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 2>;
 
-  WeightVec operator()(Weight x) const {
+  auto operator()(Weight x) const -> WeightVec {
     Weight w = (sin(x * Constants::pi - Constants::pi / 2) + 1) / 2;
     return {1 - w, w};
   }
@@ -125,10 +125,10 @@ struct SinWeightOperator {
 
 template <typename WeightT>
 struct Hermite2WeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 2> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 2>;
 
-  WeightVec operator()(Weight x) const {
+  auto operator()(Weight x) const -> WeightVec {
     Weight w = x * x * (3 - 2 * x);
     return {1 - w, w};
   }
@@ -136,10 +136,10 @@ struct Hermite2WeightOperator {
 
 template <typename WeightT>
 struct Quintic2WeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 2> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 2>;
 
-  WeightVec operator()(Weight x) const {
+  auto operator()(Weight x) const -> WeightVec {
     Weight w = x * x * x * (x * (x * 6 - 15) + 10);
     return {1 - w, w};
   }
@@ -149,12 +149,12 @@ struct Quintic2WeightOperator {
 // when x is outside of the range [0.0, 1.0]
 template <typename WeightT>
 struct Cubic4WeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 4> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 4>;
 
   Cubic4WeightOperator(bool le = false) : linearExtrapolate(le) {}
 
-  WeightVec operator()(Weight x) const {
+  auto operator()(Weight x) const -> WeightVec {
     if (linearExtrapolate && x > 1) {
       return {0, 0, 2 - x, x - 1};
     } else if (linearExtrapolate && x < 0) {
@@ -168,9 +168,9 @@ struct Cubic4WeightOperator {
       Weight x2 = x * x;
       Weight x3 = x2 * x;
       return WeightVec(-0.5 * x3 + 1 * x2 - 0.5 * x,
-          1.5 * x3 + -2.5 * x2 + 1.0,
-          -1.5 * x3 + 2.0 * x2 + 0.5 * x,
-          0.5 * x3 - 0.5 * x2);
+                       1.5 * x3 + -2.5 * x2 + 1.0,
+                       -1.5 * x3 + 2.0 * x2 + 0.5 * x,
+                       0.5 * x3 - 0.5 * x2);
     }
   }
   bool linearExtrapolate;
@@ -180,12 +180,12 @@ struct Cubic4WeightOperator {
 // when x is outside of the range [0.0, 1.0]
 template <typename WeightT>
 struct Catmul4WeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 4> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 4>;
 
   Catmul4WeightOperator(bool le = false) : linearExtrapolate(le) {}
 
-  WeightVec operator()(Weight x) const {
+  auto operator()(Weight x) const -> WeightVec {
     if (linearExtrapolate && x > 1) {
       return {0, 0, 2 - x, x - 1};
     } else if (linearExtrapolate && x < 0) {
@@ -211,7 +211,7 @@ struct Bound2 {
 // element and extent - 1
 // points exactly to the last element.
 template <typename LocType, typename IndexType>
-Bound2<LocType, IndexType> getBound2(LocType loc, IndexType extent, BoundMode bmode) {
+auto getBound2(LocType loc, IndexType extent, BoundMode bmode) -> Bound2<LocType, IndexType> {
   Bound2<LocType, IndexType> bound;
   if (extent <= 1) {
     bound.i0 = bound.i1 = bound.offset = 0;
@@ -249,7 +249,7 @@ Bound2<LocType, IndexType> getBound2(LocType loc, IndexType extent, BoundMode bm
 
 template <typename Loctype, typename IndexType>
 struct Bound4 {
-  Bound4() {}
+  Bound4() = default;
   IndexType i0;
   IndexType i1;
   IndexType i2;
@@ -261,7 +261,7 @@ struct Bound4 {
 // element and extent - 1
 // points exactly to the last element.
 template <typename LocType, typename IndexType>
-Bound4<LocType, IndexType> getBound4(LocType loc, IndexType extent, BoundMode bmode) {
+auto getBound4(LocType loc, IndexType extent, BoundMode bmode) -> Bound4<LocType, IndexType> {
   Bound4<LocType, IndexType> bound;
   if (extent <= 1) {
     bound.i0 = bound.i1 = bound.i2 = bound.i3 = bound.offset = 0;
@@ -329,8 +329,8 @@ Bound4<LocType, IndexType> getBound4(LocType loc, IndexType extent, BoundMode bm
 }
 
 template <typename Container, typename Pos, typename WeightOp>
-typename Container::value_type listInterpolate2(
-    Container const& cont, Pos x, WeightOp weightOp, BoundMode bmode = BoundMode::Clamp) {
+auto listInterpolate2(
+  Container const& cont, Pos x, WeightOp weightOp, BoundMode bmode = BoundMode::Clamp) -> typename Container::value_type {
   if (cont.size() == 0) {
     return typename Container::value_type();
   } else if (cont.size() == 1) {
@@ -343,8 +343,8 @@ typename Container::value_type listInterpolate2(
 }
 
 template <typename Container, typename Pos, typename WeightOp>
-typename Container::value_type listInterpolate4(
-    Container const& cont, Pos x, WeightOp weightOp, BoundMode bmode = BoundMode::Clamp) {
+auto listInterpolate4(
+  Container const& cont, Pos x, WeightOp weightOp, BoundMode bmode = BoundMode::Clamp) -> typename Container::value_type {
   if (cont.size() == 0) {
     return typename Container::value_type();
   } else if (cont.size() == 1) {
@@ -353,7 +353,7 @@ typename Container::value_type listInterpolate4(
     auto bound = getBound4(x, cont.size(), bmode);
     auto weights = weightOp(bound.offset);
     return cont[bound.i0] * weights[0] + cont[bound.i1] * weights[1] + cont[bound.i2] * weights[2]
-        + cont[bound.i3] * weights[3];
+      + cont[bound.i3] * weights[3];
   }
 }
 
@@ -365,7 +365,7 @@ typename Container::value_type listInterpolate4(
 // be sorted.  If there is an ambiguity on points due to repeat points, will
 // choose the lower-most of the points.
 template <typename Iterator, typename Pos, typename Comp, typename PosGetter>
-Pos inverseLinearInterpolateLower(Iterator begin, Iterator end, Pos t, Comp&& comp, PosGetter&& posGetter) {
+auto inverseLinearInterpolateLower(Iterator begin, Iterator end, Pos t, Comp&& comp, PosGetter&& posGetter) -> Pos {
   // Container must be at least size 2 for this to make sense.
   if (begin == end || std::next(begin) == end)
     return Pos();
@@ -385,14 +385,14 @@ Pos inverseLinearInterpolateLower(Iterator begin, Iterator end, Pos t, Comp&& co
 }
 
 template <typename Iterator, typename Pos>
-Pos inverseLinearInterpolateLower(Iterator begin, Iterator end, Pos t) {
+auto inverseLinearInterpolateLower(Iterator begin, Iterator end, Pos t) -> Pos {
   return inverseLinearInterpolateLower(begin, end, t, std::less<Pos>(), identity());
 }
 
 // Same as inverseLinearInterpolateLower, except chooses the upper most of the
 // points in the ambiguous case.
 template <typename Iterator, typename Pos, typename Comp, typename PosGetter>
-Pos inverseLinearInterpolateUpper(Iterator begin, Iterator end, Pos t, Comp&& comp, PosGetter&& posGetter) {
+auto inverseLinearInterpolateUpper(Iterator begin, Iterator end, Pos t, Comp&& comp, PosGetter&& posGetter) -> Pos {
   // Container must be at least size 2 for this to make sense.
   if (begin == end || std::next(begin) == end)
     return Pos();
@@ -412,16 +412,16 @@ Pos inverseLinearInterpolateUpper(Iterator begin, Iterator end, Pos t, Comp&& co
 }
 
 template <typename Iterator, typename Pos>
-Pos inverseLinearInterpolateUpper(Iterator begin, Iterator end, Pos t) {
+auto inverseLinearInterpolateUpper(Iterator begin, Iterator end, Pos t) -> Pos {
   return inverseLinearInterpolateUpper(begin, end, t, std::less<Pos>(), identity());
 }
 
 template <typename XContainer, typename YContainer, typename PositionType, typename WeightOp>
-typename YContainer::value_type parametricInterpolate2(XContainer const& xvals,
-    YContainer const& yvals,
-    PositionType const& position,
-    WeightOp weightOp,
-    BoundMode bmode) {
+auto parametricInterpolate2(XContainer const& xvals,
+                            YContainer const& yvals,
+                            PositionType const& position,
+                            WeightOp weightOp,
+                            BoundMode bmode) -> typename YContainer::value_type {
 
   if (yvals.size() == 1)
     return yvals[0];
@@ -432,11 +432,11 @@ typename YContainer::value_type parametricInterpolate2(XContainer const& xvals,
 }
 
 template <typename XContainer, typename YContainer, typename PositionType, typename WeightOp>
-typename YContainer::value_type parametricInterpolate4(XContainer const& xvals,
-    YContainer const& yvals,
-    PositionType const& position,
-    WeightOp weightOp,
-    BoundMode bmode) {
+auto parametricInterpolate4(XContainer const& xvals,
+                            YContainer const& yvals,
+                            PositionType const& position,
+                            WeightOp weightOp,
+                            BoundMode bmode) -> typename YContainer::value_type {
 
   if (yvals.size() == 1)
     return yvals[0];
@@ -446,4 +446,4 @@ typename YContainer::value_type parametricInterpolate4(XContainer const& xvals,
   return listInterpolate4(yvals, ipos, weightOp, bmode);
 }
 
-}
+}// namespace Star

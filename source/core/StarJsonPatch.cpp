@@ -1,13 +1,15 @@
 #include "StarJsonPatch.hpp"
 #include "StarJsonPath.hpp"
-#include "StarLexicalCast.hpp"
+#include "StarList.hpp"
+
+import std;
 
 namespace Star {
 
-Json jsonPatch(Json const& base, JsonArray const& patch) {
+auto jsonPatch(const Json & base, const JsonArray& patch) -> Json {
   auto res = base;
   try {
-    for (auto const& operation : patch) {
+    for (const auto& operation : patch) {
       res = JsonPatching::applyOperation(res, operation);
     }
     return res;
@@ -18,7 +20,7 @@ Json jsonPatch(Json const& base, JsonArray const& patch) {
 
 
 // Returns 0 if not found, index + 1 if found.
-size_t findJsonMatch(Json const& searchable, Json const& value, JsonPath::Pointer& pointer) {
+auto findJsonMatch(Json const& searchable, Json const& value, JsonPath::Pointer& pointer) -> std::size_t {
   if (searchable.isType(Json::Type::Array)) {
     auto array = searchable.toArray();
     for (size_t i = 0; i != array.size(); ++i) {
@@ -35,16 +37,16 @@ size_t findJsonMatch(Json const& searchable, Json const& value, JsonPath::Pointe
 namespace JsonPatching {
 
   static const StringMap<std::function<Json(Json, Json)>> functionMap = StringMap<std::function<Json(Json, Json)>>{
-      {"test", std::bind(applyTestOperation, _1, _2)},
-      {"remove", std::bind(applyRemoveOperation, _1, _2)},
-      {"add", std::bind(applyAddOperation, _1, _2)},
-      {"replace", std::bind(applyReplaceOperation, _1, _2)},
-      {"move", std::bind(applyMoveOperation, _1, _2)},
-      {"copy", std::bind(applyCopyOperation, _1, _2)},
-      {"merge", std::bind(applyMergeOperation, _1, _2)},
+      {"test", [](auto && PH1, auto && PH2) -> auto { return applyTestOperation(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }},
+      {"remove", [](auto && PH1, auto && PH2) -> auto { return applyRemoveOperation(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }},
+      {"add", [](auto && PH1, auto && PH2) -> auto { return applyAddOperation(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }},
+      {"replace", [](auto && PH1, auto && PH2) -> auto { return applyReplaceOperation(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }},
+      {"move", [](auto && PH1, auto && PH2) -> auto { return applyMoveOperation(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }},
+      {"copy", [](auto && PH1, auto && PH2) -> auto { return applyCopyOperation(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }},
+      {"merge", [](auto && PH1, auto && PH2) -> auto { return applyMergeOperation(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }},
   };
 
-  Json applyOperation(Json const& base, Json const& op, std::optional<Json> const&) {
+  auto applyOperation(Json const& base, Json const& op, std::optional<Json> const&) -> Json {
     try {
       auto operation = op.getString("op");
       return JsonPatching::functionMap.get(operation)(base, op);
@@ -55,7 +57,7 @@ namespace JsonPatching {
     }
   }
 
-  Json applyTestOperation(Json const& base, Json const& op) {
+  auto applyTestOperation(Json const& base, Json const& op) -> Json {
     String path = op.getString("path");
     auto pointer = JsonPath::Pointer(path);
     auto inverseTest = op.getBool("inverse", false);
@@ -91,7 +93,7 @@ namespace JsonPatching {
     }
   }
 
-  Json applyRemoveOperation(Json const& base, Json const& op) {
+  auto applyRemoveOperation(Json const& base, Json const& op) -> Json {
     String path = op.getString("path");
     auto pointer = JsonPath::Pointer(path);
 
@@ -107,7 +109,7 @@ namespace JsonPatching {
     }
   }
 
-  Json applyAddOperation(Json const& base, Json const& op) {
+  auto applyAddOperation(Json const& base, Json const& op) -> Json {
     String path = op.getString("path");
     auto value = op.get("value");
     auto pointer = JsonPath::Pointer(path);
@@ -124,7 +126,7 @@ namespace JsonPatching {
     }
   }
 
-  Json applyReplaceOperation(Json const& base, Json const& op) {
+  auto applyReplaceOperation(Json const& base, Json const& op) -> Json {
     String path = op.getString("path");
     auto value = op.get("value");
     auto pointer = JsonPath::Pointer(op.getString("path"));
@@ -141,7 +143,7 @@ namespace JsonPatching {
     }
   }
 
-  Json applyMoveOperation(Json const& base, Json const& op) {
+  auto applyMoveOperation(Json const& base, Json const& op) -> Json {
     String path = op.getString("path");
     auto toPointer = JsonPath::Pointer(path);
     auto fromPointer = JsonPath::Pointer(op.getString("from"));
@@ -161,7 +163,7 @@ namespace JsonPatching {
     }
   }
 
-  Json applyCopyOperation(Json const& base, Json const& op) {
+  auto applyCopyOperation(Json const& base, Json const& op) -> Json {
     String path = op.getString("path");
     auto toPointer = JsonPath::Pointer(path);
     auto fromPointer = JsonPath::Pointer(op.getString("from"));
@@ -179,7 +181,7 @@ namespace JsonPatching {
     }
   }
 
-  Json applyMergeOperation(Json const& base, Json const& op) {
+  auto applyMergeOperation(Json const& base, Json const& op) -> Json {
     String path = op.getString("path");
     auto pointer = JsonPath::Pointer(path);
 

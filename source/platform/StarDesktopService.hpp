@@ -1,9 +1,8 @@
 #pragma once
 
+#include "StarString.hpp"
+
 namespace Star {
-
-STAR_CLASS(DesktopService);
-
 class DesktopService {
 public:
   ~DesktopService() = default;

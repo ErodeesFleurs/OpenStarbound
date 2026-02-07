@@ -2,13 +2,15 @@
 #include "StarImageScaling.hpp"
 #include "StarInterpolation.hpp"
 
+import std;
+
 namespace Star {
 
-Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
+auto scaleNearest(Image const& srcImage, Vec2F const& scale) -> Image {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
-  destSize[0] = max(destSize[0], 1u);
-  destSize[1] = max(destSize[1], 1u);
+  destSize[0] = std::max(destSize[0], 1u);
+  destSize[1] = std::max(destSize[1], 1u);
 
   Image destImage(destSize, srcImage.pixelFormat());
 
@@ -19,11 +21,11 @@ Image scaleNearest(Image const& srcImage, Vec2F const& scale) {
   return destImage;
 }
 
-Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
+auto scaleBilinear(Image const& srcImage, Vec2F const& scale) -> Image {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
-  destSize[0] = max(destSize[0], 1u);
-  destSize[1] = max(destSize[1], 1u);
+  destSize[0] = std::max(destSize[0], 1u);
+  destSize[1] = std::max(destSize[1], 1u);
 
   Image destImage(destSize, srcImage.pixelFormat());
 
@@ -42,11 +44,11 @@ Image scaleBilinear(Image const& srcImage, Vec2F const& scale) {
   return destImage;
 }
 
-Image scaleBicubic(Image const& srcImage, Vec2F const& scale) {
+auto scaleBicubic(Image const& srcImage, Vec2F const& scale) -> Image {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
-  destSize[0] = max(destSize[0], 1u);
-  destSize[1] = max(destSize[1], 1u);
+  destSize[0] = std::max(destSize[0], 1u);
+  destSize[1] = std::max(destSize[1], 1u);
 
   Image destImage(destSize, srcImage.pixelFormat());
 

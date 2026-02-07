@@ -1,8 +1,9 @@
 #pragma once
 
-#include "StarSet.hpp"
-#include "StarNetElement.hpp"
 #include "StarDataStreamDevices.hpp"
+#include "StarNetElement.hpp"
+
+import std;
 
 namespace Star {
 
@@ -14,7 +15,7 @@ public:
   NetElementGroup() = default;
 
   NetElementGroup(NetElementGroup const&) = delete;
-  NetElementGroup& operator=(NetElementGroup const&) = delete;
+  auto operator=(NetElementGroup const&) -> NetElementGroup& = delete;
 
   // Add an element to the group.
   void addNetElement(NetElement* element, bool propagateInterpolation = true);
@@ -31,16 +32,16 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  auto writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const -> bool override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime) override;
 
-  NetElementVersion const* netVersion() const;
-  bool netInterpolationEnabled() const;
-  float netExtrapolationHint() const;
+  auto netVersion() const -> NetElementVersion const*;
+  auto netInterpolationEnabled() const -> bool;
+  auto netExtrapolationHint() const -> float;
 
 private:
-  List<pair<NetElement*, bool>> m_elements;
+  List<std::pair<NetElement*, bool>> m_elements;
   NetElementVersion const* m_version = nullptr;
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;
@@ -50,16 +51,16 @@ private:
   mutable DataStreamBuffer m_buffer;
 };
 
-inline NetElementVersion const* NetElementGroup::netVersion() const {
+inline auto NetElementGroup::netVersion() const -> NetElementVersion const* {
   return m_version;
 }
 
-inline bool NetElementGroup::netInterpolationEnabled() const {
+inline auto NetElementGroup::netInterpolationEnabled() const -> bool {
   return m_interpolationEnabled;
 }
 
-inline float NetElementGroup::netExtrapolationHint() const {
+inline auto NetElementGroup::netExtrapolationHint() const -> float {
   return m_extrapolationHint;
 }
 
-}
+}// namespace Star

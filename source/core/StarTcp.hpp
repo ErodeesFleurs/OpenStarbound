@@ -1,33 +1,32 @@
 #pragma once
 
-#include "StarIODevice.hpp"
+#include "StarConfig.hpp"
 #include "StarSocket.hpp"
 #include "StarThread.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(TcpSocket);
-STAR_CLASS(TcpServer);
+namespace Star {
 
 class TcpSocket : public Socket {
 public:
-  static TcpSocketPtr connectTo(HostAddressWithPort const& address);
-  static TcpSocketPtr listen(HostAddressWithPort const& address);
+  static auto connectTo(HostAddressWithPort const& address) -> Ptr<TcpSocket>;
+  static auto listen(HostAddressWithPort const& address) -> Ptr<TcpSocket>;
 
-  TcpSocketPtr accept();
+  auto accept() -> Ptr<TcpSocket>;
 
   // Must be called after connect.  Sets TCP_NODELAY option.
   void setNoDelay(bool noDelay);
 
-  size_t receive(char* data, size_t len);
-  size_t send(char const* data, size_t len);
+  auto receive(char* data, std::size_t len) -> std::size_t;
+  auto send(char const* data, std::size_t len) -> std::size_t;
 
-  HostAddressWithPort localAddress() const;
-  HostAddressWithPort remoteAddress() const;
+  auto localAddress() const -> HostAddressWithPort;
+  auto remoteAddress() const -> HostAddressWithPort;
 
 private:
   TcpSocket(NetworkMode networkMode);
-  TcpSocket(NetworkMode networkMode, SocketImplPtr impl);
+  TcpSocket(NetworkMode networkMode, Ptr<SocketImpl> impl);
 
   void connect(HostAddressWithPort const& address);
 
@@ -37,20 +36,20 @@ private:
 // Simple class to listen for and open TcpSocket instances.
 class TcpServer {
 public:
-  typedef function<void(TcpSocketPtr socket)> AcceptCallback;
+  using AcceptCallback = std::function<void(Ptr<TcpSocket> socket)>;
 
   TcpServer(HostAddressWithPort const& address);
   // Listens to all interfaces.
-  TcpServer(uint16_t port);
+  TcpServer(std::uint16_t port);
   ~TcpServer();
 
   void stop();
-  bool isListening() const;
+  auto isListening() const -> bool;
 
   // Blocks until next connection available for the given timeout.  Throws
   // ServerClosed if close() is called.  Cannot be called if AcceptCallback is
   // set.
-  TcpSocketPtr accept(unsigned timeout);
+  auto accept(unsigned timeout) -> Ptr<TcpSocket>;
 
   // Rather than calling and blocking on accept(), if an AcceptCallback is set
   // here, it will be called whenever a new connection is available.
@@ -66,7 +65,7 @@ private:
   AcceptCallback m_callback;
   ThreadFunction<void> m_callbackThread;
   HostAddressWithPort m_hostAddress;
-  TcpSocketPtr m_listenSocket;
+  Ptr<TcpSocket> m_listenSocket;
 };
 
-}
+}// namespace Star

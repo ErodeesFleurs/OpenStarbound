@@ -1,11 +1,10 @@
 #pragma once
 
 #include "StarCelestialCoordinate.hpp"
+#include "StarConfig.hpp"
 #include "StarWorldParameters.hpp"
 
 namespace Star {
-
-STAR_CLASS(CelestialParameters);
 
 class CelestialParameters {
 public:
@@ -14,36 +13,36 @@ public:
   explicit CelestialParameters(Json const& diskStore);
   explicit CelestialParameters(ByteArray netStore);
 
-  Json diskStore() const;
-  ByteArray netStore() const;
+  [[nodiscard]] auto diskStore() const -> Json;
+  [[nodiscard]] auto netStore() const -> ByteArray;
 
-  CelestialCoordinate coordinate() const;
-  String name() const;
-  uint64_t seed() const;
+  [[nodiscard]] auto coordinate() const -> CelestialCoordinate;
+  [[nodiscard]] auto name() const -> String;
+  [[nodiscard]] auto seed() const -> uint64_t;
 
-  Json parameters() const;
-  Json getParameter(String const& name, Json def = Json()) const;
+  [[nodiscard]] auto parameters() const -> Json;
+  [[nodiscard]] auto getParameter(String const& name, Json def = Json()) const -> Json;
   // Predictably select from a json array, given by the named parameter.
   // Selects based on the name hash and the system seed.
-  Json randomizeParameterList(String const& name, int32_t mix = 0) const;
+  [[nodiscard]] auto randomizeParameterList(String const& name, int32_t mix = 0) const -> Json;
   // Predictably select from a range, given by the named parameter.  Works for
   // either floating or integral ranges.
-  Json randomizeParameterRange(String const& name, int32_t mix = 0) const;
+  [[nodiscard]] auto randomizeParameterRange(String const& name, int32_t mix = 0) const -> Json;
   // Same function, but if you want to specify the range from an external source
-  Json randomizeParameterRange(JsonArray const& range, int32_t mix = 0, std::optional<String> const& name = {}) const;
+  [[nodiscard]] auto randomizeParameterRange(JsonArray const& range, int32_t mix = 0, std::optional<String> const& name = {}) const -> Json;
 
   // Not all worlds are visitable, if the world is not visitable its
   // visitableParameters will be empty.
-  bool isVisitable() const;
-  VisitableWorldParametersConstPtr visitableParameters() const;
-  void setVisitableParameters(VisitableWorldParametersPtr const& newVisitableParameters);
+  [[nodiscard]] auto isVisitable() const -> bool;
+  [[nodiscard]] auto visitableParameters() const -> ConstPtr<VisitableWorldParameters>;
+  void setVisitableParameters(Ptr<VisitableWorldParameters> const& newVisitableParameters);
 
 private:
   CelestialCoordinate m_coordinate;
   uint64_t m_seed;
   String m_name;
   Json m_parameters;
-  VisitableWorldParametersConstPtr m_visitableParameters;
+  ConstPtr<VisitableWorldParameters> m_visitableParameters;
 };
 
-}
+}// namespace Star

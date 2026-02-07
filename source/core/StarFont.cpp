@@ -1,9 +1,13 @@
 #include "StarFont.hpp"
+
+#include <ft2build.h>
+#include <freetype/freetype.h>
+
+#include "StarConfig.hpp"
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
 
-#include <ft2build.h>
-#include FT_FREETYPE_H
+import std;
 
 namespace Star {
 
@@ -32,12 +36,12 @@ struct FontImpl {
   FT_Face face;
 };
 
-FontPtr Font::loadFont(String const& fileName, unsigned pixelSize) {
-  return loadFont(make_shared<ByteArray>(File::readFile(fileName)), pixelSize);
+auto Font::loadFont(String const& fileName, unsigned pixelSize) -> Ptr<Font> {
+  return loadFont(std::make_shared<ByteArray>(File::readFile(fileName)), pixelSize);
 }
 
-FontPtr Font::loadFont(ByteArrayConstPtr const& bytes, unsigned pixelSize) {
-  FontPtr font = make_shared<Font>();
+auto Font::loadFont(ConstPtr<ByteArray> const& bytes, unsigned pixelSize) -> Ptr<Font> {
+  Ptr<Font> font = std::make_shared<Font>();
   font->m_fontBuffer = bytes;
   font->setPixelSize(pixelSize);
 
@@ -51,7 +55,7 @@ Font::~Font() {
     FT_Done_Face(m_fontImpl->face);
 }
 
-FontPtr Font::clone() const {
+auto Font::clone() const -> Ptr<Font> {
   return Font::loadFont(m_fontBuffer, m_pixelSize);
 }
 
@@ -66,15 +70,15 @@ void Font::setPixelSize(unsigned pixelSize) {
     throw FontException(strf("Cannot set font pixel size to: {}", m_pixelSize));
 }
 
-void Font::setAlphaThreshold(uint8_t alphaThreshold) {
+void Font::setAlphaThreshold(std::uint8_t alphaThreshold) {
   m_alphaThreshold = alphaThreshold;
 }
 
-unsigned Font::height() const {
+auto Font::height() const -> unsigned {
   return m_pixelSize;
 }
 
-unsigned Font::width(String::Char c) {
+auto Font::width(String::Char c) -> unsigned {
   if (auto width = m_widthCache.maybe({c, m_pixelSize})) {
     return *width;
   } else {
@@ -91,7 +95,7 @@ void Font::loadFontImpl() {
     if (!m_fontBuffer || m_fontBuffer->empty())
       throw FontException("Font buffer is null or empty");
 
-    shared_ptr<FontImpl> fontImpl = make_shared<FontImpl>();
+    std::shared_ptr<FontImpl> fontImpl = std::make_shared<FontImpl>();
     if (FT_New_Memory_Face(ftContext.library, (FT_Byte const*)m_fontBuffer->ptr(), m_fontBuffer->size(), 0, &fontImpl->face))
       throw FontException::format("Could not load font from buffer");
 
@@ -102,7 +106,7 @@ void Font::loadFontImpl() {
   }
 }
 
-tuple<Image, Vec2I, bool> Font::render(String::Char c) {
+auto Font::render(String::Char c) -> std::tuple<Image, Vec2I, bool> {
   loadFontImpl();
 
   FT_Face face = m_fontImpl->face;
@@ -125,7 +129,7 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     Vec4B white(255, 255, 255, 0);
     image.fill(white);
     for (unsigned y = 0; y != height; ++y) {
-      uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
+      std::uint8_t* p = slot->bitmap.buffer + y * slot->bitmap.pitch;
       for (unsigned x = 0; x != width; ++x) {
         if (x < width && y < height) {
           white[3] = m_alphaThreshold
@@ -137,14 +141,14 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     }
   } else if ((colored = (slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA))) {
     unsigned bpp = image.bytesPerPixel();
-    uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp); // offset by 1 pixel as it's padded
+    std::uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp); // offset by 1 pixel as it's padded
     for (size_t y = 0; y != height; ++y) {
       memcpy(data - (y * image.width() * bpp),
              slot->bitmap.buffer + y * slot->bitmap.pitch,
              slot->bitmap.pitch);
     }
     // unfortunately FreeType pre-multiplied the color channels :(
-    image.forEachPixel([](unsigned, unsigned, Vec4B& pixel) {
+    image.forEachPixel([](unsigned, unsigned, Vec4B& pixel) -> void {
       if (pixel[3] != 0 && pixel[3] != 255) {
         float a = byteToFloat(pixel[3]);
         pixel[0] /= a;
@@ -162,7 +166,7 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     colored);
 }
 
-bool Font::exists(String::Char c) {
+auto Font::exists(String::Char c) -> bool {
   loadFontImpl();
   return FT_Get_Char_Index(m_fontImpl->face, c);
 }

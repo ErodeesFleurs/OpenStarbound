@@ -3,18 +3,20 @@
 #include "StarLine.hpp"
 #include "StarList.hpp"
 
+import std;
+
 namespace Star {
 
 // Axis aligned box that can be used as a bounding volume.
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 class Box {
 public:
-  typedef Vector<T, N> Coord;
-  typedef Star::Line<T, N> Line;
-  typedef typename Line::IntersectResult LineIntersectResult;
+  using Coord = Vector<T, N>;
+  using Line = Star::Line<T, N>;
+  using LineIntersectResult = typename Line::IntersectResult;
 
-  template <size_t P, typename T2 = void>
-  using Enable2D = typename std::enable_if<P == 2 && N == P, T2>::type;
+  template <std::size_t P, typename T2 = void>
+  using Enable2D = std::enable_if_t<P == 2 && N == P, T2>;
 
   struct IntersectResult {
     // Whether or not the two objects intersect
@@ -26,60 +28,60 @@ public:
     bool glances;
   };
 
-  static Box null();
-  static Box inf();
+  static auto null() -> Box;
+  static auto inf() -> Box;
 
   // Returns an integral aligned box that at least contains the given floating
   // point box.
   template <typename Box2>
-  static Box integral(Box2 const& box);
+  static auto integral(Box2 const& box) -> Box;
 
   // Returns an integral aligned box that is equal to the given box rounded to
   // the nearest whole number (does not necessarily contain the given box).
   template <typename Box2>
-  static Box round(Box2 const& box);
+  static auto round(Box2 const& box) -> Box;
 
   template <typename... TN>
-  static Box boundBoxOf(TN const&... list);
+  static auto boundBoxOf(TN const&... list) -> Box;
 
   template <typename Collection>
-  static Box boundBoxOfPoints(Collection const& collection);
+  static auto boundBoxOfPoints(Collection const& collection) -> Box;
 
-  static Box withSize(Coord const& min, Coord const& size);
-  static Box withCenter(Coord const& center, Coord const& size);
+  static auto withSize(Coord const& min, Coord const& size) -> Box;
+  static auto withCenter(Coord const& center, Coord const& size) -> Box;
 
   Box();
   Box(Coord const& min, Coord const& max);
   Box(Box const& b);
-  Box& operator=(Box const& b);
+  auto operator=(Box const& b) -> Box&;
 
   template <typename T2>
   explicit Box(Box<T2, N> const& b);
 
   // Is equal to null()
-  bool isNull() const;
+  [[nodiscard]] auto isNull() const -> bool;
 
   // One or more dimensions are of negative magnitude
-  bool isNegative() const;
+  [[nodiscard]] auto isNegative() const -> bool;
 
   // One or more dimensions are of zero or negative magnitude
-  bool isEmpty() const;
+  [[nodiscard]] auto isEmpty() const -> bool;
 
   // Sets the bounding box equal to one containing the given bounding box and
   // the current one.
   void combine(Box const& box);
-  Box combined(Box const& box) const;
+  auto combined(Box const& box) const -> Box;
 
   // Sets the bounding box equal to one containing the current bounding box and
   // the given point.
   void combine(Coord const& point);
-  Box combined(Coord const& point) const;
+  auto combined(Coord const& point) const -> Box;
 
   // Sets the bounding box equal to the intersection of this one and the given
   // one.  If there is no intersection than the box becomes negative in that
   // dimension.
   void limit(Box const& box);
-  Box limited(Box const& box);
+  auto limited(Box const& box) -> Box;
 
   // If any range has a min < max, swap them to make it non-null.
   void makePositive();
@@ -89,8 +91,8 @@ public:
   // empty in any dimension, then this has no effect.
   void rangeSetIfEmpty(Box const& b);
 
-  Coord size() const;
-  T size(size_t dim) const;
+  auto size() const -> Coord;
+  auto size(std::size_t dim) const -> T;
 
   // Sets bound box to the minimum bound box necessary to both have the given
   // aspect ratio and contain the current bounding box.
@@ -98,150 +100,150 @@ public:
 
   void makeCube();
 
-  Coord center() const;
+  auto center() const -> Coord;
   void setCenter(Coord const& c);
 
   void translate(Coord const& c);
-  Box translated(Coord const& c) const;
+  auto translated(Coord const& c) const -> Box;
 
   // Translate the Box the minimum distance so that it includes the given point
   void translateToInclude(Coord const& coord, Coord const& padding = Coord());
 
-  Vector<T, 2> range(size_t dim) const;
-  void setRange(size_t dim, Vector<T, 2> v);
-  void combineRange(size_t dim, Vector<T, 2> v);
-  void limitRange(size_t dim, Vector<T, 2> v);
+  auto range(std::size_t dim) const -> Vector<T, 2>;
+  void setRange(std::size_t dim, Vector<T, 2> v);
+  void combineRange(std::size_t dim, Vector<T, 2> v);
+  void limitRange(std::size_t dim, Vector<T, 2> v);
 
   // Expand from center.
   void expand(T factor);
-  Box expanded(T factor) const;
+  auto expanded(T factor) const -> Box;
 
   // Expand from center.
   void expand(Coord const& factor);
-  Box expanded(Vector<T, N> const& factor) const;
+  auto expanded(Vector<T, N> const& factor) const -> Box;
 
   // Scale around origin.
   void scale(T factor);
-  Box scaled(T factor) const;
+  auto scaled(T factor) const -> Box;
 
   // Scale around origin.
   void scale(Coord const& factor);
-  Box scaled(Vector<T, N> const& factor) const;
+  auto scaled(Vector<T, N> const& factor) const -> Box;
 
   // Increase all dimensions by a constant amount on all sides
   void pad(T amount);
-  Box padded(T amount) const;
+  auto padded(T amount) const -> Box;
 
   // Increase all dimensions by a constant amount
   void pad(Coord const& amount);
-  Box padded(Vector<T, N> const& amount) const;
+  auto padded(Vector<T, N> const& amount) const -> Box;
 
   // Opposite of pad
   void trim(T amount);
-  Box trimmed(T amount) const;
+  auto trimmed(T amount) const -> Box;
 
   // Opposite of pad
   void trim(Coord const& amount);
-  Box trimmed(Vector<T, N> const& amount) const;
+  auto trimmed(Vector<T, N> const& amount) const -> Box;
 
   // Flip around some dimension (may make box have negative volume)
-  void flip(size_t dimension);
-  Box flipped(size_t dimension) const;
+  void flip(std::size_t dimension);
+  auto flipped(std::size_t dimension) const -> Box;
 
-  Coord const& min() const;
-  Coord const& max() const;
+  auto min() const -> Coord const&;
+  auto max() const -> Coord const&;
 
-  Coord& min();
-  Coord& max();
+  auto min() -> Coord&;
+  auto max() -> Coord&;
 
   void setMin(Coord const& c);
   void setMax(Coord const& c);
 
-  T volume() const;
-  Box overlap(Box const& b) const;
+  auto volume() const -> T;
+  auto overlap(Box const& b) const -> Box;
 
-  IntersectResult intersection(Box const& b) const;
-  bool intersects(Box const& b, bool includeEdges = true) const;
+  auto intersection(Box const& b) const -> IntersectResult;
+  auto intersects(Box const& b, bool includeEdges = true) const -> bool;
 
-  bool contains(Coord const& p, bool includeEdges = true) const;
-  bool contains(Box const& b, bool includeEdges = true) const;
+  auto contains(Coord const& p, bool includeEdges = true) const -> bool;
+  auto contains(Box const& b, bool includeEdges = true) const -> bool;
 
   // A version of contains that includes the min edges but not the max edges,
   // useful to select based on adjoining boxes without overlap.
-  bool belongs(Coord const& p) const;
+  auto belongs(Coord const& p) const -> bool;
 
-  bool containsEpsilon(Coord const& p, unsigned epsilons = 2) const;
-  bool containsEpsilon(Box const& b, unsigned epsilons = 2) const;
+  auto containsEpsilon(Coord const& p, unsigned epsilons = 2) const -> bool;
+  auto containsEpsilon(Box const& b, unsigned epsilons = 2) const -> bool;
 
-  bool operator==(Box const& ref) const;
-  bool operator!=(Box const& ref) const;
+  auto operator==(Box const& ref) const -> bool;
+  auto operator!=(Box const& ref) const -> bool;
 
   // Find Coord inside box nearest to
-  Coord nearestCoordTo(Coord const& c) const;
+  auto nearestCoordTo(Coord const& c) const -> Coord;
 
   // Find the coord in normalized space for this rect, so that 0 is the minimum
   // and 1 is the maximum.
-  Coord normal(Coord const& coord) const;
+  auto normal(Coord const& coord) const -> Coord;
 
   // The invers of normal, find the real space position of this normalized
   // coordinate.
-  Coord eval(Coord const& normalizedCoord) const;
+  auto eval(Coord const& normalizedCoord) const -> Coord;
 
   // 2D Only
 
   // Slightly different to make ctor work
-  template <size_t P = N, class = Enable2D<P>>
+  template <std::size_t P = N, class = Enable2D<P>>
   Box(T minx, T miny, T maxx, T maxy);
 
-  template <size_t P = N>
-  Enable2D<P, T> xMin() const;
-  template <size_t P = N>
-  Enable2D<P, T> xMax() const;
-  template <size_t P = N>
-  Enable2D<P, T> yMin() const;
-  template <size_t P = N>
-  Enable2D<P, T> yMax() const;
+  template <std::size_t P = N>
+  auto xMin() const -> Enable2D<P, T>;
+  template <std::size_t P = N>
+  auto xMax() const -> Enable2D<P, T>;
+  template <std::size_t P = N>
+  auto yMin() const -> Enable2D<P, T>;
+  template <std::size_t P = N>
+  auto yMax() const -> Enable2D<P, T>;
 
-  template <size_t P = N>
-  Enable2D<P> setXMin(T xMin);
-  template <size_t P = N>
-  Enable2D<P> setXMax(T xMax);
-  template <size_t P = N>
-  Enable2D<P> setYMin(T yMin);
-  template <size_t P = N>
-  Enable2D<P> setYMax(T yMax);
+  template <std::size_t P = N>
+  auto setXMin(T xMin) -> Enable2D<P>;
+  template <std::size_t P = N>
+  auto setXMax(T xMax) -> Enable2D<P>;
+  template <std::size_t P = N>
+  auto setYMin(T yMin) -> Enable2D<P>;
+  template <std::size_t P = N>
+  auto setYMax(T yMax) -> Enable2D<P>;
 
-  template <size_t P = N>
-  Enable2D<P, T> width() const;
-  template <size_t P = N>
-  Enable2D<P, T> height() const;
+  template <std::size_t P = N>
+  auto width() const -> Enable2D<P, T>;
+  template <std::size_t P = N>
+  auto height() const -> Enable2D<P, T>;
 
-  template <size_t P = N>
-  Enable2D<P, void> translate(T x, T y);
-  template <size_t P = N>
-  Enable2D<P, void> translateToInclude(T x, T y, T xPadding = 0, T yPadding = 0);
-  template <size_t P = N>
-  Enable2D<P, void> scale(T x, T y);
-  template <size_t P = N>
-  Enable2D<P, void> expand(T x, T y);
-  template <size_t P = N>
-  Enable2D<P, void> flipHorizontal();
-  template <size_t P = N>
-  Enable2D<P, void> flipVertical();
+  template <std::size_t P = N>
+  auto translate(T x, T y) -> Enable2D<P, void>;
+  template <std::size_t P = N>
+  auto translateToInclude(T x, T y, T xPadding = 0, T yPadding = 0) -> Enable2D<P, void>;
+  template <std::size_t P = N>
+  auto scale(T x, T y) -> Enable2D<P, void>;
+  template <std::size_t P = N>
+  auto expand(T x, T y) -> Enable2D<P, void>;
+  template <std::size_t P = N>
+  auto flipHorizontal() -> Enable2D<P, void>;
+  template <std::size_t P = N>
+  auto flipVertical() -> Enable2D<P, void>;
 
-  template <size_t P = N>
-  Enable2D<P, Array<Line, 4>> edges() const;
-  template <size_t P = N>
-  Enable2D<P, bool> intersects(Line const& l) const;
-  template <size_t P = N>
-  Enable2D<P, bool> intersectsCircle(Coord const& position, T radius) const;
-  template <size_t P = N>
-  Enable2D<P, LineIntersectResult> edgeIntersection(Line const& l) const;
+  template <std::size_t P = N>
+  auto edges() const -> Enable2D<P, Array<Line, 4>>;
+  template <std::size_t P = N>
+  auto intersects(Line const& l) const -> Enable2D<P, bool>;
+  template <std::size_t P = N>
+  auto intersectsCircle(Coord const& position, T radius) const -> Enable2D<P, bool>;
+  template <std::size_t P = N>
+  auto edgeIntersection(Line const& l) const -> Enable2D<P, LineIntersectResult>;
 
   // Returns a list of areas that are in this rect but not in the given rect.
   // Extra Credit: Implement this method for arbitrary dimensions.
-  template <size_t P = N>
-  Enable2D<P, List<Box>> subtract(Box const& rect) const;
+  template <std::size_t P = N>
+  auto subtract(Box const& rect) const -> Enable2D<P, List<Box>>;
 
 protected:
   template <typename... TN>
@@ -257,184 +259,180 @@ protected:
   Coord m_max;
 };
 
-template <typename T, size_t N>
-std::ostream& operator<<(std::ostream& os, Box<T, N> const& box);
+template <typename T, std::size_t N>
+auto operator<<(std::ostream& os, Box<T, N> const& box) -> std::ostream&;
 
-template<typename T>
+template <typename T>
 using Rect = Box<T, 2>;
 
-typedef Rect<int> RectI;
-typedef Rect<unsigned> RectU;
-typedef Rect<float> RectF;
-typedef Rect<double> RectD;
+using RectI = Rect<int>;
+using RectU = Rect<unsigned>;
+using RectF = Rect<float>;
+using RectD = Rect<double>;
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::null() {
+template <typename T, std::size_t N>
+auto Box<T, N>::null() -> Box<T, N> {
   return Box(Coord::filled(std::numeric_limits<T>::max()), Coord::filled(std::numeric_limits<T>::lowest()));
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::inf() {
+template <typename T, std::size_t N>
+auto Box<T, N>::inf() -> Box<T, N> {
   return Box(Coord::filled(std::numeric_limits<T>::lowest()), Coord::filled(std::numeric_limits<T>::max()));
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 template <typename Box2>
-Box<T, N> Box<T, N>::integral(Box2 const& box) {
+auto Box<T, N>::integral(Box2 const& box) -> Box<T, N> {
   return Box(Coord::floor(box.min()), Coord::ceil(box.max()));
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 template <typename Box2>
-Box<T, N> Box<T, N>::round(Box2 const& box) {
+auto Box<T, N>::round(Box2 const& box) -> Box<T, N> {
   return Box(Coord::round(box.min()), Coord::round(box.max()));
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 template <typename... TN>
-Box<T, N> Box<T, N>::boundBoxOf(TN const&... list) {
+auto Box<T, N>::boundBoxOf(TN const&... list) -> Box<T, N> {
   Box b = null();
   combineThings(b, list...);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 template <typename Collection>
-Box<T, N> Box<T, N>::boundBoxOfPoints(Collection const& collection) {
+auto Box<T, N>::boundBoxOfPoints(Collection const& collection) -> Box<T, N> {
   Box b = null();
   for (auto const& point : collection)
     b.combine(Coord(point));
   return b;
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::withSize(Coord const& min, Coord const& size) {
+template <typename T, std::size_t N>
+auto Box<T, N>::withSize(Coord const& min, Coord const& size) -> Box<T, N> {
   return Box(min, min + size);
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::withCenter(Coord const& center, Coord const& size) {
+template <typename T, std::size_t N>
+auto Box<T, N>::withCenter(Coord const& center, Coord const& size) -> Box<T, N> {
   return Box(center - size / 2, center + size / 2);
 }
 
-template <typename T, size_t N>
-Box<T, N>::Box() {}
+template <typename T, std::size_t N>
+Box<T, N>::Box() = default;
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 Box<T, N>::Box(Coord const& min, Coord const& max)
-  : m_min(min), m_max(max) {}
+    : m_min(min), m_max(max) {}
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 Box<T, N>::Box(Box const& b)
-  : m_min(b.min()), m_max(b.max()) {}
+    : m_min(b.min()), m_max(b.max()) {}
 
-template <typename T, size_t N>
-Box<T, N>& Box<T, N>::operator=(Box<T, N> const& b) {
-  m_min = b.m_min;
-  m_max = b.m_max;
-  return *this;
-}
+template <typename T, std::size_t N>
+auto Box<T, N>::operator=(Box<T, N> const& b) -> Box<T, N>& = default;
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 template <typename T2>
 Box<T, N>::Box(Box<T2, N> const& b)
-  : m_min(b.min()), m_max(b.max()) {}
+    : m_min(b.min()), m_max(b.max()) {}
 
-template <typename T, size_t N>
-bool Box<T, N>::isNull() const {
+template <typename T, std::size_t N>
+auto Box<T, N>::isNull() const -> bool {
   return m_min == Coord::filled(std::numeric_limits<T>::max())
-      && m_max == Coord::filled(std::numeric_limits<T>::lowest());
+    && m_max == Coord::filled(std::numeric_limits<T>::lowest());
 }
 
-template <typename T, size_t N>
-bool Box<T, N>::isNegative() const {
-  for (size_t i = 0; i < N; ++i) {
+template <typename T, std::size_t N>
+auto Box<T, N>::isNegative() const -> bool {
+  for (std::size_t i = 0; i < N; ++i) {
     if (m_max[i] < m_min[i])
       return true;
   }
   return false;
 }
 
-template <typename T, size_t N>
-bool Box<T, N>::isEmpty() const {
-  for (size_t i = 0; i < N; ++i) {
+template <typename T, std::size_t N>
+auto Box<T, N>::isEmpty() const -> bool {
+  for (std::size_t i = 0; i < N; ++i) {
     if (m_max[i] <= m_min[i])
       return true;
   }
   return false;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::combine(Box const& box) {
   m_min = box.m_min.piecewiseMin(m_min);
   m_max = box.m_max.piecewiseMax(m_max);
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::combined(Box const& box) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::combined(Box const& box) const -> Box<T, N> {
   auto b = *this;
   b.combine(box);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::combine(Coord const& point) {
   m_min = m_min.piecewiseMin(point);
   m_max = m_max.piecewiseMax(point);
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::combined(Coord const& point) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::combined(Coord const& point) const -> Box<T, N> {
   auto b = *this;
   b.combine(point);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::limit(Box const& box) {
   m_min = m_min.piecewiseMax(box.m_min);
   m_max = m_max.piecewiseMin(box.m_max);
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::limited(Box const& box) {
+template <typename T, std::size_t N>
+auto Box<T, N>::limited(Box const& box) -> Box<T, N> {
   auto b = *this;
   b.limit(box);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::makePositive() {
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     if (m_max[i] < m_min[i])
       std::swap(m_max[i], m_min[i]);
   }
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::rangeSetIfEmpty(Box const& b) {
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     if (m_max[i] <= m_min[i])
       setRange(i, b.range(i));
   }
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::makeCube() {
   setAspect(Coord::filled(1));
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 auto Box<T, N>::size() const -> Coord {
   return m_max - m_min;
 }
 
-template <typename T, size_t N>
-T Box<T, N>::size(size_t dim) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::size(std::size_t dim) const -> T {
   return m_max[dim] - m_min[dim];
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::setAspect(Coord as, bool shrink) {
   Coord nBox = (m_max - m_min).piecewiseDivide(as);
   Coord extent;
@@ -448,33 +446,33 @@ void Box<T, N>::setAspect(Coord as, bool shrink) {
   m_min = center - extent / 2;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 auto Box<T, N>::center() const -> Coord {
   return (m_min + m_max) / 2;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::setCenter(Coord const& c) {
   translate(c - center());
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::translate(Coord const& c) {
   m_min += c;
   m_max += c;
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::translated(Coord const& c) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::translated(Coord const& c) const -> Box<T, N> {
   auto b = *this;
   b.translate(c);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::translateToInclude(Coord const& coord, Coord const& padding) {
   Coord translation;
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     if (coord[i] < m_min[i] + padding[i])
       translation[i] = coord[i] - m_min[i] - padding[i];
     else if (coord[i] > m_max[i] - padding[i])
@@ -483,32 +481,32 @@ void Box<T, N>::translateToInclude(Coord const& coord, Coord const& padding) {
   translate(translation);
 }
 
-template <typename T, size_t N>
-Vector<T, 2> Box<T, N>::range(size_t dim) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::range(std::size_t dim) const -> Vector<T, 2> {
   return Coord(m_min[dim], m_max[dim]);
 }
 
-template <typename T, size_t N>
-void Box<T, N>::setRange(size_t dim, Vector<T, 2> v) {
+template <typename T, std::size_t N>
+void Box<T, N>::setRange(std::size_t dim, Vector<T, 2> v) {
   m_min[dim] = v[0];
   m_max[dim] = v[1];
 }
 
-template <typename T, size_t N>
-void Box<T, N>::combineRange(size_t dim, Vector<T, 2> v) {
+template <typename T, std::size_t N>
+void Box<T, N>::combineRange(std::size_t dim, Vector<T, 2> v) {
   m_min[dim] = std::min(m_min[dim], v[0]);
   m_max[dim] = std::max(m_max[dim], v[1]);
 }
 
-template <typename T, size_t N>
-void Box<T, N>::limitRange(size_t dim, Vector<T, 2> v) {
+template <typename T, std::size_t N>
+void Box<T, N>::limitRange(std::size_t dim, Vector<T, 2> v) {
   m_min[dim] = std::max(m_min[dim], v[0]);
   m_max[dim] = std::min(m_max[dim], v[1]);
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::expand(T factor) {
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     auto rng = range(i);
     T center = rng.sum() / 2;
     T newDist = (rng[1] - rng[0]) * factor;
@@ -516,16 +514,16 @@ void Box<T, N>::expand(T factor) {
   }
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::expanded(T factor) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::expanded(T factor) const -> Box<T, N> {
   auto b = *this;
   b.expand(factor);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::expand(Coord const& factor) {
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     auto rng = range(i);
     T center = rng.sum() / 2;
     T newDist = (rng[1] - rng[0]) * factor[i];
@@ -533,168 +531,168 @@ void Box<T, N>::expand(Coord const& factor) {
   }
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::expanded(Coord const& factor) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::expanded(Coord const& factor) const -> Box<T, N> {
   auto b = *this;
   b.expand(factor);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::scale(T factor) {
-  for (size_t i = 0; i < N; ++i)
+  for (std::size_t i = 0; i < N; ++i)
     setRange(i, range(i) * factor);
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::scaled(T factor) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::scaled(T factor) const -> Box<T, N> {
   auto b = *this;
   b.scale(factor);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::scale(Coord const& factor) {
-  for (size_t i = 0; i < N; ++i)
+  for (std::size_t i = 0; i < N; ++i)
     setRange(i, range(i) * factor[i]);
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::scaled(Coord const& factor) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::scaled(Coord const& factor) const -> Box<T, N> {
   auto b = *this;
   b.scale(factor);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::pad(T amount) {
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     m_min[i] -= amount;
     m_max[i] += amount;
   }
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::padded(T amount) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::padded(T amount) const -> Box<T, N> {
   auto b = *this;
   b.pad(amount);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::pad(Coord const& amount) {
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     m_min[i] -= amount[i];
     m_max[i] += amount[i];
   }
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::padded(Coord const& amount) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::padded(Coord const& amount) const -> Box<T, N> {
   auto b = *this;
   b.pad(amount);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::trim(T amount) {
   pad(-amount);
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::trimmed(T amount) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::trimmed(T amount) const -> Box<T, N> {
   auto b = *this;
   b.trim(amount);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::trim(Coord const& amount) {
   pad(-amount);
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::trimmed(Coord const& amount) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::trimmed(Coord const& amount) const -> Box<T, N> {
   auto b = *this;
   b.trim(amount);
   return b;
 }
 
-template <typename T, size_t N>
-void Box<T, N>::flip(size_t dimension) {
+template <typename T, std::size_t N>
+void Box<T, N>::flip(std::size_t dimension) {
   std::swap(m_min[dimension], m_max[dimension]);
 }
 
-template <typename T, size_t N>
-Box<T, N> Box<T, N>::flipped(size_t dimension) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::flipped(std::size_t dimension) const -> Box<T, N> {
   auto b = *this;
   b.flip(dimension);
   return b;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 auto Box<T, N>::normal(Coord const& coord) const -> Coord {
   return (coord - m_min).piecewiseDivide(m_max - m_min);
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 auto Box<T, N>::eval(Coord const& normalizedCoord) const -> Coord {
   return normalizedCoord.piecewiseMultiply(m_max - m_min) + m_min;
 }
 
-template <typename T, size_t N>
-auto Box<T, N>::min() const -> Coord const & {
+template <typename T, std::size_t N>
+auto Box<T, N>::min() const -> Coord const& {
   return m_min;
 }
 
-template <typename T, size_t N>
-auto Box<T, N>::max() const -> Coord const & {
+template <typename T, std::size_t N>
+auto Box<T, N>::max() const -> Coord const& {
   return m_max;
 }
 
-template <typename T, size_t N>
-auto Box<T, N>::min() -> Coord & {
+template <typename T, std::size_t N>
+auto Box<T, N>::min() -> Coord& {
   return m_min;
 }
 
-template <typename T, size_t N>
-auto Box<T, N>::max() -> Coord & {
+template <typename T, std::size_t N>
+auto Box<T, N>::max() -> Coord& {
   return m_max;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::setMin(Coord const& c) {
   m_min = c;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 void Box<T, N>::setMax(Coord const& c) {
   m_max = c;
 }
 
-template <typename T, size_t N>
-T Box<T, N>::volume() const {
+template <typename T, std::size_t N>
+auto Box<T, N>::volume() const -> T {
   return size().product();
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 auto Box<T, N>::overlap(Box const& b) const -> Box {
   Box result = *this;
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     result.m_min[i] = std::max(result.m_min[i], b.m_min[i]);
     result.m_max[i] = std::min(result.m_max[i], b.m_max[i]);
   }
   return result;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 auto Box<T, N>::intersection(Box const& b) const -> IntersectResult {
   IntersectResult res;
 
   T overlap = std::numeric_limits<T>::max();
-  size_t dim = 0;
+  std::size_t dim = 0;
   bool negative = false;
-  for (size_t i = 0; i < N; ++i) {
+  for (std::size_t i = 0; i < N; ++i) {
     if (m_max[i] - b.m_min[i] < overlap) {
       overlap = m_max[i] - b.m_min[i];
       dim = i;
@@ -728,9 +726,9 @@ auto Box<T, N>::intersection(Box const& b) const -> IntersectResult {
   return res;
 }
 
-template <typename T, size_t N>
-bool Box<T, N>::intersects(Box const& b, bool includeEdges) const {
-  for (size_t i = 0; i < N; ++i) {
+template <typename T, std::size_t N>
+auto Box<T, N>::intersects(Box const& b, bool includeEdges) const -> bool {
+  for (std::size_t i = 0; i < N; ++i) {
     if (includeEdges) {
       if (m_max[i] < b.m_min[i] || b.m_max[i] < m_min[i])
         return false;
@@ -742,9 +740,9 @@ bool Box<T, N>::intersects(Box const& b, bool includeEdges) const {
   return true;
 }
 
-template <typename T, size_t N>
-bool Box<T, N>::contains(Coord const& p, bool includeEdges) const {
-  for (size_t i = 0; i < N; ++i) {
+template <typename T, std::size_t N>
+auto Box<T, N>::contains(Coord const& p, bool includeEdges) const -> bool {
+  for (std::size_t i = 0; i < N; ++i) {
     if (includeEdges) {
       if (p[i] < m_min[i] || p[i] > m_max[i])
         return false;
@@ -756,14 +754,14 @@ bool Box<T, N>::contains(Coord const& p, bool includeEdges) const {
   return true;
 }
 
-template <typename T, size_t N>
-bool Box<T, N>::contains(Box const& b, bool includeEdges) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::contains(Box const& b, bool includeEdges) const -> bool {
   return contains(b.min(), includeEdges) && contains(b.max(), includeEdges);
 }
 
-template <typename T, size_t N>
-bool Box<T, N>::belongs(Coord const& p) const {
-  for (size_t i = 0; i < N; ++i) {
+template <typename T, std::size_t N>
+auto Box<T, N>::belongs(Coord const& p) const -> bool {
+  for (std::size_t i = 0; i < N; ++i) {
     if (p[i] < m_min[i] || p[i] >= m_max[i])
       return false;
   }
@@ -771,9 +769,9 @@ bool Box<T, N>::belongs(Coord const& p) const {
   return true;
 }
 
-template <typename T, size_t N>
-bool Box<T, N>::containsEpsilon(Coord const& p, unsigned epsilons) const {
-  for (size_t i = 0; i < N; ++i) {
+template <typename T, std::size_t N>
+auto Box<T, N>::containsEpsilon(Coord const& p, unsigned epsilons) const -> bool {
+  for (std::size_t i = 0; i < N; ++i) {
     if (p[i] < m_min[i] || p[i] > m_max[i])
       return false;
     if (nearEqual(p[i], m_min[i], epsilons) || nearEqual(p[i], m_max[i], epsilons))
@@ -782,148 +780,148 @@ bool Box<T, N>::containsEpsilon(Coord const& p, unsigned epsilons) const {
   return true;
 }
 
-template <typename T, size_t N>
-bool Box<T, N>::containsEpsilon(Box const& b, unsigned epsilons) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::containsEpsilon(Box const& b, unsigned epsilons) const -> bool {
   return containsEpsilon(b.min(), epsilons) && containsEpsilon(b.max(), epsilons);
 }
 
-template <typename T, size_t N>
-bool Box<T, N>::operator==(Box const& ref) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::operator==(Box const& ref) const -> bool {
   return m_min == ref.m_min && m_max == ref.m_max;
 }
 
-template <typename T, size_t N>
-bool Box<T, N>::operator!=(Box const& ref) const {
+template <typename T, std::size_t N>
+auto Box<T, N>::operator!=(Box const& ref) const -> bool {
   return m_min != ref.m_min || m_max != ref.m_max;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 template <typename... TN>
 void Box<T, N>::combineThings(Box& b, Coord const& point, TN const&... rest) {
   b.combine(point);
   combineThings(b, rest...);
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 template <typename... TN>
 void Box<T, N>::combineThings(Box& b, Box const& box, TN const&... rest) {
   b.combine(box);
   combineThings(b, rest...);
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 template <typename... TN>
 void Box<T, N>::combineThings(Box&) {}
 
-template <typename T, size_t N>
-std::ostream& operator<<(std::ostream& os, Box<T, N> const& box) {
+template <typename T, std::size_t N>
+auto operator<<(std::ostream& os, Box<T, N> const& box) -> std::ostream& {
   os << "Box{min:" << box.min() << " max:" << box.max() << "}";
   return os;
 }
 
-template <typename T, size_t N>
-template <size_t P, class>
+template <typename T, std::size_t N>
+template <std::size_t P, class>
 Box<T, N>::Box(T minx, T miny, T maxx, T maxy)
-  : Box(Coord(minx, miny), Coord(maxx, maxy)) {}
+    : Box(Coord(minx, miny), Coord(maxx, maxy)) {}
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::xMin() const -> Enable2D<P, T> {
   return min()[0];
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::xMax() const -> Enable2D<P, T> {
   return max()[0];
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::yMin() const -> Enable2D<P, T> {
   return min()[1];
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::yMax() const -> Enable2D<P, T> {
   return max()[1];
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::setXMin(T xMin) -> Enable2D<P> {
   m_min[0] = xMin;
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::setXMax(T xMax) -> Enable2D<P> {
   m_max[0] = xMax;
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::setYMin(T yMin) -> Enable2D<P> {
   m_min[1] = yMin;
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::setYMax(T yMax) -> Enable2D<P> {
   m_max[1] = yMax;
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::width() const -> Enable2D<P, T> {
   return size(0);
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::height() const -> Enable2D<P, T> {
   return size(1);
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::translate(T x, T y) -> Enable2D<P, void> {
   translate(Coord(x, y));
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::translateToInclude(T x, T y, T xPadding, T yPadding) -> Enable2D<P, void> {
   translateToInclude(Coord(x, y), Coord(xPadding, yPadding));
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::scale(T x, T y) -> Enable2D<P, void> {
   scale(Coord(x, y));
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::expand(T x, T y) -> Enable2D<P, void> {
   expand(Coord(x, y));
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::flipHorizontal() -> Enable2D<P, void> {
   flip(0);
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::flipVertical() -> Enable2D<P, void> {
   flip(1);
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::edges() const -> Enable2D<P, Array<Line, 4>> {
   Array<Line, 4> res;
   res[0] = {min(), {min()[0], max()[1]}};
@@ -933,8 +931,8 @@ auto Box<T, N>::edges() const -> Enable2D<P, Array<Line, 4>> {
   return res;
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::intersects(Line const& l) const -> Enable2D<P, bool> {
   if (contains(l.min()) || contains(l.max()))
     return true;
@@ -946,8 +944,8 @@ auto Box<T, N>::intersects(Line const& l) const -> Enable2D<P, bool> {
   return false;
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::intersectsCircle(Coord const& position, T radius) const -> Enable2D<P, bool> {
   if (contains(position))
     return true;
@@ -959,11 +957,11 @@ auto Box<T, N>::intersectsCircle(Coord const& position, T radius) const -> Enabl
 }
 
 // returns the closest intersection point (from l.min())
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineIntersectResult> {
   Array<LineIntersectResult, 4> candidates;
-  size_t numCandidates = 0;
+  std::size_t numCandidates = 0;
 
   for (auto i : edges()) {
     auto res = l.intersection(i);
@@ -996,8 +994,8 @@ auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineInterse
   // through both corners
   if (numCandidates != 0) {
     std::sort(candidates.ptr(),
-        candidates.ptr() + numCandidates,
-        [&](LineIntersectResult const& a, LineIntersectResult const& b) { return a.t < b.t; });
+              candidates.ptr() + numCandidates,
+              [&](LineIntersectResult const& a, LineIntersectResult const& b) -> auto { return a.t < b.t; });
     if (numCandidates == 1) {
       if (contains(l.min(), false) || contains(l.max(), false)) {
         candidates[0].glances = false;
@@ -1008,7 +1006,7 @@ auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineInterse
       } else if (contains(l.min()) && !candidates[1].glances) {
         candidates[0].glances = false;
       }
-      if (candidates[1].coincides) { // If we coincide on either consider it true
+      if (candidates[1].coincides) {// If we coincide on either consider it true
         candidates[0].coincides = true;
       }
     } else if (numCandidates == 3) {
@@ -1029,8 +1027,8 @@ auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineInterse
   }
 }
 
-template <typename T, size_t N>
-template <size_t P>
+template <typename T, std::size_t N>
+template <std::size_t P>
 auto Box<T, N>::subtract(Box const& rect) const -> Enable2D<P, List<Box>> {
   List<Box> regions;
 
@@ -1062,15 +1060,15 @@ auto Box<T, N>::subtract(Box const& rect) const -> Enable2D<P, List<Box>> {
   return regions;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 auto Box<T, N>::nearestCoordTo(Coord const& c) const -> Coord {
   Coord result = c;
-  for (size_t i = 0; i < N; ++i)
+  for (std::size_t i = 0; i < N; ++i)
     result[i] = clamp(result[i], m_min[i], m_max[i]);
   return result;
 }
 
-}
+}// namespace Star
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 struct std::formatter<Star::Box<T, N>> : Star::ostream_formatter {};

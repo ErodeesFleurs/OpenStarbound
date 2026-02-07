@@ -1,13 +1,13 @@
 #pragma once
 
-
-#include <optional>
-
+#include "StarConfig.hpp"
 #include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(FormattedJson);
+class FormattedJson;
 
 struct ObjectElement;
 struct ObjectKeyElement;
@@ -16,105 +16,107 @@ struct WhitespaceElement;
 struct ColonElement;
 struct CommaElement;
 
-typedef Variant<ValueElement, ObjectKeyElement, WhitespaceElement, ColonElement, CommaElement> JsonElement;
+using JsonElement = Variant<ValueElement, ObjectKeyElement, WhitespaceElement, ColonElement, CommaElement>;
 
 struct ValueElement {
   ValueElement(FormattedJson const& json);
 
-  FormattedJsonPtr value;
+  Ptr<FormattedJson> value;
 
-  bool operator==(ValueElement const& v) const;
+  auto operator==(ValueElement const& v) const -> bool;
 };
 
 struct ObjectKeyElement {
   String key;
 
-  bool operator==(ObjectKeyElement const& v) const;
+  auto operator==(ObjectKeyElement const& v) const -> bool;
 };
 
 struct WhitespaceElement {
   String whitespace;
 
-  bool operator==(WhitespaceElement const& v) const;
+  auto operator==(WhitespaceElement const& v) const -> bool;
 };
 
 struct ColonElement {
-  bool operator==(ColonElement const&) const;
+  auto operator==(ColonElement const&) const -> bool {
+    return true;
+  }
 };
 
 struct CommaElement {
-  bool operator==(CommaElement const&) const;
+  auto operator==(CommaElement const&) const -> bool;
 };
 
-std::ostream& operator<<(std::ostream& os, JsonElement const& elem);
+auto operator<<(std::ostream& os, JsonElement const& elem) -> std::ostream&;
 
 // Class representing formatted JSON data. Preserves whitespace and comments.
 class FormattedJson {
 public:
-  typedef List<JsonElement> ElementList;
-  typedef size_t ElementLocation;
+  using ElementList = List<JsonElement>;
+  using ElementLocation = size_t;
 
-  static FormattedJson parse(String const& string);
-  static FormattedJson parseJson(String const& string);
+  static auto parse(String const& string) -> FormattedJson;
+  static auto parseJson(String const& string) -> FormattedJson;
 
-  static FormattedJson ofType(Json::Type type);
+  static auto ofType(Json::Type type) -> FormattedJson;
 
   FormattedJson();
   FormattedJson(Json const&);
 
-  Json const& toJson() const;
+  [[nodiscard]] auto toJson() const -> Json const&;
 
-  FormattedJson get(String const& key) const;
-  FormattedJson get(size_t index) const;
+  [[nodiscard]] auto get(String const& key) const -> FormattedJson;
+  [[nodiscard]] auto get(size_t index) const -> FormattedJson;
 
   // Returns a new FormattedJson with the given values added or erased.
   // Prepend, insert and append update the value in-place if the key already
   // exists.
-  FormattedJson prepend(String const& key, FormattedJson const& value) const;
-  FormattedJson insertBefore(String const& key, FormattedJson const& value, String const& beforeKey) const;
-  FormattedJson insertAfter(String const& key, FormattedJson const& value, String const& afterKey) const;
-  FormattedJson append(String const& key, FormattedJson const& value) const;
-  FormattedJson set(String const& key, FormattedJson const& value) const;
-  FormattedJson eraseKey(String const& key) const;
+  [[nodiscard]] auto prepend(String const& key, FormattedJson const& value) const -> FormattedJson;
+  [[nodiscard]] auto insertBefore(String const& key, FormattedJson const& value, String const& beforeKey) const -> FormattedJson;
+  [[nodiscard]] auto insertAfter(String const& key, FormattedJson const& value, String const& afterKey) const -> FormattedJson;
+  [[nodiscard]] auto append(String const& key, FormattedJson const& value) const -> FormattedJson;
+  [[nodiscard]] auto set(String const& key, FormattedJson const& value) const -> FormattedJson;
+  [[nodiscard]] auto eraseKey(String const& key) const -> FormattedJson;
 
-  FormattedJson insert(size_t index, FormattedJson const& value) const;
-  FormattedJson append(FormattedJson const& value) const;
-  FormattedJson set(size_t index, FormattedJson const& value) const;
-  FormattedJson eraseIndex(size_t index) const;
+  [[nodiscard]] auto insert(size_t index, FormattedJson const& value) const -> FormattedJson;
+  [[nodiscard]] auto append(FormattedJson const& value) const -> FormattedJson;
+  [[nodiscard]] auto set(size_t index, FormattedJson const& value) const -> FormattedJson;
+  [[nodiscard]] auto eraseIndex(size_t index) const -> FormattedJson;
 
   // Returns the number of elements in a Json array, or entries in an object.
-  size_t size() const;
+  [[nodiscard]] auto size() const -> std::size_t;
 
-  bool contains(String const& key) const;
+  [[nodiscard]] auto contains(String const& key) const -> bool;
 
-  Json::Type type() const;
-  bool isType(Json::Type type) const;
-  String typeName() const;
+  [[nodiscard]] auto type() const -> Json::Type;
+  [[nodiscard]] auto isType(Json::Type type) const -> bool;
+  [[nodiscard]] auto typeName() const -> String;
 
-  String toFormattedDouble() const;
-  String toFormattedInt() const;
+  [[nodiscard]] auto toFormattedDouble() const -> String;
+  [[nodiscard]] auto toFormattedInt() const -> String;
 
-  String repr() const;
-  String printJson() const;
+  [[nodiscard]] auto repr() const -> String;
+  [[nodiscard]] auto printJson() const -> String;
 
-  ElementList const& elements() const;
+  [[nodiscard]] auto elements() const -> ElementList const&;
 
   // Equality ignores whitespace and formatting. It just compares the Json
   // values.
-  bool operator==(FormattedJson const& v) const;
-  bool operator!=(FormattedJson const& v) const;
+  auto operator==(FormattedJson const& v) const -> bool;
+  auto operator!=(FormattedJson const& v) const -> bool;
 
 private:
   friend class FormattedJsonBuilderStream;
 
-  static FormattedJson object(ElementList const& elements);
-  static FormattedJson array(ElementList const& elements);
+  static auto object(ElementList const& elements) -> FormattedJson;
+  static auto array(ElementList const& elements) -> FormattedJson;
 
-  FormattedJson objectInsert(String const& key, FormattedJson const& value, ElementLocation loc) const;
+  [[nodiscard]] auto objectInsert(String const& key, FormattedJson const& value, ElementLocation loc) const -> FormattedJson;
   void appendElement(JsonElement const& elem);
 
-  FormattedJson const& getFormattedJson(ElementLocation loc) const;
-  FormattedJson formattedAs(String const& formatting) const;
+  [[nodiscard]] auto getFormattedJson(ElementLocation loc) const -> FormattedJson const&;
+  [[nodiscard]] auto formattedAs(String const& formatting) const -> FormattedJson;
 
   Json m_jsonValue;
   ElementList m_elements;
@@ -122,11 +124,11 @@ private:
   std::optional<String> m_formatting;
 
   std::optional<ElementLocation> m_lastKey, m_lastValue;
-  Map<String, pair<ElementLocation, ElementLocation>> m_objectEntryLocations;
+  Map<String, std::pair<ElementLocation, ElementLocation>> m_objectEntryLocations;
   List<ElementLocation> m_arrayElementLocations;
 };
 
-std::ostream& operator<<(std::ostream& os, FormattedJson const& json);
+auto operator<<(std::ostream& os, FormattedJson const& json) -> std::ostream&;
 
 }
 

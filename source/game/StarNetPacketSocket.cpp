@@ -1,13 +1,16 @@
 #include "StarNetPacketSocket.hpp"
-#include "StarIterator.hpp"
 #include "StarCompression.hpp"
+#include "StarConfig.hpp"
+#include "StarIterator.hpp"
 #include "StarLogging.hpp"
 #include "StarTime.hpp"
+
+import std;
 
 namespace Star {
 
 PacketStatCollector::PacketStatCollector(float calculationWindow)
-  : m_calculationWindow(calculationWindow), m_stats(), m_totalBytes(0), m_lastMixTime(0) {}
+    : m_calculationWindow(calculationWindow), m_stats(), m_totalBytes(0), m_lastMixTime(0) {}
 
 void PacketStatCollector::mix(size_t size) {
   calculate();
@@ -30,7 +33,7 @@ void PacketStatCollector::mix(HashMap<PacketType, size_t> const& sizes, bool add
   }
 }
 
-PacketStats PacketStatCollector::stats() const {
+auto PacketStatCollector::stats() const -> PacketStats {
   const_cast<PacketStatCollector*>(this)->calculate();
   return m_stats;
 }
@@ -48,38 +51,37 @@ void PacketStatCollector::calculate() {
         m_stats.worstPacketSize = pair.second;
       }
 
-      m_stats.packetBytesPerSecond[pair.first] = round(pair.second / elapsedTime);
+      m_stats.packetBytesPerSecond[pair.first] = std::round(pair.second / elapsedTime);
     }
-    m_stats.bytesPerSecond = round(float(m_totalBytes) / elapsedTime);
+    m_stats.bytesPerSecond = std::round(float(m_totalBytes) / elapsedTime);
     m_totalBytes = 0;
     m_unmixed.clear();
   }
 }
 
-std::optional<PacketStats> PacketSocket::incomingStats() const {
+auto PacketSocket::incomingStats() const -> std::optional<PacketStats> {
   return {};
 }
 
-std::optional<PacketStats> PacketSocket::outgoingStats() const {
+auto PacketSocket::outgoingStats() const -> std::optional<PacketStats> {
   return {};
 }
 void PacketSocket::setNetRules(NetCompatibilityRules netRules) { m_netRules = netRules; }
-NetCompatibilityRules PacketSocket::netRules() const { return m_netRules; }
+auto PacketSocket::netRules() const -> NetCompatibilityRules { return m_netRules; }
 
 void CompressedPacketSocket::setCompressionStreamEnabled(bool enabled) { m_useCompressionStream = enabled; }
-bool CompressedPacketSocket::compressionStreamEnabled() const { return m_useCompressionStream; }
+auto CompressedPacketSocket::compressionStreamEnabled() const -> bool { return m_useCompressionStream; }
 
-pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> LocalPacketSocket::openPair() {
-  auto lhsIncomingPipe = make_shared<Pipe>();
-  auto rhsIncomingPipe = make_shared<Pipe>();
+auto LocalPacketSocket::openPair() -> std::pair<UPtr<LocalPacketSocket>, UPtr<LocalPacketSocket>> {
+  auto lhsIncomingPipe = std::make_shared<Pipe>();
+  auto rhsIncomingPipe = std::make_shared<Pipe>();
 
   return {
-    LocalPacketSocketUPtr(new LocalPacketSocket(lhsIncomingPipe, weak_ptr<Pipe>(rhsIncomingPipe))),
-    LocalPacketSocketUPtr(new LocalPacketSocket(rhsIncomingPipe, weak_ptr<Pipe>(lhsIncomingPipe)))
-  };
+    UPtr<LocalPacketSocket>(new LocalPacketSocket(lhsIncomingPipe, std::weak_ptr<Pipe>(rhsIncomingPipe))),
+    UPtr<LocalPacketSocket>(new LocalPacketSocket(rhsIncomingPipe, std::weak_ptr<Pipe>(lhsIncomingPipe)))};
 }
 
-bool LocalPacketSocket::isOpen() const {
+auto LocalPacketSocket::isOpen() const -> bool {
   return m_incomingPipe && !m_outgoingPipe.expired();
 }
 
@@ -87,7 +89,7 @@ void LocalPacketSocket::close() {
   m_incomingPipe.reset();
 }
 
-void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
+void LocalPacketSocket::sendPackets(List<Ptr<Packet>> packets) {
   if (!isOpen() || packets.empty())
     return;
 
@@ -111,35 +113,35 @@ void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
   }
 }
 
-List<PacketPtr> LocalPacketSocket::receivePackets() {
+auto LocalPacketSocket::receivePackets() -> List<Ptr<Packet>> {
   MutexLocker locker(m_incomingPipe->mutex);
-  List<PacketPtr> packets;
+  List<Ptr<Packet>> packets;
   packets.appendAll(take(m_incomingPipe->queue));
   return packets;
 }
 
-bool LocalPacketSocket::sentPacketsPending() const {
+auto LocalPacketSocket::sentPacketsPending() const -> bool {
   return false;
 }
 
-bool LocalPacketSocket::writeData() {
+auto LocalPacketSocket::writeData() -> bool {
   return false;
 }
 
-bool LocalPacketSocket::readData() {
+auto LocalPacketSocket::readData() -> bool {
   return false;
 }
 
-LocalPacketSocket::LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe)
-  : m_incomingPipe(std::move(incomingPipe)), m_outgoingPipe(std::move(outgoingPipe)) {}
+LocalPacketSocket::LocalPacketSocket(std::shared_ptr<Pipe> incomingPipe, std::weak_ptr<Pipe> outgoingPipe)
+    : m_incomingPipe(std::move(incomingPipe)), m_outgoingPipe(std::move(outgoingPipe)) {}
 
-TcpPacketSocketUPtr TcpPacketSocket::open(TcpSocketPtr socket) {
+auto TcpPacketSocket::open(Ptr<TcpSocket> socket) -> UPtr<TcpPacketSocket> {
   socket->setNoDelay(true);
   socket->setNonBlocking(true);
-  return TcpPacketSocketUPtr(new TcpPacketSocket(std::move(socket)));
+  return UPtr<TcpPacketSocket>(new TcpPacketSocket(std::move(socket)));
 }
 
-bool TcpPacketSocket::isOpen() const {
+auto TcpPacketSocket::isOpen() const -> bool {
   return m_socket->isActive();
 }
 
@@ -147,12 +149,12 @@ void TcpPacketSocket::close() {
   m_socket->close();
 }
 
-void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
+void TcpPacketSocket::sendPackets(List<Ptr<Packet>> packets) {
   auto it = makeSMutableIterator(packets);
   if (compressionStreamEnabled()) {
     DataStreamBuffer outBuffer;
     while (it.hasNext()) {
-      PacketPtr& packet = it.next();
+      Ptr<Packet>& packet = it.next();
       auto packetType = packet->type();
       DataStreamBuffer packetBuffer;
       packetBuffer.setStreamCompatibilityVersion(netRules());
@@ -173,7 +175,7 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
       while (it.hasNext()
              && it.peekNext()->type() == currentType
              && it.peekNext()->compressionMode() == currentCompressionMode) {
-          it.next()->write(packetBuffer, netRules());
+        it.next()->write(packetBuffer, netRules());
       }
 
       // Packets must read and write actual data, because this is used to
@@ -202,13 +204,13 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
   }
 }
 
-List<PacketPtr> TcpPacketSocket::receivePackets() {
+auto TcpPacketSocket::receivePackets() -> List<Ptr<Packet>> {
   // How large can uncompressed packets be
   // this limit is now also used during decompression
   uint64_t const PacketSizeLimit = 64 << 20;
   // How many packets can be batched together into one compressed chunk at once
   uint64_t const PacketBatchLimit = 131072;
-  List<PacketPtr> packets;
+  List<Ptr<Packet>> packets;
   try {
     DataStreamExternalBuffer ds(m_inputBuffer);
     size_t trimPos = 0;
@@ -252,7 +254,7 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
           throw IOException::format("Packet batch limit {} reached while reading {}s!", PacketBatchLimit, PacketTypeNames.getRight(packetType));
           break;
         }
-        PacketPtr packet = createPacket(packetType);
+        Ptr<Packet> packet = createPacket(packetType);
         packet->setCompressionMode(packetCompressed ? PacketCompressionMode::Enabled : PacketCompressionMode::Disabled);
         packet->read(packetStream, netRules());
         packets.append(std::move(packet));
@@ -268,11 +270,11 @@ List<PacketPtr> TcpPacketSocket::receivePackets() {
   return packets;
 }
 
-bool TcpPacketSocket::sentPacketsPending() const {
+auto TcpPacketSocket::sentPacketsPending() const -> bool {
   return !m_outputBuffer.empty() || (compressionStreamEnabled() && !m_compressedOutputBuffer.empty());
 }
 
-bool TcpPacketSocket::writeData() {
+auto TcpPacketSocket::writeData() -> bool {
   if (!isOpen())
     return false;
 
@@ -311,20 +313,20 @@ bool TcpPacketSocket::writeData() {
   return dataSent;
 }
 
-bool TcpPacketSocket::readData() {
+auto TcpPacketSocket::readData() -> bool {
   bool dataReceived = false;
   try {
-    char readBuffer[1024];
+    std::array<char, 1024> readBuffer;
     while (true) {
-      size_t readAmount = m_socket->receive(readBuffer, 1024);
+      size_t readAmount = m_socket->receive(readBuffer.data(), 1024);
       if (readAmount == 0)
         break;
       dataReceived = true;
       if (compressionStreamEnabled()) {
         m_incomingStats.mix(readAmount);
-        m_decompressionStream.decompress(readBuffer, readAmount, m_inputBuffer);
+        m_decompressionStream.decompress(readBuffer.data(), readAmount, m_inputBuffer);
       } else {
-        m_inputBuffer.append(readBuffer, readAmount);
+        m_inputBuffer.append(readBuffer.data(), readAmount);
       }
     }
   } catch (SocketClosedException const& e) {
@@ -336,21 +338,21 @@ bool TcpPacketSocket::readData() {
   return dataReceived;
 }
 
-std::optional<PacketStats> TcpPacketSocket::incomingStats() const {
+auto TcpPacketSocket::incomingStats() const -> std::optional<PacketStats> {
   return m_incomingStats.stats();
 }
 
-std::optional<PacketStats> TcpPacketSocket::outgoingStats() const {
+auto TcpPacketSocket::outgoingStats() const -> std::optional<PacketStats> {
   return m_outgoingStats.stats();
 }
 
-TcpPacketSocket::TcpPacketSocket(TcpSocketPtr socket) : m_socket(std::move(socket)) {}
+TcpPacketSocket::TcpPacketSocket(Ptr<TcpSocket> socket) : m_socket(std::move(socket)) {}
 
-P2PPacketSocketUPtr P2PPacketSocket::open(P2PSocketUPtr socket) {
-  return P2PPacketSocketUPtr(new P2PPacketSocket(std::move(socket)));
+auto P2PPacketSocket::open(UPtr<P2PSocket> socket) -> UPtr<P2PPacketSocket> {
+  return UPtr<P2PPacketSocket>(new P2PPacketSocket(std::move(socket)));
 }
 
-bool P2PPacketSocket::isOpen() const {
+auto P2PPacketSocket::isOpen() const -> bool {
   return m_socket && m_socket->isOpen();
 }
 
@@ -358,7 +360,7 @@ void P2PPacketSocket::close() {
   m_socket.reset();
 }
 
-void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
+void P2PPacketSocket::sendPackets(List<Ptr<Packet>> packets) {
   auto it = makeSMutableIterator(packets);
 
   if (compressionStreamEnabled()) {
@@ -385,7 +387,7 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
       while (it.hasNext()
              && it.peekNext()->type() == currentType
              && it.peekNext()->compressionMode() == currentCompressionMode) {
-          it.next()->write(packetBuffer, netRules());
+        it.next()->write(packetBuffer, netRules());
       }
 
       // Packets must read and write actual data, because this is used to
@@ -414,13 +416,13 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
   }
 }
 
-List<PacketPtr> P2PPacketSocket::receivePackets() {
-  List<PacketPtr> packets;
+auto P2PPacketSocket::receivePackets() -> List<Ptr<Packet>> {
+  List<Ptr<Packet>> packets;
   try {
     for (auto& inputMessage : take(m_inputMessages)) {
       DataStreamBuffer ds(std::move(inputMessage));
 
-      PacketType packetType = ds.read<PacketType>();
+      auto packetType = ds.read<PacketType>();
       bool packetCompressed = ds.read<bool>();
       size_t packetSize = ds.size() - ds.pos();
 
@@ -433,7 +435,7 @@ List<PacketPtr> P2PPacketSocket::receivePackets() {
       DataStreamExternalBuffer packetStream(packetBytes);
       packetStream.setStreamCompatibilityVersion(netRules());
       do {
-        PacketPtr packet = createPacket(packetType);
+        Ptr<Packet> packet = createPacket(packetType);
         packet->setCompressionMode(packetCompressed ? PacketCompressionMode::Enabled : PacketCompressionMode::Disabled);
         packet->read(packetStream, netRules());
         packets.append(std::move(packet));
@@ -446,11 +448,11 @@ List<PacketPtr> P2PPacketSocket::receivePackets() {
   return packets;
 }
 
-bool P2PPacketSocket::sentPacketsPending() const {
+auto P2PPacketSocket::sentPacketsPending() const -> bool {
   return !m_outputMessages.empty();
 }
 
-bool P2PPacketSocket::writeData() {
+auto P2PPacketSocket::writeData() -> bool {
   bool workDone = false;
 
   if (m_socket) {
@@ -473,7 +475,7 @@ bool P2PPacketSocket::writeData() {
   return workDone;
 }
 
-bool P2PPacketSocket::readData() {
+auto P2PPacketSocket::readData() -> bool {
   bool workDone = false;
 
   if (m_socket) {
@@ -481,8 +483,8 @@ bool P2PPacketSocket::readData() {
       while (auto message = m_socket->receiveMessage()) {
         m_incomingStats.mix(message->size());
         m_inputMessages.append(compressionStreamEnabled()
-          ? m_decompressionStream.decompress(*message)
-          : *message);
+                                 ? m_decompressionStream.decompress(*message)
+                                 : *message);
         workDone = true;
       }
     } catch (StarException const& e) {
@@ -494,15 +496,15 @@ bool P2PPacketSocket::readData() {
   return workDone;
 }
 
-std::optional<PacketStats> P2PPacketSocket::incomingStats() const {
+auto P2PPacketSocket::incomingStats() const -> std::optional<PacketStats> {
   return m_incomingStats.stats();
 }
 
-std::optional<PacketStats> P2PPacketSocket::outgoingStats() const {
+auto P2PPacketSocket::outgoingStats() const -> std::optional<PacketStats> {
   return m_outgoingStats.stats();
 }
 
-P2PPacketSocket::P2PPacketSocket(P2PSocketPtr socket)
-  : m_socket(std::move(socket)) {}
+P2PPacketSocket::P2PPacketSocket(Ptr<P2PSocket> socket)
+    : m_socket(std::move(socket)) {}
 
-}
+}// namespace Star

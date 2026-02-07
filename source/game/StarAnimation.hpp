@@ -1,11 +1,9 @@
 #pragma once
 
-#include "StarDrawable.hpp"
 #include "StarBiMap.hpp"
+#include "StarDrawable.hpp"
 
 namespace Star {
-
-STAR_CLASS(Animation);
 
 class Animation {
 public:
@@ -21,15 +19,17 @@ public:
   void setTag(String tagName, String tagValue);
   void clearTags();
 
-  Drawable drawable(float pixelSize) const;
+  [[nodiscard]] auto drawable(float pixelSize) const -> Drawable;
 
   void update(float dt);
 
-  bool isComplete() const;
+  [[nodiscard]] auto isComplete() const -> bool;
   void reset();
 
 private:
-  enum AnimationMode { Stop, EndAndDisappear, LoopForever };
+  enum AnimationMode { Stop,
+                       EndAndDisappear,
+                       LoopForever };
   static EnumMap<AnimationMode> AnimationModeNames;
 
   AnimationMode m_mode;
@@ -53,4 +53,4 @@ private:
   bool m_completed;
 };
 
-}
+}// namespace Star

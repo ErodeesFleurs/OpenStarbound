@@ -1,13 +1,13 @@
 #pragma once
 
-#include "StarException.hpp"
-#include "StarUnicode.hpp"
-#include "StarHash.hpp"
 #include "StarByteArray.hpp"
+#include "StarException.hpp"
+#include "StarFormat.hpp"
+#include "StarHash.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
 #include "StarSet.hpp"
-#include "StarFormat.hpp"
+#include "StarUnicode.hpp"
 
 import std;
 
@@ -15,7 +15,6 @@ namespace Star {
 
 class StringList;
 class StringView;
-
 
 using StringException = ExceptionDerived<"StringException">;
 
@@ -73,14 +72,14 @@ public:
 
   // These assume utf8 input
   String(char const* s);
-  String(char const* s, size_t n);
+  String(char const* s, std::size_t n);
   String(std::string const& s);
   String(std::string&& s);
 
   String(std::wstring const& s);
   String(Char const* s);
-  String(Char const* s, size_t n);
-  String(Char c, size_t n);
+  String(Char const* s, std::size_t n);
+  String(Char c, std::size_t n);
 
   explicit String(Char c);
 
@@ -90,7 +89,7 @@ public:
   [[nodiscard]] auto utf8Bytes() const -> ByteArray;
   // Pointer to internal utf8 data, null-terminated.
   [[nodiscard]] auto utf8Ptr() const -> char const*;
-  [[nodiscard]] auto utf8Size() const -> size_t;
+  [[nodiscard]] auto utf8Size() const -> std::size_t;
 
   [[nodiscard]] auto wstring() const -> std::wstring;
   [[nodiscard]] auto wideString() const -> WideString;
@@ -98,16 +97,16 @@ public:
   [[nodiscard]] auto begin() const -> const_iterator;
   [[nodiscard]] auto end() const -> const_iterator;
 
-  [[nodiscard]] auto size() const -> size_t;
-  [[nodiscard]] auto length() const -> size_t;
+  [[nodiscard]] auto size() const -> std::size_t;
+  [[nodiscard]] auto length() const -> std::size_t;
 
   void clear();
-  void reserve(size_t n);
+  void reserve(std::size_t n);
   [[nodiscard]] auto empty() const -> bool;
 
-  auto operator[](size_t i) const -> Char;
+  auto operator[](std::size_t i) const -> Char;
   // Throws StringException if i out of range.
-  [[nodiscard]] auto at(size_t i) const -> Char;
+  [[nodiscard]] auto at(std::size_t i) const -> Char;
 
   [[nodiscard]] auto toUpper() const -> String;
   [[nodiscard]] auto toLower() const -> String;
@@ -122,23 +121,23 @@ public:
 
   [[nodiscard]] auto rot13() const -> String;
 
-  [[nodiscard]] auto split(Char c, size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
-  [[nodiscard]] auto split(String const& pattern, size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
-  [[nodiscard]] auto rsplit(Char c, size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
-  [[nodiscard]] auto rsplit(String const& pattern, size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto split(Char c, std::size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto split(String const& pattern, std::size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto rsplit(Char c, std::size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto rsplit(String const& pattern, std::size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
 
   // Splits on any number of contiguous instances of any of the given
   // characters.  Behaves differently than regular split in that leading and
   // trailing instances of the characters are also ignored, and in general no
   // empty strings will be in the resulting split list.  If chars is empty,
   // then splits on any whitespace.
-  [[nodiscard]] auto splitAny(String const& chars = "", size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
-  [[nodiscard]] auto rsplitAny(String const& chars = "", size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto splitAny(String const& chars = "", std::size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto rsplitAny(String const& chars = "", std::size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
 
   // Split any with '\n\r'
-  [[nodiscard]] auto splitLines(size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto splitLines(std::size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
   // Shorthand for splitAny("");
-  [[nodiscard]] auto splitWhitespace(size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
+  [[nodiscard]] auto splitWhitespace(std::size_t maxSplit = std::numeric_limits<std::size_t>::max()) const -> StringList;
 
   // Splits a string once based on the given characters (defaulting to
   // whitespace), and returns the first part.  This string is set to the
@@ -157,37 +156,37 @@ public:
   [[nodiscard]] auto trimBeg(String const& chars = "") const -> String;
   [[nodiscard]] auto trim(String const& chars = "") const -> String;
 
-  [[nodiscard]] auto find(Char c, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const -> size_t;
-  [[nodiscard]] auto find(String const& s, size_t beg = 0, CaseSensitivity cs = CaseSensitive) const -> size_t;
-  [[nodiscard]] auto findLast(Char c, CaseSensitivity cs = CaseSensitive) const -> size_t;
-  [[nodiscard]] auto findLast(String const& s, CaseSensitivity cs = CaseSensitive) const -> size_t;
+  [[nodiscard]] auto find(Char c, std::size_t beg = 0, CaseSensitivity cs = CaseSensitive) const -> std::size_t;
+  [[nodiscard]] auto find(String const& s, std::size_t beg = 0, CaseSensitivity cs = CaseSensitive) const -> std::size_t;
+  [[nodiscard]] auto findLast(Char c, CaseSensitivity cs = CaseSensitive) const -> std::size_t;
+  [[nodiscard]] auto findLast(String const& s, CaseSensitivity cs = CaseSensitive) const -> std::size_t;
 
   // If pattern is empty, finds first whitespace
-  [[nodiscard]] auto findFirstOf(String const& chars = "", size_t beg = 0) const -> size_t;
+  [[nodiscard]] auto findFirstOf(String const& chars = "", std::size_t beg = 0) const -> std::size_t;
 
   // If pattern is empty, finds first non-whitespace
-  [[nodiscard]] auto findFirstNotOf(String const& chars = "", size_t beg = 0) const -> size_t;
+  [[nodiscard]] auto findFirstNotOf(String const& chars = "", std::size_t beg = 0) const -> std::size_t;
 
   // finds the the start of the next 'boundary' in a string.  used for quickly
   // scanning a string
-  [[nodiscard]] auto findNextBoundary(size_t index, bool backwards = false) const -> size_t;
+  [[nodiscard]] auto findNextBoundary(std::size_t index, bool backwards = false) const -> std::size_t;
 
   [[nodiscard]] auto slice(SliceIndex a = SliceIndex(), SliceIndex b = SliceIndex(), int i = 1) const -> String;
 
   void append(String const& s);
   void append(std::string const& s);
   void append(Char const* s);
-  void append(Char const* s, size_t n);
+  void append(Char const* s, std::size_t n);
   void append(char const* s);
-  void append(char const* s, size_t n);
+  void append(char const* s, std::size_t n);
   void append(Char c);
 
   void prepend(String const& s);
   void prepend(std::string const& s);
   void prepend(Char const* s);
-  void prepend(Char const* s, size_t n);
+  void prepend(Char const* s, std::size_t n);
   void prepend(char const* s);
-  void prepend(char const* s, size_t n);
+  void prepend(char const* s, std::size_t n);
   void prepend(Char c);
 
   void push_back(Char c);
@@ -203,11 +202,11 @@ public:
   // Synonym for equals(s, String::CaseInsensitive)
   [[nodiscard]] auto equalsIgnoreCase(String const& s) const -> bool;
 
-  [[nodiscard]] auto substr(size_t position, size_t n = std::numeric_limits<std::size_t>::max()) const -> String;
-  void erase(size_t pos = 0, size_t n = std::numeric_limits<std::size_t>::max());
+  [[nodiscard]] auto substr(std::size_t position, std::size_t n = std::numeric_limits<std::size_t>::max()) const -> String;
+  void erase(std::size_t pos = 0, std::size_t n = std::numeric_limits<std::size_t>::max());
 
-  [[nodiscard]] auto padLeft(size_t size, String const& filler) const -> String;
-  [[nodiscard]] auto padRight(size_t size, String const& filler) const -> String;
+  [[nodiscard]] auto padLeft(std::size_t size, String const& filler) const -> String;
+  [[nodiscard]] auto padRight(std::size_t size, String const& filler) const -> String;
 
   // Replace angle bracket tags in the string with values given by the given
   // lookup function.  Will be called as:
@@ -287,12 +286,12 @@ public:
   auto operator+=(std::string_view s) -> String&;
 
 private:
-  [[nodiscard]] auto compare(size_t selfOffset,
-      size_t selfLen,
-      String const& other,
-      size_t otherOffset,
-      size_t otherLen,
-      CaseSensitivity cs) const -> int;
+  [[nodiscard]] auto compare(std::size_t selfOffset,
+                             std::size_t selfLen,
+                             String const& other,
+                             std::size_t otherOffset,
+                             std::size_t otherLen,
+                             CaseSensitivity cs) const -> int;
 
   std::string m_string;
 };
@@ -315,14 +314,14 @@ public:
   StringList(Base&& l);
   StringList(StringList const& l);
   StringList(StringList&& l);
-  StringList(size_t len, String::Char const* const* list);
-  StringList(size_t len, char const* const* list);
-  explicit StringList(size_t len, String const& s1 = String());
+  StringList(std::size_t len, String::Char const* const* list);
+  StringList(std::size_t len, char const* const* list);
+  explicit StringList(std::size_t len, String const& s1 = String());
   StringList(std::initializer_list<String> list);
 
   template <typename InputIterator>
   StringList(InputIterator beg, InputIterator end)
-    : Base(beg, end) {}
+      : Base(beg, end) {}
 
   auto operator=(Base const& rhs) -> StringList&;
   auto operator=(Base&& rhs) -> StringList&;
@@ -349,11 +348,11 @@ auto operator<<(std::ostream& os, StringList const& list) -> std::ostream&;
 
 template <>
 struct hash<String> {
-  auto operator()(String const& s) const -> size_t;
+  auto operator()(String const& s) const -> std::size_t;
 };
 
 struct CaseInsensitiveStringHash {
-  auto operator()(String const& s) const -> size_t;
+  auto operator()(String const& s) const -> std::size_t;
 };
 
 struct CaseInsensitiveStringCompare {
@@ -375,12 +374,12 @@ using CaseInsensitiveStringMap = StringMap<MappedT, CaseInsensitiveStringHash, C
 
 template <>
 struct hash<StringList> {
-  auto operator()(StringList const& s) const -> size_t;
+  auto operator()(StringList const& s) const -> std::size_t;
 };
 
 template <typename... StringType>
 auto String::joinWith(
-    String const& join, String const& first, String const& second, String const& third, StringType const&... rest) -> String {
+  String const& join, String const& first, String const& second, String const& third, StringType const&... rest) -> String {
   return joinWith(join, joinWith(join, first, second), third, rest...);
 }
 
@@ -389,7 +388,7 @@ auto String::lookupTags(Lookup&& lookup) const -> String {
   // Operates directly on the utf8 representation of the strings, rather than
   // using unicode find / replace methods
 
-  auto substrInto = [](std::string const& ref, size_t position, size_t n, std::string& result) -> auto {
+  auto substrInto = [](std::string const& ref, std::size_t position, std::size_t n, std::string& result) -> auto {
     auto len = ref.size();
     if (position > len)
       throw OutOfRangeException(strf("out of range in substrInto: {}", position));
@@ -397,7 +396,7 @@ auto String::lookupTags(Lookup&& lookup) const -> String {
     auto it = ref.begin();
     std::advance(it, position);
 
-    for (size_t i = 0; i < n; ++i) {
+    for (std::size_t i = 0; i < n; ++i) {
       if (it == ref.end())
         break;
       result.push_back(*it);
@@ -407,8 +406,8 @@ auto String::lookupTags(Lookup&& lookup) const -> String {
 
   std::string finalString;
 
-  size_t start = 0;
-  size_t size = String::size();
+  std::size_t start = 0;
+  std::size_t size = String::size();
 
   finalString.reserve(size);
 
@@ -418,8 +417,8 @@ auto String::lookupTags(Lookup&& lookup) const -> String {
     if (start >= size)
       break;
 
-    size_t beginTag = m_string.find("<", start);
-    size_t endTag = m_string.find(">", beginTag);
+    std::size_t beginTag = m_string.find("<", start);
+    std::size_t endTag = m_string.find(">", beginTag);
     if (beginTag != std::numeric_limits<std::size_t>::max() && endTag != std::numeric_limits<std::size_t>::max()) {
       substrInto(m_string, beginTag + 1, endTag - beginTag - 1, key.m_string);
       substrInto(m_string, start, beginTag - start, finalString);
@@ -441,16 +440,16 @@ auto String::maybeLookupTagsView(Lookup&& lookup) const -> std::optional<String>
   List<std::string_view> finalViews = {};
   std::string_view view(utf8());
 
-  size_t start = 0;
+  std::size_t start = 0;
   while (true) {
     if (start >= view.size())
       break;
 
-    size_t beginTag = view.find_first_of('<', start);
+    std::size_t beginTag = view.find_first_of('<', start);
     if (beginTag == std::numeric_limits<std::size_t>::max() && !start)
       return std::nullopt;
 
-    size_t endTag = view.find_first_of('>', beginTag);
+    std::size_t endTag = view.find_first_of('>', beginTag);
     if (beginTag != std::numeric_limits<std::size_t>::max() && endTag != std::numeric_limits<std::size_t>::max()) {
       finalViews.append(view.substr(start, beginTag - start));
       finalViews.append(lookup(view.substr(beginTag + 1, endTag - beginTag - 1)).takeUtf8());
@@ -462,7 +461,7 @@ auto String::maybeLookupTagsView(Lookup&& lookup) const -> std::optional<String>
   }
 
   std::string finalString;
-  size_t finalSize = 0;
+  std::size_t finalSize = 0;
   for (auto& view : finalViews)
     finalSize += view.size();
 
@@ -495,7 +494,7 @@ auto String::replaceTags(MapType const& tags, bool replaceWithDefault, String de
   });
 }
 
-inline auto hash<String>::operator()(String const& s) const -> size_t {
+inline auto hash<String>::operator()(String const& s) const -> std::size_t {
   PLHasher hash;
   for (auto c : s.utf8())
     hash.put(c);
@@ -521,7 +520,7 @@ auto StringList::sorted(Comparator&& comparator) const -> StringList {
   return l;
 }
 
-}
+}// namespace Star
 
 template <>
 struct std::formatter<Star::String> : std::formatter<std::string> {

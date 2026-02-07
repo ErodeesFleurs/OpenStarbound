@@ -2,13 +2,16 @@
 
 #include "StarColor.hpp"
 #include "StarBiMap.hpp"
+#include "StarException.hpp"
 #include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(SkyException, StarException);
+using SkyException = ExceptionDerived<"SkyException">;
 
-enum class SkyType : uint8_t {
+enum class SkyType : std::uint8_t {
   Barren,
   Atmospheric,
   Atmosphereless,
@@ -18,7 +21,7 @@ enum class SkyType : uint8_t {
 };
 extern EnumMap<SkyType> const SkyTypeNames;
 
-enum class FlyingType : uint8_t {
+enum class FlyingType : std::uint8_t {
   None,
   Disembarking,
   Warp,
@@ -26,7 +29,7 @@ enum class FlyingType : uint8_t {
 };
 extern EnumMap<FlyingType> const FlyingTypeNames;
 
-enum class WarpPhase : int8_t {
+enum class WarpPhase : std::int8_t {
   SlowingDown = -1,
   Maintain = 0,
   SpeedingUp = 1
@@ -37,14 +40,14 @@ struct SkyColoring {
   SkyColoring();
   explicit SkyColoring(Json const& variant);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   Color mainColor;
 
-  pair<Color, Color> morningColors;
-  pair<Color, Color> dayColors;
-  pair<Color, Color> eveningColors;
-  pair<Color, Color> nightColors;
+  std::pair<Color, Color> morningColors;
+  std::pair<Color, Color> dayColors;
+  std::pair<Color, Color> eveningColors;
+  std::pair<Color, Color> nightColors;
 
   Color morningLightColor;
   Color dayLightColor;
@@ -52,8 +55,8 @@ struct SkyColoring {
   Color nightLightColor;
 };
 
-DataStream& operator>>(DataStream& ds, SkyColoring& skyColoring);
-DataStream& operator<<(DataStream& ds, SkyColoring const& skyColoring);
+auto operator>>(DataStream& ds, SkyColoring& skyColoring) -> DataStream&;
+auto operator<<(DataStream& ds, SkyColoring const& skyColoring) -> DataStream&;
 
 enum class SkyOrbiterType { Sun, Moon, HorizonCloud, SpaceDebris };
 
@@ -72,7 +75,7 @@ struct SkyWorldHorizon {
   SkyWorldHorizon();
   SkyWorldHorizon(Vec2F center, float scale, float rotation);
 
-  bool empty() const;
+  [[nodiscard]] auto empty() const -> bool;
 
   Vec2F center;
 
@@ -80,7 +83,7 @@ struct SkyWorldHorizon {
   float rotation;
 
   // List of L/R images for each layer of the world horizon, bottom to top.
-  List<pair<String, String>> layers;
+  List<std::pair<String, String>> layers;
 };
 
 }

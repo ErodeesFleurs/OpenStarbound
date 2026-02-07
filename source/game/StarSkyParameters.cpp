@@ -1,16 +1,18 @@
 #include "StarSkyParameters.hpp"
+#include "StarCasting.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarCelestialGraphics.hpp"
-#include "StarCasting.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarJsonExtra.hpp"
+
+import std;
 
 namespace Star {
 
 SkyParameters::SkyParameters() : seed(), skyType(SkyType::Barren), skyColoring(makeRight(Color::Black)), settings(JsonObject()) {}
 
-SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase)
-  : SkyParameters() {
+SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, Ptr<CelestialDatabase> const& celestialDatabase)
+    : SkyParameters() {
   if (!coordinate || coordinate.isSystem())
     return;
   auto params = celestialDatabase->parameters(coordinate);
@@ -42,8 +44,8 @@ SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDat
         pos[1] = staticRandomFloat(params->seed(), satellite->seed(), "y");
 
         nearbyMoons.append(
-            {CelestialGraphics::drawWorld(*satellite, celestialDatabase->parameters(satelliteCoordinate.parent())),
-                pos});
+          {CelestialGraphics::drawWorld(*satellite, celestialDatabase->parameters(satelliteCoordinate.parent())),
+           pos});
       }
     }
   }
@@ -55,7 +57,7 @@ SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDat
   sunType = systemParams->getParameter("typeName").toString();
 }
 
-SkyParameters::SkyParameters(SkyParameters const& oldSkyParameters, VisitableWorldParametersConstPtr newVisitableParameters) : SkyParameters() {
+SkyParameters::SkyParameters(SkyParameters const& oldSkyParameters, ConstPtr<VisitableWorldParameters> newVisitableParameters) : SkyParameters() {
   *this = oldSkyParameters;
   readVisitableParameters(newVisitableParameters);
 }
@@ -67,7 +69,7 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
   seed = config.getUInt("seed");
   dayLength = config.optFloat("dayLength");
 
-  auto extractLayerData = [](Json const& v, uint64_t selfSeed) -> pair<List<pair<String, float>>, Vec2F> {
+  auto extractLayerData = [](Json const& v, uint64_t selfSeed) -> std::pair<List<std::pair<String, float>>, Vec2F> {
     Vec2F pos;
 
     if (v.contains("pos")) {
@@ -77,7 +79,7 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
       pos[1] = staticRandomFloat(selfSeed, v.getUInt("seed"), "y");
     }
 
-    List<pair<String, float>> layers;
+    List<std::pair<String, float>> layers;
     for (auto const& l : v.get("layers").iterateArray())
       layers.append({l.getString("image"), l.getFloat("scale")});
 
@@ -89,13 +91,13 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
 
   if (config.contains("satellites"))
     nearbyMoons =
-        jsonToList<pair<List<pair<String, float>>, Vec2F>>(config.get("satellites"), bind(extractLayerData, _1, seed));
+      jsonToList<std::pair<List<std::pair<String, float>>, Vec2F>>(config.get("satellites"), [extractLayerData, this](auto&& PH1) -> auto { return extractLayerData(std::forward<decltype(PH1)>(PH1), seed); });
 
   if (config.contains("horizonImages")) {
-    horizonImages = jsonToList<pair<String, String>>(config.get("horizonImages"),
-        [](Json const& v) -> pair<String, String> {
-          return {v.getString("left"), v.getString("right")};
-        });
+    horizonImages = jsonToList<std::pair<String, String>>(config.get("horizonImages"),
+                                                          [](Json const& v) -> std::pair<String, String> {
+                                                            return {v.getString("left"), v.getString("right")};
+                                                          });
   }
 
   horizonClouds = config.getBool("horizonClouds", true);
@@ -117,48 +119,48 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
   settings = config.get("settings", JsonObject());
 }
 
-Json SkyParameters::toJson() const {
+auto SkyParameters::toJson() const -> Json {
   return JsonObject{
-      {"seed", seed},
-      {"dayLength", jsonFromMaybe<float>(dayLength)},
-      {"planet",
-          jsonFromMaybe<pair<List<pair<String, float>>, Vec2F>>(nearbyPlanet,
-              [](pair<List<pair<String, float>>, Vec2F> p) -> Json {
-                return JsonObject{
-                    {"layers",
-                        p.first.transformed([](pair<String, float> const& p) -> Json {
-                          return JsonObject{{"image", p.first}, {"scale", p.second}};
-                        })},
-                    {"pos", jsonFromVec2F(p.second)},
-                };
-              })},
-      {"satellites",
-          jsonFromList<pair<List<pair<String, float>>, Vec2F>>(nearbyMoons,
-              [](pair<List<pair<String, float>>, Vec2F> const& p) {
-                return JsonObject{
-                    {"layers",
-                        p.first.transformed([](pair<String, float> const& p) -> Json {
-                          return JsonObject{{"image", p.first}, {"scale", p.second}};
-                        })},
-                    {"pos", jsonFromVec2F(p.second)},
-                };
-              })},
-      {"horizonImages",
-          jsonFromList<pair<String, String>>(horizonImages,
-              [](pair<String, String> p) {
-                return JsonObject{
-                    {"left", p.first}, {"right", p.second},
-                };
-              })},
-      {"horizonClouds", horizonClouds},
-      {"skyType", SkyTypeNames.getRight(skyType)},
-      {"skyColoring", jsonFromMaybe<SkyColoring>(skyColoring.maybeLeft(), [](SkyColoring c) { return c.toJson(); })},
-      {"ambientLightLevel", jsonFromMaybe<Color>(skyColoring.maybeRight(), [](Color c) { return jsonFromColor(c); })},
-      {"spaceLevel", jsonFromMaybe<float>(spaceLevel)},
-      {"surfaceLevel", jsonFromMaybe<float>(surfaceLevel)},
-      {"sunType", sunType},
-      {"settings", settings}
-  };
+    {"seed", seed},
+    {"dayLength", jsonFromMaybe<float>(dayLength)},
+    {"planet",
+     jsonFromMaybe<std::pair<List<std::pair<String, float>>, Vec2F>>(nearbyPlanet,
+                                                                     [](std::pair<List<std::pair<String, float>>, Vec2F> p) -> Json {
+                                                                       return JsonObject{
+                                                                         {"layers",
+                                                                          p.first.transformed([](std::pair<String, float> const& p) -> Json {
+                                                                            return JsonObject{{"image", p.first}, {"scale", p.second}};
+                                                                          })},
+                                                                         {"pos", jsonFromVec2F(p.second)},
+                                                                       };
+                                                                     })},
+    {"satellites",
+     jsonFromList<std::pair<List<std::pair<String, float>>, Vec2F>>(nearbyMoons,
+                                                                    [](std::pair<List<std::pair<String, float>>, Vec2F> const& p) -> JsonObject {
+                                                                      return JsonObject{
+                                                                        {"layers",
+                                                                         p.first.transformed([](std::pair<String, float> const& p) -> Json {
+                                                                           return JsonObject{{"image", p.first}, {"scale", p.second}};
+                                                                         })},
+                                                                        {"pos", jsonFromVec2F(p.second)},
+                                                                      };
+                                                                    })},
+    {"horizonImages",
+     jsonFromList<std::pair<String, String>>(horizonImages,
+                                             [](std::pair<String, String> p) -> JsonObject {
+                                               return JsonObject{
+                                                 {"left", p.first},
+                                                 {"right", p.second},
+                                               };
+                                             })},
+    {"horizonClouds", horizonClouds},
+    {"skyType", SkyTypeNames.getRight(skyType)},
+    {"skyColoring", jsonFromMaybe<SkyColoring>(skyColoring.maybeLeft(), [](SkyColoring c) -> Json { return c.toJson(); })},
+    {"ambientLightLevel", jsonFromMaybe<Color>(skyColoring.maybeRight(), [](Color c) -> Json { return jsonFromColor(c); })},
+    {"spaceLevel", jsonFromMaybe<float>(spaceLevel)},
+    {"surfaceLevel", jsonFromMaybe<float>(surfaceLevel)},
+    {"sunType", sunType},
+    {"settings", settings}};
 }
 
 void SkyParameters::read(DataStream& ds) {
@@ -195,7 +197,7 @@ void SkyParameters::write(DataStream& ds) const {
     ds << settings;
 }
 
-void SkyParameters::readVisitableParameters(VisitableWorldParametersConstPtr visitableParameters) {
+void SkyParameters::readVisitableParameters(ConstPtr<VisitableWorldParameters> visitableParameters) {
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(visitableParameters)) {
     dayLength = terrestrialParameters->dayLength;
     if (terrestrialParameters->airless) {
@@ -222,14 +224,14 @@ void SkyParameters::readVisitableParameters(VisitableWorldParametersConstPtr vis
   }
 }
 
-DataStream& operator>>(DataStream& ds, SkyParameters& sky) {
+auto operator>>(DataStream& ds, SkyParameters& sky) -> DataStream& {
   sky.read(ds);
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, SkyParameters const& sky) {
+auto operator<<(DataStream& ds, SkyParameters const& sky) -> DataStream& {
   sky.write(ds);
   return ds;
 }
 
-}
+}// namespace Star

@@ -2,11 +2,13 @@
 #include "StarLogging.hpp"
 #include "StarNetImpl.hpp"
 
+import std;
+
 namespace Star {
 
 UdpSocket::UdpSocket(NetworkMode networkMode) : Socket(SocketType::Udp, networkMode) {}
 
-size_t UdpSocket::receive(HostAddressWithPort* address, char* data, size_t datasize) {
+auto UdpSocket::receive(HostAddressWithPort* address, char* data, size_t datasize) -> size_t {
   ReadLocker locker(m_mutex);
   checkOpen("UdpSocket::receive");
 
@@ -32,7 +34,7 @@ size_t UdpSocket::receive(HostAddressWithPort* address, char* data, size_t datas
   return len;
 }
 
-size_t UdpSocket::send(HostAddressWithPort const& address, char const* data, size_t size) {
+auto UdpSocket::send(HostAddressWithPort const& address, char const* data, size_t size) -> size_t {
   ReadLocker locker(m_mutex);
   checkOpen("UdpSocket::send");
 
@@ -54,7 +56,7 @@ size_t UdpSocket::send(HostAddressWithPort const& address, char const* data, siz
 }
 
 UdpServer::UdpServer(HostAddressWithPort const& address)
-  : m_hostAddress(address), m_listenSocket(make_shared<UdpSocket>(m_hostAddress.address().mode())) {
+    : m_hostAddress(address), m_listenSocket(std::make_shared<UdpSocket>(m_hostAddress.address().mode())) {
   m_listenSocket->setNonBlocking(true);
   m_listenSocket->bind(m_hostAddress);
   Logger::debug("UdpServer listening on: {}", m_hostAddress);
@@ -64,12 +66,12 @@ UdpServer::~UdpServer() {
   close();
 }
 
-size_t UdpServer::receive(HostAddressWithPort* address, char* data, size_t bufsize, unsigned timeout) {
-  Socket::poll({{m_listenSocket, {true, false}}}, timeout);
+auto UdpServer::receive(HostAddressWithPort* address, char* data, size_t bufsize, unsigned timeout) -> size_t {
+  Socket::poll({{m_listenSocket, {.readable = true, .writable = false}}}, timeout);
   return m_listenSocket->receive(address, data, bufsize);
 }
 
-size_t UdpServer::send(HostAddressWithPort const& address, char const* data, size_t len) {
+auto UdpServer::send(HostAddressWithPort const& address, char const* data, size_t len) -> size_t {
   return m_listenSocket->send(address, data, len);
 }
 
@@ -77,8 +79,8 @@ void UdpServer::close() {
   m_listenSocket->close();
 }
 
-bool UdpServer::isListening() const {
+auto UdpServer::isListening() const -> bool {
   return m_listenSocket->isActive();
 }
 
-}
+}// namespace Star

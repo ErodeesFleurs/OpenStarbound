@@ -77,7 +77,7 @@ public:
   static auto readFileString(String const& filename) -> String;
   static auto fileSize(String const& filename) -> std::int64_t;
 
-  static void writeFile(char const* data, size_t len, String const& filename);
+  static void writeFile(char const* data, std::size_t len, String const& filename);
   static void writeFile(ByteArray const& data, String const& filename);
   static void writeFile(String const& data, String const& filename);
 
@@ -86,7 +86,7 @@ public:
   // operation completes.  Writes to the same path as the existing file to
   // avoid different partition copying.  This may clobber anything in the given
   // path that matches filename + newSuffix.
-  static void overwriteFileWithRename(char const* data, size_t len, String const& filename, String const& newSuffix = ".new");
+  static void overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix = ".new");
   static void overwriteFileWithRename(ByteArray const& data, String const& filename, String const& newSuffix = ".new");
   static void overwriteFileWithRename(String const& data, String const& filename, String const& newSuffix = ".new");
 
@@ -110,15 +110,15 @@ public:
   void resize(std::int64_t size) override;
   auto size() -> std::int64_t override;
   auto atEnd() -> bool override;
-  auto read(char* data, size_t len) -> size_t override;
-  auto write(char const* data, size_t len) -> size_t override;
+  auto read(char* data, std::size_t len) -> std::size_t override;
+  auto write(char const* data, std::size_t len) -> std::size_t override;
 
   // Do an immediate read / write of an absolute location in the file, without
   // modifying the current file cursor.  Safe to call in a threaded context
   // with other reads and writes, but not safe vs changing the File state like
   // open and close.
-  auto readAbsolute(std::int64_t readPosition, char* data, size_t len) -> size_t override;
-  auto writeAbsolute(std::int64_t writePosition, char const* data, size_t len) -> size_t override;
+  auto readAbsolute(std::int64_t readPosition, char* data, std::size_t len) -> std::size_t override;
+  auto writeAbsolute(std::int64_t writePosition, char const* data, std::size_t len) -> std::size_t override;
 
   void open(IOMode mode) override;
   void close() override;
@@ -133,17 +133,17 @@ private:
   static auto fopen(char const* filename, IOMode mode) -> void*;
   static void fseek(void* file, std::int64_t offset, IOSeek seek);
   static auto ftell(void* file) -> std::int64_t;
-  static auto fread(void* file, char* data, size_t len) -> size_t;
-  static auto fwrite(void* file, char const* data, size_t len) -> size_t;
+  static auto fread(void* file, char* data, std::size_t len) -> std::size_t;
+  static auto fwrite(void* file, char const* data, std::size_t len) -> std::size_t;
   static void fsync(void* file);
   static void fclose(void* file);
   static auto fsize(void* file) -> std::int64_t;
-  static auto pread(void* file, char* data, size_t len, std::int64_t absPosition) -> size_t;
-  static auto pwrite(void* file, char const* data, size_t len, std::int64_t absPosition) -> size_t;
+  static auto pread(void* file, char* data, std::size_t len, std::int64_t absPosition) -> std::size_t;
+  static auto pwrite(void* file, char const* data, std::size_t len, std::int64_t absPosition) -> std::size_t;
   static void resize(void* file, std::int64_t size);
 
   String m_filename;
   void* m_file;
 };
 
-}
+}// namespace Star

@@ -1,6 +1,9 @@
 #pragma once
 
+#include "StarDataStreamDevices.hpp"
 #include "StarNetElement.hpp"
+
+import std;
 
 namespace Star {
 
@@ -15,7 +18,7 @@ public:
   // code that should be passed to the next call to writeState.  If
   // 'fromVersion' is 0, then this is a full write for an initial read of a
   // slave NetElementTop.
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  auto writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t>;
   // Reads a state produced by a call to writeState, optionally with the
   // interpolation delay time for the data contained in this state update.  If
   // the state is a full update rather than a delta, the interoplation delay
@@ -26,13 +29,13 @@ public:
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {});
 
 private:
-  using BaseNetElement::initNetVersion;
-  using BaseNetElement::netStore;
-  using BaseNetElement::netLoad;
-  using BaseNetElement::writeNetDelta;
-  using BaseNetElement::readNetDelta;
   using BaseNetElement::blankNetDelta;
   using BaseNetElement::checkWithRules;
+  using BaseNetElement::initNetVersion;
+  using BaseNetElement::netLoad;
+  using BaseNetElement::netStore;
+  using BaseNetElement::readNetDelta;
+  using BaseNetElement::writeNetDelta;
 
   NetElementVersion m_netVersion;
 };
@@ -43,7 +46,7 @@ NetElementTop<BaseNetElement>::NetElementTop() {
 }
 
 template <typename BaseNetElement>
-pair<ByteArray, uint64_t> NetElementTop<BaseNetElement>::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+auto NetElementTop<BaseNetElement>::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) -> std::pair<ByteArray, std::uint64_t> {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
   if (fromVersion == 0) {
@@ -73,4 +76,4 @@ void NetElementTop<BaseNetElement>::readNetState(ByteArray data, float interpola
   }
 }
 
-}
+}// namespace Star

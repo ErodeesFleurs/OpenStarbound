@@ -1,13 +1,16 @@
 #pragma once
 
-#include "StarString.hpp"
-#include "StarVariant.hpp"
+#include "StarException.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
+#include "StarString.hpp"
+#include "StarVariant.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(OptionParserException, StarException);
+using OptionParserException = ExceptionDerived<"OptionParserException">;
 
 // Simple command line argument parsing and help printing, only simple single
 // dash flags are supported, no flag combining is allowed and all components
@@ -44,7 +47,7 @@ public:
 
   // Parse the given arguments into an options set, returns the options parsed
   // and a list of all the errors encountered while parsing.
-  pair<Options, StringList> parseOptions(StringList const& arguments) const;
+  [[nodiscard]] auto parseOptions(StringList const& arguments) const -> std::pair<Options, StringList>;
 
   // Print help text to the given std::ostream
   void printHelp(std::ostream& os) const;
@@ -68,7 +71,7 @@ private:
     String description;
   };
 
-  typedef Variant<Switch, Parameter> Option;
+  using Option = Variant<Switch, Parameter>;
 
   String m_commandName;
   String m_summary;
@@ -78,4 +81,4 @@ private:
   List<Argument> m_arguments;
 };
 
-}
+}// namespace Star

@@ -45,8 +45,8 @@ public:
     auto operator++() -> const_iterator&;
     auto operator++(int) -> const_iterator;
 
-    auto operator*() const -> value_type&;
-    auto operator->() const -> value_type*;
+    auto operator*() const -> const value_type&;
+    auto operator->() const -> const value_type*;
 
     typename Table::const_iterator inner;
   };
@@ -179,12 +179,12 @@ auto FlatHashSet<Key, Hash, Equals, Allocator>::const_iterator::operator++(int) 
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
-auto FlatHashSet<Key, Hash, Equals, Allocator>::const_iterator::operator*() const -> value_type& {
+auto FlatHashSet<Key, Hash, Equals, Allocator>::const_iterator::operator*() const -> const value_type& {
   return *inner;
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
-auto FlatHashSet<Key, Hash, Equals, Allocator>::const_iterator::operator->() const -> value_type* {
+auto FlatHashSet<Key, Hash, Equals, Allocator>::const_iterator::operator->() const -> const value_type* {
   return &operator*();
 }
 

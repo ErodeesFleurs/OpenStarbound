@@ -1,5 +1,7 @@
 #include "StarShellParser.hpp"
 
+import std;
+
 namespace Star {
 
 ShellParser::ShellParser()
@@ -11,13 +13,13 @@ auto ShellParser::tokenize(String const& command) -> List<Token> {
   init(command);
 
   while (notDone()) {
-    res.append(Token{TokenType::Word, word()});
+    res.append(Token{.type=TokenType::Word, .token=word()});
   }
 
   return res;
 }
 
-StringList ShellParser::tokenizeToStringList(String const& command) {
+auto ShellParser::tokenizeToStringList(String const& command) -> StringList {
   StringList res;
   for (auto token : tokenize(command)) {
     if (token.type == TokenType::Word) {
@@ -35,7 +37,7 @@ void ShellParser::init(String const& string) {
   m_quotedType = '\0';
 }
 
-String ShellParser::word() {
+auto ShellParser::word() -> String {
   String res;
 
   while (notDone()) {
@@ -78,15 +80,15 @@ String ShellParser::word() {
   return res;
 }
 
-bool ShellParser::isSpace(Char letter) const {
+auto ShellParser::isSpace(Char letter) const -> bool {
   return String::isSpace(letter);
 }
 
-bool ShellParser::isQuote(Char letter) const {
+auto ShellParser::isQuote(Char letter) const -> bool {
   return letter == '\'' || letter == '"';
 }
 
-bool ShellParser::inQuotedString() const {
+auto ShellParser::inQuotedString() const -> bool {
   return m_quotedType != '\0';
 }
 
@@ -180,7 +182,7 @@ auto ShellParser::parseUnicodeEscapeSequence(std::optional<Char> previousCodepoi
       break;
     }
 
-    if (!isxdigit(*letter)) {
+    if (!std::isxdigit(*letter)) {
       return STAR_UTF32_REPLACEMENT_CHAR;
     }
 
@@ -201,7 +203,7 @@ auto ShellParser::parseUnicodeEscapeSequence(std::optional<Char> previousCodepoi
   }
 }
 
-bool ShellParser::notDone() const {
+auto ShellParser::notDone() const -> bool {
   return m_current != m_end;
 }
 

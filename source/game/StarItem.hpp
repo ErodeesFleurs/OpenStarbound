@@ -1,17 +1,20 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
 #include "StarDrawable.hpp"
+#include "StarException.hpp"
+#include "StarGameTypes.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarQuestDescriptor.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(GenericItem);
+// STAR_CLASS(Item);
+// STAR_CLASS(GenericItem);
 
-STAR_EXCEPTION(ItemException, StarException);
+using ItemException = ExceptionDerived<"ItemException">;
 
 class Item {
 public:
@@ -25,100 +28,100 @@ public:
 
   virtual ~Item();
 
-  virtual ItemPtr clone() const = 0;
+  [[nodiscard]] virtual auto clone() const -> Ptr<Item> = 0;
 
   // Unique identifying item name
-  String name() const;
+  [[nodiscard]] auto name() const -> String;
 
   // Number of this item that is available.
-  uint64_t count() const;
+  [[nodiscard]] auto count() const -> std::uint64_t;
   // Sets the new item count, up to a max of the maximum stack size.  If this
   // value is over stack size, returns the overflow.  If 'overfill' is set to
   // true, then will fill past max stack level.
-  uint64_t setCount(uint64_t count, bool overfill = false);
+  auto setCount(uint64_t count, bool overfill = false) -> std::uint64_t;
 
   // Is this item type stackable with the given item type at all?  Base class
   // implementation compares name(), and m_parameters fields and returns true
   // if they are both the same, similarly to matches.
-  virtual bool stackableWith(ItemConstPtr const& item) const;
-  uint64_t maxStack() const;
+  [[nodiscard]] virtual auto stackableWith(ConstPtr<Item> const& item) const -> bool;
+  [[nodiscard]] auto maxStack() const -> uint64_t;
 
   // Return how many of the given item could be shifted into this item, taking
   // into acount whether the item is stackable at all, as well as maxStack and
   // the count available.
-  uint64_t couldStack(ItemConstPtr const& item) const;
+  [[nodiscard]] auto couldStack(ConstPtr<Item> const& item) const -> uint64_t;
 
   // If the given item is stackable with this one, takes as many from the given
   // item as possible and shifts it into this item's count.  Returns true if
   // any items at all were shifted.
-  bool stackWith(ItemPtr const& item);
+  auto stackWith(Ptr<Item> const& item) -> bool;
 
   // Does this item match the given item or itemDescriptor
-  bool matches(ItemDescriptor const& descriptor, bool exactMatch = false) const;
-  bool matches(ItemConstPtr const& other, bool exactMatch = false) const;
+  [[nodiscard]] auto matches(ItemDescriptor const& descriptor, bool exactMatch = false) const -> bool;
+  [[nodiscard]] auto matches(ConstPtr<Item> const& other, bool exactMatch = false) const -> bool;
 
   // List of itemdescriptors for which the current item could be used in the
   // place of
   // in recipes and the like.
-  List<ItemDescriptor> matchingDescriptors() const;
+  [[nodiscard]] auto matchingDescriptors() const -> List<ItemDescriptor>;
 
   // If the given number of this item is available, consumes that number and
   // returns true, otherwise returns false.
-  bool consume(uint64_t count);
+  auto consume(uint64_t count) -> bool;
 
   // Take as many of this item as possible up to the given max (default is all)
   // and return the new set.  Implementation uses clone() method.
-  ItemPtr take(uint64_t max = std::numeric_limits<std::size_t>::max());
+  auto take(uint64_t max = std::numeric_limits<std::size_t>::max()) -> Ptr<Item>;
 
   // count() is 0
-  bool empty() const;
+  [[nodiscard]] auto empty() const -> bool;
 
   // Builds a descriptor out of name(), count(), and m_parameters
-  ItemDescriptor descriptor() const;
+  [[nodiscard]] auto descriptor() const -> ItemDescriptor;
 
-  String description() const;
-  String friendlyName() const;
+  [[nodiscard]] auto description() const -> String;
+  [[nodiscard]] auto friendlyName() const -> String;
 
-  Rarity rarity() const;
-  uint64_t price() const;
+  [[nodiscard]] auto rarity() const -> Rarity;
+  [[nodiscard]] auto price() const -> uint64_t;
 
-  virtual List<Drawable> iconDrawables() const;
-  virtual std::optional<List<Drawable>> secondaryDrawables() const;
-  virtual bool hasSecondaryDrawables() const;
+  [[nodiscard]] virtual auto iconDrawables() const -> List<Drawable>;
+  [[nodiscard]] virtual auto secondaryDrawables() const -> std::optional<List<Drawable>>;
+  [[nodiscard]] virtual auto hasSecondaryDrawables() const -> bool;
 
-  virtual List<Drawable> dropDrawables() const;
-  String largeImage() const;
+  [[nodiscard]] virtual auto dropDrawables() const -> List<Drawable>;
+  [[nodiscard]] auto largeImage() const -> String;
 
-  String tooltipKind() const;
-  virtual String category() const;
+  [[nodiscard]] auto tooltipKind() const -> String;
+  [[nodiscard]] virtual auto category() const -> String;
 
-  virtual String pickupSound() const;
+  [[nodiscard]] virtual auto pickupSound() const -> String;
 
-  bool twoHanded() const;
-  float timeToLive() const;
+  [[nodiscard]] auto twoHanded() const -> bool;
+  [[nodiscard]] auto timeToLive() const -> float;
 
-  List<ItemDescriptor> learnBlueprintsOnPickup() const;
-  StringMap<String> collectablesOnPickup() const;
+  [[nodiscard]] auto learnBlueprintsOnPickup() const -> List<ItemDescriptor>;
+  [[nodiscard]] auto collectablesOnPickup() const -> StringMap<String>;
 
-  List<QuestArcDescriptor> pickupQuestTemplates() const;
-  StringSet itemTags() const;
-  bool hasItemTag(String const& itemTag) const;
+  [[nodiscard]] auto pickupQuestTemplates() const -> List<QuestArcDescriptor>;
+  [[nodiscard]] auto itemTags() const -> StringSet;
+  [[nodiscard]] auto hasItemTag(String const& itemTag) const -> bool;
 
   // Return either a parameter given to the item or a config value, if no such
   // parameter exists.
-  Json instanceValue(String const& name, Json const& def = Json()) const;
-  Json instanceValueOfType(String const& name, Json::Type type, Json const& def = Json()) const;
+  [[nodiscard]] auto instanceValue(String const& name, Json const& def = Json()) const -> Json;
+  [[nodiscard]] auto instanceValueOfType(String const& name, Json::Type type, Json const& def = Json()) const -> Json;
 
   // Returns the full set of configuration values merged with parameters
-  Json instanceValues() const;
+  [[nodiscard]] auto instanceValues() const -> Json;
 
   // Returns just the base config
-  Json config() const;
+  [[nodiscard]] auto config() const -> Json;
 
   // Returns just the dynamic parameters
-  Json parameters() const;
+  [[nodiscard]] auto parameters() const -> Json;
 
-  static bool itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b);
+  static auto itemsEqual(ConstPtr<Item> const& a, ConstPtr<Item> const& b) -> bool;
 
 protected:
   void setMaxStack(uint64_t maxStack);
@@ -135,7 +138,7 @@ protected:
 
   void setInstanceValue(String const& name, Json const& val);
 
-  String const& directory() const;
+  [[nodiscard]] auto directory() const -> String const&;
 
 private:
   Json m_config;
@@ -167,22 +170,22 @@ private:
 class GenericItem : public Item {
 public:
   GenericItem(Json const& config, String const& directory, Json const& parameters);
-  virtual ItemPtr clone() const;
+  [[nodiscard]] auto clone() const -> Ptr<Item> override;
 };
 
-inline uint64_t itemSafeCount(ItemPtr const& item) {
+inline auto itemSafeCount(Ptr<Item> const& item) -> uint64_t {
   return item ? item->count() : 0;
 }
 
-inline bool itemSafeTwoHanded(ItemPtr const& item) {
+inline auto itemSafeTwoHanded(Ptr<Item> const& item) -> bool {
   return item && item->twoHanded();
 }
 
-inline bool itemSafeOneHanded(ItemPtr const& item) {
+inline auto itemSafeOneHanded(Ptr<Item> const& item) -> bool {
   return item && !item->twoHanded();
 }
 
-inline ItemDescriptor itemSafeDescriptor(ItemPtr const& item) {
+inline auto itemSafeDescriptor(Ptr<Item> const& item) -> ItemDescriptor {
   return item ? item->descriptor() : ItemDescriptor();
 }
-}
+}// namespace Star

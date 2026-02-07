@@ -1,20 +1,19 @@
 #pragma once
 
-#include <optional>
-#include <type_traits>
-
+#include "StarByteArray.hpp"
 #include "StarNetElement.hpp"
 #include "StarString.hpp"
-#include "StarByteArray.hpp"
+
+import std;
 
 namespace Star {
 
 template <typename T>
 class NetElementBasicField : public NetElement {
 public:
-  virtual ~NetElementBasicField() = default;
+  ~NetElementBasicField() override = default;
 
-  T const& get() const;
+  [[nodiscard]] auto get() const -> T const&;
 
   // Updates the value if the value is different than the existing value,
   // requires T have operator==
@@ -24,7 +23,7 @@ public:
   void push(T value);
 
   // Has this field been updated since the last call to pullUpdated?
-  bool pullUpdated();
+  auto pullUpdated() -> bool;
 
   // Update the value in place.  The mutator will be called as bool
   // mutator(T&), return true to signal that the value was updated.
@@ -42,7 +41,7 @@ public:
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  auto writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const -> bool override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
 protected:
@@ -53,10 +52,10 @@ protected:
 
 private:
   NetElementVersion const* m_netVersion = nullptr;
-  uint64_t m_latestUpdateVersion = 0;
+  std::uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
   bool m_updated = false;
-  std::optional<Deque<pair<float, T>>> m_pendingInterpolatedValues;
+  std::optional<Deque<std::pair<float, T>>> m_pendingInterpolatedValues;
 };
 
 template <typename T>
@@ -66,8 +65,8 @@ protected:
   void writeData(DataStream& ds, T const& v) const override;
 };
 
-typedef NetElementIntegral<int64_t> NetElementInt;
-typedef NetElementIntegral<uint64_t> NetElementUInt;
+using NetElementInt = NetElementIntegral<std::int64_t>;
+using NetElementUInt = NetElementIntegral<std::uint64_t>;
 
 // Properly encodes std::numeric_limits<std::size_t>::max() no matter the platform width of size_t NetElement
 // size_t values are NOT clamped when setting.
@@ -99,10 +98,10 @@ public:
 
   // Returns the number of times this event has been triggered since the last
   // pullOccurrences call.
-  uint64_t pullOccurrences();
+  auto pullOccurrences() -> std::uint64_t;
 
   // Pulls whether this event occurred at all, ignoring the number
-  bool pullOccurred();
+  auto pullOccurred() -> bool;
 
   // Ignore all the existing ocurrences
   void ignoreOccurrences();
@@ -115,11 +114,11 @@ protected:
 
 private:
   using NetElementUInt::get;
-  using NetElementUInt::set;
   using NetElementUInt::push;
+  using NetElementUInt::set;
   using NetElementUInt::update;
 
-  uint64_t m_pulledOccurrences = 0;
+  std::uint64_t m_pulledOccurrences = 0;
   bool m_ignoreOccurrencesOnNetLoad = false;
 };
 
@@ -128,22 +127,22 @@ template <typename T>
 class NetElementData : public NetElementBasicField<T> {
 public:
   NetElementData();
-  NetElementData(function<void(DataStream&, T&)> reader, function<void(DataStream&, T const&)> writer);
+  NetElementData(std::function<void(DataStream&, T&)> reader, std::function<void(DataStream&, T const&)> writer);
 
 protected:
   void readData(DataStream& ds, T& v) const override;
   void writeData(DataStream& ds, T const& v) const override;
 
 private:
-  function<void(DataStream&, T&)> m_reader;
-  function<void(DataStream&, T const&)> m_writer;
+  std::function<void(DataStream&, T&)> m_reader;
+  std::function<void(DataStream&, T const&)> m_writer;
 };
 
-typedef NetElementData<String> NetElementString;
-typedef NetElementData<ByteArray> NetElementBytes;
+using NetElementString = NetElementData<String>;
+using NetElementBytes = NetElementData<ByteArray>;
 
 template <typename T>
-T const& NetElementBasicField<T>::get() const {
+auto NetElementBasicField<T>::get() const -> T const& {
   return m_value;
 }
 
@@ -163,7 +162,7 @@ void NetElementBasicField<T>::push(T value) {
 }
 
 template <typename T>
-bool NetElementBasicField<T>::pullUpdated() {
+auto NetElementBasicField<T>::pullUpdated() -> bool {
   return take(m_updated);
 }
 
@@ -213,7 +212,8 @@ void NetElementBasicField<T>::tickNetInterpolation(float dt) {
 
 template <typename T>
 void NetElementBasicField<T>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   if (m_pendingInterpolatedValues && !m_pendingInterpolatedValues->empty())
     writeData(ds, m_pendingInterpolatedValues->last().second);
   else
@@ -222,7 +222,8 @@ void NetElementBasicField<T>::netStore(DataStream& ds, NetCompatibilityRules rul
 
 template <typename T>
 void NetElementBasicField<T>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   readData(ds, m_value);
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   updated();
@@ -231,8 +232,9 @@ void NetElementBasicField<T>::netLoad(DataStream& ds, NetCompatibilityRules rule
 }
 
 template <typename T>
-bool NetElementBasicField<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return false;
+auto NetElementBasicField<T>::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const -> bool {
+  if (!checkWithRules(rules))
+    return false;
   if (m_latestUpdateVersion < fromVersion)
     return false;
 
@@ -246,7 +248,8 @@ bool NetElementBasicField<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion
 
 template <typename T>
 void NetElementBasicField<T>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   T t;
   readData(ds, t);
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
@@ -278,7 +281,7 @@ void NetElementIntegral<T>::readData(DataStream& ds, T& v) const {
   if (sizeof(T) == 1) {
     ds.read(v);
   } else {
-    if (std::is_unsigned<T>::value)
+    if (std::is_unsigned_v<T>)
       v = ds.readVlqU();
     else
       v = ds.readVlqI();
@@ -290,7 +293,7 @@ void NetElementIntegral<T>::writeData(DataStream& ds, T const& v) const {
   if (sizeof(T) == 1) {
     ds.write(v);
   } else {
-    if (std::is_unsigned<T>::value)
+    if (std::is_unsigned_v<T>)
       ds.writeVlqU(v);
     else
       ds.writeVlqI(v);
@@ -310,16 +313,16 @@ void NetElementEnum<Enum>::writeData(DataStream& ds, Enum const& v) const {
   if (sizeof(Enum) == 1)
     ds.write(v);
   else
-    ds.writeVlqI((int64_t)v);
+    ds.writeVlqI((std::int64_t)v);
 }
 
 template <typename T>
 NetElementData<T>::NetElementData()
-  : NetElementData([](DataStream& ds, T & t) { ds >> t; }, [](DataStream& ds, T const& t) { ds << t; }) {}
+    : NetElementData([](DataStream& ds, T& t) -> auto { ds >> t; }, [](DataStream& ds, T const& t) { ds << t; }) {}
 
 template <typename T>
-NetElementData<T>::NetElementData(function<void(DataStream&, T&)> reader, function<void(DataStream&, T const&)> writer)
-  : m_reader(std::move(reader)), m_writer(std::move(writer)) {}
+NetElementData<T>::NetElementData(std::function<void(DataStream&, T&)> reader, std::function<void(DataStream&, T const&)> writer)
+    : m_reader(std::move(reader)), m_writer(std::move(writer)) {}
 
 template <typename T>
 void NetElementData<T>::readData(DataStream& ds, T& v) const {
@@ -331,4 +334,4 @@ void NetElementData<T>::writeData(DataStream& ds, T const& v) const {
   m_writer(ds, v);
 }
 
-}
+}// namespace Star

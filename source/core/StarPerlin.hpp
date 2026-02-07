@@ -1,13 +1,16 @@
 #pragma once
 
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
+#include "StarException.hpp"
 #include "StarInterpolation.hpp"
+#include "StarJson.hpp"
 #include "StarRandom.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(PerlinException, StarException);
+using PerlinException = ExceptionDerived<"PerlinException">;
 
 enum class PerlinType {
   Uninitialized,
@@ -25,62 +28,62 @@ public:
   // Default constructed perlin noise is uninitialized and cannot be queried.
   Perlin();
 
-  Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed);
-  Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed);
-  Perlin(Json const& config, uint64_t seed);
+  Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, std::uint64_t seed);
+  Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, std::uint64_t seed);
+  Perlin(Json const& config, std::uint64_t seed);
   explicit Perlin(Json const& json);
 
   Perlin(Perlin const& perlin);
   Perlin(Perlin&& perlin);
 
-  Perlin& operator=(Perlin const& perlin);
-  Perlin& operator=(Perlin&& perlin);
+  auto operator=(Perlin const& perlin) -> Perlin&;
+  auto operator=(Perlin&& perlin) -> Perlin&;
 
-  Float get(Float x) const;
-  Float get(Float x, Float y) const;
+  auto get(Float x) const -> Float;
+  auto get(Float x, Float y) const -> Float;
   Float get(Float x, Float y, Float z) const;
 
-  PerlinType type() const;
+  [[nodiscard]] auto type() const -> PerlinType;
 
-  unsigned octaves() const;
-  Float frequency() const;
-  Float amplitude() const;
-  Float bias() const;
-  Float alpha() const;
-  Float beta() const;
+  [[nodiscard]] auto octaves() const -> unsigned;
+  auto frequency() const -> Float;
+  auto amplitude() const -> Float;
+  auto bias() const -> Float;
+  auto alpha() const -> Float;
+  auto beta() const -> Float;
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
 private:
-  static Float s_curve(Float t);
+  static auto s_curve(Float t) -> Float;
   static void setup(Float v, int& b0, int& b1, Float& r0, Float& r1);
 
-  static Float at2(Float* q, Float rx, Float ry);
-  static Float at3(Float* q, Float rx, Float ry, Float rz);
+  static auto at2(Float* q, Float rx, Float ry) -> Float;
+  static auto at3(Float* q, Float rx, Float ry, Float rz) -> Float;
 
-  Float noise1(Float arg) const;
-  Float noise2(Float vec[2]) const;
-  Float noise3(Float vec[3]) const;
+  auto noise1(Float arg) const -> Float;
+  auto noise2(std::array<Float, 2>& vec) const -> Float;
+  auto noise3(std::array<Float, 3>& vec) const -> Float;
 
-  void normalize2(Float v[2]) const;
-  void normalize3(Float v[3]) const;
+  void normalize2(std::array<Float, 2>& v) const;
+  void normalize3(std::array<Float, 3>& v) const;
 
-  void init(uint64_t seed);
+  void init(std::uint64_t seed);
 
-  Float perlin(Float x) const;
-  Float perlin(Float x, Float y) const;
-  Float perlin(Float x, Float y, Float z) const;
+  auto perlin(Float x) const -> Float;
+  auto perlin(Float x, Float y) const -> Float;
+  auto perlin(Float x, Float y, Float z) const -> Float;
 
-  Float ridgedMulti(Float x) const;
-  Float ridgedMulti(Float x, Float y) const;
-  Float ridgedMulti(Float x, Float y, Float z) const;
+  auto ridgedMulti(Float x) const -> Float;
+  auto ridgedMulti(Float x, Float y) const -> Float;
+  auto ridgedMulti(Float x, Float y, Float z) const -> Float;
 
-  Float billow(Float x) const;
-  Float billow(Float x, Float y) const;
-  Float billow(Float x, Float y, Float z) const;
+  auto billow(Float x) const -> Float;
+  auto billow(Float x, Float y) const -> Float;
+  auto billow(Float x, Float y, Float z) const -> Float;
 
   PerlinType m_type;
-  uint64_t m_seed;
+  std::uint64_t m_seed;
 
   int m_octaves;
   Float m_frequency;
@@ -93,17 +96,17 @@ private:
   Float m_offset;
   Float m_gain;
 
-  unique_ptr<int[]> p;
-  unique_ptr<Float[][3]> g3;
-  unique_ptr<Float[][2]> g2;
-  unique_ptr<Float[]> g1;
+  std::unique_ptr<int[]> p;
+  std::unique_ptr<Float[][3]> g3;
+  std::unique_ptr<Float[][2]> g2;
+  std::unique_ptr<Float[]> g1;
 };
 
-typedef Perlin<float> PerlinF;
-typedef Perlin<double> PerlinD;
+using PerlinF = Perlin<float>;
+using PerlinD = Perlin<double>;
 
 template <typename Float>
-Float Perlin<Float>::s_curve(Float t) {
+auto Perlin<Float>::s_curve(Float t) -> Float {
   return t * t * (3.0 - 2.0 * t);
 }
 
@@ -119,12 +122,12 @@ void Perlin<Float>::setup(Float v, int& b0, int& b1, Float& r0, Float& r1) {
 }
 
 template <typename Float>
-Float Perlin<Float>::at2(Float* q, Float rx, Float ry) {
+auto Perlin<Float>::at2(Float* q, Float rx, Float ry) -> Float {
   return rx * q[0] + ry * q[1];
 }
 
 template <typename Float>
-Float Perlin<Float>::at3(Float* q, Float rx, Float ry, Float rz) {
+auto Perlin<Float>::at3(Float* q, Float rx, Float ry, Float rz) -> Float {
   return rx * q[0] + ry * q[1] + rz * q[2];
 }
 
@@ -143,7 +146,7 @@ Perlin<Float>::Perlin() {
 }
 
 template <typename Float>
-Perlin<Float>::Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed) {
+Perlin<Float>::Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, std::uint64_t seed) {
   m_type = PerlinType::Perlin;
   m_seed = seed;
 
@@ -162,7 +165,7 @@ Perlin<Float>::Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float
 }
 
 template <typename Float>
-Perlin<Float>::Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed) {
+Perlin<Float>::Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, std::uint64_t seed) {
   m_type = type;
   m_seed = seed;
 
@@ -181,8 +184,8 @@ Perlin<Float>::Perlin(PerlinType type, unsigned octaves, Float freq, Float amp, 
 }
 
 template <typename Float>
-Perlin<Float>::Perlin(Json const& config, uint64_t seed)
-  : Perlin(config.set("seed", seed)) {}
+Perlin<Float>::Perlin(Json const& config, std::uint64_t seed)
+    : Perlin(config.set("seed", seed)) {}
 
 template <typename Float>
 Perlin<Float>::Perlin(Json const& json) {
@@ -213,7 +216,7 @@ Perlin<Float>::Perlin(Perlin&& perlin) {
 }
 
 template <typename Float>
-Perlin<Float>& Perlin<Float>::operator=(Perlin const& perlin) {
+auto Perlin<Float>::operator=(Perlin const& perlin) -> Perlin<Float>& {
   if (perlin.m_type == PerlinType::Uninitialized) {
     m_type = PerlinType::Uninitialized;
     p.reset();
@@ -248,7 +251,7 @@ Perlin<Float>& Perlin<Float>::operator=(Perlin const& perlin) {
 }
 
 template <typename Float>
-Perlin<Float>& Perlin<Float>::operator=(Perlin&& perlin) {
+auto Perlin<Float>::operator=(Perlin&& perlin) -> Perlin<Float>& {
   m_type = perlin.m_type;
   m_seed = perlin.m_seed;
   m_octaves = perlin.m_octaves;
@@ -269,84 +272,84 @@ Perlin<Float>& Perlin<Float>::operator=(Perlin&& perlin) {
 }
 
 template <typename Float>
-Float Perlin<Float>::get(Float x) const {
+auto Perlin<Float>::get(Float x) const -> Float {
   switch (m_type) {
-    case PerlinType::Perlin:
-      return perlin(x);
-    case PerlinType::Billow:
-      return billow(x);
-    case PerlinType::RidgedMulti:
-      return ridgedMulti(x);
-    default:
-      throw PerlinException("::get called on uninitialized Perlin");
+  case PerlinType::Perlin:
+    return perlin(x);
+  case PerlinType::Billow:
+    return billow(x);
+  case PerlinType::RidgedMulti:
+    return ridgedMulti(x);
+  default:
+    throw PerlinException("::get called on uninitialized Perlin");
   }
 }
 
 template <typename Float>
-Float Perlin<Float>::get(Float x, Float y) const {
+auto Perlin<Float>::get(Float x, Float y) const -> Float {
   switch (m_type) {
-    case PerlinType::Perlin:
-      return perlin(x, y);
-    case PerlinType::Billow:
-      return billow(x, y);
-    case PerlinType::RidgedMulti:
-      return ridgedMulti(x, y);
-    default:
-      throw PerlinException("::get called on uninitialized Perlin");
+  case PerlinType::Perlin:
+    return perlin(x, y);
+  case PerlinType::Billow:
+    return billow(x, y);
+  case PerlinType::RidgedMulti:
+    return ridgedMulti(x, y);
+  default:
+    throw PerlinException("::get called on uninitialized Perlin");
   }
 }
 
 template <typename Float>
-Float Perlin<Float>::get(Float x, Float y, Float z) const {
+auto Perlin<Float>::get(Float x, Float y, Float z) const -> Float {
   switch (m_type) {
-    case PerlinType::Perlin:
-      return perlin(x, y, z);
-    case PerlinType::Billow:
-      return billow(x, y, z);
-    case PerlinType::RidgedMulti:
-      return ridgedMulti(x, y, z);
-    default:
-      throw PerlinException("::get called on uninitialized Perlin");
+  case PerlinType::Perlin:
+    return perlin(x, y, z);
+  case PerlinType::Billow:
+    return billow(x, y, z);
+  case PerlinType::RidgedMulti:
+    return ridgedMulti(x, y, z);
+  default:
+    throw PerlinException("::get called on uninitialized Perlin");
   }
 }
 
 template <typename Float>
-PerlinType Perlin<Float>::type() const {
+auto Perlin<Float>::type() const -> PerlinType {
   return m_type;
 }
 
 template <typename Float>
-unsigned Perlin<Float>::octaves() const {
+auto Perlin<Float>::octaves() const -> unsigned {
   return m_octaves;
 }
 
 template <typename Float>
-Float Perlin<Float>::frequency() const {
+auto Perlin<Float>::frequency() const -> Float {
   return m_frequency;
 }
 
 template <typename Float>
-Float Perlin<Float>::amplitude() const {
+auto Perlin<Float>::amplitude() const -> Float {
   return m_amplitude;
 }
 
 template <typename Float>
-Float Perlin<Float>::bias() const {
+auto Perlin<Float>::bias() const -> Float {
   return m_bias;
 }
 
 template <typename Float>
-Float Perlin<Float>::alpha() const {
+auto Perlin<Float>::alpha() const -> Float {
   return m_alpha;
 }
 
 template <typename Float>
-Float Perlin<Float>::beta() const {
+auto Perlin<Float>::beta() const -> Float {
   return m_beta;
 }
 
 template <typename Float>
-Json Perlin<Float>::toJson() const {
+auto Perlin<Float>::toJson() const -> Json {
   return JsonObject{
     {"seed", m_seed},
     {"octaves", m_octaves},
@@ -357,12 +360,11 @@ Json Perlin<Float>::toJson() const {
     {"beta", m_beta},
     {"offset", m_offset},
     {"gain", m_gain},
-    {"type", PerlinTypeNames.getRight(m_type)}
-  };
+    {"type", PerlinTypeNames.getRight(m_type)}};
 }
 
 template <typename Float>
-inline Float Perlin<Float>::noise1(Float arg) const {
+inline auto Perlin<Float>::noise1(Float arg) const -> Float {
   int bx0, bx1;
   Float rx0, rx1, sx, u, v;
 
@@ -376,7 +378,7 @@ inline Float Perlin<Float>::noise1(Float arg) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::noise2(Float vec[2]) const {
+inline auto Perlin<Float>::noise2(std::array<Float, 2>& vec) const -> Float {
   int bx0, bx1, by0, by1, b00, b10, b01, b11;
   Float rx0, rx1, ry0, ry1, sx, sy, a, b, u, v;
   int i, j;
@@ -407,7 +409,7 @@ inline Float Perlin<Float>::noise2(Float vec[2]) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::noise3(Float vec[3]) const {
+inline auto Perlin<Float>::noise3(std::array<Float, 3>& vec) const -> Float {
   int bx0, bx1, by0, by1, bz0, bz1, b00, b10, b01, b11;
   Float rx0, rx1, ry0, ry1, rz0, rz1, sx, sy, sz, a, b, c, d, u, v;
   int i, j;
@@ -452,7 +454,7 @@ inline Float Perlin<Float>::noise3(Float vec[3]) const {
 }
 
 template <typename Float>
-void Perlin<Float>::normalize2(Float v[2]) const {
+void Perlin<Float>::normalize2(std::array<Float, 2>& v) const {
   Float s;
 
   s = sqrt(v[0] * v[0] + v[1] * v[1]);
@@ -466,7 +468,7 @@ void Perlin<Float>::normalize2(Float v[2]) const {
 }
 
 template <typename Float>
-void Perlin<Float>::normalize3(Float v[3]) const {
+void Perlin<Float>::normalize3(std::array<Float, 3>& v) const {
   Float s;
 
   s = sqrt(v[0] * v[0] + v[1] * v[1] + v[2] * v[2]);
@@ -482,7 +484,7 @@ void Perlin<Float>::normalize3(Float v[3]) const {
 }
 
 template <typename Float>
-void Perlin<Float>::init(uint64_t seed) {
+void Perlin<Float>::init(std::uint64_t seed) {
   RandomSource randomSource(seed);
 
   p.reset(new int[PerlinSampleSize + PerlinSampleSize + 2]);
@@ -522,10 +524,10 @@ void Perlin<Float>::init(uint64_t seed) {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::perlin(Float x) const {
+inline auto Perlin<Float>::perlin(Float x) const -> Float {
   int i;
-  Float val, sum = 0;
-  Float p, scale = 1;
+  Float val, sum = 0, scale = 1;
+  Float p;
 
   p = x * m_frequency;
   for (i = 0; i < m_octaves; i++) {
@@ -538,10 +540,11 @@ inline Float Perlin<Float>::perlin(Float x) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::perlin(Float x, Float y) const {
+inline auto Perlin<Float>::perlin(Float x, Float y) const -> Float {
   int i;
   Float val, sum = 0;
-  Float p[2], scale = 1;
+  Float scale = 1;
+  std::array<Float, 2> p;
 
   p[0] = x * m_frequency;
   p[1] = y * m_frequency;
@@ -556,10 +559,11 @@ inline Float Perlin<Float>::perlin(Float x, Float y) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::perlin(Float x, Float y, Float z) const {
+inline auto Perlin<Float>::perlin(Float x, Float y, Float z) const -> Float {
   int i;
-  Float val, sum = 0;
-  Float p[3], scale = 1;
+  Float val, sum = 0, scale = 1;
+  ;
+  std::array<Float, 3> p;
 
   p[0] = x * m_frequency;
   p[1] = y * m_frequency;
@@ -577,7 +581,7 @@ inline Float Perlin<Float>::perlin(Float x, Float y, Float z) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::ridgedMulti(Float x) const {
+inline auto Perlin<Float>::ridgedMulti(Float x) const -> Float {
   Float val, sum = 0;
   Float scale = 1;
   Float weight = 1.0;
@@ -601,9 +605,9 @@ inline Float Perlin<Float>::ridgedMulti(Float x) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::ridgedMulti(Float x, Float y) const {
-  Float val, sum = 0;
-  Float p[2], scale = 1;
+inline auto Perlin<Float>::ridgedMulti(Float x, Float y) const -> Float {
+  Float val, sum = 0, scale = 1;
+  std::array<Float, 2> p;
   Float weight = 1.0;
 
   p[0] = x * m_frequency;
@@ -628,8 +632,8 @@ inline Float Perlin<Float>::ridgedMulti(Float x, Float y) const {
 
 template <typename Float>
 inline Float Perlin<Float>::ridgedMulti(Float x, Float y, Float z) const {
-  Float val, sum = 0;
-  Float p[3], scale = 1;
+  Float val, sum = 0, scale = 1;
+  std::array<Float, 3> p;
   Float weight = 1.0;
 
   p[0] = x * m_frequency;
@@ -655,7 +659,7 @@ inline Float Perlin<Float>::ridgedMulti(Float x, Float y, Float z) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::billow(Float x) const {
+inline auto Perlin<Float>::billow(Float x) const -> Float {
   Float val, sum = 0;
   Float p, scale = 1;
 
@@ -672,9 +676,9 @@ inline Float Perlin<Float>::billow(Float x) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::billow(Float x, Float y) const {
-  Float val, sum = 0;
-  Float p[2], scale = 1;
+inline auto Perlin<Float>::billow(Float x, Float y) const -> Float {
+  Float val, sum = 0, scale = 1;
+  std::array<Float, 2> p;
 
   p[0] = x * m_frequency;
   p[1] = y * m_frequency;
@@ -691,9 +695,9 @@ inline Float Perlin<Float>::billow(Float x, Float y) const {
 }
 
 template <typename Float>
-inline Float Perlin<Float>::billow(Float x, Float y, Float z) const {
-  Float val, sum = 0;
-  Float p[3], scale = 1;
+inline auto Perlin<Float>::billow(Float x, Float y, Float z) const -> Float {
+  Float val, sum = 0, scale = 1;
+  std::array<Float, 3> p;
 
   p[0] = x * m_frequency;
   p[1] = y * m_frequency;
@@ -712,4 +716,4 @@ inline Float Perlin<Float>::billow(Float x, Float y, Float z) const {
   return (sum + 0.5) * m_amplitude + m_bias;
 }
 
-}
+}// namespace Star

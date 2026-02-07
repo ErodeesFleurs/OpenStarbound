@@ -1,11 +1,11 @@
 #pragma once
 
-#include <optional>
-
-#include "StarGameTypes.hpp"
+#include "StarConfig.hpp"
+#include "StarLiquidTypes.hpp"
 #include "StarSkyTypes.hpp"
 #include "StarWeatherTypes.hpp"
-#include "StarForceRegions.hpp"
+
+import std;
 
 namespace Star {
 
@@ -32,11 +32,6 @@ enum class WorldEdgeForceRegionType : uint8_t {
 };
 extern EnumMap<WorldEdgeForceRegionType> const WorldEdgeForceRegionTypeNames;
 
-STAR_STRUCT(VisitableWorldParameters);
-STAR_STRUCT(TerrestrialWorldParameters);
-STAR_STRUCT(AsteroidsWorldParameters);
-STAR_STRUCT(FloatingDungeonWorldParameters);
-
 struct VisitableWorldParameters {
   VisitableWorldParameters() = default;
   VisitableWorldParameters(VisitableWorldParameters const& visitableWorldParameters) = default;
@@ -44,9 +39,9 @@ struct VisitableWorldParameters {
 
   virtual ~VisitableWorldParameters() = default;
 
-  virtual WorldParametersType type() const = 0;
+  [[nodiscard]] virtual auto type() const -> WorldParametersType = 0;
 
-  virtual Json store() const;
+  [[nodiscard]] virtual auto store() const -> Json;
 
   virtual void read(DataStream& ds);
   virtual void write(DataStream& ds) const;
@@ -108,11 +103,11 @@ struct TerrestrialWorldParameters : VisitableWorldParameters {
   TerrestrialWorldParameters(TerrestrialWorldParameters const& terrestrialWorldParameters) = default;
   explicit TerrestrialWorldParameters(Json const& store);
 
-  TerrestrialWorldParameters &operator=(TerrestrialWorldParameters const& terrestrialWorldParameters);
+  auto operator=(TerrestrialWorldParameters const& terrestrialWorldParameters) -> TerrestrialWorldParameters&;
 
-  WorldParametersType type() const override;
+  [[nodiscard]] auto type() const -> WorldParametersType override;
 
-  Json store() const override;
+  [[nodiscard]] auto store() const -> Json override;
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -141,9 +136,9 @@ struct AsteroidsWorldParameters : VisitableWorldParameters {
   AsteroidsWorldParameters();
   explicit AsteroidsWorldParameters(Json const& store);
 
-  WorldParametersType type() const override;
+  [[nodiscard]] auto type() const -> WorldParametersType override;
 
-  Json store() const override;
+  [[nodiscard]] auto store() const -> Json override;
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -159,9 +154,9 @@ struct FloatingDungeonWorldParameters : VisitableWorldParameters {
   FloatingDungeonWorldParameters() = default;
   explicit FloatingDungeonWorldParameters(Json const& store);
 
-  WorldParametersType type() const override;
+  [[nodiscard]] auto type() const -> WorldParametersType override;
 
-  Json store() const override;
+  [[nodiscard]] auto store() const -> Json override;
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -178,14 +173,14 @@ struct FloatingDungeonWorldParameters : VisitableWorldParameters {
   std::optional<String> nightAmbientNoises;
 };
 
-Json diskStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters);
-VisitableWorldParametersPtr diskLoadVisitableWorldParameters(Json const& store);
+auto diskStoreVisitableWorldParameters(ConstPtr<VisitableWorldParameters> const& parameters) -> Json;
+auto diskLoadVisitableWorldParameters(Json const& store) -> Ptr<VisitableWorldParameters>;
 
-ByteArray netStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters);
-VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data);
+auto netStoreVisitableWorldParameters(ConstPtr<VisitableWorldParameters> const& parameters) -> ByteArray;
+auto netLoadVisitableWorldParameters(ByteArray data) -> Ptr<VisitableWorldParameters>;
 
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, uint64_t seed);
-AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed);
-FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String const& dungeonWorldName);
+auto generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, uint64_t seed) -> Ptr<TerrestrialWorldParameters>;
+auto generateAsteroidsWorldParameters(uint64_t seed) -> Ptr<AsteroidsWorldParameters>;
+auto generateFloatingDungeonWorldParameters(String const& dungeonWorldName) -> Ptr<FloatingDungeonWorldParameters>;
 
-}
+}// namespace Star

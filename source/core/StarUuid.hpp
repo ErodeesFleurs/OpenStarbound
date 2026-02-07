@@ -2,10 +2,13 @@
 
 #include "StarArray.hpp"
 #include "StarDataStream.hpp"
+#include "StarException.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(UuidException, StarException);
+using UuidException = ExceptionDerived<"UuidException">;
 
 size_t const UuidSize = 16;
 
@@ -15,16 +18,16 @@ public:
   explicit Uuid(ByteArray const& bytes);
   explicit Uuid(String const& hex);
 
-  char const* ptr() const;
-  ByteArray bytes() const;
-  String hex() const;
+  [[nodiscard]] auto ptr() const -> char const*;
+  [[nodiscard]] auto bytes() const -> ByteArray;
+  [[nodiscard]] auto hex() const -> String;
 
-  bool operator==(Uuid const& u) const;
-  bool operator!=(Uuid const& u) const;
-  bool operator<(Uuid const& u) const;
-  bool operator<=(Uuid const& u) const;
-  bool operator>(Uuid const& u) const;
-  bool operator>=(Uuid const& u) const;
+  auto operator==(Uuid const& u) const -> bool;
+  auto operator!=(Uuid const& u) const -> bool;
+  auto operator<(Uuid const& u) const -> bool;
+  auto operator<=(Uuid const& u) const -> bool;
+  auto operator>(Uuid const& u) const -> bool;
+  auto operator>=(Uuid const& u) const -> bool;
 
 private:
   Array<char, UuidSize> m_data;
@@ -32,10 +35,10 @@ private:
 
 template <>
 struct hash<Uuid> {
-  size_t operator()(Uuid const& u) const;
+  auto operator()(Uuid const& u) const -> size_t;
 };
 
-DataStream& operator>>(DataStream& ds, Uuid& uuid);
-DataStream& operator<<(DataStream& ds, Uuid const& uuid);
+auto operator>>(DataStream& ds, Uuid& uuid) -> DataStream&;
+auto operator<<(DataStream& ds, Uuid const& uuid) -> DataStream&;
 
-}
+}// namespace Star

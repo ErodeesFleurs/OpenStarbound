@@ -1,32 +1,32 @@
 #pragma once
 
-#include <map>
-
 #include "StarFlatHashMap.hpp"
 #include "StarSet.hpp"
 #include "StarList.hpp"
+
+import std;
 
 namespace Star {
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
 class OrderedSetWrapper {
 public:
-  typedef Value value_type;
+  using value_type = Value;
 
-  typedef LinkedList<value_type, typename std::allocator_traits<Allocator>::template rebind_alloc<value_type>> OrderType;
-  typedef Map<
+  using OrderType = LinkedList<value_type, typename std::allocator_traits<Allocator>::template rebind_alloc<value_type>>;
+  using MapType = Map<
       std::reference_wrapper<value_type const>, typename OrderType::const_iterator, Args...,
-      typename std::allocator_traits<Allocator>::template rebind_alloc<pair<std::reference_wrapper<value_type const> const, typename OrderType::const_iterator>>
-    > MapType;
+      typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<std::reference_wrapper<value_type const> const, typename OrderType::const_iterator>>
+    >;
 
-  typedef typename OrderType::const_iterator const_iterator;
-  typedef const_iterator iterator;
+  using const_iterator = typename OrderType::const_iterator;
+  using iterator = const_iterator;
 
-  typedef typename OrderType::const_reverse_iterator const_reverse_iterator;
-  typedef const_reverse_iterator reverse_iterator;
+  using const_reverse_iterator = typename OrderType::const_reverse_iterator;
+  using reverse_iterator = const_reverse_iterator;
 
   template <typename Collection>
-  static OrderedSetWrapper from(Collection const& c);
+  static auto from(Collection const& c) -> OrderedSetWrapper;
 
   OrderedSetWrapper();
   OrderedSetWrapper(OrderedSetWrapper const& set);
@@ -34,78 +34,78 @@ public:
   template <typename InputIterator>
   OrderedSetWrapper(InputIterator beg, InputIterator end);
 
-  OrderedSetWrapper(initializer_list<value_type> list);
+  OrderedSetWrapper(std::initializer_list<value_type> list);
 
-  OrderedSetWrapper& operator=(OrderedSetWrapper const& set);
+  auto operator=(OrderedSetWrapper const& set) -> OrderedSetWrapper&;
 
   // Guaranteed to be in order.
-  List<value_type> values() const;
+  auto values() const -> List<value_type>;
 
-  bool contains(value_type const& v) const;
+  auto contains(value_type const& v) const -> bool;
 
   // add either adds the value to the back, or does not move it from its
   // current order.
-  pair<iterator, bool> insert(value_type const& v);
+  auto insert(value_type const& v) -> std::pair<iterator, bool>;
 
   // like insert, but only returns whether the value was added or not.
-  bool add(Value const& v);
+  auto add(Value const& v) -> bool;
 
   // Always replaces an existing value with a new value if it exists, and
   // always moves to the back.
-  bool replace(Value const& v);
+  auto replace(Value const& v) -> bool;
 
   // Either adds a value to the end of the order, or moves an existing value to
   // the back.
-  bool addBack(Value const& v);
+  auto addBack(Value const& v) -> bool;
 
   // Either adds a value to the beginning of the order, or moves an existing
   // value to the beginning.
-  bool addFront(Value const& v);
+  auto addFront(Value const& v) -> bool;
 
   template <typename Container>
   void addAll(Container const& c);
 
-  iterator toFront(iterator i);
+  auto toFront(iterator i) -> iterator;
 
-  iterator toBack(iterator i);
+  auto toBack(iterator i) -> iterator;
 
-  bool remove(value_type const& v);
+  auto remove(value_type const& v) -> bool;
 
   template <typename Container>
   void removeAll(Container const& c);
 
   void clear();
 
-  value_type const& first() const;
-  value_type const& last() const;
+  auto first() const -> value_type const&;
+  auto last() const -> value_type const&;
 
   void removeFirst();
   void removeLast();
 
-  value_type takeFirst();
-  value_type takeLast();
+  auto takeFirst() -> value_type;
+  auto takeLast() -> value_type;
 
   template <typename Compare>
   void sort(Compare comp);
 
   void sort();
 
-  size_t empty() const;
-  size_t size() const;
+  [[nodiscard]] auto empty() const -> size_t;
+  [[nodiscard]] auto size() const -> size_t;
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  auto begin() const -> const_iterator;
+  auto end() const -> const_iterator;
 
-  const_reverse_iterator rbegin() const;
-  const_reverse_iterator rend() const;
+  auto rbegin() const -> const_reverse_iterator;
+  auto rend() const -> const_reverse_iterator;
 
-  std::optional<size_t> indexOf(value_type const& v) const;
+  auto indexOf(value_type const& v) const -> std::optional<size_t>;
 
-  value_type const& at(size_t i) const;
-  value_type& at(size_t i);
+  auto at(size_t i) const -> value_type const&;
+  auto at(size_t i) -> value_type&;
 
-  OrderedSetWrapper intersection(OrderedSetWrapper const& s) const;
-  OrderedSetWrapper difference(OrderedSetWrapper const& s) const;
+  auto intersection(OrderedSetWrapper const& s) const -> OrderedSetWrapper;
+  auto difference(OrderedSetWrapper const& s) const -> OrderedSetWrapper;
 
 private:
   MapType m_map;
@@ -113,7 +113,7 @@ private:
 };
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-std::ostream& operator<<(std::ostream& os, OrderedSetWrapper<Map, Value, Allocator, Args...> const& set);
+auto operator<<(std::ostream& os, OrderedSetWrapper<Map, Value, Allocator, Args...> const& set) -> std::ostream&;
 
 template <typename Value, typename Compare = std::less<Value>, typename Allocator = std::allocator<Value>>
 using OrderedSet = OrderedSetWrapper<std::map, Value, Allocator, Compare>;
@@ -128,7 +128,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::from(Collection const& c
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper() {}
+OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper() = default;
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
 OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper(OrderedSetWrapper const& set) {
@@ -146,7 +146,7 @@ OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper(InputIterat
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper(initializer_list<value_type> list) {
+OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper(std::initializer_list<value_type> list) {
   for (value_type const& v : list)
     add(v);
 }
@@ -171,12 +171,12 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::values() const -> List<v
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-bool OrderedSetWrapper<Map, Value, Allocator, Args...>::contains(value_type const& v) const {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::contains(value_type const& v) const -> bool {
   return m_map.find(v) != m_map.end();
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::insert(value_type const& v) -> pair<iterator, bool> {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::insert(value_type const& v) -> std::pair<iterator, bool> {
   auto i = m_map.find(v);
   if (i == m_map.end()) {
     auto orderIt = m_order.insert(m_order.end(), v);
@@ -187,19 +187,19 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::insert(value_type const&
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-bool OrderedSetWrapper<Map, Value, Allocator, Args...>::add(Value const& v) {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::add(Value const& v) -> bool {
   return insert(v).second;
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-bool OrderedSetWrapper<Map, Value, Allocator, Args...>::replace(Value const& v) {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::replace(Value const& v) -> bool {
   bool replaced = remove(v);
   add(v);
   return replaced;
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-bool OrderedSetWrapper<Map, Value, Allocator, Args...>::addBack(Value const& v) {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::addBack(Value const& v) -> bool {
   auto i = m_map.find(v);
   if (i != m_map.end()) {
     m_order.splice(m_order.end(), m_order, i->second);
@@ -212,7 +212,7 @@ bool OrderedSetWrapper<Map, Value, Allocator, Args...>::addBack(Value const& v) 
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-bool OrderedSetWrapper<Map, Value, Allocator, Args...>::addFront(Value const& v) {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::addFront(Value const& v) -> bool {
   auto i = m_map.find(v);
   if (i != m_map.end()) {
     m_order.splice(m_order.begin(), m_order, i->second);
@@ -244,7 +244,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::toBack(iterator i) -> it
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-bool OrderedSetWrapper<Map, Value, Allocator, Args...>::remove(value_type const& v) {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::remove(value_type const& v) -> bool {
   auto i = m_map.find(v);
   if (i != m_map.end()) {
     auto orderIt = i->second;
@@ -340,12 +340,12 @@ void OrderedSetWrapper<Map, Value, Allocator, Args...>::sort() {
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-size_t OrderedSetWrapper<Map, Value, Allocator, Args...>::empty() const {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::empty() const -> size_t {
   return m_map.empty();
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-size_t OrderedSetWrapper<Map, Value, Allocator, Args...>::size() const {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::size() const -> size_t {
   return m_map.size();
 }
 
@@ -370,7 +370,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::rend() const -> const_re
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-std::optional<size_t> OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const& v) const {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const& v) const -> std::optional<size_t> {
   auto i = m_map.find(v);
   if (i == m_map.end())
     return {};
@@ -413,7 +413,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::difference(OrderedSetWra
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-std::ostream& operator<<(std::ostream& os, OrderedSetWrapper<Map, Value, Allocator, Args...> const& set) {
+auto operator<<(std::ostream& os, OrderedSetWrapper<Map, Value, Allocator, Args...> const& set) -> std::ostream& {
   os << "(";
   for (auto i = set.begin(); i != set.end(); ++i) {
     if (i != set.begin())

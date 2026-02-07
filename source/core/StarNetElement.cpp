@@ -1,13 +1,14 @@
 #include "StarNetElement.hpp"
 
+import std;
 
 namespace Star {
 
-uint64_t NetElementVersion::current() const {
+auto NetElementVersion::current() const -> std::uint64_t {
   return m_version;
 }
 
-uint64_t NetElementVersion::increment() {
+auto NetElementVersion::increment() -> std::uint64_t {
   return ++m_version;
 }
 

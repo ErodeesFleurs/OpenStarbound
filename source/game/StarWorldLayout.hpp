@@ -1,23 +1,22 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
+#include "StarLiquidTypes.hpp"
 #include "StarPerlin.hpp"
-#include "StarWeatherTypes.hpp"
-#include "StarGameTypes.hpp"
-#include "StarCelestialParameters.hpp"
+#include "StarVector.hpp"
+#include "StarWorldParameters.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_STRUCT(Biome);
-STAR_STRUCT(TerrainSelector);
-STAR_STRUCT(WorldRegion);
-STAR_CLASS(WorldLayout);
+class Biome;
+class TerrainSelector;
 
-typedef uint8_t BiomeIndex;
+using BiomeIndex = std::uint8_t;
 BiomeIndex const NullBiomeIndex = 0;
 
-typedef uint32_t TerrainSelectorIndex;
+using TerrainSelectorIndex = std::uint32_t;
 TerrainSelectorIndex const NullTerrainSelectorIndex = 0;
 
 struct WorldRegionLiquids {
@@ -35,7 +34,7 @@ struct WorldRegion {
   WorldRegion();
   explicit WorldRegion(Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   TerrainSelectorIndex terrainSelectorIndex;
   TerrainSelectorIndex foregroundCaveSelectorIndex;
@@ -54,14 +53,14 @@ struct WorldRegion {
 class WorldLayout {
 public:
   struct BlockNoise {
-    static BlockNoise build(Json const& config, uint64_t seed);
+    static auto build(Json const& config, std::uint64_t seed) -> BlockNoise;
 
     BlockNoise();
     explicit BlockNoise(Json const& store);
 
-    Json toJson() const;
+    [[nodiscard]] auto toJson() const -> Json;
 
-    Vec2I apply(Vec2I const& input, Vec2U const& worldSize) const;
+    [[nodiscard]] auto apply(Vec2I const& input, Vec2U const& worldSize) const -> Vec2I;
 
     // Individual noise only applied for horizontal / vertical biome transitions
     PerlinF horizontalNoise;
@@ -78,37 +77,37 @@ public:
     WorldRegion const* region;
   };
 
-  static WorldLayout buildTerrestrialLayout(TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed);
-  static WorldLayout buildAsteroidsLayout(AsteroidsWorldParameters const& asteroidParameters, uint64_t seed);
-  static WorldLayout buildFloatingDungeonLayout(FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed);
+  static auto buildTerrestrialLayout(TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed) -> WorldLayout;
+  static auto buildAsteroidsLayout(AsteroidsWorldParameters const& asteroidParameters, std::uint64_t seed) -> WorldLayout;
+  static auto buildFloatingDungeonLayout(FloatingDungeonWorldParameters const& floatingDungeonParameters, std::uint64_t seed) -> WorldLayout;
 
   WorldLayout();
   WorldLayout(Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  std::optional<BlockNoise> const& blockNoise() const;
-  std::optional<PerlinF> const& blendNoise() const;
+  [[nodiscard]] auto blockNoise() const -> std::optional<BlockNoise> const&;
+  [[nodiscard]] auto blendNoise() const -> std::optional<PerlinF> const&;
 
-  List<RectI> playerStartSearchRegions() const;
+  [[nodiscard]] auto playerStartSearchRegions() const -> List<RectI>;
 
-  BiomeConstPtr const& getBiome(BiomeIndex index) const;
-  TerrainSelectorConstPtr const& getTerrainSelector(TerrainSelectorIndex index) const;
+  [[nodiscard]] auto getBiome(BiomeIndex index) const -> ConstPtr<Biome> const&;
+  [[nodiscard]] auto getTerrainSelector(TerrainSelectorIndex index) const -> ConstPtr<TerrainSelector> const&;
 
   // Will return region weighting in order of greatest to least weighting.
-  List<RegionWeighting> getWeighting(int x, int y) const;
+  [[nodiscard]] auto getWeighting(int x, int y) const -> List<RegionWeighting>;
 
-  List<RectI> previewAddBiomeRegion(Vec2I const& position, int width) const;
-  List<RectI> previewExpandBiomeRegion(Vec2I const& position, int width) const;
+  [[nodiscard]] auto previewAddBiomeRegion(Vec2I const& position, int width) const -> List<RectI>;
+  [[nodiscard]] auto previewExpandBiomeRegion(Vec2I const& position, int width) const -> List<RectI>;
 
   void addBiomeRegion(TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed, Vec2I const& position, String biomeName, String const& subBlockSelector, int width);
   void expandBiomeRegion(Vec2I const& position, int newWidth);
 
   // sets the environment biome index for all regions in the current layer
   // to the biome at the specified position, and returns the name of the biome
-  String setLayerEnvironmentBiome(Vec2I const& position);
+  auto setLayerEnvironmentBiome(Vec2I const& position) -> String;
 
-  pair<size_t, size_t> findLayerAndCell(int x, int y) const;
+  [[nodiscard]] auto findLayerAndCell(int x, int y) const -> std::pair<size_t, size_t>;
 
 private:
   struct WorldLayer {
@@ -116,7 +115,7 @@ private:
 
     int yStart;
     Deque<int> boundaries;
-    Deque<WorldRegionPtr> cells;
+    Deque<Ptr<WorldRegion>> cells;
   };
 
   struct RegionParams {
@@ -132,27 +131,27 @@ private:
     WorldRegionLiquids regionLiquids;
   };
 
-  pair<WorldLayer, List<RectI>> expandRegionInLayer(WorldLayer targetLayer, size_t cellIndex, int newWidth) const;
+  [[nodiscard]] auto expandRegionInLayer(WorldLayer targetLayer, size_t cellIndex, int newWidth) const -> std::pair<WorldLayer, List<RectI>>;
 
-  BiomeIndex registerBiome(BiomeConstPtr biome);
-  TerrainSelectorIndex registerTerrainSelector(TerrainSelectorConstPtr terrainSelector);
+  auto registerBiome(ConstPtr<Biome> biome) -> BiomeIndex;
+  auto registerTerrainSelector(ConstPtr<TerrainSelector> terrainSelector) -> TerrainSelectorIndex;
 
-  WorldRegion buildRegion(uint64_t seed, RegionParams const& regionParams);
+  auto buildRegion(uint64_t seed, RegionParams const& regionParams) -> WorldRegion;
   void addLayer(uint64_t seed, int yStart, RegionParams regionParams);
   void addLayer(uint64_t seed, int yStart, int yBase, String const& primaryBiome,
-      RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
-      List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
-      Vec2F secondaryRegionSize, Vec2F subRegionSize);
+                RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
+                List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
+                Vec2F secondaryRegionSize, Vec2F subRegionSize);
   void finalize(Color mainSkyColor);
 
-  pair<size_t, int> findContainingCell(WorldLayer const& layer, int x) const;
-  pair<size_t, int> leftCell(WorldLayer const& layer, size_t cellIndex, int x) const;
-  pair<size_t, int> rightCell(WorldLayer const& layer, size_t cellIndex, int x) const;
+  [[nodiscard]] auto findContainingCell(WorldLayer const& layer, int x) const -> std::pair<size_t, int>;
+  [[nodiscard]] auto leftCell(WorldLayer const& layer, size_t cellIndex, int x) const -> std::pair<size_t, int>;
+  [[nodiscard]] auto rightCell(WorldLayer const& layer, size_t cellIndex, int x) const -> std::pair<size_t, int>;
 
   Vec2U m_worldSize;
 
-  List<BiomeConstPtr> m_biomes;
-  List<TerrainSelectorConstPtr> m_terrainSelectors;
+  List<ConstPtr<Biome>> m_biomes;
+  List<ConstPtr<TerrainSelector>> m_terrainSelectors;
 
   List<WorldLayer> m_layers;
 
@@ -162,19 +161,19 @@ private:
   List<RectI> m_playerStartSearchRegions;
 };
 
-DataStream& operator>>(DataStream& ds, WorldLayout& worldTemplateDescriptor);
-DataStream& operator<<(DataStream& ds, WorldLayout& worldTemplateDescriptor);
+auto operator>>(DataStream& ds, WorldLayout& worldTemplateDescriptor) -> DataStream&;
+auto operator<<(DataStream& ds, WorldLayout& worldTemplateDescriptor) -> DataStream&;
 
-inline BiomeConstPtr const& WorldLayout::getBiome(BiomeIndex index) const {
+inline auto WorldLayout::getBiome(BiomeIndex index) const -> ConstPtr<Biome> const& {
   if (index == NullBiomeIndex || index > m_biomes.size())
     throw StarException("WorldLayout::getTerrainSelector called with null or out of range BiomeIndex");
   return m_biomes[index - 1];
 }
 
-inline TerrainSelectorConstPtr const& WorldLayout::getTerrainSelector(TerrainSelectorIndex index) const {
+inline auto WorldLayout::getTerrainSelector(TerrainSelectorIndex index) const -> ConstPtr<TerrainSelector> const& {
   if (index == NullBiomeIndex || index > m_terrainSelectors.size())
     throw StarException("WorldLayout::getTerrainSelector called with null or out of range TerrainSelectorIndex");
   return m_terrainSelectors[index - 1];
 }
 
-}
+}// namespace Star

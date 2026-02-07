@@ -1,19 +1,19 @@
 #include "StarPlayerTypes.hpp"
 #include "StarJsonExtra.hpp"
 
+import std;
+
 namespace Star {
 
 EnumMap<PlayerMode> const PlayerModeNames{
   {PlayerMode::Casual, "casual"},
   {PlayerMode::Survival, "survival"},
-  {PlayerMode::Hardcore, "hardcore"}
-};
+  {PlayerMode::Hardcore, "hardcore"}};
 
 EnumMap<PlayerBusyState> const PlayerBusyStateNames{
   {PlayerBusyState::None, "none"},
   {PlayerBusyState::Chatting, "chatting"},
-  {PlayerBusyState::Menu, "menu"}
-};
+  {PlayerBusyState::Menu, "menu"}};
 
 PlayerModeConfig::PlayerModeConfig(Json config) {
   if (config.isNull())
@@ -42,19 +42,19 @@ ShipUpgrades::ShipUpgrades(Json config) {
   capabilities.addAll(jsonToStringList(config.get("capabilities", JsonArray{})));
 }
 
-Json ShipUpgrades::toJson() const {
+auto ShipUpgrades::toJson() const -> Json {
   return JsonObject{{"shipLevel", shipLevel},
-      {"maxFuel", maxFuel},
-      {"crewSize", crewSize},
-      {"fuelEfficiency", fuelEfficiency},
-      {"shipSpeed", shipSpeed},
-      {"capabilities", capabilities.values().transformed(construct<Json>())}};
+                    {"maxFuel", maxFuel},
+                    {"crewSize", crewSize},
+                    {"fuelEfficiency", fuelEfficiency},
+                    {"shipSpeed", shipSpeed},
+                    {"capabilities", capabilities.values().transformed(construct<Json>())}};
 }
 
-ShipUpgrades& ShipUpgrades::apply(Json const& upgrades) {
-  shipLevel = max(shipLevel, (unsigned)upgrades.optUInt("shipLevel").value_or(shipLevel));
+auto ShipUpgrades::apply(Json const& upgrades) -> ShipUpgrades& {
+  shipLevel = std::max(shipLevel, (unsigned)upgrades.optUInt("shipLevel").value_or(shipLevel));
   maxFuel = upgrades.optUInt("maxFuel").value_or(maxFuel);
-  crewSize = max(crewSize, (unsigned)upgrades.optUInt("crewSize").value_or(crewSize));
+  crewSize = std::max(crewSize, (unsigned)upgrades.optUInt("crewSize").value_or(crewSize));
   fuelEfficiency = upgrades.optFloat("fuelEfficiency").value_or(fuelEfficiency);
   shipSpeed = upgrades.optFloat("shipSpeed").value_or(shipSpeed);
   if (upgrades.contains("capabilities"))
@@ -62,9 +62,9 @@ ShipUpgrades& ShipUpgrades::apply(Json const& upgrades) {
   return *this;
 }
 
-bool ShipUpgrades::operator==(ShipUpgrades const& rhs) const {
+auto ShipUpgrades::operator==(ShipUpgrades const& rhs) const -> bool {
   return tie(shipLevel, maxFuel, crewSize, fuelEfficiency, shipSpeed, capabilities)
-      == tie(rhs.shipLevel, rhs.maxFuel, rhs.crewSize, rhs.fuelEfficiency, rhs.shipSpeed, rhs.capabilities);
+    == tie(rhs.shipLevel, rhs.maxFuel, rhs.crewSize, rhs.fuelEfficiency, rhs.shipSpeed, rhs.capabilities);
 }
 
-}
+}// namespace Star

@@ -2,6 +2,8 @@
 
 #include "StarInterpolation.hpp"
 
+import std;
+
 namespace Star {
 
 // Describes a simple table from index to value, which operates on bins
@@ -10,8 +12,8 @@ namespace Star {
 template <typename IndexType, typename ValueType = IndexType>
 class ParametricTable {
 public:
-  typedef IndexType Index;
-  typedef ValueType Value;
+  using Index = IndexType;
+  using Value = ValueType;
 
   ParametricTable();
 
@@ -26,18 +28,18 @@ public:
 
   // addPoint does not need to be called in order, it will insert the point in
   // the correct ordered position for the given index, and return the position.
-  size_t addPoint(IndexType index, ValueType value);
+  auto addPoint(IndexType index, ValueType value) -> std::size_t;
   void clearPoints();
 
-  size_t size() const;
-  bool empty() const;
+  [[nodiscard]] auto size() const -> std::size_t;
+  [[nodiscard]] auto empty() const -> bool;
 
-  IndexType const& index(size_t i) const;
-  ValueType const& value(size_t i) const;
+  auto index(std::size_t i) const -> IndexType const&;
+  auto value(std::size_t i) const -> ValueType const&;
 
   // Returns true if the values of the table are also valid indexes (true when
   // the data points are monotonic increasing)
-  bool isInvertible() const;
+  [[nodiscard]] auto isInvertible() const -> bool;
 
   // Invert the table, switching indexes and values.  Throws an exception if
   // the function is not invertible.  Will not generally compile unless the
@@ -46,14 +48,14 @@ public:
 
   // Find the value to the left of the given index.  If the index is lower than
   // the lowest index point, returns the first value.
-  ValueType const& get(IndexType index) const;
+  auto get(IndexType index) const -> ValueType const&;
 
 protected:
-  typedef std::vector<IndexType> IndexList;
-  typedef std::vector<ValueType> ValueList;
+  using IndexList = std::vector<IndexType>;
+  using ValueList = std::vector<ValueType>;
 
-  IndexList const& indexes() const;
-  ValueList const& values() const;
+  auto indexes() const -> IndexList const&;
+  auto values() const -> ValueList const&;
 
 private:
   IndexList m_indexes;
@@ -68,31 +70,31 @@ private:
 template <typename IndexType, typename ValueType = IndexType>
 class ParametricFunction : public ParametricTable<IndexType, ValueType> {
 public:
-  typedef ParametricTable<IndexType, ValueType> Base;
+  using Base = ParametricTable<IndexType, ValueType>;
 
   ParametricFunction(
-      InterpolationMode interpolationMode = InterpolationMode::Linear, BoundMode boundMode = BoundMode::Clamp);
+    InterpolationMode interpolationMode = InterpolationMode::Linear, BoundMode boundMode = BoundMode::Clamp);
 
   template <typename OtherIndexType, typename OtherValueType>
   explicit ParametricFunction(ParametricFunction<OtherIndexType, OtherValueType> const& parametricFunction);
 
   template <typename PairContainer>
   explicit ParametricFunction(PairContainer indexValuePairs,
-      InterpolationMode interpolationMode = InterpolationMode::Linear,
-      BoundMode boundMode = BoundMode::Clamp);
+                              InterpolationMode interpolationMode = InterpolationMode::Linear,
+                              BoundMode boundMode = BoundMode::Clamp);
 
-  InterpolationMode interpolationMode() const;
+  [[nodiscard]] auto interpolationMode() const -> InterpolationMode;
   void setInterpolationMode(InterpolationMode interpolationType);
 
-  BoundMode boundMode() const;
+  [[nodiscard]] auto boundMode() const -> BoundMode;
   void setBoundMode(BoundMode boundMode);
 
   // Interpolates a value at the given index according to the interpolation and
   // bound mode.
-  ValueType interpolate(IndexType index) const;
+  auto interpolate(IndexType index) const -> ValueType;
 
   // Synonym for interpolate
-  ValueType operator()(IndexType index) const;
+  auto operator()(IndexType index) const -> ValueType;
 
 private:
   InterpolationMode m_interpolationMode;
@@ -100,13 +102,13 @@ private:
 };
 
 template <typename IndexType, typename ValueType>
-ParametricTable<IndexType, ValueType>::ParametricTable() {}
+ParametricTable<IndexType, ValueType>::ParametricTable() = default;
 
 template <typename IndexType, typename ValueType>
 template <typename OtherIndexType, typename OtherValueType>
 ParametricTable<IndexType, ValueType>::ParametricTable(
-    ParametricTable<OtherIndexType, OtherValueType> const& parametricTable) {
-  for (size_t i = 0; i < parametricTable.size(); ++i) {
+  ParametricTable<OtherIndexType, OtherValueType> const& parametricTable) {
+  for (std::size_t i = 0; i < parametricTable.size(); ++i) {
     m_indexes.push_back(parametricTable.index(i));
     m_values.push_back(parametricTable.value(i));
   }
@@ -119,24 +121,24 @@ ParametricTable<IndexType, ValueType>::ParametricTable(PairContainer indexValueP
     return;
 
   sort(indexValuePairs,
-      [](typename PairContainer::value_type const& a, typename PairContainer::value_type const& b) {
-        return std::get<0>(a) < std::get<0>(b);
-      });
+       [](typename PairContainer::value_type const& a, typename PairContainer::value_type const& b) -> auto {
+         return std::get<0>(a) < std::get<0>(b);
+       });
 
   for (auto const& pair : indexValuePairs) {
     m_indexes.push_back(std::move(std::get<0>(pair)));
     m_values.push_back(std::move(std::get<1>(pair)));
   }
 
-  for (size_t i = 0; i < size() - 1; ++i) {
+  for (std::size_t i = 0; i < size() - 1; ++i) {
     if (m_indexes[i] == m_indexes[i + 1])
       throw MathException("Degenerate index values given in ParametricTable constructor");
   }
 }
 
 template <typename IndexType, typename ValueType>
-size_t ParametricTable<IndexType, ValueType>::addPoint(IndexType index, ValueType value) {
-  size_t insertLocation = std::distance(m_indexes.begin(), std::upper_bound(m_indexes.begin(), m_indexes.end(), index));
+auto ParametricTable<IndexType, ValueType>::addPoint(IndexType index, ValueType value) -> std::size_t {
+  std::size_t insertLocation = std::distance(m_indexes.begin(), std::upper_bound(m_indexes.begin(), m_indexes.end(), index));
   m_indexes.insert(m_indexes.begin() + insertLocation, std::move(index));
   m_values.insert(m_values.begin() + insertLocation, std::move(value));
   return insertLocation;
@@ -149,31 +151,31 @@ void ParametricTable<IndexType, ValueType>::clearPoints() {
 }
 
 template <typename IndexType, typename ValueType>
-size_t ParametricTable<IndexType, ValueType>::size() const {
+auto ParametricTable<IndexType, ValueType>::size() const -> std::size_t {
   return m_indexes.size();
 }
 
 template <typename IndexType, typename ValueType>
-bool ParametricTable<IndexType, ValueType>::empty() const {
+auto ParametricTable<IndexType, ValueType>::empty() const -> bool {
   return size() == 0;
 }
 
 template <typename IndexType, typename ValueType>
-IndexType const& ParametricTable<IndexType, ValueType>::index(size_t i) const {
+auto ParametricTable<IndexType, ValueType>::index(std::size_t i) const -> IndexType const& {
   return m_indexes.at(i);
 }
 
 template <typename IndexType, typename ValueType>
-ValueType const& ParametricTable<IndexType, ValueType>::value(size_t i) const {
+auto ParametricTable<IndexType, ValueType>::value(std::size_t i) const -> ValueType const& {
   return m_values.at(i);
 }
 
 template <typename IndexType, typename ValueType>
-bool ParametricTable<IndexType, ValueType>::isInvertible() const {
+auto ParametricTable<IndexType, ValueType>::isInvertible() const -> bool {
   if (empty())
     return true;
 
-  for (size_t i = 0; i < size() - 1; ++i) {
+  for (std::size_t i = 0; i < size() - 1; ++i) {
     if (m_values[i] > m_values[i + 1])
       return false;
   }
@@ -186,12 +188,12 @@ void ParametricTable<IndexType, ValueType>::invert() const {
   if (isInvertible())
     throw MathException("invert() called on non-invertible ParametricTable");
 
-  for (size_t i = 0; i < size(); ++i)
+  for (std::size_t i = 0; i < size(); ++i)
     std::swap(m_indexes[i], m_values[i]);
 }
 
 template <typename IndexType, typename ValueType>
-ValueType const& ParametricTable<IndexType, ValueType>::get(IndexType index) const {
+auto ParametricTable<IndexType, ValueType>::get(IndexType index) const -> ValueType const& {
   if (empty())
     throw MathException("get called on empty ParametricTable");
 
@@ -203,24 +205,24 @@ ValueType const& ParametricTable<IndexType, ValueType>::get(IndexType index) con
 }
 
 template <typename IndexType, typename ValueType>
-auto ParametricTable<IndexType, ValueType>::indexes() const -> IndexList const & {
+auto ParametricTable<IndexType, ValueType>::indexes() const -> IndexList const& {
   return m_indexes;
 }
 
 template <typename IndexType, typename ValueType>
-auto ParametricTable<IndexType, ValueType>::values() const -> ValueList const & {
+auto ParametricTable<IndexType, ValueType>::values() const -> ValueList const& {
   return m_values;
 }
 
 template <typename IndexType, typename ValueType>
 ParametricFunction<IndexType, ValueType>::ParametricFunction(InterpolationMode interpolationMode, BoundMode boundMode)
-  : m_interpolationMode(interpolationMode), m_boundMode(boundMode) {}
+    : m_interpolationMode(interpolationMode), m_boundMode(boundMode) {}
 
 template <typename IndexType, typename ValueType>
 template <typename OtherIndexType, typename OtherValueType>
 ParametricFunction<IndexType, ValueType>::ParametricFunction(
-    ParametricFunction<OtherIndexType, OtherValueType> const& parametricFunction)
-  : Base(parametricFunction) {
+  ParametricFunction<OtherIndexType, OtherValueType> const& parametricFunction)
+    : Base(parametricFunction) {
   m_interpolationMode = parametricFunction.interpolationMode();
   m_boundMode = parametricFunction.boundMode();
 }
@@ -228,14 +230,14 @@ ParametricFunction<IndexType, ValueType>::ParametricFunction(
 template <typename IndexType, typename ValueType>
 template <typename PairContainer>
 ParametricFunction<IndexType, ValueType>::ParametricFunction(
-    PairContainer indexValuePairs, InterpolationMode interpolationMode, BoundMode boundMode)
-  : Base(indexValuePairs) {
+  PairContainer indexValuePairs, InterpolationMode interpolationMode, BoundMode boundMode)
+    : Base(indexValuePairs) {
   m_interpolationMode = interpolationMode;
   m_boundMode = boundMode;
 }
 
 template <typename IndexType, typename ValueType>
-InterpolationMode ParametricFunction<IndexType, ValueType>::interpolationMode() const {
+auto ParametricFunction<IndexType, ValueType>::interpolationMode() const -> InterpolationMode {
   return m_interpolationMode;
 }
 
@@ -245,7 +247,7 @@ void ParametricFunction<IndexType, ValueType>::setInterpolationMode(Interpolatio
 }
 
 template <typename IndexType, typename ValueType>
-BoundMode ParametricFunction<IndexType, ValueType>::boundMode() const {
+auto ParametricFunction<IndexType, ValueType>::boundMode() const -> BoundMode {
   return m_boundMode;
 }
 
@@ -255,7 +257,7 @@ void ParametricFunction<IndexType, ValueType>::setBoundMode(BoundMode boundMode)
 }
 
 template <typename IndexType, typename ValueType>
-ValueType ParametricFunction<IndexType, ValueType>::interpolate(IndexType index) const {
+auto ParametricFunction<IndexType, ValueType>::interpolate(IndexType index) const -> ValueType {
   if (Base::empty())
     return ValueType();
 
@@ -264,13 +266,13 @@ ValueType ParametricFunction<IndexType, ValueType>::interpolate(IndexType index)
 
   } else if (m_interpolationMode == InterpolationMode::Linear) {
     return parametricInterpolate2(
-        Base::indexes(), Base::values(), index, LinearWeightOperator<IndexType>(), m_boundMode);
+      Base::indexes(), Base::values(), index, LinearWeightOperator<IndexType>(), m_boundMode);
 
   } else if (m_interpolationMode == InterpolationMode::Cubic) {
     // ParametricFunction uses CubicWeights with linear extrapolation (not
     // configurable atm)
     return parametricInterpolate4(
-        Base::indexes(), Base::values(), index, Cubic4WeightOperator<IndexType>(true), m_boundMode);
+      Base::indexes(), Base::values(), index, Cubic4WeightOperator<IndexType>(true), m_boundMode);
 
   } else {
     throw MathException("Unsupported interpolation type in ParametricFunction::interpolate");
@@ -278,8 +280,8 @@ ValueType ParametricFunction<IndexType, ValueType>::interpolate(IndexType index)
 }
 
 template <typename IndexType, typename ValueType>
-ValueType ParametricFunction<IndexType, ValueType>::operator()(IndexType index) const {
+auto ParametricFunction<IndexType, ValueType>::operator()(IndexType index) const -> ValueType {
   return interpolate(index);
 }
 
-}
+}// namespace Star

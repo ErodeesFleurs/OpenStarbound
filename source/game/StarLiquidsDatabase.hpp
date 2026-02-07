@@ -1,21 +1,21 @@
 #pragma once
 
-#include "StarJson.hpp"
-#include "StarEither.hpp"
-#include <optional>
-#include "StarGameTypes.hpp"
-#include "StarList.hpp"
 #include "StarCellularLiquid.hpp"
+#include "StarConfig.hpp"
+#include "StarEither.hpp"
+#include "StarException.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarJson.hpp"
+#include "StarLiquidTypes.hpp"
+#include "StarMaterialTypes.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_STRUCT(LiquidSettings);
-STAR_CLASS(LiquidsDatabase);
+using LiquidException = ExceptionDerived<"LiquidException">;
 
-STAR_EXCEPTION(LiquidException, StarException);
-
-typedef Either<MaterialId, LiquidId> LiquidInteractionResult;
+using LiquidInteractionResult = Either<MaterialId, LiquidId>;
 
 struct LiquidSettings {
   LiquidSettings();
@@ -39,63 +39,63 @@ class LiquidsDatabase {
 public:
   LiquidsDatabase();
 
-  LiquidCellEngineParameters liquidEngineParameters() const;
-  float backgroundDrain() const;
+  [[nodiscard]] auto liquidEngineParameters() const -> LiquidCellEngineParameters;
+  [[nodiscard]] auto backgroundDrain() const -> float;
 
-  StringList liquidNames() const;
+  [[nodiscard]] auto liquidNames() const -> StringList;
 
   // Returns settings object for all liquids except "empty"
-  List<LiquidSettingsConstPtr> allLiquidSettings() const;
+  [[nodiscard]] auto allLiquidSettings() const -> List<ConstPtr<LiquidSettings>>;
 
-  bool isLiquidName(String const& name) const;
-  bool isValidLiquidId(LiquidId liquidId) const;
+  [[nodiscard]] auto isLiquidName(String const& name) const -> bool;
+  [[nodiscard]] auto isValidLiquidId(LiquidId liquidId) const -> bool;
 
-  LiquidId liquidId(String const& str) const;
-  String liquidName(LiquidId liquidId) const;
-  String liquidDescription(LiquidId liquidId, String const& species) const;
-  String liquidDescription(LiquidId liquidId) const;
-  std::optional<String> liquidPath(LiquidId liquidId) const;
-  std::optional<Json> liquidConfig(LiquidId liquidId) const;
+  [[nodiscard]] auto liquidId(String const& str) const -> LiquidId;
+  [[nodiscard]] auto liquidName(LiquidId liquidId) const -> String;
+  [[nodiscard]] auto liquidDescription(LiquidId liquidId, String const& species) const -> String;
+  [[nodiscard]] auto liquidDescription(LiquidId liquidId) const -> String;
+  [[nodiscard]] auto liquidPath(LiquidId liquidId) const -> std::optional<String>;
+  [[nodiscard]] auto liquidConfig(LiquidId liquidId) const -> std::optional<Json>;
 
   // Returns null on EmptyLiquidId or invalid liquid id
-  LiquidSettingsConstPtr liquidSettings(LiquidId liquidId) const;
+  [[nodiscard]] auto liquidSettings(LiquidId liquidId) const -> ConstPtr<LiquidSettings>;
 
-  Vec3F radiantLight(LiquidLevel level) const;
+  [[nodiscard]] auto radiantLight(LiquidLevel level) const -> Vec3F;
 
-  std::optional<LiquidInteractionResult> interact(LiquidId target, LiquidId other) const;
+  [[nodiscard]] auto interact(LiquidId target, LiquidId other) const -> std::optional<LiquidInteractionResult>;
 
 private:
   LiquidCellEngineParameters m_liquidEngineParameters;
   float m_backgroundDrain;
-  List<LiquidSettingsConstPtr> m_settings;
+  List<ConstPtr<LiquidSettings>> m_settings;
   StringMap<LiquidId> m_liquidNames;
 };
 
-inline float LiquidsDatabase::backgroundDrain() const {
+inline auto LiquidsDatabase::backgroundDrain() const -> float {
   return m_backgroundDrain;
 }
 
-inline bool LiquidsDatabase::isLiquidName(String const& name) const {
+inline auto LiquidsDatabase::isLiquidName(String const& name) const -> bool {
   return m_liquidNames.contains(name);
 }
 
-inline bool LiquidsDatabase::isValidLiquidId(LiquidId liquidId) const {
+inline auto LiquidsDatabase::isValidLiquidId(LiquidId liquidId) const -> bool {
   return liquidId == EmptyLiquidId || (liquidId < m_settings.size() && m_settings[liquidId]);
 }
 
-inline LiquidSettingsConstPtr LiquidsDatabase::liquidSettings(LiquidId liquidId) const {
+inline auto LiquidsDatabase::liquidSettings(LiquidId liquidId) const -> ConstPtr<LiquidSettings> {
   if (liquidId >= m_settings.size())
     return {};
   return m_settings[liquidId];
 }
 
-inline Vec3F LiquidsDatabase::radiantLight(LiquidLevel level) const {
+inline auto LiquidsDatabase::radiantLight(LiquidLevel level) const -> Vec3F {
   if (level.liquid < m_settings.size()) {
     if (auto const& settings = m_settings[level.liquid])
       return settings->radiantLightLevel * level.level;
   }
 
-  return Vec3F();
+  return {};
 }
 
-}
+}// namespace Star

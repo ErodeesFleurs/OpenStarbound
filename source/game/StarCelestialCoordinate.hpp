@@ -1,13 +1,14 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarJson.hpp"
 #include "StarVector.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(CelestialCoordinate);
-
-STAR_EXCEPTION(CelestialException, StarException);
+using CelestialException = ExceptionDerived<"CelestialException">;
 
 // Specifies coordinates to either a planetary system, a planetary body, or a
 // satellite around such a planetary body.  The terms here are meant to be very
@@ -27,62 +28,62 @@ public:
   explicit CelestialCoordinate(Json const& json);
 
   // Is this coordanate the null coordinate?
-  bool isNull() const;
+  [[nodiscard]] auto isNull() const -> bool;
 
   // Does this coordinate point to an entire planetary system?
-  bool isSystem() const;
+  [[nodiscard]] auto isSystem() const -> bool;
   // Is this world a body whose "designated gravity buddy" is the center of a
   // planetary system?
-  bool isPlanetaryBody() const;
+  [[nodiscard]] auto isPlanetaryBody() const -> bool;
   // Is this world a body which orbits around a planetary body?
-  bool isSatelliteBody() const;
+  [[nodiscard]] auto isSatelliteBody() const -> bool;
 
-  Vec3I location() const;
+  [[nodiscard]] auto location() const -> Vec3I;
 
   // Returns just the system coordinate portion of this celestial coordinate.
-  CelestialCoordinate system() const;
+  [[nodiscard]] auto system() const -> CelestialCoordinate;
 
   // Returns just the planet portion of this celestial coordinate, throws
   // exception if this is a system coordinate.
-  CelestialCoordinate planet() const;
+  [[nodiscard]] auto planet() const -> CelestialCoordinate;
 
   // Returns the orbit number for this body.  Returns 0 for system coordinates.
-  int orbitNumber() const;
+  [[nodiscard]] auto orbitNumber() const -> int;
 
   // Returns the system for a planet or the planet for a satellite.  If this is
   // a system coordinate, throws an exception.
-  CelestialCoordinate parent() const;
+  [[nodiscard]] auto parent() const -> CelestialCoordinate;
 
   // Returns a coordinate to a child object at the given orbit number.  If the
   // orbit number is 0, returns *this, otherwise if this is a satellite throws
   // an exception.
-  CelestialCoordinate child(int orbitNumber) const;
+  [[nodiscard]] auto child(int orbitNumber) const -> CelestialCoordinate;
 
   // Stores coordinate in json form that can be used to reconstruct it.
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   // Returns coordinate in a parseable String format.
-  String id() const;
+  [[nodiscard]] auto id() const -> String;
 
   // Returns a fakey fake distance
-  double distance(CelestialCoordinate const& rhs) const;
+  [[nodiscard]] auto distance(CelestialCoordinate const& rhs) const -> double;
 
   // Returns a slightly different string format than id(), which is still in an
   // accepted format, but more appropriate for filenames.
-  String filename() const;
+  [[nodiscard]] auto filename() const -> String;
 
   // Returns true if not null
   explicit operator bool() const;
 
-  bool operator<(CelestialCoordinate const& rhs) const;
-  bool operator==(CelestialCoordinate const& rhs) const;
-  bool operator!=(CelestialCoordinate const& rhs) const;
+  auto operator<(CelestialCoordinate const& rhs) const -> bool;
+  auto operator==(CelestialCoordinate const& rhs) const -> bool;
+  auto operator!=(CelestialCoordinate const& rhs) const -> bool;
 
   // Prints in the same format accepted by parser.  Each coordinate is unique.
-  friend std::ostream& operator<<(std::ostream& os, CelestialCoordinate const& coord);
+  friend auto operator<<(std::ostream& os, CelestialCoordinate const& coord) -> std::ostream&;
 
-  friend DataStream& operator>>(DataStream& ds, CelestialCoordinate& coordinate);
-  friend DataStream& operator<<(DataStream& ds, CelestialCoordinate const& coordinate);
+  friend auto operator>>(DataStream& ds, CelestialCoordinate& coordinate) -> DataStream&;
+  friend auto operator<<(DataStream& ds, CelestialCoordinate const& coordinate) -> DataStream&;
 
 private:
   Vec3I m_location;
@@ -90,6 +91,7 @@ private:
   int m_satelliteOrbitNumber;
 };
 
-}
+}// namespace Star
 
-template <> struct std::formatter<Star::CelestialCoordinate> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::CelestialCoordinate> : Star::ostream_formatter {};

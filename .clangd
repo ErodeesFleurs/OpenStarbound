@@ -1,6 +1,7 @@
 CompileFlags:
   Add:
     [
+      -Xclang,
       -std=gnu++26,
       -fmodules,
       -fmodule-file=std=/home/fleurs/Code/OpenStarbound/build/CMakeFiles/__cmake_cxx26.dir/std.pcm,
@@ -9,10 +10,11 @@ CompileFlags:
       -Werror,
       -ferror-limit=0,
       -stdlib=libc++,
+      -Wno-module-import-in-extern-c,
     ]
   Remove: [-Werror, -isystem, /nix/store/*]
   Compiler: clang++
-  CompilationDatabase: "../build"
+  CompilationDatabase: "./build"
 
 Index:
   Background: Build
@@ -21,5 +23,7 @@ Index:
     File: /home/fleurs/Code/OpenStarbound/.clangd-index
 
 Diagnostics:
+  UnusedIncludes: Strict
   ClangTidy:
     Add: modernize*
+  Suppress: ["could not build module*", "module_not_built*"]

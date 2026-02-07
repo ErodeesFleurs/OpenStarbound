@@ -1,6 +1,6 @@
 #include "StarCellularLightArray.hpp"
-#include "StarInterpolation.hpp"
-// just specializing these in a cpp file so I can iterate on them without recompiling like 40 files!!
+
+import std;
 
 namespace Star {
 
@@ -54,14 +54,14 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
           continue;
 
         // Need to circularize manhattan attenuation here
-        float circularizedPerBlockObstacleAttenuation = perBlockObstacleAttenuation / max(fabs(direction[0]), fabs(direction[1]));
+        float circularizedPerBlockObstacleAttenuation = perBlockObstacleAttenuation / std::max(std::fabs(direction[0]), std::fabs(direction[1]));
         float blockAttenuation = lineAttenuation(blockPos, light.position, circularizedPerBlockObstacleAttenuation, remainingAttenuation);
 
         attenuation += blockAttenuation;
         // Apply single obstacle boost (determine single obstacle by one
         // block unit of attenuation).
         if (!light.asSpread)
-         attenuation += min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
+          attenuation += std::min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
 
         if (attenuation < 1.0f) {
           if (m_pointAdditive) {
@@ -127,14 +127,14 @@ void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin,
           continue;
 
         // Need to circularize manhattan attenuation here
-        float circularizedPerBlockObstacleAttenuation = perBlockObstacleAttenuation / max(fabs(direction[0]), fabs(direction[1]));
+        float circularizedPerBlockObstacleAttenuation = perBlockObstacleAttenuation / std::max(std::fabs(direction[0]), std::fabs(direction[1]));
         float blockAttenuation = lineAttenuation(blockPos, light.position, circularizedPerBlockObstacleAttenuation, remainingAttenuation);
 
         attenuation += blockAttenuation;
         // Apply single obstacle boost (determine single obstacle by one
         // block unit of attenuation).
         if (!light.asSpread)
-          attenuation += min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
+          attenuation += std::min(blockAttenuation, circularizedPerBlockObstacleAttenuation) * m_pointObstacleBoost;
 
         if (attenuation < 1.0f) {
           if (m_pointAdditive) {
@@ -150,4 +150,4 @@ void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin,
   }
 }
 
-}
+}// namespace Star

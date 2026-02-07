@@ -1,13 +1,14 @@
 #include "StarNameGenerator.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
 PatternedNameGenerator::PatternedNameGenerator() {
   auto assets = Root::singleton().assets();
-  auto &files = assets->scanExtension("namesource");
+  auto& files = assets->scanExtension("namesource");
   assets->queueJsons(files);
   for (auto& file : files) {
     try {
@@ -16,8 +17,7 @@ PatternedNameGenerator::PatternedNameGenerator() {
       if (m_markovSources.contains(sourceConfig.getString("name")))
         throw NameGeneratorException::format("Duplicate name source '{}', config file '{}'", sourceConfig.getString("name"), file);
 
-      m_markovSources.insert(sourceConfig.getString("name"), makeMarkovSource(sourceConfig.getUInt("prefixSize", 1),
-          sourceConfig.getUInt("endSize", 1), jsonToStringList(sourceConfig.get("sourceNames"))));
+      m_markovSources.insert(sourceConfig.getString("name"), makeMarkovSource(sourceConfig.getUInt("prefixSize", 1), sourceConfig.getUInt("endSize", 1), jsonToStringList(sourceConfig.get("sourceNames"))));
     } catch (std::exception const& e) {
       throw NameGeneratorException(strf("Error reading name source config {}", file), e);
     }
@@ -28,17 +28,17 @@ PatternedNameGenerator::PatternedNameGenerator() {
     m_profanityFilter.add(naughtyWord.toString().toLower());
 }
 
-String PatternedNameGenerator::generateName(String const& rulesAsset) const {
+auto PatternedNameGenerator::generateName(String const& rulesAsset) const -> String {
   RandomSource random;
   return generateName(rulesAsset, random);
 }
 
-String PatternedNameGenerator::generateName(String const& rulesAsset, uint64_t seed) const {
-  RandomSource random = RandomSource(seed);
+auto PatternedNameGenerator::generateName(String const& rulesAsset, std::uint64_t seed) const -> String {
+  auto random = RandomSource(seed);
   return generateName(rulesAsset, random);
 }
 
-String PatternedNameGenerator::generateName(String const& rulesAsset, RandomSource& random) const {
+auto PatternedNameGenerator::generateName(String const& rulesAsset, RandomSource& random) const -> String {
   auto assets = Root::singleton().assets();
   auto rules = assets->json(rulesAsset).toArray();
   String res = "";
@@ -50,7 +50,7 @@ String PatternedNameGenerator::generateName(String const& rulesAsset, RandomSour
   return res;
 }
 
-String PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& random) const {
+auto PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& random) const -> String {
   if (rule.empty())
     return "";
   Json meta;
@@ -94,7 +94,7 @@ String PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& 
       ++tries;
       piece = random.randFrom(source.starts);
       while (piece.length() < targetLength
-          || !source.ends.contains(piece.slice(piece.length() - source.endSize, piece.length()))) {
+             || !source.ends.contains(piece.slice(piece.length() - source.endSize, piece.length()))) {
         String link = piece.slice(piece.length() - source.prefixSize, piece.length());
         if (!source.chains.contains(link))
           break;
@@ -112,7 +112,7 @@ String PatternedNameGenerator::processRule(JsonArray const& rule, RandomSource& 
   return result;
 }
 
-bool PatternedNameGenerator::isProfane(String const& name) const {
+auto PatternedNameGenerator::isProfane(String const& name) const -> bool {
   auto matchNames = name.toLower().rot13().splitAny(" -");
   for (auto& naughtyWord : m_profanityFilter) {
     for (auto& matchName : matchNames) {
@@ -124,7 +124,7 @@ bool PatternedNameGenerator::isProfane(String const& name) const {
   return false;
 }
 
-MarkovSource PatternedNameGenerator::makeMarkovSource(size_t prefixSize, size_t endSize, StringList sourceNames) {
+auto PatternedNameGenerator::makeMarkovSource(size_t prefixSize, size_t endSize, StringList sourceNames) -> MarkovSource {
   MarkovSource newSource;
   newSource.prefixSize = prefixSize;
   newSource.endSize = endSize;
@@ -150,4 +150,4 @@ MarkovSource PatternedNameGenerator::makeMarkovSource(size_t prefixSize, size_t 
   return newSource;
 }
 
-}
+}// namespace Star
