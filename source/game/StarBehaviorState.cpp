@@ -30,14 +30,14 @@ void Blackboard::set(NodeParameterType type, String const& key, LuaValue value) 
   else
     m_board.get(type).set(key, value);
 
-  for (auto& input : m_input.get(type).maybe(key).value_or({})) {
-    m_parameters.get(input.first).set(input.second, value);
+  for (auto& [nodeId, paramName] : m_input.get(type).maybe(key).value_or({})) {
+    m_parameters.get(nodeId).set(paramName, value);
   }
 
   // dumb special case for setting number outputs to vec2 inputs
   if (type == NodeParameterType::Number) {
-    for (pair<uint64_t, LuaTable>& input : m_vectorNumberInput.maybe(key).value_or({})) {
-      input.second.set(input.first, value);
+    for (auto& [tableKey, luaTable] : m_vectorNumberInput.maybe(key).value_or({})) {
+      luaTable.set(tableKey, value);
     }
   }
 }
@@ -51,23 +51,24 @@ LuaTable Blackboard::parameters(StringMap<NodeParameter> const& parameters, uint
     return *table;
 
   LuaTable table = m_luaContext.engine().createTable();
-  for (auto const& p : parameters) {
-    if (auto key = p.second.second.maybe<String>()) {
-      auto& typeInput = m_input.get(p.second.first);
+  for (auto const& [paramName, paramData] : parameters) {
+    auto const& [paramType, paramValue] = paramData;
+    if (auto key = paramValue.maybe<String>()) {
+      auto& typeInput = m_input.get(paramType);
       if (!typeInput.contains(*key))
         typeInput.add(*key, {});
 
-      typeInput.get(*key).append({nodeId, p.first});
-      table.set(p.first, get(p.second.first, *key));
+      typeInput.get(*key).append({nodeId, paramName});
+      table.set(paramName, get(paramType, *key));
     } else {
-      Json value = p.second.second.get<Json>();
+      Json value = paramValue.get<Json>();
       if (value.isNull())
         continue;
 
       // dumb special case for allowing a vec2 of blackboard number keys
-      if (p.second.first == NodeParameterType::Vec2) {
+      if (paramType == NodeParameterType::Vec2) {
         if (value.type() != Json::Type::Array)
-          throw StarException(strf("Vec2 parameter not of array type for key {}", p.first, value));
+          throw StarException(strf("Vec2 parameter not of array type for key {}", paramName, value));
         JsonArray vector = value.toArray();
         LuaTable luaVector = m_luaContext.engine().createTable();
         for (int i = 0; i < 2; i++) {
@@ -82,11 +83,11 @@ LuaTable Blackboard::parameters(StringMap<NodeParameter> const& parameters, uint
             luaVector.set(i+1, m_luaContext.engine().luaFrom(vector[i]));
           }
         }
-        table.set(p.first, luaVector);
+        table.set(paramName, luaVector);
         continue;
       }
 
-      table.set(p.first, value);
+      table.set(paramName, value);
     }
   }
 
@@ -96,13 +97,14 @@ LuaTable Blackboard::parameters(StringMap<NodeParameter> const& parameters, uint
 }
 
 void Blackboard::setOutput(ActionNode const& node, LuaTable const& output) {
-  for (auto p : node.output) {
-    auto out = p.second.second;
-    if (auto boardKey = out.first) {
-      set(p.second.first, *boardKey, output.get<LuaValue>(p.first));
+  for (auto const& [outputName, outputData] : node.output) {
+    auto const& [outputType, outputValue] = outputData;
+    auto const& [boardKey, isEphemeral] = outputValue;
+    if (boardKey) {
+      set(outputType, *boardKey, output.get<LuaValue>(outputName));
 
-      if (out.second)
-        m_ephemeral.add({p.second.first, *boardKey});
+      if (isEphemeral)
+        m_ephemeral.add({outputType, *boardKey});
     }
   }
 }

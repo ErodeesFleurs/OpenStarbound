@@ -2297,20 +2297,22 @@ Json WorldServer::getProperty(String const& propertyName, Json const& def) const
 
 void WorldServer::setProperty(String const& propertyName, Json const& property) {
   // Kae: Properties set to null (nil from Lua) should be erased instead of lingering around
-  auto entry = m_worldProperties.find(propertyName);
-  bool missing = entry == m_worldProperties.end();
-  if (missing ? !property.isNull() : property != entry->second) {
-    if (missing) // property can't be null if we're doing this when missing is true
+  if (auto entry = m_worldProperties.find(propertyName); entry == m_worldProperties.end()) {
+    if (!property.isNull()) {
       m_worldProperties.emplace(propertyName, property);
-    else if (property.isNull())
+      for (auto const& pair : m_clientInfo)
+        pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(JsonObject{ {propertyName, property} }));
+    }
+  } else if (property != entry->second) {
+    if (property.isNull())
       m_worldProperties.erase(entry);
     else
       entry->second = property;
     for (auto const& pair : m_clientInfo)
       pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(JsonObject{ {propertyName, property} }));
   }
-  auto listener = m_worldPropertyListeners.find(propertyName);
-  if (listener != m_worldPropertyListeners.end())
+  
+  if (auto listener = m_worldPropertyListeners.find(propertyName); listener != m_worldPropertyListeners.end())
     listener->second(property);
 }
 
