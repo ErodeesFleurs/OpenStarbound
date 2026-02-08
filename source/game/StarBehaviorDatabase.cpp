@@ -25,13 +25,14 @@ NodeParameterValue nodeParameterValueFromJson(Json const& json) {
 }
 
 Json jsonFromNodeParameter(NodeParameter const& parameter) {
+  auto const& [paramType, paramValue] = parameter;
   JsonObject json {
-    {"type", NodeParameterTypeNames.getRight(parameter.first)}
+    {"type", NodeParameterTypeNames.getRight(paramType)}
   };
-  if (auto key = parameter.second.maybe<String>())
+  if (auto key = paramValue.maybe<String>())
     json.set("key", *key);
   else
-    json.set("value", parameter.second.get<Json>());
+    json.set("value", paramValue.get<Json>());
   return json;
 }
 
@@ -44,10 +45,12 @@ NodeParameter jsonToNodeParameter(Json const& json) {
 }
 
 Json nodeOutputToJson(NodeOutput const& output) {
+  auto const& [outputType, outputData] = output;
+  auto const& [key, ephemeral] = outputData;
   return JsonObject {
-    {"type", NodeParameterTypeNames.getRight(output.first)},
-    {"key", jsonFromMaybe<String>(output.second.first, [](String const& s) { return Json(s); })},
-    {"ephemeral", output.second.second}
+    {"type", NodeParameterTypeNames.getRight(outputType)},
+    {"key", jsonFromMaybe<String>(key, [](String const& s) { return Json(s); })},
+    {"ephemeral", ephemeral}
   };
 }
 

@@ -20,11 +20,11 @@ AiDatabase::AiDatabase() {
     }
   }
 
-  for (auto const& speciesPair : config.get("species").iterateObject())
-    m_speciesParameters[speciesPair.first] = parseSpeciesParameters(speciesPair.second);
+  for (auto const& [species, speciesConfig] : config.get("species").iterateObject())
+    m_speciesParameters[species] = parseSpeciesParameters(speciesConfig);
 
-  for (auto const& p : config.get("shipStatus").iterateObject())
-    m_shipStatus[lexicalCast<unsigned>(p.first)] = parseSpeech(p.second);
+  for (auto const& [statusKey, statusConfig] : config.get("shipStatus").iterateObject())
+    m_shipStatus[lexicalCast<unsigned>(statusKey)] = parseSpeech(statusConfig);
 
   m_noMissionsSpeech = parseSpeech(config.get("noMissionsSpeech"));
   m_noCrewSpeech = parseSpeech(config.get("noCrewSpeech"));
@@ -36,8 +36,8 @@ AiDatabase::AiDatabase() {
   m_animationConfig.scanlineAnimation = Animation("/ai/ai.config:scanlineAnimation");
   m_animationConfig.scanlineOpacity = config.getFloat("scanlineOpacity");
 
-  for (auto const& pair : config.get("aiAnimations").iterateObject())
-    m_animationConfig.aiAnimations[pair.first] = Animation(pair.second, "/ai/");
+  for (auto const& [name, animConfig] : config.get("aiAnimations").iterateObject())
+    m_animationConfig.aiAnimations[name] = Animation(animConfig, "/ai/");
 }
 
 AiMission AiDatabase::mission(String const& missionName) const {
@@ -116,8 +116,8 @@ AiMission AiDatabase::parseMission(Json const& vm) {
   mission.warpAnimation = vm.optString("warpAnimation");
   mission.warpDeploy = vm.optBool("warpDeploy");
   mission.icon = AssetPath::relativeTo("/ai/", vm.getString("icon"));
-  for (auto const& textPair : vm.get("speciesText").iterateObject())
-    mission.speciesText[textPair.first] = parseSpeciesMissionText(textPair.second);
+  for (auto const& [species, textConfig] : vm.get("speciesText").iterateObject())
+    mission.speciesText[species] = parseSpeciesMissionText(textConfig);
   return mission;
 }
 
