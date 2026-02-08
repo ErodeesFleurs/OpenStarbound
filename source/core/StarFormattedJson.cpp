@@ -478,7 +478,7 @@ void FormattedJson::appendElement(JsonElement const& elem) {
     if (m_lastKey.has_value()) {
       String key = m_elements[*m_lastKey].get<ObjectKeyElement>().key;
 
-      m_objectEntryLocations[key] = std::make_pair(*m_lastKey, loc);
+      m_objectEntryLocations[key] = {*m_lastKey, loc};
       m_jsonValue = m_jsonValue.set(key, elemToJson(elem));
 
       m_lastKey = {};

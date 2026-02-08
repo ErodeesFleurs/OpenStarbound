@@ -904,7 +904,7 @@ auto BTreeMixin<Base>::leafFind(Leaf const& leaf, Key const& key) -> std::pair<s
       len = half;
     }
   }
-  return std::make_pair(first, first < size && !(key < Base::leafKey(leaf, first)));
+  return {first, first < size && !(key < Base::leafKey(leaf, first))};
 }
 
 template <typename Base>

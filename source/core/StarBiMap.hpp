@@ -306,11 +306,11 @@ auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::operator=(BiMap const& map) -> B
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(value_type const& val) -> std::pair<iterator, bool> {
-  auto leftRes = m_leftMap.insert(std::make_pair(val.first, nullptr));
+  auto leftRes = m_leftMap.insert({val.first, nullptr});
   if (!leftRes.second)
     return {BiMapIterator{leftRes.first}, false};
 
-  auto rightRes = m_rightMap.insert(std::make_pair(val.second, nullptr));
+  auto rightRes = m_rightMap.insert({val.second, nullptr});
   leftRes.first->second = &rightRes.first->first;
   rightRes.first->second = &leftRes.first->first;
   return {BiMapIterator{leftRes.first}, true};
@@ -318,7 +318,7 @@ auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(value_type const& val) ->
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(Left const& left, Right const& right) -> bool {
-  return insert(std::make_pair(left, right)).second;
+  return insert({left, right}).second;
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>

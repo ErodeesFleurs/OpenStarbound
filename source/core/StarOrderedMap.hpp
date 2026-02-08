@@ -327,9 +327,9 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insert(value_typ
   if (i == m_map.end()) {
     iterator orderIt = m_order.insert(m_order.end(), v);
     m_map.insert(i, typename MapType::value_type(std::cref(orderIt->first), orderIt));
-    return std::make_pair(orderIt, true);
+    return {orderIt, true};
   } else {
-    return std::make_pair(i->second, false);
+    return {i->second, false};
   }
 }
 
@@ -344,9 +344,9 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insertFront(valu
   if (i == m_map.end()) {
     iterator orderIt = m_order.insert(m_order.begin(), v);
     m_map.insert(i, typename MapType::value_type(std::cref(orderIt->first), orderIt));
-    return std::make_pair(orderIt, true);
+    return {orderIt, true};
   } else {
-    return std::make_pair(i->second, false);
+    return {i->second, false};
   }
 }
 
