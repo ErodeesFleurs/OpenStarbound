@@ -6,7 +6,9 @@ import std;
 
 namespace Star {
 
-// any and all
+// any and all are convenience wrappers providing similar functionality to
+// std::any_of and std::all_of, but with additional overloads for convenience
+// They are primarily used through ListMixin member functions
 
 template <typename Iterator, typename Functor>
 auto any(Iterator iterBegin, Iterator iterEnd, Functor const& f) -> bool {
