@@ -9,13 +9,13 @@ DamageDatabase::DamageDatabase() {
   auto assets = Root::singleton().assets();
 
   auto elementalConfig = assets->json("/damage/elementaltypes.config");
-  for (auto p : elementalConfig.iterateObject()) {
+  for (auto const& [typeName, typeConfig] : elementalConfig.iterateObject()) {
     ElementalType type;
-    type.resistanceStat = p.second.getString("resistanceStat");
-    for (auto particle : p.second.getObject("damageNumberParticles")) {
-      type.damageNumberParticles.set(HitTypeNames.getLeft(particle.first), particle.second.toString());
+    type.resistanceStat = typeConfig.getString("resistanceStat");
+    for (auto const& [hitType, particleConfig] : typeConfig.getObject("damageNumberParticles")) {
+      type.damageNumberParticles.set(HitTypeNames.getLeft(hitType), particleConfig.toString());
     }
-    m_elementalTypes.set(p.first, std::move(type));
+    m_elementalTypes.set(typeName, std::move(type));
   }
 
   auto& files = assets->scanExtension("damage");

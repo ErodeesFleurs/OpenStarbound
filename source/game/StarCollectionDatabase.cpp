@@ -35,14 +35,14 @@ CollectionDatabase::CollectionDatabase() {
     collection.type = CollectionTypeNames.getLeft(config.getString("type", "generic"));
 
     m_collectables[collection.name] = {};
-    for (auto pair : config.get("collectables").iterateObject()) {
+    for (auto const& [name, collectableConfig] : config.get("collectables").iterateObject()) {
       Collectable collectable;
       if (collection.type == CollectionType::Monster)
-        collectable = parseMonsterCollectable(pair.first, pair.second);
+        collectable = parseMonsterCollectable(name, collectableConfig);
       else if (collection.type == CollectionType::Item)
-        collectable = parseItemCollectable(pair.first, pair.second);
+        collectable = parseItemCollectable(name, collectableConfig);
       else
-        collectable = parseGenericCollectable(pair.first, pair.second);
+        collectable = parseGenericCollectable(name, collectableConfig);
 
       m_collectables[collection.name][collectable.name] = collectable;
     }
