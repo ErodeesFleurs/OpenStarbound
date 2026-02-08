@@ -201,7 +201,7 @@ void NetElementFloating<T>::blankNetDelta(float interpolationTime) {
 template <typename T>
 void NetElementFloating<T>::writeValue(DataStream& ds, T t) const {
   if (m_fixedPointBase)
-    ds.writeVlqI(round(t / *m_fixedPointBase));
+    ds.writeVlqI(std::round(t / *m_fixedPointBase));
   else
     ds.write(t);
 }
@@ -230,8 +230,8 @@ auto NetElementFloating<T>::interpolate() const -> T {
     // If step separation is less than 1.0, don't normalize extrapolation to
     // the very small step difference, because this can result in large jumps
     // during jitter.
-    float stepDist = max(maxPoint.first - minPoint.first, 1.0f);
-    float offset = clamp<float>(bound.offset, 0.0f, 1.0f + m_extrapolation / stepDist);
+    float stepDist = std::max(maxPoint.first - minPoint.first, 1.0f);
+    float offset = std::clamp<float>(bound.offset, 0.0f, 1.0f + m_extrapolation / stepDist);
     return m_interpolator(offset, minPoint.second, maxPoint.second);
 
   } else {

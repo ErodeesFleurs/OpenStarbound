@@ -1,69 +1,71 @@
 #pragma once
 
-#include "StarNetElementSystem.hpp"
-#include "StarMovementController.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarGameTimers.hpp"
-#include "StarEntity.hpp"
-#include "StarScriptedEntity.hpp"
+#include "StarConfig.hpp"
 #include "StarDrawable.hpp"
+#include "StarEntity.hpp"
+#include "StarGameTimers.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarLuaComponents.hpp"
-#include <optional>
+#include "StarMovementController.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarScriptedEntity.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemDrop);
+// STAR_CLASS(Item);
+// STAR_CLASS(ItemDrop);
 
 class ItemDrop : public virtual Entity, public virtual ScriptedEntity {
 public:
   // Creates a drop at the given position and adds a hard-coded amount of
   // randomness to the drop position / velocity.
-  static ItemDropPtr createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal = false);
-  static ItemDropPtr createRandomizedDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal = false);
+  static auto createRandomizedDrop(Ptr<Item> const& item, Vec2F const& position, bool eternal = false) -> Ptr<ItemDrop>;
+  static auto createRandomizedDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal = false) -> Ptr<ItemDrop>;
 
   // Create a drop and throw in the given direction with a hard-coded initial
   // throw velocity (unrelated to magnitude of direction, direction is
   // normalized first).  Initially intangible for 1 second.
-  static ItemDropPtr throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
-  static ItemDropPtr throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
+  static auto throwDrop(Ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false) -> Ptr<ItemDrop>;
+  static auto throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false) -> Ptr<ItemDrop>;
 
-  ItemDrop(ItemPtr item);
+  ItemDrop(Ptr<Item> item);
   ItemDrop(Json const& diskStore);
   ItemDrop(ByteArray netStore, NetCompatibilityRules rules = {});
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {}) const;
+  auto diskStore() const -> Json;
+  auto netStore(NetCompatibilityRules rules = {}) const -> ByteArray;
 
-  EntityType entityType() const override;
+  auto entityType() const -> EntityType override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  String name() const override;
-  String description() const override;
+  auto name() const -> String override;
+  auto description() const -> String override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t> override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  auto position() const -> Vec2F override;
+  auto metaBoundBox() const -> RectF override;
 
-  bool ephemeral() const override;
+  auto ephemeral() const -> bool override;
 
-  RectF collisionArea() const override;
+  auto collisionArea() const -> RectF override;
 
   void update(float dt, uint64_t currentStep) override;
 
-  bool shouldDestroy() const override;
+  auto shouldDestroy() const -> bool override;
 
-  virtual void render(RenderCallback* renderCallback) override;
-  virtual void renderLightSources(RenderCallback* renderCallback) override;
+  void render(RenderCallback* renderCallback) override;
+  void renderLightSources(RenderCallback* renderCallback) override;
   // The item that this drop contains
-  ItemPtr item() const;
+  auto item() const -> Ptr<Item>;
 
   void setEternal(bool eternal);
 
@@ -73,29 +75,32 @@ public:
 
   // Mark this drop as taken by the given entity.  The drop will animate
   // towards them for a while and then disappear.
-  ItemPtr takeBy(EntityId entityId, float timeOffset = 0.0f);
+  auto takeBy(EntityId entityId, float timeOffset = 0.0f) -> Ptr<Item>;
 
   // Mark this drop as taken, but do not animate it towards a player simply
   // disappear next step.
-  ItemPtr take();
+  auto take() -> Ptr<Item>;
 
   // Item is not taken and is not intangible
-  bool canTake() const;
+  auto canTake() const -> bool;
 
   void setPosition(Vec2F const& position);
 
-  Vec2F velocity() const;
+  auto velocity() const -> Vec2F;
   void setVelocity(Vec2F const& position);
 
-  Json configValue(String const& name, Json const& def = Json()) const;
+  auto configValue(String const& name, Json const& def = Json()) const -> Json;
 
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  auto callScript(String const& func, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> override;
+  auto evalScript(String const& code) -> std::optional<LuaValue> override;
 
-  ClientEntityMode clientEntityMode() const override;
+  auto clientEntityMode() const -> ClientEntityMode override;
 
 private:
-  enum class Mode { Intangible, Available, Taken, Dead };
+  enum class Mode { Intangible,
+                    Available,
+                    Taken,
+                    Dead };
   static EnumMap<Mode> const ModeNames;
 
   ItemDrop();
@@ -106,11 +111,11 @@ private:
 
   void updateTaken(bool master);
 
-  LuaCallbacks makeItemDropCallbacks();
+  auto makeItemDropCallbacks() -> LuaCallbacks;
 
   Json m_config;
   Json m_parameters;
-  ItemPtr m_item;
+  Ptr<Item> m_item;
   RectF m_boundBox;
   float m_afterTakenLife;
   float m_overheadTime;
@@ -147,4 +152,4 @@ private:
   std::optional<Mode> m_overrideMode;
 };
 
-}
+}// namespace Star

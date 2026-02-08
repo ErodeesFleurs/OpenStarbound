@@ -1,14 +1,14 @@
 #pragma once
 
-#include "StarString.hpp"
-#include "StarNetCompatibility.hpp"
 #include "StarBytes.hpp"
+#include "StarNetCompatibility.hpp"
+#include "StarString.hpp"
 
 import std;
 
 namespace Star {
 
-using DataStreamException =  ExceptionDerived<"DataStreamException", IOException>;
+using DataStreamException = ExceptionDerived<"DataStreamException", IOException>;
 extern unsigned const CurrentStreamVersion;
 
 // Writes complex types to bytes in a portable big-endian fashion.
@@ -99,10 +99,10 @@ public:
 
   // All enum types are automatically serializable
 
-  template <typename EnumType, typename =  std::enable_if_t<std::is_enum_v<EnumType>>>
+  template <typename EnumType, typename = std::enable_if_t<std::is_enum_v<EnumType>>>
   auto operator<<(EnumType const& e) -> DataStream&;
 
-  template <typename EnumType, typename =  std::enable_if_t<std::is_enum_v<EnumType>>>
+  template <typename EnumType, typename = std::enable_if_t<std::is_enum_v<EnumType>>>
   auto operator>>(EnumType& e) -> DataStream&;
 
   // Convenience method to avoid temporary.
@@ -206,13 +206,13 @@ private:
 
 template <typename EnumType, typename>
 auto DataStream::operator<<(EnumType const& e) -> DataStream& {
-  *this << ( std::underlying_type_t<EnumType>)e;
+  *this << (std::underlying_type_t<EnumType>)e;
   return *this;
 }
 
 template <typename EnumType, typename>
 auto DataStream::operator>>(EnumType& e) -> DataStream& {
-   std::underlying_type_t<EnumType> i;
+  std::underlying_type_t<EnumType> i;
   *this >> i;
   e = (EnumType)i;
   return *this;
@@ -296,7 +296,7 @@ template <typename PointerType, typename ReadFunction>
 void DataStream::pread(PointerType& pointer, ReadFunction readFunction) {
   bool initialized = read<bool>();
   if (initialized) {
-    auto element = std::make_unique< std::decay_t<typename PointerType::element_type>>();
+    auto element = std::make_unique<std::decay_t<typename PointerType::element_type>>();
     readFunction(*this, *element);
     pointer.reset(element.release());
   } else {
@@ -316,16 +316,16 @@ void DataStream::pwrite(PointerType const& pointer, WriteFunction writeFunction)
 
 template <typename PointerType>
 void DataStream::pread(PointerType& pointer) {
-  return pread(pointer, [](DataStream& ds,  std::decay_t<typename PointerType::element_type>& value) -> auto {
-      ds.read(value);
-    });
+  return pread(pointer, [](DataStream& ds, std::decay_t<typename PointerType::element_type>& value) -> auto {
+    ds.read(value);
+  });
 }
 
 template <typename PointerType>
 void DataStream::pwrite(PointerType const& pointer) {
   return pwrite(pointer, [](DataStream& ds, typename std::decay<typename PointerType::element_type>::type const& value) -> auto {
-      ds.write(value);
-    });
+    ds.write(value);
+  });
 }
 
 template <typename Container, typename WriteFunction>
@@ -378,17 +378,17 @@ void DataStream::readContainer(Container& container) {
 template <typename Container>
 void DataStream::writeMapContainer(Container const& container) {
   writeMapContainer(container, [](DataStream& ds, typename Container::key_type const& key, typename Container::mapped_type const& mapped) -> auto {
-      ds << key;
-      ds << mapped;
-    });
+    ds << key;
+    ds << mapped;
+  });
 }
 
 template <typename Container>
 void DataStream::readMapContainer(Container& container) {
   readMapContainer(container, [](DataStream& ds, typename Container::key_type& key, typename Container::mapped_type& mapped) -> auto {
-      ds >> key;
-      ds >> mapped;
-    });
+    ds >> key;
+    ds >> mapped;
+  });
 }
 
-}
+}// namespace Star

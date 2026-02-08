@@ -4,12 +4,10 @@
 
 namespace Star {
 
-STAR_CLASS(EffectSourceItem);
-
 class EffectSourceItem {
 public:
-  virtual ~EffectSourceItem() {}
-  virtual StringSet effectSources() const = 0;
+  virtual ~EffectSourceItem() = default;
+  [[nodiscard]] virtual auto effectSources() const -> StringSet = 0;
 };
 
-}
+}// namespace Star

@@ -20,4 +20,4 @@ void NetElement::tickNetInterpolation(float) {}
 
 void NetElement::blankNetDelta(float) {}
 
-}
+}// namespace Star

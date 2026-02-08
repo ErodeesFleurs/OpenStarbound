@@ -1,28 +1,31 @@
 #pragma once
 
-#include <optional>
-
-#include "StarVector.hpp"
-#include "StarRect.hpp"
-#include "StarBiMap.hpp"
 #include "StarAStar.hpp"
+#include "StarBiMap.hpp"
 #include "StarFormat.hpp"
+#include "StarRect.hpp"
+#include "StarVector.hpp"
 
-namespace Star {
-namespace PlatformerAStar {
+import std;
 
-STAR_CLASS(PathFinder);
+namespace Star::PlatformerAStar {
 
 struct Node {
-  Node withVelocity(Vec2F velocity) const;
+  [[nodiscard]] auto withVelocity(Vec2F velocity) const -> Node;
 
-  bool operator<(Node const& other) const;
+  auto operator<(Node const& other) const -> bool;
 
   Vec2F position;
-  std::optional<Vec2F> velocity; // Only valid when jumping/falling
+  std::optional<Vec2F> velocity;// Only valid when jumping/falling
 };
 
-enum class Action { Walk, Jump, Arc, Drop, Swim, Fly, Land };
+enum class Action { Walk,
+                    Jump,
+                    Arc,
+                    Drop,
+                    Swim,
+                    Fly,
+                    Land };
 extern EnumMap<Action> const ActionNames;
 
 struct Edge {
@@ -33,7 +36,7 @@ struct Edge {
   Node target;
 };
 
-typedef AStar::Path<Edge> Path;
+using Path = AStar::Path<Edge>;
 
 struct Parameters {
   // Maximum distance from the start node to search for a path to the target
@@ -92,52 +95,55 @@ struct Parameters {
   std::optional<float> maxLandingVelocity;
 };
 
-bool operator==(Parameters const& lhs, Parameters const& rhs);
-bool operator!=(Parameters const& lhs, Parameters const& rhs);
+auto operator==(Parameters const& lhs, Parameters const& rhs) -> bool;
+auto operator!=(Parameters const& lhs, Parameters const& rhs) -> bool;
 
-inline bool operator==(Node const& a, Node const& b) {
+inline auto operator==(Node const& a, Node const& b) -> bool {
   return a.position == b.position && a.velocity == b.velocity;
 }
 
-inline std::ostream& operator<<(std::ostream& os, Node const& node) {
+inline auto operator<<(std::ostream& os, Node const& node) -> std::ostream& {
   return os << strf("Node{{position = {}, velocity = {}}}", node.position, node.velocity);
 }
-}
-}
-template <> struct std::formatter<Star::PlatformerAStar::Node> : Star::ostream_formatter {};
-namespace Star {
-namespace PlatformerAStar {
+}// namespace Star::PlatformerAStar
 
-inline std::ostream& operator<<(std::ostream& os, Action action) {
+template <>
+struct std::formatter<Star::PlatformerAStar::Node> : Star::ostream_formatter {};
+
+namespace Star::PlatformerAStar {
+
+inline auto operator<<(std::ostream& os, Action action) -> std::ostream& {
   return os << ActionNames.getRight(action);
 }
-}
-}
-template <> struct std::formatter<Star::PlatformerAStar::Action> : Star::ostream_formatter {};
-namespace Star {
-namespace PlatformerAStar {
+}// namespace Star::PlatformerAStar
 
-inline std::ostream& operator<<(std::ostream& os, Edge const& edge) {
+template <>
+struct std::formatter<Star::PlatformerAStar::Action> : Star::ostream_formatter {};
+
+namespace Star::PlatformerAStar {
+
+inline auto operator<<(std::ostream& os, Edge const& edge) -> std::ostream& {
   return os << strf("Edge{{cost = {}, action = {}, jumpVelocity = {}, source = {}, target = {}}}",
-          edge.cost,
-          edge.action,
-          edge.jumpVelocity,
-          edge.source,
-          edge.target);
+                    edge.cost,
+                    edge.action,
+                    edge.jumpVelocity,
+                    edge.source,
+                    edge.target);
 }
-}
-}
-template <> struct std::formatter<Star::PlatformerAStar::Edge> : Star::ostream_formatter {};
-namespace Star {
-namespace PlatformerAStar {
+}// namespace Star::PlatformerAStar
 
-inline bool Node::operator<(Node const& other) const {
+template <>
+struct std::formatter<Star::PlatformerAStar::Edge> : Star::ostream_formatter {};
+
+namespace Star::PlatformerAStar {
+
+inline auto Node::operator<(Node const& other) const -> bool {
   if (position == other.position)
     return velocity < other.velocity;
   return position < other.position;
 }
 
-inline bool operator==(Parameters const& lhs, Parameters const& rhs) {
+inline auto operator==(Parameters const& lhs, Parameters const& rhs) -> bool {
   return lhs.maxDistance == rhs.maxDistance
     && lhs.returnBest == rhs.returnBest
     && lhs.mustEndOnGround == rhs.mustEndOnGround
@@ -157,9 +163,8 @@ inline bool operator==(Parameters const& lhs, Parameters const& rhs) {
     && lhs.maxLandingVelocity == rhs.maxLandingVelocity;
 }
 
-inline bool operator!=(Parameters const& lhs, Parameters const& rhs) {
+inline auto operator!=(Parameters const& lhs, Parameters const& rhs) -> bool {
   return !(lhs == rhs);
 }
 
-}
-}
+}// namespace Star::PlatformerAStar

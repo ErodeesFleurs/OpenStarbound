@@ -1,23 +1,23 @@
 #pragma once
 
-#include "StarPoly.hpp"
-#include "StarJson.hpp"
+#include "StarCollisionBlock.hpp"
 #include "StarEntity.hpp"
 #include "StarForceRegions.hpp"
-#include "StarCollisionBlock.hpp"
+#include "StarJson.hpp"
+#include "StarPoly.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(PhysicsEntity);
-
 struct PhysicsMovingCollision {
-  static PhysicsMovingCollision fromJson(Json const& json);
+  static auto fromJson(Json const& json) -> PhysicsMovingCollision;
 
-  RectF boundBox() const;
+  [[nodiscard]] auto boundBox() const -> RectF;
 
   void translate(Vec2F const& pos);
 
-  bool operator==(PhysicsMovingCollision const& rhs) const;
+  auto operator==(PhysicsMovingCollision const& rhs) const -> bool;
 
   Vec2F position;
   PolyF collision;
@@ -25,33 +25,33 @@ struct PhysicsMovingCollision {
   PhysicsCategoryFilter categoryFilter;
 };
 
-DataStream& operator>>(DataStream& ds, PhysicsMovingCollision& pmc);
-DataStream& operator<<(DataStream& ds, PhysicsMovingCollision const& pmc);
+auto operator>>(DataStream& ds, PhysicsMovingCollision& pmc) -> DataStream&;
+auto operator<<(DataStream& ds, PhysicsMovingCollision const& pmc) -> DataStream&;
 
 struct MovingCollisionId {
   MovingCollisionId();
-  MovingCollisionId(EntityId physicsEntityId, size_t collisionIndex);
+  MovingCollisionId(EntityId physicsEntityId, std::size_t collisionIndex);
 
-  bool operator==(MovingCollisionId const& rhs);
+  auto operator==(MovingCollisionId const& rhs) -> bool;
 
   // Returns true if the MovingCollisionId is not empty, i.e. default
   // constructed
-  bool valid() const;
+  [[nodiscard]] auto valid() const -> bool;
   operator bool() const;
 
   EntityId physicsEntityId;
-  size_t collisionIndex;
+  std::size_t collisionIndex;
 };
 
-DataStream& operator>>(DataStream& ds, MovingCollisionId& mci);
-DataStream& operator<<(DataStream& ds, MovingCollisionId const& mci);
+auto operator>>(DataStream& ds, MovingCollisionId& mci) -> DataStream&;
+auto operator<<(DataStream& ds, MovingCollisionId const& mci) -> DataStream&;
 
 class PhysicsEntity : public virtual Entity {
 public:
-  virtual List<PhysicsForceRegion> forceRegions() const;
+  [[nodiscard]] virtual auto forceRegions() const -> List<PhysicsForceRegion>;
 
-  virtual size_t movingCollisionCount() const;
-  virtual std::optional<PhysicsMovingCollision> movingCollision(size_t positionIndex) const;
+  [[nodiscard]] virtual auto movingCollisionCount() const -> std::size_t;
+  [[nodiscard]] virtual auto movingCollision(std::size_t positionIndex) const -> std::optional<PhysicsMovingCollision>;
 };
 
-}
+}// namespace Star

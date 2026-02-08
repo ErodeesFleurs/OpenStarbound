@@ -4,12 +4,10 @@
 
 namespace Star {
 
-STAR_CLASS(StatusEffectItem);
-
 class StatusEffectItem {
 public:
-  virtual ~StatusEffectItem() {}
-  virtual List<PersistentStatusEffect> statusEffects() const = 0;
+  virtual ~StatusEffectItem() = default;
+  [[nodiscard]] virtual auto statusEffects() const -> List<PersistentStatusEffect> = 0;
 };
 
-}
+}// namespace Star

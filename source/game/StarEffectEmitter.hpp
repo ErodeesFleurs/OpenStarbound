@@ -1,13 +1,16 @@
 #pragma once
 
-#include "StarNetElementSystem.hpp"
+#include "StarConfig.hpp"
 #include "StarEffectSourceDatabase.hpp"
 #include "StarGameTypes.hpp"
+#include "StarNetElementBasicFields.hpp"
+#include "StarNetElementGroup.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(EffectEmitter);
+class RenderCallback;
 
 class EffectEmitter : public NetElementGroup {
 public:
@@ -23,13 +26,13 @@ public:
 
   void render(RenderCallback* renderCallback);
 
-  Json toJson() const;
+  auto toJson() const -> Json;
   void fromJson(Json const& diskStore);
 
 private:
-  Set<pair<String, String>> m_newSources;
-  List<EffectSourcePtr> m_sources;
-  NetElementData<Set<pair<String, String>>> m_activeSources;
+  Set<std::pair<String, String>> m_newSources;
+  List<Ptr<EffectSource>> m_sources;
+  NetElementData<Set<std::pair<String, String>>> m_activeSources;
 
   StringMap<Vec2F> m_positions;
   Direction m_direction;
@@ -38,4 +41,4 @@ private:
   bool m_renders;
 };
 
-}
+}// namespace Star

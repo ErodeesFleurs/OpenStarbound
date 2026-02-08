@@ -348,7 +348,7 @@ auto Polygon<DataType>::distance(Vertex const& c) const -> DataType {
 
   DataType dist = highest<DataType>();
   for (std::size_t i = 0; i < m_vertexes.size(); ++i)
-    dist = min(dist, sideAt(i).distanceTo(c));
+    dist = std::min(dist, sideAt(i).distanceTo(c));
 
   return dist;
 }

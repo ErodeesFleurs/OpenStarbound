@@ -20,4 +20,4 @@ auto publicKey() -> PublicKey const&;
 auto sign(void* data, std::size_t len) -> Signature;
 auto verify(std::uint8_t const* signature, std::uint8_t const* publicKey, void* data, std::size_t len) -> bool;
 
-}
+}// namespace Star::Curve25519

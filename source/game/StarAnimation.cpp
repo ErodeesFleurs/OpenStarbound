@@ -2,9 +2,8 @@
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarGameTypes.hpp"
-#include "StarLexicalCast.hpp"
+
+import std;
 
 namespace Star {
 
@@ -33,7 +32,7 @@ Animation::Animation(Json config, String const& directory) {
   m_offset = jsonToVec2F(config.get("offset", JsonArray{0.0f, 0.0f}));
   m_centered = config.getBool("centered", true);
   m_processing = config.getString("processing", "");
-  m_color = config.opt("color").apply(jsonToColor).value(Color::White);
+  m_color = config.opt("color").transform(jsonToColor).value_or(Color::White);
   m_variantOffset = Random::randInt(config.getInt("variants", 1) - 1) * m_frameNumber;
 
   reset();
@@ -59,9 +58,9 @@ void Animation::clearTags() {
   m_tagValues.clear();
 }
 
-Drawable Animation::drawable(float pixelSize) const {
+auto Animation::drawable(float pixelSize) const -> Drawable {
   if (m_base.empty() || m_frame < 0)
-    return Drawable();
+    return {};
 
   // Replace <index> with the frame index, if it is not found then add
   // :<index> to the end
@@ -80,15 +79,15 @@ void Animation::update(float dt) {
   if (m_completed)
     return;
 
-  float time_within_cycle = fmod(m_animationTimer, m_animationCycle);
+  float time_within_cycle = std::fmod(m_animationTimer, m_animationCycle);
   float time_per_frame = m_animationCycle / m_frameNumber;
   float frame_number = time_within_cycle / time_per_frame;
-  m_frame = m_variantOffset + clamp<int>(frame_number, 0, m_frameNumber - 1);
+  m_frame = m_variantOffset + std::clamp<int>(frame_number, 0, m_frameNumber - 1);
   m_animationTimer += dt;
 
   if (m_mode == Animation::LoopForever) {
     // to prevent floating point jitter and seizing after a very long time
-    m_animationTimer = fmod(m_animationTimer, m_animationCycle);
+    m_animationTimer = std::fmod(m_animationTimer, m_animationCycle);
   } else if (m_animationTimer >= m_timeToLive) {
     if (m_mode == Animation::EndAndDisappear)
       m_frame = -1;
@@ -98,7 +97,7 @@ void Animation::update(float dt) {
   m_tagValues["index"] = toString(m_frame);
 }
 
-bool Animation::isComplete() const {
+auto Animation::isComplete() const -> bool {
   return m_completed;
 }
 
@@ -111,6 +110,6 @@ void Animation::reset() {
 }
 
 EnumMap<Animation::AnimationMode> Animation::AnimationModeNames = {{Animation::AnimationMode::Stop, "Stop"},
-    {Animation::AnimationMode::EndAndDisappear, "EndAndDisappear"},
-    {Animation::AnimationMode::LoopForever, "LoopForever"}};
-}
+                                                                   {Animation::AnimationMode::EndAndDisappear, "EndAndDisappear"},
+                                                                   {Animation::AnimationMode::LoopForever, "LoopForever"}};
+}// namespace Star

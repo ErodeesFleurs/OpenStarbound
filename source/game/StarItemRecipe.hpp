@@ -1,21 +1,24 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarGameTypes.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_EXCEPTION(RecipeException, StarException);
+using RecipeException = ExceptionDerived<"RecipeException">;
 
 struct ItemRecipe {
-  Json toJson() const;
+  auto toJson() const -> Json;
 
-  bool isNull() const;
+  auto isNull() const -> bool;
 
-  bool operator==(ItemRecipe const& rhs) const;
-  bool operator!=(ItemRecipe const& rhs) const;
+  auto operator==(ItemRecipe const& rhs) const -> bool;
+  auto operator!=(ItemRecipe const& rhs) const -> bool;
 
-  StringMap<uint64_t> currencyInputs;
+  StringMap<std::uint64_t> currencyInputs;
   List<ItemDescriptor> inputs;
   ItemDescriptor output;
   float duration;
@@ -28,10 +31,10 @@ struct ItemRecipe {
 
 template <>
 struct hash<ItemRecipe> {
-  size_t operator()(ItemRecipe const& v) const;
+  auto operator()(ItemRecipe const& v) const -> std::size_t;
 };
 
-std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe);
+auto operator<<(std::ostream& os, ItemRecipe const& recipe) -> std::ostream&;
 }
 
 template <> struct std::formatter<Star::ItemRecipe> : Star::ostream_formatter {};

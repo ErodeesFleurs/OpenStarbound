@@ -1,18 +1,18 @@
 #pragma once
 
-#include <optional>
-
-#include "StarOrderedMap.hpp"
-#include "StarLruCache.hpp"
-#include "StarWorldLayout.hpp"
+#include "StarAmbient.hpp"
 #include "StarBiomePlacement.hpp"
 #include "StarCelestialDatabase.hpp"
+#include "StarConfig.hpp"
+#include "StarLruCache.hpp"
+#include "StarMaterialTypes.hpp"
 #include "StarSkyParameters.hpp"
-#include "StarAmbient.hpp"
+#include "StarWorldGeometry.hpp"
+#include "StarWorldLayout.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(WorldTemplate);
 
 // Reference object that describes the generation of a single world, and all
 // of the world metadata.  Meant to remain static (or relatively static)
@@ -71,44 +71,44 @@ public:
   // Creates a blank world with the given size
   WorldTemplate(Vec2U const& size);
   // Creates a world from the given visitable celestial object.
-  WorldTemplate(CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase);
+  WorldTemplate(CelestialCoordinate const& celestialCoordinate, Ptr<CelestialDatabase> const& celestialDatabase);
   // Creates a world from a bare VisitableWorldParameters structure
-  WorldTemplate(VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed);
+  WorldTemplate(ConstPtr<VisitableWorldParameters> const& worldParameters, SkyParameters const& skyParameters, uint64_t seed);
   // Load a world template from the given stored data.
   WorldTemplate(Json const& store);
 
-  Json store() const;
+  auto store() const -> Json;
 
-  std::optional<CelestialParameters> const& celestialParameters() const;
-  VisitableWorldParametersConstPtr worldParameters() const;
-  SkyParameters skyParameters() const;
-  WorldLayoutPtr worldLayout() const;
+  auto celestialParameters() const -> std::optional<CelestialParameters> const&;
+  auto worldParameters() const -> ConstPtr<VisitableWorldParameters>;
+  auto skyParameters() const -> SkyParameters;
+  auto worldLayout() const -> Ptr<WorldLayout>;
 
-  void setWorldParameters(VisitableWorldParametersPtr newParameters);
-  void setWorldLayout(WorldLayoutPtr newLayout);
+  void setWorldParameters(Ptr<VisitableWorldParameters> newParameters);
+  void setWorldLayout(Ptr<WorldLayout> newLayout);
   void setSkyParameters(SkyParameters newParameters);
 
-  uint64_t worldSeed() const;
-  String worldName() const;
+  auto worldSeed() const -> uint64_t;
+  auto worldName() const -> String;
 
-  Vec2U size() const;
+  auto size() const -> Vec2U;
 
   // The average (ish) surface level for this world, off of which terrain
   // generators modify the surface height.
-  float surfaceLevel() const;
+  auto surfaceLevel() const -> float;
 
   // The constant height at which everything below is considered "underground"
-  float undergroundLevel() const;
+  auto undergroundLevel() const -> float;
 
   // returns true if the world is terrestrial and the specified position is within the
   // planet's surface layer
-  bool inSurfaceLayer(Vec2I const& position) const;
+  auto inSurfaceLayer(Vec2I const& position) const -> bool;
 
   // If it is specified, searches the player start search region for an
   // acceptable player start area.  The block returned will be an empty block
   // above a terrain block, in a region of free space.  If no such block can be
   // found or the player start search region is not specified, returns nothing.
-  std::optional<Vec2I> findSensiblePlayerStart() const;
+  auto findSensiblePlayerStart() const -> std::optional<Vec2I>;
 
   // Add either a solid region hint or a space region hint for the given
   // polygonal region.  Blending size and weighting is configured in the
@@ -117,58 +117,58 @@ public:
   void addCustomSpaceRegion(PolyF poly);
   void clearCustomTerrains();
 
-  List<RectI> previewAddBiomeRegion(Vec2I const& position, int width);
-  List<RectI> previewExpandBiomeRegion(Vec2I const& position, int newWidth);
+  auto previewAddBiomeRegion(Vec2I const& position, int width) -> List<RectI>;
+  auto previewExpandBiomeRegion(Vec2I const& position, int newWidth) -> List<RectI>;
 
   void addBiomeRegion(Vec2I const& position, String const& biomeName, String const& subBlockSelector, int width);
   void expandBiomeRegion(Vec2I const& position, int newWidth);
 
-  List<Dungeon> dungeons() const;
+  auto dungeons() const -> List<Dungeon>;
 
   // Is this tile block naturally outside the terrain?
-  bool isOutside(int x, int y) const;
+  auto isOutside(int x, int y) const -> bool;
   // Is this integral region of blocks outside the terrain?
-  bool isOutside(RectI const& region) const;
+  auto isOutside(RectI const& region) const -> bool;
 
-  BlockInfo blockInfo(int x, int y) const;
+  auto blockInfo(int x, int y) const -> BlockInfo;
 
   // partial blockinfo that doesn't use terrain selectors
-  BlockInfo blockBiomeInfo(int x, int y) const;
+  auto blockBiomeInfo(int x, int y) const -> BlockInfo;
 
-  BiomeIndex blockBiomeIndex(int x, int y) const;
-  BiomeIndex environmentBiomeIndex(int x, int y) const;
-  BiomeConstPtr biome(BiomeIndex biomeIndex) const;
+  auto blockBiomeIndex(int x, int y) const -> BiomeIndex;
+  auto environmentBiomeIndex(int x, int y) const -> BiomeIndex;
+  auto biome(BiomeIndex biomeIndex) const -> ConstPtr<Biome>;
 
-  BiomeConstPtr blockBiome(int x, int y) const;
-  BiomeConstPtr environmentBiome(int x, int y) const;
+  auto blockBiome(int x, int y) const -> ConstPtr<Biome>;
+  auto environmentBiome(int x, int y) const -> ConstPtr<Biome>;
 
-  MaterialId biomeMaterial(BiomeIndex biomeIndex, int x, int y) const;
+  auto biomeMaterial(BiomeIndex biomeIndex, int x, int y) const -> MaterialId;
 
   // Returns the material and mod hue shift that should be applied to the given
   // material and mod for this biome.
-  MaterialHue biomeMaterialHueShift(BiomeIndex biomeIndex, MaterialId material) const;
-  MaterialHue biomeModHueShift(BiomeIndex biomeIndex, ModId mod) const;
+  auto biomeMaterialHueShift(BiomeIndex biomeIndex, MaterialId material) const -> MaterialHue;
+  auto biomeModHueShift(BiomeIndex biomeIndex, ModId mod) const -> MaterialHue;
 
-  AmbientNoisesDescriptionPtr ambientNoises(int x, int y) const;
-  AmbientNoisesDescriptionPtr musicTrack(int x, int y) const;
+  auto ambientNoises(int x, int y) const -> Ptr<AmbientNoisesDescription>;
+  auto musicTrack(int x, int y) const -> Ptr<AmbientNoisesDescription>;
 
-  StringList environmentStatusEffects(int x, int y) const;
-  bool breathable(int x, int y) const;
+  auto environmentStatusEffects(int x, int y) const -> StringList;
+  auto breathable(int x, int y) const -> bool;
 
-  WeatherPool weathers() const;
+  auto weathers() const -> WeatherPool;
 
   // Return potential items that would spawn at the given block.
-	void addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, std::optional<BiomePlacementMode> mode = {}) const;
-  PotentialBiomeItems potentialBiomeItemsAt(int x, int y) const;
+  void addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, std::optional<BiomePlacementMode> mode = {}) const;
+  auto potentialBiomeItemsAt(int x, int y) const -> PotentialBiomeItems;
 
   // Return only the potential items that can spawn at the given block.
-	List<BiomeItemPlacement> validBiomeItems(int x, int y, PotentialBiomeItems potentialBiomeItems) const;
+  auto validBiomeItems(int x, int y, PotentialBiomeItems potentialBiomeItems) const -> List<BiomeItemPlacement>;
 
-  float gravity() const;
-  float threatLevel() const;
+  auto gravity() const -> float;
+  auto threatLevel() const -> float;
 
   // For consistently seeding object generation at this position
-  uint64_t seedFor(int x, int y) const;
+  auto seedFor(int x, int y) const -> uint64_t;
 
 private:
   struct CustomTerrainRegion {
@@ -181,21 +181,21 @@ private:
 
   void determineWorldName();
 
-  pair<float, float> customTerrainWeighting(int x, int y) const;
+  auto customTerrainWeighting(int x, int y) const -> std::pair<float, float>;
 
   // Calculates block info and adds to cache
-  BlockInfo getBlockInfo(uint32_t x, uint32_t y) const;
+  auto getBlockInfo(uint32_t x, uint32_t y) const -> BlockInfo;
 
   Json m_templateConfig;
   float m_customTerrainBlendSize;
   float m_customTerrainBlendWeight;
 
   std::optional<CelestialParameters> m_celestialParameters;
-  VisitableWorldParametersConstPtr m_worldParameters;
+  ConstPtr<VisitableWorldParameters> m_worldParameters;
   SkyParameters m_skyParameters;
   uint64_t m_seed;
   WorldGeometry m_geometry;
-  WorldLayoutPtr m_layout;
+  Ptr<WorldLayout> m_layout;
   String m_worldName;
 
   List<CustomTerrainRegion> m_customTerrainRegions;
@@ -203,4 +203,4 @@ private:
   mutable HashLruCache<Vector<uint32_t, 2>, BlockInfo> m_blockCache;
 };
 
-}
+}// namespace Star

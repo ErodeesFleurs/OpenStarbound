@@ -1,187 +1,188 @@
 #pragma once
 
-#include "StarDrawable.hpp"
-#include "StarRect.hpp"
-#include "StarPoly.hpp"
 #include "StarColor.hpp"
+#include "StarConfig.hpp"
+#include "StarDrawable.hpp"
 #include "StarGameTypes.hpp"
 #include "StarLua.hpp"
 #include "StarPlatformerAStar.hpp"
+#include "StarPoly.hpp"
+#include "StarRect.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(WorldServer);
-STAR_CLASS(WorldClient);
-STAR_CLASS(Item);
-STAR_CLASS(ScriptedEntity);
+class ScriptedEntity;
+class WorldClient;
+class WorldServer;
 
 namespace LuaBindings {
-  typedef function<Json(ScriptedEntityPtr const& entity, String const& functionName, JsonArray const& args)> CallEntityScriptFunction;
+using CallEntityScriptFunction = std::function<Json(Ptr<ScriptedEntity> const& entity, String const& functionName, JsonArray const& args)>;
 
-  LuaCallbacks makeWorldCallbacks(World* world);
+auto makeWorldCallbacks(World* world) -> LuaCallbacks;
 
-  void addWorldDebugCallbacks(LuaCallbacks& callbacks);
-  void addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world);
-  void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world);
+void addWorldDebugCallbacks(LuaCallbacks& callbacks);
+void addWorldEntityCallbacks(LuaCallbacks& callbacks, World* world);
+void addWorldEnvironmentCallbacks(LuaCallbacks& callbacks, World* world);
 
-  namespace WorldCallbacks {
-    float magnitude(World* world, Vec2F pos1, std::optional<Vec2F> pos2);
-    Vec2F distance(World* world, Vec2F const& arg1, Vec2F const& arg2);
-    bool polyContains(World* world, PolyF const& poly, Vec2F const& pos);
-    LuaValue xwrap(World* world, LuaEngine& engine, LuaValue const& positionOrX);
-    LuaValue nearestTo(World* world, LuaEngine& engine, Variant<Vec2F, float> const& sourcePositionOrX, Variant<Vec2F, float> const& targetPositionOrX);
-    bool rectCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2);
-    bool pointTileCollision(World* world, Vec2F const& arg1, std::optional<CollisionSet> const& arg2);
-    bool lineTileCollision(World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3);
-    std::optional<pair<Vec2F, Vec2I>> lineTileCollisionPoint(World* world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& maybeCollisionSet);
-    bool rectTileCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2);
-    bool pointCollision(World* world, Vec2F const& point, std::optional<CollisionSet> const& collisionSet);
-    LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>> lineCollision(World* world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& maybeCollisionSet);
-    bool polyCollision(World* world, PolyF const& arg1, std::optional<Vec2F> const& arg2, std::optional<CollisionSet> const& arg3);
-    List<Vec2I> collisionBlocksAlongLine(World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3, std::optional<int> const& arg4);
-    List<pair<Vec2I, LiquidLevel>> liquidAlongLine(World* world, Vec2F const& start, Vec2F const& end);
-    std::optional<Vec2F> resolvePolyCollision(World* world, PolyF poly, Vec2F const& position, float maximumCorrection, std::optional<CollisionSet> const& collisionSet);
-    bool tileIsOccupied(World* world, Vec2I const& arg1, std::optional<bool> const& arg2, std::optional<bool> const& arg3);
-    bool placeObject(World* world, String const& arg1, Vec2I const& arg2, std::optional<int> const& arg3, Json const& arg4);
-    std::optional<EntityId> spawnItem(World* world, Json const& itemType, Vec2F const& worldPosition, std::optional<size_t> const& inputCount, Json const& inputParameters, std::optional<Vec2F> const& initialVelocity, std::optional<float> const& intangibleTime);
-    List<EntityId> spawnTreasure(World* world, Vec2F const& position, String const& pool, float level, std::optional<uint64_t> seed);
-    std::optional<EntityId> spawnMonster(World* world, String const& arg1, Vec2F const& arg2, std::optional<JsonObject> const& arg3);
-    std::optional<EntityId> spawnNpc(World* world, Vec2F const& arg1, String const& arg2, String const& arg3, float arg4, std::optional<uint64_t> arg5, Json const& arg6);
-    std::optional<EntityId> spawnStagehand(World* world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides);
-    std::optional<EntityId> spawnProjectile(World* world, String const& arg1, Vec2F const& arg2, std::optional<EntityId> const& arg3, std::optional<Vec2F> const& arg4, bool arg5, Json const& arg6);
-    std::optional<EntityId> spawnVehicle(World* world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig);
-    double time(World* world);
-    uint64_t day(World* world);
-    double timeOfDay(World* world);
-    float dayLength(World* world);
-    Json getProperty(World* world, String const& arg1, Json const& arg2);
-    void setProperty(World* world, String const& arg1, Json const& arg2);
-    std::optional<LiquidLevel> liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint);
-    float gravity(World* world, Vec2F const& arg1);
-    bool spawnLiquid(World* world, Vec2F const& arg1, LiquidId arg2, float arg3);
-    std::optional<LiquidLevel> destroyLiquid(World* world, Vec2F const& position);
-    bool isTileProtected(World* world, Vec2F const& position);
-    std::optional<PlatformerAStar::Path> findPlatformerPath(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
-    PlatformerAStar::PathFinder platformerPathStart(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters);
-  }
+namespace WorldCallbacks {
+auto magnitude(World* world, Vec2F pos1, std::optional<Vec2F> pos2) -> float;
+auto distance(World* world, Vec2F const& arg1, Vec2F const& arg2) -> Vec2F;
+auto polyContains(World* world, PolyF const& poly, Vec2F const& pos) -> bool;
+auto xwrap(World* world, LuaEngine& engine, LuaValue const& positionOrX) -> LuaValue;
+auto nearestTo(World* world, LuaEngine& engine, Variant<Vec2F, float> const& sourcePositionOrX, Variant<Vec2F, float> const& targetPositionOrX) -> LuaValue;
+auto rectCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2) -> bool;
+auto pointTileCollision(World* world, Vec2F const& arg1, std::optional<CollisionSet> const& arg2) -> bool;
+auto lineTileCollision(World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3) -> bool;
+auto lineTileCollisionPoint(World* world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& maybeCollisionSet) -> std::optional<std::pair<Vec2F, Vec2I>>;
+auto rectTileCollision(World* world, RectF const& arg1, std::optional<CollisionSet> const& arg2) -> bool;
+auto pointCollision(World* world, Vec2F const& point, std::optional<CollisionSet> const& collisionSet) -> bool;
+auto lineCollision(World* world, Vec2F const& start, Vec2F const& end, std::optional<CollisionSet> const& maybeCollisionSet) -> LuaTupleReturn<std::optional<Vec2F>, std::optional<Vec2F>>;
+auto polyCollision(World* world, PolyF const& arg1, std::optional<Vec2F> const& arg2, std::optional<CollisionSet> const& arg3) -> bool;
+auto collisionBlocksAlongLine(World* world, Vec2F const& arg1, Vec2F const& arg2, std::optional<CollisionSet> const& arg3, std::optional<int> const& arg4) -> List<Vec2I>;
+auto liquidAlongLine(World* world, Vec2F const& start, Vec2F const& end) -> List<std::pair<Vec2I, LiquidLevel>>;
+auto resolvePolyCollision(World* world, PolyF poly, Vec2F const& position, float maximumCorrection, std::optional<CollisionSet> const& collisionSet) -> std::optional<Vec2F>;
+auto tileIsOccupied(World* world, Vec2I const& arg1, std::optional<bool> const& arg2, std::optional<bool> const& arg3) -> bool;
+auto placeObject(World* world, String const& arg1, Vec2I const& arg2, std::optional<int> const& arg3, Json const& arg4) -> bool;
+auto spawnItem(World* world, Json const& itemType, Vec2F const& worldPosition, std::optional<size_t> const& inputCount, Json const& inputParameters, std::optional<Vec2F> const& initialVelocity, std::optional<float> const& intangibleTime) -> std::optional<EntityId>;
+auto spawnTreasure(World* world, Vec2F const& position, String const& pool, float level, std::optional<std::uint64_t> seed) -> List<EntityId>;
+auto spawnMonster(World* world, String const& arg1, Vec2F const& arg2, std::optional<JsonObject> const& arg3) -> std::optional<EntityId>;
+auto spawnNpc(World* world, Vec2F const& arg1, String const& arg2, String const& arg3, float arg4, std::optional<std::uint64_t> arg5, Json const& arg6) -> std::optional<EntityId>;
+auto spawnStagehand(World* world, Vec2F const& spawnPosition, String const& typeName, Json const& overrides) -> std::optional<EntityId>;
+auto spawnProjectile(World* world, String const& arg1, Vec2F const& arg2, std::optional<EntityId> const& arg3, std::optional<Vec2F> const& arg4, bool arg5, Json const& arg6) -> std::optional<EntityId>;
+auto spawnVehicle(World* world, String const& vehicleName, Vec2F const& pos, Json const& extraConfig) -> std::optional<EntityId>;
+auto time(World* world) -> double;
+auto day(World* world) -> std::uint64_t;
+auto timeOfDay(World* world) -> double;
+auto dayLength(World* world) -> float;
+auto getProperty(World* world, String const& arg1, Json const& arg2) -> Json;
+void setProperty(World* world, String const& arg1, Json const& arg2);
+auto liquidAt(World* world, Variant<RectF, Vec2I> boundBoxOrPoint) -> std::optional<LiquidLevel>;
+auto gravity(World* world, Vec2F const& arg1) -> float;
+auto spawnLiquid(World* world, Vec2F const& arg1, LiquidId arg2, float arg3) -> bool;
+auto destroyLiquid(World* world, Vec2F const& position) -> std::optional<LiquidLevel>;
+auto isTileProtected(World* world, Vec2F const& position) -> bool;
+auto findPlatformerPath(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters) -> std::optional<PlatformerAStar::Path>;
+auto platformerPathStart(World* world, Vec2F const& start, Vec2F const& end, ActorMovementParameters actorMovementParameters, PlatformerAStar::Parameters searchParameters) -> PlatformerAStar::PathFinder;
+}// namespace WorldCallbacks
 
-  namespace ClientWorldCallbacks {
-    void resendEntity(WorldClient* world, EntityId arg1);
-    RectI clientWindow(WorldClient* world);
-  }
+namespace ClientWorldCallbacks {
+void resendEntity(WorldClient* world, EntityId arg1);
+auto clientWindow(WorldClient* world) -> RectI;
+}// namespace ClientWorldCallbacks
 
-  namespace ServerWorldCallbacks {
-    String id(WorldServer* world);
-    bool breakObject(WorldServer* world, EntityId arg1, bool arg2);
-    bool isVisibleToPlayer(WorldServer* world, RectF const& arg1);
-    bool loadRegion(WorldServer* world, RectF const& arg1);
-    bool regionActive(WorldServer* world, RectF const& arg1);
-    void setTileProtection(WorldServer* world, DungeonId arg1, bool arg2);
-    bool isPlayerModified(WorldServer* world, RectI const& region);
-    std::optional<LiquidLevel> forceDestroyLiquid(WorldServer* world, Vec2F const& position);
-    EntityId loadUniqueEntity(WorldServer* world, String const& uniqueId);
-    void setUniqueId(WorldServer* world, EntityId entityId, std::optional<String> const& uniqueId);
-    Json takeItemDrop(World* world, EntityId entityId, std::optional<EntityId> const& takenBy);
-    void setPlayerStart(World* world, Vec2F const& playerStart, std::optional<bool> respawnInWorld);
-    List<EntityId> players(World* world);
-    LuaString fidelity(World* world, LuaEngine& engine);
-    std::optional<LuaValue> callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args);
-    bool sendPacket(WorldServer* world, ConnectionId clientId, String const& packetType, Json const& packetData);
-  }
+namespace ServerWorldCallbacks {
+auto id(WorldServer* world) -> String;
+auto breakObject(WorldServer* world, EntityId arg1, bool arg2) -> bool;
+auto isVisibleToPlayer(WorldServer* world, RectF const& arg1) -> bool;
+auto loadRegion(WorldServer* world, RectF const& arg1) -> bool;
+auto regionActive(WorldServer* world, RectF const& arg1) -> bool;
+void setTileProtection(WorldServer* world, DungeonId arg1, bool arg2);
+auto isPlayerModified(WorldServer* world, RectI const& region) -> bool;
+auto forceDestroyLiquid(WorldServer* world, Vec2F const& position) -> std::optional<LiquidLevel>;
+auto loadUniqueEntity(WorldServer* world, String const& uniqueId) -> EntityId;
+void setUniqueId(WorldServer* world, EntityId entityId, std::optional<String> const& uniqueId);
+auto takeItemDrop(World* world, EntityId entityId, std::optional<EntityId> const& takenBy) -> Json;
+void setPlayerStart(World* world, Vec2F const& playerStart, std::optional<bool> respawnInWorld);
+auto players(World* world) -> List<EntityId>;
+auto fidelity(World* world, LuaEngine& engine) -> LuaString;
+auto callScriptContext(World* world, String const& contextName, String const& function, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue>;
+auto sendPacket(WorldServer* world, ConnectionId clientId, String const& packetType, Json const& packetData) -> bool;
+}// namespace ServerWorldCallbacks
 
-  namespace WorldDebugCallbacks {
-    void debugPoint(Vec2F const& arg1, Color const& arg2);
-    void debugLine(Vec2F const& arg1, Vec2F const& arg2, Color const& arg3);
-    void debugPoly(PolyF const& poly, Color const& color);
-    void debugText(LuaEngine& engine, LuaVariadic<LuaValue> const& args);
-  }
+namespace WorldDebugCallbacks {
+void debugPoint(Vec2F const& arg1, Color const& arg2);
+void debugLine(Vec2F const& arg1, Vec2F const& arg2, Color const& arg3);
+void debugPoly(PolyF const& poly, Color const& color);
+void debugText(LuaEngine& engine, LuaVariadic<LuaValue> const& args);
+}// namespace WorldDebugCallbacks
 
-  namespace WorldEntityCallbacks {
-    LuaTable entityQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    LuaTable monsterQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    LuaTable npcQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    LuaTable objectQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    LuaTable itemDropQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    LuaTable playerQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    LuaTable loungeableQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options);
-    LuaTable entityLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
-    LuaTable objectLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
-    LuaTable npcLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options);
-    bool entityExists(World* world, EntityId entityId);
-    bool entityCanDamage(World* world, EntityId sourceId, EntityId targetId);
-    Json entityDamageTeam(World* world, EntityId entityId);
-    bool entityAggressive(World* world, EntityId entityId);
-    std::optional<LuaString> entityType(World* world, LuaEngine& engine, EntityId entityId);
-    std::optional<Vec2F> entityPosition(World* world, EntityId entityId);
-    std::optional<Vec2F> entityVelocity(World* world, EntityId entityId);
-    std::optional<RectF> entityMetaBoundBox(World* world, EntityId entityId);
-    std::optional<uint64_t> entityCurrency(World* world, EntityId entityId, String const& currencyType);
-    std::optional<uint64_t> entityHasCountOfItem(World* world, EntityId entityId, Json descriptor, std::optional<bool> exactMatch);
-    std::optional<Vec2F> entityHealth(World* world, EntityId entityId);
-    std::optional<String> entitySpecies(World* world, EntityId entityId);
-    std::optional<String> entityGender(World* world, EntityId entityId);
-    std::optional<String> entityName(World* world, EntityId entityId);
-    std::optional<Json> entityNametag(World* world, EntityId entityId);
-    std::optional<String> entityDescription(World* world, EntityId entityId, std::optional<String> const& species);
-    LuaNullTermWrapper<std::optional<List<Drawable>>> entityPortrait(World* world, EntityId entityId, String const& portraitMode);
-    std::optional<String> entityHandItem(World* world, EntityId entityId, String const& handName);
-    Json entityHandItemDescriptor(World* world, EntityId entityId, String const& handName);
-    LuaNullTermWrapper<std::optional<String>> entityUniqueId(World* world, EntityId entityId);
-    Json getObjectParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue);
-    Json getNpcScriptParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue);
-    List<Vec2I> objectSpaces(World* world, EntityId entityId);
-    std::optional<int> farmableStage(World* world, EntityId entityId);
-    std::optional<int> containerSize(World* world, EntityId entityId);
-    bool containerClose(World* world, EntityId entityId);
-    bool containerOpen(World* world, EntityId entityId);
-    Json containerItems(World* world, EntityId entityId);
-    Json containerItemAt(World* world, EntityId entityId, size_t offset);
-    std::optional<bool> containerConsume(World* world, EntityId entityId, Json const& items);
-    std::optional<bool> containerConsumeAt(World* world, EntityId entityId, size_t offset, int count);
-    std::optional<size_t> containerAvailable(World* world, EntityId entityId, Json const& items);
-    Json containerTakeAll(World* world, EntityId entityId);
-    Json containerTakeAt(World* world, EntityId entityId, size_t offset);
-    Json containerTakeNumItemsAt(World* world, EntityId entityId, size_t offset, int const& count);
-    std::optional<size_t> containerItemsCanFit(World* world, EntityId entityId, Json const& items);
-    Json containerItemsFitWhere(World* world, EntityId entityId, Json const& items);
-    Json containerAddItems(World* world, EntityId entityId, Json const& items);
-    Json containerStackItems(World* world, EntityId entityId, Json const& items);
-    Json containerPutItemsAt(World* world, EntityId entityId, Json const& items, size_t offset);
-    Json containerSwapItems(World* world, EntityId entityId, Json const& items, size_t offset);
-    Json containerSwapItemsNoCombine(World* world, EntityId entityId, Json const& items, size_t offset);
-    Json containerItemApply(World* world, EntityId entityId, Json const& items, size_t offset);
-    std::optional<LuaValue> callScriptedEntity(World* world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args);
-    RpcPromise<Vec2F> findUniqueEntity(World* world, String const& uniqueId);
-    RpcPromise<Json> sendEntityMessage(World* world, LuaEngine& engine, LuaValue entityId, String const& message, LuaVariadic<Json> args);
-    std::optional<List<EntityId>> loungingEntities(World* world, EntityId entityId, std::optional<size_t> anchorIndex);
-    std::optional<bool> loungeableOccupied(World* world, EntityId entityId, std::optional<size_t> anchorIndex);
-    std::optional<size_t> loungeableAnchorCount(World* world, EntityId entityId);
-    bool isMonster(World* world, EntityId entityId, std::optional<bool> const& aggressive);
-    std::optional<String> monsterType(World* world, EntityId entityId);
-    std::optional<String> npcType(World* world, EntityId entityId);
-    std::optional<String> stagehandType(World* world, EntityId entityId);
-    bool isNpc(World* world, EntityId entityId, std::optional<int> const& damageTeam);
-  }
+namespace WorldEntityCallbacks {
+auto entityQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) -> LuaTable;
+auto monsterQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) -> LuaTable;
+auto npcQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) -> LuaTable;
+auto objectQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) -> LuaTable;
+auto itemDropQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) -> LuaTable;
+auto playerQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) -> LuaTable;
+auto loungeableQuery(World* world, LuaEngine& engine, Vec2F const& pos1, LuaValue const& pos2, std::optional<LuaTable> options) -> LuaTable;
+auto entityLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options) -> LuaTable;
+auto objectLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options) -> LuaTable;
+auto npcLineQuery(World* world, LuaEngine& engine, Vec2F const& pos1, Vec2F const& pos2, std::optional<LuaTable> options) -> LuaTable;
+auto entityExists(World* world, EntityId entityId) -> bool;
+auto entityCanDamage(World* world, EntityId sourceId, EntityId targetId) -> bool;
+auto entityDamageTeam(World* world, EntityId entityId) -> Json;
+auto entityAggressive(World* world, EntityId entityId) -> bool;
+auto entityType(World* world, LuaEngine& engine, EntityId entityId) -> std::optional<LuaString>;
+auto entityPosition(World* world, EntityId entityId) -> std::optional<Vec2F>;
+auto entityVelocity(World* world, EntityId entityId) -> std::optional<Vec2F>;
+auto entityMetaBoundBox(World* world, EntityId entityId) -> std::optional<RectF>;
+auto entityCurrency(World* world, EntityId entityId, String const& currencyType) -> std::optional<std::uint64_t>;
+auto entityHasCountOfItem(World* world, EntityId entityId, Json descriptor, std::optional<bool> exactMatch) -> std::optional<std::uint64_t>;
+auto entityHealth(World* world, EntityId entityId) -> std::optional<Vec2F>;
+auto entitySpecies(World* world, EntityId entityId) -> std::optional<String>;
+auto entityGender(World* world, EntityId entityId) -> std::optional<String>;
+auto entityName(World* world, EntityId entityId) -> std::optional<String>;
+auto entityNametag(World* world, EntityId entityId) -> std::optional<Json>;
+auto entityDescription(World* world, EntityId entityId, std::optional<String> const& species) -> std::optional<String>;
+auto entityPortrait(World* world, EntityId entityId, String const& portraitMode) -> LuaNullTermWrapper<std::optional<List<Drawable>>>;
+auto entityHandItem(World* world, EntityId entityId, String const& handName) -> std::optional<String>;
+auto entityHandItemDescriptor(World* world, EntityId entityId, String const& handName) -> Json;
+auto entityUniqueId(World* world, EntityId entityId) -> LuaNullTermWrapper<std::optional<String>>;
+auto getObjectParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue) -> Json;
+auto getNpcScriptParameter(World* world, EntityId entityId, String const& parameterName, std::optional<Json> const& defaultValue) -> Json;
+auto objectSpaces(World* world, EntityId entityId) -> List<Vec2I>;
+auto farmableStage(World* world, EntityId entityId) -> std::optional<int>;
+auto containerSize(World* world, EntityId entityId) -> std::optional<int>;
+auto containerClose(World* world, EntityId entityId) -> bool;
+auto containerOpen(World* world, EntityId entityId) -> bool;
+auto containerItems(World* world, EntityId entityId) -> Json;
+auto containerItemAt(World* world, EntityId entityId, size_t offset) -> Json;
+auto containerConsume(World* world, EntityId entityId, Json const& items) -> std::optional<bool>;
+auto containerConsumeAt(World* world, EntityId entityId, size_t offset, int count) -> std::optional<bool>;
+auto containerAvailable(World* world, EntityId entityId, Json const& items) -> std::optional<size_t>;
+auto containerTakeAll(World* world, EntityId entityId) -> Json;
+auto containerTakeAt(World* world, EntityId entityId, size_t offset) -> Json;
+auto containerTakeNumItemsAt(World* world, EntityId entityId, size_t offset, int const& count) -> Json;
+auto containerItemsCanFit(World* world, EntityId entityId, Json const& items) -> std::optional<size_t>;
+auto containerItemsFitWhere(World* world, EntityId entityId, Json const& items) -> Json;
+auto containerAddItems(World* world, EntityId entityId, Json const& items) -> Json;
+auto containerStackItems(World* world, EntityId entityId, Json const& items) -> Json;
+auto containerPutItemsAt(World* world, EntityId entityId, Json const& items, size_t offset) -> Json;
+auto containerSwapItems(World* world, EntityId entityId, Json const& items, size_t offset) -> Json;
+auto containerSwapItemsNoCombine(World* world, EntityId entityId, Json const& items, size_t offset) -> Json;
+auto containerItemApply(World* world, EntityId entityId, Json const& items, size_t offset) -> Json;
+auto callScriptedEntity(World* world, EntityId entityId, String const& function, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue>;
+auto findUniqueEntity(World* world, String const& uniqueId) -> RpcPromise<Vec2F>;
+auto sendEntityMessage(World* world, LuaEngine& engine, LuaValue entityId, String const& message, LuaVariadic<Json> args) -> RpcPromise<Json>;
+auto loungingEntities(World* world, EntityId entityId, std::optional<size_t> anchorIndex) -> std::optional<List<EntityId>>;
+auto loungeableOccupied(World* world, EntityId entityId, std::optional<size_t> anchorIndex) -> std::optional<bool>;
+auto loungeableAnchorCount(World* world, EntityId entityId) -> std::optional<size_t>;
+auto isMonster(World* world, EntityId entityId, std::optional<bool> const& aggressive) -> bool;
+auto monsterType(World* world, EntityId entityId) -> std::optional<String>;
+auto npcType(World* world, EntityId entityId) -> std::optional<String>;
+auto stagehandType(World* world, EntityId entityId) -> std::optional<String>;
+auto isNpc(World* world, EntityId entityId, std::optional<int> const& damageTeam) -> bool;
+}// namespace WorldEntityCallbacks
 
-  namespace WorldEnvironmentCallbacks {
-    float lightLevel(World* world, Vec2F const& position);
-    float windLevel(World* world, Vec2F const& position);
-    bool breathable(World* world, Vec2F const& position);
-    bool underground(World* world, Vec2F const& position);
-    LuaValue material(World* world, LuaEngine& engine, Vec2F const& position, String const& layerName);
-    LuaValue mod(World* world, LuaEngine& engine, Vec2F const& position, String const& layerName);
-    float materialHueShift(World* world, Vec2F const& position, String const& layerName);
-    float modHueShift(World* world, Vec2F const& position, String const& layerName);
-    MaterialColorVariant materialColor(World* world, Vec2F const& position, String const& layerName);
-    void setMaterialColor(World* world, Vec2F const& position, String const& layerName, MaterialColorVariant color);
-    bool damageTiles(World* world, List<Vec2I> const& arg1, String const& arg2, Vec2F const& arg3, String const& arg4, float arg5, std::optional<unsigned> const& arg6, std::optional<EntityId> sourceEntity);
-    bool damageTileArea(World* world, Vec2F center, float radius, String layer, Vec2F sourcePosition, String damageType, float damage, std::optional<unsigned> const& harvestLevel, std::optional<EntityId> sourceEntity);
-    bool placeMaterial(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5);
-    bool replaceMaterials(World* world, List<Vec2I> const& tilePositions, String const& layer, String const& materialName, std::optional<int> const& hueShift, bool enableDrops);
-    bool replaceMaterialArea(World* world, Vec2F center, float radius, String const& layer, String const& materialName, std::optional<int> const& hueShift, bool enableDrops);
-    bool placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5);
-  }
-}
+namespace WorldEnvironmentCallbacks {
+auto lightLevel(World* world, Vec2F const& position) -> float;
+auto windLevel(World* world, Vec2F const& position) -> float;
+auto breathable(World* world, Vec2F const& position) -> bool;
+auto underground(World* world, Vec2F const& position) -> bool;
+auto material(World* world, LuaEngine& engine, Vec2F const& position, String const& layerName) -> LuaValue;
+auto mod(World* world, LuaEngine& engine, Vec2F const& position, String const& layerName) -> LuaValue;
+auto materialHueShift(World* world, Vec2F const& position, String const& layerName) -> float;
+auto modHueShift(World* world, Vec2F const& position, String const& layerName) -> float;
+auto materialColor(World* world, Vec2F const& position, String const& layerName) -> MaterialColorVariant;
+void setMaterialColor(World* world, Vec2F const& position, String const& layerName, MaterialColorVariant color);
+auto damageTiles(World* world, List<Vec2I> const& arg1, String const& arg2, Vec2F const& arg3, String const& arg4, float arg5, std::optional<unsigned> const& arg6, std::optional<EntityId> sourceEntity) -> bool;
+auto damageTileArea(World* world, Vec2F center, float radius, String layer, Vec2F sourcePosition, String damageType, float damage, std::optional<unsigned> const& harvestLevel, std::optional<EntityId> sourceEntity) -> bool;
+auto placeMaterial(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5) -> bool;
+auto replaceMaterials(World* world, List<Vec2I> const& tilePositions, String const& layer, String const& materialName, std::optional<int> const& hueShift, bool enableDrops) -> bool;
+auto replaceMaterialArea(World* world, Vec2F center, float radius, String const& layer, String const& materialName, std::optional<int> const& hueShift, bool enableDrops) -> bool;
+auto placeMod(World* world, Vec2I const& arg1, String const& arg2, String const& arg3, std::optional<int> const& arg4, bool arg5) -> bool;
+}// namespace WorldEnvironmentCallbacks
+}// namespace LuaBindings
 
-}
+}// namespace Star

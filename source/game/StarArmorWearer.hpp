@@ -1,81 +1,76 @@
 #pragma once
 
-#include "StarHumanoid.hpp"
-#include "StarNetElementSystem.hpp"
+#include "StarConfig.hpp"
 #include "StarEffectEmitter.hpp"
+#include "StarHumanoid.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarStatusTypes.hpp"
-#include "StarLightSource.hpp"
-#include "StarDamage.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(ObjectItem);
-STAR_CLASS(ArmorItem);
-STAR_CLASS(HeadArmor);
-STAR_CLASS(ChestArmor);
-STAR_CLASS(LegsArmor);
-STAR_CLASS(BackArmor);
-STAR_CLASS(ToolUserEntity);
-STAR_CLASS(Item);
-STAR_CLASS(World);
-
-STAR_CLASS(ArmorWearer);
+class ArmorItem;
+class HeadArmor;
+class ChestArmor;
+class LegsArmor;
+class BackArmor;
 
 class ArmorWearer : public NetElementSyncGroup {
 public:
   ArmorWearer();
 
   // returns true if movement parameters changed
-  bool setupHumanoid(Humanoid& humanoid, bool forceNude);
+  auto setupHumanoid(Humanoid& humanoid, bool forceNude) -> bool;
   void effects(EffectEmitter& effectEmitter);
-  List<PersistentStatusEffect> statusEffects(bool cosmeticOnly = false) const;
+  auto statusEffects(bool cosmeticOnly = false) const -> List<PersistentStatusEffect>;
 
   void reset();
 
-  Json diskStore() const;
+  auto diskStore() const -> Json;
   void diskLoad(Json const& diskStore);
 
-  bool setItem(uint8_t slot, ArmorItemPtr item, bool visible = true);
-  void setHeadItem(HeadArmorPtr headItem);
-  void setChestItem(ChestArmorPtr chestItem);
-  void setLegsItem(LegsArmorPtr legsItem);
-  void setBackItem(BackArmorPtr backItem);
-  void setHeadCosmeticItem(HeadArmorPtr headCosmeticItem);
-  void setChestCosmeticItem(ChestArmorPtr chestCosmeticItem);
-  void setLegsCosmeticItem(LegsArmorPtr legsCosmeticItem);
-  void setBackCosmeticItem(BackArmorPtr backCosmeticItem);
+  auto setItem(std::uint8_t slot, Ptr<ArmorItem> item, bool visible = true) -> bool;
+  void setHeadItem(Ptr<HeadArmor> headItem);
+  void setChestItem(Ptr<ChestArmor> chestItem);
+  void setLegsItem(Ptr<LegsArmor> legsItem);
+  void setBackItem(Ptr<BackArmor> backItem);
+  void setHeadCosmeticItem(Ptr<HeadArmor> headCosmeticItem);
+  void setChestCosmeticItem(Ptr<ChestArmor> chestCosmeticItem);
+  void setLegsCosmeticItem(Ptr<LegsArmor> legsCosmeticItem);
+  void setBackCosmeticItem(Ptr<BackArmor> backCosmeticItem);
 
-  ArmorItemPtr item(uint8_t slot) const;
-  HeadArmorPtr headItem() const;
-  ChestArmorPtr chestItem() const;
-  LegsArmorPtr legsItem() const;
-  BackArmorPtr backItem() const;
-  HeadArmorPtr headCosmeticItem() const;
-  ChestArmorPtr chestCosmeticItem() const;
-  LegsArmorPtr legsCosmeticItem() const;
-  BackArmorPtr backCosmeticItem() const;
+  auto item(std::uint8_t slot) const -> Ptr<ArmorItem>;
+  auto headItem() const -> Ptr<HeadArmor>;
+  auto chestItem() const -> Ptr<ChestArmor>;
+  auto legsItem() const -> Ptr<LegsArmor>;
+  auto backItem() const -> Ptr<BackArmor>;
+  auto headCosmeticItem() const -> Ptr<HeadArmor>;
+  auto chestCosmeticItem() const -> Ptr<ChestArmor>;
+  auto legsCosmeticItem() const -> Ptr<LegsArmor>;
+  auto backCosmeticItem() const -> Ptr<BackArmor>;
 
-  ItemDescriptor itemDescriptor(uint8_t slot) const;
-  ItemDescriptor headItemDescriptor() const;
-  ItemDescriptor chestItemDescriptor() const;
-  ItemDescriptor legsItemDescriptor() const;
-  ItemDescriptor backItemDescriptor() const;
-  ItemDescriptor headCosmeticItemDescriptor() const;
-  ItemDescriptor chestCosmeticItemDescriptor() const;
-  ItemDescriptor legsCosmeticItemDescriptor() const;
-  ItemDescriptor backCosmeticItemDescriptor() const;
+  auto itemDescriptor(std::uint8_t slot) const -> ItemDescriptor;
+  auto headItemDescriptor() const -> ItemDescriptor;
+  auto chestItemDescriptor() const -> ItemDescriptor;
+  auto legsItemDescriptor() const -> ItemDescriptor;
+  auto backItemDescriptor() const -> ItemDescriptor;
+  auto headCosmeticItemDescriptor() const -> ItemDescriptor;
+  auto chestCosmeticItemDescriptor() const -> ItemDescriptor;
+  auto legsCosmeticItemDescriptor() const -> ItemDescriptor;
+  auto backCosmeticItemDescriptor() const -> ItemDescriptor;
 
   // slot is automatically offset
-  bool setCosmeticItem(uint8_t slot, ArmorItemPtr cosmeticItem);
-  ArmorItemPtr cosmeticItem(uint8_t slot) const;
-  ItemDescriptor cosmeticItemDescriptor(uint8_t slot) const;
+  auto setCosmeticItem(std::uint8_t slot, Ptr<ArmorItem> cosmeticItem) -> bool;
+  auto cosmeticItem(std::uint8_t slot) const -> Ptr<ArmorItem>;
+  auto cosmeticItemDescriptor(std::uint8_t slot) const -> ItemDescriptor;
+
 private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
   struct Armor {
-    ArmorItemPtr item;
+    Ptr<ArmorItem> item;
     bool visible = true;
     bool needsSync = true;
     bool needsStore = true;
@@ -85,7 +80,7 @@ private:
   };
 
   Array<Armor, 20> m_armors;
-  Array<uint8_t, 4> m_wornCosmeticTypes;
+  Array<std::uint8_t, 4> m_wornCosmeticTypes;
   // only works under the assumption that this ArmorWearer
   // will only ever touch one Humanoid (which is true!)
   std::optional<Gender> m_lastGender;
@@ -93,4 +88,4 @@ private:
   bool m_lastNude;
 };
 
-}
+}// namespace Star

@@ -9,6 +9,7 @@
 #include "StarFile.hpp"
 #include "StarFont.hpp"
 #include "StarImage.hpp"
+#include "StarImageLuaBindings.hpp" // IWYU pragma: export
 #include "StarImageProcessing.hpp"
 #include "StarIterator.hpp"
 #include "StarJsonBuilder.hpp"

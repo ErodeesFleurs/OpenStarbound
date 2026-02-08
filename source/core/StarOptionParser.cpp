@@ -82,8 +82,8 @@ auto OptionParser::parseOptions(StringList const& arguments) const -> std::pair<
     }
   }
 
-  size_t minimumArguments = 0;
-  size_t maximumArguments = 0;
+  std::size_t minimumArguments = 0;
+  std::size_t maximumArguments = 0;
   for (auto const& argument : m_arguments) {
     if ((argument.requirementMode == Optional || argument.requirementMode == Required) && maximumArguments != std::numeric_limits<std::size_t>::max())
       ++maximumArguments;

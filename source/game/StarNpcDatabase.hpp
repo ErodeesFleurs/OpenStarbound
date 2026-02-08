@@ -1,21 +1,21 @@
 #pragma once
 
-#include "StarHumanoid.hpp"
+#include "StarConfig.hpp"
 #include "StarDamageTypes.hpp"
-#include "StarStatusTypes.hpp"
 #include "StarEntitySplash.hpp"
+#include "StarException.hpp"
+#include "StarHumanoid.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarStatusTypes.hpp"
 
-#include <optional>
+import std;
 
 namespace Star {
 
-STAR_CLASS(Rebuilder);
-STAR_CLASS(Item);
-STAR_CLASS(Npc);
-STAR_CLASS(NpcDatabase);
+class Npc;
+class Rebuilder;
 
-STAR_EXCEPTION(NpcException, StarException);
+using NpcException = ExceptionDerived<"NpcException">;
 
 struct NpcVariant {
   String species;
@@ -61,31 +61,31 @@ class NpcDatabase {
 public:
   NpcDatabase();
 
-  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level) const;
-  NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const;
+  [[nodiscard]] auto generateNpcVariant(String const& species, String const& typeName, float level) const -> NpcVariant;
+  [[nodiscard]] auto generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const -> NpcVariant;
 
-  ByteArray writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const;
-  NpcVariant readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] auto writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const -> ByteArray;
+  [[nodiscard]] auto readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const -> NpcVariant;
 
-  Json writeNpcVariantToJson(NpcVariant const& variant) const;
-  NpcVariant readNpcVariantFromJson(Json const& data) const;
+  [[nodiscard]] auto writeNpcVariantToJson(NpcVariant const& variant) const -> Json;
+  [[nodiscard]] auto readNpcVariantFromJson(Json const& data) const -> NpcVariant;
 
-  NpcPtr createNpc(NpcVariant const& npcVariant) const;
-  NpcPtr diskLoadNpc(Json const& diskStore) const;
-  NpcPtr netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] auto createNpc(NpcVariant const& npcVariant) const -> Ptr<Npc>;
+  [[nodiscard]] auto diskLoadNpc(Json const& diskStore) const -> Ptr<Npc>;
+  [[nodiscard]] auto netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules = {}) const -> Ptr<Npc>;
 
-  List<Drawable> npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const;
+  [[nodiscard]] auto npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const -> List<Drawable>;
 
-  Json buildConfig(String const& typeName, Json const& overrides = Json()) const;
+  [[nodiscard]] auto buildConfig(String const& typeName, Json const& overrides = Json()) const -> Json;
 
 private:
   // Recursively merges maps and lets any non-null merger (including lists)
   // override any base value
-  Json mergeConfigValues(Json const& base, Json const& merger) const;
+  [[nodiscard]] auto mergeConfigValues(Json const& base, Json const& merger) const -> Json;
 
-  RebuilderPtr m_rebuilder;
+  Ptr<Rebuilder> m_rebuilder;
 
   StringMap<Json> m_npcTypes;
 };
 
-}
+}// namespace Star

@@ -1,31 +1,32 @@
 #include "StarFireableItem.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarWorldLuaBindings.hpp"
+#include "StarCasting.hpp"
 #include "StarConfigLuaBindings.hpp"
-#include "StarItemLuaBindings.hpp"
 #include "StarFireableItemLuaBindings.hpp"
 #include "StarItem.hpp"
-#include "StarWorld.hpp"
+#include "StarItemLuaBindings.hpp"
+#include "StarJsonExtra.hpp"
+
+import std;
 
 namespace Star {
 
 FireableItem::FireableItem()
-  : m_fireTimer(0),
-    m_cooldownTime(10),
-    m_windupTime(0),
-    m_fireWhenReady(false),
-    m_startWhenReady(false),
-    m_cooldown(false),
-    m_alreadyInit(false),
-    m_requireEdgeTrigger(false),
-    m_attemptedFire(false),
-    m_fireOnRelease(false),
-    m_timeFiring(0.0f),
-    m_startTimingFire(false),
-    m_inUse(false),
-    m_walkWhileFiring(false),
-    m_stopWhileFiring(false),
-    m_mode(FireMode::None) {}
+    : m_fireTimer(0),
+      m_cooldownTime(10),
+      m_windupTime(0),
+      m_fireWhenReady(false),
+      m_startWhenReady(false),
+      m_cooldown(false),
+      m_alreadyInit(false),
+      m_requireEdgeTrigger(false),
+      m_attemptedFire(false),
+      m_fireOnRelease(false),
+      m_timeFiring(0.0f),
+      m_startTimingFire(false),
+      m_inUse(false),
+      m_walkWhileFiring(false),
+      m_stopWhileFiring(false),
+      m_mode(FireMode::None) {}
 
 FireableItem::FireableItem(Json const& params) : FireableItem() {
   setParams(params);
@@ -59,14 +60,14 @@ void FireableItem::init(ToolUserEntity* owner, ToolHand hand) {
   m_fireWhenReady = false;
   m_startWhenReady = false;
 
-  auto scripts = m_fireableParams.opt("scripts").apply(jsonToStringList);
+  auto scripts = m_fireableParams.opt("scripts").transform(jsonToStringList);
   if (entityMode() == EntityMode::Master && scripts) {
     if (!m_scriptComponent) {
       m_scriptComponent.emplace();
       m_scriptComponent->setScripts(*scripts);
     }
     m_scriptComponent->addCallbacks(
-        "config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, as<Item>(this), _1, _2)));
+      "config", LuaBindings::makeConfigCallbacks([capture0 = as<Item>(this)](auto&& PH1, auto&& PH2) -> auto { return capture0->instanceValue(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }));
     m_scriptComponent->addCallbacks("fireableItem", LuaBindings::makeFireableItemCallbacks(this));
     m_scriptComponent->addCallbacks("item", LuaBindings::makeItemCallbacks(as<Item>(this)));
     m_scriptComponent->init(world());
@@ -115,11 +116,11 @@ void FireableItem::endFire(FireMode mode, bool) {
   }
 }
 
-FireMode FireableItem::fireMode() const {
+auto FireableItem::fireMode() const -> FireMode {
   return m_mode;
 }
 
-float FireableItem::cooldownTime() const {
+auto FireableItem::cooldownTime() const -> float {
   return m_cooldownTime;
 }
 
@@ -127,7 +128,7 @@ void FireableItem::setCooldownTime(float cooldownTime) {
   m_cooldownTime = cooldownTime;
 }
 
-float FireableItem::fireTimer() const {
+auto FireableItem::fireTimer() const -> float {
   return m_fireTimer;
 }
 
@@ -135,27 +136,27 @@ void FireableItem::setFireTimer(float fireTimer) {
   m_fireTimer = fireTimer;
 }
 
-bool FireableItem::ready() const {
+auto FireableItem::ready() const -> bool {
   return fireTimer() <= 0;
 }
 
-bool FireableItem::firing() const {
+auto FireableItem::firing() const -> bool {
   return m_timeFiring > 0;
 }
 
-bool FireableItem::inUse() const {
+auto FireableItem::inUse() const -> bool {
   return m_inUse;
 }
 
-bool FireableItem::walkWhileFiring() const {
+auto FireableItem::walkWhileFiring() const -> bool {
   return m_walkWhileFiring;
 }
 
-bool FireableItem::stopWhileFiring() const {
+auto FireableItem::stopWhileFiring() const -> bool {
   return m_stopWhileFiring;
 }
 
-bool FireableItem::windup() const {
+auto FireableItem::windup() const -> bool {
   if (ready())
     return false;
 
@@ -212,7 +213,7 @@ void FireableItem::triggerCooldown() {
     m_scriptComponent->invoke("triggerCooldown");
 }
 
-bool FireableItem::coolingDown() const {
+auto FireableItem::coolingDown() const -> bool {
   return m_cooldown;
 }
 
@@ -220,7 +221,7 @@ void FireableItem::setCoolingDown(bool coolingdown) {
   m_cooldown = coolingdown;
 }
 
-float FireableItem::timeFiring() const {
+auto FireableItem::timeFiring() const -> float {
   return m_timeFiring;
 }
 
@@ -228,23 +229,23 @@ void FireableItem::setTimeFiring(float timeFiring) {
   m_timeFiring = timeFiring;
 }
 
-Vec2F FireableItem::handPosition() const {
+auto FireableItem::handPosition() const -> Vec2F {
   return m_handPosition;
 }
 
-Vec2F FireableItem::firePosition() const {
-  return Vec2F();
+auto FireableItem::firePosition() const -> Vec2F {
+  return {};
 }
 
-Json FireableItem::fireableParam(String const& key) const {
+auto FireableItem::fireableParam(String const& key) const -> Json {
   return m_fireableParams.get(key);
 }
 
-Json FireableItem::fireableParam(String const& key, Json const& defaultVal) const {
+auto FireableItem::fireableParam(String const& key, Json const& defaultVal) const -> Json {
   return m_fireableParams.get(key, defaultVal);
 }
 
-bool FireableItem::validAimPos(Vec2F const&) {
+auto FireableItem::validAimPos(Vec2F const&) -> bool {
   return true;
 }
 
@@ -278,14 +279,14 @@ void FireableItem::fireTriggered() {
     m_scriptComponent->invoke("fireTriggered");
 }
 
-Vec2F FireableItem::ownerFirePosition() const {
+auto FireableItem::ownerFirePosition() const -> Vec2F {
   if (!initialized())
     throw StarException("FireableItem uninitialized in ownerFirePosition");
 
   return owner()->handPosition(hand(), (this->firePosition() - handPosition()) / TilePixels);
 }
 
-float FireableItem::windupTime() const {
+auto FireableItem::windupTime() const -> float {
   return m_windupTime;
 }
 
@@ -293,8 +294,8 @@ void FireableItem::setWindupTime(float time) {
   m_windupTime = time;
 }
 
-List<PersistentStatusEffect> FireableItem::statusEffects() const {
+auto FireableItem::statusEffects() const -> List<PersistentStatusEffect> {
   return {};
 }
 
-}
+}// namespace Star

@@ -1,22 +1,26 @@
 #pragma once
 
-#include "StarRect.hpp"
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
-#include "StarMultiArray.hpp"
-#include "StarGameTypes.hpp"
-#include "StarTileDamage.hpp"
+#include "StarConfig.hpp"
 #include "StarDirectives.hpp"
-#include <optional>
+#include "StarException.hpp"
+#include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+#include "StarMaterialTypes.hpp"
+#include "StarRect.hpp"
+#include "StarTileDamage.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(MaterialRenderProfileException, StarException);
+using MaterialRenderProfileException = ExceptionDerived<"MaterialRenderProfileException">;
 
-enum class MaterialJoinType : uint8_t { All, Any };
+struct MaterialRenderMatch;
+
+enum class MaterialJoinType : std::uint8_t { All,
+                                             Any };
 extern EnumMap<MaterialJoinType> const MaterialJoinTypeNames;
-
-STAR_STRUCT(MaterialRule);
 
 struct MaterialRule {
   struct RuleEmpty {};
@@ -27,7 +31,7 @@ struct MaterialRule {
   };
 
   struct RuleEqualsId {
-    uint16_t id;
+    std::uint16_t id;
   };
 
   struct RulePropertyEquals {
@@ -43,32 +47,29 @@ struct MaterialRule {
   MaterialJoinType join;
   List<RuleEntry> entries;
 };
-typedef StringMap<MaterialRuleConstPtr> RuleMap;
+using RuleMap = StringMap<ConstPtr<MaterialRule>>;
 
 struct MaterialMatchPoint {
   Vec2I position;
-  MaterialRuleConstPtr rule;
+  ConstPtr<MaterialRule> rule;
 };
 
-STAR_STRUCT(MaterialRenderPiece);
-
 struct MaterialRenderPiece {
-  size_t pieceId;
+  std::size_t pieceId;
   String texture;
   // Maps each MaterialColorVariant to a list of texture coordinates for each
   // random variant
   HashMap<MaterialColorVariant, List<RectF>> variants;
 };
 
-STAR_STRUCT(MaterialRenderMatch);
-typedef List<MaterialRenderMatchConstPtr> MaterialRenderMatchList;
+using MaterialRenderMatchList = List<ConstPtr<MaterialRenderMatch>>;
 
 struct MaterialRenderMatch {
   List<MaterialMatchPoint> matchPoints;
   MaterialJoinType matchJoin;
 
   // Positions here are in TilePixels
-  List<pair<MaterialRenderPieceConstPtr, Vec2F>> resultingPieces;
+  List<std::pair<ConstPtr<MaterialRenderPiece>, Vec2F>> resultingPieces;
   MaterialRenderMatchList subMatches;
   std::optional<TileLayer> requiredLayer;
   std::optional<bool> occlude;
@@ -76,8 +77,8 @@ struct MaterialRenderMatch {
   bool haltOnSubMatch;
 };
 
-typedef StringMap<MaterialRenderPieceConstPtr> PieceMap;
-typedef StringMap<MaterialRenderMatchList> MatchMap;
+using PieceMap = StringMap<ConstPtr<MaterialRenderPiece>>;
+using MatchMap = StringMap<MaterialRenderMatchList>;
 
 // This is the maximum distance in either X or Y that material neighbor rules
 // are limited to.  This can be used as a maximum limit on the "sphere of
@@ -85,8 +86,6 @@ typedef StringMap<MaterialRenderMatchList> MatchMap;
 // here means "1 away", so would be interpreted as a 3x3 block with the
 // rendered tile in the center.
 int const MaterialRenderProfileMaxNeighborDistance = 2;
-
-STAR_STRUCT(MaterialRenderProfile);
 
 struct MaterialRenderProfile {
   RuleMap rules;
@@ -96,30 +95,30 @@ struct MaterialRenderProfile {
   String representativePiece;
 
   MaterialRenderMatchList mainMatchList;
-  List<pair<String, Vec2F>> crackingFrames;
-  List<pair<String, Vec2F>> protectedFrames;
+  List<std::pair<String, Vec2F>> crackingFrames;
+  List<std::pair<String, Vec2F>> protectedFrames;
   List<Directives> colorDirectives;
   Json ruleProperties;
 
   bool foregroundLightTransparent;
   bool backgroundLightTransparent;
-  uint8_t colorVariants;
+  std::uint8_t colorVariants;
   bool occludesBehind;
-  uint32_t zLevel;
+  std::uint32_t zLevel;
   Vec3F radiantLight;
 
   // Get a single asset path for just a single piece of a material, with the
   // image cropped to the piece itself.
-  String pieceImage(String const& pieceName,
-      unsigned variant,
-      MaterialColorVariant colorVariant = DefaultMaterialColorVariant,
-      MaterialHue hueShift = MaterialHue()) const;
+  [[nodiscard]] auto pieceImage(String const& pieceName,
+                                unsigned variant,
+                                MaterialColorVariant colorVariant = DefaultMaterialColorVariant,
+                                MaterialHue hueShift = MaterialHue()) const -> String;
 
   // Get an overlay image for rendering damaged tiles, as well as the offset
   // for it in world coordinates.
-  pair<String, Vec2F> const& damageImage(float damageLevel, TileDamageType damageType) const;
+  [[nodiscard]] auto damageImage(float damageLevel, TileDamageType damageType) const -> std::pair<String, Vec2F> const&;
 };
 
-MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const& relativePath = "");
+auto parseMaterialRenderProfile(Json const& spec, String const& relativePath = "") -> MaterialRenderProfile;
 
-}
+}// namespace Star

@@ -1252,7 +1252,7 @@ struct FunctionWrapper {
   template <typename Function, size_t... Indexes>
   static auto wrapIndexes(Function func, IndexSequence<Indexes...> const&) -> LuaWrappedFunction {
     return [func = std::move(func)](LuaEngine& engine, size_t argc, LuaValue* argv) -> auto {
-      return toWrappedReturn(engine, (Return const&)func(ArgGet<Args>::get(engine, argc, argv, Indexes)...));
+      return toWrappedReturn(engine, func(ArgGet<Args>::get(engine, argc, argv, Indexes)...));
     };
   }
 

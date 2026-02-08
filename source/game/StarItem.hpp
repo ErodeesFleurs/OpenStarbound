@@ -38,18 +38,18 @@ public:
   // Sets the new item count, up to a max of the maximum stack size.  If this
   // value is over stack size, returns the overflow.  If 'overfill' is set to
   // true, then will fill past max stack level.
-  auto setCount(uint64_t count, bool overfill = false) -> std::uint64_t;
+  auto setCount(std::uint64_t count, bool overfill = false) -> std::uint64_t;
 
   // Is this item type stackable with the given item type at all?  Base class
   // implementation compares name(), and m_parameters fields and returns true
   // if they are both the same, similarly to matches.
   [[nodiscard]] virtual auto stackableWith(ConstPtr<Item> const& item) const -> bool;
-  [[nodiscard]] auto maxStack() const -> uint64_t;
+  [[nodiscard]] auto maxStack() const -> std::uint64_t;
 
   // Return how many of the given item could be shifted into this item, taking
   // into acount whether the item is stackable at all, as well as maxStack and
   // the count available.
-  [[nodiscard]] auto couldStack(ConstPtr<Item> const& item) const -> uint64_t;
+  [[nodiscard]] auto couldStack(ConstPtr<Item> const& item) const -> std::uint64_t;
 
   // If the given item is stackable with this one, takes as many from the given
   // item as possible and shifts it into this item's count.  Returns true if
@@ -67,11 +67,11 @@ public:
 
   // If the given number of this item is available, consumes that number and
   // returns true, otherwise returns false.
-  auto consume(uint64_t count) -> bool;
+  auto consume(std::uint64_t count) -> bool;
 
   // Take as many of this item as possible up to the given max (default is all)
   // and return the new set.  Implementation uses clone() method.
-  auto take(uint64_t max = std::numeric_limits<std::size_t>::max()) -> Ptr<Item>;
+  auto take(std::uint64_t max = std::numeric_limits<std::size_t>::max()) -> Ptr<Item>;
 
   // count() is 0
   [[nodiscard]] auto empty() const -> bool;
@@ -83,7 +83,7 @@ public:
   [[nodiscard]] auto friendlyName() const -> String;
 
   [[nodiscard]] auto rarity() const -> Rarity;
-  [[nodiscard]] auto price() const -> uint64_t;
+  [[nodiscard]] auto price() const -> std::uint64_t;
 
   [[nodiscard]] virtual auto iconDrawables() const -> List<Drawable>;
   [[nodiscard]] virtual auto secondaryDrawables() const -> std::optional<List<Drawable>>;
@@ -124,12 +124,12 @@ public:
   static auto itemsEqual(ConstPtr<Item> const& a, ConstPtr<Item> const& b) -> bool;
 
 protected:
-  void setMaxStack(uint64_t maxStack);
+  void setMaxStack(std::uint64_t maxStack);
   void setDescription(String const& description);
   void setShortDescription(String const& description);
 
   void setRarity(Rarity rarity);
-  void setPrice(uint64_t price);
+  void setPrice(std::uint64_t price);
   // icon drawables are pixels, not tile, based
   void setIconDrawables(List<Drawable> drawables);
   void setSecondaryIconDrawables(std::optional<List<Drawable>> drawables);
@@ -145,10 +145,10 @@ private:
   String m_directory;
 
   String m_name;
-  uint64_t m_count;
+  std::uint64_t m_count;
   Json m_parameters;
 
-  uint64_t m_maxStack;
+  std::uint64_t m_maxStack;
   String m_shortDescription;
   String m_description;
   Rarity m_rarity;
@@ -156,7 +156,7 @@ private:
   std::optional<List<Drawable>> m_secondaryIconDrawables;
   bool m_twoHanded;
   float m_timeToLive;
-  uint64_t m_price;
+  std::uint64_t m_price;
   String m_tooltipKind;
   String m_largeImage;
   String m_category;
@@ -173,7 +173,7 @@ public:
   [[nodiscard]] auto clone() const -> Ptr<Item> override;
 };
 
-inline auto itemSafeCount(Ptr<Item> const& item) -> uint64_t {
+inline auto itemSafeCount(Ptr<Item> const& item) -> std::uint64_t {
   return item ? item->count() : 0;
 }
 

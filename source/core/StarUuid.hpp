@@ -10,7 +10,7 @@ namespace Star {
 
 using UuidException = ExceptionDerived<"UuidException">;
 
-size_t const UuidSize = 16;
+std::size_t const UuidSize = 16;
 
 class Uuid {
 public:
@@ -35,7 +35,7 @@ private:
 
 template <>
 struct hash<Uuid> {
-  auto operator()(Uuid const& u) const -> size_t;
+  auto operator()(Uuid const& u) const -> std::size_t;
 };
 
 auto operator>>(DataStream& ds, Uuid& uuid) -> DataStream&;

@@ -30,7 +30,7 @@ extern EnumMap<ClientEntityMode> const ClientEntityModeNames;
 
 // The top-level entity type.  The enum order is intended to be in the order in
 // which entities should be updated every tick
-enum class EntityType : uint8_t {
+enum class EntityType : std::uint8_t {
   Plant,
   Object,
   Vehicle,
@@ -63,7 +63,7 @@ public:
   // uninitalized.  Should return the delta to be written to the slave, along
   // with the version to pass into writeDeltaState on the next call.  The first
   // delta written to a slave entity will always be the delta starting with 0.
-  virtual auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t>;
+  virtual auto writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t>;
   // Will be called with deltas written by writeDeltaState, including if the
   // delta is empty.  interpolationTime will be provided if interpolation is
   // enabled.
@@ -149,7 +149,7 @@ public:
   // This will only ever be called on master entities.
   virtual auto receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) -> std::optional<Json>;
 
-  virtual void update(float dt, uint64_t currentStep);
+  virtual void update(float dt, std::uint64_t currentStep);
 
   virtual void render(RenderCallback* renderer);
 

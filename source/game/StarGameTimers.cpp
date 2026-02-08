@@ -1,6 +1,9 @@
 #include "StarGameTimers.hpp"
-#include "StarJsonExtra.hpp"
+
 #include "StarDataStreamExtra.hpp"
+#include "StarJsonExtra.hpp"
+
+import std;
 
 namespace Star {
 
@@ -10,16 +13,16 @@ GameTimer::GameTimer(float time) : time(time) {
   reset();
 }
 
-bool GameTimer::tick(float dt) {
+auto GameTimer::tick(float dt) -> bool {
   timer = approach(0.0f, timer, dt);
   return timer == 0.0f;
 }
 
-bool GameTimer::ready() const {
+auto GameTimer::ready() const -> bool {
   return timer == 0.0f;
 }
 
-bool GameTimer::wrapTick(float dt) {
+auto GameTimer::wrapTick(float dt) -> bool {
   auto res = tick(dt);
   if (res)
     reset();
@@ -38,20 +41,20 @@ void GameTimer::invert() {
   timer = time - timer;
 }
 
-float GameTimer::percent() const {
+auto GameTimer::percent() const -> float {
   if (time)
     return timer / time;
   else
     return 0.0f;
 }
 
-DataStream& operator>>(DataStream& ds, GameTimer& gt) {
+auto operator>>(DataStream& ds, GameTimer& gt) -> DataStream& {
   ds >> gt.time;
   ds >> gt.timer;
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, GameTimer const& gt) {
+auto operator<<(DataStream& ds, GameTimer const& gt) -> DataStream& {
   ds << gt.time;
   ds << gt.timer;
   return ds;
@@ -59,8 +62,8 @@ DataStream& operator<<(DataStream& ds, GameTimer const& gt) {
 
 SlidingWindow::SlidingWindow() : windowSize(1.0f), resolution(1) {}
 
-SlidingWindow::SlidingWindow(float windowSize, size_t resolution, float initialValue)
-  : windowSize(windowSize), resolution(resolution) {
+SlidingWindow::SlidingWindow(float windowSize, std::size_t resolution, float initialValue)
+    : windowSize(windowSize), resolution(resolution) {
   sampleTimer = GameTimer(windowSize / resolution);
   window = std::vector<float>(resolution);
   reset(initialValue);
@@ -72,10 +75,10 @@ void SlidingWindow::reset(float initialValue) {
   currentMin = initialValue;
   currentMax = initialValue;
   currentAverage = initialValue;
-  std::fill(window.begin(), window.end(), initialValue);
+  std::ranges::fill(window, initialValue);
 }
 
-void SlidingWindow::update(function<float()> sampleFunction) {
+void SlidingWindow::update(std::function<float()> sampleFunction) {
   if (sampleTimer.wrapTick()) {
     processUpdate(sampleFunction());
   }
@@ -103,15 +106,15 @@ void SlidingWindow::processUpdate(float newValue) {
   currentAverage = total / resolution;
 }
 
-float SlidingWindow::min() {
+auto SlidingWindow::min() -> float {
   return currentMin;
 }
 
-float SlidingWindow::max() {
+auto SlidingWindow::max() -> float {
   return currentMax;
 }
 
-float SlidingWindow::average() {
+auto SlidingWindow::average() -> float {
   return currentAverage;
 }
 
@@ -122,7 +125,7 @@ EpochTimer::EpochTimer(Json json) {
   m_elapsedTime = json.getDouble("elapsedTime");
 }
 
-Json EpochTimer::toJson() const {
+auto EpochTimer::toJson() const -> Json {
   return JsonObject{{"lastEpochTime", jsonFromMaybe(m_lastSeenEpochTime)}, {"elapsedTime", m_elapsedTime}};
 }
 
@@ -139,7 +142,7 @@ void EpochTimer::update(double newEpochTime) {
   }
 }
 
-double EpochTimer::elapsedTime() const {
+auto EpochTimer::elapsedTime() const -> double {
   return m_elapsedTime;
 }
 
@@ -147,16 +150,16 @@ void EpochTimer::setElapsedTime(double elapsedTime) {
   m_elapsedTime = elapsedTime;
 }
 
-DataStream& operator>>(DataStream& ds, EpochTimer& et) {
+auto operator>>(DataStream& ds, EpochTimer& et) -> DataStream& {
   ds >> et.m_lastSeenEpochTime;
   ds >> et.m_elapsedTime;
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, EpochTimer const& et) {
+auto operator<<(DataStream& ds, EpochTimer const& et) -> DataStream& {
   ds << et.m_lastSeenEpochTime;
   ds << et.m_elapsedTime;
   return ds;
 }
 
-}
+}// namespace Star

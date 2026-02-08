@@ -1,20 +1,20 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_STRUCT(AmbientTrackGroup);
-STAR_STRUCT(AmbientNoisesDescription);
-STAR_CLASS(AmbientManager);
+class AudioInstance;
 
 struct AmbientTrackGroup {
   AmbientTrackGroup();
   AmbientTrackGroup(StringList tracks);
   AmbientTrackGroup(Json const& config, String const& directory = "");
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   StringList tracks;
 };
@@ -25,15 +25,14 @@ struct AmbientNoisesDescription {
   AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night, int loops = -1);
   AmbientNoisesDescription(Json const& config, String const& directory = "");
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   AmbientTrackGroup daySounds;
   AmbientTrackGroup nightSounds;
   int trackLoops = -1;
 };
 
-typedef AmbientTrackGroup WeatherNoisesDescription;
-typedef shared_ptr<WeatherNoisesDescription> WeatherNoisesDescriptionPtr;
+using WeatherNoisesDescription = AmbientTrackGroup;
 
 // manages the running ambient sounds
 class AmbientManager {
@@ -45,15 +44,15 @@ public:
   void setTrackFadeInTime(float fadeInTime);
 
   // Returns a new AudioInstance if a new ambient sound is to be started.
-  AudioInstancePtr updateAmbient(AmbientNoisesDescriptionPtr current, bool dayTime = false);
-  AudioInstancePtr updateWeather(WeatherNoisesDescriptionPtr current);
+  auto updateAmbient(Ptr<AmbientNoisesDescription> current, bool dayTime = false) -> Ptr<AudioInstance>;
+  auto updateWeather(Ptr<WeatherNoisesDescription> current) -> Ptr<AudioInstance>;
   void cancelAll();
 
   void setVolume(float volume, float delay, float duration);
 
 private:
-  AudioInstancePtr m_currentTrack;
-  AudioInstancePtr m_weatherTrack;
+  Ptr<AudioInstance> m_currentTrack;
+  Ptr<AudioInstance> m_weatherTrack;
   String m_currentTrackName;
   String m_weatherTrackName;
   float m_trackFadeInTime = 0.0f;
@@ -66,4 +65,4 @@ private:
   bool m_volumeChanged = false;
 };
 
-}
+}// namespace Star

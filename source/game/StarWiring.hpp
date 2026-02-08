@@ -4,6 +4,8 @@
 #include "StarGameTypes.hpp"
 #include "StarWorldGeometry.hpp"
 
+import std;
+
 namespace Star {
 
 enum class WireDirection {
@@ -17,7 +19,7 @@ auto otherWireDirection(WireDirection direction) -> WireDirection;
 // and output nodes are separate.
 struct WireNode {
   WireDirection direction;
-  size_t nodeIndex;
+  std::size_t nodeIndex;
 };
 
 auto operator>>(DataStream& ds, WireNode& wireNode) -> DataStream&;
@@ -27,14 +29,14 @@ auto operator<<(DataStream& ds, WireNode const& wireNode) -> DataStream&;
 // implied based on the context.
 struct WireConnection {
   Vec2I entityLocation;
-  size_t nodeIndex;
+  std::size_t nodeIndex;
 
   auto operator==(WireConnection const& wireConnection) const -> bool;
 };
 
 template <>
 struct hash<WireConnection> {
-  auto operator()(WireConnection const& wireConnection) const -> size_t;
+  auto operator()(WireConnection const& wireConnection) const -> std::size_t;
 };
 
 auto operator>>(DataStream& ds, WireConnection& wireConnection) -> DataStream&;

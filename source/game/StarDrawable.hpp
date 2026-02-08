@@ -1,12 +1,12 @@
 #pragma once
 
-#include <optional>
-
-#include "StarDataStream.hpp"
-#include "StarPoly.hpp"
-#include "StarColor.hpp"
-#include "StarJson.hpp"
 #include "StarAssetPath.hpp"
+#include "StarColor.hpp"
+#include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarPoly.hpp"
+
+import std;
 
 namespace Star {
 
@@ -30,18 +30,18 @@ struct Drawable {
     // Add directives to this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    ImagePart& addDirectives(Directives const& directives, bool keepImageCenterPosition = false);
-    ImagePart& addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false);
+    auto addDirectives(Directives const& directives, bool keepImageCenterPosition = false) -> ImagePart&;
+    auto addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition = false) -> ImagePart&;
 
     // Remove directives from this ImagePart, while optionally keeping the
     // transformed center of the image the same if the directives change the
     // image size.
-    ImagePart& removeDirectives(bool keepImageCenterPosition = false);
+    auto removeDirectives(bool keepImageCenterPosition = false) -> ImagePart&;
   };
 
-  static Drawable makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position = Vec2F());
-  static Drawable makePoly(PolyF poly, Color const& color, Vec2F const& position = Vec2F());
-  static Drawable makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White);
+  static auto makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position = Vec2F()) -> Drawable;
+  static auto makePoly(PolyF poly, Color const& color, Vec2F const& position = Vec2F()) -> Drawable;
+  static auto makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color = Color::White) -> Drawable;
 
   template <typename DrawablesContainer>
   static void translateAll(DrawablesContainer& drawables, Vec2F const& translation);
@@ -62,12 +62,12 @@ struct Drawable {
   static void rebaseAll(DrawablesContainer& drawables, Vec2F const& newBase = Vec2F());
 
   template <typename DrawablesContainer>
-  static RectF boundBoxAll(DrawablesContainer const& drawables, bool cropImages);
+  static auto boundBoxAll(DrawablesContainer const& drawables, bool cropImages) -> RectF;
 
   Drawable();
   explicit Drawable(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   void translate(Vec2F const& translation);
   void rotate(float rotation, Vec2F const& rotationCenter = Vec2F());
@@ -81,19 +81,19 @@ struct Drawable {
   // between them.
   void rebase(Vec2F const& newBase = Vec2F());
 
-  RectF boundBox(bool cropImages) const;
+  [[nodiscard]] auto boundBox(bool cropImages) const -> RectF;
 
-  bool isLine() const;
-  LinePart& linePart();
-  LinePart const& linePart() const;
+  [[nodiscard]] auto isLine() const -> bool;
+  auto linePart() -> LinePart&;
+  [[nodiscard]] auto linePart() const -> LinePart const&;
 
-  bool isPoly() const;
-  PolyPart& polyPart();
-  PolyPart const& polyPart() const;
+  [[nodiscard]] auto isPoly() const -> bool;
+  auto polyPart() -> PolyPart&;
+  [[nodiscard]] auto polyPart() const -> PolyPart const&;
 
-  bool isImage() const;
-  ImagePart& imagePart();
-  ImagePart const& imagePart() const;
+  [[nodiscard]] auto isImage() const -> bool;
+  auto imagePart() -> ImagePart&;
+  [[nodiscard]] auto imagePart() const -> ImagePart const&;
 
   MVariant<LinePart, PolyPart, ImagePart> part;
 
@@ -102,8 +102,8 @@ struct Drawable {
   bool fullbright;
 };
 
-DataStream& operator>>(DataStream& ds, Drawable& drawable);
-DataStream& operator<<(DataStream& ds, Drawable const& drawable);
+auto operator>>(DataStream& ds, Drawable& drawable) -> DataStream&;
+auto operator<<(DataStream& ds, Drawable const& drawable) -> DataStream&;
 
 template <typename DrawablesContainer>
 void Drawable::translateAll(DrawablesContainer& drawables, Vec2F const& translation) {
@@ -142,47 +142,47 @@ void Drawable::rebaseAll(DrawablesContainer& drawables, Vec2F const& newBase) {
 }
 
 template <typename DrawablesContainer>
-RectF Drawable::boundBoxAll(DrawablesContainer const& drawables, bool cropImages) {
+auto Drawable::boundBoxAll(DrawablesContainer const& drawables, bool cropImages) -> RectF {
   RectF boundBox = RectF::null();
   for (auto const& drawable : drawables)
     boundBox.combine(drawable.boundBox(cropImages));
   return boundBox;
 }
 
-inline bool Drawable::isLine() const {
+inline auto Drawable::isLine() const -> bool {
   return part.is<LinePart>();
 }
 
-inline Drawable::LinePart& Drawable::linePart() {
+inline auto Drawable::linePart() -> Drawable::LinePart& {
   return part.get<LinePart>();
 }
 
-inline Drawable::LinePart const& Drawable::linePart() const {
+inline auto Drawable::linePart() const -> Drawable::LinePart const& {
   return part.get<LinePart>();
 }
 
-inline bool Drawable::isPoly() const {
+inline auto Drawable::isPoly() const -> bool {
   return part.is<PolyPart>();
 }
 
-inline Drawable::PolyPart& Drawable::polyPart() {
+inline auto Drawable::polyPart() -> Drawable::PolyPart& {
   return part.get<PolyPart>();
 }
 
-inline Drawable::PolyPart const& Drawable::polyPart() const {
+inline auto Drawable::polyPart() const -> Drawable::PolyPart const& {
   return part.get<PolyPart>();
 }
 
-inline bool Drawable::isImage() const {
+inline auto Drawable::isImage() const -> bool {
   return part.is<ImagePart>();
 }
 
-inline Drawable::ImagePart& Drawable::imagePart() {
+inline auto Drawable::imagePart() -> Drawable::ImagePart& {
   return part.get<ImagePart>();
 }
 
-inline Drawable::ImagePart const& Drawable::imagePart() const {
+inline auto Drawable::imagePart() const -> Drawable::ImagePart const& {
   return part.get<ImagePart>();
 }
 
-}
+}// namespace Star

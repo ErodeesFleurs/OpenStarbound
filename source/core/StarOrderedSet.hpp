@@ -1,8 +1,8 @@
 #pragma once
 
 #include "StarFlatHashMap.hpp"
-#include "StarSet.hpp"
 #include "StarList.hpp"
+#include "StarSet.hpp"
 
 import std;
 
@@ -15,9 +15,8 @@ public:
 
   using OrderType = LinkedList<value_type, typename std::allocator_traits<Allocator>::template rebind_alloc<value_type>>;
   using MapType = Map<
-      std::reference_wrapper<value_type const>, typename OrderType::const_iterator, Args...,
-      typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<std::reference_wrapper<value_type const> const, typename OrderType::const_iterator>>
-    >;
+    std::reference_wrapper<value_type const>, typename OrderType::const_iterator, Args...,
+    typename std::allocator_traits<Allocator>::template rebind_alloc<std::pair<std::reference_wrapper<value_type const> const, typename OrderType::const_iterator>>>;
 
   using const_iterator = typename OrderType::const_iterator;
   using iterator = const_iterator;
@@ -90,8 +89,8 @@ public:
 
   void sort();
 
-  [[nodiscard]] auto empty() const -> size_t;
-  [[nodiscard]] auto size() const -> size_t;
+  [[nodiscard]] auto empty() const -> std::size_t;
+  [[nodiscard]] auto size() const -> std::size_t;
 
   auto begin() const -> const_iterator;
   auto end() const -> const_iterator;
@@ -99,10 +98,10 @@ public:
   auto rbegin() const -> const_reverse_iterator;
   auto rend() const -> const_reverse_iterator;
 
-  auto indexOf(value_type const& v) const -> std::optional<size_t>;
+  auto indexOf(value_type const& v) const -> std::optional<std::size_t>;
 
-  auto at(size_t i) const -> value_type const&;
-  auto at(size_t i) -> value_type&;
+  auto at(std::size_t i) const -> value_type const&;
+  auto at(std::size_t i) -> value_type&;
 
   auto intersection(OrderedSetWrapper const& s) const -> OrderedSetWrapper;
   auto difference(OrderedSetWrapper const& s) const -> OrderedSetWrapper;
@@ -340,12 +339,12 @@ void OrderedSetWrapper<Map, Value, Allocator, Args...>::sort() {
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::empty() const -> size_t {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::empty() const -> std::size_t {
   return m_map.empty();
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::size() const -> size_t {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::size() const -> std::size_t {
   return m_map.size();
 }
 
@@ -370,7 +369,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::rend() const -> const_re
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const& v) const -> std::optional<size_t> {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const& v) const -> std::optional<std::size_t> {
   auto i = m_map.find(v);
   if (i == m_map.end())
     return {};
@@ -379,14 +378,14 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::indexOf(value_type const
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(size_t i) const -> value_type const& {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(std::size_t i) const -> value_type const& {
   auto it = begin();
   std::advance(it, i);
   return *it;
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(size_t i) -> value_type& {
+auto OrderedSetWrapper<Map, Value, Allocator, Args...>::at(std::size_t i) -> value_type& {
   auto it = begin();
   std::advance(it, i);
   return *it;
@@ -424,7 +423,7 @@ auto operator<<(std::ostream& os, OrderedSetWrapper<Map, Value, Allocator, Args.
   return os;
 }
 
-}
+}// namespace Star
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
 struct std::formatter<Star::OrderedSetWrapper<Map, Value, Allocator, Args...>> : Star::ostream_formatter {};

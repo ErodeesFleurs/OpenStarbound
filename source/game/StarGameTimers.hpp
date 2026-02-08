@@ -3,6 +3,8 @@
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
 
+import std;
+
 namespace Star {
 
 struct GameTimer {
@@ -12,42 +14,42 @@ struct GameTimer {
   float time;
   float timer;
 
-  bool tick(float dt = GlobalTimestep); // returns true if time is up
-  bool wrapTick(float dt = GlobalTimestep); // auto resets
+  auto tick(float dt = GlobalTimestep) -> bool;    // returns true if time is up
+  auto wrapTick(float dt = GlobalTimestep) -> bool;// auto resets
   void reset();
   void setDone();
   void invert();
 
-  bool ready() const;
-  float percent() const;
+  [[nodiscard]] auto ready() const -> bool;
+  [[nodiscard]] auto percent() const -> float;
 };
 
-DataStream& operator>>(DataStream& ds, GameTimer& gt);
-DataStream& operator<<(DataStream& ds, GameTimer const& gt);
+auto operator>>(DataStream& ds, GameTimer& gt) -> DataStream&;
+auto operator<<(DataStream& ds, GameTimer const& gt) -> DataStream&;
 
 struct SlidingWindow {
   SlidingWindow();
-  SlidingWindow(float windowSize, size_t resolution, float initialValue);
+  SlidingWindow(float windowSize, std::size_t resolution, float initialValue);
 
   GameTimer sampleTimer;
   float windowSize;
-  size_t resolution;
+  std::size_t resolution;
 
   float currentMin;
   float currentMax;
   float currentAverage;
 
-  size_t currentIndex;
+  std::size_t currentIndex;
   std::vector<float> window;
 
   void reset(float initialValue);
-  void update(function<float()> sampleFunction);
+  void update(std::function<float()> sampleFunction);
   void update(float newValue);
   void processUpdate(float newValue);
 
-  float min();
-  float max();
-  float average();
+  auto min() -> float;
+  auto max() -> float;
+  auto average() -> float;
 };
 
 // Keeps long term track of elapsed time based on epochTime.
@@ -56,19 +58,19 @@ public:
   EpochTimer();
   explicit EpochTimer(Json json);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   void update(double newEpochTime);
 
-  double elapsedTime() const;
+  [[nodiscard]] auto elapsedTime() const -> double;
   void setElapsedTime(double elapsedTime);
 
-  friend DataStream& operator>>(DataStream& ds, EpochTimer& et);
-  friend DataStream& operator<<(DataStream& ds, EpochTimer const& et);
+  friend auto operator>>(DataStream& ds, EpochTimer& et) -> DataStream&;
+  friend auto operator<<(DataStream& ds, EpochTimer const& et) -> DataStream&;
 
 private:
   std::optional<double> m_lastSeenEpochTime;
   double m_elapsedTime;
 };
 
-}
+}// namespace Star

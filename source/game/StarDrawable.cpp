@@ -1,20 +1,21 @@
 #include "StarDrawable.hpp"
 #include "StarColor.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarConfig.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarAssets.hpp"
 #include "StarImageMetadataDatabase.hpp"
-#include "StarGameTypes.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
-Drawable::ImagePart& Drawable::ImagePart::addDirectives(Directives const& directives, bool keepImageCenterPosition) {
+auto Drawable::ImagePart::addDirectives(Directives const& directives, bool keepImageCenterPosition) -> Drawable::ImagePart& {
   if (!directives)
     return *this;
 
   if (keepImageCenterPosition) {
-    auto imageMetadata = Root::singleton().imageMetadataDatabase();
+    ConstPtr<ImageMetadataDatabase> imageMetadata = Root::singleton().imageMetadataDatabase();
     Vec2F imageSize = Vec2F(imageMetadata->imageSize(image));
     image.directives += directives;
     Vec2F newImageSize = Vec2F(imageMetadata->imageSize(image));
@@ -29,7 +30,7 @@ Drawable::ImagePart& Drawable::ImagePart::addDirectives(Directives const& direct
   return *this;
 }
 
-Drawable::ImagePart& Drawable::ImagePart::addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition) {
+auto Drawable::ImagePart::addDirectivesGroup(DirectivesGroup const& directivesGroup, bool keepImageCenterPosition) -> Drawable::ImagePart& {
   if (directivesGroup.empty())
     return *this;
 
@@ -45,13 +46,13 @@ Drawable::ImagePart& Drawable::ImagePart::addDirectivesGroup(DirectivesGroup con
     transformation *= Mat3F::translation((imageSize - newImageSize) / 2);
   } else {
     for (Directives const& directives : directivesGroup.list())
-       image.directives += directives;
+      image.directives += directives;
   }
 
   return *this;
 }
 
-Drawable::ImagePart& Drawable::ImagePart::removeDirectives(bool keepImageCenterPosition) {
+auto Drawable::ImagePart::removeDirectives(bool keepImageCenterPosition) -> Drawable::ImagePart& {
   if (keepImageCenterPosition) {
     auto imageMetadata = Root::singleton().imageMetadataDatabase();
     Vec2F imageSize = Vec2F(imageMetadata->imageSize(image));
@@ -68,16 +69,16 @@ Drawable::ImagePart& Drawable::ImagePart::removeDirectives(bool keepImageCenterP
   return *this;
 }
 
-Drawable Drawable::makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position) {
+auto Drawable::makeLine(Line2F const& line, float lineWidth, Color const& color, Vec2F const& position) -> Drawable {
   Drawable drawable;
-  drawable.part = LinePart{std::move(line), lineWidth, {}};
+  drawable.part = LinePart{.line = std::move(line), .width = lineWidth, .endColor = {}};
   drawable.color = color;
   drawable.position = position;
 
   return drawable;
 }
 
-Drawable Drawable::makePoly(PolyF poly, Color const& color, Vec2F const& position) {
+auto Drawable::makePoly(PolyF poly, Color const& color, Vec2F const& position) -> Drawable {
   Drawable drawable;
   drawable.part = PolyPart{std::move(poly)};
   drawable.color = color;
@@ -86,7 +87,7 @@ Drawable Drawable::makePoly(PolyF poly, Color const& color, Vec2F const& positio
   return drawable;
 }
 
-Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color) {
+auto Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, Color const& color) -> Drawable {
   Drawable drawable;
   Mat3F transformation = Mat3F::identity();
   if (centered) {
@@ -98,7 +99,7 @@ Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Ve
   if (pixelSize != 1.0f)
     transformation.scale(pixelSize);
 
-  drawable.part = ImagePart{std::move(image), std::move(transformation)};
+  drawable.part = ImagePart{.image = std::move(image), .transformation = std::move(transformation)};
   drawable.position = position;
   drawable.color = color;
 
@@ -106,11 +107,11 @@ Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Ve
 }
 
 Drawable::Drawable()
-  : color(Color::White), fullbright(false) {}
+    : color(Color::White), fullbright(false) {}
 
 Drawable::Drawable(Json const& json) {
   if (auto line = json.opt("line")) {
-    part = LinePart{jsonToLine2F(*line), json.getFloat("width"), {}};
+    part = LinePart{.line = jsonToLine2F(*line), .width = json.getFloat("width"), .endColor = {}};
   } else if (auto poly = json.opt("poly")) {
     part = PolyPart{jsonToPolyF(*poly)};
   } else if (auto image = json.opt("image")) {
@@ -132,14 +133,14 @@ Drawable::Drawable(Json const& json) {
         transformation.scale(*scale);
     }
 
-    part = ImagePart{std::move(imageString), std::move(transformation)};
+    part = ImagePart{.image = std::move(imageString), .transformation = std::move(transformation)};
   }
-  position = json.opt("position").apply(jsonToVec2F).value();
-  color = json.opt("color").apply(jsonToColor).value(Color::White);
+  position = json.opt("position").transform(jsonToVec2F).value();
+  color = json.opt("color").transform(jsonToColor).value_or(Color::White);
   fullbright = json.getBool("fullbright", false);
 }
 
-Json Drawable::toJson() const {
+auto Drawable::toJson() const -> Json {
   JsonObject json;
   if (auto line = part.ptr<LinePart>()) {
     json.set("line", jsonFromLine2F(line->line));
@@ -213,7 +214,7 @@ void Drawable::rebase(Vec2F const& newBase) {
   position = newBase;
 }
 
-RectF Drawable::boundBox(bool cropImages) const {
+auto Drawable::boundBox(bool cropImages) const -> RectF {
   RectF boundBox = RectF::null();
   if (auto line = part.ptr<LinePart>()) {
     boundBox.combine(line->line.min());
@@ -247,42 +248,42 @@ RectF Drawable::boundBox(bool cropImages) const {
   return boundBox;
 }
 
-DataStream& operator>>(DataStream& ds, Drawable::LinePart& line) {
+auto operator>>(DataStream& ds, Drawable::LinePart& line) -> DataStream& {
   ds >> line.line;
   ds >> line.width;
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, Drawable::LinePart const& line) {
+auto operator<<(DataStream& ds, Drawable::LinePart const& line) -> DataStream& {
   ds << line.line;
   ds << line.width;
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, Drawable::PolyPart& poly) {
+auto operator>>(DataStream& ds, Drawable::PolyPart& poly) -> DataStream& {
   ds >> poly.poly;
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, Drawable::PolyPart const& poly) {
+auto operator<<(DataStream& ds, Drawable::PolyPart const& poly) -> DataStream& {
   ds << poly.poly;
   return ds;
 }
 
 // I need to find out if this is for network serialization or not eventually
-DataStream& operator>>(DataStream& ds, Drawable::ImagePart& image) {
+auto operator>>(DataStream& ds, Drawable::ImagePart& image) -> DataStream& {
   ds >> image.image;
   ds >> image.transformation;
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, Drawable::ImagePart const& image) {
+auto operator<<(DataStream& ds, Drawable::ImagePart const& image) -> DataStream& {
   ds << image.image;
   ds << image.transformation;
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, Drawable& drawable) {
+auto operator>>(DataStream& ds, Drawable& drawable) -> DataStream& {
   ds >> drawable.part;
   ds >> drawable.position;
   ds >> drawable.color;
@@ -290,7 +291,7 @@ DataStream& operator>>(DataStream& ds, Drawable& drawable) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, Drawable const& drawable) {
+auto operator<<(DataStream& ds, Drawable const& drawable) -> DataStream& {
   ds << drawable.part;
   ds << drawable.position;
   ds << drawable.color;
@@ -298,4 +299,4 @@ DataStream& operator<<(DataStream& ds, Drawable const& drawable) {
   return ds;
 }
 
-}
+}// namespace Star

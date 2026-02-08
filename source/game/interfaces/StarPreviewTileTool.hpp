@@ -2,16 +2,14 @@
 
 #include "StarList.hpp"
 
-STAR_STRUCT(PreviewTile);
-
-STAR_CLASS(PreviewTileTool);
+struct PreviewTile;
 
 namespace Star {
 
 class PreviewTileTool {
 public:
-  virtual ~PreviewTileTool() {}
-  virtual List<PreviewTile> previewTiles(bool shifting) const = 0;
+  virtual ~PreviewTileTool() = default;
+  [[nodiscard]] virtual auto previewTiles(bool shifting) const -> List<PreviewTile> = 0;
 };
 
-}
+}// namespace Star

@@ -4,11 +4,9 @@
 
 namespace Star {
 
-STAR_CLASS(AggressiveEntity);
-
 class AggressiveEntity : public virtual Entity {
 public:
-  virtual bool aggressive() const = 0;
+  [[nodiscard]] virtual auto aggressive() const -> bool = 0;
 };
 
-}
+}// namespace Star

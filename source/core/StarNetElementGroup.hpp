@@ -46,7 +46,7 @@ private:
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;
 
-  HashMap<VersionNumber, size_t> m_elementCounts;
+  HashMap<VersionNumber, std::size_t> m_elementCounts;
 
   mutable DataStreamBuffer m_buffer;
 };

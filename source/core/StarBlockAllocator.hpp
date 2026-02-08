@@ -62,9 +62,9 @@ private:
 
   using ChunkIndex =
     std::conditional_t<BlockSize <= std::numeric_limits<std::uint8_t>::max(), std::uint8_t,
-      std::conditional_t<BlockSize <= std::numeric_limits<std::uint16_t>::max(), std::uint16_t,
-        std::conditional_t<BlockSize <= std::numeric_limits<std::uint32_t>::max(), std::uint32_t,
-          std::conditional_t<BlockSize <= std::numeric_limits<std::uint64_t>::max(), std::uint64_t, std::uintmax_t>>>>;
+                       std::conditional_t<BlockSize <= std::numeric_limits<std::uint16_t>::max(), std::uint16_t,
+                                          std::conditional_t<BlockSize <= std::numeric_limits<std::uint32_t>::max(), std::uint32_t,
+                                                             std::conditional_t<BlockSize <= std::numeric_limits<std::uint64_t>::max(), std::uint64_t, std::uintmax_t>>>>;
 
   static ChunkIndex const NullChunkIndex = std::numeric_limits<ChunkIndex>::max();
 
@@ -74,8 +74,8 @@ private:
   };
 
   struct alignas(T) alignas(Unallocated) Chunk {
-      static constexpr std::size_t ChunkSize = std::max(sizeof(T), sizeof(Unallocated));
-      std::array<std::byte, ChunkSize> data;
+    static constexpr std::size_t ChunkSize = std::max(sizeof(T), sizeof(Unallocated));
+    std::array<std::byte, ChunkSize> data;
   };
 
   struct Block {
@@ -117,7 +117,7 @@ BlockAllocator<T, BlockSize>::BlockAllocator() {
 template <typename T, std::size_t BlockSize>
 template <class U>
 BlockAllocator<T, BlockSize>::BlockAllocator(BlockAllocator<U, BlockSize> const& other)
-  : m_family(other.m_family) {
+    : m_family(other.m_family) {
   m_data = getAllocatorData(*m_family);
 }
 
@@ -136,8 +136,8 @@ auto BlockAllocator<T, BlockSize>::allocate(std::size_t n) -> T* {
         auto block = std::make_unique<Block>();
         m_data->unfilledBlock = block.get();
         auto sortedPosition = std::lower_bound(m_data->blocks.begin(), m_data->blocks.end(), block.get(), [](std::unique_ptr<Block> const& a, Block* b) -> auto {
-            return a.get() < b;
-          });
+          return a.get() < b;
+        });
         m_data->blocks.insert(sortedPosition, std::move(block));
       }
     }
@@ -156,8 +156,8 @@ void BlockAllocator<T, BlockSize>::deallocate(T* p, std::size_t n) {
   if (n == 1) {
 
     auto i = std::upper_bound(m_data->blocks.begin(), m_data->blocks.end(), p, [](T* a, std::unique_ptr<Block> const& b) -> auto {
-        return a < (T*)b->chunkPointer(0);
-      });
+      return a < (T*)b->chunkPointer(0);
+    });
 
     --i;
 
@@ -252,4 +252,4 @@ auto BlockAllocator<T, BlockSize>::getAllocatorData(BlockAllocatorFamily& family
   return (Data*)dataptr.get();
 }
 
-}
+}// namespace Star

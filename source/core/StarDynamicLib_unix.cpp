@@ -1,28 +1,31 @@
+#include "StarConfig.hpp"
+
 #include "StarDynamicLib.hpp"
 
 #include <dlfcn.h>
 #include <pthread.h>
 #include <sys/time.h>
-#include <errno.h>
+
+import std;
 
 namespace Star {
 
 struct PrivateDynLib : public DynamicLib {
   PrivateDynLib(void* handle)
-    : m_handle(handle) {}
+      : m_handle(handle) {}
 
-  ~PrivateDynLib() {
+  ~PrivateDynLib() override {
     dlclose(m_handle);
   }
 
-  void* funcPtr(const char* name) {
+  auto funcPtr(const char* name) -> void* override {
     return dlsym(m_handle, name);
   }
 
   void* m_handle;
 };
 
-String DynamicLib::libraryExtension() {
+auto DynamicLib::libraryExtension() -> String {
 #ifdef STAR_SYSTEM_MACOS
   return ".dylib";
 #else
@@ -30,16 +33,16 @@ String DynamicLib::libraryExtension() {
 #endif
 }
 
-DynamicLibUPtr DynamicLib::loadLibrary(String const& libraryName) {
+auto DynamicLib::loadLibrary(String const& libraryName) -> UPtr<DynamicLib> {
   void* handle = dlopen(libraryName.utf8Ptr(), RTLD_NOW);
-  if (handle == NULL)
+  if (handle == nullptr)
     return {};
-  return make_unique<PrivateDynLib>(handle);
+  return std::make_unique<PrivateDynLib>(handle);
 }
 
-DynamicLibUPtr DynamicLib::currentExecutable() {
-  void* handle = dlopen(NULL, 0);
-  return make_unique<PrivateDynLib>(handle);
+auto DynamicLib::currentExecutable() -> UPtr<DynamicLib> {
+  void* handle = dlopen(nullptr, 0);
+  return std::make_unique<PrivateDynLib>(handle);
 }
 
-}
+}// namespace Star

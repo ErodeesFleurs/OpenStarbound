@@ -17,7 +17,6 @@ using WorldStorageException = ExceptionDerived<"WorldStorageException">;
 
 class WorldStorage;
 class EntityMap;
-// STAR_STRUCT(WorldGeneratorFacade);
 
 using WorldChunks = HashMap<ByteArray, std::optional<ByteArray>>;
 
@@ -91,7 +90,6 @@ class WorldStorage {
 public:
   using Sector = ServerTileSectorArray::Sector;
   using TileArray = ServerTileSectorArray::Array;
-  using TileArrayPtr = ServerTileSectorArray::ArrayPtr;
 
   static auto getWorldChunksUpdate(WorldChunks const& oldChunks, WorldChunks const& newChunks) -> WorldChunks;
   static void applyWorldChunksUpdateToFile(String const& file, WorldChunks const& update);
@@ -108,7 +106,7 @@ public:
   auto worldMetadata() -> VersionedJson;
   void setWorldMetadata(VersionedJson const& metadata);
 
-  auto tileArray() const -> ServerTileSectorArrayPtr const&;
+  auto tileArray() const -> Ptr<ServerTileSectorArray> const&;
   auto entityMap() const -> Ptr<EntityMap> const&;
 
   auto sectorForPosition(Vec2I const& position) const -> std::optional<Sector>;
@@ -213,7 +211,7 @@ private:
     SectorGenerationLevel generationLevel;
 
     VersionNumber tileSerializationVersion;
-    TileArrayPtr tiles;
+    Ptr<TileArray> tiles;
   };
 
   struct SectorMetadata {
@@ -294,7 +292,7 @@ private:
   Vec2F m_sectorTimeToLive;
   float m_generationQueueTimeToLive;
 
-  ServerTileSectorArrayPtr m_tileArray;
+  Ptr<ServerTileSectorArray> m_tileArray;
   Ptr<EntityMap> m_entityMap;
   Ptr<WorldGeneratorFacade> m_generatorFacade;
 

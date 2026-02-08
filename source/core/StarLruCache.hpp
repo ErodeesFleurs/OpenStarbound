@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarOrderedMap.hpp"
 #include "StarBlockAllocator.hpp"
+#include "StarOrderedMap.hpp"
 
 import std;
 
@@ -15,12 +15,12 @@ public:
 
   using ProducerFunction = std::function<Value(Key const&)>;
 
-  LruCacheBase(size_t maxSize = 256);
+  LruCacheBase(std::size_t maxSize = 256);
 
   // Max size cannot be zero, it will be clamped to at least 1 in order to hold
   // the most recent element returned by get.
   [[nodiscard]] auto maxSize() const -> std::size_t;
-  void setMaxSize(size_t maxSize);
+  void setMaxSize(std::size_t maxSize);
 
   [[nodiscard]] auto currentSize() const -> std::size_t;
 
@@ -51,7 +51,7 @@ public:
 
 private:
   OrderedMapType m_map;
-  size_t m_maxSize;
+  std::size_t m_maxSize;
 };
 
 template <typename Key, typename Value, typename Compare = std::less<Key>, typename Allocator = BlockAllocator<std::pair<Key const, Value>, 1024>>
@@ -61,25 +61,25 @@ template <typename Key, typename Value, typename Hash = Star::hash<Key>, typenam
 using HashLruCache = LruCacheBase<OrderedHashMap<Key, Value, Hash, Equals, Allocator>>;
 
 template <typename OrderedMapType>
-LruCacheBase<OrderedMapType>::LruCacheBase(size_t maxSize) {
+LruCacheBase<OrderedMapType>::LruCacheBase(std::size_t maxSize) {
   setMaxSize(maxSize);
 }
 
 template <typename OrderedMapType>
-auto LruCacheBase<OrderedMapType>::maxSize() const -> size_t {
+auto LruCacheBase<OrderedMapType>::maxSize() const -> std::size_t {
   return m_maxSize;
 }
 
 template <typename OrderedMapType>
-void LruCacheBase<OrderedMapType>::setMaxSize(size_t maxSize) {
-  m_maxSize = std::max<size_t>(maxSize, 1);
+void LruCacheBase<OrderedMapType>::setMaxSize(std::size_t maxSize) {
+  m_maxSize = std::max<std::size_t>(maxSize, 1);
 
   while (m_map.size() > m_maxSize)
     m_map.removeFirst();
 }
 
 template <typename OrderedMapType>
-auto LruCacheBase<OrderedMapType>::currentSize() const -> size_t {
+auto LruCacheBase<OrderedMapType>::currentSize() const -> std::size_t {
   return m_map.size();
 }
 
@@ -94,7 +94,7 @@ auto LruCacheBase<OrderedMapType>::values() const -> List<Value> {
 }
 
 template <typename OrderedMapType>
-auto LruCacheBase<OrderedMapType>::ptr(Key const& key) -> Value * {
+auto LruCacheBase<OrderedMapType>::ptr(Key const& key) -> Value* {
   auto i = m_map.find(key);
   if (i == m_map.end())
     return nullptr;
@@ -121,13 +121,13 @@ auto LruCacheBase<OrderedMapType>::remove(Key const& key) -> bool {
 template <typename OrderedMapType>
 void LruCacheBase<OrderedMapType>::removeWhere(std::function<bool(Key const&, Value&)> filter) {
   eraseWhere(m_map, [&filter](auto& p) -> auto {
-      return filter(p.first, p.second);
-    });
+    return filter(p.first, p.second);
+  });
 }
 
 template <typename OrderedMapType>
 template <typename Producer>
-auto LruCacheBase<OrderedMapType>::get(Key const& key, Producer producer) -> Value & {
+auto LruCacheBase<OrderedMapType>::get(Key const& key, Producer producer) -> Value& {
   while (m_map.size() > m_maxSize - 1)
     m_map.removeFirst();
 
@@ -145,4 +145,4 @@ void LruCacheBase<OrderedMapType>::clear() {
   m_map.clear();
 }
 
-}
+}// namespace Star

@@ -1,8 +1,8 @@
 #pragma once
 
+#include "StarByteArray.hpp"
 #include "StarException.hpp"
 #include "StarJson.hpp"
-#include "StarByteArray.hpp"
 #include "StarRpcPromise.hpp"
 
 import std;
@@ -48,4 +48,4 @@ private:
   std::uint64_t m_requestId;
 };
 
-}
+}// namespace Star

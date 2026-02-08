@@ -1,18 +1,21 @@
 #pragma once
 
-#include "StarColor.hpp"
 #include "StarCollisionBlock.hpp"
+#include "StarColor.hpp"
+#include "StarConfig.hpp"
+#include "StarException.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarLiquidTypes.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarTileDamage.hpp"
-#include "StarItemDescriptor.hpp"
-#include <optional>
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(ParticleConfig);
-STAR_CLASS(MaterialDatabase);
+class ParticleConfig;
 
-STAR_EXCEPTION(MaterialException, StarException);
+using MaterialException = ExceptionDerived<"MaterialException">;
 
 struct LiquidMaterialInteraction {
   float consumeLiquid;
@@ -30,74 +33,74 @@ class MaterialDatabase {
 public:
   MaterialDatabase();
 
-  StringList materialNames() const;
-  bool isMetaMaterialName(String const& name) const;
-  bool isMaterialName(String const& name) const;
-  bool isValidMaterialId(MaterialId material) const;
-  MaterialId materialId(String const& materialName) const;
-  String materialName(MaterialId materialId) const;
-  std::optional<String> materialPath(MaterialId materialId) const;
-  std::optional<Json> materialConfig(MaterialId materialId) const;
-  String materialDescription(MaterialId materialId, String const& species) const;
-  String materialDescription(MaterialId materialId) const;
-  String materialShortDescription(MaterialId materialId) const;
-  String materialCategory(MaterialId materialId) const;
+  [[nodiscard]] auto materialNames() const -> StringList;
+  [[nodiscard]] auto isMetaMaterialName(String const& name) const -> bool;
+  [[nodiscard]] auto isMaterialName(String const& name) const -> bool;
+  [[nodiscard]] auto isValidMaterialId(MaterialId material) const -> bool;
+  [[nodiscard]] auto materialId(String const& materialName) const -> MaterialId;
+  [[nodiscard]] auto materialName(MaterialId materialId) const -> String;
+  [[nodiscard]] auto materialPath(MaterialId materialId) const -> std::optional<String>;
+  [[nodiscard]] auto materialConfig(MaterialId materialId) const -> std::optional<Json>;
+  [[nodiscard]] auto materialDescription(MaterialId materialId, String const& species) const -> String;
+  [[nodiscard]] auto materialDescription(MaterialId materialId) const -> String;
+  [[nodiscard]] auto materialShortDescription(MaterialId materialId) const -> String;
+  [[nodiscard]] auto materialCategory(MaterialId materialId) const -> String;
 
-  StringList modNames() const;
-  bool isModName(String const& name) const;
-  bool isValidModId(ModId mod) const;
-  ModId modId(String const& modName) const;
-  String const& modName(ModId modId) const;
-  std::optional<String> modPath(ModId modId) const;
-  std::optional<Json> modConfig(ModId modId) const;
-  String modDescription(ModId modId, String const& species) const;
-  String modDescription(ModId modId) const;
-  String modShortDescription(ModId modId) const;
+  [[nodiscard]] auto modNames() const -> StringList;
+  [[nodiscard]] auto isModName(String const& name) const -> bool;
+  [[nodiscard]] auto isValidModId(ModId mod) const -> bool;
+  [[nodiscard]] auto modId(String const& modName) const -> ModId;
+  [[nodiscard]] auto modName(ModId modId) const -> String const&;
+  [[nodiscard]] auto modPath(ModId modId) const -> std::optional<String>;
+  [[nodiscard]] auto modConfig(ModId modId) const -> std::optional<Json>;
+  [[nodiscard]] auto modDescription(ModId modId, String const& species) const -> String;
+  [[nodiscard]] auto modDescription(ModId modId) const -> String;
+  [[nodiscard]] auto modShortDescription(ModId modId) const -> String;
 
   // Will return nullptr if no rendering profile is available
-  MaterialRenderProfileConstPtr materialRenderProfile(MaterialId modId) const;
-  MaterialRenderProfileConstPtr modRenderProfile(ModId modId) const;
+  [[nodiscard]] auto materialRenderProfile(MaterialId modId) const -> ConstPtr<MaterialRenderProfile>;
+  [[nodiscard]] auto modRenderProfile(ModId modId) const -> ConstPtr<MaterialRenderProfile>;
 
-  TileDamageParameters materialDamageParameters(MaterialId materialId) const;
-  TileDamageParameters modDamageParameters(ModId modId) const;
+  [[nodiscard]] auto materialDamageParameters(MaterialId materialId) const -> TileDamageParameters;
+  [[nodiscard]] auto modDamageParameters(ModId modId) const -> TileDamageParameters;
 
-  bool modBreaksWithTile(ModId modId) const;
+  [[nodiscard]] auto modBreaksWithTile(ModId modId) const -> bool;
 
-  CollisionKind materialCollisionKind(MaterialId materialId) const;
-  bool canPlaceInLayer(MaterialId materialId, TileLayer layer) const;
+  [[nodiscard]] auto materialCollisionKind(MaterialId materialId) const -> CollisionKind;
+  [[nodiscard]] auto canPlaceInLayer(MaterialId materialId, TileLayer layer) const -> bool;
 
   // Returned ItemDescriptor may be null
-  ItemDescriptor materialItemDrop(MaterialId materialId) const;
-  ItemDescriptor modItemDrop(ModId modId) const;
+  [[nodiscard]] auto materialItemDrop(MaterialId materialId) const -> ItemDescriptor;
+  [[nodiscard]] auto modItemDrop(ModId modId) const -> ItemDescriptor;
 
-  MaterialColorVariant materialColorVariants(MaterialId materialId) const;
-  MaterialColorVariant modColorVariants(ModId modId) const;
-  bool isMultiColor(MaterialId materialId) const;
-  bool foregroundLightTransparent(MaterialId materialId) const;
-  bool backgroundLightTransparent(MaterialId materialId) const;
-  bool occludesBehind(MaterialId materialId) const;
+  [[nodiscard]] auto materialColorVariants(MaterialId materialId) const -> MaterialColorVariant;
+  [[nodiscard]] auto modColorVariants(ModId modId) const -> MaterialColorVariant;
+  [[nodiscard]] auto isMultiColor(MaterialId materialId) const -> bool;
+  [[nodiscard]] auto foregroundLightTransparent(MaterialId materialId) const -> bool;
+  [[nodiscard]] auto backgroundLightTransparent(MaterialId materialId) const -> bool;
+  [[nodiscard]] auto occludesBehind(MaterialId materialId) const -> bool;
 
-  ParticleConfigPtr miningParticle(MaterialId materialId, ModId modId = NoModId) const;
-  String miningSound(MaterialId materialId, ModId modId = NoModId) const;
-  String footstepSound(MaterialId materialId, ModId modId = NoModId) const;
-  String defaultFootstepSound() const;
+  [[nodiscard]] auto miningParticle(MaterialId materialId, ModId modId = NoModId) const -> Ptr<ParticleConfig>;
+  [[nodiscard]] auto miningSound(MaterialId materialId, ModId modId = NoModId) const -> String;
+  [[nodiscard]] auto footstepSound(MaterialId materialId, ModId modId = NoModId) const -> String;
+  [[nodiscard]] auto defaultFootstepSound() const -> String;
 
-  Color materialParticleColor(MaterialId materialId, MaterialHue hueShift) const;
-  Vec3F radiantLight(MaterialId materialId, ModId modId) const;
+  [[nodiscard]] auto materialParticleColor(MaterialId materialId, MaterialHue hueShift) const -> Color;
+  [[nodiscard]] auto radiantLight(MaterialId materialId, ModId modId) const -> Vec3F;
 
-  bool supportsMod(MaterialId materialId, ModId modId) const;
-  ModId tilledModFor(MaterialId materialId) const;
-  bool isTilledMod(ModId modId) const;
+  [[nodiscard]] auto supportsMod(MaterialId materialId, ModId modId) const -> bool;
+  [[nodiscard]] auto tilledModFor(MaterialId materialId) const -> ModId;
+  [[nodiscard]] auto isTilledMod(ModId modId) const -> bool;
 
-  bool isSoil(MaterialId materialId) const;
-  bool isFallingMaterial(MaterialId materialId) const;
-  bool isCascadingFallingMaterial(MaterialId materialId) const;
-  bool blocksLiquidFlow(MaterialId materialId) const;
+  [[nodiscard]] auto isSoil(MaterialId materialId) const -> bool;
+  [[nodiscard]] auto isFallingMaterial(MaterialId materialId) const -> bool;
+  [[nodiscard]] auto isCascadingFallingMaterial(MaterialId materialId) const -> bool;
+  [[nodiscard]] auto blocksLiquidFlow(MaterialId materialId) const -> bool;
 
   // Returns the amount of liquid to consume, and optionally the material / mod
   // to transform to (may be NullMaterialId / NullModId)
-  std::optional<LiquidMaterialInteraction> liquidMaterialInteraction(LiquidId liquid, MaterialId materialId) const;
-  std::optional<LiquidModInteraction> liquidModInteraction(LiquidId liquid, ModId modId) const;
+  [[nodiscard]] auto liquidMaterialInteraction(LiquidId liquid, MaterialId materialId) const -> std::optional<LiquidMaterialInteraction>;
+  [[nodiscard]] auto liquidModInteraction(LiquidId liquid, ModId modId) const -> std::optional<LiquidModInteraction>;
 
 private:
   struct MetaMaterialInfo {
@@ -121,7 +124,7 @@ private:
     Json descriptions;
     String category;
     Color particleColor;
-    ParticleConfigPtr miningParticle;
+    Ptr<ParticleConfig> miningParticle;
     StringList miningSounds;
     String footstepSound;
     ModId tillableMod;
@@ -133,7 +136,7 @@ private:
     bool cascading;
     bool blocksLiquidFlow;
 
-    shared_ptr<MaterialRenderProfile const> materialRenderProfile;
+    std::shared_ptr<MaterialRenderProfile const> materialRenderProfile;
 
     TileDamageParameters damageParameters;
   };
@@ -149,66 +152,66 @@ private:
     String itemDrop;
     Json descriptions;
     Color particleColor;
-    ParticleConfigPtr miningParticle;
+    Ptr<ParticleConfig> miningParticle;
     StringList miningSounds;
     String footstepSound;
     bool tilled;
     bool breaksWithTile;
 
-    shared_ptr<MaterialRenderProfile const> modRenderProfile;
+    std::shared_ptr<MaterialRenderProfile const> modRenderProfile;
 
     TileDamageParameters damageParameters;
   };
 
-  size_t metaMaterialIndex(MaterialId materialId) const;
-  bool containsMetaMaterial(MaterialId materialId) const;
+  [[nodiscard]] auto metaMaterialIndex(MaterialId materialId) const -> std::size_t;
+  [[nodiscard]] auto containsMetaMaterial(MaterialId materialId) const -> bool;
   void setMetaMaterial(MaterialId materialId, MetaMaterialInfo info);
 
-  bool containsMaterial(MaterialId materialId) const;
+  [[nodiscard]] auto containsMaterial(MaterialId materialId) const -> bool;
   void setMaterial(MaterialId materialId, MaterialInfo info);
 
-  bool containsMod(ModId modId) const;
+  [[nodiscard]] auto containsMod(ModId modId) const -> bool;
   void setMod(ModId modId, ModInfo info);
 
-  shared_ptr<MetaMaterialInfo const> const& getMetaMaterialInfo(MaterialId materialId) const;
-  shared_ptr<MaterialInfo const> const& getMaterialInfo(MaterialId materialId) const;
-  shared_ptr<ModInfo const> const& getModInfo(ModId modId) const;
+  [[nodiscard]] auto getMetaMaterialInfo(MaterialId materialId) const -> std::shared_ptr<MetaMaterialInfo const> const&;
+  [[nodiscard]] auto getMaterialInfo(MaterialId materialId) const -> std::shared_ptr<MaterialInfo const> const&;
+  [[nodiscard]] auto getModInfo(ModId modId) const -> std::shared_ptr<ModInfo const> const&;
 
-  List<shared_ptr<MetaMaterialInfo const>> m_metaMaterials;
+  List<std::shared_ptr<MetaMaterialInfo const>> m_metaMaterials;
   StringMap<MaterialId> m_metaMaterialIndex;
 
-  List<shared_ptr<MaterialInfo const>> m_materials;
+  List<std::shared_ptr<MaterialInfo const>> m_materials;
   StringMap<MaterialId> m_materialIndex;
 
-  List<shared_ptr<ModInfo const>> m_mods;
+  List<std::shared_ptr<ModInfo const>> m_mods;
   StringMap<ModId> m_modIndex;
   BiMap<String, ModId> m_metaModIndex;
 
   String m_defaultFootstepSound;
 
-  HashMap<pair<LiquidId, MaterialId>, LiquidMaterialInteraction> m_liquidMaterialInteractions;
-  HashMap<pair<LiquidId, ModId>, LiquidModInteraction> m_liquidModInteractions;
+  HashMap<std::pair<LiquidId, MaterialId>, LiquidMaterialInteraction> m_liquidMaterialInteractions;
+  HashMap<std::pair<LiquidId, ModId>, LiquidModInteraction> m_liquidModInteractions;
 };
 
-inline MaterialRenderProfileConstPtr MaterialDatabase::materialRenderProfile(MaterialId materialId) const {
+inline auto MaterialDatabase::materialRenderProfile(MaterialId materialId) const -> ConstPtr<MaterialRenderProfile> {
   if (materialId < m_materials.size()) {
     if (auto const& mat = m_materials[materialId])
       return mat->materialRenderProfile;
   }
-  
+
   return {};
 }
 
-inline MaterialRenderProfileConstPtr MaterialDatabase::modRenderProfile(ModId modId) const {
+inline auto MaterialDatabase::modRenderProfile(ModId modId) const -> ConstPtr<MaterialRenderProfile> {
   if (modId < m_mods.size()) {
     if (auto const& mod = m_mods[modId])
       return mod->modRenderProfile;
   }
-  
+
   return {};
 }
 
-inline bool MaterialDatabase::foregroundLightTransparent(MaterialId materialId) const {
+inline auto MaterialDatabase::foregroundLightTransparent(MaterialId materialId) const -> bool {
   if (isRealMaterial(materialId)) {
     auto const& matInfo = getMaterialInfo(materialId);
     if (matInfo->materialRenderProfile)
@@ -221,7 +224,7 @@ inline bool MaterialDatabase::foregroundLightTransparent(MaterialId materialId) 
   return true;
 }
 
-inline bool MaterialDatabase::backgroundLightTransparent(MaterialId materialId) const {
+inline auto MaterialDatabase::backgroundLightTransparent(MaterialId materialId) const -> bool {
   if (isRealMaterial(materialId)) {
     auto const& matInfo = getMaterialInfo(materialId);
     if (matInfo->materialRenderProfile)
@@ -234,7 +237,7 @@ inline bool MaterialDatabase::backgroundLightTransparent(MaterialId materialId) 
   return true;
 }
 
-inline bool MaterialDatabase::occludesBehind(MaterialId materialId) const {
+inline auto MaterialDatabase::occludesBehind(MaterialId materialId) const -> bool {
   if (isRealMaterial(materialId)) {
     auto const& matInfo = getMaterialInfo(materialId);
     if (matInfo->materialRenderProfile)
@@ -244,7 +247,7 @@ inline bool MaterialDatabase::occludesBehind(MaterialId materialId) const {
   return false;
 }
 
-inline Vec3F MaterialDatabase::radiantLight(MaterialId materialId, ModId modId) const {
+inline auto MaterialDatabase::radiantLight(MaterialId materialId, ModId modId) const -> Vec3F {
   Vec3F radiantLight;
   if (materialId < m_materials.size()) {
     auto const& mat = m_materials[materialId];
@@ -259,20 +262,19 @@ inline Vec3F MaterialDatabase::radiantLight(MaterialId materialId, ModId modId) 
   return radiantLight;
 }
 
-inline bool MaterialDatabase::blocksLiquidFlow(MaterialId materialId) const {
+inline auto MaterialDatabase::blocksLiquidFlow(MaterialId materialId) const -> bool {
   if (isRealMaterial(materialId))
     return getMaterialInfo(materialId)->blocksLiquidFlow;
   else
     return getMetaMaterialInfo(materialId)->blocksLiquidFlow;
-
 }
 
-inline std::optional<LiquidMaterialInteraction> MaterialDatabase::liquidMaterialInteraction(
-    LiquidId liquid, MaterialId materialId) const {
+inline auto MaterialDatabase::liquidMaterialInteraction(
+  LiquidId liquid, MaterialId materialId) const -> std::optional<LiquidMaterialInteraction> {
   return m_liquidMaterialInteractions.maybe({liquid, materialId});
 }
 
-inline std::optional<LiquidModInteraction> MaterialDatabase::liquidModInteraction(LiquidId liquid, ModId modId) const {
+inline auto MaterialDatabase::liquidModInteraction(LiquidId liquid, ModId modId) const -> std::optional<LiquidModInteraction> {
   return m_liquidModInteractions.maybe({liquid, modId});
 }
-}
+}// namespace Star

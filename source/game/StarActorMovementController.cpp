@@ -1,16 +1,16 @@
-#include <optional>
-
 #include "StarActorMovementController.hpp"
-#include "StarDataStreamExtra.hpp"
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarPlatformerAStar.hpp"
 #include "StarObject.hpp"
+#include "StarPlatformerAStar.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
-ActorJumpProfile::ActorJumpProfile() {}
+ActorJumpProfile::ActorJumpProfile() = default;
 
 ActorJumpProfile::ActorJumpProfile(Json const& config) {
   jumpSpeed = config.optFloat("jumpSpeed");
@@ -24,7 +24,7 @@ ActorJumpProfile::ActorJumpProfile(Json const& config) {
   collisionCancelled = config.optBool("collisionCancelled");
 }
 
-Json ActorJumpProfile::toJson() const {
+auto ActorJumpProfile::toJson() const -> Json {
   return JsonObject{
     {"jumpSpeed", jsonFromMaybe(jumpSpeed)},
     {"jumpControlForce", jsonFromMaybe(jumpControlForce)},
@@ -34,11 +34,10 @@ Json ActorJumpProfile::toJson() const {
     {"multiJump", jsonFromMaybe(multiJump)},
     {"reJumpDelay", jsonFromMaybe(reJumpDelay)},
     {"autoJump", jsonFromMaybe(autoJump)},
-    {"collisionCancelled", jsonFromMaybe(collisionCancelled)}
-  };
+    {"collisionCancelled", jsonFromMaybe(collisionCancelled)}};
 }
 
-ActorJumpProfile ActorJumpProfile::merge(ActorJumpProfile const& rhs) const {
+auto ActorJumpProfile::merge(ActorJumpProfile const& rhs) const -> ActorJumpProfile {
   ActorJumpProfile merged;
 
   merged.jumpSpeed = rhs.jumpSpeed ? rhs.jumpSpeed : jumpSpeed;
@@ -54,7 +53,7 @@ ActorJumpProfile ActorJumpProfile::merge(ActorJumpProfile const& rhs) const {
   return merged;
 }
 
-DataStream& operator>>(DataStream& ds, ActorJumpProfile& movementParameters) {
+auto operator>>(DataStream& ds, ActorJumpProfile& movementParameters) -> DataStream& {
   ds.read(movementParameters.jumpSpeed);
   ds.read(movementParameters.jumpControlForce);
   ds.read(movementParameters.jumpInitialPercentage);
@@ -68,7 +67,7 @@ DataStream& operator>>(DataStream& ds, ActorJumpProfile& movementParameters) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameters) {
+auto operator<<(DataStream& ds, ActorJumpProfile const& movementParameters) -> DataStream& {
   ds.write(movementParameters.jumpSpeed);
   ds.write(movementParameters.jumpControlForce);
   ds.write(movementParameters.jumpInitialPercentage);
@@ -82,7 +81,7 @@ DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameter
   return ds;
 }
 
-ActorMovementParameters ActorMovementParameters::sensibleDefaults() {
+auto ActorMovementParameters::sensibleDefaults() -> ActorMovementParameters {
   return ActorMovementParameters(Root::singleton().assets()->json("/default_actor_movement.config").toObject());
 }
 
@@ -135,15 +134,15 @@ ActorMovementParameters::ActorMovementParameters(Json const& config) {
   airForce = config.optFloat("airForce");
   liquidForce = config.optFloat("liquidForce");
 
-  airJumpProfile = config.opt("airJumpProfile").apply(construct<ActorJumpProfile>()).value();
-  liquidJumpProfile = config.opt("liquidJumpProfile").apply(construct<ActorJumpProfile>()).value();
+  airJumpProfile = config.opt("airJumpProfile").transform(construct<ActorJumpProfile>()).value();
+  liquidJumpProfile = config.opt("liquidJumpProfile").transform(construct<ActorJumpProfile>()).value();
 
   fallStatusSpeedMin = config.optFloat("fallStatusSpeedMin");
   fallThroughSustainFrames = config.optInt("fallThroughSustainFrames");
   maximumPlatformCorrection = config.optFloat("maximumPlatformCorrection");
   maximumPlatformCorrectionVelocityFactor = config.optFloat("maximumPlatformCorrectionVelocityFactor");
 
-  physicsEffectCategories = config.opt("physicsEffectCategories").apply(jsonToStringSet);
+  physicsEffectCategories = config.opt("physicsEffectCategories").transform(jsonToStringSet);
 
   groundMovementMinimumSustain = config.optFloat("groundMovementMinimumSustain");
   groundMovementMaximumSustain = config.optFloat("groundMovementMaximumSustain");
@@ -156,51 +155,51 @@ ActorMovementParameters::ActorMovementParameters(Json const& config) {
   pathExploreRate = config.optFloat("pathExploreRate");
 }
 
-Json ActorMovementParameters::toJson() const {
+auto ActorMovementParameters::toJson() const -> Json {
   return JsonObject{{"mass", jsonFromMaybe(mass)},
-      {"gravityMultiplier", jsonFromMaybe(gravityMultiplier)},
-      {"liquidBuoyancy", jsonFromMaybe(liquidBuoyancy)},
-      {"airBuoyancy", jsonFromMaybe(airBuoyancy)},
-      {"bounceFactor", jsonFromMaybe(bounceFactor)},
-      {"stopOnFirstBounce", jsonFromMaybe(stopOnFirstBounce)},
-      {"enableSurfaceSlopeCorrection", jsonFromMaybe(enableSurfaceSlopeCorrection)},
-      {"slopeSlidingFactor", jsonFromMaybe(slopeSlidingFactor)},
-      {"maxMovementPerStep", jsonFromMaybe(maxMovementPerStep)},
-      {"maximumCorrection", jsonFromMaybe(maximumCorrection)},
-      {"speedLimit", jsonFromMaybe(speedLimit)},
-      {"standingPoly", jsonFromMaybe(standingPoly, jsonFromPolyF)},
-      {"crouchingPoly", jsonFromMaybe(crouchingPoly, jsonFromPolyF)},
-      {"stickyCollision", jsonFromMaybe(stickyCollision)},
-      {"stickyForce", jsonFromMaybe(stickyForce)},
-      {"walkSpeed", jsonFromMaybe(walkSpeed)},
-      {"runSpeed", jsonFromMaybe(runSpeed)},
-      {"flySpeed", jsonFromMaybe(flySpeed)},
-      {"airFriction", jsonFromMaybe(airFriction)},
-      {"liquidFriction", jsonFromMaybe(liquidFriction)},
-      {"minimumLiquidPercentage", jsonFromMaybe(minimumLiquidPercentage)},
-      {"liquidImpedance", jsonFromMaybe(liquidImpedance)},
-      {"normalGroundFriction", jsonFromMaybe(normalGroundFriction)},
-      {"ambulatingGroundFriction", jsonFromMaybe(ambulatingGroundFriction)},
-      {"groundForce", jsonFromMaybe(groundForce)},
-      {"airForce", jsonFromMaybe(airForce)},
-      {"liquidForce", jsonFromMaybe(liquidForce)},
-      {"airJumpProfile", airJumpProfile.toJson()},
-      {"liquidJumpProfile", liquidJumpProfile.toJson()},
-      {"fallStatusSpeedMin", jsonFromMaybe(fallStatusSpeedMin)},
-      {"fallThroughSustainFrames", jsonFromMaybe(fallThroughSustainFrames)},
-      {"maximumPlatformCorrection", jsonFromMaybe(maximumPlatformCorrection)},
-      {"maximumPlatformCorrectionVelocityFactor", jsonFromMaybe(maximumPlatformCorrectionVelocityFactor)},
-      {"physicsEffectCategories", jsonFromMaybe(physicsEffectCategories, jsonFromStringSet)},
-      {"groundMovementMinimumSustain", jsonFromMaybe(groundMovementMinimumSustain)},
-      {"groundMovementMaximumSustain", jsonFromMaybe(groundMovementMaximumSustain)},
-      {"groundMovementCheckDistance", jsonFromMaybe(groundMovementCheckDistance)},
-      {"collisionEnabled", jsonFromMaybe(collisionEnabled)},
-      {"frictionEnabled", jsonFromMaybe(frictionEnabled)},
-      {"gravityEnabled", jsonFromMaybe(gravityEnabled)},
-      {"pathExploreRate", jsonFromMaybe(pathExploreRate)}};
+                    {"gravityMultiplier", jsonFromMaybe(gravityMultiplier)},
+                    {"liquidBuoyancy", jsonFromMaybe(liquidBuoyancy)},
+                    {"airBuoyancy", jsonFromMaybe(airBuoyancy)},
+                    {"bounceFactor", jsonFromMaybe(bounceFactor)},
+                    {"stopOnFirstBounce", jsonFromMaybe(stopOnFirstBounce)},
+                    {"enableSurfaceSlopeCorrection", jsonFromMaybe(enableSurfaceSlopeCorrection)},
+                    {"slopeSlidingFactor", jsonFromMaybe(slopeSlidingFactor)},
+                    {"maxMovementPerStep", jsonFromMaybe(maxMovementPerStep)},
+                    {"maximumCorrection", jsonFromMaybe(maximumCorrection)},
+                    {"speedLimit", jsonFromMaybe(speedLimit)},
+                    {"standingPoly", jsonFromMaybe(standingPoly, jsonFromPolyF)},
+                    {"crouchingPoly", jsonFromMaybe(crouchingPoly, jsonFromPolyF)},
+                    {"stickyCollision", jsonFromMaybe(stickyCollision)},
+                    {"stickyForce", jsonFromMaybe(stickyForce)},
+                    {"walkSpeed", jsonFromMaybe(walkSpeed)},
+                    {"runSpeed", jsonFromMaybe(runSpeed)},
+                    {"flySpeed", jsonFromMaybe(flySpeed)},
+                    {"airFriction", jsonFromMaybe(airFriction)},
+                    {"liquidFriction", jsonFromMaybe(liquidFriction)},
+                    {"minimumLiquidPercentage", jsonFromMaybe(minimumLiquidPercentage)},
+                    {"liquidImpedance", jsonFromMaybe(liquidImpedance)},
+                    {"normalGroundFriction", jsonFromMaybe(normalGroundFriction)},
+                    {"ambulatingGroundFriction", jsonFromMaybe(ambulatingGroundFriction)},
+                    {"groundForce", jsonFromMaybe(groundForce)},
+                    {"airForce", jsonFromMaybe(airForce)},
+                    {"liquidForce", jsonFromMaybe(liquidForce)},
+                    {"airJumpProfile", airJumpProfile.toJson()},
+                    {"liquidJumpProfile", liquidJumpProfile.toJson()},
+                    {"fallStatusSpeedMin", jsonFromMaybe(fallStatusSpeedMin)},
+                    {"fallThroughSustainFrames", jsonFromMaybe(fallThroughSustainFrames)},
+                    {"maximumPlatformCorrection", jsonFromMaybe(maximumPlatformCorrection)},
+                    {"maximumPlatformCorrectionVelocityFactor", jsonFromMaybe(maximumPlatformCorrectionVelocityFactor)},
+                    {"physicsEffectCategories", jsonFromMaybe(physicsEffectCategories, jsonFromStringSet)},
+                    {"groundMovementMinimumSustain", jsonFromMaybe(groundMovementMinimumSustain)},
+                    {"groundMovementMaximumSustain", jsonFromMaybe(groundMovementMaximumSustain)},
+                    {"groundMovementCheckDistance", jsonFromMaybe(groundMovementCheckDistance)},
+                    {"collisionEnabled", jsonFromMaybe(collisionEnabled)},
+                    {"frictionEnabled", jsonFromMaybe(frictionEnabled)},
+                    {"gravityEnabled", jsonFromMaybe(gravityEnabled)},
+                    {"pathExploreRate", jsonFromMaybe(pathExploreRate)}};
 }
 
-ActorMovementParameters ActorMovementParameters::merge(ActorMovementParameters const& rhs) const {
+auto ActorMovementParameters::merge(ActorMovementParameters const& rhs) const -> ActorMovementParameters {
   ActorMovementParameters merged;
 
   merged.mass = rhs.mass ? rhs.mass : mass;
@@ -254,7 +253,7 @@ ActorMovementParameters ActorMovementParameters::merge(ActorMovementParameters c
   return merged;
 }
 
-DataStream& operator>>(DataStream& ds, ActorMovementParameters& movementParameters) {
+auto operator>>(DataStream& ds, ActorMovementParameters& movementParameters) -> DataStream& {
   ds.read(movementParameters.mass);
   ds.read(movementParameters.gravityMultiplier);
   ds.read(movementParameters.liquidBuoyancy);
@@ -297,7 +296,7 @@ DataStream& operator>>(DataStream& ds, ActorMovementParameters& movementParamete
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementParameters) {
+auto operator<<(DataStream& ds, ActorMovementParameters const& movementParameters) -> DataStream& {
   ds.write(movementParameters.mass);
   ds.write(movementParameters.gravityMultiplier);
   ds.write(movementParameters.liquidBuoyancy);
@@ -364,7 +363,7 @@ ActorMovementModifiers::ActorMovementModifiers(Json const& config) {
   }
 }
 
-Json ActorMovementModifiers::toJson() const {
+auto ActorMovementModifiers::toJson() const -> Json {
   return JsonObject{
     {"groundMovementModifier", groundMovementModifier},
     {"liquidMovementModifier", liquidMovementModifier},
@@ -374,11 +373,10 @@ Json ActorMovementModifiers::toJson() const {
     {"runningSuppressed", runningSuppressed},
     {"jumpingSuppressed", jumpingSuppressed},
     {"facingSuppressed", facingSuppressed},
-    {"movementSuppressed", movementSuppressed}
-  };
+    {"movementSuppressed", movementSuppressed}};
 }
 
-ActorMovementModifiers ActorMovementModifiers::combine(ActorMovementModifiers const& rhs) const {
+auto ActorMovementModifiers::combine(ActorMovementModifiers const& rhs) const -> ActorMovementModifiers {
   ActorMovementModifiers res = *this;
 
   res.groundMovementModifier *= rhs.groundMovementModifier;
@@ -394,7 +392,7 @@ ActorMovementModifiers ActorMovementModifiers::combine(ActorMovementModifiers co
   return res;
 }
 
-DataStream& operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers) {
+auto operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers) -> DataStream& {
   ds.read(movementModifiers.groundMovementModifier);
   ds.read(movementModifiers.liquidMovementModifier);
   ds.read(movementModifiers.speedModifier);
@@ -408,7 +406,7 @@ DataStream& operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers) {
+auto operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers) -> DataStream& {
   ds.write(movementModifiers.groundMovementModifier);
   ds.write(movementModifiers.liquidMovementModifier);
   ds.write(movementModifiers.speedModifier);
@@ -453,7 +451,7 @@ ActorMovementController::ActorMovementController(ActorMovementParameters const& 
   resetBaseParameters(parameters);
 }
 
-ActorMovementParameters const& ActorMovementController::baseParameters() const {
+auto ActorMovementController::baseParameters() const -> ActorMovementParameters const& {
   return m_baseParameters;
 }
 
@@ -467,7 +465,7 @@ void ActorMovementController::resetBaseParameters(ActorMovementParameters const&
   applyMCParameters(m_baseParameters);
 }
 
-ActorMovementModifiers const& ActorMovementController::baseModifiers() const {
+auto ActorMovementController::baseModifiers() const -> ActorMovementModifiers const& {
   return m_baseModifiers;
 }
 
@@ -479,13 +477,13 @@ void ActorMovementController::resetBaseModifiers(ActorMovementModifiers const& m
   m_baseModifiers = modifiers;
 }
 
-Json ActorMovementController::storeState() const {
+auto ActorMovementController::storeState() const -> Json {
   return JsonObject{{"position", jsonFromVec2F(MovementController::position())},
-      {"velocity", jsonFromVec2F(velocity())},
-      {"rotation", MovementController::rotation()},
-      {"movingDirection", DirectionNames.getRight(m_movingDirection.get())},
-      {"facingDirection", DirectionNames.getRight(m_facingDirection.get())},
-      {"crouching", m_crouching.get()}};
+                    {"velocity", jsonFromVec2F(velocity())},
+                    {"rotation", MovementController::rotation()},
+                    {"movingDirection", DirectionNames.getRight(m_movingDirection.get())},
+                    {"facingDirection", DirectionNames.getRight(m_facingDirection.get())},
+                    {"crouching", m_crouching.get()}};
 }
 
 void ActorMovementController::loadState(Json const& state) {
@@ -505,73 +503,73 @@ void ActorMovementController::resetAnchorState() {
   doSetAnchorState({});
 }
 
-std::optional<EntityAnchorState> ActorMovementController::anchorState() const {
+auto ActorMovementController::anchorState() const -> std::optional<EntityAnchorState> {
   return m_anchorState.get();
 }
 
-EntityAnchorConstPtr ActorMovementController::entityAnchor() const {
+auto ActorMovementController::entityAnchor() const -> ConstPtr<EntityAnchor> {
   return m_entityAnchor;
 }
 
-Vec2F ActorMovementController::position() const {
+auto ActorMovementController::position() const -> Vec2F {
   if (m_entityAnchor)
     return m_entityAnchor->position;
   return MovementController::position();
 }
 
-float ActorMovementController::rotation() const {
+auto ActorMovementController::rotation() const -> float {
   if (m_entityAnchor)
     return m_entityAnchor->angle;
   return MovementController::rotation();
 }
 
-bool ActorMovementController::walking() const {
+auto ActorMovementController::walking() const -> bool {
   return m_walking.get();
 }
 
-bool ActorMovementController::running() const {
+auto ActorMovementController::running() const -> bool {
   return m_running.get();
 }
 
-Direction ActorMovementController::movingDirection() const {
+auto ActorMovementController::movingDirection() const -> Direction {
   return m_movingDirection.get();
 }
 
-Direction ActorMovementController::facingDirection() const {
+auto ActorMovementController::facingDirection() const -> Direction {
   if (m_entityAnchor)
     return m_entityAnchor->direction;
   return m_facingDirection.get();
 }
 
-bool ActorMovementController::crouching() const {
+auto ActorMovementController::crouching() const -> bool {
   return m_crouching.get();
 }
 
-bool ActorMovementController::flying() const {
+auto ActorMovementController::flying() const -> bool {
   return m_flying.get();
 }
 
-bool ActorMovementController::falling() const {
+auto ActorMovementController::falling() const -> bool {
   return m_falling.get();
 }
 
-bool ActorMovementController::canJump() const {
+auto ActorMovementController::canJump() const -> bool {
   return m_canJump.get();
 }
 
-bool ActorMovementController::jumping() const {
+auto ActorMovementController::jumping() const -> bool {
   return m_jumping.get();
 }
 
-bool ActorMovementController::groundMovement() const {
+auto ActorMovementController::groundMovement() const -> bool {
   return m_groundMovement.get();
 }
 
-bool ActorMovementController::liquidMovement() const {
+auto ActorMovementController::liquidMovement() const -> bool {
   return m_liquidMovement.get();
 }
 
-bool ActorMovementController::pathfinding() const {
+auto ActorMovementController::pathfinding() const -> bool {
   if (m_pathController)
     return m_pathController->pathfinding();
   else
@@ -595,7 +593,7 @@ void ActorMovementController::controlApproachVelocity(Vec2F const& targetVelocit
 }
 
 void ActorMovementController::controlApproachVelocityAlongAngle(
-    float angle, float targetVelocity, float maxControlForce, bool positiveOnly) {
+  float angle, float targetVelocity, float maxControlForce, bool positiveOnly) {
   m_controlApproachVelocityAlongAngles.append({angle, targetVelocity, maxControlForce, positiveOnly});
 }
 
@@ -641,15 +639,15 @@ void ActorMovementController::controlFly(Vec2F const& velocity) {
   m_controlFly = velocity;
 }
 
-std::optional<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position, bool, std::optional<PlatformerAStar::Parameters> const& parameters) {
+auto ActorMovementController::pathMove(Vec2F const& position, bool, std::optional<PlatformerAStar::Parameters> const& parameters) -> std::optional<std::pair<Vec2F, bool>> {
   if (!m_pathController)
-    m_pathController = make_shared<PathController>(world());
+    m_pathController = std::make_shared<PathController>(world());
 
   // set new parameters if they have changed
   if (!m_pathController->targetPosition() || (parameters && m_pathController->parameters() != *parameters)) {
     if (parameters)
       m_pathController->setParameters(*parameters);
-    m_pathMoveResult = m_pathController->findPath(*this, position).transform([position](bool result) { return pair<Vec2F, bool>(position, result); });
+    m_pathMoveResult = m_pathController->findPath(*this, position).transform([position](bool result) -> std::pair<Vec2F, bool> { return {position, result}; });
   }
 
   // update target position if it has changed
@@ -657,7 +655,7 @@ std::optional<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& 
     m_pathController->findPath(*this, position);
   }
 
-  if (m_pathMoveResult.isValid()) {
+  if (m_pathMoveResult.has_value()) {
     // path controller failed or succeeded, return the result and reset the controller
     m_pathController->reset();
   }
@@ -665,11 +663,11 @@ std::optional<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& 
   return take(m_pathMoveResult);
 }
 
-std::optional<pair<Vec2F, bool>> ActorMovementController::controlPathMove(Vec2F const& position, bool run, std::optional<PlatformerAStar::Parameters> const& parameters) {
+auto ActorMovementController::controlPathMove(Vec2F const& position, bool run, std::optional<PlatformerAStar::Parameters> const& parameters) -> std::optional<std::pair<Vec2F, bool>> {
   auto result = pathMove(position, run, parameters);
 
   if (!result)
-    m_controlPathMove = pair<Vec2F, bool>(position, run);
+    m_controlPathMove = std::pair<Vec2F, bool>(position, run);
 
   return result;
 }
@@ -698,7 +696,7 @@ void ActorMovementController::clearControls() {
 }
 
 void ActorMovementController::tickMaster(float dt) {
-  EntityAnchorConstPtr newAnchor;
+  ConstPtr<EntityAnchor> newAnchor;
   if (auto anchorState = m_anchorState.get()) {
     if (auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId)))
       newAnchor = anchorableEntity->anchor(anchorState->positionIndex);
@@ -737,23 +735,23 @@ void ActorMovementController::tickMaster(float dt) {
       m_controlPathMove = {};
     }
 
-    if (m_controlMove.isValid()
+    if (m_controlMove.has_value()
         || m_controlCrouch
         || m_controlDown
         || m_controlJump
-        || m_controlFly.isValid()
+        || m_controlFly.has_value()
         || !m_controlApproachVelocities.empty()
         || !m_controlApproachVelocityAlongAngles.empty()) {
       // controlling any other movement overrides the pathing
       m_controlPathMove.reset();
     }
 
-    if (m_controlPathMove && m_pathMoveResult.isNothing()) {
+    if (m_controlPathMove && !m_pathMoveResult) {
       if (appliedForceRegion()) {
         m_pathController->reset();
       } else if (!m_pathController->pathfinding()) {
         m_pathMoveResult = m_pathController->move(*this, activeParameters, activeModifiers, m_controlPathMove->second, dt)
-          .apply([this](bool result) { return pair<Vec2F, bool>(m_controlPathMove->first, result); });
+                             .transform([this](bool result) -> std::pair<Vec2F, bool> { return {m_controlPathMove->first, result}; });
 
         auto action = m_pathController->curAction();
         bool onGround = false;
@@ -767,8 +765,8 @@ void ActorMovementController::tickMaster(float dt) {
 
           onGround = a == Action::Walk || a == Action::Drop || a == Action::Jump;
 
-          if (a == Action::Land || a== Action::Jump) {
-            auto inLiquid = liquidPercentage() >= activeParameters.minimumLiquidPercentage.value(1.0);
+          if (a == Action::Land || a == Action::Jump) {
+            auto inLiquid = liquidPercentage() >= activeParameters.minimumLiquidPercentage.value_or(1.0);
             m_liquidMovement.set(inLiquid);
             m_groundMovement.set(!inLiquid);
             onGround = !inLiquid && onGround;
@@ -794,9 +792,9 @@ void ActorMovementController::tickMaster(float dt) {
         clearControls();
         return;
       } else {
-        m_pathMoveResult = m_pathController->findPath(*this, m_controlPathMove->first).apply([this](bool result) {
-            return pair<Vec2F, bool>(m_controlPathMove->first, result);
-          });
+        m_pathMoveResult = m_pathController->findPath(*this, m_controlPathMove->first).transform([this](bool result) -> std::pair<Vec2F, bool> {
+          return {m_controlPathMove->first, result};
+        });
       }
     } else {
       m_pathController = {};
@@ -924,13 +922,11 @@ void ActorMovementController::tickMaster(float dt) {
       if (m_controlMove == Direction::Left) {
         updatedMovingDirection = Direction::Left;
         m_targetHorizontalAmbulatingVelocity =
-            -1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier
-                             : *activeParameters.walkSpeed * activeModifiers.speedModifier);
+          -1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier : *activeParameters.walkSpeed * activeModifiers.speedModifier);
       } else if (m_controlMove == Direction::Right) {
         updatedMovingDirection = Direction::Right;
         m_targetHorizontalAmbulatingVelocity =
-            1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier
-                            : *activeParameters.walkSpeed * activeModifiers.speedModifier);
+          1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier : *activeParameters.walkSpeed * activeModifiers.speedModifier);
       }
 
       m_targetHorizontalAmbulatingVelocity *= m_moveSpeedMultiplier;
@@ -941,8 +937,8 @@ void ActorMovementController::tickMaster(float dt) {
       Vec2F surfaceVelocity = MovementController::surfaceVelocity();
 
       // don't ambulate if we're already moving faster than the target velocity in the direction of ambulation
-      bool ambulationWouldAccelerate = abs(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0]) > abs(xVelocity())
-          || (m_targetHorizontalAmbulatingVelocity < 0) != (xVelocity() < 0);
+      bool ambulationWouldAccelerate = std::abs(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0]) > std::abs(xVelocity())
+        || (m_targetHorizontalAmbulatingVelocity < 0) != (xVelocity() < 0);
 
       if (m_targetHorizontalAmbulatingVelocity != 0.0f && ambulationWouldAccelerate) {
         float ambulatingAccel;
@@ -1039,8 +1035,8 @@ void ActorMovementController::applyMCParameters(ActorMovementParameters const& p
   // special 'ambulatingGroundFriction'.
   float relativeXVelocity = xVelocity() - surfaceVelocity()[0];
   bool useAmbulatingGroundFriction = (m_walking.get() || m_running.get())
-      && copysign(1, m_targetHorizontalAmbulatingVelocity) == copysign(1, relativeXVelocity)
-      && fabs(relativeXVelocity) <= fabs(m_targetHorizontalAmbulatingVelocity);
+    && std::copysign(1, m_targetHorizontalAmbulatingVelocity) == std::copysign(1, relativeXVelocity)
+    && std::fabs(relativeXVelocity) <= std::fabs(m_targetHorizontalAmbulatingVelocity);
 
   if (useAmbulatingGroundFriction)
     mcParameters.groundFriction = parameters.ambulatingGroundFriction;
@@ -1064,7 +1060,7 @@ void ActorMovementController::applyMCParameters(ActorMovementParameters const& p
 }
 
 void ActorMovementController::doSetAnchorState(std::optional<EntityAnchorState> anchorState) {
-  EntityAnchorConstPtr entityAnchor;
+  ConstPtr<EntityAnchor> entityAnchor;
   if (anchorState) {
     auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId));
     if (!anchorableEntity)
@@ -1087,11 +1083,10 @@ void ActorMovementController::doSetAnchorState(std::optional<EntityAnchorState> 
     setPosition(m_entityAnchor->position);
 }
 
-
 PathController::PathController(World* world)
-  : m_world(world), m_edgeTimer(0.0) { }
+    : m_world(world), m_edgeTimer(0.0) {}
 
-PlatformerAStar::Parameters const& PathController::parameters() {
+auto PathController::parameters() -> PlatformerAStar::Parameters const& {
   return m_parameters;
 }
 
@@ -1109,26 +1104,26 @@ void PathController::reset() {
   m_edgeTimer = 0.0;
 }
 
-bool PathController::pathfinding() const {
-  return m_path.isNothing();
+auto PathController::pathfinding() const -> bool {
+  return !m_path;
 }
 
-std::optional<Vec2F> PathController::targetPosition() const {
+auto PathController::targetPosition() const -> std::optional<Vec2F> {
   return m_targetPosition;
 }
 
-std::optional<Direction> PathController::facing() const {
+auto PathController::facing() const -> std::optional<Direction> {
   return m_controlFace;
 }
 
-std::optional<PlatformerAStar::Action> PathController::curAction() const {
+auto PathController::curAction() const -> std::optional<PlatformerAStar::Action> {
   if (m_path && m_edgeIndex < m_path->size()) {
     return m_path->at(m_edgeIndex).action;
   }
   return {};
 }
 
-std::optional<bool> PathController::findPath(ActorMovementController& movementController, Vec2F const& targetPosition) {
+auto PathController::findPath(ActorMovementController& movementController, Vec2F const& targetPosition) -> std::optional<bool> {
   using namespace PlatformerAStar;
 
   // reached the end of the last path and we have a new target position to move toward
@@ -1142,7 +1137,7 @@ std::optional<bool> PathController::findPath(ActorMovementController& movementCo
     auto grounded = movementController.onGround();
     if (m_path) {
       // if already moving on a path, collision will be disabled and we can't use MovementController::onGround() to check for ground collision
-      auto const groundCollision = CollisionSet{ CollisionKind::Null, CollisionKind::Block, CollisionKind::Slippery, CollisionKind::Platform };
+      auto const groundCollision = CollisionSet{CollisionKind::Null, CollisionKind::Block, CollisionKind::Slippery, CollisionKind::Platform};
       grounded = onGround(movementController, movementController.position(), groundCollision);
     }
     if (*movementController.parameters().gravityEnabled && !grounded && !movementController.liquidMovement()) {
@@ -1154,10 +1149,10 @@ std::optional<bool> PathController::findPath(ActorMovementController& movementCo
   }
 
   if (!m_pathFinder && m_path && m_edgeIndex == m_path->size())
-    return true; // Reached goal
+    return true;// Reached goal
 
   if (m_pathFinder) {
-    auto explored = m_pathFinder->explore(movementController.baseParameters().pathExploreRate.value(100.0));
+    auto explored = m_pathFinder->explore(movementController.baseParameters().pathExploreRate.value_or(100.0));
     if (explored) {
       auto pathfinder = m_pathFinder;
       m_pathFinder = {};
@@ -1174,7 +1169,7 @@ std::optional<bool> PathController::findPath(ActorMovementController& movementCo
           // try to fast forward on the new path
           size_t i = 0;
           // fast forward from current edge, or the last edge of the path
-          auto curEdgeIndex = min(m_edgeIndex, m_path->size() - 1);
+          auto curEdgeIndex = std::min(m_edgeIndex, m_path->size() - 1);
           auto& curEdge = m_path->at(curEdgeIndex);
           for (auto& edge : path) {
             if (curEdge.action == edge.action && curEdge.source.position == edge.source.position && edge.target.position == edge.target.position) {
@@ -1213,7 +1208,7 @@ std::optional<bool> PathController::findPath(ActorMovementController& movementCo
           // merging the paths failed, and the entity has moved from the path start position
           // try to bridge the gap from the current position to the new path
           auto bridgePathFinder = make_shared<PathFinder>(m_world, movementController.position(), *m_startPosition, movementController.baseParameters(), m_parameters);
-          auto explored = bridgePathFinder->explore(movementController.baseParameters().pathExploreRate.value(100.0));
+          auto explored = bridgePathFinder->explore(movementController.baseParameters().pathExploreRate.value_or(100.0));
 
           if (explored && *explored) {
             // concatenate the bridge path with the new path
@@ -1227,7 +1222,7 @@ std::optional<bool> PathController::findPath(ActorMovementController& movementCo
           }
         }
 
-        if(!path.empty() && !validateEdge(movementController, path[0])) {
+        if (!path.empty() && !validateEdge(movementController, path[0])) {
           // reset if the first edge is invalid
           reset();
           return false;
@@ -1247,7 +1242,7 @@ std::optional<bool> PathController::findPath(ActorMovementController& movementCo
   return {};
 }
 
-std::optional<bool> PathController::move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt) {
+auto PathController::move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt) -> std::optional<bool> {
   using namespace PlatformerAStar;
 
   // pathfind to a new target position in the background while moving on the current path
@@ -1261,43 +1256,42 @@ std::optional<bool> PathController::move(ActorMovementController& movementContro
 
   while (m_edgeIndex < m_path->size()) {
     auto& edge = m_path->at(m_edgeIndex);
-    Vec2F delta =  m_world->geometry().diff(edge.target.position, edge.source.position);
+    Vec2F delta = m_world->geometry().diff(edge.target.position, edge.source.position);
 
     Vec2F sourceVelocity;
     Vec2F targetVelocity;
     switch (edge.action) {
-      case Action::Jump:
-        if (modifiers.jumpingSuppressed) {
-          reset();
-          return {};
-        }
-        break;
-      case Action::Arc:
-        sourceVelocity = edge.source.velocity.value(Vec2F());
-        targetVelocity = edge.target.velocity.value(Vec2F());
-        break;
-      case Action::Drop:
-        targetVelocity = edge.target.velocity.value(Vec2F());
-        break;
-      case Action::Fly:
-        {
-          // accelerate along path using airForce
-          float angleFactor = movementController.velocity().normalized() * delta.normalized();
-          float speedAlongAngle = angleFactor * movementController.velocity().magnitude();
-          auto acc = parameters.airForce.value(0.0) / movementController.mass();
-          sourceVelocity = delta.normalized() * fmin(parameters.flySpeed.value(0.0), speedAlongAngle + acc * dt);
-          targetVelocity = sourceVelocity;
-        }
-        break;
-      case Action::Swim:
-        sourceVelocity = targetVelocity = delta.normalized() * parameters.flySpeed.value(0.0f) * (1.0f - parameters.liquidImpedance.value(0.0f));
-        break;
-      case Action::Walk:
-        sourceVelocity = delta.normalized() * (run ? parameters.runSpeed.value(0.0f) : parameters.walkSpeed.value(0.0f));
-        sourceVelocity *= modifiers.speedModifier;
-        targetVelocity = sourceVelocity;
-        break;
-      default: {}
+    case Action::Jump:
+      if (modifiers.jumpingSuppressed) {
+        reset();
+        return {};
+      }
+      break;
+    case Action::Arc:
+      sourceVelocity = edge.source.velocity.value_or(Vec2F());
+      targetVelocity = edge.target.velocity.value_or(Vec2F());
+      break;
+    case Action::Drop:
+      targetVelocity = edge.target.velocity.value_or(Vec2F());
+      break;
+    case Action::Fly: {
+      // accelerate along path using airForce
+      float angleFactor = movementController.velocity().normalized() * delta.normalized();
+      float speedAlongAngle = angleFactor * movementController.velocity().magnitude();
+      auto acc = parameters.airForce.value_or(0.0) / movementController.mass();
+      sourceVelocity = delta.normalized() * std::fmin(parameters.flySpeed.value_or(0.0), speedAlongAngle + acc * dt);
+      targetVelocity = sourceVelocity;
+    } break;
+    case Action::Swim:
+      sourceVelocity = targetVelocity = delta.normalized() * parameters.flySpeed.value_or(0.0f) * (1.0f - parameters.liquidImpedance.value_or(0.0f));
+      break;
+    case Action::Walk:
+      sourceVelocity = delta.normalized() * (run ? parameters.runSpeed.value_or(0.0f) : parameters.walkSpeed.value_or(0.0f));
+      sourceVelocity *= modifiers.speedModifier;
+      targetVelocity = sourceVelocity;
+      break;
+    default: {
+    }
     }
 
     Vec2F avgVelocity = (sourceVelocity + targetVelocity) / 2.0;
@@ -1357,20 +1351,20 @@ std::optional<bool> PathController::move(ActorMovementController& movementContro
     return true;
 }
 
-bool PathController::validateEdge(ActorMovementController& movementController, PlatformerAStar::Edge const& edge) {
+auto PathController::validateEdge(ActorMovementController& movementController, PlatformerAStar::Edge const& edge) -> bool {
   using namespace PlatformerAStar;
 
-  auto const groundCollision = CollisionSet{ CollisionKind::Null, CollisionKind::Block, CollisionKind::Slippery, CollisionKind::Platform };
-  auto const solidCollision = CollisionSet{ CollisionKind::Null, CollisionKind::Block, CollisionKind::Slippery };
+  auto const groundCollision = CollisionSet{CollisionKind::Null, CollisionKind::Block, CollisionKind::Slippery, CollisionKind::Platform};
+  auto const solidCollision = CollisionSet{CollisionKind::Null, CollisionKind::Block, CollisionKind::Slippery};
 
-  auto const openDoors = [&](RectF const& bounds) {
-  auto objects = m_world->entityQuery(bounds, entityTypeFilter<Object>());
-  auto opened = objects.filtered([&](EntityPtr const& e) -> bool {
+  auto const openDoors = [&](RectF const& bounds) -> bool {
+    auto objects = m_world->entityQuery(bounds, entityTypeFilter<Object>());
+    auto opened = objects.filtered([&](Ptr<Entity> const& e) -> bool {
       if (auto object = as<Object>(e)) {
         if (object->isMaster()) {
           auto arg = m_world->luaRoot()->luaEngine().createString("closedDoor");
           auto res = object->callScript("hasCapability", LuaVariadic<LuaValue>{arg});
-          if (res && res->is<LuaBoolean>() && res->get<LuaBoolean>()){
+          if (res && res->is<LuaBoolean>() && res->get<LuaBoolean>()) {
             m_world->sendEntityMessage(e->entityId(), "openDoor");
             return true;
           }
@@ -1403,7 +1397,7 @@ bool PathController::validateEdge(ActorMovementController& movementController, P
   auto inLiquid = [&](Vec2F const& position) -> bool {
     auto bounds = movementController.localBoundBox().translated(position);
     auto liquidLevel = m_world->liquidLevel(bounds);
-    if (liquidLevel.level >= movementController.baseParameters().minimumLiquidPercentage.value(1.0)) {
+    if (liquidLevel.level >= movementController.baseParameters().minimumLiquidPercentage.value_or(1.0)) {
       // for (auto line : bounds.edges()) {
       //   SpatialLogger::logLine("world", line, Color::Blue.toRgba());
       // }
@@ -1417,40 +1411,40 @@ bool PathController::validateEdge(ActorMovementController& movementController, P
   };
 
   switch (edge.action) {
-    case Action::Walk:
-      return onGround(movementController, edge.source.position, groundCollision);
-    case Action::Swim:
-      return inLiquid(edge.target.position);
-    case Action::Land:
-      return onGround(movementController, edge.target.position, groundCollision) || inLiquid(edge.target.position);
-    case Action::Drop:
-      return onGround(movementController, edge.source.position, groundCollision) && !onGround(movementController, edge.source.position, solidCollision);
-    default:
-      return true;
+  case Action::Walk:
+    return onGround(movementController, edge.source.position, groundCollision);
+  case Action::Swim:
+    return inLiquid(edge.target.position);
+  case Action::Land:
+    return onGround(movementController, edge.target.position, groundCollision) || inLiquid(edge.target.position);
+  case Action::Drop:
+    return onGround(movementController, edge.source.position, groundCollision) && !onGround(movementController, edge.source.position, solidCollision);
+  default:
+    return true;
   }
 }
 
-bool PathController::movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly) {
+auto PathController::movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly) -> bool {
   bool collided = false;
-  movementController.forEachMovingCollision(collisionPoly.boundBox(), [&](MovingCollisionId, PhysicsMovingCollision, PolyF poly, RectF) {
-      if (poly.intersects(collisionPoly)) {
-        // set collided and stop iterating
-        collided = true;
-        return false;
-      }
-      return true;
-    });
+  movementController.forEachMovingCollision(collisionPoly.boundBox(), [&](MovingCollisionId, PhysicsMovingCollision, PolyF poly, RectF) -> bool {
+    if (poly.intersects(collisionPoly)) {
+      // set collided and stop iterating
+      collided = true;
+      return false;
+    }
+    return true;
+  });
   return collided;
 }
 
-bool PathController::onGround(ActorMovementController const& movementController, Vec2F const& position, CollisionSet const& collisionSet) const {
-    auto bounds = RectI::integral(movementController.localBoundBox().translated(position));
-    Vec2I min = Vec2I(bounds.xMin(), bounds.yMin() - 1);
-    Vec2I max = Vec2I(bounds.xMax(), bounds.yMin());
-    // for (auto line : RectF(Vec2F(min), Vec2F(max)).edges()) {
-    //   SpatialLogger::logLine("world", line, m_world->rectTileCollision(RectI(min, max), collisionSet) ? Color::Blue.toRgba() : Color::Red.toRgba());
-    // }
-    return m_world->rectTileCollision(RectI(min, max), collisionSet);
+auto PathController::onGround(ActorMovementController const& movementController, Vec2F const& position, CollisionSet const& collisionSet) const -> bool {
+  auto bounds = RectI::integral(movementController.localBoundBox().translated(position));
+  Vec2I min = Vec2I(bounds.xMin(), bounds.yMin() - 1);
+  Vec2I max = Vec2I(bounds.xMax(), bounds.yMin());
+  // for (auto line : RectF(Vec2F(min), Vec2F(max)).edges()) {
+  //   SpatialLogger::logLine("world", line, m_world->rectTileCollision(RectI(min, max), collisionSet) ? Color::Blue.toRgba() : Color::Red.toRgba());
+  // }
+  return m_world->rectTileCollision(RectI(min, max), collisionSet);
 }
 
-}
+}// namespace Star

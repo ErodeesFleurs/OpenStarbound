@@ -4,13 +4,11 @@
 
 namespace Star {
 
-  STAR_CLASS(RenderableItem);
+class RenderableItem {
+public:
+  virtual ~RenderableItem() = default;
 
-  class RenderableItem {
-  public:
-    virtual ~RenderableItem() {}
+  virtual void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) = 0;
+};
 
-    virtual void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) = 0;
-  };
-
-}
+}// namespace Star

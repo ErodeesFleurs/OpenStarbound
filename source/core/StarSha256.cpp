@@ -199,7 +199,7 @@ Sha256Hasher::Sha256Hasher() {
   sha_init(&m_state);
 }
 
-void Sha256Hasher::push(char const* data, size_t length) {
+void Sha256Hasher::push(char const* data, std::size_t length) {
   if (m_finished) {
     sha_init(&m_state);
     m_finished = false;
@@ -228,14 +228,14 @@ void Sha256Hasher::compute(char* hashDestination) {
   m_finished = true;
 }
 
-void sha256(char const* source, size_t length, char* hashDestination) {
+void sha256(char const* source, std::size_t length, char* hashDestination) {
   sha_state state;
   sha_init(&state);
   sha_process(&state, (std::uint8_t*)source, length);
   sha_done(&state, (std::uint8_t*)hashDestination);
 }
 
-auto sha256(char const* source, size_t length) -> ByteArray {
+auto sha256(char const* source, std::size_t length) -> ByteArray {
   ByteArray dest(32, 0);
   sha256(source, length, dest.ptr());
   return dest;

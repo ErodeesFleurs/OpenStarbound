@@ -1,90 +1,187 @@
 #include "StarFile.hpp"
+
+#include "StarEncode.hpp"
 #include "StarFormat.hpp"
-#include "StarConfig.hpp"
+#include "StarRandom.hpp"
 
 import std;
 
+namespace fs = std::filesystem;
+
 namespace Star {
 
-void File::makeDirectoryRecursive(String const& fileName) {
-  auto parent = dirName(fileName);
-  if (!isDirectory(parent))
-    makeDirectoryRecursive(parent);
-  if (!isDirectory(fileName))
-    makeDirectory(fileName);
+namespace {
+auto fromU8Path(fs::path const& p) -> String {
+  auto u8 = p.u8string();
+  return {(char const*)u8.data(), u8.size()};
 }
 
-void File::removeDirectoryRecursive(String const& fileName) {
-  {
-    String fileInDir;
-    bool isDir;
+auto ioModeToStd(IOMode mode) -> std::ios_base::openmode {
+  std::ios_base::openmode stdMode = std::ios::binary;
+  if (mode & IOMode::Read)
+    stdMode |= std::ios::in;
+  if (mode & IOMode::Write)
+    stdMode |= std::ios::out;
+  if (mode & IOMode::Append)
+    stdMode |= std::ios::app;
+  if (mode & IOMode::Truncate)
+    stdMode |= std::ios::trunc;
+  return stdMode;
+}
+}// namespace
 
-    for (auto const& p : dirList(fileName)) {
-      std::tie(fileInDir, isDir) = p;
+auto File::convertDirSeparators(String const& path) -> String {
+  return fromU8Path(fs::path(path.utf8()).make_preferred());
+}
 
-      fileInDir = relativeTo(fileName, fileInDir);
+auto File::currentDirectory() -> String {
+  try {
+    return fromU8Path(fs::current_path());
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("currentDirectory failed: {}", e.what());
+  }
+}
 
-      if (isDir)
-        removeDirectoryRecursive(fileInDir);
-      else
-        remove(fileInDir);
+void File::changeDirectory(String const& dirName) {
+  try {
+    fs::current_path(fs::path(dirName.utf8()));
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("changeDirectory failed for '{}': {}", dirName, e.what());
+  }
+}
+
+void File::makeDirectory(String const& dirName) {
+  try {
+    fs::create_directory(fs::path(dirName.utf8()));
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("makeDirectory failed for '{}': {}", dirName, e.what());
+  }
+}
+
+void File::makeDirectoryRecursive(String const& dirName) {
+  try {
+    fs::create_directories(fs::path(dirName.utf8()));
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("makeDirectoryRecursive failed for '{}': {}", dirName, e.what());
+  }
+}
+
+auto File::dirList(String const& dirName, bool skipDots) -> List<std::pair<String, bool>> {
+  try {
+    List<std::pair<String, bool>> result;
+    for (auto const& entry : fs::directory_iterator(fs::path(dirName.utf8()))) {
+      String name = fromU8Path(entry.path().filename());
+      if (!skipDots || (name != "." && name != ".."))
+        result.append({name, entry.is_directory()});
     }
-  }
-
-  remove(fileName);
-}
-
-void File::copy(String const& source, String const& target) {
-  auto sourceFile = File::open(source, IOMode::Read);
-  auto targetFile = File::open(target, IOMode::ReadWrite);
-
-  targetFile->resize(0);
-
-  std::array<char, 1024> buf;
-  while (!sourceFile->atEnd()) {
-    size_t r = sourceFile->read(buf.data(), 1024);
-    targetFile->writeFull(buf.data(), r);
+    return result;
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("dirList failed for '{}': {}", dirName, e.what());
   }
 }
 
-auto File::open(const String& filename, IOMode mode) -> Ptr<File> {
-  auto file = std::make_shared<File>(filename);
-  file->open(mode);
+auto File::baseName(String const& fileName) -> String {
+  return fromU8Path(fs::path(fileName.utf8()).filename());
+}
+
+auto File::dirName(String const& fileName) -> String {
+  auto p = fs::path(fileName.utf8()).parent_path();
+  return p.empty() ? "." : fromU8Path(p);
+}
+
+auto File::relativeTo(String const& relativeTo, String const& path) -> String {
+  fs::path p(path.utf8());
+  if (p.is_absolute())
+    return path;
+  return fromU8Path(fs::path(relativeTo.utf8()) / p);
+}
+
+auto File::fullPath(String const& path) -> String {
+  try {
+    return fromU8Path(fs::absolute(fs::path(path.utf8())));
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("fullPath failed for '{}': {}", path, e.what());
+  }
+}
+
+auto File::temporaryFileName() -> String {
+  return relativeTo(fromU8Path(fs::temp_directory_path()), strf("starbound.tmpfile.{}", hexEncode(Random::randBytes(16))));
+}
+
+auto File::temporaryFile() -> Ptr<File> {
+  return open(temporaryFileName(), IOMode::ReadWrite);
+}
+
+auto File::ephemeralFile() -> Ptr<File> {
+  auto file = std::make_shared<File>(temporaryFileName());
+  file->m_ephemeral = true;
+  file->open(IOMode::ReadWrite);
   return file;
 }
 
-auto File::readFile(String const& filename) -> ByteArray {
-  Ptr<File> file = File::open(filename, IOMode::Read);
-  ByteArray bytes;
-  while (!file->atEnd()) {
-    std::array<char, 1024> buffer;
-    size_t r = file->read(buffer.data(), 1024);
-    bytes.append(buffer.data(), r);
-  }
-
-  return bytes;
+auto File::temporaryDirectory() -> String {
+  String dirname = relativeTo(fromU8Path(fs::temp_directory_path()), strf("starbound.tmpdir.{}", hexEncode(Random::randBytes(16))));
+  makeDirectory(dirname);
+  return dirname;
 }
 
-auto File::readFileString(String const& filename) -> String {
-  Ptr<File> file = File::open(filename, IOMode::Read);
-  std::string str;
-  while (!file->atEnd()) {
-    std::array<char, 1024> buffer;
-    size_t r = file->read(buffer.data(), 1024);
-    for (size_t i = 0; i < r; ++i)
-      str.push_back(buffer[i]);
-  }
+auto File::exists(String const& path) -> bool {
+  return fs::exists(fs::path(path.utf8()));
+}
 
-  return str;
+auto File::isFile(String const& path) -> bool {
+  return fs::is_regular_file(fs::path(path.utf8()));
+}
+
+auto File::isDirectory(String const& path) -> bool {
+  return fs::is_directory(fs::path(path.utf8()));
+}
+
+void File::remove(String const& filename) {
+  try {
+    fs::remove(fs::path(filename.utf8()));
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("remove failed for '{}': {}", filename, e.what());
+  }
+}
+
+void File::removeDirectoryRecursive(String const& filename) {
+  try {
+    fs::remove_all(fs::path(filename.utf8()));
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("removeDirectoryRecursive failed for '{}': {}", filename, e.what());
+  }
+}
+
+void File::rename(String const& source, String const& target) {
+  try {
+    fs::rename(fs::path(source.utf8()), fs::path(target.utf8()));
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("rename failed from '{}' to '{}': {}", source, target, e.what());
+  }
+}
+
+void File::copy(String const& source, String const& target) {
+  try {
+    fs::copy(fs::path(source.utf8()), fs::path(target.utf8()), fs::copy_options::overwrite_existing);
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("copy failed from '{}' to '{}': {}", source, target, e.what());
+  }
 }
 
 auto File::fileSize(String const& filename) -> std::int64_t {
-  return File::open(filename, IOMode::Read)->size();
+  try {
+    return fs::file_size(fs::path(filename.utf8()));
+  } catch (fs::filesystem_error const& e) {
+    throw IOException::format("fileSize failed for '{}': {}", filename, e.what());
+  }
 }
 
-void File::writeFile(char const* data, size_t len, String const& filename) {
-  Ptr<File> file = File::open(filename, IOMode::Write | IOMode::Truncate);
-  file->writeFull(data, len);
+void File::writeFile(char const* data, std::size_t len, String const& filename) {
+  std::ofstream file(fs::path(filename.utf8()), std::ios::binary | std::ios::trunc);
+  if (!file)
+    throw IOException::format("writeFile: could not open '{}'", filename);
+  file.write(data, len);
 }
 
 void File::writeFile(ByteArray const& data, String const& filename) {
@@ -93,6 +190,34 @@ void File::writeFile(ByteArray const& data, String const& filename) {
 
 void File::writeFile(String const& data, String const& filename) {
   writeFile(data.utf8Ptr(), data.utf8Size(), filename);
+}
+
+auto File::readFile(String const& filename) -> ByteArray {
+  std::ifstream file(fs::path(filename.utf8()), std::ios::binary | std::ios::ate);
+  if (!file)
+    throw IOException::format("readFile: could not open '{}'", filename);
+  auto size = file.tellg();
+  file.seekg(0, std::ios::beg);
+  ByteArray bytes(size, 0);
+  file.read(bytes.ptr(), size);
+  return bytes;
+}
+
+auto File::readFileString(String const& filename) -> String {
+  std::ifstream file(fs::path(filename.utf8()), std::ios::binary | std::ios::ate);
+  if (!file)
+    throw IOException::format("readFileString: could not open '{}'", filename);
+  auto size = file.tellg();
+  file.seekg(0, std::ios::beg);
+  std::string str(size, '\0');
+  file.read(str.data(), size);
+  return {std::move(str)};
+}
+
+void File::overwriteFileWithRename(char const* data, std::size_t len, String const& filename, String const& newSuffix) {
+  String newFile = filename + newSuffix;
+  writeFile(data, len, newFile);
+  File::rename(newFile, filename);
 }
 
 void File::overwriteFileWithRename(ByteArray const& data, String const& filename, String const& newSuffix) {
@@ -105,13 +230,12 @@ void File::overwriteFileWithRename(String const& data, String const& filename, S
 
 void File::backupFileInSequence(String const& initialFile, String const& targetFile, unsigned maximumBackups, String const& backupExtensionPrefix) {
   for (unsigned i = maximumBackups; i > 0; --i) {
-    bool initial = i == 1;
-    String const& sourceFile = initial ? initialFile : targetFile;
-    String curExtension = initial ? "" : strf("{}{}", backupExtensionPrefix, i - 1);
-    String nextExtension = strf("{}{}", backupExtensionPrefix, i);
-
-    if (File::isFile(sourceFile + curExtension))
-      File::copy(sourceFile + curExtension, targetFile + nextExtension);
+    bool initial = (i == 1);
+    String sourceFile = initial ? initialFile : targetFile;
+    String curExt = initial ? "" : strf("{}{}", backupExtensionPrefix, i - 1);
+    String nextExt = strf("{}{}", backupExtensionPrefix, i);
+    if (File::isFile(sourceFile + curExt))
+      File::copy(sourceFile + curExt, targetFile + nextExt);
   }
 }
 
@@ -119,69 +243,18 @@ void File::backupFileInSequence(String const& targetFile, unsigned maximumBackup
   backupFileInSequence(targetFile, targetFile, maximumBackups, backupExtensionPrefix);
 }
 
-File::File()
-  : IODevice(IOMode::Closed) {
-  m_file = nullptr;
+auto File::open(String const& filename, IOMode mode) -> Ptr<File> {
+  auto file = std::make_shared<File>(filename);
+  file->open(mode);
+  return file;
 }
 
-File::File(String filename)
-  : IODevice(IOMode::Closed), m_filename(std::move(filename)), m_file(nullptr) {}
+File::File() : IODevice(IOMode::Closed) {}
+
+File::File(String filename) : IODevice(IOMode::Closed), m_filename(std::move(filename)) {}
 
 File::~File() {
   close();
-}
-
-auto File::pos() -> std::int64_t {
-  if (!m_file)
-    throw IOException("pos called on closed File");
-
-  return ftell(m_file);
-}
-
-void File::seek(std::int64_t offset, IOSeek seekMode) {
-  if (!m_file)
-    throw IOException("seek called on closed File");
-
-  fseek(m_file, offset, seekMode);
-}
-
-auto File::size() -> std::int64_t {
-  return fsize(m_file);
-}
-
-auto File::atEnd() -> bool {
-  if (!m_file)
-    throw IOException("eof called on closed File");
-
-  return ftell(m_file) >= fsize(m_file);
-}
-
-auto File::read(char* data, size_t len) -> size_t {
-  if (!m_file)
-    throw IOException("read called on closed File");
-
-  if (!isReadable())
-    throw IOException("read called on non-readable File");
-
-  return fread(m_file, data, len);
-}
-
-auto File::write(const char* data, size_t len) -> size_t {
-  if (!m_file)
-    throw IOException("write called on closed File");
-
-  if (!isWritable())
-    throw IOException("write called on non-writable File");
-
-  return fwrite(m_file, data, len);
-}
-
-auto File::readAbsolute(std::int64_t readPosition, char* data, size_t len) -> size_t {
-  return pread(m_file, data, len, readPosition);
-}
-
-auto File::writeAbsolute(std::int64_t writePosition, char const* data, size_t len) -> size_t {
-  return pwrite(m_file, data, len, writePosition);
 }
 
 auto File::fileName() const -> String {
@@ -189,70 +262,124 @@ auto File::fileName() const -> String {
 }
 
 void File::setFilename(String filename) {
+  std::lock_guard lock(m_mutex);
   if (isOpen())
-    throw IOException("Cannot call setFilename while File is open");
+    throw IOException("setFilename called on open File");
   m_filename = std::move(filename);
 }
 
 void File::remove() {
   close();
   if (m_filename.empty())
-    throw IOException("Cannot remove file, no filename set");
+    throw IOException("remove called on unnamed File");
   remove(m_filename);
 }
 
-void File::resize(std::int64_t s) {
-  bool tempOpen = false;
-  if (!isOpen()) {
-    tempOpen = true;
-    open(mode());
-  }
-
-  File::resize(m_file, s);
-
-  if (tempOpen)
-    close();
+auto File::pos() -> std::int64_t {
+  std::lock_guard lock(m_mutex);
+  return m_file.tellg();
 }
 
-void File::sync() {
-  if (!m_file)
-    throw IOException("sync called on closed File");
-
-  fsync(m_file);
+void File::seek(std::int64_t offset, IOSeek seekMode) {
+  std::lock_guard lock(m_mutex);
+  auto dir = std::ios::beg;
+  if (seekMode == IOSeek::Relative)
+    dir = std::ios::cur;
+  else if (seekMode == IOSeek::End)
+    dir = std::ios::end;
+  m_file.seekg(offset, dir);
+  m_file.seekp(offset, dir);
 }
 
-void File::open(IOMode m) {
+void File::resize(std::int64_t size) {
+  std::lock_guard lock(m_mutex);
   close();
-  if (m_filename.empty())
-    throw IOException("Cannot open file, no filename set");
+  fs::resize_file(fs::path(m_filename.utf8()), size);
+  open(mode());
+}
 
-  m_file = fopen(m_filename.utf8Ptr(), m);
-  setMode(m);
+auto File::size() -> std::int64_t {
+  std::lock_guard lock(m_mutex);
+  auto current = m_file.tellg();
+  m_file.seekg(0, std::ios::end);
+  auto s = m_file.tellg();
+  m_file.seekg(current, std::ios::beg);
+  return s;
+}
+
+auto File::atEnd() -> bool {
+  std::lock_guard lock(m_mutex);
+  return m_file.eof() || (m_file.tellg() >= size());
+}
+
+auto File::read(char* data, std::size_t len) -> std::size_t {
+  std::lock_guard lock(m_mutex);
+  m_file.read(data, len);
+  return m_file.gcount();
+}
+
+auto File::write(char const* data, std::size_t len) -> std::size_t {
+  std::lock_guard lock(m_mutex);
+  m_file.write(data, len);
+  return m_file.good() ? len : 0;
+}
+
+auto File::readAbsolute(std::int64_t readPosition, char* data, std::size_t len) -> std::size_t {
+  std::lock_guard lock(m_mutex);
+  auto oldPos = m_file.tellg();
+  m_file.seekg(readPosition, std::ios::beg);
+  m_file.read(data, len);
+  auto read = m_file.gcount();
+  m_file.seekg(oldPos, std::ios::beg);
+  return read;
+}
+
+auto File::writeAbsolute(std::int64_t writePosition, char const* data, std::size_t len) -> std::size_t {
+  std::lock_guard lock(m_mutex);
+  auto oldPos = m_file.tellp();
+  m_file.seekp(writePosition, std::ios::beg);
+  m_file.write(data, len);
+  m_file.seekp(oldPos, std::ios::beg);
+  return m_file.good() ? len : 0;
+}
+
+void File::open(IOMode mode) {
+  std::lock_guard lock(m_mutex);
+  close();
+  m_file.open(fs::path(m_filename.utf8()), ioModeToStd(mode));
+  if (!m_file)
+    throw IOException::format("could not open file '{}'", m_filename);
+  setMode(mode);
 }
 
 void File::close() {
-  if (m_file)
-    fclose(m_file);
-  m_file = nullptr;
+  std::lock_guard lock(m_mutex);
+  if (m_file.is_open())
+    m_file.close();
+  if (m_ephemeral && !m_filename.empty()) {
+    std::error_code ec;
+    fs::remove(fs::path(m_filename.utf8()), ec);
+  }
   setMode(IOMode::Closed);
 }
 
+void File::sync() {
+  std::lock_guard lock(m_mutex);
+  m_file.flush();
+}
+
 auto File::deviceName() const -> String {
-  if (m_filename.empty())
-    return "<unnamed temp file>";
-  else
-    return m_filename;
+  return m_filename.empty() ? "<unnamed file>" : m_filename;
 }
 
 auto File::clone() -> Ptr<IODevice> {
+  std::lock_guard lock(m_mutex);
   auto cloned = std::make_shared<File>(m_filename);
   if (isOpen()) {
-    // Open with same mode
     cloned->open(mode());
-    // Seek to same position
     cloned->seek(pos());
   }
   return cloned;
 }
 
-}
+}// namespace Star

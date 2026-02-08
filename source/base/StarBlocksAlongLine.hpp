@@ -2,13 +2,15 @@
 
 #include "StarVector.hpp"
 
+import std;
+
 namespace Star {
 
 // Iterate over integral cells based on Bresenham's line drawing algorithm.
 // Returns false immediately when the callback returns false for any cell,
 // returns true after iterating through every cell otherwise.
 template <typename Scalar>
-bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy, function<bool(int, int)> callback) {
+auto forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy, std::function<bool(int, int)> callback) -> bool {
   Vector<Scalar, 2> remote = origin + dxdy;
 
   double dx = dxdy[0];
@@ -102,4 +104,4 @@ bool forBlocksAlongLine(Vector<Scalar, 2> origin, Vector<Scalar, 2> const& dxdy,
   }
 }
 
-}
+}// namespace Star

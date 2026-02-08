@@ -2,6 +2,8 @@
 
 #include "StarSkyParameters.hpp"
 
+import std;
+
 namespace Star {
 
 struct SkyRenderData {
@@ -22,7 +24,7 @@ struct SkyRenderData {
   float worldRotation;
   float orbitAngle;
 
-  size_t starFrames;
+  std::size_t starFrames;
   StringList starList;
   StringList hyperStarList;
 
@@ -32,15 +34,15 @@ struct SkyRenderData {
   Color bottomRectColor;
   Color flashColor;
 
-  StringList const& starTypes() const;
+  [[nodiscard]] auto starTypes() const -> StringList const&;
 
   // Star and orbiter positions here are in view space, from (0, 0) to viewSize
 
-  List<SkyOrbiter> backOrbiters(Vec2F const& viewSize) const;
-  SkyWorldHorizon worldHorizon(Vec2F const& viewSize) const;
-  List<SkyOrbiter> frontOrbiters(Vec2F const& viewSize) const;
+  [[nodiscard]] auto backOrbiters(Vec2F const& viewSize) const -> List<SkyOrbiter>;
+  [[nodiscard]] auto worldHorizon(Vec2F const& viewSize) const -> SkyWorldHorizon;
+  [[nodiscard]] auto frontOrbiters(Vec2F const& viewSize) const -> List<SkyOrbiter>;
 };
 
-DataStream& operator>>(DataStream& ds, SkyRenderData& skyRenderData);
-DataStream& operator<<(DataStream& ds, SkyRenderData const& skyRenderData);
-}
+auto operator>>(DataStream& ds, SkyRenderData& skyRenderData) -> DataStream&;
+auto operator<<(DataStream& ds, SkyRenderData const& skyRenderData) -> DataStream&;
+}// namespace Star

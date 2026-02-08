@@ -1,23 +1,32 @@
 #pragma once
 
 #include "StarAnchorableEntity.hpp"
-#include "StarStatusTypes.hpp"
+#include "StarConfig.hpp"
+#include "StarDirectives.hpp"
 #include "StarEntityRenderingTypes.hpp"
+#include "StarStatusTypes.hpp"
 
-#include <optional>
+import std;
 
 namespace Star {
 
-STAR_CLASS(World);
-
-STAR_STRUCT(LoungeAnchor);
-STAR_CLASS(LoungeableEntity);
-STAR_CLASS(LoungingEntity);
-
-enum class LoungeOrientation { None, Sit, Lay, Stand };
+enum class LoungeOrientation { None,
+                               Sit,
+                               Lay,
+                               Stand };
 extern EnumMap<LoungeOrientation> const LoungeOrientationNames;
 
-enum class LoungeControl { Left, Right, Down, Up, Jump, PrimaryFire, AltFire, Special1, Special2, Special3, Walk };
+enum class LoungeControl { Left,
+                           Right,
+                           Down,
+                           Up,
+                           Jump,
+                           PrimaryFire,
+                           AltFire,
+                           Special1,
+                           Special2,
+                           Special3,
+                           Walk };
 extern EnumMap<LoungeControl> const LoungeControlNames;
 
 struct LoungeAnchor : EntityAnchor {
@@ -40,20 +49,20 @@ struct LoungeAnchor : EntityAnchor {
 // may be called on both the master and slave.
 class LoungeableEntity : public AnchorableEntity {
 public:
-  virtual size_t anchorCount() const override = 0;
-  EntityAnchorConstPtr anchor(size_t anchorPositionIndex) const override;
-  virtual LoungeAnchorConstPtr loungeAnchor(size_t anchorPositionIndex) const = 0;
+  [[nodiscard]] auto anchorCount() const -> std::size_t override = 0;
+  [[nodiscard]] auto anchor(std::size_t anchorPositionIndex) const -> ConstPtr<EntityAnchor> override;
+  [[nodiscard]] virtual auto loungeAnchor(std::size_t anchorPositionIndex) const -> ConstPtr<LoungeAnchor> = 0;
 
   // Default does nothing.
-  virtual void loungeControl(size_t anchorPositionIndex, LoungeControl loungeControl);
-  virtual void loungeAim(size_t anchorPositionIndex, Vec2F const& aimPosition);
+  virtual void loungeControl(std::size_t anchorPositionIndex, LoungeControl loungeControl);
+  virtual void loungeAim(std::size_t anchorPositionIndex, Vec2F const& aimPosition);
 
   // Queries around this entity's metaBoundBox for any LoungingEntities
   // reporting that they are lounging in this entity, and returns ones that are
   // lounging in the given position.
-  Set<EntityId> entitiesLoungingIn(size_t anchorPositionIndex) const;
+  [[nodiscard]] auto entitiesLoungingIn(std::size_t anchorPositionIndex) const -> Set<EntityId>;
   // Returns pairs of entity ids, and the position they are lounging in.
-  Set<pair<EntityId, size_t>> entitiesLounging() const;
+  [[nodiscard]] auto entitiesLounging() const -> Set<std::pair<EntityId, std::size_t>>;
 };
 
 // Any lounging entity should report the entity it is lounging in on both
@@ -61,10 +70,10 @@ public:
 // in the same spot.
 class LoungingEntity : public virtual Entity {
 public:
-  virtual std::optional<EntityAnchorState> loungingIn() const = 0;
+  [[nodiscard]] virtual auto loungingIn() const -> std::optional<EntityAnchorState> = 0;
   // Returns true if the entity is in a lounge achor, but other entities are
   // also reporting being in that lounge anchor.
-  bool inConflictingLoungeAnchor() const;
+  [[nodiscard]] auto inConflictingLoungeAnchor() const -> bool;
 };
 
-}
+}// namespace Star

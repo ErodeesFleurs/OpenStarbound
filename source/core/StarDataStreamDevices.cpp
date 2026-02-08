@@ -1,4 +1,5 @@
 #include "StarDataStreamDevices.hpp"
+
 #include "StarConfig.hpp"
 
 import std;
@@ -6,7 +7,7 @@ import std;
 namespace Star {
 
 DataStreamFunctions::DataStreamFunctions(std::function<std::size_t(char*, std::size_t)> reader, std::function<std::size_t(char const*, std::size_t)> writer)
-  : m_reader(std::move(reader)), m_writer(std::move(writer)) {}
+    : m_reader(std::move(reader)), m_writer(std::move(writer)) {}
 
 void DataStreamFunctions::readData(char* data, std::size_t len) {
   if (!m_reader)
@@ -21,9 +22,9 @@ void DataStreamFunctions::writeData(char const* data, std::size_t len) {
 }
 
 DataStreamIODevice::DataStreamIODevice(Ptr<IODevice> device)
-  : m_device(std::move(device)) {}
+    : m_device(std::move(device)) {}
 
-Ptr<IODevice> const& DataStreamIODevice::device() const {
+auto DataStreamIODevice::device() const -> Ptr<IODevice> const& {
   return m_device;
 }
 
@@ -31,11 +32,11 @@ void DataStreamIODevice::seek(std::size_t pos, IOSeek mode) {
   m_device->seek(pos, mode);
 }
 
-bool DataStreamIODevice::atEnd() {
+auto DataStreamIODevice::atEnd() -> bool {
   return m_device->atEnd();
 }
 
-std::int64_t DataStreamIODevice::pos() {
+auto DataStreamIODevice::pos() -> std::int64_t {
   return m_device->pos();
 }
 
@@ -52,12 +53,12 @@ DataStreamBuffer::DataStreamBuffer() {
 }
 
 DataStreamBuffer::DataStreamBuffer(std::size_t s)
-  : DataStreamBuffer() {
+    : DataStreamBuffer() {
   reset(s);
 }
 
 DataStreamBuffer::DataStreamBuffer(ByteArray b)
-  : DataStreamBuffer() {
+    : DataStreamBuffer() {
   reset(std::move(b));
 }
 
@@ -73,35 +74,35 @@ void DataStreamBuffer::clear() {
   m_buffer->clear();
 }
 
-Ptr<Buffer> const& DataStreamBuffer::device() const {
+auto DataStreamBuffer::device() const -> Ptr<Buffer> const& {
   return m_buffer;
 }
 
-ByteArray& DataStreamBuffer::data() {
+auto DataStreamBuffer::data() -> ByteArray& {
   return m_buffer->data();
 }
 
-ByteArray const& DataStreamBuffer::data() const {
+auto DataStreamBuffer::data() const -> ByteArray const& {
   return m_buffer->data();
 }
 
-ByteArray DataStreamBuffer::takeData() {
+auto DataStreamBuffer::takeData() -> ByteArray {
   return m_buffer->takeData();
 }
 
-char* DataStreamBuffer::ptr() {
+auto DataStreamBuffer::ptr() -> char* {
   return m_buffer->ptr();
 }
 
-const char* DataStreamBuffer::ptr() const {
+auto DataStreamBuffer::ptr() const -> const char* {
   return m_buffer->ptr();
 }
 
-size_t DataStreamBuffer::size() const {
+auto DataStreamBuffer::size() const -> std::size_t {
   return m_buffer->dataSize();
 }
 
-bool DataStreamBuffer::empty() const {
+auto DataStreamBuffer::empty() const -> bool {
   return m_buffer->empty();
 }
 
@@ -109,12 +110,12 @@ void DataStreamBuffer::seek(std::size_t pos, IOSeek mode) {
   m_buffer->seek(pos, mode);
 }
 
-bool DataStreamBuffer::atEnd() {
+auto DataStreamBuffer::atEnd() -> bool {
   return m_buffer->atEnd();
 }
 
-std::size_t DataStreamBuffer::pos() {
-  return (size_t)m_buffer->pos();
+auto DataStreamBuffer::pos() -> std::size_t {
+  return (std::size_t)m_buffer->pos();
 }
 
 void DataStreamBuffer::reset(std::size_t newSize) {
@@ -143,15 +144,15 @@ DataStreamExternalBuffer::DataStreamExternalBuffer(char const* externalData, std
   reset(externalData, len);
 }
 
-char const* DataStreamExternalBuffer::ptr() const {
+auto DataStreamExternalBuffer::ptr() const -> char const* {
   return m_buffer.ptr();
 }
 
-size_t DataStreamExternalBuffer::size() const {
+auto DataStreamExternalBuffer::size() const -> std::size_t {
   return m_buffer.dataSize();
 }
 
-bool DataStreamExternalBuffer::empty() const {
+auto DataStreamExternalBuffer::empty() const -> bool {
   return m_buffer.empty();
 }
 
@@ -159,15 +160,15 @@ void DataStreamExternalBuffer::seek(std::size_t pos, IOSeek mode) {
   m_buffer.seek(pos, mode);
 }
 
-bool DataStreamExternalBuffer::atEnd() {
+auto DataStreamExternalBuffer::atEnd() -> bool {
   return m_buffer.atEnd();
 }
 
-std::size_t DataStreamExternalBuffer::pos() {
+auto DataStreamExternalBuffer::pos() -> std::size_t {
   return m_buffer.pos();
 }
 
-std::size_t DataStreamExternalBuffer::remaining() {
+auto DataStreamExternalBuffer::remaining() -> std::size_t {
   return m_buffer.dataSize() - m_buffer.pos();
 }
 
@@ -182,4 +183,4 @@ void DataStreamExternalBuffer::writeData(char const* data, std::size_t len) {
   m_buffer.writeFull(data, len);
 }
 
-}
+}// namespace Star

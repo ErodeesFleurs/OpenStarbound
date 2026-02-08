@@ -1,14 +1,13 @@
 #pragma once
 
-#include <optional>
-
-#include "StarRect.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarGameTypes.hpp"
+#include "StarNetElementBasicFields.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarRect.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(WorldClientState);
 
 // Class to aid in network syncronization of client state such as viewing area
 // and player entity id.
@@ -17,29 +16,29 @@ public:
   WorldClientState();
 
   // Actual area of the client visible screen (rounded to nearest block)
-  RectI window() const;
+  auto window() const -> RectI;
   void setWindow(RectI const& window);
 
   // Shortcut to find the window center of the client.
-  Vec2F windowCenter() const;
+  auto windowCenter() const -> Vec2F;
 
   // Entity of the unique main Player for this client
-  EntityId playerId() const;
+  auto playerId() const -> EntityId;
   void setPlayer(EntityId playerId);
 
   // Entities that should contribute to the monitoring regions of the client.
-  List<EntityId> const& clientPresenceEntities() const;
+  auto clientPresenceEntities() const -> List<EntityId> const&;
   void setClientPresenceEntities(List<EntityId> entities);
 
   // All areas of the server monitored by the client, takes a function to
   // resolve an entity id to its bound box.
-  List<RectI> monitoringRegions(function<std::optional<RectI>(EntityId)> entityBounds) const;
+  auto monitoringRegions(std::function<std::optional<RectI>(EntityId)> entityBounds) const -> List<RectI>;
 
-  ByteArray writeDelta();
+  auto writeDelta() -> ByteArray;
   void readDelta(ByteArray delta);
 
   void setNetCompatibilityRules(NetCompatibilityRules netCompatibilityRules);
-  NetCompatibilityRules netCompatibilityRules() const;
+  auto netCompatibilityRules() const -> NetCompatibilityRules;
 
   void reset();
 
@@ -48,7 +47,7 @@ private:
   int m_presenceEntityMonitoringBorder;
 
   NetElementTopGroup m_netGroup;
-  uint64_t m_netVersion;
+  std::uint64_t m_netVersion;
 
   NetElementInt m_windowXMin;
   NetElementInt m_windowYMin;
@@ -61,4 +60,4 @@ private:
   NetCompatibilityRules m_netCompatibilityRules;
 };
 
-}
+}// namespace Star

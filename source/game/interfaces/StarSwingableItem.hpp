@@ -2,24 +2,24 @@
 
 #include "StarFireableItem.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(SwingableItem);
+namespace Star {
 
 class SwingableItem : public FireableItem {
 public:
   SwingableItem();
   SwingableItem(Json const& params);
-  virtual ~SwingableItem() {}
+  ~SwingableItem() override = default;
 
   // These can be different
   // Default implementation is the same though
-  virtual float getAngleDir(float aimAngle, Direction facingDirection);
-  virtual float getAngle(float aimAngle);
-  virtual float getItemAngle(float aimAngle);
-  virtual String getArmFrame();
+  virtual auto getAngleDir(float aimAngle, Direction facingDirection) -> float;
+  virtual auto getAngle(float aimAngle) -> float;
+  virtual auto getItemAngle(float aimAngle) -> float;
+  virtual auto getArmFrame() -> String;
 
-  virtual List<Drawable> drawables() const = 0;
+  virtual auto drawables() const -> List<Drawable> = 0;
 
   void setParams(Json const& params);
 
@@ -30,4 +30,4 @@ protected:
   std::optional<float> m_coolingDownAngle;
 };
 
-}
+}// namespace Star

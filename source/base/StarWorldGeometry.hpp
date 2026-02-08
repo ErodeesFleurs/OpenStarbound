@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarPoly.hpp"
-#include <cstdint>
 
 import std;
 

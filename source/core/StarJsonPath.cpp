@@ -28,7 +28,7 @@ auto parsePointer(String& buffer, String const& path, String::const_iterator& it
       buffer.append(*iterator++);
   }
 
-  std::optional<size_t> index = maybeLexicalCast<size_t>(buffer);
+  std::optional<std::size_t> index = maybeLexicalCast<std::size_t>(buffer);
   if (index || (buffer == "-" && iterator == end))
     return TypeHint::Array;
   return TypeHint::Object;

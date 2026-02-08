@@ -1,15 +1,14 @@
 #pragma once
 
-#include <optional>
+#include "StarException.hpp"
+#include "StarJson.hpp"
+#include "StarString.hpp"
 
-#include "StarOrderedSet.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarAnimation.hpp"
-#include "StarQuestDescriptor.hpp"
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(AiException, StarException);
+using AiException = ExceptionDerived<"AiException">;
 
 struct AiSpeech {
   String animation;
@@ -21,7 +20,7 @@ struct AiState {
   AiState();
   AiState(Json const& v);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   OrderedHashSet<String> availableMissions;
   OrderedHashSet<String> completedMissions;
@@ -42,4 +41,4 @@ struct AiMission {
   StringMap<AiSpeciesMissionText> speciesText;
 };
 
-}
+}// namespace Star

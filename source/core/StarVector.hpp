@@ -452,12 +452,12 @@ auto Vector<T, N>::combine(Vector const& v, Function f) const -> Vector<T, N> {
 
 template <typename T, std::size_t N>
 auto Vector<T, N>::angleBetween(Vector const& v) const -> T {
-  return acos(this->normalized() * v.normalized());
+  return std::acos(this->normalized() * v.normalized());
 }
 
 template <typename T, std::size_t N>
 auto Vector<T, N>::angleBetweenNormalized(Vector const& v) const -> T {
-  return acos(*this * v);
+  return std::acos(*this * v);
 }
 
 template <typename T, std::size_t N>
@@ -470,7 +470,7 @@ auto Vector<T, N>::magnitudeSquared() const -> T {
 
 template <typename T, std::size_t N>
 auto Vector<T, N>::magnitude() const -> T {
-  return sqrt(magnitudeSquared());
+  return std::sqrt(magnitudeSquared());
 }
 
 template <typename T, std::size_t N>
@@ -520,7 +520,7 @@ template <typename T, std::size_t N>
 auto Vector<T, N>::abs() const -> Vector<T, N> {
   Vector v;
   for (std::size_t i = 0; i < N; ++i)
-    v[i] = fabs((*this)[i]);
+    v[i] = std::fabs((*this)[i]);
   return v;
 }
 

@@ -1,15 +1,17 @@
 #pragma once
 
-#include "StarVector.hpp"
-#include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
+#include "StarDataStream.hpp"
+#include "StarVector.hpp"
+
+import std;
 
 namespace Star {
 
-enum class LightType : uint8_t {
+enum class LightType : std::uint8_t {
   Spread = 0,
   Point = 1,
-  PointAsSpread = 2 // Point with spread-like range
+  PointAsSpread = 2// Point with spread-like range
 };
 
 extern EnumMap<LightType> const LightTypeNames;
@@ -31,6 +33,6 @@ struct LightSource {
   void translate(Vec2F const& pos);
 };
 
-DataStream& operator<<(DataStream& ds, LightSource const& lightSource);
-DataStream& operator>>(DataStream& ds, LightSource& lightSource);
-}
+auto operator<<(DataStream& ds, LightSource const& lightSource) -> DataStream&;
+auto operator>>(DataStream& ds, LightSource& lightSource) -> DataStream&;
+}// namespace Star

@@ -3,12 +3,12 @@
 #define XXH_STATIC_LINKING_ONLY
 #define XXH_INLINE_ALL
 extern "C" {
-    #include "xxhash.h"
-    #include "xxh3.h"
+#include "xxh3.h"
+#include "xxhash.h"
 }
 
-#include "StarString.hpp"
 #include "StarByteArray.hpp"
+#include "StarString.hpp"
 
 import std;
 
@@ -47,7 +47,6 @@ private:
   XXH3_state_s state;
 };
 
-
 uint32_t xxHash32(char const* source, size_t length);
 uint32_t xxHash32(ByteArray const& in);
 uint32_t xxHash32(String const& in);
@@ -74,11 +73,11 @@ uint64_t xxHash3(String const& in);
     hash.push((char const*)(&cv), sizeof(cv));              \
   }
 
-#define XXHASH3_PRIMITIVE(TYPE, CAST_TYPE)                  \
-  inline void xxHash3Push(XXHash3& hash, TYPE const& v) {   \
-    CAST_TYPE cv = v;                                       \
-    cv = toLittleEndian(cv);                                \
-    hash.push((char const*)(&cv), sizeof(cv));              \
+#define XXHASH3_PRIMITIVE(TYPE, CAST_TYPE)                \
+  inline void xxHash3Push(XXHash3& hash, TYPE const& v) { \
+    CAST_TYPE cv = v;                                     \
+    cv = toLittleEndian(cv);                              \
+    hash.push((char const*)(&cv), sizeof(cv));            \
   }
 
 XXHASH32_PRIMITIVE(bool, bool);
@@ -206,4 +205,4 @@ inline uint64_t xxHash3(ByteArray const& in) {
 inline uint64_t xxHash3(String const& in) {
   return xxHash3(in.utf8Ptr(), in.utf8Size());
 }
-}
+}// namespace Star

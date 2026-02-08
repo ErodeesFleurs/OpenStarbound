@@ -1,47 +1,47 @@
 #pragma once
 
-#include "StarGameTypes.hpp"
-#include "StarTileEntity.hpp"
+#include "StarConfig.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarRpcPromise.hpp"
+#include "StarTileEntity.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ContainerEntity);
+class ItemBag;
 
 // All container methods may be called on both master and slave entities.
 class ContainerEntity : public virtual TileEntity {
 public:
-  size_t containerSize() const;
-  List<ItemPtr> containerItems() const;
+  [[nodiscard]] auto containerSize() const -> std::size_t;
+  [[nodiscard]] auto containerItems() const -> List<Ptr<Item>>;
 
-  virtual Json containerGuiConfig() const = 0;
-  virtual String containerDescription() const = 0;
-  virtual String containerSubTitle() const = 0;
-  virtual ItemDescriptor iconItem() const = 0;
+  [[nodiscard]] virtual auto containerGuiConfig() const -> Json = 0;
+  [[nodiscard]] virtual auto containerDescription() const -> String = 0;
+  [[nodiscard]] virtual auto containerSubTitle() const -> String = 0;
+  [[nodiscard]] virtual auto iconItem() const -> ItemDescriptor = 0;
 
-  virtual ItemBagConstPtr itemBag() const = 0;
+  [[nodiscard]] virtual auto itemBag() const -> ConstPtr<ItemBag> = 0;
 
   virtual void containerOpen() = 0;
   virtual void containerClose() = 0;
 
   virtual void startCrafting() = 0;
   virtual void stopCrafting() = 0;
-  virtual bool isCrafting() const = 0;
-  virtual float craftingProgress() const = 0;
+  [[nodiscard]] virtual auto isCrafting() const -> bool = 0;
+  [[nodiscard]] virtual auto craftingProgress() const -> float = 0;
 
   virtual void burnContainerContents() = 0;
 
-  virtual RpcPromise<ItemPtr> addItems(ItemPtr const& items) = 0;
-  virtual RpcPromise<ItemPtr> putItems(size_t slot, ItemPtr const& items) = 0;
-  virtual RpcPromise<ItemPtr> takeItems(size_t slot, size_t count = std::numeric_limits<std::size_t>::max()) = 0;
-  virtual RpcPromise<ItemPtr> swapItems(size_t slot, ItemPtr const& items, bool tryCombine = true) = 0;
-  virtual RpcPromise<ItemPtr> applyAugment(size_t slot, ItemPtr const& augment) = 0;
-  virtual RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) = 0;
-  virtual RpcPromise<bool> consumeItems(size_t slot, size_t count) = 0;
-  virtual RpcPromise<List<ItemPtr>> clearContainer() = 0;
+  virtual auto addItems(Ptr<Item> const& items) -> RpcPromise<Ptr<Item>> = 0;
+  virtual auto putItems(std::size_t slot, Ptr<Item> const& items) -> RpcPromise<Ptr<Item>> = 0;
+  virtual auto takeItems(std::size_t slot, std::size_t count = std::numeric_limits<std::size_t>::max()) -> RpcPromise<Ptr<Item>> = 0;
+  virtual auto swapItems(std::size_t slot, Ptr<Item> const& items, bool tryCombine = true) -> RpcPromise<Ptr<Item>> = 0;
+  virtual auto applyAugment(std::size_t slot, Ptr<Item> const& augment) -> RpcPromise<Ptr<Item>> = 0;
+  virtual auto consumeItems(ItemDescriptor const& descriptor) -> RpcPromise<bool> = 0;
+  virtual auto consumeItems(std::size_t slot, std::size_t count) -> RpcPromise<bool> = 0;
+  virtual auto clearContainer() -> RpcPromise<List<Ptr<Item>>> = 0;
 };
 
-}
+}// namespace Star

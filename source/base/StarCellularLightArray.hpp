@@ -66,12 +66,12 @@ public:
 
   // The border around the target lighting array where initial lighting / light
   // source data is required.  Based on parameters.
-  [[nodiscard]] auto borderCells() const -> size_t;
+  [[nodiscard]] auto borderCells() const -> std::size_t;
 
   // Begin a new calculation, setting internal storage to new width and height
   // (if these are the same as last time this is cheap).  Always clears all
   // existing light and collision data.
-  void begin(size_t newWidth, size_t newHeight);
+  void begin(std::size_t newWidth, std::size_t newHeight);
 
   // Position is in index space, spread lights will have no effect if they are
   // outside of the array.  Integer points are assumed to be on the corners of
@@ -80,27 +80,27 @@ public:
   void addPointLight(PointLight const& pointLight);
 
   // Directly set the lighting values for this position.
-  void setLight(size_t x, size_t y, LightValue const& light);
+  void setLight(std::size_t x, std::size_t y, LightValue const& light);
 
   // Get current light value.  Call after calling calculate() to pull final
   // data out.
-  auto getLight(size_t x, size_t y) const -> LightValue;
+  auto getLight(std::size_t x, std::size_t y) const -> LightValue;
 
   // Set obstacle values for this position
-  void setObstacle(size_t x, size_t y, bool obstacle);
-  [[nodiscard]] auto getObstacle(size_t x, size_t y) const -> bool;
+  void setObstacle(std::size_t x, std::size_t y, bool obstacle);
+  [[nodiscard]] auto getObstacle(std::size_t x, std::size_t y) const -> bool;
 
-  auto cell(size_t x, size_t y) const -> Cell const&;
-  auto cell(size_t x, size_t y) -> Cell&;
+  auto cell(std::size_t x, std::size_t y) const -> Cell const&;
+  auto cell(std::size_t x, std::size_t y) -> Cell&;
 
-  auto cellAtIndex(size_t index) const -> Cell const&;
-  auto cellAtIndex(size_t index) -> Cell&;
+  auto cellAtIndex(std::size_t index) const -> Cell const&;
+  auto cellAtIndex(std::size_t index) -> Cell&;
 
   // Calculate lighting in the given sub-rect, in order to properly do spread
   // lighting, and initial lighting must be given for the ambient border this
   // given rect, and the array size must be at least that large.  xMax / yMax
   // are not inclusive, the range is [xMin, xMax) and [yMin, yMax).
-  void calculate(size_t xMin, size_t yMin, size_t xMax, size_t yMax);
+  void calculate(std::size_t xMin, std::size_t yMin, std::size_t xMax, std::size_t yMax);
 
 private:
   // Set 4 points based on interpolated light position and free space
@@ -108,19 +108,19 @@ private:
   void setSpreadLightingPoints();
 
   // Spreads light out in an octagonal based cellular automata
-  void calculateLightSpread(size_t xmin, size_t ymin, size_t xmax, size_t ymax);
+  void calculateLightSpread(std::size_t xmin, std::size_t ymin, std::size_t xmax, std::size_t ymax);
 
   // Loops through each light and adds light strength based on distance and
   // obstacle attenuation.  Calculates within the given sub-rect
-  void calculatePointLighting(size_t xmin, size_t ymin, size_t xmax, size_t ymax);
+  void calculatePointLighting(std::size_t xmin, std::size_t ymin, std::size_t xmax, std::size_t ymax);
 
   // Run Xiaolin Wu's anti-aliased line drawing algorithm from start to end,
   // summing each block that would be drawn to to produce an attenuation.  Not
   // circularized.
   auto lineAttenuation(Vec2F const& start, Vec2F const& end, float perObstacleAttenuation, float maxAttenuation) -> float;
 
-  size_t m_width;
-  size_t m_height;
+  std::size_t m_width;
+  std::size_t m_height;
   std::unique_ptr<Cell[]> m_cells;
   List<SpreadLight> m_spreadLights;
   List<PointLight> m_pointLights;
@@ -178,7 +178,7 @@ inline auto ColoredLightTraits::subtract(Vec3F c, float drop) -> Vec3F {
   if (max <= 0.0f)
     return c;
 
-  for (size_t i = 0; i < 3; ++i) {
+  for (std::size_t i = 0; i < 3; ++i) {
     float pdrop = (drop * c[i]) / max;
     if (c[i] > pdrop)
       c[i] -= pdrop;
@@ -217,12 +217,12 @@ void CellularLightArray<LightTraits>::setParameters(unsigned spreadPasses, float
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::borderCells() const -> size_t {
-  return (size_t)std::ceil(std::max({0.0f, m_spreadMaxAir, m_pointMaxAir}));
+auto CellularLightArray<LightTraits>::borderCells() const -> std::size_t {
+  return (std::size_t)std::ceil(std::max({0.0f, m_spreadMaxAir, m_pointMaxAir}));
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::begin(size_t newWidth, size_t newHeight) {
+void CellularLightArray<LightTraits>::begin(std::size_t newWidth, std::size_t newHeight) {
   m_spreadLights.clear();
   m_pointLights.clear();
 
@@ -248,47 +248,47 @@ void CellularLightArray<LightTraits>::addPointLight(PointLight const& pointLight
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::setLight(size_t x, size_t y, LightValue const& lightValue) {
+void CellularLightArray<LightTraits>::setLight(std::size_t x, std::size_t y, LightValue const& lightValue) {
   cell(x, y).light = lightValue;
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::setObstacle(size_t x, size_t y, bool obstacle) {
+void CellularLightArray<LightTraits>::setObstacle(std::size_t x, std::size_t y, bool obstacle) {
   cell(x, y).obstacle = obstacle;
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::getLight(size_t x, size_t y) const -> LightValue {
+auto CellularLightArray<LightTraits>::getLight(std::size_t x, std::size_t y) const -> LightValue {
   return cell(x, y).light;
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::getObstacle(size_t x, size_t y) const -> bool {
+auto CellularLightArray<LightTraits>::getObstacle(std::size_t x, std::size_t y) const -> bool {
   return cell(x, y).obstacle;
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) const -> Cell const& {
+auto CellularLightArray<LightTraits>::cell(std::size_t x, std::size_t y) const -> Cell const& {
   return m_cells[x * m_height + y];
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) -> Cell& {
+auto CellularLightArray<LightTraits>::cell(std::size_t x, std::size_t y) -> Cell& {
   return m_cells[x * m_height + y];
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) const -> Cell const& {
+auto CellularLightArray<LightTraits>::cellAtIndex(std::size_t index) const -> Cell const& {
   return m_cells[index];
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) -> Cell& {
+auto CellularLightArray<LightTraits>::cellAtIndex(std::size_t index) -> Cell& {
   return m_cells[index];
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::calculate(size_t xMin, size_t yMin, size_t xMax, size_t yMax) {
+void CellularLightArray<LightTraits>::calculate(std::size_t xMin, std::size_t yMin, std::size_t xMax, std::size_t yMax) {
   setSpreadLightingPoints();
   calculateLightSpread(xMin, yMin, xMax, yMax);
   calculatePointLighting(xMin, yMin, xMax, yMax);
@@ -298,8 +298,8 @@ template <typename LightTraits>
 void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
   for (SpreadLight const& light : m_spreadLights) {
     // - 0.5f to correct for lights being on the grid corners and not center
-    int minX = floor(light.position[0] - 0.5f);
-    int minY = floor(light.position[1] - 0.5f);
+    int minX = std::floor(light.position[0] - 0.5f);
+    int minY = std::floor(light.position[1] - 0.5f);
     int maxX = minX + 1;
     int maxY = minY + 1;
 
@@ -333,7 +333,7 @@ void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
 }
 
 template <typename LightTraits>
-void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t yMin, size_t xMax, size_t yMax) {
+void CellularLightArray<LightTraits>::calculateLightSpread(std::size_t xMin, std::size_t yMin, std::size_t xMax, std::size_t yMax) {
 
   float dropoffAir = 1.0f / m_spreadMaxAir;
   float dropoffObstacle = 1.0f / m_spreadMaxObstacle;
@@ -341,18 +341,18 @@ void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t y
   float dropoffObstacleDiag = 1.0f / m_spreadMaxObstacle * Constants::sqrt2;
 
   // enlarge x/y min/max taking into ambient spread of light
-  xMin = xMin - std::min(xMin, (size_t)std::ceil(m_spreadMaxAir));
-  yMin = yMin - std::min(yMin, (size_t)std::ceil(m_spreadMaxAir));
-  xMax = std::min(m_width, xMax + (size_t)std::ceil(m_spreadMaxAir));
-  yMax = std::min(m_height, yMax + (size_t)std::ceil(m_spreadMaxAir));
+  xMin = xMin - std::min(xMin, (std::size_t)std::ceil(m_spreadMaxAir));
+  yMin = yMin - std::min(yMin, (std::size_t)std::ceil(m_spreadMaxAir));
+  xMax = std::min(m_width, xMax + (std::size_t)std::ceil(m_spreadMaxAir));
+  yMax = std::min(m_height, yMax + (std::size_t)std::ceil(m_spreadMaxAir));
 
   for (unsigned p = 0; p < m_spreadPasses; ++p) {
     // Spread right and up and diag up right / diag down right
-    for (size_t x = xMin + 1; x < xMax - 1; ++x) {
-      size_t xCellOffset = x * m_height;
-      size_t xRightCellOffset = (x + 1) * m_height;
+    for (std::size_t x = xMin + 1; x < xMax - 1; ++x) {
+      std::size_t xCellOffset = x * m_height;
+      std::size_t xRightCellOffset = (x + 1) * m_height;
 
-      for (size_t y = yMin + 1; y < yMax - 1; ++y) {
+      for (std::size_t y = yMin + 1; y < yMax - 1; ++y) {
         auto cell = cellAtIndex(xCellOffset + y);
         auto& cellRight = cellAtIndex(xRightCellOffset + y);
         auto& cellUp = cellAtIndex(xCellOffset + y + 1);
@@ -371,11 +371,11 @@ void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t y
     }
 
     // Spread left and down and diag up left / diag down left
-    for (size_t x = xMax - 2; x > xMin; --x) {
-      size_t xCellOffset = x * m_height;
-      size_t xLeftCellOffset = (x - 1) * m_height;
+    for (std::size_t x = xMax - 2; x > xMin; --x) {
+      std::size_t xCellOffset = x * m_height;
+      std::size_t xLeftCellOffset = (x - 1) * m_height;
 
-      for (size_t y = yMax - 2; y > yMin; --y) {
+      for (std::size_t y = yMax - 2; y > yMin; --y) {
         auto cell = cellAtIndex(xCellOffset + y);
         auto& cellLeft = cellAtIndex(xLeftCellOffset + y);
         auto& cellDown = cellAtIndex(xCellOffset + y - 1);

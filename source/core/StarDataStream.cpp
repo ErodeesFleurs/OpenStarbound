@@ -6,12 +6,12 @@ import std;
 
 namespace Star {
 
-unsigned const CurrentStreamVersion = 14; // update OpenProtocolVersion too!
+unsigned const CurrentStreamVersion = 14;// update OpenProtocolVersion too!
 
 DataStream::DataStream()
-  : m_byteOrder(ByteOrder::BigEndian),
-    m_nullTerminatedStrings(false),
-    m_streamCompatibilityVersion(CurrentStreamVersion) {}
+    : m_byteOrder(ByteOrder::BigEndian),
+      m_nullTerminatedStrings(false),
+      m_streamCompatibilityVersion(CurrentStreamVersion) {}
 
 auto DataStream::byteOrder() const -> ByteOrder {
   return m_byteOrder;
@@ -41,7 +41,7 @@ void DataStream::setStreamCompatibilityVersion(NetCompatibilityRules const& rule
   m_streamCompatibilityVersion = rules.version();
 }
 
-auto DataStream::readBytes(size_t len) -> ByteArray {
+auto DataStream::readBytes(std::size_t len) -> ByteArray {
   ByteArray ba;
   ba.resize(len);
   readData(ba.ptr(), len);
@@ -225,13 +225,13 @@ auto DataStream::readVlqI(std::int64_t& i) -> std::size_t {
   return bytesRead;
 }
 
-auto DataStream::readVlqS(size_t& i) -> std::size_t {
+auto DataStream::readVlqS(std::size_t& i) -> std::size_t {
   std::uint64_t i64;
   std::size_t res = readVlqU(i64);
   if (i64 == 0)
     i = std::numeric_limits<std::size_t>::max();
   else
-    i = (size_t)(i64 - 1);
+    i = (std::size_t)(i64 - 1);
   return res;
 }
 
@@ -304,7 +304,7 @@ auto DataStream::operator>>(String& s) -> DataStream& {
   return *this;
 }
 
-void DataStream::writeStringData(char const* data, size_t len) {
+void DataStream::writeStringData(char const* data, std::size_t len) {
   if (m_nullTerminatedStrings) {
     writeData(data, len);
     operator<<((std::uint8_t)0x00);
@@ -314,4 +314,4 @@ void DataStream::writeStringData(char const* data, size_t len) {
   }
 }
 
-}
+}// namespace Star

@@ -80,7 +80,7 @@ public:
 
   // Same as readPartial, but repeats read attempting to fill buffer as much as
   // possible
-  auto read(std::int16_t* buffer, size_t bufferSize) -> size_t;
+  auto read(std::int16_t* buffer, std::size_t bufferSize) -> std::size_t;
 
   // Read into a given buffer, while also converting into the given number of
   // channels at the given sample rate and playback velocity.  If the number of
@@ -90,7 +90,7 @@ public:
   // an entire buffer depending on the destinationSampleRate / velocity /
   // available samples.
   auto resample(unsigned destinationChannels, unsigned destinationSampleRate,
-      std::int16_t* destinationBuffer, size_t destinationBufferSize,
+      std::int16_t* destinationBuffer, std::size_t destinationBufferSize,
       double velocity = 1.0) -> std::size_t;
 
   [[nodiscard]] auto name() const -> String const&;

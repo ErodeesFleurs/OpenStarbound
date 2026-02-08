@@ -103,7 +103,7 @@ public:
   auto channels() const -> unsigned;
 
   // Construct a really crappy low-pass filter based on averaging
-  auto lowpass(size_t avgSize) const -> EffectFunction;
+  auto lowpass(std::size_t avgSize) const -> EffectFunction;
   // Construct a very simple echo filter.
   auto echo(float time, float dry, float wet) const -> EffectFunction;
 
@@ -128,7 +128,7 @@ public:
 
   // Reads pending audio data.  This is thread safe with the other Mixer
   // methods, but only one call to read may be active at a time.
-  void read(std::int16_t* samples, size_t frameCount, ExtraMixFunction extraMixFunction = {});
+  void read(std::int16_t* samples, std::size_t frameCount, ExtraMixFunction extraMixFunction = {});
 
   // Call within the main loop of the program using Mixer, calculates
   // positional attenuation of audio and does cleanup.

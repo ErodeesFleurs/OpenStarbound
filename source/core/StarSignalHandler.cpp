@@ -1,23 +1,33 @@
-#include "StarMiniDump.hpp"
 #include "StarSignalHandler.hpp"
-#include "StarFormat.hpp"
-#include "StarString.hpp"
-#include "StarLogging.hpp"
+#include "StarException.hpp"
 
+#ifdef STAR_SYSTEM_WINDOWS
+#include "StarFormat.hpp"
+#include "StarMiniDump.hpp"
+#include "StarString.hpp"
 #include <windows.h>
+#else
+#include <signal.h>
+#endif
+
+import std;
 
 namespace Star {
 
+#ifdef STAR_SYSTEM_WINDOWS
 String g_sehMessage;
+#endif
 
 struct SignalHandlerImpl {
-  bool handlingFatal;
-  bool handlingInterrupt;
-  bool interrupted;
+  bool handlingFatal = false;
+  bool handlingInterrupt = false;
+  bool interrupted = false;
 
-  PVOID handler;
+#ifdef STAR_SYSTEM_WINDOWS
+  PVOID handler = nullptr;
+#endif
 
-  SignalHandlerImpl() : handlingFatal(false), handlingInterrupt(false), interrupted(false) {}
+  SignalHandlerImpl() = default;
 
   ~SignalHandlerImpl() {
     setHandleFatal(false);
@@ -26,7 +36,7 @@ struct SignalHandlerImpl {
 
   void setHandleFatal(bool b) {
     handlingFatal = b;
-
+#ifdef STAR_SYSTEM_WINDOWS
     if (handler) {
       RemoveVectoredExceptionHandler(handler);
       handler = nullptr;
@@ -34,17 +44,37 @@ struct SignalHandlerImpl {
 
     if (handlingFatal)
       handler = AddVectoredExceptionHandler(1, vectoredExceptionHandler);
+#else
+    if (handlingFatal) {
+      signal(SIGSEGV, handleFatal);
+      signal(SIGILL, handleFatal);
+      signal(SIGFPE, handleFatal);
+      signal(SIGBUS, handleFatal);
+    } else {
+      signal(SIGSEGV, SIG_DFL);
+      signal(SIGILL, SIG_DFL);
+      signal(SIGFPE, SIG_DFL);
+      signal(SIGBUS, SIG_DFL);
+    }
+#endif
   }
 
   void setHandleInterrupt(bool b) {
     handlingInterrupt = b;
-
+#ifdef STAR_SYSTEM_WINDOWS
     SetConsoleCtrlHandler(nullptr, false);
 
     if (handlingInterrupt)
       SetConsoleCtrlHandler((PHANDLER_ROUTINE)consoleCtrlHandler, true);
+#else
+    if (handlingInterrupt)
+      signal(SIGINT, handleInterrupt);
+    else
+      signal(SIGINT, SIG_DFL);
+#endif
   }
 
+#ifdef STAR_SYSTEM_WINDOWS
   static void sehTrampoline() {
     fatalError(g_sehMessage.utf8Ptr(), true);
   }
@@ -67,36 +97,28 @@ struct SignalHandlerImpl {
       else
         mode = strf("Mode({})", modeFlag);
       g_sehMessage = strf("Access violation detected at {} ({} of address {})",
-          ExceptionInfo->ExceptionRecord->ExceptionAddress,
-          mode,
-          (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[1]);
+                          ExceptionInfo->ExceptionRecord->ExceptionAddress,
+                          mode,
+                          (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[1]);
     } else {
       g_sehMessage = msg;
       g_sehMessage = strf("{} ({} @ {})",
-          g_sehMessage,
-          (PVOID)ExceptionInfo->ExceptionRecord->ExceptionCode,
-          ExceptionInfo->ExceptionRecord->ExceptionAddress);
+                          g_sehMessage,
+                          (PVOID)ExceptionInfo->ExceptionRecord->ExceptionCode,
+                          ExceptionInfo->ExceptionRecord->ExceptionAddress);
       for (DWORD i = 0; i < ExceptionInfo->ExceptionRecord->NumberParameters; i++)
         g_sehMessage = strf("{} [{}]", g_sehMessage, (PVOID)ExceptionInfo->ExceptionRecord->ExceptionInformation[i]);
     }
 
-// setup a hijack into our own trampoline as if the failure actually was a
-// function call
 #ifdef STAR_ARCHITECTURE_X86_64
     DWORD64 rsp = ExceptionInfo->ContextRecord->Rsp - 8;
-    DWORD64 rip = ExceptionInfo->ContextRecord->Rip; // an offset avoid the issue of gdb thinking
-    // the error is one statement too early, but
-    // the offset is instruction dependent, and we
-    // don't know its size + 1;
+    DWORD64 rip = ExceptionInfo->ContextRecord->Rip;
     *((DWORD64*)rsp) = rip;
     ExceptionInfo->ContextRecord->Rsp = rsp;
     ExceptionInfo->ContextRecord->Rip = (DWORD64)&sehTrampoline;
 #else
     DWORD esp = ExceptionInfo->ContextRecord->Esp - 4;
-    DWORD eip = ExceptionInfo->ContextRecord->Eip; // an offset avoid the issue of gdb thinking the
-    // error is one statement too early, but the
-    // offset is instruction dependent, and we don't
-    // know its size + 1;
+    DWORD eip = ExceptionInfo->ContextRecord->Eip;
     *((DWORD*)esp) = eip;
     ExceptionInfo->ContextRecord->Esp = esp;
     ExceptionInfo->ContextRecord->Eip = (DWORD)&sehTrampoline;
@@ -126,8 +148,7 @@ struct SignalHandlerImpl {
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_FLT_INVALID_OPERATION)
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_FLT_OVERFLOW)
         || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_FLT_STACK_CHECK)
-        || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_FLT_UNDERFLOW)
-            ) {
+        || (ExceptionInfo->ExceptionRecord->ExceptionCode == EXCEPTION_FLT_UNDERFLOW)) {
       handleFatalError("Floating point exception", ExceptionInfo);
       result = EXCEPTION_CONTINUE_EXECUTION;
     }
@@ -158,17 +179,34 @@ struct SignalHandlerImpl {
   static BOOL WINAPI consoleCtrlHandler(DWORD) {
     if (SignalHandler::s_singleton)
       SignalHandler::s_singleton->interrupted = true;
-    return true;
+    return TRUE;
   }
+#else
+  static void handleFatal(int signum) {
+    if (signum == SIGSEGV)
+      fatalError("Segfault Encountered!", true);
+    else if (signum == SIGILL)
+      fatalError("Illegal Instruction Encountered!", true);
+    else if (signum == SIGFPE)
+      fatalError("Floating Point Exception Encountered!", true);
+    else if (signum == SIGBUS)
+      fatalError("Bus Error Encountered!", true);
+  }
+
+  static void handleInterrupt(int) {
+    if (SignalHandler::s_singleton)
+      SignalHandler::s_singleton->interrupted = true;
+  }
+#endif
 };
 
-SignalHandlerImplUPtr SignalHandler::s_singleton;
+UPtr<SignalHandlerImpl> SignalHandler::s_singleton;
 
 SignalHandler::SignalHandler() {
   if (s_singleton)
     throw StarException("Singleton SignalHandler has been constructed twice!");
 
-  s_singleton = make_unique<SignalHandlerImpl>();
+  s_singleton = std::make_unique<SignalHandlerImpl>();
 }
 
 SignalHandler::~SignalHandler() {
@@ -179,7 +217,7 @@ void SignalHandler::setHandleFatal(bool handleFatal) {
   s_singleton->setHandleFatal(handleFatal);
 }
 
-bool SignalHandler::handlingFatal() const {
+auto SignalHandler::handlingFatal() const -> bool {
   return s_singleton->handlingFatal;
 }
 
@@ -187,12 +225,12 @@ void SignalHandler::setHandleInterrupt(bool handleInterrupt) {
   s_singleton->setHandleInterrupt(handleInterrupt);
 }
 
-bool SignalHandler::handlingInterrupt() const {
+auto SignalHandler::handlingInterrupt() const -> bool {
   return s_singleton->handlingInterrupt;
 }
 
-bool SignalHandler::interruptCaught() const {
+auto SignalHandler::interruptCaught() const -> bool {
   return s_singleton->interrupted;
 }
 
-}
+}// namespace Star

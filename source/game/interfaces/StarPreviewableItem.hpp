@@ -1,16 +1,17 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarDrawable.hpp"
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(PreviewableItem);
+class Player;
+// STAR_CLASS(PreviewableItem);
 
 class PreviewableItem {
 public:
-  virtual ~PreviewableItem() {}
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const = 0;
+  virtual ~PreviewableItem() = default;
+  [[nodiscard]] virtual auto preview(Ptr<Player> const& viewer = {}) const -> List<Drawable> = 0;
 };
 
-}
+}// namespace Star

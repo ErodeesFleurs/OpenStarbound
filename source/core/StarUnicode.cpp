@@ -1,4 +1,5 @@
 #include "StarUnicode.hpp"
+
 #include "StarBytes.hpp"
 #include "StarEncode.hpp"
 
@@ -18,9 +19,9 @@ void throwInvalidUtf32CodePoint(Utf32Type val) {
   throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (std::int32_t)val);
 }
 
-auto utf8Length(const Utf8Type* utf8, size_t remain) -> size_t {
+auto utf8Length(const Utf8Type* utf8, std::size_t remain) -> std::size_t {
   bool stopOnNull = remain == std::numeric_limits<std::size_t>::max();
-  size_t length = 0;
+  std::size_t length = 0;
 
   while (true) {
     if (remain == 0)
@@ -84,7 +85,7 @@ auto utf8Length(const Utf8Type* utf8, size_t remain) -> size_t {
   return length;
 }
 
-auto utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) -> size_t {
+auto utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, std::size_t remain) -> std::size_t {
   const Utf8Type* start = utf8;
   bool stopOnNull = remain == std::numeric_limits<std::size_t>::max();
 
@@ -140,7 +141,7 @@ auto utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, size_t remain) -> si
   return utf8 - start;
 }
 
-auto utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, size_t len) -> size_t {
+auto utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, std::size_t len) -> std::size_t {
   if (utf32 > 0x10FFFFu)
     throwInvalidUtf32CodePoint(utf32);
 
@@ -196,7 +197,7 @@ auto hexStringToUtf32(std::string const& codepoint, std::optional<Utf32Type> pre
 
   auto hexBytes = hexDecode(codepoint);
   if (hexBytes.size() < sizeof(Utf32Type)) {
-    ByteArray newHexBytes{(size_t)(sizeof(Utf32Type) - hexBytes.size()), (char)'\0'};
+    ByteArray newHexBytes{(std::size_t)(sizeof(Utf32Type) - hexBytes.size()), (char)'\0'};
     newHexBytes.append(hexBytes);
     hexBytes = newHexBytes;
   }

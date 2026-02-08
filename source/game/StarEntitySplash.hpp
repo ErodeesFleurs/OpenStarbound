@@ -5,9 +5,7 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_STRUCT(EntitySplashConfig);
-STAR_CLASS(EntitySplashHelper);
+class World;
 
 struct EntitySplashConfig {
   EntitySplashConfig();
@@ -21,7 +19,7 @@ struct EntitySplashConfig {
   Particle splashParticleVariance;
   float splashYVelocityFactor;
 
-  List<Particle> doSplash(Vec2F position, Vec2F velocity, World* world) const;
+  auto doSplash(Vec2F position, Vec2F velocity, World* world) const -> List<Particle>;
 };
 
 }

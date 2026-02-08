@@ -1,21 +1,23 @@
 #include "StarAnchorableEntity.hpp"
 
+import std;
+
 namespace Star {
 
-bool EntityAnchorState::operator==(EntityAnchorState const& eas) const {
-  return tie(entityId, positionIndex) == tie(eas.entityId, eas.positionIndex);
+auto EntityAnchorState::operator==(EntityAnchorState const& eas) const -> bool {
+  return std::tie(entityId, positionIndex) == std::tie(eas.entityId, eas.positionIndex);
 }
 
-DataStream& operator>>(DataStream& ds, EntityAnchorState& anchorState) {
+auto operator>>(DataStream& ds, EntityAnchorState& anchorState) -> DataStream& {
   ds.read(anchorState.entityId);
   ds.readVlqS(anchorState.positionIndex);
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, EntityAnchorState const& anchorState) {
+auto operator<<(DataStream& ds, EntityAnchorState const& anchorState) -> DataStream& {
   ds.write(anchorState.entityId);
   ds.writeVlqS(anchorState.positionIndex);
   return ds;
 }
 
-}
+}// namespace Star

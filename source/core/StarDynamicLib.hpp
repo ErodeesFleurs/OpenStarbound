@@ -31,4 +31,4 @@ inline auto DynamicLib::loadLibraryBase(String const& baseName) -> UPtr<DynamicL
   return loadLibrary(baseName + libraryExtension());
 }
 
-}
+}// namespace Star

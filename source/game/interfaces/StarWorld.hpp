@@ -27,7 +27,7 @@ public:
   // Update frame counter.  Returns the frame that is *currently* being
   // updated, not the *last* frame, so during the first call to update(), this
   // would return 1
-  [[nodiscard]] virtual auto currentStep() const -> uint64_t = 0;
+  [[nodiscard]] virtual auto currentStep() const -> std::uint64_t = 0;
 
   // All methods that take int parameters wrap around or clamp so that all int
   // values are valid world indexes.
@@ -136,7 +136,7 @@ public:
 
   virtual void timer(float delay, WorldAction worldAction) = 0;
   [[nodiscard]] virtual auto epochTime() const -> double = 0;
-  [[nodiscard]] virtual auto day() const -> uint32_t = 0;
+  [[nodiscard]] virtual auto day() const -> std::uint32_t = 0;
   [[nodiscard]] virtual auto dayLength() const -> float = 0;
   [[nodiscard]] virtual auto timeOfDay() const -> float = 0;
 

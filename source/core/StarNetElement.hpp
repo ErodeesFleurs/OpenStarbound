@@ -60,6 +60,7 @@ public:
   [[nodiscard]] auto compatibilityVersion() const -> VersionNumber;
   void setCompatibilityVersion(VersionNumber version);
   [[nodiscard]] auto checkWithRules(NetCompatibilityRules const& rules) const -> bool;
+
 private:
   VersionNumber m_netCompatibilityVersion = AnyVersion;
 };
@@ -78,4 +79,4 @@ inline auto NetElement::checkWithRules(NetCompatibilityRules const& rules) const
   return true;
 }
 
-}
+}// namespace Star

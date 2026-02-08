@@ -14,12 +14,12 @@ public:
   // implementations will throw DataStreamException as unimplemented.
   DataStreamFunctions(std::function<std::size_t(char*, std::size_t)> reader, std::function<std::size_t(char const*, std::size_t)> writer);
 
-  void readData(char* data, size_t len) override;
-  void writeData(char const* data, size_t len) override;
+  void readData(char* data, std::size_t len) override;
+  void writeData(char const* data, std::size_t len) override;
 
 private:
-  std::function<size_t(char*, size_t)> m_reader;
-  std::function<size_t(char const*, size_t)> m_writer;
+  std::function<std::size_t(char*, std::size_t)> m_reader;
+  std::function<std::size_t(char const*, std::size_t)> m_writer;
 };
 
 class DataStreamIODevice : public DataStream {
@@ -28,12 +28,12 @@ public:
 
   [[nodiscard]] auto device() const -> Ptr<IODevice> const&;
 
-  void seek(size_t pos, IOSeek seek = IOSeek::Absolute);
+  void seek(std::size_t pos, IOSeek seek = IOSeek::Absolute);
   auto atEnd() -> bool override;
   auto pos() -> std::int64_t;
 
-  void readData(char* data, size_t len) override;
-  void writeData(char const* data, size_t len) override;
+  void readData(char* data, std::size_t len) override;
+  void writeData(char const* data, std::size_t len) override;
 
 private:
   Ptr<IODevice> m_device;
@@ -90,12 +90,12 @@ public:
   static auto deserializeMapContainer(ByteArray data, ReadFunction readFunction) -> T;
 
   DataStreamBuffer();
-  DataStreamBuffer(size_t initialSize);
+  DataStreamBuffer(std::size_t initialSize);
   DataStreamBuffer(ByteArray b);
 
   // Resize existing buffer to new size.
-  void resize(size_t size);
-  void reserve(size_t size);
+  void resize(std::size_t size);
+  void reserve(std::size_t size);
   void clear();
 
   auto data() -> ByteArray&;
@@ -107,19 +107,19 @@ public:
 
   [[nodiscard]] auto device() const -> Ptr<Buffer> const&;
 
-  [[nodiscard]] auto size() const -> size_t;
+  [[nodiscard]] auto size() const -> std::size_t;
   [[nodiscard]] auto empty() const -> bool;
 
-  void seek(size_t pos, IOSeek seek = IOSeek::Absolute);
+  void seek(std::size_t pos, IOSeek seek = IOSeek::Absolute);
   auto atEnd() -> bool override;
-  auto pos() -> size_t;
+  auto pos() -> std::size_t;
 
   // Set new buffer.
-  void reset(size_t newSize);
+  void reset(std::size_t newSize);
   void reset(ByteArray b);
 
-  void readData(char* data, size_t len) override;
-  void writeData(char const* data, size_t len) override;
+  void readData(char* data, std::size_t len) override;
+  void writeData(char const* data, std::size_t len) override;
 
 private:
   Ptr<Buffer> m_buffer;
@@ -132,22 +132,22 @@ public:
   DataStreamExternalBuffer(DataStreamBuffer const& buffer);
 
   DataStreamExternalBuffer(DataStreamExternalBuffer const& buffer) = default;
-  DataStreamExternalBuffer(char const* externalData, size_t len);
+  DataStreamExternalBuffer(char const* externalData, std::size_t len);
 
   auto ptr() const -> char const*;
 
-  auto size() const -> size_t;
+  auto size() const -> std::size_t;
   auto empty() const -> bool;
 
-  void seek(size_t pos, IOSeek mode = IOSeek::Absolute);
+  void seek(std::size_t pos, IOSeek mode = IOSeek::Absolute);
   auto atEnd() -> bool override;
-  auto pos() -> size_t;
-  auto remaining() -> size_t;
+  auto pos() -> std::size_t;
+  auto remaining() -> std::size_t;
 
-  void reset(char const* externalData, size_t len);
+  void reset(char const* externalData, std::size_t len);
 
-  void readData(char* data, size_t len) override;
-  void writeData(char const* data, size_t len) override;
+  void readData(char* data, std::size_t len) override;
+  void writeData(char const* data, std::size_t len) override;
 
 private:
   ExternalBuffer m_buffer;
@@ -253,4 +253,4 @@ auto DataStreamBuffer::deserializeMapContainer(ByteArray data, ReadFunction read
   return t;
 }
 
-}
+}// namespace Star

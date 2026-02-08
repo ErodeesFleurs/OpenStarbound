@@ -12,7 +12,7 @@ auto WireConnection::operator==(WireConnection const& wireConnection) const -> b
   return tie(entityLocation, nodeIndex) == tie(wireConnection.entityLocation, wireConnection.nodeIndex);
 }
 
-auto hash<WireConnection>::operator()(WireConnection const& wireConnection) const -> size_t {
+auto hash<WireConnection>::operator()(WireConnection const& wireConnection) const -> std::size_t {
   return hashOf(wireConnection.entityLocation, wireConnection.nodeIndex);
 }
 

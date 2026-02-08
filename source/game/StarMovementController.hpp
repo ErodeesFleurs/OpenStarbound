@@ -1,24 +1,22 @@
 #pragma once
 
-#include <optional>
-
+#include "StarException.hpp"
 #include "StarJson.hpp"
-
-#include "StarWorld.hpp"
 #include "StarPhysicsEntity.hpp"
+#include "StarWorld.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(MovementControllerException, StarException);
-
-STAR_CLASS(MovementController);
+using MovementControllerException = ExceptionDerived<"MovementControllerException">;
 
 // List of all movement parameters that define a specific sort of movable
 // object.  Each parameter is optional so that this structure can be used to
 // selectively merge a specific set of parameters on top of another.
 struct MovementParameters {
   // Load sensible defaults from a config file.
-  static MovementParameters sensibleDefaults();
+  static auto sensibleDefaults() -> MovementParameters;
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
@@ -26,9 +24,9 @@ struct MovementParameters {
 
   // Merge the given set of movement parameters on top of this one, with any
   // set parameters in rhs overwriting the ones in this set.
-  MovementParameters merge(MovementParameters const& rhs) const;
+  [[nodiscard]] auto merge(MovementParameters const& rhs) const -> MovementParameters;
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   std::optional<float> mass;
   std::optional<float> gravityMultiplier;
@@ -70,8 +68,8 @@ struct MovementParameters {
   std::optional<int> restDuration;
 };
 
-DataStream& operator>>(DataStream& ds, MovementParameters& movementParameters);
-DataStream& operator<<(DataStream& ds, MovementParameters const& movementParameters);
+auto operator>>(DataStream& ds, MovementParameters& movementParameters) -> DataStream&;
+auto operator<<(DataStream& ds, MovementParameters const& movementParameters) -> DataStream&;
 
 class MovementController : public NetElementGroup {
 public:
@@ -79,7 +77,7 @@ public:
   // defaults, and the given parameters (if any) applied on top of them.
   explicit MovementController(MovementParameters const& parameters = MovementParameters());
 
-  MovementParameters const& parameters() const;
+  auto parameters() const -> MovementParameters const&;
 
   // Apply any set parameters from the given set on top of the current set.
   void applyParameters(MovementParameters const& parameters);
@@ -89,58 +87,58 @@ public:
   void resetParameters(MovementParameters const& parameters = MovementParameters());
 
   // Stores and loads position, velocity, and rotation.
-  Json storeState() const;
+  auto storeState() const -> Json;
   void loadState(Json const& state);
 
   // Currently active mass parameter
-  float mass() const;
+  auto mass() const -> float;
 
   // Currently active collisionPoly parameter
-  PolyF const& collisionPoly() const;
+  auto collisionPoly() const -> PolyF const&;
   void setCollisionPoly(PolyF const& poly);
 
-  virtual Vec2F position() const;
-  float xPosition() const;
-  float yPosition() const;
+  virtual auto position() const -> Vec2F;
+  auto xPosition() const -> float;
+  auto yPosition() const -> float;
 
-  Vec2F velocity() const;
-  float xVelocity() const;
-  float yVelocity() const;
+  auto velocity() const -> Vec2F;
+  auto xVelocity() const -> float;
+  auto yVelocity() const -> float;
 
-  virtual float rotation() const;
+  virtual auto rotation() const -> float;
 
   // CollisionPoly rotated and translated by position
-  PolyF collisionBody() const;
+  auto collisionBody() const -> PolyF;
 
   // Gets the bounding box of the collisionPoly() rotated by current rotation,
   // but not translated into world space
-  RectF localBoundBox() const;
+  auto localBoundBox() const -> RectF;
 
   // Shorthand for getting the bound box of the current collisionBody()
-  RectF collisionBoundBox() const;
+  auto collisionBoundBox() const -> RectF;
 
   // Is the collision body colliding with any collision geometry.
-  bool isColliding() const;
+  auto isColliding() const -> bool;
   // Is the collision body colliding with special "Null" collision blocks.
-  bool isNullColliding() const;
+  auto isNullColliding() const -> bool;
 
   // Is the body currently stuck in an un-solvable collision.
-  bool isCollisionStuck() const;
+  auto isCollisionStuck() const -> bool;
 
   // If this body is sticking, this is the angle toward the surface it's stuck to
-  std::optional<float> stickingDirection() const;
+  auto stickingDirection() const -> std::optional<float>;
 
   // From 0.0 to 1.0, the amount of the collision body (or if the collision
   // body is null, just the center position) that is in liquid.
-  float liquidPercentage() const;
+  auto liquidPercentage() const -> float;
 
   // Returns the liquid that the body is most in, if any
-  LiquidId liquidId() const;
+  auto liquidId() const -> LiquidId;
 
-  bool onGround() const;
-  bool zeroG() const;
+  auto onGround() const -> bool;
+  auto zeroG() const -> bool;
 
-  bool atWorldLimit(bool bottomOnly = false) const;
+  auto atWorldLimit(bool bottomOnly = false) const -> bool;
 
   void setPosition(Vec2F position);
   void setXPosition(float xPosition);
@@ -194,7 +192,7 @@ public:
 
   void setIgnorePhysicsEntities(Set<EntityId> ignorePhysicsEntities);
   // iterate over all physics entity collision polys in the region, iteration stops if the callback returns false
-  void forEachMovingCollision(RectF const& region, function<bool(MovingCollisionId, PhysicsMovingCollision, PolyF, RectF)> callback);
+  void forEachMovingCollision(RectF const& region, std::function<bool(MovingCollisionId, PhysicsMovingCollision, PolyF, RectF)> callback);
 
 protected:
   // forces the movement controller onGround status, used when manually controlling movement outside the movement controller
@@ -203,16 +201,16 @@ protected:
   void setOnGround(bool onGround);
 
   // whether force regions were applied in the last update
-  bool appliedForceRegion() const;
+  auto appliedForceRegion() const -> bool;
   // The collision correction applied during the most recent update, if any.
-  Vec2F collisionCorrection() const;
+  auto collisionCorrection() const -> Vec2F;
   // Horizontal slope of the ground the collision body has collided with, if
   // any.
-  Vec2F surfaceSlope() const;
+  auto surfaceSlope() const -> Vec2F;
   // Velocity of the surface that the body is resting on, if any
-  Vec2F surfaceVelocity() const;
+  auto surfaceVelocity() const -> Vec2F;
 
-  World* world();
+  auto world() -> World*;
 
 private:
   struct CollisionResult {
@@ -241,18 +239,18 @@ private:
     float sortDistance;
   };
 
-  static CollisionKind maxOrNullCollision(CollisionKind a, CollisionKind b);
-  static CollisionResult collisionMove(List<CollisionPoly>& collisionPolys, PolyF const& body, Vec2F const& movement,
-      bool ignorePlatforms, bool enableSurfaceSlopeCorrection, float maximumCorrection, float maximumPlatformCorrection, Vec2F sortCenter, float dt);
-  static CollisionSeparation collisionSeparate(List<CollisionPoly>& collisionPolys, PolyF const& poly,
-      bool ignorePlatforms, float maximumPlatformCorrection, Vec2F const& sortCenter, bool upward, float separationTolerance);
+  static auto maxOrNullCollision(CollisionKind a, CollisionKind b) -> CollisionKind;
+  static auto collisionMove(List<CollisionPoly>& collisionPolys, PolyF const& body, Vec2F const& movement,
+                            bool ignorePlatforms, bool enableSurfaceSlopeCorrection, float maximumCorrection, float maximumPlatformCorrection, Vec2F sortCenter, float dt) -> CollisionResult;
+  static auto collisionSeparate(List<CollisionPoly>& collisionPolys, PolyF const& poly,
+                                bool ignorePlatforms, float maximumPlatformCorrection, Vec2F const& sortCenter, bool upward, float separationTolerance) -> CollisionSeparation;
 
   void updateParameters(MovementParameters parameters);
   void updatePositionInterpolators();
 
   void queryCollisions(RectF const& region);
 
-  float gravity();
+  auto gravity() -> float;
 
   MovementParameters m_parameters;
 
@@ -297,4 +295,4 @@ private:
   List<PolyF> m_collisionBuffers;
 };
 
-}
+}// namespace Star

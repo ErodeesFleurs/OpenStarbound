@@ -1,15 +1,17 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
+#include "StarEffectSourceItem.hpp"
 #include "StarGameTypes.hpp"
 #include "StarItem.hpp"
-#include "StarEffectSourceItem.hpp"
 #include "StarPreviewableItem.hpp"
 #include "StarSwingableItem.hpp"
+
+import std;
+
 namespace Star {
 
-enum class ArmorType : uint8_t {
+enum class ArmorType : std::uint8_t {
   Head,
   Chest,
   Legs,
@@ -17,43 +19,37 @@ enum class ArmorType : uint8_t {
 };
 extern EnumMap<ArmorType> ArmorTypeNames;
 
-STAR_CLASS(ArmorItem);
-STAR_CLASS(HeadArmor);
-STAR_CLASS(ChestArmor);
-STAR_CLASS(LegsArmor);
-STAR_CLASS(BackArmor);
-
 class ArmorItem : public Item, public EffectSourceItem, public SwingableItem {
 public:
   ArmorItem(Json const& config, String const& directory, Json const& data);
-  virtual ~ArmorItem() {}
+  ~ArmorItem() override = default;
 
-  virtual List<PersistentStatusEffect> statusEffects() const override;
-  bool statusEffectsInCosmeticSlot() const;
-  List<PersistentStatusEffect> cosmeticStatusEffects() const;
+  auto statusEffects() const -> List<PersistentStatusEffect> override;
+  auto statusEffectsInCosmeticSlot() const -> bool;
+  auto cosmeticStatusEffects() const -> List<PersistentStatusEffect>;
 
-  virtual StringSet effectSources() const override;
+  auto effectSources() const -> StringSet override;
 
-  virtual List<Drawable> drawables() const override;
+  auto drawables() const -> List<Drawable> override;
 
-  virtual float getAngle(float aimAngle) override;
+  auto getAngle(float aimAngle) -> float override;
 
-  virtual void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
-  virtual void fireTriggered() override;
+  void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
+  void fireTriggered() override;
 
-  virtual ArmorType armorType() const = 0;
+  virtual auto armorType() const -> ArmorType = 0;
 
-  List<String> const& colorOptions();
+  auto colorOptions() -> List<String> const&;
 
-  Directives const& directives(bool flip = false) const;
-  bool fullbright() const;
-  bool flipping() const;
-  bool visible(bool extraCosmetics = false) const;
-  HashSet<ArmorType> const& armorTypesToHide();
-  bool hideBody() const;
-  bool bypassNude() const;
+  auto directives(bool flip = false) const -> Directives const&;
+  auto fullbright() const -> bool;
+  auto flipping() const -> bool;
+  auto visible(bool extraCosmetics = false) const -> bool;
+  auto armorTypesToHide() -> HashSet<ArmorType> const&;
+  auto hideBody() const -> bool;
+  auto bypassNude() const -> bool;
 
-  std::optional<String> const& techModule() const;
+  auto techModule() const -> std::optional<String> const&;
 
 private:
   void refreshIconDrawables();
@@ -77,16 +73,16 @@ private:
 class HeadArmor : public ArmorItem, public PreviewableItem {
 public:
   HeadArmor(Json const& config, String const& directory, Json const& data);
-  virtual ~HeadArmor() {}
+  ~HeadArmor() override = default;
 
-  virtual ItemPtr clone() const override;
+  auto clone() const -> Ptr<Item> override;
 
-  virtual ArmorType armorType() const override;
+  auto armorType() const -> ArmorType override;
 
-  String const& frameset(Gender gender) const;
-  Directives const& maskDirectives() const;
+  auto frameset(Gender gender) const -> String const&;
+  auto maskDirectives() const -> Directives const&;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  auto preview(Ptr<Player> const& viewer = {}) const -> List<Drawable> override;
 
 private:
   String m_maleImage;
@@ -97,21 +93,21 @@ private:
 class ChestArmor : public ArmorItem, public PreviewableItem {
 public:
   ChestArmor(Json const& config, String const& directory, Json const& data);
-  virtual ~ChestArmor() {}
+  ~ChestArmor() override = default;
 
-  virtual ItemPtr clone() const override;
+  auto clone() const -> Ptr<Item> override;
 
-  virtual ArmorType armorType() const override;
+  auto armorType() const -> ArmorType override;
 
   // Will have :run, :normal, :duck, and :portrait
-  String const& bodyFrameset(Gender gender) const;
+  auto bodyFrameset(Gender gender) const -> String const&;
   // Will have :idle[1-5], :duck, :rotation, :walk[1-5], :run[1-5], :jump[1-4],
   // :fall[1-4]
-  String const& frontSleeveFrameset(Gender gender) const;
+  auto frontSleeveFrameset(Gender gender) const -> String const&;
   // Same as FSleeve
-  String const& backSleeveFrameset(Gender gender) const;
+  auto backSleeveFrameset(Gender gender) const -> String const&;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  auto preview(Ptr<Player> const& viewer = {}) const -> List<Drawable> override;
 
 private:
   String m_maleBodyImage;
@@ -126,16 +122,16 @@ private:
 class LegsArmor : public ArmorItem, public PreviewableItem {
 public:
   LegsArmor(Json const& config, String const& directory, Json const& data);
-  virtual ~LegsArmor() {}
+  ~LegsArmor() override = default;
 
-  virtual ItemPtr clone() const override;
+  auto clone() const -> Ptr<Item> override;
 
-  virtual ArmorType armorType() const override;
+  auto armorType() const -> ArmorType override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
-  String const& frameset(Gender gender) const;
+  auto frameset(Gender gender) const -> String const&;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  auto preview(Ptr<Player> const& viewer = {}) const -> List<Drawable> override;
 
 private:
   String m_maleImage;
@@ -145,20 +141,20 @@ private:
 class BackArmor : public ArmorItem, public PreviewableItem {
 public:
   BackArmor(Json const& config, String const& directory, Json const& data);
-  virtual ~BackArmor() {}
+  ~BackArmor() override = default;
 
-  virtual ItemPtr clone() const override;
+  auto clone() const -> Ptr<Item> override;
 
-  virtual ArmorType armorType() const override;
+  auto armorType() const -> ArmorType override;
 
   // Will have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
-  String const& frameset(Gender gender) const;
+  auto frameset(Gender gender) const -> String const&;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  auto preview(Ptr<Player> const& viewer = {}) const -> List<Drawable> override;
 
 private:
   String m_maleImage;
   String m_femaleImage;
 };
 
-}
+}// namespace Star

@@ -1,58 +1,57 @@
 #pragma once
 
-#include <optional>
-
-#include "StarItem.hpp"
-#include "StarFireableItem.hpp"
 #include "StarBeamItem.hpp"
-#include "StarEntityRendering.hpp"
-#include "StarPreviewTileTool.hpp"
-#include "StarRenderableItem.hpp"
-#include "StarPreviewableItem.hpp"
 #include "StarCollisionBlock.hpp"
+#include "StarConfig.hpp"
+#include "StarEntityRendering.hpp"
+#include "StarFireableItem.hpp"
+#include "StarItem.hpp"
+#include "StarPreviewTileTool.hpp"
+#include "StarPreviewableItem.hpp"
+#include "StarRenderableItem.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(MaterialItem);
-STAR_CLASS(Player);
 
 class MaterialItem : public Item, public FireableItem, public PreviewTileTool, public RenderableItem, public PreviewableItem, public BeamItem {
 public:
   MaterialItem(Json const& config, String const& directory, Json const& settings);
-  virtual ~MaterialItem() {}
+  ~MaterialItem() override = default;
 
-  ItemPtr clone() const override;
+  auto clone() const -> Ptr<Item> override;
 
   void init(ToolUserEntity* owner, ToolHand hand) override;
   void uninit() override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) override;
 
-  virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
-  virtual List<Drawable> dropDrawables() const override;
-  List<Drawable> nonRotatedDrawables() const override;
+  auto preview(Ptr<Player> const& viewer = {}) const -> List<Drawable> override;
+  auto dropDrawables() const -> List<Drawable> override;
+  auto nonRotatedDrawables() const -> List<Drawable> override;
 
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
   void endFire(FireMode mode, bool shifting) override;
 
-  MaterialId materialId() const;
-  MaterialHue materialHueShift() const;
+  auto materialId() const -> MaterialId;
+  auto materialHueShift() const -> MaterialHue;
 
-  bool canPlace(bool shifting) const;
-  bool multiplaceEnabled() const;
+  auto canPlace(bool shifting) const -> bool;
+  auto multiplaceEnabled() const -> bool;
 
-  float& blockRadius();
-  float& altBlockRadius();
-  TileCollisionOverride& collisionOverride();
+  auto blockRadius() -> float&;
+  auto altBlockRadius() -> float&;
+  auto collisionOverride() -> TileCollisionOverride&;
 
-  List<PreviewTile> previewTiles(bool shifting) const override;
-  List<Drawable> const& generatedPreview(Vec2I position = {}) const;
+  auto previewTiles(bool shifting) const -> List<PreviewTile> override;
+  auto generatedPreview(Vec2I position = {}) const -> List<Drawable> const&;
+
 private:
-  size_t blockSwap(float radius, TileLayer layer);
+  auto blockSwap(float radius, TileLayer layer) -> size_t;
   void updatePropertiesFromPlayer(Player* player);
-  float calcRadius(bool shifting) const;
-  List<Vec2I>& tileArea(float radius, Vec2F const& position) const;
-  MaterialHue placementHueShift(Vec2I const& position) const;
+  auto calcRadius(bool shifting) const -> float;
+  auto tileArea(float radius, Vec2F const& position) const -> List<Vec2I>&;
+  auto placementHueShift(Vec2I const& position) const -> MaterialHue;
 
   MaterialId m_material;
   MaterialHue m_materialHueShift;
@@ -73,4 +72,4 @@ private:
   mutable std::optional<List<Drawable>> m_generatedPreviewCache;
 };
 
-}
+}// namespace Star

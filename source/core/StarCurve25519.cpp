@@ -1,7 +1,6 @@
 #include "StarCurve25519.hpp"
 #include "StarRandom.hpp"
 
-#include "curve25519/include/curve25519_dh.h"
 #include "curve25519/include/ed25519_signature.h"
 
 import std;

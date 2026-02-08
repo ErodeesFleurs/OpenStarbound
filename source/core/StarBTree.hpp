@@ -30,18 +30,18 @@ namespace Star {
 //   // Load an existing index.
 //   Index loadIndex(Pointer pointer);
 //
-//   size_t indexPointerCount(Index const& index);
-//   Pointer indexPointer(Index const& index, size_t i);
-//   void indexUpdatePointer(Index& index, size_t i, Pointer p);
+//   std::size_t indexPointerCount(Index const& index);
+//   Pointer indexPointer(Index const& index, std::size_t i);
+//   void indexUpdatePointer(Index& index, std::size_t i, Pointer p);
 //
-//   Key indexKeyBefore(Index const& index, size_t i);
-//   void indexUpdateKeyBefore(Index& index, size_t i, Key k);
+//   Key indexKeyBefore(Index const& index, std::size_t i);
+//   void indexUpdateKeyBefore(Index& index, std::size_t i, Key k);
 //
-//   void indexRemoveBefore(Index& index, size_t i);
-//   void indexInsertAfter(Index& index, size_t i, Key k, Pointer p);
+//   void indexRemoveBefore(Index& index, std::size_t i);
+//   void indexInsertAfter(Index& index, std::size_t i, Key k, Pointer p);
 //
-//   size_t indexLevel(Index const& index);
-//   void setIndexLevel(Index& index, size_t indexLevel);
+//   std::size_t indexLevel(Index const& index);
+//   void setIndexLevel(Index& index, std::size_t indexLevel);
 //
 //   // Should return true if index should try to shift elements into this index
 //   // from sibling index.
@@ -67,12 +67,12 @@ namespace Star {
 //
 //   Leaf loadLeaf(Pointer pointer);
 //
-//   size_t leafElementCount(Leaf const& leaf);
-//   Key leafKey(Leaf const& leaf, size_t i);
-//   Data leafData(Leaf const& leaf, size_t i);
+//   std::size_t leafElementCount(Leaf const& leaf);
+//   Key leafKey(Leaf const& leaf, std::size_t i);
+//   Data leafData(Leaf const& leaf, std::size_t i);
 //
-//   void leafInsert(Leaf& leaf, size_t i, Key k, Data d);
-//   void leafRemove(Leaf& leaf, size_t i);
+//   void leafInsert(Leaf& leaf, std::size_t i, Key k, Data d);
+//   void leafRemove(Leaf& leaf, std::size_t i);
 //
 //   // Set and get next-leaf pointers.  It is not required that next-leaf
 //   // pointers be kept or that they be valid, so nextLeaf may return nothing.
@@ -252,8 +252,8 @@ private:
   template <typename Visitor>
   void forAllNodes(Index const& index, Visitor&& visitor);
 
-  auto leafFind(Leaf const& leaf, Key const& key) -> std::pair<size_t, bool>;
-  auto indexFind(Index const& index, Key const& key) -> size_t;
+  auto leafFind(Leaf const& leaf, Key const& key) -> std::pair<std::size_t, bool>;
+  auto indexFind(Index const& index, Key const& key) -> std::size_t;
 };
 
 template <typename Base>
@@ -421,14 +421,14 @@ auto BTreeMixin<Base>::LeafCounter::operator()(Leaf const&) -> bool {
 
 template <typename Base>
 BTreeMixin<Base>::ModifyInfo::ModifyInfo(ModifyAction a, DataElement e)
-  : targetElement(std::move(e)), action(a) {
+    : targetElement(std::move(e)), action(a) {
   found = false;
   state = Done;
 }
 
 template <typename Base>
 auto BTreeMixin<Base>::contains(Index const& index, Key const& k) -> bool {
-  size_t i = indexFind(index, k);
+  std::size_t i = indexFind(index, k);
   if (Base::indexLevel(index) == 0)
     return contains(Base::loadLeaf(Base::indexPointer(index, i)), k);
   else
@@ -442,7 +442,7 @@ auto BTreeMixin<Base>::contains(Leaf const& leaf, Key const& k) -> bool {
 
 template <typename Base>
 auto BTreeMixin<Base>::find(Index const& index, Key const& k) -> std::optional<Data> {
-  size_t i = indexFind(index, k);
+  std::size_t i = indexFind(index, k);
   if (Base::indexLevel(index) == 0)
     return find(Base::loadLeaf(Base::indexPointer(index, i)), k);
   else
@@ -451,7 +451,7 @@ auto BTreeMixin<Base>::find(Index const& index, Key const& k) -> std::optional<D
 
 template <typename Base>
 auto BTreeMixin<Base>::find(Leaf const& leaf, Key const& k) -> std::optional<Data> {
-  std::pair<size_t, bool> res = leafFind(leaf, k);
+  std::pair<std::size_t, bool> res = leafFind(leaf, k);
   if (res.second)
     return Base::leafData(leaf, res.first);
   else
@@ -461,7 +461,7 @@ auto BTreeMixin<Base>::find(Leaf const& leaf, Key const& k) -> std::optional<Dat
 template <typename Base>
 template <typename Visitor>
 auto BTreeMixin<Base>::forEach(Index const& index, Key const& lower, Key const& upper, Visitor&& o) -> Key {
-  size_t i = indexFind(index, lower);
+  std::size_t i = indexFind(index, lower);
   Key lastKey;
 
   if (Base::indexLevel(index) == 0)
@@ -499,9 +499,9 @@ auto BTreeMixin<Base>::forEach(Leaf const& leaf, Key const& lower, Key const& up
   if (Base::leafElementCount(leaf) == 0)
     return Key();
 
-  size_t lowerIndex = leafFind(leaf, lower).first;
+  std::size_t lowerIndex = leafFind(leaf, lower).first;
 
-  for (size_t i = lowerIndex; i != Base::leafElementCount(leaf); ++i) {
+  for (std::size_t i = lowerIndex; i != Base::leafElementCount(leaf); ++i) {
     Key currentKey = Base::leafKey(leaf, i);
     if (!(currentKey < lower)) {
       if (currentKey < upper)
@@ -521,7 +521,7 @@ template <typename Base>
 template <typename Visitor>
 auto BTreeMixin<Base>::forAll(Index const& index, Visitor&& o) -> Key {
   Key lastKey;
-  for (size_t i = 0; i < Base::indexPointerCount(index); ++i) {
+  for (std::size_t i = 0; i < Base::indexPointerCount(index); ++i) {
     // If we're to the right of a given key, but lastKey >= this key, then we
     // must have already visited this node via nextLeaf pointers, so we can
     // skip it.
@@ -543,7 +543,7 @@ auto BTreeMixin<Base>::forAll(Leaf const& leaf, Visitor&& o) -> Key {
   if (Base::leafElementCount(leaf) == 0)
     return Key();
 
-  for (size_t i = 0; i != Base::leafElementCount(leaf); ++i) {
+  for (std::size_t i = 0; i != Base::leafElementCount(leaf); ++i) {
     Key currentKey = Base::leafKey(leaf, i);
     o(Base::leafKey(leaf, i), Base::leafData(leaf, i));
   }
@@ -558,7 +558,7 @@ template <typename Base>
 template <typename Visitor, typename ErrorHandler>
 void BTreeMixin<Base>::recoverAll(Index const& index, Visitor&& visitor, ErrorHandler&& error) {
   try {
-    for (size_t i = 0; i < Base::indexPointerCount(index); ++i) {
+    for (std::size_t i = 0; i < Base::indexPointerCount(index); ++i) {
       if (Base::indexLevel(index) == 0) {
         try {
           recoverAll(Base::loadLeaf(Base::indexPointer(index, i)), std::forward<Visitor>(visitor), std::forward<ErrorHandler>(error));
@@ -582,7 +582,7 @@ template <typename Base>
 template <typename Visitor, typename ErrorHandler>
 void BTreeMixin<Base>::recoverAll(Leaf const& leaf, Visitor&& visitor, ErrorHandler&& error) {
   try {
-    for (size_t i = 0; i != Base::leafElementCount(leaf); ++i) {
+    for (std::size_t i = 0; i != Base::leafElementCount(leaf); ++i) {
       Key currentKey = Base::leafKey(leaf, i);
       visitor(Base::leafKey(leaf, i), Base::leafData(leaf, i));
     }
@@ -595,8 +595,8 @@ template <typename Base>
 void BTreeMixin<Base>::modify(Leaf& leafNode, ModifyInfo& info) {
   info.state = Done;
 
-  std::pair<size_t, bool> res = leafFind(leafNode, info.targetElement.key);
-  size_t i = res.first;
+  std::pair<std::size_t, bool> res = leafFind(leafNode, info.targetElement.key);
+  std::size_t i = res.first;
   if (res.second) {
     info.found = true;
     Base::leafRemove(leafNode, i);
@@ -626,7 +626,7 @@ void BTreeMixin<Base>::modify(Leaf& leafNode, ModifyInfo& info) {
 
 template <typename Base>
 void BTreeMixin<Base>::modify(Index& indexNode, ModifyInfo& info) {
-  size_t i = indexFind(indexNode, info.targetElement.key);
+  std::size_t i = indexFind(indexNode, info.targetElement.key);
   Pointer nextPointer = Base::indexPointer(indexNode, i);
 
   Leaf lowerLeaf;
@@ -644,8 +644,8 @@ void BTreeMixin<Base>::modify(Index& indexNode, ModifyInfo& info) {
 
   bool selfUpdated = false;
 
-  size_t left = 0;
-  size_t right = 0;
+  std::size_t left = 0;
+  std::size_t right = 0;
   if (i != 0 && i == Base::indexPointerCount(indexNode) - 1) {
     left = i - 1;
     right = i;
@@ -814,7 +814,7 @@ auto BTreeMixin<Base>::modify(DataElement e, ModifyAction action) -> bool {
       // release index first (to support the common use case of delaying
       // removes until setNewRoot)
       Pointer pointer = Base::indexPointer(lowerIndex, 0);
-      size_t level = Base::indexLevel(lowerIndex);
+      std::size_t level = Base::indexLevel(lowerIndex);
       Base::deleteIndex(std::move(lowerIndex));
       Base::setNewRoot(pointer, level == 0);
     } else {
@@ -873,7 +873,7 @@ void BTreeMixin<Base>::forAllNodes(Index const& index, Visitor&& visitor) {
   if (!visitor(index))
     return;
 
-  for (size_t i = 0; i < Base::indexPointerCount(index); ++i) {
+  for (std::size_t i = 0; i < Base::indexPointerCount(index); ++i) {
     if (Base::indexLevel(index) != 0) {
       forAllNodes(Base::loadIndex(Base::indexPointer(index, i)), std::forward<Visitor>(visitor));
     } else {
@@ -884,16 +884,16 @@ void BTreeMixin<Base>::forAllNodes(Index const& index, Visitor&& visitor) {
 }
 
 template <typename Base>
-auto BTreeMixin<Base>::leafFind(Leaf const& leaf, Key const& key) -> std::pair<size_t, bool> {
+auto BTreeMixin<Base>::leafFind(Leaf const& leaf, Key const& key) -> std::pair<std::size_t, bool> {
   // Return lower bound binary search result.
-  size_t size = Base::leafElementCount(leaf);
+  std::size_t size = Base::leafElementCount(leaf);
   if (size == 0)
     return {0, false};
 
-  size_t len = size;
-  size_t first = 0;
-  size_t middle = 0;
-  size_t half;
+  std::size_t len = size;
+  std::size_t first = 0;
+  std::size_t middle = 0;
+  std::size_t half;
   while (len > 0) {
     half = len / 2;
     middle = first + half;
@@ -908,16 +908,16 @@ auto BTreeMixin<Base>::leafFind(Leaf const& leaf, Key const& key) -> std::pair<s
 }
 
 template <typename Base>
-auto BTreeMixin<Base>::indexFind(Index const& index, Key const& key) -> size_t {
+auto BTreeMixin<Base>::indexFind(Index const& index, Key const& key) -> std::size_t {
   // Return upper bound binary search result of range [1, size];
-  size_t size = Base::indexPointerCount(index);
+  std::size_t size = Base::indexPointerCount(index);
   if (size == 0)
     return 0;
 
-  size_t len = size - 1;
-  size_t first = 1;
-  size_t middle = 1;
-  size_t half;
+  std::size_t len = size - 1;
+  std::size_t first = 1;
+  std::size_t middle = 1;
+  std::size_t half;
   while (len > 0) {
     half = len / 2;
     middle = first + half;
@@ -931,4 +931,4 @@ auto BTreeMixin<Base>::indexFind(Index const& index, Key const& key) -> size_t {
   return first - 1;
 }
 
-}
+}// namespace Star

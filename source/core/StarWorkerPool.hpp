@@ -53,13 +53,12 @@ private:
 template <typename ResultType>
 class WorkerPoolPromise {
 public:
-    struct Impl {
-        Mutex mutex;
-        ConditionVariable condition;
-        std::optional<ResultType> result;
-        std::exception_ptr exception;
-    };
-
+  struct Impl {
+    Mutex mutex;
+    ConditionVariable condition;
+    std::optional<ResultType> result;
+    std::exception_ptr exception;
+  };
 
   // Returns true if the work is completed (either due to error or actual
   // completion, will not re-throw)
@@ -197,7 +196,7 @@ auto WorkerPoolPromise<ResultType>::get() const -> ResultType const& {
 
 template <typename ResultType>
 WorkerPoolPromise<ResultType>::WorkerPoolPromise(std::shared_ptr<Impl> impl)
-  : m_impl(std::move(impl)) {}
+    : m_impl(std::move(impl)) {}
 
 template <typename ResultType>
 auto WorkerPool::addProducer(std::function<ResultType()> producer) -> WorkerPoolPromise<ResultType> {
@@ -220,4 +219,4 @@ auto WorkerPool::addProducer(std::function<ResultType()> producer) -> WorkerPool
   return workerPoolPromiseImpl;
 }
 
-}
+}// namespace Star

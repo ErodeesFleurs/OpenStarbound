@@ -1,22 +1,23 @@
 #pragma once
 
-#include <optional>
-
-#include "StarObject.hpp"
+#include "StarConfig.hpp"
 #include "StarLoungingEntities.hpp"
+#include "StarObject.hpp"
+
+import std;
 
 namespace Star {
 
 class LoungeableObject : public Object, public virtual LoungeableEntity {
 public:
-  LoungeableObject(ObjectConfigConstPtr config, Json const& parameters = Json());
+  LoungeableObject(ConstPtr<ObjectConfig> config, Json const& parameters = Json());
 
   void render(RenderCallback* renderCallback) override;
 
-  InteractAction interact(InteractRequest const& request) override;
+  auto interact(InteractRequest const& request) -> InteractAction override;
 
-  size_t anchorCount() const override;
-  LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
+  auto anchorCount() const -> size_t override;
+  auto loungeAnchor(size_t positionIndex) const -> ConstPtr<LoungeAnchor> override;
 
 protected:
   void setOrientationIndex(size_t orientationIndex) override;
@@ -36,4 +37,4 @@ private:
   std::optional<String> m_sitCursorOverride;
 };
 
-}
+}// namespace Star

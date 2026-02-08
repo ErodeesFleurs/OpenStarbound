@@ -68,12 +68,12 @@ protected:
 using NetElementInt = NetElementIntegral<std::int64_t>;
 using NetElementUInt = NetElementIntegral<std::uint64_t>;
 
-// Properly encodes std::numeric_limits<std::size_t>::max() no matter the platform width of size_t NetElement
-// size_t values are NOT clamped when setting.
-class NetElementSize : public NetElementBasicField<size_t> {
+// Properly encodes std::numeric_limits<std::size_t>::max() no matter the platform width of std::size_t NetElement
+// std::size_t values are NOT clamped when setting.
+class NetElementSize : public NetElementBasicField<std::size_t> {
 protected:
-  void readData(DataStream& ds, size_t& v) const override;
-  void writeData(DataStream& ds, size_t const& v) const override;
+  void readData(DataStream& ds, std::size_t& v) const override;
+  void writeData(DataStream& ds, std::size_t const& v) const override;
 };
 
 class NetElementBool : public NetElementBasicField<bool> {

@@ -1,64 +1,64 @@
 #pragma once
 
-#include "StarUuid.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarHumanoid.hpp"
-#include "StarToolUserEntity.hpp"
-#include "StarLoungingEntities.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarAiTypes.hpp"
+#include "StarArmorWearer.hpp"
 #include "StarChattyEntity.hpp"
-#include "StarEmoteEntity.hpp"
+#include "StarConfig.hpp"
 #include "StarDamageBarEntity.hpp"
-#include "StarNametagEntity.hpp"
-#include "StarPortraitEntity.hpp"
+#include "StarEmoteEntity.hpp"
+#include "StarEntityRendering.hpp"
+#include "StarHumanoid.hpp"
 #include "StarInspectableEntity.hpp"
 #include "StarInventoryTypes.hpp"
-#include "StarActorMovementController.hpp"
-#include "StarNetworkedAnimator.hpp"
-#include "StarAiTypes.hpp"
-#include "StarItemBag.hpp"
-#include "StarArmorWearer.hpp"
-#include "StarEntityRendering.hpp"
-#include "StarToolUser.hpp"
-#include "StarPlayerTypes.hpp"
-#include "StarRadioMessageDatabase.hpp"
-#include "StarLuaComponents.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarLoungingEntities.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarLuaAnimationComponent.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarNametagEntity.hpp"
+#include "StarNetElementDynamicGroup.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarPlayerTypes.hpp"
+#include "StarPortraitEntity.hpp"
+#include "StarRadioMessageDatabase.hpp"
+#include "StarToolUser.hpp"
+#include "StarToolUserEntity.hpp"
+#include "StarUuid.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_STRUCT(PlayerConfig);
-STAR_CLASS(Songbook);
-STAR_CLASS(WireConnector);
-STAR_CLASS(PlayerInventory);
-STAR_CLASS(PlayerBlueprints);
-STAR_CLASS(PlayerTech);
-STAR_CLASS(PlayerCompanions);
-STAR_CLASS(PlayerDeployment);
-STAR_CLASS(PlayerLog);
-STAR_CLASS(TechController);
-STAR_CLASS(ClientContext);
-STAR_CLASS(Statistics);
-STAR_CLASS(StatusController);
-STAR_CLASS(PlayerCodexes);
-STAR_CLASS(QuestManager);
-STAR_CLASS(InteractiveEntity);
-STAR_CLASS(PlayerUniverseMap);
-STAR_CLASS(UniverseClient);
+class ClientContext;
+class Statistics;
+class UniverseClient;
+class QuestManager;
+class PlayerInventory;
+class PlayerBlueprints;
+class PlayerUniverseMap;
+class PlayerCodexes;
+class PlayerTech;
+class PlayerCompanions;
+class PlayerLog;
+class InteractiveEntity;
+class WireConnector;
+class Songbook;
+class PlayerDeployment;
+class TechController;
 
-STAR_CLASS(Player);
+struct PlayerConfig;
 
-class Player :
-  public virtual ToolUserEntity,
-  public virtual LoungingEntity,
-  public virtual ChattyEntity,
-  public virtual InspectableEntity,
-  public virtual DamageBarEntity,
-  public virtual PortraitEntity,
-  public virtual NametagEntity,
-  public virtual PhysicsEntity,
-  public virtual EmoteEntity {
+class Player : public virtual ToolUserEntity,
+               public virtual LoungingEntity,
+               public virtual ChattyEntity,
+               public virtual InspectableEntity,
+               public virtual DamageBarEntity,
+               public virtual PortraitEntity,
+               public virtual NametagEntity,
+               public virtual PhysicsEntity,
+               public virtual EmoteEntity {
 
 public:
   enum class State {
@@ -76,80 +76,80 @@ public:
   };
   static EnumMap<State> const StateNames;
 
-  Player(PlayerConfigPtr config, Uuid uuid = Uuid());
-  Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules = {});
-  Player(PlayerConfigPtr config, Json const& diskStore);
+  Player(Ptr<PlayerConfig> config, Uuid uuid = Uuid());
+  Player(Ptr<PlayerConfig> config, ByteArray const& netStore, NetCompatibilityRules rules = {});
+  Player(Ptr<PlayerConfig> config, Json const& diskStore);
 
   void diskLoad(Json const& diskStore);
 
-  ClientContextPtr clientContext() const;
-  void setClientContext(ClientContextPtr clientContext);
+  auto clientContext() const -> Ptr<ClientContext>;
+  void setClientContext(Ptr<ClientContext> clientContext);
 
-  StatisticsPtr statistics() const;
-  void setStatistics(StatisticsPtr statistics);
+  auto statistics() const -> Ptr<Statistics>;
+  void setStatistics(Ptr<Statistics> statistics);
 
   void setUniverseClient(UniverseClient* universeClient);
-  UniverseClient* universeClient() const;
+  auto universeClient() const -> UniverseClient*;
 
-  QuestManagerPtr questManager() const;
+  auto questManager() const -> Ptr<QuestManager>;
 
-  Json diskStore();
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  auto diskStore() -> Json;
+  auto netStore(NetCompatibilityRules rules = {}) -> ByteArray;
 
-  EntityType entityType() const override;
-  ClientEntityMode clientEntityMode() const override;
+  auto entityType() const -> EntityType override;
+  auto clientEntityMode() const -> ClientEntityMode override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  Vec2F position() const override;
-  Vec2F velocity() const override;
+  auto position() const -> Vec2F override;
+  auto velocity() const -> Vec2F override;
 
-  Vec2F mouthPosition() const override;
-  Vec2F mouthPosition(bool ignoreAdjustments) const override;
-  Vec2F mouthOffset(bool ignoreAdjustments = true) const;
-  Vec2F feetOffset() const;
-  Vec2F headArmorOffset() const;
-  Vec2F chestArmorOffset() const;
-  Vec2F legsArmorOffset() const;
-  Vec2F backArmorOffset() const;
-
-  // relative to current position
-  RectF metaBoundBox() const override;
+  auto mouthPosition() const -> Vec2F override;
+  auto mouthPosition(bool ignoreAdjustments) const -> Vec2F override;
+  auto mouthOffset(bool ignoreAdjustments = true) const -> Vec2F;
+  auto feetOffset() const -> Vec2F;
+  auto headArmorOffset() const -> Vec2F;
+  auto chestArmorOffset() const -> Vec2F;
+  auto legsArmorOffset() const -> Vec2F;
+  auto backArmorOffset() const -> Vec2F;
 
   // relative to current position
-  RectF collisionArea() const override;
+  auto metaBoundBox() const -> RectF override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  // relative to current position
+  auto collisionArea() const -> RectF override;
+
+  auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t> override;
   void readNetState(ByteArray data, float interpolationStep = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;
 
-  virtual std::optional<HitType> queryHit(DamageSource const& source) const override;
-  std::optional<PolyF> hitPoly() const override;
+  auto queryHit(DamageSource const& source) const -> std::optional<HitType> override;
+  auto hitPoly() const -> std::optional<PolyF> override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
-  List<DamageNotification> selfDamageNotifications() override;
+  auto applyDamage(DamageRequest const& damage) -> List<DamageNotification> override;
+  auto selfDamageNotifications() -> List<DamageNotification> override;
 
   void hitOther(EntityId targetEntityId, DamageRequest const& damageRequest) override;
   void damagedOther(DamageNotification const& damage) override;
 
-  List<DamageSource> damageSources() const override;
+  auto damageSources() const -> List<DamageSource> override;
 
-  bool shouldDestroy() const override;
+  auto shouldDestroy() const -> bool override;
   void destroy(RenderCallback* renderCallback) override;
 
-  std::optional<EntityAnchorState> loungingIn() const override;
-  bool lounge(EntityId loungeableEntityId, size_t anchorIndex);
+  auto loungingIn() const -> std::optional<EntityAnchorState> override;
+  auto lounge(EntityId loungeableEntityId, size_t anchorIndex) -> bool;
   void stopLounging();
 
   void revive(Vec2F const& footPosition);
 
-  List<Drawable> portrait(PortraitMode mode) const override;
-  bool underwater() const;
+  auto portrait(PortraitMode mode) const -> List<Drawable> override;
+  auto underwater() const -> bool;
 
-  bool shifting() const;
+  auto shifting() const -> bool;
   void setShifting(bool shifting);
   void special(int specialKey);
 
@@ -162,46 +162,46 @@ public:
 
   void dropItem();
 
-  float toolRadius() const;
-  float interactRadius() const override;
+  auto toolRadius() const -> float;
+  auto interactRadius() const -> float override;
   void setInteractRadius(float interactRadius);
-  List<InteractAction> pullInteractActions();
+  auto pullInteractActions() -> List<InteractAction>;
 
-  uint64_t currency(String const& currencyType) const;
+  auto currency(String const& currencyType) const -> uint64_t;
 
-  float health() const override;
-  float maxHealth() const override;
-  DamageBarType damageBar() const override;
-  float healthPercentage() const;
+  auto health() const -> float override;
+  auto maxHealth() const -> float override;
+  auto damageBar() const -> DamageBarType override;
+  auto healthPercentage() const -> float;
 
-  float energy() const override;
-  float maxEnergy() const;
-  float energyPercentage() const;
+  auto energy() const -> float override;
+  auto maxEnergy() const -> float;
+  auto energyPercentage() const -> float;
 
-  float energyRegenBlockPercent() const;
+  auto energyRegenBlockPercent() const -> float;
 
-  bool energyLocked() const override;
-  bool fullEnergy() const override;
-  bool consumeEnergy(float energy) override;
+  auto energyLocked() const -> bool override;
+  auto fullEnergy() const -> bool override;
+  auto consumeEnergy(float energy) -> bool override;
 
-  float foodPercentage() const;
+  auto foodPercentage() const -> float;
 
-  float breath() const;
-  float maxBreath() const;
+  auto breath() const -> float;
+  auto maxBreath() const -> float;
 
-  float protection() const;
+  auto protection() const -> float;
 
-  bool forceNude() const;
+  auto forceNude() const -> bool;
 
-  String description() const override;
+  auto description() const -> String override;
   void setDescription(String const& description);
 
-  List<LightSource> lightSources() const override;
+  auto lightSources() const -> List<LightSource> override;
 
-  Direction walkingDirection() const override;
-  Direction facingDirection() const override;
+  auto walkingDirection() const -> Direction override;
+  auto facingDirection() const -> Direction override;
 
-  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  auto receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) -> std::optional<Json> override;
 
   void update(float dt, uint64_t currentStep) override;
 
@@ -209,28 +209,28 @@ public:
 
   void renderLightSources(RenderCallback* renderCallback) override;
 
-  Json getGenericProperty(String const& name, Json const& defaultValue = Json()) const;
+  auto getGenericProperty(String const& name, Json const& defaultValue = Json()) const -> Json;
   void setGenericProperty(String const& name, Json const& value);
 
-  PlayerInventoryPtr inventory() const;
+  auto inventory() const -> Ptr<PlayerInventory>;
   // Returns the number of items from this stack that could be
   // picked up from the world, using inventory tab filtering
-  uint64_t itemsCanHold(ItemPtr const& items) const;
+  auto itemsCanHold(Ptr<Item> const& items) const -> uint64_t;
   // Adds items to the inventory, returning the overflow.
   // The items parameter is invalid after use.
-  ItemPtr pickupItems(ItemPtr const& items, bool silent = false);
+  auto pickupItems(Ptr<Item> const& items, bool silent = false) -> Ptr<Item>;
   // Pick up all of the given items as possible, dropping the overflow.
   // The item parameter is invalid after use.
-  void giveItem(ItemPtr const& item);
+  void giveItem(Ptr<Item> const& item);
 
-  void triggerPickupEvents(ItemPtr const& item);
+  void triggerPickupEvents(Ptr<Item> const& item);
 
-  ItemPtr essentialItem(EssentialItem essentialItem) const;
-  bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
-  uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
+  auto essentialItem(EssentialItem essentialItem) const -> Ptr<Item>;
+  auto hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const -> bool;
+  auto hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const -> uint64_t;
   // altough multiple entries may match, they might have different
   // serializations
-  ItemDescriptor takeItem(ItemDescriptor const& descriptor, bool consumePartial = false, bool exactMatch = false);
+  auto takeItem(ItemDescriptor const& descriptor, bool consumePartial = false, bool exactMatch = false) -> ItemDescriptor;
   void giveItem(ItemDescriptor const& descriptor);
 
   // Clear the item swap slot.
@@ -242,44 +242,44 @@ public:
   // Refresh worn equipment from the inventory
   void refreshEquipment();
 
-  PlayerBlueprintsPtr blueprints() const;
-  bool addBlueprint(ItemDescriptor const& descriptor, bool showFailure = false);
-  bool blueprintKnown(ItemDescriptor const& descriptor) const;
+  auto blueprints() const -> Ptr<PlayerBlueprints>;
+  auto addBlueprint(ItemDescriptor const& descriptor, bool showFailure = false) -> bool;
+  auto blueprintKnown(ItemDescriptor const& descriptor) const -> bool;
 
-  bool addCollectable(String const& collectionName, String const& collectableName);
+  auto addCollectable(String const& collectionName, String const& collectableName) -> bool;
 
-  PlayerUniverseMapPtr universeMap() const;
+  auto universeMap() const -> Ptr<PlayerUniverseMap>;
 
-  PlayerCodexesPtr codexes() const;
+  auto codexes() const -> Ptr<PlayerCodexes>;
 
-  PlayerTechPtr techs() const;
+  auto techs() const -> Ptr<PlayerTech>;
   void overrideTech(std::optional<StringList> const& techModules);
-  bool techOverridden() const;
+  auto techOverridden() const -> bool;
 
-  PlayerCompanionsPtr companions() const;
+  auto companions() const -> Ptr<PlayerCompanions>;
 
-  PlayerLogPtr log() const;
+  auto log() const -> Ptr<PlayerLog>;
 
-  InteractiveEntityPtr bestInteractionEntity(bool includeNearby);
-  void interactWithEntity(InteractiveEntityPtr entity);
+  auto bestInteractionEntity(bool includeNearby) -> Ptr<InteractiveEntity>;
+  void interactWithEntity(Ptr<InteractiveEntity> entity);
 
   // Aim this player's target at the given world position.
   void aim(Vec2F const& position);
-  Vec2F aimPosition() const override;
+  auto aimPosition() const -> Vec2F override;
 
-  Vec2F armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset = {}) const override;
-  Vec2F handOffset(ToolHand hand, Direction facingDirection) const override;
+  auto armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset = {}) const -> Vec2F override;
+  auto handOffset(ToolHand hand, Direction facingDirection) const -> Vec2F override;
 
-  Vec2F handPosition(ToolHand hand, Vec2F const& handOffset = {}) const override;
-  ItemPtr handItem(ToolHand hand) const override;
+  auto handPosition(ToolHand hand, Vec2F const& handOffset = {}) const -> Vec2F override;
+  auto handItem(ToolHand hand) const -> Ptr<Item> override;
 
-  Vec2F armAdjustment() const override;
+  auto armAdjustment() const -> Vec2F override;
 
   void setCameraFocusEntity(std::optional<EntityId> const& cameraFocusEntity) override;
 
   void playEmote(HumanoidEmote emote) override;
 
-  bool canUseTool() const;
+  auto canUseTool() const -> bool;
 
   // "Fires" whatever is in the primary (left) item slot, or the primary fire
   // of the 2H item, at whatever the current aim position is.  Will auto-repeat
@@ -297,37 +297,37 @@ public:
   void beginTrigger();
   void endTrigger();
 
-  ItemPtr primaryHandItem() const;
-  ItemPtr altHandItem() const;
+  auto primaryHandItem() const -> Ptr<Item>;
+  auto altHandItem() const -> Ptr<Item>;
 
-  Uuid uuid() const;
+  auto uuid() const -> Uuid;
 
-  PlayerMode modeType() const;
+  auto modeType() const -> PlayerMode;
   void setModeType(PlayerMode mode);
-  PlayerModeConfig modeConfig() const;
+  auto modeConfig() const -> PlayerModeConfig;
 
-  ShipUpgrades shipUpgrades();
+  auto shipUpgrades() -> ShipUpgrades;
   void setShipUpgrades(ShipUpgrades shipUpgrades);
   void applyShipUpgrades(Json const& upgrades);
   void setShipSpecies(String species);
-  String shipSpecies() const;
+  auto shipSpecies() const -> String;
 
-  String name() const override;
+  auto name() const -> String override;
   void setName(String const& name);
 
-  std::optional<String> statusText() const override;
-  bool displayNametag() const override;
-  Vec3B nametagColor() const override;
-  Vec2F nametagOrigin() const override;
-  String nametag() const override;
+  auto statusText() const -> std::optional<String> override;
+  auto displayNametag() const -> bool override;
+  auto nametagColor() const -> Vec3B override;
+  auto nametagOrigin() const -> Vec2F override;
+  auto nametag() const -> String override;
   void setNametag(std::optional<String> nametag);
 
   void updateIdentity();
 
   void setHumanoidParameter(String key, std::optional<Json> value);
-  std::optional<Json> getHumanoidParameter(String key);
+  auto getHumanoidParameter(String key) -> std::optional<Json>;
   void setHumanoidParameters(JsonObject parameters);
-  JsonObject getHumanoidParameters();
+  auto getHumanoidParameters() -> JsonObject;
   void refreshHumanoidParameters();
 
   void setBodyDirectives(String const& directives);
@@ -345,47 +345,47 @@ public:
   void setFacialMaskType(String const& type);
   void setFacialMaskDirectives(String const& directives);
 
-  void setHair      (String const& group, String const& type, String const& directives);
+  void setHair(String const& group, String const& type, String const& directives);
   void setFacialHair(String const& group, String const& type, String const& directives);
   void setFacialMask(String const& group, String const& type, String const& directives);
 
-  String species() const override;
+  auto species() const -> String override;
   void setSpecies(String const& species);
-  Gender gender() const;
+  auto gender() const -> Gender;
   void setGender(Gender const& gender);
   void setPersonality(Personality const& personality);
   void setImagePath(std::optional<String> const& imagePath);
 
-  HumanoidPtr humanoid();
-  HumanoidPtr humanoid() const;
-  HumanoidIdentity const& identity() const;
+  auto humanoid() -> Ptr<Humanoid>;
+  auto humanoid() const -> Ptr<Humanoid>;
+  auto identity() const -> HumanoidIdentity const&;
 
   void setIdentity(HumanoidIdentity identity);
 
   void setAdmin(bool isAdmin);
-  bool isAdmin() const override;
+  auto isAdmin() const -> bool override;
 
-  bool inToolRange() const override;
-  bool inToolRange(Vec2F const& aimPos) const override;
-  bool inInteractionRange() const;
-  bool inInteractionRange(Vec2F aimPos) const;
+  auto inToolRange() const -> bool override;
+  auto inToolRange(Vec2F const& aimPos) const -> bool override;
+  auto inInteractionRange() const -> bool;
+  auto inInteractionRange(Vec2F aimPos) const -> bool;
 
   void addParticles(List<Particle> const& particles) override;
   void addSound(String const& sound, float volume = 1.0f, float pitch = 1.0f) override;
 
-  bool wireToolInUse() const;
+  auto wireToolInUse() const -> bool;
   void setWireConnector(WireConnector* wireConnector) const;
 
   void addEphemeralStatusEffects(List<EphemeralStatusEffect> const& statusEffects) override;
-  ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const override;
+  auto activeUniqueStatusEffectSummary() const -> ActiveUniqueStatusEffectSummary override;
 
-  float powerMultiplier() const override;
+  auto powerMultiplier() const -> float override;
 
-  bool isDead() const;
+  auto isDead() const -> bool;
   void kill();
 
   void setFavoriteColor(Color color);
-  Color favoriteColor() const override;
+  auto favoriteColor() const -> Color override;
 
   // Starts the teleport animation sequence, locking player movement and
   // preventing some update code
@@ -393,107 +393,107 @@ public:
   void teleportIn();
   void teleportAbort();
 
-  bool isTeleporting() const;
-  bool isTeleportingOut() const;
-  bool canDeploy();
+  auto isTeleporting() const -> bool;
+  auto isTeleportingOut() const -> bool;
+  auto canDeploy() -> bool;
   void deployAbort(String const& animationType = "default");
-  bool isDeploying() const;
-  bool isDeployed() const;
+  auto isDeploying() const -> bool;
+  auto isDeployed() const -> bool;
 
   void setBusyState(PlayerBusyState busyState);
 
   // A hard move to a specified location
   void moveTo(Vec2F const& footPosition);
 
-  List<String> pullQueuedMessages();
-  List<ItemPtr> pullQueuedItemDrops();
+  auto pullQueuedMessages() -> List<String>;
+  auto pullQueuedItemDrops() -> List<Ptr<Item>>;
 
   void queueUIMessage(String const& message) override;
-  void queueItemPickupMessage(ItemPtr const& item);
+  void queueItemPickupMessage(Ptr<Item> const& item);
 
   void addChatMessage(String const& message, Json const& config = {});
   void addEmote(HumanoidEmote const& emote, std::optional<float> emoteCooldown = {});
   void setDance(std::optional<String> const& danceName);
-  pair<HumanoidEmote, float> currentEmote() const;
+  auto currentEmote() const -> std::pair<HumanoidEmote, float>;
 
-  State currentState() const;
+  auto currentState() const -> State;
 
-  List<ChatAction> pullPendingChatActions() override;
+  auto pullPendingChatActions() -> List<ChatAction> override;
 
-  std::optional<String> inspectionLogName() const override;
-  std::optional<String> inspectionDescription(String const& species) const override;
+  auto inspectionLogName() const -> std::optional<String> override;
+  auto inspectionDescription(String const& species) const -> std::optional<String> override;
 
-  float beamGunRadius() const override;
+  auto beamGunRadius() const -> float override;
 
-  bool instrumentPlaying() override;
+  auto instrumentPlaying() -> bool override;
   void instrumentEquipped(String const& instrumentKind) override;
   void interact(InteractAction const& action) override;
   void addEffectEmitters(StringSet const& emitters) override;
   void requestEmote(String const& emote) override;
 
-  ActorMovementController* movementController() override;
-  StatusController* statusController() override;
+  auto movementController() -> ActorMovementController* override;
+  auto statusController() -> StatusController* override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  auto forceRegions() const -> List<PhysicsForceRegion> override;
 
-  StatusControllerPtr statusControllerPtr();
-  ActorMovementControllerPtr movementControllerPtr();
+  auto statusControllerPtr() -> Ptr<StatusController>;
+  auto movementControllerPtr() -> Ptr<ActorMovementController>;
 
-  PlayerConfigPtr config();
+  auto config() -> Ptr<PlayerConfig>;
 
-  SongbookPtr songbook() const;
+  auto songbook() const -> Ptr<Songbook>;
 
   void finalizeCreation();
 
-  float timeSinceLastGaveDamage() const;
-  EntityId lastDamagedTarget() const;
+  auto timeSinceLastGaveDamage() const -> float;
+  auto lastDamagedTarget() const -> EntityId;
 
-  bool invisible() const;
+  auto invisible() const -> bool;
 
   void animatePortrait(float dt);
 
-  bool isOutside();
+  auto isOutside() -> bool;
 
-  void dropSelectedItems(function<bool(ItemPtr)> filter);
+  void dropSelectedItems(std::function<bool(Ptr<Item>)> filter);
   void dropEverything();
 
-  bool isPermaDead() const;
+  auto isPermaDead() const -> bool;
 
-  bool interruptRadioMessage();
-  std::optional<RadioMessage> pullPendingRadioMessage();
+  auto interruptRadioMessage() -> bool;
+  auto pullPendingRadioMessage() -> std::optional<RadioMessage>;
   void queueRadioMessage(Json const& messageConfig, float delay = 0);
   void queueRadioMessage(RadioMessage message);
 
   // If a cinematic should play, returns it and clears it.  May stop cinematics
   // by returning a null Json.
-  std::optional<Json> pullPendingCinematic();
+  auto pullPendingCinematic() -> std::optional<Json>;
   void setPendingCinematic(Json const& cinematic, bool unique = false);
 
   void setInCinematic(bool inCinematic);
 
-  std::optional<pair<std::optional<pair<StringList, int>>, float>> pullPendingAltMusic();
+  auto pullPendingAltMusic() -> std::optional<std::pair<std::optional<std::pair<StringList, int>>, float>>;
 
-  std::optional<PlayerWarpRequest> pullPendingWarp();
+  auto pullPendingWarp() -> std::optional<PlayerWarpRequest>;
   void setPendingWarp(String const& action, std::optional<String> const& animation = {}, bool deploy = false);
 
-  std::optional<pair<Json, RpcPromiseKeeper<Json>>> pullPendingConfirmation();
+  auto pullPendingConfirmation() -> std::optional<std::pair<Json, RpcPromiseKeeper<Json>>>;
   void queueConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> const& resultPromise);
 
-  AiState const& aiState() const;
-  AiState& aiState();
+  auto aiState() const -> AiState const&;
+  auto aiState() -> AiState&;
 
   // In inspection mode, scannable, scanned, and interesting objects will be
   // rendered with special highlighting.
-  bool inspecting() const;
+  auto inspecting() const -> bool;
 
   // Will return the highlight effect to give an inspectable entity when inspecting
-  EntityHighlightEffect inspectionHighlight(InspectableEntityPtr const& inspectableEntity) const;
+  auto inspectionHighlight(Ptr<InspectableEntity> const& inspectableEntity) const -> EntityHighlightEffect;
 
-  Vec2F cameraPosition();
+  auto cameraPosition() -> Vec2F;
 
   using Entity::setTeam;
 
-  NetworkedAnimatorPtr effectsAnimator();
+  auto effectsAnimator() -> Ptr<NetworkedAnimator>;
 
   // We need to store ephemeral/large/always-changing networked properties that other clients can read. Candidates:
   // genericProperties:
@@ -509,20 +509,19 @@ public:
   // I call this a 'secret property'.
 
   // If the secret property exists as a serialized Json string, returns a view to it without deserializing.
-  std::optional<StringView> getSecretPropertyView(String const& name) const;
-  String const* getSecretPropertyPtr(String const& name) const;
+  auto getSecretPropertyView(String const& name) const -> std::optional<StringView>;
+  auto getSecretPropertyPtr(String const& name) const -> String const*;
   // Gets a secret Json property. It will be de-serialized.
-  Json getSecretProperty(String const& name, Json defaultValue = Json()) const;
+  auto getSecretProperty(String const& name, Json defaultValue = Json()) const -> Json;
   // Sets a secret Json property. It will be serialized.
   void setSecretProperty(String const& name, Json const& value);
 
   void setAnimationParameter(String name, Json value);
 
 private:
-  typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> GenericScriptComponent;
-  typedef shared_ptr<GenericScriptComponent> GenericScriptComponentPtr;
+  using GenericScriptComponent = LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>>;
 
-  typedef std::function<void(ItemPtr)> ItemSetFunc;
+  using ItemSetFunc = std::function<void(Ptr<Item>)>;
 
   // handle input and other events (master only) that happen BEFORE movement/tech controller updates
   void processControls();
@@ -533,17 +532,17 @@ private:
   void getNetStates(bool initial);
   void setNetStates();
   void getNetArmorSecrets();
-  void setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible = true);
+  void setNetArmorSecret(EquipmentSlot slot, Ptr<ArmorItem> const& armor, bool visible = true);
   void setNetArmorSecrets(bool includeEmpty = false);
 
-  List<Drawable> drawables() const;
-  List<OverheadBar> bars() const;
-  List<Particle> particles();
-  String getFootstepSound(Vec2I const& sensor) const;
+  auto drawables() const -> List<Drawable>;
+  auto bars() const -> List<OverheadBar>;
+  auto particles() -> List<Particle>;
+  auto getFootstepSound(Vec2I const& sensor) const -> String;
 
   void tickShared(float dt);
 
-  HumanoidEmote detectEmotes(String const& chatter);
+  auto detectEmotes(String const& chatter) -> HumanoidEmote;
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   NetElementData<std::optional<String>> m_deathParticleBurst;
@@ -551,25 +550,25 @@ private:
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
 
-  PlayerConfigPtr m_config;
+  Ptr<PlayerConfig> m_config;
 
   NetElementTopGroup m_netGroup;
 
-  ClientContextPtr m_clientContext;
-  StatisticsPtr m_statistics;
-  QuestManagerPtr m_questManager;
+  Ptr<ClientContext> m_clientContext;
+  Ptr<Statistics> m_statistics;
+  Ptr<QuestManager> m_questManager;
 
-  PlayerInventoryPtr m_inventory;
-  PlayerBlueprintsPtr m_blueprints;
-  PlayerUniverseMapPtr m_universeMap;
-  PlayerCodexesPtr m_codexes;
-  PlayerTechPtr m_techs;
-  PlayerCompanionsPtr m_companions;
-  PlayerDeploymentPtr m_deployment;
-  PlayerLogPtr m_log;
+  Ptr<PlayerInventory> m_inventory;
+  Ptr<PlayerBlueprints> m_blueprints;
+  Ptr<PlayerUniverseMap> m_universeMap;
+  Ptr<PlayerCodexes> m_codexes;
+  Ptr<PlayerTech> m_techs;
+  Ptr<PlayerCompanions> m_companions;
+  Ptr<PlayerDeployment> m_deployment;
+  Ptr<PlayerLog> m_log;
 
-  UniverseClient* m_client; // required for celestial callbacks in scripts
-  StringMap<GenericScriptComponentPtr> m_genericScriptContexts;
+  UniverseClient* m_client;// required for celestial callbacks in scripts
+  StringMap<Ptr<GenericScriptComponent>> m_genericScriptContexts;
   JsonObject m_genericProperties;
 
   State m_state;
@@ -592,7 +591,7 @@ private:
   bool m_footstepPending;
 
   String m_teleportAnimationType;
-  NetworkedAnimatorPtr m_effectsAnimator;
+  Ptr<NetworkedAnimator> m_effectsAnimator;
   NetworkedAnimator::DynamicTarget m_effectsAnimatorDynamicTarget;
 
   float m_emoteCooldown;
@@ -612,8 +611,8 @@ private:
   ShipUpgrades m_shipUpgrades;
   String m_shipSpecies;
 
-  ToolUserPtr m_tools;
-  ArmorWearerPtr m_armor;
+  Ptr<ToolUser> m_tools;
+  Ptr<ArmorWearer> m_armor;
   HashMap<EquipmentSlot, uint64_t> m_armorSecretNetVersions;
 
   bool m_useDown;
@@ -623,9 +622,9 @@ private:
 
   std::optional<EntityId> m_cameraFocusEntity;
 
-  ActorMovementControllerPtr m_movementController;
-  TechControllerPtr m_techController;
-  StatusControllerPtr m_statusController;
+  Ptr<ActorMovementController> m_movementController;
+  Ptr<TechController> m_techController;
+  Ptr<StatusController> m_statusController;
 
   float m_foodLowThreshold;
   List<PersistentStatusEffect> m_foodLowStatusEffects;
@@ -637,29 +636,29 @@ private:
   bool m_identityUpdated;
 
   bool m_isAdmin;
-  float m_interactRadius; // hand interact radius
-  Vec2F m_walkIntoInteractBias; // offset on position to find an interactable
+  float m_interactRadius;      // hand interact radius
+  Vec2F m_walkIntoInteractBias;// offset on position to find an interactable
   // when not pointing at
   // an interactable with the mouse
 
   List<RpcPromise<InteractAction>> m_pendingInteractActions;
 
   List<Particle> m_callbackParticles;
-  List<tuple<String, float, float>> m_callbackSounds;
+  List<std::tuple<String, float, float>> m_callbackSounds;
 
   List<String> m_queuedMessages;
-  List<ItemPtr> m_queuedItemPickups;
+  List<Ptr<Item>> m_queuedItemPickups;
 
   List<ChatAction> m_pendingChatActions;
 
   StringSet m_missionRadioMessages;
   bool m_interruptRadioMessage;
-  List<pair<GameTimer, RadioMessage>> m_delayedRadioMessages;
+  List<std::pair<GameTimer, RadioMessage>> m_delayedRadioMessages;
   Deque<RadioMessage> m_pendingRadioMessages;
   std::optional<Json> m_pendingCinematic;
-  std::optional<pair<std::optional<pair<StringList, int>>, float>> m_pendingAltMusic;
+  std::optional<std::pair<std::optional<std::pair<StringList, int>>, float>> m_pendingAltMusic;
   std::optional<PlayerWarpRequest> m_pendingWarp;
-  Deque<pair<Json, RpcPromiseKeeper<Json>>> m_pendingConfirmations;
+  Deque<std::pair<Json, RpcPromiseKeeper<Json>>> m_pendingConfirmations;
 
   AiState m_aiState;
 
@@ -667,9 +666,9 @@ private:
   bool m_chatMessageChanged;
   bool m_chatMessageUpdated;
 
-  EffectEmitterPtr m_effectEmitter;
+  Ptr<EffectEmitter> m_effectEmitter;
 
-  SongbookPtr m_songbook;
+  Ptr<Songbook> m_songbook;
 
   int m_hitDamageNotificationLimiter;
   int m_hitDamageNotificationLimit;
@@ -691,4 +690,4 @@ private:
   NetElementData<std::optional<String>> m_humanoidDanceNetState;
 };
 
-}
+}// namespace Star

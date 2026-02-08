@@ -1,15 +1,15 @@
 #include "StarWorkerPool.hpp"
-#include "StarIterator.hpp"
-#include "StarMathCommon.hpp"
+
+import std;
 
 namespace Star {
 
-bool WorkerPoolHandle::done() const {
+auto WorkerPoolHandle::done() const -> bool {
   MutexLocker locker(m_impl->mutex);
   return m_impl->done;
 }
 
-bool WorkerPoolHandle::wait(unsigned millis) const {
+auto WorkerPoolHandle::wait(unsigned millis) const -> bool {
   MutexLocker locker(m_impl->mutex);
 
   if (!m_impl->done && millis != 0)
@@ -21,7 +21,7 @@ bool WorkerPoolHandle::wait(unsigned millis) const {
   return m_impl->done;
 }
 
-bool WorkerPoolHandle::poll() const {
+auto WorkerPoolHandle::poll() const -> bool {
   return wait(0);
 }
 
@@ -39,7 +39,7 @@ void WorkerPoolHandle::finish() const {
 
 WorkerPoolHandle::Impl::Impl() : done(false) {}
 
-WorkerPoolHandle::WorkerPoolHandle(shared_ptr<Impl> impl) : m_impl(std::move(impl)) {}
+WorkerPoolHandle::WorkerPoolHandle(std::shared_ptr<Impl> impl) : m_impl(std::move(impl)) {}
 
 WorkerPool::WorkerPool(String name) : m_name(std::move(name)) {}
 
@@ -52,7 +52,7 @@ WorkerPool::~WorkerPool() {
 }
 
 WorkerPool::WorkerPool(WorkerPool&&) = default;
-WorkerPool& WorkerPool::operator=(WorkerPool&&) = default;
+auto WorkerPool::operator=(WorkerPool&&) -> WorkerPool& = default;
 
 void WorkerPool::start(unsigned threadCount) {
   MutexLocker threadLock(m_threadMutex);
@@ -63,8 +63,8 @@ void WorkerPool::start(unsigned threadCount) {
   m_workCondition.broadcast();
   m_workerThreads.clear();
 
-  for (size_t i = m_workerThreads.size(); i < threadCount; ++i)
-    m_workerThreads.append(make_unique<WorkerThread>(this));
+  for (std::size_t i = m_workerThreads.size(); i < threadCount; ++i)
+    m_workerThreads.append(std::make_unique<WorkerThread>(this));
 }
 
 void WorkerPool::stop() {
@@ -102,12 +102,12 @@ void WorkerPool::finish() {
   stop();
 }
 
-WorkerPoolHandle WorkerPool::addWork(function<void()> work) {
+auto WorkerPool::addWork(std::function<void()> work) -> WorkerPoolHandle {
   // Construct a worker pool handle and wrap the work to signal the handle when
   // finished.  Set the result to empty string if successful and to the content
   // of the exception if an exception is thrown.
-  auto workerPoolHandleImpl = make_shared<WorkerPoolHandle::Impl>();
-  queueWork([workerPoolHandleImpl, work]() {
+  auto workerPoolHandleImpl = std::make_shared<WorkerPoolHandle::Impl>();
+  queueWork([workerPoolHandleImpl, work]() -> void {
     try {
       work();
       MutexLocker handleLocker(workerPoolHandleImpl->mutex);
@@ -125,10 +125,10 @@ WorkerPoolHandle WorkerPool::addWork(function<void()> work) {
 }
 
 WorkerPool::WorkerThread::WorkerThread(WorkerPool* parent)
-  : Thread(strf("WorkerThread for WorkerPool '{}'", parent->m_name)),
-    parent(parent),
-    shouldStop(false),
-    waiting(false) {
+    : Thread(strf("WorkerThread for WorkerPool '{}'", parent->m_name)),
+      parent(parent),
+      shouldStop(false),
+      waiting(false) {
   start();
 }
 
@@ -157,10 +157,10 @@ void WorkerPool::WorkerThread::run() {
   }
 }
 
-void WorkerPool::queueWork(function<void()> work) {
+void WorkerPool::queueWork(std::function<void()> work) {
   MutexLocker workLock(m_workMutex);
   m_pendingWork.append(std::move(work));
   m_workCondition.signal();
 }
 
-}
+}// namespace Star

@@ -4,12 +4,10 @@
 
 namespace Star {
 
-STAR_CLASS(NonRotatedDrawablesItem);
-
 class NonRotatedDrawablesItem {
 public:
-  virtual ~NonRotatedDrawablesItem() {}
-  virtual List<Drawable> nonRotatedDrawables() const = 0;
+  virtual ~NonRotatedDrawablesItem() = default;
+  [[nodiscard]] virtual auto nonRotatedDrawables() const -> List<Drawable> = 0;
 };
 
-}
+}// namespace Star

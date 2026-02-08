@@ -11,8 +11,8 @@
 #include <sys/types.h>
 #include <sys/socket.h>
 #endif
-#include <cerrno>
 #include <arpa/inet.h>
+#include <errno.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/udp.h>

@@ -1,9 +1,9 @@
 #pragma once
 
 #include "StarByteArray.hpp"
+#include "StarConfig.hpp"
 #include "StarException.hpp"
 #include "StarString.hpp"
-#include "StarConfig.hpp"
 
 import std;
 
@@ -132,4 +132,4 @@ inline auto IODevice::isWritable() const -> bool {
   return m_mode & IOMode::Write;
 }
 
-}
+}// namespace Star

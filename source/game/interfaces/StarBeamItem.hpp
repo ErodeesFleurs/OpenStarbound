@@ -1,40 +1,38 @@
 #pragma once
 
-#include "StarSpline.hpp"
 #include "StarGameTypes.hpp"
 #include "StarNonRotatedDrawablesItem.hpp"
+#include "StarSpline.hpp"
 #include "StarToolUserItem.hpp"
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ToolUserEntity);
-STAR_CLASS(World);
-
-STAR_CLASS(BeamItem);
-
 class BeamItem : public virtual NonRotatedDrawablesItem, public virtual ToolUserItem {
 public:
-  enum class EndType { Invalid = -1, Object, Tile, TileGroup, Wire };
+  enum class EndType { Invalid = -1,
+                       Object,
+                       Tile,
+                       TileGroup,
+                       Wire };
 
   BeamItem(Json config);
-  virtual ~BeamItem() = default;
+  ~BeamItem() override = default;
 
-  virtual void init(ToolUserEntity* owner, ToolHand hand) override;
-  virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void init(ToolUserEntity* owner, ToolHand hand) override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  virtual List<Drawable> nonRotatedDrawables() const override;
+  auto nonRotatedDrawables() const -> List<Drawable> override;
 
-  virtual float getAngle(float angle);
-  virtual List<Drawable> drawables() const;
-  virtual Vec2F handPosition() const;
-  virtual Vec2F firePosition() const;
+  virtual auto getAngle(float angle) -> float;
+  virtual auto drawables() const -> List<Drawable>;
+  virtual auto handPosition() const -> Vec2F;
+  virtual auto firePosition() const -> Vec2F;
   virtual void setRange(float range);
-  virtual float getAppropriateOpacity() const;
+  virtual auto getAppropriateOpacity() const -> float;
   virtual void setEnd(EndType type);
 
 protected:
-  List<Drawable> beamDrawables(bool canPlace = true) const;
+  auto beamDrawables(bool canPlace = true) const -> List<Drawable>;
 
   String m_image;
   StringList m_endImages;
@@ -72,4 +70,4 @@ protected:
   CSplineF m_beamCurve;
 };
 
-}
+}// namespace Star

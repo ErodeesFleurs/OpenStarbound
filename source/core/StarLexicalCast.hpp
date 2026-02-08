@@ -14,8 +14,8 @@ void throwLexicalCastError(std::errc ec, const char* first, const char* last);
 
 template <typename Type>
 auto tryLexicalCast(Type& result, const char* first, const char* last) -> bool {
-    auto [ptr, ec] = std::from_chars(first, last, result);
-    return ptr == last && (ec == std::errc{} || ec == std::errc::result_out_of_range);
+  auto [ptr, ec] = std::from_chars(first, last, result);
+  return ptr == last && (ec == std::errc{} || ec == std::errc::result_out_of_range);
 }
 
 template <>
@@ -63,4 +63,4 @@ auto lexicalCast(StringView s) -> Type {
   return lexicalCast<Type>(s.utf8Ptr(), s.utf8Ptr() + s.utf8Size());
 }
 
-}
+}// namespace Star

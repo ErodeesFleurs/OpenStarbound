@@ -1,50 +1,51 @@
 #pragma once
 
-#include "StarNetElementSystem.hpp"
+#include "StarConfig.hpp"
 #include "StarEntity.hpp"
-#include "StarNetworkedAnimator.hpp"
-#include "StarMovementController.hpp"
-#include "StarLuaComponents.hpp"
+#include "StarException.hpp"
 #include "StarLoungingEntities.hpp"
-#include "StarScriptedEntity.hpp"
 #include "StarLuaAnimationComponent.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarMovementController.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarScriptedEntity.hpp"
 
 namespace Star {
 
-STAR_EXCEPTION(VehicleException, StarException);
-STAR_CLASS(Vehicle);
+using VehicleException = ExceptionDerived<"VehicleException">;
 
 class Vehicle : public virtual LoungeableEntity, public virtual InteractiveEntity, public virtual PhysicsEntity, public virtual ScriptedEntity {
 public:
   Vehicle(Json baseConfig, String path, Json dynamicConfig);
 
-  String name() const override;
+  auto name() const -> String override;
 
-  Json baseConfig() const;
-  Json dynamicConfig() const;
+  auto baseConfig() const -> Json;
+  auto dynamicConfig() const -> Json;
 
-  Json diskStore() const;
+  auto diskStore() const -> Json;
   void diskLoad(Json diskStore);
 
-  EntityType entityType() const override;
-  ClientEntityMode clientEntityMode() const override;
+  auto entityType() const -> EntityType override;
+  auto clientEntityMode() const -> ClientEntityMode override;
 
-  List<DamageSource> damageSources() const override;
-  std::optional<HitType> queryHit(DamageSource const& source) const override;
-  std::optional<PolyF> hitPoly() const override;
+  auto damageSources() const -> List<DamageSource> override;
+  auto queryHit(DamageSource const& source) const -> std::optional<HitType> override;
+  auto hitPoly() const -> std::optional<PolyF> override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
-  List<DamageNotification> selfDamageNotifications() override;
+  auto applyDamage(DamageRequest const& damage) -> List<DamageNotification> override;
+  auto selfDamageNotifications() -> List<DamageNotification> override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
-  RectF collisionArea() const override;
-  Vec2F velocity() const;
+  auto position() const -> Vec2F override;
+  auto metaBoundBox() const -> RectF override;
+  auto collisionArea() const -> RectF override;
+  auto velocity() const -> Vec2F;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t> override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
@@ -56,28 +57,28 @@ public:
 
   void renderLightSources(RenderCallback* renderer) override;
 
-  List<LightSource> lightSources() const override;
+  auto lightSources() const -> List<LightSource> override;
 
-  bool shouldDestroy() const override;
+  auto shouldDestroy() const -> bool override;
   void destroy(RenderCallback* renderCallback) override;
 
-  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  auto receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) -> std::optional<Json> override;
 
-  RectF interactiveBoundBox() const override;
-  bool isInteractive() const override;
-  InteractAction interact(InteractRequest const& request) override;
+  auto interactiveBoundBox() const -> RectF override;
+  auto isInteractive() const -> bool override;
+  auto interact(InteractRequest const& request) -> InteractAction override;
 
-  size_t anchorCount() const override;
-  LoungeAnchorConstPtr loungeAnchor(size_t positionIndex) const override;
+  auto anchorCount() const -> size_t override;
+  auto loungeAnchor(size_t positionIndex) const -> ConstPtr<LoungeAnchor> override;
   void loungeControl(size_t positionIndex, LoungeControl loungeControl) override;
   void loungeAim(size_t positionIndex, Vec2F const& aimPosition) override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
-  size_t movingCollisionCount() const override;
-  std::optional<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  auto forceRegions() const -> List<PhysicsForceRegion> override;
+  auto movingCollisionCount() const -> size_t override;
+  auto movingCollision(size_t positionIndex) const -> std::optional<PhysicsMovingCollision> override;
 
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  auto callScript(String const& func, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> override;
+  auto evalScript(String const& code) -> std::optional<LuaValue> override;
 
   void setPosition(Vec2F const& position);
 
@@ -132,12 +133,14 @@ private:
     NetElementBool enabled;
   };
 
-  enum class VehicleLayer { Back, Passenger, Front };
+  enum class VehicleLayer { Back,
+                            Passenger,
+                            Front };
 
-  EntityRenderLayer renderLayer(VehicleLayer vehicleLayer) const;
+  auto renderLayer(VehicleLayer vehicleLayer) const -> EntityRenderLayer;
 
-  LuaCallbacks makeVehicleCallbacks();
-  Json configValue(String const& name, Json def = {}) const;
+  auto makeVehicleCallbacks() -> LuaCallbacks;
+  auto configValue(String const& name, Json def = {}) const -> Json;
 
   String m_typeName;
   Json m_baseConfig;
@@ -158,7 +161,7 @@ private:
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
-  
+
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 
@@ -169,8 +172,8 @@ private:
 
   EntityRenderLayer m_baseRenderLayer;
   std::optional<EntityRenderLayer> m_overrideRenderLayer;
-  
+
   GameTimer m_slaveHeartbeatTimer;
 };
 
-}
+}// namespace Star

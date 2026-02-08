@@ -1,14 +1,14 @@
 #pragma once
 
-#include "StarJson.hpp"
-#include "StarRect.hpp"
+#include "StarException.hpp"
 #include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+#include "StarMaterialTypes.hpp"
+#include "StarRect.hpp"
 
 namespace Star {
 
-STAR_EXCEPTION(WorldStructureException, StarException);
-
-STAR_CLASS(WorldStructure);
+using WorldStructureException = ExceptionDerived<"WorldStructureException">;
 
 class WorldStructure {
 public:
@@ -43,25 +43,25 @@ public:
   WorldStructure(String const& configPath);
   WorldStructure(Json const& store);
 
-  Json configValue(String const& name) const;
+  [[nodiscard]] auto configValue(String const& name) const -> Json;
 
-  List<Overlay> const& backgroundOverlays() const;
-  List<Overlay> const& foregroundOverlays() const;
+  [[nodiscard]] auto backgroundOverlays() const -> List<Overlay> const&;
+  [[nodiscard]] auto foregroundOverlays() const -> List<Overlay> const&;
 
-  List<Block> const& backgroundBlocks() const;
-  List<Block> const& foregroundBlocks() const;
+  [[nodiscard]] auto backgroundBlocks() const -> List<Block> const&;
+  [[nodiscard]] auto foregroundBlocks() const -> List<Block> const&;
 
-  List<Object> const& objects() const;
+  [[nodiscard]] auto objects() const -> List<Object> const&;
 
-  List<Vec2I> flaggedBlocks(String const& flag) const;
+  [[nodiscard]] auto flaggedBlocks(String const& flag) const -> List<Vec2I>;
 
-  RectI region() const;
-  Vec2I anchorPosition() const;
+  [[nodiscard]] auto region() const -> RectI;
+  [[nodiscard]] auto anchorPosition() const -> Vec2I;
 
   void setAnchorPosition(Vec2I const& anchorPosition);
   void translate(Vec2I const& distance);
 
-  Json store() const;
+  [[nodiscard]] auto store() const -> Json;
 
 private:
   struct BlockKey {
@@ -99,4 +99,4 @@ private:
   StringMap<List<Vec2I>> m_flaggedBlocks;
 };
 
-}
+}// namespace Star

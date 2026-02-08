@@ -1,10 +1,11 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarEntity.hpp"
 
-namespace Star {
+import std;
 
-STAR_STRUCT(EntityAnchor);
+namespace Star {
 
 struct EntityAnchor {
   virtual ~EntityAnchor() = default;
@@ -19,18 +20,18 @@ struct EntityAnchor {
 
 struct EntityAnchorState {
   EntityId entityId;
-  size_t positionIndex;
+  std::size_t positionIndex;
 
-  bool operator==(EntityAnchorState const& eas) const;
+  auto operator==(EntityAnchorState const& eas) const -> bool;
 };
 
-DataStream& operator>>(DataStream& ds, EntityAnchorState& anchorState);
-DataStream& operator<<(DataStream& ds, EntityAnchorState const& anchorState);
+auto operator>>(DataStream& ds, EntityAnchorState& anchorState) -> DataStream&;
+auto operator<<(DataStream& ds, EntityAnchorState const& anchorState) -> DataStream&;
 
 class AnchorableEntity : public virtual Entity {
 public:
-  virtual size_t anchorCount() const = 0;
-  virtual EntityAnchorConstPtr anchor(size_t anchorPositionIndex) const = 0;
+  [[nodiscard]] virtual auto anchorCount() const -> std::size_t = 0;
+  [[nodiscard]] virtual auto anchor(std::size_t anchorPositionIndex) const -> ConstPtr<EntityAnchor> = 0;
 };
 
-}
+}// namespace Star

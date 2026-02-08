@@ -1,10 +1,10 @@
 #pragma once
 
 #include "StarException.hpp"
+#include "StarImage.hpp"
+#include "StarJson.hpp"
 #include "StarList.hpp"
 #include "StarRect.hpp"
-#include "StarJson.hpp"
-#include "StarImage.hpp"
 
 import std;
 
@@ -135,8 +135,8 @@ struct FlipImageOperation {
 };
 
 using ImageOperation = Variant<NullImageOperation, ErrorImageOperation, HueShiftImageOperation, SaturationShiftImageOperation, BrightnessMultiplyImageOperation, FadeToColorImageOperation,
-  ScanLinesImageOperation, SetColorImageOperation, ColorReplaceImageOperation, AlphaMaskImageOperation, BlendImageOperation,
-  MultiplyImageOperation, BorderImageOperation, ScaleImageOperation, CropImageOperation, FlipImageOperation>;
+                               ScanLinesImageOperation, SetColorImageOperation, ColorReplaceImageOperation, AlphaMaskImageOperation, BlendImageOperation,
+                               MultiplyImageOperation, BorderImageOperation, ScaleImageOperation, CropImageOperation, FlipImageOperation>;
 
 auto imageOperationFromString(StringView string) -> ImageOperation;
 auto imageOperationToString(ImageOperation const& operation) -> String;
@@ -160,4 +160,4 @@ void processImageOperation(ImageOperation const& operation, Image& input, ImageR
 
 auto processImageOperations(List<ImageOperation> const& operations, Image input, ImageReferenceCallback refCallback = {}) -> Image;
 
-}
+}// namespace Star

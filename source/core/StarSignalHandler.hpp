@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_STRUCT(SignalHandlerImpl);
+struct SignalHandlerImpl;
 
 // Singleton signal handler that registers handlers for segfault, fpe,
 // illegal instructions etc as well as non-fatal interrupts.
@@ -16,19 +16,19 @@ public:
   // If enabled, will catch segfault, fpe, and illegal instructions and output
   // error information before dying.
   void setHandleFatal(bool handleFatal);
-  bool handlingFatal() const;
+  [[nodiscard]] auto handlingFatal() const -> bool;
 
   // If enabled, non-fatal interrupt signal will be caught and will not kill
   // the process and will instead set the interrupted flag.
   void setHandleInterrupt(bool handleInterrupt);
-  bool handlingInterrupt() const;
+  [[nodiscard]] auto handlingInterrupt() const -> bool;
 
-  bool interruptCaught() const;
+  [[nodiscard]] auto interruptCaught() const -> bool;
 
 private:
   friend SignalHandlerImpl;
 
-  static SignalHandlerImplUPtr s_singleton;
+  static UPtr<SignalHandlerImpl> s_singleton;
 };
 
 }

@@ -1,11 +1,10 @@
 #include "StarParallax.hpp"
-#include "StarLexicalCast.hpp"
+#include "StarImageMetadataDatabase.hpp"// IWYU pragma: export
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarRandom.hpp"
-#include "StarAssets.hpp"
-#include "StarDataStreamExtra.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
@@ -13,7 +12,7 @@ ParallaxLayer::ParallaxLayer() {
   timeOfDayCorrelation = "";
   zLevel = 0;
   verticalOrigin = 0;
-  speed = { 0, 0 };
+  speed = {0, 0};
   unlit = false;
   lightMapped = false;
   fadePercent = 0;
@@ -38,36 +37,36 @@ ParallaxLayer::ParallaxLayer(Json const& store) : ParallaxLayer() {
   zLevel = store.getFloat("zLevel");
   parallaxOffset = jsonToVec2F(store.get("parallaxOffset"));
   timeOfDayCorrelation = store.getString("timeOfDayCorrelation");
-  speed = { store.getFloat("speed"), store.getFloat("speedY", 0.0f) };
+  speed = {store.getFloat("speed"), store.getFloat("speedY", 0.0f)};
   unlit = store.getBool("unlit");
   lightMapped = store.getBool("lightMapped");
   fadePercent = store.getFloat("fadePercent");
 }
 
-Json ParallaxLayer::store() const {
+auto ParallaxLayer::store() const -> Json {
   return JsonObject{
-      {"textures", jsonFromStringList(textures)},
-      {"directives", directives.string()},
-      {"frameNumber", frameNumber},
-      {"frameOffset", frameOffset},
-      {"animationCycle", animationCycle},
-      {"parallaxValue", jsonFromVec2F(parallaxValue)},
-      {"repeat", jsonFromVec2B(repeat)},
-      {"tileLimitTop", jsonFromMaybe(tileLimitTop)},
-      {"tileLimitBottom", jsonFromMaybe(tileLimitBottom)},
-      {"verticalOrigin", verticalOrigin},
-      {"zLevel", zLevel},
-      {"parallaxOffset", jsonFromVec2F(parallaxOffset)},
-      {"timeOfDayCorrelation", timeOfDayCorrelation},
-      {"speed",  speed[0]},
-      {"speedY", speed[1]},
-      {"unlit", unlit},
-      {"lightMapped", lightMapped},
-      {"fadePercent", fadePercent}};
+    {"textures", jsonFromStringList(textures)},
+    {"directives", directives.string()},
+    {"frameNumber", frameNumber},
+    {"frameOffset", frameOffset},
+    {"animationCycle", animationCycle},
+    {"parallaxValue", jsonFromVec2F(parallaxValue)},
+    {"repeat", jsonFromVec2B(repeat)},
+    {"tileLimitTop", jsonFromMaybe(tileLimitTop)},
+    {"tileLimitBottom", jsonFromMaybe(tileLimitBottom)},
+    {"verticalOrigin", verticalOrigin},
+    {"zLevel", zLevel},
+    {"parallaxOffset", jsonFromVec2F(parallaxOffset)},
+    {"timeOfDayCorrelation", timeOfDayCorrelation},
+    {"speed", speed[0]},
+    {"speedY", speed[1]},
+    {"unlit", unlit},
+    {"lightMapped", lightMapped},
+    {"fadePercent", fadePercent}};
 }
 
 void ParallaxLayer::addImageDirectives(Directives const& newDirectives) {
-  if (newDirectives) { // TODO: Move to Directives +=
+  if (newDirectives) {// TODO: Move to Directives +=
     if (directives) {
       String dirString = directives.string();
 
@@ -79,8 +78,7 @@ void ParallaxLayer::addImageDirectives(Directives const& newDirectives) {
       }
 
       directives = std::move(dirString);
-    }
-    else
+    } else
       directives = newDirectives;
   }
 }
@@ -92,7 +90,7 @@ void ParallaxLayer::fadeToSkyColor(Color skyColor) {
   }
 }
 
-DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer) {
+auto operator>>(DataStream& ds, ParallaxLayer& parallaxLayer) -> DataStream& {
   ds.read(parallaxLayer.textures);
   ds.read(parallaxLayer.directives);
   ds.read(parallaxLayer.alpha);
@@ -111,7 +109,7 @@ DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
+auto operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) -> DataStream& {
   ds.write(parallaxLayer.textures);
   ds.write(parallaxLayer.directives);
   ds.write(parallaxLayer.alpha);
@@ -131,10 +129,10 @@ DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
 }
 
 Parallax::Parallax(String const& assetFile,
-    uint64_t seed,
-    float verticalOrigin,
-    float hueShift,
-    std::optional<TreeVariant> parallaxTreeVariant) {
+                   std::uint64_t seed,
+                   float verticalOrigin,
+                   float hueShift,
+                   std::optional<TreeVariant> parallaxTreeVariant) {
   m_seed = seed;
   m_verticalOrigin = verticalOrigin;
   m_parallaxTreeVariant = parallaxTreeVariant;
@@ -160,7 +158,7 @@ Parallax::Parallax(String const& assetFile,
   }
 
   // sort with highest Z level first
-  stableSort(m_layers, [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
+  stableSort(m_layers, [](ParallaxLayer const& a, ParallaxLayer const& b) -> bool { return a.zLevel > b.zLevel; });
 }
 
 Parallax::Parallax(Json const& store) {
@@ -172,16 +170,16 @@ Parallax::Parallax(Json const& store) {
   m_imageDirectory = store.getString("imageDirectory");
   m_layers = store.getArray("layers").transformed(construct<ParallaxLayer>());
 
-  stableSort(m_layers, [](ParallaxLayer const& a, ParallaxLayer const& b) { return a.zLevel > b.zLevel; });
+  stableSort(m_layers, [](ParallaxLayer const& a, ParallaxLayer const& b) -> bool { return a.zLevel > b.zLevel; });
 }
 
-Json Parallax::store() const {
+auto Parallax::store() const -> Json {
   return JsonObject{{"seed", m_seed},
-      {"verticalOrigin", m_verticalOrigin},
-      {"parallaxTreeVariant", m_parallaxTreeVariant ? m_parallaxTreeVariant->toJson() : Json()},
-      {"hueShift", m_hueShift},
-      {"imageDirectory", m_imageDirectory},
-      {"layers", m_layers.transformed(mem_fn(&ParallaxLayer::store))}};
+                    {"verticalOrigin", m_verticalOrigin},
+                    {"parallaxTreeVariant", m_parallaxTreeVariant ? m_parallaxTreeVariant->toJson() : Json()},
+                    {"hueShift", m_hueShift},
+                    {"imageDirectory", m_imageDirectory},
+                    {"layers", m_layers.transformed(std::mem_fn(&ParallaxLayer::store))}};
 }
 
 void Parallax::fadeToSkyColor(Color const& skyColor) {
@@ -190,7 +188,7 @@ void Parallax::fadeToSkyColor(Color const& skyColor) {
   }
 }
 
-ParallaxLayers const& Parallax::layers() const {
+auto Parallax::layers() const -> ParallaxLayers const& {
   return m_layers;
 }
 
@@ -239,19 +237,19 @@ void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
 
   layer.verticalOrigin = m_verticalOrigin;
   layer.zLevel = layer.parallaxValue.sum();
-  auto offset = layerSettings.getArray("offset", { 0, 0 });
-  layer.parallaxOffset = { offset[0].toFloat(), offset[1].toFloat() }; // shift from bottom left to horizon level in the image
+  auto offset = layerSettings.getArray("offset", {0, 0});
+  layer.parallaxOffset = {offset[0].toFloat(), offset[1].toFloat()};// shift from bottom left to horizon level in the image
   if (!layerSettings.getBool("noRandomOffset", false))
     layer.parallaxOffset[0] += rnd.randInt(imgMetadata->imageSize(layer.textures[0])[0]);
   layer.timeOfDayCorrelation = layerSettings.getString("timeOfDayCorrelation", "");
   auto minSpeed = layerSettings.get("minSpeed", 0.0f);
   auto maxSpeed = layerSettings.get("maxSpeed", 0.0f);
   if (!minSpeed.isType(Json::Type::Array))
-    minSpeed = JsonArray{ minSpeed, 0.0f };
+    minSpeed = JsonArray{minSpeed, 0.0f};
   if (!maxSpeed.isType(Json::Type::Array))
-    maxSpeed = JsonArray{ maxSpeed, 0.0f };
-  layer.speed = { rnd.randf(minSpeed.getFloat(0), maxSpeed.getFloat(0)),
-                  rnd.randf(minSpeed.getFloat(1), maxSpeed.getFloat(1)) };
+    maxSpeed = JsonArray{maxSpeed, 0.0f};
+  layer.speed = {rnd.randf(minSpeed.getFloat(0), maxSpeed.getFloat(0)),
+                 rnd.randf(minSpeed.getFloat(1), maxSpeed.getFloat(1))};
   layer.unlit = layerSettings.getBool("unlit", false);
   layer.lightMapped = layerSettings.getBool("lightMapped", false);
 
@@ -268,4 +266,4 @@ void Parallax::buildLayer(Json const& layerSettings, String const& kind) {
   m_layers.append(layer);
 }
 
-}
+}// namespace Star

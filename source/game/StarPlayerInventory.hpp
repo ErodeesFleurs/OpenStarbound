@@ -1,26 +1,25 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
+#include "StarException.hpp"
 #include "StarInventoryTypes.hpp"
-#include "StarMultiArray.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarMultiArray.hpp"
 #include "StarNetElementBasicFields.hpp"
 #include "StarNetElementSyncGroup.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ArmorItem);
-STAR_CLASS(HeadArmor);
-STAR_CLASS(ChestArmor);
-STAR_CLASS(LegsArmor);
-STAR_CLASS(BackArmor);
+class HeadArmor;
+class ChestArmor;
+class LegsArmor;
+class BackArmor;
+class ArmorItem;
+class ItemBag;
 
-STAR_CLASS(PlayerInventory);
-
-STAR_EXCEPTION(InventoryException, StarException);
+using InventoryException = ExceptionDerived<"InventoryException">;
 
 // Describes a player's entire inventory, including the main bag, material bag,
 // object bag, reagent bag, food bag, weapon and armor slots, swap slot, trash
@@ -43,67 +42,67 @@ STAR_EXCEPTION(InventoryException, StarException);
 class PlayerInventory : public NetElementSyncGroup {
 public:
   // Whether the given item is allowed to go in the given slot type
-  static bool itemAllowedInBag(ItemPtr const& item, String const& bagType);
-  static bool itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot equipmentSlot);
+  static auto itemAllowedInBag(Ptr<Item> const& item, String const& bagType) -> bool;
+  static auto itemAllowedAsEquipment(Ptr<Item> const& item, EquipmentSlot equipmentSlot) -> bool;
 
   PlayerInventory();
 
-  ItemPtr itemsAt(InventorySlot const& slot) const;
+  auto itemsAt(InventorySlot const& slot) const -> Ptr<Item>;
 
   // Attempts to combine the items with the given slot, and returns the items
   // left over (if any).
-  ItemPtr stackWith(InventorySlot const& slot, ItemPtr const& items);
+  auto stackWith(InventorySlot const& slot, Ptr<Item> const& items) -> Ptr<Item>;
 
   // Empty the slot and take what it contains, if any.
-  ItemPtr takeSlot(InventorySlot const& slot);
+  auto takeSlot(InventorySlot const& slot) -> Ptr<Item>;
 
   // Try to exchange items between any two slots, returns true on success.
-  bool exchangeItems(InventorySlot const& first, InventorySlot const& second);
+  auto exchangeItems(InventorySlot const& first, InventorySlot const& second) -> bool;
 
   // Forces the given item into the given slot, overriding what was already
   // there.  If the item is not allowed in the given location, does nothing and
   // returns false.
-  bool setItem(InventorySlot const& slot, ItemPtr const& item);
+  auto setItem(InventorySlot const& slot, Ptr<Item> const& item) -> bool;
 
-  bool consumeSlot(InventorySlot const& slot, uint64_t count = 1);
+  auto consumeSlot(InventorySlot const& slot, std::uint64_t count = 1) -> bool;
 
-  bool slotValid(InventorySlot const& slot) const;
+  auto slotValid(InventorySlot const& slot) const -> bool;
 
   // Adds items to any slot except the trash or swap slots, returns stack left
   // over.
-  ItemPtr addItems(ItemPtr items);
+  auto addItems(Ptr<Item> items) -> Ptr<Item>;
 
   // Adds items to the first matching item bag, avoiding the equipment, swap,
   // or trash slots
-  ItemPtr addToBags(ItemPtr items);
+  auto addToBags(Ptr<Item> items) -> Ptr<Item>;
 
   // Returns number of items in the given set that can fit anywhere in any item
   // slot except the trash slot (the number of items that would be added by a
   // call to addItems).
-  uint64_t itemsCanFit(ItemPtr const& items) const;
+  auto itemsCanFit(Ptr<Item> const& items) const -> std::uint64_t;
 
-  bool hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
-  uint64_t hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const;
+  auto hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const -> bool;
+  auto hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const -> std::uint64_t;
 
   // Consume items based on ItemDescriptor. Can take from any manageable item slot.
-  bool consumeItems(ItemDescriptor const& descriptor, bool exactMatch = false);
-  ItemDescriptor takeItems(ItemDescriptor const& descriptor, bool takePartial = false, bool exactMatch = false);
+  auto consumeItems(ItemDescriptor const& descriptor, bool exactMatch = false) -> bool;
+  auto takeItems(ItemDescriptor const& descriptor, bool takePartial = false, bool exactMatch = false) -> ItemDescriptor;
   // Return a summary of every item that can be consumed by ItemDescriptor.
-  HashMap<ItemDescriptor, uint64_t> availableItems() const;
+  auto availableItems() const -> HashMap<ItemDescriptor, std::uint64_t>;
 
-  HeadArmorPtr headArmor() const;
-  ChestArmorPtr chestArmor() const;
-  LegsArmorPtr legsArmor() const;
-  BackArmorPtr backArmor() const;
+  auto headArmor() const -> Ptr<HeadArmor>;
+  auto chestArmor() const -> Ptr<ChestArmor>;
+  auto legsArmor() const -> Ptr<LegsArmor>;
+  auto backArmor() const -> Ptr<BackArmor>;
 
-  HeadArmorPtr headCosmetic() const;
-  ChestArmorPtr chestCosmetic() const;
-  LegsArmorPtr legsCosmetic() const;
-  BackArmorPtr backCosmetic() const;
+  auto headCosmetic() const -> Ptr<HeadArmor>;
+  auto chestCosmetic() const -> Ptr<ChestArmor>;
+  auto legsCosmetic() const -> Ptr<LegsArmor>;
+  auto backCosmetic() const -> Ptr<BackArmor>;
 
-  ArmorItemPtr equipment(EquipmentSlot slot, bool testMask = false) const;
+  auto equipment(EquipmentSlot slot, bool testMask = false) const -> Ptr<ArmorItem>;
 
-  ItemBagConstPtr bagContents(String const& bag) const;
+  auto bagContents(String const& bag) const -> ConstPtr<ItemBag>;
 
   void condenseBagStacks(String const& bag);
 
@@ -120,29 +119,29 @@ public:
 
   // Puts the swap slot back into the inventory, if there is room.  Returns
   // true if this was successful, and the swap slot is now empty.
-  bool clearSwap();
+  auto clearSwap() -> bool;
 
-  ItemPtr swapSlotItem() const;
-  void setSwapSlotItem(ItemPtr const& items);
+  auto swapSlotItem() const -> Ptr<Item>;
+  void setSwapSlotItem(Ptr<Item> const& items);
 
   // Non-manageable essential items that are always available as action bar
   // entries.
-  ItemPtr essentialItem(EssentialItem essentialItem) const;
-  void setEssentialItem(EssentialItem essentialItem, ItemPtr item);
+  auto essentialItem(EssentialItem essentialItem) const -> Ptr<Item>;
+  void setEssentialItem(EssentialItem essentialItem, Ptr<Item> item);
 
   // Non-manageable currencies
-  StringMap<uint64_t> availableCurrencies() const;
-  uint64_t currency(String const& currencyType) const;
-  void addCurrency(String const& currencyType, uint64_t amount);
-  bool consumeCurrency(String const& currencyType, uint64_t amount);
+  auto availableCurrencies() const -> StringMap<std::uint64_t>;
+  auto currency(String const& currencyType) const -> std::uint64_t;
+  void addCurrency(String const& currencyType, std::uint64_t amount);
+  auto consumeCurrency(String const& currencyType, std::uint64_t amount) -> bool;
 
   // A custom bar location primary and secondary cannot point to a slot that
   // has no item, and rather than set an empty slot to that location, the slot
   // will simply be cleared.  If a primary slot is set to a two handed item, it
   // will clear the secondary slot.  Any secondary slot that is set must be a
   // one handed item.
-  std::optional<InventorySlot> customBarPrimarySlot(CustomBarIndex customBarIndex) const;
-  std::optional<InventorySlot> customBarSecondarySlot(CustomBarIndex customBarIndex) const;
+  auto customBarPrimarySlot(CustomBarIndex customBarIndex) const -> std::optional<InventorySlot>;
+  auto customBarSecondarySlot(CustomBarIndex customBarIndex) const -> std::optional<InventorySlot>;
   void setCustomBarPrimarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
   void setCustomBarSecondarySlot(CustomBarIndex customBarIndex, std::optional<InventorySlot> slot);
 
@@ -153,42 +152,42 @@ public:
   // This will not change the selected action bar location, but may change the
   // item if the selected location points to the custom bar and the contents
   // change.
-  uint8_t customBarGroup() const;
-  void setCustomBarGroup(uint8_t group);
-  uint8_t customBarGroups() const;
-  uint8_t customBarIndexes() const;
+  auto customBarGroup() const -> std::uint8_t;
+  void setCustomBarGroup(std::uint8_t group);
+  auto customBarGroups() const -> std::uint8_t;
+  auto customBarIndexes() const -> std::uint8_t;
 
   // The action bar is the combination of the custom bar and the essential
   // items, and any of these locations can be selected.
-  SelectedActionBarLocation selectedActionBarLocation() const;
+  auto selectedActionBarLocation() const -> SelectedActionBarLocation;
   void selectActionBarLocation(SelectedActionBarLocation selectedActionBarLocation);
 
   // Held items are either the items shortcutted to in the currently selected
   // ActionBar primary / secondary locations, or if the swap slot is non-empty
   // then the swap slot.
-  ItemPtr primaryHeldItem() const;
-  ItemPtr secondaryHeldItem() const;
+  auto primaryHeldItem() const -> Ptr<Item>;
+  auto secondaryHeldItem() const -> Ptr<Item>;
 
   // If the primary / secondary held items are valid manageable slots, returns
   // them.
-  std::optional<InventorySlot> primaryHeldSlot() const;
-  std::optional<InventorySlot> secondaryHeldSlot() const;
+  auto primaryHeldSlot() const -> std::optional<InventorySlot>;
+  auto secondaryHeldSlot() const -> std::optional<InventorySlot>;
 
-  List<ItemPtr> pullOverflow();
+  auto pullOverflow() -> List<Ptr<Item>>;
   void setEquipmentVisibility(EquipmentSlot slot, bool visible);
-  bool equipmentVisibility(EquipmentSlot slot) const;
+  auto equipmentVisibility(EquipmentSlot slot) const -> bool;
 
   void load(Json const& store);
-  Json store() const;
+  auto store() const -> Json;
 
   // Loop over every manageable item and potentially mutate it.
-  void forEveryItem(function<void(InventorySlot const&, ItemPtr&)> function);
+  void forEveryItem(std::function<void(InventorySlot const&, Ptr<Item>&)> function);
   // Loop over every manageable item.
-  void forEveryItem(function<void(InventorySlot const&, ItemPtr const&)> function) const;
+  void forEveryItem(std::function<void(InventorySlot const&, Ptr<Item> const&)> function) const;
   // Return every manageable item
-  List<ItemPtr> allItems() const;
+  auto allItems() const -> List<Ptr<Item>>;
   // Return summary of every manageable item name and the count of that item
-  Map<String, uint64_t> itemSummary() const;
+  auto itemSummary() const -> Map<String, std::uint64_t>;
 
   // Clears away any empty items and sets them as null, and updates action bar
   // slots to maintain the rules for the action bar.  Should be called every
@@ -196,12 +195,12 @@ public:
   void cleanup();
 
 private:
-  typedef pair<std::optional<InventorySlot>, std::optional<InventorySlot>> CustomBarLink;
+  using CustomBarLink = std::pair<std::optional<InventorySlot>, std::optional<InventorySlot>>;
 
-  static bool checkInventoryFilter(ItemPtr const& items, String const& filterName);
+  static auto checkInventoryFilter(Ptr<Item> const& items, String const& filterName) -> bool;
 
-  ItemPtr const& retrieve(InventorySlot const& slot) const;
-  ItemPtr& retrieve(InventorySlot const& slot);
+  auto retrieve(InventorySlot const& slot) const -> Ptr<Item> const&;
+  auto retrieve(InventorySlot const& slot) -> Ptr<Item>&;
 
   void swapCustomBarLinks(InventorySlot a, InventorySlot b);
   void autoAddToCustomBar(InventorySlot slot);
@@ -209,14 +208,14 @@ private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
-  Map<EquipmentSlot, ItemPtr> m_equipment;
-  Map<String, ItemBagPtr> m_bags;
-  ItemPtr m_swapSlot;
+  Map<EquipmentSlot, Ptr<Item>> m_equipment;
+  Map<String, Ptr<ItemBag>> m_bags;
+  Ptr<Item> m_swapSlot;
   std::optional<InventorySlot> m_swapReturnSlot;
-  ItemPtr m_trashSlot;
-  Map<EssentialItem, ItemPtr> m_essential;
-  StringMap<uint64_t> m_currencies;
-  uint8_t m_customBarGroup;
+  Ptr<Item> m_trashSlot;
+  Map<EssentialItem, Ptr<Item>> m_essential;
+  StringMap<std::uint64_t> m_currencies;
+  std::uint8_t m_customBarGroup;
   MultiArray<CustomBarLink, 2> m_customBar;
   SelectedActionBarLocation m_selectedActionBar;
 
@@ -225,13 +224,13 @@ private:
   NetElementData<ItemDescriptor> m_swapSlotNetState;
   NetElementData<ItemDescriptor> m_trashSlotNetState;
   Map<EssentialItem, NetElementData<ItemDescriptor>> m_essentialNetState;
-  NetElementData<StringMap<uint64_t>> m_currenciesNetState;
+  NetElementData<StringMap<std::uint64_t>> m_currenciesNetState;
   NetElementUInt m_customBarGroupNetState;
   MultiArray<NetElementData<CustomBarLink>, 2> m_customBarNetState;
   NetElementData<SelectedActionBarLocation> m_selectedActionBarNetState;
 
-  List<ItemPtr> m_inventoryLoadOverflow;
+  List<Ptr<Item>> m_inventoryLoadOverflow;
   unsigned m_equipmentVisibilityMask;
 };
 
-}
+}// namespace Star

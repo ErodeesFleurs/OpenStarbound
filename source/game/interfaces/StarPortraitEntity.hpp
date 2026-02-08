@@ -5,11 +5,9 @@
 
 namespace Star {
 
-STAR_CLASS(PortraitEntity);
-
 class PortraitEntity : public virtual Entity {
 public:
-  virtual List<Drawable> portrait(PortraitMode mode) const = 0;
+  [[nodiscard]] virtual auto portrait(PortraitMode mode) const -> List<Drawable> = 0;
 };
 
-}
+}// namespace Star

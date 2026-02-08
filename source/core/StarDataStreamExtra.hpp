@@ -1,12 +1,12 @@
 #pragma once
 
-#include "StarDataStream.hpp"
-#include "StarMultiArray.hpp"
 #include "StarColor.hpp"
-#include "StarPoly.hpp"
+#include "StarDataStream.hpp"
 #include "StarEither.hpp"
+#include "StarMultiArray.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarOrderedSet.hpp"
+#include "StarPoly.hpp"
 #include "StarVariant.hpp"
 
 import std;
@@ -41,57 +41,57 @@ inline auto operator>>(DataStream& ds, Empty&) -> DataStream& {
   return ds;
 }
 
-template <typename ElementT, size_t SizeN>
+template <typename ElementT, std::size_t SizeN>
 auto operator<<(DataStream& ds, Array<ElementT, SizeN> const& array) -> DataStream& {
-  for (size_t i = 0; i < SizeN; ++i)
+  for (std::size_t i = 0; i < SizeN; ++i)
     ds << array[i];
   return ds;
 }
 
-template <typename ElementT, size_t SizeN>
+template <typename ElementT, std::size_t SizeN>
 auto operator>>(DataStream& ds, Array<ElementT, SizeN>& array) -> DataStream& {
-  for (size_t i = 0; i < SizeN; ++i)
+  for (std::size_t i = 0; i < SizeN; ++i)
     ds >> array[i];
   return ds;
 }
 
-template <typename ElementT, size_t RankN>
+template <typename ElementT, std::size_t RankN>
 auto operator<<(DataStream& ds, MultiArray<ElementT, RankN> const& array) -> DataStream& {
   auto size = array.size();
-  for (size_t i = 0; i < RankN; ++i)
+  for (std::size_t i = 0; i < RankN; ++i)
     ds.writeVlqU(size[i]);
 
-  size_t count = array.count();
-  for (size_t i = 0; i < count; ++i)
+  std::size_t count = array.count();
+  for (std::size_t i = 0; i < count; ++i)
     ds << array.atIndex(i);
 
   return ds;
 }
 
-template <typename ElementT, size_t RankN>
+template <typename ElementT, std::size_t RankN>
 auto operator>>(DataStream& ds, MultiArray<ElementT, RankN>& array) -> DataStream& {
   typename MultiArray<ElementT, RankN>::SizeList size;
-  for (size_t i = 0; i < RankN; ++i)
+  for (std::size_t i = 0; i < RankN; ++i)
     size[i] = ds.readVlqU();
 
   array.setSize(size);
-  size_t count = array.count();
-  for (size_t i = 0; i < count; ++i)
+  std::size_t count = array.count();
+  for (std::size_t i = 0; i < count; ++i)
     ds >> array.atIndex(i);
 
   return ds;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 auto operator<<(DataStream& ds, Vector<T, N> const& vector) -> DataStream& {
-  for (size_t i = 0; i < N; ++i)
+  for (std::size_t i = 0; i < N; ++i)
     ds << vector[i];
   return ds;
 }
 
-template <typename T, size_t N>
+template <typename T, std::size_t N>
 auto operator>>(DataStream& ds, Vector<T, N>& vector) -> DataStream& {
-  for (size_t i = 0; i < N; ++i)
+  for (std::size_t i = 0; i < N; ++i)
     ds >> vector[i];
   return ds;
 }
@@ -228,14 +228,14 @@ auto operator>>(DataStream& ds, Polygon<DataT>& poly) -> DataStream& {
   return ds;
 }
 
-template <typename DataT, size_t Dimensions>
+template <typename DataT, std::size_t Dimensions>
 auto operator<<(DataStream& ds, Box<DataT, Dimensions> const& box) -> DataStream& {
   ds.write(box.min());
   ds.write(box.max());
   return ds;
 }
 
-template <typename DataT, size_t Dimensions>
+template <typename DataT, std::size_t Dimensions>
 auto operator>>(DataStream& ds, Box<DataT, Dimensions>& box) -> DataStream& {
   ds.read(box.min());
   ds.read(box.max());
@@ -315,8 +315,6 @@ void readMaybe(DataStream& ds, T& maybe, ReadFunction&& readFunction) {
   }
 }
 
-
-
 template <typename T>
 auto operator<<(DataStream& ds, std::optional<T> const& maybe) -> DataStream& {
   writeMaybe(ds, maybe, [](DataStream& ds, T const& t) -> auto { ds << t; });
@@ -356,14 +354,14 @@ auto operator>>(DataStream& ds, Either<Left, Right>& either) -> DataStream& {
   return ds;
 }
 
-template <typename DataT, size_t Dimensions>
+template <typename DataT, std::size_t Dimensions>
 auto operator<<(DataStream& ds, Line<DataT, Dimensions> const& line) -> DataStream& {
   ds.write(line.min());
   ds.write(line.max());
   return ds;
 }
 
-template <typename DataT, size_t Dimensions>
+template <typename DataT, std::size_t Dimensions>
 auto operator>>(DataStream& ds, Line<DataT, Dimensions>& line) -> DataStream& {
   ds.read(line.min());
   ds.read(line.max());
@@ -406,4 +404,4 @@ auto operator<<(DataStream& ds, std::tuple<T...> const& t) -> DataStream& {
   return ds;
 }
 
-}
+}// namespace Star

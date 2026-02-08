@@ -1,24 +1,25 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarObject.hpp"
 
 namespace Star {
 
 class FarmableObject : public Object {
 public:
-  FarmableObject(ObjectConfigConstPtr config, Json const& parameters);
+  FarmableObject(ConstPtr<ObjectConfig> config, Json const& parameters);
 
   void update(float dt, uint64_t currentStep) override;
 
-  bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
-  InteractAction interact(InteractRequest const& request) override;
+  auto damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) -> bool override;
+  auto interact(InteractRequest const& request) -> InteractAction override;
 
-  bool harvest();
-  int stage() const;
+  auto harvest() -> bool;
+  auto stage() const -> int;
 
 protected:
   void readStoredData(Json const& diskStore) override;
-  Json writeStoredData() const override;
+  auto writeStoredData() const -> Json override;
 
 private:
   void enterStage(int newStage);
@@ -38,4 +39,4 @@ private:
   bool m_finalStage;
 };
 
-}
+}// namespace Star

@@ -1,10 +1,11 @@
 #pragma once
 
-#include "StarDataStream.hpp"
-#include "StarException.hpp"
-#include "StarVariant.hpp"
-#include "StarString.hpp"
 #include "StarConfig.hpp"
+#include "StarDataStream.hpp"
+#include "StarDataStreamExtra.hpp" // IWYU pragma: export
+#include "StarException.hpp"
+#include "StarString.hpp"
+#include "StarVariant.hpp"
 
 import std;
 
@@ -370,7 +371,9 @@ auto jsonMergeQueryDef(String const& key, Json def, Json const& first, T const&.
 // For all other types, the values must be equal.
 auto jsonPartialMatch(Json const& base, Json const& compare) -> bool;
 
-}
+}// namespace Star
 
-template <> struct std::formatter<Star::Json> : Star::ostream_formatter {};
-template <> struct std::formatter<Star::JsonObject> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::Json> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::JsonObject> : Star::ostream_formatter {};

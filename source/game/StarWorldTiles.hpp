@@ -9,6 +9,8 @@
 #include "StarVersion.hpp"
 #include "StarWorldLayout.hpp"
 
+#include <stddef.h>
+
 import std;
 
 namespace Star {
@@ -90,7 +92,6 @@ struct ServerTile : public WorldTile {
   CollisionKind objectCollision;
 };
 using ServerTileSectorArray = TileSectorArray<ServerTile, WorldSectorSize>;
-using ServerTileSectorArrayPtr = std::shared_ptr<ServerTileSectorArray>;
 
 struct ClientTile : public WorldTile {
   ClientTile();
@@ -315,7 +316,7 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
     std::array<char, TotalTerrainSize> buffer;
     size_t bufferSize = 0;
 
-    auto hashTilePart = [&](void const* data, size_t size) {
+    auto hashTilePart = [&](void const* data, size_t size) -> auto {
       memcpy(buffer.data() + bufferSize, data, size);
       bufferSize += size;
     };

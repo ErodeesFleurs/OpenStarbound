@@ -1,22 +1,24 @@
 #pragma once
 
+#include "StarAnimatedPartSet.hpp"
+#include "StarConfig.hpp"
+#include "StarDrawable.hpp"
+#include "StarException.hpp"
+#include "StarLightSource.hpp"
+#include "StarMixer.hpp"
 #include "StarNetElementBasicFields.hpp"
 #include "StarNetElementContainers.hpp"
 #include "StarNetElementFloatFields.hpp"
 #include "StarNetElementSignal.hpp"
 #include "StarNetElementSyncGroup.hpp"
-#include "StarPeriodicFunction.hpp"
-#include "StarAnimatedPartSet.hpp"
-#include "StarDrawable.hpp"
 #include "StarParticle.hpp"
-#include "StarLightSource.hpp"
-#include "StarMixer.hpp"
-#include <optional>
+#include "StarPeriodicFunction.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(NetworkedAnimator);
-STAR_EXCEPTION(NetworkedAnimatorException, StarException);
+using NetworkedAnimatorException = ExceptionDerived<"NetworkedAnimatorException">;
 
 // Wraps an AnimatedPartSet with a set of optional light sources and particle
 // emitters to produce a network capable animation system.
@@ -30,8 +32,8 @@ public:
     // Calls stopAudio()
     ~DynamicTarget();
 
-    List<AudioInstancePtr> pullNewAudios();
-    List<Particle> pullNewParticles();
+    auto pullNewAudios() -> List<Ptr<AudioInstance>>;
+    auto pullNewParticles() -> List<Particle>;
 
     // Stops all looping audio immediately and lets non-looping audio finish
     // normally
@@ -49,22 +51,22 @@ public:
 
     struct PersistentSound {
       Json sound;
-      AudioInstancePtr audio;
+      Ptr<AudioInstance> audio;
       float stopRampTime;
     };
 
     struct ImmediateSound {
       Json sound;
-      AudioInstancePtr audio;
+      Ptr<AudioInstance> audio;
     };
 
     Vec2F position;
-    List<AudioInstancePtr> pendingAudios;
+    List<Ptr<AudioInstance>> pendingAudios;
     List<Particle> pendingParticles;
     StringMap<PersistentSound> statePersistentSounds;
     StringMap<ImmediateSound> stateImmediateSounds;
-    StringMap<List<AudioInstancePtr>> independentSounds;
-    HashMap<AudioInstancePtr, Vec2F> currentAudioBasePositions;
+    StringMap<List<Ptr<AudioInstance>>> independentSounds;
+    HashMap<Ptr<AudioInstance>, Vec2F> currentAudioBasePositions;
   };
 
   NetworkedAnimator();
@@ -75,59 +77,59 @@ public:
   NetworkedAnimator(NetworkedAnimator&& animator);
   NetworkedAnimator(NetworkedAnimator const& animator);
 
-  NetworkedAnimator& operator=(NetworkedAnimator&& animator);
-  NetworkedAnimator& operator=(NetworkedAnimator const& animator);
+  auto operator=(NetworkedAnimator&& animator) -> NetworkedAnimator&;
+  auto operator=(NetworkedAnimator const& animator) -> NetworkedAnimator&;
 
-  StringList stateTypes() const;
-  StringList states(String const& stateType) const;
+  auto stateTypes() const -> StringList;
+  auto states(String const& stateType) const -> StringList;
 
   // Returns whether a state change occurred.  If startNew is true, always
   // forces a state change and starts the state off at the beginning even if
   // this state is already the current state.
-  bool setState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
-  bool setLocalState(String const& stateType, String const& state, bool startNew = false, bool reverse = false);
-  String state(String const& stateType) const;
-  int stateFrame(String const& stateType) const;
-  int stateNextFrame(String const& stateType) const;
-  float stateFrameProgress(String const& stateType) const;
-  float stateTimer(String const& stateType) const;
-  bool stateReverse(String const& stateType) const;
+  auto setState(String const& stateType, String const& state, bool startNew = false, bool reverse = false) -> bool;
+  auto setLocalState(String const& stateType, String const& state, bool startNew = false, bool reverse = false) -> bool;
+  auto state(String const& stateType) const -> String;
+  auto stateFrame(String const& stateType) const -> int;
+  auto stateNextFrame(String const& stateType) const -> int;
+  auto stateFrameProgress(String const& stateType) const -> float;
+  auto stateTimer(String const& stateType) const -> float;
+  auto stateReverse(String const& stateType) const -> bool;
 
-  float stateCycle(String const& stateType, std::optional<String> state) const;
-  int stateFrames(String const& stateType, std::optional<String> state) const;
+  auto stateCycle(String const& stateType, std::optional<String> state) const -> float;
+  auto stateFrames(String const& stateType, std::optional<String> state) const -> int;
 
-  bool hasState(String const& stateType, std::optional<String> const& state = std::nullopt) const;
+  auto hasState(String const& stateType, std::optional<String> const& state = std::nullopt) const -> bool;
 
-  StringMap<AnimatedPartSet::Part> const& constParts() const;
-  StringMap<AnimatedPartSet::Part>& parts();
-  StringList partNames() const;
+  auto constParts() const -> StringMap<AnimatedPartSet::Part> const&;
+  auto parts() -> StringMap<AnimatedPartSet::Part>&;
+  auto partNames() const -> StringList;
 
   // Queries, if it exists, a property value from the underlying
   // AnimatedPartSet for the given state or part.  If the property does not
   // exist, returns null.
-  Json stateProperty(String const& stateType, String const& propertyName, std::optional<String> state = std::nullopt, std::optional<int> frame = std::nullopt) const;
-  Json stateNextProperty(String const& stateType, String const& propertyName) const;
-  Json partProperty(String const& partName, String const& propertyName, std::optional<String> stateType = std::nullopt, std::optional<String> state = std::nullopt, std::optional<int> frame = std::nullopt) const;
-  Json partNextProperty(String const & partName, String const & propertyName) const;
+  auto stateProperty(String const& stateType, String const& propertyName, std::optional<String> state = std::nullopt, std::optional<int> frame = std::nullopt) const -> Json;
+  auto stateNextProperty(String const& stateType, String const& propertyName) const -> Json;
+  auto partProperty(String const& partName, String const& propertyName, std::optional<String> stateType = std::nullopt, std::optional<String> state = std::nullopt, std::optional<int> frame = std::nullopt) const -> Json;
+  auto partNextProperty(String const& partName, String const& propertyName) const -> Json;
 
   // Returns the transformation from flipping and zooming that is applied to
   // all parts in the NetworkedAnimator.
-  Mat3F globalTransformation() const;
+  auto globalTransformation() const -> Mat3F;
   // The transformation applied from the given set of transformation groups
-  Mat3F groupTransformation(StringList const& transformationGroups) const;
+  auto groupTransformation(StringList const& transformationGroups) const -> Mat3F;
   // The transformation that is applied to the given part NOT including the
   // global transformation
-  Mat3F partTransformation(String const& partName) const;
+  auto partTransformation(String const& partName) const -> Mat3F;
   // Returns the total transformation for the given part, which includes the
   // globalTransformation, as well as the part rotation, scaling, and
   // translation.
-  Mat3F finalPartTransformation(String const& partName) const;
+  auto finalPartTransformation(String const& partName) const -> Mat3F;
 
   // partPoint / partPoly takes a propertyName and looks up the associated part
   // property and interprets is a Vec2F or a PolyF, then applies the final part
   // transformation and returns it.
-  std::optional<Vec2F> partPoint(String const& partName, String const& propertyName) const;
-  std::optional<PolyF> partPoly(String const& partName, String const& propertyName) const;
+  auto partPoint(String const& partName, String const& propertyName) const -> std::optional<Vec2F>;
+  auto partPoly(String const& partName, String const& propertyName) const -> std::optional<PolyF>;
 
   // Every part image can have one or more <tag> directives in it, which if set
   // here will be replaced by the tag value when constructing Drawables.  All
@@ -135,36 +137,36 @@ public:
   // current state frame is (1 indexed, so the first frame is 1).
   void setGlobalTag(String tagName, std::optional<String> tagValue = std::nullopt);
   void removeGlobalTag(String const& tagName);
-  String const* globalTagPtr(String const& tagName) const;
+  auto globalTagPtr(String const& tagName) const -> String const*;
   void setPartTag(String const& partType, String tagName, std::optional<String> tagValue = std::nullopt);
   void setLocalTag(String tagName, std::optional<String> tagValue = std::nullopt);
 
   void setPartDrawables(String const& partName, List<Drawable> drawables);
   void addPartDrawables(String const& partName, List<Drawable> drawables);
 
-  String applyPartTags(String const& partName, String apply) const;
+  auto applyPartTags(String const& partName, String apply) const -> String;
 
   void setProcessingDirectives(Directives const& directives);
   void setZoom(float zoom);
-  bool flipped() const;
-  float flippedRelativeCenterLine() const;
+  auto flipped() const -> bool;
+  auto flippedRelativeCenterLine() const -> float;
   void setFlipped(bool flipped, float relativeCenterLine = 0.0f);
 
   // Animation rate defaults to 1.0, which means normal animation speed.  This
   // can be used to globally speed up or slow down all components of
   // NetworkedAnimator together.
   void setAnimationRate(float rate);
-  float animationRate();
+  auto animationRate() -> float;
 
   // Given angle is an absolute angle.  Will rotate over time at the configured
   // angular velocity unless the immediate flag is set.
-  bool hasRotationGroup(String const& rotationGroup) const;
+  auto hasRotationGroup(String const& rotationGroup) const -> bool;
   void rotateGroup(String const& rotationGroup, float targetAngle, bool immediate = false);
-  float currentRotationAngle(String const& rotationGroup) const;
+  auto currentRotationAngle(String const& rotationGroup) const -> float;
 
   // Transformation groups can be used for arbitrary part transforamtions.
   // They apply immediately, and are optionally interpolated on slaves.
-  bool hasTransformationGroup(String const& transformationGroup) const;
+  auto hasTransformationGroup(String const& transformationGroup) const -> bool;
   void translateTransformationGroup(String const& transformationGroup, Vec2F const& translation);
   void rotateTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
   void scaleTransformationGroup(String const& transformationGroup, float scale, Vec2F const& scaleCenter = Vec2F());
@@ -172,7 +174,7 @@ public:
   void transformTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
   void resetTransformationGroup(String const& transformationGroup);
   void setTransformationGroup(String const& transformationGroup, Mat3F transform);
-  Mat3F getTransformationGroup(String const& transformationGroup);
+  auto getTransformationGroup(String const& transformationGroup) -> Mat3F;
 
   void translateLocalTransformationGroup(String const& transformationGroup, Vec2F const& translation);
   void rotateLocalTransformationGroup(String const& transformationGroup, float rotation, Vec2F const& rotationCenter = Vec2F());
@@ -181,9 +183,9 @@ public:
   void transformLocalTransformationGroup(String const& transformationGroup, float a, float b, float c, float d, float tx, float ty);
   void resetLocalTransformationGroup(String const& transformationGroup);
   void setLocalTransformationGroup(String const& transformationGroup, Mat3F transform);
-  Mat3F getLocalTransformationGroup(String const& transformationGroup);
+  auto getLocalTransformationGroup(String const& transformationGroup) -> Mat3F;
 
-  bool hasParticleEmitter(String const& emitterName) const;
+  auto hasParticleEmitter(String const& emitterName) const -> bool;
   // Active particle emitters emit over time based on emission rate/variance.
   void setParticleEmitterActive(String const& emitterName, bool active);
   // Set the emission rate in particles / sec for a given emitter
@@ -199,13 +201,13 @@ public:
   // burstCount times
   void burstParticleEmitter(String const& emitterName);
 
-  bool hasLight(String const& lightName) const;
+  auto hasLight(String const& lightName) const -> bool;
   void setLightActive(String const& lightName, bool active);
   void setLightPosition(String const& lightName, Vec2F position);
   void setLightColor(String const& lightName, Color color);
   void setLightPointAngle(String const& lightName, float angle);
 
-  bool hasSound(String const& soundName) const;
+  auto hasSound(String const& soundName) const -> bool;
   void setSoundPool(String const& soundName, StringList soundPool);
   // Plays a sound from the given independent sound pool.  Multiple sounds may
   // be played as part of this group, and playing a new one will not interrupt
@@ -224,10 +226,10 @@ public:
 
   void setEffectEnabled(String const& effect, bool enabled);
 
-  List<Drawable> drawables(Vec2F const& translate = Vec2F()) const;
-  List<pair<Drawable, float>> drawablesWithZLevel(Vec2F const& translate = Vec2F()) const;
+  auto drawables(Vec2F const& translate = Vec2F()) const -> List<Drawable>;
+  auto drawablesWithZLevel(Vec2F const& translate = Vec2F()) const -> List<std::pair<Drawable, float>>;
 
-  List<LightSource> lightSources(Vec2F const& translate = Vec2F()) const;
+  auto lightSources(Vec2F const& translate = Vec2F()) const -> List<LightSource>;
 
   // Dynamic target is optional, if not given, generated particles and sounds
   // will be discarded
@@ -236,7 +238,7 @@ public:
   // Run through the current animations until the final frame, including any
   // transition animations.
   void finishAnimations();
-  uint8_t version() const;
+  auto version() const -> std::uint8_t;
 
 private:
   struct RotationGroup {
@@ -250,13 +252,13 @@ private:
   };
 
   struct TransformationGroup {
-    Mat3F affineTransform() const;
+    [[nodiscard]] auto affineTransform() const -> Mat3F;
     void setAffineTransform(Mat3F const& matrix);
 
-    Mat3F localAffineTransform() const;
+    [[nodiscard]] auto localAffineTransform() const -> Mat3F;
     void setLocalAffineTransform(Mat3F const& matrix);
 
-    Mat3F animationAffineTransform() const;
+    [[nodiscard]] auto animationAffineTransform() const -> Mat3F;
     void setAnimationAffineTransform(Mat3F const& matrix);
     void setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress);
 
@@ -277,7 +279,6 @@ private:
     float yScaleAnimation;
     float xShearAnimation;
     float yShearAnimation;
-
   };
 
   struct ParticleEmitter {
@@ -362,10 +363,10 @@ private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
-  Json mergeIncludes(Json config, Json includes, String relativePath);
+  auto mergeIncludes(Json config, Json includes, String relativePath) -> Json;
 
   String m_relativePath;
-  uint8_t m_animatorVersion;
+  std::uint8_t m_animatorVersion;
 
   AnimatedPartSet m_animatedParts;
   OrderedHashMap<String, StateInfo> m_stateInfo;
@@ -388,9 +389,9 @@ private:
   StableStringMap<NetElementHashMap<String, String>> m_partTags;
   HashMap<String, String> m_localTags;
 
-  HashMap<String,List<Drawable>> m_partDrawables;
+  HashMap<String, List<Drawable>> m_partDrawables;
 
-  mutable StringMap<std::pair<size_t, Drawable>> m_cachedPartDrawables;
+  mutable StringMap<std::pair<std::size_t, Drawable>> m_cachedPartDrawables;
 };
 
-}
+}// namespace Star

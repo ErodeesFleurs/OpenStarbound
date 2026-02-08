@@ -1,23 +1,23 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
 #include "StarDrawable.hpp"
-#include "StarParticle.hpp"
+#include "StarGameTypes.hpp"
 #include "StarNetworkedAnimator.hpp"
+#include "StarParticle.hpp"
+
+import std;
 
 namespace Star {
 
 // Required for renderDummy
-STAR_CLASS(ArmorItem);
-STAR_CLASS(HeadArmor);
-STAR_CLASS(ChestArmor);
-STAR_CLASS(LegsArmor);
-STAR_CLASS(BackArmor);
+class HeadArmor;
+class ChestArmor;
+class LegsArmor;
+class BackArmor;
 
-STAR_CLASS(Humanoid);
-
-STAR_STRUCT(Dance);
+struct Dance;
 
 enum class HumanoidEmote {
   Idle,
@@ -36,7 +36,7 @@ enum class HumanoidEmote {
   Sleep
 };
 extern EnumMap<HumanoidEmote> const HumanoidEmoteNames;
-size_t const EmoteSize = 14;
+std::size_t const EmoteSize = 14;
 
 enum class HumanoidHand {
   Idle,
@@ -63,17 +63,17 @@ struct Personality {
   Vec2F armOffset = Vec2F();
 };
 
-Personality parsePersonalityArray(Json const& config);
+auto parsePersonalityArray(Json const& config) -> Personality;
 
-Personality& parsePersonality(Personality& personality, Json const& config);
-Personality parsePersonality(Json const& config);
+auto parsePersonality(Personality& personality, Json const& config) -> Personality&;
+auto parsePersonality(Json const& config) -> Personality;
 
-Json jsonFromPersonality(Personality const& personality);
+auto jsonFromPersonality(Personality const& personality) -> Json;
 
 struct HumanoidIdentity {
   explicit HumanoidIdentity(Json config = Json());
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   String name;
   // Must have :idle[1-5], :sit, :duck, :walk[1-8], :run[1-8], :jump[1-4], and
@@ -98,30 +98,29 @@ struct HumanoidIdentity {
   Vec4B color;
 
   std::optional<String> imagePath;
-
 };
 
-DataStream& operator>>(DataStream& ds, HumanoidIdentity& identity);
-DataStream& operator<<(DataStream& ds, HumanoidIdentity const& identity);
+auto operator>>(DataStream& ds, HumanoidIdentity& identity) -> DataStream&;
+auto operator<<(DataStream& ds, HumanoidIdentity const& identity) -> DataStream&;
 
 class Humanoid {
 public:
   enum State {
-    Idle, // 1 idle frame
-    Walk, // 8 walking frames
-    Run, // 8 run frames
-    Jump, // 4 jump frames
-    Fall, // 4 fall frames
-    Swim, // 7 swim frames
-    SwimIdle, // 2 swim idle frame
-    Duck, // 1 ducking frame
-    Sit, // 1 sitting frame
-    Lay, // 1 laying frame
+    Idle,    // 1 idle frame
+    Walk,    // 8 walking frames
+    Run,     // 8 run frames
+    Jump,    // 4 jump frames
+    Fall,    // 4 fall frames
+    Swim,    // 7 swim frames
+    SwimIdle,// 2 swim idle frame
+    Duck,    // 1 ducking frame
+    Sit,     // 1 sitting frame
+    Lay,     // 1 laying frame
     STATESIZE
   };
   static EnumMap<State> const StateNames;
 
-  static bool& globalHeadRotation();
+  static auto globalHeadRotation() -> bool&;
 
   Humanoid();
   Humanoid(Json const& config);
@@ -131,13 +130,13 @@ public:
   struct HumanoidTiming {
     explicit HumanoidTiming(Json config = Json());
 
-    static bool cyclicState(State state);
-    static bool cyclicEmoteState(HumanoidEmote state);
+    static auto cyclicState(State state) -> bool;
+    static auto cyclicEmoteState(HumanoidEmote state) -> bool;
 
-    int stateSeq(float timer, State state) const;
-    int emoteStateSeq(float timer, HumanoidEmote state) const;
-    int danceSeq(float timer, DancePtr dance) const;
-    int genericSeq(float timer, float cycle, unsigned frames, bool cyclic) const;
+    [[nodiscard]] auto stateSeq(float timer, State state) const -> int;
+    [[nodiscard]] auto emoteStateSeq(float timer, HumanoidEmote state) const -> int;
+    [[nodiscard]] auto danceSeq(float timer, Ptr<Dance> dance) const -> int;
+    [[nodiscard]] auto genericSeq(float timer, float cycle, unsigned frames, bool cyclic) const -> int;
 
     Array<float, STATESIZE> stateCycle;
     Array<unsigned, STATESIZE> stateFrames;
@@ -147,9 +146,9 @@ public:
   };
 
   void setIdentity(HumanoidIdentity const& identity);
-  HumanoidIdentity const& identity() const;
+  auto identity() const -> HumanoidIdentity const&;
 
-  bool loadConfig(Json merger = JsonObject(), bool forceRefresh = false);
+  auto loadConfig(Json merger = JsonObject(), bool forceRefresh = false) -> bool;
   void loadAnimation();
   void setHumanoidParameters(JsonObject parameters);
 
@@ -179,16 +178,16 @@ public:
   // Must have :idle, :duck, :walk[1-8], :run[1-8], :jump[1-4], :fall[1-4]
   struct WornBack : WornAny {};
 
-  typedef MVariant<WornHead, WornChest, WornLegs, WornBack> Wearable;
+  using Wearable = MVariant<WornHead, WornChest, WornLegs, WornBack>;
 
   struct Fashion {
     // 8 vanilla + 12 extra slots
     Array<Wearable, 20> wearables;
     // below 3 are recalculated when rendering updated wearables, null-terminated
-    Array<uint8_t, 20> wornHeads;
+    Array<std::uint8_t, 20> wornHeads;
     // chests and leg layering is interchangeable
-    Array<uint8_t, 20> wornChestsLegs;
-    Array<uint8_t, 20> wornBacks;
+    Array<std::uint8_t, 20> wornChestsLegs;
+    Array<std::uint8_t, 20> wornBacks;
     bool wornHeadsChanged = true;
     bool wornChestsLegsChanged = true;
     bool wornBacksChanged = true;
@@ -197,26 +196,26 @@ public:
   };
 
   template <typename T>
-  inline T const* getLastWearableOfType() const;
+  inline auto getLastWearableOfType() const -> T const*;
 
-  void removeWearable(uint8_t slot);
-  void setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender gender);
-  void setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gender gender);
-  void setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender gender);
-  void setWearableFromBack(uint8_t slot, BackArmor const& back, Gender gender);
+  void removeWearable(std::uint8_t slot);
+  void setWearableFromHead(std::uint8_t slot, HeadArmor const& head, Gender gender);
+  void setWearableFromChest(std::uint8_t slot, ChestArmor const& chest, Gender gender);
+  void setWearableFromLegs(std::uint8_t slot, LegsArmor const& legs, Gender gender);
+  void setWearableFromBack(std::uint8_t slot, BackArmor const& back, Gender gender);
   void refreshWearables(Fashion& fashion);
 
   // Legacy getters for all of the above, returns last found
-  Directives const& headArmorDirectives() const;
-  String const& headArmorFrameset() const;
-  Directives const& chestArmorDirectives() const;
-  String const& chestArmorFrameset() const;
-  String const& backSleeveFrameset() const;
-  String const& frontSleeveFrameset() const;
-  Directives const& legsArmorDirectives() const;
-  String const& legsArmorFrameset() const;
-  Directives const& backArmorDirectives() const;
-  String const& backArmorFrameset() const;
+  auto headArmorDirectives() const -> Directives const&;
+  auto headArmorFrameset() const -> String const&;
+  auto chestArmorDirectives() const -> Directives const&;
+  auto chestArmorFrameset() const -> String const&;
+  auto backSleeveFrameset() const -> String const&;
+  auto frontSleeveFrameset() const -> String const&;
+  auto legsArmorDirectives() const -> Directives const&;
+  auto legsArmorFrameset() const -> String const&;
+  auto backArmorDirectives() const -> Directives const&;
+  auto backArmorFrameset() const -> String const&;
 
   void setBodyHidden(bool hidden);
 
@@ -231,97 +230,97 @@ public:
 
   void setVaporTrail(bool enabled);
 
-  State state() const;
-  HumanoidEmote emoteState() const;
-  std::optional<String> dance() const;
-  bool danceCyclicOrEnded() const;
-  Direction facingDirection() const;
-  bool movingBackwards() const;
+  auto state() const -> State;
+  auto emoteState() const -> HumanoidEmote;
+  auto dance() const -> std::optional<String>;
+  auto danceCyclicOrEnded() const -> bool;
+  auto facingDirection() const -> Direction;
+  auto movingBackwards() const -> bool;
 
   // If not rotating, then the arms follow normal movement animation.  The
   // angle parameter should be in the range [-pi/2, pi/2] (the facing direction
   // should not be included in the angle).
   void setHandParameters(ToolHand hand, bool holdingItem, float angle, float itemAngle, bool twoHanded,
-      bool recoil, bool outsideOfHand);
+                         bool recoil, bool outsideOfHand);
   void setHandFrameOverrides(ToolHand hand, StringView back, StringView front);
   void setHandDrawables(ToolHand hand, List<Drawable> drawables);
   void setHandNonRotatedDrawables(ToolHand hand, List<Drawable> drawables);
-  bool handHoldingItem(ToolHand hand) const;
+  auto handHoldingItem(ToolHand hand) const -> bool;
 
   // Updates the animation based on whatever the current animation state is,
   // wrapping or clamping animation time as appropriate.
-  void animate(float dt, NetworkedAnimator::DynamicTarget * dynamicTarget);
+  void animate(float dt, NetworkedAnimator::DynamicTarget* dynamicTarget);
 
   // Reset animation time to 0.0f
   void resetAnimation();
 
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in world space, not pixels)
-  List<Drawable> render(bool withItems = true, bool withRotationAndScale = true);
+  auto render(bool withItems = true, bool withRotationAndScale = true) -> List<Drawable>;
 
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
-  List<Drawable> renderPortrait(PortraitMode mode) const;
+  auto renderPortrait(PortraitMode mode) const -> List<Drawable>;
 
-  List<Drawable> renderSkull() const;
+  auto renderSkull() const -> List<Drawable>;
 
-  static HumanoidPtr makeDummy(Gender gender);
+  static auto makeDummy(Gender gender) -> Ptr<Humanoid>;
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
-  List<Drawable> renderDummy(Gender gender, HeadArmor const* head = {}, ChestArmor const* chest = {},
-      LegsArmor const* legs = {}, BackArmor const* back = {});
+  auto renderDummy(Gender gender, HeadArmor const* head = {}, ChestArmor const* chest = {},
+                   LegsArmor const* legs = {}, BackArmor const* back = {}) -> List<Drawable>;
 
-  Vec2F primaryHandPosition(Vec2F const& offset) const;
-  Vec2F altHandPosition(Vec2F const& offset) const;
+  auto primaryHandPosition(Vec2F const& offset) const -> Vec2F;
+  auto altHandPosition(Vec2F const& offset) const -> Vec2F;
 
   // Finds the arm position in world space if the humanoid was facing the given
   // direction and applying the given arm angle.  The offset given is from the
   // rotation center of the arm.
-  Vec2F primaryArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const;
-  Vec2F altArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const;
+  auto primaryArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const -> Vec2F;
+  auto altArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const -> Vec2F;
 
   // Gives the offset of the hand from the arm rotation center
-  Vec2F primaryHandOffset(Direction facingDirection) const;
-  Vec2F altHandOffset(Direction facingDirection) const;
+  auto primaryHandOffset(Direction facingDirection) const -> Vec2F;
+  auto altHandOffset(Direction facingDirection) const -> Vec2F;
 
-  Vec2F armAdjustment() const;
+  auto armAdjustment() const -> Vec2F;
 
-  Vec2F mouthOffset(bool ignoreAdjustments = false) const;
-  float getBobYOffset() const;
-  Vec2F feetOffset() const;
+  auto mouthOffset(bool ignoreAdjustments = false) const -> Vec2F;
+  auto getBobYOffset() const -> float;
+  auto feetOffset() const -> Vec2F;
 
-  Vec2F headArmorOffset() const;
-  Vec2F chestArmorOffset() const;
-  Vec2F legsArmorOffset() const;
-  Vec2F backArmorOffset() const;
+  auto headArmorOffset() const -> Vec2F;
+  auto chestArmorOffset() const -> Vec2F;
+  auto legsArmorOffset() const -> Vec2F;
+  auto backArmorOffset() const -> Vec2F;
 
-  String defaultDeathParticles() const;
-  List<Particle> particles(String const& name) const;
+  auto defaultDeathParticles() const -> String;
+  auto particles(String const& name) const -> List<Particle>;
 
-  Json const& defaultMovementParameters() const;
-  std::optional<Json> const& playerMovementParameters() const;
+  auto defaultMovementParameters() const -> Json const&;
+  auto playerMovementParameters() const -> std::optional<Json> const&;
 
-  String getHeadFromIdentity() const;
-  String getBodyFromIdentity() const;
-  String getBodyMaskFromIdentity() const;
-  String getBodyHeadMaskFromIdentity() const;
-  String getFacialEmotesFromIdentity() const;
-  String getHairFromIdentity() const;
-  String getFacialHairFromIdentity() const;
-  String getFacialMaskFromIdentity() const;
-  String getBackArmFromIdentity() const;
-  String getFrontArmFromIdentity() const;
-  String getVaporTrailFrameset() const;
+  auto getHeadFromIdentity() const -> String;
+  auto getBodyFromIdentity() const -> String;
+  auto getBodyMaskFromIdentity() const -> String;
+  auto getBodyHeadMaskFromIdentity() const -> String;
+  auto getFacialEmotesFromIdentity() const -> String;
+  auto getHairFromIdentity() const -> String;
+  auto getFacialHairFromIdentity() const -> String;
+  auto getFacialMaskFromIdentity() const -> String;
+  auto getBackArmFromIdentity() const -> String;
+  auto getFrontArmFromIdentity() const -> String;
+  auto getVaporTrailFrameset() const -> String;
 
-  NetworkedAnimator * networkedAnimator();
-  NetworkedAnimator const* networkedAnimator() const;
-  List<String> animationScripts() const;
+  auto networkedAnimator() -> NetworkedAnimator*;
+  auto networkedAnimator() const -> NetworkedAnimator const*;
+  auto animationScripts() const -> List<String>;
 
-  Json humanoidConfig(bool withOverrides = true);
+  auto humanoidConfig(bool withOverrides = true) -> Json;
 
   // Extracts scalenearest from directives and returns the combined scale and
   // a new Directives without those scalenearest directives.
-  static pair<Vec2F, Directives> extractScaleFromDirectives(Directives const& directives);
+  static auto extractScaleFromDirectives(Directives const& directives) -> std::pair<Vec2F, Directives>;
 
 private:
   struct HandDrawingInfo {
@@ -339,25 +338,25 @@ private:
     bool outsideOfHand = false;
   };
 
-  HandDrawingInfo const& getHand(ToolHand hand) const;
+  auto getHand(ToolHand hand) const -> HandDrawingInfo const&;
 
   void wearableRemoved(Wearable const& wearable);
 
-  String frameBase(State state) const;
-  String emoteFrameBase(HumanoidEmote state) const;
+  auto frameBase(State state) const -> String;
+  auto emoteFrameBase(HumanoidEmote state) const -> String;
 
-  Directives const& getBodyDirectives() const;
-  Directives const& getHairDirectives() const;
-  Directives const& getEmoteDirectives() const;
-  Directives const& getFacialHairDirectives() const;
-  Directives const& getFacialMaskDirectives() const;
-  DirectivesGroup const& getHelmetMaskDirectivesGroup() const;
+  auto getBodyDirectives() const -> Directives const&;
+  auto getHairDirectives() const -> Directives const&;
+  auto getEmoteDirectives() const -> Directives const&;
+  auto getFacialHairDirectives() const -> Directives const&;
+  auto getFacialMaskDirectives() const -> Directives const&;
+  auto getHelmetMaskDirectivesGroup() const -> DirectivesGroup const&;
 
-  int getEmoteStateSequence() const;
-  int getArmStateSequence() const;
-  int getBodyStateSequence() const;
+  auto getEmoteStateSequence() const -> int;
+  auto getArmStateSequence() const -> int;
+  auto getBodyStateSequence() const -> int;
 
-  std::optional<DancePtr> getDance() const;
+  auto getDance() const -> std::optional<Ptr<Dance>>;
 
   void refreshAnimationState(bool startNew = false);
 
@@ -459,31 +458,29 @@ private:
     bool startNew;
     bool reverse;
   };
-  HashMap<Humanoid::State, HashMap<String,AnimationStateArgs>> m_animationStates;
-  HashMap<Humanoid::State, HashMap<String,AnimationStateArgs>> m_animationStatesBackwards;
-  HashMap<HumanoidEmote, HashMap<String,AnimationStateArgs>> m_emoteAnimationStates;
-  HashMap<PortraitMode, HashMap<String,AnimationStateArgs>> m_portraitAnimationStates;
+  HashMap<Humanoid::State, HashMap<String, AnimationStateArgs>> m_animationStates;
+  HashMap<Humanoid::State, HashMap<String, AnimationStateArgs>> m_animationStatesBackwards;
+  HashMap<HumanoidEmote, HashMap<String, AnimationStateArgs>> m_emoteAnimationStates;
+  HashMap<PortraitMode, HashMap<String, AnimationStateArgs>> m_portraitAnimationStates;
 
   HashMap<String, String> m_identityFramesetTags;
 
-  pair<String, String> m_headRotationPoint;
-  pair<String, String> m_frontArmRotationPoint;
-  pair<String, String> m_backArmRotationPoint;
+  std::pair<String, String> m_headRotationPoint;
+  std::pair<String, String> m_frontArmRotationPoint;
+  std::pair<String, String> m_backArmRotationPoint;
 
   String m_frontItemPart;
   String m_backItemPart;
 
-  pair<String, String> m_mouthOffsetPoint;
-  pair<String, String> m_headArmorOffsetPoint;
-  pair<String, String> m_chestArmorOffsetPoint;
-  pair<String, String> m_legsArmorOffsetPoint;
-  pair<String, String> m_backArmorOffsetPoint;
-  pair<String, String> m_feetOffsetPoint;
-  pair<String, String> m_throwPoint;
-  pair<String, String> m_interactPoint;
-
+  std::pair<String, String> m_mouthOffsetPoint;
+  std::pair<String, String> m_headArmorOffsetPoint;
+  std::pair<String, String> m_chestArmorOffsetPoint;
+  std::pair<String, String> m_legsArmorOffsetPoint;
+  std::pair<String, String> m_backArmorOffsetPoint;
+  std::pair<String, String> m_feetOffsetPoint;
+  std::pair<String, String> m_throwPoint;
+  std::pair<String, String> m_interactPoint;
 };
-
 
 // this is because species can be changed on the fly and therefore the humanoid needs to re-initialize as the new species when it changes
 // therefore we need to have these in a dynamic group in players and NPCs for the sake of the networked animator not breaking the game
@@ -497,25 +494,25 @@ public:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
-  HumanoidPtr humanoid();
+  auto humanoid() -> Ptr<Humanoid>;
   void setHumanoidParameters(JsonObject parameters);
-  JsonObject humanoidParameters();
+  auto humanoidParameters() -> JsonObject;
 
 private:
   void setupNetElements();
 
   Json m_config;
-  NetElementHashMap<String,Json> m_humanoidParameters;
-  HumanoidPtr m_humanoid;
+  NetElementHashMap<String, Json> m_humanoidParameters;
+  Ptr<Humanoid> m_humanoid;
 };
 
 template <typename T>
-inline T const* Humanoid::getLastWearableOfType() const {
-  for (size_t i = m_fashion->wearables.size(); i != 0; --i) {
+inline auto Humanoid::getLastWearableOfType() const -> T const* {
+  for (std::size_t i = m_fashion->wearables.size(); i != 0; --i) {
     if (auto ptr = m_fashion->wearables[i - 1].ptr<T>())
       return ptr;
   }
   return nullptr;
 }
 
-}
+}// namespace Star

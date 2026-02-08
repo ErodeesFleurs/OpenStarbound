@@ -1,23 +1,22 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarJson.hpp"
 
 namespace Star {
 
-STAR_EXCEPTION(StagehandDatabaseException, StarException);
+using StagehandDatabaseException = ExceptionDerived<"StagehandDatabaseException", StarException>;
 
-STAR_CLASS(Stagehand);
-
-STAR_CLASS(StagehandDatabase);
+class Stagehand;
 
 class StagehandDatabase {
 public:
   StagehandDatabase();
 
-  StagehandPtr createStagehand(String const& stagehandType, Json const& extraConfig = Json()) const;
+  [[nodiscard]] auto createStagehand(String const& stagehandType, Json const& extraConfig = Json()) const -> Ptr<Stagehand>;
 
 private:
   StringMap<Json> m_stagehandTypes;
 };
 
-}
+}// namespace Star

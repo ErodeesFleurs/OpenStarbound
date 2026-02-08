@@ -1,54 +1,54 @@
 #pragma once
 
-#include "StarToolUserItem.hpp"
-#include "StarStatusEffectItem.hpp"
 #include "StarLuaComponents.hpp"
+#include "StarStatusEffectItem.hpp"
+#include "StarToolUserItem.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(FireableItem);
 
 class FireableItem : public virtual ToolUserItem, public virtual StatusEffectItem {
 public:
   FireableItem();
   FireableItem(Json const& params);
-  virtual ~FireableItem() {}
+  ~FireableItem() override = default;
 
   FireableItem(FireableItem const& fireableItem);
 
   virtual void fire(FireMode mode, bool shifting, bool edgeTriggered);
   virtual void endFire(FireMode mode, bool shifting);
-  virtual FireMode fireMode() const;
-  virtual float fireTimer() const;
+  virtual auto fireMode() const -> FireMode;
+  virtual auto fireTimer() const -> float;
   virtual void setFireTimer(float fireTimer);
-  virtual float cooldownTime() const;
+  virtual auto cooldownTime() const -> float;
   virtual void setCooldownTime(float cooldownTime);
-  virtual float windupTime() const;
+  virtual auto windupTime() const -> float;
   virtual void setWindupTime(float time);
-  virtual bool ready() const;
-  virtual bool firing() const;
-  virtual bool inUse() const;
-  virtual bool walkWhileFiring() const;
-  virtual bool stopWhileFiring() const;
-  virtual bool windup() const;
+  virtual auto ready() const -> bool;
+  virtual auto firing() const -> bool;
+  virtual auto inUse() const -> bool;
+  virtual auto walkWhileFiring() const -> bool;
+  virtual auto stopWhileFiring() const -> bool;
+  virtual auto windup() const -> bool;
   virtual void triggerCooldown();
-  virtual bool coolingDown() const;
+  virtual auto coolingDown() const -> bool;
   virtual void setCoolingDown(bool coolingdown);
-  virtual float timeFiring() const;
+  virtual auto timeFiring() const -> float;
   virtual void setTimeFiring(float timeFiring);
-  virtual Vec2F firePosition() const;
-  virtual Vec2F handPosition() const;
+  virtual auto firePosition() const -> Vec2F;
+  virtual auto handPosition() const -> Vec2F;
 
-  virtual void init(ToolUserEntity* owner, ToolHand hand) override;
-  virtual void uninit() override;
-  virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
+  void init(ToolUserEntity* owner, ToolHand hand) override;
+  void uninit() override;
+  void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  virtual List<PersistentStatusEffect> statusEffects() const override;
+  auto statusEffects() const -> List<PersistentStatusEffect> override;
 
-  virtual bool validAimPos(Vec2F const& aimPos);
+  virtual auto validAimPos(Vec2F const& aimPos) -> bool;
 
-  Json fireableParam(String const& key) const;
-  Json fireableParam(String const& key, Json const& defaultVal) const;
+  auto fireableParam(String const& key) const -> Json;
+  auto fireableParam(String const& key, Json const& defaultVal) const -> Json;
 
 protected:
   void setParams(Json const& params);
@@ -57,7 +57,7 @@ protected:
   virtual void fireTriggered();
 
   // firePosition translated by the hand in the owner's space
-  Vec2F ownerFirePosition() const;
+  auto ownerFirePosition() const -> Vec2F;
 
   float m_fireTimer;
   float m_cooldownTime;
@@ -85,4 +85,4 @@ protected:
   FireMode m_mode;
 };
 
-}
+}// namespace Star

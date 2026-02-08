@@ -1,11 +1,13 @@
 #include "StarUtilityLuaBindings.hpp"
-#include "StarLuaConverters.hpp" // IWYU pragma: keep
-#include "StarUuid.hpp"
-#include "StarRandom.hpp"
-#include "StarPerlin.hpp"
-#include "StarLogging.hpp"
 #include "StarInterpolation.hpp"
+#include "StarLogging.hpp"
+#include "StarLuaConverters.hpp"// IWYU pragma: export
+#include "StarPerlin.hpp"
+#include "StarRandom.hpp"
 #include "StarText.hpp"
+#include "StarUuid.hpp"
+
+import std;
 
 namespace Star {
 
@@ -14,31 +16,25 @@ struct LuaConverter<RandomSource> : LuaUserDataConverter<RandomSource> {};
 
 template <>
 struct LuaUserDataMethods<RandomSource> {
-  static LuaMethods<RandomSource> make() {
+  static auto make() -> LuaMethods<RandomSource> {
     LuaMethods<RandomSource> methods;
 
-    methods.registerMethod("init", [](RandomSource& randomSource, std::optional<uint64_t> seed)
-      { seed ? randomSource.init(*seed) : randomSource.init(); });
-    methods.registerMethod("addEntropy", [](RandomSource& randomSource, std::optional<uint64_t> seed)
-      { seed ? randomSource.addEntropy(*seed) : randomSource.addEntropy(); });
+    methods.registerMethod("init", [](RandomSource& randomSource, std::optional<std::uint64_t> seed) -> void { seed ? randomSource.init(*seed) : randomSource.init(); });
+    methods.registerMethod("addEntropy", [](RandomSource& randomSource, std::optional<std::uint64_t> seed) -> void { seed ? randomSource.addEntropy(*seed) : randomSource.addEntropy(); });
 
-    methods.registerMethodWithSignature<uint32_t, RandomSource&>("randu32", mem_fn(&RandomSource::randu32));
-    methods.registerMethodWithSignature<uint64_t, RandomSource&>("randu64", mem_fn(&RandomSource::randu64));
-    methods.registerMethodWithSignature<int32_t, RandomSource&>("randi32", mem_fn(&RandomSource::randi32));
-    methods.registerMethodWithSignature<int64_t, RandomSource&>("randi64", mem_fn(&RandomSource::randi64));
+    methods.registerMethodWithSignature<std::uint32_t, RandomSource&>("randu32", std::mem_fn(&RandomSource::randu32));
+    methods.registerMethodWithSignature<std::uint64_t, RandomSource&>("randu64", std::mem_fn(&RandomSource::randu64));
+    methods.registerMethodWithSignature<std::int32_t, RandomSource&>("randi32", std::mem_fn(&RandomSource::randi32));
+    methods.registerMethodWithSignature<std::int64_t, RandomSource&>("randi64", std::mem_fn(&RandomSource::randi64));
 
-    methods.registerMethod("randf", [](RandomSource& randomSource, std::optional<float> arg1, std::optional<float> arg2)
-      { return (arg1 && arg2) ? randomSource.randf(*arg1, *arg2) : randomSource.randf(); });
-    methods.registerMethod("randd", [](RandomSource& randomSource, std::optional<double> arg1, std::optional<double> arg2)
-      { return (arg1 && arg2) ? randomSource.randd(*arg1, *arg2) : randomSource.randd(); });
+    methods.registerMethod("randf", [](RandomSource& randomSource, std::optional<float> arg1, std::optional<float> arg2) -> float { return (arg1 && arg2) ? randomSource.randf(*arg1, *arg2) : randomSource.randf(); });
+    methods.registerMethod("randd", [](RandomSource& randomSource, std::optional<double> arg1, std::optional<double> arg2) -> double { return (arg1 && arg2) ? randomSource.randd(*arg1, *arg2) : randomSource.randd(); });
 
-    methods.registerMethodWithSignature<bool, RandomSource&>("randb", mem_fn(&RandomSource::randb));
+    methods.registerMethodWithSignature<bool, RandomSource&>("randb", std::mem_fn(&RandomSource::randb));
 
-    methods.registerMethod("randInt", [](RandomSource& randomSource, int64_t arg1, std::optional<int64_t> arg2)
-      { return arg2 ? randomSource.randInt(arg1, *arg2) : randomSource.randInt(arg1); });
+    methods.registerMethod("randInt", [](RandomSource& randomSource, std::int64_t arg1, std::optional<std::int64_t> arg2) -> std::int64_t { return arg2 ? randomSource.randInt(arg1, *arg2) : randomSource.randInt(arg1); });
 
-    methods.registerMethod("randUInt", [](RandomSource& randomSource, uint64_t arg1, std::optional<uint64_t> arg2)
-      { return arg2 ? randomSource.randUInt(arg1, *arg2) : randomSource.randUInt(arg1); });
+    methods.registerMethod("randUInt", [](RandomSource& randomSource, std::uint64_t arg1, std::optional<std::uint64_t> arg2) -> std::uint64_t { return arg2 ? randomSource.randUInt(arg1, *arg2) : randomSource.randUInt(arg1); });
 
     return methods;
   }
@@ -49,24 +45,24 @@ struct LuaConverter<PerlinF> : LuaUserDataConverter<PerlinF> {};
 
 template <>
 struct LuaUserDataMethods<PerlinF> {
-  static LuaMethods<PerlinF> make() {
+  static auto make() -> LuaMethods<PerlinF> {
     LuaMethods<PerlinF> methods;
 
     methods.registerMethod("get",
-        [](PerlinF& perlinF, float x, std::optional<float> y, std::optional<float> z) {
-          if (y && z)
-            return perlinF.get(x, *y, *z);
-          else if (y)
-            return perlinF.get(x, *y);
-          else
-            return perlinF.get(x);
-        });
+                           [](PerlinF& perlinF, float x, std::optional<float> y, std::optional<float> z) -> float {
+                             if (y && z)
+                               return perlinF.get(x, *y, *z);
+                             else if (y)
+                               return perlinF.get(x, *y);
+                             else
+                               return perlinF.get(x);
+                           });
 
     return methods;
   }
 };
 
-String LuaBindings::formatLua(String const& string, List<LuaValue> const& args) {
+auto LuaBindings::formatLua(String const& string, List<LuaValue> const& args) -> String {
   auto argsIt = args.begin();
   auto argsEnd = args.end();
   auto popArg = [&argsIt, &argsEnd]() -> LuaValue {
@@ -103,7 +99,7 @@ String LuaBindings::formatLua(String const& string, List<LuaValue> const& args) 
   return result;
 }
 
-LuaCallbacks LuaBindings::makeUtilityCallbacks() {
+auto LuaBindings::makeUtilityCallbacks() -> LuaCallbacks {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("nrand", UtilityCallbacks::nrand);
@@ -117,66 +113,72 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
   callbacks.registerCallback("print", UtilityCallbacks::print);
   callbacks.registerCallback("interpolateSinEase", UtilityCallbacks::interpolateSinEase);
   callbacks.registerCallback("replaceTags", UtilityCallbacks::replaceTags);
-  callbacks.registerCallback("stripEscapeCodes", [](String const& text) { return Text::stripEscapeCodes(text); });
-  callbacks.registerCallback("parseJsonSequence", [](String const& json) { return Json::parseSequence(json); });
-  callbacks.registerCallback("jsonMerge", [](Json const& a, Json const& b) { return jsonMerge(a, b); });
-  callbacks.registerCallback("jsonEqual", [](Json const& a, Json const& b) { return a == b; });
-  callbacks.registerCallback("jsonQuery", [](Json const& json, String const& path, Json const& def) { return json.query(path, def); });
-  callbacks.registerCallback("makeRandomSource", [](std::optional<uint64_t> seed) { return seed ? RandomSource(*seed) : RandomSource(); });
-  callbacks.registerCallback("makePerlinSource", [](Json const& config) { return PerlinF(config); });
+  callbacks.registerCallback("stripEscapeCodes", [](String const& text) -> String { return Text::stripEscapeCodes(text); });
+  callbacks.registerCallback("parseJsonSequence", [](String const& json) -> Json { return Json::parseSequence(json); });
+  callbacks.registerCallback("jsonMerge", [](Json const& a, Json const& b) -> Json { return jsonMerge(a, b); });
+  callbacks.registerCallback("jsonEqual", [](Json const& a, Json const& b) -> bool { return a == b; });
+  callbacks.registerCallback("jsonQuery", [](Json const& json, String const& path, Json const& def) -> Json { return json.query(path, def); });
+  callbacks.registerCallback("makeRandomSource", [](std::optional<std::uint64_t> seed) -> RandomSource { return seed ? RandomSource(*seed) : RandomSource(); });
+  callbacks.registerCallback("makePerlinSource", [](Json const& config) -> PerlinF { return PerlinF(config); });
 
-  callbacks.copyCallback("parseJson", "jsonFromString"); // SE compat
+  callbacks.copyCallback("parseJson", "jsonFromString");// SE compat
 
-  auto hash64LuaValues = [](LuaVariadic<LuaValue> const& values) -> uint64_t {
-    XXHash64 hash;
+  auto hash64LuaValues = [](LuaVariadic<LuaValue> const& values) -> std::uint64_t {
+    std::size_t seed = 233;
 
     for (auto const& value : values) {
-      if (auto b = value.ptr<LuaBoolean>())
-        xxHash64Push(hash, *b);
-      else if (auto i = value.ptr<LuaInt>())
-        xxHash64Push(hash, *i);
-      else if (auto f = value.ptr<LuaFloat>())
-        xxHash64Push(hash, *f);
-      else if (auto s = value.ptr<LuaString>())
-        xxHash64Push(hash, s->ptr());
-      else
+      if (auto b = value.ptr<LuaBoolean>()) {
+        hashCombine(seed, std::hash<int>{}(1));
+        hashCombine(seed, std::hash<bool>{}(*b));
+      } else if (auto i = value.ptr<LuaInt>()) {
+        hashCombine(seed, std::hash<int>{}(2));
+        hashCombine(seed, std::hash<long long>{}(*i));
+      } else if (auto f = value.ptr<LuaFloat>()) {
+        hashCombine(seed, std::hash<int>{}(3));
+        hashCombine(seed, std::hash<double>{}(*f));
+      } else if (auto s = value.ptr<LuaString>()) {
+        hashCombine(seed, std::hash<int>{}(4));
+        std::string_view sv(s->ptr(), s->length());
+        hashCombine(seed, std::hash<std::string_view>{}(sv));
+      } else {
         throw LuaException("Unhashable lua type passed to staticRandomXX binding");
+      }
     }
 
-    return hash.digest();
+    return static_cast<std::uint64_t>(seed);
   };
 
   callbacks.registerCallback("staticRandomI32",
-      [hash64LuaValues](LuaVariadic<LuaValue> const& hashValues) { return (int32_t)hash64LuaValues(hashValues); });
+                             [hash64LuaValues](LuaVariadic<LuaValue> const& hashValues) -> std::int32_t { return (std::int32_t)hash64LuaValues(hashValues); });
 
   callbacks.registerCallback("staticRandomI32Range",
-      [hash64LuaValues](int32_t min, int32_t max, LuaVariadic<LuaValue> const& hashValues) {
-        if (max < min)
-          throw LuaException("Maximum bound in staticRandomI32Range must be >= minimum bound!");
-        uint64_t denom = (uint64_t)(-1) / ((uint64_t)(max - min) + 1);
-        return (int32_t)(hash64LuaValues(hashValues) / denom + min);
-      });
+                             [hash64LuaValues](std::int32_t min, std::int32_t max, LuaVariadic<LuaValue> const& hashValues) -> std::int32_t {
+                               if (max < min)
+                                 throw LuaException("Maximum bound in staticRandomI32Range must be >= minimum bound!");
+                               std::uint64_t denom = (std::uint64_t)(-1) / ((std::uint64_t)(max - min) + 1);
+                               return (std::int32_t)(hash64LuaValues(hashValues) / denom + min);
+                             });
 
   callbacks.registerCallback("staticRandomDouble",
-      [hash64LuaValues](LuaVariadic<LuaValue> const& hashValues) {
-        return (hash64LuaValues(hashValues) & 0x7fffffffffffffff) / 9223372036854775808.0;
-      });
+                             [hash64LuaValues](LuaVariadic<LuaValue> const& hashValues) -> double {
+                               return (hash64LuaValues(hashValues) & 0x7fffffffffffffff) / 9223372036854775808.0;
+                             });
 
   callbacks.registerCallback("staticRandomDoubleRange",
-      [hash64LuaValues](double min, double max, LuaVariadic<LuaValue> const& hashValues) {
-        if (max < min)
-          throw LuaException("Maximum bound in staticRandomDoubleRange must be >= minimum bound!");
-        return (hash64LuaValues(hashValues) & 0x7fffffffffffffff) / 9223372036854775808.0 * (max - min) + min;
-      });
+                             [hash64LuaValues](double min, double max, LuaVariadic<LuaValue> const& hashValues) -> double {
+                               if (max < min)
+                                 throw LuaException("Maximum bound in staticRandomDoubleRange must be >= minimum bound!");
+                               return (hash64LuaValues(hashValues) & 0x7fffffffffffffff) / 9223372036854775808.0 * (max - min) + min;
+                             });
 
   return callbacks;
 }
 
-double LuaBindings::UtilityCallbacks::nrand(std::optional<double> const& stdev, std::optional<double> const& mean) {
+auto LuaBindings::UtilityCallbacks::nrand(std::optional<double> const& stdev, std::optional<double> const& mean) -> double {
   return Random::nrandd(stdev.value_or(1.0), mean.value_or(0));
 }
 
-String LuaBindings::UtilityCallbacks::makeUuid() {
+auto LuaBindings::UtilityCallbacks::makeUuid() -> String {
   return Uuid().hex();
 }
 
@@ -196,19 +198,19 @@ void LuaBindings::UtilityCallbacks::setLogMap(String const& key, String const& v
   LogMap::set(key, formatLua(value, args));
 }
 
-Json LuaBindings::UtilityCallbacks::parseJson(String const& str) {
+auto LuaBindings::UtilityCallbacks::parseJson(String const& str) -> Json {
   return Json::parse(str);
 }
 
-String LuaBindings::UtilityCallbacks::printJson(Json const& arg, std::optional<int> pretty) {
+auto LuaBindings::UtilityCallbacks::printJson(Json const& arg, std::optional<int> pretty) -> String {
   return arg.repr(pretty.value_or(0));
 }
 
-String LuaBindings::UtilityCallbacks::print(LuaValue const& value) {
+auto LuaBindings::UtilityCallbacks::print(LuaValue const& value) -> String {
   return toString(value);
 }
 
-LuaValue LuaBindings::UtilityCallbacks::interpolateSinEase(LuaEngine& engine, double offset, LuaValue const& value1, LuaValue const& value2) {
+auto LuaBindings::UtilityCallbacks::interpolateSinEase(LuaEngine& engine, double offset, LuaValue const& value1, LuaValue const& value2) -> LuaValue {
   if (auto floatValue1 = engine.luaMaybeTo<double>(value1)) {
     auto floatValue2 = engine.luaMaybeTo<double>(value2);
     return sinEase(offset, *floatValue1, *floatValue2);
@@ -217,8 +219,8 @@ LuaValue LuaBindings::UtilityCallbacks::interpolateSinEase(LuaEngine& engine, do
   }
 }
 
-String LuaBindings::UtilityCallbacks::replaceTags(String const& str, StringMap<String> const& tags) {
+auto LuaBindings::UtilityCallbacks::replaceTags(String const& str, StringMap<String> const& tags) -> String {
   return str.replaceTags(tags);
 }
 
-}
+}// namespace Star

@@ -1,52 +1,54 @@
 #pragma once
 
-#include "StarOrderedMap.hpp"
+#include "StarConfig.hpp"
+#include "StarEffectEmitter.hpp"
 #include "StarEntity.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarMovementController.hpp"
 #include "StarNetElementSystem.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarParticle.hpp"
+#include "StarPhysicsEntity.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarStatusEffectEntity.hpp"
-#include "StarPhysicsEntity.hpp"
-#include "StarEffectEmitter.hpp"
-#include "StarMovementController.hpp"
-#include "StarParticle.hpp"
-#include "StarLuaComponents.hpp"
 
-#include <optional>
+import std;
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(RenderCallback);
-STAR_STRUCT(ProjectileConfig);
+struct ProjectileConfig;
+// STAR_CLASS(World);
+// STAR_CLASS(RenderCallback);
+// STAR_STRUCT(ProjectileConfig);
 
-STAR_CLASS(Projectile);
+// STAR_CLASS(Projectile);
 
 class Projectile : public virtual Entity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:
-  Projectile(ProjectileConfigPtr const& config, Json const& parameters);
-  Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
+  Projectile(Ptr<ProjectileConfig> const& config, Json const& parameters);
+  Projectile(Ptr<ProjectileConfig> const& config, DataStreamBuffer& netState, NetCompatibilityRules rules = {});
 
-  ByteArray netStore(NetCompatibilityRules rules = {}) const;
+  auto netStore(NetCompatibilityRules rules = {}) const -> ByteArray;
 
-  EntityType entityType() const override;
+  auto entityType() const -> EntityType override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  String typeName() const;
-  String name() const override;
-  String description() const override;
+  auto typeName() const -> String;
+  auto name() const -> String override;
+  auto description() const -> String override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  auto position() const -> Vec2F override;
+  auto metaBoundBox() const -> RectF override;
 
-  Vec2F velocity() const;
+  auto velocity() const -> Vec2F;
 
-  bool ephemeral() const override;
-  ClientEntityMode clientEntityMode() const override;
-  bool masterOnly() const override;
+  auto ephemeral() const -> bool override;
+  auto clientEntityMode() const -> ClientEntityMode override;
+  auto masterOnly() const -> bool override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t> override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
@@ -54,30 +56,30 @@ public:
 
   // If the bullet time to live has run out, or if it has collided, etc this
   // will return true.
-  bool shouldDestroy() const override;
+  auto shouldDestroy() const -> bool override;
   void destroy(RenderCallback* renderCallback) override;
 
-  List<DamageSource> damageSources() const override;
+  auto damageSources() const -> List<DamageSource> override;
   void hitOther(EntityId targetEntityId, DamageRequest const& dr) override;
 
   void update(float dt, uint64_t currentStep) override;
   void render(RenderCallback* renderCallback) override;
   void renderLightSources(RenderCallback* renderCallback) override;
 
-  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  auto receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) -> std::optional<Json> override;
 
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  auto callScript(String const& func, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> override;
+  auto evalScript(String const& code) -> std::optional<LuaValue> override;
 
-  String projectileType() const;
-  
-  Json configValue(String const& name, Json const& def = Json()) const;
+  auto projectileType() const -> String;
+
+  auto configValue(String const& name, Json const& def = Json()) const -> Json;
 
   // InitialPosition, InitialDirection, InitialVelocity, PowerMultiplier, and
   // additional status effects must be set before the projectile is added to
   // the world
 
-  float initialSpeed() const;
+  auto initialSpeed() const -> float;
   void setInitialSpeed(float speed);
 
   void setInitialPosition(Vec2F const& position);
@@ -87,21 +89,21 @@ public:
 
   void setReferenceVelocity(std::optional<Vec2F> const& velocity);
 
-  float powerMultiplier() const;
+  auto powerMultiplier() const -> float;
   void setPowerMultiplier(float multiplier);
 
   // If trackSource is true, then the projectile will (while the entity exists)
   // attempt to track the change in position of the parent entity and move
   // relative to it.
   void setSourceEntity(EntityId source, bool trackSource);
-  EntityId sourceEntity() const;
+  auto sourceEntity() const -> EntityId;
 
-  List<PersistentStatusEffect> statusEffects() const override;
-  PolyF statusEffectArea() const override;
+  auto statusEffects() const -> List<PersistentStatusEffect> override;
+  auto statusEffectArea() const -> PolyF override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
-  size_t movingCollisionCount() const override;
-  std::optional<PhysicsMovingCollision> movingCollision(size_t positionIndex) const override;
+  auto forceRegions() const -> List<PhysicsForceRegion> override;
+  auto movingCollisionCount() const -> size_t override;
+  auto movingCollision(size_t positionIndex) const -> std::optional<PhysicsMovingCollision> override;
 
   using Entity::setTeam;
 
@@ -116,22 +118,22 @@ private:
     NetElementBool enabled;
   };
 
-  static List<Particle> sparkBlock(World* world, Vec2I const& position, Vec2F const& damageSource);
+  static auto sparkBlock(World* world, Vec2I const& position, Vec2F const& damageSource) -> List<Particle>;
 
-  int getFrame() const;
+  auto getFrame() const -> int;
   void setFrame(int frame);
-  String drawableFrame();
+  auto drawableFrame() -> String;
 
   void processAction(Json const& action);
   void tickShared(float dt);
 
   void setup();
 
-  LuaCallbacks makeProjectileCallbacks();
+  auto makeProjectileCallbacks() -> LuaCallbacks;
 
   void renderPendingRenderables(RenderCallback* renderCallback);
 
-  ProjectileConfigPtr m_config;
+  Ptr<ProjectileConfig> m_config;
   Json m_parameters;
 
   // used when projectiles are fired from a moving entity and should include its velocity
@@ -158,13 +160,13 @@ private:
 
   std::optional<String> m_collisionSound;
   String m_persistentAudioFile;
-  AudioInstancePtr m_persistentAudio;
+  Ptr<AudioInstance> m_persistentAudio;
 
-  List<tuple<GameTimer, bool, Json>> m_periodicActions;
+  List<std::tuple<GameTimer, bool, Json>> m_periodicActions;
 
   NetElementTopGroup m_netGroup;
-  MovementControllerPtr m_movementController;
-  EffectEmitterPtr m_effectEmitter;
+  Ptr<MovementController> m_movementController;
+  Ptr<EffectEmitter> m_effectEmitter;
   float m_timeToLive;
 
   Line2F m_travelLine;
@@ -191,7 +193,7 @@ private:
   OrderedHashMap<String, PhysicsForceConfig> m_physicsForces;
   OrderedHashMap<String, PhysicsCollisionConfig> m_physicsCollisions;
 
-  List<Variant<AudioInstancePtr, Particle, LightSource>> m_pendingRenderables;
+  List<Variant<Ptr<AudioInstance>, Particle, LightSource>> m_pendingRenderables;
 };
 
-}
+}// namespace Star

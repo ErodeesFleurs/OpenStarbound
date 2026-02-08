@@ -10,23 +10,23 @@ namespace Star {
 class JsonBuilderStream : public JsonStream {
 public:
   void beginObject() override;
-  void objectKey(char32_t const* s, size_t len) override;
+  void objectKey(char32_t const* s, std::size_t len) override;
   void endObject() override;
 
   void beginArray() override;
   void endArray() override;
 
-  void putString(char32_t const* s, size_t len) override;
-  void putDouble(char32_t const* s, size_t len) override;
-  void putInteger(char32_t const* s, size_t len) override;
+  void putString(char32_t const* s, std::size_t len) override;
+  void putDouble(char32_t const* s, std::size_t len) override;
+  void putInteger(char32_t const* s, std::size_t len) override;
   void putBoolean(bool b) override;
   void putNull() override;
 
-  void putWhitespace(char32_t const* s, size_t len) override;
+  void putWhitespace(char32_t const* s, std::size_t len) override;
   void putColon() override;
   void putComma() override;
 
-  auto stackSize() -> size_t;
+  auto stackSize() -> std::size_t;
   auto takeTop() -> Json;
 
 private:

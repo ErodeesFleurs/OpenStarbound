@@ -1,41 +1,41 @@
 #pragma once
 
-#include "StarEntity.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarEntityRendering.hpp"
-#include "StarActorMovementController.hpp"
-#include "StarNetworkedAnimator.hpp"
-#include "StarEffectEmitter.hpp"
-#include "StarMonsterDatabase.hpp"
-#include "StarDamageBarEntity.hpp"
-#include "StarNametagEntity.hpp"
-#include "StarPortraitEntity.hpp"
-#include "StarAggressiveEntity.hpp"
-#include "StarScriptedEntity.hpp"
-#include "StarChattyEntity.hpp"
-#include "StarPhysicsEntity.hpp"
-#include "StarBehaviorState.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
-#include "StarLuaActorMovementComponent.hpp"
 #include "StarActorEntity.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarAggressiveEntity.hpp"
+#include "StarBehaviorState.hpp"
+#include "StarChattyEntity.hpp"
+#include "StarConfig.hpp"
+#include "StarDamageBarEntity.hpp"
+#include "StarEffectEmitter.hpp"
+#include "StarEntity.hpp"
+#include "StarEntityRendering.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarMonsterDatabase.hpp"
+#include "StarNametagEntity.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarPhysicsEntity.hpp"
+#include "StarScriptedEntity.hpp"
 
-#include <optional>
+import std;
 
 namespace Star {
 
-STAR_CLASS(Monster);
-STAR_CLASS(StatusController);
+// STAR_CLASS(Monster);
+// STAR_CLASS(StatusController);
 
 class Monster
-  : public virtual DamageBarEntity,
-    public virtual AggressiveEntity,
-    public virtual ScriptedEntity,
-    public virtual PhysicsEntity,
-    public virtual NametagEntity,
-    public virtual ChattyEntity,
-    public virtual InteractiveEntity,
-    public virtual ActorEntity {
+    : public virtual DamageBarEntity,
+      public virtual AggressiveEntity,
+      public virtual ScriptedEntity,
+      public virtual PhysicsEntity,
+      public virtual NametagEntity,
+      public virtual ChattyEntity,
+      public virtual InteractiveEntity,
+      public virtual ActorEntity {
 public:
   struct SkillInfo {
     String label;
@@ -45,51 +45,51 @@ public:
   Monster(MonsterVariant const& variant, std::optional<float> level = {});
   Monster(Json const& diskStore);
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  auto diskStore() const -> Json;
+  auto netStore(NetCompatibilityRules rules = {}) -> ByteArray;
 
-  EntityType entityType() const override;
-  ClientEntityMode clientEntityMode() const override;
+  auto entityType() const -> EntityType override;
+  auto clientEntityMode() const -> ClientEntityMode override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  auto position() const -> Vec2F override;
+  auto metaBoundBox() const -> RectF override;
 
-  Vec2F velocity() const;
+  auto velocity() const -> Vec2F;
 
-  Vec2F mouthOffset() const;
-  Vec2F feetOffset() const;
+  auto mouthOffset() const -> Vec2F;
+  auto feetOffset() const -> Vec2F;
 
-  RectF collisionArea() const override;
+  auto collisionArea() const -> RectF override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t> override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;
 
-  String name() const override;
-  String description() const override;
+  auto name() const -> String override;
+  auto description() const -> String override;
 
-  List<LightSource> lightSources() const override;
+  auto lightSources() const -> List<LightSource> override;
 
-  std::optional<HitType> queryHit(DamageSource const& source) const override;
-  std::optional<PolyF> hitPoly() const override;
+  auto queryHit(DamageSource const& source) const -> std::optional<HitType> override;
+  auto hitPoly() const -> std::optional<PolyF> override;
 
   void hitOther(EntityId targetEntityId, DamageRequest const& damageRequest) override;
   void damagedOther(DamageNotification const& damage) override;
 
-  List<DamageNotification> applyDamage(DamageRequest const& damage) override;
-  List<DamageNotification> selfDamageNotifications() override;
+  auto applyDamage(DamageRequest const& damage) -> List<DamageNotification> override;
+  auto selfDamageNotifications() -> List<DamageNotification> override;
 
-  List<DamageSource> damageSources() const override;
+  auto damageSources() const -> List<DamageSource> override;
 
-  bool shouldDie();
+  auto shouldDie() -> bool;
   void knockout();
 
-  bool shouldDestroy() const override;
+  auto shouldDestroy() const -> bool override;
   void destroy(RenderCallback* renderCallback) override;
 
   void update(float dt, uint64_t currentStep) override;
@@ -100,52 +100,52 @@ public:
 
   void setPosition(Vec2F const& pos);
 
-  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  auto receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) -> std::optional<Json> override;
 
-  float maxHealth() const override;
-  float health() const override;
-  DamageBarType damageBar() const override;
+  auto maxHealth() const -> float override;
+  auto health() const -> float override;
+  auto damageBar() const -> DamageBarType override;
 
-  float monsterLevel() const;
-  SkillInfo activeSkillInfo() const;
+  auto monsterLevel() const -> float;
+  auto activeSkillInfo() const -> SkillInfo;
 
-  List<Drawable> portrait(PortraitMode mode) const override;
-  String typeName() const;
-  MonsterVariant monsterVariant() const;
+  auto portrait(PortraitMode mode) const -> List<Drawable> override;
+  auto typeName() const -> String;
+  auto monsterVariant() const -> MonsterVariant;
 
-  std::optional<String> statusText() const override;
-  bool displayNametag() const override;
-  Vec3B nametagColor() const override;
-  Vec2F nametagOrigin() const override;
-  String nametag() const override;
+  auto statusText() const -> std::optional<String> override;
+  auto displayNametag() const -> bool override;
+  auto nametagColor() const -> Vec3B override;
+  auto nametagOrigin() const -> Vec2F override;
+  auto nametag() const -> String override;
 
-  bool aggressive() const override;
+  auto aggressive() const -> bool override;
 
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  auto callScript(String const& func, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> override;
+  auto evalScript(String const& code) -> std::optional<LuaValue> override;
 
-  virtual Vec2F mouthPosition() const override;
-  virtual Vec2F mouthPosition(bool ignoreAdjustments) const override;
-  virtual List<ChatAction> pullPendingChatActions() override;
+  auto mouthPosition() const -> Vec2F override;
+  auto mouthPosition(bool ignoreAdjustments) const -> Vec2F override;
+  auto pullPendingChatActions() -> List<ChatAction> override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  auto forceRegions() const -> List<PhysicsForceRegion> override;
 
-  InteractAction interact(InteractRequest const& request) override;
-  bool isInteractive() const override;
+  auto interact(InteractRequest const& request) -> InteractAction override;
+  auto isInteractive() const -> bool override;
 
-  Vec2F questIndicatorPosition() const override;
+  auto questIndicatorPosition() const -> Vec2F override;
 
-  ActorMovementController* movementController() override;
-  StatusController* statusController() override;
+  auto movementController() -> ActorMovementController* override;
+  auto statusController() -> StatusController* override;
 
   using Entity::setKeepAlive;
   using Entity::setUniqueId;
 
 private:
-  Vec2F getAbsolutePosition(Vec2F relativePosition) const;
+  auto getAbsolutePosition(Vec2F relativePosition) const -> Vec2F;
 
   void updateStatus(float dt);
-  LuaCallbacks makeMonsterCallbacks();
+  auto makeMonsterCallbacks() -> LuaCallbacks;
 
   void addChatMessage(String const& message, String const& portrait = "");
 
@@ -163,8 +163,8 @@ private:
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
 
-  ActorMovementControllerPtr m_movementController;
-  StatusControllerPtr m_statusController;
+  Ptr<ActorMovementController> m_movementController;
+  Ptr<StatusController> m_statusController;
 
   EffectEmitter m_effectEmitter;
 
@@ -184,7 +184,7 @@ private:
 
   Vec2F m_questIndicatorOffset;
 
-  List<BehaviorStatePtr> m_behaviors;
+  List<Ptr<BehaviorState>> m_behaviors;
   mutable LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_scriptComponent;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
 
@@ -214,4 +214,4 @@ private:
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 };
 
-}
+}// namespace Star

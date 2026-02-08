@@ -4,9 +4,9 @@
 
 namespace Star {
 
-STAR_CLASS(MovementController);
+class MovementController;
 
 namespace LuaBindings {
-  LuaCallbacks makeMovementControllerCallbacks(MovementController* movementController);
+auto makeMovementControllerCallbacks(MovementController* movementController) -> LuaCallbacks;
 }
-}
+}// namespace Star

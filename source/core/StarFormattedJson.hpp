@@ -54,7 +54,7 @@ auto operator<<(std::ostream& os, JsonElement const& elem) -> std::ostream&;
 class FormattedJson {
 public:
   using ElementList = List<JsonElement>;
-  using ElementLocation = size_t;
+  using ElementLocation = std::size_t;
 
   static auto parse(String const& string) -> FormattedJson;
   static auto parseJson(String const& string) -> FormattedJson;
@@ -67,7 +67,7 @@ public:
   [[nodiscard]] auto toJson() const -> Json const&;
 
   [[nodiscard]] auto get(String const& key) const -> FormattedJson;
-  [[nodiscard]] auto get(size_t index) const -> FormattedJson;
+  [[nodiscard]] auto get(std::size_t index) const -> FormattedJson;
 
   // Returns a new FormattedJson with the given values added or erased.
   // Prepend, insert and append update the value in-place if the key already
@@ -79,10 +79,10 @@ public:
   [[nodiscard]] auto set(String const& key, FormattedJson const& value) const -> FormattedJson;
   [[nodiscard]] auto eraseKey(String const& key) const -> FormattedJson;
 
-  [[nodiscard]] auto insert(size_t index, FormattedJson const& value) const -> FormattedJson;
+  [[nodiscard]] auto insert(std::size_t index, FormattedJson const& value) const -> FormattedJson;
   [[nodiscard]] auto append(FormattedJson const& value) const -> FormattedJson;
-  [[nodiscard]] auto set(size_t index, FormattedJson const& value) const -> FormattedJson;
-  [[nodiscard]] auto eraseIndex(size_t index) const -> FormattedJson;
+  [[nodiscard]] auto set(std::size_t index, FormattedJson const& value) const -> FormattedJson;
+  [[nodiscard]] auto eraseIndex(std::size_t index) const -> FormattedJson;
 
   // Returns the number of elements in a Json array, or entries in an object.
   [[nodiscard]] auto size() const -> std::size_t;
@@ -130,6 +130,7 @@ private:
 
 auto operator<<(std::ostream& os, FormattedJson const& json) -> std::ostream&;
 
-}
+}// namespace Star
 
-template <> struct std::formatter<Star::FormattedJson> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::FormattedJson> : Star::ostream_formatter {};

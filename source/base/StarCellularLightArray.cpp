@@ -5,7 +5,7 @@ import std;
 namespace Star {
 
 template <>
-void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, size_t ymin, size_t xmax, size_t ymax) {
+void CellularLightArray<ScalarLightTraits>::calculatePointLighting(std::size_t xmin, std::size_t ymin, std::size_t xmax, std::size_t ymax) {
   float pointPerBlockObstacleAttenuation = 1.0f / m_pointMaxObstacle;
   float pointPerBlockAirAttenuation = 1.0f / m_pointMaxAir;
 
@@ -20,13 +20,13 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
 
     float maxRange = maxIntensity * (light.asSpread ? m_spreadMaxAir : m_pointMaxAir);
     // The min / max considering the radius of the light
-    size_t lxmin = std::floor(std::max<float>(xmin, light.position[0] - maxRange));
-    size_t lymin = std::floor(std::max<float>(ymin, light.position[1] - maxRange));
-    size_t lxmax = std::ceil(std::min<float>(xmax, light.position[0] + maxRange));
-    size_t lymax = std::ceil(std::min<float>(ymax, light.position[1] + maxRange));
+    std::size_t lxmin = std::floor(std::max<float>(xmin, light.position[0] - maxRange));
+    std::size_t lymin = std::floor(std::max<float>(ymin, light.position[1] - maxRange));
+    std::size_t lxmax = std::ceil(std::min<float>(xmax, light.position[0] + maxRange));
+    std::size_t lymax = std::ceil(std::min<float>(ymax, light.position[1] + maxRange));
 
-    for (size_t x = lxmin; x < lxmax; ++x) {
-      for (size_t y = lymin; y < lymax; ++y) {
+    for (std::size_t x = lxmin; x < lxmax; ++x) {
+      for (std::size_t y = lymin; y < lymax; ++y) {
         LightValue lvalue = getLight(x, y);
         // + 0.5f to correct block position to center
         Vec2F blockPos = Vec2F(x + 0.5f, y + 0.5f);
@@ -78,7 +78,7 @@ void CellularLightArray<ScalarLightTraits>::calculatePointLighting(size_t xmin, 
 }
 
 template <>
-void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin, size_t ymin, size_t xmax, size_t ymax) {
+void CellularLightArray<ColoredLightTraits>::calculatePointLighting(std::size_t xmin, std::size_t ymin, std::size_t xmax, std::size_t ymax) {
   float pointPerBlockObstacleAttenuation = 1.0f / m_pointMaxObstacle;
   float pointPerBlockAirAttenuation = 1.0f / m_pointMaxAir;
 
@@ -93,13 +93,13 @@ void CellularLightArray<ColoredLightTraits>::calculatePointLighting(size_t xmin,
 
     float maxRange = maxIntensity * (light.asSpread ? m_spreadMaxAir : m_pointMaxAir);
     // The min / max considering the radius of the light
-    size_t lxmin = std::floor(std::max<float>(xmin, light.position[0] - maxRange));
-    size_t lymin = std::floor(std::max<float>(ymin, light.position[1] - maxRange));
-    size_t lxmax = std::ceil(std::min<float>(xmax, light.position[0] + maxRange));
-    size_t lymax = std::ceil(std::min<float>(ymax, light.position[1] + maxRange));
+    std::size_t lxmin = std::floor(std::max<float>(xmin, light.position[0] - maxRange));
+    std::size_t lymin = std::floor(std::max<float>(ymin, light.position[1] - maxRange));
+    std::size_t lxmax = std::ceil(std::min<float>(xmax, light.position[0] + maxRange));
+    std::size_t lymax = std::ceil(std::min<float>(ymax, light.position[1] + maxRange));
 
-    for (size_t x = lxmin; x < lxmax; ++x) {
-      for (size_t y = lymin; y < lymax; ++y) {
+    for (std::size_t x = lxmin; x < lxmax; ++x) {
+      for (std::size_t y = lymin; y < lymax; ++y) {
         LightValue lvalue = getLight(x, y);
         // + 0.5f to correct block position to center
         Vec2F blockPos = Vec2F(x + 0.5f, y + 0.5f);

@@ -1,26 +1,27 @@
 #pragma once
 
-#include "StarGameTypes.hpp"
+#include "StarBiMap.hpp"
+#include "StarConfig.hpp"
 #include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(BehaviorDatabase);
-STAR_STRUCT(ActionNode);
-STAR_STRUCT(DecoratorNode);
-STAR_STRUCT(SequenceNode);
-STAR_STRUCT(SelectorNode);
-STAR_STRUCT(ParallelNode);
-STAR_STRUCT(DynamicNode);
-STAR_STRUCT(RandomizeNode);
-STAR_STRUCT(BehaviorTree);
+struct SequenceNode;
+struct SelectorNode;
+struct ParallelNode;
+struct DynamicNode;
+struct RandomizeNode;
+struct ActionNode;
+struct DecoratorNode;
+struct BehaviorTree;
 
-typedef Variant<SequenceNode, SelectorNode, ParallelNode, DynamicNode, RandomizeNode> CompositeNode;
+using CompositeNode = Variant<SequenceNode, SelectorNode, ParallelNode, DynamicNode, RandomizeNode>;
 
-typedef Variant<ActionNode, DecoratorNode, CompositeNode, BehaviorTreeConstPtr> BehaviorNode;
-typedef std::shared_ptr<const BehaviorNode> BehaviorNodeConstPtr;
+using BehaviorNode = Variant<ActionNode, DecoratorNode, CompositeNode, ConstPtr<BehaviorTree>>;
 
-enum class NodeParameterType : uint8_t {
+enum class NodeParameterType : std::uint8_t {
   Json,
   Entity,
   Position,
@@ -33,19 +34,19 @@ enum class NodeParameterType : uint8_t {
 };
 extern EnumMap<NodeParameterType> const NodeParameterTypeNames;
 
-typedef Variant<String, Json> NodeParameterValue;
-typedef pair<NodeParameterType, NodeParameterValue> NodeParameter;
-typedef pair<NodeParameterType, pair<std::optional<String>, bool>> NodeOutput;
+using NodeParameterValue = Variant<String, Json>;
+using NodeParameter = std::pair<NodeParameterType, NodeParameterValue>;
+using NodeOutput = std::pair<NodeParameterType, std::pair<std::optional<String>, bool>>;
 
-NodeParameterValue nodeParameterValueFromJson(Json const& json);
+auto nodeParameterValueFromJson(Json const& json) -> NodeParameterValue;
 
-Json jsonFromNodeParameter(NodeParameter const& parameter);
-NodeParameter jsonToNodeParameter(Json const& json);
+auto jsonFromNodeParameter(NodeParameter const& parameter) -> Json;
+auto jsonToNodeParameter(Json const& json) -> NodeParameter;
 
-Json jsonFromNodeOutput(NodeOutput const& output);
-NodeOutput jsonToNodeOutput(Json const& json);
+auto jsonFromNodeOutput(NodeOutput const& output) -> Json;
+auto jsonToNodeOutput(Json const& json) -> NodeOutput;
 
-enum class BehaviorNodeType : uint16_t {
+enum class BehaviorNodeType : std::uint16_t {
   Action,
   Decorator,
   Composite,
@@ -53,7 +54,7 @@ enum class BehaviorNodeType : uint16_t {
 };
 extern EnumMap<BehaviorNodeType> const BehaviorNodeTypeNames;
 
-enum class CompositeType : uint16_t {
+enum class CompositeType : std::uint16_t {
   Sequence,
   Selector,
   Parallel,
@@ -63,8 +64,8 @@ enum class CompositeType : uint16_t {
 extern EnumMap<CompositeType> const CompositeTypeNames;
 
 // replaces global tags in nodeParameters in place
-NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters);
-std::optional<String> replaceOutputBehaviorTag(std::optional<String> const& output, StringMap<NodeParameterValue> const& treeParameters);
+auto replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters) -> NodeParameterValue;
+auto replaceOutputBehaviorTag(std::optional<String> const& output, StringMap<NodeParameterValue> const& treeParameters) -> std::optional<String>;
 void applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<NodeParameterValue> const& treeParameters);
 
 struct ActionNode {
@@ -76,43 +77,43 @@ struct ActionNode {
 };
 
 struct DecoratorNode {
-  DecoratorNode(String const& name, StringMap<NodeParameter> parameters, BehaviorNodeConstPtr child);
+  DecoratorNode(String const& name, StringMap<NodeParameter> parameters, ConstPtr<BehaviorNode> child);
 
   String name;
   StringMap<NodeParameter> parameters;
-  BehaviorNodeConstPtr child;
+  ConstPtr<BehaviorNode> child;
 };
 
 struct SequenceNode {
-  SequenceNode(List<BehaviorNodeConstPtr> children);
+  SequenceNode(List<ConstPtr<BehaviorNode>> children);
 
-  List<BehaviorNodeConstPtr> children;
+  List<ConstPtr<BehaviorNode>> children;
 };
 
 struct SelectorNode {
-  SelectorNode(List<BehaviorNodeConstPtr> children);
+  SelectorNode(List<ConstPtr<BehaviorNode>> children);
 
-  List<BehaviorNodeConstPtr> children;
+  List<ConstPtr<BehaviorNode>> children;
 };
 
 struct ParallelNode {
-  ParallelNode(StringMap<NodeParameter>, List<BehaviorNodeConstPtr> children);
+  ParallelNode(StringMap<NodeParameter>, List<ConstPtr<BehaviorNode>> children);
 
   int succeed;
   int fail;
-  List<BehaviorNodeConstPtr> children;
+  List<ConstPtr<BehaviorNode>> children;
 };
 
 struct DynamicNode {
-  DynamicNode(List<BehaviorNodeConstPtr> children);
+  DynamicNode(List<ConstPtr<BehaviorNode>> children);
 
-  List<BehaviorNodeConstPtr> children;
+  List<ConstPtr<BehaviorNode>> children;
 };
 
 struct RandomizeNode {
-  RandomizeNode(List<BehaviorNodeConstPtr> children);
+  RandomizeNode(List<ConstPtr<BehaviorNode>> children);
 
-  List<BehaviorNodeConstPtr> children;
+  List<ConstPtr<BehaviorNode>> children;
 };
 
 struct BehaviorTree {
@@ -123,30 +124,28 @@ struct BehaviorTree {
   StringSet functions;
   JsonObject parameters;
 
-  BehaviorNodeConstPtr root;
+  ConstPtr<BehaviorNode> root;
 };
-
-typedef std::shared_ptr<const BehaviorNode> BehaviorNodeConstPtr;
 
 class BehaviorDatabase {
 public:
   BehaviorDatabase();
 
-  BehaviorTreeConstPtr behaviorTree(String const& name) const;
-  BehaviorTreeConstPtr buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides = {}) const;
-  Json behaviorConfig(String const& name) const;
+  [[nodiscard]] auto behaviorTree(String const& name) const -> ConstPtr<BehaviorTree>;
+  [[nodiscard]] auto buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides = {}) const -> ConstPtr<BehaviorTree>;
+  [[nodiscard]] auto behaviorConfig(String const& name) const -> Json;
 
 private:
   StringMap<Json> m_configs;
-  StringMap<BehaviorTreeConstPtr> m_behaviors;
+  StringMap<ConstPtr<BehaviorTree>> m_behaviors;
   StringMap<StringMap<NodeParameter>> m_nodeParameters;
   StringMap<StringMap<NodeOutput>> m_nodeOutput;
 
   void loadTree(String const& name);
 
   // constructs node variants
-  CompositeNode compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
-  BehaviorNodeConstPtr behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const;
+  auto compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const -> CompositeNode;
+  auto behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const -> ConstPtr<BehaviorNode>;
 };
 
-}
+}// namespace Star

@@ -27,7 +27,7 @@ auto angleLerp(T1 const& offset, T2 const& f0, T2 const& f1) -> T2 {
 
 template <typename T1, typename T2>
 auto sinEase(T1 const& offset, T2 const& f0, T2 const& f1) -> T2 {
-  T1 w = (sin(offset * Constants::pi - Constants::pi / 2) + 1) / 2;
+  T1 w = (std::sin(offset * Constants::pi - Constants::pi / 2) + 1) / 2;
   return f0 * (1 - w) + f1 * w;
 }
 
@@ -38,9 +38,9 @@ auto lerp(T1 const& offset, T2 const& f0, T2 const& f1) -> T2 {
 
 template <typename T1, typename T2>
 auto lerpWithLimit(std::optional<T2> const& limit, T1 const& offset, T2 const& f0, T2 const& f1) -> T2 {
-  if (limit && abs(f1 - f0) > *limit)
+  if (limit && std::abs(f1 - f0) > *limit)
     return f1;
-  return lerp(offset, f0, f1);
+  return std::lerp(offset, f0, f1);
 }
 
 template <typename T1, typename T2>

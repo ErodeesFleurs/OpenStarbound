@@ -1,7 +1,6 @@
 #include "StarPlatformerAStarTypes.hpp"
 
-namespace Star {
-namespace PlatformerAStar {
+namespace Star::PlatformerAStar {
 
 EnumMap<Action> const ActionNames{
   {Action::Walk, "Walk"},
@@ -10,12 +9,10 @@ EnumMap<Action> const ActionNames{
   {Action::Drop, "Drop"},
   {Action::Swim, "Swim"},
   {Action::Fly, "Fly"},
-  {Action::Land, "Land"}
-};
+  {Action::Land, "Land"}};
 
-Node Node::withVelocity(Vec2F velocity) const {
-  return {position, velocity};
+auto Node::withVelocity(Vec2F velocity) const -> Node {
+  return {.position = position, .velocity = velocity};
 }
 
-}
-}
+}// namespace Star::PlatformerAStar

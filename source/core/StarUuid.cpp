@@ -3,6 +3,8 @@
 #include "StarFormat.hpp"
 #include "StarRandom.hpp"
 
+import std;
+
 namespace Star {
 
 Uuid::Uuid() : Uuid(Random::randBytes(UuidSize)) {}
@@ -52,9 +54,9 @@ auto Uuid::operator>=(Uuid const& u) const -> bool {
   return m_data >= u.m_data;
 }
 
-auto hash<Uuid>::operator()(Uuid const& u) const -> size_t {
-  size_t hashval = 0;
-  for (size_t i = 0; i < UuidSize; ++i)
+auto hash<Uuid>::operator()(Uuid const& u) const -> std::size_t {
+  std::size_t hashval = 0;
+  for (std::size_t i = 0; i < UuidSize; ++i)
     hashCombine(hashval, u.ptr()[i]);
   return hashval;
 }

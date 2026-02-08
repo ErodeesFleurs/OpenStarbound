@@ -1,12 +1,12 @@
 #pragma once
 
-#include "StarMathCommon.hpp"
+#include "StarConfig.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarMathCommon.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
 
 // Manages a collection of items with non-zero counts, and putting them in /
 // stacking them / consuming them.  As items are taken out of the ItemBag, any
@@ -18,23 +18,23 @@ STAR_CLASS(ItemBag);
 class ItemBag {
 public:
   struct ItemsFitWhereResult {
-    uint64_t leftover;
-    List<size_t> slots;
+    std::uint64_t leftover;
+    List<std::size_t> slots;
   };
 
   ItemBag();
-  explicit ItemBag(size_t size);
+  explicit ItemBag(std::size_t size);
 
-  static ItemBag fromJson(Json const& spec);
-  static ItemBag loadStore(Json const& store);
+  static auto fromJson(Json const& spec) -> ItemBag;
+  static auto loadStore(Json const& store) -> ItemBag;
 
-  Json toJson() const;
-  Json diskStore() const;
+  [[nodiscard]] auto toJson() const -> Json;
+  [[nodiscard]] auto diskStore() const -> Json;
 
-  size_t size() const;
+  [[nodiscard]] auto size() const -> std::size_t;
   // May reshape the container, but will try not to lose any container
   // contents.  Returns overflow.
-  List<ItemPtr> resize(size_t size);
+  auto resize(std::size_t size) -> List<Ptr<Item>>;
   // Clears all item slots, does not change ItemBag size
   void clearItems();
 
@@ -42,58 +42,58 @@ public:
   // methods should ever return a null item, it can be usefull to force cleanup
   // to remove empty items from memory.  If any action was done, will return
   // true.
-  bool cleanup() const;
+  [[nodiscard]] auto cleanup() const -> bool;
 
   // Direct access to item list
-  List<ItemPtr>& items();
-  List<ItemPtr> const& items() const;
+  auto items() -> List<Ptr<Item>>&;
+  [[nodiscard]] auto items() const -> List<Ptr<Item>> const&;
 
-  ItemPtr const& at(size_t i) const;
-  ItemPtr& at(size_t i);
+  [[nodiscard]] auto at(std::size_t i) const -> Ptr<Item> const&;
+  auto at(std::size_t i) -> Ptr<Item>&;
 
   // Returns all non-empty items and clears container contents
-  List<ItemPtr> takeAll();
+  auto takeAll() -> List<Ptr<Item>>;
 
   // Directly set the value of an item at a given slot
-  void setItem(size_t pos, ItemPtr item);
+  void setItem(std::size_t pos, Ptr<Item> item);
 
   // Put items into the given slot.  Returns number of items left over
-  ItemPtr putItems(size_t pos, ItemPtr items);
+  auto putItems(std::size_t pos, Ptr<Item> items) -> Ptr<Item>;
   // Take a maximum number of items from the given position, defaults to all.
-  ItemPtr takeItems(size_t pos, uint64_t count = highest<uint64_t>());
+  auto takeItems(std::size_t pos, std::uint64_t count = highest<std::uint64_t>()) -> Ptr<Item>;
   // Put items in the slot by combining, or swap the current items with the
   // given items.
-  ItemPtr swapItems(size_t pos, ItemPtr items, bool tryCombine = true);
+  auto swapItems(std::size_t pos, Ptr<Item> items, bool tryCombine = true) -> Ptr<Item>;
 
   // Destroys the given number of items, only if the entirety of count is
   // available, returns success.
-  bool consumeItems(size_t pos, uint64_t count);
+  auto consumeItems(std::size_t pos, std::uint64_t count) -> bool;
 
   // Consume any items from any stack that matches the given item descriptor,
   // only if the entirety of the count is available.  Returns success.
-  bool consumeItems(ItemDescriptor const& descriptor, bool exactMatch = false);
+  auto consumeItems(ItemDescriptor const& descriptor, bool exactMatch = false) -> bool;
 
   // Returns the number of times this ItemDescriptor could be consumed using
   // the items in this container.
-  uint64_t available(ItemDescriptor const& descriptor, bool exactMatch = false) const;
+  [[nodiscard]] auto available(ItemDescriptor const& descriptor, bool exactMatch = false) const -> std::uint64_t;
 
   // Returns the number of items that can fit anywhere in the bag, including
   // being split up.
-  uint64_t itemsCanFit(ItemConstPtr const& items) const;
+  [[nodiscard]] auto itemsCanFit(ConstPtr<Item> const& items) const -> std::uint64_t;
   // Returns the number of items that can be stacked with existing items
   // anywhere in the bag.
-  uint64_t itemsCanStack(ItemConstPtr const& items) const;
+  [[nodiscard]] auto itemsCanStack(ConstPtr<Item> const& items) const -> std::uint64_t;
 
   // Returns where the items would fit if inserted, including any splitting up
-  ItemsFitWhereResult itemsFitWhere(ItemConstPtr const& items, uint64_t max = highest<uint64_t>()) const;
+  [[nodiscard]] auto itemsFitWhere(ConstPtr<Item> const& items, std::uint64_t max = highest<std::uint64_t>()) const -> ItemsFitWhereResult;
 
   // Add items anywhere in the bag. Tries to stack items first.  If any items
   // are left over, addItems returns them, otherwise null.
-  ItemPtr addItems(ItemPtr items);
+  auto addItems(Ptr<Item> items) -> Ptr<Item>;
 
   // Add items to the bag, but only if they stack with existing items in the
   // bag.
-  ItemPtr stackItems(ItemPtr items);
+  auto stackItems(Ptr<Item> items) -> Ptr<Item>;
 
   // Attempt to condense all stacks in the given bag
   void condenseStacks();
@@ -105,14 +105,14 @@ public:
 private:
   // If the from item can stack into the given to item, returns the amount that
   // would be transfered.
-  static uint64_t stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from);
+  static auto stackTransfer(ConstPtr<Item> const& to, ConstPtr<Item> const& from) -> std::uint64_t;
 
   // Returns the slot that contains the item already and has the *highest*
   // stack count but not full, or an empty slot, or std::numeric_limits<std::size_t>::max() for no room.
-  size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const;
-  size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const;
+  auto bestSlotAvailable(ConstPtr<Item> const& item, bool stacksOnly, std::function<bool(std::size_t)> test) const -> std::size_t;
+  [[nodiscard]] auto bestSlotAvailable(ConstPtr<Item> const& item, bool stacksOnly) const -> std::size_t;
 
-  List<ItemPtr> m_items;
+  List<Ptr<Item>> m_items;
 };
 
-}
+}// namespace Star

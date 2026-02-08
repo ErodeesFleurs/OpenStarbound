@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarAiTypes.hpp"
+#include "StarAnimation.hpp"
 
 namespace Star {
 
@@ -8,19 +9,19 @@ class AiDatabase {
 public:
   AiDatabase();
 
-  AiMission mission(String const& missionName) const;
+  [[nodiscard]] auto mission(String const& missionName) const -> AiMission;
 
-  AiSpeech shipStatus(unsigned shipLevel) const;
-  AiSpeech noMissionsSpeech() const;
-  AiSpeech noCrewSpeech() const;
+  [[nodiscard]] auto shipStatus(unsigned shipLevel) const -> AiSpeech;
+  [[nodiscard]] auto noMissionsSpeech() const -> AiSpeech;
+  [[nodiscard]] auto noCrewSpeech() const -> AiSpeech;
 
-  String portraitImage(String const& species, String const& frame = "idle.0") const;
-  Animation animation(String const& species, String const& animationName) const;
-  Animation staticAnimation(String const& species) const;
-  Animation scanlineAnimation() const;
+  [[nodiscard]] auto portraitImage(String const& species, String const& frame = "idle.0") const -> String;
+  [[nodiscard]] auto animation(String const& species, String const& animationName) const -> Animation;
+  [[nodiscard]] auto staticAnimation(String const& species) const -> Animation;
+  [[nodiscard]] auto scanlineAnimation() const -> Animation;
 
-  float charactersPerSecond() const;
-  String defaultAnimation() const;
+  [[nodiscard]] auto charactersPerSecond() const -> float;
+  [[nodiscard]] auto defaultAnimation() const -> String;
 
 private:
   struct AiAnimationConfig {
@@ -41,11 +42,11 @@ private:
     String staticFrames;
   };
 
-  static AiSpeech parseSpeech(Json const& v);
-  static AiSpeciesParameters parseSpeciesParameters(Json const& vm);
+  static auto parseSpeech(Json const& v) -> AiSpeech;
+  static auto parseSpeciesParameters(Json const& vm) -> AiSpeciesParameters;
 
-  static AiSpeciesMissionText parseSpeciesMissionText(Json const& vm);
-  static AiMission parseMission(Json const& vm);
+  static auto parseSpeciesMissionText(Json const& vm) -> AiSpeciesMissionText;
+  static auto parseMission(Json const& vm) -> AiMission;
 
   StringMap<AiMission> m_missions;
   StringMap<AiSpeciesParameters> m_speciesParameters;
@@ -56,4 +57,4 @@ private:
   AiAnimationConfig m_animationConfig;
 };
 
-}
+}// namespace Star

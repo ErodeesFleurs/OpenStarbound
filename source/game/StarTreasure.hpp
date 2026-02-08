@@ -1,51 +1,53 @@
 #pragma once
 
+#include "StarConfig.hpp"
+#include "StarException.hpp"
+#include "StarGameTypes.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarParametricFunction.hpp"
 #include "StarWeightedPool.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarGameTypes.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
-STAR_CLASS(ContainerObject);
-STAR_CLASS(TreasureDatabase);
+class ItemBag;
+class ContainerObject;
+class World;
 
-STAR_EXCEPTION(TreasureException, StarException);
+using TreasureException = ExceptionDerived<"TreasureException">;
 
 class TreasureDatabase {
 public:
   TreasureDatabase();
 
-  StringList treasurePools() const;
-  bool isTreasurePool(String const& treasurePool) const;
+  [[nodiscard]] auto treasurePools() const -> StringList;
+  [[nodiscard]] auto isTreasurePool(String const& treasurePool) const -> bool;
 
-  StringList treasureChestSets() const;
-  bool isTreasureChestSet(String const& treasurePool) const;
+  [[nodiscard]] auto treasureChestSets() const -> StringList;
+  [[nodiscard]] auto isTreasureChestSet(String const& treasurePool) const -> bool;
 
-  List<ItemPtr> createTreasure(String const& treasurePool, float level) const;
-  List<ItemPtr> createTreasure(String const& treasurePool, float level, uint64_t seed) const;
+  [[nodiscard]] auto createTreasure(String const& treasurePool, float level) const -> List<Ptr<Item>>;
+  [[nodiscard]] auto createTreasure(String const& treasurePool, float level, std::uint64_t seed) const -> List<Ptr<Item>>;
 
   // Adds created treasure to the given ItemBags, does not clear the ItemBag
   // first.  Returns overflow items.
-  List<ItemPtr> fillWithTreasure(ItemBagPtr const& itemBag, String const& treasurePool, float level) const;
-  List<ItemPtr> fillWithTreasure(ItemBagPtr const& itemBag, String const& treasurePool, float level, uint64_t seed) const;
+  [[nodiscard]] auto fillWithTreasure(Ptr<ItemBag> const& itemBag, String const& treasurePool, float level) const -> List<Ptr<Item>>;
+  [[nodiscard]] auto fillWithTreasure(Ptr<ItemBag> const& itemBag, String const& treasurePool, float level, std::uint64_t seed) const -> List<Ptr<Item>>;
 
   // If the given container does not fit at this position, or if the treasure
   // box set does not have an entry with a minimum level less than the given
   // world threat level, this method will return null.
-  ContainerObjectPtr createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction) const;
-  ContainerObjectPtr createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const;
+  auto createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction) const -> Ptr<ContainerObject>;
+  auto createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, std::uint64_t seed) const -> Ptr<ContainerObject>;
 
 private:
-  List<ItemPtr> createTreasure(String const& treasurePool, float level, uint64_t seed, StringSet visitedPools) const;
+  [[nodiscard]] auto createTreasure(String const& treasurePool, float level, std::uint64_t seed, StringSet visitedPools) const -> List<Ptr<Item>>;
 
   // Specifies either an item descriptor or the name of a valid treasurepool to
   // be
   // used when an entry is selected in a "fill" or "pool" list
-  typedef MVariant<String, ItemDescriptor> TreasureEntry;
+  using TreasureEntry = MVariant<String, ItemDescriptor>;
 
   struct ItemPool {
     ItemPool();
@@ -71,7 +73,7 @@ private:
     // Note that this flag does not apply to child pools
     bool allowDuplication;
   };
-  typedef ParametricTable<float, ItemPool> TreasurePool;
+  using TreasurePool = ParametricTable<float, ItemPool>;
 
   struct TreasureChest {
     TreasureChest();
@@ -80,10 +82,10 @@ private:
     String treasurePool;
     float minimumLevel;
   };
-  typedef List<TreasureChest> TreasureChestSet;
+  using TreasureChestSet = List<TreasureChest>;
 
   StringMap<TreasurePool> m_treasurePools;
   StringMap<TreasureChestSet> m_treasureChestSets;
 };
 
-}
+}// namespace Star

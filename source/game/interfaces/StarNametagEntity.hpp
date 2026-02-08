@@ -2,17 +2,17 @@
 
 #include "StarEntity.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(NametagEntity);
+namespace Star {
 
 class NametagEntity : public virtual Entity {
 public:
-  virtual String nametag() const = 0;
-  virtual std::optional<String> statusText() const = 0;
-  virtual bool displayNametag() const = 0;
-  virtual Vec3B nametagColor() const = 0;
-  virtual Vec2F nametagOrigin() const = 0;
+  [[nodiscard]] virtual auto nametag() const -> String = 0;
+  [[nodiscard]] virtual auto statusText() const -> std::optional<String> = 0;
+  [[nodiscard]] virtual auto displayNametag() const -> bool = 0;
+  [[nodiscard]] virtual auto nametagColor() const -> Vec3B = 0;
+  [[nodiscard]] virtual auto nametagOrigin() const -> Vec2F = 0;
 };
 
-}
+}// namespace Star

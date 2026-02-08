@@ -1,31 +1,35 @@
 #pragma once
 
+#include "StarConfig.hpp"
+#include "StarException.hpp"
 #include "StarJson.hpp"
 #include "StarVehicle.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(Rebuilder);
+class Rebuilder;
 
-STAR_EXCEPTION(VehicleDatabaseException, StarException);
+using VehicleDatabaseException = ExceptionDerived<"VehicleDatabaseException">;
 
 class VehicleDatabase {
 public:
   VehicleDatabase();
 
-  VehiclePtr create(String const& vehicleName, Json const& extraConfig = Json()) const;
+  auto create(String const& vehicleName, Json const& extraConfig = Json()) const -> Ptr<Vehicle>;
 
-  ByteArray netStore(VehiclePtr const& vehicle, NetCompatibilityRules rules) const;
-  VehiclePtr netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const;
+  auto netStore(Ptr<Vehicle> const& vehicle, NetCompatibilityRules rules) const -> ByteArray;
+  auto netLoad(ByteArray const& netStore, NetCompatibilityRules rules) const -> Ptr<Vehicle>;
 
-  Json diskStore(VehiclePtr const& vehicle) const;
-  VehiclePtr diskLoad(Json const& diskStore) const;
+  auto diskStore(Ptr<Vehicle> const& vehicle) const -> Json;
+  auto diskLoad(Json const& diskStore) const -> Ptr<Vehicle>;
 
 private:
-  StringMap<pair<String, Json>> m_vehicles;
+  StringMap<std::pair<String, Json>> m_vehicles;
 
   mutable RecursiveMutex m_luaMutex;
-  RebuilderPtr m_rebuilder;
+  Ptr<Rebuilder> m_rebuilder;
 };
 
-}
+}// namespace Star

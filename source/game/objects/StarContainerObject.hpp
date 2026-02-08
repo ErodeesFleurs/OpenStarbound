@@ -1,21 +1,18 @@
 #pragma once
 
-#include <optional>
-
-
-#include "StarItemBag.hpp"
-#include "StarObject.hpp"
-#include "StarWeightedPool.hpp"
+#include "StarConfig.hpp"
 #include "StarContainerEntity.hpp"
+#include "StarItemBag.hpp"
 #include "StarItemRecipe.hpp"
+#include "StarObject.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(ContainerObject);
-
 class ContainerObject : public Object, public virtual ContainerEntity {
 public:
-  ContainerObject(ObjectConfigConstPtr config, Json const& parameters);
+  ContainerObject(ConstPtr<ObjectConfig> config, Json const& parameters);
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
 
@@ -23,61 +20,61 @@ public:
   void render(RenderCallback* renderCallback) override;
 
   void destroy(RenderCallback* renderCallback) override;
-  InteractAction interact(InteractRequest const& request) override;
+  auto interact(InteractRequest const& request) -> InteractAction override;
 
-  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) override;
+  auto receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) -> std::optional<Json> override;
 
-  Json containerGuiConfig() const override;
-  String containerDescription() const override;
-  String containerSubTitle() const override;
-  ItemDescriptor iconItem() const override;
+  auto containerGuiConfig() const -> Json override;
+  auto containerDescription() const -> String override;
+  auto containerSubTitle() const -> String override;
+  auto iconItem() const -> ItemDescriptor override;
 
-  ItemBagConstPtr itemBag() const override;
+  auto itemBag() const -> ConstPtr<ItemBag> override;
 
   void containerOpen() override;
   void containerClose() override;
 
   void startCrafting() override;
   void stopCrafting() override;
-  bool isCrafting() const override;
-  float craftingProgress() const override;
+  auto isCrafting() const -> bool override;
+  auto craftingProgress() const -> float override;
 
   void burnContainerContents() override;
 
-  RpcPromise<ItemPtr> addItems(ItemPtr const& items) override;
-  RpcPromise<ItemPtr> putItems(size_t slot, ItemPtr const& items) override;
-  RpcPromise<ItemPtr> takeItems(size_t slot, size_t count = std::numeric_limits<std::size_t>::max()) override;
-  RpcPromise<ItemPtr> swapItems(size_t slot, ItemPtr const& items, bool tryCombine = true) override;
-  RpcPromise<ItemPtr> applyAugment(size_t slot, ItemPtr const& augment) override;
-  RpcPromise<bool> consumeItems(ItemDescriptor const& descriptor) override;
-  RpcPromise<bool> consumeItems(size_t slot, size_t count) override;
-  RpcPromise<List<ItemPtr>> clearContainer() override;
+  auto addItems(Ptr<Item> const& items) -> RpcPromise<Ptr<Item>> override;
+  auto putItems(size_t slot, Ptr<Item> const& items) -> RpcPromise<Ptr<Item>> override;
+  auto takeItems(size_t slot, size_t count = std::numeric_limits<std::size_t>::max()) -> RpcPromise<Ptr<Item>> override;
+  auto swapItems(size_t slot, Ptr<Item> const& items, bool tryCombine = true) -> RpcPromise<Ptr<Item>> override;
+  auto applyAugment(size_t slot, Ptr<Item> const& augment) -> RpcPromise<Ptr<Item>> override;
+  auto consumeItems(ItemDescriptor const& descriptor) -> RpcPromise<bool> override;
+  auto consumeItems(size_t slot, size_t count) -> RpcPromise<bool> override;
+  auto clearContainer() -> RpcPromise<List<Ptr<Item>>> override;
 
 protected:
   void getNetStates(bool initial) override;
   void setNetStates() override;
 
   void readStoredData(Json const& diskStore) override;
-  Json writeStoredData() const override;
+  auto writeStoredData() const -> Json override;
 
 private:
-  typedef std::function<void(ContainerObject*)> ContainerCallback;
+  using ContainerCallback = std::function<void(ContainerObject*)>;
 
-  ItemRecipe recipeForMaterials(List<ItemPtr> const& inputItems);
+  auto recipeForMaterials(List<Ptr<Item>> const& inputItems) -> ItemRecipe;
   void tickCrafting(float dt);
 
-  ItemPtr doAddItems(ItemPtr const& items);
-  ItemPtr doStackItems(ItemPtr const& items);
-  ItemPtr doPutItems(size_t slot, ItemPtr const& items);
-  ItemPtr doTakeItems(size_t slot, size_t count = std::numeric_limits<std::size_t>::max());
-  ItemPtr doSwapItems(size_t slot, ItemPtr const& items, bool tryCombine = true);
-  ItemPtr doApplyAugment(size_t slot, ItemPtr const& augment);
-  bool doConsumeItems(ItemDescriptor const& descriptor);
-  bool doConsumeItems(size_t slot, size_t count);
-  List<ItemPtr> doClearContainer();
+  auto doAddItems(Ptr<Item> const& items) -> Ptr<Item>;
+  auto doStackItems(Ptr<Item> const& items) -> Ptr<Item>;
+  auto doPutItems(size_t slot, Ptr<Item> const& items) -> Ptr<Item>;
+  auto doTakeItems(size_t slot, size_t count = std::numeric_limits<std::size_t>::max()) -> Ptr<Item>;
+  auto doSwapItems(size_t slot, Ptr<Item> const& items, bool tryCombine = true) -> Ptr<Item>;
+  auto doApplyAugment(size_t slot, Ptr<Item> const& augment) -> Ptr<Item>;
+  auto doConsumeItems(ItemDescriptor const& descriptor) -> bool;
+  auto doConsumeItems(size_t slot, size_t count) -> bool;
+  auto doClearContainer() -> List<Ptr<Item>>;
 
-  template<typename T>
-  RpcPromise<T> addSlavePromise(String const& message, JsonArray const& args, function<T(Json)> converter);
+  template <typename T>
+  auto addSlavePromise(String const& message, JsonArray const& args, std::function<T(Json)> converter) -> RpcPromise<T>;
 
   void itemsUpdated();
 
@@ -86,7 +83,7 @@ private:
   NetElementBool m_crafting;
   NetElementFloat m_craftingProgress;
 
-  ItemBagPtr m_items;
+  Ptr<ItemBag> m_items;
   NetElementBytes m_itemsNetState;
 
   // master only
@@ -106,7 +103,7 @@ private:
 
   EpochTimer m_ageItemsTimer;
 
-  List<ItemPtr> m_lostItems;
+  List<Ptr<Item>> m_lostItems;
 };
 
-}
+}// namespace Star

@@ -1,19 +1,20 @@
 #pragma once
 
-#include <optional>
-
-#include "StarEither.hpp"
+#include "StarConfig.hpp"
+#include "StarNetElementBasicFields.hpp"
+#include "StarNetElementFloatFields.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarCelestialParameters.hpp"
 #include "StarSkyParameters.hpp"
 #include "StarSkyRenderData.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(Clock);
-STAR_CLASS(AudioInstance);
+class Clock;
+class AudioInstance;
 
-STAR_CLASS(Sky);
+// STAR_CLASS(Sky);
 
 // Sky objects, such as stars and orbiters, are given in a pseudo screen space,
 // "view space", that does not take the pixel ratio into account.  "viewSize"
@@ -32,75 +33,75 @@ public:
 
   void jumpTo(SkyParameters SkyParameters);
 
-  pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  auto writeUpdate(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t>;
   void readUpdate(ByteArray data, NetCompatibilityRules rules = {});
-  
+
   // handles flying and warp state transitions
   void stateUpdate();
   void update(double dt);
 
   void setType(SkyType type);
-  SkyType type() const;
+  auto type() const -> SkyType;
 
-  bool inSpace() const;
+  auto inSpace() const -> bool;
 
-  uint64_t seed() const;
+  auto seed() const -> std::uint64_t;
 
-  float dayLength() const;
-  uint32_t day() const;
-  float timeOfDay() const;
+  auto dayLength() const -> float;
+  auto day() const -> std::uint32_t;
+  auto timeOfDay() const -> float;
 
   // Total time since the 0th day for this world.
-  double epochTime() const;
+  auto epochTime() const -> double;
   void setEpochTime(double epochTime);
 
   // Altitude is used to determine, in Atmospheric skies, the percentage of the
   // atmosphere to draw and how much like space it should appear.
-  float altitude() const;
+  auto altitude() const -> float;
   void setAltitude(float altitude);
 
   // If a reference clock is set, then the epoch time is driven by the
   // reference clock rather than an internal timer
-  void setReferenceClock(ClockConstPtr const& referenceClock);
-  ClockConstPtr referenceClock() const;
+  void setReferenceClock(ConstPtr<Clock> const& referenceClock);
+  auto referenceClock() const -> ConstPtr<Clock>;
 
-  String ambientNoise() const;
-  List<AudioInstancePtr> pullSounds();
+  auto ambientNoise() const -> String;
+  auto pullSounds() -> List<Ptr<AudioInstance>>;
 
   // How close is the atmosphere to space?
-  float spaceLevel() const;
+  auto spaceLevel() const -> float;
 
-  float orbitAngle() const;
-  bool isDayTime() const;
+  auto orbitAngle() const -> float;
+  auto isDayTime() const -> bool;
 
   // Ranges from 0.0 to 1.0  Blended periodic curve with a period of
   // clock.dayLength, and the blend region size is determined by
   // the variant asset "dayTransitionTime"
-  float dayLevel() const;
+  auto dayLevel() const -> float;
 
   // Returns a value that cycles through the range [0.0, 4.0).  0.0 / 4.0 is
   // mid-morning, 1.0 is mid-day, 2.0 is mid-evening, and 3.0 is mid-night.
   // Does not cycle through evenly, the value will "stick" to mid-day and
   // mid-night based on the value of the variant asset "dayTransitionTime"
-  float dayCycle() const;
+  auto dayCycle() const -> float;
 
-  float skyAlpha() const;
+  auto skyAlpha() const -> float;
 
-  Color environmentLight() const;
-  Color mainSkyColor() const;
+  auto environmentLight() const -> Color;
+  auto mainSkyColor() const -> Color;
 
   // Base sky rect colors, top and bottom, includes calculation based on day /
   // night alpha
-  pair<Color, Color> skyRectColors() const;
-  Color skyFlashColor() const;
+  auto skyRectColors() const -> std::pair<Color, Color>;
+  auto skyFlashColor() const -> Color;
 
-  bool flying() const;
-  FlyingType flyingType() const;
-  float warpProgress() const;
-  WarpPhase warpPhase() const;
-  bool inHyperspace() const;
+  auto flying() const -> bool;
+  auto flyingType() const -> FlyingType;
+  auto warpProgress() const -> float;
+  auto warpPhase() const -> WarpPhase;
+  auto inHyperspace() const -> bool;
 
-  SkyRenderData renderData() const;
+  auto renderData() const -> SkyRenderData;
 
 private:
   // TODO: This needs to be more explicit/handled better
@@ -111,16 +112,16 @@ private:
 
   void enterHyperspace();
   void exitHyperspace();
-  bool controlledMovement(JsonArray const& path, Json const& origin, float timeOffset);
-  Vec2F getStarOffset() const;
-  float getStarRotation() const;
-  Vec2F getWorldOffset() const;
-  float getWorldRotation() const;
-  float speedupTime() const;
-  float slowdownTime() const;
+  auto controlledMovement(JsonArray const& path, Json const& origin, float timeOffset) -> bool;
+  auto getStarOffset() const -> Vec2F;
+  auto getStarRotation() const -> float;
+  auto getWorldOffset() const -> Vec2F;
+  auto getWorldRotation() const -> float;
+  auto speedupTime() const -> float;
+  auto slowdownTime() const -> float;
 
   void skyParametersUpdated();
- 
+
   Json m_settings;
   SkyParameters m_skyParameters;
   bool m_skyParametersUpdated;
@@ -129,7 +130,7 @@ private:
 
   double m_time = 0.0;
 
-  ClockConstPtr m_referenceClock;
+  ConstPtr<Clock> m_referenceClock;
   std::optional<double> m_clockTrackingTime;
 
   float m_altitude = 0.0f;
@@ -166,7 +167,7 @@ private:
   Vec2F m_pathOffset;
   float m_pathRotation = 0.0f;
 
-  size_t m_starFrames = 0;
+  std::size_t m_starFrames = 0;
   StringList m_starList;
   StringList m_hyperStarList;
 
@@ -189,4 +190,4 @@ private:
   NetElementFloat m_flyingTimerNetState;
 };
 
-}
+}// namespace Star

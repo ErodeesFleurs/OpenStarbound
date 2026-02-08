@@ -1,15 +1,16 @@
 #pragma once
 
-#include "StarGameTypes.hpp"
+#include "StarBiMap.hpp"
+#include "StarException.hpp"
 #include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(CollectionDatabaseException, StarException);
+using CollectionDatabaseException = ExceptionDerived<"CollectionDatabaseException">;
 
-STAR_CLASS(CollectionDatabase);
-
-enum class CollectionType : uint16_t {
+enum class CollectionType : std::uint16_t {
   Generic,
   Item,
   Monster
@@ -40,21 +41,20 @@ class CollectionDatabase {
 public:
   CollectionDatabase();
 
-  List<Collection> collections() const;
-  Collection collection(String const& collectionName) const;
-  List<Collectable> collectables(String const& collectionName) const;
-  Collectable collectable(String const& collectionName, String const& collectableName) const;
+  [[nodiscard]] auto collections() const -> List<Collection>;
+  [[nodiscard]] auto collection(String const& collectionName) const -> Collection;
+  [[nodiscard]] auto collectables(String const& collectionName) const -> List<Collectable>;
+  [[nodiscard]] auto collectable(String const& collectionName, String const& collectableName) const -> Collectable;
 
-  bool hasCollectable(String const& collectionName, String const& collectableName) const;
+  [[nodiscard]] auto hasCollectable(String const& collectionName, String const& collectableName) const -> bool;
 
 private:
-  Collectable parseGenericCollectable(String const& name, Json const& config) const;
-  Collectable parseMonsterCollectable(String const& name, Json const& config) const;
-  Collectable parseItemCollectable(String const& name, Json const& config) const;
+  [[nodiscard]] auto parseGenericCollectable(String const& name, Json const& config) const -> Collectable;
+  [[nodiscard]] auto parseMonsterCollectable(String const& name, Json const& config) const -> Collectable;
+  [[nodiscard]] auto parseItemCollectable(String const& name, Json const& config) const -> Collectable;
 
   StringMap<Collection> m_collections;
   StringMap<StringMap<Collectable>> m_collectables;
 };
 
-
-}
+}// namespace Star

@@ -79,8 +79,7 @@ inline auto toString(Type const& t) -> std::string {
   return strf("{}", t);
 }
 
-}
-
+}// namespace Star
 
 template <typename T>
 struct std::formatter<std::optional<T>> : Star::ostream_formatter {};

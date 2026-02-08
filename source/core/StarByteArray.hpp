@@ -1,8 +1,8 @@
 #pragma once
 
-#include "StarHash.hpp"
 #include "StarException.hpp"
 #include "StarFormat.hpp"
+#include "StarHash.hpp"
 
 import std;
 
@@ -250,6 +250,7 @@ inline auto hash<ByteArray>::operator()(ByteArray const& b) const -> std::size_t
   return hash.hash();
 }
 
-}
+}// namespace Star
 
-template <> struct std::formatter<Star::ByteArray> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::ByteArray> : Star::ostream_formatter {};

@@ -1,8 +1,8 @@
 #pragma once
 
-#include "StarTime.hpp"
-#include "StarRandom.hpp"
 #include "StarLruCache.hpp"
+#include "StarRandom.hpp"
+#include "StarTime.hpp"
 
 import std;
 
@@ -16,7 +16,7 @@ public:
 
   using ProducerFunction = std::function<Value(Key const&)>;
 
-  TtlCacheBase(std::int64_t timeToLive = 10000, int timeSmear = 1000, size_t maxSize = std::numeric_limits<std::size_t>::max(), bool ttlUpdateEnabled = true);
+  TtlCacheBase(std::int64_t timeToLive = 10000, int timeSmear = 1000, std::size_t maxSize = std::numeric_limits<std::size_t>::max(), bool ttlUpdateEnabled = true);
 
   [[nodiscard]] auto timeToLive() const -> std::int64_t;
   void setTimeToLive(std::int64_t timeToLive);
@@ -27,7 +27,7 @@ public:
   // If a max size is set, this cache also acts as an LRU cache with the given
   // maximum size.
   [[nodiscard]] auto maxSize() const -> std::size_t;
-  void setMaxSize(size_t maxSize = std::numeric_limits<std::size_t>::max());
+  void setMaxSize(std::size_t maxSize = std::numeric_limits<std::size_t>::max());
 
   [[nodiscard]] auto currentSize() const -> std::size_t;
 
@@ -79,7 +79,7 @@ template <typename Key, typename Value, typename Hash = Star::hash<Key>, typenam
 using HashTtlCache = TtlCacheBase<HashLruCache<Key, std::pair<std::int64_t, Value>, Hash, Equals, Allocator>>;
 
 template <typename LruCacheType>
-TtlCacheBase<LruCacheType>::TtlCacheBase(std::int64_t timeToLive, int timeSmear, size_t maxSize, bool ttlUpdateEnabled) {
+TtlCacheBase<LruCacheType>::TtlCacheBase(std::int64_t timeToLive, int timeSmear, std::size_t maxSize, bool ttlUpdateEnabled) {
   m_cache.setMaxSize(maxSize);
   m_timeToLive = timeToLive;
   m_timeSmear = timeSmear;
@@ -112,17 +112,17 @@ auto TtlCacheBase<LruCacheType>::ttlUpdateEnabled() const -> bool {
 }
 
 template <typename LruCacheType>
-auto TtlCacheBase<LruCacheType>::maxSize() const -> size_t {
+auto TtlCacheBase<LruCacheType>::maxSize() const -> std::size_t {
   return m_cache.maxSize();
 }
 
 template <typename LruCacheType>
-void TtlCacheBase<LruCacheType>::setMaxSize(size_t maxSize) {
+void TtlCacheBase<LruCacheType>::setMaxSize(std::size_t maxSize) {
   m_cache.setMaxSize(maxSize);
 }
 
 template <typename LruCacheType>
-auto TtlCacheBase<LruCacheType>::currentSize() const -> size_t {
+auto TtlCacheBase<LruCacheType>::currentSize() const -> std::size_t {
   return m_cache.currentSize();
 }
 
@@ -145,7 +145,7 @@ void TtlCacheBase<LruCacheType>::setTtlUpdateEnabled(bool enabled) {
 }
 
 template <typename LruCacheType>
-auto TtlCacheBase<LruCacheType>::ptr(Key const& key) -> Value * {
+auto TtlCacheBase<LruCacheType>::ptr(Key const& key) -> Value* {
   if (auto p = m_cache.ptr(key)) {
     if (m_ttlUpdateEnabled)
       p->first = Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear);
@@ -171,10 +171,10 @@ void TtlCacheBase<LruCacheType>::removeWhere(std::function<bool(Key const&, Valu
 
 template <typename LruCacheType>
 template <typename Producer>
-auto TtlCacheBase<LruCacheType>::get(Key const& key, Producer producer) -> Value & {
+auto TtlCacheBase<LruCacheType>::get(Key const& key, Producer producer) -> Value& {
   auto& value = m_cache.get(key, [producer](Key const& key) -> auto {
-      return std::pair<std::int64_t, Value>(0, producer(key));
-    });
+    return std::pair<std::int64_t, Value>(0, producer(key));
+  });
   if (value.first == 0 || m_ttlUpdateEnabled)
     value.first = Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear);
   return value.second;
@@ -189,14 +189,14 @@ template <typename LruCacheType>
 void TtlCacheBase<LruCacheType>::cleanup(std::function<bool(Key const&, Value const&)> refreshFilter) {
   std::int64_t currentTime = Time::monotonicMilliseconds();
   m_cache.removeWhere([&](auto const& key, auto& value) -> auto {
-      if (refreshFilter && refreshFilter(key, value.second)) {
-        value.first = currentTime;
-      } else {
-        if (currentTime - value.first > m_timeToLive)
-          return true;
-      }
-      return false;
-    });
+    if (refreshFilter && refreshFilter(key, value.second)) {
+      value.first = currentTime;
+    } else {
+      if (currentTime - value.first > m_timeToLive)
+        return true;
+    }
+    return false;
+  });
 }
 
-}
+}// namespace Star

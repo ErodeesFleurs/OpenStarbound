@@ -1,18 +1,14 @@
 #pragma once
 
-#include <optional>
-
-#include "StarSet.hpp"
-#include "StarThread.hpp"
 #include "StarEntityRenderingTypes.hpp"
+#include "StarException.hpp"
 #include "StarProjectile.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_STRUCT(ProjectileConfig);
-STAR_CLASS(ProjectileDatabase);
-
-STAR_EXCEPTION(ProjectileDatabaseException, StarException);
+using ProjectileDatabaseException = ExceptionDerived<"ProjectileDatabaseException">;
 
 struct ProjectileConfig {
   Json config;
@@ -52,7 +48,7 @@ struct ProjectileConfig {
   JsonArray actionOnTimeout;
 
   // Time, repeat flag, and action config
-  List<tuple<float, bool, Json>> periodicActions;
+  List<std::tuple<float, bool, Json>> periodicActions;
 
   String image;
   unsigned frameNumber = 0;
@@ -104,21 +100,21 @@ class ProjectileDatabase {
 public:
   ProjectileDatabase();
 
-  StringList allProjectileTypes() const;
-  bool isProjectile(String const& typeName) const;
+  [[nodiscard]] auto allProjectileTypes() const -> StringList;
+  [[nodiscard]] auto isProjectile(String const& typeName) const -> bool;
 
-  Json projectileConfig(String const& type) const;
+  [[nodiscard]] auto projectileConfig(String const& type) const -> Json;
 
-  String damageKindImage(String const& type) const;
-  float gravityMultiplier(String const& type) const;
+  [[nodiscard]] auto damageKindImage(String const& type) const -> String;
+  [[nodiscard]] auto gravityMultiplier(String const& type) const -> float;
 
-  ProjectilePtr createProjectile(String const& type, Json const& parameters = JsonObject()) const;
-  ProjectilePtr netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] auto createProjectile(String const& type, Json const& parameters = JsonObject()) const -> Ptr<Projectile>;
+  [[nodiscard]] auto netLoadProjectile(ByteArray const& netStore, NetCompatibilityRules rules = {}) const -> Ptr<Projectile>;
 
 private:
-  ProjectileConfigPtr readConfig(String const& path);
+  auto readConfig(String const& path) -> Ptr<ProjectileConfig>;
 
-  StringMap<ProjectileConfigPtr> m_configs;
+  StringMap<Ptr<ProjectileConfig>> m_configs;
 };
 
-}
+}// namespace Star

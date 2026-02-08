@@ -1,23 +1,23 @@
 #pragma once
 
-#include "StarWiring.hpp"
 #include "StarTileEntity.hpp"
+#include "StarWiring.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(WireEntity);
-
 class WireEntity : public virtual TileEntity {
 public:
-  virtual ~WireEntity() {}
+  ~WireEntity() override = default;
 
-  virtual size_t nodeCount(WireDirection direction) const = 0;
-  virtual Vec2I nodePosition(WireNode wireNode) const = 0;
-  virtual List<WireConnection> connectionsForNode(WireNode wireNode) const = 0;
-  virtual bool nodeState(WireNode wireNode) const = 0;
+  [[nodiscard]] virtual auto nodeCount(WireDirection direction) const -> std::size_t = 0;
+  [[nodiscard]] virtual auto nodePosition(WireNode wireNode) const -> Vec2I = 0;
+  [[nodiscard]] virtual auto connectionsForNode(WireNode wireNode) const -> List<WireConnection> = 0;
+  [[nodiscard]] virtual auto nodeState(WireNode wireNode) const -> bool = 0;
 
-  virtual Color nodeColor(WireNode wireNode) const = 0;
-  virtual String nodeIcon(WireNode wireNode) const = 0;
+  [[nodiscard]] virtual auto nodeColor(WireNode wireNode) const -> Color = 0;
+  [[nodiscard]] virtual auto nodeIcon(WireNode wireNode) const -> String = 0;
 
   virtual void addNodeConnection(WireNode wireNode, WireConnection nodeConnection) = 0;
   virtual void removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) = 0;
@@ -25,4 +25,4 @@ public:
   virtual void evaluate(WireCoordinator* coordinator) = 0;
 };
 
-}
+}// namespace Star

@@ -1,15 +1,12 @@
 #pragma once
 
-#include <optional>
-
-#include "StarThread.hpp"
 #include "StarJson.hpp"
+#include "StarThread.hpp"
 #include "StarUuid.hpp"
-#include "StarGameTypes.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(UniverseSettings);
 
 struct PlaceDungeonFlagAction {
   String dungeonId;
@@ -17,23 +14,23 @@ struct PlaceDungeonFlagAction {
   Vec2I targetPosition;
 };
 
-typedef MVariant<PlaceDungeonFlagAction> UniverseFlagAction;
+using UniverseFlagAction = MVariant<PlaceDungeonFlagAction>;
 
-UniverseFlagAction parseUniverseFlagAction(Json const& json);
+auto parseUniverseFlagAction(Json const& json) -> UniverseFlagAction;
 
 class UniverseSettings {
 public:
   UniverseSettings();
   UniverseSettings(Json const& json);
 
-  Json toJson() const;
+  auto toJson() const -> Json;
 
-  Uuid uuid() const;
-  StringSet flags() const;
+  auto uuid() const -> Uuid;
+  auto flags() const -> StringSet;
   void setFlag(String const& flag);
-  std::optional<List<UniverseFlagAction>> pullPendingFlagActions();
-  List<UniverseFlagAction> currentFlagActions() const;
-  List<UniverseFlagAction> currentFlagActionsForInstanceWorld(String const& instanceName) const;
+  auto pullPendingFlagActions() -> std::optional<List<UniverseFlagAction>>;
+  auto currentFlagActions() const -> List<UniverseFlagAction>;
+  auto currentFlagActionsForInstanceWorld(String const& instanceName) const -> List<UniverseFlagAction>;
   void resetFlags();
 
 private:
@@ -48,4 +45,4 @@ private:
   List<UniverseFlagAction> m_pendingFlagActions;
 };
 
-}
+}// namespace Star

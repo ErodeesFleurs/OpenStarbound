@@ -1,20 +1,18 @@
 #pragma once
 
-#include <optional>
 #include "StarColor.hpp"
-#include "StarPlantDatabase.hpp"
 #include "StarDirectives.hpp"
+#include "StarPlantDatabase.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(Parallax);
-STAR_STRUCT(ParallaxLayer);
 
 struct ParallaxLayer {
   ParallaxLayer();
   ParallaxLayer(Json const& store);
 
-  Json store() const;
+  [[nodiscard]] auto store() const -> Json;
 
   void addImageDirectives(Directives const& newDirectives);
   void fadeToSkyColor(Color skyColor);
@@ -38,31 +36,31 @@ struct ParallaxLayer {
   bool lightMapped;
   float fadePercent;
 };
-typedef List<ParallaxLayer> ParallaxLayers;
+using ParallaxLayers = List<ParallaxLayer>;
 
-DataStream& operator>>(DataStream& ds, ParallaxLayer& parallaxLayer);
-DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
+auto operator>>(DataStream& ds, ParallaxLayer& parallaxLayer) -> DataStream&;
+auto operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) -> DataStream&;
 
 // Object managing and rendering the parallax for a World
 class Parallax {
 public:
   Parallax(String const& assetFile,
-      uint64_t seed,
-      float verticalOrigin,
-      float hueShift,
-      std::optional<TreeVariant> parallaxTreeVariant = {});
+           std::uint64_t seed,
+           float verticalOrigin,
+           float hueShift,
+           std::optional<TreeVariant> parallaxTreeVariant = {});
   Parallax(Json const& store);
 
-  Json store() const;
+  [[nodiscard]] auto store() const -> Json;
 
   void fadeToSkyColor(Color const& skyColor);
 
-  ParallaxLayers const& layers() const;
+  [[nodiscard]] auto layers() const -> ParallaxLayers const&;
 
 private:
   void buildLayer(Json const& layerSettings, String const& kind);
 
-  uint64_t m_seed;
+  std::uint64_t m_seed;
   float m_verticalOrigin;
   std::optional<TreeVariant> m_parallaxTreeVariant;
   float m_hueShift;
@@ -72,4 +70,4 @@ private:
   ParallaxLayers m_layers;
 };
 
-}
+}// namespace Star

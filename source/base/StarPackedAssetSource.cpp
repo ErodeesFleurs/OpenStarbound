@@ -1,16 +1,17 @@
 #include "StarPackedAssetSource.hpp"
-#include "StarDirectoryAssetSource.hpp"
-#include "StarOrderedSet.hpp"
+#include "StarConfig.hpp"
 #include "StarDataStreamDevices.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarSha256.hpp"
+#include "StarDirectoryAssetSource.hpp"
 #include "StarFile.hpp"
+#include "StarOrderedSet.hpp"
+
+import std;
 
 namespace Star {
 
 void PackedAssetSource::build(DirectoryAssetSource& directorySource, String const& targetPackedFile,
-    StringList const& extensionSorting, BuildProgressCallback progressCallback) {
-  FilePtr file = File::open(targetPackedFile, IOMode::ReadWrite | IOMode::Truncate);
+                              StringList const& extensionSorting, BuildProgressCallback progressCallback) {
+  Ptr<File> file = File::open(targetPackedFile, IOMode::ReadWrite | IOMode::Truncate);
 
   DataStreamIODevice ds(file);
 
@@ -20,7 +21,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
 
   // Insert every found entry into the packed file, and also simultaneously
   // compute the full index.
-  StringMap<pair<uint64_t, uint64_t>> index;
+  StringMap<std::pair<std::uint64_t, std::uint64_t>> index;
 
   OrderedHashSet<String> extensionOrdering;
   for (auto const& str : extensionSorting)
@@ -32,7 +33,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
   // by name and then by extension, where every extension listed in
   // "extensionSorting" will come first, and then any extension not listed will
   // come after.
-  auto getOrderingValue = [&extensionOrdering](String const& asset) -> pair<size_t, String> {
+  auto getOrderingValue = [&extensionOrdering](String const& asset) -> std::pair<std::size_t, String> {
     String extension;
     auto lastDot = asset.findLast(".");
     if (lastDot != std::numeric_limits<std::size_t>::max())
@@ -45,11 +46,11 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
     }
   };
 
-  assetPaths.sort([&getOrderingValue](String const& a, String const& b) {
-      return getOrderingValue(a) < getOrderingValue(b);
-    });
+  assetPaths.sort([&getOrderingValue](String const& a, String const& b) -> bool {
+    return getOrderingValue(a) < getOrderingValue(b);
+  });
 
-  for (size_t i = 0; i < assetPaths.size(); ++i) {
+  for (std::size_t i = 0; i < assetPaths.size(); ++i) {
     String const& assetPath = assetPaths[i];
     ByteArray contents = directorySource.read(assetPath);
 
@@ -59,7 +60,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
     ds.writeBytes(contents);
   }
 
-  uint64_t indexStart = ds.pos();
+  std::uint64_t indexStart = ds.pos();
   ds.writeData("INDEX", 5);
   ds.write(directorySource.metadata());
   ds.write(index);
@@ -75,7 +76,7 @@ PackedAssetSource::PackedAssetSource(String const& filename) {
   if (ds.readBytes(8) != ByteArray("SBAsset6", 8))
     throw AssetSourceException("Packed assets file format unrecognized!");
 
-  uint64_t indexStart = ds.read<uint64_t>();
+  auto indexStart = ds.read<std::uint64_t>();
 
   ds.seek(indexStart);
   ByteArray header = ds.readBytes(5);
@@ -85,45 +86,45 @@ PackedAssetSource::PackedAssetSource(String const& filename) {
   ds.read(m_index);
 }
 
-JsonObject PackedAssetSource::metadata() const {
+auto PackedAssetSource::metadata() const -> JsonObject {
   return m_metadata;
 }
 
-StringList PackedAssetSource::assetPaths() const {
+auto PackedAssetSource::assetPaths() const -> StringList {
   return m_index.keys();
 }
 
-IODevicePtr PackedAssetSource::open(String const& path) {
+auto PackedAssetSource::open(String const& path) -> Ptr<IODevice> {
   struct AssetReader : public IODevice {
-    AssetReader(FilePtr file, String path, std::int64_t offset, std::int64_t size)
-      : file(file), path(path), fileOffset(offset), assetSize(size), assetPos(0) {
+    AssetReader(Ptr<File> file, String path, std::int64_t offset, std::int64_t size)
+        : file(std::move(file)), path(std::move(path)), fileOffset(offset), assetSize(size) {
       setMode(IOMode::Read);
     }
 
-    size_t read(char* data, size_t len) override {
-      len = min<std::int64_t>(len, assetSize - assetPos);
+    auto read(char* data, std::size_t len) -> std::size_t override {
+      len = std::min<std::int64_t>(len, assetSize - assetPos);
       file->readFullAbsolute(fileOffset + assetPos, data, len);
       assetPos += len;
       return len;
     }
 
-    size_t write(char const*, size_t) override {
+    auto write(char const*, std::size_t) -> std::size_t override {
       throw IOException("Assets IODevices are read-only");
     }
 
-    std::int64_t size() override {
+    auto size() -> std::int64_t override {
       return assetSize;
     }
 
-    std::int64_t pos() override {
+    auto pos() -> std::int64_t override {
       return assetPos;
     }
 
-    String deviceName() const override {
+    auto deviceName() const -> String override {
       return strf("{}:{}", file->deviceName(), path);
     }
 
-    bool atEnd() override {
+    auto atEnd() -> bool override {
       return assetPos >= assetSize;
     }
 
@@ -131,22 +132,22 @@ IODevicePtr PackedAssetSource::open(String const& path) {
       if (mode == IOSeek::Absolute)
         assetPos = p;
       else if (mode == IOSeek::Relative)
-        assetPos = clamp<std::int64_t>(assetPos + p, 0, assetSize);
+        assetPos = std::clamp<std::int64_t>(assetPos + p, 0, assetSize);
       else
-        assetPos = clamp<std::int64_t>(assetSize - p, 0, assetSize);
+        assetPos = std::clamp<std::int64_t>(assetSize - p, 0, assetSize);
     }
 
-    IODevicePtr clone() override {
-      auto cloned = make_shared<AssetReader>(file, path, fileOffset, assetSize);
+    auto clone() -> Ptr<IODevice> override {
+      auto cloned = std::make_shared<AssetReader>(file, path, fileOffset, assetSize);
       cloned->assetPos = assetPos;
       return cloned;
     }
 
-    FilePtr file;
+    Ptr<File> file;
     String path;
     std::int64_t fileOffset;
     std::int64_t assetSize;
-    std::int64_t assetPos;
+    std::int64_t assetPos{};
   };
 
   auto p = m_index.ptr(path);
@@ -156,7 +157,7 @@ IODevicePtr PackedAssetSource::open(String const& path) {
   return make_shared<AssetReader>(m_packedFile, path, p->first, p->second);
 }
 
-ByteArray PackedAssetSource::read(String const& path) {
+auto PackedAssetSource::read(String const& path) -> ByteArray {
   auto p = m_index.ptr(path);
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
@@ -166,4 +167,4 @@ ByteArray PackedAssetSource::read(String const& path) {
   return data;
 }
 
-}
+}// namespace Star

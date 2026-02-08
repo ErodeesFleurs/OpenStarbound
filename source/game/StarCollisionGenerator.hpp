@@ -17,7 +17,7 @@ public:
 
   // The Maximum number of blocks that will be generated for a single tile
   // space.
-  static size_t const MaximumCollisionsPerSpace = 4;
+  static std::size_t const MaximumCollisionsPerSpace = 4;
 
   // Callback function to tell what kind of collision geometry is in a cell.
   // Will be called up to BlockInfluenceRadius outside of the given query

@@ -1,23 +1,27 @@
 #pragma once
 
-#include "StarNetworkedAnimator.hpp"
 #include "StarActorMovementController.hpp"
-#include "StarTtlCache.hpp"
+#include "StarConfig.hpp"
 #include "StarDamageTypes.hpp"
-#include "StarStatusTypes.hpp"
-#include "StarImageProcessing.hpp"
+#include "StarDrawable.hpp"
 #include "StarEntityRenderingTypes.hpp"
-#include <optional>
+#include "StarException.hpp"
+#include "StarImageProcessing.hpp"
+#include "StarTtlCache.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(LuaRoot);
-STAR_CLASS(Rebuilder);
-STAR_CLASS(RandomSource);
-STAR_CLASS(Monster);
-STAR_CLASS(MonsterDatabase);
+class Monster;
+class Rebuilder;
+// STAR_CLASS(LuaRoot);
+// STAR_CLASS(Rebuilder);
+// STAR_CLASS(RandomSource);
+// STAR_CLASS(Monster);
+// STAR_CLASS(MonsterDatabase);
 
-STAR_EXCEPTION(MonsterException, StarException);
+using MonsterException = ExceptionDerived<"MonsterException">;
 
 struct MonsterVariant {
   String type;
@@ -94,31 +98,31 @@ public:
 
   void cleanup();
 
-  StringList monsterTypes() const;
+  auto monsterTypes() const -> StringList;
 
-  MonsterVariant randomMonster(String const& typeName, Json const& uniqueParameters = JsonObject()) const;
-  MonsterVariant monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters = JsonObject()) const;
+  auto randomMonster(String const& typeName, Json const& uniqueParameters = JsonObject()) const -> MonsterVariant;
+  auto monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters = JsonObject()) const -> MonsterVariant;
 
-  ByteArray writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules = {}) const;
-  MonsterVariant readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const;
+  auto writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules = {}) const -> ByteArray;
+  auto readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const -> MonsterVariant;
 
-  Json writeMonsterVariantToJson(MonsterVariant const& mVar) const;
-  MonsterVariant readMonsterVariantFromJson(Json const& variant) const;
+  auto writeMonsterVariantToJson(MonsterVariant const& mVar) const -> Json;
+  auto readMonsterVariantFromJson(Json const& variant) const -> MonsterVariant;
 
   // If level is 0, then the monster will start with the threat level of
   // whatever world they're spawned in.
-  MonsterPtr createMonster(MonsterVariant monsterVariant, std::optional<float> level = {}, Json uniqueParameters = {}) const;
-  MonsterPtr diskLoadMonster(Json const& diskStore) const;
-  MonsterPtr netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  auto createMonster(MonsterVariant monsterVariant, std::optional<float> level = {}, Json uniqueParameters = {}) const -> Ptr<Monster>;
+  auto diskLoadMonster(Json const& diskStore) const -> Ptr<Monster>;
+  auto netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules = {}) const -> Ptr<Monster>;
 
-  List<Drawable> monsterPortrait(MonsterVariant const& variant) const;
+  auto monsterPortrait(MonsterVariant const& variant) const -> List<Drawable>;
 
-  pair<String, String> skillInfo(String const& skillName) const;
-  Json skillConfigParameter(String const& skillName, String const& configParameterName) const;
+  auto skillInfo(String const& skillName) const -> std::pair<String, String>;
+  auto skillConfigParameter(String const& skillName, String const& configParameterName) const -> Json;
 
-  ColorReplaceMap colorSwap(String const& setName, uint64_t seed) const;
+  auto colorSwap(String const& setName, uint64_t seed) const -> ColorReplaceMap;
 
-  Json monsterConfig(String const& typeName) const;
+  auto monsterConfig(String const& typeName) const -> Json;
 
 private:
   struct MonsterType {
@@ -145,7 +149,7 @@ private:
     // what defaults.
     Json partParameterDescription;
 
-    Json toJson() const;
+    [[nodiscard]] auto toJson() const -> Json;
   };
 
   struct MonsterPart {
@@ -170,26 +174,26 @@ private:
 
   // Merges part configuration by the method specified in the part parameter
   // config.
-  static Json mergePartParameters(Json const& partParameterDescription, JsonArray const& parameters);
+  static auto mergePartParameters(Json const& partParameterDescription, JsonArray const& parameters) -> Json;
 
   // Merges final monster variant parameters together according to the
   // hard-coded variant merge rules (handles things like scripts which are
   // combined rather than overwritten)
-  static Json mergeFinalParameters(JsonArray const& parameters);
+  static auto mergeFinalParameters(JsonArray const& parameters) -> Json;
 
   // Reads common parameters out of parameters map
   static void readCommonParameters(MonsterVariant& monsterVariant);
 
   // Maps category name -> part type -> part name -> MonsterPart.  part name ->
   // MonsterPart needs to be be in a predictable order.
-  typedef StringMap<StringMap<Map<String, MonsterPart>>> PartDirectory;
+  using PartDirectory = StringMap<StringMap<Map<String, MonsterPart>>>;
 
-  MonsterVariant produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const;
+  auto produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const -> MonsterVariant;
 
   // Given a variant including parameters for baseSkills and specialSkills,
   // returns a variant containing a final 'skills' list of chosen skills, also
   // merges animation configs from skills together.
-  pair<Json, Json> chooseSkills(Json const& parameters, Json const& animatorConfig, RandomSource& rand) const;
+  auto chooseSkills(Json const& parameters, Json const& animatorConfig, RandomSource& rand) const -> std::pair<Json, Json>;
 
   StringMap<MonsterType> m_monsterTypes;
   PartDirectory m_partDirectory;
@@ -198,10 +202,10 @@ private:
 
   mutable Mutex m_cacheMutex;
 
-  RebuilderPtr m_rebuilder;
+  Ptr<Rebuilder> m_rebuilder;
 
   // Key here is the type name, seed, and the serialized unique parameters JSON
-  mutable HashTtlCache<tuple<String, uint64_t, Json>, MonsterVariant> m_monsterCache;
+  mutable HashTtlCache<std::tuple<String, uint64_t, Json>, MonsterVariant> m_monsterCache;
 };
 
-}
+}// namespace Star

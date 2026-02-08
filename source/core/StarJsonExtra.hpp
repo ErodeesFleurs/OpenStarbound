@@ -1,10 +1,10 @@
 #pragma once
 
+#include "StarColor.hpp"
+#include "StarDirectives.hpp"
 #include "StarJson.hpp"
 #include "StarPoly.hpp"
-#include "StarColor.hpp"
 #include "StarWeightedPool.hpp"
-#include "StarDirectives.hpp"
 
 import std;
 
@@ -346,7 +346,8 @@ auto jsonFromWeightedPool(WeightedPool<T> const& pool, Converter&& converter) ->
   JsonArray res;
   for (auto const& pair : pool.items()) {
     res.append(JsonObject{
-        {"weight", pair.first}, {"item", converter(pair.second)},
+      {"weight", pair.first},
+      {"item", converter(pair.second)},
     });
   }
   return res;
@@ -382,4 +383,4 @@ auto fixInsideOutPoly(Polygon<Float> p) -> Polygon<Float> {
   return p;
 }
 
-}
+}// namespace Star

@@ -1,5 +1,9 @@
 #include "StarCellularLighting.hpp"
 
+#include "StarColor.hpp"
+
+import std;
+
 namespace Star {
 
 Lightmap::Lightmap() : m_width(0), m_height(0) {}
@@ -16,17 +20,17 @@ Lightmap::Lightmap(Lightmap&& lightMap) noexcept {
   operator=(std::move(lightMap));
 }
 
-Lightmap& Lightmap::operator=(Lightmap const& lightMap) {
+auto Lightmap::operator=(Lightmap const& lightMap) -> Lightmap& {
   m_width = lightMap.m_width;
   m_height = lightMap.m_height;
   if (lightMap.m_data) {
     m_data = std::make_unique<float[]>(len());
-    memcpy(m_data.get(), lightMap.m_data.get(), len());
+    std::memcpy(m_data.get(), lightMap.m_data.get(), len());
   }
   return *this;
 }
 
-Lightmap& Lightmap::operator=(Lightmap&& lightMap) noexcept {
+auto Lightmap::operator=(Lightmap&& lightMap) noexcept -> Lightmap& {
   m_width = take(lightMap.m_width);
   m_height = take(lightMap.m_height);
   m_data = take(lightMap.m_data);
@@ -35,19 +39,18 @@ Lightmap& Lightmap::operator=(Lightmap&& lightMap) noexcept {
 
 Lightmap::operator ImageView() {
   ImageView view;
-  view.data = (uint8_t*)m_data.get();
+  view.data = (std::uint8_t*)m_data.get();
   view.size = size();
   view.format = PixelFormat::RGB_F;
   return view;
 }
 
 CellularLightingCalculator::CellularLightingCalculator(bool monochrome)
-    : m_monochrome(monochrome)
-{
-    if (monochrome)
-        m_lightArray.setRight(ScalarCellularLightArray());
-    else
-        m_lightArray.setLeft(ColoredCellularLightArray());
+    : m_monochrome(monochrome) {
+  if (monochrome)
+    m_lightArray.setRight(ScalarCellularLightArray());
+  else
+    m_lightArray.setLeft(ColoredCellularLightArray());
 }
 
 void CellularLightingCalculator::setMonochrome(bool monochrome) {
@@ -68,24 +71,22 @@ void CellularLightingCalculator::setParameters(Json const& config) {
   m_config = config;
   if (m_monochrome)
     m_lightArray.right().setParameters(
-        config.getInt("spreadPasses"),
-        config.getFloat("spreadMaxAir"),
-        config.getFloat("spreadMaxObstacle"),
-        config.getFloat("pointMaxAir"),
-        config.getFloat("pointMaxObstacle"),
-        config.getFloat("pointObstacleBoost"),
-        config.getBool("pointAdditive", false)
-      );
+      config.getInt("spreadPasses"),
+      config.getFloat("spreadMaxAir"),
+      config.getFloat("spreadMaxObstacle"),
+      config.getFloat("pointMaxAir"),
+      config.getFloat("pointMaxObstacle"),
+      config.getFloat("pointObstacleBoost"),
+      config.getBool("pointAdditive", false));
   else
     m_lightArray.left().setParameters(
-        config.getInt("spreadPasses"),
-        config.getFloat("spreadMaxAir"),
-        config.getFloat("spreadMaxObstacle"),
-        config.getFloat("pointMaxAir"),
-        config.getFloat("pointMaxObstacle"),
-        config.getFloat("pointObstacleBoost"),
-        config.getBool("pointAdditive", false)
-      );
+      config.getInt("spreadPasses"),
+      config.getFloat("spreadMaxAir"),
+      config.getFloat("spreadMaxObstacle"),
+      config.getFloat("pointMaxAir"),
+      config.getFloat("pointMaxObstacle"),
+      config.getFloat("pointObstacleBoost"),
+      config.getBool("pointAdditive", false));
 }
 
 void CellularLightingCalculator::begin(RectI const& queryRegion) {
@@ -99,24 +100,24 @@ void CellularLightingCalculator::begin(RectI const& queryRegion) {
   }
 }
 
-RectI CellularLightingCalculator::calculationRegion() const {
+auto CellularLightingCalculator::calculationRegion() const -> RectI {
   return m_calculationRegion;
 }
 
 void CellularLightingCalculator::addSpreadLight(Vec2F const& position, Vec3F const& light) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
   if (m_monochrome)
-    m_lightArray.right().addSpreadLight({arrayPosition, light.max()});
+    m_lightArray.right().addSpreadLight({.position = arrayPosition, .value = light.max()});
   else
-    m_lightArray.left().addSpreadLight({arrayPosition, light});
+    m_lightArray.left().addSpreadLight({.position = arrayPosition, .value = light});
 }
 
 void CellularLightingCalculator::addPointLight(Vec2F const& position, Vec3F const& light, float beam, float beamAngle, float beamAmbience, bool asSpread) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
   if (m_monochrome)
-    m_lightArray.right().addPointLight({arrayPosition, light.max(), beam, beamAngle, beamAmbience, asSpread});
+    m_lightArray.right().addPointLight({.position = arrayPosition, .value = light.max(), .beam = beam, .beamAngle = beamAngle, .beamAmbience = beamAmbience, .asSpread = asSpread});
   else
-    m_lightArray.left().addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience, asSpread});
+    m_lightArray.left().addPointLight({.position = arrayPosition, .value = light, .beam = beam, .beamAngle = beamAngle, .beamAmbience = beamAmbience, .asSpread = asSpread});
 }
 
 void CellularLightingCalculator::calculate(Image& output) {
@@ -131,14 +132,14 @@ void CellularLightingCalculator::calculate(Image& output) {
   output.reset(arrayMax[0] - arrayMin[0], arrayMax[1] - arrayMin[1], PixelFormat::RGB24);
 
   if (m_monochrome) {
-    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
-      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
+    for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
         output.set24(x - arrayMin[0], y - arrayMin[1], Color::grayf(m_lightArray.right().getLight(x, y)).toRgb());
       }
     }
   } else {
-    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
-      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
+    for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
         output.set24(x - arrayMin[0], y - arrayMin[1], Color::v3fToByte(m_lightArray.left().getLight(x, y)));
       }
     }
@@ -159,15 +160,15 @@ void CellularLightingCalculator::calculate(Lightmap& output) {
   float brightnessLimit = m_config.getFloat("brightnessLimit");
 
   if (m_monochrome) {
-    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
-      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
-        auto light = min(m_lightArray.right().getLight(x, y), brightnessLimit);
+    for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
+        auto light = std::min(m_lightArray.right().getLight(x, y), brightnessLimit);
         output.set(x - arrayMin[0], y - arrayMin[1], light);
       }
     }
   } else {
-    for (size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
-      for (size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
+    for (std::size_t x = arrayMin[0]; x < arrayMax[0]; ++x) {
+      for (std::size_t y = arrayMin[1]; y < arrayMax[1]; ++y) {
         auto light = m_lightArray.left().getLight(x, y);
         float intensity = ColoredLightTraits::maxIntensity(light);
         if (intensity > brightnessLimit)
@@ -187,14 +188,13 @@ void CellularLightingCalculator::setupImage(Image& image, PixelFormat format) co
 
 void CellularLightIntensityCalculator::setParameters(Json const& config) {
   m_lightArray.setParameters(
-      config.getInt("spreadPasses"),
-      config.getFloat("spreadMaxAir"),
-      config.getFloat("spreadMaxObstacle"),
-      config.getFloat("pointMaxAir"),
-      config.getFloat("pointMaxObstacle"),
-      config.getFloat("pointObstacleBoost"),
-      config.getBool("pointAdditive", false)
-    );
+    config.getInt("spreadPasses"),
+    config.getFloat("spreadMaxAir"),
+    config.getFloat("spreadMaxObstacle"),
+    config.getFloat("pointMaxAir"),
+    config.getFloat("pointMaxObstacle"),
+    config.getFloat("pointObstacleBoost"),
+    config.getBool("pointAdditive", false));
 }
 
 void CellularLightIntensityCalculator::begin(Vec2F const& queryPosition) {
@@ -205,7 +205,7 @@ void CellularLightIntensityCalculator::begin(Vec2F const& queryPosition) {
   m_lightArray.begin(m_calculationRegion.width(), m_calculationRegion.height());
 }
 
-RectI CellularLightIntensityCalculator::calculationRegion() const {
+auto CellularLightIntensityCalculator::calculationRegion() const -> RectI {
   return m_calculationRegion;
 }
 
@@ -213,24 +213,23 @@ void CellularLightIntensityCalculator::setCell(Vec2I const& position, Cell const
   setCellColumn(position, &cell, 1);
 }
 
-void CellularLightIntensityCalculator::setCellColumn(Vec2I const& position, Cell const* cells, size_t count) {
-  size_t baseIndex = (position[0] - m_calculationRegion.xMin()) * m_calculationRegion.height() + position[1] - m_calculationRegion.yMin();
-  for (size_t i = 0; i < count; ++i)
+void CellularLightIntensityCalculator::setCellColumn(Vec2I const& position, Cell const* cells, std::size_t count) {
+  std::size_t baseIndex = (position[0] - m_calculationRegion.xMin()) * m_calculationRegion.height() + position[1] - m_calculationRegion.yMin();
+  for (std::size_t i = 0; i < count; ++i)
     m_lightArray.cellAtIndex(baseIndex + i) = cells[i];
 }
 
 void CellularLightIntensityCalculator::addSpreadLight(Vec2F const& position, float light) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
-  m_lightArray.addSpreadLight({arrayPosition, light});
+  m_lightArray.addSpreadLight({.position = arrayPosition, .value = light});
 }
 
 void CellularLightIntensityCalculator::addPointLight(Vec2F const& position, float light, float beam, float beamAngle, float beamAmbience) {
   Vec2F arrayPosition = position - Vec2F(m_calculationRegion.min());
-  m_lightArray.addPointLight({arrayPosition, light, beam, beamAngle, beamAmbience, false});
+  m_lightArray.addPointLight({.position = arrayPosition, .value = light, .beam = beam, .beamAngle = beamAngle, .beamAmbience = beamAmbience, .asSpread = false});
 }
 
-
-float CellularLightIntensityCalculator::calculate() {
+auto CellularLightIntensityCalculator::calculate() -> float {
   Vec2S arrayMin = Vec2S(m_queryRegion.min() - m_calculationRegion.min());
   Vec2S arrayMax = Vec2S(m_queryRegion.max() - m_calculationRegion.min());
 
@@ -246,7 +245,7 @@ float CellularLightIntensityCalculator::calculate() {
   float xl = m_queryPosition[0] - 0.5f - m_queryRegion.xMin();
   float yl = m_queryPosition[1] - 0.5f - m_queryRegion.yMin();
 
-  return lerp(yl, lerp(xl, ll, lr), lerp(xl, ul, ur));
+  return std::lerp(yl, std::lerp(xl, ll, lr), std::lerp(xl, ul, ur));
 }
 
-}
+}// namespace Star

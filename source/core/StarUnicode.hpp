@@ -123,7 +123,7 @@ private:
   void decrement() {
     // Keep backtracking until we don't have a trailing character:
     unsigned count = 0;
-    while (((std::uint8_t) * --m_position & 0xC0u) == 0x80u)
+    while (((std::uint8_t)*--m_position & 0xC0u) == 0x80u)
       ++count;
     // now check that the sequence was valid:
     if (count != utf8_trailing_byte_count(*m_position))
@@ -154,8 +154,11 @@ private:
     }
     // we now need to remove a few of the leftmost bits, but how many depends
     // upon how many extra bytes we've extracted:
-    static const std::array<Utf32Type,4> masks = {
-        0x7Fu, 0x7FFu, 0xFFFFu, 0x1FFFFFu,
+    static const std::array<Utf32Type, 4> masks = {
+      0x7Fu,
+      0x7FFu,
+      0xFFFFu,
+      0x1FFFFFu,
     };
     m_value &= masks[extra];
     // check the result:
@@ -225,4 +228,4 @@ private:
   mutable BaseIterator m_position;
 };
 
-}
+}// namespace Star

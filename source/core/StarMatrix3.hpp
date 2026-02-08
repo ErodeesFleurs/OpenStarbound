@@ -17,7 +17,7 @@ public:
   // padded
   template <typename RT = void>
   using EnableIfContiguousStorage =
-       std::enable_if_t<sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3), RT>;
+    std::enable_if_t<sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3), RT>;
 
   static auto identity() -> Matrix3;
 
@@ -114,6 +114,7 @@ public:
 
   template <typename T2>
   auto operator*(Vector<T2, 2> const& v) const -> Vec2;
+
 private:
   Rows m_rows;
 };
@@ -128,8 +129,8 @@ auto Matrix3<T>::identity() -> Matrix3<T> {
 
 template <typename T>
 auto Matrix3<T>::rotation(T angle, Vec2 const& point) -> Matrix3<T> {
-  T s = sin(angle);
-  T c = cos(angle);
+  T s = std::sin(angle);
+  T c = std::cos(angle);
   return Matrix3(c, -s, point[0] - c * point[0] + s * point[1], s, c, point[1] - s * point[0] - c * point[1], 0, 0, 1);
 }
 
@@ -153,15 +154,15 @@ Matrix3<T>::Matrix3() = default;
 
 template <typename T>
 Matrix3<T>::Matrix3(T r1c1, T r1c2, T r1c3, T r2c1, T r2c2, T r2c3, T r3c1, T r3c2, T r3c3)
-  : m_rows(Vec3(r1c1, r1c2, r1c3), Vec3(r2c1, r2c2, r2c3), Vec3(r3c1, r3c2, r3c3)) {}
+    : m_rows(Vec3(r1c1, r1c2, r1c3), Vec3(r2c1, r2c2, r2c3), Vec3(r3c1, r3c2, r3c3)) {}
 
 template <typename T>
 Matrix3<T>::Matrix3(const Vec3& r1, const Vec3& r2, const Vec3& r3)
-  : m_rows{r1, r2, r3} {}
+    : m_rows{r1, r2, r3} {}
 
 template <typename T>
 Matrix3<T>::Matrix3(T const* ptr)
-  : m_rows{Vec3(ptr), Vec3(ptr + 3), Vec3(ptr + 6)} {}
+    : m_rows{Vec3(ptr), Vec3(ptr + 3), Vec3(ptr + 6)} {}
 
 template <typename T>
 template <typename T2>
@@ -177,12 +178,12 @@ auto Matrix3<T>::operator=(const Matrix3<T2>& m) -> Matrix3<T>& {
 }
 
 template <typename T>
-auto Matrix3<T>::operator[](const std::size_t i) -> Vec3 & {
+auto Matrix3<T>::operator[](const std::size_t i) -> Vec3& {
   return m_rows[i];
 }
 
 template <typename T>
-auto Matrix3<T>::operator[](const std::size_t i) const -> Vec3 const & {
+auto Matrix3<T>::operator[](const std::size_t i) const -> Vec3 const& {
   return m_rows[i];
 }
 
@@ -230,8 +231,8 @@ void Matrix3<T>::setCol(std::size_t i, const Vector<T2, 3>& v) {
 template <typename T>
 auto Matrix3<T>::determinant() const -> T {
   return m_rows[0][0] * m_rows[1][1] * m_rows[2][2] - m_rows[0][0] * m_rows[2][1] * m_rows[1][2]
-      + m_rows[1][0] * m_rows[2][1] * m_rows[0][2] - m_rows[1][0] * m_rows[0][1] * m_rows[2][2]
-      + m_rows[2][0] * m_rows[0][1] * m_rows[1][2] - m_rows[2][0] * m_rows[1][1] * m_rows[0][2];
+    + m_rows[1][0] * m_rows[2][1] * m_rows[0][2] - m_rows[1][0] * m_rows[0][1] * m_rows[2][2]
+    + m_rows[2][0] * m_rows[0][1] * m_rows[1][2] - m_rows[2][0] * m_rows[1][1] * m_rows[0][2];
 }
 
 template <typename T>
@@ -397,29 +398,29 @@ template <typename T>
 template <typename T2>
 auto Matrix3<T>::operator*(const Matrix3<T2>& m2) const -> Matrix3<T> {
   return Matrix3<T>(m_rows[0][0] * m2[0][0] + m_rows[0][1] * m2[1][0] + m_rows[0][2] * m2[2][0],
-      m_rows[0][0] * m2[0][1] + m_rows[0][1] * m2[1][1] + m_rows[0][2] * m2[2][1],
-      m_rows[0][0] * m2[0][2] + m_rows[0][1] * m2[1][2] + m_rows[0][2] * m2[2][2],
-      m_rows[1][0] * m2[0][0] + m_rows[1][1] * m2[1][0] + m_rows[1][2] * m2[2][0],
-      m_rows[1][0] * m2[0][1] + m_rows[1][1] * m2[1][1] + m_rows[1][2] * m2[2][1],
-      m_rows[1][0] * m2[0][2] + m_rows[1][1] * m2[1][2] + m_rows[1][2] * m2[2][2],
-      m_rows[2][0] * m2[0][0] + m_rows[2][1] * m2[1][0] + m_rows[2][2] * m2[2][0],
-      m_rows[2][0] * m2[0][1] + m_rows[2][1] * m2[1][1] + m_rows[2][2] * m2[2][1],
-      m_rows[2][0] * m2[0][2] + m_rows[2][1] * m2[1][2] + m_rows[2][2] * m2[2][2]);
+                    m_rows[0][0] * m2[0][1] + m_rows[0][1] * m2[1][1] + m_rows[0][2] * m2[2][1],
+                    m_rows[0][0] * m2[0][2] + m_rows[0][1] * m2[1][2] + m_rows[0][2] * m2[2][2],
+                    m_rows[1][0] * m2[0][0] + m_rows[1][1] * m2[1][0] + m_rows[1][2] * m2[2][0],
+                    m_rows[1][0] * m2[0][1] + m_rows[1][1] * m2[1][1] + m_rows[1][2] * m2[2][1],
+                    m_rows[1][0] * m2[0][2] + m_rows[1][1] * m2[1][2] + m_rows[1][2] * m2[2][2],
+                    m_rows[2][0] * m2[0][0] + m_rows[2][1] * m2[1][0] + m_rows[2][2] * m2[2][0],
+                    m_rows[2][0] * m2[0][1] + m_rows[2][1] * m2[1][1] + m_rows[2][2] * m2[2][1],
+                    m_rows[2][0] * m2[0][2] + m_rows[2][1] * m2[1][2] + m_rows[2][2] * m2[2][2]);
 }
 
 template <typename T>
 template <typename T2>
 auto Matrix3<T>::operator*(const Vector<T2, 3>& u) const -> Vec3 {
   return Vec3(m_rows[0][0] * u[0] + m_rows[0][1] * u[1] + m_rows[0][2] * u[2],
-      m_rows[1][0] * u[0] + m_rows[1][1] * u[1] + m_rows[1][2] * u[2],
-      m_rows[2][0] * u[0] + m_rows[2][1] * u[1] + m_rows[2][2] * u[2]);
+              m_rows[1][0] * u[0] + m_rows[1][1] * u[1] + m_rows[1][2] * u[2],
+              m_rows[2][0] * u[0] + m_rows[2][1] * u[1] + m_rows[2][2] * u[2]);
 }
 
 template <typename T>
 template <typename T2>
 auto Matrix3<T>::operator*(const Vector<T2, 2>& u) const -> Vec2 {
   return Vec2(m_rows[0][0] * u[0] + m_rows[0][1] * u[1] + m_rows[0][2],
-    m_rows[1][0] * u[0] + m_rows[1][1] * u[1] + m_rows[1][2]);
+              m_rows[1][0] * u[0] + m_rows[1][1] * u[1] + m_rows[1][2]);
 }
 
 template <typename T>
@@ -460,7 +461,7 @@ auto operator<<(std::ostream& os, Matrix3<T> m) -> std::ostream& {
   return os;
 }
 
-}
+}// namespace Star
 
 template <typename T>
 struct std::formatter<Star::Matrix3<T>> : Star::ostream_formatter {};

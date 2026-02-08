@@ -1,85 +1,80 @@
 #pragma once
 
-#include <optional>
-
-#include "StarPeriodic.hpp"
-#include "StarPeriodicFunction.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
-#include "StarTileEntity.hpp"
-#include "StarStatusEffectEntity.hpp"
-#include "StarSet.hpp"
-#include "StarColor.hpp"
-#include "StarScriptedEntity.hpp"
 #include "StarChattyEntity.hpp"
-#include "StarWireEntity.hpp"
-#include "StarInspectableEntity.hpp"
-#include "StarNetworkedAnimator.hpp"
+#include "StarColor.hpp"
+#include "StarConfig.hpp"
 #include "StarDamageTypes.hpp"
 #include "StarEntityRendering.hpp"
+#include "StarInspectableEntity.hpp"
+#include "StarLuaAnimationComponent.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarPeriodicFunction.hpp"
+#include "StarScriptedEntity.hpp"
+#include "StarStatusEffectEntity.hpp"
+#include "StarTileEntity.hpp"
+#include "StarWireEntity.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_CLASS(ObjectDatabase);
-STAR_STRUCT(ObjectConfig);
-STAR_STRUCT(ObjectOrientation);
-STAR_CLASS(Object);
+struct ObjectConfig;
+struct ObjectOrientation;
 
 class Object
-  : public virtual TileEntity,
-    public virtual StatusEffectEntity,
-    public virtual ScriptedEntity,
-    public virtual ChattyEntity,
-    public virtual InspectableEntity,
-    public virtual WireEntity {
+    : public virtual TileEntity,
+      public virtual StatusEffectEntity,
+      public virtual ScriptedEntity,
+      public virtual ChattyEntity,
+      public virtual InspectableEntity,
+      public virtual WireEntity {
 public:
+  Object(ConstPtr<ObjectConfig> config, Json const& parameters = JsonObject());
 
-  Object(ObjectConfigConstPtr config, Json const& parameters = JsonObject());
+  auto diskStore() const -> Json;
+  auto netStore(NetCompatibilityRules rules = {}) -> ByteArray;
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  auto entityType() const -> EntityType override;
+  auto clientEntityMode() const -> ClientEntityMode override;
 
-  virtual EntityType entityType() const override;
-  virtual ClientEntityMode clientEntityMode() const override;
+  void init(World* world, EntityId entityId, EntityMode mode) override;
+  void uninit() override;
 
-  virtual void init(World* world, EntityId entityId, EntityMode mode) override;
-  virtual void uninit() override;
+  auto position() const -> Vec2F override;
+  auto metaBoundBox() const -> RectF override;
 
-  virtual Vec2F position() const override;
-  virtual RectF metaBoundBox() const override;
+  auto writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t> override;
+  void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  virtual pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
-  virtual void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
+  auto name() const -> String override;
+  auto description() const -> String override;
 
-  virtual String name() const override;
-  virtual String description() const override;
+  auto inspectable() const -> bool override;
+  auto inspectionLogName() const -> std::optional<String> override;
+  auto inspectionDescription(String const& species) const -> std::optional<String> override;
 
-  virtual bool inspectable() const override;
-  virtual std::optional<String> inspectionLogName() const override;
-  virtual std::optional<String> inspectionDescription(String const& species) const override;
+  auto lightSources() const -> List<LightSource> override;
 
-  virtual List<LightSource> lightSources() const override;
+  auto shouldDestroy() const -> bool override;
+  void destroy(RenderCallback* renderCallback) override;
 
-  virtual bool shouldDestroy() const override;
-  virtual void destroy(RenderCallback* renderCallback) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
-  virtual void update(float dt, uint64_t currentStep) override;
+  void render(RenderCallback* renderCallback) override;
 
-  virtual void render(RenderCallback* renderCallback) override;
+  void renderLightSources(RenderCallback* renderCallback) override;
 
-  virtual void renderLightSources(RenderCallback* renderCallback) override;
+  auto checkBroken() -> bool override;
 
-  virtual bool checkBroken() override;
+  auto tilePosition() const -> Vec2I override;
 
-  virtual Vec2I tilePosition() const override;
+  auto spaces() const -> List<Vec2I> override;
+  auto materialSpaces() const -> List<MaterialSpace> override;
+  auto roots() const -> List<Vec2I> override;
 
-  virtual List<Vec2I> spaces() const override;
-  virtual List<MaterialSpace> materialSpaces() const override;
-  virtual List<Vec2I> roots() const override;
-
-  Direction direction() const;
+  auto direction() const -> Direction;
   void setDirection(Direction direction);
 
   // Updates tile position and calls updateOrientation
@@ -87,72 +82,72 @@ public:
 
   // Find a new valid orientation for the object
   void updateOrientation();
-  List<Vec2I> anchorPositions() const;
+  auto anchorPositions() const -> List<Vec2I>;
 
-  virtual List<Drawable> cursorHintDrawables() const;
+  virtual auto cursorHintDrawables() const -> List<Drawable>;
 
-  String shortDescription() const;
-  String category() const;
+  auto shortDescription() const -> String;
+  auto category() const -> String;
 
-  virtual ObjectOrientationPtr currentOrientation() const;
+  virtual auto currentOrientation() const -> Ptr<ObjectOrientation>;
 
-  virtual List<PersistentStatusEffect> statusEffects() const override;
-  virtual PolyF statusEffectArea() const override;
+  auto statusEffects() const -> List<PersistentStatusEffect> override;
+  auto statusEffectArea() const -> PolyF override;
 
-  virtual List<DamageSource> damageSources() const override;
+  auto damageSources() const -> List<DamageSource> override;
 
-  virtual std::optional<HitType> queryHit(DamageSource const& source) const override;
-  std::optional<PolyF> hitPoly() const override;
+  auto queryHit(DamageSource const& source) const -> std::optional<HitType> override;
+  auto hitPoly() const -> std::optional<PolyF> override;
 
-  virtual List<DamageNotification> applyDamage(DamageRequest const& damage) override;
+  auto applyDamage(DamageRequest const& damage) -> List<DamageNotification> override;
 
-  virtual bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
-  virtual bool canBeDamaged() const override;
+  auto damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) -> bool override;
+  auto canBeDamaged() const -> bool override;
 
-  RectF interactiveBoundBox() const override;
+  auto interactiveBoundBox() const -> RectF override;
 
-  bool isInteractive() const override;
-  virtual InteractAction interact(InteractRequest const& request) override;
-  List<Vec2I> interactiveSpaces() const override;
+  auto isInteractive() const -> bool override;
+  auto interact(InteractRequest const& request) -> InteractAction override;
+  auto interactiveSpaces() const -> List<Vec2I> override;
 
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args) override;
-  std::optional<LuaValue> evalScript(String const& code) override;
+  auto callScript(String const& func, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> override;
+  auto evalScript(String const& code) -> std::optional<LuaValue> override;
 
-  virtual Vec2F mouthPosition() const override;
-  virtual Vec2F mouthPosition(bool ignoreAdjustments) const override;
-  virtual List<ChatAction> pullPendingChatActions() override;
+  auto mouthPosition() const -> Vec2F override;
+  auto mouthPosition(bool ignoreAdjustments) const -> Vec2F override;
+  auto pullPendingChatActions() -> List<ChatAction> override;
 
   void breakObject(bool smash = true);
 
-  virtual size_t nodeCount(WireDirection direction) const override;
-  virtual Vec2I nodePosition(WireNode wireNode) const override;
-  virtual List<WireConnection> connectionsForNode(WireNode wireNode) const override;
-  virtual bool nodeState(WireNode wireNode) const override;
+  auto nodeCount(WireDirection direction) const -> size_t override;
+  auto nodePosition(WireNode wireNode) const -> Vec2I override;
+  auto connectionsForNode(WireNode wireNode) const -> List<WireConnection> override;
+  auto nodeState(WireNode wireNode) const -> bool override;
 
-  virtual String nodeIcon(WireNode wireNode) const override;
-  virtual Color nodeColor(WireNode wireNode) const override;
+  auto nodeIcon(WireNode wireNode) const -> String override;
+  auto nodeColor(WireNode wireNode) const -> Color override;
 
-  virtual void addNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
-  virtual void removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
+  void addNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
+  void removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) override;
 
-  virtual void evaluate(WireCoordinator* coordinator) override;
+  void evaluate(WireCoordinator* coordinator) override;
 
-  virtual List<QuestArcDescriptor> offeredQuests() const override;
-  virtual StringSet turnInQuests() const override;
-  virtual Vec2F questIndicatorPosition() const override;
+  auto offeredQuests() const -> List<QuestArcDescriptor> override;
+  auto turnInQuests() const -> StringSet override;
+  auto questIndicatorPosition() const -> Vec2F override;
 
-  std::optional<Json> receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) override;
+  auto receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) -> std::optional<Json> override;
 
   // Check, in order, the passed in object parameters, the config parameters,
   // and then the orientation parameters for the given key.  Returns 'def' if
   // no value is found.
-  Json configValue(String const& name, Json const& def = Json()) const;
+  auto configValue(String const& name, Json const& def = Json()) const -> Json;
 
-  ObjectConfigConstPtr config() const;
+  auto config() const -> ConstPtr<ObjectConfig>;
 
-  float liquidFillLevel() const;
+  auto liquidFillLevel() const -> float;
 
-  bool biomePlaced() const;
+  auto biomePlaced() const -> bool;
 
   using Entity::setUniqueId;
 
@@ -165,14 +160,14 @@ protected:
   virtual void setNetStates();
 
   virtual void readStoredData(Json const& diskStore);
-  virtual Json writeStoredData() const;
+  virtual auto writeStoredData() const -> Json;
 
   void setImageKey(String const& name, String const& value);
 
-  size_t orientationIndex() const;
+  auto orientationIndex() const -> size_t;
   virtual void setOrientationIndex(size_t orientationIndex);
 
-  PolyF volume() const;
+  auto volume() const -> PolyF;
 
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
   mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
@@ -200,32 +195,32 @@ private:
     String icon;
   };
 
-  LuaCallbacks makeObjectCallbacks();
-  LuaCallbacks makeAnimatorObjectCallbacks();
+  auto makeObjectCallbacks() -> LuaCallbacks;
+  auto makeAnimatorObjectCallbacks() -> LuaCallbacks;
 
   void ensureNetSetup();
-  List<Drawable> orientationDrawables(size_t orientationIndex) const;
+  auto orientationDrawables(size_t orientationIndex) const -> List<Drawable>;
 
   void addChatMessage(String const& message, Json const& config, String const& portrait = "");
 
   void writeOutboundNode(Vec2I outboundNode, bool state);
 
-  EntityRenderLayer renderLayer() const;
+  auto renderLayer() const -> EntityRenderLayer;
 
   // Base class render() simply calls all of these in turn.
   void renderLights(RenderCallback* renderCallback) const;
   void renderParticles(RenderCallback* renderCallback);
   void renderSounds(RenderCallback* renderCallback);
 
-  List<ObjectOrientationPtr> const& getOrientations() const;
+  auto getOrientations() const -> List<Ptr<ObjectOrientation>> const&;
 
-  Vec2F damageShake() const;
+  auto damageShake() const -> Vec2F;
 
   void checkLiquidBroken();
   GameTimer m_liquidCheckTimer;
 
-  ObjectConfigConstPtr m_config;
-  std::optional<List<ObjectOrientationPtr>> m_orientations;
+  ConstPtr<ObjectConfig> m_config;
+  std::optional<List<Ptr<ObjectOrientation>>> m_orientations;
   NetElementHashMap<String, Json> m_parameters;
 
   NetElementData<std::optional<String>> m_uniqueIdNetState;
@@ -242,7 +237,7 @@ private:
 
   std::optional<PeriodicFunction<float>> m_lightFlickering;
 
-  EntityTileDamageStatusPtr m_tileDamageStatus;
+  Ptr<EntityTileDamageStatus> m_tileDamageStatus;
 
   bool m_broken;
   bool m_unbreakable;
@@ -257,13 +252,13 @@ private:
   List<GameTimer> m_emissionTimers;
 
   NetElementBool m_soundEffectEnabled;
-  AudioInstancePtr m_soundEffect;
+  Ptr<AudioInstance> m_soundEffect;
 
   NetElementData<Color> m_lightSourceColor;
 
   Vec2F m_animationPosition;
   float m_animationCenterLine;
-  NetworkedAnimatorPtr m_networkedAnimator;
+  Ptr<NetworkedAnimator> m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
 
   List<ChatAction> m_pendingChatActions;
@@ -272,7 +267,7 @@ private:
   NetElementString m_chatPortrait;
   NetElementData<Json> m_chatConfig;
 
-  mutable std::optional<pair<size_t, List<Drawable>>> m_orientationDrawablesCache;
+  mutable std::optional<std::pair<size_t, List<Drawable>>> m_orientationDrawablesCache;
 
   List<InputNode> m_inputNodes;
   List<OutputNode> m_outputNodes;
@@ -287,4 +282,4 @@ private:
   ClientEntityMode m_clientEntityMode;
 };
 
-}
+}// namespace Star

@@ -65,7 +65,7 @@ using EmptyPathOp = std::function<Jsonlike(Jsonlike const&)>;
 template <typename Jsonlike>
 using ObjectOp = std::function<Jsonlike(Jsonlike const&, String const&)>;
 template <typename Jsonlike>
-using ArrayOp = std::function<Jsonlike(Jsonlike const&, std::optional<size_t>)>;
+using ArrayOp = std::function<Jsonlike(Jsonlike const&, std::optional<std::size_t>)>;
 
 template <typename Jsonlike>
 auto genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp) -> JsonOp<Jsonlike>;
@@ -140,7 +140,7 @@ auto pathGet(Jsonlike value, PathParser parser, String const& path) -> Jsonlike 
     if (value.type() == Json::Type::Array) {
       if (buffer == "-")
         throw TraversalException::format("Tried to get key '{}' in non-object type in pathGet(\"{}\")", buffer, path);
-      std::optional<size_t> i = maybeLexicalCast<size_t>(buffer);
+      std::optional<std::size_t> i = maybeLexicalCast<std::size_t>(buffer);
       if (!i)
         throw TraversalException::format("Cannot parse '{}' as index in pathGet(\"{}\")", buffer, path);
 
@@ -176,7 +176,7 @@ auto pathFind(Jsonlike value, PathParser parser, String const& path) -> std::opt
       if (buffer == "-")
         return std::nullopt;
 
-      std::optional<size_t> i = maybeLexicalCast<size_t>(buffer);
+      std::optional<std::size_t> i = maybeLexicalCast<std::size_t>(buffer);
       if (i && *i < value.size())
         value = value.get(*i);
       else
@@ -212,7 +212,7 @@ auto pathApply(String& buffer,
     if (iterator == path.end()) {
       return op(value, buffer);
     } else {
-      std::optional<size_t> i = maybeLexicalCast<size_t>(buffer);
+      std::optional<std::size_t> i = maybeLexicalCast<std::size_t>(buffer);
       if (!i)
         throw TraversalException::format("Cannot parse '{}' as index in pathApply(\"{}\")", buffer, path);
 
@@ -256,7 +256,7 @@ auto genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, Object
     if (parent.type() == Json::Type::Array) {
       if (*key == "-")
         return arrayOp(parent, std::nullopt);
-      std::optional<size_t> i = maybeLexicalCast<size_t>(*key);
+      std::optional<std::size_t> i = maybeLexicalCast<std::size_t>(*key);
       if (!i)
         throw TraversalException::format("Cannot parse '{}' as index in Json path \"{}\"", *key, path);
       if (i && *i > parent.size())
@@ -280,7 +280,7 @@ auto pathSet(Jsonlike const& base, PathParser parser, String const& path, Jsonli
   ObjectOp<Jsonlike> objectOp = [&value](Jsonlike const& object, String const& key) -> auto {
     return object.set(key, value);
   };
-  ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, std::optional<size_t> i) -> auto {
+  ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, std::optional<std::size_t> i) -> auto {
     if (i.has_value())
       return array.set(*i, value);
     return array.append(value);
@@ -296,7 +296,7 @@ auto pathRemove(Jsonlike const& base, PathParser parser, String const& path) -> 
       throw TraversalException::format("Could not find \"{}\" to remove", key);
     return object.eraseKey(key);
   };
-  ArrayOp<Jsonlike> arrayOp = [](Jsonlike const& array, std::optional<size_t> i) -> auto {
+  ArrayOp<Jsonlike> arrayOp = [](Jsonlike const& array, std::optional<std::size_t> i) -> auto {
     if (i.has_value())
       return array.eraseIndex(*i);
     throw TraversalException("Could not remove element after end of array");
@@ -314,7 +314,7 @@ auto pathAdd(Jsonlike const& base, PathParser parser, String const& path, Jsonli
   ObjectOp<Jsonlike> objectOp = [&value](Jsonlike const& object, String const& key) -> auto {
     return object.set(key, value);
   };
-  ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, std::optional<size_t> i) -> auto {
+  ArrayOp<Jsonlike> arrayOp = [&value](Jsonlike const& array, std::optional<std::size_t> i) -> auto {
     if (i.has_value())
       return array.insert(*i, value);
     return array.append(value);

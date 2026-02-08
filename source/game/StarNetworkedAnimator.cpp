@@ -1,10 +1,12 @@
 #include "StarNetworkedAnimator.hpp"
-#include <optional>
+
 #include "StarJsonExtra.hpp"
 #include "StarParticleDatabase.hpp" // IWYU pragma: keep
 #include "StarRoot.hpp"
 #include "StarRandom.hpp"
 #include "StarGameTypes.hpp"
+
+import std;
 
 namespace Star {
 

@@ -1,37 +1,40 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
+#include "StarNetElementBasicFields.hpp"
+#include "StarNetElementFloatFields.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarWeatherTypes.hpp"
 #include "StarWorldGeometry.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(Clock);
-STAR_CLASS(Projectile);
+class Clock;
+class Projectile;
 
-STAR_CLASS(ServerWeather);
-STAR_CLASS(ClientWeather);
+// STAR_CLASS(ServerWeather);
+// STAR_CLASS(ClientWeather);
 
 // Callback used to determine whether weather effects should be spawned in
 // the given tile location.  Other checks that enable / disable weather such as
 // whether or not the region is below the underground level are performed
 // separately of this, this is just to check the actual tile data.
-typedef function<bool(Vec2I)> WeatherEffectsActiveQuery;
+using WeatherEffectsActiveQuery = std::function<bool(Vec2I)>;
 
 class ServerWeather {
 public:
   ServerWeather();
 
   void setup(WeatherPool weatherPool, float undergroundLevel, WorldGeometry worldGeometry,
-      WeatherEffectsActiveQuery weatherEffectsActiveQuery);
+             WeatherEffectsActiveQuery weatherEffectsActiveQuery);
 
-  void setReferenceClock(ClockConstPtr referenceClock = {});
+  void setReferenceClock(ConstPtr<Clock> referenceClock = {});
 
   void setClientVisibleRegions(List<RectI> regions);
 
-  pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
+  auto writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t>;
 
   void update(double dt);
 
@@ -43,18 +46,17 @@ public:
   // cleared.  Behavior of |force| is the same as above.
   void setWeather(String const& weatherName, bool force = false);
 
-  StringList weatherList() const;
+  auto weatherList() const -> StringList;
 
   // Set or clear forcing without changing the current weather
   void forceWeather(bool force);
 
+  auto wind() const -> float;
+  auto weatherIntensity() const -> float;
 
-  float wind() const;
-  float weatherIntensity() const;
+  auto statusEffects() const -> StringList;
 
-  StringList statusEffects() const;
-
-  List<ProjectilePtr> pullNewProjectiles();
+  auto pullNewProjectiles() -> List<Ptr<Projectile>>;
 
 private:
   void setNetStates();
@@ -75,14 +77,14 @@ private:
 
   bool m_forceWeather;
 
-  ClockConstPtr m_referenceClock;
+  ConstPtr<Clock> m_referenceClock;
   std::optional<double> m_clockTrackingTime;
 
   double m_currentTime;
   double m_lastWeatherChangeTime;
   double m_nextWeatherChangeTime;
 
-  List<ProjectilePtr> m_newProjectiles;
+  List<Ptr<Projectile>> m_newProjectiles;
 
   NetElementTopGroup m_netGroup;
   NetElementBytes m_weatherPoolNetState;
@@ -104,13 +106,13 @@ public:
 
   void update(double dt);
 
-  float wind() const;
-  float weatherIntensity() const;
+  auto wind() const -> float;
+  auto weatherIntensity() const -> float;
 
-  StringList statusEffects() const;
+  auto statusEffects() const -> StringList;
 
-  List<Particle> pullNewParticles();
-  StringList weatherTrackOptions() const;
+  auto pullNewParticles() -> List<Particle>;
+  auto weatherTrackOptions() const -> StringList;
 
 private:
   void getNetStates();
@@ -141,4 +143,4 @@ private:
   NetElementFloat m_currentWindNetState;
 };
 
-}
+}// namespace Star

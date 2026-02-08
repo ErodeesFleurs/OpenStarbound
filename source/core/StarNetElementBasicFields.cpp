@@ -4,7 +4,7 @@ import std;
 
 namespace Star {
 
-void NetElementSize::readData(DataStream& ds, size_t& v) const {
+void NetElementSize::readData(DataStream& ds, std::size_t& v) const {
   std::uint64_t s = ds.readVlqU();
   if (s == 0)
     v = std::numeric_limits<std::size_t>::max();
@@ -12,7 +12,7 @@ void NetElementSize::readData(DataStream& ds, size_t& v) const {
     v = s - 1;
 }
 
-void NetElementSize::writeData(DataStream& ds, size_t const& v) const {
+void NetElementSize::writeData(DataStream& ds, std::size_t const& v) const {
   if (v == std::numeric_limits<std::size_t>::max())
     ds.writeVlqU(0);
   else

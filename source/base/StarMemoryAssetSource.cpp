@@ -1,50 +1,51 @@
 #include "StarMemoryAssetSource.hpp"
-#include "StarDataStreamDevices.hpp"
-#include "StarDataStreamExtra.hpp"
+#include "StarConfig.hpp"
 #include "StarImage.hpp"
+
+import std;
 
 namespace Star {
 
-MemoryAssetSource::MemoryAssetSource(String const& name, JsonObject metadata) : m_name(name), m_metadata(metadata) {}
+MemoryAssetSource::MemoryAssetSource(String const& name, JsonObject metadata) : m_name(std::move(name)), m_metadata(std::move(metadata)) {}
 
-String MemoryAssetSource::name() const {
+auto MemoryAssetSource::name() const -> String {
   return m_name;
 }
 
-JsonObject MemoryAssetSource::metadata() const {
+auto MemoryAssetSource::metadata() const -> JsonObject {
   return m_metadata;
 }
 
-StringList MemoryAssetSource::assetPaths() const {
+auto MemoryAssetSource::assetPaths() const -> StringList {
   return m_files.keys();
 }
 
-IODevicePtr MemoryAssetSource::open(String const& path) {
+auto MemoryAssetSource::open(String const& path) -> Ptr<IODevice> {
   struct AssetReader : public IODevice {
-    AssetReader(char* assetData, size_t assetSize, String name) {
+    AssetReader(char* assetData, std::size_t assetSize, String name) {
       this->assetData = assetData;
       this->assetSize = assetSize;
       this->name = std::move(name);
       setMode(IOMode::Read);
     }
 
-    size_t read(char* data, size_t len) override {
-      len = min<std::int64_t>(len, std::int64_t(assetSize) - assetPos);
-      memcpy(data, assetData + assetPos, len);
+    auto read(char* data, std::size_t len) -> std::size_t override {
+      len = std::min<std::int64_t>(len, std::int64_t(assetSize) - assetPos);
+      std::memcpy(data, assetData + assetPos, len);
       assetPos += len;
       return len;
     }
 
-    size_t write(char const*, size_t) override {
+    auto write(char const*, std::size_t) -> std::size_t override {
       throw IOException("Assets IODevices are read-only");
     }
 
-    std::int64_t size() override { return assetSize; }
-    std::int64_t pos() override { return assetPos; }
+    auto size() -> std::int64_t override { return assetSize; }
+    auto pos() -> std::int64_t override { return assetPos; }
 
-    String deviceName() const override { return name; }
+    auto deviceName() const -> String override { return name; }
 
-    bool atEnd() override {
+    auto atEnd() -> bool override {
       return assetPos >= (std::int64_t)assetSize;
     }
 
@@ -57,14 +58,14 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
         assetPos = clamp<std::int64_t>(assetPos - p, 0, assetSize);
     }
 
-    IODevicePtr clone() override {
-      auto cloned = make_shared<AssetReader>(assetData, assetSize, name);
+    auto clone() -> Ptr<IODevice> override {
+      auto cloned = std::make_shared<AssetReader>(assetData, assetSize, name);
       cloned->assetPos = assetPos;
       return cloned;
     }
 
     char* assetData;
-    size_t assetSize;
+    std::size_t assetSize;
     std::int64_t assetPos = 0;
     String name;
   };
@@ -73,22 +74,22 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
   else if (auto byteArray = p->ptr<ByteArray>())
-    return make_shared<AssetReader>(byteArray->ptr(), byteArray->size(), path);
+    return std::make_shared<AssetReader>(byteArray->ptr(), byteArray->size(), path);
   else {
-    auto image = p->get<ImagePtr>().get();
-    return make_shared<AssetReader>((char*)image->data(), image->width() * image->height() * image->bytesPerPixel(), path);
+    auto image = p->get<Ptr<Image>>().get();
+    return std::make_shared<AssetReader>((char*)image->data(), image->width() * image->height() * image->bytesPerPixel(), path);
   }
 }
 
-bool MemoryAssetSource::empty() const {
+auto MemoryAssetSource::empty() const -> bool {
   return m_files.empty();
 }
 
-bool MemoryAssetSource::contains(String const& path) const {
+auto MemoryAssetSource::contains(String const& path) const -> bool {
   return m_files.contains(path);
 }
 
-bool MemoryAssetSource::erase(String const& path) {
+auto MemoryAssetSource::erase(String const& path) -> bool {
   return m_files.erase(path) != 0;
 }
 
@@ -97,33 +98,33 @@ void MemoryAssetSource::set(String const& path, ByteArray data) {
 }
 
 void MemoryAssetSource::set(String const& path, Image const& image) {
-  m_files[path] = make_shared<Image>(image);
+  m_files[path] = std::make_shared<Image>(image);
 }
 
 void MemoryAssetSource::set(String const& path, Image&& image) {
-  m_files[path] = make_shared<Image>(std::move(image));
+  m_files[path] = std::make_shared<Image>(std::move(image));
 }
 
-ByteArray MemoryAssetSource::read(String const& path) {
+auto MemoryAssetSource::read(String const& path) -> ByteArray {
   auto p = m_files.ptr(path);
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
   else if (auto bytes = p->ptr<ByteArray>())
     return *bytes;
   else {
-    Image const* image = p->get<ImagePtr>().get();
-    return ByteArray((char const*)image->data(), image->width() * image->height() * image->bytesPerPixel());
+    Image const* image = p->get<Ptr<Image>>().get();
+    return {(char const*)image->data(), image->width() * image->height() * image->bytesPerPixel()};
   }
 }
 
-ImageConstPtr MemoryAssetSource::image(String const& path) {
+auto MemoryAssetSource::image(String const& path) -> ConstPtr<Image> {
   auto p = m_files.ptr(path);
   if (!p)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
-  else if (auto imagePtr = p->ptr<ImagePtr>())
+  else if (auto imagePtr = p->ptr<Ptr<Image>>())
     return *imagePtr;
   else
     return nullptr;
 }
 
-}
+}// namespace Star

@@ -1,11 +1,14 @@
 #include "StarAmbient.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarTime.hpp"
-#include "StarMixer.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarRandom.hpp"
+
+#include "StarConfig.hpp"
 #include "StarGameTypes.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarMixer.hpp"
+#include "StarRandom.hpp"
+#include "StarRoot.hpp"
+#include "StarTime.hpp"
+
+import std;
 
 namespace Star {
 
@@ -20,14 +23,14 @@ AmbientTrackGroup::AmbientTrackGroup(Json const& config, String const& directory
     tracks.append(AssetPath::relativeTo(directory, track));
 }
 
-Json AmbientTrackGroup::toJson() const {
+auto AmbientTrackGroup::toJson() const -> Json {
   return JsonObject{{"tracks", jsonFromStringList(tracks)}};
 }
 
-AmbientNoisesDescription::AmbientNoisesDescription() : trackLoops(-1) {}
+AmbientNoisesDescription::AmbientNoisesDescription() = default;
 
 AmbientNoisesDescription::AmbientNoisesDescription(AmbientTrackGroup day, AmbientTrackGroup night, int loops)
-  : daySounds(std::move(day)), nightSounds(std::move(night)), trackLoops(loops) {}
+    : daySounds(std::move(day)), nightSounds(std::move(night)), trackLoops(loops) {}
 
 AmbientNoisesDescription::AmbientNoisesDescription(Json const& config, String const& directory) {
   if (auto day = config.opt("day"))
@@ -38,7 +41,7 @@ AmbientNoisesDescription::AmbientNoisesDescription(Json const& config, String co
     trackLoops = *loops;
 }
 
-Json AmbientNoisesDescription::toJson() const {
+auto AmbientNoisesDescription::toJson() const -> Json {
   return JsonObject{{"day", daySounds.toJson()}, {"night", nightSounds.toJson()}, {"loops", trackLoops}};
 }
 
@@ -54,7 +57,7 @@ void AmbientManager::setTrackFadeInTime(float fadeInTime) {
   m_trackFadeInTime = fadeInTime;
 }
 
-AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr current, bool dayTime) {
+auto AmbientManager::updateAmbient(Ptr<AmbientNoisesDescription> current, bool dayTime) -> Ptr<AudioInstance> {
   auto assets = Root::singleton().assets();
 
   if (m_currentTrack) {
@@ -84,13 +87,13 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
         m_currentTrackName = Random::randValueFrom(tracks);
         if (m_currentTrackName.empty() || !m_recentTracks.contains(m_currentTrackName))
           break;
-        m_recentTracks.removeFirst(); // reduce chance of collisions on collision
+        m_recentTracks.removeFirst();// reduce chance of collisions on collision
       }
     }
     if (!m_currentTrackName.empty()) {
       if (auto audio = assets->tryAudio(m_currentTrackName)) {
         m_recentTracks.append(m_currentTrackName);
-        m_currentTrack = make_shared<AudioInstance>(*audio);
+        m_currentTrack = std::make_shared<AudioInstance>(*audio);
         m_currentTrack->setLoops(current ? current->trackLoops : -1);
         // Slowly fade the music track in
         m_currentTrack->setVolume(0.0f);
@@ -116,7 +119,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
   return {};
 }
 
-AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr current) {
+auto AmbientManager::updateWeather(Ptr<WeatherNoisesDescription> current) -> Ptr<AudioInstance> {
   auto assets = Root::singleton().assets();
 
   if (m_weatherTrack) {
@@ -139,7 +142,7 @@ AudioInstancePtr AmbientManager::updateWeather(WeatherNoisesDescriptionPtr curre
     m_weatherTrackName = Random::randValueFrom(tracks);
     if (!m_weatherTrackName.empty()) {
       if (auto audio = assets->tryAudio(m_weatherTrackName)) {
-        m_weatherTrack = make_shared<AudioInstance>(*audio);
+        m_weatherTrack = std::make_shared<AudioInstance>(*audio);
         m_weatherTrack->setLoops(-1);
         m_weatherTrack->setVolume(0.0f);
         m_weatherTrack->setVolume(1, m_trackFadeInTime);
@@ -171,4 +174,4 @@ void AmbientManager::setVolume(float volume, float delay, float duration) {
   m_volumeChanged = true;
 }
 
-}
+}// namespace Star

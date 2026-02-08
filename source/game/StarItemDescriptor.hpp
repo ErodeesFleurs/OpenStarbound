@@ -61,19 +61,19 @@ public:
   friend struct hash<ItemDescriptor>;
 
 private:
-  ItemDescriptor(String name, std::uint64_t count, Json parameters, std::optional<size_t> parametersHash);
+  ItemDescriptor(String name, std::uint64_t count, Json parameters, std::optional<std::size_t> parametersHash);
 
-  auto parametersHash() const -> size_t;
+  auto parametersHash() const -> std::size_t;
 
   String m_name;
   std::uint64_t m_count;
   Json m_parameters;
-  mutable std::optional<size_t> m_parametersHash;
+  mutable std::optional<std::size_t> m_parametersHash;
 };
 
 template <>
 struct hash<ItemDescriptor> {
-  auto operator()(ItemDescriptor const& v) const -> size_t;
+  auto operator()(ItemDescriptor const& v) const -> std::size_t;
 };
 
 }// namespace Star

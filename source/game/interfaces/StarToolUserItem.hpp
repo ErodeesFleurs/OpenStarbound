@@ -1,12 +1,13 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarToolUserEntity.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(ToolUserItemException, StarException);
-
-STAR_CLASS(ToolUserItem);
+using ToolUserItemException = ExceptionDerived<"ToolUserItemException">;
 
 // FIXME: You know what another name for an item that a tool user uses is?  A
 // Tool.  Three words when one will do, rename.
@@ -24,22 +25,22 @@ public:
   virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves);
 
   // Default implementations return empty list
-  virtual List<DamageSource> damageSources() const;
-  virtual List<PolyF> shieldPolys() const;
-  virtual List<PhysicsForceRegion> forceRegions() const;
+  [[nodiscard]] virtual auto damageSources() const -> List<DamageSource>;
+  [[nodiscard]] virtual auto shieldPolys() const -> List<PolyF>;
+  [[nodiscard]] virtual auto forceRegions() const -> List<PhysicsForceRegion>;
 
-  bool initialized() const;
+  [[nodiscard]] auto initialized() const -> bool;
 
   // owner, entityMode, hand, and world throw ToolUserException if
   // initialized() is false
-  ToolUserEntity* owner() const;
-  EntityMode entityMode() const;
-  ToolHand hand() const;
-  World* world() const;
+  [[nodiscard]] auto owner() const -> ToolUserEntity*;
+  [[nodiscard]] auto entityMode() const -> EntityMode;
+  [[nodiscard]] auto hand() const -> ToolHand;
+  [[nodiscard]] auto world() const -> World*;
 
 private:
   ToolUserEntity* m_owner;
   std::optional<ToolHand> m_hand;
 };
 
-}
+}// namespace Star

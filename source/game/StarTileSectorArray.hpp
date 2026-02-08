@@ -1,7 +1,10 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarRect.hpp"
 #include "StarSectorArray2D.hpp"
+
+import std;
 
 namespace Star {
 
@@ -14,62 +17,61 @@ namespace Star {
 template <typename TileT, unsigned SectorSizeT>
 class TileSectorArray {
 public:
-  typedef TileT Tile;
+  using Tile = TileT;
   static unsigned const SectorSize = SectorSizeT;
 
-  typedef SectorArray2D<Tile, SectorSize> SectorArray;
-  typedef typename SectorArray::Sector Sector;
-  typedef typename SectorArray::Array Array;
-  typedef typename SectorArray::ArrayPtr ArrayPtr;
+  using SectorArray = SectorArray2D<Tile, SectorSize>;
+  using Sector = typename SectorArray::Sector;
+  using Array = typename SectorArray::Array;
 
   TileSectorArray();
   TileSectorArray(Vec2U const& size, Tile defaultTile = Tile());
 
   void init(Vec2U const& size, Tile defaultTile = Tile());
 
-  Vec2U size() const;
-  Tile defaultTile() const;
+  [[nodiscard]] auto size() const -> Vec2U;
+  auto defaultTile() const -> Tile;
 
   // Returns true if this sector is within the size bounds, regardless of
   // loaded / unloaded status.
-  bool sectorValid(Sector const& sector) const;
+  auto sectorValid(Sector const& sector) const -> bool;
 
-  Sector sectorFor(Vec2I const& pos) const;
+  auto sectorFor(Vec2I const& pos) const -> Sector;
 
   // Return all valid sectors within a given range, regardless of loaded /
   // unloaded status.
-  List<Sector> validSectorsFor(RectI const& region) const;
+  auto validSectorsFor(RectI const& region) const -> List<Sector>;
 
   // Returns the region for this sector, which is SectorSize x SectorSize
   // large.
-  RectI sectorRegion(Sector const& sector) const;
+  auto sectorRegion(Sector const& sector) const -> RectI;
 
   // Returns adjacent sectors in any given integral movement, in sectors.
-  Sector adjacentSector(Sector const& sector, Vec2I const& sectorMovement);
+  auto adjacentSector(Sector const& sector, Vec2I const& sectorMovement) -> Sector;
 
   // Load a sector into the active sector array.
-  void loadSector(Sector const& sector, ArrayPtr array);
+  void loadSector(Sector const& sector, Ptr<Array> array);
   // Load with a sector full of the default tile.
   void loadDefaultSector(Sector const& sector);
   // Make a copy of a sector
-  ArrayPtr copySector(Sector const& sector);
+  auto copySector(Sector const& sector) -> Ptr<Array>;
   // Take a sector out of the sector array.
-  ArrayPtr unloadSector(Sector const& sector);
+  auto unloadSector(Sector const& sector) -> Ptr<Array>;
 
-  bool sectorLoaded(Sector sector) const;
-  List<Sector> loadedSectors() const;
-  size_t loadedSectorCount() const;
+  auto sectorLoaded(Sector sector) const -> bool;
+  auto loadedSectors() const -> List<Sector>;
+  [[nodiscard]] auto loadedSectorCount() const -> std::size_t;
 
   // Will return null if the sector is unloaded.
-  Array const* sectorArray(Sector sector) const;
-  Array* sectorArray(Sector sector);
+  auto sectorArray(Sector sector) const -> Array const*;
+  auto sectorArray(Sector sector) -> Array*;
 
-  bool tileLoaded(Vec2I const& pos) const;
+  [[nodiscard]] auto tileLoaded(Vec2I const& pos) const -> bool;
 
-  Tile const& tile(Vec2I const& pos) const;
+  auto tile(Vec2I const& pos) const -> Tile const&;
 
   // Will return nullptr if the position is invalid.
-  Tile* modifyTile(Vec2I const& pos);
+  auto modifyTile(Vec2I const& pos) -> Tile*;
 
   // Function signature here is (Vec2I const&, Tile const&).  Will be called
   // for the entire region, valid or not.  If tile positions are not valid,
@@ -80,7 +82,7 @@ public:
   // Behaves like tileEach, but gathers the results of calling the function into
   // a MultiArray
   template <typename Function>
-  MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> tileEachResult(RectI const& region, Function&& function) const;
+  auto tileEachResult(RectI const& region, Function&& function) const -> MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2>;
 
   // Fastest way to copy data from the tile array to a given target array.
   // Takes a multi-array and a region and a function, resizes the multi-array
@@ -107,12 +109,12 @@ public:
   // Returns true on the first instance found.  Passed in function must accept
   // (Vec2I const&, Tile const&).
   template <typename Function>
-  bool tileSatisfies(RectI const& region, Function&& function) const;
+  auto tileSatisfies(RectI const& region, Function&& function) const -> bool;
   // Same, but uses a radius of 'distance', which is inclusive on all sides.
   // In other words, calling tileSatisfies({0, 0}, 1, <func>) should be
   // equivalent to calling tileSatisfies({-1, -1}, {3, 3}, <func>).
   template <typename Function>
-  bool tileSatisfies(Vec2I const& pos, unsigned distance, Function&& function) const;
+  auto tileSatisfies(Vec2I const& pos, unsigned distance, Function&& function) const -> bool;
 
 private:
   struct SplitRect {
@@ -122,15 +124,15 @@ private:
 
   // function must return bool to continue iteration
   template <typename Function>
-  bool tileEachAbortable(RectI const& region, Function&& function) const;
+  auto tileEachAbortable(RectI const& region, Function&& function) const -> bool;
 
   // Splits rects along the world wrap line and wraps the x coordinate for each
   // rect into world space.  Also returns the integral x offset to transform
   // back into the input rect range.
-  StaticList<SplitRect, 2> splitRect(RectI rect) const;
+  auto splitRect(RectI rect) const -> StaticList<SplitRect, 2>;
 
   // Clamp the rect to entirely within valid tile spaces in y dimension
-  RectI yClampRect(RectI const& r) const;
+  [[nodiscard]] auto yClampRect(RectI const& r) const -> RectI;
 
   Vec2U m_worldSize;
   Tile m_default;
@@ -141,7 +143,7 @@ template <typename Tile, unsigned SectorSize>
 unsigned const TileSectorArray<Tile, SectorSize>::SectorSize;
 
 template <typename Tile, unsigned SectorSize>
-TileSectorArray<Tile, SectorSize>::TileSectorArray() {}
+TileSectorArray<Tile, SectorSize>::TileSectorArray() = default;
 
 template <typename Tile, unsigned SectorSize>
 TileSectorArray<Tile, SectorSize>::TileSectorArray(Vec2U const& size, Tile defaultTile) {
@@ -157,12 +159,12 @@ void TileSectorArray<Tile, SectorSize>::init(Vec2U const& size, Tile defaultTile
 }
 
 template <typename Tile, unsigned SectorSize>
-Vec2U TileSectorArray<Tile, SectorSize>::size() const {
+auto TileSectorArray<Tile, SectorSize>::size() const -> Vec2U {
   return m_worldSize;
 }
 
 template <typename Tile, unsigned SectorSize>
-Tile TileSectorArray<Tile, SectorSize>::defaultTile() const {
+auto TileSectorArray<Tile, SectorSize>::defaultTile() const -> Tile {
   return m_default;
 }
 
@@ -172,7 +174,7 @@ auto TileSectorArray<Tile, SectorSize>::sectorFor(Vec2I const& pos) const -> Sec
 }
 
 template <typename Tile, unsigned SectorSize>
-bool TileSectorArray<Tile, SectorSize>::sectorValid(Sector const& sector) const {
+auto TileSectorArray<Tile, SectorSize>::sectorValid(Sector const& sector) const -> bool {
   return m_tileSectors.sectorValid(sector);
 }
 
@@ -182,8 +184,8 @@ auto TileSectorArray<Tile, SectorSize>::validSectorsFor(RectI const& region) con
   for (auto const& split : splitRect(yClampRect(region))) {
     auto sectorRange = m_tileSectors.sectorRange(split.rect.xMin(), split.rect.yMin(), split.rect.width(), split.rect.height());
     sectors.reserve(sectors.size() + (sectorRange.max[0] - sectorRange.min[0]) * (sectorRange.max[1] - sectorRange.min[1]));
-    for (size_t x = sectorRange.min[0]; x < sectorRange.max[0]; ++x) {
-      for (size_t y = sectorRange.min[1]; y < sectorRange.max[1]; ++y)
+    for (std::size_t x = sectorRange.min[0]; x < sectorRange.max[0]; ++x) {
+      for (std::size_t y = sectorRange.min[1]; y < sectorRange.max[1]; ++y)
         sectors.append({x, y});
     }
   }
@@ -191,9 +193,9 @@ auto TileSectorArray<Tile, SectorSize>::validSectorsFor(RectI const& region) con
 }
 
 template <typename Tile, unsigned SectorSize>
-RectI TileSectorArray<Tile, SectorSize>::sectorRegion(Sector const& sector) const {
+auto TileSectorArray<Tile, SectorSize>::sectorRegion(Sector const& sector) const -> RectI {
   Vec2I sectorCorner(m_tileSectors.sectorCorner(sector));
-  return RectI::withSize(sectorCorner, {min<int>(SectorSize, m_worldSize[0] - sectorCorner[0]), min<int>(SectorSize, m_worldSize[1] - sectorCorner[1])});
+  return RectI::withSize(sectorCorner, {std::min<int>(SectorSize, m_worldSize[0] - sectorCorner[0]), std::min<int>(SectorSize, m_worldSize[1] - sectorCorner[1])});
 }
 
 template <typename Tile, unsigned SectorSize>
@@ -207,7 +209,7 @@ auto TileSectorArray<Tile, SectorSize>::adjacentSector(Sector const& sector, Vec
 }
 
 template <typename Tile, unsigned SectorSize>
-void TileSectorArray<Tile, SectorSize>::loadSector(Sector const& sector, ArrayPtr tile) {
+void TileSectorArray<Tile, SectorSize>::loadSector(Sector const& sector, Ptr<Array> tile) {
   if (sectorValid(sector))
     m_tileSectors.loadSector(sector, std::move(tile));
 }
@@ -219,7 +221,7 @@ void TileSectorArray<Tile, SectorSize>::loadDefaultSector(Sector const& sector) 
 }
 
 template <typename Tile, unsigned SectorSize>
-auto TileSectorArray<Tile, SectorSize>::copySector(Sector const& sector) -> ArrayPtr {
+auto TileSectorArray<Tile, SectorSize>::copySector(Sector const& sector) -> Ptr<Array> {
   if (sectorValid(sector))
     return m_tileSectors.copySector(sector);
   else
@@ -227,7 +229,7 @@ auto TileSectorArray<Tile, SectorSize>::copySector(Sector const& sector) -> Arra
 }
 
 template <typename Tile, unsigned SectorSize>
-auto TileSectorArray<Tile, SectorSize>::unloadSector(Sector const& sector) -> ArrayPtr {
+auto TileSectorArray<Tile, SectorSize>::unloadSector(Sector const& sector) -> Ptr<Array> {
   if (sectorValid(sector))
     return m_tileSectors.takeSector(sector);
   else
@@ -235,7 +237,7 @@ auto TileSectorArray<Tile, SectorSize>::unloadSector(Sector const& sector) -> Ar
 }
 
 template <typename Tile, unsigned SectorSize>
-bool TileSectorArray<Tile, SectorSize>::sectorLoaded(Sector sector) const {
+auto TileSectorArray<Tile, SectorSize>::sectorLoaded(Sector sector) const -> bool {
   if (sectorValid(sector))
     return m_tileSectors.sectorLoaded(sector);
   else
@@ -248,12 +250,12 @@ auto TileSectorArray<Tile, SectorSize>::loadedSectors() const -> List<Sector> {
 }
 
 template <typename Tile, unsigned SectorSize>
-size_t TileSectorArray<Tile, SectorSize>::loadedSectorCount() const {
+auto TileSectorArray<Tile, SectorSize>::loadedSectorCount() const -> std::size_t {
   return m_tileSectors.loadedSectorCount();
 }
 
 template <typename Tile, unsigned SectorSize>
-auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) const -> Array const * {
+auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) const -> Array const* {
   if (sectorValid(sector))
     return m_tileSectors.sector(sector);
   else
@@ -261,7 +263,7 @@ auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) const -> Arra
 }
 
 template <typename Tile, unsigned SectorSize>
-auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) -> Array * {
+auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) -> Array* {
   if (sectorValid(sector))
     return m_tileSectors.sector(sector);
   else
@@ -269,23 +271,23 @@ auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) -> Array * {
 }
 
 template <typename Tile, unsigned SectorSize>
-bool TileSectorArray<Tile, SectorSize>::tileLoaded(Vec2I const& pos) const {
+auto TileSectorArray<Tile, SectorSize>::tileLoaded(Vec2I const& pos) const -> bool {
   if (pos[1] < 0 || pos[1] >= (int)m_worldSize[1])
     return false;
 
-  unsigned xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
-  unsigned yind = (unsigned)pos[1];
+  auto xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
+  auto yind = (unsigned)pos[1];
 
   return m_tileSectors.get(xind, yind) != nullptr;
 }
 
 template <typename Tile, unsigned SectorSize>
-Tile const& TileSectorArray<Tile, SectorSize>::tile(Vec2I const& pos) const {
+auto TileSectorArray<Tile, SectorSize>::tile(Vec2I const& pos) const -> Tile const& {
   if (pos[1] < 0 || pos[1] >= (int)m_worldSize[1])
     return m_default;
 
-  unsigned xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
-  unsigned yind = (unsigned)pos[1];
+  auto xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
+  auto yind = (unsigned)pos[1];
 
   Tile const* tile = m_tileSectors.get(xind, yind);
   if (tile)
@@ -295,12 +297,12 @@ Tile const& TileSectorArray<Tile, SectorSize>::tile(Vec2I const& pos) const {
 }
 
 template <typename Tile, unsigned SectorSize>
-Tile* TileSectorArray<Tile, SectorSize>::modifyTile(Vec2I const& pos) {
+auto TileSectorArray<Tile, SectorSize>::modifyTile(Vec2I const& pos) -> Tile* {
   if (pos[1] < 0 || pos[1] >= (int)m_worldSize[1])
     return nullptr;
 
-  unsigned xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
-  unsigned yind = (unsigned)pos[1];
+  auto xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
+  auto yind = (unsigned)pos[1];
 
   return m_tileSectors.get(xind, yind);
 }
@@ -309,17 +311,17 @@ template <typename Tile, unsigned SectorSize>
 template <typename Function>
 void TileSectorArray<Tile, SectorSize>::tileEach(RectI const& region, Function&& function) const {
   tileEachAbortable(region,
-      [&](Vec2I const& pos, Tile const& tile) {
-        function(pos, tile);
-        return true;
-      });
+                    [&](Vec2I const& pos, Tile const& tile) -> auto {
+                      function(pos, tile);
+                      return true;
+                    });
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> TileSectorArray<Tile, SectorSize>::tileEachResult(RectI const& region, Function&& function) const {
+auto TileSectorArray<Tile, SectorSize>::tileEachResult(RectI const& region, Function&& function) const -> MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> {
   MultiArray<std::invoke_result_t<Function, Vec2I, Tile>, 2> res;
-  tileEachTo(res, region, [&](auto& res, Vec2I const& pos, Tile const& tile) { res = function(pos, tile); });
+  tileEachTo(res, region, [&](auto& res, Vec2I const& pos, Tile const& tile) -> auto { res = function(pos, tile); });
   return res;
 }
 
@@ -338,17 +340,16 @@ void TileSectorArray<Tile, SectorSize>::tileEachTo(MultiArray& results, RectI co
   for (auto const& split : splitRect(region)) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      m_tileSectors.evalColumns(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&](size_t x, size_t y, Tile const* column, size_t columnSize) {
-          size_t arrayColumnIndex = (x + split.xOffset + xArrayOffset) * results.size(1) + y + yArrayOffset;
+      m_tileSectors.evalColumns(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), [&](std::size_t x, std::size_t y, Tile const* column, std::size_t columnSize) -> auto {
+          std::size_t arrayColumnIndex = (x + split.xOffset + xArrayOffset) * results.size(1) + y + yArrayOffset;
           if (column) {
-            for (size_t i = 0; i < columnSize; ++i)
+            for (std::size_t i = 0; i < columnSize; ++i)
               function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), column[i]);
           } else {
-            for (size_t i = 0; i < columnSize; ++i)
+            for (std::size_t i = 0; i < columnSize; ++i)
               function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), m_default);
           }
-          return true;
-        }, true);
+          return true; }, true);
     }
 
     // Call with default tile for tiles outside of the y-range (to ensure that
@@ -373,7 +374,7 @@ void TileSectorArray<Tile, SectorSize>::tileEval(RectI const& region, Function&&
     if (!clampedRect.isEmpty()) {
       // If non-const variant, do not call function if tile not loaded (pass
       // false to evalEmpty in sector array)
-      auto fwrapper = [&](unsigned x, unsigned y, Tile* tile) {
+      auto fwrapper = [&](unsigned x, unsigned y, Tile* tile) -> auto {
         function(Vec2I((int)x + split.xOffset, (int)y), *tile);
         return true;
       };
@@ -386,7 +387,7 @@ template <typename Tile, unsigned SectorSize>
 template <typename Function>
 void TileSectorArray<Tile, SectorSize>::tileEachColumns(RectI const& region, Function&& function) const {
   const_cast<TileSectorArray*>(this)->tileEvalColumns(
-      region, [&](Vec2I const& pos, Tile* tiles, size_t size) { function(pos, (Tile const*)tiles, size); });
+    region, [&](Vec2I const& pos, Tile* tiles, std::size_t size) -> auto { function(pos, (Tile const*)tiles, size); });
 }
 
 template <typename Tile, unsigned SectorSize>
@@ -395,7 +396,7 @@ void TileSectorArray<Tile, SectorSize>::tileEvalColumns(RectI const& region, Fun
   for (auto const& split : splitRect(region)) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
-      auto fwrapper = [&](size_t x, size_t y, Tile* column, size_t columnSize) {
+      auto fwrapper = [&](std::size_t x, std::size_t y, Tile* column, std::size_t columnSize) -> auto {
         function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize);
         return true;
       };
@@ -406,24 +407,24 @@ void TileSectorArray<Tile, SectorSize>::tileEvalColumns(RectI const& region, Fun
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-bool TileSectorArray<Tile, SectorSize>::tileSatisfies(Vec2I const& pos, unsigned distance, Function&& function) const {
+auto TileSectorArray<Tile, SectorSize>::tileSatisfies(Vec2I const& pos, unsigned distance, Function&& function) const -> bool {
   return tileSatisfies(RectI::withSize(pos - Vec2I::filled(distance), Vec2I::filled(distance * 2 + 1)), function);
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-bool TileSectorArray<Tile, SectorSize>::tileSatisfies(RectI const& region, Function&& function) const {
-  return !tileEachAbortable(region, [&](Vec2I const& pos, Tile const& tile) { return !function(pos, tile); });
+auto TileSectorArray<Tile, SectorSize>::tileSatisfies(RectI const& region, Function&& function) const -> bool {
+  return !tileEachAbortable(region, [&](Vec2I const& pos, Tile const& tile) -> auto { return !function(pos, tile); });
 }
 
 template <typename Tile, unsigned SectorSize>
 template <typename Function>
-bool TileSectorArray<Tile, SectorSize>::tileEachAbortable(RectI const& region, Function&& function) const {
+auto TileSectorArray<Tile, SectorSize>::tileEachAbortable(RectI const& region, Function&& function) const -> bool {
   for (auto const& split : splitRect(region)) {
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
       // If const variant, call function with default tile if not loaded.
-      auto fwrapper = [&](unsigned x, unsigned y, Tile const* tile) {
+      auto fwrapper = [&](unsigned x, unsigned y, Tile const* tile) -> auto {
         if (!tile)
           tile = &m_default;
         return function(Vec2I((int)x + split.xOffset, y), *tile);
@@ -456,7 +457,7 @@ auto TileSectorArray<Tile, SectorSize>::splitRect(RectI rect) const -> StaticLis
 
   // any rect at least the width of the world is equivalent to a rect that spans the width of the world exactly
   if (rect.width() >= (int)m_worldSize[0])
-    return{SplitRect{RectI(0, rect.yMin(), m_worldSize[0], rect.yMax()), 0}};
+    return {SplitRect{RectI(0, rect.yMin(), m_worldSize[0], rect.yMax()), 0}};
 
   if (rect.isEmpty())
     return {};
@@ -470,16 +471,15 @@ auto TileSectorArray<Tile, SectorSize>::splitRect(RectI rect) const -> StaticLis
   if (rect.xMin() < (int)m_worldSize[0] && rect.xMax() > (int)m_worldSize[0]) {
     return {
       SplitRect{RectI(rect.xMin(), rect.yMin(), m_worldSize[0], rect.yMax()), xOffset},
-      SplitRect{RectI(0, rect.yMin(), rect.xMax() - m_worldSize[0], rect.yMax()), xOffset + (int)m_worldSize[0]}
-    };
+      SplitRect{RectI(0, rect.yMin(), rect.xMax() - m_worldSize[0], rect.yMax()), xOffset + (int)m_worldSize[0]}};
   } else {
     return {SplitRect{rect, xOffset}};
   }
 }
 
 template <typename Tile, unsigned SectorSize>
-RectI TileSectorArray<Tile, SectorSize>::yClampRect(RectI const& r) const {
-  return RectI(r.xMin(), clamp<int>(r.yMin(), 0, m_worldSize[1]), r.xMax(), clamp<int>(r.yMax(), 0, m_worldSize[1]));
+auto TileSectorArray<Tile, SectorSize>::yClampRect(RectI const& r) const -> RectI {
+  return {r.xMin(), clamp<int>(r.yMin(), 0, m_worldSize[1]), r.xMax(), clamp<int>(r.yMax(), 0, m_worldSize[1])};
 }
 
-}
+}// namespace Star

@@ -163,6 +163,7 @@ SET (star_core_SOURCES
     StarFormattedJson.cpp
     StarLexicalCast.cpp
     StarListener.cpp
+    StarLockFile.cpp
     StarLogging.cpp
     StarLua.cpp
     StarLuaConverters.cpp
@@ -175,8 +176,10 @@ SET (star_core_SOURCES
     StarOptionParser.cpp
     StarPerlin.cpp
     StarRandom.cpp
+    StarSecureRandom.cpp
     StarSha256.cpp
     StarShellParser.cpp
+    StarSignalHandler.cpp
     StarSocket.cpp
     StarString.cpp
     StarStringView.cpp
@@ -197,11 +200,6 @@ IF (UNIX)
     SET (star_core_SOURCES ${star_core_SOURCES}
       StarDynamicLib_unix.cpp
       StarException_unix.cpp
-      StarFile_unix.cpp
-      StarLockFile_unix.cpp
-      StarSecureRandom_unix.cpp
-      StarSignalHandler_unix.cpp
-      StarTime_unix.cpp
     )
 ELSEIF (WIN32)
     SET (star_core_HEADERS ${star_core_HEADERS}
@@ -210,14 +208,9 @@ ELSEIF (WIN32)
 
     SET (star_core_SOURCES ${star_core_SOURCES}
       StarDynamicLib_windows.cpp
-      StarFile_windows.cpp
-      StarLockFile_windows.cpp
       StarMiniDump_windows.cpp
-      StarSignalHandler_windows.cpp
       StarString_windows.cpp
-      StarTime_windows.cpp
       StarException_windows.cpp
-      StarSecureRandom_windows.cpp
     )
 
 ENDIF ()

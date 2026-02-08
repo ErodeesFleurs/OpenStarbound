@@ -14,7 +14,7 @@ void throwLexicalCastError(std::errc ec, const char* first, const char* last) {
 
 template <>
 auto tryLexicalCast(bool& result, const char* first, const char* last) -> bool {
-  size_t len = last - first;
+  std::size_t len = last - first;
   if (std::strncmp(first, "true", len) == 0)
     result = true;
   else if (std::strncmp(first, "false", len) != 0)
@@ -26,7 +26,7 @@ auto tryLexicalCast(bool& result, const char* first, const char* last) -> bool {
 
 template <>
 auto lexicalCast(const char* first, const char* last) -> bool {
-  size_t len = last - first;
+  std::size_t len = last - first;
   if (std::strncmp(first, "true", len) == 0)
     return true;
   else if (std::strncmp(first, "false", len) != 0)
@@ -35,4 +35,4 @@ auto lexicalCast(const char* first, const char* last) -> bool {
   return false;
 }
 
-}
+}// namespace Star

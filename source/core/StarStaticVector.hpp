@@ -263,12 +263,12 @@ auto StaticVector<Element, MaxSize>::rend() -> reverse_iterator {
 
 template <typename Element, std::size_t MaxSize>
 auto StaticVector<Element, MaxSize>::ptr() const -> Element const* {
-  return reinterpret_cast<Element const*>(m_elements);
+  return reinterpret_cast<Element const*>(m_elements.data());
 }
 
 template <typename Element, std::size_t MaxSize>
 auto StaticVector<Element, MaxSize>::ptr() -> Element* {
-  return reinterpret_cast<Element*>(m_elements);
+  return reinterpret_cast<Element*>(m_elements.data());
 }
 
 template <typename Element, std::size_t MaxSize>

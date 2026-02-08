@@ -1,7 +1,9 @@
 #include "StarBiome.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarParallax.hpp"
+
 #include "StarAmbient.hpp"
+#include "StarParallax.hpp"
+
+import std;
 
 namespace Star {
 
@@ -20,17 +22,16 @@ BiomePlaceables::BiomePlaceables(Json const& variant) {
   itemDistributions = variant.getArray("itemDistributions").transformed(construct<BiomeItemDistribution>());
 }
 
-Json BiomePlaceables::toJson() const {
+auto BiomePlaceables::toJson() const -> Json {
   return JsonObject{
     {"grassMod", grassMod},
     {"grassModDensity", grassModDensity},
     {"ceilingGrassMod", ceilingGrassMod},
     {"ceilingGrassModDensity", ceilingGrassModDensity},
-    {"itemDistributions", itemDistributions.transformed(mem_fn(&BiomeItemDistribution::toJson))}
-  };
+    {"itemDistributions", itemDistributions.transformed(std::mem_fn(&BiomeItemDistribution::toJson))}};
 }
 
-std::optional<TreeVariant> BiomePlaceables::firstTreeType() const {
+auto BiomePlaceables::firstTreeType() const -> std::optional<TreeVariant> {
   for (auto const& itemDistribution : itemDistributions) {
     for (auto const& biomeItem : itemDistribution.allItems()) {
       if (biomeItem.is<TreePair>())
@@ -53,7 +54,7 @@ Biome::Biome(Json const& store) : Biome() {
   mainBlock = store.getUInt("mainBlock");
   subBlocks = store.getArray("subBlocks").transformed([](Json const& v) -> MaterialId { return v.toUInt(); });
   ores =
-      store.getArray("ores").transformed([](Json const& v) { return pair<ModId, float>(v.getUInt(0), v.getFloat(1)); });
+    store.getArray("ores").transformed([](Json const& v) -> std::pair<ModId, float> { return {v.getUInt(0), v.getFloat(1)}; });
   hueShift = store.getFloat("hueShift");
   materialHueShift = store.getUInt("materialHueShift");
 
@@ -64,31 +65,31 @@ Biome::Biome(Json const& store) : Biome() {
     spawnProfile = SpawnProfile(*config);
 
   if (auto config = store.opt("parallax"))
-    parallax = make_shared<Parallax>(*config);
+    parallax = std::make_shared<Parallax>(*config);
 
   if (auto config = store.opt("ambientNoises"))
-    ambientNoises = make_shared<AmbientNoisesDescription>(*config);
+    ambientNoises = std::make_shared<AmbientNoisesDescription>(*config);
   if (auto config = store.opt("musicTrack"))
-    musicTrack = make_shared<AmbientNoisesDescription>(*config);
+    musicTrack = std::make_shared<AmbientNoisesDescription>(*config);
 }
 
-Json Biome::toJson() const {
+auto Biome::toJson() const -> Json {
   return JsonObject{{"baseName", baseName},
-      {"description", description},
-      {"mainBlock", mainBlock},
-      {"subBlocks", subBlocks.transformed(construct<Json>())},
-      {"ores",
-          ores.transformed([](pair<ModId, float> const& p) -> Json {
-            return JsonArray{p.first, p.second};
-          })},
-      {"hueShift", hueShift},
-      {"materialHueShift", materialHueShift},
-      {"surfacePlaceables", surfacePlaceables.toJson()},
-      {"undergroundPlaceables", undergroundPlaceables.toJson()},
-      {"spawnProfile", spawnProfile.toJson()},
-      {"parallax", parallax ? parallax->store() : Json()},
-      {"ambientNoises", ambientNoises ? ambientNoises->toJson() : Json()},
-      {"musicTrack", musicTrack ? musicTrack->toJson() : Json()}};
+                    {"description", description},
+                    {"mainBlock", mainBlock},
+                    {"subBlocks", subBlocks.transformed(construct<Json>())},
+                    {"ores",
+                     ores.transformed([](std::pair<ModId, float> const& p) -> Json {
+                       return JsonArray{p.first, p.second};
+                     })},
+                    {"hueShift", hueShift},
+                    {"materialHueShift", materialHueShift},
+                    {"surfacePlaceables", surfacePlaceables.toJson()},
+                    {"undergroundPlaceables", undergroundPlaceables.toJson()},
+                    {"spawnProfile", spawnProfile.toJson()},
+                    {"parallax", parallax ? parallax->store() : Json()},
+                    {"ambientNoises", ambientNoises ? ambientNoises->toJson() : Json()},
+                    {"musicTrack", musicTrack ? musicTrack->toJson() : Json()}};
 }
 
-}
+}// namespace Star

@@ -1,11 +1,12 @@
 #include "StarItemRecipe.hpp"
-#include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
+
 #include "StarJsonExtra.hpp"
+
+import std;
 
 namespace Star {
 
-Json ItemRecipe::toJson() const {
+auto ItemRecipe::toJson() const -> Json {
   JsonArray inputList;
   inputList.reserve(inputList.size());
   for (auto& input : inputs)
@@ -22,25 +23,25 @@ Json ItemRecipe::toJson() const {
     };
 }
 
-bool ItemRecipe::isNull() const {
+auto ItemRecipe::isNull() const -> bool {
   return currencyInputs.size() == 0 && inputs.size() == 0 && output.isNull();
 }
 
-bool ItemRecipe::operator==(ItemRecipe const& rhs) const {
+auto ItemRecipe::operator==(ItemRecipe const& rhs) const -> bool {
   return std::tie(currencyInputs, inputs, output) == std::tie(rhs.currencyInputs, rhs.inputs, rhs.output);
 }
 
-bool ItemRecipe::operator!=(ItemRecipe const& rhs) const {
+auto ItemRecipe::operator!=(ItemRecipe const& rhs) const -> bool {
   return std::tie(currencyInputs, inputs, output) != std::tie(rhs.currencyInputs, rhs.inputs, rhs.output);
 }
 
-std::ostream& operator<<(std::ostream& os, ItemRecipe const& recipe) {
+auto operator<<(std::ostream& os, ItemRecipe const& recipe) -> std::ostream& {
   os << "CurrencyInputs: " << recipe.currencyInputs << "Inputs: " << recipe.inputs << "\nOutput: " << recipe.output
       << "\nDuration: " << recipe.duration << "\nGroups: " << recipe.groups;
   return os;
 }
 
-size_t hash<ItemRecipe>::operator()(ItemRecipe const& v) const {
+auto hash<ItemRecipe>::operator()(ItemRecipe const& v) const -> std::size_t {
   return hashOf(v.currencyInputs.keys(), v.currencyInputs.values(), v.inputs, v.output);
 }
 

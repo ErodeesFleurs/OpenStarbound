@@ -1,4 +1,5 @@
 #include "StarRandom.hpp"
+
 #include "StarThread.hpp"
 #include "StarTime.hpp"
 
@@ -26,7 +27,7 @@ void RandomSource::init(std::uint64_t seed) {
   m_data[0] = seed;
   m_data[1] = seed >> 32;
 
-  for (size_t i = 2; i < 256; ++i)
+  for (std::size_t i = 2; i < 256; ++i)
     m_data[i] = 69069 * m_data[i - 2] + 362437;
 
   m_index = 255;
@@ -53,7 +54,7 @@ void RandomSource::addEntropy(std::uint64_t seed) {
   m_data[0] ^= seed;
   m_data[1] ^= (seed >> 32) ^ seed;
 
-  for (size_t i = 2; i < 256; ++i)
+  for (std::size_t i = 2; i < 256; ++i)
     m_data[i] ^= 69069 * m_data[i - 2] + 362437;
 }
 
@@ -127,10 +128,10 @@ auto RandomSource::randb() -> bool {
   return parity;
 }
 
-void RandomSource::randBytes(char* buf, size_t len) {
+void RandomSource::randBytes(char* buf, std::size_t len) {
   while (len) {
     std::uint32_t ui = gen32();
-    for (size_t i = 0; i < 4; ++i) {
+    for (std::size_t i = 0; i < 4; ++i) {
       if (len) {
         *buf = (char)(ui >> (i * 8));
         --len;
@@ -140,7 +141,7 @@ void RandomSource::randBytes(char* buf, size_t len) {
   }
 }
 
-auto RandomSource::randBytes(size_t len) -> ByteArray {
+auto RandomSource::randBytes(std::size_t len) -> ByteArray {
   ByteArray array(len, 0);
   randBytes(array.ptr(), len);
   return array;
@@ -331,13 +332,13 @@ auto stochasticRound(double val) -> std::int64_t {
   return g_randSource->stochasticRound(val);
 }
 
-void randBytes(char* buf, size_t len) {
+void randBytes(char* buf, std::size_t len) {
   MutexLocker locker(g_randMutex);
   checkInit();
   g_randSource->randBytes(buf, len);
 }
 
-auto randBytes(size_t len) -> ByteArray {
+auto randBytes(std::size_t len) -> ByteArray {
   MutexLocker locker(g_randMutex);
   checkInit();
   return g_randSource->randBytes(len);

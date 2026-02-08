@@ -252,7 +252,7 @@ inline void Image::set32(Vec2U const& pos, Vec4B const& c) {
 
 inline void Image::set32(unsigned x, unsigned y, Vec4B const& c) {
 
-  size_t offset = y * m_width * 4 + x * 4;
+  std::size_t offset = y * m_width * 4 + x * 4;
   m_data[offset] = c[0];
   m_data[offset + 1] = c[1];
   m_data[offset + 2] = c[2];
@@ -262,7 +262,7 @@ inline void Image::set32(unsigned x, unsigned y, Vec4B const& c) {
 inline auto Image::get32(unsigned x, unsigned y) const -> Vec4B {
 
   Vec4B c;
-  size_t offset = y * m_width * 4 + x * 4;
+  std::size_t offset = y * m_width * 4 + x * 4;
   c[0] = m_data[offset];
   c[1] = m_data[offset + 1];
   c[2] = m_data[offset + 2];
@@ -276,7 +276,7 @@ inline void Image::set24(Vec2U const& pos, Vec3B const& c) {
 
 inline void Image::set24(unsigned x, unsigned y, Vec3B const& c) {
 
-  size_t offset = y * m_width * 3 + x * 3;
+  std::size_t offset = y * m_width * 3 + x * 3;
   m_data[offset] = c[0];
   m_data[offset + 1] = c[1];
   m_data[offset + 2] = c[2];
@@ -285,7 +285,7 @@ inline void Image::set24(unsigned x, unsigned y, Vec3B const& c) {
 inline auto Image::get24(unsigned x, unsigned y) const -> Vec3B {
 
   Vec3B c;
-  size_t offset = y * m_width * 3 + x * 3;
+  std::size_t offset = y * m_width * 3 + x * 3;
   c[0] = m_data[offset];
   c[1] = m_data[offset + 1];
   c[2] = m_data[offset + 2];

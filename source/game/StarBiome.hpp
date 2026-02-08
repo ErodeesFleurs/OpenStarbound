@@ -1,24 +1,26 @@
 #pragma once
 
 #include "StarBiomePlacement.hpp"
+#include "StarConfig.hpp"
+#include "StarMaterialTypes.hpp"
 #include "StarSpawnTypeDatabase.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_STRUCT(AmbientNoisesDescription);
-STAR_CLASS(Parallax);
-STAR_STRUCT(BiomePlaceables);
-STAR_STRUCT(Biome);
+class Parallax;
+class AmbientNoisesDescription;
 
 struct BiomePlaceables {
   BiomePlaceables();
   explicit BiomePlaceables(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   // If any of the item distributions contain trees, this returns the first
   // tree type.
-  std::optional<TreeVariant> firstTreeType() const;
+  [[nodiscard]] auto firstTreeType() const -> std::optional<TreeVariant>;
 
   ModId grassMod;
   float grassModDensity;
@@ -32,7 +34,7 @@ struct Biome {
   Biome();
   explicit Biome(Json const& store);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   String baseName;
   String description;
@@ -40,7 +42,7 @@ struct Biome {
   MaterialId mainBlock;
   List<MaterialId> subBlocks;
   // Pairs the ore type with the commonality multiplier.
-  List<pair<ModId, float>> ores;
+  List<std::pair<ModId, float>> ores;
 
   float hueShift;
   MaterialHue materialHueShift;
@@ -50,10 +52,10 @@ struct Biome {
 
   SpawnProfile spawnProfile;
 
-  ParallaxPtr parallax;
+  Ptr<Parallax> parallax;
 
-  AmbientNoisesDescriptionPtr ambientNoises;
-  AmbientNoisesDescriptionPtr musicTrack;
+  Ptr<AmbientNoisesDescription> ambientNoises;
+  Ptr<AmbientNoisesDescription> musicTrack;
 };
 
-}
+}// namespace Star

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarString.hpp"
+
 import std;
 
 namespace Star {
@@ -9,45 +10,44 @@ constexpr std::uint64_t FNV_OFFSET_BASIS = 0xcbf29ce484222325ull;
 constexpr std::uint64_t FNV_PRIME = 0x100000001b3ull;
 
 inline void fnvPush(std::uint64_t& hash, const void* data, std::size_t size) {
-    const auto* bytes = static_cast<const std::uint8_t*>(data);
-    for (std::size_t i = 0; i < size; ++i) {
-        hash ^= bytes[i];
-        hash *= FNV_PRIME;
-    }
+  const auto* bytes = static_cast<const std::uint8_t*>(data);
+  for (std::size_t i = 0; i < size; ++i) {
+    hash ^= bytes[i];
+    hash *= FNV_PRIME;
+  }
 }
 
 template <typename T>
 void staticPushValue(std::uint64_t& hash, T const& v) {
-    if constexpr (std::is_same_v<T, String>) {
-        fnvPush(hash, v.utf8Ptr(), v.utf8Size());
-    } else if constexpr (std::is_enum_v<T>) {
-        auto val = static_cast<std::underlying_type_t<T>>(v);
-        fnvPush(hash, &val, sizeof(val));
-    } else {
-        fnvPush(hash, &v, sizeof(v));
-    }
+  if constexpr (std::is_same_v<T, String>) {
+    fnvPush(hash, v.utf8Ptr(), v.utf8Size());
+  } else if constexpr (std::is_enum_v<T>) {
+    auto val = static_cast<std::underlying_type_t<T>>(v);
+    fnvPush(hash, &val, sizeof(val));
+  } else {
+    fnvPush(hash, &v, sizeof(v));
+  }
 }
-
 
 inline void staticRandomIter(std::uint64_t&) {}
 
 template <typename T, typename... TL>
 void staticRandomIter(std::uint64_t& hash, T const& v, TL const&... rest) {
-    staticPushValue(hash, v);
-    staticRandomIter(hash, rest...);
+  staticPushValue(hash, v);
+  staticRandomIter(hash, rest...);
 }
 
 template <typename T, typename... TL>
 auto staticRandomU64(T const& v, TL const&... rest) -> std::uint64_t {
-    std::uint64_t hash = 1997293021376312589ull;
-    staticRandomIter(hash, v, rest...);
-    return hash;
+  std::uint64_t hash = 1997293021376312589ull;
+  staticRandomIter(hash, v, rest...);
+  return hash;
 }
 
 template <typename T, typename... TL>
 auto staticRandomU32(T const& v, TL const&... rest) -> std::uint32_t {
-    std::uint64_t h = staticRandomU64(v, rest...);
-    return (std::uint32_t)(h ^ (h >> 32));
+  std::uint64_t h = staticRandomU64(v, rest...);
+  return (std::uint32_t)(h ^ (h >> 32));
 }
 
 template <typename T, typename... TL>
@@ -122,7 +122,7 @@ auto staticRandomValueFrom(Container const& container, T const& d, TL const&... 
 template <typename T>
 class URBG {
 public:
-  using Function = std::function <T()>;
+  using Function = std::function<T()>;
 
   URBG(Function func) : m_func(func) {};
 
@@ -130,6 +130,7 @@ public:
   static constexpr auto min() -> T { return std::numeric_limits<T>::min(); };
   static constexpr auto max() -> T { return std::numeric_limits<T>::max(); };
   auto operator()() -> T { return m_func(); };
+
 private:
   Function m_func;
 };
@@ -146,4 +147,4 @@ void staticRandomShuffle(Container& container, T const& d, TL const&... rest) {
   }
 }
 
-}
+}// namespace Star

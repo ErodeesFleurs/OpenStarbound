@@ -1,12 +1,15 @@
 #pragma once
 
-#include "StarJson.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarBiMap.hpp"
+#include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
+
+import std;
 
 namespace Star {
 
-enum class EquipmentSlot : uint8_t {
+enum class EquipmentSlot : std::uint8_t {
   Head = 0,
   Chest = 1,
   Legs = 2,
@@ -30,22 +33,22 @@ enum class EquipmentSlot : uint8_t {
 };
 extern EnumMap<EquipmentSlot> const EquipmentSlotNames;
 
-typedef pair<String, uint8_t> BagSlot;
+using BagSlot = std::pair<String, std::uint8_t>;
 
-strong_typedef(Empty, SwapSlot);
-strong_typedef(Empty, TrashSlot);
+using SwapSlot = StrongTypedef<Empty>;
+using TrashSlot = StrongTypedef<Empty>;
 
 // Any manageable location in the player inventory can be pointed to by an
 // InventorySlot
-typedef Variant<EquipmentSlot, BagSlot, SwapSlot, TrashSlot> InventorySlot;
+using InventorySlot = Variant<EquipmentSlot, BagSlot, SwapSlot, TrashSlot>;
 
-InventorySlot jsonToInventorySlot(Json const& json);
-Json jsonFromInventorySlot(InventorySlot const& slot);
+auto jsonToInventorySlot(Json const& json) -> InventorySlot;
+auto jsonFromInventorySlot(InventorySlot const& slot) -> Json;
 
-std::ostream& operator<<(std::ostream& ostream, InventorySlot const& slot);
+auto operator<<(std::ostream& ostream, InventorySlot const& slot) -> std::ostream&;
 
 // Special items in the player inventory that are not generally manageable
-enum class EssentialItem : uint8_t {
+enum class EssentialItem : std::uint8_t {
   BeamAxe = 0,
   WireTool = 1,
   PaintTool = 2,
@@ -57,15 +60,16 @@ extern EnumMap<EssentialItem> const EssentialItemNames;
 // hard coded shortcuts to the essential items.  There is one location selected
 // at a time, which is either an entry on the custom bar, or one of the
 // essential items, or nothing.
-typedef uint8_t CustomBarIndex;
-typedef MVariant<CustomBarIndex, EssentialItem> SelectedActionBarLocation;
+using CustomBarIndex = std::uint8_t;
+using SelectedActionBarLocation = MVariant<CustomBarIndex, EssentialItem>;
 
-SelectedActionBarLocation jsonToSelectedActionBarLocation(Json const& json);
-Json jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location);
+auto jsonToSelectedActionBarLocation(Json const& json) -> SelectedActionBarLocation;
+auto jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location) -> Json;
 
-static uint8_t const EquipmentSize = 8;
-static uint8_t const EssentialItemCount = 4;
+static std::uint8_t const EquipmentSize = 8;
+static std::uint8_t const EssentialItemCount = 4;
 
-}
+}// namespace Star
 
-template <> struct std::formatter<Star::InventorySlot> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::InventorySlot> : Star::ostream_formatter {};

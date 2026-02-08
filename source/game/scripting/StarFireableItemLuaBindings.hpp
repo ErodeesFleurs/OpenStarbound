@@ -1,32 +1,32 @@
 #pragma once
 
-#include <optional>
-
 #include "StarLua.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(FireableItem);
+class FireableItem;
 
 namespace LuaBindings {
-  LuaCallbacks makeFireableItemCallbacks(FireableItem* fireableItem);
+auto makeFireableItemCallbacks(FireableItem* fireableItem) -> LuaCallbacks;
 
-  namespace FireableItemCallbacks {
-    void fire(FireableItem* fireableItem, std::optional<String> const& mode);
-    void triggerCooldown(FireableItem* fireableItem);
-    void setCooldown(FireableItem* fireableItem, float cooldownTime);
-    void endCooldown(FireableItem* fireableItem);
-    float cooldownTime(FireableItem* fireableItem);
-    Json fireableParam(FireableItem* fireableItem, String const& name, Json const& def);
-    String fireMode(FireableItem* fireableItem);
-    bool ready(FireableItem* fireableItem);
-    bool firing(FireableItem* fireableItem);
-    bool windingUp(FireableItem* fireableItem);
-    bool coolingDown(FireableItem* fireableItem);
-    bool ownerFullEnergy(FireableItem* fireableItem);
-    bool ownerEnergy(FireableItem* fireableItem);
-    bool ownerEnergyLocked(FireableItem* fireableItem);
-    bool ownerConsumeEnergy(FireableItem* fireableItem, float energy);
-  }
-}
-}
+namespace FireableItemCallbacks {
+void fire(FireableItem* fireableItem, std::optional<String> const& mode);
+void triggerCooldown(FireableItem* fireableItem);
+void setCooldown(FireableItem* fireableItem, float cooldownTime);
+void endCooldown(FireableItem* fireableItem);
+auto cooldownTime(FireableItem* fireableItem) -> float;
+auto fireableParam(FireableItem* fireableItem, String const& name, Json const& def) -> Json;
+auto fireMode(FireableItem* fireableItem) -> String;
+auto ready(FireableItem* fireableItem) -> bool;
+auto firing(FireableItem* fireableItem) -> bool;
+auto windingUp(FireableItem* fireableItem) -> bool;
+auto coolingDown(FireableItem* fireableItem) -> bool;
+auto ownerFullEnergy(FireableItem* fireableItem) -> bool;
+auto ownerEnergy(FireableItem* fireableItem) -> bool;
+auto ownerEnergyLocked(FireableItem* fireableItem) -> bool;
+auto ownerConsumeEnergy(FireableItem* fireableItem, float energy) -> bool;
+}// namespace FireableItemCallbacks
+}// namespace LuaBindings
+}// namespace Star

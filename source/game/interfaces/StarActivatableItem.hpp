@@ -1,18 +1,14 @@
 #pragma once
 
-#include "StarConfig.hpp"
-
 namespace Star {
-
-STAR_CLASS(ActivatableItem);
 
 class ActivatableItem {
 public:
-  virtual ~ActivatableItem() {}
-  virtual bool active() const = 0;
+  virtual ~ActivatableItem() = default;
+  [[nodiscard]] virtual auto active() const -> bool = 0;
   virtual void setActive(bool active) = 0;
-  virtual bool usable() const = 0;
+  [[nodiscard]] virtual auto usable() const -> bool = 0;
   virtual void activate() = 0;
 };
 
-}
+}// namespace Star

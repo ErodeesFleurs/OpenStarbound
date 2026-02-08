@@ -1,17 +1,19 @@
 #pragma once
 
-#include <optional>
-
 #include "StarBiMap.hpp"
+#include "StarException.hpp"
 #include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(RadioMessageDatabaseException, StarException);
-STAR_STRUCT(RadioMessage);
-STAR_CLASS(RadioMessageDatabase);
+using RadioMessageDatabaseException = ExceptionDerived<"RadioMessageDatabaseException">;
 
-enum class RadioMessageType { Generic, Mission, Quest, Tutorial };
+enum class RadioMessageType { Generic,
+                              Mission,
+                              Quest,
+                              Tutorial };
 extern EnumMap<RadioMessageType> const RadioMessageTypeNames;
 
 struct RadioMessage {
@@ -36,11 +38,11 @@ class RadioMessageDatabase {
 public:
   RadioMessageDatabase();
 
-  RadioMessage radioMessage(String const& messageName) const;
-  RadioMessage createRadioMessage(Json const& config, std::optional<String> const& uniqueId = {}) const;
+  [[nodiscard]] auto radioMessage(String const& messageName) const -> RadioMessage;
+  [[nodiscard]] auto createRadioMessage(Json const& config, std::optional<String> const& uniqueId = {}) const -> RadioMessage;
 
 private:
   StringMap<RadioMessage> m_radioMessages;
 };
 
-}
+}// namespace Star

@@ -38,11 +38,10 @@ auto JsonRpc::invokeRemote(String const& handler, Json const& arguments) -> RpcP
   std::uint64_t id = m_requestId++;
   JsonObject request;
   m_pending.append(JsonObject{
-      {"command", "request"},
-      {"id", id},
-      {"handler", handler},
-      {"arguments", arguments}
-    });
+    {"command", "request"},
+    {"id", id},
+    {"handler", handler},
+    {"arguments", arguments}});
 
   auto pair = RpcPromise<Json>::createPair();
   m_pendingResponse.add(id, pair.second);
@@ -80,19 +79,17 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
         if (!m_handlers.contains(handlerName))
           throw JsonRpcException(strf("Unknown handler '{}'", handlerName));
         m_pending.append(JsonObject{
-            {"command", "response"},
-            {"id", request.get("id")},
-            {"result", m_handlers[handlerName](request.get("arguments"))}
-          });
+          {"command", "response"},
+          {"id", request.get("id")},
+          {"result", m_handlers[handlerName](request.get("arguments"))}});
       } catch (std::exception& e) {
         Logger::error("Exception while handling variant rpc request handler call. {}", outputException(e, false));
         JsonObject response;
         response["command"] = "fail";
         response["id"] = request.get("id");
         m_pending.append(JsonObject{
-            {"command", "fail"},
-            {"id", request.get("id")}
-          });
+          {"command", "fail"},
+          {"id", request.get("id")}});
       }
 
     } else if (request.get("command") == "response") {
@@ -114,4 +111,4 @@ void JsonRpc::receive(ByteArray const& inbuffer) {
   }
 }
 
-}
+}// namespace Star

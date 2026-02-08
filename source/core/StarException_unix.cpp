@@ -1,69 +1,74 @@
 #include "StarException.hpp"
+
 #include "StarCasting.hpp"
 #include "StarLogging.hpp"
 
 #include <execinfo.h>
-#include <cstdlib>
+
 #ifdef STAR_USE_CPPTRACE
 #include "cpptrace/cpptrace.hpp"
 #include "cpptrace/formatting.hpp"
 #endif
 
+import std;
+
 namespace Star {
+using std::bind;
 
 #ifdef STAR_USE_CPPTRACE
 
 static inline std::string captureBacktrace() {
   auto formatter = cpptrace::formatter{}
-    .paths(cpptrace::formatter::path_mode::basename);
+                     .paths(cpptrace::formatter::path_mode::basename);
   std::ostringstream out;
   formatter.print(out, cpptrace::generate_trace());
   return out.str();
 }
-  
+
 #endif
 
-static size_t const StackLimit = 256;
+static std::size_t const StackLimit = 256;
 
-typedef pair<Array<void*, StackLimit>, size_t> StackCapture;
+using StackCapture = std::pair<Array<void*, StackLimit>, std::size_t>;
 
-inline StackCapture captureStack() {
+inline auto captureStack() -> StackCapture {
   StackCapture stackCapture;
   stackCapture.second = backtrace(stackCapture.first.ptr(), StackLimit);
   return stackCapture;
 }
 
-OutputProxy outputStack(StackCapture stack) {
-  return OutputProxy([stack = std::move(stack)](std::ostream & os) {
-      char** symbols = backtrace_symbols(stack.first.ptr(), stack.second);
-      for (size_t i = 0; i < stack.second; ++i) {
-        os << symbols[i];
-        if (i + 1 < stack.second)
-          os << std::endl;
-      }
+auto outputStack(StackCapture stack) -> OutputProxy {
+  return {[stack = std::move(stack)](std::ostream& os) -> void {
+    char** symbols = backtrace_symbols(stack.first.ptr(), stack.second);
+    for (std::size_t i = 0; i < stack.second; ++i) {
+      os << symbols[i];
+      if (i + 1 < stack.second)
+        os << std::endl;
+    }
 
-      if (stack.second == StackLimit)
-        os << std::endl << "[Stack Output Limit Reached]";
+    if (stack.second == StackLimit)
+      os << std::endl
+         << "[Stack Output Limit Reached]";
 
-      ::free(symbols);
-    });
+    std::free(symbols);
+  }};
 }
 
 StarException::StarException() noexcept
-  : StarException(std::string("StarException")) {}
+    : StarException(std::string("StarException")) {}
 
-StarException::~StarException() noexcept {}
+StarException::~StarException() noexcept = default;
 
 StarException::StarException(std::string message, bool genStackTrace) noexcept
-  : StarException("StarException", std::move(message), genStackTrace) {}
+    : StarException("StarException", std::move(message), genStackTrace) {}
 
 StarException::StarException(std::exception const& cause) noexcept
-  : StarException("StarException", std::string(), cause) {}
+    : StarException("StarException", std::string(), cause) {}
 
 StarException::StarException(std::string message, std::exception const& cause) noexcept
-  : StarException("StarException", std::move(message), cause) {}
+    : StarException("StarException", std::move(message), cause) {}
 
-const char* StarException::what() const throw() {
+auto StarException::what() const noexcept -> const char* {
   if (m_whatBuffer.empty()) {
     std::ostringstream os;
     m_printException(os, false);
@@ -76,7 +81,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
 #ifdef STAR_USE_CPPTRACE
   auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::string stack) {
 #else
-  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::optional<StackCapture> stack) {
+  auto printException = [](std::ostream& os, bool fullStacktrace, char const* type, std::string message, std::optional<StackCapture> stack) -> void {
 #endif
     os << "(" << type << ")";
     if (!message.empty())
@@ -97,31 +102,33 @@ StarException::StarException(char const* type, std::string message, bool genStac
 #ifdef STAR_USE_CPPTRACE
   m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureBacktrace() : std::string());
 #else
-  m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureStack() : std::optional<StackCapture>());
+  m_printException = [printException, type, capture0 = std::move(message), capture1 = genStackTrace ? captureStack() : std::optional<StackCapture>()](auto&& PH1, auto&& PH2) -> auto { printException(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), type, capture0, capture1); };
 #endif
 }
 
 StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept
-  : StarException(type, std::move(message)) {
-  auto printException = [](std::ostream& os, bool fullStacktrace, function<void(std::ostream&, bool)> self, function<void(std::ostream&, bool)> cause) {
+    : StarException(type, std::move(message)) {
+  auto printException = [](std::ostream& os, bool fullStacktrace, std::function<void(std::ostream&, bool)> self, std::function<void(std::ostream&, bool)> cause) -> void {
     self(os, fullStacktrace);
-    os << std::endl << "Caused by: ";
+    os << std::endl
+       << "Caused by: ";
     cause(os, fullStacktrace);
   };
 
   std::function<void(std::ostream&, bool)> printCause;
   if (auto starException = as<StarException>(&cause)) {
-    printCause = bind(starException->m_printException, _1, _2);
+    printCause = bind(starException->m_printException, std::placeholders::_1, std::placeholders::_2);
   } else {
-    printCause = bind([](std::ostream& os, bool, std::string causeWhat) {
+    printCause = bind([](std::ostream& os, bool, std::string causeWhat) -> void {
       os << "std::exception: " << causeWhat;
-    }, _1, _2, std::string(cause.what()));
+    },
+                      std::placeholders::_1, std::placeholders::_2, std::string(cause.what()));
   }
 
-  m_printException = bind(printException, _1, _2, m_printException, std::move(printCause));
+  m_printException = [printException, this, capture0 = std::move(printCause)](auto&& PH1, auto&& PH2) -> auto { printException(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), m_printException, capture0); };
 }
 
-std::string printException(std::exception const& e, bool fullStacktrace) {
+auto printException(std::exception const& e, bool fullStacktrace) -> std::string {
   std::ostringstream os;
   printException(os, e, fullStacktrace);
   return os.str();
@@ -134,11 +141,11 @@ void printException(std::ostream& os, std::exception const& e, bool fullStacktra
     os << "std::exception: " << e.what();
 }
 
-OutputProxy outputException(std::exception const& e, bool fullStacktrace) {
+auto outputException(std::exception const& e, bool fullStacktrace) -> OutputProxy {
   if (auto starException = as<StarException>(&e))
-    return OutputProxy(bind(starException->m_printException, _1, fullStacktrace));
+    return {bind(starException->m_printException, std::placeholders::_1, fullStacktrace)};
   else
-    return OutputProxy(bind([](std::ostream& os, std::string what) { os << "std::exception: " << what; }, _1, std::string(e.what())));
+    return {bind([](std::ostream& os, std::string what) -> void { os << "std::exception: " << what; }, std::placeholders::_1, std::string(e.what()))};
 }
 
 void printStack(char const* message) {
@@ -175,4 +182,4 @@ void fatalException(std::exception const& e, bool showStackTrace) {
   std::abort();
 }
 
-}
+}// namespace Star

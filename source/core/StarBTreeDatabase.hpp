@@ -1,25 +1,25 @@
 #pragma once
 
+#include "StarBTree.hpp"
+#include "StarConfig.hpp"
 #include "StarException.hpp"
+#include "StarIODevice.hpp"
 #include "StarLruCache.hpp"
 #include "StarSet.hpp"
-#include "StarBTree.hpp"
 #include "StarThread.hpp"
-#include "StarIODevice.hpp"
-#include "StarConfig.hpp"
 
 import std;
 
 namespace Star {
 
-using DBException = ExceptionDerived<"DBException",IOException>;
+using DBException = ExceptionDerived<"DBException", IOException>;
 
 class BTreeDatabase {
 public:
   std::uint32_t const ContentIdentifierStringSize = 16;
 
   BTreeDatabase();
-  BTreeDatabase(String const& contentIdentifier, size_t keySize);
+  BTreeDatabase(String const& contentIdentifier, std::size_t keySize);
   ~BTreeDatabase();
 
   // The underlying device will be allocated in "blocks" of this size.
@@ -154,21 +154,21 @@ private:
 
   struct LeafNode {
     [[nodiscard]] auto count() const -> std::size_t;
-    [[nodiscard]] auto key(size_t i) const -> ByteArray const&;
-    [[nodiscard]] auto data(size_t i) const -> ByteArray const&;
+    [[nodiscard]] auto key(std::size_t i) const -> ByteArray const&;
+    [[nodiscard]] auto data(std::size_t i) const -> ByteArray const&;
 
-    void insert(size_t i, ByteArray k, ByteArray d);
-    void remove(size_t i);
+    void insert(std::size_t i, ByteArray k, ByteArray d);
+    void remove(std::size_t i);
 
     // count is number of elements to shift left
-    void shiftLeft(LeafNode& right, size_t count);
+    void shiftLeft(LeafNode& right, std::size_t count);
 
     // count is number of elements to shift right
-    void shiftRight(LeafNode& left, size_t count);
+    void shiftRight(LeafNode& left, std::size_t count);
 
     // i should be index of element that will be the new start of right node.
     // Returns right index node.
-    void split(LeafNode& right, size_t i);
+    void split(LeafNode& right, std::size_t i);
 
     struct Element {
       ByteArray key;
@@ -208,7 +208,7 @@ private:
     auto storeLeaf(Leaf leaf) -> Pointer;
     void deleteLeaf(Leaf leaf);
 
-    auto indexPointerCount(Index const& index) -> size_t;
+    auto indexPointerCount(Index const& index) -> std::size_t;
     auto indexPointer(Index const& index, std::size_t i) -> Pointer;
     void indexUpdatePointer(Index& index, std::size_t i, Pointer p);
     auto indexKeyBefore(Index const& index, std::size_t i) -> Key;
@@ -322,28 +322,28 @@ public:
   auto insert(String const& key, ByteArray const& value) -> bool;
   auto remove(String const& key) -> bool;
 
-  using BTreeDatabase::ContentIdentifierStringSize;
-  using BTreeDatabase::blockSize;
-  using BTreeDatabase::setBlockSize;
-  using BTreeDatabase::contentIdentifier;
-  using BTreeDatabase::setContentIdentifier;
-  using BTreeDatabase::indexCacheSize;
-  using BTreeDatabase::setIndexCacheSize;
   using BTreeDatabase::autoCommit;
-  using BTreeDatabase::setAutoCommit;
-  using BTreeDatabase::ioDevice;
-  using BTreeDatabase::setIODevice;
-  using BTreeDatabase::open;
-  using BTreeDatabase::isOpen;
-  using BTreeDatabase::recordCount;
-  using BTreeDatabase::indexLevels;
-  using BTreeDatabase::totalBlockCount;
+  using BTreeDatabase::blockSize;
+  using BTreeDatabase::close;
+  using BTreeDatabase::commit;
+  using BTreeDatabase::contentIdentifier;
+  using BTreeDatabase::ContentIdentifierStringSize;
   using BTreeDatabase::freeBlockCount;
   using BTreeDatabase::indexBlockCount;
+  using BTreeDatabase::indexCacheSize;
+  using BTreeDatabase::indexLevels;
+  using BTreeDatabase::ioDevice;
+  using BTreeDatabase::isOpen;
   using BTreeDatabase::leafBlockCount;
-  using BTreeDatabase::commit;
+  using BTreeDatabase::open;
+  using BTreeDatabase::recordCount;
   using BTreeDatabase::rollback;
-  using BTreeDatabase::close;
+  using BTreeDatabase::setAutoCommit;
+  using BTreeDatabase::setBlockSize;
+  using BTreeDatabase::setContentIdentifier;
+  using BTreeDatabase::setIndexCacheSize;
+  using BTreeDatabase::setIODevice;
+  using BTreeDatabase::totalBlockCount;
 };
 
-}
+}// namespace Star

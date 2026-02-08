@@ -1,4 +1,5 @@
 #include "StarLogging.hpp"
+
 #include "StarConfig.hpp"
 #include "StarTime.hpp"
 
@@ -10,11 +11,10 @@ EnumMap<LogLevel> const LogLevelNames{
   {LogLevel::Debug, "Debug"},
   {LogLevel::Info, "Info"},
   {LogLevel::Warn, "Warn"},
-  {LogLevel::Error, "Error"}
-};
+  {LogLevel::Error, "Error"}};
 
 LogSink::LogSink()
-  : m_level(LogLevel::Info) {}
+    : m_level(LogLevel::Info) {}
 
 LogSink::~LogSink() = default;
 
@@ -86,7 +86,7 @@ auto Logger::loggable(LogLevel level) -> bool {
 void Logger::refreshLoggable() {
   s_loggable = Array<bool, 4>::filled(false);
   for (auto const& l : s_sinks) {
-    for (auto i = (size_t)l->level(); i != s_loggable.size(); ++i)
+    for (auto i = (std::size_t)l->level(); i != s_loggable.size(); ++i)
       s_loggable[i] = true;
   }
 }
@@ -119,19 +119,20 @@ void LogMap::clear() {
 HashMap<String, String> LogMap::s_logMap;
 Mutex LogMap::s_logMapMutex;
 
-size_t const SpatialLogger::MaximumLines;
-size_t const SpatialLogger::MaximumPoints;
-size_t const SpatialLogger::MaximumText;
+std::size_t const SpatialLogger::MaximumLines;
+std::size_t const SpatialLogger::MaximumPoints;
+std::size_t const SpatialLogger::MaximumText;
 
 void SpatialLogger::logPoly(char const* space, PolyF const& poly, Vec4B const& color) {
-  if (!observed()) return;
+  if (!observed())
+    return;
 
   MutexLocker locker(s_mutex);
   auto& lines = s_lines[space];
 
-  for (size_t i = 0; i < poly.sides(); ++i) {
+  for (std::size_t i = 0; i < poly.sides(); ++i) {
     auto side = poly.side(i);
-    lines.append(Line{.begin=side.min(), .end=side.max(), .color=color});
+    lines.append(Line{.begin = side.min(), .end = side.max(), .color = color});
   }
 
   while (lines.size() > MaximumLines)
@@ -139,48 +140,52 @@ void SpatialLogger::logPoly(char const* space, PolyF const& poly, Vec4B const& c
 }
 
 void SpatialLogger::logLine(char const* space, Line2F const& line, Vec4B const& color) {
-  if (!observed()) return;
+  if (!observed())
+    return;
 
   MutexLocker locker(s_mutex);
   auto& lines = s_lines[space];
 
-  lines.append(Line{.begin=line.min(), .end=line.max(), .color=color});
+  lines.append(Line{.begin = line.min(), .end = line.max(), .color = color});
 
   while (lines.size() > MaximumLines)
     lines.removeFirst();
 }
 
 void SpatialLogger::logLine(char const* space, Vec2F const& begin, Vec2F const& end, Vec4B const& color) {
-  if (!observed()) return;
+  if (!observed())
+    return;
 
   MutexLocker locker(s_mutex);
   auto& lines = s_lines[space];
 
-  lines.append(Line{.begin=begin, .end=end, .color=color});
+  lines.append(Line{.begin = begin, .end = end, .color = color});
 
   while (lines.size() > MaximumLines)
     lines.removeFirst();
 }
 
 void SpatialLogger::logPoint(char const* space, Vec2F const& position, Vec4B const& color) {
-  if (!observed()) return;
+  if (!observed())
+    return;
 
   MutexLocker locker(s_mutex);
   auto& points = s_points[space];
 
-  points.append(Point{.position=position, .color=color});
+  points.append(Point{.position = position, .color = color});
 
   while (points.size() > MaximumPoints)
     points.removeFirst();
 }
 
 void SpatialLogger::logText(char const* space, String text, Vec2F const& position, Vec4B const& color) {
-  if (!observed()) return;
+  if (!observed())
+    return;
 
   MutexLocker locker(s_mutex);
   auto& texts = s_logText[space];
 
-  texts.append(LogText{.text=text, .position=position, .color=color});
+  texts.append(LogText{.text = text, .position = position, .color = color});
 
   while (texts.size() > MaximumText)
     texts.removeFirst();
@@ -219,7 +224,7 @@ void SpatialLogger::clear() {
     lines = std::move(s_lines);
     points = std::move(s_points);
     logText = std::move(s_logText);
-  } // Move while locked to deallocate contents while unlocked.
+  }// Move while locked to deallocate contents while unlocked.
 }
 
 auto SpatialLogger::observed() -> bool {
@@ -230,10 +235,9 @@ void SpatialLogger::setObserved(bool observed) {
   s_observed = observed;
 }
 
-
 Mutex SpatialLogger::s_mutex;
 StringMap<Deque<SpatialLogger::Line>> SpatialLogger::s_lines;
 StringMap<Deque<SpatialLogger::Point>> SpatialLogger::s_points;
 StringMap<Deque<SpatialLogger::LogText>> SpatialLogger::s_logText;
 bool SpatialLogger::s_observed = false;
-}
+}// namespace Star

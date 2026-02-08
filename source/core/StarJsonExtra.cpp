@@ -1,12 +1,13 @@
 #include "StarJsonExtra.hpp"
-#include "StarRandom.hpp"
+
 #include "StarList.hpp"
+#include "StarRandom.hpp"
 
 import std;
 
 namespace Star {
 
-auto jsonToSize(Json const& v) -> size_t {
+auto jsonToSize(Json const& v) -> std::size_t {
   if (v.isNull())
     return std::numeric_limits<std::size_t>::max();
 
@@ -16,7 +17,7 @@ auto jsonToSize(Json const& v) -> size_t {
   return v.toUInt();
 }
 
-auto jsonFromSize(size_t s) -> Json {
+auto jsonFromSize(std::size_t s) -> Json {
   if (s == std::numeric_limits<std::size_t>::max())
     return {};
   return {s};
@@ -392,7 +393,7 @@ auto weightedChoiceFromJson(Json const& source, Json const& default_) -> Json {
     throw StarException("Json of array type expected.");
   List<std::pair<float, Json>> options;
   float sum = 0;
-  size_t idx = 0;
+  std::size_t idx = 0;
   while (idx < source.size()) {
     float weight = 1;
     Json entry = source.get(idx);
@@ -471,4 +472,4 @@ auto jsonToWeightedPool(Json const& source) -> WeightedPool<JsonObject> {
   return jsonToWeightedPool<JsonObject>(source, [](Json const& v) -> JsonObject { return v.toObject(); });
 }
 
-}
+}// namespace Star

@@ -1,16 +1,18 @@
 #pragma once
 
-#include "StarPhysicsEntity.hpp"
-#include "StarInventoryTypes.hpp"
-#include "StarCollisionBlock.hpp"
-#include "StarPlatformerAStar.hpp"
 #include "StarActorMovementController.hpp"
-#include "StarDamage.hpp"
-#include "StarCollectionDatabase.hpp"
 #include "StarBehaviorState.hpp"
+#include "StarCollectionDatabase.hpp"
+#include "StarCollisionBlock.hpp"
+#include "StarConfig.hpp"
+#include "StarDamage.hpp"
 #include "StarDrawable.hpp"
-#include "StarLuaConverters.hpp" // IWYU pragma: keep
 #include "StarEntity.hpp"
+#include "StarInventoryTypes.hpp"
+#include "StarLuaConverters.hpp"// IWYU pragma: keep
+#include "StarPhysicsEntity.hpp"
+#include "StarPlatformerAStar.hpp"
+#include "StarRpcThreadPromise.hpp"
 
 import std;
 
@@ -18,20 +20,20 @@ namespace Star {
 
 template <>
 struct LuaConverter<InventorySlot> {
-  static LuaValue from(LuaEngine& engine, InventorySlot k);
-  static std::optional<InventorySlot> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, InventorySlot k) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<InventorySlot>;
 };
 
 template <>
 struct LuaConverter<CollisionKind> {
-  static LuaValue from(LuaEngine& engine, CollisionKind k);
-  static std::optional<CollisionKind> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, CollisionKind k) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<CollisionKind>;
 };
 
 template <>
 struct LuaConverter<CollisionSet> {
-  static LuaValue from(LuaEngine& engine, CollisionSet const& s);
-  static std::optional<CollisionSet> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, CollisionSet const& s) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<CollisionSet>;
 };
 
 template <typename T>
@@ -39,7 +41,7 @@ struct LuaConverter<RpcPromise<T>> : LuaUserDataConverter<RpcPromise<T>> {};
 
 template <typename T>
 struct LuaUserDataMethods<RpcPromise<T>> {
-  static LuaMethods<RpcPromise<T>> make();
+  static auto make() -> LuaMethods<RpcPromise<T>>;
 };
 
 template <typename T>
@@ -47,12 +49,12 @@ struct LuaConverter<RpcThreadPromise<T>> : LuaUserDataConverter<RpcThreadPromise
 
 template <typename T>
 struct LuaUserDataMethods<RpcThreadPromise<T>> {
-  static LuaMethods<RpcThreadPromise<T>> make();
+  static auto make() -> LuaMethods<RpcThreadPromise<T>>;
 };
 
 template <>
 struct LuaConverter<PlatformerAStar::Path> {
-  static LuaValue from(LuaEngine& engine, PlatformerAStar::Path const& path);
+  static auto from(LuaEngine& engine, PlatformerAStar::Path const& path) -> LuaValue;
 };
 
 template <>
@@ -60,70 +62,70 @@ struct LuaConverter<PlatformerAStar::PathFinder> : LuaUserDataConverter<Platform
 
 template <>
 struct LuaUserDataMethods<PlatformerAStar::PathFinder> {
-  static LuaMethods<PlatformerAStar::PathFinder> make();
+  static auto make() -> LuaMethods<PlatformerAStar::PathFinder>;
 };
 
 template <>
 struct LuaConverter<PlatformerAStar::Parameters> {
-  static std::optional<PlatformerAStar::Parameters> to(LuaEngine& engine, LuaValue const& v);
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<PlatformerAStar::Parameters>;
 };
 
 template <>
 struct LuaConverter<ActorJumpProfile> {
-  static LuaValue from(LuaEngine& engine, ActorJumpProfile const& v);
-  static std::optional<ActorJumpProfile> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, ActorJumpProfile const& v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<ActorJumpProfile>;
 };
 
 template <>
 struct LuaConverter<ActorMovementParameters> {
-  static LuaValue from(LuaEngine& engine, ActorMovementParameters const& v);
-  static std::optional<ActorMovementParameters> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, ActorMovementParameters const& v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<ActorMovementParameters>;
 };
 
 template <>
 struct LuaConverter<ActorMovementModifiers> {
-  static LuaValue from(LuaEngine& engine, ActorMovementModifiers const& v);
-  static std::optional<ActorMovementModifiers> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, ActorMovementModifiers const& v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<ActorMovementModifiers>;
 };
 
 template <>
 struct LuaConverter<StatModifier> {
-  static LuaValue from(LuaEngine& engine, StatModifier const& v);
-  static std::optional<StatModifier> to(LuaEngine& engine, LuaValue v);
+  static auto from(LuaEngine& engine, StatModifier const& v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue v) -> std::optional<StatModifier>;
 };
 
 template <>
 struct LuaConverter<EphemeralStatusEffect> {
-  static LuaValue from(LuaEngine& engine, EphemeralStatusEffect const& v);
-  static std::optional<EphemeralStatusEffect> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, EphemeralStatusEffect const& v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<EphemeralStatusEffect>;
 };
 
 template <>
 struct LuaConverter<DamageRequest> {
-  static LuaValue from(LuaEngine& engine, DamageRequest const& v);
-  static std::optional<DamageRequest> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, DamageRequest const& v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<DamageRequest>;
 };
 
 template <>
 struct LuaConverter<DamageNotification> {
-  static LuaValue from(LuaEngine& engine, DamageNotification const& v);
-  static std::optional<DamageNotification> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, DamageNotification const& v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<DamageNotification>;
 };
 
 template <>
 struct LuaConverter<LiquidLevel> {
-  static LuaValue from(LuaEngine& engine, LiquidLevel const& v);
-  static std::optional<LiquidLevel> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, LiquidLevel const& v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<LiquidLevel>;
 };
 
 template <>
 struct LuaConverter<Drawable> {
-  static LuaValue from(LuaEngine& engine, Drawable const& v);
-  static std::optional<Drawable> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, Drawable const& v) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<Drawable>;
 };
 
 template <typename T>
-LuaMethods<RpcPromise<T>> LuaUserDataMethods<RpcPromise<T>>::make() {
+auto LuaUserDataMethods<RpcPromise<T>>::make() -> LuaMethods<RpcPromise<T>> {
   LuaMethods<RpcPromise<T>> methods;
   methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("finished", mem_fn(&RpcPromise<T>::finished));
   methods.template registerMethodWithSignature<bool, RpcPromise<T>&>("succeeded", mem_fn(&RpcPromise<T>::succeeded));
@@ -133,7 +135,7 @@ LuaMethods<RpcPromise<T>> LuaUserDataMethods<RpcPromise<T>>::make() {
 }
 
 template <typename T>
-LuaMethods<RpcThreadPromise<T>> LuaUserDataMethods<RpcThreadPromise<T>>::make() {
+auto LuaUserDataMethods<RpcThreadPromise<T>>::make() -> LuaMethods<RpcThreadPromise<T>> {
   LuaMethods<RpcThreadPromise<T>> methods;
   methods.template registerMethodWithSignature<bool, RpcThreadPromise<T>&>("finished", mem_fn(&RpcThreadPromise<T>::finished));
   methods.template registerMethodWithSignature<bool, RpcThreadPromise<T>&>("succeeded", mem_fn(&RpcThreadPromise<T>::succeeded));
@@ -144,53 +146,53 @@ LuaMethods<RpcThreadPromise<T>> LuaUserDataMethods<RpcThreadPromise<T>>::make() 
 
 template <>
 struct LuaConverter<Collection> {
-  static LuaValue from(LuaEngine& engine, Collection const& c);
-  static std::optional<Collection> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, Collection const& c) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<Collection>;
 };
 
 template <>
 struct LuaConverter<Collectable> {
-  static LuaValue from(LuaEngine& engine, Collectable const& c);
-  static std::optional<Collectable> to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, Collectable const& c) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> std::optional<Collectable>;
 };
 
 // BehaviorState contains Lua references, putting it in a UserData violates
 // the "don't put lua references in userdata, just don't" rule. We get around it by keeping
 // a weak pointer to the behavior state, forcing it to be destroyed elsewhere.
 template <>
-struct LuaConverter<BehaviorStateWeakPtr> : LuaUserDataConverter<BehaviorStateWeakPtr> {};
+struct LuaConverter<WeakPtr<BehaviorState>> : LuaUserDataConverter<WeakPtr<BehaviorState>> {};
 
 template <>
-struct LuaUserDataMethods<BehaviorStateWeakPtr> {
-  static LuaMethods<BehaviorStateWeakPtr> make();
+struct LuaUserDataMethods<WeakPtr<BehaviorState>> {
+  static auto make() -> LuaMethods<WeakPtr<BehaviorState>>;
 };
 
 template <>
 struct LuaConverter<NodeStatus> {
-  static LuaValue from(LuaEngine& engine, NodeStatus const& status);
-  static NodeStatus to(LuaEngine& engine, LuaValue const& v);
+  static auto from(LuaEngine& engine, NodeStatus const& status) -> LuaValue;
+  static auto to(LuaEngine& engine, LuaValue const& v) -> NodeStatus;
 };
 
 template <>
 struct LuaConverter<PhysicsMovingCollision> {
-  static LuaValue from(LuaEngine& engine, PhysicsMovingCollision const& v);
+  static auto from(LuaEngine& engine, PhysicsMovingCollision const& v) -> LuaValue;
 };
 
 // Weak pointer for the same reasons as BehaviorState.
 template <>
-struct LuaConverter<BlackboardWeakPtr> : LuaUserDataConverter<BlackboardWeakPtr> {};
+struct LuaConverter<WeakPtr<Blackboard>> : LuaUserDataConverter<WeakPtr<Blackboard>> {};
 
 template <>
-struct LuaUserDataMethods<BlackboardWeakPtr> {
-  static LuaMethods<BlackboardWeakPtr> make();
+struct LuaUserDataMethods<WeakPtr<Blackboard>> {
+  static auto make() -> LuaMethods<WeakPtr<Blackboard>>;
 };
 
 template <>
-struct LuaConverter<EntityPtr> : LuaUserDataConverter<EntityPtr> {};
+struct LuaConverter<Ptr<Entity>> : LuaUserDataConverter<Ptr<Entity>> {};
 
 template <>
-struct LuaUserDataMethods<EntityPtr> {
-  static LuaMethods<EntityPtr> make();
+struct LuaUserDataMethods<Ptr<Entity>> {
+  static auto make() -> LuaMethods<Ptr<Entity>>;
 };
 
-}
+}// namespace Star

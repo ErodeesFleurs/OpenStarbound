@@ -2,33 +2,33 @@
 
 #include "StarEntity.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(InspectableEntity);
+namespace Star {
 
 class InspectableEntity : public virtual Entity {
 public:
   // Default implementation returns true
-  virtual bool inspectable() const;
+  [[nodiscard]] virtual auto inspectable() const -> bool;
 
   // If this entity can be entered into the player log, will return the log
   // identifier.
-  virtual std::optional<String> inspectionLogName() const;
+  [[nodiscard]] virtual auto inspectionLogName() const -> std::optional<String>;
 
   // Long description to display when inspected, if any
-  virtual std::optional<String> inspectionDescription(String const& species) const;
+  [[nodiscard]] virtual auto inspectionDescription(String const& species) const -> std::optional<String>;
 };
 
-inline bool InspectableEntity::inspectable() const {
+inline auto InspectableEntity::inspectable() const -> bool {
   return true;
 }
 
-inline std::optional<String> InspectableEntity::inspectionLogName() const {
+inline auto InspectableEntity::inspectionLogName() const -> std::optional<String> {
   return {};
 }
 
-inline std::optional<String> InspectableEntity::inspectionDescription(String const&) const {
+inline auto InspectableEntity::inspectionDescription(String const&) const -> std::optional<String> {
   return {};
 }
 
-}
+}// namespace Star

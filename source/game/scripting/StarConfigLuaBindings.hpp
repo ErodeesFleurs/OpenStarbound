@@ -2,9 +2,8 @@
 
 #include "StarLua.hpp"
 
-namespace Star {
+import std;
 
-namespace LuaBindings {
-  LuaCallbacks makeConfigCallbacks(function<Json(String const&, Json const&)> getParameter);
-}
+namespace Star::LuaBindings {
+auto makeConfigCallbacks(std::function<Json(String const&, Json const&)> getParameter) -> LuaCallbacks;
 }

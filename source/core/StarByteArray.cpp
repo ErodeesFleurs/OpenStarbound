@@ -10,13 +10,13 @@ auto ByteArray::fromCString(char const* str) -> ByteArray {
 }
 
 auto ByteArray::fromCStringWithNull(char const* str) -> ByteArray {
-  size_t len = std::strlen(str);
+  std::size_t len = std::strlen(str);
   ByteArray ba(str, len + 1);
   ba[len] = 0;
   return ba;
 }
 
-auto ByteArray::withReserve(size_t capacity) -> ByteArray {
+auto ByteArray::withReserve(std::size_t capacity) -> ByteArray {
   ByteArray bytes;
   bytes.reserve(capacity);
   return bytes;
@@ -28,12 +28,12 @@ ByteArray::ByteArray() {
   m_size = 0;
 }
 
-ByteArray::ByteArray(size_t dataSize, char c)
+ByteArray::ByteArray(std::size_t dataSize, char c)
   : ByteArray() {
   fill(dataSize, c);
 }
 
-ByteArray::ByteArray(const char* data, size_t dataSize)
+ByteArray::ByteArray(const char* data, std::size_t dataSize)
   : ByteArray() {
   append(data, dataSize);
 }
@@ -82,7 +82,7 @@ void ByteArray::reset() {
   }
 }
 
-void ByteArray::reserve(size_t newCapacity) {
+void ByteArray::reserve(std::size_t newCapacity) {
   if (newCapacity > m_capacity) {
     if (!m_data) {
       auto newMem = (char*)Star::malloc(newCapacity);
@@ -91,7 +91,7 @@ void ByteArray::reserve(size_t newCapacity) {
       m_data = newMem;
       m_capacity = newCapacity;
     } else {
-      newCapacity = std::max({m_capacity * 2, newCapacity, (size_t)8});
+      newCapacity = std::max({m_capacity * 2, newCapacity, (std::size_t)8});
       auto newMem = (char*)Star::realloc(m_data, newCapacity);
       if (!newMem)
         throw MemoryException::format(std::string_view("Could not set new ByteArray capacity {}\n"), newCapacity);
@@ -101,17 +101,17 @@ void ByteArray::reserve(size_t newCapacity) {
   }
 }
 
-void ByteArray::resize(size_t size, char f) {
+void ByteArray::resize(std::size_t size, char f) {
   if (m_size == size)
     return;
 
-  size_t oldSize = m_size;
+  std::size_t oldSize = m_size;
   resize(size);
-  for (size_t i = oldSize; i < m_size; ++i)
+  for (std::size_t i = oldSize; i < m_size; ++i)
     (*this)[i] = f;
 }
 
-void ByteArray::fill(size_t s, char c) {
+void ByteArray::fill(std::size_t s, char c) {
   if (s != std::numeric_limits<std::size_t>::max())
     resize(s);
 
@@ -122,7 +122,7 @@ void ByteArray::fill(char c) {
   fill(std::numeric_limits<std::size_t>::max(), c);
 }
 
-auto ByteArray::sub(size_t b, size_t s) const -> ByteArray {
+auto ByteArray::sub(std::size_t b, std::size_t s) const -> ByteArray {
   if (b == 0 && s >= m_size) {
     return {*this};
   } else {
@@ -130,11 +130,11 @@ auto ByteArray::sub(size_t b, size_t s) const -> ByteArray {
   }
 }
 
-auto ByteArray::left(size_t s) const -> ByteArray {
+auto ByteArray::left(std::size_t s) const -> ByteArray {
   return sub(0, s);
 }
 
-auto ByteArray::right(size_t s) const -> ByteArray {
+auto ByteArray::right(std::size_t s) const -> ByteArray {
   if (s > m_size)
     s = 0;
   else
@@ -143,7 +143,7 @@ auto ByteArray::right(size_t s) const -> ByteArray {
   return sub(s, m_size);
 }
 
-void ByteArray::trimLeft(size_t s) {
+void ByteArray::trimLeft(std::size_t s) {
   if (s >= m_size) {
     clear();
   } else {
@@ -152,18 +152,18 @@ void ByteArray::trimLeft(size_t s) {
   }
 }
 
-void ByteArray::trimRight(size_t s) {
+void ByteArray::trimRight(std::size_t s) {
   if (s >= m_size)
     clear();
   else
     resize(m_size - s);
 }
 
-auto ByteArray::diffChar(const ByteArray& b) const -> size_t {
-  size_t s = std::min(m_size, b.size());
+auto ByteArray::diffChar(const ByteArray& b) const -> std::size_t {
+  std::size_t s = std::min(m_size, b.size());
   char* ac = m_data;
   char* bc = b.m_data;
-  size_t i;
+  std::size_t i;
   for (i = 0; i < s; ++i) {
     if (ac[i] != bc[i])
       break;
@@ -182,7 +182,7 @@ auto ByteArray::compare(const ByteArray& b) const -> int {
   if (b.m_size == 0)
     return 1;
 
-  size_t d = diffChar(b);
+  std::size_t d = diffChar(b);
   if (d == m_size) {
     if (d != b.m_size)
       return -1;
@@ -221,15 +221,15 @@ auto ByteArray::xorWith(ByteArray const& rhs, bool extend) -> ByteArray {
   return combineWith([](char a, char b) -> int { return a ^ b; }, rhs, extend);
 }
 
-void ByteArray::insert(size_t pos, char byte) {
+void ByteArray::insert(std::size_t pos, char byte) {
   resize(m_size + 1);
-  for (size_t i = m_size - 1; i > pos; --i)
+  for (std::size_t i = m_size - 1; i > pos; --i)
     m_data[i] = m_data[i - 1];
   m_data[pos] = byte;
 }
 
 auto ByteArray::insert(const_iterator pos, char byte) -> ByteArray::iterator {
-  size_t d = pos - begin();
+  std::size_t d = pos - begin();
   insert(d, byte);
   return begin() + d + 1;
 }

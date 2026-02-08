@@ -158,7 +158,7 @@ Json::Json(String::Char const* s) {
   m_data = std::make_shared<String const>(s);
 }
 
-Json::Json(String::Char const* s, size_t len) {
+Json::Json(String::Char const* s, std::size_t len) {
   m_data = std::make_shared<String const>(s, len);
 }
 
@@ -315,7 +315,7 @@ auto Json::optObject() const -> std::optional<JsonObject> {
   return toObject();
 }
 
-auto Json::size() const -> size_t {
+auto Json::size() const -> std::size_t {
   if (type() == Type::Array)
     return m_data.get<ConstPtr<JsonArray>>()->size();
   else if (type() == Type::Object)
@@ -774,13 +774,13 @@ auto Json::eraseKey(String key) const -> Json {
   return map;
 }
 
-auto Json::set(size_t index, Json value) const -> Json {
+auto Json::set(std::size_t index, Json value) const -> Json {
   auto array = toArray();
   array[index] = std::move(value);
   return array;
 }
 
-auto Json::insert(size_t index, Json value) const -> Json {
+auto Json::insert(std::size_t index, Json value) const -> Json {
   auto array = toArray();
   array.insertAt(index, std::move(value));
   return array;
@@ -792,7 +792,7 @@ auto Json::append(Json value) const -> Json {
   return array;
 }
 
-auto Json::eraseIndex(size_t index) const -> Json {
+auto Json::eraseIndex(std::size_t index) const -> Json {
   auto array = toArray();
   array.eraseAt(index);
   return array;
@@ -933,15 +933,15 @@ auto operator>>(DataStream& os, Json& v) -> DataStream& {
     v = Json(os.read<String>());
   } else if (type == Json::Type::Array) {
     JsonArray l;
-    size_t s = os.readVlqU();
-    for (size_t i = 0; i < s; ++i)
+    std::size_t s = os.readVlqU();
+    for (std::size_t i = 0; i < s; ++i)
       l.append(os.read<Json>());
 
     v = std::move(l);
   } else if (type == Json::Type::Object) {
     JsonObject m;
-    size_t s = os.readVlqU();
-    for (size_t i = 0; i < s; ++i) {
+    std::size_t s = os.readVlqU();
+    for (std::size_t i = 0; i < s; ++i) {
       auto k = os.read<String>();
       m[k] = os.read<Json>();
     }
@@ -1006,13 +1006,13 @@ void Json::getHash(std::size_t& seed) const {
   }
 }
 
-auto hash<Json>::operator()(Json const& v) const -> size_t {
-  size_t seed = 233;
+auto hash<Json>::operator()(Json const& v) const -> std::size_t {
+  std::size_t seed = 233;
   v.getHash(seed);
   return seed;
 }
 
-auto Json::ptr(size_t index) const -> Json const* {
+auto Json::ptr(std::size_t index) const -> Json const* {
   if (type() != Type::Array)
     throw JsonException::format("Cannot call get with index on Json type {}, must be Array type", typeName());
 

@@ -1,6 +1,8 @@
 #include "StarIODevice.hpp"
-#include "StarMathCommon.hpp"
+
 #include "StarFormat.hpp"
+
+import std;
 
 namespace Star {
 
@@ -16,8 +18,8 @@ void IODevice::resize(std::int64_t) {
   throw IOException("resize not supported");
 }
 
-void IODevice::readFull(char* data, size_t len) {
-  size_t r = read(data, len);
+void IODevice::readFull(char* data, std::size_t len) {
+  std::size_t r = read(data, len);
   if (r < len) {
     if (atEnd())
       throw EofException("Failed to read full buffer in readFull, eof reached.");
@@ -28,8 +30,8 @@ void IODevice::readFull(char* data, size_t len) {
   len -= r;
 }
 
-void IODevice::writeFull(char const* data, size_t len) {
-  size_t r = write(data, len);
+void IODevice::writeFull(char const* data, std::size_t len) {
+  std::size_t r = write(data, len);
   if (r < len) {
     if (atEnd())
       throw EofException("Failed to write full buffer in writeFull, eof reached.");
@@ -51,15 +53,15 @@ void IODevice::close() {
 
 void IODevice::sync() {}
 
-String IODevice::deviceName() const {
+auto IODevice::deviceName() const -> String {
   return strf("IODevice <{}>", (void*)this);
 }
 
-bool IODevice::atEnd() {
+auto IODevice::atEnd() -> bool {
   return pos() >= size();
 }
 
-std::int64_t IODevice::size() {
+auto IODevice::size() -> std::int64_t {
   try {
     std::int64_t storedPos = pos();
     seek(0, IOSeek::End);
@@ -71,25 +73,25 @@ std::int64_t IODevice::size() {
   }
 }
 
-size_t IODevice::readAbsolute(std::int64_t readPosition, char* data, size_t len) {
+auto IODevice::readAbsolute(std::int64_t readPosition, char* data, std::size_t len) -> std::size_t {
   std::int64_t storedPos = pos();
   seek(readPosition);
-  size_t ret = read(data, len);
+  std::size_t ret = read(data, len);
   seek(storedPos);
   return ret;
 }
 
-size_t IODevice::writeAbsolute(std::int64_t writePosition, char const* data, size_t len) {
+auto IODevice::writeAbsolute(std::int64_t writePosition, char const* data, std::size_t len) -> std::size_t {
   std::int64_t storedPos = pos();
   seek(writePosition);
-  size_t ret = write(data, len);
+  std::size_t ret = write(data, len);
   seek(storedPos);
   return ret;
 }
 
-void IODevice::readFullAbsolute(std::int64_t readPosition, char* data, size_t len) {
+void IODevice::readFullAbsolute(std::int64_t readPosition, char* data, std::size_t len) {
   while (len > 0) {
-    size_t r = readAbsolute(readPosition, data, len);
+    std::size_t r = readAbsolute(readPosition, data, len);
     if (r == 0)
       throw IOException("Failed to read full buffer in readFullAbsolute");
     readPosition += r;
@@ -98,9 +100,9 @@ void IODevice::readFullAbsolute(std::int64_t readPosition, char* data, size_t le
   }
 }
 
-void IODevice::writeFullAbsolute(std::int64_t writePosition, char const* data, size_t len) {
+void IODevice::writeFullAbsolute(std::int64_t writePosition, char const* data, std::size_t len) {
   while (len > 0) {
-    size_t r = writeAbsolute(writePosition, data, len);
+    std::size_t r = writeAbsolute(writePosition, data, len);
     if (r == 0)
       throw IOException("Failed to write full buffer in writeFullAbsolute");
     writePosition += r;
@@ -109,7 +111,7 @@ void IODevice::writeFullAbsolute(std::int64_t writePosition, char const* data, s
   }
 }
 
-ByteArray IODevice::readBytes(size_t size) {
+auto IODevice::readBytes(std::size_t size) -> ByteArray {
   if (!size)
     return {};
 
@@ -123,7 +125,7 @@ void IODevice::writeBytes(ByteArray const& p) {
   writeFull(p.ptr(), p.size());
 }
 
-ByteArray IODevice::readBytesAbsolute(std::int64_t readPosition, size_t size) {
+auto IODevice::readBytesAbsolute(std::int64_t readPosition, std::size_t size) -> ByteArray {
   if (!size)
     return {};
 
@@ -145,9 +147,9 @@ IODevice::IODevice(IODevice const& rhs) {
   m_mode = rhs.mode();
 }
 
-IODevice& IODevice::operator=(IODevice const& rhs) {
+auto IODevice::operator=(IODevice const& rhs) -> IODevice& {
   m_mode = rhs.mode();
   return *this;
 }
 
-}
+}// namespace Star

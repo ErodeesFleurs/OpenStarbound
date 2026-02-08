@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarLua.hpp"
+#include "StarLuaConverters.hpp" // IWYU pragma: export
 
 namespace Star {
 

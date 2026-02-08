@@ -1,24 +1,30 @@
 #pragma once
 
+#include "StarAnchorableEntity.hpp"
+#include "StarConfig.hpp"
+#include "StarException.hpp"
+#include "StarGameTimers.hpp"
 #include "StarMovementController.hpp"
 #include "StarPlatformerAStarTypes.hpp"
-#include "StarAnchorableEntity.hpp"
-#include "StarGameTimers.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(ActorMovementControllerException, MovementControllerException);
+using ActorMovementControllerException = ExceptionDerived<"ActorMovementControllerException", MovementControllerException>;
 
-STAR_CLASS(ActorMovementController);
-STAR_CLASS(PathController);
+class PathController;
+namespace PlatformerAStar {
+class PathFinder;
+}
 
 struct ActorJumpProfile {
   ActorJumpProfile();
   ActorJumpProfile(Json const& config);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  ActorJumpProfile merge(ActorJumpProfile const& rhs) const;
+  [[nodiscard]] auto merge(ActorJumpProfile const& rhs) const -> ActorJumpProfile;
 
   std::optional<float> jumpSpeed;
   std::optional<float> jumpControlForce;
@@ -36,25 +42,25 @@ struct ActorJumpProfile {
   std::optional<bool> collisionCancelled;
 };
 
-DataStream& operator>>(DataStream& ds, ActorJumpProfile& movementParameters);
-DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameters);
+auto operator>>(DataStream& ds, ActorJumpProfile& movementParameters) -> DataStream&;
+auto operator<<(DataStream& ds, ActorJumpProfile const& movementParameters) -> DataStream&;
 
 // A not-quite superset of MovementParameters, with some fields from
 // MovementParameters ignored because they make no sense, and other fields
 // expanded out to different cases based on Actor specific things.
 struct ActorMovementParameters {
   // Load sensible defaults from a config file.
-  static ActorMovementParameters sensibleDefaults();
+  static auto sensibleDefaults() -> ActorMovementParameters;
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
   explicit ActorMovementParameters(Json const& config = Json());
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   // Merge the given set of movement parameters on top of this one, with any
   // set parameters in rhs overwriting the ones in this set.
-  ActorMovementParameters merge(ActorMovementParameters const& rhs) const;
+  [[nodiscard]] auto merge(ActorMovementParameters const& rhs) const -> ActorMovementParameters;
 
   std::optional<float> mass;
   std::optional<float> gravityMultiplier;
@@ -112,8 +118,8 @@ struct ActorMovementParameters {
   std::optional<float> pathExploreRate;
 };
 
-DataStream& operator>>(DataStream& ds, ActorMovementParameters& movementParameters);
-DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementParameters);
+auto operator>>(DataStream& ds, ActorMovementParameters& movementParameters) -> DataStream&;
+auto operator<<(DataStream& ds, ActorMovementParameters const& movementParameters) -> DataStream&;
 
 // A set of normalized values that act as "modifiers" or "bonuses" to movement,
 // and can be combined sensibly.  A modifier of 0.0 represents a 0% change, a
@@ -123,10 +129,10 @@ DataStream& operator<<(DataStream& ds, ActorMovementParameters const& movementPa
 struct ActorMovementModifiers {
   explicit ActorMovementModifiers(Json const& config = Json());
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   // Combines each modifier value through addition.
-  ActorMovementModifiers combine(ActorMovementModifiers const& rhs) const;
+  [[nodiscard]] auto combine(ActorMovementModifiers const& rhs) const -> ActorMovementModifiers;
 
   float groundMovementModifier;
   float liquidMovementModifier;
@@ -141,8 +147,8 @@ struct ActorMovementModifiers {
   bool facingSuppressed;
 };
 
-DataStream& operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers);
-DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers);
+auto operator>>(DataStream& ds, ActorMovementModifiers& movementModifiers) -> DataStream&;
+auto operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers) -> DataStream&;
 
 class ActorMovementController : public virtual MovementController {
 public:
@@ -151,7 +157,7 @@ public:
   explicit ActorMovementController(ActorMovementParameters const& parameters = ActorMovementParameters());
 
   // Currently active parameters.
-  ActorMovementParameters const& baseParameters() const;
+  auto baseParameters() const -> ActorMovementParameters const&;
 
   // Apply any set parameters from the given set on top of the current set.
   void updateBaseParameters(ActorMovementParameters const& parameters);
@@ -161,7 +167,7 @@ public:
   void resetBaseParameters(ActorMovementParameters const& parameters = ActorMovementParameters());
 
   // Currently active modifiers.
-  ActorMovementModifiers const& baseModifiers() const;
+  auto baseModifiers() const -> ActorMovementModifiers const&;
 
   // Combine the given modifiers with the already active modifiers.
   void updateBaseModifiers(ActorMovementModifiers const& modifiers);
@@ -171,7 +177,7 @@ public:
 
   // Stores and loads position, velocity, rotation, movingDirection,
   // facingDirection, and crouching
-  Json storeState() const;
+  auto storeState() const -> Json;
   void loadState(Json const& state);
 
   // Optionaly anchor this ActorMovementController to the given
@@ -181,28 +187,28 @@ public:
   // AnchorableEntity state.
   void setAnchorState(EntityAnchorState anchorState);
   void resetAnchorState();
-  std::optional<EntityAnchorState> anchorState() const;
-  EntityAnchorConstPtr entityAnchor() const;
+  auto anchorState() const -> std::optional<EntityAnchorState>;
+  auto entityAnchor() const -> ConstPtr<EntityAnchor>;
 
   // ActorMovementController position and rotation honor the entity anchor, if
   // an anchor is set.
-  Vec2F position() const override;
-  float rotation() const override;
+  auto position() const -> Vec2F override;
+  auto rotation() const -> float override;
 
-  bool walking() const;
-  bool running() const;
-  Direction movingDirection() const;
-  Direction facingDirection() const;
-  bool crouching() const;
-  bool flying() const;
-  bool falling() const;
-  bool canJump() const;
-  bool jumping() const;
+  auto walking() const -> bool;
+  auto running() const -> bool;
+  auto movingDirection() const -> Direction;
+  auto facingDirection() const -> Direction;
+  auto crouching() const -> bool;
+  auto flying() const -> bool;
+  auto falling() const -> bool;
+  auto canJump() const -> bool;
+  auto jumping() const -> bool;
   // Slightly different than onGround, in that this is sustained for a few
   // extra frames of movement before it becomes false.
-  bool groundMovement() const;
-  bool liquidMovement() const;
-  bool pathfinding() const;
+  auto groundMovement() const -> bool;
+  auto liquidMovement() const -> bool;
+  auto pathfinding() const -> bool;
 
   // Basic direct physics controls that can be called multiple times per
   // update and will be combined.
@@ -230,8 +236,8 @@ public:
   void controlJump(bool jumpEvenIfUnable = false);
   void controlFly(Vec2F const& velocity);
 
-  std::optional<pair<Vec2F, bool>> pathMove(Vec2F const& pathPosition, bool run = false, std::optional<PlatformerAStar::Parameters> const& parameters = {});
-  std::optional<pair<Vec2F, bool>> controlPathMove(Vec2F const& pathPosition, bool run = false, std::optional<PlatformerAStar::Parameters> const& parameters = {});
+  auto pathMove(Vec2F const& pathPosition, bool run = false, std::optional<PlatformerAStar::Parameters> const& parameters = {}) -> std::optional<std::pair<Vec2F, bool>>;
+  auto controlPathMove(Vec2F const& pathPosition, bool run = false, std::optional<PlatformerAStar::Parameters> const& parameters = {}) -> std::optional<std::pair<Vec2F, bool>>;
 
   // Used for user controller input.
   void setMoveSpeedMultiplier(float multiplier = 1.0f);
@@ -244,7 +250,6 @@ public:
   void tickMaster(float dt);
 
   void tickSlave(float dt);
-
 
 private:
   struct ApproachVelocityCommand {
@@ -279,7 +284,7 @@ private:
   NetElementBool m_groundMovement;
   NetElementBool m_liquidMovement;
   NetElementData<std::optional<EntityAnchorState>> m_anchorState;
-  EntityAnchorConstPtr m_entityAnchor;
+  ConstPtr<EntityAnchor> m_entityAnchor;
 
   // Command data
 
@@ -299,9 +304,9 @@ private:
 
   std::optional<Vec2F> m_controlFly;
 
-  std::optional<pair<Vec2F, bool>> m_controlPathMove;
-  std::optional<pair<Vec2F, bool>> m_pathMoveResult;
-  PathControllerPtr m_pathController;
+  std::optional<std::pair<Vec2F, bool>> m_controlPathMove;
+  std::optional<std::pair<Vec2F, bool>> m_pathMoveResult;
+  Ptr<PathController> m_pathController;
 
   ActorMovementParameters m_controlParameters;
   ActorMovementModifiers m_controlModifiers;
@@ -325,30 +330,31 @@ class PathController {
 public:
   PathController(World* world);
 
-  PlatformerAStar::Parameters const& parameters();
+  auto parameters() -> PlatformerAStar::Parameters const&;
   void setParameters(PlatformerAStar::Parameters const& parameters);
   void reset();
-  bool pathfinding() const;
-  std::optional<Vec2F> targetPosition() const;
-  std::optional<Direction> facing() const;
-  std::optional<PlatformerAStar::Action> curAction() const;
+  [[nodiscard]] auto pathfinding() const -> bool;
+  [[nodiscard]] auto targetPosition() const -> std::optional<Vec2F>;
+  [[nodiscard]] auto facing() const -> std::optional<Direction>;
+  [[nodiscard]] auto curAction() const -> std::optional<PlatformerAStar::Action>;
 
   // return true for reaching goal, false for failing to find path, nothing for running
-  std::optional<bool> findPath(ActorMovementController& movementController, Vec2F const& targetPosition);
-  std::optional<bool> move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt);
-private:
-  bool validateEdge(ActorMovementController& movementController, PlatformerAStar::Edge const& edge);
-  bool movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly);
+  auto findPath(ActorMovementController& movementController, Vec2F const& targetPosition) -> std::optional<bool>;
+  auto move(ActorMovementController& movementController, ActorMovementParameters const& parameters, ActorMovementModifiers const& modifiers, bool run, float dt) -> std::optional<bool>;
 
 private:
-  bool onGround(ActorMovementController const& movementController, Vec2F const& position, CollisionSet const& collisionSet) const;
+  auto validateEdge(ActorMovementController& movementController, PlatformerAStar::Edge const& edge) -> bool;
+  auto movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly) -> bool;
+
+private:
+  [[nodiscard]] auto onGround(ActorMovementController const& movementController, Vec2F const& position, CollisionSet const& collisionSet) const -> bool;
 
   World* m_world;
   PlatformerAStar::Parameters m_parameters;
 
   std::optional<Vec2F> m_startPosition;
   std::optional<Vec2F> m_targetPosition;
-  PlatformerAStar::PathFinderPtr m_pathFinder;
+  Ptr<PlatformerAStar::PathFinder> m_pathFinder;
 
   std::optional<Direction> m_controlFace;
 
@@ -357,4 +363,4 @@ private:
   std::optional<PlatformerAStar::Path> m_path;
 };
 
-}
+}// namespace Star

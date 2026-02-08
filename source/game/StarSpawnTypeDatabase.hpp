@@ -1,18 +1,19 @@
 #pragma once
 
+#include "StarBiMap.hpp"
+#include "StarException.hpp"
 #include "StarJson.hpp"
 #include "StarVector.hpp"
-#include "StarBiMap.hpp"
 #include "StarWeightedPool.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(SpawnTypeDatabaseException, StarException);
-
-STAR_CLASS(SpawnTypeDatabase);
+using SpawnTypeDatabaseException = ExceptionDerived<"SpawnTypeDatabaseException">;
 
 struct SpawnParameters {
-  enum class Area : uint8_t {
+  enum class Area : std::uint8_t {
     Surface,
     Ceiling,
     Air,
@@ -20,13 +21,13 @@ struct SpawnParameters {
     Solid
   };
 
-  enum class Region : uint8_t {
+  enum class Region : std::uint8_t {
     All,
     Enclosed,
     Exposed
   };
 
-  enum class Time : uint8_t {
+  enum class Time : std::uint8_t {
     All,
     Day,
     Night
@@ -40,7 +41,7 @@ struct SpawnParameters {
   SpawnParameters(Json const& config = {});
   SpawnParameters(Set<Area> areas, Region region, Time time);
 
-  bool compatible(SpawnParameters const& parameters) const;
+  [[nodiscard]] auto compatible(SpawnParameters const& parameters) const -> bool;
 
   Set<Area> areas;
   Region region;
@@ -60,32 +61,32 @@ struct SpawnType {
   float spawnChance;
 
   SpawnParameters spawnParameters;
-  uint64_t seedMix;
+  std::uint64_t seedMix;
 };
 
-SpawnType spawnTypeFromJson(Json const& config);
+auto spawnTypeFromJson(Json const& config) -> SpawnType;
 
 struct SpawnProfile {
   SpawnProfile();
   SpawnProfile(Json const& config);
   SpawnProfile(StringSet spawnTypes, Json monsterParameters);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   StringSet spawnTypes;
   Json monsterParameters;
 };
 
-SpawnProfile constructSpawnProfile(Json const& config, uint64_t seed);
+auto constructSpawnProfile(Json const& config, std::uint64_t seed) -> SpawnProfile;
 
 class SpawnTypeDatabase {
 public:
   SpawnTypeDatabase();
 
-  SpawnType spawnType(String const& typeName) const;
+  [[nodiscard]] auto spawnType(String const& typeName) const -> SpawnType;
 
 private:
   StringMap<SpawnType> m_spawnTypes;
 };
 
-}
+}// namespace Star

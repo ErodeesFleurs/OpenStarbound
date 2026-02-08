@@ -1,4 +1,5 @@
 #include "StarDirectives.hpp"
+
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
 
@@ -6,13 +7,13 @@ import std;
 
 namespace Star {
 
-Directives::Entry::Entry(ImageOperation&& newOperation, size_t strBegin, size_t strLength) {
+Directives::Entry::Entry(ImageOperation&& newOperation, std::size_t strBegin, std::size_t strLength) {
   operation = std::move(newOperation);
   begin = strBegin;
   length = strLength;
 }
 
-Directives::Entry::Entry(ImageOperation const& newOperation, size_t strBegin, size_t strLength) {
+Directives::Entry::Entry(ImageOperation const& newOperation, std::size_t strBegin, std::size_t strLength) {
   operation = newOperation;
   begin = strBegin;
   length = strLength;
@@ -26,10 +27,9 @@ Directives::Entry::Entry(Entry const& other) {
 
 auto Directives::Entry::loadOperation(Shared const& parent) const -> ImageOperation const& {
   if (operation.is<NullImageOperation>()) {
-    try
-      { operation = imageOperationFromString(string(parent)); }
-    catch (StarException const& e)
-      { operation = ErrorImageOperation{std::exception_ptr()}; }
+    try {
+      operation = imageOperationFromString(string(parent));
+    } catch (StarException const& e) { operation = ErrorImageOperation{std::exception_ptr()}; }
   }
   return operation;
 }
@@ -51,11 +51,11 @@ Directives::Shared::Shared(List<Entry>&& givenEntries, String&& givenString) {
   string = std::move(givenString);
 
   if (string.empty()) {
-          hash = 0;
-    } else {
-        std::string_view sv(string.utf8Ptr(), string.utf8Size());
-        hash = std::hash<std::string_view>{}(sv);
-    }
+    hash = 0;
+  } else {
+    std::string_view sv(string.utf8Ptr(), string.utf8Size());
+    hash = std::hash<std::string_view>{}(sv);
+  }
 }
 
 Directives::Directives() = default;
@@ -134,14 +134,13 @@ void Directives::parse(String&& directives) {
 
   List<Entry> entries;
   StringView view(directives);
-  view.forEachSplitView("?", [&](StringView split, size_t beg, size_t end) -> void {
+  view.forEachSplitView("?", [&](StringView split, std::size_t beg, std::size_t end) -> void {
     if (!split.empty()) {
       ImageOperation operation = NullImageOperation();
       if (beg == 0) {
-        try
-          { operation = imageOperationFromString(split); }
-        catch (StarException const& e)
-          { operation = ErrorImageOperation{std::exception_ptr()}; }
+        try {
+          operation = imageOperationFromString(split);
+        } catch (StarException const& e) { operation = ErrorImageOperation{std::exception_ptr()}; }
       }
       entries.emplace_back(std::move(operation), beg, end);
     }
@@ -153,7 +152,7 @@ void Directives::parse(String&& directives) {
   }
 
   m_shared = std::make_shared<Shared const>(std::move(entries), std::move(directives));
-  if (view.utf8().size() < 1000) { // Pre-load short enough directives
+  if (view.utf8().size() < 1000) {// Pre-load short enough directives
     for (auto& entry : m_shared->entries)
       entry.loadOperation(*m_shared);
   }
@@ -184,7 +183,6 @@ auto Directives::stringPtr() const -> String const* {
     return &m_shared->string;
 }
 
-
 auto Directives::buildString() const -> String {
   if (m_shared) {
     String built;
@@ -206,11 +204,11 @@ auto Directives::addToString(String& out) const -> String& {
   return out;
 }
 
-auto Directives::hash() const -> size_t {
+auto Directives::hash() const -> std::size_t {
   return m_shared ? m_shared->hash : 0;
 }
 
-auto Directives::size() const -> size_t {
+auto Directives::size() const -> std::size_t {
   return m_shared ? m_shared->entries.size() : 0;
 }
 
@@ -256,7 +254,7 @@ auto operator>>(DataStream& ds, Directives& directives) -> DataStream& {
   return ds;
 }
 
-auto operator<<(DataStream & ds, Directives const& directives) -> DataStream& {
+auto operator<<(DataStream& ds, Directives const& directives) -> DataStream& {
   if (directives)
     ds.write(directives->string);
   else
@@ -395,12 +393,12 @@ void DirectivesGroup::applyExistingImage(Image& image, ImageReferenceCallback re
   });
 }
 
-auto DirectivesGroup::hash() const -> size_t {
-    size_t seed = 233;
-    for (auto const& directives : m_directives) {
-        hashCombine(seed, directives.hash());
-    }
-    return seed;
+auto DirectivesGroup::hash() const -> std::size_t {
+  std::size_t seed = 233;
+  for (auto const& directives : m_directives) {
+    hashCombine(seed, directives.hash());
+  }
+  return seed;
 }
 
 auto DirectivesGroup::list() const -> const List<Directives>& {
@@ -430,8 +428,8 @@ auto operator<<(DataStream& ds, DirectivesGroup const& directivesGroup) -> DataS
   return ds;
 }
 
-auto hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const -> size_t {
+auto hash<DirectivesGroup>::operator()(DirectivesGroup const& s) const -> std::size_t {
   return s.hash();
 }
 
-}
+}// namespace Star

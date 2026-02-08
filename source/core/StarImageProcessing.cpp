@@ -1,12 +1,13 @@
 #include "StarImageProcessing.hpp"
+
+#include "StarColor.hpp"
+#include "StarEncode.hpp"
+#include "StarImage.hpp"
 #include "StarImageScaling.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarColor.hpp"
-#include "StarImage.hpp"
-#include "StarStringView.hpp"
-#include "StarEncode.hpp"
-#include "StarLogging.hpp"
 #include "StarList.hpp"
+#include "StarLogging.hpp"
+#include "StarStringView.hpp"
 
 import std;
 
@@ -93,33 +94,28 @@ auto imageOperationFromString(StringView string) -> ImageOperation {
               c[1] |= (c[1] << 4);
               c[2] |= (c[2] << 4);
               c[3] = static_cast<char>(255);
-            }
-            else if (hexLen == 4) {
+            } else if (hexLen == 4) {
               nibbleDecode(hexPtr, 4, c, 4);
               c[0] |= (c[0] << 4);
               c[1] |= (c[1] << 4);
               c[2] |= (c[2] << 4);
               c[3] |= (c[3] << 4);
-            }
-            else if (hexLen == 6) {
+            } else if (hexLen == 6) {
               hexDecode(hexPtr, 6, c, 4);
               c[3] = static_cast<char>(255);
-            }
-            else if (hexLen == 8) {
+            } else if (hexLen == 8) {
               hexDecode(hexPtr, 8, c, 4);
-            }
-            else if (!which || (ptr != end && ++ptr != end))
-                return ErrorImageOperation{strf("Improper size for hex string '{}'", StringView(hexPtr, hexLen))};
-            else // we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an error if B is also there.
-                return operation;
+            } else if (!which || (ptr != end && ++ptr != end))
+              return ErrorImageOperation{strf("Improper size for hex string '{}'", StringView(hexPtr, hexLen))};
+            else// we're in A of A=B. In vanilla only A=B pairs are evaluated, so only throw an error if B is also there.
+              return operation;
 
             if ((which = !which))
               operation.colorReplaceMap[*(Vec4B*)&a] = *(Vec4B*)&b;
 
             hexLen = 0;
           }
-        }
-        else if (!hexLen++)
+        } else if (!hexLen++)
           hexPtr = ptr;
 
         if (ptr++ == end)
@@ -133,7 +129,7 @@ auto imageOperationFromString(StringView string) -> ImageOperation {
 
     List<StringView> bits;
 
-    string.forEachSplitAnyView("=;", [&](StringView split, size_t, size_t) -> void {
+    string.forEachSplitAnyView("=;", [&](StringView split, std::size_t, std::size_t) -> void {
       if (!split.empty())
         bits.emplace_back(split);
     });
@@ -154,15 +150,15 @@ auto imageOperationFromString(StringView string) -> ImageOperation {
 
     } else if (type == "scanlines") {
       return ScanLinesImageOperation{
-          .fade1=FadeToColorImageOperation(Color::fromHex(bits.at(1)).toRgb(), lexicalCast<float>(bits.at(2))),
-          .fade2=FadeToColorImageOperation(Color::fromHex(bits.at(3)).toRgb(), lexicalCast<float>(bits.at(4)))};
+        .fade1 = FadeToColorImageOperation(Color::fromHex(bits.at(1)).toRgb(), lexicalCast<float>(bits.at(2))),
+        .fade2 = FadeToColorImageOperation(Color::fromHex(bits.at(3)).toRgb(), lexicalCast<float>(bits.at(4)))};
 
     } else if (type == "setcolor") {
       return SetColorImageOperation{Color::fromHex(bits.at(1)).toRgb()};
 
     } else if (type == "replace") {
       ColorReplaceImageOperation operation;
-      for (size_t i = 0; i < (bits.size() - 1) / 2; ++i)
+      for (std::size_t i = 0; i < (bits.size() - 1) / 2; ++i)
         operation.colorReplaceMap[Color::hexToVec4B(bits[i * 2 + 1])] = Color::hexToVec4B(bits[i * 2 + 2]);
 
       return operation;
@@ -214,7 +210,7 @@ auto imageOperationFromString(StringView string) -> ImageOperation {
       else
         operation.endColor = operation.startColor;
       operation.outlineOnly = type == "outline";
-      operation.includeTransparent = false; // Currently just here for anti-aliased fonts
+      operation.includeTransparent = false;// Currently just here for anti-aliased fonts
 
       return operation;
 
@@ -233,11 +229,11 @@ auto imageOperationFromString(StringView string) -> ImageOperation {
       else
         mode = ScaleImageOperation::Bilinear;
 
-      return ScaleImageOperation{.mode=mode, .scale=scale};
+      return ScaleImageOperation{.mode = mode, .scale = scale};
 
     } else if (type == "crop") {
       return CropImageOperation{RectI(lexicalCast<float>(bits.at(1)), lexicalCast<float>(bits.at(2)),
-          lexicalCast<float>(bits.at(3)), lexicalCast<float>(bits.at(4)))};
+                                      lexicalCast<float>(bits.at(3)), lexicalCast<float>(bits.at(4)))};
 
     } else if (type == "flipx") {
       return FlipImageOperation{FlipImageOperation::FlipX};
@@ -271,10 +267,10 @@ auto imageOperationToString(ImageOperation const& operation) -> String {
     return strf("fade={}={}", Color::rgb(op->color).toHex(), op->amount);
   } else if (auto op = operation.ptr<ScanLinesImageOperation>()) {
     return strf("scanlines={}={}={}={}",
-        Color::rgb(op->fade1.color).toHex(),
-        op->fade1.amount,
-        Color::rgb(op->fade2.color).toHex(),
-        op->fade2.amount);
+                Color::rgb(op->fade1.color).toHex(),
+                op->fade1.amount,
+                Color::rgb(op->fade2.color).toHex(),
+                op->fade2.amount);
   } else if (auto op = operation.ptr<SetColorImageOperation>()) {
     return strf("setcolor={}", Color::rgb(op->color).toHex());
   } else if (auto op = operation.ptr<ColorReplaceImageOperation>()) {
@@ -321,7 +317,7 @@ auto imageOperationToString(ImageOperation const& operation) -> String {
 }
 
 void parseImageOperations(StringView params, std::function<void(ImageOperation&&)> outputter) {
-  params.forEachSplitView("?", [&](StringView op, size_t, size_t) -> void {
+  params.forEachSplitView("?", [&](StringView op, std::size_t, std::size_t) -> void {
     if (!op.empty())
       outputter(imageOperationFromString(op));
   });
@@ -329,10 +325,10 @@ void parseImageOperations(StringView params, std::function<void(ImageOperation&&
 
 auto parseImageOperations(StringView params) -> List<ImageOperation> {
   List<ImageOperation> operations;
-  params.forEachSplitView("?", [&](StringView op, size_t, size_t) -> void {
+  params.forEachSplitView("?", [&](StringView op, std::size_t, std::size_t) -> void {
     if (!op.empty())
       operations.append(imageOperationFromString(op));
-    });
+  });
 
   return operations;
 }
@@ -476,8 +472,8 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
   } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) -> void {
       pixel = pixel.combine(op->color, [](std::uint8_t a, std::uint8_t b) -> std::uint8_t {
-          return (std::uint8_t)(((int)a * (int)b) / 255);
-        });
+        return (std::uint8_t)(((int)a * (int)b) / 255);
+      });
     });
 
   } else if (auto op = operation.ptr<BorderImageOperation>()) {
@@ -496,7 +492,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
               Vec4B remotePixel = image.get(i + x - pixels, j + y - pixels);
               if (remotePixel[3] != 0) {
                 dist = std::min(dist, std::abs(i) + std::abs(j));
-                if (dist == 1) // Early out, if dist is 1 it ain't getting shorter
+                if (dist == 1)// Early out, if dist is 1 it ain't getting shorter
                   break;
               }
             }
@@ -510,12 +506,11 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
             if (op->outlineOnly) {
               float pixelA = byteToFloat(pixel[3]);
               color.setAlphaF((1.0f - pixelA) * std::fminf(pixelA, 0.5f) * 2.0f);
-            }
-            else {
+            } else {
               Color pixelF = Color::rgba(pixel);
               float pixelA = pixelF.alphaF(), colorA = color.alphaF();
               colorA += pixelA * (1.0f - colorA);
-              pixelF.convertToLinear(); //Mix in linear color space as it is more perceptually accurate
+              pixelF.convertToLinear();//Mix in linear color space as it is more perceptually accurate
               color.convertToLinear();
               color = color.mix(pixelF, pixelA);
               color.convertToSRGB();
@@ -551,9 +546,9 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
 
   } else if (auto op = operation.ptr<FlipImageOperation>()) {
     if (op->mode == FlipImageOperation::FlipX || op->mode == FlipImageOperation::FlipXY) {
-      for (size_t y = 0; y < image.height(); ++y) {
-        for (size_t xLeft = 0; xLeft < image.width() / 2; ++xLeft) {
-          size_t xRight = image.width() - 1 - xLeft;
+      for (std::size_t y = 0; y < image.height(); ++y) {
+        for (std::size_t xLeft = 0; xLeft < image.width() / 2; ++xLeft) {
+          std::size_t xRight = image.width() - 1 - xLeft;
 
           auto left = image.get(xLeft, y);
           auto right = image.get(xRight, y);
@@ -565,9 +560,9 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
     }
 
     if (op->mode == FlipImageOperation::FlipY || op->mode == FlipImageOperation::FlipXY) {
-      for (size_t x = 0; x < image.width(); ++x) {
-        for (size_t yTop = 0; yTop < image.height() / 2; ++yTop) {
-          size_t yBottom = image.height() - 1 - yTop;
+      for (std::size_t x = 0; x < image.width(); ++x) {
+        for (std::size_t yTop = 0; yTop < image.height() / 2; ++yTop) {
+          std::size_t yBottom = image.height() - 1 - yTop;
 
           auto top = image.get(x, yTop);
           auto bottom = image.get(x, yBottom);
@@ -587,4 +582,4 @@ auto processImageOperations(List<ImageOperation> const& operations, Image image,
   return image;
 }
 
-}
+}// namespace Star

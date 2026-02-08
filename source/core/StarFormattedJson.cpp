@@ -1,4 +1,5 @@
 #include "StarFormattedJson.hpp"
+
 #include "StarJsonBuilder.hpp"
 #include "StarLexicalCast.hpp"
 
@@ -9,19 +10,19 @@ namespace Star {
 class FormattedJsonBuilderStream : public JsonStream {
 public:
   void beginObject() override;
-  void objectKey(String::Char const* s, size_t len) override;
+  void objectKey(String::Char const* s, std::size_t len) override;
   void endObject() override;
 
   void beginArray() override;
   void endArray() override;
 
-  void putString(String::Char const* s, size_t len) override;
-  void putDouble(String::Char const* s, size_t len) override;
-  void putInteger(String::Char const* s, size_t len) override;
+  void putString(String::Char const* s, std::size_t len) override;
+  void putDouble(String::Char const* s, std::size_t len) override;
+  void putInteger(String::Char const* s, std::size_t len) override;
   void putBoolean(bool b) override;
   void putNull() override;
 
-  void putWhitespace(String::Char const* s, size_t len) override;
+  void putWhitespace(String::Char const* s, std::size_t len) override;
   void putComma() override;
   void putColon() override;
 
@@ -63,12 +64,12 @@ auto CommaElement::operator==(CommaElement const&) const -> bool {
 
 auto FormattedJson::parse(String const& string) -> FormattedJson {
   return inputUtf32Json<String::const_iterator, FormattedJsonBuilderStream, FormattedJson>(
-      string.begin(), string.end(), JsonParseType::Value);
+    string.begin(), string.end(), JsonParseType::Value);
 }
 
 auto FormattedJson::parseJson(String const& string) -> FormattedJson {
   return inputUtf32Json<String::const_iterator, FormattedJsonBuilderStream, FormattedJson>(
-      string.begin(), string.end(), JsonParseType::Top);
+    string.begin(), string.end(), JsonParseType::Top);
 }
 
 auto FormattedJson::ofType(Json::Type type) -> FormattedJson {
@@ -80,12 +81,12 @@ auto FormattedJson::ofType(Json::Type type) -> FormattedJson {
 FormattedJson::FormattedJson() : FormattedJson(Json()) {}
 
 FormattedJson::FormattedJson(Json const& json)
-  : m_jsonValue(Json::ofType(json.type())),
-    m_elements(),
-    m_formatting(),
-    m_lastKey(),
-    m_objectEntryLocations(),
-    m_arrayElementLocations() {
+    : m_jsonValue(Json::ofType(json.type())),
+      m_elements(),
+      m_formatting(),
+      m_lastKey(),
+      m_objectEntryLocations(),
+      m_arrayElementLocations() {
   if (json.type() == Json::Type::Object || json.type() == Json::Type::Array) {
     FormattedJsonBuilderStream stream;
     JsonStreamer<Json>::toJsonStream(json, stream, false);
@@ -112,7 +113,7 @@ auto FormattedJson::get(String const& key) const -> FormattedJson {
   return getFormattedJson(entry->second);
 }
 
-auto FormattedJson::get(size_t index) const -> FormattedJson {
+auto FormattedJson::get(std::size_t index) const -> FormattedJson {
   if (type() != Json::Type::Array)
     throw JsonException::format("Cannot call get with index on FormattedJson type {}, must be Array type", typeName());
 
@@ -142,7 +143,7 @@ auto indexOf(FormattedJson::ElementList const& elements, FormattedJson::ElementL
 
 template <class ElementType>
 auto lastIndexOf(
-    FormattedJson::ElementList const& elements, FormattedJson::ElementLocation pos) -> FormattedJson::ElementLocation {
+  FormattedJson::ElementList const& elements, FormattedJson::ElementLocation pos) -> FormattedJson::ElementLocation {
   while (pos > 0) {
     --pos;
     if (elements[pos].is<ElementType>())
@@ -152,7 +153,7 @@ auto lastIndexOf(
 }
 
 auto concatWhitespace(FormattedJson::ElementList const& elements, FormattedJson::ElementLocation from,
-    FormattedJson::ElementLocation to) -> String {
+                      FormattedJson::ElementLocation to) -> String {
   String whitespace;
   for (JsonElement const& elem : elements.slice(from, to)) {
     if (elem.is<WhitespaceElement>())
@@ -162,7 +163,7 @@ auto concatWhitespace(FormattedJson::ElementList const& elements, FormattedJson:
 }
 
 auto detectWhitespace(FormattedJson::ElementList const& elements,
-    FormattedJson::ElementLocation insertLoc, bool array) -> WhitespaceStyle {
+                      FormattedJson::ElementLocation insertLoc, bool array) -> WhitespaceStyle {
   WhitespaceStyle style{"", "", "", ""};
 
   // Find a nearby value as a reference location to learn whitespace from.
@@ -216,7 +217,7 @@ void insertWhitespace(FormattedJson::ElementList& destination, FormattedJson::El
 }
 
 void insertWithWhitespace(FormattedJson::ElementList& destination, WhitespaceStyle const& style,
-    FormattedJson::ElementLocation& at, JsonElement const& element) {
+                          FormattedJson::ElementLocation& at, JsonElement const& element) {
   if (element.is<ValueElement>())
     insertWhitespace(destination, at, style.beforeValue);
   if (element.is<ObjectKeyElement>())
@@ -229,7 +230,7 @@ void insertWithWhitespace(FormattedJson::ElementList& destination, WhitespaceSty
 }
 
 void insertWithCommaAndFormatting(FormattedJson::ElementList& destination, FormattedJson::ElementLocation at,
-    bool array, FormattedJson::ElementList const& elements) {
+                                  bool array, FormattedJson::ElementList const& elements) {
   // Find the previous value we're inserting after, if any.
   at = lastIndexOf<ValueElement>(destination, at);
   if (at == std::numeric_limits<std::size_t>::max())
@@ -280,12 +281,12 @@ auto FormattedJson::set(String const& key, FormattedJson const& value) const -> 
   return objectInsert(key, value, m_elements.size());
 }
 
-void removeValueFromArray(List<JsonElement>& elements, size_t loc) {
+void removeValueFromArray(List<JsonElement>& elements, std::size_t loc) {
   // Remove the value itself, the comma following and the whitespace up to the
   // next value.
   // If it's the last value, it removes the value, and the preceding whitespace
   // and comma.
-  size_t commaLoc = elements.indexOf(CommaElement{}, loc);
+  std::size_t commaLoc = elements.indexOf(CommaElement{}, loc);
   if (commaLoc != std::numeric_limits<std::size_t>::max()) {
     elements.eraseAt(loc, commaLoc + 1);
     while (loc < elements.size() && elements.at(loc).is<WhitespaceElement>())
@@ -308,15 +309,15 @@ auto FormattedJson::eraseKey(String const& key) const -> FormattedJson {
 
   ElementLocation loc = maybeEntry->first;
   ElementList elements = m_elements;
-  elements.eraseAt(loc, maybeEntry->second); // Remove key, colon and whitespace up to the value
+  elements.eraseAt(loc, maybeEntry->second);// Remove key, colon and whitespace up to the value
   removeValueFromArray(elements, loc);
   return object(elements);
 }
 
-auto FormattedJson::insert(size_t index, FormattedJson const& value) const -> FormattedJson {
+auto FormattedJson::insert(std::size_t index, FormattedJson const& value) const -> FormattedJson {
   if (type() != Json::Type::Array)
     throw JsonException::format(
-        "Cannot call insert with index on FormattedJson type {}, must be Array type", typeName());
+      "Cannot call insert with index on FormattedJson type {}, must be Array type", typeName());
 
   if (index > m_arrayElementLocations.size())
     throw JsonException::format("FormattedJson::insert({}) out of range", index);
@@ -339,7 +340,7 @@ auto FormattedJson::append(FormattedJson const& value) const -> FormattedJson {
   return array(elements);
 }
 
-auto FormattedJson::set(size_t index, FormattedJson const& value) const -> FormattedJson {
+auto FormattedJson::set(std::size_t index, FormattedJson const& value) const -> FormattedJson {
   if (type() != Json::Type::Array)
     throw JsonException::format("Cannot call set with index on FormattedJson type {}, must be Array type", typeName());
 
@@ -352,7 +353,7 @@ auto FormattedJson::set(size_t index, FormattedJson const& value) const -> Forma
   return array(elements);
 }
 
-auto FormattedJson::eraseIndex(size_t index) const -> FormattedJson {
+auto FormattedJson::eraseIndex(std::size_t index) const -> FormattedJson {
   if (type() != Json::Type::Array)
     throw JsonException::format("Cannot call set with index on FormattedJson type {}, must be Array type", typeName());
 
@@ -365,7 +366,7 @@ auto FormattedJson::eraseIndex(size_t index) const -> FormattedJson {
   return array(elements);
 }
 
-auto FormattedJson::size() const -> size_t {
+auto FormattedJson::size() const -> std::size_t {
   return m_jsonValue.size();
 }
 
@@ -505,7 +506,7 @@ void FormattedJsonBuilderStream::beginObject() {
   push(value);
 }
 
-void FormattedJsonBuilderStream::objectKey(String::Char const* s, size_t len) {
+void FormattedJsonBuilderStream::objectKey(String::Char const* s, std::size_t len) {
   current().appendElement(ObjectKeyElement{String(s, len)});
 }
 
@@ -530,17 +531,17 @@ void FormattedJsonBuilderStream::endArray() {
     m_root = value;
 }
 
-void FormattedJsonBuilderStream::putString(String::Char const* s, size_t len) {
+void FormattedJsonBuilderStream::putString(String::Char const* s, std::size_t len) {
   putValue(String(s, len));
 }
 
-void FormattedJsonBuilderStream::putDouble(String::Char const* s, size_t len) {
+void FormattedJsonBuilderStream::putDouble(String::Char const* s, std::size_t len) {
   String formatted(s, len);
   auto d = lexicalCast<double>(formatted);
   putValue(d, formatted);
 }
 
-void FormattedJsonBuilderStream::putInteger(String::Char const* s, size_t len) {
+void FormattedJsonBuilderStream::putInteger(String::Char const* s, std::size_t len) {
   String formatted(s, len);
   auto d = lexicalCast<long long>(formatted);
   putValue(d, formatted);
@@ -554,7 +555,7 @@ void FormattedJsonBuilderStream::putNull() {
   putValue(Json::ofType(Json::Type::Null));
 }
 
-void FormattedJsonBuilderStream::putWhitespace(String::Char const* s, size_t len) {
+void FormattedJsonBuilderStream::putWhitespace(String::Char const* s, std::size_t len) {
   if (m_stack.size() > 0)
     current().appendElement(WhitespaceElement{String(s, len)});
 }
@@ -663,4 +664,4 @@ auto operator<<(std::ostream& os, FormattedJson const& json) -> std::ostream& {
   return os << json.repr();
 }
 
-}
+}// namespace Star
