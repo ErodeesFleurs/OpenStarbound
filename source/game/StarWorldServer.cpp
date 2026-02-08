@@ -318,16 +318,14 @@ bool WorldServer::hasClient(ConnectionId clientId) const {
 }
 
 RectF WorldServer::clientWindow(ConnectionId clientId) const {
-  auto i = m_clientInfo.find(clientId);
-  if (i != m_clientInfo.end())
+  if (auto i = m_clientInfo.find(clientId); i != m_clientInfo.end())
     return RectF(i->second->clientState.window());
   else
     return RectF::null();
 }
 
 PlayerPtr WorldServer::clientPlayer(ConnectionId clientId) const {
-  auto i = m_clientInfo.find(clientId);
-  if (i != m_clientInfo.end())
+  if (auto i = m_clientInfo.find(clientId); i != m_clientInfo.end())
     return get<Player>(i->second->clientState.playerId());
   else
     return {};
