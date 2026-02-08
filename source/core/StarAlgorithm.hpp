@@ -17,12 +17,8 @@ struct construct {
   }
 };
 
-struct identity {
-  template <typename U>
-  constexpr auto operator()(U&& v) const -> decltype(auto) {
-    return std::forward<U>(v);
-  }
-};
+// Use std::identity from C++20 instead of custom implementation
+// The custom identity struct has been removed in favor of std::identity
 
 template <typename Func>
 struct SwallowReturn {
@@ -71,6 +67,9 @@ auto compose(FirstFunction firstFunction, SecondFunction secondFunction, ThirdFu
   return compose(std::forward<FirstFunction>(firstFunction), compose(std::forward<SecondFunction>(secondFunction), compose(std::forward<ThirdFunction>(thirdFunction), std::forward<RestFunctions>(restFunctions)...)));
 }
 
+// fold and fold1 are convenience wrappers around std::accumulate
+// They provide a more functional programming style interface
+// For direct replacements, consider: std::accumulate(l.begin(), l.end(), v, f)
 template <typename Container, typename Value, typename Function>
 auto fold(Container const& l, Value v, Function f) -> Value {
   auto i = l.begin();

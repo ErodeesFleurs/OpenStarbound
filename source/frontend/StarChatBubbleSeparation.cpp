@@ -72,7 +72,8 @@ RectF separateBubble(List<RectF> const& sortedLeftEdges, List<RectF> const& sort
     });
     if (overlappingBoxes.empty())
       break;
-    RectF overlapBoundBox = fold(overlappingBoxes, box, [](RectF const& a, RectF const& b) { return a.combined(b); });
+    RectF overlapBoundBox = std::accumulate(overlappingBoxes.begin(), overlappingBoxes.end(), box, 
+      [](RectF const& a, RectF const& b) { return a.combined(b); });
     //SpatialLogger::logPoly("screen", PolyF(box), { 255, 0, 0, 255 });
     //SpatialLogger::logPoly("screen", PolyF(overlapBoundBox), { 0, 0, 255, 255 });
     auto height = box.height();

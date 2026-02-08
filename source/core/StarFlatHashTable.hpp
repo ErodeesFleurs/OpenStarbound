@@ -353,7 +353,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::insert(Value va
     auto& target = m_buckets[currentBucket];
     if (auto entryValue = target.valuePtr()) {
       if (target.hash == hash && m_equals(m_getKey(*entryValue), m_getKey(value)))
-        return std::make_pair(iterator{m_buckets.data() + currentBucket}, false);
+        return {iterator{m_buckets.data() + currentBucket}, false};
 
       std::size_t entryTargetBucket = hashBucket(target.hash);
       std::size_t entryError = bucketError(currentBucket, entryTargetBucket);
@@ -374,7 +374,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::insert(Value va
       if (insertedBucket == std::numeric_limits<std::size_t>::max())
         insertedBucket = currentBucket;
 
-      return std::make_pair(iterator{m_buckets.data() + insertedBucket}, true);
+      return {iterator{m_buckets.data() + insertedBucket}, true};
     }
   }
 }

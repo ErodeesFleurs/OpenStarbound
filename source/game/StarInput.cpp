@@ -413,8 +413,7 @@ void Input::reset(bool clear) {
         p.second.reset();
       else {
         for (auto& tag : p.first->tags) {
-          auto find = m_activeTags.find(tag);
-          if (find != m_activeTags.end() && !--find->second)
+          if (auto find = m_activeTags.find(tag); find != m_activeTags.end() && !--find->second)
               m_activeTags.erase(find);
         }
         return true;

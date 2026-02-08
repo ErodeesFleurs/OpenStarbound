@@ -1042,7 +1042,7 @@ auto Assets::applyImagePatches(ConstPtr<Image> image, String const& path, List<s
     auto& patchSource = pair.second;
     auto patchStream = patchSource->read(patchPath);
     if (patchPath.endsWith(".lua")) {
-      std::pair<AssetSource*, String> contextKey = std::make_pair(patchSource.get(), patchPath);
+      std::pair<AssetSource*, String> contextKey = {patchSource.get(), patchPath};
       luaLocker.lock();
       Ptr<LuaContext>& context = m_patchContexts[contextKey];
       if (!context) {
@@ -1117,7 +1117,7 @@ auto Assets::applyJsonPatches(Json const& input, String const& path, List<std::p
     auto& patchSource = pair.second;
     auto patchStream = patchSource->read(patchBasePath);
     if (patchBasePath.endsWith(".lua")) {
-      std::pair<AssetSource*, String> contextKey = std::make_pair(patchSource.get(), patchBasePath);
+      std::pair<AssetSource*, String> contextKey = {patchSource.get(), patchBasePath};
       RecursiveMutexLocker luaLocker(m_luaMutex);
       // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
       Ptr<LuaContext>& context = m_patchContexts[contextKey];

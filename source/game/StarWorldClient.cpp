@@ -907,8 +907,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       // may be context hints with tile modifications to figure out what to do
       // with failures.
       for (auto& modification : tileModificationFailure->modifications) {
-        auto findPrediction = m_predictedTiles.find(modification.first);
-        if (findPrediction != m_predictedTiles.end()) {
+        if (auto findPrediction = m_predictedTiles.find(modification.first); findPrediction != m_predictedTiles.end()) {
           auto& p = findPrediction->second;
           if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
             if (placeMaterial->layer == TileLayer::Foreground) {
@@ -2012,8 +2011,7 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool upd
     return false;
 
   if (!m_predictedTiles.empty()) {
-    auto findPrediction = m_predictedTiles.find(pos);
-    if (findPrediction != m_predictedTiles.end()) {
+    if (auto findPrediction = m_predictedTiles.find(pos); findPrediction != m_predictedTiles.end()) {
       auto& p = findPrediction->second;
 
       if (p.collision && *p.collision == netTile.collision)

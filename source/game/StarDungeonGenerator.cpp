@@ -1207,14 +1207,14 @@ namespace Dungeon {
     if (!spaceBlendingVertexes.empty())
       m_facade->markSpace(PolyF::convexHull(spaceBlendingVertexes));
 
-    for (auto iter = m_backgroundMaterial.begin(); iter != m_backgroundMaterial.end(); iter++)
-      m_facade->setBackgroundMaterial(displace(iter->first), iter->second.material, iter->second.hueshift, iter->second.colorVariant);
-    for (auto iter = m_foregroundMaterial.begin(); iter != m_foregroundMaterial.end(); iter++)
-      m_facade->setForegroundMaterial(displace(iter->first), iter->second.material, iter->second.hueshift, iter->second.colorVariant);
-    for (auto iter = m_foregroundMod.begin(); iter != m_foregroundMod.end(); iter++)
-      m_facade->setForegroundMod(displace(iter->first), iter->second.mod, iter->second.hueshift);
-    for (auto iter = m_backgroundMod.begin(); iter != m_backgroundMod.end(); iter++)
-      m_facade->setBackgroundMod(displace(iter->first), iter->second.mod, iter->second.hueshift);
+    for (auto const& [pos, material] : m_backgroundMaterial)
+      m_facade->setBackgroundMaterial(displace(pos), material.material, material.hueshift, material.colorVariant);
+    for (auto const& [pos, material] : m_foregroundMaterial)
+      m_facade->setForegroundMaterial(displace(pos), material.material, material.hueshift, material.colorVariant);
+    for (auto const& [pos, mod] : m_foregroundMod)
+      m_facade->setForegroundMod(displace(pos), mod.mod, mod.hueshift);
+    for (auto const& [pos, mod] : m_backgroundMod)
+      m_facade->setBackgroundMod(displace(pos), mod.mod, mod.hueshift);
 
     List<Vec2I> sortedPositions = m_objects.keys();
     sortByComputedValue(sortedPositions, [](Vec2I pos) { return pos[1] + pos[0] / 1000.0f; });
@@ -1263,11 +1263,11 @@ namespace Dungeon {
       m_facade->connectWireGroup(wireGroup);
     }
 
-    for (auto iter = m_drops.begin(); iter != m_drops.end(); iter++)
-      m_facade->addDrop(displaceF(iter->first), iter->second);
+    for (auto const& [pos, drop] : m_drops)
+      m_facade->addDrop(displaceF(pos), drop);
 
-    for (auto iter = m_liquids.begin(); iter != m_liquids.end(); iter++)
-      m_facade->setLiquid(displace(iter->first), iter->second);
+    for (auto const& [pos, liquid] : m_liquids)
+      m_facade->setLiquid(displace(pos), liquid);
 
     for (auto const& dungeonId : m_dungeonIds)
       m_facade->setDungeonIdAt(dungeonId.first, dungeonId.second);

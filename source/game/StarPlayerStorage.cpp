@@ -82,8 +82,7 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
 
     if (auto order = m_metadata.value("order")) {
       for (auto const& jUuid : order.iterateArray()) {
-        auto entry = m_savedPlayersCache.find(Uuid(jUuid.toString()));
-        if (entry != m_savedPlayersCache.end())
+        if (auto entry = m_savedPlayersCache.find(Uuid(jUuid.toString())); entry != m_savedPlayersCache.end())
           m_savedPlayersCache.toBack(entry);
       }
     }

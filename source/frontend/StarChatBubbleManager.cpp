@@ -270,7 +270,8 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
         get<3>(bubbleText) += Vec2F(-horizontalCenter, partSize);
 
       auto pos = m_camera.worldToScreen(sayAction.position + m_bubbleOffset);
-      RectF boundBox = fold(backgroundImages, RectF::null(), [pos, pixelRatio, this](RectF const& boundBox, BubbleImage const& bubbleImage) {
+      RectF boundBox = std::accumulate(backgroundImages.begin(), backgroundImages.end(), RectF::null(), 
+        [pos, pixelRatio, this](RectF const& boundBox, BubbleImage const& bubbleImage) {
           return boundBox.combined(bubbleImageRect(pos, bubbleImage, pixelRatio));
         });
       Bubble bubble = {sayAction.entity, sayAction.text, sayAction.config, 0, std::move(backgroundImages), std::move(bubbleTexts), false};

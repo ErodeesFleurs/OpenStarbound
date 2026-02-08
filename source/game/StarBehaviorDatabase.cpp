@@ -25,13 +25,14 @@ NodeParameterValue nodeParameterValueFromJson(Json const& json) {
 }
 
 Json jsonFromNodeParameter(NodeParameter const& parameter) {
+  auto const& [paramType, paramValue] = parameter;
   JsonObject json {
-    {"type", NodeParameterTypeNames.getRight(parameter.first)}
+    {"type", NodeParameterTypeNames.getRight(paramType)}
   };
-  if (auto key = parameter.second.maybe<String>())
+  if (auto key = paramValue.maybe<String>())
     json.set("key", *key);
   else
-    json.set("value", parameter.second.get<Json>());
+    json.set("value", paramValue.get<Json>());
   return json;
 }
 
@@ -44,10 +45,12 @@ NodeParameter jsonToNodeParameter(Json const& json) {
 }
 
 Json nodeOutputToJson(NodeOutput const& output) {
+  auto const& [outputType, outputData] = output;
+  auto const& [key, ephemeral] = outputData;
   return JsonObject {
-    {"type", NodeParameterTypeNames.getRight(output.first)},
-    {"key", jsonFromMaybe<String>(output.second.first, [](String const& s) { return Json(s); })},
-    {"ephemeral", output.second.second}
+    {"type", NodeParameterTypeNames.getRight(outputType)},
+    {"key", jsonFromMaybe<String>(key, [](String const& s) { return Json(s); })},
+    {"ephemeral", ephemeral}
   };
 }
 
@@ -158,14 +161,14 @@ BehaviorDatabase::BehaviorDatabase() {
       Json nodes = assets->json(file);
       for (auto& node : nodes.toObject()) {
         StringMap<NodeParameter> parameters;
-        for (auto p : node.second.getObject("properties", {}))
-          parameters.set(p.first, jsonToNodeParameter(p.second));
+        for (auto const& [key, value] : node.second.getObject("properties", {}))
+          parameters.set(key, jsonToNodeParameter(value));
 
         m_nodeParameters.set(node.first, parameters);
 
         StringMap<NodeOutput> output;
-        for (auto p : node.second.getObject("output", {}))
-          output.set(p.first, jsonToNodeOutput(p.second));
+        for (auto const& [key, value] : node.second.getObject("output", {}))
+          output.set(key, jsonToNodeOutput(value));
 
         m_nodeOutput.set(node.first, output);
       }
@@ -190,9 +193,9 @@ BehaviorDatabase::BehaviorDatabase() {
     }
   }
 
-  for (auto& pair : m_configs) {
-    if (!m_behaviors.contains(pair.first))
-      loadTree(pair.first);
+  for (auto const& [name, config] : m_configs) {
+    if (!m_behaviors.contains(name))
+      loadTree(name);
   }
 }
 
@@ -208,10 +211,10 @@ BehaviorTreeConstPtr BehaviorDatabase::buildTree(Json const& config, StringMap<N
   auto tree = BehaviorTree(config.getString("name"), scripts, config.getObject("parameters", {}));
 
   StringMap<NodeParameterValue> parameters;
-  for (auto p : config.getObject("parameters", {}))
-    parameters.set(p.first, p.second);
-  for (auto p : overrides)
-    parameters.set(p.first, p.second);
+  for (auto const& [key, value] : config.getObject("parameters", {}))
+    parameters.set(key, value);
+  for (auto const& [key, value] : overrides)
+    parameters.set(key, value);
   BehaviorNodeConstPtr root = behaviorNode(config.get("root"), parameters, tree);
   tree.root = root;
   return std::make_shared<BehaviorTree>(std::move(tree));

@@ -257,9 +257,9 @@ List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) c
 std::pair<String, String> MonsterDatabase::skillInfo(String const& skillName) const {
   if (m_skills.contains(skillName)) {
     auto& skill = m_skills.get(skillName);
-    return std::make_pair(skill.label, skill.image);
+    return {skill.label, skill.image};
   } else {
-    return std::make_pair("", "");
+    return {"", ""};
   }
 }
 

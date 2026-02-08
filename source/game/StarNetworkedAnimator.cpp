@@ -932,8 +932,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
 
     if (!usedImage.empty() && usedImage[0] != ':' && usedImage[0] != '?') {
       size_t hash = hashOf(usedImage);
-      auto find = m_cachedPartDrawables.find(partName);
-      if (find == m_cachedPartDrawables.end() || find->second.first != hash) {
+      if (auto find = m_cachedPartDrawables.find(partName); find == m_cachedPartDrawables.end() || find->second.first != hash) {
         String relativeImage;
         if (usedImage[0] != '/')
           relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
