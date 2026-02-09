@@ -1,10 +1,13 @@
 #include "StarEntityRenderingTypes.hpp"
+
 #include "StarJsonExtra.hpp"
 #include "StarLexicalCast.hpp"
 
+import std;
+
 namespace Star {
 
-EntityRenderLayer parseRenderLayer(String renderLayer) {
+auto parseRenderLayer(String renderLayer) -> EntityRenderLayer {
   static CaseInsensitiveStringMap<EntityRenderLayer> RenderLayerMap{
     {"BackgroundOverlay", RenderLayerBackgroundOverlay},
     {"BackgroundTile", RenderLayerBackgroundTile},
@@ -45,68 +48,68 @@ EntityRenderLayer parseRenderLayer(String renderLayer) {
 }
 
 PreviewTile::PreviewTile()
-  : foreground(false),
-    liqId(EmptyLiquidId),
-    matId(NullMaterialId),
-    hueShift(0),
-    updateMatId(false),
-    colorVariant(DefaultMaterialColorVariant),
-    updateLight(false) {}
+    : foreground(false),
+      liqId(EmptyLiquidId),
+      matId(NullMaterialId),
+      hueShift(0),
+      updateMatId(false),
+      colorVariant(DefaultMaterialColorVariant),
+      updateLight(false) {}
 
 PreviewTile::PreviewTile(
-    Vec2I const& position, bool foreground, MaterialId matId, MaterialHue hueShift, bool updateMatId)
-  : position(position),
-    foreground(foreground),
-    liqId(EmptyLiquidId),
-    matId(matId),
-    hueShift(hueShift),
-    updateMatId(updateMatId),
-    colorVariant(DefaultMaterialColorVariant),
-    updateLight(false) {}
+  Vec2I const& position, bool foreground, MaterialId matId, MaterialHue hueShift, bool updateMatId)
+    : position(position),
+      foreground(foreground),
+      liqId(EmptyLiquidId),
+      matId(matId),
+      hueShift(hueShift),
+      updateMatId(updateMatId),
+      colorVariant(DefaultMaterialColorVariant),
+      updateLight(false) {}
 
 PreviewTile::PreviewTile(Vec2I const& position, bool foreground, Vec3B const& light, bool updateLight)
-  : position(position),
-    foreground(foreground),
-    liqId(EmptyLiquidId),
-    matId(NullMaterialId),
-    hueShift(0),
-    updateMatId(false),
-    colorVariant(DefaultMaterialColorVariant),
-    light(light),
-    updateLight(updateLight) {}
+    : position(position),
+      foreground(foreground),
+      liqId(EmptyLiquidId),
+      matId(NullMaterialId),
+      hueShift(0),
+      updateMatId(false),
+      colorVariant(DefaultMaterialColorVariant),
+      light(light),
+      updateLight(updateLight) {}
 
 PreviewTile::PreviewTile(Vec2I const& position,
-    bool foreground,
-    MaterialId matId,
-    MaterialHue hueShift,
-    bool updateMatId,
-    Vec3B const& light,
-    bool updateLight,
-    MaterialColorVariant colorVariant)
-  : position(position),
-    foreground(foreground),
-    liqId(EmptyLiquidId),
-    matId(matId),
-    hueShift(hueShift),
-    updateMatId(updateMatId),
-    colorVariant(colorVariant),
-    light(light),
-    updateLight(updateLight) {}
+                         bool foreground,
+                         MaterialId matId,
+                         MaterialHue hueShift,
+                         bool updateMatId,
+                         Vec3B const& light,
+                         bool updateLight,
+                         MaterialColorVariant colorVariant)
+    : position(position),
+      foreground(foreground),
+      liqId(EmptyLiquidId),
+      matId(matId),
+      hueShift(hueShift),
+      updateMatId(updateMatId),
+      colorVariant(colorVariant),
+      light(light),
+      updateLight(updateLight) {}
 
 PreviewTile::PreviewTile(Vec2I const& position, LiquidId liqId)
-  : position(position),
-    foreground(true),
-    liqId(liqId),
-    matId(NullMaterialId),
-    hueShift(0),
-    updateMatId(false),
-    colorVariant(DefaultMaterialColorVariant),
-    updateLight(false) {}
+    : position(position),
+      foreground(true),
+      liqId(liqId),
+      matId(NullMaterialId),
+      hueShift(0),
+      updateMatId(false),
+      colorVariant(DefaultMaterialColorVariant),
+      updateLight(false) {}
 
 OverheadBar::OverheadBar() : percentage(0.0f), detailOnly(false) {}
 
 OverheadBar::OverheadBar(Json const& json) {
-  entityPosition = json.opt("position").apply(jsonToVec2F).value();
+  entityPosition = json.opt("position").transform(jsonToVec2F).value();
   icon = json.optString("icon");
   percentage = json.getFloat("percentage");
   color = jsonToColor(json.get("color"));
@@ -114,14 +117,13 @@ OverheadBar::OverheadBar(Json const& json) {
 }
 
 OverheadBar::OverheadBar(std::optional<String> icon, float percentage, Color color, bool detailOnly)
-  : icon(std::move(icon)), percentage(percentage), color(std::move(color)), detailOnly(detailOnly) {}
+    : icon(std::move(icon)), percentage(percentage), color(std::move(color)), detailOnly(detailOnly) {}
 
 EnumMap<EntityHighlightEffectType> const EntityHighlightEffectTypeNames{
   {EntityHighlightEffectType::None, "none"},
   {EntityHighlightEffectType::Interactive, "interactive"},
   {EntityHighlightEffectType::Inspectable, "inspectable"},
   {EntityHighlightEffectType::Interesting, "interesting"},
-  {EntityHighlightEffectType::Inspected, "inspected"}
-};
+  {EntityHighlightEffectType::Inspected, "inspected"}};
 
-}
+}// namespace Star

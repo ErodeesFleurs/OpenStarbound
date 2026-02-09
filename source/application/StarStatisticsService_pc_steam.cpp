@@ -1,9 +1,11 @@
 #include "StarStatisticsService_pc_steam.hpp"
+
+#include "StarConfig.hpp"
 #include "StarLogging.hpp"
 
 namespace Star {
 
-SteamStatisticsService::SteamStatisticsService(PcPlatformServicesStatePtr)
+SteamStatisticsService::SteamStatisticsService(Ptr<PcPlatformServicesState>)
 : m_callbackUserStatsReceived(this, &SteamStatisticsService::onUserStatsReceived),
   m_callbackUserStatsStored(this, &SteamStatisticsService::onUserStatsStored),
   m_callbackAchievementStored(this, &SteamStatisticsService::onAchievementStored) {

@@ -1,5 +1,9 @@
 #include "StarVersionOptionParser.hpp"
+
 #include "StarFile.hpp"
+#include "StarVersion.hpp"
+
+import std;
 
 namespace Star {
 
@@ -13,7 +17,7 @@ VersionOptionParser::VersionOptionParser() {
   addSwitch("version", "Print version info");
 }
 
-VersionOptionParser::Options VersionOptionParser::parseOrDie(StringList const& cmdLineArguments) const {
+auto VersionOptionParser::parseOrDie(StringList const& cmdLineArguments) const -> VersionOptionParser::Options {
   Options options;
   StringList errors;
   tie(options, errors) = OptionParser::parseOptions(cmdLineArguments);
@@ -38,9 +42,9 @@ VersionOptionParser::Options VersionOptionParser::parseOrDie(StringList const& c
   return options;
 }
 
-VersionOptionParser::Options VersionOptionParser::commandParseOrDie(int argc, char** argv) {
+auto VersionOptionParser::commandParseOrDie(int argc, char** argv) -> VersionOptionParser::Options {
   setCommandName(File::baseName(argv[0]));
   return parseOrDie(StringList(argc - 1, argv + 1));
 }
 
-}
+}// namespace Star

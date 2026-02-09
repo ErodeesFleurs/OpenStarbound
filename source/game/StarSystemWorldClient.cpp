@@ -1,31 +1,36 @@
 #include "StarSystemWorldClient.hpp"
+
+#include "StarCasting.hpp"
 #include "StarCelestialDatabase.hpp"
+#include "StarConfig.hpp"
 #include "StarPlayerUniverseMap.hpp"
+
+import std;
 
 namespace Star {
 
-SystemWorldClient::SystemWorldClient(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PlayerUniverseMapPtr universeMap)
-  : SystemWorld(universeClock, celestialDatabase), m_universeMap(std::move(universeMap)) {}
+SystemWorldClient::SystemWorldClient(ConstPtr<Clock> universeClock, Ptr<CelestialDatabase> celestialDatabase, Ptr<PlayerUniverseMap> universeMap)
+    : SystemWorld(universeClock, celestialDatabase), m_universeMap(std::move(universeMap)) {}
 
-CelestialCoordinate SystemWorldClient::currentSystem() const {
-  return CelestialCoordinate(m_location);
+auto SystemWorldClient::currentSystem() const -> CelestialCoordinate {
+  return {m_location};
 }
 
-std::optional<Vec2F> SystemWorldClient::shipPosition() const {
+auto SystemWorldClient::shipPosition() const -> std::optional<Vec2F> {
   if (m_ship)
     return m_ship->position();
   else
     return {};
 }
 
-SystemLocation SystemWorldClient::shipLocation() const {
+auto SystemWorldClient::shipLocation() const -> SystemLocation {
   if (m_ship)
     return m_ship->systemLocation();
   else
     return {};
 }
 
-SystemLocation SystemWorldClient::shipDestination() const {
+auto SystemWorldClient::shipDestination() const -> SystemLocation {
   if (m_ship)
     return m_ship->destination();
   else
@@ -33,7 +38,7 @@ SystemLocation SystemWorldClient::shipDestination() const {
 }
 
 // ship is flying if the system world is uninitialized or the ship doesn't have a location
-bool SystemWorldClient::flying() const {
+auto SystemWorldClient::flying() const -> bool {
   if (m_ship)
     return m_ship->systemLocation().empty();
   return true;
@@ -72,38 +77,36 @@ void SystemWorldClient::update(float dt) {
     m_ship = {};
     m_location = Vec3I();
   } else if (auto celestialSlave = as<CelestialSlaveDatabase>(m_celestialDatabase))
-    celestialSlave->signalSystem(currentSystem()); // keeps the celestial chunk for our current system alive
+    celestialSlave->signalSystem(currentSystem());// keeps the celestial chunk for our current system alive
 }
 
-List<SystemObjectPtr> SystemWorldClient::objects() const {
+auto SystemWorldClient::objects() const -> List<Ptr<SystemObject>> {
   return m_objects.values();
 }
 
-List<Uuid> SystemWorldClient::objectKeys() const {
+auto SystemWorldClient::objectKeys() const -> List<Uuid> {
   return m_objects.keys();
 }
 
-SystemObjectPtr SystemWorldClient::getObject(Uuid const& uuid) const {
-  return m_objects.maybe(uuid).value_or({});
+auto SystemWorldClient::getObject(Uuid const& uuid) const -> Ptr<SystemObject> {
+  return m_objects.maybe(uuid).value_or(nullptr);
 }
 
-List<SystemClientShipPtr> SystemWorldClient::ships() const
-{
+auto SystemWorldClient::ships() const -> List<Ptr<SystemClientShip>> {
   return m_clientShips.values();
 }
 
-SystemClientShipPtr SystemWorldClient::getShip(Uuid const & uuid) const
-{
-  return m_clientShips.maybe(uuid).value_or({});
+auto SystemWorldClient::getShip(Uuid const& uuid) const -> Ptr<SystemClientShip> {
+  return m_clientShips.maybe(uuid).value_or(nullptr);
 }
 
-Uuid SystemWorldClient::spawnObject(String typeName, std::optional<Vec2F> position, std::optional<Uuid> const& uuid, JsonObject overrides) {
+auto SystemWorldClient::spawnObject(String typeName, std::optional<Vec2F> position, std::optional<Uuid> const& uuid, JsonObject overrides) -> Uuid {
   Uuid objectUuid = uuid.value_or(Uuid());
   m_outgoingPackets.append(make_shared<SystemObjectSpawnPacket>(std::move(typeName), objectUuid, std::move(position), std::move(overrides)));
   return objectUuid;
 }
 
-bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
+auto SystemWorldClient::handleIncomingPacket(Ptr<Packet> packet) -> bool {
   if (auto updatePacket = as<SystemWorldUpdatePacket>(packet)) {
     auto location = m_ship->systemLocation();
     for (auto p : updatePacket->shipUpdates) {
@@ -136,7 +139,7 @@ bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
     m_objects.clear();
     m_clientShips.clear();
     m_location = startPacket->location;
-    for (auto netStore: startPacket->objectStores) {
+    for (auto netStore : startPacket->objectStores) {
       auto object = netLoadObject(netStore);
       m_objects.set(object->uuid(), object);
     }
@@ -157,29 +160,28 @@ bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
   return true;
 }
 
-List<PacketPtr> SystemWorldClient::pullOutgoingPackets() {
+auto SystemWorldClient::pullOutgoingPackets() -> List<Ptr<Packet>> {
   return take(m_outgoingPackets);
 }
 
-SystemObjectPtr SystemWorldClient::netLoadObject(ByteArray netStore) {
+auto SystemWorldClient::netLoadObject(ByteArray netStore) -> Ptr<SystemObject> {
   DataStreamBuffer ds(std::move(netStore));
   Uuid uuid = ds.read<Uuid>();
 
-  String name = ds.read<String>();
+  auto name = ds.read<String>();
   auto objectConfig = systemObjectConfig(name, uuid);
 
-  Vec2F position = ds.read<Vec2F>();
+  auto position = ds.read<Vec2F>();
 
-  JsonObject parameters = ds.read<JsonObject>();
-  return make_shared<SystemObject>(objectConfig, uuid, position, parameters);
+  auto parameters = ds.read<JsonObject>();
+  return std::make_shared<SystemObject>(objectConfig, uuid, position, parameters);
 }
 
-SystemClientShipPtr SystemWorldClient::netLoadShip(ByteArray netStore)
-{
+auto SystemWorldClient::netLoadShip(ByteArray netStore) -> Ptr<SystemClientShip> {
   DataStreamBuffer ds(std::move(netStore));
   Uuid uuid = ds.read<Uuid>();
-  SystemLocation location = ds.read<SystemLocation>();
-  return make_shared<SystemClientShip>(this, uuid, location);
+  auto location = ds.read<SystemLocation>();
+  return std::make_shared<SystemClientShip>(this, uuid, location);
 }
 
-}
+}// namespace Star

@@ -1,4 +1,5 @@
 #include "StarJsonBuilder.hpp"
+
 #include "StarLexicalCast.hpp"
 
 import std;

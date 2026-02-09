@@ -1,7 +1,8 @@
 #pragma once
 
 #include "StarOptionParser.hpp"
-#include "StarVersion.hpp"
+
+import std;
 
 namespace Star {
 
@@ -15,10 +16,10 @@ public:
 
   // Parse the command line options, or, in the case of an error, -h, or -v,
   // prints the appropriate text and immediately exits.
-  Options parseOrDie(StringList const& cmdLineArguments) const;
+  [[nodiscard]] auto parseOrDie(StringList const& cmdLineArguments) const -> Options;
 
   // First sets the command name based on argv[0], then calls parseOrDie.
-  Options commandParseOrDie(int argc, char** argv);
+  auto commandParseOrDie(int argc, char** argv) -> Options;
 };
 
-}
+}// namespace Star

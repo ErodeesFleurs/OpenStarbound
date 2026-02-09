@@ -13,11 +13,11 @@ class CollisionGenerator {
 public:
   // The maximum number of spaces away from a block that can influence the
   // collision geometry of a given block.
-  static int const BlockInfluenceRadius = 2;
+  static constexpr std::int32_t BlockInfluenceRadius = 2;
 
   // The Maximum number of blocks that will be generated for a single tile
   // space.
-  static std::size_t const MaximumCollisionsPerSpace = 4;
+  static constexpr std::size_t MaximumCollisionsPerSpace = 4;
 
   // Callback function to tell what kind of collision geometry is in a cell.
   // Will be called up to BlockInfluenceRadius outside of the given query

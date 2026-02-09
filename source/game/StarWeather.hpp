@@ -14,9 +14,6 @@ namespace Star {
 class Clock;
 class Projectile;
 
-// STAR_CLASS(ServerWeather);
-// STAR_CLASS(ClientWeather);
-
 // Callback used to determine whether weather effects should be spawned in
 // the given tile location.  Other checks that enable / disable weather such as
 // whether or not the region is below the underground level are performed
@@ -34,14 +31,14 @@ public:
 
   void setClientVisibleRegions(List<RectI> regions);
 
-  auto writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t>;
+  auto writeUpdate(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t>;
 
   void update(double dt);
 
   // Immediately sets the active weather index. If the index is std::numeric_limits<std::size_t>::max() or out of
   // range, weather is cleared.  If force is true, weather will not automatically
   // change until setWeatherIndex/SetWeather is called again.
-  void setWeatherIndex(size_t weatherIndex, bool force = false);
+  void setWeatherIndex(std::size_t weatherIndex, bool force = false);
   // Immediately sets the active weather type by name. If not found, weather is
   // cleared.  Behavior of |force| is the same as above.
   void setWeather(String const& weatherName, bool force = false);
@@ -70,7 +67,7 @@ private:
 
   List<RectI> m_clientVisibleRegions;
 
-  size_t m_currentWeatherIndex;
+  std::size_t m_currentWeatherIndex;
   std::optional<WeatherType> m_currentWeatherType;
   float m_currentWeatherIntensity;
   float m_currentWind;
@@ -124,7 +121,7 @@ private:
   WorldGeometry m_worldGeometry;
   WeatherEffectsActiveQuery m_weatherEffectsActiveQuery;
 
-  size_t m_currentWeatherIndex;
+  std::size_t m_currentWeatherIndex;
   std::optional<WeatherType> m_currentWeatherType;
   float m_currentWeatherIntensity;
   float m_currentWind;

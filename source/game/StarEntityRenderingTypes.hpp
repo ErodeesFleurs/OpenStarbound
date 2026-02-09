@@ -1,8 +1,8 @@
 #pragma once
 
 #include "StarBiMap.hpp"
-#include "StarJson.hpp"
 #include "StarColor.hpp"
+#include "StarJson.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarMaterialTypes.hpp"
 
@@ -86,4 +86,4 @@ struct EntityHighlightEffect {
   float level = 0.0f;
 };
 
-}
+}// namespace Star

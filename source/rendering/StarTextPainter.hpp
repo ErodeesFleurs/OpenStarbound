@@ -2,23 +2,23 @@
 
 #include "StarFontTextureGroup.hpp"
 #include "StarAnchorTypes.hpp"
-#include "StarRoot.hpp"
+#include "StarListener.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
+
+import std;
 
 namespace Star {
 
 // deprecated in favor of explicit shadow color
-enum class FontMode : uint8_t {
+enum class FontMode : std::uint8_t {
   Normal,
   Shadow
 };
 
-inline Color const& fontModeToColor(FontMode mode) {
+inline auto fontModeToColor(FontMode mode) -> Color const& {
   return mode == FontMode::Shadow ? Color::Black : Color::Clear;
 }
-
-STAR_CLASS(TextPainter);
 
 struct TextPositioning {
   TextPositioning();
@@ -26,70 +26,70 @@ struct TextPositioning {
   TextPositioning(Vec2F pos,
       HorizontalAnchor hAnchor = HorizontalAnchor::LeftAnchor,
       VerticalAnchor vAnchor = VerticalAnchor::BottomAnchor,
-      Maybe<unsigned> wrapWidth = {},
-      Maybe<unsigned> charLimit = {});
+      std::optional<unsigned> wrapWidth = {},
+      std::optional<unsigned> charLimit = {});
 
   TextPositioning(Json const& v);
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  TextPositioning translated(Vec2F translation) const;
+  [[nodiscard]] auto translated(Vec2F translation) const -> TextPositioning;
 
   Vec2F pos;
   HorizontalAnchor hAnchor;
   VerticalAnchor vAnchor;
-  Maybe<unsigned> wrapWidth;
-  Maybe<unsigned> charLimit;
+  std::optional<unsigned> wrapWidth;
+  std::optional<unsigned> charLimit;
 };
 
 // Renders text while caching individual glyphs for fast rendering but with *no
 // kerning*.
 class TextPainter {
 public:
-  TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup);
+  TextPainter(Ptr<Renderer> renderer, Ptr<TextureGroup> textureGroup);
 
-  RectF renderText(StringView s, TextPositioning const& position);
-  RectF renderLine(StringView s, TextPositioning const& position);
-  RectF renderGlyph(String::Char c, TextPositioning const& position);
+  auto renderText(StringView s, TextPositioning const& position) -> RectF;
+  auto renderLine(StringView s, TextPositioning const& position) -> RectF;
+  auto renderGlyph(String::Char c, TextPositioning const& position) -> RectF;
 
-  RectF determineTextSize(StringView s, TextPositioning const& position);
-  RectF determineLineSize(StringView s, TextPositioning const& position);
-  RectF determineGlyphSize(String::Char c, TextPositioning const& position);
+  auto determineTextSize(StringView s, TextPositioning const& position) -> RectF;
+  auto determineLineSize(StringView s, TextPositioning const& position) -> RectF;
+  auto determineGlyphSize(String::Char c, TextPositioning const& position) -> RectF;
 
-  int glyphWidth(String::Char c);
-  int stringWidth(StringView s, unsigned charLimit = 0);
+  auto glyphWidth(String::Char c) -> int;
+  auto stringWidth(StringView s, unsigned charLimit = 0) -> int;
 
-    
-  typedef function<bool(StringView, unsigned)> WrapTextCallback;
-  bool processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
 
-  List<StringView> wrapTextViews(StringView s, Maybe<unsigned> wrapWidth);
-  StringList wrapText(StringView s, Maybe<unsigned> wrapWidth);
+  using WrapTextCallback = std::function<bool(StringView, unsigned)>;
+  auto processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc) -> bool;
 
-  unsigned fontSize() const;
+  auto wrapTextViews(StringView s, std::optional<unsigned> wrapWidth) -> List<StringView>;
+  auto wrapText(StringView s, std::optional<unsigned> wrapWidth) -> StringList;
+
+  [[nodiscard]] auto fontSize() const -> unsigned;
   void setFontSize(unsigned size);
   void setLineSpacing(float lineSpacing);
   void setMode(FontMode mode);
   void setFontColor(Vec4B color);
   void setProcessingDirectives(StringView directives, bool back = false);
   void setFont(String const& font);
-  TextStyle& setTextStyle(TextStyle const& textStyle);
+  auto setTextStyle(TextStyle const& textStyle) -> TextStyle&;
   void clearTextStyle();
-  void addFont(FontPtr const& font, String const& name);
+  void addFont(Ptr<Font> const& font, String const& name);
   void reloadFonts();
 
-  void cleanup(int64_t textureTimeout);
+  void cleanup(std::int64_t textureTimeout);
   void applyCommands(StringView unsplitCommands);
 private:
   void modifyDirectives(Directives& directives);
-  RectF doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
-  RectF doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
-  RectF doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender);
+  auto doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit) -> RectF;
+  auto doRenderLine(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit) -> RectF;
+  auto doRenderGlyph(String::Char c, TextPositioning const& position, bool reallyRender) -> RectF;
 
   void renderPrimitives();
   void renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B color, Directives const* processingDirectives = nullptr);
-  static FontPtr loadFont(String const& fontPath, Maybe<String> fontName = {});
+  static auto loadFont(String const& fontPath, std::optional<String> fontName = {}) -> Ptr<Font>;
 
-  RendererPtr m_renderer;
+  Ptr<Renderer> m_renderer;
   List<RenderPrimitive> m_shadowPrimitives;
   List<RenderPrimitive> m_backPrimitives;
   List<RenderPrimitive> m_frontPrimitives;
@@ -100,7 +100,7 @@ private:
   TextStyle m_savedRenderSettings;
 
   String m_nonRenderedCharacters;
-  TrackerListenerPtr m_reloadTracker;
+  Ptr<TrackerListener> m_reloadTracker;
 };
 
 }

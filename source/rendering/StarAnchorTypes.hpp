@@ -18,4 +18,4 @@ enum class VerticalAnchor {
 };
 extern EnumMap<VerticalAnchor> const VerticalAnchorNames;
 
-}
+}// namespace Star

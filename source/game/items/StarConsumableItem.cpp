@@ -1,13 +1,16 @@
 #include "StarConsumableItem.hpp"
-#include "StarRoot.hpp"
+
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarStatusController.hpp"
 
+import std;
+
 namespace Star {
 
 ConsumableItem::ConsumableItem(Json const& config, String const& directory, Json const& data)
-  : Item(config, directory, data), SwingableItem(config) {
+    : Item(config, directory, data), SwingableItem(config) {
   setWindupTime(0);
   setCooldownTime(0.25f);
   m_requireEdgeTrigger = true;
@@ -24,11 +27,11 @@ ConsumableItem::ConsumableItem(Json const& config, String const& directory, Json
   m_consuming = false;
 }
 
-ItemPtr ConsumableItem::clone() const {
-  return make_shared<ConsumableItem>(*this);
+auto ConsumableItem::clone() const -> Ptr<Item> {
+  return std::make_shared<ConsumableItem>(*this);
 }
 
-List<Drawable> ConsumableItem::drawables() const {
+auto ConsumableItem::drawables() const -> List<Drawable> {
   auto drawables = iconDrawables();
   Drawable::scaleAll(drawables, 1.0f / TilePixels);
   Drawable::translateAll(drawables, -handPosition() / TilePixels);
@@ -63,7 +66,7 @@ void ConsumableItem::uninit() {
   FireableItem::uninit();
 }
 
-bool ConsumableItem::canUse() const {
+auto ConsumableItem::canUse() const -> bool {
   if (!count() || m_consuming)
     return false;
 
@@ -84,7 +87,7 @@ void ConsumableItem::triggerEffects() {
   if (m_foodValue) {
     owner()->statusController()->giveResource("food", *m_foodValue);
     if (owner()->statusController()->resourcePercentage("food") == 1.0f)
-      owner()->statusController()->addEphemeralEffect(EphemeralStatusEffect{UniqueStatusEffect("wellfed"), {}});
+      owner()->statusController()->addEphemeralEffect(EphemeralStatusEffect{.uniqueEffect = UniqueStatusEffect("wellfed"), .duration = {}});
   }
 
   if (!m_emote.empty())
@@ -97,9 +100,7 @@ void ConsumableItem::maybeConsume() {
   if (m_consuming) {
     m_consuming = false;
 
-    world()->sendEntityMessage(owner()->entityId(), "recordEvent", {"useItem", JsonObject {
-      {"itemType", name()}
-    }});
+    world()->sendEntityMessage(owner()->entityId(), "recordEvent", {"useItem", JsonObject{{"itemType", name()}}});
     if (count())
       setCount(count() - 1);
     else
@@ -107,4 +108,4 @@ void ConsumableItem::maybeConsume() {
   }
 }
 
-}
+}// namespace Star

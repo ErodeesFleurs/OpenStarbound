@@ -1,38 +1,37 @@
 #pragma once
 
-#include "StarUuid.hpp"
+#include "StarConfig.hpp"
 #include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(Codex);
-STAR_STRUCT(CodexEntry);
-STAR_CLASS(UniverseClient);
+class Codex;
 
 class PlayerCodexes {
 public:
-  typedef pair<CodexConstPtr, bool> CodexEntry;
+  using CodexEntry = std::pair<ConstPtr<Codex>, bool>;
 
   PlayerCodexes(Json const& json = {});
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  List<CodexEntry> codexes() const;
+  [[nodiscard]] auto codexes() const -> List<CodexEntry>;
 
-  bool codexKnown(String const& codexId) const;
-  CodexConstPtr learnCodex(String const& codexId, bool markRead = false);
+  [[nodiscard]] auto codexKnown(String const& codexId) const -> bool;
+  auto learnCodex(String const& codexId, bool markRead = false) -> ConstPtr<Codex>;
 
-  bool codexRead(String const& codexId) const;
-  bool markCodexRead(String const& codexId);
-  bool markCodexUnread(String const& codexId);
+  [[nodiscard]] auto codexRead(String const& codexId) const -> bool;
+  auto markCodexRead(String const& codexId) -> bool;
+  auto markCodexUnread(String const& codexId) -> bool;
 
   void learnInitialCodexes(String const& playerSpecies);
 
-  CodexConstPtr firstNewCodex() const;
+  [[nodiscard]] auto firstNewCodex() const -> ConstPtr<Codex>;
 
 private:
   StringMap<CodexEntry> m_codexes;
 };
 
-typedef shared_ptr<PlayerCodexes> PlayerCodexesPtr;
-}
+}// namespace Star

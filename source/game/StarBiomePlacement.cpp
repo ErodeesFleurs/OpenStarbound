@@ -1,12 +1,14 @@
 #include "StarBiomePlacement.hpp"
+
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
+
+import std;
 
 namespace Star {
 
-BiomeItem variantToBiomeItem(Json const& store) {
+auto variantToBiomeItem(Json const& store) -> BiomeItem {
   auto type = store.get(0);
   if (type == "grass") {
     return GrassVariant(store.get(1));
@@ -15,9 +17,9 @@ BiomeItem variantToBiomeItem(Json const& store) {
   } else if (type == "treePair") {
     return TreePair(TreeVariant(store.get(1).get(0)), TreeVariant(store.get(1).get(1)));
   } else if (type == "objectPool") {
-    return ObjectPool(store.getArray(1).transformed([](Json const& pair) {
-        return make_pair(pair.getFloat(0), make_pair(pair.get(1).getString(0), pair.get(1).get(1)));
-      }));
+    return ObjectPool(store.getArray(1).transformed([](Json const& pair) -> std::pair<std::float_t, std::pair<Star::String, Star::Json>> {
+      return std::make_pair(pair.getFloat(0), std::make_pair(pair.get(1).getString(0), pair.get(1).get(1)));
+    }));
   } else if (type == "treasureBoxSet") {
     return TreasureBoxSet(store.getString(1));
   } else if (type == "microDungeon") {
@@ -27,7 +29,7 @@ BiomeItem variantToBiomeItem(Json const& store) {
   }
 }
 
-Json variantFromBiomeItem(BiomeItem const& biomeItem) {
+auto variantFromBiomeItem(BiomeItem const& biomeItem) -> Json {
   if (auto grassVariant = biomeItem.ptr<GrassVariant>()) {
     return JsonArray{"grass", grassVariant->toJson()};
   } else if (auto bushVariant = biomeItem.ptr<BushVariant>()) {
@@ -35,13 +37,13 @@ Json variantFromBiomeItem(BiomeItem const& biomeItem) {
   } else if (auto treePair = biomeItem.ptr<TreePair>()) {
     return JsonArray{"treePair", JsonArray{treePair->first.toJson(), treePair->second.toJson()}};
   } else if (auto objectPool = biomeItem.ptr<ObjectPool>()) {
-    return JsonArray{"objectPool", transform<JsonArray>(objectPool->items(), [](pair<double, pair<String, Json>> const& p) {
-        return JsonArray{p.first, JsonArray{p.second.first, p.second.second}};
-      })};
+    return JsonArray{"objectPool", transform<JsonArray>(objectPool->items(), [](std::pair<double, std::pair<String, Json>> const& p) -> JsonArray {
+                       return JsonArray{p.first, JsonArray{p.second.first, p.second.second}};
+                     })};
   } else if (auto treasureBoxSet = biomeItem.ptr<TreasureBoxSet>()) {
     return JsonArray{"treasureBoxSet", String(*treasureBoxSet)};
   } else if (auto microDungeonNames = biomeItem.ptr<MicroDungeonNames>()) {
-    return JsonArray{"microDungeon", jsonFromStringSet(*microDungeonNames)};
+    return JsonArray{"microDungeon", jsonFromStringSet(microDungeonNames->get())};
   } else {
     throw BiomeException(strf("Unrecognized biome item type"));
   }
@@ -51,17 +53,16 @@ EnumMap<BiomePlacementMode> const BiomePlacementModeNames{
   {BiomePlacementMode::Floor, "floor"},
   {BiomePlacementMode::Ceiling, "ceiling"},
   {BiomePlacementMode::Background, "background"},
-  {BiomePlacementMode::Ocean, "ocean"}
-};
+  {BiomePlacementMode::Ocean, "ocean"}};
 
 BiomeItemPlacement::BiomeItemPlacement(BiomeItem item, Vec2I position, float priority)
-  : item(std::move(item)), position(position), priority(priority) {}
+    : item(std::move(item)), position(position), priority(priority) {}
 
-bool BiomeItemPlacement::operator<(BiomeItemPlacement const& rhs) const {
+auto BiomeItemPlacement::operator<(BiomeItemPlacement const& rhs) const -> bool {
   return priority < rhs.priority;
 }
 
-std::optional<BiomeItem> BiomeItemDistribution::createItem(Json const& config, RandomSource& rand, float biomeHueShift) {
+auto BiomeItemDistribution::createItem(Json const& config, RandomSource& rand, float biomeHueShift) -> std::optional<BiomeItem> {
   auto& root = Root::singleton();
 
   auto type = config.getString("type");
@@ -85,7 +86,7 @@ std::optional<BiomeItem> BiomeItemDistribution::createItem(Json const& config, R
     auto foliageList = jsonToStringList(config.get("treeFoliageList", JsonArray()));
 
     // Find matching pairs of stem / foliage (that have the same shape)
-    List<pair<String, String>> matchingPairs;
+    List<std::pair<String, String>> matchingPairs;
     for (auto stem : stemList) {
       for (auto foliage : foliageList) {
         if (foliage.empty() || root.plantDatabase()->treeStemShape(stem) == root.plantDatabase()->treeFoliageShape(foliage))
@@ -110,9 +111,9 @@ std::optional<BiomeItem> BiomeItemDistribution::createItem(Json const& config, R
         altTree = root.plantDatabase()->buildTreeVariant(chosenPair.first, treeStemHueShift);
       } else {
         primaryTree = root.plantDatabase()->buildTreeVariant(
-            chosenPair.first, treeStemHueShift, chosenPair.second, treeFoliageHueShift);
+          chosenPair.first, treeStemHueShift, chosenPair.second, treeFoliageHueShift);
         altTree = root.plantDatabase()->buildTreeVariant(
-            chosenPair.first, treeStemHueShift, chosenPair.second, treeAltFoliageHueShift);
+          chosenPair.first, treeStemHueShift, chosenPair.second, treeAltFoliageHueShift);
       }
       return BiomeItem{TreePair{primaryTree, altTree}};
     }
@@ -154,7 +155,7 @@ BiomeItemDistribution::BiomeItemDistribution() {
   m_priority = 0.0f;
 }
 
-BiomeItemDistribution::BiomeItemDistribution(Json const& config, uint64_t seed, float biomeHueShift) {
+BiomeItemDistribution::BiomeItemDistribution(Json const& config, std::uint64_t seed, float biomeHueShift) {
   RandomSource rand(seed);
 
   m_mode = BiomePlacementModeNames.getLeft(config.getString("mode", "floor"));
@@ -223,12 +224,12 @@ BiomeItemDistribution::BiomeItemDistribution(Json const& store) {
   m_modulusDistortion = PerlinF(store.get("modulusDistortion"));
   m_modulus = store.getInt("modulus");
   m_modulusOffset = store.getInt("modulusOffset");
-  m_weightedItems = store.getArray("weightedItems") .transformed([](Json const& v) {
-      return make_pair(variantToBiomeItem(v.get(0)), PerlinF(v.get(1)));
-    });
+  m_weightedItems = store.getArray("weightedItems").transformed([](Json const& v) -> std::pair<BiomeItem, Star::Perlin<float>> {
+    return std::make_pair(variantToBiomeItem(v.get(0)), PerlinF(v.get(1)));
+  });
 }
 
-Json BiomeItemDistribution::toJson() const {
+auto BiomeItemDistribution::toJson() const -> Json {
   return JsonObject{
     {"mode", BiomePlacementModeNames.getRight(m_mode)},
     {"distribution", DistributionTypeNames.getRight(m_distribution)},
@@ -240,17 +241,17 @@ Json BiomeItemDistribution::toJson() const {
     {"modulusDistortion", m_modulusDistortion.toJson()},
     {"modulus", m_modulus},
     {"modulusOffset", m_modulusOffset},
-    {"weightedItems", m_weightedItems.transformed([](pair<BiomeItem, PerlinF> const& p) -> Json {
-        return JsonArray{variantFromBiomeItem(p.first), p.second.toJson()};
-      })},
+    {"weightedItems", m_weightedItems.transformed([](std::pair<BiomeItem, PerlinF> const& p) -> Json {
+       return JsonArray{variantFromBiomeItem(p.first), p.second.toJson()};
+     })},
   };
 }
 
-BiomePlacementMode BiomeItemDistribution::mode() const {
+auto BiomeItemDistribution::mode() const -> BiomePlacementMode {
   return m_mode;
 }
 
-List<BiomeItem> BiomeItemDistribution::allItems() const {
+auto BiomeItemDistribution::allItems() const -> List<BiomeItem> {
   if (m_distribution == DistributionType::Random) {
     return m_randomItems;
   } else if (m_distribution == DistributionType::Periodic) {
@@ -263,7 +264,7 @@ List<BiomeItem> BiomeItemDistribution::allItems() const {
   }
 }
 
-std::optional<BiomeItemPlacement> BiomeItemDistribution::itemToPlace(int x, int y) const {
+auto BiomeItemDistribution::itemToPlace(int x, int y) const -> std::optional<BiomeItemPlacement> {
   if (m_distribution == DistributionType::Random) {
     if (staticRandomFloat(x, y, m_blockSeed) <= m_blockProbability)
       return BiomeItemPlacement{staticRandomValueFrom(m_randomItems, x, y, m_blockSeed), Vec2I(x, y), m_priority};
@@ -272,7 +273,7 @@ std::optional<BiomeItemPlacement> BiomeItemDistribution::itemToPlace(int x, int 
     BiomeItem const* biomeItem = nullptr;
     if (m_densityFunction.get(x, y) > 0) {
       if ((int)(x + m_modulusOffset + m_modulusDistortion.get(x, y)) % m_modulus == 0) {
-        float maxWeight = lowest<float>();
+        auto maxWeight = lowest<float>();
         for (auto const& weightedItem : m_weightedItems) {
           float weight = weightedItem.second.get(x, y);
           if (weight > maxWeight) {
@@ -292,7 +293,6 @@ std::optional<BiomeItemPlacement> BiomeItemDistribution::itemToPlace(int x, int 
 
 EnumMap<BiomeItemDistribution::DistributionType> const BiomeItemDistribution::DistributionTypeNames{
   {DistributionType::Random, "random"},
-  {DistributionType::Periodic, "periodic"}
-};
+  {DistributionType::Periodic, "periodic"}};
 
-}
+}// namespace Star

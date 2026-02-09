@@ -1,5 +1,7 @@
 #include "StarChatAction.hpp"
 
+import std;
+
 namespace Star {
 
 SayChatAction::SayChatAction() {
@@ -7,10 +9,10 @@ SayChatAction::SayChatAction() {
 }
 
 SayChatAction::SayChatAction(EntityId entity, String const& text, Vec2F const& position)
-  : entity(entity), text(text), position(position) {}
+    : entity(entity), text(std::move(text)), position(position) {}
 
 SayChatAction::SayChatAction(EntityId entity, String const& text, Vec2F const& position, Json const& config)
-  : entity(entity), text(text), position(position), config(config) {}
+    : entity(entity), text(std::move(text)), position(position), config(std::move(config)) {}
 
 SayChatAction::operator bool() const {
   return !text.empty();
@@ -21,15 +23,14 @@ PortraitChatAction::PortraitChatAction() {
 }
 
 PortraitChatAction::PortraitChatAction(
-    EntityId entity, String const& portrait, String const& text, Vec2F const& position)
-  : entity(entity), portrait(portrait), text(text), position(position) {}
+  EntityId entity, String const& portrait, String const& text, Vec2F const& position)
+    : entity(entity), portrait(std::move(portrait)), text(std::move(text)), position(position) {}
 
 PortraitChatAction::PortraitChatAction(
-    EntityId entity, String const& portrait, String const& text, Vec2F const& position, Json const& config)
-  : entity(entity), portrait(portrait), text(text), position(position), config(config) {}
-
+  EntityId entity, String const& portrait, String const& text, Vec2F const& position, Json const& config)
+    : entity(entity), portrait(std::move(portrait)), text(std::move(text)), position(position), config(std::move(config)) {}
 PortraitChatAction::operator bool() const {
   return !text.empty();
 }
 
-}
+}// namespace Star

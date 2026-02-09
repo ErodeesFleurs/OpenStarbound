@@ -1,16 +1,12 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarItemDescriptor.hpp"
-#include "StarThread.hpp"
 #include "StarVector.hpp"
-#include "StarStrongTypedef.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(SpeciesTextVariants);
-STAR_CLASS(PositionalTextVariants);
-STAR_CLASS(QuestTemplate);
-STAR_CLASS(QuestTemplateDatabase);
 
 // A Quest Template
 // Used to check prerequisites for quest availability and by the QuestManager to
@@ -68,13 +64,13 @@ public:
   QuestTemplateDatabase();
 
   // Return a list of all known template id values
-  List<String> allQuestTemplateIds() const;
+  [[nodiscard]] auto allQuestTemplateIds() const -> List<String>;
 
   // Return the template for the given template id
-  QuestTemplatePtr questTemplate(String const& templateId) const;
+  [[nodiscard]] auto questTemplate(String const& templateId) const -> Ptr<QuestTemplate>;
 
 private:
-  StringMap<QuestTemplatePtr> m_templates;
+  StringMap<Ptr<QuestTemplate>> m_templates;
 };
 
-}
+}// namespace Star

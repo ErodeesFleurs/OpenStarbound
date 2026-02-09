@@ -11,6 +11,8 @@
 #include "StarNetworkedAnimator.hpp"
 #include "StarScriptedEntity.hpp"
 
+import std;
+
 namespace Star {
 
 using VehicleException = ExceptionDerived<"VehicleException">;
@@ -45,13 +47,13 @@ public:
   auto collisionArea() const -> RectF override;
   auto velocity() const -> Vec2F;
 
-  auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t> override;
+  auto writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t> override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   void render(RenderCallback* renderer) override;
 

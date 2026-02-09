@@ -1,10 +1,12 @@
 #include "StarStoredFunctions.hpp"
-#include "StarAssets.hpp"
+
 #include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
-double const StoredFunction::DefaultSearchTolerance = 0.001;
+constexpr std::double_t StoredFunction::DefaultSearchTolerance = 0.001;
 
 StoredFunction::StoredFunction(ParametricFunction<double, double> data) {
   if (data.empty())
@@ -33,15 +35,15 @@ StoredFunction::StoredFunction(ParametricFunction<double, double> data) {
   }
 }
 
-Monotonicity StoredFunction::monotonicity() const {
+auto StoredFunction::monotonicity() const -> Monotonicity {
   return m_monotonicity;
 }
 
-double StoredFunction::evaluate(double value) const {
+auto StoredFunction::evaluate(double value) const -> double {
   return m_function.interpolate(value);
 }
 
-StoredFunction::SearchResult StoredFunction::search(double targetValue, double valueTolerance) const {
+auto StoredFunction::search(double targetValue, double valueTolerance) const -> StoredFunction::SearchResult {
   double minIndex = m_function.index(0);
   double minValue = m_function.value(0);
 
@@ -106,7 +108,7 @@ StoredFunction::SearchResult StoredFunction::search(double targetValue, double v
 
 StoredFunction2::StoredFunction2(MultiTable2D table) : table(std::move(table)) {}
 
-double StoredFunction2::evaluate(double x, double y) const {
+auto StoredFunction2::evaluate(double x, double y) const -> double {
   return table.interpolate({x, y});
 }
 
@@ -114,7 +116,7 @@ StoredConfigFunction::StoredConfigFunction(ParametricTable<int, Json> data) {
   m_data = std::move(data);
 }
 
-Json StoredConfigFunction::get(double value) const {
+auto StoredConfigFunction::get(double value) const -> Json {
   return m_data.get(value);
 }
 
@@ -133,7 +135,7 @@ FunctionDatabase::FunctionDatabase() {
     for (auto const& functionPair : assets->json(file).iterateObject()) {
       if (m_functions.contains(functionPair.first))
         throw StarException(strf("Named Function '{}' defined twice, second time from {}", functionPair.first, file));
-      m_functions[functionPair.first] = make_shared<StoredFunction>(parametricFunctionFromConfig(functionPair.second));
+      m_functions[functionPair.first] = std::make_shared<StoredFunction>(parametricFunctionFromConfig(functionPair.second));
     }
   }
 
@@ -141,8 +143,8 @@ FunctionDatabase::FunctionDatabase() {
     for (auto const& functionPair : assets->json(file).iterateObject()) {
       if (m_functions2.contains(functionPair.first))
         throw StarException(
-            strf("Named 2-ary Function '{}' defined twice, second time from {}", functionPair.first, file));
-      m_functions2[functionPair.first] = make_shared<StoredFunction2>(multiTable2DFromConfig(functionPair.second));
+          strf("Named 2-ary Function '{}' defined twice, second time from {}", functionPair.first, file));
+      m_functions2[functionPair.first] = std::make_shared<StoredFunction2>(multiTable2DFromConfig(functionPair.second));
     }
   }
 
@@ -150,52 +152,52 @@ FunctionDatabase::FunctionDatabase() {
     for (auto const& tablePair : assets->json(file).iterateObject()) {
       if (m_configFunctions.contains(tablePair.first))
         throw StarException(
-            strf("Named config function '{}' defined twice, second time from {}", tablePair.first, file));
+          strf("Named config function '{}' defined twice, second time from {}", tablePair.first, file));
       m_configFunctions[tablePair.first] =
-          make_shared<StoredConfigFunction>(parametricTableFromConfig(tablePair.second));
+        std::make_shared<StoredConfigFunction>(parametricTableFromConfig(tablePair.second));
     }
   }
 }
 
-StringList FunctionDatabase::namedFunctions() const {
+auto FunctionDatabase::namedFunctions() const -> StringList {
   return m_functions.keys();
 }
 
-StringList FunctionDatabase::namedFunctions2() const {
+auto FunctionDatabase::namedFunctions2() const -> StringList {
   return m_functions2.keys();
 }
 
-StringList FunctionDatabase::namedConfigFunctions() const {
+auto FunctionDatabase::namedConfigFunctions() const -> StringList {
   return m_configFunctions.keys();
 }
 
-StoredFunctionPtr FunctionDatabase::function(Json const& configOrName) const {
+auto FunctionDatabase::function(Json const& configOrName) const -> Ptr<StoredFunction> {
   if (configOrName.type() == Json::Type::String)
     return m_functions.get(configOrName.toString());
   else
-    return make_shared<StoredFunction>(parametricFunctionFromConfig(configOrName));
+    return std::make_shared<StoredFunction>(parametricFunctionFromConfig(configOrName));
 }
 
-StoredFunction2Ptr FunctionDatabase::function2(Json const& configOrName) const {
+auto FunctionDatabase::function2(Json const& configOrName) const -> Ptr<StoredFunction2> {
   if (configOrName.type() == Json::Type::String)
     return m_functions2.get(configOrName.toString());
   else
-    return make_shared<StoredFunction2>(multiTable2DFromConfig(configOrName));
+    return std::make_shared<StoredFunction2>(multiTable2DFromConfig(configOrName));
 }
 
-StoredConfigFunctionPtr FunctionDatabase::configFunction(Json const& configOrName) const {
+auto FunctionDatabase::configFunction(Json const& configOrName) const -> Ptr<StoredConfigFunction> {
   if (configOrName.type() == Json::Type::String)
     return m_configFunctions.get(configOrName.toString());
   else
-    return make_shared<StoredConfigFunction>(parametricTableFromConfig(configOrName));
+    return std::make_shared<StoredConfigFunction>(parametricTableFromConfig(configOrName));
 }
 
-ParametricFunction<double, double> FunctionDatabase::parametricFunctionFromConfig(Json descriptor) {
+auto FunctionDatabase::parametricFunctionFromConfig(Json descriptor) -> ParametricFunction<double, double> {
   try {
     String interpolationModeString = descriptor.getString(0);
     String boundModeString = descriptor.getString(1);
 
-    List<pair<double, double>> points;
+    List<std::pair<double, double>> points;
     for (size_t i = 2; i < descriptor.size(); ++i) {
       auto pointPair = descriptor.get(i);
       if (pointPair.size() != 2)
@@ -231,9 +233,9 @@ ParametricFunction<double, double> FunctionDatabase::parametricFunctionFromConfi
   }
 }
 
-ParametricTable<int, Json> FunctionDatabase::parametricTableFromConfig(Json descriptor) {
+auto FunctionDatabase::parametricTableFromConfig(Json descriptor) -> ParametricTable<int, Json> {
   try {
-    List<pair<int, Json>> points;
+    List<std::pair<int, Json>> points;
     for (size_t i = 0; i < descriptor.size(); ++i) {
       auto pointPair = descriptor.get(i);
       if (pointPair.size() != 2)
@@ -247,7 +249,7 @@ ParametricTable<int, Json> FunctionDatabase::parametricTableFromConfig(Json desc
   }
 }
 
-MultiTable2D FunctionDatabase::multiTable2DFromConfig(Json descriptor) {
+auto FunctionDatabase::multiTable2DFromConfig(Json descriptor) -> MultiTable2D {
   try {
     String interpolationModeString = descriptor.getString(0);
     String boundModeString = descriptor.getString(1);
@@ -311,4 +313,4 @@ MultiTable2D FunctionDatabase::multiTable2DFromConfig(Json descriptor) {
   }
 }
 
-}
+}// namespace Star

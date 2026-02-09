@@ -4,9 +4,9 @@
 #include "StarSet.hpp"
 #include "StarThread.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(ChatProcessor);
+namespace Star {
 
 // Handles all chat routing and command parsing for client / server chat.
 // Thread safe.
@@ -16,30 +16,30 @@ public:
 
   // CommandHandler is passed the origin connection, the command portion
   // excluding the '/' character, and the remaining command line in full.
-  typedef function<String(ConnectionId, String, String)> CommandHandler;
+  using CommandHandler = std::function<String(ConnectionId, String, String)>;
 
-  String connectClient(ConnectionId clientId, String nick = "");
+  auto connectClient(ConnectionId clientId, String nick = "") -> String;
   // Returns any pending messages.
-  List<ChatReceivedMessage> disconnectClient(ConnectionId clientId);
+  auto disconnectClient(ConnectionId clientId) -> List<ChatReceivedMessage>;
 
-  List<ConnectionId> clients() const;
-  bool hasClient(ConnectionId clientId) const;
+  auto clients() const -> List<ConnectionId>;
+  auto hasClient(ConnectionId clientId) const -> bool;
 
   // Clears all clients and channels
   void reset();
 
   // Will return nothing if nick is not found.
-  std::optional<ConnectionId> findNick(String const& nick) const;
-  String connectionNick(ConnectionId connectionId) const;
-  String renick(ConnectionId clientId, String const& nick);
+  auto findNick(String const& nick) const -> std::optional<ConnectionId>;
+  auto connectionNick(ConnectionId connectionId) const -> String;
+  auto renick(ConnectionId clientId, String const& nick) -> String;
 
   // join / leave return true in the even that the client channel state was
   // actually changed.
-  bool joinChannel(ConnectionId clientId, String const& channelName);
-  bool leaveChannel(ConnectionId clientId, String const& channelName);
+  auto joinChannel(ConnectionId clientId, String const& channelName) -> bool;
+  auto leaveChannel(ConnectionId clientId, String const& channelName) -> bool;
 
-  StringList clientChannels(ConnectionId clientId) const;
-  StringList activeChannels() const;
+  auto clientChannels(ConnectionId clientId) const -> StringList;
+  auto activeChannels() const -> StringList;
 
   void broadcast(ConnectionId sourceConnectionId, String const& text, JsonObject data = {});
   void message(ConnectionId sourceConnectionId, MessageContext::Mode context, String const& channelName, String const& text, JsonObject data = {});
@@ -51,7 +51,7 @@ public:
   void adminMessage(MessageContext::Mode context, String const& channelName, String const& text);
   void adminWhisper(ConnectionId targetClientId, String const& text);
 
-  List<ChatReceivedMessage> pullPendingMessages(ConnectionId clientId);
+  auto pullPendingMessages(ConnectionId clientId) -> List<ChatReceivedMessage>;
 
   void setCommandHandler(CommandHandler commandHandler);
   void clearCommandHandler();
@@ -65,11 +65,11 @@ private:
     List<ChatReceivedMessage> pendingMessages;
   };
 
-  String makeNickUnique(String nick);
+  auto makeNickUnique(String nick) -> String;
 
   // Returns true if message was handled completely and needs no further
   // processing.
-  bool handleCommand(ChatReceivedMessage& message);
+  auto handleCommand(ChatReceivedMessage& message) -> bool;
 
   mutable RecursiveMutex m_mutex;
 
@@ -80,4 +80,4 @@ private:
   CommandHandler m_commandHandler;
 };
 
-}
+}// namespace Star

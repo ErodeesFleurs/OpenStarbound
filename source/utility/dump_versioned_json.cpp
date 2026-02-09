@@ -1,9 +1,11 @@
 #include "StarFile.hpp"
 #include "StarVersioningDatabase.hpp"
 
+import std;
+
 using namespace Star;
 
-int main(int argc, char** argv) {
+auto main(int argc, char** argv) -> int {
   try {
     if (argc != 3) {
       coutf("Usage, {} <versioned_json_binary> <versioned_json_json>\n", argv[0]);

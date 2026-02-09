@@ -1,4 +1,5 @@
 #include "StarLockFile.hpp"
+
 #include "StarFormat.hpp"
 #include "StarThread.hpp"
 #include "StarTime.hpp"
@@ -72,7 +73,7 @@ auto LockFile::lock(std::int64_t timeout) -> bool {
         throw StarException(strf("Could not lock file {}, {}\n", m_filename, std::strerror(errno)));
       return {};
     }
-    return {(void*)(intptr_t)fd, [fn = m_filename](void* h) {
+    return {(void*)(intptr_t)fd, [fn = m_filename](void* h) -> void {
               int f = (int)(intptr_t)h;
               ::unlink(fn.utf8Ptr());
               ::close(f);

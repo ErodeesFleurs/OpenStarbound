@@ -36,4 +36,4 @@ private:
   std::shared_ptr<void> m_handle;
 };
 
-} // namespace Star
+}// namespace Star

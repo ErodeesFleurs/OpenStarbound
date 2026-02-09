@@ -94,9 +94,9 @@ unsigned const TilePixels = 8;
 extern float GlobalTimescale;
 extern float GlobalTimestep;
 extern float ServerGlobalTimestep;
-float const SystemWorldTimestep = 1.0f / 20.0f;
+const std::float_t SystemWorldTimestep = 1.0f / 20.0f;
 
-std::size_t const WorldSectorSize = 32;
+std::size_t constexpr WorldSectorSize = 32;
 
 using EntityId = std::int32_t;
 EntityId const NullEntityId = 0;

@@ -1,6 +1,9 @@
 #include "StarCodex.hpp"
-#include "StarJsonExtra.hpp"
+
 #include "StarAssetPath.hpp"
+#include "StarJsonExtra.hpp"
+
+import std;
 
 namespace Star {
 
@@ -16,62 +19,62 @@ Codex::Codex(Json const& config, String const& path) {
   m_itemConfig = config.get("itemConfig", Json());
 }
 
-Json Codex::toJson() const {
+auto Codex::toJson() const -> Json {
   auto result = JsonObject{
-      {"id", m_id},
-      {"species", m_species},
-      {"title", m_title},
-      {"description", m_description},
-      {"icon", m_icon},
-      {"contentPages", jsonFromStringList(m_pages)},
-      {"itemConfig", m_itemConfig}};
+    {"id", m_id},
+    {"species", m_species},
+    {"title", m_title},
+    {"description", m_description},
+    {"icon", m_icon},
+    {"contentPages", jsonFromStringList(m_pages)},
+    {"itemConfig", m_itemConfig}};
   return result;
 }
 
-String Codex::id() const {
+auto Codex::id() const -> String {
   return m_id;
 }
 
-String Codex::species() const {
+auto Codex::species() const -> String {
   return m_species;
 }
 
-String Codex::title() const {
+auto Codex::title() const -> String {
   return m_title;
 }
 
-String Codex::description() const {
+auto Codex::description() const -> String {
   return m_description;
 }
 
-String Codex::icon() const {
+auto Codex::icon() const -> String {
   return m_icon;
 }
 
-String Codex::page(size_t pageNum) const {
+auto Codex::page(std::size_t pageNum) const -> String {
   if (pageNum < m_pages.size())
     return m_pages[pageNum];
   return "";
 }
 
-List<String> Codex::pages() const {
+auto Codex::pages() const -> List<String> {
   return m_pages;
 }
 
-size_t Codex::pageCount() const {
+auto Codex::pageCount() const -> std::size_t {
   return m_pages.size();
 }
 
-Json Codex::itemConfig() const {
+auto Codex::itemConfig() const -> Json {
   return m_itemConfig;
 }
 
-String Codex::directory() const {
+auto Codex::directory() const -> String {
   return m_directory;
 }
 
-String Codex::filename() const {
+auto Codex::filename() const -> String {
   return m_filename;
 }
 
-}
+}// namespace Star

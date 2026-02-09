@@ -1,9 +1,10 @@
 #include "StarTeamClient.hpp"
+
+#include "StarClientContext.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerLog.hpp" // IWYU pragma: keep
+#include "StarPlayerLog.hpp"
 #include "StarRoot.hpp"
-#include "StarClientContext.hpp"
 #include "StarTime.hpp"
 #include "StarWorldClient.hpp"
 
@@ -121,13 +122,13 @@ void TeamClient::update() {
       JsonObject request;
       request["playerUuid"] = m_clientContext->playerUuid().hex();
       invokeRemote("team.pollInvitation", request, [this](Json response) {
-          if (response.isNull())
-            return;
-          if (m_hasPendingInvitation)
-            return;
-          m_pendingInvitation = {Uuid(response.getString("inviterUuid")), response.getString("inviterName")};
-          m_hasPendingInvitation = true;
-        });
+        if (response.isNull())
+          return;
+        if (m_hasPendingInvitation)
+          return;
+        m_pendingInvitation = {Uuid(response.getString("inviterUuid")), response.getString("inviterName")};
+        m_hasPendingInvitation = true;
+      });
     }
   }
   if (!m_fullUpdateRunning) {
@@ -152,33 +153,33 @@ void TeamClient::pullFullUpdate() {
   request["playerUuid"] = m_clientContext->playerUuid().hex();
 
   invokeRemote("team.fetchTeamStatus", request, [this](Json response) {
-      m_fullUpdateRunning = false;
+    m_fullUpdateRunning = false;
 
-      m_teamUuid = response.optString("teamUuid").transform(construct<Uuid>());
+    m_teamUuid = response.optString("teamUuid").transform(construct<Uuid>());
 
-      if (m_teamUuid) {
-        m_teamLeader = Uuid(response.getString("leader"));
-        m_members.clear();
+    if (m_teamUuid) {
+      m_teamLeader = Uuid(response.getString("leader"));
+      m_members.clear();
 
-        for (auto m : response.getArray("members")) {
-          Member member;
-          member.name = m.getString("name");
-          member.uuid = Uuid(m.getString("uuid"));
-          member.entity = m.getInt("entity");
-          member.healthPercentage = m.getFloat("health");
-          member.energyPercentage = m.getFloat("energy");
-          member.position[0] = m.getFloat("x");
-          member.position[1] = m.getFloat("y");
-          member.world = parseWorldId(m.getString("world"));
-          member.warpMode = WarpModeNames.getLeft(m.getString("warpMode"));
-          member.portrait = jsonToList<Drawable>(m.get("portrait"));
-          m_members.push_back(member);
-        }
-        std::sort(m_members.begin(), m_members.end(), [](Member const& a, Member const& b) { return a.name < b.name; });
-      } else {
-        clearTeam();
+      for (auto m : response.getArray("members")) {
+        Member member;
+        member.name = m.getString("name");
+        member.uuid = Uuid(m.getString("uuid"));
+        member.entity = m.getInt("entity");
+        member.healthPercentage = m.getFloat("health");
+        member.energyPercentage = m.getFloat("energy");
+        member.position[0] = m.getFloat("x");
+        member.position[1] = m.getFloat("y");
+        member.world = parseWorldId(m.getString("world"));
+        member.warpMode = WarpModeNames.getLeft(m.getString("warpMode"));
+        member.portrait = jsonToList<Drawable>(m.get("portrait"));
+        m_members.push_back(member);
       }
-    });
+      std::sort(m_members.begin(), m_members.end(), [](Member const& a, Member const& b) { return a.name < b.name; });
+    } else {
+      clearTeam();
+    }
+  });
 }
 
 void TeamClient::statusUpdate() {
@@ -194,8 +195,8 @@ void TeamClient::statusUpdate() {
   writePlayerData(request, player, true);
 
   invokeRemote("team.updateStatus", request, [this](Json) {
-      m_statusUpdateRunning = false;
-    });
+    m_statusUpdateRunning = false;
+  });
 }
 
 List<TeamClient::Member> TeamClient::members() {
@@ -260,4 +261,4 @@ void TeamClient::clearTeam() {
   forceUpdate();
 }
 
-}
+}// namespace Star

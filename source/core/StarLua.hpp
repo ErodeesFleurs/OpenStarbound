@@ -246,6 +246,8 @@ public:
   // thread has finished execution
   template <typename Ret = LuaValue, typename... Args>
   auto resume(Args const&... args) -> std::optional<Ret>;
+  template <typename Ret = LuaValue, typename... Args>
+  auto resume(Args const&... args) const -> std::optional<Ret>;
   void pushFunction(LuaFunction const& func) const;
   [[nodiscard]] auto status() const -> Status;
 };
@@ -1777,7 +1779,15 @@ template <typename Ret, typename... Args>
 auto LuaThread::resume(Args const&... args) -> std::optional<Ret> {
   auto res = engine().resumeThread(handleIndex(), args...);
   if (res)
-    return engine().luaTo<Ret>(std::move(*res));
+    return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), std::move(*res));
+  return std::nullopt;
+}
+
+template <typename Ret, typename... Args>
+auto LuaThread::resume(Args const&... args) const -> std::optional<Ret> {
+  auto res = engine().resumeThread(handleIndex(), args...);
+  if (res)
+    return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), std::move(*res));
   return std::nullopt;
 }
 

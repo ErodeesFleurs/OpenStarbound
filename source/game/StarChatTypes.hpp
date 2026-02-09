@@ -4,9 +4,11 @@
 #include "StarGameTypes.hpp"
 #include "StarJson.hpp"
 
+import std;
+
 namespace Star {
 
-enum class ChatSendMode : uint8_t {
+enum class ChatSendMode : std::uint8_t {
   Broadcast,
   Local,
   Party
@@ -15,7 +17,7 @@ enum class ChatSendMode : uint8_t {
 extern EnumMap<ChatSendMode> const ChatSendModeNames;
 
 struct MessageContext {
-  enum Mode : uint8_t {
+  enum Mode : std::uint8_t {
     Local,
     Party,
     Broadcast,
@@ -37,8 +39,8 @@ struct MessageContext {
 
 extern EnumMap<MessageContext::Mode> const MessageContextModeNames;
 
-DataStream& operator>>(DataStream& ds, MessageContext& messageContext);
-DataStream& operator<<(DataStream& ds, MessageContext const& messageContext);
+auto operator>>(DataStream& ds, MessageContext& messageContext) -> DataStream&;
+auto operator<<(DataStream& ds, MessageContext const& messageContext) -> DataStream&;
 
 struct ChatReceivedMessage {
   ChatReceivedMessage();
@@ -46,7 +48,7 @@ struct ChatReceivedMessage {
   ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text, String const& portrait);
   ChatReceivedMessage(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   MessageContext context;
 
@@ -59,7 +61,7 @@ struct ChatReceivedMessage {
   JsonObject data;
 };
 
-DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage);
-DataStream& operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage);
+auto operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage) -> DataStream&;
+auto operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage) -> DataStream&;
 
-};
+};// namespace Star

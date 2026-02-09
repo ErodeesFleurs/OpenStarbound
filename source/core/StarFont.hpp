@@ -2,8 +2,8 @@
 
 #include "StarConfig.hpp"
 #include "StarException.hpp"
-#include "StarString.hpp"
 #include "StarImage.hpp"
+#include "StarString.hpp"
 
 import std;
 
@@ -49,4 +49,4 @@ private:
   HashMap<std::pair<String::Char, unsigned>, unsigned> m_widthCache;
 };
 
-}
+}// namespace Star

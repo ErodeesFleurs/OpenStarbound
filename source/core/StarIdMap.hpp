@@ -1,9 +1,9 @@
 #pragma once
 
+#include "StarDataStream.hpp"
 #include "StarException.hpp"
 #include "StarMap.hpp"
 #include "StarMathCommon.hpp"
-#include "StarDataStream.hpp"
 
 import std;
 
@@ -45,22 +45,22 @@ public:
   auto operator==(IdMapWrapper const& rhs) const -> bool;
   auto operator!=(IdMapWrapper const& rhs) const -> bool;
 
-  using BaseMap::keys;
-  using BaseMap::values;
-  using BaseMap::pairs;
-  using BaseMap::contains;
-  using BaseMap::size;
-  using BaseMap::empty;
-  using BaseMap::get;
-  using BaseMap::ptr;
-  using BaseMap::maybe;
-  using BaseMap::take;
-  using BaseMap::maybeTake;
-  using BaseMap::remove;
-  using BaseMap::value;
   using BaseMap::begin;
+  using BaseMap::contains;
+  using BaseMap::empty;
   using BaseMap::end;
   using BaseMap::erase;
+  using BaseMap::get;
+  using BaseMap::keys;
+  using BaseMap::maybe;
+  using BaseMap::maybeTake;
+  using BaseMap::pairs;
+  using BaseMap::ptr;
+  using BaseMap::remove;
+  using BaseMap::size;
+  using BaseMap::take;
+  using BaseMap::value;
+  using BaseMap::values;
 
   template <typename Base>
   friend auto operator>>(DataStream& ds, IdMapWrapper<Base>& map) -> DataStream&;
@@ -81,11 +81,11 @@ using IdHashMap = IdMapWrapper<HashMap<Key, Value>>;
 
 template <typename BaseMap>
 IdMapWrapper<BaseMap>::IdMapWrapper()
-  : m_min(lowest<IdType>()), m_max(highest<IdType>()), m_nextId(m_min) {}
+    : m_min(lowest<IdType>()), m_max(highest<IdType>()), m_nextId(m_min) {}
 
 template <typename BaseMap>
 IdMapWrapper<BaseMap>::IdMapWrapper(IdType min, IdType max)
-  : m_min(min), m_max(max), m_nextId(m_min) {
+    : m_min(min), m_max(max), m_nextId(m_min) {
 }
 
 template <typename BaseMap>
@@ -147,4 +147,4 @@ auto operator<<(DataStream& ds, IdMapWrapper<BaseMap> const& map) -> DataStream&
   return ds;
 }
 
-}
+}// namespace Star

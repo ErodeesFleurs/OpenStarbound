@@ -1,44 +1,41 @@
 #pragma once
 
-#include "StarSet.hpp"
 #include "StarJson.hpp"
 
 namespace Star {
-
-STAR_CLASS(PlayerLog);
 
 class PlayerLog {
 public:
   PlayerLog();
   PlayerLog(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  int deathCount() const;
+  [[nodiscard]] auto deathCount() const -> int;
   void addDeathCount(int deaths);
 
-  double playTime() const;
+  [[nodiscard]] auto playTime() const -> double;
   void addPlayTime(double elapsedTime);
 
-  bool introComplete() const;
+  [[nodiscard]] auto introComplete() const -> bool;
   void setIntroComplete(bool complete);
 
-  StringSet scannedObjects() const;
-  bool addScannedObject(String const& objectName);
+  [[nodiscard]] auto scannedObjects() const -> StringSet;
+  auto addScannedObject(String const& objectName) -> bool;
   void removeScannedObject(String const& objectName);
   void clearScannedObjects();
 
-  StringSet radioMessages() const;
-  bool addRadioMessage(String const& messageName);
+  [[nodiscard]] auto radioMessages() const -> StringSet;
+  auto addRadioMessage(String const& messageName) -> bool;
   void clearRadioMessages();
 
-  StringSet cinematics() const;
-  bool addCinematic(String const& cinematic);
+  [[nodiscard]] auto cinematics() const -> StringSet;
+  auto addCinematic(String const& cinematic) -> bool;
   void clearCinematics();
 
-  StringList collections() const;
-  StringSet collectables(String const& collection) const;
-  bool addCollectable(String const& collection, String const& collectable);
+  [[nodiscard]] auto collections() const -> StringList;
+  [[nodiscard]] auto collectables(String const& collection) const -> StringSet;
+  auto addCollectable(String const& collection, String const& collectable) -> bool;
   void clearCollectables(String const& collection);
 
 private:
@@ -51,4 +48,4 @@ private:
   StringMap<StringSet> m_collections;
 };
 
-}
+}// namespace Star

@@ -1,11 +1,13 @@
 #include "StarKarstCave.hpp"
 
+import std;
+
 namespace Star {
 
 char const* const KarstCaveSelector::Name = "karstcave";
 
 KarstCaveSelector::KarstCaveSelector(Json const& config, TerrainSelectorParameters const& parameters)
-  : TerrainSelector(Name, config, parameters) {
+    : TerrainSelector(Name, config, parameters) {
   m_sectorSize = config.getUInt("sectorSize", 64);
   m_layerResolution = config.getInt("layerResolution");
   m_layerDensity = config.getFloat("layerDensity");
@@ -24,15 +26,16 @@ KarstCaveSelector::KarstCaveSelector(Json const& config, TerrainSelectorParamete
   m_sectorCache.setMaxSize(config.getUInt("sectorCacheSize", 16));
 }
 
-float KarstCaveSelector::get(int x, int y) const {
+auto KarstCaveSelector::get(int x, int y) const -> float {
   Vec2I key = Vec2I(x - pmod(x, m_sectorSize), y - pmod(y, m_sectorSize));
-  return m_sectorCache.get(key, [=, this](Vec2I const& key) {
-      return Sector(this, key);
-    }).get(x, y);
+  return m_sectorCache.get(key, [=, this](Vec2I const& key) -> Sector {
+                        return {this, key};
+                      })
+    .get(x, y);
 }
 
 KarstCaveSelector::Sector::Sector(KarstCaveSelector const* parent, Vec2I sector)
-  : parent(parent), sector(sector), values(square(parent->m_sectorSize)) {
+    : parent(parent), sector(sector), values(square(parent->m_sectorSize)) {
 
   m_maxValue = 0;
 
@@ -53,27 +56,27 @@ KarstCaveSelector::Sector::Sector(KarstCaveSelector const* parent, Vec2I sector)
         float isThereACaveHere = layerPerlins.caveDecision.get(noiseX, noiseY);
         if (isThereACaveHere > 0) {
           float taperFactor = isThereACaveHere < parent->m_caveTaperPoint
-              ? std::sin((0.5 * Constants::pi * isThereACaveHere) / parent->m_caveTaperPoint)
-              : 1.0f;
+            ? std::sin((0.5 * Constants::pi * isThereACaveHere) / parent->m_caveTaperPoint)
+            : 1.0f;
 
           int baseY = y + layerPerlins.layerHeightVariation.get(noiseX, noiseY);
           int ceilingY = baseY + layerPerlins.caveHeightVariation.get(noiseX, noiseY) * taperFactor;
           int floorY = baseY + layerPerlins.caveFloorVariation.get(noiseX, noiseY) * taperFactor;
-          float halfHeight = abs(ceilingY - floorY + 1) / 2.0f;
+          float halfHeight = std::abs(ceilingY - floorY + 1) / 2.0f;
           float midpointY = (floorY + ceilingY) / 2.0f;
 
-          m_maxValue = max(m_maxValue, halfHeight);
+          m_maxValue = std::max(m_maxValue, halfHeight);
 
           for (int pointY = floorY; pointY < ceilingY; pointY++)
             if (inside(x, pointY))
-              set(x, pointY, max(get(x, pointY), halfHeight - abs(midpointY - pointY)));
+              set(x, pointY, std::max(get(x, pointY), halfHeight - std::abs(midpointY - pointY)));
         }
       }
     }
   }
 }
 
-float KarstCaveSelector::Sector::get(int x, int y) {
+auto KarstCaveSelector::Sector::get(int x, int y) -> float {
   auto val = values[(x - sector[0]) + parent->m_sectorSize * (y - sector[1])];
   if (val > 0)
     return val;
@@ -81,7 +84,7 @@ float KarstCaveSelector::Sector::get(int x, int y) {
     return -m_maxValue;
 }
 
-bool KarstCaveSelector::Sector::inside(int x, int y) {
+auto KarstCaveSelector::Sector::inside(int x, int y) -> bool {
   int x_ = x - sector[0];
   if (x_ < 0 || x_ >= parent->m_sectorSize)
     return false;
@@ -95,15 +98,14 @@ void KarstCaveSelector::Sector::set(int x, int y, float value) {
   values[(x - sector[0]) + parent->m_sectorSize * (y - sector[1])] = value;
 }
 
-KarstCaveSelector::LayerPerlins const& KarstCaveSelector::layerPerlins(int y) const {
-  return m_layerPerlinsCache.get(y, [this](int y) {
-      return LayerPerlins{
-        PerlinF(m_caveDecisionPerlinConfig, staticRandomU64(y, m_seed, "CaveDecision")),
-        PerlinF(m_layerHeightVariationPerlinConfig, staticRandomU64(y, m_seed, "LayerHeightVariation")),
-        PerlinF(m_caveHeightVariationPerlinConfig, staticRandomU64(y, m_seed, "CaveHeightVariation")),
-        PerlinF(m_caveFloorVariationPerlinConfig, staticRandomU64(y, m_seed, "CaveFloorVariation"))
-      };
-    });
+auto KarstCaveSelector::layerPerlins(int y) const -> KarstCaveSelector::LayerPerlins const& {
+  return m_layerPerlinsCache.get(y, [this](int y) -> LayerPerlins {
+    return LayerPerlins{
+      .caveDecision = PerlinF(m_caveDecisionPerlinConfig, staticRandomU64(y, m_seed, "CaveDecision")),
+      .layerHeightVariation = PerlinF(m_layerHeightVariationPerlinConfig, staticRandomU64(y, m_seed, "LayerHeightVariation")),
+      .caveHeightVariation = PerlinF(m_caveHeightVariationPerlinConfig, staticRandomU64(y, m_seed, "CaveHeightVariation")),
+      .caveFloorVariation = PerlinF(m_caveFloorVariationPerlinConfig, staticRandomU64(y, m_seed, "CaveFloorVariation"))};
+  });
 }
 
-}
+}// namespace Star

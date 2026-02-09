@@ -1,10 +1,12 @@
 #include "StarInterpolationTracker.hpp"
+
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
+
+import std;
 
 namespace Star {
 
-constexpr double VanillaStepsPerSecond = 60.0;
+constexpr std::double_t VanillaStepsPerSecond = 60.0;
 
 InterpolationTracker::InterpolationTracker(Json config) {
   if (config.isNull()) {
@@ -24,18 +26,18 @@ InterpolationTracker::InterpolationTracker(Json config) {
   m_currentTime = 0.0;
 }
 
-bool InterpolationTracker::interpolationEnabled() const {
+auto InterpolationTracker::interpolationEnabled() const -> bool {
   return m_interpolationEnabled;
 }
 
-unsigned InterpolationTracker::extrapolationHint() const {
+auto InterpolationTracker::extrapolationHint() const -> unsigned {
   if (m_interpolationEnabled)
     return m_extrapolationHint;
   else
     return 0;
 }
 
-float InterpolationTracker::entityUpdateDelta() const {
+auto InterpolationTracker::entityUpdateDelta() const -> float {
   return m_entityUpdateDelta;
 }
 
@@ -56,10 +58,10 @@ void InterpolationTracker::update(double newLocalTime) {
   }
 }
 
-float InterpolationTracker::interpolationLeadTime() const {
+auto InterpolationTracker::interpolationLeadTime() const -> float {
   if (!m_interpolationEnabled || !m_predictedTime || !m_lastTimeUpdate)
     return 0.0f;
   return *m_lastTimeUpdate - *m_predictedTime + m_timeLead;
 }
 
-}
+}// namespace Star

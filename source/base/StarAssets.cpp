@@ -9,7 +9,7 @@
 #include "StarFile.hpp"
 #include "StarFont.hpp"
 #include "StarImage.hpp"
-#include "StarImageLuaBindings.hpp" // IWYU pragma: export
+#include "StarImageLuaBindings.hpp"// IWYU pragma: export
 #include "StarImageProcessing.hpp"
 #include "StarIterator.hpp"
 #include "StarJsonBuilder.hpp"
@@ -26,7 +26,6 @@
 import std;
 
 namespace Star {
-using std::bind;
 
 // if a ptr is returned, can be optionally used to format an error
 static auto validateBasePath(std::string_view const& basePath) -> const char* {

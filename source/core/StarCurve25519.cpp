@@ -15,7 +15,7 @@ struct KeySet {
     SecretKey secret;
     Random::randBytes(SecretKeySize).copyTo((char*)secret.data());
 
-    secret[0]  &= 248;
+    secret[0] &= 248;
     secret[31] &= 127;
     secret[31] |= 64;
 
@@ -29,9 +29,7 @@ static auto staticKeys() -> KeySet const& {
   return keys;
 }
 
-PrivateKey const& privateKey() { return staticKeys().privateKey; }
-
-
+auto privateKey() -> PrivateKey const& { return staticKeys().privateKey; }
 
 auto sign(void* data, std::size_t len) -> Signature {
   Signature signature;
@@ -43,6 +41,6 @@ auto verify(std::uint8_t const* signature, std::uint8_t const* publicKey, void* 
   return ed25519_VerifySignature(signature, publicKey, (unsigned char*)data, len);
 }
 
-PublicKey  const& publicKey()  { return staticKeys().publicKey;  }
+auto publicKey() -> PublicKey const& { return staticKeys().publicKey; }
 
-}
+}// namespace Star::Curve25519

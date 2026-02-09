@@ -1,7 +1,7 @@
 #include "StarCodexDatabase.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
+
+import std;
 
 namespace Star {
 
@@ -14,9 +14,9 @@ CodexDatabase::CodexDatabase() {
     try {
       auto codexJson = assets->json(file);
       codexJson = codexJson.set("icon",
-          AssetPath::relativeTo(AssetPath::directory(file), codexJson.getString("icon", codexConfig.getString("defaultIcon"))));
+                                AssetPath::relativeTo(AssetPath::directory(file), codexJson.getString("icon", codexConfig.getString("defaultIcon"))));
 
-      auto codex = make_shared<Codex>(codexJson, file);
+      auto codex = std::make_shared<Codex>(codexJson, file);
 
       if (m_codexes.contains(codex->id()))
         throw CodexDatabaseException::format("Duplicate codex named '{}', config file '{}'", codex->id(), file);
@@ -28,14 +28,14 @@ CodexDatabase::CodexDatabase() {
   }
 }
 
-StringMap<CodexConstPtr> CodexDatabase::codexes() const {
+auto CodexDatabase::codexes() const -> StringMap<ConstPtr<Codex>> {
   return m_codexes;
 }
 
-CodexConstPtr CodexDatabase::codex(String const& codexId) const {
+auto CodexDatabase::codex(String const& codexId) const -> ConstPtr<Codex> {
   if (auto codex = m_codexes.maybe(codexId))
     return std::move(*codex);
   return {};
 }
 
-}
+}// namespace Star

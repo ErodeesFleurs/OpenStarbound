@@ -1,11 +1,12 @@
+#include "StarFile.hpp"
 #include "StarPackedAssetSource.hpp"
 #include "StarTime.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarFile.hpp"
+
+import std;
 
 using namespace Star;
 
-int main(int argc, char** argv) {
+auto main(int argc, char** argv) -> int {
   try {
     double startTime = Time::monotonicTime();
 

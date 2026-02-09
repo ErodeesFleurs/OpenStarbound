@@ -1,6 +1,10 @@
 #include "StarCurrency.hpp"
-#include "StarRandom.hpp"
+
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarRandom.hpp"
+
+import std;
 
 namespace Star {
 
@@ -9,11 +13,11 @@ CurrencyItem::CurrencyItem(Json const& config, String const& directory) : Item(c
   m_value = config.getUInt("value");
 }
 
-ItemPtr CurrencyItem::clone() const {
-  return make_shared<CurrencyItem>(*this);
+auto CurrencyItem::clone() const -> Ptr<Item> {
+  return std::make_shared<CurrencyItem>(*this);
 }
 
-String CurrencyItem::pickupSound() const {
+auto CurrencyItem::pickupSound() const -> String {
   if (count() <= instanceValue("smallStackLimit", 100).toUInt()) {
     if (!instanceValue("pickupSoundsSmall", {}).isNull())
       return Random::randFrom(jsonToStringSet(instanceValue("pickupSoundsSmall")));
@@ -27,16 +31,16 @@ String CurrencyItem::pickupSound() const {
   return Item::pickupSound();
 }
 
-String CurrencyItem::currencyType() {
+auto CurrencyItem::currencyType() -> String {
   return m_currency;
 }
 
-uint64_t CurrencyItem::currencyValue() {
+auto CurrencyItem::currencyValue() -> std::uint64_t {
   return m_value;
 }
 
-uint64_t CurrencyItem::totalValue() {
+auto CurrencyItem::totalValue() -> std::uint64_t {
   return m_value * count();
 }
 
-}
+}// namespace Star

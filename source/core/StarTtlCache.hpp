@@ -156,7 +156,7 @@ auto TtlCacheBase<LruCacheType>::ptr(Key const& key) -> Value* {
 
 template <typename LruCacheType>
 void TtlCacheBase<LruCacheType>::set(Key const& key, Value value) {
-  m_cache.set(key, make_pair(Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear), value));
+  m_cache.set(key, std::make_pair(Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear), value));
 }
 
 template <typename LruCacheType>

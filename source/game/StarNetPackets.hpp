@@ -29,7 +29,7 @@ extern VersionNumber const StarProtocolVersion;
 
 // Packet types sent between the client and server over a NetSocket.  Does not
 // correspond to actual packets, simply logical portions of NetSocket data.
-enum class PacketType : uint8_t {
+enum class PacketType : std::uint8_t {
   // Packets used as part of the initial handshake
   ProtocolRequest,
   ProtocolResponse,
@@ -124,13 +124,13 @@ enum class PacketType : uint8_t {
 };
 extern EnumMap<PacketType> const PacketTypeNames;
 
-enum class NetCompressionMode : uint8_t {
+enum class NetCompressionMode : std::uint8_t {
   None,
   Zstd
 };
 extern EnumMap<NetCompressionMode> const NetCompressionModeNames;
 
-enum class PacketCompressionMode : uint8_t {
+enum class PacketCompressionMode : std::uint8_t {
   Disabled,
   Automatic,
   Enabled
@@ -299,7 +299,7 @@ struct PausePacket : PacketBase<PacketType::Pause> {
 
 struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {
   ServerInfoPacket();
-  ServerInfoPacket(uint16_t players, uint16_t maxPlayers);
+  ServerInfoPacket(std::uint16_t players, std::uint16_t maxPlayers);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -307,8 +307,8 @@ struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {
   void readJson(Json const& json) override;
   [[nodiscard]] auto writeJson() const -> Json override;
 
-  uint16_t players;
-  uint16_t maxPlayers;
+  std::uint16_t players;
+  std::uint16_t maxPlayers;
 };
 
 struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
@@ -617,12 +617,12 @@ struct FindUniqueEntityResponsePacket : PacketBase<PacketType::FindUniqueEntityR
 
 struct PongPacket : PacketBase<PacketType::Pong> {
   PongPacket();
-  PongPacket(int64_t time);
+  PongPacket(std::int64_t time);
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
-  int64_t time = 0;
+  std::int64_t time = 0;
 };
 
 struct ModifyTileListPacket : PacketBase<PacketType::ModifyTileList> {
@@ -746,12 +746,12 @@ struct WorldStartAcknowledgePacket : PacketBase<PacketType::WorldStartAcknowledg
 
 struct PingPacket : PacketBase<PacketType::Ping> {
   PingPacket();
-  PingPacket(int64_t time);
+  PingPacket(std::int64_t time);
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
-  int64_t time = 0;
+  std::int64_t time = 0;
 };
 
 struct EntityCreatePacket : PacketBase<PacketType::EntityCreate> {

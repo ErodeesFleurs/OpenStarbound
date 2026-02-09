@@ -13,10 +13,10 @@ struct MultiArrayInterpolator2 {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = MultiArray::Rank;
+  static std::size_t const Rank = MultiArray::Rank;
 
-  using IndexList = Array<size_t, Rank>;
-  using SizeList = Array<size_t, Rank>;
+  using IndexList = Array<std::size_t, Rank>;
+  using SizeList = Array<std::size_t, Rank>;
   using PositionList = Array<Position, Rank>;
   using WeightList = Array<Position, 2>;
 
@@ -33,7 +33,7 @@ struct MultiArrayInterpolator2 {
     IndexList imax;
     PositionList offset;
 
-    for (size_t i = 0; i < Rank; ++i) {
+    for (std::size_t i = 0; i < Rank; ++i) {
       auto binfo = getBound2(coord[i], array.size(i), boundMode);
       imin[i] = binfo.i0;
       imax[i] = binfo.i1;
@@ -47,7 +47,7 @@ struct MultiArrayInterpolator2 {
     MultiArray const& array,
     IndexList const& imin, IndexList const& imax,
     PositionList const& offset, IndexList const& index,
-    size_t const dim) const -> Element {
+    std::size_t const dim) const -> Element {
     IndexList minIndex = index;
     IndexList maxIndex = index;
 
@@ -70,10 +70,10 @@ struct MultiArrayInterpolator4 {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = MultiArray::Rank;
+  static std::size_t const Rank = MultiArray::Rank;
 
-  using IndexList = Array<size_t, Rank>;
-  using SizeList = Array<size_t, Rank>;
+  using IndexList = Array<std::size_t, Rank>;
+  using SizeList = Array<std::size_t, Rank>;
   using PositionList = Array<Position, Rank>;
   using WeightList = Array<Position, 4>;
 
@@ -92,7 +92,7 @@ struct MultiArrayInterpolator4 {
     IndexList index3;
     PositionList offset;
 
-    for (size_t i = 0; i < Rank; ++i) {
+    for (std::size_t i = 0; i < Rank; ++i) {
       auto bound = getBound4(coord[i], array.size(i), boundMode);
       index0[i] = bound.i0;
       index1[i] = bound.i1;
@@ -109,7 +109,7 @@ struct MultiArrayInterpolator4 {
     IndexList const& i0, IndexList const& i1,
     IndexList const& i2, IndexList const& i3,
     PositionList const& offset, IndexList const& index,
-    size_t const dim) const -> Element {
+    std::size_t const dim) const -> Element {
     IndexList index0 = index;
     IndexList index1 = index;
     IndexList index2 = index;
@@ -136,17 +136,17 @@ struct MultiArrayPiecewiseInterpolator {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = MultiArray::Rank;
+  static std::size_t const Rank = MultiArray::Rank;
 
-  using IndexList = Array<size_t, Rank>;
-  using SizeList = Array<size_t, Rank>;
+  using IndexList = Array<std::size_t, Rank>;
+  using SizeList = Array<std::size_t, Rank>;
   using PositionList = Array<Position, Rank>;
   using WeightList = Array<Position, 2>;
 
   using WeightFunction = std::function<WeightList(Position)>;
 
   struct PiecewiseRange {
-    size_t dim;
+    std::size_t dim;
     Position offset;
 
     auto operator<(PiecewiseRange const& pr) const -> bool {
@@ -168,7 +168,7 @@ struct MultiArrayPiecewiseInterpolator {
     IndexList minIndex;
     IndexList maxIndex;
 
-    for (size_t i = 0; i < Rank; ++i) {
+    for (std::size_t i = 0; i < Rank; ++i) {
       PiecewiseRange range;
       range.dim = i;
 
@@ -187,7 +187,7 @@ struct MultiArrayPiecewiseInterpolator {
     Element last = result;
     Element current;
 
-    for (size_t i = 0; i < Rank; ++i) {
+    for (std::size_t i = 0; i < Rank; ++i) {
       auto const& pr = piecewiseRangeList[i];
       location[pr.dim] = maxIndex[pr.dim];
       current = array(location);
@@ -209,10 +209,10 @@ struct MultiArrayInterpolator2<MultiArray<ElementT, 2>, PositionT> {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = 2;
+  static std::size_t const Rank = 2;
 
-  using IndexList = Array<size_t, Rank>;
-  using SizeList = Array<size_t, Rank>;
+  using IndexList = Array<std::size_t, Rank>;
+  using SizeList = Array<std::size_t, Rank>;
   using PositionList = Array<Position, Rank>;
   using WeightList = Array<Position, 2>;
 
@@ -229,7 +229,7 @@ struct MultiArrayInterpolator2<MultiArray<ElementT, 2>, PositionT> {
     IndexList imax;
     PositionList offset;
 
-    for (size_t i = 0; i < Rank; ++i) {
+    for (std::size_t i = 0; i < Rank; ++i) {
       auto bound = getBound2(coord[i], array.size(i), boundMode);
       imin[i] = bound.i0;
       imax[i] = bound.i1;
@@ -249,10 +249,10 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 2>, PositionT> {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = 2;
+  static std::size_t const Rank = 2;
 
-  using IndexList = Array<size_t, Rank>;
-  using SizeList = Array<size_t, Rank>;
+  using IndexList = Array<std::size_t, Rank>;
+  using SizeList = Array<std::size_t, Rank>;
   using PositionList = Array<Position, Rank>;
   using WeightList = Array<Position, 4>;
 
@@ -271,7 +271,7 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 2>, PositionT> {
     IndexList index3;
     PositionList offset;
 
-    for (size_t i = 0; i < Rank; ++i) {
+    for (std::size_t i = 0; i < Rank; ++i) {
       auto bound = getBound4(coord[i], array.size(i), boundMode);
       index0[i] = bound.i0;
       index1[i] = bound.i1;
@@ -295,10 +295,10 @@ struct MultiArrayInterpolator2<MultiArray<ElementT, 3>, PositionT> {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = 3;
+  static std::size_t const Rank = 3;
 
-  using IndexList = Array<size_t, Rank>;
-  using SizeList = Array<size_t, Rank>;
+  using IndexList = Array<std::size_t, Rank>;
+  using SizeList = Array<std::size_t, Rank>;
   using PositionList = Array<Position, Rank>;
   using WeightList = Array<Position, 2>;
 
@@ -315,7 +315,7 @@ struct MultiArrayInterpolator2<MultiArray<ElementT, 3>, PositionT> {
     IndexList imax;
     PositionList offset;
 
-    for (size_t i = 0; i < Rank; ++i) {
+    for (std::size_t i = 0; i < Rank; ++i) {
       auto bound = getBound2(coord[i], array.size(i), boundMode);
       imin[i] = bound.i0;
       imax[i] = bound.i1;
@@ -336,10 +336,10 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 3>, PositionT> {
   using Position = PositionT;
 
   using Element = typename MultiArray::Element;
-  static size_t const Rank = 3;
+  static std::size_t const Rank = 3;
 
-  using IndexList = Array<size_t, Rank>;
-  using SizeList = Array<size_t, Rank>;
+  using IndexList = Array<std::size_t, Rank>;
+  using SizeList = Array<std::size_t, Rank>;
   using PositionList = Array<Position, Rank>;
   using WeightList = Array<Position, 4>;
 
@@ -358,7 +358,7 @@ struct MultiArrayInterpolator4<MultiArray<ElementT, 3>, PositionT> {
     IndexList index3;
     PositionList offset;
 
-    for (size_t i = 0; i < Rank; ++i) {
+    for (std::size_t i = 0; i < Rank; ++i) {
       auto bound = getBound4(coord[i], array.size(i), boundMode);
       index0[i] = bound.i0;
       index1[i] = bound.i1;

@@ -1,72 +1,69 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
+#include "StarDurabilityItem.hpp"
+#include "StarItem.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarNetElementBasicFields.hpp"
 #include "StarNetElementFloatFields.hpp"
-#include "StarItem.hpp"
-#include "StarToolUserItem.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
 #include "StarNetworkedAnimator.hpp"
-#include "StarLuaAnimationComponent.hpp"
-#include "StarDurabilityItem.hpp"
+#include "StarToolUserItem.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_CLASS(ActiveItem);
-
-class ActiveItem :
-  public Item,
-  public DurabilityItem,
-  public virtual ToolUserItem,
-  public virtual NetElementGroup {
+class ActiveItem : public Item,
+                   public DurabilityItem,
+                   public virtual ToolUserItem,
+                   public virtual NetElementGroup {
 public:
   ActiveItem(Json const& config, String const& directory, Json const& parameters = JsonObject());
   ActiveItem(ActiveItem const& rhs);
 
-  ItemPtr clone() const override;
+  auto clone() const -> Ptr<Item> override;
 
   void init(ToolUserEntity* owner, ToolHand hand) override;
   void uninit() override;
 
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<DamageSource> damageSources() const override;
-  List<PolyF> shieldPolys() const override;
+  auto damageSources() const -> List<DamageSource> override;
+  auto shieldPolys() const -> List<PolyF> override;
 
-  List<PhysicsForceRegion> forceRegions() const override;
+  auto forceRegions() const -> List<PhysicsForceRegion> override;
 
-  bool holdingItem() const;
-  std::optional<String> backArmFrame() const;
-  std::optional<String> frontArmFrame() const;
-  bool twoHandedGrip() const;
-  bool recoil() const;
-  bool outsideOfHand() const;
+  auto holdingItem() const -> bool;
+  auto backArmFrame() const -> std::optional<String>;
+  auto frontArmFrame() const -> std::optional<String>;
+  auto twoHandedGrip() const -> bool;
+  auto recoil() const -> bool;
+  auto outsideOfHand() const -> bool;
 
-  float armAngle() const;
-  std::optional<Direction> facingDirection() const;
+  auto armAngle() const -> float;
+  auto facingDirection() const -> std::optional<Direction>;
 
   // Hand drawables are in hand-space, everything else is in world space.
-  List<Drawable> handDrawables() const;
-  List<pair<Drawable, std::optional<EntityRenderLayer>>> entityDrawables() const;
-  List<LightSource> lights() const;
-  List<AudioInstancePtr> pullNewAudios();
-  List<Particle> pullNewParticles();
+  auto handDrawables() const -> List<Drawable>;
+  auto entityDrawables() const -> List<std::pair<Drawable, std::optional<EntityRenderLayer>>>;
+  auto lights() const -> List<LightSource>;
+  auto pullNewAudios() -> List<Ptr<AudioInstance>>;
+  auto pullNewParticles() -> List<Particle>;
 
-  std::optional<String> cursor() const;
+  auto cursor() const -> std::optional<String>;
 
-  std::optional<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  auto receiveMessage(String const& message, bool localMessage, JsonArray const& args = {}) -> std::optional<Json>;
 
-  float durabilityStatus() override;
+  auto durabilityStatus() -> float override;
 
 private:
-  Vec2F armPosition(Vec2F const& offset) const;
-  Vec2F handPosition(Vec2F const& offset) const;
+  auto armPosition(Vec2F const& offset) const -> Vec2F;
+  auto handPosition(Vec2F const& offset) const -> Vec2F;
 
-  LuaCallbacks makeActiveItemCallbacks();
-  LuaCallbacks makeScriptedAnimationCallbacks();
+  auto makeActiveItemCallbacks() -> LuaCallbacks;
+  auto makeScriptedAnimationCallbacks() -> LuaCallbacks;
 
   mutable LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_script;
 
@@ -75,7 +72,7 @@ private:
 
   mutable LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
 
-  HashMap<AudioInstancePtr, Vec2F> m_activeAudio;
+  HashMap<Ptr<AudioInstance>, Vec2F> m_activeAudio;
 
   FireMode m_currentFireMode;
   std::optional<String> m_cursor;
@@ -97,4 +94,4 @@ private:
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 };
 
-}
+}// namespace Star

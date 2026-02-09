@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarString.hpp"
 #include "StarBiMap.hpp"
+#include "StarString.hpp"
 #include "StarVariant.hpp"
 #include "StarVector.hpp"
 
@@ -281,16 +281,16 @@ struct ControllerButtonUpEvent {
 };
 
 using InputEvent = Variant<
-    KeyDownEvent,
-    KeyUpEvent,
-    TextInputEvent,
-    MouseMoveEvent,
-    MouseButtonDownEvent,
-    MouseButtonUpEvent,
-    MouseWheelEvent,
-    ControllerAxisEvent,
-    ControllerButtonDownEvent,
-    ControllerButtonUpEvent>;
+  KeyDownEvent,
+  KeyUpEvent,
+  TextInputEvent,
+  MouseMoveEvent,
+  MouseButtonDownEvent,
+  MouseButtonUpEvent,
+  MouseWheelEvent,
+  ControllerAxisEvent,
+  ControllerButtonDownEvent,
+  ControllerButtonUpEvent>;
 
 inline auto operator|(KeyMod a, KeyMod b) -> KeyMod {
   return (KeyMod)((std::uint16_t)a | (std::uint16_t)b);
@@ -318,4 +318,4 @@ inline auto operator&=(KeyMod& a, KeyMod b) -> KeyMod& {
   return a;
 }
 
-}
+}// namespace Star

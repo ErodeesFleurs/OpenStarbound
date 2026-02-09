@@ -1,10 +1,13 @@
 #pragma once
 
 #include "StarEither.hpp"
-#include "StarNetElementSystem.hpp"
+#include "StarNetElementBasicFields.hpp"
+#include "StarNetElementContainers.hpp"
+#include "StarNetElementFloatFields.hpp"
+#include "StarNetElementSyncGroup.hpp"
 #include "StarStatSet.hpp"
 
-#include <optional>
+import std;
 
 namespace Star {
 
@@ -14,38 +17,38 @@ class StatCollection : public NetElementSyncGroup {
 public:
   explicit StatCollection(Json const& config);
 
-  StringList statNames() const;
-  float stat(String const& statName) const;
+  auto statNames() const -> StringList;
+  auto stat(String const& statName) const -> float;
   // Returns true if the stat is strictly greater than zero
-  bool statPositive(String const& statName) const;
+  auto statPositive(String const& statName) const -> bool;
 
-  StringList resourceNames() const;
-  bool isResource(String const& resourceName) const;
-  float resource(String const& resourceName) const;
+  auto resourceNames() const -> StringList;
+  auto isResource(String const& resourceName) const -> bool;
+  auto resource(String const& resourceName) const -> float;
   // Returns true if the resource is strictly greater than zero
-  bool resourcePositive(String const& resourceName) const;
+  auto resourcePositive(String const& resourceName) const -> bool;
 
   void setResource(String const& resourceName, float value);
   void modifyResource(String const& resourceName, float amount);
 
-  float giveResource(String const& resourceName, float amount);
+  auto giveResource(String const& resourceName, float amount) -> float;
 
-  bool consumeResource(String const& resourceName, float amount);
-  bool overConsumeResource(String const& resourceName, float amount);
+  auto consumeResource(String const& resourceName, float amount) -> bool;
+  auto overConsumeResource(String const& resourceName, float amount) -> bool;
 
-  bool resourceLocked(String const& resourceName) const;
+  auto resourceLocked(String const& resourceName) const -> bool;
   void setResourceLocked(String const& resourceName, bool locked);
 
   // Resetting a resource also clears any locked states
   void resetResource(String const& resourceName);
   void resetAllResources();
 
-  std::optional<float> resourceMax(String const& resourceName) const;
-  std::optional<float> resourcePercentage(String const& resourceName) const;
-  float setResourcePercentage(String const& resourceName, float resourcePercentage);
-  float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
+  auto resourceMax(String const& resourceName) const -> std::optional<float>;
+  auto resourcePercentage(String const& resourceName) const -> std::optional<float>;
+  auto setResourcePercentage(String const& resourceName, float resourcePercentage) -> float;
+  auto modifyResourcePercentage(String const& resourceName, float resourcePercentage) -> float;
 
-  StatModifierGroupId addStatModifierGroup(List<StatModifier> modifiers = {});
+  auto addStatModifierGroup(List<StatModifier> modifiers = {}) -> StatModifierGroupId;
   void setStatModifierGroup(StatModifierGroupId modifierGroupId, List<StatModifier> modifiers);
   void removeStatModifierGroup(StatModifierGroupId modifierGroupId);
   void clearStatModifiers();
@@ -66,4 +69,4 @@ private:
   StableStringMap<NetElementBool> m_resourceLockedNetStates;
 };
 
-}
+}// namespace Star

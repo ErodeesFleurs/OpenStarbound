@@ -1,5 +1,10 @@
 #include "StarStatisticsDatabase.hpp"
+
 #include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
@@ -41,53 +46,51 @@ StatisticsDatabase::StatisticsDatabase() : m_cacheMutex(), m_eventCache() {
   }
 }
 
-StatEventPtr StatisticsDatabase::event(String const& name) const {
+auto StatisticsDatabase::event(String const& name) const -> Ptr<StatEvent> {
   MutexLocker locker(m_cacheMutex);
-  return m_eventCache.get(name, [this](String const& name) -> StatEventPtr {
-      if (auto path = m_eventPaths.maybe(name))
-        return readEvent(*path);
-      return {};
-    });
+  return m_eventCache.get(name, [this](String const& name) -> Ptr<StatEvent> {
+    if (auto path = m_eventPaths.maybe(name))
+      return readEvent(*path);
+    return {};
+  });
 }
 
-AchievementPtr StatisticsDatabase::achievement(String const& name) const {
+auto StatisticsDatabase::achievement(String const& name) const -> Ptr<Achievement> {
   MutexLocker locker(m_cacheMutex);
-  return m_achievementCache.get(name, [this](String const& name) -> AchievementPtr {
-      if (auto path = m_achievementPaths.maybe(name))
-        return readAchievement(*path);
-      return {};
-    });
+  return m_achievementCache.get(name, [this](String const& name) -> Ptr<Achievement> {
+    if (auto path = m_achievementPaths.maybe(name))
+      return readAchievement(*path);
+    return {};
+  });
 }
 
-StringList StatisticsDatabase::allAchievements() const {
+auto StatisticsDatabase::allAchievements() const -> StringList {
   return m_achievementPaths.keys();
 }
 
-StringList StatisticsDatabase::achievementsForStat(String const& statName) const {
+auto StatisticsDatabase::achievementsForStat(String const& statName) const -> StringList {
   return m_statAchievements.value(statName);
 }
 
-StatEventPtr StatisticsDatabase::readEvent(String const& path) {
+auto StatisticsDatabase::readEvent(String const& path) -> Ptr<StatEvent> {
   auto assets = Root::singleton().assets();
   Json config = assets->json(path);
 
-  return make_shared<StatEvent>(StatEvent {
-      config.getString("eventName"),
-      jsonToStringList(config.get("scripts")),
-      config
-    });
+  return std::make_shared<StatEvent>(StatEvent{
+    .eventName = config.getString("eventName"),
+    .scripts = jsonToStringList(config.get("scripts")),
+    .config = config});
 }
 
-AchievementPtr StatisticsDatabase::readAchievement(String const& path) {
+auto StatisticsDatabase::readAchievement(String const& path) -> Ptr<Achievement> {
   auto assets = Root::singleton().assets();
   Json config = assets->json(path);
 
-  return make_shared<Achievement>(Achievement {
-      config.getString("name"),
-      jsonToStringList(config.get("triggers")),
-      jsonToStringList(config.get("scripts")),
-      config
-    });
+  return std::make_shared<Achievement>(Achievement{
+    .name = config.getString("name"),
+    .triggers = jsonToStringList(config.get("triggers")),
+    .scripts = jsonToStringList(config.get("scripts")),
+    .config = config});
 }
 
-}
+}// namespace Star

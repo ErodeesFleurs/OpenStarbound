@@ -1,7 +1,5 @@
 #pragma once
 
-#include "StarConfig.hpp"
-
 import std;
 
 namespace Star {
@@ -9,9 +7,9 @@ namespace Star {
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 struct FlatHashTable {
 private:
-  static std::size_t const EmptyHashValue = 0;
-  static std::size_t const EndHashValue = 1;
-  static std::size_t const FilledHashBit = (std::size_t)1 << (sizeof(std::size_t) * 8 - 1);
+  static constexpr std::size_t EmptyHashValue = 0;
+  static constexpr std::size_t EndHashValue = 1;
+  static constexpr std::size_t FilledHashBit = (std::size_t)1 << (sizeof(std::size_t) * 8 - 1);
 
   struct Bucket {
     Bucket();
@@ -20,17 +18,17 @@ private:
     Bucket(Bucket const& rhs);
     Bucket(Bucket&& rhs);
 
-    Bucket& operator=(Bucket const& rhs);
-    Bucket& operator=(Bucket&& rhs);
+    auto operator=(Bucket const& rhs) -> Bucket&;
+    auto operator=(Bucket&& rhs) -> Bucket&;
 
     void setFilled(std::size_t hash, Value value);
     void setEmpty();
     void setEnd();
 
-    Value const* valuePtr() const;
-    Value* valuePtr();
-    bool isEmpty() const;
-    bool isEnd() const;
+    auto valuePtr() const -> Value const*;
+    auto valuePtr() -> Value*;
+    [[nodiscard]] auto isEmpty() const -> bool;
+    [[nodiscard]] auto isEnd() const -> bool;
 
     union {
       Value value;
@@ -38,31 +36,31 @@ private:
     std::size_t hash;
   };
 
-  typedef std::vector<Bucket, typename std::allocator_traits<Allocator>::template rebind_alloc<Bucket>> Buckets;
+  using Buckets = std::vector<Bucket, typename std::allocator_traits<Allocator>::template rebind_alloc<Bucket>>;
 
 public:
   struct const_iterator {
-    bool operator==(const_iterator const& rhs) const;
-    bool operator!=(const_iterator const& rhs) const;
+    auto operator==(const_iterator const& rhs) const -> bool;
+    auto operator!=(const_iterator const& rhs) const -> bool;
 
-    const_iterator& operator++();
-    const_iterator operator++(int);
+    auto operator++() -> const_iterator&;
+    auto operator++(int) -> const_iterator;
 
-    Value const& operator*() const;
-    Value const* operator->() const;
+    auto operator*() const -> Value const&;
+    auto operator->() const -> Value const*;
 
     Bucket const* current;
   };
 
   struct iterator {
-    bool operator==(iterator const& rhs) const;
-    bool operator!=(iterator const& rhs) const;
+    auto operator==(iterator const& rhs) const -> bool;
+    auto operator!=(iterator const& rhs) const -> bool;
 
-    iterator& operator++();
-    iterator operator++(int);
+    auto operator++() -> iterator&;
+    auto operator++(int) -> iterator;
 
-    Value& operator*() const;
-    Value* operator->() const;
+    auto operator*() const -> Value&;
+    auto operator->() const -> Value*;
 
     operator const_iterator() const;
 
@@ -71,44 +69,44 @@ public:
 
   FlatHashTable(std::size_t bucketCount, GetKey const& getKey, Hash const& hash, Equals const& equal, Allocator const& alloc);
 
-  iterator begin();
-  iterator end();
+  auto begin() -> iterator;
+  auto end() -> iterator;
 
-  const_iterator begin() const;
-  const_iterator end() const;
+  auto begin() const -> const_iterator;
+  auto end() const -> const_iterator;
 
-  std::size_t empty() const;
-  std::size_t size() const;
+  [[nodiscard]] auto empty() const -> std::size_t;
+  [[nodiscard]] auto size() const -> std::size_t;
   void clear();
 
-  std::pair<iterator, bool> insert(Value value);
+  auto insert(Value value) -> std::pair<iterator, bool>;
 
-  iterator erase(const_iterator pos);
-  iterator erase(const_iterator first, const_iterator last);
+  auto erase(const_iterator pos) -> iterator;
+  auto erase(const_iterator first, const_iterator last) -> iterator;
 
-  const_iterator find(Key const& key) const;
-  iterator find(Key const& key);
+  auto find(Key const& key) const -> const_iterator;
+  auto find(Key const& key) -> iterator;
 
   void reserve(std::size_t capacity);
-  Allocator getAllocator() const;
+  auto getAllocator() const -> Allocator;
 
-  bool operator==(FlatHashTable const& rhs) const;
-  bool operator!=(FlatHashTable const& rhs) const;
+  auto operator==(FlatHashTable const& rhs) const -> bool;
+  auto operator!=(FlatHashTable const& rhs) const -> bool;
 
 private:
   static constexpr std::size_t MinCapacity = 8;
   static constexpr double MaxFillLevel = 0.7;
 
   // Scans for the next bucket value that is non-empty
-  static Bucket* scan(Bucket* p);
-  static Bucket const* scan(Bucket const* p);
+  static auto scan(Bucket* p) -> Bucket*;
+  static auto scan(Bucket const* p) -> Bucket const*;
 
-  std::size_t hashBucket(std::size_t hash) const;
-  std::size_t bucketError(std::size_t current, std::size_t target) const;
+  [[nodiscard]] auto hashBucket(std::size_t hash) const -> std::size_t;
+  [[nodiscard]] auto bucketError(std::size_t current, std::size_t target) const -> std::size_t;
   void checkCapacity(std::size_t additionalCapacity);
 
   Buckets m_buckets;
-  std::size_t m_filledCount;
+  std::size_t m_filledCount{};
 
   GetKey m_getKey;
   Hash m_hash;
@@ -194,36 +192,36 @@ void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::setEnd(
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-Value const* FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::valuePtr() const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::valuePtr() const -> Value const* {
   if (hash & FilledHashBit)
     return &this->value;
   return nullptr;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-Value* FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::valuePtr() {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::valuePtr() -> Value* {
   if (hash & FilledHashBit)
     return &this->value;
   return nullptr;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::isEmpty() const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::isEmpty() const -> bool {
   return this->hash == EmptyHashValue;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::isEnd() const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::isEnd() const -> bool {
   return this->hash == EndHashValue;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::const_iterator::operator==(const_iterator const& rhs) const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::const_iterator::operator==(const_iterator const& rhs) const -> bool {
   return current == rhs.current;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::const_iterator::operator!=(const_iterator const& rhs) const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::const_iterator::operator!=(const_iterator const& rhs) const -> bool {
   return current != rhs.current;
 }
 
@@ -251,12 +249,12 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::const_iterator:
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::iterator::operator==(iterator const& rhs) const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::iterator::operator==(iterator const& rhs) const -> bool {
   return current == rhs.current;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::iterator::operator!=(iterator const& rhs) const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::iterator::operator!=(iterator const& rhs) const -> bool {
   return current != rhs.current;
 }
 
@@ -290,9 +288,9 @@ FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::iterator::operator t
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::FlatHashTable(std::size_t bucketCount,
-    GetKey const& getKey, Hash const& hash, Equals const& equal, Allocator const& alloc)
-  : m_buckets(alloc), m_filledCount(0), m_getKey(getKey),
-    m_hash(hash), m_equals(equal) {
+                                                                          GetKey const& getKey, Hash const& hash, Equals const& equal, Allocator const& alloc)
+    : m_buckets(alloc), m_getKey(getKey),
+      m_hash(hash), m_equals(equal) {
   if (bucketCount != 0)
     checkCapacity(bucketCount);
 }
@@ -320,12 +318,12 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::end() const -> 
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-std::size_t FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::empty() const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::empty() const -> std::size_t {
   return m_filledCount == 0;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-std::size_t FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::size() const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::size() const -> std::size_t {
   return m_filledCount;
 }
 
@@ -455,12 +453,12 @@ void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::reserve(std::si
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-Allocator FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::getAllocator() const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::getAllocator() const -> Allocator {
   return m_buckets.get_allocator();
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::operator==(FlatHashTable const& rhs) const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::operator==(FlatHashTable const& rhs) const -> bool {
   if (size() != rhs.size())
     return false;
 
@@ -479,7 +477,7 @@ bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::operator==(Flat
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-bool FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::operator!=(FlatHashTable const& rhs) const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::operator!=(FlatHashTable const& rhs) const -> bool {
   return !operator==(rhs);
 }
 
@@ -504,12 +502,12 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::scan(Bucket con
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-std::size_t FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::hashBucket(std::size_t hash) const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::hashBucket(std::size_t hash) const -> std::size_t {
   return hash & (m_buckets.size() - 2);
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-std::size_t FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::bucketError(std::size_t current, std::size_t target) const {
+auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::bucketError(std::size_t current, std::size_t target) const -> std::size_t {
   return hashBucket(current - target);
 }
 
@@ -551,4 +549,4 @@ void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::checkCapacity(s
   }
 }
 
-}
+}// namespace Star

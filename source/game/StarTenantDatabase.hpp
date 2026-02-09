@@ -1,17 +1,15 @@
 #pragma once
 
-#include <optional>
-
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarConfig.hpp"
+#include "StarException.hpp"
+#include "StarJson.hpp"
 #include "StarTtlCache.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_STRUCT(Tenant);
-STAR_CLASS(TenantDatabase);
-
-STAR_EXCEPTION(TenantException, StarException);
+using TenantException = ExceptionDerived<"TenantException">;
 
 struct TenantNpcSpawnable {
   List<String> species;
@@ -26,7 +24,7 @@ struct TenantMonsterSpawnable {
   std::optional<Json> overrides;
 };
 
-typedef MVariant<TenantNpcSpawnable, TenantMonsterSpawnable> TenantSpawnable;
+using TenantSpawnable = MVariant<TenantNpcSpawnable, TenantMonsterSpawnable>;
 
 struct TenantRent {
   Vec2F periodRange;
@@ -34,7 +32,7 @@ struct TenantRent {
 };
 
 struct Tenant {
-  bool criteriaSatisfied(StringMap<unsigned> const& colonyTags) const;
+  [[nodiscard]] auto criteriaSatisfied(StringMap<unsigned> const& colonyTags) const -> bool;
 
   String name;
   float priority;
@@ -57,18 +55,18 @@ public:
 
   void cleanup();
 
-  TenantPtr getTenant(String const& name) const;
+  auto getTenant(String const& name) const -> Ptr<Tenant>;
 
   // Return the list of all tenants for which colonyTags is a superset of
   // colonyTagCriteria
-  List<TenantPtr> getMatchingTenants(StringMap<unsigned> const& colonyTags) const;
+  auto getMatchingTenants(StringMap<unsigned> const& colonyTags) const -> List<Ptr<Tenant>>;
 
 private:
-  static TenantPtr readTenant(String const& path);
+  static auto readTenant(String const& path) -> Ptr<Tenant>;
 
   Map<String, String> m_paths;
   mutable Mutex m_cacheMutex;
-  mutable HashTtlCache<String, TenantPtr> m_tenantCache;
+  mutable HashTtlCache<String, Ptr<Tenant>> m_tenantCache;
 };
 
-}
+}// namespace Star

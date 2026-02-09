@@ -1,18 +1,14 @@
 #pragma once
 
-#include "StarItem.hpp"
-#include "StarInstrumentItem.hpp"
-#include "StarStatusEffectItem.hpp"
-#include "StarEffectSourceItem.hpp"
-#include "StarToolUserItem.hpp"
 #include "StarActivatableItem.hpp"
+#include "StarConfig.hpp"
+#include "StarEffectSourceItem.hpp"
+#include "StarItem.hpp"
 #include "StarPointableItem.hpp"
+#include "StarStatusEffectItem.hpp"
+#include "StarToolUserItem.hpp"
 
 namespace Star {
-
-STAR_CLASS(World);
-STAR_CLASS(ToolUserEntity);
-STAR_CLASS(InstrumentItem);
 
 class InstrumentItem : public Item,
                        public StatusEffectItem,
@@ -23,20 +19,20 @@ class InstrumentItem : public Item,
 public:
   InstrumentItem(Json const& config, String const& directory, Json const& data);
 
-  ItemPtr clone() const override;
+  [[nodiscard]] auto clone() const -> Ptr<Item> override;
 
-  List<PersistentStatusEffect> statusEffects() const override;
-  StringSet effectSources() const override;
+  [[nodiscard]] auto statusEffects() const -> List<PersistentStatusEffect> override;
+  [[nodiscard]] auto effectSources() const -> StringSet override;
 
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  bool active() const override;
+  [[nodiscard]] auto active() const -> bool override;
   void setActive(bool active) override;
-  bool usable() const override;
+  [[nodiscard]] auto usable() const -> bool override;
   void activate() override;
 
-  List<Drawable> drawables() const override;
-  float getAngle(float angle) override;
+  [[nodiscard]] auto drawables() const -> List<Drawable> override;
+  auto getAngle(float angle) -> float override;
 
 private:
   List<PersistentStatusEffect> m_activeStatusEffects;
@@ -51,4 +47,4 @@ private:
   String m_kind;
 };
 
-}
+}// namespace Star

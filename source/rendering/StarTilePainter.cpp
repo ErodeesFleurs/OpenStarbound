@@ -1,16 +1,18 @@
 #include "StarTilePainter.hpp"
-#include "StarLexicalCast.hpp"
+
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarXXHash.hpp"
+#include "StarLiquidsDatabase.hpp"// IWYU pragma: export
 #include "StarMaterialDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarTileDrawer.hpp"
+#include "StarXXHash.hpp"
+
+import std;
 
 namespace Star {
 
-TilePainter::TilePainter(RendererPtr renderer) : TileDrawer() {
+TilePainter::TilePainter(Ptr<Renderer> renderer) : TileDrawer() {
   m_renderer = std::move(renderer);
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 
@@ -26,32 +28,27 @@ TilePainter::TilePainter(RendererPtr renderer) : TileDrawer() {
   m_textureCache.setTimeToLive(assets->json("/rendering.config:textureTimeout").toInt());
 
   for (auto const& liquid : root.liquidsDatabase()->allLiquidSettings()) {
-    m_liquids.set(liquid->id, LiquidInfo{
-        m_renderer->createTexture(*assets->image(liquid->config.getString("texture")), TextureAddressing::Wrap),
-        jsonToColor(liquid->config.get("color")).toRgba(),
-        jsonToColor(liquid->config.get("bottomLightMix")).toRgbF(),
-        liquid->config.getFloat("textureMovementFactor")
-      });
+    m_liquids.set(liquid->id, LiquidInfo{m_renderer->createTexture(*assets->image(liquid->config.getString("texture")), TextureAddressing::Wrap), jsonToColor(liquid->config.get("color")).toRgba(), jsonToColor(liquid->config.get("bottomLightMix")).toRgbF(), liquid->config.getFloat("textureMovementFactor")});
   }
 }
 
 void TilePainter::adjustLighting(WorldRenderData& renderData) const {
   RectI lightRange = RectI::withSize(renderData.lightMinPosition, Vec2I(renderData.lightMap.size()));
-  forEachRenderTile(renderData, lightRange, [&](Vec2I const& pos, RenderTile const& tile) {
-      // Only adjust lighting for tiles with liquid above the draw threshold
-      float drawLevel = liquidDrawLevel(byteToFloat(tile.liquidLevel));
-      if (drawLevel == 0.0f)
-        return;
+  forEachRenderTile(renderData, lightRange, [&](Vec2I const& pos, RenderTile const& tile) -> void {
+    // Only adjust lighting for tiles with liquid above the draw threshold
+    float drawLevel = liquidDrawLevel(byteToFloat(tile.liquidLevel));
+    if (drawLevel == 0.0f)
+      return;
 
-      auto lightIndex = Vec2U(pos - renderData.lightMinPosition);
-      auto lightValue = renderData.lightMap.get(lightIndex.x(), lightIndex.y());
+    auto lightIndex = Vec2U(pos - renderData.lightMinPosition);
+    auto lightValue = renderData.lightMap.get(lightIndex.x(), lightIndex.y());
 
-      auto const& liquid = m_liquids[tile.liquidId];
-      float darknessLevel = (1.f - (lightValue.sum() / 3.0f)) * drawLevel;
-      lightValue = lightValue.piecewiseMultiply(Vec3F::filled(1.f - darknessLevel) + liquid.bottomLightMix * darknessLevel);
+    auto const& liquid = m_liquids[tile.liquidId];
+    float darknessLevel = (1.f - (lightValue.sum() / 3.0f)) * drawLevel;
+    lightValue = lightValue.piecewiseMultiply(Vec3F::filled(1.f - darknessLevel) + liquid.bottomLightMix * darknessLevel);
 
-      renderData.lightMap.set(lightIndex.x(), lightIndex.y(), lightValue);
-    });
+    renderData.lightMap.set(lightIndex.x(), lightIndex.y(), lightValue);
+  });
 }
 
 void TilePainter::setup(WorldCamera const& camera, WorldRenderData& renderData) {
@@ -72,7 +69,7 @@ void TilePainter::setup(WorldCamera const& camera, WorldRenderData& renderData) 
     for (int y = chunkRange.yMin(); y < chunkRange.yMax(); ++y) {
       size_t index = i++;
       m_pendingTerrainChunks[index] = getTerrainChunk(renderData, {x, y});
-      m_pendingLiquidChunks [index] =  getLiquidChunk(renderData, {x, y});
+      m_pendingLiquidChunks[index] = getLiquidChunk(renderData, {x, y});
     }
   }
 }
@@ -112,19 +109,19 @@ void TilePainter::cleanup() {
   m_liquidChunkCache.cleanup();
 }
 
-size_t TilePainter::TextureKeyHash::operator()(TextureKey const& key) const {
+auto TilePainter::TextureKeyHash::operator()(TextureKey const& key) const -> size_t {
   if (key.is<MaterialPieceTextureKey>())
     return hashOf(key.typeIndex(), key.get<MaterialPieceTextureKey>());
   else
     return hashOf(key.typeIndex(), key.get<AssetTextureKey>());
 }
 
-TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
+auto TilePainter::terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) -> TilePainter::ChunkHash {
   //XXHash3 hasher;
   static ByteArray buffer;
   buffer.clear();
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
-  forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
+  forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) -> void {
     //renderTile.hashPushTerrain(hasher);
     buffer.append((char*)&renderTile, offsetof(RenderTile, liquidId));
   });
@@ -133,13 +130,13 @@ TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData
   return XXH3_64bits(buffer.ptr(), buffer.size());
 }
 
-TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
+auto TilePainter::liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) -> TilePainter::ChunkHash {
   ///XXHash3 hasher;
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
   static ByteArray buffer;
   buffer.clear();
 
-  forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
+  forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) -> void {
     //renderTile.hashPushLiquid(hasher);
     buffer.append((char*)&renderTile.liquidId, sizeof(LiquidId) + sizeof(LiquidLevel));
   });
@@ -149,7 +146,7 @@ TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData,
 }
 
 void TilePainter::renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer) {
-  Map<QuadZLevel, List<RenderBufferPtr>> zOrderBuffers;
+  Map<QuadZLevel, List<Ptr<RenderBuffer>>> zOrderBuffers;
   for (auto const& chunk : m_pendingTerrainChunks) {
     for (auto const& pair : chunk->value(terrainLayer))
       zOrderBuffers[pair.first].append(pair.second);
@@ -168,63 +165,63 @@ void TilePainter::renderTerrainChunks(WorldCamera const& camera, TerrainLayer te
   m_renderer->flush();
 }
 
-shared_ptr<TilePainter::TerrainChunk const> TilePainter::getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex) {
-  pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, terrainChunkHash(renderData, chunkIndex)};
-  return m_terrainChunkCache.get(chunkKey, [&](auto const&) {
-      HashMap<TerrainLayer, HashMap<QuadZLevel, List<RenderPrimitive>>> terrainPrimitives;
+auto TilePainter::getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex) -> std::shared_ptr<TilePainter::TerrainChunk const> {
+  std::pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, terrainChunkHash(renderData, chunkIndex)};
+  return m_terrainChunkCache.get(chunkKey, [&](auto const&) -> auto {
+    HashMap<TerrainLayer, HashMap<QuadZLevel, List<RenderPrimitive>>> terrainPrimitives;
 
-      RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize));
-      for (int x = tileRange.xMin(); x < tileRange.xMax(); ++x) {
-        for (int y = tileRange.yMin(); y < tileRange.yMax(); ++y) {
-          bool occluded = this->produceTerrainPrimitives(terrainPrimitives[TerrainLayer::Foreground], TerrainLayer::Foreground, {x, y}, renderData);
-          occluded = this->produceTerrainPrimitives(terrainPrimitives[TerrainLayer::Midground], TerrainLayer::Midground, {x, y}, renderData) || occluded;
-          if (!occluded)
-            this->produceTerrainPrimitives(terrainPrimitives[TerrainLayer::Background], TerrainLayer::Background, {x, y}, renderData);
-        }
+    RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize));
+    for (int x = tileRange.xMin(); x < tileRange.xMax(); ++x) {
+      for (int y = tileRange.yMin(); y < tileRange.yMax(); ++y) {
+        bool occluded = this->produceTerrainPrimitives(terrainPrimitives[TerrainLayer::Foreground], TerrainLayer::Foreground, {x, y}, renderData);
+        occluded = this->produceTerrainPrimitives(terrainPrimitives[TerrainLayer::Midground], TerrainLayer::Midground, {x, y}, renderData) || occluded;
+        if (!occluded)
+          this->produceTerrainPrimitives(terrainPrimitives[TerrainLayer::Background], TerrainLayer::Background, {x, y}, renderData);
       }
+    }
 
-      auto chunk = make_shared<TerrainChunk>();
+    auto chunk = std::make_shared<TerrainChunk>();
 
-      for (auto& layerPair : terrainPrimitives) {
-        for (auto& zLevelPair : layerPair.second) {
-          auto rb = m_renderer->createRenderBuffer();
-          rb->set(zLevelPair.second);
-          (*chunk)[layerPair.first][zLevelPair.first] = std::move(rb);
-        }
-      }
-
-      return chunk;
-    });
-}
-
-shared_ptr<TilePainter::LiquidChunk const> TilePainter::getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex) {
-  pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, liquidChunkHash(renderData, chunkIndex)};
-  return m_liquidChunkCache.get(chunkKey, [&](auto const&) {
-      HashMap<LiquidId, List<RenderPrimitive>> liquidPrimitives;
-
-      RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize));
-      for (int x = tileRange.xMin(); x < tileRange.xMax(); ++x) {
-        for (int y = tileRange.yMin(); y < tileRange.yMax(); ++y)
-          this->produceLiquidPrimitives(liquidPrimitives, {x, y}, renderData);
-      }
-
-      auto chunk = make_shared<LiquidChunk>();
-
-      for (auto& p : liquidPrimitives) {
+    for (auto& layerPair : terrainPrimitives) {
+      for (auto& zLevelPair : layerPair.second) {
         auto rb = m_renderer->createRenderBuffer();
-        rb->set(p.second);
-        chunk->set(p.first, std::move(rb));
+        rb->set(zLevelPair.second);
+        (*chunk)[layerPair.first][zLevelPair.first] = std::move(rb);
       }
+    }
 
-      return chunk;
-    });
+    return chunk;
+  });
 }
 
-bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
-    TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData) {
+auto TilePainter::getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex) -> std::shared_ptr<TilePainter::LiquidChunk const> {
+  std::pair<Vec2I, ChunkHash> chunkKey = {chunkIndex, liquidChunkHash(renderData, chunkIndex)};
+  return m_liquidChunkCache.get(chunkKey, [&](auto const&) -> auto {
+    HashMap<LiquidId, List<RenderPrimitive>> liquidPrimitives;
+
+    RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize));
+    for (int x = tileRange.xMin(); x < tileRange.xMax(); ++x) {
+      for (int y = tileRange.yMin(); y < tileRange.yMax(); ++y)
+        this->produceLiquidPrimitives(liquidPrimitives, {x, y}, renderData);
+    }
+
+    auto chunk = std::make_shared<LiquidChunk>();
+
+    for (auto& p : liquidPrimitives) {
+      auto rb = m_renderer->createRenderBuffer();
+      rb->set(p.second);
+      chunk->set(p.first, std::move(rb));
+    }
+
+    return chunk;
+  });
+}
+
+auto TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
+                                           TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData) -> bool {
   auto& root = Root::singleton();
   auto assets = Root::singleton().assets();
-  auto materialDatabase = root.materialDatabase();
+  ConstPtr<MaterialDatabase> materialDatabase = root.materialDatabase();
 
   RenderTile const& tile = getRenderTile(renderData, pos);
 
@@ -264,15 +261,15 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
   if (terrainLayer == (isBlock ? TerrainLayer::Midground : TerrainLayer::Foreground))
     return false;
 
-  auto getPieceTexture = [this, assets](MaterialId material, MaterialRenderPieceConstPtr const& piece, MaterialHue hue, Directives const* directives, bool mod) {
-    return m_textureCache.get(MaterialPieceTextureKey(material, piece->pieceId, hue, mod), [&](auto const&) {
-        AssetPath texture = (hue == 0) ? piece->texture : strf("{}?hueshift={}", piece->texture, materialHueToDegrees(hue));
+  auto getPieceTexture = [this, assets](MaterialId material, ConstPtr<MaterialRenderPiece> const& piece, MaterialHue hue, Directives const* directives, bool mod) -> RefPtr<Texture> {
+    return m_textureCache.get(MaterialPieceTextureKey(material, piece->pieceId, hue, mod), [&](auto const&) -> auto {
+      AssetPath texture = (hue == 0) ? piece->texture : strf("{}?hueshift={}", piece->texture, materialHueToDegrees(hue));
 
-        if (directives)
-          texture.directives += *directives;
+      if (directives)
+        texture.directives += *directives;
 
-        return m_textureGroup->create(*assets->image(texture));
-      });
+      return m_textureGroup->create(*assets->image(texture));
+    });
   };
 
   auto materialRenderProfile = materialDatabase->materialRenderProfile(material);
@@ -286,27 +283,29 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
 
     MaterialPieceResultList pieces;
     determineMatchingPieces(pieces, &occlude, materialDatabase, materialRenderProfile->mainMatchList, renderData, pos,
-        terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, false);
+                            terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, false);
     Directives const* directives = materialRenderProfile->colorDirectives.empty()
       ? nullptr
       : &materialRenderProfile->colorDirectives.wrap(materialColorVariant);
     for (auto const& piecePair : pieces) {
-      TexturePtr texture = getPieceTexture(material, piecePair.first, materialHue, directives, false);
+      RefPtr<Texture> texture = getPieceTexture(material, piecePair.first, materialHue, directives, false);
       auto variant = piecePair.first->variants.ptr(materialColorVariant);
-      if (!variant) variant = piecePair.first->variants.ptr(0);
-      if (!variant) continue;
+      if (!variant)
+        variant = piecePair.first->variants.ptr(0);
+      if (!variant)
+        continue;
       RectF textureCoords = variant->wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
       quadList.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
-          worldCoords  .min(),
-          textureCoords.min(),
-          Vec2F(  worldCoords.xMax(),   worldCoords.yMin()),
-          Vec2F(textureCoords.xMax(), textureCoords.yMin()),
-          worldCoords  .max(),
-          textureCoords.max(),
-          Vec2F(  worldCoords.xMin(),   worldCoords.yMax()),
-          Vec2F(textureCoords.xMin(), textureCoords.yMax()),
-          color, 1.0f);
+                            worldCoords.min(),
+                            textureCoords.min(),
+                            Vec2F(worldCoords.xMax(), worldCoords.yMin()),
+                            Vec2F(textureCoords.xMax(), textureCoords.yMin()),
+                            worldCoords.max(),
+                            textureCoords.max(),
+                            Vec2F(worldCoords.xMin(), worldCoords.yMax()),
+                            Vec2F(textureCoords.xMin(), textureCoords.yMax()),
+                            color, 1.0f);
     }
   }
 
@@ -317,23 +316,25 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
 
     MaterialPieceResultList pieces;
     determineMatchingPieces(pieces, &occlude, materialDatabase, modRenderProfile->mainMatchList, renderData, pos,
-        terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
+                            terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
     Directives const* directives = modRenderProfile->colorDirectives.empty()
       ? nullptr
       : &modRenderProfile->colorDirectives.wrap(modColorVariant);
     for (auto const& piecePair : pieces) {
       auto texture = getPieceTexture(mod, piecePair.first, modHue, directives, true);
       auto variant = piecePair.first->variants.ptr(modColorVariant);
-      if (!variant) variant = piecePair.first->variants.ptr(0);
-      if (!variant) continue;
+      if (!variant)
+        variant = piecePair.first->variants.ptr(0);
+      if (!variant)
+        continue;
       auto& textureCoords = variant->wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
       quadList.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
-          worldCoords.min(), textureCoords.min(),
-          Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()),
-          worldCoords.max(), textureCoords.max(),
-          Vec2F(worldCoords.xMin(), worldCoords.yMax()), Vec2F(textureCoords.xMin(), textureCoords.yMax()),
-        color, 1.0f);
+                            worldCoords.min(), textureCoords.min(),
+                            Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()),
+                            worldCoords.max(), textureCoords.max(),
+                            Vec2F(worldCoords.xMin(), worldCoords.yMax()), Vec2F(textureCoords.xMin(), textureCoords.yMax()),
+                            color, 1.0f);
     }
   }
 
@@ -341,19 +342,19 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
     auto& quadList = primitives[damageZLevel()];
     auto const& crackingImage = materialRenderProfile->damageImage(damageLevel, damageType);
 
-    TexturePtr texture = m_textureCache.get(AssetTextureKey(crackingImage.first),
-        [&](auto const&) { return m_textureGroup->create(*assets->image(crackingImage.first)); });
+    RefPtr<Texture> texture = m_textureCache.get(AssetTextureKey(crackingImage.first),
+                                                 [&](auto const&) -> auto { return m_textureGroup->create(*assets->image(crackingImage.first)); });
 
     Vec2F textureSize(texture->size());
     RectF textureCoords = RectF::withSize(Vec2F(), textureSize);
     RectF worldCoords = RectF::withSize(crackingImage.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
 
     quadList.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
-        worldCoords.min(), textureCoords.min(),
-        Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()),
-        worldCoords.max(), textureCoords.max(),
-        Vec2F(worldCoords.xMin(), worldCoords.yMax()), Vec2F(textureCoords.xMin(), textureCoords.yMax()),
-      color, 1.0f);
+                          worldCoords.min(), textureCoords.min(),
+                          Vec2F(worldCoords.xMax(), worldCoords.yMin()), Vec2F(textureCoords.xMax(), textureCoords.yMin()),
+                          worldCoords.max(), textureCoords.max(),
+                          Vec2F(worldCoords.xMin(), worldCoords.yMax()), Vec2F(textureCoords.xMin(), textureCoords.yMax()),
+                          color, 1.0f);
   }
 
   return occlude;
@@ -379,15 +380,15 @@ void TilePainter::produceLiquidPrimitives(HashMap<LiquidId, List<RenderPrimitive
 
   auto const& liquid = m_liquids[tile.liquidId];
   primitives[tile.liquidId].emplace_back(std::in_place_type_t<RenderQuad>(), liquid.texture,
-      worldRect.min(), texRect.min(),
-      Vec2F(worldRect.xMax(), worldRect.yMin()), Vec2F(texRect.xMax(), texRect.yMin()),
-      worldRect.max(), texRect.max(),
-      Vec2F(worldRect.xMin(), worldRect.yMax()), Vec2F(texRect.xMin(), texRect.yMax()),
-    liquid.color, 1.0f);
+                                         worldRect.min(), texRect.min(),
+                                         Vec2F(worldRect.xMax(), worldRect.yMin()), Vec2F(texRect.xMax(), texRect.yMin()),
+                                         worldRect.max(), texRect.max(),
+                                         Vec2F(worldRect.xMin(), worldRect.yMax()), Vec2F(texRect.xMin(), texRect.yMax()),
+                                         liquid.color, 1.0f);
 }
 
-float TilePainter::liquidDrawLevel(float liquidLevel) const {
+auto TilePainter::liquidDrawLevel(float liquidLevel) const -> float {
   return clamp((liquidLevel - m_liquidDrawLevels[0]) / (m_liquidDrawLevels[1] - m_liquidDrawLevels[0]), 0.0f, 1.0f);
 }
 
-}
+}// namespace Star

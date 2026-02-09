@@ -1,23 +1,22 @@
 #pragma once
 
-#include "StarJson.hpp"
 #include "StarCodex.hpp"
+#include "StarConfig.hpp"
+#include "StarException.hpp"
 
 namespace Star {
 
-STAR_EXCEPTION(CodexDatabaseException, StarException);
-
-STAR_CLASS(CodexDatabase);
+using CodexDatabaseException = ExceptionDerived<"CodexDatabaseException">;
 
 class CodexDatabase {
 public:
   CodexDatabase();
 
-  StringMap<CodexConstPtr> codexes() const;
-  CodexConstPtr codex(String const& codexId) const;
+  [[nodiscard]] auto codexes() const -> StringMap<ConstPtr<Codex>>;
+  [[nodiscard]] auto codex(String const& codexId) const -> ConstPtr<Codex>;
 
 private:
-  StringMap<CodexConstPtr> m_codexes;
+  StringMap<ConstPtr<Codex>> m_codexes;
 };
 
-}
+}// namespace Star

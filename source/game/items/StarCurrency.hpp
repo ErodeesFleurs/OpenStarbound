@@ -1,30 +1,31 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarItem.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(CurrencyItem);
+namespace Star {
 
 class CurrencyItem : public Item {
 public:
   CurrencyItem(Json const& config, String const& directory);
 
-  virtual ItemPtr clone() const override;
+  [[nodiscard]] auto clone() const -> Ptr<Item> override;
 
-  virtual String pickupSound() const override;
+  [[nodiscard]] auto pickupSound() const -> String override;
 
-  String currencyType();
+  auto currencyType() -> String;
 
   // Value of a single instance of this currency
-  uint64_t currencyValue();
+  auto currencyValue() -> std::uint64_t;
 
   // Total value of all currencies (so currencyValue * count)
-  uint64_t totalValue();
+  auto totalValue() -> std::uint64_t;
 
 private:
   String m_currency;
-  uint64_t m_value;
+  std::uint64_t m_value;
 };
 
-}
+}// namespace Star

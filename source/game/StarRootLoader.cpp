@@ -1,6 +1,9 @@
 #include "StarRootLoader.hpp"
-#include "StarLexicalCast.hpp"
+
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
+
+import std;
 
 namespace Star {
 
@@ -53,7 +56,7 @@ Json const BaseDefaultConfiguration = Json::parseJson(R"JSON(
       "gameServerBind" : "::",
 )JSON"
 #endif
-R"JSON(
+                                                      R"JSON(
       "serverUsers" : {},
       "allowAnonymousConnections" : true,
 
@@ -121,54 +124,53 @@ RootLoader::RootLoader(Defaults defaults) {
   std::optional<String> userConfigFile;
 
   addParameter("bootconfig", "bootconfig", Optional,
-      strf("Boot time configuration file, defaults to sbinit.config"));
+               strf("Boot time configuration file, defaults to sbinit.config"));
   addParameter("logfile", "logfile", Optional,
-      strf("Log to the given logfile relative to the root directory, defaults to {}",
-        defaults.logFile ? *defaults.logFile : "no log file"));
+               strf("Log to the given logfile relative to the root directory, defaults to {}",
+                    defaults.logFile ? *defaults.logFile : "no log file"));
   addParameter("loglevel", "level", Optional,
-      strf("Sets the logging level (debug|info|warn|error), defaults to {}",
-        LogLevelNames.getRight(defaults.logLevel)));
+               strf("Sets the logging level (debug|info|warn|error), defaults to {}",
+                    LogLevelNames.getRight(defaults.logLevel)));
   addSwitch("quiet", strf("Do not log to stdout, defaults to {}", defaults.quiet));
   addSwitch("verbose", strf("Log to stdout, defaults to {}", !defaults.quiet));
   addSwitch("runtimeconfig",
-      strf("Sets the path to the runtime configuration storage file relative to root directory, defauts to {}",
-        defaults.runtimeConfigFile ? *defaults.runtimeConfigFile : "no storage file"));
+            strf("Sets the path to the runtime configuration storage file relative to root directory, defauts to {}",
+                 defaults.runtimeConfigFile ? *defaults.runtimeConfigFile : "no storage file"));
   m_defaults = std::move(defaults);
 }
 
-pair<Root::Settings, RootLoader::Options> RootLoader::parseOrDie(
-    StringList const& cmdLineArguments) const {
+auto RootLoader::parseOrDie(
+  StringList const& cmdLineArguments) const -> std::pair<Root::Settings, RootLoader::Options> {
   auto options = VersionOptionParser::parseOrDie(cmdLineArguments);
   return {rootSettingsForOptions(options), options};
 }
 
-pair<RootUPtr, RootLoader::Options> RootLoader::initOrDie(StringList const& cmdLineArguments) const {
+auto RootLoader::initOrDie(StringList const& cmdLineArguments) const -> std::pair<UPtr<Root>, RootLoader::Options> {
   auto p = parseOrDie(cmdLineArguments);
-  auto root = make_unique<Root>(p.first);
+  auto root = std::make_unique<Root>(p.first);
   return {std::move(root), p.second};
 }
 
-pair<Root::Settings, RootLoader::Options> RootLoader::commandParseOrDie(int argc, char** argv) {
+auto RootLoader::commandParseOrDie(int argc, char** argv) -> std::pair<Root::Settings, RootLoader::Options> {
   auto options = VersionOptionParser::commandParseOrDie(argc, argv);
   return {rootSettingsForOptions(options), options};
 }
 
-pair<RootUPtr, RootLoader::Options> RootLoader::commandInitOrDie(int argc, char** argv) {
+auto RootLoader::commandInitOrDie(int argc, char** argv) -> std::pair<UPtr<Root>, RootLoader::Options> {
   auto p = commandParseOrDie(argc, argv);
-  auto root = make_unique<Root>(p.first);
+  auto root = std::make_unique<Root>(p.first);
   return {std::move(root), p.second};
 }
 
-Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const {
+auto RootLoader::rootSettingsForOptions(Options const& options) const -> Root::Settings {
   try {
     String bootConfigFile = options.parameters.value("bootconfig").maybeFirst().value_or("sbinit.config");
     Json bootConfig = Json::parseJson(File::readFileString(bootConfigFile));
 
     Json assetsSettings = jsonMerge(
-        BaseAssetsSettings,
-        m_defaults.additionalAssetsSettings,
-        bootConfig.get("assetsSettings", {})
-      );
+      BaseAssetsSettings,
+      m_defaults.additionalAssetsSettings,
+      bootConfig.get("assetsSettings", {}));
 
     Root::Settings rootSettings;
     rootSettings.assetsSettings.assetTimeToLive = assetsSettings.getInt("assetTimeToLive");
@@ -180,13 +182,12 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
     rootSettings.assetsSettings.digestIgnore = jsonToStringList(assetsSettings.get("digestIgnore"));
 
     rootSettings.assetDirectories = jsonToStringList(bootConfig.get("assetDirectories", JsonArray()));
-    rootSettings.assetSources     = jsonToStringList(bootConfig.get("assetSources",     JsonArray()));
+    rootSettings.assetSources = jsonToStringList(bootConfig.get("assetSources", JsonArray()));
 
     rootSettings.defaultConfiguration = jsonMerge(
-        BaseDefaultConfiguration,
-        m_defaults.additionalDefaultConfiguration,
-        bootConfig.get("defaultConfiguration", {})
-      );
+      BaseDefaultConfiguration,
+      m_defaults.additionalDefaultConfiguration,
+      bootConfig.get("defaultConfiguration", {}));
 
     rootSettings.storageDirectory = bootConfig.getString("storageDirectory");
     rootSettings.logDirectory = bootConfig.optString("logDirectory");
@@ -220,4 +221,4 @@ Root::Settings RootLoader::rootSettingsForOptions(Options const& options) const 
   }
 }
 
-}
+}// namespace Star

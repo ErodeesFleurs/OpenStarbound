@@ -1,16 +1,11 @@
 #pragma once
 
-#include "StarJson.hpp"
-#include "StarThread.hpp"
 #include "StarDamageTypes.hpp"
+#include "StarJson.hpp"
 
 namespace Star {
 
-STAR_STRUCT(DamageKind);
-STAR_CLASS(DamageDatabase);
-STAR_STRUCT(ElementalType);
-
-typedef String TargetMaterial;
+using TargetMaterial = String;
 
 struct ElementalType {
   String resistanceStat;
@@ -32,12 +27,12 @@ class DamageDatabase {
 public:
   DamageDatabase();
 
-  DamageKind const& damageKind(String name) const;
-  ElementalType const& elementalType(String const& name) const;
+  [[nodiscard]] auto damageKind(String name) const -> DamageKind const&;
+  [[nodiscard]] auto elementalType(String const& name) const -> ElementalType const&;
 
 private:
   StringMap<DamageKind> m_damageKinds;
   StringMap<ElementalType> m_elementalTypes;
 };
 
-}
+}// namespace Star

@@ -1,7 +1,8 @@
 #include "StarDamageDatabase.hpp"
-#include "StarRandom.hpp"
-#include "StarAssets.hpp"
+
 #include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
@@ -32,10 +33,9 @@ DamageDatabase::DamageDatabase() {
       TargetMaterial material = effect.first;
       kind.effects.set(material, {});
       for (auto hit : effect.second.toObject()) {
-        DamageEffect effect = DamageEffect {
-          hit.second.get("sounds", JsonArray()),
-          hit.second.get("particles", JsonArray())
-        };
+        DamageEffect effect = DamageEffect{
+          .sounds = hit.second.get("sounds", JsonArray()),
+          .particles = hit.second.get("particles", JsonArray())};
         kind.effects[material].set(HitTypeNames.getLeft(hit.first), effect);
       }
     }
@@ -47,7 +47,7 @@ DamageDatabase::DamageDatabase() {
   }
 }
 
-DamageKind const& DamageDatabase::damageKind(String kind) const {
+auto DamageDatabase::damageKind(String kind) const -> DamageKind const& {
   if (kind.empty())
     kind = "default";
   else
@@ -59,11 +59,11 @@ DamageKind const& DamageDatabase::damageKind(String kind) const {
   return m_damageKinds.get(kind);
 }
 
-ElementalType const& DamageDatabase::elementalType(String const& name) const {
+auto DamageDatabase::elementalType(String const& name) const -> ElementalType const& {
   if (!m_damageKinds.contains(name))
     throw StarException(strf("Unknown elemental type with name '{}'.", name));
 
   return m_elementalTypes.get(name);
 }
 
-}
+}// namespace Star

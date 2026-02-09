@@ -1,16 +1,19 @@
 #include "StarInspectionTool.hpp"
+
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
+#include "StarLiquidsDatabase.hpp"
 #include "StarLogging.hpp"
-#include "StarMaterialDatabase.hpp" // IWYU pragma: keep
+#include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
 
-#include <optional>
+import std;
 
 namespace Star {
 
 InspectionTool::InspectionTool(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {
+    : Item(config, directory, parameters) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_lightPosition = jsonToVec2F(instanceValue("lightPosition"));
@@ -39,8 +42,8 @@ InspectionTool::InspectionTool(Json const& config, String const& directory, Json
   m_lastFireMode = FireMode::None;
 }
 
-ItemPtr InspectionTool::clone() const {
-  return make_shared<InspectionTool>(*this);
+auto InspectionTool::clone() const -> Ptr<Item> {
+  return std::make_shared<InspectionTool>(*this);
 }
 
 void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlType> const&) {
@@ -56,11 +59,11 @@ void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlT
   m_lastFireMode = fireMode;
 }
 
-List<Drawable> InspectionTool::drawables() const {
+auto InspectionTool::drawables() const -> List<Drawable> {
   return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -m_handPosition)};
 }
 
-List<LightSource> InspectionTool::lightSources() const {
+auto InspectionTool::lightSources() const -> List<LightSource> {
   if (!initialized())
     return {};
 
@@ -75,17 +78,17 @@ List<LightSource> InspectionTool::lightSources() const {
   return {std::move(lightSource)};
 }
 
-float InspectionTool::inspectionHighlightLevel(InspectableEntityPtr const& inspectable) const {
+auto InspectionTool::inspectionHighlightLevel(Ptr<InspectableEntity> const& inspectable) const -> float {
   if (m_showHighlights)
     return inspectionLevel(inspectable);
   return 0;
 }
 
-List<InspectionTool::InspectionResult> InspectionTool::pullInspectionResults() {
+auto InspectionTool::pullInspectionResults() -> List<InspectionTool::InspectionResult> {
   return Star::take(m_inspectionResults);
 }
 
-float InspectionTool::inspectionLevel(InspectableEntityPtr const& inspectable) const {
+auto InspectionTool::inspectionLevel(Ptr<InspectableEntity> const& inspectable) const -> float {
   if (!initialized() || !inspectable->inspectable())
     return 0;
 
@@ -105,22 +108,21 @@ float InspectionTool::inspectionLevel(InspectableEntityPtr const& inspectable) c
       if (pointLevel > 0 && hasLineOfSight(space, spaceSet))
         totalLevel += pointLevel;
     }
-    return clamp(totalLevel / min(spaceSet.size(), m_fullInspectionSpaces), 0.0f, 1.0f);
-  }
-  else
+    return std::clamp(totalLevel / std::min(spaceSet.size(), m_fullInspectionSpaces), 0.0f, 1.0f);
+  } else
     return pointInspectionLevel(inspectable->position());
 }
 
-float InspectionTool::pointInspectionLevel(Vec2F const& position) const {
+auto InspectionTool::pointInspectionLevel(Vec2F const& position) const -> float {
   Vec2F gdiff = world()->geometry().diff(position, m_currentPosition);
   float gdist = gdiff.magnitude();
-  float angleFactor = (abs(angleDiff(gdiff.angle(), m_currentAngle)) - m_inspectionAngles[0]) / (m_inspectionAngles[1] - m_inspectionAngles[0]);
+  float angleFactor = (std::abs(angleDiff(gdiff.angle(), m_currentAngle)) - m_inspectionAngles[0]) / (m_inspectionAngles[1] - m_inspectionAngles[0]);
   float distFactor = (gdist - m_inspectionRanges[0]) / (m_inspectionRanges[1] - m_inspectionRanges[0]);
   float ambientFactor = gdist / m_ambientInspectionRadius;
-  return 1 - clamp(max(distFactor, min(ambientFactor, angleFactor)), 0.0f, 1.0f);
+  return 1 - std::clamp(std::max(distFactor, std::min(ambientFactor, angleFactor)), 0.0f, 1.0f);
 }
 
-bool InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& targetSpaces) const {
+auto InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& targetSpaces) const -> bool {
   if (!m_requireLineOfSight)
     return true;
   auto collisions = world()->collidingTilesAlongLine(centerOfTile(m_currentPosition), centerOfTile(position));
@@ -131,36 +133,35 @@ bool InspectionTool::hasLineOfSight(Vec2I const& position, Set<Vec2I> const& tar
   return true;
 }
 
-InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) {
+auto InspectionTool::inspect(Vec2F const& position) -> InspectionTool::InspectionResult {
   auto assets = Root::singleton().assets();
   auto species = owner()->species();
 
   // if there's a candidate InspectableEntity at the position, make sure that entity's total inspection level
   // is above the minimum threshold
-  auto check = [&](InspectableEntityPtr entity) -> std::optional<InspectionTool::InspectionResult> {
+  auto check = [&](Ptr<InspectableEntity> entity) -> std::optional<InspectionTool::InspectionResult> {
     if (m_inspectableTypeFilter && !m_inspectableTypeFilter->contains(entity->entityType()))
       return {};
     if (entity->inspectable() && inspectionLevel(entity) >= m_minimumInspectionLevel) {
       if (m_allowScanning)
-        return { { entity->inspectionDescription(species).value(), entity->inspectionLogName(), entity->entityId() } };
+        return {{.message = entity->inspectionDescription(species).value(), .objectName = entity->inspectionLogName(), .entityId = entity->entityId()}};
       else
-        return { { entity->inspectionDescription(species).value(), {}, {} } };
+        return {{.message = entity->inspectionDescription(species).value(), .objectName = {}, .entityId = {}}};
     }
     return {};
   };
 
-
   WorldGeometry geometry = world()->geometry();
-  for (auto& entity : world()->query<InspectableEntity>(RectF::withCenter(position, Vec2F()), [&](InspectableEntityPtr const& entity) {
-    if (entity->entityType() == EntityType::Object)
-      return false;
-    else if (!geometry.rectContains(entity->metaBoundBox().translated(entity->position()), position))
-      return false;
-    else {
-      auto hitPoly = entity->hitPoly();
-      return hitPoly && geometry.polyContains(*hitPoly, position);
-    }
-  })) {
+  for (auto& entity : world()->query<InspectableEntity>(RectF::withCenter(position, Vec2F()), [&](Ptr<InspectableEntity> const& entity) -> bool {
+         if (entity->entityType() == EntityType::Object)
+           return false;
+         else if (!geometry.rectContains(entity->metaBoundBox().translated(entity->position()), position))
+           return false;
+         else {
+           auto hitPoly = entity->hitPoly();
+           return hitPoly && geometry.polyContains(*hitPoly, position);
+         }
+       })) {
     if (auto result = check(entity))
       return *result;
   }
@@ -172,40 +173,40 @@ InspectionTool::InspectionResult InspectionTool::inspect(Vec2F const& position) 
 
   // check the inspection level at the selected tile
   if (!hasLineOfSight(Vec2I::floor(position)) || pointInspectionLevel(centerOfTile(position)) < m_minimumInspectionLevel)
-    return {inspectionFailureText("outOfRangeText", species), {}};
+    return {.message = inspectionFailureText("outOfRangeText", species), .objectName = {}};
 
   // check the tile for foreground mod or material
   MaterialId fgMaterial = world()->material(Vec2I::floor(position), TileLayer::Foreground);
   MaterialId fgMod = world()->mod(Vec2I(position.floor()), TileLayer::Foreground);
-  auto materialDatabase = Root::singleton().materialDatabase();
+  ConstPtr<MaterialDatabase> materialDatabase = Root::singleton().materialDatabase();
   if (isRealMaterial(fgMaterial)) {
     if (isRealMod(fgMod))
-      return {materialDatabase->modDescription(fgMod, species), {}};
+      return {.message = materialDatabase->modDescription(fgMod, species), .objectName = {}};
     else
-      return {materialDatabase->materialDescription(fgMaterial, species), {}};
+      return {.message = materialDatabase->materialDescription(fgMaterial, species), .objectName = {}};
   }
 
   // check for liquid at the tile
   auto liquidLevel = world()->liquidLevel(Vec2I::floor(position));
-  auto liquidsDatabase = Root::singleton().liquidsDatabase();
+  ConstPtr<LiquidsDatabase> liquidsDatabase = Root::singleton().liquidsDatabase();
   if (liquidLevel.liquid != EmptyLiquidId)
-    return {liquidsDatabase->liquidDescription(liquidLevel.liquid, species), {}};
+    return {.message = liquidsDatabase->liquidDescription(liquidLevel.liquid, species), .objectName = {}};
 
   // check the tile for background mod or material
   MaterialId bgMaterial = world()->material(Vec2I::floor(position), TileLayer::Background);
   MaterialId bgMod = world()->mod(Vec2I(position.floor()), TileLayer::Background);
   if (isRealMaterial(bgMaterial)) {
     if (isRealMod(bgMod))
-      return {materialDatabase->modDescription(bgMod, species), {}};
+      return {.message = materialDatabase->modDescription(bgMod, species), .objectName = {}};
     else
-      return {materialDatabase->materialDescription(bgMaterial, species), {}};
+      return {.message = materialDatabase->materialDescription(bgMaterial, species), .objectName = {}};
   }
 
   // at this point you're just staring into the void
-  return {inspectionFailureText("nothingThereText", species), {}};
+  return {.message = inspectionFailureText("nothingThereText", species), .objectName = {}};
 }
 
-String InspectionTool::inspectionFailureText(String const& failureType, String const& species) const {
+auto InspectionTool::inspectionFailureText(String const& failureType, String const& species) const -> String {
   JsonArray textOptions;
   Json nothingThere = instanceValue(failureType);
   if (nothingThere.contains(species))
@@ -215,4 +216,4 @@ String InspectionTool::inspectionFailureText(String const& failureType, String c
   return textOptions.wrap(Random::randu64()).toString();
 }
 
-}
+}// namespace Star

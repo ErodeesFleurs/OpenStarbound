@@ -1,20 +1,19 @@
 #pragma once
 
-#include "StarParametricFunction.hpp"
+#include "StarConfig.hpp"
+#include "StarException.hpp"
 #include "StarJson.hpp"
 #include "StarMultiTable.hpp"
-#include "StarThread.hpp"
+#include "StarParametricFunction.hpp"
 
 namespace Star {
 
-STAR_CLASS(StoredFunction);
-STAR_CLASS(StoredFunction2);
-STAR_CLASS(StoredConfigFunction);
-STAR_CLASS(FunctionDatabase);
+using StoredFunctionException = ExceptionDerived<"StoredFunctionException">;
 
-STAR_EXCEPTION(StoredFunctionException, StarException);
-
-enum class Monotonicity { Flat, Increasing, Decreasing, None };
+enum class Monotonicity { Flat,
+                          Increasing,
+                          Decreasing,
+                          None };
 
 // Interpolated function from single input to single output read from
 // configuration.
@@ -36,13 +35,13 @@ public:
 
   StoredFunction(ParametricFunction<double, double> data);
 
-  Monotonicity monotonicity() const;
+  [[nodiscard]] auto monotonicity() const -> Monotonicity;
 
-  double evaluate(double input) const;
+  [[nodiscard]] auto evaluate(double input) const -> double;
 
   // Search for the input which would give the target value.  Will only work if
   // the function Monotonicity is Increasing or Decreasing.
-  SearchResult search(double targetValue, double valueTolerance = DefaultSearchTolerance) const;
+  [[nodiscard]] auto search(double targetValue, double valueTolerance = DefaultSearchTolerance) const -> SearchResult;
 
 private:
   Monotonicity m_monotonicity;
@@ -54,7 +53,7 @@ class StoredFunction2 {
 public:
   StoredFunction2(MultiTable2D table);
 
-  double evaluate(double x, double y) const;
+  [[nodiscard]] auto evaluate(double x, double y) const -> double;
 
 private:
   MultiTable2D table;
@@ -65,7 +64,7 @@ class StoredConfigFunction {
 public:
   StoredConfigFunction(ParametricTable<int, Json> data);
 
-  Json get(double input) const;
+  [[nodiscard]] auto get(double input) const -> Json;
 
 private:
   ParametricTable<int, Json> m_data;
@@ -75,24 +74,24 @@ class FunctionDatabase {
 public:
   FunctionDatabase();
 
-  StringList namedFunctions() const;
-  StringList namedFunctions2() const;
-  StringList namedConfigFunctions() const;
+  [[nodiscard]] auto namedFunctions() const -> StringList;
+  [[nodiscard]] auto namedFunctions2() const -> StringList;
+  [[nodiscard]] auto namedConfigFunctions() const -> StringList;
 
   // If configOrName is a string, loads the named function.  If it is an inline
   // config, reads the inline config.
-  StoredFunctionPtr function(Json const& configOrName) const;
-  StoredFunction2Ptr function2(Json const& configOrName) const;
-  StoredConfigFunctionPtr configFunction(Json const& configOrName) const;
+  [[nodiscard]] auto function(Json const& configOrName) const -> Ptr<StoredFunction>;
+  [[nodiscard]] auto function2(Json const& configOrName) const -> Ptr<StoredFunction2>;
+  [[nodiscard]] auto configFunction(Json const& configOrName) const -> Ptr<StoredConfigFunction>;
 
 private:
-  static ParametricFunction<double, double> parametricFunctionFromConfig(Json descriptor);
-  static ParametricTable<int, Json> parametricTableFromConfig(Json descriptor);
-  static MultiTable2D multiTable2DFromConfig(Json descriptor);
+  static auto parametricFunctionFromConfig(Json descriptor) -> ParametricFunction<double, double>;
+  static auto parametricTableFromConfig(Json descriptor) -> ParametricTable<int, Json>;
+  static auto multiTable2DFromConfig(Json descriptor) -> MultiTable2D;
 
-  StringMap<StoredFunctionPtr> m_functions;
-  StringMap<StoredFunction2Ptr> m_functions2;
-  StringMap<StoredConfigFunctionPtr> m_configFunctions;
+  StringMap<Ptr<StoredFunction>> m_functions;
+  StringMap<Ptr<StoredFunction2>> m_functions2;
+  StringMap<Ptr<StoredConfigFunction>> m_configFunctions;
 };
 
-}
+}// namespace Star

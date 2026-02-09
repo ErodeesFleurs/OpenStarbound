@@ -1,10 +1,10 @@
 #include "StarEntityRendering.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+
+import std;
 
 namespace Star {
 
-RenderCallback::~RenderCallback() {}
+RenderCallback::~RenderCallback() = default;
 
 void RenderCallback::addDrawables(List<Drawable> drawables, EntityRenderLayer renderLayer, Vec2F translate) {
   for (auto& drawable : drawables) {
@@ -27,7 +27,7 @@ void RenderCallback::addParticles(List<Particle> particles, Vec2F translate) {
   }
 }
 
-void RenderCallback::addAudios(List<AudioInstancePtr> audios, Vec2F translate) {
+void RenderCallback::addAudios(List<Ptr<AudioInstance>> audios, Vec2F translate) {
   for (auto& audio : audios) {
     audio->translate(translate);
     addAudio(std::move(audio));
@@ -46,4 +46,4 @@ void RenderCallback::addOverheadBars(List<OverheadBar> bars, Vec2F translate) {
   }
 }
 
-}
+}// namespace Star

@@ -1,20 +1,21 @@
-#include "StarServerRconThread.hpp"
 #include "StarServerRconClient.hpp"
+
+#include "StarConfig.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
 #include "StarUniverseServer.hpp"
-#include "StarLexicalCast.hpp"
+
+import std;
 
 namespace Star {
 
-ServerRconClient::ServerRconClient(UniverseServer* universe, TcpSocketPtr socket)
-  : Thread("RconClient"),
-    m_universe(universe),
-    m_socket(socket),
-    m_packetBuffer(MaxPacketSize),
-    m_stop(true),
-    m_authed(false) {
+ServerRconClient::ServerRconClient(UniverseServer* universe, Ptr<TcpSocket> socket)
+    : Thread("RconClient"),
+      m_universe(universe),
+      m_socket(std::move(socket)),
+      m_packetBuffer(MaxPacketSize),
+      m_stop(true),
+      m_authed(false) {
   auto& root = Root::singleton();
   auto cfg = root.configuration();
 
@@ -29,7 +30,7 @@ ServerRconClient::~ServerRconClient() {
   join();
 }
 
-String ServerRconClient::handleCommand(String commandLine) {
+auto ServerRconClient::handleCommand(String commandLine) -> String {
   String command = commandLine.extract();
 
   if (command == "echo") {
@@ -57,9 +58,9 @@ void ServerRconClient::receive(size_t size) {
   }
 }
 
-void ServerRconClient::send(uint32_t requestId, uint32_t cmd, String str) {
+void ServerRconClient::send(std::uint32_t requestId, std::uint32_t cmd, String str) {
   m_packetBuffer.clear();
-  m_packetBuffer << (uint32_t)(str.utf8Size() + 10) << requestId << cmd << str << (uint8_t)0x00;
+  m_packetBuffer << (std::uint32_t)(str.utf8Size() + 10) << requestId << cmd << str << (std::uint8_t)0x00;
   m_socket->send(m_packetBuffer.ptr(), m_packetBuffer.size());
 }
 
@@ -67,7 +68,7 @@ void ServerRconClient::sendAuthFailure() {
   send(SERVERDATA_AUTH_FAILURE, SERVERDATA_AUTH_RESPONSE, "");
 }
 
-void ServerRconClient::sendCmdResponse(uint32_t requestId, String response) {
+void ServerRconClient::sendCmdResponse(std::uint32_t requestId, String response) {
   size_t len = response.length();
   // Always send at least one packet even if the response was blank
   do {
@@ -90,45 +91,45 @@ void ServerRconClient::stop() {
 
 void ServerRconClient::processRequest() {
   receive(4);
-  uint32_t size = m_packetBuffer.read<uint32_t>();
+  auto size = m_packetBuffer.read<std::uint32_t>();
 
   receive(size);
-  uint32_t requestId;
+  std::uint32_t requestId;
   m_packetBuffer >> requestId;
 
-  uint32_t cmd;
+  std::uint32_t cmd;
   m_packetBuffer >> cmd;
 
   switch (cmd) {
-    case SERVERDATA_AUTH: {
-      String password;
-      m_packetBuffer >> password;
-      if (!m_rconPassword.empty() && m_rconPassword.equals(password)) {
-        m_authed = true;
-        send(requestId, SERVERDATA_RESPONSE_VALUE);
-        send(requestId, SERVERDATA_AUTH_RESPONSE);
-      } else {
-        m_authed = false;
-        sendAuthFailure();
-      }
-      break;
+  case SERVERDATA_AUTH: {
+    String password;
+    m_packetBuffer >> password;
+    if (!m_rconPassword.empty() && m_rconPassword.equals(password)) {
+      m_authed = true;
+      send(requestId, SERVERDATA_RESPONSE_VALUE);
+      send(requestId, SERVERDATA_AUTH_RESPONSE);
+    } else {
+      m_authed = false;
+      sendAuthFailure();
     }
-    case SERVERDATA_EXECCOMMAND:
-      if (m_authed) {
-        String command;
-        m_packetBuffer >> command;
-        try {
-          Logger::info("RCON {}: {}", m_socket->remoteAddress(), command);
-          sendCmdResponse(requestId, handleCommand(command));
-        } catch (std::exception const& e) {
-          sendCmdResponse(requestId, strf("RCON: Error executing: {}: {}", command, outputException(e, true)));
-        }
-      } else {
-        sendAuthFailure();
+    break;
+  }
+  case SERVERDATA_EXECCOMMAND:
+    if (m_authed) {
+      String command;
+      m_packetBuffer >> command;
+      try {
+        Logger::info("RCON {}: {}", m_socket->remoteAddress(), command);
+        sendCmdResponse(requestId, handleCommand(command));
+      } catch (std::exception const& e) {
+        sendCmdResponse(requestId, strf("RCON: Error executing: {}: {}", command, outputException(e, true)));
       }
-      break;
-    default:
-      sendCmdResponse(requestId, strf("Unknown request {:06x}", cmd));
+    } else {
+      sendAuthFailure();
+    }
+    break;
+  default:
+    sendCmdResponse(requestId, strf("Unknown request {:06x}", cmd));
   }
 }
 
@@ -142,4 +143,4 @@ void ServerRconClient::run() {
   }
 }
 
-}
+}// namespace Star

@@ -1,212 +1,207 @@
 #pragma once
 
-#include "StarRect.hpp"
+#include "StarConfig.hpp"
 #include "StarDungeonGenerator.hpp"
+#include "StarRect.hpp"
 #include "StarTilesetDatabase.hpp"
-#include "StarLexicalCast.hpp"
 
-namespace Star {
+import std;
 
-namespace Dungeon {
-  STAR_CLASS(TMXTilesets);
-  STAR_CLASS(TMXTileLayer);
-  STAR_CLASS(TMXObject);
-  STAR_CLASS(TMXObjectGroup);
-  STAR_CLASS(TMXMap);
+namespace Star::Dungeon {
 
-  class TMXTilesets {
-  public:
-    TMXTilesets(Json const& tmx);
+class TMXMap;
 
-    Tiled::Tile const& getTile(unsigned gid, TileLayer layer) const;
+class TMXTilesets {
+public:
+  TMXTilesets(Json const& tmx);
 
-    Tiled::Tile const& nullTile() const {
-      return *m_nullTile;
-    }
+  [[nodiscard]] auto getTile(unsigned gid, TileLayer layer) const -> Tiled::Tile const&;
 
-  private:
-    struct TilesetInfo {
-      Tiled::Tileset const* tileset;
-      size_t firstGid;
-      size_t lastGid;
-    };
+  [[nodiscard]] auto nullTile() const -> Tiled::Tile const& {
+    return *m_nullTile;
+  }
 
-    static bool tilesetComparator(TilesetInfo const& a, TilesetInfo const& b);
-
-    // The default empty background tile has clear=true.  (If you use the pink
-    // tile in the background, clear will be false instead.) Analogous to
-    // EmptyMaterialId.
-    Tiled::TileConstPtr m_emptyBackTile;
-    // The default foreground tile doesn't have a 'clear' property.  Also
-    // returned by tile layers when given coordinates outside the bounds of the
-    // layer.  Analogous to the NullMaterialId that mission maps are initially
-    // filled with.
-    Tiled::TileConstPtr m_nullTile;
-
-    List<Tiled::TilesetConstPtr> m_tilesets;
-    List<Tiled::Tile const*> m_foregroundTilesByGid;
-    List<Tiled::Tile const*> m_backgroundTilesByGid;
+private:
+  struct TilesetInfo {
+    Tiled::Tileset const* tileset;
+    std::size_t firstGid;
+    std::size_t lastGid;
   };
 
-  class TMXTileLayer {
-  public:
-    TMXTileLayer(Json const& tmx);
+  static auto tilesetComparator(TilesetInfo const& a, TilesetInfo const& b) -> bool;
 
-    Tiled::Tile const& getTile(TMXTilesetsPtr const& tilesets, Vec2I pos) const;
+  // The default empty background tile has clear=true.  (If you use the pink
+  // tile in the background, clear will be false instead.) Analogous to
+  // EmptyMaterialId.
+  ConstPtr<Tiled::Tile> m_emptyBackTile;
+  // The default foreground tile doesn't have a 'clear' property.  Also
+  // returned by tile layers when given coordinates outside the bounds of the
+  // layer.  Analogous to the NullMaterialId that mission maps are initially
+  // filled with.
+  ConstPtr<Tiled::Tile> m_nullTile;
 
-    unsigned width() const {
-      return m_rect.xMax() - m_rect.xMin() + 1;
-    }
-    unsigned height() const {
-      return m_rect.yMax() - m_rect.yMin() + 1;
-    }
+  List<ConstPtr<Tiled::Tileset>> m_tilesets;
+  List<Tiled::Tile const*> m_foregroundTilesByGid;
+  List<Tiled::Tile const*> m_backgroundTilesByGid;
+};
 
-    RectI const& rect() const {
-      return m_rect;
-    }
-    String const& name() const {
-      return m_name;
-    }
+class TMXTileLayer {
+public:
+  TMXTileLayer(Json const& tmx);
 
-    TileLayer layer() const {
-      return m_layer;
-    }
+  [[nodiscard]] auto getTile(Ptr<TMXTilesets> const& tilesets, Vec2I pos) const -> Tiled::Tile const&;
 
-    bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+  [[nodiscard]] auto width() const -> unsigned {
+    return m_rect.xMax() - m_rect.xMin() + 1;
+  }
+  [[nodiscard]] auto height() const -> unsigned {
+    return m_rect.yMax() - m_rect.yMin() + 1;
+  }
 
-  private:
-    RectI m_rect;
-    String m_name;
-    TileLayer m_layer;
-    List<unsigned> m_tileData;
+  [[nodiscard]] auto rect() const -> RectI const& {
+    return m_rect;
+  }
+  [[nodiscard]] auto name() const -> String const& {
+    return m_name;
+  }
+
+  [[nodiscard]] auto layer() const -> TileLayer {
+    return m_layer;
+  }
+
+  auto forEachTile(TMXMap const* map, TileCallback const& callback) const -> bool;
+  auto forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const -> bool;
+
+private:
+  RectI m_rect;
+  String m_name;
+  TileLayer m_layer;
+  List<unsigned> m_tileData;
+};
+
+enum class ObjectKind {
+  Tile,
+  Rectangle,
+  Ellipse,
+  Polygon,
+  Polyline,
+  Stagehand
+};
+
+enum TileFlip {
+  Horizontal = 0x80000000u,
+  Vertical = 0x40000000u,
+  Diagonal = 0x20000000u,
+  AllBits = 0xe0000000u
+};
+
+class TMXObject {
+public:
+  TMXObject(std::optional<Json> const& groupProperties, Json const& tmx, Ptr<TMXTilesets> tilesets);
+
+  [[nodiscard]] auto pos() const -> Vec2I const& {
+    return m_rect.min();
+  }
+  [[nodiscard]] auto rect() const -> RectI const& {
+    return m_rect;
+  }
+  [[nodiscard]] auto tile() const -> Tiled::Tile const& {
+    return *m_tile;
+  }
+  [[nodiscard]] auto kind() const -> ObjectKind {
+    return m_kind;
+  }
+
+  auto forEachTile(TMXMap const* map, TileCallback const& callback) const -> bool;
+  auto forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const -> bool;
+
+private:
+  // "Tile Objects" in Tiled are objects that contain an image from a tileset,
+  // and have a bunch of their own Tile Object-specific properties.
+  struct TileObjectInfo {
+    Tiled::Properties tileProperties;
+    unsigned flipBits;
   };
 
-  enum class ObjectKind {
-    Tile,
-    Rectangle,
-    Ellipse,
-    Polygon,
-    Polyline,
-    Stagehand
-  };
+  static auto getSize(Json const& tmx) -> Vec2I;
+  static auto getImagePosition(Tiled::Properties const& properties) -> Vec2I;
+  static auto getObjectKind(Json const& tmx, std::optional<Json> const& objectProperties) -> ObjectKind;
+  static auto getTileObjectInfo(Json const& tmx, Ptr<TMXTilesets> tilesets, TileLayer layer) -> std::optional<TileObjectInfo>;
+  static auto getLayer(std::optional<Json> const& groupProperties, std::optional<Json> const& objectProperties) -> TileLayer;
 
-  enum TileFlip {
-    Horizontal = 0x80000000u,
-    Vertical = 0x40000000u,
-    Diagonal = 0x20000000u,
-    AllBits = 0xe0000000u
-  };
+  static auto getPos(Json const& tmx) -> Vec2I;
+  static auto tmxObjectError(Json const& tmx, String const& msg) -> StarException;
 
-  class TMXObject {
-  public:
-    TMXObject(std::optional<Json> const& groupProperties, Json const& tmx, TMXTilesetsPtr tilesets);
+  RectI m_rect;
+  ConstPtr<Tiled::Tile> m_tile;
+  TileLayer m_layer;
+  ObjectKind m_kind;
+  unsigned m_objectId;
+  List<Vec2I> m_polyline;
+};
 
-    Vec2I const& pos() const {
-      return m_rect.min();
-    }
-    RectI const& rect() const {
-      return m_rect;
-    }
-    Tiled::Tile const& tile() const {
-      return *m_tile;
-    }
-    ObjectKind kind() const {
-      return m_kind;
-    }
+class TMXObjectGroup {
+public:
+  TMXObjectGroup(Json const& tmx, Ptr<TMXTilesets> tilesets);
 
-    bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+  [[nodiscard]] auto objects() const -> List<Ptr<TMXObject>> const& {
+    return m_objects;
+  }
 
-  private:
-    // "Tile Objects" in Tiled are objects that contain an image from a tileset,
-    // and have a bunch of their own Tile Object-specific properties.
-    struct TileObjectInfo {
-      Tiled::Properties tileProperties;
-      unsigned flipBits;
-    };
+  [[nodiscard]] auto name() const -> String;
 
-    static Vec2I getSize(Json const& tmx);
-    static Vec2I getImagePosition(Tiled::Properties const& properties);
-    static ObjectKind getObjectKind(Json const& tmx, std::optional<Json >const& objectProperties);
-    static std::optional<TileObjectInfo> getTileObjectInfo(Json const& tmx, TMXTilesetsPtr tilesets, TileLayer layer);
-    static TileLayer getLayer(std::optional<Json> const& groupProperties, std::optional<Json> const& objectProperties);
+  auto forEachTile(TMXMap const* map, TileCallback const& callback) const -> bool;
+  auto forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const -> bool;
 
-    static Vec2I getPos(Json const& tmx);
-    static StarException tmxObjectError(Json const& tmx, String const& msg);
+private:
+  String m_name;
+  List<Ptr<TMXObject>> m_objects;
+};
 
-    RectI m_rect;
-    Tiled::TileConstPtr m_tile;
-    TileLayer m_layer;
-    ObjectKind m_kind;
-    unsigned m_objectId;
-    List<Vec2I> m_polyline;
-  };
+class TMXMap {
+public:
+  TMXMap(Json const& tmx);
 
-  class TMXObjectGroup {
-  public:
-    TMXObjectGroup(Json const& tmx, TMXTilesetsPtr tilesets);
+  [[nodiscard]] auto tileLayers() const -> List<Ptr<TMXTileLayer>> const& {
+    return m_tileLayers;
+  }
+  [[nodiscard]] auto objectGroups() const -> List<Ptr<TMXObjectGroup>> const& {
+    return m_objectGroups;
+  }
+  [[nodiscard]] auto tilesets() const -> Ptr<TMXTilesets> const& {
+    return m_tilesets;
+  }
+  [[nodiscard]] auto width() const -> unsigned {
+    return m_width;
+  }
+  [[nodiscard]] auto height() const -> unsigned {
+    return m_height;
+  }
 
-    List<TMXObjectPtr> const& objects() const {
-      return m_objects;
-    }
+  [[nodiscard]] auto forEachTile(TileCallback const& callback) const -> bool;
+  [[nodiscard]] auto forEachTileAt(Vec2I pos, TileCallback const& callback) const -> bool;
 
-    String name() const;
+private:
+  List<Ptr<TMXTileLayer>> m_tileLayers;
+  List<Ptr<TMXObjectGroup>> m_objectGroups;
 
-    bool forEachTile(TMXMap const* map, TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TMXMap const* map, TileCallback const& callback) const;
+  Ptr<TMXTilesets> m_tilesets;
+  unsigned m_width, m_height;
+};
 
-  private:
-    String m_name;
-    List<TMXObjectPtr> m_objects;
-  };
+class TMXPartReader : public PartReader {
+public:
+  void readAsset(String const& asset) override;
 
-  class TMXMap {
-  public:
-    TMXMap(Json const& tmx);
+  [[nodiscard]] auto size() const -> Vec2U override;
 
-    List<TMXTileLayerPtr> const& tileLayers() const {
-      return m_tileLayers;
-    }
-    List<TMXObjectGroupPtr> const& objectGroups() const {
-      return m_objectGroups;
-    }
-    TMXTilesetsPtr const& tilesets() const {
-      return m_tilesets;
-    }
-    unsigned width() const {
-      return m_width;
-    }
-    unsigned height() const {
-      return m_height;
-    }
+  void forEachTile(TileCallback const& callback) const override;
+  void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
 
-    bool forEachTile(TileCallback const& callback) const;
-    bool forEachTileAt(Vec2I pos, TileCallback const& callback) const;
+private:
+  // Return true in the callback to exit early without processing later maps
+  void forEachMap(std::function<bool(ConstPtr<TMXMap> const&)> func) const;
 
-  private:
-    List<TMXTileLayerPtr> m_tileLayers;
-    List<TMXObjectGroupPtr> m_objectGroups;
-
-    TMXTilesetsPtr m_tilesets;
-    unsigned m_width, m_height;
-  };
-
-  class TMXPartReader : public PartReader {
-  public:
-    virtual void readAsset(String const& asset) override;
-
-    virtual Vec2U size() const override;
-
-    virtual void forEachTile(TileCallback const& callback) const override;
-    virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
-
-  private:
-    // Return true in the callback to exit early without processing later maps
-    void forEachMap(function<bool(TMXMapConstPtr const&)> func) const;
-
-    List<pair<String, TMXMapConstPtr>> m_maps;
-  };
-}
-
-}
+  List<std::pair<String, ConstPtr<TMXMap>>> m_maps;
+};
+}// namespace Star::Dungeon

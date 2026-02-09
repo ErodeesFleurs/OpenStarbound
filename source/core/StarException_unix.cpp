@@ -117,12 +117,12 @@ StarException::StarException(char const* type, std::string message, std::excepti
 
   std::function<void(std::ostream&, bool)> printCause;
   if (auto starException = as<StarException>(&cause)) {
-    printCause = bind(starException->m_printException, std::placeholders::_1, std::placeholders::_2);
+    printCause = std::bind(starException->m_printException, std::placeholders::_1, std::placeholders::_2);
   } else {
-    printCause = bind([](std::ostream& os, bool, std::string causeWhat) -> void {
+    printCause = std::bind([](std::ostream& os, bool, std::string causeWhat) -> void {
       os << "std::exception: " << causeWhat;
     },
-                      std::placeholders::_1, std::placeholders::_2, std::string(cause.what()));
+                           std::placeholders::_1, std::placeholders::_2, std::string(cause.what()));
   }
 
   m_printException = [printException, this, capture0 = std::move(printCause)](auto&& PH1, auto&& PH2) -> auto { printException(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), m_printException, capture0); };
@@ -143,9 +143,9 @@ void printException(std::ostream& os, std::exception const& e, bool fullStacktra
 
 auto outputException(std::exception const& e, bool fullStacktrace) -> OutputProxy {
   if (auto starException = as<StarException>(&e))
-    return {bind(starException->m_printException, std::placeholders::_1, fullStacktrace)};
+    return {std::bind(starException->m_printException, std::placeholders::_1, fullStacktrace)};
   else
-    return {bind([](std::ostream& os, std::string what) -> void { os << "std::exception: " << what; }, std::placeholders::_1, std::string(e.what()))};
+    return {std::bind([](std::ostream& os, std::string what) -> void { os << "std::exception: " << what; }, std::placeholders::_1, std::string(e.what()))};
 }
 
 void printStack(char const* message) {

@@ -1,19 +1,18 @@
 #include "StarImageMetadataDatabase.hpp"
-#include "StarFile.hpp"
+
+#include "StarGameTypes.hpp"
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarLogging.hpp"
-#include "StarEncode.hpp"
-#include "StarGameTypes.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
+
+import std;
 
 namespace Star {
 
 ImageMetadataDatabase::ImageMetadataDatabase() {
   MutexLocker locker(m_mutex);
   int timeSmear = 2000;
-  int64_t timeToLive = 60000;
+  std::int64_t timeToLive = 60000;
   m_sizeCache.setTimeSmear(timeSmear);
   m_spacesCache.setTimeSmear(timeSmear);
   m_regionCache.setTimeSmear(timeSmear);
@@ -22,7 +21,7 @@ ImageMetadataDatabase::ImageMetadataDatabase() {
   m_regionCache.setTimeToLive(timeToLive);
 }
 
-Vec2U ImageMetadataDatabase::imageSize(AssetPath const& path) const {
+auto ImageMetadataDatabase::imageSize(AssetPath const& path) const -> Vec2U {
   MutexLocker locker(m_mutex);
   if (auto cached = m_sizeCache.ptr(path))
     return *cached;
@@ -35,7 +34,7 @@ Vec2U ImageMetadataDatabase::imageSize(AssetPath const& path) const {
   return size;
 }
 
-List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const {
+auto ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const -> List<Vec2I> {
   SpacesEntry key = make_tuple(path, Vec2I::round(position), fillLimit, flip);
 
   MutexLocker locker(m_mutex);
@@ -67,12 +66,12 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
       float fillRatio = 0.0f;
 
       for (int y = 0; y < (int)TilePixels; ++y) {
-        int ypixel = round(yspace * (int)TilePixels + y - position[1]);
+        int ypixel = std::round(yspace * (int)TilePixels + y - position[1]);
         if (ypixel < 0 || ypixel >= imageHeight)
           continue;
 
         for (int x = 0; x < (int)TilePixels; ++x) {
-          int xpixel = round(xspace * (int)TilePixels + x - position[0]);
+          int xpixel = std::round(xspace * (int)TilePixels + x - position[0]);
           if (flip)
             xpixel = imageWidth - 1 - xpixel;
 
@@ -96,9 +95,9 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
   return spaces;
 }
 
-RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
+auto ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const -> RectU {
   MutexLocker locker(m_mutex);
-  
+
   if (auto cached = m_regionCache.ptr(path)) {
     return *cached;
   }
@@ -112,7 +111,7 @@ RectU ImageMetadataDatabase::nonEmptyRegion(AssetPath const& path) const {
   locker.unlock();
   auto image = Root::singleton().assets()->image(filteredPath);
   RectU region = RectU::null();
-  image->forEachPixel([&region](unsigned x, unsigned y, Vec4B const& pixel) {
+  image->forEachPixel([&region](unsigned x, unsigned y, Vec4B const& pixel) -> void {
     if (pixel[3] > 0)
       region.combine(RectU::withSize({x, y}, {1, 1}));
   });
@@ -132,37 +131,32 @@ void ImageMetadataDatabase::cleanup() const {
   m_regionCache.cleanup();
 }
 
-AssetPath ImageMetadataDatabase::filterProcessing(AssetPath const& path) {
-  AssetPath newPath = { path.basePath, path.subPath, {} };
+auto ImageMetadataDatabase::filterProcessing(AssetPath const& path) -> AssetPath {
+  AssetPath newPath = {path.basePath, path.subPath, {}};
 
   String filtered;
   for (auto& directives : path.directives.list())
     directives.loadOperations();
-  path.directives.forEach([&](auto const& entry, Directives const& directives) {
+  path.directives.forEach([&](auto const& entry, Directives const& directives) -> auto {
     ImageOperation const& operation = entry.operation;
-    if (!(operation.is<HueShiftImageOperation>()           ||
-          operation.is<SaturationShiftImageOperation>()    ||
-          operation.is<BrightnessMultiplyImageOperation>() ||
-          operation.is<FadeToColorImageOperation>()        ||
-          operation.is<ScanLinesImageOperation>()          ||
-          operation.is<SetColorImageOperation>())) {
+    if (!(operation.is<HueShiftImageOperation>() || operation.is<SaturationShiftImageOperation>() || operation.is<BrightnessMultiplyImageOperation>() || operation.is<FadeToColorImageOperation>() || operation.is<ScanLinesImageOperation>() || operation.is<SetColorImageOperation>())) {
       filtered += "?";
       filtered += entry.string(*directives);
     }
-    });
+  });
 
   newPath.directives = std::move(filtered);
   return newPath;
 }
 
-Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
+auto ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const -> Vec2U {
   // Carefully calculate an image's size while trying not to actually load it.
   // In error cases, this will fall back to calling Assets::image, so that image
   // can possibly produce a missing image asset or properly report the error.
 
   auto assets = Root::singleton().assets();
 
-  auto fallback = [&assets, &path]() {
+  auto fallback = [&assets, &path]() -> Vec2U {
     return assets->image(path)->size();
   };
 
@@ -201,9 +195,9 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
 
   struct OperationSizeAdjust {
     Vec2U& imageSize;
-    bool hasError;
+    bool hasError{};
 
-    OperationSizeAdjust(Vec2U& size) : imageSize(size), hasError(false) {};
+    OperationSizeAdjust(Vec2U& size) : imageSize(size) {};
 
     void operator()(NullImageOperation const&) {}
 
@@ -238,11 +232,7 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
     }
 
     void operator()(CropImageOperation const& cio) {
-      if (cio.subset.isEmpty() ||
-          cio.subset.xMin() < 0 ||
-          cio.subset.yMin() < 0 ||
-          (unsigned)cio.subset.xMax() > imageSize[0] ||
-          (unsigned)cio.subset.yMax() > imageSize[1]) {
+      if (cio.subset.isEmpty() || cio.subset.xMin() < 0 || cio.subset.yMin() < 0 || (unsigned)cio.subset.xMax() > imageSize[0] || (unsigned)cio.subset.yMax() > imageSize[1]) {
         hasError = true;
       } else {
         imageSize = Vec2U(cio.subset.size());
@@ -268,4 +258,4 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
   return imageSize;
 }
 
-}
+}// namespace Star

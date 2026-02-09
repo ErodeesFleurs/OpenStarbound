@@ -372,8 +372,8 @@ auto PausePacket::writeJson() const -> Json {
 
 ServerInfoPacket::ServerInfoPacket() = default;
 
-ServerInfoPacket::ServerInfoPacket(uint16_t players, uint16_t maxPlayers) : players(players),
-                                                                            maxPlayers(maxPlayers) {}
+ServerInfoPacket::ServerInfoPacket(std::uint16_t players, std::uint16_t maxPlayers) : players(players),
+                                                                                      maxPlayers(maxPlayers) {}
 
 void ServerInfoPacket::read(DataStream& ds) {
   ds.read(players);
@@ -437,12 +437,12 @@ ClientDisconnectRequestPacket::ClientDisconnectRequestPacket() = default;
 
 void ClientDisconnectRequestPacket::read(DataStream& ds) {
   // Packets cannot be empty due to the way packet serialization is handled.
-  ds.read<uint8_t>();
+  ds.read<std::uint8_t>();
 }
 
 void ClientDisconnectRequestPacket::write(DataStream& ds) const {
   // Packets cannot be empty due to the way packet serialization is handled.
-  ds.write<uint8_t>(0);
+  ds.write<std::uint8_t>(0);
 }
 
 HandshakeResponsePacket::HandshakeResponsePacket() = default;
@@ -961,7 +961,7 @@ void WorldStartAcknowledgePacket::write(DataStream& ds) const {
 }
 
 PingPacket::PingPacket() = default;
-PingPacket::PingPacket(int64_t time) : time(time) {}
+PingPacket::PingPacket(std::int64_t time) : time(time) {}
 
 void PingPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   if (netRules.isLegacy()) {
@@ -1275,7 +1275,7 @@ void FindUniqueEntityResponsePacket::write(DataStream& ds) const {
 }
 
 PongPacket::PongPacket() = default;
-PongPacket::PongPacket(int64_t time) : time(time) {}
+PongPacket::PongPacket(std::int64_t time) : time(time) {}
 
 void PongPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
   if (netRules.isLegacy()) {
@@ -1311,7 +1311,7 @@ void StepUpdatePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
 
 void StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   if (netRules.isLegacy()) {
-    ds.writeVlqU((uint64_t)std::round(remoteTime * 60.0));
+    ds.writeVlqU((std::uint64_t)std::round(remoteTime * 60.0));
   } else {
     ds.write(remoteTime);
   }

@@ -1,37 +1,37 @@
 #include "StarChatTypes.hpp"
 
+import std;
+
 namespace Star {
 
 EnumMap<ChatSendMode> const ChatSendModeNames{
-    {ChatSendMode::Broadcast, "Broadcast"},
-    {ChatSendMode::Local, "Local"},
-    {ChatSendMode::Party, "Party"}
-  };
+  {ChatSendMode::Broadcast, "Broadcast"},
+  {ChatSendMode::Local, "Local"},
+  {ChatSendMode::Party, "Party"}};
 
 MessageContext::MessageContext() : mode() {}
 
 MessageContext::MessageContext(Mode mode) : mode(mode) {}
 
-MessageContext::MessageContext(Mode mode, String const& channelName) : mode(mode), channelName(channelName) {}
+MessageContext::MessageContext(Mode mode, String const& channelName) : mode(mode), channelName(std::move(channelName)) {}
 
 EnumMap<MessageContext::Mode> const MessageContextModeNames{
-    {MessageContext::Mode::Local, "Local"},
-    {MessageContext::Mode::Party, "Party"},
-    {MessageContext::Mode::Broadcast, "Broadcast"},
-    {MessageContext::Mode::Whisper, "Whisper"},
-    {MessageContext::Mode::CommandResult, "CommandResult"},
-    {MessageContext::Mode::RadioMessage, "RadioMessage"},
-    {MessageContext::Mode::World, "World"}
-  };
+  {MessageContext::Mode::Local, "Local"},
+  {MessageContext::Mode::Party, "Party"},
+  {MessageContext::Mode::Broadcast, "Broadcast"},
+  {MessageContext::Mode::Whisper, "Whisper"},
+  {MessageContext::Mode::CommandResult, "CommandResult"},
+  {MessageContext::Mode::RadioMessage, "RadioMessage"},
+  {MessageContext::Mode::World, "World"}};
 
-DataStream& operator>>(DataStream& ds, MessageContext& messageContext) {
+auto operator>>(DataStream& ds, MessageContext& messageContext) -> DataStream& {
   ds.read(messageContext.mode);
   ds.read(messageContext.channelName);
 
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, MessageContext const& messageContext) {
+auto operator<<(DataStream& ds, MessageContext const& messageContext) -> DataStream& {
   ds.write(messageContext.mode);
   ds.write(messageContext.channelName);
 
@@ -41,17 +41,16 @@ DataStream& operator<<(DataStream& ds, MessageContext const& messageContext) {
 ChatReceivedMessage::ChatReceivedMessage() : fromConnection() {}
 
 ChatReceivedMessage::ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text)
-  : context(context), fromConnection(fromConnection), fromNick(fromNick), text(text) {}
+    : context(std::move(context)), fromConnection(fromConnection), fromNick(std::move(fromNick)), text(std::move(text)) {}
 
 ChatReceivedMessage::ChatReceivedMessage(MessageContext context, ConnectionId fromConnection, String const& fromNick, String const& text, String const& portrait)
-  : context(context), fromConnection(fromConnection), fromNick(fromNick), portrait(portrait), text(text) {}
+    : context(std::move(context)), fromConnection(fromConnection), fromNick(std::move(fromNick)), portrait(std::move(portrait)), text(std::move(text)) {}
 
 ChatReceivedMessage::ChatReceivedMessage(Json const& json) : ChatReceivedMessage() {
   auto jContext = json.get("context");
   context = MessageContext(
     MessageContextModeNames.getLeft(jContext.getString("mode")),
-    jContext.getString("channelName", "")
-  );
+    jContext.getString("channelName", ""));
   fromConnection = json.getUInt("fromConnection", 0);
   fromNick = json.getString("fromNick", "");
   portrait = json.getString("portrait", "");
@@ -59,22 +58,17 @@ ChatReceivedMessage::ChatReceivedMessage(Json const& json) : ChatReceivedMessage
   data = json.getObject("data", JsonObject());
 }
 
-Json ChatReceivedMessage::toJson() const {
+auto ChatReceivedMessage::toJson() const -> Json {
   return JsonObject{
-    {"context", JsonObject{
-      {"mode", MessageContextModeNames.getRight(context.mode)},
-      {"channelName", context.channelName.empty() ? Json() : Json(context.channelName)}
-    }},
+    {"context", JsonObject{{"mode", MessageContextModeNames.getRight(context.mode)}, {"channelName", context.channelName.empty() ? Json() : Json(context.channelName)}}},
     {"fromConnection", fromConnection},
     {"fromNick", fromNick.empty() ? Json() : fromNick},
     {"portrait", portrait.empty() ? Json() : portrait},
     {"text", text},
-    {"data", data}
-  };
+    {"data", data}};
 }
 
-
-DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage) {
+auto operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage) -> DataStream& {
   ds.read(receivedMessage.context);
   ds.read(receivedMessage.fromConnection);
   ds.read(receivedMessage.fromNick);
@@ -85,7 +79,7 @@ DataStream& operator>>(DataStream& ds, ChatReceivedMessage& receivedMessage) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage) {
+auto operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessage) -> DataStream& {
   ds.write(receivedMessage.context);
   ds.write(receivedMessage.fromConnection);
   ds.write(receivedMessage.fromNick);
@@ -96,4 +90,4 @@ DataStream& operator<<(DataStream& ds, ChatReceivedMessage const& receivedMessag
   return ds;
 }
 
-}
+}// namespace Star

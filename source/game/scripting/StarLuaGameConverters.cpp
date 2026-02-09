@@ -1,8 +1,10 @@
 #include "StarLuaGameConverters.hpp"
 
+import std;
+
 namespace Star {
 
-LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {
+auto LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) -> LuaValue {
   if (auto equipment = k.ptr<EquipmentSlot>())
     return engine.createString(EquipmentSlotNames.getRight(*equipment));
   else if (auto bag = k.ptr<BagSlot>()) {
@@ -10,15 +12,15 @@ LuaValue LuaConverter<InventorySlot>::from(LuaEngine& engine, InventorySlot k) {
     table.set(1, bag->first);
     table.set(2, bag->second);
     return table;
-  }
-  else if (k.is<SwapSlot>())
+  } else if (k.is<SwapSlot>())
     return engine.createString("swap");
   else if (k.is<TrashSlot>())
     return engine.createString("trash");
-  else return {}; // avoid UB if every accounted-for case fails
+  else
+    return {};// avoid UB if every accounted-for case fails
 }
 
-std::optional<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const& v) {
+auto LuaConverter<InventorySlot>::to(LuaEngine&, LuaValue const& v) -> std::optional<InventorySlot> {
   if (auto str = v.ptr<LuaString>()) {
     auto string = str->toString();
     if (string.equalsIgnoreCase("swap"))
@@ -28,25 +30,24 @@ std::optional<InventorySlot> LuaConverter<InventorySlot>::to(LuaEngine&, LuaValu
     else if (auto equipment = EquipmentSlotNames.leftPtr(str->toString()))
       return {*equipment};
     else
-      return {};
-  }
-  else if (auto table = v.ptr<LuaTable>())
-    return {BagSlot(table->get<LuaString>(1).toString(), (uint8_t)table->get<unsigned>(2))};
+      return std::nullopt;
+  } else if (auto table = v.ptr<LuaTable>())
+    return {BagSlot(table->get<LuaString>(1).toString(), (std::uint8_t)table->get<unsigned>(2))};
   else
-    return {};
+    return std::nullopt;
 }
 
-LuaValue LuaConverter<CollisionKind>::from(LuaEngine& engine, CollisionKind k) {
+auto LuaConverter<CollisionKind>::from(LuaEngine& engine, CollisionKind k) -> LuaValue {
   return engine.createString(CollisionKindNames.getRight(k));
 }
 
-std::optional<CollisionKind> LuaConverter<CollisionKind>::to(LuaEngine&, LuaValue const& v) {
+auto LuaConverter<CollisionKind>::to(LuaEngine&, LuaValue const& v) -> std::optional<CollisionKind> {
   if (auto str = v.ptr<LuaString>())
     return CollisionKindNames.maybeLeft(str->ptr());
   return {};
 }
 
-LuaValue LuaConverter<CollisionSet>::from(LuaEngine& engine, CollisionSet const& s) {
+auto LuaConverter<CollisionSet>::from(LuaEngine& engine, CollisionSet const& s) -> LuaValue {
   auto collisionTable = engine.createTable();
   int i = 1;
   for (auto const& v : CollisionKindNames) {
@@ -57,30 +58,30 @@ LuaValue LuaConverter<CollisionSet>::from(LuaEngine& engine, CollisionSet const&
   return collisionTable;
 }
 
-std::optional<CollisionSet> LuaConverter<CollisionSet>::to(LuaEngine& engine, LuaValue const& v) {
+auto LuaConverter<CollisionSet>::to(LuaEngine& engine, LuaValue const& v) -> std::optional<CollisionSet> {
   auto table = v.ptr<LuaTable>();
   if (!table)
     return {};
 
   CollisionSet result;
   bool failed = false;
-  table->iterate([&result, &failed, &engine](LuaValue, LuaValue value) {
-      if (auto k = engine.luaMaybeTo<CollisionKind>(std::move(value))) {
-        result.insert(*k);
-        return true;
-      } else {
-        failed = true;
-        return false;
-      }
-    });
+  table->iterate([&result, &failed, &engine](LuaValue, LuaValue value) -> bool {
+    if (auto k = engine.luaMaybeTo<CollisionKind>(std::move(value))) {
+      result.insert(*k);
+      return true;
+    } else {
+      failed = true;
+      return false;
+    }
+  });
 
   if (failed)
     return {};
   return result;
 }
 
-LuaValue LuaConverter<PlatformerAStar::Path>::from(LuaEngine& engine, PlatformerAStar::Path const& path) {
-  auto convertNode = [&engine](PlatformerAStar::Node const& node) {
+auto LuaConverter<PlatformerAStar::Path>::from(LuaEngine& engine, PlatformerAStar::Path const& path) -> LuaValue {
+  auto convertNode = [&engine](PlatformerAStar::Node const& node) -> LuaTable {
     auto table = engine.createTable();
     table.set("position", node.position);
     table.set("velocity", node.velocity);
@@ -101,16 +102,16 @@ LuaValue LuaConverter<PlatformerAStar::Path>::from(LuaEngine& engine, Platformer
   return pathTable;
 }
 
-LuaMethods<PlatformerAStar::PathFinder> LuaUserDataMethods<PlatformerAStar::PathFinder>::make() {
+auto LuaUserDataMethods<PlatformerAStar::PathFinder>::make() -> LuaMethods<PlatformerAStar::PathFinder> {
   LuaMethods<PlatformerAStar::PathFinder> methods;
   methods.registerMethodWithSignature<std::optional<bool>, PlatformerAStar::PathFinder&, std::optional<unsigned>>(
-      "explore", mem_fn(&PlatformerAStar::PathFinder::explore));
+    "explore", mem_fn(&PlatformerAStar::PathFinder::explore));
   methods.registerMethodWithSignature<std::optional<PlatformerAStar::Path>, PlatformerAStar::PathFinder&>(
-      "result", mem_fn(&PlatformerAStar::PathFinder::result));
+    "result", mem_fn(&PlatformerAStar::PathFinder::result));
   return methods;
 }
 
-std::optional<PlatformerAStar::Parameters> LuaConverter<PlatformerAStar::Parameters>::to(LuaEngine&, LuaValue const& v) {
+auto LuaConverter<PlatformerAStar::Parameters>::to(LuaEngine&, LuaValue const& v) -> std::optional<PlatformerAStar::Parameters> {
   PlatformerAStar::Parameters p;
   p.returnBest = false;
   p.mustEndOnGround = false;
@@ -148,7 +149,7 @@ std::optional<PlatformerAStar::Parameters> LuaConverter<PlatformerAStar::Paramet
   return p;
 }
 
-LuaValue LuaConverter<ActorJumpProfile>::from(LuaEngine& engine, ActorJumpProfile const& v) {
+auto LuaConverter<ActorJumpProfile>::from(LuaEngine& engine, ActorJumpProfile const& v) -> LuaValue {
   auto table = engine.createTable();
   table.set("jumpSpeed", v.jumpSpeed);
   table.set("jumpControlForce", v.jumpControlForce);
@@ -162,7 +163,7 @@ LuaValue LuaConverter<ActorJumpProfile>::from(LuaEngine& engine, ActorJumpProfil
   return table;
 }
 
-std::optional<ActorJumpProfile> LuaConverter<ActorJumpProfile>::to(LuaEngine&, LuaValue const& v) {
+auto LuaConverter<ActorJumpProfile>::to(LuaEngine&, LuaValue const& v) -> std::optional<ActorJumpProfile> {
   if (v == LuaNil)
     return ActorJumpProfile();
 
@@ -187,7 +188,7 @@ std::optional<ActorJumpProfile> LuaConverter<ActorJumpProfile>::to(LuaEngine&, L
   }
 }
 
-LuaValue LuaConverter<ActorMovementParameters>::from(LuaEngine& engine, ActorMovementParameters const& v) {
+auto LuaConverter<ActorMovementParameters>::from(LuaEngine& engine, ActorMovementParameters const& v) -> LuaValue {
   auto table = engine.createTable();
   table.set("mass", v.mass);
   table.set("gravityMultiplier", v.gravityMultiplier);
@@ -230,7 +231,7 @@ LuaValue LuaConverter<ActorMovementParameters>::from(LuaEngine& engine, ActorMov
   return table;
 }
 
-std::optional<ActorMovementParameters> LuaConverter<ActorMovementParameters>::to(LuaEngine&, LuaValue const& v) {
+auto LuaConverter<ActorMovementParameters>::to(LuaEngine&, LuaValue const& v) -> std::optional<ActorMovementParameters> {
   if (v == LuaNil)
     return ActorMovementParameters();
 
@@ -249,8 +250,8 @@ std::optional<ActorMovementParameters> LuaConverter<ActorMovementParameters>::to
     amp.maxMovementPerStep = table->get<std::optional<float>>("maxMovementPerStep");
     amp.maximumCorrection = table->get<std::optional<float>>("maximumCorrection");
     amp.speedLimit = table->get<std::optional<float>>("speedLimit");
-    amp.standingPoly = table->get<std::optional<PolyF>>("standingPoly").or_else([&]{return table->get<std::optional<PolyF>>("collisionPoly");});
-    amp.crouchingPoly = table->get<std::optional<PolyF>>("crouchingPoly").or_else([&]{return table->get<std::optional<PolyF>>("collisionPoly");});
+    amp.standingPoly = table->get<std::optional<PolyF>>("standingPoly").or_else([&] -> std::optional<Star::Polygon<float>> { return table->get<std::optional<PolyF>>("collisionPoly"); });
+    amp.crouchingPoly = table->get<std::optional<PolyF>>("crouchingPoly").or_else([&] -> std::optional<Star::Polygon<float>> { return table->get<std::optional<PolyF>>("collisionPoly"); });
     amp.stickyCollision = table->get<std::optional<bool>>("stickyCollision");
     amp.stickyForce = table->get<std::optional<float>>("stickyForce");
     amp.walkSpeed = table->get<std::optional<float>>("walkSpeed");
@@ -284,7 +285,7 @@ std::optional<ActorMovementParameters> LuaConverter<ActorMovementParameters>::to
   }
 }
 
-LuaValue LuaConverter<ActorMovementModifiers>::from(LuaEngine& engine, ActorMovementModifiers const& v) {
+auto LuaConverter<ActorMovementModifiers>::from(LuaEngine& engine, ActorMovementModifiers const& v) -> LuaValue {
   auto table = engine.createTable();
   table.set("groundMovementModifier", v.groundMovementModifier);
   table.set("liquidMovementModifier", v.liquidMovementModifier);
@@ -298,7 +299,7 @@ LuaValue LuaConverter<ActorMovementModifiers>::from(LuaEngine& engine, ActorMove
   return table;
 }
 
-std::optional<ActorMovementModifiers> LuaConverter<ActorMovementModifiers>::to(LuaEngine&, LuaValue const& v) {
+auto LuaConverter<ActorMovementModifiers>::to(LuaEngine&, LuaValue const& v) -> std::optional<ActorMovementModifiers> {
   if (v == LuaNil)
     return ActorMovementModifiers();
 
@@ -323,11 +324,11 @@ std::optional<ActorMovementModifiers> LuaConverter<ActorMovementModifiers>::to(L
   }
 }
 
-LuaValue LuaConverter<StatModifier>::from(LuaEngine& engine, StatModifier const& v) {
+auto LuaConverter<StatModifier>::from(LuaEngine& engine, StatModifier const& v) -> LuaValue {
   return engine.luaFrom(jsonFromStatModifier(v));
 }
 
-std::optional<StatModifier> LuaConverter<StatModifier>::to(LuaEngine& engine, LuaValue v) {
+auto LuaConverter<StatModifier>::to(LuaEngine& engine, LuaValue v) -> std::optional<StatModifier> {
   auto json = engine.luaMaybeTo<Json>(std::move(v));
   if (!json)
     return std::nullopt;
@@ -339,27 +340,27 @@ std::optional<StatModifier> LuaConverter<StatModifier>::to(LuaEngine& engine, Lu
   }
 }
 
-LuaValue LuaConverter<EphemeralStatusEffect>::from(LuaEngine& engine, EphemeralStatusEffect const& v) {
+auto LuaConverter<EphemeralStatusEffect>::from(LuaEngine& engine, EphemeralStatusEffect const& v) -> LuaValue {
   auto table = engine.createTable();
   table.set("effect", v.uniqueEffect);
   table.set("duration", v.duration);
   return table;
 }
 
-Maybe<EphemeralStatusEffect> LuaConverter<EphemeralStatusEffect>::to(LuaEngine& engine, LuaValue const& v) {
+auto LuaConverter<EphemeralStatusEffect>::to(LuaEngine& engine, LuaValue const& v) -> std::optional<EphemeralStatusEffect> {
   if (auto s = v.ptr<LuaString>()) {
-    return EphemeralStatusEffect{UniqueStatusEffect(s->ptr()), {}};
+    return EphemeralStatusEffect{.uniqueEffect = UniqueStatusEffect(s->ptr()), .duration = {}};
   } else if (auto table = v.ptr<LuaTable>()) {
     auto effect = engine.luaMaybeTo<String>(table->get("effect"));
-    auto duration = engine.luaMaybeTo<Maybe<float>>(table->get("duratino"));
+    auto duration = engine.luaMaybeTo<std::optional<float>>(table->get("duratino"));
     if (effect && duration)
-      return EphemeralStatusEffect{effect.take(), duration.take()};
+      return EphemeralStatusEffect{.uniqueEffect = std::move(*effect), .duration = std::move(*duration)};
   }
 
-  return {};
+  return std::nullopt;
 }
 
-LuaValue LuaConverter<DamageRequest>::from(LuaEngine& engine, DamageRequest const& v) {
+auto LuaConverter<DamageRequest>::from(LuaEngine& engine, DamageRequest const& v) -> LuaValue {
   auto table = engine.createTable();
   table.set("hitType", HitTypeNames.getRight(v.hitType));
   table.set("damageType", DamageTypeNames.getRight(v.damageType));
@@ -371,35 +372,35 @@ LuaValue LuaConverter<DamageRequest>::from(LuaEngine& engine, DamageRequest cons
   return table;
 }
 
-Maybe<DamageRequest> LuaConverter<DamageRequest>::to(LuaEngine&, LuaValue const& v) {
+auto LuaConverter<DamageRequest>::to(LuaEngine&, LuaValue const& v) -> std::optional<DamageRequest> {
   auto table = v.ptr<LuaTable>();
   if (!table)
-    return {};
+    return std::nullopt;
 
   try {
     DamageRequest dr;
-    if (auto hitType = table->get<Maybe<String>>("hitType"))
+    if (auto hitType = table->get<std::optional<String>>("hitType"))
       dr.hitType = HitTypeNames.getLeft(*hitType);
-    if (auto damageType = table->get<Maybe<String>>("damageType"))
+    if (auto damageType = table->get<std::optional<String>>("damageType"))
       dr.damageType = DamageTypeNames.getLeft(*damageType);
     dr.damage = table->get<float>("damage");
-    if (auto knockbackMomentum = table->get<Maybe<Vec2F>>("knockbackMomentum"))
+    if (auto knockbackMomentum = table->get<std::optional<Vec2F>>("knockbackMomentum"))
       dr.knockbackMomentum = *knockbackMomentum;
-    if (auto sourceEntityId = table->get<Maybe<EntityId>>("sourceEntityId"))
+    if (auto sourceEntityId = table->get<std::optional<EntityId>>("sourceEntityId"))
       dr.sourceEntityId = *sourceEntityId;
-    if (auto damageSourceKind = table->get<Maybe<String>>("damageSourceKind"))
-      dr.damageSourceKind = damageSourceKind.take();
-    if (auto statusEffects = table->get<Maybe<List<EphemeralStatusEffect>>>("statusEffects"))
-      dr.statusEffects = statusEffects.take();
+    if (auto damageSourceKind = table->get<std::optional<String>>("damageSourceKind"))
+      dr.damageSourceKind = std::move(*damageSourceKind);
+    if (auto statusEffects = table->get<std::optional<List<EphemeralStatusEffect>>>("statusEffects"))
+      dr.statusEffects = std::move(*statusEffects);
     return dr;
   } catch (LuaConversionException const&) {
-    return {};
+    return std::nullopt;
   } catch (MapException const&) {
-    return {};
+    return std::nullopt;
   }
 }
 
-LuaValue LuaConverter<DamageNotification>::from(LuaEngine& engine, DamageNotification const& v) {
+auto LuaConverter<DamageNotification>::from(LuaEngine& engine, DamageNotification const& v) -> LuaValue {
   auto table = engine.createTable();
   table.set("sourceEntityId", v.sourceEntityId);
   table.set("targetEntityId", v.targetEntityId);
@@ -412,7 +413,7 @@ LuaValue LuaConverter<DamageNotification>::from(LuaEngine& engine, DamageNotific
   return table;
 }
 
-Maybe<DamageNotification> LuaConverter<DamageNotification>::to(LuaEngine&, LuaValue const& v) {
+auto LuaConverter<DamageNotification>::to(LuaEngine&, LuaValue const& v) -> std::optional<DamageNotification> {
   auto table = v.ptr<LuaTable>();
   if (!table)
     return {};
@@ -434,24 +435,24 @@ Maybe<DamageNotification> LuaConverter<DamageNotification>::to(LuaEngine&, LuaVa
   }
 }
 
-LuaValue LuaConverter<LiquidLevel>::from(LuaEngine& engine, LiquidLevel const& v) {
+auto LuaConverter<LiquidLevel>::from(LuaEngine& engine, LiquidLevel const& v) -> LuaValue {
   auto table = engine.createTable();
   table.set(1, v.liquid);
   table.set(2, v.level);
   return table;
 }
 
-Maybe<LiquidLevel> LuaConverter<LiquidLevel>::to(LuaEngine& engine, LuaValue const& v) {
+auto LuaConverter<LiquidLevel>::to(LuaEngine& engine, LuaValue const& v) -> std::optional<LiquidLevel> {
   if (auto table = v.ptr<LuaTable>()) {
     auto liquid = engine.luaMaybeTo<LiquidId>(table->get(1));
-    auto level = engine.luaMaybeTo<uint8_t>(table->get(2));
+    auto level = engine.luaMaybeTo<std::uint8_t>(table->get(2));
     if (liquid && level)
-      return LiquidLevel(liquid.take(), level.take());
+      return LiquidLevel(std::move(*liquid), std::move(*level));
   }
   return {};
 }
 
-LuaValue LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
+auto LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) -> LuaValue {
   auto table = engine.createTable();
   if (auto line = v.part.ptr<Drawable::LinePart>()) {
     table.set("line", line->line);
@@ -470,32 +471,32 @@ LuaValue LuaConverter<Drawable>::from(LuaEngine& engine, Drawable const& v) {
   return table;
 }
 
-Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine&, LuaValue const& v) {
+auto LuaConverter<Drawable>::to(LuaEngine&, LuaValue const& v) -> std::optional<Drawable> {
   if (auto table = v.ptr<LuaTable>()) {
-    Maybe<Drawable> result;
+    std::optional<Drawable> result;
     result.emplace();
-    Drawable& drawable = result.get();
+    Drawable& drawable = result.value();
 
-    Color color = table->get<Maybe<Color>>("color").value(Color::White);
+    Color color = table->get<std::optional<Color>>("color").value_or(Color::White);
 
-    if (auto line = table->get<Maybe<Line2F>>("line"))
-      drawable = Drawable::makeLine(line.take(), table->get<float>("width"), color);
-    else if (auto poly = table->get<Maybe<PolyF>>("poly"))
-      drawable = Drawable::makePoly(poly.take(), color);
-    else if (auto image = table->get<Maybe<String>>("image"))
-      drawable = Drawable::makeImage(image.take(), 1.0f, table->get<Maybe<bool>>("centered").value(true), Vec2F(), color);
+    if (auto line = table->get<std::optional<Line2F>>("line"))
+      drawable = Drawable::makeLine(std::move(*line), table->get<float>("width"), color);
+    else if (auto poly = table->get<std::optional<PolyF>>("poly"))
+      drawable = Drawable::makePoly(std::move(*poly), color);
+    else if (auto image = table->get<std::optional<String>>("image"))
+      drawable = Drawable::makeImage(std::move(*image), 1.0f, table->get<std::optional<bool>>("centered").value_or(true), Vec2F(), color);
     else
-      return {}; // throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
+      return std::nullopt;// throw LuaAnimationComponentException("Drawable table must have 'line', 'poly', or 'image'");
 
-    if (auto transformation = table->get<Maybe<Mat3F>>("transformation"))
+    if (auto transformation = table->get<std::optional<Mat3F>>("transformation"))
       drawable.transform(*transformation);
-    if (auto rotation = table->get<Maybe<float>>("rotation"))
+    if (auto rotation = table->get<std::optional<float>>("rotation"))
       drawable.rotate(*rotation);
     if (table->get<bool>("mirrored"))
       drawable.scale(Vec2F(-1, 1));
-    if (auto scale = table->get<Maybe<float>>("scale"))
+    if (auto scale = table->get<std::optional<float>>("scale"))
       drawable.scale(*scale);
-    if (auto position = table->get<Maybe<Vec2F>>("position"))
+    if (auto position = table->get<std::optional<Vec2F>>("position"))
       drawable.translate(*position);
 
     drawable.fullbright = table->get<bool>("fullbright");
@@ -505,7 +506,7 @@ Maybe<Drawable> LuaConverter<Drawable>::to(LuaEngine&, LuaValue const& v) {
   return {};
 }
 
-LuaValue LuaConverter<Collection>::from(LuaEngine& engine, Collection const& c) {
+auto LuaConverter<Collection>::from(LuaEngine& engine, Collection const& c) -> LuaValue {
   auto table = engine.createTable();
   table.set("name", c.name);
   table.set("type", CollectionTypeNames.getRight(c.type));
@@ -513,7 +514,7 @@ LuaValue LuaConverter<Collection>::from(LuaEngine& engine, Collection const& c) 
   return table;
 }
 
-Maybe<Collection> LuaConverter<Collection>::to(LuaEngine& engine, LuaValue const& v) {
+auto LuaConverter<Collection>::to(LuaEngine& engine, LuaValue const& v) -> std::optional<Collection> {
   if (auto table = v.ptr<LuaTable>()) {
     auto name = engine.luaMaybeTo<String>(table->get("name"));
     auto type = engine.luaMaybeTo<String>(table->get("type"));
@@ -525,7 +526,7 @@ Maybe<Collection> LuaConverter<Collection>::to(LuaEngine& engine, LuaValue const
   return {};
 }
 
-LuaValue LuaConverter<Collectable>::from(LuaEngine& engine, Collectable const& c) {
+auto LuaConverter<Collectable>::from(LuaEngine& engine, Collectable const& c) -> LuaValue {
   auto table = engine.createTable();
   table.set("name", c.name);
   table.set("order", c.order);
@@ -535,22 +536,22 @@ LuaValue LuaConverter<Collectable>::from(LuaEngine& engine, Collectable const& c
   return table;
 }
 
-Maybe<Collectable> LuaConverter<Collectable>::to(LuaEngine& engine, LuaValue const& v) {
+auto LuaConverter<Collectable>::to(LuaEngine& engine, LuaValue const& v) -> std::optional<Collectable> {
   if (auto table = v.ptr<LuaTable>()) {
     auto name = engine.luaMaybeTo<String>(table->get("name"));
     if (name) {
       return Collectable(*name,
-        engine.luaMaybeTo<int>(table->get("order")).value(0),
-        engine.luaMaybeTo<String>(table->get("title")).value(""),
-        engine.luaMaybeTo<String>(table->get("description")).value(""),
-        engine.luaMaybeTo<String>(table->get("icon")).value(""));
+                         engine.luaMaybeTo<int>(table->get("order")).value_or(0),
+                         engine.luaMaybeTo<String>(table->get("title")).value_or(""),
+                         engine.luaMaybeTo<String>(table->get("description")).value_or(""),
+                         engine.luaMaybeTo<String>(table->get("icon")).value_or(""));
     }
   }
 
   return {};
 }
 
-LuaValue LuaConverter<PhysicsMovingCollision>::from(LuaEngine& engine, PhysicsMovingCollision const& v) {
+auto LuaConverter<PhysicsMovingCollision>::from(LuaEngine& engine, PhysicsMovingCollision const& v) -> LuaValue {
   auto table = engine.createTable();
   table.set("position", v.position);
   table.set("collision", v.collision);
@@ -560,29 +561,28 @@ LuaValue LuaConverter<PhysicsMovingCollision>::from(LuaEngine& engine, PhysicsMo
   // see jsonToPhysicsCategoryFilter
   categoryTable.set(
     v.categoryFilter.type == PhysicsCategoryFilter::Type::Whitelist ? "categoryWhitelist" : "categoryBlacklist",
-    v.categoryFilter.categories
-  );
+    v.categoryFilter.categories);
   return table;
 }
 
-LuaMethods<BehaviorStateWeakPtr> LuaUserDataMethods<BehaviorStateWeakPtr>::make() {
-  LuaMethods<BehaviorStateWeakPtr> methods;
-  methods.registerMethodWithSignature<NodeStatus, BehaviorStateWeakPtr, float>(
-    "run", [](BehaviorStateWeakPtr const& behavior, float dt) -> NodeStatus {
+auto LuaUserDataMethods<WeakPtr<BehaviorState>>::make() -> LuaMethods<WeakPtr<BehaviorState>> {
+  LuaMethods<WeakPtr<BehaviorState>> methods;
+  methods.registerMethodWithSignature<NodeStatus, WeakPtr<BehaviorState>, float>(
+    "run", [](WeakPtr<BehaviorState> const& behavior, float dt) -> NodeStatus {
       if (behavior.expired())
         throw StarException("Use of expired blackboard");
 
       return behavior.lock()->run(dt);
     });
-  methods.registerMethodWithSignature<void, BehaviorStateWeakPtr>(
-    "clear", [](BehaviorStateWeakPtr const& behavior) {
+  methods.registerMethodWithSignature<void, WeakPtr<BehaviorState>>(
+    "clear", [](WeakPtr<BehaviorState> const& behavior) -> void {
       if (behavior.expired())
         throw StarException("Use of expired blackboard");
 
       behavior.lock()->clear();
     });
-  methods.registerMethodWithSignature<BlackboardWeakPtr, BehaviorStateWeakPtr>(
-    "blackboard", [](BehaviorStateWeakPtr const& behavior) -> BlackboardWeakPtr {
+  methods.registerMethodWithSignature<WeakPtr<Blackboard>, WeakPtr<BehaviorState>>(
+    "blackboard", [](WeakPtr<BehaviorState> const& behavior) -> WeakPtr<Blackboard> {
       if (behavior.expired())
         throw StarException("Use of expired blackboard");
 
@@ -591,7 +591,7 @@ LuaMethods<BehaviorStateWeakPtr> LuaUserDataMethods<BehaviorStateWeakPtr>::make(
   return methods;
 }
 
-LuaValue LuaConverter<NodeStatus>::from(LuaEngine&, NodeStatus const& status) {
+auto LuaConverter<NodeStatus>::from(LuaEngine&, NodeStatus const& status) -> LuaValue {
   if (status == NodeStatus::Success)
     return true;
   else if (status == NodeStatus::Failure)
@@ -600,105 +600,104 @@ LuaValue LuaConverter<NodeStatus>::from(LuaEngine&, NodeStatus const& status) {
     return {};
 }
 
-NodeStatus LuaConverter<NodeStatus>::to(LuaEngine&, LuaValue const& v) {
+auto LuaConverter<NodeStatus>::to(LuaEngine&, LuaValue const& v) -> NodeStatus {
   if (v.is<LuaBoolean>())
     return v.get<LuaBoolean>() == true ? NodeStatus::Success : NodeStatus::Failure;
   else
     return NodeStatus::Running;
 }
 
-LuaMethods<BlackboardWeakPtr> LuaUserDataMethods<BlackboardWeakPtr>::make() {
-  LuaMethods<BlackboardWeakPtr> methods;
+auto LuaUserDataMethods<WeakPtr<Blackboard>>::make() -> LuaMethods<WeakPtr<Blackboard>> {
+  LuaMethods<WeakPtr<Blackboard>> methods;
 
-  auto get =[](BlackboardWeakPtr const& board, NodeParameterType const& type, String const& key) -> LuaValue {
+  auto get = [](WeakPtr<Blackboard> const& board, NodeParameterType const& type, String const& key) -> LuaValue {
     if (board.expired())
       throw StarException("Use of expired blackboard");
 
     return board.lock()->get(type, key);
   };
-  auto set = [](BlackboardWeakPtr const& board, NodeParameterType const& type, String const& key, LuaValue const& value) {
+  auto set = [](WeakPtr<Blackboard> const& board, NodeParameterType const& type, String const& key, LuaValue const& value) -> void {
     if (board.expired())
       throw StarException("Use of expired blackboard");
 
     board.lock()->set(type, key, value);
   };
 
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String, String>("get",
-    [&](BlackboardWeakPtr const& board, String const& type, String const& key) -> LuaValue {
-      return get(board, NodeParameterTypeNames.getLeft(type), key);
-    });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, String, LuaValue>("set",
-    [&](BlackboardWeakPtr const& board, String const& type, String const& key, LuaValue const& value) {
-      set(board, NodeParameterTypeNames.getLeft(type), key, value);
-    });
+  methods.registerMethodWithSignature<LuaValue, WeakPtr<Blackboard>, String, String>("get",
+                                                                                     [&](WeakPtr<Blackboard> const& board, String const& type, String const& key) -> LuaValue {
+                                                                                       return get(board, NodeParameterTypeNames.getLeft(type), key);
+                                                                                     });
+  methods.registerMethodWithSignature<void, WeakPtr<Blackboard>, String, String, LuaValue>("set",
+                                                                                           [&](WeakPtr<Blackboard> const& board, String const& type, String const& key, LuaValue const& value) -> void {
+                                                                                             set(board, NodeParameterTypeNames.getLeft(type), key, value);
+                                                                                           });
 
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getEntity", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, WeakPtr<Blackboard>, String>(
+    "getEntity", [&](WeakPtr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Entity, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getPosition", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, WeakPtr<Blackboard>, String>(
+    "getPosition", [&](WeakPtr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Position, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getVec2", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, WeakPtr<Blackboard>, String>(
+    "getVec2", [&](WeakPtr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Vec2, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getNumber", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, WeakPtr<Blackboard>, String>(
+    "getNumber", [&](WeakPtr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Number, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getBool", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, WeakPtr<Blackboard>, String>(
+    "getBool", [&](WeakPtr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Bool, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getList", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, WeakPtr<Blackboard>, String>(
+    "getList", [&](WeakPtr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::List, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getTable", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, WeakPtr<Blackboard>, String>(
+    "getTable", [&](WeakPtr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::Table, key);
     });
-  methods.registerMethodWithSignature<LuaValue, BlackboardWeakPtr, String>(
-    "getString", [&](BlackboardWeakPtr const& board, String const& key) -> LuaValue {
+  methods.registerMethodWithSignature<LuaValue, WeakPtr<Blackboard>, String>(
+    "getString", [&](WeakPtr<Blackboard> const& board, String const& key) -> LuaValue {
       return get(board, NodeParameterType::String, key);
     });
 
-
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setEntity", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, WeakPtr<Blackboard>, String, LuaValue>(
+    "setEntity", [&](WeakPtr<Blackboard> const& board, String const& key, LuaValue const& value) -> void {
       set(board, NodeParameterType::Entity, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setPosition", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, WeakPtr<Blackboard>, String, LuaValue>(
+    "setPosition", [&](WeakPtr<Blackboard> const& board, String const& key, LuaValue const& value) -> void {
       set(board, NodeParameterType::Position, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setVec2", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, WeakPtr<Blackboard>, String, LuaValue>(
+    "setVec2", [&](WeakPtr<Blackboard> const& board, String const& key, LuaValue const& value) -> void {
       set(board, NodeParameterType::Vec2, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setNumber", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, WeakPtr<Blackboard>, String, LuaValue>(
+    "setNumber", [&](WeakPtr<Blackboard> const& board, String const& key, LuaValue const& value) -> void {
       set(board, NodeParameterType::Number, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setBool", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, WeakPtr<Blackboard>, String, LuaValue>(
+    "setBool", [&](WeakPtr<Blackboard> const& board, String const& key, LuaValue const& value) -> void {
       set(board, NodeParameterType::Bool, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setList", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, WeakPtr<Blackboard>, String, LuaValue>(
+    "setList", [&](WeakPtr<Blackboard> const& board, String const& key, LuaValue const& value) -> void {
       set(board, NodeParameterType::List, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setTable", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, WeakPtr<Blackboard>, String, LuaValue>(
+    "setTable", [&](WeakPtr<Blackboard> const& board, String const& key, LuaValue const& value) -> void {
       set(board, NodeParameterType::Table, key, value);
     });
-  methods.registerMethodWithSignature<void, BlackboardWeakPtr, String, LuaValue>(
-    "setString", [&](BlackboardWeakPtr const& board, String const& key, LuaValue const& value) {
+  methods.registerMethodWithSignature<void, WeakPtr<Blackboard>, String, LuaValue>(
+    "setString", [&](WeakPtr<Blackboard> const& board, String const& key, LuaValue const& value) -> void {
       set(board, NodeParameterType::String, key, value);
     });
   return methods;
 }
 
-}
+}// namespace Star

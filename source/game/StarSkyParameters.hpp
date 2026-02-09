@@ -10,7 +10,7 @@ import std;
 namespace Star {
 
 class CelestialDatabase;
-class VisitableWorldParameters;
+struct VisitableWorldParameters;
 
 // This struct is a stripped down version of CelestialParameters that only
 // contains the required inforamtion to generate a sky.  It's constructable

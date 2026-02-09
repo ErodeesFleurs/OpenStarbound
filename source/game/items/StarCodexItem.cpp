@@ -1,15 +1,18 @@
 #include "StarCodexItem.hpp"
-#include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarPlayer.hpp"
-#include "StarAssets.hpp"
-#include "StarClientContext.hpp"
+
+#include "StarCasting.hpp"
 #include "StarCodex.hpp"
+#include "StarConfig.hpp"
+#include "StarPlayer.hpp"
+#include "StarPlayerCodexes.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
 CodexItem::CodexItem(Json const& config, String const& directory, Json const& data)
-  : Item(config, directory, data), SwingableItem(config) {
+    : Item(config, directory, data), SwingableItem(config) {
   setWindupTime(0.2f);
   setCooldownTime(0.5f);
   m_requireEdgeTrigger = true;
@@ -19,17 +22,17 @@ CodexItem::CodexItem(Json const& config, String const& directory, Json const& da
   m_worldDrawables = {Drawable::makeImage(iconPath, 1.0f / TilePixels, true, Vec2F())};
 }
 
-ItemPtr CodexItem::clone() const {
-  return make_shared<CodexItem>(*this);
+auto CodexItem::clone() const -> Ptr<Item> {
+  return std::make_shared<CodexItem>(*this);
 }
 
-List<Drawable> CodexItem::drawables() const {
+auto CodexItem::drawables() const -> List<Drawable> {
   return m_worldDrawables;
 }
 
 void CodexItem::fireTriggered() {
   if (auto player = as<Player>(owner())) {
-    auto codexLearned = player->codexes()->learnCodex(m_codexId);
+    ConstPtr<Codex> codexLearned = player->codexes()->learnCodex(m_codexId);
     if (codexLearned) {
       player->queueUIMessage(Root::singleton().assets()->json("/codex.config:messages.learned").toString());
     } else {
@@ -39,12 +42,12 @@ void CodexItem::fireTriggered() {
   }
 }
 
-List<Drawable> CodexItem::iconDrawables() const {
+auto CodexItem::iconDrawables() const -> List<Drawable> {
   return m_iconDrawables;
 }
 
-List<Drawable> CodexItem::dropDrawables() const {
+auto CodexItem::dropDrawables() const -> List<Drawable> {
   return m_worldDrawables;
 }
 
-}
+}// namespace Star

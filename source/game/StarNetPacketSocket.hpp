@@ -7,6 +7,8 @@
 #include "StarTcp.hpp"
 #include "StarZSTDCompression.hpp"
 
+import std;
+
 namespace Star {
 
 struct PacketStats {
@@ -36,7 +38,7 @@ private:
   PacketStats m_stats;
   Map<PacketType, float> m_unmixed;
   size_t m_totalBytes;
-  int64_t m_lastMixTime;
+  std::int64_t m_lastMixTime;
 };
 
 // Interface for bidirectional communication using NetPackets, based around a

@@ -17,11 +17,6 @@ import std;
 namespace Star {
 
 struct ProjectileConfig;
-// STAR_CLASS(World);
-// STAR_CLASS(RenderCallback);
-// STAR_STRUCT(ProjectileConfig);
-
-// STAR_CLASS(Projectile);
 
 class Projectile : public virtual Entity, public virtual ScriptedEntity, public virtual PhysicsEntity, public virtual StatusEffectEntity {
 public:
@@ -48,7 +43,7 @@ public:
   auto clientEntityMode() const -> ClientEntityMode override;
   auto masterOnly() const -> bool override;
 
-  auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t> override;
+  auto writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t> override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
@@ -62,7 +57,7 @@ public:
   auto damageSources() const -> List<DamageSource> override;
   void hitOther(EntityId targetEntityId, DamageRequest const& dr) override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
   void render(RenderCallback* renderCallback) override;
   void renderLightSources(RenderCallback* renderCallback) override;
 

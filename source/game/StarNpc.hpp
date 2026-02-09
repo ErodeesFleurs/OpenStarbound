@@ -31,11 +31,6 @@ import std;
 namespace Star {
 
 class Songbook;
-// STAR_CLASS(Songbook);
-// STAR_CLASS(Item);
-// STAR_CLASS(RenderCallback);
-// STAR_CLASS(Npc);
-// STAR_CLASS(StatusController);
 
 class Npc
     : public virtual DamageBarEntity,
@@ -74,7 +69,7 @@ public:
 
   auto collisionArea() const -> RectF override;
 
-  auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t> override;
+  auto writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t> override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
@@ -98,7 +93,7 @@ public:
   auto shouldDestroy() const -> bool override;
   void destroy(RenderCallback* renderCallback) override;
 
-  void update(float dt, uint64_t currentVersion) override;
+  void update(float dt, std::uint64_t currentVersion) override;
 
   void render(RenderCallback* renderCallback) override;
 

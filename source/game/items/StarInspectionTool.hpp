@@ -1,22 +1,20 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
+#include "StarInspectableEntity.hpp"
 #include "StarItem.hpp"
 #include "StarPointableItem.hpp"
 #include "StarToolUserItem.hpp"
-#include "StarInspectableEntity.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(InspectionTool);
-
 class InspectionTool
-  : public Item,
-    public PointableItem,
-    public ToolUserItem {
+    : public Item,
+      public PointableItem,
+      public ToolUserItem {
 public:
-
   struct InspectionResult {
     String message;
     std::optional<String> objectName = {};
@@ -25,26 +23,26 @@ public:
 
   InspectionTool(Json const& config, String const& directory, Json const& parameters = JsonObject());
 
-  ItemPtr clone() const override;
+  [[nodiscard]] auto clone() const -> Ptr<Item> override;
 
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
-  List<Drawable> drawables() const override;
+  [[nodiscard]] auto drawables() const -> List<Drawable> override;
 
-  List<LightSource> lightSources() const;
+  [[nodiscard]] auto lightSources() const -> List<LightSource>;
 
-  float inspectionHighlightLevel(InspectableEntityPtr const& inspectableEntity) const;
+  [[nodiscard]] auto inspectionHighlightLevel(Ptr<InspectableEntity> const& inspectableEntity) const -> float;
 
-  List<InspectionResult> pullInspectionResults();
+  auto pullInspectionResults() -> List<InspectionResult>;
 
 private:
-  InspectionResult inspect(Vec2F const& position);
+  auto inspect(Vec2F const& position) -> InspectionResult;
 
-  float inspectionLevel(InspectableEntityPtr const& inspectableEntity) const;
-  float pointInspectionLevel(Vec2F const& position) const;
-  bool hasLineOfSight(Vec2I const& targetPosition, Set<Vec2I> const& targetSpaces = {}) const;
+  [[nodiscard]] auto inspectionLevel(Ptr<InspectableEntity> const& inspectableEntity) const -> float;
+  [[nodiscard]] auto pointInspectionLevel(Vec2F const& position) const -> float;
+  [[nodiscard]] auto hasLineOfSight(Vec2I const& targetPosition, Set<Vec2I> const& targetSpaces = {}) const -> bool;
 
-  String inspectionFailureText(String const& failureType, String const& species) const;
+  [[nodiscard]] auto inspectionFailureText(String const& failureType, String const& species) const -> String;
 
   float m_currentAngle;
   Vec2F m_currentPosition;
@@ -71,4 +69,4 @@ private:
   List<InspectionResult> m_inspectionResults;
 };
 
-}
+}// namespace Star

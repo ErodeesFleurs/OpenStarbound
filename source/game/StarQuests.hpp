@@ -1,19 +1,21 @@
 #pragma once
 
-#include "StarItemDescriptor.hpp"
+#include "StarConfig.hpp"
 #include "StarDrawable.hpp"
-#include "StarSystemWorld.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarQuestDescriptor.hpp"
 #include "StarQuestTemplateDatabase.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
+#include "StarSystemWorld.hpp"
 #include "StarWarping.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(Quest);
-STAR_CLASS(Player);
-STAR_CLASS(UniverseClient);
+class Player;
+class UniverseClient;
 
 enum class QuestState {
   // New - being set up and quest hasn't been offered yet (or was offered and declined)
@@ -34,15 +36,15 @@ public:
   Quest(QuestArcDescriptor const& questArc, size_t arcPos, Player* player);
 
   Quest(Json const& diskStore);
-  Json diskStore() const;
+  auto diskStore() const -> Json;
 
-  QuestTemplatePtr getTemplate() const;
+  auto getTemplate() const -> Ptr<QuestTemplate>;
 
   void init(Player* player, World* world, UniverseClient* client);
   void uninit();
 
-  std::optional<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
-  std::optional<LuaValue> callScript(String const& func, LuaVariadic<LuaValue> const& args);
+  auto receiveMessage(String const& message, bool localMessage, JsonArray const& args = {}) -> std::optional<Json>;
+  auto callScript(String const& func, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue>;
   void update(float dt);
 
   void offer();
@@ -53,77 +55,77 @@ public:
   void fail();
   void abandon();
 
-  bool interactWithEntity(EntityId entity);
+  auto interactWithEntity(EntityId entity) -> bool;
 
   // The generated ID for this instance of the quest with these specific
   // parameters. Multiple players iin a universe may have quests with the same
   // questId if the the source of the quest was the same.
-  String questId() const;
+  auto questId() const -> String;
   // The ID of the template this quest was created from
-  String templateId() const;
+  auto templateId() const -> String;
 
-  StringMap<QuestParam> const& parameters() const;
+  auto parameters() const -> StringMap<QuestParam> const&;
 
-  QuestState state() const;
+  auto state() const -> QuestState;
 
   // Whether to show the Complete / Failed dialog
-  bool showDialog() const;
+  auto showDialog() const -> bool;
   void setDialogShown();
 
-  void setEntityParameter(String const& paramName, EntityConstPtr const& entity);
+  void setEntityParameter(String const& paramName, ConstPtr<Entity> const& entity);
   void setParameter(String const& paramName, QuestParam const& paramValue);
 
-  std::optional<List<Drawable>> portrait(String const& portraitName) const;
-  std::optional<String> portraitTitle(String const& portraitName) const;
+  auto portrait(String const& portraitName) const -> std::optional<List<Drawable>>;
+  auto portraitTitle(String const& portraitName) const -> std::optional<String>;
 
-  QuestDescriptor questDescriptor() const;
-  QuestArcDescriptor questArcDescriptor() const;
-  size_t questArcPosition() const;
+  auto questDescriptor() const -> QuestDescriptor;
+  auto questArcDescriptor() const -> QuestArcDescriptor;
+  auto questArcPosition() const -> size_t;
 
-  std::optional<WorldId> worldId() const;
-  std::optional<pair<Vec3I, SystemLocation>> location() const;
-  std::optional<Uuid> serverUuid() const;
+  auto worldId() const -> std::optional<WorldId>;
+  auto location() const -> std::optional<std::pair<Vec3I, SystemLocation>>;
+  auto serverUuid() const -> std::optional<Uuid>;
   void setWorldId(std::optional<WorldId> worldId);
-  void setLocation(std::optional<pair<Vec3I, SystemLocation>> location);
+  void setLocation(std::optional<std::pair<Vec3I, SystemLocation>> location);
   void setServerUuid(std::optional<Uuid> serverUuid);
 
-  String title() const;
-  String text() const;
-  String completionText() const;
-  String failureText() const;
+  auto title() const -> String;
+  auto text() const -> String;
+  auto completionText() const -> String;
+  auto failureText() const -> String;
 
-  size_t money() const;
-  List<ItemConstPtr> rewards() const;
+  auto money() const -> size_t;
+  auto rewards() const -> List<ConstPtr<Item>>;
 
   // The time when this quest last changed state (active/completed/failed)
-  int64_t lastUpdatedOn() const;
-  bool unread() const;
+  auto lastUpdatedOn() const -> std::int64_t;
+  auto unread() const -> bool;
   void markAsRead();
-  bool canTurnIn() const;
+  auto canTurnIn() const -> bool;
 
-  String questGiverIndicator() const;
-  String questReceiverIndicator() const;
+  auto questGiverIndicator() const -> String;
+  auto questReceiverIndicator() const -> String;
 
   // The String returned by this method is an image path, not a reference to a configured indicator
-  std::optional<String> customIndicator(EntityPtr const& entity) const;
+  auto customIndicator(Ptr<Entity> const& entity) const -> std::optional<String>;
 
-  std::optional<JsonArray> objectiveList() const;
-  std::optional<float> progress() const;
-  std::optional<float> compassDirection() const;
+  auto objectiveList() const -> std::optional<JsonArray>;
+  auto progress() const -> std::optional<float>;
+  auto compassDirection() const -> std::optional<float>;
 
   void setObjectiveList(std::optional<JsonArray> const& objectiveList);
   void setProgress(std::optional<float> const& progress);
   void setCompassDirection(std::optional<float> const& compassDirection);
 
-  std::optional<String> completionCinema() const;
-  bool canBeAbandoned() const;
-  bool ephemeral() const;
-  bool showInLog() const;
-  bool showAcceptDialog() const;
-  bool showCompleteDialog() const;
-  bool showFailDialog() const;
-  bool mainQuest() const;
-  bool hideCrossServer() const;
+  auto completionCinema() const -> std::optional<String>;
+  auto canBeAbandoned() const -> bool;
+  auto ephemeral() const -> bool;
+  auto showInLog() const -> bool;
+  auto showAcceptDialog() const -> bool;
+  auto showCompleteDialog() const -> bool;
+  auto showFailDialog() const -> bool;
+  auto mainQuest() const -> bool;
+  auto hideCrossServer() const -> bool;
 
 private:
   struct DisplayParameters {
@@ -140,12 +142,12 @@ private:
 
   void initScript();
   void uninitScript();
-  LuaCallbacks makeQuestCallbacks(Player* player);
+  auto makeQuestCallbacks(Player* player) -> LuaCallbacks;
 
   void setEntityParameter(String const& paramName, Entity const* entity);
   void addReward(ItemDescriptor const& reward);
 
-  String const& defaultCustomIndicator() const;
+  auto defaultCustomIndicator() const -> String const&;
 
   Player* m_player;
   World* m_world;
@@ -160,11 +162,11 @@ private:
   StringMap<QuestParam> m_parameters;
   DisplayParameters m_displayParameters;
   std::optional<WorldId> m_worldId;
-  std::optional<pair<Vec3I, SystemLocation>> m_location;
+  std::optional<std::pair<Vec3I, SystemLocation>> m_location;
   std::optional<Uuid> m_serverUuid;
   size_t m_money;
-  List<ItemConstPtr> m_rewards;
-  int64_t m_lastUpdatedOn;
+  List<ConstPtr<Item>> m_rewards;
+  std::int64_t m_lastUpdatedOn;
   bool m_unread;
   bool m_canTurnIn;
   StringSet m_indicators;
@@ -184,12 +186,12 @@ private:
   std::optional<float> m_compassDirection;
 
   LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>>
-      m_scriptComponent;
+    m_scriptComponent;
 };
 
 // Create an instance of Quest for a specific template with all the parameters filled
 // in with examples. Doesn't necessarily make a valid quest that can be completed, since
 // its purpose is for previewing dialogs only.
-QuestPtr createPreviewQuest(
-    String const& templateId, String const& position, String const& questGiverSpecies, Player* player);
-}
+auto createPreviewQuest(
+  String const& templateId, String const& position, String const& questGiverSpecies, Player* player) -> Ptr<Quest>;
+}// namespace Star

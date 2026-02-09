@@ -1,5 +1,6 @@
-#include "StarImage.hpp"
 #include "StarImageScaling.hpp"
+
+#include "StarImage.hpp"
 #include "StarInterpolation.hpp"
 
 import std;
@@ -59,41 +60,36 @@ auto scaleBicubic(Image const& srcImage, Vec2F const& scale) -> Image {
       auto fpart = pos - Vec2F(ipart);
 
       Vec4F a = cubic4(fpart[0],
-          Vec4F(srcImage.clamp(ipart[0], ipart[1])),
-          Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1])),
-          Vec4F(srcImage.clamp(ipart[0] + 2, ipart[1])),
-          Vec4F(srcImage.clamp(ipart[0] + 3, ipart[1])));
+                       Vec4F(srcImage.clamp(ipart[0], ipart[1])),
+                       Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1])),
+                       Vec4F(srcImage.clamp(ipart[0] + 2, ipart[1])),
+                       Vec4F(srcImage.clamp(ipart[0] + 3, ipart[1])));
 
       Vec4F b = cubic4(fpart[0],
-          Vec4F(srcImage.clamp(ipart[0], ipart[1] + 1)),
-          Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1] + 1)),
-          Vec4F(srcImage.clamp(ipart[0] + 2, ipart[1] + 1)),
-          Vec4F(srcImage.clamp(ipart[0] + 3, ipart[1] + 1)));
+                       Vec4F(srcImage.clamp(ipart[0], ipart[1] + 1)),
+                       Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1] + 1)),
+                       Vec4F(srcImage.clamp(ipart[0] + 2, ipart[1] + 1)),
+                       Vec4F(srcImage.clamp(ipart[0] + 3, ipart[1] + 1)));
 
       Vec4F c = cubic4(fpart[0],
-          Vec4F(srcImage.clamp(ipart[0], ipart[1] + 2)),
-          Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1] + 2)),
-          Vec4F(srcImage.clamp(ipart[0] + 2, ipart[1] + 2)),
-          Vec4F(srcImage.clamp(ipart[0] + 3, ipart[1] + 2)));
+                       Vec4F(srcImage.clamp(ipart[0], ipart[1] + 2)),
+                       Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1] + 2)),
+                       Vec4F(srcImage.clamp(ipart[0] + 2, ipart[1] + 2)),
+                       Vec4F(srcImage.clamp(ipart[0] + 3, ipart[1] + 2)));
 
       Vec4F d = cubic4(fpart[0],
-          Vec4F(srcImage.clamp(ipart[0], ipart[1] + 3)),
-          Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1] + 3)),
-          Vec4F(srcImage.clamp(ipart[0] + 2, ipart[1] + 3)),
-          Vec4F(srcImage.clamp(ipart[0] + 3, ipart[1] + 3)));
+                       Vec4F(srcImage.clamp(ipart[0], ipart[1] + 3)),
+                       Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1] + 3)),
+                       Vec4F(srcImage.clamp(ipart[0] + 2, ipart[1] + 3)),
+                       Vec4F(srcImage.clamp(ipart[0] + 3, ipart[1] + 3)));
 
       auto result = cubic4(fpart[1], a, b, c, d);
 
-      destImage.set({x, y}, Vec4B(
-          clamp(result[0], 0.0f, 255.0f),
-          clamp(result[1], 0.0f, 255.0f),
-          clamp(result[2], 0.0f, 255.0f),
-          clamp(result[3], 0.0f, 255.0f)
-        ));
+      destImage.set({x, y}, Vec4B(clamp(result[0], 0.0f, 255.0f), clamp(result[1], 0.0f, 255.0f), clamp(result[2], 0.0f, 255.0f), clamp(result[3], 0.0f, 255.0f)));
     }
   }
 
   return destImage;
 }
 
-}
+}// namespace Star

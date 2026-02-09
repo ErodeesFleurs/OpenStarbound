@@ -1,14 +1,16 @@
 #include "StarThrownItem.hpp"
-#include "StarProjectile.hpp"
+
+#include "StarConfig.hpp"
+#include "StarProjectileDatabase.hpp"// IWYU pragma: export
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarWorld.hpp"
+
+import std;
 
 namespace Star {
 
 ThrownItem::ThrownItem(Json const& config, String const& directory, Json const& itemParameters)
-  : Item(config, directory, itemParameters), SwingableItem(config) {
+    : Item(config, directory, itemParameters), SwingableItem(config) {
   m_projectileType = instanceValue("projectileType").toString();
   m_projectileConfig = instanceValue("projectileConfig", {});
   m_ammoUsage = instanceValue("ammoUsage", 1).toUInt();
@@ -17,15 +19,15 @@ ThrownItem::ThrownItem(Json const& config, String const& directory, Json const& 
   m_drawables = {Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F())};
 }
 
-ItemPtr ThrownItem::clone() const {
-  return make_shared<ThrownItem>(*this);
+auto ThrownItem::clone() const -> Ptr<Item> {
+  return std::make_shared<ThrownItem>(*this);
 }
 
-List<Drawable> ThrownItem::drawables() const {
+auto ThrownItem::drawables() const -> List<Drawable> {
   return m_drawables;
 }
 
-List<Drawable> ThrownItem::preview(PlayerPtr const&) const {
+auto ThrownItem::preview(Ptr<Player> const&) const -> List<Drawable> {
   return iconDrawables();
 }
 
@@ -53,4 +55,4 @@ void ThrownItem::fireTriggered() {
   }
 }
 
-}
+}// namespace Star

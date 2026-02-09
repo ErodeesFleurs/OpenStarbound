@@ -1,8 +1,8 @@
 #pragma once
 
+#include "StarDataStream.hpp"
 #include "StarDirectives.hpp"
 #include "StarHash.hpp"
-#include "StarDataStream.hpp"
 
 import std;
 
@@ -21,29 +21,29 @@ namespace Star {
 // portion of the path starts with a '?', and '?' separates each subsquent
 // directive.
 struct AssetPath {
-  static AssetPath split(String const& path);
-  static String join(AssetPath const& path);
+  static auto split(String const& path) -> AssetPath;
+  static auto join(AssetPath const& path) -> String;
 
   // Get / modify sub-path directly on a joined path string
-  static String setSubPath(String const& joinedPath, String const& subPath);
-  static String removeSubPath(String const& joinedPath);
+  static auto setSubPath(String const& joinedPath, String const& subPath) -> String;
+  static auto removeSubPath(String const& joinedPath) -> String;
 
   // Get / modify directives directly on a joined path string
-  static String getDirectives(String const& joinedPath);
-  static String addDirectives(String const& joinedPath, String const& directives);
-  static String removeDirectives(String const& joinedPath);
+  static auto getDirectives(String const& joinedPath) -> String;
+  static auto addDirectives(String const& joinedPath, String const& directives) -> String;
+  static auto removeDirectives(String const& joinedPath) -> String;
 
   // The base directory name for any given path, including the trailing '/'.
   // Ignores sub-path and directives.
-  static String directory(String const& path);
+  static auto directory(String const& path) -> String;
 
   // The file part of any given path, ignoring sub-path and directives.  Path
   // must be a file not a directory.
-  static String filename(String const& path);
+  static auto filename(String const& path) -> String;
 
   // The file extension of a given file path, ignoring directives and
   // sub-paths.
-  static String extension(String const& path);
+  static auto extension(String const& path) -> String;
 
   // Computes an absolute asset path from a relative path relative to another
   // asset.  The sourcePath must be an absolute path (may point to a directory
@@ -52,7 +52,7 @@ struct AssetPath {
   // is an absolute path, it is returned unchanged.  If it is a relative path,
   // then it is computed as relative to the directory component of the
   // sourcePath.
-  static String relativeTo(String const& sourcePath, String const& givenPath);
+  static auto relativeTo(String const& sourcePath, String const& givenPath) -> String;
 
   AssetPath() = default;
   AssetPath(const char* path);
@@ -63,19 +63,20 @@ struct AssetPath {
   std::optional<String> subPath;
   DirectivesGroup directives;
 
-  bool operator==(AssetPath const& rhs) const;
+  auto operator==(AssetPath const& rhs) const -> bool;
 };
 
-DataStream& operator>>(DataStream& ds, AssetPath& path);
-DataStream& operator<<(DataStream& ds, AssetPath const& path);
+auto operator>>(DataStream& ds, AssetPath& path) -> DataStream&;
+auto operator<<(DataStream& ds, AssetPath const& path) -> DataStream&;
 
-std::ostream& operator<<(std::ostream& os, AssetPath const& rhs);
+auto operator<<(std::ostream& os, AssetPath const& rhs) -> std::ostream&;
 
 template <>
 struct hash<AssetPath> {
-  std::size_t operator()(AssetPath const& s) const;
+  auto operator()(AssetPath const& s) const -> std::size_t;
 };
 
-}
+}// namespace Star
 
-template <> struct std::formatter<Star::AssetPath> : Star::ostream_formatter {};
+template <>
+struct std::formatter<Star::AssetPath> : Star::ostream_formatter {};

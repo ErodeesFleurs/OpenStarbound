@@ -1,12 +1,12 @@
 #pragma once
 
-#include <optional>
-
 #include "StarOrderedMap.hpp"
-#include "StarUuid.hpp"
 #include "StarPlayerFactory.hpp"
 #include "StarThread.hpp"
+#include "StarUuid.hpp"
 #include "StarWorldStorage.hpp"
+
+import std;
 
 namespace Star {
 
@@ -15,23 +15,23 @@ public:
   PlayerStorage(String const& storageDir);
   ~PlayerStorage();
 
-  size_t playerCount() const;
+  auto playerCount() const -> size_t;
   // Returns nothing if index is out of bounds.
-  std::optional<Uuid> playerUuidAt(size_t index);
+  auto playerUuidAt(size_t index) -> std::optional<Uuid>;
   // Returns nothing if name doesn't match a player.
-  std::optional<Uuid> playerUuidByName(String const& name, std::optional<Uuid> except = {});
+  auto playerUuidByName(String const& name, std::optional<Uuid> except = {}) -> std::optional<Uuid>;
   // Returns nothing if name doesn't match a player.
-  List<Uuid> playerUuidListByName(String const& name, std::optional<Uuid> except = {});
+  auto playerUuidListByName(String const& name, std::optional<Uuid> except = {}) -> List<Uuid>;
 
   // Also returns the diskStore Json if needed.
-  Json savePlayer(PlayerPtr const& player);
+  auto savePlayer(Ptr<Player> const& player) -> Json;
 
-  std::optional<Json> maybeGetPlayerData(Uuid const& uuid);
-  Json getPlayerData(Uuid const& uuid);
-  PlayerPtr loadPlayer(Uuid const& uuid);
+  auto maybeGetPlayerData(Uuid const& uuid) -> std::optional<Json>;
+  auto getPlayerData(Uuid const& uuid) -> Json;
+  auto loadPlayer(Uuid const& uuid) -> Ptr<Player>;
   void deletePlayer(Uuid const& uuid);
 
-  WorldChunks loadShipData(Uuid const& uuid);
+  auto loadShipData(Uuid const& uuid) -> WorldChunks;
   void applyShipUpdates(Uuid const& uuid, WorldChunks const& updates);
 
   // Move the given player to the top of the player ordering.
@@ -43,10 +43,10 @@ public:
 
   // Get / Set PlayerStorage global metadata
   void setMetadata(String key, Json value);
-  Json getMetadata(String const& key);
+  auto getMetadata(String const& key) -> Json;
 
 private:
-  String const& uuidFileName(Uuid const& uuid);
+  auto uuidFileName(Uuid const& uuid) -> String const&;
   void writeMetadata();
 
   mutable RecursiveMutex m_mutex;
@@ -57,4 +57,4 @@ private:
   JsonObject m_metadata;
 };
 
-}
+}// namespace Star

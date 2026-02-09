@@ -1,17 +1,16 @@
 #pragma once
 
-#include "StarTtlCache.hpp"
-#include "StarWorldRenderData.hpp"
+#include "StarConfig.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarRenderer.hpp"
-#include "StarWorldCamera.hpp"
 #include "StarTileDrawer.hpp"
+#include "StarTtlCache.hpp"
+#include "StarWorldCamera.hpp"
+#include "StarWorldRenderData.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(Assets);
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(TilePainter);
 
 class TilePainter : public TileDrawer {
 public:
@@ -27,7 +26,7 @@ public:
   static unsigned const RenderChunkSize = 16;
   static unsigned const BorderTileSize = RenderChunkSize + MaterialRenderProfileMaxNeighborDistance - 1;
 
-  TilePainter(RendererPtr renderer);
+  TilePainter(Ptr<Renderer> renderer);
 
   // Adjusts lighting levels for liquids.
   void adjustLighting(WorldRenderData& renderData) const;
@@ -47,61 +46,63 @@ public:
   void cleanup();
 
 private:
-  typedef uint64_t QuadZLevel;
-  typedef uint64_t ChunkHash;
+  using QuadZLevel = std::uint64_t;
+  using ChunkHash = std::uint64_t;
 
-  enum class TerrainLayer { Background, Midground, Foreground };
+  enum class TerrainLayer { Background,
+                            Midground,
+                            Foreground };
 
   struct LiquidInfo {
-    TexturePtr texture;
+    RefPtr<Texture> texture;
     Vec4B color;
     Vec3F bottomLightMix;
     float textureMovementFactor;
   };
 
-  typedef HashMap<TerrainLayer, HashMap<QuadZLevel, RenderBufferPtr>> TerrainChunk;
-  typedef HashMap<LiquidId, RenderBufferPtr> LiquidChunk;
+  using TerrainChunk = HashMap<TerrainLayer, HashMap<QuadZLevel, Ptr<RenderBuffer>>>;
+  using LiquidChunk = HashMap<LiquidId, Ptr<RenderBuffer>>;
 
-  typedef tuple<MaterialId, MaterialRenderPieceIndex, MaterialHue, bool> MaterialPieceTextureKey;
-  typedef String AssetTextureKey;
-  typedef Variant<MaterialPieceTextureKey, AssetTextureKey> TextureKey;
+  using MaterialPieceTextureKey = std::tuple<MaterialId, MaterialRenderPieceIndex, MaterialHue, bool>;
+  using AssetTextureKey = String;
+  using TextureKey = Variant<MaterialPieceTextureKey, AssetTextureKey>;
 
   struct TextureKeyHash {
-    size_t operator()(TextureKey const& key) const;
+    auto operator()(TextureKey const& key) const -> size_t;
   };
 
   // chunkIndex here is the index of the render chunk such that chunkIndex *
   // RenderChunkSize results in the coordinate of the lower left most tile in
   // the render chunk.
 
-  static ChunkHash terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
-  static ChunkHash liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex);
+  static auto terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) -> ChunkHash;
+  static auto liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) -> ChunkHash;
 
   void renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer);
 
-  shared_ptr<TerrainChunk const> getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex);
-  shared_ptr<LiquidChunk const> getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex);
+  auto getTerrainChunk(WorldRenderData& renderData, Vec2I chunkIndex) -> std::shared_ptr<TerrainChunk const>;
+  auto getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex) -> std::shared_ptr<LiquidChunk const>;
 
-  bool produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
-      TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData);
+  auto produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
+                                TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData) -> bool;
   void produceLiquidPrimitives(HashMap<LiquidId, List<RenderPrimitive>>& primitives, Vec2I const& pos, WorldRenderData const& renderData);
 
-  float liquidDrawLevel(float liquidLevel) const;
+  [[nodiscard]] auto liquidDrawLevel(float liquidLevel) const -> float;
 
   List<LiquidInfo> m_liquids;
 
-  RendererPtr m_renderer;
-  TextureGroupPtr m_textureGroup;
+  Ptr<Renderer> m_renderer;
+  Ptr<TextureGroup> m_textureGroup;
 
-  HashTtlCache<TextureKey, TexturePtr, TextureKeyHash> m_textureCache;
-  HashTtlCache<pair<Vec2I, ChunkHash>, shared_ptr<TerrainChunk const>> m_terrainChunkCache;
-  HashTtlCache<pair<Vec2I, ChunkHash>, shared_ptr<LiquidChunk const>> m_liquidChunkCache;
+  HashTtlCache<TextureKey, RefPtr<Texture>, TextureKeyHash> m_textureCache;
+  HashTtlCache<std::pair<Vec2I, ChunkHash>, std::shared_ptr<TerrainChunk const>> m_terrainChunkCache;
+  HashTtlCache<std::pair<Vec2I, ChunkHash>, std::shared_ptr<LiquidChunk const>> m_liquidChunkCache;
 
-  List<shared_ptr<TerrainChunk const>> m_pendingTerrainChunks;
-  List<shared_ptr<LiquidChunk const>> m_pendingLiquidChunks;
+  List<std::shared_ptr<TerrainChunk const>> m_pendingTerrainChunks;
+  List<std::shared_ptr<LiquidChunk const>> m_pendingLiquidChunks;
 
-  Maybe<Vec2F> m_lastCameraCenter;
+  std::optional<Vec2F> m_lastCameraCenter;
   Vec2F m_cameraPan;
 };
 
-}
+}// namespace Star

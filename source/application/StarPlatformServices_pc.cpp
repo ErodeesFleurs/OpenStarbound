@@ -1,12 +1,17 @@
-#include "StarLogging.hpp"
 #include "StarPlatformServices_pc.hpp"
+
+#include "StarApplication.hpp"
+#include "StarConfig.hpp"
+#include "StarLogging.hpp"
 #include "StarP2PNetworkingService_pc.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "StarDesktopService_pc_steam.hpp"
 #include "StarStatisticsService_pc_steam.hpp"
 #include "StarUserGeneratedContentService_pc_steam.hpp"
-#include "StarDesktopService_pc_steam.hpp"
 #endif
+
+import std;
 
 namespace Star {
 
@@ -16,15 +21,15 @@ uint64_t const DiscordClientId = 467102538278109224;
 
 PcPlatformServicesState::PcPlatformServicesState()
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  : callbackGameOverlayActivated(this, &PcPlatformServicesState::onGameOverlayActivated) {
+    : callbackGameOverlayActivated(this, &PcPlatformServicesState::onGameOverlayActivated) {
 #else
-  {
+{
 #endif
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   bool shouldLoadSteam = true;
 
-  #ifdef STAR_SYSTEM_LINUX
+#ifdef STAR_SYSTEM_LINUX
   // Flatpak doesn't create ~/.steam by default, which prevents
   // SteamAPI from initializing...
   //
@@ -65,7 +70,7 @@ PcPlatformServicesState::PcPlatformServicesState()
       }
     }
   }
-  #endif
+#endif
 
   if (shouldLoadSteam) {
     SteamErrMsg errMsg;
@@ -89,14 +94,14 @@ PcPlatformServicesState::PcPlatformServicesState()
     discordCore.reset(discordCorePtr);
     discordAvailable = true;
 
-    discordCore->UserManager().OnCurrentUserUpdate.Connect([this](){
-        discord::User user;
-        auto res = discordCore->UserManager().GetCurrentUser(&user);
-        if (res != discord::Result::Ok)
-          Logger::error("Could not get current Discord user. (err {})", (int)res);
-        else
-          discordCurrentUser = user;
-      });
+    discordCore->UserManager().OnCurrentUserUpdate.Connect([this]() {
+      discord::User user;
+      auto res = discordCore->UserManager().GetCurrentUser(&user);
+      if (res != discord::Result::Ok)
+        Logger::error("Could not get current Discord user. (err {})", (int)res);
+      else
+        discordCurrentUser = user;
+    });
 
   } else {
     Logger::error("Failed to instantiate Discord core (err {})", (int)res);
@@ -116,15 +121,15 @@ PcPlatformServicesState::PcPlatformServicesState()
     });
     discordEventShutdown = false;
     discordEventThread = Thread::invoke("PcPlatformServices::discordEventThread", [this]() {
-        while (!discordEventShutdown) {
-          {
-            MutexLocker locker(discordMutex);
-            discordCore->RunCallbacks();
-            discordCore->LobbyManager().FlushNetwork();
-          }
-          Thread::sleep(DiscordEventSleep);
+      while (!discordEventShutdown) {
+        {
+          MutexLocker locker(discordMutex);
+          discordCore->RunCallbacks();
+          discordCore->LobbyManager().FlushNetwork();
         }
-      });
+        Thread::sleep(DiscordEventSleep);
+      }
+    });
 
     Logger::info("Initialized Discord platform services");
   } else {
@@ -148,10 +153,10 @@ void PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* cal
 }
 #endif
 
-PcPlatformServicesUPtr PcPlatformServices::create([[maybe_unused]] String const& path, StringList platformArguments) {
-  auto services = unique_ptr<PcPlatformServices>(new PcPlatformServices);
+auto PcPlatformServices::create([[maybe_unused]] String const& path, StringList platformArguments) -> UPtr<PcPlatformServices> {
+  auto services = std::unique_ptr<PcPlatformServices>(new PcPlatformServices);
 
-  services->m_state = make_shared<PcPlatformServicesState>();
+  services->m_state = std::make_shared<PcPlatformServicesState>();
 
   bool provideP2PNetworking = false;
 
@@ -196,23 +201,23 @@ PcPlatformServicesUPtr PcPlatformServices::create([[maybe_unused]] String const&
   return services;
 }
 
-StatisticsServicePtr PcPlatformServices::statisticsService() const {
+auto PcPlatformServices::statisticsService() const -> Ptr<StatisticsService> {
   return m_statisticsService;
 }
 
-P2PNetworkingServicePtr PcPlatformServices::p2pNetworkingService() const {
+auto PcPlatformServices::p2pNetworkingService() const -> Ptr<P2PNetworkingService> {
   return m_p2pNetworkingService;
 }
 
-UserGeneratedContentServicePtr PcPlatformServices::userGeneratedContentService() const {
+auto PcPlatformServices::userGeneratedContentService() const -> Ptr<UserGeneratedContentService> {
   return m_userGeneratedContentService;
 }
 
-DesktopServicePtr PcPlatformServices::desktopService() const {
+auto PcPlatformServices::desktopService() const -> Ptr<DesktopService> {
   return m_desktopService;
 }
 
-bool PcPlatformServices::overlayActive() const {
+auto PcPlatformServices::overlayActive() const -> bool {
   return m_state->overlayActive;
 }
 
@@ -222,4 +227,4 @@ void PcPlatformServices::update() {
 #endif
 }
 
-}
+}// namespace Star

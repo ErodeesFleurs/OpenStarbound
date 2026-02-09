@@ -1,159 +1,160 @@
 #include "StarStatusControllerLuaBindings.hpp"
+
 #include "StarStatusController.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarLuaGameConverters.hpp"
+
+import std;
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeStatusControllerCallbacks(StatusController* statController) {
+auto LuaBindings::makeStatusControllerCallbacks(StatusController* statController) -> LuaCallbacks {
   LuaCallbacks callbacks;
 
   callbacks.registerCallbackWithSignature<Json, String, Json>(
-      "statusProperty", bind(StatusControllerCallbacks::statusProperty, statController, _1, _2));
+    "statusProperty", [statController](auto&& PH1, auto&& PH2) -> auto { return StatusControllerCallbacks::statusProperty(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<void, String, Json>(
-      "setStatusProperty", bind(StatusControllerCallbacks::setStatusProperty, statController, _1, _2));
+    "setStatusProperty", [statController](auto&& PH1, auto&& PH2) -> auto { StatusControllerCallbacks::setStatusProperty(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<float, String>(
-      "stat", bind(StatusControllerCallbacks::stat, statController, _1));
+    "stat", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::stat(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<bool, String>(
-      "statPositive", bind(StatusControllerCallbacks::statPositive, statController, _1));
+    "statPositive", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::statPositive(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<StringList>(
-      "resourceNames", bind(StatusControllerCallbacks::resourceNames, statController));
+    "resourceNames", [statController] -> StringList { return StatusControllerCallbacks::resourceNames(statController); });
   callbacks.registerCallbackWithSignature<bool, String>(
-      "isResource", bind(StatusControllerCallbacks::isResource, statController, _1));
+    "isResource", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::isResource(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<float, String>(
-      "resource", bind(StatusControllerCallbacks::resource, statController, _1));
+    "resource", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::resource(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<bool, String>(
-      "resourcePositive", bind(StatusControllerCallbacks::resourcePositive, statController, _1));
+    "resourcePositive", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::resourcePositive(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<void, String, float>(
-      "setResource", bind(StatusControllerCallbacks::setResource, statController, _1, _2));
+    "setResource", [statController](auto&& PH1, auto&& PH2) -> auto { StatusControllerCallbacks::setResource(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<void, String, float>(
-      "modifyResource", bind(StatusControllerCallbacks::modifyResource, statController, _1, _2));
+    "modifyResource", [statController](auto&& PH1, auto&& PH2) -> auto { StatusControllerCallbacks::modifyResource(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<float, String, float>(
-      "giveResource", bind(StatusControllerCallbacks::giveResource, statController, _1, _2));
+    "giveResource", [statController](auto&& PH1, auto&& PH2) -> auto { return StatusControllerCallbacks::giveResource(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<bool, String, float>(
-      "consumeResource", bind(StatusControllerCallbacks::consumeResource, statController, _1, _2));
+    "consumeResource", [statController](auto&& PH1, auto&& PH2) -> auto { return StatusControllerCallbacks::consumeResource(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<bool, String, float>(
-      "overConsumeResource", bind(StatusControllerCallbacks::overConsumeResource, statController, _1, _2));
+    "overConsumeResource", [statController](auto&& PH1, auto&& PH2) -> auto { return StatusControllerCallbacks::overConsumeResource(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<bool, String>(
-      "resourceLocked", bind(StatusControllerCallbacks::resourceLocked, statController, _1));
+    "resourceLocked", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::resourceLocked(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<void, String, bool>(
-      "setResourceLocked", bind(StatusControllerCallbacks::setResourceLocked, statController, _1, _2));
+    "setResourceLocked", [statController](auto&& PH1, auto&& PH2) -> auto { StatusControllerCallbacks::setResourceLocked(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<void, String>(
-      "resetResource", bind(StatusControllerCallbacks::resetResource, statController, _1));
+    "resetResource", [statController](auto&& PH1) -> auto { StatusControllerCallbacks::resetResource(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<void>(
-      "resetAllResources", bind(StatusControllerCallbacks::resetAllResources, statController));
-  callbacks.registerCallbackWithSignature<Maybe<float>, String>(
-      "resourceMax", bind(StatusControllerCallbacks::resourceMax, statController, _1));
-  callbacks.registerCallbackWithSignature<Maybe<float>, String>(
-      "resourcePercentage", bind(StatusControllerCallbacks::resourcePercentage, statController, _1));
+    "resetAllResources", [statController] -> void { StatusControllerCallbacks::resetAllResources(statController); });
+  callbacks.registerCallbackWithSignature<std::optional<float>, String>(
+    "resourceMax", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::resourceMax(statController, std::forward<decltype(PH1)>(PH1)); });
+  callbacks.registerCallbackWithSignature<std::optional<float>, String>(
+    "resourcePercentage", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::resourcePercentage(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<float, String, float>(
-      "setResourcePercentage", bind(StatusControllerCallbacks::setResourcePercentage, statController, _1, _2));
+    "setResourcePercentage", [statController](auto&& PH1, auto&& PH2) -> auto { return StatusControllerCallbacks::setResourcePercentage(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<float, String, float>(
-      "modifyResourcePercentage", bind(StatusControllerCallbacks::modifyResourcePercentage, statController, _1, _2));
+    "modifyResourcePercentage", [statController](auto&& PH1, auto&& PH2) -> auto { return StatusControllerCallbacks::modifyResourcePercentage(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<JsonArray, String>(
-      "getPersistentEffects", bind(StatusControllerCallbacks::getPersistentEffects, statController, _1));
+    "getPersistentEffects", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::getPersistentEffects(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<void, String, Json>(
-      "addPersistentEffect", bind(StatusControllerCallbacks::addPersistentEffect, statController, _1, _2));
+    "addPersistentEffect", [statController](auto&& PH1, auto&& PH2) -> auto { StatusControllerCallbacks::addPersistentEffect(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<void, String, JsonArray>(
-      "addPersistentEffects", bind(StatusControllerCallbacks::addPersistentEffects, statController, _1, _2));
+    "addPersistentEffects", [statController](auto&& PH1, auto&& PH2) -> auto { StatusControllerCallbacks::addPersistentEffects(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<void, String, JsonArray>(
-      "setPersistentEffects", bind(StatusControllerCallbacks::setPersistentEffects, statController, _1, _2));
+    "setPersistentEffects", [statController](auto&& PH1, auto&& PH2) -> auto { StatusControllerCallbacks::setPersistentEffects(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<void, String>(
-      "clearPersistentEffects", bind(StatusControllerCallbacks::clearPersistentEffects, statController, _1));
+    "clearPersistentEffects", [statController](auto&& PH1) -> auto { StatusControllerCallbacks::clearPersistentEffects(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<void>(
-      "clearAllPersistentEffects", bind(StatusControllerCallbacks::clearAllPersistentEffects, statController));
-  callbacks.registerCallbackWithSignature<void, String, Maybe<float>, Maybe<EntityId>>(
-      "addEphemeralEffect", bind(StatusControllerCallbacks::addEphemeralEffect, statController, _1, _2, _3));
-  callbacks.registerCallbackWithSignature<void, JsonArray, Maybe<EntityId>>(
-      "addEphemeralEffects", bind(StatusControllerCallbacks::addEphemeralEffects, statController, _1, _2));
+    "clearAllPersistentEffects", [statController] -> void { StatusControllerCallbacks::clearAllPersistentEffects(statController); });
+  callbacks.registerCallbackWithSignature<void, String, std::optional<float>, std::optional<EntityId>>(
+    "addEphemeralEffect", [statController](auto&& PH1, auto&& PH2, auto&& PH3) -> auto { StatusControllerCallbacks::addEphemeralEffect(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2), std::forward<decltype(PH3)>(PH3)); });
+  callbacks.registerCallbackWithSignature<void, JsonArray, std::optional<EntityId>>(
+    "addEphemeralEffects", [statController](auto&& PH1, auto&& PH2) -> auto { StatusControllerCallbacks::addEphemeralEffects(statController, std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); });
   callbacks.registerCallbackWithSignature<void, String>(
-      "removeEphemeralEffect", bind(StatusControllerCallbacks::removeEphemeralEffect, statController, _1));
+    "removeEphemeralEffect", [statController](auto&& PH1) -> auto { StatusControllerCallbacks::removeEphemeralEffect(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<void>(
-      "clearEphemeralEffects", bind(StatusControllerCallbacks::clearEphemeralEffects, statController));
-  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, uint64_t>, Maybe<uint64_t>>(
-      "damageTakenSince", bind(StatusControllerCallbacks::damageTakenSince, statController, _1));
-  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, uint64_t>, Maybe<uint64_t>>(
-      "inflictedHitsSince", bind(StatusControllerCallbacks::inflictedHitsSince, statController, _1));
-  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, uint64_t>, Maybe<uint64_t>>(
-      "inflictedDamageSince", bind(StatusControllerCallbacks::inflictedDamageSince, statController, _1));
+    "clearEphemeralEffects", [statController] -> void { StatusControllerCallbacks::clearEphemeralEffects(statController); });
+  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, std::uint64_t>, std::optional<std::uint64_t>>(
+    "damageTakenSince", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::damageTakenSince(statController, std::forward<decltype(PH1)>(PH1)); });
+  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, std::uint64_t>, std::optional<std::uint64_t>>(
+    "inflictedHitsSince", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::inflictedHitsSince(statController, std::forward<decltype(PH1)>(PH1)); });
+  callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, std::uint64_t>, std::optional<std::uint64_t>>(
+    "inflictedDamageSince", [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::inflictedDamageSince(statController, std::forward<decltype(PH1)>(PH1)); });
   callbacks.registerCallbackWithSignature<List<JsonArray>>("activeUniqueStatusEffectSummary",
-      bind(&StatusControllerCallbacks::activeUniqueStatusEffectSummary, statController));
+                                                           [statController] -> List<JsonArray> { return StatusControllerCallbacks::activeUniqueStatusEffectSummary(statController); });
   callbacks.registerCallbackWithSignature<bool, String>("uniqueStatusEffectActive",
-      bind(&StatusControllerCallbacks::uniqueStatusEffectActive, statController, _1));
+                                                        [statController](auto&& PH1) -> auto { return StatusControllerCallbacks::uniqueStatusEffectActive(statController, std::forward<decltype(PH1)>(PH1)); });
 
-  callbacks.registerCallbackWithSignature<Directives>("primaryDirectives", bind(&StatusController::primaryDirectives, statController));
-  callbacks.registerCallback("setPrimaryDirectives", [statController](Maybe<String> const& directives) { statController->setPrimaryDirectives(directives.value()); });
+  callbacks.registerCallbackWithSignature<Directives>("primaryDirectives", [statController] -> Directives { return statController->primaryDirectives(); });
+  callbacks.registerCallback("setPrimaryDirectives", [statController](std::optional<String> const& directives) -> void { statController->setPrimaryDirectives(directives.value()); });
 
-  callbacks.registerCallbackWithSignature<void, DamageRequest>("applySelfDamageRequest", bind(&StatusController::applySelfDamageRequest, statController, _1));
+  callbacks.registerCallbackWithSignature<void, DamageRequest>("applySelfDamageRequest", [statController](auto&& PH1) -> auto { statController->applySelfDamageRequest(std::forward<decltype(PH1)>(PH1)); });
 
   return callbacks;
 }
 
-Json LuaBindings::StatusControllerCallbacks::statusProperty(
-    StatusController* statController, String const& arg1, Json const& arg2) {
+auto LuaBindings::StatusControllerCallbacks::statusProperty(
+  StatusController* statController, String const& arg1, Json const& arg2) -> Json {
   return statController->statusProperty(arg1, arg2);
 }
 
 void LuaBindings::StatusControllerCallbacks::setStatusProperty(
-    StatusController* statController, String const& arg1, Json const& arg2) {
+  StatusController* statController, String const& arg1, Json const& arg2) {
   statController->setStatusProperty(arg1, arg2);
 }
 
-float LuaBindings::StatusControllerCallbacks::stat(StatusController* statController, String const& arg1) {
+auto LuaBindings::StatusControllerCallbacks::stat(StatusController* statController, String const& arg1) -> float {
   return statController->stat(arg1);
 }
 
-bool LuaBindings::StatusControllerCallbacks::statPositive(StatusController* statController, String const& arg1) {
+auto LuaBindings::StatusControllerCallbacks::statPositive(StatusController* statController, String const& arg1) -> bool {
   return statController->statPositive(arg1);
 }
 
-StringList LuaBindings::StatusControllerCallbacks::resourceNames(StatusController* statController) {
+auto LuaBindings::StatusControllerCallbacks::resourceNames(StatusController* statController) -> StringList {
   return statController->resourceNames();
 }
 
-bool LuaBindings::StatusControllerCallbacks::isResource(StatusController* statController, String const& arg1) {
+auto LuaBindings::StatusControllerCallbacks::isResource(StatusController* statController, String const& arg1) -> bool {
   return statController->isResource(arg1);
 }
 
-float LuaBindings::StatusControllerCallbacks::resource(StatusController* statController, String const& arg1) {
+auto LuaBindings::StatusControllerCallbacks::resource(StatusController* statController, String const& arg1) -> float {
   return statController->resource(arg1);
 }
 
-bool LuaBindings::StatusControllerCallbacks::resourcePositive(StatusController* statController, String const& arg1) {
+auto LuaBindings::StatusControllerCallbacks::resourcePositive(StatusController* statController, String const& arg1) -> bool {
   return statController->resourcePositive(arg1);
 }
 
 void LuaBindings::StatusControllerCallbacks::setResource(
-    StatusController* statController, String const& arg1, float arg2) {
+  StatusController* statController, String const& arg1, float arg2) {
   statController->setResource(arg1, arg2);
 }
 
 void LuaBindings::StatusControllerCallbacks::modifyResource(
-    StatusController* statController, String const& arg1, float arg2) {
+  StatusController* statController, String const& arg1, float arg2) {
   statController->modifyResource(arg1, arg2);
 }
 
-float LuaBindings::StatusControllerCallbacks::giveResource(
-    StatusController* statController, String const& resourceName, float amount) {
+auto LuaBindings::StatusControllerCallbacks::giveResource(
+  StatusController* statController, String const& resourceName, float amount) -> float {
   return statController->giveResource(resourceName, amount);
 }
 
-bool LuaBindings::StatusControllerCallbacks::consumeResource(
-    StatusController* statController, String const& arg1, float arg2) {
+auto LuaBindings::StatusControllerCallbacks::consumeResource(
+  StatusController* statController, String const& arg1, float arg2) -> bool {
   return statController->consumeResource(arg1, arg2);
 }
 
-bool LuaBindings::StatusControllerCallbacks::overConsumeResource(
-    StatusController* statController, String const& arg1, float arg2) {
+auto LuaBindings::StatusControllerCallbacks::overConsumeResource(
+  StatusController* statController, String const& arg1, float arg2) -> bool {
   return statController->overConsumeResource(arg1, arg2);
 }
 
-bool LuaBindings::StatusControllerCallbacks::resourceLocked(StatusController* statController, String const& arg1) {
+auto LuaBindings::StatusControllerCallbacks::resourceLocked(StatusController* statController, String const& arg1) -> bool {
   return statController->resourceLocked(arg1);
 }
 
 void LuaBindings::StatusControllerCallbacks::setResourceLocked(
-    StatusController* statController, String const& arg1, bool arg2) {
+  StatusController* statController, String const& arg1, bool arg2) {
   statController->setResourceLocked(arg1, arg2);
 }
 
@@ -165,47 +166,47 @@ void LuaBindings::StatusControllerCallbacks::resetAllResources(StatusController*
   statController->resetAllResources();
 }
 
-Maybe<float> LuaBindings::StatusControllerCallbacks::resourceMax(StatusController* statController, String const& arg1) {
+auto LuaBindings::StatusControllerCallbacks::resourceMax(StatusController* statController, String const& arg1) -> std::optional<float> {
   return statController->resourceMax(arg1);
 }
 
-Maybe<float> LuaBindings::StatusControllerCallbacks::resourcePercentage(
-    StatusController* statController, String const& arg1) {
+auto LuaBindings::StatusControllerCallbacks::resourcePercentage(
+  StatusController* statController, String const& arg1) -> std::optional<float> {
   return statController->resourcePercentage(arg1);
 }
 
-float LuaBindings::StatusControllerCallbacks::setResourcePercentage(
-    StatusController* statController, String const& arg1, float arg2) {
+auto LuaBindings::StatusControllerCallbacks::setResourcePercentage(
+  StatusController* statController, String const& arg1, float arg2) -> float {
   return statController->setResourcePercentage(arg1, arg2);
 }
 
-float LuaBindings::StatusControllerCallbacks::modifyResourcePercentage(
-    StatusController* statController, String const& arg1, float arg2) {
+auto LuaBindings::StatusControllerCallbacks::modifyResourcePercentage(
+  StatusController* statController, String const& arg1, float arg2) -> float {
   return statController->modifyResourcePercentage(arg1, arg2);
 }
 
-JsonArray LuaBindings::StatusControllerCallbacks::getPersistentEffects(
-    StatusController* statController, String const& arg1) {
+auto LuaBindings::StatusControllerCallbacks::getPersistentEffects(
+  StatusController* statController, String const& arg1) -> JsonArray {
   return statController->getPersistentEffects(arg1).transformed(jsonFromPersistentStatusEffect);
 }
 
 void LuaBindings::StatusControllerCallbacks::addPersistentEffect(
-    StatusController* statController, String const& arg1, Json const& arg2) {
+  StatusController* statController, String const& arg1, Json const& arg2) {
   addPersistentEffects(statController, arg1, JsonArray{arg2});
 }
 
 void LuaBindings::StatusControllerCallbacks::addPersistentEffects(
-    StatusController* statController, String const& arg1, JsonArray const& arg2) {
+  StatusController* statController, String const& arg1, JsonArray const& arg2) {
   statController->addPersistentEffects(arg1, arg2.transformed(jsonToPersistentStatusEffect));
 }
 
 void LuaBindings::StatusControllerCallbacks::setPersistentEffects(
-    StatusController* statController, String const& arg1, JsonArray const& arg2) {
+  StatusController* statController, String const& arg1, JsonArray const& arg2) {
   statController->setPersistentEffects(arg1, arg2.transformed(jsonToPersistentStatusEffect));
 }
 
 void LuaBindings::StatusControllerCallbacks::clearPersistentEffects(
-    StatusController* statController, String const& arg1) {
+  StatusController* statController, String const& arg1) {
   statController->clearPersistentEffects(arg1);
 }
 
@@ -214,17 +215,17 @@ void LuaBindings::StatusControllerCallbacks::clearAllPersistentEffects(StatusCon
 }
 
 void LuaBindings::StatusControllerCallbacks::addEphemeralEffect(
-    StatusController* statController, String const& arg1, Maybe<float> arg2, Maybe<EntityId> sourceEntityId) {
-  statController->addEphemeralEffect(EphemeralStatusEffect{UniqueStatusEffect{arg1}, arg2}, sourceEntityId);
+  StatusController* statController, String const& arg1, std::optional<float> arg2, std::optional<EntityId> sourceEntityId) {
+  statController->addEphemeralEffect(EphemeralStatusEffect{.uniqueEffect = UniqueStatusEffect{arg1}, .duration = arg2}, sourceEntityId);
 }
 
 void LuaBindings::StatusControllerCallbacks::addEphemeralEffects(
-    StatusController* statController, JsonArray const& arg1, Maybe<EntityId> sourceEntityId) {
+  StatusController* statController, JsonArray const& arg1, std::optional<EntityId> sourceEntityId) {
   statController->addEphemeralEffects(arg1.transformed(jsonToEphemeralStatusEffect), sourceEntityId);
 }
 
 void LuaBindings::StatusControllerCallbacks::removeEphemeralEffect(
-    StatusController* statController, String const& arg1) {
+  StatusController* statController, String const& arg1) {
   statController->removeEphemeralEffect(UniqueStatusEffect{arg1});
 }
 
@@ -232,30 +233,30 @@ void LuaBindings::StatusControllerCallbacks::clearEphemeralEffects(StatusControl
   statController->clearEphemeralEffects();
 }
 
-LuaTupleReturn<List<Json>, uint64_t> LuaBindings::StatusControllerCallbacks::damageTakenSince(
-    StatusController* statController, Maybe<uint64_t> timestep) {
+auto LuaBindings::StatusControllerCallbacks::damageTakenSince(
+  StatusController* statController, std::optional<std::uint64_t> timestep) -> LuaTupleReturn<List<Json>, std::uint64_t> {
   auto pair = statController->damageTakenSince(timestep.value());
-  return luaTupleReturn(pair.first.transformed(mem_fn(&DamageNotification::toJson)), pair.second);
+  return luaTupleReturn(pair.first.transformed(std::mem_fn(&DamageNotification::toJson)), pair.second);
 }
 
-LuaTupleReturn<List<Json>, uint64_t> LuaBindings::StatusControllerCallbacks::inflictedHitsSince(
-    StatusController* statController, Maybe<uint64_t> timestep) {
+auto LuaBindings::StatusControllerCallbacks::inflictedHitsSince(
+  StatusController* statController, std::optional<std::uint64_t> timestep) -> LuaTupleReturn<List<Json>, std::uint64_t> {
   auto pair = statController->inflictedHitsSince(timestep.value());
   return luaTupleReturn(
-      pair.first.transformed([](auto const& p) { return p.second.toJson().set("targetEntityId", p.first); }),
-      pair.second);
+    pair.first.transformed([](auto const& p) -> auto { return p.second.toJson().set("targetEntityId", p.first); }),
+    pair.second);
 }
 
-LuaTupleReturn<List<Json>, uint64_t> LuaBindings::StatusControllerCallbacks::inflictedDamageSince(
-    StatusController* statController, Maybe<uint64_t> timestep) {
+auto LuaBindings::StatusControllerCallbacks::inflictedDamageSince(
+  StatusController* statController, std::optional<std::uint64_t> timestep) -> LuaTupleReturn<List<Json>, std::uint64_t> {
   auto pair = statController->inflictedDamageSince(timestep.value());
-  return luaTupleReturn(pair.first.transformed(mem_fn(&DamageNotification::toJson)), pair.second);
+  return luaTupleReturn(pair.first.transformed(std::mem_fn(&DamageNotification::toJson)), pair.second);
 }
 
-List<JsonArray> LuaBindings::StatusControllerCallbacks::activeUniqueStatusEffectSummary(
-    StatusController* statController) {
+auto LuaBindings::StatusControllerCallbacks::activeUniqueStatusEffectSummary(
+  StatusController* statController) -> List<JsonArray> {
   auto summary = statController->activeUniqueStatusEffectSummary();
-  return summary.transformed([](pair<UniqueStatusEffect, Maybe<float>> effect) {
+  return summary.transformed([](std::pair<UniqueStatusEffect, std::optional<float>> effect) -> JsonArray {
     JsonArray effectJson = {effect.first};
     if (effect.second)
       effectJson.append(*effect.second);
@@ -263,9 +264,9 @@ List<JsonArray> LuaBindings::StatusControllerCallbacks::activeUniqueStatusEffect
   });
 }
 
-bool LuaBindings::StatusControllerCallbacks::uniqueStatusEffectActive(
-    StatusController* statController, String const& effectName) {
+auto LuaBindings::StatusControllerCallbacks::uniqueStatusEffectActive(
+  StatusController* statController, String const& effectName) -> bool {
   return statController->uniqueStatusEffectActive(effectName);
 }
 
-}
+}// namespace Star

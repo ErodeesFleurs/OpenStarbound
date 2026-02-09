@@ -1,20 +1,21 @@
 #pragma once
 
-#include "StarParallax.hpp"
-#include "StarWorldRenderData.hpp"
 #include "StarAssetTextureGroup.hpp"
-#include "StarRenderer.hpp"
-#include "StarWorldCamera.hpp"
+#include "StarConfig.hpp"
+#include "StarParallax.hpp"
 #include "StarPerlin.hpp"
 #include "StarRandomPoint.hpp"
+#include "StarRenderer.hpp"
+#include "StarSkyRenderData.hpp"
+#include "StarWorldCamera.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(EnvironmentPainter);
-
 class EnvironmentPainter {
 public:
-  EnvironmentPainter(RendererPtr renderer);
+  EnvironmentPainter(Ptr<Renderer> renderer);
 
   void update(float dt);
 
@@ -27,7 +28,7 @@ public:
 
   void renderParallaxLayers(Vec2F parallaxWorldPosition, WorldCamera const& camera, ParallaxLayers const& layers, SkyRenderData const& sky);
 
-  void cleanup(int64_t textureTimeout);
+  void cleanup(std::int64_t textureTimeout);
 
 private:
   static float const SunriseTime;
@@ -49,29 +50,29 @@ private:
 
   void drawRays(float pixelRatio, SkyRenderData const& sky, Vec2F start, float length, double time, float alpha);
   void drawRay(float pixelRatio,
-      SkyRenderData const& sky,
-      Vec2F start,
-      float width,
-      float length,
-      float angle,
-      double time,
-      Vec3B color,
-      float alpha);
+               SkyRenderData const& sky,
+               Vec2F start,
+               float width,
+               float length,
+               float angle,
+               double time,
+               Vec3B color,
+               float alpha);
   void drawOrbiter(float pixelRatio, Vec2F const& screenSize, SkyRenderData const& sky, SkyOrbiter const& orbiter);
 
-  uint64_t starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const;
+  [[nodiscard]] auto starsHash(SkyRenderData const& sky, Vec2F const& viewSize) const -> std::uint64_t;
   void setupStars(SkyRenderData const& sky);
 
-  RendererPtr m_renderer;
-  AssetTextureGroupPtr m_textureGroup;
+  Ptr<Renderer> m_renderer;
+  Ptr<AssetTextureGroup> m_textureGroup;
 
   double m_timer;
   PerlinF m_rayPerlin;
 
-  uint64_t m_starsHash{};
-  List<TexturePtr> m_starTextures;
-  shared_ptr<Random2dPointGenerator<pair<size_t, float>>> m_starGenerator;
-  List<shared_ptr<Random2dPointGenerator<pair<String, float>, double>>> m_debrisGenerators;
+  std::uint64_t m_starsHash{};
+  List<RefPtr<Texture>> m_starTextures;
+  std::shared_ptr<Random2dPointGenerator<std::pair<std::size_t, float>>> m_starGenerator;
+  List<std::shared_ptr<Random2dPointGenerator<std::pair<String, float>, double>>> m_debrisGenerators;
 };
 
-}
+}// namespace Star

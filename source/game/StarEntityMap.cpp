@@ -1,22 +1,27 @@
 #include "StarEntityMap.hpp"
-#include "StarTileEntity.hpp"
+
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
 #include "StarInteractiveEntity.hpp"
-#include "StarProjectile.hpp"
+#include "StarLogging.hpp"
+#include "StarTileEntity.hpp"
+
+import std;
 
 namespace Star {
 
-float const EntityMapSpatialHashSectorSize = 16.0f;
-int const EntityMap::MaximumEntityBoundBox = 10000;
+constexpr std::float_t EntityMapSpatialHashSectorSize = 16.0f;
+constexpr std::int32_t EntityMap::MaximumEntityBoundBox = 10000;
 
 EntityMap::EntityMap(Vec2U const& worldSize, EntityId beginIdSpace, EntityId endIdSpace)
-  : m_geometry(worldSize),
-    m_spatialMap(EntityMapSpatialHashSectorSize),
-    m_nextId(beginIdSpace),
-    m_beginIdSpace(beginIdSpace),
-    m_endIdSpace(endIdSpace) {}
+    : m_geometry(worldSize),
+      m_spatialMap(EntityMapSpatialHashSectorSize),
+      m_nextId(beginIdSpace),
+      m_beginIdSpace(beginIdSpace),
+      m_endIdSpace(endIdSpace) {}
 
-EntityId EntityMap::reserveEntityId() {
-  if (m_spatialMap.size() >= (size_t)(m_endIdSpace - m_beginIdSpace))
+auto EntityMap::reserveEntityId() -> EntityId {
+  if (m_spatialMap.size() >= (std::size_t)(m_endIdSpace - m_beginIdSpace))
     throw EntityMapException("No more entity id space in EntityMap::reserveEntityId");
 
   EntityId id = m_nextId;
@@ -27,8 +32,8 @@ EntityId EntityMap::reserveEntityId() {
   return id;
 }
 
-std::optional<EntityId> EntityMap::maybeReserveEntityId(EntityId entityId) {
-  if (m_spatialMap.size() >= (size_t)(m_endIdSpace - m_beginIdSpace))
+auto EntityMap::maybeReserveEntityId(EntityId entityId) -> std::optional<EntityId> {
+  if (m_spatialMap.size() >= (std::size_t)(m_endIdSpace - m_beginIdSpace))
     throw EntityMapException("No more entity id space in EntityMap::reserveEntityId");
 
   if (entityId == NullEntityId || m_spatialMap.contains(entityId))
@@ -37,7 +42,7 @@ std::optional<EntityId> EntityMap::maybeReserveEntityId(EntityId entityId) {
     return entityId;
 }
 
-EntityId EntityMap::reserveEntityId(EntityId entityId) {
+auto EntityMap::reserveEntityId(EntityId entityId) -> EntityId {
   if (entityId == NullEntityId)
     return reserveEntityId();
   if (auto reserved = maybeReserveEntityId(entityId))
@@ -47,8 +52,7 @@ EntityId EntityMap::reserveEntityId(EntityId entityId) {
   return reserveEntityId();
 }
 
-
-void EntityMap::addEntity(EntityPtr entity) {
+void EntityMap::addEntity(Ptr<Entity> entity) {
   auto position = entity->position();
   auto boundBox = entity->metaBoundBox();
   auto entityId = entity->entityId();
@@ -59,7 +63,7 @@ void EntityMap::addEntity(EntityPtr entity) {
 
   if (boundBox.isNegative() || boundBox.width() > MaximumEntityBoundBox || boundBox.height() > MaximumEntityBoundBox) {
     throw EntityMapException::format("Entity id: {} type: {} bound box is negative or beyond the maximum entity bound box size in EntityMap::addEntity",
-        entity->entityId(), (int)entity->entityType());
+                                     entity->entityId(), (int)entity->entityType());
   }
 
   if (entityId == NullEntityId)
@@ -73,7 +77,7 @@ void EntityMap::addEntity(EntityPtr entity) {
     m_uniqueMap.add(*uniqueId, entityId);
 }
 
-EntityPtr EntityMap::removeEntity(EntityId entityId) {
+auto EntityMap::removeEntity(EntityId entityId) -> Ptr<Entity> {
   if (auto entity = m_spatialMap.remove(entityId)) {
     m_uniqueMap.removeRight(entityId);
     return std::move(*entity);
@@ -81,16 +85,16 @@ EntityPtr EntityMap::removeEntity(EntityId entityId) {
   return {};
 }
 
-size_t EntityMap::size() const {
+auto EntityMap::size() const -> std::size_t {
   return m_spatialMap.size();
 }
 
-List<EntityId> EntityMap::entityIds() const {
+auto EntityMap::entityIds() const -> List<EntityId> {
   return m_spatialMap.keys();
 }
 
-void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(EntityPtr const&, EntityPtr const&)> sortOrder) {
-  auto updateEntityInfo = [&](SpatialMap::Entry const& entry) {
+void EntityMap::updateAllEntities(EntityCallback const& callback, std::function<bool(Ptr<Entity> const&, Ptr<Entity> const&)> sortOrder) {
+  auto updateEntityInfo = [&](SpatialMap::Entry const& entry) -> void {
     auto const& entity = entry.value;
 
     auto position = entity->position();
@@ -98,7 +102,7 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(
 
     if (boundBox.isNegative() || boundBox.width() > MaximumEntityBoundBox || boundBox.height() > MaximumEntityBoundBox) {
       throw EntityMapException::format("Entity id: {} type: {} bound box is negative or beyond the maximum entity bound box size in EntityMap::addEntity",
-          entity->entityId(), (int)entity->entityType());
+                                       entity->entityId(), (int)entity->entityType());
     }
 
     auto entityId = entity->entityId();
@@ -130,9 +134,9 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(
     m_entrySortBuffer.append(&entry.second);
 
   if (sortOrder) {
-    m_entrySortBuffer.sort([&sortOrder](auto a, auto b) {
-        return sortOrder(a->value, b->value);
-      });
+    m_entrySortBuffer.sort([&sortOrder](auto a, auto b) -> auto {
+      return sortOrder(a->value, b->value);
+    });
   }
 
   for (auto entry : m_entrySortBuffer) {
@@ -142,43 +146,43 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(
   }
 }
 
-EntityId EntityMap::uniqueEntityId(String const& uniqueId) const {
+auto EntityMap::uniqueEntityId(String const& uniqueId) const -> EntityId {
   return m_uniqueMap.maybeRight(uniqueId).value_or(NullEntityId);
 }
 
-EntityPtr EntityMap::entity(EntityId entityId) const {
+auto EntityMap::entity(EntityId entityId) const -> Ptr<Entity> {
   auto entity = m_spatialMap.value(entityId);
   return entity;
 }
 
-EntityPtr EntityMap::uniqueEntity(String const& uniqueId) const {
+auto EntityMap::uniqueEntity(String const& uniqueId) const -> Ptr<Entity> {
   return entity(uniqueEntityId(uniqueId));
 }
 
-List<EntityPtr> EntityMap::entityQuery(RectF const& boundBox, EntityFilter const& filter) const {
-  List<EntityPtr> values;
-  forEachEntity(boundBox, [&](EntityPtr const& entity) {
-      if (!filter || filter(entity))
-        values.append(entity);
-    });
+auto EntityMap::entityQuery(RectF const& boundBox, EntityFilter const& filter) const -> List<Ptr<Entity>> {
+  List<Ptr<Entity>> values;
+  forEachEntity(boundBox, [&](Ptr<Entity> const& entity) -> void {
+    if (!filter || filter(entity))
+      values.append(entity);
+  });
   return values;
 }
 
-List<EntityPtr> EntityMap::entitiesAt(Vec2F const& pos, EntityFilter const& filter) const {
+auto EntityMap::entitiesAt(Vec2F const& pos, EntityFilter const& filter) const -> List<Ptr<Entity>> {
   auto entityList = entityQuery(RectF::withCenter(pos, {0, 0}), filter);
 
-  sortByComputedValue(entityList, [&](EntityPtr const& entity) -> float {
-      return vmagSquared(entity->position() - pos);
-    });
+  sortByComputedValue(entityList, [&](Ptr<Entity> const& entity) -> float {
+    return vmagSquared(entity->position() - pos);
+  });
   return entityList;
 }
 
-List<TileEntityPtr> EntityMap::entitiesAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const {
-  List<TileEntityPtr> values;
-  forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
-      if (!filter || filter(entity))
-        values.append(entity);
-    });
+auto EntityMap::entitiesAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const -> List<Ptr<TileEntity>> {
+  List<Ptr<TileEntity>> values;
+  forEachEntityAtTile(pos, [&](Ptr<TileEntity> const& entity) -> void {
+    if (!filter || filter(entity))
+      values.append(entity);
+  });
   return values;
 }
 
@@ -187,36 +191,36 @@ void EntityMap::forEachEntity(RectF const& boundBox, EntityCallback const& callb
 }
 
 void EntityMap::forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback const& callback) const {
-  return m_spatialMap.forEach(m_geometry.splitRect(RectF::boundBoxOf(begin, end)), [&](EntityPtr const& entity) {
-      if (m_geometry.lineIntersectsRect({begin, end}, entity->metaBoundBox().translated(entity->position())))
-        callback(entity);
-    });
+  return m_spatialMap.forEach(m_geometry.splitRect(RectF::boundBoxOf(begin, end)), [&](Ptr<Entity> const& entity) -> void {
+    if (m_geometry.lineIntersectsRect({begin, end}, entity->metaBoundBox().translated(entity->position())))
+      callback(entity);
+  });
 }
 
 void EntityMap::forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> const& callback) const {
   RectF rect(Vec2F(pos[0], pos[1]), Vec2F(pos[0] + 1, pos[1] + 1));
-  forEachEntity(rect, [&](EntityPtr const& entity) {
-      if (auto tileEntity = as<TileEntity>(entity)) {
-        for (Vec2I space : tileEntity->spaces()) {
-          if (m_geometry.equal(pos, space + tileEntity->tilePosition()))
-            callback(tileEntity);
-        }
+  forEachEntity(rect, [&](Ptr<Entity> const& entity) -> void {
+    if (auto tileEntity = as<TileEntity>(entity)) {
+      for (Vec2I space : tileEntity->spaces()) {
+        if (m_geometry.equal(pos, space + tileEntity->tilePosition()))
+          callback(tileEntity);
       }
-    });
+    }
+  });
 }
 
-void EntityMap::forAllEntities(EntityCallback const& callback, function<bool(EntityPtr const&, EntityPtr const&)> sortOrder) const {
+void EntityMap::forAllEntities(EntityCallback const& callback, std::function<bool(Ptr<Entity> const&, Ptr<Entity> const&)> sortOrder) const {
   // Even if there is no sort order, we still copy pointers to a temporary
   // list, so that it is safe to call addEntity from the callback.
-  List<EntityPtr const*> allEntities;
+  List<Ptr<Entity> const*> allEntities;
   allEntities.reserve(m_spatialMap.size());
   for (auto const& entry : m_spatialMap.entries())
     allEntities.append(&entry.second.value);
 
   if (sortOrder) {
-    allEntities.sort([&sortOrder](EntityPtr const* a, EntityPtr const* b) {
-        return sortOrder(*a, *b);
-      });
+    allEntities.sort([&sortOrder](Ptr<Entity> const* a, Ptr<Entity> const* b) -> bool {
+      return sortOrder(*a, *b);
+    });
   }
 
   for (auto ptr : allEntities) {
@@ -225,132 +229,131 @@ void EntityMap::forAllEntities(EntityCallback const& callback, function<bool(Ent
       callback(entity);
     } catch (...) {
       Logger::error("[EntityMap] Exception caught running forAllEntities callback for {} entity {} (named \"{}\")",
-        EntityTypeNames.getRight(entity->entityType()),
-        entity->entityId(),
-        entity->name()
-      );
+                    EntityTypeNames.getRight(entity->entityType()),
+                    entity->entityId(),
+                    entity->name());
       throw;
     }
   }
 }
 
-EntityPtr EntityMap::findEntity(RectF const& boundBox, EntityFilter const& filter) const {
-  EntityPtr res;
-  forEachEntity(boundBox, [&filter, &res](EntityPtr const& entity) {
-      if (res)
-        return;
-      if (filter(entity))
-        res = entity;
-    });
+auto EntityMap::findEntity(RectF const& boundBox, EntityFilter const& filter) const -> Ptr<Entity> {
+  Ptr<Entity> res;
+  forEachEntity(boundBox, [&filter, &res](Ptr<Entity> const& entity) -> void {
+    if (res)
+      return;
+    if (filter(entity))
+      res = entity;
+  });
   return res;
 }
 
-EntityPtr EntityMap::findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const {
-  return findEntity(RectF::boundBoxOf(begin, end), [&](EntityPtr const& entity) {
-      if (m_geometry.lineIntersectsRect({begin, end}, entity->metaBoundBox().translated(entity->position()))) {
-        if (filter(entity))
-          return true;
-      }
-      return false;
-    });
+auto EntityMap::findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const -> Ptr<Entity> {
+  return findEntity(RectF::boundBoxOf(begin, end), [&](Ptr<Entity> const& entity) -> bool {
+    if (m_geometry.lineIntersectsRect({begin, end}, entity->metaBoundBox().translated(entity->position()))) {
+      if (filter(entity))
+        return true;
+    }
+    return false;
+  });
 }
 
-EntityPtr EntityMap::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const {
+auto EntityMap::findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> const& filter) const -> Ptr<Entity> {
   RectF rect(Vec2F(pos[0], pos[1]), Vec2F(pos[0] + 1, pos[1] + 1));
-  return findEntity(rect, [&](EntityPtr const& entity) {
-      if (auto tileEntity = as<TileEntity>(entity)) {
-        for (Vec2I space : tileEntity->spaces()) {
-          if (m_geometry.equal(pos, space + tileEntity->tilePosition())) {
-            if (filter(tileEntity))
-              return true;
-          }
+  return findEntity(rect, [&](Ptr<Entity> const& entity) -> bool {
+    if (auto tileEntity = as<TileEntity>(entity)) {
+      for (Vec2I space : tileEntity->spaces()) {
+        if (m_geometry.equal(pos, space + tileEntity->tilePosition())) {
+          if (filter(tileEntity))
+            return true;
         }
       }
-      return false;
-    });
+    }
+    return false;
+  });
 }
 
-List<EntityPtr> EntityMap::entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const {
-  List<EntityPtr> values;
-  forEachEntityLine(begin, end, [&](EntityPtr const& entity) {
-      if (!filter || filter(entity))
-        values.append(entity);
-    });
+auto EntityMap::entityLineQuery(Vec2F const& begin, Vec2F const& end, EntityFilter const& filter) const -> List<Ptr<Entity>> {
+  List<Ptr<Entity>> values;
+  forEachEntityLine(begin, end, [&](Ptr<Entity> const& entity) -> void {
+    if (!filter || filter(entity))
+      values.append(entity);
+  });
   return values;
 }
 
-EntityPtr EntityMap::closestEntity(Vec2F const& center, float radius, EntityFilter const& filter) const {
-  EntityPtr closest;
+auto EntityMap::closestEntity(Vec2F const& center, float radius, EntityFilter const& filter) const -> Ptr<Entity> {
+  Ptr<Entity> closest;
   float distSquared = square(radius);
   RectF boundBox(center[0] - radius, center[1] - radius, center[0] + radius, center[1] + radius);
 
-  m_spatialMap.forEach(m_geometry.splitRect(boundBox), [&](EntityPtr const& entity) {
-      Vec2F pos = entity->position();
-      float thisDistSquared = m_geometry.diff(center, pos).magnitudeSquared();
-      if (distSquared > thisDistSquared) {
-        if (!filter || filter(entity)) {
-          distSquared = thisDistSquared;
-          closest = entity;
-        }
+  m_spatialMap.forEach(m_geometry.splitRect(boundBox), [&](Ptr<Entity> const& entity) -> void {
+    Vec2F pos = entity->position();
+    float thisDistSquared = m_geometry.diff(center, pos).magnitudeSquared();
+    if (distSquared > thisDistSquared) {
+      if (!filter || filter(entity)) {
+        distSquared = thisDistSquared;
+        closest = entity;
       }
-    });
+    }
+  });
 
   return closest;
 }
 
-InteractiveEntityPtr EntityMap::interactiveEntityNear(Vec2F const& pos, float maxRadius) const {
+auto EntityMap::interactiveEntityNear(Vec2F const& pos, float maxRadius) const -> Ptr<InteractiveEntity> {
   auto rect = RectF::withCenter(pos, Vec2F::filled(maxRadius));
-  InteractiveEntityPtr interactiveEntity;
+  Ptr<InteractiveEntity> interactiveEntity;
   double bestDistance = maxRadius + 100;
   double bestCenterDistance = maxRadius + 100;
-  m_spatialMap.forEach(m_geometry.splitRect(rect), [&](EntityPtr const& entity) {
-      if (auto ie = as<InteractiveEntity>(entity)) {
-        if (ie->isInteractive()) {
-          if (auto tileEntity = as<TileEntity>(entity)) {
-            for (Vec2I space : tileEntity->interactiveSpaces()) {
-              auto dist = m_geometry.diff(pos, centerOfTile(space + tileEntity->tilePosition())).magnitude();
-              auto centerDist = m_geometry.diff(tileEntity->metaBoundBox().center() + tileEntity->position(), pos).magnitude();
-              if ((dist < bestDistance) || ((dist == bestDistance) && (centerDist < bestCenterDistance))) {
-                interactiveEntity = ie;
-                bestDistance = dist;
-                bestCenterDistance = centerDist;
-              }
-            }
-          } else {
-            auto box = ie->interactiveBoundBox().translated(entity->position());
-            auto dist = m_geometry.diffToNearestCoordInBox(box, pos).magnitude();
-            auto centerDist = m_geometry.diff(box.center(), pos).magnitude();
+  m_spatialMap.forEach(m_geometry.splitRect(rect), [&](Ptr<Entity> const& entity) -> void {
+    if (auto ie = as<InteractiveEntity>(entity)) {
+      if (ie->isInteractive()) {
+        if (auto tileEntity = as<TileEntity>(entity)) {
+          for (Vec2I space : tileEntity->interactiveSpaces()) {
+            auto dist = m_geometry.diff(pos, centerOfTile(space + tileEntity->tilePosition())).magnitude();
+            auto centerDist = m_geometry.diff(tileEntity->metaBoundBox().center() + tileEntity->position(), pos).magnitude();
             if ((dist < bestDistance) || ((dist == bestDistance) && (centerDist < bestCenterDistance))) {
               interactiveEntity = ie;
               bestDistance = dist;
               bestCenterDistance = centerDist;
             }
           }
+        } else {
+          auto box = ie->interactiveBoundBox().translated(entity->position());
+          auto dist = m_geometry.diffToNearestCoordInBox(box, pos).magnitude();
+          auto centerDist = m_geometry.diff(box.center(), pos).magnitude();
+          if ((dist < bestDistance) || ((dist == bestDistance) && (centerDist < bestCenterDistance))) {
+            interactiveEntity = ie;
+            bestDistance = dist;
+            bestCenterDistance = centerDist;
+          }
         }
       }
-    });
+    }
+  });
   if (bestDistance <= maxRadius)
     return interactiveEntity;
   return {};
 }
 
-bool EntityMap::tileIsOccupied(Vec2I const& pos, bool includeEphemeral) const {
+auto EntityMap::tileIsOccupied(Vec2I const& pos, bool includeEphemeral) const -> bool {
   RectF rect(Vec2F(pos[0], pos[1]), Vec2F(pos[0] + 1, pos[1] + 1));
-  return (bool)findEntity(rect, [&](EntityPtr const& entity) {
-      if (auto tileEntity = as<TileEntity>(entity)) {
-        if (includeEphemeral || !tileEntity->ephemeral()) {
-          for (Vec2I space : tileEntity->spaces()) {
-            if (m_geometry.equal(pos, space + tileEntity->tilePosition())) {
-              return true;
-            }
+  return (bool)findEntity(rect, [&](Ptr<Entity> const& entity) -> bool {
+    if (auto tileEntity = as<TileEntity>(entity)) {
+      if (includeEphemeral || !tileEntity->ephemeral()) {
+        for (Vec2I space : tileEntity->spaces()) {
+          if (m_geometry.equal(pos, space + tileEntity->tilePosition())) {
+            return true;
           }
         }
       }
-      return false;
-    });
+    }
+    return false;
+  });
 }
 
-bool EntityMap::spaceIsOccupied(RectF const& rect, bool includesEphemeral) const {
+auto EntityMap::spaceIsOccupied(RectF const& rect, bool includesEphemeral) const -> bool {
   for (auto const& entity : entityQuery(rect)) {
     if (!includesEphemeral && entity->ephemeral())
       continue;
@@ -363,4 +366,4 @@ bool EntityMap::spaceIsOccupied(RectF const& rect, bool includesEphemeral) const
   return false;
 }
 
-}
+}// namespace Star

@@ -14,9 +14,6 @@ import std;
 
 namespace Star {
 
-// STAR_CLASS(Item);
-// STAR_CLASS(ItemDrop);
-
 class ItemDrop : public virtual Entity, public virtual ScriptedEntity {
 public:
   // Creates a drop at the given position and adds a hard-coded amount of
@@ -45,7 +42,7 @@ public:
   auto name() const -> String override;
   auto description() const -> String override;
 
-  auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t> override;
+  auto writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t> override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
@@ -58,7 +55,7 @@ public:
 
   auto collisionArea() const -> RectF override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   auto shouldDestroy() const -> bool override;
 

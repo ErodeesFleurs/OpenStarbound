@@ -1,21 +1,22 @@
 #pragma once
 
-#include "StarWorldGeometry.hpp"
+#include "StarConfig.hpp"
 #include "StarParticle.hpp"
+#include "StarWorldGeometry.hpp"
 #include "StarWorldTiles.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(ParticleManager);
-
 class ParticleManager {
 public:
-  ParticleManager(WorldGeometry const& worldGeometry, ClientTileSectorArrayPtr const& tileSectorArray);
+  ParticleManager(WorldGeometry const& worldGeometry, Ptr<ClientTileSectorArray> const& tileSectorArray);
 
   void add(Particle particle);
   void addParticles(List<Particle> particles);
 
-  size_t count() const;
+  [[nodiscard]] auto count() const -> size_t;
   void clear();
 
   void setUndergroundLevel(float undergroundLevel);
@@ -23,18 +24,20 @@ public:
   // Updates current particles and spawns new weather particles
   void update(float dt, RectF const& cullRegion, float wind);
 
-  List<Particle> const& particles() const;
-  List<pair<Vec2F, Vec3F>> lightSources() const;
+  [[nodiscard]] auto particles() const -> List<Particle> const&;
+  [[nodiscard]] auto lightSources() const -> List<std::pair<Vec2F, Vec3F>>;
 
 private:
-  enum class TileType { Colliding, Water, Empty };
+  enum class TileType { Colliding,
+                        Water,
+                        Empty };
 
   List<Particle> m_particles;
   List<Particle> m_nextParticles;
 
   WorldGeometry m_worldGeometry;
   float m_undergroundLevel;
-  ClientTileSectorArrayPtr m_tileSectorArray;
+  Ptr<ClientTileSectorArray> m_tileSectorArray;
 };
 
-}
+}// namespace Star

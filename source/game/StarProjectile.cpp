@@ -1,33 +1,36 @@
 #include "StarProjectile.hpp"
-#include "StarEntityRendering.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarMixer.hpp"
-#include "StarMonster.hpp" // IWYU pragma: keep
-#include "StarParticleDatabase.hpp" // IWYU pragma: keep
-#include "StarMonsterDatabase.hpp" // IWYU pragma: keep
-#include "StarWorld.hpp"
-#include "StarLogging.hpp"
-#include "StarRoot.hpp"
-#include "StarDataStreamExtra.hpp" // IWYU pragma: keep
-#include "StarMaterialDatabase.hpp"
-#include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
-#include "StarProjectileDatabase.hpp"
-#include "StarItemDrop.hpp"
-#include "StarIterator.hpp"
+
+#include "StarConfig.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
+#include "StarEntityRendering.hpp"
+#include "StarItemDrop.hpp"
+#include "StarIterator.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLiquidsDatabase.hpp"// IWYU pragma: export
+#include "StarLogging.hpp"
+#include "StarMaterialDatabase.hpp"// IWYU pragma: export
+#include "StarMixer.hpp"
+#include "StarMonster.hpp"
+#include "StarMonsterDatabase.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
+#include "StarParticleDatabase.hpp"// IWYU pragma: export
+#include "StarProjectileDatabase.hpp"
+#include "StarRoot.hpp"
+#include "StarWorld.hpp"
+
+import std;
 
 namespace Star {
 
-Projectile::Projectile(ProjectileConfigPtr const& config, Json const& parameters) {
+Projectile::Projectile(Ptr<ProjectileConfig> const& config, Json const& parameters) {
   m_config = config;
   m_parameters = parameters;
 
   setup();
 }
 
-Projectile::Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules) {
+Projectile::Projectile(Ptr<ProjectileConfig> const& config, DataStreamBuffer& data, NetCompatibilityRules) {
   m_config = config;
   data.read(m_parameters);
   setup();
@@ -41,7 +44,7 @@ Projectile::Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& data
   setTeam(data.read<EntityDamageTeam>());
 }
 
-ByteArray Projectile::netStore(NetCompatibilityRules rules) const {
+auto Projectile::netStore(NetCompatibilityRules rules) const -> ByteArray {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
 
@@ -58,11 +61,11 @@ ByteArray Projectile::netStore(NetCompatibilityRules rules) const {
   return ds.data();
 }
 
-EntityType Projectile::entityType() const {
+auto Projectile::entityType() const -> EntityType {
   return EntityType::Projectile;
 }
 
-Json Projectile::configValue(String const& name, Json const& def) const {
+auto Projectile::configValue(String const& name, Json const& def) const -> Json {
   return m_parameters.query(name, m_config->config.query(name, def));
 }
 
@@ -77,10 +80,10 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
   m_periodicActions.clear();
   if (m_parameters.contains("periodicActions")) {
     for (auto const& c : m_parameters.getArray("periodicActions", {}))
-      m_periodicActions.append(make_tuple(GameTimer(c.getFloat("time")), c.getBool("repeat", true), c));
+      m_periodicActions.append(std::make_tuple(GameTimer(c.getFloat("time")), c.getBool("repeat", true), c));
   } else {
     for (auto const& periodicAction : m_config->periodicActions)
-      m_periodicActions.append(make_tuple(GameTimer(get<0>(periodicAction)), get<1>(periodicAction), get<2>(periodicAction)));
+      m_periodicActions.append(std::make_tuple(GameTimer(get<0>(periodicAction)), get<1>(periodicAction), get<2>(periodicAction)));
   }
 
   if (isMaster()) {
@@ -91,7 +94,7 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
       m_scriptComponent.setUpdateDelta(m_parameters.getUInt("scriptDelta", m_config->config.getUInt("scriptDelta", 1)));
 
       m_scriptComponent.addCallbacks("projectile", makeProjectileCallbacks());
-      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Projectile::configValue, this, _1, _2)));
+      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](auto&& PH1, auto&& PH2) -> auto { return configValue(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }));
       m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(m_movementController.get()));
       m_scriptComponent.init(world);
@@ -103,7 +106,7 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
     setReferenceVelocity(referenceVelocity.transform(jsonToVec2F));
 
   if (world->isClient() && !m_persistentAudioFile.empty()) {
-    m_persistentAudio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_persistentAudioFile));
+    m_persistentAudio = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_persistentAudioFile));
     m_persistentAudio->setLoops(-1);
     m_persistentAudio->setPosition(position());
     m_pendingRenderables.append(m_persistentAudio);
@@ -127,31 +130,31 @@ void Projectile::uninit() {
   Entity::uninit();
 }
 
-String Projectile::typeName() const {
+auto Projectile::typeName() const -> String {
   return m_config->typeName;
 }
 
-String Projectile::name() const {
+auto Projectile::name() const -> String {
   return m_config->typeName;
 }
 
-String Projectile::description() const {
+auto Projectile::description() const -> String {
   return m_config->description;
 }
 
-Vec2F Projectile::position() const {
+auto Projectile::position() const -> Vec2F {
   return m_movementController->position();
 }
 
-RectF Projectile::metaBoundBox() const {
+auto Projectile::metaBoundBox() const -> RectF {
   return m_config->boundBox;
 }
 
-Vec2F Projectile::velocity() const {
+auto Projectile::velocity() const -> Vec2F {
   return m_movementController->velocity();
 }
 
-pair<ByteArray, uint64_t> Projectile::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+auto Projectile::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) -> std::pair<ByteArray, std::uint64_t> {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -167,7 +170,7 @@ void Projectile::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-bool Projectile::shouldDestroy() const {
+auto Projectile::shouldDestroy() const -> bool {
   if (auto res = m_scriptComponent.invoke<bool>("shouldDestroy"))
     return *res;
   return m_timeToLive <= 0.0f;
@@ -191,7 +194,7 @@ void Projectile::destroy(RenderCallback* renderCallback) {
   m_scriptComponent.invoke("destroy");
 }
 
-List<DamageSource> Projectile::damageSources() const {
+auto Projectile::damageSources() const -> List<DamageSource> {
   if (m_onlyHitTerrain)
     return {};
 
@@ -214,9 +217,9 @@ List<DamageSource> Projectile::damageSources() const {
     knockback = knockbackMagnitude;
 
   List<DamageSource> res;
-  auto addDamageSource = [&](DamageSource::DamageArea damageArea) {
+  auto addDamageSource = [&](DamageSource::DamageArea damageArea) -> void {
     res.append(DamageSource(m_damageType, damageArea, m_power * m_powerMultiplier, true, m_sourceEntity, sourceTeam,
-        m_damageRepeatGroup, m_damageRepeatTimeout, m_damageKind, statusEffects, knockback, m_rayCheckToSource));
+                            m_damageRepeatGroup, m_damageRepeatTimeout, m_damageKind, statusEffects, knockback, m_rayCheckToSource));
   };
 
   Vec2F positionDelta = world()->geometry().diff(m_travelLine.min(), m_travelLine.max());
@@ -264,7 +267,7 @@ void Projectile::hitOther(EntityId entity, DamageRequest const&) {
   m_scriptComponent.invoke("hit", entity);
 }
 
-void Projectile::update(float dt, uint64_t) {
+void Projectile::update(float dt, std::uint64_t) {
   m_movementController->setTimestep(dt);
 
   if (isMaster()) {
@@ -393,22 +396,22 @@ void Projectile::renderLightSources(RenderCallback* renderCallback) {
     if (renderable.is<LightSource>())
       renderCallback->addLightSource(renderable.get<LightSource>());
   }
-  renderCallback->addLightSource({position(), m_config->lightColor.toRgbF(), m_config->lightType, 0.0f, 0.0f, 0.0f});
+  renderCallback->addLightSource({.position = position(), .color = m_config->lightColor.toRgbF(), .type = m_config->lightType, .pointBeam = 0.0f, .beamAngle = 0.0f, .beamAmbience = 0.0f});
 }
 
-std::optional<Json> Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
+auto Projectile::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) -> std::optional<Json> {
   return m_scriptComponent.handleMessage(message, sendingConnection == world()->connection(), args);
 }
 
-std::optional<LuaValue> Projectile::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+auto Projectile::callScript(String const& func, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> {
   return m_scriptComponent.invoke(func, args);
 }
 
-std::optional<LuaValue> Projectile::evalScript(String const& code) {
+auto Projectile::evalScript(String const& code) -> std::optional<LuaValue> {
   return m_scriptComponent.eval(code);
 }
 
-String Projectile::projectileType() const {
+auto Projectile::projectileType() const -> String {
   return m_config->typeName;
 }
 
@@ -419,7 +422,7 @@ void Projectile::setReferenceVelocity(std::optional<Vec2F> const& velocity) {
   m_effectEmitter->setBaseVelocity(m_referenceVelocity.value_or(Vec2F()));
 }
 
-float Projectile::initialSpeed() const {
+auto Projectile::initialSpeed() const -> float {
   return m_initialSpeed;
 }
 
@@ -456,7 +459,7 @@ void Projectile::setSourceEntity(EntityId source, bool trackSource) {
   }
 }
 
-float Projectile::powerMultiplier() const {
+auto Projectile::powerMultiplier() const -> float {
   return m_powerMultiplier;
 }
 
@@ -464,35 +467,35 @@ void Projectile::setPowerMultiplier(float powerMultiplier) {
   m_powerMultiplier = powerMultiplier;
 }
 
-EntityId Projectile::sourceEntity() const {
+auto Projectile::sourceEntity() const -> EntityId {
   return m_sourceEntity;
 }
 
-List<PersistentStatusEffect> Projectile::statusEffects() const {
+auto Projectile::statusEffects() const -> List<PersistentStatusEffect> {
   return m_config->persistentStatusEffects;
 }
 
-PolyF Projectile::statusEffectArea() const {
+auto Projectile::statusEffectArea() const -> PolyF {
   return m_config->statusEffectArea;
 }
 
-List<PhysicsForceRegion> Projectile::forceRegions() const {
+auto Projectile::forceRegions() const -> List<PhysicsForceRegion> {
   List<PhysicsForceRegion> forces;
   for (auto const& p : m_physicsForces) {
     if (p.second.enabled.get()) {
       PhysicsForceRegion forceRegion = p.second.forceRegion;
-      forceRegion.call([pos = position()](auto& fr) { fr.translate(pos); });
+      forceRegion.call([pos = position()](auto& fr) -> auto { fr.translate(pos); });
       forces.append(std::move(forceRegion));
     }
   }
   return forces;
 }
 
-size_t Projectile::movingCollisionCount() const {
+auto Projectile::movingCollisionCount() const -> size_t {
   return m_physicsCollisions.size();
 }
 
-std::optional<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) const {
+auto Projectile::movingCollision(size_t positionIndex) const -> std::optional<PhysicsMovingCollision> {
   auto& mc = m_physicsCollisions.values().at(positionIndex);
   if (!mc.enabled.get())
     return std::nullopt;
@@ -501,7 +504,7 @@ std::optional<PhysicsMovingCollision> Projectile::movingCollision(size_t positio
   return collision;
 }
 
-List<Particle> Projectile::sparkBlock(World* world, Vec2I const& position, Vec2F const& damageSource) {
+auto Projectile::sparkBlock(World* world, Vec2I const& position, Vec2F const& damageSource) -> List<Particle> {
   auto& root = Root::singleton();
   auto assets = root.assets();
   auto materialDatabase = root.materialDatabase();
@@ -532,18 +535,18 @@ List<Particle> Projectile::sparkBlock(World* world, Vec2I const& position, Vec2F
   return result;
 }
 
-int Projectile::getFrame() const {
+auto Projectile::getFrame() const -> int {
   float time_per_frame = m_animationCycle / m_config->frameNumber;
 
   if (m_config->animationLoops) {
     if (m_animationTimer < time_per_frame * m_config->windupFrames) {
-      return floor(m_animationTimer / time_per_frame);
+      return std::floor(m_animationTimer / time_per_frame);
     } else if (m_timeToLive < time_per_frame * m_config->winddownFrames) {
       return m_config->windupFrames + m_config->frameNumber
-          + clamp<int>((time_per_frame * m_config->winddownFrames - m_timeToLive) / time_per_frame, 0, m_config->winddownFrames - 1);
+        + clamp<int>((time_per_frame * m_config->winddownFrames - m_timeToLive) / time_per_frame, 0, m_config->winddownFrames - 1);
     } else {
       float time_within_cycle = std::fmod(m_animationTimer, m_animationCycle);
-      return m_config->windupFrames + floor(time_within_cycle / time_per_frame);
+      return m_config->windupFrames + std::floor(time_within_cycle / time_per_frame);
     }
   } else {
     return clamp<int>(m_animationTimer / time_per_frame, 0, m_config->frameNumber - 1);
@@ -554,20 +557,20 @@ void Projectile::setFrame(int frame) {
   m_frame = frame;
 }
 
-String Projectile::drawableFrame() {
+auto Projectile::drawableFrame() -> String {
   String str = strf("{}:{}{}", m_config->image, m_frame, m_imageSuffix);
   return m_imageDirectives.addToString(str);
 }
 
-bool Projectile::ephemeral() const {
+auto Projectile::ephemeral() const -> bool {
   return true;
 }
 
-ClientEntityMode Projectile::clientEntityMode() const {
+auto Projectile::clientEntityMode() const -> ClientEntityMode {
   return m_config->clientEntityMode;
 }
 
-bool Projectile::masterOnly() const {
+auto Projectile::masterOnly() const -> bool {
   return m_config->masterOnly;
 }
 
@@ -582,7 +585,7 @@ void Projectile::processAction(Json const& action) {
     command = action.toString().toLower();
   }
 
-  auto doWithDelay = [this](int stepsDelay, WorldAction function) {
+  auto doWithDelay = [this](int stepsDelay, WorldAction function) -> void {
     if (stepsDelay == 0)
       function(world());
     else
@@ -612,7 +615,7 @@ void Projectile::processAction(Json const& action) {
 
     Random::shuffle(tileDrops);
     for (auto& tile : zip(openSpaces, tileDrops)) {
-      if (!world()->modifyTile(std::get<0>(tile), PlaceMaterial{TileLayer::Foreground, std::get<1>(tile), MaterialHue()}, allowEntityOverlap)) {
+      if (!world()->modifyTile(std::get<0>(tile), PlaceMaterial{.layer = TileLayer::Foreground, .material = std::get<1>(tile), .materialHueShift = MaterialHue()}, allowEntityOverlap)) {
         auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(std::get<1>(tile)), (Vec2F)std::get<0>(tile));
         world()->addEntity(itemDrop);
       }
@@ -624,7 +627,7 @@ void Projectile::processAction(Json const& action) {
 
     auto materialDatabase = Root::singleton().materialDatabase();
     std::optional<ModId> previousMod =
-        parameters.optString("previousMod").transform(bind(&MaterialDatabase::modId, materialDatabase, _1));
+      parameters.optString("previousMod").transform([materialDatabase](auto&& PH1) -> auto { return materialDatabase->modId(std::forward<decltype(PH1)>(PH1)); });
     ModId newMod = materialDatabase->modId(parameters.getString("newMod"));
     int radius = parameters.getInt("radius", 0);
     float chance = parameters.getFloat("chance", 1.0f);
@@ -646,7 +649,7 @@ void Projectile::processAction(Json const& action) {
               if (isRealMaterial(mat)) {
                 auto mod = world()->mod({x, y}, layer);
                 if (!previousMod || *previousMod == mod)
-                  world()->modifyTile({x, y}, PlaceMod{layer, newMod, {}}, true);
+                  world()->modifyTile({x, y}, PlaceMod{.layer = layer, .mod = newMod, .modHueShift = {}}, true);
               }
             }
             if (mat != EmptyMaterialId)
@@ -669,7 +672,7 @@ void Projectile::processAction(Json const& action) {
 
       auto liquidLevel = world()->liquidLevel(pos);
       if (liquidLevel.liquid == EmptyLiquidId || liquidLevel.liquid == liquid) {
-        world()->modifyTile(pos, PlaceLiquid{liquid, waterAmount}, true);
+        world()->modifyTile(pos, PlaceLiquid{.liquid = liquid, .liquidLevel = waterAmount}, true);
         break;
       }
     }
@@ -729,7 +732,7 @@ void Projectile::processAction(Json const& action) {
     if (!projectile->m_damageTeam && !world()->entity(m_sourceEntity))
       projectile->setTeam(getTeam());
 
-    doWithDelay(parameters.getUInt("delaySteps", 0), [=](World* world) { world->addEntity(projectile); });
+    doWithDelay(parameters.getUInt("delaySteps", 0), [=](World* world) -> void { world->addEntity(projectile); });
 
   } else if (command == "spark") {
     if (!world()->isClient())
@@ -775,18 +778,18 @@ void Projectile::processAction(Json const& action) {
     unsigned harvestLevel = parameters.getUInt("harvestLevel", 0);
     Vec2F explosionPosition = position();
 
-    doWithDelay(parameters.getUInt("delaySteps", 0), [=, this](World* world) {
-        world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
-            TileLayer::Foreground,
-            explosionPosition,
-            {damageType, explosiveDamageAmount, harvestLevel},
-            sourceEntity());
-        world->damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
-            TileLayer::Background,
-            explosionPosition,
-            {damageType, explosiveDamageAmount, harvestLevel},
-            sourceEntity());
-      });
+    doWithDelay(parameters.getUInt("delaySteps", 0), [=, this](World* world) -> void {
+      world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
+                         TileLayer::Foreground,
+                         explosionPosition,
+                         {damageType, explosiveDamageAmount, harvestLevel},
+                         sourceEntity());
+      world->damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
+                         TileLayer::Background,
+                         explosionPosition,
+                         {damageType, explosiveDamageAmount, harvestLevel},
+                         sourceEntity());
+    });
 
   } else if (command == "spawnmonster") {
     if (isMaster()) {
@@ -796,8 +799,8 @@ void Projectile::processAction(Json const& action) {
 
       float level = parameters.getFloat("level", m_parameters.getFloat("level", 0.0f));
 
-      auto monsterDatabase = Root::singleton().monsterDatabase();
-      auto monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(type, arguments), level);
+      ConstPtr<MonsterDatabase> monsterDatabase = Root::singleton().monsterDatabase();
+      Ptr<Monster> monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(type, arguments), level);
 
       auto spawnPosition = position();
       if (parameters.contains("offset"))
@@ -828,7 +831,7 @@ void Projectile::processAction(Json const& action) {
     if (!world()->isClient())
       return;
 
-    AudioInstancePtr sound = make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
+    Ptr<AudioInstance> sound = std::make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
     sound->setPosition(position());
     sound->setVolume(parameters.getFloat("volume", 1.0f));
     sound->setPitchMultiplier(parameters.getFloat("pitch", 1.0f));
@@ -839,13 +842,12 @@ void Projectile::processAction(Json const& action) {
       return;
 
     m_pendingRenderables.append(LightSource{
-        position(),
-        jsonToColor(parameters.get("color")).toRgbF(),
-        (LightType)parameters.getBool("pointLight", true),
-        0.0f,
-        0.0f,
-        0.0f
-      });
+      .position = position(),
+      .color = jsonToColor(parameters.get("color")).toRgbF(),
+      .type = (LightType)parameters.getBool("pointLight", true),
+      .pointBeam = 0.0f,
+      .beamAngle = 0.0f,
+      .beamAmbience = 0.0f});
 
   } else if (command == "option") {
     JsonArray options = parameters.getArray("options");
@@ -915,18 +917,16 @@ void Projectile::setup() {
   m_acceleration = m_parameters.getFloat("acceleration", m_config->acceleration);
   m_power = m_parameters.getFloat("power", m_config->power);
   m_powerMultiplier = m_parameters.getFloat("powerMultiplier", 1.0f);
-  { // it is possible to shove a frame name in processing. I hope nobody actually does this but account for it...
+  {// it is possible to shove a frame name in processing. I hope nobody actually does this but account for it...
     String processing = m_parameters.getString("processing", "");
     auto begin = processing.utf8().find_first_of('?');
     if (begin == std::numeric_limits<std::size_t>::max()) {
       m_imageDirectives = "";
       m_imageSuffix = std::move(processing);
-    }
-    else if (begin == 0) {
+    } else if (begin == 0) {
       m_imageDirectives = std::move(processing);
       m_imageSuffix = "";
-    }
-    else {
+    } else {
       m_imageDirectives = (String)processing.utf8().substr(begin);
       m_imageSuffix = processing.utf8().substr(0, begin);
     }
@@ -942,9 +942,9 @@ void Projectile::setup() {
     setTeam(EntityDamageTeam(damageTeam));
   }
   m_damageRepeatGroup = m_parameters.optString("damageRepeatGroup")
-                                   .or_else([&]{ return m_config->damageRepeatGroup; });
+                          .or_else([&] -> std::optional<String> { return m_config->damageRepeatGroup; });
   m_damageRepeatTimeout = m_parameters.optFloat("damageRepeatTimeout")
-                                     .or_else([&]{ return m_config->damageRepeatTimeout; });
+                            .or_else([&] -> std::optional<float> { return m_config->damageRepeatTimeout; });
 
   m_falldown = m_parameters.getBool("falldown", m_config->falldown);
 
@@ -954,9 +954,9 @@ void Projectile::setup() {
   auto movementSettings = jsonMerge(m_config->movementSettings, m_parameters.get("movementSettings", Json()));
   if (!movementSettings.contains("physicsEffectCategories"))
     movementSettings = movementSettings.set("physicsEffectCategories", JsonArray{"projectile"});
-  m_movementController = make_shared<MovementController>(movementSettings);
+  m_movementController = std::make_shared<MovementController>(movementSettings);
 
-  m_effectEmitter = make_shared<EffectEmitter>();
+  m_effectEmitter = std::make_shared<EffectEmitter>();
 
   m_initialSpeed = m_parameters.getFloat("speed", m_config->initialSpeed);
   m_sourceEntity = NullEntityId;
@@ -996,37 +996,37 @@ void Projectile::setup() {
   m_netGroup.addNetElement(m_effectEmitter.get());
 }
 
-LuaCallbacks Projectile::makeProjectileCallbacks() {
+auto Projectile::makeProjectileCallbacks() -> LuaCallbacks {
   LuaCallbacks callbacks;
-  callbacks.registerCallback("getParameter", [this](String const& name, Json const& def) {
-      return configValue(name,def);
-    });
-  callbacks.registerCallback("die", [this]() { m_timeToLive = 0.0f; });
+  callbacks.registerCallback("getParameter", [this](String const& name, Json const& def) -> Json {
+    return configValue(name, def);
+  });
+  callbacks.registerCallback("die", [this]() -> void { m_timeToLive = 0.0f; });
   callbacks.registerCallback("sourceEntity", [this]() -> std::optional<EntityId> {
-      if (m_sourceEntity == NullEntityId)
-        return {};
-      else
-        return m_sourceEntity;
-    });
-  callbacks.registerCallback("powerMultiplier", [this]() { return powerMultiplier(); });
-  callbacks.registerCallback("timeToLive", [this]() { return m_timeToLive; });
-  callbacks.registerCallback("setTimeToLive", [this](float const& timeToLive) { return m_timeToLive = timeToLive; });
-  callbacks.registerCallback("collision", [this]() { return m_collision; });
-  callbacks.registerCallback("processAction", [this](Json const& action) { processAction(action); });
-  callbacks.registerCallback("power", [this]() { return m_power; });
-  callbacks.registerCallback("setPower", [this](float const& power) { m_power = power; });
-  callbacks.registerCallback("setReferenceVelocity", [this](std::optional<Vec2F> const& referenceVelocity) { setReferenceVelocity(referenceVelocity); });
+    if (m_sourceEntity == NullEntityId)
+      return {};
+    else
+      return m_sourceEntity;
+  });
+  callbacks.registerCallback("powerMultiplier", [this]() -> float { return powerMultiplier(); });
+  callbacks.registerCallback("timeToLive", [this]() -> float { return m_timeToLive; });
+  callbacks.registerCallback("setTimeToLive", [this](float const& timeToLive) -> float { return m_timeToLive = timeToLive; });
+  callbacks.registerCallback("collision", [this]() -> bool { return m_collision; });
+  callbacks.registerCallback("processAction", [this](Json const& action) -> void { processAction(action); });
+  callbacks.registerCallback("power", [this]() -> float { return m_power; });
+  callbacks.registerCallback("setPower", [this](float const& power) -> void { m_power = power; });
+  callbacks.registerCallback("setReferenceVelocity", [this](std::optional<Vec2F> const& referenceVelocity) -> void { setReferenceVelocity(referenceVelocity); });
   return callbacks;
 }
 
 void Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
   for (auto renderable : m_pendingRenderables) {
-    if (renderable.is<AudioInstancePtr>())
-      renderCallback->addAudio(renderable.get<AudioInstancePtr>());
+    if (renderable.is<Ptr<AudioInstance>>())
+      renderCallback->addAudio(renderable.get<Ptr<AudioInstance>>());
     else if (renderable.is<Particle>())
       renderCallback->addParticle(renderable.get<Particle>());
   }
   m_pendingRenderables.clear();
 }
 
-}
+}// namespace Star

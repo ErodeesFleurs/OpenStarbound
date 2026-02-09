@@ -1,25 +1,28 @@
-#include "StarMainApplication.hpp"
-#include "StarLogging.hpp"
-#include "StarSignalHandler.hpp"
-#include "StarTickRateMonitor.hpp"
-#include "StarRenderer_opengl.hpp"
-#include "StarTtlCache.hpp"
+#include "StarApplicationController.hpp"
+#include "StarConfig.hpp"
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarApplicationController.hpp"
+#include "StarLogging.hpp"
+#include "StarMainApplication.hpp"
+#include "StarRenderer_opengl.hpp"
+#include "StarSignalHandler.hpp"
+#include "StarTickRateMonitor.hpp"
+#include "StarTtlCache.hpp"
 
-#include "SDL3/SDL.h" // IWYU pragma: keep
+#include "SDL3/SDL.h"// IWYU pragma: keep
 #include "StarPlatformServices_pc.hpp"
 
 #ifdef STAR_SYSTEM_WINDOWS
+#include <ShlObj_core.h>
 #include <dwmapi.h>
 #include <objidl.h>
-#include <ShlObj_core.h>
 #endif
 
 #include "imgui.h"
-#include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl3.h"
+
+import std;
 
 namespace Star {
 
@@ -35,9 +38,9 @@ static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned 
   hV5.bV5Planes = 1;
   hV5.bV5BitCount = 32;
   hV5.bV5Compression = BI_RGB;
-  hV5.bV5RedMask   = 0x00FF0000;
+  hV5.bV5RedMask = 0x00FF0000;
   hV5.bV5GreenMask = 0x0000FF00;
-  hV5.bV5BlueMask  = 0x000000FF;
+  hV5.bV5BlueMask = 0x000000FF;
   hV5.bV5AlphaMask = 0xFF000000;
   hV5.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
   hV5.bV5Intent = LCS_GM_GRAPHICS;
@@ -49,9 +52,9 @@ static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned 
       unsigned int* rgba = (unsigned int*)(dst + sizeof(hV5));
       for (unsigned int x = 0; x != sizeI; ++x) {
         unsigned int c = data[x];
-        unsigned int v = c & 0xFF00FF00; // a and g
-        v |= c << 16 & 0x00FF0000;       // r
-        v |= c >> 16 & 0x000000FF;       // b
+        unsigned int v = c & 0xFF00FF00;// a and g
+        v |= c << 16 & 0x00FF0000;      // r
+        v |= c >> 16 & 0x000000FF;      // b
         rgba[x] = v;
       }
       GlobalUnlock(handle);
@@ -110,7 +113,7 @@ static bool copyFileToClipboard(String const& path) {
 }
 #endif
 
-std::optional<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
+auto keyFromSdlKeyCode(SDL_Keycode sym) -> std::optional<Key> {
   static HashMap<int, Key> KeyCodeMap{
     {SDLK_BACKSPACE, Key::Backspace},
     {SDLK_TAB, Key::Tab},
@@ -251,68 +254,67 @@ std::optional<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
     {SDLK_SYSREQ, Key::SysReq},
     {SDLK_PAUSE, Key::Pause},
     {SDLK_MENU, Key::Menu},
-    {SDLK_POWER, Key::Power}
-  };
+    {SDLK_POWER, Key::Power}};
 
   return KeyCodeMap.maybe(sym);
 }
 
-KeyMod keyModsFromSdlKeyMods(uint16_t mod) {
+auto keyModsFromSdlKeyMods(uint16_t mod) -> KeyMod {
   return static_cast<KeyMod>(mod);
 }
 
-MouseButton mouseButtonFromSdlMouseButton(uint8_t button) {
+auto mouseButtonFromSdlMouseButton(uint8_t button) -> MouseButton {
   switch (button) {
-    case SDL_BUTTON_LEFT: return MouseButton::Left;
-    case SDL_BUTTON_MIDDLE: return MouseButton::Middle;
-    case SDL_BUTTON_RIGHT: return MouseButton::Right;
-    case SDL_BUTTON_X1: return MouseButton::FourthButton;
-    default: return MouseButton::FifthButton;
+  case SDL_BUTTON_LEFT: return MouseButton::Left;
+  case SDL_BUTTON_MIDDLE: return MouseButton::Middle;
+  case SDL_BUTTON_RIGHT: return MouseButton::Right;
+  case SDL_BUTTON_X1: return MouseButton::FourthButton;
+  default: return MouseButton::FifthButton;
   }
 }
 
-ControllerAxis controllerAxisFromSdlControllerAxis(uint8_t axis) {
+auto controllerAxisFromSdlControllerAxis(uint8_t axis) -> ControllerAxis {
   switch (axis) {
-    case SDL_GAMEPAD_AXIS_LEFTX : return ControllerAxis::LeftX;
-    case SDL_GAMEPAD_AXIS_LEFTY : return ControllerAxis::LeftY;
-    case SDL_GAMEPAD_AXIS_RIGHTX : return ControllerAxis::RightX;
-    case SDL_GAMEPAD_AXIS_RIGHTY : return ControllerAxis::RightY;
-    case SDL_GAMEPAD_AXIS_LEFT_TRIGGER : return ControllerAxis::TriggerLeft;
-    case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER : return ControllerAxis::TriggerRight;
-    default: return ControllerAxis::Invalid;
+  case SDL_GAMEPAD_AXIS_LEFTX: return ControllerAxis::LeftX;
+  case SDL_GAMEPAD_AXIS_LEFTY: return ControllerAxis::LeftY;
+  case SDL_GAMEPAD_AXIS_RIGHTX: return ControllerAxis::RightX;
+  case SDL_GAMEPAD_AXIS_RIGHTY: return ControllerAxis::RightY;
+  case SDL_GAMEPAD_AXIS_LEFT_TRIGGER: return ControllerAxis::TriggerLeft;
+  case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER: return ControllerAxis::TriggerRight;
+  default: return ControllerAxis::Invalid;
   }
 }
 
-ControllerButton controllerButtonFromSdlControllerButton(uint8_t button) {
+auto controllerButtonFromSdlControllerButton(uint8_t button) -> ControllerButton {
   switch (button) {
-    case SDL_GAMEPAD_BUTTON_SOUTH : return ControllerButton::A;
-    case SDL_GAMEPAD_BUTTON_EAST : return ControllerButton::B;
-    case SDL_GAMEPAD_BUTTON_WEST : return ControllerButton::X;
-    case SDL_GAMEPAD_BUTTON_NORTH : return ControllerButton::Y;
-    case SDL_GAMEPAD_BUTTON_BACK : return ControllerButton::Back;
-    case SDL_GAMEPAD_BUTTON_GUIDE : return ControllerButton::Guide;
-    case SDL_GAMEPAD_BUTTON_START : return ControllerButton::Start;
-    case SDL_GAMEPAD_BUTTON_LEFT_STICK : return ControllerButton::LeftStick;
-    case SDL_GAMEPAD_BUTTON_RIGHT_STICK : return ControllerButton::RightStick;
-    case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER : return ControllerButton::LeftShoulder;
-    case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER : return ControllerButton::RightShoulder;
-    case SDL_GAMEPAD_BUTTON_DPAD_UP : return ControllerButton::DPadUp;
-    case SDL_GAMEPAD_BUTTON_DPAD_DOWN : return ControllerButton::DPadDown;
-    case SDL_GAMEPAD_BUTTON_DPAD_LEFT : return ControllerButton::DPadLeft;
-    case SDL_GAMEPAD_BUTTON_DPAD_RIGHT : return ControllerButton::DPadRight;
-    case SDL_GAMEPAD_BUTTON_MISC1 : return ControllerButton::Misc1;
-    case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1 : return ControllerButton::Paddle1;
-    case SDL_GAMEPAD_BUTTON_LEFT_PADDLE1 : return ControllerButton::Paddle2;
-    case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2 : return ControllerButton::Paddle3;
-    case SDL_GAMEPAD_BUTTON_LEFT_PADDLE2 : return ControllerButton::Paddle4;
-    case SDL_GAMEPAD_BUTTON_TOUCHPAD : return ControllerButton::Touchpad;
-    default: return ControllerButton::Invalid;
+  case SDL_GAMEPAD_BUTTON_SOUTH: return ControllerButton::A;
+  case SDL_GAMEPAD_BUTTON_EAST: return ControllerButton::B;
+  case SDL_GAMEPAD_BUTTON_WEST: return ControllerButton::X;
+  case SDL_GAMEPAD_BUTTON_NORTH: return ControllerButton::Y;
+  case SDL_GAMEPAD_BUTTON_BACK: return ControllerButton::Back;
+  case SDL_GAMEPAD_BUTTON_GUIDE: return ControllerButton::Guide;
+  case SDL_GAMEPAD_BUTTON_START: return ControllerButton::Start;
+  case SDL_GAMEPAD_BUTTON_LEFT_STICK: return ControllerButton::LeftStick;
+  case SDL_GAMEPAD_BUTTON_RIGHT_STICK: return ControllerButton::RightStick;
+  case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: return ControllerButton::LeftShoulder;
+  case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: return ControllerButton::RightShoulder;
+  case SDL_GAMEPAD_BUTTON_DPAD_UP: return ControllerButton::DPadUp;
+  case SDL_GAMEPAD_BUTTON_DPAD_DOWN: return ControllerButton::DPadDown;
+  case SDL_GAMEPAD_BUTTON_DPAD_LEFT: return ControllerButton::DPadLeft;
+  case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: return ControllerButton::DPadRight;
+  case SDL_GAMEPAD_BUTTON_MISC1: return ControllerButton::Misc1;
+  case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1: return ControllerButton::Paddle1;
+  case SDL_GAMEPAD_BUTTON_LEFT_PADDLE1: return ControllerButton::Paddle2;
+  case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2: return ControllerButton::Paddle3;
+  case SDL_GAMEPAD_BUTTON_LEFT_PADDLE2: return ControllerButton::Paddle4;
+  case SDL_GAMEPAD_BUTTON_TOUCHPAD: return ControllerButton::Touchpad;
+  default: return ControllerButton::Invalid;
   }
 }
 
 class SdlPlatform {
 public:
-  SdlPlatform(ApplicationUPtr application, StringList cmdLineArgs) {
+  SdlPlatform(UPtr<Application> application, StringList cmdLineArgs) {
     m_application = std::move(application);
 
     // extract application path from command line args
@@ -320,13 +322,13 @@ public:
     cmdLineArgs = cmdLineArgs.slice(1);
 
     StringList platformArguments;
-    eraseWhere(cmdLineArgs, [&platformArguments](String& argument) {
-        if (argument.beginsWith("+platform")) {
-          platformArguments.append(std::move(argument));
-          return true;
-        }
-        return false;
-      });
+    eraseWhere(cmdLineArgs, [&platformArguments](String& argument) -> bool {
+      if (argument.beginsWith("+platform")) {
+        platformArguments.append(std::move(argument));
+        return true;
+      }
+      return false;
+    });
 
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "Starbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_VERSION_STRING, OpenStarVersionString);
@@ -391,9 +393,8 @@ public:
         Image conv = img.convert(PixelFormat::RGBA32);
 
         Image flipped = processImageOperations(
-          List<ImageOperation>{ FlipImageOperation{ FlipImageOperation::Mode::FlipY } },
-          conv
-        );
+          List<ImageOperation>{FlipImageOperation{FlipImageOperation::Mode::FlipY}},
+          conv);
 
         SDL_PixelFormat sdlFmt = static_cast<SDL_PixelFormat>(SDL_PIXELFORMAT_ABGR8888);
 
@@ -406,8 +407,7 @@ public:
           h,
           sdlFmt,
           (void*)flipped.data(),
-          pitch
-        );
+          pitch);
 
         if (iconSurface) {
           SDL_SetWindowIcon(m_sdlWindow, iconSurface);
@@ -445,7 +445,7 @@ public:
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
     const char* glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);// Always required on Mac
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -479,15 +479,13 @@ public:
     Logger::info("Application: Opening audio device");
     m_audioOutputData.clear();
     SDL_AudioSpec desired = {SDL_AUDIO_S16, 2, 44100};
-    m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired,
-    [](void* userdata, SDL_AudioStream* stream, int len, int) {
+    m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired, [](void* userdata, SDL_AudioStream* stream, int len, int) -> void {
       if (len > 0) {
         auto sdlPlatform = ((SdlPlatform*)(userdata));
         sdlPlatform->m_audioOutputData.resize(len);
         sdlPlatform->getAudioData(sdlPlatform->m_audioOutputData.data(), len);
         SDL_PutAudioStreamData(stream, sdlPlatform->m_audioOutputData.data(), len);
-      }
-    }, this);
+      } }, this);
     if (!m_sdlAudioOutputStream) {
       Logger::error("Application: Could not open audio device, no sound available!");
     } else {
@@ -495,7 +493,7 @@ public:
       SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream));
     }
 
-    m_renderer = make_shared<OpenGlRenderer>();
+    m_renderer = std::make_shared<OpenGlRenderer>();
     m_renderer->setScreenSize(m_windowSize);
 
     m_cursorCache.setTimeToLive(30000);
@@ -512,7 +510,6 @@ public:
 
     ImGui_ImplSDL3_InitForOpenGL(m_sdlWindow, m_sdlGlContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
-
   }
 
   ~SdlPlatform() {
@@ -535,36 +532,33 @@ public:
     SDL_Quit();
   }
 
-  typedef std::function<void(uint8_t*, int)> AudioCallback;
-  bool openAudioInputDevice(SDL_AudioDeviceID deviceId, int freq, int channels, AudioCallback callback) {
+  using AudioCallback = std::function<void(uint8_t*, int)>;
+  auto openAudioInputDevice(SDL_AudioDeviceID deviceId, int freq, int channels, AudioCallback callback) -> bool {
     closeAudioInputDevice();
     m_audioInputCallback = std::move(callback);
     SDL_AudioSpec desired = {SDL_AUDIO_S16, channels, freq};
-    m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired,
-    [](void* userdata, SDL_AudioStream* stream, int len, int) {
+    m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired, [](void* userdata, SDL_AudioStream* stream, int len, int) -> void {
       if (len > 0) {
         auto sdlPlatform = ((SdlPlatform*)(userdata));
         sdlPlatform->m_audioInputData.resize(len);
         SDL_GetAudioStreamData(stream, sdlPlatform->m_audioInputData.data(), len);
         sdlPlatform->m_audioInputCallback(sdlPlatform->m_audioInputData.data(), len);
-      }
-    }, this);
+      } }, this);
 
     if (m_sdlAudioInputStream) {
-        Logger::info("Opened audio input device '{}'", SDL_GetAudioDeviceName(SDL_GetAudioStreamDevice(m_sdlAudioInputStream)));
+      Logger::info("Opened audio input device '{}'", SDL_GetAudioDeviceName(SDL_GetAudioStreamDevice(m_sdlAudioInputStream)));
       SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioInputStream));
-    }
-    else
+    } else
       Logger::info("Failed to open audio input device: {}", SDL_GetError());
 
-    return m_sdlAudioInputStream != 0;
+    return m_sdlAudioInputStream != nullptr;
   }
 
-  bool closeAudioInputDevice() {
+  auto closeAudioInputDevice() -> bool {
     if (m_sdlAudioInputStream) {
       Logger::info("Closing audio input device");
       SDL_CloseAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioInputStream));
-      m_sdlAudioInputStream = 0;
+      m_sdlAudioInputStream = nullptr;
       return true;
     }
     return false;
@@ -578,7 +572,7 @@ public:
   void run() {
     try {
       Logger::info("Application: initialization...");
-      m_application->applicationInit(make_shared<Controller>(this));
+      m_application->applicationInit(std::make_shared<Controller>(this));
 
       Logger::info("Application: renderer initialization...");
       m_application->renderInit(m_renderer);
@@ -592,7 +586,6 @@ public:
       while (true) {
         cleanup();
 
-
         for (auto const& event : processEvents())
           m_application->processInput(event);
 
@@ -604,12 +597,11 @@ public:
         else
           SDL_HideCursor();
 
-
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
 
-        int updatesBehind = max<int>(round(m_updateTicker.ticksBehind()), 1);
-        updatesBehind = min<int>(updatesBehind, m_maxFrameSkip + 1);
+        int updatesBehind = std::max<int>(std::round(m_updateTicker.ticksBehind()), 1);
+        updatesBehind = std::min<int>(updatesBehind, m_maxFrameSkip + 1);
         for (int i = 0; i < updatesBehind; ++i) {
           //since frame-skipping is a thing, we have to begin a new ImGui frame here to prevent duplicate elements made by updates
           if (i != 0)
@@ -643,7 +635,7 @@ public:
           break;
         }
 
-        int64_t spareMilliseconds = round(m_updateTicker.spareTime() * 1000);
+        int64_t spareMilliseconds = std::round(m_updateTicker.spareTime() * 1000);
         if (spareMilliseconds > 0)
           Thread::sleepPrecise(spareMilliseconds);
       }
@@ -662,7 +654,7 @@ public:
     SDL_CloseAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream));
     m_SdlControllers.clear();
 
-    SDL_SetCursor(NULL);
+    SDL_SetCursor(nullptr);
     m_cursorCache.clear();
 
     m_application.reset();
@@ -671,13 +663,13 @@ public:
 private:
   struct Controller : public ApplicationController {
     Controller(SdlPlatform* parent)
-      : parent(parent) {}
+        : parent(parent) {}
 
-    bool hasClipboard() override {
+    auto hasClipboard() -> bool override {
       return SDL_HasClipboardText();
     }
 
-    std::optional<String> getClipboard() override {
+    auto getClipboard() -> std::optional<String> override {
       std::optional<String> string;
       if (SDL_HasClipboardText()) {
         if (auto text = SDL_GetClipboardText()) {
@@ -689,23 +681,23 @@ private:
       return string;
     }
 
-    bool setClipboard(String text) override {
+    auto setClipboard(String text) -> bool override {
       return SDL_SetClipboardText(text.utf8Ptr());
     }
 
-    bool setClipboardData(StringMap<ByteArray> data) override {
+    auto setClipboardData(StringMap<ByteArray> data) -> bool override {
       return parent->setClipboardData(std::move(data));
     }
 
-    bool setClipboardImage(Image const& image, ByteArray* png, String const* path) override {
+    auto setClipboardImage(Image const& image, ByteArray* png, String const* path) -> bool override {
       return parent->setClipboardImage(image, png, path);
     }
 
-    bool setClipboardFile(String const& path) override {
+    auto setClipboardFile(String const& path) -> bool override {
       return parent->setClipboardFile(path);
     }
 
-    bool isFocused() const override {
+    [[nodiscard]] auto isFocused() const -> bool override {
       return (SDL_GetWindowFlags(parent->m_sdlWindow) & SDL_WINDOW_INPUT_FOCUS) != 0;
     }
 
@@ -731,7 +723,7 @@ private:
         if (SDL_GetClosestFullscreenDisplayMode(currentDisplayIndex, (int)fullScreenResolution[0], (int)fullScreenResolution[1], 0.f, true, &closestDisplayMode)) {
           if (SDL_SetWindowFullscreenMode(parent->m_sdlWindow, &closestDisplayMode)) {
             if (parent->m_windowMode == WindowMode::Fullscreen)
-              SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
+              SDL_SetWindowFullscreen(parent->m_sdlWindow, false);
             else if (parent->m_windowMode == WindowMode::Borderless)
               SDL_SetWindowBordered(parent->m_sdlWindow, true);
             else if (parent->m_windowMode == WindowMode::Maximized)
@@ -762,7 +754,7 @@ private:
       auto window = parent->m_sdlWindow;
       if (parent->m_windowMode != WindowMode::Normal || parent->m_windowSize != windowSize) {
         if (parent->m_windowMode == WindowMode::Fullscreen)
-          SDL_SetWindowFullscreen(window, 0);
+          SDL_SetWindowFullscreen(window, false);
         else if (parent->m_windowMode == WindowMode::Borderless)
           SDL_SetWindowBordered(window, true);
         else if (parent->m_windowMode == WindowMode::Maximized)
@@ -780,7 +772,7 @@ private:
     void setMaximizedWindow() override {
       if (parent->m_windowMode != WindowMode::Maximized) {
         if (parent->m_windowMode == WindowMode::Fullscreen)
-          SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
+          SDL_SetWindowFullscreen(parent->m_sdlWindow, false);
         else if (parent->m_windowMode == WindowMode::Borderless)
           SDL_SetWindowBordered(parent->m_sdlWindow, true);
 
@@ -793,7 +785,7 @@ private:
     void setBorderlessWindow() override {
       if (parent->m_windowMode != WindowMode::Borderless) {
         if (parent->m_windowMode == WindowMode::Fullscreen)
-          SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
+          SDL_SetWindowFullscreen(parent->m_sdlWindow, false);
         else if (parent->m_windowMode == WindowMode::Maximized)
           SDL_RestoreWindow(parent->m_sdlWindow);
 
@@ -836,7 +828,7 @@ private:
       parent->m_cursorHardware = hardware;
     }
 
-    bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) override {
+    auto setCursorImage(const String& id, const ConstPtr<Image>& image, unsigned scale, const Vec2I& offset) -> bool override {
       return parent->setCursorImage(id, image, scale, offset);
     }
 
@@ -851,7 +843,7 @@ private:
       }
     }
 
-    void setTextArea(std::optional<pair<RectI, int>> area) override {
+    void setTextArea(std::optional<std::pair<RectI, int>> area) override {
       if (parent->m_textInputArea == area)
         return;
       parent->m_textInputArea = area;
@@ -859,18 +851,17 @@ private:
         RectI& r = area->first;
         SDL_Rect rect{
           r.xMin(), (int)parent->m_windowSize.y() - r.yMax(),
-          r.width(), r.height()
-        };
+          r.width(), r.height()};
         SDL_SetTextInputArea(parent->m_sdlWindow, &rect, area->second);
       } else {
-        SDL_SetTextInputArea(parent->m_sdlWindow, NULL, 0);
+        SDL_SetTextInputArea(parent->m_sdlWindow, nullptr, 0);
       }
     }
 
-    AudioFormat enableAudio() override {
+    auto enableAudio() -> AudioFormat override {
       parent->m_audioEnabled = true;
       SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(parent->m_sdlAudioOutputStream));
-      return AudioFormat{44100, 2};
+      return AudioFormat{.sampleRate = 44100, .channels = 2};
     }
 
     void disableAudio() override {
@@ -878,41 +869,41 @@ private:
       SDL_PauseAudioDevice(SDL_GetAudioStreamDevice(parent->m_sdlAudioOutputStream));
     }
 
-    bool openAudioInputDevice(uint32_t deviceId, int freq, int channels, AudioCallback callback) override {
+    auto openAudioInputDevice(uint32_t deviceId, int freq, int channels, AudioCallback callback) -> bool override {
       return parent->openAudioInputDevice(deviceId, freq, channels, callback);
     };
 
-    bool closeAudioInputDevice() override {
+    auto closeAudioInputDevice() -> bool override {
       return parent->closeAudioInputDevice();
     };
 
-    float updateRate() const override {
+    [[nodiscard]] auto updateRate() const -> float override {
       return parent->m_updateRate;
     }
 
-    float renderFps() const override {
+    [[nodiscard]] auto renderFps() const -> float override {
       return parent->m_renderRate;
     }
 
-    StatisticsServicePtr statisticsService() const override {
+    [[nodiscard]] auto statisticsService() const -> Ptr<StatisticsService> override {
       if (parent->m_platformServices)
         return parent->m_platformServices->statisticsService();
       return {};
     }
 
-    P2PNetworkingServicePtr p2pNetworkingService() const override {
+    [[nodiscard]] auto p2pNetworkingService() const -> Ptr<P2PNetworkingService> override {
       if (parent->m_platformServices)
         return parent->m_platformServices->p2pNetworkingService();
       return {};
     }
 
-    UserGeneratedContentServicePtr userGeneratedContentService() const override {
+    [[nodiscard]] auto userGeneratedContentService() const -> Ptr<UserGeneratedContentService> override {
       if (parent->m_platformServices)
         return parent->m_platformServices->userGeneratedContentService();
       return {};
     }
 
-    DesktopServicePtr desktopService() const override {
+    [[nodiscard]] auto desktopService() const -> Ptr<DesktopService> override {
       if (parent->m_platformServices)
         return parent->m_platformServices->desktopService();
       return {};
@@ -925,7 +916,7 @@ private:
     SdlPlatform* parent;
   };
 
-  List<InputEvent> processEvents() {
+  auto processEvents() -> List<InputEvent> {
     List<InputEvent> inputEvents;
 
     ImGuiIO& io = ImGui::GetIO();
@@ -951,11 +942,10 @@ private:
         m_windowSize = Vec2U(event.window.data1, event.window.data2);
         m_renderer->setScreenSize(m_windowSize);
         m_application->windowChanged(m_windowMode, m_windowSize);
-      }
-      else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
+      } else if (event.type == SDL_EVENT_KEY_DOWN && (!io.WantCaptureKeyboard || !io.WantTextInput)) {
         if (!event.key.repeat) {
           if (auto key = keyFromSdlKeyCode(event.key.key))
-            starEvent = KeyDownEvent{*key, keyModsFromSdlKeyMods(event.key.mod)};
+            starEvent = KeyDownEvent{.key = *key, .mods = keyModsFromSdlKeyMods(event.key.mod)};
         }
       } else if (event.type == SDL_EVENT_KEY_UP) {
         if (auto key = keyFromSdlKeyCode(event.key.key))
@@ -964,26 +954,26 @@ private:
         starEvent = TextInputEvent{String(event.text.text)};
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
         starEvent = MouseMoveEvent{
-            {event.motion.xrel, -event.motion.yrel}, {event.motion.x, (int)m_windowSize[1] - event.motion.y}};
+          .mouseMove = {event.motion.xrel, -event.motion.yrel},
+          .mousePosition = {event.motion.x, (int)m_windowSize[1] - event.motion.y}};
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
-        starEvent = MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
-            {event.button.x, (int)m_windowSize[1] - event.button.y}};
+        starEvent = MouseButtonDownEvent{.mouseButton = mouseButtonFromSdlMouseButton(event.button.button),
+                                         .mousePosition = {event.button.x, (int)m_windowSize[1] - event.button.y}};
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
-        starEvent = MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
-            {event.button.x, (int)m_windowSize[1] - event.button.y}};
+        starEvent = MouseButtonUpEvent{.mouseButton = mouseButtonFromSdlMouseButton(event.button.button),
+                                       .mousePosition = {event.button.x, (int)m_windowSize[1] - event.button.y}};
       } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
-        starEvent = MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
-          {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}};
+        starEvent = MouseWheelEvent{.mouseWheel = event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
+                                    .mousePosition = {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}};
       } else if (event.type == SDL_EVENT_GAMEPAD_AXIS_MOTION) {
         starEvent = ControllerAxisEvent{
-          (ControllerId)event.gaxis.which,
-          controllerAxisFromSdlControllerAxis(event.gaxis.axis),
-          (float)event.gaxis.value / 32768.0f
-        };
+          .controller = (ControllerId)event.gaxis.which,
+          .controllerAxis = controllerAxisFromSdlControllerAxis(event.gaxis.axis),
+          .controllerAxisValue = (float)event.gaxis.value / 32768.0f};
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
-        starEvent = ControllerButtonDownEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) };
+        starEvent = ControllerButtonDownEvent{.controller = (ControllerId)event.gbutton.which, .controllerButton = controllerButtonFromSdlControllerButton(event.gbutton.button)};
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
-        starEvent = ControllerButtonUpEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) };
+        starEvent = ControllerButtonUpEvent{.controller = (ControllerId)event.gbutton.which, .controllerButton = controllerButtonFromSdlControllerButton(event.gbutton.button)};
       } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
         auto insertion = m_SdlControllers.insert_or_assign(event.gdevice.which, SDLGameControllerUPtr(SDL_OpenGamepad(event.gdevice.which), SDL_CloseGamepad));
         if (SDL_Gamepad* controller = insertion.first->second.get())
@@ -1032,7 +1022,7 @@ private:
   }
 
   inline static const size_t MaxCursorSize = 128;
-  bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) {
+  auto setCursorImage(const String& id, const ConstPtr<Image>& image, unsigned scale, const Vec2I& offset) -> bool {
     auto imageSize = image->size().piecewiseMultiply(Vec2U::filled(scale));
     if (!m_cursorHardware || !scale || imageSize.max() > MaxCursorSize || imageSize.product() > square(MaxCursorSize)) {
       if (auto defaultCursor = SDL_GetDefaultCursor()) {
@@ -1042,50 +1032,47 @@ private:
       return m_cursorVisible = false;
     }
 
-    auto& entry = m_cursorCache.get(m_currentCursor = { scale, offset, id }, [&](auto const&) {
+    auto& entry = m_cursorCache.get(m_currentCursor = {scale, offset, id}, [&](auto const&) -> auto {
       auto entry = std::make_shared<CursorEntry>();
       List<ImageOperation> operations;
       if (scale != 1)
         operations = {
-          FlipImageOperation{ FlipImageOperation::Mode::FlipY }, // SDL wants an Australian cursor.
-          BorderImageOperation{ 1, Vec4B(), Vec4B(), false, false }, // Nearest scaling fucks up and clips half off the edges, work around this with border+crop for now.
-          ScaleImageOperation{ ScaleImageOperation::Mode::Nearest, Vec2F::filled(scale) },
-          CropImageOperation{ RectI::withSize(Vec2I::filled(ceilf((float)scale / 2)), Vec2I(imageSize)) }
-        };
+          FlipImageOperation{FlipImageOperation::Mode::FlipY},                                                                             // SDL wants an Australian cursor.
+          BorderImageOperation{.pixels = 1, .startColor = Vec4B(), .endColor = Vec4B(), .outlineOnly = false, .includeTransparent = false},// Nearest scaling fucks up and clips half off the edges, work around this with border+crop for now.
+          ScaleImageOperation{.mode = ScaleImageOperation::Mode::Nearest, .scale = Vec2F::filled(scale)},
+          CropImageOperation{RectI::withSize(Vec2I::filled(std::ceilf((float)scale / 2)), Vec2I(imageSize))}};
       else
-        operations = { FlipImageOperation{ FlipImageOperation::Mode::FlipY } };
+        operations = {FlipImageOperation{FlipImageOperation::Mode::FlipY}};
 
       auto newImage = std::make_shared<Image>(processImageOperations(operations, *image));
       // Fix fully transparent pixels inverting the underlying display pixel on Windows (allowing this could be made configurable per cursor later!)
-      newImage->forEachPixel([](unsigned /*x*/, unsigned /*y*/, Vec4B& pixel) { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
+      newImage->forEachPixel([](unsigned /*x*/, unsigned /*y*/, Vec4B& pixel) -> auto { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
       entry->image = std::move(newImage);
-
 
       auto size = entry->image->size();
       SDL_PixelFormat pixelFormat;
       switch (entry->image->pixelFormat()) {
-        case PixelFormat::RGB24: // I know this conversion looks wrong, but it's correct. I'm confused too.
-          pixelFormat = SDL_PIXELFORMAT_XBGR8888;
-          break;
-        case PixelFormat::RGBA32:
-          pixelFormat = SDL_PIXELFORMAT_ABGR8888;
-          break;
-        case PixelFormat::BGR24:
-          pixelFormat = SDL_PIXELFORMAT_XRGB8888;
-          break;
-        case PixelFormat::BGRA32:
-          pixelFormat = SDL_PIXELFORMAT_ARGB8888;
-          break;
-        default:
-          pixelFormat = SDL_PIXELFORMAT_UNKNOWN;
+      case PixelFormat::RGB24:// I know this conversion looks wrong, but it's correct. I'm confused too.
+        pixelFormat = SDL_PIXELFORMAT_XBGR8888;
+        break;
+      case PixelFormat::RGBA32:
+        pixelFormat = SDL_PIXELFORMAT_ABGR8888;
+        break;
+      case PixelFormat::BGR24:
+        pixelFormat = SDL_PIXELFORMAT_XRGB8888;
+        break;
+      case PixelFormat::BGRA32:
+        pixelFormat = SDL_PIXELFORMAT_ARGB8888;
+        break;
+      default:
+        pixelFormat = SDL_PIXELFORMAT_UNKNOWN;
       }
 
       entry->sdlSurface.reset(SDL_CreateSurfaceFrom(
         size[0], size[1],
         pixelFormat,
         (void*)entry->image->data(),
-        entry->image->bytesPerPixel() * size[0])
-      );
+        entry->image->bytesPerPixel() * size[0]));
       entry->sdlCursor.reset(SDL_CreateColorCursor(entry->sdlSurface.get(), offset[0] * scale, offset[1] * scale));
 
       return entry;
@@ -1095,7 +1082,7 @@ private:
     return m_cursorVisible = true;
   }
 
-  bool setClipboardData(StringMap<ByteArray> data) {
+  auto setClipboardData(StringMap<ByteArray> data) -> bool {
     auto heldData = new StringMap<ByteArray>(std::move(data));
     std::vector<const char*> types;
     for (auto& entry : *heldData)
@@ -1106,7 +1093,7 @@ private:
         return entry->ptr();
       }
       *size = 0;
-      return NULL;
+      return nullptr;
     };
     auto cleanup = [](void* userdata) { delete ((StringMap<ByteArray>*)userdata); };
     if (SDL_SetClipboardData(request, cleanup, heldData, types.data(), types.size()))
@@ -1116,8 +1103,8 @@ private:
     return false;
   }
 
-  bool setClipboardImage(Image const& image, ByteArray* png, String const* path) {
-    #ifdef STAR_SYSTEM_WINDOWS // wow, SDL3's implementation is so bad!!
+  auto setClipboardImage([[maybe_unused]] Image const& image, ByteArray* png, [[maybe_unused]] String const* path) -> bool {
+#ifdef STAR_SYSTEM_WINDOWS// wow, SDL3's implementation is so bad!!
     return duringClipboard(m_sdlWindow, [&]() {
       if (path)
         copyFileToClipboard(*path);
@@ -1125,26 +1112,23 @@ private:
       auto converted = image.convert(PixelFormat::RGBA32);
       copyDibToClipboard(converted.data(), converted.width(), converted.height());
     });
-    #else
-    _unused(image);
-    _unused(path);
+#else
     if (png) {
       StringMap<ByteArray> clipboardData = {{"image/png", std::move(*png)}};
       return setClipboardData(std::move(clipboardData));
     }
     return false;
-    #endif
+#endif
   }
 
-  bool setClipboardFile(String const& path) {
-    #ifdef STAR_SYSTEM_WINDOWS
+  auto setClipboardFile([[maybe_unused]] String const& path) -> bool {
+#ifdef STAR_SYSTEM_WINDOWS
     return duringClipboard(m_sdlWindow, [&]() {
       return copyFileToClipboard(path);
     });
-    #else
-    _unused(path);
+#else
     return false;
-    #endif
+#endif
   }
 
   SignalHandler m_signalHandler;
@@ -1156,27 +1140,27 @@ private:
 
   SDL_Window* m_sdlWindow = nullptr;
   SDL_GLContext m_sdlGlContext = nullptr;
-  SDL_AudioStream* m_sdlAudioOutputStream = 0;
-  SDL_AudioStream* m_sdlAudioInputStream = 0;
+  SDL_AudioStream* m_sdlAudioOutputStream = nullptr;
+  SDL_AudioStream* m_sdlAudioInputStream = nullptr;
   AudioCallback m_audioInputCallback;
   std::vector<uint8_t> m_audioInputData;
   std::vector<uint8_t> m_audioOutputData;
-  std::optional<pair<RectI, int>> m_textInputArea;
+  std::optional<std::pair<RectI, int>> m_textInputArea;
 
-  typedef std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)> SDLGameControllerUPtr;
+  using SDLGameControllerUPtr = std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)>;
   StableHashMap<int, SDLGameControllerUPtr> m_SdlControllers;
 
-  typedef std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)> SDLSurfaceUPtr;
-  typedef std::unique_ptr<SDL_Cursor, decltype(&SDL_DestroyCursor)> SDLCursorUPtr;
+  using SDLSurfaceUPtr = std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)>;
+  using SDLCursorUPtr = std::unique_ptr<SDL_Cursor, decltype(&SDL_DestroyCursor)>;
   struct CursorEntry {
-    ImageConstPtr image = nullptr;
+    ConstPtr<Image> image = nullptr;
     SDLSurfaceUPtr sdlSurface;
     SDLCursorUPtr sdlCursor;
 
     CursorEntry() : image(nullptr), sdlSurface(nullptr, SDL_DestroySurface), sdlCursor(nullptr, SDL_DestroyCursor) {};
   };
 
-  typedef tuple<unsigned, Vec2I, String> CursorDescriptor;
+  using CursorDescriptor = std::tuple<unsigned, Vec2I, String>;
 
   HashTtlCache<CursorDescriptor, std::shared_ptr<CursorEntry>> m_cursorCache;
   CursorDescriptor m_currentCursor;
@@ -1193,12 +1177,12 @@ private:
   bool m_audioEnabled = false;
   bool m_quitRequested = false;
 
-  OpenGlRendererPtr m_renderer;
-  ApplicationUPtr m_application;
-  PcPlatformServicesUPtr m_platformServices;
+  Ptr<OpenGlRenderer> m_renderer;
+  UPtr<Application> m_application;
+  UPtr<PcPlatformServices> m_platformServices;
 };
 
-int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs) {
+auto runMainApplication(UPtr<Application> application, StringList cmdLineArgs) -> int {
   try {
     {
       SdlPlatform platform(std::move(application), std::move(cmdLineArgs));
@@ -1214,4 +1198,4 @@ int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs) {
   return 1;
 }
 
-}
+}// namespace Star

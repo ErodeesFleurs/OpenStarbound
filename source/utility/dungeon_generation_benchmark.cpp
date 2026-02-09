@@ -1,24 +1,26 @@
+#include "StarConfig.hpp"
 #include "StarRootLoader.hpp"
-#include "StarCelestialDatabase.hpp"
-#include "StarWorldTemplate.hpp"
 #include "StarWorldServer.hpp"
+#include "StarWorldTemplate.hpp"
+
+import std;
 
 using namespace Star;
 
-int main(int argc, char** argv) {
+auto main(int argc, char** argv) -> int {
   try {
     unsigned repetitions = 5;
     unsigned reportEvery = 1;
     String dungeonWorldName = "outpost";
 
-    RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
+    RootLoader rootLoader({.additionalAssetsSettings = {}, .additionalDefaultConfiguration = {}, .logFile = {}, .logLevel = LogLevel::Error, .quiet = false, .runtimeConfigFile = {}});
     rootLoader.addParameter("dungeonWorld", "dungeonWorld", OptionParser::Optional, strf("dungeonWorld to test, default is {}", dungeonWorldName));
     rootLoader.addParameter("repetitions", "repetitions", OptionParser::Optional, strf("number of times to generate, default {}", repetitions));
     rootLoader.addParameter("reportevery", "report repetitions", OptionParser::Optional, strf("number of repetitions before each progress report, default {}", reportEvery));
 
-    RootUPtr root;
+    UPtr<Root> root;
     OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     coutf("Fully loading root...");
     root->fullyLoad();
@@ -45,7 +47,7 @@ int main(int argc, char** argv) {
         coutf("[{}] {}s | Generations Per Second: {}\n", i, Time::monotonicTime() - start, gps);
       }
 
-      VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
+      Ptr<VisitableWorldParameters> worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
       auto worldTemplate = make_shared<WorldTemplate>(worldParameters, SkyParameters(), 1234);
       WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
     }

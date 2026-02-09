@@ -53,7 +53,7 @@ public:
   // world horizon.
   static auto worldHorizonImages(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> List<std::pair<String, String>>;
 
-  static int worldRadialPosition(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate);
+  static auto worldRadialPosition(Ptr<CelestialDatabase> celestialDatabase, CelestialCoordinate const& coordinate) -> int;
 
 private:
 };

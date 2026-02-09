@@ -1,9 +1,12 @@
 #include "StarEffectEmitter.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarParticleDatabase.hpp"
+
+#include "StarConfig.hpp"
 #include "StarEntityRendering.hpp"
-#include "StarDataStreamExtra.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarParticleDatabase.hpp"// IWYU pragma: export
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
@@ -39,14 +42,14 @@ void EffectEmitter::tick(float dt, EntityMode mode) {
       throw StarException("EffectEmitters can only be added to the master entity.");
   }
   if (m_renders) {
-    eraseWhere(m_sources, [](EffectSourcePtr const& source) { return source->expired(); });
+    eraseWhere(m_sources, [](Ptr<EffectSource> const& source) -> bool { return source->expired(); });
 
     for (auto& ps : m_sources)
       ps->tick(dt);
 
-    Set<pair<String, String>> current;
+    Set<std::pair<String, String>> current;
     for (auto& ps : m_sources) {
-      pair<String, String> entry = {ps->suggestedSpawnLocation(), ps->kind()};
+      std::pair<String, String> entry = {ps->suggestedSpawnLocation(), ps->kind()};
       current.add(entry);
       if (!m_activeSources.get().contains(entry)) {
         ps->stop();
@@ -92,19 +95,19 @@ void EffectEmitter::render(RenderCallback* renderCallback) {
     ps->postRender();
 }
 
-Json EffectEmitter::toJson() const {
+auto EffectEmitter::toJson() const -> Json {
   return JsonObject{{"activeSources",
-      jsonFromSet<Set<pair<String, String>>>(m_activeSources.get(),
-                         [](pair<String, String> const& entry) {
-                           return JsonObject{{"position", entry.first}, {"source", entry.second}};
-                         })}};
+                     jsonFromSet<Set<std::pair<String, String>>>(m_activeSources.get(),
+                                                                 [](std::pair<String, String> const& entry) -> JsonObject {
+                                                                   return JsonObject{{"position", entry.first}, {"source", entry.second}};
+                                                                 })}};
 }
 
 void EffectEmitter::fromJson(Json const& diskStore) {
-  m_activeSources.set(jsonToSet<Set<pair<String, String>>>(diskStore.get("activeSources"),
-      [](Json const& v) {
-        return pair<String, String>{v.getString("position"), v.getString("source")};
-      }));
+  m_activeSources.set(jsonToSet<Set<std::pair<String, String>>>(diskStore.get("activeSources"),
+                                                                [](Json const& v) -> std::pair<String, String> {
+                                                                  return std::pair<String, String>{v.getString("position"), v.getString("source")};
+                                                                }));
 }
 
-}
+}// namespace Star

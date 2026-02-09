@@ -1,17 +1,17 @@
 #pragma once
 
-#include <optional>
-
-#include "StarUuid.hpp"
+#include "StarConfig.hpp"
 #include "StarDrawable.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarUuid.hpp"
 #include "StarWarping.hpp"
-#include "StarJsonRpc.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(ClientContext);
-STAR_CLASS(TeamClient);
+class Player;
+class ClientContext;
 
 class TeamClient {
 public:
@@ -27,23 +27,23 @@ public:
     List<Drawable> portrait;
   };
 
-  TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext);
+  TeamClient(Ptr<Player> mainPlayer, Ptr<ClientContext> clientContext);
 
   void invitePlayer(String const& playerName);
   void acceptInvitation(Uuid const& inviterUuid);
 
-  std::optional<Uuid> currentTeam() const;
+  [[nodiscard]] auto currentTeam() const -> std::optional<Uuid>;
 
   void makeLeader(Uuid const& playerUuid);
   void removeFromTeam(Uuid const& playerUuid);
 
-  bool isTeamLeader();
-  bool isTeamLeader(Uuid const& playerUuid);
-  bool isMemberOfTeam();
+  auto isTeamLeader() -> bool;
+  auto isTeamLeader(Uuid const& playerUuid) -> bool;
+  auto isMemberOfTeam() -> bool;
 
-  bool hasInvitationPending();
-  pair<Uuid, String> pullInvitation();
-  List<Variant<pair<String, bool>, StringList>> pullInviteResults();
+  auto hasInvitationPending() -> bool;
+  auto pullInvitation() -> std::pair<Uuid, String>;
+  auto pullInviteResults() -> List<Variant<std::pair<String, bool>, StringList>>;
 
   void update();
 
@@ -52,20 +52,20 @@ public:
 
   void forceUpdate();
 
-  List<Member> members();
+  auto members() -> List<Member>;
 
 private:
-  typedef pair<RpcPromise<Json>, function<void(Json const&)>> RpcResponseHandler;
+  using RpcResponseHandler = std::pair<RpcPromise<Json>, std::function<void(Json const&)>>;
 
-  void invokeRemote(String const& method, Json const& args, function<void(Json const&)> responseFunction = {});
+  void invokeRemote(String const& method, Json const& args, std::function<void(Json const&)> responseFunction = {});
   void handleRpcResponses();
 
-  void writePlayerData(JsonObject& request, PlayerPtr player, bool fullWrite = false) const;
+  void writePlayerData(JsonObject& request, Ptr<Player> player, bool fullWrite = false) const;
 
   void clearTeam();
 
-  PlayerPtr m_mainPlayer;
-  ClientContextPtr m_clientContext;
+  Ptr<Player> m_mainPlayer;
+  Ptr<ClientContext> m_clientContext;
   std::optional<Uuid> m_teamUuid;
 
   Uuid m_teamLeader;
@@ -73,9 +73,9 @@ private:
   List<Member> m_members;
 
   bool m_hasPendingInvitation;
-  pair<Uuid, String> m_pendingInvitation;
+  std::pair<Uuid, String> m_pendingInvitation;
   double m_pollInvitationsTimer;
-  List<Variant<pair<String, bool>, StringList>> m_pendingInviteResults;
+  List<Variant<std::pair<String, bool>, StringList>> m_pendingInviteResults;
 
   bool m_fullUpdateRunning;
   double m_fullUpdateTimer;
@@ -86,4 +86,4 @@ private:
   List<RpcResponseHandler> m_pendingResponses;
 };
 
-}
+}// namespace Star

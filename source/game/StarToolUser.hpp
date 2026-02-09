@@ -10,6 +10,8 @@
 #include "StarLightSource.hpp"
 #include "StarStatusTypes.hpp"
 
+import std;
+
 namespace Star {
 
 class ToolUserEntity;
@@ -84,7 +86,7 @@ private:
     void disableNetInterpolation() override;
     void tickNetInterpolation(float dt) override;
 
-    auto writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const -> bool override;
+    auto writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const -> bool override;
     void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 

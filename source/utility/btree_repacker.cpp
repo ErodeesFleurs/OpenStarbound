@@ -1,11 +1,13 @@
 #include "StarBTreeDatabase.hpp"
-#include "StarTime.hpp"
 #include "StarFile.hpp"
+#include "StarTime.hpp"
 #include "StarVersionOptionParser.hpp"
+
+import std;
 
 using namespace Star;
 
-int main(int argc, char** argv) {
+auto main(int argc, char** argv) -> int {
   try {
     double startTime = Time::monotonicTime();
 
@@ -37,12 +39,12 @@ int main(int argc, char** argv) {
     coutf("Repacking {}...\n", bTreePath);
     //copy the data over
     unsigned count = 0, overwritten = 0;
-    auto visitor = [&](ByteArray key, ByteArray data) {
+    auto visitor = [&](ByteArray key, ByteArray data) -> void {
       if (newDb.insert(key, data))
         ++overwritten;
       ++count;
     };
-    auto errorHandler = [&](String const& error, std::exception const& e) {
+    auto errorHandler = [&](String const& error, std::exception const& e) -> void {
       coutf("{}: {}\n", error, e.what());
     };
     db.recoverAll(visitor, errorHandler);

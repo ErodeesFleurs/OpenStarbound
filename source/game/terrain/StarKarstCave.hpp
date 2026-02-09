@@ -1,9 +1,11 @@
 #pragma once
 
-#include "StarTerrainDatabase.hpp"
 #include "StarLruCache.hpp"
-#include "StarVector.hpp"
 #include "StarPerlin.hpp"
+#include "StarTerrainDatabase.hpp"
+#include "StarVector.hpp"
+
+import std;
 
 namespace Star {
 
@@ -13,7 +15,7 @@ public:
 
   KarstCaveSelector(Json const& config, TerrainSelectorParameters const& parameters);
 
-  float get(int x, int y) const override;
+  auto get(int x, int y) const -> float override;
 
 private:
   struct LayerPerlins {
@@ -26,9 +28,9 @@ private:
   struct Sector {
     Sector(KarstCaveSelector const* parent, Vec2I sector);
 
-    float get(int x, int y);
+    auto get(int x, int y) -> float;
 
-    bool inside(int x, int y);
+    auto inside(int x, int y) -> bool;
     void set(int x, int y, float value);
 
     KarstCaveSelector const* parent;
@@ -38,7 +40,7 @@ private:
     float m_maxValue;
   };
 
-  LayerPerlins const& layerPerlins(int y) const;
+  auto layerPerlins(int y) const -> LayerPerlins const&;
 
   int m_sectorSize;
   int m_layerResolution;
@@ -52,10 +54,10 @@ private:
   Json m_caveFloorVariationPerlinConfig;
 
   int m_worldWidth;
-  uint64_t m_seed;
+  std::uint64_t m_seed;
 
   mutable HashLruCache<int, LayerPerlins> m_layerPerlinsCache;
   mutable HashLruCache<Vec2I, Sector> m_sectorCache;
 };
 
-}
+}// namespace Star

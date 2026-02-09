@@ -1,19 +1,16 @@
 #pragma once
 
-#include <optional>
-
 #include "StarApplication.hpp"
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
+#include "StarConfig.hpp"
 #include "StarDesktopService.hpp"
 #include "StarImage.hpp"
-#include "StarRect.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarStatisticsService.hpp"
+#include "StarUserGeneratedContentService.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(ApplicationController);
-
 // Audio format is always 16 bit signed integer samples
 struct AudioFormat {
   unsigned sampleRate;
@@ -45,39 +42,38 @@ public:
   virtual void setCursorVisible(bool cursorVisible) = 0;
   virtual void setCursorPosition(Vec2I cursorPosition) = 0;
   virtual void setCursorHardware(bool cursorHardware) = 0;
-  virtual bool setCursorImage(const String& id, const ImageConstPtr& image, unsigned scale, const Vec2I& offset) = 0;
+  virtual auto setCursorImage(const String& id, const ConstPtr<Image>& image, unsigned scale, const Vec2I& offset) -> bool = 0;
   virtual void setAcceptingTextInput(bool acceptingTextInput) = 0;
-  virtual void setTextArea(std::optional<pair<RectI, int>> area = {}) = 0;
+  virtual void setTextArea(std::optional<std::pair<RectI, int>> area = {}) = 0;
 
-
-  virtual AudioFormat enableAudio() = 0;
+  virtual auto enableAudio() -> AudioFormat = 0;
   virtual void disableAudio() = 0;
 
-  typedef std::function<void(uint8_t*, int)> AudioCallback;
-  virtual bool openAudioInputDevice(uint32_t deviceId, int freq, int channels, AudioCallback callback) = 0;
-  virtual bool closeAudioInputDevice() = 0;
+  using AudioCallback = std::function<void(std::uint8_t*, int)>;
+  virtual auto openAudioInputDevice(std::uint32_t deviceId, int freq, int channels, AudioCallback callback) -> bool = 0;
+  virtual auto closeAudioInputDevice() -> bool = 0;
 
-  virtual bool hasClipboard() = 0;
-  virtual bool setClipboard(String text) = 0;
-  virtual bool setClipboardData(StringMap<ByteArray>) = 0;
-  virtual bool setClipboardImage(Image const& image, ByteArray* png = {}, String const* path = nullptr) = 0;
-  virtual bool setClipboardFile(String const& path) = 0;
-  virtual std::optional<String> getClipboard() = 0;
+  virtual auto hasClipboard() -> bool = 0;
+  virtual auto setClipboard(String text) -> bool = 0;
+  virtual auto setClipboardData(StringMap<ByteArray>) -> bool = 0;
+  virtual auto setClipboardImage(Image const& image, ByteArray* png = {}, String const* path = nullptr) -> bool = 0;
+  virtual auto setClipboardFile(String const& path) -> bool = 0;
+  virtual auto getClipboard() -> std::optional<String> = 0;
 
-  virtual bool isFocused() const = 0;
+  [[nodiscard]] virtual auto isFocused() const -> bool = 0;
 
   // Returns the latest actual measured update and render rate, which may be
   // different than the target update rate.
-  virtual float updateRate() const = 0;
-  virtual float renderFps() const = 0;
+  [[nodiscard]] virtual auto updateRate() const -> float = 0;
+  [[nodiscard]] virtual auto renderFps() const -> float = 0;
 
-  virtual StatisticsServicePtr statisticsService() const = 0;
-  virtual P2PNetworkingServicePtr p2pNetworkingService() const = 0;
-  virtual UserGeneratedContentServicePtr userGeneratedContentService() const = 0;
-  virtual DesktopServicePtr desktopService() const = 0;
+  [[nodiscard]] virtual auto statisticsService() const -> Ptr<StatisticsService> = 0;
+  [[nodiscard]] virtual auto p2pNetworkingService() const -> Ptr<P2PNetworkingService> = 0;
+  [[nodiscard]] virtual auto userGeneratedContentService() const -> Ptr<UserGeneratedContentService> = 0;
+  [[nodiscard]] virtual auto desktopService() const -> Ptr<DesktopService> = 0;
 
   // Signals the application to quit
   virtual void quit() = 0;
 };
 
-}
+}// namespace Star

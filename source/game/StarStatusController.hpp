@@ -1,61 +1,62 @@
 #pragma once
 
-#include "StarObserverStream.hpp"
+#include "StarDamage.hpp"
+#include "StarEntityRenderingTypes.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarNetElementDynamicGroup.hpp"
 #include "StarNetElementExt.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarObserverStream.hpp"
 #include "StarStatCollection.hpp"
 #include "StarStatusEffectDatabase.hpp"
-#include "StarDamage.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarNetworkedAnimator.hpp"
-#include "StarEntityRenderingTypes.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(StatusController);
 
 class StatusController : public NetElement {
 public:
   StatusController(Json const& config);
 
-  Json diskStore() const;
+  auto diskStore() const -> Json;
   void diskLoad(Json const& store);
 
-  Json statusProperty(String const& name, Json const& def = Json()) const;
+  auto statusProperty(String const& name, Json const& def = Json()) const -> Json;
   void setStatusProperty(String const& name, Json value);
 
-  StringList statNames() const;
-  float stat(String const& statName) const;
+  auto statNames() const -> StringList;
+  auto stat(String const& statName) const -> float;
   // Returns true if the stat is strictly greater than zero
-  bool statPositive(String const& statName) const;
+  auto statPositive(String const& statName) const -> bool;
 
-  StringList resourceNames() const;
-  bool isResource(String const& resourceName) const;
-  float resource(String const& resourceName) const;
+  auto resourceNames() const -> StringList;
+  auto isResource(String const& resourceName) const -> bool;
+  auto resource(String const& resourceName) const -> float;
   // Returns true if the resource is strictly greater than zero
-  bool resourcePositive(String const& resourceName) const;
+  auto resourcePositive(String const& resourceName) const -> bool;
 
   void setResource(String const& resourceName, float value);
   void modifyResource(String const& resourceName, float amount);
 
-  float giveResource(String const& resourceName, float amount);
+  auto giveResource(String const& resourceName, float amount) -> float;
 
-  bool consumeResource(String const& resourceName, float amount);
-  bool overConsumeResource(String const& resourceName, float amount);
+  auto consumeResource(String const& resourceName, float amount) -> bool;
+  auto overConsumeResource(String const& resourceName, float amount) -> bool;
 
-  bool resourceLocked(String const& resourceName) const;
+  auto resourceLocked(String const& resourceName) const -> bool;
   void setResourceLocked(String const& resourceName, bool locked);
 
   // Resetting a resource also clears any locked states
   void resetResource(String const& resourceName);
   void resetAllResources();
 
-  std::optional<float> resourceMax(String const& resourceName) const;
-  std::optional<float> resourcePercentage(String const& resourceName) const;
-  float setResourcePercentage(String const& resourceName, float resourcePercentage);
-  float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
+  auto resourceMax(String const& resourceName) const -> std::optional<float>;
+  auto resourcePercentage(String const& resourceName) const -> std::optional<float>;
+  auto setResourcePercentage(String const& resourceName, float resourcePercentage) -> float;
+  auto modifyResourcePercentage(String const& resourceName, float resourcePercentage) -> float;
 
-  List<PersistentStatusEffect> getPersistentEffects(String const& statEffectCategory) const;
+  auto getPersistentEffects(String const& statEffectCategory) const -> List<PersistentStatusEffect>;
   void addPersistentEffect(String const& statEffectCategory, PersistentStatusEffect const& persistentEffect);
   void addPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects);
   void setPersistentEffects(String const& statEffectCategory, List<PersistentStatusEffect> const& persistentEffects);
@@ -65,26 +66,26 @@ public:
   void addEphemeralEffect(EphemeralStatusEffect const& effect, std::optional<EntityId> sourceEntityId = {});
   void addEphemeralEffects(List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId = {});
   // Will have no effect if the unique effect is not applied ephemerally
-  bool removeEphemeralEffect(UniqueStatusEffect const& uniqueEffect);
+  auto removeEphemeralEffect(UniqueStatusEffect const& uniqueEffect) -> bool;
   void clearEphemeralEffects();
 
-  bool appliesEnvironmentStatusEffects() const;
+  auto appliesEnvironmentStatusEffects() const -> bool;
   void setAppliesEnvironmentStatusEffects(bool appliesEnvironmentStatusEffects);
 
   // All unique stat effects, whether applied ephemerally or persistently, and
   // their remaining durations.
-  ActiveUniqueStatusEffectSummary activeUniqueStatusEffectSummary() const;
+  auto activeUniqueStatusEffectSummary() const -> ActiveUniqueStatusEffectSummary;
 
-  bool uniqueStatusEffectActive(String const& effectName) const;
+  auto uniqueStatusEffectActive(String const& effectName) const -> bool;
 
-  const Directives& primaryDirectives() const;
+  auto primaryDirectives() const -> const Directives&;
   void setPrimaryDirectives(Directives const& directives);
 
   // damage request and notification methods should only be called on the master controller.
-  List<DamageNotification> applyDamageRequest(DamageRequest const& damageRequest);
+  auto applyDamageRequest(DamageRequest const& damageRequest) -> List<DamageNotification>;
   void hitOther(EntityId targetEntityId, DamageRequest damageRequest);
   void damagedOther(DamageNotification damageNotification);
-  List<DamageNotification> pullSelfDamageNotifications();
+  auto pullSelfDamageNotifications() -> List<DamageNotification>;
   void applySelfDamageRequest(DamageRequest dr);
 
   // Pulls recent incoming and outgoing damage notifications.  In order for
@@ -94,9 +95,9 @@ public:
   // another step value to pass into the function on the next call to get
   // damage notifications SINCE the first call.  If since is 0, returns all
   // recent notifications available.
-  pair<List<DamageNotification>, uint64_t> damageTakenSince(uint64_t since = 0) const;
-  pair<List<pair<EntityId, DamageRequest>>, uint64_t> inflictedHitsSince(uint64_t since = 0) const;
-  pair<List<DamageNotification>, uint64_t> inflictedDamageSince(uint64_t since = 0) const;
+  auto damageTakenSince(std::uint64_t since = 0) const -> std::pair<List<DamageNotification>, std::uint64_t>;
+  auto inflictedHitsSince(std::uint64_t since = 0) const -> std::pair<List<std::pair<EntityId, DamageRequest>>, std::uint64_t>;
+  auto inflictedDamageSince(std::uint64_t since = 0) const -> std::pair<List<DamageNotification>, std::uint64_t>;
 
   void init(Entity* parentEntity, ActorMovementController* movementController);
   void uninit();
@@ -110,27 +111,27 @@ public:
   void disableNetInterpolation() override;
   void tickNetInterpolation(float dt) override;
 
-  bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+  auto writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const -> bool override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
   void blankNetDelta(float interpolationTime) override;
 
   void tickMaster(float dt);
   void tickSlave(float dt);
 
-  const DirectivesGroup& parentDirectives() const;
-  List<Drawable> drawables() const;
-  List<LightSource> lightSources() const;
-  List<OverheadBar> overheadBars();
-  bool toolUsageSuppressed() const;
+  auto parentDirectives() const -> const DirectivesGroup&;
+  auto drawables() const -> List<Drawable>;
+  auto lightSources() const -> List<LightSource>;
+  auto overheadBars() -> List<OverheadBar>;
+  auto toolUsageSuppressed() const -> bool;
 
   // new audios and particles will only be generated on the client
-  List<AudioInstancePtr> pullNewAudios();
-  List<Particle> pullNewParticles();
+  auto pullNewAudios() -> List<Ptr<AudioInstance>>;
+  auto pullNewParticles() -> List<Particle>;
 
-  std::optional<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
+  auto receiveMessage(String const& message, bool localMessage, JsonArray const& args = {}) -> std::optional<Json>;
 
 private:
-  typedef LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> StatScript;
+  using StatScript = LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>;
 
   struct EffectAnimator : public NetElement {
     EffectAnimator(std::optional<String> animationConfig = {});
@@ -144,7 +145,7 @@ private:
     void disableNetInterpolation() override;
     void tickNetInterpolation(float dt) override;
 
-    bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
+    auto writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules = {}) const -> bool override;
     void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
     void blankNetDelta(float interpolationTime) override;
 
@@ -152,7 +153,7 @@ private:
     NetworkedAnimator animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
   };
-  typedef NetElementDynamicGroup<EffectAnimator> EffectAnimatorGroup;
+  using EffectAnimatorGroup = NetElementDynamicGroup<EffectAnimator>;
 
   struct UniqueEffectMetadata : public NetElementSyncGroup {
     UniqueEffectMetadata();
@@ -170,7 +171,7 @@ private:
     // the unique effect was the owning entity.
     NetElementData<std::optional<EntityId>> sourceEntityId;
   };
-  typedef NetElementDynamicGroup<UniqueEffectMetadata> UniqueEffectMetadataGroup;
+  using UniqueEffectMetadataGroup = NetElementDynamicGroup<UniqueEffectMetadata>;
 
   struct PersistentEffectCategory {
     std::optional<StatModifierGroupId> modifierEffectsGroupId;
@@ -191,8 +192,8 @@ private:
   void updateAnimators(float dt);
   void updatePersistentUniqueEffects();
 
-  float defaultUniqueEffectDuration(UniqueStatusEffect const& name) const;
-  bool addUniqueEffect(UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId);
+  auto defaultUniqueEffectDuration(UniqueStatusEffect const& name) const -> float;
+  auto addUniqueEffect(UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId) -> bool;
   void removeUniqueEffect(UniqueStatusEffect const& name);
 
   void initPrimaryScript();
@@ -201,7 +202,7 @@ private:
   void initUniqueEffectScript(UniqueEffectInstance& uniqueEffect);
   void uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffect);
 
-  LuaCallbacks makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect);
+  auto makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect) -> LuaCallbacks;
 
   NetElementGroup m_netGroup;
   StatCollection m_statCollection;
@@ -233,9 +234,9 @@ private:
 
   List<DamageNotification> m_pendingSelfDamageNotifications;
 
-  ObserverStream<pair<EntityId, DamageRequest>> m_recentHitsGiven;
+  ObserverStream<std::pair<EntityId, DamageRequest>> m_recentHitsGiven;
   ObserverStream<DamageNotification> m_recentDamageGiven;
   ObserverStream<DamageNotification> m_recentDamageTaken;
 };
 
-}
+}// namespace Star

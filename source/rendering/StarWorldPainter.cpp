@@ -1,9 +1,10 @@
 #include "StarWorldPainter.hpp"
+
 #include "StarAnimation.hpp"
-#include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
-#include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
@@ -25,7 +26,7 @@ WorldPainter::WorldPainter() {
   m_preloadTextureChance = m_assets->json("/rendering.config:preloadTextureChance").toFloat();
 }
 
-void WorldPainter::renderInit(RendererPtr renderer) {
+void WorldPainter::renderInit(Ptr<Renderer> renderer) {
   m_assets = Root::singleton().assets();
 
   m_renderer = std::move(renderer);
@@ -41,7 +42,7 @@ void WorldPainter::setCameraPosition(WorldGeometry const& geometry, Vec2F const&
   m_camera.setCenterWorldPosition(position);
 }
 
-WorldCamera& WorldPainter::camera() {
+auto WorldPainter::camera() -> WorldCamera& {
   return m_camera;
 }
 
@@ -49,7 +50,7 @@ void WorldPainter::update(float dt) {
   m_environmentPainter->update(dt);
 }
 
-void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWaiter) {
+void WorldPainter::render(WorldRenderData& renderData, std::function<bool()> lightWaiter) {
   m_camera.setScreenSize(m_renderer->screenSize());
   m_camera.setTargetPixelRatio(Root::singleton().configuration()->get("zoomLevel").toFloat());
 
@@ -80,7 +81,7 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
 
   m_renderer->setEffectParameter("lightMapEnabled", !renderData.isFullbright);
   if (renderData.isFullbright) {
-    m_renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), { 255, 255, 255, 255 }, PixelFormat::RGB24));
+    m_renderer->setEffectTexture("lightMap", Image::filled(Vec2U(1, 1), {255, 255, 255, 255}, PixelFormat::RGB24));
     m_renderer->setEffectParameter("lightMapMultiplier", 1.0f);
   } else {
     if (lightMapUpdated) {
@@ -107,14 +108,14 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
 
   // Main world layers
 
-  Map<EntityRenderLayer, List<pair<EntityHighlightEffect, List<Drawable>>>> entityDrawables;
+  Map<EntityRenderLayer, List<std::pair<EntityHighlightEffect, List<Drawable>>>> entityDrawables;
   for (auto& ed : renderData.entityDrawables) {
     for (auto& p : ed.layers)
       entityDrawables[p.first].append({ed.highlightEffect, std::move(p.second)});
   }
 
   auto entityDrawableIterator = entityDrawables.begin();
-  auto renderEntitiesUntil = [this, &entityDrawables, &entityDrawableIterator](Maybe<EntityRenderLayer> until) {
+  auto renderEntitiesUntil = [this, &entityDrawables, &entityDrawableIterator](std::optional<EntityRenderLayer> until) -> void {
     while (true) {
       if (entityDrawableIterator == entityDrawables.end())
         break;
@@ -151,11 +152,11 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
   renderBars(renderData);
   renderEntitiesUntil({});
 
-  auto dimLevel = round(renderData.dimLevel * 255);
+  auto dimLevel = std::round(renderData.dimLevel * 255);
   if (dimLevel != 0)
     m_renderer->render(renderFlatRect(RectF::withSize({}, Vec2F(m_camera.screenSize())), Vec4B(renderData.dimColor, dimLevel), 0.0f));
 
-  int64_t textureTimeout = m_assets->json("/rendering.config:textureTimeout").toInt();
+  std::int64_t textureTimeout = m_assets->json("/rendering.config:textureTimeout").toInt();
   m_textPainter->cleanup(textureTimeout);
   m_drawablePainter->cleanup(textureTimeout);
   m_environmentPainter->cleanup(textureTimeout);
@@ -186,9 +187,9 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
 
     if (particle.type == Particle::Type::Ember) {
       m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(),
-        RectF(position - size / 2, position + size / 2),
-        particle.color.toRgba(),
-        particle.fullbright ? 0.0f : 1.0f);
+                                                     RectF(position - size / 2, position + size / 2),
+                                                     particle.color.toRgba(),
+                                                     particle.fullbright ? 0.0f : 1.0f);
 
     } else if (particle.type == Particle::Type::Streak) {
       // Draw a rotated quad streaking in the direction the particle is coming from.
@@ -199,11 +200,11 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
       Vec4B color = particle.color.toRgba();
       float lightMapMultiplier = particle.fullbright ? 0.0f : 1.0f;
       m_renderer->immediatePrimitives().emplace_back(std::in_place_type_t<RenderQuad>(),
-        position - sideHalf,
-        position + sideHalf,
-        position - dir * length + sideHalf,
-        position - dir * length - sideHalf,
-        color, lightMapMultiplier);
+                                                     position - sideHalf,
+                                                     position + sideHalf,
+                                                     position - dir * length + sideHalf,
+                                                     position - dir * length - sideHalf,
+                                                     color, lightMapMultiplier);
 
     } else if (particle.type == Particle::Type::Textured || particle.type == Particle::Type::Animated) {
       Drawable drawable;
@@ -225,7 +226,7 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
 
     } else if (particle.type == Particle::Type::Text) {
       Vec2F position = m_camera.worldToScreen(particle.position);
-      int size = min(128.0f, round((float)textParticleFontSize * m_camera.pixelRatio() * particle.size));
+      int size = std::min(128.0f, std::round((float)textParticleFontSize * m_camera.pixelRatio() * particle.size));
       if (size > 0) {
         m_textPainter->setFontSize(size);
         m_textPainter->setFontColor(particle.color.toRgba());
@@ -321,4 +322,4 @@ void WorldPainter::drawDrawableSet(List<Drawable>& drawables) {
   m_renderer->flush();
 }
 
-}
+}// namespace Star

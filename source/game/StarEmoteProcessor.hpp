@@ -4,21 +4,19 @@
 
 namespace Star {
 
-STAR_CLASS(EmoteProcessor);
-
 class EmoteProcessor {
 public:
   EmoteProcessor();
 
-  HumanoidEmote detectEmotes(String const& chatter) const;
+  [[nodiscard]] auto detectEmotes(String const& chatter) const -> HumanoidEmote;
 
 private:
   struct EmoteBinding {
-    EmoteBinding() : emote() {}
+    EmoteBinding() = default;
     String text;
-    HumanoidEmote emote;
+    HumanoidEmote emote{};
   };
   List<EmoteBinding> m_emoteBindings;
 };
 
-}
+}// namespace Star

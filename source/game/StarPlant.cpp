@@ -1,14 +1,14 @@
 #include "StarPlant.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarWorld.hpp"
-#include "StarRoot.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarPlantDrop.hpp"
-#include "StarImageMetadataDatabase.hpp"
-#include "StarAssets.hpp"
-#include "StarImage.hpp"
+
 #include "StarEntityRendering.hpp"
-#include "StarParticleDatabase.hpp"
+#include "StarImageMetadataDatabase.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarParticleDatabase.hpp"// IWYU pragma: export
+#include "StarPlantDrop.hpp"
+#include "StarRoot.hpp"
+#include "StarWorld.hpp"
+
+import std;
 
 namespace Star {
 
@@ -27,7 +27,7 @@ Plant::PlantPiece::PlantPiece() {
   imagePath = AssetPath();
   offset = {};
   segmentIdx = 0;
-  structuralSegment = 0;
+  structuralSegment = false;
   kind = PlantPieceKind::None;
   zLevel = 0;
   rotationType = RotationType::DontRotate;
@@ -36,7 +36,7 @@ Plant::PlantPiece::PlantPiece() {
   flip = false;
 }
 
-Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
+Plant::Plant(TreeVariant const& config, std::uint64_t seed) : Plant() {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_windTime = 0.0f;
@@ -121,7 +121,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
 
       if (baseLeavesSettings.contains("image") && !baseLeavesSettings.get("image").toString().empty()) {
         String baseLeavesFile =
-            AssetPath::relativeTo(config.foliageDirectory, baseLeavesSettings.get("image").toString());
+          AssetPath::relativeTo(config.foliageDirectory, baseLeavesSettings.get("image").toString());
 
         PlantPiece piece;
         piece.image = strf("{}?hueshift={}", baseLeavesFile, config.foliageHueShift);
@@ -137,7 +137,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
 
       if (baseLeavesSettings.contains("backimage") && !baseLeavesSettings.get("backimage").toString().empty()) {
         String baseLeavesBackFile =
-            AssetPath::relativeTo(config.foliageDirectory, baseLeavesSettings.get("backimage").toString());
+          AssetPath::relativeTo(config.foliageDirectory, baseLeavesSettings.get("backimage").toString());
         PlantPiece piece;
         piece.image = strf("{}?hueshift={}", baseLeavesBackFile, config.foliageHueShift);
         piece.offset = Vec2F{xOf, yOf};
@@ -152,7 +152,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
     }
 
     xOffset += attachmentSettings.get("x").toDouble() / TilePixels;
-    yOffset += attachmentSettings.get("y").toDouble() / TilePixels; // trunk height
+    yOffset += attachmentSettings.get("y").toDouble() / TilePixels;// trunk height
 
     segment++;
   }
@@ -207,7 +207,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
 
         if (trunkLeavesSettings.contains("image") && !trunkLeavesSettings.get("image").toString().empty()) {
           String trunkLeavesFile =
-              AssetPath::relativeTo(config.foliageDirectory, trunkLeavesSettings.get("image").toString());
+            AssetPath::relativeTo(config.foliageDirectory, trunkLeavesSettings.get("image").toString());
           PlantPiece piece;
           piece.image = strf("{}?hueshift={}", trunkLeavesFile, config.foliageHueShift);
           piece.offset = Vec2F{xOf, yOf};
@@ -222,7 +222,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
 
         if (trunkLeavesSettings.contains("backimage") && !trunkLeavesSettings.get("backimage").toString().empty()) {
           String trunkLeavesBackFile =
-              AssetPath::relativeTo(config.foliageDirectory, trunkLeavesSettings.get("backimage").toString());
+            AssetPath::relativeTo(config.foliageDirectory, trunkLeavesSettings.get("backimage").toString());
           PlantPiece piece;
           piece.image = strf("{}?hueshift={}", trunkLeavesBackFile, config.foliageHueShift);
           piece.offset = Vec2F{xOf, yOf};
@@ -280,7 +280,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
 
             if (branchLeavesSettings.contains("image") && !branchLeavesSettings.get("image").toString().empty()) {
               String branchLeavesFile =
-                  AssetPath::relativeTo(config.foliageDirectory, branchLeavesSettings.get("image").toString());
+                AssetPath::relativeTo(config.foliageDirectory, branchLeavesSettings.get("image").toString());
               PlantPiece piece;
               piece.image = strf("{}?hueshift={}", branchLeavesFile, config.foliageHueShift);
               piece.offset = Vec2F{xOf, yOf};
@@ -296,7 +296,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
             if (branchLeavesSettings.contains("backimage")
                 && !branchLeavesSettings.get("backimage").toString().empty()) {
               String branchLeavesBackFile =
-                  AssetPath::relativeTo(config.foliageDirectory, branchLeavesSettings.get("backimage").toString());
+                AssetPath::relativeTo(config.foliageDirectory, branchLeavesSettings.get("backimage").toString());
               PlantPiece piece;
               piece.image = strf("{}?hueshift={}", branchLeavesBackFile, config.foliageHueShift);
               piece.offset = Vec2F{xOf, yOf};
@@ -358,7 +358,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
 
         if (crownLeavesSettings.contains("image") && !crownLeavesSettings.get("image").toString().empty()) {
           String crownLeavesFile =
-              AssetPath::relativeTo(config.foliageDirectory, crownLeavesSettings.get("image").toString());
+            AssetPath::relativeTo(config.foliageDirectory, crownLeavesSettings.get("image").toString());
 
           PlantPiece piece;
           piece.image = strf("{}?hueshift={}", crownLeavesFile, config.foliageHueShift);
@@ -374,7 +374,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
 
         if (crownLeavesSettings.contains("backimage") && !crownLeavesSettings.get("backimage").toString().empty()) {
           String crownLeavesBackFile =
-              AssetPath::relativeTo(config.foliageDirectory, crownLeavesSettings.get("backimage").toString());
+            AssetPath::relativeTo(config.foliageDirectory, crownLeavesSettings.get("backimage").toString());
 
           PlantPiece piece;
           piece.image = strf("{}?hueshift={}", crownLeavesBackFile, config.foliageHueShift);
@@ -391,12 +391,12 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
     }
   }
 
-  sort(m_pieces, [](PlantPiece const& a, PlantPiece const& b) { return a.zLevel < b.zLevel; });
+  sort(m_pieces, [](PlantPiece const& a, PlantPiece const& b) -> bool { return a.zLevel < b.zLevel; });
   validatePieces();
   setupNetStates();
 }
 
-Json Plant::diskStore() const {
+auto Plant::diskStore() const -> Json {
   return JsonObject{
     {"tilePosition", jsonFromVec2I(m_tilePosition)},
     {"ceiling", m_ceiling},
@@ -411,7 +411,7 @@ Json Plant::diskStore() const {
   };
 }
 
-ByteArray Plant::netStore(NetCompatibilityRules rules) const {
+auto Plant::netStore(NetCompatibilityRules rules) const -> ByteArray {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
   ds.viwrite(m_tilePosition[0]);
@@ -430,7 +430,7 @@ ByteArray Plant::netStore(NetCompatibilityRules rules) const {
   return ds.takeData();
 }
 
-Plant::Plant(GrassVariant const& config, uint64_t seed) : Plant() {
+Plant::Plant(GrassVariant const& config, std::uint64_t seed) : Plant() {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -451,7 +451,7 @@ Plant::Plant(GrassVariant const& config, uint64_t seed) : Plant() {
   // If this is a ceiling plant, offset the image so that the [0, 0] space is
   // at the top
   if (config.ceiling) {
-    auto imgMetadata = Root::singleton().imageMetadataDatabase();
+    ConstPtr<ImageMetadataDatabase> imgMetadata = Root::singleton().imageMetadataDatabase();
     float imageHeight = imgMetadata->imageSize(imageName)[1];
     offset = Vec2F(0.0f, 1.0f - imageHeight / TilePixels);
   }
@@ -469,7 +469,7 @@ Plant::Plant(GrassVariant const& config, uint64_t seed) : Plant() {
   setupNetStates();
 }
 
-Plant::Plant(BushVariant const& config, uint64_t seed) : Plant() {
+Plant::Plant(BushVariant const& config, std::uint64_t seed) : Plant() {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -578,7 +578,7 @@ Plant::Plant() {
   m_tileDamageEvent = false;
 }
 
-EntityType Plant::entityType() const {
+auto Plant::entityType() const -> EntityType {
   return EntityType::Plant;
 }
 
@@ -588,7 +588,7 @@ void Plant::init(World* world, EntityId entityId, EntityMode mode) {
   m_tilePosition = world->geometry().xwrap(m_tilePosition);
 }
 
-pair<ByteArray, uint64_t> Plant::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+auto Plant::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) -> std::pair<ByteArray, std::uint64_t> {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -607,23 +607,23 @@ void Plant::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-String Plant::description() const {
+auto Plant::description() const -> String {
   return m_descriptions.getString("description");
 }
 
-Vec2F Plant::position() const {
+auto Plant::position() const -> Vec2F {
   return Vec2F(m_tilePosition);
 }
 
-RectF Plant::metaBoundBox() const {
+auto Plant::metaBoundBox() const -> RectF {
   return m_metaBoundBox;
 }
 
-bool Plant::ephemeral() const {
+auto Plant::ephemeral() const -> bool {
   return m_ephemeral;
 }
 
-Vec2I Plant::tilePosition() const {
+auto Plant::tilePosition() const -> Vec2I {
   return m_tilePosition;
 }
 
@@ -631,27 +631,27 @@ void Plant::setTilePosition(Vec2I const& tilePosition) {
   m_tilePosition = tilePosition;
 }
 
-List<Vec2I> Plant::spaces() const {
+auto Plant::spaces() const -> List<Vec2I> {
   return m_spaces;
 }
 
-List<Vec2I> Plant::roots() const {
+auto Plant::roots() const -> List<Vec2I> {
   return m_roots;
 }
 
-Vec2I Plant::primaryRoot() const {
+auto Plant::primaryRoot() const -> Vec2I {
   return m_ceiling ? Vec2I(0, 1) : Vec2I(0, -1);
 }
 
-bool Plant::ceiling() const {
+auto Plant::ceiling() const -> bool {
   return m_ceiling;
 }
 
-bool Plant::shouldDestroy() const {
+auto Plant::shouldDestroy() const -> bool {
   return m_broken || m_pieces.size() == 0;
 }
 
-bool Plant::checkBroken() {
+auto Plant::checkBroken() -> bool {
   if (!m_broken) {
     if (!allSpacesOccupied(m_roots)) {
       if (m_fallsWhenDead) {
@@ -666,11 +666,11 @@ bool Plant::checkBroken() {
   return m_broken;
 }
 
-List<Plant::PlantPiece> Plant::pieces() const {
+auto Plant::pieces() const -> List<Plant::PlantPiece> {
   return m_pieces;
 }
 
-RectF Plant::interactiveBoundBox() const {
+auto Plant::interactiveBoundBox() const -> RectF {
   return RectF(m_boundBox);
 }
 
@@ -686,7 +686,7 @@ void Plant::scanSpacesAndRoots() {
   for (auto& piece : m_pieces) {
     piece.imageSize = imageMetadataDatabase->imageSize(piece.image);
     piece.spaces = Set<Vec2I>::from(
-        imageMetadataDatabase->imageSpaces(piece.image, piece.offset * TilePixels, PlantScanThreshold, piece.flip));
+      imageMetadataDatabase->imageSpaces(piece.image, piece.offset * TilePixels, PlantScanThreshold, piece.flip));
     spaces.addAll(piece.spaces);
   }
 
@@ -711,16 +711,16 @@ void Plant::calcBoundBox() {
   m_metaBoundBox = RectF(boundBox.min() - Vec2F(1, 1), boundBox.max() + Vec2F(2, 2));
 }
 
-float Plant::branchRotation(float xPos, float rotoffset) const {
+auto Plant::branchRotation(float xPos, float rotoffset) const -> float {
   if (!inWorld() || m_windLevel == 0.0f)
     return 0.0f;
 
-  float intensity = fabs(m_windLevel);
+  float intensity = std::fabs(m_windLevel);
 
-  return copysign(0.00117f, m_windLevel) * (std::sin(m_windTime + rotoffset + xPos / 10.0f) * intensity - intensity / 300.0f);
+  return std::copysign(0.00117f, m_windLevel) * (std::sin(m_windTime + rotoffset + xPos / 10.0f) * intensity - intensity / 300.0f);
 }
 
-void Plant::update(float dt, uint64_t) {
+void Plant::update(float dt, std::uint64_t) {
   m_windTime += dt;
   m_windTime = std::fmod(m_windTime, 628.32f);
   m_windLevel = world()->windLevel(Vec2F(m_tilePosition));
@@ -789,7 +789,7 @@ void Plant::render(RenderCallback* renderCallback) {
         auto sound = Random::randFrom(damageTreeSoundOptions);
         Vec2F pos = position() + Vec2F(m_tileDamageX + Random::randf(), m_tileDamageY + Random::randf());
         auto assets = Root::singleton().assets();
-        auto audioInstance = make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
+        auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
         audioInstance->setPosition(pos);
         audioInstance->setVolume(sound.getFloat("volume", 1.0f));
         renderCallback->addAudio(std::move(audioInstance));
@@ -801,69 +801,69 @@ void Plant::render(RenderCallback* renderCallback) {
 void Plant::readPieces(ByteArray pieces) {
   if (!pieces.empty()) {
     DataStreamBuffer ds(std::move(pieces));
-    ds.readContainer(m_pieces, [](DataStream& ds, PlantPiece& piece) {
-        ds.read(piece.image);
-        ds.read(piece.offset[0]);
-        ds.read(piece.offset[1]);
-        ds.read(piece.rotationType);
-        ds.read(piece.rotationOffset);
-        ds.read(piece.structuralSegment);
-        ds.read(piece.kind);
-        ds.read(piece.segmentIdx);
-        ds.read(piece.flip);
-      });
+    ds.readContainer(m_pieces, [](DataStream& ds, PlantPiece& piece) -> void {
+      ds.read(piece.image);
+      ds.read(piece.offset[0]);
+      ds.read(piece.offset[1]);
+      ds.read(piece.rotationType);
+      ds.read(piece.rotationOffset);
+      ds.read(piece.structuralSegment);
+      ds.read(piece.kind);
+      ds.read(piece.segmentIdx);
+      ds.read(piece.flip);
+    });
     m_piecesScanned = false;
     if (inWorld())
       validatePieces();
   }
 }
 
-ByteArray Plant::writePieces() const {
-  return DataStreamBuffer::serializeContainer(m_pieces, [](DataStream& ds, PlantPiece const& piece) {
-      ds.write(piece.image);
-      ds.write(piece.offset[0]);
-      ds.write(piece.offset[1]);
-      ds.write(piece.rotationType);
-      ds.write(piece.rotationOffset);
-      ds.write(piece.structuralSegment);
-      ds.write(piece.kind);
-      ds.write(piece.segmentIdx);
-      ds.write(piece.flip);
-    });
+auto Plant::writePieces() const -> ByteArray {
+  return DataStreamBuffer::serializeContainer(m_pieces, [](DataStream& ds, PlantPiece const& piece) -> void {
+    ds.write(piece.image);
+    ds.write(piece.offset[0]);
+    ds.write(piece.offset[1]);
+    ds.write(piece.rotationType);
+    ds.write(piece.rotationOffset);
+    ds.write(piece.structuralSegment);
+    ds.write(piece.kind);
+    ds.write(piece.segmentIdx);
+    ds.write(piece.flip);
+  });
 }
 
 void Plant::readPiecesFromJson(Json const& pieces) {
   m_pieces = jsonToList<PlantPiece>(pieces, [](Json const& v) -> PlantPiece {
-      PlantPiece res;
-      res.image = v.getString("image");
-      res.offset = jsonToVec2F(v.get("offset"));
-      res.rotationType = RotationTypeNames.getLeft(v.getString("rotationType"));
-      res.rotationOffset = v.getFloat("rotationOffset");
-      res.structuralSegment = v.getBool("structuralSegment");
-      res.kind = (PlantPieceKind)v.getInt("kind");
-      res.segmentIdx = v.getInt("segmentIdx");
-      res.flip = v.getBool("flip");
+    PlantPiece res;
+    res.image = v.getString("image");
+    res.offset = jsonToVec2F(v.get("offset"));
+    res.rotationType = RotationTypeNames.getLeft(v.getString("rotationType"));
+    res.rotationOffset = v.getFloat("rotationOffset");
+    res.structuralSegment = v.getBool("structuralSegment");
+    res.kind = (PlantPieceKind)v.getInt("kind");
+    res.segmentIdx = v.getInt("segmentIdx");
+    res.flip = v.getBool("flip");
 
-      return res;
-    });
+    return res;
+  });
   m_piecesScanned = false;
   if (inWorld())
     validatePieces();
 }
 
-Json Plant::writePiecesToJson() const {
+auto Plant::writePiecesToJson() const -> Json {
   return jsonFromList<PlantPiece>(m_pieces, [](PlantPiece const& piece) -> Json {
-      return JsonObject{
-        {"image", piece.image},
-        {"offset", jsonFromVec2F(piece.offset)},
-        {"rotationType", RotationTypeNames.getRight(piece.rotationType)},
-        {"rotationOffset", piece.rotationOffset},
-        {"structuralSegment", piece.structuralSegment},
-        {"kind", piece.kind},
-        {"segmentIdx", piece.segmentIdx},
-        {"flip", piece.flip},
-      };
-    });
+    return JsonObject{
+      {"image", piece.image},
+      {"offset", jsonFromVec2F(piece.offset)},
+      {"rotationType", RotationTypeNames.getRight(piece.rotationType)},
+      {"rotationOffset", piece.rotationOffset},
+      {"structuralSegment", piece.structuralSegment},
+      {"kind", piece.kind},
+      {"segmentIdx", piece.segmentIdx},
+      {"flip", piece.flip},
+    };
+  });
 }
 
 void Plant::validatePieces() {
@@ -883,8 +883,8 @@ void Plant::setupNetStates() {
   m_netGroup.addNetElement(&m_tileDamageYNetState);
   m_netGroup.addNetElement(&m_tileDamageEventNetState);
 
-  m_netGroup.setNeedsStoreCallback(bind(&Plant::setNetStates, this));
-  m_netGroup.setNeedsLoadCallback(bind(&Plant::getNetStates, this));
+  m_netGroup.setNeedsStoreCallback([this] -> void { setNetStates(); });
+  m_netGroup.setNeedsLoadCallback([this](auto _) -> auto { getNetStates(); });
 }
 
 void Plant::getNetStates() {
@@ -914,7 +914,7 @@ void Plant::setNetStates() {
   }
 }
 
-bool Plant::damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePosition, TileDamage const& tileDamage) {
+auto Plant::damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePosition, TileDamage const& tileDamage) -> bool {
   auto position = baseDamagePosition(positions);
 
   auto geometry = world()->geometry();
@@ -942,7 +942,7 @@ bool Plant::damageTiles(List<Vec2I> const& positions, Vec2F const& sourcePositio
 void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) {
   auto geometry = world()->geometry();
   Vec2I internalPos = geometry.diff(position, tilePosition());
-  size_t idx = highest<size_t>();
+  auto idx = highest<size_t>();
   int segmentIdx = highest<int>();
   for (size_t i = 0; i < m_pieces.size(); ++i) {
     auto& piece = m_pieces[i];
@@ -1001,7 +1001,7 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   }
   m_piecesUpdated = true;
 
-  Vec2I breakPointI = Vec2I(round(breakPoint[0]), round(breakPoint[1]));
+  Vec2I breakPointI = Vec2I(std::round(breakPoint[0]), std::round(breakPoint[1]));
 
   // Calculate a new origin for the droppedPieces
   for (auto& piece : droppedPieces) {
@@ -1029,15 +1029,15 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   for (auto segmentIdx : segmentOrder) {
     auto segment = segments[segmentIdx];
     world()->addEntity(make_shared<PlantDrop>(segment,
-        worldSpaceBreakPoint,
-        fallVector,
-        description(),
-        m_ceiling,
-        m_stemDropConfig,
-        m_foliageDropConfig,
-        m_saplingDropConfig,
-        first,
-        random));
+                                              worldSpaceBreakPoint,
+                                              fallVector,
+                                              description(),
+                                              m_ceiling,
+                                              m_stemDropConfig,
+                                              m_foliageDropConfig,
+                                              m_saplingDropConfig,
+                                              first,
+                                              random));
     first = false;
   }
 
@@ -1046,7 +1046,7 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   validatePieces();
 }
 
-Vec2I Plant::baseDamagePosition(List<Vec2I> const& positions) const {
+auto Plant::baseDamagePosition(List<Vec2I> const& positions) const -> Vec2I {
   auto res = positions.at(0);
 
   for (auto const& piece : m_pieces) {
@@ -1067,7 +1067,7 @@ Vec2I Plant::baseDamagePosition(List<Vec2I> const& positions) const {
   return res;
 }
 
-bool Plant::damagable() const {
+auto Plant::damagable() const -> bool {
   if (m_stemDropConfig.type() != Json::Type::Object)
     return true;
   if (!m_stemDropConfig.getBool("destructable", true))
@@ -1075,4 +1075,4 @@ bool Plant::damagable() const {
   return true;
 }
 
-}
+}// namespace Star

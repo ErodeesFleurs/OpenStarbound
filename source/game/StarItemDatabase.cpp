@@ -1,6 +1,7 @@
-#include "StarCodexDatabase.hpp" // IWYU pragma: keep
-#include "StarString.hpp"
 #include "StarItemDatabase.hpp"
+
+#include "StarCodexDatabase.hpp"
+#include "StarString.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"

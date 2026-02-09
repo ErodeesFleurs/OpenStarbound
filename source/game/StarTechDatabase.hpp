@@ -1,14 +1,15 @@
 #pragma once
 
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
+#include "StarException.hpp"
 #include "StarGameTypes.hpp"
+#include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(TechDatabaseException, StarException);
-
-STAR_CLASS(TechDatabase);
+using TechDatabaseException = ExceptionDerived<"TechDatabaseException">;
 
 enum class TechType {
   Head,
@@ -37,13 +38,13 @@ class TechDatabase {
 public:
   TechDatabase();
 
-  bool contains(String const& techName) const;
-  TechConfig tech(String const& techName) const;
+  [[nodiscard]] auto contains(String const& techName) const -> bool;
+  [[nodiscard]] auto tech(String const& techName) const -> TechConfig;
 
 private:
-  TechConfig parseTech(Json const& config, String const& path) const;
+  [[nodiscard]] auto parseTech(Json const& config, String const& path) const -> TechConfig;
 
   StringMap<TechConfig> m_tech;
 };
 
-}
+}// namespace Star

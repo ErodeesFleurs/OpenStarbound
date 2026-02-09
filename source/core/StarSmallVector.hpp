@@ -102,7 +102,7 @@ private:
 
 template <typename Element, std::size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector() {
-  m_begin = reinterpret_cast<Element*>(m_stackElements);
+  m_begin = reinterpret_cast<Element*>(m_stackElements.data());
   m_end = m_begin;
   m_capacity = m_begin + MaxStackSize;
 }
@@ -440,7 +440,7 @@ auto SmallVector<Element, MaxStackSize>::operator<(SmallVector const& other) con
 
 template <typename Element, std::size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::isHeapAllocated() const -> bool {
-  return m_begin != reinterpret_cast<Element const*>(m_stackElements);
+  return m_begin != reinterpret_cast<Element const*>(m_stackElements.data());
 }
 
 }// namespace Star

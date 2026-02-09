@@ -1,10 +1,13 @@
 #include "StarPlayerTech.hpp"
+
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
 
+import std;
+
 namespace Star {
 
-PlayerTech::PlayerTech() {}
+PlayerTech::PlayerTech() = default;
 
 PlayerTech::PlayerTech(Json const& json) {
   m_availableTechs = jsonToStringSet(json.get("availableTechs"));
@@ -19,17 +22,17 @@ PlayerTech::PlayerTech(Json const& json) {
   }
 }
 
-Json PlayerTech::toJson() const {
+auto PlayerTech::toJson() const -> Json {
   return JsonObject{
     {"availableTechs", jsonFromStringSet(m_availableTechs)},
     {"enabledTechs", jsonFromStringSet(m_enabledTechs)},
-    {"equippedTechs", jsonFromMapK(m_equippedTechs, [](TechType t) {
-        return TechTypeNames.getRight(t);
-      })},
+    {"equippedTechs", jsonFromMapK(m_equippedTechs, [](TechType t) -> String {
+       return TechTypeNames.getRight(t);
+     })},
   };
 }
 
-bool PlayerTech::isAvailable(String const& techModule) const {
+auto PlayerTech::isAvailable(String const& techModule) const -> bool {
   return m_availableTechs.contains(techModule);
 }
 
@@ -42,7 +45,7 @@ void PlayerTech::makeUnavailable(String const& techModule) {
   m_availableTechs.remove(techModule);
 }
 
-bool PlayerTech::isEnabled(String const& techModule) const {
+auto PlayerTech::isEnabled(String const& techModule) const -> bool {
   return m_enabledTechs.contains(techModule);
 }
 
@@ -57,7 +60,7 @@ void PlayerTech::disable(String const& techModule) {
   m_enabledTechs.remove(techModule);
 }
 
-bool PlayerTech::isEquipped(String const& techModule) const {
+auto PlayerTech::isEquipped(String const& techModule) const -> bool {
   for (auto t : m_equippedTechs.keys()) {
     if (m_equippedTechs.get(t) == techModule)
       return true;
@@ -80,20 +83,20 @@ void PlayerTech::unequip(String const& techModule) {
   }
 }
 
-StringSet const& PlayerTech::availableTechs() const {
+auto PlayerTech::availableTechs() const -> StringSet const& {
   return m_availableTechs;
 }
 
-StringSet const& PlayerTech::enabledTechs() const {
+auto PlayerTech::enabledTechs() const -> StringSet const& {
   return m_enabledTechs;
 }
 
-HashMap<TechType, String> const& PlayerTech::equippedTechs() const {
+auto PlayerTech::equippedTechs() const -> HashMap<TechType, String> const& {
   return m_equippedTechs;
 }
 
-StringList PlayerTech::techModules() const {
+auto PlayerTech::techModules() const -> StringList {
   return m_equippedTechs.values();
 }
 
-}
+}// namespace Star

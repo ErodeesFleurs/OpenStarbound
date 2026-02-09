@@ -1,31 +1,32 @@
 #include "StarTileDrawer.hpp"
-#include "StarLexicalCast.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarXXHash.hpp"
+
+#include "StarConfig.hpp"
 #include "StarException.hpp"
-#include "StarAssets.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
 RenderTile TileDrawer::DefaultRenderTile{
-    .foreground=NullMaterialId,
-    .foregroundMod=NoModId,
-    .background=NullMaterialId,
-    .backgroundMod=NoModId,
-    .foregroundHueShift=0,
-    .foregroundModHueShift=0,
-    .foregroundColorVariant=DefaultMaterialColorVariant,
-    .foregroundDamageType=TileDamageType::Protected,
-    .foregroundDamageLevel=0,
-    .backgroundHueShift=0,
-    .backgroundModHueShift=0,
-    .backgroundColorVariant=DefaultMaterialColorVariant,
-    .backgroundDamageType=TileDamageType::Protected,
-    .backgroundDamageLevel=0,
-    .liquidId=EmptyLiquidId,
-    .liquidLevel=0
-};
+  .foreground = NullMaterialId,
+  .foregroundMod = NoModId,
+  .background = NullMaterialId,
+  .backgroundMod = NoModId,
+  .foregroundHueShift = 0,
+  .foregroundModHueShift = 0,
+  .foregroundColorVariant = DefaultMaterialColorVariant,
+  .foregroundDamageType = TileDamageType::Protected,
+  .foregroundDamageLevel = 0,
+  .backgroundHueShift = 0,
+  .backgroundModHueShift = 0,
+  .backgroundColorVariant = DefaultMaterialColorVariant,
+  .backgroundDamageType = TileDamageType::Protected,
+  .backgroundDamageLevel = 0,
+  .liquidId = EmptyLiquidId,
+  .liquidLevel = 0};
 
 TileDrawer* TileDrawer::s_singleton;
 
@@ -54,11 +55,11 @@ TileDrawer::~TileDrawer() {
     s_singleton = nullptr;
 }
 
-bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
-  TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, std::optional<TerrainLayer> variantLayer) {
+auto TileDrawer::produceTerrainDrawables(Drawables& drawables,
+                                         TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, std::optional<TerrainLayer> variantLayer) -> bool {
   auto& root = Root::singleton();
   auto assets = Root::singleton().assets();
-  auto materialDatabase = root.materialDatabase();
+  ConstPtr<MaterialDatabase> materialDatabase = root.materialDatabase();
 
   RenderTile const& tile = getRenderTile(renderData, pos);
 
@@ -98,7 +99,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   if ((isBlock && terrainLayer == TerrainLayer::Midground) || (!isBlock && terrainLayer == TerrainLayer::Foreground))
     return false;
 
-  auto getPieceImage = [](MaterialRenderPieceConstPtr const& piece, Box<float, 2> const& box, MaterialHue hue, Directives const* directives) -> AssetPath {
+  auto getPieceImage = [](ConstPtr<MaterialRenderPiece> const& piece, Box<float, 2> const& box, MaterialHue hue, Directives const* directives) -> AssetPath {
     String path = (hue == 0)
       ? strf("{}?crop={};{};{};{}", piece->texture, box.xMin(), box.yMin(), box.xMax(), box.yMax())
       : strf("{}?crop={};{};{};{}?hueshift={}", piece->texture, box.xMin(), box.yMin(), box.xMax(), box.yMax(), materialHueToDegrees(hue));
@@ -116,19 +117,21 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   if (materialRenderProfile) {
     occlude = materialRenderProfile->occludesBehind;
     auto materialColorVariant = materialRenderProfile->colorVariants > 0 ? colorVariant % materialRenderProfile->colorVariants : 0;
-    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]) + offset[0], pos[1] + offset[1], (int)variantLayer.value_or(terrainLayer), "main");
+    std::uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]) + offset[0], pos[1] + offset[1], (int)variantLayer.value_or(terrainLayer), "main");
     auto& drawList = drawables[materialZLevel(materialRenderProfile->zLevel, material, materialHue, materialColorVariant)];
 
     MaterialPieceResultList pieces;
     determineMatchingPieces(pieces, &occlude, materialDatabase, materialRenderProfile->mainMatchList, renderData, pos,
-        terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, false);
+                            terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, false);
     Directives const* directives = materialRenderProfile->colorDirectives.empty()
       ? nullptr
       : &materialRenderProfile->colorDirectives.wrap(materialColorVariant);
     for (auto const& piecePair : pieces) {
       auto variant = piecePair.first->variants.ptr(materialColorVariant);
-      if (!variant) variant = piecePair.first->variants.ptr(0);
-      if (!variant) continue;
+      if (!variant)
+        variant = piecePair.first->variants.ptr(0);
+      if (!variant)
+        continue;
       auto& textureCoords = variant->wrap(variance);
       auto image = getPieceImage(piecePair.first, textureCoords, materialHue, directives);
       drawList.emplace_back(Drawable::makeImage(image, scale, false, piecePair.second * scale + Vec2F(pos), color));
@@ -137,19 +140,21 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
 
   if (modRenderProfile) {
     auto modColorVariant = modRenderProfile->colorVariants > 0 ? colorVariant % modRenderProfile->colorVariants : 0;
-    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)variantLayer.value_or(terrainLayer), "mod");
+    std::uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)variantLayer.value_or(terrainLayer), "mod");
     auto& drawList = drawables[modZLevel(modRenderProfile->zLevel, mod, modHue, modColorVariant)];
 
     MaterialPieceResultList pieces;
     determineMatchingPieces(pieces, &occlude, materialDatabase, modRenderProfile->mainMatchList, renderData, pos,
-        terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
+                            terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
     Directives const* directives = modRenderProfile->colorDirectives.empty()
       ? nullptr
       : &modRenderProfile->colorDirectives.wrap(modColorVariant);
     for (auto const& piecePair : pieces) {
       auto variant = piecePair.first->variants.ptr(modColorVariant);
-      if (!variant) variant = piecePair.first->variants.ptr(0);
-      if (!variant) continue;
+      if (!variant)
+        variant = piecePair.first->variants.ptr(0);
+      if (!variant)
+        continue;
       auto& textureCoords = variant->wrap(variance);
       auto image = getPieceImage(piecePair.first, textureCoords, modHue, directives);
       drawList.emplace_back(Drawable::makeImage(image, scale, false, piecePair.second * scale + Vec2F(pos), color));
@@ -166,52 +171,52 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   return occlude;
 }
 
-WorldRenderData& TileDrawer::renderData() {
+auto TileDrawer::renderData() -> WorldRenderData& {
   return m_tempRenderData;
 }
 
-MutexLocker TileDrawer::lockRenderData() {
+auto TileDrawer::lockRenderData() -> MutexLocker {
   return MutexLocker(m_tempRenderDataMutex);
 }
 
-RenderTile const& TileDrawer::getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos) {
+auto TileDrawer::getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos) -> RenderTile const& {
   Vec2I arrayPos = renderData.geometry.diff(worldPos, renderData.tileMinPosition);
 
-  Vec2I size = Vec2I(renderData.tiles.size());
+  auto size = Vec2I(renderData.tiles.size());
   if (arrayPos[0] >= 0 && arrayPos[1] >= 0 && arrayPos[0] < size[0] && arrayPos[1] < size[1])
     return renderData.tiles(Vec2S(arrayPos));
 
   return DefaultRenderTile;
 }
 
-TileDrawer::QuadZLevel TileDrawer::materialZLevel(uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant) {
+auto TileDrawer::materialZLevel(std::uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant) -> TileDrawer::QuadZLevel {
   QuadZLevel quadZLevel = 0;
-  quadZLevel |= (uint64_t)colorVariant;
-  quadZLevel |= (uint64_t)hue << 8;
-  quadZLevel |= (uint64_t)material << 16;
-  quadZLevel |= (uint64_t)zLevel << 32;
+  quadZLevel |= (std::uint64_t)colorVariant;
+  quadZLevel |= (std::uint64_t)hue << 8;
+  quadZLevel |= (std::uint64_t)material << 16;
+  quadZLevel |= (std::uint64_t)zLevel << 32;
   return quadZLevel;
 }
 
-TileDrawer::QuadZLevel TileDrawer::modZLevel(uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant) {
+auto TileDrawer::modZLevel(std::uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant) -> TileDrawer::QuadZLevel {
   QuadZLevel quadZLevel = 0;
-  quadZLevel |= (uint64_t)colorVariant;
-  quadZLevel |= (uint64_t)hue << 8;
-  quadZLevel |= (uint64_t)mod << 16;
-  quadZLevel |= (uint64_t)zLevel << 32;
-  quadZLevel |= (uint64_t)1 << 63;
+  quadZLevel |= (std::uint64_t)colorVariant;
+  quadZLevel |= (std::uint64_t)hue << 8;
+  quadZLevel |= (std::uint64_t)mod << 16;
+  quadZLevel |= (std::uint64_t)zLevel << 32;
+  quadZLevel |= (std::uint64_t)1 << 63;
   return quadZLevel;
 }
 
-TileDrawer::QuadZLevel TileDrawer::damageZLevel() {
-  return (uint64_t)(-1);
+auto TileDrawer::damageZLevel() -> TileDrawer::QuadZLevel {
+  return (std::uint64_t)(-1);
 }
 
-bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, MaterialDatabaseConstPtr const& materialDb, MaterialRenderMatchList const& matchList,
-    WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod) {
+auto TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, ConstPtr<MaterialDatabase> const& materialDb, MaterialRenderMatchList const& matchList,
+                                         WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod) -> bool {
   RenderTile const& tile = getRenderTile(renderData, basePos);
 
-  auto matchSetMatches = [&](MaterialRenderMatchConstPtr const& match) -> bool {
+  auto matchSetMatches = [&](ConstPtr<MaterialRenderMatch> const& match) -> bool {
     if (match->requiredLayer && *match->requiredLayer != layer)
       return false;
 
@@ -324,4 +329,4 @@ bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bo
   return subMatchResult;
 }
 
-}
+}// namespace Star

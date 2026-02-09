@@ -1,24 +1,25 @@
 #include "StarUniverseClient.hpp"
+
+#include "StarAssets.hpp"
+#include "StarClientContext.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
-#include "StarPlayerLog.hpp" // IWYU pragma: keep
-#include "StarPlayerStorage.hpp" // IWYU pragma: keep
-#include "StarPlayerUniverseMap.hpp" // IWYU pragma: keep
-#include "StarProjectile.hpp"
-#include "StarProjectileDatabase.hpp" // IWYU pragma: keep
-#include "StarRoot.hpp"
-#include "StarPlayer.hpp"
-#include "StarAssets.hpp"
-#include "StarStatistics.hpp"
-#include "StarTime.hpp"
 #include "StarNetPackets.hpp"
-#include "StarWorldClient.hpp"
-#include "StarSystemWorldClient.hpp"
-#include "StarClientContext.hpp"
-#include "StarTeamClient.hpp"
-#include "StarSha256.hpp"
+#include "StarPlayer.hpp"
 #include "StarPlayerCodexes.hpp"
+#include "StarPlayerLog.hpp"
+#include "StarPlayerStorage.hpp"
+#include "StarPlayerUniverseMap.hpp"
+#include "StarProjectile.hpp"
+#include "StarProjectileDatabase.hpp"
 #include "StarQuestManager.hpp"
+#include "StarRoot.hpp"
+#include "StarSha256.hpp"
+#include "StarStatistics.hpp"
+#include "StarSystemWorldClient.hpp"
+#include "StarTeamClient.hpp"
+#include "StarTime.hpp"
+#include "StarWorldClient.hpp"
 #include "StarWorldTemplate.hpp"
 
 namespace Star {
@@ -113,7 +114,7 @@ std::optional<String> UniverseClient::connect(UniverseConnection connection, boo
         compressedSocket->setCompressionStreamEnabled(compressionMode == NetCompressionMode::Zstd);
       }
     } else {
-      compatibilityRules.setVersion(1); // A version of 1 is OpenStarbound prior to the NetElement compatibility stuff
+      compatibilityRules.setVersion(1);// A version of 1 is OpenStarbound prior to the NetElement compatibility stuff
       if (compressedSocket) {
         Logger::info("UniverseClient: Defaulting to Zstd network stream compression (older server version)");
         compressedSocket->setCompressionStreamEnabled(true);
@@ -122,12 +123,11 @@ std::optional<String> UniverseClient::connect(UniverseConnection connection, boo
   }
   connection.packetSocket().setNetRules(compatibilityRules);
   auto clientConnect = make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
-      m_mainPlayer->shipSpecies(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
-      m_mainPlayer->log()->introComplete(), account);
+                                                        m_mainPlayer->shipSpecies(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
+                                                        m_mainPlayer->log()->introComplete(), account);
   clientConnect->info = JsonObject{
     {"brand", "OpenStarbound"},
-    {"openProtocolVersion", OpenProtocolVersion }
-  };
+    {"openProtocolVersion", OpenProtocolVersion}};
   connection.pushSingle(std::move(clientConnect));
   connection.sendAll(timeout);
 
@@ -234,8 +234,7 @@ void UniverseClient::update(float dt) {
 
         bool isDeploying = m_mainPlayer->isDeploying();
         String cinematicJsonPath = isDeploying ? "/client.config:deployCinematic" : "/client.config:warpCinematic";
-        String cinematicAssetPath = assets->json(cinematicJsonPath).toString()
-        .replaceTags(StringMap<String>{{"species", m_mainPlayer->species()}});
+        String cinematicAssetPath = assets->json(cinematicJsonPath).toString().replaceTags(StringMap<String>{{"species", m_mainPlayer->species()}});
 
         Json cinematic = jsonMerge(assets->json(cinematicJsonPath + "Base"), assets->json(cinematicAssetPath));
         m_mainPlayer->setPendingCinematic(cinematic);
@@ -258,8 +257,7 @@ void UniverseClient::update(float dt) {
   m_connection->receive();
   try {
     handlePackets(m_connection->pull());
-  }
-  catch (StarException const& e) {
+  } catch (StarException const& e) {
     Logger::error("Exception caught handling incoming server packets {}", outputException(e, true));
     reset();
     if (!m_disconnectReason)
@@ -288,10 +286,10 @@ void UniverseClient::update(float dt) {
   for (auto& result : m_teamClient->pullInviteResults()) {
     String printout;
     if (auto pair = result.ptr<std::pair<String, bool>>()) {
-        if (pair->second)
-            printout = strf("Invited {}", pair->first);
-        else
-            printout = strf("Couldn't find anyone to invite named {}", pair->first);
+      if (pair->second)
+        printout = strf("Invited {}", pair->first);
+      else
+        printout = strf("Couldn't find anyone to invite named {}", pair->first);
     } else if (auto invited = result.ptr<StringList>()) {
       printout = "";
       for (size_t i = 0; i != invited->size(); ++i) {
@@ -335,9 +333,8 @@ void UniverseClient::update(float dt) {
       if (m_respawnTimer.tick(dt)) {
         String cinematic = assets->json("/client.config:respawnCinematic").toString();
         cinematic = cinematic.replaceTags(StringMap<String>{
-            {"species", m_mainPlayer->species()},
-            {"mode", PlayerModeNames.getRight(m_mainPlayer->modeType())}
-          });
+          {"species", m_mainPlayer->species()},
+          {"mode", PlayerModeNames.getRight(m_mainPlayer->modeType())}});
         m_mainPlayer->setPendingCinematic(Json(std::move(cinematic)));
         if (!playerOnOwnShip() && !m_worldClient->respawnInWorld())
           m_pendingWarp = WarpAlias::OwnShip;
@@ -590,7 +587,7 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const&, bool resetInter
       auto config = projectileDb->projectileConfig("opensb:playerloading");
       indicator = projectileDb->createProjectile("stationpartsound", config);
       indicator->setInitialPosition(player->position());
-      indicator->setInitialDirection({ 1.0f, 0.0f });
+      indicator->setInitialDirection({1.0f, 0.0f});
       world->addEntity(indicator);
     }
 
@@ -606,8 +603,7 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const&, bool resetInter
   try {
     auto newData = data.set("movementController", originalData.get("movementController"));
     player->diskLoad(newData);
-  }
-  catch (std::exception const& e) {
+  } catch (std::exception const& e) {
     player->diskLoad(originalData);
     exception = std::current_exception();
   }
@@ -754,7 +750,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
       } else if (auto serverDisconnectPacket = as<ServerDisconnectPacket>(packet)) {
         reset();
         m_disconnectReason = serverDisconnectPacket->reason;
-        break; // Stop handling other packets
+        break;// Stop handling other packets
 
       } else if (auto celestialResponse = as<CelestialResponsePacket>(packet)) {
         m_celestialDatabase->pushResponses(std::move(celestialResponse->responses));
@@ -788,8 +784,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
         // see if the system world will handle it, otherwise pass it along to the world client
         m_worldClient->handleIncomingPackets({packet});
       }
-    }
-    catch (StarException const& e) {
+    } catch (StarException const& e) {
       Logger::error("Exception thrown while handling {} packet", PacketTypeNames.getRight(packet->type()));
       throw;
     }
@@ -817,4 +812,4 @@ void UniverseClient::reset() {
   m_connection.reset();
 }
 
-}
+}// namespace Star

@@ -1,16 +1,19 @@
 #include "StarRebuilder.hpp"
-#include "StarAssets.hpp"
-#include "StarLuaRoot.hpp"
+
 #include "StarLua.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarRoot.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+
+import std;
 
 namespace Star {
 
 Rebuilder::Rebuilder(String const& id) {
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = std::make_shared<LuaRoot>();
   auto assets = Root::singleton().assets();
-  m_contexts = make_shared<List<LuaContext>>();
+  m_contexts = std::make_shared<List<LuaContext>>();
 
   for (auto& path : assets->assetSources()) {
     auto metadata = assets->assetSourceMetadata(path);
@@ -27,7 +30,7 @@ Rebuilder::Rebuilder(String const& id) {
   }
 }
 
-bool Rebuilder::rebuild(Json store, String last_error, AttemptCallback attempt) const {
+auto Rebuilder::rebuild(Json store, String last_error, AttemptCallback attempt) const -> bool {
   RecursiveMutexLocker locker(m_luaMutex);
   for (auto& context : *m_contexts) {
     Json newStore = context.invokePath<Json>("error", store, last_error);
@@ -43,4 +46,4 @@ bool Rebuilder::rebuild(Json store, String last_error, AttemptCallback attempt) 
   return false;
 }
 
-}
+}// namespace Star

@@ -1,30 +1,33 @@
 #include "StarItemDrop.hpp"
-#include "StarRandom.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarEntityRendering.hpp"
-#include "StarWorld.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarPlayer.hpp"
-#include "StarMaterialItem.hpp"
+
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
-#include "StarMovementControllerLuaBindings.hpp"
+#include "StarEntityRendering.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarItemLuaBindings.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarMaterialItem.hpp"
+#include "StarMovementControllerLuaBindings.hpp"
+#include "StarPlayer.hpp"
+#include "StarRandom.hpp"
+#include "StarRoot.hpp"
+#include "StarWorld.hpp"
+
+import std;
 
 namespace Star {
 
-ItemDropPtr ItemDrop::createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal) {
+auto ItemDrop::createRandomizedDrop(Ptr<Item> const& item, Vec2F const& position, bool eternal) -> Ptr<ItemDrop> {
   if (!item)
     return {};
 
   auto idconfig = Root::singleton().assets()->json("/itemdrop.config");
 
-  ItemDropPtr itemDrop = make_shared<ItemDrop>(item);
+  Ptr<ItemDrop> itemDrop = std::make_shared<ItemDrop>(item);
   auto offset = Vec2F(idconfig.getFloat("randomizedDistance"), 0).rotate(Constants::pi * 2.0 * Random::randf());
-  offset[1] = fabs(offset[1]);
+  offset[1] = std::fabs(offset[1]);
   itemDrop->setPosition(position + offset / TilePixels);
   itemDrop->setVelocity(offset * idconfig.getFloat("randomizedSpeed"));
   itemDrop->setEternal(eternal);
@@ -32,24 +35,24 @@ ItemDropPtr ItemDrop::createRandomizedDrop(ItemPtr const& item, Vec2F const& pos
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec2F const& position, bool eternal) {
+auto ItemDrop::createRandomizedDrop(ItemDescriptor const& descriptor, Vec2F const& position, bool eternal) -> Ptr<ItemDrop> {
   if (!descriptor || descriptor.isEmpty())
     return {};
 
-  auto itemDatabase = Root::singleton().itemDatabase();
+  ConstPtr<ItemDatabase> itemDatabase = Root::singleton().itemDatabase();
   auto itemDrop = createRandomizedDrop(itemDatabase->item(descriptor), position);
   itemDrop->setEternal(eternal);
 
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+auto ItemDrop::throwDrop(Ptr<Item> const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) -> Ptr<ItemDrop> {
   if (!item)
     return {};
 
   auto idconfig = Root::singleton().assets()->json("/itemdrop.config");
 
-  ItemDropPtr itemDrop = make_shared<ItemDrop>(item);
+  Ptr<ItemDrop> itemDrop = make_shared<ItemDrop>(item);
   itemDrop->setPosition(position);
   if (direction != Vec2F())
     itemDrop->setVelocity(velocity + vnorm(direction) * idconfig.getFloat("throwSpeed"));
@@ -60,7 +63,7 @@ ItemDropPtr ItemDrop::throwDrop(ItemPtr const& item, Vec2F const& position, Vec2
   return itemDrop;
 }
 
-ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) {
+auto ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal) -> Ptr<ItemDrop> {
   if (!itemDescriptor || itemDescriptor.isEmpty())
     return {};
 
@@ -71,11 +74,11 @@ ItemDropPtr ItemDrop::throwDrop(ItemDescriptor const& itemDescriptor, Vec2F cons
   return itemDrop;
 }
 
-ItemDrop::ItemDrop(ItemPtr item)
-  : ItemDrop() {
+ItemDrop::ItemDrop(Ptr<Item> item)
+    : ItemDrop() {
   m_item = std::move(item);
 
-  m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
+  m_parameters = m_item->instanceValueOfType("itemDrop", Json::Type::Object, JsonObject{});
 
   updateCollisionPoly();
 
@@ -86,9 +89,9 @@ ItemDrop::ItemDrop(ItemPtr item)
 }
 
 ItemDrop::ItemDrop(Json const& diskStore)
-  : ItemDrop() {
+    : ItemDrop() {
   Root::singleton().itemDatabase()->diskLoad(diskStore.get("item"), m_item);
-  m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
+  m_parameters = m_item->instanceValueOfType("itemDrop", Json::Type::Object, JsonObject{});
   m_movementController.setPosition(jsonToVec2F(diskStore.get("position")));
   m_mode.set(ModeNames.getLeft(diskStore.getString("mode")));
   m_eternal = diskStore.getBool("eternal");
@@ -106,7 +109,7 @@ ItemDrop::ItemDrop(ByteArray store, NetCompatibilityRules rules) : ItemDrop() {
   ds.setStreamCompatibilityVersion(rules);
 
   Root::singleton().itemDatabase()->loadItem(ds.read<ItemDescriptor>(), m_item);
-  m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
+  m_parameters = m_item->instanceValueOfType("itemDrop", Json::Type::Object, JsonObject{});
   ds.read(m_eternal);
   ds.read(m_dropAge);
   ds.read(m_intangibleTimer);
@@ -116,7 +119,7 @@ ItemDrop::ItemDrop(ByteArray store, NetCompatibilityRules rules) : ItemDrop() {
   m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
 
-Json ItemDrop::diskStore() const {
+auto ItemDrop::diskStore() const -> Json {
   auto itemDatabase = Root::singleton().itemDatabase();
   return JsonObject{
     {"item", itemDatabase->diskStore(m_item)},
@@ -124,11 +127,10 @@ Json ItemDrop::diskStore() const {
     {"mode", ModeNames.getRight(m_mode.get())},
     {"eternal", m_eternal},
     {"dropAge", m_dropAge.toJson()},
-    {"ageItemsTimer", m_ageItemsTimer.toJson()}
-  };
+    {"ageItemsTimer", m_ageItemsTimer.toJson()}};
 }
 
-ByteArray ItemDrop::netStore(NetCompatibilityRules rules) const {
+auto ItemDrop::netStore(NetCompatibilityRules rules) const -> ByteArray {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
 
@@ -140,7 +142,7 @@ ByteArray ItemDrop::netStore(NetCompatibilityRules rules) const {
   return ds.takeData();
 }
 
-EntityType ItemDrop::entityType() const {
+auto ItemDrop::entityType() const -> EntityType {
   return EntityType::ItemDrop;
 }
 
@@ -149,14 +151,14 @@ void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
 
   m_movementController.init(world);
   if (isMaster()) {
-    auto scripts = configValue("scripts").optArray().apply(jsonToStringList);
+    auto scripts = configValue("scripts").optArray().transform(jsonToStringList);
     if (scripts && !(*scripts).empty()) {
       m_scriptComponent.setScripts(*scripts);
-      m_scriptComponent.setUpdateDelta(configValue("scriptDelta",1).toUInt());
+      m_scriptComponent.setUpdateDelta(configValue("scriptDelta", 1).toUInt());
 
       m_scriptComponent.addCallbacks("itemDrop", makeItemDropCallbacks());
       m_scriptComponent.addCallbacks("item", LuaBindings::makeItemCallbacks(m_item.get()));
-      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&ItemDrop::configValue, this, _1, _2)));
+      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](auto&& PH1, auto&& PH2) -> auto { return configValue(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }));
       m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(&m_movementController));
       m_scriptComponent.init(world);
@@ -164,7 +166,7 @@ void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
   }
 }
 
-ClientEntityMode ItemDrop::clientEntityMode() const {
+auto ItemDrop::clientEntityMode() const -> ClientEntityMode {
   return m_clientEntityMode;
 }
 
@@ -172,7 +174,7 @@ void ItemDrop::uninit() {
   Entity::uninit();
   m_movementController.uninit();
   if (isMaster()) {
-    auto scripts = configValue("scripts").optArray().apply(jsonToStringList);
+    auto scripts = configValue("scripts").optArray().transform(jsonToStringList);
     if (scripts && !(*scripts).empty()) {
       m_scriptComponent.uninit();
       m_scriptComponent.removeCallbacks("itemDrop");
@@ -184,17 +186,17 @@ void ItemDrop::uninit() {
   }
 }
 
-String ItemDrop::name() const {
+auto ItemDrop::name() const -> String {
   if (m_item)
     return m_item->name();
   return Entity::name();
 }
 
-String ItemDrop::description() const {
+auto ItemDrop::description() const -> String {
   return m_item->description();
 }
 
-pair<ByteArray, uint64_t> ItemDrop::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+auto ItemDrop::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) -> std::pair<ByteArray, std::uint64_t> {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -212,23 +214,23 @@ void ItemDrop::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-Vec2F ItemDrop::position() const {
+auto ItemDrop::position() const -> Vec2F {
   return m_movementController.position();
 }
 
-RectF ItemDrop::metaBoundBox() const {
+auto ItemDrop::metaBoundBox() const -> RectF {
   return m_boundBox;
 }
 
-bool ItemDrop::ephemeral() const {
+auto ItemDrop::ephemeral() const -> bool {
   return true;
 }
 
-RectF ItemDrop::collisionArea() const {
+auto ItemDrop::collisionArea() const -> RectF {
   return m_boundBox;
 }
 
-void ItemDrop::update(float dt, uint64_t) {
+void ItemDrop::update(float dt, std::uint64_t) {
   m_dropAge.update(world()->epochTime());
 
   if (isMaster()) {
@@ -239,27 +241,27 @@ void ItemDrop::update(float dt, uint64_t) {
     } else {
       // Rarely, check for other drops near us and combine with them if possible.
       if (canTake() && m_mode.get() == Mode::Available && Random::randf() < m_combineChance) {
-        world()->findEntity(RectF::withCenter(position(), Vec2F::filled(m_combineRadius)), [&](EntityPtr const& entity) {
-            if (auto closeDrop = as<ItemDrop>(entity)) {
-              // Make sure not to try to merge with ourselves here.
-              if (closeDrop.get() != this && closeDrop->canTake()
-                  && vmag(position() - closeDrop->position()) < m_combineRadius
-                  && closeDrop->isMaster()) {
-                if (m_item->couldStack(closeDrop->item()) == closeDrop->item()->count()) {
-                  m_item->stackWith(closeDrop->take());
-                  m_dropAge.setElapsedTime(min(m_dropAge.elapsedTime(), closeDrop->m_dropAge.elapsedTime()));
+        auto _ = world()->findEntity(RectF::withCenter(position(), Vec2F::filled(m_combineRadius)), [&](Ptr<Entity> const& entity) -> bool {
+          if (auto closeDrop = as<ItemDrop>(entity)) {
+            // Make sure not to try to merge with ourselves here.
+            if (closeDrop.get() != this && closeDrop->canTake()
+                && vmag(position() - closeDrop->position()) < m_combineRadius
+                && closeDrop->isMaster()) {
+              if (m_item->couldStack(closeDrop->item()) == closeDrop->item()->count()) {
+                m_item->stackWith(closeDrop->take());
+                m_dropAge.setElapsedTime(std::min(m_dropAge.elapsedTime(), closeDrop->m_dropAge.elapsedTime()));
 
-                  // Average the position and velocity of the drop we merged
-                  // with
-                  m_movementController.setPosition(m_movementController.position()
-                      + world()->geometry().diff(closeDrop->position(), m_movementController.position()) / 2.0f);
-                  m_movementController.setVelocity((m_movementController.velocity() + closeDrop->velocity()) / 2.0f);
-                  return true;
-                }
+                // Average the position and velocity of the drop we merged
+                // with
+                m_movementController.setPosition(m_movementController.position()
+                                                 + world()->geometry().diff(closeDrop->position(), m_movementController.position()) / 2.0f);
+                m_movementController.setVelocity((m_movementController.velocity() + closeDrop->velocity()) / 2.0f);
+                return true;
               }
             }
-            return false;
-          });
+          }
+          return false;
+        });
       }
 
       MovementParameters parameters;
@@ -280,7 +282,6 @@ void ItemDrop::update(float dt, uint64_t) {
       m_mode.set(Mode::Dead);
     if (m_mode.get() == Mode::Taken && m_dropAge.elapsedTime() > m_afterTakenLife)
       m_mode.set(Mode::Dead);
-
 
     if (m_overrideMode) {
       m_mode.set(*m_overrideMode);
@@ -309,20 +310,19 @@ void ItemDrop::update(float dt, uint64_t) {
         updateTaken(false);
         m_movementController.tickMaster(dt);
       }
-    }
-    else {
+    } else {
       m_movementController.tickSlave(dt);
     }
   }
 
   if (world()->isClient()) {
     SpatialLogger::logPoly("world",
-      m_movementController.collisionBody(),
-      (canTake() ? Color::Green : Color::Red).toRgba());
+                           m_movementController.collisionBody(),
+                           (canTake() ? Color::Green : Color::Red).toRgba());
   }
 }
 
-bool ItemDrop::shouldDestroy() const {
+auto ItemDrop::shouldDestroy() const -> bool {
   return m_mode.get() == Mode::Dead || (m_item->empty() && m_owningEntity.get() == NullEntityId);
 }
 
@@ -347,8 +347,8 @@ void ItemDrop::render(RenderCallback* renderCallback) {
     }
 
     beamColor.setAlphaF(0.8f);
-    Line2F line = { Vec2F(), Vec2F(0.0f, 1.0f + m_boundBox.height() / 2) };
-    float width = min(2.0f, m_boundBox.width() * TilePixels);
+    Line2F line = {Vec2F(), Vec2F(0.0f, 1.0f + m_boundBox.height() / 2)};
+    float width = std::min(2.0f, m_boundBox.width() * TilePixels);
     auto drawable = Drawable::makeLine(line, width, beamColor, position());
     (drawable.linePart().endColor = beamColor)->setAlphaF(0.0f);
     drawable.fullbright = true;
@@ -359,8 +359,7 @@ void ItemDrop::render(RenderCallback* renderCallback) {
     if (auto mat = as<MaterialItem>(m_item.get())) {
       m_drawables = mat->generatedPreview(Vec2I(position().floor()));
       m_overForeground = true;
-    }
-    else
+    } else
       m_drawables = m_item->dropDrawables();
 
     if (Directives dropDirectives = m_config.getString("directives", "")) {
@@ -386,8 +385,7 @@ void ItemDrop::renderLightSources(RenderCallback* renderCallback) {
   renderCallback->addLightSource(std::move(light));
 }
 
-
-ItemPtr ItemDrop::item() const {
+auto ItemDrop::item() const -> Ptr<Item> {
   return m_item;
 }
 
@@ -401,7 +399,7 @@ void ItemDrop::setIntangibleTime(float intangibleTime) {
     m_mode.set(Mode::Intangible);
 }
 
-bool ItemDrop::canTake() const {
+auto ItemDrop::canTake() const -> bool {
   if (m_mode.get() == Mode::Available && m_owningEntity.get() == NullEntityId && !m_item->empty()) {
     if (isMaster())
       if (auto res = m_scriptComponent.invoke<bool>("canTake"))
@@ -411,7 +409,7 @@ bool ItemDrop::canTake() const {
   return false;
 }
 
-ItemPtr ItemDrop::takeBy(EntityId entityId, float timeOffset) {
+auto ItemDrop::takeBy(EntityId entityId, float timeOffset) -> Ptr<Item> {
   if (canTake()) {
     m_owningEntity.set(entityId);
     m_dropAge.setElapsedTime(timeOffset);
@@ -424,7 +422,7 @@ ItemPtr ItemDrop::takeBy(EntityId entityId, float timeOffset) {
   }
 }
 
-ItemPtr ItemDrop::take() {
+auto ItemDrop::take() -> Ptr<Item> {
   if (canTake()) {
     m_mode.set(Mode::Taken);
     return m_item->take();
@@ -437,7 +435,7 @@ void ItemDrop::setPosition(Vec2F const& position) {
   m_movementController.setPosition(position);
 }
 
-Vec2F ItemDrop::velocity() const {
+auto ItemDrop::velocity() const -> Vec2F {
   return m_movementController.velocity();
 }
 
@@ -446,12 +444,12 @@ void ItemDrop::setVelocity(Vec2F const& velocity) {
 }
 
 EnumMap<ItemDrop::Mode> const ItemDrop::ModeNames{
-    {ItemDrop::Mode::Intangible, "Intangible"},
-    {ItemDrop::Mode::Available, "Available"},
-    {ItemDrop::Mode::Taken, "Taken"},
-    {ItemDrop::Mode::Dead, "Dead"}};
+  {ItemDrop::Mode::Intangible, "Intangible"},
+  {ItemDrop::Mode::Available, "Available"},
+  {ItemDrop::Mode::Taken, "Taken"},
+  {ItemDrop::Mode::Dead, "Dead"}};
 
-Json ItemDrop::configValue(String const& name, Json const& def) const {
+auto ItemDrop::configValue(String const& name, Json const& def) const -> Json {
   return m_parameters.query(name, m_config.query(name, def));
 }
 
@@ -507,7 +505,6 @@ void ItemDrop::updateCollisionPoly() {
   */
 }
 
-
 void ItemDrop::updateTaken(bool master) {
   if (auto owningEntity = world()->entity(m_owningEntity.get())) {
     Vec2F position = m_movementController.position();
@@ -523,7 +520,7 @@ void ItemDrop::updateTaken(bool master) {
     }
     Vec2F diff = world()->geometry().diff(targetPosition, position);
     float magnitude = diff.magnitude();
-    Vec2F velocity = diff.normalized() * m_velocity * min(1.0f, magnitude);
+    Vec2F velocity = diff.normalized() * m_velocity * std::min(1.0f, magnitude);
     if (auto playerEntity = as<Player>(owningEntity))
       velocity += playerEntity->velocity();
     m_movementController.approachVelocity(velocity, overhead ? m_overheadApproach : m_velocityApproach);
@@ -542,27 +539,27 @@ void ItemDrop::updateTaken(bool master) {
   m_movementController.applyParameters(parameters);
 }
 
-std::optional<LuaValue> ItemDrop::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
+auto ItemDrop::callScript(String const& func, LuaVariadic<LuaValue> const& args) -> std::optional<LuaValue> {
   return m_scriptComponent.invoke(func, args);
 }
 
-std::optional<LuaValue> ItemDrop::evalScript(String const& code) {
+auto ItemDrop::evalScript(String const& code) -> std::optional<LuaValue> {
   return m_scriptComponent.eval(code);
 }
 
-LuaCallbacks ItemDrop::makeItemDropCallbacks() {
+auto ItemDrop::makeItemDropCallbacks() -> LuaCallbacks {
   LuaCallbacks callbacks;
   callbacks.registerCallback("takingEntity", [this]() -> std::optional<EntityId> {
-      if (m_owningEntity.get() == NullEntityId)
-        return std::nullopt;
-      else
-        return m_owningEntity.get();
+    if (m_owningEntity.get() == NullEntityId)
+      return std::nullopt;
+    else
+      return m_owningEntity.get();
   });
-  callbacks.registerCallback("setEternal", [this](bool const& eternal) { setEternal(eternal); });
+  callbacks.registerCallback("setEternal", [this](bool const& eternal) -> void { setEternal(eternal); });
   callbacks.registerCallback("eternal", [this]() -> bool { return m_eternal; });
-  callbacks.registerCallback("setIntangibleTime", [this](float const& intangibleTime) { setIntangibleTime(intangibleTime); });
+  callbacks.registerCallback("setIntangibleTime", [this](float const& intangibleTime) -> void { setIntangibleTime(intangibleTime); });
   callbacks.registerCallback("intangibleTime", [this]() -> float { return m_intangibleTimer.timer; });
-  callbacks.registerCallback("setOverrideMode", [this](std::optional<String> const& mode) {
+  callbacks.registerCallback("setOverrideMode", [this](std::optional<String> const& mode) -> void {
     if (mode)
       m_overrideMode = ModeNames.getLeft(*mode);
     else
@@ -577,4 +574,4 @@ LuaCallbacks ItemDrop::makeItemDropCallbacks() {
   return callbacks;
 }
 
-}
+}// namespace Star

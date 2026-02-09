@@ -20,7 +20,7 @@ class EntityMap;
 
 using WorldChunks = HashMap<ByteArray, std::optional<ByteArray>>;
 
-enum class SectorLoadLevel : uint8_t {
+enum class SectorLoadLevel : std::uint8_t {
   None = 0,
   Tiles = 1,
   Entities = 2,
@@ -28,7 +28,7 @@ enum class SectorLoadLevel : uint8_t {
   Loaded = 2
 };
 
-enum class SectorGenerationLevel : uint8_t {
+enum class SectorGenerationLevel : std::uint8_t {
   None = 0,
   BaseTiles = 1,
   MicroDungeons = 2,
@@ -182,7 +182,7 @@ public:
   void setFloatingDungeonWorld(bool floatingDungeonWorld);
 
 private:
-  enum class StoreType : uint8_t {
+  enum class StoreType : std::uint8_t {
     Metadata = 0,
     TileSector = 1,
     EntitySector = 2,

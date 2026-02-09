@@ -1,27 +1,30 @@
 #include "StarPlayerBlueprints.hpp"
+
 #include "StarItemDescriptor.hpp"
+
+import std;
 
 namespace Star {
 
-PlayerBlueprints::PlayerBlueprints() {}
+PlayerBlueprints::PlayerBlueprints() = default;
 
 PlayerBlueprints::PlayerBlueprints(Json const& variant) {
   m_knownBlueprints =
-      transform<HashSet<ItemDescriptor>>(variant.get("knownBlueprints").toArray(), construct<ItemDescriptor>());
+    transform<HashSet<ItemDescriptor>>(variant.get("knownBlueprints").toArray(), construct<ItemDescriptor>());
   m_newBlueprints =
-      transform<HashSet<ItemDescriptor>>(variant.get("newBlueprints").toArray(), construct<ItemDescriptor>());
+    transform<HashSet<ItemDescriptor>>(variant.get("newBlueprints").toArray(), construct<ItemDescriptor>());
 }
 
-Json PlayerBlueprints::toJson() const {
-  return JsonObject{{"knownBlueprints", transform<JsonArray>(m_knownBlueprints, mem_fn(&ItemDescriptor::toJson))},
-      {"newBlueprints", transform<JsonArray>(m_newBlueprints, mem_fn(&ItemDescriptor::toJson))}};
+auto PlayerBlueprints::toJson() const -> Json {
+  return JsonObject{{"knownBlueprints", transform<JsonArray>(m_knownBlueprints, std::mem_fn(&ItemDescriptor::toJson))},
+                    {"newBlueprints", transform<JsonArray>(m_newBlueprints, std::mem_fn(&ItemDescriptor::toJson))}};
 }
 
-bool PlayerBlueprints::isKnown(ItemDescriptor const& itemDescriptor) const {
+auto PlayerBlueprints::isKnown(ItemDescriptor const& itemDescriptor) const -> bool {
   return m_knownBlueprints.contains(itemDescriptor.singular());
 }
 
-bool PlayerBlueprints::isNew(ItemDescriptor const& itemDescriptor) const {
+auto PlayerBlueprints::isNew(ItemDescriptor const& itemDescriptor) const -> bool {
   return m_newBlueprints.contains(itemDescriptor.singular());
 }
 
@@ -34,4 +37,4 @@ void PlayerBlueprints::markAsRead(ItemDescriptor const& itemDescriptor) {
   m_newBlueprints.remove(itemDescriptor.singular());
 }
 
-}
+}// namespace Star

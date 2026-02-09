@@ -12,10 +12,6 @@ import std;
 
 namespace Star {
 
-// STAR_CLASS(CelestialDatabase);
-// STAR_CLASS(CelestialMasterDatabase);
-// STAR_CLASS(CelestialSlaveDatabase);
-
 class CelestialDatabase {
 public:
   virtual ~CelestialDatabase();
@@ -89,7 +85,7 @@ public:
   // celestial space that satisfies the given parameters.  May fail to find
   // anything, though with the defaults this is vanishingly unlikely.
   auto findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
-                       std::function<bool(CelestialCoordinate)> filter = {}, std::optional<uint64_t> seed = {}) -> std::optional<CelestialCoordinate>;
+                       std::function<bool(CelestialCoordinate)> filter = {}, std::optional<std::uint64_t> seed = {}) -> std::optional<CelestialCoordinate>;
 
   // CelestialMasterDatabase always returns actual data, as it does just in
   // time generation.
@@ -120,7 +116,7 @@ protected:
   struct PlanetaryType {
     String typeName;
     float satelliteProbability;
-    size_t maxSatelliteCount;
+    std::size_t maxSatelliteCount;
     Json baseParameters;
     JsonArray variationParameters;
     JsonObject orbitParameters;

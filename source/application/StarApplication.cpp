@@ -1,6 +1,8 @@
 #include "StarApplication.hpp"
-#include "StarTime.hpp"
-#include "StarLogging.hpp"
+
+#include "StarConfig.hpp"
+
+import std;
 
 namespace Star {
 
@@ -14,11 +16,11 @@ bool g_steamIsFlatpak = false;
 
 void Application::startup(StringList const&) {}
 
-void Application::applicationInit(ApplicationControllerPtr appController) {
+void Application::applicationInit(Ptr<ApplicationController> appController) {
   m_appController = std::move(appController);
 }
 
-void Application::renderInit(RendererPtr renderer) {
+void Application::renderInit(Ptr<Renderer> renderer) {
   m_renderer = std::move(renderer);
 }
 
@@ -28,14 +30,14 @@ void Application::processInput(InputEvent const&) {}
 
 void Application::update() {}
 
-unsigned Application::framesSkipped() const { return 0; }
+auto Application::framesSkipped() const -> unsigned { return 0; }
 
 void Application::render() {}
 
-void Application::getAudioData(int16_t* samples, size_t sampleCount) {
-  for (size_t i = 0; i < sampleCount; ++i)
+void Application::getAudioData(std::int16_t* samples, std::size_t sampleCount) {
+  for (std::size_t i = 0; i < sampleCount; ++i)
     samples[i] = 0;
 }
 
 void Application::shutdown() {}
-}
+}// namespace Star

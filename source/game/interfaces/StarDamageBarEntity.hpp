@@ -2,9 +2,11 @@
 
 #include "StarPortraitEntity.hpp"
 
+import std;
+
 namespace Star {
 
-enum class DamageBarType : uint8_t {
+enum class DamageBarType : std::uint8_t {
   Default,
   None,
   Special

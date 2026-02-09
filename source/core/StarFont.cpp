@@ -1,7 +1,7 @@
 #include "StarFont.hpp"
 
-#include <ft2build.h>
 #include <freetype/freetype.h>
+#include <ft2build.h>
 
 #include "StarConfig.hpp"
 #include "StarFile.hpp"
@@ -134,14 +134,14 @@ auto Font::render(String::Char c) -> std::tuple<Image, Vec2I, bool> {
         if (x < width && y < height) {
           white[3] = m_alphaThreshold
             ? (*(p + x) >= m_alphaThreshold ? 255 : 0)
-            :  *(p + x);
+            : *(p + x);
           image.set(x + 1, height - y, white);
         }
       }
     }
   } else if ((colored = (slot->bitmap.pixel_mode == FT_PIXEL_MODE_BGRA))) {
     unsigned bpp = image.bytesPerPixel();
-    std::uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp); // offset by 1 pixel as it's padded
+    std::uint8_t* data = image.data() + bpp + ((image.width() * (image.height() - 2)) * bpp);// offset by 1 pixel as it's padded
     for (size_t y = 0; y != height; ++y) {
       memcpy(data - (y * image.width() * bpp),
              slot->bitmap.buffer + y * slot->bitmap.pitch,
@@ -171,4 +171,4 @@ auto Font::exists(String::Char c) -> bool {
   return FT_Get_Char_Index(m_fontImpl->face, c);
 }
 
-}
+}// namespace Star

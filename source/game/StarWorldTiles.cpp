@@ -1,9 +1,10 @@
 #include "StarWorldTiles.hpp"
+
 #include "StarLiquidTypes.hpp"
 
 namespace Star {
 
-bool WorldTile::isConnectable(TileLayer layer, bool materialOnly) const {
+auto WorldTile::isConnectable(TileLayer layer, bool materialOnly) const -> bool {
   if (layer == TileLayer::Foreground) {
     if (isConnectableMaterial(foreground))
       return true;
@@ -20,7 +21,7 @@ bool WorldTile::isConnectable(TileLayer layer, bool materialOnly) const {
     return false;
 }
 
-bool WorldTile::isColliding(CollisionSet const& collisionSet) const {
+auto WorldTile::isColliding(CollisionSet const& collisionSet) const -> bool {
   return Star::isColliding(collision, collisionSet);
 }
 
@@ -32,18 +33,11 @@ ServerTile::ServerTile(ServerTile const& serverTile) : WorldTile() {
   *this = serverTile;
 }
 
-bool ServerTile::isColliding(CollisionSet const& collisionSet) const {
+auto ServerTile::isColliding(CollisionSet const& collisionSet) const -> bool {
   return Star::isColliding(getCollision(), collisionSet);
 }
 
-ServerTile& ServerTile::operator=(ServerTile const& serverTile) {
-  WorldTile::operator=(serverTile);
-
-  liquid = serverTile.liquid;
-  rootSource = serverTile.rootSource;
-  objectCollision = serverTile.objectCollision;
-  return *this;
-}
+auto ServerTile::operator=(ServerTile const& serverTile) -> ServerTile& = default;
 
 void ServerTile::write(DataStream& ds) const {
   ds.write(foreground);
@@ -103,7 +97,7 @@ void ServerTile::read(DataStream& ds, VersionNumber serializationVersion) {
   collisionCacheDirty = true;
 }
 
-bool ServerTile::updateCollision(CollisionKind kind) {
+auto ServerTile::updateCollision(CollisionKind kind) -> bool {
   if (collision != kind) {
     collision = kind;
     collisionCacheDirty = true;
@@ -113,7 +107,7 @@ bool ServerTile::updateCollision(CollisionKind kind) {
   return false;
 }
 
-bool ServerTile::updateObjectCollision(CollisionKind kind) {
+auto ServerTile::updateObjectCollision(CollisionKind kind) -> bool {
   if (objectCollision != kind) {
     objectCollision = kind;
     collisionCacheDirty = true;
@@ -123,7 +117,7 @@ bool ServerTile::updateObjectCollision(CollisionKind kind) {
   return false;
 }
 
-CollisionKind ServerTile::getCollision() const {
+auto ServerTile::getCollision() const -> CollisionKind {
   CollisionKind kind = collision;
   if (objectCollision != CollisionKind::None
       && (objectCollision != CollisionKind::Platform || kind == CollisionKind::None)) {
@@ -133,22 +127,21 @@ CollisionKind ServerTile::getCollision() const {
 }
 
 PredictedTile::operator bool() const {
-  return
-     background
-  || backgroundHueShift
-  || backgroundColorVariant
-  || backgroundMod
-  || backgroundModHueShift
-  || foreground
-  || foregroundHueShift
-  || foregroundColorVariant
-  || foregroundMod
-  || foregroundModHueShift
-  || liquid
-  || collision;
+  return background
+    || backgroundHueShift
+    || backgroundColorVariant
+    || backgroundMod
+    || backgroundModHueShift
+    || foreground
+    || foregroundHueShift
+    || foregroundColorVariant
+    || foregroundMod
+    || foregroundModHueShift
+    || liquid
+    || collision;
 }
 
-DataStream& operator>>(DataStream& ds, NetTile& tile) {
+auto operator>>(DataStream& ds, NetTile& tile) -> DataStream& {
   ds.read(tile.background);
   if (tile.background == 0) {
     tile.background = EmptyMaterialId;
@@ -200,7 +193,7 @@ DataStream& operator>>(DataStream& ds, NetTile& tile) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, NetTile const& tile) {
+auto operator<<(DataStream& ds, NetTile const& tile) -> DataStream& {
   if (tile.background == EmptyMaterialId) {
     ds.cwrite<MaterialId>(0);
   } else {
@@ -241,7 +234,7 @@ DataStream& operator<<(DataStream& ds, NetTile const& tile) {
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, RenderTile& tile) {
+auto operator>>(DataStream& ds, RenderTile& tile) -> DataStream& {
   ds >> tile.foreground;
   ds >> tile.foregroundHueShift;
   ds >> tile.foregroundMod;
@@ -262,7 +255,7 @@ DataStream& operator>>(DataStream& ds, RenderTile& tile) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, RenderTile const& tile) {
+auto operator<<(DataStream& ds, RenderTile const& tile) -> DataStream& {
   ds << tile.foreground;
   ds << tile.foregroundHueShift;
   ds << tile.foregroundMod;
@@ -283,4 +276,4 @@ DataStream& operator<<(DataStream& ds, RenderTile const& tile) {
   return ds;
 }
 
-}
+}// namespace Star

@@ -21,8 +21,8 @@ public:
   using reference = value_type&;
   using const_reference = const value_type&;
 
-  using pointer         = std::allocator_traits<Allocator>::pointer;
-  using const_pointer   = std::allocator_traits<Allocator>::const_pointer;
+  using pointer = std::allocator_traits<Allocator>::pointer;
+  using const_pointer = std::allocator_traits<Allocator>::const_pointer;
 
 private:
   struct GetKey {
@@ -74,20 +74,20 @@ public:
 
   FlatHashSet();
   explicit FlatHashSet(std::size_t bucketCount, hasher const& hash = hasher(),
-      key_equal const& equal = key_equal(), allocator_type const& alloc = allocator_type());
+                       key_equal const& equal = key_equal(), allocator_type const& alloc = allocator_type());
   FlatHashSet(std::size_t bucketCount, allocator_type const& alloc);
   FlatHashSet(std::size_t bucketCount, hasher const& hash, allocator_type const& alloc);
   explicit FlatHashSet(allocator_type const& alloc);
 
   template <typename InputIt>
   FlatHashSet(InputIt first, InputIt last, std::size_t bucketCount = 0,
-      hasher const& hash = hasher(), key_equal const& equal = key_equal(),
-      allocator_type const& alloc = allocator_type());
+              hasher const& hash = hasher(), key_equal const& equal = key_equal(),
+              allocator_type const& alloc = allocator_type());
   template <typename InputIt>
   FlatHashSet(InputIt first, InputIt last, std::size_t bucketCount, allocator_type const& alloc);
   template <typename InputIt>
   FlatHashSet(InputIt first, InputIt last, std::size_t bucketCount,
-      hasher const& hash, allocator_type const& alloc);
+              hasher const& hash, allocator_type const& alloc);
 
   FlatHashSet(FlatHashSet const& other);
   FlatHashSet(FlatHashSet const& other, allocator_type const& alloc);
@@ -95,11 +95,11 @@ public:
   FlatHashSet(FlatHashSet&& other, allocator_type const& alloc);
 
   FlatHashSet(std::initializer_list<value_type> init, std::size_t bucketCount = 0,
-      hasher const& hash = hasher(), key_equal const& equal = key_equal(),
-      allocator_type const& alloc = allocator_type());
+              hasher const& hash = hasher(), key_equal const& equal = key_equal(),
+              allocator_type const& alloc = allocator_type());
   FlatHashSet(std::initializer_list<value_type> init, std::size_t bucketCount, allocator_type const& alloc);
   FlatHashSet(std::initializer_list<value_type> init, std::size_t bucketCount, hasher const& hash,
-      allocator_type const& alloc);
+              allocator_type const& alloc);
 
   auto operator=(FlatHashSet const& other) -> FlatHashSet&;
   auto operator=(FlatHashSet&& other) -> FlatHashSet&;
@@ -228,81 +228,81 @@ FlatHashSet<Key, Hash, Equals, Allocator>::iterator::operator typename FlatHashS
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet()
-  : FlatHashSet(0) {}
+    : FlatHashSet(0) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(std::size_t bucketCount, hasher const& hash,
-    key_equal const& equal, allocator_type const& alloc)
-  : m_table(bucketCount, GetKey(), hash, equal, alloc) {}
+                                                       key_equal const& equal, allocator_type const& alloc)
+    : m_table(bucketCount, GetKey(), hash, equal, alloc) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(std::size_t bucketCount, allocator_type const& alloc)
-  : FlatHashSet(bucketCount, hasher(), key_equal(), alloc) {}
+    : FlatHashSet(bucketCount, hasher(), key_equal(), alloc) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(std::size_t bucketCount, hasher const& hash,
-    allocator_type const& alloc)
-  : FlatHashSet(bucketCount, hash, key_equal(), alloc) {}
+                                                       allocator_type const& alloc)
+    : FlatHashSet(bucketCount, hash, key_equal(), alloc) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(allocator_type const& alloc)
-  : FlatHashSet(0, hasher(), key_equal(), alloc) {}
+    : FlatHashSet(0, hasher(), key_equal(), alloc) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 template <typename InputIt>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(InputIt first, InputIt last, std::size_t bucketCount,
-    hasher const& hash, key_equal const& equal, allocator_type const& alloc)
-  : FlatHashSet(bucketCount, hash, equal, alloc) {
+                                                       hasher const& hash, key_equal const& equal, allocator_type const& alloc)
+    : FlatHashSet(bucketCount, hash, equal, alloc) {
   insert(first, last);
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 template <typename InputIt>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(InputIt first, InputIt last, std::size_t bucketCount,
-    allocator_type const& alloc)
-  : FlatHashSet(first, last, bucketCount, hasher(), key_equal(), alloc) {}
+                                                       allocator_type const& alloc)
+    : FlatHashSet(first, last, bucketCount, hasher(), key_equal(), alloc) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 template <typename InputIt>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(InputIt first, InputIt last, std::size_t bucketCount,
-    hasher const& hash, allocator_type const& alloc)
-  : FlatHashSet(first, last, bucketCount, hash, key_equal(), alloc) {}
+                                                       hasher const& hash, allocator_type const& alloc)
+    : FlatHashSet(first, last, bucketCount, hash, key_equal(), alloc) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(FlatHashSet const& other)
-  : FlatHashSet(other, other.m_table.getAllocator()) {}
+    : FlatHashSet(other, other.m_table.getAllocator()) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(FlatHashSet const& other, allocator_type const& alloc)
-  : FlatHashSet(alloc) {
+    : FlatHashSet(alloc) {
   operator=(other);
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(FlatHashSet&& other)
-  : FlatHashSet(std::move(other), other.m_table.getAllocator()) {}
+    : FlatHashSet(std::move(other), other.m_table.getAllocator()) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(FlatHashSet&& other, allocator_type const& alloc)
-  : FlatHashSet(alloc) {
+    : FlatHashSet(alloc) {
   operator=(std::move(other));
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(std::initializer_list<value_type> init, std::size_t bucketCount,
-    hasher const& hash, key_equal const& equal, allocator_type const& alloc)
-  : FlatHashSet(bucketCount, hash, equal, alloc) {
+                                                       hasher const& hash, key_equal const& equal, allocator_type const& alloc)
+    : FlatHashSet(bucketCount, hash, equal, alloc) {
   operator=(init);
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(std::initializer_list<value_type> init, std::size_t bucketCount, allocator_type const& alloc)
-  : FlatHashSet(init, bucketCount, hasher(), key_equal(), alloc) {}
+    : FlatHashSet(init, bucketCount, hasher(), key_equal(), alloc) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 FlatHashSet<Key, Hash, Equals, Allocator>::FlatHashSet(std::initializer_list<value_type> init, std::size_t bucketCount,
-    hasher const& hash, allocator_type const& alloc)
-  : FlatHashSet(init, bucketCount, hash, key_equal(), alloc) {}
+                                                       hasher const& hash, allocator_type const& alloc)
+    : FlatHashSet(init, bucketCount, hash, key_equal(), alloc) {}
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
 auto FlatHashSet<Key, Hash, Equals, Allocator>::operator=(FlatHashSet const& other) -> FlatHashSet<Key, Hash, Equals, Allocator>& {
@@ -495,4 +495,4 @@ auto FlatHashSet<Key, Hash, Equals, Allocator>::operator!=(FlatHashSet const& rh
   return m_table != rhs.m_table;
 }
 
-}
+}// namespace Star

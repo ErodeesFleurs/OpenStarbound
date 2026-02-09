@@ -1,8 +1,8 @@
 #include "zlib.h"
 
 #include "StarCompression.hpp"
-#include "StarFormat.hpp"
 #include "StarConfig.hpp"
+#include "StarFormat.hpp"
 
 import std;
 
@@ -57,7 +57,7 @@ void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) 
   if (!inLen)
     return;
 
-  constexpr size_t BUFSIZE = 32 * 1024;
+  constexpr std::size_t BUFSIZE = 32 * 1024;
   auto tempBuffer = std::make_unique<std::array<unsigned char, BUFSIZE>>();
 
   z_stream strm{};
@@ -117,10 +117,10 @@ auto CompressedFile::open(String const& filename, IOMode mode, CompressionLevel 
 }
 
 CompressedFile::CompressedFile()
-  : IODevice(IOMode::Closed), m_file(nullptr), m_compression(MediumCompression) {}
+    : IODevice(IOMode::Closed), m_file(nullptr), m_compression(MediumCompression) {}
 
 CompressedFile::CompressedFile(String filename)
-  : IODevice(IOMode::Closed), m_file(nullptr), m_compression(MediumCompression) {
+    : IODevice(IOMode::Closed), m_file(nullptr), m_compression(MediumCompression) {
   setFilename(std::move(filename));
 }
 
@@ -149,7 +149,7 @@ void CompressedFile::seek(std::int64_t offset, IOSeek seekMode) {
   if (retCode < 0) {
     throw IOException::format("Seek error: {}", gzerror((gzFile)m_file, nullptr));
   } else if ((seekMode == IOSeek::Relative && begPos + offset != endPos)
-      || (seekMode == IOSeek::Absolute && offset != endPos)) {
+             || (seekMode == IOSeek::Absolute && offset != endPos)) {
     throw EofException("Error, unexpected end of file found");
   }
 }
@@ -245,4 +245,4 @@ auto CompressedFile::clone() -> Ptr<IODevice> {
   return cloned;
 }
 
-}
+}// namespace Star

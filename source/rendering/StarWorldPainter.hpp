@@ -1,29 +1,31 @@
 #pragma once
 
-#include "StarWorldRenderData.hpp"
-#include "StarTilePainter.hpp"
-#include "StarEnvironmentPainter.hpp"
-#include "StarTextPainter.hpp"
+#include "StarAssets.hpp"
+#include "StarConfig.hpp"
 #include "StarDrawablePainter.hpp"
+#include "StarEnvironmentPainter.hpp"
 #include "StarRenderer.hpp"
+#include "StarTextPainter.hpp"
+#include "StarTilePainter.hpp"
+#include "StarWorldRenderData.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(WorldPainter);
 
 // Will update client rendering window internally
 class WorldPainter {
 public:
   WorldPainter();
 
-  void renderInit(RendererPtr renderer);
+  void renderInit(Ptr<Renderer> renderer);
 
   void setCameraPosition(WorldGeometry const& worldGeometry, Vec2F const& position);
 
-  WorldCamera& camera();
+  auto camera() -> WorldCamera&;
 
   void update(float dt);
-  void render(WorldRenderData& renderData, function<bool()> lightWaiter);
+  void render(WorldRenderData& renderData, std::function<bool()> lightWaiter);
   void adjustLighting(WorldRenderData& renderData);
 
 private:
@@ -37,15 +39,15 @@ private:
 
   WorldCamera m_camera;
 
-  RendererPtr m_renderer;
+  Ptr<Renderer> m_renderer;
 
-  TextPainterPtr m_textPainter;
-  DrawablePainterPtr m_drawablePainter;
-  EnvironmentPainterPtr m_environmentPainter;
-  TilePainterPtr m_tilePainter;
+  Ptr<TextPainter> m_textPainter;
+  Ptr<DrawablePainter> m_drawablePainter;
+  Ptr<EnvironmentPainter> m_environmentPainter;
+  Ptr<TilePainter> m_tilePainter;
 
   Json m_highlightConfig;
-  Map<EntityHighlightEffectType, pair<Directives, Directives>> m_highlightDirectives;
+  Map<EntityHighlightEffectType, std::pair<Directives, Directives>> m_highlightDirectives;
 
   Vec2F m_entityBarOffset;
   Vec2F m_entityBarSpacing;
@@ -54,7 +56,7 @@ private:
 
   // Updated every frame
 
-  AssetsConstPtr m_assets;
+  ConstPtr<Assets> m_assets;
   RectF m_worldScreenRect;
 
   Vec2F m_previousCameraCenter;
@@ -63,4 +65,4 @@ private:
   float m_preloadTextureChance;
 };
 
-}
+}// namespace Star

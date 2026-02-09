@@ -1,14 +1,15 @@
 #include "StarDisplacementSelector.hpp"
-#include "StarRandom.hpp"
+
 #include "StarJsonExtra.hpp"
+#include "StarRandom.hpp"
 
 namespace Star {
 
 char const* const DisplacementSelector::Name = "displacement";
 
 DisplacementSelector::DisplacementSelector(
-    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database)
-  : TerrainSelector(Name, config, parameters) {
+  Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database)
+    : TerrainSelector(Name, config, parameters) {
   RandomSource random(parameters.seed);
 
   auto xType = PerlinTypeNames.getLeft(config.getString("xType"));
@@ -47,23 +48,19 @@ DisplacementSelector::DisplacementSelector(
   m_source = database->createSelectorType(sourceType, sourceConfig, parameters);
 }
 
-float DisplacementSelector::get(int x, int y) const {
+auto DisplacementSelector::get(int x, int y) const -> float {
   auto x_ = x + xDisplacementFunction.get(x * xXInfluence, y * xYInfluence);
   auto y_ = y + clampY(yDisplacementFunction.get(x * yXInfluence, y * yYInfluence));
   return m_source->get(x_, y_);
 }
 
-float DisplacementSelector::clampY(float v) const {
+auto DisplacementSelector::clampY(float v) const -> float {
   if (!yClamp)
     return v;
   if (yClampSmoothing == 0)
     return clamp(v, yClampRange[0], yClampRange[1]);
 
-  return 0.2f * (clamp(v - yClampSmoothing, yClampRange[0], yClampRange[1])
-      + clamp(v - 0.5f * yClampSmoothing, yClampRange[0], yClampRange[1])
-      + clamp(v, yClampRange[0], yClampRange[1])
-      + clamp(v + 0.5f * yClampSmoothing, yClampRange[0], yClampRange[1])
-      + clamp(v + yClampSmoothing, yClampRange[0], yClampRange[1]));
+  return 0.2f * (clamp(v - yClampSmoothing, yClampRange[0], yClampRange[1]) + clamp(v - 0.5f * yClampSmoothing, yClampRange[0], yClampRange[1]) + clamp(v, yClampRange[0], yClampRange[1]) + clamp(v + 0.5f * yClampSmoothing, yClampRange[0], yClampRange[1]) + clamp(v + yClampSmoothing, yClampRange[0], yClampRange[1]));
 }
 
-}
+}// namespace Star

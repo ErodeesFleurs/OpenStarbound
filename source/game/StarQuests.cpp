@@ -1,7 +1,8 @@
 #include "StarQuests.hpp"
-#include "StarItemDatabase.hpp" // IWYU pragma: keep
+
+#include "StarItemDatabase.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarQuestManager.hpp" // IWYU pragma: keep
+#include "StarQuestManager.hpp"
 #include "StarRoot.hpp"
 #include "StarTime.hpp"
 #include "StarRandom.hpp"

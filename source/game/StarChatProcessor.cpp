@@ -1,10 +1,12 @@
 #include "StarChatProcessor.hpp"
 
+import std;
+
 namespace Star {
 
 char const* ChatProcessor::ServerNick = "server";
 
-String ChatProcessor::connectClient(ConnectionId clientId, String nick) {
+auto ChatProcessor::connectClient(ConnectionId clientId, String nick) -> String {
   RecursiveMutexLocker locker(m_mutex);
 
   if (nick.empty())
@@ -13,12 +15,10 @@ String ChatProcessor::connectClient(ConnectionId clientId, String nick) {
   nick = makeNickUnique(nick);
 
   for (auto& pair : m_clients) {
-    pair.second.pendingMessages.append({
-        {MessageContext::Broadcast},
-        ServerConnectionId,
-        ServerNick,
-        strf("Player '{}' connected", nick)
-      });
+    pair.second.pendingMessages.append({{MessageContext::Broadcast},
+                                        ServerConnectionId,
+                                        ServerNick,
+                                        strf("Player '{}' connected", nick)});
   }
 
   m_clients.add(clientId, ClientInfo(clientId, nick));
@@ -26,7 +26,7 @@ String ChatProcessor::connectClient(ConnectionId clientId, String nick) {
   return nick;
 }
 
-List<ChatReceivedMessage> ChatProcessor::disconnectClient(ConnectionId clientId) {
+auto ChatProcessor::disconnectClient(ConnectionId clientId) -> List<ChatReceivedMessage> {
   RecursiveMutexLocker locker(m_mutex);
 
   for (auto channel : clientChannels(clientId))
@@ -37,28 +37,26 @@ List<ChatReceivedMessage> ChatProcessor::disconnectClient(ConnectionId clientId)
   m_nicks.remove(clientInfo.nick);
 
   for (auto& pair : m_clients) {
-    pair.second.pendingMessages.append({
-        {MessageContext::Broadcast},
-        ServerConnectionId,
-        ServerNick,
-        strf("Player '{}' disconnected", clientInfo.nick)
-      });
+    pair.second.pendingMessages.append({{MessageContext::Broadcast},
+                                        ServerConnectionId,
+                                        ServerNick,
+                                        strf("Player '{}' disconnected", clientInfo.nick)});
   }
 
   return clientInfo.pendingMessages;
 }
 
-List<ConnectionId> ChatProcessor::clients() const {
+auto ChatProcessor::clients() const -> List<ConnectionId> {
   RecursiveMutexLocker locker(m_mutex);
   return m_clients.keys();
 }
 
-bool ChatProcessor::hasClient(ConnectionId clientId) const {
+auto ChatProcessor::hasClient(ConnectionId clientId) const -> bool {
   RecursiveMutexLocker locker(m_mutex);
   return m_clients.contains(clientId);
 }
 
-std::optional<ConnectionId> ChatProcessor::findNick(String const& nick) const {
+auto ChatProcessor::findNick(String const& nick) const -> std::optional<ConnectionId> {
   RecursiveMutexLocker locker(m_mutex);
   if (auto m = m_nicks.maybe(nick))
     return m;
@@ -67,7 +65,7 @@ std::optional<ConnectionId> ChatProcessor::findNick(String const& nick) const {
   return {};
 }
 
-String ChatProcessor::connectionNick(ConnectionId clientId) const {
+auto ChatProcessor::connectionNick(ConnectionId clientId) const -> String {
   RecursiveMutexLocker locker(m_mutex);
 
   if (clientId == ServerConnectionId)
@@ -76,7 +74,7 @@ String ChatProcessor::connectionNick(ConnectionId clientId) const {
     return m_clients.get(clientId).nick;
 }
 
-String ChatProcessor::renick(ConnectionId clientId, String const& nick) {
+auto ChatProcessor::renick(ConnectionId clientId, String const& nick) -> String {
   RecursiveMutexLocker locker(m_mutex);
 
   auto& clientInfo = m_clients.get(clientId);
@@ -88,19 +86,19 @@ String ChatProcessor::renick(ConnectionId clientId, String const& nick) {
   return nick;
 }
 
-bool ChatProcessor::joinChannel(ConnectionId clientId, String const& channelName) {
+auto ChatProcessor::joinChannel(ConnectionId clientId, String const& channelName) -> bool {
   RecursiveMutexLocker locker(m_mutex);
 
   // Right now channels are simply created on join if they don't exist.
   return m_channels[channelName].add(clientId);
 }
 
-bool ChatProcessor::leaveChannel(ConnectionId clientId, String const& channelName) {
+auto ChatProcessor::leaveChannel(ConnectionId clientId, String const& channelName) -> bool {
   RecursiveMutexLocker locker(m_mutex);
   return m_channels[channelName].remove(clientId);
 }
 
-StringList ChatProcessor::clientChannels(ConnectionId clientId) const {
+auto ChatProcessor::clientChannels(ConnectionId clientId) const -> StringList {
   RecursiveMutexLocker locker(m_mutex);
 
   StringList channels;
@@ -111,7 +109,7 @@ StringList ChatProcessor::clientChannels(ConnectionId clientId) const {
   return channels;
 }
 
-StringList ChatProcessor::activeChannels() const {
+auto ChatProcessor::activeChannels() const -> StringList {
   RecursiveMutexLocker locker(m_mutex);
 
   StringList channels;
@@ -129,8 +127,7 @@ void ChatProcessor::broadcast(ConnectionId sourceConnectionId, String const& tex
     {MessageContext::Broadcast},
     sourceConnectionId,
     connectionNick(sourceConnectionId),
-    text
-  };
+    text};
 
   message.data = std::move(data);
 
@@ -148,8 +145,7 @@ void ChatProcessor::message(ConnectionId sourceConnectionId, MessageContext::Mod
     {mode, channelName},
     sourceConnectionId,
     connectionNick(sourceConnectionId),
-    text
-  };
+    text};
 
   message.data = std::move(data);
 
@@ -169,8 +165,7 @@ void ChatProcessor::whisper(ConnectionId sourceConnectionId, ConnectionId target
     {MessageContext::Whisper},
     sourceConnectionId,
     connectionNick(sourceConnectionId),
-    text
-  };
+    text};
 
   message.data = std::move(data);
 
@@ -198,7 +193,7 @@ void ChatProcessor::adminWhisper(ConnectionId targetClientId, String const& text
   whisper(ServerConnectionId, targetClientId, text);
 }
 
-List<ChatReceivedMessage> ChatProcessor::pullPendingMessages(ConnectionId clientId) {
+auto ChatProcessor::pullPendingMessages(ConnectionId clientId) -> List<ChatReceivedMessage> {
   RecursiveMutexLocker locker(m_mutex);
   if (m_clients.contains(clientId))
     return take(m_clients.get(clientId).pendingMessages);
@@ -215,16 +210,16 @@ void ChatProcessor::clearCommandHandler() {
   m_commandHandler = {};
 }
 
-ChatProcessor::ClientInfo::ClientInfo(ConnectionId clientId, String const& nick) : clientId(clientId), nick(nick) {}
+ChatProcessor::ClientInfo::ClientInfo(ConnectionId clientId, String const& nick) : clientId(clientId), nick(std::move(nick)) {}
 
-String ChatProcessor::makeNickUnique(String nick) {
+auto ChatProcessor::makeNickUnique(String nick) -> String {
   while (m_nicks.contains(nick) || nick == ServerNick)
     nick.append("_");
 
   return nick;
 }
 
-bool ChatProcessor::handleCommand(ChatReceivedMessage& message) {
+auto ChatProcessor::handleCommand(ChatReceivedMessage& message) -> bool {
   if (!message.text.beginsWith("/")) {
     return false;
   } else if (message.text.beginsWith("//")) {
@@ -253,15 +248,10 @@ bool ChatProcessor::handleCommand(ChatReceivedMessage& message) {
   }
 
   if (!response.empty()) {
-    m_clients.get(message.fromConnection).pendingMessages.append({
-        MessageContext(MessageContext::CommandResult),
-        ServerConnectionId,
-        connectionNick(ServerConnectionId),
-        response
-      });
+    m_clients.get(message.fromConnection).pendingMessages.append({MessageContext(MessageContext::CommandResult), ServerConnectionId, connectionNick(ServerConnectionId), response});
   }
 
   return true;
 }
 
-}
+}// namespace Star

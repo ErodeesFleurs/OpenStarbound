@@ -1,11 +1,10 @@
 #pragma once
 
-#include "StarThread.hpp"
-#include "StarApplication.hpp"
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
+#include "StarConfig.hpp"
 #include "StarDesktopService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarStatisticsService.hpp"
+#include "StarUserGeneratedContentService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 #include "steam/steam_api.h"
@@ -16,9 +15,6 @@
 #endif
 
 namespace Star {
-
-STAR_CLASS(PcPlatformServices);
-STAR_STRUCT(PcPlatformServicesState);
 
 struct PcPlatformServicesState {
   PcPlatformServicesState();
@@ -38,7 +34,7 @@ struct PcPlatformServicesState {
   Mutex discordMutex;
 
   unique_ptr<discord::Core> discordCore;
-  
+
   std::optional<discord::User> discordCurrentUser;
   ThreadFunction<void> discordEventThread;
   atomic<bool> discordEventShutdown;
@@ -47,34 +43,33 @@ struct PcPlatformServicesState {
   bool overlayActive = false;
 };
 
-
 class PcPlatformServices {
 public:
   // Any command line arguments that start with '+platform' will be stripped
   // out and passed here
-  static PcPlatformServicesUPtr create(String const& path, StringList platformArguments);
+  static auto create(String const& path, StringList platformArguments) -> UPtr<PcPlatformServices>;
 
-  StatisticsServicePtr statisticsService() const;
-  P2PNetworkingServicePtr p2pNetworkingService() const;
-  UserGeneratedContentServicePtr userGeneratedContentService() const;
-  DesktopServicePtr desktopService() const;
+  [[nodiscard]] auto statisticsService() const -> Ptr<StatisticsService>;
+  [[nodiscard]] auto p2pNetworkingService() const -> Ptr<P2PNetworkingService>;
+  [[nodiscard]] auto userGeneratedContentService() const -> Ptr<UserGeneratedContentService>;
+  [[nodiscard]] auto desktopService() const -> Ptr<DesktopService>;
 
   // Will return true if there is an in-game overlay active.  This is important
   // because the cursor must be visible when such an overlay is active,
   // regardless of the ApplicationController setting.
-  bool overlayActive() const;
+  [[nodiscard]] auto overlayActive() const -> bool;
 
   void update();
 
 private:
   PcPlatformServices() = default;
 
-  PcPlatformServicesStatePtr m_state;
+  Ptr<PcPlatformServicesState> m_state;
 
-  StatisticsServicePtr m_statisticsService;
-  P2PNetworkingServicePtr m_p2pNetworkingService;
-  UserGeneratedContentServicePtr m_userGeneratedContentService;
-  DesktopServicePtr m_desktopService;
+  Ptr<StatisticsService> m_statisticsService;
+  Ptr<P2PNetworkingService> m_p2pNetworkingService;
+  Ptr<UserGeneratedContentService> m_userGeneratedContentService;
+  Ptr<DesktopService> m_desktopService;
 };
 
-}
+}// namespace Star

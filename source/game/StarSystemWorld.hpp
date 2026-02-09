@@ -18,12 +18,6 @@ class SystemObject;
 class SystemWorldServer;
 
 struct SystemObjectConfig;
-// STAR_CLASS(Celestial);
-// STAR_CLASS(ClientContext);
-// STAR_CLASS(SystemClientShip);
-// STAR_CLASS(SystemObject);
-
-// STAR_STRUCT(SystemObjectConfig);
 
 struct CelestialOrbit {
   static auto fromJson(Json const& json) -> CelestialOrbit;

@@ -1,24 +1,28 @@
 #pragma once
+
+#include "StarConfig.hpp"
 #include "StarJson.hpp"
 #include "StarThread.hpp"
 
+import std;
+
 namespace Star {
 
-STAR_CLASS(LuaContext);
-STAR_CLASS(LuaRoot);
+class LuaRoot;
+class LuaContext;
 
 class Rebuilder {
 public:
   Rebuilder(String const& id);
   ~Rebuilder() = default;
 
-  typedef function<String(Json const&)> AttemptCallback;
-  bool rebuild(Json store, String last_error, AttemptCallback attempt) const;
+  using AttemptCallback = std::function<String(Json const&)>;
+  auto rebuild(Json store, String last_error, AttemptCallback attempt) const -> bool;
 
 private:
-  LuaRootPtr m_luaRoot;
+  Ptr<LuaRoot> m_luaRoot;
   mutable RecursiveMutex m_luaMutex;
-  shared_ptr<List<LuaContext>> m_contexts; // this is a ptr to avoid having to include Lua.hpp here
+  std::shared_ptr<List<LuaContext>> m_contexts;// this is a ptr to avoid having to include Lua.hpp here
 };
 
-}
+}// namespace Star

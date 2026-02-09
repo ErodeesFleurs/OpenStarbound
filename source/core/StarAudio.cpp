@@ -1,3 +1,5 @@
+#include "StarAudio.hpp"
+
 // Fixes unused variable warning
 #define OV_EXCLUDE_STATIC_CALLBACKS
 #include "vorbis/codec.h"
@@ -6,7 +8,6 @@
 
 #include "StarBytes.hpp"
 #include "StarConfig.hpp"
-#include "StarAudio.hpp"
 #include "StarBuffer.hpp"
 #include "StarFormat.hpp"
 

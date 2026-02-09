@@ -1,93 +1,94 @@
 #pragma once
 
-#include "StarNetElementSystem.hpp"
-#include <optional>
-#include "StarThread.hpp"
-#include "StarUuid.hpp"
-#include "StarJsonRpc.hpp"
+#include "StarConfig.hpp"
 #include "StarDamageTypes.hpp"
 #include "StarGameTypes.hpp"
 #include "StarHostAddress.hpp"
-#include "StarClientContext.hpp"
-#include "StarWorldStorage.hpp"
+#include "StarJsonRpc.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarPlayerTypes.hpp"
 #include "StarSystemWorld.hpp"
+#include "StarThread.hpp"
+#include "StarUuid.hpp"
+#include "StarWorldStorage.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(WorldServerThread);
-STAR_CLASS(SystemWorldServerThread);
-STAR_CLASS(ServerClientContext);
+class WorldServerThread;
+class SystemWorldServerThread;
 
 class ServerClientContext {
 public:
   ServerClientContext(ConnectionId clientId, std::optional<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks);
+                      String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks);
 
-  ConnectionId clientId() const;
-  std::optional<HostAddress> const& remoteAddress() const;
-  Uuid const& playerUuid() const;
-  String const& playerName() const;
-  String const& shipSpecies() const;
-  bool canBecomeAdmin() const;
-  NetCompatibilityRules netRules() const;
-  String descriptiveName() const;
+  auto clientId() const -> ConnectionId;
+  auto remoteAddress() const -> std::optional<HostAddress> const&;
+  auto playerUuid() const -> Uuid const&;
+  auto playerName() const -> String const&;
+  auto shipSpecies() const -> String const&;
+  auto canBecomeAdmin() const -> bool;
+  auto netRules() const -> NetCompatibilityRules;
+  auto descriptiveName() const -> String;
 
   // Register additional rpc methods from other server side services.
   void registerRpcHandlers(JsonRpcHandlers const& rpcHandlers);
 
   // The coordinate for the world which the *player's* ship is currently
   // orbiting, if it is currently orbiting a world.
-  CelestialCoordinate shipCoordinate() const;
+  auto shipCoordinate() const -> CelestialCoordinate;
   void setShipCoordinate(CelestialCoordinate shipCoordinate);
 
-  SystemLocation shipLocation() const;
+  auto shipLocation() const -> SystemLocation;
   void setShipLocation(SystemLocation location);
 
   // Warp action and warp mode to the planet the player is currently orbiting
   // valid when the player is on any ship world orbiting a location
-  std::optional<pair<WarpAction, WarpMode>> orbitWarpAction() const;
-  void setOrbitWarpAction(std::optional<pair<WarpAction, WarpMode>> warpAction);
+  auto orbitWarpAction() const -> std::optional<std::pair<WarpAction, WarpMode>>;
+  void setOrbitWarpAction(std::optional<std::pair<WarpAction, WarpMode>> warpAction);
 
-  bool isAdmin() const;
+  auto isAdmin() const -> bool;
   void setAdmin(bool admin);
 
-  EntityDamageTeam team() const;
+  auto team() const -> EntityDamageTeam;
   void setTeam(EntityDamageTeam team);
 
-  ShipUpgrades shipUpgrades() const;
+  auto shipUpgrades() const -> ShipUpgrades;
   void setShipUpgrades(ShipUpgrades shipUpgrades);
   void setShipSpecies(String shipSpecies);
 
-  WorldChunks shipChunks() const;
+  auto shipChunks() const -> WorldChunks;
   void updateShipChunks(WorldChunks newShipChunks);
 
-  ByteArray writeInitialState() const;
+  auto writeInitialState() const -> ByteArray;
 
   void readUpdate(ByteArray data);
-  ByteArray writeUpdate();
+  auto writeUpdate() -> ByteArray;
 
-  void setPlayerWorld(WorldServerThreadPtr worldThread);
-  WorldServerThreadPtr playerWorld() const;
-  WorldId playerWorldId() const;
+  void setPlayerWorld(Ptr<WorldServerThread> worldThread);
+  auto playerWorld() const -> Ptr<WorldServerThread>;
+  auto playerWorldId() const -> WorldId;
   void clearPlayerWorld();
 
-  void setSystemWorld(SystemWorldServerThreadPtr systemWorldThread);
-  SystemWorldServerThreadPtr systemWorld() const;
+  void setSystemWorld(Ptr<SystemWorldServerThread> systemWorldThread);
+  auto systemWorld() const -> Ptr<SystemWorldServerThread>;
   void clearSystemWorld();
 
-  WarpToWorld playerReturnWarp() const;
+  auto playerReturnWarp() const -> WarpToWorld;
   void setPlayerReturnWarp(WarpToWorld warp);
 
-  WarpToWorld playerReviveWarp() const;
+  auto playerReviveWarp() const -> WarpToWorld;
   void setPlayerReviveWarp(WarpToWorld warp);
 
   // Store and load the data for this client that should be persisted on the
   // server, such as celestial log data, admin state, team, and current ship
   // location, and warp history.  Does not store ship data or ship upgrades.
   void loadServerData(Json const& store);
-  Json storeServerData();
+  auto storeServerData() -> Json;
 
-  int64_t creationTime() const;
+  auto creationTime() const -> std::int64_t;
 
 private:
   ConnectionId const m_clientId;
@@ -105,17 +106,17 @@ private:
 
   SystemLocation m_shipSystemLocation;
   JsonRpc m_rpc;
-  WorldServerThreadPtr m_worldThread;
+  Ptr<WorldServerThread> m_worldThread;
   WarpToWorld m_returnWarp;
   WarpToWorld m_reviveWarp;
 
-  SystemWorldServerThreadPtr m_systemWorldThread;
+  Ptr<SystemWorldServerThread> m_systemWorldThread;
 
   NetElementTopGroup m_netGroup;
-  uint64_t m_netVersion = 0;
-  int64_t m_creationTime;
+  std::uint64_t m_netVersion = 0;
+  std::int64_t m_creationTime;
 
-  NetElementData<std::optional<pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
+  NetElementData<std::optional<std::pair<WarpAction, WarpMode>>> m_orbitWarpActionNetState;
   NetElementData<WorldId> m_playerWorldIdNetState;
   NetElementBool m_isAdminNetState;
   NetElementData<EntityDamageTeam> m_teamNetState;
@@ -123,4 +124,4 @@ private:
   NetElementData<CelestialCoordinate> m_shipCoordinate;
 };
 
-}
+}// namespace Star

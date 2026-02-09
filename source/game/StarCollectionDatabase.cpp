@@ -1,25 +1,25 @@
 #include "StarCollectionDatabase.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarMonsterDatabase.hpp"
 #include "StarItemDatabase.hpp"
+#include "StarMonsterDatabase.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
-EnumMap<CollectionType> const CollectionTypeNames {
+EnumMap<CollectionType> const CollectionTypeNames{
   {CollectionType::Generic, "generic"},
   {CollectionType::Item, "item"},
-  {CollectionType::Monster, "monster"}
-};
+  {CollectionType::Monster, "monster"}};
 
 Collection::Collection() : name(), title(), type() {}
 
-Collection::Collection(String const& name, CollectionType type, String const& title) : name(name), title(title), type(type) {}
+Collection::Collection(String const& name, CollectionType type, String const& title) : name(std::move(name)), title(std::move(title)), type(type) {}
 
 Collectable::Collectable() : name(), order(), title(), description(), icon() {}
 
 Collectable::Collectable(String const& name, int order, String const& title, String const& description, String const& icon)
-  : name(name), order(order), title(title), description(description), icon(icon) {};
+    : name(std::move(name)), order(order), title(std::move(title)), description(std::move(description)), icon(std::move(icon)) {};
 
 CollectionDatabase::CollectionDatabase() {
   auto assets = Root::singleton().assets();
@@ -51,19 +51,19 @@ CollectionDatabase::CollectionDatabase() {
   }
 }
 
-List<Collection> CollectionDatabase::collections() const {
+auto CollectionDatabase::collections() const -> List<Collection> {
   return m_collections.values();
 }
 
-Collection CollectionDatabase::collection(String const& collectionName) const {
+auto CollectionDatabase::collection(String const& collectionName) const -> Collection {
   try {
-    return m_collections.get(collectionName); 
+    return m_collections.get(collectionName);
   } catch (MapException const& e) {
     throw CollectionDatabaseException(strf("Collection '{}' not found", collectionName), e);
   }
 }
 
-List<Collectable> CollectionDatabase::collectables(String const& collectionName) const {
+auto CollectionDatabase::collectables(String const& collectionName) const -> List<Collectable> {
   try {
     return m_collectables.get(collectionName).values();
   } catch (MapException const& e) {
@@ -71,7 +71,7 @@ List<Collectable> CollectionDatabase::collectables(String const& collectionName)
   }
 }
 
-Collectable CollectionDatabase::collectable(String const& collectionName, String const& collectableName) const {
+auto CollectionDatabase::collectable(String const& collectionName, String const& collectableName) const -> Collectable {
   try {
     return m_collectables.get(collectionName).get(collectableName);
   } catch (MapException const& e) {
@@ -79,11 +79,11 @@ Collectable CollectionDatabase::collectable(String const& collectionName, String
   }
 }
 
-bool CollectionDatabase::hasCollectable(String const& collectionName, String const& collectableName) const {
+auto CollectionDatabase::hasCollectable(String const& collectionName, String const& collectableName) const -> bool {
   return (m_collections.contains(collectionName) && m_collectables.get(collectionName).contains(collectableName));
 }
 
-Collectable CollectionDatabase::parseGenericCollectable(String const& name, Json const& config) const {
+auto CollectionDatabase::parseGenericCollectable(String const& name, Json const& config) const -> Collectable {
   Collectable collectable;
   collectable.name = name;
   collectable.order = config.getInt("order", 0);
@@ -95,18 +95,18 @@ Collectable CollectionDatabase::parseGenericCollectable(String const& name, Json
   return collectable;
 }
 
-Collectable CollectionDatabase::parseMonsterCollectable(String const& name, Json const& config) const {
+auto CollectionDatabase::parseMonsterCollectable(String const& name, Json const& config) const -> Collectable {
   Collectable collectable = parseGenericCollectable(name, config);
-  auto seed = 0; // use a static seed to utilize caching
+  auto seed = 0;// use a static seed to utilize caching
   auto variant = Root::singleton().monsterDatabase()->monsterVariant(config.getString("monsterType"), seed);
 
-  collectable.title = variant.shortDescription.value("");
-  collectable.description = variant.description.value("");
+  collectable.title = variant.shortDescription.value_or("");
+  collectable.description = variant.description.value_or("");
 
   return collectable;
 }
 
-Collectable CollectionDatabase::parseItemCollectable(String const& name, Json const& config) const {
+auto CollectionDatabase::parseItemCollectable(String const& name, Json const& config) const -> Collectable {
   Collectable collectable = parseGenericCollectable(name, config);
   auto itemDatabase = Root::singleton().itemDatabase();
   auto item = itemDatabase->itemShared(ItemDescriptor(config.getString("item")));
@@ -125,4 +125,4 @@ Collectable CollectionDatabase::parseItemCollectable(String const& name, Json co
   return collectable;
 }
 
-}
+}// namespace Star

@@ -1,39 +1,39 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarDungeonGenerator.hpp"
+#include "StarImage.hpp"
 
-namespace Star {
+import std;
 
-namespace Dungeon {
+namespace Star::Dungeon {
 
-  STAR_CLASS(ImagePartReader);
-  STAR_CLASS(ImageTileset);
+class ImageTileset;
 
-  class ImagePartReader : public PartReader {
-  public:
-    ImagePartReader(ImageTilesetConstPtr tileset) : m_tileset(tileset) {}
+class ImagePartReader : public PartReader {
+public:
+  ImagePartReader(ConstPtr<ImageTileset> tileset) : m_tileset(std::move(tileset)) {}
 
-    virtual void readAsset(String const& asset) override;
-    virtual Vec2U size() const override;
+  void readAsset(String const& asset) override;
+  [[nodiscard]] auto size() const -> Vec2U override;
 
-    virtual void forEachTile(TileCallback const& callback) const override;
-    virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
+  void forEachTile(TileCallback const& callback) const override;
+  void forEachTileAt(Vec2I pos, TileCallback const& callback) const override;
 
-  private:
-    List<pair<String, ImageConstPtr>> m_images;
-    ImageTilesetConstPtr m_tileset;
-  };
+private:
+  List<std::pair<String, ConstPtr<Image>>> m_images;
+  ConstPtr<ImageTileset> m_tileset;
+};
 
-  class ImageTileset {
-  public:
-    ImageTileset(Json const& tileset);
+class ImageTileset {
+public:
+  ImageTileset(Json const& tileset);
 
-    Tile const* getTile(Vec4B color) const;
+  [[nodiscard]] auto getTile(Vec4B color) const -> Tile const*;
 
-  private:
-    unsigned colorAsInt(Vec4B color) const;
+private:
+  [[nodiscard]] auto colorAsInt(Vec4B color) const -> unsigned;
 
-    Map<unsigned, Tile> m_tiles;
-  };
-}
-}
+  Map<unsigned, Tile> m_tiles;
+};
+}// namespace Star::Dungeon

@@ -6,7 +6,7 @@ namespace Star {
 
 // The filename is everything after the last slash (excluding directives) and
 // up to the first directive marker.
-static std::optional<std::pair<std::size_t, std::size_t>> findFilenameRange(std::string const& pathUtf8) {
+static auto findFilenameRange(std::string const& pathUtf8) -> std::optional<std::pair<std::size_t, std::size_t>> {
   std::size_t firstDirectiveOrSubPath = pathUtf8.find_first_of(":?");
   std::size_t filenameStart = 0;
   while (true) {
@@ -105,13 +105,13 @@ auto AssetPath::directory(String const& path) -> String {
 
 auto AssetPath::filename(String const& path) -> String {
   if (auto p = findFilenameRange(path.utf8())) {
-    return String(path.utf8().substr(p->first, p->second));
+    return {path.utf8().substr(p->first, p->second)};
   } else {
     return {};
   }
 }
 
-String AssetPath::extension(String const& path) {
+auto AssetPath::extension(String const& path) -> String {
   auto file = filename(path);
   auto lastDot = file.findLast(".");
   if (lastDot == std::numeric_limits<std::size_t>::max())
@@ -120,7 +120,7 @@ String AssetPath::extension(String const& path) {
   return file.substr(lastDot + 1);
 }
 
-String AssetPath::relativeTo(String const& sourcePath, String const& givenPath) {
+auto AssetPath::relativeTo(String const& sourcePath, String const& givenPath) -> String {
   if (!givenPath.empty() && givenPath[0] == '/')
     return givenPath;
 
@@ -129,14 +129,13 @@ String AssetPath::relativeTo(String const& sourcePath, String const& givenPath) 
   return path;
 }
 
-bool AssetPath::operator==(AssetPath const& rhs) const {
+auto AssetPath::operator==(AssetPath const& rhs) const -> bool {
   return tie(basePath, subPath, directives) == tie(rhs.basePath, rhs.subPath, rhs.directives);
 }
 
 AssetPath::AssetPath(const char* path) {
   *this = AssetPath::split(path);
 }
-
 
 AssetPath::AssetPath(String const& path) {
   *this = AssetPath::split(path);
@@ -154,14 +153,14 @@ AssetPath::AssetPath(String const& basePath, const std::optional<String>& subPat
   this->directives = directives;
 }
 
-std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
+auto operator<<(std::ostream& os, AssetPath const& rhs) -> std::ostream& {
   os << rhs.basePath;
   if (rhs.subPath) {
     os << ":";
     os << *rhs.subPath;
   }
 
-  rhs.directives.forEach([&](Directives::Entry const& entry, Directives const& directives) {
+  rhs.directives.forEach([&](Directives::Entry const& entry, Directives const& directives) -> void {
     os << "?";
     os << entry.string(*directives);
   });
@@ -169,11 +168,11 @@ std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
   return os;
 }
 
-std::size_t hash<AssetPath>::operator()(AssetPath const& s) const {
+auto hash<AssetPath>::operator()(AssetPath const& s) const -> std::size_t {
   return hashOf(s.basePath, s.subPath, s.directives);
 }
 
-DataStream& operator>>(DataStream& ds, AssetPath& path) {
+auto operator>>(DataStream& ds, AssetPath& path) -> DataStream& {
   String string;
   ds.read(string);
 
@@ -182,10 +181,10 @@ DataStream& operator>>(DataStream& ds, AssetPath& path) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, AssetPath const& path) {
+auto operator<<(DataStream& ds, AssetPath const& path) -> DataStream& {
   ds.write(AssetPath::join(path));
 
   return ds;
 }
 
-}
+}// namespace Star

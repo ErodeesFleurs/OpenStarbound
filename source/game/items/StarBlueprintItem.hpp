@@ -1,24 +1,22 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarItem.hpp"
-#include "StarWorld.hpp"
 #include "StarSwingableItem.hpp"
 
 namespace Star {
 
-STAR_CLASS(BlueprintItem);
-
 class BlueprintItem : public Item, public SwingableItem {
 public:
   BlueprintItem(Json const& config, String const& directory, Json const& data);
-  virtual ItemPtr clone() const override;
+  auto clone() const -> Ptr<Item> override;
 
-  virtual List<Drawable> drawables() const override;
+  auto drawables() const -> List<Drawable> override;
 
-  virtual void fireTriggered() override;
+  void fireTriggered() override;
 
-  virtual List<Drawable> iconDrawables() const override;
-  virtual List<Drawable> dropDrawables() const override;
+  auto iconDrawables() const -> List<Drawable> override;
+  auto dropDrawables() const -> List<Drawable> override;
 
 private:
   ItemDescriptor m_recipe;
@@ -26,4 +24,4 @@ private:
   List<Drawable> m_inHandDrawable;
 };
 
-}
+}// namespace Star

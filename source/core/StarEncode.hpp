@@ -1,7 +1,7 @@
 #pragma once
 
-#include "StarString.hpp"
 #include "StarByteArray.hpp"
+#include "StarString.hpp"
 
 import std;
 
@@ -23,4 +23,4 @@ auto hexDecode(String const& encodedData) -> ByteArray;
 auto base64Encode(ByteArray const& data) -> String;
 auto base64Decode(String const& encodedData) -> ByteArray;
 
-}
+}// namespace Star

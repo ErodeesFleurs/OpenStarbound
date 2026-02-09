@@ -1,7 +1,8 @@
 #include "StarEmoteProcessor.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
+
 #include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
@@ -20,7 +21,7 @@ EmoteProcessor::EmoteProcessor() {
   }
 }
 
-HumanoidEmote EmoteProcessor::detectEmotes(String const& chatter) const {
+auto EmoteProcessor::detectEmotes(String const& chatter) const -> HumanoidEmote {
   auto isShouty = [](String const& text) -> bool {
     int caps = 0;
     int noCaps = 0;
@@ -58,4 +59,4 @@ HumanoidEmote EmoteProcessor::detectEmotes(String const& chatter) const {
   return result;
 }
 
-}
+}// namespace Star

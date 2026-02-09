@@ -1,58 +1,54 @@
 #pragma once
 
-#include <optional>
-
-#include "StarCelestialParameters.hpp"
 #include "StarCelestialCoordinate.hpp"
-#include "StarSystemWorld.hpp"
+#include "StarConfig.hpp"
 #include "StarNetPackets.hpp"
+#include "StarSystemWorld.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(CelestialDatabase);
-STAR_CLASS(PlayerUniverseMap);
-STAR_CLASS(Celestial);
-STAR_CLASS(Clock);
-STAR_CLASS(ClientContext);
+class PlayerUniverseMap;
 
 class SystemWorldClient : public SystemWorld {
 public:
-  SystemWorldClient(ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PlayerUniverseMapPtr clientContext);
+  SystemWorldClient(ConstPtr<Clock> universeClock, Ptr<CelestialDatabase> celestialDatabase, Ptr<PlayerUniverseMap> clientContext);
 
-  CelestialCoordinate currentSystem() const;
+  [[nodiscard]] auto currentSystem() const -> CelestialCoordinate;
 
-  std::optional<Vec2F> shipPosition() const;
-  SystemLocation shipLocation() const;
-  SystemLocation shipDestination() const;
-  bool flying() const;
+  [[nodiscard]] auto shipPosition() const -> std::optional<Vec2F>;
+  [[nodiscard]] auto shipLocation() const -> SystemLocation;
+  [[nodiscard]] auto shipDestination() const -> SystemLocation;
+  [[nodiscard]] auto flying() const -> bool;
 
   void update(float dt);
 
-  List<SystemObjectPtr> objects() const override;
-  List<Uuid> objectKeys() const override;
-  SystemObjectPtr getObject(Uuid const& uuid) const override;
+  [[nodiscard]] auto objects() const -> List<Ptr<SystemObject>> override;
+  [[nodiscard]] auto objectKeys() const -> List<Uuid> override;
+  [[nodiscard]] auto getObject(Uuid const& uuid) const -> Ptr<SystemObject> override;
 
-  List<SystemClientShipPtr> ships() const;
-  SystemClientShipPtr getShip(Uuid const& uuid) const;
+  [[nodiscard]] auto ships() const -> List<Ptr<SystemClientShip>>;
+  [[nodiscard]] auto getShip(Uuid const& uuid) const -> Ptr<SystemClientShip>;
 
-  Uuid spawnObject(String typeName, std::optional<Vec2F> position = {}, std::optional<Uuid> const& uuid = {}, JsonObject parameters = {});
+  auto spawnObject(String typeName, std::optional<Vec2F> position = {}, std::optional<Uuid> const& uuid = {}, JsonObject parameters = {}) -> Uuid;
 
   // returns whether the packet was handled
-  bool handleIncomingPacket(PacketPtr packet);
-  List<PacketPtr> pullOutgoingPackets();
+  auto handleIncomingPacket(Ptr<Packet> packet) -> bool;
+  auto pullOutgoingPackets() -> List<Ptr<Packet>>;
+
 private:
-  SystemObjectPtr netLoadObject(ByteArray netStore);
-  SystemClientShipPtr netLoadShip(ByteArray netStore);
+  auto netLoadObject(ByteArray netStore) -> Ptr<SystemObject>;
+  auto netLoadShip(ByteArray netStore) -> Ptr<SystemClientShip>;
 
   // m_ship can be a null pointer, indicating that the system is not initialized
-  SystemClientShipPtr m_ship;
-  HashMap<Uuid, SystemObjectPtr> m_objects;
-  HashMap<Uuid, SystemClientShipPtr> m_clientShips;
+  Ptr<SystemClientShip> m_ship;
+  HashMap<Uuid, Ptr<SystemObject>> m_objects;
+  HashMap<Uuid, Ptr<SystemClientShip>> m_clientShips;
 
-  PlayerUniverseMapPtr m_universeMap;
+  Ptr<PlayerUniverseMap> m_universeMap;
 
-  List<PacketPtr> m_outgoingPackets;
+  List<Ptr<Packet>> m_outgoingPackets;
 };
 
-
-}
+}// namespace Star

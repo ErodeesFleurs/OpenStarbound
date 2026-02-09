@@ -100,29 +100,29 @@ Either<Left, Right>::Either() = default;
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(EitherLeftValue<Left> left)
-  : m_value(std::move(left)) {}
+    : m_value(std::move(left)) {}
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(EitherRightValue<Right> right)
-  : m_value(std::move(right)) {}
+    : m_value(std::move(right)) {}
 
 template <typename Left, typename Right>
 template <typename T>
 Either<Left, Right>::Either(EitherLeftValue<T> left)
-  : Either(LeftType{std::move(left.value)}) {}
+    : Either(LeftType{std::move(left.value)}) {}
 
 template <typename Left, typename Right>
 template <typename T>
 Either<Left, Right>::Either(EitherRightValue<T> right)
-  : Either(RightType{std::move(right.value)}) {}
+    : Either(RightType{std::move(right.value)}) {}
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(Either const& rhs)
-  : m_value(rhs.m_value) {}
+    : m_value(rhs.m_value) {}
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(Either&& rhs)
-  : m_value(std::move(rhs.m_value)) {}
+    : m_value(std::move(rhs.m_value)) {}
 
 template <typename Left, typename Right>
 auto Either<Left, Right>::operator=(Either const& rhs) -> Either<Left, Right>& = default;
@@ -237,4 +237,4 @@ auto Either<Left, Right>::rightPtr() -> Right* {
   return nullptr;
 }
 
-}
+}// namespace Star

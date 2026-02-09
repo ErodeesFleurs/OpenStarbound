@@ -4,12 +4,14 @@
 #include "StarConfig.hpp"
 #include "StarWorldParameters.hpp"
 
+import std;
+
 namespace Star {
 
 class CelestialParameters {
 public:
   CelestialParameters();
-  CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters);
+  CelestialParameters(CelestialCoordinate coordinate, std::uint64_t seed, String name, Json parameters);
   explicit CelestialParameters(Json const& diskStore);
   explicit CelestialParameters(ByteArray netStore);
 
@@ -18,18 +20,18 @@ public:
 
   [[nodiscard]] auto coordinate() const -> CelestialCoordinate;
   [[nodiscard]] auto name() const -> String;
-  [[nodiscard]] auto seed() const -> uint64_t;
+  [[nodiscard]] auto seed() const -> std::uint64_t;
 
   [[nodiscard]] auto parameters() const -> Json;
   [[nodiscard]] auto getParameter(String const& name, Json def = Json()) const -> Json;
   // Predictably select from a json array, given by the named parameter.
   // Selects based on the name hash and the system seed.
-  [[nodiscard]] auto randomizeParameterList(String const& name, int32_t mix = 0) const -> Json;
+  [[nodiscard]] auto randomizeParameterList(String const& name, std::int32_t mix = 0) const -> Json;
   // Predictably select from a range, given by the named parameter.  Works for
   // either floating or integral ranges.
-  [[nodiscard]] auto randomizeParameterRange(String const& name, int32_t mix = 0) const -> Json;
+  [[nodiscard]] auto randomizeParameterRange(String const& name, std::int32_t mix = 0) const -> Json;
   // Same function, but if you want to specify the range from an external source
-  [[nodiscard]] auto randomizeParameterRange(JsonArray const& range, int32_t mix = 0, std::optional<String> const& name = {}) const -> Json;
+  [[nodiscard]] auto randomizeParameterRange(JsonArray const& range, std::int32_t mix = 0, std::optional<String> const& name = {}) const -> Json;
 
   // Not all worlds are visitable, if the world is not visitable its
   // visitableParameters will be empty.
@@ -39,7 +41,7 @@ public:
 
 private:
   CelestialCoordinate m_coordinate;
-  uint64_t m_seed;
+  std::uint64_t m_seed;
   String m_name;
   Json m_parameters;
   ConstPtr<VisitableWorldParameters> m_visitableParameters;

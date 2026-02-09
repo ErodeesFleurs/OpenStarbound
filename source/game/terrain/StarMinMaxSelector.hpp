@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarTerrainDatabase.hpp"
 
 namespace Star {
@@ -9,9 +10,9 @@ struct MinMaxSelector : TerrainSelector {
 
   MinMaxSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] auto get(int x, int y) const -> float override;
 
-  List<TerrainSelectorConstPtr> m_sources;
+  List<ConstPtr<TerrainSelector>> m_sources;
 };
 
 }

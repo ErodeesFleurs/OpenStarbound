@@ -5,7 +5,7 @@ import std;
 namespace Star {
 
 auto hexEncode(char const* data, std::size_t len, char* output, std::size_t outLen) -> std::size_t {
-    static constexpr std::array<char, 17> hex = { "0123456789abcdef" };
+  static constexpr std::array<char, 17> hex = {"0123456789abcdef"};
 
   len = std::min(len, outLen / 2);
   for (std::size_t i = 0; i < len; ++i) {
@@ -68,63 +68,63 @@ auto nibbleDecode(char const* src, std::size_t len, char* output, std::size_t ou
 static const std::string base64_chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
 
 auto base64Encode(char const* data, std::size_t len, char* output, std::size_t outLen) -> std::size_t {
-    if (outLen == 0)
-        return 0;
-    std::size_t written = 0;
+  if (outLen == 0)
+    return 0;
+  std::size_t written = 0;
 
-    std::array<unsigned char, 3> ca3 = {0, 0, 0};
-    std::array<unsigned char, 4> ca4 = {0, 0, 0, 0};
-    const auto* inPtr = (const unsigned char*)data;
-    int i = 0, j = 0, in_len = len;
+  std::array<unsigned char, 3> ca3 = {0, 0, 0};
+  std::array<unsigned char, 4> ca4 = {0, 0, 0, 0};
+  const auto* inPtr = (const unsigned char*)data;
+  int i = 0, j = 0, in_len = len;
 
-    while (in_len--) {
-        ca3[i++] = *(inPtr++);
-        if (i == 3) {
-        ca4[0] = (ca3[0] & 0xfc) >> 2;
-        ca4[1] = ((ca3[0] & 0x03) << 4) + ((ca3[1] & 0xf0) >> 4);
-        ca4[2] = ((ca3[1] & 0x0f) << 2) + ((ca3[2] & 0xc0) >> 6);
-        ca4[3] = ca3[2] & 0x3f;
-        for (i = 0; (i < 4); i++) {
-            --outLen;
-            *output = base64_chars[ca4[i]];
-            ++output;
-            ++written;
-
-            if (outLen == 0)
-            return written;
-        }
-        i = 0;
-        }
-    }
-
-    if (i) {
-        for (j = i; j < 3; j++)
-        ca3[j] = '\0';
-        ca4[0] = (ca3[0] & 0xfc) >> 2;
-        ca4[1] = ((ca3[0] & 0x03) << 4) + ((ca3[1] & 0xf0) >> 4);
-        ca4[2] = ((ca3[1] & 0x0f) << 2) + ((ca3[2] & 0xc0) >> 6);
-        ca4[3] = ca3[2] & 0x3f;
-        for (j = 0; (j < i + 1); j++) {
+  while (in_len--) {
+    ca3[i++] = *(inPtr++);
+    if (i == 3) {
+      ca4[0] = (ca3[0] & 0xfc) >> 2;
+      ca4[1] = ((ca3[0] & 0x03) << 4) + ((ca3[1] & 0xf0) >> 4);
+      ca4[2] = ((ca3[1] & 0x0f) << 2) + ((ca3[2] & 0xc0) >> 6);
+      ca4[3] = ca3[2] & 0x3f;
+      for (i = 0; (i < 4); i++) {
         --outLen;
-        *output = base64_chars[ca4[j]];
+        *output = base64_chars[ca4[i]];
         ++output;
         ++written;
 
         if (outLen == 0)
-            return written;
-        }
-        while ((i++ < 3)) {
-        --outLen;
-        *output = '=';
-        ++output;
-        ++written;
-
-        if (outLen == 0)
-            return written;
-        }
+          return written;
+      }
+      i = 0;
     }
+  }
 
-    return written;
+  if (i) {
+    for (j = i; j < 3; j++)
+      ca3[j] = '\0';
+    ca4[0] = (ca3[0] & 0xfc) >> 2;
+    ca4[1] = ((ca3[0] & 0x03) << 4) + ((ca3[1] & 0xf0) >> 4);
+    ca4[2] = ((ca3[1] & 0x0f) << 2) + ((ca3[2] & 0xc0) >> 6);
+    ca4[3] = ca3[2] & 0x3f;
+    for (j = 0; (j < i + 1); j++) {
+      --outLen;
+      *output = base64_chars[ca4[j]];
+      ++output;
+      ++written;
+
+      if (outLen == 0)
+        return written;
+    }
+    while ((i++ < 3)) {
+      --outLen;
+      *output = '=';
+      ++output;
+      ++written;
+
+      if (outLen == 0)
+        return written;
+    }
+  }
+
+  return written;
 }
 
 static inline auto is_base64(unsigned char c) -> bool {
@@ -218,4 +218,4 @@ auto base64Decode(String const& encodedData) -> ByteArray {
   return res;
 }
 
-}
+}// namespace Star

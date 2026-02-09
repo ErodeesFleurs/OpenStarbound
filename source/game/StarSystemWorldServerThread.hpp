@@ -1,29 +1,28 @@
 #pragma once
 
-#include <optional>
-
+#include "StarConfig.hpp"
+#include "StarNetPackets.hpp"
 #include "StarSystemWorldServer.hpp"
 #include "StarThread.hpp"
-#include "StarNetPackets.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(SystemWorldServerThread);
-
-typedef function<void(SystemClientShip*)> ClientShipAction;
+using ClientShipAction = std::function<void(SystemClientShip*)>;
 
 class SystemWorldServerThread : public Thread {
 public:
-  SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile);
-  ~SystemWorldServerThread();
+  SystemWorldServerThread(Vec3I const& location, Ptr<SystemWorldServer> systemWorld, String storageFile);
+  ~SystemWorldServerThread() override;
 
-  Vec3I location() const;
+  auto location() const -> Vec3I;
 
-  List<ConnectionId> clients();
+  auto clients() -> List<ConnectionId>;
   void addClient(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation const& location);
   void removeClient(ConnectionId clientId);
 
-  void setPause(shared_ptr<const atomic<bool>> pause);
+  void setPause(std::shared_ptr<const std::atomic<bool>> pause);
   void run() override;
   void stop();
 
@@ -32,43 +31,42 @@ public:
   void setClientDestination(ConnectionId clientId, SystemLocation const& location);
   void executeClientShipAction(ConnectionId clientId, ClientShipAction action);
 
-  SystemLocation clientShipLocation(ConnectionId clientId);
-  std::optional<pair<WarpAction, WarpMode>> clientWarpAction(ConnectionId clientId);
-  SkyParameters clientSkyParameters(ConnectionId clientId);
+  auto clientShipLocation(ConnectionId clientId) -> SystemLocation;
+  auto clientWarpAction(ConnectionId clientId) -> std::optional<std::pair<WarpAction, WarpMode>>;
+  auto clientSkyParameters(ConnectionId clientId) -> SkyParameters;
 
-  List<InstanceWorldId> activeInstanceWorlds() const;
+  auto activeInstanceWorlds() const -> List<InstanceWorldId>;
 
   // callback to be run after update in the server thread
-  void setUpdateAction(function<void(SystemWorldServerThread*)> updateAction);
-  void pushIncomingPacket(ConnectionId clientId, PacketPtr packet);
-  List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
+  void setUpdateAction(std::function<void(SystemWorldServerThread*)> updateAction);
+  void pushIncomingPacket(ConnectionId clientId, Ptr<Packet> packet);
+  auto pullOutgoingPackets(ConnectionId clientId) -> List<Ptr<Packet>>;
 
   void store();
 
 private:
   Vec3I m_systemLocation;
-  SystemWorldServerPtr m_systemWorld;
+  Ptr<SystemWorldServer> m_systemWorld;
 
-  atomic<bool> m_stop{false};
+  std::atomic<bool> m_stop{false};
   float m_periodicStorage{300.0f};
-  bool m_triggerStorage{ false};
+  bool m_triggerStorage{false};
   String m_storageFile;
 
-  shared_ptr<const atomic<bool>> m_pause;
-  function<void(SystemWorldServerThread*)> m_updateAction;
+  std::shared_ptr<const std::atomic<bool>> m_pause;
+  std::function<void(SystemWorldServerThread*)> m_updateAction;
 
   ReadersWriterMutex m_mutex;
   ReadersWriterMutex m_queueMutex;
 
   HashSet<ConnectionId> m_clients;
   HashMap<ConnectionId, SystemLocation> m_clientShipDestinations;
-  HashMap<ConnectionId, pair<SystemLocation, SkyParameters>> m_clientShipLocations;
-  HashMap<ConnectionId, pair<WarpAction, WarpMode>> m_clientWarpActions;
-  List<pair<ConnectionId, ClientShipAction>> m_clientShipActions;
+  HashMap<ConnectionId, std::pair<SystemLocation, SkyParameters>> m_clientShipLocations;
+  HashMap<ConnectionId, std::pair<WarpAction, WarpMode>> m_clientWarpActions;
+  List<std::pair<ConnectionId, ClientShipAction>> m_clientShipActions;
   List<InstanceWorldId> m_activeInstanceWorlds;
-  Map<ConnectionId, List<PacketPtr>> m_outgoingPacketQueue;
-  List<pair<ConnectionId, PacketPtr>> m_incomingPacketQueue;
+  Map<ConnectionId, List<Ptr<Packet>>> m_outgoingPacketQueue;
+  List<std::pair<ConnectionId, Ptr<Packet>>> m_incomingPacketQueue;
 };
 
-
-}
+}// namespace Star

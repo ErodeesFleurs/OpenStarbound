@@ -1,9 +1,9 @@
 #pragma once
 
-#include "StarException.hpp"
-#include "StarVector.hpp"
-#include "StarIODevice.hpp"
 #include "StarConfig.hpp"
+#include "StarException.hpp"
+#include "StarIODevice.hpp"
+#include "StarVector.hpp"
 
 import std;
 
@@ -146,35 +146,35 @@ private:
 
 inline auto bitsPerPixel(PixelFormat pf) -> std::uint8_t {
   switch (pf) {
-    case PixelFormat::RGB24:
-      return 24;
-    case PixelFormat::RGBA32:
-      return 32;
-    case PixelFormat::BGR24:
-      return 24;
-    case PixelFormat::BGRA32:
-      return 32;
-    case PixelFormat::RGB_F:
-      return 96;
-    default:
-      return 128;
+  case PixelFormat::RGB24:
+    return 24;
+  case PixelFormat::RGBA32:
+    return 32;
+  case PixelFormat::BGR24:
+    return 24;
+  case PixelFormat::BGRA32:
+    return 32;
+  case PixelFormat::RGB_F:
+    return 96;
+  default:
+    return 128;
   }
 }
 
 inline auto bytesPerPixel(PixelFormat pf) -> std::uint8_t {
   switch (pf) {
-    case PixelFormat::RGB24:
-      return 3;
-    case PixelFormat::RGBA32:
-      return 4;
-    case PixelFormat::BGR24:
-      return 3;
-    case PixelFormat::BGRA32:
-      return 4;
-    case PixelFormat::RGB_F:
-      return 12;
-    default:
-      return 16;
+  case PixelFormat::RGB24:
+    return 3;
+  case PixelFormat::RGBA32:
+    return 4;
+  case PixelFormat::BGR24:
+    return 3;
+  case PixelFormat::BGRA32:
+    return 4;
+  case PixelFormat::RGB_F:
+    return 12;
+  default:
+    return 16;
   }
 }
 
@@ -321,4 +321,4 @@ struct ImageView {
   PixelFormat format = PixelFormat::RGB24;
 };
 
-}
+}// namespace Star

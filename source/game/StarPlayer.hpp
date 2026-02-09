@@ -120,7 +120,7 @@ public:
   // relative to current position
   auto collisionArea() const -> RectF override;
 
-  auto writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, uint64_t> override;
+  auto writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t> override;
   void readNetState(ByteArray data, float interpolationStep = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
@@ -167,7 +167,7 @@ public:
   void setInteractRadius(float interactRadius);
   auto pullInteractActions() -> List<InteractAction>;
 
-  auto currency(String const& currencyType) const -> uint64_t;
+  auto currency(String const& currencyType) const -> std::uint64_t;
 
   auto health() const -> float override;
   auto maxHealth() const -> float override;
@@ -203,7 +203,7 @@ public:
 
   auto receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args = {}) -> std::optional<Json> override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 
@@ -215,7 +215,7 @@ public:
   auto inventory() const -> Ptr<PlayerInventory>;
   // Returns the number of items from this stack that could be
   // picked up from the world, using inventory tab filtering
-  auto itemsCanHold(Ptr<Item> const& items) const -> uint64_t;
+  auto itemsCanHold(Ptr<Item> const& items) const -> std::uint64_t;
   // Adds items to the inventory, returning the overflow.
   // The items parameter is invalid after use.
   auto pickupItems(Ptr<Item> const& items, bool silent = false) -> Ptr<Item>;
@@ -227,7 +227,7 @@ public:
 
   auto essentialItem(EssentialItem essentialItem) const -> Ptr<Item>;
   auto hasItem(ItemDescriptor const& descriptor, bool exactMatch = false) const -> bool;
-  auto hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const -> uint64_t;
+  auto hasCountOfItem(ItemDescriptor const& descriptor, bool exactMatch = false) const -> std::uint64_t;
   // altough multiple entries may match, they might have different
   // serializations
   auto takeItem(ItemDescriptor const& descriptor, bool consumePartial = false, bool exactMatch = false) -> ItemDescriptor;
@@ -613,7 +613,7 @@ private:
 
   Ptr<ToolUser> m_tools;
   Ptr<ArmorWearer> m_armor;
-  HashMap<EquipmentSlot, uint64_t> m_armorSecretNetVersions;
+  HashMap<EquipmentSlot, std::uint64_t> m_armorSecretNetVersions;
 
   bool m_useDown;
   bool m_edgeTriggeredUse;

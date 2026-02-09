@@ -1,9 +1,10 @@
 #pragma once
 
-#include "StarItem.hpp"
+#include "StarConfig.hpp"
 #include "StarDrawable.hpp"
-#include "StarSwingableItem.hpp"
+#include "StarItem.hpp"
 #include "StarPreviewableItem.hpp"
+#include "StarSwingableItem.hpp"
 
 namespace Star {
 
@@ -11,10 +12,10 @@ class ThrownItem : public Item, public SwingableItem, public PreviewableItem {
 public:
   ThrownItem(Json const& config, String const& directory, Json const& itemParameters = JsonObject());
 
-  ItemPtr clone() const override;
+  auto clone() const -> Ptr<Item> override;
 
-  List<Drawable> drawables() const override;
-  List<Drawable> preview(PlayerPtr const& viewer = {}) const override;
+  auto drawables() const -> List<Drawable> override;
+  auto preview(Ptr<Player> const& viewer = {}) const -> List<Drawable> override;
 
 protected:
   void fireTriggered() override;
@@ -26,4 +27,4 @@ private:
   List<Drawable> m_drawables;
 };
 
-}
+}// namespace Star

@@ -1,18 +1,23 @@
 #include "StarWorldServerThread.hpp"
-#include "StarPlayer.hpp" // IWYU pragma: keep
-#include "StarTickRateMonitor.hpp"
-#include "StarRoot.hpp"
+
+#include "StarConfig.hpp"
 #include "StarLogging.hpp"
+#include "StarPlayer.hpp"
+#include "StarRoot.hpp"
+#include "StarTickRateMonitor.hpp"
+#include "StarTime.hpp"
+
+import std;
 
 namespace Star {
 
-WorldServerThread::WorldServerThread(WorldServerPtr server, WorldId worldId)
-  : Thread("WorldServerThread: " + printWorldId(worldId)),
-    m_worldServer(std::move(server)),
-    m_worldId(std::move(worldId)),
-    m_stop(false),
-    m_errorOccurred(false),
-    m_shouldExpire(true) {
+WorldServerThread::WorldServerThread(Ptr<WorldServer> server, WorldId worldId)
+    : Thread("WorldServerThread: " + printWorldId(worldId)),
+      m_worldServer(std::move(server)),
+      m_worldId(std::move(worldId)),
+      m_stop(false),
+      m_errorOccurred(false),
+      m_shouldExpire(true) {
   if (m_worldServer)
     m_worldServer->setWorldId(printWorldId(m_worldId));
 }
@@ -26,7 +31,7 @@ WorldServerThread::~WorldServerThread() {
     removeClient(clientId);
 }
 
-WorldId WorldServerThread::worldId() const {
+auto WorldServerThread::worldId() const -> WorldId {
   return m_worldId;
 }
 
@@ -41,19 +46,19 @@ void WorldServerThread::stop() {
   Thread::join();
 }
 
-void WorldServerThread::setPause(shared_ptr<const atomic<bool>> pause) {
+void WorldServerThread::setPause(std::shared_ptr<const std::atomic<bool>> pause) {
   m_pause = pause;
 }
 
-bool WorldServerThread::serverErrorOccurred() {
+auto WorldServerThread::serverErrorOccurred() -> bool {
   return m_errorOccurred;
 }
 
-bool WorldServerThread::shouldExpire() {
+auto WorldServerThread::shouldExpire() -> bool {
   return m_shouldExpire;
 }
 
-bool WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
+auto WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) -> bool {
   try {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->spawnTargetValid(spawnTarget);
@@ -64,7 +69,7 @@ bool WorldServerThread::spawnTargetValid(SpawnTarget const& spawnTarget) {
   }
 }
 
-bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin, NetCompatibilityRules netRules) {
+auto WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin, NetCompatibilityRules netRules) -> bool {
   try {
     RecursiveMutexLocker locker(m_mutex);
     if (m_worldServer->addClient(clientId, spawnTarget, isLocal, isAdmin, netRules)) {
@@ -80,14 +85,14 @@ bool WorldServerThread::addClient(ConnectionId clientId, SpawnTarget const& spaw
   }
 }
 
-List<PacketPtr> WorldServerThread::removeClient(ConnectionId clientId) {
+auto WorldServerThread::removeClient(ConnectionId clientId) -> List<Ptr<Packet>> {
   RecursiveMutexLocker locker(m_mutex);
   if (!m_clients.contains(clientId))
     return {};
 
   RecursiveMutexLocker queueLocker(m_queueMutex);
 
-  List<PacketPtr> outgoingPackets;
+  List<Ptr<Packet>> outgoingPackets;
   try {
     auto incomingPackets = take(m_incomingPacketQueue[clientId]);
     if (m_worldServer->hasClient(clientId))
@@ -108,42 +113,41 @@ List<PacketPtr> WorldServerThread::removeClient(ConnectionId clientId) {
   return outgoingPackets;
 }
 
-List<ConnectionId> WorldServerThread::clients() const {
+auto WorldServerThread::clients() const -> List<ConnectionId> {
   RecursiveMutexLocker locker(m_mutex);
   return m_clients.values();
 }
 
-bool WorldServerThread::hasClient(ConnectionId clientId) const {
+auto WorldServerThread::hasClient(ConnectionId clientId) const -> bool {
   RecursiveMutexLocker locker(m_mutex);
   return m_clients.contains(clientId);
 }
 
-bool WorldServerThread::noClients() const {
+auto WorldServerThread::noClients() const -> bool {
   RecursiveMutexLocker locker(m_mutex);
   return m_clients.empty();
 }
 
-
-List<ConnectionId> WorldServerThread::erroredClients() const {
+auto WorldServerThread::erroredClients() const -> List<ConnectionId> {
   RecursiveMutexLocker locker(m_mutex);
   auto unerroredClients = HashSet<ConnectionId>::from(m_worldServer->clientIds());
   return m_clients.difference(unerroredClients).values();
 }
 
-void WorldServerThread::pushIncomingPackets(ConnectionId clientId, List<PacketPtr> packets) {
+void WorldServerThread::pushIncomingPackets(ConnectionId clientId, List<Ptr<Packet>> packets) {
   RecursiveMutexLocker queueLocker(m_queueMutex);
   m_incomingPacketQueue[clientId].appendAll(std::move(packets));
 }
 
-List<PacketPtr> WorldServerThread::pullOutgoingPackets(ConnectionId clientId) {
+auto WorldServerThread::pullOutgoingPackets(ConnectionId clientId) -> List<Ptr<Packet>> {
   RecursiveMutexLocker queueLocker(m_queueMutex);
   return take(m_outgoingPacketQueue[clientId]);
 }
 
-std::optional<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId clientId) const {
+auto WorldServerThread::playerRevivePosition(ConnectionId clientId) const -> std::optional<Vec2F> {
   try {
     RecursiveMutexLocker locker(m_mutex);
-    if (auto player = m_worldServer->clientPlayer(clientId))
+    if (Ptr<Player> player = m_worldServer->clientPlayer(clientId))
       return player->position() + player->feetOffset();
     return std::nullopt;
   } catch (std::exception const& e) {
@@ -153,7 +157,7 @@ std::optional<Vec2F> WorldServerThread::playerRevivePosition(ConnectionId client
   }
 }
 
-std::optional<pair<String, String>> WorldServerThread::pullNewPlanetType() {
+auto WorldServerThread::pullNewPlanetType() -> std::optional<std::pair<String, String>> {
   try {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->pullNewPlanetType();
@@ -189,7 +193,7 @@ void WorldServerThread::unloadAll(bool force) {
   }
 }
 
-WorldChunks WorldServerThread::readChunks() {
+auto WorldServerThread::readChunks() -> WorldChunks {
   try {
     RecursiveMutexLocker locker(m_mutex);
     return m_worldServer->readChunks();
@@ -248,7 +252,7 @@ void WorldServerThread::run() {
         fidelityScore = 0.0;
       }
 
-      int64_t spareMilliseconds = floor(spareTime * 1000);
+      int64_t spareMilliseconds = std::floor(spareTime * 1000);
       if (spareMilliseconds > 0)
         Thread::sleepPrecise(spareMilliseconds);
     }
@@ -269,7 +273,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
       m_worldServer->handleIncomingPackets(clientId, std::move(incomingPackets));
     } catch (std::exception const& e) {
       Logger::error("WorldServerThread exception caught handling incoming packets for client {}: {}",
-          clientId, outputException(e, true));
+                    clientId, outputException(e, true));
       RecursiveMutexLocker queueLocker(m_queueMutex);
       m_outgoingPacketQueue[clientId].appendAll(m_worldServer->removeClient(clientId));
       unerroredClientIds.remove(clientId);
@@ -311,4 +315,4 @@ void WorldServerThread::sync() {
   m_worldServer->sync();
 }
 
-}
+}// namespace Star

@@ -1,18 +1,17 @@
 #pragma once
 
-#include "StarSet.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarTileEntity.hpp"
-#include "StarPlantDatabase.hpp"
-#include "StarInspectableEntity.hpp"
 #include "StarAssetPath.hpp"
+#include "StarException.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarPlantDatabase.hpp"
+#include "StarSet.hpp"
+#include "StarTileEntity.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(Plant);
-
-STAR_EXCEPTION(PlantException, StarException);
+using PlantException = ExceptionDerived<"PlantException">;
 
 class Plant : public virtual TileEntity {
 public:
@@ -53,79 +52,79 @@ public:
     float zLevel;
   };
 
-  Plant(TreeVariant const& config, uint64_t seed);
-  Plant(GrassVariant const& config, uint64_t seed);
-  Plant(BushVariant const& config, uint64_t seed);
+  Plant(TreeVariant const& config, std::uint64_t seed);
+  Plant(GrassVariant const& config, std::uint64_t seed);
+  Plant(BushVariant const& config, std::uint64_t seed);
   Plant(Json const& diskStore);
   Plant(ByteArray const& netStore, NetCompatibilityRules rules = {});
 
-  Json diskStore() const;
-  ByteArray netStore(NetCompatibilityRules rules = {}) const;
+  auto diskStore() const -> Json;
+  auto netStore(NetCompatibilityRules rules = {}) const -> ByteArray;
 
-  EntityType entityType() const override;
+  auto entityType() const -> EntityType override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
 
-  virtual String description() const override;
+  auto description() const -> String override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  auto writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t> override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint) override;
   void disableInterpolation() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  auto position() const -> Vec2F override;
+  auto metaBoundBox() const -> RectF override;
 
-  bool ephemeral() const override;
+  auto ephemeral() const -> bool override;
 
-  bool shouldDestroy() const override;
+  auto shouldDestroy() const -> bool override;
 
   // Forces the plant to check if it has been invalidly placed in some way, and
   // should die.  shouldDie does not, by default, do this expensive calculation
-  bool checkBroken() override;
+  auto checkBroken() -> bool override;
 
   // Base tile grid position
-  Vec2I tilePosition() const override;
+  auto tilePosition() const -> Vec2I override;
   void setTilePosition(Vec2I const& tilePosition) override;
 
   // Spaces this plant currently occupies
-  List<Vec2I> spaces() const override;
+  auto spaces() const -> List<Vec2I> override;
 
   // Root blocks for this plant.
-  List<Vec2I> roots() const override;
+  auto roots() const -> List<Vec2I> override;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 
-  bool damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) override;
+  auto damageTiles(List<Vec2I> const& position, Vec2F const& sourcePosition, TileDamage const& tileDamage) -> bool override;
 
   // Central root position
-  Vec2I primaryRoot() const;
+  auto primaryRoot() const -> Vec2I;
   // Plant hangs from the ceiling
-  bool ceiling() const;
+  auto ceiling() const -> bool;
 
-  List<PlantPiece> pieces() const;
-  RectF interactiveBoundBox() const override;
+  auto pieces() const -> List<PlantPiece>;
+  auto interactiveBoundBox() const -> RectF override;
 
 private:
   Plant();
 
   void breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition);
-  Vec2I baseDamagePosition(List<Vec2I> const& positions) const;
-  bool damagable() const;
+  auto baseDamagePosition(List<Vec2I> const& positions) const -> Vec2I;
+  auto damagable() const -> bool;
 
   void scanSpacesAndRoots();
-  List<PlantPiece> spawnFolliage(String const& key, String const& type);
-  float branchRotation(float xPos, float rotoffset) const;
+  auto spawnFolliage(String const& key, String const& type) -> List<PlantPiece>;
+  auto branchRotation(float xPos, float rotoffset) const -> float;
   void calcBoundBox();
 
   void readPieces(ByteArray pieces);
-  ByteArray writePieces() const;
+  auto writePieces() const -> ByteArray;
 
   void readPiecesFromJson(Json const& pieces);
-  Json writePiecesToJson() const;
+  auto writePiecesToJson() const -> Json;
 
   void validatePieces();
 
@@ -174,4 +173,4 @@ private:
   NetElementEvent m_tileDamageEventNetState;
 };
 
-}
+}// namespace Star

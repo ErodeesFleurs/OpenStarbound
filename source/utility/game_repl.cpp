@@ -1,15 +1,17 @@
+#include "StarConfig.hpp"
 #include "StarRootLoader.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRootLuaBindings.hpp"
+
+import std;
 
 using namespace Star;
 
-int main(int argc, char** argv) {
-  RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
-  RootUPtr root;
+auto main(int argc, char** argv) -> int {
+  RootLoader rootLoader({.additionalAssetsSettings = {}, .additionalDefaultConfiguration = {}, .logFile = {}, .logLevel = LogLevel::Error, .quiet = false, .runtimeConfigFile = {}});
+  UPtr<Root> root;
   OptionParser::Options options;
-  tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+  std::tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
   auto engine = LuaEngine::create(true);
   auto context = engine->createContext();
@@ -22,7 +24,7 @@ int main(int argc, char** argv) {
     auto getline = [](std::istream& stream) -> String {
       std::string line;
       std::getline(stream, line);
-      return String(std::move(line));
+      return {std::move(line)};
     };
 
     if (continuation) {

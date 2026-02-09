@@ -1,12 +1,13 @@
 #pragma once
 
-#include "StarWorldServer.hpp"
-#include "StarThread.hpp"
+#include "StarConfig.hpp"
 #include "StarRpcThreadPromise.hpp"
+#include "StarThread.hpp"
+#include "StarWorldServer.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(WorldServerThread);
 
 // Runs a WorldServer in a separate thread and guards exceptions that occur in
 // it.  All methods are designed to not throw exceptions, but will instead log
@@ -19,46 +20,46 @@ public:
     RpcThreadPromiseKeeper<Json> promise;
   };
 
-  typedef function<void(WorldServerThread*, WorldServer*)> WorldServerAction;
+  using WorldServerAction = std::function<void(WorldServerThread*, WorldServer*)>;
 
-  WorldServerThread(WorldServerPtr server, WorldId worldId);
-  ~WorldServerThread();
+  WorldServerThread(Ptr<WorldServer> server, WorldId worldId);
+  ~WorldServerThread() override;
 
-  WorldId worldId() const;
+  auto worldId() const -> WorldId;
 
   void start();
   // Signals the WorldServerThread to stop and then joins it
   void stop();
-  void setPause(shared_ptr<const atomic<bool>> pause);
+  void setPause(std::shared_ptr<const std::atomic<bool>> pause);
 
   // An exception occurred from the actual WorldServer itself and the
   // WorldServerThread has stopped running.
-  bool serverErrorOccurred();
-  bool shouldExpire();
+  auto serverErrorOccurred() -> bool;
+  auto shouldExpire() -> bool;
 
-  bool spawnTargetValid(SpawnTarget const& spawnTarget);
+  auto spawnTargetValid(SpawnTarget const& spawnTarget) -> bool;
 
-  bool addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {});
+  auto addClient(ConnectionId clientId, SpawnTarget const& spawnTarget, bool isLocal, bool isAdmin = false, NetCompatibilityRules netRules = {}) -> bool;
   // Returns final outgoing packets
-  List<PacketPtr> removeClient(ConnectionId clientId);
+  auto removeClient(ConnectionId clientId) -> List<Ptr<Packet>>;
 
-  List<ConnectionId> clients() const;
-  bool hasClient(ConnectionId clientId) const;
-  bool noClients() const;
+  auto clients() const -> List<ConnectionId>;
+  auto hasClient(ConnectionId clientId) const -> bool;
+  auto noClients() const -> bool;
 
   // Clients that have caused an error with incoming packets are removed from
   // the world and no further packets are handled from them.  They are still
   // added to this WorldServerThread, and must be removed and the final
   // outgoing packets should be sent to them.
-  List<ConnectionId> erroredClients() const;
+  auto erroredClients() const -> List<ConnectionId>;
 
-  void pushIncomingPackets(ConnectionId clientId, List<PacketPtr> packets);
-  List<PacketPtr> pullOutgoingPackets(ConnectionId clientId);
+  void pushIncomingPackets(ConnectionId clientId, List<Ptr<Packet>> packets);
+  auto pullOutgoingPackets(ConnectionId clientId) -> List<Ptr<Packet>>;
 
-  std::optional<Vec2F> playerRevivePosition(ConnectionId clientId) const;
+  auto playerRevivePosition(ConnectionId clientId) const -> std::optional<Vec2F>;
 
   // Worlds use this to notify the universe server that their celestial type should change
-  std::optional<pair<String, String>> pullNewPlanetType();
+  auto pullNewPlanetType() -> std::optional<std::pair<String, String>>;
 
   // Executes the given action on the world in a thread safe context.  This
   // does *not* catch exceptions thrown by the action or set the server error
@@ -76,10 +77,10 @@ public:
 
   // Syncs all active sectors to disk and reads the full content of the world
   // into memory, useful for the ship.
-  WorldChunks readChunks();
+  auto readChunks() -> WorldChunks;
 
 protected:
-  virtual void run();
+  void run() override;
 
 private:
   void update(WorldServerFidelity fidelity);
@@ -89,21 +90,21 @@ private:
 
   HashSet<ConnectionId> m_clients;
 
-  WorldServerPtr m_worldServer;
+  Ptr<WorldServer> m_worldServer;
   WorldId m_worldId;
   WorldServerAction m_updateAction;
 
   mutable RecursiveMutex m_queueMutex;
-  Map<ConnectionId, List<PacketPtr>> m_incomingPacketQueue;
-  Map<ConnectionId, List<PacketPtr>> m_outgoingPacketQueue;
+  Map<ConnectionId, List<Ptr<Packet>>> m_incomingPacketQueue;
+  Map<ConnectionId, List<Ptr<Packet>>> m_outgoingPacketQueue;
 
   mutable RecursiveMutex m_messageMutex;
   List<Message> m_messages;
 
-  atomic<bool> m_stop;
-  shared_ptr<const atomic<bool>> m_pause;
-  mutable atomic<bool> m_errorOccurred;
-  mutable atomic<bool> m_shouldExpire;
+  std::atomic<bool> m_stop;
+  std::shared_ptr<const std::atomic<bool>> m_pause;
+  mutable std::atomic<bool> m_errorOccurred;
+  mutable std::atomic<bool> m_shouldExpire;
 };
 
-}
+}// namespace Star

@@ -35,7 +35,7 @@ public:
 
   auto connection() const -> ConnectionId override;
   auto geometry() const -> WorldGeometry override;
-  auto currentStep() const -> uint64_t override;
+  auto currentStep() const -> std::uint64_t override;
   auto material(Vec2I const& position, TileLayer layer) const -> MaterialId override;
   auto materialHueShift(Vec2I const& position, TileLayer layer) const -> MaterialHue override;
   auto mod(Vec2I const& position, TileLayer layer) const -> ModId override;
@@ -85,7 +85,7 @@ public:
   void setProperty(String const& propertyName, Json const& property) override;
   void timer(float delay, WorldAction worldAction) override;
   auto epochTime() const -> double override;
-  auto day() const -> uint32_t override;
+  auto day() const -> std::uint32_t override;
   auto dayLength() const -> float override;
   auto timeOfDay() const -> float override;
   auto luaRoot() -> Ptr<LuaRoot> override;
@@ -104,7 +104,7 @@ public:
   auto respawnInWorld() const -> bool;
   void setRespawnInWorld(bool respawnInWorld);
 
-  auto latency() const -> int64_t;
+  auto latency() const -> std::int64_t;
 
   void resendEntity(EntityId entityId);
   void removeEntity(EntityId entityId, bool andDie);
@@ -256,13 +256,13 @@ private:
   JsonObject m_worldProperties;
 
   Ptr<EntityMap> m_entityMap;
-  ClientTileSectorArrayPtr m_tileArray;
+  Ptr<ClientTileSectorArray> m_tileArray;
   ClientTileGetter m_tileGetterFunction;
   Ptr<DamageManager> m_damageManager;
   Ptr<LuaRoot> m_luaRoot;
 
   WorldGeometry m_geometry;
-  uint64_t m_currentStep;
+  std::uint64_t m_currentStep;
   double m_currentTime;
   bool m_fullBright;
   bool m_asyncLighting;
@@ -320,14 +320,14 @@ private:
   List<Ptr<AudioInstance>> m_samples;
   List<Ptr<AudioInstance>> m_music;
 
-  HashMap<EntityId, uint64_t> m_masterEntitiesNetVersion;
+  HashMap<EntityId, std::uint64_t> m_masterEntitiesNetVersion;
 
   InterpolationTracker m_interpolationTracker;
   GameTimer m_entityUpdateTimer;
 
   List<Ptr<Packet>> m_outgoingPackets;
-  std::optional<int64_t> m_pingTime;
-  int64_t m_latency;
+  std::optional<std::int64_t> m_pingTime;
+  std::int64_t m_latency;
 
   Set<EntityId> m_requestedDrops;
 
@@ -373,7 +373,7 @@ private:
   BroadcastCallback m_broadcastCallback;
 
   // used to keep track of already-printed stack traces caused by remote entities, so they don't clog the log
-  HashSet<uint64_t> m_entityExceptionsLogged;
+  HashSet<std::uint64_t> m_entityExceptionsLogged;
 };
 
 }// namespace Star

@@ -1,5 +1,7 @@
 #include "StarGameTypes.hpp"
 
+import std;
+
 namespace Star {
 
 float GlobalTimescale = 1.0f;
@@ -19,26 +21,22 @@ EnumMap<Gender> const GenderNames{
 EnumMap<FireMode> const FireModeNames{
   {FireMode::None, "none"},
   {FireMode::Primary, "primary"},
-  {FireMode::Alt, "alt"}
-};
+  {FireMode::Alt, "alt"}};
 
 EnumMap<ToolHand> const ToolHandNames{
   {ToolHand::Primary, "primary"},
-  {ToolHand::Alt, "alt"}
-};
+  {ToolHand::Alt, "alt"}};
 
 EnumMap<TileLayer> const TileLayerNames{
   {TileLayer::Foreground, "foreground"},
-  {TileLayer::Background, "background"}
-};
+  {TileLayer::Background, "background"}};
 
 EnumMap<MoveControlType> const MoveControlTypeNames{
   {MoveControlType::Left, "left"},
   {MoveControlType::Right, "right"},
   {MoveControlType::Down, "down"},
   {MoveControlType::Up, "up"},
-  {MoveControlType::Jump, "jump"}
-};
+  {MoveControlType::Jump, "jump"}};
 
 EnumMap<PortraitMode> const PortraitModeNames{
   {PortraitMode::Head, "head"},
@@ -46,18 +44,16 @@ EnumMap<PortraitMode> const PortraitModeNames{
   {PortraitMode::Full, "full"},
   {PortraitMode::FullNeutral, "fullneutral"},
   {PortraitMode::FullNude, "fullnude"},
-  {PortraitMode::FullNeutralNude, "fullneutralnude"}
-};
+  {PortraitMode::FullNeutralNude, "fullneutralnude"}};
 
 EnumMap<Rarity> const RarityNames{
   {Rarity::Common, "common"},
   {Rarity::Uncommon, "uncommon"},
   {Rarity::Rare, "rare"},
   {Rarity::Legendary, "legendary"},
-  {Rarity::Essential, "essential"}
-};
+  {Rarity::Essential, "essential"}};
 
-std::pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId) {
+auto connectionEntitySpace(ConnectionId connectionId) -> std::pair<EntityId, EntityId> {
   if (connectionId == ServerConnectionId) {
     return {MinServerEntityId, MaxServerEntityId};
   } else if (connectionId >= MinClientConnectionId && connectionId <= MaxClientConnectionId) {
@@ -69,19 +65,19 @@ std::pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId) {
   }
 }
 
-bool entityIdInSpace(EntityId entityId, ConnectionId connectionId) {
+auto entityIdInSpace(EntityId entityId, ConnectionId connectionId) -> bool {
   auto pair = connectionEntitySpace(connectionId);
   return entityId >= pair.first && entityId <= pair.second;
 }
 
-ConnectionId connectionForEntity(EntityId entityId) {
+auto connectionForEntity(EntityId entityId) -> ConnectionId {
   if (entityId > 0)
     return ServerConnectionId;
   else
     return (-entityId - 1) / 65536 + 1;
 }
 
-pair<float, Direction> getAngleSide(float angle, bool ccRotation) {
+auto getAngleSide(float angle, bool ccRotation) -> std::pair<float, Direction> {
   angle = constrainAngle(angle);
   Direction direction = Direction::Right;
   if (angle > Constants::pi / 2) {
@@ -95,7 +91,7 @@ pair<float, Direction> getAngleSide(float angle, bool ccRotation) {
   if (direction == Direction::Left && ccRotation)
     angle *= -1;
 
-  return make_pair(angle, direction);
+  return std::make_pair(angle, direction);
 }
 
-}
+}// namespace Star

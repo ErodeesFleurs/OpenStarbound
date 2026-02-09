@@ -1,19 +1,9 @@
 #include "StarArmorWearer.hpp"
-#include "StarActivatableItem.hpp"
 #include "StarArmors.hpp"
-#include "StarAssets.hpp"
 #include "StarCasting.hpp"
 #include "StarConfig.hpp"
-#include "StarImageProcessing.hpp"
 #include "StarItemDatabase.hpp"
-#include "StarLiquidItem.hpp"
-#include "StarMaterialItem.hpp"
-#include "StarObject.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarObjectItem.hpp"
 #include "StarRoot.hpp"
-#include "StarTools.hpp"
-#include "StarWorld.hpp"
 
 import std;
 
@@ -31,7 +21,7 @@ ArmorWearer::ArmorWearer() : m_lastNude(true) {
   reset();
 }
 
-bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
+auto ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) -> bool {
   bool nudeChanged = m_lastNude != forceNude;
   auto gender = humanoid.identity().gender;
   bool genderChanged = !m_lastGender || *m_lastGender != gender;
@@ -60,7 +50,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
 
   bool bodyHidden = false;
   Json humanoidConfig;
-  auto addHumanoidConfig = [&](ArmorItem const& item) {
+  auto addHumanoidConfig = [&](ArmorItem const& item) -> void {
     bodyHidden |= item.hideBody();
     auto newConfig = item.instanceValue("humanoidConfig");
     if (newConfig.isType(Json::Type::Object)) {
@@ -80,7 +70,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
       if (!armor.visible || !item || !item->visible(i >= 8) || (forceNude && !item->bypassNude())) {
         allowed = false;
       } else if (!armor.isCosmetic) {
-        std::uint8_t typeIndex = (std::uint8_t)armor.item->armorType();
+        auto typeIndex = (std::uint8_t)armor.item->armorType();
         std::uint8_t prevWorn = m_wornCosmeticTypes[typeIndex];
         std::uint8_t curWorn = wornCosmeticTypes[typeIndex];
         if (curWorn == 0) {
@@ -122,8 +112,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
 void ArmorWearer::effects(EffectEmitter& effectEmitter) {
   StringSet headEffects, chestEffects, legsEffects, backEffects;
 
-  for (std::uint8_t i = 0; i != m_armors.size(); ++i) {
-    auto& armor = m_armors[i];
+  for (auto& armor : m_armors) {
     if (auto item = as<EffectSourceItem>(armor.item)) {
       auto armorType = armor.item->armorType();
       if (!armor.visible || (!armor.isCosmetic && m_wornCosmeticTypes[(std::uint8_t)armorType] > 0))
@@ -179,7 +168,7 @@ auto ArmorWearer::diskStore() const -> Json {
 }
 
 void ArmorWearer::diskLoad(Json const& diskStore) {
-  auto itemDb = Root::singleton().itemDatabase();
+  ConstPtr<ItemDatabase> itemDb = Root::singleton().itemDatabase();
   auto load = [&](std::uint8_t slot, String const& id) -> void {
     if (auto item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(id, {}))))
       setItem(slot, item);
@@ -213,7 +202,7 @@ auto ArmorWearer::statusEffects(bool cosmeticOnly) const -> List<PersistentStatu
   return statusEffects;
 }
 
-bool ArmorWearer::setItem(std::uint8_t slot, Ptr<ArmorItem> item, bool visible) {
+auto ArmorWearer::setItem(std::uint8_t slot, Ptr<ArmorItem> item, bool visible) -> bool {
   if (slot >= m_armors.size())
     return false;
   auto& armor = m_armors[slot];
@@ -262,63 +251,63 @@ auto ArmorWearer::itemDescriptor(std::uint8_t slot) const -> ItemDescriptor {
   return {};
 }
 
-ItemDescriptor ArmorWearer::headItemDescriptor() const {
+auto ArmorWearer::headItemDescriptor() const -> ItemDescriptor {
   if (auto item = headItem())
     return item->descriptor();
   return {};
 }
 
-ItemDescriptor ArmorWearer::chestItemDescriptor() const {
+auto ArmorWearer::chestItemDescriptor() const -> ItemDescriptor {
   if (auto item = chestItem())
     return item->descriptor();
   return {};
 }
 
-ItemDescriptor ArmorWearer::legsItemDescriptor() const {
+auto ArmorWearer::legsItemDescriptor() const -> ItemDescriptor {
   if (auto item = legsItem())
     return item->descriptor();
   return {};
 }
 
-ItemDescriptor ArmorWearer::backItemDescriptor() const {
+auto ArmorWearer::backItemDescriptor() const -> ItemDescriptor {
   if (auto item = backItem())
     return item->descriptor();
   return {};
 }
 
-ItemDescriptor ArmorWearer::headCosmeticItemDescriptor() const {
+auto ArmorWearer::headCosmeticItemDescriptor() const -> ItemDescriptor {
   if (auto item = headCosmeticItem())
     return item->descriptor();
   return {};
 }
 
-ItemDescriptor ArmorWearer::chestCosmeticItemDescriptor() const {
+auto ArmorWearer::chestCosmeticItemDescriptor() const -> ItemDescriptor {
   if (auto item = chestCosmeticItem())
     return item->descriptor();
   return {};
 }
 
-ItemDescriptor ArmorWearer::legsCosmeticItemDescriptor() const {
+auto ArmorWearer::legsCosmeticItemDescriptor() const -> ItemDescriptor {
   if (auto item = legsCosmeticItem())
     return item->descriptor();
   return {};
 }
 
-ItemDescriptor ArmorWearer::backCosmeticItemDescriptor() const {
+auto ArmorWearer::backCosmeticItemDescriptor() const -> ItemDescriptor {
   if (auto item = backCosmeticItem())
     return item->descriptor();
   return {};
 }
 
-bool ArmorWearer::setCosmeticItem(std::uint8_t slot, Ptr<ArmorItem> cosmeticItem) {
+auto ArmorWearer::setCosmeticItem(std::uint8_t slot, Ptr<ArmorItem> cosmeticItem) -> bool {
   return setItem(slot + 8, cosmeticItem);
 }
 
-Ptr<ArmorItem> ArmorWearer::cosmeticItem(std::uint8_t slot) const {
+auto ArmorWearer::cosmeticItem(std::uint8_t slot) const -> Ptr<ArmorItem> {
   return item(slot + 8);
 }
 
-ItemDescriptor ArmorWearer::cosmeticItemDescriptor(std::uint8_t slot) const {
+auto ArmorWearer::cosmeticItemDescriptor(std::uint8_t slot) const -> ItemDescriptor {
   if (auto item = cosmeticItem(slot + 8))
     return item->descriptor();
   return {};

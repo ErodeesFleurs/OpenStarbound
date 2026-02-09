@@ -1,145 +1,137 @@
 #pragma once
 
-#include <optional>
-#include "StarHostAddress.hpp"
-#include "StarGameTimers.hpp"
-#include "StarCelestialParameters.hpp"
 #include "StarChatTypes.hpp"
-#include "StarWarping.hpp"
-#include "StarAiTypes.hpp"
+#include "StarConfig.hpp"
+#include "StarGameTimers.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarSky.hpp"
 #include "StarUniverseConnection.hpp"
-#include "StarLuaComponents.hpp"
+#include "StarWarping.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(WorldTemplate);
-STAR_CLASS(ClientContext);
-STAR_CLASS(Sky);
-STAR_STRUCT(Packet);
-STAR_CLASS(WorldClient);
-STAR_CLASS(SystemWorldClient);
-STAR_CLASS(Player);
-STAR_CLASS(PlayerStorage);
-STAR_CLASS(Statistics);
-STAR_CLASS(Clock);
-STAR_CLASS(CelestialLog);
-STAR_CLASS(CelestialSlaveDatabase);
-STAR_CLASS(CelestialDatabase);
-STAR_CLASS(JsonRpcInterface);
-STAR_CLASS(TeamClient);
-STAR_CLASS(QuestManager);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(LuaRoot);
+class PlayerStorage;
+class Statistics;
+class Player;
+class SystemWorldClient;
+class WorldTemplate;
+class CelestialLog;
+class JsonRpcInterface;
+class ClientContext;
+class TeamClient;
+class QuestManager;
+class CelestialSlaveDatabase;
 
 class UniverseClient {
 public:
-  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics);
+  UniverseClient(Ptr<PlayerStorage> playerStorage, Ptr<Statistics> statistics);
   ~UniverseClient();
 
-  void setMainPlayer(PlayerPtr player);
-  PlayerPtr mainPlayer() const;
+  void setMainPlayer(Ptr<Player> player);
+  auto mainPlayer() const -> Ptr<Player>;
 
   // Returns error if connection failed
-  std::optional<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
-  bool isConnected() const;
+  auto connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false) -> std::optional<String>;
+  auto isConnected() const -> bool;
   void disconnect();
-  std::optional<String> disconnectReason() const;
+  auto disconnectReason() const -> std::optional<String>;
 
   // WorldClient may be null if the UniverseClient is not connected.
-  WorldClientPtr worldClient() const;
-  SystemWorldClientPtr systemWorldClient() const;
+  auto worldClient() const -> Ptr<WorldClient>;
+  auto systemWorldClient() const -> Ptr<SystemWorldClient>;
 
   // Updates internal world client in addition to handling universe level
   // commands.
   void update(float dt);
 
-  std::optional<BeamUpRule> beamUpRule() const;
-  bool canBeamUp() const;
-  bool canBeamDown(bool deploy = false) const;
-  bool canBeamToTeamShip() const;
-  bool canTeleport() const;
+  auto beamUpRule() const -> std::optional<BeamUpRule>;
+  auto canBeamUp() const -> bool;
+  auto canBeamDown(bool deploy = false) const -> bool;
+  auto canBeamToTeamShip() const -> bool;
+  auto canTeleport() const -> bool;
 
   void warpPlayer(WarpAction const& warpAction, bool animate = true, String const& animationType = "default", bool deploy = false);
   void flyShip(Vec3I const& system, SystemLocation const& destination, Json const& settings = {});
 
-  CelestialDatabasePtr celestialDatabase() const;
+  auto celestialDatabase() const -> Ptr<CelestialDatabase>;
 
-  CelestialCoordinate shipCoordinate() const;
+  auto shipCoordinate() const -> CelestialCoordinate;
 
-  bool playerOnOwnShip() const;
-  bool playerIsOriginal() const;
+  auto playerOnOwnShip() const -> bool;
+  auto playerIsOriginal() const -> bool;
 
-  WorldId playerWorld() const;
-  bool isAdmin() const;
+  auto playerWorld() const -> WorldId;
+  auto isAdmin() const -> bool;
   // If the player is in a multi person team returns the team uuid, or if the
   // player is by themselves returns the player uuid.
-  Uuid teamUuid() const;
+  auto teamUuid() const -> Uuid;
 
-  WorldTemplateConstPtr currentTemplate() const;
-  SkyConstPtr currentSky() const;
-  bool flying() const;
+  auto currentTemplate() const -> ConstPtr<WorldTemplate>;
+  auto currentSky() const -> ConstPtr<Sky>;
+  auto flying() const -> bool;
 
   void sendChat(String const& text, ChatSendMode sendMode, std::optional<bool> speak = {}, std::optional<JsonObject> data = {});
-  List<ChatReceivedMessage> pullChatMessages();
+  auto pullChatMessages() -> List<ChatReceivedMessage>;
 
-  uint16_t players();
-  uint16_t maxPlayers();
+  auto players() -> std::uint16_t;
+  auto maxPlayers() -> std::uint16_t;
 
   void setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks);
   void restartLua();
   void startLuaScripts();
   void stopLua();
-  LuaRootPtr luaRoot();
+  auto luaRoot() -> Ptr<LuaRoot>;
 
-  bool reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false, bool showIndicator = false);
-  bool switchPlayer(Uuid const& uuid);
-  bool switchPlayer(size_t index);
-  bool switchPlayer(String const& name);
+  auto reloadPlayer(Json const& data, Uuid const& uuid, bool resetInterfaces = false, bool showIndicator = false) -> bool;
+  auto switchPlayer(Uuid const& uuid) -> bool;
+  auto switchPlayer(size_t index) -> bool;
+  auto switchPlayer(String const& name) -> bool;
 
-  typedef std::function<void()> Callback;
-  typedef std::function<void(bool)> ReloadPlayerCallback;
-  ReloadPlayerCallback& playerReloadPreCallback();
-  ReloadPlayerCallback& playerReloadCallback();
+  using Callback = std::function<void()>;
+  using ReloadPlayerCallback = std::function<void(bool)>;
+  auto playerReloadPreCallback() -> ReloadPlayerCallback&;
+  auto playerReloadCallback() -> ReloadPlayerCallback&;
 
-  ClockConstPtr universeClock() const;
-  CelestialLogConstPtr celestialLog() const;
-  JsonRpcInterfacePtr rpcInterface() const;
-  ClientContextPtr clientContext() const;
-  TeamClientPtr teamClient() const;
-  QuestManagerPtr questManager() const;
-  PlayerStoragePtr playerStorage() const;
-  StatisticsPtr statistics() const;
+  auto universeClock() const -> ConstPtr<Clock>;
+  auto celestialLog() const -> ConstPtr<CelestialLog>;
+  auto rpcInterface() const -> Ptr<JsonRpcInterface>;
+  auto clientContext() const -> Ptr<ClientContext>;
+  auto teamClient() const -> Ptr<TeamClient>;
+  auto questManager() const -> Ptr<QuestManager>;
+  auto playerStorage() const -> Ptr<PlayerStorage>;
+  auto statistics() const -> Ptr<Statistics>;
 
-  bool paused() const;
+  auto paused() const -> bool;
 
 private:
   struct ServerInfo {
-    uint16_t players;
-    uint16_t maxPlayers;
+    std::uint16_t players;
+    std::uint16_t maxPlayers;
   };
 
   void setPause(bool pause);
 
-  void handlePackets(List<PacketPtr> const& packets);
+  void handlePackets(List<Ptr<Packet>> const& packets);
   void reset();
 
-  PlayerStoragePtr m_playerStorage;
-  StatisticsPtr m_statistics;
-  PlayerPtr m_mainPlayer;
+  Ptr<PlayerStorage> m_playerStorage;
+  Ptr<Statistics> m_statistics;
+  Ptr<Player> m_mainPlayer;
 
   bool m_pause;
-  ClockPtr m_universeClock;
-  WorldClientPtr m_worldClient;
-  SystemWorldClientPtr m_systemWorldClient;
+  Ptr<Clock> m_universeClock;
+  Ptr<WorldClient> m_worldClient;
+  Ptr<SystemWorldClient> m_systemWorldClient;
   std::optional<UniverseConnection> m_connection;
   std::optional<ServerInfo> m_serverInfo;
 
-  CelestialSlaveDatabasePtr m_celestialDatabase;
-  ClientContextPtr m_clientContext;
-  TeamClientPtr m_teamClient;
+  Ptr<CelestialSlaveDatabase> m_celestialDatabase;
+  Ptr<ClientContext> m_clientContext;
+  Ptr<TeamClient> m_teamClient;
 
-  QuestManagerPtr m_questManager;
+  Ptr<QuestManager> m_questManager;
 
   WarpAction m_pendingWarp;
   GameTimer m_warpDelay;
@@ -149,20 +141,19 @@ private:
   bool m_respawning;
   GameTimer m_respawnTimer;
 
-  int64_t m_storageTriggerDeadline;
+  std::int64_t m_storageTriggerDeadline;
 
   List<ChatReceivedMessage> m_pendingMessages;
 
   std::optional<String> m_disconnectReason;
 
-  LuaRootPtr m_luaRoot;
+  Ptr<LuaRoot> m_luaRoot;
 
-  typedef LuaUpdatableComponent<LuaBaseComponent> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
-  StringMap<ScriptComponentPtr> m_scriptContexts;
+  using ScriptComponent = LuaUpdatableComponent<LuaBaseComponent>;
+  StringMap<Ptr<ScriptComponent>> m_scriptContexts;
 
   ReloadPlayerCallback m_playerReloadPreCallback;
   ReloadPlayerCallback m_playerReloadCallback;
 };
 
-}
+}// namespace Star

@@ -1,28 +1,28 @@
 #pragma once
 
-#include "StarDrawable.hpp"
-#include "StarUuid.hpp"
-#include "StarJsonRpc.hpp"
-#include "StarWarping.hpp"
-#include "StarThread.hpp"
 #include "StarDamageTypes.hpp"
+#include "StarDrawable.hpp"
+#include "StarJsonRpc.hpp"
+#include "StarThread.hpp"
+#include "StarUuid.hpp"
+#include "StarWarping.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(TeamManager);
 
 class TeamManager {
 public:
   TeamManager();
 
-  JsonRpcHandlers rpcHandlers();
+  auto rpcHandlers() -> JsonRpcHandlers;
 
   void setConnectedPlayers(StringMap<List<Uuid>> connectedPlayers);
   void playerDisconnected(Uuid const& playerUuid);
 
-  TeamNumber getPvpTeam(Uuid const& playerUuid);
-  HashMap<Uuid, TeamNumber> getPvpTeams();
-  std::optional<Uuid> getTeam(Uuid const& playerUuid) const;
+  auto getPvpTeam(Uuid const& playerUuid) -> TeamNumber;
+  auto getPvpTeams() -> HashMap<Uuid, TeamNumber>;
+  [[nodiscard]] auto getTeam(Uuid const& playerUuid) const -> std::optional<Uuid>;
 
 private:
   struct TeamMember {
@@ -52,11 +52,11 @@ private:
   void purgeInvitationsFor(Uuid const& playerUuid);
   void purgeInvitationsFrom(Uuid const& playerUuid);
 
-  bool playerWithUuidExists(Uuid const& playerUuid) const;
+  [[nodiscard]] auto playerWithUuidExists(Uuid const& playerUuid) const -> bool;
 
-  Uuid createTeam(Uuid const& leaderUuid);
-  bool addToTeam(Uuid const& playerUuid, Uuid const& teamUuid);
-  bool removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid);
+  auto createTeam(Uuid const& leaderUuid) -> Uuid;
+  auto addToTeam(Uuid const& playerUuid, Uuid const& teamUuid) -> bool;
+  auto removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid) -> bool;
 
   RecursiveMutex m_mutex;
   Map<Uuid, Team> m_teams;
@@ -67,13 +67,13 @@ private:
 
   TeamNumber m_pvpTeamCounter;
 
-  Json fetchTeamStatus(Json const& args);
-  Json updateStatus(Json const& args);
-  Json invite(Json const& args);
-  Json pollInvitation(Json const& args);
-  Json acceptInvitation(Json const& args);
-  Json removeFromTeam(Json const& args);
-  Json makeLeader(Json const& args);
+  auto fetchTeamStatus(Json const& args) -> Json;
+  auto updateStatus(Json const& args) -> Json;
+  auto invite(Json const& args) -> Json;
+  auto pollInvitation(Json const& args) -> Json;
+  auto acceptInvitation(Json const& args) -> Json;
+  auto removeFromTeam(Json const& args) -> Json;
+  auto makeLeader(Json const& args) -> Json;
 };
 
-}
+}// namespace Star

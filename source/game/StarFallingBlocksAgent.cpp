@@ -1,11 +1,14 @@
 #include "StarFallingBlocksAgent.hpp"
+
+#include "StarConfig.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
+
+import std;
 
 namespace Star {
 
-FallingBlocksAgent::FallingBlocksAgent(FallingBlocksFacadePtr worldFacade)
-  : m_facade(std::move(worldFacade)) {
+FallingBlocksAgent::FallingBlocksAgent(Ptr<FallingBlocksFacade> worldFacade)
+    : m_facade(std::move(worldFacade)) {
   m_immediateUpwardPropagateProbability = Root::singleton().assets()->json("/worldserver.config:fallingBlocksImmediateUpwardPropogateProbability").toFloat();
 }
 
@@ -19,9 +22,9 @@ void FallingBlocksAgent::update() {
 
     m_random.shuffle(positions);
 
-    positions.sort([](auto const& a, auto const& b) {
-        return a[1] < b[1];
-      });
+    positions.sort([](auto const& a, auto const& b) -> auto {
+      return a[1] < b[1];
+    });
 
     for (auto const& pos : positions) {
       Vec2I belowPos = pos + Vec2I(0, -1);
@@ -78,4 +81,4 @@ void FallingBlocksAgent::visitRegion(RectI const& region) {
   }
 }
 
-}
+}// namespace Star

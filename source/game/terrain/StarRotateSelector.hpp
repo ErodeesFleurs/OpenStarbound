@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarTerrainDatabase.hpp"
 #include "StarVector.hpp"
 
@@ -10,12 +11,12 @@ struct RotateSelector : TerrainSelector {
 
   RotateSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] auto get(int x, int y) const -> float override;
 
   float rotation;
   Vec2F rotationCenter;
 
-  TerrainSelectorConstPtr m_source;
+  ConstPtr<TerrainSelector> m_source;
 };
 
-}
+}// namespace Star

@@ -31,7 +31,7 @@ struct InstanceWorldId {
 
 template <>
 struct hash<InstanceWorldId> {
-  auto operator()(InstanceWorldId const& id) const -> size_t;
+  auto operator()(InstanceWorldId const& id) const -> std::size_t;
 };
 
 auto operator>>(DataStream& ds, InstanceWorldId& missionWorldId) -> DataStream&;

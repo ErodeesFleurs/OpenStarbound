@@ -6,11 +6,10 @@ CollisionSet const DefaultCollisionSet({CollisionKind::Null, CollisionKind::Slip
 CollisionSet const BlockCollisionSet({CollisionKind::Block, CollisionKind::Slippery});
 
 EnumMap<TileCollisionOverride> const TileCollisionOverrideNames = {
-    {TileCollisionOverride::None, "None"},
-    {TileCollisionOverride::Empty, "Empty"},
-    {TileCollisionOverride::Platform, "Platform"},
-    {TileCollisionOverride::Block, "Block"}
-  };
+  {TileCollisionOverride::None, "None"},
+  {TileCollisionOverride::Empty, "Empty"},
+  {TileCollisionOverride::Platform, "Platform"},
+  {TileCollisionOverride::Block, "Block"}};
 
 EnumMap<CollisionKind> const CollisionKindNames{
   {CollisionKind::Null, "Null"},
@@ -18,7 +17,6 @@ EnumMap<CollisionKind> const CollisionKindNames{
   {CollisionKind::Platform, "Platform"},
   {CollisionKind::Dynamic, "Dynamic"},
   {CollisionKind::Slippery, "Slippery"},
-  {CollisionKind::Block, "Block"}
-};
+  {CollisionKind::Block, "Block"}};
 
-}
+}// namespace Star

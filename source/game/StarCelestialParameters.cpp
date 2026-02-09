@@ -1,18 +1,16 @@
 #include "StarCelestialParameters.hpp"
-#include "StarStaticRandom.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarConfig.hpp"
 #include "StarDataStreamDevices.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
-#include "StarWeatherTypes.hpp"
+#include "StarStaticRandom.hpp"
+
+import std;
 
 namespace Star {
 
 CelestialParameters::CelestialParameters() : m_seed(0) {}
 
-CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters)
-  : m_coordinate(std::move(coordinate)), m_seed(seed), m_name(std::move(name)), m_parameters(std::move(parameters)) {
+CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, std::uint64_t seed, String name, Json parameters)
+    : m_coordinate(std::move(coordinate)), m_seed(seed), m_name(std::move(name)), m_parameters(std::move(parameters)) {
   if (auto worldType = getParameter("worldType").optString()) {
     if (worldType->equalsIgnoreCase("Terrestrial")) {
       auto worldSize = getParameter("worldSize").toString();
@@ -43,15 +41,15 @@ CelestialParameters::CelestialParameters(Json const& variant) {
   m_visitableParameters = diskLoadVisitableWorldParameters(variant.get("visitableParameters"));
 }
 
-Json CelestialParameters::diskStore() const {
+auto CelestialParameters::diskStore() const -> Json {
   return JsonObject{{"coordinate", m_coordinate.toJson()},
-      {"seed", m_seed},
-      {"name", m_name},
-      {"parameters", m_parameters},
-      {"visitableParameters", diskStoreVisitableWorldParameters(m_visitableParameters)}};
+                    {"seed", m_seed},
+                    {"name", m_name},
+                    {"parameters", m_parameters},
+                    {"visitableParameters", diskStoreVisitableWorldParameters(m_visitableParameters)}};
 }
 
-ByteArray CelestialParameters::netStore() const {
+auto CelestialParameters::netStore() const -> ByteArray {
   DataStreamBuffer ds;
   ds << m_coordinate;
   ds << m_seed;
@@ -62,70 +60,70 @@ ByteArray CelestialParameters::netStore() const {
   return ds.takeData();
 }
 
-CelestialCoordinate CelestialParameters::coordinate() const {
+auto CelestialParameters::coordinate() const -> CelestialCoordinate {
   return m_coordinate;
 }
 
-String CelestialParameters::name() const {
+auto CelestialParameters::name() const -> String {
   return m_name;
 }
 
-uint64_t CelestialParameters::seed() const {
+auto CelestialParameters::seed() const -> std::uint64_t {
   return m_seed;
 }
 
-Json CelestialParameters::parameters() const {
+auto CelestialParameters::parameters() const -> Json {
   return m_parameters;
 }
 
-Json CelestialParameters::getParameter(String const& name, Json def) const {
+auto CelestialParameters::getParameter(String const& name, Json def) const -> Json {
   return m_parameters.get(name, std::move(def));
 }
 
-Json CelestialParameters::randomizeParameterList(String const& name, int32_t mix) const {
+auto CelestialParameters::randomizeParameterList(String const& name, std::int32_t mix) const -> Json {
   auto parameter = getParameter(name);
   if (parameter.isNull())
-    return Json();
+    return {};
   return staticRandomFrom(parameter.toArray(), mix, m_seed, name);
 }
 
-Json CelestialParameters::randomizeParameterRange(String const& name, int32_t mix) const {
+auto CelestialParameters::randomizeParameterRange(String const& name, std::int32_t mix) const -> Json {
   auto parameter = getParameter(name);
   if (parameter.isNull()) {
-    return Json();
+    return {};
   } else {
     JsonArray list = parameter.toArray();
     if (list.size() != 2)
       throw CelestialException(
-          strf("Parameter '{}' does not appear to be a range in CelestialParameters::randomizeRange", name));
+        strf("Parameter '{}' does not appear to be a range in CelestialParameters::randomizeRange", name));
 
     return randomizeParameterRange(list, mix, name);
   }
 }
 
-Json CelestialParameters::randomizeParameterRange(
-    JsonArray const& range, int32_t mix, std::optional<String> const& name) const {
+auto CelestialParameters::randomizeParameterRange(
+  JsonArray const& range, std::int32_t mix, std::optional<String> const& name) const -> Json {
   if (range[0].type() == Json::Type::Int) {
-    int64_t min = range[0].toInt();
-    int64_t max = range[1].toInt();
-    return staticRandomU64(mix, m_seed, name.value("")) % (max - min + 1) + min;
+    std::int64_t min = range[0].toInt();
+    std::int64_t max = range[1].toInt();
+    return staticRandomU64(mix, m_seed, name.value_or("")) % (max - min + 1) + min;
   } else {
     double min = range[0].toDouble();
     double max = range[1].toDouble();
-    return staticRandomDouble(mix, m_seed, name.value("")) * (max - min) + min;
+    return staticRandomDouble(mix, m_seed, name.value_or("")) * (max - min) + min;
   }
 }
 
-bool CelestialParameters::isVisitable() const {
+auto CelestialParameters::isVisitable() const -> bool {
   return (bool)m_visitableParameters;
 }
 
-VisitableWorldParametersConstPtr CelestialParameters::visitableParameters() const {
+auto CelestialParameters::visitableParameters() const -> ConstPtr<VisitableWorldParameters> {
   return m_visitableParameters;
 }
 
-void CelestialParameters::setVisitableParameters(VisitableWorldParametersPtr const& newVisitableParameters) {
+void CelestialParameters::setVisitableParameters(Ptr<VisitableWorldParameters> const& newVisitableParameters) {
   m_visitableParameters = newVisitableParameters;
 }
 
-}
+}// namespace Star

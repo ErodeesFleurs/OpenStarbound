@@ -1,45 +1,42 @@
 #pragma once
 
-#include <optional>
-
-#include "StarJson.hpp"
-#include "StarWarping.hpp"
 #include "StarCelestialCoordinate.hpp"
+#include "StarJson.hpp"
 #include "StarSystemWorld.hpp"
+#include "StarWarping.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(PlayerUniverseMap);
+template <typename T>
+auto jsonFromBookmarkTarget(T const& target) -> Json;
 
 template <typename T>
-Json jsonFromBookmarkTarget(T const& target);
-
-template <typename T>
-T jsonToBookmarkTarget(Json const& json);
+auto jsonToBookmarkTarget(Json const& json) -> T;
 
 // Bookmark<T> requires T to implement jsonToBookmarkTarget<T> and jsonFromBookmarkTarget<T>
 // also operator== and operator!=
-template<typename T>
+template <typename T>
 struct Bookmark {
   T target;
   String targetName;
   String bookmarkName;
   String icon;
 
-  static Bookmark fromJson(Json const& json);
-  Json toJson() const;
+  static auto fromJson(Json const& json) -> Bookmark;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  bool operator==(Bookmark<T> const& rhs) const;
-  bool operator!=(Bookmark<T> const& rhs) const;
-  bool operator<(Bookmark<T> const& rhs) const;
+  auto operator==(Bookmark<T> const& rhs) const -> bool;
+  auto operator!=(Bookmark<T> const& rhs) const -> bool;
+  auto operator<(Bookmark<T> const& rhs) const -> bool;
 };
 
-typedef Variant<CelestialCoordinate, Uuid> OrbitTarget;
-typedef pair<WorldId, SpawnTarget> TeleportTarget;
+using OrbitTarget = Variant<CelestialCoordinate, Uuid>;
+using TeleportTarget = std::pair<WorldId, SpawnTarget>;
 
-typedef Bookmark<OrbitTarget> OrbitBookmark;
-typedef Bookmark<TeleportTarget> TeleportBookmark;
-
+using OrbitBookmark = Bookmark<OrbitTarget>;
+using TeleportBookmark = Bookmark<TeleportTarget>;
 
 class PlayerUniverseMap {
 public:
@@ -51,24 +48,24 @@ public:
 
   PlayerUniverseMap(Json const& json = {});
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
   // pair of system location and bookmark, not all orbit bookmarks include the system
-  List<pair<Vec3I, OrbitBookmark>> orbitBookmarks() const;
-  bool addOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
-  bool removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark);
+  [[nodiscard]] auto orbitBookmarks() const -> List<std::pair<Vec3I, OrbitBookmark>>;
+  auto addOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark) -> bool;
+  auto removeOrbitBookmark(CelestialCoordinate const& system, OrbitBookmark const& bookmark) -> bool;
 
-  List<TeleportBookmark> teleportBookmarks() const;
-  bool addTeleportBookmark(TeleportBookmark bookmark);
-  bool removeTeleportBookmark(TeleportBookmark const& bookmark);
+  [[nodiscard]] auto teleportBookmarks() const -> List<TeleportBookmark>;
+  auto addTeleportBookmark(TeleportBookmark bookmark) -> bool;
+  auto removeTeleportBookmark(TeleportBookmark const& bookmark) -> bool;
   void invalidateWarpAction(WarpAction const& bookmark);
 
-  std::optional<OrbitBookmark> worldBookmark(CelestialCoordinate const& world) const;
-  List<OrbitBookmark> systemBookmarks(CelestialCoordinate const& system) const;
-  List<OrbitBookmark> planetBookmarks(CelestialCoordinate const& planet) const;
+  [[nodiscard]] auto worldBookmark(CelestialCoordinate const& world) const -> std::optional<OrbitBookmark>;
+  [[nodiscard]] auto systemBookmarks(CelestialCoordinate const& system) const -> List<OrbitBookmark>;
+  [[nodiscard]] auto planetBookmarks(CelestialCoordinate const& planet) const -> List<OrbitBookmark>;
 
-  bool isMapped(CelestialCoordinate const& coordinate);
-  HashMap<Uuid, MappedObject> mappedObjects(CelestialCoordinate const& system);
+  auto isMapped(CelestialCoordinate const& coordinate) -> bool;
+  auto mappedObjects(CelestialCoordinate const& system) -> HashMap<Uuid, MappedObject>;
 
   void addMappedCoordinate(CelestialCoordinate const& coordinate);
   void addMappedObject(CelestialCoordinate const& system, Uuid const& uuid, String const& typeName, std::optional<CelestialOrbit> const& orbit = {}, JsonObject parameters = {});
@@ -83,37 +80,37 @@ private:
     HashMap<Uuid, MappedObject> mappedObjects;
     Set<OrbitBookmark> bookmarks;
 
-    static SystemMap fromJson(Json const& json);
-    Json toJson() const;
+    static auto fromJson(Json const& json) -> SystemMap;
+    [[nodiscard]] auto toJson() const -> Json;
   };
   struct UniverseMap {
     HashMap<Vec3I, SystemMap> systems;
     Set<TeleportBookmark> teleportBookmarks;
 
-    static UniverseMap fromJson(Json const& json);
-    Json toJson() const;
+    static auto fromJson(Json const& json) -> UniverseMap;
+    [[nodiscard]] auto toJson() const -> Json;
   };
 
-  UniverseMap const& universeMap() const;
-  UniverseMap& universeMap();
+  [[nodiscard]] auto universeMap() const -> UniverseMap const&;
+  auto universeMap() -> UniverseMap&;
 
   std::optional<Uuid> m_serverUuid;
   HashMap<Uuid, UniverseMap> m_universeMaps;
 };
 
 template <typename T>
-bool Bookmark<T>::operator==(Bookmark<T> const& rhs) const {
+auto Bookmark<T>::operator==(Bookmark<T> const& rhs) const -> bool {
   return target == rhs.target;
 }
 
 template <typename T>
-bool Bookmark<T>::operator!=(Bookmark<T> const& rhs) const {
+auto Bookmark<T>::operator!=(Bookmark<T> const& rhs) const -> bool {
   return target != rhs.target;
 }
 
 template <typename T>
-bool Bookmark<T>::operator<(Bookmark<T> const& rhs) const {
+auto Bookmark<T>::operator<(Bookmark<T> const& rhs) const -> bool {
   return target < rhs.target;
 }
 
-}
+}// namespace Star

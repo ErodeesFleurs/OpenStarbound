@@ -39,7 +39,7 @@ auto PacketStatCollector::stats() const -> PacketStats {
 }
 
 void PacketStatCollector::calculate() {
-  int64_t currentTime = Time::monotonicMilliseconds();
+  std::int64_t currentTime = Time::monotonicMilliseconds();
   float elapsedTime = (currentTime - m_lastMixTime) / 1000.0f;
   if (elapsedTime >= m_calculationWindow) {
     m_lastMixTime = currentTime;
@@ -207,21 +207,21 @@ void TcpPacketSocket::sendPackets(List<Ptr<Packet>> packets) {
 auto TcpPacketSocket::receivePackets() -> List<Ptr<Packet>> {
   // How large can uncompressed packets be
   // this limit is now also used during decompression
-  uint64_t const PacketSizeLimit = 64 << 20;
+  std::uint64_t const PacketSizeLimit = 64 << 20;
   // How many packets can be batched together into one compressed chunk at once
-  uint64_t const PacketBatchLimit = 131072;
+  std::uint64_t const PacketBatchLimit = 131072;
   List<Ptr<Packet>> packets;
   try {
     DataStreamExternalBuffer ds(m_inputBuffer);
     size_t trimPos = 0;
     while (!ds.atEnd()) {
       PacketType packetType;
-      uint64_t packetSize = 0;
+      std::uint64_t packetSize = 0;
       bool packetCompressed = false;
 
       try {
         packetType = ds.read<PacketType>();
-        int64_t len = ds.readVlqI();
+        std::int64_t len = ds.readVlqI();
         packetCompressed = len < 0;
         packetSize = packetCompressed ? -len : len;
       } catch (EofException const&) {

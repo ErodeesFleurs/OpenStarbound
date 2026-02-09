@@ -1,16 +1,19 @@
 #include "StarPlayerCodexes.hpp"
+
 #include "StarCodex.hpp"
-#include "StarCodexDatabase.hpp"
+#include "StarCodexDatabase.hpp"// IWYU pragma: export
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
+
+import std;
 
 namespace Star {
 
 PlayerCodexes::PlayerCodexes(Json const& variant) {
   if (variant) {
     auto assets = Root::singleton().assets();
-    auto codexData = jsonToMapV<StringMap<bool>>(variant, mem_fn(&Json::toBool));
+    auto codexData = jsonToMapV<StringMap<bool>>(variant, std::mem_fn(&Json::toBool));
     for (auto pair : codexData) {
       if (auto codex = Root::singleton().codexDatabase()->codex(pair.first)) {
         m_codexes[pair.first] = CodexEntry{codex, pair.second};
@@ -21,26 +24,26 @@ PlayerCodexes::PlayerCodexes(Json const& variant) {
   }
 }
 
-Json PlayerCodexes::toJson() const {
-  return jsonFromMapV<StringMap<CodexEntry>>(m_codexes, [](CodexEntry const& entry) { return entry.second; });
+auto PlayerCodexes::toJson() const -> Json {
+  return jsonFromMapV<StringMap<CodexEntry>>(m_codexes, [](CodexEntry const& entry) -> bool { return entry.second; });
 }
 
-List<PlayerCodexes::CodexEntry> PlayerCodexes::codexes() const {
+auto PlayerCodexes::codexes() const -> List<PlayerCodexes::CodexEntry> {
   List<CodexEntry> result;
   for (auto pair : m_codexes)
     result.append(pair.second);
   sort(result,
-      [](CodexEntry const& left, CodexEntry const& right) -> bool {
-        return make_tuple(left.second, left.first->title()) < make_tuple(right.second, right.first->title());
-      });
+       [](CodexEntry const& left, CodexEntry const& right) -> bool {
+         return std::make_tuple(left.second, left.first->title()) < std::make_tuple(right.second, right.first->title());
+       });
   return result;
 }
 
-bool PlayerCodexes::codexKnown(String const& codexId) const {
+auto PlayerCodexes::codexKnown(String const& codexId) const -> bool {
   return m_codexes.contains(codexId);
 }
 
-CodexConstPtr PlayerCodexes::learnCodex(String const& codexId, bool markRead) {
+auto PlayerCodexes::learnCodex(String const& codexId, bool markRead) -> ConstPtr<Codex> {
   if (!codexKnown(codexId)) {
     if (auto codex = Root::singleton().codexDatabase()->codex(codexId)) {
       auto entry = CodexEntry{codex, markRead};
@@ -51,11 +54,11 @@ CodexConstPtr PlayerCodexes::learnCodex(String const& codexId, bool markRead) {
   return {};
 }
 
-bool PlayerCodexes::codexRead(String const& codexId) const {
+auto PlayerCodexes::codexRead(String const& codexId) const -> bool {
   return m_codexes.contains(codexId) && m_codexes.get(codexId).second;
 }
 
-bool PlayerCodexes::markCodexRead(String const& codexId) {
+auto PlayerCodexes::markCodexRead(String const& codexId) -> bool {
   if (codexKnown(codexId) && !codexRead(codexId)) {
     m_codexes[codexId].second = true;
     return true;
@@ -63,7 +66,7 @@ bool PlayerCodexes::markCodexRead(String const& codexId) {
   return false;
 }
 
-bool PlayerCodexes::markCodexUnread(String const& codexId) {
+auto PlayerCodexes::markCodexUnread(String const& codexId) -> bool {
   if (codexKnown(codexId) && codexRead(codexId)) {
     m_codexes[codexId].second = false;
     return true;
@@ -76,7 +79,7 @@ void PlayerCodexes::learnInitialCodexes(String const& playerSpecies) {
     learnCodex(codexId, true);
 }
 
-CodexConstPtr PlayerCodexes::firstNewCodex() const {
+auto PlayerCodexes::firstNewCodex() const -> ConstPtr<Codex> {
   for (auto pair : m_codexes) {
     if (!pair.second.second)
       return pair.second.first;
@@ -84,4 +87,4 @@ CodexConstPtr PlayerCodexes::firstNewCodex() const {
   return {};
 }
 
-}
+}// namespace Star

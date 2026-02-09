@@ -1,15 +1,13 @@
 #pragma once
 
 #include "StarLua.hpp"
-#include "StarPoly.hpp"
-#include "StarColor.hpp"
 
 namespace Star {
 
-STAR_CLASS(NetworkedAnimator);
+class NetworkedAnimator;
 
 namespace LuaBindings {
-  LuaCallbacks makeNetworkedAnimatorCallbacks(NetworkedAnimator* networkedAnimator);
+auto makeNetworkedAnimatorCallbacks(NetworkedAnimator* networkedAnimator) -> LuaCallbacks;
 }
 
-}
+}// namespace Star

@@ -1,18 +1,19 @@
 #include "StarStatusController.hpp"
-#include "StarRoot.hpp"
-#include "StarDataStreamExtra.hpp" // IWYU pragma: keep
-#include "StarJsonExtra.hpp"
-#include "StarLiquidsDatabase.hpp" // IWYU pragma: keep
-#include "StarLuaConverters.hpp" // IWYU pragma: keep
-#include "StarLuaGameConverters.hpp" // IWYU pragma: keep
-#include "StarWorld.hpp"
-#include "StarWorldLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
+
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarRoot.hpp"
+#include "StarStatusControllerLuaBindings.hpp"
 #include "StarStatusEffectDatabase.hpp"
 #include "StarStatusEffectEntity.hpp"
+#include "StarWorld.hpp"
+
+import std;
 
 namespace Star {
 
@@ -22,15 +23,19 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
 
   m_statusProperties.reset(config.getObject("statusProperties", {}));
   m_statusProperties.setOverrides(
-    [&](DataStream& ds, NetCompatibilityRules rules) {
-      if (rules.version() <= 1) ds << m_statusProperties.baseMap();
-      else m_statusProperties.NetElementHashMap<String, Json>::netStore(ds, rules);
+    [&](DataStream& ds, NetCompatibilityRules rules) -> void {
+      if (rules.version() <= 1)
+        ds << m_statusProperties.baseMap();
+      else
+        m_statusProperties.NetElementHashMap<String, Json>::netStore(ds, rules);
     },
-    [&](DataStream& ds, NetCompatibilityRules rules) {
-      if (rules.version() <= 1) m_statusProperties.reset(ds.read<JsonObject>());
-      else m_statusProperties.NetElementHashMap<String, Json>::netLoad(ds, rules);
+    [&](DataStream& ds, NetCompatibilityRules rules) -> void {
+      if (rules.version() <= 1)
+        m_statusProperties.reset(ds.read<JsonObject>());
+      else
+        m_statusProperties.NetElementHashMap<String, Json>::netLoad(ds, rules);
     },
-    [&](DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) {
+    [&](DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) -> bool {
       if (rules.version() <= 1) {
         if (m_statusProperties.shouldWriteNetDelta(fromVersion, rules)) {
           ds << m_statusProperties.baseMap();
@@ -40,11 +45,12 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
       }
       return m_statusProperties.NetElementHashMap<String, Json>::writeNetDelta(ds, fromVersion, rules);
     },
-    [&](DataStream& ds, float interp, NetCompatibilityRules rules) {
-      if (rules.version() <= 1) m_statusProperties.reset(ds.read<JsonObject>());
-      else m_statusProperties.NetElementHashMap<String, Json>::readNetDelta(ds, interp, rules);
-    }
-  );
+    [&](DataStream& ds, float interp, NetCompatibilityRules rules) -> void {
+      if (rules.version() <= 1)
+        m_statusProperties.reset(ds.read<JsonObject>());
+      else
+        m_statusProperties.NetElementHashMap<String, Json>::readNetDelta(ds, interp, rules);
+    });
 
   m_minimumLiquidStatusEffectPercentage = config.getFloat("minimumLiquidStatusEffectPercentage");
   m_appliesEnvironmentStatusEffects = config.getBool("appliesEnvironmentStatusEffects");
@@ -55,7 +61,7 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_primaryScript.setScripts(jsonToStringList(config.get("primaryScriptSources", JsonArray())));
   m_primaryScript.setUpdateDelta(config.getUInt("primaryScriptDelta", 1));
 
-  uint64_t keepDamageSteps = config.getUInt("keepDamageNotificationSteps", 120);
+  std::uint64_t keepDamageSteps = config.getUInt("keepDamageNotificationSteps", 120);
   m_recentHitsGiven.setHistoryLimit(keepDamageSteps);
   m_recentDamageGiven.setHistoryLimit(keepDamageSteps);
   m_recentDamageTaken.setHistoryLimit(keepDamageSteps);
@@ -70,12 +76,12 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
   m_netGroup.addNetElement(&m_toolUsageSuppressed);
 
   if (m_primaryAnimationConfig)
-    m_primaryAnimatorId = m_effectAnimators.addNetElement(make_shared<EffectAnimator>(*m_primaryAnimationConfig));
+    m_primaryAnimatorId = m_effectAnimators.addNetElement(std::make_shared<EffectAnimator>(*m_primaryAnimationConfig));
   else
     m_primaryAnimatorId = EffectAnimatorGroup::NullElementId;
 }
 
-Json StatusController::diskStore() const {
+auto StatusController::diskStore() const -> Json {
   JsonObject resourceValues;
   JsonObject resourcesLocked;
   for (auto const& resourceName : resourceNames()) {
@@ -98,15 +104,15 @@ Json StatusController::diskStore() const {
     // effect will always appear "full" on reload (but just last less time)
     auto metadata = m_uniqueEffectMetadata.getNetElement(pair.second.metadataId);
     if (metadata->duration)
-      ephemeralEffects.append(jsonFromEphemeralStatusEffect(EphemeralStatusEffect{pair.first, *metadata->duration}));
+      ephemeralEffects.append(jsonFromEphemeralStatusEffect(EphemeralStatusEffect{.uniqueEffect = pair.first, .duration = *metadata->duration}));
   }
 
   return JsonObject{
-      {"statusProperties", m_statusProperties.baseMap()},
-      {"persistentEffectCategories", std::move(persistentEffectCategories)},
-      {"ephemeralEffects", std::move(ephemeralEffects)},
-      {"resourceValues", std::move(resourceValues)},
-      {"resourcesLocked", std::move(resourcesLocked)},
+    {"statusProperties", m_statusProperties.baseMap()},
+    {"persistentEffectCategories", std::move(persistentEffectCategories)},
+    {"ephemeralEffects", std::move(ephemeralEffects)},
+    {"resourceValues", std::move(resourceValues)},
+    {"resourcesLocked", std::move(resourcesLocked)},
   };
 }
 
@@ -132,7 +138,7 @@ void StatusController::diskLoad(Json const& store) {
   }
 }
 
-Json StatusController::statusProperty(String const& name, Json const& def) const {
+auto StatusController::statusProperty(String const& name, Json const& def) const -> Json {
   return m_statusProperties.value(name, def);
 }
 
@@ -143,31 +149,31 @@ void StatusController::setStatusProperty(String const& name, Json value) {
     m_statusProperties.set(name, value);
 }
 
-StringList StatusController::statNames() const {
+auto StatusController::statNames() const -> StringList {
   return m_statCollection.statNames();
 }
 
-float StatusController::stat(String const& statName) const {
+auto StatusController::stat(String const& statName) const -> float {
   return m_statCollection.stat(statName);
 }
 
-bool StatusController::statPositive(String const& statName) const {
+auto StatusController::statPositive(String const& statName) const -> bool {
   return m_statCollection.statPositive(statName);
 }
 
-StringList StatusController::resourceNames() const {
+auto StatusController::resourceNames() const -> StringList {
   return m_statCollection.resourceNames();
 }
 
-bool StatusController::isResource(String const& resourceName) const {
+auto StatusController::isResource(String const& resourceName) const -> bool {
   return m_statCollection.isResource(resourceName);
 }
 
-float StatusController::resource(String const& resourceName) const {
+auto StatusController::resource(String const& resourceName) const -> float {
   return m_statCollection.resource(resourceName);
 }
 
-bool StatusController::resourcePositive(String const& resourceName) const {
+auto StatusController::resourcePositive(String const& resourceName) const -> bool {
   return m_statCollection.resourcePositive(resourceName);
 }
 
@@ -179,11 +185,11 @@ void StatusController::modifyResource(String const& resourceName, float amount) 
   m_statCollection.modifyResource(resourceName, amount);
 }
 
-float StatusController::giveResource(String const& resourceName, float amount) {
+auto StatusController::giveResource(String const& resourceName, float amount) -> float {
   return m_statCollection.giveResource(resourceName, amount);
 }
 
-bool StatusController::consumeResource(String const& resourceName, float amount) {
+auto StatusController::consumeResource(String const& resourceName, float amount) -> bool {
   if (m_statCollection.consumeResource(resourceName, amount)) {
     m_primaryScript.invoke("notifyResourceConsumed", resourceName, amount);
     return true;
@@ -191,7 +197,7 @@ bool StatusController::consumeResource(String const& resourceName, float amount)
   return false;
 }
 
-bool StatusController::overConsumeResource(String const& resourceName, float amount) {
+auto StatusController::overConsumeResource(String const& resourceName, float amount) -> bool {
   if (m_statCollection.overConsumeResource(resourceName, amount)) {
     m_primaryScript.invoke("notifyResourceConsumed", resourceName, amount);
     return true;
@@ -199,7 +205,7 @@ bool StatusController::overConsumeResource(String const& resourceName, float amo
   return false;
 }
 
-bool StatusController::resourceLocked(String const& resourceName) const {
+auto StatusController::resourceLocked(String const& resourceName) const -> bool {
   return m_statCollection.resourceLocked(resourceName);
 }
 
@@ -215,38 +221,38 @@ void StatusController::resetAllResources() {
   m_statCollection.resetAllResources();
 }
 
-std::optional<float> StatusController::resourceMax(String const& resourceName) const {
+auto StatusController::resourceMax(String const& resourceName) const -> std::optional<float> {
   return m_statCollection.resourceMax(resourceName);
 }
 
-std::optional<float> StatusController::resourcePercentage(String const& resourceName) const {
+auto StatusController::resourcePercentage(String const& resourceName) const -> std::optional<float> {
   return m_statCollection.resourcePercentage(resourceName);
 }
 
-float StatusController::setResourcePercentage(String const& resourceName, float resourcePercentage) {
+auto StatusController::setResourcePercentage(String const& resourceName, float resourcePercentage) -> float {
   return m_statCollection.setResourcePercentage(resourceName, resourcePercentage);
 }
 
-float StatusController::modifyResourcePercentage(String const& resourceName, float resourcePercentage) {
+auto StatusController::modifyResourcePercentage(String const& resourceName, float resourcePercentage) -> float {
   return m_statCollection.modifyResourcePercentage(resourceName, resourcePercentage);
 }
 
-List<PersistentStatusEffect> StatusController::getPersistentEffects(String const& statEffectCategory) const {
+auto StatusController::getPersistentEffects(String const& statEffectCategory) const -> List<PersistentStatusEffect> {
   auto category = m_persistentEffects.maybe(statEffectCategory).value();
   List<PersistentStatusEffect> persistentEffects =
-      category.statModifiers.transformed(construct<PersistentStatusEffect>());
+    category.statModifiers.transformed(construct<PersistentStatusEffect>());
   persistentEffects.appendAll(
-      List<UniqueStatusEffect>::from(category.uniqueEffects).transformed(construct<PersistentStatusEffect>()));
+    List<UniqueStatusEffect>::from(category.uniqueEffects).transformed(construct<PersistentStatusEffect>()));
   return persistentEffects;
 }
 
 void StatusController::addPersistentEffect(
-    String const& statusEffectCategory, PersistentStatusEffect const& persistentEffect) {
+  String const& statusEffectCategory, PersistentStatusEffect const& persistentEffect) {
   addPersistentEffects(statusEffectCategory, {persistentEffect});
 }
 
 void StatusController::addPersistentEffects(
-    String const& statusEffectCategory, List<PersistentStatusEffect> const& effectList) {
+  String const& statusEffectCategory, List<PersistentStatusEffect> const& effectList) {
   auto& persistentEffectCategory = m_persistentEffects[statusEffectCategory];
   if (!persistentEffectCategory.modifierEffectsGroupId)
     persistentEffectCategory.modifierEffectsGroupId = m_statCollection.addStatModifierGroup();
@@ -258,13 +264,13 @@ void StatusController::addPersistentEffects(
       persistentEffectCategory.uniqueEffects.add(effect.get<UniqueStatusEffect>());
   }
   m_statCollection.setStatModifierGroup(
-      *persistentEffectCategory.modifierEffectsGroupId, persistentEffectCategory.statModifiers);
+    *persistentEffectCategory.modifierEffectsGroupId, persistentEffectCategory.statModifiers);
 
   updatePersistentUniqueEffects();
 }
 
 void StatusController::setPersistentEffects(
-    String const& statusEffectCategory, List<PersistentStatusEffect> const& effectList) {
+  String const& statusEffectCategory, List<PersistentStatusEffect> const& effectList) {
   if (effectList.empty()) {
     if (auto groupId = m_persistentEffects[statusEffectCategory].modifierEffectsGroupId)
       m_statCollection.removeStatModifierGroup(*groupId);
@@ -293,7 +299,7 @@ void StatusController::addEphemeralEffect(EphemeralStatusEffect const& effect, s
 }
 
 void StatusController::addEphemeralEffects(
-    List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId) {
+  List<EphemeralStatusEffect> const& effectList, std::optional<EntityId> sourceEntityId) {
   for (auto const& effect : effectList) {
     if (auto existingEffect = m_uniqueEffects.ptr(effect.uniqueEffect)) {
       auto metadata = m_uniqueEffectMetadata.getNetElement(existingEffect->metadataId);
@@ -308,16 +314,16 @@ void StatusController::addEphemeralEffects(
           metadata->sourceEntityId.set(sourceEntityId);
           metadata->duration = newDuration;
         }
-        metadata->maxDuration.set(max(metadata->maxDuration.get(), newDuration));
+        metadata->maxDuration.set(std::max(metadata->maxDuration.get(), newDuration));
       }
     } else {
       addUniqueEffect(
-          effect.uniqueEffect, effect.duration.value_or(defaultUniqueEffectDuration(effect.uniqueEffect)), sourceEntityId);
+        effect.uniqueEffect, effect.duration.value_or(defaultUniqueEffectDuration(effect.uniqueEffect)), sourceEntityId);
     }
   }
 }
 
-bool StatusController::removeEphemeralEffect(UniqueStatusEffect const& effect) {
+auto StatusController::removeEphemeralEffect(UniqueStatusEffect const& effect) -> bool {
   if (auto uniqueEffect = m_uniqueEffects.ptr(effect)) {
     auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect->metadataId);
     if (metadata->duration) {
@@ -334,7 +340,7 @@ void StatusController::clearEphemeralEffects() {
     removeEphemeralEffect(key);
 }
 
-bool StatusController::appliesEnvironmentStatusEffects() const {
+auto StatusController::appliesEnvironmentStatusEffects() const -> bool {
   return m_appliesEnvironmentStatusEffects;
 }
 
@@ -342,7 +348,7 @@ void StatusController::setAppliesEnvironmentStatusEffects(bool appliesEnvironmen
   m_appliesEnvironmentStatusEffects = appliesEnvironmentStatusEffects;
 }
 
-ActiveUniqueStatusEffectSummary StatusController::activeUniqueStatusEffectSummary() const {
+auto StatusController::activeUniqueStatusEffectSummary() const -> ActiveUniqueStatusEffectSummary {
   ActiveUniqueStatusEffectSummary summary;
   for (auto const& metadata : m_uniqueEffectMetadata.netElements()) {
     if (metadata->duration)
@@ -353,7 +359,7 @@ ActiveUniqueStatusEffectSummary StatusController::activeUniqueStatusEffectSummar
   return summary;
 }
 
-bool StatusController::uniqueStatusEffectActive(String const& effectName) const {
+auto StatusController::uniqueStatusEffectActive(String const& effectName) const -> bool {
   for (auto const& metadata : m_uniqueEffectMetadata.netElements()) {
     if (metadata->effect == effectName)
       return true;
@@ -362,7 +368,7 @@ bool StatusController::uniqueStatusEffectActive(String const& effectName) const 
   return false;
 }
 
-const Directives& StatusController::primaryDirectives() const {
+auto StatusController::primaryDirectives() const -> const Directives& {
   return m_primaryDirectives;
 }
 
@@ -370,7 +376,7 @@ void StatusController::setPrimaryDirectives(Directives const& directives) {
   m_primaryDirectives = directives;
 }
 
-List<DamageNotification> StatusController::applyDamageRequest(DamageRequest const& damageRequest) {
+auto StatusController::applyDamageRequest(DamageRequest const& damageRequest) -> List<DamageNotification> {
   if (auto damageNotifications = m_primaryScript.invoke<List<DamageNotification>>("applyDamageRequest", damageRequest)) {
     for (auto const& dn : *damageNotifications)
       m_recentDamageTaken.add(dn);
@@ -387,7 +393,7 @@ void StatusController::damagedOther(DamageNotification damageNotification) {
   m_recentDamageGiven.add(std::move(damageNotification));
 }
 
-List<DamageNotification> StatusController::pullSelfDamageNotifications() {
+auto StatusController::pullSelfDamageNotifications() -> List<DamageNotification> {
   return take(m_pendingSelfDamageNotifications);
 }
 
@@ -398,15 +404,15 @@ void StatusController::applySelfDamageRequest(DamageRequest dr) {
   m_pendingSelfDamageNotifications.appendAll(std::move(damageNotifications));
 }
 
-pair<List<DamageNotification>, uint64_t> StatusController::damageTakenSince(uint64_t since) const {
+auto StatusController::damageTakenSince(std::uint64_t since) const -> std::pair<List<DamageNotification>, std::uint64_t> {
   return m_recentDamageTaken.query(since);
 }
 
-pair<List<pair<EntityId, DamageRequest>>, uint64_t> StatusController::inflictedHitsSince(uint64_t since) const {
+auto StatusController::inflictedHitsSince(std::uint64_t since) const -> std::pair<List<std::pair<EntityId, DamageRequest>>, std::uint64_t> {
   return m_recentHitsGiven.query(since);
 }
 
-pair<List<DamageNotification>, uint64_t> StatusController::inflictedDamageSince(uint64_t since) const {
+auto StatusController::inflictedDamageSince(std::uint64_t since) const -> std::pair<List<DamageNotification>, std::uint64_t> {
   return m_recentDamageGiven.query(since);
 }
 
@@ -445,12 +451,14 @@ void StatusController::initNetVersion(NetElementVersion const* version) {
 }
 
 void StatusController::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   m_netGroup.netStore(ds, rules);
 }
 
 void StatusController::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   clearAllPersistentEffects();
   clearEphemeralEffects();
 
@@ -469,7 +477,7 @@ void StatusController::tickNetInterpolation(float dt) {
   m_netGroup.tickNetInterpolation(dt);
 }
 
-bool StatusController::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+auto StatusController::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const -> bool {
   return m_netGroup.writeNetDelta(ds, fromVersion, rules);
 }
 
@@ -491,7 +499,7 @@ void StatusController::tickMaster(float dt) {
   bool statusImmune = statPositive("statusImmunity");
 
   if (!statusImmune && m_movementController->liquidPercentage() > m_minimumLiquidStatusEffectPercentage) {
-    auto liquidsDatabase = Root::singleton().liquidsDatabase();
+    ConstPtr<LiquidsDatabase> liquidsDatabase = Root::singleton().liquidsDatabase();
     if (auto liquidSettings = liquidsDatabase->liquidSettings(m_movementController->liquidId())) {
       for (auto const& effect : liquidSettings->statusEffects)
         addEphemeralEffect(jsonToEphemeralStatusEffect(effect));
@@ -503,14 +511,14 @@ void StatusController::tickMaster(float dt) {
     List<PersistentStatusEffect> entityEffects;
     if (!statusImmune) {
       m_parentEntity->world()->forEachEntity(collisionBody.boundBox(),
-          [this, collisionBody, &entityEffects](EntityPtr const& e) {
-            if (auto entity = as<StatusEffectEntity>(e)) {
-              auto statusEffectArea = entity->statusEffectArea();
-              statusEffectArea.translate(entity->position());
-              if (m_parentEntity->world()->geometry().polyIntersectsPoly(statusEffectArea, collisionBody))
-                entityEffects.appendAll(entity->statusEffects());
-            }
-          });
+                                             [this, collisionBody, &entityEffects](Ptr<Entity> const& e) -> void {
+                                               if (auto entity = as<StatusEffectEntity>(e)) {
+                                                 auto statusEffectArea = entity->statusEffectArea();
+                                                 statusEffectArea.translate(entity->position());
+                                                 if (m_parentEntity->world()->geometry().polyIntersectsPoly(statusEffectArea, collisionBody))
+                                                   entityEffects.appendAll(entity->statusEffects());
+                                               }
+                                             });
     }
     setPersistentEffects("entities", entityEffects);
 
@@ -553,52 +561,52 @@ void StatusController::tickSlave(float dt) {
   updateAnimators(dt);
 }
 
-const DirectivesGroup& StatusController::parentDirectives() const {
+auto StatusController::parentDirectives() const -> const DirectivesGroup& {
   return m_parentDirectives.get();
 }
 
-List<Drawable> StatusController::drawables() const {
+auto StatusController::drawables() const -> List<Drawable> {
   List<Drawable> drawables;
   for (auto const& animator : m_effectAnimators.netElements())
     drawables.appendAll(animator->animator.drawables(m_movementController->position()));
   return drawables;
 }
 
-List<LightSource> StatusController::lightSources() const {
+auto StatusController::lightSources() const -> List<LightSource> {
   List<LightSource> lightSources;
   for (auto const& animator : m_effectAnimators.netElements())
     lightSources.appendAll(animator->animator.lightSources(m_movementController->position()));
   return lightSources;
 }
 
-List<OverheadBar> StatusController::overheadBars() {
+auto StatusController::overheadBars() -> List<OverheadBar> {
   if (auto bars = m_primaryScript.invoke<JsonArray>("overheadBars"))
     return bars->transformed(construct<OverheadBar>());
   return {};
 }
 
-bool StatusController::toolUsageSuppressed() const {
+auto StatusController::toolUsageSuppressed() const -> bool {
   return m_toolUsageSuppressed.get();
 }
 
-List<AudioInstancePtr> StatusController::pullNewAudios() {
-  List<AudioInstancePtr> newAudios;
+auto StatusController::pullNewAudios() -> List<Ptr<AudioInstance>> {
+  List<Ptr<AudioInstance>> newAudios;
   for (auto const& animator : m_effectAnimators.netElements())
     newAudios.appendAll(animator->dynamicTarget.pullNewAudios());
   return newAudios;
 }
 
-List<Particle> StatusController::pullNewParticles() {
+auto StatusController::pullNewParticles() -> List<Particle> {
   List<Particle> newParticles;
   for (auto const& animator : m_effectAnimators.netElements())
     newParticles.appendAll(animator->dynamicTarget.pullNewParticles());
   return newParticles;
 }
 
-std::optional<Json> StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+auto StatusController::receiveMessage(String const& message, bool localMessage, JsonArray const& args) -> std::optional<Json> {
   std::optional<Json> result = m_primaryScript.handleMessage(message, localMessage, args);
   for (auto& p : m_uniqueEffects)
-    result = result.or_else([&]{return p.second.script.handleMessage(message, localMessage, args);});
+    result = result.or_else([&] -> std::optional<Json> { return p.second.script.handleMessage(message, localMessage, args); });
   return result;
 }
 
@@ -612,13 +620,15 @@ void StatusController::EffectAnimator::initNetVersion(NetElementVersion const* v
 }
 
 void StatusController::EffectAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   ds.write(animationConfig);
   animator.netStore(ds, rules);
 }
 
 void StatusController::EffectAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   ds.read(animationConfig);
   animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
   animator.netLoad(ds, rules);
@@ -636,7 +646,7 @@ void StatusController::EffectAnimator::tickNetInterpolation(float dt) {
   animator.tickNetInterpolation(dt);
 }
 
-bool StatusController::EffectAnimator::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
+auto StatusController::EffectAnimator::writeNetDelta(DataStream& ds, std::uint64_t fromVersion, NetCompatibilityRules rules) const -> bool {
   return animator.writeNetDelta(ds, fromVersion, rules);
 }
 
@@ -657,7 +667,7 @@ StatusController::UniqueEffectMetadata::UniqueEffectMetadata() {
 }
 
 StatusController::UniqueEffectMetadata::UniqueEffectMetadata(UniqueStatusEffect effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId)
-  : UniqueEffectMetadata() {
+    : UniqueEffectMetadata() {
   this->effect = std::move(effect);
   this->duration = std::move(duration);
   this->maxDuration.set(this->duration.value());
@@ -685,8 +695,8 @@ void StatusController::updateAnimators(float dt) {
 
 void StatusController::updatePersistentUniqueEffects() {
   Set<UniqueStatusEffect> activePersistentUniqueEffects;
-  for (auto & categoryPair : m_persistentEffects) {
-    for (auto & uniqueEffectName : categoryPair.second.uniqueEffects) {
+  for (auto& categoryPair : m_persistentEffects) {
+    for (auto& uniqueEffectName : categoryPair.second.uniqueEffects) {
       // It is important to note here that if a unique effect exists, it *may*
       // not come from a persistent effect, it *may* be from an ephemeral effect.
       // Here, when a persistent effect overrides an ephemeral effect, it is
@@ -713,12 +723,12 @@ void StatusController::updatePersistentUniqueEffects() {
   }
 }
 
-float StatusController::defaultUniqueEffectDuration(UniqueStatusEffect const& effect) const {
+auto StatusController::defaultUniqueEffectDuration(UniqueStatusEffect const& effect) const -> float {
   return Root::singleton().statusEffectDatabase()->uniqueEffectConfig(effect).defaultDuration;
 }
 
-bool StatusController::addUniqueEffect(
-    UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId) {
+auto StatusController::addUniqueEffect(
+  UniqueStatusEffect const& effect, std::optional<float> duration, std::optional<EntityId> sourceEntityId) -> bool {
   auto statusEffectDatabase = Root::singleton().statusEffectDatabase();
   if (statusEffectDatabase->isUniqueEffect(effect)) {
     auto effectConfig = statusEffectDatabase->uniqueEffectConfig(effect);
@@ -731,12 +741,12 @@ bool StatusController::addUniqueEffect(
     uniqueEffect.script.setUpdateDelta(uniqueEffect.effectConfig.scriptDelta);
 
     uniqueEffect.metadataId =
-        m_uniqueEffectMetadata.addNetElement(make_shared<UniqueEffectMetadata>(effect, duration, sourceEntityId));
+      m_uniqueEffectMetadata.addNetElement(make_shared<UniqueEffectMetadata>(effect, duration, sourceEntityId));
 
     uniqueEffect.animatorId = UniqueEffectMetadataGroup::NullElementId;
     if (uniqueEffect.effectConfig.animationConfig)
       uniqueEffect.animatorId =
-          m_effectAnimators.addNetElement(make_shared<EffectAnimator>(uniqueEffect.effectConfig.animationConfig));
+        m_effectAnimators.addNetElement(make_shared<EffectAnimator>(uniqueEffect.effectConfig.animationConfig));
 
     uniqueEffect.toolUsageSuppressed = false;
 
@@ -787,9 +797,9 @@ void StatusController::uninitPrimaryScript() {
 void StatusController::initUniqueEffectScript(UniqueEffectInstance& uniqueEffect) {
   uniqueEffect.script.addCallbacks("effect", makeUniqueEffectCallbacks(uniqueEffect));
   uniqueEffect.script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(this));
-  uniqueEffect.script.addCallbacks("config", LuaBindings::makeConfigCallbacks([&uniqueEffect](String const& name, Json const& def) {
-      return uniqueEffect.effectConfig.effectConfig.query(name, def);
-    }));
+  uniqueEffect.script.addCallbacks("config", LuaBindings::makeConfigCallbacks([&uniqueEffect](String const& name, Json const& def) -> Json {
+                                     return uniqueEffect.effectConfig.effectConfig.query(name, def);
+                                   }));
   uniqueEffect.script.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_parentEntity));
   if (uniqueEffect.animatorId != EffectAnimatorGroup::NullElementId) {
     auto animator = m_effectAnimators.getNetElement(uniqueEffect.animatorId);
@@ -813,74 +823,74 @@ void StatusController::uninitUniqueEffectScript(UniqueEffectInstance& uniqueEffe
   uniqueEffect.modifierGroups.clear();
 }
 
-LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect) {
+auto StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& uniqueEffect) -> LuaCallbacks {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("name", [this, &uniqueEffect]() {
+  callbacks.registerCallback("name", [this, &uniqueEffect]() -> UniqueStatusEffect {
     return m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId)->effect;
   });
 
-  callbacks.registerCallback("duration", [this, &uniqueEffect]() {
-      return m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId)->duration;
-    });
-  callbacks.registerCallback("modifyDuration", [this, &uniqueEffect](float duration) {
-      auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
-      if (metadata->duration)
-        *metadata->duration += duration;
-    });
-  callbacks.registerCallback("setDuration", [this, &uniqueEffect](float duration) {
+  callbacks.registerCallback("duration", [this, &uniqueEffect]() -> std::optional<float> {
+    return m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId)->duration;
+  });
+  callbacks.registerCallback("modifyDuration", [this, &uniqueEffect](float duration) -> void {
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+    if (metadata->duration)
+      *metadata->duration += duration;
+  });
+  callbacks.registerCallback("setDuration", [this, &uniqueEffect](float duration) -> void {
     auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
     if (metadata->duration)
       *metadata->duration = duration;
   });
 
-  callbacks.registerCallback("expire", [this, &uniqueEffect]() {
-      auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
-      if (metadata->duration)
-        metadata->duration = 0.0f;
-    });
+  callbacks.registerCallback("expire", [this, &uniqueEffect]() -> void {
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+    if (metadata->duration)
+      metadata->duration = 0.0f;
+  });
   callbacks.registerCallback("sourceEntity", [this, &uniqueEffect]() -> std::optional<EntityId> {
-      auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
-      auto sourceEntityId = metadata->sourceEntityId.get();
-      if (!sourceEntityId)
-        return m_parentEntity->entityId();
-      if (sourceEntityId == NullEntityId)
-        return {};
-      return sourceEntityId;
-    });
-  callbacks.registerCallback("setParentDirectives", [&uniqueEffect](std::optional<String> const& directives) {
-      uniqueEffect.parentDirectives = directives.value();
-    });
+    auto metadata = m_uniqueEffectMetadata.getNetElement(uniqueEffect.metadataId);
+    auto sourceEntityId = metadata->sourceEntityId.get();
+    if (!sourceEntityId)
+      return m_parentEntity->entityId();
+    if (sourceEntityId == NullEntityId)
+      return {};
+    return sourceEntityId;
+  });
+  callbacks.registerCallback("setParentDirectives", [&uniqueEffect](std::optional<String> const& directives) -> void {
+    uniqueEffect.parentDirectives = directives.value();
+  });
   callbacks.registerCallback("getParameter", [&uniqueEffect](String const& name, Json const& def) -> Json {
-      return uniqueEffect.effectConfig.effectConfig.query(name, def);
-    });
+    return uniqueEffect.effectConfig.effectConfig.query(name, def);
+  });
   callbacks.registerCallback("addStatModifierGroup", [this, &uniqueEffect](List<StatModifier> const& modifiers) -> StatModifierGroupId {
-      auto newGroupId = m_statCollection.addStatModifierGroup(modifiers);
-      uniqueEffect.modifierGroups.add(newGroupId);
-      return newGroupId;
-    });
-  callbacks.registerCallback("setStatModifierGroup", [this, &uniqueEffect](StatModifierGroupId groupId, List<StatModifier> const& modifiers) {
-      if (!uniqueEffect.modifierGroups.contains(groupId))
-        throw StatusException("Cannot set stat modifier group that was not added from this effect");
-      m_statCollection.setStatModifierGroup(groupId, modifiers);
-    });
-  callbacks.registerCallback("removeStatModifierGroup", [this, &uniqueEffect](StatModifierGroupId groupId) {
-      if (!uniqueEffect.modifierGroups.contains(groupId))
-        throw StatusException("Cannot remove stat modifier group that was not added from this effect");
-      m_statCollection.removeStatModifierGroup(groupId);
-      uniqueEffect.modifierGroups.remove(groupId);
-    });
-  callbacks.registerCallback("setToolUsageSuppressed", [this, &uniqueEffect](bool suppressed) {
-      if (uniqueEffect.toolUsageSuppressed == suppressed)
-        return;
-      uniqueEffect.toolUsageSuppressed = suppressed;
-      bool anySuppressed = false;
-      for (auto& p : m_uniqueEffects)
-        anySuppressed = anySuppressed || p.second.toolUsageSuppressed;
-      m_toolUsageSuppressed.set(anySuppressed);
-    });
+    auto newGroupId = m_statCollection.addStatModifierGroup(modifiers);
+    uniqueEffect.modifierGroups.add(newGroupId);
+    return newGroupId;
+  });
+  callbacks.registerCallback("setStatModifierGroup", [this, &uniqueEffect](StatModifierGroupId groupId, List<StatModifier> const& modifiers) -> void {
+    if (!uniqueEffect.modifierGroups.contains(groupId))
+      throw StatusException("Cannot set stat modifier group that was not added from this effect");
+    m_statCollection.setStatModifierGroup(groupId, modifiers);
+  });
+  callbacks.registerCallback("removeStatModifierGroup", [this, &uniqueEffect](StatModifierGroupId groupId) -> void {
+    if (!uniqueEffect.modifierGroups.contains(groupId))
+      throw StatusException("Cannot remove stat modifier group that was not added from this effect");
+    m_statCollection.removeStatModifierGroup(groupId);
+    uniqueEffect.modifierGroups.remove(groupId);
+  });
+  callbacks.registerCallback("setToolUsageSuppressed", [this, &uniqueEffect](bool suppressed) -> void {
+    if (uniqueEffect.toolUsageSuppressed == suppressed)
+      return;
+    uniqueEffect.toolUsageSuppressed = suppressed;
+    bool anySuppressed = false;
+    for (auto& p : m_uniqueEffects)
+      anySuppressed = anySuppressed || p.second.toolUsageSuppressed;
+    m_toolUsageSuppressed.set(anySuppressed);
+  });
 
   return callbacks;
 }
 
-}
+}// namespace Star

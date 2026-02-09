@@ -1,10 +1,11 @@
 #pragma once
 
-#include <optional>
-
-#include "StarItem.hpp"
+#include "StarConfig.hpp"
 #include "StarGameTypes.hpp"
+#include "StarItem.hpp"
 #include "StarSwingableItem.hpp"
+
+import std;
 
 namespace Star {
 
@@ -12,9 +13,9 @@ class ConsumableItem : public Item, public SwingableItem {
 public:
   ConsumableItem(Json const& config, String const& directory, Json const& data);
 
-  ItemPtr clone() const override;
+  auto clone() const -> Ptr<Item> override;
 
-  List<Drawable> drawables() const override;
+  auto drawables() const -> List<Drawable> override;
 
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   void fire(FireMode mode, bool shifting, bool edgeTriggered) override;
@@ -22,7 +23,7 @@ public:
   void uninit() override;
 
 private:
-  bool canUse() const;
+  auto canUse() const -> bool;
 
   void triggerEffects();
   void maybeConsume();
@@ -34,4 +35,4 @@ private:
   bool m_consuming;
 };
 
-}
+}// namespace Star

@@ -1,8 +1,8 @@
 #pragma once
 
-#include <optional>
-
 #include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
@@ -12,18 +12,18 @@ public:
 
   // Should interpolation be enabled on entities at all?  If this is false,
   // extrapolationHint and interpolationLead will always return 0.
-  bool interpolationEnabled() const;
-  unsigned extrapolationHint() const;
+  [[nodiscard]] auto interpolationEnabled() const -> bool;
+  [[nodiscard]] auto extrapolationHint() const -> unsigned;
 
   // Time in-between entity updates
-  float entityUpdateDelta() const;
+  [[nodiscard]] auto entityUpdateDelta() const -> float;
 
   void receiveTimeUpdate(double remoteTime);
   void update(double newLocalTime);
 
   // Lead time that incoming interpolated data as of this moment should be
   // marked for.  If interpolation is disabled, this is always 0.0
-  float interpolationLeadTime() const;
+  [[nodiscard]] auto interpolationLeadTime() const -> float;
 
 private:
   bool m_interpolationEnabled;

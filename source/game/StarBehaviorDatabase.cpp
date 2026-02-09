@@ -1,11 +1,14 @@
 #include "StarBehaviorDatabase.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
+
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
-EnumMap<NodeParameterType> const NodeParameterTypeNames {
+EnumMap<NodeParameterType> const NodeParameterTypeNames{
   {NodeParameterType::Json, "json"},
   {NodeParameterType::Entity, "entity"},
   {NodeParameterType::Position, "position"},
@@ -14,20 +17,18 @@ EnumMap<NodeParameterType> const NodeParameterTypeNames {
   {NodeParameterType::Bool, "bool"},
   {NodeParameterType::List, "list"},
   {NodeParameterType::Table, "table"},
-  {NodeParameterType::String, "string"}
-};
+  {NodeParameterType::String, "string"}};
 
-NodeParameterValue nodeParameterValueFromJson(Json const& json) {
+auto nodeParameterValueFromJson(Json const& json) -> NodeParameterValue {
   if (auto key = json.optString("key"))
     return *key;
   else
     return json.get("value");
 }
 
-Json jsonFromNodeParameter(NodeParameter const& parameter) {
-  JsonObject json {
-    {"type", NodeParameterTypeNames.getRight(parameter.first)}
-  };
+auto jsonFromNodeParameter(NodeParameter const& parameter) -> Json {
+  JsonObject json{
+    {"type", NodeParameterTypeNames.getRight(parameter.first)}};
   if (auto key = parameter.second.maybe<String>())
     json.set("key", *key);
   else
@@ -35,7 +36,7 @@ Json jsonFromNodeParameter(NodeParameter const& parameter) {
   return json;
 }
 
-NodeParameter jsonToNodeParameter(Json const& json) {
+auto jsonToNodeParameter(Json const& json) -> NodeParameter {
   NodeParameterType type = NodeParameterTypeNames.getLeft(json.getString("type"));
   if (auto key = json.optString("key"))
     return {type, *key};
@@ -43,35 +44,31 @@ NodeParameter jsonToNodeParameter(Json const& json) {
     return {type, json.opt("value").value_or(Json())};
 }
 
-Json nodeOutputToJson(NodeOutput const& output) {
-  return JsonObject {
+auto nodeOutputToJson(NodeOutput const& output) -> Json {
+  return JsonObject{
     {"type", NodeParameterTypeNames.getRight(output.first)},
-    {"key", jsonFromMaybe<String>(output.second.first, [](String const& s) { return Json(s); })},
-    {"ephemeral", output.second.second}
-  };
+    {"key", jsonFromMaybe<String>(output.second.first, [](String const& s) -> Json { return {s}; })},
+    {"ephemeral", output.second.second}};
 }
 
-NodeOutput jsonToNodeOutput(Json const& json) {
+auto jsonToNodeOutput(Json const& json) -> NodeOutput {
   return {
     NodeParameterTypeNames.getLeft(json.getString("type")),
-    {jsonToMaybe<String>(json.get("key"), [](Json const& j) { return j.toString(); }), json.optBool("ephemeral").value_or(false)}
-  };
+    {jsonToMaybe<String>(json.get("key"), [](Json const& j) -> String { return j.toString(); }), json.optBool("ephemeral").value_or(false)}};
 }
 
-EnumMap<BehaviorNodeType> const BehaviorNodeTypeNames {
+EnumMap<BehaviorNodeType> const BehaviorNodeTypeNames{
   {BehaviorNodeType::Action, "Action"},
   {BehaviorNodeType::Decorator, "Decorator"},
   {BehaviorNodeType::Composite, "Composite"},
-  {BehaviorNodeType::Module, "Module"}
-};
+  {BehaviorNodeType::Module, "Module"}};
 
-EnumMap<CompositeType> const CompositeTypeNames {
+EnumMap<CompositeType> const CompositeTypeNames{
   {CompositeType::Sequence, "Sequence"},
   {CompositeType::Selector, "Selector"},
   {CompositeType::Parallel, "Parallel"},
   {CompositeType::Dynamic, "Dynamic"},
-  {CompositeType::Randomize, "Randomize"}
-};
+  {CompositeType::Randomize, "Randomize"}};
 
 void applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<NodeParameterValue> const& treeParameters) {
   for (auto& p : nodeParameters) {
@@ -80,7 +77,7 @@ void applyTreeParameters(StringMap<NodeParameter>& nodeParameters, StringMap<Nod
   }
 }
 
-NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters) {
+auto replaceBehaviorTag(NodeParameterValue const& parameter, StringMap<NodeParameterValue> const& treeParameters) -> NodeParameterValue {
   std::optional<String> strVal = parameter.maybe<String>();
   if (!strVal && parameter.get<Json>().isType(Json::Type::String))
     strVal = parameter.get<Json>().toString();
@@ -99,7 +96,7 @@ NodeParameterValue replaceBehaviorTag(NodeParameterValue const& parameter, Strin
   return parameter;
 }
 
-std::optional<String> replaceOutputBehaviorTag(std::optional<String> const& output, StringMap<NodeParameterValue> const& treeParameters) {
+auto replaceOutputBehaviorTag(std::optional<String> const& output, StringMap<NodeParameterValue> const& treeParameters) -> std::optional<String> {
   if (auto out = output) {
     if (out->beginsWith('<') && out->endsWith('>')) {
       if (auto replace = treeParameters.maybe(out->substr(1, out->size() - 2))) {
@@ -120,20 +117,20 @@ std::optional<String> replaceOutputBehaviorTag(std::optional<String> const& outp
 // TODO: This is temporary until BehaviorState can handle valueType:value pairs
 void parseNodeParameters(JsonObject& parameters) {
   for (auto& p : parameters)
-    p.second = p.second.opt("key").or_else([&]() { return p.second.opt("value"); }).value_or(Json());
+    p.second = p.second.opt("key").or_else([&]() -> std::optional<Json> { return p.second.opt("value"); }).value_or(Json());
 }
 
 ActionNode::ActionNode(String name, StringMap<NodeParameter> parameters, StringMap<NodeOutput> output)
-  : name(std::move(name)), parameters(std::move(parameters)), output(std::move(output)) { }
+    : name(std::move(name)), parameters(std::move(parameters)), output(std::move(output)) {}
 
-DecoratorNode::DecoratorNode(String const& name, StringMap<NodeParameter> parameters, BehaviorNodeConstPtr child)
-  : name(name), parameters(parameters), child(child) { }
+DecoratorNode::DecoratorNode(String const& name, StringMap<NodeParameter> parameters, ConstPtr<BehaviorNode> child)
+    : name(std::move(name)), parameters(std::move(parameters)), child(std::move(child)) {}
 
-SequenceNode::SequenceNode(List<BehaviorNodeConstPtr> children) : children(children) { }
+SequenceNode::SequenceNode(List<ConstPtr<BehaviorNode>> children) : children(std::move(children)) {}
 
-SelectorNode::SelectorNode(List<BehaviorNodeConstPtr> children) : children(children) { }
+SelectorNode::SelectorNode(List<ConstPtr<BehaviorNode>> children) : children(std::move(children)) {}
 
-ParallelNode::ParallelNode(StringMap<NodeParameter> parameters, List<BehaviorNodeConstPtr> children) : children(children) {
+ParallelNode::ParallelNode(StringMap<NodeParameter> parameters, List<ConstPtr<BehaviorNode>> children) : children(children) {
   int s = parameters.get("success").second.get<Json>().optInt().value_or(-1);
   succeed = s == -1 ? children.size() : s;
 
@@ -141,12 +138,12 @@ ParallelNode::ParallelNode(StringMap<NodeParameter> parameters, List<BehaviorNod
   fail = f == -1 ? children.size() : f;
 }
 
-DynamicNode::DynamicNode(List<BehaviorNodeConstPtr> children) : children(children) { }
+DynamicNode::DynamicNode(List<ConstPtr<BehaviorNode>> children) : children(std::move(children)) {}
 
-RandomizeNode::RandomizeNode(List<BehaviorNodeConstPtr> children) : children(children) { }
+RandomizeNode::RandomizeNode(List<ConstPtr<BehaviorNode>> children) : children(std::move(children)) {}
 
 BehaviorTree::BehaviorTree(String const& name, StringSet scripts, JsonObject const& parameters)
-  : name(name), scripts(scripts), parameters(parameters) { }
+    : name(std::move(name)), scripts(std::move(scripts)), parameters(std::move(parameters)) {}
 
 BehaviorDatabase::BehaviorDatabase() {
   auto assets = Root::singleton().assets();
@@ -196,14 +193,14 @@ BehaviorDatabase::BehaviorDatabase() {
   }
 }
 
-BehaviorTreeConstPtr BehaviorDatabase::behaviorTree(String const& name) const {
+auto BehaviorDatabase::behaviorTree(String const& name) const -> ConstPtr<BehaviorTree> {
   if (!m_behaviors.contains(name))
     throw StarException(strf("No such behavior tree \'{}\'", name));
 
   return m_behaviors.get(name);
 }
 
-BehaviorTreeConstPtr BehaviorDatabase::buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides) const {
+auto BehaviorDatabase::buildTree(Json const& config, StringMap<NodeParameterValue> const& overrides) const -> ConstPtr<BehaviorTree> {
   StringSet scripts = jsonToStringSet(config.get("scripts", JsonArray()));
   auto tree = BehaviorTree(config.getString("name"), scripts, config.getObject("parameters", {}));
 
@@ -212,12 +209,12 @@ BehaviorTreeConstPtr BehaviorDatabase::buildTree(Json const& config, StringMap<N
     parameters.set(p.first, p.second);
   for (auto p : overrides)
     parameters.set(p.first, p.second);
-  BehaviorNodeConstPtr root = behaviorNode(config.get("root"), parameters, tree);
+  ConstPtr<BehaviorNode> root = behaviorNode(config.get("root"), parameters, tree);
   tree.root = root;
   return std::make_shared<BehaviorTree>(std::move(tree));
 }
 
-Json BehaviorDatabase::behaviorConfig(String const& name) const {
+auto BehaviorDatabase::behaviorConfig(String const& name) const -> Json {
   if (!m_configs.contains(name))
     throw StarException(strf("No such behavior tree \'{}\'", name));
 
@@ -228,10 +225,10 @@ void BehaviorDatabase::loadTree(String const& name) {
   m_behaviors.set(name, buildTree(m_configs.get(name)));
 }
 
-CompositeNode BehaviorDatabase::compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {
-  List<BehaviorNodeConstPtr> children = config.getArray("children", {}).transformed([this,treeParameters,&tree](Json const& child) {
-      return behaviorNode(child, treeParameters, tree);
-    });
+auto BehaviorDatabase::compositeNode(Json const& config, StringMap<NodeParameter> parameters, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const -> CompositeNode {
+  List<ConstPtr<BehaviorNode>> children = config.getArray("children", {}).transformed([this, treeParameters, &tree](Json const& child) -> ConstPtr<BehaviorNode> {
+    return behaviorNode(child, treeParameters, tree);
+  });
 
   CompositeType type = CompositeTypeNames.getLeft(config.getString("name"));
   if (type == CompositeType::Sequence)
@@ -249,24 +246,24 @@ CompositeNode BehaviorDatabase::compositeNode(Json const& config, StringMap<Node
   throw StarException(strf("Composite node type '{}' could not be created from JSON", CompositeTypeNames.getRight(type)));
 }
 
-BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const {
+auto BehaviorDatabase::behaviorNode(Json const& json, StringMap<NodeParameterValue> const& treeParameters, BehaviorTree& tree) const -> ConstPtr<BehaviorNode> {
   BehaviorNodeType type = BehaviorNodeTypeNames.getLeft(json.getString("type"));
 
   auto name = json.getString("name");
   auto parameterConfig = json.getObject("parameters", {});
 
   if (type == BehaviorNodeType::Module) {
-      // merge in module parameters to a copy of the treeParameters to propagate
-      // tree parameters into the sub-tree, but allow modules to override
-      auto moduleParameters = treeParameters;
-      for (auto p : parameterConfig)
-        moduleParameters.set(p.first, replaceBehaviorTag(nodeParameterValueFromJson(p.second), treeParameters));
+    // merge in module parameters to a copy of the treeParameters to propagate
+    // tree parameters into the sub-tree, but allow modules to override
+    auto moduleParameters = treeParameters;
+    for (auto p : parameterConfig)
+      moduleParameters.set(p.first, replaceBehaviorTag(nodeParameterValueFromJson(p.second), treeParameters));
 
-      BehaviorTree module = *buildTree(m_configs.get(name), moduleParameters);
-      tree.scripts.addAll(module.scripts);
-      tree.functions.addAll(module.functions);
+    BehaviorTree module = *buildTree(m_configs.get(name), moduleParameters);
+    tree.scripts.addAll(module.scripts);
+    tree.functions.addAll(module.functions);
 
-      return module.root;
+    return module.root;
   }
 
   StringMap<NodeParameter> parameters = m_nodeParameters.get(name);
@@ -280,19 +277,19 @@ BehaviorNodeConstPtr BehaviorDatabase::behaviorNode(Json const& json, StringMap<
     Json outputConfig = json.getObject("output", {});
     StringMap<NodeOutput> output = m_nodeOutput.get(name);
     for (auto& p : output)
-      p.second.second.first = replaceOutputBehaviorTag(outputConfig.optString(p.first).or_else([&]() { return p.second.second.first; }), treeParameters);
+      p.second.second.first = replaceOutputBehaviorTag(outputConfig.optString(p.first).or_else([&]() -> std::optional<Star::String> { return p.second.second.first; }), treeParameters);
 
-    return make_shared<BehaviorNode>(ActionNode(name, parameters, output));
+    return std::make_shared<BehaviorNode>(ActionNode(name, parameters, output));
   } else if (type == BehaviorNodeType::Decorator) {
     tree.functions.add(name);
-    BehaviorNodeConstPtr child = behaviorNode(json.get("child"), treeParameters, tree);
-    return make_shared<BehaviorNode>(DecoratorNode(name, parameters, child));
+    ConstPtr<BehaviorNode> child = behaviorNode(json.get("child"), treeParameters, tree);
+    return std::make_shared<BehaviorNode>(DecoratorNode(name, parameters, child));
   } else if (type == BehaviorNodeType::Composite) {
-    return make_shared<BehaviorNode>(compositeNode(json, parameters, treeParameters, tree));
+    return std::make_shared<BehaviorNode>(compositeNode(json, parameters, treeParameters, tree));
   }
 
   // above statement must be exhaustive
   throw StarException(strf("Behavior node type '{}' could not be created from JSON", BehaviorNodeTypeNames.getRight(type)));
 }
 
-}
+}// namespace Star

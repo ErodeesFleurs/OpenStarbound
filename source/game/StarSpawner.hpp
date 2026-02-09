@@ -27,7 +27,7 @@ public:
   [[nodiscard]] virtual auto liquidLevel(Vec2I const& pos) const -> LiquidLevel = 0;
   [[nodiscard]] virtual auto spawningProhibited(RectF const& area) const -> bool = 0;
 
-  [[nodiscard]] virtual auto spawnSeed() const -> uint64_t = 0;
+  [[nodiscard]] virtual auto spawnSeed() const -> std::uint64_t = 0;
   [[nodiscard]] virtual auto spawnProfile(Vec2F const& position) const -> SpawnProfile = 0;
   [[nodiscard]] virtual auto dayLevel() const -> float = 0;
   [[nodiscard]] virtual auto threatLevel() const -> float = 0;

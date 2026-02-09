@@ -73,7 +73,7 @@ public:
   // Creates a world from the given visitable celestial object.
   WorldTemplate(CelestialCoordinate const& celestialCoordinate, Ptr<CelestialDatabase> const& celestialDatabase);
   // Creates a world from a bare VisitableWorldParameters structure
-  WorldTemplate(ConstPtr<VisitableWorldParameters> const& worldParameters, SkyParameters const& skyParameters, uint64_t seed);
+  WorldTemplate(ConstPtr<VisitableWorldParameters> const& worldParameters, SkyParameters const& skyParameters, std::uint64_t seed);
   // Load a world template from the given stored data.
   WorldTemplate(Json const& store);
 
@@ -88,7 +88,7 @@ public:
   void setWorldLayout(Ptr<WorldLayout> newLayout);
   void setSkyParameters(SkyParameters newParameters);
 
-  auto worldSeed() const -> uint64_t;
+  auto worldSeed() const -> std::uint64_t;
   auto worldName() const -> String;
 
   auto size() const -> Vec2U;
@@ -168,7 +168,7 @@ public:
   auto threatLevel() const -> float;
 
   // For consistently seeding object generation at this position
-  auto seedFor(int x, int y) const -> uint64_t;
+  auto seedFor(int x, int y) const -> std::uint64_t;
 
 private:
   struct CustomTerrainRegion {
@@ -184,7 +184,7 @@ private:
   auto customTerrainWeighting(int x, int y) const -> std::pair<float, float>;
 
   // Calculates block info and adds to cache
-  auto getBlockInfo(uint32_t x, uint32_t y) const -> BlockInfo;
+  auto getBlockInfo(std::uint32_t x, std::uint32_t y) const -> BlockInfo;
 
   Json m_templateConfig;
   float m_customTerrainBlendSize;
@@ -193,14 +193,14 @@ private:
   std::optional<CelestialParameters> m_celestialParameters;
   ConstPtr<VisitableWorldParameters> m_worldParameters;
   SkyParameters m_skyParameters;
-  uint64_t m_seed;
+  std::uint64_t m_seed;
   WorldGeometry m_geometry;
   Ptr<WorldLayout> m_layout;
   String m_worldName;
 
   List<CustomTerrainRegion> m_customTerrainRegions;
 
-  mutable HashLruCache<Vector<uint32_t, 2>, BlockInfo> m_blockCache;
+  mutable HashLruCache<Vector<std::uint32_t, 2>, BlockInfo> m_blockCache;
 };
 
 }// namespace Star

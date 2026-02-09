@@ -1,14 +1,16 @@
 #include "StarUnlockItem.hpp"
+
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
 #include "StarPlayer.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarClientContext.hpp"
-#include "StarPlayerBlueprints.hpp"
+
+import std;
 
 namespace Star {
 
 UnlockItem::UnlockItem(Json const& config, String const& directory, Json const& itemParameters)
-  : Item(config, directory, itemParameters), SwingableItem(config) {
+    : Item(config, directory, itemParameters), SwingableItem(config) {
   m_tierRecipesUnlock = instanceValue("tierRecipesUnlock").optString();
   m_shipUpgrade = instanceValue("shipUpgrade").optUInt();
   m_unlockMessage = instanceValue("unlockMessage").optString().value();
@@ -16,15 +18,15 @@ UnlockItem::UnlockItem(Json const& config, String const& directory, Json const& 
   m_drawables = {Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F())};
 }
 
-ItemPtr UnlockItem::clone() const {
-  return make_shared<UnlockItem>(*this);
+auto UnlockItem::clone() const -> Ptr<Item> {
+  return std::make_shared<UnlockItem>(*this);
 }
 
-List<Drawable> UnlockItem::drawables() const {
+auto UnlockItem::drawables() const -> List<Drawable> {
   return m_drawables;
 }
 
-List<Drawable> UnlockItem::preview(PlayerPtr const&) const {
+auto UnlockItem::preview(Ptr<Player> const&) const -> List<Drawable> {
   return iconDrawables();
 }
 
@@ -40,7 +42,7 @@ void UnlockItem::fireTriggered() {
 
     if (auto clientContext = player->clientContext()) {
       if (m_shipUpgrade)
-        player->applyShipUpgrades(JsonObject{ {"shipLevel", *m_shipUpgrade} });
+        player->applyShipUpgrades(JsonObject{{"shipLevel", *m_shipUpgrade}});
     }
 
     if (!m_unlockMessage.empty()) {
@@ -66,4 +68,4 @@ void UnlockItem::fireTriggered() {
   }
 }
 
-}
+}// namespace Star

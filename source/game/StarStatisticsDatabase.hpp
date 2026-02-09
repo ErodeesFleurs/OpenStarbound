@@ -1,14 +1,14 @@
 #pragma once
 
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+#include "StarConfig.hpp"
+#include "StarJson.hpp"
 #include "StarLruCache.hpp"
+#include "StarString.hpp"
+#include "StarThread.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_STRUCT(StatEvent);
-STAR_STRUCT(Achievement);
-STAR_CLASS(StatisticsDatabase);
 
 struct StatEvent {
   String eventName;
@@ -27,22 +27,22 @@ class StatisticsDatabase {
 public:
   StatisticsDatabase();
 
-  StatEventPtr event(String const& eventName) const;
+  auto event(String const& eventName) const -> Ptr<StatEvent>;
 
-  AchievementPtr achievement(String const& name) const;
-  StringList allAchievements() const;
-  StringList achievementsForStat(String const& statName) const;
+  auto achievement(String const& name) const -> Ptr<Achievement>;
+  auto allAchievements() const -> StringList;
+  auto achievementsForStat(String const& statName) const -> StringList;
 
 private:
-  static StatEventPtr readEvent(String const& path);
-  static AchievementPtr readAchievement(String const& path);
+  static auto readEvent(String const& path) -> Ptr<StatEvent>;
+  static auto readAchievement(String const& path) -> Ptr<Achievement>;
 
   StringMap<String> m_eventPaths;
   StringMap<String> m_achievementPaths;
   StringMap<StringList> m_statAchievements;
   mutable Mutex m_cacheMutex;
-  mutable HashLruCache<String, StatEventPtr> m_eventCache;
-  mutable HashLruCache<String, AchievementPtr> m_achievementCache;
+  mutable HashLruCache<String, Ptr<StatEvent>> m_eventCache;
+  mutable HashLruCache<String, Ptr<Achievement>> m_achievementCache;
 };
 
-}
+}// namespace Star

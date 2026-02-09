@@ -1,18 +1,15 @@
 #pragma once
 
-#include <optional>
-
-#include "StarThread.hpp"
-#include "StarItemDescriptor.hpp"
+#include "StarConfig.hpp"
 #include "StarHumanoid.hpp"
-#include "StarStatusTypes.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarLuaRoot.hpp"
-#include "StarTtlCache.hpp"
+#include "StarStatusTypes.hpp"
+#include "StarThread.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(SpeciesDefinition);
-STAR_CLASS(SpeciesDatabase);
 
 struct SpeciesCharCreationTooltip {
   String title;
@@ -63,22 +60,22 @@ class SpeciesDefinition {
 public:
   SpeciesDefinition(Json const& config);
 
-  Json config() const;
-  String kind() const;
-  bool playerSelectable() const;
-  SpeciesOption const& options() const;
-  Json humanoidConfig() const;
-  List<Personality> const& personalities() const;
-  String nameGen(Gender gender) const;
-  String ouchNoise(Gender gender) const;
-  List<ItemDescriptor> defaultItems() const;
-  List<ItemDescriptor> defaultBlueprints() const;
-  StringList charGenTextLabels() const;
-  String skull() const;
-  List<PersistentStatusEffect> statusEffects() const;
-  String effectDirectives() const;
+  [[nodiscard]] auto config() const -> Json;
+  [[nodiscard]] auto kind() const -> String;
+  [[nodiscard]] auto playerSelectable() const -> bool;
+  [[nodiscard]] auto options() const -> SpeciesOption const&;
+  [[nodiscard]] auto humanoidConfig() const -> Json;
+  [[nodiscard]] auto personalities() const -> List<Personality> const&;
+  [[nodiscard]] auto nameGen(Gender gender) const -> String;
+  [[nodiscard]] auto ouchNoise(Gender gender) const -> String;
+  [[nodiscard]] auto defaultItems() const -> List<ItemDescriptor>;
+  [[nodiscard]] auto defaultBlueprints() const -> List<ItemDescriptor>;
+  [[nodiscard]] auto charGenTextLabels() const -> StringList;
+  [[nodiscard]] auto skull() const -> String;
+  [[nodiscard]] auto statusEffects() const -> List<PersistentStatusEffect>;
+  [[nodiscard]] auto effectDirectives() const -> String;
 
-  SpeciesCharCreationTooltip const& tooltip() const;
+  [[nodiscard]] auto tooltip() const -> SpeciesCharCreationTooltip const&;
 
 private:
   String m_kind;
@@ -108,19 +105,19 @@ class SpeciesDatabase {
 public:
   SpeciesDatabase();
 
-  SpeciesDefinitionPtr species(String const& kind) const;
-  StringMap<SpeciesDefinitionPtr> allSpecies() const;
+  auto species(String const& kind) const -> Ptr<SpeciesDefinition>;
+  auto allSpecies() const -> StringMap<Ptr<SpeciesDefinition>>;
 
-  Json humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const;
-  CharacterCreationResult createHumanoid(String name, String speciesChoice, size_t genderChoice, size_t bodyColor, size_t alty, size_t hairChoice, size_t heady, size_t shirtChoice, size_t shirtColor, size_t pantsChoice, size_t pantsColor, size_t personality, LuaVariadic<LuaValue> ext = {}) const;
+  auto humanoidConfig(HumanoidIdentity identity, JsonObject parameters = JsonObject(), Json config = Json()) const -> Json;
+  auto createHumanoid(String name, String speciesChoice, size_t genderChoice, size_t bodyColor, size_t alty, size_t hairChoice, size_t heady, size_t shirtChoice, size_t shirtColor, size_t pantsChoice, size_t pantsColor, size_t personality, LuaVariadic<LuaValue> ext = {}) const -> CharacterCreationResult;
 
-  CharacterCreationResult generateHumanoid(String species, int64_t seed, std::optional<Gender> = {}) const;
+  auto generateHumanoid(String species, std::int64_t seed, std::optional<Gender> = {}) const -> CharacterCreationResult;
 
 private:
-  StringMap<SpeciesDefinitionPtr> m_species;
+  StringMap<Ptr<SpeciesDefinition>> m_species;
 
   mutable RecursiveMutex m_luaMutex;
-  LuaRootPtr m_luaRoot;
+  Ptr<LuaRoot> m_luaRoot;
 };
 
-}
+}// namespace Star

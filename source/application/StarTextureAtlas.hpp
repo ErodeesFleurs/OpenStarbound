@@ -1,14 +1,15 @@
 #pragma once
 
-#include <optional>
-
-#include "StarRect.hpp"
-#include "StarImage.hpp"
 #include "StarCasting.hpp"
+#include "StarException.hpp"
+#include "StarImage.hpp"
+#include "StarRect.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(TextureAtlasException, StarException);
+using TextureAtlasException = ExceptionDerived<"TextureAtlasException">;
 
 // Implements a set of "texture atlases" or, sets of smaller textures grouped
 // as a larger texture.
@@ -16,10 +17,10 @@ template <typename AtlasTextureHandle>
 class TextureAtlasSet {
 public:
   struct Texture {
-    virtual Vec2U imageSize() const = 0;
+    [[nodiscard]] virtual auto imageSize() const -> Vec2U = 0;
 
-    virtual AtlasTextureHandle const& atlasTexture() const = 0;
-    virtual RectU atlasTextureCoordinates() const = 0;
+    virtual auto atlasTexture() const -> AtlasTextureHandle const& = 0;
+    [[nodiscard]] virtual auto atlasTextureCoordinates() const -> RectU = 0;
 
     // A locked texture will never be moved during compression, so its
     // atlasTexture and textureCoordinates will not change.
@@ -27,17 +28,17 @@ public:
 
     // Returns true if this texture has been freed or the parent
     // TextureAtlasSet has been destructed.
-    virtual bool expired() const = 0;
+    [[nodiscard]] virtual auto expired() const -> bool = 0;
   };
 
-  typedef shared_ptr<Texture> TextureHandle;
+  using TextureHandle = std::shared_ptr<Texture>;
 
   TextureAtlasSet(unsigned cellSize, unsigned atlasNumCells);
 
   virtual ~TextureAtlasSet() = default;
 
   // The constant square size of all atlas textures
-  Vec2U atlasTextureSize() const;
+  [[nodiscard]] auto atlasTextureSize() const -> Vec2U;
 
   // Removes all existing textures and destroys all texture atlases.
   void reset();
@@ -47,15 +48,15 @@ public:
   // texture.  If borderPixels is true, then fills a 1px border around the
   // given image in the atlas with the nearest color value, to prevent
   // bleeding.
-  TextureHandle addTexture(Image const& image, bool borderPixels = true);
+  auto addTexture(Image const& image, bool borderPixels = true) -> TextureHandle;
 
   // Removes the given texture from the TextureAtlasSet and invalidates the
   // pointer.
   void freeTexture(TextureHandle const& texture);
 
-  unsigned totalAtlases() const;
-  unsigned totalTextures() const;
-  float averageFillLevel() const;
+  [[nodiscard]] auto totalAtlases() const -> unsigned;
+  [[nodiscard]] auto totalTextures() const -> unsigned;
+  [[nodiscard]] auto averageFillLevel() const -> float;
 
   // Takes images from sparsely filled atlases and moves them to less sparsely
   // filled atlases in an effort to free up room.  This method tages the atlas
@@ -63,23 +64,23 @@ public:
   // re-adds it to the AtlasSet.  It does this up to textureCount textures,
   // until it finds a texture where re-adding it to the texture atlas simply
   // moves the texture into the same atlas, at which point it stops.
-  void compressionPass(size_t textureCount = std::numeric_limits<std::size_t>::max());
+  void compressionPass(std::size_t textureCount = std::numeric_limits<std::size_t>::max());
 
   // The number of atlases that the AtlasSet will attempt to fit a texture in
   // before giving up and creating a new atlas.  Tries in order of least full
   // to most full.  Defaults to 3.
-  unsigned textureFitTries() const;
+  [[nodiscard]] auto textureFitTries() const -> unsigned;
   void setTextureFitTries(unsigned textureFitTries);
 
 protected:
-  virtual AtlasTextureHandle createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) = 0;
+  virtual auto createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) -> AtlasTextureHandle = 0;
   virtual void destroyAtlasTexture(AtlasTextureHandle const& atlasTexture) = 0;
   virtual void copyAtlasPixels(AtlasTextureHandle const& atlasTexture, Vec2U const& bottomLeft, Image const& image) = 0;
 
 private:
   struct TextureAtlas {
     AtlasTextureHandle atlasTexture;
-    unique_ptr<bool[]> usedCells;
+    std::unique_ptr<bool[]> usedCells;
     unsigned usedCellCount;
   };
 
@@ -93,16 +94,16 @@ private:
   struct TextureEntry : Texture {
     virtual ~TextureEntry() = default;
 
-    Vec2U imageSize() const override;
+    [[nodiscard]] auto imageSize() const -> Vec2U override;
 
-    AtlasTextureHandle const& atlasTexture() const override;
-    RectU atlasTextureCoordinates() const override;
+    auto atlasTexture() const -> AtlasTextureHandle const& override;
+    [[nodiscard]] auto atlasTextureCoordinates() const -> RectU override;
 
     // A locked texture will never be moved during compression, so its
     // atlasTexture and textureCoordinates will not change.
     void setLocked(bool locked) override;
 
-    bool expired() const override;
+    [[nodiscard]] auto expired() const -> bool override;
 
     Image textureImage;
     AtlasPlacement atlasPlacement;
@@ -112,23 +113,23 @@ private:
 
   void setAtlasRegionUsed(TextureAtlas* extureAtlas, RectU const& region, bool used) const;
 
-  std::optional<AtlasPlacement> addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels);
+  auto addTextureToAtlas(TextureAtlas* atlas, Image const& image, bool borderPixels) -> std::optional<AtlasPlacement>;
   void sortAtlases();
 
   unsigned m_atlasCellSize;
   unsigned m_atlasNumCells;
-  unsigned m_textureFitTries;
+  unsigned m_textureFitTries{};
 
-  List<shared_ptr<TextureAtlas>> m_atlases;
-  HashSet<shared_ptr<TextureEntry>> m_textures;
+  List<std::shared_ptr<TextureAtlas>> m_atlases;
+  HashSet<std::shared_ptr<TextureEntry>> m_textures;
 };
 
 template <typename AtlasTextureHandle>
 TextureAtlasSet<AtlasTextureHandle>::TextureAtlasSet(unsigned cellSize, unsigned atlasNumCells)
-  : m_atlasCellSize(cellSize), m_atlasNumCells(atlasNumCells), m_textureFitTries(3) {}
+    : m_atlasCellSize(cellSize), m_atlasNumCells(atlasNumCells) {}
 
 template <typename AtlasTextureHandle>
-Vec2U TextureAtlasSet<AtlasTextureHandle>::atlasTextureSize() const {
+auto TextureAtlasSet<AtlasTextureHandle>::atlasTextureSize() const -> Vec2U {
   return Vec2U::filled(m_atlasCellSize * m_atlasNumCells);
 }
 
@@ -172,7 +173,7 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTexture(Image const& image, bool bo
     if (!placement)
       return nullptr;
 
-    auto textureEntry = make_shared<TextureEntry>();
+    auto textureEntry = std::make_shared<TextureEntry>();
     textureEntry->textureImage = std::move(finalImage);
     textureEntry->atlasPlacement = *placement;
 
@@ -184,18 +185,17 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTexture(Image const& image, bool bo
   // Try the first 'm_textureFitTries' atlases to see if we can fit a given
   // texture in an existing atlas.  Do this from the most full to the least
   // full atlas to maximize compression.
-  size_t startAtlas = m_atlases.size() - min<size_t>(m_atlases.size(), m_textureFitTries);
-  for (size_t i = startAtlas; i < m_atlases.size(); ++i) {
+  std::size_t startAtlas = m_atlases.size() - std::min<std::size_t>(m_atlases.size(), m_textureFitTries);
+  for (std::size_t i = startAtlas; i < m_atlases.size(); ++i) {
     if (auto texturePtr = tryAtlas(m_atlases[i].get()))
       return texturePtr;
   }
 
   // If we have not found an existing atlas to put the texture, need to create
   // a new atlas
-  m_atlases.append(make_shared<TextureAtlas>(TextureAtlas{
-      createAtlasTexture(Vec2U::filled(m_atlasCellSize * m_atlasNumCells), PixelFormat::RGBA32),
-      unique_ptr<bool[]>(new bool[m_atlasNumCells * m_atlasNumCells]()), 0
-    }));
+  m_atlases.append(std::make_shared<TextureAtlas>(TextureAtlas{
+    createAtlasTexture(Vec2U::filled(m_atlasCellSize * m_atlasNumCells), PixelFormat::RGBA32),
+    std::unique_ptr<bool[]>(new bool[m_atlasNumCells * m_atlasNumCells]()), 0}));
 
   if (auto texturePtr = tryAtlas(m_atlases.last().get()))
     return texturePtr;
@@ -218,17 +218,17 @@ void TextureAtlasSet<AtlasTextureHandle>::freeTexture(TextureHandle const& textu
 }
 
 template <typename AtlasTextureHandle>
-unsigned TextureAtlasSet<AtlasTextureHandle>::totalAtlases() const {
+auto TextureAtlasSet<AtlasTextureHandle>::totalAtlases() const -> unsigned {
   return m_atlases.size();
 }
 
 template <typename AtlasTextureHandle>
-unsigned TextureAtlasSet<AtlasTextureHandle>::totalTextures() const {
+auto TextureAtlasSet<AtlasTextureHandle>::totalTextures() const -> unsigned {
   return m_textures.size();
 }
 
 template <typename AtlasTextureHandle>
-float TextureAtlasSet<AtlasTextureHandle>::averageFillLevel() const {
+auto TextureAtlasSet<AtlasTextureHandle>::averageFillLevel() const -> float {
   if (m_atlases.empty())
     return 0.0f;
 
@@ -239,7 +239,7 @@ float TextureAtlasSet<AtlasTextureHandle>::averageFillLevel() const {
 }
 
 template <typename AtlasTextureHandle>
-void TextureAtlasSet<AtlasTextureHandle>::compressionPass(size_t textureCount) {
+void TextureAtlasSet<AtlasTextureHandle>::compressionPass(std::size_t textureCount) {
   while (m_atlases.size() > 1 && textureCount > 0) {
     // Find the least full atlas, If it is empty, remove it and start at the
     // next atlas.
@@ -270,8 +270,8 @@ void TextureAtlasSet<AtlasTextureHandle>::compressionPass(size_t textureCount) {
       break;
 
     // Try to add the texture to any atlas that isn't the last (most empty) one
-    size_t startAtlas = m_atlases.size() - 1 - min<size_t>(m_atlases.size() - 1, m_textureFitTries);
-    for (size_t i = startAtlas; i < m_atlases.size() - 1; ++i) {
+    std::size_t startAtlas = m_atlases.size() - 1 - std::min<std::size_t>(m_atlases.size() - 1, m_textureFitTries);
+    for (std::size_t i = startAtlas; i < m_atlases.size() - 1; ++i) {
       if (auto placement = addTextureToAtlas(m_atlases[i].get(), smallestTexture->textureImage, smallestTexture->atlasPlacement.borderPixels)) {
         setAtlasRegionUsed(smallestTexture->atlasPlacement.atlas, smallestTexture->atlasPlacement.occupiedCells, false);
         smallestTexture->atlasPlacement = *placement;
@@ -291,7 +291,7 @@ void TextureAtlasSet<AtlasTextureHandle>::compressionPass(size_t textureCount) {
 }
 
 template <typename AtlasTextureHandle>
-unsigned TextureAtlasSet<AtlasTextureHandle>::textureFitTries() const {
+auto TextureAtlasSet<AtlasTextureHandle>::textureFitTries() const -> unsigned {
   return m_textureFitTries;
 }
 
@@ -301,7 +301,7 @@ void TextureAtlasSet<AtlasTextureHandle>::setTextureFitTries(unsigned textureFit
 }
 
 template <typename AtlasTextureHandle>
-Vec2U TextureAtlasSet<AtlasTextureHandle>::TextureEntry::imageSize() const {
+auto TextureAtlasSet<AtlasTextureHandle>::TextureEntry::imageSize() const -> Vec2U {
   if (atlasPlacement.borderPixels)
     return textureImage.size() - Vec2U(2, 2);
   else
@@ -309,12 +309,12 @@ Vec2U TextureAtlasSet<AtlasTextureHandle>::TextureEntry::imageSize() const {
 }
 
 template <typename AtlasTextureHandle>
-AtlasTextureHandle const& TextureAtlasSet<AtlasTextureHandle>::TextureEntry::atlasTexture() const {
+auto TextureAtlasSet<AtlasTextureHandle>::TextureEntry::atlasTexture() const -> AtlasTextureHandle const& {
   return atlasPlacement.atlas->atlasTexture;
 }
 
 template <typename AtlasTextureHandle>
-RectU TextureAtlasSet<AtlasTextureHandle>::TextureEntry::atlasTextureCoordinates() const {
+auto TextureAtlasSet<AtlasTextureHandle>::TextureEntry::atlasTextureCoordinates() const -> RectU {
   return atlasPlacement.textureCoords;
 }
 
@@ -324,7 +324,7 @@ void TextureAtlasSet<AtlasTextureHandle>::TextureEntry::setLocked(bool locked) {
 }
 
 template <typename AtlasTextureHandle>
-bool TextureAtlasSet<AtlasTextureHandle>::TextureEntry::expired() const {
+auto TextureAtlasSet<AtlasTextureHandle>::TextureEntry::expired() const -> bool {
   return textureExpired;
 }
 
@@ -346,9 +346,9 @@ void TextureAtlasSet<AtlasTextureHandle>::setAtlasRegionUsed(TextureAtlas* textu
 
 template <typename AtlasTextureHandle>
 void TextureAtlasSet<AtlasTextureHandle>::sortAtlases() {
-  sort(m_atlases, [](auto const& a1, auto const& a2) {
-      return a1->usedCellCount > a2->usedCellCount;
-    });
+  sort(m_atlases, [](auto const& a1, auto const& a2) -> auto {
+    return a1->usedCellCount > a2->usedCellCount;
+  });
 }
 
 template <typename AtlasTextureHandle>
@@ -361,18 +361,18 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas,
   Vec2U imageSize = image.size();
 
   // Number of cells this image will take.
-  size_t numCellsX = (imageSize[0] + m_atlasCellSize - 1) / m_atlasCellSize;
-  size_t numCellsY = (imageSize[1] + m_atlasCellSize - 1) / m_atlasCellSize;
+  std::size_t numCellsX = (imageSize[0] + m_atlasCellSize - 1) / m_atlasCellSize;
+  std::size_t numCellsY = (imageSize[1] + m_atlasCellSize - 1) / m_atlasCellSize;
 
   if (numCellsX > m_atlasNumCells || numCellsY > m_atlasNumCells)
     return {};
 
-  for (size_t cellY = 0; cellY <= m_atlasNumCells - numCellsY; ++cellY) {
-    for (size_t cellX = 0; cellX <= m_atlasNumCells - numCellsX; ++cellX) {
+  for (std::size_t cellY = 0; cellY <= m_atlasNumCells - numCellsY; ++cellY) {
+    for (std::size_t cellX = 0; cellX <= m_atlasNumCells - numCellsX; ++cellX) {
       // Check this box of numCellsX x numCellsY for fit.
       found = true;
-      size_t fx;
-      size_t fy;
+      std::size_t fx;
+      std::size_t fy;
       for (fy = cellY; fy < cellY + numCellsY; ++fy) {
         for (fx = cellX; fx < cellX + numCellsX; ++fx) {
           if (atlas->usedCells[fy * m_atlasNumCells + fx]) {
@@ -415,4 +415,4 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas,
   return atlasPlacement;
 }
 
-}
+}// namespace Star

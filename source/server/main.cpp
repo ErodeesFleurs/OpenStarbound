@@ -1,14 +1,13 @@
-#include "StarFile.hpp"
-#include "StarRandom.hpp"
-#include "StarLexicalCast.hpp"
+#include "StarConfig.hpp"
 #include "StarLogging.hpp"
-#include "StarUniverseServer.hpp"
 #include "StarRootLoader.hpp"
-#include "StarConfiguration.hpp"
-#include "StarVersion.hpp"
 #include "StarServerQueryThread.hpp"
 #include "StarServerRconThread.hpp"
 #include "StarSignalHandler.hpp"
+#include "StarUniverseServer.hpp"
+#include "StarVersion.hpp"
+
+import std;
 
 using namespace Star;
 
@@ -37,14 +36,14 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
     }
   )JSON");
 
-int main(int argc, char** argv) {
+auto main(int argc, char** argv) -> int {
   try {
-    #if defined STAR_SYSTEM_WINDOWS
+#if defined STAR_SYSTEM_WINDOWS
     unsigned long exceptionStackSize = 131072;
     SetThreadStackGuarantee(&exceptionStackSize);
-    #endif
-    RootLoader rootLoader({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
-    RootUPtr root = rootLoader.commandInitOrDie(argc, argv).first;
+#endif
+    RootLoader rootLoader({.additionalAssetsSettings = {}, .additionalDefaultConfiguration = AdditionalDefaultConfiguration, .logFile = String("starbound_server.log"), .logLevel = LogLevel::Info, .quiet = false, .runtimeConfigFile = String("starbound_server.config")});
+    UPtr<Root> root = rootLoader.commandInitOrDie(argc, argv).first;
     root->fullyLoad();
 
     SignalHandler signalHandler;
@@ -62,19 +61,19 @@ int main(int argc, char** argv) {
         Logger::info("Configured tick rate is {:4.2f}hz", updateRate);
       }
 
-      UniverseServerUPtr server = make_unique<UniverseServer>(root->toStoragePath("universe"));
+      UPtr<UniverseServer> server = std::make_unique<UniverseServer>(root->toStoragePath("universe"));
       server->setListeningTcp(true);
       server->start();
 
-      ServerQueryThreadUPtr queryServer;
+      UPtr<ServerQueryThread> queryServer;
       if (configuration->get("runQueryServer").toBool()) {
-        queryServer = make_unique<ServerQueryThread>(server.get(), HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()));
+        queryServer = std::make_unique<ServerQueryThread>(server.get(), HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()));
         queryServer->start();
       }
 
-      ServerRconThreadUPtr rconServer;
+      UPtr<ServerRconThread> rconServer;
       if (configuration->get("runRconServer").toBool()) {
-        rconServer = make_unique<ServerRconThread>(server.get(), HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()));
+        rconServer = std::make_unique<ServerRconThread>(server.get(), HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()));
         rconServer->start();
       }
 

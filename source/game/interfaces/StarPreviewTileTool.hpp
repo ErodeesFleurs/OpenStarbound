@@ -2,9 +2,10 @@
 
 #include "StarList.hpp"
 
-struct PreviewTile;
 
 namespace Star {
+
+struct PreviewTile;
 
 class PreviewTileTool {
 public:

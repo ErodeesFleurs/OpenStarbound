@@ -1,13 +1,14 @@
 #include "StarDamage.hpp"
 
-#include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarRoot.hpp"
+#include "StarJsonExtra.hpp"
+
+import std;
 
 namespace Star {
 
 DamageSource::DamageSource()
-  : damageType(DamageType::NoDamage), damage(0.0), sourceEntityId(NullEntityId), rayCheck(false) {}
+    : damageType(DamageType::NoDamage), damage(0.0), sourceEntityId(NullEntityId), rayCheck(false) {}
 
 DamageSource::DamageSource(Json const& config) {
   if (auto dtype = config.optString("damageType"))
@@ -51,31 +52,31 @@ DamageSource::DamageSource(Json const& config) {
 }
 
 DamageSource::DamageSource(DamageType damageType,
-    DamageArea damageArea,
-    float damage,
-    bool trackSourceEntity,
-    EntityId sourceEntityId,
-    EntityDamageTeam team,
-    std::optional<String> damageRepeatGroup,
-    std::optional<float> damageRepeatTimeout,
-    String damageSourceKind,
-    List<EphemeralStatusEffect> statusEffects,
-    Knockback knockback,
-    bool rayCheck)
-  : damageType(std::move(damageType)),
-    damageArea(std::move(damageArea)),
-    damage(std::move(damage)),
-    trackSourceEntity(std::move(trackSourceEntity)),
-    sourceEntityId(std::move(sourceEntityId)),
-    team(std::move(team)),
-    damageRepeatGroup(std::move(damageRepeatGroup)),
-    damageRepeatTimeout(std::move(damageRepeatTimeout)),
-    damageSourceKind(std::move(damageSourceKind)),
-    statusEffects(std::move(statusEffects)),
-    knockback(std::move(knockback)),
-    rayCheck(std::move(rayCheck)) {}
+                           DamageArea damageArea,
+                           float damage,
+                           bool trackSourceEntity,
+                           EntityId sourceEntityId,
+                           EntityDamageTeam team,
+                           std::optional<String> damageRepeatGroup,
+                           std::optional<float> damageRepeatTimeout,
+                           String damageSourceKind,
+                           List<EphemeralStatusEffect> statusEffects,
+                           Knockback knockback,
+                           bool rayCheck)
+    : damageType(std::move(damageType)),
+      damageArea(std::move(damageArea)),
+      damage(std::move(damage)),
+      trackSourceEntity(std::move(trackSourceEntity)),
+      sourceEntityId(std::move(sourceEntityId)),
+      team(std::move(team)),
+      damageRepeatGroup(std::move(damageRepeatGroup)),
+      damageRepeatTimeout(std::move(damageRepeatTimeout)),
+      damageSourceKind(std::move(damageSourceKind)),
+      statusEffects(std::move(statusEffects)),
+      knockback(std::move(knockback)),
+      rayCheck(std::move(rayCheck)) {}
 
-Json DamageSource::toJson() const {
+auto DamageSource::toJson() const -> Json {
   Json damageAreaJson;
   if (auto p = damageArea.ptr<PolyF>())
     damageAreaJson = jsonFromPolyF(*p);
@@ -89,20 +90,20 @@ Json DamageSource::toJson() const {
     knockbackJson = jsonFromVec2F(*p);
 
   return JsonObject{{"damageType", DamageTypeNames.getRight(damageType)},
-      {"damageArea", damageAreaJson},
-      {"damage", damage},
-      {"trackSourceEntity", trackSourceEntity},
-      {"sourceEntityId", sourceEntityId},
-      {"team", team.toJson()},
-      {"damageRepeatGroup", jsonFromMaybe(damageRepeatGroup)},
-      {"damageRepeatTimeout", jsonFromMaybe(damageRepeatTimeout)},
-      {"damageSourceKind", damageSourceKind},
-      {"statusEffects", statusEffects.transformed(jsonFromEphemeralStatusEffect)},
-      {"knockback", knockbackJson},
-      {"rayCheck", rayCheck}};
+                    {"damageArea", damageAreaJson},
+                    {"damage", damage},
+                    {"trackSourceEntity", trackSourceEntity},
+                    {"sourceEntityId", sourceEntityId},
+                    {"team", team.toJson()},
+                    {"damageRepeatGroup", jsonFromMaybe(damageRepeatGroup)},
+                    {"damageRepeatTimeout", jsonFromMaybe(damageRepeatTimeout)},
+                    {"damageSourceKind", damageSourceKind},
+                    {"statusEffects", statusEffects.transformed(jsonFromEphemeralStatusEffect)},
+                    {"knockback", knockbackJson},
+                    {"rayCheck", rayCheck}};
 }
 
-bool DamageSource::intersectsWithPoly(WorldGeometry const& geometry, PolyF const& targetPoly) const {
+auto DamageSource::intersectsWithPoly(WorldGeometry const& geometry, PolyF const& targetPoly) const -> bool {
   if (auto poly = damageArea.ptr<PolyF>())
     return geometry.polyIntersectsPoly(*poly, targetPoly);
   else if (auto line = damageArea.ptr<Line2F>())
@@ -111,7 +112,7 @@ bool DamageSource::intersectsWithPoly(WorldGeometry const& geometry, PolyF const
     return false;
 }
 
-Vec2F DamageSource::knockbackMomentum(WorldGeometry const& worldGeometry, Vec2F const& targetCenter) const {
+auto DamageSource::knockbackMomentum(WorldGeometry const& worldGeometry, Vec2F const& targetCenter) const -> Vec2F {
   if (auto v = knockback.ptr<Vec2F>()) {
     return *v;
   } else if (auto s = knockback.ptr<float>()) {
@@ -123,24 +124,24 @@ Vec2F DamageSource::knockbackMomentum(WorldGeometry const& worldGeometry, Vec2F 
     }
   }
 
-  return Vec2F();
+  return {};
 }
 
-bool DamageSource::operator==(DamageSource const& rhs) const {
+auto DamageSource::operator==(DamageSource const& rhs) const -> bool {
   return tie(damageType, damageArea, damage, trackSourceEntity, sourceEntityId, team, damageSourceKind, statusEffects, knockback, rayCheck)
-      == tie(rhs.damageType,
-             rhs.damageArea,
-             rhs.damage,
-             rhs.trackSourceEntity,
-             rhs.sourceEntityId,
-             rhs.team,
-             rhs.damageSourceKind,
-             rhs.statusEffects,
-             rhs.knockback,
-             rhs.rayCheck);
+    == tie(rhs.damageType,
+           rhs.damageArea,
+           rhs.damage,
+           rhs.trackSourceEntity,
+           rhs.sourceEntityId,
+           rhs.team,
+           rhs.damageSourceKind,
+           rhs.statusEffects,
+           rhs.knockback,
+           rhs.rayCheck);
 }
 
-DamageSource& DamageSource::translate(Vec2F const& position) {
+auto DamageSource::translate(Vec2F const& position) -> DamageSource& {
   if (auto poly = damageArea.ptr<PolyF>())
     poly->translate(position);
   else if (auto line = damageArea.ptr<Line2F>())
@@ -148,7 +149,7 @@ DamageSource& DamageSource::translate(Vec2F const& position) {
   return *this;
 }
 
-DataStream& operator<<(DataStream& ds, DamageSource const& damageSource) {
+auto operator<<(DataStream& ds, DamageSource const& damageSource) -> DataStream& {
   ds.write(damageSource.damageType);
   ds.write(damageSource.damageArea);
   ds.write(damageSource.damage);
@@ -164,7 +165,7 @@ DataStream& operator<<(DataStream& ds, DamageSource const& damageSource) {
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, DamageSource& damageSource) {
+auto operator>>(DataStream& ds, DamageSource& damageSource) -> DataStream& {
   ds.read(damageSource.damageType);
   ds.read(damageSource.damageArea);
   ds.read(damageSource.damage);
@@ -181,7 +182,7 @@ DataStream& operator>>(DataStream& ds, DamageSource& damageSource) {
 }
 
 DamageRequest::DamageRequest()
-  : hitType(HitType::Hit), damageType(DamageType::Damage), damage(0.0f), sourceEntityId(NullEntityId) {}
+    : hitType(HitType::Hit), damageType(DamageType::Damage), damage(0.0f), sourceEntityId(NullEntityId) {}
 
 DamageRequest::DamageRequest(Json const& v) {
   hitType = HitTypeNames.getLeft(v.getString("hitType", "hit"));
@@ -194,31 +195,31 @@ DamageRequest::DamageRequest(Json const& v) {
 }
 
 DamageRequest::DamageRequest(HitType hitType,
-    DamageType damageType,
-    float damage,
-    Vec2F const& knockbackMomentum,
-    EntityId sourceEntityId,
-    String const& damageSourceKind,
-    List<EphemeralStatusEffect> const& statusEffects)
-  : hitType(hitType),
-    damageType(damageType),
-    damage(damage),
-    knockbackMomentum(knockbackMomentum),
-    sourceEntityId(sourceEntityId),
-    damageSourceKind(damageSourceKind),
-    statusEffects(statusEffects) {}
+                             DamageType damageType,
+                             float damage,
+                             Vec2F const& knockbackMomentum,
+                             EntityId sourceEntityId,
+                             String const& damageSourceKind,
+                             List<EphemeralStatusEffect> const& statusEffects)
+    : hitType(hitType),
+      damageType(damageType),
+      damage(damage),
+      knockbackMomentum(knockbackMomentum),
+      sourceEntityId(sourceEntityId),
+      damageSourceKind(std::move(damageSourceKind)),
+      statusEffects(statusEffects) {}
 
-Json DamageRequest::toJson() const {
+auto DamageRequest::toJson() const -> Json {
   return JsonObject{{"hitType", HitTypeNames.getRight(hitType)},
-      {"damageType", DamageTypeNames.getRight(damageType)},
-      {"damage", damage},
-      {"knockbackMomentum", jsonFromVec2F(knockbackMomentum)},
-      {"sourceEntityId", sourceEntityId},
-      {"damageSourceKind", damageSourceKind},
-      {"statusEffects", statusEffects.transformed(jsonFromEphemeralStatusEffect)}};
+                    {"damageType", DamageTypeNames.getRight(damageType)},
+                    {"damage", damage},
+                    {"knockbackMomentum", jsonFromVec2F(knockbackMomentum)},
+                    {"sourceEntityId", sourceEntityId},
+                    {"damageSourceKind", damageSourceKind},
+                    {"statusEffects", statusEffects.transformed(jsonFromEphemeralStatusEffect)}};
 }
 
-DataStream& operator<<(DataStream& ds, DamageRequest const& damageRequest) {
+auto operator<<(DataStream& ds, DamageRequest const& damageRequest) -> DataStream& {
   ds << damageRequest.hitType;
   ds << damageRequest.damageType;
   ds << damageRequest.damage;
@@ -229,7 +230,7 @@ DataStream& operator<<(DataStream& ds, DamageRequest const& damageRequest) {
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, DamageRequest& damageRequest) {
+auto operator>>(DataStream& ds, DamageRequest& damageRequest) -> DataStream& {
   ds >> damageRequest.hitType;
   ds >> damageRequest.damageType;
   ds >> damageRequest.damage;
@@ -254,34 +255,34 @@ DamageNotification::DamageNotification(Json const& v) {
 }
 
 DamageNotification::DamageNotification(EntityId sourceEntityId,
-    EntityId targetEntityId,
-    Vec2F position,
-    float damageDealt,
-    float healthLost,
-    HitType hitType,
-    String damageSourceKind,
-    String targetMaterialKind)
-  : sourceEntityId(sourceEntityId),
-    targetEntityId(targetEntityId),
-    position(position),
-    damageDealt(damageDealt),
-    healthLost(healthLost),
-    hitType(hitType),
-    damageSourceKind(std::move(damageSourceKind)),
-    targetMaterialKind(std::move(targetMaterialKind)) {}
+                                       EntityId targetEntityId,
+                                       Vec2F position,
+                                       float damageDealt,
+                                       float healthLost,
+                                       HitType hitType,
+                                       String damageSourceKind,
+                                       String targetMaterialKind)
+    : sourceEntityId(sourceEntityId),
+      targetEntityId(targetEntityId),
+      position(position),
+      damageDealt(damageDealt),
+      healthLost(healthLost),
+      hitType(hitType),
+      damageSourceKind(std::move(damageSourceKind)),
+      targetMaterialKind(std::move(targetMaterialKind)) {}
 
-Json DamageNotification::toJson() const {
+auto DamageNotification::toJson() const -> Json {
   return JsonObject{{"sourceEntityId", sourceEntityId},
-      {"targetEntityId", targetEntityId},
-      {"position", jsonFromVec2F(position)},
-      {"damageDealt", damageDealt},
-      {"healthLost", healthLost},
-      {"hitType", HitTypeNames.getRight(hitType)},
-      {"damageSourceKind", damageSourceKind},
-      {"targetMaterialKind", targetMaterialKind}};
+                    {"targetEntityId", targetEntityId},
+                    {"position", jsonFromVec2F(position)},
+                    {"damageDealt", damageDealt},
+                    {"healthLost", healthLost},
+                    {"hitType", HitTypeNames.getRight(hitType)},
+                    {"damageSourceKind", damageSourceKind},
+                    {"targetMaterialKind", targetMaterialKind}};
 }
 
-DataStream& operator<<(DataStream& ds, DamageNotification const& damageNotification) {
+auto operator<<(DataStream& ds, DamageNotification const& damageNotification) -> DataStream& {
   ds.viwrite(damageNotification.sourceEntityId);
   ds.viwrite(damageNotification.targetEntityId);
   ds.vfwrite(damageNotification.position[0], 0.01f);
@@ -295,7 +296,7 @@ DataStream& operator<<(DataStream& ds, DamageNotification const& damageNotificat
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, DamageNotification& damageNotification) {
+auto operator>>(DataStream& ds, DamageNotification& damageNotification) -> DataStream& {
   ds.viread(damageNotification.sourceEntityId);
   ds.viread(damageNotification.targetEntityId);
   ds.vfread(damageNotification.position[0], 0.01f);
@@ -309,4 +310,4 @@ DataStream& operator>>(DataStream& ds, DamageNotification& damageNotification) {
   return ds;
 }
 
-}
+}// namespace Star

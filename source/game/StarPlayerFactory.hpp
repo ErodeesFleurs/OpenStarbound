@@ -1,17 +1,17 @@
 #pragma once
 
-#include "StarItemDescriptor.hpp"
-#include "StarHumanoid.hpp"
+#include "StarConfig.hpp"
 #include "StarEntitySplash.hpp"
+#include "StarException.hpp"
+#include "StarHumanoid.hpp"
+#include "StarItemDescriptor.hpp"
 
 namespace Star {
 
-STAR_CLASS(Rebuilder);
-STAR_CLASS(Player);
-STAR_STRUCT(PlayerConfig);
-STAR_CLASS(PlayerFactory);
+class Player;
+class Rebuilder;
 
-STAR_EXCEPTION(PlayerException, StarException);
+using PlayerException = ExceptionDerived<"PlayerException">;
 
 // The player has a large number of shared config states, so this is a shared
 // config object to hold them.
@@ -59,14 +59,14 @@ class PlayerFactory {
 public:
   PlayerFactory();
 
-  PlayerPtr create() const;
-  PlayerPtr diskLoadPlayer(Json const& diskStore) const;
-  PlayerPtr netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  [[nodiscard]] auto create() const -> Ptr<Player>;
+  [[nodiscard]] auto diskLoadPlayer(Json const& diskStore) const -> Ptr<Player>;
+  [[nodiscard]] auto netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules = {}) const -> Ptr<Player>;
 
 private:
-  PlayerConfigPtr m_config;
+  Ptr<PlayerConfig> m_config;
 
-  RebuilderPtr m_rebuilder;
+  Ptr<Rebuilder> m_rebuilder;
 };
 
-}
+}// namespace Star

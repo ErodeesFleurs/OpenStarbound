@@ -1,4 +1,5 @@
 #include "StarPlayerLog.hpp"
+
 #include "StarJsonExtra.hpp"
 
 namespace Star {
@@ -24,21 +25,21 @@ PlayerLog::PlayerLog(Json const& json) {
     m_collections[pair.first] = jsonToStringSet(pair.second);
 }
 
-Json PlayerLog::toJson() const {
+auto PlayerLog::toJson() const -> Json {
   auto collections = JsonObject();
   for (auto pair : m_collections)
     collections[pair.first] = jsonFromStringSet(pair.second);
 
   return JsonObject{{"deathCount", m_deathCount},
-      {"playTime", m_playTime},
-      {"introComplete", m_introComplete},
-      {"scannedObjects", jsonFromStringSet(m_scannedObjects)},
-      {"radioMessages", jsonFromStringSet(m_radioMessages)},
-      {"cinematics", jsonFromStringSet(m_cinematics)},
-      {"collections", collections}};
+                    {"playTime", m_playTime},
+                    {"introComplete", m_introComplete},
+                    {"scannedObjects", jsonFromStringSet(m_scannedObjects)},
+                    {"radioMessages", jsonFromStringSet(m_radioMessages)},
+                    {"cinematics", jsonFromStringSet(m_cinematics)},
+                    {"collections", collections}};
 }
 
-int PlayerLog::deathCount() const {
+auto PlayerLog::deathCount() const -> int {
   return m_deathCount;
 }
 
@@ -46,7 +47,7 @@ void PlayerLog::addDeathCount(int deaths) {
   m_deathCount += deaths;
 }
 
-double PlayerLog::playTime() const {
+auto PlayerLog::playTime() const -> double {
   return m_playTime;
 }
 
@@ -54,7 +55,7 @@ void PlayerLog::addPlayTime(double elapsedTime) {
   m_playTime += elapsedTime;
 }
 
-bool PlayerLog::introComplete() const {
+auto PlayerLog::introComplete() const -> bool {
   return m_introComplete;
 }
 
@@ -62,11 +63,11 @@ void PlayerLog::setIntroComplete(bool complete) {
   m_introComplete = complete;
 }
 
-StringSet PlayerLog::scannedObjects() const {
+auto PlayerLog::scannedObjects() const -> StringSet {
   return m_scannedObjects;
 }
 
-bool PlayerLog::addScannedObject(String const& objectName) {
+auto PlayerLog::addScannedObject(String const& objectName) -> bool {
   return m_scannedObjects.add(objectName);
 }
 
@@ -78,11 +79,11 @@ void PlayerLog::clearScannedObjects() {
   m_scannedObjects.clear();
 }
 
-StringSet PlayerLog::radioMessages() const {
+auto PlayerLog::radioMessages() const -> StringSet {
   return m_radioMessages;
 }
 
-bool PlayerLog::addRadioMessage(String const& messageName) {
+auto PlayerLog::addRadioMessage(String const& messageName) -> bool {
   return m_radioMessages.add(messageName);
 }
 
@@ -90,11 +91,11 @@ void PlayerLog::clearRadioMessages() {
   m_radioMessages.clear();
 }
 
-StringSet PlayerLog::cinematics() const {
+auto PlayerLog::cinematics() const -> StringSet {
   return m_cinematics;
 }
 
-bool PlayerLog::addCinematic(String const& cinematic) {
+auto PlayerLog::addCinematic(String const& cinematic) -> bool {
   return m_cinematics.add(cinematic);
 }
 
@@ -102,18 +103,18 @@ void PlayerLog::clearCinematics() {
   m_cinematics.clear();
 }
 
-StringList PlayerLog::collections() const {
+auto PlayerLog::collections() const -> StringList {
   return m_collections.keys();
 }
 
-StringSet PlayerLog::collectables(String const& collection) const {
+auto PlayerLog::collectables(String const& collection) const -> StringSet {
   if (!m_collections.contains(collection))
     return {};
 
   return m_collections.get(collection);
 }
 
-bool PlayerLog::addCollectable(String const& collection, String const& collectable) {
+auto PlayerLog::addCollectable(String const& collection, String const& collectable) -> bool {
   if (!m_collections.contains(collection))
     m_collections[collection] = {};
 
@@ -124,4 +125,4 @@ void PlayerLog::clearCollectables(String const& collection) {
   m_collections.remove(collection);
 }
 
-}
+}// namespace Star

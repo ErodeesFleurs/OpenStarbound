@@ -1,15 +1,17 @@
 #include "StarServerRconThread.hpp"
+
+#include "StarIterator.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
-#include "StarUniverseServer.hpp"
 #include "StarServerRconClient.hpp"
-#include "StarIterator.hpp"
+#include "StarUniverseServer.hpp"
+
+import std;
 
 namespace Star {
 
 ServerRconThread::ServerRconThread(UniverseServer* universe, HostAddressWithPort const& address)
-  : Thread("RconServer"), m_universe(universe), m_rconServer(address), m_stop(true) {
+    : Thread("RconServer"), m_universe(universe), m_rconServer(address), m_stop(true) {
   if (Root::singleton().configuration()->get("rconServerPassword").toString().empty())
     Logger::warn("rconServerPassword is not configured requests will NOT be processed");
 }
@@ -48,7 +50,7 @@ void ServerRconThread::run() {
     while (!m_stop) {
       if (auto client = m_rconServer.accept(100)) {
         client->setTimeout(timeout);
-        auto rconClient = make_shared<ServerRconClient>(m_universe, client);
+        auto rconClient = std::make_shared<ServerRconClient>(m_universe, client);
         rconClient->start();
         m_clients[client->remoteAddress().address()] = rconClient;
         clearClients();
@@ -59,4 +61,4 @@ void ServerRconThread::run() {
   }
 }
 
-}
+}// namespace Star

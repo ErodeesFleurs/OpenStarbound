@@ -83,12 +83,12 @@ auto HostAddress::isZero() const -> bool {
 
 auto HostAddress::size() const -> size_t {
   switch (m_mode) {
-    case NetworkMode::IPv4:
-      return 4;
-    case NetworkMode::IPv6:
-      return 16;
-    default:
-      return 0;
+  case NetworkMode::IPv4:
+    return 4;
+  case NetworkMode::IPv6:
+    return 16;
+  default:
+    return 0;
   }
 }
 
@@ -138,14 +138,14 @@ void HostAddress::set(String const& address) {
     for (ptr = result; ptr != nullptr; ptr = ptr->ai_next) {
       NetworkMode mode;
       switch (ptr->ai_family) {
-        case AF_INET:
-          mode = NetworkMode::IPv4;
-          break;
-        case AF_INET6:
-          mode = NetworkMode::IPv6;
-          break;
-        default:
-          continue;
+      case AF_INET:
+        mode = NetworkMode::IPv4;
+        break;
+      case AF_INET6:
+        mode = NetworkMode::IPv6;
+        break;
+      default:
+        continue;
       }
       if (mode == NetworkMode::IPv4) {
         auto* info = (struct sockaddr_in*)ptr->ai_addr;
@@ -170,33 +170,33 @@ void HostAddress::set(NetworkMode mode, uint8_t const* addr) {
 
 auto operator<<(std::ostream& os, HostAddress const& address) -> std::ostream& {
   switch (address.mode()) {
-    case NetworkMode::IPv4:
-      format(os, "{}.{}.{}.{}", address.octet(0), address.octet(1), address.octet(2), address.octet(3));
-      break;
+  case NetworkMode::IPv4:
+    format(os, "{}.{}.{}.{}", address.octet(0), address.octet(1), address.octet(2), address.octet(3));
+    break;
 
-    case NetworkMode::IPv6:
-      format(os,
-          "{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}",
-          address.octet(0),
-          address.octet(1),
-          address.octet(2),
-          address.octet(3),
-          address.octet(4),
-          address.octet(5),
-          address.octet(6),
-          address.octet(7),
-          address.octet(8),
-          address.octet(9),
-          address.octet(10),
-          address.octet(11),
-          address.octet(12),
-          address.octet(13),
-          address.octet(14),
-          address.octet(15));
-      break;
+  case NetworkMode::IPv6:
+    format(os,
+           "{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}:{:02x}{:02x}",
+           address.octet(0),
+           address.octet(1),
+           address.octet(2),
+           address.octet(3),
+           address.octet(4),
+           address.octet(5),
+           address.octet(6),
+           address.octet(7),
+           address.octet(8),
+           address.octet(9),
+           address.octet(10),
+           address.octet(11),
+           address.octet(12),
+           address.octet(13),
+           address.octet(14),
+           address.octet(15));
+    break;
 
-    default:
-      throw NetworkException(strf("Unknown address mode ({})", (int)address.mode()));
+  default:
+    throw NetworkException(strf("Unknown address mode ({})", (int)address.mode()));
   }
   return os;
 }
@@ -236,7 +236,7 @@ auto HostAddressWithPort::lookupWithPort(String const& address) -> Either<String
 HostAddressWithPort::HostAddressWithPort() : m_port(0) {}
 
 HostAddressWithPort::HostAddressWithPort(HostAddress const& address, uint16_t port)
-  : m_address(address), m_port(port) {}
+    : m_address(address), m_port(port) {}
 
 HostAddressWithPort::HostAddressWithPort(NetworkMode mode, uint8_t* address, uint16_t port) {
   m_address = HostAddress(mode, address);
@@ -278,4 +278,4 @@ auto hash<HostAddressWithPort>::operator()(HostAddressWithPort const& addressWit
   return hashOf(addressWithPort.address(), addressWithPort.port());
 }
 
-}
+}// namespace Star

@@ -15,17 +15,12 @@ namespace Star {
 
 class Monster;
 class Rebuilder;
-// STAR_CLASS(LuaRoot);
-// STAR_CLASS(Rebuilder);
-// STAR_CLASS(RandomSource);
-// STAR_CLASS(Monster);
-// STAR_CLASS(MonsterDatabase);
 
 using MonsterException = ExceptionDerived<"MonsterException">;
 
 struct MonsterVariant {
   String type;
-  uint64_t seed;
+  std::uint64_t seed;
   Json uniqueParameters;
 
   std::optional<String> shortDescription;
@@ -78,7 +73,7 @@ struct MonsterVariant {
   bool persistent;
 
   TeamType damageTeamType;
-  uint8_t damageTeam;
+  std::uint8_t damageTeam;
 
   PolyF selfDamagePoly;
 
@@ -101,7 +96,7 @@ public:
   auto monsterTypes() const -> StringList;
 
   auto randomMonster(String const& typeName, Json const& uniqueParameters = JsonObject()) const -> MonsterVariant;
-  auto monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters = JsonObject()) const -> MonsterVariant;
+  auto monsterVariant(String const& typeName, std::uint64_t seed, Json const& uniqueParameters = JsonObject()) const -> MonsterVariant;
 
   auto writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules = {}) const -> ByteArray;
   auto readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const -> MonsterVariant;
@@ -120,7 +115,7 @@ public:
   auto skillInfo(String const& skillName) const -> std::pair<String, String>;
   auto skillConfigParameter(String const& skillName, String const& configParameterName) const -> Json;
 
-  auto colorSwap(String const& setName, uint64_t seed) const -> ColorReplaceMap;
+  auto colorSwap(String const& setName, std::uint64_t seed) const -> ColorReplaceMap;
 
   auto monsterConfig(String const& typeName) const -> Json;
 
@@ -188,7 +183,7 @@ private:
   // MonsterPart needs to be be in a predictable order.
   using PartDirectory = StringMap<StringMap<Map<String, MonsterPart>>>;
 
-  auto produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const -> MonsterVariant;
+  auto produceMonster(String const& typeName, std::uint64_t seed, Json const& uniqueParameters) const -> MonsterVariant;
 
   // Given a variant including parameters for baseSkills and specialSkills,
   // returns a variant containing a final 'skills' list of chosen skills, also
@@ -205,7 +200,7 @@ private:
   Ptr<Rebuilder> m_rebuilder;
 
   // Key here is the type name, seed, and the serialized unique parameters JSON
-  mutable HashTtlCache<std::tuple<String, uint64_t, Json>, MonsterVariant> m_monsterCache;
+  mutable HashTtlCache<std::tuple<String, std::uint64_t, Json>, MonsterVariant> m_monsterCache;
 };
 
 }// namespace Star

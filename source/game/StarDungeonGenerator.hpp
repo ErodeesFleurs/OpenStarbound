@@ -1,27 +1,28 @@
 #pragma once
 
-#include <optional>
-
-#include "StarImage.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarWorldGeometry.hpp"
+#include "StarConfig.hpp"
+#include "StarException.hpp"
 #include "StarGameTypes.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarLiquidTypes.hpp"
+#include "StarLruCache.hpp"
+#include "StarMaterialTypes.hpp"
 #include "StarRandom.hpp"
 #include "StarSet.hpp"
 #include "StarThread.hpp"
-#include "StarLruCache.hpp"
+#include "StarWorldGeometry.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(DungeonException, StarException);
+using DungeonException = ExceptionDerived<"DungeonException">;
 
-STAR_CLASS(DungeonGeneratorWorldFacade);
-STAR_CLASS(DungeonDefinition);
-STAR_CLASS(DungeonDefinitions);
+class DungeonDefinition;
 
 class DungeonGeneratorWorldFacade {
 public:
-  virtual ~DungeonGeneratorWorldFacade() {}
+  virtual ~DungeonGeneratorWorldFacade() = default;
 
   // Hint that the given rectangular region is dungeon generated, and thus
   // would not receive the normal entity generation steps.
@@ -45,615 +46,609 @@ public:
   virtual void setLiquid(Vec2I const& pos, LiquidStore const& liquid) = 0;
   virtual void connectWireGroup(List<Vec2I> const& wireGroup) = 0;
   virtual void setTileProtection(DungeonId dungeonId, bool isProtected) = 0;
-  virtual bool checkSolid(Vec2I const& position, TileLayer layer) = 0;
-  virtual bool checkOpen(Vec2I const& position, TileLayer layer) = 0;
-  virtual bool checkOceanLiquid(Vec2I const& position) = 0;
-  virtual DungeonId getDungeonIdAt(Vec2I const& position) = 0;
+  virtual auto checkSolid(Vec2I const& position, TileLayer layer) -> bool = 0;
+  virtual auto checkOpen(Vec2I const& position, TileLayer layer) -> bool = 0;
+  virtual auto checkOceanLiquid(Vec2I const& position) -> bool = 0;
+  virtual auto getDungeonIdAt(Vec2I const& position) -> DungeonId = 0;
   virtual void setDungeonIdAt(Vec2I const& position, DungeonId dungeonId) = 0;
   virtual void clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) = 0;
 
-  virtual WorldGeometry getWorldGeometry() const = 0;
+  [[nodiscard]] virtual auto getWorldGeometry() const -> WorldGeometry = 0;
 
   virtual void setPlayerStart(Vec2F const& startPosition) = 0;
 };
 
 namespace Dungeon {
-  STAR_CLASS(DungeonGeneratorWriter);
-  STAR_CLASS(PartReader);
-  STAR_CLASS(Part);
-  STAR_CLASS(Rule);
-  STAR_CLASS(Brush);
-  STAR_STRUCT(Tile);
-  STAR_CLASS(Connector);
 
-  class DungeonGeneratorWriter {
-  public:
-    DungeonGeneratorWriter(DungeonGeneratorWorldFacadePtr facade, std::optional<int> terrainMarkingSurfaceLevel, std::optional<int> terrainSurfaceSpaceExtends);
+class Part;
+struct Tile;
 
-    Vec2I wrapPosition(Vec2I const& pos) const;
+class DungeonGeneratorWriter {
+public:
+  DungeonGeneratorWriter(Ptr<DungeonGeneratorWorldFacade> facade, std::optional<int> terrainMarkingSurfaceLevel, std::optional<int> terrainSurfaceSpaceExtends);
 
-    void setMarkDungeonId(std::optional<DungeonId> markDungeonId = {});
+  [[nodiscard]] auto wrapPosition(Vec2I const& pos) const -> Vec2I;
 
-    void requestLiquid(Vec2I const& pos, LiquidStore const& liquid);
-    void setLiquid(Vec2I const& pos, LiquidStore const& liquid);
-    void setForegroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant);
-    void setBackgroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant);
-    void setForegroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift);
-    void setBackgroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift);
-    bool needsForegroundBiomeMod(Vec2I const& position);
-    bool needsBackgroundBiomeMod(Vec2I const& position);
-    void placeObject(Vec2I const& position, String const& objectType, Direction direction, Json const& parameters);
-    void placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters);
-    void placeSurfaceBiomeItems(Vec2I const& pos);
-    void placeBiomeTree(Vec2I const& pos);
-    void addDrop(Vec2F const& position, ItemDescriptor const& item);
-    void requestWire(Vec2I const& position, String const& wireGroup, bool partLocal);
-    void spawnNpc(Vec2F const& pos, Json const& definition);
-    void spawnStagehand(Vec2F const& pos, Json const& definition);
-    void setPlayerStart(Vec2F const& startPosition);
-    bool checkSolid(Vec2I position, TileLayer layer);
-    bool checkOpen(Vec2I position, TileLayer layer);
-    bool checkLiquid(Vec2I const& position);
-    bool otherDungeonPresent(Vec2I position);
-    void setDungeonId(Vec2I const& pos, DungeonId dungeonId);
-    void markPosition(Vec2F const& pos);
-    void markPosition(Vec2I const& pos);
-    void finishPart();
+  void setMarkDungeonId(std::optional<DungeonId> markDungeonId = {});
 
-    void clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects);
+  void requestLiquid(Vec2I const& pos, LiquidStore const& liquid);
+  void setLiquid(Vec2I const& pos, LiquidStore const& liquid);
+  void setForegroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant);
+  void setBackgroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant);
+  void setForegroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift);
+  void setBackgroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift);
+  auto needsForegroundBiomeMod(Vec2I const& position) -> bool;
+  auto needsBackgroundBiomeMod(Vec2I const& position) -> bool;
+  void placeObject(Vec2I const& position, String const& objectType, Direction direction, Json const& parameters);
+  void placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters);
+  void placeSurfaceBiomeItems(Vec2I const& pos);
+  void placeBiomeTree(Vec2I const& pos);
+  void addDrop(Vec2F const& position, ItemDescriptor const& item);
+  void requestWire(Vec2I const& position, String const& wireGroup, bool partLocal);
+  void spawnNpc(Vec2F const& pos, Json const& definition);
+  void spawnStagehand(Vec2F const& pos, Json const& definition);
+  void setPlayerStart(Vec2F const& startPosition);
+  auto checkSolid(Vec2I position, TileLayer layer) -> bool;
+  auto checkOpen(Vec2I position, TileLayer layer) -> bool;
+  auto checkLiquid(Vec2I const& position) -> bool;
+  auto otherDungeonPresent(Vec2I position) -> bool;
+  void setDungeonId(Vec2I const& pos, DungeonId dungeonId);
+  void markPosition(Vec2F const& pos);
+  void markPosition(Vec2I const& pos);
+  void finishPart();
 
-    void flushLiquid();
-    void flush();
+  void clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects);
 
-    List<RectI> boundingBoxes() const;
+  void flushLiquid();
+  void flush();
 
-    void reset();
+  [[nodiscard]] auto boundingBoxes() const -> List<RectI>;
 
-  private:
-    struct Material {
-      MaterialId material;
-      MaterialHue hueshift;
-      MaterialColorVariant colorVariant;
-    };
+  void reset();
 
-    struct Mod {
-      ModId mod;
-      MaterialHue hueshift;
-    };
-
-    struct ObjectSettings {
-      ObjectSettings() : direction() {}
-      ObjectSettings(String const& objectName, Direction direction, Json const& parameters)
-        : objectName(objectName), direction(direction), parameters(parameters) {}
-
-      String objectName;
-      Direction direction;
-      Json parameters;
-    };
-
-    DungeonGeneratorWorldFacadePtr m_facade;
-    std::optional<int> m_terrainMarkingSurfaceLevel;
-    std::optional<int> m_terrainSurfaceSpaceExtends;
-
-    Map<Vec2I, LiquidStore> m_pendingLiquids;
-
-    Map<Vec2I, Material> m_foregroundMaterial;
-    Map<Vec2I, Material> m_backgroundMaterial;
-    Map<Vec2I, Mod> m_foregroundMod;
-    Map<Vec2I, Mod> m_backgroundMod;
-
-    Map<Vec2I, ObjectSettings> m_objects;
-    Map<Vec2F, pair<String, Json>> m_vehicles;
-    Set<Vec2I> m_biomeTrees;
-    Set<Vec2I> m_biomeItems;
-    Map<Vec2F, ItemDescriptor> m_drops;
-    Map<Vec2F, Json> m_npcs;
-    Map<Vec2F, Json> m_stagehands;
-    Map<Vec2I, DungeonId> m_dungeonIds;
-
-    Map<Vec2I, LiquidStore> m_liquids;
-
-    StringMap<Set<Vec2I>> m_globalWires;
-    List<Set<Vec2I>> m_localWires;
-    StringMap<Set<Vec2I>> m_openLocalWires;
-
-    std::optional<DungeonId> m_markDungeonId;
-    RectI m_currentBounds;
-    List<RectI> m_boundingBoxes;
+private:
+  struct Material {
+    MaterialId material;
+    MaterialHue hueshift;
+    MaterialColorVariant colorVariant;
   };
 
-  class Rule {
-  public:
-    static std::optional<RuleConstPtr> parse(Json const& config);
-    static List<RuleConstPtr> readRules(Json const& rules);
-
-    virtual ~Rule() {}
-
-    virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const;
-
-    virtual bool overdrawable() const;
-    virtual bool ignorePartMaximum() const;
-    virtual bool allowSpawnCount(int currentCount) const;
-
-    virtual bool doesNotConnectToPart(String const& name) const;
-    virtual bool checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const;
-
-    virtual bool requiresOpen() const;
-    virtual bool requiresSolid() const;
-    virtual bool requiresLiquid() const;
-
-  protected:
-    Rule() {}
+  struct Mod {
+    ModId mod;
+    MaterialHue hueshift;
   };
 
-  class WorldGenMustContainAirRule : public Rule {
-  public:
-    WorldGenMustContainAirRule(TileLayer layer) : layer(layer) {}
+  struct ObjectSettings {
+    ObjectSettings() : direction() {}
+    ObjectSettings(String objectName, Direction direction, Json parameters)
+        : objectName(std::move(objectName)), direction(direction), parameters(std::move(parameters)) {}
 
-    virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
+    String objectName;
+    Direction direction;
+    Json parameters;
+  };
 
-    virtual bool requiresOpen() const override {
-      return true;
+  Ptr<DungeonGeneratorWorldFacade> m_facade;
+  std::optional<int> m_terrainMarkingSurfaceLevel;
+  std::optional<int> m_terrainSurfaceSpaceExtends;
+
+  Map<Vec2I, LiquidStore> m_pendingLiquids;
+
+  Map<Vec2I, Material> m_foregroundMaterial;
+  Map<Vec2I, Material> m_backgroundMaterial;
+  Map<Vec2I, Mod> m_foregroundMod;
+  Map<Vec2I, Mod> m_backgroundMod;
+
+  Map<Vec2I, ObjectSettings> m_objects;
+  Map<Vec2F, std::pair<String, Json>> m_vehicles;
+  Set<Vec2I> m_biomeTrees;
+  Set<Vec2I> m_biomeItems;
+  Map<Vec2F, ItemDescriptor> m_drops;
+  Map<Vec2F, Json> m_npcs;
+  Map<Vec2F, Json> m_stagehands;
+  Map<Vec2I, DungeonId> m_dungeonIds;
+
+  Map<Vec2I, LiquidStore> m_liquids;
+
+  StringMap<Set<Vec2I>> m_globalWires;
+  List<Set<Vec2I>> m_localWires;
+  StringMap<Set<Vec2I>> m_openLocalWires;
+
+  std::optional<DungeonId> m_markDungeonId;
+  RectI m_currentBounds;
+  List<RectI> m_boundingBoxes;
+};
+
+class Rule {
+public:
+  static auto parse(Json const& config) -> std::optional<ConstPtr<Rule>>;
+  static auto readRules(Json const& rules) -> List<ConstPtr<Rule>>;
+
+  virtual ~Rule() = default;
+
+  virtual auto checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const -> bool;
+
+  [[nodiscard]] virtual auto overdrawable() const -> bool;
+  [[nodiscard]] virtual auto ignorePartMaximum() const -> bool;
+  [[nodiscard]] virtual auto allowSpawnCount(int currentCount) const -> bool;
+
+  [[nodiscard]] virtual auto doesNotConnectToPart(String const& name) const -> bool;
+  [[nodiscard]] virtual auto checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const -> bool;
+
+  [[nodiscard]] virtual auto requiresOpen() const -> bool;
+  [[nodiscard]] virtual auto requiresSolid() const -> bool;
+  [[nodiscard]] virtual auto requiresLiquid() const -> bool;
+
+protected:
+  Rule() = default;
+};
+
+class WorldGenMustContainAirRule : public Rule {
+public:
+  WorldGenMustContainAirRule(TileLayer layer) : layer(layer) {}
+
+  auto checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const -> bool override;
+
+  [[nodiscard]] auto requiresOpen() const -> bool override {
+    return true;
+  }
+
+  TileLayer layer;
+};
+
+class WorldGenMustContainSolidRule : public Rule {
+public:
+  WorldGenMustContainSolidRule(TileLayer layer) : layer(layer) {}
+
+  auto checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const -> bool override;
+
+  [[nodiscard]] auto requiresSolid() const -> bool override {
+    return true;
+  }
+
+  TileLayer layer;
+};
+
+class WorldGenMustContainLiquidRule : public Rule {
+public:
+  WorldGenMustContainLiquidRule() = default;
+
+  auto checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const -> bool override;
+
+  [[nodiscard]] auto requiresLiquid() const -> bool override {
+    return true;
+  }
+};
+
+class WorldGenMustNotContainLiquidRule : public Rule {
+public:
+  WorldGenMustNotContainLiquidRule() = default;
+
+  auto checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const -> bool override;
+};
+
+class AllowOverdrawingRule : public Rule {
+public:
+  AllowOverdrawingRule() = default;
+
+  [[nodiscard]] auto overdrawable() const -> bool override {
+    return true;
+  }
+};
+
+class IgnorePartMaximumRule : public Rule {
+public:
+  IgnorePartMaximumRule() = default;
+
+  [[nodiscard]] auto ignorePartMaximum() const -> bool override {
+    return true;
+  }
+};
+
+class MaxSpawnCountRule : public Rule {
+public:
+  MaxSpawnCountRule(Json const& rule) {
+    m_maxCount = rule.toArray()[1].toArray()[0].toInt();
+  }
+
+  [[nodiscard]] auto allowSpawnCount(int currentCount) const -> bool override {
+    return currentCount < m_maxCount;
+  }
+
+private:
+  int m_maxCount;
+};
+
+class DoNotConnectToPartRule : public Rule {
+public:
+  DoNotConnectToPartRule(Json const& rule) {
+    for (auto entry : rule.toArray()[1].toArray())
+      m_partNames.add(entry.toString());
+  }
+
+  [[nodiscard]] auto doesNotConnectToPart(String const& name) const -> bool override;
+
+private:
+  StringSet m_partNames;
+};
+
+class DoNotCombineWithRule : public Rule {
+public:
+  DoNotCombineWithRule(Json const& rule) {
+    for (auto part : rule.toArray()[1].toArray())
+      m_parts.add(part.toString());
+  }
+
+  [[nodiscard]] auto checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const -> bool override {
+    for (auto part : m_parts) {
+      if (placementCounter.contains(part) && (placementCounter.get(part) > 0))
+        return false;
     }
+    return true;
+  }
+
+private:
+  StringSet m_parts;
+};
+
+enum class Phase {
+  ClearPhase,
+  WallPhase,
+  ModsPhase,
+  ObjectPhase,
+  BiomeTreesPhase,
+  BiomeItemsPhase,
+  WirePhase,
+  ItemPhase,
+  NpcPhase,
+  DungeonIdPhase
+};
+
+class Brush {
+public:
+  static auto parse(Json const& brush) -> ConstPtr<Brush>;
+  static auto readBrushes(Json const& brushes) -> List<ConstPtr<Brush>>;
+
+  virtual ~Brush() = default;
+
+  virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const = 0;
+
+protected:
+  Brush() = default;
+};
 
-    TileLayer layer;
-  };
-
-  class WorldGenMustContainSolidRule : public Rule {
-  public:
-    WorldGenMustContainSolidRule(TileLayer layer) : layer(layer) {}
-
-    virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
-
-    virtual bool requiresSolid() const override {
-      return true;
-    }
-
-    TileLayer layer;
-  };
-
-  class WorldGenMustContainLiquidRule : public Rule {
-  public:
-    WorldGenMustContainLiquidRule() {}
-
-    virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
-
-    virtual bool requiresLiquid() const override {
-      return true;
-    }
-  };
-
-  class WorldGenMustNotContainLiquidRule : public Rule {
-  public:
-    WorldGenMustNotContainLiquidRule() {}
-
-    virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
-  };
-
-  class AllowOverdrawingRule : public Rule {
-  public:
-    AllowOverdrawingRule() {}
-
-    virtual bool overdrawable() const override {
-      return true;
-    }
-  };
-
-  class IgnorePartMaximumRule : public Rule {
-  public:
-    IgnorePartMaximumRule() {}
-
-    virtual bool ignorePartMaximum() const override {
-      return true;
-    }
-  };
-
-  class MaxSpawnCountRule : public Rule {
-  public:
-    MaxSpawnCountRule(Json const& rule) {
-      m_maxCount = rule.toArray()[1].toArray()[0].toInt();
-    }
-
-    virtual bool allowSpawnCount(int currentCount) const override {
-      return currentCount < m_maxCount;
-    }
-
-  private:
-    int m_maxCount;
-  };
-
-  class DoNotConnectToPartRule : public Rule {
-  public:
-    DoNotConnectToPartRule(Json const& rule) {
-      for (auto entry : rule.toArray()[1].toArray())
-        m_partNames.add(entry.toString());
-    }
-
-    virtual bool doesNotConnectToPart(String const& name) const override {
-      return m_partNames.contains(name);
-    }
-
-  private:
-    StringSet m_partNames;
-  };
-
-  class DoNotCombineWithRule : public Rule {
-  public:
-    DoNotCombineWithRule(Json const& rule) {
-      for (auto part : rule.toArray()[1].toArray())
-        m_parts.add(part.toString());
-    }
-
-    virtual bool checkPartCombinationsAllowed(StringMap<int> const& placementCounter) const override {
-      for (auto part : m_parts) {
-        if (placementCounter.contains(part) && (placementCounter.get(part) > 0))
-          return false;
-      }
-      return true;
-    }
-
-  private:
-    StringSet m_parts;
-  };
-
-  enum class Phase {
-    ClearPhase,
-    WallPhase,
-    ModsPhase,
-    ObjectPhase,
-    BiomeTreesPhase,
-    BiomeItemsPhase,
-    WirePhase,
-    ItemPhase,
-    NpcPhase,
-    DungeonIdPhase
-  };
-
-  class Brush {
-  public:
-    static BrushConstPtr parse(Json const& brush);
-    static List<BrushConstPtr> readBrushes(Json const& brushes);
-
-    virtual ~Brush() {}
+class RandomBrush : public Brush {
+public:
+  RandomBrush(Json const& brush);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const = 0;
-
-  protected:
-    Brush() {}
-  };
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+
+private:
+  List<ConstPtr<Brush>> m_brushes;
+  std::int64_t m_seed;
+};
 
-  class RandomBrush : public Brush {
-  public:
-    RandomBrush(Json const& brush);
+class ClearBrush : public Brush {
+public:
+  ClearBrush() = default;
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+};
 
-  private:
-    List<BrushConstPtr> m_brushes;
-    int64_t m_seed;
-  };
+class FrontBrush : public Brush {
+public:
+  FrontBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant);
 
-  class ClearBrush : public Brush {
-  public:
-    ClearBrush() {}
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
-  };
+private:
+  String m_material;
+  MaterialHue m_materialHue;
+  MaterialColorVariant m_materialColorVariant;
+  std::optional<String> m_mod;
+  MaterialHue m_modHue;
+};
 
-  class FrontBrush : public Brush {
-  public:
-    FrontBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant);
+class BackBrush : public Brush {
+public:
+  BackBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
-  private:
-    String m_material;
-    MaterialHue m_materialHue;
-    MaterialColorVariant m_materialColorVariant;
-    std::optional<String> m_mod;
-    MaterialHue m_modHue;
-  };
+private:
+  String m_material;
+  MaterialHue m_materialHue;
+  MaterialColorVariant m_materialColorVariant;
+  std::optional<String> m_mod;
+  MaterialHue m_modHue;
+};
 
-  class BackBrush : public Brush {
-  public:
-    BackBrush(String const& material, std::optional<String> mod, std::optional<float> hueshift, std::optional<float> modhueshift, std::optional<MaterialColorVariant> colorVariant);
+class ObjectBrush : public Brush {
+public:
+  ObjectBrush(String const& object, Star::Direction direction, Json const& parameters);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
-  private:
-    String m_material;
-    MaterialHue m_materialHue;
-    MaterialColorVariant m_materialColorVariant;
-    std::optional<String> m_mod;
-    MaterialHue m_modHue;
-  };
+private:
+  String m_object;
+  Star::Direction m_direction;
+  Json m_parameters;
+};
 
-  class ObjectBrush : public Brush {
-  public:
-    ObjectBrush(String const& object, Star::Direction direction, Json const& parameters);
+class VehicleBrush : public Brush {
+public:
+  VehicleBrush(String const& vehicle, Json const& parameters);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
-  private:
-    String m_object;
-    Star::Direction m_direction;
-    Json m_parameters;
-  };
+private:
+  String m_vehicle;
+  Json m_parameters;
+};
 
-  class VehicleBrush : public Brush {
-  public:
-    VehicleBrush(String const& vehicle, Json const& parameters);
+class BiomeItemsBrush : public Brush {
+public:
+  BiomeItemsBrush() = default;
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+};
 
-  private:
-    String m_vehicle;
-    Json m_parameters;
-  };
+class BiomeTreeBrush : public Brush {
+public:
+  BiomeTreeBrush() = default;
 
-  class BiomeItemsBrush : public Brush {
-  public:
-    BiomeItemsBrush() {}
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+};
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
-  };
+class ItemBrush : public Brush {
+public:
+  ItemBrush(ItemDescriptor const& item);
 
-  class BiomeTreeBrush : public Brush {
-  public:
-    BiomeTreeBrush() {}
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
-  };
+private:
+  ItemDescriptor m_item;
+};
 
-  class ItemBrush : public Brush {
-  public:
-    ItemBrush(ItemDescriptor const& item);
+class NpcBrush : public Brush {
+public:
+  NpcBrush(Json const& brush);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
-  private:
-    ItemDescriptor m_item;
-  };
+private:
+  Json m_npc;
+};
 
-  class NpcBrush : public Brush {
-  public:
-    NpcBrush(Json const& brush);
+class StagehandBrush : public Brush {
+public:
+  StagehandBrush(Json const& definition);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
-
-  private:
-    Json m_npc;
-  };
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
-  class StagehandBrush : public Brush {
-  public:
-    StagehandBrush(Json const& definition);
-
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+private:
+  Json m_definition;
+};
 
-  private:
-    Json m_definition;
-  };
-
-  class DungeonIdBrush : public Brush {
-  public:
-    DungeonIdBrush(DungeonId dungeonId);
-
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
-
-  private:
-    DungeonId m_dungeonId;
-  };
-
-  class SurfaceBrush : public Brush {
-  public:
-    SurfaceBrush(std::optional<int> variant, std::optional<String> mod);
+class DungeonIdBrush : public Brush {
+public:
+  DungeonIdBrush(DungeonId dungeonId);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
-  private:
-    int m_variant;
-    std::optional<String> m_mod;
-  };
+private:
+  DungeonId m_dungeonId;
+};
 
-  class SurfaceBackgroundBrush : public Brush {
-  public:
-    SurfaceBackgroundBrush(std::optional<int> variant, std::optional<String> mod);
+class SurfaceBrush : public Brush {
+public:
+  SurfaceBrush(std::optional<int> variant, std::optional<String> mod);
 
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
 
-  private:
-    int m_variant;
-    std::optional<String> m_mod;
-  };
+private:
+  int m_variant;
+  std::optional<String> m_mod;
+};
 
-  class LiquidBrush : public Brush {
-  public:
-    LiquidBrush(String const& liquidName, float quantity, bool source);
-
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
-
-  private:
-    String m_liquid;
-    float m_quantity;
-    bool m_source;
-  };
-
-  class WireBrush : public Brush {
-  public:
-    WireBrush(String wireGroup, bool partLocal) : m_wireGroup(wireGroup), m_partLocal(partLocal) {}
-
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
-
-  private:
-    String m_wireGroup;
-    bool m_partLocal;
-  };
-
-  class PlayerStartBrush : public Brush {
-  public:
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
-  };
-
-  // InvalidBrush reports an error when it is painted. This brush is used on
-  // tiles
-  // that represent objects that have been removed from the game.
-  class InvalidBrush : public Brush {
-  public:
-    InvalidBrush(std::optional<String> nameHint);
-
-    virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
-
-  private:
-    std::optional<String> m_nameHint;
-  };
-
-  enum class Direction : uint8_t {
-    Left = 0,
-    Right = 1,
-    Up = 2,
-    Down = 3,
-    Unknown = 4,
-    Any = 5
-  };
-  extern EnumMap<Dungeon::Direction> const DungeonDirectionNames;
-
-  class Connector {
-  public:
-    Connector(Part* part, String value, bool forwardOnly, Direction direction, Vec2I offset);
-
-    bool connectsTo(ConnectorConstPtr connector) const;
-
-    String value() const;
-    Vec2I positionAdjustment() const;
-    Part* part() const;
-    Vec2I offset() const;
-
-  private:
-    String m_value;
-    bool m_forwardOnly;
-    Direction m_direction;
-    Vec2I m_offset;
-    Part* m_part;
-  };
-
-  typedef function<bool(Vec2I, Tile const&)> TileCallback;
-
-  class PartReader {
-  public:
-    virtual ~PartReader() {}
-
-    virtual void readAsset(String const& asset) = 0;
-
-    // Returns the dimensions of the part
-    virtual Vec2U size() const = 0;
-
-    // Iterate over every tile in every layer of the part.
-    // The callback receives the position of the tile (within the part), and
-    // the tile at that position.
-    // The callback can return true to exit from the loop early.
-    virtual void forEachTile(TileCallback const& callback) const = 0;
-
-    // Calls the callback with only the tiles at the given position.
-    virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const = 0;
-
-  protected:
-    PartReader() {}
-  };
-
-  class Part {
-  public:
-    Part(DungeonDefinition* dungeon, Json const& part, PartReaderPtr reader);
-
-    String const& name() const;
-    Vec2U size() const;
-    Vec2I anchorPoint() const;
-    float chance() const;
-    bool markDungeonId() const;
-    std::optional<float> minimumThreatLevel() const;
-    std::optional<float> maximumThreatLevel() const;
-    bool clearAnchoredObjects() const;
-    int placementLevelConstraint() const;
-    bool ignoresPartMaximum() const;
-    bool allowsPlacement(int currentPlacementCount) const;
-    List<ConnectorConstPtr> const& connections() const;
-    bool doesNotConnectTo(Part* part) const;
-    bool checkPartCombinationsAllowed(StringMap<int> const& placementCounts) const;
-    bool collidesWithPlaces(Vec2I pos, Set<Vec2I>& places) const;
-
-    bool canPlace(Vec2I pos, DungeonGeneratorWriter* writer) const;
-
-    void place(Vec2I pos, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const;
-
-    void forEachTile(TileCallback const& callback) const;
-
-  private:
-    void placePhase(Vec2I pos, Phase phase, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const;
-
-    bool tileUsesPlaces(Vec2I pos) const;
-    Direction pickByEdge(Vec2I position, Vec2U size) const;
-    Direction pickByNeighbours(Vec2I pos) const;
-    void scanConnectors();
-    void scanAnchor();
-
-    PartReaderConstPtr m_reader;
-
-    String m_name;
-    List<RuleConstPtr> m_rules;
-    DungeonDefinition* m_dungeon;
-    List<ConnectorConstPtr> m_connections;
-    Vec2I m_anchorPoint;
-    bool m_overrideAllowAlways;
-    std::optional<float> m_minimumThreatLevel;
-    std::optional<float> m_maximumThreatLevel;
-    bool m_clearAnchoredObjects;
-    Vec2U m_size;
-    float m_chance;
-    bool m_markDungeonId;
-  };
-
-  struct TileConnector {
-    String value;
-    bool forwardOnly;
-    Direction direction = Direction::Unknown;
-  };
-
-  struct Tile {
-    bool canPlace(Vec2I position, DungeonGeneratorWriter* writer) const;
-    void place(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const;
-    bool usesPlaces() const;
-    bool modifiesPlaces() const;
-    bool collidesWithPlaces() const;
-    bool requiresOpen() const;
-    bool requiresSolid() const;
-    bool requiresLiquid() const;
-
-    List<BrushConstPtr> brushes;
-    List<RuleConstPtr> rules;
-    std::optional<TileConnector> connector;
-  };
-}
+class SurfaceBackgroundBrush : public Brush {
+public:
+  SurfaceBackgroundBrush(std::optional<int> variant, std::optional<String> mod);
+
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+
+private:
+  int m_variant;
+  std::optional<String> m_mod;
+};
+
+class LiquidBrush : public Brush {
+public:
+  LiquidBrush(String const& liquidName, float quantity, bool source);
+
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+
+private:
+  String m_liquid;
+  float m_quantity;
+  bool m_source;
+};
+
+class WireBrush : public Brush {
+public:
+  WireBrush(String wireGroup, bool partLocal) : m_wireGroup(std::move(wireGroup)), m_partLocal(partLocal) {}
+
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+
+private:
+  String m_wireGroup;
+  bool m_partLocal;
+};
+
+class PlayerStartBrush : public Brush {
+public:
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+};
+
+// InvalidBrush reports an error when it is painted. This brush is used on
+// tiles
+// that represent objects that have been removed from the game.
+class InvalidBrush : public Brush {
+public:
+  InvalidBrush(std::optional<String> nameHint);
+
+  void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
+
+private:
+  std::optional<String> m_nameHint;
+};
+
+enum class Direction : std::uint8_t {
+  Left = 0,
+  Right = 1,
+  Up = 2,
+  Down = 3,
+  Unknown = 4,
+  Any = 5
+};
+extern EnumMap<Dungeon::Direction> const DungeonDirectionNames;
+
+class Connector {
+public:
+  Connector(Part* part, String value, bool forwardOnly, Direction direction, Vec2I offset);
+
+  [[nodiscard]] auto connectsTo(ConstPtr<Connector> connector) const -> bool;
+
+  [[nodiscard]] auto value() const -> String;
+  [[nodiscard]] auto positionAdjustment() const -> Vec2I;
+  [[nodiscard]] auto part() const -> Part*;
+  [[nodiscard]] auto offset() const -> Vec2I;
+
+private:
+  String m_value;
+  bool m_forwardOnly;
+  Direction m_direction;
+  Vec2I m_offset;
+  Part* m_part;
+};
+
+using TileCallback = std::function<bool(Vec2I, Tile const&)>;
+
+class PartReader {
+public:
+  virtual ~PartReader() = default;
+
+  virtual void readAsset(String const& asset) = 0;
+
+  // Returns the dimensions of the part
+  [[nodiscard]] virtual auto size() const -> Vec2U = 0;
+
+  // Iterate over every tile in every layer of the part.
+  // The callback receives the position of the tile (within the part), and
+  // the tile at that position.
+  // The callback can return true to exit from the loop early.
+  virtual void forEachTile(TileCallback const& callback) const = 0;
+
+  // Calls the callback with only the tiles at the given position.
+  virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const = 0;
+
+protected:
+  PartReader() = default;
+};
+
+class Part {
+public:
+  Part(DungeonDefinition* dungeon, Json const& part, Ptr<PartReader> reader);
+
+  [[nodiscard]] auto name() const -> String const&;
+  [[nodiscard]] auto size() const -> Vec2U;
+  [[nodiscard]] auto anchorPoint() const -> Vec2I;
+  [[nodiscard]] auto chance() const -> float;
+  [[nodiscard]] auto markDungeonId() const -> bool;
+  [[nodiscard]] auto minimumThreatLevel() const -> std::optional<float>;
+  [[nodiscard]] auto maximumThreatLevel() const -> std::optional<float>;
+  [[nodiscard]] auto clearAnchoredObjects() const -> bool;
+  [[nodiscard]] auto placementLevelConstraint() const -> int;
+  [[nodiscard]] auto ignoresPartMaximum() const -> bool;
+  [[nodiscard]] auto allowsPlacement(int currentPlacementCount) const -> bool;
+  [[nodiscard]] auto connections() const -> List<ConstPtr<Connector>> const&;
+  auto doesNotConnectTo(Part* part) const -> bool;
+  [[nodiscard]] auto checkPartCombinationsAllowed(StringMap<int> const& placementCounts) const -> bool;
+  auto collidesWithPlaces(Vec2I pos, Set<Vec2I>& places) const -> bool;
+
+  auto canPlace(Vec2I pos, DungeonGeneratorWriter* writer) const -> bool;
+
+  void place(Vec2I pos, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const;
+
+  void forEachTile(TileCallback const& callback) const;
+
+private:
+  void placePhase(Vec2I pos, Phase phase, Set<Vec2I> const& places, DungeonGeneratorWriter* writer) const;
+
+  [[nodiscard]] auto tileUsesPlaces(Vec2I pos) const -> bool;
+  [[nodiscard]] auto pickByEdge(Vec2I position, Vec2U size) const -> Direction;
+  [[nodiscard]] auto pickByNeighbours(Vec2I pos) const -> Direction;
+  void scanConnectors();
+  void scanAnchor();
+
+  ConstPtr<PartReader> m_reader;
+
+  String m_name;
+  List<ConstPtr<Rule>> m_rules;
+  DungeonDefinition* m_dungeon;
+  List<ConstPtr<Connector>> m_connections;
+  Vec2I m_anchorPoint;
+  bool m_overrideAllowAlways;
+  std::optional<float> m_minimumThreatLevel;
+  std::optional<float> m_maximumThreatLevel;
+  bool m_clearAnchoredObjects;
+  Vec2U m_size;
+  float m_chance;
+  bool m_markDungeonId;
+};
+
+struct TileConnector {
+  String value;
+  bool forwardOnly;
+  Direction direction = Direction::Unknown;
+};
+
+struct Tile {
+  auto canPlace(Vec2I position, DungeonGeneratorWriter* writer) const -> bool;
+  void place(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const;
+  [[nodiscard]] auto usesPlaces() const -> bool;
+  [[nodiscard]] auto modifiesPlaces() const -> bool;
+  [[nodiscard]] auto collidesWithPlaces() const -> bool;
+  [[nodiscard]] auto requiresOpen() const -> bool;
+  [[nodiscard]] auto requiresSolid() const -> bool;
+  [[nodiscard]] auto requiresLiquid() const -> bool;
+
+  List<ConstPtr<Brush>> brushes;
+  List<ConstPtr<Rule>> rules;
+  std::optional<TileConnector> connector;
+};
+}// namespace Dungeon
 
 class DungeonDefinition {
 public:
   DungeonDefinition(JsonObject const& definition, String const& directory);
 
-  JsonObject metadata() const;
-  String directory() const;
-  String name() const;
-  String displayName() const;
-  bool isProtected() const;
-  std::optional<float> gravity() const;
-  std::optional<bool> breathable() const;
-  StringMap<Dungeon::PartConstPtr> const& parts() const;
+  [[nodiscard]] auto metadata() const -> JsonObject;
+  [[nodiscard]] auto directory() const -> String;
+  [[nodiscard]] auto name() const -> String;
+  [[nodiscard]] auto displayName() const -> String;
+  [[nodiscard]] auto isProtected() const -> bool;
+  [[nodiscard]] auto gravity() const -> std::optional<float>;
+  [[nodiscard]] auto breathable() const -> std::optional<bool>;
+  [[nodiscard]] auto parts() const -> StringMap<ConstPtr<Dungeon::Part>> const&;
 
-  List<String> const& anchors() const;
-  std::optional<Json> const& optTileset() const;
-  int maxParts() const;
-  int maxRadius() const;
-  int extendSurfaceFreeSpace() const;
+  [[nodiscard]] auto anchors() const -> List<String> const&;
+  [[nodiscard]] auto optTileset() const -> std::optional<Json> const&;
+  [[nodiscard]] auto maxParts() const -> int;
+  [[nodiscard]] auto maxRadius() const -> int;
+  [[nodiscard]] auto extendSurfaceFreeSpace() const -> int;
 
-  JsonObject metaData() const;
+  [[nodiscard]] auto metaData() const -> JsonObject;
 
 private:
   JsonObject m_metadata;
@@ -662,8 +657,8 @@ private:
   String m_displayName;
   String m_species;
   bool m_isProtected;
-  List<Dungeon::RuleConstPtr> m_rules;
-  StringMap<Dungeon::PartConstPtr> m_parts;
+  List<ConstPtr<Dungeon::Rule>> m_rules;
+  StringMap<ConstPtr<Dungeon::Part>> m_parts;
   List<String> m_anchors;
   std::optional<Json> m_tileset;
 
@@ -679,35 +674,35 @@ class DungeonDefinitions {
 public:
   DungeonDefinitions();
 
-  DungeonDefinitionConstPtr get(String const& name) const;
-  JsonObject getMetadata(String const& name) const;
+  auto get(String const& name) const -> ConstPtr<DungeonDefinition>;
+  auto getMetadata(String const& name) const -> JsonObject;
 
 private:
-  static DungeonDefinitionPtr readDefinition(String const& path);
+  static auto readDefinition(String const& path) -> Ptr<DungeonDefinition>;
 
   StringMap<String> m_paths;
   mutable Mutex m_cacheMutex;
-  mutable HashLruCache<String, DungeonDefinitionPtr> m_definitionCache;
+  mutable HashLruCache<String, Ptr<DungeonDefinition>> m_definitionCache;
 };
 
 class DungeonGenerator {
 public:
-  DungeonGenerator(String const& dungeonName, uint64_t seed, float threatLevel, std::optional<DungeonId> dungeonId);
+  DungeonGenerator(String const& dungeonName, std::uint64_t seed, float threatLevel, std::optional<DungeonId> dungeonId);
 
-  std::optional<pair<List<RectI>, Set<Vec2I>>> generate(DungeonGeneratorWorldFacadePtr facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement);
+  auto generate(Ptr<DungeonGeneratorWorldFacade> facade, Vec2I position, bool markSurfaceAndTerrain, bool forcePlacement) -> std::optional<std::pair<List<RectI>, Set<Vec2I>>>;
 
-  pair<List<RectI>, Set<Vec2I>> buildDungeon(Dungeon::PartConstPtr anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement);
-  Dungeon::PartConstPtr pickAnchor();
-  List<Dungeon::ConnectorConstPtr> findConnectablePart(Dungeon::ConnectorConstPtr connector) const;
+  auto buildDungeon(ConstPtr<Dungeon::Part> anchor, Vec2I pos, Dungeon::DungeonGeneratorWriter* writer, bool forcePlacement) -> std::pair<List<RectI>, Set<Vec2I>>;
+  auto pickAnchor() -> ConstPtr<Dungeon::Part>;
+  [[nodiscard]] auto findConnectablePart(ConstPtr<Dungeon::Connector> connector) const -> List<ConstPtr<Dungeon::Connector>>;
 
-  DungeonDefinitionConstPtr definition() const;
+  [[nodiscard]] auto definition() const -> ConstPtr<DungeonDefinition>;
 
 private:
-  DungeonDefinitionConstPtr m_def;
+  ConstPtr<DungeonDefinition> m_def;
 
   RandomSource m_rand;
   float m_threatLevel;
   std::optional<DungeonId> m_dungeonId;
 };
 
-}
+}// namespace Star

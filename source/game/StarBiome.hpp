@@ -10,7 +10,7 @@ import std;
 namespace Star {
 
 class Parallax;
-class AmbientNoisesDescription;
+struct AmbientNoisesDescription;
 
 struct BiomePlaceables {
   BiomePlaceables();

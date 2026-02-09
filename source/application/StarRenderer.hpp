@@ -1,23 +1,21 @@
 #pragma once
 
-#include <optional>
-#include "StarVariant.hpp"
-#include "StarImage.hpp"
-#include "StarPoly.hpp"
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
+#include "StarConfig.hpp"
+#include "StarException.hpp"
+#include "StarImage.hpp"
+#include "StarJson.hpp"
+#include "StarPoly.hpp"
 #include "StarRefPtr.hpp"
+#include "StarVariant.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(RendererException, StarException);
+using RendererException = ExceptionDerived<"RendererException">;
 
 class Texture;
-typedef RefPtr<Texture> TexturePtr;
-
-STAR_CLASS(TextureGroup);
-STAR_CLASS(RenderBuffer);
-STAR_CLASS(Renderer);
 
 enum class TextureAddressing {
   Clamp,
@@ -54,9 +52,9 @@ class RenderTriangle {
 public:
   RenderTriangle() = default;
   RenderTriangle(Vec2F posA, Vec2F posB, Vec2F posC, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
-  RenderTriangle(TexturePtr tex, Vec2F posA, Vec2F uvA, Vec2F posB, Vec2F uvB, Vec2F posC, Vec2F uvC, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
+  RenderTriangle(RefPtr<Texture> tex, Vec2F posA, Vec2F uvA, Vec2F posB, Vec2F uvB, Vec2F posC, Vec2F uvC, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
 
-  TexturePtr texture;
+  RefPtr<Texture> texture;
   RenderVertex a, b, c;
 };
 
@@ -64,13 +62,13 @@ class RenderQuad {
 public:
   RenderQuad() = default;
   RenderQuad(Vec2F posA, Vec2F posB, Vec2F posC, Vec2F posD, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
-  RenderQuad(TexturePtr tex, Vec2F minScreen, float textureScale = 1.0f, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
-  RenderQuad(TexturePtr tex, RectF const& screenCoords, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
-  RenderQuad(TexturePtr tex, Vec2F posA, Vec2F uvA, Vec2F posB, Vec2F uvB, Vec2F posC, Vec2F uvC, Vec2F posD, Vec2F uvD, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
-  RenderQuad(TexturePtr tex, RenderVertex vA, RenderVertex vB, RenderVertex vC, RenderVertex vD);
+  RenderQuad(RefPtr<Texture> tex, Vec2F minScreen, float textureScale = 1.0f, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
+  RenderQuad(RefPtr<Texture> tex, RectF const& screenCoords, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
+  RenderQuad(RefPtr<Texture> tex, Vec2F posA, Vec2F uvA, Vec2F posB, Vec2F uvB, Vec2F posC, Vec2F uvC, Vec2F posD, Vec2F uvD, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
+  RenderQuad(RefPtr<Texture> tex, RenderVertex vA, RenderVertex vB, RenderVertex vC, RenderVertex vD);
   RenderQuad(RectF const& rect, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
 
-  TexturePtr texture;
+  RefPtr<Texture> texture;
   RenderVertex a, b, c, d;
 };
 
@@ -79,24 +77,24 @@ public:
   RenderPoly() = default;
   RenderPoly(List<Vec2F> const& verts, Vec4B color, float param1 = 0.0f);
 
-  TexturePtr texture;
+  RefPtr<Texture> texture;
   List<RenderVertex> vertexes;
 };
 
-RenderQuad renderTexturedRect(TexturePtr texture, Vec2F minScreen, float textureScale = 1.0f, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
-RenderQuad renderTexturedRect(TexturePtr texture, RectF const& screenCoords, Vec4B color = Vec4B::filled(255), float param1 = 0.0f);
-RenderQuad renderFlatRect(RectF const& rect, Vec4B color, float param1 = 0.0f);
-RenderPoly renderFlatPoly(PolyF const& poly, Vec4B color, float param1 = 0.0f);
+auto renderTexturedRect(RefPtr<Texture> texture, Vec2F minScreen, float textureScale = 1.0f, Vec4B color = Vec4B::filled(255), float param1 = 0.0f) -> RenderQuad;
+auto renderTexturedRect(RefPtr<Texture> texture, RectF const& screenCoords, Vec4B color = Vec4B::filled(255), float param1 = 0.0f) -> RenderQuad;
+auto renderFlatRect(RectF const& rect, Vec4B color, float param1 = 0.0f) -> RenderQuad;
+auto renderFlatPoly(PolyF const& poly, Vec4B color, float param1 = 0.0f) -> RenderPoly;
 
-typedef Variant<RenderTriangle, RenderQuad, RenderPoly> RenderPrimitive;
+using RenderPrimitive = Variant<RenderTriangle, RenderQuad, RenderPoly>;
 
 class Texture : public RefCounter {
 public:
-  virtual ~Texture() = default;
+  ~Texture() override = default;
 
-  virtual Vec2U size() const = 0;
-  virtual TextureFiltering filtering() const = 0;
-  virtual TextureAddressing addressing() const = 0;
+  [[nodiscard]] virtual auto size() const -> Vec2U = 0;
+  [[nodiscard]] virtual auto filtering() const -> TextureFiltering = 0;
+  [[nodiscard]] virtual auto addressing() const -> TextureAddressing = 0;
 };
 
 // Textures may be created individually, or in a texture group.  Textures in
@@ -108,8 +106,8 @@ class TextureGroup {
 public:
   virtual ~TextureGroup() = default;
 
-  virtual TextureFiltering filtering() const = 0;
-  virtual TexturePtr create(Image const& texture) = 0;
+  [[nodiscard]] virtual auto filtering() const -> TextureFiltering = 0;
+  virtual auto create(Image const& texture) -> RefPtr<Texture> = 0;
 };
 
 class RenderBuffer {
@@ -121,14 +119,14 @@ public:
   virtual void set(List<RenderPrimitive>& primitives) = 0;
 };
 
-typedef Variant<float, int, Vec4F, Vec3F, Vec2F, bool> RenderEffectParameter;
+using RenderEffectParameter = Variant<float, int, Vec4F, Vec3F, Vec2F, bool>;
 
 class Renderer {
 public:
   virtual ~Renderer() = default;
 
-  virtual String rendererId() const = 0;
-  virtual Vec2U screenSize() const = 0;
+  [[nodiscard]] virtual auto rendererId() const -> String = 0;
+  [[nodiscard]] virtual auto screenSize() const -> Vec2U = 0;
 
   virtual void loadConfig(Json const& config) = 0;
 
@@ -143,29 +141,29 @@ public:
   // set here.
   virtual void setEffectParameter(String const& parameterName, RenderEffectParameter const& parameter) = 0;
   virtual void setEffectScriptableParameter(String const& effectName, String const& parameterName, RenderEffectParameter const& parameter) = 0;
-  virtual std::optional<RenderEffectParameter> getEffectScriptableParameter(String const& effectName, String const& parameterName) = 0;
-  virtual std::optional<VariantTypeIndex> getEffectScriptableParameterType(String const& effectName, String const& parameterName) = 0;
+  virtual auto getEffectScriptableParameter(String const& effectName, String const& parameterName) -> std::optional<RenderEffectParameter> = 0;
+  virtual auto getEffectScriptableParameterType(String const& effectName, String const& parameterName) -> std::optional<VariantTypeIndex> = 0;
   virtual void setEffectTexture(String const& textureName, ImageView const& image) = 0;
-  virtual bool switchEffectConfig(String const& name) = 0;
+  virtual auto switchEffectConfig(String const& name) -> bool = 0;
 
   // Any further rendering will be scissored based on this rect, specified in
   // pixels
   virtual void setScissorRect(std::optional<RectI> const& scissorRect) = 0;
 
-  virtual TexturePtr createTexture(Image const& texture,
-      TextureAddressing addressing = TextureAddressing::Clamp,
-      TextureFiltering filtering = TextureFiltering::Nearest) = 0;
+  virtual auto createTexture(Image const& texture,
+                             TextureAddressing addressing = TextureAddressing::Clamp,
+                             TextureFiltering filtering = TextureFiltering::Nearest) -> RefPtr<Texture> = 0;
   virtual void setSizeLimitEnabled(bool enabled) = 0;
   virtual void setMultiTexturingEnabled(bool enabled) = 0;
   virtual void setMultiSampling(unsigned multiSampling) = 0;
-  virtual TextureGroupPtr createTextureGroup(TextureGroupSize size = TextureGroupSize::Medium, TextureFiltering filtering = TextureFiltering::Nearest) = 0;
-  virtual RenderBufferPtr createRenderBuffer() = 0;
+  virtual auto createTextureGroup(TextureGroupSize size = TextureGroupSize::Medium, TextureFiltering filtering = TextureFiltering::Nearest) -> Ptr<TextureGroup> = 0;
+  virtual auto createRenderBuffer() -> Ptr<RenderBuffer> = 0;
 
-  virtual List<RenderPrimitive>& immediatePrimitives() = 0;
+  virtual auto immediatePrimitives() -> List<RenderPrimitive>& = 0;
   virtual void render(RenderPrimitive primitive) = 0;
-  virtual void renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F const& transformation = Mat3F::identity()) = 0;
+  virtual void renderBuffer(Ptr<RenderBuffer> const& renderBuffer, Mat3F const& transformation = Mat3F::identity()) = 0;
 
   virtual void flush(Mat3F const& transformation = Mat3F::identity()) = 0;
 };
 
-}
+}// namespace Star

@@ -1,5 +1,7 @@
 #pragma once
 
+#include <stddef.h>// for offsetof
+
 #include "StarCollisionGenerator.hpp"
 #include "StarGameTypes.hpp"
 #include "StarLiquidTypes.hpp"
@@ -8,8 +10,6 @@
 #include "StarTileSectorArray.hpp"
 #include "StarVersion.hpp"
 #include "StarWorldLayout.hpp"
-
-#include <stddef.h>
 
 import std;
 
@@ -107,7 +107,6 @@ struct ClientTile : public WorldTile {
   float gravity{};
 };
 using ClientTileSectorArray = TileSectorArray<ClientTile, WorldSectorSize>;
-using ClientTileSectorArrayPtr = std::shared_ptr<ClientTileSectorArray>;
 
 // Tile structure to transfer all data from client to server
 struct NetTile {
@@ -134,7 +133,7 @@ auto operator<<(DataStream& ds, NetTile const& tile) -> DataStream&;
 
 // For storing predicted tile state.
 struct PredictedTile {
-  int64_t time;
+  std::int64_t time;
   std::optional<MaterialId> background;
   std::optional<MaterialHue> backgroundHueShift;
   std::optional<MaterialColorVariant> backgroundColorVariant;
@@ -185,16 +184,16 @@ struct RenderTile {
   MaterialHue foregroundModHueShift;
   MaterialColorVariant foregroundColorVariant;
   TileDamageType foregroundDamageType;
-  uint8_t foregroundDamageLevel;
+  std::uint8_t foregroundDamageLevel;
 
   MaterialHue backgroundHueShift;
   MaterialHue backgroundModHueShift;
   MaterialColorVariant backgroundColorVariant;
   TileDamageType backgroundDamageType;
-  uint8_t backgroundDamageLevel;
+  std::uint8_t backgroundDamageLevel;
 
   LiquidId liquidId;
-  uint8_t liquidLevel;
+  std::uint8_t liquidLevel;
 
   template <typename Hasher>
   void hashPushTerrain(Hasher& hasher) const;
@@ -317,7 +316,7 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
     size_t bufferSize = 0;
 
     auto hashTilePart = [&](void const* data, size_t size) -> auto {
-      memcpy(buffer.data() + bufferSize, data, size);
+      std::memcpy(buffer.data() + bufferSize, data, size);
       bufferSize += size;
     };
 
@@ -347,8 +346,8 @@ template <typename Hasher>
 inline void RenderTile::hashPushLiquid(Hasher& hasher) const {
   std::array<char, sizeof(liquidLevel) + sizeof(liquidId)> buffer;
 
-  memcpy(buffer.data(), &liquidLevel, sizeof(liquidLevel));
-  memcpy(buffer.data() + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
+  std::memcpy(buffer.data(), &liquidLevel, sizeof(liquidLevel));
+  std::memcpy(buffer.data() + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
 
   hasher.push(buffer, sizeof(liquidLevel) + sizeof(liquidId));
 }

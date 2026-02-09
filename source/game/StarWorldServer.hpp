@@ -121,7 +121,7 @@ public:
 
   auto connection() const -> ConnectionId override;
   auto geometry() const -> WorldGeometry override;
-  auto currentStep() const -> uint64_t override;
+  auto currentStep() const -> std::uint64_t override;
   auto material(Vec2I const& position, TileLayer layer) const -> MaterialId override;
   auto materialHueShift(Vec2I const& position, TileLayer layer) const -> MaterialHue override;
   auto mod(Vec2I const& position, TileLayer layer) const -> ModId override;
@@ -173,7 +173,7 @@ public:
   void setProperty(String const& propertyName, Json const& property) override;
   void timer(float delay, WorldAction worldAction) override;
   auto epochTime() const -> double override;
-  auto day() const -> uint32_t override;
+  auto day() const -> std::uint32_t override;
   auto dayLength() const -> float override;
   auto timeOfDay() const -> float override;
   auto luaRoot() -> Ptr<LuaRoot> override;
@@ -289,8 +289,8 @@ private:
     auto needsDamageNotification(RemoteDamageNotification const& rdn) const -> bool;
 
     ConnectionId clientId;
-    uint64_t skyNetVersion;
-    uint64_t weatherNetVersion;
+    std::uint64_t skyNetVersion;
+    std::uint64_t weatherNetVersion;
     WorldClientState clientState;
     bool pendingForward;
     bool started;
@@ -300,7 +300,7 @@ private:
     List<Ptr<Packet>> outgoingPackets;
 
     // All slave entities for which the player should be knowledgable about.
-    HashMap<EntityId, uint64_t> clientSlavesNetVersion;
+    HashMap<EntityId, std::uint64_t> clientSlavesNetVersion;
 
     // Batch send tile updates
     HashSet<Vec2I> pendingTileUpdates;
@@ -384,7 +384,7 @@ private:
 
   WorldGeometry m_geometry;
   double m_currentTime;
-  uint64_t m_currentStep;
+  std::uint64_t m_currentStep;
   mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
   Ptr<Sky> m_sky;
 
@@ -393,7 +393,7 @@ private:
   CollisionGenerator m_collisionGenerator;
   List<CollisionBlock> m_workingCollisionBlocks;
 
-  HashMap<NetCompatibilityRules, HashMap<std::pair<EntityId, uint64_t>, std::pair<ByteArray, uint64_t>>> m_netStateCache;
+  HashMap<NetCompatibilityRules, HashMap<std::pair<EntityId, std::uint64_t>, std::pair<ByteArray, std::uint64_t>>> m_netStateCache;
   OrderedHashMap<ConnectionId, std::shared_ptr<ClientInfo>> m_clientInfo;
 
   GameTimer m_entityUpdateTimer;

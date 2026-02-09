@@ -17,7 +17,7 @@ using InputVariant = Variant<Key, MouseButton, ControllerButton>;
 
 template <>
 struct hash<InputVariant> {
-  auto operator()(InputVariant const& v) const -> size_t;
+  auto operator()(InputVariant const& v) const -> std::size_t;
 };
 
 class Input {
@@ -105,7 +105,7 @@ public:
     // Calls the passed functions for each press and release.
     template <typename PressFunction, typename ReleaseFunction>
     void forEach(PressFunction&& pressed, ReleaseFunction&& released) {
-      for (size_t i = 0; i != releases; ++i) {
+      for (std::size_t i = 0; i != releases; ++i) {
         pressed();
         released();
       }

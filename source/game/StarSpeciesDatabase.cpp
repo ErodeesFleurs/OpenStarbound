@@ -1,39 +1,41 @@
 #include "StarSpeciesDatabase.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarRandom.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarNameGenerator.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
+
+#include "StarConfig.hpp"
 #include "StarImageProcessing.hpp"
+#include "StarInventoryTypes.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarNameGenerator.hpp"// IWYU pragma: export
+#include "StarRandom.hpp"
+#include "StarRoot.hpp"
 #include "StarRootLuaBindings.hpp"
-#include "StarConfigLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
+
+import std;
 
 namespace Star {
 
 SpeciesOption::SpeciesOption()
-  : species(),
-    headOptionAsHairColor(),
-    headOptionAsFacialhair(),
-    altOptionAsUndyColor(),
-    altOptionAsHairColor(),
-    altOptionAsFacialMask(),
-    hairColorAsBodySubColor(),
-    bodyColorAsFacialMaskSubColor(),
-    altColorAsFacialMaskSubColor(),
-    genderOptions(),
-    bodyColorDirectives(),
-    undyColorDirectives(),
-    hairColorDirectives() {}
+    : species(),
+      headOptionAsHairColor(),
+      headOptionAsFacialhair(),
+      altOptionAsUndyColor(),
+      altOptionAsHairColor(),
+      altOptionAsFacialMask(),
+      hairColorAsBodySubColor(),
+      bodyColorAsFacialMaskSubColor(),
+      altColorAsFacialMaskSubColor(),
+      genderOptions(),
+      bodyColorDirectives(),
+      undyColorDirectives(),
+      hairColorDirectives() {}
 
-SpeciesDatabase::SpeciesDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
+SpeciesDatabase::SpeciesDatabase() : m_luaRoot(std::make_shared<LuaRoot>()) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("species");
   assets->queueJsons(files);
   for (auto& file : files) {
-    auto speciesDefinition = make_shared<SpeciesDefinition>(assets->json(file));
+    auto speciesDefinition = std::make_shared<SpeciesDefinition>(assets->json(file));
     if (m_species.contains(speciesDefinition->kind()))
       throw StarException(strf("Duplicate species asset with kind {}. configfile {}", speciesDefinition->kind(), file));
     auto k = speciesDefinition->kind().toLower();
@@ -41,18 +43,18 @@ SpeciesDatabase::SpeciesDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   }
 }
 
-SpeciesDefinitionPtr SpeciesDatabase::species(String const& kind) const {
+auto SpeciesDatabase::species(String const& kind) const -> Ptr<SpeciesDefinition> {
   auto k = kind.toLower();
   if (!m_species.contains(k))
     throw StarException(strf("Unknown species kind '{}'.", kind));
   return m_species.get(k);
 }
 
-StringMap<SpeciesDefinitionPtr> SpeciesDatabase::allSpecies() const {
+auto SpeciesDatabase::allSpecies() const -> StringMap<Ptr<SpeciesDefinition>> {
   return m_species;
 }
 
-Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config) const {
+auto SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config) const -> Json {
   auto speciesDef = species(identity.species);
   if (speciesDef->m_buildScripts.size() > 0) {
     RecursiveMutexLocker locker(m_luaMutex);
@@ -63,7 +65,7 @@ Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject param
     // NPCs can have their own custom humanoidConfig that don't align with their species
     // however we need to make sure it only gets passed into this if its different from base
     // so in script we know when we have a unique case we should probably ignore or not
-    return context.invokePath<Json>("build", identity.toJson(), parameters, speciesDef->humanoidConfig(), config );
+    return context.invokePath<Json>("build", identity.toJson(), parameters, speciesDef->humanoidConfig(), config);
   } else {
     if (config.isType(Json::Type::Object))
       return config;
@@ -72,7 +74,7 @@ Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject param
   }
 }
 
-CharacterCreationResult SpeciesDatabase::createHumanoid(
+auto SpeciesDatabase::createHumanoid(
   String name,
   String speciesChoice,
   size_t genderChoice,
@@ -85,8 +87,7 @@ CharacterCreationResult SpeciesDatabase::createHumanoid(
   size_t pantsChoice,
   size_t pantsColor,
   size_t personality,
-  LuaVariadic<LuaValue> ext
-) const {
+  LuaVariadic<LuaValue> ext) const -> CharacterCreationResult {
   CharacterCreationResult result;
 
   auto speciesDefinition = species(speciesChoice);
@@ -189,7 +190,7 @@ CharacterCreationResult SpeciesDatabase::createHumanoid(
   return result;
 }
 
-CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, int64_t seed, std::optional<Gender> gender) const {
+auto SpeciesDatabase::generateHumanoid(String speciesChoice, std::int64_t seed, std::optional<Gender> gender) const -> CharacterCreationResult {
   RandomSource randSource(seed);
   auto speciesDefinition = species(speciesChoice);
   auto chosenGender = gender.value_or(randSource.randb() ? Gender::Male : Gender::Female);
@@ -205,8 +206,7 @@ CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, 
     randSource.randu32(),
     randSource.randu32(),
     randSource.randu32(),
-    randSource.randu32()
-  );
+    randSource.randu32());
 }
 
 SpeciesDefinition::SpeciesDefinition(Json const& config) {
@@ -270,7 +270,7 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
     gender.pantsOptions = jsonToStringList(genderData.get("pants", config.get("pants", JsonArray({""}))));
     gender.facialHairGroup = genderData.getString("facialHairGroup", config.getString("facialHairGroup", ""));
     gender.facialHairOptions = jsonToStringList(genderData.get("facialHair", config.get("facialHair", JsonArray({""}))));
-    gender.facialMaskGroup = genderData.getString("facialMaskGroup", config.getString("facialMaskGroup",""));
+    gender.facialMaskGroup = genderData.getString("facialMaskGroup", config.getString("facialMaskGroup", ""));
     gender.facialMaskOptions = jsonToStringList(genderData.get("facialMask", config.get("facialMask", JsonArray({""}))));
 
     species.genderOptions.append(gender);
@@ -278,61 +278,61 @@ SpeciesDefinition::SpeciesDefinition(Json const& config) {
   m_options = species;
 }
 
-Json SpeciesDefinition::config() const {
+auto SpeciesDefinition::config() const -> Json {
   return m_config;
 }
 
-String SpeciesDefinition::kind() const {
+auto SpeciesDefinition::kind() const -> String {
   return m_kind;
 }
 
-String SpeciesDefinition::nameGen(Gender gender) const {
+auto SpeciesDefinition::nameGen(Gender gender) const -> String {
   return m_nameGen[(unsigned)gender];
 }
 
-String SpeciesDefinition::ouchNoise(Gender gender) const {
+auto SpeciesDefinition::ouchNoise(Gender gender) const -> String {
   return m_ouchNoises[(unsigned)gender];
 }
 
-SpeciesOption const& SpeciesDefinition::options() const {
+auto SpeciesDefinition::options() const -> SpeciesOption const& {
   return m_options;
 }
 
-Json SpeciesDefinition::humanoidConfig() const {
+auto SpeciesDefinition::humanoidConfig() const -> Json {
   auto config = Root::singleton().assets()->json(m_humanoidConfig);
   return jsonMerge(config, m_humanoidOverrides);
 }
 
-List<Personality> const& SpeciesDefinition::personalities() const {
+auto SpeciesDefinition::personalities() const -> List<Personality> const& {
   return m_personalities;
 }
 
-List<ItemDescriptor> SpeciesDefinition::defaultItems() const {
+auto SpeciesDefinition::defaultItems() const -> List<ItemDescriptor> {
   return m_defaultItems;
 }
 
-List<ItemDescriptor> SpeciesDefinition::defaultBlueprints() const {
+auto SpeciesDefinition::defaultBlueprints() const -> List<ItemDescriptor> {
   return m_defaultBlueprints;
 }
 
-StringList SpeciesDefinition::charGenTextLabels() const {
+auto SpeciesDefinition::charGenTextLabels() const -> StringList {
   return m_charGenTextLabels;
 }
 
-SpeciesCharCreationTooltip const& SpeciesDefinition::tooltip() const {
+auto SpeciesDefinition::tooltip() const -> SpeciesCharCreationTooltip const& {
   return m_tooltip;
 }
 
-String SpeciesDefinition::skull() const {
+auto SpeciesDefinition::skull() const -> String {
   return m_skull;
 }
 
-List<PersistentStatusEffect> SpeciesDefinition::statusEffects() const {
+auto SpeciesDefinition::statusEffects() const -> List<PersistentStatusEffect> {
   return m_statusEffects;
 }
 
-String SpeciesDefinition::effectDirectives() const {
+auto SpeciesDefinition::effectDirectives() const -> String {
   return m_effectDirectives;
 }
 
-}
+}// namespace Star

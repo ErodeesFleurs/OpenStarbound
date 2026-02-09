@@ -1,11 +1,12 @@
 #include "StarPlayerFactory.hpp"
+
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarAssets.hpp"
+#include "StarRebuilder.hpp"
 #include "StarRoot.hpp"
 #include "StarRootLuaBindings.hpp"
-#include "StarUtilityLuaBindings.hpp"
-#include "StarRebuilder.hpp"
+
+import std;
 
 namespace Star {
 
@@ -47,28 +48,28 @@ PlayerConfig::PlayerConfig(JsonObject const& cfg) {
 
   bodyMaterialKind = cfg.get("bodyMaterialKind").toString();
 
-  for (auto& p : cfg.get("genericScriptContexts").optObject().value(JsonObject()))
+  for (auto& p : cfg.get("genericScriptContexts").optObject().value_or(JsonObject()))
     genericScriptContexts[p.first] = p.second.toString();
 }
 
-PlayerFactory::PlayerFactory() : m_rebuilder(make_shared<Rebuilder>("player")) {
+PlayerFactory::PlayerFactory() : m_rebuilder(std::make_shared<Rebuilder>("player")) {
   auto assets = Root::singleton().assets();
-  m_config = make_shared<PlayerConfig>(assets->json("/player.config").toObject());
+  m_config = std::make_shared<PlayerConfig>(assets->json("/player.config").toObject());
 }
 
-PlayerPtr PlayerFactory::create() const {
-  return make_shared<Player>(m_config);
+auto PlayerFactory::create() const -> Ptr<Player> {
+  return std::make_shared<Player>(m_config);
 }
 
-PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
-  PlayerPtr player;
+auto PlayerFactory::diskLoadPlayer(Json const& diskStore) const -> Ptr<Player> {
+  Ptr<Player> player;
   try {
-    player = make_shared<Player>(m_config, diskStore);
+    player = std::make_shared<Player>(m_config, diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
-        player = make_shared<Player>(m_config, store);
+        player = std::make_shared<Player>(m_config, store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -82,8 +83,8 @@ PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
   return player;
 }
 
-PlayerPtr PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Player>(m_config, netStore, rules);
+auto PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const -> Ptr<Player> {
+  return std::make_shared<Player>(m_config, netStore, rules);
 }
 
-}
+}// namespace Star

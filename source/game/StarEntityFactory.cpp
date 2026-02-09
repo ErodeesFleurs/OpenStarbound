@@ -1,18 +1,24 @@
 #include "StarEntityFactory.hpp"
-#include "StarPlayer.hpp"
-#include "StarPlayerFactory.hpp"
+
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
+#include "StarItemDrop.hpp"
 #include "StarMonster.hpp"
+#include "StarNpc.hpp"
 #include "StarObject.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarPlant.hpp"
 #include "StarPlantDrop.hpp"
+#include "StarPlayer.hpp"
+#include "StarPlayerFactory.hpp"
 #include "StarProjectile.hpp"
-#include "StarProjectileDatabase.hpp"
-#include "StarItemDrop.hpp"
-#include "StarNpc.hpp"
+#include "StarProjectileDatabase.hpp"// IWYU pragma: export
 #include "StarRoot.hpp"
 #include "StarStagehand.hpp"
-#include "StarVehicleDatabase.hpp"
+#include "StarVehicle.hpp"
+#include "StarVehicleDatabase.hpp"// IWYU pragma: export
+
+import std;
 
 namespace Star {
 
@@ -26,8 +32,7 @@ EnumMap<EntityType> const EntityFactory::EntityStorageIdentifiers{
   {EntityType::PlantDrop, "PlantDropEntity"},
   {EntityType::Npc, "NpcEntity"},
   {EntityType::Stagehand, "StagehandEntity"},
-  {EntityType::Vehicle, "VehicleEntity"}
-};
+  {EntityType::Vehicle, "VehicleEntity"}};
 
 EntityFactory::EntityFactory() {
   auto& root = Root::singleton();
@@ -40,7 +45,7 @@ EntityFactory::EntityFactory() {
   m_versioningDatabase = root.versioningDatabase();
 }
 
-ByteArray EntityFactory::netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules) const {
+auto EntityFactory::netStoreEntity(Ptr<Entity> const& entity, NetCompatibilityRules rules) const -> ByteArray {
   RecursiveMutexLocker locker(m_mutex);
 
   if (auto player = as<Player>(entity)) {
@@ -68,7 +73,7 @@ ByteArray EntityFactory::netStoreEntity(EntityPtr const& entity, NetCompatibilit
   }
 }
 
-EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules) const {
+auto EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules) const -> Ptr<Entity> {
   RecursiveMutexLocker locker(m_mutex);
 
   if (type == EntityType::Player) {
@@ -78,17 +83,17 @@ EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStor
   } else if (type == EntityType::Object) {
     return m_objectDatabase->netLoadObject(netStore, rules);
   } else if (type == EntityType::Plant) {
-    return make_shared<Plant>(netStore, rules);
+    return std::make_shared<Plant>(netStore, rules);
   } else if (type == EntityType::PlantDrop) {
-    return make_shared<PlantDrop>(netStore, rules);
+    return std::make_shared<PlantDrop>(netStore, rules);
   } else if (type == EntityType::Projectile) {
     return m_projectileDatabase->netLoadProjectile(netStore, rules);
   } else if (type == EntityType::ItemDrop) {
-    return make_shared<ItemDrop>(netStore, rules);
+    return std::make_shared<ItemDrop>(netStore, rules);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->netLoadNpc(netStore, rules);
   } else if (type == EntityType::Stagehand) {
-    return make_shared<Stagehand>(netStore, rules);
+    return std::make_shared<Stagehand>(netStore, rules);
   } else if (type == EntityType::Vehicle) {
     return m_vehicleDatabase->netLoad(netStore, rules);
   } else {
@@ -96,7 +101,7 @@ EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStor
   }
 }
 
-Json EntityFactory::diskStoreEntity(EntityPtr const& entity) const {
+auto EntityFactory::diskStoreEntity(Ptr<Entity> const& entity) const -> Json {
   RecursiveMutexLocker locker(m_mutex);
 
   if (auto player = as<Player>(entity)) {
@@ -120,7 +125,7 @@ Json EntityFactory::diskStoreEntity(EntityPtr const& entity) const {
   }
 }
 
-EntityPtr EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) const {
+auto EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) const -> Ptr<Entity> {
   RecursiveMutexLocker locker(m_mutex);
 
   if (type == EntityType::Player) {
@@ -130,13 +135,13 @@ EntityPtr EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) 
   } else if (type == EntityType::Object) {
     return m_objectDatabase->diskLoadObject(diskStore);
   } else if (type == EntityType::Plant) {
-    return make_shared<Plant>(diskStore);
+    return std::make_shared<Plant>(diskStore);
   } else if (type == EntityType::ItemDrop) {
-    return make_shared<ItemDrop>(diskStore);
+    return std::make_shared<ItemDrop>(diskStore);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->diskLoadNpc(diskStore);
   } else if (type == EntityType::Stagehand) {
-    return make_shared<Stagehand>(diskStore);
+    return std::make_shared<Stagehand>(diskStore);
   } else if (type == EntityType::Vehicle) {
     return m_vehicleDatabase->diskLoad(diskStore);
   } else {
@@ -144,21 +149,21 @@ EntityPtr EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) 
   }
 }
 
-Json EntityFactory::loadVersionedJson(VersionedJson const& versionedJson, EntityType expectedType) const {
+auto EntityFactory::loadVersionedJson(VersionedJson const& versionedJson, EntityType expectedType) const -> Json {
   RecursiveMutexLocker locker(m_mutex);
 
   String identifier = EntityStorageIdentifiers.getRight(expectedType);
   return m_versioningDatabase->loadVersionedJson(versionedJson, identifier);
 }
 
-VersionedJson EntityFactory::storeVersionedJson(EntityType type, Json const& store) const {
+auto EntityFactory::storeVersionedJson(EntityType type, Json const& store) const -> VersionedJson {
   RecursiveMutexLocker locker(m_mutex);
 
   String identifier = EntityStorageIdentifiers.getRight(type);
   return m_versioningDatabase->makeCurrentVersionedJson(identifier, store);
 }
 
-EntityPtr EntityFactory::loadVersionedEntity(VersionedJson const& versionedJson) const {
+auto EntityFactory::loadVersionedEntity(VersionedJson const& versionedJson) const -> Ptr<Entity> {
   RecursiveMutexLocker locker(m_mutex);
 
   EntityType type = EntityStorageIdentifiers.getLeft(versionedJson.identifier);
@@ -166,8 +171,8 @@ EntityPtr EntityFactory::loadVersionedEntity(VersionedJson const& versionedJson)
   return diskLoadEntity(type, store);
 }
 
-VersionedJson EntityFactory::storeVersionedEntity(EntityPtr const& entityPtr) const {
+auto EntityFactory::storeVersionedEntity(Ptr<Entity> const& entityPtr) const -> VersionedJson {
   return storeVersionedJson(entityPtr->entityType(), diskStoreEntity(entityPtr));
 }
 
-}
+}// namespace Star

@@ -1,14 +1,16 @@
 #include "StarBlueprintItem.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
+
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
 #include "StarPlayer.hpp"
-#include "StarAssets.hpp"
-#include "StarPlayerBlueprints.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
 BlueprintItem::BlueprintItem(Json const& config, String const& directory, Json const& data)
-  : Item(config, directory, data), SwingableItem(config) {
+    : Item(config, directory, data), SwingableItem(config) {
   setWindupTime(0.2f);
   setCooldownTime(0.1f);
   m_requireEdgeTrigger = true;
@@ -16,19 +18,19 @@ BlueprintItem::BlueprintItem(Json const& config, String const& directory, Json c
 
   m_recipeIconUnderlay = Drawable(Root::singleton().assets()->json("/blueprint.config:iconUnderlay"));
   m_inHandDrawable = {Drawable::makeImage(
-      Root::singleton().assets()->json("/blueprint.config:inHandImage").toString(),
-      1.0f / TilePixels,
-      true,
-      Vec2F())};
+    Root::singleton().assets()->json("/blueprint.config:inHandImage").toString(),
+    1.0f / TilePixels,
+    true,
+    Vec2F())};
 
   setPrice(int(price() * Root::singleton().assets()->json("/items/defaultParameters.config:blueprintPriceFactor").toFloat()));
 }
 
-ItemPtr BlueprintItem::clone() const {
-  return make_shared<BlueprintItem>(*this);
+auto BlueprintItem::clone() const -> Ptr<Item> {
+  return std::make_shared<BlueprintItem>(*this);
 }
 
-List<Drawable> BlueprintItem::drawables() const {
+auto BlueprintItem::drawables() const -> List<Drawable> {
   return m_inHandDrawable;
 }
 
@@ -39,15 +41,15 @@ void BlueprintItem::fireTriggered() {
         setCount(count() - 1);
 }
 
-List<Drawable> BlueprintItem::iconDrawables() const {
+auto BlueprintItem::iconDrawables() const -> List<Drawable> {
   List<Drawable> result;
   result.append(m_recipeIconUnderlay);
   result.appendAll(Item::iconDrawables());
   return result;
 }
 
-List<Drawable> BlueprintItem::dropDrawables() const {
+auto BlueprintItem::dropDrawables() const -> List<Drawable> {
   return m_inHandDrawable;
 }
 
-}
+}// namespace Star

@@ -1,8 +1,11 @@
 #include "StarTeamManager.hpp"
-#include "StarRandom.hpp"
+
 #include "StarJsonExtra.hpp"
+#include "StarRandom.hpp"
 #include "StarRoot.hpp"
 #include "StarText.hpp"
+
+import std;
 
 namespace Star {
 
@@ -11,16 +14,15 @@ TeamManager::TeamManager() {
   m_maxTeamSize = Root::singleton().configuration()->get("maxTeamSize").toUInt();
 }
 
-JsonRpcHandlers TeamManager::rpcHandlers() {
+auto TeamManager::rpcHandlers() -> JsonRpcHandlers {
   return JsonRpcHandlers{
-    {"team.fetchTeamStatus", bind(&TeamManager::fetchTeamStatus, this, _1)},
-    {"team.updateStatus", bind(&TeamManager::updateStatus, this, _1)},
-    {"team.invite", bind(&TeamManager::invite, this, _1)},
-    {"team.pollInvitation", bind(&TeamManager::pollInvitation, this, _1)},
-    {"team.acceptInvitation", bind(&TeamManager::acceptInvitation, this, _1)},
-    {"team.makeLeader", bind(&TeamManager::makeLeader, this, _1)},
-    {"team.removeFromTeam", [&](Json request) -> Json { return removeFromTeam(request); }}
-  };
+    {"team.fetchTeamStatus", [this](auto&& PH1) -> auto { return fetchTeamStatus(std::forward<decltype(PH1)>(PH1)); }},
+    {"team.updateStatus", [this](auto&& PH1) -> auto { return updateStatus(std::forward<decltype(PH1)>(PH1)); }},
+    {"team.invite", [this](auto&& PH1) -> auto { return invite(std::forward<decltype(PH1)>(PH1)); }},
+    {"team.pollInvitation", [this](auto&& PH1) -> auto { return pollInvitation(std::forward<decltype(PH1)>(PH1)); }},
+    {"team.acceptInvitation", [this](auto&& PH1) -> auto { return acceptInvitation(std::forward<decltype(PH1)>(PH1)); }},
+    {"team.makeLeader", [this](auto&& PH1) -> auto { return makeLeader(std::forward<decltype(PH1)>(PH1)); }},
+    {"team.removeFromTeam", [&](Json request) -> Json { return removeFromTeam(request); }}};
 }
 
 void TeamManager::setConnectedPlayers(StringMap<List<Uuid>> connectedPlayers) {
@@ -40,7 +42,7 @@ void TeamManager::playerDisconnected(Uuid const& playerUuid) {
   }
 }
 
-TeamNumber TeamManager::getPvpTeam(Uuid const& playerUuid) {
+auto TeamManager::getPvpTeam(Uuid const& playerUuid) -> TeamNumber {
   RecursiveMutexLocker lock(m_mutex);
   for (auto const& teamPair : m_teams) {
     if (teamPair.second.members.contains(playerUuid))
@@ -49,7 +51,7 @@ TeamNumber TeamManager::getPvpTeam(Uuid const& playerUuid) {
   return 0;
 }
 
-HashMap<Uuid, TeamNumber> TeamManager::getPvpTeams() {
+auto TeamManager::getPvpTeams() -> HashMap<Uuid, TeamNumber> {
   HashMap<Uuid, TeamNumber> result;
   for (auto const& teamPair : m_teams) {
     for (auto const& memberPair : teamPair.second.members)
@@ -58,7 +60,7 @@ HashMap<Uuid, TeamNumber> TeamManager::getPvpTeams() {
   return result;
 }
 
-std::optional<Uuid> TeamManager::getTeam(Uuid const& playerUuid) const {
+auto TeamManager::getTeam(Uuid const& playerUuid) const -> std::optional<Uuid> {
   for (auto const& teamPair : m_teams) {
     if (teamPair.second.members.contains(playerUuid))
       return teamPair.first;
@@ -71,12 +73,12 @@ void TeamManager::purgeInvitationsFor(Uuid const& playerUuid) {
 }
 
 void TeamManager::purgeInvitationsFrom(Uuid const& playerUuid) {
-  eraseWhere(m_invitations, [playerUuid](auto const& invitation) {
-      return invitation.second.inviterUuid == playerUuid;
-    });
+  eraseWhere(m_invitations, [playerUuid](auto const& invitation) -> auto {
+    return invitation.second.inviterUuid == playerUuid;
+  });
 }
 
-bool TeamManager::playerWithUuidExists(Uuid const& playerUuid) const {
+auto TeamManager::playerWithUuidExists(Uuid const& playerUuid) const -> bool {
   for (auto const& p : m_connectedPlayers) {
     if (p.second.contains(playerUuid))
       return true;
@@ -84,11 +86,11 @@ bool TeamManager::playerWithUuidExists(Uuid const& playerUuid) const {
   return false;
 }
 
-Uuid TeamManager::createTeam(Uuid const& leaderUuid) {
+auto TeamManager::createTeam(Uuid const& leaderUuid) -> Uuid {
   RecursiveMutexLocker lock(m_mutex);
 
   Uuid teamUuid;
-  auto& team = m_teams[teamUuid]; // create
+  auto& team = m_teams[teamUuid];// create
 
   int limiter = 256;
   while (true) {
@@ -117,7 +119,7 @@ Uuid TeamManager::createTeam(Uuid const& leaderUuid) {
   return teamUuid;
 }
 
-bool TeamManager::addToTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
+auto TeamManager::addToTeam(Uuid const& playerUuid, Uuid const& teamUuid) -> bool {
   RecursiveMutexLocker lock(m_mutex);
 
   if (!m_teams.contains(teamUuid))
@@ -146,7 +148,7 @@ bool TeamManager::addToTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
   return true;
 }
 
-bool TeamManager::removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
+auto TeamManager::removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid) -> bool {
   RecursiveMutexLocker lock(m_mutex);
 
   if (!m_teams.contains(teamUuid))
@@ -168,7 +170,7 @@ bool TeamManager::removeFromTeam(Uuid const& playerUuid, Uuid const& teamUuid) {
   return true;
 }
 
-Json TeamManager::fetchTeamStatus(Json const& arguments) {
+auto TeamManager::fetchTeamStatus(Json const& arguments) -> Json {
   RecursiveMutexLocker lock(m_mutex);
   auto playerUuid = Uuid(arguments.getString("playerUuid"));
   JsonObject result;
@@ -191,7 +193,7 @@ Json TeamManager::fetchTeamStatus(Json const& arguments) {
       member["y"] = mem.position[1];
       member["world"] = printWorldId(mem.world);
       member["warpMode"] = WarpModeNames.getRight(mem.warpMode);
-      member["portrait"] = jsonFromList(mem.portrait, mem_fn(&Drawable::toJson));
+      member["portrait"] = jsonFromList(mem.portrait, std::mem_fn(&Drawable::toJson));
       members.push_back(member);
     }
     result["members"] = members;
@@ -199,7 +201,7 @@ Json TeamManager::fetchTeamStatus(Json const& arguments) {
   return result;
 }
 
-Json TeamManager::updateStatus(Json const& arguments) {
+auto TeamManager::updateStatus(Json const& arguments) -> Json {
   RecursiveMutexLocker lock(m_mutex);
   auto playerUuid = Uuid(arguments.getString("playerUuid"));
   if (auto teamUuid = getTeam(playerUuid)) {
@@ -224,7 +226,7 @@ Json TeamManager::updateStatus(Json const& arguments) {
   }
 }
 
-Json TeamManager::invite(Json const& arguments) {
+auto TeamManager::invite(Json const& arguments) -> Json {
   RecursiveMutexLocker lock(m_mutex);
   auto inviteeName = Text::stripEscapeCodes(arguments.getString("inviteeName"));
 
@@ -253,7 +255,7 @@ Json TeamManager::invite(Json const& arguments) {
     return "inviteeNotFound";
 }
 
-Json TeamManager::pollInvitation(Json const& arguments) {
+auto TeamManager::pollInvitation(Json const& arguments) -> Json {
   RecursiveMutexLocker lock(m_mutex);
   auto playerUuid = Uuid(arguments.getString("playerUuid"));
   if (m_invitations.contains(playerUuid)) {
@@ -266,7 +268,7 @@ Json TeamManager::pollInvitation(Json const& arguments) {
   return {};
 }
 
-Json TeamManager::acceptInvitation(Json const& arguments) {
+auto TeamManager::acceptInvitation(Json const& arguments) -> Json {
   RecursiveMutexLocker lock(m_mutex);
   auto inviterUuid = Uuid(arguments.getString("inviterUuid"));
   auto inviteeUuid = Uuid(arguments.getString("inviteeUuid"));
@@ -286,7 +288,7 @@ Json TeamManager::acceptInvitation(Json const& arguments) {
   return success ? Json() : "acceptInvitationFailed";
 }
 
-Json TeamManager::removeFromTeam(Json const& arguments) {
+auto TeamManager::removeFromTeam(Json const& arguments) -> Json {
   auto playerUuid = Uuid(arguments.getString("playerUuid"));
   auto teamUuid = Uuid(arguments.getString("teamUuid"));
 
@@ -294,7 +296,7 @@ Json TeamManager::removeFromTeam(Json const& arguments) {
   return success ? Json() : "removeFromTeamFailed";
 }
 
-Json TeamManager::makeLeader(Json const& arguments) {
+auto TeamManager::makeLeader(Json const& arguments) -> Json {
   RecursiveMutexLocker lock(m_mutex);
   auto playerUuid = Uuid(arguments.getString("playerUuid"));
   auto teamUuid = Uuid(arguments.getString("teamUuid"));
@@ -312,4 +314,4 @@ Json TeamManager::makeLeader(Json const& arguments) {
   return {};
 }
 
-}
+}// namespace Star

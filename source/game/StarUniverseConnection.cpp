@@ -1,14 +1,16 @@
 #include "StarUniverseConnection.hpp"
+#include "StarConfig.hpp"
 #include "StarFormat.hpp"
 #include "StarLogging.hpp"
 #include "StarTime.hpp"
-#include <thread>
+
+import std;
 
 namespace Star {
 
-static const int PacketSocketPollSleep = 1;
+static constexpr std::int32_t PacketSocketPollSleep = 1;
 
-UniverseConnection::UniverseConnection(PacketSocketUPtr packetSocket)
+UniverseConnection::UniverseConnection(UPtr<PacketSocket> packetSocket)
     : m_packetSocket(std::move(packetSocket)) {}
 
 UniverseConnection::UniverseConnection(UniverseConnection&& rhs) {
@@ -20,7 +22,7 @@ UniverseConnection::~UniverseConnection() {
     m_packetSocket->close();
 }
 
-UniverseConnection& UniverseConnection::operator=(UniverseConnection&& rhs) {
+auto UniverseConnection::operator=(UniverseConnection&& rhs) -> UniverseConnection& {
   MutexLocker locker(m_mutex);
   m_sendQueue = take(rhs.m_sendQueue);
   m_receiveQueue = take(rhs.m_receiveQueue);
@@ -28,7 +30,7 @@ UniverseConnection& UniverseConnection::operator=(UniverseConnection&& rhs) {
   return *this;
 }
 
-bool UniverseConnection::isOpen() const {
+auto UniverseConnection::isOpen() const -> bool {
   MutexLocker locker(m_mutex);
   return m_packetSocket->isOpen();
 }
@@ -38,35 +40,35 @@ void UniverseConnection::close() {
   m_packetSocket->close();
 }
 
-void UniverseConnection::push(List<PacketPtr> packets) {
+void UniverseConnection::push(List<Ptr<Packet>> packets) {
   MutexLocker locker(m_mutex);
   m_sendQueue.appendAll(std::move(packets));
 }
 
-void UniverseConnection::pushSingle(PacketPtr packet) {
+void UniverseConnection::pushSingle(Ptr<Packet> packet) {
   MutexLocker locker(m_mutex);
   m_sendQueue.append(std::move(packet));
 }
 
-List<PacketPtr> UniverseConnection::pull() {
+auto UniverseConnection::pull() -> List<Ptr<Packet>> {
   MutexLocker locker(m_mutex);
-  return List<PacketPtr>::from(take(m_receiveQueue));
+  return List<Ptr<Packet>>::from(take(m_receiveQueue));
 }
 
-PacketPtr UniverseConnection::pullSingle() {
+auto UniverseConnection::pullSingle() -> Ptr<Packet> {
   MutexLocker locker(m_mutex);
   if (m_receiveQueue.empty())
     return {};
   return m_receiveQueue.takeFirst();
 }
 
-bool UniverseConnection::send() {
+auto UniverseConnection::send() -> bool {
   MutexLocker locker(m_mutex);
   m_packetSocket->sendPackets(take(m_sendQueue));
   return m_packetSocket->writeData();
 }
 
-bool UniverseConnection::sendAll(unsigned timeout) {
+auto UniverseConnection::sendAll(unsigned timeout) -> bool {
   MutexLocker locker(m_mutex);
 
   m_packetSocket->sendPackets(take(m_sendQueue));
@@ -84,14 +86,14 @@ bool UniverseConnection::sendAll(unsigned timeout) {
   }
 }
 
-bool UniverseConnection::receive() {
+auto UniverseConnection::receive() -> bool {
   MutexLocker locker(m_mutex);
   bool received = m_packetSocket->readData();
   m_receiveQueue.appendAll(m_packetSocket->receivePackets());
   return received;
 }
 
-bool UniverseConnection::receiveAny(unsigned timeout) {
+auto UniverseConnection::receiveAny(unsigned timeout) -> bool {
   MutexLocker locker(m_mutex);
   if (!m_receiveQueue.empty())
     return true;
@@ -110,16 +112,16 @@ bool UniverseConnection::receiveAny(unsigned timeout) {
   }
 }
 
-PacketSocket& UniverseConnection::packetSocket() {
+auto UniverseConnection::packetSocket() -> PacketSocket& {
   return *m_packetSocket;
 }
 
-std::optional<PacketStats> UniverseConnection::incomingStats() const {
+auto UniverseConnection::incomingStats() const -> std::optional<PacketStats> {
   MutexLocker locker(m_mutex);
   return m_packetSocket->incomingStats();
 }
 
-std::optional<PacketStats> UniverseConnection::outgoingStats() const {
+auto UniverseConnection::outgoingStats() const -> std::optional<PacketStats> {
   MutexLocker locker(m_mutex);
   return m_packetSocket->outgoingStats();
 }
@@ -127,7 +129,7 @@ std::optional<PacketStats> UniverseConnection::outgoingStats() const {
 UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetReceiver, size_t numWorkerThreads)
     : m_packetReceiver(std::move(packetReceiver)), m_shutdown(false) {
   if (numWorkerThreads == 0)
-    m_numWorkerThreads = max<size_t>(2, std::thread::hardware_concurrency() / 4);
+    m_numWorkerThreads = std::max<size_t>(2, std::thread::hardware_concurrency() / 4);
   else
     m_numWorkerThreads = numWorkerThreads;
 
@@ -136,7 +138,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
   m_workerStats.resize(m_numWorkerThreads);
 
   for (size_t i = 0; i < m_numWorkerThreads; ++i) {
-    m_processingThreads.append(Thread::invoke(strf("UniverseConnectionServer::worker_{}", i), [this, i]() {
+    m_processingThreads.append(Thread::invoke(strf("UniverseConnectionServer::worker_{}", i), [this, i]() -> void {
       RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
       try {
         while (!m_shutdown) {
@@ -159,7 +161,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
             dataTransmitted |= p.second->packetSocket->writeData();
 
             dataTransmitted |= p.second->packetSocket->readData();
-            List<PacketPtr> receivePackets = p.second->packetSocket->receivePackets();
+            List<Ptr<Packet>> receivePackets = p.second->packetSocket->receivePackets();
             if (!receivePackets.empty()) {
               p.second->lastActivityTime = Time::monotonicMilliseconds();
               m_workerStats[i].packetsProcessed += receivePackets.size();
@@ -167,7 +169,7 @@ UniverseConnectionServer::UniverseConnectionServer(PacketReceiveCallback packetR
             }
 
             if (!p.second->receiveQueue.empty()) {
-              List<PacketPtr> toReceive = List<PacketPtr>::from(take(p.second->receiveQueue));
+              List<Ptr<Packet>> toReceive = List<Ptr<Packet>>::from(take(p.second->receiveQueue));
               connectionLocker.unlock();
 
               try {
@@ -203,17 +205,17 @@ UniverseConnectionServer::~UniverseConnectionServer() {
   removeAllConnections();
 }
 
-bool UniverseConnectionServer::hasConnection(ConnectionId clientId) const {
+auto UniverseConnectionServer::hasConnection(ConnectionId clientId) const -> bool {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   return m_connections.contains(clientId);
 }
 
-List<ConnectionId> UniverseConnectionServer::allConnections() const {
+auto UniverseConnectionServer::allConnections() const -> List<ConnectionId> {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   return m_connections.keys();
 }
 
-bool UniverseConnectionServer::connectionIsOpen(ConnectionId clientId) const {
+auto UniverseConnectionServer::connectionIsOpen(ConnectionId clientId) const -> bool {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
     connectionsLocker.unlock();
@@ -224,7 +226,7 @@ bool UniverseConnectionServer::connectionIsOpen(ConnectionId clientId) const {
   throw UniverseConnectionException::format("No such client '{}' in UniverseConnectionServer::connectionIsOpen", clientId);
 }
 
-int64_t UniverseConnectionServer::lastActivityTime(ConnectionId clientId) const {
+auto UniverseConnectionServer::lastActivityTime(ConnectionId clientId) const -> std::int64_t {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
     connectionsLocker.unlock();
@@ -239,7 +241,7 @@ void UniverseConnectionServer::addConnection(ConnectionId clientId, UniverseConn
   if (m_connections.contains(clientId))
     throw UniverseConnectionException::format("Client '{}' already exists in UniverseConnectionServer::addConnection", clientId);
 
-  auto connection = make_shared<Connection>();
+  auto connection = std::make_shared<Connection>();
   connection->packetSocket = std::move(uc.m_packetSocket);
   connection->sendQueue = std::move(uc.m_sendQueue);
   connection->receiveQueue = std::move(uc.m_receiveQueue);
@@ -248,7 +250,7 @@ void UniverseConnectionServer::addConnection(ConnectionId clientId, UniverseConn
   m_connections.add(clientId, std::move(connection));
 }
 
-UniverseConnection UniverseConnectionServer::removeConnection(ConnectionId clientId) {
+auto UniverseConnectionServer::removeConnection(ConnectionId clientId) -> UniverseConnection {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (!m_connections.contains(clientId))
     throw UniverseConnectionException::format("Client '{}' does not exist in UniverseConnectionServer::removeConnection", clientId);
@@ -264,7 +266,7 @@ UniverseConnection UniverseConnectionServer::removeConnection(ConnectionId clien
   return uc;
 }
 
-List<UniverseConnection> UniverseConnectionServer::removeAllConnections() {
+auto UniverseConnectionServer::removeAllConnections() -> List<UniverseConnection> {
   List<UniverseConnection> removedConnections;
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   for (auto connectionId : m_connections.keys())
@@ -272,7 +274,7 @@ List<UniverseConnection> UniverseConnectionServer::removeAllConnections() {
   return removedConnections;
 }
 
-void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<PacketPtr> packets) {
+void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<Ptr<Packet>> packets) {
   RecursiveMutexLocker connectionsLocker(m_connectionsMutex);
   if (auto conn = m_connections.value(clientId)) {
     connectionsLocker.unlock();
@@ -288,14 +290,14 @@ void UniverseConnectionServer::sendPackets(ConnectionId clientId, List<PacketPtr
   }
 }
 
-uint64_t UniverseConnectionServer::totalPacketsProcessed() const {
-  uint64_t total = 0;
+auto UniverseConnectionServer::totalPacketsProcessed() const -> std::uint64_t {
+  std::uint64_t total = 0;
   for (auto const& stats : m_workerStats)
     total += stats.packetsProcessed.load();
   return total;
 }
 
-size_t UniverseConnectionServer::numWorkerThreads() const {
+auto UniverseConnectionServer::numWorkerThreads() const -> size_t {
   return m_numWorkerThreads;
 }
 

@@ -1,46 +1,47 @@
 #include "StarCelestialTypes.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
+
+import std;
 
 namespace Star {
 
-DataStream& operator>>(DataStream& ds, CelestialPlanet& planet) {
+auto operator>>(DataStream& ds, CelestialPlanet& planet) -> DataStream& {
   planet.planetParameters = CelestialParameters(ds.read<ByteArray>());
   ds.readMapContainer(planet.satelliteParameters,
-      [](DataStream& ds, int& orbit, CelestialParameters& parameters) {
-        ds.read(orbit);
-        parameters = CelestialParameters(ds.read<ByteArray>());
-      });
+                      [](DataStream& ds, int& orbit, CelestialParameters& parameters) -> void {
+                        ds.read(orbit);
+                        parameters = CelestialParameters(ds.read<ByteArray>());
+                      });
 
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, CelestialPlanet const& planet) {
+auto operator<<(DataStream& ds, CelestialPlanet const& planet) -> DataStream& {
   ds.write(planet.planetParameters.netStore());
   ds.writeMapContainer(planet.satelliteParameters,
-      [](DataStream& ds, int orbit, CelestialParameters const& parameters) {
-        ds.write(orbit);
-        ds.write(parameters.netStore());
-      });
+                       [](DataStream& ds, int orbit, CelestialParameters const& parameters) -> void {
+                         ds.write(orbit);
+                         ds.write(parameters.netStore());
+                       });
 
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, CelestialSystemObjects& systemObjects) {
+auto operator>>(DataStream& ds, CelestialSystemObjects& systemObjects) -> DataStream& {
   ds.read(systemObjects.systemLocation);
   ds.read(systemObjects.planets);
 
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects) {
+auto operator<<(DataStream& ds, CelestialSystemObjects const& systemObjects) -> DataStream& {
   ds.write(systemObjects.systemLocation);
   ds.write(systemObjects.planets);
 
   return ds;
 }
 
-CelestialChunk::CelestialChunk() {}
+CelestialChunk::CelestialChunk() = default;
 
 CelestialChunk::CelestialChunk(Json const& store) {
   chunkIndex = jsonToVec2I(store.get("chunkIndex"));
@@ -69,7 +70,7 @@ CelestialChunk::CelestialChunk(Json const& store) {
   }
 }
 
-Json CelestialChunk::toJson() const {
+auto CelestialChunk::toJson() const -> Json {
   JsonArray constellationStore;
   for (auto const& constellation : constellations) {
     JsonArray lines;
@@ -91,45 +92,46 @@ Json CelestialChunk::toJson() const {
         satellitesStore.append(JsonArray{satellitePair.first, satellitePair.second.diskStore()});
 
       planetsStore.append(JsonArray{planetPair.first,
-          JsonObject{
-              {"parameters", planetPair.second.planetParameters.diskStore()}, {"satellites", std::move(satellitesStore)}}});
+                                    JsonObject{
+                                      {"parameters", planetPair.second.planetParameters.diskStore()},
+                                      {"satellites", std::move(satellitesStore)}}});
     }
     systemObjectsStore.append(JsonArray{jsonFromVec3I(systemObjectPair.first), std::move(planetsStore)});
   }
 
   return JsonObject{{"chunkIndex", jsonFromVec2I(chunkIndex)},
-      {"constellations", constellationStore},
-      {"systemParameters", systemParametersStore},
-      {"systemObjects", systemObjectsStore}};
+                    {"constellations", constellationStore},
+                    {"systemParameters", systemParametersStore},
+                    {"systemObjects", systemObjectsStore}};
 }
 
-DataStream& operator>>(DataStream& ds, CelestialChunk& chunk) {
+auto operator>>(DataStream& ds, CelestialChunk& chunk) -> DataStream& {
   ds.read(chunk.chunkIndex);
   ds.read(chunk.constellations);
   ds.readMapContainer(chunk.systemParameters,
-      [](DataStream& ds, Vec3I& location, CelestialParameters& parameters) {
-        ds.read(location);
-        parameters = CelestialParameters(ds.read<ByteArray>());
-      });
+                      [](DataStream& ds, Vec3I& location, CelestialParameters& parameters) -> void {
+                        ds.read(location);
+                        parameters = CelestialParameters(ds.read<ByteArray>());
+                      });
   ds.read(chunk.systemObjects);
 
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, CelestialChunk const& chunk) {
+auto operator<<(DataStream& ds, CelestialChunk const& chunk) -> DataStream& {
   ds.write(chunk.chunkIndex);
   ds.write(chunk.constellations);
   ds.writeMapContainer(chunk.systemParameters,
-      [](DataStream& ds, Vec3I const& location, CelestialParameters const& parameters) {
-        ds.write(location);
-        ds.write(parameters.netStore());
-      });
+                       [](DataStream& ds, Vec3I const& location, CelestialParameters const& parameters) -> void {
+                         ds.write(location);
+                         ds.write(parameters.netStore());
+                       });
   ds.write(chunk.systemObjects);
 
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation) {
+auto operator>>(DataStream& ds, CelestialBaseInformation& celestialInformation) -> DataStream& {
   ds.read(celestialInformation.planetOrbitalLevels);
   ds.read(celestialInformation.satelliteOrbitalLevels);
   ds.read(celestialInformation.chunkSize);
@@ -139,7 +141,7 @@ DataStream& operator>>(DataStream& ds, CelestialBaseInformation& celestialInform
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation) {
+auto operator<<(DataStream& ds, CelestialBaseInformation const& celestialInformation) -> DataStream& {
   ds.write(celestialInformation.planetOrbitalLevels);
   ds.write(celestialInformation.satelliteOrbitalLevels);
   ds.write(celestialInformation.chunkSize);
@@ -149,4 +151,4 @@ DataStream& operator<<(DataStream& ds, CelestialBaseInformation const& celestial
   return ds;
 }
 
-}
+}// namespace Star

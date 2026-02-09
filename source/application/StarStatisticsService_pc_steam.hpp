@@ -1,36 +1,38 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarPlatformServices_pc.hpp"
+
+import std;
+
 
 namespace Star {
 
-STAR_CLASS(SteamStatisticsService);
-
 class SteamStatisticsSeSTEAM_CALLBACKrvice : public StatisticsService {
 public:
-  SteamStatisticsService(PcPlatformServicesStatePtr state);
+  SteamStatisticsService(Ptr<PcPlatformServicesState> state);
 
-  bool initialized() const override;
-  std::optional<String> error() const override;
+  [[nodiscard]] auto initialized() const -> bool override;
+  [[nodiscard]] auto error() const -> std::optional<String> override;
 
-  bool setStat(String const& name, String const& type, Json const& value) override;
-  Json getStat(String const& name, String const& type, Json def = {}) const override;
+  auto setStat(String const& name, String const& type, Json const& value) -> bool override;
+  [[nodiscard]] auto getStat(String const& name, String const& type, Json def = {}) const -> Json override;
 
-  bool reportEvent(String const& name, Json const& fields) override;
+  auto reportEvent(String const& name, Json const& fields) -> bool override;
 
-  bool unlockAchievement(String const& name) override;
-  StringSet achievementsUnlocked() const override;
+  auto unlockAchievement(String const& name) -> bool override;
+  [[nodiscard]] auto achievementsUnlocked() const -> StringSet override;
 
   void refresh() override;
   void flush() override;
   bool reset() override;
 
 private:
-  STEAM_CALLBACK(SteamStatisticsService, onUserStatsReceived, UserStatsReceived_t, m_callbackUserStatsReceived);
-  STEAM_CALLBACK(SteamStatisticsService, onUserStatsStored, UserStatsStored_t, m_callbackUserStatsStored);
-  STEAM_CALLBACK(SteamStatisticsService, onAchievementStored, UserAchievementStored_t, m_callbackAchievementStored);
+  // STEAM_CALLBACK(SteamStatisticsService, onUserStatsReceived, UserStatsReceived_t, m_callbackUserStatsReceived);
+  // STEAM_CALLBACK(SteamStatisticsService, onUserStatsStored, UserStatsStored_t, m_callbackUserStatsStored);
+  // STEAM_CALLBACK(SteamStatisticsService, onAchievementStored, UserAchievementStored_t, m_callbackAchievementStored);
 
-  uint64_t m_appId;
+  std::uint64_t m_appId;
   bool m_initialized;
   std::optional<String> m_error;
 };

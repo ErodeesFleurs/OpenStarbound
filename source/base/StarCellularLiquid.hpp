@@ -89,8 +89,8 @@ public:
 
   void update();
 
-  [[nodiscard]] auto activeCells() const -> size_t;
-  auto activeCells(LiquidId liquid) const -> size_t;
+  [[nodiscard]] auto activeCells() const -> std::size_t;
+  auto activeCells(LiquidId liquid) const -> std::size_t;
   [[nodiscard]] auto isActive(Vec2I const& pos) const -> bool;
 
 private:
@@ -235,15 +235,15 @@ void LiquidCellEngine<LiquidId>::update() {
 }
 
 template <typename LiquidId>
-auto LiquidCellEngine<LiquidId>::activeCells() const -> size_t {
-  size_t totalSize = 0;
+auto LiquidCellEngine<LiquidId>::activeCells() const -> std::size_t {
+  std::size_t totalSize = 0;
   for (auto const& p : m_activeCells)
     totalSize += p.second.size();
   return totalSize;
 }
 
 template <typename LiquidId>
-auto LiquidCellEngine<LiquidId>::activeCells(LiquidId liquid) const -> size_t {
+auto LiquidCellEngine<LiquidId>::activeCells(LiquidId liquid) const -> std::size_t {
   return m_activeCells.value(liquid).size();
 }
 
@@ -268,7 +268,7 @@ void LiquidCellEngine<LiquidId>::setup() {
     if (tickDelta == 0 || m_step % tickDelta != 0)
       continue;
 
-    size_t limitedCellNumber = 0;
+    std::size_t limitedCellNumber = 0;
     for (auto const& pos : activeCellsPair.second.values()) {
       if (m_processingLimit) {
         bool foundInUnlimitedRegion = false;

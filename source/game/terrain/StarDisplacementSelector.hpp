@@ -1,7 +1,8 @@
 #pragma once
 
-#include "StarTerrainDatabase.hpp"
+#include "StarConfig.hpp"
 #include "StarPerlin.hpp"
+#include "StarTerrainDatabase.hpp"
 #include "StarVector.hpp"
 
 namespace Star {
@@ -10,9 +11,9 @@ struct DisplacementSelector : TerrainSelector {
   static char const* const Name;
 
   DisplacementSelector(
-      Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
+    Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] auto get(int x, int y) const -> float override;
 
   PerlinF xDisplacementFunction;
   PerlinF yDisplacementFunction;
@@ -26,9 +27,9 @@ struct DisplacementSelector : TerrainSelector {
   Vec2F yClampRange;
   float yClampSmoothing;
 
-  float clampY(float v) const;
+  auto clampY(float v) const -> float;
 
-  TerrainSelectorConstPtr m_source;
+  ConstPtr<TerrainSelector> m_source;
 };
 
-}
+}// namespace Star

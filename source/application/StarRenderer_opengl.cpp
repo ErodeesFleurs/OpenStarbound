@@ -1,11 +1,14 @@
 #include "StarRenderer_opengl.hpp"
-#include "StarJsonExtra.hpp"
+
 #include "StarCasting.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+
+import std;
 
 namespace Star {
 
-size_t const MultiTextureCount = 4;
+std::size_t const MultiTextureCount = 4;
 
 char const* DefaultVertexShader = R"SHADER(
 #version 140
@@ -98,10 +101,10 @@ OpenGlRenderer::OpenGlRenderer() {
     throw RendererException("OpenGL 2.0 not available!");
 
   Logger::info(std::string_view("OpenGL version: '{}' vendor: '{}' renderer: '{}' shader: '{}'"),
-      (const char*)glGetString(GL_VERSION),
-      (const char*)glGetString(GL_VENDOR),
-      (const char*)glGetString(GL_RENDERER),
-      (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+               (const char*)glGetString(GL_VERSION),
+               (const char*)glGetString(GL_VENDOR),
+               (const char*)glGetString(GL_RENDERER),
+               (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
 
   glClearColor(0.0, 0.0, 0.0, 1.0);
   glEnable(GL_BLEND);
@@ -113,8 +116,8 @@ OpenGlRenderer::OpenGlRenderer() {
   }
 
   m_whiteTexture = createGlTexture(Image::filled({1, 1}, Vec4B(255, 255, 255, 255), PixelFormat::RGBA32),
-      TextureAddressing::Clamp,
-      TextureFiltering::Nearest);
+                                   TextureAddressing::Clamp,
+                                   TextureFiltering::Nearest);
   m_immediateRenderBuffer = createGlRenderBuffer();
 
   loadEffectConfig("internal", JsonObject(), {{"vertex", DefaultVertexShader}, {"fragment", DefaultFragmentShader}});
@@ -134,15 +137,15 @@ OpenGlRenderer::~OpenGlRenderer() {
   logGlErrorSummary("OpenGL errors during shutdown");
 }
 
-String OpenGlRenderer::rendererId() const {
+auto OpenGlRenderer::rendererId() const -> String {
   return "OpenGL20";
 }
 
-Vec2U OpenGlRenderer::screenSize() const {
+auto OpenGlRenderer::screenSize() const -> Vec2U {
   return m_screenSize;
 }
 
-OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbConfig) {
+OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(std::move(fbConfig)) {
   texture = make_ref<GlLoneTexture>();
   texture->textureFiltering = TextureFiltering::Nearest;
   texture->textureAddressing = TextureAddressing::Clamp;
@@ -156,12 +159,12 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
   glBindTexture(target, texture->glTextureId());
 
   sizeDiv = config.getUInt("sizeDiv", 1);
-  Vec2U size = jsonToVec2U(config.getArray("size", { 256, 256 })) / sizeDiv;
+  Vec2U size = jsonToVec2U(config.getArray("size", {256, 256})) / sizeDiv;
 
   if (multisample)
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, size[0], size[1], GL_TRUE);
   else {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
   }
   auto addressing = TextureAddressingNames.getLeft(config.getString("textureAddressing", "clamp"));
   auto filtering = TextureFilteringNames.getLeft(config.getString("textureFiltering", "nearest"));
@@ -194,7 +197,6 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
     throw RendererException("OpenGL framebuffer is not complete!");
 }
 
-
 OpenGlRenderer::GlFrameBuffer::~GlFrameBuffer() {
   glDeleteFramebuffers(1, &id);
   texture.reset();
@@ -208,7 +210,6 @@ void OpenGlRenderer::loadConfig(Json const& config) {
     config = config.set("multisample", m_multiSampling);
     Logger::info(std::string_view("Creating framebuffer {}"), pair.first);
     m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(config);
-
   }
   setScreenSize(m_screenSize);
   m_config = config;
@@ -222,7 +223,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
   }
 
   GLint status = 0;
-  char logBuffer[1024];
+  std::array<char, 1024> logBuffer;
 
   auto compileShader = [&](GLenum type, String const& name) -> GLuint {
     GLuint shader = glCreateShader(type);
@@ -230,12 +231,12 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     if (!source)
       return 0;
     char const* sourcePtr = source->utf8Ptr();
-    glShaderSource(shader, 1, &sourcePtr, NULL);
+    glShaderSource(shader, 1, &sourcePtr, nullptr);
     glCompileShader(shader);
 
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (!status) {
-      glGetShaderInfoLog(shader, sizeof(logBuffer), NULL, logBuffer);
+      glGetShaderInfoLog(shader, sizeof(logBuffer), nullptr, logBuffer.data());
       throw RendererException(strf(std::string_view("Failed to compile {} shader: {}\n"), name, logBuffer));
     }
 
@@ -246,11 +247,12 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
   try {
     vertexShader = compileShader(GL_VERTEX_SHADER, "vertex");
     fragmentShader = compileShader(GL_FRAGMENT_SHADER, "fragment");
-  }
-  catch (RendererException const& e) {
+  } catch (RendererException const& e) {
     Logger::error(std::string_view("Shader compile error, using default: {}"), e.what());
-    if (vertexShader) glDeleteShader(vertexShader);
-    if (fragmentShader) glDeleteShader(fragmentShader);
+    if (vertexShader)
+      glDeleteShader(vertexShader);
+    if (fragmentShader)
+      glDeleteShader(fragmentShader);
     vertexShader = compileShader(GL_VERTEX_SHADER, DefaultVertexShader);
     fragmentShader = compileShader(GL_FRAGMENT_SHADER, DefaultFragmentShader);
   }
@@ -270,7 +272,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
 
   glGetProgramiv(program, GL_LINK_STATUS, &status);
   if (!status) {
-    glGetProgramInfoLog(program, sizeof(logBuffer), NULL, logBuffer);
+    glGetProgramInfoLog(program, sizeof(logBuffer), nullptr, logBuffer.data());
     glDeleteProgram(program);
     throw RendererException(strf(std::string_view("Failed to link program: {}\n"), logBuffer));
   }
@@ -280,7 +282,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
   auto& effect = m_effects.emplace(name, Effect()).first->second;
   effect.program = m_program;
   effect.config = effectConfig;
-  effect.includeVBTextures = effectConfig.getBool("includeVBTextures",true);
+  effect.includeVBTextures = effectConfig.getBool("includeVBTextures", true);
   m_currentEffect = &effect;
   setupGlUniforms(effect, m_screenSize);
 
@@ -308,7 +310,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
         throw RendererException::format(std::string_view("Unrecognized effect parameter type '{}'"), type);
       }
 
-      if (p.second.getBool("scriptable",false)) {
+      if (p.second.getBool("scriptable", false)) {
         if (Json def = p.second.get("default", {})) {
           if (type == "bool") {
             effectParameter.parameterValue = (RenderEffectParameter)def.toBool();
@@ -357,23 +359,20 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     if (effectTexture.textureUniform == -1) {
       Logger::warn(std::string_view("OpenGL20 effect parameter '{}' has no associated uniform, skipping"), p.first);
     } else {
-        effectTexture.textureUnit = parameterTextureUnit++;
-        glUniform1i(effectTexture.textureUniform, effectTexture.textureUnit);
+      effectTexture.textureUnit = parameterTextureUnit++;
+      glUniform1i(effectTexture.textureUniform, effectTexture.textureUnit);
 
-        effectTexture.textureAddressing = TextureAddressingNames.getLeft(p.second.getString("textureAddressing", "clamp"));
-        effectTexture.textureFiltering = TextureFilteringNames.getLeft(p.second.getString("textureFiltering", "nearest"));
-        if (auto tsu = p.second.optString("textureSizeUniform")) {
-          effectTexture.textureSizeUniform = glGetUniformLocation(m_program, tsu->utf8Ptr());
-          if (effectTexture.textureSizeUniform == -1)
-            Logger::warn(std::string_view("OpenGL20 effect parameter '{}' has textureSizeUniform '{}' with no associated uniform"), p.first, *tsu);
-        }
+      effectTexture.textureAddressing = TextureAddressingNames.getLeft(p.second.getString("textureAddressing", "clamp"));
+      effectTexture.textureFiltering = TextureFilteringNames.getLeft(p.second.getString("textureFiltering", "nearest"));
+      if (auto tsu = p.second.optString("textureSizeUniform")) {
+        effectTexture.textureSizeUniform = glGetUniformLocation(m_program, tsu->utf8Ptr());
+        if (effectTexture.textureSizeUniform == -1)
+          Logger::warn(std::string_view("OpenGL20 effect parameter '{}' has textureSizeUniform '{}' with no associated uniform"), p.first, *tsu);
+      }
 
       effect.textures[p.first] = effectTexture;
     }
   }
-
-  if (DebugEnabled)
-    logGlErrorSummary("OpenGL errors setting effect config");
 }
 
 void OpenGlRenderer::setEffectParameter(String const& parameterName, RenderEffectParameter const& value) {
@@ -419,7 +418,7 @@ void OpenGlRenderer::setEffectScriptableParameter(String const& effectName, Stri
   ptr->parameterValue = value;
 }
 
-std::optional<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParameter(String const& effectName, String const& parameterName) {
+auto OpenGlRenderer::getEffectScriptableParameter(String const& effectName, String const& parameterName) -> std::optional<RenderEffectParameter> {
   auto find = m_effects.find(effectName);
   if (find == m_effects.end())
     return {};
@@ -432,7 +431,7 @@ std::optional<RenderEffectParameter> OpenGlRenderer::getEffectScriptableParamete
 
   return ptr->parameterValue;
 }
-std::optional<VariantTypeIndex> OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) {
+auto OpenGlRenderer::getEffectScriptableParameterType(String const& effectName, String const& parameterName) -> std::optional<VariantTypeIndex> {
   auto find = m_effects.find(effectName);
   if (find == m_effects.end())
     return {};
@@ -467,7 +466,7 @@ void OpenGlRenderer::setEffectTexture(String const& textureName, ImageView const
   }
 }
 
-bool OpenGlRenderer::switchEffectConfig(String const& name) {
+auto OpenGlRenderer::switchEffectConfig(String const& name) -> bool {
   flushImmediatePrimitives();
   auto find = m_effects.find(name);
   if (find == m_effects.end())
@@ -531,7 +530,7 @@ void OpenGlRenderer::setScissorRect(std::optional<RectI> const& scissorRect) {
   }
 }
 
-TexturePtr OpenGlRenderer::createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) {
+auto OpenGlRenderer::createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) -> TexturePtr {
   return createGlTexture(texture, addressing, filtering);
 }
 
@@ -560,10 +559,10 @@ void OpenGlRenderer::setMultiSampling(unsigned multiSampling) {
   loadConfig(m_config);
 }
 
-TextureGroupPtr OpenGlRenderer::createTextureGroup(TextureGroupSize textureSize, TextureFiltering filtering) {
+auto OpenGlRenderer::createTextureGroup(TextureGroupSize textureSize, TextureFiltering filtering) -> Ptr<TextureGroup> {
   int maxTextureSize;
   glGetIntegerv(GL_MAX_TEXTURE_SIZE, &maxTextureSize);
-  maxTextureSize = min(maxTextureSize, (2 << 14));
+  maxTextureSize = std::min(maxTextureSize, (2 << 14));
   // Large texture sizes are not always supported
   if (textureSize == TextureGroupSize::Large && (m_limitTextureGroupSize || maxTextureSize < 4096))
     textureSize = TextureGroupSize::Medium;
@@ -573,22 +572,22 @@ TextureGroupPtr OpenGlRenderer::createTextureGroup(TextureGroupSize textureSize,
     atlasNumCells = 256;
   else if (textureSize == TextureGroupSize::Medium)
     atlasNumCells = 128;
-  else // TextureGroupSize::Small
+  else// TextureGroupSize::Small
     atlasNumCells = 64;
 
   Logger::info(std::string_view("detected supported OpenGL texture size {}, using atlasNumCells {}"), maxTextureSize, atlasNumCells);
 
-  auto glTextureGroup = make_shared<GlTextureGroup>(atlasNumCells);
+  auto glTextureGroup = std::make_shared<GlTextureGroup>(atlasNumCells);
   glTextureGroup->textureAtlasSet.textureFiltering = filtering;
   m_liveTextureGroups.append(glTextureGroup);
   return glTextureGroup;
 }
 
-RenderBufferPtr OpenGlRenderer::createRenderBuffer() {
+auto OpenGlRenderer::createRenderBuffer() -> Ptr<RenderBuffer> {
   return createGlRenderBuffer();
 }
 
-List<RenderPrimitive>& OpenGlRenderer::immediatePrimitives() {
+auto OpenGlRenderer::immediatePrimitives() -> List<RenderPrimitive>& {
   return m_immediatePrimitives;
 }
 
@@ -596,7 +595,7 @@ void OpenGlRenderer::render(RenderPrimitive primitive) {
   m_immediatePrimitives.append(std::move(primitive));
 }
 
-void OpenGlRenderer::renderBuffer(RenderBufferPtr const& renderBuffer, Mat3F const& transformation) {
+void OpenGlRenderer::renderBuffer(Ptr<RenderBuffer> const& renderBuffer, Mat3F const& transformation) {
   flushImmediatePrimitives();
   renderGlBuffer(*convert<GlRenderBuffer>(renderBuffer.get()), transformation);
 }
@@ -617,7 +616,7 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
       glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
     } else {
       glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     }
   }
 }
@@ -647,28 +646,25 @@ void OpenGlRenderer::finishFrame() {
   List<RenderPrimitive> empty;
   m_immediateRenderBuffer->set(empty);
 
-  filter(m_liveTextureGroups, [](auto const& p) {
-        unsigned const CompressionsPerFrame = 1;
+  filter(m_liveTextureGroups, [](auto const& p) -> auto {
+    unsigned const CompressionsPerFrame = 1;
 
-        if (p.use_count() != 1 || p->textureAtlasSet.totalTextures() > 0) {
-          p->textureAtlasSet.compressionPass(CompressionsPerFrame);
-          return true;
-        }
+    if (p.use_count() != 1 || p->textureAtlasSet.totalTextures() > 0) {
+      p->textureAtlasSet.compressionPass(CompressionsPerFrame);
+      return true;
+    }
 
-        return false;
-      });
+    return false;
+  });
 
   // Blit if another shader hasn't
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
-  if (DebugEnabled)
-    logGlErrorSummary("OpenGL errors this frame");
 }
 
 OpenGlRenderer::GlTextureAtlasSet::GlTextureAtlasSet(unsigned atlasNumCells)
-  : TextureAtlasSet(16, atlasNumCells) {}
+    : TextureAtlasSet(16, atlasNumCells) {}
 
-GLuint OpenGlRenderer::GlTextureAtlasSet::createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) {
+auto OpenGlRenderer::GlTextureAtlasSet::createAtlasTexture(Vec2U const& size, PixelFormat pixelFormat) -> GLuint {
   GLuint glTextureId;
   glGenTextures(1, &glTextureId);
   if (glTextureId == 0)
@@ -696,7 +692,7 @@ void OpenGlRenderer::GlTextureAtlasSet::destroyAtlasTexture(GLuint const& glText
 }
 
 void OpenGlRenderer::GlTextureAtlasSet::copyAtlasPixels(
-    GLuint const& glTexture, Vec2U const& bottomLeft, Image const& image) {
+  GLuint const& glTexture, Vec2U const& bottomLeft, Image const& image) {
   glBindTexture(GL_TEXTURE_2D, glTexture);
 
   glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -717,17 +713,17 @@ void OpenGlRenderer::GlTextureAtlasSet::copyAtlasPixels(
 }
 
 OpenGlRenderer::GlTextureGroup::GlTextureGroup(unsigned atlasNumCells)
-  : textureAtlasSet(atlasNumCells) {}
+    : textureAtlasSet(atlasNumCells) {}
 
 OpenGlRenderer::GlTextureGroup::~GlTextureGroup() {
   textureAtlasSet.reset();
 }
 
-TextureFiltering OpenGlRenderer::GlTextureGroup::filtering() const {
+auto OpenGlRenderer::GlTextureGroup::filtering() const -> TextureFiltering {
   return textureAtlasSet.textureFiltering;
 }
 
-TexturePtr OpenGlRenderer::GlTextureGroup::create(Image const& texture) {
+auto OpenGlRenderer::GlTextureGroup::create(Image const& texture) -> TexturePtr {
   // If the image is empty, or would not fit in the texture atlas with border
   // pixels, just create a regular texture
   Vec2U atlasTextureSize = textureAtlasSet.atlasTextureSize();
@@ -746,27 +742,27 @@ OpenGlRenderer::GlGroupedTexture::~GlGroupedTexture() {
     parentGroup->textureAtlasSet.freeTexture(parentAtlasTexture);
 }
 
-Vec2U OpenGlRenderer::GlGroupedTexture::size() const {
+auto OpenGlRenderer::GlGroupedTexture::size() const -> Vec2U {
   return parentAtlasTexture->imageSize();
 }
 
-TextureFiltering OpenGlRenderer::GlGroupedTexture::filtering() const {
+auto OpenGlRenderer::GlGroupedTexture::filtering() const -> TextureFiltering {
   return parentGroup->filtering();
 }
 
-TextureAddressing OpenGlRenderer::GlGroupedTexture::addressing() const {
+auto OpenGlRenderer::GlGroupedTexture::addressing() const -> TextureAddressing {
   return TextureAddressing::Clamp;
 }
 
-GLuint OpenGlRenderer::GlGroupedTexture::glTextureId() const {
+auto OpenGlRenderer::GlGroupedTexture::glTextureId() const -> GLuint {
   return parentAtlasTexture->atlasTexture();
 }
 
-Vec2U OpenGlRenderer::GlGroupedTexture::glTextureSize() const {
+auto OpenGlRenderer::GlGroupedTexture::glTextureSize() const -> Vec2U {
   return parentGroup->textureAtlasSet.atlasTextureSize();
 }
 
-Vec2U OpenGlRenderer::GlGroupedTexture::glTextureCoordinateOffset() const {
+auto OpenGlRenderer::GlGroupedTexture::glTextureCoordinateOffset() const -> Vec2U {
   return parentAtlasTexture->atlasTextureCoordinates().min();
 }
 
@@ -787,28 +783,28 @@ OpenGlRenderer::GlLoneTexture::~GlLoneTexture() {
     glDeleteTextures(1, &textureId);
 }
 
-Vec2U OpenGlRenderer::GlLoneTexture::size() const {
+auto OpenGlRenderer::GlLoneTexture::size() const -> Vec2U {
   return textureSize;
 }
 
-TextureFiltering OpenGlRenderer::GlLoneTexture::filtering() const {
+auto OpenGlRenderer::GlLoneTexture::filtering() const -> TextureFiltering {
   return textureFiltering;
 }
 
-TextureAddressing OpenGlRenderer::GlLoneTexture::addressing() const {
+auto OpenGlRenderer::GlLoneTexture::addressing() const -> TextureAddressing {
   return textureAddressing;
 }
 
-GLuint OpenGlRenderer::GlLoneTexture::glTextureId() const {
+auto OpenGlRenderer::GlLoneTexture::glTextureId() const -> GLuint {
   return textureId;
 }
 
-Vec2U OpenGlRenderer::GlLoneTexture::glTextureSize() const {
+auto OpenGlRenderer::GlLoneTexture::glTextureSize() const -> Vec2U {
   return textureSize;
 }
 
-Vec2U OpenGlRenderer::GlLoneTexture::glTextureCoordinateOffset() const {
-  return Vec2U();
+auto OpenGlRenderer::GlLoneTexture::glTextureCoordinateOffset() const -> Vec2U {
+  return {};
 }
 
 OpenGlRenderer::GlRenderBuffer::GlRenderBuffer() {
@@ -838,11 +834,11 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
   List<Vec2U> currentTextureSizes;
   size_t currentVertexCount = 0;
   glBindVertexArray(vertexArray);
-  auto finishCurrentBuffer = [&]() {
+  auto finishCurrentBuffer = [&]() -> void {
     if (currentVertexCount > 0) {
       GlVertexBuffer vb;
       for (size_t i = 0; i < currentTextures.size(); ++i) {
-        vb.textures.append(GlVertexBufferTexture{currentTextures[i], currentTextureSizes[i]});
+        vb.textures.append(GlVertexBufferTexture{.texture = currentTextures[i], .size = currentTextureSizes[i]});
       }
       vb.vertexCount = currentVertexCount;
       if (!oldVertexBuffers.empty()) {
@@ -869,7 +865,7 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
   };
 
   auto textureCount = useMultiTexturing ? MultiTextureCount : 1;
-  auto addCurrentTexture = [&](TexturePtr texture) -> pair<uint8_t, Vec2F> {
+  auto addCurrentTexture = [&](TexturePtr texture) -> std::pair<uint8_t, Vec2F> {
     if (!texture)
       texture = whiteTexture;
 
@@ -893,7 +889,7 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
     return {float(textureIndex), Vec2F(glTexture->glTextureCoordinateOffset())};
   };
 
-  auto appendBufferVertex = [&](RenderVertex const& v, uint8_t textureIndex, Vec2F textureCoordinateOffset, RenderVertex const& prev, RenderVertex const& next) {
+  auto appendBufferVertex = [&](RenderVertex const& v, uint8_t textureIndex, Vec2F textureCoordinateOffset, RenderVertex const& prev, RenderVertex const& next) -> GlRenderVertex {
     size_t off = accumulationBuffer.size();
     accumulationBuffer.resize(accumulationBuffer.size() + sizeof(GlRenderVertex));
     GlRenderVertex& glv = *(GlRenderVertex*)(accumulationBuffer.ptr() + off);
@@ -905,8 +901,8 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
     // Tell the vertex shader to round to the nearest pixel if the vertices form a straight
     // edge, to ensure sharpness with supersampling. If we rounded *all* vertex positions,
     // it'd cause slight visual issues with sprites rotating around a point.
-    glv.pack.vars.rX = min(abs(glv.pos.x() - prev.screenCoordinate.x()), abs(glv.pos.x() - next.screenCoordinate.x())) < 0.001f;
-    glv.pack.vars.rY = min(abs(glv.pos.y() - prev.screenCoordinate.y()), abs(glv.pos.y() - next.screenCoordinate.y())) < 0.001f;
+    glv.pack.vars.rX = std::min(std::abs(glv.pos.x() - prev.screenCoordinate.x()), std::abs(glv.pos.x() - next.screenCoordinate.x())) < 0.001f;
+    glv.pack.vars.rY = std::min(std::abs(glv.pos.y() - prev.screenCoordinate.y()), std::abs(glv.pos.y() - next.screenCoordinate.y())) < 0.001f;
     glv.pack.vars.unused = 0;
     ++currentVertexCount;
     return glv;
@@ -927,11 +923,11 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
 
       // = prev and next are altered - the diagonal across the quad is bad for the rounding check
       appendBufferVertex(quad->a, textureIndex, textureOffset, quad->d, quad->b);
-      appendBufferVertex(quad->b, textureIndex, textureOffset, quad->a, quad->c); //
+      appendBufferVertex(quad->b, textureIndex, textureOffset, quad->a, quad->c);//
       appendBufferVertex(quad->c, textureIndex, textureOffset, quad->b, quad->d);
 
       appendBufferVertex(quad->a, textureIndex, textureOffset, quad->d, quad->b);
-      appendBufferVertex(quad->c, textureIndex, textureOffset, quad->b, quad->d); //
+      appendBufferVertex(quad->c, textureIndex, textureOffset, quad->b, quad->d);//
       appendBufferVertex(quad->d, textureIndex, textureOffset, quad->c, quad->a);
 
     } else if (auto poly = primitive.ptr<RenderPoly>()) {
@@ -939,9 +935,9 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
         tie(textureIndex, textureOffset) = addCurrentTexture(std::move(poly->texture));
 
         for (size_t i = 1; i < poly->vertexes.size() - 1; ++i) {
-            RenderVertex const& a = poly->vertexes[0],
-                                b = poly->vertexes[i],
-                                c = poly->vertexes[i + 1];
+          RenderVertex const &a = poly->vertexes[0],
+                             b = poly->vertexes[i],
+                             c = poly->vertexes[i + 1];
           appendBufferVertex(a, textureIndex, textureOffset, c, b);
           appendBufferVertex(b, textureIndex, textureOffset, a, c);
           appendBufferVertex(c, textureIndex, textureOffset, b, a);
@@ -957,7 +953,7 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
     glDeleteBuffers(1, &vb.vertexBuffer);
 }
 
-bool OpenGlRenderer::logGlErrorSummary(String prefix) {
+auto OpenGlRenderer::logGlErrorSummary(String prefix) -> bool {
   if (GLenum error = glGetError()) {
     Logger::error(std::string_view("{}: "), prefix);
     do {
@@ -1023,7 +1019,7 @@ void OpenGlRenderer::flushImmediatePrimitives(Mat3F const& transformation) {
 }
 
 auto OpenGlRenderer::createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering)
-    ->RefPtr<GlLoneTexture> {
+  -> RefPtr<GlLoneTexture> {
   auto glLoneTexture = make_ref<GlLoneTexture>();
   glLoneTexture->textureFiltering = filtering;
   glLoneTexture->textureAddressing = addressing;
@@ -1051,15 +1047,14 @@ auto OpenGlRenderer::createGlTexture(ImageView const& image, TextureAddressing a
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
   }
 
-
   if (!image.empty())
     uploadTextureImage(image.format, image.size, image.data);
 
   return glLoneTexture;
 }
 
-auto OpenGlRenderer::createGlRenderBuffer() -> shared_ptr<GlRenderBuffer> {
-  auto glrb = make_shared<GlRenderBuffer>();
+auto OpenGlRenderer::createGlRenderBuffer() -> std::shared_ptr<GlRenderBuffer> {
+  auto glrb = std::make_shared<GlRenderBuffer>();
   glrb->whiteTexture = m_whiteTexture;
   glrb->useMultiTexturing = m_useMultiTexturing;
   return glrb;
@@ -1146,7 +1141,7 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
   }
 }
 
-RefPtr<OpenGlRenderer::GlFrameBuffer> OpenGlRenderer::getGlFrameBuffer(String const& id) {
+auto OpenGlRenderer::getGlFrameBuffer(String const& id) -> RefPtr<OpenGlRenderer::GlFrameBuffer> {
   if (auto ptr = m_frameBuffers.ptr(id))
     return *ptr;
   else
@@ -1163,8 +1158,7 @@ void OpenGlRenderer::blitGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffer)
   glBlitFramebuffer(
     0, 0, size[0], size[1],
     0, 0, size[0], size[1],
-    GL_COLOR_BUFFER_BIT, GL_NEAREST
-  );
+    GL_COLOR_BUFFER_BIT, GL_NEAREST);
 
   frameBuffer->blitted = true;
 }
@@ -1177,7 +1171,7 @@ void OpenGlRenderer::switchGlFrameBuffer(RefPtr<GlFrameBuffer> const& frameBuffe
   m_currentFrameBuffer = frameBuffer;
 }
 
-GLuint OpenGlRenderer::Effect::getAttribute(String const& name) {
+auto OpenGlRenderer::Effect::getAttribute(String const& name) -> GLuint {
   auto find = attributes.find(name);
   if (find == attributes.end()) {
     GLuint attrib = glGetAttribLocation(program, name.utf8Ptr());
@@ -1187,7 +1181,7 @@ GLuint OpenGlRenderer::Effect::getAttribute(String const& name) {
   return find->second;
 }
 
-GLuint OpenGlRenderer::Effect::getUniform(String const& name) {
+auto OpenGlRenderer::Effect::getUniform(String const& name) -> GLuint {
   auto find = uniforms.find(name);
   if (find == uniforms.end()) {
     GLuint uniform = glGetUniformLocation(program, name.utf8Ptr());
@@ -1197,5 +1191,4 @@ GLuint OpenGlRenderer::Effect::getUniform(String const& name) {
   return find->second;
 }
 
-
-}
+}// namespace Star

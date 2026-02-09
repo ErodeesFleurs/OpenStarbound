@@ -1,7 +1,6 @@
 #include "StarStatCollection.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarGameTypes.hpp"
-#include "StarLogging.hpp"
+
+import std;
 
 namespace Star {
 
@@ -51,31 +50,31 @@ StatCollection::StatCollection(Json const& config) {
   }
 }
 
-StringList StatCollection::statNames() const {
+auto StatCollection::statNames() const -> StringList {
   return m_stats.effectiveStatNames();
 }
 
-float StatCollection::stat(String const& statName) const {
+auto StatCollection::stat(String const& statName) const -> float {
   return m_stats.statEffectiveValue(statName);
 }
 
-bool StatCollection::statPositive(String const& statName) const {
+auto StatCollection::statPositive(String const& statName) const -> bool {
   return stat(statName) > 0.0f;
 }
 
-StringList StatCollection::resourceNames() const {
+auto StatCollection::resourceNames() const -> StringList {
   return m_stats.resourceNames();
 }
 
-bool StatCollection::isResource(String const& resourceName) const {
+auto StatCollection::isResource(String const& resourceName) const -> bool {
   return m_stats.isResource(resourceName);
 }
 
-float StatCollection::resource(String const& resourceName) const {
+auto StatCollection::resource(String const& resourceName) const -> float {
   return m_stats.resourceValue(resourceName);
 }
 
-bool StatCollection::resourcePositive(String const& resourceName) const {
+auto StatCollection::resourcePositive(String const& resourceName) const -> bool {
   return resource(resourceName) > 0.0f;
 }
 
@@ -87,19 +86,19 @@ void StatCollection::modifyResource(String const& resourceName, float amount) {
   m_stats.modifyResourceValue(resourceName, amount);
 }
 
-float StatCollection::giveResource(String const& resourceName, float amount) {
+auto StatCollection::giveResource(String const& resourceName, float amount) -> float {
   return m_stats.giveResourceValue(resourceName, amount);
 }
 
-bool StatCollection::consumeResource(String const& resourceName, float amount) {
+auto StatCollection::consumeResource(String const& resourceName, float amount) -> bool {
   return m_stats.consumeResourceValue(resourceName, amount);
 }
 
-bool StatCollection::overConsumeResource(String const& resourceName, float amount) {
+auto StatCollection::overConsumeResource(String const& resourceName, float amount) -> bool {
   return m_stats.overConsumeResourceValue(resourceName, amount);
 }
 
-bool StatCollection::resourceLocked(String const& resourceName) const {
+auto StatCollection::resourceLocked(String const& resourceName) const -> bool {
   return m_stats.resourceLocked(resourceName);
 }
 
@@ -121,23 +120,23 @@ void StatCollection::resetAllResources() {
     resetResource(resourceName);
 }
 
-std::optional<float> StatCollection::resourceMax(String const& resourceName) const {
+auto StatCollection::resourceMax(String const& resourceName) const -> std::optional<float> {
   return m_stats.resourceMaxValue(resourceName);
 }
 
-std::optional<float> StatCollection::resourcePercentage(String const& resourceName) const {
+auto StatCollection::resourcePercentage(String const& resourceName) const -> std::optional<float> {
   return m_stats.resourcePercentage(resourceName);
 }
 
-float StatCollection::setResourcePercentage(String const& resourceName, float resourcePercentage) {
+auto StatCollection::setResourcePercentage(String const& resourceName, float resourcePercentage) -> float {
   return m_stats.setResourcePercentage(resourceName, resourcePercentage);
 }
 
-float StatCollection::modifyResourcePercentage(String const& resourceName, float resourcePercentage) {
+auto StatCollection::modifyResourcePercentage(String const& resourceName, float resourcePercentage) -> float {
   return m_stats.modifyResourcePercentage(resourceName, resourcePercentage);
 }
 
-StatModifierGroupId StatCollection::addStatModifierGroup(List<StatModifier> modifiers) {
+auto StatCollection::addStatModifierGroup(List<StatModifier> modifiers) -> StatModifierGroupId {
   return m_stats.addStatModifierGroup(modifiers);
 }
 
@@ -186,4 +185,4 @@ void StatCollection::netElementsNeedStore() {
     pair.second.set(m_stats.resourceLocked(pair.first));
 }
 
-}
+}// namespace Star

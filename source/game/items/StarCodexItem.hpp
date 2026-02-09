@@ -1,7 +1,7 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarItem.hpp"
-#include "StarPlayerCodexes.hpp"
 #include "StarSwingableItem.hpp"
 
 namespace Star {
@@ -9,14 +9,14 @@ namespace Star {
 class CodexItem : public Item, public SwingableItem {
 public:
   CodexItem(Json const& config, String const& directory, Json const& data);
-  virtual ItemPtr clone() const override;
+  auto clone() const -> Ptr<Item> override;
 
-  virtual List<Drawable> drawables() const override;
+  auto drawables() const -> List<Drawable> override;
 
-  virtual void fireTriggered() override;
+  void fireTriggered() override;
 
-  virtual List<Drawable> iconDrawables() const override;
-  virtual List<Drawable> dropDrawables() const override;
+  auto iconDrawables() const -> List<Drawable> override;
+  auto dropDrawables() const -> List<Drawable> override;
 
 private:
   String m_codexId;
@@ -24,4 +24,4 @@ private:
   List<Drawable> m_worldDrawables;
 };
 
-}
+}// namespace Star

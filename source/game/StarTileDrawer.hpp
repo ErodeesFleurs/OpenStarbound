@@ -1,56 +1,57 @@
 #pragma once
 
-#include "StarTtlCache.hpp"
-#include "StarWorldRenderData.hpp"
+#include "StarConfig.hpp"
 #include "StarMaterialRenderProfile.hpp"
+#include "StarWorldRenderData.hpp"
 
 import std;
 
 namespace Star {
 
-STAR_CLASS(Assets);
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(TileDrawer);
+class MaterialDatabase;
 
 class TileDrawer {
 public:
-  typedef uint64_t QuadZLevel;
-  typedef HashMap<QuadZLevel, List<Drawable>> Drawables;
+  using QuadZLevel = std::uint64_t;
+  using Drawables = HashMap<QuadZLevel, List<Drawable>>;
 
-  typedef size_t MaterialRenderPieceIndex;
-  typedef List<pair<MaterialRenderPieceConstPtr, Vec2F>> MaterialPieceResultList;
+  using MaterialRenderPieceIndex = size_t;
+  using MaterialPieceResultList = List<std::pair<ConstPtr<MaterialRenderPiece>, Vec2F>>;
 
-  enum class TerrainLayer { Background, Midground, Foreground };
+  enum class TerrainLayer { Background,
+                            Midground,
+                            Foreground };
 
   static RenderTile DefaultRenderTile;
 
-  static TileDrawer* singletonPtr();
-  static TileDrawer& singleton();
+  static auto singletonPtr() -> TileDrawer*;
+  static auto singleton() -> TileDrawer&;
 
   TileDrawer();
   ~TileDrawer();
 
-  bool produceTerrainDrawables(Drawables& drawables, TerrainLayer terrainLayer, Vec2I const& pos,
-    WorldRenderData const& renderData, float scale = 1.0f, Vec2I variantOffset = {}, std::optional<TerrainLayer> variantLayer = {});
+  auto produceTerrainDrawables(Drawables& drawables, TerrainLayer terrainLayer, Vec2I const& pos,
+                               WorldRenderData const& renderData, float scale = 1.0f, Vec2I variantOffset = {}, std::optional<TerrainLayer> variantLayer = {}) -> bool;
 
-  WorldRenderData& renderData();
-  MutexLocker lockRenderData();
+  auto renderData() -> WorldRenderData&;
+  auto lockRenderData() -> MutexLocker;
 
   template <typename Function>
   static void forEachRenderTile(WorldRenderData const& renderData, RectI const& worldCoordRange, Function&& function);
+
 private:
   friend class TilePainter;
 
   static TileDrawer* s_singleton;
 
-  static RenderTile const& getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos);
+  static auto getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos) -> RenderTile const&;
 
-  static QuadZLevel materialZLevel(uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant);
-  static QuadZLevel modZLevel(uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant);
-  static QuadZLevel damageZLevel();
+  static auto materialZLevel(std::uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant) -> QuadZLevel;
+  static auto modZLevel(std::uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant) -> QuadZLevel;
+  static auto damageZLevel() -> QuadZLevel;
 
-  static bool determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, MaterialDatabaseConstPtr const& materialDb, MaterialRenderMatchList const& matchList,
-    WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod);
+  static auto determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, ConstPtr<MaterialDatabase> const& materialDb, MaterialRenderMatchList const& matchList,
+                                      WorldRenderData const& renderData, Vec2I const& basePos, TileLayer layer, bool isMod) -> bool;
 
   Vec4B m_backgroundLayerColor;
   Vec4B m_foregroundLayerColor;
@@ -66,10 +67,10 @@ void TileDrawer::forEachRenderTile(WorldRenderData const& renderData, RectI cons
   indexRect.limit(RectI::withSize(Vec2I(0, 0), Vec2I(renderData.tiles.size())));
 
   if (!indexRect.isEmpty()) {
-    renderData.tiles.forEach(Array2S(indexRect.min()), Array2S(indexRect.size()), [&](Array2S const& index, RenderTile const& tile) {
+    renderData.tiles.forEach(Array2S(indexRect.min()), Array2S(indexRect.size()), [&](Array2S const& index, RenderTile const& tile) -> auto {
       return function(worldCoordRange.min() + (Vec2I(index) - indexRect.min()), tile);
-      });
+    });
   }
 }
 
-}
+}// namespace Star

@@ -21,7 +21,7 @@ struct NpcVariant {
   String species;
   String typeName;
   float level;
-  uint64_t seed;
+  std::uint64_t seed;
 
   Json overrides;
 
@@ -50,7 +50,7 @@ struct NpcVariant {
   bool keepAlive;
 
   TeamType damageTeamType;
-  uint8_t damageTeam;
+  std::uint8_t damageTeam;
 
   Vec3B nametagColor;
 
@@ -62,7 +62,7 @@ public:
   NpcDatabase();
 
   [[nodiscard]] auto generateNpcVariant(String const& species, String const& typeName, float level) const -> NpcVariant;
-  [[nodiscard]] auto generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const -> NpcVariant;
+  [[nodiscard]] auto generateNpcVariant(String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides) const -> NpcVariant;
 
   [[nodiscard]] auto writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules = {}) const -> ByteArray;
   [[nodiscard]] auto readNpcVariant(ByteArray const& data, NetCompatibilityRules rules = {}) const -> NpcVariant;

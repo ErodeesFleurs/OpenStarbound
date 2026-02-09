@@ -1,14 +1,9 @@
 #pragma once
 
-#include "StarLua.hpp"
 #include "StarBehaviorState.hpp"
+#include "StarConfig.hpp"
+#include "StarLua.hpp"
 
-namespace Star {
-
-STAR_CLASS(Root);
-STAR_CLASS(UniverseClient);
-
-namespace LuaBindings {
-  LuaCallbacks makeBehaviorCallbacks(List<BehaviorStatePtr>* list);
-}
+namespace Star::LuaBindings {
+auto makeBehaviorCallbacks(List<Ptr<BehaviorState>>* list) -> LuaCallbacks;
 }

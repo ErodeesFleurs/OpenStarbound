@@ -1,12 +1,13 @@
 #pragma once
 
+#include "StarException.hpp"
 #include "StarStatusTypes.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_EXCEPTION(StatusEffectDatabaseException, StarException);
-
-STAR_CLASS(StatusEffectDatabase);
+using StatusEffectDatabaseException = ExceptionDerived<"StatusEffectDatabaseException">;
 
 // Named, unique, unstackable scripted effects.
 struct UniqueStatusEffectConfig {
@@ -22,21 +23,21 @@ struct UniqueStatusEffectConfig {
   String description;
   std::optional<String> icon;
 
-  JsonObject toJson();
+  auto toJson() -> JsonObject;
 };
 
 class StatusEffectDatabase {
 public:
   StatusEffectDatabase();
 
-  bool isUniqueEffect(UniqueStatusEffect const& effect) const;
+  [[nodiscard]] auto isUniqueEffect(UniqueStatusEffect const& effect) const -> bool;
 
-  UniqueStatusEffectConfig uniqueEffectConfig(UniqueStatusEffect const& effect) const;
+  [[nodiscard]] auto uniqueEffectConfig(UniqueStatusEffect const& effect) const -> UniqueStatusEffectConfig;
 
 private:
-  UniqueStatusEffectConfig parseUniqueEffect(Json const& config, String const& path) const;
+  [[nodiscard]] auto parseUniqueEffect(Json const& config, String const& path) const -> UniqueStatusEffectConfig;
 
   HashMap<UniqueStatusEffect, UniqueStatusEffectConfig> m_uniqueEffects;
 };
 
-}
+}// namespace Star

@@ -1,5 +1,8 @@
 #include "StarStatSet.hpp"
+
 #include "StarMathCommon.hpp"
+
+import std;
 
 namespace Star {
 
@@ -15,15 +18,15 @@ void StatSet::removeStat(String const& statName) {
   update(0.0f);
 }
 
-StringList StatSet::baseStatNames() const {
+auto StatSet::baseStatNames() const -> StringList {
   return m_baseStats.keys();
 }
 
-bool StatSet::isBaseStat(String const& statName) const {
+auto StatSet::isBaseStat(String const& statName) const -> bool {
   return m_baseStats.contains(statName);
 }
 
-float StatSet::statBaseValue(String const& statName) const {
+auto StatSet::statBaseValue(String const& statName) const -> float {
   if (auto s = m_baseStats.ptr(statName))
     return *s;
   throw StatusException::format("No such base stat '{}' in StatSet", statName);
@@ -40,7 +43,7 @@ void StatSet::setStatBaseValue(String const& statName, float value) {
   }
 }
 
-StatModifierGroupId StatSet::addStatModifierGroup(List<StatModifier> modifiers) {
+auto StatSet::addStatModifierGroup(List<StatModifier> modifiers) -> StatModifierGroupId {
   bool empty = modifiers.empty();
   auto id = m_statModifierGroups.add(std::move(modifiers));
   if (!empty)
@@ -48,11 +51,11 @@ StatModifierGroupId StatSet::addStatModifierGroup(List<StatModifier> modifiers) 
   return id;
 }
 
-List<StatModifierGroupId> StatSet::statModifierGroupIds() const {
+auto StatSet::statModifierGroupIds() const -> List<StatModifierGroupId> {
   return m_statModifierGroups.keys();
 }
 
-List<StatModifier> StatSet::statModifierGroup(StatModifierGroupId modifierGroupId) const {
+auto StatSet::statModifierGroup(StatModifierGroupId modifierGroupId) const -> List<StatModifier> {
   return m_statModifierGroups.get(modifierGroupId);
 }
 
@@ -63,7 +66,7 @@ void StatSet::addStatModifierGroup(StatModifierGroupId groupId, List<StatModifie
     update(0.0f);
 }
 
-bool StatSet::setStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers) {
+auto StatSet::setStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers) -> bool {
   auto& list = m_statModifierGroups.get(groupId);
   if (list != modifiers) {
     list = std::move(modifiers);
@@ -74,7 +77,7 @@ bool StatSet::setStatModifierGroup(StatModifierGroupId groupId, List<StatModifie
   return false;
 }
 
-bool StatSet::removeStatModifierGroup(StatModifierGroupId modifierSetId) {
+auto StatSet::removeStatModifierGroup(StatModifierGroupId modifierSetId) -> bool {
   if (m_statModifierGroups.remove(modifierSetId)) {
     update(0.0f);
     return true;
@@ -89,7 +92,7 @@ void StatSet::clearStatModifiers() {
   }
 }
 
-StatModifierGroupMap const& StatSet::allStatModifierGroups() const {
+auto StatSet::allStatModifierGroups() const -> StatModifierGroupMap const& {
   return m_statModifierGroups;
 }
 
@@ -100,15 +103,15 @@ void StatSet::setAllStatModifierGroups(StatModifierGroupMap map) {
   }
 }
 
-StringList StatSet::effectiveStatNames() const {
+auto StatSet::effectiveStatNames() const -> StringList {
   return m_effectiveStats.keys();
 }
 
-bool StatSet::isEffectiveStat(String const& statName) const {
+auto StatSet::isEffectiveStat(String const& statName) const -> bool {
   return m_effectiveStats.contains(statName);
 }
 
-float StatSet::statEffectiveValue(String const& statName) const {
+auto StatSet::statEffectiveValue(String const& statName) const -> float {
   // All stat values will be added to m_effectiveStats regardless of whether a
   // modifier is applied for it.
   if (auto modified = m_effectiveStats.ptr(statName))
@@ -118,7 +121,7 @@ float StatSet::statEffectiveValue(String const& statName) const {
 }
 
 void StatSet::addResource(String resourceName, MVariant<String, float> max, MVariant<String, float> delta) {
-  auto pair = m_resources.insert({std::move(resourceName), Resource{std::move(max), std::move(delta), false, 0.0f, {}}});
+  auto pair = m_resources.insert({std::move(resourceName), Resource{.max = std::move(max), .delta = std::move(delta), .locked = false, .value = 0.0f, .maxValue = {}}});
   if (!pair.second)
     throw StatusException::format("Added duplicate resource named '{}' in StatSet", resourceName);
   update(0.0f);
@@ -129,38 +132,38 @@ void StatSet::removeResource(String const& resourceName) {
     throw StatusException::format("No such resource named '{}' in StatSet", resourceName);
 }
 
-StringList StatSet::resourceNames() const {
+auto StatSet::resourceNames() const -> StringList {
   return m_resources.keys();
 }
 
-MVariant<String, float> StatSet::resourceMax(String const& resourceName) const {
+auto StatSet::resourceMax(String const& resourceName) const -> MVariant<String, float> {
   return getResource(resourceName).max;
 }
 
-MVariant<String, float> StatSet::resourceDelta(String const& resourceName) const {
+auto StatSet::resourceDelta(String const& resourceName) const -> MVariant<String, float> {
   return getResource(resourceName).delta;
 }
 
-bool StatSet::isResource(String const& resourceName) const {
+auto StatSet::isResource(String const& resourceName) const -> bool {
   return m_resources.contains(resourceName);
 }
 
-float StatSet::resourceValue(String const& resourceName) const {
+auto StatSet::resourceValue(String const& resourceName) const -> float {
   if (auto r = m_resources.ptr(resourceName))
     return r->value;
   return 0.0f;
 }
 
-float StatSet::setResourceValue(String const& resourceName, float value) {
+auto StatSet::setResourceValue(String const& resourceName, float value) -> float {
   return getResource(resourceName).setValue(value);
 }
 
-float StatSet::modifyResourceValue(String const& resourceName, float amount) {
+auto StatSet::modifyResourceValue(String const& resourceName, float amount) -> float {
   auto& resource = getResource(resourceName);
   return resource.setValue(resource.value + amount);
 }
 
-float StatSet::giveResourceValue(String const& resourceName, float amount) {
+auto StatSet::giveResourceValue(String const& resourceName, float amount) -> float {
   if (auto r = m_resources.ptr(resourceName)) {
     float previousValue = r->value;
     r->setValue(r->value + amount);
@@ -169,15 +172,15 @@ float StatSet::giveResourceValue(String const& resourceName, float amount) {
   return 0;
 }
 
-bool StatSet::consumeResourceValue(String const& resourceName, float amount) {
+auto StatSet::consumeResourceValue(String const& resourceName, float amount) -> bool {
   return consumeResourceValue(resourceName, amount, false);
 }
 
-bool StatSet::overConsumeResourceValue(String const& resourceName, float amount) {
+auto StatSet::overConsumeResourceValue(String const& resourceName, float amount) -> bool {
   return consumeResourceValue(resourceName, amount, true);
 }
 
-bool StatSet::resourceLocked(String const& resourceName) const {
+auto StatSet::resourceLocked(String const& resourceName) const -> bool {
   return getResource(resourceName).locked;
 }
 
@@ -185,29 +188,29 @@ void StatSet::setResourceLocked(String const& resourceName, bool locked) {
   getResource(resourceName).locked = locked;
 }
 
-std::optional<float> StatSet::resourceMaxValue(String const& resourceName) const {
+auto StatSet::resourceMaxValue(String const& resourceName) const -> std::optional<float> {
   return getResource(resourceName).maxValue;
 }
 
-std::optional<float> StatSet::resourcePercentage(String const& resourceName) const {
+auto StatSet::resourcePercentage(String const& resourceName) const -> std::optional<float> {
   auto const& resource = getResource(resourceName);
   if (!resource.maxValue)
     return {};
   return resource.value / *resource.maxValue;
 }
 
-float StatSet::setResourcePercentage(String const& resourceName, float resourcePercentage) {
+auto StatSet::setResourcePercentage(String const& resourceName, float resourcePercentage) -> float {
   auto& resource = getResource(resourceName);
   if (!resource.maxValue)
     throw StatusException::format("setResourcePersentage called on resource '{}' which has no maximum", resourceName);
   return resource.setValue(resourcePercentage * *resource.maxValue);
 }
 
-float StatSet::modifyResourcePercentage(String const& resourceName, float resourcePercentage) {
+auto StatSet::modifyResourcePercentage(String const& resourceName, float resourcePercentage) -> float {
   auto& resource = getResource(resourceName);
   if (!resource.maxValue)
     throw StatusException::format(
-        "modifyResourcePercentage called on resource '{}' which has no maximum", resourceName);
+      "modifyResourcePercentage called on resource '{}' which has no maximum", resourceName);
   return resource.setValue(resource.value + resourcePercentage * *resource.maxValue);
 }
 
@@ -290,27 +293,27 @@ void StatSet::update(float dt) {
   }
 }
 
-float StatSet::Resource::setValue(float v) {
+auto StatSet::Resource::setValue(float v) -> float {
   if (maxValue)
-    value = clamp(v, 0.0f, *maxValue);
+    value = std::clamp(v, 0.0f, *maxValue);
   else
-    value = Star::max(v, 0.0f);
+    value = std::max(v, 0.0f);
   return value;
 }
 
-StatSet::Resource const& StatSet::getResource(String const& resourceName) const {
+auto StatSet::getResource(String const& resourceName) const -> StatSet::Resource const& {
   if (auto r = m_resources.ptr(resourceName))
     return *r;
   throw StatusException::format("No such resource '{}' in StatSet", resourceName);
 }
 
-StatSet::Resource& StatSet::getResource(String const& resourceName) {
+auto StatSet::getResource(String const& resourceName) -> StatSet::Resource& {
   if (auto r = m_resources.ptr(resourceName))
     return *r;
   throw StatusException::format("No such resource '{}' in StatSet", resourceName);
 }
 
-bool StatSet::consumeResourceValue(String const& resourceName, float amount, bool allowOverConsume) {
+auto StatSet::consumeResourceValue(String const& resourceName, float amount, bool allowOverConsume) -> bool {
   if (amount < 0.0f)
     throw StatusException::format("StatSet, consumeResource called with negative amount '{}' {}", resourceName, amount);
 
@@ -329,4 +332,4 @@ bool StatSet::consumeResourceValue(String const& resourceName, float amount, boo
   return false;
 }
 
-}
+}// namespace Star

@@ -1,4 +1,5 @@
 #include "StarJson.hpp"
+
 #include "StarConfig.hpp"
 #include "StarFormat.hpp"
 #include "StarJsonBuilder.hpp"

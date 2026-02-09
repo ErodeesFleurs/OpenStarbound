@@ -1,67 +1,68 @@
 #include "StarServerClientContext.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarWorldServerThread.hpp"
-#include "StarScriptedEntity.hpp"
+
+#include "StarCasting.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarRoot.hpp"
-#include "StarUniverseSettings.hpp"
+#include "StarUniverseSettings.hpp"// IWYU pragma: export
+#include "StarWorldServerThread.hpp"
+
+import std;
 
 namespace Star {
 
 ServerClientContext::ServerClientContext(ConnectionId clientId, std::optional<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-    String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks)
-  : m_clientId(clientId),
-    m_remoteAddress(remoteAddress),
-    m_netRules(netRules),
-    m_playerUuid(playerUuid),
-    m_playerName(playerName),
-    m_shipSpecies(shipSpecies),
-    m_canBecomeAdmin(canBecomeAdmin),
-    m_shipChunks(std::move(initialShipChunks)) {
+                                         String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks)
+    : m_clientId(clientId),
+      m_remoteAddress(remoteAddress),
+      m_netRules(netRules),
+      m_playerUuid(playerUuid),
+      m_playerName(std::move(playerName)),
+      m_shipSpecies(std::move(shipSpecies)),
+      m_canBecomeAdmin(canBecomeAdmin),
+      m_shipChunks(std::move(initialShipChunks)) {
   m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> Json {
-      RecursiveMutexLocker locker(m_mutex);
-      setShipUpgrades(shipUpgrades().apply(args));
-      return true;
-    });
+    RecursiveMutexLocker locker(m_mutex);
+    setShipUpgrades(shipUpgrades().apply(args));
+    return true;
+  });
 
   m_rpc.registerHandler("ship.setShipSpecies", [this](Json const& species) -> Json {
-      RecursiveMutexLocker locker(m_mutex);
-      setShipSpecies(species.toString());
-      return true;
-    });
+    RecursiveMutexLocker locker(m_mutex);
+    setShipSpecies(species.toString());
+    return true;
+  });
 
   m_rpc.registerHandler("world.containerPutItems", [this](Json const& args) -> Json {
-      List<ItemDescriptor> overflow = args.getArray("items").transformed(construct<ItemDescriptor>());
-      RecursiveMutexLocker locker(m_mutex);
-      if (m_worldThread) {
-        m_worldThread->executeAction([args, &overflow](WorldServerThread*, WorldServer* server) {
-          EntityId entityId = args.getInt("entityId");
-          Json items = args.get("items");
-          auto itemDatabase = Root::singleton().itemDatabase();
-          if (auto containerEntity = as<ContainerEntity>(server->entity(entityId))) {
-            overflow.clear();
-            for (auto const& itemDescriptor : items.iterateArray()) {
-              if (auto left = containerEntity->addItems(itemDatabase->item(ItemDescriptor(itemDescriptor))).result().value())
-                overflow.append(left->descriptor());
-            }
+    List<ItemDescriptor> overflow = args.getArray("items").transformed(construct<ItemDescriptor>());
+    RecursiveMutexLocker locker(m_mutex);
+    if (m_worldThread) {
+      m_worldThread->executeAction([args, &overflow](WorldServerThread*, WorldServer* server) -> void {
+        EntityId entityId = args.getInt("entityId");
+        Json items = args.get("items");
+        ConstPtr<ItemDatabase> itemDatabase = Root::singleton().itemDatabase();
+        if (auto containerEntity = as<ContainerEntity>(server->entity(entityId))) {
+          overflow.clear();
+          for (auto const& itemDescriptor : items.iterateArray()) {
+            if (auto left = containerEntity->addItems(itemDatabase->item(ItemDescriptor(itemDescriptor))).result().value())
+              overflow.append(left->descriptor());
           }
-        });
-      }
-      return overflow.transformed(mem_fn(&ItemDescriptor::toJson));
-    });
+        }
+      });
+    }
+    return overflow.transformed(std::mem_fn(&ItemDescriptor::toJson));
+  });
 
   m_rpc.registerHandler("universe.setFlag", [this](Json const& args) -> Json {
-      auto flagName = args.toString();
-      RecursiveMutexLocker locker(m_mutex);
-      if (m_worldThread) {
-        m_worldThread->executeAction([flagName](WorldServerThread*, WorldServer* server) {
-          server->universeSettings()->setFlag(flagName);
-        });
-      }
-      return Json();
-    });
+    auto flagName = args.toString();
+    RecursiveMutexLocker locker(m_mutex);
+    if (m_worldThread) {
+      m_worldThread->executeAction([flagName](WorldServerThread*, WorldServer* server) -> void {
+        server->universeSettings()->setFlag(flagName);
+      });
+    }
+    return {};
+  });
 
   m_netGroup.addNetElement(&m_orbitWarpActionNetState);
   m_netGroup.addNetElement(&m_playerWorldIdNetState);
@@ -73,35 +74,35 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, std::optional<Ho
   m_creationTime = Time::monotonicMilliseconds();
 }
 
-ConnectionId ServerClientContext::clientId() const {
+auto ServerClientContext::clientId() const -> ConnectionId {
   return m_clientId;
 }
 
-std::optional<HostAddress> const& ServerClientContext::remoteAddress() const {
+auto ServerClientContext::remoteAddress() const -> std::optional<HostAddress> const& {
   return m_remoteAddress;
 }
 
-Uuid const& ServerClientContext::playerUuid() const {
+auto ServerClientContext::playerUuid() const -> Uuid const& {
   return m_playerUuid;
 }
 
-String const& ServerClientContext::playerName() const {
+auto ServerClientContext::playerName() const -> String const& {
   return m_playerName;
 }
 
-String const& ServerClientContext::shipSpecies() const {
+auto ServerClientContext::shipSpecies() const -> String const& {
   return m_shipSpecies;
 }
 
-bool ServerClientContext::canBecomeAdmin() const {
+auto ServerClientContext::canBecomeAdmin() const -> bool {
   return m_canBecomeAdmin;
 }
 
-NetCompatibilityRules ServerClientContext::netRules() const {
+auto ServerClientContext::netRules() const -> NetCompatibilityRules {
   return m_netRules;
 }
 
-String ServerClientContext::descriptiveName() const {
+auto ServerClientContext::descriptiveName() const -> String {
   RecursiveMutexLocker locker(m_mutex);
   String hostName = m_remoteAddress ? toString(*m_remoteAddress) : "local";
   return strf("'{}' <{}> ({})", m_playerName, m_clientId, hostName);
@@ -111,7 +112,7 @@ void ServerClientContext::registerRpcHandlers(JsonRpcHandlers const& rpcHandlers
   m_rpc.registerHandlers(rpcHandlers);
 }
 
-CelestialCoordinate ServerClientContext::shipCoordinate() const {
+auto ServerClientContext::shipCoordinate() const -> CelestialCoordinate {
   RecursiveMutexLocker locker(m_mutex);
   return m_shipCoordinate.get();
 }
@@ -121,7 +122,7 @@ void ServerClientContext::setShipCoordinate(CelestialCoordinate system) {
   m_shipCoordinate.set(system);
 }
 
-SystemLocation ServerClientContext::shipLocation() const {
+auto ServerClientContext::shipLocation() const -> SystemLocation {
   RecursiveMutexLocker locker(m_mutex);
   return m_shipSystemLocation;
 }
@@ -131,17 +132,17 @@ void ServerClientContext::setShipLocation(SystemLocation location) {
   m_shipSystemLocation = location;
 }
 
-std::optional<pair<WarpAction, WarpMode>> ServerClientContext::orbitWarpAction() const {
+auto ServerClientContext::orbitWarpAction() const -> std::optional<std::pair<WarpAction, WarpMode>> {
   RecursiveMutexLocker locker(m_mutex);
   return m_orbitWarpActionNetState.get();
 }
 
-void ServerClientContext::setOrbitWarpAction(std::optional<pair<WarpAction, WarpMode>> warpAction) {
+void ServerClientContext::setOrbitWarpAction(std::optional<std::pair<WarpAction, WarpMode>> warpAction) {
   RecursiveMutexLocker locker(m_mutex);
   m_orbitWarpActionNetState.set(std::move(warpAction));
 }
 
-bool ServerClientContext::isAdmin() const {
+auto ServerClientContext::isAdmin() const -> bool {
   RecursiveMutexLocker locker(m_mutex);
   return m_isAdminNetState.get();
 }
@@ -151,7 +152,7 @@ void ServerClientContext::setAdmin(bool admin) {
   m_isAdminNetState.set(admin);
 }
 
-EntityDamageTeam ServerClientContext::team() const {
+auto ServerClientContext::team() const -> EntityDamageTeam {
   RecursiveMutexLocker locker(m_mutex);
   return m_teamNetState.get();
 }
@@ -161,7 +162,7 @@ void ServerClientContext::setTeam(EntityDamageTeam team) {
   m_teamNetState.set(team);
 }
 
-ShipUpgrades ServerClientContext::shipUpgrades() const {
+auto ServerClientContext::shipUpgrades() const -> ShipUpgrades {
   RecursiveMutexLocker locker(m_mutex);
   return m_shipUpgrades.get();
 }
@@ -175,7 +176,7 @@ void ServerClientContext::setShipSpecies(String shipSpecies) {
   m_shipSpecies = shipSpecies;
 }
 
-WorldChunks ServerClientContext::shipChunks() const {
+auto ServerClientContext::shipChunks() const -> WorldChunks {
   RecursiveMutexLocker locker(m_mutex);
   return m_shipChunks;
 }
@@ -191,7 +192,7 @@ void ServerClientContext::readUpdate(ByteArray data) {
   m_rpc.receive(data);
 }
 
-ByteArray ServerClientContext::writeUpdate() {
+auto ServerClientContext::writeUpdate() -> ByteArray {
   RecursiveMutexLocker locker(m_mutex);
 
   ByteArray rpcUpdate = m_rpc.send();
@@ -201,7 +202,7 @@ ByteArray ServerClientContext::writeUpdate() {
     shipChunksUpdate = DataStreamBuffer::serialize(take(m_shipChunksUpdate));
 
   ByteArray netGroupUpdate;
-  tie(netGroupUpdate, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netRules);
+  std::tie(netGroupUpdate, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netRules);
 
   if (rpcUpdate.empty() && shipChunksUpdate.empty() && netGroupUpdate.empty())
     return {};
@@ -214,7 +215,7 @@ ByteArray ServerClientContext::writeUpdate() {
   return ds.takeData();
 }
 
-void ServerClientContext::setSystemWorld(SystemWorldServerThreadPtr systemWorldThread) {
+void ServerClientContext::setSystemWorld(Ptr<SystemWorldServerThread> systemWorldThread) {
   RecursiveMutexLocker locker(m_mutex);
   if (m_systemWorldThread == systemWorldThread)
     return;
@@ -222,7 +223,7 @@ void ServerClientContext::setSystemWorld(SystemWorldServerThreadPtr systemWorldT
   m_systemWorldThread = std::move(systemWorldThread);
 }
 
-SystemWorldServerThreadPtr ServerClientContext::systemWorld() const {
+auto ServerClientContext::systemWorld() const -> Ptr<SystemWorldServerThread> {
   RecursiveMutexLocker locker(m_mutex);
   return m_systemWorldThread;
 }
@@ -232,7 +233,7 @@ void ServerClientContext::clearSystemWorld() {
   setSystemWorld({});
 }
 
-void ServerClientContext::setPlayerWorld(WorldServerThreadPtr worldThread) {
+void ServerClientContext::setPlayerWorld(Ptr<WorldServerThread> worldThread) {
   RecursiveMutexLocker locker(m_mutex);
   if (m_worldThread == worldThread)
     return;
@@ -244,12 +245,12 @@ void ServerClientContext::setPlayerWorld(WorldServerThreadPtr worldThread) {
     m_playerWorldIdNetState.set(WorldId());
 }
 
-WorldServerThreadPtr ServerClientContext::playerWorld() const {
+auto ServerClientContext::playerWorld() const -> Ptr<WorldServerThread> {
   RecursiveMutexLocker locker(m_mutex);
   return m_worldThread;
 }
 
-WorldId ServerClientContext::playerWorldId() const {
+auto ServerClientContext::playerWorldId() const -> WorldId {
   RecursiveMutexLocker locker(m_mutex);
   return m_playerWorldIdNetState.get();
 }
@@ -258,7 +259,7 @@ void ServerClientContext::clearPlayerWorld() {
   setPlayerWorld({});
 }
 
-WarpToWorld ServerClientContext::playerReturnWarp() const {
+auto ServerClientContext::playerReturnWarp() const -> WarpToWorld {
   RecursiveMutexLocker locker(m_mutex);
   return m_returnWarp;
 }
@@ -268,7 +269,7 @@ void ServerClientContext::setPlayerReturnWarp(WarpToWorld warp) {
   m_returnWarp = std::move(warp);
 }
 
-WarpToWorld ServerClientContext::playerReviveWarp() const {
+auto ServerClientContext::playerReviveWarp() const -> WarpToWorld {
   RecursiveMutexLocker locker(m_mutex);
   return m_reviveWarp;
 }
@@ -288,7 +289,7 @@ void ServerClientContext::loadServerData(Json const& store) {
   m_returnWarp = WarpToWorld(store.get("returnWarp"));
 }
 
-Json ServerClientContext::storeServerData() {
+auto ServerClientContext::storeServerData() -> Json {
   RecursiveMutexLocker locker(m_mutex);
   auto store = JsonObject{
     {"shipCoordinate", m_shipCoordinate.get().toJson()},
@@ -296,13 +297,12 @@ Json ServerClientContext::storeServerData() {
     {"isAdmin", m_isAdminNetState.get()},
     {"team", team().toJson()},
     {"reviveWarp", m_reviveWarp.toJson()},
-    {"returnWarp", m_returnWarp.toJson()}
-  };
+    {"returnWarp", m_returnWarp.toJson()}};
   return store;
 }
 
-int64_t ServerClientContext::creationTime() const {
+auto ServerClientContext::creationTime() const -> int64_t {
   return m_creationTime;
 }
 
-}
+}// namespace Star

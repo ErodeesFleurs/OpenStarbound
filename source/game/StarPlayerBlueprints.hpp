@@ -1,22 +1,19 @@
 #pragma once
 
-#include "StarByteArray.hpp"
-#include "StarSet.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarSet.hpp"
 
 namespace Star {
-
-STAR_CLASS(PlayerBlueprints);
 
 class PlayerBlueprints {
 public:
   PlayerBlueprints();
   PlayerBlueprints(Json const& json);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  bool isKnown(ItemDescriptor const& itemDescriptor) const;
-  bool isNew(ItemDescriptor const& itemDescriptor) const;
+  [[nodiscard]] auto isKnown(ItemDescriptor const& itemDescriptor) const -> bool;
+  [[nodiscard]] auto isNew(ItemDescriptor const& itemDescriptor) const -> bool;
   void add(ItemDescriptor const& itemDescriptor);
   void markAsRead(ItemDescriptor const& itemDescriptor);
 
@@ -25,4 +22,4 @@ private:
   HashSet<ItemDescriptor> m_newBlueprints;
 };
 
-}
+}// namespace Star

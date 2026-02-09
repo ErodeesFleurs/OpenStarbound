@@ -9,14 +9,14 @@ import std;
 
 namespace Star {
 
-enum class WorldParametersType : uint8_t {
+enum class WorldParametersType : std::uint8_t {
   TerrestrialWorldParameters,
   AsteroidsWorldParameters,
   FloatingDungeonWorldParameters
 };
 extern EnumMap<WorldParametersType> const WorldParametersTypeNames;
 
-enum class BeamUpRule : uint8_t {
+enum class BeamUpRule : std::uint8_t {
   Nowhere,
   Surface,
   Anywhere,
@@ -24,7 +24,7 @@ enum class BeamUpRule : uint8_t {
 };
 extern EnumMap<BeamUpRule> const BeamUpRuleNames;
 
-enum class WorldEdgeForceRegionType : uint8_t {
+enum class WorldEdgeForceRegionType : std::uint8_t {
   None,
   Top,
   Bottom,
@@ -179,8 +179,8 @@ auto diskLoadVisitableWorldParameters(Json const& store) -> Ptr<VisitableWorldPa
 auto netStoreVisitableWorldParameters(ConstPtr<VisitableWorldParameters> const& parameters) -> ByteArray;
 auto netLoadVisitableWorldParameters(ByteArray data) -> Ptr<VisitableWorldParameters>;
 
-auto generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, uint64_t seed) -> Ptr<TerrestrialWorldParameters>;
-auto generateAsteroidsWorldParameters(uint64_t seed) -> Ptr<AsteroidsWorldParameters>;
+auto generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, std::uint64_t seed) -> Ptr<TerrestrialWorldParameters>;
+auto generateAsteroidsWorldParameters(std::uint64_t seed) -> Ptr<AsteroidsWorldParameters>;
 auto generateFloatingDungeonWorldParameters(String const& dungeonWorldName) -> Ptr<FloatingDungeonWorldParameters>;
 
 }// namespace Star

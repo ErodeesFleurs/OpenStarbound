@@ -1,9 +1,10 @@
 #pragma once
 
 #include "StarApplication.hpp"
+#include "StarConfig.hpp"
 
 namespace Star {
-  int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs);
+auto runMainApplication(UPtr<Application> application, StringList cmdLineArgs) -> int;
 }
 
 #if defined STAR_SYSTEM_WINDOWS
@@ -15,7 +16,8 @@ namespace Star {
     int nArgs;                                                                    \
     LPWSTR* argsList = CommandLineToArgvW(GetCommandLineW(), &nArgs);             \
     Star::StringList args;                                                        \
-    for (int i = 0; i < nArgs; ++i) args.append(Star::String(argsList[i]));       \
+    for (int i = 0; i < nArgs; ++i)                                               \
+      args.append(Star::String(argsList[i]));                                     \
     if (IsDebuggerPresent() && AllocConsole()) {                                  \
       freopen("CONOUT$", "w", stdout);                                            \
       freopen("CONOUT$", "w", stderr);                                            \
@@ -27,8 +29,8 @@ namespace Star {
 
 #else
 
-#define STAR_MAIN_APPLICATION(ApplicationClass)                                                                   \
-  int main(int argc, char** argv) {                                                                               \
+#define STAR_MAIN_APPLICATION(ApplicationClass)                                                           \
+  int main(int argc, char** argv) {                                                                       \
     return Star::runMainApplication(Star::make_unique<ApplicationClass>(), Star::StringList(argc, argv)); \
   }
 

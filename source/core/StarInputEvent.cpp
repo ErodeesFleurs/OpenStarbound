@@ -141,8 +141,7 @@ EnumMap<Key> const KeyNames{
   {Key::SysReq, "SysReq"},
   {Key::Pause, "Pause"},
   {Key::Menu, "Menu"},
-  {Key::Power, "Power"}
-};
+  {Key::Power, "Power"}};
 
 EnumMap<KeyMod> const KeyModNames{
   {KeyMod::NoMod, "NoMod"},
@@ -156,21 +155,18 @@ EnumMap<KeyMod> const KeyModNames{
   {KeyMod::RGui, "RMeta"},
   {KeyMod::Num, "Num"},
   {KeyMod::Caps, "Caps"},
-  {KeyMod::AltGr, "AltGr"}
-};
+  {KeyMod::AltGr, "AltGr"}};
 
 EnumMap<MouseButton> const MouseButtonNames{
   {MouseButton::Left, "MouseLeft"},
   {MouseButton::Middle, "MouseMiddle"},
   {MouseButton::Right, "MouseRight"},
   {MouseButton::FourthButton, "MouseFourth"},
-  {MouseButton::FifthButton, "MouseFifth"}
-};
+  {MouseButton::FifthButton, "MouseFifth"}};
 
 EnumMap<MouseWheel> const MouseWheelNames{
   {MouseWheel::Up, "MouseWheelUp"},
-  {MouseWheel::Down, "MouseWheelDown"}
-};
+  {MouseWheel::Down, "MouseWheelDown"}};
 
 EnumMap<ControllerAxis> const ControllerAxisNames{
   {ControllerAxis::LeftX, "LeftX"},
@@ -203,7 +199,6 @@ EnumMap<ControllerButton> const ControllerButtonNames{
   {ControllerButton::Paddle3, "Paddle3"},
   {ControllerButton::Paddle4, "Paddle4"},
   {ControllerButton::Touchpad, "Touchpad"},
-  {ControllerButton::Invalid, "Invalid"}
-};
+  {ControllerButton::Invalid, "Invalid"}};
 
-}
+}// namespace Star

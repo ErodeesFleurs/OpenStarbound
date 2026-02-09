@@ -9,6 +9,10 @@ import std;
 
 // Version of strong_typedef for builtin types.
 
+namespace Star {
+class DataStream;
+}
+
 template <typename BaseType>
 class StrongTypedef {
 private:
@@ -57,6 +61,14 @@ public:
   friend auto
   operator>>(std::basic_istream<CharT, Traits>& is, StrongTypedef& st) -> std::basic_istream<CharT, Traits>& {
     return is >> st.value_;
+  }
+
+  friend auto operator<<(Star::DataStream& ds, const StrongTypedef& st) -> Star::DataStream& {
+    return ds << st.value_;
+  }
+
+  friend auto operator>>(Star::DataStream& ds, StrongTypedef& st) -> Star::DataStream& {
+    return ds >> st.value_;
   }
 
   friend struct std::hash<StrongTypedef>;

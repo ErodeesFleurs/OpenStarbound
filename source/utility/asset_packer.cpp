@@ -1,12 +1,14 @@
+#include "StarFile.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarPackedAssetSource.hpp"
 #include "StarTime.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarFile.hpp"
 #include "StarVersionOptionParser.hpp"
+
+import std;
 
 using namespace Star;
 
-int main(int argc, char** argv) {
+auto main(int argc, char** argv) -> int {
   try {
     double startTime = Time::monotonicTime();
 
@@ -59,8 +61,8 @@ int main(int argc, char** argv) {
 
     bool verbose = opts.parameters.contains("v");
 
-    function<void(size_t, size_t, String, String, bool)> BuildProgressCallback;
-    auto progressCallback = [verbose](size_t, size_t, String filePath, String assetPath) {
+    std::function<void(std::size_t, std::size_t, String, String, bool)> BuildProgressCallback;
+    auto progressCallback = [verbose](std::size_t, std::size_t, String filePath, String assetPath) -> void {
       if (verbose)
         coutf("Adding file '{}' to the target pak as '{}'\n", filePath, assetPath);
     };

@@ -1,25 +1,25 @@
 #pragma once
 
-#include "StarRect.hpp"
-#include "StarMap.hpp"
-#include "StarSet.hpp"
 #include "StarBlockAllocator.hpp"
+#include "StarMap.hpp"
+#include "StarRect.hpp"
+#include "StarSet.hpp"
 
-#include <optional>
+import std;
 
 namespace Star {
 
 // Dual-map based on key and 2 dimensional bounding rectangle.  Implements a 2d
 // spatial hash for fast bounding box queries.  Each entry may have more than
 // one bounding rectangle.
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT = int, size_t AllocatorBlockSize = 4096>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT = int, std::size_t AllocatorBlockSize = 4096>
 class SpatialHash2D {
 public:
-  typedef KeyT Key;
-  typedef ScalarT Scalar;
-  typedef Box<ScalarT, 2> Rect;
-  typedef typename Rect::Coord Coord;
-  typedef ValueT Value;
+  using Key = KeyT;
+  using Scalar = ScalarT;
+  using Rect = Box<ScalarT, 2>;
+  using Coord = typename Rect::Coord;
+  using Value = ValueT;
 
   struct Entry {
     Entry();
@@ -28,28 +28,28 @@ public:
     Value value;
   };
 
-  typedef StableHashMap<Key, Entry, hash<Key>, std::equal_to<Key>, BlockAllocator<pair<Key const, Entry>, AllocatorBlockSize>> EntryMap;
+  using EntryMap = StableHashMap<Key, Entry, hash<Key>, std::equal_to<Key>, BlockAllocator<std::pair<Key const, Entry>, AllocatorBlockSize>>;
 
   SpatialHash2D(Scalar const& sectorSize);
 
-  List<Key> keys() const;
-  List<Value> values() const;
-  EntryMap const& entries() const;
+  auto keys() const -> List<Key>;
+  auto values() const -> List<Value>;
+  auto entries() const -> EntryMap const&;
 
-  size_t size() const;
+  [[nodiscard]] auto size() const -> std::size_t;
 
-  bool contains(Key const& key) const;
+  auto contains(Key const& key) const -> bool;
 
-  Value const& get(Key const& key) const;
-  Value& get(Key const& key);
+  auto get(Key const& key) const -> Value const&;
+  auto get(Key const& key) -> Value&;
 
   // Returns default constructed value if key not found
-  Value value(Key const& key) const;
+  auto value(Key const& key) const -> Value;
 
   // Query values from several bounding boxes at once with no duplicates.
-  List<Value> queryValues(Rect const& rect) const;
+  auto queryValues(Rect const& rect) const -> List<Value>;
   template <typename RectCollection>
-  List<Value> queryValues(RectCollection const& rects) const;
+  auto queryValues(RectCollection const& rects) const -> List<Value>;
 
   // Iterate over entries in the given bounding boxes without duplication.  It
   // is safe to modify rects or add entries from the given callback, but it is
@@ -71,18 +71,18 @@ public:
   template <typename RectCollection>
   void set(Key const& key, RectCollection const& rects, Value value);
 
-  std::optional<Value> remove(Key const& key);
+  auto remove(Key const& key) -> std::optional<Value>;
 
   // Recalculates every item in sector map
   void setSectorSize(Scalar const& sectorSize);
 
 private:
-  typedef Vector<IntT, 2> Sector;
-  typedef Box<IntT, 2> SectorRange;
-  typedef HashSet<Entry const*, hash<Entry const*>, std::equal_to<Entry const*>> SectorEntrySet;
-  typedef HashMap<Sector, SectorEntrySet> SectorMap;
+  using Sector = Vector<IntT, 2>;
+  using SectorRange = Box<IntT, 2>;
+  using SectorEntrySet = HashSet<Entry const*, hash<Entry const*>, std::equal_to<Entry const*>>;
+  using SectorMap = HashMap<Sector, SectorEntrySet>;
 
-  SectorRange getSectors(Rect const& r) const;
+  auto getSectors(Rect const& r) const -> SectorRange;
 
   void addSpatial(Entry const* entry);
   void removeSpatial(Entry const* entry);
@@ -95,21 +95,21 @@ private:
   SectorMap m_sectorMap;
 };
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Entry::Entry()
-  : value() {}
+    : value() {}
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::SpatialHash2D(Scalar const& sectorSize)
-  : m_sectorSize(sectorSize) {}
+    : m_sectorSize(sectorSize) {}
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-List<KeyT> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::keys() const {
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::keys() const -> List<KeyT> {
   return m_entryMap.keys();
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-List<typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::values() const {
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::values() const -> List<typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value> {
   List<Value> values;
   for (auto const& pair : m_entryMap)
     values.append(pair.second.value);
@@ -117,37 +117,36 @@ List<typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Va
   return values;
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::EntryMap const&
-SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::entries() const {
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::entries() const -> typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::EntryMap const& {
   return m_entryMap;
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-size_t SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::size() const {
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::size() const -> std::size_t {
   return m_entryMap.size();
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-bool SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::contains(Key const& key) const {
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::contains(Key const& key) const -> bool {
   return m_entryMap.contains(key);
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value const& SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::get(
-    Key const& key) const {
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::get(
+  Key const& key) const -> typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value const& {
   return m_entryMap.get(key).value;
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value& SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::get(
-    Key const& key) {
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::get(
+  Key const& key) -> typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value& {
   return m_entryMap.get(key).value;
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::value(
-    Key const& key) const {
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::value(
+  Key const& key) const -> typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value {
   auto iter = m_entryMap.find(key);
   if (iter == m_entryMap.end())
     return Value();
@@ -155,28 +154,28 @@ typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value S
     return iter->second.value;
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-List<ValueT> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::queryValues(Rect const& rect) const {
-  return queryValues(initializer_list<Rect>{rect});
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::queryValues(Rect const& rect) const -> List<ValueT> {
+  return queryValues(std::initializer_list<Rect>{rect});
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 template <typename RectCollection>
-List<ValueT> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::queryValues(RectCollection const& rects) const {
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::queryValues(RectCollection const& rects) const -> List<ValueT> {
   List<Value> values;
-  forEach(rects, [&values](Value const& value) {
-      values.append(value);
-    });
+  forEach(rects, [&values](Value const& value) -> auto {
+    values.append(value);
+  });
   return values;
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 template <typename Function>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::forEach(Rect const& rect, Function&& function) const {
-  return forEach(initializer_list<Rect>{rect}, forward<Function>(function));
+  return forEach(std::initializer_list<Rect>{rect}, forward<Function>(function));
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 template <typename RectCollection, typename Function>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::forEach(RectCollection const& rects, Function&& function) const {
   SmallList<Entry const*, 32> foundEntries;
@@ -222,33 +221,33 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::forEach(Rec
   }
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, Coord const& pos) {
   set(key, {Rect(pos, pos)});
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, Rect const& rect) {
   set(key, {rect});
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 template <typename RectCollection>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, RectCollection const& rects) {
   updateSpatial(&m_entryMap.get(key), rects);
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, Coord const& pos, Value value) {
   set(key, {Rect(pos, pos)}, std::move(value));
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, Rect const& rect, Value value) {
   set(key, {rect}, std::move(value));
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 template <typename RectCollection>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key const& key, RectCollection const& rects, Value value) {
   Entry& entry = m_entryMap[key];
@@ -256,7 +255,7 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key con
   updateSpatial(&entry, rects);
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::remove(Key const& key) -> std::optional<Value> {
   auto iter = m_entryMap.find(key);
   if (iter == m_entryMap.end())
@@ -268,7 +267,7 @@ auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::remove(Key 
   return val;
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::setSectorSize(Scalar const& sectorSize) {
   m_sectorSize = sectorSize;
   m_sectorMap.clear();
@@ -276,16 +275,16 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::setSectorSi
     addSpatial(pair.first, pair.second);
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::SectorRange SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::getSectors(Rect const& r) const {
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
+auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::getSectors(Rect const& r) const -> typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::SectorRange {
   return SectorRange(
-      floor(r.xMin() / m_sectorSize),
-      floor(r.yMin() / m_sectorSize),
-      ceil(r.xMax() / m_sectorSize),
-      ceil(r.yMax() / m_sectorSize));
+    std::floor(r.xMin() / m_sectorSize),
+    std::floor(r.yMin() / m_sectorSize),
+    std::ceil(r.xMax() / m_sectorSize),
+    std::ceil(r.yMax() / m_sectorSize));
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::addSpatial(Entry const* entry) {
   for (Rect const& rect : entry->rects) {
     if (rect.isNull())
@@ -304,7 +303,7 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::addSpatial(
   }
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::removeSpatial(Entry const* entry) {
   for (Rect const& rect : entry->rects) {
     if (rect.isNull())
@@ -324,7 +323,7 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::removeSpati
   }
 }
 
-template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
+template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, std::size_t AllocatorBlockSize>
 template <typename RectCollection>
 void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::updateSpatial(Entry* entry, RectCollection const& rects) {
   removeSpatial(entry);
@@ -333,4 +332,4 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::updateSpati
   addSpatial(entry);
 }
 
-}
+}// namespace Star

@@ -1,7 +1,9 @@
 #include "StarInstrumentItem.hpp"
+
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
+
+import std;
 
 namespace Star {
 
@@ -26,17 +28,17 @@ InstrumentItem::InstrumentItem(Json const& config, String const& directory, Json
   m_kind = instanceValue("kind").toString();
 }
 
-ItemPtr InstrumentItem::clone() const {
-  return make_shared<InstrumentItem>(*this);
+auto InstrumentItem::clone() const -> Ptr<Item> {
+  return std::make_shared<InstrumentItem>(*this);
 }
 
-List<PersistentStatusEffect> InstrumentItem::statusEffects() const {
+auto InstrumentItem::statusEffects() const -> List<PersistentStatusEffect> {
   if (active())
     return m_activeStatusEffects;
   return m_inactiveStatusEffects;
 }
 
-StringSet InstrumentItem::effectSources() const {
+auto InstrumentItem::effectSources() const -> StringSet {
   if (active())
     return m_activeEffectSources;
   return m_inactiveEffectSources;
@@ -52,7 +54,7 @@ void InstrumentItem::update(float, FireMode, bool, HashSet<MoveControlType> cons
   owner()->instrumentEquipped(m_kind);
 }
 
-bool InstrumentItem::active() const {
+auto InstrumentItem::active() const -> bool {
   if (!initialized())
     return false;
   return (m_activeCooldown > 0) || owner()->instrumentPlaying();
@@ -65,7 +67,7 @@ void InstrumentItem::setActive(bool active) {
     m_activeCooldown = 0;
 }
 
-bool InstrumentItem::usable() const {
+auto InstrumentItem::usable() const -> bool {
   return true;
 }
 
@@ -73,16 +75,16 @@ void InstrumentItem::activate() {
   owner()->interact(InteractAction{InteractActionType::OpenSongbookInterface, owner()->entityId(), {}});
 }
 
-List<Drawable> InstrumentItem::drawables() const {
+auto InstrumentItem::drawables() const -> List<Drawable> {
   if (active())
     return m_activeDrawables;
   return m_drawables;
 }
 
-float InstrumentItem::getAngle(float angle) {
+auto InstrumentItem::getAngle(float angle) -> float {
   if (active())
     return m_activeAngle;
   return angle;
 }
 
-}
+}// namespace Star

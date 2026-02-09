@@ -1,47 +1,49 @@
 #pragma once
 
-#include "StarWorldGeometry.hpp"
 #include "StarGameTypes.hpp"
 #include "StarInterpolation.hpp"
+#include "StarWorldGeometry.hpp"
+
+import std;
 
 namespace Star {
 
 class WorldCamera {
 public:
   void setScreenSize(Vec2U screenSize);
-  Vec2U screenSize() const;
+  [[nodiscard]] auto screenSize() const -> Vec2U;
 
   void setTargetPixelRatio(float targetPixelRatio);
   void setPixelRatio(float pixelRatio);
-  float pixelRatio() const;
+  [[nodiscard]] auto pixelRatio() const -> float;
 
   void setWorldGeometry(WorldGeometry geometry);
-  WorldGeometry worldGeometry() const;
+  [[nodiscard]] auto worldGeometry() const -> WorldGeometry;
 
   // Set the camera center position (in world space) to as close to the given
   // location as possible while keeping the screen within world bounds.
   void setCenterWorldPosition(Vec2F position, bool force = false);
   // Returns the actual camera position.
-  Vec2F centerWorldPosition() const;
+  [[nodiscard]] auto centerWorldPosition() const -> Vec2F;
 
   // Transforms world coordinates into one set of screen coordinates.  Since
   // the world is non-euclidean, one world coordinate can transform to
   // potentially an infinite number of screen coordinates.  This will retrun
   // the closest to the center of the screen.
-  Vec2F worldToScreen(Vec2F worldCoord) const;
+  [[nodiscard]] auto worldToScreen(Vec2F worldCoord) const -> Vec2F;
 
   // Assumes top left corner of screen is (0, 0) in screen coordinates.
-  Vec2F screenToWorld(Vec2F screen) const;
+  [[nodiscard]] auto screenToWorld(Vec2F screen) const -> Vec2F;
 
   // Returns screen dimensions in world space.
-  RectF worldScreenRect() const;
+  [[nodiscard]] auto worldScreenRect() const -> RectF;
 
   // Returns tile dimensions of the tiles that overlap with the screen
-  RectI worldTileRect() const;
+  [[nodiscard]] auto worldTileRect() const -> RectI;
 
   // Returns the position of the lower left corner of the lower left tile of
   // worldTileRect, in screen coordinates.
-  Vec2F tileMinScreen() const;
+  [[nodiscard]] auto tileMinScreen() const -> Vec2F;
 
   void update(float dt);
 
@@ -58,7 +60,7 @@ inline void WorldCamera::setScreenSize(Vec2U screenSize) {
   m_screenSize = screenSize;
 }
 
-inline Vec2U WorldCamera::screenSize() const {
+inline auto WorldCamera::screenSize() const -> Vec2U {
   return m_screenSize;
 }
 
@@ -70,7 +72,7 @@ inline void WorldCamera::setPixelRatio(float pixelRatio) {
   m_pixelRatio = m_targetPixelRatio = pixelRatio;
 }
 
-inline float WorldCamera::pixelRatio() const {
+inline auto WorldCamera::pixelRatio() const -> float {
   return m_pixelRatio;
 }
 
@@ -78,52 +80,50 @@ inline void WorldCamera::setWorldGeometry(WorldGeometry geometry) {
   m_worldGeometry = std::move(geometry);
 }
 
-inline WorldGeometry WorldCamera::worldGeometry() const {
+inline auto WorldCamera::worldGeometry() const -> WorldGeometry {
   return m_worldGeometry;
 }
 
-inline Vec2F WorldCamera::centerWorldPosition() const {
-  return Vec2F(m_worldCenter);
+inline auto WorldCamera::centerWorldPosition() const -> Vec2F {
+  return {m_worldCenter};
 }
 
-inline Vec2F WorldCamera::worldToScreen(Vec2F worldCoord) const {
+inline auto WorldCamera::worldToScreen(Vec2F worldCoord) const -> Vec2F {
   Vec2F wrappedCoord = m_worldGeometry.nearestTo(Vec2F(m_worldCenter), worldCoord);
-  return Vec2F(
-      (wrappedCoord[0] - m_worldCenter[0]) * (TilePixels * m_pixelRatio) + (float)m_screenSize[0] / 2.0,
-      (wrappedCoord[1] - m_worldCenter[1]) * (TilePixels * m_pixelRatio) + (float)m_screenSize[1] / 2.0
-    );
+  return {
+    static_cast<float>((wrappedCoord[0] - m_worldCenter[0]) * (TilePixels * m_pixelRatio) + (float)m_screenSize[0] / 2.0),
+    (wrappedCoord[1] - m_worldCenter[1]) * (TilePixels * m_pixelRatio) + (float)m_screenSize[1] / 2.0};
 }
 
-inline Vec2F WorldCamera::screenToWorld(Vec2F screen) const {
-  return Vec2F(
-      (screen[0] - (float)m_screenSize[0] / 2.0) / (TilePixels * m_pixelRatio) + m_worldCenter[0],
-      (screen[1] - (float)m_screenSize[1] / 2.0) / (TilePixels * m_pixelRatio) + m_worldCenter[1]
-    );
+inline auto WorldCamera::screenToWorld(Vec2F screen) const -> Vec2F {
+  return {
+    static_cast<float>(screen[0] - (float)m_screenSize[0] / 2.0) / (TilePixels * m_pixelRatio) + m_worldCenter[0],
+    (screen[1] - (float)m_screenSize[1] / 2.0) / (TilePixels * m_pixelRatio) + m_worldCenter[1]};
 }
 
-inline RectF WorldCamera::worldScreenRect() const {
+inline auto WorldCamera::worldScreenRect() const -> RectF {
   // screen dimensions in world space
   float w = (float)m_screenSize[0] / (TilePixels * m_pixelRatio);
   float h = (float)m_screenSize[1] / (TilePixels * m_pixelRatio);
   return RectF::withSize(Vec2F(m_worldCenter[0] - w / 2, m_worldCenter[1] - h / 2), Vec2F(w, h));
 }
 
-inline RectI WorldCamera::worldTileRect() const {
+inline auto WorldCamera::worldTileRect() const -> RectI {
   RectF screen = worldScreenRect();
   Vec2I min = Vec2I::floor(screen.min());
   Vec2I size = Vec2I::ceil(Vec2F(m_screenSize) / (TilePixels * m_pixelRatio) + (screen.min() - Vec2F(min)));
   return RectI::withSize(min, size);
 }
 
-inline Vec2F WorldCamera::tileMinScreen() const {
+inline auto WorldCamera::tileMinScreen() const -> Vec2F {
   RectF screenRect = worldScreenRect();
   RectI tileRect = worldTileRect();
   return (Vec2F(tileRect.min()) - screenRect.min()) * (TilePixels * m_pixelRatio);
 }
 
 inline void WorldCamera::update(float dt) {
-  float newPixelRatio = lerp(exp(-20.0f * dt), m_targetPixelRatio, m_pixelRatio);
-  if (abs(newPixelRatio - m_targetPixelRatio) < 0.0125f)
+  float newPixelRatio = lerp(std::exp(-20.0f * dt), m_targetPixelRatio, m_pixelRatio);
+  if (std::abs(newPixelRatio - m_targetPixelRatio) < 0.0125f)
     newPixelRatio = m_targetPixelRatio;
   if (m_pixelRatio != newPixelRatio) {
     m_pixelRatio = newPixelRatio;
@@ -131,4 +131,4 @@ inline void WorldCamera::update(float dt) {
   }
 }
 
-}
+}// namespace Star

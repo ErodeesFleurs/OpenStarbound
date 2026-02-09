@@ -1,7 +1,9 @@
+#include "StarConfig.hpp"
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
 #include "StarRootLoader.hpp"
-#include "StarTilesetDatabase.hpp"
+
+import std;
 
 using namespace Star;
 
@@ -13,7 +15,7 @@ void removeCommonPrefix(StringList& a, StringList& b) {
   }
 }
 
-String createRelativePath(String fromFile, String toFile) {
+auto createRelativePath(String fromFile, String toFile) -> String {
   if (!File::isDirectory(fromFile))
     fromFile = File::dirName(fromFile);
   fromFile = File::fullPath(fromFile);
@@ -31,7 +33,7 @@ String createRelativePath(String fromFile, String toFile) {
   return relativeParts.join("/");
 }
 
-Maybe<Json> repairTileset(Json tileset, String const& mapPath, String const& tilesetPath) {
+auto repairTileset(Json tileset, String const& mapPath, String const& tilesetPath) -> std::optional<Json> {
   if (tileset.contains("source"))
     return {};
   size_t firstGid = tileset.getUInt("firstgid");
@@ -42,12 +44,12 @@ Maybe<Json> repairTileset(Json tileset, String const& mapPath, String const& til
   return {JsonObject{{"firstgid", firstGid}, {"source", createRelativePath(mapPath, tilesetFileName)}}};
 }
 
-Maybe<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPath) {
+auto repair(Json mapJson, String const& mapPath, String const& tilesetPath) -> std::optional<Json> {
   JsonArray tilesets = mapJson.getArray("tilesets");
   bool changed = false;
-  for (size_t i = 0; i < tilesets.size(); ++i) {
-    if (Maybe<Json> tileset = repairTileset(tilesets[i], mapPath, tilesetPath)) {
-      tilesets[i] = *tileset;
+  for (auto& i : tilesets) {
+    if (std::optional<Json> tileset = repairTileset(i, mapPath, tilesetPath)) {
+      i = *tileset;
       changed = true;
     }
   }
@@ -56,8 +58,8 @@ Maybe<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPat
   return mapJson.set("tilesets", tilesets);
 }
 
-void forEachRecursiveFileMatch(String const& dirName, String const& filenameSuffix, function<void(String)> func) {
-  for (pair<String, bool> entry : File::dirList(dirName)) {
+void forEachRecursiveFileMatch(String const& dirName, String const& filenameSuffix, std::function<void(String)> func) {
+  for (std::pair<String, bool> entry : File::dirList(dirName)) {
     if (entry.second)
       forEachRecursiveFileMatch(File::relativeTo(dirName, entry.first), filenameSuffix, func);
     else if (entry.first.endsWith(filenameSuffix))
@@ -66,25 +68,25 @@ void forEachRecursiveFileMatch(String const& dirName, String const& filenameSuff
 }
 
 void fixEmbeddedTilesets(String const& searchRoot, String const& tilesetPath) {
-  forEachRecursiveFileMatch(searchRoot, ".json", [tilesetPath](String const& path) {
-      Json json = Json::parseJson(File::readFileString(path));
-      if (json.contains("tilesets")) {
-        if (Maybe<Json> fixed = repair(json, path, tilesetPath)) {
-          File::writeFile(fixed->repr(2, true), path);
-          Logger::info("Repaired {}", path);
-        }
+  forEachRecursiveFileMatch(searchRoot, ".json", [tilesetPath](String const& path) -> void {
+    Json json = Json::parseJson(File::readFileString(path));
+    if (json.contains("tilesets")) {
+      if (std::optional<Json> fixed = repair(json, path, tilesetPath)) {
+        File::writeFile(fixed->repr(2, true), path);
+        Logger::info("Repaired {}", path);
       }
-    });
+    }
+  });
 }
 
-int main(int argc, char* argv[]) {
+auto main(int argc, char* argv[]) -> int {
   try {
-    RootLoader rootLoader({{}, {}, {}, LogLevel::Info, false, {}});
+    RootLoader rootLoader({.additionalAssetsSettings = {}, .additionalDefaultConfiguration = {}, .logFile = {}, .logLevel = LogLevel::Info, .quiet = false, .runtimeConfigFile = {}});
     rootLoader.setSummary("Replaces embedded tilesets in Tiled JSON files with references to external tilesets. Assumes tilesets are available in the packed assets.");
     rootLoader.addArgument("searchRoot", OptionParser::Required);
     rootLoader.addArgument("tilesetsPath", OptionParser::Required);
 
-    RootUPtr root;
+    UPtr<Root> root;
     OptionParser::Options options;
     tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

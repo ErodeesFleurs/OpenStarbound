@@ -122,7 +122,7 @@ auto Image::readPng(Ptr<IODevice> device) -> Image {
   return image;
 }
 
-std::tuple<Vec2U, PixelFormat> Image::readPngMetadata(Ptr<IODevice> device) {
+auto Image::readPngMetadata(Ptr<IODevice> device) -> std::tuple<Vec2U, PixelFormat> {
   std::array<png_byte, 8> header{};
   device->readFull((char*)header.data(), header.size());
 

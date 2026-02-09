@@ -1,4 +1,5 @@
 #include "StarWarping.hpp"
+
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLexicalCast.hpp"
@@ -26,7 +27,7 @@ auto InstanceWorldId::operator<(InstanceWorldId const& rhs) const -> bool {
   return tie(instance, uuid, rhs.level) < tie(rhs.instance, rhs.uuid, rhs.level);
 }
 
-auto hash<InstanceWorldId>::operator()(InstanceWorldId const& id) const -> size_t {
+auto hash<InstanceWorldId>::operator()(InstanceWorldId const& id) const -> std::size_t {
   return hashOf(id.instance, id.uuid, id.level);
 }
 

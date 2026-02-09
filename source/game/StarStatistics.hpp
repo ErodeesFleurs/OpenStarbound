@@ -1,32 +1,33 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarLua.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarStatisticsService.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(Statistics);
+namespace Star {
 
 class Statistics {
 public:
-  Statistics(String const& storageDirectory, StatisticsServicePtr service = {});
+  Statistics(String const& storageDirectory, Ptr<StatisticsService> service = {});
 
   void writeStatistics();
 
-  Json stat(String const& name, Json def = {}) const;
-  std::optional<String> statType(String const& name) const;
-  bool achievementUnlocked(String const& name) const;
+  [[nodiscard]] auto stat(String const& name, Json def = {}) const -> Json;
+  [[nodiscard]] auto statType(String const& name) const -> std::optional<String>;
+  [[nodiscard]] auto achievementUnlocked(String const& name) const -> bool;
 
   void recordEvent(String const& name, Json const& fields);
-  bool reset();
+  auto reset() -> bool;
 
   void update();
 
 private:
   struct Stat {
-    static Stat fromJson(Json const& json);
-    Json toJson() const;
+    static auto fromJson(Json const& json) -> Stat;
+    [[nodiscard]] auto toJson() const -> Json;
 
     String type;
     Json value;
@@ -38,27 +39,27 @@ private:
   // services don't implement the API calls these correspond to.
   void setStat(String const& name, String const& type, Json const& value);
   void unlockAchievement(String const& name);
-  bool checkAchievement(String const& achievementName);
+  auto checkAchievement(String const& achievementName) -> bool;
 
   void readStatistics();
   void mergeServiceStatistics();
 
-  LuaCallbacks makeStatisticsCallbacks();
+  auto makeStatisticsCallbacks() -> LuaCallbacks;
 
   template <typename Result = LuaValue, typename... V>
-  std::optional<Result> runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args);
+  auto runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args) -> std::optional<Result>;
 
-  StatisticsServicePtr m_service;
+  Ptr<StatisticsService> m_service;
   String m_storageDirectory;
   bool m_initialized;
 
-  List<pair<String, Json>> m_pendingEvents;
+  List<std::pair<String, Json>> m_pendingEvents;
   StringSet m_pendingAchievementChecks;
 
   StringMap<Stat> m_stats;
   StringSet m_achievements;
 
-  LuaRootPtr m_luaRoot;
+  Ptr<LuaRoot> m_luaRoot;
 };
 
-}
+}// namespace Star

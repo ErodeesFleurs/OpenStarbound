@@ -1,27 +1,27 @@
 #pragma once
 
+#include "StarConfig.hpp"
+#include "StarException.hpp"
 #include "StarJson.hpp"
-#include "StarThread.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_STRUCT(TerrainSelector);
-STAR_CLASS(TerrainDatabase);
-
-STAR_EXCEPTION(TerrainException, StarException);
+using TerrainException = ExceptionDerived<"TerrainException">;
 
 struct TerrainSelectorParameters {
   TerrainSelectorParameters();
   explicit TerrainSelectorParameters(Json const& v);
 
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  TerrainSelectorParameters withSeed(uint64_t seed) const;
-  TerrainSelectorParameters withCommonality(float commonality) const;
+  [[nodiscard]] auto withSeed(std::uint64_t seed) const -> TerrainSelectorParameters;
+  [[nodiscard]] auto withCommonality(float commonality) const -> TerrainSelectorParameters;
 
   unsigned worldWidth;
   float baseHeight;
-  uint64_t seed;
+  std::uint64_t seed;
   float commonality;
 };
 
@@ -31,7 +31,7 @@ struct TerrainSelector {
 
   // Returns a float signifying the "solid-ness" of a block, >= 0.0 should be
   // considered solid, < 0.0 should be considered open space.
-  virtual float get(int x, int y) const = 0;
+  [[nodiscard]] virtual auto get(int x, int y) const -> float = 0;
 
   String type;
   Json config;
@@ -45,19 +45,19 @@ public:
     Json parameters;
   };
 
-  Config selectorConfig(String const& name) const;
-  TerrainSelectorConstPtr createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const;
+  [[nodiscard]] auto selectorConfig(String const& name) const -> Config;
+  [[nodiscard]] auto createSelectorType(String const& type, Json const& config, TerrainSelectorParameters const& parameters) const -> ConstPtr<TerrainSelector>;
 
   TerrainDatabase();
 
-  TerrainSelectorConstPtr createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const;
-  TerrainSelectorConstPtr constantSelector(float value);
+  [[nodiscard]] auto createNamedSelector(String const& name, TerrainSelectorParameters const& parameters) const -> ConstPtr<TerrainSelector>;
+  auto constantSelector(float value) -> ConstPtr<TerrainSelector>;
 
-  Json storeSelector(TerrainSelectorConstPtr const& selector) const;
-  TerrainSelectorConstPtr loadSelector(Json const& store) const;
+  [[nodiscard]] auto storeSelector(ConstPtr<TerrainSelector> const& selector) const -> Json;
+  [[nodiscard]] auto loadSelector(Json const& store) const -> ConstPtr<TerrainSelector>;
 
 private:
   StringMap<Config> m_terrainSelectors;
 };
 
-}
+}// namespace Star

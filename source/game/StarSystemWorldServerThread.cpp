@@ -1,17 +1,17 @@
 #include "StarSystemWorldServerThread.hpp"
-#include "StarTickRateMonitor.hpp"
-#include "StarNetPackets.hpp"
+
+#include "StarConfig.hpp"
 #include "StarLogging.hpp"
+#include "StarNetPackets.hpp"
 #include "StarRoot.hpp"
+#include "StarTickRateMonitor.hpp"
+
+import std;
 
 namespace Star {
 
-SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, SystemWorldServerPtr systemWorld, String storageFile)
-  : Thread(strf("SystemWorldServer: {}", location))
-  , m_systemLocation(location)
-  , m_systemWorld(std::move(systemWorld))
-  , m_storageFile(storageFile)
-{
+SystemWorldServerThread::SystemWorldServerThread(Vec3I const& location, Ptr<SystemWorldServer> systemWorld, String storageFile)
+    : Thread(strf("SystemWorldServer: {}", location)), m_systemLocation(location), m_systemWorld(std::move(systemWorld)), m_storageFile(std::move(storageFile)) {
 }
 
 SystemWorldServerThread::~SystemWorldServerThread() {
@@ -19,18 +19,18 @@ SystemWorldServerThread::~SystemWorldServerThread() {
   join();
 }
 
-Vec3I SystemWorldServerThread::location() const {
+auto SystemWorldServerThread::location() const -> Vec3I {
   return m_systemLocation;
 }
 
-List<ConnectionId> SystemWorldServerThread::clients() {
+auto SystemWorldServerThread::clients() -> List<ConnectionId> {
   return m_clients.values();
 }
 
 void SystemWorldServerThread::addClient(ConnectionId clientId, Uuid const& uuid, float shipSpeed, SystemLocation const& location) {
   WriteLocker locker(m_mutex);
   m_clients.add(clientId);
-  m_outgoingPacketQueue.set(clientId, List<PacketPtr>());
+  m_outgoingPacketQueue.set(clientId, List<Ptr<Packet>>());
 
   m_systemWorld->addClientShip(clientId, uuid, shipSpeed, location);
 
@@ -48,7 +48,7 @@ void SystemWorldServerThread::removeClient(ConnectionId clientId) {
   m_outgoingPacketQueue.remove(clientId);
 }
 
-void SystemWorldServerThread::setPause(shared_ptr<const atomic<bool>> pause) {
+void SystemWorldServerThread::setPause(std::shared_ptr<const std::atomic<bool>> pause) {
   m_pause = std::move(pause);
 }
 
@@ -63,14 +63,14 @@ void SystemWorldServerThread::run() {
     m_periodicStorage -= 1.0 / tickApproacher.rate();
     if (m_triggerStorage || m_periodicStorage <= 0.0) {
       m_triggerStorage = false;
-      m_periodicStorage = 300.0; // store every 5 minutes
+      m_periodicStorage = 300.0;// store every 5 minutes
       store();
     }
 
     tickApproacher.tick();
 
     double spareTime = tickApproacher.spareTime();
-    uint64_t millis = floor(spareTime * 1000);
+    std::uint64_t millis = std::floor(spareTime * 1000);
     if (spareTime > 0)
       sleepPrecise(millis);
   }
@@ -132,7 +132,7 @@ void SystemWorldServerThread::executeClientShipAction(ConnectionId clientId, Cli
   m_clientShipActions.append({clientId, std::move(action)});
 }
 
-SystemLocation SystemWorldServerThread::clientShipLocation(ConnectionId clientId) {
+auto SystemWorldServerThread::clientShipLocation(ConnectionId clientId) -> SystemLocation {
   ReadLocker locker(m_queueMutex);
   // while a ship destination is pending the ship is assumed to be flying
   if (m_clientShipDestinations.contains(clientId))
@@ -140,32 +140,32 @@ SystemLocation SystemWorldServerThread::clientShipLocation(ConnectionId clientId
   return m_clientShipLocations.get(clientId).first;
 }
 
-std::optional<pair<WarpAction, WarpMode>> SystemWorldServerThread::clientWarpAction(ConnectionId clientId) {
+auto SystemWorldServerThread::clientWarpAction(ConnectionId clientId) -> std::optional<std::pair<WarpAction, WarpMode>> {
   ReadLocker locker(m_queueMutex);
   if (m_clientShipDestinations.contains(clientId))
     return {};
   return m_clientWarpActions.maybe(clientId);
 }
 
-SkyParameters SystemWorldServerThread::clientSkyParameters(ConnectionId clientId) {
+auto SystemWorldServerThread::clientSkyParameters(ConnectionId clientId) -> SkyParameters {
   ReadLocker locker(m_queueMutex);
   return m_clientShipLocations.get(clientId).second;
 }
 
-List<InstanceWorldId> SystemWorldServerThread::activeInstanceWorlds() const {
+auto SystemWorldServerThread::activeInstanceWorlds() const -> List<InstanceWorldId> {
   return m_activeInstanceWorlds;
 }
 
-void SystemWorldServerThread::setUpdateAction(function<void(SystemWorldServerThread*)> updateAction) {
+void SystemWorldServerThread::setUpdateAction(std::function<void(SystemWorldServerThread*)> updateAction) {
   m_updateAction = updateAction;
 }
 
-void SystemWorldServerThread::pushIncomingPacket(ConnectionId clientId, PacketPtr packet) {
+void SystemWorldServerThread::pushIncomingPacket(ConnectionId clientId, Ptr<Packet> packet) {
   WriteLocker locker(m_queueMutex);
   m_incomingPacketQueue.append({std::move(clientId), std::move(packet)});
 }
 
-List<PacketPtr> SystemWorldServerThread::pullOutgoingPackets(ConnectionId clientId) {
+auto SystemWorldServerThread::pullOutgoingPackets(ConnectionId clientId) -> List<Ptr<Packet>> {
   WriteLocker locker(m_queueMutex);
   return take(m_outgoingPacketQueue[clientId]);
 }
@@ -181,4 +181,4 @@ void SystemWorldServerThread::store() {
   VersionedJson::writeFile(versionedStore, m_storageFile);
 }
 
-}
+}// namespace Star

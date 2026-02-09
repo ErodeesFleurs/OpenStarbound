@@ -1,24 +1,24 @@
 #pragma once
 
+#include "StarAssetTextureGroup.hpp"
 #include "StarDrawable.hpp"
 #include "StarRenderer.hpp"
-#include "StarAssetTextureGroup.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(DrawablePainter);
-
 class DrawablePainter {
 public:
-  DrawablePainter(RendererPtr renderer, AssetTextureGroupPtr textureGroup);
+  DrawablePainter(Ptr<Renderer> renderer, Ptr<AssetTextureGroup> textureGroup);
 
   void drawDrawable(Drawable const& drawable);
 
-  void cleanup(int64_t textureTimeout);
+  void cleanup(std::int64_t textureTimeout);
 
 private:
-  RendererPtr m_renderer;
-  AssetTextureGroupPtr m_textureGroup;
+  Ptr<Renderer> m_renderer;
+  Ptr<AssetTextureGroup> m_textureGroup;
 };
 
-}
+}// namespace Star

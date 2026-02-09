@@ -1,7 +1,8 @@
 #pragma once
 
-#include "StarTerrainDatabase.hpp"
+#include "StarConfig.hpp"
 #include "StarLruCache.hpp"
+#include "StarTerrainDatabase.hpp"
 #include "StarVector.hpp"
 
 namespace Star {
@@ -11,10 +12,10 @@ struct CacheSelector : TerrainSelector {
 
   CacheSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
 
-  float get(int x, int y) const override;
+  auto get(int x, int y) const -> float override;
 
-  TerrainSelectorConstPtr m_source;
+  ConstPtr<TerrainSelector> m_source;
   mutable HashLruCache<Vec2I, float> m_cache;
 };
 
-}
+}// namespace Star

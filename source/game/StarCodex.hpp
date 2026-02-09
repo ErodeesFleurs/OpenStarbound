@@ -2,26 +2,26 @@
 
 #include "StarJson.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(Codex);
+namespace Star {
 
 class Codex {
 public:
   Codex(Json const& config, String const& path);
-  Json toJson() const;
+  [[nodiscard]] auto toJson() const -> Json;
 
-  String id() const;
-  String species() const;
-  String title() const;
-  String description() const;
-  String icon() const;
-  String page(size_t pageNum) const;
-  List<String> pages() const;
-  size_t pageCount() const;
-  Json itemConfig() const;
-  String directory() const;
-  String filename() const;
+  [[nodiscard]] auto id() const -> String;
+  [[nodiscard]] auto species() const -> String;
+  [[nodiscard]] auto title() const -> String;
+  [[nodiscard]] auto description() const -> String;
+  [[nodiscard]] auto icon() const -> String;
+  [[nodiscard]] auto page(std::size_t pageNum) const -> String;
+  [[nodiscard]] auto pages() const -> List<String>;
+  [[nodiscard]] auto pageCount() const -> std::size_t;
+  [[nodiscard]] auto itemConfig() const -> Json;
+  [[nodiscard]] auto directory() const -> String;
+  [[nodiscard]] auto filename() const -> String;
 
 private:
   String m_id;
@@ -35,4 +35,4 @@ private:
   String m_filename;
 };
 
-}
+}// namespace Star

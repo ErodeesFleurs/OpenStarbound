@@ -2,6 +2,7 @@
 
 #include "StarConfig.hpp"
 #include "StarSocket.hpp"
+#include <cstdint>
 
 import std;
 
@@ -9,7 +10,7 @@ namespace Star {
 
 // A Good default assumption for a maximum size of a UDP datagram without
 // fragmentation
-unsigned const MaxUdpData = 1460;
+constexpr std::uint32_t MaxUdpData = 1460;
 
 class UdpSocket : public Socket {
 public:

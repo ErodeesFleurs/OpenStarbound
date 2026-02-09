@@ -1,7 +1,8 @@
 #include "StarHttpClient.hpp"
+
 #include "StarFormat.hpp"
-#include "StarWorkerPool.hpp"
 #include "StarThread.hpp"
+#include "StarWorkerPool.hpp"
 
 #include <curl/curl.h>
 
@@ -94,7 +95,10 @@ private:
   std::atomic<bool> m_stop;
   Mutex m_mutex;
   ConditionVariable m_condition;
-  struct Pending { CURL* easy; std::function<void(CURLcode, CURL*)> callback; };
+  struct Pending {
+    CURL* easy;
+    std::function<void(CURLcode, CURL*)> callback;
+  };
   List<Pending> m_pendingAdditions;
   std::unordered_map<CURL*, std::function<void(CURLcode, CURL*)>> m_callbacks;
 };
@@ -189,7 +193,8 @@ auto HttpClient::request(HttpRequest req) -> Task {
           curl_easy_getinfo(easy, CURLINFO_RESPONSE_CODE, &code);
           response.statusCode = (int)code;
         }
-        if (headers) curl_slist_free_all(headers);
+        if (headers)
+          curl_slist_free_all(headers);
         curl_easy_cleanup(easy);
         h.resume();
       });
@@ -201,23 +206,23 @@ auto HttpClient::request(HttpRequest req) -> Task {
 }
 
 auto HttpClient::get(String const& url, StringMap<String> const& headers) -> Task {
-  return request({.method="GET", .url=url, .headers=headers, .body=""});
+  return request({.method = "GET", .url = url, .headers = headers, .body = ""});
 }
 
 auto HttpClient::post(String const& url, String const& body, StringMap<String> const& headers) -> Task {
-  return request({.method="POST", .url=url, .headers=headers, .body=body});
+  return request({.method = "POST", .url = url, .headers = headers, .body = body});
 }
 
 auto HttpClient::put(String const& url, String const& body, StringMap<String> const& headers) -> Task {
-  return request({.method="PUT", .url=url, .headers=headers, .body=body});
+  return request({.method = "PUT", .url = url, .headers = headers, .body = body});
 }
 
 auto HttpClient::delete_(String const& url, StringMap<String> const& headers) -> Task {
-  return request({.method="DELETE", .url=url, .headers=headers, .body=""});
+  return request({.method = "DELETE", .url = url, .headers = headers, .body = ""});
 }
 
 auto HttpClient::patch(String const& url, String const& body, StringMap<String> const& headers) -> Task {
-  return request({.method="PATCH", .url=url, .headers=headers, .body=body});
+  return request({.method = "PATCH", .url = url, .headers = headers, .body = body});
 }
 
 static auto performRequestSync(HttpRequest const& req) -> HttpResponse {
@@ -235,7 +240,8 @@ static auto performRequestSync(HttpRequest const& req) -> HttpResponse {
     response.statusCode = (int)code;
   }
 
-  if (headers) curl_slist_free_all(headers);
+  if (headers)
+    curl_slist_free_all(headers);
   curl_easy_cleanup(easy);
   return response;
 }
@@ -247,23 +253,23 @@ auto HttpClient::requestAsync(HttpRequest const& request) -> WorkerPoolPromise<H
 }
 
 auto HttpClient::getAsync(String const& url, StringMap<String> const& headers) -> WorkerPoolPromise<HttpResponse> {
-  return requestAsync({.method="GET", .url=url, .headers=headers, .body=""});
+  return requestAsync({.method = "GET", .url = url, .headers = headers, .body = ""});
 }
 
 auto HttpClient::postAsync(String const& url, String const& body, StringMap<String> const& headers) -> WorkerPoolPromise<HttpResponse> {
-  return requestAsync({.method="POST", .url=url, .headers=headers, .body=body});
+  return requestAsync({.method = "POST", .url = url, .headers = headers, .body = body});
 }
 
 auto HttpClient::putAsync(String const& url, String const& body, StringMap<String> const& headers) -> WorkerPoolPromise<HttpResponse> {
-  return requestAsync({.method="PUT", .url=url, .headers=headers, .body=body});
+  return requestAsync({.method = "PUT", .url = url, .headers = headers, .body = body});
 }
 
 auto HttpClient::deleteAsync(String const& url, StringMap<String> const& headers) -> WorkerPoolPromise<HttpResponse> {
-  return requestAsync({.method="DELETE", .url=url, .headers=headers, .body=""});
+  return requestAsync({.method = "DELETE", .url = url, .headers = headers, .body = ""});
 }
 
 auto HttpClient::patchAsync(String const& url, String const& body, StringMap<String> const& headers) -> WorkerPoolPromise<HttpResponse> {
-  return requestAsync({.method="PATCH", .url=url, .headers=headers, .body=body});
+  return requestAsync({.method = "PATCH", .url = url, .headers = headers, .body = body});
 }
 
-}
+}// namespace Star

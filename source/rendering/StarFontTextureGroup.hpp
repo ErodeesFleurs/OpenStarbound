@@ -1,56 +1,57 @@
 #pragma once
 
-#include "StarColor.hpp"
+#include "StarConfig.hpp"
+#include "StarDirectives.hpp"
 #include "StarFont.hpp"
 #include "StarRenderer.hpp"
-#include "StarDirectives.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(FontTextureGroup);
 
 class FontTextureGroup {
 public:
   // Font* is only included for key uniqueness and should not be dereferenced
-  typedef tuple<String::Char, unsigned, size_t, Font*> GlyphDescriptor;
+  using GlyphDescriptor = std::tuple<String::Char, unsigned, std::size_t, Font*>;
 
   struct GlyphTexture {
-    TexturePtr texture;
+    RefPtr<Texture> texture;
     bool colored = false;
-    int64_t time = 0;
+    std::int64_t time = 0;
     Vec2F offset;
   };
 
-  FontTextureGroup(TextureGroupPtr textureGroup);
+  FontTextureGroup(Ptr<TextureGroup> textureGroup);
 
-  const GlyphTexture& glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
+  auto glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr) -> const GlyphTexture&;
 
-  TexturePtr glyphTexturePtr(String::Char, unsigned fontSize);
-  TexturePtr glyphTexturePtr(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
+  auto glyphTexturePtr(String::Char, unsigned fontSize) -> RefPtr<Texture>;
+  auto glyphTexturePtr(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr) -> RefPtr<Texture>;
 
-  unsigned glyphWidth(String::Char c, unsigned fontSize);
+  auto glyphWidth(String::Char c, unsigned fontSize) -> unsigned;
 
   // Removes glyphs that haven't been used in more than the given time in
   // milliseconds
-  void cleanup(int64_t timeout);
+  void cleanup(std::int64_t timeout);
   // Switches the current font
   void switchFont(String const& font);
-  String const& activeFont();
-  void addFont(FontPtr const& font, String const& name);
+  auto activeFont() -> String const&;
+  void addFont(Ptr<Font> const& font, String const& name);
   void clearFonts();
   void setFixedFonts(String const& defaultFontName, String const& fallbackFontName, String const& emojiFontName);
+
 private:
-  Font* getFontForCharacter(String::Char);
+  auto getFontForCharacter(String::Char) -> Font*;
 
-  CaseInsensitiveStringMap<FontPtr> m_fonts;
+  CaseInsensitiveStringMap<Ptr<Font>> m_fonts;
   String m_fontName;
-  FontPtr m_activeFont;
-  FontPtr m_defaultFont;
-  FontPtr m_fallbackFont;
-  FontPtr m_emojiFont;
+  Ptr<Font> m_activeFont;
+  Ptr<Font> m_defaultFont;
+  Ptr<Font> m_fallbackFont;
+  Ptr<Font> m_emojiFont;
 
-  TextureGroupPtr m_textureGroup;
+  Ptr<TextureGroup> m_textureGroup;
   HashMap<GlyphDescriptor, GlyphTexture> m_glyphs;
 };
 
-}
+}// namespace Star

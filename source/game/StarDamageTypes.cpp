@@ -1,30 +1,32 @@
 #include "StarDamageTypes.hpp"
 
+import std;
+
 namespace Star {
 
 EnumMap<DamageType> const DamageTypeNames{{DamageType::NoDamage, "NoDamage"},
-    {DamageType::Damage, "Damage"},
-    {DamageType::IgnoresDef, "IgnoresDef"},
-    {DamageType::Knockback, "Knockback"},
-    {DamageType::Environment, "Environment"},
-		{DamageType::Status, "Status"}};
+                                          {DamageType::Damage, "Damage"},
+                                          {DamageType::IgnoresDef, "IgnoresDef"},
+                                          {DamageType::Knockback, "Knockback"},
+                                          {DamageType::Environment, "Environment"},
+                                          {DamageType::Status, "Status"}};
 
 EnumMap<HitType> const HitTypeNames{
-    {HitType::Hit, "Hit"},
-    {HitType::StrongHit, "StrongHit"},
-    {HitType::WeakHit, "WeakHit"},
-    {HitType::ShieldHit, "ShieldHit"},
-    {HitType::Kill, "Kill"}};
+  {HitType::Hit, "Hit"},
+  {HitType::StrongHit, "StrongHit"},
+  {HitType::WeakHit, "WeakHit"},
+  {HitType::ShieldHit, "ShieldHit"},
+  {HitType::Kill, "Kill"}};
 
 EnumMap<TeamType> const TeamTypeNames{{TeamType::Null, "null"},
-    {TeamType::Friendly, "friendly"},
-    {TeamType::Enemy, "enemy"},
-    {TeamType::PVP, "pvp"},
-    {TeamType::Passive, "passive"},
-    {TeamType::Ghostly, "ghostly"},
-    {TeamType::Environment, "environment"},
-    {TeamType::Indiscriminate, "indiscriminate"},
-    {TeamType::Assistant, "assistant"}};
+                                      {TeamType::Friendly, "friendly"},
+                                      {TeamType::Enemy, "enemy"},
+                                      {TeamType::PVP, "pvp"},
+                                      {TeamType::Passive, "passive"},
+                                      {TeamType::Ghostly, "ghostly"},
+                                      {TeamType::Environment, "environment"},
+                                      {TeamType::Indiscriminate, "indiscriminate"},
+                                      {TeamType::Assistant, "assistant"}};
 
 EntityDamageTeam::EntityDamageTeam() : type(TeamType::Null), team(0) {}
 
@@ -35,11 +37,11 @@ EntityDamageTeam::EntityDamageTeam(Json const& json) {
   team = json.getUInt("team", 0);
 }
 
-Json EntityDamageTeam::toJson() const {
+auto EntityDamageTeam::toJson() const -> Json {
   return JsonObject{{"type", TeamTypeNames.getRight(type)}, {"team", team}};
 }
 
-bool EntityDamageTeam::canDamage(EntityDamageTeam victim, bool victimIsSelf) const {
+auto EntityDamageTeam::canDamage(EntityDamageTeam victim, bool victimIsSelf) const -> bool {
   if (victimIsSelf) {
     if (type == TeamType::Indiscriminate)
       return true;
@@ -77,24 +79,24 @@ bool EntityDamageTeam::canDamage(EntityDamageTeam victim, bool victimIsSelf) con
   return false;
 }
 
-bool EntityDamageTeam::operator==(EntityDamageTeam const& rhs) const {
-  return tie(type, team) == tie(rhs.type, rhs.team);
+auto EntityDamageTeam::operator==(EntityDamageTeam const& rhs) const -> bool {
+  return std::tie(type, team) == std::tie(rhs.type, rhs.team);
 }
 
-DataStream& operator<<(DataStream& ds, EntityDamageTeam const& team) {
+auto operator<<(DataStream& ds, EntityDamageTeam const& team) -> DataStream& {
   ds.write(team.type);
   ds.write(team.team);
   return ds;
 }
 
-DataStream& operator>>(DataStream& ds, EntityDamageTeam& team) {
+auto operator>>(DataStream& ds, EntityDamageTeam& team) -> DataStream& {
   ds.read(team.type);
   ds.read(team.team);
   return ds;
 }
 
-TeamNumber soloPvpTeam(ConnectionId clientId) {
+auto soloPvpTeam(ConnectionId clientId) -> TeamNumber {
   return (TeamNumber)clientId;
 }
 
-}
+}// namespace Star

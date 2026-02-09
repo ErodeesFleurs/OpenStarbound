@@ -13,7 +13,7 @@ struct HttpRequest {
   StringMap<String> headers;
   String body;
 
-  int timeout = 30; // 0 - no timeout.
+  int timeout = 30;// 0 - no timeout.
 };
 
 struct HttpResponse {
@@ -51,7 +51,10 @@ public:
 
     Task(std::coroutine_handle<promise_type> h) : handle(h) {}
     Task(Task&& other) noexcept : handle(std::exchange(other.handle, nullptr)) {}
-    ~Task() { if (handle) handle.destroy(); }
+    ~Task() {
+      if (handle)
+        handle.destroy();
+    }
 
     [[nodiscard]] auto await_ready() const noexcept -> bool { return false; }
     void await_suspend(std::coroutine_handle<> h);
@@ -80,4 +83,4 @@ private:
   static auto workerPool() -> WorkerPool&;
 };
 
-}
+}// namespace Star

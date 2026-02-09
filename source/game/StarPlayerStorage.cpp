@@ -1,11 +1,16 @@
 #include "StarPlayerStorage.hpp"
-#include "StarEntityFactory.hpp" // IWYU pragma: keep
+
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
+#include "StarEntityFactory.hpp"
 #include "StarFile.hpp"
-#include "StarLogging.hpp"
 #include "StarIterator.hpp"
+#include "StarLogging.hpp"
 #include "StarPlayer.hpp"
 #include "StarRoot.hpp"
 #include "StarText.hpp"
+
+import std;
 
 namespace Star {
 
@@ -27,7 +32,7 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
     }
   } else {
     auto versioningDatabase = Root::singleton().versioningDatabase();
-    auto entityFactory = Root::singleton().entityFactory();
+    ConstPtr<EntityFactory> entityFactory = Root::singleton().entityFactory();
 
     for (auto file : File::dirList(m_storageDirectory)) {
       if (file.second)
@@ -96,12 +101,12 @@ PlayerStorage::~PlayerStorage() {
   writeMetadata();
 }
 
-size_t PlayerStorage::playerCount() const {
+auto PlayerStorage::playerCount() const -> size_t {
   RecursiveMutexLocker locker(m_mutex);
   return m_savedPlayersCache.size();
 }
 
-std::optional<Uuid> PlayerStorage::playerUuidAt(size_t index) {
+auto PlayerStorage::playerUuidAt(size_t index) -> std::optional<Uuid> {
   RecursiveMutexLocker locker(m_mutex);
   if (index < m_savedPlayersCache.size())
     return m_savedPlayersCache.keyAt(index);
@@ -109,7 +114,7 @@ std::optional<Uuid> PlayerStorage::playerUuidAt(size_t index) {
     return {};
 }
 
-std::optional<Uuid> PlayerStorage::playerUuidByName(String const& name, std::optional<Uuid> except) {
+auto PlayerStorage::playerUuidByName(String const& name, std::optional<Uuid> except) -> std::optional<Uuid> {
   String cleanMatch = Text::stripEscapeCodes(name).toLower();
   std::optional<Uuid> uuid;
 
@@ -132,7 +137,7 @@ std::optional<Uuid> PlayerStorage::playerUuidByName(String const& name, std::opt
   return uuid;
 }
 
-List<Uuid> PlayerStorage::playerUuidListByName(String const& name, std::optional<Uuid> except) {
+auto PlayerStorage::playerUuidListByName(String const& name, std::optional<Uuid> except) -> List<Uuid> {
   String cleanMatch = Text::stripEscapeCodes(name).toLower();
   List<Uuid> list = {};
 
@@ -152,8 +157,7 @@ List<Uuid> PlayerStorage::playerUuidListByName(String const& name, std::optional
   return list;
 }
 
-
-Json PlayerStorage::savePlayer(PlayerPtr const& player) {
+auto PlayerStorage::savePlayer(Ptr<Player> const& player) -> Json {
   auto entityFactory = Root::singleton().entityFactory();
   auto versioningDatabase = Root::singleton().versioningDatabase();
 
@@ -175,7 +179,7 @@ Json PlayerStorage::savePlayer(PlayerPtr const& player) {
   return newPlayerData;
 }
 
-std::optional<Json> PlayerStorage::maybeGetPlayerData(Uuid const& uuid) {
+auto PlayerStorage::maybeGetPlayerData(Uuid const& uuid) -> std::optional<Json> {
   RecursiveMutexLocker locker(m_mutex);
   if (auto cache = m_savedPlayersCache.ptr(uuid))
     return *cache;
@@ -183,7 +187,7 @@ std::optional<Json> PlayerStorage::maybeGetPlayerData(Uuid const& uuid) {
     return {};
 }
 
-Json PlayerStorage::getPlayerData(Uuid const& uuid) {
+auto PlayerStorage::getPlayerData(Uuid const& uuid) -> Json {
   auto data = maybeGetPlayerData(uuid);
   if (!data)
     throw PlayerException(strf("No such stored player with uuid '{}'", uuid.hex()));
@@ -191,7 +195,7 @@ Json PlayerStorage::getPlayerData(Uuid const& uuid) {
     return *data;
 }
 
-PlayerPtr PlayerStorage::loadPlayer(Uuid const& uuid) {
+auto PlayerStorage::loadPlayer(Uuid const& uuid) -> Ptr<Player> {
   auto playerCacheData = getPlayerData(uuid);
   auto entityFactory = Root::singleton().entityFactory();
   try {
@@ -218,7 +222,7 @@ void PlayerStorage::deletePlayer(Uuid const& uuid) {
   auto storagePrefix = File::relativeTo(m_storageDirectory, uuidHex);
   auto backupPrefix = File::relativeTo(m_backupDirectory, uuidHex);
 
-  auto removeIfExists = [](String const& prefix, String const& suffix) {
+  auto removeIfExists = [](String const& prefix, String const& suffix) -> void {
     if (File::exists(prefix + suffix)) {
       File::remove(prefix + suffix);
     }
@@ -236,7 +240,7 @@ void PlayerStorage::deletePlayer(Uuid const& uuid) {
   }
 }
 
-WorldChunks PlayerStorage::loadShipData(Uuid const& uuid) {
+auto PlayerStorage::loadShipData(Uuid const& uuid) -> WorldChunks {
   RecursiveMutexLocker locker(m_mutex);
   if (!m_savedPlayersCache.contains(uuid))
     throw PlayerException(strf("No such stored player with uuid '{}'", uuid.hex()));
@@ -276,7 +280,7 @@ void PlayerStorage::backupCycle(Uuid const& uuid) {
   unsigned playerBackupFileCount = configuration->get("playerBackupFileCount").toUInt();
   auto& fileName = uuidFileName(uuid);
 
-  auto path = [&](String const& dir, String const& extension) {
+  auto path = [&](String const& dir, String const& extension) -> String {
     return File::relativeTo(dir, strf("{}.{}", fileName, extension));
   };
 
@@ -296,11 +300,11 @@ void PlayerStorage::setMetadata(String key, Json value) {
   }
 }
 
-Json PlayerStorage::getMetadata(String const& key) {
+auto PlayerStorage::getMetadata(String const& key) -> Json {
   return m_metadata.value(key);
 }
 
-String const& PlayerStorage::uuidFileName(Uuid const& uuid) {
+auto PlayerStorage::uuidFileName(Uuid const& uuid) -> String const& {
   if (auto fileName = m_playerFileNames.rightPtr(uuid))
     return *fileName;
   else {
@@ -320,4 +324,4 @@ void PlayerStorage::writeMetadata() {
   File::overwriteFileWithRename(Json(m_metadata).printJson(0), filename);
 }
 
-}
+}// namespace Star

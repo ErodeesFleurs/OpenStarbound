@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarTerrainDatabase.hpp"
 
 namespace Star {
@@ -9,11 +10,11 @@ struct MixSelector : TerrainSelector {
 
   MixSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database);
 
-  float get(int x, int y) const override;
+  [[nodiscard]] auto get(int x, int y) const -> float override;
 
-  TerrainSelectorConstPtr m_mixSource;
-  TerrainSelectorConstPtr m_aSource;
-  TerrainSelectorConstPtr m_bSource;
+  ConstPtr<TerrainSelector> m_mixSource;
+  ConstPtr<TerrainSelector> m_aSource;
+  ConstPtr<TerrainSelector> m_bSource;
 };
 
-}
+}// namespace Star

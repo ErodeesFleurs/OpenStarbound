@@ -1,56 +1,57 @@
 #include "StarAssetTextureGroup.hpp"
-#include "StarIterator.hpp"
-#include "StarTime.hpp"
+
+#include "StarConfig.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarImageMetadataDatabase.hpp"
+#include "StarTime.hpp"
+
+import std;
 
 namespace Star {
 
-AssetTextureGroup::AssetTextureGroup(TextureGroupPtr textureGroup)
-  : m_textureGroup(std::move(textureGroup)) {
-  m_reloadTracker = make_shared<TrackerListener>();
+AssetTextureGroup::AssetTextureGroup(Ptr<TextureGroup> textureGroup)
+    : m_textureGroup(std::move(textureGroup)) {
+  m_reloadTracker = std::make_shared<TrackerListener>();
   Root::singleton().registerReloadListener(m_reloadTracker);
 }
 
-TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath) {
+auto AssetTextureGroup::loadTexture(AssetPath const& imagePath) -> RefPtr<Texture> {
   return loadTexture(imagePath, false);
 }
 
-TexturePtr AssetTextureGroup::tryTexture(AssetPath const& imagePath) {
+auto AssetTextureGroup::tryTexture(AssetPath const& imagePath) -> RefPtr<Texture> {
   return loadTexture(imagePath, true);
 }
 
-bool AssetTextureGroup::textureLoaded(AssetPath const& imagePath) const {
+auto AssetTextureGroup::textureLoaded(AssetPath const& imagePath) const -> bool {
   return m_textureMap.contains(imagePath);
 }
 
-void AssetTextureGroup::cleanup(int64_t textureTimeout) {
+void AssetTextureGroup::cleanup(std::int64_t textureTimeout) {
   if (m_reloadTracker->pullTriggered()) {
     m_textureMap.clear();
     m_textureDeduplicationMap.clear();
 
   } else {
-    int64_t time = Time::monotonicMilliseconds();
+    std::int64_t time = Time::monotonicMilliseconds();
 
     List<Texture const*> liveTextures;
-    filter(m_textureMap, [&](auto const& pair) {
-        if (time - pair.second.second < textureTimeout) {
-          liveTextures.append(pair.second.first.get());
-          return true;
-        }
-        return false;
-      });
+    filter(m_textureMap, [&](auto const& pair) -> auto {
+      if (time - pair.second.second < textureTimeout) {
+        liveTextures.append(pair.second.first.get());
+        return true;
+      }
+      return false;
+    });
 
     liveTextures.sort();
 
-    eraseWhere(m_textureDeduplicationMap, [&](auto const& p) {
-        return !liveTextures.containsSorted(p.second.get());
-      });
+    eraseWhere(m_textureDeduplicationMap, [&](auto const& p) -> auto {
+      return !liveTextures.containsSorted(p.second.get());
+    });
   }
 }
 
-TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTexture) {
+auto AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTexture) -> RefPtr<Texture> {
   if (auto p = m_textureMap.ptr(imagePath)) {
     p->second = Time::monotonicMilliseconds();
     return p->first;
@@ -58,7 +59,7 @@ TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTe
 
   auto assets = Root::singleton().assets();
 
-  ImageConstPtr image;
+  ConstPtr<Image> image;
   if (tryTexture)
     image = assets->tryImage(imagePath);
   else
@@ -82,4 +83,4 @@ TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTe
   }
 }
 
-}
+}// namespace Star

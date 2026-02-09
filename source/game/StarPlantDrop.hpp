@@ -1,49 +1,48 @@
 #pragma once
 
-#include "StarNetElementSystem.hpp"
-#include "StarMovementController.hpp"
-#include "StarPlant.hpp"
 #include "StarAssetPath.hpp"
+#include "StarMovementController.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarPlant.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_CLASS(RenderCallback);
-STAR_CLASS(PlantDrop);
 
 class PlantDrop : public virtual Entity {
 public:
   PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
-      bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig,
-      bool master, float random);
+            bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig,
+            bool master, float random);
   PlantDrop(ByteArray const& netStore, NetCompatibilityRules rules = {});
 
-  ByteArray netStore(NetCompatibilityRules rules = {});
+  auto netStore(NetCompatibilityRules rules = {}) -> ByteArray;
 
-  EntityType entityType() const override;
+  auto entityType() const -> EntityType override;
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
   void uninit() override;
 
-  String description() const override;
+  auto description() const -> String override;
 
-  pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) override;
+  auto writeNetState(std::uint64_t fromVersion = 0, NetCompatibilityRules rules = {}) -> std::pair<ByteArray, std::uint64_t> override;
   void readNetState(ByteArray data, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
   void enableInterpolation(float extrapolationHint = 0.0f) override;
   void disableInterpolation() override;
 
-  Vec2F position() const override;
-  RectF metaBoundBox() const override;
+  auto position() const -> Vec2F override;
+  auto metaBoundBox() const -> RectF override;
 
-  bool shouldDestroy() const override;
+  auto shouldDestroy() const -> bool override;
   void destroy(RenderCallback* renderCallback) override;
 
   void setPosition();
   void setVelocity(Vec2F const& position);
 
-  RectF collisionRect() const;
+  auto collisionRect() const -> RectF;
 
-  void update(float dt, uint64_t currentStep) override;
+  void update(float dt, std::uint64_t currentStep) override;
 
   void render(RenderCallback* renderCallback) override;
 
@@ -78,4 +77,4 @@ private:
   bool m_spawnedDropEffects;
 };
 
-}
+}// namespace Star

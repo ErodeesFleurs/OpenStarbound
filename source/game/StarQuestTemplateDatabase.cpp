@@ -1,9 +1,10 @@
 #include "StarQuestTemplateDatabase.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
+
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
@@ -31,7 +32,7 @@ QuestTemplate::QuestTemplate(Json const& config) {
     }
     rewards.append(rewardOption);
   }
-  rewardParameters = config.getArray("rewardParameters", {}).transformed(mem_fn(&Json::toString));
+  rewardParameters = config.getArray("rewardParameters", {}).transformed(std::mem_fn(&Json::toString));
   completionCinema = config.optString("completionCinema");
   canBeAbandoned = config.getBool("canBeAbandoned", true);
   ephemeral = config.getBool("ephemeral", false);
@@ -45,7 +46,7 @@ QuestTemplate::QuestTemplate(Json const& config) {
   questReceiverIndicator = config.getString("questReceiverIndicator", "questreceiver");
   prerequisiteQuests = jsonToStringList(config.get("prerequisites", JsonArray{}));
   requiredShipLevel = config.optUInt("requiredShipLevel");
-  requiredItems = config.getArray("requiredItems", {}).transformed([](Json item) { return ItemDescriptor(item); });
+  requiredItems = config.getArray("requiredItems", {}).transformed([](Json item) -> ItemDescriptor { return ItemDescriptor(item); });
 
   updateDelta = config.getUInt("updateDelta", 10);
   script = config.optString("script");
@@ -63,22 +64,22 @@ QuestTemplateDatabase::QuestTemplateDatabase() {
   auto& files = assets->scanExtension("questtemplate");
   assets->queueJsons(files);
   for (auto& qt : files) {
-    auto questTemplate = make_shared<QuestTemplate>(assets->json(qt));
+    auto questTemplate = std::make_shared<QuestTemplate>(assets->json(qt));
     if (!m_templates.insert(questTemplate->templateId, questTemplate).second)
       throw StarException(strf("Duplicate quest template '{}'", questTemplate->templateId));
   }
 }
 
-List<String> QuestTemplateDatabase::allQuestTemplateIds() const {
+auto QuestTemplateDatabase::allQuestTemplateIds() const -> List<String> {
   return m_templates.keys();
 }
 
-QuestTemplatePtr QuestTemplateDatabase::questTemplate(String const& templateId) const {
+auto QuestTemplateDatabase::questTemplate(String const& templateId) const -> Ptr<QuestTemplate> {
   if (!m_templates.contains(templateId)) {
     Logger::error("No quest template found for id '{}'", templateId);
-    return {};
+    return nullptr;
   }
   return m_templates.get(templateId);
 }
 
-}
+}// namespace Star

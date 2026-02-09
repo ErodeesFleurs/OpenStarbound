@@ -1,73 +1,74 @@
 #pragma once
 
-#include <optional>
+#include "StarConfig.hpp"
 #include "StarGameTypes.hpp"
-#include "StarShellParser.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaRoot.hpp"
+#include "StarShellParser.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(UniverseServer);
-STAR_CLASS(CommandProcessor);
+class UniverseServer;
 
 class CommandProcessor {
 public:
-  CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot);
+  CommandProcessor(UniverseServer* universe, Ptr<LuaRoot> luaRoot);
 
-  String adminCommand(String const& command, String const& argumentString);
-  String userCommand(ConnectionId clientId, String const& command, String const& argumentString);
+  auto adminCommand(String const& command, String const& argumentString) -> String;
+  auto userCommand(ConnectionId clientId, String const& command, String const& argumentString) -> String;
 
 private:
-  static std::optional<ConnectionId> playerCidFromCommand(String const& player, UniverseServer* universe);
+  static auto playerCidFromCommand(String const& player, UniverseServer* universe) -> std::optional<ConnectionId>;
 
-  String help(ConnectionId connectionId, String const& argumentString);
-  String admin(ConnectionId connectionId, String const& argumentString);
-  String pvp(ConnectionId connectionId, String const& argumentString);
-  String whoami(ConnectionId connectionId, String const& argumentString);
-	
-  String warp(ConnectionId connectionId, String const& argumentString);
-  String warpRandom(ConnectionId connectionId, String const& argumentString);
-  String timewarp(ConnectionId connectionId, String const& argumentString);
-  String timescale(ConnectionId connectionId, String const& argumentString);
-  String tickrate(ConnectionId connectionId, String const& argumentString);
-  String setTileProtection(ConnectionId connectionId, String const& argumentString);
-  String setDungeonId(ConnectionId connectionId, String const& argumentString);
-  String setPlayerStart(ConnectionId connectionId, String const& argumentString);
-  String spawnItem(ConnectionId connectionId, String const& argumentString);
-  String spawnTreasure(ConnectionId connectionId, String const& argumentString);
-  String spawnMonster(ConnectionId connectionId, String const& argumentString);
-  String spawnNpc(ConnectionId connectionId, String const& argumentString);
-  String spawnVehicle(ConnectionId connectionId, String const& argumentString);
-  String spawnStagehand(ConnectionId connectionId, String const& argumentString);
-  String clearStagehand(ConnectionId connectionId, String const& argumentString);
-  String spawnLiquid(ConnectionId connectionId, String const& argumentString);
-  String kick(ConnectionId connectionId, String const& argumentString);
-  String ban(ConnectionId connectionId, String const& argumentString);
-  String unbanIp(ConnectionId connectionId, String const& argumentString);
-  String unbanUuid(ConnectionId connectionId, String const& argumentString);
-  String list(ConnectionId connectionId, String const& argumentString);
-  String clientCoordinate(ConnectionId connectionId, String const& argumentString);
-  String serverReload(ConnectionId connectionId, String const& argumentString);
-  String eval(ConnectionId connectionId, String const& lua);
-  String entityEval(ConnectionId connectionId, String const& lua);
-  String enableSpawning(ConnectionId connectionId, String const& argumentString);
-  String disableSpawning(ConnectionId connectionId, String const& argumentString);
-  String placeDungeon(ConnectionId connectionId, String const& argumentString);
-  String setUniverseFlag(ConnectionId connectionId, String const& argumentString);
-  String resetUniverseFlags(ConnectionId connectionId, String const& argumentString);
-  String addBiomeRegion(ConnectionId connectionId, String const& argumentString);
-  String expandBiomeRegion(ConnectionId connectionId, String const& argumentString);
-  String updatePlanetType(ConnectionId connectionId, String const& argumentString);
-  String setWeather(ConnectionId connectionId, String const& argumentString);
-  String setEnvironmentBiome(ConnectionId connectionId, String const& argumentString);
+  auto help(ConnectionId connectionId, String const& argumentString) -> String;
+  auto admin(ConnectionId connectionId, String const& argumentString) -> String;
+  auto pvp(ConnectionId connectionId, String const& argumentString) -> String;
+  auto whoami(ConnectionId connectionId, String const& argumentString) -> String;
+
+  auto warp(ConnectionId connectionId, String const& argumentString) -> String;
+  auto warpRandom(ConnectionId connectionId, String const& argumentString) -> String;
+  auto timewarp(ConnectionId connectionId, String const& argumentString) -> String;
+  auto timescale(ConnectionId connectionId, String const& argumentString) -> String;
+  auto tickrate(ConnectionId connectionId, String const& argumentString) -> String;
+  auto setTileProtection(ConnectionId connectionId, String const& argumentString) -> String;
+  auto setDungeonId(ConnectionId connectionId, String const& argumentString) -> String;
+  auto setPlayerStart(ConnectionId connectionId, String const& argumentString) -> String;
+  auto spawnItem(ConnectionId connectionId, String const& argumentString) -> String;
+  auto spawnTreasure(ConnectionId connectionId, String const& argumentString) -> String;
+  auto spawnMonster(ConnectionId connectionId, String const& argumentString) -> String;
+  auto spawnNpc(ConnectionId connectionId, String const& argumentString) -> String;
+  auto spawnVehicle(ConnectionId connectionId, String const& argumentString) -> String;
+  auto spawnStagehand(ConnectionId connectionId, String const& argumentString) -> String;
+  auto clearStagehand(ConnectionId connectionId, String const& argumentString) -> String;
+  auto spawnLiquid(ConnectionId connectionId, String const& argumentString) -> String;
+  auto kick(ConnectionId connectionId, String const& argumentString) -> String;
+  auto ban(ConnectionId connectionId, String const& argumentString) -> String;
+  auto unbanIp(ConnectionId connectionId, String const& argumentString) -> String;
+  auto unbanUuid(ConnectionId connectionId, String const& argumentString) -> String;
+  auto list(ConnectionId connectionId, String const& argumentString) -> String;
+  auto clientCoordinate(ConnectionId connectionId, String const& argumentString) -> String;
+  auto serverReload(ConnectionId connectionId, String const& argumentString) -> String;
+  auto eval(ConnectionId connectionId, String const& lua) -> String;
+  auto entityEval(ConnectionId connectionId, String const& lua) -> String;
+  auto enableSpawning(ConnectionId connectionId, String const& argumentString) -> String;
+  auto disableSpawning(ConnectionId connectionId, String const& argumentString) -> String;
+  auto placeDungeon(ConnectionId connectionId, String const& argumentString) -> String;
+  auto setUniverseFlag(ConnectionId connectionId, String const& argumentString) -> String;
+  auto resetUniverseFlags(ConnectionId connectionId, String const& argumentString) -> String;
+  auto addBiomeRegion(ConnectionId connectionId, String const& argumentString) -> String;
+  auto expandBiomeRegion(ConnectionId connectionId, String const& argumentString) -> String;
+  auto updatePlanetType(ConnectionId connectionId, String const& argumentString) -> String;
+  auto setWeather(ConnectionId connectionId, String const& argumentString) -> String;
+  auto setEnvironmentBiome(ConnectionId connectionId, String const& argumentString) -> String;
 
   mutable Mutex m_mutex;
 
-  String handleCommand(ConnectionId connectionId, String const& command, String const& argumentString);
-  std::optional<String> adminCheck(ConnectionId connectionId, String const& commandDescription) const;
-  std::optional<String> localCheck(ConnectionId connectionId, String const& commandDescription) const;
-  LuaCallbacks makeCommandCallbacks();
+  auto handleCommand(ConnectionId connectionId, String const& command, String const& argumentString) -> String;
+  auto adminCheck(ConnectionId connectionId, String const& commandDescription) const -> std::optional<String>;
+  auto localCheck(ConnectionId connectionId, String const& commandDescription) const -> std::optional<String>;
+  auto makeCommandCallbacks() -> LuaCallbacks;
 
   UniverseServer* m_universe;
   ShellParser m_parser;
@@ -75,4 +76,4 @@ private:
   LuaBaseComponent m_scriptComponent;
 };
 
-}
+}// namespace Star

@@ -100,14 +100,14 @@ public:
   [[nodiscard]] auto previewAddBiomeRegion(Vec2I const& position, int width) const -> List<RectI>;
   [[nodiscard]] auto previewExpandBiomeRegion(Vec2I const& position, int width) const -> List<RectI>;
 
-  void addBiomeRegion(TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed, Vec2I const& position, String biomeName, String const& subBlockSelector, int width);
+  void addBiomeRegion(TerrestrialWorldParameters const& terrestrialParameters, std::uint64_t seed, Vec2I const& position, String biomeName, String const& subBlockSelector, int width);
   void expandBiomeRegion(Vec2I const& position, int newWidth);
 
   // sets the environment biome index for all regions in the current layer
   // to the biome at the specified position, and returns the name of the biome
   auto setLayerEnvironmentBiome(Vec2I const& position) -> String;
 
-  [[nodiscard]] auto findLayerAndCell(int x, int y) const -> std::pair<size_t, size_t>;
+  [[nodiscard]] auto findLayerAndCell(int x, int y) const -> std::pair<std::size_t, std::size_t>;
 
 private:
   struct WorldLayer {
@@ -131,22 +131,22 @@ private:
     WorldRegionLiquids regionLiquids;
   };
 
-  [[nodiscard]] auto expandRegionInLayer(WorldLayer targetLayer, size_t cellIndex, int newWidth) const -> std::pair<WorldLayer, List<RectI>>;
+  [[nodiscard]] auto expandRegionInLayer(WorldLayer targetLayer, std::size_t cellIndex, int newWidth) const -> std::pair<WorldLayer, List<RectI>>;
 
   auto registerBiome(ConstPtr<Biome> biome) -> BiomeIndex;
   auto registerTerrainSelector(ConstPtr<TerrainSelector> terrainSelector) -> TerrainSelectorIndex;
 
-  auto buildRegion(uint64_t seed, RegionParams const& regionParams) -> WorldRegion;
-  void addLayer(uint64_t seed, int yStart, RegionParams regionParams);
-  void addLayer(uint64_t seed, int yStart, int yBase, String const& primaryBiome,
+  auto buildRegion(std::uint64_t seed, RegionParams const& regionParams) -> WorldRegion;
+  void addLayer(std::uint64_t seed, int yStart, RegionParams regionParams);
+  void addLayer(std::uint64_t seed, int yStart, int yBase, String const& primaryBiome,
                 RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
                 List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
                 Vec2F secondaryRegionSize, Vec2F subRegionSize);
   void finalize(Color mainSkyColor);
 
-  [[nodiscard]] auto findContainingCell(WorldLayer const& layer, int x) const -> std::pair<size_t, int>;
-  [[nodiscard]] auto leftCell(WorldLayer const& layer, size_t cellIndex, int x) const -> std::pair<size_t, int>;
-  [[nodiscard]] auto rightCell(WorldLayer const& layer, size_t cellIndex, int x) const -> std::pair<size_t, int>;
+  [[nodiscard]] auto findContainingCell(WorldLayer const& layer, int x) const -> std::pair<std::size_t, int>;
+  [[nodiscard]] auto leftCell(WorldLayer const& layer, std::size_t cellIndex, int x) const -> std::pair<std::size_t, int>;
+  [[nodiscard]] auto rightCell(WorldLayer const& layer, std::size_t cellIndex, int x) const -> std::pair<std::size_t, int>;
 
   Vec2U m_worldSize;
 

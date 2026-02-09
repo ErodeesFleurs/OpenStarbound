@@ -289,7 +289,7 @@ void DataStream::vfread(FloatType& data, FloatType base) {
 
 template <typename FloatType>
 void DataStream::vfwrite(FloatType const& data, FloatType base) {
-  writeVlqI((std::int64_t)round(data / base));
+  writeVlqI((std::int64_t)std::round(data / base));
 }
 
 template <typename PointerType, typename ReadFunction>

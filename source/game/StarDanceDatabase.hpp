@@ -1,12 +1,12 @@
 #pragma once
 
-#include "StarRoot.hpp"
+#include "StarConfig.hpp"
+#include "StarString.hpp"
+#include "StarVector.hpp"
+
+import std;
 
 namespace Star {
-
-STAR_STRUCT(DanceStep);
-STAR_STRUCT(Dance);
-STAR_CLASS(DanceDatabase);
 
 struct DanceStep {
   std::optional<String> bodyFrame;
@@ -32,12 +32,12 @@ class DanceDatabase {
 public:
   DanceDatabase();
 
-  DancePtr getDance(String const& name) const;
+  [[nodiscard]] auto getDance(String const& name) const -> Ptr<Dance>;
 
 private:
-  static DancePtr readDance(String const& path);
+  static auto readDance(String const& path) -> Ptr<Dance>;
 
-  StringMap<DancePtr> m_dances;
+  StringMap<Ptr<Dance>> m_dances;
 };
 
-}
+}// namespace Star

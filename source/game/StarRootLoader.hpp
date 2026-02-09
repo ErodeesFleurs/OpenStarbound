@@ -1,9 +1,10 @@
 #pragma once
 
-#include <optional>
-
-#include "StarVersionOptionParser.hpp"
+#include "StarConfig.hpp"
 #include "StarRoot.hpp"
+#include "StarVersionOptionParser.hpp"
+
+import std;
 
 namespace Star {
 
@@ -55,16 +56,16 @@ public:
 
   RootLoader(Defaults defaults);
 
-  pair<Root::Settings, Options> parseOrDie(StringList const& cmdLineArguments) const;
-  pair<RootUPtr, Options> initOrDie(StringList const& cmdLineArguments) const;
+  [[nodiscard]] auto parseOrDie(StringList const& cmdLineArguments) const -> std::pair<Root::Settings, Options>;
+  [[nodiscard]] auto initOrDie(StringList const& cmdLineArguments) const -> std::pair<UPtr<Root>, Options>;
 
-  pair<Root::Settings, Options> commandParseOrDie(int argc, char** argv);
-  pair<RootUPtr, Options> commandInitOrDie(int argc, char** argv);
+  auto commandParseOrDie(int argc, char** argv) -> std::pair<Root::Settings, Options>;
+  auto commandInitOrDie(int argc, char** argv) -> std::pair<UPtr<Root>, Options>;
 
 private:
-  Root::Settings rootSettingsForOptions(Options const& options) const;
+  [[nodiscard]] auto rootSettingsForOptions(Options const& options) const -> Root::Settings;
 
   Defaults m_defaults;
 };
 
-}
+}// namespace Star

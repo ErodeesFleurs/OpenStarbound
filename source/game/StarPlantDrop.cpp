@@ -1,14 +1,16 @@
 #include "StarPlantDrop.hpp"
+
+#include "StarConfig.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarPlayer.hpp"
-#include "StarRoot.hpp"
+#include "StarEntityRendering.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarItemDrop.hpp"
-#include "StarAssets.hpp"
-#include "StarEntityRendering.hpp"
-#include "StarWorld.hpp"
+#include "StarParticleDatabase.hpp"// IWYU pragma: export
 #include "StarRandom.hpp"
-#include "StarParticleDatabase.hpp"
+#include "StarRoot.hpp"
+#include "StarWorld.hpp"
+
+import std;
 
 namespace Star {
 
@@ -21,7 +23,7 @@ PlantDrop::PlantDropPiece::PlantDropPiece() {
 }
 
 PlantDrop::PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
-    bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random) {
+                     bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random) {
   m_netGroup.addNetElement(&m_movementController);
   m_netGroup.addNetElement(&m_spawnedDrops);
 
@@ -41,7 +43,7 @@ PlantDrop::PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2
   m_description = description;
   m_movementController.setPosition(position);
   if (!upsideDown) {
-    m_rotationRate = copysign(0.00001f, -strikeVector[0] + random);
+    m_rotationRate = std::copysign(0.00001f, -strikeVector[0] + random);
     m_rotationFallThreshold = Constants::pi / (3 + random);
     m_rotationCap = Constants::pi - m_rotationFallThreshold;
   } else {
@@ -99,13 +101,13 @@ PlantDrop::PlantDrop(ByteArray const& netStore, NetCompatibilityRules rules) {
   ds >> m_collisionRect;
   ds >> m_rotationRate;
   ds.readContainer(m_pieces,
-      [](DataStream& ds, PlantDropPiece& piece) {
-        ds.read(piece.image);
-        ds.read(piece.offset[0]);
-        ds.read(piece.offset[1]);
-        ds.read(piece.flip);
-        ds.read(piece.kind);
-      });
+                   [](DataStream& ds, PlantDropPiece& piece) -> void {
+                     ds.read(piece.image);
+                     ds.read(piece.offset[0]);
+                     ds.read(piece.offset[1]);
+                     ds.read(piece.flip);
+                     ds.read(piece.kind);
+                   });
   ds >> m_stemConfig;
   ds >> m_foliageConfig;
   ds >> m_saplingConfig;
@@ -114,7 +116,7 @@ PlantDrop::PlantDrop(ByteArray const& netStore, NetCompatibilityRules rules) {
   m_spawnedDropEffects = true;
 }
 
-ByteArray PlantDrop::netStore(NetCompatibilityRules) {
+auto PlantDrop::netStore(NetCompatibilityRules) -> ByteArray {
   DataStreamBuffer ds;
   ds << m_time;
   ds << m_master;
@@ -123,13 +125,13 @@ ByteArray PlantDrop::netStore(NetCompatibilityRules) {
   ds << m_collisionRect;
   ds << m_rotationRate;
   ds.writeContainer(m_pieces,
-      [](DataStream& ds, PlantDropPiece const& piece) {
-        ds.write(piece.image);
-        ds.write(piece.offset[0]);
-        ds.write(piece.offset[1]);
-        ds.write(piece.flip);
-        ds.write(piece.kind);
-      });
+                    [](DataStream& ds, PlantDropPiece const& piece) -> void {
+                      ds.write(piece.image);
+                      ds.write(piece.offset[0]);
+                      ds.write(piece.offset[1]);
+                      ds.write(piece.flip);
+                      ds.write(piece.kind);
+                    });
   ds << m_stemConfig;
   ds << m_foliageConfig;
   ds << m_saplingConfig;
@@ -137,7 +139,7 @@ ByteArray PlantDrop::netStore(NetCompatibilityRules) {
   return ds.data();
 }
 
-EntityType PlantDrop::entityType() const {
+auto PlantDrop::entityType() const -> EntityType {
   return EntityType::PlantDrop;
 }
 
@@ -159,38 +161,38 @@ void PlantDrop::uninit() {
   m_movementController.uninit();
 }
 
-String PlantDrop::description() const {
+auto PlantDrop::description() const -> String {
   return m_description;
 }
 
-Vec2F PlantDrop::position() const {
+auto PlantDrop::position() const -> Vec2F {
   return m_movementController.position();
 }
 
-RectF PlantDrop::metaBoundBox() const {
+auto PlantDrop::metaBoundBox() const -> RectF {
   return m_boundingBox;
 }
 
-RectF PlantDrop::collisionRect() const {
+auto PlantDrop::collisionRect() const -> RectF {
   PolyF shape = PolyF(m_collisionRect);
   shape.rotate(m_movementController.rotation());
   return shape.boundBox();
 }
 
-void PlantDrop::update(float dt, uint64_t) {
+void PlantDrop::update(float dt, std::uint64_t) {
   m_time -= dt;
 
   m_movementController.setTimestep(dt);
   if (isMaster()) {
     if (m_spawnedDropEffects && !m_spawnedDrops.get())
-      m_spawnedDropEffects = false; // false positive assumption over already having done the effect
+      m_spawnedDropEffects = false;// false positive assumption over already having done the effect
     // to avoid effects for newly joining players.
     if (m_spawnedDrops.get())
       m_firstTick = false;
 
     // think up a better curve then sin
-    auto rotationAcceleration = 0.01f * world()->gravity(position()) * copysign(1.0f, m_rotationRate) * dt;
-    if (abs(m_movementController.rotation()) > m_rotationCap)
+    auto rotationAcceleration = 0.01f * world()->gravity(position()) * std::copysign(1.0f, m_rotationRate) * dt;
+    if (std::abs(m_movementController.rotation()) > m_rotationCap)
       m_rotationRate -= rotationAcceleration;
     else if (std::fabs(m_movementController.rotation()) < m_rotationFallThreshold)
       m_rotationRate += rotationAcceleration;
@@ -210,7 +212,7 @@ void PlantDrop::update(float dt, uint64_t) {
         m_time = 0;
     }
 
-    auto imgMetadata = Root::singleton().imageMetadataDatabase();
+    ConstPtr<ImageMetadataDatabase> imgMetadata = Root::singleton().imageMetadataDatabase();
 
     if ((m_time <= 0 || world()->gravity(position()) == 0) && !m_spawnedDrops.get()) {
       m_spawnedDrops.set(true);
@@ -225,13 +227,13 @@ void PlantDrop::update(float dt, uint64_t) {
           for (auto drop : option) {
             auto size = imgMetadata->imageSize(plantPiece.image);
             Vec2F pos = Vec2F(plantPiece.offset + Vec2F(size) * .5f / TilePixels).rotate(m_movementController.rotation())
-                + Vec2F(Random::randf(-0.2f, 0.2f), Random::randf(-0.2f, 0.2f));
+              + Vec2F(Random::randf(-0.2f, 0.2f), Random::randf(-0.2f, 0.2f));
             if (drop.getString("item") == "sapling")
               world()->addEntity(ItemDrop::createRandomizedDrop(
-                  ItemDescriptor("sapling", (size_t)drop.getInt("count", 1), m_saplingConfig), position() + pos));
+                ItemDescriptor("sapling", (size_t)drop.getInt("count", 1), m_saplingConfig), position() + pos));
             else
               world()->addEntity(ItemDrop::createRandomizedDrop(
-                  {drop.getString("item"), (size_t)drop.getInt("count", 1)}, position() + pos));
+                {drop.getString("item"), (size_t)drop.getInt("count", 1)}, position() + pos));
           }
         }
       }
@@ -240,7 +242,7 @@ void PlantDrop::update(float dt, uint64_t) {
     m_netGroup.tickNetInterpolation(dt);
 
     if (m_spawnedDropEffects && !m_spawnedDrops.get())
-      m_spawnedDropEffects = false; // false positive assumption over already having done the effect
+      m_spawnedDropEffects = false;// false positive assumption over already having done the effect
     // to avoid effects for newly joining players.
     if (m_spawnedDrops.get())
       m_firstTick = false;
@@ -300,11 +302,11 @@ void PlantDrop::render(RenderCallback* renderCallback) {
     // smoke, particles
 
     if (m_master) {
-      auto playBreakSound = [&](Json const& config) {
+      auto playBreakSound = [&](Json const& config) -> void {
         JsonArray breakTreeOptions = config.get("sounds", JsonObject()).getArray("breakTree", JsonArray());
         if (breakTreeOptions.size()) {
           auto sound = Random::randFrom(breakTreeOptions);
-          auto audioInstance = make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
+          auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
           audioInstance->setPosition(collisionRect().center() + position());
           audioInstance->setVolume(sound.getFloat("volume", 1.0f));
           renderCallback->addAudio(std::move(audioInstance));
@@ -326,11 +328,11 @@ void PlantDrop::render(RenderCallback* renderCallback) {
     m_spawnedDropEffects = true;
     // smoke, particles
 
-    auto playHitSound = [&](Json const& config) {
+    auto playHitSound = [&](Json const& config) -> void {
       JsonArray hitGroundOptions = config.get("sounds", JsonObject()).getArray("hitGround", JsonArray());
       if (hitGroundOptions.size()) {
         auto sound = Random::randFrom(hitGroundOptions);
-        auto audioInstance = make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
+        auto audioInstance = std::make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
         audioInstance->setPosition(collisionRect().center() + position());
         audioInstance->setVolume(sound.getFloat("volume", 1.0f));
         renderCallback->addAudio(std::move(audioInstance));
@@ -359,7 +361,7 @@ void PlantDrop::render(RenderCallback* renderCallback) {
   }
 }
 
-pair<ByteArray, uint64_t> PlantDrop::writeNetState(uint64_t fromVersion, NetCompatibilityRules rules) {
+auto PlantDrop::writeNetState(std::uint64_t fromVersion, NetCompatibilityRules rules) -> std::pair<ByteArray, std::uint64_t> {
   return m_netGroup.writeNetState(fromVersion, rules);
 }
 
@@ -375,8 +377,8 @@ void PlantDrop::disableInterpolation() {
   m_netGroup.disableNetInterpolation();
 }
 
-bool PlantDrop::shouldDestroy() const {
+auto PlantDrop::shouldDestroy() const -> bool {
   return m_time <= 0.0f;
 }
 
-}
+}// namespace Star

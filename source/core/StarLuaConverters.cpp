@@ -1,4 +1,5 @@
 #include "StarLuaConverters.hpp"
+
 #include "StarColor.hpp"
 
 import std;
@@ -53,4 +54,4 @@ auto LuaConverter<LuaCallbacks>::to(LuaEngine&, LuaValue const&) -> std::optiona
   return {};
 }
 
-}
+}// namespace Star

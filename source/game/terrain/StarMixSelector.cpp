@@ -1,4 +1,5 @@
 #include "StarMixSelector.hpp"
+
 #include "StarInterpolation.hpp"
 
 namespace Star {
@@ -6,8 +7,8 @@ namespace Star {
 char const* const MixSelector::Name = "mix";
 
 MixSelector::MixSelector(Json const& config, TerrainSelectorParameters const& parameters, TerrainDatabase const* database)
-  : TerrainSelector(Name, config, parameters) {
-  auto readSource = [&](Json const& sourceConfig) {
+    : TerrainSelector(Name, config, parameters) {
+  auto readSource = [&](Json const& sourceConfig) -> ConstPtr<TerrainSelector> {
     String type = sourceConfig.getString("type");
     return database->createSelectorType(type, sourceConfig, parameters);
   };
@@ -17,7 +18,7 @@ MixSelector::MixSelector(Json const& config, TerrainSelectorParameters const& pa
   m_bSource = readSource(config.get("bSource"));
 }
 
-float MixSelector::get(int x, int y) const {
+auto MixSelector::get(int x, int y) const -> float {
   auto f = clamp(m_mixSource->get(x, y), -1.0f, 1.0f);
   if (f == -1)
     return m_aSource->get(x, y);
@@ -26,4 +27,4 @@ float MixSelector::get(int x, int y) const {
   return lerp(f * 0.5f + 0.5f, m_aSource->get(x, y), m_bSource->get(x, y));
 }
 
-}
+}// namespace Star

@@ -1,43 +1,45 @@
 #pragma once
 
-#include "StarPlatformServices_pc.hpp"
 #include "StarAlgorithm.hpp"
-#include "StarThread.hpp"
-#include "StarStrongTypedef.hpp"
+#include "StarConfig.hpp"
+#include "StarHostAddress.hpp"
+#include "StarPlatformServices_pc.hpp"
 #include "StarRpcPromise.hpp"
+#include "StarStrongTypedef.hpp"
+#include "StarThread.hpp"
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(PcP2PNetworkingService);
-
 class PcP2PNetworkingService : public P2PNetworkingService {
 public:
-  PcP2PNetworkingService(PcPlatformServicesStatePtr state);
-  ~PcP2PNetworkingService();
+  PcP2PNetworkingService(Ptr<PcPlatformServicesState> state);
+  ~PcP2PNetworkingService() override;
 
   void setJoinUnavailable() override;
-  void setJoinLocal(uint32_t capacity) override;
+  void setJoinLocal(std::uint32_t capacity) override;
   void setJoinRemote(HostAddressWithPort location) override;
-  void setActivityData(const char* title, const char* details, int64_t startTime, std::optional<pair<uint16_t, uint16_t>>) override;
+  void setActivityData(const char* title, const char* details, std::int64_t startTime, std::optional<std::pair<std::uint16_t, std::uint16_t>>) override;
 
-  MVariant<P2PNetworkingPeerId, HostAddressWithPort> pullPendingJoin() override;
-  std::optional<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
+  auto pullPendingJoin() -> MVariant<P2PNetworkingPeerId, HostAddressWithPort> override;
+  auto pullJoinRequest() -> std::optional<std::pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> override;
 
   void setAcceptingP2PConnections(bool acceptingP2PConnections) override;
-  List<P2PSocketUPtr> acceptP2PConnections() override;
+  auto acceptP2PConnections() -> List<UPtr<P2PSocket>> override;
   void update() override;
-  Either<String, P2PSocketUPtr> connectToPeer(P2PNetworkingPeerId peerId) override;
+  auto connectToPeer(P2PNetworkingPeerId peerId) -> Either<String, UPtr<P2PSocket>> override;
 
   void addPendingJoin(String connectionString);
 
 private:
-  strong_typedef(Empty, JoinUnavailable);
+  using JoinUnavailable = StrongTypedef<Empty>;
   struct JoinLocal {
-    bool operator==(JoinLocal const& rhs) const { return capacity == rhs.capacity; };
-    uint32_t capacity;
+    auto operator==(JoinLocal const& rhs) const -> bool { return capacity == rhs.capacity; };
+    std::uint32_t capacity;
   };
-  strong_typedef(HostAddressWithPort, JoinRemote);
-  typedef Variant<JoinUnavailable, JoinLocal, JoinRemote> JoinLocation;
+  using JoinRemote = StrongTypedef<HostAddressWithPort>;
+  using JoinLocation = Variant<JoinUnavailable, JoinLocal, JoinRemote>;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 
@@ -100,15 +102,15 @@ private:
   void discordOnLobbyMemberDisconnect(discord::LobbyId lobbyId, discord::UserId userId);
 
 #endif
-  
+
   void setJoinLocation(JoinLocation joinLocation);
 
-  PcPlatformServicesStatePtr m_state;
+  Ptr<PcPlatformServicesState> m_state;
 
   Mutex m_mutex;
   JoinLocation m_joinLocation;
   bool m_acceptingP2PConnections = false;
-  List<P2PSocketUPtr> m_pendingIncomingConnections;
+  List<UPtr<P2PSocket>> m_pendingIncomingConnections;
   MVariant<P2PNetworkingPeerId, HostAddressWithPort> m_pendingJoin;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
@@ -119,7 +121,6 @@ private:
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
 
-  
   List<pair<discord::UserId, String>> m_discordJoinRequests;
   List<pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>> m_pendingDiscordJoinRequests;
 
@@ -142,4 +143,4 @@ private:
 #endif
 };
 
-}
+}// namespace Star

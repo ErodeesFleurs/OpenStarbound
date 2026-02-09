@@ -1,17 +1,12 @@
 #pragma once
 
-#include "StarVector.hpp"
-#include "StarSet.hpp"
-#include "StarMap.hpp"
+#include "StarConfig.hpp"
 #include "StarRandom.hpp"
-#include "StarGameTypes.hpp"
-#include "StarWorldTiles.hpp"
+#include "StarRect.hpp"
+#include "StarSet.hpp"
+#include "StarVector.hpp"
 
 namespace Star {
-
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(FallingBlocksFacade);
-STAR_CLASS(FallingBlocksAgent);
 
 enum class FallingBlockType {
   Immovable,
@@ -24,13 +19,13 @@ class FallingBlocksFacade {
 public:
   virtual ~FallingBlocksFacade() = default;
 
-  virtual FallingBlockType blockType(Vec2I const& pos) = 0;
+  virtual auto blockType(Vec2I const& pos) -> FallingBlockType = 0;
   virtual void moveBlock(Vec2I const& from, Vec2I const& to) = 0;
 };
 
 class FallingBlocksAgent {
 public:
-  FallingBlocksAgent(FallingBlocksFacadePtr worldFacade);
+  FallingBlocksAgent(Ptr<FallingBlocksFacade> worldFacade);
 
   void update();
 
@@ -38,10 +33,10 @@ public:
   void visitRegion(RectI const& region);
 
 private:
-  FallingBlocksFacadePtr m_facade;
+  Ptr<FallingBlocksFacade> m_facade;
   float m_immediateUpwardPropagateProbability;
   HashSet<Vec2I> m_pending;
   RandomSource m_random;
 };
 
-}
+}// namespace Star

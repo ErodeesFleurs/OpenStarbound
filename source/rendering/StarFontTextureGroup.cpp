@@ -1,35 +1,37 @@
 #include "StarFontTextureGroup.hpp"
-#include "StarTime.hpp"
+
 #include "StarImageProcessing.hpp"
 #include "StarLogging.hpp"
+#include "StarTime.hpp"
+
+import std;
 
 namespace Star {
 
-FontTextureGroup::FontTextureGroup(TextureGroupPtr textureGroup)
-  : m_textureGroup(std::move(textureGroup)) {}
+FontTextureGroup::FontTextureGroup(Ptr<TextureGroup> textureGroup)
+    : m_textureGroup(std::move(textureGroup)) {}
 
-void FontTextureGroup::cleanup(int64_t timeout) {
-  int64_t currentTime = Time::monotonicMilliseconds();
-  eraseWhere(m_glyphs, [&](auto const& p) { return currentTime - p.second.time > timeout; });
+void FontTextureGroup::cleanup(std::int64_t timeout) {
+  std::int64_t currentTime = Time::monotonicMilliseconds();
+  eraseWhere(m_glyphs, [&](auto const& p) -> auto { return currentTime - p.second.time > timeout; });
 }
 
 void FontTextureGroup::switchFont(String const& font) {
   if (font.empty()) {
     m_activeFont = m_defaultFont;
     m_fontName.clear();
-  }
-  else if (m_fontName != font) {
+  } else if (m_fontName != font) {
     m_fontName = font;
     auto find = m_fonts.find(font);
     m_activeFont = find != m_fonts.end() ? find->second : m_defaultFont;
   }
 }
 
-String const& FontTextureGroup::activeFont() {
+auto FontTextureGroup::activeFont() -> String const& {
   return m_fontName;
 }
 
-void FontTextureGroup::addFont(FontPtr const& font, String const& name) {
+void FontTextureGroup::addFont(Ptr<Font> const& font, String const& name) {
   m_fonts[name] = font;
 }
 
@@ -47,8 +49,7 @@ void FontTextureGroup::setFixedFonts(String const& defaultFontName, String const
     m_emojiFont = *emojiFont;
 }
 
-const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Char c, unsigned size, Directives const* processingDirectives)
-{
+auto FontTextureGroup::glyphTexture(String::Char c, unsigned size, Directives const* processingDirectives) -> const FontTextureGroup::GlyphTexture& {
   Font* font = getFontForCharacter(c);
   if (font == m_emojiFont.get())
     processingDirectives = nullptr;
@@ -71,16 +72,16 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
               string->clear();
             }
           } else if (auto& exception = error->cause.get<std::exception_ptr>()) {
-            try
-              { std::rethrow_exception(error->cause.get<std::exception_ptr>()); }
-            catch (std::exception const& e)
-              { Logger::error("Exception in parsed font directives: {}", e.what()); };
+            try {
+              std::rethrow_exception(error->cause.get<std::exception_ptr>());
+            } catch (std::exception const& e) { Logger::error("Exception in parsed font directives: {}", e.what()); };
             exception = {};
           }
           broken |= true;
         } else {
-          try { processImageOperation(entry.operation, image); }
-          catch (StarException const& e) {
+          try {
+            processImageOperation(entry.operation, image);
+          } catch (StarException const& e) {
             broken |= true;
             Logger::error("Exception processing font directives for {}px '{}': {}", size, String(c), e.what());
           }
@@ -89,7 +90,7 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
 
       if (broken) {
         glyphTexture.colored = true;
-        image.forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) {
+        image.forEachPixel([](unsigned x, unsigned y, Vec4B& pixel) -> void {
           pixel = ((x + y) % 2 == 0) ? Vec4B(255, 0, 255, pixel[3]) : Vec4B(0, 0, 0, pixel[3]);
         });
       }
@@ -106,35 +107,35 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
   return glyphTexture;
 }
 
-TexturePtr FontTextureGroup::glyphTexturePtr(String::Char c, unsigned size) {
+auto FontTextureGroup::glyphTexturePtr(String::Char c, unsigned size) -> RefPtr<Texture> {
   return glyphTexture(c, size, nullptr).texture;
 }
 
-TexturePtr FontTextureGroup::glyphTexturePtr(String::Char c, unsigned size, Directives const* processingDirectives) {
+auto FontTextureGroup::glyphTexturePtr(String::Char c, unsigned size, Directives const* processingDirectives) -> RefPtr<Texture> {
   return glyphTexture(c, size, processingDirectives).texture;
 }
 
-unsigned FontTextureGroup::glyphWidth(String::Char c, unsigned fontSize) {
+auto FontTextureGroup::glyphWidth(String::Char c, unsigned fontSize) -> unsigned {
   Font* font = getFontForCharacter(c);
   font->setPixelSize(fontSize);
   return font->width(c);
 }
 
-Font* FontTextureGroup::getFontForCharacter(String::Char c) {
-  if (((c >= 0x1F600 && c <= 0x1F64F) || // Emoticons
-       (c >= 0x1F300 && c <= 0x1F5FF) || // Misc Symbols and Pictographs
-       (c >= 0x1F680 && c <= 0x1F6FF) || // Transport and Map
-       (c >= 0x1F1E6 && c <= 0x1F1FF) || // Regional country flags
-       (c >= 0x2600  && c <= 0x26FF ) || // Misc symbols 9728 - 9983
-       (c >= 0x2700  && c <= 0x27BF ) || // Dingbats
-       (c >= 0xFE00  && c <= 0xFE0F ) || // Variation Selectors
-       (c >= 0x1F900 && c <= 0x1F9FF) || // Supplemental Symbols and Pictographs
-       (c >= 0x1F018 && c <= 0x1F270) || // Various asian characters
-       (c >= 65024   && c <= 65039  ) || // Variation selector
-       (c >= 9100    && c <= 9300   ) || // Misc items
-       (c >= 8400    && c <= 8447   ))&& // Combining Diacritical Marks for Symbols
-      m_emojiFont->exists(c)
-    )
+auto FontTextureGroup::getFontForCharacter(String::Char c) -> Font* {
+  if (((c >= 0x1F600 && c <= 0x1F64F) ||// Emoticons
+       (c >= 0x1F300 && c <= 0x1F5FF) ||// Misc Symbols and Pictographs
+       (c >= 0x1F680 && c <= 0x1F6FF) ||// Transport and Map
+       (c >= 0x1F1E6 && c <= 0x1F1FF) ||// Regional country flags
+       (c >= 0x2600 && c <= 0x26FF) ||  // Misc symbols 9728 - 9983
+       (c >= 0x2700 && c <= 0x27BF) ||  // Dingbats
+       (c >= 0xFE00 && c <= 0xFE0F) ||  // Variation Selectors
+       (c >= 0x1F900 && c <= 0x1F9FF) ||// Supplemental Symbols and Pictographs
+       (c >= 0x1F018 && c <= 0x1F270) ||// Various asian characters
+       (c >= 65024 && c <= 65039) ||    // Variation selector
+       (c >= 9100 && c <= 9300) ||      // Misc items
+       (c >= 8400 && c <= 8447))
+      &&// Combining Diacritical Marks for Symbols
+      m_emojiFont->exists(c))
     return m_emojiFont.get();
   else if (m_activeFont->exists(c) || !m_fallbackFont)
     return m_activeFont.get();
@@ -142,4 +143,4 @@ Font* FontTextureGroup::getFontForCharacter(String::Char c) {
     return m_fallbackFont.get();
 }
 
-}
+}// namespace Star

@@ -1,12 +1,10 @@
 #pragma once
 
-#include <optional>
-
 #include "StarStatusTypes.hpp"
 
-namespace Star {
+import std;
 
-STAR_CLASS(StatSet);
+namespace Star {
 
 // Manages a collection of Stats and Resources.
 //
@@ -40,79 +38,79 @@ public:
 
   // Only lists base stats added with addStat, not stats that come only from
   // modifiers
-  StringList baseStatNames() const;
-  bool isBaseStat(String const& statName) const;
+  [[nodiscard]] auto baseStatNames() const -> StringList;
+  [[nodiscard]] auto isBaseStat(String const& statName) const -> bool;
 
   // Throws when the stat is not a base stat that is added via addStat.
-  float statBaseValue(String const& statName) const;
+  [[nodiscard]] auto statBaseValue(String const& statName) const -> float;
   void setStatBaseValue(String const& statName, float value);
 
-  List<StatModifierGroupId> statModifierGroupIds() const;
-  List<StatModifier> statModifierGroup(StatModifierGroupId modifierGroupId) const;
+  [[nodiscard]] auto statModifierGroupIds() const -> List<StatModifierGroupId>;
+  [[nodiscard]] auto statModifierGroup(StatModifierGroupId modifierGroupId) const -> List<StatModifier>;
 
-  StatModifierGroupId addStatModifierGroup(List<StatModifier> modifiers = {});
+  auto addStatModifierGroup(List<StatModifier> modifiers = {}) -> StatModifierGroupId;
   void addStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers);
-  bool setStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers);
-  bool removeStatModifierGroup(StatModifierGroupId modifierGroupId);
+  auto setStatModifierGroup(StatModifierGroupId groupId, List<StatModifier> modifiers) -> bool;
+  auto removeStatModifierGroup(StatModifierGroupId modifierGroupId) -> bool;
   void clearStatModifiers();
 
-  StatModifierGroupMap const& allStatModifierGroups() const;
+  [[nodiscard]] auto allStatModifierGroups() const -> StatModifierGroupMap const&;
   void setAllStatModifierGroups(StatModifierGroupMap map);
 
-  StringList effectiveStatNames() const;
+  [[nodiscard]] auto effectiveStatNames() const -> StringList;
 
   // Does this stat exist either from the base stats or the modifiers
-  bool isEffectiveStat(String const& statName) const;
+  [[nodiscard]] auto isEffectiveStat(String const& statName) const -> bool;
 
   // Will never throw, returns either the base stat value, or the modified
   // stat value if a modifier is applied, or 0.0.  This is to support stats that
   // may come only from modifiers and have no base value.
-  float statEffectiveValue(String const& statName) const;
+  [[nodiscard]] auto statEffectiveValue(String const& statName) const -> float;
 
   void addResource(String resourceName, MVariant<String, float> max = {}, MVariant<String, float> delta = {});
   void removeResource(String const& resourceName);
 
-  MVariant<String, float> resourceMax(String const& resourceName) const;
-  MVariant<String, float> resourceDelta(String const& resourceName) const;
+  [[nodiscard]] auto resourceMax(String const& resourceName) const -> MVariant<String, float>;
+  [[nodiscard]] auto resourceDelta(String const& resourceName) const -> MVariant<String, float>;
 
-  StringList resourceNames() const;
-  bool isResource(String const& resourceName) const;
+  [[nodiscard]] auto resourceNames() const -> StringList;
+  [[nodiscard]] auto isResource(String const& resourceName) const -> bool;
 
   // Will never throw, returns either the resource value, or 0.0 for a missing
   // resource
-  float resourceValue(String const& resourceName) const;
+  [[nodiscard]] auto resourceValue(String const& resourceName) const -> float;
 
-  float setResourceValue(String const& resourceName, float value);
-  float modifyResourceValue(String const& resourceName, float amount);
+  auto setResourceValue(String const& resourceName, float value) -> float;
+  auto modifyResourceValue(String const& resourceName, float amount) -> float;
 
   // Similar to consumeResource, will add the given amount to a resource if
   // it exists. Returns the amount by which the resource was actually increased.
-  float giveResourceValue(String const& resourceName, float amount);
+  auto giveResourceValue(String const& resourceName, float amount) -> float;
 
   // If a resource exists and has more than the given amount available, and the
   // resource is not locked, then subtracts this amount from the resource and
   // returns true.  Otherwise, does nothing and returns false.  Will only throw
   // if 'amount' is less than zero, will simply return false on missing
   // resource.
-  bool consumeResourceValue(String const& resourceName, float amount);
+  auto consumeResourceValue(String const& resourceName, float amount) -> bool;
 
   // Like consumeResource, but always succeeds if the resource is unlocked and
   // the amount is nonzero.  If the amount is greater than the available
   // resource, then the resource will be consumed to zero.
-  bool overConsumeResourceValue(String const& resourceName, float amount);
+  auto overConsumeResourceValue(String const& resourceName, float amount) -> bool;
 
   // A locked resource cannot be consumed in any way.
-  bool resourceLocked(String const& resourceName) const;
+  [[nodiscard]] auto resourceLocked(String const& resourceName) const -> bool;
   void setResourceLocked(String const& resourceName, bool locked);
 
   // If a resource has a maximum value, this will return it.
-  std::optional<float> resourceMaxValue(String const& resourceName) const;
+  [[nodiscard]] auto resourceMaxValue(String const& resourceName) const -> std::optional<float>;
   // Returns the resource percentage if the resource has a max value.
-  std::optional<float> resourcePercentage(String const& resourceName) const;
+  [[nodiscard]] auto resourcePercentage(String const& resourceName) const -> std::optional<float>;
   // If the resource has a max value, then modifies the value percentage,
   // otherwise this is nonsense so throws.
-  float setResourcePercentage(String const& resourceName, float resourcePercentage);
-  float modifyResourcePercentage(String const& resourceName, float resourcePercentage);
+  auto setResourcePercentage(String const& resourceName, float resourcePercentage) -> float;
+  auto modifyResourcePercentage(String const& resourceName, float resourcePercentage) -> float;
 
   void update(float dt);
 
@@ -135,13 +133,13 @@ private:
 
     // Sets value and clamps between [0.0, maxStatValue] or just >= 0.0 if
     // maxStatValue is not given.
-    float setValue(float v);
+    auto setValue(float v) -> float;
   };
 
-  Resource const& getResource(String const& resourceName) const;
-  Resource& getResource(String const& resourceName);
+  [[nodiscard]] auto getResource(String const& resourceName) const -> Resource const&;
+  auto getResource(String const& resourceName) -> Resource&;
 
-  bool consumeResourceValue(String const& resourceName, float amount, bool allowOverConsume);
+  auto consumeResourceValue(String const& resourceName, float amount, bool allowOverConsume) -> bool;
 
   StringMap<float> m_baseStats;
   StringMap<EffectiveStat> m_effectiveStats;
@@ -149,4 +147,4 @@ private:
   StringMap<Resource> m_resources;
 };
 
-}
+}// namespace Star

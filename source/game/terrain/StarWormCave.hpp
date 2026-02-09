@@ -4,16 +4,18 @@
 #include "StarLruCache.hpp"
 #include "StarVector.hpp"
 
+import std;
+
 namespace Star {
 
 class WormCaveSector {
 public:
-  WormCaveSector(int sectorSize, Vec2I sector, Json const& config, size_t seed, float commonality);
+  WormCaveSector(int sectorSize, Vec2I sector, Json const& config, std::size_t seed, float commonality);
 
-  float get(int x, int y);
+  auto get(int x, int y) -> float;
 
 private:
-  bool inside(int x, int y);
+  auto inside(int x, int y) -> bool;
   void set(int x, int y, float value);
 
   int m_sectorSize;
@@ -29,7 +31,7 @@ public:
 
   WormCaveSelector(Json const& config, TerrainSelectorParameters const& parameters);
 
-  float get(int x, int y) const override;
+  auto get(int x, int y) const -> float override;
 
 private:
   int m_sectorSize;
