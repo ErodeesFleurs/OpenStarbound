@@ -1,21 +1,24 @@
 #include "StarMaterialRenderProfile.hpp"
-#include "StarLexicalCast.hpp"
+
+#include "StarConfig.hpp"
+#include "StarImageMetadataDatabase.hpp"// IWYU pragma: export
 #include "StarJsonExtra.hpp"
-#include "StarAssets.hpp"
-#include "StarImageMetadataDatabase.hpp"
 #include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
 EnumMap<MaterialJoinType> const MaterialJoinTypeNames = {
-    {MaterialJoinType::All, "All"}, {MaterialJoinType::Any, "Any"},
+  {MaterialJoinType::All, "All"},
+  {MaterialJoinType::Any, "Any"},
 };
 
-MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, RuleMap const& ruleMap, PieceMap const& pieceMap, MatchMap const& matchMap) {
+auto parseMaterialRenderMatchList(Json const& matchSpec, RuleMap const& ruleMap, PieceMap const& pieceMap, MatchMap const& matchMap) -> MaterialRenderMatchList {
   MaterialRenderMatchList matchList;
 
   for (auto const& matchConfig : matchSpec.toArray()) {
-    MaterialRenderMatchPtr match = make_shared<MaterialRenderMatch>();
+    Ptr<MaterialRenderMatch> match = std::make_shared<MaterialRenderMatch>();
 
     Json matchPointList = JsonArray();
     if (auto matchAllPoints = matchConfig.opt("matchAllPoints")) {
@@ -29,9 +32,9 @@ MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, Rule
     for (auto const& matchPointConfig : matchPointList.iterateArray()) {
       MaterialMatchPoint matchPoint;
       matchPoint.position = jsonToVec2I(matchPointConfig.get(0));
-      if (abs(matchPoint.position[0]) > MaterialRenderProfileMaxNeighborDistance || abs(matchPoint.position[1]) > MaterialRenderProfileMaxNeighborDistance)
+      if (std::abs(matchPoint.position[0]) > MaterialRenderProfileMaxNeighborDistance || std::abs(matchPoint.position[1]) > MaterialRenderProfileMaxNeighborDistance)
         throw MaterialRenderProfileException(strf("Match position {} outside of maximum rule distance {}",
-            matchPoint.position, MaterialRenderProfileMaxNeighborDistance));
+                                                  matchPoint.position, MaterialRenderProfileMaxNeighborDistance));
       matchPoint.rule = ruleMap.get(matchPointConfig.getString(1));
       match->matchPoints.append(std::move(matchPoint));
     }
@@ -45,7 +48,7 @@ MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, Rule
     else if (!subMatches.isNull())
       match->subMatches = parseMaterialRenderMatchList(subMatches, ruleMap, pieceMap, matchMap);
 
-    match->requiredLayer = matchConfig.optString("requiredLayer").transform(bind(&EnumMap<TileLayer>::getLeft, &TileLayerNames, _1));
+    match->requiredLayer = matchConfig.optString("requiredLayer").transform([ObjectPtr = &TileLayerNames](auto&& PH1) -> auto { return ObjectPtr->getLeft(std::forward<decltype(PH1)>(PH1)); });
     match->haltOnMatch = matchConfig.getBool("haltOnMatch", false);
     match->haltOnSubMatch = matchConfig.getBool("haltOnSubMatch", false);
 
@@ -57,7 +60,7 @@ MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, Rule
   return matchList;
 }
 
-String MaterialRenderProfile::pieceImage(String const& pieceName, unsigned variant, MaterialColorVariant colorVariant, MaterialHue hueShift) const {
+auto MaterialRenderProfile::pieceImage(String const& pieceName, unsigned variant, MaterialColorVariant colorVariant, MaterialHue hueShift) const -> String {
   auto const& piece = pieces.get(pieceName);
 
   String texture = piece->texture;
@@ -68,19 +71,19 @@ String MaterialRenderProfile::pieceImage(String const& pieceName, unsigned varia
   return strf("{}?crop={};{};{};{}", texture, rect.xMin(), rect.yMin(), rect.xMax(), rect.yMax());
 }
 
-pair<String, Vec2F> const& MaterialRenderProfile::damageImage(float damageLevel, TileDamageType damageType) const {
+auto MaterialRenderProfile::damageImage(float damageLevel, TileDamageType damageType) const -> std::pair<String, Vec2F> const& {
   if (damageType == TileDamageType::Protected)
     return protectedFrames.at(clamp<unsigned>(damageLevel * crackingFrames.size(), 0, crackingFrames.size() - 1));
   return crackingFrames.at(clamp<unsigned>(damageLevel * crackingFrames.size(), 0, crackingFrames.size() - 1));
 }
 
-MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const& relativePath) {
+auto parseMaterialRenderProfile(Json const& spec, String const& relativePath) -> MaterialRenderProfile {
   MaterialRenderProfile profile;
 
   bool lightTransparent = spec.getBool("lightTransparent", false);
   profile.foregroundLightTransparent = spec.getBool("foregroundLightTransparent", lightTransparent);
   profile.backgroundLightTransparent = spec.getBool("backgroundLightTransparent", lightTransparent);
-  profile.colorVariants = spec.getBool("multiColored", false) ? spec.getUInt("colorVariants", (uint64_t)MaxMaterialColorVariant + 1) : 0;
+  profile.colorVariants = spec.getBool("multiColored", false) ? spec.getUInt("colorVariants", (std::uint64_t)MaxMaterialColorVariant + 1) : 0;
   for (auto& entry : spec.getArray("colorDirectives", JsonArray()))
     profile.colorDirectives.append(entry.toString());
   profile.occludesBehind = spec.getBool("occludesBelow", true);
@@ -90,7 +93,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
   profile.representativePiece = spec.getString("representativePiece");
 
   for (auto const& pair : spec.get("rules").iterateObject()) {
-    auto rule = make_shared<MaterialRule>();
+    auto rule = std::make_shared<MaterialRule>();
     rule->join = MaterialJoinTypeNames.getLeft(pair.second.getString("join", "all"));
     for (auto const& ruleEntry : pair.second.getArray("entries", {})) {
       bool inverse = ruleEntry.getBool("inverse", false);
@@ -102,16 +105,16 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
       } else if (type.equalsIgnoreCase("EqualsSelf")) {
         rule->entries.append({MaterialRule::RuleEqualsSelf{ruleEntry.getBool("matchHue", false)}, inverse});
       } else if (type.equalsIgnoreCase("EqualsId")) {
-        rule->entries.append({MaterialRule::RuleEqualsId{(uint16_t)ruleEntry.getUInt("id")}, inverse});
+        rule->entries.append({MaterialRule::RuleEqualsId{(std::uint16_t)ruleEntry.getUInt("id")}, inverse});
       } else if (type.equalsIgnoreCase("PropertyEquals")) {
-        rule->entries.append({MaterialRule::RulePropertyEquals{ruleEntry.getString("propertyName"), ruleEntry.get("propertyValue")}, inverse});
+        rule->entries.append({MaterialRule::RulePropertyEquals{.propertyName = ruleEntry.getString("propertyName"), .compare = ruleEntry.get("propertyValue")}, inverse});
       }
     }
     profile.rules[pair.first] = std::move(rule);
   }
 
   for (auto const& pair : spec.get("pieces").iterateObject()) {
-    auto renderPiece = make_shared<MaterialRenderPiece>();
+    auto renderPiece = std::make_shared<MaterialRenderPiece>();
     renderPiece->pieceId = profile.pieces.size();
 
     renderPiece->texture = AssetPath::relativeTo(relativePath, pair.second.getString("texture", spec.getString("texture")));
@@ -126,7 +129,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
     // assume top down image coordinates
     unsigned imageHeight = Root::singleton().imageMetadataDatabase()->imageSize(renderPiece->texture)[1];
     auto flipTextureCoordinates = [imageHeight](
-        RectF const& rect) { return RectF::withSize(Vec2F(rect.xMin(), imageHeight - rect.yMax()), rect.size()); };
+                                    RectF const& rect) -> Box<float, 2> { return RectF::withSize(Vec2F(rect.xMin(), imageHeight - rect.yMax()), rect.size()); };
     for (unsigned v = 0; v < variants; ++v) {
       auto i = DefaultMaterialColorVariant;
       RectF textureRect = RectF::withSize(texturePosition + variantStride * v, textureSize);
@@ -151,20 +154,18 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
     {"/tiles/blockdamage.png:2", Vec2F(0, 0)},
     {"/tiles/blockdamage.png:3", Vec2F(0, 0)},
     {"/tiles/blockdamage.png:4", Vec2F(0, 0)},
-    {"/tiles/blockdamage.png:5", Vec2F(0, 0)}
-  };
+    {"/tiles/blockdamage.png:5", Vec2F(0, 0)}};
 
   profile.protectedFrames = {
     {"/tiles/blockprotection.png:1", Vec2F(0, 0)},
     {"/tiles/blockprotection.png:2", Vec2F(0, 0)},
     {"/tiles/blockprotection.png:3", Vec2F(0, 0)},
     {"/tiles/blockprotection.png:4", Vec2F(0, 0)},
-    {"/tiles/blockprotection.png:5", Vec2F(0, 0)}
-  };
+    {"/tiles/blockprotection.png:5", Vec2F(0, 0)}};
 
   profile.ruleProperties = spec.get("ruleProperties", JsonObject());
 
   return profile;
 }
 
-}
+}// namespace Star

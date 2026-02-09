@@ -1,7 +1,7 @@
 #include "StarWorldClient.hpp"
 
 #include "StarBiome.hpp"
-#include "StarClientContext.hpp"
+#include "StarClientContext.hpp"// IWYU pragma: export
 #include "StarConfig.hpp"
 #include "StarCurve25519.hpp"
 #include "StarDamageDatabase.hpp"
@@ -11,8 +11,6 @@
 #include "StarItemDrop.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarLogging.hpp"
-#include "StarObject.hpp"
-#include "StarObjectDatabase.hpp"
 #include "StarParticleManager.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarPlayer.hpp"
@@ -713,7 +711,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     }
   }
 
-  auto functionDatabase = Root::singleton().functionDatabase();
+  ConstPtr<FunctionDatabase> functionDatabase = Root::singleton().functionDatabase();
   for (auto& layer : renderData.parallaxLayers) {
     if (!layer.timeOfDayCorrelation.empty())
       layer.alpha *= clamp((float)functionDatabase->function(layer.timeOfDayCorrelation)->evaluate(m_sky->timeOfDay() / m_sky->dayLength()), 0.0f, 1.0f);
@@ -807,8 +805,8 @@ void WorldClient::setCollisionDebug(bool collisionDebug) {
 void WorldClient::handleIncomingPackets(List<Ptr<Packet>> const& packets) {
   auto& root = Root::singleton();
   auto materialDatabase = root.materialDatabase();
-  auto itemDatabase = root.itemDatabase();
-  auto entityFactory = root.entityFactory();
+  ConstPtr<ItemDatabase> itemDatabase = root.itemDatabase();
+  ConstPtr<EntityFactory> entityFactory = root.entityFactory();
 
   for (auto const& packet : packets) {
     if (!inWorld() && !is<WorldStartPacket>(packet))
@@ -1312,52 +1310,52 @@ void WorldClient::update(float dt) {
   LogMap::set("client_lua_mem", m_luaRoot->luaMemoryUsage());
 }
 
-ConnectionId WorldClient::connection() const {
+auto WorldClient::connection() const -> ConnectionId {
   return *m_clientId;
 }
 
-WorldGeometry WorldClient::geometry() const {
+auto WorldClient::geometry() const -> WorldGeometry {
   return m_geometry;
 }
 
-std::uint64_t WorldClient::currentStep() const {
+auto WorldClient::currentStep() const -> std::uint64_t {
   return m_currentStep;
 }
 
-MaterialId WorldClient::material(Vec2I const& pos, TileLayer layer) const {
+auto WorldClient::material(Vec2I const& pos, TileLayer layer) const -> MaterialId {
   if (!inWorld())
     return NullMaterialId;
   return m_tileArray->tile(pos).material(layer);
 }
 
-MaterialHue WorldClient::materialHueShift(Vec2I const& position, TileLayer layer) const {
+auto WorldClient::materialHueShift(Vec2I const& position, TileLayer layer) const -> MaterialHue {
   if (!inWorld())
     return MaterialHue();
   auto const& tile = m_tileArray->tile(position);
   return layer == TileLayer::Foreground ? tile.foregroundHueShift : tile.backgroundHueShift;
 }
 
-ModId WorldClient::mod(Vec2I const& pos, TileLayer layer) const {
+auto WorldClient::mod(Vec2I const& pos, TileLayer layer) const -> ModId {
   if (!inWorld())
     return NoModId;
   return m_tileArray->tile(pos).mod(layer);
 }
 
-MaterialHue WorldClient::modHueShift(Vec2I const& position, TileLayer layer) const {
+auto WorldClient::modHueShift(Vec2I const& position, TileLayer layer) const -> MaterialHue {
   if (!inWorld())
     return MaterialHue();
   auto const& tile = m_tileArray->tile(position);
   return layer == TileLayer::Foreground ? tile.foregroundModHueShift : tile.backgroundModHueShift;
 }
 
-MaterialColorVariant WorldClient::colorVariant(Vec2I const& position, TileLayer layer) const {
+auto WorldClient::colorVariant(Vec2I const& position, TileLayer layer) const -> MaterialColorVariant {
   if (!inWorld())
     return MaterialColorVariant();
   auto const& tile = m_tileArray->tile(position);
   return layer == TileLayer::Foreground ? tile.foregroundColorVariant : tile.backgroundColorVariant;
 }
 
-Ptr<Entity> WorldClient::entity(EntityId entityId) const {
+auto WorldClient::entity(EntityId entityId) const -> Ptr<Entity> {
   if (!inWorld())
     return {};
 
@@ -1382,14 +1380,14 @@ void WorldClient::addEntity(Ptr<Entity> const& entity, EntityId entityId) {
   }
 }
 
-TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity) {
+auto WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, std::optional<EntityId> sourceEntity) -> TileDamageResult {
   if (!inWorld())
     return TileDamageResult::None;
 
   // Filter out any tiles that are not currently occupied or are protected
-  auto occupied = pos.filtered([this, layer](Vec2I pos) { return tileIsOccupied(pos, layer, true); });
-  auto toDamage = occupied.filtered([this](Vec2I pos) { return !isTileProtected(pos); });
-  auto toDing = occupied.filtered([this](Vec2I pos) { return isTileProtected(pos); });
+  auto occupied = pos.filtered([this, layer](Vec2I pos) -> bool { return tileIsOccupied(pos, layer, true); });
+  auto toDamage = occupied.filtered([this](Vec2I pos) -> bool { return !isTileProtected(pos); });
+  auto toDing = occupied.filtered([this](Vec2I pos) -> bool { return isTileProtected(pos); });
 
   if (toDamage.size() + toDing.size() == 0)
     return TileDamageResult::None;
@@ -1411,7 +1409,7 @@ TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer laye
   return res;
 }
 
-DungeonId WorldClient::dungeonId(Vec2I const& pos) const {
+auto WorldClient::dungeonId(Vec2I const& pos) const -> DungeonId {
   if (!inWorld())
     return NoDungeonId;
 
@@ -1455,7 +1453,7 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
   m_outgoingPackets.append(make_shared<CollectLiquidPacket>(tilePositions, liquidId));
 }
 
-bool WorldClient::waitForLighting(WorldRenderData* renderData) {
+auto WorldClient::waitForLighting(WorldRenderData* renderData) -> bool {
   MutexLocker prepLocker(m_lightMapPrepMutex);
   MutexLocker lightMapLocker(m_lightMapMutex);
   if (renderData && !m_lightMap.empty()) {
@@ -1474,11 +1472,11 @@ bool WorldClient::waitForLighting(WorldRenderData* renderData) {
   return false;
 }
 
-WorldClient::BroadcastCallback& WorldClient::broadcastCallback() {
+auto WorldClient::broadcastCallback() -> WorldClient::BroadcastCallback& {
   return m_broadcastCallback;
 }
 
-bool WorldClient::isTileProtected(Vec2I const& pos) const {
+auto WorldClient::isTileProtected(Vec2I const& pos) const -> bool {
   if (!inWorld())
     return true;
 
@@ -1504,13 +1502,13 @@ void WorldClient::queueUpdatePackets(bool sendEntityUpdates) {
   if (m_currentStep % m_clientConfig.getInt("worldClientStateUpdateDelta") == 0)
     m_outgoingPackets.append(std::make_shared<WorldClientStateUpdatePacket>(m_clientState.writeDelta()));
 
-  m_entityMap->forAllEntities([&](Ptr<Entity> const& entity) { notifyEntityCreate(entity); });
+  m_entityMap->forAllEntities([&](Ptr<Entity> const& entity) -> void { notifyEntityCreate(entity); });
 
   if (sendEntityUpdates) {
     auto entityUpdateSet = std::make_shared<EntityUpdateSetPacket>();
     entityUpdateSet->forConnection = *m_clientId;
     auto netRules = m_clientState.netCompatibilityRules();
-    m_entityMap->forAllEntities([&](Ptr<Entity> const& entity) {
+    m_entityMap->forAllEntities([&](Ptr<Entity> const& entity) -> void {
       if (auto version = m_masterEntitiesNetVersion.ptr(entity->entityId())) {
         auto updateAndVersion = entity->writeNetState(*version, netRules);
         if (!updateAndVersion.first.empty())
@@ -1533,7 +1531,7 @@ void WorldClient::handleDamageNotifications() {
   if (!inWorld())
     return;
 
-  auto renderParticle = [&](Vec2F position, float amount, String const& damageNumberParticleKind) {
+  auto renderParticle = [&](Vec2F position, float amount, String const& damageNumberParticleKind) -> void {
     int displayValue = (int)std::ceil(amount - 0.1f);
     if (displayValue <= 0)
       return;
@@ -1649,19 +1647,19 @@ void WorldClient::sparkDamagedBlocks() {
   }
 }
 
-Ptr<InteractiveEntity> WorldClient::getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const {
+auto WorldClient::getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const -> Ptr<InteractiveEntity> {
   if (!inWorld())
     return {};
   return WorldImpl::getInteractiveInRange(m_geometry, m_entityMap, targetPosition, sourcePosition, maxRange);
 }
 
-bool WorldClient::canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive) const {
+auto WorldClient::canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive) const -> bool {
   if (!inWorld())
     return false;
   return WorldImpl::canReachEntity(m_geometry, m_tileArray, m_entityMap, position, radius, targetEntity, preferInteractive);
 }
 
-RpcPromise<InteractAction> WorldClient::interact(InteractRequest const& request) {
+auto WorldClient::interact(InteractRequest const& request) -> RpcPromise<InteractAction> {
   if (!inWorld())
     return RpcPromise<InteractAction>::createFailed("not initialized in world");
 
@@ -1691,7 +1689,7 @@ void WorldClient::lightingTileGather() {
 
   // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
 
-  m_tileArray->tileEvalColumns(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
+  m_tileArray->tileEvalColumns(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) -> void {
     size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
     for (size_t y = 0; y < ySize; ++y) {
       auto& tile = column[y];
@@ -1829,7 +1827,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_sky = std::make_shared<Sky>();
   m_sky->readUpdate(startPacket.skyData, m_clientState.netCompatibilityRules());
 
-  m_weather.setup(m_geometry, [this](Vec2I const& pos) {
+  m_weather.setup(m_geometry, [this](Vec2I const& pos) -> bool {
     auto const& tile = m_tileArray->tile(pos);
     return !isRealMaterial(tile.background) && !isSolidColliding(tile.getCollision());
   });
@@ -1928,7 +1926,7 @@ void WorldClient::notifyEntityCreate(Ptr<Entity> const& entity) {
   }
 }
 
-Vec2I WorldClient::environmentBiomeTrackPosition() const {
+auto WorldClient::environmentBiomeTrackPosition() const -> Vec2I {
   if (!inWorld())
     return {};
 
@@ -1936,7 +1934,7 @@ Vec2I WorldClient::environmentBiomeTrackPosition() const {
   return {m_geometry.xwrap(pos[0]), pos[1]};
 }
 
-Ptr<AmbientNoisesDescription> WorldClient::currentAmbientNoises() const {
+auto WorldClient::currentAmbientNoises() const -> Ptr<AmbientNoisesDescription> {
   if (!inWorld())
     return {};
 
@@ -1944,7 +1942,7 @@ Ptr<AmbientNoisesDescription> WorldClient::currentAmbientNoises() const {
   return m_worldTemplate->ambientNoises(pos[0], pos[1]);
 }
 
-Ptr<WeatherNoisesDescription> WorldClient::currentWeatherNoises() const {
+auto WorldClient::currentWeatherNoises() const -> Ptr<WeatherNoisesDescription> {
   if (!inWorld())
     return {};
 
@@ -1955,7 +1953,7 @@ Ptr<WeatherNoisesDescription> WorldClient::currentWeatherNoises() const {
     return std::make_shared<WeatherNoisesDescription>(std::move(trackOptions));
 }
 
-Ptr<AmbientNoisesDescription> WorldClient::currentMusicTrack() const {
+auto WorldClient::currentMusicTrack() const -> Ptr<AmbientNoisesDescription> {
   if (!inWorld())
     return {};
 
@@ -1963,7 +1961,7 @@ Ptr<AmbientNoisesDescription> WorldClient::currentMusicTrack() const {
   return m_worldTemplate->musicTrack(pos[0], pos[1]);
 }
 
-Ptr<AmbientNoisesDescription> WorldClient::currentAltMusicTrack() const {
+auto WorldClient::currentAltMusicTrack() const -> Ptr<AmbientNoisesDescription> {
   if (!inWorld())
     return {};
 
@@ -1988,7 +1986,7 @@ void WorldClient::stopAltMusic(float fadeTime) {
   }
 }
 
-ConstPtr<Biome> WorldClient::mainEnvironmentBiome() const {
+auto WorldClient::mainEnvironmentBiome() const -> ConstPtr<Biome> {
   if (!inWorld())
     return {};
 
@@ -1996,7 +1994,7 @@ ConstPtr<Biome> WorldClient::mainEnvironmentBiome() const {
   return m_worldTemplate->environmentBiome(pos[0], pos[1]);
 }
 
-bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision) {
+auto WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision) -> bool {
   ClientTile* tile = m_tileArray->modifyTile(pos);
   if (!tile)
     return false;
@@ -2102,33 +2100,33 @@ void WorldClient::freshenCollision(RectI const& region) {
   }
 }
 
-float WorldClient::lightLevel(Vec2F const& pos) const {
+auto WorldClient::lightLevel(Vec2F const& pos) const -> float {
   if (!inWorld())
     return 0.0f;
   return WorldImpl::lightLevel(m_tileArray, m_entityMap, m_geometry, m_worldTemplate, m_sky, m_lightIntensityCalculator, pos);
 }
 
-bool WorldClient::breathable(Vec2F const& pos) const {
+auto WorldClient::breathable(Vec2F const& pos) const -> bool {
   if (!inWorld())
     return true;
 
   return WorldImpl::breathable(this, m_tileArray, m_dungeonIdBreathable, m_worldTemplate, pos);
 }
 
-float WorldClient::threatLevel() const {
+auto WorldClient::threatLevel() const -> float {
   if (!inWorld())
     return 0.0f;
   return m_worldTemplate->threatLevel();
 }
 
-StringList WorldClient::environmentStatusEffects(Vec2F const& pos) const {
+auto WorldClient::environmentStatusEffects(Vec2F const& pos) const -> StringList {
   if (!inWorld())
     return {};
 
   return m_worldTemplate->environmentStatusEffects(std::floor(pos[0]), std::floor(pos[1]));
 }
 
-StringList WorldClient::weatherStatusEffects(Vec2F const& pos) const {
+auto WorldClient::weatherStatusEffects(Vec2F const& pos) const -> StringList {
   if (!inWorld())
     return {};
 
@@ -2140,7 +2138,7 @@ StringList WorldClient::weatherStatusEffects(Vec2F const& pos) const {
   return {};
 }
 
-bool WorldClient::exposedToWeather(Vec2F const& pos) const {
+auto WorldClient::exposedToWeather(Vec2F const& pos) const -> bool {
   if (!inWorld())
     return false;
 
@@ -2157,23 +2155,23 @@ bool WorldClient::exposedToWeather(Vec2F const& pos) const {
   return false;
 }
 
-bool WorldClient::isUnderground(Vec2F const& pos) const {
+auto WorldClient::isUnderground(Vec2F const& pos) const -> bool {
   if (!inWorld())
     return true;
   return m_worldTemplate->undergroundLevel() >= pos[1];
 }
 
-bool WorldClient::disableDeathDrops() const {
+auto WorldClient::disableDeathDrops() const -> bool {
   if (const auto& parameters = m_worldTemplate->worldParameters())
     return parameters->disableDeathDrops;
   return false;
 }
 
-List<PhysicsForceRegion> WorldClient::forceRegions() const {
+auto WorldClient::forceRegions() const -> List<PhysicsForceRegion> {
   return m_forceRegions;
 }
 
-Json WorldClient::getProperty(String const& propertyName, Json const& def) const {
+auto WorldClient::getProperty(String const& propertyName, Json const& def) const -> Json {
   if (!inWorld())
     return {};
 
@@ -2190,7 +2188,7 @@ void WorldClient::setProperty(String const& propertyName, Json const& property) 
   m_outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(JsonObject{{propertyName, property}}));
 }
 
-bool WorldClient::playerCanReachEntity(EntityId entityId, bool preferInteractive) const {
+auto WorldClient::playerCanReachEntity(EntityId entityId, bool preferInteractive) const -> bool {
   return (entityId == m_mainPlayer->entityId()) || m_mainPlayer->isAdmin()
     || canReachEntity(m_mainPlayer->position(), m_mainPlayer->interactRadius(), entityId, preferInteractive);
 }
@@ -2200,8 +2198,8 @@ void WorldClient::disconnectAllWires(Vec2I wireEntityPosition, WireNode const& n
 }
 
 void WorldClient::wire(Vec2I const& outputPosition, size_t outputIndex, Vec2I const& inputPosition, size_t inputIndex) {
-  WireConnection output = {outputPosition, outputIndex};
-  WireConnection input = {inputPosition, inputIndex};
+  WireConnection output = {.entityLocation = outputPosition, .nodeIndex = outputIndex};
+  WireConnection input = {.entityLocation = inputPosition, .nodeIndex = inputIndex};
   connectWire(output, input);
 }
 
@@ -2209,7 +2207,7 @@ void WorldClient::connectWire(WireConnection const& output, WireConnection const
   m_outgoingPackets.append(std::make_shared<ConnectWirePacket>(output, input));
 }
 
-bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw, bool compress) {
+auto WorldClient::sendSecretBroadcast(StringView broadcast, bool raw, bool compress) -> bool {
   if (!inWorld() || !m_mainPlayer || !m_mainPlayer->getSecretPropertyView(SECRET_BROADCAST_PUBLIC_KEY))
     return false;
 
@@ -2233,7 +2231,7 @@ bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw, bool compr
   return true;
 }
 
-bool WorldClient::handleSecretBroadcast(Ptr<Player> player, StringView broadcast) {
+auto WorldClient::handleSecretBroadcast(Ptr<Player> player, StringView broadcast) -> bool {
   if (m_broadcastCallback)
     return m_broadcastCallback(player, broadcast);
   else
@@ -2264,35 +2262,35 @@ void WorldClient::ClientRenderCallback::addOverheadBar(OverheadBar bar) {
   overheadBars.append(std::move(bar));
 }
 
-double WorldClient::epochTime() const {
+auto WorldClient::epochTime() const -> double {
   if (!inWorld())
     return 0;
   return m_sky->epochTime();
 }
 
-std::uint32_t WorldClient::day() const {
+auto WorldClient::day() const -> std::uint32_t {
   if (!inWorld())
     return 0;
   return m_sky->day();
 }
 
-float WorldClient::dayLength() const {
+auto WorldClient::dayLength() const -> float {
   if (!inWorld())
     return 0;
   return m_sky->dayLength();
 }
 
-float WorldClient::timeOfDay() const {
+auto WorldClient::timeOfDay() const -> float {
   if (!inWorld())
     return 0;
   return m_sky->timeOfDay();
 }
 
-Ptr<LuaRoot> WorldClient::luaRoot() {
+auto WorldClient::luaRoot() -> Ptr<LuaRoot> {
   return m_luaRoot;
 }
 
-RpcPromise<Vec2F> WorldClient::findUniqueEntity(String const& uniqueId) {
+auto WorldClient::findUniqueEntity(String const& uniqueId) -> RpcPromise<Vec2F> {
   if (!inWorld())
     return RpcPromise<Vec2F>::createFailed("Not currently in a world");
 
@@ -2308,7 +2306,7 @@ RpcPromise<Vec2F> WorldClient::findUniqueEntity(String const& uniqueId) {
   return pair.first;
 }
 
-RpcPromise<Json> WorldClient::sendEntityMessage(Variant<EntityId, String> const& entityId, String const& message, JsonArray const& args) {
+auto WorldClient::sendEntityMessage(Variant<EntityId, String> const& entityId, String const& message, JsonArray const& args) -> RpcPromise<Json> {
   if (!inWorld())
     return RpcPromise<Json>::createFailed("Not currently in a world");
 
@@ -2336,7 +2334,7 @@ RpcPromise<Json> WorldClient::sendEntityMessage(Variant<EntityId, String> const&
   }
 }
 
-List<ChatAction> WorldClient::pullPendingChatActions() {
+auto WorldClient::pullPendingChatActions() -> List<ChatAction> {
   List<ChatAction> result;
   if (m_entityMap) {
     for (auto const& entity : m_entityMap->all<ChattyEntity>())
@@ -2345,11 +2343,11 @@ List<ChatAction> WorldClient::pullPendingChatActions() {
   return result;
 }
 
-WorldStructure const& WorldClient::centralStructure() const {
+auto WorldClient::centralStructure() const -> WorldStructure const& {
   return m_centralStructure;
 }
 
-bool WorldClient::DamageNumberKey::operator<(DamageNumberKey const& other) const {
+auto WorldClient::DamageNumberKey::operator<(DamageNumberKey const& other) const -> bool {
   return std::tie(sourceEntityId, targetEntityId, damageNumberParticleKind)
     < std::tie(other.sourceEntityId, other.targetEntityId, other.damageNumberParticleKind);
 }
@@ -2359,12 +2357,12 @@ void WorldClient::renderCollisionDebug() {
   if (clientWindow.isEmpty())
     return;
 
-  auto logPoly = [](PolyF poly, Vec2F position, float r, float g, float b) {
+  auto logPoly = [](PolyF poly, Vec2F position, float r, float g, float b) -> void {
     poly.translate(position);
     SpatialLogger::logPoly("world", poly, {floatToByte(r, true), floatToByte(g, true), floatToByte(b, true), 255});
   };
 
-  forEachCollisionBlock(clientWindow, [&](auto const& block) {
+  forEachCollisionBlock(clientWindow, [&](auto const& block) -> auto {
     logPoly(block.poly, Vec2F{}, 1.0f, 0.0f, 0.0f);
   });
 

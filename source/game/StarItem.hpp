@@ -11,9 +11,6 @@ import std;
 
 namespace Star {
 
-// STAR_CLASS(Item);
-// STAR_CLASS(GenericItem);
-
 using ItemException = ExceptionDerived<"ItemException">;
 
 class Item {

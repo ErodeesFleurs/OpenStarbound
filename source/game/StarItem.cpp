@@ -1,9 +1,12 @@
 #include "StarItem.hpp"
-#include "StarRoot.hpp"
+
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRandom.hpp"
 #include "StarLogging.hpp"
-#include "StarWorldLuaBindings.hpp"
+#include "StarRandom.hpp"
+#include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
@@ -67,17 +70,17 @@ Item::Item(Json config, String directory, Json parameters) {
     m_collectablesOnPickup[pair.first] = pair.second.toString();
 }
 
-Item::~Item() {}
+Item::~Item() = default;
 
-String Item::name() const {
+auto Item::name() const -> String {
   return m_name;
 }
 
-uint64_t Item::count() const {
+auto Item::count() const -> std::uint64_t {
   return m_count;
 }
 
-uint64_t Item::setCount(uint64_t count, bool overfill) {
+auto Item::setCount(std::uint64_t count, bool overfill) -> std::uint64_t {
   if (overfill)
     m_count = count;
   else
@@ -85,25 +88,25 @@ uint64_t Item::setCount(uint64_t count, bool overfill) {
   return count - m_count;
 }
 
-bool Item::stackableWith(ItemConstPtr const& item) const {
+auto Item::stackableWith(ConstPtr<Item> const& item) const -> bool {
   return item && name() == item->name() && parameters() == item->parameters();
 }
 
-uint64_t Item::maxStack() const {
+auto Item::maxStack() const -> std::uint64_t {
   return m_maxStack;
 }
 
-uint64_t Item::couldStack(ItemConstPtr const& item) const {
+auto Item::couldStack(ConstPtr<Item> const& item) const -> std::uint64_t {
   if (stackableWith(item) && m_count < m_maxStack) {
-    uint64_t take = m_maxStack - m_count;
+    std::uint64_t take = m_maxStack - m_count;
     return std::min(take, item->count());
   } else {
     return 0;
   }
 }
 
-bool Item::stackWith(ItemPtr const& item) {
-  uint64_t take = couldStack(item);
+auto Item::stackWith(Ptr<Item> const& item) -> bool {
+  std::uint64_t take = couldStack(item);
 
   if (take > 0 && item->consume(take)) {
     m_count += take;
@@ -113,15 +116,15 @@ bool Item::stackWith(ItemPtr const& item) {
   }
 }
 
-bool Item::matches(ItemDescriptor const& descriptor, bool exactMatch) const {
+auto Item::matches(ItemDescriptor const& descriptor, bool exactMatch) const -> bool {
   return descriptor.name() == m_name && (!exactMatch || descriptor.parameters() == m_parameters);
 }
 
-bool Item::matches(ItemConstPtr const& other, bool exactMatch) const {
+auto Item::matches(ConstPtr<Item> const& other, bool exactMatch) const -> bool {
   return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
 }
 
-bool Item::consume(uint64_t count) {
+auto Item::consume(std::uint64_t count) -> bool {
   if (m_count >= count) {
     m_count -= count;
     return true;
@@ -130,8 +133,8 @@ bool Item::consume(uint64_t count) {
   }
 }
 
-ItemPtr Item::take(uint64_t max) {
-  uint64_t takeCount = std::min(m_count, max);
+auto Item::take(std::uint64_t max) -> Ptr<Item> {
+  std::uint64_t takeCount = std::min(m_count, max);
   if (takeCount != 0) {
     if (auto newItems = clone()) {
       m_count -= takeCount;
@@ -145,73 +148,73 @@ ItemPtr Item::take(uint64_t max) {
   return {};
 }
 
-bool Item::empty() const {
+auto Item::empty() const -> bool {
   return m_count == 0;
 }
 
-ItemDescriptor Item::descriptor() const {
-  return ItemDescriptor(m_name, m_count, m_parameters);
+auto Item::descriptor() const -> ItemDescriptor {
+  return {m_name, m_count, m_parameters};
 }
 
-String Item::description() const {
+auto Item::description() const -> String {
   return m_description;
 }
 
-String Item::friendlyName() const {
+auto Item::friendlyName() const -> String {
   return m_shortDescription;
 }
 
-Rarity Item::rarity() const {
+auto Item::rarity() const -> Rarity {
   return m_rarity;
 }
 
-List<Drawable> Item::iconDrawables() const {
+auto Item::iconDrawables() const -> List<Drawable> {
   return m_iconDrawables;
 }
 
-std::optional<List<Drawable>> Item::secondaryDrawables() const {
+auto Item::secondaryDrawables() const -> std::optional<List<Drawable>> {
   return m_secondaryIconDrawables;
 }
 
-bool Item::hasSecondaryDrawables() const {
+auto Item::hasSecondaryDrawables() const -> bool {
   return m_secondaryIconDrawables.has_value();
 }
 
-List<Drawable> Item::dropDrawables() const {
+auto Item::dropDrawables() const -> List<Drawable> {
   auto drawables = iconDrawables();
   Drawable::scaleAll(drawables, 1.0f / TilePixels);
   return drawables;
 }
 
-bool Item::twoHanded() const {
+auto Item::twoHanded() const -> bool {
   return m_twoHanded;
 }
 
-float Item::timeToLive() const {
+auto Item::timeToLive() const -> float {
   return m_timeToLive;
 }
 
-uint64_t Item::price() const {
+auto Item::price() const -> std::uint64_t {
   return m_price * count();
 }
 
-String Item::tooltipKind() const {
+auto Item::tooltipKind() const -> String {
   return m_tooltipKind;
 }
 
-String Item::largeImage() const {
+auto Item::largeImage() const -> String {
   return m_largeImage;
 }
 
-String Item::category() const {
+auto Item::category() const -> String {
   return m_category;
 }
 
-String Item::pickupSound() const {
+auto Item::pickupSound() const -> String {
   return Random::randFrom(m_pickupSounds);
 }
 
-void Item::setMaxStack(uint64_t maxStack) {
+void Item::setMaxStack(std::uint64_t maxStack) {
   m_maxStack = maxStack;
 }
 
@@ -227,7 +230,7 @@ void Item::setRarity(Rarity rarity) {
   m_rarity = rarity;
 }
 
-void Item::setPrice(uint64_t price) {
+void Item::setPrice(std::uint64_t price) {
   m_price = price;
 }
 
@@ -274,38 +277,38 @@ void Item::setTimeToLive(float timeToLive) {
   m_timeToLive = timeToLive;
 }
 
-List<QuestArcDescriptor> Item::pickupQuestTemplates() const {
+auto Item::pickupQuestTemplates() const -> List<QuestArcDescriptor> {
   return instanceValue("pickupQuestTemplates", JsonArray{}).toArray().transformed(&QuestArcDescriptor::fromJson);
 }
 
-StringSet Item::itemTags() const {
+auto Item::itemTags() const -> StringSet {
   return jsonToStringSet(m_config.get("itemTags", JsonArray{}));
 }
 
-bool Item::hasItemTag(String const& itemTag) const {
+auto Item::hasItemTag(String const& itemTag) const -> bool {
   return itemTags().contains(itemTag);
 }
 
-Json Item::instanceValue(String const& name, Json const& def) const {
+auto Item::instanceValue(String const& name, Json const& def) const -> Json {
   return jsonMergeQueryDef(name, def, m_config, m_parameters);
 }
 
-Json Item::instanceValueOfType(String const& name, Json::Type type, Json const& def) const {
+auto Item::instanceValueOfType(String const& name, Json::Type type, Json const& def) const -> Json {
   auto value = instanceValue(name, def);
   if (value.isType(type))
     return value;
   return def;
 }
 
-Json Item::instanceValues() const {
+auto Item::instanceValues() const -> Json {
   return m_config.setAll(m_parameters.toObject());
 }
 
-Json Item::config() const {
+auto Item::config() const -> Json {
   return m_config;
 }
 
-Json Item::parameters() const {
+auto Item::parameters() const -> Json {
   return m_parameters;
 }
 
@@ -314,32 +317,32 @@ void Item::setInstanceValue(String const& name, Json const& value) {
     m_parameters = m_parameters.setAll(JsonObject{{name, value}});
 }
 
-String const& Item::directory() const {
+auto Item::directory() const -> String const& {
   return m_directory;
 }
 
-List<ItemDescriptor> Item::learnBlueprintsOnPickup() const {
+auto Item::learnBlueprintsOnPickup() const -> List<ItemDescriptor> {
   return m_learnBlueprintsOnPickup;
 }
 
-StringMap<String> Item::collectablesOnPickup() const {
+auto Item::collectablesOnPickup() const -> StringMap<String> {
   return m_collectablesOnPickup;
 }
 
 GenericItem::GenericItem(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {}
+    : Item(config, directory, parameters) {}
 
-ItemPtr GenericItem::clone() const {
-  return make_shared<GenericItem>(*this);
+auto GenericItem::clone() const -> Ptr<Item> {
+  return std::make_shared<GenericItem>(*this);
 }
 
-bool Item::itemsEqual(ItemConstPtr const& a, ItemConstPtr const& b) {
-  if (!a && !b) // Both are null
+auto Item::itemsEqual(ConstPtr<Item> const& a, ConstPtr<Item> const& b) -> bool {
+  if (!a && !b)// Both are null
     return true;
-  if (a && b) // Both aren't null, compare
+  if (a && b)// Both aren't null, compare
     return a->stackableWith(b);
-  else // One is null, so not equal
+  else// One is null, so not equal
     return false;
 }
 
-}
+}// namespace Star

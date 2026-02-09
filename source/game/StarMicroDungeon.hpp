@@ -1,29 +1,30 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarRect.hpp"
 #include "StarString.hpp"
-#include <optional>
+
+import std;
 
 namespace Star {
 
-STAR_CLASS(DungeonGeneratorWorldFacade);
-STAR_CLASS(MicroDungeonFactory);
+class DungeonGeneratorWorldFacade;
 
 class MicroDungeonFactory {
 public:
   MicroDungeonFactory();
 
-  std::optional<pair<List<RectI>, Set<Vec2I>>> generate(RectI const& bounds,
-      String const& dungeonName,
-      Vec2I const& position,
-      uint64_t seed,
-      float threatLevel,
-      DungeonGeneratorWorldFacadePtr facade,
-      bool forcePlacement = false);
+  auto generate(RectI const& bounds,
+                String const& dungeonName,
+                Vec2I const& position,
+                std::uint64_t seed,
+                float threatLevel,
+                Ptr<DungeonGeneratorWorldFacade> facade,
+                bool forcePlacement = false) -> std::optional<std::pair<List<RectI>, Set<Vec2I>>>;
 
 private:
   List<int> m_placementshifts;
   bool m_generating;
 };
 
-}
+}// namespace Star

@@ -5,11 +5,13 @@
 #include "StarRoot.hpp"
 #include "StarVersioningDatabase.hpp"
 
+import std;
+
 namespace Star {
 
 ItemDescriptor::ItemDescriptor() : m_count(0), m_parameters(JsonObject()) {}
 
-ItemDescriptor::ItemDescriptor(String name, uint64_t count, Json parameters)
+ItemDescriptor::ItemDescriptor(String name, std::uint64_t count, Json parameters)
     : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)) {
   if (m_parameters.isNull())
     m_parameters = JsonObject();
@@ -43,40 +45,40 @@ ItemDescriptor::ItemDescriptor(Json const& spec) {
   }
 }
 
-ItemDescriptor ItemDescriptor::loadStore(Json const& spec) {
+auto ItemDescriptor::loadStore(Json const& spec) -> ItemDescriptor {
   auto versioningDatabase = Root::singleton().versioningDatabase();
   return ItemDescriptor{versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "Item")};
 }
 
-String const& ItemDescriptor::name() const {
+auto ItemDescriptor::name() const -> String const& {
   return m_name;
 }
 
-uint64_t ItemDescriptor::count() const {
+auto ItemDescriptor::count() const -> std::uint64_t {
   return m_count;
 }
 
-Json const& ItemDescriptor::parameters() const {
+auto ItemDescriptor::parameters() const -> Json const& {
   return m_parameters;
 }
 
-ItemDescriptor ItemDescriptor::singular() const {
-  return ItemDescriptor(name(), 1, parameters(), m_parametersHash);
+auto ItemDescriptor::singular() const -> ItemDescriptor {
+  return {name(), 1, parameters(), m_parametersHash};
 }
 
-ItemDescriptor ItemDescriptor::withCount(uint64_t count) const {
-  return ItemDescriptor(name(), count, parameters(), m_parametersHash);
+auto ItemDescriptor::withCount(std::uint64_t count) const -> ItemDescriptor {
+  return {name(), count, parameters(), m_parametersHash};
 }
 
-ItemDescriptor ItemDescriptor::multiply(uint64_t count) const {
-  return ItemDescriptor(name(), this->count() * count, parameters(), m_parametersHash);
+auto ItemDescriptor::multiply(std::uint64_t count) const -> ItemDescriptor {
+  return {name(), this->count() * count, parameters(), m_parametersHash};
 }
 
-ItemDescriptor ItemDescriptor::applyParameters(JsonObject const& parameters) const {
-  return ItemDescriptor(name(), this->count(), this->parameters().setAll(parameters));
+auto ItemDescriptor::applyParameters(JsonObject const& parameters) const -> ItemDescriptor {
+  return {name(), this->count(), this->parameters().setAll(parameters)};
 }
 
-bool ItemDescriptor::isNull() const {
+auto ItemDescriptor::isNull() const -> bool {
   return m_name.empty();
 }
 
@@ -84,27 +86,27 @@ ItemDescriptor::operator bool() const {
   return !isNull();
 }
 
-bool ItemDescriptor::isEmpty() const {
+auto ItemDescriptor::isEmpty() const -> bool {
   return m_name.empty() || m_count == 0;
 }
 
-bool ItemDescriptor::operator==(ItemDescriptor const& rhs) const {
+auto ItemDescriptor::operator==(ItemDescriptor const& rhs) const -> bool {
   return std::tie(m_name, m_count, m_parameters) == std::tie(rhs.m_name, rhs.m_count, rhs.m_parameters);
 }
 
-bool ItemDescriptor::operator!=(ItemDescriptor const& rhs) const {
+auto ItemDescriptor::operator!=(ItemDescriptor const& rhs) const -> bool {
   return std::tie(m_name, m_count, m_parameters) != std::tie(rhs.m_name, rhs.m_count, rhs.m_parameters);
 }
 
-bool ItemDescriptor::matches(ItemDescriptor const& other, bool exactMatch) const {
+auto ItemDescriptor::matches(ItemDescriptor const& other, bool exactMatch) const -> bool {
   return other.name() == m_name && (!exactMatch || other.parameters() == m_parameters);
 }
 
-bool ItemDescriptor::matches(ConstPtr<Item> const& other, bool exactMatch) const {
+auto ItemDescriptor::matches(ConstPtr<Item> const& other, bool exactMatch) const -> bool {
   return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
 }
 
-Json ItemDescriptor::diskStore() const {
+auto ItemDescriptor::diskStore() const -> Json {
   auto versioningDatabase = Root::singleton().versioningDatabase();
   auto res = JsonObject{
     {"name", m_name},
@@ -115,9 +117,9 @@ Json ItemDescriptor::diskStore() const {
   return versioningDatabase->makeCurrentVersionedJson("Item", res).toJson();
 }
 
-Json ItemDescriptor::toJson() const {
+auto ItemDescriptor::toJson() const -> Json {
   if (isNull()) {
-    return Json();
+    return {};
   } else {
     return JsonObject{
       {"name", m_name},
@@ -127,16 +129,16 @@ Json ItemDescriptor::toJson() const {
   }
 }
 
-ItemDescriptor::ItemDescriptor(String name, uint64_t count, Json parameters, std::optional<size_t> parametersHash)
+ItemDescriptor::ItemDescriptor(String name, std::uint64_t count, Json parameters, std::optional<size_t> parametersHash)
     : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)), m_parametersHash(parametersHash) {}
 
-size_t ItemDescriptor::parametersHash() const {
+auto ItemDescriptor::parametersHash() const -> size_t {
   if (!m_parametersHash)
     m_parametersHash = hash<Json>()(m_parameters);
   return *m_parametersHash;
 }
 
-DataStream& operator>>(DataStream& ds, ItemDescriptor& itemDescriptor) {
+auto operator>>(DataStream& ds, ItemDescriptor& itemDescriptor) -> DataStream& {
   ds.read(itemDescriptor.m_name);
   ds.readVlqU(itemDescriptor.m_count);
   ds.read(itemDescriptor.m_parameters);
@@ -146,7 +148,7 @@ DataStream& operator>>(DataStream& ds, ItemDescriptor& itemDescriptor) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor) {
+auto operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor) -> DataStream& {
   ds.write(itemDescriptor.m_name);
   ds.writeVlqU(itemDescriptor.m_count);
   ds.write(itemDescriptor.m_parameters);
@@ -154,12 +156,12 @@ DataStream& operator<<(DataStream& ds, ItemDescriptor const& itemDescriptor) {
   return ds;
 }
 
-std::ostream& operator<<(std::ostream& os, ItemDescriptor const& descriptor) {
+auto operator<<(std::ostream& os, ItemDescriptor const& descriptor) -> std::ostream& {
   format(os, "[{}, {}, {}]", descriptor.m_name, descriptor.m_count, descriptor.m_parameters);
   return os;
 }
 
-size_t hash<ItemDescriptor>::operator()(ItemDescriptor const& v) const {
+auto hash<ItemDescriptor>::operator()(ItemDescriptor const& v) const -> size_t {
   return hashOf(v.m_name, v.m_count, v.m_parametersHash);
 }
 

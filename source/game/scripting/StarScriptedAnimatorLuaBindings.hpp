@@ -3,9 +3,8 @@
 #include "StarLua.hpp"
 #include "StarNetworkedAnimator.hpp"
 
-namespace Star {
+import std;
 
-namespace LuaBindings {
-  LuaCallbacks makeScriptedAnimatorCallbacks( NetworkedAnimator* animator, function<Json(String const&, Json const&)> getParameter);
-}
+namespace Star::LuaBindings {
+auto makeScriptedAnimatorCallbacks(NetworkedAnimator* animator, std::function<Json(String const&, Json const&)> getParameter) -> LuaCallbacks;
 }

@@ -1,9 +1,11 @@
 #include "StarLiquidsDatabase.hpp"
-#include "StarLexicalCast.hpp"
-#include "StarAssets.hpp"
+
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
+
+import std;
 
 namespace Star {
 
@@ -11,7 +13,7 @@ LiquidSettings::LiquidSettings() : id(EmptyLiquidId) {}
 
 LiquidsDatabase::LiquidsDatabase() {
   auto assets = Root::singleton().assets();
-  auto materialDatabase = Root::singleton().materialDatabase();
+  ConstPtr<MaterialDatabase> materialDatabase = Root::singleton().materialDatabase();
 
   auto config = assets->json("/liquids.config");
 
@@ -43,7 +45,7 @@ LiquidsDatabase::LiquidsDatabase() {
       if (id != (LiquidId)id)
         throw LiquidException(strf("Liquid id {} does not fall in the valid range, wrapped to {}\n", id, (LiquidId)id));
 
-      auto entry = make_shared<LiquidSettings>();
+      auto entry = std::make_shared<LiquidSettings>();
       entry->id = (LiquidId)id;
       entry->name = liquidConfig.getString("name");
       entry->path = file;
@@ -77,7 +79,7 @@ LiquidsDatabase::LiquidsDatabase() {
           interactionResult = makeRight<LiquidId>(*liquidResult);
         else
           throw LiquidException::format(
-              "Neither resultMaterial or resultLiquid specified in liquid interaction of liquid {}", entry->id);
+            "Neither resultMaterial or resultLiquid specified in liquid interaction of liquid {}", entry->id);
 
         entry->interactions[liquid] = interactionResult;
       }
@@ -90,23 +92,23 @@ LiquidsDatabase::LiquidsDatabase() {
   }
 }
 
-LiquidCellEngineParameters LiquidsDatabase::liquidEngineParameters() const {
+auto LiquidsDatabase::liquidEngineParameters() const -> LiquidCellEngineParameters {
   return m_liquidEngineParameters;
 }
 
-StringList LiquidsDatabase::liquidNames() const {
+auto LiquidsDatabase::liquidNames() const -> StringList {
   return m_liquidNames.keys();
 }
 
-List<LiquidSettingsConstPtr> LiquidsDatabase::allLiquidSettings() const {
-  return filtered<List<LiquidSettingsConstPtr>>(m_settings, mem_fn(&LiquidSettingsConstPtr::operator bool));
+auto LiquidsDatabase::allLiquidSettings() const -> List<ConstPtr<LiquidSettings>> {
+  return filtered<List<ConstPtr<LiquidSettings>>>(m_settings, std::mem_fn(&ConstPtr<LiquidSettings>::operator bool));
 }
 
-LiquidId LiquidsDatabase::liquidId(String const& str) const {
+auto LiquidsDatabase::liquidId(String const& str) const -> LiquidId {
   return m_liquidNames.get(str);
 }
 
-String LiquidsDatabase::liquidName(LiquidId liquidId) const {
+auto LiquidsDatabase::liquidName(LiquidId liquidId) const -> String {
   if (liquidId == EmptyLiquidId)
     return "empty";
   else if (auto settings = liquidSettings(liquidId))
@@ -114,24 +116,24 @@ String LiquidsDatabase::liquidName(LiquidId liquidId) const {
   throw LiquidException::format("invalid liquid id {}", liquidId);
 }
 
-String LiquidsDatabase::liquidDescription(LiquidId liquidId, String const& species) const {
+auto LiquidsDatabase::liquidDescription(LiquidId liquidId, String const& species) const -> String {
   if (liquidId == EmptyLiquidId)
-    return String();
+    return {};
   else if (auto settings = liquidSettings(liquidId))
     return settings->descriptions.getString(
-        strf("{}Description", species), settings->descriptions.getString("description"));
+      strf("{}Description", species), settings->descriptions.getString("description"));
   throw LiquidException::format("invalid liquid id {}", liquidId);
 }
 
-String LiquidsDatabase::liquidDescription(LiquidId liquidId) const {
+auto LiquidsDatabase::liquidDescription(LiquidId liquidId) const -> String {
   if (liquidId == EmptyLiquidId)
-    return String();
+    return {};
   else if (auto settings = liquidSettings(liquidId))
     return settings->descriptions.getString("description");
   throw LiquidException::format("invalid liquid id {}", liquidId);
 }
 
-std::optional<String> LiquidsDatabase::liquidPath(LiquidId liquidId) const {
+auto LiquidsDatabase::liquidPath(LiquidId liquidId) const -> std::optional<String> {
   if (liquidId == EmptyLiquidId)
     return {};
   else if (auto settings = liquidSettings(liquidId))
@@ -139,7 +141,7 @@ std::optional<String> LiquidsDatabase::liquidPath(LiquidId liquidId) const {
   return {};
 }
 
-std::optional<Json> LiquidsDatabase::liquidConfig(LiquidId liquidId) const {
+auto LiquidsDatabase::liquidConfig(LiquidId liquidId) const -> std::optional<Json> {
   if (liquidId == EmptyLiquidId)
     return {};
   else if (auto settings = liquidSettings(liquidId))
@@ -147,10 +149,10 @@ std::optional<Json> LiquidsDatabase::liquidConfig(LiquidId liquidId) const {
   return {};
 }
 
-std::optional<LiquidInteractionResult> LiquidsDatabase::interact(LiquidId target, LiquidId other) const {
+auto LiquidsDatabase::interact(LiquidId target, LiquidId other) const -> std::optional<LiquidInteractionResult> {
   if (auto settings = liquidSettings(target))
     return settings->interactions.value(other);
   return {};
 }
 
-}
+}// namespace Star

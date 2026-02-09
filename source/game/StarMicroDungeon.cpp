@@ -1,8 +1,10 @@
 #include "StarMicroDungeon.hpp"
-#include "StarRoot.hpp"
-#include "StarInterpolation.hpp"
-#include "StarLogging.hpp"
+
+#include "StarConfig.hpp"
 #include "StarDungeonGenerator.hpp"
+#include "StarLogging.hpp"
+
+import std;
 
 namespace Star {
 
@@ -19,20 +21,20 @@ MicroDungeonFactory::MicroDungeonFactory() {
     m_placementshifts.push_back(-i);
 }
 
-std::optional<pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI const& bounds,
-    String const& dungeonName,
-    Vec2I const& position,
-    uint64_t seed,
-    float threatLevel,
-    DungeonGeneratorWorldFacadePtr facade,
-    bool forcePlacement) {
+auto MicroDungeonFactory::generate(RectI const& bounds,
+                                   String const& dungeonName,
+                                   Vec2I const& position,
+                                   std::uint64_t seed,
+                                   float threatLevel,
+                                   Ptr<DungeonGeneratorWorldFacade> facade,
+                                   bool forcePlacement) -> std::optional<std::pair<List<RectI>, Set<Vec2I>>> {
   Dungeon::DungeonGeneratorWriter writer(facade, {}, {});
 
   if (m_generating)
     throw DungeonException("Not reentrant.");
 
   m_generating = true;
-  auto generatingGuard = finally([this]() { m_generating = false; });
+  auto generatingGuard = finally([this]() -> void { m_generating = false; });
 
   DungeonGenerator dungeonGenerator(dungeonName, seed, threatLevel, BiomeMicroDungeonId);
 
@@ -56,14 +58,14 @@ std::optional<pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI
 
         bool collision = false;
         anchorPart->forEachTile([&](Vec2I tilePos, Dungeon::Tile const& tile) -> bool {
-            if (tile.usesPlaces()) {
-              if (facade->getDungeonIdAt(pos + tilePos) != NoDungeonId) {
-                collision = true;
-                return true;
-              }
+          if (tile.usesPlaces()) {
+            if (facade->getDungeonIdAt(pos + tilePos) != NoDungeonId) {
+              collision = true;
+              return true;
             }
-            return false;
-          });
+          }
+          return false;
+        });
 
         if (!collision && anchorPart->canPlace(pos, &writer)) {
           return dungeonGenerator.buildDungeon(anchorPart, pos, &writer, forcePlacement);
@@ -77,4 +79,4 @@ std::optional<pair<List<RectI>, Set<Vec2I>>> MicroDungeonFactory::generate(RectI
   return {};
 }
 
-}
+}// namespace Star

@@ -1,4 +1,5 @@
 #include "StarItemBag.hpp"
+
 #include "StarConfig.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarRoot.hpp"
@@ -134,7 +135,7 @@ auto ItemBag::putItems(size_t pos, Ptr<Item> items) -> Ptr<Item> {
   }
 }
 
-auto ItemBag::takeItems(size_t pos, uint64_t count) -> Ptr<Item> {
+auto ItemBag::takeItems(size_t pos, std::uint64_t count) -> Ptr<Item> {
   if (auto& storedItem = at(pos)) {
     auto taken = storedItem->take(count);
     if (storedItem->empty())
@@ -168,7 +169,7 @@ auto ItemBag::swapItems(size_t pos, Ptr<Item> items, bool tryCombine) -> Ptr<Ite
   return swapItems;
 }
 
-auto ItemBag::consumeItems(size_t pos, uint64_t count) -> bool {
+auto ItemBag::consumeItems(size_t pos, std::uint64_t count) -> bool {
   bool consumed = false;
   if (auto& storedItem = at(pos)) {
     consumed = storedItem->consume(count);
@@ -180,13 +181,13 @@ auto ItemBag::consumeItems(size_t pos, uint64_t count) -> bool {
 }
 
 auto ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) -> bool {
-  uint64_t countLeft = descriptor.count();
-  List<std::pair<size_t, uint64_t>> consumeLocations;
+  std::uint64_t countLeft = descriptor.count();
+  List<std::pair<size_t, std::uint64_t>> consumeLocations;
   for (size_t i = 0; i < m_items.size(); ++i) {
     auto& storedItem = at(i);
     if (storedItem && storedItem->matches(descriptor, exactMatch)) {
-      uint64_t count = storedItem->count();
-      uint64_t take = std::min(count, countLeft);
+      std::uint64_t count = storedItem->count();
+      std::uint64_t take = std::min(count, countLeft);
       consumeLocations.append({i, take});
       countLeft -= take;
       if (countLeft == 0)
@@ -205,8 +206,8 @@ auto ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) ->
   return true;
 }
 
-auto ItemBag::available(ItemDescriptor const& descriptor, bool exactMatch) const -> uint64_t {
-  uint64_t count = 0;
+auto ItemBag::available(ItemDescriptor const& descriptor, bool exactMatch) const -> std::uint64_t {
+  std::uint64_t count = 0;
   for (auto const& items : m_items) {
     if (items && items->matches(descriptor, exactMatch))
       count += items->count();
@@ -215,27 +216,27 @@ auto ItemBag::available(ItemDescriptor const& descriptor, bool exactMatch) const
   return count / descriptor.count();
 }
 
-auto ItemBag::itemsCanFit(ConstPtr<Item> const& items) const -> uint64_t {
+auto ItemBag::itemsCanFit(ConstPtr<Item> const& items) const -> std::uint64_t {
   auto itemsFit = itemsFitWhere(items);
   return items->count() - itemsFit.leftover;
 }
 
-auto ItemBag::itemsCanStack(ConstPtr<Item> const& items) const -> uint64_t {
+auto ItemBag::itemsCanStack(ConstPtr<Item> const& items) const -> std::uint64_t {
   auto itemsFit = itemsFitWhere(items);
-  uint64_t stackable = 0;
+  std::uint64_t stackable = 0;
   for (auto slot : itemsFit.slots)
     if (m_items[slot])
       stackable += stackTransfer(at(slot), items);
   return stackable;
 }
 
-auto ItemBag::itemsFitWhere(ConstPtr<Item> const& items, uint64_t max) const -> ItemsFitWhereResult {
+auto ItemBag::itemsFitWhere(ConstPtr<Item> const& items, std::uint64_t max) const -> ItemsFitWhereResult {
   if (!items || items->empty())
     return {};
 
   List<size_t> slots;
   StableHashSet<size_t> taken;
-  uint64_t count = std::min(items->count(), max);
+  std::uint64_t count = std::min(items->count(), max);
 
   while (true) {
     if (count == 0)
@@ -251,7 +252,7 @@ auto ItemBag::itemsFitWhere(ConstPtr<Item> const& items, uint64_t max) const -> 
       taken.insert(slot);
     }
 
-    uint64_t available = stackTransfer(at(slot), items);
+    std::uint64_t available = stackTransfer(at(slot), items);
     if (available != 0)
       count -= std::min(available, count);
     else
@@ -344,7 +345,7 @@ void ItemBag::write(DataStream& ds) const {
     ds.write(itemSafeDescriptor(at(i)));
 }
 
-auto ItemBag::stackTransfer(ConstPtr<Item> const& to, ConstPtr<Item> const& from) -> uint64_t {
+auto ItemBag::stackTransfer(ConstPtr<Item> const& to, ConstPtr<Item> const& from) -> std::uint64_t {
   if (!from)
     return 0;
   else if (!to)

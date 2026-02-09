@@ -1,40 +1,43 @@
 #pragma once
 
+#include "StarJson.hpp"
 #include "StarPoly.hpp"
 #include "StarVariant.hpp"
-#include "StarJson.hpp"
+
+import std;
 
 namespace Star {
 
 struct PhysicsCategoryFilter {
-  enum Type { Whitelist, Blacklist };
+  enum Type { Whitelist,
+              Blacklist };
 
-  static PhysicsCategoryFilter whitelist(StringSet categories);
-  static PhysicsCategoryFilter blacklist(StringSet categories);
+  static auto whitelist(StringSet categories) -> PhysicsCategoryFilter;
+  static auto blacklist(StringSet categories) -> PhysicsCategoryFilter;
 
   PhysicsCategoryFilter(Type type = Blacklist, StringSet categories = {});
 
-  bool check(StringSet const& categories) const;
+  [[nodiscard]] auto check(StringSet const& categories) const -> bool;
 
-  bool operator==(PhysicsCategoryFilter const& rhs) const;
+  auto operator==(PhysicsCategoryFilter const& rhs) const -> bool;
 
   Type type;
   StringSet categories;
 };
 
-DataStream& operator>>(DataStream& ds, PhysicsCategoryFilter& rfr);
-DataStream& operator<<(DataStream& ds, PhysicsCategoryFilter const& rfr);
+auto operator>>(DataStream& ds, PhysicsCategoryFilter& rfr) -> DataStream&;
+auto operator<<(DataStream& ds, PhysicsCategoryFilter const& rfr) -> DataStream&;
 
-PhysicsCategoryFilter jsonToPhysicsCategoryFilter(Json const& json);
+auto jsonToPhysicsCategoryFilter(Json const& json) -> PhysicsCategoryFilter;
 
 struct DirectionalForceRegion {
-  static DirectionalForceRegion fromJson(Json const& json);
+  static auto fromJson(Json const& json) -> DirectionalForceRegion;
 
-  RectF boundBox() const;
+  [[nodiscard]] auto boundBox() const -> RectF;
 
   void translate(Vec2F const& pos);
 
-  bool operator==(DirectionalForceRegion const& rhs) const;
+  auto operator==(DirectionalForceRegion const& rhs) const -> bool;
 
   PolyF region;
   std::optional<float> xTargetVelocity;
@@ -43,17 +46,17 @@ struct DirectionalForceRegion {
   PhysicsCategoryFilter categoryFilter;
 };
 
-DataStream& operator>>(DataStream& ds, DirectionalForceRegion& rfr);
-DataStream& operator<<(DataStream& ds, DirectionalForceRegion const& rfr);
+auto operator>>(DataStream& ds, DirectionalForceRegion& rfr) -> DataStream&;
+auto operator<<(DataStream& ds, DirectionalForceRegion const& rfr) -> DataStream&;
 
 struct RadialForceRegion {
-  static RadialForceRegion fromJson(Json const& json);
+  static auto fromJson(Json const& json) -> RadialForceRegion;
 
-  RectF boundBox() const;
+  [[nodiscard]] auto boundBox() const -> RectF;
 
   void translate(Vec2F const& pos);
 
-  bool operator==(RadialForceRegion const& rhs) const;
+  auto operator==(RadialForceRegion const& rhs) const -> bool;
 
   Vec2F center;
   float outerRadius;
@@ -63,17 +66,17 @@ struct RadialForceRegion {
   PhysicsCategoryFilter categoryFilter;
 };
 
-DataStream& operator>>(DataStream& ds, RadialForceRegion& rfr);
-DataStream& operator<<(DataStream& ds, RadialForceRegion const& rfr);
+auto operator>>(DataStream& ds, RadialForceRegion& rfr) -> DataStream&;
+auto operator<<(DataStream& ds, RadialForceRegion const& rfr) -> DataStream&;
 
 struct GradientForceRegion {
-  static GradientForceRegion fromJson(Json const& json);
+  static auto fromJson(Json const& json) -> GradientForceRegion;
 
-  RectF boundBox() const;
+  [[nodiscard]] auto boundBox() const -> RectF;
 
   void translate(Vec2F const& pos);
 
-  bool operator==(GradientForceRegion const& rhs) const;
+  auto operator==(GradientForceRegion const& rhs) const -> bool;
 
   PolyF region;
   Line2F gradient;
@@ -82,11 +85,11 @@ struct GradientForceRegion {
   PhysicsCategoryFilter categoryFilter;
 };
 
-DataStream& operator>>(DataStream& ds, GradientForceRegion& rfr);
-DataStream& operator<<(DataStream& ds, GradientForceRegion const& rfr);
+auto operator>>(DataStream& ds, GradientForceRegion& rfr) -> DataStream&;
+auto operator<<(DataStream& ds, GradientForceRegion const& rfr) -> DataStream&;
 
-typedef Variant<DirectionalForceRegion, RadialForceRegion, GradientForceRegion> PhysicsForceRegion;
+using PhysicsForceRegion = Variant<DirectionalForceRegion, RadialForceRegion, GradientForceRegion>;
 
-PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json);
+auto jsonToPhysicsForceRegion(Json const& json) -> PhysicsForceRegion;
 
-}
+}// namespace Star

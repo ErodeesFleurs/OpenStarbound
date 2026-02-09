@@ -1,24 +1,23 @@
 #pragma once
 
+#include "StarConfig.hpp"
 #include "StarItem.hpp"
 
 namespace Star {
-
-STAR_CLASS(AugmentItem);
 
 class AugmentItem : public Item {
 public:
   AugmentItem(Json const& config, String const& directory, Json const& parameters = JsonObject());
   AugmentItem(AugmentItem const& rhs);
 
-  ItemPtr clone() const override;
+  [[nodiscard]] auto clone() const -> Ptr<Item> override;
 
-  StringList augmentScripts() const;
+  [[nodiscard]] auto augmentScripts() const -> StringList;
 
   // Makes no change to the given item if the augment can't be applied.
   // Consumes itself and returns true if the augment is applied.
   // Has no effect if augmentation fails.
-  ItemPtr applyTo(ItemPtr const item);
+  auto applyTo(Ptr<Item> const item) -> Ptr<Item>;
 };
 
-}
+}// namespace Star

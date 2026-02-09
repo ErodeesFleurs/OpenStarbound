@@ -1,21 +1,23 @@
 #include "StarForceRegions.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarJsonExtra.hpp"
+
+import std;
 
 namespace Star {
 
-PhysicsCategoryFilter PhysicsCategoryFilter::whitelist(StringSet categories) {
-  return PhysicsCategoryFilter(Whitelist, std::move(categories));
+auto PhysicsCategoryFilter::whitelist(StringSet categories) -> PhysicsCategoryFilter {
+  return {Whitelist, std::move(categories)};
 }
 
-PhysicsCategoryFilter PhysicsCategoryFilter::blacklist(StringSet categories) {
-  return PhysicsCategoryFilter(Blacklist, std::move(categories));
+auto PhysicsCategoryFilter::blacklist(StringSet categories) -> PhysicsCategoryFilter {
+  return {Blacklist, std::move(categories)};
 }
 
 PhysicsCategoryFilter::PhysicsCategoryFilter(Type type, StringSet categories)
-  : type(type), categories(std::move(categories)) {}
+    : type(type), categories(std::move(categories)) {}
 
-bool PhysicsCategoryFilter::check(StringSet const& otherCategories) const {
+auto PhysicsCategoryFilter::check(StringSet const& otherCategories) const -> bool {
   bool intersection = categories.hasIntersection(otherCategories);
   if (type == Whitelist)
     return intersection;
@@ -23,23 +25,23 @@ bool PhysicsCategoryFilter::check(StringSet const& otherCategories) const {
     return !intersection;
 }
 
-bool PhysicsCategoryFilter::operator==(PhysicsCategoryFilter const& rhs) const {
+auto PhysicsCategoryFilter::operator==(PhysicsCategoryFilter const& rhs) const -> bool {
   return tie(type, categories) == tie(rhs.type, rhs.categories);
 }
 
-DataStream& operator>>(DataStream& ds, PhysicsCategoryFilter& pcf) {
+auto operator>>(DataStream& ds, PhysicsCategoryFilter& pcf) -> DataStream& {
   ds >> pcf.type;
   ds >> pcf.categories;
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, PhysicsCategoryFilter const& pcf) {
+auto operator<<(DataStream& ds, PhysicsCategoryFilter const& pcf) -> DataStream& {
   ds << pcf.type;
   ds << pcf.categories;
   return ds;
 }
 
-PhysicsCategoryFilter jsonToPhysicsCategoryFilter(Json const& json) {
+auto jsonToPhysicsCategoryFilter(Json const& json) -> PhysicsCategoryFilter {
   auto whitelist = json.opt("categoryWhitelist");
   auto blacklist = json.opt("categoryBlacklist");
   if (whitelist && blacklist)
@@ -48,10 +50,10 @@ PhysicsCategoryFilter jsonToPhysicsCategoryFilter(Json const& json) {
     return PhysicsCategoryFilter::whitelist(jsonToStringSet(*whitelist));
   if (blacklist)
     return PhysicsCategoryFilter::blacklist(jsonToStringSet(*blacklist));
-  return PhysicsCategoryFilter();
+  return {};
 }
 
-DirectionalForceRegion DirectionalForceRegion::fromJson(Json const& json) {
+auto DirectionalForceRegion::fromJson(Json const& json) -> DirectionalForceRegion {
   DirectionalForceRegion dfr;
   if (json.contains("polyRegion"))
     dfr.region = jsonToPolyF(json.get("polyRegion"));
@@ -64,7 +66,7 @@ DirectionalForceRegion DirectionalForceRegion::fromJson(Json const& json) {
   return dfr;
 }
 
-RectF DirectionalForceRegion::boundBox() const {
+auto DirectionalForceRegion::boundBox() const -> RectF {
   return region.boundBox();
 }
 
@@ -72,12 +74,12 @@ void DirectionalForceRegion::translate(Vec2F const& pos) {
   region.translate(pos);
 }
 
-bool DirectionalForceRegion::operator==(DirectionalForceRegion const& rhs) const {
+auto DirectionalForceRegion::operator==(DirectionalForceRegion const& rhs) const -> bool {
   return tie(region, xTargetVelocity, yTargetVelocity, controlForce, categoryFilter)
-      == tie(rhs.region, rhs.xTargetVelocity, rhs.yTargetVelocity, rhs.controlForce, rhs.categoryFilter);
+    == tie(rhs.region, rhs.xTargetVelocity, rhs.yTargetVelocity, rhs.controlForce, rhs.categoryFilter);
 }
 
-DataStream& operator>>(DataStream& ds, DirectionalForceRegion& dfr) {
+auto operator>>(DataStream& ds, DirectionalForceRegion& dfr) -> DataStream& {
   ds >> dfr.region;
   ds >> dfr.xTargetVelocity;
   ds >> dfr.yTargetVelocity;
@@ -86,7 +88,7 @@ DataStream& operator>>(DataStream& ds, DirectionalForceRegion& dfr) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, DirectionalForceRegion const& dfr) {
+auto operator<<(DataStream& ds, DirectionalForceRegion const& dfr) -> DataStream& {
   ds << dfr.region;
   ds << dfr.xTargetVelocity;
   ds << dfr.yTargetVelocity;
@@ -95,9 +97,9 @@ DataStream& operator<<(DataStream& ds, DirectionalForceRegion const& dfr) {
   return ds;
 }
 
-RadialForceRegion RadialForceRegion::fromJson(Json const& json) {
+auto RadialForceRegion::fromJson(Json const& json) -> RadialForceRegion {
   RadialForceRegion rfr;
-  rfr.center = json.opt("center").apply(jsonToVec2F).value();
+  rfr.center = json.opt("center").transform(jsonToVec2F).value();
   rfr.outerRadius = json.getFloat("outerRadius");
   rfr.innerRadius = json.getFloat("innerRadius");
   rfr.targetRadialVelocity = json.getFloat("targetRadialVelocity");
@@ -106,7 +108,7 @@ RadialForceRegion RadialForceRegion::fromJson(Json const& json) {
   return rfr;
 }
 
-RectF RadialForceRegion::boundBox() const {
+auto RadialForceRegion::boundBox() const -> RectF {
   return RectF::withCenter(center, Vec2F::filled(outerRadius));
 }
 
@@ -114,12 +116,12 @@ void RadialForceRegion::translate(Vec2F const& pos) {
   center += pos;
 }
 
-bool RadialForceRegion::operator==(RadialForceRegion const& rhs) const {
+auto RadialForceRegion::operator==(RadialForceRegion const& rhs) const -> bool {
   return tie(center, outerRadius, innerRadius, targetRadialVelocity, controlForce, categoryFilter)
-      == tie(rhs.center, rhs.outerRadius, rhs.innerRadius, rhs.targetRadialVelocity, rhs.controlForce, rhs.categoryFilter);
+    == tie(rhs.center, rhs.outerRadius, rhs.innerRadius, rhs.targetRadialVelocity, rhs.controlForce, rhs.categoryFilter);
 }
 
-DataStream& operator>>(DataStream& ds, RadialForceRegion& rfr) {
+auto operator>>(DataStream& ds, RadialForceRegion& rfr) -> DataStream& {
   ds >> rfr.center;
   ds >> rfr.outerRadius;
   ds >> rfr.innerRadius;
@@ -129,7 +131,7 @@ DataStream& operator>>(DataStream& ds, RadialForceRegion& rfr) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, RadialForceRegion const& gfr) {
+auto operator<<(DataStream& ds, RadialForceRegion const& gfr) -> DataStream& {
   ds << gfr.center;
   ds << gfr.outerRadius;
   ds << gfr.innerRadius;
@@ -139,7 +141,7 @@ DataStream& operator<<(DataStream& ds, RadialForceRegion const& gfr) {
   return ds;
 }
 
-GradientForceRegion GradientForceRegion::fromJson(Json const& json) {
+auto GradientForceRegion::fromJson(Json const& json) -> GradientForceRegion {
   GradientForceRegion gfr;
   if (json.contains("polyRegion"))
     gfr.region = jsonToPolyF(json.get("polyRegion"));
@@ -152,7 +154,7 @@ GradientForceRegion GradientForceRegion::fromJson(Json const& json) {
   return gfr;
 }
 
-RectF GradientForceRegion::boundBox() const {
+auto GradientForceRegion::boundBox() const -> RectF {
   return region.boundBox();
 }
 
@@ -161,12 +163,12 @@ void GradientForceRegion::translate(Vec2F const& pos) {
   gradient.translate(pos);
 }
 
-bool GradientForceRegion::operator==(GradientForceRegion const& rhs) const {
-  return tie(region, gradient, baseTargetVelocity, baseControlForce, categoryFilter)
-      == tie(rhs.region, rhs.gradient, rhs.baseTargetVelocity, rhs.baseControlForce, rhs.categoryFilter);
+auto GradientForceRegion::operator==(GradientForceRegion const& rhs) const -> bool {
+  return std::tie(region, gradient, baseTargetVelocity, baseControlForce, categoryFilter)
+    == std::tie(rhs.region, rhs.gradient, rhs.baseTargetVelocity, rhs.baseControlForce, rhs.categoryFilter);
 }
 
-DataStream& operator>>(DataStream& ds, GradientForceRegion& gfr) {
+auto operator>>(DataStream& ds, GradientForceRegion& gfr) -> DataStream& {
   ds >> gfr.region;
   ds >> gfr.gradient;
   ds >> gfr.baseTargetVelocity;
@@ -175,7 +177,7 @@ DataStream& operator>>(DataStream& ds, GradientForceRegion& gfr) {
   return ds;
 }
 
-DataStream& operator<<(DataStream& ds, GradientForceRegion const& gfr) {
+auto operator<<(DataStream& ds, GradientForceRegion const& gfr) -> DataStream& {
   ds << gfr.region;
   ds << gfr.gradient;
   ds << gfr.baseTargetVelocity;
@@ -184,7 +186,7 @@ DataStream& operator<<(DataStream& ds, GradientForceRegion const& gfr) {
   return ds;
 }
 
-PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json) {
+auto jsonToPhysicsForceRegion(Json const& json) -> PhysicsForceRegion {
   String type = json.getString("type");
   if (type.equalsIgnoreCase("DirectionalForceRegion"))
     return DirectionalForceRegion::fromJson(json);
@@ -196,4 +198,4 @@ PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json) {
     throw JsonException::format("No such physics force region type '{}'", type);
 }
 
-}
+}// namespace Star

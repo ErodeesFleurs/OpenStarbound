@@ -3,6 +3,7 @@
 #include "StarConfig.hpp"
 #include "StarListener.hpp"
 #include "StarLua.hpp"
+#include "StarLuaConverters.hpp"// IWYU pragma: export
 #include "StarThread.hpp"
 
 import std;
