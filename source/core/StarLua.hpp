@@ -59,6 +59,23 @@ class LuaThread;
 class LuaUserData;
 using LuaValue = Variant<LuaNilType, LuaBoolean, LuaInt, LuaFloat, LuaString, LuaTable, LuaFunction, LuaThread, LuaUserData>;
 
+// Modern C++20 helper: Get type name from LuaValue using std::visit
+[[nodiscard]] inline auto luaValueTypeName(LuaValue const& value) -> std::string_view {
+  return std::visit([](auto&& arg) -> std::string_view {
+    using T = std::decay_t<decltype(arg)>;
+    if constexpr (std::is_same_v<T, LuaNilType>) return "nil";
+    else if constexpr (std::is_same_v<T, LuaBoolean>) return "boolean";
+    else if constexpr (std::is_same_v<T, LuaInt>) return "integer";
+    else if constexpr (std::is_same_v<T, LuaFloat>) return "number";
+    else if constexpr (std::is_same_v<T, LuaString>) return "string";
+    else if constexpr (std::is_same_v<T, LuaTable>) return "table";
+    else if constexpr (std::is_same_v<T, LuaFunction>) return "function";
+    else if constexpr (std::is_same_v<T, LuaThread>) return "thread";
+    else if constexpr (std::is_same_v<T, LuaUserData>) return "userdata";
+    else return "unknown";
+  }, value);
+}
+
 // Used to wrap multiple return values from calling a lua function or to pass
 // multiple values as arguments to a lua function from a container.  If this is
 // used as an argument to a lua callback function, it must be the final
@@ -2019,8 +2036,11 @@ auto LuaEngine::luaConvertTo(LuaValue const& v) -> std::expected<T, LuaConversio
     if (auto result = LuaConverter<T>::to(*this, v)) {
       return std::expected<T, LuaConversionError>(std::move(*result));
     }
+    // Use modern pattern matching for better error messages
     return std::unexpected(LuaConversionError{
-      strf("Failed to convert LuaValue to type '{}'", typeid(T).name())
+      strf("Failed to convert {} to type '{}'", luaValueTypeName(v), typeid(T).name()),
+      typeid(T).name(),
+      String(luaValueTypeName(v))
     });
   }
 }
@@ -2030,11 +2050,15 @@ auto LuaEngine::luaConvertTo(LuaValue&& v) -> std::expected<T, LuaConversionErro
   if constexpr (requires { LuaConverter<T>::tryTo(*this, std::move(v)); }) {
     return LuaConverter<T>::tryTo(*this, std::move(v));
   } else {
+    // Need to get type name before moving
+    auto typeName = luaValueTypeName(v);
     if (auto result = LuaConverter<T>::to(*this, std::move(v))) {
       return std::expected<T, LuaConversionError>(std::move(*result));
     }
     return std::unexpected(LuaConversionError{
-      strf("Failed to convert LuaValue to type '{}'", typeid(T).name())
+      strf("Failed to convert {} to type '{}'", typeName, typeid(T).name()),
+      typeid(T).name(),
+      String(typeName)
     });
   }
 }
