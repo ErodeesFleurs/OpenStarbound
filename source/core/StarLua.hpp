@@ -549,21 +549,59 @@ private:
   StringMap<LuaDetail::LuaWrappedFunction> m_methods;
 };
 
-// A single execution context from a LuaEngine that manages a (mostly) distinct
-// lua environment.  Each LuaContext's global environment is separate and one
-// LuaContext can (mostly) not affect any other.
-class LuaContext : protected LuaTable {
+// REFACTORED: LuaContext now uses composition instead of protected inheritance
+class LuaContext {
 public:
   using RequireFunction = std::function<void(LuaContext&, LuaString const&)>;
 
-  using LuaTable::LuaTable;
+  explicit LuaContext(LuaTable table) : m_table(std::move(table)) {}
 
-  using LuaTable::contains;
-  using LuaTable::engine;
-  using LuaTable::get;
-  using LuaTable::handleIndex;
-  using LuaTable::remove;
-  using LuaTable::set;
+  // Delegate to underlying table - explicit forwarding shows intent
+  template <typename K>
+  auto contains(K key) const -> bool {
+    return m_table.contains(std::move(key));
+  }
+  
+  auto contains(char const* key) const -> bool {
+    return m_table.contains(key);
+  }
+  
+  auto engine() const -> LuaEngine& {
+    return m_table.engine();
+  }
+  
+  template <typename T = LuaValue, typename K>
+  auto get(K key) const -> T {
+    return m_table.template get<T>(std::move(key));
+  }
+  
+  template <typename T = LuaValue>
+  auto get(char const* key) const -> T {
+    return m_table.template get<T>(key);
+  }
+  
+  auto handleIndex() const -> int {
+    return m_table.handleIndex();
+  }
+  
+  template <typename K>
+  void remove(K key) const {
+    m_table.remove(std::move(key));
+  }
+  
+  void remove(char const* key) const {
+    m_table.remove(key);
+  }
+  
+  template <typename T, typename K>
+  void set(K key, T value) const {
+    m_table.set(std::move(key), std::move(value));
+  }
+  
+  template <typename T>
+  void set(char const* key, T value) const {
+    m_table.set(key, std::move(value));
+  }
 
   // Splits the path by '.' character, so can get / set values in tables inside
   // other tables.  If any table in the path is not a table but is accessed as
@@ -635,6 +673,9 @@ public:
 
   template <typename T>
   auto createUserData(T t) -> LuaUserData;
+  
+private:
+  LuaTable m_table;  // COMPOSITION: Context HAS-A table
 };
 
 template <typename T>
