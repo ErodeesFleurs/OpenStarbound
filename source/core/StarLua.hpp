@@ -285,28 +285,55 @@ auto operator!=(char const* s1, LuaString const& s2) -> bool;
 auto operator!=(std::string const& s1, LuaString const& s2) -> bool;
 auto operator!=(String const& s1, LuaString const& s2) -> bool;
 
-class LuaTable : public LuaReference {
+// REFACTORED: LuaTable now uses composition instead of inheritance
+class LuaTable {
 public:
-  using LuaReference::LuaReference;
+  explicit LuaTable(LuaDetail::LuaHandle handle) 
+    : m_handle(std::move(handle)) {}
+  
+  explicit LuaTable(LuaDetail::LuaHandleComponent handle)
+    : m_handle(std::move(handle)) {}
+
+  LuaTable(LuaTable&&) = default;
+  auto operator=(LuaTable&&) -> LuaTable& = default;
+  
+  LuaTable(LuaTable const&) = default;
+  auto operator=(LuaTable const&) -> LuaTable& = default;
 
   template <typename T = LuaValue, typename K>
-  auto get(K key) const -> T;
+  auto get(K key) const -> T {
+    return m_handle.engine().template luaTo<T>(m_handle.engine().tableGet(false, m_handle.handleIndex(), std::move(key)));
+  }
+  
   template <typename T = LuaValue>
-  auto get(char const* key) const -> T;
+  auto get(char const* key) const -> T {
+    return m_handle.engine().template luaTo<T>(m_handle.engine().tableGet(false, m_handle.handleIndex(), key));
+  }
 
   template <typename T, typename K>
-  void set(K key, T t) const;
+  void set(K key, T t) const {
+    m_handle.engine().tableSet(false, m_handle.handleIndex(), std::move(key), m_handle.engine().luaFrom(std::move(t)));
+  }
+  
   template <typename T>
-  void set(char const* key, T t) const;
+  void set(char const* key, T t) const {
+    m_handle.engine().tableSet(false, m_handle.handleIndex(), key, m_handle.engine().luaFrom(std::move(t)));
+  }
 
   // Shorthand for get(path) != LuaNil
   template <typename K>
-  auto contains(K key) const -> bool;
+  auto contains(K key) const -> bool {
+    return m_handle.engine().tableGet(false, m_handle.handleIndex(), std::move(key)) != LuaNil;
+  }
+  
   auto contains(char const* key) const -> bool;
 
   // Shorthand for setting to LuaNil
   template <typename K>
-  void remove(K key) const;
+  void remove(K key) const {
+    m_handle.engine().tableSet(false, m_handle.handleIndex(), std::move(key), LuaNil);
+  }
+  
   void remove(char const* key) const;
 
   // Result of lua # operator
@@ -314,7 +341,9 @@ public:
 
   // If iteration function returns bool, returning false signals stopping.
   template <typename Function>
-  void iterate(Function&& iterator) const;
+  void iterate(Function&& iterator) const {
+    m_handle.engine().tableIterate(m_handle.handleIndex(), std::forward<Function>(iterator));
+  }
 
   template <typename Return, typename... Args, typename Function>
   void iterateWithSignature(Function&& func) const;
@@ -323,29 +352,91 @@ public:
   void setMetatable(LuaTable const& table) const;
 
   template <typename T = LuaValue, typename K>
-  auto rawGet(K key) const -> T;
+  auto rawGet(K key) const -> T {
+    return m_handle.engine().template luaTo<T>(m_handle.engine().tableGet(true, m_handle.handleIndex(), std::move(key)));
+  }
+  
   template <typename T = LuaValue>
-  auto rawGet(char const* key) const -> T;
+  auto rawGet(char const* key) const -> T {
+    return m_handle.engine().template luaTo<T>(m_handle.engine().tableGet(true, m_handle.handleIndex(), key));
+  }
 
   template <typename T, typename K>
-  void rawSet(K key, T t) const;
+  void rawSet(K key, T t) const {
+    m_handle.engine().tableSet(true, m_handle.handleIndex(), std::move(key), m_handle.engine().luaFrom(std::move(t)));
+  }
+  
   template <typename T>
-  void rawSet(char const* key, T t) const;
+  void rawSet(char const* key, T t) const {
+    m_handle.engine().tableSet(true, m_handle.handleIndex(), key, m_handle.engine().luaFrom(std::move(t)));
+  }
 
   [[nodiscard("Raw table length needed for operations")]] auto rawLength() const -> LuaInt;
+  
+  // Convenience accessors for compatibility
+  [[nodiscard]] auto engine() const -> LuaEngine& {
+    return m_handle.engine();
+  }
+  
+  [[nodiscard]] auto handleIndex() const -> int {
+    return m_handle.handleIndex();
+  }
+
+private:
+  LuaDetail::LuaHandleComponent m_handle;  // COMPOSITION, not inheritance
 };
 
-class LuaFunction : public LuaReference {
+// REFACTORED: LuaFunction now uses composition
+class LuaFunction {
 public:
-  using LuaReference::LuaReference;
+  explicit LuaFunction(LuaDetail::LuaHandle handle) 
+    : m_handle(std::move(handle)) {}
+  
+  explicit LuaFunction(LuaDetail::LuaHandleComponent handle)
+    : m_handle(std::move(handle)) {}
+
+  LuaFunction(LuaFunction&&) = default;
+  auto operator=(LuaFunction&&) -> LuaFunction& = default;
+  
+  LuaFunction(LuaFunction const&) = default;
+  auto operator=(LuaFunction const&) -> LuaFunction& = default;
 
   template <typename Ret = LuaValue, typename... Args>
-  auto invoke(Args const&... args) const -> Ret;
+  auto invoke(Args const&... args) const -> Ret {
+    return LuaDetail::FromFunctionReturn<Ret>::convert(
+      m_handle.engine(), 
+      m_handle.engine().callFunction(m_handle.handleIndex(), args...)
+    );
+  }
+  
+  // Convenience accessors
+  [[nodiscard]] auto engine() const -> LuaEngine& {
+    return m_handle.engine();
+  }
+  
+  [[nodiscard]] auto handleIndex() const -> int {
+    return m_handle.handleIndex();
+  }
+
+private:
+  LuaDetail::LuaHandleComponent m_handle;  // COMPOSITION
 };
 
-class LuaThread : public LuaReference {
+// REFACTORED: LuaThread now uses composition
+class LuaThread {
 public:
-  using LuaReference::LuaReference;
+  explicit LuaThread(LuaDetail::LuaHandle handle) 
+    : m_handle(std::move(handle)) {}
+  
+  explicit LuaThread(LuaDetail::LuaHandleComponent handle)
+    : m_handle(std::move(handle)) {}
+
+  LuaThread(LuaThread&&) = default;
+  auto operator=(LuaThread&&) -> LuaThread& = default;
+  
+  LuaThread(LuaThread const&) = default;
+  auto operator=(LuaThread const&) -> LuaThread& = default;
+
   enum class Status {
     Dead,
     Active,
@@ -358,28 +449,67 @@ public:
   template <typename Self, typename Ret = LuaValue, typename... Args>
   [[nodiscard("Thread result must be checked")]] 
   auto resume(this Self&& self, Args const&... args) -> std::optional<Ret> {
-    auto res = self.engine().resumeThread(self.handleIndex(), args...);
+    auto res = self.m_handle.engine().resumeThread(self.m_handle.handleIndex(), args...);
     if (res)
-      return LuaDetail::FromFunctionReturn<Ret>::convert(self.engine(), std::move(*res));
+      return LuaDetail::FromFunctionReturn<Ret>::convert(self.m_handle.engine(), std::move(*res));
     return std::nullopt;
   }
   
   void pushFunction(LuaFunction const& func) const;
   [[nodiscard("Thread status needed for control flow")]] auto status() const -> Status;
+  
+  // Convenience accessors
+  [[nodiscard]] auto engine() const -> LuaEngine& {
+    return m_handle.engine();
+  }
+  
+  [[nodiscard]] auto handleIndex() const -> int {
+    return m_handle.handleIndex();
+  }
+
+private:
+  LuaDetail::LuaHandleComponent m_handle;  // COMPOSITION
 };
 
 // Keeping LuaReferences in LuaUserData will lead to circular references to
 // LuaEngine, in addition to circular references in Lua which the Lua
 // garbage collector can't collect. Don't put LuaReferences in LuaUserData.
-class LuaUserData : public LuaReference {
+// REFACTORED: LuaUserData now uses composition
+class LuaUserData {
 public:
-  using LuaReference::LuaReference;
+  explicit LuaUserData(LuaDetail::LuaHandle handle) 
+    : m_handle(std::move(handle)) {}
+  
+  explicit LuaUserData(LuaDetail::LuaHandleComponent handle)
+    : m_handle(std::move(handle)) {}
+
+  LuaUserData(LuaUserData&&) = default;
+  auto operator=(LuaUserData&&) -> LuaUserData& = default;
+  
+  LuaUserData(LuaUserData const&) = default;
+  auto operator=(LuaUserData const&) -> LuaUserData& = default;
 
   template <typename T>
-  [[nodiscard("Type check result must be used")]] auto is() const -> bool;
+  [[nodiscard("Type check result must be used")]] auto is() const -> bool {
+    return m_handle.engine().template userDataIsType<T>(m_handle.handleIndex());
+  }
 
   template <typename T>
-  [[nodiscard("UserData reference must be used")]] auto get() const -> T&;
+  [[nodiscard("UserData reference must be used")]] auto get() const -> T& {
+    return *m_handle.engine().template getUserData<T>(m_handle.handleIndex());
+  }
+  
+  // Convenience accessors
+  [[nodiscard]] auto engine() const -> LuaEngine& {
+    return m_handle.engine();
+  }
+  
+  [[nodiscard]] auto handleIndex() const -> int {
+    return m_handle.handleIndex();
+  }
+
+private:
+  LuaDetail::LuaHandleComponent m_handle;  // COMPOSITION
 };
 
 inline constexpr LuaValue LuaNil = LuaValue();
@@ -1940,10 +2070,7 @@ void LuaTable::rawSet(char const* key, T value) const {
   engine().tableSet(true, handleIndex(), engine().luaFrom(key), engine().luaFrom(value));
 }
 
-template <typename Ret, typename... Args>
-auto LuaFunction::invoke(Args const&... args) const -> Ret {
-  return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), engine().callFunction(handleIndex(), args...));
-}
+// LuaFunction::invoke is now defined inline in the class definition
 
 // LuaThread::resume is now defined inline with deducing this in the class definition
 
@@ -1955,15 +2082,7 @@ inline auto LuaThread::status() const -> LuaThread::Status {
   return engine().threadStatus(handleIndex());
 }
 
-template <typename T>
-auto LuaUserData::is() const -> bool {
-  return engine().userDataIsType<T>(handleIndex());
-}
-
-template <typename T>
-auto LuaUserData::get() const -> T& {
-  return *engine().getUserData<T>(handleIndex());
-}
+// LuaUserData methods are now defined inline in the class definition
 
 template <typename Function>
 void LuaCallbacks::registerCallback(String name, Function&& func) {
