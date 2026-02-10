@@ -1639,11 +1639,11 @@ auto luaTupleReturn(Types&&... args) -> LuaTupleReturn<std::decay_t<Types>...> {
 
 inline LuaReference::LuaReference(LuaDetail::LuaHandle handle) : m_handle(std::move(handle)) {}
 
-inline auto LuaReference::operator==(LuaReference const& rhs) const noexcept -> bool {
+inline auto LuaReference::operator==(LuaReference const& rhs) const -> bool {
   return std::tie(m_handle.engine, m_handle.handleIndex) == std::tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
 }
 
-inline auto LuaReference::operator!=(LuaReference const& rhs) const noexcept -> bool {
+inline auto LuaReference::operator!=(LuaReference const& rhs) const -> bool {
   return std::tie(m_handle.engine, m_handle.handleIndex) != std::tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
 }
 
