@@ -36,6 +36,18 @@ using LuaRecursionLimitReached = ExceptionDerived<"LuaRecursionLimitReached", Lu
 // different type.
 using LuaConversionException = ExceptionDerived<"LuaConversionException", LuaException>;
 
+// Error information for Lua conversions (C++23 std::expected support)
+struct LuaConversionError {
+  String message;
+  String expectedType;
+  String actualType;
+  
+  constexpr LuaConversionError() = default;
+  constexpr LuaConversionError(String msg) : message(std::move(msg)) {}
+  constexpr LuaConversionError(String msg, String expected, String actual)
+    : message(std::move(msg)), expectedType(std::move(expected)), actualType(std::move(actual)) {}
+};
+
 using LuaNilType = Empty;
 using LuaBoolean = bool;
 using LuaInt = lua_Integer;
@@ -244,10 +256,16 @@ public:
 
   // Will return a value if the thread has yielded a value, and nothing if the
   // thread has finished execution
-  template <typename Ret = LuaValue, typename... Args>
-  [[nodiscard("Thread result must be checked")]] auto resume(Args const&... args) -> std::optional<Ret>;
-  template <typename Ret = LuaValue, typename... Args>
-  [[nodiscard("Thread result must be checked")]] auto resume(Args const&... args) const -> std::optional<Ret>;
+  // Using deducing this (C++23) to deduce const-correctness
+  template <typename Self, typename Ret = LuaValue, typename... Args>
+  [[nodiscard("Thread result must be checked")]] 
+  auto resume(this Self&& self, Args const&... args) -> std::optional<Ret> {
+    auto res = self.engine().resumeThread(self.handleIndex(), args...);
+    if (res)
+      return LuaDetail::FromFunctionReturn<Ret>::convert(self.engine(), std::move(*res));
+    return std::nullopt;
+  }
+  
   void pushFunction(LuaFunction const& func) const;
   [[nodiscard("Thread status needed for control flow")]] auto status() const -> Status;
 };
@@ -432,7 +450,8 @@ private:
 // this template and provide static to and from methods on it.  The method
 // signatures will be called like:
 //   LuaValue from(LuaEngine& engine, T t);
-//   std::optional<T> to(LuaEngine& engine, LuaValue v);
+//   std::expected<T, LuaConversionError> tryTo(LuaEngine& engine, LuaValue v); // Modern API
+//   std::optional<T> to(LuaEngine& engine, LuaValue v);  // Legacy API
 // The methods can also take 'T const&' or 'LuaValue const&' as parameters, and
 // the 'to' method can also return a bare T if conversion cannot fail.
 template <typename T>
@@ -443,6 +462,12 @@ template <typename T>
 concept LuaConvertible = requires(LuaEngine& engine, T value, LuaValue luaValue) {
   { LuaConverter<std::decay_t<T>>::from(engine, value) } -> std::same_as<LuaValue>;
   { LuaConverter<std::decay_t<T>>::to(engine, luaValue) };
+};
+
+// Modern concept requiring std::expected support
+template <typename T>
+concept LuaConvertibleExpected = LuaConvertible && requires(LuaEngine& engine, LuaValue luaValue) {
+  { LuaConverter<std::decay_t<T>>::tryTo(engine, luaValue) } -> std::same_as<std::expected<T, LuaConversionError>>;
 };
 
 template <typename T>
@@ -556,12 +581,24 @@ public:
   auto luaFrom(T&& t) -> LuaValue;
   template <typename T>
   auto luaFrom(T const& t) -> LuaValue;
+  
+  // Modern API: Returns std::expected for structured error handling (C++23)
   template <typename T>
+  [[nodiscard("Conversion result must be checked")]]
+  auto luaConvertTo(LuaValue const& v) -> std::expected<T, LuaConversionError>;
+  template <typename T>
+  [[nodiscard("Conversion result must be checked")]]
+  auto luaConvertTo(LuaValue&& v) -> std::expected<T, LuaConversionError>;
+  
+  // Legacy API: Returns std::optional (deprecated - use luaConvertTo)
+  template <typename T>
+  [[deprecated("Use luaConvertTo() for better error messages")]]
   auto luaMaybeTo(LuaValue const& v) -> std::optional<T>;
   template <typename T>
+  [[deprecated("Use luaConvertTo() for better error messages")]]
   auto luaMaybeTo(LuaValue&& v) -> std::optional<T>;
 
-  // Wraps luaMaybeTo, throws an exception if conversion fails.
+  // Wraps luaConvertTo, throws an exception if conversion fails.
   template <typename T>
   auto luaTo(LuaValue const& v) -> T;
   template <typename T>
@@ -782,6 +819,16 @@ struct LuaConverter<bool> {
       return *b;
     if (v == LuaNil)
       return false;
+    return true;
+  }
+  
+  // Modern API with structured error
+  static auto tryTo([[maybe_unused]] LuaEngine& engine, LuaValue const& v) -> std::expected<bool, LuaConversionError> {
+    if (auto b = v.ptr<LuaBoolean>())
+      return *b;
+    if (v == LuaNil)
+      return false;
+    // Truthy conversion always succeeds
     return true;
   }
 };
@@ -1792,21 +1839,7 @@ auto LuaFunction::invoke(Args const&... args) const -> Ret {
   return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), engine().callFunction(handleIndex(), args...));
 }
 
-template <typename Ret, typename... Args>
-auto LuaThread::resume(Args const&... args) -> std::optional<Ret> {
-  auto res = engine().resumeThread(handleIndex(), args...);
-  if (res)
-    return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), std::move(*res));
-  return std::nullopt;
-}
-
-template <typename Ret, typename... Args>
-auto LuaThread::resume(Args const&... args) const -> std::optional<Ret> {
-  auto res = engine().resumeThread(handleIndex(), args...);
-  if (res)
-    return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), std::move(*res));
-  return std::nullopt;
-}
+// LuaThread::resume is now defined inline with deducing this in the class definition
 
 inline void LuaThread::pushFunction(LuaFunction const& func) const {
   engine().threadPushFunction(handleIndex(), func.handleIndex());
@@ -1975,18 +2008,51 @@ auto LuaEngine::luaMaybeTo(LuaValue const& v) -> std::optional<T> {
   return LuaConverter<T>::to(*this, v);
 }
 
+// Modern std::expected-based conversion (C++23)
+template <typename T>
+auto LuaEngine::luaConvertTo(LuaValue const& v) -> std::expected<T, LuaConversionError> {
+  if constexpr (requires { LuaConverter<T>::tryTo(*this, v); }) {
+    // Use modern tryTo if available
+    return LuaConverter<T>::tryTo(*this, v);
+  } else {
+    // Fallback to legacy to() method
+    if (auto result = LuaConverter<T>::to(*this, v)) {
+      return std::expected<T, LuaConversionError>(std::move(*result));
+    }
+    return std::unexpected(LuaConversionError{
+      strf("Failed to convert LuaValue to type '{}'", typeid(T).name())
+    });
+  }
+}
+
+template <typename T>
+auto LuaEngine::luaConvertTo(LuaValue&& v) -> std::expected<T, LuaConversionError> {
+  if constexpr (requires { LuaConverter<T>::tryTo(*this, std::move(v)); }) {
+    return LuaConverter<T>::tryTo(*this, std::move(v));
+  } else {
+    if (auto result = LuaConverter<T>::to(*this, std::move(v))) {
+      return std::expected<T, LuaConversionError>(std::move(*result));
+    }
+    return std::unexpected(LuaConversionError{
+      strf("Failed to convert LuaValue to type '{}'", typeid(T).name())
+    });
+  }
+}
+
 template <typename T>
 auto LuaEngine::luaTo(LuaValue&& v) -> T {
-  if (auto res = luaMaybeTo<T>(std::move(v)))
+  auto res = luaConvertTo<T>(std::move(v));
+  if (res)
     return std::move(*res);
-  throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
+  throw LuaConversionException::format("Error converting LuaValue: {}", res.error().message);
 }
 
 template <typename T>
 auto LuaEngine::luaTo(LuaValue const& v) -> T {
-  if (auto res = luaMaybeTo<T>(v))
+  auto res = luaConvertTo<T>(v);
+  if (res)
     return std::move(*res);
-  throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
+  throw LuaConversionException::format("Error converting LuaValue: {}", res.error().message);
 }
 
 template <LuaContainer Container>
