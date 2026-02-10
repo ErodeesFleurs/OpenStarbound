@@ -42,9 +42,9 @@ struct LuaConversionError {
   String expectedType;
   String actualType;
   
-  constexpr LuaConversionError() = default;
-  constexpr LuaConversionError(String msg) : message(std::move(msg)) {}
-  constexpr LuaConversionError(String msg, String expected, String actual)
+  LuaConversionError() = default;
+  LuaConversionError(String msg) : message(std::move(msg)) {}
+  LuaConversionError(String msg, String expected, String actual)
     : message(std::move(msg)), expectedType(std::move(expected)), actualType(std::move(actual)) {}
 };
 
@@ -2047,7 +2047,7 @@ auto LuaEngine::luaConvertTo(LuaValue const& v) -> std::expected<T, LuaConversio
   } else {
     // Fallback to legacy to() method
     if (auto result = LuaConverter<T>::to(*this, v)) {
-      return std::expected<T, LuaConversionError>(std::move(*result));
+      return std::move(*result);  // Implicit conversion to std::expected
     }
     // Use modern pattern matching for better error messages
     return std::unexpected(LuaConversionError{
@@ -2067,7 +2067,7 @@ auto LuaEngine::luaConvertTo(LuaValue&& v) -> std::expected<T, LuaConversionErro
     // Need to get type name before moving
     auto typeName = luaValueTypeName(v);
     if (auto result = LuaConverter<T>::to(*this, std::move(v))) {
-      return std::expected<T, LuaConversionError>(std::move(*result));
+      return std::move(*result);  // Implicit conversion to std::expected
     }
     return std::unexpected(LuaConversionError{
       strf("Failed to convert {} to type '{}'", typeName, typeid(T).name()),
