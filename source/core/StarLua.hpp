@@ -142,6 +142,39 @@ struct LuaHandle {
   int handleIndex = 0;
 };
 
+// Composition-based handle holder - reduces coupling via composition
+// This replaces inheritance from LuaReference
+class LuaHandleComponent {
+public:
+  explicit LuaHandleComponent(LuaHandle handle) : m_handle(std::move(handle)) {}
+  
+  LuaHandleComponent(LuaHandleComponent&&) = default;
+  auto operator=(LuaHandleComponent&&) -> LuaHandleComponent& = default;
+  
+  LuaHandleComponent(LuaHandleComponent const&) = default;
+  auto operator=(LuaHandleComponent const&) -> LuaHandleComponent& = default;
+  
+  [[nodiscard("Engine reference must be used")]] auto engine() const -> LuaEngine& {
+    return *m_handle.engine;
+  }
+  
+  [[nodiscard("Handle index needed for Lua operations")]] auto handleIndex() const -> int {
+    return m_handle.handleIndex;
+  }
+  
+  auto operator==(LuaHandleComponent const& rhs) const -> bool {
+    return std::tie(m_handle.engine, m_handle.handleIndex) == 
+           std::tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
+  }
+  
+  auto operator!=(LuaHandleComponent const& rhs) const -> bool {
+    return !(*this == rhs);
+  }
+
+private:
+  LuaHandle m_handle;
+};
+
 // Not meant to be used directly, exposes a raw interface for wrapped C++
 // functions to be wrapped with the least amount of overhead.  Arguments are
 // passed non-const so that they can be moved into wrapped functions that
@@ -177,15 +210,63 @@ private:
   LuaDetail::LuaHandle m_handle;
 };
 
-class LuaString : public LuaReference {
+// REFACTORED: LuaString now uses composition instead of inheritance
+// This reduces coupling and improves flexibility
+class LuaString {
 public:
-  using LuaReference::LuaReference;
+  explicit LuaString(LuaDetail::LuaHandle handle) 
+    : m_handle(std::move(handle)) {}
+  
+  // Allow construction from LuaHandleComponent for internal use
+  explicit LuaString(LuaDetail::LuaHandleComponent handle)
+    : m_handle(std::move(handle)) {}
 
-  [[nodiscard("String pointer needed for access")]] auto ptr() const -> char const*;
-  [[nodiscard("String length needed for operations")]] auto length() const -> size_t;
+  LuaString(LuaString&&) = default;
+  auto operator=(LuaString&&) -> LuaString& = default;
+  
+  LuaString(LuaString const&) = default;
+  auto operator=(LuaString const&) -> LuaString& = default;
 
-  [[nodiscard("String conversion creates new object")]] auto toString() const -> String;
-  [[nodiscard("String view provides access")]] auto view() const -> StringView;
+  [[nodiscard("String pointer needed for access")]] auto ptr() const -> char const* {
+    return m_handle.engine().stringPtr(m_handle.handleIndex());
+  }
+  
+  [[nodiscard("String length needed for operations")]] auto length() const -> size_t {
+    return m_handle.engine().stringLength(m_handle.handleIndex());
+  }
+
+  [[nodiscard("String conversion creates new object")]] auto toString() const -> String {
+    return m_handle.engine().string(m_handle.handleIndex());
+  }
+  
+  [[nodiscard("String view provides access")]] auto view() const -> StringView {
+    return m_handle.engine().stringView(m_handle.handleIndex());
+  }
+  
+  // Provide access to handle component for internal operations
+  [[nodiscard]] auto handleComponent() const -> LuaDetail::LuaHandleComponent const& {
+    return m_handle;
+  }
+  
+  // Convenience accessors for compatibility
+  [[nodiscard]] auto engine() const -> LuaEngine& {
+    return m_handle.engine();
+  }
+  
+  [[nodiscard]] auto handleIndex() const -> int {
+    return m_handle.handleIndex();
+  }
+  
+  auto operator==(LuaString const& rhs) const -> bool {
+    return view() == rhs.view();
+  }
+  
+  auto operator!=(LuaString const& rhs) const -> bool {
+    return !(*this == rhs);
+  }
+
+private:
+  LuaDetail::LuaHandleComponent m_handle;  // COMPOSITION, not inheritance
 };
 
 auto operator==(LuaString const& s1, LuaString const& s2) -> bool;
