@@ -408,25 +408,25 @@ public:
 
 template <typename T>
 struct LuaNullTermWrapper : T {
-  LuaNullTermWrapper() : T() {}
-  LuaNullTermWrapper(LuaNullTermWrapper const& nt) : T(nt) {}
-  LuaNullTermWrapper(LuaNullTermWrapper&& nt) : T(std::move(nt)) {}
-  LuaNullTermWrapper(T const& bt) : T(bt) {}
-  LuaNullTermWrapper(T&& bt) : T(std::move(bt)) {}
+  constexpr LuaNullTermWrapper() : T() {}
+  constexpr LuaNullTermWrapper(LuaNullTermWrapper const& nt) : T(nt) {}
+  constexpr LuaNullTermWrapper(LuaNullTermWrapper&& nt) noexcept : T(std::move(nt)) {}
+  constexpr LuaNullTermWrapper(T const& bt) : T(bt) {}
+  constexpr LuaNullTermWrapper(T&& bt) noexcept : T(std::move(bt)) {}
 
   using T::T;
 
-  auto operator=(LuaNullTermWrapper const& rhs) -> LuaNullTermWrapper& {
+  constexpr auto operator=(LuaNullTermWrapper const& rhs) -> LuaNullTermWrapper& {
     T::operator=(rhs);
     return *this;
   }
 
-  auto operator=(LuaNullTermWrapper&& rhs) -> LuaNullTermWrapper& {
+  constexpr auto operator=(LuaNullTermWrapper&& rhs) noexcept -> LuaNullTermWrapper& {
     T::operator=(std::move(rhs));
     return *this;
   }
 
-  auto operator=(T&& other) -> LuaNullTermWrapper& {
+  constexpr auto operator=(T&& other) -> LuaNullTermWrapper& {
     T::operator=(std::forward<T>(other));
     return *this;
   }
@@ -682,7 +682,7 @@ private:
 
   auto tableLength(bool raw, int handleIndex) -> LuaInt;
 
-  void tableIterate(int handleIndex, std::function<bool(LuaValue, LuaValue)> iterator);
+  void tableIterate(int handleIndex, std::function_ref<bool(LuaValue, LuaValue)> iterator);
 
   auto tableGetMetatable(int handleIndex) -> std::optional<LuaTable>;
   void tableSetMetatable(int handleIndex, LuaTable const& table);
@@ -1639,19 +1639,19 @@ auto luaTupleReturn(Types&&... args) -> LuaTupleReturn<std::decay_t<Types>...> {
 
 inline LuaReference::LuaReference(LuaDetail::LuaHandle handle) : m_handle(std::move(handle)) {}
 
-inline auto LuaReference::operator==(LuaReference const& rhs) const -> bool {
+inline auto LuaReference::operator==(LuaReference const& rhs) const noexcept -> bool {
   return std::tie(m_handle.engine, m_handle.handleIndex) == std::tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
 }
 
-inline auto LuaReference::operator!=(LuaReference const& rhs) const -> bool {
+inline auto LuaReference::operator!=(LuaReference const& rhs) const noexcept -> bool {
   return std::tie(m_handle.engine, m_handle.handleIndex) != std::tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
 }
 
-inline auto LuaReference::engine() const -> LuaEngine& {
+inline auto LuaReference::engine() const noexcept -> LuaEngine& {
   return *m_handle.engine;
 }
 
-inline auto LuaReference::handleIndex() const -> int {
+inline auto LuaReference::handleIndex() const noexcept -> int {
   return m_handle.handleIndex;
 }
 
@@ -1911,12 +1911,12 @@ auto LuaContext::luaTo(LuaValue const& v) -> T {
   return engine().luaTo<T>(v);
 }
 
-template <typename Container>
+template <LuaContainer Container>
 auto LuaContext::createTable(Container const& map) -> LuaTable {
   return engine().createTable(map);
 }
 
-template <typename Container>
+template <LuaContainer Container>
 auto LuaContext::createArrayTable(Container const& array) -> LuaTable {
   return engine().createArrayTable(array);
 }
@@ -1989,7 +1989,7 @@ auto LuaEngine::luaTo(LuaValue const& v) -> T {
   throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
 }
 
-template <typename Container>
+template <LuaContainer Container>
 auto LuaEngine::createTable(Container const& map) -> LuaTable {
   auto table = createTable(0, map.size());
   for (auto const& p : map)
@@ -1997,13 +1997,11 @@ auto LuaEngine::createTable(Container const& map) -> LuaTable {
   return table;
 }
 
-template <typename Container>
+template <LuaContainer Container>
 auto LuaEngine::createArrayTable(Container const& array) -> LuaTable {
   auto table = createTable(array.size(), 0);
-  int i = 1;
-  for (auto const& elem : array) {
-    table.set(LuaInt(i), elem);
-    ++i;
+  for (auto const& [i, elem] : std::views::enumerate(array)) {
+    table.set(LuaInt(i + 1), elem);
   }
   return table;
 }

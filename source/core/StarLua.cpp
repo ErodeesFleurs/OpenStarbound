@@ -880,7 +880,7 @@ auto LuaEngine::tableLength(bool raw, int handleIndex) -> LuaInt {
   }
 }
 
-void LuaEngine::tableIterate(int handleIndex, std::function<bool(LuaValue key, LuaValue value)> iterator) {
+void LuaEngine::tableIterate(int handleIndex, std::function_ref<bool(LuaValue key, LuaValue value)> iterator) {
   lua_checkstack(m_state, 4);
 
   pushHandle(m_state, handleIndex);
