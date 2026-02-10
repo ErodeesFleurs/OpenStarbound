@@ -13,6 +13,21 @@ import std;
 
 namespace Star {
 
+// C++20 Concepts for Lua type constraints
+template <typename T>
+concept LuaConvertible = requires(LuaEngine& engine, T value, LuaValue luaValue) {
+  { LuaConverter<std::decay_t<T>>::from(engine, value) } -> std::same_as<LuaValue>;
+  { LuaConverter<std::decay_t<T>>::to(engine, luaValue) };
+};
+
+template <typename T>
+concept LuaContainer = requires(T container) {
+  typename T::value_type;
+  { container.begin() } -> std::input_iterator;
+  { container.end() } -> std::input_iterator;
+  { container.size() } -> std::convertible_to<std::size_t>;
+};
+
 class LuaEngine;
 using LuaEnginePtr = RefPtr<LuaEngine>;
 
@@ -141,8 +156,8 @@ public:
   auto operator==(LuaReference const& rhs) const -> bool;
   auto operator!=(LuaReference const& rhs) const -> bool;
 
-  [[nodiscard]] auto engine() const -> LuaEngine&;
-  [[nodiscard]] auto handleIndex() const -> int;
+  [[nodiscard("Engine reference must be used")]] auto engine() const -> LuaEngine&;
+  [[nodiscard("Handle index needed for Lua operations")]] auto handleIndex() const -> int;
 
 private:
   LuaDetail::LuaHandle m_handle;
@@ -152,11 +167,11 @@ class LuaString : public LuaReference {
 public:
   using LuaReference::LuaReference;
 
-  [[nodiscard]] auto ptr() const -> char const*;
-  [[nodiscard]] auto length() const -> size_t;
+  [[nodiscard("String pointer needed for access")]] auto ptr() const -> char const*;
+  [[nodiscard("String length needed for operations")]] auto length() const -> size_t;
 
-  [[nodiscard]] auto toString() const -> String;
-  [[nodiscard]] auto view() const -> StringView;
+  [[nodiscard("String conversion creates new object")]] auto toString() const -> String;
+  [[nodiscard("String view provides access")]] auto view() const -> StringView;
 };
 
 auto operator==(LuaString const& s1, LuaString const& s2) -> bool;
@@ -200,7 +215,7 @@ public:
   void remove(char const* key) const;
 
   // Result of lua # operator
-  [[nodiscard]] auto length() const -> LuaInt;
+  [[nodiscard("Table length needed for iteration")]] auto length() const -> LuaInt;
 
   // If iteration function returns bool, returning false signals stopping.
   template <typename Function>
@@ -209,7 +224,7 @@ public:
   template <typename Return, typename... Args, typename Function>
   void iterateWithSignature(Function&& func) const;
 
-  [[nodiscard]] auto getMetatable() const -> std::optional<LuaTable>;
+  [[nodiscard("Metatable may be empty")]] auto getMetatable() const -> std::optional<LuaTable>;
   void setMetatable(LuaTable const& table) const;
 
   template <typename T = LuaValue, typename K>
@@ -222,7 +237,7 @@ public:
   template <typename T>
   void rawSet(char const* key, T t) const;
 
-  [[nodiscard]] auto rawLength() const -> LuaInt;
+  [[nodiscard("Raw table length needed for operations")]] auto rawLength() const -> LuaInt;
 };
 
 class LuaFunction : public LuaReference {
@@ -245,11 +260,11 @@ public:
   // Will return a value if the thread has yielded a value, and nothing if the
   // thread has finished execution
   template <typename Ret = LuaValue, typename... Args>
-  auto resume(Args const&... args) -> std::optional<Ret>;
+  [[nodiscard("Thread result must be checked")]] auto resume(Args const&... args) -> std::optional<Ret>;
   template <typename Ret = LuaValue, typename... Args>
-  auto resume(Args const&... args) const -> std::optional<Ret>;
+  [[nodiscard("Thread result must be checked")]] auto resume(Args const&... args) const -> std::optional<Ret>;
   void pushFunction(LuaFunction const& func) const;
-  [[nodiscard]] auto status() const -> Status;
+  [[nodiscard("Thread status needed for control flow")]] auto status() const -> Status;
 };
 
 // Keeping LuaReferences in LuaUserData will lead to circular references to
@@ -260,13 +275,13 @@ public:
   using LuaReference::LuaReference;
 
   template <typename T>
-  [[nodiscard]] auto is() const -> bool;
+  [[nodiscard("Type check result must be used")]] auto is() const -> bool;
 
   template <typename T>
-  auto get() const -> T&;
+  [[nodiscard("UserData reference must be used")]] auto get() const -> T&;
 };
 
-LuaValue const LuaNil = LuaValue();
+inline constexpr LuaValue LuaNil = LuaValue();
 
 class LuaCallbacks {
 public:
@@ -282,7 +297,7 @@ public:
 
   auto merge(LuaCallbacks const& callbacks) -> LuaCallbacks&;
 
-  [[nodiscard]] auto callbacks() const -> StringMap<LuaDetail::LuaWrappedFunction> const&;
+  [[nodiscard("Callback map needed for registration")]] auto callbacks() const -> StringMap<LuaDetail::LuaWrappedFunction> const&;
 
 private:
   StringMap<LuaDetail::LuaWrappedFunction> m_callbacks;
@@ -297,7 +312,7 @@ public:
   template <typename Return, typename... Args, typename Function>
   void registerMethodWithSignature(String name, Function&& func);
 
-  [[nodiscard]] auto methods() const -> StringMap<LuaDetail::LuaWrappedFunction> const&;
+  [[nodiscard("Method map needed for registration")]] auto methods() const -> StringMap<LuaDetail::LuaWrappedFunction> const&;
 
 private:
   StringMap<LuaDetail::LuaWrappedFunction> m_methods;
@@ -325,7 +340,7 @@ public:
   template <typename T = LuaValue>
   auto getPath(String path) const -> T;
   // Shorthand for getPath != LuaNil
-  [[nodiscard]] auto containsPath(String path) const -> bool;
+  [[nodiscard("Path existence check must be used")]] auto containsPath(String path) const -> bool;
   // Will create new tables if the key contains paths that are nil
   template <typename T>
   void setPath(String path, T value);
@@ -333,6 +348,7 @@ public:
   // Load the given code (either source or bytecode) into this context as a new
   // chunk.  It is not necessary to provide the name again if given bytecode.
   void load(char const* contents, size_t size, char const* name = nullptr);
+  void load(std::span<char const> contents, char const* name = nullptr);
   void load(String const& contents, String const& name = String());
   void load(ByteArray const& contents, String const& name = String());
 
@@ -374,10 +390,10 @@ public:
 
   auto createTable() -> LuaTable;
 
-  template <typename Container>
+  template <LuaContainer Container>
   auto createTable(Container const& map) -> LuaTable;
 
-  template <typename Container>
+  template <LuaContainer Container>
   auto createArrayTable(Container const& array) -> LuaTable;
 
   template <typename Function>
@@ -495,29 +511,29 @@ public:
   // recursive entries into LuaEngine accumulate the same instruction counter.
   // 0 disables the instruction limit.
   void setInstructionLimit(std::uint64_t instructionLimit = 0);
-  [[nodiscard]] auto instructionLimit() const -> std::uint64_t;
+  [[nodiscard("Instruction limit needed for monitoring")]] auto instructionLimit() const -> std::uint64_t;
 
   // If profiling is enabled, then every 'measureInterval' instructions, the
   // function call stack will be recorded, and a summary of function timing can
   // be printed using profileReport
   void setProfilingEnabled(bool profilingEnabled);
-  [[nodiscard]] auto profilingEnabled() const -> bool;
+  [[nodiscard("Profiling state needed for conditional logic")]] auto profilingEnabled() const -> bool;
 
   // Print a summary of the profiling data gathered since profiling was last
   // enabled.
-  auto getProfile() -> List<LuaProfileEntry>;
+  [[nodiscard("Profile data must be used")]] auto getProfile() -> List<LuaProfileEntry>;
 
   // If an instruction limit is set or profiling is neabled, this field
   // describes the resolution of instruction count measurement, and affects the
   // accuracy of profiling and the instruction count limit.  Defaults to 1000
   void setInstructionMeasureInterval(unsigned measureInterval = 1000);
-  [[nodiscard]] auto instructionMeasureInterval() const -> unsigned;
+  [[nodiscard("Measure interval needed for configuration")]] auto instructionMeasureInterval() const -> unsigned;
 
   // Sets the LuaEngine recursion limit, limiting the number of times a
   // LuaEngine call may directly or inderectly trigger a call back into the
   // LuaEngine, preventing a C++ stack overflow.  0 disables the limit.
   void setRecursionLimit(unsigned recursionLimit = 0);
-  [[nodiscard]] auto recursionLimit() const -> unsigned;
+  [[nodiscard("Recursion limit needed for safety checks")]] auto recursionLimit() const -> unsigned;
 
   // Compile a given script into bytecode.  If name is given, then it will be
   // used as the internal name for the resulting chunk and will provide better
@@ -527,6 +543,7 @@ public:
   // execute in two separate contexts and truly be isolated is to compile the
   // script to bytecode and load once in each context as a separate chunk.
   auto compile(char const* contents, size_t size, char const* name = nullptr) -> ByteArray;
+  auto compile(std::span<char const> contents, char const* name = nullptr) -> ByteArray;
   auto compile(String const& contents, String const& name = String()) -> ByteArray;
   auto compile(ByteArray const& contents, String const& name = String()) -> ByteArray;
 
@@ -556,10 +573,10 @@ public:
 
   auto createTable(int narr = 0, int nrec = 0) -> LuaTable;
 
-  template <typename Container>
+  template <LuaContainer Container>
   auto createTable(Container const& map) -> LuaTable;
 
-  template <typename Container>
+  template <LuaContainer Container>
   auto createArrayTable(Container const& array) -> LuaTable;
 
   // Creates a function and deduces the signature of the function using
@@ -611,10 +628,10 @@ public:
   void tuneAutoGarbageCollection(float pause, float stepMultiplier);
 
   // Bytes in use by lua
-  [[nodiscard]] auto memoryUsage() const -> std::size_t;
+  [[nodiscard("Memory usage information must be used")]] auto memoryUsage() const -> std::size_t;
 
   // Enforce null-terminated string conversion as long as the returned enforcer object is in scope.
-  auto nullTerminate() -> LuaNullEnforcer;
+  [[nodiscard("Null enforcer RAII object must be kept alive")]] auto nullTerminate() -> LuaNullEnforcer;
   // Disables null-termination enforcement
   void setNullTerminated(bool nullTerminated);
   void addImGui();

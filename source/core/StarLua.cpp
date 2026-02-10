@@ -95,6 +95,10 @@ void LuaContext::load(char const* contents, size_t size, char const* name) {
   engine().contextLoad(handleIndex(), contents, size, name);
 }
 
+void LuaContext::load(std::span<char const> contents, char const* name) {
+  engine().contextLoad(handleIndex(), contents.data(), contents.size(), name);
+}
+
 void LuaContext::load(String const& contents, String const& name) {
   load(contents.utf8Ptr(), contents.utf8Size(), name.utf8Ptr());
 }
@@ -471,6 +475,10 @@ auto LuaEngine::compile(char const* contents, size_t size, char const* name) -> 
 
 auto LuaEngine::compile(String const& contents, String const& name) -> ByteArray {
   return compile(contents.utf8Ptr(), contents.utf8Size(), name.empty() ? nullptr : name.utf8Ptr());
+}
+
+auto LuaEngine::compile(std::span<char const> contents, char const* name) -> ByteArray {
+  return compile(contents.data(), contents.size(), name);
 }
 
 auto LuaEngine::compile(ByteArray const& contents, String const& name) -> ByteArray {
