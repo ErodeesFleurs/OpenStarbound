@@ -13,21 +13,6 @@ import std;
 
 namespace Star {
 
-// C++20 Concepts for Lua type constraints
-template <typename T>
-concept LuaConvertible = requires(LuaEngine& engine, T value, LuaValue luaValue) {
-  { LuaConverter<std::decay_t<T>>::from(engine, value) } -> std::same_as<LuaValue>;
-  { LuaConverter<std::decay_t<T>>::to(engine, luaValue) };
-};
-
-template <typename T>
-concept LuaContainer = requires(T container) {
-  typename T::value_type;
-  { container.begin() } -> std::input_iterator;
-  { container.end() } -> std::input_iterator;
-  { container.size() } -> std::convertible_to<std::size_t>;
-};
-
 class LuaEngine;
 using LuaEnginePtr = RefPtr<LuaEngine>;
 
@@ -410,9 +395,9 @@ template <typename T>
 struct LuaNullTermWrapper : T {
   constexpr LuaNullTermWrapper() : T() {}
   constexpr LuaNullTermWrapper(LuaNullTermWrapper const& nt) : T(nt) {}
-  constexpr LuaNullTermWrapper(LuaNullTermWrapper&& nt) noexcept : T(std::move(nt)) {}
+  constexpr LuaNullTermWrapper(LuaNullTermWrapper&& nt) noexcept(std::is_nothrow_move_constructible_v<T>) : T(std::move(nt)) {}
   constexpr LuaNullTermWrapper(T const& bt) : T(bt) {}
-  constexpr LuaNullTermWrapper(T&& bt) noexcept : T(std::move(bt)) {}
+  constexpr LuaNullTermWrapper(T&& bt) noexcept(std::is_nothrow_move_constructible_v<T>) : T(std::move(bt)) {}
 
   using T::T;
 
@@ -421,7 +406,7 @@ struct LuaNullTermWrapper : T {
     return *this;
   }
 
-  constexpr auto operator=(LuaNullTermWrapper&& rhs) noexcept -> LuaNullTermWrapper& {
+  constexpr auto operator=(LuaNullTermWrapper&& rhs) noexcept(std::is_nothrow_move_assignable_v<T>) -> LuaNullTermWrapper& {
     T::operator=(std::move(rhs));
     return *this;
   }
@@ -452,6 +437,21 @@ private:
 // the 'to' method can also return a bare T if conversion cannot fail.
 template <typename T>
 struct LuaConverter;
+
+// C++20 Concepts for Lua type constraints
+template <typename T>
+concept LuaConvertible = requires(LuaEngine& engine, T value, LuaValue luaValue) {
+  { LuaConverter<std::decay_t<T>>::from(engine, value) } -> std::same_as<LuaValue>;
+  { LuaConverter<std::decay_t<T>>::to(engine, luaValue) };
+};
+
+template <typename T>
+concept LuaContainer = requires(T container) {
+  typename T::value_type;
+  { container.begin() } -> std::input_iterator;
+  { container.end() } -> std::input_iterator;
+  { container.size() } -> std::convertible_to<std::size_t>;
+};
 
 // UserData types that want to expose methods to lua should specialize this
 // template.
@@ -523,14 +523,14 @@ public:
   // enabled.
   [[nodiscard("Profile data must be used")]] auto getProfile() -> List<LuaProfileEntry>;
 
-  // If an instruction limit is set or profiling is neabled, this field
+  // If an instruction limit is set or profiling is enabled, this field
   // describes the resolution of instruction count measurement, and affects the
   // accuracy of profiling and the instruction count limit.  Defaults to 1000
   void setInstructionMeasureInterval(unsigned measureInterval = 1000);
   [[nodiscard("Measure interval needed for configuration")]] auto instructionMeasureInterval() const -> unsigned;
 
   // Sets the LuaEngine recursion limit, limiting the number of times a
-  // LuaEngine call may directly or inderectly trigger a call back into the
+  // LuaEngine call may directly or indirectly trigger a call back into the
   // LuaEngine, preventing a C++ stack overflow.  0 disables the limit.
   void setRecursionLimit(unsigned recursionLimit = 0);
   [[nodiscard("Recursion limit needed for safety checks")]] auto recursionLimit() const -> unsigned;
@@ -1647,7 +1647,7 @@ inline auto LuaReference::operator!=(LuaReference const& rhs) const noexcept -> 
   return std::tie(m_handle.engine, m_handle.handleIndex) != std::tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
 }
 
-inline auto LuaReference::engine() const noexcept -> LuaEngine& {
+inline auto LuaReference::engine() const -> LuaEngine& {
   return *m_handle.engine;
 }
 
@@ -2000,6 +2000,7 @@ auto LuaEngine::createTable(Container const& map) -> LuaTable {
 template <LuaContainer Container>
 auto LuaEngine::createArrayTable(Container const& array) -> LuaTable {
   auto table = createTable(array.size(), 0);
+  // Using std::views::enumerate from C++23 (included in C++26)
   for (auto const& [i, elem] : std::views::enumerate(array)) {
     table.set(LuaInt(i + 1), elem);
   }
