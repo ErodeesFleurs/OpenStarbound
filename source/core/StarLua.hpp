@@ -595,30 +595,38 @@ public:
   // Generic from/to lua conversion, calls template specialization of
   // LuaConverter for actual conversion.
   template <typename T>
+    requires LuaConvertible<T>
   auto luaFrom(T&& t) -> LuaValue;
   template <typename T>
+    requires LuaConvertible<T>
   auto luaFrom(T const& t) -> LuaValue;
   
   // Modern API: Returns std::expected for structured error handling (C++23)
   template <typename T>
+    requires LuaConvertible<T>
   [[nodiscard("Conversion result must be checked")]]
   auto luaConvertTo(LuaValue const& v) -> std::expected<T, LuaConversionError>;
   template <typename T>
+    requires LuaConvertible<T>
   [[nodiscard("Conversion result must be checked")]]
   auto luaConvertTo(LuaValue&& v) -> std::expected<T, LuaConversionError>;
   
   // Legacy API: Returns std::optional (deprecated - use luaConvertTo)
   template <typename T>
+    requires LuaConvertible<T>
   [[deprecated("Use luaConvertTo() for better error messages")]]
   auto luaMaybeTo(LuaValue const& v) -> std::optional<T>;
   template <typename T>
+    requires LuaConvertible<T>
   [[deprecated("Use luaConvertTo() for better error messages")]]
   auto luaMaybeTo(LuaValue&& v) -> std::optional<T>;
 
   // Wraps luaConvertTo, throws an exception if conversion fails.
   template <typename T>
+    requires LuaConvertible<T>
   auto luaTo(LuaValue const& v) -> T;
   template <typename T>
+    requires LuaConvertible<T>
   auto luaTo(LuaValue&& v) -> T;
 
   auto createString(std::string const& str) -> LuaString;
@@ -2006,27 +2014,32 @@ auto LuaUserDataConverter<T>::to([[maybe_unused]] LuaEngine& engine, LuaValue co
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaFrom(T&& t) -> LuaValue {
   return LuaConverter<std::decay_t<T>>::from(*this, std::forward<T>(t));
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaFrom(T const& t) -> LuaValue {
   return LuaConverter<T>::from(*this, t);
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaMaybeTo(LuaValue&& v) -> std::optional<T> {
   return LuaConverter<T>::to(*this, std::move(v));
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaMaybeTo(LuaValue const& v) -> std::optional<T> {
   return LuaConverter<T>::to(*this, v);
 }
 
 // Modern std::expected-based conversion (C++23)
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaConvertTo(LuaValue const& v) -> std::expected<T, LuaConversionError> {
   if constexpr (requires { LuaConverter<T>::tryTo(*this, v); }) {
     // Use modern tryTo if available
@@ -2046,6 +2059,7 @@ auto LuaEngine::luaConvertTo(LuaValue const& v) -> std::expected<T, LuaConversio
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaConvertTo(LuaValue&& v) -> std::expected<T, LuaConversionError> {
   if constexpr (requires { LuaConverter<T>::tryTo(*this, std::move(v)); }) {
     return LuaConverter<T>::tryTo(*this, std::move(v));
@@ -2064,6 +2078,7 @@ auto LuaEngine::luaConvertTo(LuaValue&& v) -> std::expected<T, LuaConversionErro
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaTo(LuaValue&& v) -> T {
   auto res = luaConvertTo<T>(std::move(v));
   if (res)
@@ -2072,6 +2087,7 @@ auto LuaEngine::luaTo(LuaValue&& v) -> T {
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaTo(LuaValue const& v) -> T {
   auto res = luaConvertTo<T>(v);
   if (res)
