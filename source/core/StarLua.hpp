@@ -2001,6 +2001,7 @@ template <LuaContainer Container>
 auto LuaEngine::createArrayTable(Container const& array) -> LuaTable {
   auto table = createTable(array.size(), 0);
   // Using std::views::enumerate from C++23 (included in C++26)
+  // enumerate provides 0-based indices; +1 converts to Lua's 1-based indexing
   for (auto const& [i, elem] : std::views::enumerate(array)) {
     table.set(LuaInt(i + 1), elem);
   }
