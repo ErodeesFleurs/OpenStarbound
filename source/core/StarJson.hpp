@@ -1,13 +1,13 @@
 #pragma once
 
 #include "StarConfig.hpp"
-#include "StarDataStream.hpp"
 #include "StarDataStreamExtra.hpp" // IWYU pragma: export
 #include "StarException.hpp"
 #include "StarString.hpp"
 #include "StarVariant.hpp"
 
 import std;
+import star.data_stream;
 
 namespace Star {
 
@@ -281,14 +281,14 @@ auto operator<<(std::ostream& os, JsonObject const& v) -> std::ostream&;
 
 // Serialize json to DataStream.  Strings are stored as UTF-8, ints are stored
 // as VLQ, doubles as 64 bit.
-auto operator<<(DataStream& ds, Json const& v) -> DataStream&;
-auto operator>>(DataStream& ds, Json& v) -> DataStream&;
+auto operator<<(data_stream& ds, Json const& v) -> data_stream&;
+auto operator>>(data_stream& ds, Json& v) -> data_stream&;
 
 // Convenience methods for Json containers
-auto operator<<(DataStream& ds, JsonArray const& l) -> DataStream&;
-auto operator>>(DataStream& ds, JsonArray& l) -> DataStream&;
-auto operator<<(DataStream& ds, JsonObject const& m) -> DataStream&;
-auto operator>>(DataStream& ds, JsonObject& m) -> DataStream&;
+auto operator<<(data_stream& ds, JsonArray const& l) -> data_stream&;
+auto operator>>(data_stream& ds, JsonArray& l) -> data_stream&;
+auto operator<<(data_stream& ds, JsonObject const& m) -> data_stream&;
+auto operator>>(data_stream& ds, JsonObject& m) -> data_stream&;
 
 // Merges the two given json values and returns the result, by the following
 // rules (applied in order):  If the base value is null, returns the merger.

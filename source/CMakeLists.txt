@@ -150,36 +150,36 @@ set(BUILD_SHARED_LIBS OFF)
 set(STAR_CORE_INCLUDES ${PROJECT_SOURCE_DIR}/core
     ${PROJECT_SOURCE_DIR}/core/scripting
 )
-set(STAR_BASE_INCLUDES
-    ${PROJECT_SOURCE_DIR}/base
-    ${PROJECT_SOURCE_DIR}/base/scripting
-)
-set(STAR_GAME_INCLUDES
-    ${PROJECT_SOURCE_DIR}/game
-    ${PROJECT_SOURCE_DIR}/game/interfaces
-    ${PROJECT_SOURCE_DIR}/game/items
-    ${PROJECT_SOURCE_DIR}/game/objects
-    ${PROJECT_SOURCE_DIR}/game/scripting
-    ${PROJECT_SOURCE_DIR}/game/terrain
-)
+# set(STAR_BASE_INCLUDES
+#     ${PROJECT_SOURCE_DIR}/base
+#     ${PROJECT_SOURCE_DIR}/base/scripting
+# )
+# set(STAR_GAME_INCLUDES
+#     ${PROJECT_SOURCE_DIR}/game
+#     ${PROJECT_SOURCE_DIR}/game/interfaces
+#     ${PROJECT_SOURCE_DIR}/game/items
+#     ${PROJECT_SOURCE_DIR}/game/objects
+#     ${PROJECT_SOURCE_DIR}/game/scripting
+#     ${PROJECT_SOURCE_DIR}/game/terrain
+# )
 
-set(STAR_PLATFORM_INCLUDES ${PROJECT_SOURCE_DIR}/platform)
+# set(STAR_PLATFORM_INCLUDES ${PROJECT_SOURCE_DIR}/platform)
 
 add_subdirectory(extern)
 add_subdirectory(core)
-add_subdirectory(base)
-add_subdirectory(platform)
-add_subdirectory(game)
-add_subdirectory(server)
-add_subdirectory(utility)
+# add_subdirectory(base)
+# add_subdirectory(platform)
+# add_subdirectory(game)
+# add_subdirectory(server)
+# add_subdirectory(utility)
 
-if(STAR_BUILD_GUI)
-    add_subdirectory(application)
-    add_subdirectory(rendering)
-    add_subdirectory(windowing)
-    add_subdirectory(frontend)
-    add_subdirectory(client)
-endif()
+# if(STAR_BUILD_GUI)
+#     add_subdirectory(application)
+#     add_subdirectory(rendering)
+#     add_subdirectory(windowing)
+#     add_subdirectory(frontend)
+#     add_subdirectory(client)
+# endif()
 
 # option(BUILD_TESTING "Build tests" OFF)
 # if(BUILD_TESTING)

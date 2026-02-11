@@ -247,9 +247,9 @@ void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementCon
       return m_movementController->pathfinding();
     });
 
-    callbacks.registerCallbackWithSignature<bool>("autoClearControls", bind(&LuaActorMovementComponent::autoClearControls, this));
-    callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", bind(&LuaActorMovementComponent::setAutoClearControls, this, std::placeholders::_1));
-    callbacks.registerCallbackWithSignature<void>("clearControls", bind(&LuaActorMovementComponent::clearControls, this));
+    callbacks.registerCallbackWithSignature<bool>("autoClearControls", std::bind(&LuaActorMovementComponent::autoClearControls, this));
+    callbacks.registerCallbackWithSignature<void, bool>("setAutoClearControls", std::bind(&LuaActorMovementComponent::setAutoClearControls, this, std::placeholders::_1));
+    callbacks.registerCallbackWithSignature<void>("clearControls", std::bind(&LuaActorMovementComponent::clearControls, this));
 
     Base::addCallbacks("mcontroller", callbacks);
 

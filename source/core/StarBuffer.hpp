@@ -1,7 +1,6 @@
-#pragma once
+module;
 
 #include "StarIODevice.hpp"
-#include "StarString.hpp"
 
 import std;
 

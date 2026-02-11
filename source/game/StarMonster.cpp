@@ -7,6 +7,8 @@
 #include "StarItemDrop.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+#include "StarLuaConverters.hpp"    // IWYU pragma: export
+#include "StarLuaGameConverters.hpp"// IWYU pragma: export
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarRoot.hpp"
 #include "StarRootLuaBindings.hpp"

@@ -73,21 +73,21 @@ SET_TARGET_PROPERTIES(star_extern PROPERTIES C_VISIBILITY_PRESET hidden)
 
 # CTRE
 
-SET(CTRE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-SET(CTRE_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-ADD_SUBDIRECTORY(ctre EXCLUDE_FROM_ALL)
+# SET(CTRE_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+# SET(CTRE_BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
+# ADD_SUBDIRECTORY(ctre EXCLUDE_FROM_ALL)
 
-IF (TARGET ctre)
-    ADD_LIBRARY(ctre_module STATIC)
-    TARGET_LINK_LIBRARIES(ctre_module PUBLIC ctre)
-    TARGET_SOURCES(ctre_module
-        PUBLIC
-        FILE_SET CXX_MODULES
-        BASE_DIRS ctre/
-        FILES ctre/ctre.cppm
-    )
-    list(APPEND LOCAL_EXT_LIBS ctre_module)
-ENDIF()
+# IF (TARGET ctre)
+#     ADD_LIBRARY(ctre_module STATIC)
+#     TARGET_LINK_LIBRARIES(ctre_module PUBLIC ctre)
+#     TARGET_SOURCES(ctre_module
+#         PUBLIC
+#         FILE_SET CXX_MODULES
+#         BASE_DIRS ctre/
+#         FILES ctre/ctre.cppm
+#     )
+#     list(APPEND LOCAL_EXT_LIBS ctre_module)
+# ENDIF()
 
 # --- RE2 ---
 

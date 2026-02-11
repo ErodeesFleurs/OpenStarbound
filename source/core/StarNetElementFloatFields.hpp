@@ -73,7 +73,7 @@ void NetElementFloating<T>::set(T value) {
   if (m_value != value) {
     // Only mark the step as updated here if it actually would change the
     // transmitted value.
-    if (!m_fixedPointBase || round(m_value / *m_fixedPointBase) != round(value / *m_fixedPointBase))
+    if (!m_fixedPointBase || std::round(m_value / *m_fixedPointBase) != std::round(value / *m_fixedPointBase))
       m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
 
     m_value = value;

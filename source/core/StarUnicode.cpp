@@ -8,177 +8,177 @@ import std;
 namespace Star {
 
 void throwInvalidUtf8Sequence() {
-  throw UnicodeException("Invalid UTF-8 code unit sequence in utf8Length");
+	throw UnicodeException("Invalid UTF-8 code unit sequence in utf8Length");
 }
 
 void throwMissingUtf8End() {
-  throw UnicodeException("UTF-8 string missing trailing code units in utf8Length");
+	throw UnicodeException("UTF-8 string missing trailing code units in utf8Length");
 }
 
 void throwInvalidUtf32CodePoint(Utf32Type val) {
-  throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (std::int32_t)val);
+	throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (std::int32_t)val);
 }
 
 auto utf8Length(const Utf8Type* utf8, std::size_t remain) -> std::size_t {
-  bool stopOnNull = remain == std::numeric_limits<std::size_t>::max();
-  std::size_t length = 0;
+	bool stopOnNull = remain == std::numeric_limits<std::size_t>::max();
+	std::size_t length = 0;
 
-  while (true) {
-    if (remain == 0)
-      break;
+	while (true) {
+		if (remain == 0)
+			break;
 
-    if (stopOnNull && utf8[0] == 0)
-      break;
+		if (stopOnNull && utf8[0] == 0)
+			break;
 
-    if ((utf8[0] & 0x80) == 0x00) {
-      ++length;
-      ++utf8;
-      --remain;
-      continue;
-    }
+		if ((utf8[0] & 0x80) == 0x00) {
+			++length;
+			++utf8;
+			--remain;
+			continue;
+		}
 
-    if (remain == 1)
-      throwMissingUtf8End();
+		if (remain == 1)
+			throwMissingUtf8End();
 
-    if ((utf8[0] & 0xe0) == 0xc0 && (utf8[1] & 0xc0) == 0x80) {
-      if (((utf8[0] & 0x1fL) << 6) >= 0x00000080L) {
-        ++length;
-        utf8 += 2;
-        remain -= 2;
-        continue;
-      } else {
-        throwInvalidUtf8Sequence();
-      }
-    }
+		if ((utf8[0] & 0xe0) == 0xc0 && (utf8[1] & 0xc0) == 0x80) {
+			if (((utf8[0] & 0x1fL) << 6) >= 0x00000080L) {
+				++length;
+				utf8 += 2;
+				remain -= 2;
+				continue;
+			} else {
+				throwInvalidUtf8Sequence();
+			}
+		}
 
-    if (remain == 2)
-      throwMissingUtf8End();
+		if (remain == 2)
+			throwMissingUtf8End();
 
-    if ((utf8[0] & 0xf0) == 0xe0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80) {
-      if ((((utf8[0] & 0x0fL) << 12) | ((utf8[1] & 0x3fL) << 6)) >= 0x00000800L) {
-        ++length;
-        utf8 += 3;
-        remain -= 3;
-        continue;
-      } else {
-        throwInvalidUtf8Sequence();
-      }
-    }
+		if ((utf8[0] & 0xf0) == 0xe0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80) {
+			if ((((utf8[0] & 0x0fL) << 12) | ((utf8[1] & 0x3fL) << 6)) >= 0x00000800L) {
+				++length;
+				utf8 += 3;
+				remain -= 3;
+				continue;
+			} else {
+				throwInvalidUtf8Sequence();
+			}
+		}
 
-    if (remain == 3)
-      throwMissingUtf8End();
+		if (remain == 3)
+			throwMissingUtf8End();
 
-    if ((utf8[0] & 0xf8) == 0xf0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80 && (utf8[3] & 0xc0) == 0x80) {
-      if ((((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12)) >= 0x00010000L) {
-        ++length;
-        utf8 += 4;
-        remain -= 4;
-        continue;
-      } else {
-        throwInvalidUtf8Sequence();
-      }
-    } else {
-      throwInvalidUtf8Sequence();
-    }
-  }
+		if ((utf8[0] & 0xf8) == 0xf0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80 && (utf8[3] & 0xc0) == 0x80) {
+			if ((((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12)) >= 0x00010000L) {
+				++length;
+				utf8 += 4;
+				remain -= 4;
+				continue;
+			} else {
+				throwInvalidUtf8Sequence();
+			}
+		} else {
+			throwInvalidUtf8Sequence();
+		}
+	}
 
-  return length;
+	return length;
 }
 
 auto utf8DecodeChar(const Utf8Type* utf8, Utf32Type* utf32, std::size_t remain) -> std::size_t {
-  const Utf8Type* start = utf8;
-  bool stopOnNull = remain == std::numeric_limits<std::size_t>::max();
+	const Utf8Type* start = utf8;
+	bool stopOnNull = remain == std::numeric_limits<std::size_t>::max();
 
-  while (true) {
-    if (remain == 0)
-      break;
+	while (true) {
+		if (remain == 0)
+			break;
 
-    if (stopOnNull && utf8[0] == 0)
-      break;
+		if (stopOnNull && utf8[0] == 0)
+			break;
 
-    if ((utf8[0] & 0x80) == 0x00) {
-      *utf32 = utf8[0];
-      return utf8 - start + 1;
-    }
+		if ((utf8[0] & 0x80) == 0x00) {
+			*utf32 = utf8[0];
+			return utf8 - start + 1;
+		}
 
-    if (remain == 1)
-      throwMissingUtf8End();
+		if (remain == 1)
+			throwMissingUtf8End();
 
-    if ((utf8[0] & 0xe0) == 0xc0 && (utf8[1] & 0xc0) == 0x80) {
-      *utf32 = ((utf8[0] & 0x1fL) << 6) | ((utf8[1] & 0x3fL) << 0);
-      if (*utf32 >= 0x00000080L)
-        return utf8 - start + 2;
-      else
-        throwInvalidUtf8Sequence();
-    }
+		if ((utf8[0] & 0xe0) == 0xc0 && (utf8[1] & 0xc0) == 0x80) {
+			*utf32 = ((utf8[0] & 0x1fL) << 6) | ((utf8[1] & 0x3fL) << 0);
+			if (*utf32 >= 0x00000080L)
+				return utf8 - start + 2;
+			else
+				throwInvalidUtf8Sequence();
+		}
 
-    if (remain == 2)
-      throwMissingUtf8End();
+		if (remain == 2)
+			throwMissingUtf8End();
 
-    if ((utf8[0] & 0xf0) == 0xe0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80) {
-      *utf32 = ((utf8[0] & 0x0fL) << 12) | ((utf8[1] & 0x3fL) << 6) | ((utf8[2] & 0x3fL) << 0);
-      if (*utf32 >= 0x00000800L)
-        return utf8 - start + 3;
-      else
-        throwInvalidUtf8Sequence();
-    }
+		if ((utf8[0] & 0xf0) == 0xe0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80) {
+			*utf32 = ((utf8[0] & 0x0fL) << 12) | ((utf8[1] & 0x3fL) << 6) | ((utf8[2] & 0x3fL) << 0);
+			if (*utf32 >= 0x00000800L)
+				return utf8 - start + 3;
+			else
+				throwInvalidUtf8Sequence();
+		}
 
-    if (remain == 3)
-      throwMissingUtf8End();
+		if (remain == 3)
+			throwMissingUtf8End();
 
-    if ((utf8[0] & 0xf8) == 0xf0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80 && (utf8[3] & 0xc0) == 0x80) {
-      *utf32 =
-        ((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12) | ((utf8[2] & 0x3fL) << 6) | ((utf8[3] & 0x3fL) << 0);
-      if (*utf32 >= 0x00010000L)
-        return utf8 - start + 4;
-      else
-        throwInvalidUtf8Sequence();
-    } else {
-      throwInvalidUtf8Sequence();
-    }
-  }
+		if ((utf8[0] & 0xf8) == 0xf0 && (utf8[1] & 0xc0) == 0x80 && (utf8[2] & 0xc0) == 0x80 && (utf8[3] & 0xc0) == 0x80) {
+			*utf32 =
+			  ((utf8[0] & 0x07L) << 18) | ((utf8[1] & 0x3fL) << 12) | ((utf8[2] & 0x3fL) << 6) | ((utf8[3] & 0x3fL) << 0);
+			if (*utf32 >= 0x00010000L)
+				return utf8 - start + 4;
+			else
+				throwInvalidUtf8Sequence();
+		} else {
+			throwInvalidUtf8Sequence();
+		}
+	}
 
-  return utf8 - start;
+	return utf8 - start;
 }
 
 auto utf8EncodeChar(Utf8Type* utf8, Utf32Type utf32, std::size_t len) -> std::size_t {
-  if (utf32 > 0x10FFFFu)
-    throwInvalidUtf32CodePoint(utf32);
+	if (utf32 > 0x10FFFFu)
+		throwInvalidUtf32CodePoint(utf32);
 
-  if (utf32 <= 0x0000007fL) {
-    if (len < 1)
-      return 0;
+	if (utf32 <= 0x0000007fL) {
+		if (len < 1)
+			return 0;
 
-    utf8[0] = utf32;
-    return 1;
-  } else if (utf32 <= 0x000007ffL) {
-    if (len < 2)
-      return 0;
+		utf8[0] = utf32;
+		return 1;
+	} else if (utf32 <= 0x000007ffL) {
+		if (len < 2)
+			return 0;
 
-    utf8[0] = 0xc0 | ((utf32 >> 6) & 0x1f);
-    utf8[1] = 0x80 | ((utf32 >> 0) & 0x3f);
+		utf8[0] = 0xc0 | ((utf32 >> 6) & 0x1f);
+		utf8[1] = 0x80 | ((utf32 >> 0) & 0x3f);
 
-    return 2;
-  } else if (utf32 <= 0x0000ffffL) {
-    if (len < 3)
-      return 0;
+		return 2;
+	} else if (utf32 <= 0x0000ffffL) {
+		if (len < 3)
+			return 0;
 
-    utf8[0] = 0xe0 | ((utf32 >> 12) & 0x0f);
-    utf8[1] = 0x80 | ((utf32 >> 6) & 0x3f);
-    utf8[2] = 0x80 | ((utf32 >> 0) & 0x3f);
+		utf8[0] = 0xe0 | ((utf32 >> 12) & 0x0f);
+		utf8[1] = 0x80 | ((utf32 >> 6) & 0x3f);
+		utf8[2] = 0x80 | ((utf32 >> 0) & 0x3f);
 
-    return 3;
-  } else {
-    if (len < 4)
-      return 0;
+		return 3;
+	} else {
+		if (len < 4)
+			return 0;
 
-    utf8[0] = 0xf0 | ((utf32 >> 18) & 0x07);
-    utf8[1] = 0x80 | ((utf32 >> 12) & 0x3f);
-    utf8[2] = 0x80 | ((utf32 >> 6) & 0x3f);
-    utf8[3] = 0x80 | ((utf32 >> 0) & 0x3f);
+		utf8[0] = 0xf0 | ((utf32 >> 18) & 0x07);
+		utf8[1] = 0x80 | ((utf32 >> 12) & 0x3f);
+		utf8[2] = 0x80 | ((utf32 >> 6) & 0x3f);
+		utf8[3] = 0x80 | ((utf32 >> 0) & 0x3f);
 
-    return 4;
-  }
+		return 4;
+	}
 }
 
 static const char32_t MIN_LEAD = 0xd800;
@@ -190,84 +190,84 @@ static const char32_t MIN_PAIR = 0x10000;
 static const char32_t MAX_CODEPOINT = 0x10ffff;
 
 auto hexStringToUtf32(std::string const& codepoint, std::optional<Utf32Type> previousCodepoint) -> Utf32Type {
-  bool continuation = false;
-  if (previousCodepoint && isUtf16LeadSurrogate(*previousCodepoint)) {
-    continuation = true;
-  }
+	bool continuation = false;
+	if (previousCodepoint && isUtf16LeadSurrogate(*previousCodepoint)) {
+		continuation = true;
+	}
 
-  auto hexBytes = hexDecode(codepoint);
-  if (hexBytes.size() < sizeof(Utf32Type)) {
-    ByteArray newHexBytes{(std::size_t)(sizeof(Utf32Type) - hexBytes.size()), (char)'\0'};
-    newHexBytes.append(hexBytes);
-    hexBytes = newHexBytes;
-  }
+	auto hexBytes = hexDecode(codepoint);
+	if (hexBytes.size() < sizeof(Utf32Type)) {
+		ByteArray newHexBytes{(std::size_t)(sizeof(Utf32Type) - hexBytes.size()), (char)'\0'};
+		newHexBytes.append(hexBytes);
+		hexBytes = newHexBytes;
+	}
 
-  if (hexBytes.size() > sizeof(Utf32Type))
-    throw UnicodeException("Codepoint size is too big in parseUnicodeCodepoint");
+	if (hexBytes.size() > sizeof(Utf32Type))
+		throw UnicodeException("Codepoint size is too big in parseUnicodeCodepoint");
 
-  auto res = fromBigEndian(*(Utf32Type*)hexBytes.ptr());
+	auto res = fromBigEndian(*(Utf32Type*)hexBytes.ptr());
 
-  if (continuation) {
-    res = utf32FromUtf16SurrogatePair(*previousCodepoint, res);
-  }
+	if (continuation) {
+		res = utf32FromUtf16SurrogatePair(*previousCodepoint, res);
+	}
 
-  return res;
+	return res;
 }
 
 auto hexStringFromUtf32(Utf32Type character) -> std::string {
-  if (character > MAX_CODEPOINT)
-    throw UnicodeException("Codepoint too big in hexStringFromUtf32");
-  Utf32Type lead;
-  std::optional<Utf32Type> trail;
-  tie(lead, trail) = utf32ToUtf16SurrogatePair(character);
+	if (character > MAX_CODEPOINT)
+		throw UnicodeException("Codepoint too big in hexStringFromUtf32");
+	Utf32Type lead;
+	std::optional<Utf32Type> trail;
+	tie(lead, trail) = utf32ToUtf16SurrogatePair(character);
 
-  char16_t leadOut = toBigEndian((char16_t)lead);
-  auto leadHex = hexEncode(reinterpret_cast<char*>(&leadOut), sizeof(leadOut)).takeUtf8();
+	char16_t leadOut = toBigEndian((char16_t)lead);
+	auto leadHex = hexEncode(reinterpret_cast<char*>(&leadOut), sizeof(leadOut)).take_utf8();
 
-  if (!trail)
-    return leadHex;
+	if (!trail)
+		return leadHex;
 
-  char16_t trailOut = toBigEndian((char16_t)*trail);
-  auto trailHex = hexEncode(reinterpret_cast<char*>(&trailOut), sizeof(trailOut));
+	char16_t trailOut = toBigEndian((char16_t)*trail);
+	auto trailHex = hexEncode(reinterpret_cast<char*>(&trailOut), sizeof(trailOut));
 
-  return (leadHex + trailHex).takeUtf8();
+	return (leadHex + trailHex).take_utf8();
 }
 
 auto isUtf16LeadSurrogate(Utf32Type codepoint) -> bool {
-  return codepoint >= MIN_LEAD && codepoint <= MAX_LEAD;
+	return codepoint >= MIN_LEAD && codepoint <= MAX_LEAD;
 }
 
 auto isUtf16TrailSurrogate(Utf32Type codepoint) -> bool {
-  return codepoint >= MIN_TRAIL && codepoint <= MAX_TRAIL;
+	return codepoint >= MIN_TRAIL && codepoint <= MAX_TRAIL;
 }
 
 auto utf32FromUtf16SurrogatePair(Utf32Type lead, Utf32Type trail) -> Utf32Type {
-  if (!isUtf16LeadSurrogate(lead))
-    throw UnicodeException("Invalid lead surrogate passed to utf32FromUtf16SurrogatePair");
-  if (!isUtf16TrailSurrogate(trail))
-    throw UnicodeException("Invalid trail surrogate passed to utf32FromUtf16SurrogatePair");
+	if (!isUtf16LeadSurrogate(lead))
+		throw UnicodeException("Invalid lead surrogate passed to utf32FromUtf16SurrogatePair");
+	if (!isUtf16TrailSurrogate(trail))
+		throw UnicodeException("Invalid trail surrogate passed to utf32FromUtf16SurrogatePair");
 
-  lead -= MIN_LEAD;
-  trail -= MIN_TRAIL;
+	lead -= MIN_LEAD;
+	trail -= MIN_TRAIL;
 
-  Utf32Type codepoint = (lead << 10) + trail + MIN_PAIR;
+	Utf32Type codepoint = (lead << 10) + trail + MIN_PAIR;
 
-  return codepoint;
+	return codepoint;
 }
 
 auto utf32ToUtf16SurrogatePair(Utf32Type codepoint) -> std::pair<Utf32Type, std::optional<Utf32Type>> {
-  if (codepoint >= MIN_PAIR) {
-    codepoint -= MIN_PAIR;
-    Utf32Type lead = (codepoint >> 10) + MIN_LEAD;
-    Utf32Type trail = (codepoint & SURR_MASK) + MIN_TRAIL;
+	if (codepoint >= MIN_PAIR) {
+		codepoint -= MIN_PAIR;
+		Utf32Type lead = (codepoint >> 10) + MIN_LEAD;
+		Utf32Type trail = (codepoint & SURR_MASK) + MIN_TRAIL;
 
-    if (!isUtf16LeadSurrogate(lead))
-      throw UnicodeException("Invalid codepoint passed to utf32ToUtf16SurrogatePair");
+		if (!isUtf16LeadSurrogate(lead))
+			throw UnicodeException("Invalid codepoint passed to utf32ToUtf16SurrogatePair");
 
-    return {lead, trail};
-  }
+		return {lead, trail};
+	}
 
-  return {codepoint, {}};
+	return {codepoint, {}};
 }
 
 }// namespace Star

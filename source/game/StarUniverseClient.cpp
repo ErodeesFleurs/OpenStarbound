@@ -1,15 +1,15 @@
 #include "StarUniverseClient.hpp"
 
-#include "StarAssets.hpp"
+#include "StarCasting.hpp"
 #include "StarClientContext.hpp"
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarNetPackets.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerCodexes.hpp"
-#include "StarPlayerLog.hpp"
+#include "StarPlayerLog.hpp"// IWYU pragma: export
 #include "StarPlayerStorage.hpp"
-#include "StarPlayerUniverseMap.hpp"
+#include "StarPlayerUniverseMap.hpp"// IWYU pragma: export
 #include "StarProjectile.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarQuestManager.hpp"
@@ -22,14 +22,16 @@
 #include "StarWorldClient.hpp"
 #include "StarWorldTemplate.hpp"
 
+import std;
+
 namespace Star {
 
-UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics) {
+UniverseClient::UniverseClient(Ptr<PlayerStorage> playerStorage, Ptr<Statistics> statistics) {
   m_storageTriggerDeadline = 0;
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
   m_pause = false;
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = std::make_shared<LuaRoot>();
   reset();
 }
 
@@ -37,7 +39,7 @@ UniverseClient::~UniverseClient() {
   disconnect();
 }
 
-void UniverseClient::setMainPlayer(PlayerPtr player) {
+void UniverseClient::setMainPlayer(Ptr<Player> player) {
   if (isConnected())
     throw StarException("Cannot call UniverseClient::setMainPlayer while connected");
 
@@ -59,11 +61,11 @@ void UniverseClient::setMainPlayer(PlayerPtr player) {
   }
 }
 
-PlayerPtr UniverseClient::mainPlayer() const {
+auto UniverseClient::mainPlayer() const -> Ptr<Player> {
   return m_mainPlayer;
 }
 
-std::optional<String> UniverseClient::connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account, String const& password, bool const& forceLegacy) {
+auto UniverseClient::connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account, String const& password, bool const& forceLegacy) -> std::optional<String> {
   auto& root = Root::singleton();
   auto assets = root.assets();
 
@@ -77,7 +79,7 @@ std::optional<String> UniverseClient::connect(UniverseConnection connection, boo
   Logger::info("UniverseClient: Connecting to server, packet timeout is {}ms", timeout);
 
   {
-    auto protocolRequest = make_shared<ProtocolRequestPacket>(StarProtocolVersion);
+    auto protocolRequest = std::make_shared<ProtocolRequestPacket>(StarProtocolVersion);
     if (!forceLegacy) {
       protocolRequest->setCompressionMode(PacketCompressionMode::Enabled);
       // Signal that we're OpenStarbound. Vanilla Starbound only compresses
@@ -139,7 +141,7 @@ std::optional<String> UniverseClient::connect(UniverseConnection connection, boo
     passAccountSalt.append(challenge->passwordSalt);
     ByteArray passHash = Star::sha256(passAccountSalt);
 
-    connection.pushSingle(make_shared<HandshakeResponsePacket>(passHash));
+    connection.pushSingle(std::make_shared<HandshakeResponsePacket>(passHash));
     connection.sendAll(timeout);
 
     connection.receiveAny(timeout);
@@ -147,19 +149,19 @@ std::optional<String> UniverseClient::connect(UniverseConnection connection, boo
   }
 
   if (auto success = as<ConnectSuccessPacket>(packet)) {
-    m_universeClock = make_shared<Clock>();
-    m_clientContext = make_shared<ClientContext>(success->serverUuid, m_mainPlayer->uuid());
+    m_universeClock = std::make_shared<Clock>();
+    m_clientContext = std::make_shared<ClientContext>(success->serverUuid, m_mainPlayer->uuid());
     m_clientContext->setNetCompatibilityRules(compatibilityRules);
-    m_teamClient = make_shared<TeamClient>(m_mainPlayer, m_clientContext);
+    m_teamClient = std::make_shared<TeamClient>(m_mainPlayer, m_clientContext);
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
-    m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot);
+    m_worldClient = std::make_shared<WorldClient>(m_mainPlayer, m_luaRoot);
     m_worldClient->clientState().setNetCompatibilityRules(compatibilityRules);
     m_worldClient->setAsyncLighting(true);
 
     m_connection = std::move(connection);
-    m_celestialDatabase = make_shared<CelestialSlaveDatabase>(std::move(success->celestialInformation));
-    m_systemWorldClient = make_shared<SystemWorldClient>(m_universeClock, m_celestialDatabase, m_mainPlayer->universeMap());
+    m_celestialDatabase = std::make_shared<CelestialSlaveDatabase>(std::move(success->celestialInformation));
+    m_systemWorldClient = std::make_shared<SystemWorldClient>(m_universeClock, m_celestialDatabase, m_mainPlayer->universeMap());
 
     Logger::info("UniverseClient: Joined {} server as client {}", legacyServer ? "Starbound" : "OpenStarbound", success->clientId);
     return {};
@@ -175,7 +177,7 @@ std::optional<String> UniverseClient::connect(UniverseConnection connection, boo
   return {};
 }
 
-bool UniverseClient::isConnected() const {
+auto UniverseClient::isConnected() const -> bool {
   return m_connection && m_connection->isOpen();
 }
 
@@ -185,7 +187,7 @@ void UniverseClient::disconnect() {
 
   if (isConnected()) {
     Logger::info("UniverseClient: Client disconnecting...");
-    m_connection->pushSingle(make_shared<ClientDisconnectRequestPacket>());
+    m_connection->pushSingle(std::make_shared<ClientDisconnectRequestPacket>());
   }
 
   // Try to handle all the shutdown packets before returning.
@@ -202,15 +204,15 @@ void UniverseClient::disconnect() {
   m_mainPlayer = {};
 }
 
-std::optional<String> UniverseClient::disconnectReason() const {
+auto UniverseClient::disconnectReason() const -> std::optional<String> {
   return m_disconnectReason;
 }
 
-WorldClientPtr UniverseClient::worldClient() const {
+auto UniverseClient::worldClient() const -> Ptr<WorldClient> {
   return m_worldClient;
 }
 
-SystemWorldClientPtr UniverseClient::systemWorldClient() const {
+auto UniverseClient::systemWorldClient() const -> Ptr<SystemWorldClient> {
   return m_systemWorldClient;
 }
 
@@ -227,7 +229,7 @@ void UniverseClient::update(float dt) {
 
   if (m_pendingWarp) {
     if ((m_warping && !m_mainPlayer->isTeleportingOut()) || (!m_warping && m_warpDelay.tick(dt))) {
-      m_connection->pushSingle(make_shared<PlayerWarpPacket>(take(m_pendingWarp), m_mainPlayer->isDeploying()));
+      m_connection->pushSingle(std::make_shared<PlayerWarpPacket>(take(m_pendingWarp), m_mainPlayer->isDeploying()));
       m_warpDelay.reset();
       if (m_warping) {
         m_warpCinemaCancelTimer = GameTimer(assets->json("/client.config:playerWarpCinemaMinimumTime").toFloat());
@@ -305,11 +307,11 @@ void UniverseClient::update(float dt) {
 
   auto contextUpdate = m_clientContext->writeUpdate(m_clientContext->netCompatibilityRules());
   if (!contextUpdate.empty())
-    m_connection->pushSingle(make_shared<ClientContextUpdatePacket>(std::move(contextUpdate)));
+    m_connection->pushSingle(std::make_shared<ClientContextUpdatePacket>(std::move(contextUpdate)));
 
   auto celestialRequests = m_celestialDatabase->pullRequests();
   if (!celestialRequests.empty())
-    m_connection->pushSingle(make_shared<CelestialRequestPacket>(std::move(celestialRequests)));
+    m_connection->pushSingle(std::make_shared<CelestialRequestPacket>(std::move(celestialRequests)));
 
   m_connection->send();
 
@@ -364,7 +366,7 @@ void UniverseClient::update(float dt) {
   }
 }
 
-std::optional<BeamUpRule> UniverseClient::beamUpRule() const {
+auto UniverseClient::beamUpRule() const -> std::optional<BeamUpRule> {
   if (auto worldTemplate = currentTemplate())
     if (auto parameters = worldTemplate->worldParameters())
       return parameters->beamUpRule;
@@ -372,7 +374,7 @@ std::optional<BeamUpRule> UniverseClient::beamUpRule() const {
   return {};
 }
 
-bool UniverseClient::canBeamUp() const {
+auto UniverseClient::canBeamUp() const -> bool {
   auto playerWorldId = m_clientContext->playerWorldId();
 
   if (playerWorldId.empty() || playerWorldId.is<ClientShipWorldId>())
@@ -391,7 +393,7 @@ bool UniverseClient::canBeamUp() const {
   return false;
 }
 
-bool UniverseClient::canBeamDown(bool deploy) const {
+auto UniverseClient::canBeamDown(bool deploy) const -> bool {
   if (!m_clientContext->orbitWarpAction() || flying())
     return false;
   if (auto warpAction = m_clientContext->orbitWarpAction()) {
@@ -407,7 +409,7 @@ bool UniverseClient::canBeamDown(bool deploy) const {
   return true;
 }
 
-bool UniverseClient::canBeamToTeamShip() const {
+auto UniverseClient::canBeamToTeamShip() const -> bool {
   auto playerWorldId = m_clientContext->playerWorldId();
   if (playerWorldId.empty())
     return false;
@@ -424,7 +426,7 @@ bool UniverseClient::canBeamToTeamShip() const {
   return false;
 }
 
-bool UniverseClient::canTeleport() const {
+auto UniverseClient::canTeleport() const -> bool {
   if (m_mainPlayer->isAdmin())
     return true;
 
@@ -445,7 +447,7 @@ void UniverseClient::warpPlayer(WarpAction const& warpAction, bool animate, Stri
   if (auto warpToWorld = warpAction.ptr<WarpToWorld>()) {
     if (warpToWorld->world.empty() || warpToWorld->world == playerWorld()) {
       if (auto pos = warpToWorld->target.ptr<SpawnTargetPosition>()) {
-        m_mainPlayer->moveTo(*pos);
+        m_mainPlayer->moveTo(pos->get());
         return;
       }
     }
@@ -464,45 +466,45 @@ void UniverseClient::flyShip(Vec3I const& system, SystemLocation const& destinat
   m_connection->pushSingle(make_shared<FlyShipPacket>(system, destination, settings));
 }
 
-CelestialDatabasePtr UniverseClient::celestialDatabase() const {
+auto UniverseClient::celestialDatabase() const -> Ptr<CelestialDatabase> {
   return m_celestialDatabase;
 }
 
-CelestialCoordinate UniverseClient::shipCoordinate() const {
+auto UniverseClient::shipCoordinate() const -> CelestialCoordinate {
   return m_clientContext->shipCoordinate();
 }
 
-bool UniverseClient::playerOnOwnShip() const {
-  return playerWorld().is<ClientShipWorldId>() && playerWorld().get<ClientShipWorldId>() == m_clientContext->playerUuid();
+auto UniverseClient::playerOnOwnShip() const -> bool {
+  return playerWorld().is<ClientShipWorldId>() && playerWorld().get<ClientShipWorldId>().get() == m_clientContext->playerUuid();
 }
 
-bool UniverseClient::playerIsOriginal() const {
+auto UniverseClient::playerIsOriginal() const -> bool {
   return m_clientContext->playerUuid() == mainPlayer()->uuid();
 }
 
-WorldId UniverseClient::playerWorld() const {
+auto UniverseClient::playerWorld() const -> WorldId {
   return m_clientContext->playerWorldId();
 }
 
-bool UniverseClient::isAdmin() const {
+auto UniverseClient::isAdmin() const -> bool {
   return m_mainPlayer->isAdmin();
 }
 
-Uuid UniverseClient::teamUuid() const {
+auto UniverseClient::teamUuid() const -> Uuid {
   if (auto team = m_teamClient->currentTeam())
     return *team;
   return m_clientContext->playerUuid();
 }
 
-WorldTemplateConstPtr UniverseClient::currentTemplate() const {
+auto UniverseClient::currentTemplate() const -> ConstPtr<WorldTemplate> {
   return m_worldClient->currentTemplate();
 }
 
-SkyConstPtr UniverseClient::currentSky() const {
+auto UniverseClient::currentSky() const -> ConstPtr<Sky> {
   return m_worldClient->currentSky();
 }
 
-bool UniverseClient::flying() const {
+auto UniverseClient::flying() const -> bool {
   if (auto sky = currentSky())
     return sky->flying();
   return false;
@@ -511,22 +513,22 @@ bool UniverseClient::flying() const {
 void UniverseClient::sendChat(String const& text, ChatSendMode sendMode, std::optional<bool> speak, std::optional<JsonObject> data) {
   if (speak.value_or(!text.beginsWith("/")))
     m_mainPlayer->addChatMessage(text);
-  auto packet = make_shared<ChatSendPacket>(text, sendMode);
+  auto packet = std::make_shared<ChatSendPacket>(text, sendMode);
   if (data)
     packet->data = std::move(*data);
   m_connection->pushSingle(packet);
 }
 
-List<ChatReceivedMessage> UniverseClient::pullChatMessages() {
+auto UniverseClient::pullChatMessages() -> List<ChatReceivedMessage> {
   return take(m_pendingMessages);
 }
 
-uint16_t UniverseClient::players() {
-  return m_serverInfo.transform([](auto const& info) { return info.players; }).value_or(1);
+auto UniverseClient::players() -> std::uint16_t {
+  return m_serverInfo.transform([](auto const& info) -> auto { return info.players; }).value_or(1);
 }
 
-uint16_t UniverseClient::maxPlayers() {
-  return m_serverInfo.transform([](auto const& info) { return info.maxPlayers; }).value_or(1);
+auto UniverseClient::maxPlayers() -> std::uint16_t {
+  return m_serverInfo.transform([](auto const& info) -> auto { return info.maxPlayers; }).value_or(1);
 }
 
 void UniverseClient::setLuaCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
@@ -545,7 +547,7 @@ void UniverseClient::restartLua() {
 void UniverseClient::startLuaScripts() {
   auto assets = Root::singleton().assets();
   for (auto& p : assets->json("/client.config:universeScriptContexts").toObject()) {
-    auto scriptComponent = make_shared<ScriptComponent>();
+    auto scriptComponent = std::make_shared<ScriptComponent>();
     scriptComponent->setLuaRoot(m_luaRoot);
     scriptComponent->setScripts(jsonToStringList(p.second.toArray()));
 
@@ -561,11 +563,11 @@ void UniverseClient::stopLua() {
   m_scriptContexts.clear();
 }
 
-LuaRootPtr UniverseClient::luaRoot() {
+auto UniverseClient::luaRoot() -> Ptr<LuaRoot> {
   return m_luaRoot;
 }
 
-bool UniverseClient::reloadPlayer(Json const& data, Uuid const&, bool resetInterfaces, bool showIndicator) {
+auto UniverseClient::reloadPlayer(Json const& data, Uuid const&, bool resetInterfaces, bool showIndicator) -> bool {
   auto player = mainPlayer();
   bool playerInWorld = player->inWorld();
   auto world = as<WorldClient>(player->world());
@@ -577,13 +579,13 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const&, bool resetInter
   if (m_playerReloadPreCallback)
     m_playerReloadPreCallback(resetInterfaces);
 
-  ProjectilePtr indicator;
+  Ptr<Projectile> indicator;
 
   if (playerInWorld) {
     if (showIndicator) {
       // EntityCreatePacket for player entities can be pretty big.
       // We can show a loading projectile to other players while the create packet uploads.
-      auto projectileDb = Root::singleton().projectileDatabase();
+      ConstPtr<ProjectileDatabase> projectileDb = Root::singleton().projectileDatabase();
       auto config = projectileDb->projectileConfig("opensb:playerloading");
       indicator = projectileDb->createProjectile("stationpartsound", config);
       indicator->setInitialPosition(player->position());
@@ -626,7 +628,7 @@ bool UniverseClient::reloadPlayer(Json const& data, Uuid const&, bool resetInter
   return true;
 }
 
-bool UniverseClient::switchPlayer(Uuid const& uuid) {
+auto UniverseClient::switchPlayer(Uuid const& uuid) -> bool {
   if (uuid == mainPlayer()->uuid())
     return false;
   else if (auto data = m_playerStorage->maybeGetPlayerData(uuid)) {
@@ -640,14 +642,14 @@ bool UniverseClient::switchPlayer(Uuid const& uuid) {
   return false;
 }
 
-bool UniverseClient::switchPlayer(size_t index) {
+auto UniverseClient::switchPlayer(size_t index) -> bool {
   if (auto uuid = m_playerStorage->playerUuidAt(index))
     return switchPlayer(*uuid);
   else
     return false;
 }
 
-bool UniverseClient::switchPlayer(String const& name) {
+auto UniverseClient::switchPlayer(String const& name) -> bool {
   if (auto uuid = m_playerStorage->playerUuidByName(name, mainPlayer()->uuid()))
     return switchPlayer(*uuid);
   else if (name.utf8Size() == UuidSize * 2)
@@ -656,43 +658,43 @@ bool UniverseClient::switchPlayer(String const& name) {
     return false;
 }
 
-UniverseClient::ReloadPlayerCallback& UniverseClient::playerReloadPreCallback() {
+auto UniverseClient::playerReloadPreCallback() -> UniverseClient::ReloadPlayerCallback& {
   return m_playerReloadPreCallback;
 }
 
-UniverseClient::ReloadPlayerCallback& UniverseClient::playerReloadCallback() {
+auto UniverseClient::playerReloadCallback() -> UniverseClient::ReloadPlayerCallback& {
   return m_playerReloadCallback;
 }
 
-ClockConstPtr UniverseClient::universeClock() const {
+auto UniverseClient::universeClock() const -> ConstPtr<Clock> {
   return m_universeClock;
 }
 
-JsonRpcInterfacePtr UniverseClient::rpcInterface() const {
+auto UniverseClient::rpcInterface() const -> Ptr<JsonRpcInterface> {
   return m_clientContext->rpcInterface();
 }
 
-ClientContextPtr UniverseClient::clientContext() const {
+auto UniverseClient::clientContext() const -> Ptr<ClientContext> {
   return m_clientContext;
 }
 
-TeamClientPtr UniverseClient::teamClient() const {
+auto UniverseClient::teamClient() const -> Ptr<TeamClient> {
   return m_teamClient;
 }
 
-QuestManagerPtr UniverseClient::questManager() const {
+auto UniverseClient::questManager() const -> Ptr<QuestManager> {
   return m_mainPlayer->questManager();
 }
 
-PlayerStoragePtr UniverseClient::playerStorage() const {
+auto UniverseClient::playerStorage() const -> Ptr<PlayerStorage> {
   return m_playerStorage;
 }
 
-StatisticsPtr UniverseClient::statistics() const {
+auto UniverseClient::statistics() const -> Ptr<Statistics> {
   return m_statistics;
 }
 
-bool UniverseClient::paused() const {
+auto UniverseClient::paused() const -> bool {
   return m_pause;
 }
 
@@ -705,7 +707,7 @@ void UniverseClient::setPause(bool pause) {
     m_universeClock->start();
 }
 
-void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
+void UniverseClient::handlePackets(List<Ptr<Packet>> const& packets) {
   for (auto const& packet : packets) {
     try {
       bool skip = false;
@@ -757,7 +759,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
 
       } else if (auto warpResult = as<PlayerWarpResultPacket>(packet)) {
         if (m_mainPlayer->isDeploying() && m_warping && m_warping->is<WarpToPlayer>()) {
-          Uuid target = m_warping->get<WarpToPlayer>();
+          Uuid target = m_warping->get<WarpToPlayer>().get();
           for (auto member : m_teamClient->members()) {
             if (member.uuid == target) {
               if (member.warpMode != WarpMode::DeployOnly && member.warpMode != WarpMode::BeamOrDeploy)
@@ -779,7 +781,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
         setPause(pausePacket->pause);
         GlobalTimescale = clamp(pausePacket->timescale, 0.0f, 1024.f);
       } else if (auto serverInfoPacket = as<ServerInfoPacket>(packet)) {
-        m_serverInfo = ServerInfo{serverInfoPacket->players, serverInfoPacket->maxPlayers};
+        m_serverInfo = ServerInfo{.players = serverInfoPacket->players, .maxPlayers = serverInfoPacket->maxPlayers};
       } else if (!m_systemWorldClient->handleIncomingPacket(packet)) {
         // see if the system world will handle it, otherwise pass it along to the world client
         m_worldClient->handleIncomingPackets({packet});

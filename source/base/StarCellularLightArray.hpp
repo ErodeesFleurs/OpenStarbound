@@ -55,10 +55,10 @@ public:
   struct PointLight {
     Vec2F position;
     LightValue value;
-    float beam;
-    float beamAngle;
-    float beamAmbience;
-    bool asSpread;
+    float beam{};
+    float beamAngle{};
+    float beamAmbience{};
+    bool asSpread{};
   };
 
   void setParameters(unsigned spreadPasses, float spreadMaxAir, float spreadMaxObstacle,
@@ -142,7 +142,7 @@ inline auto ScalarLightTraits::spread(float source, float dest, float drop) -> f
 }
 
 inline auto ScalarLightTraits::subtract(float c, float drop) -> float {
-  return std::max(c - drop, 0.0f);
+  return std::max(c - drop, 0.0F);
 }
 
 inline auto ScalarLightTraits::multiply(float v1, float v2) -> float {
@@ -163,11 +163,12 @@ inline auto ScalarLightTraits::max(float v1, float v2) -> float {
 
 inline auto ColoredLightTraits::spread(Vec3F const& source, Vec3F const& dest, float drop) -> Vec3F {
   float maxChannel = std::max({source[0], source[1], source[2]});
-  if (maxChannel <= 0.0f)
+  if (maxChannel <= 0.0F) {
     return dest;
+  }
 
   drop /= maxChannel;
-  return {
+  return Vec3F{
     std::max(source[0] - source[0] * drop, dest[0]),
     std::max(source[1] - source[1] * drop, dest[1]),
     std::max(source[2] - source[2] * drop, dest[2])};
@@ -175,15 +176,17 @@ inline auto ColoredLightTraits::spread(Vec3F const& source, Vec3F const& dest, f
 
 inline auto ColoredLightTraits::subtract(Vec3F c, float drop) -> Vec3F {
   float max = std::max({c[0], c[1], c[2]});
-  if (max <= 0.0f)
+  if (max <= 0.0F) {
     return c;
+  }
 
   for (std::size_t i = 0; i < 3; ++i) {
     float pdrop = (drop * c[i]) / max;
-    if (c[i] > pdrop)
+    if (c[i] > pdrop) {
       c[i] -= pdrop;
-    else
+    } else {
       c[i] = 0;
+    }
   }
   return c;
 }
@@ -218,7 +221,7 @@ void CellularLightArray<LightTraits>::setParameters(unsigned spreadPasses, float
 
 template <typename LightTraits>
 auto CellularLightArray<LightTraits>::borderCells() const -> std::size_t {
-  return (std::size_t)std::ceil(std::max({0.0f, m_spreadMaxAir, m_pointMaxAir}));
+  return (std::size_t)std::ceil(std::max({0.0F, m_spreadMaxAir, m_pointMaxAir}));
 }
 
 template <typename LightTraits>
@@ -298,47 +301,52 @@ template <typename LightTraits>
 void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
   for (SpreadLight const& light : m_spreadLights) {
     // - 0.5f to correct for lights being on the grid corners and not center
-    int minX = std::floor(light.position[0] - 0.5f);
-    int minY = std::floor(light.position[1] - 0.5f);
+    int minX = std::floor(light.position[0] - 0.5F);
+    int minY = std::floor(light.position[1] - 0.5F);
     int maxX = minX + 1;
     int maxY = minY + 1;
 
-    float xdist = light.position[0] - minX - 0.5f;
-    float ydist = light.position[1] - minY - 0.5f;
+    float xdist = light.position[0] - minX - 0.5F;
+    float ydist = light.position[1] - minY - 0.5F;
 
     // Pick falloff here based on closest block obstacle value (probably not
     // best)
     Vec2I pos(light.position.floor());
     float oneBlockAtt;
-    if (pos[0] >= 0 && pos[0] < (int)m_width && pos[1] >= 0 && pos[1] < (int)m_height && getObstacle(pos[0], pos[1]))
-      oneBlockAtt = 1.0f / m_spreadMaxObstacle;
-    else
-      oneBlockAtt = 1.0f / m_spreadMaxAir;
+    if (pos[0] >= 0 && pos[0] < (int)m_width && pos[1] >= 0 && pos[1] < (int)m_height && getObstacle(pos[0], pos[1])) {
+      oneBlockAtt = 1.0F / m_spreadMaxObstacle;
+    } else {
+      oneBlockAtt = 1.0F / m_spreadMaxAir;
+    }
 
     // "pre fall-off" a 2x2 area of blocks to smooth out floating point
     // positions using the cellular algorithm
 
-    if (minX >= 0 && minX < (int)m_width && minY >= 0 && minY < (int)m_height)
+    if (minX >= 0 && minX < (int)m_width && minY >= 0 && minY < (int)m_height) {
       setLight(minX, minY, LightTraits::max(getLight(minX, minY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (1.0f - xdist) - (1.0f - ydist)))));
+    }
 
-    if (minX >= 0 && minX < (int)m_width && maxY >= 0 && maxY < (int)m_height)
+    if (minX >= 0 && minX < (int)m_width && maxY >= 0 && maxY < (int)m_height) {
       setLight(minX, maxY, LightTraits::max(getLight(minX, maxY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (1.0f - xdist) - (ydist)))));
+    }
 
-    if (maxX >= 0 && maxX < (int)m_width && minY >= 0 && minY < (int)m_height)
+    if (maxX >= 0 && maxX < (int)m_width && minY >= 0 && minY < (int)m_height) {
       setLight(maxX, minY, LightTraits::max(getLight(maxX, minY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (xdist) - (1.0f - ydist)))));
+    }
 
-    if (maxX >= 0 && maxX < (int)m_width && maxY >= 0 && maxY < (int)m_height)
+    if (maxX >= 0 && maxX < (int)m_width && maxY >= 0 && maxY < (int)m_height) {
       setLight(maxX, maxY, LightTraits::max(getLight(maxX, maxY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (xdist) - (ydist)))));
+    }
   }
 }
 
 template <typename LightTraits>
 void CellularLightArray<LightTraits>::calculateLightSpread(std::size_t xMin, std::size_t yMin, std::size_t xMax, std::size_t yMax) {
 
-  float dropoffAir = 1.0f / m_spreadMaxAir;
-  float dropoffObstacle = 1.0f / m_spreadMaxObstacle;
-  float dropoffAirDiag = 1.0f / m_spreadMaxAir * Constants::sqrt2;
-  float dropoffObstacleDiag = 1.0f / m_spreadMaxObstacle * Constants::sqrt2;
+  float dropoffAir = 1.0F / m_spreadMaxAir;
+  float dropoffObstacle = 1.0F / m_spreadMaxObstacle;
+  float dropoffAirDiag = 1.0F / m_spreadMaxAir * Constants::sqrt2;
+  float dropoffObstacleDiag = 1.0F / m_spreadMaxObstacle * Constants::sqrt2;
 
   // enlarge x/y min/max taking into ambient spread of light
   xMin = xMin - std::min(xMin, (std::size_t)std::ceil(m_spreadMaxAir));
@@ -426,14 +434,17 @@ auto CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F 
     int ypxl1 = yend;
     int xpxl1 = ipart(xend);
 
-    if (cell(xpxl1, ypxl1).obstacle)
+    if (cell(xpxl1, ypxl1).obstacle) {
       obstacleAttenuation += rfpart(xend) * ygap * perObstacleAttenuation;
+    }
 
-    if (cell(xpxl1 + 1, ypxl1).obstacle)
+    if (cell(xpxl1 + 1, ypxl1).obstacle) {
       obstacleAttenuation += fpart(xend) * ygap * perObstacleAttenuation;
+    }
 
-    if (obstacleAttenuation >= maxAttenuation)
+    if (obstacleAttenuation >= maxAttenuation) {
       return maxAttenuation;
+    }
 
     float interx = xend + gradient;
 
@@ -444,27 +455,33 @@ auto CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F 
     int ypxl2 = yend;
     int xpxl2 = ipart(xend);
 
-    if (cell(xpxl2, ypxl2).obstacle)
+    if (cell(xpxl2, ypxl2).obstacle) {
       obstacleAttenuation += rfpart(xend) * ygap * perObstacleAttenuation;
+    }
 
-    if (cell(xpxl2 + 1, ypxl2).obstacle)
+    if (cell(xpxl2 + 1, ypxl2).obstacle) {
       obstacleAttenuation += fpart(xend) * ygap * perObstacleAttenuation;
+    }
 
-    if (obstacleAttenuation >= maxAttenuation)
+    if (obstacleAttenuation >= maxAttenuation) {
       return maxAttenuation;
+    }
 
     for (int y = ypxl1 + 1; y < ypxl2; ++y) {
       int interxIpart = ipart(interx);
       float interxFpart = interx - interxIpart;
       float interxRFpart = 1.0 - interxFpart;
 
-      if (cell(interxIpart, y).obstacle)
+      if (cell(interxIpart, y).obstacle) {
         obstacleAttenuation += interxRFpart * perObstacleAttenuation;
-      if (cell(interxIpart + 1, y).obstacle)
+      }
+      if (cell(interxIpart + 1, y).obstacle) {
         obstacleAttenuation += interxFpart * perObstacleAttenuation;
+      }
 
-      if (obstacleAttenuation >= maxAttenuation)
+      if (obstacleAttenuation >= maxAttenuation) {
         return maxAttenuation;
+      }
 
       interx += gradient;
     }
@@ -483,14 +500,17 @@ auto CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F 
     int xpxl1 = xend;
     int ypxl1 = ipart(yend);
 
-    if (cell(xpxl1, ypxl1).obstacle)
+    if (cell(xpxl1, ypxl1).obstacle) {
       obstacleAttenuation += rfpart(yend) * xgap * perObstacleAttenuation;
+    }
 
-    if (cell(xpxl1, ypxl1 + 1).obstacle)
+    if (cell(xpxl1, ypxl1 + 1).obstacle) {
       obstacleAttenuation += fpart(yend) * xgap * perObstacleAttenuation;
+    }
 
-    if (obstacleAttenuation >= maxAttenuation)
+    if (obstacleAttenuation >= maxAttenuation) {
       return maxAttenuation;
+    }
 
     float intery = yend + gradient;
 
@@ -501,27 +521,33 @@ auto CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F 
     int xpxl2 = xend;
     int ypxl2 = ipart(yend);
 
-    if (cell(xpxl2, ypxl2).obstacle)
+    if (cell(xpxl2, ypxl2).obstacle) {
       obstacleAttenuation += rfpart(yend) * xgap * perObstacleAttenuation;
+    }
 
-    if (cell(xpxl2, ypxl2 + 1).obstacle)
+    if (cell(xpxl2, ypxl2 + 1).obstacle) {
       obstacleAttenuation += fpart(yend) * xgap * perObstacleAttenuation;
+    }
 
-    if (obstacleAttenuation >= maxAttenuation)
+    if (obstacleAttenuation >= maxAttenuation) {
       return maxAttenuation;
+    }
 
     for (int x = xpxl1 + 1; x < xpxl2; ++x) {
       int interyIpart = ipart(intery);
       float interyFpart = intery - interyIpart;
       float interyRFpart = 1.0 - interyFpart;
 
-      if (cell(x, interyIpart).obstacle)
+      if (cell(x, interyIpart).obstacle) {
         obstacleAttenuation += interyRFpart * perObstacleAttenuation;
-      if (cell(x, interyIpart + 1).obstacle)
+      }
+      if (cell(x, interyIpart + 1).obstacle) {
         obstacleAttenuation += interyFpart * perObstacleAttenuation;
+      }
 
-      if (obstacleAttenuation >= maxAttenuation)
+      if (obstacleAttenuation >= maxAttenuation) {
         return maxAttenuation;
+      }
 
       intery += gradient;
     }

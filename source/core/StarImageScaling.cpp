@@ -10,14 +10,15 @@ namespace Star {
 auto scaleNearest(Image const& srcImage, Vec2F const& scale) -> Image {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
-  destSize[0] = std::max(destSize[0], 1u);
-  destSize[1] = std::max(destSize[1], 1u);
+  destSize[0] = std::max(destSize[0], 1U);
+  destSize[1] = std::max(destSize[1], 1U);
 
   Image destImage(destSize, srcImage.pixelFormat());
 
   for (unsigned y = 0; y < destSize[1]; ++y) {
-    for (unsigned x = 0; x < destSize[0]; ++x)
-      destImage.set({x, y}, srcImage.clamp(Vec2I::round(vdiv(Vec2F(x, y), scale))));
+    for (unsigned x = 0; x < destSize[0]; ++x) {
+      destImage.set(Vec2U{x, y}, srcImage.clamp(Vec2I::round(vdiv(Vec2F(x, y), scale))));
+    }
   }
   return destImage;
 }
@@ -25,8 +26,8 @@ auto scaleNearest(Image const& srcImage, Vec2F const& scale) -> Image {
 auto scaleBilinear(Image const& srcImage, Vec2F const& scale) -> Image {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
-  destSize[0] = std::max(destSize[0], 1u);
-  destSize[1] = std::max(destSize[1], 1u);
+  destSize[0] = std::max(destSize[0], 1U);
+  destSize[1] = std::max(destSize[1], 1U);
 
   Image destImage(destSize, srcImage.pixelFormat());
 
@@ -38,7 +39,7 @@ auto scaleBilinear(Image const& srcImage, Vec2F const& scale) -> Image {
 
       auto result = lerp(fpart[1], lerp(fpart[0], Vec4F(srcImage.clamp(ipart[0], ipart[1])), Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1]))), lerp(fpart[0], Vec4F(srcImage.clamp(ipart[0], ipart[1] + 1)), Vec4F(srcImage.clamp(ipart[0] + 1, ipart[1] + 1))));
 
-      destImage.set({x, y}, Vec4B(result));
+      destImage.set(Vec2U{x, y}, Vec4B(result));
     }
   }
 
@@ -48,8 +49,8 @@ auto scaleBilinear(Image const& srcImage, Vec2F const& scale) -> Image {
 auto scaleBicubic(Image const& srcImage, Vec2F const& scale) -> Image {
   Vec2U srcSize = srcImage.size();
   Vec2U destSize = Vec2U::round(vmult(Vec2F(srcSize), scale));
-  destSize[0] = std::max(destSize[0], 1u);
-  destSize[1] = std::max(destSize[1], 1u);
+  destSize[0] = std::max(destSize[0], 1U);
+  destSize[1] = std::max(destSize[1], 1U);
 
   Image destImage(destSize, srcImage.pixelFormat());
 
@@ -85,7 +86,7 @@ auto scaleBicubic(Image const& srcImage, Vec2F const& scale) -> Image {
 
       auto result = cubic4(fpart[1], a, b, c, d);
 
-      destImage.set({x, y}, Vec4B(clamp(result[0], 0.0f, 255.0f), clamp(result[1], 0.0f, 255.0f), clamp(result[2], 0.0f, 255.0f), clamp(result[3], 0.0f, 255.0f)));
+      destImage.set(Vec2U{x, y}, Vec4B(clamp(result[0], 0.0F, 255.0F), clamp(result[1], 0.0F, 255.0F), clamp(result[2], 0.0f, 255.0f), clamp(result[3], 0.0F, 255.0F)));
     }
   }
 

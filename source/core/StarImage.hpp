@@ -36,16 +36,16 @@ public:
   static auto filled(Vec2U size, Vec4B color, PixelFormat pf = PixelFormat::RGBA32) -> Image;
 
   // Creates a zero size image
-  Image(PixelFormat pf = PixelFormat::RGBA32);
-  Image(Vec2U size, PixelFormat pf = PixelFormat::RGBA32);
+  explicit Image(PixelFormat pf = PixelFormat::RGBA32);
+  explicit Image(Vec2U size, PixelFormat pf = PixelFormat::RGBA32);
   Image(unsigned width, unsigned height, PixelFormat pf = PixelFormat::RGBA32);
   ~Image();
 
   Image(Image const& image);
-  Image(Image&& image);
+  Image(Image&& image) noexcept;
 
   auto operator=(Image const& image) -> Image&;
-  auto operator=(Image&& image) -> Image&;
+  auto operator=(Image&& image) noexcept -> Image&;
 
   [[nodiscard]] auto bitsPerPixel() const -> std::uint8_t;
   [[nodiscard]] auto bytesPerPixel() const -> std::uint8_t;
@@ -199,7 +199,7 @@ inline auto Image::empty() const -> bool {
 }
 
 inline auto Image::size() const -> Vec2U {
-  return {m_width, m_height};
+  return Vec2U{m_width, m_height};
 }
 
 inline auto Image::pixelFormat() const -> PixelFormat {
@@ -215,35 +215,35 @@ inline auto Image::data() -> std::uint8_t* {
 }
 
 inline void Image::set(unsigned x, unsigned y, Vec4B const& c) {
-  return set({x, y}, c);
+  return set(Vec2U{x, y}, c);
 }
 
 inline void Image::set(unsigned x, unsigned y, Vec3B const& c) {
-  return set({x, y}, c);
+  return set(Vec2U{x, y}, c);
 }
 
 inline auto Image::get(unsigned x, unsigned y) const -> Vec4B {
-  return get({x, y});
+  return get(Vec2U{x, y});
 }
 
 inline void Image::setrgb(unsigned x, unsigned y, Vec4B const& c) {
-  return setrgb({x, y}, c);
+  return setrgb(Vec2U{x, y}, c);
 }
 
 inline void Image::setrgb(unsigned x, unsigned y, Vec3B const& c) {
-  return setrgb({x, y}, c);
+  return setrgb(Vec2U{x, y}, c);
 }
 
 inline auto Image::getrgb(unsigned x, unsigned y) const -> Vec4B {
-  return getrgb({x, y});
+  return getrgb(Vec2U{x, y});
 }
 
 inline auto Image::clamp(int x, int y) const -> Vec4B {
-  return clamp({x, y});
+  return clamp(Vec2I{x, y});
 }
 
 inline auto Image::clamprgb(int x, int y) const -> Vec4B {
-  return clamprgb({x, y});
+  return clamprgb(Vec2I{x, y});
 }
 
 inline void Image::set32(Vec2U const& pos, Vec4B const& c) {
@@ -305,7 +305,7 @@ void Image::forEachPixel(CallbackType&& callback) {
   for (unsigned y = 0; y < m_height; y++) {
     for (unsigned x = 0; x < m_width; x++) {
       Vec4B pixel = get(x, y);
-      callback(x, y, pixel);
+      std::forward<CallbackType>(callback)(x, y, pixel);
       set(x, y, pixel);
     }
   }
@@ -314,7 +314,7 @@ void Image::forEachPixel(CallbackType&& callback) {
 struct ImageView {
   [[nodiscard]] inline auto empty() const -> bool { return size.x() == 0 || size.y() == 0; }
   ImageView() = default;
-  ImageView(Image const& image);
+  explicit ImageView(Image const& image);
 
   Vec2U size{0, 0};
   std::uint8_t const* data = nullptr;

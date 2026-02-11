@@ -1,631 +1,390 @@
-#include "StarColor.hpp"
-
-#include "StarEncode.hpp"
-#include "StarFormat.hpp"
-#include "StarInterpolation.hpp"
+module star.color;
 
 import std;
+import star.encode;
+
+namespace star {
+
+std::flat_map<std::string, color> const color::named_colors{{"red", color::Red},
+                                                           {"orange", color::Orange},
+                                                           {"yellow", color::Yellow},
+                                                           {"green", color::Green},
+                                                           {"blue", color::Blue},
+                                                           {"indigo", color::Indigo},
+                                                           {"violet", color::Violet},
+                                                           {"black", color::Black},
+                                                           {"white", color::White},
+                                                           {"magenta", color::Magenta},
+                                                           {"darkmagenta", color::DarkMagenta},
+                                                           {"cyan", color::Cyan},
+                                                           {"darkcyan", color::DarkCyan},
+                                                           {"cornflowerblue", color::CornFlowerBlue},
+                                                           {"gray", color::Gray},
+                                                           {"lightgray", color::LightGray},
+                                                           {"darkgray", color::DarkGray},
+                                                           {"darkgreen", color::DarkGreen},
+                                                           {"pink", color::Pink},
+                                                           {"clear", color::Clear}};
+
+constexpr auto color::rgbf(const vec_3f& c) -> color { return rgbaf(c[0], c[1], c[2], 1.0F); }
+
+constexpr auto color::rgbaf(const vec_4f& c) -> color { return rgbaf(c[0], c[1], c[2], c[3]); }
+
+constexpr auto color::temperature(float temp) -> color {
+	temp = std::clamp(temp, 1000.0F, 40000.0F) / 100.0F;
+	double r, g, b;
+	if (temp <= 66) {
+		r = 255;
+		g = std::clamp(99.4708025861 * std::log(temp) - 161.1195681661, 0.0, 255.0);
+		b = (temp <= 19) ? 0 : std::clamp(138.5177312231 * std::log(temp - 10) - 305.0447927307, 0.0, 255.0);
+	} else {
+		r = std::clamp(329.698727446 * std::pow(temp - 60, -0.1332047592), 0.0, 255.0);
+		g = std::clamp(288.1221695283 * std::pow(temp - 60, -0.0755148492), 0.0, 255.0);
+		b = 255;
+	}
+	return rgbaf(static_cast<float>(r) / 255.0F, static_cast<float>(g) / 255.0F, static_cast<float>(b) / 255.0F, 1.0F);
+}
+
+constexpr auto color::rgb(vec_3b const& c) -> color { return rgb(c[0], c[1], c[2]); }
+
+constexpr auto color::rgba(vec_4b const& c) -> color { return rgba(c[0], c[1], c[2], c[3]); }
+
+constexpr auto color::hsv(float h, float s, float v) -> color { return hsva(h, s, v, 1.0F); }
+
+constexpr auto color::hsva(float h, float s, float v, float a) -> color {
+	h = std::clamp(h, 0.0F, 1.0F);
+	s = std::clamp(s, 0.0F, 1.0F);
+	v = std::clamp(v, 0.0F, 1.0F);
+
+	if (s == 0.0F) {
+		return rgbaf(v, v, v, a);
+	}
+
+	float var_h = (h == 1.0F ? 0.0F : h * 6.0F);
+	int var_i = static_cast<int>(std::floor(var_h));
+	float v1 = v * (1.0F - s);
+	float v2 = v * (1.0F - s * (var_h - static_cast<float>(var_i)));
+	float v3 = v * (1.0F - (1.0F - (var_h - static_cast<float>(var_i))) * s);
+
+	switch (var_i) {
+	case 0: return rgbaf(v, v3, v1, a);
+	case 1: return rgbaf(v2, v, v1, a);
+	case 2: return rgbaf(v1, v, v3, a);
+	case 3: return rgbaf(v1, v2, v, a);
+	case 4: return rgbaf(v3, v1, v, a);
+	default: return rgbaf(v, v1, v2, a);
+	}
+}
 
-namespace Star {
-
-Color const Color::Red = Color::rgba(255, 73, 66, 255);
-Color const Color::Orange = Color::rgba(255, 180, 47, 255);
-Color const Color::Yellow = Color::rgba(255, 239, 30, 255);
-Color const Color::Green = Color::rgba(79, 230, 70, 255);
-Color const Color::Blue = Color::rgba(38, 96, 255, 255);
-Color const Color::Indigo = Color::rgba(75, 0, 130, 255);
-Color const Color::Violet = Color::rgba(160, 119, 255, 255);
-Color const Color::Black = Color::rgba(0, 0, 0, 255);
-Color const Color::White = Color::rgba(255, 255, 255, 255);
-Color const Color::Magenta = Color::rgba(221, 92, 249, 255);
-Color const Color::DarkMagenta = Color::rgba(142, 33, 144, 255);
-Color const Color::Cyan = Color::rgba(0, 220, 233, 255);
-Color const Color::DarkCyan = Color::rgba(0, 137, 165, 255);
-Color const Color::CornFlowerBlue = Color::rgba(100, 149, 237, 255);
-Color const Color::Gray = Color::rgba(160, 160, 160, 255);
-Color const Color::LightGray = Color::rgba(192, 192, 192, 255);
-Color const Color::DarkGray = Color::rgba(128, 128, 128, 255);
-Color const Color::DarkGreen = Color::rgba(0, 128, 0, 255);
-Color const Color::Pink = Color::rgba(255, 162, 187, 255);
-Color const Color::Clear = Color::rgba(0, 0, 0, 0);
-
-CaseInsensitiveStringMap<Color> const Color::NamedColors{
-  {"red", Color::Red},
-  {"orange", Color::Orange},
-  {"yellow", Color::Yellow},
-  {"green", Color::Green},
-  {"blue", Color::Blue},
-  {"indigo", Color::Indigo},
-  {"violet", Color::Violet},
-  {"black", Color::Black},
-  {"white", Color::White},
-  {"magenta", Color::Magenta},
-  {"darkmagenta", Color::DarkMagenta},
-  {"cyan", Color::Cyan},
-  {"darkcyan", Color::DarkCyan},
-  {"cornflowerblue", Color::CornFlowerBlue},
-  {"gray", Color::Gray},
-  {"lightgray", Color::LightGray},
-  {"darkgray", Color::DarkGray},
-  {"darkgreen", Color::DarkGreen},
-  {"pink", Color::Pink},
-  {"clear", Color::Clear}
-};
-
-auto Color::rgbf(const Vec3F& c) -> Color {
-  return rgbaf(c[0], c[1], c[2], 1.0f);
-}
-
-auto Color::rgbaf(const Vec4F& c) -> Color {
-  return rgbaf(c[0], c[1], c[2], c[3]);
-}
-
-auto Color::rgbf(float r, float g, float b) -> Color {
-  return rgbaf(r, g, b, 1.0f);
-}
-
-auto Color::rgbaf(float r, float g, float b, float a) -> Color {
-  Color c;
-  c.m_data[0] = clamp(r, 0.0f, 1.0f);
-  c.m_data[1] = clamp(g, 0.0f, 1.0f);
-  c.m_data[2] = clamp(b, 0.0f, 1.0f);
-  c.m_data[3] = clamp(a, 0.0f, 1.0f);
-  return c;
-}
-
-auto Color::rgb(std::uint8_t r, std::uint8_t g, std::uint8_t b) -> Color {
-  return rgba(r, g, b, 255);
-}
+constexpr auto color::hsv(vec_3f const& c) -> color { return color::hsv(c[0], c[1], c[2]); }
 
-auto Color::rgba(std::uint8_t r, std::uint8_t g, std::uint8_t b, std::uint8_t a) -> Color {
-  Color c;
-  c.m_data[0] = r / 255.0f;
-  c.m_data[1] = g / 255.0f;
-  c.m_data[2] = b / 255.0f;
-  c.m_data[3] = a / 255.0f;
-  return c;
-}
+constexpr auto color::hsva(vec_4f const& c) -> color { return color::hsva(c[0], c[1], c[2], c[3]); }
 
-auto Color::fromUint32(std::uint32_t v) -> Color {
-  Color c;
-  c.setAlpha(((std::uint8_t*)(&v))[3]);
-  c.setRed(((std::uint8_t*)(&v))[2]);
-  c.setGreen(((std::uint8_t*)(&v))[1]);
-  c.setBlue(((std::uint8_t*)(&v))[0]);
-  return c;
-}
+constexpr auto color::grayf(float g) -> color { return color::rgbf(g, g, g); }
 
-auto Color::temperature(float temp) -> Color {
-  // Magic numbers ahoy!
-  Color c;
-  c.setAlpha(255);
-
-  temp = clamp<float>(temp, 1000, 40000);
-
-  temp /= 100;
-
-  double r, g, b;
-  if (temp <= 66) {
-    r = 255;
-    g = clamp<double>(99.4708025861 * std::log(temp) - 161.1195681661, 0, 255);
-    if (temp <= 19) {
-      b = 0;
-    } else {
-      b = clamp<double>(138.5177312231 * std::log(temp - 10) - 305.0447927307, 0, 255);
-    }
-  } else {
-    r = clamp<double>(329.698727446 * std::pow(temp - 60, -0.1332047592), 0, 255);
-    g = clamp<double>(288.1221695283 * std::pow(temp - 60, -0.0755148492), 0, 255);
-    b = 255;
-  }
-
-  c.setRedF((float)r / 255.0f);
-  c.setGreenF((float)g / 255.0f);
-  c.setBlueF((float)b / 255.0f);
-
-  return c;
-}
+constexpr auto color::gray(std::uint8_t g) -> color { return color::rgb(g, g, g); }
 
-auto Color::rgb(Vec3B const& c) -> Color {
-  return rgb(c[0], c[1], c[2]);
+color::color(std::string_view name) {
+	if (name.starts_with('#')) {
+		*this = from_hex(name.substr(1));
+	} else {
+		auto i = named_colors.find(std::string(name));
+		if (i != named_colors.end()) {
+			*this = i->second;
+		} else {
+			throw color_exception(std::format("Named color {} not found", name), false);
+		}
+	}
 }
 
-auto Color::rgba(Vec4B const& c) -> Color {
-  return rgba(c[0], c[1], c[2], c[3]);
-}
+constexpr auto color::from_hex(std::string_view s) -> color { return color::rgba(hex_to_vec_4b(s)); }
 
-auto Color::hsv(float h, float s, float v) -> Color {
-  return hsva(h, s, v, 1.0f);
-}
+constexpr auto color::to_rgb() const -> vec_3b { return vec_3b{red(), green(), blue()}; }
 
-auto Color::hsva(float h, float s, float v, float a) -> Color {
-  h = clamp(h, 0.0f, 1.0f);
-  s = clamp(s, 0.0f, 1.0f);
-  v = clamp(v, 0.0f, 1.0f);
-  a = clamp(a, 0.0f, 1.0f);
-
-  Color retColor;
-  if (s == 0.0f) {
-    retColor.setRedF(v);
-    retColor.setGreenF(v);
-    retColor.setBlueF(v);
-    retColor.setAlphaF(a);
-  } else {
-    float var_h, var_i, var_1, var_2, var_3, var_r, var_g, var_b;
-
-    var_h = h * 6.0f;
-    if (var_h == 6.0f)
-      var_h = 0.0f; // H must be < 1
-
-    var_i = std::floor(var_h);
-
-    var_1 = v * (1.0f - s);
-    var_2 = v * (1.0f - s * (var_h - var_i));
-    var_3 = v * (1.0f - s * (1.0f - (var_h - var_i)));
-
-    if (var_i == 0) {
-      var_r = v;
-      var_g = var_3;
-      var_b = var_1;
-    } else if (var_i == 1) {
-      var_r = var_2;
-      var_g = v;
-      var_b = var_1;
-    } else if (var_i == 2) {
-      var_r = var_1;
-      var_g = v;
-      var_b = var_3;
-    } else if (var_i == 3) {
-      var_r = var_1;
-      var_g = var_2;
-      var_b = v;
-    } else if (var_i == 4) {
-      var_r = var_3;
-      var_g = var_1;
-      var_b = v;
-    } else {
-      var_r = v;
-      var_g = var_1;
-      var_b = var_2;
-    }
-
-    retColor.setRedF(var_r);
-    retColor.setGreenF(var_g);
-    retColor.setBlueF(var_b);
-    retColor.setAlphaF(a);
-  }
-  return retColor;
-}
+constexpr auto color::to_rgbf() const -> vec_3f { return vec_3f{redf(), greenf(), bluef()}; }
 
-auto Color::hsv(Vec3F const& c) -> Color {
-  return Color::hsv(c[0], c[1], c[2]);
-}
+constexpr auto color::toHsva() const -> vec_4f {
+	float h, s, v;
 
-auto Color::hsva(Vec4F const& c) -> Color {
-  return Color::hsva(c[0], c[1], c[2], c[3]);
-}
+	float var_r = redf();
+	float var_g = greenf();
+	float var_b = bluef();
 
-auto Color::grayf(float g) -> Color {
-  return Color::rgbf(g, g, g);
-}
+	// Min. value of RGB
+	float var_min = std::min({var_r, var_g, var_b});
 
-auto Color::gray(std::uint8_t g) -> Color {
-  return Color::rgb(g, g, g);
-}
+	// Max. value of RGB
+	float var_max = std::max({var_r, var_g, var_b});
 
-Color::Color(StringView name) {
-  if (name.utf8().starts_with('#'))
-    *this = fromHex(name.utf8().substr(1));
-  else {
-    auto i = NamedColors.find(String(name));
-    if (i != NamedColors.end())
-      *this = i->second;
-    else
-      throw ColorException(strf("Named color {} not found", name), false);
-  }
-}
+	// Delta RGB value
+	float del_max = var_max - var_min;
 
-auto Color::redF() const -> float {
-  return m_data[0];
-}
+	v = var_max;
 
-auto Color::greenF() const -> float {
-  return m_data[1];
-}
+	if (del_max == 0.0F) {// This is a gray, no chroma...
+		h = 0.0F;
+		s = 0.0F;
+	} else {// Chromatic data
+		s = del_max / var_max;
 
-auto Color::blueF() const -> float {
-  return m_data[2];
-}
+		float del_r = (((var_max - var_r) / 6.0F) + (del_max / 2.0F)) / del_max;
+		float del_g = (((var_max - var_g) / 6.0F) + (del_max / 2.0F)) / del_max;
+		float del_b = (((var_max - var_b) / 6.0F) + (del_max / 2.0F)) / del_max;
 
-auto Color::alphaF() const -> float {
-  return m_data[3];
-}
+		if (var_r == var_max) {
+			h = del_b - del_g;
+		} else if (var_g == var_max) {
+			h = (1.0F / 3.0F) + del_r - del_b;
+		} else {
+			h = (2.0F / 3.0F) + del_g - del_r;
+		}
 
-auto Color::isClear() const -> bool {
-  return m_data[3] == 0;
-}
+		if (h < 0.0F) {
+			h += 1.0F;
+		}
+		if (h >= 1.0F) {
+			h -= 1.0F;
+		}
+	}
 
-auto Color::red() const -> std::uint8_t {
-  return std::uint8_t(std::round(m_data[0] * 255));
+	return vec_4f{h, s, v, alphaf()};
 }
 
-auto Color::green() const -> std::uint8_t {
-  return std::uint8_t(std::round(m_data[1] * 255));
-}
+constexpr auto color::hue() const -> float { return toHsva()[0]; }
 
-auto Color::blue() const -> std::uint8_t {
-  return std::uint8_t(std::round(m_data[2] * 255));
-}
+constexpr auto color::saturation() const -> float {
+	// Min. value of RGB
+	float var_min = std::min({m_data[0], m_data[1], m_data[2]});
 
-auto Color::alpha() const -> std::uint8_t {
-  return std::uint8_t(m_data[3] * 255);
-}
+	// Max. value of RGB
+	float var_max = std::max({m_data[0], m_data[1], m_data[2]});
 
-void Color::setRedF(float r) {
-  m_data[0] = clamp(r, 0.0f, 1.0f);
-}
+	// Delta RGB value
+	float del_max = var_max - var_min;
 
-void Color::setGreenF(float g) {
-  m_data[1] = clamp(g, 0.0f, 1.0f);
+	if (del_max == 0.0F) {// This is a gray, no chroma...
+		return 0.0F;
+	} else {
+		return del_max / var_max;
+	}
 }
 
-void Color::setBlueF(float b) {
-  m_data[2] = clamp(b, 0.0f, 1.0f);
-}
+constexpr auto color::value() const -> float { return std::max({m_data[0], m_data[1], m_data[2]}); }
 
-void Color::setAlphaF(float a) {
-  m_data[3] = clamp(a, 0.0f, 1.0f);
+constexpr void color::set_hue(float h) {
+	auto hsva = toHsva();
+	*this = color::hsva(std::clamp(h, 0.0F, 1.0F), hsva[1], hsva[2], alphaf());
 }
 
-void Color::setRed(std::uint8_t r) {
-  m_data[0] = r / 255.0f;
+constexpr void color::set_saturation(float s) {
+	auto hsva = toHsva();
+	*this = color::hsva(hsva[0], std::clamp(s, 0.0F, 1.0F), hsva[2], alphaf());
 }
 
-void Color::setGreen(std::uint8_t g) {
-  m_data[1] = g / 255.0f;
+constexpr void color::set_value(float v) {
+	auto hsva = toHsva();
+	*this = color::hsva(hsva[0], hsva[1], std::clamp(v, 0.0F, 1.0F), alphaf());
 }
 
-void Color::setBlue(std::uint8_t b) {
-  m_data[2] = b / 255.0f;
-}
+constexpr void color::hue_shift(float h) { set_hue(pfmod(hue() + h, 1.0F)); }
 
-void Color::setAlpha(std::uint8_t a) {
-  m_data[3] = a / 255.0f;
+constexpr void color::fade(float value) {
+	m_data *= (1.0F - value);
+	m_data.clamp(0.0F, 1.0F);
 }
 
-auto Color::toUint32() const -> std::uint32_t {
-  std::uint32_t val;
-  ((std::uint8_t*)(&val))[3] = alpha();
-  ((std::uint8_t*)(&val))[2] = red();
-  ((std::uint8_t*)(&val))[1] = green();
-  ((std::uint8_t*)(&val))[0] = blue();
-  return val;
+auto operator<<(std::ostream& os, const color& c) -> std::ostream& {
+	os << c.to_rgbaf();
+	return os;
 }
 
-auto Color::fromHex(StringView s) -> Color {
-  return Color::rgba(hexToVec4B(s));
+constexpr auto color::to_linear(float in) -> float {
+	const float a = 0.055F;
+	if (in <= 0.04045F) {
+		return in / 12.92F;
+	}
+	return std::powf((in + a) / (1.0F + a), 2.4F);
 }
 
-auto Color::toRgba() const -> Vec4B {
-  return {red(), green(), blue(), alpha()};
+constexpr auto color::from_linear(float in) -> float {
+	const float a = 0.055F;
+	if (in <= 0.0031308F) {
+		return 12.92F * in;
+	}
+	return (1.0F + a) * std::powf(in, 1.0F / 2.4F) - a;
 }
 
-auto Color::toRgb() const -> Vec3B {
-  return {red(), green(), blue()};
+constexpr auto color::to_hex() const -> std::string {
+	auto rgba = to_rgba();
+	return hex_encode(std::as_bytes(std::span(rgba.ptr(), rgba[3] == 255 ? 3 : 4)));
 }
 
-auto Color::toRgbaF() const -> Vec4F {
-  return {redF(), greenF(), blueF(), alphaF()};
+constexpr void color::convert_to_linear() {
+	set_redf(to_linear(redf()));
+	set_greenf(to_linear(greenf()));
+	set_bluef(to_linear(bluef()));
 }
 
-auto Color::toRgbF() const -> Vec3F {
-  return {redF(), greenF(), blueF()};
+constexpr void color::convert_to_srgb() {
+	set_redf(from_linear(redf()));
+	set_greenf(from_linear(greenf()));
+	set_bluef(from_linear(bluef()));
 }
-
-auto Color::toHsva() const -> Vec4F {
-  float h, s, v;
-
-  float var_r = redF();
-  float var_g = greenF();
-  float var_b = blueF();
-
-  // Min. value of RGB
-  float var_min = std::min({var_r, var_g, var_b});
 
-  // Max. value of RGB
-  float var_max = std::max({var_r, var_g, var_b});
-
-  // Delta RGB value
-  float del_max = var_max - var_min;
-
-  v = var_max;
-
-  if (del_max == 0.0f) { // This is a gray, no chroma...
-    h = 0.0f;
-    s = 0.0f;
-  } else { // Chromatic data
-    s = del_max / var_max;
-
-    float del_r = (((var_max - var_r) / 6.0f) + (del_max / 2.0f)) / del_max;
-    float del_g = (((var_max - var_g) / 6.0f) + (del_max / 2.0f)) / del_max;
-    float del_b = (((var_max - var_b) / 6.0f) + (del_max / 2.0f)) / del_max;
-
-    if (var_r == var_max)
-      h = del_b - del_g;
-    else if (var_g == var_max)
-      h = (1.0f / 3.0f) + del_r - del_b;
-    else
-      /*if (var_b == var_max)*/ h = (2.0f / 3.0f) + del_g - del_r;
-
-    if (h < 0.0f)
-      h += 1.0f;
-    if (h >= 1.0f)
-      h -= 1.0f;
-  }
-
-  return {h, s, v, alphaF()};
+constexpr auto color::to_linear() -> color {
+	color c = *this;
+	c.convert_to_linear();
+	return c;
 }
 
-auto Color::hue() const -> float {
-  return toHsva()[0];
+constexpr auto color::to_srgb() -> color {
+	color c = *this;
+	c.convert_to_srgb();
+	return c;
 }
-
-auto Color::saturation() const -> float {
-  // Min. value of RGB
-  float var_min = std::min({m_data[0], m_data[1], m_data[2]});
 
-  // Max. value of RGB
-  float var_max = std::max({m_data[0], m_data[1], m_data[2]});
-
-  // Delta RGB value
-  float del_max = var_max - var_min;
-
-  if (del_max == 0.0f) { // This is a gray, no chroma...
-    return 0.0f;
-  } else
-    return del_max / var_max;
+constexpr auto color::contrasting() -> color {
+	color c = *this;
+	c.set_hue(c.hue() + 120);
+	return c;
 }
 
-auto Color::value() const -> float {
-  return std::max({m_data[0], m_data[1], m_data[2]});
+constexpr auto color::complementary() -> color {
+	color c = *this;
+	c.set_hue(c.hue() + 180);
+	return c;
 }
 
-void Color::setHue(float h) {
-  auto hsva = toHsva();
-  *this = Color::hsva(clamp(h, 0.0f, 1.0f), hsva[1], hsva[2], alphaF());
-}
+constexpr auto color::multiply(float amount) const -> color { return color::rgbaf(m_data * amount); }
 
-void Color::setSaturation(float s) {
-  auto hsva = toHsva();
-  *this = Color::hsva(hsva[0], clamp(s, 0.0f, 1.0f), hsva[2], alphaF());
-}
+auto color::operator+(color const& c) const -> color { return color::rgbaf(m_data + c.to_rgbaf()); }
 
-void Color::setValue(float v) {
-  auto hsva = toHsva();
-  *this = Color::hsva(hsva[0], hsva[1], clamp(v, 0.0f, 1.0f), alphaF());
-}
+auto color::operator*(color const& c) const -> color { return color::rgbaf(m_data.piecewise_multiply(c.to_rgbaf())); }
 
-void Color::hueShift(float h) {
-  setHue(pfmod(hue() + h, 1.0f));
-}
+auto color::operator+=(color const& c) -> color& { return *this = *this + c; }
 
-void Color::fade(float value) {
-  m_data *= (1.0f - value);
-  m_data.clamp(0.0f, 1.0f);
-}
+auto color::operator*=(color const& c) -> color& { return *this = *this * c; }
 
-auto Color::operator==(const Color& c) const -> bool {
-  return m_data == c.m_data;
-}
+auto color::hue_shift_vec_4b(vec_4b color, float hue) -> vec_4b {
+	float h, s, v;
 
-auto Color::operator!=(const Color& c) const -> bool {
-  return m_data != c.m_data;
-}
+	float var_r = static_cast<std::float_t>(color[0]) / 255.0F;
+	float var_g = static_cast<std::float_t>(color[1]) / 255.0F;
+	float var_b = static_cast<std::float_t>(color[2]) / 255.0F;
 
-auto operator<<(std::ostream& os, const Color& c) -> std::ostream& {
-  os << c.toRgbaF();
-  return os;
-}
+	// Min. value of RGB
+	float var_min = std::min({var_r, var_g, var_b});
 
-auto Color::toLinear(float in) -> float {
-  const float a = 0.055f;
-  if (in <= 0.04045f)
-    return in / 12.92f;
-  return std::powf((in + a) / (1.0f + a), 2.4f);
-}
+	// Max. value of RGB
+	float var_max = std::max({var_r, var_g, var_b});
 
-auto Color::fromLinear(float in) -> float {
-  const float a = 0.055f;
-  if (in <= 0.0031308f)
-    return 12.92f * in;
-  return (1.0f + a) * std::powf(in, 1.0f / 2.4f) - a;
-}
+	// Delta RGB value
+	float del_max = var_max - var_min;
 
-auto Color::toHex() const -> String {
-  auto rgba = toRgba();
-  return hexEncode((char*)rgba.ptr(), rgba[3] == 255 ? 3 : 4);
-}
+	v = var_max;
 
-void Color::convertToLinear() {
-  setRedF(toLinear(redF()));
-  setGreenF(toLinear(greenF()));
-  setBlueF(toLinear(blueF()));
-}
+	if (del_max == 0.0F) {// This is a gray, no chroma...
+		h = 0.0F;
+		s = 0.0F;
+	} else {// Chromatic data
+		s = del_max / var_max;
 
-void Color::convertToSRGB() {
-  setRedF(fromLinear(redF()));
-  setGreenF(fromLinear(greenF()));
-  setBlueF(fromLinear(blueF()));
-}
+		float vd = 1.0F / 6.0F;
+		float dmh = del_max * 0.5F;
+		float dmi = 1.0F / del_max;
+		float del_r = (((var_max - var_r) * vd) + dmh) * dmi;
+		float del_g = (((var_max - var_g) * vd) + dmh) * dmi;
+		float del_b = (((var_max - var_b) * vd) + dmh) * dmi;
 
-auto Color::toLinear() -> Color {
-  Color c = *this;
-  c.convertToLinear();
-  return c;
-}
+		if (var_r == var_max) {
+			h = del_b - del_g;
+		} else if (var_g == var_max) {
+			h = (1.0F / 3.0F) + del_r - del_b;
+		} else {
+			h = (2.0F / 3.0F) + del_g - del_r;
+		}
 
-auto Color::toSRGB() -> Color {
-  Color c = *this;
-  c.convertToSRGB();
-  return c;
-}
+		if (h < 0.0F) {
+			h += 1.0F;
+		}
+		if (h >= 1.0F) {
+			h -= 1.0F;
+		}
+	}
 
-auto Color::contrasting() -> Color {
-  Color c = *this;
-  c.setHue(c.hue() + 120);
-  return c;
-}
+	h += hue;
 
-auto Color::complementary() -> Color {
-  Color c = *this;
-  c.setHue(c.hue() + 180);
-  return c;
-}
+	if (h >= 1.0F) {
+		h -= 1.0F;
+	}
 
-auto Color::mix(Color const& c, float amount) const -> Color {
-  return Color::rgbaf(lerp(clamp(amount, 0.0f, 1.0f), toRgbaF(), c.toRgbaF()));
-}
+	if (s == 0.0F) {
+		auto c = std::uint8_t(std::round(v * 255));
+		return vec_4b{c, c, c, color[3]};
+	} else {
+		float var_h, var_i, var_1, var_2, var_3, var_r, var_g, var_b;
 
-auto Color::multiply(float amount) const -> Color {
-  return Color::rgbaf(m_data * amount);
-}
+		var_h = h * 6.0F;
+		if (var_h == 6.0F) {
+			var_h = 0.0F;// H must be < 1
+		}
 
-auto Color::operator+(Color const& c) const -> Color {
-  return Color::rgbaf(m_data + c.toRgbaF());
-}
+		var_i = std::floor(var_h);
 
-auto Color::operator*(Color const& c) const -> Color {
-  return Color::rgbaf(m_data.piecewiseMultiply(c.toRgbaF()));
-}
+		var_1 = v * (1.0F - s);
+		var_2 = v * (1.0F - s * (var_h - var_i));
+		var_3 = v * (1.0F - s * (1.0F - (var_h - var_i)));
 
-auto Color::operator+=(Color const& c) -> Color& {
-  return * this = *this + c;
-}
+		if (var_i == 0) {
+			var_r = v;
+			var_g = var_3;
+			var_b = var_1;
+		} else if (var_i == 1) {
+			var_r = var_2;
+			var_g = v;
+			var_b = var_1;
+		} else if (var_i == 2) {
+			var_r = var_1;
+			var_g = v;
+			var_b = var_3;
+		} else if (var_i == 3) {
+			var_r = var_1;
+			var_g = var_2;
+			var_b = v;
+		} else if (var_i == 4) {
+			var_r = var_3;
+			var_g = var_1;
+			var_b = v;
+		} else {
+			var_r = v;
+			var_g = var_1;
+			var_b = var_2;
+		}
 
-auto Color::operator*=(Color const& c) -> Color& {
-  return * this = *this * c;
+		return vec_4b{std::uint8_t(std::round(var_r * 255)), std::uint8_t(std::round(var_g * 255)),
+		             std::uint8_t(std::round(var_b * 255)), color[3]};
+	}
 }
 
-auto Color::hueShiftVec4B(Vec4B color, float hue) -> Vec4B {
-  float h, s, v;
-
-  float var_r = color[0] / 255.0f;
-  float var_g = color[1] / 255.0f;
-  float var_b = color[2] / 255.0f;
-
-  // Min. value of RGB
-  float var_min = std::min({var_r, var_g, var_b});
-
-  // Max. value of RGB
-  float var_max = std::max({var_r, var_g, var_b});
-
-  // Delta RGB value
-  float del_max = var_max - var_min;
-
-  v = var_max;
-
-  if (del_max == 0.0f) { // This is a gray, no chroma...
-    h = 0.0f;
-    s = 0.0f;
-  } else { // Chromatic data
-    s = del_max / var_max;
-
-    float vd = 1.0f / 6.0f;
-    float dmh = del_max * 0.5f;
-    float dmi = 1.0f / del_max;
-    float del_r = (((var_max - var_r) * vd) + dmh) * dmi;
-    float del_g = (((var_max - var_g) * vd) + dmh) * dmi;
-    float del_b = (((var_max - var_b) * vd) + dmh) * dmi;
-
-    if (var_r == var_max)
-      h = del_b - del_g;
-    else if (var_g == var_max)
-      h = (1.0f / 3.0f) + del_r - del_b;
-    else
-      h = (2.0f / 3.0f) + del_g - del_r;
-
-    if (h < 0.0f)
-      h += 1.0f;
-    if (h >= 1.0f)
-      h -= 1.0f;
-  }
-
-  h += hue;
-
-  if (h >= 1.0f)
-    h -= 1.0f;
-
-  if (s == 0.0f) {
-    auto c = std::uint8_t(std::round(v * 255));
-    return {c, c, c, color[3]};
-  } else {
-    float var_h, var_i, var_1, var_2, var_3, var_r, var_g, var_b;
-
-    var_h = h * 6.0f;
-    if (var_h == 6.0f)
-      var_h = 0.0f; // H must be < 1
-
-    var_i = std::floor(var_h);
-
-    var_1 = v * (1.0f - s);
-    var_2 = v * (1.0f - s * (var_h - var_i));
-    var_3 = v * (1.0f - s * (1.0f - (var_h - var_i)));
-
-    if (var_i == 0) {
-      var_r = v;
-      var_g = var_3;
-      var_b = var_1;
-    } else if (var_i == 1) {
-      var_r = var_2;
-      var_g = v;
-      var_b = var_1;
-    } else if (var_i == 2) {
-      var_r = var_1;
-      var_g = v;
-      var_b = var_3;
-    } else if (var_i == 3) {
-      var_r = var_1;
-      var_g = var_2;
-      var_b = v;
-    } else if (var_i == 4) {
-      var_r = var_3;
-      var_g = var_1;
-      var_b = v;
-    } else {
-      var_r = v;
-      var_g = var_1;
-      var_b = var_2;
-    }
-
-    return {std::uint8_t(std::round(var_r * 255)), std::uint8_t(std::round(var_g * 255)), std::uint8_t(std::round(var_b * 255)), color[3]};
-  }
-}
+auto color::hex_to_vec_4b(std::string_view s) -> vec_4b {
+	std::array<std::uint8_t, 4> cbytes{};
+	auto out = std::as_writable_bytes(std::span(cbytes));
 
-auto Color::hexToVec4B(StringView s) -> Vec4B {
-  Array<std::uint8_t, 4> cbytes;
-
-  if (s.utf8Size() == 3) {
-    nibbleDecode(s.utf8Ptr(), 3, (char*)cbytes.data(), 4);
-    cbytes[0] = (cbytes[0] << 4) | cbytes[0];
-    cbytes[1] = (cbytes[1] << 4) | cbytes[1];
-    cbytes[2] = (cbytes[2] << 4) | cbytes[2];
-    cbytes[3] = 255;
-  } else if (s.utf8Size() == 4) {
-    nibbleDecode(s.utf8Ptr(), 4, (char*)cbytes.data(), 4);
-    cbytes[0] = (cbytes[0] << 4) | cbytes[0];
-    cbytes[1] = (cbytes[1] << 4) | cbytes[1];
-    cbytes[2] = (cbytes[2] << 4) | cbytes[2];
-    cbytes[3] = (cbytes[3] << 4) | cbytes[3];
-  } else if (s.utf8Size() == 6) {
-    hexDecode(s.utf8Ptr(), 6, (char*)cbytes.data(), 4);
-    cbytes[3] = 255;
-  } else if (s.utf8Size() == 8) {
-    hexDecode(s.utf8Ptr(), 8, (char*)cbytes.data(), 4);
-  } else {
-    throw ColorException(strf("Improper size {} for hex string '{}' in Color::hexToVec4B", s.utf8Size(), s), false);
-  }
-
-  return Vec4B(std::move(cbytes));
+	if (s.size() == 3) {
+		nibble_decode(s, out.subspan(0, 3));
+		for (int i : {0, 1, 2}) {
+			cbytes[i] = (cbytes[i] << 4) | cbytes[i];// NOLINT(hicpp-signed-bitwise)
+		}
+		cbytes[3] = 255;
+	} else if (s.size() == 6) {
+		hex_decode(s, out.subspan(0, 3));
+		cbytes[3] = 255;
+	} else if (s.size() == 8) {
+		hex_decode(s, out);
+	} else {
+		throw color_exception(std::format("Invalid hex color size: {}", s.size()));
+	}
+	return vec_4b(cbytes[0], cbytes[1], cbytes[2], cbytes[3]);
 }
 
-}
+}// namespace Star

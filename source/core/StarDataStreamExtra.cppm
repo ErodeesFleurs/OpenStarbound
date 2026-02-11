@@ -1,20 +1,18 @@
-#pragma once
+module;
 
 #include "StarColor.hpp"
-#include "StarDataStream.hpp"
-#include "StarEither.hpp"
 #include "StarMultiArray.hpp"
-#include "StarOrderedMap.hpp"
-#include "StarOrderedSet.hpp"
-#include "StarPoly.hpp"
-#include "StarVariant.hpp"
+
+export module star.data_stream_extra;
 
 import std;
+import star.data_stream;
+import star.poly;
 
 namespace Star {
 
 struct DataStreamWriteFunctor {
-  DataStreamWriteFunctor(DataStream& ds) : ds(ds) {}
+  explicit DataStreamWriteFunctor(DataStream& ds) : ds(ds) {}
 
   DataStream& ds;
   template <typename T>
@@ -97,7 +95,7 @@ auto operator>>(DataStream& ds, Vector<T, N>& vector) -> DataStream& {
 }
 
 inline auto operator<<(DataStream& ds, Color const& color) -> DataStream& {
-  ds << color.toRgbaF();
+  ds << color.to_rgbaf();
   return ds;
 }
 
@@ -144,74 +142,50 @@ auto operator>>(DataStream& ds, ListMixin<BaseList>& list) -> DataStream& {
   return ds;
 }
 
-template <typename BaseSet>
-auto operator<<(DataStream& ds, SetMixin<BaseSet> const& set) -> DataStream& {
-  ds.writeContainer(set);
-  return ds;
-}
-
-template <typename BaseSet>
-auto operator>>(DataStream& ds, SetMixin<BaseSet>& set) -> DataStream& {
-  ds.readContainer(set);
-  return ds;
-}
-
-template <typename BaseMap>
-auto operator<<(DataStream& ds, MapMixin<BaseMap> const& map) -> DataStream& {
-  ds.writeMapContainer(map);
-  return ds;
-}
-
-template <typename BaseMap>
-auto operator>>(DataStream& ds, MapMixin<BaseMap>& map) -> DataStream& {
+template <typename Key, typename Value, typename Compare, typename Allocator>
+auto operator>>(DataStream& ds, std::flat_map<Key, Value, Compare, Allocator>& map) -> DataStream& {
   ds.readMapContainer(map);
   return ds;
 }
 
 template <typename Key, typename Value, typename Compare, typename Allocator>
-auto operator>>(DataStream& ds, OrderedMap<Key, Value, Compare, Allocator>& map) -> DataStream& {
-  ds.readMapContainer(map);
-  return ds;
-}
-
-template <typename Key, typename Value, typename Compare, typename Allocator>
-auto operator<<(DataStream& ds, OrderedMap<Key, Value, Compare, Allocator> const& map) -> DataStream& {
+auto operator<<(DataStream& ds, std::flat_map<Key, Value, Compare, Allocator> const& map) -> DataStream& {
   ds.writeMapContainer(map);
   return ds;
 }
 
 template <typename Key, typename Value, typename Hash, typename Equals, typename Allocator>
-auto operator>>(DataStream& ds, OrderedHashMap<Key, Value, Hash, Equals, Allocator>& map) -> DataStream& {
+auto operator>>(DataStream& ds,  std::flat_map<Key, Value, Hash, Equals, Allocator>& map) -> DataStream& {
   ds.readMapContainer(map);
   return ds;
 }
 
 template <typename Key, typename Value, typename Hash, typename Equals, typename Allocator>
-auto operator<<(DataStream& ds, OrderedHashMap<Key, Value, Hash, Equals, Allocator> const& map) -> DataStream& {
+auto operator<<(DataStream& ds, std::flat_map<Key, Value, Hash, Equals, Allocator> const& map) -> DataStream& {
   ds.writeMapContainer(map);
   return ds;
 }
 
 template <typename Value, typename Compare, typename Allocator>
-auto operator>>(DataStream& ds, OrderedSet<Value, Compare, Allocator>& set) -> DataStream& {
+auto operator>>(DataStream& ds, std::flat_set<Value, Compare, Allocator>& set) -> DataStream& {
   ds.readContainer(set);
   return ds;
 }
 
 template <typename Value, typename Compare, typename Allocator>
-auto operator<<(DataStream& ds, OrderedSet<Value, Compare, Allocator> const& set) -> DataStream& {
+auto operator<<(DataStream& ds, std::flat_set<Value, Compare, Allocator> const& set) -> DataStream& {
   ds.writeContainer(set);
   return ds;
 }
 
 template <typename Value, typename Hash, typename Equals, typename Allocator>
-auto operator>>(DataStream& ds, OrderedHashSet<Value, Hash, Equals, Allocator>& set) -> DataStream& {
+auto operator>>(DataStream& ds, std::flat_set<Value, Equals, Allocator>& set) -> DataStream& {
   ds.readContainer(set);
   return ds;
 }
 
 template <typename Value, typename Hash, typename Equals, typename Allocator>
-auto operator<<(DataStream& ds, OrderedHashSet<Value, Hash, Equals, Allocator> const& set) -> DataStream& {
+auto operator<<(DataStream& ds, std::flat_set<Value, Equals, Allocator> const& set) -> DataStream& {
   ds.writeContainer(set);
   return ds;
 }
@@ -347,10 +321,11 @@ auto operator<<(DataStream& ds, Either<Left, Right> const& either) -> DataStream
 template <typename Left, typename Right>
 auto operator>>(DataStream& ds, Either<Left, Right>& either) -> DataStream& {
   auto m = ds.read<std::uint8_t>();
-  if (m == 1)
+  if (m == 1) {
     either = makeLeft(ds.read<Left>());
-  else if (m == 2)
+  } else if (m == 2) {
     either = makeRight(ds.read<Right>());
+}
   return ds;
 }
 

@@ -81,4 +81,4 @@ private:
   std::optional<String> m_onWorldQuestId;
 };
 
-}
+}// namespace Star

@@ -1,15 +1,19 @@
 #include "StarMonsterDatabase.hpp"
-#include "StarMonster.hpp"
-#include "StarRoot.hpp"
+
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRandom.hpp"
 #include "StarLexicalCast.hpp"
-#include "StarRootLuaBindings.hpp"
+#include "StarMonster.hpp"
+#include "StarRandom.hpp"
 #include "StarRebuilder.hpp"
+#include "StarRoot.hpp"
+#include "StarRootLuaBindings.hpp"
+
+import std;
 
 namespace Star {
 
-MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster")) {
+MonsterDatabase::MonsterDatabase() : m_rebuilder(std::make_shared<Rebuilder>("monster")) {
   auto assets = Root::singleton().assets();
 
   auto& monsterTypes = assets->scanExtension("monstertype");
@@ -145,15 +149,15 @@ void MonsterDatabase::cleanup() {
   m_monsterCache.cleanup();
 }
 
-StringList MonsterDatabase::monsterTypes() const {
+auto MonsterDatabase::monsterTypes() const -> StringList {
   return m_monsterTypes.keys();
 }
 
-MonsterVariant MonsterDatabase::randomMonster(String const& typeName, Json const& uniqueParameters) const {
+auto MonsterDatabase::randomMonster(String const& typeName, Json const& uniqueParameters) const -> MonsterVariant {
   size_t seed;
   if (auto seedConfig = uniqueParameters.opt("seed")) {
     if (seedConfig->type() == Json::Type::String) {
-      seed = lexicalCast<uint64_t>(seedConfig->toString());
+      seed = lexicalCast<std::uint64_t>(seedConfig->toString());
     } else {
       seed = seedConfig->toUInt();
     }
@@ -164,14 +168,14 @@ MonsterVariant MonsterDatabase::randomMonster(String const& typeName, Json const
   return monsterVariant(typeName, seed, uniqueParameters);
 }
 
-MonsterVariant MonsterDatabase::monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters) const {
+auto MonsterDatabase::monsterVariant(String const& typeName, std::uint64_t seed, Json const& uniqueParameters) const -> MonsterVariant {
   MutexLocker locker(m_cacheMutex);
-  return m_monsterCache.get(make_tuple(typeName, seed, uniqueParameters), [this](tuple<String, uint64_t, Json> const& key) {
-      return produceMonster(get<0>(key), get<1>(key), get<2>(key));
-    });
+  return m_monsterCache.get(std::make_tuple(typeName, seed, uniqueParameters), [this](std::tuple<String, std::uint64_t, Json> const& key) -> MonsterVariant {
+    return produceMonster(get<0>(key), get<1>(key), get<2>(key));
+  });
 }
 
-ByteArray MonsterDatabase::writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules) const {
+auto MonsterDatabase::writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules) const -> ByteArray {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
 
@@ -182,31 +186,31 @@ ByteArray MonsterDatabase::writeMonsterVariant(MonsterVariant const& variant, Ne
   return ds.data();
 }
 
-MonsterVariant MonsterDatabase::readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules) const {
+auto MonsterDatabase::readMonsterVariant(ByteArray const& data, NetCompatibilityRules rules) const -> MonsterVariant {
   DataStreamBuffer ds(data);
   ds.setStreamCompatibilityVersion(rules);
 
-  String type = ds.read<String>();
-  uint64_t seed = ds.read<uint64_t>();
+  auto type = ds.read<String>();
+  auto seed = ds.read<std::uint64_t>();
   Json uniqueParameters = ds.read<Json>();
 
   return monsterVariant(type, seed, uniqueParameters);
 }
 
-Json MonsterDatabase::writeMonsterVariantToJson(MonsterVariant const& mVar) const {
+auto MonsterDatabase::writeMonsterVariantToJson(MonsterVariant const& mVar) const -> Json {
   return JsonObject{
-      {"type", mVar.type},
-      {"seed", mVar.seed},
-      {"uniqueParameters", mVar.uniqueParameters},
+    {"type", mVar.type},
+    {"seed", mVar.seed},
+    {"uniqueParameters", mVar.uniqueParameters},
   };
 }
 
-MonsterVariant MonsterDatabase::readMonsterVariantFromJson(Json const& variant) const {
+auto MonsterDatabase::readMonsterVariantFromJson(Json const& variant) const -> MonsterVariant {
   return monsterVariant(variant.getString("type"), variant.getUInt("seed"), variant.getObject("uniqueParameters"));
 }
 
-MonsterPtr MonsterDatabase::createMonster(
-    MonsterVariant monsterVariant, std::optional<float> level, Json uniqueParameters) const {
+auto MonsterDatabase::createMonster(
+  MonsterVariant monsterVariant, std::optional<float> level, Json uniqueParameters) const -> Ptr<Monster> {
   if (uniqueParameters) {
     monsterVariant.uniqueParameters = jsonMerge(monsterVariant.uniqueParameters, uniqueParameters);
     monsterVariant.parameters = jsonMerge(monsterVariant.parameters, monsterVariant.uniqueParameters);
@@ -215,15 +219,15 @@ MonsterPtr MonsterDatabase::createMonster(
   return make_shared<Monster>(monsterVariant, level);
 }
 
-MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
-  MonsterPtr monster;
+auto MonsterDatabase::diskLoadMonster(Json const& diskStore) const -> Ptr<Monster> {
+  Ptr<Monster> monster;
   try {
-    monster = make_shared<Monster>(diskStore);
+    monster = std::make_shared<Monster>(diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
-        monster = make_shared<Monster>(store);
+        monster = std::make_shared<Monster>(store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -237,11 +241,11 @@ MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
   return monster;
 }
 
-MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Monster>(readMonsterVariant(netStore, rules));
+auto MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const -> Ptr<Monster> {
+  return std::make_shared<Monster>(readMonsterVariant(netStore, rules));
 }
 
-List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) const {
+auto MonsterDatabase::monsterPortrait(MonsterVariant const& variant) const -> List<Drawable> {
   NetworkedAnimator animator(variant.animatorConfig);
   for (auto const& pair : variant.animatorPartTags)
     animator.setPartTag(pair.first, "partImage", pair.second);
@@ -254,7 +258,7 @@ List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) c
   return drawables;
 }
 
-std::pair<String, String> MonsterDatabase::skillInfo(String const& skillName) const {
+auto MonsterDatabase::skillInfo(String const& skillName) const -> std::pair<String, String> {
   if (m_skills.contains(skillName)) {
     auto& skill = m_skills.get(skillName);
     return std::make_pair(skill.label, skill.image);
@@ -263,16 +267,16 @@ std::pair<String, String> MonsterDatabase::skillInfo(String const& skillName) co
   }
 }
 
-Json MonsterDatabase::skillConfigParameter(String const& skillName, String const& configParameterName) const {
+auto MonsterDatabase::skillConfigParameter(String const& skillName, String const& configParameterName) const -> Json {
   if (m_skills.contains(skillName)) {
     auto& skill = m_skills.get(skillName);
     return skill.config.get(configParameterName, Json());
   } else {
-    return Json();
+    return {};
   }
 }
 
-ColorReplaceMap MonsterDatabase::colorSwap(String const& setName, uint64_t seed) const {
+auto MonsterDatabase::colorSwap(String const& setName, std::uint64_t seed) const -> ColorReplaceMap {
   if (m_colorSwaps.contains(setName))
     return staticRandomFrom(m_colorSwaps.get(setName), seed);
   else {
@@ -281,11 +285,11 @@ ColorReplaceMap MonsterDatabase::colorSwap(String const& setName, uint64_t seed)
   }
 }
 
-Json MonsterDatabase::monsterConfig(String const& typeName) const {
+auto MonsterDatabase::monsterConfig(String const& typeName) const -> Json {
   return m_monsterTypes.get(typeName).toJson();
 }
 
-Json MonsterDatabase::mergePartParameters(Json const& partParameterDescription, JsonArray const& parameters) {
+auto MonsterDatabase::mergePartParameters(Json const& partParameterDescription, JsonArray const& parameters) -> Json {
   JsonObject mergedParameters;
 
   // First assign all the defaults.
@@ -332,7 +336,7 @@ Json MonsterDatabase::mergePartParameters(Json const& partParameterDescription, 
   return mergedParameters;
 }
 
-Json MonsterDatabase::mergeFinalParameters(JsonArray const& parameters) {
+auto MonsterDatabase::mergeFinalParameters(JsonArray const& parameters) -> Json {
   JsonObject mergedParameters;
 
   for (auto const& applyParams : parameters) {
@@ -357,59 +361,59 @@ Json MonsterDatabase::mergeFinalParameters(JsonArray const& parameters) {
 }
 
 void MonsterDatabase::readCommonParameters(MonsterVariant& variant) {
-    if (auto newDesc = variant.parameters.optString("shortdescription")) {
-        variant.shortDescription = std::move(newDesc);
+  if (auto newDesc = variant.parameters.optString("shortdescription")) {
+    variant.shortDescription = std::move(newDesc);
+  }
+  variant.dropPoolConfig = variant.parameters.get("dropPools", variant.dropPoolConfig);
+  variant.scripts = jsonToStringList(variant.parameters.get("scripts"));
+  variant.animationScripts = jsonToStringList(variant.parameters.getArray("animationScripts", {}));
+  variant.animatorConfig = jsonMerge(variant.animatorConfig, variant.parameters.get("animationCustom", JsonObject()));
+  variant.initialScriptDelta = variant.parameters.getUInt("initialScriptDelta", 5);
+  variant.metaBoundBox = jsonToRectF(variant.parameters.get("metaBoundBox"));
+  variant.renderLayer = variant.parameters.optString("renderLayer").transform(parseRenderLayer).value_or(RenderLayerMonster);
+  variant.scale = variant.parameters.getFloat("scale");
+  variant.movementSettings = ActorMovementParameters(variant.parameters.get("movementSettings", {}));
+  variant.walkMultiplier = variant.parameters.getFloat("walkMultiplier", 1.0f);
+  variant.runMultiplier = variant.parameters.getFloat("runMultiplier", 1.0f);
+  variant.jumpMultiplier = variant.parameters.getFloat("jumpMultiplier", 1.0f);
+  variant.weightMultiplier = variant.parameters.getFloat("weightMultiplier", 1.0f);
+  variant.healthMultiplier = variant.parameters.getFloat("healthMultiplier", 1.0f);
+  variant.touchDamageMultiplier = variant.parameters.getFloat("touchDamageMultiplier", 1.0f);
+  variant.touchDamageConfig = variant.parameters.get("touchDamage", {});
+  variant.animationDamageParts = variant.parameters.getObject("animationDamageParts", {});
+  variant.statusSettings = variant.parameters.get("statusSettings");
+  variant.mouthOffset = jsonToVec2F(variant.parameters.get("mouthOffset")) / TilePixels;
+  variant.feetOffset = jsonToVec2F(variant.parameters.get("feetOffset")) / TilePixels;
+  variant.powerLevelFunction = variant.parameters.getString("powerLevelFunction", "monsterLevelPowerMultiplier");
+  variant.healthLevelFunction = variant.parameters.getString("healthLevelFunction", "monsterLevelHealthMultiplier");
+  variant.clientEntityMode = ClientEntityModeNames.getLeft(variant.parameters.getString("clientEntityMode", "ClientSlaveOnly"));
+  variant.persistent = variant.parameters.getBool("persistent", false);
+  variant.damageTeamType = TeamTypeNames.getLeft(variant.parameters.getString("damageTeamType", "enemy"));
+  variant.damageTeam = variant.parameters.getUInt("damageTeam", 2);
+
+  if (auto sdp = variant.parameters.get("selfDamagePoly", {}))
+    variant.selfDamagePoly = jsonToPolyF(sdp);
+  else
+    variant.selfDamagePoly = *variant.movementSettings.standingPoly;
+
+  variant.portraitIcon = variant.parameters.optString("portraitIcon");
+  variant.damageReceivedAggressiveDuration = variant.parameters.getFloat("damageReceivedAggressiveDuration", 1.0f);
+  variant.onDamagedOthersAggressiveDuration = variant.parameters.getFloat("onDamagedOthersAggressiveDuration", 5.0f);
+  variant.onFireAggressiveDuration = variant.parameters.getFloat("onFireAggressiveDuration", 5.0f);
+
+  variant.nametagColor = jsonToVec3B(variant.parameters.get("nametagColor", JsonArray{255, 255, 255}));
+
+  variant.colorSwap = variant.parameters.optObject("colorSwap").transform([](JsonObject const& json) -> ColorReplaceMap {
+    ColorReplaceMap swaps;
+    for (auto pair : json) {
+      swaps.insert(Color::fromHex(pair.first).toRgba(), Color::fromHex(pair.second.toString()).toRgba());
     }
-    variant.dropPoolConfig = variant.parameters.get("dropPools", variant.dropPoolConfig);
-    variant.scripts = jsonToStringList(variant.parameters.get("scripts"));
-    variant.animationScripts = jsonToStringList(variant.parameters.getArray("animationScripts", {}));
-    variant.animatorConfig = jsonMerge(variant.animatorConfig, variant.parameters.get("animationCustom", JsonObject()));
-    variant.initialScriptDelta = variant.parameters.getUInt("initialScriptDelta", 5);
-    variant.metaBoundBox = jsonToRectF(variant.parameters.get("metaBoundBox"));
-    variant.renderLayer = variant.parameters.optString("renderLayer").transform(parseRenderLayer).value_or(RenderLayerMonster);
-    variant.scale = variant.parameters.getFloat("scale");
-    variant.movementSettings = ActorMovementParameters(variant.parameters.get("movementSettings", {}));
-    variant.walkMultiplier = variant.parameters.getFloat("walkMultiplier", 1.0f);
-    variant.runMultiplier = variant.parameters.getFloat("runMultiplier", 1.0f);
-    variant.jumpMultiplier = variant.parameters.getFloat("jumpMultiplier", 1.0f);
-    variant.weightMultiplier = variant.parameters.getFloat("weightMultiplier", 1.0f);
-    variant.healthMultiplier = variant.parameters.getFloat("healthMultiplier", 1.0f);
-    variant.touchDamageMultiplier = variant.parameters.getFloat("touchDamageMultiplier", 1.0f);
-    variant.touchDamageConfig = variant.parameters.get("touchDamage", {});
-    variant.animationDamageParts = variant.parameters.getObject("animationDamageParts", {});
-    variant.statusSettings = variant.parameters.get("statusSettings");
-    variant.mouthOffset = jsonToVec2F(variant.parameters.get("mouthOffset")) / TilePixels;
-    variant.feetOffset = jsonToVec2F(variant.parameters.get("feetOffset")) / TilePixels;
-    variant.powerLevelFunction = variant.parameters.getString("powerLevelFunction", "monsterLevelPowerMultiplier");
-    variant.healthLevelFunction = variant.parameters.getString("healthLevelFunction", "monsterLevelHealthMultiplier");
-    variant.clientEntityMode = ClientEntityModeNames.getLeft(variant.parameters.getString("clientEntityMode", "ClientSlaveOnly"));
-    variant.persistent = variant.parameters.getBool("persistent", false);
-    variant.damageTeamType = TeamTypeNames.getLeft(variant.parameters.getString("damageTeamType", "enemy"));
-    variant.damageTeam = variant.parameters.getUInt("damageTeam", 2);
-
-    if (auto sdp = variant.parameters.get("selfDamagePoly", {}))
-        variant.selfDamagePoly = jsonToPolyF(sdp);
-    else
-        variant.selfDamagePoly = *variant.movementSettings.standingPoly;
-
-    variant.portraitIcon = variant.parameters.optString("portraitIcon");
-    variant.damageReceivedAggressiveDuration = variant.parameters.getFloat("damageReceivedAggressiveDuration", 1.0f);
-    variant.onDamagedOthersAggressiveDuration = variant.parameters.getFloat("onDamagedOthersAggressiveDuration", 5.0f);
-    variant.onFireAggressiveDuration = variant.parameters.getFloat("onFireAggressiveDuration", 5.0f);
-
-    variant.nametagColor = jsonToVec3B(variant.parameters.get("nametagColor", JsonArray{255, 255, 255}));
-
-    variant.colorSwap = variant.parameters.optObject("colorSwap").transform([](JsonObject const& json) -> ColorReplaceMap {
-        ColorReplaceMap swaps;
-        for (auto pair : json) {
-            swaps.insert(Color::fromHex(pair.first).toRgba(), Color::fromHex(pair.second.toString()).toRgba());
-        }
-        return swaps;
-        });
+    return swaps;
+  });
 }
 
-MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const {
-  RandomSource rand = RandomSource(seed);
+auto MonsterDatabase::produceMonster(String const& typeName, std::uint64_t seed, Json const& uniqueParameters) const -> MonsterVariant {
+  auto rand = RandomSource(seed);
 
   auto const& monsterType = m_monsterTypes.get(typeName);
 
@@ -454,7 +458,7 @@ MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t 
   monsterVariant.parameters = mergeFinalParameters({baseParameters, mergedPartParameters});
   monsterVariant.parameters = jsonMerge(monsterVariant.parameters, uniqueParameters);
 
-  tie(monsterVariant.parameters, monsterVariant.animatorConfig) = chooseSkills(monsterVariant.parameters, monsterVariant.animatorConfig, rand);
+  std::tie(monsterVariant.parameters, monsterVariant.animatorConfig) = chooseSkills(monsterVariant.parameters, monsterVariant.animatorConfig, rand);
   monsterVariant.animatorZoom = 1.0f;
   monsterVariant.dropPoolConfig = monsterType.dropPools;
 
@@ -466,8 +470,8 @@ MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t 
   return monsterVariant;
 }
 
-pair<Json, Json> MonsterDatabase::chooseSkills(
-    Json const& parameters, Json const& animatorConfig, RandomSource& rand) const {
+auto MonsterDatabase::chooseSkills(
+  Json const& parameters, Json const& animatorConfig, RandomSource& rand) const -> std::pair<Json, Json> {
   // Pick a subset of skills, then merge in any params from those skills
   if (parameters.contains("baseSkills") || parameters.contains("specialSkills")) {
     auto skillCount = parameters.getUInt("skillCount", 2);
@@ -501,7 +505,7 @@ pair<Json, Json> MonsterDatabase::chooseSkills(
     return {finalParameters, finalAnimatorConfig};
   } else if (parameters.contains("skills")) {
     auto availableSkillNames = jsonToStringList(parameters.get("skills"));
-    auto skillCount = min<size_t>(parameters.getUInt("skillCount", 2), availableSkillNames.size());
+    auto skillCount = std::min<size_t>(parameters.getUInt("skillCount", 2), availableSkillNames.size());
 
     List<String> skillNames;
     for (size_t i = 0; i < skillCount; ++i)
@@ -526,7 +530,7 @@ pair<Json, Json> MonsterDatabase::chooseSkills(
   }
 }
 
-Json MonsterDatabase::MonsterType::toJson() const {
+auto MonsterDatabase::MonsterType::toJson() const -> Json {
   return JsonObject{
     {"type", typeName},
     {"shortdescription", shortDescription.value_or("")},
@@ -539,7 +543,6 @@ Json MonsterDatabase::MonsterType::toJson() const {
     {"dropPools", dropPools},
     {"baseParameters", baseParameters},
     {"partParameters", partParameterOverrides},
-    {"partParameterDescription", partParameterDescription}
-  };
+    {"partParameterDescription", partParameterDescription}};
 }
-}
+}// namespace Star

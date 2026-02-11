@@ -1,11 +1,11 @@
 #pragma once
 
-#include "StarException.hpp"
 #include "StarJson.hpp"
 #include "StarMatrix3.hpp"
 #include "StarOrderedMap.hpp"
 
 import std;
+import star.exception;
 
 namespace Star {
 
@@ -44,149 +44,154 @@ using AnimatedPartSetException = ExceptionDerived<"AnimatedPartSetException">;
 // like damage or collision polys can be stored along with the animation
 // frames, the part state, the base part, whichever is most applicable.
 class AnimatedPartSet {
-public:
-  struct ActiveStateInformation {
-    String stateTypeName;
-    String stateName;
-    float timer;
-    unsigned frame;
-    float frameProgress;
-    JsonObject properties;
-    bool reverse;
-    unsigned nextFrame;
-    JsonObject nextProperties;
-  };
+  public:
+    struct ActiveStateInformation {
+        String stateTypeName;
+        String stateName;
+        float timer;
+        unsigned frame;
+        float frameProgress;
+        JsonObject properties;
+        bool reverse;
+        unsigned nextFrame;
+        JsonObject nextProperties;
+    };
 
-  struct ActivePartInformation {
-    String partName;
-    // If a state match is found, this will be set.
-    std::optional<ActiveStateInformation> activeState;
-    JsonObject properties;
-    JsonObject nextProperties;
+    struct ActivePartInformation {
+        String partName;
+        // If a state match is found, this will be set.
+        std::optional<ActiveStateInformation> activeState;
+        JsonObject properties;
+        JsonObject nextProperties;
 
-    [[nodiscard]] auto animationAffineTransform() const -> Mat3F;
-    void setAnimationAffineTransform(Mat3F const& matrix);
-    void setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress);
+        [[nodiscard]] auto animationAffineTransform() const -> Mat3F;
+        void setAnimationAffineTransform(Mat3F const& matrix);
+        void setAnimationAffineTransform(Mat3F const& mat1, Mat3F const& mat2, float progress);
 
-    float xTranslationAnimation;
-    float yTranslationAnimation;
-    float xScaleAnimation;
-    float yScaleAnimation;
-    float xShearAnimation;
-    float yShearAnimation;
-  };
+        float xTranslationAnimation;
+        float yTranslationAnimation;
+        float xScaleAnimation;
+        float yScaleAnimation;
+        float xShearAnimation;
+        float yShearAnimation;
+    };
 
-  enum AnimationMode {
-    End,
-    Loop,
-    Transition
-  };
+    enum AnimationMode { End, Loop, Transition };
 
-  struct State {
-    unsigned frames;
-    float cycle;
-    AnimationMode animationMode;
-    String transitionState;
-    JsonObject stateProperties;
-    JsonObject stateFrameProperties;
-  };
+    struct State {
+        unsigned frames;
+        float cycle;
+        AnimationMode animationMode;
+        String transitionState;
+        JsonObject stateProperties;
+        JsonObject stateFrameProperties;
+    };
 
-  struct StateType {
-    float priority;
-    bool enabled;
-    String defaultState;
-    JsonObject stateTypeProperties;
-    OrderedHashMap<String, std::shared_ptr<State const>> states;
+    struct StateType {
+        float priority;
+        bool enabled;
+        String defaultState;
+        JsonObject stateTypeProperties;
+        OrderedHashMap<String, std::shared_ptr<State const>> states;
 
-    ActiveStateInformation activeState;
-    State const* activeStatePointer;
-    bool activeStateDirty;
-  };
+        ActiveStateInformation activeState;
+        State const* activeStatePointer;
+        bool activeStateDirty;
+    };
 
-  struct PartState {
-    JsonObject partStateProperties;
-    JsonObject partStateFrameProperties;
-  };
+    struct PartState {
+        JsonObject partStateProperties;
+        JsonObject partStateFrameProperties;
+    };
 
-  struct Part {
-    JsonObject partProperties;
-    StringMap<StringMap<PartState>> partStates;
+    struct Part {
+        JsonObject partProperties;
+        StringMap<StringMap<PartState>> partStates;
 
-    ActivePartInformation activePart;
-    bool activePartDirty;
-  };
+        ActivePartInformation activePart;
+        bool activePartDirty;
+    };
 
-  AnimatedPartSet();
-  AnimatedPartSet(Json config, std::uint8_t animatiorVersion);
+    AnimatedPartSet();
+    AnimatedPartSet(Json config, std::uint8_t animatiorVersion);
 
-  // Returns the available state types.
-  [[nodiscard]] auto stateTypes() const -> StringList;
+    // Returns the available state types.
+    [[nodiscard]] auto stateTypes() const -> StringList;
 
-  // If a state type is disabled, no parts will match against it even
-  // if they have entries for that state type.
-  void setStateTypeEnabled(String const& stateTypeName, bool enabled);
-  void setEnabledStateTypes(StringList const& stateTypeNames);
-  [[nodiscard]] auto stateTypeEnabled(String const& stateTypeName) const -> bool;
+    // If a state type is disabled, no parts will match against it even
+    // if they have entries for that state type.
+    void setStateTypeEnabled(String const& stateTypeName, bool enabled);
+    void setEnabledStateTypes(StringList const& stateTypeNames);
+    [[nodiscard]] auto stateTypeEnabled(String const& stateTypeName) const -> bool;
 
-  // Returns the available states for the given state type.
-  [[nodiscard]] auto states(String const& stateTypeName) const -> StringList;
+    // Returns the available states for the given state type.
+    [[nodiscard]] auto states(String const& stateTypeName) const -> StringList;
 
-  [[nodiscard]] auto partNames() const -> StringList;
+    [[nodiscard]] auto partNames() const -> StringList;
 
-  // Sets the active state for this state type.  If the state is different than
-  // the previously set state, will start the new states animation off at the
-  // beginning.  If alwaysStart is true, then starts the state animation off at
-  // the beginning even if no state change has occurred.  Returns true if a
-  // state animation reset was done.
-  auto setActiveState(String const& stateTypeName, String const& stateName, bool alwaysStart = false, bool reverse = false) -> bool;
+    // Sets the active state for this state type.  If the state is different than
+    // the previously set state, will start the new states animation off at the
+    // beginning.  If alwaysStart is true, then starts the state animation off at
+    // the beginning even if no state change has occurred.  Returns true if a
+    // state animation reset was done.
+    auto setActiveState(String const& stateTypeName, String const& stateName,
+                        bool alwaysStart = false, bool reverse = false) -> bool;
 
-  // Restart this given state type's timer off at the beginning.
-  void restartState(String const& stateTypeName);
+    // Restart this given state type's timer off at the beginning.
+    void restartState(String const& stateTypeName);
 
-  [[nodiscard]] auto activeState(String const& stateTypeName) const -> ActiveStateInformation const&;
-  [[nodiscard]] auto activePart(String const& partName) const -> ActivePartInformation const&;
-  [[nodiscard]] auto getState(String const& stateTypeName, String const& stateName) const -> State const&;
+    [[nodiscard]] auto activeState(String const& stateTypeName) const
+      -> ActiveStateInformation const&;
+    [[nodiscard]] auto activePart(String const& partName) const -> ActivePartInformation const&;
+    [[nodiscard]] auto getState(String const& stateTypeName, String const& stateName) const
+      -> State const&;
 
-  [[nodiscard]] auto constParts() const -> StringMap<Part> const&;
-  auto parts() -> StringMap<Part>&;
+    [[nodiscard]] auto constParts() const -> StringMap<Part> const&;
+    auto parts() -> StringMap<Part>&;
 
-  // Function will be given the name of each state type, and the
-  // ActiveStateInformation for the active state for that state type.
-  void forEachActiveState(std::function<void(String const&, ActiveStateInformation const&)> callback) const;
+    // Function will be given the name of each state type, and the
+    // ActiveStateInformation for the active state for that state type.
+    void forEachActiveState(
+      std::function<void(String const&, ActiveStateInformation const&)> callback) const;
 
-  // Function will be given the name of each part, and the
-  // ActivePartInformation for the active part.
-  void forEachActivePart(std::function<void(String const&, ActivePartInformation const&)> callback) const;
+    // Function will be given the name of each part, and the
+    // ActivePartInformation for the active part.
+    void forEachActivePart(
+      std::function<void(String const&, ActivePartInformation const&)> callback) const;
 
-  // Useful for serializing state changes.  Since each set of states for a
-  // state type is ordered, it is possible to simply serialize and deserialize
-  // the state index for that state type.
-  [[nodiscard]] auto activeStateIndex(String const& stateTypeName) const -> std::size_t;
-  [[nodiscard]] auto activeStateReverse(String const& stateTypeName) const -> bool;
-  auto setActiveStateIndex(String const& stateTypeName, std::size_t stateIndex, bool alwaysStart = false, bool reverse = false) -> bool;
+    // Useful for serializing state changes.  Since each set of states for a
+    // state type is ordered, it is possible to simply serialize and deserialize
+    // the state index for that state type.
+    [[nodiscard]] auto activeStateIndex(String const& stateTypeName) const -> std::size_t;
+    [[nodiscard]] auto activeStateReverse(String const& stateTypeName) const -> bool;
+    auto setActiveStateIndex(String const& stateTypeName, std::size_t stateIndex,
+                             bool alwaysStart = false, bool reverse = false) -> bool;
 
-  // Animate each state type forward 'dt' time, and either change state frames
-  // or transition to new states, depending on the config.
-  void update(float dt);
+    // Animate each state type forward 'dt' time, and either change state frames
+    // or transition to new states, depending on the config.
+    void update(float dt);
 
-  // Pushes all the animations into their final state
-  void finishAnimations();
+    // Pushes all the animations into their final state
+    void finishAnimations();
 
-  [[nodiscard]] auto version() const -> std::uint8_t;
+    [[nodiscard]] auto version() const -> std::uint8_t;
 
-  [[nodiscard]] auto getStateFrameProperty(String const& stateType, String const& propertyName, String state, int frame) const -> Json;
-  [[nodiscard]] auto getPartStateFrameProperty(String const& partName, String const& propertyName, String const& stateType, String state, int frame) const -> Json;
+    [[nodiscard]] auto getStateFrameProperty(String const& stateType, String const& propertyName,
+                                             String state, int frame) const -> Json;
+    [[nodiscard]] auto getPartStateFrameProperty(String const& partName, String const& propertyName,
+                                                 String const& stateType, String state,
+                                                 int frame) const -> Json;
 
-private:
-  static auto stringToAnimationMode(String const& string) -> AnimationMode;
+  private:
+    static auto stringToAnimationMode(String const& string) -> AnimationMode;
 
-  void freshenActiveState(StateType& stateType);
-  void freshenActivePart(Part& part);
+    void freshenActiveState(StateType& stateType);
+    void freshenActivePart(Part& part);
 
-  OrderedHashMap<String, StateType> m_stateTypes;
-  StringMap<Part> m_parts;
+    OrderedHashMap<String, StateType> m_stateTypes;
+    StringMap<Part> m_parts;
 
-  std::uint8_t m_animatorVersion;
+    std::uint8_t m_animatorVersion;
 };
 
 }// namespace Star

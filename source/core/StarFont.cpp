@@ -110,15 +110,18 @@ auto Font::render(String::Char c) -> std::tuple<Image, Vec2I, bool> {
   loadFontImpl();
 
   FT_Face face = m_fontImpl->face;
-  if (FT_Load_Glyph(face, FT_Get_Char_Index(face, c), FontLoadFlags) != 0)
-    return {};
+  if (FT_Load_Glyph(face, FT_Get_Char_Index(face, c), FontLoadFlags) != 0) {
+    return {Image(), Vec2I(), false};
+  }
 
-  if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0)
-    return {};
+  if (FT_Render_Glyph(face->glyph, FT_RENDER_MODE_NORMAL) != 0) {
+    return {Image(), Vec2I(), false};
+  }
 
   FT_GlyphSlot slot = face->glyph;
-  if (!slot->bitmap.buffer)
-    return {};
+  if (!slot->bitmap.buffer) {
+    return {Image(), Vec2I(), false};
+  }
 
   unsigned width = slot->bitmap.width;
   unsigned height = slot->bitmap.rows;
@@ -157,7 +160,7 @@ auto Font::render(String::Char c) -> std::tuple<Image, Vec2I, bool> {
       }
     });
   } else {
-    return {};
+    return {Image(), Vec2I(), false};
   }
 
   return make_tuple(

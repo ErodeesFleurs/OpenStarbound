@@ -3,6 +3,7 @@
 #include "StarCasting.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+#include "StarRefPtr.hpp"
 
 import std;
 
@@ -530,7 +531,7 @@ void OpenGlRenderer::setScissorRect(std::optional<RectI> const& scissorRect) {
   }
 }
 
-auto OpenGlRenderer::createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) -> TexturePtr {
+auto OpenGlRenderer::createTexture(Image const& texture, TextureAddressing addressing, TextureFiltering filtering) -> RefPtr<Texture> {
   return createGlTexture(texture, addressing, filtering);
 }
 
@@ -723,7 +724,7 @@ auto OpenGlRenderer::GlTextureGroup::filtering() const -> TextureFiltering {
   return textureAtlasSet.textureFiltering;
 }
 
-auto OpenGlRenderer::GlTextureGroup::create(Image const& texture) -> TexturePtr {
+auto OpenGlRenderer::GlTextureGroup::create(Image const& texture) -> RefPtr<Texture> {
   // If the image is empty, or would not fit in the texture atlas with border
   // pixels, just create a regular texture
   Vec2U atlasTextureSize = textureAtlasSet.atlasTextureSize();
@@ -865,7 +866,7 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
   };
 
   auto textureCount = useMultiTexturing ? MultiTextureCount : 1;
-  auto addCurrentTexture = [&](TexturePtr texture) -> std::pair<uint8_t, Vec2F> {
+  auto addCurrentTexture = [&](RefPtr<Texture> texture) -> std::pair<uint8_t, Vec2F> {
     if (!texture)
       texture = whiteTexture;
 

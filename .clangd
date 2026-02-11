@@ -1,10 +1,9 @@
 CompileFlags:
   Add:
     [
-      -Xclang,
       -std=gnu++26,
       -fmodules,
-      -fmodule-file=std=/home/fleurs/Code/OpenStarbound/build/CMakeFiles/__cmake_cxx26.dir/std.pcm,
+      # -fmodule-file=std=/home/fleurs/Code/OpenStarbound/build/CMakeFiles/__cmake_cxx26.dir/std.pcm,
       -Wall,
       -Wextra,
       -Werror,
@@ -25,5 +24,10 @@ Index:
 Diagnostics:
   UnusedIncludes: Strict
   ClangTidy:
-    Add: modernize*
-  Suppress: ["could not build module*", "module_not_built*"]
+    Add: [modernize*, performance*, bugprone*, hicpp*]
+  Suppress:
+    [
+      "could not build module*",
+      "module_not_built*",
+      "bugprone-easily-swappable-parameters",
+    ]

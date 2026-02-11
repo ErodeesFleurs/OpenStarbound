@@ -1,20 +1,24 @@
 #include "StarNpcDatabase.hpp"
-#include "StarInventoryTypes.hpp"
-#include "StarNameGenerator.hpp" // IWYU pragma: keep
-#include "StarRandom.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarNpc.hpp"
-#include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
+
 #include "StarArmors.hpp"
-#include "StarRootLuaBindings.hpp"
+#include "StarConfig.hpp"
+#include "StarInventoryTypes.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarNameGenerator.hpp"// IWYU pragma: export
+#include "StarNpc.hpp"
+#include "StarRandom.hpp"
 #include "StarRebuilder.hpp"
-#include "StarStoredFunctions.hpp" // IWYU pragma: keep
+#include "StarRoot.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarStoredFunctions.hpp"
+
+import std;
 
 namespace Star {
 
-NpcDatabase::NpcDatabase() : m_rebuilder(make_shared<Rebuilder>("npc")) {
+NpcDatabase::NpcDatabase() : m_rebuilder(std::make_shared<Rebuilder>("npc")) {
   auto assets = Root::singleton().assets();
 
   auto& files = assets->scanExtension("npctype");
@@ -35,12 +39,12 @@ NpcDatabase::NpcDatabase() : m_rebuilder(make_shared<Rebuilder>("npc")) {
   }
 }
 
-NpcVariant NpcDatabase::generateNpcVariant(String const& species, String const& typeName, float level) const {
+auto NpcDatabase::generateNpcVariant(String const& species, String const& typeName, float level) const -> NpcVariant {
   return generateNpcVariant(species, typeName, level, Random::randu64(), {});
 }
 
-NpcVariant NpcDatabase::generateNpcVariant(
-    String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const {
+auto NpcDatabase::generateNpcVariant(
+  String const& species, String const& typeName, float level, std::uint64_t seed, Json const& overrides) const -> NpcVariant {
   NpcVariant variant;
   variant.species = species;
   variant.typeName = typeName;
@@ -54,7 +58,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
   variant.description = config.optString("description");
 
   auto levelVariance = jsonToVec2F(config.getArray("levelVariance", {0, 0}));
-  variant.level = max(randSource.randf(level + levelVariance[0], level + levelVariance[1]), 0.0f);
+  variant.level = std::max(randSource.randf(level + levelVariance[0], level + levelVariance[1]), 0.0f);
 
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.initialScriptDelta = config.getUInt("initialScriptDelta", 5);
@@ -71,7 +75,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
     identity.name = config.getString("npcname");
   else if (config.contains("nameGen")) {
     identity.name = Root::singleton().nameGenerator()->generateName(
-        jsonToStringList(config.get("nameGen"))[(int)identity.gender], randSource);
+      jsonToStringList(config.get("nameGen"))[(int)identity.gender], randSource);
   }
   // we're going to kinda end up doing this twice just to make sure it ends up generating with the right personality array
   // its dumb that personality is the only identity value that isn't in the customization screen but comes from the humanoid config
@@ -81,7 +85,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
     identity = HumanoidIdentity(jsonMerge(identity.toJson(), config.get("identity")));
 
   variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
-  if (variant.uniqueHumanoidConfig){
+  if (variant.uniqueHumanoidConfig) {
     variant.humanoidConfig = Root::singleton().assets()->json(config.getString("humanoidConfig"));
     auto usedHumanoidConfig = speciesDatabase->humanoidConfig(identity, variant.humanoidParameters, variant.humanoidConfig);
     // this only needs to be done if the npc has a unique humanoid config, otherwise the output from generateHumanoid should be fine
@@ -99,17 +103,17 @@ NpcVariant NpcDatabase::generateNpcVariant(
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings");
 
-  auto functionDatabase = Root::singleton().functionDatabase();
+  ConstPtr<FunctionDatabase> functionDatabase = Root::singleton().functionDatabase();
   float powerMultiplierModifier = functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
   float protectionMultiplier = functionDatabase->function("npcLevelProtectionMultiplier")->evaluate(variant.level);
   float maxHealthMultiplier = functionDatabase->function("npcLevelHealthMultiplier")->evaluate(variant.level);
   float maxEnergyMultiplier = functionDatabase->function("npcLevelEnergyMultiplier")->evaluate(variant.level);
 
   variant.innateStatusEffects = config.get("innateStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
-  variant.innateStatusEffects.append(StatModifier(StatValueModifier{"powerMultiplier", powerMultiplierModifier}));
-  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"protection", protectionMultiplier}));
-  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"maxHealth", maxHealthMultiplier}));
-  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"maxEnergy", maxEnergyMultiplier}));
+  variant.innateStatusEffects.append(StatModifier(StatValueModifier{.statName = "powerMultiplier", .value = powerMultiplierModifier}));
+  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{.statName = "protection", .baseMultiplier = protectionMultiplier}));
+  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{.statName = "maxHealth", .baseMultiplier = maxHealthMultiplier}));
+  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{.statName = "maxEnergy", .baseMultiplier = maxEnergyMultiplier}));
 
   variant.touchDamageConfig = config.get("touchDamage", {});
 
@@ -170,7 +174,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
   return variant;
 }
 
-ByteArray NpcDatabase::writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules) const {
+auto NpcDatabase::writeNpcVariant(NpcVariant const& variant, NetCompatibilityRules rules) const -> ByteArray {
   DataStreamBuffer ds;
   ds.setStreamCompatibilityVersion(rules);
 
@@ -182,7 +186,7 @@ ByteArray NpcDatabase::writeNpcVariant(NpcVariant const& variant, NetCompatibili
 
   ds.write(variant.initialScriptDelta);
   ds.write(variant.humanoidIdentity);
-  if (rules.version() >= 11 ) {
+  if (rules.version() >= 11) {
     ds.write(variant.humanoidParameters);
     ds.write(variant.description);
   }
@@ -197,7 +201,7 @@ ByteArray NpcDatabase::writeNpcVariant(NpcVariant const& variant, NetCompatibili
   return ds.data();
 }
 
-NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRules rules) const {
+auto NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRules rules) const -> NpcVariant {
   DataStreamBuffer ds(data);
   ds.setStreamCompatibilityVersion(rules);
 
@@ -211,13 +215,12 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 
   auto config = buildConfig(variant.typeName, variant.overrides);
 
-
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.scriptConfig = config.get("scriptConfig");
 
   ds.read(variant.initialScriptDelta);
   ds.read(variant.humanoidIdentity);
-  if (rules.version() >= 11){
+  if (rules.version() >= 11) {
     ds.read(variant.humanoidParameters);
     ds.read(variant.description);
   } else {
@@ -238,17 +241,17 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 
   auto functionDatabase = Root::singleton().functionDatabase();
   float powerMultiplierModifier =
-      functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
+    functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
   float protectionMultiplier = functionDatabase->function("npcLevelProtectionMultiplier")->evaluate(variant.level);
   float maxHealthMultiplier = functionDatabase->function("npcLevelHealthMultiplier")->evaluate(variant.level);
   float maxEnergyMultiplier = functionDatabase->function("npcLevelEnergyMultiplier")->evaluate(variant.level);
 
   variant.innateStatusEffects =
-      config.get("innateStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
-  variant.innateStatusEffects.append(StatModifier(StatValueModifier{"powerMultiplier", powerMultiplierModifier}));
-  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"protection", protectionMultiplier}));
-  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"maxHealth", maxHealthMultiplier}));
-  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"maxEnergy", maxEnergyMultiplier}));
+    config.get("innateStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
+  variant.innateStatusEffects.append(StatModifier(StatValueModifier{.statName = "powerMultiplier", .value = powerMultiplierModifier}));
+  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{.statName = "protection", .baseMultiplier = protectionMultiplier}));
+  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{.statName = "maxHealth", .baseMultiplier = maxHealthMultiplier}));
+  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{.statName = "maxEnergy", .baseMultiplier = maxEnergyMultiplier}));
 
   variant.touchDamageConfig = config.get("touchDamage", {});
 
@@ -269,8 +272,8 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
   return variant;
 }
 
-Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
-  JsonObject store {
+auto NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const -> Json {
+  JsonObject store{
     {"species", variant.species},
     {"typeName", variant.typeName},
     {"level", variant.level},
@@ -278,19 +281,18 @@ Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
     {"overrides", variant.overrides},
     {"initialScriptDelta", variant.initialScriptDelta},
     {"humanoidIdentity", variant.humanoidIdentity.toJson()},
-    {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, mem_fn(&ItemDescriptor::diskStore))},
+    {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, std::mem_fn(&ItemDescriptor::diskStore))},
     {"persistent", variant.persistent},
     {"keepAlive", variant.keepAlive},
     {"damageTeam", variant.damageTeam},
     {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)},
-    {"humanoidParameters", variant.humanoidParameters}
-  };
+    {"humanoidParameters", variant.humanoidParameters}};
   if (variant.description)
     store.set("description", *variant.description);
   return store;
 }
 
-NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
+auto NpcDatabase::readNpcVariantFromJson(Json const& data) const -> NpcVariant {
   NpcVariant variant;
 
   variant.species = data.getString("species");
@@ -318,23 +320,22 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 
-
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings", {});
 
   auto functionDatabase = Root::singleton().functionDatabase();
   float powerMultiplierModifier =
-      functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
+    functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
   float protectionMultiplier = functionDatabase->function("npcLevelProtectionMultiplier")->evaluate(variant.level);
   float maxHealthMultiplier = functionDatabase->function("npcLevelHealthMultiplier")->evaluate(variant.level);
   float maxEnergyMultiplier = functionDatabase->function("npcLevelEnergyMultiplier")->evaluate(variant.level);
 
   variant.innateStatusEffects =
-      config.get("innateStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
-  variant.innateStatusEffects.append(StatModifier(StatValueModifier{"powerMultiplier", powerMultiplierModifier}));
-  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"protection", protectionMultiplier}));
-  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"maxHealth", maxHealthMultiplier}));
-  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"maxEnergy", maxEnergyMultiplier}));
+    config.get("innateStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
+  variant.innateStatusEffects.append(StatModifier(StatValueModifier{.statName = "powerMultiplier", .value = powerMultiplierModifier}));
+  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{.statName = "protection", .baseMultiplier = protectionMultiplier}));
+  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{.statName = "maxHealth", .baseMultiplier = maxHealthMultiplier}));
+  variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{.statName = "maxEnergy", .baseMultiplier = maxEnergyMultiplier}));
 
   variant.touchDamageConfig = config.get("touchDamage", {});
 
@@ -355,21 +356,21 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
   return variant;
 }
 
-NpcPtr NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
-  return make_shared<Npc>(npcVariant);
+auto NpcDatabase::createNpc(NpcVariant const& npcVariant) const -> Ptr<Npc> {
+  return std::make_shared<Npc>(npcVariant);
 }
 
-NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
-  NpcPtr npc;
+auto NpcDatabase::diskLoadNpc(Json const& diskStore) const -> Ptr<Npc> {
+  Ptr<Npc> npc;
   try {
     NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
-    npc = make_shared<Npc>(npcVariant, diskStore);
+    npc = std::make_shared<Npc>(npcVariant, diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
         NpcVariant npcVariant = readNpcVariantFromJson(store.get("npcVariant"));
-        npc = make_shared<Npc>(npcVariant, store);
+        npc = std::make_shared<Npc>(npcVariant, store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -383,24 +384,24 @@ NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
   return npc;
 }
 
-NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Npc>(readNpcVariant(netStore, rules));
+auto NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const -> Ptr<Npc> {
+  return std::make_shared<Npc>(readNpcVariant(netStore, rules));
 }
 
-List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const {
+auto NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const -> List<Drawable> {
   Humanoid humanoid(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json());
 
   auto itemDatabase = Root::singleton().itemDatabase();
   auto items = StringMap<ItemDescriptor, CaseInsensitiveStringHash, CaseInsensitiveStringCompare>::from(npcVariant.items);
 
-  auto makeItem = [&npcVariant, &itemDatabase](ItemDescriptor itemDescriptor) -> ItemPtr {
+  auto makeItem = [&npcVariant, &itemDatabase](ItemDescriptor itemDescriptor) -> Ptr<Item> {
     return itemDatabase->item(itemDescriptor, npcVariant.level, npcVariant.seed);
   };
 
   ArmorWearer armor;
   for (auto item : npcVariant.items) {
     if (auto equipmentSlot = EquipmentSlotNames.maybeLeft(item.first)) {
-      armor.setItem((uint8_t)*equipmentSlot, as<ArmorItem>(makeItem(ItemDescriptor(item.second))));
+      armor.setItem((std::uint8_t)*equipmentSlot, as<ArmorItem>(makeItem(ItemDescriptor(item.second))));
     }
   }
 
@@ -409,7 +410,7 @@ List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMo
   return humanoid.renderPortrait(mode);
 }
 
-Json NpcDatabase::buildConfig(String const& typeName, Json const& overrides) const {
+auto NpcDatabase::buildConfig(String const& typeName, Json const& overrides) const -> Json {
   auto const& baseConfig = m_npcTypes.get(typeName);
   auto config = mergeConfigValues(baseConfig, overrides);
 
@@ -421,7 +422,7 @@ Json NpcDatabase::buildConfig(String const& typeName, Json const& overrides) con
   }
 }
 
-Json NpcDatabase::mergeConfigValues(Json const& base, Json const& merger) const {
+auto NpcDatabase::mergeConfigValues(Json const& base, Json const& merger) const -> Json {
   if (base.type() == Json::Type::Object && merger.type() == Json::Type::Object) {
     auto map = base.toObject();
     for (auto const& entry : merger.iterateObject()) {
@@ -437,4 +438,4 @@ Json NpcDatabase::mergeConfigValues(Json const& base, Json const& merger) const 
   }
 }
 
-}
+}// namespace Star

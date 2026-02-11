@@ -86,8 +86,9 @@ auto ActorMovementParameters::sensibleDefaults() -> ActorMovementParameters {
 }
 
 ActorMovementParameters::ActorMovementParameters(Json const& config) {
-  if (config.isNull())
+  if (config.isNull()) {
     return;
+  }
 
   mass = config.optFloat("mass");
   gravityMultiplier = config.optFloat("gravityMultiplier");
@@ -108,10 +109,11 @@ ActorMovementParameters::ActorMovementParameters(Json const& config) {
   auto standingPolyConfig = config.get("standingPoly", {});
   auto crouchingPolyConfig = config.get("crouchingPoly", {});
 
-  if (!standingPolyConfig.isNull())
+  if (!standingPolyConfig.isNull()) {
     standingPoly = jsonToPolyF(standingPolyConfig);
-  else if (!collisionPolyConfig.isNull())
+  } else if (!collisionPolyConfig.isNull()) {
     standingPoly = jsonToPolyF(collisionPolyConfig);
+  }
 
   if (!crouchingPolyConfig.isNull())
     crouchingPoly = jsonToPolyF(crouchingPolyConfig);
@@ -339,23 +341,14 @@ auto operator<<(DataStream& ds, ActorMovementParameters const& movementParameter
   return ds;
 }
 
-ActorMovementModifiers::ActorMovementModifiers(Json const& config) {
-  groundMovementModifier = 1.0f;
-  liquidMovementModifier = 1.0f;
-  speedModifier = 1.0f;
-  airJumpModifier = 1.0f;
-  liquidJumpModifier = 1.0f;
-  runningSuppressed = false;
-  jumpingSuppressed = false;
-  facingSuppressed = false;
-  movementSuppressed = false;
+ActorMovementModifiers::ActorMovementModifiers(Json const& config) : groundMovementModifier(1.0F), liquidMovementModifier(1.0F), speedModifier(1.0F), airJumpModifier(1.0F), liquidJumpModifier(1.0F), runningSuppressed(false), jumpingSuppressed(false), movementSuppressed(false), facingSuppressed(false) {
 
   if (!config.isNull()) {
-    groundMovementModifier = config.getFloat("groundMovementModifier", 1.0f);
-    liquidMovementModifier = config.getFloat("liquidMovementModifier", 1.0f);
-    speedModifier = config.getFloat("speedModifier", 1.0f);
-    airJumpModifier = config.getFloat("airJumpModifier", 1.0f);
-    liquidJumpModifier = config.getFloat("liquidJumpModifier", 1.0f);
+    groundMovementModifier = config.getFloat("groundMovementModifier", 1.0F);
+    liquidMovementModifier = config.getFloat("liquidMovementModifier", 1.0F);
+    speedModifier = config.getFloat("speedModifier", 1.0F);
+    airJumpModifier = config.getFloat("airJumpModifier", 1.0F);
+    liquidJumpModifier = config.getFloat("liquidJumpModifier", 1.0F);
     runningSuppressed = config.getBool("runningSuppressed", false);
     jumpingSuppressed = config.getBool("jumpingSuppressed", false);
     facingSuppressed = config.getBool("facingSuppressed", false);
@@ -420,13 +413,8 @@ auto operator<<(DataStream& ds, ActorMovementModifiers const& movementModifiers)
   return ds;
 }
 
-ActorMovementController::ActorMovementController(ActorMovementParameters const& parameters) {
-  m_controlRotationRate = 0.0f;
-  m_controlRun = false;
-  m_controlCrouch = false;
-  m_controlDown = false;
-  m_controlJump = false;
-  m_controlJumpAnyway = false;
+ActorMovementController::ActorMovementController(ActorMovementParameters const& parameters) : m_controlRotationRate(0.0F), m_controlRun(false), m_controlCrouch(false), m_controlDown(false), m_controlJump(false), m_controlJumpAnyway(false), m_fallThroughSustain(0), m_lastControlJump(false), m_lastControlDown(false), m_moveSpeedMultiplier(1.0F), m_targetHorizontalAmbulatingVelocity(0.0F) {
+
   m_controlPathMove = {};
 
   addNetElement(&m_walking);
@@ -441,12 +429,6 @@ ActorMovementController::ActorMovementController(ActorMovementParameters const& 
   addNetElement(&m_groundMovement);
   addNetElement(&m_liquidMovement);
   addNetElement(&m_anchorState);
-
-  m_fallThroughSustain = 0;
-  m_lastControlJump = false;
-  m_lastControlDown = false;
-  m_targetHorizontalAmbulatingVelocity = 0.0f;
-  m_moveSpeedMultiplier = 1.0f;
 
   resetBaseParameters(parameters);
 }
@@ -512,14 +494,16 @@ auto ActorMovementController::entityAnchor() const -> ConstPtr<EntityAnchor> {
 }
 
 auto ActorMovementController::position() const -> Vec2F {
-  if (m_entityAnchor)
+  if (m_entityAnchor) {
     return m_entityAnchor->position;
+  }
   return MovementController::position();
 }
 
 auto ActorMovementController::rotation() const -> float {
-  if (m_entityAnchor)
+  if (m_entityAnchor) {
     return m_entityAnchor->angle;
+  }
   return MovementController::rotation();
 }
 
@@ -536,8 +520,9 @@ auto ActorMovementController::movingDirection() const -> Direction {
 }
 
 auto ActorMovementController::facingDirection() const -> Direction {
-  if (m_entityAnchor)
+  if (m_entityAnchor) {
     return m_entityAnchor->direction;
+  }
   return m_facingDirection.get();
 }
 
@@ -570,10 +555,11 @@ auto ActorMovementController::liquidMovement() const -> bool {
 }
 
 auto ActorMovementController::pathfinding() const -> bool {
-  if (m_pathController)
+  if (m_pathController) {
     return m_pathController->pathfinding();
-  else
+  } else {
     return false;
+  }
 }
 
 void ActorMovementController::controlRotation(float rotationRate) {
@@ -639,14 +625,16 @@ void ActorMovementController::controlFly(Vec2F const& velocity) {
   m_controlFly = velocity;
 }
 
-auto ActorMovementController::pathMove(Vec2F const& position, bool, std::optional<PlatformerAStar::Parameters> const& parameters) -> std::optional<std::pair<Vec2F, bool>> {
-  if (!m_pathController)
+auto ActorMovementController::pathMove(Vec2F const& position, bool /*unused*/, std::optional<PlatformerAStar::Parameters> const& parameters) -> std::optional<std::pair<Vec2F, bool>> {
+  if (!m_pathController) {
     m_pathController = std::make_shared<PathController>(world());
+  }
 
   // set new parameters if they have changed
   if (!m_pathController->targetPosition() || (parameters && m_pathController->parameters() != *parameters)) {
-    if (parameters)
+    if (parameters) {
       m_pathController->setParameters(*parameters);
+    }
     m_pathMoveResult = m_pathController->findPath(*this, position).transform([position](bool result) -> std::pair<Vec2F, bool> { return {position, result}; });
   }
 
@@ -666,8 +654,9 @@ auto ActorMovementController::pathMove(Vec2F const& position, bool, std::optiona
 auto ActorMovementController::controlPathMove(Vec2F const& position, bool run, std::optional<PlatformerAStar::Parameters> const& parameters) -> std::optional<std::pair<Vec2F, bool>> {
   auto result = pathMove(position, run, parameters);
 
-  if (!result)
+  if (!result) {
     m_controlPathMove = std::pair<Vec2F, bool>(position, run);
+  }
 
   return result;
 }
@@ -677,7 +666,7 @@ void ActorMovementController::setMoveSpeedMultiplier(float scale) {
 }
 
 void ActorMovementController::clearControls() {
-  m_controlRotationRate = 0.0f;
+  m_controlRotationRate = 0.0F;
   m_controlAcceleration = Vec2F();
   m_controlForce = Vec2F();
   m_controlApproachVelocities.clear();
@@ -698,14 +687,16 @@ void ActorMovementController::clearControls() {
 void ActorMovementController::tickMaster(float dt) {
   ConstPtr<EntityAnchor> newAnchor;
   if (auto anchorState = m_anchorState.get()) {
-    if (auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId)))
+    if (auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId))) {
       newAnchor = anchorableEntity->anchor(anchorState->positionIndex);
+    }
   }
 
-  if (newAnchor)
+  if (newAnchor) {
     m_entityAnchor = newAnchor;
-  else
+  } else {
     resetAnchorState();
+  }
 
   if (m_entityAnchor) {
     m_walking.set(false);
@@ -760,8 +751,8 @@ void ActorMovementController::tickMaster(float dt) {
           m_walking.set(a == Action::Walk && !m_controlPathMove->second);
           m_running.set(a == Action::Walk && m_controlPathMove->second);
           m_flying.set(a == Action::Fly || a == Action::Swim);
-          m_falling.set((a == Action::Arc && yVelocity() < 0.0f) || a == Action::Drop);
-          m_jumping.set(a == Action::Arc && yVelocity() >= 0.0f);
+          m_falling.set((a == Action::Arc && yVelocity() < 0.0F) || a == Action::Drop);
+          m_jumping.set(a == Action::Arc && yVelocity() >= 0.0F);
 
           onGround = a == Action::Walk || a == Action::Drop || a == Action::Jump;
 
@@ -801,27 +792,31 @@ void ActorMovementController::tickMaster(float dt) {
     }
 
     // Do some basic movement consistency checks.
-    if (m_controlFly)
+    if (m_controlFly) {
       m_controlMove = {};
+    }
 
-    if ((m_controlDown && !m_lastControlDown) || m_controlFly)
+    if ((m_controlDown && !m_lastControlDown) || m_controlFly) {
       m_fallThroughSustain = *activeParameters.fallThroughSustainFrames;
-    else if (m_fallThroughSustain > 0)
+    } else if (m_fallThroughSustain > 0) {
       --m_fallThroughSustain;
+    }
 
     applyMCParameters(activeParameters);
 
-    m_targetHorizontalAmbulatingVelocity = 0.0f;
+    m_targetHorizontalAmbulatingVelocity = 0.0F;
 
     rotate(m_controlRotationRate);
     accelerate(m_controlAcceleration);
     force(m_controlForce);
 
-    for (auto const& approach : m_controlApproachVelocities)
+    for (auto const& approach : m_controlApproachVelocities) {
       approachVelocity(approach.targetVelocity * activeModifiers.speedModifier, approach.maxControlForce);
+    }
 
-    for (auto const& approach : m_controlApproachVelocityAlongAngles)
+    for (auto const& approach : m_controlApproachVelocityAlongAngles) {
       approachVelocityAlongAngle(approach.alongAngle, approach.targetVelocity * activeModifiers.speedModifier, approach.maxControlForce, approach.positiveOnly);
+    }
 
     m_liquidMovement.set(liquidPercentage() >= *activeParameters.minimumLiquidPercentage);
     float liquidImpedance = *activeParameters.liquidImpedance * liquidPercentage();
@@ -831,18 +826,21 @@ void ActorMovementController::tickMaster(float dt) {
 
     if (m_controlFly) {
       Vec2F flyVelocity = *m_controlFly;
-      if (flyVelocity.magnitudeSquared() != 0)
+      if (flyVelocity.magnitudeSquared() != 0) {
         flyVelocity = flyVelocity.normalized() * *activeParameters.flySpeed;
+      }
 
-      if (m_liquidMovement.get())
-        approachVelocity(flyVelocity * (1.0f - liquidImpedance) * activeModifiers.speedModifier, *activeParameters.liquidForce * activeModifiers.liquidMovementModifier);
-      else
+      if (m_liquidMovement.get()) {
+        approachVelocity(flyVelocity * (1.0F - liquidImpedance) * activeModifiers.speedModifier, *activeParameters.liquidForce * activeModifiers.liquidMovementModifier);
+      } else {
         approachVelocity(flyVelocity * activeModifiers.speedModifier, *activeParameters.airForce);
+      }
 
-      if (flyVelocity[0] > 0)
+      if (flyVelocity[0] > 0) {
         updatedMovingDirection = Direction::Right;
-      else if (flyVelocity[0] < 0)
+      } else if (flyVelocity[0] < 0) {
         updatedMovingDirection = Direction::Left;
+      }
 
       m_groundMovementSustainTimer = GameTimer(0);
 
@@ -852,7 +850,7 @@ void ActorMovementController::tickMaster(float dt) {
       if (m_liquidMovement.get()) {
         jumpModifier = activeModifiers.liquidJumpModifier;
         jumpProfile = activeParameters.liquidJumpProfile;
-        *jumpProfile.jumpSpeed *= (1.0f - liquidImpedance);
+        *jumpProfile.jumpSpeed *= (1.0F - liquidImpedance);
       } else {
         jumpModifier = activeModifiers.airJumpModifier;
         jumpProfile = activeParameters.airJumpProfile;
@@ -872,11 +870,12 @@ void ActorMovementController::tickMaster(float dt) {
       m_groundMovementSustainTimer.tick(dt);
       if (onGround()) {
         m_groundMovementSustainTimer = GameTimer(maxGroundSustain);
-      } else if (!m_groundMovementSustainTimer.ready() && groundCheckDistance > 0.0f && maxGroundSustain - m_groundMovementSustainTimer.timer > minGroundSustain) {
+      } else if (!m_groundMovementSustainTimer.ready() && groundCheckDistance > 0.0F && maxGroundSustain - m_groundMovementSustainTimer.timer > minGroundSustain) {
         PolyF collisionBody = MovementController::collisionBody();
         collisionBody.translate(Vec2F(0, -groundCheckDistance));
-        if (!world()->polyCollision(collisionBody, {CollisionKind::Block, CollisionKind::Dynamic, CollisionKind::Platform, CollisionKind::Slippery}))
+        if (!world()->polyCollision(collisionBody, {CollisionKind::Block, CollisionKind::Dynamic, CollisionKind::Platform, CollisionKind::Slippery})) {
           m_groundMovementSustainTimer = GameTimer(0);
+        }
       }
 
       bool standingJumpable = !m_groundMovementSustainTimer.ready();
@@ -887,21 +886,24 @@ void ActorMovementController::tickMaster(float dt) {
       // jumpProfile.autoJump is set, then we don't care whether it is a new
       // m_controlJump command, m_controlJump can be held.
       if (m_reJumpTimer.ready() && controlJump && (*jumpProfile.autoJump || !m_lastControlJump)) {
-        if (standingJumpable || *jumpProfile.multiJump || m_controlJumpAnyway)
+        if (standingJumpable || *jumpProfile.multiJump || m_controlJumpAnyway) {
           startJump = true;
+        }
       } else if (m_jumping.get() && controlJump && (!m_jumpHoldTimer || !m_jumpHoldTimer->ready())) {
-        if (!*jumpProfile.collisionCancelled || collisionCorrection()[1] >= 0.0f)
+        if (!*jumpProfile.collisionCancelled || collisionCorrection()[1] >= 0.0F) {
           holdJump = true;
+        }
       }
 
       if (startJump) {
         m_jumping.set(true);
 
         m_reJumpTimer = GameTimer(*jumpProfile.reJumpDelay);
-        if (*jumpProfile.jumpHoldTime >= 0.0f)
+        if (*jumpProfile.jumpHoldTime >= 0.0F) {
           m_jumpHoldTimer = GameTimer(*jumpProfile.jumpHoldTime);
-        else
+        } else {
           m_jumpHoldTimer = {};
+        }
 
         setYVelocity(yVelocity() + *jumpProfile.jumpSpeed * *jumpProfile.jumpInitialPercentage * jumpModifier);
 
@@ -909,8 +911,9 @@ void ActorMovementController::tickMaster(float dt) {
 
       } else if (holdJump) {
         m_reJumpTimer.tick(dt);
-        if (m_jumpHoldTimer)
+        if (m_jumpHoldTimer) {
           m_jumpHoldTimer->tick(dt);
+        }
 
         approachYVelocity(*jumpProfile.jumpSpeed * jumpModifier, *jumpProfile.jumpControlForce * jumpModifier);
 
@@ -922,17 +925,18 @@ void ActorMovementController::tickMaster(float dt) {
       if (m_controlMove == Direction::Left) {
         updatedMovingDirection = Direction::Left;
         m_targetHorizontalAmbulatingVelocity =
-          -1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier : *activeParameters.walkSpeed * activeModifiers.speedModifier);
+          -1.0F * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier : *activeParameters.walkSpeed * activeModifiers.speedModifier);
       } else if (m_controlMove == Direction::Right) {
         updatedMovingDirection = Direction::Right;
         m_targetHorizontalAmbulatingVelocity =
-          1.0f * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier : *activeParameters.walkSpeed * activeModifiers.speedModifier);
+          1.0F * (running ? *activeParameters.runSpeed * activeModifiers.speedModifier : *activeParameters.walkSpeed * activeModifiers.speedModifier);
       }
 
       m_targetHorizontalAmbulatingVelocity *= m_moveSpeedMultiplier;
 
-      if (m_liquidMovement.get())
-        m_targetHorizontalAmbulatingVelocity *= (1.0f - liquidImpedance);
+      if (m_liquidMovement.get()) {
+        m_targetHorizontalAmbulatingVelocity *= (1.0F - liquidImpedance);
+      }
 
       Vec2F surfaceVelocity = MovementController::surfaceVelocity();
 
@@ -940,29 +944,32 @@ void ActorMovementController::tickMaster(float dt) {
       bool ambulationWouldAccelerate = std::abs(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0]) > std::abs(xVelocity())
         || (m_targetHorizontalAmbulatingVelocity < 0) != (xVelocity() < 0);
 
-      if (m_targetHorizontalAmbulatingVelocity != 0.0f && ambulationWouldAccelerate) {
+      if (0.0F != m_targetHorizontalAmbulatingVelocity && ambulationWouldAccelerate) {
         float ambulatingAccel;
-        if (onGround())
+        if (onGround()) {
           ambulatingAccel = *activeParameters.groundForce * activeModifiers.groundMovementModifier;
-        else if (m_liquidMovement.get())
+        } else if (m_liquidMovement.get()) {
           ambulatingAccel = *activeParameters.liquidForce * activeModifiers.liquidMovementModifier;
-        else
+        } else {
           ambulatingAccel = *activeParameters.airForce;
+        }
 
         approachXVelocity(m_targetHorizontalAmbulatingVelocity + surfaceVelocity[0], ambulatingAccel);
       }
     }
 
-    if (updatedMovingDirection)
+    if (updatedMovingDirection) {
       m_movingDirection.set(*updatedMovingDirection);
+    }
 
     if (!activeModifiers.facingSuppressed) {
-      if (m_controlFace)
+      if (m_controlFace) {
         m_facingDirection.set(*m_controlFace);
-      else if (updatedMovingDirection)
+      } else if (updatedMovingDirection) {
         m_facingDirection.set(*updatedMovingDirection);
-      else if (m_controlPathMove && m_pathController && m_pathController->facing())
+      } else if (m_controlPathMove && m_pathController && m_pathController->facing()) {
         m_facingDirection.set(*m_pathController->facing());
+      }
     }
 
     m_groundMovement.set(!m_groundMovementSustainTimer.ready());
@@ -981,10 +988,11 @@ void ActorMovementController::tickMaster(float dt) {
     m_lastControlJump = m_controlJump;
     m_lastControlDown = m_controlDown;
 
-    if (m_liquidMovement.get())
+    if (m_liquidMovement.get()) {
       m_canJump.set(m_reJumpTimer.ready() && (!m_groundMovementSustainTimer.ready() || *activeParameters.liquidJumpProfile.multiJump));
-    else
+    } else {
       m_canJump.set(m_reJumpTimer.ready() && (!m_groundMovementSustainTimer.ready() || *activeParameters.airJumpProfile.multiJump));
+    }
   }
 
   clearControls();
@@ -995,8 +1003,9 @@ void ActorMovementController::tickSlave(float dt) {
 
   m_entityAnchor.reset();
   if (auto anchorState = m_anchorState.get()) {
-    if (auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId)))
+    if (auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId))) {
       m_entityAnchor = anchorableEntity->anchor(anchorState->positionIndex);
+    }
   }
 }
 
@@ -1005,10 +1014,11 @@ void ActorMovementController::applyMCParameters(ActorMovementParameters const& p
 
   mcParameters.mass = parameters.mass;
 
-  if (!onGround() && yVelocity() < 0)
+  if (!onGround() && yVelocity() < 0) {
     mcParameters.gravityMultiplier = *parameters.gravityMultiplier;
-  else
+  } else {
     mcParameters.gravityMultiplier = parameters.gravityMultiplier;
+  }
 
   mcParameters.liquidBuoyancy = parameters.liquidBuoyancy;
   mcParameters.airBuoyancy = parameters.airBuoyancy;
@@ -1018,10 +1028,11 @@ void ActorMovementController::applyMCParameters(ActorMovementParameters const& p
   mcParameters.slopeSlidingFactor = parameters.slopeSlidingFactor;
   mcParameters.maxMovementPerStep = parameters.maxMovementPerStep;
 
-  if (m_crouching.get())
+  if (m_crouching.get()) {
     mcParameters.collisionPoly = *parameters.crouchingPoly;
-  else
+  } else {
     mcParameters.collisionPoly = *parameters.standingPoly;
+  }
 
   mcParameters.stickyCollision = parameters.stickyCollision;
   mcParameters.stickyForce = parameters.stickyForce;
@@ -1038,10 +1049,11 @@ void ActorMovementController::applyMCParameters(ActorMovementParameters const& p
     && std::copysign(1, m_targetHorizontalAmbulatingVelocity) == std::copysign(1, relativeXVelocity)
     && std::fabs(relativeXVelocity) <= std::fabs(m_targetHorizontalAmbulatingVelocity);
 
-  if (useAmbulatingGroundFriction)
+  if (useAmbulatingGroundFriction) {
     mcParameters.groundFriction = parameters.ambulatingGroundFriction;
-  else
+  } else {
     mcParameters.groundFriction = parameters.normalGroundFriction;
+  }
 
   mcParameters.collisionEnabled = parameters.collisionEnabled;
   mcParameters.frictionEnabled = parameters.frictionEnabled;
@@ -1063,11 +1075,13 @@ void ActorMovementController::doSetAnchorState(std::optional<EntityAnchorState> 
   ConstPtr<EntityAnchor> entityAnchor;
   if (anchorState) {
     auto anchorableEntity = as<AnchorableEntity>(world()->entity(anchorState->entityId));
-    if (!anchorableEntity)
+    if (!anchorableEntity) {
       throw ActorMovementControllerException::format("No such anchorable entity id {} in ActorMovementController::setAnchorState", anchorState->entityId);
+    }
     entityAnchor = anchorableEntity->anchor(anchorState->positionIndex);
-    if (!entityAnchor)
+    if (!entityAnchor) {
       throw ActorMovementControllerException::format("Anchor position {} is disabled ActorMovementController::setAnchorState", anchorState->positionIndex);
+    }
   }
   auto prevAnchor = m_entityAnchor;
   m_anchorState.set(anchorState);
@@ -1075,12 +1089,13 @@ void ActorMovementController::doSetAnchorState(std::optional<EntityAnchorState> 
 
   if (!entityAnchor && prevAnchor && prevAnchor->exitBottomPosition) {
     auto boundBox = MovementController::localBoundBox();
-    Vec2F bottomMid = {boundBox.center()[0], boundBox.yMin()};
+    Vec2F bottomMid = Vec2F{boundBox.center()[0], boundBox.yMin()};
     setPosition(*prevAnchor->exitBottomPosition - bottomMid);
   }
 
-  if (m_entityAnchor)
+  if (m_entityAnchor) {
     setPosition(m_entityAnchor->position);
+  }
 }
 
 PathController::PathController(World* world)
@@ -1148,8 +1163,9 @@ auto PathController::findPath(ActorMovementController& movementController, Vec2F
     m_pathFinder = make_shared<PathFinder>(m_world, movementController.position(), *m_targetPosition, movementController.baseParameters(), m_parameters);
   }
 
-  if (!m_pathFinder && m_path && m_edgeIndex == m_path->size())
+  if (!m_pathFinder && m_path && m_edgeIndex == m_path->size()) {
     return true;// Reached goal
+  }
 
   if (m_pathFinder) {
     auto explored = m_pathFinder->explore(movementController.baseParameters().pathExploreRate.value_or(100.0));
@@ -1231,8 +1247,9 @@ auto PathController::findPath(ActorMovementController& movementController, Vec2F
         m_edgeTimer = newEdgeTimer;
         m_edgeIndex = newEdgeIndex;
         m_path = path;
-        if (m_path->empty())
+        if (m_path->empty()) {
           return true;
+        }
       } else {
         reset();
         return false;
@@ -1246,11 +1263,13 @@ auto PathController::move(ActorMovementController& movementController, ActorMove
   using namespace PlatformerAStar;
 
   // pathfind to a new target position in the background while moving on the current path
-  if (m_pathFinder && m_targetPosition)
+  if (m_pathFinder && m_targetPosition) {
     findPath(movementController, *m_targetPosition);
+  }
 
-  if (!m_path)
+  if (!m_path) {
     return {};
+  }
 
   m_controlFace = {};
 
@@ -1283,10 +1302,10 @@ auto PathController::move(ActorMovementController& movementController, ActorMove
       targetVelocity = sourceVelocity;
     } break;
     case Action::Swim:
-      sourceVelocity = targetVelocity = delta.normalized() * parameters.flySpeed.value_or(0.0f) * (1.0f - parameters.liquidImpedance.value_or(0.0f));
+      sourceVelocity = targetVelocity = delta.normalized() * parameters.flySpeed.value_or(0.0F) * (1.0F - parameters.liquidImpedance.value_or(0.0F));
       break;
     case Action::Walk:
-      sourceVelocity = delta.normalized() * (run ? parameters.runSpeed.value_or(0.0f) : parameters.walkSpeed.value_or(0.0f));
+      sourceVelocity = delta.normalized() * (run ? parameters.runSpeed.value_or(0.0F) : parameters.walkSpeed.value_or(0.0F));
       sourceVelocity *= modifiers.speedModifier;
       targetVelocity = sourceVelocity;
       break;
@@ -1296,10 +1315,10 @@ auto PathController::move(ActorMovementController& movementController, ActorMove
 
     Vec2F avgVelocity = (sourceVelocity + targetVelocity) / 2.0;
     float avgSpeed = avgVelocity.magnitude();
-    auto edgeTime = avgSpeed > 0.0f ? delta.magnitude() / avgSpeed : 0.2;
+    auto edgeTime = avgSpeed > 0.0F ? delta.magnitude() / avgSpeed : 0.2;
 
     auto edgeProgress = m_edgeTimer / edgeTime;
-    if (edgeProgress > 1.0f) {
+    if (edgeProgress > 1.0F) {
       m_edgeTimer -= edgeTime;
       m_edgeIndex++;
       if (m_edgeIndex < m_path->size()) {
@@ -1332,8 +1351,9 @@ auto PathController::move(ActorMovementController& movementController, ActorMove
     //   }
     // }
 
-    if (auto direction = directionOf(delta[0]))
+    if (auto direction = directionOf(delta[0])) {
       m_controlFace = direction;
+    }
 
     m_edgeTimer += dt;
     return {};
@@ -1345,10 +1365,11 @@ auto PathController::move(ActorMovementController& movementController, ActorMove
   }
 
   // reached the end of the path, success unless we're also currently pathfinding to a new position
-  if (m_pathFinder)
+  if (m_pathFinder) {
     return {};
-  else
+  } else {
     return true;
+  }
 }
 
 auto PathController::validateEdge(ActorMovementController& movementController, PlatformerAStar::Edge const& edge) -> bool {
@@ -1426,7 +1447,7 @@ auto PathController::validateEdge(ActorMovementController& movementController, P
 
 auto PathController::movingCollision(ActorMovementController& movementController, PolyF const& collisionPoly) -> bool {
   bool collided = false;
-  movementController.forEachMovingCollision(collisionPoly.boundBox(), [&](MovingCollisionId, PhysicsMovingCollision, PolyF poly, RectF) -> bool {
+  movementController.forEachMovingCollision(collisionPoly.boundBox(), [&](MovingCollisionId _, PhysicsMovingCollision __, PolyF poly, RectF ___) -> bool {
     if (poly.intersects(collisionPoly)) {
       // set collided and stop iterating
       collided = true;

@@ -1,15 +1,12 @@
 #include "StarQuestManager.hpp"
 
-#include "StarAssets.hpp"
-#include "StarClientContext.hpp"
+#include "StarCasting.hpp"
+#include "StarClientContext.hpp"// IWYU pragma: export
 #include "StarConfig.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerInventory.hpp"
-#include "StarRandom.hpp"
+#include "StarPlayerInventory.hpp"// IWYU pragma: export
 #include "StarRoot.hpp"
-#include "StarTime.hpp"
 #include "StarUniverseClient.hpp"
 
 import std;
@@ -240,8 +237,8 @@ auto QuestManager::getFirstMainQuest() -> std::optional<Ptr<Quest>> {
 void sortQuests(List<Ptr<Quest>>& quests) {
   std::ranges::sort(quests,
                     [](Ptr<Quest> const& left, Ptr<Quest> const& right) -> bool {
-                      int64_t leftUpdated = left->lastUpdatedOn();
-                      int64_t rightUpdated = right->lastUpdatedOn();
+                      std::int64_t leftUpdated = left->lastUpdatedOn();
+                      std::int64_t rightUpdated = right->lastUpdatedOn();
                       String leftQuestId = left->templateId();
                       String rightQuestId = right->templateId();
                       return std::tie(leftUpdated, leftQuestId) < std::tie(rightUpdated, rightQuestId);
@@ -389,7 +386,7 @@ void QuestManager::update(float dt) {
     if (!active)
       m_onWorldQuestId = {};
   } else if (m_trackOnWorldQuests) {
-    auto playerWorldId = m_client->clientContext().playerWorldId();
+    auto playerWorldId = m_client->clientContext()->playerWorldId();
     auto trackedWorld = currentQuest().and_then([](Ptr<Quest> q) -> std::optional<WorldId> { return q->worldId(); });
     if (!trackedWorld || playerWorldId != *trackedWorld) {
       // the currently tracked quest is not on this world, track another quest on this world

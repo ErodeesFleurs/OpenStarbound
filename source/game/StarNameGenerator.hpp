@@ -11,8 +11,8 @@ namespace Star {
 using NameGeneratorException = ExceptionDerived<"NameGeneratorException">;
 
 struct MarkovSource {
-  size_t prefixSize;
-  size_t endSize;
+  std::size_t prefixSize;
+  std::size_t endSize;
   StringList starts;
   StringMap<StringList> chains;
   StringSet ends;
@@ -31,7 +31,7 @@ private:
 
   [[nodiscard]] auto isProfane(String const& name) const -> bool;
 
-  auto makeMarkovSource(size_t prefixSize, size_t endSize, StringList sourceNames) -> MarkovSource;
+  auto makeMarkovSource(std::size_t prefixSize, std::size_t endSize, StringList sourceNames) -> MarkovSource;
 
   StringMap<MarkovSource> m_markovSources;
   StringSet m_profanityFilter;

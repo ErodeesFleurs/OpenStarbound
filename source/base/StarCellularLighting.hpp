@@ -23,7 +23,7 @@ public:
   auto operator=(Lightmap const& lightMap) -> Lightmap&;
   auto operator=(Lightmap&& lightMap) noexcept -> Lightmap&;
 
-  operator ImageView();
+  explicit operator ImageView();
 
   void set(unsigned x, unsigned y, float v);
   void set(unsigned x, unsigned y, Vec3F const& v);
@@ -82,7 +82,7 @@ inline auto Lightmap::get(unsigned x, unsigned y) const -> Vec3F {
     return {};
   }
   float* ptr = m_data.get() + (y * m_width * 3 + x * 3);
-  return {ptr[0], ptr[1], ptr[2]};
+  return Vec3F{ptr[0], ptr[1], ptr[2]};
 }
 
 inline auto Lightmap::empty() const -> bool {
@@ -90,7 +90,7 @@ inline auto Lightmap::empty() const -> bool {
 }
 
 inline auto Lightmap::size() const -> Vec2U {
-  return {m_width, m_height};
+  return Vec2U{m_width, m_height};
 }
 
 inline auto Lightmap::width() const -> unsigned {
@@ -188,10 +188,11 @@ inline auto CellularLightingCalculator::baseIndexFor(Vec2I const& position) -> s
 }
 
 inline void CellularLightingCalculator::setCellIndex(std::size_t cellIndex, Vec3F const& light, bool obstacle) {
-  if (m_monochrome)
+  if (m_monochrome) {
     m_lightArray.right().cellAtIndex(cellIndex) = ScalarCellularLightArray::Cell{.light = light.sum() / 3, .obstacle = obstacle};
-  else
+  } else {
     m_lightArray.left().cellAtIndex(cellIndex) = ColoredCellularLightArray::Cell{.light = light, .obstacle = obstacle};
+  }
 }
 
 }// namespace Star

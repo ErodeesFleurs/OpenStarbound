@@ -29,8 +29,9 @@ namespace Star {
 
 // if a ptr is returned, can be optionally used to format an error
 static auto validateBasePath(std::string_view const& basePath) -> const char* {
-  if (basePath.empty() || basePath[0] != '/')
+  if (basePath.empty() || basePath[0] != '/') {
     return "Path '{}' must be absolute";
+  }
 
   bool first = true;
   bool slashed = true;
@@ -38,20 +39,23 @@ static auto validateBasePath(std::string_view const& basePath) -> const char* {
   for (auto c : basePath) {
     if (c == '/') {
       if (!first) {
-        if (slashed)
+        if (slashed) {
           return "Path '{}' contains consecutive //, not allowed";
-        else if (dotted)
+        } else if (dotted) {
           return "Path '{}' '.' and '..' not allowed";
+        }
       }
       slashed = true;
       dotted = false;
     } else if (c == ':') {
-      if (slashed)
+      if (slashed) {
         return "Path '{}' has ':' after directory";
+      }
       break;
     } else if (c == '?') {
-      if (slashed)
+      if (slashed) {
         return "Path '{}' has '?' after directory";
+      }
       break;
     } else {
       slashed = false;
@@ -59,30 +63,34 @@ static auto validateBasePath(std::string_view const& basePath) -> const char* {
     }
     first = false;
   }
-  if (slashed)
+  if (slashed) {
     return "Path '{}' cannot be a file";
+  }
 
   return nullptr;
 }
 
 static auto validatePath(AssetPath const& components, bool canContainSubPath, bool canContainDirectives, bool throwing = true) -> bool {
   if (auto error = validateBasePath(components.basePath.utf8())) {
-    if (throwing)
+    if (throwing) {
       throw AssetException::vformat(error, components.basePath.utf8());
-    else
+    } else {
       return false;
+    }
   }
 
   if (!canContainSubPath && components.subPath) {
-    if (throwing)
+    if (throwing) {
       throw AssetException::format("Path '{}' cannot contain sub-path", components);
-    else
+    } else {
       return false;
+    }
   } else if (!canContainDirectives && !components.directives.empty()) {
-    if (throwing)
+    if (throwing) {
       throw AssetException::format("Path '{}' cannot contain directives", components);
-    else
+    } else {
       return false;
+    }
   }
 
   return true;
@@ -94,10 +102,11 @@ static auto validatePath(AssetPath const& components, bool canContainSubPath, bo
   size_t end = str.find_first_of(":?");
   auto basePath = str.substr(0, end);
   if (auto error = validateBasePath(basePath)) {
-    if (throwing)
+    if (throwing) {
       throw AssetException::vformat(error, basePath);
-    else
+    } else {
       return false;
+    }
   }
 
   bool subPath = false;
@@ -105,23 +114,26 @@ static auto validatePath(AssetPath const& components, bool canContainSubPath, bo
     size_t beg = end + 1;
     if (beg != str.size()) {
       end = str.find_first_of('?', beg);
-      if (end == std::numeric_limits<std::size_t>::max() && beg + 1 != str.size())
+      if (end == std::numeric_limits<std::size_t>::max() && beg + 1 != str.size()) {
         subPath = true;
-      else if (size_t _ = end - beg)
+      } else if (size_t _ = end - beg) {
         subPath = true;
+      }
     }
   }
 
   if (subPath) {
-    if (throwing)
+    if (throwing) {
       throw AssetException::format(std::string_view("Path '{}' cannot contain sub-path"), path);
-    else
+    } else {
       return false;
+    }
   } else if (end != std::numeric_limits<std::size_t>::max() && str[end] == '?' && !canContainDirectives) {
-    if (throwing)
+    if (throwing) {
       throw AssetException::format(std::string_view("Path '{}' cannot contain directives"), path);
-    else
+    } else {
       return false;
+    }
   }
 
   return true;
@@ -142,21 +154,18 @@ auto FramesSpecification::toJson() const -> Json {
     {"file", framesFile}};
 }
 
-Assets::Assets(Settings settings, StringList assetSources) {
+Assets::Assets(Settings settings, StringList assetSources) : m_settings(std::move(settings)), m_assetSources(std::move(assetSources)), m_stopThreads(false) {
   const char* AssetsPatchSuffix = ".patch";
   const char* AssetsPatchListSuffix = ".patchlist";
   const char* AssetsLuaPatchSuffix = ".patch.lua";
-
-  m_settings = std::move(settings);
-  m_stopThreads = false;
-  m_assetSources = std::move(assetSources);
 
   auto luaEngine = LuaEngine::create();
   m_luaEngine = luaEngine;
   auto pushGlobalContext = [&luaEngine](String const& name, LuaCallbacks&& callbacks) -> void {
     auto table = luaEngine->createTable();
-    for (auto const& p : callbacks.callbacks())
+    for (auto const& p : callbacks.callbacks()) {
       table.set(p.first, luaEngine->createWrappedFunction(p.second));
+    }
     luaEngine->setGlobal(name, table);
   };
 
@@ -174,21 +183,24 @@ Assets::Assets(Settings settings, StringList assetSources) {
           table.set(assetSource, this->assetSourceMetadata(assetSource));
       } else {
         size_t i = 0;
-        for (auto& assetSource : assetSources)
+        for (auto& assetSource : assetSources) {
           table.set(++i, assetSource);
+        }
       }
       return table;
     });
 
     callbacks.registerCallback("sourceMetadata", [this](String const& sourcePath) -> std::optional<JsonObject> {
-      if (auto assetSource = m_assetSourcePaths.rightPtr(sourcePath))
+      if (auto assetSource = m_assetSourcePaths.rightPtr(sourcePath)) {
         return (*assetSource)->metadata();
+      }
       return {};
     });
 
     callbacks.registerCallback("origin", [this](String const& path) -> std::optional<String> {
-      if (auto descriptor = this->assetDescriptor(path))
+      if (auto descriptor = this->assetDescriptor(path)) {
         return this->assetSourcePath(descriptor->source);
+      }
       return {};
     });
 
@@ -199,15 +211,17 @@ Assets::Assets(Settings settings, StringList assetSources) {
 
     callbacks.registerCallback("image", [this](String const& path) -> Image {
       auto assetImage = image(path);
-      if (assetImage->bytesPerPixel() == 3)
+      if (assetImage->bytesPerPixel() == 3) {
         return assetImage->convert(PixelFormat::RGBA32);
-      else
+      } else {
         return *assetImage;
+      }
     });
 
     callbacks.registerCallback("frames", [this](String const& path) -> Json {
-      if (auto frames = imageFrames(path))
+      if (auto frames = imageFrames(path)) {
         return frames->toJson();
+      }
       return {};
     });
 
@@ -227,9 +241,9 @@ Assets::Assets(Settings settings, StringList assetSources) {
       auto callbacks = makeBaseAssetCallbacks();
       callbacks.registerCallback("add", [newFiles](LuaEngine& engine, String const& path, LuaValue const& data) -> void {
         ByteArray bytes;
-        if (auto str = engine.luaMaybeTo<String>(data))
+        if (auto str = engine.luaMaybeTo<String>(data)) {
           bytes = ByteArray(str->utf8Ptr(), str->utf8Size());
-        else if (auto image = engine.luaMaybeTo<Image>(data)) {
+        } else if (auto image = engine.luaMaybeTo<Image>(data)) {
           newFiles->set(path, std::move(*image));
           return;
         } else {
@@ -282,8 +296,9 @@ Assets::Assets(Settings settings, StringList assetSources) {
 
       callbacks.registerCallback("erase", [this](String const& path) -> bool {
         bool erased = m_files.erase(path);
-        if (erased)
+        if (erased) {
           m_filesByExtension[AssetPath::extension(path).toLower()].erase(path);
+        }
         return erased;
       });
 
@@ -298,12 +313,14 @@ Assets::Assets(Settings settings, StringList assetSources) {
       if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
         if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - std::strlen(AssetsPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
+          if (auto p = m_files.ptr(targetPatchFile)) {
             p->patchSources.append({filename, source});
+          }
         } else if (filename.endsWith(AssetsLuaPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - std::strlen(AssetsLuaPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
+          if (auto p = m_files.ptr(targetPatchFile)) {
             p->patchSources.append({filename, source});
+          }
         } else if (filename.endsWith(AssetsPatchListSuffix, String::CaseInsensitive)) {
           auto stream = source->read(filename);
           size_t patchIndex = 0;
@@ -313,10 +330,11 @@ Assets::Assets(Settings settings, StringList assetSources) {
               if (auto p = m_files.ptr(path.toString())) {
                 for (size_t i = 0; i != patches.size(); ++i) {
                   auto& patch = patches[i];
-                  if (patch.isType(Json::Type::String))
+                  if (patch.isType(Json::Type::String)) {
                     p->patchSources.append({patch.toString(), source});
-                  else
+                  } else {
                     p->patchSources.append({strf(std::string_view("{}:[{}].patches[{}]"), filename, patchIndex, i), source});
+                  }
                 }
               }
             }
@@ -326,8 +344,9 @@ Assets::Assets(Settings settings, StringList assetSources) {
           for (int i = 0; i < 10; i++) {
             if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
               auto targetPatchFile = filename.substr(0, filename.size() - std::strlen(AssetsPatchSuffix) + 1);
-              if (auto p = m_files.ptr(targetPatchFile))
+              if (auto p = m_files.ptr(targetPatchFile)) {
                 p->patchSources.append({filename, source});
+              }
               break;
             }
           }
@@ -362,8 +381,9 @@ Assets::Assets(Settings settings, StringList assetSources) {
           Logger::error(std::string_view("Exception while running {} scripts from asset source '{}': {}"), groupName, sourcePath, e.what());
         }
         Logger::info(std::string_view("Took {} seconds to run {} scripts {}"), Time::monotonicTime() - now, groupName, *scriptGroup);
-        if (!memoryAssets->empty())
+        if (!memoryAssets->empty()) {
           addSource(strf(std::string_view("{}::{}"), sourcePath, groupName), memoryAssets);
+        }
       }
     }
     // clear any caching that may have been trigered by load scripts as they may no longer be valid
@@ -376,10 +396,11 @@ Assets::Assets(Settings settings, StringList assetSources) {
   for (auto& sourcePath : m_assetSources) {
     Logger::info(std::string_view("Loading assets from: '{}'"), sourcePath);
     Ptr<AssetSource> source;
-    if (File::isDirectory(sourcePath))
+    if (File::isDirectory(sourcePath)) {
       source = std::make_shared<DirectoryAssetSource>(sourcePath, m_settings.pathIgnore);
-    else
+    } else {
       source = std::make_shared<PackedAssetSource>(sourcePath);
+    }
 
     addSource(sourcePath, source);
     sources.append(make_pair(sourcePath, source));
@@ -387,8 +408,9 @@ Assets::Assets(Settings settings, StringList assetSources) {
     runLoadScripts("onLoad", sourcePath, source);
   }
 
-  for (auto& pair : sources)
+  for (auto& pair : sources) {
     runLoadScripts("postLoad", pair.first, pair.second);
+  }
 
   Sha256Hasher digest;
 
@@ -409,16 +431,18 @@ Assets::Assets(Settings settings, StringList assetSources) {
     if (digestFile) {
       digest.push(assetPath);
       digest.push(DataStreamBuffer::serialize(descriptor.source->open(descriptor.sourceName)->size()));
-      for (auto const& pair : descriptor.patchSources)
+      for (auto const& pair : descriptor.patchSources) {
         digest.push(DataStreamBuffer::serialize(pair.second->open(AssetPath::removeSubPath(pair.first))->size()));
+      }
     }
   }
 
   m_digest = digest.compute();
 
   int workerPoolSize = m_settings.workerPoolSize;
-  for (int i = 0; i < workerPoolSize; i++)
+  for (int i = 0; i < workerPoolSize; i++) {
     m_workerThreads.append(Thread::invoke("Assets::workerMain", std::mem_fn(&Assets::workerMain), this));
+  }
 
   // preload.config contains an array of files which will be loaded and then told to persist
   Json preload = json("/preload.config");
@@ -483,8 +507,9 @@ auto Assets::assetDescriptor(String const& path) const -> std::optional<Assets::
 
 auto Assets::assetSource(String const& path) const -> String {
   MutexLocker assetsLocker(m_assetsMutex);
-  if (auto p = m_files.ptr(path))
+  if (auto p = m_files.ptr(path)) {
     return m_assetSourcePaths.getLeft(p->source);
+  }
   throw AssetException(strf(std::string_view("No such asset '{}'"), path));
 }
 
@@ -502,8 +527,9 @@ auto Assets::scan(String const& suffix) const -> StringList {
     StringList result;
     for (auto const& fileEntry : m_files) {
       String const& file = fileEntry.first;
-      if (file.endsWith(suffix, String::CaseInsensitive))
+      if (file.endsWith(suffix, String::CaseInsensitive)) {
         result.append(file);
+      }
     }
 
     return result;
@@ -515,14 +541,16 @@ auto Assets::scan(String const& prefix, String const& suffix) const -> StringLis
   if (suffix.beginsWith(".") && !suffix.substr(1).hasChar('.')) {
     auto& filesWithExtension = scanExtension(suffix);
     for (auto const& file : filesWithExtension) {
-      if (file.beginsWith(prefix, String::CaseInsensitive))
+      if (file.beginsWith(prefix, String::CaseInsensitive)) {
         result.append(file);
+      }
     }
   } else {
     for (auto const& fileEntry : m_files) {
       String const& file = fileEntry.first;
-      if (file.beginsWith(prefix, String::CaseInsensitive) && file.endsWith(suffix, String::CaseInsensitive))
+      if (file.beginsWith(prefix, String::CaseInsensitive) && file.endsWith(suffix, String::CaseInsensitive)) {
         result.append(file);
+      }
     }
   }
   return result;
@@ -543,10 +571,11 @@ auto Assets::json(String const& path) const -> Json {
 }
 
 auto Assets::fetchJson(Json const& v, String const& dir) const -> Json {
-  if (v.isType(Json::Type::String))
+  if (v.isType(Json::Type::String)) {
     return Assets::json(AssetPath::relativeTo(dir, v.toString()));
-  else
+  } else {
     return v;
+  }
 }
 
 void Assets::queueJsons(StringList const& paths) const {
@@ -592,10 +621,11 @@ void Assets::queueImages(CaseInsensitiveStringSet const& paths) const {
 }
 
 auto Assets::tryImage(AssetPath const& path) const -> ConstPtr<Image> {
-  if (auto imageData = as<ImageData>(tryAsset(AssetId{.type = AssetType::Image, .path = path})))
+  if (auto imageData = as<ImageData>(tryAsset(AssetId{.type = AssetType::Image, .path = path}))) {
     return imageData->image;
-  else
+  } else {
     return {};
+  }
 }
 
 auto Assets::imageFrames(String const& path) const -> ConstPtr<FramesSpecification> {
@@ -636,10 +666,11 @@ auto Assets::tryAudio(String const& path) const -> ConstPtr<Audio> {
   auto components = AssetPath::split(path);
   validatePath(components, false, false);
 
-  if (auto audioData = as<AudioData>(tryAsset(AssetId{.type = AssetType::Audio, .path = std::move(components)})))
+  if (auto audioData = as<AudioData>(tryAsset(AssetId{.type = AssetType::Audio, .path = std::move(components)}))) {
     return audioData->audio;
-  else
+  } else {
     return {};
+  }
 }
 
 auto Assets::font(String const& path) const -> ConstPtr<Font> {
@@ -668,8 +699,9 @@ void Assets::clearCache() {
   while (it.hasNext()) {
     auto const& pair = it.next();
     // Don't clean up queued, persistent, or broken assets.
-    if (pair.second && !pair.second->shouldPersist() && !m_queue.contains(pair.first))
+    if (pair.second && !pair.second->shouldPersist() && !m_queue.contains(pair.first)) {
       it.remove();
+    }
   }
 }
 
@@ -686,10 +718,11 @@ void Assets::cleanup() {
       double liveTime = time - pair.second->time;
       if (liveTime > m_settings.assetTimeToLive) {
         // If the asset should persist, just refresh the access time.
-        if (pair.second->shouldPersist())
+        if (pair.second->shouldPersist()) {
           pair.second->time = time;
-        else
+        } else {
           it.remove();
+        }
       }
     }
   }
@@ -732,11 +765,12 @@ auto Assets::parseFramesSpecification(Json const& frameConfig, String path) -> F
     for (auto const& pair : frameConfig.get("frameList").toObject()) {
       String frameName = pair.first;
       RectU rect = RectU(jsonToRectI(pair.second));
-      if (rect.isEmpty())
+      if (rect.isEmpty()) {
         throw AssetException(
           strf(std::string_view("Empty rect in frame specification in image {} frame {}"), framesSpecification.framesFile, frameName));
-      else
+      } else {
         framesSpecification.frames[frameName] = rect;
+      }
     }
   }
 
@@ -747,42 +781,50 @@ auto Assets::parseFramesSpecification(Json const& frameConfig, String path) -> F
     Vec2U size(jsonToVec2I(grid.get("size")));
     Vec2U dimensions(jsonToVec2I(grid.get("dimensions")));
 
-    if (dimensions[0] == 0 || dimensions[1] == 0)
+    if (dimensions[0] == 0 || dimensions[1] == 0) {
       throw AssetException(strf(std::string_view("Image {} \"dimensions\" in frameGrid cannot be zero"), framesSpecification.framesFile));
+    }
 
     if (grid.contains("names")) {
       auto nameList = grid.get("names");
       for (size_t y = 0; y < nameList.size(); ++y) {
-        if (y >= dimensions[1])
+        if (y >= dimensions[1]) {
           throw AssetException(strf(std::string_view("Image {} row {} is out of bounds for y-dimension {}"),
                                     framesSpecification.framesFile,
                                     y + 1,
                                     dimensions[1]));
+        }
         auto rowList = nameList.get(y);
-        if (rowList.isNull())
+        if (rowList.isNull()) {
           continue;
+        }
         for (unsigned x = 0; x < rowList.size(); ++x) {
-          if (x >= dimensions[0])
+          if (x >= dimensions[0]) {
             throw AssetException(strf(std::string_view("Image {} column {} is out of bounds for x-dimension {}"),
                                       framesSpecification.framesFile,
                                       x + 1,
                                       dimensions[0]));
+          }
 
           auto frame = rowList.get(x);
-          if (frame.isNull())
+          if (frame.isNull()) {
             continue;
+          }
           auto frameName = frame.toString();
-          if (!frameName.empty())
+          if (!frameName.empty()) {
             framesSpecification.frames[frameName] =
               RectU::withSize(Vec2U(begin[0] + x * size[0], begin[1] + y * size[1]), size);
+          }
         }
       }
     } else {
       // If "names" not specified, use auto naming algorithm
-      for (size_t y = 0; y < dimensions[1]; ++y)
-        for (size_t x = 0; x < dimensions[0]; ++x)
+      for (size_t y = 0; y < dimensions[1]; ++y) {
+        for (size_t x = 0; x < dimensions[0]; ++x) {
           framesSpecification.frames[toString(y * dimensions[0] + x)] =
             RectU::withSize(Vec2U(begin[0] + x * size[0], begin[1] + y * size[1]), size);
+        }
+      }
     }
   }
 
@@ -798,8 +840,9 @@ auto Assets::parseFramesSpecification(Json const& frameConfig, String path) -> F
       for (size_t i = 0; i <= aliases->size(); ++i) {
         auto it = aliases->find(value);
         if (it != aliases->end()) {
-          if (i == aliases->size())
+          if (i == aliases->size()) {
             throw AssetException(strf(std::string_view("Infinite alias loop detected for alias '{}'"), key));
+          }
 
           value = it->second.toString();
         } else {
@@ -807,8 +850,9 @@ auto Assets::parseFramesSpecification(Json const& frameConfig, String path) -> F
         }
       }
 
-      if (!framesSpecification.frames.contains(value))
+      if (!framesSpecification.frames.contains(value)) {
         throw AssetException(strf(std::string_view("No such frame '{}' found for alias '{}'"), value, key));
+      }
       framesSpecification.aliases[key] = std::move(value);
     }
   }
@@ -819,15 +863,17 @@ auto Assets::parseFramesSpecification(Json const& frameConfig, String path) -> F
 void Assets::queueAssets(List<AssetId> const& assetIds) const {
   MutexLocker assetsLocker(m_assetsMutex);
 
-  for (auto const& id : assetIds)
+  for (auto const& id : assetIds) {
     queueAsset(id);
+  }
 }
 
 void Assets::queueAsset(AssetId const& assetId) const {
   auto i = m_assetsCache.find(assetId);
   if (i != m_assetsCache.end()) {
-    if (i->second)
+    if (i->second) {
       freshen(i->second);
+    }
   } else {
     auto j = m_queue.find(assetId);
     if (j == m_queue.end()) {
@@ -874,16 +920,18 @@ auto Assets::getAsset(AssetId const& id) const -> std::shared_ptr<Assets::AssetD
     } else {
       // Try to load the asset in-thread, if we cannot, then the asset has been
       // queued so wait for a worker thread to finish it.
-      if (!doLoad(id))
+      if (!doLoad(id)) {
         m_assetsDone.wait(m_assetsMutex);
+      }
     }
   }
 }
 
 void Assets::workerMain() {
   while (true) {
-    if (m_stopThreads)
+    if (m_stopThreads) {
       break;
+    }
 
     {
       RecursiveMutexLocker luaLocker(m_luaMutex);
@@ -900,8 +948,9 @@ void Assets::workerMain() {
       if (pair.second == QueuePriority::Load || pair.second == QueuePriority::PostProcess) {
         assetId = pair.first;
         queuePriority = pair.second;
-        if (pair.second == QueuePriority::Load)
+        if (pair.second == QueuePriority::Load) {
           break;
+        }
       }
     }
 
@@ -912,10 +961,11 @@ void Assets::workerMain() {
     }
 
     bool workIsBlocking;
-    if (queuePriority == QueuePriority::PostProcess)
+    if (queuePriority == QueuePriority::PostProcess) {
       workIsBlocking = !doPost(assetId);
-    else
+    } else {
       workIsBlocking = !doLoad(assetId);
+    }
 
     if (workIsBlocking) {
       // We are blocking on some sort of busy asset, so need to wait on
@@ -961,10 +1011,11 @@ auto Assets::bestFramesSpecification(String const& image) const -> ConstPtr<Fram
 
     auto subdir = [](String const& dir) -> String {
       auto dirsplit = dir.substr(0, dir.size() - 1).rsplit("/", 1);
-      if (dirsplit.size() < 2)
+      if (dirsplit.size() < 2) {
         return "";
-      else
+      } else {
         return dirsplit[0] + "/";
+      }
     };
 
     std::optional<String> foundFramesFile;
@@ -1004,24 +1055,28 @@ auto Assets::bestFramesSpecification(String const& image) const -> ConstPtr<Fram
 }
 
 auto Assets::open(String const& path) const -> Ptr<IODevice> {
-  if (auto p = m_files.ptr(path))
+  if (auto p = m_files.ptr(path)) {
     return p->source->open(p->sourceName);
+  }
   throw AssetException(strf(std::string_view("No such asset '{}'"), path));
 }
 
 auto Assets::read(String const& path) const -> ByteArray {
-  if (auto p = m_files.ptr(path))
+  if (auto p = m_files.ptr(path)) {
     return p->source->read(p->sourceName);
+  }
   throw AssetException(strf(std::string_view("No such asset '{}'"), path));
 }
 
 auto Assets::readImage(String const& path) const -> ConstPtr<Image> {
   if (auto p = m_files.ptr(path)) {
     ConstPtr<Image> image;
-    if (auto memorySource = as<MemoryAssetSource>(p->source))
+    if (auto memorySource = as<MemoryAssetSource>(p->source)) {
       image = memorySource->image(p->sourceName);
-    if (!image)
+    }
+    if (!image) {
       image = std::make_shared<Image>(Image::readPng(p->source->open(p->sourceName)));
+    }
 
     if (!p->patchSources.empty()) {
       return applyImagePatches(image, path, p->patchSources);
@@ -1051,10 +1106,11 @@ auto Assets::applyImagePatches(ConstPtr<Image> image, String const& path, List<s
       auto newResult = context->invokePath<LuaValue>("patch", result, path);
       if (!newResult.is<LuaNilType>()) {
         if (auto ud = newResult.ptr<LuaUserData>()) {
-          if (ud->is<Image>())
+          if (ud->is<Image>()) {
             result = std::move(newResult);
-          else
+          } else {
             Logger::warn("Patch '{}' for image '{}' returned a non-Image userdata value, ignoring", patchPath, path);
+          }
         } else {
           Logger::warn("Patch '{}' for image '{}' returned a non-Image value, ignoring", patchPath, path);
         }
@@ -1125,13 +1181,15 @@ auto Assets::applyJsonPatches(Json const& input, String const& path, List<std::p
         context->load(patchStream, patchBasePath);
       }
       auto newResult = context->invokePath<Json>("patch", result, path);
-      if (newResult)
+      if (newResult) {
         result = std::move(newResult);
+      }
     } else {
       try {
         auto patchJson = inputUtf8Json(patchStream.begin(), patchStream.end(), JsonParseType::Top);
-        if (patchAssetPath.subPath)
+        if (patchAssetPath.subPath) {
           patchJson = patchJson.query(*patchAssetPath.subPath);
+        }
         if (patchJson.isType(Json::Type::Array)) {
           auto patchData = patchJson.toArray();
           try {
@@ -1175,8 +1233,9 @@ auto Assets::doPost(AssetId const& id) const -> bool {
   std::shared_ptr<AssetData> assetData;
   try {
     assetData = m_assetsCache.get(id);
-    if (id.type == AssetType::Audio)
+    if (id.type == AssetType::Audio) {
       assetData = postProcessAudio(assetData);
+    }
   } catch (std::exception const& e) {
     Logger::error(std::string_view("Exception caught post-processing asset: {}, {}"), id.path, outputException(e, true));
   } catch (...) {
@@ -1195,11 +1254,13 @@ auto Assets::doPost(AssetId const& id) const -> bool {
 }
 
 auto Assets::loadAsset(AssetId const& id) const -> std::shared_ptr<Assets::AssetData> {
-  if (auto asset = m_assetsCache.value(id))
+  if (auto asset = m_assetsCache.value(id)) {
     return asset;
+  }
 
-  if (m_queue.value(id, QueuePriority::None) == QueuePriority::Working)
+  if (m_queue.value(id, QueuePriority::None) == QueuePriority::Working) {
     return {};
+  }
 
   try {
     m_queue[id] = QueuePriority::Working;
@@ -1231,10 +1292,11 @@ auto Assets::loadAsset(AssetId const& id) const -> std::shared_ptr<Assets::Asset
     }
 
     if (assetData) {
-      if (assetData->needsPostProcessing)
+      if (assetData->needsPostProcessing) {
         m_queue[id] = QueuePriority::PostProcess;
-      else
+      } else {
         m_queue.remove(id);
+      }
       m_assetsCache[id] = assetData;
       m_assetsDone.broadcast();
       freshen(assetData);
@@ -1264,8 +1326,9 @@ auto Assets::loadJson(AssetPath const& path) const -> std::shared_ptr<Assets::As
   if (path.subPath) {
     auto topJson =
       as<JsonData>(loadAsset(AssetId{.type = AssetType::Json, .path = {path.basePath, {}, {}}}));
-    if (!topJson)
+    if (!topJson) {
       return {};
+    }
 
     try {
       auto newData = std::make_shared<JsonData>();
@@ -1292,13 +1355,15 @@ auto Assets::loadImage(AssetPath const& path) const -> std::shared_ptr<Assets::A
   if (!path.directives.empty()) {
     std::shared_ptr<ImageData> source =
       as<ImageData>(loadAsset(AssetId{.type = AssetType::Image, .path = {path.basePath, path.subPath, {}}}));
-    if (!source)
+    if (!source) {
       return {};
+    }
     StringMap<ConstPtr<Image>> references;
     StringList referencePaths;
 
-    for (auto& directives : path.directives.list())
+    for (auto& directives : path.directives.list()) {
       directives.loadOperations();
+    }
 
     path.directives.forEach([&](auto const& entry, Directives const&) -> auto {
       addImageOperationReferences(entry.operation, referencePaths);
@@ -1308,8 +1373,9 @@ auto Assets::loadImage(AssetPath const& path) const -> std::shared_ptr<Assets::A
       auto components = AssetPath::split(ref);
       validatePath(components, true, false);
       auto refImage = as<ImageData>(loadAsset(AssetId{.type = AssetType::Image, .path = std::move(components)}));
-      if (!refImage)
+      if (!refImage) {
         return {};
+      }
       references[ref] = refImage->image;
     }
 
@@ -1322,17 +1388,20 @@ auto Assets::loadImage(AssetPath const& path) const -> std::shared_ptr<Assets::A
 
   } else if (path.subPath) {
     auto imageData = as<ImageData>(loadAsset(AssetId{.type = AssetType::Image, .path = {path.basePath, {}, {}}}));
-    if (!imageData)
+    if (!imageData) {
       return {};
+    }
 
     // Base image must have frames data associated with it.
-    if (!imageData->frames)
+    if (!imageData->frames) {
       throw AssetException::format(std::string_view("No associated frames file found for image '{}' while resolving image frame '{}'"), path.basePath, path);
+    }
 
     if (auto alias = imageData->frames->aliases.ptr(*path.subPath)) {
       imageData = as<ImageData>(loadAsset(AssetId{.type = AssetType::Image, .path = {path.basePath, *alias, path.directives}}));
-      if (!imageData)
+      if (!imageData) {
         return {};
+      }
 
       auto newData = std::make_shared<ImageData>();
       newData->image = imageData->image;
@@ -1341,8 +1410,9 @@ auto Assets::loadImage(AssetPath const& path) const -> std::shared_ptr<Assets::A
 
     } else {
       auto frameRect = imageData->frames->frames.ptr(*path.subPath);
-      if (!frameRect)
+      if (!frameRect) {
         throw AssetException(strf(std::string_view("No such frame {} in frames spec {}"), *path.subPath, imageData->frames->framesFile));
+      }
 
       return unlockDuring([&]() -> std::shared_ptr<Star::Assets::ImageData> {
         // Need to flip frame coordinates because frame configs assume top

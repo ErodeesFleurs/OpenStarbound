@@ -219,15 +219,16 @@ Image::Image(unsigned width, unsigned height, PixelFormat pf)
 }
 
 Image::~Image() {
-  if (m_data)
+  if (m_data) {
     Star::free(m_data);
+  }
 }
 
 Image::Image(Image const& image) : Image() {
   operator=(image);
 }
 
-Image::Image(Image&& image) : Image() {
+Image::Image(Image&& image) noexcept : Image() {
   operator=(std::move(image));
 }
 
@@ -237,7 +238,7 @@ auto Image::operator=(Image const& image) -> Image& {
   return *this;
 }
 
-auto Image::operator=(Image&& image) -> Image& {
+auto Image::operator=(Image&& image) noexcept -> Image& {
   reset(0, 0, m_pixelFormat);
 
   m_data = take(image.m_data);
@@ -400,7 +401,7 @@ auto Image::clamp(Vec2I const& pos) const -> Vec4B {
   auto x = (unsigned)Star::clamp<int>(pos[0], 0, m_width - 1);
   auto y = (unsigned)Star::clamp<int>(pos[1], 0, m_height - 1);
   if (m_width == 0 || m_height == 0) {
-    return {0, 0, 0, 0};
+    return Vec4B{0, 0, 0, 0};
   } else if (bytesPerPixel() == 4) {
     size_t offset = y * m_width * 4 + x * 4;
     c[0] = m_data[offset];
@@ -419,21 +420,23 @@ auto Image::clamp(Vec2I const& pos) const -> Vec4B {
 
 auto Image::clamprgb(Vec2I const& pos) const -> Vec4B {
   auto c = clamp(pos);
-  if (m_pixelFormat == PixelFormat::BGR24 || m_pixelFormat == PixelFormat::BGRA32)
+  if (m_pixelFormat == PixelFormat::BGR24 || m_pixelFormat == PixelFormat::BGRA32) {
     return Vec4B{c[2], c[1], c[0], c[3]};
-  else
+  } else {
     return c;
+  }
 }
 
 auto Image::subImage(Vec2U const& pos, Vec2U const& size) const -> Image {
-  if (pos[0] + size[0] > m_width || pos[1] + size[1] > m_height)
+  if (pos[0] + size[0] > m_width || pos[1] + size[1] > m_height) {
     throw ImageException(strf("call to subImage with pos {} size {} out of image bounds ({}, {})", pos, size, m_width, m_height));
+  }
 
   Image sub(size[0], size[1], m_pixelFormat);
 
   for (unsigned y = 0; y < size[1]; ++y) {
     for (unsigned x = 0; x < size[0]; ++x) {
-      sub.set({x, y}, get(pos + Vec2U(x, y)));
+      sub.set(Vec2U{x, y}, get(pos + Vec2U(x, y)));
     }
   }
 

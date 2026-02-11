@@ -1,16 +1,19 @@
 #include "StarTeamClient.hpp"
 
 #include "StarClientContext.hpp"
+#include "StarConfig.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarPlayerLog.hpp"
+#include "StarPlayerLog.hpp"// IWYU pragma: export
 #include "StarRoot.hpp"
 #include "StarTime.hpp"
 #include "StarWorldClient.hpp"
 
+import std;
+
 namespace Star {
 
-TeamClient::TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext) {
+TeamClient::TeamClient(Ptr<Player> mainPlayer, Ptr<ClientContext> clientContext) {
   m_mainPlayer = mainPlayer;
   m_clientContext = clientContext;
 
@@ -24,19 +27,19 @@ TeamClient::TeamClient(PlayerPtr mainPlayer, ClientContextPtr clientContext) {
   m_statusUpdateTimer = 0;
 }
 
-bool TeamClient::isTeamLeader() {
+auto TeamClient::isTeamLeader() -> bool {
   if (!m_teamUuid)
     return false;
   return m_teamLeader == m_clientContext->playerUuid();
 }
 
-bool TeamClient::isTeamLeader(Uuid const& playerUuid) {
+auto TeamClient::isTeamLeader(Uuid const& playerUuid) -> bool {
   if (!m_teamUuid)
     return false;
   return m_teamLeader == playerUuid;
 }
 
-bool TeamClient::isMemberOfTeam() {
+auto TeamClient::isMemberOfTeam() -> bool {
   return (bool)m_teamUuid;
 }
 
@@ -48,14 +51,14 @@ void TeamClient::invitePlayer(String const& playerName) {
   request["inviteeName"] = playerName;
   request["inviterUuid"] = m_clientContext->playerUuid().hex();
   request["inviterName"] = m_mainPlayer->name();
-  invokeRemote("team.invite", request, [=, this](Json response) {
+  invokeRemote("team.invite", request, [=, this](Json response) -> void {
     if (!response)
-      m_pendingInviteResults.append(make_pair(playerName, true));
+      m_pendingInviteResults.append(std::make_pair(playerName, true));
     else if (response == "inviteeNotFound")
-      m_pendingInviteResults.append(make_pair(playerName, false));
+      m_pendingInviteResults.append(std::make_pair(playerName, false));
     else if (response.isType(Json::Type::Array)) {
       m_pendingInviteResults.push_back(StringList());
-      StringList& invited = m_pendingInviteResults.back().get<StringList>();
+      auto& invited = m_pendingInviteResults.back().get<StringList>();
       for (auto& entry : response.toArray()) {
         if (!entry.isType(Json::Type::Array))
           continue;
@@ -71,10 +74,10 @@ void TeamClient::acceptInvitation(Uuid const& inviterUuid) {
   JsonObject request;
   request["inviterUuid"] = inviterUuid.hex();
   request["inviteeUuid"] = m_clientContext->playerUuid().hex();
-  invokeRemote("team.acceptInvitation", request, [this](Json) { forceUpdate(); });
+  invokeRemote("team.acceptInvitation", request, [this](Json) -> void { forceUpdate(); });
 }
 
-std::optional<Uuid> TeamClient::currentTeam() const {
+auto TeamClient::currentTeam() const -> std::optional<Uuid> {
   return m_teamUuid;
 }
 
@@ -86,7 +89,7 @@ void TeamClient::makeLeader(Uuid const& playerUuid) {
   JsonObject request;
   request["teamUuid"] = m_teamUuid->hex();
   request["playerUuid"] = playerUuid.hex();
-  invokeRemote("team.makeLeader", request, [this](Json) { forceUpdate(); });
+  invokeRemote("team.makeLeader", request, [this](Json) -> void { forceUpdate(); });
 }
 
 void TeamClient::removeFromTeam(Uuid const& playerUuid) {
@@ -97,19 +100,19 @@ void TeamClient::removeFromTeam(Uuid const& playerUuid) {
   JsonObject request;
   request["teamUuid"] = m_teamUuid->hex();
   request["playerUuid"] = playerUuid.hex();
-  invokeRemote("team.removeFromTeam", request, [this](Json) { forceUpdate(); });
+  invokeRemote("team.removeFromTeam", request, [this](Json) -> void { forceUpdate(); });
 }
 
-bool TeamClient::hasInvitationPending() {
+auto TeamClient::hasInvitationPending() -> bool {
   return m_hasPendingInvitation;
 }
 
-std::pair<Uuid, String> TeamClient::pullInvitation() {
+auto TeamClient::pullInvitation() -> std::pair<Uuid, String> {
   m_hasPendingInvitation = false;
   return m_pendingInvitation;
 }
 
-List<Variant<pair<String, bool>, StringList>> TeamClient::pullInviteResults() {
+auto TeamClient::pullInviteResults() -> List<Variant<std::pair<String, bool>, StringList>> {
   return take(m_pendingInviteResults);
 }
 
@@ -121,7 +124,7 @@ void TeamClient::update() {
       m_pollInvitationsTimer = Time::monotonicTime();
       JsonObject request;
       request["playerUuid"] = m_clientContext->playerUuid().hex();
-      invokeRemote("team.pollInvitation", request, [this](Json response) {
+      invokeRemote("team.pollInvitation", request, [this](Json response) -> void {
         if (response.isNull())
           return;
         if (m_hasPendingInvitation)
@@ -152,7 +155,7 @@ void TeamClient::pullFullUpdate() {
   JsonObject request;
   request["playerUuid"] = m_clientContext->playerUuid().hex();
 
-  invokeRemote("team.fetchTeamStatus", request, [this](Json response) {
+  invokeRemote("team.fetchTeamStatus", request, [this](Json response) -> void {
     m_fullUpdateRunning = false;
 
     m_teamUuid = response.optString("teamUuid").transform(construct<Uuid>());
@@ -175,7 +178,7 @@ void TeamClient::pullFullUpdate() {
         member.portrait = jsonToList<Drawable>(m.get("portrait"));
         m_members.push_back(member);
       }
-      std::sort(m_members.begin(), m_members.end(), [](Member const& a, Member const& b) { return a.name < b.name; });
+      std::ranges::sort(m_members, [](Member const& a, Member const& b) -> bool { return a.name < b.name; });
     } else {
       clearTeam();
     }
@@ -194,12 +197,12 @@ void TeamClient::statusUpdate() {
   // TODO: write full player data less often?
   writePlayerData(request, player, true);
 
-  invokeRemote("team.updateStatus", request, [this](Json) {
+  invokeRemote("team.updateStatus", request, [this](Json) -> void {
     m_statusUpdateRunning = false;
   });
 }
 
-List<TeamClient::Member> TeamClient::members() {
+auto TeamClient::members() -> List<TeamClient::Member> {
   return m_members;
 }
 
@@ -209,7 +212,7 @@ void TeamClient::forceUpdate() {
   m_pollInvitationsTimer = 0;
 }
 
-void TeamClient::invokeRemote(String const& method, Json const& args, function<void(Json const&)> responseFunction) {
+void TeamClient::invokeRemote(String const& method, Json const& args, std::function<void(Json const&)> responseFunction) {
   auto promise = m_clientContext->rpcInterface()->invokeRemote(method, args);
   m_pendingResponses.append({std::move(promise), std::move(responseFunction)});
 }
@@ -230,7 +233,7 @@ void TeamClient::handleRpcResponses() {
   m_pendingResponses = stillPendingResponses;
 }
 
-void TeamClient::writePlayerData(JsonObject& request, PlayerPtr player, bool fullWrite) const {
+void TeamClient::writePlayerData(JsonObject& request, Ptr<Player> player, bool fullWrite) const {
   request["playerUuid"] = m_clientContext->playerUuid().hex();
   request["entity"] = player->entityId();
   request["health"] = player->health() / player->maxHealth();
@@ -250,7 +253,7 @@ void TeamClient::writePlayerData(JsonObject& request, PlayerPtr player, bool ful
 
   if (fullWrite) {
     request["name"] = player->name();
-    request["portrait"] = jsonFromList(player->portrait(PortraitMode::Head), mem_fn(&Drawable::toJson));
+    request["portrait"] = jsonFromList(player->portrait(PortraitMode::Head), std::mem_fn(&Drawable::toJson));
   }
 }
 

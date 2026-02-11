@@ -134,7 +134,7 @@ void NetElementDynamicGroup<Element>::initNetVersion(NetElementVersion const* ve
   addChangeData(ElementReset());
   for (auto& pair : m_idMap) {
     pair.second->initNetVersion(m_netVersion);
-    addChangeData(ElementAddition(pair.first, {}));// we will write the data stream once we know the rules for the one recieving
+    addChangeData(ElementAddition({pair.first, {}}));// we will write the data stream once we know the rules for the one recieving
   }
 }
 
@@ -191,7 +191,7 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRu
     ElementId id = ds.readVlqU();
     DataStreamBuffer storeBuffer(ds.read<ByteArray>());
 
-    ElementPtr element = make_shared<Element>();
+    ElementPtr element = std::make_shared<Element>();
     element->netLoad(storeBuffer, rules);
     readyElement(element);
 
@@ -274,13 +274,13 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
         if (changeUpdate.template is<ElementReset>()) {
           m_idMap.clear();
         } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
-          ElementPtr element = make_shared<Element>();
+          ElementPtr element = std::make_shared<Element>();
           DataStreamBuffer storeBuffer(std::move(addition->get().second));
           element->netLoad(storeBuffer, rules);
           readyElement(element);
           m_idMap.add(addition->get().first, std::move(element));
         } else if (auto removal = changeUpdate.template ptr<ElementRemoval>()) {
-          m_idMap.remove(*removal);
+          m_idMap.remove(removal->get());
         }
       } else {
         ElementId elementId = code - 1;

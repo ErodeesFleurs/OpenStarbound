@@ -1,5 +1,7 @@
 #include "StarActiveItem.hpp"
 
+#include "StarCasting.hpp"
+#include "StarConfig.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarEmoteEntity.hpp"
 #include "StarEntityLuaBindings.hpp"
@@ -11,6 +13,8 @@
 #include "StarRoot.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarStatusControllerLuaBindings.hpp"
+
+import std;
 
 namespace Star {
 
@@ -50,14 +54,14 @@ ActiveItem::ActiveItem(Json const& config, String const& directory, Json const& 
 
 ActiveItem::ActiveItem(ActiveItem const& rhs) : ActiveItem(rhs.config(), rhs.directory(), rhs.parameters()) {}
 
-ItemPtr ActiveItem::clone() const {
-  return make_shared<ActiveItem>(*this);
+auto ActiveItem::clone() const -> Ptr<Item> {
+  return std::make_shared<ActiveItem>(*this);
 }
 
 void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
   ToolUserItem::init(owner, hand);
   if (entityMode() == EntityMode::Master) {
-    m_script.setScripts(jsonToStringList(instanceValue("scripts")).transformed(bind(&AssetPath::relativeTo, directory(), _1)));
+    m_script.setScripts(jsonToStringList(instanceValue("scripts")).transformed([capture0 = directory()](auto&& PH1) -> auto { return AssetPath::relativeTo(capture0, std::forward<decltype(PH1)>(PH1)); }));
     m_script.setUpdateDelta(instanceValue("scriptDelta", 1).toUInt());
     m_twoHandedGrip.set(twoHanded());
 
@@ -66,7 +70,7 @@ void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
 
     m_script.addCallbacks("activeItem", makeActiveItemCallbacks());
     m_script.addCallbacks("item", LuaBindings::makeItemCallbacks(this));
-    m_script.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, as<Item>(this), _1, _2)));
+    m_script.addCallbacks("config", LuaBindings::makeConfigCallbacks([capture0 = as<Item>(this)](auto&& PH1, auto&& PH2) -> auto { return capture0->instanceValue(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }));
     m_script.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_itemAnimator));
     m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(owner->statusController()));
     m_script.addActorMovementCallbacks(owner->movementController());
@@ -78,14 +82,14 @@ void ActiveItem::init(ToolUserEntity* owner, ToolHand hand) {
   }
   if (world()->isClient()) {
     if (auto animationScripts = instanceValue("animationScripts")) {
-      m_scriptedAnimator.setScripts(jsonToStringList(animationScripts).transformed(bind(&AssetPath::relativeTo, directory(), _1)));
+      m_scriptedAnimator.setScripts(jsonToStringList(animationScripts).transformed([capture0 = directory()](auto&& PH1) -> auto { return AssetPath::relativeTo(capture0, std::forward<decltype(PH1)>(PH1)); }));
       m_scriptedAnimator.setUpdateDelta(instanceValue("animationDelta", 1).toUInt());
 
       m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(&m_itemAnimator, [this](String const& name, Json const& defaultValue) -> Json {
                                         return m_scriptedAnimationParameters.value(name, defaultValue);
                                       }));
       m_scriptedAnimator.addCallbacks("activeItemAnimation", makeScriptedAnimationCallbacks());
-      m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Item::instanceValue, as<Item>(this), _1, _2)));
+      m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks([capture0 = as<Item>(this)](auto&& PH1, auto&& PH2) -> auto { return capture0->instanceValue(std::forward<decltype(PH1)>(PH1), std::forward<decltype(PH2)>(PH2)); }));
       m_scriptedAnimator.init(world());
     }
   }
@@ -143,7 +147,7 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
     m_itemAnimator.update(dt, nullptr);
   }
 
-  eraseWhere(m_activeAudio, [this](pair<AudioInstancePtr const, Vec2F> const& a) {
+  eraseWhere(m_activeAudio, [this](std::pair<const Ptr<AudioInstance>, Vec2F> const& a) -> bool {
     a.first->setPosition(owner()->position() + handPosition(a.second));
     return a.first->finished();
   });
@@ -164,7 +168,7 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
   }
 }
 
-List<DamageSource> ActiveItem::damageSources() const {
+auto ActiveItem::damageSources() const -> List<DamageSource> {
   List<DamageSource> damageSources = m_damageSources.get();
   for (auto ds : m_itemDamageSources.get()) {
     if (ds.damageArea.is<PolyF>()) {
@@ -185,7 +189,7 @@ List<DamageSource> ActiveItem::damageSources() const {
   return damageSources;
 }
 
-List<PolyF> ActiveItem::shieldPolys() const {
+auto ActiveItem::shieldPolys() const -> List<PolyF> {
   List<PolyF> shieldPolys = m_shieldPolys.get();
   for (auto sp : m_itemShieldPolys.get()) {
     sp.rotate(m_armAngle.get());
@@ -197,7 +201,7 @@ List<PolyF> ActiveItem::shieldPolys() const {
   return shieldPolys;
 }
 
-List<PhysicsForceRegion> ActiveItem::forceRegions() const {
+auto ActiveItem::forceRegions() const -> List<PhysicsForceRegion> {
   List<PhysicsForceRegion> forceRegions = m_forceRegions.get();
   for (auto fr : m_itemForceRegions.get()) {
     if (auto dfr = fr.ptr<DirectionalForceRegion>()) {
@@ -216,39 +220,39 @@ List<PhysicsForceRegion> ActiveItem::forceRegions() const {
   return forceRegions;
 }
 
-bool ActiveItem::holdingItem() const {
+auto ActiveItem::holdingItem() const -> bool {
   return m_holdingItem.get();
 }
 
-std::optional<String> ActiveItem::backArmFrame() const {
+auto ActiveItem::backArmFrame() const -> std::optional<String> {
   return m_backArmFrame.get();
 }
 
-std::optional<String> ActiveItem::frontArmFrame() const {
+auto ActiveItem::frontArmFrame() const -> std::optional<String> {
   return m_frontArmFrame.get();
 }
 
-bool ActiveItem::twoHandedGrip() const {
+auto ActiveItem::twoHandedGrip() const -> bool {
   return m_twoHandedGrip.get();
 }
 
-bool ActiveItem::recoil() const {
+auto ActiveItem::recoil() const -> bool {
   return m_recoil.get();
 }
 
-bool ActiveItem::outsideOfHand() const {
+auto ActiveItem::outsideOfHand() const -> bool {
   return m_outsideOfHand.get();
 }
 
-float ActiveItem::armAngle() const {
+auto ActiveItem::armAngle() const -> float {
   return m_armAngle.get();
 }
 
-std::optional<Direction> ActiveItem::facingDirection() const {
+auto ActiveItem::facingDirection() const -> std::optional<Direction> {
   return m_facingDirection.get();
 }
 
-List<Drawable> ActiveItem::handDrawables() const {
+auto ActiveItem::handDrawables() const -> List<Drawable> {
   if (m_itemAnimator.constParts().empty()) {
     auto drawables = Item::iconDrawables();
     Drawable::scaleAll(drawables, 1.0f / TilePixels);
@@ -258,11 +262,11 @@ List<Drawable> ActiveItem::handDrawables() const {
   }
 }
 
-List<pair<Drawable, std::optional<EntityRenderLayer>>> ActiveItem::entityDrawables() const {
+auto ActiveItem::entityDrawables() const -> List<std::pair<Drawable, std::optional<EntityRenderLayer>>> {
   return m_scriptedAnimator.drawables();
 }
 
-List<LightSource> ActiveItem::lights() const {
+auto ActiveItem::lights() const -> List<LightSource> {
   // Same as pullNewAudios, we translate and flip ourselves.
   List<LightSource> result;
   for (auto& light : m_itemAnimator.lightSources()) {
@@ -280,7 +284,7 @@ List<LightSource> ActiveItem::lights() const {
   return result;
 }
 
-List<AudioInstancePtr> ActiveItem::pullNewAudios() {
+auto ActiveItem::pullNewAudios() -> List<Ptr<AudioInstance>> {
   // Because the item animator is in hand-space, and Humanoid does all the
   // translation *and flipping*, we cannot use NetworkedAnimator's built-in
   // functionality to rotate and flip, and instead must do it manually.  We do
@@ -288,7 +292,7 @@ List<AudioInstancePtr> ActiveItem::pullNewAudios() {
   // ourselves.  It would be easier if (0, 0) for the NetworkedAnimator was,
   // say, the shoulder and un-rotated, but it gets a bit weird with Humanoid
   // modifications.
-  List<AudioInstancePtr> result;
+  List<Ptr<AudioInstance>> result;
   for (auto& audio : m_itemAnimatorDynamicTarget.pullNewAudios()) {
     m_activeAudio[audio] = *audio->position();
     audio->setPosition(owner()->position() + handPosition(*audio->position()));
@@ -298,7 +302,7 @@ List<AudioInstancePtr> ActiveItem::pullNewAudios() {
   return result;
 }
 
-List<Particle> ActiveItem::pullNewParticles() {
+auto ActiveItem::pullNewParticles() -> List<Particle> {
   // Same as pullNewAudios, we translate, rotate, and flip ourselves
   List<Particle> result;
   for (auto& particle : m_itemAnimatorDynamicTarget.pullNewParticles()) {
@@ -314,15 +318,15 @@ List<Particle> ActiveItem::pullNewParticles() {
   return result;
 }
 
-std::optional<String> ActiveItem::cursor() const {
+auto ActiveItem::cursor() const -> std::optional<String> {
   return m_cursor;
 }
 
-std::optional<Json> ActiveItem::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
+auto ActiveItem::receiveMessage(String const& message, bool localMessage, JsonArray const& args) -> std::optional<Json> {
   return m_script.handleMessage(message, localMessage, args);
 }
 
-float ActiveItem::durabilityStatus() {
+auto ActiveItem::durabilityStatus() -> float {
   auto durability = instanceValue("durability").optFloat();
   if (durability) {
     auto durabilityHit = instanceValue("durabilityHit").optFloat().value_or(*durability);
@@ -331,42 +335,42 @@ float ActiveItem::durabilityStatus() {
   return 1.0;
 }
 
-Vec2F ActiveItem::armPosition(Vec2F const& offset) const {
+auto ActiveItem::armPosition(Vec2F const& offset) const -> Vec2F {
   return owner()->armPosition(hand(), owner()->facingDirection(), m_armAngle.get(), offset);
 }
 
-Vec2F ActiveItem::handPosition(Vec2F const& offset) const {
+auto ActiveItem::handPosition(Vec2F const& offset) const -> Vec2F {
   return armPosition(offset + owner()->handOffset(hand(), owner()->facingDirection()));
 }
 
-LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
+auto ActiveItem::makeActiveItemCallbacks() -> LuaCallbacks {
   LuaCallbacks callbacks;
-  callbacks.registerCallback("ownerEntityId", [this]() {
+  callbacks.registerCallback("ownerEntityId", [this]() -> EntityId {
     return owner()->entityId();
   });
-  callbacks.registerCallback("ownerTeam", [this]() {
+  callbacks.registerCallback("ownerTeam", [this]() -> Json {
     return owner()->getTeam().toJson();
   });
-  callbacks.registerCallback("ownerAimPosition", [this]() {
+  callbacks.registerCallback("ownerAimPosition", [this]() -> Vec2F {
     return owner()->aimPosition();
   });
-  callbacks.registerCallback("ownerPowerMultiplier", [this]() {
+  callbacks.registerCallback("ownerPowerMultiplier", [this]() -> float {
     return owner()->powerMultiplier();
   });
-  callbacks.registerCallback("fireMode", [this]() {
+  callbacks.registerCallback("fireMode", [this]() -> String {
     return FireModeNames.getRight(m_currentFireMode);
   });
-  callbacks.registerCallback("hand", [this]() {
+  callbacks.registerCallback("hand", [this]() -> String {
     return ToolHandNames.getRight(hand());
   });
-  callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) {
+  callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) -> Vec2F {
     return handPosition(offset.value());
   });
 
   // Gets the required aim angle to aim a "barrel" of the item that has the given
   // vertical offset from the hand at the given target.  The line that is aimed
   // at the target is the horizontal line going through the aimVerticalOffset.
-  callbacks.registerCallback("aimAngleAndDirection", [this](float aimVerticalOffset, Vec2F targetPosition) {
+  callbacks.registerCallback("aimAngleAndDirection", [this](float aimVerticalOffset, Vec2F targetPosition) -> LuaTupleReturn<std::decay_t<float>, std::decay_t<int>> {
     // This was figured out using pencil and paper geometry from the hand
     // rotation center, the target position, and the 90 deg vertical offset of
     // the "barrel".
@@ -401,7 +405,7 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
   });
 
   // Similar to aimAngleAndDirection, but only provides the offset-adjusted aimAngle for the current facing direction
-  callbacks.registerCallback("aimAngle", [this](float aimVerticalOffset, Vec2F targetPosition) {
+  callbacks.registerCallback("aimAngle", [this](float aimVerticalOffset, Vec2F targetPosition) -> float {
     Vec2F handRotationCenter = owner()->armPosition(hand(), owner()->facingDirection(), 0.0f, Vec2F());
     Vec2F ownerPosition = owner()->position();
     Vec2F toTarget = owner()->world()->geometry().diff(targetPosition, (ownerPosition + handRotationCenter));
@@ -410,77 +414,77 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
     return toTarget.angle() + angleAdjust;
   });
 
-  callbacks.registerCallback("setHoldingItem", [this](bool holdingItem) {
+  callbacks.registerCallback("setHoldingItem", [this](bool holdingItem) -> void {
     m_holdingItem.set(holdingItem);
   });
 
-  callbacks.registerCallback("setBackArmFrame", [this](std::optional<String> armFrame) {
+  callbacks.registerCallback("setBackArmFrame", [this](std::optional<String> armFrame) -> void {
     m_backArmFrame.set(armFrame);
   });
 
-  callbacks.registerCallback("setFrontArmFrame", [this](std::optional<String> armFrame) {
+  callbacks.registerCallback("setFrontArmFrame", [this](std::optional<String> armFrame) -> void {
     m_frontArmFrame.set(armFrame);
   });
 
-  callbacks.registerCallback("setTwoHandedGrip", [this](bool twoHandedGrip) {
+  callbacks.registerCallback("setTwoHandedGrip", [this](bool twoHandedGrip) -> void {
     m_twoHandedGrip.set(twoHandedGrip);
   });
 
-  callbacks.registerCallback("setRecoil", [this](bool recoil) {
+  callbacks.registerCallback("setRecoil", [this](bool recoil) -> void {
     m_recoil.set(recoil);
   });
 
-  callbacks.registerCallback("setOutsideOfHand", [this](bool outsideOfHand) {
+  callbacks.registerCallback("setOutsideOfHand", [this](bool outsideOfHand) -> void {
     m_outsideOfHand.set(outsideOfHand);
   });
 
-  callbacks.registerCallback("setArmAngle", [this](float armAngle) {
+  callbacks.registerCallback("setArmAngle", [this](float armAngle) -> void {
     m_armAngle.set(armAngle);
   });
 
-  callbacks.registerCallback("setFacingDirection", [this](float direction) {
+  callbacks.registerCallback("setFacingDirection", [this](float direction) -> void {
     m_facingDirection.set(directionOf(direction));
   });
 
-  callbacks.registerCallback("setDamageSources", [this](std::optional<JsonArray> const& damageSources) {
+  callbacks.registerCallback("setDamageSources", [this](std::optional<JsonArray> const& damageSources) -> void {
     m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
   });
 
-  callbacks.registerCallback("setItemDamageSources", [this](std::optional<JsonArray> const& damageSources) {
+  callbacks.registerCallback("setItemDamageSources", [this](std::optional<JsonArray> const& damageSources) -> void {
     m_itemDamageSources.set(damageSources.value().transformed(construct<DamageSource>()));
   });
 
-  callbacks.registerCallback("setShieldPolys", [this](std::optional<List<PolyF>> const& shieldPolys) {
+  callbacks.registerCallback("setShieldPolys", [this](std::optional<List<PolyF>> const& shieldPolys) -> void {
     m_shieldPolys.set(shieldPolys.value());
   });
 
-  callbacks.registerCallback("setItemShieldPolys", [this](std::optional<List<PolyF>> const& shieldPolys) {
+  callbacks.registerCallback("setItemShieldPolys", [this](std::optional<List<PolyF>> const& shieldPolys) -> void {
     m_itemShieldPolys.set(shieldPolys.value());
   });
 
-  callbacks.registerCallback("setForceRegions", [this](std::optional<JsonArray> const& forceRegions) {
+  callbacks.registerCallback("setForceRegions", [this](std::optional<JsonArray> const& forceRegions) -> void {
     if (forceRegions)
       m_forceRegions.set(forceRegions->transformed(jsonToPhysicsForceRegion));
     else
       m_forceRegions.set({});
   });
 
-  callbacks.registerCallback("setItemForceRegions", [this](std::optional<JsonArray> const& forceRegions) {
+  callbacks.registerCallback("setItemForceRegions", [this](std::optional<JsonArray> const& forceRegions) -> void {
     if (forceRegions)
       m_itemForceRegions.set(forceRegions->transformed(jsonToPhysicsForceRegion));
     else
       m_itemForceRegions.set({});
   });
 
-  callbacks.registerCallback("setCursor", [this](std::optional<String> cursor) {
+  callbacks.registerCallback("setCursor", [this](std::optional<String> cursor) -> void {
     m_cursor = std::move(cursor);
   });
 
-  callbacks.registerCallback("setScriptedAnimationParameter", [this](String name, Json value) {
+  callbacks.registerCallback("setScriptedAnimationParameter", [this](String name, Json value) -> void {
     m_scriptedAnimationParameters.set(std::move(name), std::move(value));
   });
 
-  callbacks.registerCallback("setInventoryIcon", [this](Json inventoryIcon) {
+  callbacks.registerCallback("setInventoryIcon", [this](Json inventoryIcon) -> void {
     setInstanceValue("inventoryIcon", inventoryIcon);
 
     if (inventoryIcon.type() == Json::Type::Array) {
@@ -494,7 +498,7 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
       setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F())});
     }
   });
-  callbacks.registerCallback("setSecondaryIcon", [this](Json secondaryIcon) {
+  callbacks.registerCallback("setSecondaryIcon", [this](Json secondaryIcon) -> void {
     setInstanceValue("secondaryIcon", secondaryIcon);
     if (secondaryIcon.type() == Json::Type::Array) {
       setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
@@ -510,37 +514,37 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
     }
   });
 
-  callbacks.registerCallback("setInstanceValue", [this](String name, Json val) {
+  callbacks.registerCallback("setInstanceValue", [this](String name, Json val) -> void {
     setInstanceValue(std::move(name), std::move(val));
   });
 
-  callbacks.registerCallback("callOtherHandScript", [this](String const& func, LuaVariadic<LuaValue> const& args) {
+  callbacks.registerCallback("callOtherHandScript", [this](String const& func, LuaVariadic<LuaValue> const& args) -> Star::Variant<Star::Empty, bool, long long, double, Star::LuaString, Star::LuaTable, Star::LuaFunction, Star::LuaThread, Star::LuaUserData> {
     if (auto otherHandItem = owner()->handItem(hand() == ToolHand::Primary ? ToolHand::Alt : ToolHand::Primary)) {
       if (auto otherActiveItem = as<ActiveItem>(otherHandItem))
         return otherActiveItem->m_script.invoke(func, args).value();
     }
-    return LuaValue();
+    return {};
   });
 
-  callbacks.registerCallback("interact", [this](String const& type, Json const& configData, std::optional<EntityId> const& sourceEntityId) {
+  callbacks.registerCallback("interact", [this](String const& type, Json const& configData, std::optional<EntityId> const& sourceEntityId) -> void {
     owner()->interact(InteractAction(type, sourceEntityId.value_or(NullEntityId), configData));
   });
 
-  callbacks.registerCallback("emote", [this](String const& emoteName) {
+  callbacks.registerCallback("emote", [this](String const& emoteName) -> void {
     auto emote = HumanoidEmoteNames.getLeft(emoteName);
     if (auto entity = as<EmoteEntity>(owner()))
       entity->playEmote(emote);
   });
 
-  callbacks.registerCallback("setCameraFocusEntity", [this](std::optional<EntityId> const& cameraFocusEntity) {
+  callbacks.registerCallback("setCameraFocusEntity", [this](std::optional<EntityId> const& cameraFocusEntity) -> void {
     owner()->setCameraFocusEntity(cameraFocusEntity);
   });
 
-  callbacks.registerCallback("setDescription", [this](String const& description) {
+  callbacks.registerCallback("setDescription", [this](String const& description) -> void {
     setInstanceValue("description", description);
     setDescription(description);
   });
-  callbacks.registerCallback("setShortDescription", [this](String const& description) {
+  callbacks.registerCallback("setShortDescription", [this](String const& description) -> void {
     setInstanceValue("shortdescription", description);
     setShortDescription(description);
   });
@@ -548,21 +552,21 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
   return callbacks;
 }
 
-LuaCallbacks ActiveItem::makeScriptedAnimationCallbacks() {
+auto ActiveItem::makeScriptedAnimationCallbacks() -> LuaCallbacks {
   LuaCallbacks callbacks;
-  callbacks.registerCallback("ownerPosition", [this]() {
+  callbacks.registerCallback("ownerPosition", [this]() -> Vec2F {
     return owner()->position();
   });
-  callbacks.registerCallback("ownerAimPosition", [this]() {
+  callbacks.registerCallback("ownerAimPosition", [this]() -> Vec2F {
     return owner()->aimPosition();
   });
-  callbacks.registerCallback("ownerArmAngle", [this]() {
+  callbacks.registerCallback("ownerArmAngle", [this]() -> float {
     return m_armAngle.get();
   });
-  callbacks.registerCallback("ownerFacingDirection", [this]() {
+  callbacks.registerCallback("ownerFacingDirection", [this]() -> int {
     return numericalDirection(owner()->facingDirection());
   });
-  callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) {
+  callbacks.registerCallback("handPosition", [this](std::optional<Vec2F> offset) -> Vec2F {
     return handPosition(offset.value());
   });
   return callbacks;

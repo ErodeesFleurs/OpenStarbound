@@ -6,6 +6,7 @@
 #include "StarRandom.hpp"
 #include "StarRect.hpp"
 #include "StarVariant.hpp"
+#include "StarVector.hpp"
 
 import std;
 
@@ -168,7 +169,7 @@ auto CellularLiquidWorld<LiquidId>::uniqueLocation(Vec2I const& location) const 
 
 template <typename LiquidId>
 auto CellularLiquidWorld<LiquidId>::drainLevel(Vec2I const&) const -> float {
-  return 0.0f;
+  return 0.0F;
 }
 
 template <typename LiquidId>
@@ -214,8 +215,9 @@ void LiquidCellEngine<LiquidId>::visitLocation(Vec2I const& p) {
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::visitRegion(RectI const& region) {
   for (int x = region.xMin(); x < region.xMax(); ++x) {
-    for (int y = region.yMin(); y < region.yMax(); ++y)
-      m_nextActiveCells.add({x, y});
+    for (int y = region.yMin(); y < region.yMax(); ++y) {
+      m_nextActiveCells.add(Vec2I{x, y});
+    }
   }
 }
 
@@ -305,67 +307,73 @@ void LiquidCellEngine<LiquidId>::setup() {
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::applyPressure() {
   for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid || selfCell->sourceCell)
+    if (!selfCell->liquid || selfCell->sourceCell) {
       continue;
+    }
 
     auto topCell = adjacentCell(selfCell, Adjacency::Top);
-    if (topCell && selfCell->liquid == topCell->liquid)
-      setPressure(max(selfCell->pressure, topCell->pressure + min(topCell->level, 1.0f)), *selfCell);
+    if (topCell && selfCell->liquid == topCell->liquid) {
+      setPressure(max(selfCell->pressure, topCell->pressure + min(topCell->level, 1.0F)), *selfCell);
+    }
   }
 }
 
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::spreadPressure() {
   for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid)
+    if (!selfCell->liquid) {
       continue;
+    }
 
     auto spreadPressure = [&](Adjacency adjacency, float bias) -> auto {
       auto targetCell = adjacentCell(selfCell, adjacency);
-      if (targetCell && !targetCell->sourceCell)
+      if (targetCell && !targetCell->sourceCell) {
         transferPressure((selfCell->pressure + bias - targetCell->pressure) * m_engineParameters.pressureEqualizeFactor, *selfCell, *targetCell, true);
+      }
     };
 
     if (m_random.randb()) {
-      spreadPressure(Adjacency::Left, 0.0f);
-      spreadPressure(Adjacency::Right, 0.0f);
+      spreadPressure(Adjacency::Left, 0.0F);
+      spreadPressure(Adjacency::Right, 0.0F);
     } else {
-      spreadPressure(Adjacency::Right, 0.0f);
-      spreadPressure(Adjacency::Left, 0.0f);
+      spreadPressure(Adjacency::Right, 0.0F);
+      spreadPressure(Adjacency::Left, 0.0F);
     }
 
-    spreadPressure(Adjacency::Bottom, 1.0f);
-    spreadPressure(Adjacency::Top, -1.0f);
+    spreadPressure(Adjacency::Bottom, 1.0F);
+    spreadPressure(Adjacency::Top, -1.0F);
   }
 }
 
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::limitPressure() {
   for (auto const& selfCell : m_currentActiveCells) {
-    float level = min(selfCell->level, 1.0f);
+    float level = min(selfCell->level, 1.0F);
     auto topCell = adjacentCell(selfCell, Adjacency::Top);
 
     // Force the pressure to the cell level if there is empty space above,
     // otherwise simply make sure the pressure is at least the level
-    if (topCell && !topCell->liquid)
+    if (topCell && !topCell->liquid) {
       setPressure(level, *selfCell);
-    else
+    } else {
       setPressure(max(selfCell->pressure, level), *selfCell);
+    }
   }
 }
 
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::pressureMove() {
   for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid)
+    if (!selfCell->liquid) {
       continue;
+    }
 
     auto pressureMove = [&](Adjacency adjacency) -> auto {
       auto targetCell = adjacentCell(selfCell, adjacency);
       if (targetCell && !targetCell->sourceCell && targetCell->level >= selfCell->level) {
         float amount = (selfCell->pressure - targetCell->pressure) * m_engineParameters.pressureMoveFactor;
-        amount = min(amount, selfCell->level - (1.0f - m_engineParameters.maximumPressureLevelImbalance));
-        amount = min(amount, (1.0f + m_engineParameters.maximumPressureLevelImbalance) - targetCell->level);
+        amount = min(amount, selfCell->level - (1.0F - m_engineParameters.maximumPressureLevelImbalance));
+        amount = min(amount, (1.0F + m_engineParameters.maximumPressureLevelImbalance) - targetCell->level);
         transferLevel(amount, *selfCell, *targetCell, false);
       }
     };
@@ -383,15 +391,17 @@ void LiquidCellEngine<LiquidId>::pressureMove() {
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::spreadOverfill() {
   for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid || selfCell->sourceCell)
+    if (!selfCell->liquid || selfCell->sourceCell) {
       continue;
+    }
 
     auto spreadOverfill = [&](Adjacency adjacency, float factor) -> auto {
-      float overfill = selfCell->level - 1.0f;
-      if (overfill > 0.0f) {
+      float overfill = selfCell->level - 1.0F;
+      if (overfill > 0.0F) {
         auto targetCell = adjacentCell(selfCell, adjacency);
-        if (targetCell)
+        if (targetCell) {
           transferLevel(min(overfill, (selfCell->level - targetCell->level)) * factor, *selfCell, *targetCell, false);
+        }
       }
     };
 
@@ -412,19 +422,22 @@ void LiquidCellEngine<LiquidId>::spreadOverfill() {
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::levelMove() {
   for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid)
+    if (!selfCell->liquid) {
       continue;
+    }
 
     auto belowCell = adjacentCell(selfCell, Adjacency::Bottom);
-    if (belowCell)
-      transferLevel(min(1.0f - belowCell->level, selfCell->level), *selfCell, *belowCell, false);
+    if (belowCell) {
+      transferLevel(min(1.0F - belowCell->level, selfCell->level), *selfCell, *belowCell, false);
+    }
 
-    setLevel(selfCell->level * (1.0f - m_cellWorld->drainLevel(selfCell->position)), *selfCell);
+    setLevel(selfCell->level * (1.0F - m_cellWorld->drainLevel(selfCell->position)), *selfCell);
 
     auto lateralMove = [&](Adjacency adjacency) -> auto {
       auto targetCell = adjacentCell(selfCell, adjacency);
-      if (targetCell)
+      if (targetCell) {
         transferLevel((selfCell->level - targetCell->level) * m_engineParameters.lateralMoveFactor, *selfCell, *targetCell, false);
+      }
     };
 
     if (m_random.randb()) {
@@ -440,37 +453,41 @@ void LiquidCellEngine<LiquidId>::levelMove() {
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::findInteractions() {
   for (auto const& selfCell : m_currentActiveCells) {
-    if (!selfCell->liquid)
+    if (!selfCell->liquid) {
       continue;
+    }
 
     for (auto adjacency : {Adjacency::Bottom, Adjacency::Top, Adjacency::Left, Adjacency::Right}) {
       auto targetCell = adjacentCell(selfCell, adjacency);
       if (!targetCell) {
         Vec2I adjacentPos = selfCell->position;
-        if (adjacency == Adjacency::Left)
+        if (adjacency == Adjacency::Left) {
           adjacentPos += Vec2I(-1, 0);
-        else if (adjacency == Adjacency::Right)
+        } else if (adjacency == Adjacency::Right) {
           adjacentPos += Vec2I(1, 0);
-        else if (adjacency == Adjacency::Bottom)
+        } else if (adjacency == Adjacency::Bottom) {
           adjacentPos += Vec2I(0, -1);
-        else if (adjacency == Adjacency::Top)
+        } else if (adjacency == Adjacency::Top) {
           adjacentPos += Vec2I(0, 1);
+        }
         m_liquidCollisions.add(make_tuple(selfCell->position, *selfCell->liquid, adjacentPos));
 
       } else if (targetCell->liquid && *targetCell->liquid != *selfCell->liquid) {
         if (targetCell->level <= m_engineParameters.interactTransformationLevel
             || selfCell->level <= m_engineParameters.interactTransformationLevel) {
-          if (selfCell->level > targetCell->level)
+          if (selfCell->level > targetCell->level) {
             targetCell->liquid = selfCell->liquid;
-          else
+          } else {
             selfCell->liquid = targetCell->liquid;
+          }
         } else {
           // Make sure to add the point pair in a predictable order so that any
           // combination of Vec2I points will be unique in m_liquidInteractions
-          if (selfCell->position < targetCell->position)
+          if (selfCell->position < targetCell->position) {
             m_liquidInteractions.add(make_tuple(selfCell->position, *selfCell->liquid, targetCell->position, *targetCell->liquid));
-          else
+          } else {
             m_liquidInteractions.add(make_tuple(targetCell->position, *targetCell->liquid, selfCell->position, *selfCell->liquid));
+          }
         }
       }
     }
@@ -484,33 +501,37 @@ void LiquidCellEngine<LiquidId>::finish() {
   for (auto& workingCellPair : take(m_workingCells)) {
     if (workingCellPair.second && !workingCellPair.second->sourceCell) {
       if (workingCellPair.second->liquid) {
-        if (workingCellPair.second->level < m_engineParameters.minimumLiquidLevel)
-          workingCellPair.second->level = 0.0f;
+        if (workingCellPair.second->level < m_engineParameters.minimumLiquidLevel) {
+          workingCellPair.second->level = 0.0F;
+        }
       } else {
-        workingCellPair.second->level = 0.0f;
+        workingCellPair.second->level = 0.0F;
       }
 
-      if (workingCellPair.second->level == 0.0f) {
+      if (workingCellPair.second->level == 0.0F) {
         workingCellPair.second->liquid = {};
-        workingCellPair.second->pressure = 0.0f;
+        workingCellPair.second->pressure = 0.0F;
       }
 
       m_cellWorld->setFlow(workingCellPair.second->position, CellularLiquidFlowCell<LiquidId>{workingCellPair.second->liquid, workingCellPair.second->level, workingCellPair.second->pressure});
     }
   }
 
-  for (auto const& interaction : take(m_liquidInteractions))
+  for (auto const& interaction : take(m_liquidInteractions)) {
     m_cellWorld->liquidInteraction(get<0>(interaction), get<1>(interaction), get<2>(interaction), get<3>(interaction));
+  }
 
-  for (auto const& interaction : take(m_liquidCollisions))
+  for (auto const& interaction : take(m_liquidCollisions)) {
     m_cellWorld->liquidCollision(get<0>(interaction), get<1>(interaction), get<2>(interaction));
+  }
 
   for (auto const& c : take(m_nextActiveCells)) {
     auto visit = [this](Vec2I p) -> auto {
       p = m_cellWorld->uniqueLocation(p);
       auto cell = workingCell(p);
-      if (cell && cell->liquid)
+      if (cell && cell->liquid) {
         m_activeCells[*cell->liquid].add(p);
+      }
     };
 
     visit(c);
@@ -532,10 +553,11 @@ auto LiquidCellEngine<LiquidId>::workingCell(Vec2I p) -> typename LiquidCellEngi
   auto res = m_workingCells.insert(make_pair(p, std::optional<WorkingCell>()));
   if (res.second) {
     auto cellData = m_cellWorld->cell(p);
-    if (auto flowCell = cellData.template ptr<CellularLiquidFlowCell<LiquidId>>())
+    if (auto flowCell = cellData.template ptr<CellularLiquidFlowCell<LiquidId>>()) {
       res.first->second = WorkingCell{p, flowCell->liquid, false, flowCell->level, flowCell->pressure, nullptr, nullptr, nullptr, nullptr};
-    else if (auto sourceCell = cellData.template ptr<CellularLiquidSourceCell<LiquidId>>())
+    } else if (auto sourceCell = cellData.template ptr<CellularLiquidSourceCell<LiquidId>>()) {
       res.first->second = WorkingCell{p, sourceCell->liquid, true, 1.0f, sourceCell->pressure, nullptr, nullptr, nullptr, nullptr};
+    }
   }
   return res.first->second.ptr();
 }
@@ -544,55 +566,64 @@ template <typename LiquidId>
 auto LiquidCellEngine<LiquidId>::adjacentCell(
   WorkingCell* cell, Adjacency adjacency) -> typename LiquidCellEngine<LiquidId>::WorkingCell* {
   auto getCell = [this](WorkingCell*& cellptr, Vec2I cellPos) -> auto {
-    if (cellptr)
+    if (cellptr) {
       return cellptr;
+    }
     cellptr = workingCell(cellPos);
     return cellptr;
   };
 
-  if (adjacency == Adjacency::Left)
+  if (adjacency == Adjacency::Left) {
     return getCell(cell->leftCell, cell->position + Vec2I(-1, 0));
-  else if (adjacency == Adjacency::Right)
+  } else if (adjacency == Adjacency::Right) {
     return getCell(cell->rightCell, cell->position + Vec2I(1, 0));
-  else if (adjacency == Adjacency::Bottom)
+  } else if (adjacency == Adjacency::Bottom) {
     return getCell(cell->bottomCell, cell->position + Vec2I(0, -1));
-  else if (adjacency == Adjacency::Top)
+  } else if (adjacency == Adjacency::Top) {
     return getCell(cell->topCell, cell->position + Vec2I(0, 1));
+  }
 
   return nullptr;
 }
 
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::setPressure(float pressure, WorkingCell& cell) {
-  if (!cell.liquid || cell.sourceCell)
+  if (!cell.liquid || cell.sourceCell) {
     return;
+  }
 
-  if (fabs(cell.pressure - pressure) > m_engineParameters.minimumLivenPressureChange)
+  if (fabs(cell.pressure - pressure) > m_engineParameters.minimumLivenPressureChange) {
     m_nextActiveCells.add(cell.position);
+  }
   cell.pressure = pressure;
 }
 
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::transferPressure(float amount, WorkingCell& source, WorkingCell& dest, bool allowReverse) {
-  if (amount < 0.0f && allowReverse) {
+  if (amount < 0.0F && allowReverse) {
     return transferPressure(-amount, dest, source, false);
-  } else if (amount > 0.0f) {
-    if (!source.liquid)
+  } else if (amount > 0.0F) {
+    if (!source.liquid) {
       return;
+    }
 
-    if (source.sourceCell && dest.sourceCell)
+    if (source.sourceCell && dest.sourceCell) {
       return;
+    }
 
-    if (dest.liquid && dest.liquid != source.liquid)
+    if (dest.liquid && dest.liquid != source.liquid) {
       return;
+    }
 
     amount = min(amount, source.pressure);
 
-    if (!source.sourceCell)
+    if (!source.sourceCell) {
       source.pressure -= amount;
+    }
 
-    if (dest.liquid && !dest.sourceCell)
+    if (dest.liquid && !dest.sourceCell) {
       dest.pressure += amount;
+    }
 
     if (amount > m_engineParameters.minimumLivenPressureChange) {
       m_nextActiveCells.add(source.position);
@@ -603,47 +634,54 @@ void LiquidCellEngine<LiquidId>::transferPressure(float amount, WorkingCell& sou
 
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::setLevel(float level, WorkingCell& cell) {
-  if (!cell.liquid || cell.sourceCell)
+  if (!cell.liquid || cell.sourceCell) {
     return;
+  }
 
-  if (fabs(cell.level - level) > m_engineParameters.minimumLivenLevelChange)
+  if (fabs(cell.level - level) > m_engineParameters.minimumLivenLevelChange) {
     m_nextActiveCells.add(cell.position);
+  }
 
   cell.level = level;
 
-  if (cell.level <= 0.0f) {
+  if (cell.level <= 0.0F) {
     cell.liquid = {};
-    cell.level = 0.0f;
+    cell.level = 0.0F;
   }
 }
 
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::transferLevel(
   float amount, WorkingCell& source, WorkingCell& dest, bool allowReverse) {
-  if (amount < 0.0f && allowReverse) {
+  if (amount < 0.0F && allowReverse) {
     transferLevel(-amount, dest, source, false);
 
-  } else if (amount > 0.0f) {
-    if (!source.liquid)
+  } else if (amount > 0.0F) {
+    if (!source.liquid) {
       return;
+    }
 
-    if (source.sourceCell && dest.sourceCell)
+    if (source.sourceCell && dest.sourceCell) {
       return;
+    }
 
-    if (dest.liquid && dest.liquid != source.liquid)
+    if (dest.liquid && dest.liquid != source.liquid) {
       return;
+    }
 
     amount = min(amount, source.level);
-    if (!source.sourceCell)
+    if (!source.sourceCell) {
       source.level -= amount;
+    }
 
     if (!dest.sourceCell) {
       dest.level += amount;
       dest.liquid = source.liquid;
     }
 
-    if (!source.sourceCell && source.level == 0.0f)
+    if (!source.sourceCell && source.level == 0.0F) {
       source.liquid = {};
+    }
 
     if (amount > m_engineParameters.minimumLivenLevelChange) {
       m_nextActiveCells.add(source.position);

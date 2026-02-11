@@ -380,7 +380,7 @@ public:
       Logger::info("Application: No platform services available");
 
     Logger::info("Application: Creating SDL window");
-    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8Ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
+    m_sdlWindow = SDL_CreateWindow(m_windowTitle.utf8_ptr(), m_windowSize[0], m_windowSize[1], SDL_WINDOW_OPENGL | SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
 
@@ -682,7 +682,7 @@ private:
     }
 
     auto setClipboard(String text) -> bool override {
-      return SDL_SetClipboardText(text.utf8Ptr());
+      return SDL_SetClipboardText(text.utf8_ptr());
     }
 
     auto setClipboardData(StringMap<ByteArray> data) -> bool override {
@@ -712,7 +712,7 @@ private:
     void setApplicationTitle(String title) override {
       parent->m_windowTitle = std::move(title);
       if (parent->m_sdlWindow)
-        SDL_SetWindowTitle(parent->m_sdlWindow, parent->m_windowTitle.utf8Ptr());
+        SDL_SetWindowTitle(parent->m_sdlWindow, parent->m_windowTitle.utf8_ptr());
     }
 
     void setFullscreenWindow(Vec2U fullScreenResolution) override {

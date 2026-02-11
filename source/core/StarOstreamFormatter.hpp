@@ -6,10 +6,11 @@ namespace Star {
 
 template <typename T>
 auto operator<<(std::ostream& os, std::optional<T> const& opt) -> std::ostream& {
-  if (opt)
+  if (opt) {
     return os << "Just (" << *opt << ")";
-  else
+  } else {
     return os << "Nothing";
+  }
 }
 
 struct ostream_formatter {
