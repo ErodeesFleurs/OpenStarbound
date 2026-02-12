@@ -91,4 +91,24 @@ constexpr auto hash_of(First const& first, Rest const&... rest) -> std::size_t {
     return h;
 }
 
+// hash for compare
+struct case_insensitive_string_hash {
+    auto operator()(const std::string& s) const -> std::size_t {
+        std::size_t h = 0;
+        for (char c : s) {
+            hash_combine(h, std::tolower(static_cast<unsigned char>(c)));
+        }
+        return h;
+    }
+};
+
+struct case_insensitive_string_compare {
+    auto operator()(const std::string& lhs, const std::string& rhs) const -> bool {
+        return std::ranges::equal(lhs, rhs, [](char a, char b) -> bool {
+            return std::tolower(static_cast<unsigned char>(a))
+              == std::tolower(static_cast<unsigned char>(b));
+        });
+    }
+};
+
 }// namespace star

@@ -1,7 +1,5 @@
 #pragma once
 
-#include "StarString.hpp"
-
 import std;
 
 namespace Star {

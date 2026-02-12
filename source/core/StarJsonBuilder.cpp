@@ -1,168 +1,209 @@
-#include "StarJsonBuilder.hpp"
+module star.json.builder;
 
-#include "StarLexicalCast.hpp"
+import std;
+import star.json;
+import star.unicode;
 
 import std;
 
-namespace Star {
+namespace star::json {
 
-void JsonBuilderStream::beginObject() {
-  pushSentry();
-}
-
-void JsonBuilderStream::objectKey(char32_t const* s, std::size_t len) {
-  push(Json(s, len));
-}
-
-void JsonBuilderStream::endObject() {
-  JsonObject object;
-  while (true) {
-    if (isSentry()) {
-      set(Json(std::move(object)));
-      return;
-    } else {
-      Json v = pop();
-      String k = pop().toString();
-      if (!object.insert(k, std::move(v)).second)
-        throw JsonParsingException(strf("Json object contains a duplicate entry for key '{}'", k));
+void json_builder_stream::place_value(json_value&& value) {
+    if (m_stack.empty()) {
+        m_stack.emplace_back(std::move(value));
+        return;
     }
-  }
-}
+    std::optional<json_value>& top_opt = m_stack.back();
 
-void JsonBuilderStream::beginArray() {
-  pushSentry();
-}
-
-void JsonBuilderStream::endArray() {
-  JsonArray array;
-  while (true) {
-    if (isSentry()) {
-      array.reverse();
-      set(Json(std::move(array)));
-      return;
-    } else {
-      array.append(pop());
+    if (!top_opt.has_value()) {
+        top_opt = std::move(value);
+        return;
     }
-  }
-}
 
-void JsonBuilderStream::putString(char32_t const* s, std::size_t len) {
-  push(Json(s, len));
-}
+    json_value& top = *top_opt;
 
-void JsonBuilderStream::putDouble(char32_t const* s, std::size_t len) {
-  push(Json(lexicalCast<double>(String(s, len))));
-}
-
-void JsonBuilderStream::putInteger(char32_t const* s, std::size_t len) {
-  push(Json(lexicalCast<long long>(String(s, len))));
-}
-
-void JsonBuilderStream::putBoolean(bool b) {
-  push(Json(b));
-}
-
-void JsonBuilderStream::putNull() {
-  push(Json());
-}
-
-void JsonBuilderStream::putWhitespace(char32_t const*, std::size_t) {}
-
-void JsonBuilderStream::putColon() {}
-
-void JsonBuilderStream::putComma() {}
-
-auto JsonBuilderStream::stackSize() -> std::size_t {
-  return m_stack.size();
-}
-
-auto JsonBuilderStream::takeTop() -> Json {
-  if (m_stack.size())
-    return std::move(*m_stack.takeLast());
-  else
-    return {};
-}
-
-void JsonBuilderStream::push(Json v) {
-  m_stack.append(std::move(v));
-}
-
-auto JsonBuilderStream::pop() -> Json {
-  return std::move(*m_stack.takeLast());
-}
-
-void JsonBuilderStream::set(Json v) {
-  m_stack.last() = std::move(v);
-}
-
-void JsonBuilderStream::pushSentry() {
-  m_stack.append({});
-}
-
-auto JsonBuilderStream::isSentry() -> bool {
-  return !m_stack.empty() && !m_stack.last();
-}
-
-void JsonStreamer<Json>::toJsonStream(Json const& val, JsonStream& stream, bool sort) {
-  Json::Type type = val.type();
-  if (type == Json::Type::Null) {
-    stream.putNull();
-  } else if (type == Json::Type::Float) {
-    auto d = String(toString(val.toDouble())).wideString();
-    stream.putDouble(d.c_str(), d.length());
-  } else if (type == Json::Type::Bool) {
-    stream.putBoolean(val.toBool());
-  } else if (type == Json::Type::Int) {
-    auto i = String(toString(val.toInt())).wideString();
-    stream.putInteger(i.c_str(), i.length());
-  } else if (type == Json::Type::String) {
-    auto ws = val.toString().wideString();
-    stream.putString(ws.c_str(), ws.length());
-  } else if (type == Json::Type::Array) {
-    stream.beginArray();
-    bool first = true;
-    for (auto const& elem : val.iterateArray()) {
-      if (!first)
-        stream.putComma();
-      first = false;
-      toJsonStream(elem, stream, sort);
+    if (top.is<json_array, true>()) {
+        auto arr_res = top.as<json_array, true>();
+        if (arr_res) {
+            arr_res.value()->push_back(std::move(value));
+            return;
+        }
     }
-    stream.endArray();
-  } else if (type == Json::Type::Object) {
-    stream.beginObject();
-    if (sort) {
-      auto objectPtr = val.objectPtr();
-      List<JsonObject::const_iterator> iterators;
-      iterators.reserve(objectPtr->size());
-      for (auto i = objectPtr->begin(); i != objectPtr->end(); ++i)
-        iterators.append(i);
-      iterators.sort([](JsonObject::const_iterator a, JsonObject::const_iterator b) -> bool {
-        return a->first < b->first;
-      });
-      bool first = true;
-      for (auto const& i : iterators) {
-        if (!first)
-          stream.putComma();
-        first = false;
-        auto ws = i->first.wideString();
-        stream.objectKey(ws.c_str(), ws.length());
-        stream.putColon();
-        toJsonStream(i->second, stream, sort);
-      }
-    } else {
-      bool first = true;
-      for (auto const& pair : val.iterateObject()) {
-        if (!first)
-          stream.putComma();
-        first = false;
-        auto ws = pair.first.wideString();
-        stream.objectKey(ws.c_str(), ws.length());
-        stream.putColon();
-        toJsonStream(pair.second, stream, sort);
-      }
+    if (top.is<json_object, true>() && m_current_key.has_value()) {
+        auto obj_res = top.as<json_object, true>();
+        if (obj_res) {
+            (**obj_res)[std::move(*m_current_key)] = std::move(value);
+            m_current_key.reset();
+            return;
+        }
     }
-    stream.endObject();
-  }
 }
 
-}// namespace Star
+void json_builder_stream::begin_object() {
+    m_stack.emplace_back(std::nullopt);
+    m_current_key.reset();
+}
+
+void json_builder_stream::object_key(std::u32string_view key) {
+    if (m_stack.empty() || m_stack.back().has_value()) {
+        m_stack.emplace_back(std::nullopt);
+    }
+    m_stack.back() = json_value::mutable_object();
+    m_current_key = unicode::utf32_to_utf8(key).value_or(std::u8string{});
+}
+
+void json_builder_stream::end_object() {
+    if (m_stack.empty()) {
+        return;
+    }
+    auto top_opt = std::move(m_stack.back());
+    m_stack.pop_back();
+
+    if (!top_opt.has_value()) {
+        place_value(json_value::object());
+        return;
+    }
+
+    json_value& top = *top_opt;
+    if (!top.is<json_object, true>()) {
+        return;
+    }
+
+    auto frozen = std::move(top).freeze();
+    if (!frozen) {
+        return;
+    }
+    place_value(std::move(*frozen));
+    m_current_key.reset();
+}
+
+void json_builder_stream::begin_array() {
+    m_stack.emplace_back(std::nullopt);
+    m_current_key.reset();
+}
+
+void json_builder_stream::end_array() {
+    if (m_stack.empty()) {
+        return;
+    }
+    auto top_opt = std::move(m_stack.back());
+    m_stack.pop_back();
+
+    if (!top_opt.has_value()) {
+        place_value(json_value::array());
+        return;
+    }
+
+    json_value& top = *top_opt;
+    if (!top.is<json_array, true>()) {
+        return;
+    }
+
+    auto frozen = std::move(top).freeze();
+    if (!frozen) {
+        return;
+    }
+    place_value(std::move(*frozen));
+    m_current_key.reset();
+}
+
+void json_builder_stream::put_string(std::u32string_view s) {
+    place_value(json_value::string(unicode::utf32_to_utf8(s).value_or(std::u8string{})));
+}
+
+void json_builder_stream::put_double(std::double_t value) {
+    place_value(json_value::floating(value));
+}
+
+void json_builder_stream::put_integer(std::int64_t value) {
+    place_value(json_value::integer(value));
+}
+
+void json_builder_stream::put_boolean(bool value) { place_value(json_value::boolean(value)); }
+
+void json_builder_stream::put_null() { place_value(json_value::null()); }
+
+auto json_builder_stream::stack_size() const noexcept -> std::size_t { return m_stack.size(); }
+
+auto json_builder_stream::take_top() -> std::optional<json_value> {
+    if (m_stack.size() != 1) {
+        return std::nullopt;
+    }
+    auto& top_opt = m_stack.back();
+    if (!top_opt.has_value()) {
+        return std::nullopt;
+    }
+    auto top = std::move(*top_opt);
+    m_stack.pop_back();
+
+    if (top.is<json_array, true>() || top.is<json_object, true>()) {
+        auto frozen = std::move(top).freeze();
+        if (!frozen) {
+            return std::nullopt;
+        }
+        return std::move(*frozen);
+    }
+    return std::move(top);
+}
+
+void json_streamer<json_value>::to_stream(const json_value& val, json_stream& stream,
+                                          bool sort_keys) {
+    val.visit(overload{[&](std::nullptr_t) -> void { stream.put_null(); },
+                       [&](bool b) -> void { stream.put_boolean(b); },
+                       [&](std::int64_t i) -> void { stream.put_integer(i); },
+                       [&](std::double_t d) -> void { stream.put_double(d); },
+                       [&](const std::shared_ptr<const std::u8string>& s) -> void {
+                           stream.put_string(unicode::utf8_to_utf32(*s).value_or(std::u32string{}));
+                       },
+                       [&](const std::shared_ptr<const json_array>& arr_ptr) -> void {
+                           stream.begin_array();
+                           bool first = true;
+                           for (const auto& elem : *arr_ptr) {
+                               if (first) {
+                                   first = false;
+                               } else {
+                                   stream.put_comma();
+                               }
+                               to_stream(elem, stream, sort_keys);
+                           }
+                           stream.end_array();
+                       },
+                       [&](const std::shared_ptr<const json_object>& obj_ptr) -> void {
+                           stream.begin_object();
+                           const auto& obj = *obj_ptr;
+                           std::vector<std::u8string_view> keys;
+                           keys.reserve(obj.size());
+                           for (const auto& [k, v] : obj) {
+                               keys.emplace_back(k);
+                           }
+                           if (sort_keys) {
+                               std::ranges::sort(keys);
+                           }
+                           bool first = true;
+                           for (auto k : keys) {
+                               if (first) {
+                                   first = false;
+                               } else {
+                                   stream.put_comma();
+                               }
+                               stream.object_key(
+                                 unicode::utf8_to_utf32(k).value_or(std::u32string{}));
+                               to_stream(obj.at(std::u8string{k}), stream, sort_keys);
+                           }
+                           stream.end_object();
+                       },
+                       [&](const std::shared_ptr<json_array>&) -> void {
+                           auto frozen = val.freeze();
+                           if (frozen) {
+                               to_stream(*frozen, stream, sort_keys);
+                           }
+                       },
+                       [&](const std::shared_ptr<json_object>&) -> void {
+                           auto frozen = val.freeze();
+                           if (frozen) {
+                               to_stream(*frozen, stream, sort_keys);
+                           }
+                       }});
+}
+
+}// namespace star::json

@@ -17,7 +17,7 @@ constexpr auto create_base64_table() {
 
 inline constexpr auto Base64Table = create_base64_table();
 
-constexpr auto hex_to_nibble(char c) -> std::uint8_t {
+constexpr auto hex_to_nibble(char8_t c) -> std::uint8_t {
     if (c >= '0' && c <= '9') {
         return c - '0';
     }
@@ -33,7 +33,8 @@ constexpr auto hex_to_nibble(char c) -> std::uint8_t {
 
 export namespace star {
 
-constexpr auto hex_encode(std::span<std::byte const> data, std::span<char> output) -> std::size_t {
+constexpr auto hex_encode(std::span<std::byte const> data, std::span<char8_t> output)
+  -> std::size_t {
     static constexpr char hexChars[] = "0123456789abcdef";//NOLINT
     std::size_t count = std::min(data.size(), output.size() / 2);
 
@@ -44,7 +45,7 @@ constexpr auto hex_encode(std::span<std::byte const> data, std::span<char> outpu
     }
     return count * 2;
 }
-constexpr auto hex_decode(std::string_view src, std::span<std::byte> output) -> std::size_t {
+constexpr auto hex_decode(std::u8string_view src, std::span<std::byte> output) -> std::size_t {
     std::size_t count = std::min(src.size() / 2, output.size());
     for (std::size_t i = 0; i < count; ++i) {
         auto n1 = detail::hex_to_nibble(src[i * 2]);
@@ -54,7 +55,7 @@ constexpr auto hex_decode(std::string_view src, std::span<std::byte> output) -> 
     return count;
 }
 
-constexpr auto nibble_decode(std::string_view src, std::span<std::byte> output) -> std::size_t {
+constexpr auto nibble_decode(std::u8string_view src, std::span<std::byte> output) -> std::size_t {
     std::size_t count = std::min(src.size(), output.size());
     for (std::size_t i = 0; i < count; ++i) {
         output[i] = static_cast<std::byte>(detail::hex_to_nibble(src[i]));
@@ -64,7 +65,7 @@ constexpr auto nibble_decode(std::string_view src, std::span<std::byte> output) 
 
 // Base64
 
-constexpr auto base64_encode(std::span<std::byte const> data, std::span<char> output)
+constexpr auto base64_encode(std::span<std::byte const> data, std::span<char8_t> output)
   -> std::size_t {
     std::size_t outIdx = 0;
     std::uint32_t buffer = 0;
@@ -101,12 +102,12 @@ constexpr auto base64_encode(std::span<std::byte const> data, std::span<char> ou
     return outIdx;
 }
 
-constexpr auto base64_decode(std::string_view src, std::span<std::byte> output) -> std::size_t {
+constexpr auto base64_decode(std::u8string_view src, std::span<std::byte> output) -> std::size_t {
     std::size_t outIdx = 0;
     std::uint32_t buffer = 0;
     int bits = 0;
 
-    for (char c : src) {
+    for (char8_t c : src) {
         if (c == '=') {
             break;
         }
@@ -131,18 +132,18 @@ constexpr auto base64_decode(std::string_view src, std::span<std::byte> output) 
 
 // api
 
-constexpr auto hex_encode(std::span<const std::byte> data) -> std::string {
-    std::string res;
-    res.resize_and_overwrite(data.size() * 2, [&](char* ptr, std::size_t n) -> std::size_t {
+constexpr auto hex_encode(std::span<const std::byte> data) -> std::u8string {
+    std::u8string res;
+    res.resize_and_overwrite(data.size() * 2, [&](char8_t* ptr, std::size_t n) -> std::size_t {
         return hex_encode(data, {ptr, n});
     });
     return res;
 }
 
-constexpr auto base64_encode(std::span<std::byte const> data) -> std::string {
-    std::string res;
+constexpr auto base64_encode(std::span<std::byte const> data) -> std::u8string {
+    std::u8string res;
     std::size_t expected = (data.size() + 2) / 3 * 4;
-    res.resize_and_overwrite(expected, [&](char* ptr, std::size_t n) -> std::size_t {
+    res.resize_and_overwrite(expected, [&](char8_t* ptr, std::size_t n) -> std::size_t {
         return base64_encode(data, {ptr, n});
     });
     return res;

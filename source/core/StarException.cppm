@@ -97,7 +97,9 @@ template <fixed_string Name, typename Base = star_exception> class exception_der
     explicit exception_derived(std::string message, bool gen_stack_trace = true)
         : Base(std::move(message), gen_stack_trace) {}
 
-    [[nodiscard]] auto get_type_name() const noexcept -> std::string_view override { return Name(); }
+    [[nodiscard]] auto get_type_name() const noexcept -> std::string_view override {
+        return Name();
+    }
 
     template <typename... Args>
     static auto format(std::format_string<Args...> fmt, Args&&... args) -> exception_derived {

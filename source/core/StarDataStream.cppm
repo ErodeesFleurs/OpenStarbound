@@ -2,7 +2,7 @@ export module star.data_stream;
 
 import std;
 import star.bytes;
-import star.bytearray;
+import star.byte_array;
 import star.exception;
 import star.net_compatibility;
 
@@ -36,13 +36,18 @@ class data_stream {
     void set_stream_compatibility_version(unsigned stream_compatibility_version);
     void set_stream_compatibility_version(net_compatibility_rules const& rules);
     // Do direct reads and writes
-    virtual void read_data(char* data, std::size_t len) = 0;
-    virtual void write_data(char const* data, std::size_t len) = 0;
+    virtual void read_data(std::span<std::byte> data) = 0;
+    virtual void write_data(std::span<std::byte const> data) = 0;
+
+    // Compatibility overloads
+    void read_data(char* data, std::size_t len) { read_data({reinterpret_cast<std::byte*>(data), len}); }
+    void write_data(char const* data, std::size_t len) { write_data({reinterpret_cast<std::byte const*>(data), len}); }
+
     virtual auto at_end() -> bool { return false; };
 
     // These do not read / write sizes, they simply read / write directly.
-    auto read_bytes(std::size_t len) -> bytearray;
-    void write_bytes(bytearray const& ba);
+    auto read_bytes(std::size_t len) -> byte_array;
+    void write_bytes(byte_array const& ba);
 
     auto operator<<(bool d) -> data_stream&;
     auto operator<<(char c) -> data_stream&;
@@ -93,22 +98,22 @@ class data_stream {
     // terminated rather than length then content.
 
     auto operator<<(const char* s) -> data_stream&;
-    auto operator<<(std::string const& d) -> data_stream&;
-    auto operator<<(bytearray const& d) -> data_stream&;
+    auto operator<<(const std::string& d) -> data_stream&;
+    auto operator<<(const byte_array& d) -> data_stream&;
 
     auto operator>>(std::string& d) -> data_stream&;
-    auto operator>>(bytearray& d) -> data_stream&;
+    auto operator>>(byte_array& d) -> data_stream&;
 
     // All enum types are automatically serializable
 
-    template <typename EnumType, typename = std::enable_if_t<std::is_enum_v<EnumType>>>
+    template <typename EnumType> requires std::is_enum_v<EnumType>
     auto operator<<(EnumType const& e) -> data_stream&;
 
-    template <typename EnumType, typename = std::enable_if_t<std::is_enum_v<EnumType>>>
+    template <typename EnumType> requires std::is_enum_v<EnumType>
     auto operator>>(EnumType& e) -> data_stream&;
 
     // Convenience method to avoid temporary.
-    template <typename T> auto read() -> T;
+    template <typename T> [[nodiscard]] auto read() -> T;
 
     // Convenient argument style reading / writing
 
@@ -125,23 +130,23 @@ class data_stream {
     // Argument style reading / writing of variable length integers.  Arguments
     // are explicitly casted, so things like enums are allowed.
 
-    template <typename IntegralType> void vu_read(IntegralType& data);
+    template <std::integral IntegralType> void vu_read(IntegralType& data);
 
-    template <typename IntegralType> void vi_read(IntegralType& data);
+    template <std::integral IntegralType> void vi_read(IntegralType& data);
 
-    template <typename IntegralType> void vs_read(IntegralType& data);
+    template <std::integral IntegralType> void vs_read(IntegralType& data);
 
-    template <typename IntegralType> void vu_write(IntegralType const& data);
+    template <std::integral IntegralType> void vu_write(IntegralType const& data);
 
-    template <typename IntegralType> void vi_write(IntegralType const& data);
+    template <std::integral IntegralType> void vi_write(IntegralType const& data);
 
-    template <typename IntegralType> void vs_write(IntegralType const& data);
+    template <std::integral IntegralType> void vs_write(IntegralType const& data);
 
     // Store a fixed point number as a variable length integer
 
-    template <typename FloatType> void vf_read(FloatType& data, FloatType base);
+    template <std::floating_point FloatType> void vf_read(FloatType& data, FloatType base);
 
-    template <typename FloatType> void vf_write(FloatType const& data, FloatType base);
+    template <std::floating_point FloatType> void vf_write(FloatType const& data, FloatType base);
 
     // Read a shared / unique ptr, and store whether the pointer is initialized.
 
@@ -187,13 +192,14 @@ class data_stream {
     unsigned m_stream_compatibility_version;
 };
 
-template <typename EnumType, typename>
+template <typename EnumType> requires std::is_enum_v<EnumType>
 auto data_stream::operator<<(EnumType const& e) -> data_stream& {
     *this << std::to_underlying(e);
     return *this;
 }
 
-template <typename EnumType, typename> auto data_stream::operator>>(EnumType& e) -> data_stream& {
+template <typename EnumType> requires std::is_enum_v<EnumType>
+auto data_stream::operator>>(EnumType& e) -> data_stream& {
     std::underlying_type_t<EnumType> i;
     *this >> i;
     e = static_cast<EnumType>(i);
@@ -221,39 +227,39 @@ template <typename WriteType, typename Data> void data_stream::cwrite(Data const
     *this << v;
 }
 
-template <typename IntegralType> void data_stream::vu_read(IntegralType& data) {
+template <std::integral IntegralType> void data_stream::vu_read(IntegralType& data) {
     std::uint64_t i = read_vlq_u();
     data = static_cast<IntegralType>(i);
 }
 
-template <typename IntegralType> void data_stream::vi_read(IntegralType& data) {
+template <std::integral IntegralType> void data_stream::vi_read(IntegralType& data) {
     std::int64_t i = read_vlq_i();
     data = static_cast<IntegralType>(i);
 }
 
-template <typename IntegralType> void data_stream::vs_read(IntegralType& data) {
+template <std::integral IntegralType> void data_stream::vs_read(IntegralType& data) {
     std::size_t s = read_vlq_s();
     data = static_cast<IntegralType>(s);
 }
 
-template <typename IntegralType> void data_stream::vu_write(IntegralType const& data) {
+template <std::integral IntegralType> void data_stream::vu_write(const IntegralType& data) {
     write_vlq_u(static_cast<std::uint64_t>(data));
 }
 
-template <typename IntegralType> void data_stream::vi_write(IntegralType const& data) {
+template <std::integral IntegralType> void data_stream::vi_write(const IntegralType& data) {
     write_vlq_i(static_cast<std::int64_t>(data));
 }
 
-template <typename IntegralType> void data_stream::vs_write(IntegralType const& data) {
+template <std::integral IntegralType> void data_stream::vs_write(const IntegralType& data) {
     write_vlq_s(static_cast<std::size_t>(data));
 }
 
-template <typename FloatType> void data_stream::vf_read(FloatType& data, FloatType base) {
+template <std::floating_point FloatType> void data_stream::vf_read(FloatType& data, FloatType base) {
     std::int64_t i = read_vlq_i();
     data = static_cast<FloatType>(i) * base;
 }
 
-template <typename FloatType> void data_stream::vf_write(FloatType const& data, FloatType base) {
+template <std::floating_point FloatType> void data_stream::vf_write(FloatType const& data, FloatType base) {
     write_vlq_i(static_cast<std::int64_t>(std::round(data / base)));
 }
 

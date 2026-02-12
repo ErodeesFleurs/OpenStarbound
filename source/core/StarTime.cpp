@@ -1,287 +1,310 @@
-#include "StarTime.hpp"
-#include "StarFormat.hpp"
-
-#ifdef STAR_SYSTEM_WINDOWS
-#include <ctime>
-#else
-#include <time.h>
-#endif
+module star.time;
 
 import std;
 
-namespace Star {
+namespace star::time {
 
-namespace Time {
-// Use nanoseconds as the internal representation for ticks for high resolution and cross-platform consistency.
-static constexpr std::int64_t TicksPerSecond = 1'000'000'000;
+static constexpr std::int64_t ticks_per_second = 1'000'000'000;
 
-auto timeSinceEpoch() -> double {
-  return ticksToSeconds(epochTicks(), epochTickFrequency());
+auto time_since_epoch() -> double {
+    return ticks_to_seconds(epoch_ticks(), epoch_tick_frequency());
 }
 
-auto millisecondsSinceEpoch() -> std::int64_t {
-  return ticksToMilliseconds(epochTicks(), epochTickFrequency());
+auto milliseconds_since_epoch() -> std::int64_t {
+    return ticks_to_milliseconds(epoch_ticks(), epoch_tick_frequency());
 }
 
-auto monotonicTime() -> double {
-  return ticksToSeconds(monotonicTicks(), monotonicTickFrequency());
+auto monotonic_time() -> double {
+    return ticks_to_seconds(monotonic_ticks(), monotonic_tick_frequency());
 }
 
-auto monotonicMilliseconds() -> std::int64_t {
-  return ticksToMilliseconds(monotonicTicks(), monotonicTickFrequency());
+auto monotonic_milliseconds() -> std::int64_t {
+    return ticks_to_milliseconds(monotonic_ticks(), monotonic_tick_frequency());
 }
 
-auto monotonicMicroseconds() -> std::int64_t {
-  return ticksToMicroseconds(monotonicTicks(), monotonicTickFrequency());
+auto monotonic_microseconds() -> std::int64_t {
+    return ticks_to_microseconds(monotonic_ticks(), monotonic_tick_frequency());
 }
 
-auto printDuration(double time) -> String {
-  String hours;
-  String minutes;
-  String seconds;
-  String milliseconds;
+auto print_duration(double seconds) -> std::string {
+    auto dur = std::chrono::duration<std::double_t>(seconds);
 
-  if (time >= 3600) {
-    int numHours = (int)time / 3600;
-    hours = strf("{} hour{}", numHours, numHours == 1 ? "" : "s");
-  }
-  if (time >= 60) {
-    int numMinutes = (int)(time / 60) % 60;
-    minutes = strf("{} minute{}", numMinutes, numMinutes == 1 ? "" : "s");
-  }
-  if (time >= 1) {
-    int numSeconds = (int)time % 60;
-    seconds = strf("{} second{}", numSeconds, numSeconds == 1 ? "" : "s");
-  }
+    auto h = duration_cast<std::chrono::hours>(dur);
+    dur -= h;
+    auto m = duration_cast<std::chrono::minutes>(dur);
+    dur -= m;
+    auto s = duration_cast<std::chrono::seconds>(dur);
+    ;
+    auto ms = duration_cast<std::chrono::milliseconds>(dur);
 
-  int numMilliseconds = std::round(std::fmod(time, 1.0) * 1000);
-  milliseconds = strf("{} millisecond{}", numMilliseconds, numMilliseconds == 1 ? "" : "s");
+    std::vector<std::string> parts;
+    if (h.count() > 0) {
+        parts.push_back(std::format("{} hour{}", h.count(), h.count() == 1 ? "" : "s"));
+    }
+    if (m.count() > 0) {
+        parts.push_back(std::format("{} minute{}", m.count(), m.count() == 1 ? "" : "s"));
+    }
+    if (s.count() > 0) {
+        parts.push_back(std::format("{} second{}", s.count(), s.count() == 1 ? "" : "s"));
+    }
+    parts.push_back(std::format("{} millisecond{}", ms.count(), ms.count() == 1 ? "" : "s"));
 
-  return String::joinWith(", ", hours, minutes, seconds, milliseconds);
+    std::string result;
+    for (std::size_t i = 0; i < parts.size(); ++i) {
+        result += parts[i];
+        if (i < parts.size() - 1) {
+            result += ", ";
+        }
+    }
+    return result;
 }
 
-auto printDateAndTime(std::int64_t epochTicks, String format) -> String {
-  auto seconds = epochTicks / epochTickFrequency();
-  auto millis = (epochTicks % epochTickFrequency()) / (epochTickFrequency() / 1000);
+auto print_date_and_time(std::int64_t ticks, std::string_view format) -> std::string {
+    using namespace std::chrono;
+    using namespace std::literals;
 
-  auto t = (std::time_t)seconds;
-  std::tm ptm;
-#ifdef STAR_SYSTEM_WINDOWS
-  if (localtime_s(&ptm, &t) != 0)
-    return "Error formatting date";
-#else
-  if (localtime_r(&t, &ptm) == nullptr)
-    return "Error formatting date";
-#endif
+    nanoseconds total_ns{ticks};
+    auto sec = duration_cast<seconds>(total_ns);
+    auto ms_part = duration_cast<milliseconds>(total_ns % 1s).count();
 
-  return format.replaceTags(StringMap<String>{
-    {"year", strf("{:04d}", ptm.tm_year + 1900)},
-    {"month", strf("{:02d}", ptm.tm_mon + 1)},
-    {"day", strf("{:02d}", ptm.tm_mday)},
-    {"hours", strf("{:02d}", ptm.tm_hour)},
-    {"minutes", strf("{:02d}", ptm.tm_min)},
-    {"seconds", strf("{:02d}", ptm.tm_sec)},
-    {"millis", strf("{:03d}", millis)}});
+    auto t = static_cast<std::time_t>(sec.count());
+    std::tm* lt = std::localtime(&t);
+
+    struct TagMap {
+        std::string_view tag;
+        std::string value;
+    };
+    std::array replacements{
+      TagMap{.tag = "year", .value = std::format("{:04d}", lt->tm_year + 1900)},
+      TagMap{.tag = "month", .value = std::format("{:02d}", lt->tm_mon + 1)},
+      TagMap{.tag = "day", .value = std::format("{:02d}", lt->tm_mday)},
+      TagMap{.tag = "hours", .value = std::format("{:02d}", lt->tm_hour)},
+      TagMap{.tag = "minutes", .value = std::format("{:02d}", lt->tm_min)},
+      TagMap{.tag = "seconds", .value = std::format("{:02d}", lt->tm_sec)},
+      TagMap{.tag = "millis", .value = std::format("{:03d}", ms_part)}};
+
+    std::string res;
+    res.reserve(format.size() + 16);
+    for (std::size_t i = 0; i < format.size(); ++i) {
+        if (format[i] == '<') {
+            std::size_t end = format.find('>', i);
+            if (end != std::string_view::npos) {
+                std::string_view current_tag = format.substr(i + 1, end - i - 1);
+
+                bool found = false;
+                for (const auto& [tag, value] : replacements) {
+                    if (current_tag == tag) {
+                        res += value;
+                        i = end;
+                        found = true;
+                        break;
+                    }
+                }
+                if (found) {
+                    continue;
+                }
+            }
+        }
+        res += format[i];
+    }
+
+    return res;
 }
 
-auto printCurrentDateAndTime(String format) -> String {
-  return printDateAndTime(epochTicks(), format);
+auto print_current_date_and_time(std::string_view format) -> std::string {
+    return print_date_and_time(epoch_ticks(), format);
 }
 
-auto epochTicks() -> std::int64_t {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+auto epoch_ticks() -> std::int64_t {
+    return std::chrono::system_clock::now().time_since_epoch() / std::chrono::nanoseconds(1);
 }
 
-auto epochTickFrequency() -> std::int64_t {
-  return TicksPerSecond;
+auto epoch_tick_frequency() -> std::int64_t { return ticks_per_second; }
+
+auto monotonic_ticks() -> std::int64_t {
+    return std::chrono::steady_clock::now().time_since_epoch() / std::chrono::nanoseconds(1);
 }
 
-auto monotonicTicks() -> std::int64_t {
-  return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+auto monotonic_tick_frequency() -> std::int64_t { return ticks_per_second; }
+
+auto ticks_to_seconds(std::int64_t ticks, std::int64_t freq) -> double {
+    return static_cast<double>(ticks) / static_cast<double>(freq);
 }
 
-auto monotonicTickFrequency() -> std::int64_t {
-  return TicksPerSecond;
+auto ticks_to_milliseconds(std::int64_t ticks, std::int64_t freq) -> std::int64_t {
+    std::int64_t tpms = freq / 1000;
+    return tpms == 0 ? 0 : (ticks + tpms / 2) / tpms;
 }
 
-auto ticksToSeconds(std::int64_t ticks, std::int64_t tickFrequency) -> double {
-  return ticks / (double)tickFrequency;
+auto ticks_to_microseconds(std::int64_t ticks, std::int64_t freq) -> std::int64_t {
+    std::int64_t tpus = freq / 1'000'000;
+    return tpus == 0 ? 0 : (ticks + tpus / 2) / tpus;
 }
 
-auto ticksToMilliseconds(std::int64_t ticks, std::int64_t tickFrequency) -> std::int64_t {
-  std::int64_t ticksPerMs = tickFrequency / 1000;
-  if (ticksPerMs == 0)
-    return 0;
-  return (ticks + ticksPerMs / 2) / ticksPerMs;
+auto seconds_to_ticks(double seconds, std::int64_t freq) -> std::int64_t {
+    return static_cast<std::int64_t>(std::round(seconds * static_cast<std::double_t>(freq)));
 }
 
-auto ticksToMicroseconds(std::int64_t ticks, std::int64_t tickFrequency) -> std::int64_t {
-  std::int64_t ticksPerUs = tickFrequency / 1000000;
-  if (ticksPerUs == 0)
-    return 0;
-  return (ticks + ticksPerUs / 2) / ticksPerUs;
+auto milliseconds_to_ticks(std::int64_t ms, std::int64_t freq) -> std::int64_t {
+    return ms * (freq / 1000);
 }
 
-auto secondsToTicks(double seconds, std::int64_t tickFrequency) -> std::int64_t {
-  return std::round(seconds * tickFrequency);
+auto microseconds_to_ticks(std::int64_t us, std::int64_t freq) -> std::int64_t {
+    return us * (freq / 1'000'000);
 }
 
-auto millisecondsToTicks(std::int64_t milliseconds, std::int64_t tickFrequency) -> std::int64_t {
-  return milliseconds * (tickFrequency / 1000);
+}// namespace star::time
+
+namespace star {
+
+clock::clock(bool start_active) {
+    if (start_active) {
+        start();
+    }
 }
 
-auto microsecondsToTicks(std::int64_t microseconds, std::int64_t tickFrequency) -> std::int64_t {
-  return microseconds * (tickFrequency / 1000000);
-}
-}// namespace Time
+clock::clock(clock const& other) { *this = other; }
 
-Clock::Clock(bool start) {
-  m_elapsedTicks = 0;
-  m_running = false;
-  if (start)
-    Clock::start();
-}
-
-Clock::Clock(Clock const& clock) {
-  operator=(clock);
+auto clock::operator=(clock const& other) -> clock& {
+    if (this != &other) {
+        std::scoped_lock lock(m_mutex, other.m_mutex);
+        m_elapsed_ticks = other.m_elapsed_ticks;
+        m_last_ticks = other.m_last_ticks;
+        m_running = other.m_running;
+    }
+    return *this;
 }
 
-auto Clock::operator=(Clock const& clock) -> Clock& {
-  RecursiveMutexLocker locker(m_mutex);
-  RecursiveMutexLocker otherLocker(clock.m_mutex);
-  m_elapsedTicks = clock.m_elapsedTicks;
-  m_lastTicks = clock.m_lastTicks;
-  m_running = clock.m_running;
+clock::clock(clock&& other) noexcept { *this = std::move(other); }
 
-  return *this;
+auto clock::operator=(clock&& other) noexcept -> clock& {
+    if (this != &other) {
+        std::scoped_lock lock(m_mutex, other.m_mutex);
+        m_elapsed_ticks = std::exchange(other.m_elapsed_ticks, 0);
+        m_last_ticks = std::exchange(other.m_last_ticks, std::nullopt);
+        m_running = std::exchange(other.m_running, false);
+    }
+    return *this;
 }
 
-void Clock::reset() {
-  RecursiveMutexLocker locker(m_mutex);
-  m_elapsedTicks = 0;
-  if (m_running)
-    m_lastTicks = Time::monotonicTicks();
-  else
-    m_lastTicks.reset();
+void clock::reset() {
+    std::lock_guard lock(m_mutex);
+    m_elapsed_ticks = 0;
+    m_last_ticks = m_running ? std::make_optional(time::monotonic_ticks()) : std::nullopt;
 }
 
-void Clock::stop() {
-  RecursiveMutexLocker locker(m_mutex);
-  updateElapsed();
-  m_lastTicks.reset();
-  m_running = false;
+void clock::stop() {
+    std::lock_guard lock(m_mutex);
+    update_elapsed();
+    m_last_ticks.reset();
+    m_running = false;
 }
 
-void Clock::start() {
-  RecursiveMutexLocker locker(m_mutex);
-  if (!m_running) {
-    m_running = true;
-    m_lastTicks = Time::monotonicTicks();
-  }
+void clock::start() {
+    std::lock_guard lock(m_mutex);
+    if (!m_running) {
+        m_running = true;
+        m_last_ticks = time::monotonic_ticks();
+    }
 }
 
-auto Clock::running() const -> bool {
-  RecursiveMutexLocker locker(m_mutex);
-  return m_running;
+auto clock::is_running() const -> bool {
+    std::lock_guard lock(m_mutex);
+    return m_running;
 }
 
-auto Clock::time() const -> double {
-  RecursiveMutexLocker locker(m_mutex);
-  updateElapsed();
-  return Time::ticksToSeconds(m_elapsedTicks, Time::monotonicTickFrequency());
+auto clock::time() const -> double {
+    std::lock_guard lock(m_mutex);
+    update_elapsed();
+    return time::ticks_to_seconds(m_elapsed_ticks, time::monotonic_tick_frequency());
 }
 
-auto Clock::milliseconds() const -> std::int64_t {
-  RecursiveMutexLocker locker(m_mutex);
-  updateElapsed();
-  return Time::ticksToMilliseconds(m_elapsedTicks, Time::monotonicTickFrequency());
+auto clock::milliseconds() const -> std::int64_t {
+    std::lock_guard lock(m_mutex);
+    update_elapsed();
+    return time::ticks_to_milliseconds(m_elapsed_ticks, time::monotonic_tick_frequency());
 }
 
-void Clock::setTime(double time) {
-  RecursiveMutexLocker locker(m_mutex);
-  m_elapsedTicks = Time::secondsToTicks(time, Time::monotonicTickFrequency());
-  if (m_running)
-    m_lastTicks = Time::monotonicTicks();
+void clock::set_time(double seconds) {
+    std::lock_guard lock(m_mutex);
+    m_elapsed_ticks = time::seconds_to_ticks(seconds, time::monotonic_tick_frequency());
+    if (m_running) {
+        m_last_ticks = time::monotonic_ticks();
+    }
 }
 
-void Clock::setMilliseconds(std::int64_t millis) {
-  RecursiveMutexLocker locker(m_mutex);
-  m_elapsedTicks = Time::millisecondsToTicks(millis, Time::monotonicTickFrequency());
-  if (m_running)
-    m_lastTicks = Time::monotonicTicks();
+void clock::set_milliseconds(std::int64_t millis) {
+    std::lock_guard lock(m_mutex);
+    m_elapsed_ticks = time::milliseconds_to_ticks(millis, time::monotonic_tick_frequency());
+    if (m_running) {
+        m_last_ticks = time::monotonic_ticks();
+    }
 }
 
-void Clock::adjustTime(double timeAdjustment) {
-  RecursiveMutexLocker locker(m_mutex);
-  setTime(std::max<double>(0.0, time() + timeAdjustment));
+void clock::adjust_time(double adjustment) {
+    std::lock_guard lock(m_mutex);
+    set_time(std::max(0.0, time() + adjustment));
 }
 
-void Clock::adjustMilliseconds(std::int64_t millisAdjustment) {
-  RecursiveMutexLocker locker(m_mutex);
-  setMilliseconds(milliseconds() + millisAdjustment);
+void clock::adjust_milliseconds(std::int64_t adjustment) {
+    std::lock_guard lock(m_mutex);
+    set_milliseconds(milliseconds() + adjustment);
 }
 
-void Clock::updateElapsed() const {
-  if (!m_running)
-    return;
-
-  std::int64_t currentTicks = Time::monotonicTicks();
-  if (m_lastTicks)
-    m_elapsedTicks += (currentTicks - *m_lastTicks);
-
-  m_lastTicks = currentTicks;
+void clock::update_elapsed() const {
+    if (!m_running) {
+        return;
+    }
+    std::int64_t current = time::monotonic_ticks();
+    if (m_last_ticks) {
+        m_elapsed_ticks += (current - *m_last_ticks);
+    }
+    m_last_ticks = current;
 }
 
-auto Timer::withTime(double timeLeft, bool start) -> Timer {
-  Timer timer;
-  timer.setTime(-timeLeft);
-  if (start)
-    timer.start();
-  return timer;
+auto timer::with_time(double t_left, bool start) -> timer {
+    timer t;
+    t.set_time(-t_left);
+    if (start) {
+        t.start();
+    }
+    return t;
 }
 
-auto Timer::withMilliseconds(std::int64_t millis, bool start) -> Timer {
-  Timer timer;
-  timer.setMilliseconds(-millis);
-  if (start)
-    timer.start();
-  return timer;
+auto timer::with_milliseconds(std::int64_t ms_left, bool start) -> timer {
+    timer t;
+    t.set_milliseconds(-ms_left);
+    if (start) {
+        t.start();
+    }
+    return t;
 }
 
-Timer::Timer() : Clock(false) {
-  setTime(0.0);
+timer::timer() : clock(false) { set_time(0.0); }
+
+timer::timer(timer const& other) = default;
+auto timer::operator=(timer const& other) -> timer& = default;
+
+void timer::restart(double t_left) {
+    clock::set_time(-t_left);
+    clock::start();
 }
 
-Timer::Timer(Timer const& timer) = default;
-
-auto Timer::operator=(Timer const& timer) -> Timer& = default;
-
-void Timer::restart(double timeLeft) {
-  Clock::setTime(-timeLeft);
-  Clock::start();
+void timer::restart_with_milliseconds(std::int64_t ms_left) {
+    clock::set_milliseconds(-ms_left);
+    clock::start();
 }
 
-void Timer::restartWithMilliseconds(std::int64_t millisecondsLeft) {
-  Clock::setMilliseconds(-millisecondsLeft);
-  Clock::start();
+auto timer::time_left(bool neg) const -> double {
+    double left = -clock::time();
+    return neg ? left : std::max(0.0, left);
 }
 
-auto Timer::timeLeft(bool negative) const -> double {
-  double timeLeft = -Clock::time();
-  if (!negative)
-    timeLeft = std::max(0.0, timeLeft);
-  return timeLeft;
+auto timer::milliseconds_left(bool neg) const -> std::int64_t {
+    std::int64_t left = -clock::milliseconds();
+    return neg ? left : std::max<std::int64_t>(0, left);
 }
 
-auto Timer::millisecondsLeft(bool negative) const -> std::int64_t {
-  std::int64_t millisLeft = -Clock::milliseconds();
-  if (!negative)
-    millisLeft = std::max<std::int64_t>(0, millisLeft);
-  return millisLeft;
-}
+auto timer::is_time_up() const -> bool { return clock::time() >= 0.0; }
 
-auto Timer::timeUp() const -> bool {
-  return Clock::time() >= 0.0;
-}
-
-}// namespace Star
+}// namespace star

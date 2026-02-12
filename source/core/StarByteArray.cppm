@@ -1,4 +1,4 @@
-export module star.bytearray;
+export module star.byte_array;
 
 import std;
 import star.hash;
@@ -10,33 +10,38 @@ export namespace star {
  * larger than what is reported by size(), to avoid repeated allocations when a
  * ByteArray grows.
  */
-class bytearray {
+class byte_array {
   public:
     static constexpr std::size_t SBO_SIZE = 23;
 
-    constexpr bytearray() noexcept : m_size(0) { m_store.local.fill(std::byte{0}); }
+    constexpr byte_array() noexcept : m_size(0) { m_store.local.fill(std::byte{0}); }
 
-    constexpr explicit bytearray(std::string_view sv) : bytearray() { assign(sv); }
+    constexpr explicit byte_array(std::string_view sv) : byte_array() { assign(sv); }
 
-    constexpr bytearray(const bytearray& other) : bytearray() { assign(other.view()); }
+    constexpr explicit byte_array(std::size_t size, std::byte fill_byte = std::byte{0})
+        : byte_array() {
+        resize(size, fill_byte);
+    }
 
-    constexpr bytearray(bytearray&& other) noexcept : bytearray() { swap(other); }
+    constexpr byte_array(const byte_array& other) : byte_array() { assign(other.view()); }
 
-    constexpr ~bytearray() {
+    constexpr byte_array(byte_array&& other) noexcept : byte_array() { swap(other); }
+
+    constexpr ~byte_array() {
         if (is_heap()) {
             delete[] m_store.heap.ptr;
         }
     }
 
-    constexpr auto operator=(const bytearray& other) -> bytearray& {
+    constexpr auto operator=(const byte_array& other) -> byte_array& {
         if (this != &other) {
             assign(other.view());
         }
         return *this;
     }
 
-    constexpr auto operator=(bytearray&& other) noexcept -> bytearray& {
-        bytearray(std::move(other)).swap(*this);
+    constexpr auto operator=(byte_array&& other) noexcept -> byte_array& {
+        byte_array(std::move(other)).swap(*this);
         return *this;
     }
 
@@ -63,6 +68,8 @@ class bytearray {
 
     [[nodiscard]] constexpr auto size() const noexcept -> std::size_t { return m_size; }
 
+    constexpr auto reserve(std::size_t new_capacity) -> void { ensure_capacity(new_capacity); }
+
     constexpr auto resize(std::size_t new_size, std::byte fill_byte = std::byte{0}) -> void {
         if (new_size > m_size) {
             ensure_capacity(new_size);
@@ -72,6 +79,8 @@ class bytearray {
         }
         m_size = new_size;
     }
+
+    constexpr void clear() { m_size = 0; }
 
     [[nodiscard]] constexpr auto empty() const noexcept -> bool { return m_size == 0; }
 
@@ -92,14 +101,14 @@ class bytearray {
         m_size = new_size;
     }
 
-    constexpr void swap(bytearray& other) noexcept {
+    constexpr void swap(byte_array& other) noexcept {
         std::swap(m_store, other.m_store);
         std::swap(m_size, other.m_size);
     }
 
-    auto operator<=>(const bytearray& rhs) const noexcept { return view() <=> rhs.view(); }
+    auto operator<=>(const byte_array& rhs) const noexcept { return view() <=> rhs.view(); }
 
-    auto operator==(const bytearray& rhs) const noexcept -> bool { return view() == rhs.view(); }
+    auto operator==(const byte_array& rhs) const noexcept -> bool { return view() == rhs.view(); }
 
   private:
     constexpr void set_heap_flag(bool heap) {
@@ -146,15 +155,15 @@ class bytearray {
     std::size_t m_size;
 };
 
-template <> struct hash<star::bytearray> {
-    auto operator()(const star::bytearray& b) const noexcept -> std::size_t {
+template <> struct hash<star::byte_array> {
+    auto operator()(const star::byte_array& b) const noexcept -> std::size_t {
         return std::hash<std::string_view>{}(b.view());
     }
 };
 
 }// namespace star
 
-template <> struct std::formatter<star::bytearray> : std::formatter<std::string_view> {
+template <> struct std::formatter<star::byte_array> : std::formatter<std::string_view> {
     bool hex_mode = false;
 
     constexpr auto parse(format_parse_context& ctx) {
@@ -166,7 +175,7 @@ template <> struct std::formatter<star::bytearray> : std::formatter<std::string_
         return it;
     }
 
-    auto format(const star::bytearray& b, format_context& ctx) const {
+    auto format(const star::byte_array& b, format_context& ctx) const {
         if (hex_mode) {
             auto out = ctx.out();
             auto v = b.view();

@@ -62,7 +62,7 @@ class color {
     }
 
     constexpr color() : m_data{0, 0, 0, 1} {}
-    explicit color(std::string_view name);
+    explicit color(std::u8string_view name);
 
     template <typename Self> [[nodiscard]] constexpr auto data(this Self&& self) -> auto&& {
         return std::forward<Self>(self).m_data;
@@ -107,7 +107,7 @@ class color {
     }
 
     [[nodiscard]] static constexpr auto hsva(float h, float s, float v, float a) -> color;
-    [[nodiscard]] static constexpr auto from_hex(std::string_view s) -> color;
+    [[nodiscard]] static constexpr auto from_hex(std::u8string_view s) -> color;
     [[nodiscard]] static constexpr auto temperature(float temp) -> color;
 
     // Some useful conversion methods for dealing with Vec3 / Vec4 as colors
@@ -130,7 +130,7 @@ class color {
     [[nodiscard]] static constexpr auto gray(std::uint8_t g) -> color;
 
     static auto hue_shift_vec_4b(vec_4b color, float hue) -> vec_4b;
-    static auto hex_to_vec_4b(std::string_view s) -> vec_4b;
+    static auto hex_to_vec_4b(std::u8string_view s) -> vec_4b;
     // Black;
 
     [[nodiscard]] constexpr auto redf() const -> float { return m_data[0]; };
@@ -162,7 +162,7 @@ class color {
     // Reduce the color toward black by the given amount, from 0.0 to 1.0.
     constexpr void fade(float value);
 
-    [[nodiscard]] constexpr auto to_hex() const -> std::string;
+    [[nodiscard]] constexpr auto to_hex() const -> std::u8string;
 
     constexpr void convert_to_linear();
     constexpr void convert_to_srgb();

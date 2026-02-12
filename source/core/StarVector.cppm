@@ -65,6 +65,15 @@ template <typename T, std::size_t N> class vector : public star::array<T, N> {
         return std::forward<Self>(self)[3];
     }
 
+    template <std::size_t M>
+    [[nodiscard]] constexpr auto to_size(this vector const& self) -> vector<T, M>
+        requires(M <= N)
+    {
+        vector<T, M> r;
+        std::ranges::copy(self | std::views::take(M), r.begin());
+        return r;
+    }
+
     // Math operations
     [[nodiscard]] constexpr auto magnitude_squared() const -> T {
         T sum{0};

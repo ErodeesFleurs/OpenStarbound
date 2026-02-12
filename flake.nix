@@ -48,6 +48,7 @@
             egl-wayland
             glew
             libGL
+            tzdata
             fleurs-nur.packages.${pkgs.stdenv.hostPlatform.system}.imgui
           ];
 

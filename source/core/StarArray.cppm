@@ -46,9 +46,10 @@ template <typename ElementT, std::size_t SizeN> class array : public std::array<
     auto operator<=>(array const&) const = default;
 
     template <std::size_t Size2>
-    [[nodiscard]] constexpr auto to_size() const -> array<Element, Size2> {
+        requires(Size2 <= SizeN)
+    [[nodiscard]] constexpr auto to_size(this array const& self) -> array<Element, Size2> {
         array<Element, Size2> r;
-        std::ranges::copy(*this | std::views::take(std::min(SizeN, Size2)), r.begin());
+        std::ranges::copy(self | std::views::take(Size2), r.begin());
         return r;
     }
 

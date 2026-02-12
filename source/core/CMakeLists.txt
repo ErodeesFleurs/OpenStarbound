@@ -7,7 +7,6 @@ set (star_core_HEADERS
     # StarIODeviceCallbacks.hpp
     # StarBTree.hpp
     # StarBTreeDatabase.hpp
-    # StarBiMap.hpp
     # StarBlockAllocator.hpp
     # StarBuffer.hpp
     # StarCasting.hpp
@@ -19,15 +18,12 @@ set (star_core_HEADERS
     # StarDirectives.hpp
     # StarDynamicLib.hpp
     # StarEither.hpp
-    # StarFile.hpp
     # StarFlatHashMap.hpp
     # StarFlatHashSet.hpp
     # StarFont.hpp
-    # StarFormat.hpp
     # StarHostAddress.hpp
     # StarHttpClient.hpp
     # StarIdMap.hpp
-    # StarImage.hpp
     # StarImageProcessing.hpp
     # StarImageScaling.hpp
     # StarInputEvent.hpp
@@ -35,7 +31,6 @@ set (star_core_HEADERS
     # StarRefPtr.hpp
     # StarIterator.hpp
     # StarJson.hpp
-    # StarJsonBuilder.hpp
     # StarJsonExtra.hpp
     # StarJsonParser.hpp
     # StarJsonPath.hpp
@@ -46,7 +41,6 @@ set (star_core_HEADERS
     # StarList.hpp
     # StarListener.hpp
     # StarLockFile.hpp
-    # StarLogging.hpp
     # StarLruCache.hpp
     # StarLua.hpp
     # StarLuaConverters.hpp
@@ -77,7 +71,6 @@ set (star_core_HEADERS
     # StarPeriodicFunction.hpp
     # StarPerlin.hpp
     # StarPythonic.hpp
-    # StarRandom.hpp
     # StarRandomPoint.hpp
     # StarRpcPromise.hpp
     # StarRpcThreadPromise.hpp
@@ -90,14 +83,12 @@ set (star_core_HEADERS
     # StarSocket.hpp
     # StarSpatialHash2D.hpp
     # StarSpline.hpp
-    # StarStaticRandom.hpp
     # StarStaticVector.hpp
     # StarStrongTypedef.hpp
     # StarTcp.hpp
     # StarText.hpp
     # StarThread.hpp
     # StarTickRateMonitor.hpp
-    # StarTime.hpp
     # StarTtlCache.hpp
     # StarUdp.hpp
     # StarUnicode.hpp
@@ -121,16 +112,13 @@ set (star_core_SOURCES
     # StarCurve25519.cpp
     # StarDataStreamDevices.cpp
     # StarDirectives.cpp
-    # StarFile.cpp
     # StarFont.cpp
     # StarHostAddress.cpp
     # StarHttpClient.cpp
-    # StarImage.cpp
     # StarImageProcessing.cpp
     # StarImageScaling.cpp
     # StarInputEvent.cpp
     # StarJson.cpp
-    # StarJsonBuilder.cpp
     # StarJsonExtra.cpp
     # StarJsonPath.cpp
     # StarJsonPatch.cpp
@@ -139,7 +127,6 @@ set (star_core_SOURCES
     # StarLexicalCast.cpp
     # StarListener.cpp
     # StarLockFile.cpp
-    # StarLogging.cpp
     # StarLua.cpp
     # StarLuaConverters.cpp
     # StarNetCompatibility.cpp
@@ -149,7 +136,6 @@ set (star_core_SOURCES
     # StarNetElementSyncGroup.cpp
     # StarOptionParser.cpp
     # StarPerlin.cpp
-    # StarRandom.cpp
     # StarSecureRandom.cpp
     # StarSha256.cpp
     # StarShellParser.cpp
@@ -158,7 +144,6 @@ set (star_core_SOURCES
     # StarTcp.cpp
     # StarText.cpp
     # StarThread.cpp
-    # StarTime.cpp
     # StarTickRateMonitor.cpp
     # StarUdp.cpp
     # StarUnicode.cpp
@@ -169,8 +154,14 @@ set (star_core_SOURCES
   )
 
 set (star_core_MODULES
+    StarString.cppm
+    StarFormat.cppm
+    StarStaticRandom.cppm
+    StarFuncional.cppm
+    StarBiMap.cppm
     StarBytes.cppm
     StarVersion.cppm
+    StarTime.cppm
     StarHash.cppm
     StarEncode.cppm
     StarException.cppm
@@ -184,14 +175,38 @@ set (star_core_MODULES
     StarVlqEncoding.cppm
     StarByteArray.cppm
     StarIODevice.cppm
+    StarFile.cppm
+    StarUnicode.cppm
     StarColor.cppm
     StarNetCompatibility.cppm
     StarDataStream.cppm
+    StarBuffer.cppm
+    StarRandom.cppm
+    StarLogging.cppm
+    StarImage.cppm
+    StarDataStreamExtra.cppm
+    StarLexicalCast.cppm
+    StarJsonParser.cppm
+    StarJson.cppm
+    StarJsonBuilder.cppm
+    StarImageProcessing.cppm
   )
 
 set (star_core_SOURCES
+    StarTime.cpp
     StarColor.cpp
     StarDataStream.cpp
+    StarIODevice.cpp
+    StarRandom.cpp
+    StarUnicode.cpp
+    StarFile.cpp
+    StarBuffer.cpp
+    StarLogging.cpp
+    StarImage.cpp
+    StarLexicalCast.cpp
+    StarJson.cpp
+    StarJsonBuilder.cpp
+    StarImageProcessing.cpp
 )
 
 #configure_file (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)

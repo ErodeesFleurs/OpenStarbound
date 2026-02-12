@@ -1,132 +1,132 @@
+module star.io_device;
 
 import std;
 
-namespace Star {
+namespace star {
 
+void io_device::resize(std::int64_t /*unused*/) { throw io_exception("resize not supported"); }
 
-void IODevice::resize(std::int64_t /*unused*/) { throw IOException("resize not supported"); }
-
-void IODevice::readFull(std::span<std::byte> data) {
+void io_device::read_full(std::span<std::byte> data) {
 	while (!data.empty()) {
 		std::size_t r = read(data);
 		if (r == 0) {
-			if (atEnd()) {
-				throw EofException("Failed to read full buffer, eof reached.");
+			if (at_end()) {
+				throw eof_exception("Failed to read full buffer, eof reached.");
 			} else {
-				throw IOException("Failed to read full buffer, device returned zero-length read.");
+				throw io_exception("Failed to read full buffer, device returned zero-length read.");
 			}
 		}
 		data = data.subspan(r);
 	}
 }
 
-void IODevice::writeFull(std::span<std::byte const> data) {
+void io_device::write_full(std::span<std::byte const> data) {
 	while (!data.empty()) {
 		std::size_t r = write(data);
 		if (r == 0) {
-			throw IOException("Failed to write full buffer, device returned zero-length write.");
+			throw io_exception("Failed to write full buffer, device returned zero-length write.");
 		}
 		data = data.subspan(r);
 	}
 }
 
-void IODevice::open(IOMode mode) {
+void io_device::open(io_mode mode) {
 	if (mode != m_mode.load()) {
-		throw IOException::format("Cannot reopen device '{}' with different mode", deviceName());
+		throw io_exception::format("Cannot reopen device '{}' with different mode", device_name());
 	}
 }
 
-void IODevice::close() { m_mode.store(IOMode::Closed); }
+void io_device::close() { m_mode.store(io_mode::closed); }
 
-void IODevice::sync() {}
+void io_device::sync() {}
 
-auto IODevice::deviceName() const -> std::string {
-	return std::format("IODevice <{}>", static_cast<void const*>(this));
+auto io_device::device_name() const -> std::string {
+	return std::format("io_device <{}>", static_cast<void const*>(this));
 }
 
-auto IODevice::atEnd() -> bool { return pos() >= size(); }
+auto io_device::at_end() -> bool { return pos() >= size(); }
 
-auto IODevice::size() -> std::int64_t {
+auto io_device::size() -> std::int64_t {
 	try {
-		std::int64_t storedPos = pos();
-		seek(0, IOSeek::End);
+		std::int64_t stored_pos = pos();
+		seek(0, io_seek::end);
 		std::int64_t size = pos();
-		seek(storedPos);
+		seek(stored_pos);
 		return size;
-	} catch (IOException const& e) { throw IOException("Cannot call size() on IODevice", e); }
+	} catch (const io_exception& e) { throw io_exception("Cannot call size() on io_device", e); }
 }
 
-auto IODevice::readAbsolute(std::int64_t readPosition, std::span<std::byte> data) -> std::size_t {
-	std::int64_t storedPos = pos();
-	seek(readPosition);
+auto io_device::read_absolute(std::int64_t read_position, std::span<std::byte> data) -> std::size_t {
+	std::int64_t stored_pos = pos();
+	seek(read_position);
 	std::size_t ret = read(data);
-	seek(storedPos);
+	seek(stored_pos);
 	return ret;
 }
 
-auto IODevice::writeAbsolute(std::int64_t writePosition, std::span<const std::byte> data) -> std::size_t {
-	std::int64_t storedPos = pos();
-	seek(writePosition);
+auto io_device::write_absolute(std::int64_t write_position, std::span<const std::byte> data) -> std::size_t {
+	std::int64_t stored_pos = pos();
+	seek(write_position);
 	std::size_t ret = write(data);
-	seek(storedPos);
+	seek(stored_pos);
 	return ret;
 }
 
-void IODevice::readFullAbsolute(std::int64_t readPosition, std::span<std::byte> data) {
+void io_device::read_full_absolute(std::int64_t read_position, std::span<std::byte> data) {
 	while (!data.empty()) {
-		std::size_t r = readAbsolute(readPosition, data);
+		std::size_t r = read_absolute(read_position, data);
 		if (r == 0) {
-			throw IOException("Failed to read full buffer in readFullAbsolute");
+			throw io_exception("Failed to read full buffer in read_full_absolute");
 		}
-		readPosition += static_cast<std::uint32_t>(r);
+		read_position += static_cast<std::uint32_t>(r);
 		data = data.subspan(r);
 	}
 }
 
-void IODevice::writeFullAbsolute(std::int64_t writePosition, std::span<const std::byte> data) {
+void io_device::write_full_absolute(std::int64_t write_position, std::span<const std::byte> data) {
 	while (!data.empty()) {
-		std::size_t r = writeAbsolute(writePosition, data);
+		std::size_t r = write_absolute(write_position, data);
 		if (r == 0) {
-			throw IOException("Failed to write full buffer in writeFullAbsolute");
+			throw io_exception("Failed to write full buffer in write_full_absolute");
 		}
-		writePosition += static_cast<std::uint32_t>(r);
+		write_position += static_cast<std::uint32_t>(r);
 		data = data.subspan(r);
 	}
 }
 
-auto IODevice::readBytes(std::size_t size) -> ByteArray {
+auto io_device::read_bytes(std::size_t size) -> byte_array {
 	if (!size) {
 		return {};
 	}
-	ByteArray p;
+	byte_array p;
 	p.resize(size);
-	readFull({reinterpret_cast<std::byte*>(p.data()), size});
+	read_full({reinterpret_cast<std::byte*>(p.data()), size});
 	return p;
 }
 
-void IODevice::writeBytes(ByteArray const& p) { writeFull({reinterpret_cast<std::byte const*>(p.data()), p.size()}); }
+void io_device::write_bytes(byte_array const& p) { write_full({reinterpret_cast<std::byte const*>(p.data()), p.size()}); }
 
-auto IODevice::readBytesAbsolute(std::int64_t readPosition, std::size_t size) -> ByteArray {
+auto io_device::read_bytes_absolute(std::int64_t read_position, std::size_t size) -> byte_array {
 	if (!size) {
 		return {};
 	}
-	ByteArray p;
+	byte_array p;
 	p.resize(size);
-	readFullAbsolute(readPosition, {reinterpret_cast<std::byte*>(p.data()), size});
+	read_full_absolute(read_position, {reinterpret_cast<std::byte*>(p.data()), size});
 	return p;
 }
 
-void IODevice::writeBytesAbsolute(std::int64_t writePosition, ByteArray const& p) {
-	writeFullAbsolute(writePosition, {reinterpret_cast<std::byte const*>(p.data()), p.size()});
+void io_device::write_bytes_absolute(std::int64_t write_position, byte_array const& p) {
+	write_full_absolute(write_position, {reinterpret_cast<std::byte const*>(p.data()), p.size()});
 }
 
-void IODevice::setMode(IOMode m) noexcept { m_mode.store(m); }
+void io_device::set_mode(io_mode m) noexcept { m_mode.store(m); }
 
-IODevice::IODevice(const IODevice& rhs) : m_mode(rhs.mode()) {}
+io_device::io_device(const io_device& rhs) : m_mode(rhs.mode()) {}
 
-auto IODevice::operator=(const IODevice& rhs) -> IODevice& {
+auto io_device::operator=(const io_device& rhs) -> io_device& {
 	m_mode.store(rhs.mode());
 	return *this;
 }
 
-}// namespace Star
+}// namespace star

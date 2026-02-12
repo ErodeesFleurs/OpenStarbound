@@ -1,9 +1,9 @@
 CompileFlags:
   Add:
     [
-      -std=gnu++26,
+      -std=gnu++2c,
       -fmodules,
-      # -fmodule-file=std=/home/fleurs/Code/OpenStarbound/build/CMakeFiles/__cmake_cxx26.dir/std.pcm,
+      -fmodule-file=std=/home/fleurs/Code/OpenStarbound/build/CMakeFiles/__cmake_cxx26.dir/std.pcm,
       -Wall,
       -Wextra,
       -Werror,

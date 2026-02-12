@@ -7,7 +7,7 @@ import star.vector;
 import star.rect;
 import star.matrix3;
 
-namespace star {
+export namespace star {
 
 template <typename DataType>
     requires std::is_arithmetic_v<DataType>

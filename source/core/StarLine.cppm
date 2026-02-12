@@ -4,12 +4,13 @@ import std;
 import star.hash;
 import star.math_common;
 import star.matrix3;
+import star.vector;
 
 export namespace star {
 
 template <typename T, std::size_t N> class line {
   public:
-    using vector_type = std::array<T, N>;
+    using vector_type = star::vector<T, N>;
 
     struct intersect_result {
         // Whether or not the two objects intersect
