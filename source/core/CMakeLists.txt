@@ -30,7 +30,6 @@ set (star_core_HEADERS
     # StarInterpolation.hpp
     # StarRefPtr.hpp
     # StarIterator.hpp
-    # StarJson.hpp
     # StarJsonExtra.hpp
     # StarJsonParser.hpp
     # StarJsonPath.hpp
@@ -118,7 +117,6 @@ set (star_core_SOURCES
     # StarImageProcessing.cpp
     # StarImageScaling.cpp
     # StarInputEvent.cpp
-    # StarJson.cpp
     # StarJsonExtra.cpp
     # StarJsonPath.cpp
     # StarJsonPatch.cpp
@@ -204,7 +202,6 @@ set (star_core_SOURCES
     StarLogging.cpp
     StarImage.cpp
     StarLexicalCast.cpp
-    StarJson.cpp
     StarJsonBuilder.cpp
     StarImageProcessing.cpp
 )
