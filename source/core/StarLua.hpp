@@ -36,6 +36,18 @@ using LuaRecursionLimitReached = ExceptionDerived<"LuaRecursionLimitReached", Lu
 // different type.
 using LuaConversionException = ExceptionDerived<"LuaConversionException", LuaException>;
 
+// Error information for Lua conversions (C++23 std::expected support)
+struct LuaConversionError {
+  String message;
+  String expectedType;
+  String actualType;
+  
+  LuaConversionError() = default;
+  LuaConversionError(String msg) : message(std::move(msg)) {}
+  LuaConversionError(String msg, String expected, String actual)
+    : message(std::move(msg)), expectedType(std::move(expected)), actualType(std::move(actual)) {}
+};
+
 using LuaNilType = Empty;
 using LuaBoolean = bool;
 using LuaInt = lua_Integer;
@@ -46,6 +58,23 @@ class LuaFunction;
 class LuaThread;
 class LuaUserData;
 using LuaValue = Variant<LuaNilType, LuaBoolean, LuaInt, LuaFloat, LuaString, LuaTable, LuaFunction, LuaThread, LuaUserData>;
+
+// Modern C++20 helper: Get type name from LuaValue using std::visit
+[[nodiscard]] inline auto luaValueTypeName(LuaValue const& value) -> std::string_view {
+  return std::visit([](auto&& arg) -> std::string_view {
+    using T = std::decay_t<decltype(arg)>;
+    if constexpr (std::is_same_v<T, LuaNilType>) return "nil";
+    else if constexpr (std::is_same_v<T, LuaBoolean>) return "boolean";
+    else if constexpr (std::is_same_v<T, LuaInt>) return "integer";
+    else if constexpr (std::is_same_v<T, LuaFloat>) return "number";
+    else if constexpr (std::is_same_v<T, LuaString>) return "string";
+    else if constexpr (std::is_same_v<T, LuaTable>) return "table";
+    else if constexpr (std::is_same_v<T, LuaFunction>) return "function";
+    else if constexpr (std::is_same_v<T, LuaThread>) return "thread";
+    else if constexpr (std::is_same_v<T, LuaUserData>) return "userdata";
+    else return "unknown";
+  }, value);
+}
 
 // Used to wrap multiple return values from calling a lua function or to pass
 // multiple values as arguments to a lua function from a container.  If this is
@@ -113,6 +142,39 @@ struct LuaHandle {
   int handleIndex = 0;
 };
 
+// Composition-based handle holder - reduces coupling via composition
+// This replaces inheritance from LuaReference
+class LuaHandleComponent {
+public:
+  explicit LuaHandleComponent(LuaHandle handle) : m_handle(std::move(handle)) {}
+  
+  LuaHandleComponent(LuaHandleComponent&&) = default;
+  auto operator=(LuaHandleComponent&&) -> LuaHandleComponent& = default;
+  
+  LuaHandleComponent(LuaHandleComponent const&) = default;
+  auto operator=(LuaHandleComponent const&) -> LuaHandleComponent& = default;
+  
+  [[nodiscard("Engine reference must be used")]] auto engine() const -> LuaEngine& {
+    return *m_handle.engine;
+  }
+  
+  [[nodiscard("Handle index needed for Lua operations")]] auto handleIndex() const -> int {
+    return m_handle.handleIndex;
+  }
+  
+  auto operator==(LuaHandleComponent const& rhs) const -> bool {
+    return std::tie(m_handle.engine, m_handle.handleIndex) == 
+           std::tie(rhs.m_handle.engine, rhs.m_handle.handleIndex);
+  }
+  
+  auto operator!=(LuaHandleComponent const& rhs) const -> bool {
+    return !(*this == rhs);
+  }
+
+private:
+  LuaHandle m_handle;
+};
+
 // Not meant to be used directly, exposes a raw interface for wrapped C++
 // functions to be wrapped with the least amount of overhead.  Arguments are
 // passed non-const so that they can be moved into wrapped functions that
@@ -141,22 +203,70 @@ public:
   auto operator==(LuaReference const& rhs) const -> bool;
   auto operator!=(LuaReference const& rhs) const -> bool;
 
-  [[nodiscard]] auto engine() const -> LuaEngine&;
-  [[nodiscard]] auto handleIndex() const -> int;
+  [[nodiscard("Engine reference must be used")]] auto engine() const -> LuaEngine&;
+  [[nodiscard("Handle index needed for Lua operations")]] auto handleIndex() const -> int;
 
 private:
   LuaDetail::LuaHandle m_handle;
 };
 
-class LuaString : public LuaReference {
+// REFACTORED: LuaString now uses composition instead of inheritance
+// This reduces coupling and improves flexibility
+class LuaString {
 public:
-  using LuaReference::LuaReference;
+  explicit LuaString(LuaDetail::LuaHandle handle) 
+    : m_handle(std::move(handle)) {}
+  
+  // Allow construction from LuaHandleComponent for internal use
+  explicit LuaString(LuaDetail::LuaHandleComponent handle)
+    : m_handle(std::move(handle)) {}
 
-  [[nodiscard]] auto ptr() const -> char const*;
-  [[nodiscard]] auto length() const -> size_t;
+  LuaString(LuaString&&) = default;
+  auto operator=(LuaString&&) -> LuaString& = default;
+  
+  LuaString(LuaString const&) = default;
+  auto operator=(LuaString const&) -> LuaString& = default;
 
-  [[nodiscard]] auto toString() const -> String;
-  [[nodiscard]] auto view() const -> StringView;
+  [[nodiscard("String pointer needed for access")]] auto ptr() const -> char const* {
+    return m_handle.engine().stringPtr(m_handle.handleIndex());
+  }
+  
+  [[nodiscard("String length needed for operations")]] auto length() const -> size_t {
+    return m_handle.engine().stringLength(m_handle.handleIndex());
+  }
+
+  [[nodiscard("String conversion creates new object")]] auto toString() const -> String {
+    return m_handle.engine().string(m_handle.handleIndex());
+  }
+  
+  [[nodiscard("String view provides access")]] auto view() const -> StringView {
+    return m_handle.engine().stringView(m_handle.handleIndex());
+  }
+  
+  // Provide access to handle component for internal operations
+  [[nodiscard]] auto handleComponent() const -> LuaDetail::LuaHandleComponent const& {
+    return m_handle;
+  }
+  
+  // Convenience accessors for compatibility
+  [[nodiscard]] auto engine() const -> LuaEngine& {
+    return m_handle.engine();
+  }
+  
+  [[nodiscard]] auto handleIndex() const -> int {
+    return m_handle.handleIndex();
+  }
+  
+  auto operator==(LuaString const& rhs) const -> bool {
+    return view() == rhs.view();
+  }
+  
+  auto operator!=(LuaString const& rhs) const -> bool {
+    return !(*this == rhs);
+  }
+
+private:
+  LuaDetail::LuaHandleComponent m_handle;  // COMPOSITION, not inheritance
 };
 
 auto operator==(LuaString const& s1, LuaString const& s2) -> bool;
@@ -175,67 +285,158 @@ auto operator!=(char const* s1, LuaString const& s2) -> bool;
 auto operator!=(std::string const& s1, LuaString const& s2) -> bool;
 auto operator!=(String const& s1, LuaString const& s2) -> bool;
 
-class LuaTable : public LuaReference {
+// REFACTORED: LuaTable now uses composition instead of inheritance
+class LuaTable {
 public:
-  using LuaReference::LuaReference;
+  explicit LuaTable(LuaDetail::LuaHandle handle) 
+    : m_handle(std::move(handle)) {}
+  
+  explicit LuaTable(LuaDetail::LuaHandleComponent handle)
+    : m_handle(std::move(handle)) {}
+
+  LuaTable(LuaTable&&) = default;
+  auto operator=(LuaTable&&) -> LuaTable& = default;
+  
+  LuaTable(LuaTable const&) = default;
+  auto operator=(LuaTable const&) -> LuaTable& = default;
 
   template <typename T = LuaValue, typename K>
-  auto get(K key) const -> T;
+  auto get(K key) const -> T {
+    return m_handle.engine().template luaTo<T>(m_handle.engine().tableGet(false, m_handle.handleIndex(), std::move(key)));
+  }
+  
   template <typename T = LuaValue>
-  auto get(char const* key) const -> T;
+  auto get(char const* key) const -> T {
+    return m_handle.engine().template luaTo<T>(m_handle.engine().tableGet(false, m_handle.handleIndex(), key));
+  }
 
   template <typename T, typename K>
-  void set(K key, T t) const;
+  void set(K key, T t) const {
+    m_handle.engine().tableSet(false, m_handle.handleIndex(), std::move(key), m_handle.engine().luaFrom(std::move(t)));
+  }
+  
   template <typename T>
-  void set(char const* key, T t) const;
+  void set(char const* key, T t) const {
+    m_handle.engine().tableSet(false, m_handle.handleIndex(), key, m_handle.engine().luaFrom(std::move(t)));
+  }
 
   // Shorthand for get(path) != LuaNil
   template <typename K>
-  auto contains(K key) const -> bool;
+  auto contains(K key) const -> bool {
+    return m_handle.engine().tableGet(false, m_handle.handleIndex(), std::move(key)) != LuaNil;
+  }
+  
   auto contains(char const* key) const -> bool;
 
   // Shorthand for setting to LuaNil
   template <typename K>
-  void remove(K key) const;
+  void remove(K key) const {
+    m_handle.engine().tableSet(false, m_handle.handleIndex(), std::move(key), LuaNil);
+  }
+  
   void remove(char const* key) const;
 
   // Result of lua # operator
-  [[nodiscard]] auto length() const -> LuaInt;
+  [[nodiscard("Table length needed for iteration")]] auto length() const -> LuaInt;
 
   // If iteration function returns bool, returning false signals stopping.
   template <typename Function>
-  void iterate(Function&& iterator) const;
+  void iterate(Function&& iterator) const {
+    m_handle.engine().tableIterate(m_handle.handleIndex(), std::forward<Function>(iterator));
+  }
 
   template <typename Return, typename... Args, typename Function>
   void iterateWithSignature(Function&& func) const;
 
-  [[nodiscard]] auto getMetatable() const -> std::optional<LuaTable>;
+  [[nodiscard("Metatable may be empty")]] auto getMetatable() const -> std::optional<LuaTable>;
   void setMetatable(LuaTable const& table) const;
 
   template <typename T = LuaValue, typename K>
-  auto rawGet(K key) const -> T;
+  auto rawGet(K key) const -> T {
+    return m_handle.engine().template luaTo<T>(m_handle.engine().tableGet(true, m_handle.handleIndex(), std::move(key)));
+  }
+  
   template <typename T = LuaValue>
-  auto rawGet(char const* key) const -> T;
+  auto rawGet(char const* key) const -> T {
+    return m_handle.engine().template luaTo<T>(m_handle.engine().tableGet(true, m_handle.handleIndex(), key));
+  }
 
   template <typename T, typename K>
-  void rawSet(K key, T t) const;
+  void rawSet(K key, T t) const {
+    m_handle.engine().tableSet(true, m_handle.handleIndex(), std::move(key), m_handle.engine().luaFrom(std::move(t)));
+  }
+  
   template <typename T>
-  void rawSet(char const* key, T t) const;
+  void rawSet(char const* key, T t) const {
+    m_handle.engine().tableSet(true, m_handle.handleIndex(), key, m_handle.engine().luaFrom(std::move(t)));
+  }
 
-  [[nodiscard]] auto rawLength() const -> LuaInt;
+  [[nodiscard("Raw table length needed for operations")]] auto rawLength() const -> LuaInt;
+  
+  // Convenience accessors for compatibility
+  [[nodiscard]] auto engine() const -> LuaEngine& {
+    return m_handle.engine();
+  }
+  
+  [[nodiscard]] auto handleIndex() const -> int {
+    return m_handle.handleIndex();
+  }
+
+private:
+  LuaDetail::LuaHandleComponent m_handle;  // COMPOSITION, not inheritance
 };
 
-class LuaFunction : public LuaReference {
+// REFACTORED: LuaFunction now uses composition
+class LuaFunction {
 public:
-  using LuaReference::LuaReference;
+  explicit LuaFunction(LuaDetail::LuaHandle handle) 
+    : m_handle(std::move(handle)) {}
+  
+  explicit LuaFunction(LuaDetail::LuaHandleComponent handle)
+    : m_handle(std::move(handle)) {}
+
+  LuaFunction(LuaFunction&&) = default;
+  auto operator=(LuaFunction&&) -> LuaFunction& = default;
+  
+  LuaFunction(LuaFunction const&) = default;
+  auto operator=(LuaFunction const&) -> LuaFunction& = default;
 
   template <typename Ret = LuaValue, typename... Args>
-  auto invoke(Args const&... args) const -> Ret;
+  auto invoke(Args const&... args) const -> Ret {
+    return LuaDetail::FromFunctionReturn<Ret>::convert(
+      m_handle.engine(), 
+      m_handle.engine().callFunction(m_handle.handleIndex(), args...)
+    );
+  }
+  
+  // Convenience accessors
+  [[nodiscard]] auto engine() const -> LuaEngine& {
+    return m_handle.engine();
+  }
+  
+  [[nodiscard]] auto handleIndex() const -> int {
+    return m_handle.handleIndex();
+  }
+
+private:
+  LuaDetail::LuaHandleComponent m_handle;  // COMPOSITION
 };
 
-class LuaThread : public LuaReference {
+// REFACTORED: LuaThread now uses composition
+class LuaThread {
 public:
-  using LuaReference::LuaReference;
+  explicit LuaThread(LuaDetail::LuaHandle handle) 
+    : m_handle(std::move(handle)) {}
+  
+  explicit LuaThread(LuaDetail::LuaHandleComponent handle)
+    : m_handle(std::move(handle)) {}
+
+  LuaThread(LuaThread&&) = default;
+  auto operator=(LuaThread&&) -> LuaThread& = default;
+  
+  LuaThread(LuaThread const&) = default;
+  auto operator=(LuaThread const&) -> LuaThread& = default;
+
   enum class Status {
     Dead,
     Active,
@@ -244,29 +445,74 @@ public:
 
   // Will return a value if the thread has yielded a value, and nothing if the
   // thread has finished execution
-  template <typename Ret = LuaValue, typename... Args>
-  auto resume(Args const&... args) -> std::optional<Ret>;
-  template <typename Ret = LuaValue, typename... Args>
-  auto resume(Args const&... args) const -> std::optional<Ret>;
+  // Using deducing this (C++23) to deduce const-correctness
+  template <typename Self, typename Ret = LuaValue, typename... Args>
+  [[nodiscard("Thread result must be checked")]] 
+  auto resume(this Self&& self, Args const&... args) -> std::optional<Ret> {
+    auto res = self.m_handle.engine().resumeThread(self.m_handle.handleIndex(), args...);
+    if (res)
+      return LuaDetail::FromFunctionReturn<Ret>::convert(self.m_handle.engine(), std::move(*res));
+    return std::nullopt;
+  }
+  
   void pushFunction(LuaFunction const& func) const;
-  [[nodiscard]] auto status() const -> Status;
+  [[nodiscard("Thread status needed for control flow")]] auto status() const -> Status;
+  
+  // Convenience accessors
+  [[nodiscard]] auto engine() const -> LuaEngine& {
+    return m_handle.engine();
+  }
+  
+  [[nodiscard]] auto handleIndex() const -> int {
+    return m_handle.handleIndex();
+  }
+
+private:
+  LuaDetail::LuaHandleComponent m_handle;  // COMPOSITION
 };
 
 // Keeping LuaReferences in LuaUserData will lead to circular references to
 // LuaEngine, in addition to circular references in Lua which the Lua
 // garbage collector can't collect. Don't put LuaReferences in LuaUserData.
-class LuaUserData : public LuaReference {
+// REFACTORED: LuaUserData now uses composition
+class LuaUserData {
 public:
-  using LuaReference::LuaReference;
+  explicit LuaUserData(LuaDetail::LuaHandle handle) 
+    : m_handle(std::move(handle)) {}
+  
+  explicit LuaUserData(LuaDetail::LuaHandleComponent handle)
+    : m_handle(std::move(handle)) {}
+
+  LuaUserData(LuaUserData&&) = default;
+  auto operator=(LuaUserData&&) -> LuaUserData& = default;
+  
+  LuaUserData(LuaUserData const&) = default;
+  auto operator=(LuaUserData const&) -> LuaUserData& = default;
 
   template <typename T>
-  [[nodiscard]] auto is() const -> bool;
+  [[nodiscard("Type check result must be used")]] auto is() const -> bool {
+    return m_handle.engine().template userDataIsType<T>(m_handle.handleIndex());
+  }
 
   template <typename T>
-  auto get() const -> T&;
+  [[nodiscard("UserData reference must be used")]] auto get() const -> T& {
+    return *m_handle.engine().template getUserData<T>(m_handle.handleIndex());
+  }
+  
+  // Convenience accessors
+  [[nodiscard]] auto engine() const -> LuaEngine& {
+    return m_handle.engine();
+  }
+  
+  [[nodiscard]] auto handleIndex() const -> int {
+    return m_handle.handleIndex();
+  }
+
+private:
+  LuaDetail::LuaHandleComponent m_handle;  // COMPOSITION
 };
 
-LuaValue const LuaNil = LuaValue();
+inline constexpr LuaValue LuaNil = LuaValue();
 
 class LuaCallbacks {
 public:
@@ -282,7 +528,7 @@ public:
 
   auto merge(LuaCallbacks const& callbacks) -> LuaCallbacks&;
 
-  [[nodiscard]] auto callbacks() const -> StringMap<LuaDetail::LuaWrappedFunction> const&;
+  [[nodiscard("Callback map needed for registration")]] auto callbacks() const -> StringMap<LuaDetail::LuaWrappedFunction> const&;
 
 private:
   StringMap<LuaDetail::LuaWrappedFunction> m_callbacks;
@@ -297,27 +543,65 @@ public:
   template <typename Return, typename... Args, typename Function>
   void registerMethodWithSignature(String name, Function&& func);
 
-  [[nodiscard]] auto methods() const -> StringMap<LuaDetail::LuaWrappedFunction> const&;
+  [[nodiscard("Method map needed for registration")]] auto methods() const -> StringMap<LuaDetail::LuaWrappedFunction> const&;
 
 private:
   StringMap<LuaDetail::LuaWrappedFunction> m_methods;
 };
 
-// A single execution context from a LuaEngine that manages a (mostly) distinct
-// lua environment.  Each LuaContext's global environment is separate and one
-// LuaContext can (mostly) not affect any other.
-class LuaContext : protected LuaTable {
+// REFACTORED: LuaContext now uses composition instead of protected inheritance
+class LuaContext {
 public:
   using RequireFunction = std::function<void(LuaContext&, LuaString const&)>;
 
-  using LuaTable::LuaTable;
+  explicit LuaContext(LuaTable table) : m_table(std::move(table)) {}
 
-  using LuaTable::contains;
-  using LuaTable::engine;
-  using LuaTable::get;
-  using LuaTable::handleIndex;
-  using LuaTable::remove;
-  using LuaTable::set;
+  // Delegate to underlying table - explicit forwarding shows intent
+  template <typename K>
+  auto contains(K key) const -> bool {
+    return m_table.contains(std::move(key));
+  }
+  
+  auto contains(char const* key) const -> bool {
+    return m_table.contains(key);
+  }
+  
+  auto engine() const -> LuaEngine& {
+    return m_table.engine();
+  }
+  
+  template <typename T = LuaValue, typename K>
+  auto get(K key) const -> T {
+    return m_table.template get<T>(std::move(key));
+  }
+  
+  template <typename T = LuaValue>
+  auto get(char const* key) const -> T {
+    return m_table.template get<T>(key);
+  }
+  
+  auto handleIndex() const -> int {
+    return m_table.handleIndex();
+  }
+  
+  template <typename K>
+  void remove(K key) const {
+    m_table.remove(std::move(key));
+  }
+  
+  void remove(char const* key) const {
+    m_table.remove(key);
+  }
+  
+  template <typename T, typename K>
+  void set(K key, T value) const {
+    m_table.set(std::move(key), std::move(value));
+  }
+  
+  template <typename T>
+  void set(char const* key, T value) const {
+    m_table.set(key, std::move(value));
+  }
 
   // Splits the path by '.' character, so can get / set values in tables inside
   // other tables.  If any table in the path is not a table but is accessed as
@@ -325,7 +609,7 @@ public:
   template <typename T = LuaValue>
   auto getPath(String path) const -> T;
   // Shorthand for getPath != LuaNil
-  [[nodiscard]] auto containsPath(String path) const -> bool;
+  [[nodiscard("Path existence check must be used")]] auto containsPath(String path) const -> bool;
   // Will create new tables if the key contains paths that are nil
   template <typename T>
   void setPath(String path, T value);
@@ -333,6 +617,7 @@ public:
   // Load the given code (either source or bytecode) into this context as a new
   // chunk.  It is not necessary to provide the name again if given bytecode.
   void load(char const* contents, size_t size, char const* name = nullptr);
+  void load(std::span<char const> contents, char const* name = nullptr);
   void load(String const& contents, String const& name = String());
   void load(ByteArray const& contents, String const& name = String());
 
@@ -374,10 +659,10 @@ public:
 
   auto createTable() -> LuaTable;
 
-  template <typename Container>
+  template <LuaContainer Container>
   auto createTable(Container const& map) -> LuaTable;
 
-  template <typename Container>
+  template <LuaContainer Container>
   auto createArrayTable(Container const& array) -> LuaTable;
 
   template <typename Function>
@@ -388,29 +673,32 @@ public:
 
   template <typename T>
   auto createUserData(T t) -> LuaUserData;
+  
+private:
+  LuaTable m_table;  // COMPOSITION: Context HAS-A table
 };
 
 template <typename T>
 struct LuaNullTermWrapper : T {
-  LuaNullTermWrapper() : T() {}
-  LuaNullTermWrapper(LuaNullTermWrapper const& nt) : T(nt) {}
-  LuaNullTermWrapper(LuaNullTermWrapper&& nt) : T(std::move(nt)) {}
-  LuaNullTermWrapper(T const& bt) : T(bt) {}
-  LuaNullTermWrapper(T&& bt) : T(std::move(bt)) {}
+  constexpr LuaNullTermWrapper() : T() {}
+  constexpr LuaNullTermWrapper(LuaNullTermWrapper const& nt) : T(nt) {}
+  constexpr LuaNullTermWrapper(LuaNullTermWrapper&& nt) noexcept(std::is_nothrow_move_constructible_v<T>) : T(std::move(nt)) {}
+  constexpr LuaNullTermWrapper(T const& bt) : T(bt) {}
+  constexpr LuaNullTermWrapper(T&& bt) noexcept(std::is_nothrow_move_constructible_v<T>) : T(std::move(bt)) {}
 
   using T::T;
 
-  auto operator=(LuaNullTermWrapper const& rhs) -> LuaNullTermWrapper& {
+  constexpr auto operator=(LuaNullTermWrapper const& rhs) -> LuaNullTermWrapper& {
     T::operator=(rhs);
     return *this;
   }
 
-  auto operator=(LuaNullTermWrapper&& rhs) -> LuaNullTermWrapper& {
+  constexpr auto operator=(LuaNullTermWrapper&& rhs) noexcept(std::is_nothrow_move_assignable_v<T>) -> LuaNullTermWrapper& {
     T::operator=(std::move(rhs));
     return *this;
   }
 
-  auto operator=(T&& other) -> LuaNullTermWrapper& {
+  constexpr auto operator=(T&& other) -> LuaNullTermWrapper& {
     T::operator=(std::forward<T>(other));
     return *this;
   }
@@ -431,11 +719,33 @@ private:
 // this template and provide static to and from methods on it.  The method
 // signatures will be called like:
 //   LuaValue from(LuaEngine& engine, T t);
-//   std::optional<T> to(LuaEngine& engine, LuaValue v);
+//   std::expected<T, LuaConversionError> tryTo(LuaEngine& engine, LuaValue v); // Modern API
+//   std::optional<T> to(LuaEngine& engine, LuaValue v);  // Legacy API
 // The methods can also take 'T const&' or 'LuaValue const&' as parameters, and
 // the 'to' method can also return a bare T if conversion cannot fail.
 template <typename T>
 struct LuaConverter;
+
+// C++20 Concepts for Lua type constraints
+template <typename T>
+concept LuaConvertible = requires(LuaEngine& engine, T value, LuaValue luaValue) {
+  { LuaConverter<std::decay_t<T>>::from(engine, value) } -> std::same_as<LuaValue>;
+  { LuaConverter<std::decay_t<T>>::to(engine, luaValue) };
+};
+
+// Modern concept requiring std::expected support
+template <typename T>
+concept LuaConvertibleExpected = LuaConvertible && requires(LuaEngine& engine, LuaValue luaValue) {
+  { LuaConverter<std::decay_t<T>>::tryTo(engine, luaValue) } -> std::same_as<std::expected<T, LuaConversionError>>;
+};
+
+template <typename T>
+concept LuaContainer = requires(T container) {
+  typename T::value_type;
+  { container.begin() } -> std::input_iterator;
+  { container.end() } -> std::input_iterator;
+  { container.size() } -> std::convertible_to<std::size_t>;
+};
 
 // UserData types that want to expose methods to lua should specialize this
 // template.
@@ -495,29 +805,29 @@ public:
   // recursive entries into LuaEngine accumulate the same instruction counter.
   // 0 disables the instruction limit.
   void setInstructionLimit(std::uint64_t instructionLimit = 0);
-  [[nodiscard]] auto instructionLimit() const -> std::uint64_t;
+  [[nodiscard("Instruction limit needed for monitoring")]] auto instructionLimit() const -> std::uint64_t;
 
   // If profiling is enabled, then every 'measureInterval' instructions, the
   // function call stack will be recorded, and a summary of function timing can
   // be printed using profileReport
   void setProfilingEnabled(bool profilingEnabled);
-  [[nodiscard]] auto profilingEnabled() const -> bool;
+  [[nodiscard("Profiling state needed for conditional logic")]] auto profilingEnabled() const -> bool;
 
   // Print a summary of the profiling data gathered since profiling was last
   // enabled.
-  auto getProfile() -> List<LuaProfileEntry>;
+  [[nodiscard("Profile data must be used")]] auto getProfile() -> List<LuaProfileEntry>;
 
-  // If an instruction limit is set or profiling is neabled, this field
+  // If an instruction limit is set or profiling is enabled, this field
   // describes the resolution of instruction count measurement, and affects the
   // accuracy of profiling and the instruction count limit.  Defaults to 1000
   void setInstructionMeasureInterval(unsigned measureInterval = 1000);
-  [[nodiscard]] auto instructionMeasureInterval() const -> unsigned;
+  [[nodiscard("Measure interval needed for configuration")]] auto instructionMeasureInterval() const -> unsigned;
 
   // Sets the LuaEngine recursion limit, limiting the number of times a
-  // LuaEngine call may directly or inderectly trigger a call back into the
+  // LuaEngine call may directly or indirectly trigger a call back into the
   // LuaEngine, preventing a C++ stack overflow.  0 disables the limit.
   void setRecursionLimit(unsigned recursionLimit = 0);
-  [[nodiscard]] auto recursionLimit() const -> unsigned;
+  [[nodiscard("Recursion limit needed for safety checks")]] auto recursionLimit() const -> unsigned;
 
   // Compile a given script into bytecode.  If name is given, then it will be
   // used as the internal name for the resulting chunk and will provide better
@@ -527,6 +837,7 @@ public:
   // execute in two separate contexts and truly be isolated is to compile the
   // script to bytecode and load once in each context as a separate chunk.
   auto compile(char const* contents, size_t size, char const* name = nullptr) -> ByteArray;
+  auto compile(std::span<char const> contents, char const* name = nullptr) -> ByteArray;
   auto compile(String const& contents, String const& name = String()) -> ByteArray;
   auto compile(ByteArray const& contents, String const& name = String()) -> ByteArray;
 
@@ -536,18 +847,38 @@ public:
   // Generic from/to lua conversion, calls template specialization of
   // LuaConverter for actual conversion.
   template <typename T>
+    requires LuaConvertible<T>
   auto luaFrom(T&& t) -> LuaValue;
   template <typename T>
+    requires LuaConvertible<T>
   auto luaFrom(T const& t) -> LuaValue;
+  
+  // Modern API: Returns std::expected for structured error handling (C++23)
   template <typename T>
+    requires LuaConvertible<T>
+  [[nodiscard("Conversion result must be checked")]]
+  auto luaConvertTo(LuaValue const& v) -> std::expected<T, LuaConversionError>;
+  template <typename T>
+    requires LuaConvertible<T>
+  [[nodiscard("Conversion result must be checked")]]
+  auto luaConvertTo(LuaValue&& v) -> std::expected<T, LuaConversionError>;
+  
+  // Legacy API: Returns std::optional (deprecated - use luaConvertTo)
+  template <typename T>
+    requires LuaConvertible<T>
+  [[deprecated("Use luaConvertTo() for better error messages")]]
   auto luaMaybeTo(LuaValue const& v) -> std::optional<T>;
   template <typename T>
+    requires LuaConvertible<T>
+  [[deprecated("Use luaConvertTo() for better error messages")]]
   auto luaMaybeTo(LuaValue&& v) -> std::optional<T>;
 
-  // Wraps luaMaybeTo, throws an exception if conversion fails.
+  // Wraps luaConvertTo, throws an exception if conversion fails.
   template <typename T>
+    requires LuaConvertible<T>
   auto luaTo(LuaValue const& v) -> T;
   template <typename T>
+    requires LuaConvertible<T>
   auto luaTo(LuaValue&& v) -> T;
 
   auto createString(std::string const& str) -> LuaString;
@@ -556,10 +887,10 @@ public:
 
   auto createTable(int narr = 0, int nrec = 0) -> LuaTable;
 
-  template <typename Container>
+  template <LuaContainer Container>
   auto createTable(Container const& map) -> LuaTable;
 
-  template <typename Container>
+  template <LuaContainer Container>
   auto createArrayTable(Container const& array) -> LuaTable;
 
   // Creates a function and deduces the signature of the function using
@@ -611,10 +942,10 @@ public:
   void tuneAutoGarbageCollection(float pause, float stepMultiplier);
 
   // Bytes in use by lua
-  [[nodiscard]] auto memoryUsage() const -> std::size_t;
+  [[nodiscard("Memory usage information must be used")]] auto memoryUsage() const -> std::size_t;
 
   // Enforce null-terminated string conversion as long as the returned enforcer object is in scope.
-  auto nullTerminate() -> LuaNullEnforcer;
+  [[nodiscard("Null enforcer RAII object must be kept alive")]] auto nullTerminate() -> LuaNullEnforcer;
   // Disables null-termination enforcement
   void setNullTerminated(bool nullTerminated);
   void addImGui();
@@ -665,7 +996,7 @@ private:
 
   auto tableLength(bool raw, int handleIndex) -> LuaInt;
 
-  void tableIterate(int handleIndex, std::function<bool(LuaValue, LuaValue)> iterator);
+  void tableIterate(int handleIndex, std::function_ref<bool(LuaValue, LuaValue)> iterator);
 
   auto tableGetMetatable(int handleIndex) -> std::optional<LuaTable>;
   void tableSetMetatable(int handleIndex, LuaTable const& table);
@@ -765,6 +1096,16 @@ struct LuaConverter<bool> {
       return *b;
     if (v == LuaNil)
       return false;
+    return true;
+  }
+  
+  // Modern API with structured error
+  static auto tryTo([[maybe_unused]] LuaEngine& engine, LuaValue const& v) -> std::expected<bool, LuaConversionError> {
+    if (auto b = v.ptr<LuaBoolean>())
+      return *b;
+    if (v == LuaNil)
+      return false;
+    // Truthy conversion always succeeds
     return true;
   }
 };
@@ -1634,7 +1975,7 @@ inline auto LuaReference::engine() const -> LuaEngine& {
   return *m_handle.engine;
 }
 
-inline auto LuaReference::handleIndex() const -> int {
+inline auto LuaReference::handleIndex() const noexcept -> int {
   return m_handle.handleIndex;
 }
 
@@ -1770,26 +2111,9 @@ void LuaTable::rawSet(char const* key, T value) const {
   engine().tableSet(true, handleIndex(), engine().luaFrom(key), engine().luaFrom(value));
 }
 
-template <typename Ret, typename... Args>
-auto LuaFunction::invoke(Args const&... args) const -> Ret {
-  return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), engine().callFunction(handleIndex(), args...));
-}
+// LuaFunction::invoke is now defined inline in the class definition
 
-template <typename Ret, typename... Args>
-auto LuaThread::resume(Args const&... args) -> std::optional<Ret> {
-  auto res = engine().resumeThread(handleIndex(), args...);
-  if (res)
-    return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), std::move(*res));
-  return std::nullopt;
-}
-
-template <typename Ret, typename... Args>
-auto LuaThread::resume(Args const&... args) const -> std::optional<Ret> {
-  auto res = engine().resumeThread(handleIndex(), args...);
-  if (res)
-    return LuaDetail::FromFunctionReturn<Ret>::convert(engine(), std::move(*res));
-  return std::nullopt;
-}
+// LuaThread::resume is now defined inline with deducing this in the class definition
 
 inline void LuaThread::pushFunction(LuaFunction const& func) const {
   engine().threadPushFunction(handleIndex(), func.handleIndex());
@@ -1799,15 +2123,7 @@ inline auto LuaThread::status() const -> LuaThread::Status {
   return engine().threadStatus(handleIndex());
 }
 
-template <typename T>
-auto LuaUserData::is() const -> bool {
-  return engine().userDataIsType<T>(handleIndex());
-}
-
-template <typename T>
-auto LuaUserData::get() const -> T& {
-  return *engine().getUserData<T>(handleIndex());
-}
+// LuaUserData methods are now defined inline in the class definition
 
 template <typename Function>
 void LuaCallbacks::registerCallback(String name, Function&& func) {
@@ -1894,12 +2210,12 @@ auto LuaContext::luaTo(LuaValue const& v) -> T {
   return engine().luaTo<T>(v);
 }
 
-template <typename Container>
+template <LuaContainer Container>
 auto LuaContext::createTable(Container const& map) -> LuaTable {
   return engine().createTable(map);
 }
 
-template <typename Container>
+template <LuaContainer Container>
 auto LuaContext::createArrayTable(Container const& array) -> LuaTable {
   return engine().createArrayTable(array);
 }
@@ -1939,40 +2255,88 @@ auto LuaUserDataConverter<T>::to([[maybe_unused]] LuaEngine& engine, LuaValue co
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaFrom(T&& t) -> LuaValue {
   return LuaConverter<std::decay_t<T>>::from(*this, std::forward<T>(t));
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaFrom(T const& t) -> LuaValue {
   return LuaConverter<T>::from(*this, t);
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaMaybeTo(LuaValue&& v) -> std::optional<T> {
   return LuaConverter<T>::to(*this, std::move(v));
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaMaybeTo(LuaValue const& v) -> std::optional<T> {
   return LuaConverter<T>::to(*this, v);
 }
 
+// Modern std::expected-based conversion (C++23)
 template <typename T>
+  requires LuaConvertible<T>
+auto LuaEngine::luaConvertTo(LuaValue const& v) -> std::expected<T, LuaConversionError> {
+  if constexpr (requires { LuaConverter<T>::tryTo(*this, v); }) {
+    // Use modern tryTo if available
+    return LuaConverter<T>::tryTo(*this, v);
+  } else {
+    // Fallback to legacy to() method
+    if (auto result = LuaConverter<T>::to(*this, v)) {
+      return std::move(*result);  // Implicit conversion to std::expected
+    }
+    // Use modern pattern matching for better error messages
+    return std::unexpected(LuaConversionError{
+      strf("Failed to convert {} to type '{}'", luaValueTypeName(v), typeid(T).name()),
+      typeid(T).name(),
+      String(luaValueTypeName(v))
+    });
+  }
+}
+
+template <typename T>
+  requires LuaConvertible<T>
+auto LuaEngine::luaConvertTo(LuaValue&& v) -> std::expected<T, LuaConversionError> {
+  if constexpr (requires { LuaConverter<T>::tryTo(*this, std::move(v)); }) {
+    return LuaConverter<T>::tryTo(*this, std::move(v));
+  } else {
+    // Need to get type name before moving
+    auto typeName = luaValueTypeName(v);
+    if (auto result = LuaConverter<T>::to(*this, std::move(v))) {
+      return std::move(*result);  // Implicit conversion to std::expected
+    }
+    return std::unexpected(LuaConversionError{
+      strf("Failed to convert {} to type '{}'", typeName, typeid(T).name()),
+      typeid(T).name(),
+      String(typeName)
+    });
+  }
+}
+
+template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaTo(LuaValue&& v) -> T {
-  if (auto res = luaMaybeTo<T>(std::move(v)))
+  auto res = luaConvertTo<T>(std::move(v));
+  if (res)
     return std::move(*res);
-  throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
+  throw LuaConversionException::format("Error converting LuaValue: {}", res.error().message);
 }
 
 template <typename T>
+  requires LuaConvertible<T>
 auto LuaEngine::luaTo(LuaValue const& v) -> T {
-  if (auto res = luaMaybeTo<T>(v))
+  auto res = luaConvertTo<T>(v);
+  if (res)
     return std::move(*res);
-  throw LuaConversionException::format("Error converting LuaValue to type '{}'", typeid(T).name());
+  throw LuaConversionException::format("Error converting LuaValue: {}", res.error().message);
 }
 
-template <typename Container>
+template <LuaContainer Container>
 auto LuaEngine::createTable(Container const& map) -> LuaTable {
   auto table = createTable(0, map.size());
   for (auto const& p : map)
@@ -1980,13 +2344,13 @@ auto LuaEngine::createTable(Container const& map) -> LuaTable {
   return table;
 }
 
-template <typename Container>
+template <LuaContainer Container>
 auto LuaEngine::createArrayTable(Container const& array) -> LuaTable {
   auto table = createTable(array.size(), 0);
-  int i = 1;
-  for (auto const& elem : array) {
-    table.set(LuaInt(i), elem);
-    ++i;
+  // Using std::views::enumerate from C++23 (included in C++26)
+  // enumerate provides 0-based indices; +1 converts to Lua's 1-based indexing
+  for (auto const& [i, elem] : std::views::enumerate(array)) {
+    table.set(LuaInt(i + 1), elem);
   }
   return table;
 }

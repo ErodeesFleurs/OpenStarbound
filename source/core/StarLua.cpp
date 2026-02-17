@@ -9,34 +9,38 @@ namespace Star {
 using LuaDetail::LuaFunctionReturn;
 
 auto operator<<(std::ostream& os, LuaValue const& value) -> std::ostream& {
-  if (value.is<LuaBoolean>()) {
-    os << (value.get<LuaBoolean>() ? "true" : "false");
-  } else if (value.is<LuaInt>()) {
-    os << value.get<LuaInt>();
-  } else if (value.is<LuaFloat>()) {
-    os << value.get<LuaFloat>();
-  } else if (value.is<LuaString>()) {
-    os << value.get<LuaString>().ptr();
-  } else if (value.is<LuaTable>()) {
-    os << "{";
-    bool first = true;
-    value.get<LuaTable>().iterate([&os, &first](LuaValue const& key, LuaValue const& value) -> void {
-      if (first)
-        first = false;
-      else
-        os << ", ";
-      os << key << ": " << value;
-    });
-    os << "}";
-  } else if (value.is<LuaFunction>()) {
-    os << "<function reg:" << value.get<LuaFunction>().handleIndex() << ">";
-  } else if (value.is<LuaThread>()) {
-    os << "<thread reg:" << value.get<LuaThread>().handleIndex() << ">";
-  } else if (value.is<LuaUserData>()) {
-    os << "<userdata reg:" << value.get<LuaUserData>().handleIndex() << ">";
-  } else {
-    os << "nil";
-  }
+  // Modern C++20 pattern matching with std::visit
+  std::visit([&os](auto&& arg) {
+    using T = std::decay_t<decltype(arg)>;
+    if constexpr (std::is_same_v<T, LuaNilType>) {
+      os << "nil";
+    } else if constexpr (std::is_same_v<T, LuaBoolean>) {
+      os << (arg ? "true" : "false");
+    } else if constexpr (std::is_same_v<T, LuaInt>) {
+      os << arg;
+    } else if constexpr (std::is_same_v<T, LuaFloat>) {
+      os << arg;
+    } else if constexpr (std::is_same_v<T, LuaString>) {
+      os << arg.ptr();
+    } else if constexpr (std::is_same_v<T, LuaTable>) {
+      os << "{";
+      bool first = true;
+      arg.iterate([&os, &first](LuaValue const& key, LuaValue const& value) -> void {
+        if (first)
+          first = false;
+        else
+          os << ", ";
+        os << key << ": " << value;
+      });
+      os << "}";
+    } else if constexpr (std::is_same_v<T, LuaFunction>) {
+      os << "<function reg:" << arg.handleIndex() << ">";
+    } else if constexpr (std::is_same_v<T, LuaThread>) {
+      os << "<thread reg:" << arg.handleIndex() << ">";
+    } else if constexpr (std::is_same_v<T, LuaUserData>) {
+      os << "<userdata reg:" << arg.handleIndex() << ">";
+    }
+  }, value);
   return os;
 }
 
@@ -93,6 +97,10 @@ auto LuaContext::containsPath(String path) const -> bool {
 
 void LuaContext::load(char const* contents, size_t size, char const* name) {
   engine().contextLoad(handleIndex(), contents, size, name);
+}
+
+void LuaContext::load(std::span<char const> contents, char const* name) {
+  engine().contextLoad(handleIndex(), contents.data(), contents.size(), name);
 }
 
 void LuaContext::load(String const& contents, String const& name) {
@@ -471,6 +479,10 @@ auto LuaEngine::compile(char const* contents, size_t size, char const* name) -> 
 
 auto LuaEngine::compile(String const& contents, String const& name) -> ByteArray {
   return compile(contents.utf8Ptr(), contents.utf8Size(), name.empty() ? nullptr : name.utf8Ptr());
+}
+
+auto LuaEngine::compile(std::span<char const> contents, char const* name) -> ByteArray {
+  return compile(contents.data(), contents.size(), name);
 }
 
 auto LuaEngine::compile(ByteArray const& contents, String const& name) -> ByteArray {
@@ -872,7 +884,7 @@ auto LuaEngine::tableLength(bool raw, int handleIndex) -> LuaInt {
   }
 }
 
-void LuaEngine::tableIterate(int handleIndex, std::function<bool(LuaValue key, LuaValue value)> iterator) {
+void LuaEngine::tableIterate(int handleIndex, std::function_ref<bool(LuaValue key, LuaValue value)> iterator) {
   lua_checkstack(m_state, 4);
 
   pushHandle(m_state, handleIndex);
