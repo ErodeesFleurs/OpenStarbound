@@ -23,6 +23,8 @@
 
         nativeTools = with pkgs; [
           clang
+          lld
+          sccache
           cmake
           ninja
           pkg-config
