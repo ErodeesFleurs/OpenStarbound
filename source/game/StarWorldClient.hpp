@@ -259,6 +259,7 @@ private:
   void setupForceRegions();
 
   Json m_clientConfig;
+  Json m_lightingConfig;
   WorldTemplatePtr m_worldTemplate;
   WorldStructure m_centralStructure;
   Vec2F m_playerStart;
@@ -306,6 +307,9 @@ private:
   PlayerPtr m_mainPlayer;
 
   bool m_collisionDebug;
+  float m_interactivePulseAmount;
+  float m_interactivePulseRate;
+  float m_inspectionFlickerAmount;
 
   // Client side entity updates are not done until m_inWorld is true, which is
   // set to true after we have entered a world *and* the first batch of updates

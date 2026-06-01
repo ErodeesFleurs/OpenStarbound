@@ -51,6 +51,7 @@ private:
   Vec2F m_entityBarSpacing;
   Vec2F m_entityBarSize;
   Vec2F m_entityBarIconOffset;
+  float m_lightMapMultiplier;
 
   // Updated every frame
 

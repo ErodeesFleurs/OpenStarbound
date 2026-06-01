@@ -22,6 +22,7 @@ WorldPainter::WorldPainter() {
   m_entityBarSpacing = jsonToVec2F(m_assets->json("/rendering.config:entityBarSpacing"));
   m_entityBarSize = jsonToVec2F(m_assets->json("/rendering.config:entityBarSize"));
   m_entityBarIconOffset = jsonToVec2F(m_assets->json("/rendering.config:entityBarIconOffset"));
+  m_lightMapMultiplier = m_assets->json("/rendering.config:lightMapMultiplier").toFloat();
   m_preloadTextureChance = m_assets->json("/rendering.config:preloadTextureChance").toFloat();
 }
 
@@ -87,7 +88,7 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
       adjustLighting(renderData);
       m_renderer->setEffectTexture("lightMap", renderData.lightMap);
     }
-    m_renderer->setEffectParameter("lightMapMultiplier", m_assets->json("/rendering.config:lightMapMultiplier").toFloat());
+    m_renderer->setEffectParameter("lightMapMultiplier", m_lightMapMultiplier);
     m_renderer->setEffectParameter("lightMapScale", Vec2F::filled(TilePixels * m_camera.pixelRatio()));
     m_renderer->setEffectParameter("lightMapOffset", m_camera.worldToScreen(Vec2F(renderData.lightMinPosition)));
   }

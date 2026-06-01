@@ -15,19 +15,20 @@ TilePainter::TilePainter(RendererPtr renderer) : TileDrawer() {
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 
   auto& root = Root::singleton();
-  auto assets = root.assets();
+  m_assets = root.assets();
+  m_materialDatabase = root.materialDatabase();
 
-  m_terrainChunkCache.setTimeToLive(assets->json("/rendering.config:chunkCacheTimeout").toInt());
+  m_terrainChunkCache.setTimeToLive(m_assets->json("/rendering.config:chunkCacheTimeout").toInt());
   m_terrainChunkCache.setTimeSmear(m_terrainChunkCache.timeToLive() / 4);
 
-  m_liquidChunkCache.setTimeToLive(assets->json("/rendering.config:chunkCacheTimeout").toInt());
+  m_liquidChunkCache.setTimeToLive(m_assets->json("/rendering.config:chunkCacheTimeout").toInt());
   m_liquidChunkCache.setTimeSmear(m_liquidChunkCache.timeToLive() / 4);
 
-  m_textureCache.setTimeToLive(assets->json("/rendering.config:textureTimeout").toInt());
+  m_textureCache.setTimeToLive(m_assets->json("/rendering.config:textureTimeout").toInt());
 
   for (auto const& liquid : root.liquidsDatabase()->allLiquidSettings()) {
     m_liquids.set(liquid->id, LiquidInfo{
-        m_renderer->createTexture(*assets->image(liquid->config.getString("texture")), TextureAddressing::Wrap),
+        m_renderer->createTexture(*m_assets->image(liquid->config.getString("texture")), TextureAddressing::Wrap),
         jsonToColor(liquid->config.get("color")).toRgba(),
         jsonToColor(liquid->config.get("bottomLightMix")).toRgbF(),
         liquid->config.getFloat("textureMovementFactor")
@@ -120,32 +121,24 @@ size_t TilePainter::TextureKeyHash::operator()(TextureKey const& key) const {
 }
 
 TilePainter::ChunkHash TilePainter::terrainChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
-  //XXHash3 hasher;
-  static ByteArray buffer;
-  buffer.clear();
+  XXHash3 hasher;
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
-    //renderTile.hashPushTerrain(hasher);
-    buffer.append((char*)&renderTile, offsetof(RenderTile, liquidId));
+    hasher.push((char const*)&renderTile, offsetof(RenderTile, liquidId));
   });
 
-  //return hasher.digest();
-  return XXH3_64bits(buffer.ptr(), buffer.size());
+  return hasher.digest();
 }
 
 TilePainter::ChunkHash TilePainter::liquidChunkHash(WorldRenderData& renderData, Vec2I chunkIndex) {
-  ///XXHash3 hasher;
+  XXHash3 hasher;
   RectI tileRange = RectI::withSize(chunkIndex * RenderChunkSize, Vec2I::filled(RenderChunkSize)).padded(MaterialRenderProfileMaxNeighborDistance);
-  static ByteArray buffer;
-  buffer.clear();
 
   forEachRenderTile(renderData, tileRange, [&](Vec2I const&, RenderTile const& renderTile) {
-    //renderTile.hashPushLiquid(hasher);
-    buffer.append((char*)&renderTile.liquidId, sizeof(LiquidId) + sizeof(LiquidLevel));
+    hasher.push((char const*)&renderTile.liquidId, sizeof(LiquidId) + sizeof(LiquidLevel));
   });
 
-  //return hasher.digest();
-  return XXH3_64bits(buffer.ptr(), buffer.size());
+  return hasher.digest();
 }
 
 void TilePainter::renderTerrainChunks(WorldCamera const& camera, TerrainLayer terrainLayer) {
@@ -222,10 +215,6 @@ shared_ptr<TilePainter::LiquidChunk const> TilePainter::getLiquidChunk(WorldRend
 
 bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
     TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData) {
-  auto& root = Root::singleton();
-  auto assets = Root::singleton().assets();
-  auto materialDatabase = root.materialDatabase();
-
   RenderTile const& tile = getRenderTile(renderData, pos);
 
   MaterialId material = EmptyMaterialId;
@@ -260,23 +249,23 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
   }
 
   // render non-block colliding things in the midground
-  bool isBlock = BlockCollisionSet.contains(materialDatabase->materialCollisionKind(material));
+  bool isBlock = BlockCollisionSet.contains(m_materialDatabase->materialCollisionKind(material));
   if (terrainLayer == (isBlock ? TerrainLayer::Midground : TerrainLayer::Foreground))
     return false;
 
-  auto getPieceTexture = [this, assets](MaterialId material, MaterialRenderPieceConstPtr const& piece, MaterialHue hue, Directives const* directives, bool mod) {
+  auto getPieceTexture = [this](MaterialId material, MaterialRenderPieceConstPtr const& piece, MaterialHue hue, Directives const* directives, bool mod) {
     return m_textureCache.get(MaterialPieceTextureKey(material, piece->pieceId, hue, mod), [&](auto const&) {
         AssetPath texture = (hue == 0) ? piece->texture : strf("{}?hueshift={}", piece->texture, materialHueToDegrees(hue));
 
         if (directives)
           texture.directives += *directives;
 
-        return m_textureGroup->create(*assets->image(texture));
+        return m_textureGroup->create(*m_assets->image(texture));
       });
   };
 
-  auto materialRenderProfile = materialDatabase->materialRenderProfile(material);
-  auto modRenderProfile = materialDatabase->modRenderProfile(mod);
+  auto materialRenderProfile = m_materialDatabase->materialRenderProfile(material);
+  auto modRenderProfile = m_materialDatabase->modRenderProfile(mod);
 
   if (materialRenderProfile) {
     occlude = materialRenderProfile->occludesBehind;
@@ -285,7 +274,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
     auto& quadList = primitives[materialZLevel(materialRenderProfile->zLevel, material, materialHue, materialColorVariant)];
 
     MaterialPieceResultList pieces;
-    determineMatchingPieces(pieces, &occlude, materialDatabase, materialRenderProfile->mainMatchList, renderData, pos,
+    determineMatchingPieces(pieces, &occlude, m_materialDatabase, materialRenderProfile->mainMatchList, renderData, pos,
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, false);
     Directives const* directives = materialRenderProfile->colorDirectives.empty()
       ? nullptr
@@ -316,7 +305,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
     auto& quadList = primitives[modZLevel(modRenderProfile->zLevel, mod, modHue, modColorVariant)];
 
     MaterialPieceResultList pieces;
-    determineMatchingPieces(pieces, &occlude, materialDatabase, modRenderProfile->mainMatchList, renderData, pos,
+    determineMatchingPieces(pieces, &occlude, m_materialDatabase, modRenderProfile->mainMatchList, renderData, pos,
         terrainLayer == TerrainLayer::Background ? TileLayer::Background : TileLayer::Foreground, true);
     Directives const* directives = modRenderProfile->colorDirectives.empty()
       ? nullptr
@@ -342,7 +331,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
     auto const& crackingImage = materialRenderProfile->damageImage(damageLevel, damageType);
 
     TexturePtr texture = m_textureCache.get(AssetTextureKey(crackingImage.first),
-        [&](auto const&) { return m_textureGroup->create(*assets->image(crackingImage.first)); });
+        [&](auto const&) { return m_textureGroup->create(*m_assets->image(crackingImage.first)); });
 
     Vec2F textureSize(texture->size());
     RectF textureCoords = RectF::withSize(Vec2F(), textureSize);

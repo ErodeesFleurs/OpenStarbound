@@ -2,6 +2,8 @@
 
 #include "StarAlgorithm.hpp"
 
+#include <type_traits>
+
 namespace Star {
 
 // A vector that is stack allocated up to a maximum size, becoming heap
@@ -23,7 +25,7 @@ public:
 
   SmallVector();
   SmallVector(SmallVector const& other);
-  SmallVector(SmallVector&& other);
+  SmallVector(SmallVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
   template <typename OtherElement, size_t OtherMaxStackSize>
   SmallVector(SmallVector<OtherElement, OtherMaxStackSize> const& other);
   template <class Iterator>
@@ -33,7 +35,7 @@ public:
   ~SmallVector();
 
   SmallVector& operator=(SmallVector const& other);
-  SmallVector& operator=(SmallVector&& other);
+  SmallVector& operator=(SmallVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
   SmallVector& operator=(std::initializer_list<Element> list);
 
   size_t size() const;
@@ -119,9 +121,27 @@ SmallVector<Element, MaxStackSize>::SmallVector(SmallVector const& other)
 
 template <typename Element, size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector(SmallVector&& other)
+  noexcept(std::is_nothrow_move_constructible<Element>::value)
   : SmallVector() {
+  if (other.isHeapAllocated()) {
+    m_begin = other.m_begin;
+    m_end = other.m_end;
+    m_capacity = other.m_capacity;
+
+    other.m_begin = (Element*)&other.m_stackElements;
+    other.m_end = other.m_begin;
+    other.m_capacity = other.m_begin + MaxStackSize;
+    return;
+  }
+
+  try {
     for (auto& e : other)
       emplace_back(std::move(e));
+    other.clear();
+  } catch (...) {
+    clear();
+    throw;
+  }
 }
 
 template <typename Element, size_t MaxStackSize>
@@ -165,10 +185,32 @@ auto SmallVector<Element, MaxStackSize>::operator=(SmallVector const& other) -> 
 }
 
 template <typename Element, size_t MaxStackSize>
-auto SmallVector<Element, MaxStackSize>::operator=(SmallVector&& other) -> SmallVector& {
-  resize(other.size());
-  for (size_t i = 0; i < size(); ++i)
-    operator[](i) = std::move(other[i]);
+auto SmallVector<Element, MaxStackSize>::operator=(SmallVector&& other)
+    noexcept(std::is_nothrow_move_constructible<Element>::value) -> SmallVector& {
+  if (this == &other)
+    return *this;
+
+  clear();
+  if (isHeapAllocated()) {
+    free(m_begin, (m_capacity - m_begin) * sizeof(Element));
+    m_begin = (Element*)&m_stackElements;
+    m_end = m_begin;
+    m_capacity = m_begin + MaxStackSize;
+  }
+
+  if (other.isHeapAllocated()) {
+    m_begin = other.m_begin;
+    m_end = other.m_end;
+    m_capacity = other.m_capacity;
+
+    other.m_begin = (Element*)&other.m_stackElements;
+    other.m_end = other.m_begin;
+    other.m_capacity = other.m_begin + MaxStackSize;
+  } else {
+    for (auto& e : other)
+      emplace_back(std::move(e));
+    other.clear();
+  }
 
   return *this;
 }

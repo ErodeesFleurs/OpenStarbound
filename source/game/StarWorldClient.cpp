@@ -33,6 +33,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
   auto assets = root.assets();
 
   m_clientConfig = assets->json("/client.config");
+  m_lightingConfig = assets->json("/lighting.config:lighting");
 
   m_currentStep = 0;
   m_currentTime = 0;
@@ -46,6 +47,9 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
   m_parallaxFadeTimer.setDone();
 
   m_collisionDebug = false;
+  m_interactivePulseAmount = assets->json("/highlights.config:interactivePulseAmount").toFloat();
+  m_interactivePulseRate = assets->json("/highlights.config:interactivePulseRate").toFloat();
+  m_inspectionFlickerAmount = assets->json("/highlights.config:inspectionFlickerAmount").toFloat();
   m_inWorld = false;
 
   m_luaRoot = luaRoot;
@@ -519,12 +523,10 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       lightingCalc();
   }
 
-  float pulseAmount = Root::singleton().assets()->json("/highlights.config:interactivePulseAmount").toFloat();
-  float pulseRate = Root::singleton().assets()->json("/highlights.config:interactivePulseRate").toFloat();
-  float pulseLevel = 1 - pulseAmount * 0.5 * (sin(2 * Constants::pi * pulseRate * Time::monotonicMilliseconds() / 1000.0) + 1);
+  float pulseLevel = 1 - m_interactivePulseAmount * 0.5 * (sin(2 * Constants::pi * m_interactivePulseRate * Time::monotonicMilliseconds() / 1000.0) + 1);
 
   bool inspecting = m_mainPlayer->inspecting();
-  float inspectionFlickerMultiplier = Random::randf(1 - Root::singleton().assets()->json("/highlights.config:inspectionFlickerAmount").toFloat(), 1);
+  float inspectionFlickerMultiplier = Random::randf(1 - m_inspectionFlickerAmount, 1);
 
   EntityId playerAimInteractive = NullEntityId;
   if (Root::singleton().configuration()->get("interactiveHighlight").toBool()) {
@@ -1742,7 +1744,7 @@ void WorldClient::lightingCalc() {
   auto configuration = root.configuration();
   bool newLighting = configuration->get("newLighting").optBool().value(true);
   bool monochrome = configuration->get("monochromeLighting").toBool();
-  m_lightingCalculator.setParameters(root.assets()->json("/lighting.config:lighting").set("pointAdditive", newLighting));
+  m_lightingCalculator.setParameters(m_lightingConfig.set("pointAdditive", newLighting));
   m_lightingCalculator.setMonochrome(monochrome);
   m_lightingCalculator.begin(lightRange);
   lightingTileGather();

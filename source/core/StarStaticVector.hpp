@@ -3,6 +3,8 @@
 #include "StarException.hpp"
 #include "StarFormat.hpp"
 
+#include <type_traits>
+
 namespace Star {
 
 STAR_EXCEPTION(StaticVectorSizeException, StarException);
@@ -29,7 +31,7 @@ public:
 
   StaticVector();
   StaticVector(StaticVector const& other);
-  StaticVector(StaticVector&& other);
+  StaticVector(StaticVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
   template <typename OtherElement, size_t OtherMaxSize>
   StaticVector(StaticVector<OtherElement, OtherMaxSize> const& other);
   template <class Iterator>
@@ -39,7 +41,7 @@ public:
   ~StaticVector();
 
   StaticVector& operator=(StaticVector const& other);
-  StaticVector& operator=(StaticVector&& other);
+  StaticVector& operator=(StaticVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
   StaticVector& operator=(std::initializer_list<Element> list);
 
   size_t size() const;
@@ -113,9 +115,11 @@ StaticVector<Element, MaxSize>::StaticVector(StaticVector const& other)
 
 template <typename Element, size_t MaxSize>
 StaticVector<Element, MaxSize>::StaticVector(StaticVector&& other)
+  noexcept(std::is_nothrow_move_constructible<Element>::value)
   : StaticVector() {
   for (auto& e : other)
     emplace_back(std::move(e));
+  other.clear();
 }
 
 template <typename Element, size_t MaxSize>
@@ -159,10 +163,15 @@ auto StaticVector<Element, MaxSize>::operator=(StaticVector const& other) -> Sta
 }
 
 template <typename Element, size_t MaxSize>
-auto StaticVector<Element, MaxSize>::operator=(StaticVector&& other) -> StaticVector& {
-  resize(other.size());
-  for (size_t i = 0; i < m_size; ++i)
-    operator[](i) = std::move(other[i]);
+auto StaticVector<Element, MaxSize>::operator=(StaticVector&& other)
+    noexcept(std::is_nothrow_move_constructible<Element>::value) -> StaticVector& {
+  if (this == &other)
+    return *this;
+
+  clear();
+  for (auto& e : other)
+    emplace_back(std::move(e));
+  other.clear();
 
   return *this;
 }
