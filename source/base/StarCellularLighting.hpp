@@ -178,7 +178,7 @@ public:
 private:
   ScalarCellularLightArray m_lightArray;
   Vec2F m_queryPosition;
-  RectI m_queryRegion;;
+  RectI m_queryRegion;
   RectI m_calculationRegion;
 };
 

@@ -244,14 +244,26 @@ static int impl_##name(lua_State *L) { \
 #define CALL_FUNCTION(name, retType,...) \
   retType ret = ImGui::name(__VA_ARGS__);
 
+#define CALL_FUNCTION0(name, retType) \
+  retType ret = ImGui::name();
+
 #define DRAW_LIST_CALL_FUNCTION(name, retType,...) \
   retType ret = ImGui::GetWindowDrawList()->name(__VA_ARGS__);
+
+#define DRAW_LIST_CALL_FUNCTION0(name, retType) \
+  retType ret = ImGui::GetWindowDrawList()->name();
 
 #define CALL_FUNCTION_NO_RET(name, ...) \
   ImGui::name(__VA_ARGS__);
 
+#define CALL_FUNCTION_NO_RET0(name) \
+  ImGui::name();
+
 #define DRAW_LIST_CALL_FUNCTION_NO_RET(name, ...) \
   ImGui::GetWindowDrawList()->name(__VA_ARGS__);
+
+#define DRAW_LIST_CALL_FUNCTION_NO_RET0(name) \
+  ImGui::GetWindowDrawList()->name();
 
 #define PUSH_STRING(name) \
   lua_pushstring(L, name); \
@@ -374,12 +386,20 @@ static const struct luaL_Reg imguilib [] = {
 #define BOOL_ARG(name)
 #undef CALL_FUNCTION
 #define CALL_FUNCTION(name, retType, ...)
+#undef CALL_FUNCTION0
+#define CALL_FUNCTION0(name, retType)
 #undef DRAW_LIST_CALL_FUNCTION
 #define DRAW_LIST_CALL_FUNCTION(name, retType, ...)
+#undef DRAW_LIST_CALL_FUNCTION0
+#define DRAW_LIST_CALL_FUNCTION0(name, retType)
 #undef CALL_FUNCTION_NO_RET
 #define CALL_FUNCTION_NO_RET(name, ...)
+#undef CALL_FUNCTION_NO_RET0
+#define CALL_FUNCTION_NO_RET0(name)
 #undef DRAW_LIST_CALL_FUNCTION_NO_RET
 #define DRAW_LIST_CALL_FUNCTION_NO_RET(name, ...)
+#undef DRAW_LIST_CALL_FUNCTION_NO_RET0
+#define DRAW_LIST_CALL_FUNCTION_NO_RET0(name)
 #undef PUSH_STRING
 #define PUSH_STRING(name)
 #undef PUSH_NUMBER
@@ -487,12 +507,20 @@ static void pushImguiEnums(lua_State* lState, const char* tableName) {
 #define BOOL_ARG(name)
 #undef CALL_FUNCTION
 #define CALL_FUNCTION(name, retType, ...)
+#undef CALL_FUNCTION0
+#define CALL_FUNCTION0(name, retType)
 #undef DRAW_LIST_CALL_FUNCTION
 #define DRAW_LIST_CALL_FUNCTION(name, retType, ...)
+#undef DRAW_LIST_CALL_FUNCTION0
+#define DRAW_LIST_CALL_FUNCTION0(name, retType)
 #undef CALL_FUNCTION_NO_RET
 #define CALL_FUNCTION_NO_RET(name, ...)
+#undef CALL_FUNCTION_NO_RET0
+#define CALL_FUNCTION_NO_RET0(name)
 #undef DRAW_LIST_CALL_FUNCTION_NO_RET
 #define DRAW_LIST_CALL_FUNCTION_NO_RET(name, ...)
+#undef DRAW_LIST_CALL_FUNCTION_NO_RET0
+#define DRAW_LIST_CALL_FUNCTION_NO_RET0(name)
 #undef PUSH_STRING
 #define PUSH_STRING(name)
 #undef PUSH_NUMBER

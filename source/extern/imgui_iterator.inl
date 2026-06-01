@@ -23,7 +23,7 @@
 //Not allowed to use this function
 //    IMGUI_API void          EndFrame();                                 // ends the Dear ImGui frame. automatically called by Render(). If you don't need to render data (skipping rendering) you may call EndFrame() without Render()... but you'll have wasted CPU already! If you don't need to render, better to not create any windows and not call NewFrame() at all!
 IMGUI_FUNCTION(EndFrame)
-CALL_FUNCTION_NO_RET(EndFrame)
+CALL_FUNCTION_NO_RET0(EndFrame)
 POP_END_STACK(0)
 END_IMGUI_FUNC
 //    IMGUI_API void          Render();                                   // ends the Dear ImGui frame, finalize the draw data. You can then get call GetDrawData().
@@ -75,11 +75,11 @@ CALL_FUNCTION_NO_RET(ShowFontSelector, label)
 END_IMGUI_FUNC
 //    IMGUI_API void          ShowUserGuide();                            // add basic help/info block (not a window): how to manipulate ImGui as an end-user (mouse/keyboard controls).
 IMGUI_FUNCTION(ShowUserGuide)
-CALL_FUNCTION_NO_RET(ShowUserGuide)
+CALL_FUNCTION_NO_RET0(ShowUserGuide)
 END_IMGUI_FUNC
 //    IMGUI_API const char*   GetVersion();                               // get the compiled version string e.g. "1.80 WIP" (essentially the value for IMGUI_VERSION from the compiled version of imgui.cpp)
 IMGUI_FUNCTION(GetVersion)
-CALL_FUNCTION(GetVersion, const char*)
+CALL_FUNCTION0(GetVersion, const char*)
 PUSH_STRING(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          StyleColorsDark(ImGuiStyle* dst = NULL);    // new, recommended style (default)
@@ -100,7 +100,7 @@ END_BOOL_POINTER(p_open)
 END_IMGUI_FUNC
 //    IMGUI_API void          End();
 IMGUI_FUNCTION(End)
-CALL_FUNCTION_NO_RET(End)
+CALL_FUNCTION_NO_RET0(End)
 POP_END_STACK(1)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginChild(const char* str_id, const ImVec2& size = ImVec2 0  0, ImGuiChildFlags child_flags = 0, ImGuiWindowFlags window_flags = 0);
@@ -125,17 +125,17 @@ PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndChild();
 IMGUI_FUNCTION(EndChild)
-CALL_FUNCTION_NO_RET(EndChild)
+CALL_FUNCTION_NO_RET0(EndChild)
 POP_END_STACK(2)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsWindowAppearing();
 IMGUI_FUNCTION(IsWindowAppearing)
-CALL_FUNCTION(IsWindowAppearing, bool)
+CALL_FUNCTION0(IsWindowAppearing, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsWindowCollapsed();
 IMGUI_FUNCTION(IsWindowCollapsed)
-CALL_FUNCTION(IsWindowCollapsed, bool)
+CALL_FUNCTION0(IsWindowCollapsed, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsWindowFocused(ImGuiFocusedFlags flags=0); // is current window focused? or its root/child, depending on flags. see flags for options.
@@ -154,24 +154,24 @@ END_IMGUI_FUNC
 // Unsupported return type ImDrawList*
 //    IMGUI_API ImVec2        GetWindowPos();                             // get current window position in screen space (IT IS UNLIKELY YOU EVER NEED TO USE THIS. Consider always using GetCursorScreenPos() and GetContentRegionAvail() instead)
 IMGUI_FUNCTION(GetWindowPos)
-CALL_FUNCTION(GetWindowPos, ImVec2)
+CALL_FUNCTION0(GetWindowPos, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetWindowSize();                            // get current window size (IT IS UNLIKELY YOU EVER NEED TO USE THIS. Consider always using GetCursorScreenPos() and GetContentRegionAvail() instead)
 IMGUI_FUNCTION(GetWindowSize)
-CALL_FUNCTION(GetWindowSize, ImVec2)
+CALL_FUNCTION0(GetWindowSize, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetWindowWidth();                           // get current window width (IT IS UNLIKELY YOU EVER NEED TO USE THIS). Shortcut for GetWindowSize().x.
 IMGUI_FUNCTION(GetWindowWidth)
-CALL_FUNCTION(GetWindowWidth, float)
+CALL_FUNCTION0(GetWindowWidth, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetWindowHeight();                          // get current window height (IT IS UNLIKELY YOU EVER NEED TO USE THIS). Shortcut for GetWindowSize().y.
 IMGUI_FUNCTION(GetWindowHeight)
-CALL_FUNCTION(GetWindowHeight, float)
+CALL_FUNCTION0(GetWindowHeight, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextWindowPos(const ImVec2& pos, ImGuiCond cond = 0, const ImVec2& pivot = ImVec2 0  0); // set next window position. call before Begin(). use pivot=(0.5f,0.5f) to center on given point, etc.
@@ -203,7 +203,7 @@ CALL_FUNCTION_NO_RET(SetNextWindowCollapsed, collapsed, cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextWindowFocus();                                                       // set next window to be focused / top-most. call before Begin()
 IMGUI_FUNCTION(SetNextWindowFocus)
-CALL_FUNCTION_NO_RET(SetNextWindowFocus)
+CALL_FUNCTION_NO_RET0(SetNextWindowFocus)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextWindowScroll(const ImVec2& scroll);                                  // set next window scrolling value (use < 0.0f to not affect a given axis).
 IMGUI_FUNCTION(SetNextWindowScroll)
@@ -235,7 +235,7 @@ CALL_FUNCTION_NO_RET(SetWindowCollapsed, collapsed, cond)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetWindowFocus();                                                           // (not recommended) set current window to be focused / top-most. prefer using SetNextWindowFocus().
 IMGUI_FUNCTION(SetWindowFocus)
-CALL_FUNCTION_NO_RET(SetWindowFocus)
+CALL_FUNCTION_NO_RET0(SetWindowFocus)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetWindowFontScale(float scale);                                            // [OBSOLETE] set font scale. Adjust IO.FontGlobalScale if you want to scale all windows. This is an old API! For correct scaling, prefer to reload font + rebuild ImFontAtlas + call style.ScaleAllSizes().
 IMGUI_FUNCTION(SetWindowFontScale)
@@ -270,12 +270,12 @@ CALL_FUNCTION_NO_RET(SetWindowFocus, name)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetScrollX();                                                   // get scrolling amount [0 .. GetScrollMaxX()]
 IMGUI_FUNCTION(GetScrollX)
-CALL_FUNCTION(GetScrollX, float)
+CALL_FUNCTION0(GetScrollX, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetScrollY();                                                   // get scrolling amount [0 .. GetScrollMaxY()]
 IMGUI_FUNCTION(GetScrollY)
-CALL_FUNCTION(GetScrollY, float)
+CALL_FUNCTION0(GetScrollY, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetScrollX(float scroll_x);                                     // set scrolling amount [0 .. GetScrollMaxX()]
@@ -290,12 +290,12 @@ CALL_FUNCTION_NO_RET(SetScrollY, scroll_y)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetScrollMaxX();                                                // get maximum scrolling amount ~~ ContentSize.x - WindowSize.x - DecorationsSize.x
 IMGUI_FUNCTION(GetScrollMaxX)
-CALL_FUNCTION(GetScrollMaxX, float)
+CALL_FUNCTION0(GetScrollMaxX, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetScrollMaxY();                                                // get maximum scrolling amount ~~ ContentSize.y - WindowSize.y - DecorationsSize.y
 IMGUI_FUNCTION(GetScrollMaxY)
-CALL_FUNCTION(GetScrollMaxY, float)
+CALL_FUNCTION0(GetScrollMaxY, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetScrollHereX(float center_x_ratio = 0.5f);                    // adjust scrolling amount to make current cursor position visible. center_x_ratio=0.0: left, 0.5: center, 1.0: right. When using to make a "default/current item" visible, consider using SetItemDefaultFocus() instead.
@@ -324,7 +324,7 @@ END_IMGUI_FUNC
 // Unsupported arg type ImFont* font
 //    IMGUI_API void          PopFont();
 IMGUI_FUNCTION(PopFont)
-CALL_FUNCTION_NO_RET(PopFont)
+CALL_FUNCTION_NO_RET0(PopFont)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushStyleColor(ImGuiCol idx, ImU32 col);                        // modify a style color. always use this if you modify the style after NewFrame().
 IMGUI_FUNCTION(PushStyleColor)
@@ -383,7 +383,7 @@ CALL_FUNCTION_NO_RET(PushItemFlag, option, enabled)
 END_IMGUI_FUNC
 //    IMGUI_API void          PopItemFlag();
 IMGUI_FUNCTION(PopItemFlag)
-CALL_FUNCTION_NO_RET(PopItemFlag)
+CALL_FUNCTION_NO_RET0(PopItemFlag)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushItemWidth(float item_width);                                // push width of items for common large "item+label" widgets. >0.0f: width in pixels, <0.0f align xx pixels to the right of window (so -FLT_MIN always align width to the right side).
 IMGUI_FUNCTION(PushItemWidth)
@@ -392,7 +392,7 @@ CALL_FUNCTION_NO_RET(PushItemWidth, item_width)
 END_IMGUI_FUNC
 //    IMGUI_API void          PopItemWidth();
 IMGUI_FUNCTION(PopItemWidth)
-CALL_FUNCTION_NO_RET(PopItemWidth)
+CALL_FUNCTION_NO_RET0(PopItemWidth)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextItemWidth(float item_width);                             // set width of the _next_ common large "item+label" widget. >0.0f: width in pixels, <0.0f align xx pixels to the right of window (so -FLT_MIN always align width to the right side)
 IMGUI_FUNCTION(SetNextItemWidth)
@@ -401,7 +401,7 @@ CALL_FUNCTION_NO_RET(SetNextItemWidth, item_width)
 END_IMGUI_FUNC
 //    IMGUI_API float         CalcItemWidth();                                                // width of item given pushed settings and current cursor position. NOT necessarily the width of last item unlike most 'Item' functions.
 IMGUI_FUNCTION(CalcItemWidth)
-CALL_FUNCTION(CalcItemWidth, float)
+CALL_FUNCTION0(CalcItemWidth, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushTextWrapPos(float wrap_local_pos_x = 0.0f);                 // push word-wrapping position for Text*() commands. < 0.0f: no wrapping; 0.0f: wrap to end of window (or column); > 0.0f: wrap at 'wrap_pos_x' position in window local space
@@ -411,18 +411,18 @@ CALL_FUNCTION_NO_RET(PushTextWrapPos, wrap_local_pos_x)
 END_IMGUI_FUNC
 //    IMGUI_API void          PopTextWrapPos();
 IMGUI_FUNCTION(PopTextWrapPos)
-CALL_FUNCTION_NO_RET(PopTextWrapPos)
+CALL_FUNCTION_NO_RET0(PopTextWrapPos)
 END_IMGUI_FUNC
 //    IMGUI_API ImFont*       GetFont();                                                      // get current font
 // Unsupported return type ImFont*
 //    IMGUI_API float         GetFontSize();                                                  // get current font size (= height in pixels) of current font with current scale applied
 IMGUI_FUNCTION(GetFontSize)
-CALL_FUNCTION(GetFontSize, float)
+CALL_FUNCTION0(GetFontSize, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetFontTexUvWhitePixel();                                       // get UV coordinate for a white pixel, useful to draw custom shapes via the ImDrawList API
 IMGUI_FUNCTION(GetFontTexUvWhitePixel)
-CALL_FUNCTION(GetFontTexUvWhitePixel, ImVec2)
+CALL_FUNCTION0(GetFontTexUvWhitePixel, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
@@ -450,7 +450,7 @@ END_IMGUI_FUNC
 // Unsupported return type const
 //    IMGUI_API ImVec2        GetCursorScreenPos();                                           // cursor position, absolute coordinates. THIS IS YOUR BEST FRIEND (prefer using this rather than GetCursorPos(), also more useful to work with ImDrawList API).
 IMGUI_FUNCTION(GetCursorScreenPos)
-CALL_FUNCTION(GetCursorScreenPos, ImVec2)
+CALL_FUNCTION0(GetCursorScreenPos, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
@@ -461,24 +461,24 @@ CALL_FUNCTION_NO_RET(SetCursorScreenPos, pos)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetContentRegionAvail();                                        // available space from current position. THIS IS YOUR BEST FRIEND.
 IMGUI_FUNCTION(GetContentRegionAvail)
-CALL_FUNCTION(GetContentRegionAvail, ImVec2)
+CALL_FUNCTION0(GetContentRegionAvail, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetCursorPos();                                                 // [window-local] cursor position in window-local coordinates. This is not your best friend.
 IMGUI_FUNCTION(GetCursorPos)
-CALL_FUNCTION(GetCursorPos, ImVec2)
+CALL_FUNCTION0(GetCursorPos, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetCursorPosX();                                                // [window-local] "
 IMGUI_FUNCTION(GetCursorPosX)
-CALL_FUNCTION(GetCursorPosX, float)
+CALL_FUNCTION0(GetCursorPosX, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetCursorPosY();                                                // [window-local] "
 IMGUI_FUNCTION(GetCursorPosY)
-CALL_FUNCTION(GetCursorPosY, float)
+CALL_FUNCTION0(GetCursorPosY, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetCursorPos(const ImVec2& local_pos);                          // [window-local] "
@@ -498,13 +498,13 @@ CALL_FUNCTION_NO_RET(SetCursorPosY, local_y)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetCursorStartPos();                                            // [window-local] initial cursor position, in window-local coordinates. Call GetCursorScreenPos() after Begin() to get the absolute coordinates version.
 IMGUI_FUNCTION(GetCursorStartPos)
-CALL_FUNCTION(GetCursorStartPos, ImVec2)
+CALL_FUNCTION0(GetCursorStartPos, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
 //    IMGUI_API void          Separator();                                                    // separator, generally horizontal. inside a menu bar or in horizontal layout mode, this becomes a vertical separator.
 IMGUI_FUNCTION(Separator)
-CALL_FUNCTION_NO_RET(Separator)
+CALL_FUNCTION_NO_RET0(Separator)
 END_IMGUI_FUNC
 //    IMGUI_API void          SameLine(float offset_from_start_x=0.0f, float spacing=-1.0f);  // call between widgets or groups to layout them horizontally. X position given in window coordinates.
 IMGUI_FUNCTION(SameLine)
@@ -514,11 +514,11 @@ CALL_FUNCTION_NO_RET(SameLine, offset_from_start_x, spacing)
 END_IMGUI_FUNC
 //    IMGUI_API void          NewLine();                                                      // undo a SameLine() or force a new line when in a horizontal-layout context.
 IMGUI_FUNCTION(NewLine)
-CALL_FUNCTION_NO_RET(NewLine)
+CALL_FUNCTION_NO_RET0(NewLine)
 END_IMGUI_FUNC
 //    IMGUI_API void          Spacing();                                                      // add vertical spacing.
 IMGUI_FUNCTION(Spacing)
-CALL_FUNCTION_NO_RET(Spacing)
+CALL_FUNCTION_NO_RET0(Spacing)
 END_IMGUI_FUNC
 //    IMGUI_API void          Dummy(const ImVec2& size);                                      // add a dummy item of given size. unlike InvisibleButton(), Dummy() won't take the mouse click or be navigable into.
 IMGUI_FUNCTION(Dummy)
@@ -537,36 +537,36 @@ CALL_FUNCTION_NO_RET(Unindent, indent_w)
 END_IMGUI_FUNC
 //    IMGUI_API void          BeginGroup();                                                   // lock horizontal starting position
 IMGUI_FUNCTION(BeginGroup)
-CALL_FUNCTION_NO_RET(BeginGroup)
+CALL_FUNCTION_NO_RET0(BeginGroup)
 ADD_END_STACK(4)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndGroup();                                                     // unlock horizontal starting position + capture the whole group bounding box into one "item" (so you can use IsItemHovered() or layout primitives such as SameLine() on whole group, etc.)
 IMGUI_FUNCTION(EndGroup)
-CALL_FUNCTION_NO_RET(EndGroup)
+CALL_FUNCTION_NO_RET0(EndGroup)
 POP_END_STACK(4)
 END_IMGUI_FUNC
 //    IMGUI_API void          AlignTextToFramePadding();                                      // vertically align upcoming text baseline to FramePadding.y so that it will align properly to regularly framed items (call if you have text on a line before a framed item)
 IMGUI_FUNCTION(AlignTextToFramePadding)
-CALL_FUNCTION_NO_RET(AlignTextToFramePadding)
+CALL_FUNCTION_NO_RET0(AlignTextToFramePadding)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetTextLineHeight();                                            // ~ FontSize
 IMGUI_FUNCTION(GetTextLineHeight)
-CALL_FUNCTION(GetTextLineHeight, float)
+CALL_FUNCTION0(GetTextLineHeight, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetTextLineHeightWithSpacing();                                 // ~ FontSize + style.ItemSpacing.y (distance in pixels between 2 consecutive lines of text)
 IMGUI_FUNCTION(GetTextLineHeightWithSpacing)
-CALL_FUNCTION(GetTextLineHeightWithSpacing, float)
+CALL_FUNCTION0(GetTextLineHeightWithSpacing, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetFrameHeight();                                               // ~ FontSize + style.FramePadding.y * 2
 IMGUI_FUNCTION(GetFrameHeight)
-CALL_FUNCTION(GetFrameHeight, float)
+CALL_FUNCTION0(GetFrameHeight, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetFrameHeightWithSpacing();                                    // ~ FontSize + style.FramePadding.y * 2 + style.ItemSpacing.y (distance in pixels between 2 consecutive lines of framed widgets)
 IMGUI_FUNCTION(GetFrameHeightWithSpacing)
-CALL_FUNCTION(GetFrameHeightWithSpacing, float)
+CALL_FUNCTION0(GetFrameHeightWithSpacing, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushID(const char* str_id);                                     // push string into the ID stack (will hash string).
@@ -589,7 +589,7 @@ CALL_FUNCTION_NO_RET(PushID, int_id)
 END_IMGUI_FUNC
 //    IMGUI_API void          PopID();                                                        // pop from the ID stack.
 IMGUI_FUNCTION(PopID)
-CALL_FUNCTION_NO_RET(PopID)
+CALL_FUNCTION_NO_RET0(PopID)
 END_IMGUI_FUNC
 //    IMGUI_API ImGuiID       GetID(const char* str_id);                                      // calculate unique ID (hash of whole ID stack + given parameter). e.g. if you want to query into ImGuiStorage yourself
 IMGUI_FUNCTION(GetID)
@@ -752,7 +752,7 @@ CALL_FUNCTION_NO_RET(ProgressBar, fraction, size_arg, overlay)
 END_IMGUI_FUNC
 //    IMGUI_API void          Bullet();                                                       // draw a small circle + keep the cursor on the same line. advance cursor x position by GetTreeNodeToLabelSpacing(), same distance that TreeNode() uses
 IMGUI_FUNCTION(Bullet)
-CALL_FUNCTION_NO_RET(Bullet)
+CALL_FUNCTION_NO_RET0(Bullet)
 END_IMGUI_FUNC
 //    IMGUI_API bool          TextLink(const char* label);                                    // hyperlink text button, return true when clicked
 IMGUI_FUNCTION(TextLink)
@@ -807,7 +807,7 @@ PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndCombo(); // only call EndCombo() if BeginCombo() returns true!
 IMGUI_FUNCTION(EndCombo)
-CALL_FUNCTION_NO_RET(EndCombo)
+CALL_FUNCTION_NO_RET0(EndCombo)
 POP_END_STACK(5)
 END_IMGUI_FUNC
 //    IMGUI_API bool          Combo(const char* label, int* current_item, const char* const items[], int items_count, int popup_max_height_in_items = -1);
@@ -1130,12 +1130,12 @@ END_IMGUI_FUNC
 // Unsupported arg type const void* ptr_id
 //    IMGUI_API void          TreePop();                                                          // ~ Unindent()+PopID()
 IMGUI_FUNCTION(TreePop)
-CALL_FUNCTION_NO_RET(TreePop)
+CALL_FUNCTION_NO_RET0(TreePop)
 POP_END_STACK(6)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetTreeNodeToLabelSpacing();                                        // horizontal distance preceding label when using TreeNode*() or Bullet() == (g.FontSize + style.FramePadding.x*2) for a regular unframed TreeNode
 IMGUI_FUNCTION(GetTreeNodeToLabelSpacing)
-CALL_FUNCTION(GetTreeNodeToLabelSpacing, float)
+CALL_FUNCTION0(GetTreeNodeToLabelSpacing, float)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          CollapsingHeader(const char* label, ImGuiTreeNodeFlags flags = 0);  // if returning 'true' the header is open. doesn't indent nor push on ID stack. user doesn't have to call TreePop().
@@ -1192,7 +1192,7 @@ END_IMGUI_FUNC
 // Unsupported arg type ImGuiSelectionUserData selection_user_data
 //    IMGUI_API bool                  IsItemToggledSelection();                                   // Was the last item selection state toggled? Useful if you need the per-item information _before_ reaching EndMultiSelect(). We only returns toggle _event_ in order to handle clipping correctly.
 IMGUI_FUNCTION(IsItemToggledSelection)
-CALL_FUNCTION(IsItemToggledSelection, bool)
+CALL_FUNCTION0(IsItemToggledSelection, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginListBox(const char* label, const ImVec2& size = ImVec2 0  0); // open a framed scrolling region
@@ -1205,7 +1205,7 @@ PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndListBox();                                                       // only call EndListBox() if BeginListBox() returned true!
 IMGUI_FUNCTION(EndListBox)
-CALL_FUNCTION_NO_RET(EndListBox)
+CALL_FUNCTION_NO_RET0(EndListBox)
 POP_END_STACK(7)
 END_IMGUI_FUNC
 //    IMGUI_API bool          ListBox(const char* label, int* current_item, const char* const items[], int items_count, int height_in_items = -1);
@@ -1250,24 +1250,24 @@ CALL_FUNCTION_NO_RET(Value, prefix, v, float_format)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginMenuBar();                                                     // append to menu-bar of current window (requires ImGuiWindowFlags_MenuBar flag set on parent window).
 IMGUI_FUNCTION(BeginMenuBar)
-CALL_FUNCTION(BeginMenuBar, bool)
+CALL_FUNCTION0(BeginMenuBar, bool)
 IF_RET_ADD_END_STACK(8)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndMenuBar();                                                       // only call EndMenuBar() if BeginMenuBar() returns true!
 IMGUI_FUNCTION(EndMenuBar)
-CALL_FUNCTION_NO_RET(EndMenuBar)
+CALL_FUNCTION_NO_RET0(EndMenuBar)
 POP_END_STACK(8)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginMainMenuBar();                                                 // create and append to a full screen menu-bar.
 IMGUI_FUNCTION(BeginMainMenuBar)
-CALL_FUNCTION(BeginMainMenuBar, bool)
+CALL_FUNCTION0(BeginMainMenuBar, bool)
 IF_RET_ADD_END_STACK(9)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndMainMenuBar();                                                   // only call EndMainMenuBar() if BeginMainMenuBar() returns true!
 IMGUI_FUNCTION(EndMainMenuBar)
-CALL_FUNCTION_NO_RET(EndMainMenuBar)
+CALL_FUNCTION_NO_RET0(EndMainMenuBar)
 POP_END_STACK(9)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginMenu(const char* label, bool enabled = true);                  // create a sub-menu entry. only call EndMenu() if this returns true!
@@ -1280,7 +1280,7 @@ PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndMenu();                                                          // only call EndMenu() if BeginMenu() returns true!
 IMGUI_FUNCTION(EndMenu)
-CALL_FUNCTION_NO_RET(EndMenu)
+CALL_FUNCTION_NO_RET0(EndMenu)
 POP_END_STACK(10)
 END_IMGUI_FUNC
 //    IMGUI_API bool          MenuItem(const char* label, const char* shortcut = NULL, bool selected = false, bool enabled = true);  // return true when activated.
@@ -1304,13 +1304,13 @@ END_BOOL_POINTER(p_selected)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginTooltip();                                                     // begin/append a tooltip window.
 IMGUI_FUNCTION(BeginTooltip)
-CALL_FUNCTION(BeginTooltip, bool)
+CALL_FUNCTION0(BeginTooltip, bool)
 IF_RET_ADD_END_STACK(11)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTooltip();                                                       // only call EndTooltip() if BeginTooltip()/BeginItemTooltip() returns true!
 IMGUI_FUNCTION(EndTooltip)
-CALL_FUNCTION_NO_RET(EndTooltip)
+CALL_FUNCTION_NO_RET0(EndTooltip)
 POP_END_STACK(11)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetTooltip(const char* fmt, ...);                     // set a text-only tooltip. Often used after a ImGui::IsItemHovered() check. Override any previous call to SetTooltip().
@@ -1323,7 +1323,7 @@ END_IMGUI_FUNC
 // Unsupported arg type  va_list args
 //    IMGUI_API bool          BeginItemTooltip();                                                 // begin/append a tooltip window if preceding item was hovered.
 IMGUI_FUNCTION(BeginItemTooltip)
-CALL_FUNCTION(BeginItemTooltip, bool)
+CALL_FUNCTION0(BeginItemTooltip, bool)
 IF_RET_ADD_END_STACK(12)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
@@ -1355,7 +1355,7 @@ END_BOOL_POINTER(p_open)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndPopup();                                                                         // only call EndPopup() if BeginPopupXXX() returns true!
 IMGUI_FUNCTION(EndPopup)
-CALL_FUNCTION_NO_RET(EndPopup)
+CALL_FUNCTION_NO_RET0(EndPopup)
 POP_END_STACK(13)
 END_IMGUI_FUNC
 //    IMGUI_API void          OpenPopup(const char* str_id, ImGuiPopupFlags popup_flags = 0);                     // call to mark popup as open (don't call every frame!).
@@ -1378,7 +1378,7 @@ CALL_FUNCTION_NO_RET(OpenPopupOnItemClick, str_id, popup_flags)
 END_IMGUI_FUNC
 //    IMGUI_API void          CloseCurrentPopup();                                                                // manually close the popup we have begin-ed into.
 IMGUI_FUNCTION(CloseCurrentPopup)
-CALL_FUNCTION_NO_RET(CloseCurrentPopup)
+CALL_FUNCTION_NO_RET0(CloseCurrentPopup)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginPopupContextItem(const char* str_id = NULL, ImGuiPopupFlags popup_flags = 1);  // open+begin popup when clicked on last item. Use str_id==NULL to associate the popup to previous item. If you want to use that on a non-interactive item such as Text() you need to pass in an explicit ID here. read comments in .cpp!
 IMGUI_FUNCTION(BeginPopupContextItem)
@@ -1424,7 +1424,7 @@ PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTable();                                         // only call EndTable() if BeginTable() returns true!
 IMGUI_FUNCTION(EndTable)
-CALL_FUNCTION_NO_RET(EndTable)
+CALL_FUNCTION_NO_RET0(EndTable)
 POP_END_STACK(14)
 END_IMGUI_FUNC
 //    IMGUI_API void          TableNextRow(ImGuiTableRowFlags row_flags = 0, float min_row_height = 0.0f); // append into the first cell of a new row.
@@ -1435,7 +1435,7 @@ CALL_FUNCTION_NO_RET(TableNextRow, row_flags, min_row_height)
 END_IMGUI_FUNC
 //    IMGUI_API bool          TableNextColumn();                                  // append into the next column (or first column of next row if currently in last column). Return true when column is visible.
 IMGUI_FUNCTION(TableNextColumn)
-CALL_FUNCTION(TableNextColumn, bool)
+CALL_FUNCTION0(TableNextColumn, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          TableSetColumnIndex(int column_n);                  // append into the specified column. Return true when column is visible.
@@ -1465,27 +1465,27 @@ CALL_FUNCTION_NO_RET(TableHeader, label)
 END_IMGUI_FUNC
 //    IMGUI_API void          TableHeadersRow();                                  // submit a row with headers cells based on data provided to TableSetupColumn() + submit context menu
 IMGUI_FUNCTION(TableHeadersRow)
-CALL_FUNCTION_NO_RET(TableHeadersRow)
+CALL_FUNCTION_NO_RET0(TableHeadersRow)
 END_IMGUI_FUNC
 //    IMGUI_API void          TableAngledHeadersRow();                            // submit a row with angled headers for every column with the ImGuiTableColumnFlags_AngledHeader flag. MUST BE FIRST ROW.
 IMGUI_FUNCTION(TableAngledHeadersRow)
-CALL_FUNCTION_NO_RET(TableAngledHeadersRow)
+CALL_FUNCTION_NO_RET0(TableAngledHeadersRow)
 END_IMGUI_FUNC
 //    IMGUI_API ImGuiTableSortSpecs*  TableGetSortSpecs();                        // get latest sort specs for the table (NULL if not sorting).  Lifetime: don't hold on this pointer over multiple frames or past any subsequent call to BeginTable().
 // Unsupported return type ImGuiTableSortSpecs*
 //    IMGUI_API int                   TableGetColumnCount();                      // return number of columns (value passed to BeginTable)
 IMGUI_FUNCTION(TableGetColumnCount)
-CALL_FUNCTION(TableGetColumnCount, int)
+CALL_FUNCTION0(TableGetColumnCount, int)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API int                   TableGetColumnIndex();                      // return current column index.
 IMGUI_FUNCTION(TableGetColumnIndex)
-CALL_FUNCTION(TableGetColumnIndex, int)
+CALL_FUNCTION0(TableGetColumnIndex, int)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API int                   TableGetRowIndex();                         // return current row index.
 IMGUI_FUNCTION(TableGetRowIndex)
-CALL_FUNCTION(TableGetRowIndex, int)
+CALL_FUNCTION0(TableGetRowIndex, int)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API const char*           TableGetColumnName(int column_n = -1);      // return "" if column didn't have a name declared by TableSetupColumn(). Pass -1 to use current column.
@@ -1508,7 +1508,7 @@ CALL_FUNCTION_NO_RET(TableSetColumnEnabled, column_n, v)
 END_IMGUI_FUNC
 //    IMGUI_API int                   TableGetHoveredColumn();                    // return hovered column. return -1 when table is not hovered. return columns_count if the unused space at the right of visible columns is hovered. Can also use (TableGetColumnFlags() & ImGuiTableColumnFlags_IsHovered) instead.
 IMGUI_FUNCTION(TableGetHoveredColumn)
-CALL_FUNCTION(TableGetHoveredColumn, int)
+CALL_FUNCTION0(TableGetHoveredColumn, int)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void                  TableSetBgColor(ImGuiTableBgTarget target, ImU32 color, int column_n = -1);  // change the color of a cell, row, or column. See ImGuiTableBgTarget_ flags for details.
@@ -1527,11 +1527,11 @@ CALL_FUNCTION_NO_RET(Columns, count, id, borders)
 END_IMGUI_FUNC
 //    IMGUI_API void          NextColumn();                                                       // next column, defaults to current row or next row if the current row is finished
 IMGUI_FUNCTION(NextColumn)
-CALL_FUNCTION_NO_RET(NextColumn)
+CALL_FUNCTION_NO_RET0(NextColumn)
 END_IMGUI_FUNC
 //    IMGUI_API int           GetColumnIndex();                                                   // get current column index
 IMGUI_FUNCTION(GetColumnIndex)
-CALL_FUNCTION(GetColumnIndex, int)
+CALL_FUNCTION0(GetColumnIndex, int)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API float         GetColumnWidth(int column_index = -1);                              // get column width (in pixels). pass -1 to use current column
@@ -1560,7 +1560,7 @@ CALL_FUNCTION_NO_RET(SetColumnOffset, column_index, offset_x)
 END_IMGUI_FUNC
 //    IMGUI_API int           GetColumnsCount();
 IMGUI_FUNCTION(GetColumnsCount)
-CALL_FUNCTION(GetColumnsCount, int)
+CALL_FUNCTION0(GetColumnsCount, int)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginTabBar(const char* str_id, ImGuiTabBarFlags flags = 0);        // create and append into a TabBar
@@ -1573,7 +1573,7 @@ PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTabBar();                                                        // only call EndTabBar() if BeginTabBar() returns true!
 IMGUI_FUNCTION(EndTabBar)
-CALL_FUNCTION_NO_RET(EndTabBar)
+CALL_FUNCTION_NO_RET0(EndTabBar)
 POP_END_STACK(15)
 END_IMGUI_FUNC
 //    IMGUI_API bool          BeginTabItem(const char* label, bool* p_open = NULL, ImGuiTabItemFlags flags = 0); // create a Tab. Returns true if the Tab is selected.
@@ -1588,7 +1588,7 @@ END_BOOL_POINTER(p_open)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndTabItem();                                                       // only call EndTabItem() if BeginTabItem() returns true!
 IMGUI_FUNCTION(EndTabItem)
-CALL_FUNCTION_NO_RET(EndTabItem)
+CALL_FUNCTION_NO_RET0(EndTabItem)
 POP_END_STACK(16)
 END_IMGUI_FUNC
 //    IMGUI_API bool          TabItemButton(const char* label, ImGuiTabItemFlags flags = 0);      // create a Tab behaving like a button. return true when clicked. cannot be selected in the tab bar.
@@ -1621,11 +1621,11 @@ CALL_FUNCTION_NO_RET(LogToClipboard, auto_open_depth)
 END_IMGUI_FUNC
 //    IMGUI_API void          LogFinish();                                                        // stop logging (close file, etc.)
 IMGUI_FUNCTION(LogFinish)
-CALL_FUNCTION_NO_RET(LogFinish)
+CALL_FUNCTION_NO_RET0(LogFinish)
 END_IMGUI_FUNC
 //    IMGUI_API void          LogButtons();                                                       // helper to display buttons for logging to tty/file/clipboard
 IMGUI_FUNCTION(LogButtons)
-CALL_FUNCTION_NO_RET(LogButtons)
+CALL_FUNCTION_NO_RET0(LogButtons)
 END_IMGUI_FUNC
 //    IMGUI_API void          LogText(const char* fmt, ...);                        // pass text data straight to log (without being displayed)
 // Variadic functions aren't supported but here it is anyway
@@ -1647,12 +1647,12 @@ END_IMGUI_FUNC
 // Unsupported arg type  size_t sz
 //    IMGUI_API void          EndDragDropSource();                                                                    // only call EndDragDropSource() if BeginDragDropSource() returns true!
 IMGUI_FUNCTION(EndDragDropSource)
-CALL_FUNCTION_NO_RET(EndDragDropSource)
+CALL_FUNCTION_NO_RET0(EndDragDropSource)
 POP_END_STACK(17)
 END_IMGUI_FUNC
 //    IMGUI_API bool                  BeginDragDropTarget();                                                          // call after submitting an item that may receive a payload. If this returns true, you can call AcceptDragDropPayload() + EndDragDropTarget()
 IMGUI_FUNCTION(BeginDragDropTarget)
-CALL_FUNCTION(BeginDragDropTarget, bool)
+CALL_FUNCTION0(BeginDragDropTarget, bool)
 IF_RET_ADD_END_STACK(18)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
@@ -1660,7 +1660,7 @@ END_IMGUI_FUNC
 // Unsupported return type const
 //    IMGUI_API void                  EndDragDropTarget();                                                            // only call EndDragDropTarget() if BeginDragDropTarget() returns true!
 IMGUI_FUNCTION(EndDragDropTarget)
-CALL_FUNCTION_NO_RET(EndDragDropTarget)
+CALL_FUNCTION_NO_RET0(EndDragDropTarget)
 POP_END_STACK(18)
 END_IMGUI_FUNC
 //    IMGUI_API const ImGuiPayload*   GetDragDropPayload();                                                           // peek directly into the current payload from anywhere. returns NULL when drag and drop is finished or inactive. use ImGuiPayload::IsDataType() to test for the payload type.
@@ -1673,7 +1673,7 @@ ADD_END_STACK(19)
 END_IMGUI_FUNC
 //    IMGUI_API void          EndDisabled();
 IMGUI_FUNCTION(EndDisabled)
-CALL_FUNCTION_NO_RET(EndDisabled)
+CALL_FUNCTION_NO_RET0(EndDisabled)
 POP_END_STACK(19)
 END_IMGUI_FUNC
 //    IMGUI_API void          PushClipRect(const ImVec2& clip_rect_min, const ImVec2& clip_rect_max, bool intersect_with_current_clip_rect);
@@ -1685,11 +1685,11 @@ CALL_FUNCTION_NO_RET(PushClipRect, clip_rect_min, clip_rect_max, intersect_with_
 END_IMGUI_FUNC
 //    IMGUI_API void          PopClipRect();
 IMGUI_FUNCTION(PopClipRect)
-CALL_FUNCTION_NO_RET(PopClipRect)
+CALL_FUNCTION_NO_RET0(PopClipRect)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetItemDefaultFocus();                                              // make last item the default focused item of a newly appearing window.
 IMGUI_FUNCTION(SetItemDefaultFocus)
-CALL_FUNCTION_NO_RET(SetItemDefaultFocus)
+CALL_FUNCTION_NO_RET0(SetItemDefaultFocus)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetKeyboardFocusHere(int offset = 0);                               // focus keyboard on the next widget. Use positive 'offset' to access sub components of a multiple component widget. Use -1 to access previous widget.
 IMGUI_FUNCTION(SetKeyboardFocusHere)
@@ -1703,7 +1703,7 @@ CALL_FUNCTION_NO_RET(SetNavCursorVisible, visible)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetNextItemAllowOverlap();                                          // allow next item to be overlapped by a subsequent item. Useful with invisible buttons, selectable, treenode covering an area where subsequent items may need to be added. Note that both Selectable() and TreeNode() have dedicated flags doing this.
 IMGUI_FUNCTION(SetNextItemAllowOverlap)
-CALL_FUNCTION_NO_RET(SetNextItemAllowOverlap)
+CALL_FUNCTION_NO_RET0(SetNextItemAllowOverlap)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemHovered(ImGuiHoveredFlags flags = 0);                         // is the last item hovered? (and usable, aka not blocked by a popup, etc.). See ImGuiHoveredFlags for more options.
 IMGUI_FUNCTION(IsItemHovered)
@@ -1713,12 +1713,12 @@ PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemActive();                                                     // is the last item active? (e.g. button being held, text field being edited. This will continuously return true while holding mouse button on an item. Items that don't interact will always return false)
 IMGUI_FUNCTION(IsItemActive)
-CALL_FUNCTION(IsItemActive, bool)
+CALL_FUNCTION0(IsItemActive, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemFocused();                                                    // is the last item focused for keyboard/gamepad navigation?
 IMGUI_FUNCTION(IsItemFocused)
-CALL_FUNCTION(IsItemFocused, bool)
+CALL_FUNCTION0(IsItemFocused, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemClicked(ImGuiMouseButton mouse_button = 0);                   // is the last item hovered and mouse clicked on? (**)  == IsMouseClicked(mouse_button) && IsItemHovered()Important. (**) this is NOT equivalent to the behavior of e.g. Button(). Read comments in function definition.
@@ -1729,69 +1729,69 @@ PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemVisible();                                                    // is the last item visible? (items may be out of sight because of clipping/scrolling)
 IMGUI_FUNCTION(IsItemVisible)
-CALL_FUNCTION(IsItemVisible, bool)
+CALL_FUNCTION0(IsItemVisible, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemEdited();                                                     // did the last item modify its underlying value this frame? or was pressed? This is generally the same as the "bool" return value of many widgets.
 IMGUI_FUNCTION(IsItemEdited)
-CALL_FUNCTION(IsItemEdited, bool)
+CALL_FUNCTION0(IsItemEdited, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemActivated();                                                  // was the last item just made active (item was previously inactive).
 IMGUI_FUNCTION(IsItemActivated)
-CALL_FUNCTION(IsItemActivated, bool)
+CALL_FUNCTION0(IsItemActivated, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemDeactivated();                                                // was the last item just made inactive (item was previously active). Useful for Undo/Redo patterns with widgets that require continuous editing.
 IMGUI_FUNCTION(IsItemDeactivated)
-CALL_FUNCTION(IsItemDeactivated, bool)
+CALL_FUNCTION0(IsItemDeactivated, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemDeactivatedAfterEdit();                                       // was the last item just made inactive and made a value change when it was active? (e.g. Slider/Drag moved). Useful for Undo/Redo patterns with widgets that require continuous editing. Note that you may get false positives (some widgets such as Combo()/ListBox()/Selectable() will return true even when clicking an already selected item).
 IMGUI_FUNCTION(IsItemDeactivatedAfterEdit)
-CALL_FUNCTION(IsItemDeactivatedAfterEdit, bool)
+CALL_FUNCTION0(IsItemDeactivatedAfterEdit, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsItemToggledOpen();                                                // was the last item open state toggled? set by TreeNode().
 IMGUI_FUNCTION(IsItemToggledOpen)
-CALL_FUNCTION(IsItemToggledOpen, bool)
+CALL_FUNCTION0(IsItemToggledOpen, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsAnyItemHovered();                                                 // is any item hovered?
 IMGUI_FUNCTION(IsAnyItemHovered)
-CALL_FUNCTION(IsAnyItemHovered, bool)
+CALL_FUNCTION0(IsAnyItemHovered, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsAnyItemActive();                                                  // is any item active?
 IMGUI_FUNCTION(IsAnyItemActive)
-CALL_FUNCTION(IsAnyItemActive, bool)
+CALL_FUNCTION0(IsAnyItemActive, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API bool          IsAnyItemFocused();                                                 // is any item focused?
 IMGUI_FUNCTION(IsAnyItemFocused)
-CALL_FUNCTION(IsAnyItemFocused, bool)
+CALL_FUNCTION0(IsAnyItemFocused, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API ImGuiID       GetItemID();                                                        // get ID of last item (~~ often same ImGui::GetID(label) beforehand)
 IMGUI_FUNCTION(GetItemID)
-CALL_FUNCTION(GetItemID, unsigned int)
+CALL_FUNCTION0(GetItemID, unsigned int)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetItemRectMin();                                                   // get upper-left bounding rectangle of the last item (screen space)
 IMGUI_FUNCTION(GetItemRectMin)
-CALL_FUNCTION(GetItemRectMin, ImVec2)
+CALL_FUNCTION0(GetItemRectMin, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetItemRectMax();                                                   // get lower-right bounding rectangle of the last item (screen space)
 IMGUI_FUNCTION(GetItemRectMax)
-CALL_FUNCTION(GetItemRectMax, ImVec2)
+CALL_FUNCTION0(GetItemRectMax, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetItemRectSize();                                                  // get size of last item
 IMGUI_FUNCTION(GetItemRectSize)
-CALL_FUNCTION(GetItemRectSize, ImVec2)
+CALL_FUNCTION0(GetItemRectSize, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
@@ -1816,12 +1816,12 @@ PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API double        GetTime();                                                          // get global imgui time. incremented by io.DeltaTime every frame.
 IMGUI_FUNCTION(GetTime)
-CALL_FUNCTION(GetTime, double)
+CALL_FUNCTION0(GetTime, double)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API int           GetFrameCount();                                                    // get global imgui frame count. incremented by 1 every frame.
 IMGUI_FUNCTION(GetFrameCount)
-CALL_FUNCTION(GetFrameCount, int)
+CALL_FUNCTION0(GetFrameCount, int)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API ImDrawListSharedData* GetDrawListSharedData();                                    // you may use this when creating your own ImDrawList instances.
@@ -1968,18 +1968,18 @@ END_IMGUI_FUNC
 // Unsupported arg type const ImVec2* mouse_pos = NULL
 //    IMGUI_API bool          IsAnyMouseDown();                                                   // [WILL OBSOLETE] is any mouse button held? This was designed for backends, but prefer having backend maintain a mask of held mouse buttons, because upcoming input queue system will make this invalid.
 IMGUI_FUNCTION(IsAnyMouseDown)
-CALL_FUNCTION(IsAnyMouseDown, bool)
+CALL_FUNCTION0(IsAnyMouseDown, bool)
 PUSH_BOOL(ret)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetMousePos();                                                      // shortcut to ImGui::GetIO().MousePos provided by user, to be consistent with other calls
 IMGUI_FUNCTION(GetMousePos)
-CALL_FUNCTION(GetMousePos, ImVec2)
+CALL_FUNCTION0(GetMousePos, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
 //    IMGUI_API ImVec2        GetMousePosOnOpeningCurrentPopup();                                 // retrieve mouse position at the time of opening popup we have BeginPopup() into (helper to avoid user backing that value themselves)
 IMGUI_FUNCTION(GetMousePosOnOpeningCurrentPopup)
-CALL_FUNCTION(GetMousePosOnOpeningCurrentPopup, ImVec2)
+CALL_FUNCTION0(GetMousePosOnOpeningCurrentPopup, ImVec2)
 PUSH_NUMBER(ret.x)
 PUSH_NUMBER(ret.y)
 END_IMGUI_FUNC
@@ -2005,7 +2005,7 @@ CALL_FUNCTION_NO_RET(ResetMouseDragDelta, button)
 END_IMGUI_FUNC
 //    IMGUI_API ImGuiMouseCursor GetMouseCursor();                                                // get desired mouse cursor shape. Important: reset in ImGui::NewFrame(), this is updated during the frame. valid before Render(). If you use software rendering by setting io.MouseDrawCursor ImGui will render those for you
 IMGUI_FUNCTION(GetMouseCursor)
-CALL_FUNCTION(GetMouseCursor, ImGuiMouseCursor)
+CALL_FUNCTION0(GetMouseCursor, ImGuiMouseCursor)
 PUSH_NUMBER(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetMouseCursor(ImGuiMouseCursor cursor_type);                       // set desired mouse cursor shape
@@ -2020,7 +2020,7 @@ CALL_FUNCTION_NO_RET(SetNextFrameWantCaptureMouse, want_capture_mouse)
 END_IMGUI_FUNC
 //    IMGUI_API const char*   GetClipboardText();
 IMGUI_FUNCTION(GetClipboardText)
-CALL_FUNCTION(GetClipboardText, const char*)
+CALL_FUNCTION0(GetClipboardText, const char*)
 PUSH_STRING(ret)
 END_IMGUI_FUNC
 //    IMGUI_API void          SetClipboardText(const char* text);
@@ -2054,7 +2054,7 @@ CALL_FUNCTION_NO_RET(DebugFlashStyleColor, idx)
 END_IMGUI_FUNC
 //    IMGUI_API void          DebugStartItemPicker();
 IMGUI_FUNCTION(DebugStartItemPicker)
-CALL_FUNCTION_NO_RET(DebugStartItemPicker)
+CALL_FUNCTION_NO_RET0(DebugStartItemPicker)
 END_IMGUI_FUNC
 //    IMGUI_API bool          DebugCheckVersionAndDataLayout(const char* version_str, size_t sz_io, size_t sz_style, size_t sz_vec2, size_t sz_vec4, size_t sz_drawvert, size_t sz_drawidx); // This is called by IMGUI_CHECKVERSION() macro.
 // Unsupported arg type  size_t sz_io
@@ -3229,11 +3229,11 @@ DRAW_LIST_CALL_FUNCTION_NO_RET(PushClipRect, clip_rect_min, clip_rect_max, inter
 END_IMGUI_FUNC
 //    IMGUI_API void  PushClipRectFullScreen();
 IMGUI_FUNCTION_DRAW_LIST(PushClipRectFullScreen)
-DRAW_LIST_CALL_FUNCTION_NO_RET(PushClipRectFullScreen)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(PushClipRectFullScreen)
 END_IMGUI_FUNC
 //    IMGUI_API void  PopClipRect();
 IMGUI_FUNCTION_DRAW_LIST(PopClipRect)
-DRAW_LIST_CALL_FUNCTION_NO_RET(PopClipRect)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(PopClipRect)
 END_IMGUI_FUNC
 //    IMGUI_API void  PushTextureID(ImTextureID texture_id);
 IMGUI_FUNCTION_DRAW_LIST(PushTextureID)
@@ -3242,7 +3242,7 @@ DRAW_LIST_CALL_FUNCTION_NO_RET(PushTextureID, texture_id)
 END_IMGUI_FUNC
 //    IMGUI_API void  PopTextureID();
 IMGUI_FUNCTION_DRAW_LIST(PopTextureID)
-DRAW_LIST_CALL_FUNCTION_NO_RET(PopTextureID)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(PopTextureID)
 END_IMGUI_FUNC
 //    inline ImVec2   GetClipRectMin() const { const ImVec4& cr = _ClipRectStack.back(); return ImVec2 cr.x  cr.y; }
 // Unsupported arg type ) const { const ImVec4& cr = _ClipRectStack.back(
@@ -3495,7 +3495,7 @@ END_IMGUI_FUNC
 // Unsupported arg type  size_t userdata_size = 0
 //    IMGUI_API void  AddDrawCmd();                                               // This is useful if you need to forcefully create a new draw call (to allow for dependent rendering / blending). Otherwise primitives are merged into the same draw-call as much as possible
 IMGUI_FUNCTION_DRAW_LIST(AddDrawCmd)
-DRAW_LIST_CALL_FUNCTION_NO_RET(AddDrawCmd)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(AddDrawCmd)
 END_IMGUI_FUNC
 //    inline void     ChannelsSplit(int count)    { _Splitter.Split(this, count); }
 // Unsupported arg type int count)    { _Splitter.Split(this
@@ -3583,31 +3583,31 @@ END_IMGUI_FUNC
 // Unsupported arg type  num_segments
 //    IMGUI_API void  _ResetForNewFrame();
 IMGUI_FUNCTION_DRAW_LIST(_ResetForNewFrame)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_ResetForNewFrame)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(_ResetForNewFrame)
 END_IMGUI_FUNC
 //    IMGUI_API void  _ClearFreeMemory();
 IMGUI_FUNCTION_DRAW_LIST(_ClearFreeMemory)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_ClearFreeMemory)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(_ClearFreeMemory)
 END_IMGUI_FUNC
 //    IMGUI_API void  _PopUnusedDrawCmd();
 IMGUI_FUNCTION_DRAW_LIST(_PopUnusedDrawCmd)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_PopUnusedDrawCmd)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(_PopUnusedDrawCmd)
 END_IMGUI_FUNC
 //    IMGUI_API void  _TryMergeDrawCmds();
 IMGUI_FUNCTION_DRAW_LIST(_TryMergeDrawCmds)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_TryMergeDrawCmds)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(_TryMergeDrawCmds)
 END_IMGUI_FUNC
 //    IMGUI_API void  _OnChangedClipRect();
 IMGUI_FUNCTION_DRAW_LIST(_OnChangedClipRect)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_OnChangedClipRect)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(_OnChangedClipRect)
 END_IMGUI_FUNC
 //    IMGUI_API void  _OnChangedTextureID();
 IMGUI_FUNCTION_DRAW_LIST(_OnChangedTextureID)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_OnChangedTextureID)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(_OnChangedTextureID)
 END_IMGUI_FUNC
 //    IMGUI_API void  _OnChangedVtxOffset();
 IMGUI_FUNCTION_DRAW_LIST(_OnChangedVtxOffset)
-DRAW_LIST_CALL_FUNCTION_NO_RET(_OnChangedVtxOffset)
+DRAW_LIST_CALL_FUNCTION_NO_RET0(_OnChangedVtxOffset)
 END_IMGUI_FUNC
 //    IMGUI_API void  _SetTextureID(ImTextureID texture_id);
 IMGUI_FUNCTION_DRAW_LIST(_SetTextureID)
