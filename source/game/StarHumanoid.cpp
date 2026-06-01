@@ -2333,7 +2333,7 @@ void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   NetElementSyncGroup::netLoad(ds, rules);
 }
 
-void NetHumanoid::netElementsNeedLoad(bool initial) {
+void NetHumanoid::netElementsNeedLoad(bool) {
 }
 
 void NetHumanoid::netElementsNeedStore() {

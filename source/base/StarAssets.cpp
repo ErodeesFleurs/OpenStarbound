@@ -85,45 +85,6 @@ static bool validatePath(AssetPath const& components, bool canContainSubPath, bo
   return true;
 }
 
-static bool validatePath(StringView path, bool canContainSubPath, bool canContainDirectives, bool throwing = true) {
-  std::string_view const& str = path.utf8();
-
-  size_t end = str.find_first_of(":?");
-  auto basePath = str.substr(0, end);
-  if (auto error = validateBasePath(basePath)) {
-    if (throwing)
-      throw AssetException::format(error, basePath);
-    else
-      return false;
-  }
-
-  bool subPath = false;
-  if (str[end] == ':') {
-    size_t beg = end + 1;
-    if (beg != str.size()) {
-      end = str.find_first_of('?', beg);
-      if (end == NPos && beg + 1 != str.size())
-        subPath = true;
-      else if (size_t len = end - beg)
-        subPath = true;
-    }
-  }
-
-  if (subPath) {
-    if (throwing)
-      throw AssetException::format("Path '{}' cannot contain sub-path", path);
-    else
-      return false;
-  } else if (end != NPos && str[end] == '?' && !canContainDirectives) {
-    if (throwing)
-      throw AssetException::format("Path '{}' cannot contain directives", path);
-    else
-      return false;
-  }
-
-  return true;
-}
-
 Maybe<RectU> FramesSpecification::getRect(String const& frame) const {
   if (auto alias = aliases.ptr(frame)) {
     return frames.get(*alias);

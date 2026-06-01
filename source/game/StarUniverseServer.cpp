@@ -1640,8 +1640,6 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
     clientsLocker.unlock();
 
     for (auto& packet : packets) {
-      auto packetType = packet->type();
-
       if (auto warpAction = as<PlayerWarpPacket>(packet)) {
         auto const& action = warpAction->action;
         bool blocked = m_secureWarps;

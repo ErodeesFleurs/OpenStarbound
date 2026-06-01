@@ -36,7 +36,7 @@ static void AddToStack(int type) {
   endStack.push_back(type);
 }
 
-static void PopEndStack(int type) {
+static void PopEndStack(int) {
   if (!endStack.empty()) {
     endStack.pop_back(); // hopefully the type matches
   }
