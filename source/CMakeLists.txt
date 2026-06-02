@@ -12,10 +12,6 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
 set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "" CACHE STRING "" FORCE)
 
-# The bundled fmt version uses consteval format-string checks in C++20, but the
-# project wraps format strings through Star::strf and exception helpers.
-add_definitions(-DFMT_CONSTEVAL=)
-
 if(STAR_USE_COMPILER_CACHE)
   find_program(SCCACHE_PATH sccache)
   if(SCCACHE_PATH)

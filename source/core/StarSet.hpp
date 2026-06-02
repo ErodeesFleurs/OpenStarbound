@@ -317,3 +317,15 @@ HashSetMixin<BaseMap> HashSetMixin<BaseMap>::combination(HashSetMixin const& s) 
 }
 
 }
+
+template <typename BaseSet>
+struct std::formatter<Star::SetMixin<BaseSet>> : Star::OstreamFormatter {};
+
+template <typename Value, typename Compare, typename Allocator>
+struct std::formatter<Star::Set<Value, Compare, Allocator>> : Star::OstreamFormatter {};
+
+template <typename BaseSet>
+struct std::formatter<Star::HashSetMixin<BaseSet>> : Star::OstreamFormatter {};
+
+template <typename Value, typename Hash, typename Equals, typename Allocator>
+struct std::formatter<Star::FlatHashSet<Value, Hash, Equals, Allocator>> : Star::OstreamFormatter {};

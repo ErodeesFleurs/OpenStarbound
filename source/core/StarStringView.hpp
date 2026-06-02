@@ -116,6 +116,6 @@ private:
 
 }
 
-template <> struct fmt::formatter<Star::StringView> : formatter<std::string_view> {
-  fmt::appender format(Star::StringView const& s, format_context& ctx) const;
+template <> struct std::formatter<Star::StringView> : formatter<std::string_view> {
+  format_context::iterator format(Star::StringView const& s, format_context& ctx) const;
 };

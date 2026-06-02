@@ -3,25 +3,22 @@
 #include "StarMemory.hpp"
 #include "StarException.hpp"
 
-#include "fmt/core.h"
-#include "fmt/ostream.h"
-#include "fmt/format.h"
-#include "fmt/ranges.h"
+#include <string_view>
 
 namespace Star {
 
 STAR_EXCEPTION(FormatException, StarException);
 
 template <typename... T>
-std::string strf(fmt::format_string<T...> fmt, T&&... args) {
-  try { return fmt::format(fmt, args...); }
+std::string strf(std::string_view fmt, T&&... args) {
+  try { return std::vformat(fmt, std::make_format_args(args...)); }
   catch (std::exception const& e) {
-    throw FormatException(strf("Exception thrown during string format: {}", e.what()));
+    throw FormatException(std::string("Exception thrown during string format: ") + e.what());
   }
 }
 
 template <typename... T>
-void format(std::ostream& out, fmt::format_string<T...> fmt, T&&... args) {
+void format(std::ostream& out, std::string_view fmt, T&&... args) {
   out << strf(fmt, args...);
 }
 
@@ -41,7 +38,13 @@ void cerrf(char const* fmt, Args const&... args) {
 
 template <class Type>
 inline std::string toString(Type const& t) {
-  return fmt::to_string(t);
+  std::ostringstream os;
+  os << t;
+  return os.str();
 }
 
 }
+
+template <typename T>
+struct std::formatter<Star::OutputAnyDetail::Wrapper<T>> : Star::OstreamFormatter {};
+template <> struct std::formatter<Star::OutputProxy> : Star::OstreamFormatter {};

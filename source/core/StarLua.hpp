@@ -2242,4 +2242,4 @@ size_t LuaEngine::pushArguments(lua_State* state, Args const&... args) {
 
 }
 
-template <> struct fmt::formatter<Star::LuaValue> : ostream_formatter {};
+template <> struct std::formatter<Star::LuaValue> : Star::OstreamFormatter {};

@@ -745,3 +745,6 @@ std::ostream& operator<<(std::ostream& os, Polygon<DataType> const& poly) {
 }
 
 }
+
+template <typename DataType>
+struct std::formatter<Star::Polygon<DataType>> : Star::OstreamFormatter {};
