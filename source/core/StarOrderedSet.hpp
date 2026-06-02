@@ -172,7 +172,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::values() const -> List<v
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
 bool OrderedSetWrapper<Map, Value, Allocator, Args...>::contains(value_type const& v) const {
-  return m_map.find(v) != m_map.end();
+  return m_map.contains(v);
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>

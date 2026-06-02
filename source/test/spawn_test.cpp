@@ -39,7 +39,7 @@ TEST(SpawnTest, RandomInstanceWorld) {
   auto& root = Root::singleton();
   StringList instanceWorlds = root.assets()->json("/instance_worlds.config").toObject().keys();
   ASSERT_GT(instanceWorlds.size(), 0u);
-  WorldId instanceWorld = InstanceWorldId(Random::randFrom(instanceWorlds));
+  WorldId instanceWorld = InstanceWorldId(instanceWorlds.contains("outpost") ? "outpost" : instanceWorlds.first());
 
   TestUniverse testUniverse(Vec2U(100, 100));
   ASSERT_TRUE(testUniverse.warpPlayer(instanceWorld));

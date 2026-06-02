@@ -34,8 +34,9 @@ SET (star_core_tests_SOURCES
       line_test.cpp
       lua_test.cpp
       lua_json_test.cpp
-      math_test.cpp
-      multi_table_test.cpp
+	      math_test.cpp
+	      move_traits_test.cpp
+	      multi_table_test.cpp
       net_states_test.cpp
       ordered_map_test.cpp
       ordered_set_test.cpp
@@ -61,6 +62,9 @@ ADD_EXECUTABLE (core_tests
 TARGET_COMPILE_OPTIONS (core_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
 TARGET_LINK_LIBRARIES (core_tests ${STAR_EXT_LIBS})
 ADD_TEST (NAME core_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/core_tests)
+SET_TESTS_PROPERTIES(core_tests PROPERTIES
+                     LABELS "NoAssets"
+                     TIMEOUT 120)
 
 SET (star_game_tests_SOURCES
       gtest/gtest-all.cc
@@ -85,32 +89,38 @@ ADD_EXECUTABLE (game_tests
 TARGET_COMPILE_OPTIONS (game_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
 TARGET_LINK_LIBRARIES (game_tests ${STAR_EXT_LIBS})
 
-SET (STAR_GAME_TEST_RUNTIME_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/game-test-runtime)
-FILE (MAKE_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs)
-FILE (WRITE ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/sbinit.config
-"{
-  \"assetDirectories\" : [
-    \"${PROJECT_SOURCE_DIR}/../assets/\",
-    \"${PROJECT_SOURCE_DIR}/../mods/\"
-  ],
+SET (STAR_BASE_ASSET_PACKAGE ${PROJECT_SOURCE_DIR}/../assets/packed.pak)
+IF (EXISTS ${STAR_BASE_ASSET_PACKAGE})
+  SET (STAR_GAME_TEST_RUNTIME_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/game-test-runtime)
+  FILE (MAKE_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs)
+  FILE (WRITE ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/sbinit.config
+  "{
+    \"assetDirectories\" : [
+      \"${PROJECT_SOURCE_DIR}/../assets/\",
+      \"${PROJECT_SOURCE_DIR}/../mods/\"
+    ],
 
-  \"storageDirectory\" : \"${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage/\",
-  \"logDirectory\" : \"${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs/\",
+    \"storageDirectory\" : \"${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage/\",
+    \"logDirectory\" : \"${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs/\",
 
-  \"assetsSettings\" : {
-    \"pathIgnore\" : [],
-    \"digestIgnore\" : [
-      \".*\"
-    ]
-  },
+    \"assetsSettings\" : {
+      \"pathIgnore\" : [],
+      \"digestIgnore\" : [
+        \".*\"
+      ]
+    },
 
-  \"defaultConfiguration\" : {
-    \"allowAdminCommandsFromAnyone\" : true,
-    \"anonymousConnectionsAreAdmin\" : true
+    \"defaultConfiguration\" : {
+      \"allowAdminCommandsFromAnyone\" : true,
+      \"anonymousConnectionsAreAdmin\" : true
+    }
   }
-}
-")
-ADD_TEST (NAME game_tests WORKING_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
-
-SET_TESTS_PROPERTIES(core_tests PROPERTIES
-                     LABELS "NoAssets")
+  ")
+  ADD_TEST (NAME game_tests WORKING_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
+  SET_TESTS_PROPERTIES(game_tests PROPERTIES
+                       LABELS "Assets"
+                       TIMEOUT 300
+                       RESOURCE_LOCK game_assets)
+ELSE ()
+  MESSAGE (STATUS "Skipping game_tests registration because ${STAR_BASE_ASSET_PACKAGE} was not found")
+ENDIF ()

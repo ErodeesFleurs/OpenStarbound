@@ -54,6 +54,7 @@
 
         gccTools = with pkgs; [
           gcc
+          lld
         ] ++ commonTools;
 
         systemLibraries = with pkgs; [
@@ -128,8 +129,37 @@
             cmake --build build/linux-release-gcc
           '';
         };
+
+        testClangScript = pkgs.writeShellApplication {
+          name = "openstarbound-test-clang";
+          runtimeInputs = clangTools ++ systemLibraries;
+          text = ''
+            export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
+            ctest --test-dir build/linux-release-clang --output-on-failure
+          '';
+        };
+
+        testGccScript = pkgs.writeShellApplication {
+          name = "openstarbound-test-gcc";
+          runtimeInputs = gccTools ++ systemLibraries;
+          text = ''
+            export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
+            ctest --test-dir build/linux-release-gcc --output-on-failure
+          '';
+        };
       in
       {
+        checks.cmake-presets = pkgs.runCommand "openstarbound-cmake-presets" {
+          nativeBuildInputs = [
+            pkgs.cmake
+            pkgs.python3
+          ];
+        } ''
+          python -m json.tool ${self}/source/CMakePresets.json > /dev/null
+          export VCPKG_ROOT="${vcpkgRoot}"
+          cmake --list-presets -S ${self}/source > $out
+        '';
+
         devShells.default = pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } {
           packages = clangTools ++ systemLibraries;
 
@@ -190,6 +220,18 @@
           type = "app";
           program = "${buildGccScript}/bin/openstarbound-build-gcc";
           meta.description = "Configure and build OpenStarbound with gcc";
+        };
+
+        apps.test-clang = {
+          type = "app";
+          program = "${testClangScript}/bin/openstarbound-test-clang";
+          meta.description = "Run OpenStarbound ctest suite for the clang build";
+        };
+
+        apps.test-gcc = {
+          type = "app";
+          program = "${testGccScript}/bin/openstarbound-test-gcc";
+          meta.description = "Run OpenStarbound ctest suite for the gcc build";
         };
       }
     );

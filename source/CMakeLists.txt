@@ -50,6 +50,8 @@ if(STAR_ENABLE_LTO)
   endif()
 endif()
 
+option(STAR_ENABLE_FRAME_POINTERS "Keep frame pointers for profiling" OFF)
+
 # Update the docstring on CMAKE_BUILD_TYPE to show what options we actually
 # allow
 # SET (CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug RelWithAsserts RelWithDebInfo Release" FORCE)
@@ -141,8 +143,8 @@ if(STAR_COMPILER STREQUAL "msvc")
   option(STAR_ENABLE_STATIC_MSVC_RUNTIME "Statically link with the CRT" OFF)
 endif()
 
-if(STAR_COMPILER STREQUAL "clang" AND NOT STAR_SYSTEM_MACOS)
-  option(STAR_USE_LLD "Link with LLVM lld when building with clang" ON)
+if((STAR_COMPILER STREQUAL "clang" OR STAR_COMPILER STREQUAL "gnu") AND NOT STAR_SYSTEM_MACOS)
+  option(STAR_USE_LLD "Link with LLVM lld when supported by the compiler" ON)
 endif()
 
 option(STAR_BUILD_GUI "Build GUI utilities and Client" ON)
@@ -170,6 +172,7 @@ message(STATUS "C++ standard: C++${CMAKE_CXX_STANDARD}")
 message(STATUS "Compiler cache: ${STAR_COMPILER_CACHE}")
 message(STATUS "Precompiled headers: ${STAR_PRECOMPILED_HEADERS}")
 message(STATUS "LTO / IPO: ${STAR_ENABLE_LTO}")
+message(STATUS "Frame pointers: ${STAR_ENABLE_FRAME_POINTERS}")
 
 if(DEFINED STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX)
   message(STATUS "Statically linking to libgcc / libstdc++: ${STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX}")
@@ -297,6 +300,15 @@ if(STAR_COMPILER_GNU)
   else()
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_REENTRANT")
+    if(STAR_USE_LLD)
+      set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
+      set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld")
+    endif()
+  endif()
+
+  if(STAR_ENABLE_FRAME_POINTERS)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
   endif()
 
   if(STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX)
@@ -341,6 +353,11 @@ elseif(STAR_COMPILER_CLANG)
       set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -fuse-ld=lld")
       set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -fuse-ld=lld")
     endif()
+  endif()
+
+  if(STAR_ENABLE_FRAME_POINTERS)
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fno-omit-frame-pointer")
   endif()
 
   set(CMAKE_C_FLAGS_DEBUG "-g")
