@@ -96,6 +96,19 @@
     },
     {
       "inherits": "linux-release",
+      "name": "linux-release-gcc",
+      "displayName": "Linux GCC x64",
+      "binaryDir": "${sourceParentDir}/build/linux-release-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-mixed",
+        "STAR_USE_JEMALLOC": true
+      }
+    },
+    {
+      "inherits": "linux-release",
       "name": "linux-release-clang",
       "displayName": "Linux Clang x64",
       "binaryDir": "${sourceParentDir}/build/linux-release-clang",

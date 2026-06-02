@@ -21,9 +21,7 @@
 
         vcpkgRoot = "${pkgs.vcpkg}/share/vcpkg";
 
-        nativeTools = with pkgs; [
-          clang
-          lld
+        commonTools = with pkgs; [
           sccache
           cmake
           ninja
@@ -48,6 +46,15 @@
           meson
           nasm
         ];
+
+        clangTools = with pkgs; [
+          clang
+          lld
+        ] ++ commonTools;
+
+        gccTools = with pkgs; [
+          gcc
+        ] ++ commonTools;
 
         systemLibraries = with pkgs; [
           alsa-lib
@@ -75,9 +82,16 @@
           libxxf86vm
         ];
 
-        buildScript = pkgs.writeShellApplication {
+        runtimeLibraryPath = pkgs.lib.makeLibraryPath (
+          systemLibraries
+          ++ [
+            pkgs.stdenv.cc.cc.lib
+          ]
+        );
+
+        buildClangScript = pkgs.writeShellApplication {
           name = "openstarbound-build-clang";
-          runtimeInputs = nativeTools ++ systemLibraries;
+          runtimeInputs = clangTools ++ systemLibraries;
           text = ''
             export CC=clang
             export CXX=clang++
@@ -87,16 +101,37 @@
             export VCPKG_DEFAULT_BINARY_CACHE="''${VCPKG_DEFAULT_BINARY_CACHE:-$PWD/.vcpkg/binary-cache}"
             export VCPKG_BINARY_SOURCES="''${VCPKG_BINARY_SOURCES:-clear;files,$VCPKG_DEFAULT_BINARY_CACHE,readwrite}"
             export PKG_CONFIG_PATH="${pkgs.lib.makeSearchPath "lib/pkgconfig" systemLibraries}:''${PKG_CONFIG_PATH:-}"
+            export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
 
             mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
             cmake --preset=linux-release-clang -S source
             cmake --build build/linux-release-clang
           '';
         };
+
+        buildGccScript = pkgs.writeShellApplication {
+          name = "openstarbound-build-gcc";
+          runtimeInputs = gccTools ++ systemLibraries;
+          text = ''
+            export CC=gcc
+            export CXX=g++
+            export PKG_CONFIG="${pkgs.pkg-config}/bin/pkg-config"
+            export VCPKG_ROOT="${vcpkgRoot}"
+            export VCPKG_DOWNLOADS="''${VCPKG_DOWNLOADS:-$PWD/.vcpkg/downloads}"
+            export VCPKG_DEFAULT_BINARY_CACHE="''${VCPKG_DEFAULT_BINARY_CACHE:-$PWD/.vcpkg/binary-cache}"
+            export VCPKG_BINARY_SOURCES="''${VCPKG_BINARY_SOURCES:-clear;files,$VCPKG_DEFAULT_BINARY_CACHE,readwrite}"
+            export PKG_CONFIG_PATH="${pkgs.lib.makeSearchPath "lib/pkgconfig" systemLibraries}:''${PKG_CONFIG_PATH:-}"
+            export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
+
+            mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
+            cmake --preset=linux-release-gcc -S source
+            cmake --build build/linux-release-gcc
+          '';
+        };
       in
       {
         devShells.default = pkgs.mkShell.override { stdenv = pkgs.clangStdenv; } {
-          packages = nativeTools ++ systemLibraries;
+          packages = clangTools ++ systemLibraries;
 
           CC = "clang";
           CXX = "clang++";
@@ -111,6 +146,7 @@
             export VCPKG_DEFAULT_BINARY_CACHE="''${VCPKG_DEFAULT_BINARY_CACHE:-$PWD/.vcpkg/binary-cache}"
             export VCPKG_BINARY_SOURCES="''${VCPKG_BINARY_SOURCES:-clear;files,$VCPKG_DEFAULT_BINARY_CACHE,readwrite}"
             export PKG_CONFIG_PATH="${pkgs.lib.makeSearchPath "lib/pkgconfig" systemLibraries}:''${PKG_CONFIG_PATH:-}"
+            export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
             mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
 
             echo "OpenStarbound clang shell"
@@ -119,10 +155,41 @@
           '';
         };
 
+        devShells.gcc = pkgs.mkShell {
+          packages = gccTools ++ systemLibraries;
+
+          CC = "gcc";
+          CXX = "g++";
+          PKG_CONFIG = "${pkgs.pkg-config}/bin/pkg-config";
+          VCPKG_ROOT = vcpkgRoot;
+
+          shellHook = ''
+            export CC=gcc
+            export CXX=g++
+            export PKG_CONFIG="${pkgs.pkg-config}/bin/pkg-config"
+            export VCPKG_DOWNLOADS="''${VCPKG_DOWNLOADS:-$PWD/.vcpkg/downloads}"
+            export VCPKG_DEFAULT_BINARY_CACHE="''${VCPKG_DEFAULT_BINARY_CACHE:-$PWD/.vcpkg/binary-cache}"
+            export VCPKG_BINARY_SOURCES="''${VCPKG_BINARY_SOURCES:-clear;files,$VCPKG_DEFAULT_BINARY_CACHE,readwrite}"
+            export PKG_CONFIG_PATH="${pkgs.lib.makeSearchPath "lib/pkgconfig" systemLibraries}:''${PKG_CONFIG_PATH:-}"
+            export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
+            mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
+
+            echo "OpenStarbound gcc shell"
+            echo "Configure: cmake --preset=linux-release-gcc -S source"
+            echo "Build:     cmake --build build/linux-release-gcc"
+          '';
+        };
+
         apps.build-clang = {
           type = "app";
-          program = "${buildScript}/bin/openstarbound-build-clang";
+          program = "${buildClangScript}/bin/openstarbound-build-clang";
           meta.description = "Configure and build OpenStarbound with clang";
+        };
+
+        apps.build-gcc = {
+          type = "app";
+          program = "${buildGccScript}/bin/openstarbound-build-gcc";
+          meta.description = "Configure and build OpenStarbound with gcc";
         };
       }
     );

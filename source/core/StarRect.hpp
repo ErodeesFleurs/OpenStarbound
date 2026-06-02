@@ -959,6 +959,10 @@ auto Box<T, N>::intersectsCircle(Coord const& position, T radius) const -> Enabl
 }
 
 // returns the closest intersection point (from l.min())
+#ifdef STAR_COMPILER_GNU
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstringop-overflow"
+#endif
 template <typename T, size_t N>
 template <size_t P>
 auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineIntersectResult> {
@@ -1028,6 +1032,9 @@ auto Box<T, N>::edgeIntersection(Line const& l) const -> Enable2D<P, LineInterse
     return LineIntersectResult();
   }
 }
+#ifdef STAR_COMPILER_GNU
+#pragma GCC diagnostic pop
+#endif
 
 template <typename T, size_t N>
 template <size_t P>

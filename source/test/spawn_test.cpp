@@ -30,7 +30,7 @@ TEST(SpawnTest, RandomCelestialWorld) {
 
   TestUniverse testUniverse(Vec2U(100, 100));
   WorldId worldId = CelestialWorldId(*celestialWorld);
-  testUniverse.warpPlayer(worldId);
+  ASSERT_TRUE(testUniverse.warpPlayer(worldId));
   EXPECT_EQ(testUniverse.currentPlayerWorld(), worldId);
   validateWorld(testUniverse);
 }
@@ -42,7 +42,7 @@ TEST(SpawnTest, RandomInstanceWorld) {
   WorldId instanceWorld = InstanceWorldId(Random::randFrom(instanceWorlds));
 
   TestUniverse testUniverse(Vec2U(100, 100));
-  testUniverse.warpPlayer(instanceWorld);
+  ASSERT_TRUE(testUniverse.warpPlayer(instanceWorld));
   EXPECT_EQ(testUniverse.currentPlayerWorld(), instanceWorld);
   validateWorld(testUniverse);
 }

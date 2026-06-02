@@ -136,11 +136,11 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
     invWindowReader.registerCallback(itemGrid + ".middle", bind(middleClickCallback, name, _1));
   }
 
-  invWindowReader.registerCallback("close", [=](Widget*) {
+  invWindowReader.registerCallback("close", [=, this](Widget*) {
       dismiss();
     });
 
-  invWindowReader.registerCallback("sort", [=](Widget*) {
+  invWindowReader.registerCallback("sort", [=, this](Widget*) {
       m_player->inventory()->condenseBagStacks(m_selectedTab);
       m_player->inventory()->sortBag(m_selectedTab);
       // Don't show sorted items as new items
@@ -148,13 +148,13 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
       m_itemGrids[m_selectedTab]->clearChangedSlots();
     });
 
-  invWindowReader.registerCallback("gridModeSelector", [=](Widget* widget) {
+  invWindowReader.registerCallback("gridModeSelector", [=, this](Widget* widget) {
       auto selected = convert<ButtonWidget>(widget)->data().toString();
       selectTab(m_tabButtonData.keyOf(selected));
     });
 
   auto registerSlotCallbacks = [&](String name, InventorySlot slot) {
-    invWindowReader.registerCallback(name, [=](Widget* paneObj) {
+    invWindowReader.registerCallback(name, [=, this](Widget* paneObj) {
         if (as<ItemSlotWidget>(paneObj))
           m_player->inventory()->shiftSwap(slot);
         else

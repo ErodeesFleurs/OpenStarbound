@@ -35,17 +35,17 @@ QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, 
 
   GuiReader reader;
 
-  reader.registerCallback("close", [=](Widget*) { dismiss(); });
+  reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
   reader.registerCallback("btnToggleTracking",
-      [=](Widget*) {
+      [=, this](Widget*) {
         toggleTracking();
       });
   reader.registerCallback("btnAbandon",
-      [=](Widget*) {
+      [=, this](Widget*) {
         abandon();
       });
   reader.registerCallback("filter",
-      [=](Widget*) {
+      [=, this](Widget*) {
         fetchData();
       });
 
@@ -292,9 +292,9 @@ QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player) : Pane(), m_quest(
 void QuestPane::commonSetup(Json config, String bodyText, String const& portraitName) {
   GuiReader reader;
 
-  reader.registerCallback("close", [=](Widget*) { close(); });
-  reader.registerCallback("btnDecline", [=](Widget*) { decline(); });
-  reader.registerCallback("btnAccept", [=](Widget*) { accept(); });
+  reader.registerCallback("close", [=, this](Widget*) { close(); });
+  reader.registerCallback("btnDecline", [=, this](Widget*) { decline(); });
+  reader.registerCallback("btnAccept", [=, this](Widget*) { accept(); });
   reader.construct(config.get("paneLayout"), this);
 
   if (auto titleLabel = fetchChild<LabelWidget>("lblQuestTitle"))

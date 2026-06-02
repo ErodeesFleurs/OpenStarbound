@@ -45,6 +45,8 @@ TEST(ItemTest, ItemComparison) {
   auto itemDatabase = Root::singleton().itemDatabase();
   ItemPtr testItem = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1));
   ItemPtr testItemParams = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}));
+  ItemDescriptor testItemExact = testItem->descriptor();
+  ItemDescriptor testItemParamsExact = testItemParams->descriptor();
 
   List<ItemDescriptor> testItemDescriptors = List<ItemDescriptor>{
     ItemDescriptor("perfectlygenericitem", 1),
@@ -87,10 +89,10 @@ TEST(ItemTest, ItemComparison) {
   EXPECT_TRUE(testItemParams->matches(testItem));
 
   // comparisons WITH exactMatch
-    for (ItemDescriptor const& id : testItemDescriptors) {
-    EXPECT_TRUE(testItem->matches(id, true));
+  for (ItemDescriptor const& id : testItemDescriptors) {
+    EXPECT_FALSE(testItem->matches(id, true));
     EXPECT_FALSE(testItemParams->matches(id, true));
-    EXPECT_TRUE(id.matches(testItem, true));
+    EXPECT_FALSE(id.matches(testItem, true));
     EXPECT_FALSE(id.matches(testItemParams, true));
     for (ItemDescriptor const& id2 : testItemDescriptors)
       EXPECT_TRUE(id.matches(id2, true));
@@ -99,14 +101,18 @@ TEST(ItemTest, ItemComparison) {
   }
   for (ItemDescriptor const& id : testItemDescriptorsParams) {
     EXPECT_FALSE(testItem->matches(id, true));
-    EXPECT_TRUE(testItemParams->matches(id, true));
+    EXPECT_FALSE(testItemParams->matches(id, true));
     EXPECT_FALSE(id.matches(testItem, true));
-    EXPECT_TRUE(id.matches(testItemParams, true));
+    EXPECT_FALSE(id.matches(testItemParams, true));
     for (ItemDescriptor const& id2 : testItemDescriptors)
       EXPECT_FALSE(id.matches(id2, true));
     for (ItemDescriptor const& id2 : testItemDescriptorsParams)
       EXPECT_TRUE(id.matches(id2, true));
   }
+  EXPECT_TRUE(testItem->matches(testItemExact, true));
+  EXPECT_TRUE(testItemExact.matches(testItem, true));
+  EXPECT_TRUE(testItemParams->matches(testItemParamsExact, true));
+  EXPECT_TRUE(testItemParamsExact.matches(testItemParams, true));
   EXPECT_FALSE(testItem->matches(testItemParams, true));
   EXPECT_FALSE(testItemParams->matches(testItem, true));
 }

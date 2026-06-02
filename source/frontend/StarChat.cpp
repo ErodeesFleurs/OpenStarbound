@@ -57,12 +57,12 @@ Chat::Chat(UniverseClientPtr client, Json const& baseConfig) : BaseScriptPane(ba
   m_colorCodes[MessageContext::RadioMessage] = config.query("colors.radioMessage").toString();
   m_colorCodes[MessageContext::World] = config.query("colors.world").toString();
   if (!m_scripted) {
-    m_reader->registerCallback("textBox", [=](Widget*) { startChat(); });
-    m_reader->registerCallback("upButton", [=](Widget*) { scrollUp(); });
-    m_reader->registerCallback("downButton", [=](Widget*) { scrollDown(); });
-    m_reader->registerCallback("bottomButton", [=](Widget*) { scrollBottom(); });
+    m_reader->registerCallback("textBox", [=, this](Widget*) { startChat(); });
+    m_reader->registerCallback("upButton", [=, this](Widget*) { scrollUp(); });
+    m_reader->registerCallback("downButton", [=, this](Widget*) { scrollDown(); });
+    m_reader->registerCallback("bottomButton", [=, this](Widget*) { scrollBottom(); });
 
-    m_reader->registerCallback("filterGroup", [=](Widget* widget) {
+    m_reader->registerCallback("filterGroup", [=, this](Widget* widget) {
       Json data = as<ButtonWidget>(widget)->data();
       auto filter = data.getArray("filter", {});
       m_modeFilter.clear();
@@ -417,7 +417,7 @@ bool Chat::sendEvent(InputEvent const& event) {
 }
 
 void Chat::scrollUp() {
-  auto shownMessages = m_receivedMessages.filtered([=](LogMessage msg) {
+  auto shownMessages = m_receivedMessages.filtered([=, this](LogMessage msg) {
       return (m_modeFilter.empty() || m_modeFilter.contains(msg.mode));
     });
 

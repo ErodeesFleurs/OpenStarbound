@@ -149,7 +149,7 @@ WormCaveSelector::WormCaveSelector(Json const& config, TerrainSelectorParameters
 
 float WormCaveSelector::get(int x, int y) const {
   Vec2I sector = Vec2I(x - pmod(x, m_sectorSize), y - pmod(y, m_sectorSize));
-  return m_cache.get(sector, [=](Vec2I const& sector) {
+  return m_cache.get(sector, [=, this](Vec2I const& sector) {
       return WormCaveSector(m_sectorSize, sector, config, parameters.seed, parameters.commonality);
     }).get(x, y);
 }

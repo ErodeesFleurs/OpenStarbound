@@ -18,9 +18,9 @@ SongbookInterface::SongbookInterface(PlayerPtr player) {
 
   GuiReader reader;
 
-  reader.registerCallback("close", [=](Widget*) { dismiss(); });
+  reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
   reader.registerCallback("btnPlay",
-      [=](Widget*) {
+      [=, this](Widget*) {
         if (play())
           dismiss();
       });

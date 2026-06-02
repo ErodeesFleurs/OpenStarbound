@@ -84,7 +84,33 @@ ADD_EXECUTABLE (game_tests
   ${star_game_tests_SOURCES})
 TARGET_COMPILE_OPTIONS (game_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
 TARGET_LINK_LIBRARIES (game_tests ${STAR_EXT_LIBS})
-ADD_TEST (NAME game_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
+
+SET (STAR_GAME_TEST_RUNTIME_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/game-test-runtime)
+FILE (MAKE_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs)
+FILE (WRITE ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/sbinit.config
+"{
+  \"assetDirectories\" : [
+    \"${PROJECT_SOURCE_DIR}/../assets/\",
+    \"${PROJECT_SOURCE_DIR}/../mods/\"
+  ],
+
+  \"storageDirectory\" : \"${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage/\",
+  \"logDirectory\" : \"${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs/\",
+
+  \"assetsSettings\" : {
+    \"pathIgnore\" : [],
+    \"digestIgnore\" : [
+      \".*\"
+    ]
+  },
+
+  \"defaultConfiguration\" : {
+    \"allowAdminCommandsFromAnyone\" : true,
+    \"anonymousConnectionsAreAdmin\" : true
+  }
+}
+")
+ADD_TEST (NAME game_tests WORKING_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
 
 SET_TESTS_PROPERTIES(core_tests PROPERTIES
                      LABELS "NoAssets")

@@ -9,6 +9,8 @@
 #include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
 
+#include "gtest/gtest.h"
+
 namespace Star {
 
 TestUniverse::TestUniverse(Vec2U clientWindowSize) {
@@ -25,6 +27,8 @@ TestUniverse::TestUniverse(Vec2U clientWindowSize) {
   m_server->start();
 
   m_mainPlayer = root.playerFactory()->create();
+  m_mainPlayer->setSpecies("human");
+  m_mainPlayer->setShipSpecies("human");
   m_mainPlayer->finalizeCreation();
   m_mainPlayer->setAdmin(true);
   m_mainPlayer->setModeType(PlayerMode::Survival);
@@ -39,12 +43,19 @@ TestUniverse::~TestUniverse() {
   File::removeDirectoryRecursive(m_storagePath);
 }
 
-void TestUniverse::warpPlayer(WorldId worldId) {
+bool TestUniverse::warpPlayer(WorldId worldId) {
   m_client->warpPlayer(WarpToWorld(worldId), true);
-  while (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()) {
+  for (unsigned i = 0; i < 600 && (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()); ++i) {
     m_client->update(0.016f);
     Thread::sleep(16);
   }
+
+  if (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()) {
+    ADD_FAILURE() << "Timed out while warping test player";
+    return false;
+  }
+
+  return true;
 }
 
 WorldId TestUniverse::currentPlayerWorld() const {
