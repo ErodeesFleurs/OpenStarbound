@@ -3,6 +3,8 @@
 
 #include "gtest/gtest.h"
 
+#include <sstream>
+
 using namespace Star;
 
 TEST(StringTest, substr) {
@@ -114,6 +116,13 @@ TEST(StringTest, contains) {
 TEST(StringTest, format) {
   EXPECT_EQ(strf("({}, {}, {})", 1, "foo", 3.2), "(1, foo, 3.2)");
   EXPECT_EQ(strf("{} ({}, {}, {})", String("asdf\0", 5), 1, "foo", 3.2), String("asdf\0 (1, foo, 3.2)", 19));
+  EXPECT_EQ(strf("{{{}}}", "value"), "{value}");
+
+  std::ostringstream out;
+  format(out, "{}:{}", "stream", 42);
+  EXPECT_EQ(out.str(), "stream:42");
+
+  EXPECT_THROW(strf("{:d}", "not-an-int"), FormatException);
 }
 
 TEST(StringTest, append) {

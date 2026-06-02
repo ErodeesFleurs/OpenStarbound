@@ -97,7 +97,7 @@ List<std::pair<String, bool>> File::dirList(const String& dirName, bool skipDots
 
   hFind = FindFirstFileW(stringToUtf16(File::relativeTo(dirName, "*")).get(), &findFileData);
   if (hFind == INVALID_HANDLE_VALUE)
-    throw IOException(strf("Invalid file handle in dirList of '{}', error is %u", dirName, GetLastError()));
+    throw IOException(strf("Invalid file handle in dirList of '{}', error is {}", dirName, GetLastError()));
 
   while (true) {
     String entry = utf16ToString(findFileData.cFileName);
@@ -111,7 +111,7 @@ List<std::pair<String, bool>> File::dirList(const String& dirName, bool skipDots
   FindClose(hFind);
 
   if ((dwError != ERROR_NO_MORE_FILES) && (dwError != NO_ERROR))
-    throw IOException(strf("FindNextFile error in dirList of '{}'.  Error is %u", dirName, dwError));
+    throw IOException(strf("FindNextFile error in dirList of '{}'.  Error is {}", dirName, dwError));
 
   return fileList;
 }

@@ -105,7 +105,7 @@ inline std::ostream& operator<<(std::ostream& os, Action action) {
 }
 
 inline std::ostream& operator<<(std::ostream& os, Edge const& edge) {
-  return os << strf("Edge{cost = %f, action = {}, jumpVelocity = {}, source = {}, target = {}}",
+  return os << strf("Edge{cost = {}, action = {}, jumpVelocity = {}, source = {}, target = {}}",
           edge.cost,
           edge.action,
           edge.jumpVelocity,

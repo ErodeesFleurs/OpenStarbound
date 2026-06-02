@@ -16,7 +16,6 @@
         "CMAKE_CXX_STANDARD": "20",
         "CMAKE_INSTALL_PREFIX": "${sourceParentDir}/install",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceParentDir}/triplets",
-        "CMAKE_VERBOSE_MAKEFILE": true,
         "BUILD_TESTING": true,
         "STAR_ENABLE_STEAM_INTEGRATION": true,
         "STAR_ENABLE_DISCORD_INTEGRATION": true

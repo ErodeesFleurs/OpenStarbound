@@ -3,6 +3,9 @@
 #include "StarMemory.hpp"
 #include "StarException.hpp"
 
+#include <format>
+#include <iterator>
+#include <ostream>
 #include <string_view>
 
 namespace Star {
@@ -19,7 +22,10 @@ std::string strf(std::string_view fmt, T&&... args) {
 
 template <typename... T>
 void format(std::ostream& out, std::string_view fmt, T&&... args) {
-  out << strf(fmt, args...);
+  try { std::vformat_to(std::ostreambuf_iterator<char>(out), fmt, std::make_format_args(args...)); }
+  catch (std::exception const& e) {
+    throw FormatException(std::string("Exception thrown during string format: ") + e.what());
+  }
 }
 
 // Automatically flushes, use format to avoid flushing.
