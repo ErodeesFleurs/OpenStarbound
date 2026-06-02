@@ -1729,7 +1729,7 @@ void WorldClient::lightingTileGather() {
       m_lightingCalculator.setCellIndex(baseIndex + y, light, !tile.foregroundLightTransparent);
     }
   });
-  LogMap::set("client_render_world_async_light_gather", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+  LogMap::set("client_render_world_async_light_gather", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - start));
 }
 
 void WorldClient::lightingCalc() {
@@ -1791,7 +1791,7 @@ void WorldClient::lightingMain() {
 
     int64_t start = Time::monotonicMicroseconds();
     lightingCalc();
-    LogMap::set("client_render_world_async_light_calc", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+    LogMap::set("client_render_world_async_light_calc", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - start));
   }
 }
 

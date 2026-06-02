@@ -452,14 +452,14 @@ void ClientApplication::render() {
       renderer->switchEffectConfig("world");
       auto clientStart = totalStart;
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
-      LogMap::set("client_render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - clientStart));
+      LogMap::set("client_render_world_client", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - clientStart));
 
       auto paintStart = Time::monotonicMicroseconds();
       m_worldPainter->render(m_renderData, [&]() -> bool {
         return worldClient->waitForLighting(&m_renderData);
       });
-      LogMap::set("client_render_world_painter", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - paintStart));
-      LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
+      LogMap::set("client_render_world_painter", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - paintStart));
+      LogMap::set("client_render_world_total", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - totalStart));
       
       auto size = Vec2F(renderer->screenSize());
       auto quad = renderFlatRect(RectF::withSize(size / -2, size), Vec4B::filled(0), 0.0f);
@@ -479,7 +479,7 @@ void ClientApplication::render() {
     m_mainInterface->renderInWorldElements();
     m_mainInterface->render();
     m_cinematicOverlay->render();
-    LogMap::set("client_render_interface", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+    LogMap::set("client_render_interface", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - start));
   }
 
   if (!m_errorScreen->accepted())

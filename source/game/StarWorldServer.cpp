@@ -1421,7 +1421,7 @@ void WorldServer::init(bool firstTime) {
 
   m_entityMessageResponses = {};
 
-  m_collisionGenerator.init([=](int x, int y) {
+  m_collisionGenerator.init([=, this](int x, int y) {
       return m_tileArray->tile({x, y}).getCollision();
     });
 

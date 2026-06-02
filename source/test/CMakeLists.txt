@@ -58,6 +58,7 @@ SET (star_core_tests_SOURCES
 ADD_EXECUTABLE (core_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
   ${star_core_tests_SOURCES})
+TARGET_COMPILE_OPTIONS (core_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
 TARGET_LINK_LIBRARIES (core_tests ${STAR_EXT_LIBS})
 ADD_TEST (NAME core_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/core_tests)
 
@@ -81,6 +82,7 @@ SET (star_game_tests_SOURCES
 ADD_EXECUTABLE (game_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   ${star_game_tests_SOURCES})
+TARGET_COMPILE_OPTIONS (game_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
 TARGET_LINK_LIBRARIES (game_tests ${STAR_EXT_LIBS})
 ADD_TEST (NAME game_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
 
