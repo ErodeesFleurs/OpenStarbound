@@ -274,6 +274,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
             auto patches = patchPair.getArray("patches");
             for (auto& path : patchPair.getArray("paths")) {
               if (auto p = m_files.ptr(path.toString())) {
+                p->patchSources.reserve(p->patchSources.size() + patches.size());
                 for (size_t i = 0; i != patches.size(); ++i) {
                   auto& patch = patches[i];
                   if (patch.isType(Json::Type::String))

@@ -248,6 +248,7 @@ namespace JsonPath {
   template <typename Jsonlike>
   Jsonlike pathApply(Jsonlike const& base, PathParser parser, String const& path, JsonOp<Jsonlike> op) {
     String buffer;
+    buffer.reserve(path.size());
     return pathApply(buffer, base, parser, path, path.begin(), op);
   }
 

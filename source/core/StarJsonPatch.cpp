@@ -34,14 +34,16 @@ size_t findJsonMatch(Json const& searchable, Json const& value, JsonPath::Pointe
 
 namespace JsonPatching {
 
-  static const StringMap<std::function<Json(Json, Json)>> functionMap = StringMap<std::function<Json(Json, Json)>>{
-      {"test", std::bind(applyTestOperation, _1, _2)},
-      {"remove", std::bind(applyRemoveOperation, _1, _2)},
-      {"add", std::bind(applyAddOperation, _1, _2)},
-      {"replace", std::bind(applyReplaceOperation, _1, _2)},
-      {"move", std::bind(applyMoveOperation, _1, _2)},
-      {"copy", std::bind(applyCopyOperation, _1, _2)},
-      {"merge", std::bind(applyMergeOperation, _1, _2)},
+  using OperationFunction = Json (*)(Json const&, Json const&);
+
+  static const StringMap<OperationFunction> functionMap = StringMap<OperationFunction>{
+      {"test", applyTestOperation},
+      {"remove", applyRemoveOperation},
+      {"add", applyAddOperation},
+      {"replace", applyReplaceOperation},
+      {"move", applyMoveOperation},
+      {"copy", applyCopyOperation},
+      {"merge", applyMergeOperation},
   };
 
   Json applyOperation(Json const& base, Json const& op, Maybe<Json> const&) {

@@ -74,6 +74,21 @@ Do not change the default allocator from this single run. Repeat the same
 commands several times on a quiet machine and prefer symbol-level profiles once
 `perf` or another profiler is available.
 
+Repeated allocator comparison, 2026-06-03, source
+`b88ecabea037ba635eb477e00437702d826f4a4d`, five `ctest` runs per allocator on
+the same clang profiling configuration:
+
+- jemalloc: `core_tests` average 7.28 seconds, `game_tests` average
+  19.98 seconds, total average 27.05 seconds, total range 26.43-28.10 seconds.
+- system allocator: `core_tests` average 7.42 seconds, `game_tests` average
+  20.39 seconds, total average 27.65 seconds, total range 26.90-29.71 seconds.
+- mimalloc: `core_tests` average 7.30 seconds, `game_tests` average
+  19.54 seconds, total average 26.40 seconds, total range 25.85-27.54 seconds.
+
+Mimalloc is the best candidate from this repeated `ctest` sample, but one
+`game_tests` outlier still appeared. Keep jemalloc as the default until a real
+startup or asset-heavy scenario confirms the same trend.
+
 ## Current Priorities
 
 1. Asset loading and JSON parsing
