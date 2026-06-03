@@ -20,7 +20,7 @@ STAR_EXCEPTION(ShellParsingException, StarException);
 class ShellParser {
 public:
   ShellParser();
-  typedef String::Char Char;
+  using Char = String::Char;
 
   enum class TokenType {
     Word,

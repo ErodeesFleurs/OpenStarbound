@@ -14,12 +14,12 @@ template <typename LeftT,
     typename RightMapT = Map<RightT, LeftT const*>>
 class BiMap {
 public:
-  typedef LeftT Left;
-  typedef RightT Right;
-  typedef LeftMapT LeftMap;
-  typedef RightMapT RightMap;
+  using Left = LeftT;
+  using Right = RightT;
+  using LeftMap = LeftMapT;
+  using RightMap = RightMapT;
 
-  typedef pair<Left, Right> value_type;
+  using value_type = pair<Left, Right>;
 
   struct BiMapIterator {
     BiMapIterator& operator++();
@@ -33,8 +33,8 @@ public:
     typename LeftMap::const_iterator iterator;
   };
 
-  typedef BiMapIterator iterator;
-  typedef iterator const_iterator;
+  using iterator = BiMapIterator;
+  using const_iterator = iterator;
 
   template <typename Collection>
   static BiMap from(Collection const& c);

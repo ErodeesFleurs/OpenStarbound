@@ -91,8 +91,8 @@ public:
   void close(bool closeDevice = false);
 
 private:
-  typedef uint32_t BlockIndex;
-  static BlockIndex const InvalidBlockIndex = (BlockIndex)(-1);
+  using BlockIndex = uint32_t;
+  static BlockIndex const InvalidBlockIndex = static_cast<BlockIndex>(-1);
   static uint32_t const HeaderSize = 512;
 
   // 8 byte magic file identifier
@@ -140,7 +140,7 @@ private:
       ByteArray key;
       BlockIndex pointer;
     };
-    typedef List<Element> ElementList;
+    using ElementList = List<Element>;
 
     BlockIndex self;
     uint8_t level;
@@ -170,19 +170,19 @@ private:
       ByteArray key;
       ByteArray data;
     };
-    typedef List<Element> ElementList;
+    using ElementList = List<Element>;
 
     BlockIndex self;
     ElementList elements;
   };
 
   struct BTreeImpl {
-    typedef ByteArray Key;
-    typedef ByteArray Data;
-    typedef BlockIndex Pointer;
+    using Key = ByteArray;
+    using Data = ByteArray;
+    using Pointer = BlockIndex;
 
-    typedef shared_ptr<IndexNode> Index;
-    typedef shared_ptr<LeafNode> Leaf;
+    using Index = shared_ptr<IndexNode>;
+    using Leaf = shared_ptr<LeafNode>;
 
     Pointer rootPointer();
     bool rootIsLeaf();

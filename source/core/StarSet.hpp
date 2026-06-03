@@ -13,12 +13,12 @@ STAR_EXCEPTION(SetException, StarException);
 template <typename BaseSet>
 class SetMixin : public BaseSet {
 public:
-  typedef BaseSet Base;
+  using Base = BaseSet;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
 
-  typedef typename Base::value_type value_type;
+  using value_type = typename Base::value_type;
 
   using Base::Base;
 
@@ -60,12 +60,12 @@ std::ostream& operator<<(std::ostream& os, SetMixin<BaseSet> const& set);
 template <typename Value, typename Compare = std::less<Value>, typename Allocator = std::allocator<Value>>
 class Set : public SetMixin<std::set<Value, Compare, Allocator>> {
 public:
-  typedef SetMixin<std::set<Value, Compare, Allocator>> Base;
+  using Base = SetMixin<std::set<Value, Compare, Allocator>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
 
-  typedef typename Base::value_type value_type;
+  using value_type = typename Base::value_type;
 
   template <typename Container>
   static Set from(Container const& c);
@@ -87,12 +87,12 @@ public:
 template <typename BaseSet>
 class HashSetMixin : public SetMixin<BaseSet> {
 public:
-  typedef SetMixin<BaseSet> Base;
+  using Base = SetMixin<BaseSet>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
 
-  typedef typename Base::value_type value_type;
+  using value_type = typename Base::value_type;
 
   template <typename Container>
   static HashSetMixin from(Container const& c);

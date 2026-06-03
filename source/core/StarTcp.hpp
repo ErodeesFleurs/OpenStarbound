@@ -37,7 +37,7 @@ private:
 // Simple class to listen for and open TcpSocket instances.
 class TcpServer {
 public:
-  typedef function<void(TcpSocketPtr socket)> AcceptCallback;
+  using AcceptCallback = function<void(TcpSocketPtr socket)>;
 
   TcpServer(HostAddressWithPort const& address);
   // Listens to all interfaces.

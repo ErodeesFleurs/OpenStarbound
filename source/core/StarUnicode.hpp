@@ -7,8 +7,8 @@ namespace Star {
 
 STAR_EXCEPTION(UnicodeException, StarException);
 
-typedef char Utf8Type;
-typedef char32_t Utf32Type;
+using Utf8Type = char;
+using Utf32Type = char32_t;
 
 #define STAR_UTF32_REPLACEMENT_CHAR 0x000000b7L
 
@@ -38,11 +38,11 @@ pair<Utf32Type, Maybe<Utf32Type>> utf32ToUtf16SurrogatePair(Utf32Type codepoint)
 template <class BaseIterator, class U32Type = Utf32Type>
 class U8ToU32Iterator {
 public:
-  typedef ptrdiff_t difference_type;
-  typedef U32Type value_type;
-  typedef U32Type* pointer;
-  typedef U32Type& reference;
-  typedef std::bidirectional_iterator_tag iterator_category;
+  using difference_type = ptrdiff_t;
+  using value_type = U32Type;
+  using pointer = U32Type*;
+  using reference = U32Type&;
+  using iterator_category = std::bidirectional_iterator_tag;
 
   U8ToU32Iterator() : m_position(), m_value(pending_read) {}
 
@@ -122,7 +122,7 @@ private:
   void decrement() {
     // Keep backtracking until we don't have a trailing character:
     unsigned count = 0;
-    while (((uint8_t) * --m_position & 0xC0u) == 0x80u)
+    while ((static_cast<uint8_t>(*--m_position) & 0xC0u) == 0x80u)
       ++count;
     // now check that the sequence was valid:
     if (count != utf8_trailing_byte_count(*m_position))
@@ -137,7 +137,7 @@ private:
   void extract_current() const {
     m_value = static_cast<Utf8Type>(*m_position);
     // we must not have a continuation character:
-    if (((uint8_t)m_value & 0xC0u) == 0x80u)
+    if ((static_cast<uint8_t>(m_value) & 0xC0u) == 0x80u)
       invalid_sequence();
     // see how many extra byts we have:
     unsigned extra = utf8_trailing_byte_count(*m_position);
@@ -158,7 +158,7 @@ private:
     };
     m_value &= masks[extra];
     // check the result:
-    if ((uint32_t)m_value > (uint32_t)0x10FFFFu)
+    if (static_cast<uint32_t>(m_value) > static_cast<uint32_t>(0x10FFFFu))
       invalid_sequence();
   }
 
@@ -170,10 +170,10 @@ private:
 template <class BaseIterator, class U32Type = Utf32Type>
 class Utf8OutputIterator {
 public:
-  typedef void difference_type;
-  typedef void value_type;
-  typedef U32Type* pointer;
-  typedef U32Type& reference;
+  using difference_type = void;
+  using value_type = void;
+  using pointer = U32Type*;
+  using reference = U32Type&;
 
   Utf8OutputIterator(const BaseIterator& b) : m_position(b) {}
   Utf8OutputIterator(const Utf8OutputIterator& that) : m_position(that.m_position) {}
@@ -207,20 +207,21 @@ private:
     if (c > 0x10FFFFu)
       invalid_utf32_code_point(c);
 
-    if ((uint32_t)c < 0x80u) {
-      *m_position++ = static_cast<Utf8Type>((uint32_t)c);
-    } else if ((uint32_t)c < 0x800u) {
-      *m_position++ = static_cast<Utf8Type>(0xC0u + ((uint32_t)c >> 6));
-      *m_position++ = static_cast<Utf8Type>(0x80u + ((uint32_t)c & 0x3Fu));
-    } else if ((uint32_t)c < 0x10000u) {
-      *m_position++ = static_cast<Utf8Type>(0xE0u + ((uint32_t)c >> 12));
-      *m_position++ = static_cast<Utf8Type>(0x80u + (((uint32_t)c >> 6) & 0x3Fu));
-      *m_position++ = static_cast<Utf8Type>(0x80u + ((uint32_t)c & 0x3Fu));
+    auto codePoint = static_cast<uint32_t>(c);
+    if (codePoint < 0x80u) {
+      *m_position++ = static_cast<Utf8Type>(codePoint);
+    } else if (codePoint < 0x800u) {
+      *m_position++ = static_cast<Utf8Type>(0xC0u + (codePoint >> 6));
+      *m_position++ = static_cast<Utf8Type>(0x80u + (codePoint & 0x3Fu));
+    } else if (codePoint < 0x10000u) {
+      *m_position++ = static_cast<Utf8Type>(0xE0u + (codePoint >> 12));
+      *m_position++ = static_cast<Utf8Type>(0x80u + ((codePoint >> 6) & 0x3Fu));
+      *m_position++ = static_cast<Utf8Type>(0x80u + (codePoint & 0x3Fu));
     } else {
-      *m_position++ = static_cast<Utf8Type>(0xF0u + ((uint32_t)c >> 18));
-      *m_position++ = static_cast<Utf8Type>(0x80u + (((uint32_t)c >> 12) & 0x3Fu));
-      *m_position++ = static_cast<Utf8Type>(0x80u + (((uint32_t)c >> 6) & 0x3Fu));
-      *m_position++ = static_cast<Utf8Type>(0x80u + ((uint32_t)c & 0x3Fu));
+      *m_position++ = static_cast<Utf8Type>(0xF0u + (codePoint >> 18));
+      *m_position++ = static_cast<Utf8Type>(0x80u + ((codePoint >> 12) & 0x3Fu));
+      *m_position++ = static_cast<Utf8Type>(0x80u + ((codePoint >> 6) & 0x3Fu));
+      *m_position++ = static_cast<Utf8Type>(0x80u + (codePoint & 0x3Fu));
     }
   }
 

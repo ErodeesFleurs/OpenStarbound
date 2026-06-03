@@ -9,10 +9,10 @@ namespace Star {
 template <typename LruCacheType>
 class TtlCacheBase {
 public:
-  typedef typename LruCacheType::Key Key;
-  typedef typename LruCacheType::Value::second_type Value;
+  using Key = typename LruCacheType::Key;
+  using Value = typename LruCacheType::Value::second_type;
 
-  typedef function<Value(Key const&)> ProducerFunction;
+  using ProducerFunction = function<Value(Key const&)>;
 
   TtlCacheBase(int64_t timeToLive = 10000, int timeSmear = 1000, size_t maxSize = NPos, bool ttlUpdateEnabled = true);
 

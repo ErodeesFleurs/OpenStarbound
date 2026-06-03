@@ -14,10 +14,10 @@ STAR_EXCEPTION(InvalidMaybeAccessException, StarException);
 template <typename T>
 class Maybe {
 public:
-  typedef T* PointerType;
-  typedef T const* PointerConstType;
-  typedef T& RefType;
-  typedef T const& RefConstType;
+  using PointerType = T*;
+  using PointerConstType = T const*;
+  using RefType = T&;
+  using RefConstType = T const&;
 
   Maybe();
 
@@ -25,14 +25,14 @@ public:
   Maybe(T&& t);
 
   Maybe(Maybe const& rhs);
-  Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value);
+  Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>);
   template <typename T2>
   Maybe(Maybe<T2> const& rhs);
 
   ~Maybe();
 
   Maybe& operator=(Maybe const& rhs);
-  Maybe& operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value);
+  Maybe& operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>);
   template <typename T2>
   Maybe& operator=(Maybe<T2> const& rhs);
 
@@ -136,7 +136,7 @@ Maybe<T>::Maybe(Maybe const& rhs)
 
 template <typename T>
 Maybe<T>::Maybe(Maybe&& rhs)
-  noexcept(std::is_nothrow_move_constructible<T>::value)
+  noexcept(std::is_nothrow_move_constructible_v<T>)
   : Maybe() {
   if (rhs.m_initialized) {
     std::construct_at(&m_data, std::move(*rhs.ptr()));
@@ -185,7 +185,7 @@ Maybe<T>& Maybe<T>::operator=(Maybe<T2> const& rhs) {
 }
 
 template <typename T>
-Maybe<T>& Maybe<T>::operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value) {
+Maybe<T>& Maybe<T>::operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>) {
   if (&rhs == this)
     return *this;
 

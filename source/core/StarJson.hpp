@@ -12,11 +12,11 @@ STAR_EXCEPTION(JsonParsingException, StarException);
 
 STAR_CLASS(Json);
 
-typedef List<Json> JsonArray;
-typedef shared_ptr<JsonArray const> JsonArrayConstPtr;
+using JsonArray = List<Json>;
+using JsonArrayConstPtr = shared_ptr<JsonArray const>;
 
-typedef StringMap<Json> JsonObject;
-typedef shared_ptr<JsonObject const> JsonObjectConstPtr;
+using JsonObject = StringMap<Json>;
+using JsonObjectConstPtr = shared_ptr<JsonObject const>;
 
 // Class for holding representation of JSON data.  Immutable and implicitly
 // shared.
@@ -24,8 +24,8 @@ class Json {
 public:
   template <typename Container>
   struct IteratorWrapper {
-    typedef typename Container::const_iterator const_iterator;
-    typedef const_iterator iterator;
+    using const_iterator = typename Container::const_iterator;
+    using iterator = const_iterator;
 
     const_iterator begin() const;
     const_iterator end() const;

@@ -51,8 +51,8 @@ public:
 
 template <typename InputIterator>
 Json inputUtf8Json(InputIterator begin, InputIterator end, JsonParseType parseType) {
-  typedef U8ToU32Iterator<InputIterator> Utf32Input;
-  typedef JsonParser<Utf32Input> Parser;
+  using Utf32Input = U8ToU32Iterator<InputIterator>;
+  using Parser = JsonParser<Utf32Input>;
 
   JsonBuilderStream stream;
   Parser parser(stream);
@@ -70,8 +70,8 @@ Json inputUtf8Json(InputIterator begin, InputIterator end, JsonParseType parseTy
 
 template <typename OutputIterator>
 void outputUtf8Json(Json const& val, OutputIterator out, int pretty, bool sort) {
-  typedef Utf8OutputIterator<OutputIterator> Utf8Output;
-  typedef JsonWriter<Utf8Output> Writer;
+  using Utf8Output = Utf8OutputIterator<OutputIterator>;
+  using Writer = JsonWriter<Utf8Output>;
   Writer writer(Utf8Output(out), pretty);
   JsonStreamer<Json>::toJsonStream(val, writer, sort);
 }

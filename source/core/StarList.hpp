@@ -17,13 +17,13 @@ namespace Star {
 template <typename BaseList>
 class ListMixin : public BaseList {
 public:
-  typedef BaseList Base;
+  using Base = BaseList;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   ListMixin();
   ListMixin(Base const& list);
@@ -108,13 +108,13 @@ private:
 template <typename BaseList>
 class RandomAccessListMixin : public BaseList {
 public:
-  typedef BaseList Base;
+  using Base = BaseList;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   using Base::Base;
 
@@ -168,13 +168,13 @@ public:
 template <typename BaseList>
 class FrontModifyingListMixin : public BaseList {
 public:
-  typedef BaseList Base;
+  using Base = BaseList;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   using Base::Base;
 
@@ -197,13 +197,13 @@ public:
 template <typename Element, typename Allocator = std::allocator<Element>>
 class List : public RandomAccessListMixin<ListMixin<std::vector<Element, Allocator>>> {
 public:
-  typedef RandomAccessListMixin<ListMixin<std::vector<Element, Allocator>>> Base;
+  using Base = RandomAccessListMixin<ListMixin<std::vector<Element, Allocator>>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   template <typename Container>
   static List from(Container const& c);
@@ -236,13 +236,13 @@ struct hash<List<Element, Allocator>> : public ListHasher<List<Element, Allocato
 template <typename Element, size_t MaxSize>
 class StaticList : public RandomAccessListMixin<ListMixin<StaticVector<Element, MaxSize>>> {
 public:
-  typedef RandomAccessListMixin<ListMixin<StaticVector<Element, MaxSize>>> Base;
+  using Base = RandomAccessListMixin<ListMixin<StaticVector<Element, MaxSize>>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   template <typename Container>
   static StaticList from(Container const& c);
@@ -271,13 +271,13 @@ struct hash<StaticList<Element, MaxStackSize>> : public ListHasher<StaticList<El
 template <typename Element, size_t MaxStackSize>
 class SmallList : public RandomAccessListMixin<ListMixin<SmallVector<Element, MaxStackSize>>> {
 public:
-  typedef RandomAccessListMixin<ListMixin<SmallVector<Element, MaxStackSize>>> Base;
+  using Base = RandomAccessListMixin<ListMixin<SmallVector<Element, MaxStackSize>>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   template <typename Container>
   static SmallList from(Container const& c);
@@ -306,13 +306,13 @@ struct hash<SmallList<Element, MaxStackSize>> : public ListHasher<SmallList<Elem
 template <typename Element, typename Allocator = std::allocator<Element>>
 class Deque : public FrontModifyingListMixin<RandomAccessListMixin<ListMixin<std::deque<Element, Allocator>>>> {
 public:
-  typedef FrontModifyingListMixin<RandomAccessListMixin<ListMixin<std::deque<Element, Allocator>>>> Base;
+  using Base = FrontModifyingListMixin<RandomAccessListMixin<ListMixin<std::deque<Element, Allocator>>>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   template <typename Container>
   static Deque from(Container const& c);
@@ -341,13 +341,13 @@ struct hash<Deque<Element, Allocator>> : public ListHasher<Deque<Element, Alloca
 template <typename Element, typename Allocator = std::allocator<Element>>
 class LinkedList : public FrontModifyingListMixin<ListMixin<std::list<Element, Allocator>>> {
 public:
-  typedef FrontModifyingListMixin<ListMixin<std::list<Element, Allocator>>> Base;
+  using Base = FrontModifyingListMixin<ListMixin<std::list<Element, Allocator>>>;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
-  typedef typename Base::value_type value_type;
-  typedef typename Base::reference reference;
-  typedef typename Base::const_reference const_reference;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
+  using value_type = typename Base::value_type;
+  using reference = typename Base::reference;
+  using const_reference = typename Base::const_reference;
 
   template <typename Container>
   static LinkedList from(Container const& c);
@@ -384,8 +384,8 @@ std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list);
 
 template <typename... Containers>
 struct ListZipTypes {
-  typedef tuple<typename std::decay_t<Containers>::value_type...> Tuple;
-  typedef List<Tuple> Result;
+  using Tuple = tuple<typename std::decay_t<Containers>::value_type...>;
+  using Result = List<Tuple>;
 };
 
 template <typename... Containers>
@@ -393,8 +393,8 @@ typename ListZipTypes<Containers...>::Result zip(Containers&&... args);
 
 template <typename Container>
 struct ListEnumerateTypes {
-  typedef pair<typename std::decay_t<Container>::value_type, size_t> Pair;
-  typedef List<Pair> Result;
+  using Pair = pair<typename std::decay_t<Container>::value_type, size_t>;
+  using Result = List<Pair>;
 };
 
 template <typename Container>

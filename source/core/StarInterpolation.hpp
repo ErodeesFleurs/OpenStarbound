@@ -85,8 +85,8 @@ T2 quintic2(T1 const& x, T2 const& a, T2 const& b) {
 
 template <typename WeightT>
 struct LinearWeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 2> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 2>;
 
   WeightVec operator()(Weight x) const {
     return {1 - x, x};
@@ -95,8 +95,8 @@ struct LinearWeightOperator {
 
 template <typename WeightT>
 struct StepWeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 2> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 2>;
 
   StepWeightOperator(Weight threshold = 0.5) : threshold(threshold) {}
 
@@ -112,8 +112,8 @@ struct StepWeightOperator {
 
 template <typename WeightT>
 struct SinWeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 2> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 2>;
 
   WeightVec operator()(Weight x) const {
     Weight w = (sin(x * Constants::pi - Constants::pi / 2) + 1) / 2;
@@ -123,8 +123,8 @@ struct SinWeightOperator {
 
 template <typename WeightT>
 struct Hermite2WeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 2> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 2>;
 
   WeightVec operator()(Weight x) const {
     Weight w = x * x * (3 - 2 * x);
@@ -134,8 +134,8 @@ struct Hermite2WeightOperator {
 
 template <typename WeightT>
 struct Quintic2WeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 2> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 2>;
 
   WeightVec operator()(Weight x) const {
     Weight w = x * x * x * (x * (x * 6 - 15) + 10);
@@ -147,8 +147,8 @@ struct Quintic2WeightOperator {
 // when x is outside of the range [0.0, 1.0]
 template <typename WeightT>
 struct Cubic4WeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 4> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 4>;
 
   Cubic4WeightOperator(bool le = false) : linearExtrapolate(le) {}
 
@@ -178,8 +178,8 @@ struct Cubic4WeightOperator {
 // when x is outside of the range [0.0, 1.0]
 template <typename WeightT>
 struct Catmul4WeightOperator {
-  typedef WeightT Weight;
-  typedef Array<Weight, 4> WeightVec;
+  using Weight = WeightT;
+  using WeightVec = Array<Weight, 4>;
 
   Catmul4WeightOperator(bool le = false) : linearExtrapolate(le) {}
 

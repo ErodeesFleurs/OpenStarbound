@@ -9,24 +9,24 @@ namespace Star {
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 class OrderedMapWrapper {
 public:
-  typedef Key key_type;
-  typedef Value mapped_type;
-  typedef pair<key_type const, mapped_type> value_type;
+  using key_type = Key;
+  using mapped_type = Value;
+  using value_type = pair<key_type const, mapped_type>;
 
-  typedef LinkedList<value_type, Allocator> OrderType;
-  typedef Map<
+  using OrderType = LinkedList<value_type, Allocator>;
+  using MapType = Map<
       std::reference_wrapper<key_type const>, typename OrderType::iterator, MapArgs...,
       typename std::allocator_traits<Allocator>::template rebind_alloc<pair<std::reference_wrapper<key_type const> const, typename OrderType::iterator>>
-    > MapType;
+    >;
 
-  typedef typename OrderType::iterator iterator;
-  typedef typename OrderType::const_iterator const_iterator;
+  using iterator = typename OrderType::iterator;
+  using const_iterator = typename OrderType::const_iterator;
 
-  typedef typename OrderType::reverse_iterator reverse_iterator;
-  typedef typename OrderType::const_reverse_iterator const_reverse_iterator;
+  using reverse_iterator = typename OrderType::reverse_iterator;
+  using const_reverse_iterator = typename OrderType::const_reverse_iterator;
 
-  typedef std::decay_t<mapped_type>* mapped_ptr;
-  typedef std::decay_t<mapped_type> const* mapped_const_ptr;
+  using mapped_ptr = std::decay_t<mapped_type>*;
+  using mapped_const_ptr = std::decay_t<mapped_type> const*;
 
   template <typename Collection>
   static OrderedMapWrapper from(Collection const& c);

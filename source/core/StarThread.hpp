@@ -243,8 +243,8 @@ private:
   MutexType& m_mutex;
   bool m_locked;
 };
-typedef MLocker<Mutex> MutexLocker;
-typedef MLocker<RecursiveMutex> RecursiveMutexLocker;
+using MutexLocker = MLocker<Mutex>;
+using RecursiveMutexLocker = MLocker<RecursiveMutex>;
 
 class ReadersWriterMutex {
 public:
@@ -313,7 +313,7 @@ public:
 private:
   atomic_flag m_lock;
 };
-typedef MLocker<SpinLock> SpinLocker;
+using SpinLocker = MLocker<SpinLock>;
 
 template <typename MutexType>
 MLocker<MutexType>::MLocker(MutexType& ref, bool l)
