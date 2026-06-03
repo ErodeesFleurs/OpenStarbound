@@ -30,7 +30,7 @@ String Time::printDateAndTime(int64_t epochTicks, String format) {
 
 int64_t Time::epochTicks() {
   timeval tv;
-  gettimeofday(&tv, NULL);
+  gettimeofday(&tv, nullptr);
   return (int64_t)tv.tv_sec * 1'000'000 + tv.tv_usec;
 }
 
