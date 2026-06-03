@@ -51,5 +51,5 @@ private:
 
   WidgetCallbackFunc m_callback;
 };
-typedef shared_ptr<SliderBarWidget> SliderBarWidgetPtr;
+using SliderBarWidgetPtr = shared_ptr<SliderBarWidget>;
 }

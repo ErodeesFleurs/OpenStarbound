@@ -672,7 +672,7 @@ public:
     SDL_Quit();
   }
 
-  typedef std::function<void(uint8_t*, int)> AudioCallback;
+  using AudioCallback = std::function<void(uint8_t*, int)>;
   bool openAudioInputDevice(SDL_AudioDeviceID deviceId, int freq, int channels, AudioCallback callback) {
     closeAudioInputDevice();
     m_audioInputCallback = std::move(callback);
@@ -1330,11 +1330,11 @@ private:
   std::vector<uint8_t> m_audioOutputData;
   Maybe<pair<RectI, int>> m_textInputArea;
 
-  typedef std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)> SDLGameControllerUPtr;
+  using SDLGameControllerUPtr = std::unique_ptr<SDL_Gamepad, decltype(&SDL_CloseGamepad)>;
   StableHashMap<int, SDLGameControllerUPtr> m_SdlControllers;
 
-  typedef std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)> SDLSurfaceUPtr;
-  typedef std::unique_ptr<SDL_Cursor, decltype(&SDL_DestroyCursor)> SDLCursorUPtr;
+  using SDLSurfaceUPtr = std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)>;
+  using SDLCursorUPtr = std::unique_ptr<SDL_Cursor, decltype(&SDL_DestroyCursor)>;
   struct CursorEntry {
     ImageConstPtr image = nullptr;
     SDLSurfaceUPtr sdlSurface;
@@ -1343,7 +1343,7 @@ private:
     CursorEntry() : image(nullptr), sdlSurface(nullptr, SDL_DestroySurface), sdlCursor(nullptr, SDL_DestroyCursor) {};
   };
 
-  typedef tuple<unsigned, Vec2I, String> CursorDescriptor;
+  using CursorDescriptor = tuple<unsigned, Vec2I, String>;
 
   HashTtlCache<CursorDescriptor, std::shared_ptr<CursorEntry>> m_cursorCache;
   CursorDescriptor m_currentCursor;

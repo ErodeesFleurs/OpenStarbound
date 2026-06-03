@@ -54,7 +54,7 @@ public:
   virtual AudioFormat enableAudio() = 0;
   virtual void disableAudio() = 0;
 
-  typedef std::function<void(uint8_t*, int)> AudioCallback;
+  using AudioCallback = std::function<void(uint8_t*, int)>;
   virtual bool openAudioInputDevice(uint32_t deviceId, int freq, int channels, AudioCallback callback) = 0;
   virtual bool closeAudioInputDevice() = 0;
 

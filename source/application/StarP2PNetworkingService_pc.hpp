@@ -37,7 +37,7 @@ private:
     uint32_t capacity;
   };
   strong_typedef(HostAddressWithPort, JoinRemote);
-  typedef Variant<JoinUnavailable, JoinLocal, JoinRemote> JoinLocation;
+  using JoinLocation = Variant<JoinUnavailable, JoinLocal, JoinRemote>;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 

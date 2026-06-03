@@ -43,7 +43,7 @@ private:
   bool m_hovered;
   bool m_pressed;
 };
-typedef shared_ptr<ScrollThumb> ScrollThumbPtr;
+using ScrollThumbPtr = shared_ptr<ScrollThumb>;
 
 class ScrollBar : public Widget {
 public:
@@ -73,7 +73,7 @@ private:
 
   ImageStretchSet m_track;
 };
-typedef shared_ptr<ScrollBar> ScrollBarPtr;
+using ScrollBarPtr = shared_ptr<ScrollBar>;
 
 class ScrollArea : public Widget {
 public:
@@ -129,5 +129,5 @@ private:
 
   bool m_updatesChildren;
 };
-typedef shared_ptr<ScrollArea> ScrollAreaPtr;
+using ScrollAreaPtr = shared_ptr<ScrollArea>;
 }

@@ -15,7 +15,7 @@ struct PlaceDungeonFlagAction {
   Vec2I targetPosition;
 };
 
-typedef MVariant<PlaceDungeonFlagAction> UniverseFlagAction;
+using UniverseFlagAction = MVariant<PlaceDungeonFlagAction>;
 
 UniverseFlagAction parseUniverseFlagAction(Json const& json);
 

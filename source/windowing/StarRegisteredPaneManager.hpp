@@ -10,7 +10,7 @@ namespace Star {
 template <typename KeyT>
 class RegisteredPaneManager : public PaneManager {
 public:
-  typedef KeyT Key;
+  using Key = KeyT;
 
   void registerPane(KeyT paneId, PaneLayer paneLayer, PanePtr pane, DismissCallback onDismiss = {});
   PanePtr deregisterPane(KeyT const& paneId);

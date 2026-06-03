@@ -87,8 +87,8 @@ struct ServerTile : public WorldTile {
   // Do not serialize - calculated at runtime
   CollisionKind objectCollision;
 };
-typedef TileSectorArray<ServerTile, WorldSectorSize> ServerTileSectorArray;
-typedef shared_ptr<ServerTileSectorArray> ServerTileSectorArrayPtr;
+using ServerTileSectorArray = TileSectorArray<ServerTile, WorldSectorSize>;
+using ServerTileSectorArrayPtr = shared_ptr<ServerTileSectorArray>;
 
 struct ClientTile : public WorldTile {
   ClientTile();
@@ -103,8 +103,8 @@ struct ClientTile : public WorldTile {
 
   float gravity;
 };
-typedef TileSectorArray<ClientTile, WorldSectorSize> ClientTileSectorArray;
-typedef shared_ptr<ClientTileSectorArray> ClientTileSectorArrayPtr;
+using ClientTileSectorArray = TileSectorArray<ClientTile, WorldSectorSize>;
+using ClientTileSectorArrayPtr = shared_ptr<ClientTileSectorArray>;
 
 // Tile structure to transfer all data from client to server
 struct NetTile {
@@ -194,7 +194,7 @@ struct RenderTile {
 DataStream& operator>>(DataStream& ds, RenderTile& tile);
 DataStream& operator<<(DataStream& ds, RenderTile const& tile);
 
-typedef MultiArray<RenderTile, 2> RenderTileArray;
+using RenderTileArray = MultiArray<RenderTile, 2>;
 
 inline WorldTile::WorldTile()
   : foreground(NullMaterialId),

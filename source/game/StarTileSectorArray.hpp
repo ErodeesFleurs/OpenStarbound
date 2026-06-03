@@ -18,13 +18,13 @@ namespace Star {
 template <typename TileT, unsigned SectorSizeT>
 class TileSectorArray {
 public:
-  typedef TileT Tile;
+  using Tile = TileT;
   static unsigned const SectorSize = SectorSizeT;
 
-  typedef SectorArray2D<Tile, SectorSize> SectorArray;
-  typedef typename SectorArray::Sector Sector;
-  typedef typename SectorArray::Array Array;
-  typedef typename SectorArray::ArrayPtr ArrayPtr;
+  using SectorArray = SectorArray2D<Tile, SectorSize>;
+  using Sector = typename SectorArray::Sector;
+  using Array = typename SectorArray::Array;
+  using ArrayPtr = typename SectorArray::ArrayPtr;
 
   TileSectorArray();
   TileSectorArray(Vec2U const& size, Tile defaultTile = Tile());

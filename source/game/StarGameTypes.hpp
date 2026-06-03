@@ -99,7 +99,7 @@ float const SystemWorldTimestep = 1.0f / 20.0f;
 
 size_t const WorldSectorSize = 32;
 
-typedef int32_t EntityId;
+using EntityId = int32_t;
 EntityId const NullEntityId = 0;
 EntityId const MinServerEntityId = 1;
 EntityId const MaxServerEntityId = highest<EntityId>();
@@ -112,7 +112,7 @@ enum class EntityMode {
   Slave
 };
 
-typedef uint16_t ConnectionId;
+using ConnectionId = uint16_t;
 ConnectionId const ServerConnectionId = 0;
 // Minimum and maximum valid client ids
 ConnectionId const MinClientConnectionId = 1;
@@ -123,7 +123,7 @@ inline Vec2F centerOfTile(Vec2T const& tile) {
   return Vec2F(tile.floor()) + Vec2F::filled(0.5);
 }
 
-typedef uint16_t DungeonId;
+using DungeonId = uint16_t;
 
 static const DungeonId NoDungeonId = 65535;
 static const DungeonId SpawnDungeonId = 65534;

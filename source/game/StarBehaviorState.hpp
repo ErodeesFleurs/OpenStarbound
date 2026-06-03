@@ -42,10 +42,10 @@ private:
   Set<pair<NodeParameterType, String>> m_ephemeral;
 };
 
-typedef Maybe<Variant<ActionState,DecoratorState,CompositeState>> NodeState;
-typedef shared_ptr<NodeState> NodeStatePtr;
+using NodeState = Maybe<Variant<ActionState,DecoratorState,CompositeState>>;
+using NodeStatePtr = shared_ptr<NodeState>;
 
-typedef pair<LuaFunction, LuaThread> Coroutine;
+using Coroutine = pair<LuaFunction, LuaThread>;
 
 enum class NodeStatus {
   Invalid,
@@ -54,7 +54,7 @@ enum class NodeStatus {
   Running
 };
 
-typedef LuaTupleReturn<NodeStatus, LuaValue> ActionReturn;
+using ActionReturn = LuaTupleReturn<NodeStatus, LuaValue>;
 struct ActionState {
   LuaThread thread;
 };

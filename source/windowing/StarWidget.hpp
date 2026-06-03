@@ -19,7 +19,7 @@ enum class KeyboardCaptureMode {
   TextInput
 };
 
-typedef function<void(Widget*)> WidgetCallbackFunc;
+using WidgetCallbackFunc = function<void(Widget*)>;
 
 class Widget {
 public:

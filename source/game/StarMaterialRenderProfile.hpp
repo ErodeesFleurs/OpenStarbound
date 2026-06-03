@@ -42,7 +42,7 @@ struct MaterialRule {
   MaterialJoinType join;
   List<RuleEntry> entries;
 };
-typedef StringMap<MaterialRuleConstPtr> RuleMap;
+using RuleMap = StringMap<MaterialRuleConstPtr>;
 
 struct MaterialMatchPoint {
   Vec2I position;
@@ -60,7 +60,7 @@ struct MaterialRenderPiece {
 };
 
 STAR_STRUCT(MaterialRenderMatch);
-typedef List<MaterialRenderMatchConstPtr> MaterialRenderMatchList;
+using MaterialRenderMatchList = List<MaterialRenderMatchConstPtr>;
 
 struct MaterialRenderMatch {
   List<MaterialMatchPoint> matchPoints;
@@ -75,8 +75,8 @@ struct MaterialRenderMatch {
   bool haltOnSubMatch;
 };
 
-typedef StringMap<MaterialRenderPieceConstPtr> PieceMap;
-typedef StringMap<MaterialRenderMatchList> MatchMap;
+using PieceMap = StringMap<MaterialRenderPieceConstPtr>;
+using MatchMap = StringMap<MaterialRenderMatchList>;
 
 // This is the maximum distance in either X or Y that material neighbor rules
 // are limited to.  This can be used as a maximum limit on the "sphere of
