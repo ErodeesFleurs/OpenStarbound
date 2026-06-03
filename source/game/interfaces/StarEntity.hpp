@@ -212,8 +212,8 @@ using EntityCallbackOf = function<void(shared_ptr<EntityT> const&)>;
 template <typename EntityT>
 using EntityFilterOf = function<bool(shared_ptr<EntityT> const&)>;
 
-typedef EntityCallbackOf<Entity> EntityCallback;
-typedef EntityFilterOf<Entity> EntityFilter;
+using EntityCallback = EntityCallbackOf<Entity>;
+using EntityFilter = EntityFilterOf<Entity>;
 
 // Filters based first on dynamic casting to the given type, then optionally on
 // the given derived type filter.

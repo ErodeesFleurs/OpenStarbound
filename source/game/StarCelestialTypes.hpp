@@ -11,7 +11,7 @@ STAR_STRUCT(CelestialSystemObjects);
 STAR_STRUCT(CelestialChunk);
 STAR_STRUCT(CelestialBaseInformation);
 
-typedef List<pair<Vec2I, Vec2I>> CelestialConstellation;
+using CelestialConstellation = List<pair<Vec2I, Vec2I>>;
 
 struct CelestialOrbitRegion {
   String regionName;
@@ -53,8 +53,8 @@ struct CelestialChunk {
 DataStream& operator>>(DataStream& ds, CelestialChunk& chunk);
 DataStream& operator<<(DataStream& ds, CelestialChunk const& chunk);
 
-typedef Either<Vec2I, Vec3I> CelestialRequest;
-typedef Either<CelestialChunk, CelestialSystemObjects> CelestialResponse;
+using CelestialRequest = Either<Vec2I, Vec3I>;
+using CelestialResponse = Either<CelestialChunk, CelestialSystemObjects>;
 
 struct CelestialBaseInformation {
   int planetOrbitalLevels;

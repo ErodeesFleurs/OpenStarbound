@@ -14,7 +14,7 @@ STAR_CLASS(LiquidsDatabase);
 
 STAR_EXCEPTION(LiquidException, StarException);
 
-typedef Either<MaterialId, LiquidId> LiquidInteractionResult;
+using LiquidInteractionResult = Either<MaterialId, LiquidId>;
 
 struct LiquidSettings {
   LiquidSettings();

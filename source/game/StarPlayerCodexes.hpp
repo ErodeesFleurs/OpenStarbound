@@ -11,7 +11,7 @@ STAR_CLASS(UniverseClient);
 
 class PlayerCodexes {
 public:
-  typedef pair<CodexConstPtr, bool> CodexEntry;
+  using CodexEntry = pair<CodexConstPtr, bool>;
 
   PlayerCodexes(Json const& json = {});
 
@@ -34,5 +34,5 @@ private:
   StringMap<CodexEntry> m_codexes;
 };
 
-typedef shared_ptr<PlayerCodexes> PlayerCodexesPtr;
+using PlayerCodexesPtr = shared_ptr<PlayerCodexes>;
 }

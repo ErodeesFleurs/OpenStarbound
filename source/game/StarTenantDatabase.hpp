@@ -24,7 +24,7 @@ struct TenantMonsterSpawnable {
   Maybe<Json> overrides;
 };
 
-typedef MVariant<TenantNpcSpawnable, TenantMonsterSpawnable> TenantSpawnable;
+using TenantSpawnable = MVariant<TenantNpcSpawnable, TenantMonsterSpawnable>;
 
 struct TenantRent {
   Vec2F periodRange;

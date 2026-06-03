@@ -181,7 +181,7 @@ private:
 
   // Maps category name -> part type -> part name -> MonsterPart.  part name ->
   // MonsterPart needs to be be in a predictable order.
-  typedef StringMap<StringMap<Map<String, MonsterPart>>> PartDirectory;
+  using PartDirectory = StringMap<StringMap<Map<String, MonsterPart>>>;
 
   MonsterVariant produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const;
 

@@ -10,7 +10,7 @@ STAR_STRUCT(DamageKind);
 STAR_CLASS(DamageDatabase);
 STAR_STRUCT(ElementalType);
 
-typedef String TargetMaterial;
+using TargetMaterial = String;
 
 struct ElementalType {
   String resistanceStat;

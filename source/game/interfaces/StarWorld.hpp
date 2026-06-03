@@ -15,7 +15,7 @@ STAR_CLASS(World);
 STAR_CLASS(TileEntity);
 STAR_CLASS(ScriptedEntity);
 
-typedef function<void(World*)> WorldAction;
+using WorldAction = function<void(World*)>;
 
 class World {
 public:

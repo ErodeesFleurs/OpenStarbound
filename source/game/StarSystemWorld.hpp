@@ -39,7 +39,7 @@ DataStream& operator>>(DataStream& ds, CelestialOrbit& orbit);
 DataStream& operator<<(DataStream& ds, CelestialOrbit const& orbit);
 
 // in transit, at a planet, orbiting a planet,, at a system object, or at a vector position
-typedef MVariant<CelestialCoordinate, CelestialOrbit, Uuid, Vec2F> SystemLocation;
+using SystemLocation = MVariant<CelestialCoordinate, CelestialOrbit, Uuid, Vec2F>;
 Json jsonFromSystemLocation(SystemLocation const& location);
 SystemLocation jsonToSystemLocation(Json const& json);
 

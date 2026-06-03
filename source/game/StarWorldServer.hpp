@@ -48,9 +48,9 @@ extern EnumMap<WorldServerFidelity> const WorldServerFidelityNames;
 
 class WorldServer : public World {
 public:
-  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
-  typedef function<void(Json const&)> WorldPropertyListener;
+  using ScriptComponent = LuaMessageHandlingComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>;
+  using ScriptComponentPtr = shared_ptr<ScriptComponent>;
+  using WorldPropertyListener = function<void(Json const&)>;
 
   // Create a new world with the given template, writing new storage file.
   WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage);
@@ -323,7 +323,7 @@ private:
     List<Vec2I> roots;
   };
 
-  typedef function<ServerTile const& (Vec2I)> ServerTileGetter;
+  using ServerTileGetter = function<ServerTile const& (Vec2I)>;
 
   void init(bool firstTime);
 

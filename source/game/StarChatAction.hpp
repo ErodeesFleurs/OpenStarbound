@@ -32,6 +32,6 @@ struct PortraitChatAction {
   Json config;
 };
 
-typedef MVariant<SayChatAction, PortraitChatAction> ChatAction;
+using ChatAction = MVariant<SayChatAction, PortraitChatAction>;
 
 }

@@ -32,11 +32,11 @@ struct Bookmark {
   bool operator<(Bookmark<T> const& rhs) const;
 };
 
-typedef Variant<CelestialCoordinate, Uuid> OrbitTarget;
-typedef pair<WorldId, SpawnTarget> TeleportTarget;
+using OrbitTarget = Variant<CelestialCoordinate, Uuid>;
+using TeleportTarget = pair<WorldId, SpawnTarget>;
 
-typedef Bookmark<OrbitTarget> OrbitBookmark;
-typedef Bookmark<TeleportTarget> TeleportBookmark;
+using OrbitBookmark = Bookmark<OrbitTarget>;
+using TeleportBookmark = Bookmark<TeleportTarget>;
 
 
 class PlayerUniverseMap {

@@ -7,8 +7,8 @@
 namespace Star {
 
 struct DamageSource {
-  typedef MVariant<PolyF, Line2F> DamageArea;
-  typedef MVariant<float, Vec2F> Knockback;
+  using DamageArea = MVariant<PolyF, Line2F>;
+  using Knockback = MVariant<float, Vec2F>;
 
   DamageSource();
   DamageSource(Json const& v);
