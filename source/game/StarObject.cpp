@@ -85,7 +85,7 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
 
   auto colorName = configValue("color", "default").toString().takeUtf8();
   m_imageKeys.set("color", colorName);
-  for (auto p : configValue("imageKeys", JsonObject()).toObject())
+  for (auto const& p : configValue("imageKeys", JsonObject()).iterateObject())
     m_imageKeys.set(p.first, p.second.toString());
 
 
@@ -195,7 +195,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
   if (isMaster()) {
     setImageKey("color", colorName);
-    for (auto p : configValue("imageKeys", JsonObject()).toObject())
+    for (auto const& p : configValue("imageKeys", JsonObject()).iterateObject())
       setImageKey(p.first, p.second.toString());
 
     if (m_config->lightColors.contains(colorName))

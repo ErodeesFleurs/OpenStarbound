@@ -1038,7 +1038,7 @@ Json const* Json::ptr(String const& key) const {
 Json jsonMerge(Json const& base, Json const& merger) {
   if (base.type() == Json::Type::Object && merger.type() == Json::Type::Object) {
     JsonObject merged = base.toObject();
-    for (auto const& p : merger.toObject()) {
+    for (auto const& p : merger.iterateObject()) {
       auto res = merged.insert(p);
       if (!res.second)
         res.first->second = jsonMerge(res.first->second, p.second);
@@ -1051,7 +1051,7 @@ Json jsonMerge(Json const& base, Json const& merger) {
 Json jsonMergeNulling(Json const& base, Json const& merger) {
   if (base.type() == Json::Type::Object && merger.type() == Json::Type::Object) {
     JsonObject merged = base.toObject();
-    for (auto const& p : merger.toObject()) {
+    for (auto const& p : merger.iterateObject()) {
       if (p.second.isNull())
         merged.erase(p.first);
       else {
@@ -1070,16 +1070,17 @@ bool jsonPartialMatch(Json const& base, Json const& compare) {
     return true;
   } else {
     if (base.type() == Json::Type::Object && compare.type() == Json::Type::Object) {
-      for (auto const& c : compare.toObject()) {
+      for (auto const& c : compare.iterateObject()) {
         if (!base.contains(c.first) || !jsonPartialMatch(base.get(c.first), c.second))
           return false;
       }
       return true;
     }
     if (base.type() == Json::Type::Array && compare.type() == Json::Type::Array) {
-      for (auto const& c : compare.toArray()) {
+      auto baseArray = base.iterateArray();
+      for (auto const& c : compare.iterateArray()) {
         bool similar = false;
-        for (auto const& b : base.toArray()) {
+        for (auto const& b : baseArray) {
           if (jsonPartialMatch(c, b)) {
             similar = true;
             break;
