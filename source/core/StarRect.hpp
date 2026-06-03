@@ -14,7 +14,7 @@ public:
   typedef typename Line::IntersectResult LineIntersectResult;
 
   template <size_t P, typename T2 = void>
-  using Enable2D = typename std::enable_if<P == 2 && N == P, T2>::type;
+  using Enable2D = std::enable_if_t<P == 2 && N == P, T2>;
 
   struct IntersectResult {
     // Whether or not the two objects intersect

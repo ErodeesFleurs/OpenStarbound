@@ -25,8 +25,8 @@ public:
   typedef typename OrderType::reverse_iterator reverse_iterator;
   typedef typename OrderType::const_reverse_iterator const_reverse_iterator;
 
-  typedef typename std::decay<mapped_type>::type* mapped_ptr;
-  typedef typename std::decay<mapped_type>::type const* mapped_const_ptr;
+  typedef std::decay_t<mapped_type>* mapped_ptr;
+  typedef std::decay_t<mapped_type> const* mapped_const_ptr;
 
   template <typename Collection>
   static OrderedMapWrapper from(Collection const& c);

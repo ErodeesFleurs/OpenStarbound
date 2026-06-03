@@ -154,7 +154,7 @@ Maybe<Error> const& RpcPromise<Result, Error>::error() const {
 template <typename Result, typename Error>
 template <typename Function>
 decltype(auto) RpcPromise<Result, Error>::wrap(Function function) {
-  typedef RpcPromise<typename std::decay<decltype(function(std::declval<Result>()))>::type, Error> WrappedPromise;
+  typedef RpcPromise<std::decay_t<decltype(function(std::declval<Result>()))>, Error> WrappedPromise;
   WrappedPromise wrappedPromise;
   wrappedPromise.m_getValue = [wrapper = std::move(function), valuePtr = std::make_shared<typename WrappedPromise::Value>(), otherGetValue = m_getValue]() {
     if (!valuePtr->result && !valuePtr->error) {

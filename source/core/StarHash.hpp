@@ -72,9 +72,9 @@ public:
 };
 
 template <typename EnumType>
-struct hash<EnumType, typename std::enable_if<std::is_enum<EnumType>::value>::type> {
+struct hash<EnumType, std::enable_if_t<std::is_enum<EnumType>::value>> {
 private:
-  typedef typename std::underlying_type<EnumType>::type UnderlyingType;
+  typedef std::underlying_type_t<EnumType> UnderlyingType;
 
 public:
   size_t operator()(EnumType e) const {

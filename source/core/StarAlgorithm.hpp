@@ -478,8 +478,8 @@ private:
 };
 
 template <typename Functor>
-FinallyGuard<typename std::decay<Functor>::type> finally(Functor&& f) {
-  return FinallyGuard<Functor>(std::forward<Functor>(f));
+FinallyGuard<std::decay_t<Functor>> finally(Functor&& f) {
+  return FinallyGuard<std::decay_t<Functor>>(std::forward<Functor>(f));
 }
 
 // Generates compile time sequences of indexes from MinIndex to MaxIndex
@@ -505,7 +505,7 @@ decltype(auto) tupleUnpackFunctionIndexes(Function&& function, Tuple&& args, Ind
 template <typename Function, typename Tuple>
 decltype(auto) tupleUnpackFunction(Function&& function, Tuple&& args) {
   return tupleUnpackFunctionIndexes<Function, Tuple>(std::forward<Function>(function), std::forward<Tuple>(args),
-      typename GenIndexSequence<0, std::tuple_size<typename std::decay<Tuple>::type>::value>::type());
+      typename GenIndexSequence<0, std::tuple_size<std::decay_t<Tuple>>::value>::type());
 }
 
 // Apply a function to every element of a tuple.  This will NOT happen in a
@@ -519,7 +519,7 @@ decltype(auto) tupleApplyFunctionIndexes(Function&& function, Tuple&& args, Inde
 template <typename Function, typename Tuple>
 decltype(auto) tupleApplyFunction(Function&& function, Tuple&& args) {
   return tupleApplyFunctionIndexes<Function, Tuple>(std::forward<Function>(function), std::forward<Tuple>(args),
-      typename GenIndexSequence<0, std::tuple_size<typename std::decay<Tuple>::type>::value>::type());
+      typename GenIndexSequence<0, std::tuple_size<std::decay_t<Tuple>>::value>::type());
 }
 
 // Use this version if you do not care about the return value of the function
@@ -559,7 +559,7 @@ decltype(auto) subTuple(Tuple&& t) {
 
 template <size_t Trim, typename Tuple>
 decltype(auto) trimTuple(Tuple&& t) {
-  return subTupleIndexes(std::forward<Tuple>(t), typename GenIndexSequence<Trim, std::tuple_size<typename std::decay<Tuple>::type>::value>::type());
+  return subTupleIndexes(std::forward<Tuple>(t), typename GenIndexSequence<Trim, std::tuple_size<std::decay_t<Tuple>>::value>::type());
 }
 
 // Unpack a parameter expansion into a container

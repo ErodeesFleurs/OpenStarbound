@@ -384,7 +384,7 @@ std::ostream& operator<<(std::ostream& os, ListMixin<BaseList> const& list);
 
 template <typename... Containers>
 struct ListZipTypes {
-  typedef tuple<typename std::decay<Containers>::type::value_type...> Tuple;
+  typedef tuple<typename std::decay_t<Containers>::value_type...> Tuple;
   typedef List<Tuple> Result;
 };
 
@@ -393,7 +393,7 @@ typename ListZipTypes<Containers...>::Result zip(Containers&&... args);
 
 template <typename Container>
 struct ListEnumerateTypes {
-  typedef pair<typename std::decay<Container>::type::value_type, size_t> Pair;
+  typedef pair<typename std::decay_t<Container>::value_type, size_t> Pair;
   typedef List<Pair> Result;
 };
 
@@ -861,7 +861,7 @@ List<Element, Allocator> List<Element, Allocator>::sorted() const {
 template <typename Element, typename Allocator>
 template <typename Function>
 auto List<Element, Allocator>::transformed(Function&& function) {
-  List<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type> res;
+  List<std::decay_t<decltype(std::declval<Function>()(std::declval<reference>()))>> res;
   res.reserve(Base::size());
   transformInto(res, *this, std::forward<Function>(function));
   return res;
@@ -870,7 +870,7 @@ auto List<Element, Allocator>::transformed(Function&& function) {
 template <typename Element, typename Allocator>
 template <typename Function>
 auto List<Element, Allocator>::transformed(Function&& function) const {
-  List<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type> res;
+  List<std::decay_t<decltype(std::declval<Function>()(std::declval<const_reference>()))>> res;
   res.reserve(Base::size());
   transformInto(res, *this, std::forward<Function>(function));
   return res;
@@ -913,7 +913,7 @@ StaticList<Element, MaxSize> StaticList<Element, MaxSize>::sorted() const {
 template <typename Element, size_t MaxSize>
 template <typename Function>
 auto StaticList<Element, MaxSize>::transformed(Function&& function) {
-  StaticList<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type, MaxSize> res;
+  StaticList<std::decay_t<decltype(std::declval<Function>()(std::declval<reference>()))>, MaxSize> res;
   transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
@@ -921,7 +921,7 @@ auto StaticList<Element, MaxSize>::transformed(Function&& function) {
 template <typename Element, size_t MaxSize>
 template <typename Function>
 auto StaticList<Element, MaxSize>::transformed(Function&& function) const {
-  StaticList<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type, MaxSize> res;
+  StaticList<std::decay_t<decltype(std::declval<Function>()(std::declval<const_reference>()))>, MaxSize> res;
   transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
@@ -963,7 +963,7 @@ SmallList<Element, MaxStackSize> SmallList<Element, MaxStackSize>::sorted() cons
 template <typename Element, size_t MaxStackSize>
 template <typename Function>
 auto SmallList<Element, MaxStackSize>::transformed(Function&& function) {
-  SmallList<typename std::decay<decltype(std::declval<Function>()(std::declval<reference>()))>::type, MaxStackSize> res;
+  SmallList<std::decay_t<decltype(std::declval<Function>()(std::declval<reference>()))>, MaxStackSize> res;
   transformInto(res, *this, std::forward<Function>(function));
   return res;
 }
@@ -971,7 +971,7 @@ auto SmallList<Element, MaxStackSize>::transformed(Function&& function) {
 template <typename Element, size_t MaxStackSize>
 template <typename Function>
 auto SmallList<Element, MaxStackSize>::transformed(Function&& function) const {
-  SmallList<typename std::decay<decltype(std::declval<Function>()(std::declval<const_reference>()))>::type, MaxStackSize> res;
+  SmallList<std::decay_t<decltype(std::declval<Function>()(std::declval<const_reference>()))>, MaxStackSize> res;
   transformInto(res, *this, std::forward<Function>(function));
   return res;
 }

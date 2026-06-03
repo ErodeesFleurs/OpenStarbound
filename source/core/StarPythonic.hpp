@@ -2,6 +2,8 @@
 
 #include "StarAlgorithm.hpp"
 
+#include <iterator>
+
 namespace Star {
 
 // any and all
@@ -16,7 +18,7 @@ bool any(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
 
 template <typename Iterator>
 bool any(Iterator const& iterBegin, Iterator const& iterEnd) {
-  typedef typename std::iterator_traits<Iterator>::value_type IteratorValue;
+  typedef std::iter_value_t<Iterator> IteratorValue;
   std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
   return any(iterBegin, iterEnd, compare);
 }
@@ -43,7 +45,7 @@ bool all(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
 
 template <typename Iterator>
 bool all(Iterator const& iterBegin, Iterator const& iterEnd) {
-  typedef typename std::iterator_traits<Iterator>::value_type IteratorValue;
+  typedef std::iter_value_t<Iterator> IteratorValue;
   std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
   return all(iterBegin, iterEnd, compare);
 }
@@ -289,12 +291,12 @@ typename zipIteratorReturn<Container, Rest...>::type zipIterator(Container& cont
 namespace RangeHelper {
 
   template <typename Diff>
-  typename std::enable_if<std::is_unsigned<Diff>::value, bool>::type checkIfDiffLessThanZero(Diff) {
+  std::enable_if_t<std::is_unsigned<Diff>::value, bool> checkIfDiffLessThanZero(Diff) {
     return false;
   }
 
   template <typename Diff>
-  typename std::enable_if<!std::is_unsigned<Diff>::value, bool>::type checkIfDiffLessThanZero(Diff diff) {
+  std::enable_if_t<!std::is_unsigned<Diff>::value, bool> checkIfDiffLessThanZero(Diff diff) {
     return diff < 0;
   }
 }

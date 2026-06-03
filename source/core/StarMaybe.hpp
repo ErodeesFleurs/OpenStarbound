@@ -3,6 +3,8 @@
 #include "StarException.hpp"
 #include "StarHash.hpp"
 
+#include <memory>
+#include <new>
 #include <type_traits>
 
 namespace Star {
@@ -82,7 +84,7 @@ public:
   // given function to it and returns the result, otherwise returns Nothing (of
   // the type the function would normally return).
   template <typename Function>
-  auto apply(Function&& function) const -> Maybe<typename std::decay<decltype(function(std::declval<T>()))>::type>;
+  auto apply(Function&& function) const -> Maybe<std::decay_t<decltype(function(std::declval<T>()))>>;
 
   // Monadic bind operator.  Given function should return another Maybe.
   template <typename Function>
@@ -112,14 +114,14 @@ Maybe<T>::Maybe()
 template <typename T>
 Maybe<T>::Maybe(T const& t)
   : Maybe() {
-  new (&m_data) T(t);
+  std::construct_at(&m_data, t);
   m_initialized = true;
 }
 
 template <typename T>
 Maybe<T>::Maybe(T&& t)
   : Maybe() {
-  new (&m_data) T(std::forward<T>(t));
+  std::construct_at(&m_data, std::forward<T>(t));
   m_initialized = true;
 }
 
@@ -127,7 +129,7 @@ template <typename T>
 Maybe<T>::Maybe(Maybe const& rhs)
   : Maybe() {
   if (rhs.m_initialized) {
-    new (&m_data) T(rhs.m_data);
+    std::construct_at(&m_data, rhs.get());
     m_initialized = true;
   }
 }
@@ -137,7 +139,7 @@ Maybe<T>::Maybe(Maybe&& rhs)
   noexcept(std::is_nothrow_move_constructible<T>::value)
   : Maybe() {
   if (rhs.m_initialized) {
-    new (&m_data) T(std::move(rhs.m_data));
+    std::construct_at(&m_data, std::move(*rhs.ptr()));
     m_initialized = true;
     rhs.reset();
   }
@@ -148,7 +150,7 @@ template <typename T2>
 Maybe<T>::Maybe(Maybe<T2> const& rhs)
   : Maybe() {
   if (rhs) {
-    new (&m_data) T(*rhs);
+    std::construct_at(&m_data, *rhs);
     m_initialized = true;
   }
 }
@@ -213,14 +215,14 @@ Maybe<T>::operator bool() const {
 template <typename T>
 auto Maybe<T>::ptr() const -> PointerConstType {
   if (m_initialized)
-    return &m_data;
+    return std::launder(&m_data);
   return nullptr;
 }
 
 template <typename T>
 auto Maybe<T>::ptr() -> PointerType {
   if (m_initialized)
-    return &m_data;
+    return std::launder(&m_data);
   return nullptr;
 }
 
@@ -229,7 +231,7 @@ auto Maybe<T>::operator-> () const -> PointerConstType {
   if (!m_initialized)
     throw InvalidMaybeAccessException();
 
-  return &m_data;
+  return ptr();
 }
 
 template <typename T>
@@ -237,7 +239,7 @@ auto Maybe<T>::operator->() -> PointerType {
   if (!m_initialized)
     throw InvalidMaybeAccessException();
 
-  return &m_data;
+  return ptr();
 }
 
 template <typename T>
@@ -278,7 +280,7 @@ auto Maybe<T>::get() const -> RefConstType {
   if (!m_initialized)
     throw InvalidMaybeAccessException();
 
-  return m_data;
+  return *ptr();
 }
 
 template <typename T>
@@ -286,13 +288,13 @@ auto Maybe<T>::get() -> RefType {
   if (!m_initialized)
     throw InvalidMaybeAccessException();
 
-  return m_data;
+  return *ptr();
 }
 
 template <typename T>
 T Maybe<T>::value(T def) const {
   if (m_initialized)
-    return m_data;
+    return *ptr();
   else
     return def;
 }
@@ -310,7 +312,7 @@ T Maybe<T>::take() {
   if (!m_initialized)
     throw InvalidMaybeAccessException();
 
-  T val(std::move(m_data));
+  T val(std::move(*ptr()));
 
   reset();
 
@@ -320,7 +322,7 @@ T Maybe<T>::take() {
 template <typename T>
 bool Maybe<T>::put(T& t) {
   if (m_initialized) {
-    t = std::move(m_data);
+    t = std::move(*ptr());
 
     reset();
 
@@ -345,7 +347,7 @@ template <typename... Args>
 void Maybe<T>::emplace(Args&&... t) {
   reset();
 
-  new (&m_data) T(std::forward<Args>(t)...);
+  std::construct_at(&m_data, std::forward<Args>(t)...);
   m_initialized = true;
 }
 
@@ -353,14 +355,14 @@ template <typename T>
 void Maybe<T>::reset() {
   if (m_initialized) {
     m_initialized = false;
-    m_data.~T();
+    std::destroy_at(&m_data);
   }
 }
 
 template <typename T>
 template <typename Function>
 auto Maybe<T>::apply(Function&& function) const
-    -> Maybe<typename std::decay<decltype(function(std::declval<T>()))>::type> {
+    -> Maybe<std::decay_t<decltype(function(std::declval<T>()))>> {
   if (!isValid())
     return {};
   return function(get());

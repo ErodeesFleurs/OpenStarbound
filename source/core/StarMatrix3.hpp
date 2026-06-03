@@ -15,7 +15,7 @@ public:
   // padded
   template <typename RT = void>
   using EnableIfContiguousStorage =
-      typename std::enable_if<sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3), RT>::type;
+      std::enable_if_t<sizeof(Vec3) == 3 * sizeof(T) && sizeof(Rows) == 3 * sizeof(Vec3), RT>;
 
   static Matrix3 identity();
 

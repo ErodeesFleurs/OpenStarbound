@@ -33,8 +33,8 @@
                                                                                                                     \
     template <class Arg>                                                                                            \
     NewType##Wrapper& operator=(Arg&& other) {                                                                      \
-      static_assert(std::is_base_of<BaseType, typename std::decay<Arg>::type>::value == false                       \
-              || std::is_same<NewType##Wrapper, typename std::decay<Arg>::type>::value,                             \
+      static_assert(std::is_base_of<BaseType, std::decay_t<Arg>>::value == false                                    \
+              || std::is_same<NewType##Wrapper, std::decay_t<Arg>>::value,                                          \
           "" #NewType " can not implicitly be assigned from " #ParentType "-derived classes or strong " #ParentType \
           " typedefs");                                                                                             \
                                                                                                                     \

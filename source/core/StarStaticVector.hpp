@@ -3,6 +3,7 @@
 #include "StarException.hpp"
 #include "StarFormat.hpp"
 
+#include <memory>
 #include <type_traits>
 
 namespace Star {
@@ -95,7 +96,7 @@ public:
 
 private:
   size_t m_size;
-  typename std::aligned_storage<MaxSize * sizeof(Element), alignof(Element)>::type m_elements;
+  alignas(Element) unsigned char m_elements[(MaxSize != 0 ? MaxSize : 1) * sizeof(Element)];
 };
 
 template <typename Element, size_t MaxSize>
@@ -273,12 +274,12 @@ auto StaticVector<Element, MaxSize>::rend() -> reverse_iterator {
 
 template <typename Element, size_t MaxSize>
 Element const* StaticVector<Element, MaxSize>::ptr() const {
-  return (Element const*)&m_elements;
+  return std::launder(reinterpret_cast<Element const*>(m_elements));
 }
 
 template <typename Element, size_t MaxSize>
 Element* StaticVector<Element, MaxSize>::ptr() {
-  return (Element*)&m_elements;
+  return std::launder(reinterpret_cast<Element*>(m_elements));
 }
 
 template <typename Element, size_t MaxSize>
@@ -291,7 +292,7 @@ void StaticVector<Element, MaxSize>::pop_back() {
   if (m_size == 0)
     throw OutOfRangeException("StaticVector::pop_back called on empty StaticVector");
   --m_size;
-  (ptr() + m_size)->~Element();
+  std::destroy_at(ptr() + m_size);
 }
 
 template <typename Element, size_t MaxSize>
@@ -341,7 +342,7 @@ void StaticVector<Element, MaxSize>::emplace_back(Args&&... args) {
     throw StaticVectorSizeException::format("StaticVector::emplace_back would extend StaticVector beyond size {}", MaxSize);
 
   m_size += 1;
-  new (ptr() + m_size - 1) Element(std::forward<Args>(args)...);
+  std::construct_at(ptr() + m_size - 1, std::forward<Args>(args)...);
 }
 
 template <typename Element, size_t MaxSize>

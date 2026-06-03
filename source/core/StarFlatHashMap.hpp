@@ -120,10 +120,10 @@ public:
   void clear();
 
   pair<iterator, bool> insert(value_type const& value);
-  template <typename T, typename = typename std::enable_if<std::is_constructible<TableValue, T&&>::value>::type>
+  template <typename T, typename = std::enable_if_t<std::is_constructible<TableValue, T&&>::value>>
   pair<iterator, bool> insert(T&& value);
   iterator insert(const_iterator hint, value_type const& value);
-  template <typename T, typename = typename std::enable_if<std::is_constructible<TableValue, T&&>::value>::type>
+  template <typename T, typename = std::enable_if_t<std::is_constructible<TableValue, T&&>::value>>
   iterator insert(const_iterator hint, T&& value);
   template <typename InputIt>
   void insert(InputIt first, InputIt last);

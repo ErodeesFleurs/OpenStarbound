@@ -22,8 +22,8 @@ public:
   typedef typename Base::mapped_type mapped_type;
   typedef typename Base::value_type value_type;
 
-  typedef typename std::decay<mapped_type>::type* mapped_ptr;
-  typedef typename std::decay<mapped_type>::type const* mapped_const_ptr;
+  typedef std::decay_t<mapped_type>* mapped_ptr;
+  typedef std::decay_t<mapped_type> const* mapped_const_ptr;
 
   template <typename MapType>
   static MapMixin from(MapType const& m);

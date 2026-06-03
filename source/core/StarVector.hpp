@@ -13,22 +13,22 @@ public:
   typedef Array<T, N> Base;
 
   template <size_t P, typename T2 = void>
-  using Enable2D = typename std::enable_if<P == 2 && N == P, T2>::type;
+  using Enable2D = std::enable_if_t<P == 2 && N == P, T2>;
 
   template <size_t P, typename T2 = void>
-  using Enable3D = typename std::enable_if<P == 3 && N == P, T2>::type;
+  using Enable3D = std::enable_if_t<P == 3 && N == P, T2>;
 
   template <size_t P, typename T2 = void>
-  using Enable4D = typename std::enable_if<P == 4 && N == P, T2>::type;
+  using Enable4D = std::enable_if_t<P == 4 && N == P, T2>;
 
   template <size_t P, typename T2 = void>
-  using Enable2DOrHigher = typename std::enable_if<P >= 2 && N == P, T2>::type;
+  using Enable2DOrHigher = std::enable_if_t<P >= 2 && N == P, T2>;
 
   template <size_t P, typename T2 = void>
-  using Enable3DOrHigher = typename std::enable_if<P >= 3 && N == P, T2>::type;
+  using Enable3DOrHigher = std::enable_if_t<P >= 3 && N == P, T2>;
 
   template <size_t P, typename T2 = void>
-  using Enable4DOrHigher = typename std::enable_if<P >= 4 && N == P, T2>::type;
+  using Enable4DOrHigher = std::enable_if_t<P >= 4 && N == P, T2>;
 
   static Vector filled(T const& t);
 
