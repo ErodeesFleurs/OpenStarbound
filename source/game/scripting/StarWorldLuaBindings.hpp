@@ -19,7 +19,7 @@ STAR_CLASS(Item);
 STAR_CLASS(ScriptedEntity);
 
 namespace LuaBindings {
-  typedef function<Json(ScriptedEntityPtr const& entity, String const& functionName, JsonArray const& args)> CallEntityScriptFunction;
+  using CallEntityScriptFunction = function<Json(ScriptedEntityPtr const& entity, String const& functionName, JsonArray const& args)>;
 
   LuaCallbacks makeWorldCallbacks(World* world);
 

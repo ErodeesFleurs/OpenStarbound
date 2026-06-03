@@ -161,7 +161,7 @@ protected:
   static Maybe<CelestialOrbitRegion> orbitRegion(
       List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber);
 
-  typedef std::function<void(std::function<void()>&&)>&& UnlockDuringFunction;
+  using UnlockDuringFunction = std::function<void(std::function<void()>&&)>&&;
   CelestialChunk const& getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {});
 
   CelestialChunk produceChunk(Vec2I const& chunkLocation) const;

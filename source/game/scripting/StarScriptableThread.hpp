@@ -20,8 +20,8 @@ public:
     RpcThreadPromiseKeeper<Json> promise;
   };
 
-  typedef LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>> ScriptComponent;
-  typedef shared_ptr<ScriptComponent> ScriptComponentPtr;
+  using ScriptComponent = LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>>;
+  using ScriptComponentPtr = shared_ptr<ScriptComponent>;
 
   ScriptableThread(Json parameters);
   ~ScriptableThread();

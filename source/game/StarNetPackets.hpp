@@ -467,7 +467,7 @@ struct CentralStructureUpdatePacket : PacketBase<PacketType::CentralStructureUpd
 };
 
 struct TileArrayUpdatePacket : PacketBase<PacketType::TileArrayUpdate> {
-  typedef MultiArray<NetTile, 2> TileArray;
+  using TileArray = MultiArray<NetTile, 2>;
 
   TileArrayUpdatePacket();
 

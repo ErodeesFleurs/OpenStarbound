@@ -30,7 +30,7 @@ struct Edge {
   Node target;
 };
 
-typedef AStar::Path<Edge> Path;
+using Path = AStar::Path<Edge>;
 
 struct Parameters {
   // Maximum distance from the start node to search for a path to the target

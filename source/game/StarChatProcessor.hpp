@@ -16,7 +16,7 @@ public:
 
   // CommandHandler is passed the origin connection, the command portion
   // excluding the '/' character, and the remaining command line in full.
-  typedef function<String(ConnectionId, String, String)> CommandHandler;
+  using CommandHandler = function<String(ConnectionId, String, String)>;
 
   String connectClient(ConnectionId clientId, String nick = "");
   // Returns any pending messages.

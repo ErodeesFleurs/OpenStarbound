@@ -53,7 +53,7 @@ public:
   List<Member> members();
 
 private:
-  typedef pair<RpcPromise<Json>, function<void(Json const&)>> RpcResponseHandler;
+  using RpcResponseHandler = pair<RpcPromise<Json>, function<void(Json const&)>>;
 
   void invokeRemote(String const& method, Json const& args, function<void(Json const&)> responseFunction = {});
   void handleRpcResponses();

@@ -7,7 +7,7 @@
 
 namespace Star {
 
-typedef uint32_t EntityRenderLayer;
+using EntityRenderLayer = uint32_t;
 
 unsigned const RenderLayerUpperBits = 5;
 unsigned const RenderLayerLowerBits = 32 - RenderLayerUpperBits;

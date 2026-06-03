@@ -85,7 +85,7 @@ struct GradientForceRegion {
 DataStream& operator>>(DataStream& ds, GradientForceRegion& rfr);
 DataStream& operator<<(DataStream& ds, GradientForceRegion const& rfr);
 
-typedef Variant<DirectionalForceRegion, RadialForceRegion, GradientForceRegion> PhysicsForceRegion;
+using PhysicsForceRegion = Variant<DirectionalForceRegion, RadialForceRegion, GradientForceRegion>;
 
 PhysicsForceRegion jsonToPhysicsForceRegion(Json const& json);
 

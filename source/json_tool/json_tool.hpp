@@ -29,7 +29,7 @@ struct EditCommand {
   JsonPath::PathPtr path;
 };
 
-typedef MVariant<GetCommand, SetCommand, AddCommand, RemoveCommand, EditCommand> Command;
+using Command = MVariant<GetCommand, SetCommand, AddCommand, RemoveCommand, EditCommand>;
 
 struct AtBeginning {};
 
@@ -43,7 +43,7 @@ struct AfterKey {
   String key;
 };
 
-typedef MVariant<AtBeginning, AtEnd, BeforeKey, AfterKey> InsertLocation;
+using InsertLocation = MVariant<AtBeginning, AtEnd, BeforeKey, AfterKey>;
 
 STAR_CLASS(JsonInputFormat);
 
@@ -130,7 +130,7 @@ struct FindInput {
   String filenameSuffix;
 };
 
-typedef MVariant<JsonLiteralInput, FileInput, FindInput> Input;
+using Input = MVariant<JsonLiteralInput, FileInput, FindInput>;
 
 struct ParsedArgs {
   ParsedArgs() : inputs(), command(), options() {}
