@@ -10,8 +10,8 @@ namespace Star {
 template <typename IndexType, typename ValueType = IndexType>
 class ParametricTable {
 public:
-  typedef IndexType Index;
-  typedef ValueType Value;
+  using Index = IndexType;
+  using Value = ValueType;
 
   ParametricTable();
 
@@ -49,8 +49,8 @@ public:
   ValueType const& get(IndexType index) const;
 
 protected:
-  typedef std::vector<IndexType> IndexList;
-  typedef std::vector<ValueType> ValueList;
+  using IndexList = std::vector<IndexType>;
+  using ValueList = std::vector<ValueType>;
 
   IndexList const& indexes() const;
   ValueList const& values() const;
@@ -68,7 +68,7 @@ private:
 template <typename IndexType, typename ValueType = IndexType>
 class ParametricFunction : public ParametricTable<IndexType, ValueType> {
 public:
-  typedef ParametricTable<IndexType, ValueType> Base;
+  using Base = ParametricTable<IndexType, ValueType>;
 
   ParametricFunction(
       InterpolationMode interpolationMode = InterpolationMode::Linear, BoundMode boundMode = BoundMode::Clamp);

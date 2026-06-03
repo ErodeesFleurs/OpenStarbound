@@ -8,7 +8,7 @@ namespace Star {
 STAR_CLASS(CompressedFile);
 
 // Zlib compression level, ranges from 0 to 9
-typedef int CompressionLevel;
+using CompressionLevel = int;
 
 CompressionLevel const LowCompression = 2;
 CompressionLevel const MediumCompression = 5;

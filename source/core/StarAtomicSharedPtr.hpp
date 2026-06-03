@@ -10,8 +10,8 @@ namespace Star {
 template <typename T>
 class AtomicSharedPtr {
 public:
-  typedef shared_ptr<T> SharedPtr;
-  typedef weak_ptr<T> WeakPtr;
+  using SharedPtr = shared_ptr<T>;
+  using WeakPtr = weak_ptr<T>;
 
   AtomicSharedPtr();
   AtomicSharedPtr(AtomicSharedPtr const& p);

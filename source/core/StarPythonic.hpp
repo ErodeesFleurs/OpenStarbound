@@ -18,9 +18,10 @@ bool any(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
 
 template <typename Iterator>
 bool any(Iterator const& iterBegin, Iterator const& iterEnd) {
-  typedef std::iter_value_t<Iterator> IteratorValue;
-  std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
-  return any(iterBegin, iterEnd, compare);
+  for (auto iter = iterBegin; iter != iterEnd; ++iter)
+    if (static_cast<bool>(*iter))
+      return true;
+  return false;
 }
 
 template <typename Iterable, typename Functor>
@@ -30,9 +31,7 @@ bool any(Iterable const& iter, Functor const& f) {
 
 template <typename Iterable>
 bool any(Iterable const& iter) {
-  typedef decltype(*std::begin(iter)) IteratorValue;
-  std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
-  return any(std::begin(iter), std::end(iter), compare);
+  return any(std::begin(iter), std::end(iter));
 }
 
 template <typename Iterator, typename Functor>
@@ -45,9 +44,10 @@ bool all(Iterator iterBegin, Iterator iterEnd, Functor const& f) {
 
 template <typename Iterator>
 bool all(Iterator const& iterBegin, Iterator const& iterEnd) {
-  typedef std::iter_value_t<Iterator> IteratorValue;
-  std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
-  return all(iterBegin, iterEnd, compare);
+  for (auto iter = iterBegin; iter != iterEnd; ++iter)
+    if (!static_cast<bool>(*iter))
+      return false;
+  return true;
 }
 
 template <typename Iterable, typename Functor>
@@ -57,9 +57,7 @@ bool all(Iterable const& iter, Functor const& f) {
 
 template <typename Iterable>
 bool all(Iterable const& iter) {
-  typedef decltype(*std::begin(iter)) IteratorValue;
-  std::function<bool(IteratorValue)> compare = [](IteratorValue const& i) { return (bool)i; };
-  return all(std::begin(iter), std::end(iter), compare);
+  return all(std::begin(iter), std::end(iter));
 }
 
 // Python style container slicing
@@ -78,7 +76,7 @@ SliceIndex const SliceNil = SliceIndex();
 // push_back(typeof T::operator[](int()))
 template <typename Res, typename In>
 Res slice(In const& r, SliceIndex a, SliceIndex b = SliceIndex(), int j = 1) {
-  int size = (int)r.size();
+  int size = static_cast<int>(r.size());
   int start, end;
 
   // Throw exception on j == 0?
@@ -151,9 +149,9 @@ private:
   bool atEnd;
 
 public:
-  typedef IteratorT Iterator;
-  typedef decltype(*std::declval<Iterator>()) IteratorValue;
-  typedef tuple<IteratorValue> value_type;
+  using Iterator = IteratorT;
+  using IteratorValue = decltype(*std::declval<Iterator>());
+  using value_type = tuple<IteratorValue>;
 
   ZipWrapperIterator() : atEnd(true) {}
 
@@ -209,13 +207,13 @@ private:
   bool atEnd;
 
 public:
-  typedef TailIteratorT TailIterator;
-  typedef HeadIteratorT HeadIterator;
+  using TailIterator = TailIteratorT;
+  using HeadIterator = HeadIteratorT;
 
-  typedef decltype(*TailIterator()) TailType;
-  typedef decltype(*HeadIterator()) HeadType;
+  using TailType = decltype(*TailIterator());
+  using HeadType = decltype(*HeadIterator());
 
-  typedef decltype(std::tuple_cat(std::declval<TailType>(), std::declval<HeadType>())) value_type;
+  using value_type = decltype(std::tuple_cat(std::declval<TailType>(), std::declval<HeadType>()));
 
   ZipTupleIterator() : atEnd(true) {}
 
@@ -266,12 +264,12 @@ ZipTupleIterator<HeadIteratorT, TailIteratorT> makeZipTupleIterator(HeadIterator
 
 template <typename Container, typename... Rest>
 struct zipIteratorReturn {
-  typedef ZipTupleIterator<typename zipIteratorReturn<Container>::type, typename zipIteratorReturn<Rest...>::type> type;
+  using type = ZipTupleIterator<typename zipIteratorReturn<Container>::type, typename zipIteratorReturn<Rest...>::type>;
 };
 
 template <typename Container>
 struct zipIteratorReturn<Container> {
-  typedef ZipWrapperIterator<decltype(std::declval<Container>().begin())> type;
+  using type = ZipWrapperIterator<decltype(std::declval<Container>().begin())>;
 };
 
 template <typename Container>
@@ -487,11 +485,11 @@ private:
   }
 
   Diff stepsBetween(Value start, Value end) const {
-    return ((Diff)end - (Diff)start) / m_diff;
+    return (static_cast<Diff>(end) - static_cast<Diff>(start)) / m_diff;
   }
 
   Value applySteps(Value start, Diff travel) const {
-    return (Value)((Diff)start + travel);
+    return static_cast<Value>(static_cast<Diff>(start) + travel);
   }
 
   Value m_start;
@@ -520,17 +518,17 @@ RangeIterator<Numeric, Diff> range(Numeric min, Numeric max) {
 
 template <typename Numeric, typename Diff>
 RangeIterator<Numeric, Diff> rangeInclusive(Numeric min, Numeric max, Diff diff) {
-  return RangeIterator<Numeric, Diff>(min, (Numeric)((Diff)max + 1), diff);
+  return RangeIterator<Numeric, Diff>(min, static_cast<Numeric>(static_cast<Diff>(max) + 1), diff);
 }
 
 template <typename Numeric, typename Diff = int>
 RangeIterator<Numeric, Diff> rangeInclusive(Numeric max) {
-  return RangeIterator<Numeric, Diff>((Numeric)((Diff)max + 1));
+  return RangeIterator<Numeric, Diff>(static_cast<Numeric>(static_cast<Diff>(max) + 1));
 }
 
 template <typename Numeric, typename Diff = int>
 RangeIterator<Numeric, Diff> rangeInclusive(Numeric min, Numeric max) {
-  return RangeIterator<Numeric, Diff>(min, (Numeric)((Diff)max + 1));
+  return RangeIterator<Numeric, Diff>(min, static_cast<Numeric>(static_cast<Diff>(max) + 1));
 }
 
 // END RANGE
@@ -546,8 +544,8 @@ private:
   bool atEnd;
 
 public:
-  typedef decltype(*std::declval<Iterator>()) IteratorValue;
-  typedef pair<IteratorValue&, size_t> value_type;
+  using IteratorValue = decltype(*std::declval<Iterator>());
+  using value_type = pair<IteratorValue&, size_t>;
 
   EnumerateIterator() : index(0), atEnd(true) {}
 

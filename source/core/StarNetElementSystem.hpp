@@ -11,6 +11,6 @@
 namespace Star {
 
 // Makes a good default top-level NetElement group.
-typedef NetElementTop<NetElementCallbackGroup> NetElementTopGroup;
+using NetElementTopGroup = NetElementTop<NetElementCallbackGroup>;
 
 }
