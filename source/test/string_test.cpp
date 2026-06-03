@@ -1,11 +1,24 @@
 #include "StarString.hpp"
 #include "StarFormat.hpp"
+#include "StarOutputProxy.hpp"
 
 #include "gtest/gtest.h"
 
 #include <sstream>
 
 using namespace Star;
+
+namespace {
+
+struct FormatStreamOnly {
+  int value;
+};
+
+std::ostream& operator<<(std::ostream& os, FormatStreamOnly const& streamOnly) {
+  return os << "stream-only:" << streamOnly.value;
+}
+
+}
 
 TEST(StringTest, substr) {
   EXPECT_EQ(String("barbazbaffoo").substr(4, 4), String("azba"));
@@ -122,7 +135,14 @@ TEST(StringTest, format) {
   format(out, "{}:{}", "stream", 42);
   EXPECT_EQ(out.str(), "stream:42");
 
+  EXPECT_EQ(strf("{}", outputAny(FormatStreamOnly{7})), "stream-only:7");
+
+  std::ostringstream streamOnlyOut;
+  format(streamOnlyOut, "{}", outputAny(FormatStreamOnly{9}));
+  EXPECT_EQ(streamOnlyOut.str(), "stream-only:9");
+
   EXPECT_THROW(strf("{:d}", "not-an-int"), FormatException);
+  EXPECT_THROW(format(out, "{", 1), FormatException);
 }
 
 TEST(StringTest, append) {

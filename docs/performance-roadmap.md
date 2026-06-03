@@ -9,8 +9,7 @@ keep frame pointers while preserving release-like optimization.
 Configure and build a profiling binary:
 
 ```sh
-cmake --preset=linux-profile-clang -S source
-cmake --build --preset linux-profile-clang
+nix run .#profile-clang
 ```
 
 Run the focused test suite before collecting profiles:
@@ -55,3 +54,5 @@ perf report
    - `STAR_USE_LLD` is enabled by default for GCC/Clang non-macOS builds.
    - CMake presets do not enable verbose builds by default, so CI logs keep
      warnings and errors visible without dumping every compile/link command.
+   - If an existing build directory still runs `ninja -v`, clean stale cache
+     entries with `nix run .#clean-cmake-cache`.
