@@ -13,12 +13,12 @@ namespace Star {
 template <typename BaseMap>
 class NetElementMapWrapper : public NetElement, private BaseMap {
 public:
-  typedef typename BaseMap::iterator iterator;
-  typedef typename BaseMap::const_iterator const_iterator;
+  using iterator = typename BaseMap::iterator;
+  using const_iterator = typename BaseMap::const_iterator;
 
-  typedef typename BaseMap::key_type key_type;
-  typedef typename BaseMap::mapped_type mapped_type;
-  typedef typename BaseMap::value_type value_type;
+  using key_type = typename BaseMap::key_type;
+  using mapped_type = typename BaseMap::mapped_type;
+  using value_type = typename BaseMap::value_type;
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -94,7 +94,7 @@ private:
   };
   struct ClearChange {};
 
-  typedef Variant<SetChange, RemoveChange, ClearChange> ElementChange;
+  using ElementChange = Variant<SetChange, RemoveChange, ClearChange>;
 
   static void writeChange(DataStream& ds, ElementChange const& change);
   static ElementChange readChange(DataStream& ds);

@@ -231,9 +231,9 @@ Container stableSorted(Container const& c) {
 // must be constructable with Container(size_t).
 template <typename Container, typename Getter>
 void sortByComputedValue(Container& container, Getter&& valueGetter, bool stable = false) {
-  typedef typename Container::value_type ContainerValue;
-  typedef decltype(valueGetter(ContainerValue())) ComputedValue;
-  typedef std::pair<ComputedValue, size_t> ComputedPair;
+  using ContainerValue = typename Container::value_type;
+  using ComputedValue = decltype(valueGetter(ContainerValue()));
+  using ComputedPair = std::pair<ComputedValue, size_t>;
 
   size_t containerSize = container.size();
 
@@ -344,11 +344,11 @@ bool containersEqual(Container1 const& cont1, Container2 const& cont2) {
 template <typename UnaryFunction>
 class FunctionOutputIterator {
 public:
-  typedef std::output_iterator_tag iterator_category;
-  typedef void value_type;
-  typedef void difference_type;
-  typedef void pointer;
-  typedef void reference;
+  using iterator_category = std::output_iterator_tag;
+  using value_type = void;
+  using difference_type = void;
+  using pointer = void;
+  using reference = void;
 
   class OutputProxy {
   public:
@@ -393,13 +393,13 @@ FunctionOutputIterator<UnaryFunction> makeFunctionOutputIterator(UnaryFunction f
 template <typename NullaryFunction>
 class FunctionInputIterator {
 public:
-  typedef std::output_iterator_tag iterator_category;
-  typedef void value_type;
-  typedef void difference_type;
-  typedef void pointer;
-  typedef void reference;
+  using iterator_category = std::output_iterator_tag;
+  using value_type = void;
+  using difference_type = void;
+  using pointer = void;
+  using reference = void;
 
-  typedef std::invoke_result_t<NullaryFunction> FunctionReturnType;
+  using FunctionReturnType = std::invoke_result_t<NullaryFunction>;
 
   explicit FunctionInputIterator(NullaryFunction f = {})
     : m_function(std::move(f)) {}
@@ -492,7 +492,7 @@ struct GenIndexSequence : GenIndexSequence<Min, N - 1, N - 1, S...> {};
 
 template <size_t Min, size_t... S>
 struct GenIndexSequence<Min, Min, S...> {
-  typedef IndexSequence<S...> type;
+  using type = IndexSequence<S...>;
 };
 
 // Apply a tuple as individual arguments to a function
@@ -599,8 +599,8 @@ struct VariadicTypedef<> {};
 
 template <typename FirstT, typename... RestT>
 struct VariadicTypedef<FirstT, RestT...> {
-  typedef FirstT First;
-  typedef VariadicTypedef<RestT...> Rest;
+  using First = FirstT;
+  using Rest = VariadicTypedef<RestT...>;
 };
 
 // For generic types, directly use the result of the signature of its
@@ -613,16 +613,16 @@ struct FunctionTraits<ReturnType(ArgsTypes...)> {
   // arity is the number of arguments.
   static constexpr size_t Arity = sizeof...(ArgsTypes);
 
-  typedef ReturnType Return;
+  using Return = ReturnType;
 
-  typedef VariadicTypedef<ArgsTypes...> Args;
-  typedef tuple<ArgsTypes...> ArgTuple;
+  using Args = VariadicTypedef<ArgsTypes...>;
+  using ArgTuple = tuple<ArgsTypes...>;
 
   template <size_t i>
   struct Arg {
     // the i-th argument is equivalent to the i-th tuple element of a tuple
     // composed of those arguments.
-    typedef typename tuple_element<i, ArgTuple>::type type;
+    using type = typename tuple_element<i, ArgTuple>::type;
   };
 };
 
@@ -634,12 +634,12 @@ struct FunctionTraits<std::function<FunctionType>> : public FunctionTraits<Funct
 
 template <typename ClassType, typename ReturnType, typename... Args>
 struct FunctionTraits<ReturnType (ClassType::*)(Args...)> : public FunctionTraits<ReturnType(Args...)> {
-  typedef ClassType& OwnerType;
+  using OwnerType = ClassType&;
 };
 
 template <typename ClassType, typename ReturnType, typename... Args>
 struct FunctionTraits<ReturnType (ClassType::*)(Args...) const> : public FunctionTraits<ReturnType(Args...)> {
-  typedef const ClassType& OwnerType;
+  using OwnerType = const ClassType&;
 };
 
 template <typename T>

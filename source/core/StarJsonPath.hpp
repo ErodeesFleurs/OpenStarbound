@@ -11,7 +11,7 @@ namespace JsonPath {
     Object
   };
 
-  typedef function<TypeHint(String&, String const&, String::const_iterator&, String::const_iterator)> PathParser;
+  using PathParser = function<TypeHint(String&, String const&, String::const_iterator&, String::const_iterator)>;
 
   STAR_EXCEPTION(ParsingException, JsonException);
   STAR_EXCEPTION(TraversalException, JsonException);

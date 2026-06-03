@@ -11,11 +11,11 @@ STAR_CLASS(String);
 // I literally just copy-pasted it all from there
 class StringView {
 public:
-  typedef String::Char Char;
+  using Char = String::Char;
 
-  typedef U8ToU32Iterator<std::string_view::const_iterator> const_iterator;
-  typedef Char value_type;
-  typedef value_type const& const_reference;
+  using const_iterator = U8ToU32Iterator<std::string_view::const_iterator>;
+  using value_type = Char;
+  using const_reference = value_type const&;
 
   using CaseSensitivity = String::CaseSensitivity;
 
@@ -59,7 +59,7 @@ public:
   bool beginsWith(StringView beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
   bool beginsWith(Char beg, CaseSensitivity cs = CaseSensitivity::CaseSensitive) const;
 
-  typedef function<void(StringView, size_t, size_t)> SplitCallback;
+  using SplitCallback = function<void(StringView, size_t, size_t)>;
   void forEachSplitAnyView(StringView pattern, SplitCallback) const;
   void forEachSplitView(StringView pattern, SplitCallback) const;
 

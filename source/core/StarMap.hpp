@@ -13,17 +13,17 @@ STAR_EXCEPTION(MapException, StarException);
 template <typename BaseMap>
 class MapMixin : public BaseMap {
 public:
-  typedef BaseMap Base;
+  using Base = BaseMap;
 
-  typedef typename Base::iterator iterator;
-  typedef typename Base::const_iterator const_iterator;
+  using iterator = typename Base::iterator;
+  using const_iterator = typename Base::const_iterator;
 
-  typedef typename Base::key_type key_type;
-  typedef typename Base::mapped_type mapped_type;
-  typedef typename Base::value_type value_type;
+  using key_type = typename Base::key_type;
+  using mapped_type = typename Base::mapped_type;
+  using value_type = typename Base::value_type;
 
-  typedef std::decay_t<mapped_type>* mapped_ptr;
-  typedef std::decay_t<mapped_type> const* mapped_const_ptr;
+  using mapped_ptr = std::decay_t<mapped_type>*;
+  using mapped_const_ptr = std::decay_t<mapped_type> const*;
 
   template <typename MapType>
   static MapMixin from(MapType const& m);

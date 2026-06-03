@@ -13,7 +13,7 @@ namespace Star {
 STAR_EXCEPTION(BadVariantCast, StarException);
 STAR_EXCEPTION(BadVariantType, StarException);
 
-typedef uint8_t VariantTypeIndex;
+using VariantTypeIndex = uint8_t;
 VariantTypeIndex const InvalidVariantType = 255;
 
 namespace detail {
@@ -545,7 +545,7 @@ bool Variant<FirstType, RestTypes...>::operator==(Variant const& x) const {
     return false;
   } else {
     return call([&x](auto const& t) {
-        typedef std::decay_t<decltype(t)> T;
+        using T = std::decay_t<decltype(t)>;
         return t == x.template get<T>();
       });
   }
@@ -567,7 +567,7 @@ bool Variant<FirstType, RestTypes...>::operator<(Variant const& x) const {
       return sti < xti;
     } else {
       return call([&x](auto const& t) {
-          typedef std::decay_t<decltype(t)> T;
+          using T = std::decay_t<decltype(t)>;
           return t < x.template get<T>();
         });
     }
@@ -614,7 +614,7 @@ void Variant<FirstType, RestTypes...>::destruct() {
 template <typename FirstType, typename... RestTypes>
 template <typename T>
 void Variant<FirstType, RestTypes...>::assign(T&& x) {
-  typedef std::decay_t<T> AssignType;
+  using AssignType = std::decay_t<T>;
   if (auto p = ptr<AssignType>()) {
     *p = std::forward<T>(x);
   } else {

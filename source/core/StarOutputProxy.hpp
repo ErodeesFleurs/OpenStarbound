@@ -47,7 +47,7 @@ OutputAnyDetail::Wrapper<T> outputAny(T const& t) {
 }
 
 struct OutputProxy {
-  typedef function<void(std::ostream&)> PrintFunction;
+  using PrintFunction = function<void(std::ostream&)>;
 
   OutputProxy(PrintFunction p)
     : print(std::move(p)) {}

@@ -7,9 +7,9 @@ namespace Star {
 template <typename T>
 class Matrix3 {
 public:
-  typedef Vector<T, 3> Vec3;
-  typedef Vector<T, 2> Vec2;
-  typedef Array<Vec3, 3> Rows;
+  using Vec3 = Vector<T, 3>;
+  using Vec2 = Vector<T, 2>;
+  using Rows = Array<Vec3, 3>;
 
   // Only enable pointer access if we know that our internal rows are not
   // padded
@@ -116,8 +116,8 @@ private:
   Rows m_rows;
 };
 
-typedef Matrix3<float> Mat3F;
-typedef Matrix3<double> Mat3D;
+using Mat3F = Matrix3<float>;
+using Mat3D = Matrix3<double>;
 
 template <typename T>
 Matrix3<T> Matrix3<T>::identity() {
