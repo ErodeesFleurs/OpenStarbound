@@ -2,6 +2,8 @@
 
 #include "StarException.hpp"
 
+#include <type_traits>
+
 namespace Star {
 
 // Function that does nothing and takes any number of arguments
@@ -397,7 +399,7 @@ public:
   typedef void pointer;
   typedef void reference;
 
-  typedef typename std::result_of<NullaryFunction()>::type FunctionReturnType;
+  typedef std::invoke_result_t<NullaryFunction> FunctionReturnType;
 
   explicit FunctionInputIterator(NullaryFunction f = {})
     : m_function(std::move(f)) {}
