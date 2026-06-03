@@ -183,6 +183,52 @@
           '';
         };
 
+        profileClangSystemAllocScript = pkgs.writeShellApplication {
+          name = "openstarbound-profile-clang-system-alloc";
+          runtimeInputs = clangTools ++ systemLibraries;
+          text = ''
+            export CC=clang
+            export CXX=clang++
+            export PKG_CONFIG="${pkgs.pkg-config}/bin/pkg-config"
+            export VCPKG_ROOT="${vcpkgRoot}"
+            export VCPKG_DOWNLOADS="''${VCPKG_DOWNLOADS:-$PWD/.vcpkg/downloads}"
+            export VCPKG_DEFAULT_BINARY_CACHE="''${VCPKG_DEFAULT_BINARY_CACHE:-$PWD/.vcpkg/binary-cache}"
+            export VCPKG_BINARY_SOURCES="''${VCPKG_BINARY_SOURCES:-clear;files,$VCPKG_DEFAULT_BINARY_CACHE,readwrite}"
+            export PKG_CONFIG_PATH="${pkgConfigPath}:''${PKG_CONFIG_PATH:-}"
+            export CMAKE_PREFIX_PATH="${cmakePrefixPath}:''${CMAKE_PREFIX_PATH:-}"
+            export CMAKE_INCLUDE_PATH="${cmakeIncludePath}:''${CMAKE_INCLUDE_PATH:-}"
+            export CMAKE_LIBRARY_PATH="${cmakeLibraryPath}:''${CMAKE_LIBRARY_PATH:-}"
+            export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
+
+            mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
+            cmake --preset=linux-profile-clang-system-alloc -S source
+            cmake --build build/linux-profile-clang-system-alloc
+          '';
+        };
+
+        profileClangMimallocScript = pkgs.writeShellApplication {
+          name = "openstarbound-profile-clang-mimalloc";
+          runtimeInputs = clangTools ++ systemLibraries;
+          text = ''
+            export CC=clang
+            export CXX=clang++
+            export PKG_CONFIG="${pkgs.pkg-config}/bin/pkg-config"
+            export VCPKG_ROOT="${vcpkgRoot}"
+            export VCPKG_DOWNLOADS="''${VCPKG_DOWNLOADS:-$PWD/.vcpkg/downloads}"
+            export VCPKG_DEFAULT_BINARY_CACHE="''${VCPKG_DEFAULT_BINARY_CACHE:-$PWD/.vcpkg/binary-cache}"
+            export VCPKG_BINARY_SOURCES="''${VCPKG_BINARY_SOURCES:-clear;files,$VCPKG_DEFAULT_BINARY_CACHE,readwrite}"
+            export PKG_CONFIG_PATH="${pkgConfigPath}:''${PKG_CONFIG_PATH:-}"
+            export CMAKE_PREFIX_PATH="${cmakePrefixPath}:''${CMAKE_PREFIX_PATH:-}"
+            export CMAKE_INCLUDE_PATH="${cmakeIncludePath}:''${CMAKE_INCLUDE_PATH:-}"
+            export CMAKE_LIBRARY_PATH="${cmakeLibraryPath}:''${CMAKE_LIBRARY_PATH:-}"
+            export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
+
+            mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
+            cmake --preset=linux-profile-clang-mimalloc -S source
+            cmake --build build/linux-profile-clang-mimalloc
+          '';
+        };
+
         testClangScript = pkgs.writeShellApplication {
           name = "openstarbound-test-clang";
           runtimeInputs = clangTools ++ systemLibraries;
@@ -303,6 +349,18 @@
           type = "app";
           program = "${profileClangScript}/bin/openstarbound-profile-clang";
           meta.description = "Configure and build the clang profiling preset";
+        };
+
+        apps.profile-clang-system-alloc = {
+          type = "app";
+          program = "${profileClangSystemAllocScript}/bin/openstarbound-profile-clang-system-alloc";
+          meta.description = "Configure and build the clang profiling preset with the system allocator";
+        };
+
+        apps.profile-clang-mimalloc = {
+          type = "app";
+          program = "${profileClangMimallocScript}/bin/openstarbound-profile-clang-mimalloc";
+          meta.description = "Configure and build the clang profiling preset with mimalloc";
         };
       }
     );

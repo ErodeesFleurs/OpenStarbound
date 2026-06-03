@@ -27,6 +27,7 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
     extensionOrdering.add(str.toLower());
 
   StringList assetPaths = directorySource.assetPaths();
+  index.reserve(assetPaths.size());
 
   // Returns a value for the asset that can be used to predictably sort assets
   // by name and then by extension, where every extension listed in

@@ -44,6 +44,36 @@ Recommended baseline scenarios:
 - `starbound_server` startup, to profile server-side initialization without GUI
   frame noise.
 
+## Local Baseline
+
+2026-06-03, source `8845f5eff9d35d7d072ca95e64ca2c5e8c85ade3`,
+`linux-profile-clang`, clang 21.1.8, `STAR_USE_JEMALLOC=ON`,
+`STAR_ENABLE_FRAME_POINTERS=ON`:
+
+- `core_tests`: 7.01 seconds before the allocation pass, 7.03 seconds after it.
+- `game_tests`: 19.29 seconds before and after the allocation pass.
+- Total `ctest`: 26.30 seconds before, 26.32 seconds after.
+- Final post-change verification run: `core_tests` 7.09 seconds,
+  `game_tests` 19.73 seconds, total 26.82 seconds.
+
+This machine did not have `perf` available in the host PATH or the Nix dev
+shell, so this baseline is a coarse correctness and wall-time guard rather than
+a symbol-level hotspot profile. Treat small deltas here as noise.
+
+Allocator comparison, single run each on the same source and clang profiling
+configuration:
+
+- jemalloc: `core_tests` 7.09 seconds, `game_tests` 19.73 seconds, total
+  26.82 seconds.
+- system allocator: `core_tests` 7.32 seconds, `game_tests` 20.18 seconds,
+  total 27.51 seconds.
+- mimalloc: `core_tests` 7.17 seconds, `game_tests` 19.11 seconds, total
+  26.28 seconds.
+
+Do not change the default allocator from this single run. Repeat the same
+commands several times on a quiet machine and prefer symbol-level profiles once
+`perf` or another profiler is available.
+
 ## Current Priorities
 
 1. Asset loading and JSON parsing
@@ -68,6 +98,11 @@ Recommended baseline scenarios:
      the same workload before changing defaults.
    - Keep allocator decisions preset-driven so CI and developer shells stay
      reproducible.
+   - Use the separate clang profiling presets to avoid allocator cache
+     cross-contamination:
+     `nix run .#profile-clang`,
+     `nix run .#profile-clang-system-alloc`, and
+     `nix run .#profile-clang-mimalloc`.
 
 5. Link and build time
    - `STAR_USE_LLD` is enabled by default for GCC/Clang non-macOS builds.
