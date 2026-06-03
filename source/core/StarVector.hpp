@@ -10,7 +10,7 @@ namespace Star {
 template <typename T, size_t N>
 class Vector : public Array<T, N> {
 public:
-  typedef Array<T, N> Base;
+  using Base = Array<T, N>;
 
   template <size_t P, typename T2 = void>
   using Enable2D = std::enable_if_t<P == 2 && N == P, T2>;
@@ -215,26 +215,26 @@ public:
   using Base::empty;
 };
 
-typedef Vector<int, 2> Vec2I;
-typedef Vector<unsigned, 2> Vec2U;
-typedef Vector<float, 2> Vec2F;
-typedef Vector<double, 2> Vec2D;
-typedef Vector<uint8_t, 2> Vec2B;
-typedef Vector<size_t, 2> Vec2S;
+using Vec2I = Vector<int, 2>;
+using Vec2U = Vector<unsigned, 2>;
+using Vec2F = Vector<float, 2>;
+using Vec2D = Vector<double, 2>;
+using Vec2B = Vector<uint8_t, 2>;
+using Vec2S = Vector<size_t, 2>;
 
-typedef Vector<int, 3> Vec3I;
-typedef Vector<unsigned, 3> Vec3U;
-typedef Vector<float, 3> Vec3F;
-typedef Vector<double, 3> Vec3D;
-typedef Vector<uint8_t, 3> Vec3B;
-typedef Vector<size_t, 3> Vec3S;
+using Vec3I = Vector<int, 3>;
+using Vec3U = Vector<unsigned, 3>;
+using Vec3F = Vector<float, 3>;
+using Vec3D = Vector<double, 3>;
+using Vec3B = Vector<uint8_t, 3>;
+using Vec3S = Vector<size_t, 3>;
 
-typedef Vector<int, 4> Vec4I;
-typedef Vector<unsigned, 4> Vec4U;
-typedef Vector<float, 4> Vec4F;
-typedef Vector<double, 4> Vec4D;
-typedef Vector<uint8_t, 4> Vec4B;
-typedef Vector<size_t, 4> Vec4S;
+using Vec4I = Vector<int, 4>;
+using Vec4U = Vector<unsigned, 4>;
+using Vec4F = Vector<float, 4>;
+using Vec4D = Vector<double, 4>;
+using Vec4B = Vector<uint8_t, 4>;
+using Vec4S = Vector<size_t, 4>;
 
 template <typename T, size_t N>
 std::ostream& operator<<(std::ostream& os, Vector<T, N> const& v);

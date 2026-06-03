@@ -17,22 +17,22 @@ STAR_EXCEPTION(StaticVectorSizeException, StarException);
 template <typename Element, size_t MaxSize>
 class StaticVector {
 public:
-  typedef Element* iterator;
-  typedef Element const* const_iterator;
+  using iterator = Element*;
+  using const_iterator = Element const*;
 
-  typedef std::reverse_iterator<iterator> reverse_iterator;
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  typedef Element value_type;
+  using value_type = Element;
 
-  typedef Element& reference;
-  typedef Element const& const_reference;
+  using reference = Element&;
+  using const_reference = Element const&;
 
   static constexpr size_t MaximumSize = MaxSize;
 
   StaticVector();
   StaticVector(StaticVector const& other);
-  StaticVector(StaticVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
+  StaticVector(StaticVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   template <typename OtherElement, size_t OtherMaxSize>
   StaticVector(StaticVector<OtherElement, OtherMaxSize> const& other);
   template <class Iterator>
@@ -42,7 +42,7 @@ public:
   ~StaticVector();
 
   StaticVector& operator=(StaticVector const& other);
-  StaticVector& operator=(StaticVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
+  StaticVector& operator=(StaticVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   StaticVector& operator=(std::initializer_list<Element> list);
 
   size_t size() const;
@@ -116,7 +116,7 @@ StaticVector<Element, MaxSize>::StaticVector(StaticVector const& other)
 
 template <typename Element, size_t MaxSize>
 StaticVector<Element, MaxSize>::StaticVector(StaticVector&& other)
-  noexcept(std::is_nothrow_move_constructible<Element>::value)
+  noexcept(std::is_nothrow_move_constructible_v<Element>)
   : StaticVector() {
   for (auto& e : other)
     emplace_back(std::move(e));
@@ -165,7 +165,7 @@ auto StaticVector<Element, MaxSize>::operator=(StaticVector const& other) -> Sta
 
 template <typename Element, size_t MaxSize>
 auto StaticVector<Element, MaxSize>::operator=(StaticVector&& other)
-    noexcept(std::is_nothrow_move_constructible<Element>::value) -> StaticVector& {
+    noexcept(std::is_nothrow_move_constructible_v<Element>) -> StaticVector& {
   if (this == &other)
     return *this;
 

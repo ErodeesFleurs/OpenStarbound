@@ -9,9 +9,9 @@ namespace Star {
 template <typename T, size_t N>
 class Box {
 public:
-  typedef Vector<T, N> Coord;
-  typedef Star::Line<T, N> Line;
-  typedef typename Line::IntersectResult LineIntersectResult;
+  using Coord = Vector<T, N>;
+  using Line = Star::Line<T, N>;
+  using LineIntersectResult = typename Line::IntersectResult;
 
   template <size_t P, typename T2 = void>
   using Enable2D = std::enable_if_t<P == 2 && N == P, T2>;
@@ -263,10 +263,10 @@ std::ostream& operator<<(std::ostream& os, Box<T, N> const& box);
 template<typename T>
 using Rect = Box<T, 2>;
 
-typedef Rect<int> RectI;
-typedef Rect<unsigned> RectU;
-typedef Rect<float> RectF;
-typedef Rect<double> RectD;
+using RectI = Rect<int>;
+using RectU = Rect<unsigned>;
+using RectF = Rect<float>;
+using RectD = Rect<double>;
 
 template <typename T, size_t N>
 Box<T, N> Box<T, N>::null() {

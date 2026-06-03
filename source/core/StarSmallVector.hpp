@@ -13,20 +13,20 @@ namespace Star {
 template <typename Element, size_t MaxStackSize>
 class SmallVector {
 public:
-  typedef Element* iterator;
-  typedef Element const* const_iterator;
+  using iterator = Element*;
+  using const_iterator = Element const*;
 
-  typedef std::reverse_iterator<iterator> reverse_iterator;
-  typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
+  using reverse_iterator = std::reverse_iterator<iterator>;
+  using const_reverse_iterator = std::reverse_iterator<const_iterator>;
 
-  typedef Element value_type;
+  using value_type = Element;
 
-  typedef Element& reference;
-  typedef Element const& const_reference;
+  using reference = Element&;
+  using const_reference = Element const&;
 
   SmallVector();
   SmallVector(SmallVector const& other);
-  SmallVector(SmallVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
+  SmallVector(SmallVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   template <typename OtherElement, size_t OtherMaxStackSize>
   SmallVector(SmallVector<OtherElement, OtherMaxStackSize> const& other);
   template <class Iterator>
@@ -36,7 +36,7 @@ public:
   ~SmallVector();
 
   SmallVector& operator=(SmallVector const& other);
-  SmallVector& operator=(SmallVector&& other) noexcept(std::is_nothrow_move_constructible<Element>::value);
+  SmallVector& operator=(SmallVector&& other) noexcept(std::is_nothrow_move_constructible_v<Element>);
   SmallVector& operator=(std::initializer_list<Element> list);
 
   size_t size() const;
@@ -124,7 +124,7 @@ SmallVector<Element, MaxStackSize>::SmallVector(SmallVector const& other)
 
 template <typename Element, size_t MaxStackSize>
 SmallVector<Element, MaxStackSize>::SmallVector(SmallVector&& other)
-  noexcept(std::is_nothrow_move_constructible<Element>::value)
+  noexcept(std::is_nothrow_move_constructible_v<Element>)
   : SmallVector() {
   if (other.isHeapAllocated()) {
     m_begin = other.m_begin;
@@ -189,7 +189,7 @@ auto SmallVector<Element, MaxStackSize>::operator=(SmallVector const& other) -> 
 
 template <typename Element, size_t MaxStackSize>
 auto SmallVector<Element, MaxStackSize>::operator=(SmallVector&& other)
-    noexcept(std::is_nothrow_move_constructible<Element>::value) -> SmallVector& {
+    noexcept(std::is_nothrow_move_constructible_v<Element>) -> SmallVector& {
   if (this == &other)
     return *this;
 
