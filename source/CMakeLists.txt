@@ -47,6 +47,8 @@ if(STAR_ENABLE_LTO)
 endif()
 
 option(STAR_ENABLE_FRAME_POINTERS "Keep frame pointers for profiling" OFF)
+option(STAR_ENABLE_UNITY_BUILD "Use CMake unity builds for faster clean builds" OFF)
+set(CMAKE_UNITY_BUILD ${STAR_ENABLE_UNITY_BUILD})
 
 # Update the docstring on CMAKE_BUILD_TYPE to show what options we actually
 # allow
@@ -169,6 +171,7 @@ message(STATUS "Compiler cache: ${STAR_COMPILER_CACHE}")
 message(STATUS "Precompiled headers: ${STAR_PRECOMPILED_HEADERS}")
 message(STATUS "LTO / IPO: ${STAR_ENABLE_LTO}")
 message(STATUS "Frame pointers: ${STAR_ENABLE_FRAME_POINTERS}")
+message(STATUS "Unity build: ${STAR_ENABLE_UNITY_BUILD}")
 
 if(DEFINED STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX)
   message(STATUS "Statically linking to libgcc / libstdc++: ${STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX}")

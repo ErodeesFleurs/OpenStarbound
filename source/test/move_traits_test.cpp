@@ -42,6 +42,8 @@ static_assert((checkMovableValueType<OrderedMap<String, int>>(), true));
 static_assert((checkMovableValueType<OrderedSet<String>>(), true));
 
 static_assert((checkNoThrowMovableValueType<ByteArray>(), true));
+static_assert((checkNoThrowMovableValueType<String>(), true));
+static_assert((checkNoThrowMovableValueType<StringList>(), true));
 static_assert((checkNoThrowMovableValueType<Maybe<ByteArray>>(), true));
 
 }

@@ -18,12 +18,22 @@ Run the focused test suite before collecting profiles:
 ctest --test-dir build/linux-profile-clang --output-on-failure
 ```
 
-Collect a CPU profile with the tool available on the host, for example:
+Use a dated local directory for machine-specific profiles. The profile output is
+not committed, but keeping the command and scenario stable makes later deltas
+meaningful:
 
 ```sh
-perf record -g -- build/linux-profile-clang/starbound_server
-perf report
+mkdir -p profiles/$(date +%Y%m%d)
+perf record -F 997 -g -o profiles/$(date +%Y%m%d)/server-startup.data -- dist/starbound_server
+perf report -i profiles/$(date +%Y%m%d)/server-startup.data
 ```
+
+Recommended baseline scenarios:
+
+- `core_tests`, to catch core container, JSON, string, and Lua changes.
+- `game_tests`, to cover asset loading with the checked-in asset set.
+- `starbound_server` startup, to profile server-side initialization without GUI
+  frame noise.
 
 ## Current Priorities
 
@@ -56,3 +66,8 @@ perf report
      warnings and errors visible without dumping every compile/link command.
    - If an existing build directory still runs `ninja -v`, clean stale cache
      entries with `nix run .#clean-cmake-cache`.
+   - `STAR_ENABLE_UNITY_BUILD` is available for opt-in clean-build experiments:
+     `cmake --preset=linux-release-clang -S source -DSTAR_ENABLE_UNITY_BUILD=ON`.
+     Keep it off by default until both clang and gcc warning output stay clean.
+   - When comparing build changes, record `sccache --show-stats` before and
+     after a clean configure/build so cache effects are visible.

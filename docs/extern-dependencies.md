@@ -14,3 +14,14 @@ build option:
 
 Dependencies that no longer had project references, such as `fmt` and
 `tinyformat`, have been removed from the vendored tree.
+
+Before adding or removing vendored code, run:
+
+```sh
+grep -R "fmt::\|tinyformat\|tinyformat.h\|#include <fmt\|#include \"fmt" -n source cmake docs
+grep -R "fast_float\|rpmalloc\|imgui_lua_bindings" -n source | head
+```
+
+The first command should only find this document unless a new formatting
+dependency was intentionally introduced. The second command documents why the
+remaining non-Lua extern files are still present.

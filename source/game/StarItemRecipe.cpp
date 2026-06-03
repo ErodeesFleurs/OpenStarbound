@@ -7,7 +7,7 @@ namespace Star {
 
 Json ItemRecipe::toJson() const {
   JsonArray inputList;
-  inputList.reserve(inputList.size());
+  inputList.reserve(inputs.size());
   for (auto& input : inputs)
     inputList.append(input.toJson());
 

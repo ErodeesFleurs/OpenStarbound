@@ -98,6 +98,7 @@ Vec3I jsonToVec3I(Json const& v) {
 
 Json jsonFromVec3I(Vec3I const& v) {
   JsonArray result;
+  result.reserve(3);
   result.append(v[0]);
   result.append(v[1]);
   result.append(v[2]);
@@ -231,6 +232,7 @@ Color jsonToColor(Json const& v) {
 
 Json jsonFromColor(Color const& color) {
   JsonArray result;
+  result.reserve(color.alpha() < 255 ? 4 : 3);
   result.push_back(color.red());
   result.push_back(color.green());
   result.push_back(color.blue());
@@ -268,6 +270,7 @@ PolyI jsonToPolyI(Json const& v) {
 
 Json jsonFromPolyF(PolyF const& poly) {
   JsonArray vertexList;
+  vertexList.reserve(poly.vertexes().size());
   for (auto const& vertex : poly.vertexes())
     vertexList.append(JsonArray{vertex[0], vertex[1]});
 
@@ -292,6 +295,7 @@ Json jsonFromMat3F(Mat3F const& v) {
 
 StringList jsonToStringList(Json const& v) {
   StringList result;
+  result.reserve(v.size());
   for (auto const& entry : v.iterateArray())
     result.push_back(entry.toString());
   return result;
@@ -299,6 +303,7 @@ StringList jsonToStringList(Json const& v) {
 
 Json jsonFromStringList(List<String> const& v) {
   JsonArray result;
+  result.reserve(v.size());
   for (auto& e : v)
     result.push_back(e);
   return result;
@@ -306,6 +311,7 @@ Json jsonFromStringList(List<String> const& v) {
 
 List<float> jsonToFloatList(Json const& v) {
   List<float> result;
+  result.reserve(v.size());
   for (auto const& entry : v.iterateArray())
     result.push_back(entry.toFloat());
   return result;
@@ -320,6 +326,7 @@ StringSet jsonToStringSet(Json const& v) {
 
 Json jsonFromStringSet(StringSet const& v) {
   JsonArray result;
+  result.reserve(v.size());
   for (auto& e : v)
     result.push_back(e);
   return result;
@@ -327,6 +334,7 @@ Json jsonFromStringSet(StringSet const& v) {
 
 List<int> jsonToIntList(Json const& v) {
   List<int> result;
+  result.reserve(v.size());
   for (auto const& entry : v.iterateArray())
     result.push_back(entry.toInt());
   return result;
@@ -334,6 +342,7 @@ List<int> jsonToIntList(Json const& v) {
 
 List<Vec2I> jsonToVec2IList(Json const& v) {
   List<Vec2I> result;
+  result.reserve(v.size());
   for (auto const& entry : v.iterateArray())
     result.append(jsonToVec2I(entry));
   return result;
@@ -341,6 +350,7 @@ List<Vec2I> jsonToVec2IList(Json const& v) {
 
 List<Vec2U> jsonToVec2UList(Json const& v) {
   List<Vec2U> result;
+  result.reserve(v.size());
   for (auto const& entry : v.iterateArray())
     result.append(jsonToVec2U(entry));
   return result;
@@ -348,6 +358,7 @@ List<Vec2U> jsonToVec2UList(Json const& v) {
 
 List<Vec2F> jsonToVec2FList(Json const& v) {
   List<Vec2F> result;
+  result.reserve(v.size());
   for (auto const& entry : v.iterateArray())
     result.append(jsonToVec2F(entry));
   return result;
@@ -355,6 +366,7 @@ List<Vec2F> jsonToVec2FList(Json const& v) {
 
 List<Vec4B> jsonToVec4BList(Json const& v) {
   List<Vec4B> result;
+  result.reserve(v.size());
   for (auto const& entry : v.iterateArray())
     result.append(jsonToVec4B(entry));
   return result;
@@ -362,6 +374,7 @@ List<Vec4B> jsonToVec4BList(Json const& v) {
 
 List<Color> jsonToColorList(Json const& v) {
   List<Color> result;
+  result.reserve(v.size());
   for (auto const& entry : v.iterateArray())
     result.append(jsonToColor(entry));
   return result;
@@ -369,6 +382,7 @@ List<Color> jsonToColorList(Json const& v) {
 
 List<Directives> jsonToDirectivesList(Json const& v) {
   List<Directives> result;
+  result.reserve(v.size());
   for (auto const& entry : v.iterateArray())
     result.append(entry.toString());
   return result;
@@ -376,6 +390,7 @@ List<Directives> jsonToDirectivesList(Json const& v) {
 
 Json jsonFromDirectivesList(List<Directives> const& v) {
   JsonArray result;
+  result.reserve(v.size());
   for (auto& e : v) {
     if (e)
       result.push_back(*e.stringPtr());
