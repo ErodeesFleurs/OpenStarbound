@@ -28,6 +28,15 @@ perf record -F 997 -g -o profiles/$(date +%Y%m%d)/server-startup.data -- dist/st
 perf report -i profiles/$(date +%Y%m%d)/server-startup.data
 ```
 
+Record the baseline context next to each profile:
+
+- Preset and compiler, for example `linux-profile-clang` with the exact compiler
+  version from CMake configure output.
+- Allocator options, especially `STAR_USE_JEMALLOC` or `STAR_USE_RPMALLOC`.
+- Asset revision or local asset pack used for the run.
+- Exact command line and scenario notes.
+- Top functions from `perf report` before making optimization changes.
+
 Recommended baseline scenarios:
 
 - `core_tests`, to catch core container, JSON, string, and Lua changes.
@@ -68,6 +77,16 @@ Recommended baseline scenarios:
      entries with `nix run .#clean-cmake-cache`.
    - `STAR_ENABLE_UNITY_BUILD` is available for opt-in clean-build experiments:
      `cmake --preset=linux-release-clang -S source -DSTAR_ENABLE_UNITY_BUILD=ON`.
-     Keep it off by default until both clang and gcc warning output stay clean.
+     The 2026-06-03 validation passed for clang and gcc release builds with
+     `star_extern`, `core_tests`, and `game_tests` explicitly kept out of unity
+     builds.
+   - Keep `star_extern` out of unity because some vendored C translation units
+     reuse local typedef and helper names that collide when merged. Keep the test
+     targets out because several test files intentionally reuse local helper
+     names, and merged test translation units also interact poorly with the
+     project memory wrappers around system allocation names.
+   - Restore a build directory after a unity experiment with
+     `cmake --preset=linux-release-clang -S source -DSTAR_ENABLE_UNITY_BUILD=OFF`
+     before running normal release validation.
    - When comparing build changes, record `sccache --show-stats` before and
      after a clean configure/build so cache effects are visible.

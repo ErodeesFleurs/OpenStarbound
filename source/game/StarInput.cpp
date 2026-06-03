@@ -34,6 +34,7 @@ inline bool compareKeyMod(KeyMod input, KeyMod test) {
 
 Json keyModsToJson(KeyMod mod) {
   JsonArray array;
+  array.reserve(12);
   
   if (bool(mod & KeyMod::LShift)) array.emplace_back("LShift");
   if (bool(mod & KeyMod::RShift)) array.emplace_back("RShift");
@@ -236,6 +237,7 @@ void Input::BindEntry::updated() {
   auto config = Root::singleton().configuration();
 
   JsonArray array;
+  array.reserve(customBinds.size());
   for (auto const& bind : customBinds)
     array.emplace_back(bindToJson(bind));
 
@@ -653,7 +655,9 @@ void Input::resetBinds(String const& categoryId, String const& bindId) {
 
 Json Input::getDefaultBinds(String const& categoryId, String const& bindId) {
   JsonArray array;
-  for (Bind const& bind : bindEntry(categoryId, bindId).defaultBinds)
+  auto const& defaultBinds = bindEntry(categoryId, bindId).defaultBinds;
+  array.reserve(defaultBinds.size());
+  for (Bind const& bind : defaultBinds)
     array.emplace_back(bindToJson(bind));
 
   return array;
@@ -661,7 +665,9 @@ Json Input::getDefaultBinds(String const& categoryId, String const& bindId) {
 
 Json Input::getBinds(String const& categoryId, String const& bindId) {
   JsonArray array;
-  for (Bind const& bind : bindEntry(categoryId, bindId).customBinds)
+  auto const& customBinds = bindEntry(categoryId, bindId).customBinds;
+  array.reserve(customBinds.size());
+  for (Bind const& bind : customBinds)
     array.emplace_back(bindToJson(bind));
 
   return array;

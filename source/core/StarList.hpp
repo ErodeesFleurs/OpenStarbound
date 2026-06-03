@@ -3,6 +3,7 @@
 #include <vector>
 #include <deque>
 #include <list>
+#include <utility>
 
 #include "StarException.hpp"
 #include "StarStaticVector.hpp"
@@ -26,7 +27,7 @@ public:
 
   ListMixin();
   ListMixin(Base const& list);
-  ListMixin(Base&& list);
+  ListMixin(Base&& list) noexcept(noexcept(Base(std::declval<Base&&>())));
   ListMixin(value_type const* p, size_t count);
   template <typename InputIterator>
   ListMixin(InputIterator beg, InputIterator end);
@@ -408,7 +409,7 @@ ListMixin<BaseList>::ListMixin(Base const& list)
   : Base(list) {}
 
 template <typename BaseList>
-ListMixin<BaseList>::ListMixin(Base&& list)
+ListMixin<BaseList>::ListMixin(Base&& list) noexcept(noexcept(Base(std::declval<Base&&>())))
   : Base(std::move(list)) {}
 
 template <typename BaseList>

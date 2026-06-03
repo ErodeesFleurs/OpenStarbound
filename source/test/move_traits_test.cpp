@@ -45,6 +45,9 @@ static_assert((checkNoThrowMovableValueType<ByteArray>(), true));
 static_assert((checkNoThrowMovableValueType<String>(), true));
 static_assert((checkNoThrowMovableValueType<StringList>(), true));
 static_assert((checkNoThrowMovableValueType<Maybe<ByteArray>>(), true));
+static_assert((checkNoThrowMovableValueType<Maybe<String>>(), true));
+static_assert((checkNoThrowMovableValueType<Variant<int, String>>(), true));
+static_assert((checkNoThrowMovableValueType<List<String>>(), true));
 
 }
 

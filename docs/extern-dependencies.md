@@ -15,6 +15,10 @@ build option:
 Dependencies that no longer had project references, such as `fmt` and
 `tinyformat`, have been removed from the vendored tree.
 
+`star_extern` intentionally has `UNITY_BUILD` disabled. The vendored C sources
+are valid as separate translation units, but some of them reuse private typedef
+or helper names that collide when CMake merges sources for a unity build.
+
 Before adding or removing vendored code, run:
 
 ```sh

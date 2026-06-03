@@ -71,22 +71,28 @@ CelestialChunk::CelestialChunk(Json const& store) {
 
 Json CelestialChunk::toJson() const {
   JsonArray constellationStore;
+  constellationStore.reserve(constellations.size());
   for (auto const& constellation : constellations) {
     JsonArray lines;
+    lines.reserve(constellation.size());
     for (auto const& p : constellation)
       lines.append(JsonArray{jsonFromVec2I(p.first), jsonFromVec2I(p.second)});
     constellationStore.append(lines);
   }
 
   JsonArray systemParametersStore;
+  systemParametersStore.reserve(systemParameters.size());
   for (auto const& p : systemParameters)
     systemParametersStore.append(JsonArray{jsonFromVec3I(p.first), p.second.diskStore()});
 
   JsonArray systemObjectsStore;
+  systemObjectsStore.reserve(systemObjects.size());
   for (auto const& systemObjectPair : systemObjects) {
     JsonArray planetsStore;
+    planetsStore.reserve(systemObjectPair.second.size());
     for (auto const& planetPair : systemObjectPair.second) {
       JsonArray satellitesStore;
+      satellitesStore.reserve(planetPair.second.satelliteParameters.size());
       for (auto const& satellitePair : planetPair.second.satelliteParameters)
         satellitesStore.append(JsonArray{satellitePair.first, satellitePair.second.diskStore()});
 
