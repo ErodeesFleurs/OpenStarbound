@@ -436,8 +436,11 @@ void Object::render(RenderCallback* renderCallback) {
   renderParticles(renderCallback);
   renderSounds(renderCallback);
 
-  for (auto const& imageKeyPair : m_imageKeys)
-    m_networkedAnimator->setGlobalTag(imageKeyPair.first, imageKeyPair.second);
+  for (auto const& imageKeyPair : m_imageKeys) {
+    auto currentTag = m_networkedAnimator->globalTagPtr(imageKeyPair.first);
+    if (!currentTag || *currentTag != imageKeyPair.second)
+      m_networkedAnimator->setGlobalTag(imageKeyPair.first, imageKeyPair.second);
+  }
 
   renderCallback->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
   renderCallback->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());

@@ -229,6 +229,47 @@
           '';
         };
 
+        profileServerStartupScript = pkgs.writeShellApplication {
+          name = "openstarbound-profile-server-startup";
+          runtimeInputs = clangTools ++ systemLibraries ++ [
+            pkgs.coreutils
+            pkgs.time
+          ];
+          text = ''
+            export CC=clang
+            export CXX=clang++
+            export PKG_CONFIG="${pkgs.pkg-config}/bin/pkg-config"
+            export VCPKG_ROOT="${vcpkgRoot}"
+            export VCPKG_DOWNLOADS="''${VCPKG_DOWNLOADS:-$PWD/.vcpkg/downloads}"
+            export VCPKG_DEFAULT_BINARY_CACHE="''${VCPKG_DEFAULT_BINARY_CACHE:-$PWD/.vcpkg/binary-cache}"
+            export VCPKG_BINARY_SOURCES="''${VCPKG_BINARY_SOURCES:-clear;files,$VCPKG_DEFAULT_BINARY_CACHE,readwrite}"
+            export PKG_CONFIG_PATH="${pkgConfigPath}:''${PKG_CONFIG_PATH:-}"
+            export CMAKE_PREFIX_PATH="${cmakePrefixPath}:''${CMAKE_PREFIX_PATH:-}"
+            export CMAKE_INCLUDE_PATH="${cmakeIncludePath}:''${CMAKE_INCLUDE_PATH:-}"
+            export CMAKE_LIBRARY_PATH="${cmakeLibraryPath}:''${CMAKE_LIBRARY_PATH:-}"
+            export LD_LIBRARY_PATH="${runtimeLibraryPath}:''${LD_LIBRARY_PATH:-}"
+
+            timeout_seconds="''${STAR_PROFILE_SERVER_TIMEOUT:-20}"
+            mkdir -p "$VCPKG_DOWNLOADS" "$VCPKG_DEFAULT_BINARY_CACHE"
+            cmake --preset=linux-profile-clang -S source
+            cmake --build build/linux-profile-clang
+
+            cd dist
+            set +e
+            /usr/bin/env time -f "server-startup wall=%e user=%U sys=%S maxrss=%MKB" \
+              timeout --preserve-status "$timeout_seconds" ./starbound_server -bootconfig bin/sbinit.config "$@"
+            status=$?
+            set -e
+
+            if [ "$status" -eq 143 ]; then
+              echo "server-startup timeout=$timeout_seconds seconds"
+              exit 0
+            fi
+
+            exit "$status"
+          '';
+        };
+
         testClangScript = pkgs.writeShellApplication {
           name = "openstarbound-test-clang";
           runtimeInputs = clangTools ++ systemLibraries;
@@ -361,6 +402,12 @@
           type = "app";
           program = "${profileClangMimallocScript}/bin/openstarbound-profile-clang-mimalloc";
           meta.description = "Configure and build the clang profiling preset with mimalloc";
+        };
+
+        apps.profile-server-startup = {
+          type = "app";
+          program = "${profileServerStartupScript}/bin/openstarbound-profile-server-startup";
+          meta.description = "Build the clang profiling preset and time bounded starbound_server startup";
         };
       }
     );

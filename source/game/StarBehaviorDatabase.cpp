@@ -156,7 +156,7 @@ BehaviorDatabase::BehaviorDatabase() {
   for (String const& file : nodeFiles) {
     try {
       Json nodes = assets->json(file);
-      for (auto& node : nodes.toObject()) {
+      for (auto const& node : nodes.iterateObject()) {
         StringMap<NodeParameter> parameters;
         for (auto p : node.second.getObject("properties", {}))
           parameters.set(p.first, jsonToNodeParameter(p.second));

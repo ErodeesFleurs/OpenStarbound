@@ -694,7 +694,7 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
   framesSpecification.framesFile = std::move(path);
 
   if (frameConfig.contains("frameList")) {
-    for (auto const& pair : frameConfig.get("frameList").toObject()) {
+    for (auto const& pair : frameConfig.get("frameList").iterateObject()) {
       String frameName = pair.first;
       RectU rect = RectU(jsonToRectI(pair.second));
       if (rect.isEmpty())

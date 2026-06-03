@@ -44,6 +44,17 @@ Recommended baseline scenarios:
 - `starbound_server` startup, to profile server-side initialization without GUI
   frame noise.
 
+For a bounded server startup wall-time sample, build the clang profiling preset
+and run the server under a timeout:
+
+```sh
+STAR_PROFILE_SERVER_TIMEOUT=20 nix run .#profile-server-startup
+```
+
+The command treats a timeout-terminated server as a successful bounded sample
+and prints wall/user/sys/maxrss timing. Keep the timeout, asset set, allocator,
+and command line stable when comparing runs.
+
 ## Local Baseline
 
 2026-06-03, source `8845f5eff9d35d7d072ca95e64ca2c5e8c85ade3`,
@@ -118,6 +129,9 @@ startup or asset-heavy scenario confirms the same trend.
      `nix run .#profile-clang`,
      `nix run .#profile-clang-system-alloc`, and
      `nix run .#profile-clang-mimalloc`.
+   - Use `STAR_PROFILE_SERVER_TIMEOUT=20 nix run .#profile-server-startup`
+     for a repeatable bounded server startup scenario before changing the
+     default allocator.
 
 5. Link and build time
    - `STAR_USE_LLD` is enabled by default for GCC/Clang non-macOS builds.

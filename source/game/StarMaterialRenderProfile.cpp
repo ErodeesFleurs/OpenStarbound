@@ -14,7 +14,7 @@ EnumMap<MaterialJoinType> const MaterialJoinTypeNames = {
 MaterialRenderMatchList parseMaterialRenderMatchList(Json const& matchSpec, RuleMap const& ruleMap, PieceMap const& pieceMap, MatchMap const& matchMap) {
   MaterialRenderMatchList matchList;
 
-  for (auto const& matchConfig : matchSpec.toArray()) {
+  for (auto const& matchConfig : matchSpec.iterateArray()) {
     MaterialRenderMatchPtr match = make_shared<MaterialRenderMatch>();
 
     Json matchPointList = JsonArray();

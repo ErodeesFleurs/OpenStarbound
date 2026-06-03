@@ -554,7 +554,7 @@ void Input::reload() {;
   auto assets = Root::singleton().assets();
 
   for (auto& bindPath : assets->scanExtension("binds")) {
-    for (auto& pair : assets->json(bindPath).toObject()) {
+    for (auto const& pair : assets->json(bindPath).iterateObject()) {
       String const& categoryId = pair.first;
       Json const& categoryConfig = pair.second;
       if (!categoryConfig.isType(Json::Type::Object))
