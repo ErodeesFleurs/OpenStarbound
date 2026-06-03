@@ -13,11 +13,11 @@ STAR_CLASS(TileDrawer);
 
 class TileDrawer {
 public:
-  typedef uint64_t QuadZLevel;
-  typedef HashMap<QuadZLevel, List<Drawable>> Drawables;
+  using QuadZLevel = uint64_t;
+  using Drawables = HashMap<QuadZLevel, List<Drawable>>;
 
-  typedef size_t MaterialRenderPieceIndex;
-  typedef List<pair<MaterialRenderPieceConstPtr, Vec2F>> MaterialPieceResultList;
+  using MaterialRenderPieceIndex = size_t;
+  using MaterialPieceResultList = List<pair<MaterialRenderPieceConstPtr, Vec2F>>;
 
   enum class TerrainLayer { Background, Midground, Foreground };
 

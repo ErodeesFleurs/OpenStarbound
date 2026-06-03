@@ -12,10 +12,10 @@ STAR_STRUCT(TerrainSelector);
 STAR_STRUCT(WorldRegion);
 STAR_CLASS(WorldLayout);
 
-typedef uint8_t BiomeIndex;
+using BiomeIndex = uint8_t;
 BiomeIndex const NullBiomeIndex = 0;
 
-typedef uint32_t TerrainSelectorIndex;
+using TerrainSelectorIndex = uint32_t;
 TerrainSelectorIndex const NullTerrainSelectorIndex = 0;
 
 struct WorldRegionLiquids {

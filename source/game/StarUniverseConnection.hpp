@@ -77,7 +77,7 @@ public:
   // method on the UniverseConnectionServer without deadlocking.  The receive
   // callback will not be called for any client until the previous callback for
   // that client is complete.
-  typedef function<void(UniverseConnectionServer*, ConnectionId, List<PacketPtr>)> PacketReceiveCallback;
+  using PacketReceiveCallback = function<void(UniverseConnectionServer*, ConnectionId, List<PacketPtr>)>;
 
   UniverseConnectionServer(PacketReceiveCallback packetReceiver, size_t numWorkerThreads = 0);
   ~UniverseConnectionServer();

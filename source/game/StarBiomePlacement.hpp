@@ -13,15 +13,15 @@ STAR_CLASS(BiomeItemDistribution);
 
 STAR_EXCEPTION(BiomeException, StarException);
 
-typedef pair<TreeVariant, TreeVariant> TreePair;
+using TreePair = pair<TreeVariant, TreeVariant>;
 
 // Weighted pairs of object name / parameters.
-typedef WeightedPool<pair<String, Json>> ObjectPool;
+using ObjectPool = WeightedPool<pair<String, Json>>;
 
 strong_typedef(String, TreasureBoxSet);
 strong_typedef(StringSet, MicroDungeonNames);
 
-typedef Variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames> BiomeItem;
+using BiomeItem = Variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames>;
 BiomeItem variantToBiomeItem(Json const& store);
 Json variantFromBiomeItem(BiomeItem const& biomeItem);
 

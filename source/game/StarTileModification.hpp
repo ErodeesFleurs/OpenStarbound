@@ -43,7 +43,7 @@ struct PlaceLiquid {
 DataStream& operator>>(DataStream& ds, PlaceLiquid& tileLiquidPlacement);
 DataStream& operator<<(DataStream& ds, PlaceLiquid const& tileLiquidPlacement);
 
-typedef MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid> TileModification;
-typedef List<pair<Vec2I, TileModification>> TileModificationList;
+using TileModification = MVariant<PlaceMaterial, PlaceMod, PlaceMaterialColor, PlaceLiquid>;
+using TileModificationList = List<pair<Vec2I, TileModification>>;
 
 }

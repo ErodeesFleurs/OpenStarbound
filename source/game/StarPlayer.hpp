@@ -519,10 +519,10 @@ public:
   void setAnimationParameter(String name, Json value);
 
 private:
-  typedef LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>> GenericScriptComponent;
-  typedef shared_ptr<GenericScriptComponent> GenericScriptComponentPtr;
+  using GenericScriptComponent = LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>>;
+  using GenericScriptComponentPtr = shared_ptr<GenericScriptComponent>;
 
-  typedef std::function<void(ItemPtr)> ItemSetFunc;
+  using ItemSetFunc = std::function<void(ItemPtr)>;
 
   // handle input and other events (master only) that happen BEFORE movement/tech controller updates
   void processControls();

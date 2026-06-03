@@ -58,7 +58,7 @@ protected:
   Json writeStoredData() const override;
 
 private:
-  typedef std::function<void(ContainerObject*)> ContainerCallback;
+  using ContainerCallback = std::function<void(ContainerObject*)>;
 
   ItemRecipe recipeForMaterials(List<ItemPtr> const& inputItems);
   void tickCrafting(float dt);
