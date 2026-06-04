@@ -47,7 +47,7 @@ void Buffer::seek(StreamOffset pos, IOSeek mode) {
 }
 
 void Buffer::resize(StreamOffset size) {
-  data().resize((size_t)size);
+  data().resize(static_cast<size_t>(size));
 }
 
 bool Buffer::atEnd() {

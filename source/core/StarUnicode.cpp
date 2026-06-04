@@ -12,7 +12,7 @@ void throwMissingUtf8End() {
 }
 
 void throwInvalidUtf32CodePoint(Utf32Type val) {
-  throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", (int32_t)val);
+  throw UnicodeException::format("Invalid UTF-32 code point {} encountered while trying to encode UTF-8", static_cast<int32_t>(val));
 }
 
 size_t utf8Length(const Utf8Type* utf8, size_t remain) {
@@ -193,7 +193,7 @@ Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previo
 
   auto hexBytes = hexDecode(codepoint);
   if (hexBytes.size() < sizeof(Utf32Type)) {
-    ByteArray newHexBytes{(size_t)(sizeof(Utf32Type) - hexBytes.size()), (char)'\0'};
+    ByteArray newHexBytes{static_cast<size_t>(sizeof(Utf32Type) - hexBytes.size()), static_cast<char>('\0')};
     newHexBytes.append(hexBytes);
     hexBytes = newHexBytes;
   }

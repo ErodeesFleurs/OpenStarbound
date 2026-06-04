@@ -76,13 +76,13 @@ void Logger::log(LogLevel level, char const* msg) {
 }
 
 bool Logger::loggable(LogLevel level) {
-  return s_loggable[(int)level];
+  return s_loggable[static_cast<int>(level)];
 }
 
 void Logger::refreshLoggable() {
   s_loggable = Array<bool, 4>::filled(false);
   for (auto const& l : s_sinks) {
-    for (auto i = (size_t)l->level(); i != s_loggable.size(); ++i)
+    for (auto i = static_cast<size_t>(l->level()); i != s_loggable.size(); ++i)
       s_loggable[i] = true;
   }
 }

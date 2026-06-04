@@ -89,7 +89,7 @@ void ByteArray::reserve(size_t newCapacity) {
       m_data = newMem;
       m_capacity = newCapacity;
     } else {
-      newCapacity = max({m_capacity * 2, newCapacity, (size_t)8});
+      newCapacity = max({m_capacity * 2, newCapacity, static_cast<size_t>(8)});
       auto newMem = static_cast<char*>(Star::realloc(m_data, newCapacity));
       if (!newMem)
         throw MemoryException::format("Could not set new ByteArray capacity {}\n", newCapacity);

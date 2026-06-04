@@ -582,7 +582,7 @@ void LuaEngine::tuneAutoGarbageCollection(float pause, float stepMultiplier) {
 }
 
 size_t LuaEngine::memoryUsage() const {
-  return (size_t)lua_gc(m_state, LUA_GCCOUNT, 0) * 1024 + lua_gc(m_state, LUA_GCCOUNTB, 0);
+  return static_cast<size_t>(lua_gc(m_state, LUA_GCCOUNT, 0)) * 1024 + lua_gc(m_state, LUA_GCCOUNTB, 0);
 }
 
 LuaNullEnforcer LuaEngine::nullTerminate() {
@@ -641,7 +641,7 @@ void LuaEngine::countHook(lua_State* state, lua_Debug* ar) {
       if (lua_getinfo(state, "nS", ar) == 0)
         break;
 
-      auto key = make_tuple(String(ar->short_src), (unsigned)ar->linedefined);
+      auto key = make_tuple(String(ar->short_src), static_cast<unsigned>(ar->linedefined));
       auto& entryMap = parentEntry ? parentEntry->calls : self->m_profileEntries;
       if (!entryMap.contains(key)) {
         auto e = make_shared<LuaProfileEntry>();
@@ -1149,7 +1149,7 @@ LuaFunction LuaEngine::createWrappedFunction(LuaDetail::LuaWrappedFunction funct
       } else if (auto vec = res.ptr<LuaVariadic<LuaValue>>()) {
         for (auto const& r : *vec)
           self->pushLuaValue(state, r);
-        return (int)vec->size();
+        return static_cast<int>(vec->size());
       } else {
         return 0;
       }
@@ -1547,7 +1547,7 @@ void LuaDetail::jcontResize(LuaTable const& table, size_t targetSize) {
     if (auto nils = mt->rawGet<Maybe<LuaTable>>("__nils")) {
       nils->iterate([&](LuaValue const& key, LuaValue const&) {
         auto i = asInteger(key);
-        if (i && *i > 0 && (size_t)*i > targetSize)
+        if (i && *i > 0 && static_cast<size_t>(*i) > targetSize)
           nils->rawSet(key, LuaNil);
       });
     }
@@ -1555,7 +1555,7 @@ void LuaDetail::jcontResize(LuaTable const& table, size_t targetSize) {
 
   table.iterate([&](LuaValue const& key, LuaValue const&) {
     auto i = asInteger(key);
-    if (i && *i > 0 && (size_t)*i > targetSize)
+    if (i && *i > 0 && static_cast<size_t>(*i) > targetSize)
       table.rawSet(key, LuaNil);
   });
 

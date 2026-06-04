@@ -111,7 +111,7 @@ bool DataStreamBuffer::atEnd() {
 }
 
 size_t DataStreamBuffer::pos() {
-  return (size_t)m_buffer->pos();
+  return static_cast<size_t>(m_buffer->pos());
 }
 
 void DataStreamBuffer::reset(size_t newSize) {
