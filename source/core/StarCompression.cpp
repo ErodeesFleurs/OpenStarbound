@@ -25,14 +25,14 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
   if (deflate_res != Z_OK)
     throw IOException(strf("Failed to initialise deflate ({})", deflate_res));
 
-  strm.next_in = (unsigned char*)in.ptr();
+  strm.next_in = const_cast<unsigned char*>(reinterpret_cast<unsigned char const*>(in.ptr()));
   strm.avail_in = in.size();
   strm.next_out = tempBuffer.get();
   strm.avail_out = BUFSIZE;
   while (deflate_res == Z_OK) {
     deflate_res = deflate(&strm, Z_FINISH);
     if (strm.avail_out == 0) {
-      out.append((char const*)tempBuffer.get(), BUFSIZE);
+      out.append(reinterpret_cast<char const*>(tempBuffer.get()), BUFSIZE);
       strm.next_out = tempBuffer.get();
       strm.avail_out = BUFSIZE;
     }
@@ -42,7 +42,7 @@ void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compress
   if (deflate_res != Z_STREAM_END)
     throw IOException(strf("Internal error in uncompressData, deflate_res is {}", deflate_res));
 
-  out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
+  out.append(reinterpret_cast<char const*>(tempBuffer.get()), BUFSIZE - strm.avail_out);
 }
 
 ByteArray compressData(ByteArray const& in, CompressionLevel compression) {
@@ -68,7 +68,7 @@ void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) 
   if (inflate_res != Z_OK)
     throw IOException(strf("Failed to initialise inflate ({})", inflate_res));
 
-  strm.next_in = (unsigned char*)in;
+  strm.next_in = const_cast<unsigned char*>(reinterpret_cast<unsigned char const*>(in));
   strm.avail_in = inLen;
   strm.next_out = tempBuffer.get();
   strm.avail_out = BUFSIZE;
@@ -76,7 +76,7 @@ void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) 
   while (inflate_res == Z_OK || inflate_res == Z_BUF_ERROR) {
     inflate_res = inflate(&strm, Z_FINISH);
     if (strm.avail_out == 0) {
-      out.append((char const*)tempBuffer.get(), BUFSIZE);
+      out.append(reinterpret_cast<char const*>(tempBuffer.get()), BUFSIZE);
       strm.next_out = tempBuffer.get();
       strm.avail_out = BUFSIZE;
       if (limit && out.size() >= limit) {
@@ -93,7 +93,7 @@ void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit) 
   if (inflate_res != Z_STREAM_END)
     throw IOException(strf("Internal error in uncompressData, inflate_res is {}", inflate_res));
 
-  out.append((char const*)tempBuffer.get(), BUFSIZE - strm.avail_out);
+  out.append(reinterpret_cast<char const*>(tempBuffer.get()), BUFSIZE - strm.avail_out);
 }
 
 ByteArray uncompressData(const char* in, size_t inLen, size_t limit) {
