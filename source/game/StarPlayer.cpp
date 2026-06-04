@@ -748,7 +748,7 @@ void Player::revive(Vec2F const& footPosition) {
   m_techController->reloadTech();
 
   float moneyCost = m_inventory->currency("money") * modeConfig().reviveCostPercentile;
-  m_inventory->consumeCurrency("money", min((uint64_t)round(moneyCost), m_inventory->currency("money")));
+  m_inventory->consumeCurrency("money", min(static_cast<uint64_t>(round(moneyCost)), m_inventory->currency("money")));
 }
 
 bool Player::shifting() const {
@@ -1291,7 +1291,7 @@ ItemPtr Player::pickupItems(ItemPtr const& items, bool silent) {
   if (!silent) {
     if (items->pickupSound().size()) {
       m_effectsAnimator->setSoundPool("pickup", {items->pickupSound()});
-      float pitch = 1.f - ((float)items->count() / (float)items->maxStack()) * 0.5f;
+      float pitch = 1.f - (static_cast<float>(items->count()) / static_cast<float>(items->maxStack())) * 0.5f;
       m_effectsAnimator->setSoundPitchMultiplier("pickup", clamp(pitch * Random::randf(0.8f, 1.2f), 0.f, 2.f));
       m_effectsAnimator->playSound("pickup");
     }
@@ -1392,7 +1392,7 @@ void Player::refreshArmor() {
 
   bool shouldSetArmorSecrets = m_clientContext && m_clientContext->netCompatibilityRules().version() < 9;
   for (uint8_t i = 0; i != 20; ++i) {
-    auto slot = (EquipmentSlot)i;
+    auto slot = static_cast<EquipmentSlot>(i);
     auto item = m_inventory->equipment(slot);
     bool visible = m_inventory->equipmentVisibility(slot);
     if (m_armor->setItem(i, item, visible)) {
@@ -2843,7 +2843,7 @@ Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
     DataStreamExternalBuffer buffer(view.data(), view.size());
     try {
       uint8_t typeIndex = buffer.read<uint8_t>() - 1;
-      if ((Json::Type)typeIndex == Json::Type::String) {
+      if (static_cast<Json::Type>(typeIndex) == Json::Type::String) {
         size_t len = buffer.readVlqU();
         size_t pos = buffer.pos();
         if (pos + len == buffer.size())
