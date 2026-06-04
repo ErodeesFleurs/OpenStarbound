@@ -328,7 +328,7 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
 #endif
 
   if (FastHash) {
-    hasher.push((char const*)this, TerrainEndOffset);
+    hasher.push(reinterpret_cast<char const*>(this), TerrainEndOffset);
   } else {
     char buffer[TotalTerrainSize];
     size_t bufferSize = 0;
