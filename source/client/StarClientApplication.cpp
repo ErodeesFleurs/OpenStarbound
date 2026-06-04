@@ -1254,7 +1254,7 @@ void ClientApplication::updateRunning(float dt) {
       if (worldClient->inWorld()) {
         if (needstoSendVoice) {
           auto signature = Curve25519::sign(voiceData.ptr(), voiceData.size());
-          std::string_view signatureView((char*)signature.data(), signature.size());
+          std::string_view signatureView(reinterpret_cast<char const*>(signature.data()), signature.size());
           std::string_view audioDataView(voiceData.ptr(), voiceData.size());
           auto broadcast = strf("data\0voice\0{}{}"s, signatureView, audioDataView);
           worldClient->sendSecretBroadcast(broadcast, true, false); // Already compressed by Opus.

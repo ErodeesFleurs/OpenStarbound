@@ -997,9 +997,9 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
               auto rawBroadcast = view.substr(FULL_SIZE);
               if (Curve25519::verify(
-                (uint8_t const*)signature.data(),
-                (uint8_t const*)publicKey->utf8Ptr(),
-                (void*)rawBroadcast.data(),
+                reinterpret_cast<uint8_t const*>(signature.data()),
+                reinterpret_cast<uint8_t const*>(publicKey->utf8Ptr()),
+                rawBroadcast.data(),
                        rawBroadcast.size()
               )) {
                 handleSecretBroadcast(player, rawBroadcast);
@@ -1015,9 +1015,9 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
           if (auto publicKey = player->effectsAnimator()->globalTagPtr("\0SE_VOICE_SIGNING_KEY"s)) {
             auto raw = view.substr(75);
             if (m_broadcastCallback && Curve25519::verify(
-              (uint8_t const*)view.data() + LEGACY_VOICE_PREFIX.size(),
-              (uint8_t const*)publicKey->utf8Ptr(),
-              (void*)raw.data(),
+              reinterpret_cast<uint8_t const*>(view.data()) + LEGACY_VOICE_PREFIX.size(),
+              reinterpret_cast<uint8_t const*>(publicKey->utf8Ptr()),
+              raw.data(),
                      raw.size()
             )) {
               auto broadcastData = "Voice\0"s;
@@ -2232,7 +2232,7 @@ bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw, bool compr
   if (!inWorld() || !m_mainPlayer || !m_mainPlayer->getSecretPropertyView(SECRET_BROADCAST_PUBLIC_KEY))
     return false;
 
-  auto signature = Curve25519::sign((void*)broadcast.utf8Ptr(), broadcast.utf8Size());
+  auto signature = Curve25519::sign(broadcast.utf8Ptr(), broadcast.utf8Size());
 
   auto damageNotification = make_shared<DamageNotificationPacket>();
   auto& remDmg = damageNotification->remoteDamageNotification;
@@ -2242,7 +2242,7 @@ bool WorldClient::sendSecretBroadcast(StringView broadcast, bool raw, bool compr
   dmg.damageDealt = dmg.healthLost = 0.0f;
   dmg.hitType = HitType::Hit;
   dmg.damageSourceKind = "nodamage";
-  dmg.targetMaterialKind = raw ? broadcast : strf("{}{}{}", SECRET_BROADCAST_PREFIX, StringView((char*)&signature, sizeof(signature)), broadcast);
+  dmg.targetMaterialKind = raw ? broadcast : strf("{}{}{}", SECRET_BROADCAST_PREFIX, StringView(reinterpret_cast<char const*>(&signature), sizeof(signature)), broadcast);
   dmg.position = m_mainPlayer->position();
 
   if (!compress)
