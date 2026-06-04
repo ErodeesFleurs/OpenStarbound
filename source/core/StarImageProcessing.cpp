@@ -78,6 +78,13 @@ ImageOperation imageOperationFromString(StringView string) {
 
       char a[4]{}, b[4]{};
       bool which = true;
+      auto colorBytes = [](char const bytes[4]) {
+        return Vec4B(
+            static_cast<uint8_t>(bytes[0]),
+            static_cast<uint8_t>(bytes[1]),
+            static_cast<uint8_t>(bytes[2]),
+            static_cast<uint8_t>(bytes[3]));
+      };
 
       while (true) {
         char ch = *ptr;
@@ -113,7 +120,7 @@ ImageOperation imageOperationFromString(StringView string) {
                 return operation;
               
             if ((which = !which))
-              operation.colorReplaceMap[*(Vec4B*)&a] = *(Vec4B*)&b;
+              operation.colorReplaceMap[colorBytes(a)] = colorBytes(b);
 
             hexLen = 0;
           }

@@ -98,10 +98,10 @@ OpenGlRenderer::OpenGlRenderer() {
     throw RendererException("OpenGL 2.0 not available!");
 
   Logger::info("OpenGL version: '{}' vendor: '{}' renderer: '{}' shader: '{}'",
-      (const char*)glGetString(GL_VERSION),
-      (const char*)glGetString(GL_VENDOR),
-      (const char*)glGetString(GL_RENDERER),
-      (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION));
+      reinterpret_cast<char const*>(glGetString(GL_VERSION)),
+      reinterpret_cast<char const*>(glGetString(GL_VENDOR)),
+      reinterpret_cast<char const*>(glGetString(GL_RENDERER)),
+      reinterpret_cast<char const*>(glGetString(GL_SHADING_LANGUAGE_VERSION)));
 
   glClearColor(0.0, 0.0, 0.0, 1.0);
   glEnable(GL_BLEND);
@@ -897,7 +897,7 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
   auto appendBufferVertex = [&](RenderVertex const& v, uint8_t textureIndex, Vec2F textureCoordinateOffset, RenderVertex const& prev, RenderVertex const& next) {
     size_t off = accumulationBuffer.size();
     accumulationBuffer.resize(accumulationBuffer.size() + sizeof(GlRenderVertex));
-    GlRenderVertex& glv = *(GlRenderVertex*)(accumulationBuffer.ptr() + off);
+    auto& glv = *reinterpret_cast<GlRenderVertex*>(accumulationBuffer.ptr() + off);
     glv.pos = v.screenCoordinate;
     glv.uv = v.textureCoordinate + textureCoordinateOffset;
     glv.color = v.color;
@@ -1092,10 +1092,10 @@ void OpenGlRenderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F co
     glEnableVertexAttribArray(m_colorAttribute);
     glEnableVertexAttribArray(m_dataAttribute);
 
-    glVertexAttribPointer(m_positionAttribute, 2, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, pos));
-    glVertexAttribPointer(m_texCoordAttribute, 2, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, uv));
-    glVertexAttribPointer(m_colorAttribute, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, color));
-    glVertexAttribIPointer(m_dataAttribute, 1, GL_INT, sizeof(GlRenderVertex), (GLvoid*)offsetof(GlRenderVertex, pack));
+    glVertexAttribPointer(m_positionAttribute, 2, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), reinterpret_cast<GLvoid*>(offsetof(GlRenderVertex, pos)));
+    glVertexAttribPointer(m_texCoordAttribute, 2, GL_FLOAT, GL_FALSE, sizeof(GlRenderVertex), reinterpret_cast<GLvoid*>(offsetof(GlRenderVertex, uv)));
+    glVertexAttribPointer(m_colorAttribute, 4, GL_UNSIGNED_BYTE, GL_TRUE, sizeof(GlRenderVertex), reinterpret_cast<GLvoid*>(offsetof(GlRenderVertex, color)));
+    glVertexAttribIPointer(m_dataAttribute, 1, GL_INT, sizeof(GlRenderVertex), reinterpret_cast<GLvoid*>(offsetof(GlRenderVertex, pack)));
 
     glDrawArrays(GL_TRIANGLES, 0, vb.vertexCount);
   }
