@@ -9,32 +9,32 @@ STAR_EXCEPTION(PointerConvertException, StarException);
 
 template <typename Type1, typename Type2>
 bool is(Type2* p) {
-  return (bool)dynamic_cast<Type1*>(p);
+  return dynamic_cast<Type1*>(p) != nullptr;
 }
 
 template <typename Type1, typename Type2>
 bool is(Type2 const* p) {
-  return (bool)dynamic_cast<Type1 const*>(p);
+  return dynamic_cast<Type1 const*>(p) != nullptr;
 }
 
 template <typename Type1, typename Type2>
 bool is(shared_ptr<Type2> const& p) {
-  return (bool)dynamic_cast<Type1*>(p.get());
+  return dynamic_cast<Type1*>(p.get()) != nullptr;
 }
 
 template <typename Type1, typename Type2>
 bool is(shared_ptr<Type2 const> const& p) {
-  return (bool)dynamic_cast<Type1 const*>(p.get());
+  return dynamic_cast<Type1 const*>(p.get()) != nullptr;
 }
 
 template <typename Type1, typename Type2>
 bool ris(Type2& r) {
-  return (bool)dynamic_cast<Type1*>(&r);
+  return dynamic_cast<Type1*>(&r) != nullptr;
 }
 
 template <typename Type1, typename Type2>
 bool ris(Type2 const& r) {
-  return (bool)dynamic_cast<Type1 const*>(&r);
+  return dynamic_cast<Type1 const*>(&r) != nullptr;
 }
 
 template <typename Type1, typename Type2>
