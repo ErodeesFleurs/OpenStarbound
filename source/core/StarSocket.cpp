@@ -122,11 +122,11 @@ void Socket::bind(HostAddressWithPort const& addressWithPort) {
 
   // Ensure quick restarts don't prevent us binding
   int set = 1;
-  m_impl->setSockOpt(SOL_SOCKET, SO_REUSEADDR, (void*)&set, sizeof(int));
+  m_impl->setSockOpt(SOL_SOCKET, SO_REUSEADDR, &set, sizeof(int));
 
   m_localAddress = addressWithPort;
   setNativeFromAddress(m_localAddress, &sockAddr, &sockAddrLen);
-  if (::bind(m_impl->socketDesc, (struct sockaddr*)&sockAddr, sockAddrLen) < 0)
+  if (::bind(m_impl->socketDesc, reinterpret_cast<struct sockaddr*>(&sockAddr), sockAddrLen) < 0)
     throw NetworkException(strf("Cannot bind socket to {}: {}", m_localAddress, netErrorString()));
 
   m_socketMode = SocketMode::Bound;

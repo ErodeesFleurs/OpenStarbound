@@ -148,11 +148,11 @@ void HostAddress::set(String const& address) {
           continue;
       }
       if (mode == NetworkMode::IPv4) {
-        struct sockaddr_in* info = (struct sockaddr_in*)ptr->ai_addr;
-        set(mode, (uint8_t*)(&info->sin_addr));
+        auto* info = reinterpret_cast<struct sockaddr_in*>(ptr->ai_addr);
+        set(mode, reinterpret_cast<uint8_t*>(&info->sin_addr));
       } else {
-        struct sockaddr_in6* info = (struct sockaddr_in6*)ptr->ai_addr;
-        set(mode, (uint8_t*)(&info->sin6_addr));
+        auto* info = reinterpret_cast<struct sockaddr_in6*>(ptr->ai_addr);
+        set(mode, reinterpret_cast<uint8_t*>(&info->sin6_addr));
       }
       break;
     }
