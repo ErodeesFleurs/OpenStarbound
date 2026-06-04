@@ -292,7 +292,7 @@ void* File::fopen(char const* filename, IOMode mode) {
     }
   }
 
-  return (void*)file;
+  return static_cast<void*>(file);
 }
 
 void File::fseek(void* f, StreamOffset offset, IOSeek seekMode) {

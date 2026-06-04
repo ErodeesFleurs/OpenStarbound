@@ -12,11 +12,11 @@ public:
     : m_handle(handle) {}
 
   ~PrivateDynLib() {
-    FreeLibrary((HMODULE)m_handle);
+    FreeLibrary(static_cast<HMODULE>(m_handle));
   }
 
   void* funcPtr(const char* name) {
-    return (void*)GetProcAddress((HMODULE)m_handle, name);
+    return reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(m_handle), name));
   }
 
 private:
