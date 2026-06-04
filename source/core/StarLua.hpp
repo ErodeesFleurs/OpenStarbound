@@ -13,7 +13,7 @@
 namespace Star {
 
 class LuaEngine;
-typedef RefPtr<LuaEngine> LuaEnginePtr;
+using LuaEnginePtr = RefPtr<LuaEngine>;
 
 // Basic unspecified lua exception
 STAR_EXCEPTION(LuaException, StarException);
@@ -35,16 +35,16 @@ STAR_EXCEPTION(LuaRecursionLimitReached, LuaException);
 // different type.
 STAR_EXCEPTION(LuaConversionException, LuaException);
 
-typedef Empty LuaNilType;
-typedef bool LuaBoolean;
-typedef lua_Integer LuaInt;
-typedef lua_Number LuaFloat;
+using LuaNilType = Empty;
+using LuaBoolean = bool;
+using LuaInt = lua_Integer;
+using LuaFloat = lua_Number;
 class LuaString;
 class LuaTable;
 class LuaFunction;
 class LuaThread;
 class LuaUserData;
-typedef Variant<LuaNilType, LuaBoolean, LuaInt, LuaFloat, LuaString, LuaTable, LuaFunction, LuaThread, LuaUserData> LuaValue;
+using LuaValue = Variant<LuaNilType, LuaBoolean, LuaInt, LuaFloat, LuaString, LuaTable, LuaFunction, LuaThread, LuaUserData>;
 
 // Used to wrap multiple return values from calling a lua function or to pass
 // multiple values as arguments to a lua function from a container.  If this is
@@ -67,7 +67,7 @@ LuaVariadic<typename std::decay_t<Container>::value_type> luaUnpack(Container&& 
 template <typename... Types>
 class LuaTupleReturn : public tuple<Types...> {
 public:
-  typedef tuple<Types...> Base;
+  using Base = tuple<Types...>;
 
   explicit LuaTupleReturn(Types const&... args);
   template <typename... UTypes>
@@ -116,8 +116,8 @@ namespace LuaDetail {
   // functions to be wrapped with the least amount of overhead.  Arguments are
   // passed non-const so that they can be moved into wrapped functions that
   // take values without copying.
-  typedef Variant<LuaValue, LuaVariadic<LuaValue>> LuaFunctionReturn;
-  typedef function<LuaFunctionReturn(LuaEngine&, size_t argc, LuaValue* argv)> LuaWrappedFunction;
+  using LuaFunctionReturn = Variant<LuaValue, LuaVariadic<LuaValue>>;
+  using LuaWrappedFunction = function<LuaFunctionReturn(LuaEngine&, size_t argc, LuaValue* argv)>;
 }
 
 // Prints the lua value similar to lua's print function, except it makes an
@@ -305,7 +305,7 @@ private:
 // LuaContext can (mostly) not affect any other.
 class LuaContext : protected LuaTable {
 public:
-  typedef function<void(LuaContext&, LuaString const&)> RequireFunction;
+  using RequireFunction = function<void(LuaContext&, LuaString const&)>;
 
   using LuaTable::LuaTable;
 

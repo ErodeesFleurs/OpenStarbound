@@ -13,10 +13,10 @@ public:
   bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
   void readNetDelta(DataStream& ds, float interpolationTime = 0.0f, NetCompatibilityRules rules = {}) override;
 
-  typedef std::function<void(DataStream&, NetCompatibilityRules)> NetStorer;
-  typedef std::function<void(DataStream&, NetCompatibilityRules)> NetLoader;
-  typedef std::function<bool(DataStream&, uint64_t, NetCompatibilityRules)> NetDeltaWriter;
-  typedef std::function<void(DataStream&, float, NetCompatibilityRules)> NetDeltaReader;
+  using NetStorer = std::function<void(DataStream&, NetCompatibilityRules)>;
+  using NetLoader = std::function<void(DataStream&, NetCompatibilityRules)>;
+  using NetDeltaWriter = std::function<bool(DataStream&, uint64_t, NetCompatibilityRules)>;
+  using NetDeltaReader = std::function<void(DataStream&, float, NetCompatibilityRules)>;
 
   void setNetStorer(NetStorer);
   void setNetLoader(NetLoader);

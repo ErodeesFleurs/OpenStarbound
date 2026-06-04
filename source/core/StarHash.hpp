@@ -51,7 +51,7 @@ public:
 template <typename... TTypes>
 class hash<std::tuple<TTypes...>> {
 private:
-  typedef std::tuple<TTypes...> Tuple;
+  using Tuple = std::tuple<TTypes...>;
 
   template <size_t N>
   size_t operator()(Tuple const&) const {
@@ -74,11 +74,11 @@ public:
 template <typename EnumType>
 struct hash<EnumType, std::enable_if_t<std::is_enum<EnumType>::value>> {
 private:
-  typedef std::underlying_type_t<EnumType> UnderlyingType;
+  using UnderlyingType = std::underlying_type_t<EnumType>;
 
 public:
   size_t operator()(EnumType e) const {
-    return std::hash<UnderlyingType>()((UnderlyingType)e);
+    return std::hash<UnderlyingType>()(static_cast<UnderlyingType>(e));
   }
 };
 

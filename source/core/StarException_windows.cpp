@@ -38,7 +38,7 @@ static DbgHelpLock g_dbgHelpLock;
 
 static size_t const StackLimit = 256;
 
-typedef pair<Array<DWORD64, StackLimit>, size_t> StackCapture;
+using StackCapture = pair<Array<DWORD64, StackLimit>, size_t>;
 
 inline StackCapture captureStack() {
   HANDLE process = GetCurrentProcess();

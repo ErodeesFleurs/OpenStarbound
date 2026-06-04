@@ -11,7 +11,7 @@ namespace Star {
 template <typename T>
 class RefPtr {
 public:
-  typedef T element_type;
+  using element_type = T;
 
   RefPtr();
   explicit RefPtr(T* p, bool addRef = true);

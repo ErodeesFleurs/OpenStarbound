@@ -25,7 +25,7 @@ static inline std::string captureBacktrace() {
 
 static size_t const StackLimit = 256;
 
-typedef pair<Array<void*, StackLimit>, size_t> StackCapture;
+using StackCapture = pair<Array<void*, StackLimit>, size_t>;
 
 inline StackCapture captureStack() {
   StackCapture stackCapture;

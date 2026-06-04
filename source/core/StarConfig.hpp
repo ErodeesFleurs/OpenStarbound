@@ -64,7 +64,7 @@ constexpr bool DebugEnabled = false;
 // and is the largest value for size_t.
 constexpr size_t NPos = static_cast<size_t>(-1);
 
-typedef int64_t StreamOffset;
+using StreamOffset = int64_t;
 
 // Convenient way to purposefully mark a variable as unused to avoid warning
 #define _unused(x) ((void)x)
