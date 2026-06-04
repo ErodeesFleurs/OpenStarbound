@@ -24,7 +24,7 @@ namespace Star {
 
 #ifdef STAR_SYSTEM_WINDOWS
 static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned int height) {
-  size_t size = (size_t)(width * height * 4u);
+  size_t size = static_cast<size_t>(width * height * 4u);
 
   BITMAPV5HEADER hV5{};
   hV5.bV5Size = sizeof(hV5);
@@ -41,11 +41,11 @@ static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned 
   hV5.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
   hV5.bV5Intent = LCS_GM_GRAPHICS;
   if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(hV5) + size)) {
-    if (auto dst = (char*)GlobalLock(handle)) {
+    if (auto dst = static_cast<char*>(GlobalLock(handle))) {
       memcpy(dst, &hV5, sizeof(hV5));
       unsigned int sizeI = width * height;
-      unsigned int* data = (unsigned int*)buf;
-      unsigned int* rgba = (unsigned int*)(dst + sizeof(hV5));
+      auto* data = reinterpret_cast<unsigned int const*>(buf);
+      auto* rgba = reinterpret_cast<unsigned int*>(dst + sizeof(hV5));
       for (unsigned int x = 0; x != sizeI; ++x) {
         unsigned int c = data[x];
         unsigned int v = c & 0xFF00FF00; // a and g
@@ -65,7 +65,7 @@ static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned 
 
 static bool copyPngToClipboard(void* buf, size_t size) {
   if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, size)) {
-    if (auto dst = (char*)GlobalLock(handle)) {
+    if (auto dst = static_cast<char*>(GlobalLock(handle))) {
       memcpy(dst, buf, size);
       GlobalUnlock(handle);
     }
@@ -77,7 +77,7 @@ static bool copyPngToClipboard(void* buf, size_t size) {
 
 static bool duringClipboard(SDL_Window* window, std::function<void()> task) {
   auto props = SDL_GetWindowProperties(window);
-  auto handle = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+  auto handle = static_cast<HWND>(SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
   if (!handle || !OpenClipboard(handle))
     return false;
   EmptyClipboard();
@@ -97,7 +97,7 @@ static bool copyFileToClipboard(String const& path) {
   wide.push_back(0);
   size_t wideSize = wide.size() * sizeof(std::wstring::value_type);
   if (HGLOBAL handle = GlobalAlloc(GMEM_MOVEABLE, sizeof(DROPFILES) + wideSize)) {
-    if (auto dst = (char*)GlobalLock(handle)) {
+    if (auto dst = static_cast<char*>(GlobalLock(handle))) {
       memcpy(dst, &drop, sizeof(drop));
       memcpy(dst + sizeof(DROPFILES), wide.data(), wideSize);
       GlobalUnlock(handle);
@@ -542,7 +542,7 @@ public:
           w,
           h,
           sdlFmt,
-          (void*)flipped.data(),
+          static_cast<void*>(flipped.data()),
           pitch
         );
 
@@ -865,7 +865,7 @@ private:
         int currentDisplayIndex = SDL_GetDisplayForWindow(parent->m_sdlWindow);
 
         SDL_DisplayMode closestDisplayMode;
-        if (SDL_GetClosestFullscreenDisplayMode(currentDisplayIndex, (int)fullScreenResolution[0], (int)fullScreenResolution[1], 0.f, true, &closestDisplayMode)) {
+        if (SDL_GetClosestFullscreenDisplayMode(currentDisplayIndex, static_cast<int>(fullScreenResolution[0]), static_cast<int>(fullScreenResolution[1]), 0.f, true, &closestDisplayMode)) {
           if (SDL_SetWindowFullscreenMode(parent->m_sdlWindow, &closestDisplayMode)) {
             if (parent->m_windowMode == WindowMode::Fullscreen)
               SDL_SetWindowFullscreen(parent->m_sdlWindow, 0);
@@ -877,14 +877,14 @@ private:
             parent->m_windowMode = WindowMode::Fullscreen;
             SDL_SetWindowFullscreen(parent->m_sdlWindow, SDL_WINDOW_FULLSCREEN);
           } else {
-            Logger::warn("Failed to set resolution {}, {}", (unsigned)closestDisplayMode.w, (unsigned)closestDisplayMode.h);
+            Logger::warn("Failed to set resolution {}, {}", static_cast<unsigned>(closestDisplayMode.w), static_cast<unsigned>(closestDisplayMode.h));
           }
         } else {
-          Logger::warn("Unable to set requested display resolution {}, {}", (int)fullScreenResolution[0], (int)fullScreenResolution[1]);
+          Logger::warn("Unable to set requested display resolution {}, {}", static_cast<int>(fullScreenResolution[0]), static_cast<int>(fullScreenResolution[1]));
         }
 
         if (auto displayMode = SDL_GetWindowFullscreenMode(parent->m_sdlWindow)) {
-          parent->m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
+          parent->m_windowSize = {static_cast<unsigned>(displayMode->w), static_cast<unsigned>(displayMode->h)};
 
           // call these manually since no SDL_WindowEvent is triggered when changing between fullscreen resolutions for some reason
           parent->m_renderer->setScreenSize(parent->m_windowSize);
@@ -938,10 +938,10 @@ private:
         parent->m_windowMode = WindowMode::Borderless;
 
         if (auto displayMode = SDL_GetDesktopDisplayMode(SDL_GetDisplayForWindow(parent->m_sdlWindow))) {
-          parent->m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
+          parent->m_windowSize = {static_cast<unsigned>(displayMode->w), static_cast<unsigned>(displayMode->h)};
           #ifdef STAR_SYSTEM_WINDOWS
           if (m_borderlessWorkaround) { // breaks brightness on some setups god what the fuck fuck microsoft fuck nvidia
-            auto handle = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(parent->m_sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
+            auto handle = static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(parent->m_sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
             SetWindowLongPtr(handle, GWL_STYLE, WS_OVERLAPPED);
             SetWindowLongPtr(handle, GWL_EXSTYLE, WS_EX_APPWINDOW);
             SetWindowPos(handle, HWND_TOP, 0, 0, displayMode->w, displayMode->h, SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
@@ -1009,7 +1009,7 @@ private:
       if (area) {
         RectI& r = area->first;
         SDL_Rect rect{
-          r.xMin(), (int)parent->m_windowSize.y() - r.yMax(),
+          r.xMin(), static_cast<int>(parent->m_windowSize.y()) - r.yMax(),
           r.width(), r.height()
         };
         SDL_SetTextInputArea(parent->m_sdlWindow, &rect, area->second);
@@ -1131,26 +1131,26 @@ private:
       } else if (event.type == SDL_EVENT_MOUSE_MOTION) {
         starEvent.set(MouseMoveEvent{
           {event.motion.xrel, -event.motion.yrel},
-          {event.motion.x, (int)m_windowSize[1] - event.motion.y}});
+          {event.motion.x, static_cast<int>(m_windowSize[1]) - event.motion.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
-          {event.button.x, (int)m_windowSize[1] - event.button.y}});
+          {event.button.x, static_cast<int>(m_windowSize[1]) - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
-          {event.button.x, (int)m_windowSize[1] - event.button.y}});
+          {event.button.x, static_cast<int>(m_windowSize[1]) - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
         starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
-          {event.wheel.mouse_x, (int)m_windowSize[1] - event.wheel.mouse_y}});
+          {event.wheel.mouse_x, static_cast<int>(m_windowSize[1]) - event.wheel.mouse_y}});
       } else if (event.type == SDL_EVENT_GAMEPAD_AXIS_MOTION) {
         starEvent.set(ControllerAxisEvent{
-          (ControllerId)event.gaxis.which,
+          static_cast<ControllerId>(event.gaxis.which),
           controllerAxisFromSdlControllerAxis(event.gaxis.axis),
-          (float)event.gaxis.value / 32768.0f
+          static_cast<float>(event.gaxis.value) / 32768.0f
         });
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
-        starEvent.set(ControllerButtonDownEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
+        starEvent.set(ControllerButtonDownEvent{ static_cast<ControllerId>(event.gbutton.which), controllerButtonFromSdlControllerButton(event.gbutton.button) });
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
-        starEvent.set(ControllerButtonUpEvent{ (ControllerId)event.gbutton.which, controllerButtonFromSdlControllerButton(event.gbutton.button) });
+        starEvent.set(ControllerButtonUpEvent{ static_cast<ControllerId>(event.gbutton.which), controllerButtonFromSdlControllerButton(event.gbutton.button) });
       } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
         auto insertion = m_SdlControllers.insert_or_assign(event.gdevice.which, SDLGameControllerUPtr(SDL_OpenGamepad(event.gdevice.which), SDL_CloseGamepad));
         if (SDL_Gamepad* controller = insertion.first->second.get())
@@ -1176,7 +1176,7 @@ private:
 
   void getAudioData(Uint8* stream, int len) {
     if (m_audioEnabled) {
-      m_application->getAudioData((int16_t*)stream, len / 4);
+      m_application->getAudioData(reinterpret_cast<int16_t*>(stream), len / 4);
     } else {
       for (int i = 0; i < len; ++i)
         stream[i] = 0;
@@ -1217,7 +1217,7 @@ private:
           FlipImageOperation{ FlipImageOperation::Mode::FlipY }, // SDL wants an Australian cursor.
           BorderImageOperation{ 1, Vec4B(), Vec4B(), false, false }, // Nearest scaling fucks up and clips half off the edges, work around this with border+crop for now.
           ScaleImageOperation{ ScaleImageOperation::Mode::Nearest, Vec2F::filled(scale) },
-          CropImageOperation{ RectI::withSize(Vec2I::filled(ceilf((float)scale / 2)), Vec2I(imageSize)) }
+          CropImageOperation{ RectI::withSize(Vec2I::filled(ceilf(static_cast<float>(scale) / 2)), Vec2I(imageSize)) }
         };
       else
         operations = { FlipImageOperation{ FlipImageOperation::Mode::FlipY } };
@@ -1250,7 +1250,7 @@ private:
       entry->sdlSurface.reset(SDL_CreateSurfaceFrom(
         size[0], size[1],
         pixelFormat,
-        (void*)entry->image->data(),
+        const_cast<uint8_t*>(entry->image->data()),
         entry->image->bytesPerPixel() * size[0])
       );
       entry->sdlCursor.reset(SDL_CreateColorCursor(entry->sdlSurface.get(), offset[0] * scale, offset[1] * scale));
