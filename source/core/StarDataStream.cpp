@@ -53,7 +53,7 @@ void DataStream::writeBytes(ByteArray const& ba) {
 }
 
 DataStream& DataStream::operator<<(bool d) {
-  operator<<((uint8_t)d);
+  operator<<(static_cast<uint8_t>(d));
   return *this;
 }
 
@@ -63,67 +63,67 @@ DataStream& DataStream::operator<<(char c) {
 }
 
 DataStream& DataStream::operator<<(int8_t d) {
-  writeData((char*)&d, sizeof(d));
+  writeData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator<<(uint8_t d) {
-  writeData((char*)&d, sizeof(d));
+  writeData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator<<(int16_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
+  writeData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator<<(uint16_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
+  writeData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator<<(int32_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
+  writeData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator<<(uint32_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
+  writeData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator<<(int64_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
+  writeData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator<<(uint64_t d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
+  writeData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator<<(float d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
+  writeData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator<<(double d) {
   d = toByteOrder(m_byteOrder, d);
-  writeData((char*)&d, sizeof(d));
+  writeData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator>>(bool& d) {
   uint8_t bu;
-  readData((char*)&bu, sizeof(bu));
-  d = (bool)bu;
+  readData(reinterpret_cast<char*>(&bu), sizeof(bu));
+  d = static_cast<bool>(bu);
   return *this;
 }
 
@@ -133,59 +133,59 @@ DataStream& DataStream::operator>>(char& c) {
 }
 
 DataStream& DataStream::operator>>(int8_t& d) {
-  readData((char*)&d, sizeof(d));
+  readData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator>>(uint8_t& d) {
-  readData((char*)&d, sizeof(d));
+  readData(reinterpret_cast<char*>(&d), sizeof(d));
   return *this;
 }
 
 DataStream& DataStream::operator>>(int16_t& d) {
-  readData((char*)&d, sizeof(d));
+  readData(reinterpret_cast<char*>(&d), sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(uint16_t& d) {
-  readData((char*)&d, sizeof(d));
+  readData(reinterpret_cast<char*>(&d), sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(int32_t& d) {
-  readData((char*)&d, sizeof(d));
+  readData(reinterpret_cast<char*>(&d), sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(uint32_t& d) {
-  readData((char*)&d, sizeof(d));
+  readData(reinterpret_cast<char*>(&d), sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(int64_t& d) {
-  readData((char*)&d, sizeof(d));
+  readData(reinterpret_cast<char*>(&d), sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(uint64_t& d) {
-  readData((char*)&d, sizeof(d));
+  readData(reinterpret_cast<char*>(&d), sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(float& d) {
-  readData((char*)&d, sizeof(d));
+  readData(reinterpret_cast<char*>(&d), sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
 
 DataStream& DataStream::operator>>(double& d) {
-  readData((char*)&d, sizeof(d));
+  readData(reinterpret_cast<char*>(&d), sizeof(d));
   d = fromByteOrder(m_byteOrder, d);
   return *this;
 }
@@ -279,7 +279,7 @@ DataStream& DataStream::operator>>(std::string& d) {
     d.clear();
     char c;
     while (true) {
-      readData((char*)&c, sizeof(c));
+      readData(&c, sizeof(c));
       if (c == '\0')
         break;
       d.push_back(c);
@@ -307,7 +307,7 @@ DataStream& DataStream::operator>>(String& s) {
 void DataStream::writeStringData(char const* data, size_t len) {
   if (m_nullTerminatedStrings) {
     writeData(data, len);
-    operator<<((uint8_t)0x00);
+    operator<<(static_cast<uint8_t>(0x00));
   } else {
     writeVlqU(len);
     writeData(data, len);
