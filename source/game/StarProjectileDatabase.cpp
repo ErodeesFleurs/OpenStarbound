@@ -122,7 +122,7 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
   if (auto lightType = config.optString("lightType"))
     projectileConfig->lightType = LightTypeNames.getLeft(*lightType);
   else
-    projectileConfig->lightType = (LightType)config.getBool("pointLight", false);
+    projectileConfig->lightType = static_cast<LightType>(config.getBool("pointLight", false));
 
   projectileConfig->persistentAudio = config.getString("persistentAudio", "");
 

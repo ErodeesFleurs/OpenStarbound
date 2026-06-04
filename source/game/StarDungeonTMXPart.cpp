@@ -158,7 +158,7 @@ namespace Dungeon {
   TMXTileLayer::TMXTileLayer(Json const& layer) {
     unsigned width = layer.getInt("width"), height = layer.getInt("height");
     int x = layer.getInt("x", 0), y = layer.getInt("y", 0);
-    m_rect = RectI({x, y}, {x + (int)width - 1, y + (int)height - 1});
+    m_rect = RectI({x, y}, {x + static_cast<int>(width) - 1, y + static_cast<int>(height) - 1});
 
     m_name = layer.getString("name");
     m_layer = Tiled::LayerNames.getLeft(m_name);
@@ -167,7 +167,10 @@ namespace Dungeon {
       ByteArray compressedData = base64Decode(layer.getString("data"));
       ByteArray bytes = uncompressData(compressedData);
       for (size_t i = 0; i + 3 < bytes.size(); i += 4) {
-        uint32_t gid = (uint8_t)bytes[i] | ((uint8_t)bytes[i + 1] << 8) | ((uint8_t)bytes[i + 2] << 16) | ((uint8_t)bytes[i + 3] << 24);
+        uint32_t gid = static_cast<uint8_t>(bytes[i])
+            | (static_cast<uint8_t>(bytes[i + 1]) << 8)
+            | (static_cast<uint8_t>(bytes[i + 2]) << 16)
+            | (static_cast<uint8_t>(bytes[i + 3]) << 24);
         m_tileData.append(gid & ~TileFlip::AllBits);
       }
     } else if (!layer.contains("compression")) {
