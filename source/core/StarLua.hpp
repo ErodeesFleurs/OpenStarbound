@@ -2066,7 +2066,7 @@ void LuaEngine::registerUserDataType() {
 
   // Set the __gc function to the userdata destructor
   auto gcFunction = [](lua_State* state) {
-    T& t = *(T*)(lua_touserdata(state, 1));
+    T& t = *static_cast<T*>(lua_touserdata(state, 1));
     t.~T();
     return 0;
   };
@@ -2176,7 +2176,7 @@ T* LuaEngine::getUserData(int handleIndex) {
   lua_checkstack(m_state, 3);
 
   pushHandle(m_state, handleIndex);
-  T* userdata = (T*)lua_touserdata(m_state, -1);
+  T* userdata = static_cast<T*>(lua_touserdata(m_state, -1));
   if (lua_getmetatable(m_state, -1) == 0) {
     lua_pop(m_state, 1);
     throw LuaException("Cannot get userdata from lua type, no metatable found");

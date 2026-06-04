@@ -261,7 +261,7 @@ LuaEnginePtr LuaEngine::create(bool safe) {
   // Create the common metatable for wrapped functions
   lua_newtable(self->m_state);
   lua_pushcfunction(self->m_state, [](lua_State* state) {
-      auto func = (LuaDetail::LuaWrappedFunction*)lua_touserdata(state, 1);
+      auto func = static_cast<LuaDetail::LuaWrappedFunction*>(lua_touserdata(state, 1));
       func->~function();
       return 0;
     });
@@ -273,7 +273,7 @@ LuaEnginePtr LuaEngine::create(bool safe) {
   // Create the common metatable for require functions
   lua_newtable(self->m_state);
   lua_pushcfunction(self->m_state, [](lua_State* state) {
-      auto func = (LuaContext::RequireFunction*)lua_touserdata(state, 1);
+      auto func = static_cast<LuaContext::RequireFunction*>(lua_touserdata(state, 1));
       func->~function();
       return 0;
     });
@@ -920,7 +920,7 @@ void LuaEngine::setContextRequire(int handleIndex, LuaContext::RequireFunction r
 
   pushHandle(m_state, handleIndex);
 
-  auto funcUserdata = (LuaContext::RequireFunction*)lua_newuserdata(m_state, sizeof(LuaContext::RequireFunction));
+  auto funcUserdata = static_cast<LuaContext::RequireFunction*>(lua_newuserdata(m_state, sizeof(LuaContext::RequireFunction)));
   new (funcUserdata) LuaContext::RequireFunction(std::move(requireFunction));
   lua_rawgeti(m_state, LUA_REGISTRYINDEX, m_requireFunctionMetatableRegistryId);
   lua_setmetatable(m_state, -2);
@@ -931,7 +931,7 @@ void LuaEngine::setContextRequire(int handleIndex, LuaContext::RequireFunction r
     try {
       lua_checkstack(state, 2);
 
-      auto require = (LuaContext::RequireFunction*)lua_touserdata(state, lua_upvalueindex(1));
+      auto require = static_cast<LuaContext::RequireFunction*>(lua_touserdata(state, lua_upvalueindex(1)));
       auto self = luaEnginePtr(state);
 
       auto moduleName = self->luaTo<LuaString>(self->popLuaValue(state));
@@ -1115,14 +1115,14 @@ int LuaEngine::placeHandle() {
 LuaFunction LuaEngine::createWrappedFunction(LuaDetail::LuaWrappedFunction function) {
   lua_checkstack(m_state, 2);
 
-  auto funcUserdata = (LuaDetail::LuaWrappedFunction*)lua_newuserdata(m_state, sizeof(LuaDetail::LuaWrappedFunction));
+  auto funcUserdata = static_cast<LuaDetail::LuaWrappedFunction*>(lua_newuserdata(m_state, sizeof(LuaDetail::LuaWrappedFunction)));
   new (funcUserdata) LuaDetail::LuaWrappedFunction(std::move(function));
 
   lua_rawgeti(m_state, LUA_REGISTRYINDEX, m_wrappedFunctionMetatableRegistryId);
   lua_setmetatable(m_state, -2);
 
   auto invokeFunction = [](lua_State* state) {
-    auto func = (LuaDetail::LuaWrappedFunction*)lua_touserdata(state, lua_upvalueindex(1));
+    auto func = static_cast<LuaDetail::LuaWrappedFunction*>(lua_touserdata(state, lua_upvalueindex(1)));
     auto self = luaEnginePtr(state);
 
     int argumentCount = lua_gettop(state);
