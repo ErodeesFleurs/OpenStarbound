@@ -117,7 +117,7 @@ Json CelestialParameters::randomizeParameterRange(
 }
 
 bool CelestialParameters::isVisitable() const {
-  return (bool)m_visitableParameters;
+  return static_cast<bool>(m_visitableParameters);
 }
 
 VisitableWorldParametersConstPtr CelestialParameters::visitableParameters() const {

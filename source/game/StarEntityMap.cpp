@@ -59,7 +59,7 @@ void EntityMap::addEntity(EntityPtr entity) {
 
   if (boundBox.isNegative() || boundBox.width() > MaximumEntityBoundBox || boundBox.height() > MaximumEntityBoundBox) {
     throw EntityMapException::format("Entity id: {} type: {} bound box is negative or beyond the maximum entity bound box size in EntityMap::addEntity",
-        entity->entityId(), (int)entity->entityType());
+        entity->entityId(), static_cast<int>(entity->entityType()));
   }
 
   if (entityId == NullEntityId)
@@ -98,7 +98,7 @@ void EntityMap::updateAllEntities(EntityCallback const& callback, function<bool(
 
     if (boundBox.isNegative() || boundBox.width() > MaximumEntityBoundBox || boundBox.height() > MaximumEntityBoundBox) {
       throw EntityMapException::format("Entity id: {} type: {} bound box is negative or beyond the maximum entity bound box size in EntityMap::addEntity",
-          entity->entityId(), (int)entity->entityType());
+          entity->entityId(), static_cast<int>(entity->entityType()));
     }
 
     auto entityId = entity->entityId();
@@ -337,7 +337,7 @@ InteractiveEntityPtr EntityMap::interactiveEntityNear(Vec2F const& pos, float ma
 
 bool EntityMap::tileIsOccupied(Vec2I const& pos, bool includeEphemeral) const {
   RectF rect(Vec2F(pos[0], pos[1]), Vec2F(pos[0] + 1, pos[1] + 1));
-  return (bool)findEntity(rect, [&](EntityPtr const& entity) {
+  return static_cast<bool>(findEntity(rect, [&](EntityPtr const& entity) {
       if (auto tileEntity = as<TileEntity>(entity)) {
         if (includeEphemeral || !tileEntity->ephemeral()) {
           for (Vec2I space : tileEntity->spaces()) {
@@ -348,7 +348,7 @@ bool EntityMap::tileIsOccupied(Vec2I const& pos, bool includeEphemeral) const {
         }
       }
       return false;
-    });
+    }));
 }
 
 bool EntityMap::spaceIsOccupied(RectF const& rect, bool includesEphemeral) const {

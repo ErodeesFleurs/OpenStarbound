@@ -173,7 +173,7 @@ PacketPtr createPacket(PacketType type) {
     case PacketType::ReplaceTileList: return make_shared<ReplaceTileListPacket>();
     case PacketType::UpdateWorldTemplate: return make_shared<UpdateWorldTemplatePacket>();
     default:
-      throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
+      throw StarPacketException(strf("Unrecognized packet type {}", static_cast<unsigned int>(type)));
   }
 }
 
@@ -1106,7 +1106,7 @@ void EntityMessagePacket::write(DataStream& ds) const {
 void EntityMessagePacket::readJson(Json const& json) {
   auto jEntityId = json.get("entityId");
   if (jEntityId.canConvert(Json::Type::Int))
-    entityId = (EntityId)jEntityId.toInt();
+    entityId = static_cast<EntityId>(jEntityId.toInt());
   else
     entityId = jEntityId.toString();
   message = json.getString("message");
@@ -1326,7 +1326,7 @@ void StepUpdatePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
 
 void StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   if (netRules.isLegacy()) {
-    ds.writeVlqU((uint64_t)round(remoteTime * 60.0));
+    ds.writeVlqU(static_cast<uint64_t>(round(remoteTime * 60.0)));
   } else {
     ds.write(remoteTime);
   }

@@ -235,7 +235,7 @@ uint32_t Sky::day() const {
 float Sky::timeOfDay() const {
   if (!m_skyParameters.dayLength)
     return 0;
-  return fmod(epochTime(), (double)dayLength());
+  return fmod(epochTime(), static_cast<double>(dayLength()));
 }
 
 double Sky::epochTime() const {
