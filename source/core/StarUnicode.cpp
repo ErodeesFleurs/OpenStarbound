@@ -221,7 +221,7 @@ std::string hexStringFromUtf32(Utf32Type character) {
   Maybe<Utf32Type> trail;
   tie(lead, trail) = utf32ToUtf16SurrogatePair(character);
 
-  char16_t leadOut = toBigEndian((char16_t)lead);
+  char16_t leadOut = toBigEndian(static_cast<char16_t>(lead));
   auto leadHex = hexEncode(reinterpret_cast<char*>(&leadOut), sizeof(leadOut)).takeUtf8();
 
   starAssert(leadHex.size() == 4);
@@ -229,7 +229,7 @@ std::string hexStringFromUtf32(Utf32Type character) {
   if (!trail)
     return leadHex;
 
-  char16_t trailOut = toBigEndian((char16_t)*trail);
+  char16_t trailOut = toBigEndian(static_cast<char16_t>(*trail));
   auto trailHex = hexEncode(reinterpret_cast<char*>(&trailOut), sizeof(trailOut));
 
   starAssert(trailHex.size() == 4);

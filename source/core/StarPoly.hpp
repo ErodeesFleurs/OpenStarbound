@@ -466,14 +466,14 @@ typename Polygon<DataType>::Vertex Polygon<DataType>::normal(size_t i) const {
 
 template <typename DataType>
 typename Polygon<DataType>::Vertex Polygon<DataType>::center() const {
-  return std::accumulate(m_vertexes.begin(), m_vertexes.end(), Vertex()) / (DataType)m_vertexes.size();
+  return std::accumulate(m_vertexes.begin(), m_vertexes.end(), Vertex()) / static_cast<DataType>(m_vertexes.size());
 }
 
 template <typename DataType>
 typename Polygon<DataType>::Vertex Polygon<DataType>::bottomCenter() const {
   if (m_vertexes.size() == 0)
     return Vertex();
-  Polygon<DataType>::Vertex center = std::accumulate(m_vertexes.begin(), m_vertexes.end(), Vertex()) / (DataType)m_vertexes.size();
+  Polygon<DataType>::Vertex center = std::accumulate(m_vertexes.begin(), m_vertexes.end(), Vertex()) / static_cast<DataType>(m_vertexes.size());
   Polygon<DataType>::Vertex bottomLeft = *std::min_element(m_vertexes.begin(), m_vertexes.end());
   Polygon<DataType>::Vertex topRight = *std::max_element(m_vertexes.begin(), m_vertexes.end());
   Polygon<DataType>::Vertex size = topRight - bottomLeft;

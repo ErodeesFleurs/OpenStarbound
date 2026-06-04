@@ -65,7 +65,7 @@ auto Random2dPointGenerator<PointData, DataType>::generate(Poly const& area, Poi
           sectorRandomness.init(staticRandomU64(m_seed, x, y));
           unsigned max = sectorRandomness.randInt(m_densityRange[0], m_densityRange[1]);
           for (unsigned i = 0; i < max; ++i) {
-            Point pointPos = Point(x + (DataType)sectorRandomness.randd(), y + (DataType)sectorRandomness.randd()) * m_cellSize;
+            Point pointPos = Point(x + static_cast<DataType>(sectorRandomness.randd()), y + static_cast<DataType>(sectorRandomness.randd())) * m_cellSize;
             sectorResult.append(pair<Point, PointData>(pointPos, callback(sectorRandomness)));
           }
 

@@ -68,7 +68,7 @@ size_t Buffer::write(char const* data, size_t len) {
 
 size_t Buffer::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
   size_t rpos = readPosition;
-  if ((StreamOffset)rpos != readPosition)
+  if (static_cast<StreamOffset>(rpos) != readPosition)
     throw IOException("Error, readPosition out of range");
 
   return doRead(rpos, data, len);
@@ -76,7 +76,7 @@ size_t Buffer::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
 
 size_t Buffer::writeAbsolute(StreamOffset writePosition, char const* data, size_t len) {
   size_t wpos = writePosition;
-  if ((StreamOffset)wpos != writePosition)
+  if (static_cast<StreamOffset>(wpos) != writePosition)
     throw IOException("Error, writePosition out of range");
 
   return doWrite(wpos, data, len);
@@ -234,7 +234,7 @@ size_t ExternalBuffer::write(char const*, size_t) {
 
 size_t ExternalBuffer::readAbsolute(StreamOffset readPosition, char* data, size_t len) {
   size_t rpos = readPosition;
-  if ((StreamOffset)rpos != readPosition)
+  if (static_cast<StreamOffset>(rpos) != readPosition)
     throw IOException("Error, readPosition out of range");
 
   return doRead(rpos, data, len);

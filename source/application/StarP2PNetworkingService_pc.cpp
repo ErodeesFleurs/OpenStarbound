@@ -127,7 +127,7 @@ void Star::PcP2PNetworkingService::setActivityData(
           activity.GetSecrets().SetJoin(joinSecret.utf8Ptr());
         }
       } else if (m_joinLocation.is<JoinRemote>()) {
-        String address = toString((HostAddressWithPort)m_joinLocation.get<JoinRemote>());
+        String address = toString(HostAddressWithPort(m_joinLocation.get<JoinRemote>()));
         String joinSecret = strf("connect:address_{}", address);
         Logger::info("Setting Discord join secret as {}", joinSecret);
         activity.GetSecrets().SetJoin(joinSecret.utf8Ptr());
