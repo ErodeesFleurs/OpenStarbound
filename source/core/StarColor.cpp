@@ -117,9 +117,9 @@ Color Color::temperature(float temp) {
     b = 255;
   }
 
-  c.setRedF((float)r / 255.0f);
-  c.setGreenF((float)g / 255.0f);
-  c.setBlueF((float)b / 255.0f);
+  c.setRedF(static_cast<float>(r) / 255.0f);
+  c.setGreenF(static_cast<float>(g) / 255.0f);
+  c.setBlueF(static_cast<float>(b) / 255.0f);
 
   return c;
 }

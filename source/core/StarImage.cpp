@@ -393,8 +393,8 @@ Vec4B Image::getrgb(Vec2U const& pos) const {
 
 Vec4B Image::clamp(Vec2I const& pos) const {
   Vec4B c;
-  unsigned x = (unsigned)Star::clamp<int>(pos[0], 0, m_width - 1);
-  unsigned y = (unsigned)Star::clamp<int>(pos[1], 0, m_height - 1);
+  unsigned x = static_cast<unsigned>(Star::clamp<int>(pos[0], 0, m_width - 1));
+  unsigned y = static_cast<unsigned>(Star::clamp<int>(pos[1], 0, m_height - 1));
   if (m_width == 0 || m_height == 0) {
     return {0, 0, 0, 0};
   } else if (bytesPerPixel() == 4) {

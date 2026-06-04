@@ -37,7 +37,7 @@ using std::log10;
 using std::copysign;
 
 inline float log2(float f) {
-  return log(f) * (float)Constants::log2e;
+  return log(f) * static_cast<float>(Constants::log2e);
 }
 
 inline double log2(double d) {
@@ -59,7 +59,7 @@ template <typename T, typename T2>
 std::enable_if_t<!std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer && sizeof(T) >= sizeof(T2), bool>
 nearEqual(T x, T2 y, unsigned ulp) {
   auto epsilon = std::numeric_limits<T>::epsilon();
-  return abs(x - y) <= epsilon * max(abs(x), (T)abs(y)) * ulp;
+  return abs(x - y) <= epsilon * max(abs(x), static_cast<T>(abs(y))) * ulp;
 }
 
 template <typename T, typename T2>
@@ -71,13 +71,13 @@ nearEqual(T x, T2 y, unsigned ulp) {
 template <typename T, typename T2>
 std::enable_if_t<std::numeric_limits<T>::is_integer && !std::numeric_limits<T2>::is_integer, bool>
 nearEqual(T x, T2 y, unsigned ulp) {
-  return nearEqual((double)x, y, ulp);
+  return nearEqual(static_cast<double>(x), y, ulp);
 }
 
 template <typename T, typename T2>
 std::enable_if_t<!std::numeric_limits<T>::is_integer && std::numeric_limits<T2>::is_integer, bool>
 nearEqual(T x, T2 y, unsigned ulp) {
-  return nearEqual(x, (double)y, ulp);
+  return nearEqual(x, static_cast<double>(y), ulp);
 }
 
 template <typename T, typename T2>
@@ -123,7 +123,7 @@ constexpr T cube(T const& x) {
 
 template <typename Float>
 int ipart(Float f) {
-  return (int)floor(f);
+  return static_cast<int>(floor(f));
 }
 
 template <typename Float>
@@ -297,7 +297,7 @@ T approachAngle(T goal, T current, T rate) {
 inline uint8_t floatToByte(float val, bool doClamp = false) {
   if (doClamp)
     val = clamp(val, 0.0f, 1.0f);
-  return (uint8_t)(val * 255.0f);
+  return static_cast<uint8_t>(val * 255.0f);
 }
 
 // Used in color conversion from uint8_t to normalized float.

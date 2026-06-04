@@ -484,7 +484,7 @@ void processImageOperation(ImageOperation const& operation, Image& image, ImageR
   } else if (auto op = operation.ptr<MultiplyImageOperation>()) {
     image.forEachPixel([&op](unsigned, unsigned, Vec4B& pixel) {
       pixel = pixel.combine(op->color, [](uint8_t a, uint8_t b) -> uint8_t {
-          return (uint8_t)(((int)a * (int)b) / 255);
+          return static_cast<uint8_t>((static_cast<int>(a) * static_cast<int>(b)) / 255);
         });
     });
 
