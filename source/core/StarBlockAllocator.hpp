@@ -298,7 +298,7 @@ typename BlockAllocator<T, BlockSize>::Data* BlockAllocator<T, BlockSize>::getAl
   auto& dataptr = family[typeid(Data)];
   if (!dataptr)
     dataptr = make_shared<Data>();
-  return (Data*)dataptr.get();
+  return static_cast<Data*>(dataptr.get());
 }
 
 }

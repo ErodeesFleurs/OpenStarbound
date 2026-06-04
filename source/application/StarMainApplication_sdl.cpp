@@ -619,7 +619,7 @@ public:
     m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired,
     [](void* userdata, SDL_AudioStream* stream, int len, int) {
       if (len > 0) {
-        auto sdlPlatform = ((SdlPlatform*)(userdata));
+        auto sdlPlatform = static_cast<SdlPlatform*>(userdata);
         sdlPlatform->m_audioOutputData.resize(len);
         sdlPlatform->getAudioData(sdlPlatform->m_audioOutputData.data(), len);
         SDL_PutAudioStreamData(stream, sdlPlatform->m_audioOutputData.data(), len);
@@ -680,7 +680,7 @@ public:
     m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired,
     [](void* userdata, SDL_AudioStream* stream, int len, int) {
       if (len > 0) {
-        auto sdlPlatform = ((SdlPlatform*)(userdata));
+        auto sdlPlatform = static_cast<SdlPlatform*>(userdata);
         sdlPlatform->m_audioInputData.resize(len);
         SDL_GetAudioStreamData(stream, sdlPlatform->m_audioInputData.data(), len);
         sdlPlatform->m_audioInputCallback(sdlPlatform->m_audioInputData.data(), len);
