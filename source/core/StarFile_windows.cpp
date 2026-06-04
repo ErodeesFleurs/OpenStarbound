@@ -44,7 +44,7 @@ void File::changeDirectory(const String& dirName) {
 }
 
 void File::makeDirectory(String const& dirName) {
-  if (CreateDirectoryW(stringToUtf16(dirName).get(), NULL) == 0) {
+  if (CreateDirectoryW(stringToUtf16(dirName).get(), nullptr) == 0) {
     auto error = GetLastError();
     throw IOException(strf("could not create directory '{}', {}", dirName, error));
   }
@@ -260,15 +260,15 @@ void* File::fopen(char const* filename, IOMode mode) {
     creationDisposition = OPEN_EXISTING;
 
   HANDLE file = CreateFileW(stringToUtf16(String(filename)).get(),
-      desiredAccess, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, NULL,
-      creationDisposition, 0, NULL);
+      desiredAccess, FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE, nullptr,
+      creationDisposition, 0, nullptr);
 
   if (file == INVALID_HANDLE_VALUE)
     throw IOException::format("could not open file '{}' {}", filename, GetLastError());
 
   LARGE_INTEGER szero;
   szero.QuadPart = 0;
-  if (!SetFilePointerEx(file, szero, NULL, 0)) {
+  if (!SetFilePointerEx(file, szero, nullptr, 0)) {
     CloseHandle(file);
     throw IOException::format("could not set file pointer in fopen '{}' {}", filename, GetLastError());
   }
@@ -286,7 +286,7 @@ void* File::fopen(char const* filename, IOMode mode) {
       CloseHandle(file);
       throw IOException::format("could not get file size in fopen '{}' {}", filename, GetLastError());
     }
-    if (!SetFilePointerEx(file, size, NULL, 0)) {
+    if (!SetFilePointerEx(file, size, nullptr, 0)) {
       CloseHandle(file);
       throw IOException::format("could not set file pointer in fopen '{}' {}", filename, GetLastError());
     }
@@ -405,7 +405,7 @@ void File::resize(void* f, StreamOffset size) {
   HANDLE file = (HANDLE)f;
   LARGE_INTEGER s;
   s.QuadPart = size;
-  SetFilePointerEx(file, s, NULL, 0);
+  SetFilePointerEx(file, s, nullptr, 0);
   SetEndOfFile(file);
 }
 

@@ -13,7 +13,7 @@ struct WindowsSymInitializer {
   WindowsSymInitializer() {
     DWORD options = SymGetOptions();
     SymSetOptions(options | SYMOPT_LOAD_LINES);
-    if (!SymInitialize(GetCurrentProcess(), NULL, TRUE))
+    if (!SymInitialize(GetCurrentProcess(), nullptr, TRUE))
       fatalError("SymInitialize failed", false);
   }
 };
@@ -106,7 +106,7 @@ inline StackCapture captureStack() {
   Array<DWORD64, StackLimit> addresses;
   size_t count = 0;
   for (size_t i = 0; i < StackLimit; i++) {
-    if (!StackWalk64(image, process, thread, &stackFrame, &context, NULL, SymFunctionTableAccess64, SymGetModuleBase64, NULL))
+    if (!StackWalk64(image, process, thread, &stackFrame, &context, nullptr, SymFunctionTableAccess64, SymGetModuleBase64, nullptr))
       break;
     if (stackFrame.AddrPC.Offset == 0)
       break;
@@ -141,7 +141,7 @@ OutputProxy outputStack(StackCapture stack) {
         }
         format(os, " ({}:{})", ++file, line.LineNumber);
       }
-      if (SymFromAddr(process, stack.first[i], NULL, symbol))
+      if (SymFromAddr(process, stack.first[i], nullptr, symbol))
         format(os, " {}", symbol->Name);
 
       if (i + 1 < stack.second)
@@ -248,7 +248,7 @@ void fatalError(char const* message, bool showStackTrace) {
     ss << outputStack(captureStack());
 
   Logger::log(LogLevel::Error, ss.str().c_str());
-  MessageBoxW(NULL, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
+  MessageBoxW(nullptr, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
 
   std::abort();
 }
@@ -261,7 +261,7 @@ void fatalException(std::exception const& e, bool showStackTrace) {
     ss << "Caught at:" << std::endl << outputStack(captureStack());
 
   Logger::log(LogLevel::Error, ss.str().c_str());
-  MessageBoxW(NULL, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
+  MessageBoxW(nullptr, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);
 
   std::abort();
 }

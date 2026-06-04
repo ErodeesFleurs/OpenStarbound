@@ -74,8 +74,8 @@ struct ThreadImpl {
 
     stopped = false;
     if (thread == INVALID_HANDLE_VALUE)
-      thread = CreateThread(NULL, 0, runThread, (void*)this, 0, NULL);
-    if (thread == NULL)
+      thread = CreateThread(nullptr, 0, runThread, (void*)this, 0, nullptr);
+    if (thread == nullptr)
       thread = INVALID_HANDLE_VALUE;
     if (thread == INVALID_HANDLE_VALUE) {
       stopped = true;
@@ -208,17 +208,17 @@ private:
     EmulatedImpl() {
       numThreads = 0;
       isBroadcasting = 0;
-      threadSemaphore = CreateSemaphore(NULL, // no security
+      threadSemaphore = CreateSemaphore(nullptr, // no security
           0, // initially 0
           0x7fffffff, // max count
-          NULL); // unnamed
+          nullptr); // unnamed
 
       InitializeSRWLock(&numThreadsConditionLock);
 
-      broadcastDone = CreateEvent(NULL, // no security
+      broadcastDone = CreateEvent(nullptr, // no security
           FALSE, // auto-reset
           FALSE, // non-signaled initially
-          NULL); // unnamed
+          nullptr); // unnamed
     }
 
     virtual ~EmulatedImpl() {

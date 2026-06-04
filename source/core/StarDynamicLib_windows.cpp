@@ -29,7 +29,7 @@ String DynamicLib::libraryExtension() {
 
 DynamicLibUPtr DynamicLib::loadLibrary(String const& libraryName) {
   void* handle = LoadLibraryW(stringToUtf16(libraryName).get());
-  if (handle == NULL)
+  if (handle == nullptr)
     return {};
   return make_unique<PrivateDynLib>(handle);
 }

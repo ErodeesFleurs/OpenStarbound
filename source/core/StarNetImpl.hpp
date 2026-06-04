@@ -44,21 +44,21 @@ static WindowsSocketInitializer g_windowsSocketInitializer;
 
 inline String netErrorString() {
 #ifdef STAR_SYSTEM_WINDOWS
-  LPWSTR lpMsgBuf = NULL;
+  LPWSTR lpMsgBuf = nullptr;
   int error = WSAGetLastError();
 
   FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM
               | FORMAT_MESSAGE_IGNORE_INSERTS | FORMAT_MESSAGE_MAX_WIDTH_MASK,
-      NULL,
+      nullptr,
       error,
       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
       (LPTSTR)&lpMsgBuf,
       0,
-      NULL);
+      nullptr);
 
   String result = strf("{} - {}", error, utf16ToString(lpMsgBuf));
 
-  if (lpMsgBuf != NULL)
+  if (lpMsgBuf != nullptr)
     LocalFree(lpMsgBuf);
 
   return result;
