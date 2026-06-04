@@ -784,14 +784,14 @@ List<ItemPtr> PlayerInventory::pullOverflow() {
 }
 
 bool PlayerInventory::equipmentVisibility(EquipmentSlot slot) const {
-  return (m_equipmentVisibilityMask >> (uint8_t)slot) & 0x1;
+  return (m_equipmentVisibilityMask >> static_cast<uint8_t>(slot)) & 0x1;
 }
 
 void PlayerInventory::setEquipmentVisibility(EquipmentSlot slot, bool visible) {
   if (visible)
-    m_equipmentVisibilityMask |= (1 << (uint8_t)slot);
+    m_equipmentVisibilityMask |= (1u << static_cast<uint8_t>(slot));
   else
-    m_equipmentVisibilityMask &= ~(1 << (uint8_t)slot);
+    m_equipmentVisibilityMask &= ~(1u << static_cast<uint8_t>(slot));
 }
 
 void PlayerInventory::load(Json const& store) {
@@ -852,7 +852,7 @@ void PlayerInventory::load(Json const& store) {
   m_essential[EssentialItem::PaintTool] = itemDatabase->diskLoad(store.get("paintTool"));
   m_essential[EssentialItem::InspectionTool] = itemDatabase->diskLoad(store.get("inspectionTool"));
 
-  m_equipmentVisibilityMask = (unsigned)store.optUInt("equipmentVisibilityMask").value(0xFFFFFFFF);
+  m_equipmentVisibilityMask = static_cast<unsigned>(store.optUInt("equipmentVisibilityMask").value(0xFFFFFFFF));
 }
 
 Json PlayerInventory::store() const {

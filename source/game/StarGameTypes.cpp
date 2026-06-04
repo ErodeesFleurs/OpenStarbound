@@ -61,7 +61,7 @@ std::pair<EntityId, EntityId> connectionEntitySpace(ConnectionId connectionId) {
   if (connectionId == ServerConnectionId) {
     return {MinServerEntityId, MaxServerEntityId};
   } else if (connectionId >= MinClientConnectionId && connectionId <= MaxClientConnectionId) {
-    EntityId beginIdSpace = (EntityId)connectionId * -65536;
+    EntityId beginIdSpace = static_cast<EntityId>(connectionId) * -65536;
     EntityId endIdSpace = beginIdSpace + 65535;
     return {beginIdSpace, endIdSpace};
   } else {

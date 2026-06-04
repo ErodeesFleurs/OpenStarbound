@@ -94,7 +94,7 @@ DataStream& operator>>(DataStream& ds, EntityDamageTeam& team) {
 }
 
 TeamNumber soloPvpTeam(ConnectionId clientId) {
-  return (TeamNumber)clientId;
+  return static_cast<TeamNumber>(clientId);
 }
 
 }
