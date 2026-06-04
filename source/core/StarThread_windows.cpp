@@ -74,7 +74,7 @@ struct ThreadImpl {
 
     stopped = false;
     if (thread == INVALID_HANDLE_VALUE)
-      thread = CreateThread(nullptr, 0, runThread, (void*)this, 0, nullptr);
+      thread = CreateThread(nullptr, 0, runThread, static_cast<void*>(this), 0, nullptr);
     if (thread == nullptr)
       thread = INVALID_HANDLE_VALUE;
     if (thread == INVALID_HANDLE_VALUE) {
