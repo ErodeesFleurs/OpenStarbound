@@ -56,7 +56,7 @@ PcP2PNetworkingService::~PcP2PNetworkingService() {
     if (m_discordServerLobby) {
       Logger::info("Deleting Discord server lobby {}", m_discordServerLobby->first);
       m_state->discordCore->LobbyManager().DeleteLobby(m_discordServerLobby->first, [](discord::Result res) {
-          Logger::error("Could not delete Discord server lobby (err {})", (int)res);
+          Logger::error("Could not delete Discord server lobby (err {})", static_cast<int>(res));
         });
     }
 
@@ -138,7 +138,7 @@ void Star::PcP2PNetworkingService::setActivityData(
       m_discordUpdatingActivity = true;
       m_state->discordCore->ActivityManager().UpdateActivity(activity, [this](discord::Result res) {
           if (res != discord::Result::Ok)
-            Logger::error("Failed to set Discord activity (err {})", (int)res);
+            Logger::error("Failed to set Discord activity (err {})", static_cast<int>(res));
         
           MutexLocker serviceLocker(m_mutex);
           m_discordUpdatingActivity = false;
@@ -203,7 +203,7 @@ void Star::PcP2PNetworkingService::update() {
 
       m_state->discordCore->ActivityManager().SendRequestReply(p.first, reply, [](discord::Result res) {
           if (res != discord::Result::Ok)
-            Logger::error("Could not send Discord activity join response (err {})", (int)res);
+            Logger::error("Could not send Discord activity join response (err {})", static_cast<int>(res));
         });
     }
   }
@@ -394,9 +394,9 @@ bool PcP2PNetworkingService::DiscordP2PSocket::sendMessage(ByteArray const& mess
   if (mode != DiscordSocketMode::Connected)
     return false;
 
-  discord::Result res = parent->m_state->discordCore->LobbyManager().SendNetworkMessage(lobbyId, remoteUserId, DiscordMainNetworkChannel, (uint8_t*)message.ptr(), message.size());
+  discord::Result res = parent->m_state->discordCore->LobbyManager().SendNetworkMessage(lobbyId, remoteUserId, DiscordMainNetworkChannel, const_cast<uint8_t*>(reinterpret_cast<uint8_t const*>(message.ptr())), message.size());
   if (res != discord::Result::Ok)
-    throw ApplicationException::format("discord::Network::Send returned error (err {})", (int)res);
+    throw ApplicationException::format("discord::Network::Send returned error (err {})", static_cast<int>(res));
 
   return true;
 }
@@ -417,7 +417,7 @@ void PcP2PNetworkingService::discordCloseSocket(DiscordP2PSocket* socket) {
       if (!m_joinLocation.is<JoinLocal>() && m_discordOpenSockets.empty()) {
         auto res = m_state->discordCore->LobbyManager().DisconnectNetwork(socket->lobbyId);
         if (res != discord::Result::Ok)
-          Logger::error("Failed to leave network for lobby {} (err {})", socket->lobbyId, (int)res);
+          Logger::error("Failed to leave network for lobby {} (err {})", socket->lobbyId, static_cast<int>(res));
 
         m_state->discordCore->LobbyManager().DisconnectLobby(socket->lobbyId, [this, lobbyId = socket->lobbyId](discord::Result res) {
             if (res != discord::Result::Ok)
@@ -458,13 +458,13 @@ P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remot
           res = m_state->discordCore->LobbyManager().ConnectNetwork(lobbyId);
           if (res != discord::Result::Ok) {
             discordCloseSocket(socket);
-            return Logger::error("Could not connect to Discord lobby network (err {})", (int)res);
+            return Logger::error("Could not connect to Discord lobby network (err {})", static_cast<int>(res));
           }
           
           res = m_state->discordCore->LobbyManager().OpenNetworkChannel(lobbyId, DiscordMainNetworkChannel, true);
           if (res != discord::Result::Ok) {
             discordCloseSocket(socket);
-            return Logger::error("Could not open Discord main network channel (err {})", (int)res);
+            return Logger::error("Could not open Discord main network channel (err {})", static_cast<int>(res));
           }
 
               socket->mode = DiscordSocketMode::Connected;
@@ -476,7 +476,7 @@ P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remot
           Logger::error("discord::Lobbies::Connect callback no matching remoteUserId {} found", remoteUserId);
         }
       } else {
-        Logger::error("Failed to connect to remote lobby (err {})", (int)res);
+        Logger::error("Failed to connect to remote lobby (err {})", static_cast<int>(res));
         if (auto socket = m_discordOpenSockets.value(remoteUserId)) {
           MutexLocker socketLocker(socket->mutex);
           discordCloseSocket(socket);
@@ -574,7 +574,7 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
     if (m_discordServerLobby) {
       Logger::info("Deleting Discord server lobby {}", m_discordServerLobby->first);
       m_state->discordCore->LobbyManager().DeleteLobby(m_discordServerLobby->first, [](discord::Result res) {
-          Logger::error("Could not delete Discord server lobby (err {})", (int)res);
+          Logger::error("Could not delete Discord server lobby (err {})", static_cast<int>(res));
         });
     }
 
@@ -601,21 +601,21 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
                 // successfully joined lobby network
                 return;
               } else {
-                Logger::error("Failed to open Discord main network channel (err {})", (int)res);
+                Logger::error("Failed to open Discord main network channel (err {})", static_cast<int>(res));
               }
             } else {
-              Logger::error("Failed to join Discord lobby network (err {})", (int)res);
+              Logger::error("Failed to join Discord lobby network (err {})", static_cast<int>(res));
             }
 
             // Created lobby but failed to join the lobby network, delete lobby
-            Logger::error("Failed to join Discord lobby network (err {})", (int)res);
+            Logger::error("Failed to join Discord lobby network (err {})", static_cast<int>(res));
 
             Logger::info("Deleting Discord lobby {}", lobbyId);
             m_state->discordCore->LobbyManager().DeleteLobby(lobbyId, [lobbyId](discord::Result res) {
-                Logger::error("Failed to delete Discord lobby {} (err {})", lobbyId, (int)res);
+                Logger::error("Failed to delete Discord lobby {} (err {})", lobbyId, static_cast<int>(res));
               });
           } else {
-            Logger::error("Failed to create Discord lobby (err {})", (int)res);
+            Logger::error("Failed to create Discord lobby (err {})", static_cast<int>(res));
           }
         });
     }

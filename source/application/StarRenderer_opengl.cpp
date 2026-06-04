@@ -92,7 +92,7 @@ static void GLAPIENTRY GlMessageCallback(GLenum, GLenum type, GLuint, GLenum, GL
 OpenGlRenderer::OpenGlRenderer() {
   auto glewResult = glewInit();
   if (glewResult != GLEW_OK && glewResult != GLEW_ERROR_NO_GLX_DISPLAY)
-    throw RendererException::format("Could not initialize GLEW: {}", (char*)glewGetErrorString(glewResult));
+    throw RendererException::format("Could not initialize GLEW: {}", reinterpret_cast<char const*>(glewGetErrorString(glewResult)));
 
   if (!GLEW_VERSION_2_0)
     throw RendererException("OpenGL 2.0 not available!");
