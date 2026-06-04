@@ -203,7 +203,7 @@ private:
 
 template <typename EnumType, typename>
 DataStream& DataStream::operator<<(EnumType const& e) {
-  *this << (std::underlying_type_t<EnumType>)e;
+  *this << static_cast<std::underlying_type_t<EnumType>>(e);
   return *this;
 }
 
@@ -211,7 +211,7 @@ template <typename EnumType, typename>
 DataStream& DataStream::operator>>(EnumType& e) {
   std::underlying_type_t<EnumType> i;
   *this >> i;
-  e = (EnumType)i;
+  e = static_cast<EnumType>(i);
   return *this;
 }
 
@@ -236,12 +236,12 @@ template <typename ReadType, typename Data>
 void DataStream::cread(Data& data) {
   ReadType v;
   *this >> v;
-  data = (Data)v;
+  data = static_cast<Data>(v);
 }
 
 template <typename WriteType, typename Data>
 void DataStream::cwrite(Data const& data) {
-  WriteType v = (WriteType)data;
+  WriteType v = static_cast<WriteType>(data);
   *this << v;
 }
 

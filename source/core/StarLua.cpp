@@ -1567,8 +1567,8 @@ Maybe<LuaInt> LuaDetail::asInteger(LuaValue const& v) {
     return v.get<LuaInt>();
   if (v.is<LuaFloat>()) {
     auto f = v.get<LuaFloat>();
-    if ((LuaFloat)(LuaInt)f == f)
-      return (LuaInt)f;
+    if (static_cast<LuaFloat>(static_cast<LuaInt>(f)) == f)
+      return static_cast<LuaInt>(f);
     return {};
   }
   /*// Kae: This prevents 1-1 conversion between Lua and Star::Json.

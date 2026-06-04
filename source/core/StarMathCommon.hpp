@@ -257,7 +257,7 @@ Float ppow(Float val, Float pow) {
 // Returns angle wrapped around to the range [-pi, pi).
 template <typename Float>
 Float constrainAngle(Float angle) {
-  angle = fmod((Float)(angle + Constants::pi), (Float)(Constants::pi * 2));
+  angle = fmod(static_cast<Float>(angle + Constants::pi), static_cast<Float>(Constants::pi * 2));
   if (angle < 0)
     angle += Constants::pi * 2;
   return angle - Constants::pi;
@@ -267,7 +267,7 @@ Float constrainAngle(Float angle) {
 // angle, in radians.
 template <typename Float>
 Float angleDiff(Float angle, Float targetAngle) {
-  double diff = fmod((Float)(targetAngle - angle + Constants::pi), (Float)(Constants::pi * 2));
+  double diff = fmod(static_cast<Float>(targetAngle - angle + Constants::pi), static_cast<Float>(Constants::pi * 2));
   if (diff < 0)
     diff += Constants::pi * 2;
   return diff - Constants::pi;

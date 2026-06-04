@@ -799,7 +799,7 @@ Json Json::eraseIndex(size_t index) const {
 }
 
 Json::Type Json::type() const {
-  return (Type)m_data.typeIndex();
+  return static_cast<Type>(m_data.typeIndex());
 }
 
 String Json::typeName() const {

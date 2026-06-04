@@ -562,7 +562,7 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
       SteamFriends()->SetRichPresence("connect", strf("+platform:connect:steamid_{}", steamId).c_str());
 
     } else if (m_joinLocation.is<JoinRemote>()) {
-      auto address = (HostAddressWithPort)location.get<JoinRemote>();
+      auto address = HostAddressWithPort(location.get<JoinRemote>());
       Logger::info("Setting Steam rich presence connection as address_{}", address);
       SteamFriends()->SetRichPresence("connect", strf("+platform:connect:address_{}", address).c_str());
     }
