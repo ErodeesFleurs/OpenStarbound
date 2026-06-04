@@ -160,7 +160,7 @@ void Sky::update(double dt) {
       m_worldOffset -= m_worldOffset * m_settings.queryFloat("correctionPower");
     } else if (m_flyingType == FlyingType::Warp) {
       float percentage = 0.0;
-      float dir = (int)m_warpPhase < 0 ? -1.0 : 1.0;
+      float dir = static_cast<int>(m_warpPhase) < 0 ? -1.0 : 1.0;
       if (m_warpPhase == WarpPhase::SpeedingUp)
         percentage = powf(m_flyingTimer / speedupTime(), 2.0);
       else if (m_warpPhase == WarpPhase::Maintain)
@@ -518,13 +518,13 @@ void Sky::writeNetStates() {
   if (take(m_skyParametersUpdated))
     m_skyParametersNetState.set(DataStreamBuffer::serialize<Json>(m_skyParameters.toJson()));
 
-  m_skyTypeNetState.set((int)m_skyType);
+  m_skyTypeNetState.set(static_cast<int>(m_skyType));
   m_timeNetState.set(m_time);
   m_enterHyperspaceNetState.set(m_enterHyperspace);
   m_startInWarpNetState.set(m_startInWarp);
 
-  m_flyingTypeNetState.set((unsigned)m_flyingType);
-  m_warpPhaseNetState.set((int)m_warpPhase);
+  m_flyingTypeNetState.set(static_cast<unsigned>(m_flyingType));
+  m_warpPhaseNetState.set(static_cast<int>(m_warpPhase));
 
   m_flyingTimerNetState.set(m_flyingTimer);
   m_worldMoveNetState.set(m_worldMoveOffset);
@@ -537,13 +537,13 @@ void Sky::readNetStates() {
     skyParametersUpdated();
   }
 
-  m_skyType = (SkyType)m_skyTypeNetState.get();
+  m_skyType = static_cast<SkyType>(m_skyTypeNetState.get());
   m_time = m_timeNetState.get();
   m_enterHyperspace = m_enterHyperspaceNetState.get();
   m_startInWarp = m_startInWarpNetState.get();
 
-  m_flyingType = (FlyingType)m_flyingTypeNetState.get();
-  m_warpPhase = (WarpPhase)m_warpPhaseNetState.get();
+  m_flyingType = static_cast<FlyingType>(m_flyingTypeNetState.get());
+  m_warpPhase = static_cast<WarpPhase>(m_warpPhaseNetState.get());
   stateUpdate();
 
   if (!m_netInit) {
