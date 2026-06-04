@@ -496,7 +496,7 @@ void PcP2PNetworkingService::discordOnReceiveMessage(discord::LobbyId lobbyId, d
   if (auto socket = m_discordOpenSockets.value(userId)) {
       if (channel == DiscordMainNetworkChannel) {
         MutexLocker socketLocker(socket->mutex);
-        socket->incoming.append(ByteArray((char const*)data, size));
+        socket->incoming.append(ByteArray(reinterpret_cast<char const*>(data), size));
       } else {
         Logger::error("Received Discord message on unexpected channel {}, ignoring", channel);
       }

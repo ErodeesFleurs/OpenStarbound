@@ -455,7 +455,7 @@ ByteArray LuaEngine::compile(char const* contents, size_t size, char const* name
 
   ByteArray compiledScript;
   lua_Writer writer = [](lua_State*, void const* data, size_t size, void* byteArrayPtr) -> int {
-    ((ByteArray*)byteArrayPtr)->append((char const*)data, size);
+    static_cast<ByteArray*>(byteArrayPtr)->append(static_cast<char const*>(data), size);
     return 0;
   };
   lua_dump(m_state, writer, &compiledScript, false);

@@ -26,8 +26,8 @@ StringView::StringView(std::string_view const& s) : m_view(s) {};
 StringView::StringView(std::string_view&& s) noexcept : m_view(std::move(s)) {};
 StringView::StringView(std::string const& s) : m_view(s) {}
 
-StringView::StringView(Char const* s) : m_view((char const*)s, sizeof(*s)) {}
-StringView::StringView(Char const* s, size_t n) : m_view((char const*)s, n * sizeof(*s)) {};
+StringView::StringView(Char const* s) : m_view(reinterpret_cast<char const*>(s), sizeof(*s)) {}
+StringView::StringView(Char const* s, size_t n) : m_view(reinterpret_cast<char const*>(s), n * sizeof(*s)) {};
 
 std::string_view const& StringView::utf8() const {
   return m_view;
