@@ -233,10 +233,10 @@ Perlin<Float>& Perlin<Float>::operator=(Perlin const& perlin) {
     m_offset = perlin.m_offset;
     m_gain = perlin.m_gain;
 
-    p.reset(new int[PerlinSampleSize + PerlinSampleSize + 2]);
-    g3.reset(new Float[PerlinSampleSize + PerlinSampleSize + 2][3]);
-    g2.reset(new Float[PerlinSampleSize + PerlinSampleSize + 2][2]);
-    g1.reset(new Float[PerlinSampleSize + PerlinSampleSize + 2]);
+    p = make_unique<int[]>(PerlinSampleSize + PerlinSampleSize + 2);
+    g3 = make_unique<Float[][3]>(PerlinSampleSize + PerlinSampleSize + 2);
+    g2 = make_unique<Float[][2]>(PerlinSampleSize + PerlinSampleSize + 2);
+    g1 = make_unique<Float[]>(PerlinSampleSize + PerlinSampleSize + 2);
 
     std::memcpy(p.get(), perlin.p.get(), (PerlinSampleSize + PerlinSampleSize + 2) * sizeof(int));
     std::memcpy(g3.get(), perlin.g3.get(), (PerlinSampleSize + PerlinSampleSize + 2) * sizeof(Float) * 3);
@@ -485,23 +485,23 @@ template <typename Float>
 void Perlin<Float>::init(uint64_t seed) {
   RandomSource randomSource(seed);
 
-  p.reset(new int[PerlinSampleSize + PerlinSampleSize + 2]);
-  g3.reset(new Float[PerlinSampleSize + PerlinSampleSize + 2][3]);
-  g2.reset(new Float[PerlinSampleSize + PerlinSampleSize + 2][2]);
-  g1.reset(new Float[PerlinSampleSize + PerlinSampleSize + 2]);
+  p = make_unique<int[]>(PerlinSampleSize + PerlinSampleSize + 2);
+  g3 = make_unique<Float[][3]>(PerlinSampleSize + PerlinSampleSize + 2);
+  g2 = make_unique<Float[][2]>(PerlinSampleSize + PerlinSampleSize + 2);
+  g1 = make_unique<Float[]>(PerlinSampleSize + PerlinSampleSize + 2);
 
   int i, j, k;
 
   for (i = 0; i < PerlinSampleSize; i++) {
     p[i] = i;
-    g1[i] = (Float)(randomSource.randInt(-PerlinSampleSize, PerlinSampleSize)) / PerlinSampleSize;
+    g1[i] = static_cast<Float>(randomSource.randInt(-PerlinSampleSize, PerlinSampleSize)) / PerlinSampleSize;
 
     for (j = 0; j < 2; j++)
-      g2[i][j] = (Float)(randomSource.randInt(-PerlinSampleSize, PerlinSampleSize)) / PerlinSampleSize;
+      g2[i][j] = static_cast<Float>(randomSource.randInt(-PerlinSampleSize, PerlinSampleSize)) / PerlinSampleSize;
     normalize2(g2[i]);
 
     for (j = 0; j < 3; j++)
-      g3[i][j] = (Float)(randomSource.randInt(-PerlinSampleSize, PerlinSampleSize)) / PerlinSampleSize;
+      g3[i][j] = static_cast<Float>(randomSource.randInt(-PerlinSampleSize, PerlinSampleSize)) / PerlinSampleSize;
     normalize3(g3[i]);
   }
 
