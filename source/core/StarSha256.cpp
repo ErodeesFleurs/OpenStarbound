@@ -16,7 +16,7 @@ namespace Star {
 // Tom St Denis
 
 // the K array
-static const uint32_t K[64] = {0x428a2f98U,
+static constexpr uint32_t K[64] = {0x428a2f98U,
     0x71374491U,
     0xb5c0fbcfU,
     0xe9b5dba5U,
@@ -79,17 +79,40 @@ static const uint32_t K[64] = {0x428a2f98U,
     0x90befffaU,
     0xa4506cebU,
     0xbef9a3f7U,
-    0xc67178f2UL};
+    0xc67178f2U};
 
 // Various logical functions
-#define Ch(x, y, z) ((x & y) ^ (~x & z))
-#define Maj(x, y, z) ((x & y) ^ (x & z) ^ (y & z))
-#define S(x, n) (((x) >> ((n)&31)) | ((x) << (32 - ((n)&31))))
-#define R(x, n) ((x) >> (n))
-#define Sigma0(x) (S(x, 2) ^ S(x, 13) ^ S(x, 22))
-#define Sigma1(x) (S(x, 6) ^ S(x, 11) ^ S(x, 25))
-#define Gamma0(x) (S(x, 7) ^ S(x, 18) ^ R(x, 3))
-#define Gamma1(x) (S(x, 17) ^ S(x, 19) ^ R(x, 10))
+static constexpr uint32_t choose(uint32_t x, uint32_t y, uint32_t z) {
+  return (x & y) ^ (~x & z);
+}
+
+static constexpr uint32_t majority(uint32_t x, uint32_t y, uint32_t z) {
+  return (x & y) ^ (x & z) ^ (y & z);
+}
+
+static constexpr uint32_t rotateRight(uint32_t x, uint32_t n) {
+  return (x >> (n & 31)) | (x << (32 - (n & 31)));
+}
+
+static constexpr uint32_t shiftRight(uint32_t x, uint32_t n) {
+  return x >> n;
+}
+
+static constexpr uint32_t sigma0(uint32_t x) {
+  return rotateRight(x, 2) ^ rotateRight(x, 13) ^ rotateRight(x, 22);
+}
+
+static constexpr uint32_t sigma1(uint32_t x) {
+  return rotateRight(x, 6) ^ rotateRight(x, 11) ^ rotateRight(x, 25);
+}
+
+static constexpr uint32_t gamma0(uint32_t x) {
+  return rotateRight(x, 7) ^ rotateRight(x, 18) ^ shiftRight(x, 3);
+}
+
+static constexpr uint32_t gamma1(uint32_t x) {
+  return rotateRight(x, 17) ^ rotateRight(x, 19) ^ shiftRight(x, 10);
+}
 
 // compress 512-bits
 static void sha_compress(sha_state* md) {
@@ -109,12 +132,12 @@ static void sha_compress(sha_state* md) {
 
   /* fill W[16..63] */
   for (i = 16; i < 64; i++)
-    W[i] = Gamma1(W[i - 2]) + W[i - 7] + Gamma0(W[i - 15]) + W[i - 16];
+    W[i] = gamma1(W[i - 2]) + W[i - 7] + gamma0(W[i - 15]) + W[i - 16];
 
   /* Compress */
   for (i = 0; i < 64; i++) {
-    t0 = S[7] + Sigma1(S[4]) + Ch(S[4], S[5], S[6]) + K[i] + W[i];
-    t1 = Sigma0(S[0]) + Maj(S[0], S[1], S[2]);
+    t0 = S[7] + sigma1(S[4]) + choose(S[4], S[5], S[6]) + K[i] + W[i];
+    t1 = sigma0(S[0]) + majority(S[0], S[1], S[2]);
     S[7] = S[6];
     S[6] = S[5];
     S[5] = S[4];
@@ -143,7 +166,7 @@ static void sha_init(sha_state* md) {
   md->state[7] = 0x5BE0CD19U;
 }
 
-static void sha_process(sha_state* md, uint8_t* buf, int len) {
+static void sha_process(sha_state* md, uint8_t const* buf, size_t len) {
   while (len--) {
     /* copy byte */
     md->buf[md->curlen++] = *buf++;
@@ -205,7 +228,7 @@ void Sha256Hasher::push(char const* data, size_t length) {
     m_finished = false;
   }
 
-  sha_process(&m_state, const_cast<uint8_t*>(reinterpret_cast<uint8_t const*>(data)), length);
+  sha_process(&m_state, reinterpret_cast<uint8_t const*>(data), length);
 }
 
 void Sha256Hasher::push(String const& data) {
@@ -231,7 +254,7 @@ void Sha256Hasher::compute(char* hashDestination) {
 void sha256(char const* source, size_t length, char* hashDestination) {
   sha_state state;
   sha_init(&state);
-  sha_process(&state, const_cast<uint8_t*>(reinterpret_cast<uint8_t const*>(source)), length);
+  sha_process(&state, reinterpret_cast<uint8_t const*>(source), length);
   sha_done(&state, reinterpret_cast<uint8_t*>(hashDestination));
 }
 

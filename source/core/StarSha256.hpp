@@ -5,10 +5,10 @@
 
 namespace Star {
 
-typedef struct sha_state_struct {
+struct sha_state {
   uint32_t state[8], length, curlen;
   uint8_t buf[64];
-} sha_state;
+};
 
 class Sha256Hasher {
 public:
