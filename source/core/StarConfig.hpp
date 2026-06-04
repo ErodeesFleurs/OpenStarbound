@@ -62,7 +62,7 @@ constexpr bool DebugEnabled = false;
 
 // A version of string::npos that's used in general to mean "not a position"
 // and is the largest value for size_t.
-size_t const NPos = (size_t)(-1);
+constexpr size_t NPos = static_cast<size_t>(-1);
 
 typedef int64_t StreamOffset;
 

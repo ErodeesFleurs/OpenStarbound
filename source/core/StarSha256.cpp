@@ -102,8 +102,10 @@ static void sha_compress(sha_state* md) {
 
   /* copy the state into 512-bits into W[0..15] */
   for (i = 0; i < 16; i++)
-    W[i] = (((uint32_t)md->buf[(4 * i) + 0]) << 24) | (((uint32_t)md->buf[(4 * i) + 1]) << 16)
-        | (((uint32_t)md->buf[(4 * i) + 2]) << 8) | (((uint32_t)md->buf[(4 * i) + 3]));
+    W[i] = (static_cast<uint32_t>(md->buf[(4 * i) + 0]) << 24)
+        | (static_cast<uint32_t>(md->buf[(4 * i) + 1]) << 16)
+        | (static_cast<uint32_t>(md->buf[(4 * i) + 2]) << 8)
+        | static_cast<uint32_t>(md->buf[(4 * i) + 3]);
 
   /* fill W[16..63] */
   for (i = 16; i < 64; i++)

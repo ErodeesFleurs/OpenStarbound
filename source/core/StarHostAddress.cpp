@@ -196,7 +196,7 @@ std::ostream& operator<<(std::ostream& os, HostAddress const& address) {
       break;
 
     default:
-      throw NetworkException(strf("Unknown address mode ({})", (int)address.mode()));
+      throw NetworkException(strf("Unknown address mode ({})", static_cast<int>(address.mode())));
   }
   return os;
 }
