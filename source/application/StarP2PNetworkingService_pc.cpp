@@ -310,7 +310,7 @@ auto PcP2PNetworkingService::createSteamP2PSocket(CSteamID steamId) -> unique_pt
     steamCloseSocket(oldSocket);
   }
 
-  unique_ptr<SteamP2PSocket> socket(new SteamP2PSocket);
+  auto socket = make_unique<SteamP2PSocket>();
   socket->parent = this;
   socket->steamId = steamId;
   socket->connected = true;
@@ -441,7 +441,7 @@ P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remot
     discordCloseSocket(oldSocket);
   }
 
-  unique_ptr<DiscordP2PSocket> socket(new DiscordP2PSocket);
+  auto socket = make_unique<DiscordP2PSocket>();
   socket->parent = this;
   socket->mode = DiscordSocketMode::Startup;
   socket->remoteUserId = remoteUserId;
@@ -510,7 +510,7 @@ void PcP2PNetworkingService::discordOnLobbyMemberConnect(discord::LobbyId lobbyI
 
   if (m_discordServerLobby && m_discordServerLobby->first == lobbyId && userId != m_state->discordCurrentUser->GetId()) {
     if (!m_discordOpenSockets.contains(userId)) {
-      unique_ptr<DiscordP2PSocket> socket(new DiscordP2PSocket);
+      auto socket = make_unique<DiscordP2PSocket>();
       socket->parent = this;
       socket->lobbyId = lobbyId;
       socket->remoteUserId = userId;
