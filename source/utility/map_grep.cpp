@@ -6,16 +6,16 @@
 using namespace Star;
 using namespace Star::Dungeon;
 
-typedef String TileName;
-typedef pair<String, String> TileProperty;
+using TileName = String;
+using TileProperty = pair<String, String>;
 
-typedef MVariant<TileName, TileProperty> MatchCriteria;
+using MatchCriteria = MVariant<TileName, TileProperty>;
 
 struct SearchParameters {
   MatchCriteria criteria;
 };
 
-typedef function<void(String, Vec2I)> MatchReporter;
+using MatchReporter = function<void(String, Vec2I)>;
 
 String const MapFilenameSuffix = ".json";
 

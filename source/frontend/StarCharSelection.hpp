@@ -9,9 +9,9 @@ STAR_CLASS(PlayerStorage);
 
 class CharSelectionPane : public Pane {
 public:
-  typedef function<void()> CreateCharCallback;
-  typedef function<void(PlayerPtr const&)> SelectCharacterCallback;
-  typedef function<void(Uuid)> DeleteCharacterCallback;
+  using CreateCharCallback = function<void()>;
+  using SelectCharacterCallback = function<void(PlayerPtr const&)>;
+  using DeleteCharacterCallback = function<void(Uuid)>;
 
   CharSelectionPane(PlayerStoragePtr playerStorage, CreateCharCallback createCallback,
       SelectCharacterCallback selectCallback, DeleteCharacterCallback deleteCallback);
@@ -35,5 +35,5 @@ private:
   SelectCharacterCallback m_selectCallback;
   DeleteCharacterCallback m_deleteCallback;
 };
-typedef shared_ptr<CharSelectionPane> CharSelectionPanePtr;
+using CharSelectionPanePtr = shared_ptr<CharSelectionPane>;
 }

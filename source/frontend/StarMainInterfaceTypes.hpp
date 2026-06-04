@@ -41,7 +41,7 @@ enum class MainInterfacePanes {
 
 extern EnumMap<MainInterfacePanes> const MainInterfacePanesNames;
 
-typedef RegisteredPaneManager<MainInterfacePanes> MainInterfacePaneManager;
+using MainInterfacePaneManager = RegisteredPaneManager<MainInterfacePanes>;
 
 struct MainInterfaceConfig {
   static MainInterfaceConfigPtr loadFromAssets();

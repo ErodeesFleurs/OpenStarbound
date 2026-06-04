@@ -25,8 +25,8 @@ public:
   void render();
 
 private:
-  typedef tuple<String, Vec2F> BubbleImage;
-  typedef tuple<String, TextStyle, bool, Vec2F> BubbleText;
+  using BubbleImage = tuple<String, Vec2F>;
+  using BubbleText = tuple<String, TextStyle, bool, Vec2F>;
 
   struct Bubble {
     EntityId entity;

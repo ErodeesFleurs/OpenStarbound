@@ -6,7 +6,7 @@ namespace Star {
 
 STAR_CLASS(ContainerInteractor);
 
-typedef List<ItemPtr> ContainerResult;
+using ContainerResult = List<ItemPtr>;
 
 class ContainerInteractor {
 public:

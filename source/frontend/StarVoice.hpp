@@ -12,9 +12,9 @@
 #include <queue>
 
 struct OpusDecoder;
-typedef std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)> OpusDecoderPtr;
+using OpusDecoderPtr = std::unique_ptr<OpusDecoder, void(*)(OpusDecoder*)>;
 struct OpusEncoder;
-typedef std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)> OpusEncoderPtr;
+using OpusEncoderPtr = std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)>;
 
 namespace Star {
 
@@ -65,7 +65,7 @@ struct VoiceAudioChunk {
 class Voice {
 public:
   // Individual speakers are represented by their connection ID.
-  typedef ConnectionId SpeakerId;
+  using SpeakerId = ConnectionId;
 
   class Speaker {
   public:
@@ -97,7 +97,7 @@ public:
     Json toJson() const;
   };
 
-  typedef std::shared_ptr<Speaker> SpeakerPtr;
+  using SpeakerPtr = std::shared_ptr<Speaker>;
 
   // Get pointer to the singleton Voice instance, if it exists.  Otherwise,
   // returns nullptr.
@@ -135,7 +135,7 @@ public:
   // Called to mix voice audio with the game.
   void mix(int16_t* buffer, size_t frames, unsigned channels);
 
-  typedef function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
+  using PositionalAttenuationFunction = function<float(unsigned, Vec2F, float)>;
   void update(float dt, PositionalAttenuationFunction positionalAttenuationFunction = {});
 
   void setDeviceName(Maybe<String> device);

@@ -7,7 +7,7 @@
 namespace Star {
 
 class Player;
-typedef shared_ptr<Player> PlayerPtr;
+using PlayerPtr = shared_ptr<Player>;
 
 STAR_EXCEPTION(CharCreationException, StarException);
 
