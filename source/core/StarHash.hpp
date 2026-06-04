@@ -23,7 +23,7 @@ public:
 
   template <typename T>
   void put(T b) {
-    m_hash = m_hash * 101 + (size_t)b;
+    m_hash = m_hash * 101 + static_cast<size_t>(b);
   }
 
   size_t hash() const {

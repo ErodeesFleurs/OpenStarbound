@@ -192,7 +192,7 @@ Vec2S SectorArray2D<ElementT, SectorSize>::sectorCorner(Sector const& id) const 
 template <typename ElementT, size_t SectorSize>
 bool SectorArray2D<ElementT, SectorSize>::hasSector(Sector const& id) const {
   starAssert(id[0] < m_sectors.size(0) && id[1] < m_sectors.size(1));
-  return (bool)m_sectors(id[0], id[1]);
+  return m_sectors(id[0], id[1]) != nullptr;
 }
 
 template <typename ElementT, size_t SectorSize>
