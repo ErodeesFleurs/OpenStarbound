@@ -15,7 +15,7 @@ size_t UdpSocket::receive(HostAddressWithPort* address, char* data, size_t datas
   struct sockaddr_storage sockAddr;
   socklen_t sockAddrLen = sizeof(sockAddr);
 
-  len = ::recvfrom(m_impl->socketDesc, data, datasize, flags, (struct sockaddr*)&sockAddr, &sockAddrLen);
+  len = ::recvfrom(m_impl->socketDesc, data, datasize, flags, reinterpret_cast<struct sockaddr*>(&sockAddr), &sockAddrLen);
 
   if (len < 0) {
     if (!isActive())
@@ -40,7 +40,7 @@ size_t UdpSocket::send(HostAddressWithPort const& address, char const* data, siz
   socklen_t sockAddrLen;
   setNativeFromAddress(address, &sockAddr, &sockAddrLen);
 
-  int len = ::sendto(m_impl->socketDesc, data, size, 0, (struct sockaddr*)&sockAddr, sockAddrLen);
+  int len = ::sendto(m_impl->socketDesc, data, size, 0, reinterpret_cast<struct sockaddr*>(&sockAddr), sockAddrLen);
   if (len < 0) {
     if (!isActive())
       throw SocketClosedException("Connection closed");
