@@ -451,7 +451,7 @@ float Color::fromLinear(float in) {
 
 String Color::toHex() const {
   auto rgba = toRgba();
-  return hexEncode((char*)rgba.ptr(), rgba[3] == 255 ? 3 : 4);
+  return hexEncode(reinterpret_cast<char*>(rgba.ptr()), rgba[3] == 255 ? 3 : 4);
 }
 
 void Color::convertToLinear() {
@@ -613,22 +613,22 @@ Vec4B Color::hexToVec4B(StringView s) {
   Array<uint8_t, 4> cbytes;
 
   if (s.utf8Size() == 3) {
-    nibbleDecode(s.utf8Ptr(), 3, (char*)cbytes.data(), 4);
+    nibbleDecode(s.utf8Ptr(), 3, reinterpret_cast<char*>(cbytes.data()), 4);
     cbytes[0] = (cbytes[0] << 4) | cbytes[0];
     cbytes[1] = (cbytes[1] << 4) | cbytes[1];
     cbytes[2] = (cbytes[2] << 4) | cbytes[2];
     cbytes[3] = 255;
   } else if (s.utf8Size() == 4) {
-    nibbleDecode(s.utf8Ptr(), 4, (char*)cbytes.data(), 4);
+    nibbleDecode(s.utf8Ptr(), 4, reinterpret_cast<char*>(cbytes.data()), 4);
     cbytes[0] = (cbytes[0] << 4) | cbytes[0];
     cbytes[1] = (cbytes[1] << 4) | cbytes[1];
     cbytes[2] = (cbytes[2] << 4) | cbytes[2];
     cbytes[3] = (cbytes[3] << 4) | cbytes[3];
   } else if (s.utf8Size() == 6) {
-    hexDecode(s.utf8Ptr(), 6, (char*)cbytes.data(), 4);
+    hexDecode(s.utf8Ptr(), 6, reinterpret_cast<char*>(cbytes.data()), 4);
     cbytes[3] = 255;
   } else if (s.utf8Size() == 8) {
-    hexDecode(s.utf8Ptr(), 8, (char*)cbytes.data(), 4);
+    hexDecode(s.utf8Ptr(), 8, reinterpret_cast<char*>(cbytes.data()), 4);
   } else {
     throw ColorException(strf("Improper size {} for hex string '{}' in Color::hexToVec4B", s.utf8Size(), s), false);
   }
