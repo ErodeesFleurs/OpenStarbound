@@ -18,7 +18,7 @@ MiningTool::MiningTool(Json const& config, String const& directory, Json const& 
   m_frames = instanceValue("frames", 1).toInt();
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
   m_frameTiming = 0;
-  for (size_t i = 0; i < (size_t)m_frames; i++)
+  for (size_t i = 0; i < static_cast<size_t>(m_frames); i++)
     m_animationFrame.append(m_image.replace("{frame}", toString(i)));
   m_idleFrame = m_image.replace("{frame}", "idle");
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
@@ -40,7 +40,7 @@ List<Drawable> MiningTool::drawables() const {
   if (m_frameTiming == 0) {
     return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   } else {
-    int frame = std::max(0, std::min(m_frames - 1, (int)std::floor((m_frameTiming / m_frameCycle) * m_frames)));
+    int frame = std::max(0, std::min(m_frames - 1, static_cast<int>(std::floor((m_frameTiming / m_frameCycle) * m_frames))));
     return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   }
 }
@@ -108,7 +108,7 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       for (auto pos : brushArea) {
         if (auto miningParticleConfig = materialDatabase->miningParticle(world()->material(pos, layer), world()->mod(pos, layer))) {
           auto miningParticle = miningParticleConfig->instance();
-          miningParticle.position += (Vec2F)pos;
+          miningParticle.position += static_cast<Vec2F>(pos);
           miningParticles.append(miningParticle);
         }
       }
@@ -153,7 +153,7 @@ HarvestingTool::HarvestingTool(Json const& config, String const& directory, Json
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
-  for (size_t i = 0; i < (size_t)m_frames; i++)
+  for (size_t i = 0; i < static_cast<size_t>(m_frames); i++)
     m_animationFrame.append(m_image.replace("{frame}", toString(i)));
   m_idleFrame = m_image.replace("{frame}", "idle");
 
@@ -172,7 +172,7 @@ List<Drawable> HarvestingTool::drawables() const {
   if (m_frameTiming == 0)
     return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   else {
-    int frame = std::max(0, std::min(m_frames - 1, (int)std::floor((m_frameTiming / m_frameCycle) * m_frames)));
+    int frame = std::max(0, std::min(m_frames - 1, static_cast<int>(std::floor((m_frameTiming / m_frameCycle) * m_frames))));
     return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   }
 }
@@ -483,7 +483,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       for (auto pos : brushArea) {
         if (auto miningParticleConfig = materialDatabase->miningParticle(worldp->material(pos, layer), worldp->mod(pos, layer))) {
           auto miningParticle = miningParticleConfig->instance();
-          miningParticle.position += (Vec2F)pos;
+          miningParticle.position += static_cast<Vec2F>(pos);
           miningParticles.append(miningParticle);
         }
       }
@@ -504,7 +504,7 @@ TillingTool::TillingTool(Json const& config, String const& directory, Json const
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_frames = instanceValue("frames", 1).toInt();
   m_frameCycle = instanceValue("animationCycle", 1.0f).toFloat();
-  for (size_t i = 0; i < (size_t)m_frames; i++)
+  for (size_t i = 0; i < static_cast<size_t>(m_frames); i++)
     m_animationFrame.append(m_image.replace("{frame}", toString(i)));
   m_idleFrame = m_image.replace("{frame}", "idle");
 
@@ -522,7 +522,7 @@ List<Drawable> TillingTool::drawables() const {
   if (m_frameTiming == 0)
     return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   else {
-    int frame = std::max(0, std::min(m_frames - 1, (int)std::floor((m_frameTiming / m_frameCycle) * m_frames)));
+    int frame = std::max(0, std::min(m_frames - 1, static_cast<int>(std::floor((m_frameTiming / m_frameCycle) * m_frames))));
     return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
   }
 }
@@ -658,10 +658,10 @@ List<PreviewTile> PaintingBeamTool::previewTiles(bool shifting) const {
       int radius = !shifting ? m_blockRadius : m_altBlockRadius;
 
       for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
-        if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Foreground, (MaterialColorVariant)m_colorIndex}, true)) {
-          result.append({pos, true, NullMaterialId, MaterialHue(), false, light, true, (MaterialColorVariant)m_colorIndex});
-        } else if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Background, (MaterialColorVariant)m_colorIndex}, true)) {
-          result.append({pos, false, NullMaterialId, MaterialHue(), false, light, true, (MaterialColorVariant)m_colorIndex});
+        if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Foreground, static_cast<MaterialColorVariant>(m_colorIndex)}, true)) {
+          result.append({pos, true, NullMaterialId, MaterialHue(), false, light, true, static_cast<MaterialColorVariant>(m_colorIndex)});
+        } else if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Background, static_cast<MaterialColorVariant>(m_colorIndex)}, true)) {
+          result.append({pos, false, NullMaterialId, MaterialHue(), false, light, true, static_cast<MaterialColorVariant>(m_colorIndex)});
         } else if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Foreground, DefaultMaterialColorVariant}, true)) {
           result.append({pos, true, NullMaterialId, MaterialHue(), false, light, true, DefaultMaterialColorVariant});
         } else if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Background, DefaultMaterialColorVariant}, true)) {
@@ -707,8 +707,8 @@ void PaintingBeamTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       if (ownerp->isAdmin() || ownerp->inToolRange()) {
         for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
           TileModificationList modifications = {
-            {pos, PlaceMaterialColor{TileLayer::Foreground, (MaterialColorVariant)m_colorIndex}},
-            {pos, PlaceMaterialColor{TileLayer::Background, (MaterialColorVariant)m_colorIndex}}
+            {pos, PlaceMaterialColor{TileLayer::Foreground, static_cast<MaterialColorVariant>(m_colorIndex)}},
+            {pos, PlaceMaterialColor{TileLayer::Background, static_cast<MaterialColorVariant>(m_colorIndex)}}
           };
           auto failed = worldp->applyTileModifications(modifications, true);
           if (failed.count() < 2)
