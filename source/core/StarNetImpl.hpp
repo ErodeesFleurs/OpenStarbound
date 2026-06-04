@@ -52,7 +52,7 @@ inline String netErrorString() {
       nullptr,
       error,
       MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), // Default language
-      (LPTSTR)&lpMsgBuf,
+      reinterpret_cast<LPTSTR>(&lpMsgBuf),
       0,
       nullptr);
 
@@ -86,13 +86,13 @@ inline bool netErrorInterrupt() {
 inline void setAddressFromNative(HostAddressWithPort& addressWithPort, NetworkMode mode, struct sockaddr_storage* sockAddr) {
   switch (mode) {
     case NetworkMode::IPv4: {
-      struct sockaddr_in* addr4 = (struct sockaddr_in*)sockAddr;
-      addressWithPort = HostAddressWithPort(mode, (uint8_t*)&(addr4->sin_addr.s_addr), ntohs(addr4->sin_port));
+      auto* addr4 = reinterpret_cast<struct sockaddr_in*>(sockAddr);
+      addressWithPort = HostAddressWithPort(mode, reinterpret_cast<uint8_t*>(&addr4->sin_addr.s_addr), ntohs(addr4->sin_port));
       break;
     }
     case NetworkMode::IPv6: {
-      struct sockaddr_in6* addr6 = (struct sockaddr_in6*)sockAddr;
-      addressWithPort = HostAddressWithPort(mode, (uint8_t*)&addr6->sin6_addr.s6_addr, ntohs(addr6->sin6_port));
+      auto* addr6 = reinterpret_cast<struct sockaddr_in6*>(sockAddr);
+      addressWithPort = HostAddressWithPort(mode, reinterpret_cast<uint8_t*>(&addr6->sin6_addr.s6_addr), ntohs(addr6->sin6_port));
       break;
     }
     default:
@@ -103,24 +103,24 @@ inline void setAddressFromNative(HostAddressWithPort& addressWithPort, NetworkMo
 inline void setNativeFromAddress(HostAddressWithPort const& addressWithPort, struct sockaddr_storage* sockAddr, socklen_t* sockAddrLen) {
   switch (addressWithPort.address().mode()) {
     case NetworkMode::IPv4: {
-      struct sockaddr_in* addr4 = (struct sockaddr_in*)sockAddr;
+      auto* addr4 = reinterpret_cast<struct sockaddr_in*>(sockAddr);
       *sockAddrLen = sizeof(*addr4);
 
       memset(addr4, 0, *sockAddrLen);
       addr4->sin_family = AF_INET;
       addr4->sin_port = htons(addressWithPort.port());
-      memcpy(((char*)&addr4->sin_addr.s_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
+      memcpy(reinterpret_cast<char*>(&addr4->sin_addr.s_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
 
       break;
     }
     case NetworkMode::IPv6: {
-      struct sockaddr_in6* addr6 = (struct sockaddr_in6*)sockAddr;
+      auto* addr6 = reinterpret_cast<struct sockaddr_in6*>(sockAddr);
       *sockAddrLen = sizeof(*addr6);
 
       memset(addr6, 0, *sockAddrLen);
       addr6->sin6_family = AF_INET6;
       addr6->sin6_port = htons(addressWithPort.port());
-      memcpy(((char*)&addr6->sin6_addr.s6_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
+      memcpy(reinterpret_cast<char*>(&addr6->sin6_addr.s6_addr), addressWithPort.address().bytes(), addressWithPort.address().size());
       break;
     }
     default:
@@ -145,7 +145,7 @@ struct SocketImpl {
 
   void setSockOpt(int level, int optname, const void* optval, socklen_t len) {
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
-    int ret = ::setsockopt(socketDesc, level, optname, (const char*)optval, len);
+    int ret = ::setsockopt(socketDesc, level, optname, static_cast<const char*>(optval), len);
 #else
     int ret = ::setsockopt(socketDesc, level, optname, optval, len);
 #endif
