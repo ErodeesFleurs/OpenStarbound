@@ -231,7 +231,7 @@ size_t DataStream::readVlqS(size_t& i) {
   if (i64 == 0)
     i = NPos;
   else
-    i = (size_t)(i64 - 1);
+    i = static_cast<size_t>(i64 - 1);
   return res;
 }
 
@@ -285,14 +285,14 @@ DataStream& DataStream::operator>>(std::string& d) {
       d.push_back(c);
     }
   } else {
-    d.resize((size_t)readVlqU());
+    d.resize(static_cast<size_t>(readVlqU()));
     readData(&d[0], d.size());
   }
   return *this;
 }
 
 DataStream& DataStream::operator>>(ByteArray& d) {
-  d.resize((size_t)readVlqU());
+  d.resize(static_cast<size_t>(readVlqU()));
   readData(d.ptr(), d.size());
   return *this;
 }

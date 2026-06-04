@@ -50,24 +50,24 @@ uint64_t staticRandomU64(T const& d, TL const&... rest) {
 
 template <typename T, typename... TL>
 int32_t staticRandomI32(T const& d, TL const&... rest) {
-  return (int32_t)staticRandomU32(d, rest...);
+  return static_cast<int32_t>(staticRandomU32(d, rest...));
 }
 
 template <typename T, typename... TL>
 int32_t staticRandomI32Range(int32_t min, int32_t max, T const& d, TL const&... rest) {
-  uint64_t denom = (uint64_t)(-1) / ((uint64_t)(max - min) + 1);
-  return (int32_t)(staticRandomU64(d, rest...) / denom + min);
+  uint64_t denom = static_cast<uint64_t>(-1) / (static_cast<uint64_t>(max - min) + 1);
+  return static_cast<int32_t>(staticRandomU64(d, rest...) / denom + min);
 }
 
 template <typename T, typename... TL>
 uint32_t staticRandomU32Range(uint32_t min, uint32_t max, T const& d, TL const&... rest) {
-  uint64_t denom = (uint64_t)(-1) / ((uint64_t)(max - min) + 1);
+  uint64_t denom = static_cast<uint64_t>(-1) / (static_cast<uint64_t>(max - min) + 1);
   return staticRandomU64(d, rest...) / denom + min;
 }
 
 template <typename T, typename... TL>
 int64_t staticRandomI64(T const& d, TL const&... rest) {
-  return (int64_t)staticRandomU64(d, rest...);
+  return static_cast<int64_t>(staticRandomU64(d, rest...));
 }
 
 // Generates values in the range [0.0, 1.0]
