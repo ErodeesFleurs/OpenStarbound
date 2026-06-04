@@ -221,7 +221,7 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
             ds.writeVlqU(1);
             DataStreamBuffer storeBuffer;
             element->get()->netStore(storeBuffer, rules);
-            ds.write((ElementChange)ElementAddition(id, storeBuffer.takeData()));
+            ds.write(ElementChange(ElementAddition(id, storeBuffer.takeData())));
           }
         } else {
           willWrite();
