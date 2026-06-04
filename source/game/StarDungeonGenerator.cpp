@@ -283,7 +283,7 @@ namespace Dungeon {
   }
 
   void RandomBrush::paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const {
-    size_t rnd = (size_t)staticRandomI32(m_seed, position[0], position[1]);
+    size_t rnd = static_cast<size_t>(staticRandomI32(m_seed, position[0], position[1]));
     m_brushes[rnd % m_brushes.size()]->paint(position, phase, writer);
   }
 
@@ -802,11 +802,11 @@ namespace Dungeon {
     // if on a border use that, corners use the left/right direction
     if (x == 0)
       return Direction::Left;
-    if (x == (int)size().x() - 1)
+    if (x == static_cast<int>(size().x()) - 1)
       return Direction::Right;
     if (y == 0)
       return Direction::Down;
-    if (y == (int)size().y() - 1)
+    if (y == static_cast<int>(size().y()) - 1)
       return Direction::Up;
 
     // scans around the connector, the direction where it finds a solid is where
@@ -837,7 +837,7 @@ namespace Dungeon {
             d = pickByNeighbours(position);
           if (d == Direction::Unknown)
             d = pickByEdge(position, m_size);
-          Logger::debug("Found connector on {} at {} group {} direction {}", m_name, position, tile.connector->value, (int)d);
+          Logger::debug("Found connector on {} at {} group {} direction {}", m_name, position, tile.connector->value, static_cast<int>(d));
           m_connections.append(make_shared<Connector>(this, tile.connector->value, tile.connector->forwardOnly, d, position));
         }
 
@@ -863,15 +863,15 @@ namespace Dungeon {
           cc++;
         }
         if (tile.requiresOpen()) {
-          if ((int)y < lowestAir)
+          if (y < lowestAir)
             lowestAir = y;
         }
         if (tile.requiresSolid()) {
-          if ((int)y > highestGound)
+          if (y > highestGound)
             highestGound = y;
         }
         if (tile.requiresLiquid()) {
-          if ((int)y > highestLiquid)
+          if (y > highestLiquid)
             highestLiquid = y;
         }
         return false;
@@ -884,7 +884,7 @@ namespace Dungeon {
     if (highestGound == -1)
       highestGound = lowestAir - 1;
 
-    if (lowestAir == (int)m_size[1])
+    if (lowestAir == static_cast<int>(m_size[1]))
       lowestAir = highestGound + 1;
 
     if (cc == 0) {

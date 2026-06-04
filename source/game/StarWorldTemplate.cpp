@@ -259,7 +259,7 @@ List<WorldTemplate::Dungeon> WorldTemplate::dungeons() const {
         int dungeonSpacing = floor(m_geometry.width() / layer.dungeons.size());
         uint32_t dungeonOffset = staticRandomU32Range(0, m_geometry.width(), m_seed, layer.layerBaseHeight);
         for (auto const& dp : enumerateIterator(layer.dungeons)) {
-          dungeonList.append({dp.first, layer.layerBaseHeight, (int)dungeonOffset, layer.dungeonXVariance, false, true});
+          dungeonList.append({dp.first, layer.layerBaseHeight, static_cast<int>(dungeonOffset), layer.dungeonXVariance, false, true});
           dungeonOffset = (dungeonOffset + dungeonSpacing) % m_geometry.width();
         }
       }
@@ -292,7 +292,7 @@ WorldTemplate::BlockInfo WorldTemplate::blockBiomeInfo(int x, int y) const {
 
   int blendNoiseOffset = 0;
   if (auto const& blendNoise = m_layout->blendNoise())
-    blendNoiseOffset = (int)blendNoise->get(x, y);
+    blendNoiseOffset = static_cast<int>(blendNoise->get(x, y));
 
   Vec2I blockPos;
   List<WorldLayout::RegionWeighting> blockWeighting;
@@ -489,7 +489,7 @@ void WorldTemplate::addPotentialBiomeItems(int x, int y, PotentialBiomeItems& it
 
 
 WorldTemplate::PotentialBiomeItems WorldTemplate::potentialBiomeItemsAt(int x, int y) const {
-  if (!m_layout || y <= 0 || y >= (int)m_geometry.height() - 1)
+  if (!m_layout || y <= 0 || y >= static_cast<int>(m_geometry.height()) - 1)
     return {};
   x = m_geometry.xwrap(x);
 
@@ -523,7 +523,7 @@ WorldTemplate::PotentialBiomeItems WorldTemplate::potentialBiomeItemsAt(int x, i
 }
 
 List<BiomeItemPlacement> WorldTemplate::validBiomeItems(int x, int y, PotentialBiomeItems potentialBiomeItems) const {
-  if (y <= 0 || y >= (int)m_geometry.height() - 1)
+  if (y <= 0 || y >= static_cast<int>(m_geometry.height()) - 1)
     return {};
 
   x = m_geometry.xwrap(x);
@@ -639,7 +639,7 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(uint32_t x, uint32_t y) con
 
       int blendNoiseOffset = 0;
       if (auto const& blendNoise = m_layout->blendNoise())
-        blendNoiseOffset = (int)blendNoise->get(x, y);
+        blendNoiseOffset = static_cast<int>(blendNoise->get(x, y));
 
       Vec2I blockPos;
       List<WorldLayout::RegionWeighting> blockWeighting;
@@ -721,7 +721,7 @@ WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(uint32_t x, uint32_t y) con
       blockInfo.encloseLiquids = regionLiquids.encloseLiquids;
       blockInfo.fillMicrodungeons = regionLiquids.fillMicrodungeons;
 
-      if (!blockInfo.terrain && blockInfo.encloseLiquids && (int)y < blockInfo.oceanLiquidLevel) {
+      if (!blockInfo.terrain && blockInfo.encloseLiquids && static_cast<int>(y) < blockInfo.oceanLiquidLevel) {
         blockInfo.terrain = true;
         blockInfo.foregroundCave = true;
       }
