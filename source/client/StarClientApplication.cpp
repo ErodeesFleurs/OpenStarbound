@@ -565,7 +565,7 @@ void ClientApplication::renderReload() {
     if (label) {
       m_labelledPostProcessLayers.add(label.value(),m_postProcessLayers.count());
     }
-    m_postProcessLayers.append(PostProcessLayer{ std::move(effects), (unsigned)layer.getUInt("passes", 1), group });
+    m_postProcessLayers.append(PostProcessLayer{ std::move(effects), static_cast<unsigned>(layer.getUInt("passes", 1)), group });
   }
 
   loadEffectConfig("interface");
@@ -734,7 +734,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_mainMixer->setUniverseClient(m_universeClient);
     m_universeClient->setMainPlayer(m_player);
     m_cinematicOverlay->setPlayer(m_player);
-    m_timeSinceJoin = (int64_t)Time::millisecondsSinceEpoch() / 1000;
+    m_timeSinceJoin = static_cast<int64_t>(Time::millisecondsSinceEpoch()) / 1000;
 
     auto assets = m_root->assets();
     String loadingCinematic = assets->json("/client.config:loadingCinematic").toString();
@@ -1177,7 +1177,7 @@ void ClientApplication::updateRunning(float dt) {
       if (isActionTakenEdge(InterfaceAction::EmoteSleep))
         m_player->addEmote(HumanoidEmote::Sleep);
 
-      if (int newZoomDirection = (int)m_input->bindHeld("opensb", "zoomIn") - (int)m_input->bindHeld("opensb", "zoomOut"))
+      if (int newZoomDirection = static_cast<int>(m_input->bindHeld("opensb", "zoomIn")) - static_cast<int>(m_input->bindHeld("opensb", "zoomOut")))
         m_cameraZoomDirection = newZoomDirection;
     }
     if (m_cameraZoomDirection != 0) {
@@ -1185,7 +1185,7 @@ void ClientApplication::updateRunning(float dt) {
       bool goingIn = m_cameraZoomDirection == 1;
       auto config = m_root->configuration();
       float curZoom = config->get("zoomLevel").toFloat(),
-            newZoom = max(1.f, curZoom * powf(1.f + (float)m_cameraZoomDirection * 0.5f, min(1.f, dt * 5.f))),
+            newZoom = max(1.f, curZoom * powf(1.f + static_cast<float>(m_cameraZoomDirection) * 0.5f, min(1.f, dt * 5.f))),
             intZoom = max(1.f, (goingIn ? floor(curZoom) : ceil(curZoom)) + m_cameraZoomDirection);
       bool pastInt = goingIn ? newZoom + threshold > intZoom
                              : newZoom - threshold < intZoom;
