@@ -72,7 +72,7 @@ size_t base64Encode(char const* data, size_t len, char* output, size_t outLen) {
 
   unsigned char ca3[3] = {0, 0, 0};
   unsigned char ca4[4] = {0, 0, 0, 0};
-  const unsigned char* inPtr = (const unsigned char*)data;
+  auto inPtr = reinterpret_cast<unsigned char const*>(data);
   int i = 0, j = 0, in_len = len;
 
   while (in_len--) {

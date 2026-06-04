@@ -60,8 +60,8 @@ namespace {
 
   bool isUncompressed(IODevicePtr device) {
     const size_t sigLength = 4;
-    unique_ptr<char[]> riffSig(new char[sigLength + 1]()); // RIFF\0
-    unique_ptr<char[]> waveSig(new char[sigLength + 1]()); // WAVE\0
+    auto riffSig = make_unique<char[]>(sigLength + 1); // RIFF\0
+    auto waveSig = make_unique<char[]>(sigLength + 1); // WAVE\0
 
     StreamOffset previousOffset = device->pos();
     device->seek(0);
@@ -77,10 +77,10 @@ namespace {
 
   WaveData parseWav(IODevicePtr device) {
     const size_t sigLength = 4;
-    unique_ptr<char[]> riffSig(new char[sigLength + 1]()); // RIFF\0
-    unique_ptr<char[]> waveSig(new char[sigLength + 1]()); // WAVE\0
-    unique_ptr<char[]> fmtSig(new char[sigLength + 1]()); // fmt \0
-    unique_ptr<char[]> dataSig(new char[sigLength + 1]()); // data\0
+    auto riffSig = make_unique<char[]>(sigLength + 1); // RIFF\0
+    auto waveSig = make_unique<char[]>(sigLength + 1); // WAVE\0
+    auto fmtSig = make_unique<char[]>(sigLength + 1); // fmt \0
+    auto dataSig = make_unique<char[]>(sigLength + 1); // data\0
 
     // RIFF Chunk Descriptor
     device->seek(0);

@@ -107,7 +107,7 @@ Image Image::readPng(IODevicePtr device) {
 
   Image image(img_width, img_height, channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32);
 
-  std::unique_ptr<png_bytep[]> row_ptrs(new png_bytep[img_height]);
+  auto row_ptrs = std::make_unique<png_bytep[]>(img_height);
   size_t stride = img_width * channels;
   for (size_t i = 0; i < img_height; ++i)
     row_ptrs[i] = reinterpret_cast<png_bytep>(image.data()) + (img_height - i - 1) * stride;
@@ -509,7 +509,7 @@ void Image::writePng(IODevicePtr device) const {
       PNG_COMPRESSION_TYPE_DEFAULT,
       PNG_FILTER_TYPE_DEFAULT);
 
-  unique_ptr<png_bytep[]> row_ptrs(new png_bytep[m_height]);
+  auto row_ptrs = make_unique<png_bytep[]>(m_height);
   size_t stride = m_width * 8 * channels / 8;
   for (size_t i = 0; i < m_height; ++i) {
     size_t q = (m_height - i - 1) * stride;
