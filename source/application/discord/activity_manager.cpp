@@ -92,8 +92,7 @@ void ActivityManager::UpdateActivity(Activity const& activity, std::function<voi
         }
         (*cb)(static_cast<Result>(result));
     };
-    std::unique_ptr<std::function<void(Result)>> cb{};
-    cb.reset(new std::function<void(Result)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result)>>(std::move(callback));
     internal_->update_activity(internal_,
                                reinterpret_cast<DiscordActivity*>(const_cast<Activity*>(&activity)),
                                cb.release(),
@@ -110,8 +109,7 @@ void ActivityManager::ClearActivity(std::function<void(Result)> callback)
         }
         (*cb)(static_cast<Result>(result));
     };
-    std::unique_ptr<std::function<void(Result)>> cb{};
-    cb.reset(new std::function<void(Result)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result)>>(std::move(callback));
     internal_->clear_activity(internal_, cb.release(), wrapper);
 }
 
@@ -127,8 +125,7 @@ void ActivityManager::SendRequestReply(UserId userId,
         }
         (*cb)(static_cast<Result>(result));
     };
-    std::unique_ptr<std::function<void(Result)>> cb{};
-    cb.reset(new std::function<void(Result)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result)>>(std::move(callback));
     internal_->send_request_reply(internal_,
                                   userId,
                                   static_cast<EDiscordActivityJoinRequestReply>(reply),
@@ -149,8 +146,7 @@ void ActivityManager::SendInvite(UserId userId,
         }
         (*cb)(static_cast<Result>(result));
     };
-    std::unique_ptr<std::function<void(Result)>> cb{};
-    cb.reset(new std::function<void(Result)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result)>>(std::move(callback));
     internal_->send_invite(internal_,
                            userId,
                            static_cast<EDiscordActivityActionType>(type),
@@ -169,8 +165,7 @@ void ActivityManager::AcceptInvite(UserId userId, std::function<void(Result)> ca
         }
         (*cb)(static_cast<Result>(result));
     };
-    std::unique_ptr<std::function<void(Result)>> cb{};
-    cb.reset(new std::function<void(Result)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result)>>(std::move(callback));
     internal_->accept_invite(internal_, userId, cb.release(), wrapper);
 }
 

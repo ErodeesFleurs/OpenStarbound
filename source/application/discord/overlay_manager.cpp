@@ -57,8 +57,7 @@ void OverlayManager::SetLocked(bool locked, std::function<void(Result)> callback
         }
         (*cb)(static_cast<Result>(result));
     };
-    std::unique_ptr<std::function<void(Result)>> cb{};
-    cb.reset(new std::function<void(Result)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result)>>(std::move(callback));
     internal_->set_locked(internal_, (locked ? 1 : 0), cb.release(), wrapper);
 }
 
@@ -73,8 +72,7 @@ void OverlayManager::OpenActivityInvite(ActivityActionType type,
         }
         (*cb)(static_cast<Result>(result));
     };
-    std::unique_ptr<std::function<void(Result)>> cb{};
-    cb.reset(new std::function<void(Result)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result)>>(std::move(callback));
     internal_->open_activity_invite(
       internal_, static_cast<EDiscordActivityActionType>(type), cb.release(), wrapper);
 }
@@ -89,8 +87,7 @@ void OverlayManager::OpenGuildInvite(char const* code, std::function<void(Result
         }
         (*cb)(static_cast<Result>(result));
     };
-    std::unique_ptr<std::function<void(Result)>> cb{};
-    cb.reset(new std::function<void(Result)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result)>>(std::move(callback));
     internal_->open_guild_invite(internal_, const_cast<char*>(code), cb.release(), wrapper);
 }
 
@@ -104,8 +101,7 @@ void OverlayManager::OpenVoiceSettings(std::function<void(Result)> callback)
         }
         (*cb)(static_cast<Result>(result));
     };
-    std::unique_ptr<std::function<void(Result)>> cb{};
-    cb.reset(new std::function<void(Result)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result)>>(std::move(callback));
     internal_->open_voice_settings(internal_, cb.release(), wrapper);
 }
 
@@ -195,9 +191,8 @@ void OverlayManager::SetImeCompositionRangeCallback(
         }
         (*cb)(from, to, reinterpret_cast<Rect*>(bounds), boundsLength);
     };
-    std::unique_ptr<std::function<void(std::int32_t, std::int32_t, Rect*, std::uint32_t)>> cb{};
-    cb.reset(new std::function<void(std::int32_t, std::int32_t, Rect*, std::uint32_t)>(
-      std::move(onImeCompositionRangeChanged)));
+    auto cb = std::make_unique<std::function<void(std::int32_t, std::int32_t, Rect*, std::uint32_t)>>(
+      std::move(onImeCompositionRangeChanged));
     internal_->set_ime_composition_range_callback(internal_, cb.release(), wrapper);
 }
 
@@ -215,8 +210,7 @@ void OverlayManager::SetImeSelectionBoundsCallback(
               *reinterpret_cast<Rect const*>(&focus),
               (isAnchorFirst != 0));
     };
-    std::unique_ptr<std::function<void(Rect, Rect, bool)>> cb{};
-    cb.reset(new std::function<void(Rect, Rect, bool)>(std::move(onImeSelectionBoundsChanged)));
+    auto cb = std::make_unique<std::function<void(Rect, Rect, bool)>>(std::move(onImeSelectionBoundsChanged));
     internal_->set_ime_selection_bounds_callback(internal_, cb.release(), wrapper);
 }
 
