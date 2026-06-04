@@ -77,7 +77,7 @@ static bool copyPngToClipboard(void* buf, size_t size) {
 
 static bool duringClipboard(SDL_Window* window, std::function<void()> task) {
   auto props = SDL_GetWindowProperties(window);
-  auto handle = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+  auto handle = (HWND)SDL_GetPointerProperty(props, SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
   if (!handle || !OpenClipboard(handle))
     return false;
   EmptyClipboard();
@@ -799,7 +799,7 @@ public:
     SDL_CloseAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioOutputStream));
     m_SdlControllers.clear();
 
-    SDL_SetCursor(NULL);
+    SDL_SetCursor(nullptr);
     m_cursorCache.clear();
 
     m_application.reset();
@@ -941,7 +941,7 @@ private:
           parent->m_windowSize = {(unsigned)displayMode->w, (unsigned)displayMode->h};
           #ifdef STAR_SYSTEM_WINDOWS
           if (m_borderlessWorkaround) { // breaks brightness on some setups god what the fuck fuck microsoft fuck nvidia
-            auto handle = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(parent->m_sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, NULL);
+            auto handle = (HWND)SDL_GetPointerProperty(SDL_GetWindowProperties(parent->m_sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr);
             SetWindowLongPtr(handle, GWL_STYLE, WS_OVERLAPPED);
             SetWindowLongPtr(handle, GWL_EXSTYLE, WS_EX_APPWINDOW);
             SetWindowPos(handle, HWND_TOP, 0, 0, displayMode->w, displayMode->h, SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
@@ -1014,7 +1014,7 @@ private:
         };
         SDL_SetTextInputArea(parent->m_sdlWindow, &rect, area->second);
       } else {
-        SDL_SetTextInputArea(parent->m_sdlWindow, NULL, 0);
+        SDL_SetTextInputArea(parent->m_sdlWindow, nullptr, 0);
       }
     }
 
@@ -1273,7 +1273,7 @@ private:
         return entry->ptr();
       }
       *size = 0;
-      return NULL;
+      return nullptr;
     };
     auto cleanup = [](void* userdata) { delete ((StringMap<ByteArray>*)userdata); };
     if (SDL_SetClipboardData(request, cleanup, heldData, types.data(), types.size()))

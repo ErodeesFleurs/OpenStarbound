@@ -161,7 +161,7 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
   if (multisample)
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, size[0], size[1], GL_TRUE);
   else {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
   }
   auto addressing = TextureAddressingNames.getLeft(config.getString("textureAddressing", "clamp"));
   auto filtering = TextureFilteringNames.getLeft(config.getString("textureFiltering", "nearest"));
@@ -230,12 +230,12 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     if (!source)
       return 0;
     char const* sourcePtr = source->utf8Ptr();
-    glShaderSource(shader, 1, &sourcePtr, NULL);
+    glShaderSource(shader, 1, &sourcePtr, nullptr);
     glCompileShader(shader);
 
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (!status) {
-      glGetShaderInfoLog(shader, sizeof(logBuffer), NULL, logBuffer);
+      glGetShaderInfoLog(shader, sizeof(logBuffer), nullptr, logBuffer);
       throw RendererException(strf("Failed to compile {} shader: {}\n", name, logBuffer));
     }
 
@@ -270,7 +270,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
 
   glGetProgramiv(program, GL_LINK_STATUS, &status);
   if (!status) {
-    glGetProgramInfoLog(program, sizeof(logBuffer), NULL, logBuffer);
+    glGetProgramInfoLog(program, sizeof(logBuffer), nullptr, logBuffer);
     glDeleteProgram(program);
     throw RendererException(strf("Failed to link program: {}\n", logBuffer));
   }
@@ -617,7 +617,7 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
       glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
     } else {
       glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     }
   }
 }
