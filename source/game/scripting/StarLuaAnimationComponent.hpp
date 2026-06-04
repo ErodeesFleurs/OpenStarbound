@@ -89,7 +89,7 @@ LuaAnimationComponent<Base>::LuaAnimationComponent() {
       m_lightSources.append({
           lightSourceTable.get<Vec2F>("position"),
           lightSourceTable.get<Color>("color").toRgbF(),
-          (LightType)lightSourceTable.get<Maybe<bool>>("pointLight").value(),
+          static_cast<LightType>(lightSourceTable.get<Maybe<bool>>("pointLight").value()),
           lightSourceTable.get<Maybe<float>>("pointBeam").value(),
           lightSourceTable.get<Maybe<float>>("beamAngle").value(),
           lightSourceTable.get<Maybe<float>>("beamAmbience").value()

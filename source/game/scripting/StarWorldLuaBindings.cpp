@@ -287,9 +287,9 @@ namespace LuaBindings {
 
     callbacks.registerCallback("size", [world]() -> Vec2I {
         if (auto serverWorld = as<WorldServer>(world))
-          return (Vec2I)serverWorld->worldTemplate()->size();
+          return Vec2I(serverWorld->worldTemplate()->size());
         else if (auto clientWorld = as<WorldClient>(world))
-          return (Vec2I)clientWorld->currentTemplate()->size();
+          return Vec2I(clientWorld->currentTemplate()->size());
         return Vec2I();
       });
 
@@ -1371,7 +1371,7 @@ namespace LuaBindings {
   }
 
   bool WorldEntityCallbacks::entityExists(World* world, EntityId entityId) {
-    return (bool)world->entity(entityId);
+    return static_cast<bool>(world->entity(entityId));
   }
 
   bool WorldEntityCallbacks::entityCanDamage(World* world, EntityId sourceId, EntityId targetId) {
