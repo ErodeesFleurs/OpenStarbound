@@ -51,7 +51,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
 
     if (armor.visible && armor.isCosmetic && item && item->visible(i >= 8)) {
       for (auto armorType : item->armorTypesToHide())
-        ++wornCosmeticTypes[(uint8_t)armorType];
+        ++wornCosmeticTypes[static_cast<uint8_t>(armorType)];
     }
   }
 
@@ -68,7 +68,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   };
 
   std::exception_ptr configException;
-  bool movementParametersChanged;
+  bool movementParametersChanged = false;
   if (anyNeedsSync) {
     for (size_t i = 0; i != m_armors.size(); ++i) {
       Armor& armor = m_armors[i];
@@ -77,7 +77,7 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
       if (!armor.visible || !item || !item->visible(i >= 8) || (forceNude && !item->bypassNude())) {
         allowed = false;
       } else if (!armor.isCosmetic) {
-        uint8_t typeIndex = (uint8_t)armor.item->armorType();
+        uint8_t typeIndex = static_cast<uint8_t>(armor.item->armorType());
         uint8_t prevWorn = m_wornCosmeticTypes[typeIndex];
         uint8_t curWorn = wornCosmeticTypes[typeIndex];
         if (curWorn == 0) {
@@ -124,7 +124,7 @@ void ArmorWearer::effects(EffectEmitter& effectEmitter) {
     auto& armor = m_armors[i];
     if (auto item = as<EffectSourceItem>(armor.item)) {
       auto armorType = armor.item->armorType();
-      if (!armor.visible || (!armor.isCosmetic && m_wornCosmeticTypes[(uint8_t)armorType] > 0))
+      if (!armor.visible || (!armor.isCosmetic && m_wornCosmeticTypes[static_cast<uint8_t>(armorType)] > 0))
         continue;
       auto newEffects = item->effectSources();
       if (armorType == ArmorType::Head)

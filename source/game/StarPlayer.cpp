@@ -524,7 +524,7 @@ void Player::kill() {
 }
 
 bool Player::wireToolInUse() const {
-  return (bool)as<WireTool>(m_tools->primaryHandItem());
+  return static_cast<bool>(as<WireTool>(m_tools->primaryHandItem()));
 }
 
 void Player::setWireConnector(WireConnector* wireConnector) const {
@@ -2009,7 +2009,7 @@ bool Player::inToolRange(Vec2F const& aimPos) const {
 }
 
 void Player::getNetStates(bool initial) {
-  m_state = (State)m_stateNetState.get();
+  m_state = static_cast<State>(m_stateNetState.get());
   m_shifting = m_shiftingNetState.get();
   m_aimPosition[0] = m_xAimPositionNetState.get();
   m_aimPosition[1] = m_yAimPositionNetState.get();
@@ -2043,7 +2043,7 @@ void Player::getNetStates(bool initial) {
 }
 
 void Player::setNetStates() {
-  m_stateNetState.set((unsigned)m_state);
+  m_stateNetState.set(static_cast<unsigned>(m_state));
   m_shiftingNetState.set(m_shifting);
   m_xAimPositionNetState.set(m_aimPosition[0]);
   m_yAimPositionNetState.set(m_aimPosition[1]);
@@ -2077,7 +2077,7 @@ void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bo
 void Player::setNetArmorSecrets(bool includeEmpty) {
   if (m_clientContext && m_clientContext->netCompatibilityRules().version() < 9) {
     for (uint8_t i = 0; i != 12; ++i) {
-      auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+      auto slot = static_cast<EquipmentSlot>(static_cast<uint8_t>(EquipmentSlot::Cosmetic1) + i);
       auto item = as<ArmorItem>(m_inventory->itemsAt(slot));
       bool visible = m_inventory->equipmentVisibility(slot);
       if ((item && visible) || includeEmpty)
@@ -2091,7 +2091,7 @@ void Player::getNetArmorSecrets() {
     auto itemDatabase = Root::singleton().itemDatabase();
 
     for (uint8_t i = 0; i != 12; ++i) {
-      auto slot = EquipmentSlot((uint8_t)EquipmentSlot::Cosmetic1 + i);
+      auto slot = static_cast<EquipmentSlot>(static_cast<uint8_t>(EquipmentSlot::Cosmetic1) + i);
       String const& slotName = EquipmentSlotNames.getRight(slot);
       auto& curVersion = m_armorSecretNetVersions[slot];
       uint64_t newVersion = 0;
