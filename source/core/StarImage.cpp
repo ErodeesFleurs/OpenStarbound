@@ -6,25 +6,25 @@
 namespace Star {
 
 void logPngError(png_structp png_ptr, png_const_charp c) {
-  Logger::debug("PNG error in file: '{}', {}", ((IODevice*)png_get_error_ptr(png_ptr))->deviceName(), c);
+  Logger::debug("PNG error in file: '{}', {}", static_cast<IODevice*>(png_get_error_ptr(png_ptr))->deviceName(), c);
 };
 
 void logPngWarning(png_structp png_ptr, png_const_charp c) {
-  Logger::debug("PNG warning in file: '{}', {}", ((IODevice*)png_get_error_ptr(png_ptr))->deviceName(), c);
+  Logger::debug("PNG warning in file: '{}', {}", static_cast<IODevice*>(png_get_error_ptr(png_ptr))->deviceName(), c);
 };
 
 void readPngData(png_structp pngPtr, png_bytep data, png_size_t length) {
-  ((IODevice*)png_get_io_ptr(pngPtr))->readFull((char*)data, length);
+  static_cast<IODevice*>(png_get_io_ptr(pngPtr))->readFull(reinterpret_cast<char*>(data), length);
 };
 
 bool Image::isPng(IODevicePtr device) {
   png_byte header[8]{};
-  return !png_sig_cmp(header, 0, device->readAbsolute(0, (char*)header, sizeof(header)));
+  return !png_sig_cmp(header, 0, device->readAbsolute(0, reinterpret_cast<char*>(header), sizeof(header)));
 }
 
 Image Image::readPng(IODevicePtr device) {
   png_byte header[8]{};
-  device->readFull((char*)header, sizeof(header));
+  device->readFull(reinterpret_cast<char*>(header), sizeof(header));
 
   if (png_sig_cmp(header, 0, sizeof(header)))
     throw ImageException(strf("File {} is not a png image!", device->deviceName()));
@@ -34,7 +34,7 @@ Image Image::readPng(IODevicePtr device) {
     throw ImageException("Internal libPNG error");
 
   // Use custom warning function to suppress cerr warnings
-  png_set_error_fn(png_ptr, (png_voidp)device.get(), logPngError, logPngWarning);
+  png_set_error_fn(png_ptr, static_cast<png_voidp>(device.get()), logPngError, logPngWarning);
 
   png_infop info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {
@@ -110,7 +110,7 @@ Image Image::readPng(IODevicePtr device) {
   std::unique_ptr<png_bytep[]> row_ptrs(new png_bytep[img_height]);
   size_t stride = img_width * channels;
   for (size_t i = 0; i < img_height; ++i)
-    row_ptrs[i] = (png_bytep)image.data() + (img_height - i - 1) * stride;
+    row_ptrs[i] = reinterpret_cast<png_bytep>(image.data()) + (img_height - i - 1) * stride;
 
   png_read_image(png_ptr, row_ptrs.get());
   png_destroy_read_struct(&png_ptr, &info_ptr, &end_info);
@@ -120,7 +120,7 @@ Image Image::readPng(IODevicePtr device) {
 
 tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
   png_byte header[8];
-  device->readFull((char*)header, sizeof(header));
+  device->readFull(reinterpret_cast<char*>(header), sizeof(header));
 
   if (png_sig_cmp(header, 0, sizeof(header)))
     throw ImageException(strf("File {} is not a png image!", device->deviceName()));
@@ -130,7 +130,7 @@ tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
     throw ImageException("Internal libPNG error");
 
   // Use custom warning function to suppress cerr warnings
-  png_set_error_fn(png_ptr, (png_voidp)device.get(), logPngError, logPngWarning);
+  png_set_error_fn(png_ptr, static_cast<png_voidp>(device.get()), logPngError, logPngWarning);
 
   png_infop info_ptr = png_create_info_struct(png_ptr);
   if (!info_ptr) {
@@ -263,9 +263,9 @@ void Image::reset(unsigned width, unsigned height, Maybe<PixelFormat> pf) {
   } else {
     uint8_t* newData = nullptr;
     if (!m_data)
-      newData = (uint8_t*)Star::malloc(imageSize);
+      newData = static_cast<uint8_t*>(Star::malloc(imageSize));
     else
-      newData = (uint8_t*)Star::realloc(m_data, imageSize);
+      newData = static_cast<uint8_t*>(Star::realloc(m_data, imageSize));
 
     if (!newData)
       throw MemoryException::format("Could not allocate memory for new Image size {}\n", imageSize);
@@ -473,8 +473,8 @@ Image Image::convert(PixelFormat pixelFormat) const {
 
 void Image::writePng(IODevicePtr device) const {
   auto writePngData = [](png_structp pngPtr, png_bytep data, png_size_t length) {
-    IODevice* device = (IODevice*)png_get_io_ptr(pngPtr);
-    device->writeFull((char*)data, length);
+    auto* device = static_cast<IODevice*>(png_get_io_ptr(pngPtr));
+    device->writeFull(reinterpret_cast<char*>(data), length);
   };
 
   auto flushPngData = [](png_structp) {};
@@ -513,7 +513,7 @@ void Image::writePng(IODevicePtr device) const {
   size_t stride = m_width * 8 * channels / 8;
   for (size_t i = 0; i < m_height; ++i) {
     size_t q = (m_height - i - 1) * stride;
-    row_ptrs[i] = (png_bytep)m_data + q;
+    row_ptrs[i] = reinterpret_cast<png_bytep>(m_data) + q;
   }
 
   png_set_write_fn(png_ptr, device.get(), writePngData, flushPngData);
