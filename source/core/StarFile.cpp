@@ -120,11 +120,11 @@ void File::backupFileInSequence(String const& targetFile, unsigned maximumBackup
 
 File::File()
   : IODevice(IOMode::Closed) {
-  m_file = 0;
+  m_file = nullptr;
 }
 
 File::File(String filename)
-  : IODevice(IOMode::Closed), m_filename(std::move(filename)), m_file(0) {}
+  : IODevice(IOMode::Closed), m_filename(std::move(filename)), m_file(nullptr) {}
 
 File::~File() {
   close();
@@ -232,7 +232,7 @@ void File::open(IOMode m) {
 void File::close() {
   if (m_file)
     fclose(m_file);
-  m_file = 0;
+  m_file = nullptr;
   setMode(IOMode::Closed);
 }
 
