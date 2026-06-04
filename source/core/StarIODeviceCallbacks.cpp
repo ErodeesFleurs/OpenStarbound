@@ -15,12 +15,12 @@ IODevicePtr const& IODeviceCallbacks::device() const {
 
 size_t IODeviceCallbacks::readFunc(void* ptr, size_t size, size_t nmemb, void* datasource) {
   auto* callbacks = static_cast<IODeviceCallbacks*>(datasource);
-  return callbacks->m_device->read((char*)ptr, size * nmemb) / size;
+  return callbacks->m_device->read(static_cast<char*>(ptr), size * nmemb) / size;
 }
 
 int IODeviceCallbacks::seekFunc(void* datasource, ogg_int64_t offset, int whence) {
   auto* callbacks = static_cast<IODeviceCallbacks*>(datasource);
-  callbacks->m_device->seek(offset, (IOSeek)whence);
+  callbacks->m_device->seek(offset, static_cast<IOSeek>(whence));
   return 0;
 }
 

@@ -13,7 +13,7 @@ struct KeySet {
 
   KeySet() {
     SecretKey secret;
-    Random::randBytes(SecretKeySize).copyTo((char*)secret.data());
+    Random::randBytes(SecretKeySize).copyTo(reinterpret_cast<char*>(secret.data()));
 
     secret[0]  &= 248;
     secret[31] &= 127;

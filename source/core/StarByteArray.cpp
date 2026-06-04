@@ -83,14 +83,14 @@ void ByteArray::reset() {
 void ByteArray::reserve(size_t newCapacity) {
   if (newCapacity > m_capacity) {
     if (!m_data) {
-      auto newMem = (char*)Star::malloc(newCapacity);
+      auto newMem = static_cast<char*>(Star::malloc(newCapacity));
       if (!newMem)
         throw MemoryException::format("Could not set new ByteArray capacity {}\n", newCapacity);
       m_data = newMem;
       m_capacity = newCapacity;
     } else {
       newCapacity = max({m_capacity * 2, newCapacity, (size_t)8});
-      auto newMem = (char*)Star::realloc(m_data, newCapacity);
+      auto newMem = static_cast<char*>(Star::realloc(m_data, newCapacity));
       if (!newMem)
         throw MemoryException::format("Could not set new ByteArray capacity {}\n", newCapacity);
       m_data = newMem;
