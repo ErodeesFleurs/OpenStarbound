@@ -127,27 +127,27 @@ Json::Json(bool b) {
 }
 
 Json::Json(int i) {
-  m_data = (int64_t)i;
+  m_data = static_cast<int64_t>(i);
 }
 
 Json::Json(long i) {
-  m_data = (int64_t)i;
+  m_data = static_cast<int64_t>(i);
 }
 
 Json::Json(long long i) {
-  m_data = (int64_t)i;
+  m_data = static_cast<int64_t>(i);
 }
 
 Json::Json(unsigned int i) {
-  m_data = (int64_t)i;
+  m_data = static_cast<int64_t>(i);
 }
 
 Json::Json(unsigned long i) {
-  m_data = (int64_t)i;
+  m_data = static_cast<int64_t>(i);
 }
 
 Json::Json(unsigned long long i) {
-  m_data = (int64_t)i;
+  m_data = static_cast<int64_t>(i);
 }
 
 Json::Json(char const* s) {
@@ -182,13 +182,13 @@ double Json::toDouble() const {
   if (type() == Type::Float)
     return m_data.get<double>();
   if (type() == Type::Int)
-    return (double)m_data.get<int64_t>();
+    return static_cast<double>(m_data.get<int64_t>());
 
   throw JsonException::format("Improper conversion to double from {}", typeName());
 }
 
 float Json::toFloat() const {
-  return (float)toDouble();
+  return static_cast<float>(toDouble());
 }
 
 bool Json::toBool() const {
@@ -199,7 +199,7 @@ bool Json::toBool() const {
 
 int64_t Json::toInt() const {
   if (type() == Type::Float) {
-    return (int64_t)m_data.get<double>();
+    return static_cast<int64_t>(m_data.get<double>());
   } else if (type() == Type::Int) {
     return m_data.get<int64_t>();
   } else {
@@ -209,9 +209,9 @@ int64_t Json::toInt() const {
 
 uint64_t Json::toUInt() const {
   if (type() == Type::Float) {
-    return (uint64_t)m_data.get<double>();
+    return static_cast<uint64_t>(m_data.get<double>());
   } else if (type() == Type::Int) {
-    return (uint64_t)m_data.get<int64_t>();
+    return static_cast<uint64_t>(m_data.get<int64_t>());
   } else {
     throw JsonException::format("Improper conversion to unsigned int from {}", typeName());
   }
@@ -888,7 +888,7 @@ std::ostream& operator<<(std::ostream& os, JsonObject const& v) {
 DataStream& operator<<(DataStream& os, const Json& v) {
   // Compatibility with old serialization, 0 was INVALID but INVALID is no
   // longer used.
-  os.write<uint8_t>((uint8_t)v.type() + 1);
+  os.write<uint8_t>(static_cast<uint8_t>(v.type()) + 1);
 
   if (v.type() == Json::Type::Float) {
     os.write<double>(v.toDouble());
@@ -921,7 +921,7 @@ DataStream& operator>>(DataStream& os, Json& v) {
   if (typeIndex > 0)
     typeIndex -= 1;
 
-  Json::Type type = (Json::Type)typeIndex;
+  Json::Type type = static_cast<Json::Type>(typeIndex);
 
   if (type == Json::Type::Float) {
     v = Json(os.read<double>());
@@ -973,15 +973,15 @@ DataStream& operator>>(DataStream& ds, JsonObject& m) {
 }
 
 void Json::getHash(XXHash3& hasher) const {
-  Json::Type type = (Json::Type)m_data.typeIndex();
+  Json::Type type = static_cast<Json::Type>(m_data.typeIndex());
   if (type == Json::Type::Bool)
     hasher.push(m_data.get<bool>() ? "\2\1" : "\2\0", 2);
   else {
-    hasher.push((const char*)&type, sizeof(type));
+    hasher.push(reinterpret_cast<char const*>(&type), sizeof(type));
     if (type == Json::Type::Float)
-      hasher.push((const char*)m_data.ptr<double>(), sizeof(double));
+      hasher.push(reinterpret_cast<char const*>(m_data.ptr<double>()), sizeof(double));
     else if (type == Json::Type::Int)
-      hasher.push((const char*)m_data.ptr<int64_t>(), sizeof(int64_t));
+      hasher.push(reinterpret_cast<char const*>(m_data.ptr<int64_t>()), sizeof(int64_t));
     else if (type == Json::Type::String) {
       const String& str = *m_data.get<StringConstPtr>();
       hasher.push(str.utf8Ptr(), str.utf8Size());
