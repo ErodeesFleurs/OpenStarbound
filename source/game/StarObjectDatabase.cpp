@@ -489,7 +489,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
         List<ItemDescriptor> group;
         for (auto dropChoiceEntry : dropChoiceGroups.iterateArray())
           group.append(
-              {dropChoiceEntry.getString(0), (size_t)dropChoiceEntry.getUInt(1), dropChoiceEntry.getObject(2)});
+              {dropChoiceEntry.getString(0), static_cast<size_t>(dropChoiceEntry.getUInt(1)), dropChoiceEntry.getObject(2)});
         objectConfig->breakDropOptions.append(group);
       }
       // If breakDropOptions is set but empty, then the object should always

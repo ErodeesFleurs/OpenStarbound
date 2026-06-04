@@ -124,7 +124,7 @@ namespace Dungeon {
     }
     if (color[3] == 0)
       color = Vec4B(255, 255, 255, 0);
-    return (((unsigned)color[2]) << 16) | (((unsigned)color[1]) << 8) | ((unsigned)color[0]);
+    return (static_cast<unsigned>(color[2]) << 16) | (static_cast<unsigned>(color[1]) << 8) | static_cast<unsigned>(color[0]);
   }
 }
 
