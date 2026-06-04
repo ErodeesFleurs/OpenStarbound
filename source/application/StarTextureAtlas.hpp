@@ -232,7 +232,7 @@ float TextureAtlasSet<AtlasTextureHandle>::averageFillLevel() const {
 
   float atlasFillLevelSum = 0.0f;
   for (auto const& atlas : m_atlases)
-    atlasFillLevelSum += atlas->usedCellCount / (float)square(m_atlasNumCells);
+    atlasFillLevelSum += atlas->usedCellCount / static_cast<float>(square(m_atlasNumCells));
   return atlasFillLevelSum / m_atlases.size();
 }
 
@@ -400,7 +400,8 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTextureToAtlas(TextureAtlas* atlas,
   if (!found)
     return {};
 
-  setAtlasRegionUsed(atlas, RectU::withSize({fitCellX, fitCellY}, {(unsigned)numCellsX, (unsigned)numCellsY}), true);
+  setAtlasRegionUsed(
+      atlas, RectU::withSize({fitCellX, fitCellY}, {static_cast<unsigned>(numCellsX), static_cast<unsigned>(numCellsY)}), true);
 
   copyAtlasPixels(atlas->atlasTexture, Vec2U(fitCellX * m_atlasCellSize, fitCellY * m_atlasCellSize), image);
 

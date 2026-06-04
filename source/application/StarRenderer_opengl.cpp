@@ -311,17 +311,17 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
       if (p.second.getBool("scriptable",false)) {
         if (Json def = p.second.get("default", {})) {
           if (type == "bool") {
-            effectParameter.parameterValue = (RenderEffectParameter)def.toBool();
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(def.toBool());
           } else if (type == "int") {
-            effectParameter.parameterValue = (RenderEffectParameter)(int)def.toInt();
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(static_cast<int>(def.toInt()));
           } else if (type == "float") {
-            effectParameter.parameterValue = (RenderEffectParameter)def.toFloat();
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(def.toFloat());
           } else if (type == "vec2") {
-            effectParameter.parameterValue = (RenderEffectParameter)jsonToVec2F(def);
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(jsonToVec2F(def));
           } else if (type == "vec3") {
-            effectParameter.parameterValue = (RenderEffectParameter)jsonToVec3F(def);
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(jsonToVec3F(def));
           } else if (type == "vec4") {
-            effectParameter.parameterValue = (RenderEffectParameter)jsonToVec4F(def);
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(jsonToVec4F(def));
           }
         }
         effect.scriptables[p.first] = effectParameter;
@@ -331,7 +331,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
           if (type == "bool") {
             setEffectParameter(p.first, def.toBool());
           } else if (type == "int") {
-            setEffectParameter(p.first, (int)def.toInt());
+            setEffectParameter(p.first, static_cast<int>(def.toInt()));
           } else if (type == "float") {
             setEffectParameter(p.first, def.toFloat());
           } else if (type == "vec2") {
