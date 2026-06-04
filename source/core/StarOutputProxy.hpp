@@ -11,7 +11,7 @@ namespace OutputAnyDetail {
   template<typename T, typename CharT, typename Traits>
   std::basic_string<CharT, Traits> string(T const& t) {
     std::basic_ostringstream<CharT, Traits> os;
-    os << "<type " << typeid(T).name() << " at address: " << (void*)&t << ">";
+    os << "<type " << typeid(T).name() << " at address: " << static_cast<void const*>(&t) << ">";
     return os.str();
   }
 
