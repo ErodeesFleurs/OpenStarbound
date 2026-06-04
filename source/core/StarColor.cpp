@@ -86,10 +86,10 @@ Color Color::rgba(uint8_t r, uint8_t g, uint8_t b, uint8_t a) {
 
 Color Color::fromUint32(uint32_t v) {
   Color c;
-  c.setAlpha(((uint8_t*)(&v))[3]);
-  c.setRed(((uint8_t*)(&v))[2]);
-  c.setGreen(((uint8_t*)(&v))[1]);
-  c.setBlue(((uint8_t*)(&v))[0]);
+  c.setAlpha(static_cast<uint8_t>((v >> 24) & 0xff));
+  c.setRed(static_cast<uint8_t>((v >> 16) & 0xff));
+  c.setGreen(static_cast<uint8_t>((v >> 8) & 0xff));
+  c.setBlue(static_cast<uint8_t>(v & 0xff));
   return c;
 }
 
@@ -299,12 +299,10 @@ void Color::setAlpha(uint8_t a) {
 }
 
 uint32_t Color::toUint32() const {
-  uint32_t val;
-  ((uint8_t*)(&val))[3] = alpha();
-  ((uint8_t*)(&val))[2] = red();
-  ((uint8_t*)(&val))[1] = green();
-  ((uint8_t*)(&val))[0] = blue();
-  return val;
+  return (static_cast<uint32_t>(alpha()) << 24)
+      | (static_cast<uint32_t>(red()) << 16)
+      | (static_cast<uint32_t>(green()) << 8)
+      | static_cast<uint32_t>(blue());
 }
 
 Color Color::fromHex(StringView s) {
