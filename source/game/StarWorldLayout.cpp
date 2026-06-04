@@ -90,7 +90,7 @@ Json WorldLayout::BlockNoise::toJson() const {
 }
 
 Vec2I WorldLayout::BlockNoise::apply(Vec2I const& input, Vec2U const& worldSize) const {
-  float angle = (input[0] / (float)worldSize[0]) * 2 * Constants::pi;
+  float angle = (input[0] / static_cast<float>(worldSize[0])) * 2 * Constants::pi;
   float xc = std::sin(angle) / (2 * Constants::pi) * worldSize[0];
   float zc = std::cos(angle) / (2 * Constants::pi) * worldSize[0];
 
@@ -250,7 +250,7 @@ WorldLayout WorldLayout::buildAsteroidsLayout(AsteroidsWorldParameters const& as
   layout.m_worldSize = asteroidParameters.worldSize;
 
   RegionParams asteroidRegion{
-    (int)asteroidParameters.worldSize[1] / 2,
+    static_cast<int>(asteroidParameters.worldSize[1]) / 2,
     asteroidParameters.threatLevel,
     asteroidParameters.asteroidBiome,
     asteroidTerrainConfig.getString("terrainSelector"),
@@ -263,7 +263,7 @@ WorldLayout WorldLayout::buildAsteroidsLayout(AsteroidsWorldParameters const& as
   };
 
   RegionParams emptyRegion{
-    (int)asteroidParameters.worldSize[1] / 2,
+    static_cast<int>(asteroidParameters.worldSize[1]) / 2,
     asteroidParameters.threatLevel,
     asteroidParameters.asteroidBiome,
     emptyTerrainConfig.getString("terrainSelector"),
@@ -299,7 +299,7 @@ WorldLayout WorldLayout::buildFloatingDungeonLayout(FloatingDungeonWorldParamete
   layout.m_worldSize = floatingDungeonParameters.worldSize;
 
   RegionParams biomeRegion{
-    (int)floatingDungeonParameters.dungeonSurfaceHeight,
+    static_cast<int>(floatingDungeonParameters.dungeonSurfaceHeight),
     floatingDungeonParameters.threatLevel,
     floatingDungeonParameters.biome,
     {}, {}, {}, {}, {}, {},
