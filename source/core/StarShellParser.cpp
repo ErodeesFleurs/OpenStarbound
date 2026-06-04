@@ -159,7 +159,7 @@ auto ShellParser::parseBackslash() -> Char {
           }
         }
         previous();
-        return STAR_UTF32_REPLACEMENT_CHAR;
+        return Utf32ReplacementChar;
       } else {
         return letter;
       }
@@ -181,7 +181,7 @@ auto ShellParser::parseUnicodeEscapeSequence(Maybe<Char> previousCodepoint) -> C
     }
 
     if (!isxdigit(*letter)) {
-      return STAR_UTF32_REPLACEMENT_CHAR;
+      return Utf32ReplacementChar;
     }
 
     codepoint.append(*letter);
@@ -192,12 +192,12 @@ auto ShellParser::parseUnicodeEscapeSequence(Maybe<Char> previousCodepoint) -> C
   }
 
   if (codepoint.size() != 4) // exactly 4 digits are required by \u
-    return STAR_UTF32_REPLACEMENT_CHAR;
+    return Utf32ReplacementChar;
 
   try {
     return hexStringToUtf32(codepoint.utf8(), previousCodepoint);
   } catch (UnicodeException const&) {
-    return STAR_UTF32_REPLACEMENT_CHAR;
+    return Utf32ReplacementChar;
   }
 }
 

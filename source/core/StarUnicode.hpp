@@ -10,7 +10,7 @@ STAR_EXCEPTION(UnicodeException, StarException);
 using Utf8Type = char;
 using Utf32Type = char32_t;
 
-#define STAR_UTF32_REPLACEMENT_CHAR 0x000000b7L
+constexpr Utf32Type Utf32ReplacementChar = static_cast<Utf32Type>(0x000000b7);
 
 void throwInvalidUtf8Sequence();
 void throwMissingUtf8End();
