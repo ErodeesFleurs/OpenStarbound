@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(Image);
+class Image;
 
 template <>
 struct LuaConverter<Image> : LuaUserDataConverter<Image> {};

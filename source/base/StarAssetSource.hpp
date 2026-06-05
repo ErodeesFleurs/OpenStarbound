@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(AssetSource);
+class AssetSource;
+using AssetSourcePtr = SharedPtr<AssetSource>;
 
 struct AssetSourceExceptionTag { static constexpr char const* typeName = "AssetSourceException"; };
 using AssetSourceException = TypedException<StarException, AssetSourceExceptionTag>;

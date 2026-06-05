@@ -5,8 +5,11 @@
 
 namespace Star {
 
-STAR_CLASS(MemoryAssetSource);
-STAR_CLASS(Image);
+class MemoryAssetSource;
+using MemoryAssetSourcePtr = SharedPtr<MemoryAssetSource>;
+class Image;
+using ImagePtr = SharedPtr<Image>;
+using ImageConstPtr = SharedPtr<Image const>;
 
 class MemoryAssetSource : public AssetSource {
 public:

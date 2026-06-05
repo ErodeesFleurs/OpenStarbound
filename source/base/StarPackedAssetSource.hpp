@@ -6,8 +6,6 @@
 
 namespace Star {
 
-STAR_CLASS(PackedAssetSource);
-
 class PackedAssetSource : public AssetSource {
 public:
   typedef function<void(size_t, size_t, String, String)> BuildProgressCallback;

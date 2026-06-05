@@ -10,8 +10,10 @@
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_CLASS(Mixer);
+class AudioInstance;
+using AudioInstancePtr = SharedPtr<AudioInstance>;
+class Mixer;
+using MixerPtr = SharedPtr<Mixer>;
 
 struct RampedValue {
   float value;
