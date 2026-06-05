@@ -15,7 +15,7 @@ TEST(StrongTypedefTest, All) {
   i -= 5;
   EXPECT_EQ(i, -4);
 
-  func((DerivedType1)BaseType());
+  func(static_cast<DerivedType1>(BaseType()));
   func(DerivedType1());
 
   // Shouldn't compile!  Can't test this automatically!

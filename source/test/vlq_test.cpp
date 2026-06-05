@@ -20,9 +20,9 @@ TEST(VlqTest, All) {
   EXPECT_EQ(readVlqI(result, buffer), 1u);
   EXPECT_EQ(result, -64);
 
-  EXPECT_EQ(writeVlqI((int64_t)1 << 63, buffer), 10u);
+  EXPECT_EQ(writeVlqI(static_cast<int64_t>(1) << 63, buffer), 10u);
   EXPECT_EQ(readVlqI(result, buffer), 10u);
-  EXPECT_EQ(result, (int64_t)1 << 63);
+  EXPECT_EQ(result, static_cast<int64_t>(1) << 63);
 
   EXPECT_EQ(writeVlqI(0, buffer), 1u);
   EXPECT_EQ(readVlqI(result, buffer), 1u);

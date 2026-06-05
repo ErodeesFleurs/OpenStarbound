@@ -26,7 +26,7 @@ TEST(SpawnTest, RandomCelestialWorld) {
   Maybe<CelestialCoordinate> celestialWorld = celestialDatabase.findRandomWorld(10, 50, [&](CelestialCoordinate const& coord) {
       return celestialDatabase.parameters(coord)->isVisitable();
     });
-  ASSERT_TRUE((bool)celestialWorld);
+  ASSERT_TRUE(static_cast<bool>(celestialWorld));
 
   TestUniverse testUniverse(Vec2U(100, 100));
   WorldId worldId = CelestialWorldId(*celestialWorld);
