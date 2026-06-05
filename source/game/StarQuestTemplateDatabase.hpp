@@ -7,10 +7,13 @@
 
 namespace Star {
 
-STAR_CLASS(SpeciesTextVariants);
-STAR_CLASS(PositionalTextVariants);
-STAR_CLASS(QuestTemplate);
-STAR_CLASS(QuestTemplateDatabase);
+class SpeciesTextVariants;
+class PositionalTextVariants;
+class QuestTemplate;
+using QuestTemplatePtr = SharedPtr<QuestTemplate>;
+class QuestTemplateDatabase;
+using QuestTemplateDatabasePtr = SharedPtr<QuestTemplateDatabase>;
+using QuestTemplateDatabaseConstPtr = SharedPtr<QuestTemplateDatabase const>;
 
 // A Quest Template
 // Used to check prerequisites for quest availability and by the QuestManager to
