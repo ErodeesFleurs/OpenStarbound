@@ -14,8 +14,10 @@
 
 namespace Star {
 
-STAR_CLASS(Input);
-STAR_CLASS(Voice);
+class Input;
+using InputPtr = SharedPtr<Input>;
+class Voice;
+using VoicePtr = SharedPtr<Voice>;
 
 class ClientApplication : public Application {
 public:
