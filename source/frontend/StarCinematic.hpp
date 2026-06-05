@@ -10,8 +10,10 @@
 
 namespace Star {
 
-STAR_CLASS(Cinematic);
-STAR_CLASS(Player);
+class Cinematic;
+using CinematicPtr = SharedPtr<Cinematic>;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
 
 class Cinematic {
 public:
@@ -68,7 +70,7 @@ private:
     float endTime;
     float loopTime;
   };
-  using PanelPtr = shared_ptr<Panel>;
+  using PanelPtr = SharedPtr<Panel>;
 
   struct PanelValues {
     float zoom;
