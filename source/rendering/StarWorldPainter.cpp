@@ -226,7 +226,7 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
 
     } else if (particle.type == Particle::Type::Text) {
       Vec2F position = m_camera.worldToScreen(particle.position);
-      int size = min(128.0f, round((float)textParticleFontSize * m_camera.pixelRatio() * particle.size));
+      int size = min(128.0f, round(static_cast<float>(textParticleFontSize) * m_camera.pixelRatio() * particle.size));
       if (size > 0) {
         m_textPainter->setFontSize(size);
         m_textPainter->setFontColor(particle.color.toRgba());

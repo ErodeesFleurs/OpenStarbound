@@ -362,7 +362,7 @@ void TextPainter::applyCommands(StringView unsplitCommands) {
       } else {
         // expects both #... sequences and plain old color names.
         Color c = Color(command);
-        c.setAlphaF(c.alphaF() * ((float)m_savedRenderSettings.color[3]) / 255);
+        c.setAlphaF(c.alphaF() * (static_cast<float>(m_savedRenderSettings.color[3])) / 255);
         m_renderSettings.color = c.toRgba();
       }
     } catch (JsonException&) {
@@ -422,7 +422,7 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   } else if (pos.hAnchor == HorizontalAnchor::HMidAnchor) {
     StringView trimmedString = charLimit ? text.substr(0, *charLimit) : text;
-    pos.pos[0] -= floor((float)stringWidth(trimmedString) / 2);
+    pos.pos[0] -= floor(static_cast<float>(stringWidth(trimmedString)) / 2);
     pos.hAnchor = HorizontalAnchor::LeftAnchor;
   }
 
@@ -464,13 +464,13 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
   if (position.hAnchor == HorizontalAnchor::RightAnchor)
     hOffset = -width;
   else if (position.hAnchor == HorizontalAnchor::HMidAnchor)
-    hOffset = -floor((float)width / 2);
+    hOffset = -floor(static_cast<float>(width) / 2);
 
   float vOffset = 0;
   if (position.vAnchor == VerticalAnchor::VMidAnchor)
-    vOffset = -floor((float)m_renderSettings.fontSize / 2);
+    vOffset = -floor(static_cast<float>(m_renderSettings.fontSize) / 2);
   else if (position.vAnchor == VerticalAnchor::TopAnchor)
-    vOffset = -(float)m_renderSettings.fontSize;
+    vOffset = -static_cast<float>(m_renderSettings.fontSize);
 
   Directives* directives = m_renderSettings.directives ? &m_renderSettings.directives : nullptr;
 
@@ -499,7 +499,7 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
     renderGlyph(c, pos, output, m_renderSettings.fontSize, 1, m_renderSettings.color, directives);
   }
 
-  return RectF::withSize(pos, {(float)width, (int)m_renderSettings.fontSize});
+  return RectF::withSize(pos, {static_cast<float>(width), static_cast<int>(m_renderSettings.fontSize)});
 }
 
 void TextPainter::renderPrimitives() {
