@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_STRUCT(EntityAnchor);
+struct EntityAnchor;
+using EntityAnchorConstPtr = SharedPtr<EntityAnchor const>;
 
 struct EntityAnchor {
   virtual ~EntityAnchor() = default;

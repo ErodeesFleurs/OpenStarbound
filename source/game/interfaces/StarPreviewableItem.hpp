@@ -4,8 +4,9 @@
 
 namespace Star {
 
-STAR_CLASS(Player);
-STAR_CLASS(PreviewableItem);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class PreviewableItem;
 
 class PreviewableItem {
 public:

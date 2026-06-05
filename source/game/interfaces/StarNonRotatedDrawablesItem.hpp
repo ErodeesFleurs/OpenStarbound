@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(NonRotatedDrawablesItem);
+class NonRotatedDrawablesItem;
 
 class NonRotatedDrawablesItem {
 public:

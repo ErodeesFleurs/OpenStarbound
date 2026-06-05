@@ -8,7 +8,7 @@ namespace Star {
 struct ToolUserItemExceptionTag { static constexpr char const* typeName = "ToolUserItemException"; };
 using ToolUserItemException = TypedException<StarException, ToolUserItemExceptionTag>;
 
-STAR_CLASS(ToolUserItem);
+class ToolUserItem;
 
 // FIXME: You know what another name for an item that a tool user uses is?  A
 // Tool.  Three words when one will do, rename.
