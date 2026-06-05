@@ -6,7 +6,7 @@
 
 namespace Star {
 
-STAR_CLASS(Image);
+class Image;
 
 struct ImageOperationExceptionTag { static constexpr char const* typeName = "ImageOperationException"; };
 using ImageOperationException = TypedException<StarException, ImageOperationExceptionTag>;

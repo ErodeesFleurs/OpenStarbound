@@ -12,13 +12,13 @@ using JsonException = TypedException<StarException, JsonExceptionTag>;
 struct JsonParsingExceptionTag { static constexpr char const* typeName = "JsonParsingException"; };
 using JsonParsingException = TypedException<StarException, JsonParsingExceptionTag>;
 
-STAR_CLASS(Json);
+class Json;
 
 using JsonArray = List<Json>;
-using JsonArrayConstPtr = shared_ptr<JsonArray const>;
+using JsonArrayConstPtr = SharedPtr<JsonArray const>;
 
 using JsonObject = StringMap<Json>;
-using JsonObjectConstPtr = shared_ptr<JsonObject const>;
+using JsonObjectConstPtr = SharedPtr<JsonObject const>;
 
 // Class for holding representation of JSON data.  Immutable and implicitly
 // shared.

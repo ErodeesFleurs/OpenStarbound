@@ -4,8 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(StringView);
-STAR_CLASS(String);
+class StringView;
+class String;
 
 // This is a StringView version of Star::String
 // I literally just copy-pasted it all from there

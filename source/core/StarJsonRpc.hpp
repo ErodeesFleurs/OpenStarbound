@@ -6,8 +6,10 @@
 
 namespace Star {
 
-STAR_CLASS(JsonRpcInterface);
-STAR_CLASS(JsonRpc);
+class JsonRpcInterface;
+using JsonRpcInterfacePtr = SharedPtr<JsonRpcInterface>;
+class JsonRpc;
+using JsonRpcPtr = SharedPtr<JsonRpc>;
 
 struct JsonRpcExceptionTag { static constexpr char const* typeName = "JsonRpcException"; };
 using JsonRpcException = TypedException<StarException, JsonRpcExceptionTag>;
