@@ -71,7 +71,7 @@ int main(int argc, char** argv) {
           auto weightings = layout->getWeighting(pos[0], pos[1]);
           for (auto const& weighting : weightings) {
             Color mixColor = Color::rgb(128, 0, 0);
-            mixColor.setHue(staticRandomFloat((uint64_t)weighting.region));
+            mixColor.setHue(staticRandomFloat(static_cast<uint64_t>(weighting.region)));
             color = Color::rgbaf(color.toRgbaF() + mixColor.toRgbaF() * weighting.weight);
           }
           outputImage->set(x, y, color.toRgb());

@@ -103,7 +103,7 @@ bool ServerQueryThread::processPacket(HostAddressWithPort const& address, char c
       m_generalResponse.clear();
       m_generalResponse << A2S_HEAD_INT << A2S_INFO_REPLY << A2S_VERSION << m_serverName << serverWorldNames()
                         << GAME_DIR << GAME_DESC << A2S_APPID // Should be SteamAppId but this isn't a short :(
-                        << serverPlayerCount() << m_maxPlayers << (uint8_t)0x00 // bots
+                        << serverPlayerCount() << m_maxPlayers << static_cast<uint8_t>(0x00) // bots
                         << A2S_TYPE_DEDICATED // dedicated
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
                         << A2S_ENV_WINDOWS // os
@@ -156,7 +156,7 @@ void ServerQueryThread::buildPlayerResponse() {
   }
 
   auto clientIds = m_universe->clientIdsAndCreationTime();
-  uint8_t cnt = (uint8_t)clientIds.count();
+  uint8_t cnt = static_cast<uint8_t>(clientIds.count());
   int32_t kills = 0; // Not currently supported
 
   m_playersResponse.clear();
@@ -249,9 +249,9 @@ bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, char 
     return false;
   }
 
-  uint8_t const* b = (uint8_t const*)data;
-  int32_t challenge = ((int32_t)b[8] & 0xff) << 24 | ((int32_t)b[7] & 0xff) << 16 | ((int32_t)b[6] & 0xff) << 8
-      | ((int32_t)b[5] & 0xff);
+  uint8_t const* b = reinterpret_cast<uint8_t const*>(data);
+  int32_t challenge = (static_cast<int32_t>(b[8]) & 0xff) << 24 | (static_cast<int32_t>(b[7]) & 0xff) << 16 | (static_cast<int32_t>(b[6]) & 0xff) << 8
+      | (static_cast<int32_t>(b[5]) & 0xff);
   // Note: No byte order swapping needed as protcol performs no conversion
   if (m_validChallenges.get(address.address())->getChallenge() != challenge) {
     // Challenges didnt match ignore

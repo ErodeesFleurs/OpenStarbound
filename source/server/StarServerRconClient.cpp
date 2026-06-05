@@ -59,7 +59,7 @@ void ServerRconClient::receive(size_t size) {
 
 void ServerRconClient::send(uint32_t requestId, uint32_t cmd, String str) {
   m_packetBuffer.clear();
-  m_packetBuffer << (uint32_t)(str.utf8Size() + 10) << requestId << cmd << str << (uint8_t)0x00;
+  m_packetBuffer << static_cast<uint32_t>(str.utf8Size() + 10) << requestId << cmd << str << static_cast<uint8_t>(0x00);
   m_socket->send(m_packetBuffer.ptr(), m_packetBuffer.size());
 }
 
