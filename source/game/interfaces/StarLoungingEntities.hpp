@@ -7,11 +7,10 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-
-STAR_STRUCT(LoungeAnchor);
-STAR_CLASS(LoungeableEntity);
-STAR_CLASS(LoungingEntity);
+struct LoungeAnchor;
+using LoungeAnchorConstPtr = SharedPtr<LoungeAnchor const>;
+class LoungeableEntity;
+class LoungingEntity;
 
 enum class LoungeOrientation { None, Sit, Lay, Stand };
 extern EnumMap<LoungeOrientation> const LoungeOrientationNames;

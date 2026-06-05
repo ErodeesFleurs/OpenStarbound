@@ -7,11 +7,7 @@
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ToolUserEntity);
-STAR_CLASS(World);
-
-STAR_CLASS(BeamItem);
+class BeamItem;
 
 class BeamItem : public virtual NonRotatedDrawablesItem, public virtual ToolUserItem {
 public:

@@ -8,10 +8,9 @@
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ToolUserEntity);
-STAR_CLASS(ActorMovementController);
-STAR_CLASS(StatusController);
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class ToolUserEntity;
 
 // FIXME: This interface is a complete mess.
 class ToolUserEntity : public virtual ActorEntity {
