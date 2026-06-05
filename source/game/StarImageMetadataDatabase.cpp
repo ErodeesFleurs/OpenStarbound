@@ -65,14 +65,15 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
   for (int yspace = min[1]; yspace < max[1]; ++yspace) {
     for (int xspace = min[0]; xspace < max[0]; ++xspace) {
       float fillRatio = 0.0f;
+      int const tilePixels = static_cast<int>(TilePixels);
 
-      for (int y = 0; y < (int)TilePixels; ++y) {
-        int ypixel = round(yspace * (int)TilePixels + y - position[1]);
+      for (int y = 0; y < tilePixels; ++y) {
+        int ypixel = round(yspace * tilePixels + y - position[1]);
         if (ypixel < 0 || ypixel >= imageHeight)
           continue;
 
-        for (int x = 0; x < (int)TilePixels; ++x) {
-          int xpixel = round(xspace * (int)TilePixels + x - position[0]);
+        for (int x = 0; x < tilePixels; ++x) {
+          int xpixel = round(xspace * tilePixels + x - position[0]);
           if (flip)
             xpixel = imageWidth - 1 - xpixel;
 
@@ -241,8 +242,8 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
       if (cio.subset.isEmpty() ||
           cio.subset.xMin() < 0 ||
           cio.subset.yMin() < 0 ||
-          (unsigned)cio.subset.xMax() > imageSize[0] ||
-          (unsigned)cio.subset.yMax() > imageSize[1]) {
+          static_cast<unsigned>(cio.subset.xMax()) > imageSize[0] ||
+          static_cast<unsigned>(cio.subset.yMax()) > imageSize[1]) {
         hasError = true;
       } else {
         imageSize = Vec2U(cio.subset.size());
