@@ -5,8 +5,12 @@
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemBag);
+class Item;
+using ItemPtr = SharedPtr<Item>;
+using ItemConstPtr = SharedPtr<Item const>;
+class ItemBag;
+using ItemBagPtr = SharedPtr<ItemBag>;
+using ItemBagConstPtr = SharedPtr<ItemBag const>;
 
 // Manages a collection of items with non-zero counts, and putting them in /
 // stacking them / consuming them.  As items are taken out of the ItemBag, any
