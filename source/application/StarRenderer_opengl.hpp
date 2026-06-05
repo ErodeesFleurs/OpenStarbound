@@ -9,11 +9,6 @@ namespace Star {
 
 class OpenGlRenderer;
 using OpenGlRendererPtr = SharedPtr<OpenGlRenderer>;
-using OpenGlRendererConstPtr = SharedPtr<OpenGlRenderer const>;
-using OpenGlRendererWeakPtr = WeakPtr<OpenGlRenderer>;
-using OpenGlRendererConstWeakPtr = WeakPtr<OpenGlRenderer const>;
-using OpenGlRendererUPtr = UniquePtr<OpenGlRenderer>;
-using OpenGlRendererConstUPtr = UniquePtr<OpenGlRenderer const>;
 
 constexpr size_t FrameBufferCount = 1;
 

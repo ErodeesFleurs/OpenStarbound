@@ -4,14 +4,6 @@
 
 namespace Star {
 
-class SteamStatisticsService;
-using SteamStatisticsServicePtr = SharedPtr<SteamStatisticsService>;
-using SteamStatisticsServiceConstPtr = SharedPtr<SteamStatisticsService const>;
-using SteamStatisticsServiceWeakPtr = WeakPtr<SteamStatisticsService>;
-using SteamStatisticsServiceConstWeakPtr = WeakPtr<SteamStatisticsService const>;
-using SteamStatisticsServiceUPtr = UniquePtr<SteamStatisticsService>;
-using SteamStatisticsServiceConstUPtr = UniquePtr<SteamStatisticsService const>;
-
 class SteamStatisticsService : public StatisticsService {
 public:
   SteamStatisticsService(PcPlatformServicesStatePtr state);

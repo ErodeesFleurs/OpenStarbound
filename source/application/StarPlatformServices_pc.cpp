@@ -148,8 +148,8 @@ void PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* cal
 }
 #endif
 
-PcPlatformServicesUPtr PcPlatformServices::create([[maybe_unused]] String const& path, StringList platformArguments) {
-  auto services = unique_ptr<PcPlatformServices>(new PcPlatformServices);
+UniquePtr<PcPlatformServices> PcPlatformServices::create([[maybe_unused]] String const& path, StringList platformArguments) {
+  auto services = UniquePtr<PcPlatformServices>(new PcPlatformServices);
 
   services->m_state = make_shared<PcPlatformServicesState>();
 

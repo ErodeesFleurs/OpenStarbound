@@ -440,7 +440,7 @@ ControllerButton controllerButtonFromSdlControllerButton(uint8_t button) {
 
 class SdlPlatform {
 public:
-  SdlPlatform(ApplicationUPtr application, StringList cmdLineArgs) {
+  SdlPlatform(UniquePtr<Application> application, StringList cmdLineArgs) {
     m_application = std::move(application);
 
     // extract application path from command line args
@@ -1365,11 +1365,11 @@ private:
   const char* m_audioDriver;
 
   OpenGlRendererPtr m_renderer;
-  ApplicationUPtr m_application;
-  PcPlatformServicesUPtr m_platformServices;
+  UniquePtr<Application> m_application;
+  UniquePtr<PcPlatformServices> m_platformServices;
 };
 
-int runMainApplication(ApplicationUPtr application, StringList cmdLineArgs) {
+int runMainApplication(UniquePtr<Application> application, StringList cmdLineArgs) {
   try {
     {
       SdlPlatform platform(std::move(application), std::move(cmdLineArgs));

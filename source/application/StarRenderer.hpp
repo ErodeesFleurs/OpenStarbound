@@ -17,25 +17,10 @@ using TexturePtr = RefPtr<Texture>;
 
 class TextureGroup;
 using TextureGroupPtr = SharedPtr<TextureGroup>;
-using TextureGroupConstPtr = SharedPtr<TextureGroup const>;
-using TextureGroupWeakPtr = WeakPtr<TextureGroup>;
-using TextureGroupConstWeakPtr = WeakPtr<TextureGroup const>;
-using TextureGroupUPtr = UniquePtr<TextureGroup>;
-using TextureGroupConstUPtr = UniquePtr<TextureGroup const>;
 class RenderBuffer;
 using RenderBufferPtr = SharedPtr<RenderBuffer>;
-using RenderBufferConstPtr = SharedPtr<RenderBuffer const>;
-using RenderBufferWeakPtr = WeakPtr<RenderBuffer>;
-using RenderBufferConstWeakPtr = WeakPtr<RenderBuffer const>;
-using RenderBufferUPtr = UniquePtr<RenderBuffer>;
-using RenderBufferConstUPtr = UniquePtr<RenderBuffer const>;
 class Renderer;
 using RendererPtr = SharedPtr<Renderer>;
-using RendererConstPtr = SharedPtr<Renderer const>;
-using RendererWeakPtr = WeakPtr<Renderer>;
-using RendererConstWeakPtr = WeakPtr<Renderer const>;
-using RendererUPtr = UniquePtr<Renderer>;
-using RendererConstUPtr = UniquePtr<Renderer const>;
 
 enum class TextureAddressing {
   Clamp,

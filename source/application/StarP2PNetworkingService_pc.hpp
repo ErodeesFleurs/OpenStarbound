@@ -8,14 +8,6 @@
 
 namespace Star {
 
-class PcP2PNetworkingService;
-using PcP2PNetworkingServicePtr = SharedPtr<PcP2PNetworkingService>;
-using PcP2PNetworkingServiceConstPtr = SharedPtr<PcP2PNetworkingService const>;
-using PcP2PNetworkingServiceWeakPtr = WeakPtr<PcP2PNetworkingService>;
-using PcP2PNetworkingServiceConstWeakPtr = WeakPtr<PcP2PNetworkingService const>;
-using PcP2PNetworkingServiceUPtr = UniquePtr<PcP2PNetworkingService>;
-using PcP2PNetworkingServiceConstUPtr = UniquePtr<PcP2PNetworkingService const>;
-
 class PcP2PNetworkingService : public P2PNetworkingService {
 public:
   PcP2PNetworkingService(PcPlatformServicesStatePtr state);

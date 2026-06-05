@@ -18,19 +18,8 @@
 namespace Star {
 
 class PcPlatformServices;
-using PcPlatformServicesPtr = SharedPtr<PcPlatformServices>;
-using PcPlatformServicesConstPtr = SharedPtr<PcPlatformServices const>;
-using PcPlatformServicesWeakPtr = WeakPtr<PcPlatformServices>;
-using PcPlatformServicesConstWeakPtr = WeakPtr<PcPlatformServices const>;
-using PcPlatformServicesUPtr = UniquePtr<PcPlatformServices>;
-using PcPlatformServicesConstUPtr = UniquePtr<PcPlatformServices const>;
 struct PcPlatformServicesState;
 using PcPlatformServicesStatePtr = SharedPtr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstPtr = SharedPtr<PcPlatformServicesState const>;
-using PcPlatformServicesStateWeakPtr = WeakPtr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstWeakPtr = WeakPtr<PcPlatformServicesState const>;
-using PcPlatformServicesStateUPtr = UniquePtr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstUPtr = UniquePtr<PcPlatformServicesState const>;
 
 struct PcPlatformServicesState {
   PcPlatformServicesState();
@@ -64,7 +53,7 @@ class PcPlatformServices {
 public:
   // Any command line arguments that start with '+platform' will be stripped
   // out and passed here
-  static PcPlatformServicesUPtr create(String const& path, StringList platformArguments);
+  static UniquePtr<PcPlatformServices> create(String const& path, StringList platformArguments);
 
   StatisticsServicePtr statisticsService() const;
   P2PNetworkingServicePtr p2pNetworkingService() const;

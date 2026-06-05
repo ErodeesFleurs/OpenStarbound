@@ -4,14 +4,6 @@
 
 namespace Star {
 
-class SteamUserGeneratedContentService;
-using SteamUserGeneratedContentServicePtr = SharedPtr<SteamUserGeneratedContentService>;
-using SteamUserGeneratedContentServiceConstPtr = SharedPtr<SteamUserGeneratedContentService const>;
-using SteamUserGeneratedContentServiceWeakPtr = WeakPtr<SteamUserGeneratedContentService>;
-using SteamUserGeneratedContentServiceConstWeakPtr = WeakPtr<SteamUserGeneratedContentService const>;
-using SteamUserGeneratedContentServiceUPtr = UniquePtr<SteamUserGeneratedContentService>;
-using SteamUserGeneratedContentServiceConstUPtr = UniquePtr<SteamUserGeneratedContentService const>;
-
 class SteamUserGeneratedContentService final : public UserGeneratedContentService {
 public:
   SteamUserGeneratedContentService(PcPlatformServicesStatePtr state);
