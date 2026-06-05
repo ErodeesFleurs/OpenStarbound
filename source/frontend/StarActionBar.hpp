@@ -5,14 +5,17 @@
 
 namespace Star {
 
-STAR_CLASS(MainInterface);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(Player);
-STAR_CLASS(Item);
-STAR_CLASS(ItemSlotWidget);
-STAR_CLASS(ImageWidget);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class ItemSlotWidget;
+using ItemSlotWidgetPtr = SharedPtr<ItemSlotWidget>;
+class ImageWidget;
+using ImageWidgetPtr = SharedPtr<ImageWidget>;
 
-STAR_CLASS(ActionBar);
+class ActionBar;
+using ActionBarPtr = SharedPtr<ActionBar>;
 
 class ActionBar : public Pane {
 public:

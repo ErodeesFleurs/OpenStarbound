@@ -9,15 +9,19 @@
 
 namespace Star {
 
-STAR_CLASS(MainInterface);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(Player);
-STAR_CLASS(Item);
-STAR_CLASS(ItemSlotWidget);
-STAR_CLASS(ItemGridWidget);
-STAR_CLASS(ImageWidget);
-STAR_CLASS(Widget);
-STAR_CLASS(InventoryPane);
+class MainInterface;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class ItemSlotWidget;
+using ItemSlotWidgetPtr = SharedPtr<ItemSlotWidget>;
+class ItemGridWidget;
+using ItemGridWidgetPtr = SharedPtr<ItemGridWidget>;
+class ImageWidget;
+using ImageWidgetPtr = SharedPtr<ImageWidget>;
+class Widget;
+using WidgetPtr = SharedPtr<Widget>;
+class InventoryPane;
+using InventoryPanePtr = SharedPtr<InventoryPane>;
 
 class InventoryPane : public Pane {
 public:
