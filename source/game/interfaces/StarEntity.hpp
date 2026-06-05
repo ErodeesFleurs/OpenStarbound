@@ -7,10 +7,12 @@
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(World);
-STAR_STRUCT(DamageNotification);
-STAR_CLASS(Entity);
+class RenderCallback;
+class World;
+struct DamageNotification;
+class Entity;
+using EntityPtr = SharedPtr<Entity>;
+using EntityConstPtr = SharedPtr<Entity const>;
 
 struct EntityExceptionTag { static constexpr char const* typeName = "EntityException"; };
 using EntityException = TypedException<StarException, EntityExceptionTag>;
