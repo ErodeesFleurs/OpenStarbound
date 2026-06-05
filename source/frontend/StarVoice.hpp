@@ -147,7 +147,7 @@ public:
   // Must be called every frame with input state, expires after 1s.
   void setInput(bool input = true);
 
-  inline int encoderChannels() const { return (int)m_channelMode; }
+  inline int encoderChannels() const { return static_cast<int>(m_channelMode); }
 
   static OpusDecoder* createDecoder(int channels);
   static OpusEncoder* createEncoder(int channels);
