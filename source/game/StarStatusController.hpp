@@ -13,7 +13,8 @@
 
 namespace Star {
 
-STAR_CLASS(StatusController);
+class StatusController;
+using StatusControllerPtr = SharedPtr<StatusController>;
 
 class StatusController : public NetElement {
 public:

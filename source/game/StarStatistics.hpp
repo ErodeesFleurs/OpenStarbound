@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_CLASS(Statistics);
+class Statistics;
+using StatisticsPtr = SharedPtr<Statistics>;
 
 class Statistics {
 public:

@@ -9,7 +9,7 @@ namespace Star {
 struct WorldStructureExceptionTag { static constexpr char const* typeName = "WorldStructureException"; };
 using WorldStructureException = TypedException<StarException, WorldStructureExceptionTag>;
 
-STAR_CLASS(WorldStructure);
+class WorldStructure;
 
 class WorldStructure {
 public:
