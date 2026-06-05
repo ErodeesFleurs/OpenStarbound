@@ -11,8 +11,9 @@
 
 namespace Star {
 
-STAR_CLASS(SpawnerFacade);
-STAR_CLASS(Spawner);
+class SpawnerFacade;
+using SpawnerFacadePtr = SharedPtr<SpawnerFacade>;
+class Spawner;
 
 class SpawnerFacade {
 public:

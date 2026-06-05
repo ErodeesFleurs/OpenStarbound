@@ -7,8 +7,8 @@
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(PlantDrop);
+class RenderCallback;
+class PlantDrop;
 
 class PlantDrop : public virtual Entity {
 public:
