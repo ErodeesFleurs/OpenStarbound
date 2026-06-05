@@ -253,7 +253,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
   size_t bufferSize = frameCount * m_channels;
   m_mixBuffer.resize(bufferSize, 0);
 
-  float time = (float)frameCount / sampleRate;
+  float time = static_cast<float>(frameCount) / sampleRate;
   float beginVolume = volume;
   float endVolume = approach(targetVolume, volume, volumeVelocity * time);
 
@@ -332,7 +332,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
             if (sampleTime > *audioInstance->m_clockStop) {
               float volume = 0.0f;
               if (audioInstance->m_clockStopFadeOut > 0)
-                volume = 1.0f - (float)(sampleTime - *audioInstance->m_clockStop) / (float)audioInstance->m_clockStopFadeOut;
+                volume = 1.0f - static_cast<float>(sampleTime - *audioInstance->m_clockStop) / static_cast<float>(audioInstance->m_clockStopFadeOut);
 
               if (volume <= 0) {
                 for (size_t c = 0; c < channels; ++c)
@@ -348,7 +348,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
         }
 
         for (size_t s = 0; s < ramt / channels; ++s) {
-          float vol = lerp((float)s / frameCount, beginVolume * groupVolume * audioStopVolBegin, endVolume * groupEndVolume * audioStopVolEnd);
+          float vol = lerp(static_cast<float>(s) / frameCount, beginVolume * groupVolume * audioStopVolBegin, endVolume * groupEndVolume * audioStopVolEnd);
           for (size_t c = 0; c < channels; ++c) {
             float sample = m_mixBuffer[s * channels + c] * vol * audioState.positionalChannelVolumes[c] * audioInstance->m_volume.value;
             int16_t& outSample = outBuffer[s * channels + c];
@@ -387,7 +387,7 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
       effectInfo->effectFunction(m_mixBuffer.ptr(), frameCount, channels);
 
       for (size_t s = 0; s < frameCount; ++s) {
-        float amt = lerp((float)s / frameCount, effectBegin, effectEnd);
+        float amt = lerp(static_cast<float>(s) / frameCount, effectBegin, effectEnd);
         for (size_t c = 0; c < channels; ++c) {
           int16_t prev = outBuffer[s * channels + c];
           outBuffer[s * channels + c] = lerp(amt, prev, m_mixBuffer[s * channels + c]);
@@ -424,7 +424,7 @@ Mixer::EffectFunction Mixer::lowpass(size_t avgSize) const {
           filterChannel.append(buffer[f * channels + c] / 32767.0f);
           while (filterChannel.size() > avgSize)
             filterChannel.takeFirst();
-          buffer[f * channels + c] = sum(filterChannel) / (float)avgSize * 32767.0f;
+          buffer[f * channels + c] = sum(filterChannel) / static_cast<float>(avgSize) * 32767.0f;
         }
       }
     }

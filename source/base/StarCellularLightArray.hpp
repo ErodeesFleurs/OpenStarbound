@@ -217,7 +217,7 @@ void CellularLightArray<LightTraits>::setParameters(unsigned spreadPasses, float
 
 template <typename LightTraits>
 size_t CellularLightArray<LightTraits>::borderCells() const {
-  return (size_t)ceil(max(0.0f, max(m_spreadMaxAir, m_pointMaxAir)));
+  return static_cast<size_t>(ceil(max(0.0f, max(m_spreadMaxAir, m_pointMaxAir))));
 }
 
 template <typename LightTraits>
@@ -314,7 +314,7 @@ void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
     // best)
     Vec2I pos(light.position.floor());
     float oneBlockAtt;
-    if (pos[0] >= 0 && pos[0] < (int)m_width && pos[1] >= 0 && pos[1] < (int)m_height && getObstacle(pos[0], pos[1]))
+    if (pos[0] >= 0 && pos[0] < static_cast<int>(m_width) && pos[1] >= 0 && pos[1] < static_cast<int>(m_height) && getObstacle(pos[0], pos[1]))
       oneBlockAtt = 1.0f / m_spreadMaxObstacle;
     else
       oneBlockAtt = 1.0f / m_spreadMaxAir;
@@ -322,16 +322,16 @@ void CellularLightArray<LightTraits>::setSpreadLightingPoints() {
     // "pre fall-off" a 2x2 area of blocks to smooth out floating point
     // positions using the cellular algorithm
 
-    if (minX >= 0 && minX < (int)m_width && minY >= 0 && minY < (int)m_height)
+    if (minX >= 0 && minX < static_cast<int>(m_width) && minY >= 0 && minY < static_cast<int>(m_height))
       setLight(minX, minY, LightTraits::max(getLight(minX, minY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (1.0f - xdist) - (1.0f - ydist)))));
 
-    if (minX >= 0 && minX < (int)m_width && maxY >= 0 && maxY < (int)m_height)
+    if (minX >= 0 && minX < static_cast<int>(m_width) && maxY >= 0 && maxY < static_cast<int>(m_height))
       setLight(minX, maxY, LightTraits::max(getLight(minX, maxY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (1.0f - xdist) - (ydist)))));
 
-    if (maxX >= 0 && maxX < (int)m_width && minY >= 0 && minY < (int)m_height)
+    if (maxX >= 0 && maxX < static_cast<int>(m_width) && minY >= 0 && minY < static_cast<int>(m_height))
       setLight(maxX, minY, LightTraits::max(getLight(maxX, minY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (xdist) - (1.0f - ydist)))));
 
-    if (maxX >= 0 && maxX < (int)m_width && maxY >= 0 && maxY < (int)m_height)
+    if (maxX >= 0 && maxX < static_cast<int>(m_width) && maxY >= 0 && maxY < static_cast<int>(m_height))
       setLight(maxX, maxY, LightTraits::max(getLight(maxX, maxY), LightTraits::subtract(light.value, oneBlockAtt * (2.0f - (xdist) - (ydist)))));
   }
 }
@@ -346,10 +346,10 @@ void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t y
   float dropoffObstacleDiag = 1.0f / m_spreadMaxObstacle * Constants::sqrt2;
 
   // enlarge x/y min/max taking into ambient spread of light
-  xMin = xMin - min(xMin, (size_t)ceil(m_spreadMaxAir));
-  yMin = yMin - min(yMin, (size_t)ceil(m_spreadMaxAir));
-  xMax = min(m_width, xMax + (size_t)ceil(m_spreadMaxAir));
-  yMax = min(m_height, yMax + (size_t)ceil(m_spreadMaxAir));
+  xMin = xMin - min(xMin, static_cast<size_t>(ceil(m_spreadMaxAir)));
+  yMin = yMin - min(yMin, static_cast<size_t>(ceil(m_spreadMaxAir)));
+  xMax = min(m_width, xMax + static_cast<size_t>(ceil(m_spreadMaxAir)));
+  yMax = min(m_height, yMax + static_cast<size_t>(ceil(m_spreadMaxAir)));
 
   for (unsigned p = 0; p < m_spreadPasses; ++p) {
     // Spread right and up and diag up right / diag down right

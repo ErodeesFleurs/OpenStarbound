@@ -58,7 +58,7 @@ StaticList<RectF, 2> WorldGeometry::splitRect(RectF const& bbox) const {
   RectF bboxWrap = RectF(minWrap, minWrap + bbox.size());
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(bbox.xMax() - bbox.xMin() <= (float)m_size[0]);
+  starAssert(bbox.xMax() - bbox.xMin() <= static_cast<float>(m_size[0]));
 
   // Since min is wrapped, we're only checking to see if max is on the other
   // side of the wrap point
@@ -83,11 +83,11 @@ StaticList<RectI, 2> WorldGeometry::splitRect(RectI const bbox) const {
   RectI bboxWrap = RectI(minWrap, minWrap + bbox.size());
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(bbox.xMax() - bbox.xMin() <= (int)m_size[0]);
+  starAssert(bbox.xMax() - bbox.xMin() <= static_cast<int>(m_size[0]));
 
   // Since min is wrapped, we're only checking to see if max is on the other
   // side of the wrap point
-  if (bboxWrap.xMax() > (int)m_size[0]) {
+  if (bboxWrap.xMax() > static_cast<int>(m_size[0])) {
     return {RectI(bboxWrap.xMin(), bboxWrap.yMin(), m_size[0], bboxWrap.yMax()),
         RectI(0, bboxWrap.yMin(), bboxWrap.xMax() - m_size[0], bboxWrap.yMax())};
   } else {
@@ -140,7 +140,7 @@ StaticList<PolyF, 2> WorldGeometry::splitPoly(PolyF const& poly) const {
   for (unsigned i = 0; i < poly.sides(); i++) {
     Line2F segment = poly.side(i);
     if ((segment.min()[0] < 0) ^ (segment.max()[0] < 0)) {
-      Vec2F worldCorrect = {(float)m_size[0], 0};
+      Vec2F worldCorrect = {static_cast<float>(m_size[0]), 0};
       Vec2F intersect = segment.intersection(worldBoundLeft, true).point;
       if (segment.min()[0] < 0) {
         res[polySelect].add(segment.min() + worldCorrect);
@@ -154,7 +154,7 @@ StaticList<PolyF, 2> WorldGeometry::splitPoly(PolyF const& poly) const {
         res[polySelect].add(Vec2F(m_size[0], intersect[1]));
       }
     } else if ((segment.min()[0] > m_size[0]) ^ (segment.max()[0] > m_size[0])) {
-      Vec2F worldCorrect = {(float)m_size[0], 0};
+      Vec2F worldCorrect = {static_cast<float>(m_size[0]), 0};
       Vec2F intersect = segment.intersection(worldBoundRight, true).point;
       if (segment.min()[0] > m_size[0]) {
         res[polySelect].add(segment.min() - worldCorrect);
@@ -169,9 +169,9 @@ StaticList<PolyF, 2> WorldGeometry::splitPoly(PolyF const& poly) const {
       }
     } else {
       if (segment.min()[0] < 0) {
-        res[polySelect].add(segment.min() + Vec2F((float)m_size[0], 0));
+        res[polySelect].add(segment.min() + Vec2F(static_cast<float>(m_size[0]), 0));
       } else if (segment.min()[0] > m_size[0]) {
-        res[polySelect].add(segment.min() - Vec2F((float)m_size[0], 0));
+        res[polySelect].add(segment.min() - Vec2F(static_cast<float>(m_size[0]), 0));
       } else {
         res[polySelect].add(segment.min());
       }
@@ -198,12 +198,12 @@ StaticList<Vec2I, 2> WorldGeometry::splitXRegion(Vec2I const& xRegion) const {
   starAssert(xRegion[1] >= xRegion[0]);
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(xRegion[1] - xRegion[0] <= (int)m_size[0]);
+  starAssert(xRegion[1] - xRegion[0] <= static_cast<int>(m_size[0]));
 
   int x1 = xwrap(xRegion[0]);
   int x2 = x1 + xRegion[1] - xRegion[0];
 
-  if (x2 > (int)m_size[0]) {
+  if (x2 > static_cast<int>(m_size[0])) {
     return {Vec2I(x1, m_size[0]), Vec2I(0.0f, x2 - m_size[0])};
   } else {
     return {{x1, x2}};
@@ -217,7 +217,7 @@ StaticList<Vec2F, 2> WorldGeometry::splitXRegion(Vec2F const& xRegion) const {
   starAssert(xRegion[1] >= xRegion[0]);
 
   // This does not work for ranges greater than m_size[0] wide!
-  starAssert(xRegion[1] - xRegion[0] <= (float)m_size[0]);
+  starAssert(xRegion[1] - xRegion[0] <= static_cast<float>(m_size[0]));
 
   float x1 = xwrap(xRegion[0]);
   float x2 = x1 + xRegion[1] - xRegion[0];

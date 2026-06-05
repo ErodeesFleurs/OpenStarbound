@@ -193,7 +193,7 @@ inline bool WorldGeometry::equal(Vec2I const& p1, Vec2I const& p2) const {
 }
 
 inline unsigned WorldGeometry::index(int x) const {
-  return (unsigned)xwrap(x);
+  return static_cast<unsigned>(xwrap(x));
 }
 
 inline Vec2U WorldGeometry::index(Vec2I const& i) const {
