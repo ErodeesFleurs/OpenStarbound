@@ -6,9 +6,11 @@
 
 namespace Star {
 
-STAR_CLASS(Player);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
 
-STAR_CLASS(SongbookInterface);
+class SongbookInterface;
+using SongbookInterfacePtr = SharedPtr<SongbookInterface>;
 
 class SongbookInterface : public Pane {
 public:

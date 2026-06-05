@@ -5,12 +5,17 @@
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(Widget);
-STAR_CLASS(ListWidget);
-STAR_CLASS(Augment);
-STAR_CLASS(Pane);
-STAR_CLASS(Player);
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class Widget;
+using WidgetPtr = SharedPtr<Widget>;
+class ListWidget;
+using ListWidgetPtr = SharedPtr<ListWidget>;
+class Augment;
+class Pane;
+using PanePtr = SharedPtr<Pane>;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
 
 namespace ItemTooltipBuilder {
   PanePtr buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer = {});
