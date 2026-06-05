@@ -6,8 +6,9 @@
 
 namespace Star {
 
-STAR_CLASS(RenderCallback);
-STAR_CLASS(EffectEmitter);
+class RenderCallback;
+class EffectEmitter;
+using EffectEmitterPtr = SharedPtr<EffectEmitter>;
 
 class EffectEmitter : public NetElementGroup {
 public:

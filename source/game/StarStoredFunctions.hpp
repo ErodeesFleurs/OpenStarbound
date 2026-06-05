@@ -7,10 +7,15 @@
 
 namespace Star {
 
-STAR_CLASS(StoredFunction);
-STAR_CLASS(StoredFunction2);
-STAR_CLASS(StoredConfigFunction);
-STAR_CLASS(FunctionDatabase);
+class StoredFunction;
+using StoredFunctionPtr = SharedPtr<StoredFunction>;
+class StoredFunction2;
+using StoredFunction2Ptr = SharedPtr<StoredFunction2>;
+class StoredConfigFunction;
+using StoredConfigFunctionPtr = SharedPtr<StoredConfigFunction>;
+class FunctionDatabase;
+using FunctionDatabasePtr = SharedPtr<FunctionDatabase>;
+using FunctionDatabaseConstPtr = SharedPtr<FunctionDatabase const>;
 
 struct StoredFunctionExceptionTag { static constexpr char const* typeName = "StoredFunctionException"; };
 using StoredFunctionException = TypedException<StarException, StoredFunctionExceptionTag>;
