@@ -9,7 +9,9 @@
 
 namespace Star {
 
-STAR_STRUCT(MainInterfaceConfig);
+struct MainInterfaceConfig;
+using MainInterfaceConfigPtr = SharedPtr<MainInterfaceConfig>;
+using MainInterfaceConfigConstPtr = SharedPtr<MainInterfaceConfig const>;
 
 enum class MainInterfacePanes {
   EscapeDialog,

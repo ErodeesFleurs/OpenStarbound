@@ -12,7 +12,6 @@ using PlayerPtr = shared_ptr<Player>;
 struct CharCreationExceptionTag { static constexpr char const* typeName = "CharCreationException"; };
 using CharCreationException = TypedException<StarException, CharCreationExceptionTag>;
 
-STAR_CLASS(CharCreationPane);
 class CharCreationPane : public Pane {
 public:
   // The callback here is either called with null (when the user hits the
