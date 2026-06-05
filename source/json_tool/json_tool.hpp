@@ -45,7 +45,13 @@ struct AfterKey {
 
 using InsertLocation = MVariant<AtBeginning, AtEnd, BeforeKey, AfterKey>;
 
-STAR_CLASS(JsonInputFormat);
+class JsonInputFormat;
+using JsonInputFormatPtr = shared_ptr<JsonInputFormat>;
+using JsonInputFormatConstPtr = shared_ptr<JsonInputFormat const>;
+using JsonInputFormatWeakPtr = weak_ptr<JsonInputFormat>;
+using JsonInputFormatConstWeakPtr = weak_ptr<JsonInputFormat const>;
+using JsonInputFormatUPtr = unique_ptr<JsonInputFormat>;
+using JsonInputFormatConstUPtr = unique_ptr<JsonInputFormat const>;
 
 class JsonInputFormat {
 public:
@@ -76,7 +82,13 @@ public:
   virtual FormattedJson getDefault() const override;
 };
 
-STAR_CLASS(Output);
+class Output;
+using OutputPtr = shared_ptr<Output>;
+using OutputConstPtr = shared_ptr<Output const>;
+using OutputWeakPtr = weak_ptr<Output>;
+using OutputConstWeakPtr = weak_ptr<Output const>;
+using OutputUPtr = unique_ptr<Output>;
+using OutputConstUPtr = unique_ptr<Output const>;
 
 class Output {
 public:

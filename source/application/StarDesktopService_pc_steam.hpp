@@ -4,7 +4,13 @@
 
 namespace Star {
 
-STAR_CLASS(SteamDesktopService);
+class SteamDesktopService;
+using SteamDesktopServicePtr = shared_ptr<SteamDesktopService>;
+using SteamDesktopServiceConstPtr = shared_ptr<SteamDesktopService const>;
+using SteamDesktopServiceWeakPtr = weak_ptr<SteamDesktopService>;
+using SteamDesktopServiceConstWeakPtr = weak_ptr<SteamDesktopService const>;
+using SteamDesktopServiceUPtr = unique_ptr<SteamDesktopService>;
+using SteamDesktopServiceConstUPtr = unique_ptr<SteamDesktopService const>;
 
 class SteamDesktopService final : public DesktopService {
 public:
