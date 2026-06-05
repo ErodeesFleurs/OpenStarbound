@@ -7,11 +7,11 @@
 
 namespace Star {
 
-STAR_STRUCT(ThreadImpl);
-STAR_STRUCT(ThreadFunctionImpl);
-STAR_STRUCT(MutexImpl);
-STAR_STRUCT(ConditionVariableImpl);
-STAR_STRUCT(RecursiveMutexImpl);
+struct ThreadImpl;
+struct ThreadFunctionImpl;
+struct MutexImpl;
+struct ConditionVariableImpl;
+struct RecursiveMutexImpl;
 
 template <typename Return>
 class ThreadFunction;
@@ -67,7 +67,7 @@ protected:
   virtual void run() = 0;
 
 private:
-  unique_ptr<ThreadImpl> m_impl;
+  UniquePtr<ThreadImpl> m_impl;
 };
 
 // Wraps a function call and calls in another thread, very nice lightweight
@@ -111,7 +111,7 @@ public:
   String name();
 
 private:
-  unique_ptr<ThreadFunctionImpl> m_impl;
+  UniquePtr<ThreadFunctionImpl> m_impl;
 };
 
 template <typename Return>
@@ -160,7 +160,7 @@ public:
 
 private:
   friend struct ConditionVariableImpl;
-  unique_ptr<MutexImpl> m_impl;
+  UniquePtr<MutexImpl> m_impl;
 };
 
 class ConditionVariable {
@@ -186,7 +186,7 @@ public:
   void broadcast();
 
 private:
-  unique_ptr<ConditionVariableImpl> m_impl;
+  UniquePtr<ConditionVariableImpl> m_impl;
 };
 
 // Recursive mutex lock.  lock() may be called many times freely by the same
@@ -211,7 +211,7 @@ public:
   void unlock();
 
 private:
-  unique_ptr<RecursiveMutexImpl> m_impl;
+  UniquePtr<RecursiveMutexImpl> m_impl;
   #ifdef STAR_MUTEX_LOG
   bool m_log = false;
   #endif
