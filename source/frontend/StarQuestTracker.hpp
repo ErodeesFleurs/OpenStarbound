@@ -4,11 +4,19 @@
 
 namespace Star {
 
-STAR_CLASS(LabelWidget);
-STAR_CLASS(ImageWidget);
-STAR_CLASS(ImageStretchWidget);
-STAR_CLASS(ProgressWidget);
-STAR_CLASS(Quest);
+class LabelWidget;
+using LabelWidgetPtr = SharedPtr<LabelWidget>;
+class ImageWidget;
+using ImageWidgetPtr = SharedPtr<ImageWidget>;
+class ImageStretchWidget;
+using ImageStretchWidgetPtr = SharedPtr<ImageStretchWidget>;
+class ProgressWidget;
+using ProgressWidgetPtr = SharedPtr<ProgressWidget>;
+class Quest;
+using QuestPtr = SharedPtr<Quest>;
+
+class QuestTrackerPane;
+using QuestTrackerPanePtr = SharedPtr<QuestTrackerPane>;
 
 class QuestTrackerPane : public Pane {
 public:

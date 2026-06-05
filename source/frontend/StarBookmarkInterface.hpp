@@ -5,8 +5,6 @@
 
 namespace Star {
 
-STAR_CLASS(EditBookmarkDialog);
-
 class EditBookmarkDialog : public Pane {
 public:
   EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap);

@@ -8,10 +8,13 @@
 
 namespace Star {
 
-STAR_CLASS(GuiContext);
-STAR_CLASS(AssetTextureGroup);
-STAR_CLASS(WorldClient);
-STAR_CLASS(ChatBubbleManager);
+class GuiContext;
+class AssetTextureGroup;
+using AssetTextureGroupPtr = SharedPtr<AssetTextureGroup>;
+class WorldClient;
+using WorldClientPtr = SharedPtr<WorldClient>;
+class ChatBubbleManager;
+using ChatBubbleManagerPtr = SharedPtr<ChatBubbleManager>;
 
 class ChatBubbleManager {
 public:

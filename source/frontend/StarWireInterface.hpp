@@ -5,10 +5,14 @@
 
 namespace Star {
 
-STAR_CLASS(WorldClient);
-STAR_CLASS(WorldPainter);
-STAR_CLASS(Player);
-STAR_CLASS(WirePane);
+class WorldClient;
+using WorldClientPtr = SharedPtr<WorldClient>;
+class WorldPainter;
+using WorldPainterPtr = SharedPtr<WorldPainter>;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class WirePane;
+using WirePanePtr = SharedPtr<WirePane>;
 
 class WirePane : public Pane, public WireConnector {
 public:
