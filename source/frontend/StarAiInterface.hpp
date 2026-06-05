@@ -11,21 +11,30 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseClient);
-STAR_CLASS(AiDatabase);
-STAR_CLASS(Cinematic);
-STAR_CLASS(LabelWidget);
-STAR_CLASS(ImageWidget);
-STAR_CLASS(ImageStretchWidget);
-STAR_CLASS(CanvasWidget);
-STAR_CLASS(ListWidget);
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(QuestManager);
-STAR_CLASS(StackWidget);
-STAR_CLASS(TabSetWidget);
-STAR_CLASS(Companion);
-
-STAR_CLASS(AiInterface);
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
+class AiDatabase;
+using AiDatabaseConstPtr = SharedPtr<AiDatabase const>;
+class Cinematic;
+using CinematicPtr = SharedPtr<Cinematic>;
+class LabelWidget;
+using LabelWidgetPtr = SharedPtr<LabelWidget>;
+class ImageWidget;
+using ImageWidgetPtr = SharedPtr<ImageWidget>;
+class ImageStretchWidget;
+using ImageStretchWidgetPtr = SharedPtr<ImageStretchWidget>;
+class CanvasWidget;
+using CanvasWidgetPtr = SharedPtr<CanvasWidget>;
+class ListWidget;
+using ListWidgetPtr = SharedPtr<ListWidget>;
+class ButtonWidget;
+using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
+class QuestManager;
+using QuestManagerPtr = SharedPtr<QuestManager>;
+class StackWidget;
+using StackWidgetPtr = SharedPtr<StackWidget>;
+class Companion;
+using CompanionPtr = SharedPtr<Companion>;
 
 struct AiInterfaceExceptionTag { static constexpr char const* typeName = "AiInterfaceException"; };
 using AiInterfaceException = TypedException<StarException, AiInterfaceExceptionTag>;
