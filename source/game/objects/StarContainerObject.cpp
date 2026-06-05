@@ -444,7 +444,7 @@ ItemRecipe ContainerObject::recipeForMaterials(List<ItemPtr> const& inputItems) 
     return itemDatabase->getPreciseRecipeForMaterials(recipeGroup.toString(), inputItems, {});
 
   Maybe<Json> result = m_scriptComponent.invoke<Json>("craftingRecipe", inputItems.filtered([](ItemPtr const& item) {
-      return (bool)item;
+      return static_cast<bool>(item);
     }).transformed([](ItemPtr const& item) {
       return item->descriptor().toJson();
     }));

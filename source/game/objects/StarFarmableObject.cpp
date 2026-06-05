@@ -146,7 +146,7 @@ void FarmableObject::enterStage(int newStage) {
     }
   }
 
-  if (newStage == (int)m_stages.size() - 1) {
+  if (newStage == static_cast<int>(m_stages.size()) - 1) {
     m_finalStage = true;
   } else {
     m_finalStage = false;
@@ -175,7 +175,7 @@ void FarmableObject::readStoredData(Json const& diskStore) {
   m_stageEnterTime = diskStore.getDouble("stageEnterTime");
   m_nextStageTime = diskStore.getDouble("nextStageTime");
 
-  m_finalStage = (m_stage == (int)m_stages.size() - 1);
+  m_finalStage = (m_stage == static_cast<int>(m_stages.size()) - 1);
   setImageKey("stage", toString(m_stage));
   setImageKey("alt", toString(m_stageAlt));
 }

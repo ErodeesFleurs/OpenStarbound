@@ -190,7 +190,7 @@ bool PlayerInventory::consumeSlot(InventorySlot const& slot, uint64_t count) {
 bool PlayerInventory::slotValid(InventorySlot const& slot) const {
   if (auto bagSlot = slot.ptr<BagSlot>()) {
     if (auto bag = bagContents(bagSlot->first)) {
-      if ((size_t)bagSlot->second >= bag->size())
+      if (static_cast<size_t>(bagSlot->second) >= bag->size())
         return false;
     }
     else return false;
