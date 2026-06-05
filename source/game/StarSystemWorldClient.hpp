@@ -2,16 +2,11 @@
 
 #include "StarCelestialParameters.hpp"
 #include "StarCelestialCoordinate.hpp"
+#include "StarPlayerUniverseMap.hpp"
 #include "StarSystemWorld.hpp"
 #include "StarNetPackets.hpp"
 
 namespace Star {
-
-STAR_CLASS(CelestialDatabase);
-STAR_CLASS(PlayerUniverseMap);
-STAR_CLASS(Celestial);
-STAR_CLASS(Clock);
-STAR_CLASS(ClientContext);
 
 class SystemWorldClient : public SystemWorld {
 public:
