@@ -5,9 +5,12 @@
 
 namespace Star {
 
-STAR_STRUCT(DanceStep);
-STAR_STRUCT(Dance);
-STAR_CLASS(DanceDatabase);
+struct DanceStep;
+struct Dance;
+using DancePtr = SharedPtr<Dance>;
+class DanceDatabase;
+using DanceDatabasePtr = SharedPtr<DanceDatabase>;
+using DanceDatabaseConstPtr = SharedPtr<DanceDatabase const>;
 
 struct DanceStep {
   Maybe<String> bodyFrame;

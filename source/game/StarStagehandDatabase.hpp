@@ -7,9 +7,12 @@ namespace Star {
 struct StagehandDatabaseExceptionTag { static constexpr char const* typeName = "StagehandDatabaseException"; };
 using StagehandDatabaseException = TypedException<StarException, StagehandDatabaseExceptionTag>;
 
-STAR_CLASS(Stagehand);
+class Stagehand;
+using StagehandPtr = SharedPtr<Stagehand>;
 
-STAR_CLASS(StagehandDatabase);
+class StagehandDatabase;
+using StagehandDatabasePtr = SharedPtr<StagehandDatabase>;
+using StagehandDatabaseConstPtr = SharedPtr<StagehandDatabase const>;
 
 class StagehandDatabase {
 public:

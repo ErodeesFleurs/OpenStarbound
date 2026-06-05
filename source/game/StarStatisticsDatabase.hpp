@@ -6,9 +6,13 @@
 
 namespace Star {
 
-STAR_STRUCT(StatEvent);
-STAR_STRUCT(Achievement);
-STAR_CLASS(StatisticsDatabase);
+struct StatEvent;
+using StatEventPtr = SharedPtr<StatEvent>;
+struct Achievement;
+using AchievementPtr = SharedPtr<Achievement>;
+class StatisticsDatabase;
+using StatisticsDatabasePtr = SharedPtr<StatisticsDatabase>;
+using StatisticsDatabaseConstPtr = SharedPtr<StatisticsDatabase const>;
 
 struct StatEvent {
   String eventName;

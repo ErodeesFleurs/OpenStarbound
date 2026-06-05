@@ -6,8 +6,11 @@
 
 namespace Star {
 
-STAR_CLASS(ParticleConfig);
-STAR_CLASS(ParticleDatabase);
+class ParticleConfig;
+using ParticleConfigPtr = SharedPtr<ParticleConfig>;
+class ParticleDatabase;
+using ParticleDatabasePtr = SharedPtr<ParticleDatabase>;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
 
 class ParticleConfig {
 public:
