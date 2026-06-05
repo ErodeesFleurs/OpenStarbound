@@ -5,7 +5,7 @@
 
 namespace Star {
 
-STAR_CLASS(Item);
+class Item;
 
 namespace LuaBindings {
   LuaCallbacks makeItemCallbacks(Item* item);

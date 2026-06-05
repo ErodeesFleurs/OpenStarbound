@@ -12,11 +12,13 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(WorldServer);
-STAR_CLASS(WorldClient);
-STAR_CLASS(Item);
-STAR_CLASS(ScriptedEntity);
+class World;
+class WorldServer;
+class WorldClient;
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class ScriptedEntity;
+using ScriptedEntityPtr = SharedPtr<ScriptedEntity>;
 
 namespace LuaBindings {
   using CallEntityScriptFunction = function<Json(ScriptedEntityPtr const& entity, String const& functionName, JsonArray const& args)>;

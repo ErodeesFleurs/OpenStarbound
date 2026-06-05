@@ -6,7 +6,7 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseServer);
+class UniverseServer;
 
 namespace LuaBindings {
   LuaCallbacks makeUniverseServerCallbacks(UniverseServer* universe);

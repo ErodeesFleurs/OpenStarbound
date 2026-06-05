@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(WorldCamera);
+class WorldCamera;
 
 namespace LuaBindings {
   LuaCallbacks makeCameraCallbacks(WorldCamera* camera);

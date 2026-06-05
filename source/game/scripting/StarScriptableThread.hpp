@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_CLASS(ScriptableThread);
+class ScriptableThread;
+using ScriptableThreadPtr = SharedPtr<ScriptableThread>;
 
 // Runs a Lua in a separate thread and guards exceptions that occur in
 // it.  All methods are designed to not throw exceptions, but will instead log
@@ -21,7 +22,7 @@ public:
   };
 
   using ScriptComponent = LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>>;
-  using ScriptComponentPtr = shared_ptr<ScriptComponent>;
+  using ScriptComponentPtr = SharedPtr<ScriptComponent>;
 
   ScriptableThread(Json parameters);
   ~ScriptableThread();

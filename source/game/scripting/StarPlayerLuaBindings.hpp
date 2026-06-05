@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(Player);
+class Player;
 
 namespace LuaBindings {
   LuaCallbacks makePlayerCallbacks(Player* player);

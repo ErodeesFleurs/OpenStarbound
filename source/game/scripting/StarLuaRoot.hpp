@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(LuaRoot);
+class LuaRoot;
+using LuaRootPtr = SharedPtr<LuaRoot>;
 
 // Loads and caches lua scripts from assets.  Automatically clears cache on
 // root reload.  Uses an internal LuaEngine, so this and all contexts are meant
@@ -61,7 +62,7 @@ private:
 
   LuaEnginePtr m_luaEngine;
   StringMap<LuaCallbacks> m_luaCallbacks;
-  shared_ptr<ScriptCache> m_scriptCache;
+  SharedPtr<ScriptCache> m_scriptCache;
 
   ListenerPtr m_rootReloadListener;
 

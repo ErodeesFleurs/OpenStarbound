@@ -5,7 +5,7 @@
 
 namespace Star {
 
-STAR_CLASS(StatusController);
+class StatusController;
 
 namespace LuaBindings {
   LuaCallbacks makeStatusControllerCallbacks(StatusController* statController);

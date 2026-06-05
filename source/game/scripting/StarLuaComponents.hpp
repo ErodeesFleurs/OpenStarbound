@@ -11,7 +11,7 @@ namespace Star {
 struct LuaComponentExceptionTag { static constexpr char const* typeName = "LuaComponentException"; };
 using LuaComponentException = TypedException<LuaException, LuaComponentExceptionTag>;
 
-STAR_CLASS(ScriptableThread);
+class ScriptableThread;
 
 // Basic lua component that can be initialized (takes and then owns a script
 // context, calls the script context's init function) and uninitialized
