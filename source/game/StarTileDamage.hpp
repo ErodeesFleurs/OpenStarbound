@@ -11,7 +11,8 @@ STAR_CLASS(TileDamageParameters);
 STAR_CLASS(TileDamageStatus);
 STAR_CLASS(EntityTileDamageStatus);
 
-STAR_EXCEPTION(TileDamageException, StarException);
+struct TileDamageExceptionTag { static constexpr char const* typeName = "TileDamageException"; };
+using TileDamageException = TypedException<StarException, TileDamageExceptionTag>;
 
 List<Vec2I> tileAreaBrush(float range, Vec2F const& centerOffset, bool diameterMode);
 

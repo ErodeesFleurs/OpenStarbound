@@ -8,7 +8,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(GuiException, StarException);
+struct GuiExceptionTag { static constexpr char const* typeName = "GuiException"; };
+using GuiException = TypedException<StarException, GuiExceptionTag>;
 
 STAR_CLASS(Widget);
 STAR_CLASS(Pane);

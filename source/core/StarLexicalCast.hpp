@@ -9,7 +9,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(BadLexicalCast, StarException);
+struct BadLexicalCastTag { static constexpr char const* typeName = "BadLexicalCast"; };
+using BadLexicalCast = TypedException<StarException, BadLexicalCastTag>;
 
 void throwLexicalCastError(std::errc ec, const char* first, const char* last);
 

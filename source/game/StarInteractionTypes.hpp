@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(InteractActionException, StarException);
+struct InteractActionExceptionTag { static constexpr char const* typeName = "InteractActionException"; };
+using InteractActionException = TypedException<StarException, InteractActionExceptionTag>;
 
 struct InteractRequest {
   EntityId sourceId;

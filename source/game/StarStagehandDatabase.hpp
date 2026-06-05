@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(StagehandDatabaseException, StarException);
+struct StagehandDatabaseExceptionTag { static constexpr char const* typeName = "StagehandDatabaseException"; };
+using StagehandDatabaseException = TypedException<StarException, StagehandDatabaseExceptionTag>;
 
 STAR_CLASS(Stagehand);
 

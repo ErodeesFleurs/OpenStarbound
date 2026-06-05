@@ -18,7 +18,8 @@ STAR_CLASS(Player);
 
 STAR_CLASS(PlayerInventory);
 
-STAR_EXCEPTION(InventoryException, StarException);
+struct InventoryExceptionTag { static constexpr char const* typeName = "InventoryException"; };
+using InventoryException = TypedException<StarException, InventoryExceptionTag>;
 
 // Describes a player's entire inventory, including the main bag, material bag,
 // object bag, reagent bag, food bag, weapon and armor slots, swap slot, trash

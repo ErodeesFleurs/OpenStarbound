@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(ColorException, StarException);
+struct ColorExceptionTag { static constexpr char const* typeName = "ColorException"; };
+using ColorException = TypedException<StarException, ColorExceptionTag>;
 
 class Color {
 public:

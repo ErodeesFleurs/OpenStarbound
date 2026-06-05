@@ -9,7 +9,8 @@ namespace Star {
 STAR_STRUCT(Tenant);
 STAR_CLASS(TenantDatabase);
 
-STAR_EXCEPTION(TenantException, StarException);
+struct TenantExceptionTag { static constexpr char const* typeName = "TenantException"; };
+using TenantException = TypedException<StarException, TenantExceptionTag>;
 
 struct TenantNpcSpawnable {
   List<String> species;

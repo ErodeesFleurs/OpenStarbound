@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(MathException, StarException);
+struct MathExceptionTag { static constexpr char const* typeName = "MathException"; };
+using MathException = TypedException<StarException, MathExceptionTag>;
 
 namespace Constants {
   double constexpr pi = 3.14159265358979323846;

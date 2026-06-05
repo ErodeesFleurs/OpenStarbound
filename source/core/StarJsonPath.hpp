@@ -13,8 +13,10 @@ namespace JsonPath {
 
   using PathParser = function<TypeHint(String&, String const&, String::const_iterator&, String::const_iterator)>;
 
-  STAR_EXCEPTION(ParsingException, JsonException);
-  STAR_EXCEPTION(TraversalException, JsonException);
+  struct ParsingExceptionTag { static constexpr char const* typeName = "ParsingException"; };
+using ParsingException = TypedException<JsonException, ParsingExceptionTag>;
+  struct TraversalExceptionTag { static constexpr char const* typeName = "TraversalException"; };
+using TraversalException = TypedException<JsonException, TraversalExceptionTag>;
 
   // Parses RFC 6901 JSON Pointers, e.g. /foo/bar/4/baz
   TypeHint parsePointer(String& outputBuffer, String const& path, String::const_iterator& iterator, String::const_iterator end);

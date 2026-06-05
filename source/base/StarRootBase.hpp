@@ -6,7 +6,8 @@ namespace Star {
 
 STAR_CLASS(Configuration);
 
-STAR_EXCEPTION(RootException, StarException);
+struct RootExceptionTag { static constexpr char const* typeName = "RootException"; };
+using RootException = TypedException<StarException, RootExceptionTag>;
 
 class RootBase {
 public:

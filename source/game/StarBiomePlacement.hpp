@@ -11,7 +11,8 @@ namespace Star {
 
 STAR_CLASS(BiomeItemDistribution);
 
-STAR_EXCEPTION(BiomeException, StarException);
+struct BiomeExceptionTag { static constexpr char const* typeName = "BiomeException"; };
+using BiomeException = TypedException<StarException, BiomeExceptionTag>;
 
 using TreePair = pair<TreeVariant, TreeVariant>;
 

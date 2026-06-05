@@ -15,7 +15,8 @@ namespace Star {
 // and hexadecimal, because it's possible to construct invalid unicode code
 // points using them
 
-STAR_EXCEPTION(ShellParsingException, StarException);
+struct ShellParsingExceptionTag { static constexpr char const* typeName = "ShellParsingException"; };
+using ShellParsingException = TypedException<StarException, ShellParsingExceptionTag>;
 
 class ShellParser {
 public:

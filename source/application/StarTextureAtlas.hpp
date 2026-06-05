@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(TextureAtlasException, StarException);
+struct TextureAtlasExceptionTag { static constexpr char const* typeName = "TextureAtlasException"; };
+using TextureAtlasException = TypedException<StarException, TextureAtlasExceptionTag>;
 
 // Implements a set of "texture atlases" or, sets of smaller textures grouped
 // as a larger texture.

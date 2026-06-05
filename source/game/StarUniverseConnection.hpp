@@ -7,7 +7,8 @@ namespace Star {
 STAR_CLASS(UniverseConnection);
 STAR_CLASS(UniverseConnectionServer);
 
-STAR_EXCEPTION(UniverseConnectionException, StarException);
+struct UniverseConnectionExceptionTag { static constexpr char const* typeName = "UniverseConnectionException"; };
+using UniverseConnectionException = TypedException<StarException, UniverseConnectionExceptionTag>;
 
 // Symmetric NetPacket based connection between the UniverseServer and the
 // UniverseClient.

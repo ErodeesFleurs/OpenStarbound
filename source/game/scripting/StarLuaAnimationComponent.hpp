@@ -14,7 +14,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(LuaAnimationComponentException, LuaComponentException);
+struct LuaAnimationComponentExceptionTag { static constexpr char const* typeName = "LuaAnimationComponentException"; };
+using LuaAnimationComponentException = TypedException<LuaComponentException, LuaAnimationComponentExceptionTag>;
 
 // Lua component that allows lua to directly produce drawables, light sources,
 // audios, and particles.  Adds a "localAnimation" callback table.

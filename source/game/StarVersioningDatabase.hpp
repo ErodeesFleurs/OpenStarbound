@@ -11,8 +11,10 @@ namespace Star {
 STAR_STRUCT(VersionedJson);
 STAR_CLASS(VersioningDatabase);
 
-STAR_EXCEPTION(VersionedJsonException, StarException);
-STAR_EXCEPTION(VersioningDatabaseException, StarException);
+struct VersionedJsonExceptionTag { static constexpr char const* typeName = "VersionedJsonException"; };
+using VersionedJsonException = TypedException<StarException, VersionedJsonExceptionTag>;
+struct VersioningDatabaseExceptionTag { static constexpr char const* typeName = "VersioningDatabaseException"; };
+using VersioningDatabaseException = TypedException<StarException, VersioningDatabaseExceptionTag>;
 
 struct VersionedJson {
   static char const* const Magic;

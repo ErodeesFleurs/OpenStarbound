@@ -11,7 +11,8 @@ STAR_CLASS(Player);
 STAR_STRUCT(PlayerConfig);
 STAR_CLASS(PlayerFactory);
 
-STAR_EXCEPTION(PlayerException, StarException);
+struct PlayerExceptionTag { static constexpr char const* typeName = "PlayerException"; };
+using PlayerException = TypedException<StarException, PlayerExceptionTag>;
 
 // The player has a large number of shared config states, so this is a shared
 // config object to hold them.

@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(ToolUserItemException, StarException);
+struct ToolUserItemExceptionTag { static constexpr char const* typeName = "ToolUserItemException"; };
+using ToolUserItemException = TypedException<StarException, ToolUserItemExceptionTag>;
 
 STAR_CLASS(ToolUserItem);
 

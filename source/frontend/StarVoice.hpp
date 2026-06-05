@@ -20,7 +20,8 @@ namespace Star {
 
 String const VoiceBroadcastPrefix = "Voice\0"s;
 
-STAR_EXCEPTION(VoiceException, StarException);
+struct VoiceExceptionTag { static constexpr char const* typeName = "VoiceException"; };
+using VoiceException = TypedException<StarException, VoiceExceptionTag>;
 
 enum class VoiceInputMode : uint8_t { VoiceActivity, PushToTalk };
 extern EnumMap<VoiceInputMode> const VoiceInputModeNames;

@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(EitherException, StarException);
+struct EitherExceptionTag { static constexpr char const* typeName = "EitherException"; };
+using EitherException = TypedException<StarException, EitherExceptionTag>;
 
 template <typename Value>
 struct EitherLeftValue {

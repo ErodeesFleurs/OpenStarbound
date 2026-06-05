@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(DataStreamException, IOException);
+struct DataStreamExceptionTag { static constexpr char const* typeName = "DataStreamException"; };
+using DataStreamException = TypedException<IOException, DataStreamExceptionTag>;
 extern unsigned const CurrentStreamVersion;
 
 // Writes complex types to bytes in a portable big-endian fashion.

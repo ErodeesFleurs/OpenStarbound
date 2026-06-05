@@ -7,7 +7,8 @@ namespace Star {
 
 STAR_CLASS(CelestialCoordinate);
 
-STAR_EXCEPTION(CelestialException, StarException);
+struct CelestialExceptionTag { static constexpr char const* typeName = "CelestialException"; };
+using CelestialException = TypedException<StarException, CelestialExceptionTag>;
 
 // Specifies coordinates to either a planetary system, a planetary body, or a
 // satellite around such a planetary body.  The terms here are meant to be very

@@ -9,7 +9,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(RpcThreadPromiseException, StarException);
+struct RpcThreadPromiseExceptionTag { static constexpr char const* typeName = "RpcThreadPromiseException"; };
+using RpcThreadPromiseException = TypedException<StarException, RpcThreadPromiseExceptionTag>;
 
 template <typename Result, typename Error = String>
 class RpcThreadPromiseKeeper {

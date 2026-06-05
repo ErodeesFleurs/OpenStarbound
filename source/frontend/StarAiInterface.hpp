@@ -27,7 +27,8 @@ STAR_CLASS(Companion);
 
 STAR_CLASS(AiInterface);
 
-STAR_EXCEPTION(AiInterfaceException, StarException);
+struct AiInterfaceExceptionTag { static constexpr char const* typeName = "AiInterfaceException"; };
+using AiInterfaceException = TypedException<StarException, AiInterfaceExceptionTag>;
 
 class AiInterface : public Pane {
 public:

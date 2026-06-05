@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(NameGeneratorException, StarException);
+struct NameGeneratorExceptionTag { static constexpr char const* typeName = "NameGeneratorException"; };
+using NameGeneratorException = TypedException<StarException, NameGeneratorExceptionTag>;
 
 STAR_CLASS(PatternedNameGenerator);
 

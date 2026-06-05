@@ -9,7 +9,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(RendererException, StarException);
+struct RendererExceptionTag { static constexpr char const* typeName = "RendererException"; };
+using RendererException = TypedException<StarException, RendererExceptionTag>;
 
 class Texture;
 using TexturePtr = RefPtr<Texture>;

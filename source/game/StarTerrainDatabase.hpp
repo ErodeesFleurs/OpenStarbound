@@ -8,7 +8,8 @@ namespace Star {
 STAR_STRUCT(TerrainSelector);
 STAR_CLASS(TerrainDatabase);
 
-STAR_EXCEPTION(TerrainException, StarException);
+struct TerrainExceptionTag { static constexpr char const* typeName = "TerrainException"; };
+using TerrainException = TypedException<StarException, TerrainExceptionTag>;
 
 struct TerrainSelectorParameters {
   TerrainSelectorParameters();

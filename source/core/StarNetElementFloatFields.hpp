@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(StepStreamException, StarException);
+struct StepStreamExceptionTag { static constexpr char const* typeName = "StepStreamException"; };
+using StepStreamException = TypedException<StarException, StepStreamExceptionTag>;
 
 template <typename T>
 class NetElementFloating : public NetElement {

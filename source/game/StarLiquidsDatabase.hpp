@@ -12,7 +12,8 @@ namespace Star {
 STAR_STRUCT(LiquidSettings);
 STAR_CLASS(LiquidsDatabase);
 
-STAR_EXCEPTION(LiquidException, StarException);
+struct LiquidExceptionTag { static constexpr char const* typeName = "LiquidException"; };
+using LiquidException = TypedException<StarException, LiquidExceptionTag>;
 
 using LiquidInteractionResult = Either<MaterialId, LiquidId>;
 

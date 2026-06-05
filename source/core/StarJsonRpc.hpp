@@ -9,7 +9,8 @@ namespace Star {
 STAR_CLASS(JsonRpcInterface);
 STAR_CLASS(JsonRpc);
 
-STAR_EXCEPTION(JsonRpcException, StarException);
+struct JsonRpcExceptionTag { static constexpr char const* typeName = "JsonRpcException"; };
+using JsonRpcException = TypedException<StarException, JsonRpcExceptionTag>;
 
 using JsonRpcRemoteFunction = function<Json(Json const&)>;
 

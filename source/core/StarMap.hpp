@@ -8,7 +8,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(MapException, StarException);
+struct MapExceptionTag { static constexpr char const* typeName = "MapException"; };
+using MapException = TypedException<StarException, MapExceptionTag>;
 
 template <typename BaseMap>
 class MapMixin : public BaseMap {

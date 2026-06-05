@@ -7,8 +7,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(JsonException, StarException);
-STAR_EXCEPTION(JsonParsingException, StarException);
+struct JsonExceptionTag { static constexpr char const* typeName = "JsonException"; };
+using JsonException = TypedException<StarException, JsonExceptionTag>;
+struct JsonParsingExceptionTag { static constexpr char const* typeName = "JsonParsingException"; };
+using JsonParsingException = TypedException<StarException, JsonParsingExceptionTag>;
 
 STAR_CLASS(Json);
 

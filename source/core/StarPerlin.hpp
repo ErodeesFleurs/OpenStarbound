@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(PerlinException, StarException);
+struct PerlinExceptionTag { static constexpr char const* typeName = "PerlinException"; };
+using PerlinException = TypedException<StarException, PerlinExceptionTag>;
 
 enum class PerlinType {
   Uninitialized,

@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(FontException, StarException);
+struct FontExceptionTag { static constexpr char const* typeName = "FontException"; };
+using FontException = TypedException<StarException, FontExceptionTag>;
 
 STAR_STRUCT(FontImpl);
 STAR_CLASS(Font);

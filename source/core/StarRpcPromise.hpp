@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(RpcPromiseException, StarException);
+struct RpcPromiseExceptionTag { static constexpr char const* typeName = "RpcPromiseException"; };
+using RpcPromiseException = TypedException<StarException, RpcPromiseExceptionTag>;
 
 // The other side of an RpcPromise, can be used to either fulfill or fail a
 // paired promise.  Call either fulfill or fail function exactly once, any

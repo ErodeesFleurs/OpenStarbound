@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(CollectionDatabaseException, StarException);
+struct CollectionDatabaseExceptionTag { static constexpr char const* typeName = "CollectionDatabaseException"; };
+using CollectionDatabaseException = TypedException<StarException, CollectionDatabaseExceptionTag>;
 
 STAR_CLASS(CollectionDatabase);
 

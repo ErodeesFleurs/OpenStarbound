@@ -11,7 +11,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(VehicleException, StarException);
+struct VehicleExceptionTag { static constexpr char const* typeName = "VehicleException"; };
+using VehicleException = TypedException<StarException, VehicleExceptionTag>;
 STAR_CLASS(Vehicle);
 
 class Vehicle : public virtual LoungeableEntity, public virtual InteractiveEntity, public virtual PhysicsEntity, public virtual ScriptedEntity {
