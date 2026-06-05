@@ -4,10 +4,13 @@
 
 namespace Star {
 
-STAR_CLASS(Listener);
-STAR_CLASS(CallbackListener);
-STAR_CLASS(TrackerListener);
-STAR_CLASS(ListenerGroup);
+class Listener;
+using ListenerPtr = SharedPtr<Listener>;
+using ListenerWeakPtr = WeakPtr<Listener>;
+class CallbackListener;
+using CallbackListenerPtr = SharedPtr<CallbackListener>;
+class TrackerListener;
+using TrackerListenerPtr = SharedPtr<TrackerListener>;
 
 class Listener {
 public:

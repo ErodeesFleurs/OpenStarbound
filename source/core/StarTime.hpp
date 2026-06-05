@@ -4,8 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(Clock);
-STAR_CLASS(Timer);
+class Clock;
+using ClockPtr = SharedPtr<Clock>;
 
 namespace Time {
   double timeSinceEpoch();

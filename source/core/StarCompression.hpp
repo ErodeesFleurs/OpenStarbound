@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(CompressedFile);
+class CompressedFile;
+using CompressedFilePtr = SharedPtr<CompressedFile>;
 
 // Zlib compression level, ranges from 0 to 9
 using CompressionLevel = int;
