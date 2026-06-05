@@ -8,6 +8,8 @@
 #include "xxhash.h"
 #include "xxh3.h"
 
+#include <type_traits>
+
 namespace Star {
 
 class XXHash32 {
@@ -56,56 +58,48 @@ uint64_t xxHash3(char const* source, size_t length);
 uint64_t xxHash3(ByteArray const& in);
 uint64_t xxHash3(String const& in);
 
-#define XXHASH32_PRIMITIVE(TYPE, CAST_TYPE)                 \
-  inline void xxHash32Push(XXHash32& hash, TYPE const& v) { \
-    CAST_TYPE cv = v;                                       \
-    cv = toLittleEndian(cv);                                \
-    hash.push(reinterpret_cast<char const*>(&cv), sizeof(cv)); \
+namespace Detail {
+  template <typename T>
+  struct XXHashPrimitiveType;
+
+  template <> struct XXHashPrimitiveType<bool> { using Type = bool; };
+  template <> struct XXHashPrimitiveType<int> { using Type = int32_t; };
+  template <> struct XXHashPrimitiveType<long> { using Type = int64_t; };
+  template <> struct XXHashPrimitiveType<long long> { using Type = int64_t; };
+  template <> struct XXHashPrimitiveType<unsigned int> { using Type = uint32_t; };
+  template <> struct XXHashPrimitiveType<unsigned long> { using Type = uint64_t; };
+  template <> struct XXHashPrimitiveType<unsigned long long> { using Type = uint64_t; };
+  template <> struct XXHashPrimitiveType<float> { using Type = float; };
+  template <> struct XXHashPrimitiveType<double> { using Type = double; };
+
+  template <typename T>
+  concept XXHashPrimitive = requires {
+    typename XXHashPrimitiveType<std::remove_cvref_t<T>>::Type;
+  };
+
+  template <typename Hash, XXHashPrimitive T>
+  void xxHashPushPrimitive(Hash& hash, T const& v) {
+    using CastType = typename XXHashPrimitiveType<std::remove_cvref_t<T>>::Type;
+    auto cv = static_cast<CastType>(v);
+    cv = toLittleEndian(cv);
+    hash.push(reinterpret_cast<char const*>(&cv), sizeof(cv));
   }
+}
 
-#define XXHASH64_PRIMITIVE(TYPE, CAST_TYPE)                 \
-  inline void xxHash64Push(XXHash64& hash, TYPE const& v) { \
-    CAST_TYPE cv = v;                                       \
-    cv = toLittleEndian(cv);                                \
-    hash.push(reinterpret_cast<char const*>(&cv), sizeof(cv)); \
-  }
+template <Detail::XXHashPrimitive T>
+inline void xxHash32Push(XXHash32& hash, T const& v) {
+  Detail::xxHashPushPrimitive(hash, v);
+}
 
-#define XXHASH3_PRIMITIVE(TYPE, CAST_TYPE)                  \
-  inline void xxHash3Push(XXHash3& hash, TYPE const& v) {   \
-    CAST_TYPE cv = v;                                       \
-    cv = toLittleEndian(cv);                                \
-    hash.push(reinterpret_cast<char const*>(&cv), sizeof(cv)); \
-  }
+template <Detail::XXHashPrimitive T>
+inline void xxHash64Push(XXHash64& hash, T const& v) {
+  Detail::xxHashPushPrimitive(hash, v);
+}
 
-XXHASH32_PRIMITIVE(bool, bool);
-XXHASH32_PRIMITIVE(int, int32_t);
-XXHASH32_PRIMITIVE(long, int64_t);
-XXHASH32_PRIMITIVE(long long, int64_t);
-XXHASH32_PRIMITIVE(unsigned int, uint32_t);
-XXHASH32_PRIMITIVE(unsigned long, uint64_t);
-XXHASH32_PRIMITIVE(unsigned long long, uint64_t);
-XXHASH32_PRIMITIVE(float, float);
-XXHASH32_PRIMITIVE(double, double);
-
-XXHASH64_PRIMITIVE(bool, bool);
-XXHASH64_PRIMITIVE(int, int32_t);
-XXHASH64_PRIMITIVE(long, int64_t);
-XXHASH64_PRIMITIVE(long long, int64_t);
-XXHASH64_PRIMITIVE(unsigned int, uint32_t);
-XXHASH64_PRIMITIVE(unsigned long, uint64_t);
-XXHASH64_PRIMITIVE(unsigned long long, uint64_t);
-XXHASH64_PRIMITIVE(float, float);
-XXHASH64_PRIMITIVE(double, double);
-
-XXHASH3_PRIMITIVE(bool, bool);
-XXHASH3_PRIMITIVE(int, int32_t);
-XXHASH3_PRIMITIVE(long, int64_t);
-XXHASH3_PRIMITIVE(long long, int64_t);
-XXHASH3_PRIMITIVE(unsigned int, uint32_t);
-XXHASH3_PRIMITIVE(unsigned long, uint64_t);
-XXHASH3_PRIMITIVE(unsigned long long, uint64_t);
-XXHASH3_PRIMITIVE(float, float);
-XXHASH3_PRIMITIVE(double, double);
+template <Detail::XXHashPrimitive T>
+inline void xxHash3Push(XXHash3& hash, T const& v) {
+  Detail::xxHashPushPrimitive(hash, v);
+}
 
 inline void xxHash32Push(XXHash32& hash, char const* str) {
   hash.push(str, strlen(str));
