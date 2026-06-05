@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(JoinRequestDialog);
+class JoinRequestDialog;
+using JoinRequestDialogPtr = SharedPtr<JoinRequestDialog>;
 
 class JoinRequestDialog : public Pane {
 public:
