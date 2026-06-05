@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(InteractiveEntity);
+class InteractiveEntity;
+using InteractiveEntityPtr = SharedPtr<InteractiveEntity>;
 
 class InteractiveEntity : public virtual Entity {
 public:

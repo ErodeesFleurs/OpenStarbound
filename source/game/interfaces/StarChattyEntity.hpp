@@ -5,7 +5,7 @@
 
 namespace Star {
 
-STAR_CLASS(ChattyEntity);
+class ChattyEntity;
 
 class ChattyEntity : public virtual Entity {
 public:

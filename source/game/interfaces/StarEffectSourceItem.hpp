@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(EffectSourceItem);
+class EffectSourceItem;
 
 class EffectSourceItem {
 public:

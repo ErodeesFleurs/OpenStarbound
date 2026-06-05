@@ -5,7 +5,7 @@
 
 namespace Star {
 
-STAR_CLASS(WireEntity);
+class WireEntity;
 
 class WireEntity : public virtual TileEntity {
 public:
