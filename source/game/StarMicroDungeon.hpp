@@ -5,8 +5,10 @@
 
 namespace Star {
 
-STAR_CLASS(DungeonGeneratorWorldFacade);
-STAR_CLASS(MicroDungeonFactory);
+class DungeonGeneratorWorldFacade;
+using DungeonGeneratorWorldFacadePtr = SharedPtr<DungeonGeneratorWorldFacade>;
+class MicroDungeonFactory;
+using MicroDungeonFactoryPtr = SharedPtr<MicroDungeonFactory>;
 
 class MicroDungeonFactory {
 public:

@@ -7,8 +7,9 @@
 
 namespace Star {
 
-STAR_CLASS(Parallax);
-STAR_STRUCT(ParallaxLayer);
+class Parallax;
+using ParallaxPtr = SharedPtr<Parallax>;
+struct ParallaxLayer;
 
 struct ParallaxLayer {
   ParallaxLayer();
