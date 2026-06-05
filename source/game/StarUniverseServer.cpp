@@ -59,7 +59,7 @@ UniverseServer::UniverseServer(String const& storageDir)
 
   if (configuration->get("clearUniverseFiles").toBool()) {
     Logger::info("UniverseServer: Clearing all universe files");
-    for (auto file : File::dirList(storageDir)) {
+    for (auto const& file : File::dirList(storageDir)) {
       if (!file.second && file.first != LockFile)
         File::remove(File::relativeTo(storageDir, file.first));
     }
@@ -645,7 +645,7 @@ void UniverseServer::processUniverseFlags() {
   ReadLocker clientsLocker(m_clientsLock);
 
   if (auto actions = m_universeSettings->pullPendingFlagActions()) {
-    for (auto action : *actions) {
+    for (auto const& action : *actions) {
       if (action.is<PlaceDungeonFlagAction>()) {
         auto placeDungeonAction = action.get<PlaceDungeonFlagAction>();
         if (instanceWorldStoredOrActive(placeDungeonAction.targetInstance)) {
@@ -841,7 +841,7 @@ void UniverseServer::reapConnections() {
   RecursiveMutexLocker locker(m_mainLock);
   auto pendingConnections = take(m_pendingDisconnections);
   locker.unlock();
-  for (auto p : pendingConnections)
+  for (auto const& p : pendingConnections)
     doDisconnection(p.first, p.second);
 
   ReadLocker clientsLocker(m_clientsLock);
@@ -1290,7 +1290,7 @@ void UniverseServer::shutdownInactiveWorlds() {
   // Clear out all temporary worlds shut down more than tempWorldDeleteTime time ago.
   // Keep around worlds that are currently running or are active in system worlds
   Set<InstanceWorldId> systemLocationWorlds;
-  for (auto p : m_systemWorlds) {
+  for (auto const& p : m_systemWorlds) {
     for (auto instanceWorldId : p.second->activeInstanceWorlds()) {
       if (m_tempWorldIndex.contains(instanceWorldId))
         systemLocationWorlds.add(instanceWorldId);

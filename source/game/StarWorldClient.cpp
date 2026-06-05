@@ -409,7 +409,7 @@ TileModificationList WorldClient::replaceTiles(TileModificationList const& modif
     return modificationList;
   
   TileModificationList success, failures;
-  for (auto pair : modificationList) {
+  for (auto const& pair : modificationList) {
     if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second))
       success.append(pair);
     else
@@ -1235,7 +1235,7 @@ void WorldClient::update(float dt) {
 
     Vec2F playerPos = m_mainPlayer->position();
     auto dropList = m_entityMap->query<ItemDrop>(RectF(playerPos - Vec2F::filled(DropDist / 2), playerPos + Vec2F::filled(DropDist / 2)));
-    for (auto itemDrop : dropList) {
+    for (auto const& itemDrop : dropList) {
       auto distSquared = m_geometry.diff(itemDrop->position(), playerPos).magnitudeSquared();
 
       // If the drop is within DropDist and not owned, request it.
@@ -1316,7 +1316,7 @@ void WorldClient::update(float dt) {
         return RectI::integral(entity->metaBoundBox().translated(entity->position()));
       return {};
     });
-  for (auto monitoredRegion : monitoredRegions)
+  for (auto const& monitoredRegion : monitoredRegions)
     neededSectors.addAll(m_tileArray->validSectorsFor(monitoredRegion.padded(WorldSectorSize)));
 
   auto loadedSectors = m_tileArray->loadedSectors();

@@ -389,7 +389,7 @@ void Projectile::render(RenderCallback* renderCallback) {
 }
 
 void Projectile::renderLightSources(RenderCallback* renderCallback) {
-  for (auto renderable : m_pendingRenderables) {
+  for (auto const& renderable : m_pendingRenderables) {
     if (renderable.is<LightSource>())
       renderCallback->addLightSource(renderable.get<LightSource>());
   }
@@ -1018,7 +1018,7 @@ LuaCallbacks Projectile::makeProjectileCallbacks() {
 }
 
 void Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
-  for (auto renderable : m_pendingRenderables) {
+  for (auto const& renderable : m_pendingRenderables) {
     if (renderable.is<AudioInstancePtr>())
       renderCallback->addAudio(renderable.get<AudioInstancePtr>());
     else if (renderable.is<Particle>())
