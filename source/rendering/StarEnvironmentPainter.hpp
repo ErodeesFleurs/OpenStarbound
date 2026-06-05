@@ -10,7 +10,8 @@
 
 namespace Star {
 
-STAR_CLASS(EnvironmentPainter);
+class EnvironmentPainter;
+using EnvironmentPainterPtr = SharedPtr<EnvironmentPainter>;
 
 class EnvironmentPainter {
 public:

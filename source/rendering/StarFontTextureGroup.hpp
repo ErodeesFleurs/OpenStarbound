@@ -7,8 +7,6 @@
 
 namespace Star {
 
-STAR_CLASS(FontTextureGroup);
-
 class FontTextureGroup {
 public:
   // Font* is only included for key uniqueness and should not be dereferenced

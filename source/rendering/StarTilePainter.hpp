@@ -9,9 +9,12 @@
 
 namespace Star {
 
-STAR_CLASS(Assets);
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(TilePainter);
+class Assets;
+using AssetsConstPtr = SharedPtr<Assets const>;
+class MaterialDatabase;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
+class TilePainter;
+using TilePainterPtr = SharedPtr<TilePainter>;
 
 class TilePainter : public TileDrawer {
 public:
