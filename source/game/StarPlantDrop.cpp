@@ -228,10 +228,10 @@ void PlantDrop::update(float dt, uint64_t) {
                 + Vec2F(Random::randf(-0.2f, 0.2f), Random::randf(-0.2f, 0.2f));
             if (drop.getString("item") == "sapling")
               world()->addEntity(ItemDrop::createRandomizedDrop(
-                  ItemDescriptor("sapling", (size_t)drop.getInt("count", 1), m_saplingConfig), position() + pos));
+                  ItemDescriptor("sapling", static_cast<size_t>(drop.getInt("count", 1)), m_saplingConfig), position() + pos));
             else
               world()->addEntity(ItemDrop::createRandomizedDrop(
-                  {drop.getString("item"), (size_t)drop.getInt("count", 1)}, position() + pos));
+                  {drop.getString("item"), static_cast<size_t>(drop.getInt("count", 1))}, position() + pos));
           }
         }
       }

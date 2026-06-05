@@ -840,7 +840,7 @@ void Plant::readPiecesFromJson(Json const& pieces) {
       res.rotationType = RotationTypeNames.getLeft(v.getString("rotationType"));
       res.rotationOffset = v.getFloat("rotationOffset");
       res.structuralSegment = v.getBool("structuralSegment");
-      res.kind = (PlantPieceKind)v.getInt("kind");
+      res.kind = static_cast<PlantPieceKind>(v.getInt("kind"));
       res.segmentIdx = v.getInt("segmentIdx");
       res.flip = v.getBool("flip");
 

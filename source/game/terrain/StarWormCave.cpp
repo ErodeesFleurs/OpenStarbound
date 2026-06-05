@@ -39,7 +39,7 @@ WormCaveSector::WormCaveSector(int sectorSize, Vec2I sector, Json const& config,
     for (int y = sector[1] - sectorRadius; y <= sector[1] + sectorRadius; y += m_sectorSize) {
       RandomSource rs(staticRandomU64(x, y, seed));
       float numberOfWorms = rs.randf(numberOfWormsPerSectorRange[0], numberOfWormsPerSectorRange[1]) * commonality;
-      int intNumberOfWorms = (int)numberOfWorms;
+      int intNumberOfWorms = static_cast<int>(numberOfWorms);
       if (rs.randf() < (numberOfWorms - intNumberOfWorms))
         intNumberOfWorms++;
       for (int n = 0; n < intNumberOfWorms; ++n) {
