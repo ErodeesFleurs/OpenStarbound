@@ -5,7 +5,7 @@
 
 namespace Star {
 
-STAR_CLASS(PlayerStorage);
+using PlayerStoragePtr = SharedPtr<PlayerStorage>;
 
 class CharSelectionPane : public Pane {
 public:
@@ -35,5 +35,5 @@ private:
   SelectCharacterCallback m_selectCallback;
   DeleteCharacterCallback m_deleteCallback;
 };
-using CharSelectionPanePtr = shared_ptr<CharSelectionPane>;
+using CharSelectionPanePtr = SharedPtr<CharSelectionPane>;
 }
