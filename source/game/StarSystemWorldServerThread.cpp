@@ -46,7 +46,7 @@ void SystemWorldServerThread::removeClient(ConnectionId clientId) {
   m_outgoingPacketQueue.remove(clientId);
 }
 
-void SystemWorldServerThread::setPause(shared_ptr<const atomic<bool>> pause) {
+void SystemWorldServerThread::setPause(SharedPtr<atomic<bool> const> pause) {
   m_pause = std::move(pause);
 }
 

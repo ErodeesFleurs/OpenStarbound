@@ -43,7 +43,7 @@ void WorldServerThread::stop() {
   Thread::join();
 }
 
-void WorldServerThread::setPause(shared_ptr<const atomic<bool>> pause) {
+void WorldServerThread::setPause(SharedPtr<atomic<bool> const> pause) {
   m_pause = pause;
 }
 

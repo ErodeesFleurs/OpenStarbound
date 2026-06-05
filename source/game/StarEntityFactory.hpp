@@ -5,14 +5,22 @@
 
 namespace Star {
 
-STAR_CLASS(VersioningDatabase);
-STAR_CLASS(PlayerFactory);
-STAR_CLASS(MonsterDatabase);
-STAR_CLASS(ObjectDatabase);
-STAR_CLASS(ProjectileDatabase);
-STAR_CLASS(NpcDatabase);
+class VersioningDatabase;
+using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
+class PlayerFactory;
+using PlayerFactoryConstPtr = SharedPtr<PlayerFactory const>;
+class MonsterDatabase;
+using MonsterDatabaseConstPtr = SharedPtr<MonsterDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class ProjectileDatabase;
+using ProjectileDatabaseConstPtr = SharedPtr<ProjectileDatabase const>;
+class NpcDatabase;
+using NpcDatabaseConstPtr = SharedPtr<NpcDatabase const>;
 
-STAR_CLASS(EntityFactory);
+class EntityFactory;
+using EntityFactoryPtr = SharedPtr<EntityFactory>;
+using EntityFactoryConstPtr = SharedPtr<EntityFactory const>;
 
 struct EntityFactoryExceptionTag { static constexpr char const* typeName = "EntityFactoryException"; };
 using EntityFactoryException = TypedException<StarException, EntityFactoryExceptionTag>;
