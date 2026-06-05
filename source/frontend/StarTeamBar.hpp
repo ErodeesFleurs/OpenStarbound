@@ -8,15 +8,17 @@
 
 namespace Star {
 
-STAR_CLASS(TeamBar);
-STAR_CLASS(MainInterface);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(Player);
+class TeamBar;
+class MainInterface;
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
 
-STAR_CLASS(TeamInvite);
-STAR_CLASS(TeamInvitation);
-STAR_CLASS(TeamMemberMenu);
-STAR_CLASS(TeamBar);
+class TeamInvite;
+using TeamInvitePtr = SharedPtr<TeamInvite>;
+class TeamInvitation;
+using TeamInvitationPtr = SharedPtr<TeamInvitation>;
+class TeamMemberMenu;
+using TeamMemberMenuPtr = SharedPtr<TeamMemberMenu>;
 
 class TeamInvite : public Pane {
 public:
