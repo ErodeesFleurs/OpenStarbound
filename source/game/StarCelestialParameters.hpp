@@ -5,8 +5,6 @@
 
 namespace Star {
 
-STAR_CLASS(CelestialParameters);
-
 class CelestialParameters {
 public:
   CelestialParameters();

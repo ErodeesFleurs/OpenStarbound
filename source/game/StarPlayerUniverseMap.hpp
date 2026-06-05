@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_CLASS(PlayerUniverseMap);
+class PlayerUniverseMap;
+using PlayerUniverseMapPtr = SharedPtr<PlayerUniverseMap>;
 
 template <typename T>
 Json jsonFromBookmarkTarget(T const& target);

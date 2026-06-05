@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(QuestManager);
+class QuestManager;
+using QuestManagerPtr = SharedPtr<QuestManager>;
 
 struct QuestIndicator {
   String indicatorImage;

@@ -8,6 +8,7 @@
 #include "StarPane.hpp"
 #include "StarMainInterfaceTypes.hpp"
 #include "StarTechDatabase.hpp"
+#include "StarQuestManager.hpp"
 
 namespace Star {
 
@@ -30,7 +31,6 @@ using ListWidgetPtr = SharedPtr<ListWidget>;
 class ButtonWidget;
 using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
 class QuestManager;
-using QuestManagerPtr = SharedPtr<QuestManager>;
 class StackWidget;
 using StackWidgetPtr = SharedPtr<StackWidget>;
 class Companion;
