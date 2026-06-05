@@ -109,7 +109,7 @@ static int impl_##name(lua_State *L) { \
 // I use OpenGL so this is a GLuint
 // Using unsigned int cause im lazy don't copy me
 #define IM_TEXTURE_ID_ARG(name) \
-  const ImTextureID name = (ImTextureID)luaL_checkinteger(L, arg++);
+  const ImTextureID name = static_cast<ImTextureID>(luaL_checkinteger(L, arg++));
 
 #define OPTIONAL_LABEL_ARG(name) \
   const char* name; \
@@ -126,7 +126,7 @@ static int impl_##name(lua_State *L) { \
 #define IM_VEC_2_ARG(name)\
   const lua_Number i_##name##_x = luaL_checknumber(L, arg++); \
   const lua_Number i_##name##_y = luaL_checknumber(L, arg++); \
-  const ImVec2 name((double)i_##name##_x, (double)i_##name##_y);
+  const ImVec2 name(static_cast<double>(i_##name##_x), static_cast<double>(i_##name##_y));
 
 #define OPTIONAL_IM_VEC_2_ARG(name, x, y) \
   lua_Number i_##name##_x = x; \
@@ -135,14 +135,14 @@ static int impl_##name(lua_State *L) { \
     i_##name##_x = luaL_checknumber(L, arg++); \
     i_##name##_y = luaL_checknumber(L, arg++); \
   } \
-  const ImVec2 name((double)i_##name##_x, (double)i_##name##_y);
+  const ImVec2 name(static_cast<double>(i_##name##_x), static_cast<double>(i_##name##_y));
 
 #define IM_VEC_4_ARG(name) \
   const lua_Number i_##name##_x = luaL_checknumber(L, arg++); \
   const lua_Number i_##name##_y = luaL_checknumber(L, arg++); \
   const lua_Number i_##name##_z = luaL_checknumber(L, arg++); \
   const lua_Number i_##name##_w = luaL_checknumber(L, arg++); \
-  const ImVec4 name((double)i_##name##_x, (double)i_##name##_y, (double)i_##name##_z, (double)i_##name##_w);
+  const ImVec4 name(static_cast<double>(i_##name##_x), static_cast<double>(i_##name##_y), static_cast<double>(i_##name##_z), static_cast<double>(i_##name##_w));
 
 #define OPTIONAL_IM_VEC_4_ARG(name, x, y, z, w) \
   lua_Number i_##name##_x = x; \
@@ -155,7 +155,7 @@ static int impl_##name(lua_State *L) { \
     i_##name##_z = luaL_checknumber(L, arg++); \
     i_##name##_w = luaL_checknumber(L, arg++); \
   } \
-  const ImVec4 name((double)i_##name##_x, (double)i_##name##_y, (double)i_##name##_z, (double)i_##name##_w);
+  const ImVec4 name(static_cast<double>(i_##name##_x), static_cast<double>(i_##name##_y), static_cast<double>(i_##name##_z), static_cast<double>(i_##name##_w));
 
 #define NUMBER_ARG(name)\
   lua_Number name = luaL_checknumber(L, arg++);
@@ -179,11 +179,11 @@ static int impl_##name(lua_State *L) { \
 #define OPTIONAL_INT_ARG(name, otherwise)\
   int name = otherwise; \
   if (arg <= max_args) { \
-    name = (int)lua_tonumber(L, arg++); \
+    name = static_cast<int>(lua_tonumber(L, arg++)); \
   }
 
 #define INT_ARG(name) \
-  const int name = (int)luaL_checknumber(L, arg++);
+  const int name = static_cast<int>(luaL_checknumber(L, arg++));
 
 #define OPTIONAL_ENUM_ARG(name, ename, otherwise)\
   ename name = otherwise; \
@@ -197,14 +197,14 @@ static int impl_##name(lua_State *L) { \
 #define OPTIONAL_UINT_ARG(name, otherwise)\
   unsigned int name = otherwise; \
   if (arg <= max_args) { \
-    name = (unsigned int)lua_tounsigned(L, arg++); \
+    name = static_cast<unsigned int>(lua_tounsigned(L, arg++)); \
   }
 
 #define UINT_ARG(name) \
-  const unsigned int name = (unsigned int)luaL_checkinteger(L, arg++);
+  const unsigned int name = static_cast<unsigned int>(luaL_checkinteger(L, arg++));
 
 #define INT_POINTER_ARG(name) \
-  int i_##name##_value = (int)luaL_checkinteger(L, arg++); \
+  int i_##name##_value = static_cast<int>(luaL_checkinteger(L, arg++)); \
   int* name = &(i_##name##_value);
 
 #define END_INT_POINTER(name) \
@@ -214,7 +214,7 @@ static int impl_##name(lua_State *L) { \
   }
 
 #define UINT_POINTER_ARG(name) \
-  unsigned int i_##name##_value = (unsigned int)luaL_checkinteger(L, arg++); \
+  unsigned int i_##name##_value = static_cast<unsigned int>(luaL_checkinteger(L, arg++)); \
   unsigned int* name = &(i_##name##_value);
 
 #define END_UINT_POINTER(name) \
@@ -277,12 +277,12 @@ static int impl_##name(lua_State *L) { \
   stackval++;
 
 #define PUSH_BOOL(name) \
-  lua_pushboolean(L, (int) name); \
+  lua_pushboolean(L, static_cast<int>(name)); \
   stackval++;
 
 #define END_BOOL_POINTER(name) \
   if (name != NULL) { \
-    lua_pushboolean(L, (int)i_##name##_value); \
+    lua_pushboolean(L, static_cast<int>(i_##name##_value)); \
     stackval++; \
   }
 
