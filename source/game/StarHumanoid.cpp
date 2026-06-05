@@ -234,7 +234,7 @@ int Humanoid::HumanoidTiming::stateSeq(float timer, State state) const {
 }
 
 int Humanoid::HumanoidTiming::emoteStateSeq(float timer, HumanoidEmote state) const {
-  return genericSeq(timer, emoteCycle[(size_t)state], emoteFrames[(size_t)state], cyclicEmoteState(state));
+  return genericSeq(timer, emoteCycle[static_cast<size_t>(state)], emoteFrames[static_cast<size_t>(state)], cyclicEmoteState(state));
 }
 
 int Humanoid::HumanoidTiming::danceSeq(float timer, DancePtr dance) const {
@@ -343,9 +343,9 @@ void Humanoid::setIdentity(HumanoidIdentity const& identity) {
     m_networkedAnimator.resetLocalTransformationGroup("personalityArmOffset");
     m_networkedAnimator.translateLocalTransformationGroup("personalityArmOffset", m_identity.personality.armOffset / TilePixels);
 
-    m_networkedAnimator.setLocalTag("hairFrameset", m_identity.hairType.empty() ? "" : (String)strf("{}/{}.png", m_identity.hairGroup, m_identity.hairType));
-    m_networkedAnimator.setLocalTag("facialHairFrameset", m_identity.facialHairType.empty() ? "" : (String)strf("{}/{}.png", m_identity.facialHairGroup, m_identity.facialHairType));
-    m_networkedAnimator.setLocalTag("facialMaskFrameset", m_identity.facialMaskType.empty() ? "" : (String)strf("{}/{}.png", m_identity.facialMaskGroup, m_identity.facialMaskType));
+    m_networkedAnimator.setLocalTag("hairFrameset", m_identity.hairType.empty() ? "" : String(strf("{}/{}.png", m_identity.hairGroup, m_identity.hairType)));
+    m_networkedAnimator.setLocalTag("facialHairFrameset", m_identity.facialHairType.empty() ? "" : String(strf("{}/{}.png", m_identity.facialHairGroup, m_identity.facialHairType)));
+    m_networkedAnimator.setLocalTag("facialMaskFrameset", m_identity.facialMaskType.empty() ? "" : String(strf("{}/{}.png", m_identity.facialMaskGroup, m_identity.facialMaskType)));
 
     for (auto p : m_identityFramesetTags) {
       m_networkedAnimator.setLocalTag(m_networkedAnimator.applyPartTags("anchor", p.first), m_networkedAnimator.applyPartTags("anchor", p.second));
@@ -966,10 +966,10 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
     }
     if (m_headRotation != 0.f) {
       float dir = numericalDirection(m_facingDirection);
-      float headX = (m_headRotation / ((float)Constants::pi * 2.f));
+      float headX = (m_headRotation / (static_cast<float>(Constants::pi) * 2.f));
       Vec2F translate = {
         -(state() == State::Run ? (fmaxf(headX, 0.f) * 2.f) : headX),
-        -(fabsf(m_headRotation / ((float)Constants::pi * 4.f)))
+        -(fabsf(m_headRotation / (static_cast<float>(Constants::pi) * 4.f)))
       };
       auto rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_headRotationPoint.first, m_headRotationPoint.second));
       auto bodyHeadRotationCenter = networkedAnimator()->partTransformation(m_headRotationPoint.first).transformVec2(rotationCenter);
@@ -1122,10 +1122,10 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         float dir = numericalDirection(m_facingDirection);
         Vec2F rotationPoint = headPosition + m_headRotationCenter;
         rotationPoint[0] *= dir;
-        float headX = (m_headRotation / ((float)Constants::pi * 2.f));
+        float headX = (m_headRotation / (static_cast<float>(Constants::pi) * 2.f));
         drawable.rotate(m_headRotation, rotationPoint);
         drawable.position[0] -= state() == State::Run ? (fmaxf(headX * dir, 0.f) * 2.f) * dir : headX;
-        drawable.position[1] -= fabsf(m_headRotation / ((float)Constants::pi * 4.f));
+        drawable.position[1] -= fabsf(m_headRotation / (static_cast<float>(Constants::pi) * 4.f));
       }
     };
 
