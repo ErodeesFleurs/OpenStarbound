@@ -10,7 +10,9 @@ namespace Star {
 struct SpawnTypeDatabaseExceptionTag { static constexpr char const* typeName = "SpawnTypeDatabaseException"; };
 using SpawnTypeDatabaseException = TypedException<StarException, SpawnTypeDatabaseExceptionTag>;
 
-STAR_CLASS(SpawnTypeDatabase);
+class SpawnTypeDatabase;
+using SpawnTypeDatabasePtr = SharedPtr<SpawnTypeDatabase>;
+using SpawnTypeDatabaseConstPtr = SharedPtr<SpawnTypeDatabase const>;
 
 struct SpawnParameters {
   enum class Area : uint8_t {

@@ -7,9 +7,10 @@
 
 namespace Star {
 
-STAR_CLASS(TileDamageParameters);
-STAR_CLASS(TileDamageStatus);
-STAR_CLASS(EntityTileDamageStatus);
+class TileDamageParameters;
+class TileDamageStatus;
+class EntityTileDamageStatus;
+using EntityTileDamageStatusPtr = SharedPtr<EntityTileDamageStatus>;
 
 struct TileDamageExceptionTag { static constexpr char const* typeName = "TileDamageException"; };
 using TileDamageException = TypedException<StarException, TileDamageExceptionTag>;

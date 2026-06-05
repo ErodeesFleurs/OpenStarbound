@@ -8,7 +8,9 @@ namespace Star {
 struct CollectionDatabaseExceptionTag { static constexpr char const* typeName = "CollectionDatabaseException"; };
 using CollectionDatabaseException = TypedException<StarException, CollectionDatabaseExceptionTag>;
 
-STAR_CLASS(CollectionDatabase);
+class CollectionDatabase;
+using CollectionDatabasePtr = SharedPtr<CollectionDatabase>;
+using CollectionDatabaseConstPtr = SharedPtr<CollectionDatabase const>;
 
 enum class CollectionType : uint16_t {
   Generic,

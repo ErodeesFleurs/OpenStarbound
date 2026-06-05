@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_CLASS(UniverseSettings);
+class UniverseSettings;
+using UniverseSettingsPtr = SharedPtr<UniverseSettings>;
 
 struct PlaceDungeonFlagAction {
   String dungeonId;
