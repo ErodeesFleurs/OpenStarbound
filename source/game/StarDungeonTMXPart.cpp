@@ -357,8 +357,8 @@ namespace Dungeon {
   }
 
   Vec2I TMXObject::getImagePosition(Tiled::Properties const& properties) {
-    int x = (int)(properties.opt<float>("imagePositionX").value(0) / TilePixels);
-    int y = (int)(properties.opt<float>("imagePositionY").value(0) / TilePixels);
+    int x = static_cast<int>(properties.opt<float>("imagePositionX").value(0) / TilePixels);
+    int y = static_cast<int>(properties.opt<float>("imagePositionY").value(0) / TilePixels);
     return Vec2I(x, -y);
   }
 
