@@ -30,7 +30,7 @@ public:
   virtual Maybe<ByteArray> receiveMessage() = 0;
 };
 
-strong_typedef(String, P2PNetworkingPeerId);
+using P2PNetworkingPeerId = StrongTypedef<String, struct P2PNetworkingPeerIdTag>;
 
 // API for platform specific peer to peer multiplayer services.
 class P2PNetworkingService {

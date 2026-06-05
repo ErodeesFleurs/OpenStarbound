@@ -18,8 +18,8 @@ using TreePair = pair<TreeVariant, TreeVariant>;
 // Weighted pairs of object name / parameters.
 using ObjectPool = WeightedPool<pair<String, Json>>;
 
-strong_typedef(String, TreasureBoxSet);
-strong_typedef(StringSet, MicroDungeonNames);
+using TreasureBoxSet = StrongTypedef<String, struct TreasureBoxSetTag>;
+using MicroDungeonNames = StrongTypedef<StringSet, struct MicroDungeonNamesTag>;
 
 using BiomeItem = Variant<GrassVariant, BushVariant, TreePair, ObjectPool, TreasureBoxSet, MicroDungeonNames>;
 BiomeItem variantToBiomeItem(Json const& store);

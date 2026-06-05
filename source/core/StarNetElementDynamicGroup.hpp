@@ -60,9 +60,9 @@ private:
   using ElementRemovalType = ElementId;
   using ElementAdditionType = pair<ElementId, ByteArray>;
 
-  strong_typedef(Empty, ElementReset);
-  strong_typedef_builtin(ElementRemovalType, ElementRemoval);
-  strong_typedef(ElementAdditionType, ElementAddition);
+  using ElementReset = StrongTypedef<Empty, struct ElementResetTag>;
+  using ElementRemoval = StrongTypedefBuiltin<ElementRemovalType, struct ElementRemovalTag>;
+  using ElementAddition = StrongTypedef<ElementAdditionType, struct ElementAdditionTag>;
 
   using ElementChange = Variant<ElementReset, ElementRemoval, ElementAddition>;
 

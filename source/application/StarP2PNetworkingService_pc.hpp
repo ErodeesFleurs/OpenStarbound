@@ -31,12 +31,12 @@ public:
   void addPendingJoin(String connectionString);
 
 private:
-  strong_typedef(Empty, JoinUnavailable);
+  using JoinUnavailable = StrongTypedef<Empty, struct JoinUnavailableTag>;
   struct JoinLocal {
     bool operator==(JoinLocal const& rhs) const { return capacity == rhs.capacity; };
     uint32_t capacity;
   };
-  strong_typedef(HostAddressWithPort, JoinRemote);
+  using JoinRemote = StrongTypedef<HostAddressWithPort, struct JoinRemoteTag>;
   using JoinLocation = Variant<JoinUnavailable, JoinLocal, JoinRemote>;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION

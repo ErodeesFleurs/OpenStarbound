@@ -32,8 +32,8 @@ extern EnumMap<EquipmentSlot> const EquipmentSlotNames;
 
 using BagSlot = pair<String, uint8_t>;
 
-strong_typedef(Empty, SwapSlot);
-strong_typedef(Empty, TrashSlot);
+using SwapSlot = StrongTypedef<Empty, struct SwapSlotTag>;
+using TrashSlot = StrongTypedef<Empty, struct TrashSlotTag>;
 
 // Any manageable location in the player inventory can be pointed to by an
 // InventorySlot
