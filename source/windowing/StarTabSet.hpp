@@ -4,11 +4,12 @@
 
 namespace Star {
 
-STAR_CLASS(FlowLayout);
-STAR_CLASS(StackWidget);
-
-STAR_CLASS(TabBarWidget);
-STAR_CLASS(TabSetWidget);
+class FlowLayout;
+using FlowLayoutPtr = SharedPtr<FlowLayout>;
+class StackWidget;
+using StackWidgetPtr = SharedPtr<StackWidget>;
+class TabSetWidget;
+using TabSetWidgetPtr = SharedPtr<TabSetWidget>;
 
 struct TabSetConfig {
   String tabButtonBaseImage;

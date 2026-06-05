@@ -11,8 +11,10 @@ namespace Star {
 struct GuiExceptionTag { static constexpr char const* typeName = "GuiException"; };
 using GuiException = TypedException<StarException, GuiExceptionTag>;
 
-STAR_CLASS(Widget);
-STAR_CLASS(Pane);
+class Widget;
+using WidgetPtr = SharedPtr<Widget>;
+class Pane;
+using PanePtr = SharedPtr<Pane>;
 
 enum class KeyboardCaptureMode {
   None,

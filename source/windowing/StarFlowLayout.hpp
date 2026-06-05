@@ -6,7 +6,8 @@ namespace Star {
 
 // Super simple, only supports left to right, top to bottom flow layouts
 // currently
-STAR_CLASS(FlowLayout);
+class FlowLayout;
+using FlowLayoutPtr = SharedPtr<FlowLayout>;
 class FlowLayout : public Layout {
 public:
   FlowLayout();

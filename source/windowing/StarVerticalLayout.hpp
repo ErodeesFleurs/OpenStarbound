@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(VerticalLayout);
+class VerticalLayout;
+using VerticalLayoutPtr = SharedPtr<VerticalLayout>;
 
 class VerticalLayout : public Layout {
 public:

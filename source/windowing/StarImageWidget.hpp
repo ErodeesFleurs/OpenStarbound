@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(ImageWidget);
+class ImageWidget;
+using ImageWidgetPtr = SharedPtr<ImageWidget>;
 class ImageWidget : public Widget {
 public:
   ImageWidget(String const& image = {});

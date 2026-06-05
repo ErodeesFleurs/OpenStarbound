@@ -7,9 +7,11 @@
 
 namespace Star {
 
-STAR_CLASS(Player);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
 
-STAR_CLASS(LargeCharPlateWidget);
+class LargeCharPlateWidget;
+using LargeCharPlateWidgetPtr = SharedPtr<LargeCharPlateWidget>;
 class LargeCharPlateWidget : public ButtonWidget {
 public:
   LargeCharPlateWidget(WidgetCallbackFunc mainCallback, PlayerPtr player = PlayerPtr());

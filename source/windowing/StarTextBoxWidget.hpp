@@ -6,7 +6,8 @@ namespace Star {
 
 enum class SpecialRepeatKeyCodes : String::Char { None, Delete, Backspace, Left, Right };
 
-STAR_CLASS(TextBoxWidget);
+class TextBoxWidget;
+using TextBoxWidgetPtr = SharedPtr<TextBoxWidget>;
 class TextBoxWidget : public Widget {
 public:
   TextBoxWidget(String const& startingText, String const& hint, WidgetCallbackFunc callback);

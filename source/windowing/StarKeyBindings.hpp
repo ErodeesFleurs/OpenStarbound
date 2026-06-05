@@ -95,7 +95,8 @@ Json inputDescriptorToJson(KeyChord const& chord);
 
 String printInputDescriptor(KeyChord chord);
 
-STAR_CLASS(KeyBindings);
+class KeyBindings;
+using KeyBindingsPtr = SharedPtr<KeyBindings>;
 
 class KeyBindings {
 public:

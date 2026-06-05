@@ -4,9 +4,12 @@
 
 namespace Star {
 
-STAR_CLASS(ButtonWidget);
-STAR_CLASS(ButtonGroup);
-STAR_CLASS(ButtonGroupWidget);
+class ButtonWidget;
+using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
+class ButtonGroup;
+using ButtonGroupPtr = SharedPtr<ButtonGroup>;
+class ButtonGroupWidget;
+using ButtonGroupWidgetPtr = SharedPtr<ButtonGroupWidget>;
 
 // Manages group of buttons in which *at most* a single button can be checked
 // at any time.

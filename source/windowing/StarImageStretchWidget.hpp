@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(ImageStretchWidget);
+class ImageStretchWidget;
+using ImageStretchWidgetPtr = SharedPtr<ImageStretchWidget>;
 
 class ImageStretchWidget : public Widget {
 public:

@@ -6,10 +6,13 @@
 
 namespace Star {
 
-STAR_CLASS(Pane);
-STAR_CLASS(LuaCallbacks);
-STAR_CLASS(AudioInstance);
-STAR_CLASS(GuiReader);
+class Pane;
+using PanePtr = SharedPtr<Pane>;
+class LuaCallbacks;
+class AudioInstance;
+using AudioInstancePtr = SharedPtr<AudioInstance>;
+class GuiReader;
+using GuiReaderPtr = SharedPtr<GuiReader>;
 
 enum class PaneAnchor {
   None,

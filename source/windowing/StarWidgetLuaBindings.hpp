@@ -5,8 +5,10 @@
 
 namespace Star {
 
-STAR_CLASS(Widget);
-STAR_CLASS(CanvasWidget);
+class Widget;
+using WidgetPtr = SharedPtr<Widget>;
+class CanvasWidget;
+using CanvasWidgetPtr = SharedPtr<CanvasWidget>;
 
 template <>
 struct LuaConverter<CanvasWidgetPtr> : LuaUserDataConverter<CanvasWidgetPtr> {};
