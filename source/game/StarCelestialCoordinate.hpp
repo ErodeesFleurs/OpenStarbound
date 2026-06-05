@@ -5,7 +5,7 @@
 
 namespace Star {
 
-STAR_CLASS(CelestialCoordinate);
+class CelestialCoordinate;
 
 struct CelestialExceptionTag { static constexpr char const* typeName = "CelestialException"; };
 using CelestialException = TypedException<StarException, CelestialExceptionTag>;

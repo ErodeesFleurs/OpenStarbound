@@ -18,7 +18,8 @@
 
 namespace Star {
 
-STAR_STRUCT(Packet);
+struct Packet;
+using PacketPtr = SharedPtr<Packet>;
 
 struct StarPacketExceptionTag { static constexpr char const* typeName = "StarPacketException"; };
 using StarPacketException = TypedException<IOException, StarPacketExceptionTag>;
