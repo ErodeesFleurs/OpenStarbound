@@ -8,11 +8,15 @@
 
 namespace Star {
 
-STAR_CLASS(TilesetDatabase);
+class TilesetDatabase;
+using TilesetDatabasePtr = SharedPtr<TilesetDatabase>;
+using TilesetDatabaseConstPtr = SharedPtr<TilesetDatabase const>;
 
 namespace Tiled {
-  STAR_CLASS(Tile);
-  STAR_CLASS(Tileset);
+  class Tile;
+  using TileConstPtr = SharedPtr<Tile const>;
+  class Tileset;
+  using TilesetConstPtr = SharedPtr<Tileset const>;
 
   extern EnumMap<TileLayer> const LayerNames;
 
