@@ -9,8 +9,11 @@
 
 namespace Star {
 
-STAR_CLASS(SpeciesDefinition);
-STAR_CLASS(SpeciesDatabase);
+class SpeciesDefinition;
+using SpeciesDefinitionPtr = SharedPtr<SpeciesDefinition>;
+class SpeciesDatabase;
+using SpeciesDatabasePtr = SharedPtr<SpeciesDatabase>;
+using SpeciesDatabaseConstPtr = SharedPtr<SpeciesDatabase const>;
 
 struct SpeciesCharCreationTooltip {
   String title;

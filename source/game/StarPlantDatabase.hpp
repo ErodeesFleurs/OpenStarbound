@@ -6,8 +6,11 @@
 
 namespace Star {
 
-STAR_CLASS(Plant);
-STAR_CLASS(PlantDatabase);
+class Plant;
+using PlantPtr = SharedPtr<Plant>;
+class PlantDatabase;
+using PlantDatabasePtr = SharedPtr<PlantDatabase>;
+using PlantDatabaseConstPtr = SharedPtr<PlantDatabase const>;
 
 struct PlantDatabaseExceptionTag { static constexpr char const* typeName = "PlantDatabaseException"; };
 using PlantDatabaseException = TypedException<StarException, PlantDatabaseExceptionTag>;

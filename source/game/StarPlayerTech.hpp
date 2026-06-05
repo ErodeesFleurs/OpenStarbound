@@ -7,7 +7,8 @@ namespace Star {
 struct PlayerTechExceptionTag { static constexpr char const* typeName = "PlayerTechException"; };
 using PlayerTechException = TypedException<StarException, PlayerTechExceptionTag>;
 
-STAR_CLASS(PlayerTech);
+class PlayerTech;
+using PlayerTechPtr = SharedPtr<PlayerTech>;
 
 // Set of player techs, techs can be either unavailable, available but not
 // enabled, enabled but not equipped, or equipped.
