@@ -7,8 +7,11 @@
 
 namespace Star {
 
-STAR_CLASS(P2PSocket);
-STAR_CLASS(P2PNetworkingService);
+class P2PSocket;
+using P2PSocketPtr = SharedPtr<P2PSocket>;
+using P2PSocketUPtr = UniquePtr<P2PSocket>;
+class P2PNetworkingService;
+using P2PNetworkingServicePtr = SharedPtr<P2PNetworkingService>;
   
 enum class P2PJoinRequestReply {
   No,

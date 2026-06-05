@@ -2,7 +2,8 @@
 
 namespace Star {
 
-STAR_CLASS(UserGeneratedContentService);
+class UserGeneratedContentService;
+using UserGeneratedContentServicePtr = SharedPtr<UserGeneratedContentService>;
 
 class UserGeneratedContentService {
 public:

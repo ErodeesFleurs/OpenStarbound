@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(StatisticsService);
+class StatisticsService;
+using StatisticsServicePtr = SharedPtr<StatisticsService>;
 
 class StatisticsService {
 public:
