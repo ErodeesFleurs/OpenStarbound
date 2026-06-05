@@ -10,7 +10,9 @@
 
 namespace Star {
 
-STAR_CLASS(WorldTemplate);
+class WorldTemplate;
+using WorldTemplatePtr = SharedPtr<WorldTemplate>;
+using WorldTemplateConstPtr = SharedPtr<WorldTemplate const>;
 
 // Reference object that describes the generation of a single world, and all
 // of the world metadata.  Meant to remain static (or relatively static)

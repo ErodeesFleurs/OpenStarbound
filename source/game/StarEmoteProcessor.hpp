@@ -4,7 +4,9 @@
 
 namespace Star {
 
-STAR_CLASS(EmoteProcessor);
+class EmoteProcessor;
+using EmoteProcessorPtr = SharedPtr<EmoteProcessor>;
+using EmoteProcessorConstPtr = SharedPtr<EmoteProcessor const>;
 
 class EmoteProcessor {
 public:

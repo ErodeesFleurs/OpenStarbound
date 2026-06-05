@@ -5,9 +5,9 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_STRUCT(EntitySplashConfig);
-STAR_CLASS(EntitySplashHelper);
+class World;
+struct EntitySplashConfig;
+class EntitySplashHelper;
 
 struct EntitySplashConfig {
   EntitySplashConfig();

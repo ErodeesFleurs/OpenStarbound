@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(CelestialDatabase);
+class CelestialDatabase;
+using CelestialDatabasePtr = SharedPtr<CelestialDatabase>;
 
 // Functions for generating and drawing worlds from a celestial database.
 // Guards against drawing unloaded celestial objects, will return empty if no
