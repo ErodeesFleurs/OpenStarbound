@@ -296,7 +296,7 @@ bool MaterialDatabase::isModName(String const& name) const {
 
 bool MaterialDatabase::isValidModId(ModId mod) const {
   if (isRealMod(mod))
-    return mod < m_mods.size() && (bool)m_mods[mod];
+    return mod < m_mods.size() && static_cast<bool>(m_mods[mod]);
   else
     return m_metaModIndex.hasRightValue(mod);
 }

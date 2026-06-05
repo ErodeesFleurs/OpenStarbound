@@ -38,7 +38,7 @@ bool TeamClient::isTeamLeader(Uuid const& playerUuid) {
 }
 
 bool TeamClient::isMemberOfTeam() {
-  return (bool)m_teamUuid;
+  return static_cast<bool>(m_teamUuid);
 }
 
 void TeamClient::invitePlayer(String const& playerName) {
