@@ -380,9 +380,8 @@ void ContainerObject::burnContainerContents() {
         if (fuelSingle > 0) {
           auto itemsToConsume = min<uint64_t>((leftToFill + fuelSingle - 1) / fuelSingle, item->count());
           level = min(maxLevel, level + fuelSingle * itemsToConsume);
-          auto consumed = item->consume(itemsToConsume);
+          [[maybe_unused]] auto consumed = item->consume(itemsToConsume);
           starAssert(consumed);
-          _unused(consumed);
         }
       }
     }
@@ -483,8 +482,7 @@ void ContainerObject::tickCrafting(float dt) {
   if (m_craftingProgress.get() >= 1.0f) {
     m_craftingProgress.set(0);
     for (auto const& input : m_goalRecipe.inputs) {
-      bool consumed = m_items->consumeItems(input);
-      _unused(consumed);
+      [[maybe_unused]] bool consumed = m_items->consumeItems(input);
       starAssert(consumed);
     }
     ItemPtr overflow =

@@ -342,8 +342,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
   for (auto pair : m_bags) {
     quantity = min(leftoverCount, consumeFromItemBags[pair.first]);
     if (quantity > 0) {
-      auto res = pair.second->consumeItems(one.multiply(quantity), exactMatch);
-      _unused(res);
+      [[maybe_unused]] auto res = pair.second->consumeItems(one.multiply(quantity), exactMatch);
       starAssert(res);
       leftoverCount -= quantity;
     }
@@ -351,13 +350,11 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
 
   quantity = min(leftoverCount, consumeFromEquipment);
   if (quantity > 0) {
-    auto leftoverQuantity = quantity;
-    _unused(leftoverQuantity);
+    [[maybe_unused]] auto leftoverQuantity = quantity;
     for (auto const& p : m_equipment) {
       if (p.second && p.second->matches(one, exactMatch)) {
         auto toConsume = min(p.second->count(), quantity);
-        auto res = p.second->consume(toConsume);
-        _unused(res);
+        [[maybe_unused]] auto res = p.second->consume(toConsume);
         starAssert(res);
 
         leftoverQuantity -= toConsume;
@@ -371,8 +368,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
   if (quantity > 0) {
     if (m_swapSlot && m_swapSlot->matches(one, exactMatch)) {
       auto toConsume = std::min(m_swapSlot->count(), quantity);
-      auto res = m_swapSlot->consume(toConsume);
-      _unused(res);
+      [[maybe_unused]] auto res = m_swapSlot->consume(toConsume);
       starAssert(res);
 
       quantity -= toConsume;
@@ -385,8 +381,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
   if (quantity > 0) {
     if (m_trashSlot && m_trashSlot->matches(one, exactMatch)) {
       auto toConsume = std::min(m_trashSlot->count(), quantity);
-      auto res = m_trashSlot->consume(toConsume);
-      _unused(res);
+      [[maybe_unused]] auto res = m_trashSlot->consume(toConsume);
       starAssert(res);
 
       quantity -= toConsume;

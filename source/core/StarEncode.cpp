@@ -183,16 +183,14 @@ size_t base64Decode(char const* src, size_t len, char* output, size_t outLen) {
 
 String hexEncode(char const* data, size_t len) {
   std::string res(len * 2, '\0');
-  size_t encoded = hexEncode(data, len, &res[0], res.size());
-  _unused(encoded);
+  [[maybe_unused]] size_t encoded = hexEncode(data, len, &res[0], res.size());
   starAssert(encoded == res.size());
   return res;
 }
 
 String base64Encode(char const* data, size_t len) {
   std::string res(len * 4 / 3 + 3, '\0');
-  size_t encoded = base64Encode(data, len, &res[0], res.size());
-  _unused(encoded);
+  [[maybe_unused]] size_t encoded = base64Encode(data, len, &res[0], res.size());
   starAssert(encoded <= res.size());
   res.resize(encoded);
   return res;
@@ -204,8 +202,7 @@ String hexEncode(ByteArray const& data) {
 
 ByteArray hexDecode(String const& encodedData) {
   ByteArray res(encodedData.size() / 2, 0);
-  size_t decoded = hexDecode(encodedData.utf8Ptr(), encodedData.utf8Size(), res.ptr(), res.size());
-  _unused(decoded);
+  [[maybe_unused]] size_t decoded = hexDecode(encodedData.utf8Ptr(), encodedData.utf8Size(), res.ptr(), res.size());
   starAssert(decoded == res.size());
   return res;
 }
@@ -216,8 +213,7 @@ String base64Encode(ByteArray const& data) {
 
 ByteArray base64Decode(String const& encodedData) {
   ByteArray res(encodedData.size() * 3 / 4, 0);
-  size_t decoded = base64Decode(encodedData.utf8Ptr(), encodedData.utf8Size(), res.ptr(), res.size());
-  _unused(decoded);
+  [[maybe_unused]] size_t decoded = base64Decode(encodedData.utf8Ptr(), encodedData.utf8Size(), res.ptr(), res.size());
   starAssert(decoded <= res.size());
   res.resize(decoded);
   return res;

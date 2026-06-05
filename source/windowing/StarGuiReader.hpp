@@ -12,9 +12,9 @@ public:
   GuiReader();
 
 protected:
-  WidgetConstructResult titleHandler(String const& _unused, Json const& config);
-  WidgetConstructResult paneFeatureHandler(String const& _unused, Json const& config);
-  WidgetConstructResult backgroundHandler(String const& _unused, Json const& config);
+  WidgetConstructResult titleHandler(String const&, Json const& config);
+  WidgetConstructResult paneFeatureHandler(String const&, Json const& config);
+  WidgetConstructResult backgroundHandler(String const&, Json const& config);
 };
 
 }

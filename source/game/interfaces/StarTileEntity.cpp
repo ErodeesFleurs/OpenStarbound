@@ -54,8 +54,7 @@ List<Vec2I> TileEntity::interactiveSpaces() const {
   return spaces();
 }
 
-InteractAction TileEntity::interact(InteractRequest const& request) {
-  _unused(request);
+InteractAction TileEntity::interact([[maybe_unused]] InteractRequest const& request) {
   return InteractAction();
 }
 

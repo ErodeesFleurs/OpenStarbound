@@ -637,8 +637,7 @@ List<Drawable> PaintingBeamTool::drawables() const {
   return result;
 }
 
-void PaintingBeamTool::setEnd(EndType type) {
-  _unused(type);
+void PaintingBeamTool::setEnd([[maybe_unused]] EndType type) {
   m_endType = EndType::Object;
 }
 

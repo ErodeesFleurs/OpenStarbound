@@ -88,11 +88,11 @@ EnumMap<NetCompressionMode> const NetCompressionModeNames {
 
 Packet::~Packet() {}
 
-void Packet::read(DataStream& ds, NetCompatibilityRules netRules) { read(ds); _unused(netRules); }
-void Packet::read(DataStream& ds) { _unused(ds); }
-void Packet::write(DataStream& ds, NetCompatibilityRules netRules) const { write(ds); _unused(netRules); }
-void Packet::write(DataStream& ds) const { _unused(ds); }
-void Packet::readJson(Json const& json) { _unused(json); }
+void Packet::read(DataStream& ds, [[maybe_unused]] NetCompatibilityRules netRules) { read(ds); }
+void Packet::read([[maybe_unused]] DataStream& ds) {}
+void Packet::write(DataStream& ds, [[maybe_unused]] NetCompatibilityRules netRules) const { write(ds); }
+void Packet::write([[maybe_unused]] DataStream& ds) const {}
+void Packet::readJson([[maybe_unused]] Json const& json) {}
 Json Packet::writeJson() const  { return JsonObject{}; }
 
 PacketCompressionMode Packet::compressionMode() const { return m_compressionMode; }

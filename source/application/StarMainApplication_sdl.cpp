@@ -1294,8 +1294,8 @@ private:
       copyDibToClipboard(converted.data(), converted.width(), converted.height());
     });
     #else
-    _unused(image);
-    _unused(path);
+    static_cast<void>(image);
+    static_cast<void>(path);
     if (png) {
       StringMap<ByteArray> clipboardData = {{"image/png", std::move(*png)}};
       return setClipboardData(std::move(clipboardData));
@@ -1310,7 +1310,7 @@ private:
       return copyFileToClipboard(path);
     });
     #else
-    _unused(path);
+    static_cast<void>(path);
     return false;
     #endif
   }
