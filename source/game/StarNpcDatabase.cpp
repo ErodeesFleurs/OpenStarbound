@@ -403,7 +403,7 @@ List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMo
   ArmorWearer armor;
   for (auto item : npcVariant.items) {
     if (auto equipmentSlot = EquipmentSlotNames.maybeLeft(item.first)) {
-      armor.setItem((uint8_t)*equipmentSlot, as<ArmorItem>(makeItem(ItemDescriptor(item.second))));
+      armor.setItem(static_cast<uint8_t>(*equipmentSlot), as<ArmorItem>(makeItem(ItemDescriptor(item.second))));
     }
   }
 

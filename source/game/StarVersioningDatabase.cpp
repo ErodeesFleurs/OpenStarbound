@@ -87,7 +87,7 @@ VersionedJson VersionedJson::fromJson(Json const& source) {
   for (auto const& p : source.getObject("subVersions", JsonObject()))
     subVersions[p.first] = p.second.toUInt();
 
-  return {*id, (VersionNumber)*version, *content, subVersions};
+  return {*id, static_cast<VersionNumber>(*version), *content, subVersions};
 }
 
 bool VersionedJson::empty() const {

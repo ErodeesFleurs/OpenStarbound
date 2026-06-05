@@ -2083,7 +2083,7 @@ namespace LuaBindings {
     placeMaterial.material = materialDatabase->materialId(materialName);
 
     if (arg4)
-      placeMaterial.materialHueShift = (MaterialHue)*arg4;
+      placeMaterial.materialHueShift = static_cast<MaterialHue>(*arg4);
 
     bool allowOverlap = arg5;
 
@@ -2126,7 +2126,7 @@ namespace LuaBindings {
     placeMaterial.material = materialDatabase->materialId(materialName);
 
     if (hueShift)
-      placeMaterial.materialHueShift = (MaterialHue)*hueShift;
+      placeMaterial.materialHueShift = static_cast<MaterialHue>(*hueShift);
 
     TileModificationList modifications;
     for (auto pos : tilePositions) {
@@ -2181,7 +2181,7 @@ namespace LuaBindings {
     placeMod.mod = materialDatabase->modId(modName);
 
     if (arg4)
-      placeMod.modHueShift = (MaterialHue)*arg4;
+      placeMod.modHueShift = static_cast<MaterialHue>(*arg4);
 
     bool allowOverlap = arg5;
 

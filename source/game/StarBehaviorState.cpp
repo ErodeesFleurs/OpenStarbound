@@ -2,6 +2,8 @@
 #include "StarRandom.hpp"
 #include "StarLuaGameConverters.hpp"
 
+#include <cstdint>
+
 namespace Star {
 
 // node parameter types supported by the blackboard
@@ -201,7 +203,7 @@ NodeStatus BehaviorState::runNode(BehaviorNode const& node, NodeState& state) {
 }
 
 NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
-  uint64_t id = (uint64_t)&node;
+  uint64_t id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(&node));
 
   auto result = ActionReturn(NodeStatus::Invalid, LuaNil);
   if (state.isNothing()) {
@@ -237,7 +239,7 @@ NodeStatus BehaviorState::runAction(ActionNode const& node, NodeState& state) {
 }
 
 NodeStatus BehaviorState::runDecorator(DecoratorNode const& node, NodeState& state) {
-  uint64_t id = (uint64_t)&node;
+  uint64_t id = static_cast<uint64_t>(reinterpret_cast<uintptr_t>(&node));
   NodeStatus status = NodeStatus::Running;
   if (state.isNothing()) {
     auto parameters = board()->parameters(node.parameters, id);

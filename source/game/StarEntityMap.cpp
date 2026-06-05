@@ -16,7 +16,7 @@ EntityMap::EntityMap(Vec2U const& worldSize, EntityId beginIdSpace, EntityId end
     m_endIdSpace(endIdSpace) {}
 
 EntityId EntityMap::reserveEntityId() {
-  if (m_spatialMap.size() >= (size_t)(m_endIdSpace - m_beginIdSpace))
+  if (m_spatialMap.size() >= static_cast<size_t>(m_endIdSpace - m_beginIdSpace))
     throw EntityMapException("No more entity id space in EntityMap::reserveEntityId");
 
   EntityId id = m_nextId;
@@ -28,7 +28,7 @@ EntityId EntityMap::reserveEntityId() {
 }
 
 Maybe<EntityId> EntityMap::maybeReserveEntityId(EntityId entityId) {
-  if (m_spatialMap.size() >= (size_t)(m_endIdSpace - m_beginIdSpace))
+  if (m_spatialMap.size() >= static_cast<size_t>(m_endIdSpace - m_beginIdSpace))
     throw EntityMapException("No more entity id space in EntityMap::reserveEntityId");
 
   if (entityId == NullEntityId || m_spatialMap.contains(entityId))
