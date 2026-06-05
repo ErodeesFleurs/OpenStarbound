@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(StatusEffectItem);
+class StatusEffectItem;
 
 class StatusEffectItem {
 public:

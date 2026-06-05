@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(NametagEntity);
+class NametagEntity;
 
 class NametagEntity : public virtual Entity {
 public:

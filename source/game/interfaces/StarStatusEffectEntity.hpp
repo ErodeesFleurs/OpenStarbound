@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(StatusEffectEntity);
+class StatusEffectEntity;
 
 class StatusEffectEntity : public virtual Entity {
 public:

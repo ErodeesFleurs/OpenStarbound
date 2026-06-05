@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(SwingableItem);
+class SwingableItem;
 
 class SwingableItem : public FireableItem {
 public:

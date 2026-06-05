@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(PortraitEntity);
+class PortraitEntity;
+using PortraitEntityPtr = SharedPtr<PortraitEntity>;
 
 class PortraitEntity : public virtual Entity {
 public:

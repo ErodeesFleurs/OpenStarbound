@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(ActivatableItem);
+class ActivatableItem;
+using ActivatableItemPtr = SharedPtr<ActivatableItem>;
 
 class ActivatableItem {
 public:
