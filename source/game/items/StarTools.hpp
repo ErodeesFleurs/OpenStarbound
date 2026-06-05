@@ -11,17 +11,17 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(WireConnector);
-STAR_CLASS(ToolUserEntity);
+class World;
+class WireConnector;
+class ToolUserEntity;
 
-STAR_CLASS(MiningTool);
-STAR_CLASS(HarvestingTool);
-STAR_CLASS(WireTool);
-STAR_CLASS(Flashlight);
-STAR_CLASS(BeamMiningTool);
-STAR_CLASS(TillingTool);
-STAR_CLASS(PaintingBeamTool);
+class MiningTool;
+class HarvestingTool;
+class WireTool;
+class Flashlight;
+class BeamMiningTool;
+class TillingTool;
+class PaintingBeamTool;
 
 class MiningTool : public Item, public SwingableItem, public DurabilityItem {
 public:

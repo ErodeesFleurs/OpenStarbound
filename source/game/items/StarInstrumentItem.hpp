@@ -10,9 +10,9 @@
 
 namespace Star {
 
-STAR_CLASS(World);
-STAR_CLASS(ToolUserEntity);
-STAR_CLASS(InstrumentItem);
+class World;
+class ToolUserEntity;
+class InstrumentItem;
 
 class InstrumentItem : public Item,
                        public StatusEffectItem,
