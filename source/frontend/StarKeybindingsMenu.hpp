@@ -4,9 +4,12 @@
 
 namespace Star {
 
-STAR_CLASS(TabSetWidget);
-STAR_CLASS(ListWidget);
-STAR_CLASS(KeybindingsMenu);
+class TabSetWidget;
+using TabSetWidgetPtr = SharedPtr<TabSetWidget>;
+class ListWidget;
+using ListWidgetPtr = SharedPtr<ListWidget>;
+class KeybindingsMenu;
+using KeybindingsMenuPtr = SharedPtr<KeybindingsMenu>;
 
 class KeybindingsMenu : public Pane {
 public:

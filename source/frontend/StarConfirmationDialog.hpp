@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(ConfirmationDialog);
+class ConfirmationDialog;
+using ConfirmationDialogPtr = SharedPtr<ConfirmationDialog>;
 
 class ConfirmationDialog : public Pane {
 public:

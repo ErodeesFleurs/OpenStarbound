@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(ContainerInteractor);
+class ContainerInteractor;
+using ContainerInteractorPtr = SharedPtr<ContainerInteractor>;
 
 using ContainerResult = List<ItemPtr>;
 

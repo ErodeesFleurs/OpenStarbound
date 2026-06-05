@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(PopupInterface);
+class PopupInterface;
+using PopupInterfacePtr = SharedPtr<PopupInterface>;
 class PopupInterface : public Pane {
 public:
   PopupInterface();

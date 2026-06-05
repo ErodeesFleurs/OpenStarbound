@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(VoiceSettingsMenu);
+class VoiceSettingsMenu;
+using VoiceSettingsMenuPtr = SharedPtr<VoiceSettingsMenu>;
 
 class VoiceSettingsMenu : public BaseScriptPane {
 public:
