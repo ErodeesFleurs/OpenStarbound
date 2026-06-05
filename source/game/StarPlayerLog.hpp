@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(PlayerLog);
+class PlayerLog;
+using PlayerLogPtr = SharedPtr<PlayerLog>;
 
 class PlayerLog {
 public:

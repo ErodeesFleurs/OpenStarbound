@@ -11,8 +11,8 @@
 
 namespace Star {
 
-STAR_CLASS(CelestialLog);
-STAR_CLASS(ClientContext);
+class ClientContext;
+using ClientContextPtr = SharedPtr<ClientContext>;
 
 class ClientContext {
 public:

@@ -9,7 +9,9 @@
 
 namespace Star {
 
-STAR_CLASS(ImageMetadataDatabase);
+class ImageMetadataDatabase;
+using ImageMetadataDatabasePtr = SharedPtr<ImageMetadataDatabase>;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 
 // Caches image size, image spaces, and nonEmptyRegion completely until a
 // reload, does not expire cached values in a TTL based way like Assets,
