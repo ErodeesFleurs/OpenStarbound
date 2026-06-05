@@ -4,8 +4,10 @@
 
 namespace Star {
 
-STAR_CLASS(MainInterface);
-STAR_CLASS(UniverseClient);
+class MainInterface;
+using MainInterfacePtr = SharedPtr<MainInterface>;
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
 
 namespace LuaBindings {
   LuaCallbacks makeInterfaceCallbacks(MainInterface* mainInterface);
