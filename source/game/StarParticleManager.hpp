@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(ParticleManager);
+class ParticleManager;
+using ParticleManagerPtr = SharedPtr<ParticleManager>;
 
 class ParticleManager {
 public:

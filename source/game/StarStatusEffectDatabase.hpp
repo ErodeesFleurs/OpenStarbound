@@ -8,7 +8,9 @@ namespace Star {
 struct StatusEffectDatabaseExceptionTag { static constexpr char const* typeName = "StatusEffectDatabaseException"; };
 using StatusEffectDatabaseException = TypedException<StarException, StatusEffectDatabaseExceptionTag>;
 
-STAR_CLASS(StatusEffectDatabase);
+class StatusEffectDatabase;
+using StatusEffectDatabasePtr = SharedPtr<StatusEffectDatabase>;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 // Named, unique, unstackable scripted effects.
 struct UniqueStatusEffectConfig {

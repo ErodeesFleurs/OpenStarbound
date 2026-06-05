@@ -10,9 +10,12 @@
 
 namespace Star {
 
-STAR_CLASS(CelestialDatabase);
-STAR_CLASS(CelestialMasterDatabase);
-STAR_CLASS(CelestialSlaveDatabase);
+class CelestialDatabase;
+using CelestialDatabasePtr = SharedPtr<CelestialDatabase>;
+class CelestialMasterDatabase;
+using CelestialMasterDatabasePtr = SharedPtr<CelestialMasterDatabase>;
+class CelestialSlaveDatabase;
+using CelestialSlaveDatabasePtr = SharedPtr<CelestialSlaveDatabase>;
 
 class CelestialDatabase {
 public:
