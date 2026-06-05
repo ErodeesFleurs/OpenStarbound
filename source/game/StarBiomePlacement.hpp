@@ -9,8 +9,6 @@
 
 namespace Star {
 
-STAR_CLASS(BiomeItemDistribution);
-
 struct BiomeExceptionTag { static constexpr char const* typeName = "BiomeException"; };
 using BiomeException = TypedException<StarException, BiomeExceptionTag>;
 

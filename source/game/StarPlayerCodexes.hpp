@@ -5,9 +5,8 @@
 
 namespace Star {
 
-STAR_CLASS(Codex);
-STAR_STRUCT(CodexEntry);
-STAR_CLASS(UniverseClient);
+class Codex;
+using CodexConstPtr = SharedPtr<Codex const>;
 
 class PlayerCodexes {
 public:
@@ -34,5 +33,5 @@ private:
   StringMap<CodexEntry> m_codexes;
 };
 
-using PlayerCodexesPtr = shared_ptr<PlayerCodexes>;
+using PlayerCodexesPtr = SharedPtr<PlayerCodexes>;
 }

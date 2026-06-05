@@ -8,7 +8,9 @@ namespace Star {
 struct NameGeneratorExceptionTag { static constexpr char const* typeName = "NameGeneratorException"; };
 using NameGeneratorException = TypedException<StarException, NameGeneratorExceptionTag>;
 
-STAR_CLASS(PatternedNameGenerator);
+class PatternedNameGenerator;
+using PatternedNameGeneratorPtr = SharedPtr<PatternedNameGenerator>;
+using PatternedNameGeneratorConstPtr = SharedPtr<PatternedNameGenerator const>;
 
 struct MarkovSource {
   size_t prefixSize;
