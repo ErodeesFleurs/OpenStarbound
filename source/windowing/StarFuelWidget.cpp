@@ -84,7 +84,7 @@ void FuelWidget::renderImpl() {
     guiContext.setFontColor(Color::White.toRgba());
   }
 
-  guiContext.renderInterfaceText(strf("Fuel {}/{}", std::min(m_fuelLevel + m_potential, m_maxLevel), (int)m_maxLevel),
+  guiContext.renderInterfaceText(strf("Fuel {}/{}", std::min(m_fuelLevel + m_potential, m_maxLevel), static_cast<int>(m_maxLevel)),
       {textPosition, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor});
 }
 

@@ -115,7 +115,7 @@ void LargeCharPlateWidget::setPlayer(PlayerPtr player) {
   auto modeTypeTextAndColor = Root::singleton().assets()->json("/interface.config:modeTypeTextAndColor").toArray();
   int modeType;
   if (m_player) {
-    modeType = 1 + (int)m_player->modeType();
+    modeType = 1 + static_cast<int>(m_player->modeType());
   } else {
     modeType = 0;
   }

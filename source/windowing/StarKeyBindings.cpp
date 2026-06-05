@@ -105,7 +105,7 @@ KeyChord inputDescriptorFromJson(Json const& json) {
     if (value.isType(Json::Type::String)) {
       key = KeyNames.getLeft(value.toString());
     } else if (value.canConvert(Json::Type::Int)) {
-      key = (Key)value.toUInt();
+      key = static_cast<Key>(value.toUInt());
     } else {
       throw StarException::format("Improper key value '{}'", value);
     }

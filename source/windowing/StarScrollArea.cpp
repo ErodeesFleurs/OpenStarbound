@@ -201,8 +201,8 @@ void ScrollBar::drawChildren() {
     if (ratio < 1)
       ratio = 1;
 
-    int innerSize = (int)max(0.0f, ceil(trackSize() / ratio));
-    int offsetBegin = (int)ceil((trackSize() - innerSize) * scrollRatio());
+    int innerSize = static_cast<int>(max(0.0f, ceil(trackSize() / ratio)));
+    int offsetBegin = static_cast<int>(ceil((trackSize() - innerSize) * scrollRatio()));
     innerSize += ScrollThumbOverhead;
 
     if (m_direction == GuiDirection::Vertical) {
@@ -234,13 +234,13 @@ Vec2I ScrollBar::offsetFromThumbPosition(Vec2I const& thumbPosition) const {
   if (m_direction == GuiDirection::Vertical) {
     int scrollSpan = trackSize() - m_thumb->size()[1];
     int scrollOffset = clamp((thumbPosition[1] - ScrollButtonStackSize), 0, scrollSpan);
-    float scrollRatio = (float)scrollOffset / (float)scrollSpan;
+    float scrollRatio = static_cast<float>(scrollOffset) / static_cast<float>(scrollSpan);
     return {scrollArea->scrollOffset()[0], ceil(scrollArea->maxScrollPosition()[1] * scrollRatio)};
   } else {
     int scrollSpan = trackSize() - m_thumb->size()[0];
     int scrollOffset = clamp((thumbPosition[0] - ScrollButtonStackSize), 0, scrollSpan);
-    float scrollRatio = (float)scrollOffset / (float)scrollSpan;
-    return {(int)ceil(scrollArea->maxScrollPosition()[0] * scrollRatio), scrollArea->scrollOffset()[1]};
+    float scrollRatio = static_cast<float>(scrollOffset) / static_cast<float>(scrollSpan);
+    return {static_cast<int>(ceil(scrollArea->maxScrollPosition()[0] * scrollRatio)), scrollArea->scrollOffset()[1]};
   }
 }
 
@@ -442,7 +442,7 @@ int ScrollArea::advanceFactorHelper() {
   m_advanceLimiter = Time::monotonicMilliseconds();
   if ((t > ScrollAdvanceTimer) || (t < 0))
     t = ScrollAdvanceTimer;
-  return (int)std::ceil((m_buttonAdvance * t) / (float)ScrollAdvanceTimer);
+  return static_cast<int>(std::ceil((m_buttonAdvance * t) / static_cast<float>(ScrollAdvanceTimer)));
 }
 
 void ScrollArea::setUpdatesChildren(bool slop) {

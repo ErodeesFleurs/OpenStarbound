@@ -202,7 +202,7 @@ void CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& 
 
   for (int x = 0; x < textureCount[0]; ++x) {
     for (int y = 0; y < textureCount[1]; ++y) {
-      Vec2F screenPos = screenLowerLeft + texScaledSize.piecewiseMultiply({(float)x, (float)y});
+      Vec2F screenPos = screenLowerLeft + texScaledSize.piecewiseMultiply({static_cast<float>(x), static_cast<float>(y)});
       RectF screenRect = RectF::withSize(screenPos, texScaledSize);
 
       RectF limitedScreenRect;

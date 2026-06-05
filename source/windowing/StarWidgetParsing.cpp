@@ -272,7 +272,7 @@ WidgetConstructResult WidgetParser::spinnerHandler(String const& name, Json cons
   auto imageSize = imgMetadata->imageSize(leftBase);
   auto padding = assets->json("/interface.config:spinner.defaultPadding").toInt();
 
-  float upOffset = config.getFloat("upOffset", (float)imageSize[0] + padding);
+  float upOffset = config.getFloat("upOffset", static_cast<float>(imageSize[0]) + padding);
 
   auto down = make_shared<ButtonWidget>(
       callbackDown, config.getString("leftBase", leftBase), config.getString("leftHover", leftHover));
