@@ -580,7 +580,7 @@ void Vehicle::setPosition(Vec2F const& position) {
 
 EntityRenderLayer Vehicle::renderLayer(VehicleLayer vehicleLayer) const {
   // Z-offset based on entity id, so vehicles don't overlap strangely.
-  return m_overrideRenderLayer ? (*m_overrideRenderLayer + (unsigned)vehicleLayer) : (m_baseRenderLayer + ((EntityRenderLayer)(entityId() * 4 + (unsigned)vehicleLayer) & RenderLayerLowerMask));
+  return m_overrideRenderLayer ? (*m_overrideRenderLayer + static_cast<unsigned>(vehicleLayer)) : (m_baseRenderLayer + (static_cast<EntityRenderLayer>(entityId() * 4 + static_cast<unsigned>(vehicleLayer)) & RenderLayerLowerMask));
 }
 
 LuaCallbacks Vehicle::makeVehicleCallbacks() {

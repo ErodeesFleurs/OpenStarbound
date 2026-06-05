@@ -11,7 +11,7 @@ using EntityRenderLayer = uint32_t;
 
 unsigned const RenderLayerUpperBits = 5;
 unsigned const RenderLayerLowerBits = 32 - RenderLayerUpperBits;
-EntityRenderLayer const RenderLayerLowerMask = (EntityRenderLayer)-1 >> RenderLayerUpperBits;
+EntityRenderLayer const RenderLayerLowerMask = static_cast<EntityRenderLayer>(-1) >> RenderLayerUpperBits;
 
 EntityRenderLayer const RenderLayerBackgroundOverlay = 1 << RenderLayerLowerBits;
 EntityRenderLayer const RenderLayerBackgroundTile = 2 << RenderLayerLowerBits;
