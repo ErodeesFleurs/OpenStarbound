@@ -8,7 +8,9 @@ namespace Star {
 struct CodexDatabaseExceptionTag { static constexpr char const* typeName = "CodexDatabaseException"; };
 using CodexDatabaseException = TypedException<StarException, CodexDatabaseExceptionTag>;
 
-STAR_CLASS(CodexDatabase);
+class CodexDatabase;
+using CodexDatabasePtr = SharedPtr<CodexDatabase>;
+using CodexDatabaseConstPtr = SharedPtr<CodexDatabase const>;
 
 class CodexDatabase {
 public:
