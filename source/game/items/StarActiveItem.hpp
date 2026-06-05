@@ -12,8 +12,9 @@
 
 namespace Star {
 
-STAR_CLASS(AudioInstance);
-STAR_CLASS(ActiveItem);
+class AudioInstance;
+using AudioInstancePtr = SharedPtr<AudioInstance>;
+class ActiveItem;
 
 class ActiveItem :
   public Item,

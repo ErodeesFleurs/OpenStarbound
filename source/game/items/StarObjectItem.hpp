@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(ObjectItem);
+class ObjectItem;
+using ObjectItemPtr = SharedPtr<ObjectItem>;
 
 class ObjectItem : public Item, public FireableItem, public BeamItem {
 public:

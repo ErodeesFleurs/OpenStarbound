@@ -7,7 +7,7 @@
 
 namespace Star {
 
-STAR_CLASS(UnlockItem);
+class UnlockItem;
 
 class UnlockItem : public Item, public SwingableItem, public PreviewableItem {
 public:

@@ -6,7 +6,7 @@
 
 namespace Star {
 
-STAR_CLASS(BlueprintItem);
+class BlueprintItem;
 
 class BlueprintItem : public Item, public SwingableItem {
 public:

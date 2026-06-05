@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(AugmentItem);
+class AugmentItem;
 
 class AugmentItem : public Item {
 public:

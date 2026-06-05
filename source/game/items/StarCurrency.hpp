@@ -4,7 +4,7 @@
 
 namespace Star {
 
-STAR_CLASS(CurrencyItem);
+class CurrencyItem;
 
 class CurrencyItem : public Item {
 public:
