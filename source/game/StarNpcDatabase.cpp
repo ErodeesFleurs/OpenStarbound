@@ -74,7 +74,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
     identity.name = config.getString("npcname");
   else if (config.contains("nameGen")) {
     identity.name = Root::singleton().nameGenerator()->generateName(
-        jsonToStringList(config.get("nameGen"))[(int)identity.gender], randSource);
+        jsonToStringList(config.get("nameGen"))[static_cast<int>(identity.gender)], randSource);
   }
   // we're going to kinda end up doing this twice just to make sure it ends up generating with the right personality array
   // its dumb that personality is the only identity value that isn't in the customization screen but comes from the humanoid config
