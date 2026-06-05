@@ -189,7 +189,7 @@ void Cinematic::render() {
       m_completable = true;
     if (!values.alpha)
       continue;
-    auto frame = toString(((int)values.frame) % panel->animationFrames);
+    auto frame = toString(static_cast<int>(values.frame) % panel->animationFrames);
     auto alphaColor = Color::rgbaf(1.0f, 1.0f, 1.0f, values.alpha);
     for (auto const& d : panel->drawables) {
       Drawable drawable = Drawable(d.set("image", d.getString("image").replaceTags(StringMap<String>{{"species", playerSpecies}, {"frame", frame}})));
@@ -337,7 +337,7 @@ void Cinematic::updateCamera(float timecode) {
 }
 
 float Cinematic::currentTimecode() const {
-  return std::min((float)m_timer.time() - m_backgroundFadeTime, m_completionTime - 2 * m_backgroundFadeTime);
+  return std::min(static_cast<float>(m_timer.time()) - m_backgroundFadeTime, m_completionTime - 2 * m_backgroundFadeTime);
 }
 
 Cinematic::PanelValues Cinematic::determinePanelValues(PanelPtr panel, float timecode) {

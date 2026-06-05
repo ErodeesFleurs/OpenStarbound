@@ -150,7 +150,7 @@ void QuestTrackerPane::update(float dt) {
       else
         m_compassFrame->setImage(m_compassFrameImage);
 
-      float compassDiff = pfmod(*compassDirection - m_compassDirection, (float)Constants::pi * 2);
+      float compassDiff = pfmod(*compassDirection - m_compassDirection, static_cast<float>(Constants::pi) * 2);
       if (abs(compassDiff) < m_compassAcceleration && abs(m_compassSpeed) < m_compassAcceleration) {
         m_compassSpeed = 0;
         m_compassDirection = *compassDirection;

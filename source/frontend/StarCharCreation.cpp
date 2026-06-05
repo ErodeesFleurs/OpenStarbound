@@ -159,7 +159,7 @@ void CharCreationPane::createPlayer() {
   m_previewPlayer = Root::singleton().playerFactory()->create();
   try {
     auto portrait = fetchChild<PortraitWidget>("charPreview");
-    if ((bool)portrait) {
+    if (static_cast<bool>(portrait)) {
       portrait->setEntity(m_previewPlayer);
     } else {
       throw CharCreationException("The charPreview portrait has the wrong type.");
@@ -317,7 +317,7 @@ void CharCreationPane::changed() {
   );
 
 
-  m_previewPlayer->setModeType((PlayerMode)m_modeChoice);
+  m_previewPlayer->setModeType(static_cast<PlayerMode>(m_modeChoice));
 
   m_previewPlayer->setHumanoidParameters(results.humanoidParameters);
   m_previewPlayer->setIdentity(results.identity);

@@ -297,7 +297,7 @@ void MerchantPane::updateBuyTotal() {
   else
     m_buyButton->disable();
 
-  if (m_buyTotal > (int)m_player->inventory()->currency("money")) {
+  if (m_buyTotal > static_cast<int>(m_player->inventory()->currency("money"))) {
     m_buyTotalLabel->setColor(Color::Red);
     m_buyButton->disable();
   } else {
@@ -363,7 +363,7 @@ int MerchantPane::maxBuyCount() {
     auto unitPrice = selected->data().toUInt();
     if (unitPrice == 0)
       return m_maxBuyCount;
-    return min(m_maxBuyCount, (int)floor(m_player->currency("money") / unitPrice));
+    return min(m_maxBuyCount, static_cast<int>(floor(m_player->currency("money") / unitPrice)));
   } else {
     return 0;
   }

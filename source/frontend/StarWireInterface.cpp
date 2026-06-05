@@ -97,9 +97,9 @@ void WirePane::renderImpl() {
   auto region = RectF(m_worldClient->clientWindow());
 
   auto const& camera = m_worldPainter->camera();
-  auto badWire = Color::rgbf(0.6f + (float)sin(Time::monotonicTime() * Constants::pi * 2.0) * 0.4f, 0.0f, 0.0f);
+  auto badWire = Color::rgbf(0.6f + static_cast<float>(sin(Time::monotonicTime() * Constants::pi * 2.0)) * 0.4f, 0.0f, 0.0f);
   auto white = Color::White.toRgba();
-  float phase = 0.5f + 0.5f * std::sin((double)Time::monotonicMilliseconds() / 100.0);
+  float phase = 0.5f + 0.5f * std::sin(static_cast<double>(Time::monotonicMilliseconds()) / 100.0);
   auto drawLineColor = Color::Red.mix(Color::White, phase);
 
   for (auto entity : m_worldClient->query<WireEntity>(region)) {
@@ -204,7 +204,7 @@ bool WirePane::sendEvent(InputEvent const& event) {
 WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F pos, FireMode mode) {
   pos = geometry.xwrap(pos);
 
-  if (m_worldClient->isTileProtected((Vec2I)pos)) {
+  if (m_worldClient->isTileProtected(static_cast<Vec2I>(pos))) {
     m_connecting = false;
     return Protected;
   }
