@@ -11,8 +11,10 @@
 
 namespace Star {
 
-STAR_CLASS(Item);
-STAR_CLASS(ItemDrop);
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class ItemDrop;
+using ItemDropPtr = SharedPtr<ItemDrop>;
 
 class ItemDrop : public virtual Entity, public virtual ScriptedEntity {
 public:

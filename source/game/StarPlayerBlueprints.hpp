@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(PlayerBlueprints);
+class PlayerBlueprints;
+using PlayerBlueprintsPtr = SharedPtr<PlayerBlueprints>;
 
 class PlayerBlueprints {
 public:

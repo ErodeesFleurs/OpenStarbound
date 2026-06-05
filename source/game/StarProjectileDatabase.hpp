@@ -7,8 +7,10 @@
 
 namespace Star {
 
-STAR_STRUCT(ProjectileConfig);
-STAR_CLASS(ProjectileDatabase);
+struct ProjectileConfig;
+class ProjectileDatabase;
+using ProjectileDatabasePtr = SharedPtr<ProjectileDatabase>;
+using ProjectileDatabaseConstPtr = SharedPtr<ProjectileDatabase const>;
 
 struct ProjectileDatabaseExceptionTag { static constexpr char const* typeName = "ProjectileDatabaseException"; };
 using ProjectileDatabaseException = TypedException<StarException, ProjectileDatabaseExceptionTag>;
