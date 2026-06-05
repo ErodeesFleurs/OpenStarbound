@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_CLASS(FormattedJson);
+class FormattedJson;
+using FormattedJsonPtr = SharedPtr<FormattedJson>;
 
 struct ObjectElement;
 struct ObjectKeyElement;

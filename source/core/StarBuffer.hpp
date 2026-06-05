@@ -5,8 +5,9 @@
 
 namespace Star {
 
-STAR_CLASS(Buffer);
-STAR_CLASS(ExternalBuffer);
+class Buffer;
+using BufferPtr = SharedPtr<Buffer>;
+class ExternalBuffer;
 
 // Wraps a ByteArray to an IODevice
 class Buffer : public IODevice {

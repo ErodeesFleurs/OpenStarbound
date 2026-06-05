@@ -6,7 +6,9 @@
 
 namespace Star {
 
-STAR_CLASS(ByteArray);
+class ByteArray;
+using ByteArrayPtr = SharedPtr<ByteArray>;
+using ByteArrayConstPtr = SharedPtr<ByteArray const>;
 
 // Class to hold an array of bytes.  Contains an internal buffer that may be
 // larger than what is reported by size(), to avoid repeated allocations when a
