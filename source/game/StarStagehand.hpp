@@ -10,7 +10,7 @@
 
 namespace Star {
 
-STAR_CLASS(Stagehand);
+class Stagehand;
 
 class Stagehand : public virtual ScriptedEntity {
 public:

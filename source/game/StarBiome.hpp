@@ -5,10 +5,14 @@
 
 namespace Star {
 
-STAR_STRUCT(AmbientNoisesDescription);
-STAR_CLASS(Parallax);
-STAR_STRUCT(BiomePlaceables);
-STAR_STRUCT(Biome);
+struct AmbientNoisesDescription;
+using AmbientNoisesDescriptionPtr = SharedPtr<AmbientNoisesDescription>;
+class Parallax;
+using ParallaxPtr = SharedPtr<Parallax>;
+struct BiomePlaceables;
+struct Biome;
+using BiomePtr = SharedPtr<Biome>;
+using BiomeConstPtr = SharedPtr<Biome const>;
 
 struct BiomePlaceables {
   BiomePlaceables();
