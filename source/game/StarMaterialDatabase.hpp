@@ -8,8 +8,11 @@
 
 namespace Star {
 
-STAR_CLASS(ParticleConfig);
-STAR_CLASS(MaterialDatabase);
+class ParticleConfig;
+using ParticleConfigPtr = SharedPtr<ParticleConfig>;
+class MaterialDatabase;
+using MaterialDatabasePtr = SharedPtr<MaterialDatabase>;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
 
 struct MaterialExceptionTag { static constexpr char const* typeName = "MaterialException"; };
 using MaterialException = TypedException<StarException, MaterialExceptionTag>;
