@@ -11,12 +11,12 @@
 namespace Star {
 
 class ApplicationController;
-using ApplicationControllerPtr = shared_ptr<ApplicationController>;
-using ApplicationControllerConstPtr = shared_ptr<ApplicationController const>;
-using ApplicationControllerWeakPtr = weak_ptr<ApplicationController>;
-using ApplicationControllerConstWeakPtr = weak_ptr<ApplicationController const>;
-using ApplicationControllerUPtr = unique_ptr<ApplicationController>;
-using ApplicationControllerConstUPtr = unique_ptr<ApplicationController const>;
+using ApplicationControllerPtr = SharedPtr<ApplicationController>;
+using ApplicationControllerConstPtr = SharedPtr<ApplicationController const>;
+using ApplicationControllerWeakPtr = WeakPtr<ApplicationController>;
+using ApplicationControllerConstWeakPtr = WeakPtr<ApplicationController const>;
+using ApplicationControllerUPtr = UniquePtr<ApplicationController>;
+using ApplicationControllerConstUPtr = UniquePtr<ApplicationController const>;
 
 // Audio format is always 16 bit signed integer samples
 struct AudioFormat {

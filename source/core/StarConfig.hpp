@@ -53,6 +53,15 @@ using std::atomic_flag;
 using std::atomic_load;
 using std::atomic_store;
 
+template <typename T>
+using SharedPtr = std::shared_ptr<T>;
+
+template <typename T>
+using WeakPtr = std::weak_ptr<T>;
+
+template <typename T>
+using UniquePtr = std::unique_ptr<T>;
+
 #ifndef NDEBUG
 #define STAR_DEBUG 1
 constexpr bool DebugEnabled = true;
@@ -71,21 +80,21 @@ using StreamOffset = int64_t;
 
 #define STAR_CLASS(ClassName)                                     \
   class ClassName;                                                \
-  using ClassName##Ptr = std::shared_ptr<ClassName>;              \
-  using ClassName##ConstPtr = std::shared_ptr<const ClassName>;   \
-  using ClassName##WeakPtr = std::weak_ptr<ClassName>;            \
-  using ClassName##ConstWeakPtr = std::weak_ptr<const ClassName>; \
-  using ClassName##UPtr = std::unique_ptr<ClassName>;             \
-  using ClassName##ConstUPtr = std::unique_ptr<const ClassName>
+  using ClassName##Ptr = Star::SharedPtr<ClassName>;              \
+  using ClassName##ConstPtr = Star::SharedPtr<ClassName const>;   \
+  using ClassName##WeakPtr = Star::WeakPtr<ClassName>;            \
+  using ClassName##ConstWeakPtr = Star::WeakPtr<ClassName const>; \
+  using ClassName##UPtr = Star::UniquePtr<ClassName>;             \
+  using ClassName##ConstUPtr = Star::UniquePtr<ClassName const>
 
 #define STAR_STRUCT(StructName)                                     \
   struct StructName;                                                \
-  using StructName##Ptr = std::shared_ptr<StructName>;              \
-  using StructName##ConstPtr = std::shared_ptr<const StructName>;   \
-  using StructName##WeakPtr = std::weak_ptr<StructName>;            \
-  using StructName##ConstWeakPtr = std::weak_ptr<const StructName>; \
-  using StructName##UPtr = std::unique_ptr<StructName>;             \
-  using StructName##ConstUPtr = std::unique_ptr<const StructName>
+  using StructName##Ptr = Star::SharedPtr<StructName>;              \
+  using StructName##ConstPtr = Star::SharedPtr<StructName const>;   \
+  using StructName##WeakPtr = Star::WeakPtr<StructName>;            \
+  using StructName##ConstWeakPtr = Star::WeakPtr<StructName const>; \
+  using StructName##UPtr = Star::UniquePtr<StructName>;             \
+  using StructName##ConstUPtr = Star::UniquePtr<StructName const>
 
 #define STAR_QUOTE(name) #name
 #define STAR_STR(macro) STAR_QUOTE(macro)

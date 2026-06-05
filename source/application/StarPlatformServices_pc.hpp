@@ -18,19 +18,19 @@
 namespace Star {
 
 class PcPlatformServices;
-using PcPlatformServicesPtr = shared_ptr<PcPlatformServices>;
-using PcPlatformServicesConstPtr = shared_ptr<PcPlatformServices const>;
-using PcPlatformServicesWeakPtr = weak_ptr<PcPlatformServices>;
-using PcPlatformServicesConstWeakPtr = weak_ptr<PcPlatformServices const>;
-using PcPlatformServicesUPtr = unique_ptr<PcPlatformServices>;
-using PcPlatformServicesConstUPtr = unique_ptr<PcPlatformServices const>;
+using PcPlatformServicesPtr = SharedPtr<PcPlatformServices>;
+using PcPlatformServicesConstPtr = SharedPtr<PcPlatformServices const>;
+using PcPlatformServicesWeakPtr = WeakPtr<PcPlatformServices>;
+using PcPlatformServicesConstWeakPtr = WeakPtr<PcPlatformServices const>;
+using PcPlatformServicesUPtr = UniquePtr<PcPlatformServices>;
+using PcPlatformServicesConstUPtr = UniquePtr<PcPlatformServices const>;
 struct PcPlatformServicesState;
-using PcPlatformServicesStatePtr = shared_ptr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstPtr = shared_ptr<PcPlatformServicesState const>;
-using PcPlatformServicesStateWeakPtr = weak_ptr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstWeakPtr = weak_ptr<PcPlatformServicesState const>;
-using PcPlatformServicesStateUPtr = unique_ptr<PcPlatformServicesState>;
-using PcPlatformServicesStateConstUPtr = unique_ptr<PcPlatformServicesState const>;
+using PcPlatformServicesStatePtr = SharedPtr<PcPlatformServicesState>;
+using PcPlatformServicesStateConstPtr = SharedPtr<PcPlatformServicesState const>;
+using PcPlatformServicesStateWeakPtr = WeakPtr<PcPlatformServicesState>;
+using PcPlatformServicesStateConstWeakPtr = WeakPtr<PcPlatformServicesState const>;
+using PcPlatformServicesStateUPtr = UniquePtr<PcPlatformServicesState>;
+using PcPlatformServicesStateConstUPtr = UniquePtr<PcPlatformServicesState const>;
 
 struct PcPlatformServicesState {
   PcPlatformServicesState();

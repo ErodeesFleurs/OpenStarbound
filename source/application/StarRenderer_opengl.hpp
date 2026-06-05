@@ -8,12 +8,12 @@
 namespace Star {
 
 class OpenGlRenderer;
-using OpenGlRendererPtr = shared_ptr<OpenGlRenderer>;
-using OpenGlRendererConstPtr = shared_ptr<OpenGlRenderer const>;
-using OpenGlRendererWeakPtr = weak_ptr<OpenGlRenderer>;
-using OpenGlRendererConstWeakPtr = weak_ptr<OpenGlRenderer const>;
-using OpenGlRendererUPtr = unique_ptr<OpenGlRenderer>;
-using OpenGlRendererConstUPtr = unique_ptr<OpenGlRenderer const>;
+using OpenGlRendererPtr = SharedPtr<OpenGlRenderer>;
+using OpenGlRendererConstPtr = SharedPtr<OpenGlRenderer const>;
+using OpenGlRendererWeakPtr = WeakPtr<OpenGlRenderer>;
+using OpenGlRendererConstWeakPtr = WeakPtr<OpenGlRenderer const>;
+using OpenGlRendererUPtr = UniquePtr<OpenGlRenderer>;
+using OpenGlRendererConstUPtr = UniquePtr<OpenGlRenderer const>;
 
 constexpr size_t FrameBufferCount = 1;
 
@@ -101,7 +101,7 @@ private:
     void decrementBufferUseCount();
 
     unsigned bufferUseCount = 0;
-    shared_ptr<GlTextureGroup> parentGroup;
+    SharedPtr<GlTextureGroup> parentGroup;
     GlTextureAtlasSet::TextureHandle parentAtlasTexture = nullptr;
   };
 
@@ -217,7 +217,7 @@ private:
   
   static RefPtr<GlLoneTexture> createGlTexture(ImageView const& image, TextureAddressing addressing, TextureFiltering filtering);
 
-  shared_ptr<GlRenderBuffer> createGlRenderBuffer();
+  SharedPtr<GlRenderBuffer> createGlRenderBuffer();
 
   void flushImmediatePrimitives(Mat3F const& transformation = Mat3F::identity());
 
@@ -257,10 +257,10 @@ private:
   bool m_limitTextureGroupSize;
   bool m_useMultiTexturing;
   unsigned m_multiSampling; // if non-zero, is enabled and acts as sample count
-  List<shared_ptr<GlTextureGroup>> m_liveTextureGroups;
+  List<SharedPtr<GlTextureGroup>> m_liveTextureGroups;
 
   List<RenderPrimitive> m_immediatePrimitives;
-  shared_ptr<GlRenderBuffer> m_immediateRenderBuffer;
+  SharedPtr<GlRenderBuffer> m_immediateRenderBuffer;
 };
 
 }

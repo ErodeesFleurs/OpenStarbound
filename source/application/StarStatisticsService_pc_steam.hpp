@@ -5,12 +5,12 @@
 namespace Star {
 
 class SteamStatisticsService;
-using SteamStatisticsServicePtr = shared_ptr<SteamStatisticsService>;
-using SteamStatisticsServiceConstPtr = shared_ptr<SteamStatisticsService const>;
-using SteamStatisticsServiceWeakPtr = weak_ptr<SteamStatisticsService>;
-using SteamStatisticsServiceConstWeakPtr = weak_ptr<SteamStatisticsService const>;
-using SteamStatisticsServiceUPtr = unique_ptr<SteamStatisticsService>;
-using SteamStatisticsServiceConstUPtr = unique_ptr<SteamStatisticsService const>;
+using SteamStatisticsServicePtr = SharedPtr<SteamStatisticsService>;
+using SteamStatisticsServiceConstPtr = SharedPtr<SteamStatisticsService const>;
+using SteamStatisticsServiceWeakPtr = WeakPtr<SteamStatisticsService>;
+using SteamStatisticsServiceConstWeakPtr = WeakPtr<SteamStatisticsService const>;
+using SteamStatisticsServiceUPtr = UniquePtr<SteamStatisticsService>;
+using SteamStatisticsServiceConstUPtr = UniquePtr<SteamStatisticsService const>;
 
 class SteamStatisticsService : public StatisticsService {
 public:
