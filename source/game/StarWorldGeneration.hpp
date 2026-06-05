@@ -10,13 +10,11 @@
 
 namespace Star {
 
-STAR_CLASS(WorldServer);
-STAR_CLASS(FallingBlocksWorld);
-STAR_CLASS(DungeonGeneratorWorld);
-STAR_CLASS(SpawnerWorld);
-STAR_CLASS(WorldGenerator);
-STAR_CLASS(Plant);
-STAR_CLASS(LiquidsDatabase);
+class WorldServer;
+class Plant;
+using PlantPtr = SharedPtr<Plant>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
 
 class LiquidWorld : public CellularLiquidWorld<LiquidId> {
 public:

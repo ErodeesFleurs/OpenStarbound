@@ -9,9 +9,10 @@
 
 namespace Star {
 
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(FallingBlocksFacade);
-STAR_CLASS(FallingBlocksAgent);
+class FallingBlocksFacade;
+using FallingBlocksFacadePtr = SharedPtr<FallingBlocksFacade>;
+class FallingBlocksAgent;
+using FallingBlocksAgentPtr = SharedPtr<FallingBlocksAgent>;
 
 enum class FallingBlockType {
   Immovable,

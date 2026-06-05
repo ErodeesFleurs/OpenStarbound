@@ -6,10 +6,12 @@
 
 namespace Star {
 
-STAR_CLASS(Rebuilder);
-STAR_CLASS(Player);
-STAR_STRUCT(PlayerConfig);
-STAR_CLASS(PlayerFactory);
+class Rebuilder;
+using RebuilderPtr = SharedPtr<Rebuilder>;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+struct PlayerConfig;
+using PlayerConfigPtr = SharedPtr<PlayerConfig>;
 
 struct PlayerExceptionTag { static constexpr char const* typeName = "PlayerException"; };
 using PlayerException = TypedException<StarException, PlayerExceptionTag>;
