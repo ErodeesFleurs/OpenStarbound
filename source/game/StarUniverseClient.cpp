@@ -225,7 +225,7 @@ void UniverseClient::update(float dt) {
 
   if (!m_warping && !m_pendingWarp) {
     if (auto playerWarp = m_mainPlayer->pullPendingWarp())
-      warpPlayer(parseWarpAction(playerWarp->action), (bool)playerWarp->animation, playerWarp->animation.value("default"), playerWarp->deploy);
+      warpPlayer(parseWarpAction(playerWarp->action), static_cast<bool>(playerWarp->animation), playerWarp->animation.value("default"), playerWarp->deploy);
   }
 
   if (m_pendingWarp) {
@@ -360,11 +360,11 @@ void UniverseClient::update(float dt) {
 
   if (auto netStats = m_connection->incomingStats()) {
     LogMap::set("net_total_incoming", strf("{:4.3f} kB/s", netStats->bytesPerSecond / 1000.f));
-    LogMap::set("net_worst_incoming", strf("^cyan;{}^reset; ({:4.3f} kB/s)", PacketTypeNames.getRight(netStats->worstPacketType), (float)netStats->worstPacketSize / 1000.f));
+    LogMap::set("net_worst_incoming", strf("^cyan;{}^reset; ({:4.3f} kB/s)", PacketTypeNames.getRight(netStats->worstPacketType), static_cast<float>(netStats->worstPacketSize) / 1000.f));
   }
   if (auto netStats = m_connection->outgoingStats()) {
     LogMap::set("net_total_outgoing", strf("{:4.3f} kB/s", netStats->bytesPerSecond / 1000.f));
-    LogMap::set("net_worst_outgoing", strf("^cyan;{}^reset; ({:4.3f} kB/s)", PacketTypeNames.getRight(netStats->worstPacketType), (float)netStats->worstPacketSize / 1000.f));
+    LogMap::set("net_worst_outgoing", strf("^cyan;{}^reset; ({:4.3f} kB/s)", PacketTypeNames.getRight(netStats->worstPacketType), static_cast<float>(netStats->worstPacketSize) / 1000.f));
   }
 }
 

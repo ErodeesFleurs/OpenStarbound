@@ -311,7 +311,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
           }
 
         } else {
-          branchYOffset += (attachmentSettings.get("h").toDouble() / TilePixels) / (float)(1 + rnd.randInt(4));
+          branchYOffset += (attachmentSettings.get("h").toDouble() / TilePixels) / static_cast<float>(1 + rnd.randInt(4));
         }
       }
       segment++;
