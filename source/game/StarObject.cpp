@@ -237,7 +237,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptedAnimator.init(world);
   }
 
-  m_xTilePosition.set(world->geometry().xwrap((int)m_xTilePosition.get()));
+  m_xTilePosition.set(world->geometry().xwrap(static_cast<int>(m_xTilePosition.get())));
 
   // Compute all the relevant animation information after the final orientation
   // has been selected and after the script is initialized
@@ -718,7 +718,7 @@ void Object::readStoredData(Json const& diskStore) {
       auto& in = m_inputNodes[i];
       List<WireConnection> connections;
       for (auto const& conn : inputNodes[i].getArray("connections"))
-        connections.append(WireConnection{jsonToVec2I(conn.get(0)), (size_t)conn.get(1).toUInt()});
+        connections.append(WireConnection{jsonToVec2I(conn.get(0)), static_cast<size_t>(conn.get(1).toUInt())});
       in.connections.set(std::move(connections));
       in.state.set(inputNodes[i].getBool("state"));
     }
@@ -730,7 +730,7 @@ void Object::readStoredData(Json const& diskStore) {
       auto& in = m_outputNodes[i];
       List<WireConnection> connections;
       for (auto const& conn : outputNodes[i].getArray("connections"))
-        connections.append(WireConnection{jsonToVec2I(conn.get(0)), (size_t)conn.get(1).toUInt()});
+        connections.append(WireConnection{jsonToVec2I(conn.get(0)), static_cast<size_t>(conn.get(1).toUInt())});
       in.connections.set(std::move(connections));
       in.state.set(outputNodes[i].getBool("state"));
     }

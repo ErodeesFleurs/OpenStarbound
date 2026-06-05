@@ -219,7 +219,7 @@ void WorldServer::removeCentralStructure() {
 
 bool WorldServer::spawnTargetValid(SpawnTarget const& spawnTarget) const {
   if (spawnTarget.is<SpawnTargetUniqueEntity>())
-    return (bool)m_entityMap->get<WarpTargetEntity>(m_worldStorage->loadUniqueEntity(spawnTarget.get<SpawnTargetUniqueEntity>()));
+    return static_cast<bool>(m_entityMap->get<WarpTargetEntity>(m_worldStorage->loadUniqueEntity(spawnTarget.get<SpawnTargetUniqueEntity>())));
   return true;
 }
 
@@ -1179,7 +1179,7 @@ bool WorldServer::placeDungeon(String const& dungeonName, Vec2I const& position,
 }
 
 void WorldServer::addBiomeRegion(Vec2I const& position, String const& biomeName, String const& subBlockSelector, int width) {
-  width = std::min(width, (int)m_worldTemplate->size()[0]);
+  width = std::min(width, static_cast<int>(m_worldTemplate->size()[0]));
 
   auto regions = m_worldTemplate->previewAddBiomeRegion(position, width);
 
@@ -1197,7 +1197,7 @@ void WorldServer::addBiomeRegion(Vec2I const& position, String const& biomeName,
 }
 
 void WorldServer::expandBiomeRegion(Vec2I const& position, int newWidth) {
-  newWidth = std::min(newWidth, (int)m_worldTemplate->size()[0]);
+  newWidth = std::min(newWidth, static_cast<int>(m_worldTemplate->size()[0]));
 
   auto regions = m_worldTemplate->previewExpandBiomeRegion(position, newWidth);
 

@@ -157,7 +157,7 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
       packetBuffer.setStreamCompatibilityVersion(netRules());
       packet->write(packetBuffer, netRules());
       outBuffer.write(packetType);
-      outBuffer.writeVlqI((int)packetBuffer.size());
+      outBuffer.writeVlqI(static_cast<int>(packetBuffer.size()));
       outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
       m_outgoingStats.mix(packetType, packetBuffer.size(), false);
     }
@@ -189,11 +189,11 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
       outBuffer.write(currentType);
 
       if (!compressedPackets.empty() && (mustCompress || compressedPackets.size() < packetBuffer.size())) {
-        outBuffer.writeVlqI(-(int)(compressedPackets.size()));
+        outBuffer.writeVlqI(-static_cast<int>(compressedPackets.size()));
         outBuffer.writeData(compressedPackets.ptr(), compressedPackets.size());
         m_outgoingStats.mix(currentType, compressedPackets.size());
       } else {
-        outBuffer.writeVlqI((int)(packetBuffer.size()));
+        outBuffer.writeVlqI(static_cast<int>(packetBuffer.size()));
         outBuffer.writeData(packetBuffer.ptr(), packetBuffer.size());
         m_outgoingStats.mix(currentType, packetBuffer.size());
       }
