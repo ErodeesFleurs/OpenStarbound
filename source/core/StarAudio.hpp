@@ -14,9 +14,11 @@ float perceptualToAmplitude(float perceptual, float normalizedMax = 1.f,
 float amplitudeToPerceptual(float amp, float normalizedMax = 1.f,
   float range = DefaultPerceptualRangeDb, float boostRange = DefaultPerceptualBoostRangeDb);
 
-STAR_CLASS(CompressedAudioImpl);
-STAR_CLASS(UncompressedAudioImpl);
-STAR_CLASS(Audio);
+class CompressedAudioImpl;
+using CompressedAudioImplPtr = SharedPtr<CompressedAudioImpl>;
+class UncompressedAudioImpl;
+using UncompressedAudioImplPtr = SharedPtr<UncompressedAudioImpl>;
+class Audio;
 
 struct AudioExceptionTag { static constexpr char const* typeName = "AudioException"; };
 using AudioException = TypedException<StarException, AudioExceptionTag>;

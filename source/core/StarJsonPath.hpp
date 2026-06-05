@@ -71,9 +71,10 @@ using TraversalException = TypedException<JsonException, TraversalExceptionTag>;
   template <typename Jsonlike>
   JsonOp<Jsonlike> genericObjectArrayOp(String path, EmptyPathOp<Jsonlike> emptyPathOp, ObjectOp<Jsonlike> objectOp, ArrayOp<Jsonlike> arrayOp);
 
-  STAR_CLASS(Path);
-  STAR_CLASS(Pointer);
-  STAR_CLASS(QueryPath);
+  class Path;
+  using PathPtr = SharedPtr<Path>;
+  class Pointer;
+  class QueryPath;
 
   class Path {
   public:

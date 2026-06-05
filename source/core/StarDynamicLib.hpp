@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_CLASS(DynamicLib);
+class DynamicLib;
+using DynamicLibUPtr = UniquePtr<DynamicLib>;
 
 class DynamicLib {
 public:

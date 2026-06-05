@@ -10,8 +10,10 @@ namespace Star {
 struct FontExceptionTag { static constexpr char const* typeName = "FontException"; };
 using FontException = TypedException<StarException, FontExceptionTag>;
 
-STAR_STRUCT(FontImpl);
-STAR_CLASS(Font);
+struct FontImpl;
+using FontImplPtr = SharedPtr<FontImpl>;
+class Font;
+using FontPtr = SharedPtr<Font>;
 
 class Font {
 public:

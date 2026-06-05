@@ -7,7 +7,7 @@ namespace Star {
 struct WorkerPoolExceptionTag { static constexpr char const* typeName = "WorkerPoolException"; };
 using WorkerPoolException = TypedException<StarException, WorkerPoolExceptionTag>;
 
-STAR_CLASS(WorkerPool);
+class WorkerPool;
 
 // Shareable handle for a WorkerPool computation that does not produce any
 // value.

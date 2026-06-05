@@ -8,8 +8,8 @@
 
 namespace Star {
 
-STAR_CLASS(Directives);
-STAR_CLASS(DirectivesGroup);
+class Directives;
+class DirectivesGroup;
 struct DirectivesExceptionTag { static constexpr char const* typeName = "DirectivesException"; };
 using DirectivesException = TypedException<StarException, DirectivesExceptionTag>;
 
