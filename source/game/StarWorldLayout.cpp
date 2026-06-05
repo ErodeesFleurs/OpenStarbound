@@ -672,7 +672,10 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
   // Logger::info("boundaries before expansion are {}", targetLayer.boundaries);
 
   // TODO: this is a messy way to get the top of the layer, but maybe it's ok
-  int layerTop = (int)m_worldSize[1];
+  int const worldWidth = static_cast<int>(m_worldSize[0]);
+  int const worldHeight = static_cast<int>(m_worldSize[1]);
+
+  int layerTop = worldHeight;
   for (size_t i = 0; i < m_layers.size(); ++i) {
     if (m_layers[i].yStart == targetLayer.yStart && m_layers.size() > i + 1) {
       layerTop = m_layers[i + 1].yStart;
@@ -681,11 +684,11 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
   }
 
   // if the region is going to cover the full layer width, this is much simpler
-  if (newWidth == (int)m_worldSize[0]) {
+  if (newWidth == worldWidth) {
     targetLayer.cells = {targetLayer.cells[cellIndex]};
     targetLayer.boundaries = {};
 
-    regionRects.append(RectI{0, targetLayer.yStart, (int)m_worldSize[0], layerTop});
+    regionRects.append(RectI{0, targetLayer.yStart, worldWidth, layerTop});
   } else {
     auto targetRegion = targetLayer.cells[cellIndex];
 
@@ -696,7 +699,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
     int lastBoundary = 0;
     size_t lastCellIndex = targetLayer.cells.size() - 1;
     for (size_t i = 0; i <= lastCellIndex; ++i) {
-      int nextBoundary = i == lastCellIndex ? (int)m_worldSize[0] : targetLayer.boundaries[i];
+      int nextBoundary = i == lastCellIndex ? worldWidth : targetLayer.boundaries[i];
       if (i == cellIndex ||
           (i == 0 && cellIndex == lastCellIndex && targetLayer.cells[i] == targetRegion) ||
           (cellIndex == 0 && i == lastCellIndex && targetLayer.cells[i] == targetRegion))
@@ -741,10 +744,10 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
     for (auto cell : targetCells) {
       if (cell.lBound < 0) {
         wrappedTargetCells.append(RegionCell{0, cell.rBound, cell.region});
-        wrappedTargetCells.append(RegionCell{(int)m_worldSize[0] + cell.lBound, (int)m_worldSize[0], cell.region});
-      } else if (cell.rBound > (int)m_worldSize[0]) {
-        wrappedTargetCells.append(RegionCell{cell.lBound, (int)m_worldSize[0], cell.region});
-        wrappedTargetCells.append(RegionCell{0, cell.rBound - (int)m_worldSize[0], cell.region});
+        wrappedTargetCells.append(RegionCell{worldWidth + cell.lBound, worldWidth, cell.region});
+      } else if (cell.rBound > worldWidth) {
+        wrappedTargetCells.append(RegionCell{cell.lBound, worldWidth, cell.region});
+        wrappedTargetCells.append(RegionCell{0, cell.rBound - worldWidth, cell.region});
       } else {
         wrappedTargetCells.append(cell);
       }
@@ -924,19 +927,22 @@ void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& p
   for (size_t i = 0; i < secondaryRegions.size(); ++i)
     addRegion(secondaryRegions[i], secondarySubRegions[i], secondaryRegionSize);
 
+  int const worldWidth = static_cast<int>(m_worldSize[0]);
+  int const worldHeight = static_cast<int>(m_worldSize[1]);
+
   // construct boundaries based on normalized sizes
-  int nextBoundary = staticRandomI32Range(0, m_worldSize[0] - 1, seed, yStart, "LayerOffset");
+  int nextBoundary = staticRandomI32Range(0, worldWidth - 1, seed, yStart, "LayerOffset");
   layer.boundaries.append(nextBoundary);
   for (size_t i = 0; i + 1 < relativeRegionSizes.size(); ++i) {
-    int regionSize = (int)m_worldSize[0] * (relativeRegionSizes[i] / totalRelativeSize);
+    int regionSize = worldWidth * (relativeRegionSizes[i] / totalRelativeSize);
     nextBoundary += regionSize;
     layer.boundaries.append(nextBoundary);
   }
 
   // wrap cells + boundaries
-  while (layer.boundaries.last() > (int)m_worldSize[0]) {
+  while (layer.boundaries.last() > worldWidth) {
     layer.cells.prepend(layer.cells.takeLast());
-    layer.boundaries.prepend(layer.boundaries.takeLast() - m_worldSize[0]);
+    layer.boundaries.prepend(layer.boundaries.takeLast() - worldWidth);
   }
   layer.cells.prepend(layer.cells.last());
 
@@ -944,9 +950,9 @@ void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& p
   int i = 0;
   int lastBoundary = 0;
   for (auto region : layer.cells) {
-    int nextBoundary = i < (int)layer.boundaries.size() ? layer.boundaries[i] : m_worldSize[0];
+    int nextBoundary = i < static_cast<int>(layer.boundaries.size()) ? layer.boundaries[i] : worldWidth;
     if (spawnBiomeIndexes.contains(region->blockBiomeIndex))
-      m_playerStartSearchRegions.append(RectI(lastBoundary, std::max(0, yBase - yRange), nextBoundary, std::min((int)m_worldSize[1], yBase + yRange)));
+      m_playerStartSearchRegions.append(RectI(lastBoundary, std::max(0, yBase - yRange), nextBoundary, std::min(worldHeight, yBase + yRange)));
     lastBoundary = nextBoundary;
     i++;
   }
@@ -972,14 +978,14 @@ pair<size_t, int> WorldLayout::findContainingCell(WorldLayer const& layer, int x
 
 pair<size_t, int> WorldLayout::leftCell(WorldLayer const& layer, size_t cellIndex, int x) const {
   if (cellIndex == 0)
-    return {layer.cells.size() - 1, x + (int)m_worldSize[0]};
+    return {layer.cells.size() - 1, x + static_cast<int>(m_worldSize[0])};
   else
     return {cellIndex - 1, x};
 }
 
 pair<size_t, int> WorldLayout::rightCell(WorldLayer const& layer, size_t cellIndex, int x) const {
   if (cellIndex >= layer.cells.size() - 1)
-    return {0, x - (int)m_worldSize[0]};
+    return {0, x - static_cast<int>(m_worldSize[0])};
   else
     return {cellIndex + 1, x};
 }
