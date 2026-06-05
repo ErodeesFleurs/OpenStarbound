@@ -8,10 +8,13 @@
 
 namespace Star {
 
-STAR_CLASS(Clock);
-STAR_CLASS(AudioInstance);
-
-STAR_CLASS(Sky);
+class Clock;
+using ClockConstPtr = SharedPtr<Clock const>;
+class AudioInstance;
+using AudioInstancePtr = SharedPtr<AudioInstance>;
+class Sky;
+using SkyPtr = SharedPtr<Sky>;
+using SkyConstPtr = SharedPtr<Sky const>;
 
 // Sky objects, such as stars and orbiters, are given in a pseudo screen space,
 // "view space", that does not take the pixel ratio into account.  "viewSize"
