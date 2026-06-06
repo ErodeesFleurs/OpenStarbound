@@ -280,7 +280,7 @@ WorldLayout WorldLayout::buildAsteroidsLayout(AsteroidsWorldParameters const& as
   layout.addLayer(seed, asteroidParameters.asteroidTopLevel, emptyRegion);
 
   layout.m_regionBlending = asteroidParameters.blendSize;
-  layout.m_blockNoise = asteroidsConfig.opt("blockNoise").apply(bind(&BlockNoise::build, _1, seed));
+  layout.m_blockNoise = asteroidsConfig.opt("blockNoise").apply([seed](Json const& config) { return BlockNoise::build(config, seed); });
 
   layout.m_playerStartSearchRegions.append(RectI(0, asteroidParameters.asteroidBottomLevel, asteroidParameters.worldSize[0], asteroidParameters.asteroidTopLevel));
 

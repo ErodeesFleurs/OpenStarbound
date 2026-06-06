@@ -11,15 +11,15 @@ namespace Star {
 LuaCallbacks LuaBindings::makeEntityCallbacks(Entity const* entity) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<EntityId>("id", bind(EntityCallbacks::id, entity));
+  callbacks.registerCallbackWithSignature<EntityId>("id", [entity]() { return EntityCallbacks::id(entity); });
   callbacks.registerCallbackWithSignature<LuaTable, LuaEngine&>(
-      "damageTeam", bind(EntityCallbacks::damageTeam, entity, _1));
+      "damageTeam", [entity](LuaEngine& engine) { return EntityCallbacks::damageTeam(entity, engine); });
   callbacks.registerCallbackWithSignature<bool, EntityId>(
-      "isValidTarget", bind(EntityCallbacks::isValidTarget, entity, _1));
+      "isValidTarget", [entity](EntityId targetId) { return EntityCallbacks::isValidTarget(entity, targetId); });
   callbacks.registerCallbackWithSignature<Vec2F, EntityId>(
-      "distanceToEntity", bind(EntityCallbacks::distanceToEntity, entity, _1));
+      "distanceToEntity", [entity](EntityId targetId) { return EntityCallbacks::distanceToEntity(entity, targetId); });
   callbacks.registerCallbackWithSignature<bool, EntityId>(
-      "entityInSight", bind(EntityCallbacks::entityInSight, entity, _1));
+      "entityInSight", [entity](EntityId targetId) { return EntityCallbacks::entityInSight(entity, targetId); });
 
   callbacks.registerCallback("position", [entity]() { return entity->position(); });
   callbacks.registerCallback("entityType", [entity]() { return EntityTypeNames.getRight(entity->entityType()); });

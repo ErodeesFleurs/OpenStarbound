@@ -189,7 +189,9 @@ StarException::StarException(char const* type, std::string message, bool genStac
     }
   };
 
-  m_printException = bind(printException, _1, _2, type, std::move(message), genStackTrace ? captureStack() : Maybe<StackCapture>());
+  m_printException = [printException, type, message = std::move(message), stack = genStackTrace ? captureStack() : Maybe<StackCapture>()](std::ostream& os, bool fullStacktrace) mutable {
+    printException(os, fullStacktrace, type, std::move(message), std::move(stack));
+  };
 }
 
 StarException::StarException(char const* type, std::string message, std::exception const& cause) noexcept
@@ -205,14 +207,16 @@ StarException::StarException(char const* type, std::string message, std::excepti
 
   std::function<void(std::ostream&, bool)> printCause;
   if (auto starException = as<StarException>(&cause)) {
-    printCause = bind(starException->m_printException, _1, _2);
+    printCause = [starException](std::ostream& os, bool fullStacktrace) { starException->m_printException(os, fullStacktrace); };
   } else {
-    printCause = bind([](std::ostream& os, bool, std::string causeWhat) {
+    printCause = [causeWhat = std::string(cause.what())](std::ostream& os, bool) {
       os << "std::exception: " << causeWhat;
-    }, _1, _2, std::string(cause.what()));
+    };
   }
 
-  m_printException = bind(printException, _1, _2, m_printException, std::move(printCause));
+  m_printException = [printException, self = m_printException, cause = std::move(printCause)](std::ostream& os, bool fullStacktrace) {
+    printException(os, fullStacktrace, self, cause);
+  };
 }
 
 std::string printException(std::exception const& e, bool fullStacktrace) {
@@ -230,10 +234,9 @@ void printException(std::ostream& os, std::exception const& e, bool fullStacktra
 
 OutputProxy outputException(std::exception const& e, bool fullStacktrace) {
   if (auto starException = as<StarException>(&e))
-    return OutputProxy(bind(starException->m_printException, _1, fullStacktrace));
+    return OutputProxy([starException, fullStacktrace](std::ostream& os) { starException->m_printException(os, fullStacktrace); });
   else
-    return OutputProxy(
-        bind([](std::ostream& os, std::string what) { os << "std::exception: " << what; }, _1, std::string(e.what())));
+    return OutputProxy([what = std::string(e.what())](std::ostream& os) { os << "std::exception: " << what; });
 }
 
 void printStack(char const* message) {

@@ -131,9 +131,9 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   });
   for (auto name : bagOrder) {
     auto itemGrid = itemBagConfig.get(name).getString("itemGrid");
-    invWindowReader.registerCallback(itemGrid, bind(leftClickCallback, name, _1));
-    invWindowReader.registerCallback(itemGrid + ".right", bind(bagGridCallback, name, _1));
-    invWindowReader.registerCallback(itemGrid + ".middle", bind(middleClickCallback, name, _1));
+    invWindowReader.registerCallback(itemGrid, [this, leftClickCallback, name](Widget* widget) { leftClickCallback(name, widget); });
+    invWindowReader.registerCallback(itemGrid + ".right", [bagGridCallback, rightClickCallback, name](Widget* widget) { bagGridCallback(name, widget); });
+    invWindowReader.registerCallback(itemGrid + ".middle", [this, middleClickCallback, name](Widget* widget) { middleClickCallback(name, widget); });
   }
 
   invWindowReader.registerCallback("close", [=, this](Widget*) {

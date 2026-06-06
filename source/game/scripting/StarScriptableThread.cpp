@@ -30,7 +30,7 @@ ScriptableThread::ScriptableThread(Json parameters)
         
       m_luaRoot->addCallbacks("thread", makeThreadCallbacks());
       m_luaRoot->addCallbacks(
-          "config", LuaBindings::makeConfigCallbacks(bind(&ScriptableThread::configValue, this, _1, _2)));
+          "config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
       
       for (auto const& p : m_parameters.get("scripts").iterateObject()) {
         auto scriptComponent = make_shared<ScriptComponent>();

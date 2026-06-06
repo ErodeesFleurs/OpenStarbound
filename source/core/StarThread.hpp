@@ -360,7 +360,7 @@ bool MLocker<MutexType>::tryLock() {
 
 template <typename Function, typename... Args>
 ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> Thread::invoke(String const& name, Function&& f, Args&&... args) {
-  return {bind(std::forward<Function>(f), std::forward<Args>(args)...), name};
+  return {[f = std::forward<Function>(f), ...args = std::forward<Args>(args)]() mutable { return f(std::move(args)...); }, name};
 }
 
 template <typename Return>

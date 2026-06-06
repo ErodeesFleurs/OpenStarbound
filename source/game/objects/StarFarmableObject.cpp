@@ -51,7 +51,7 @@ void FarmableObject::update(float dt, uint64_t currentStep) {
     }
 
     // update immersion and check whether farmable should break
-    m_immersion.update(bind(&Object::liquidFillLevel, this));
+    m_immersion.update([this]() { return liquidFillLevel(); });
     if (m_immersion.average() > m_maxImmersion || m_immersion.average() < m_minImmersion)
       breakObject(false);
   }

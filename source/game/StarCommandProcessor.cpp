@@ -1073,7 +1073,7 @@ Maybe<String> CommandProcessor::localCheck(ConnectionId connectionId, String con
 LuaCallbacks CommandProcessor::makeCommandCallbacks() {
   LuaCallbacks callbacks;
   callbacks.registerCallbackWithSignature<Maybe<String>, ConnectionId, String>(
-      "adminCheck", bind(&CommandProcessor::adminCheck, this, _1, _2));
+      "adminCheck", [this](ConnectionId clientId, String const& argument) { return adminCheck(clientId, argument); });
   return callbacks;
 }
 

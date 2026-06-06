@@ -1062,8 +1062,8 @@ void MovementController::updatePositionInterpolators() {
   if (m_world)
     m_xPosition.setInterpolator(m_world->geometry().xLerpFunction(m_parameters.discontinuityThreshold));
   else
-    m_xPosition.setInterpolator(bind(lerpWithLimit<float, float>, m_parameters.discontinuityThreshold, _1, _2, _3));
-  m_yPosition.setInterpolator(bind(lerpWithLimit<float, float>, m_parameters.discontinuityThreshold, _1, _2, _3));
+    m_xPosition.setInterpolator([threshold = m_parameters.discontinuityThreshold](float a, float b, float t) { return lerpWithLimit<float, float>(threshold, a, b, t); });
+  m_yPosition.setInterpolator([threshold = m_parameters.discontinuityThreshold](float a, float b, float t) { return lerpWithLimit<float, float>(threshold, a, b, t); });
 }
 
 void MovementController::queryCollisions(RectF const& region) {

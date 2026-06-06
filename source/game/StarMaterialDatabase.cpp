@@ -90,7 +90,7 @@ MaterialDatabase::MaterialDatabase() {
         material.miningParticle = pdb->config(matConfig.getString("miningParticle"));
       if (matConfig.contains("miningSounds"))
         material.miningSounds = transform<StringList>(
-            jsonToStringList(matConfig.get("miningSounds")), bind(AssetPath::relativeTo, file, _1));
+            jsonToStringList(matConfig.get("miningSounds")), [file](String const& s) { return AssetPath::relativeTo(file, s); });
       if (matConfig.contains("footstepSound"))
         material.footstepSound = AssetPath::relativeTo(file, matConfig.getString("footstepSound"));
 
@@ -167,7 +167,7 @@ MaterialDatabase::MaterialDatabase() {
         mod.miningParticle = pdb->config(modConfig.getString("miningParticle"));
       if (modConfig.contains("miningSounds"))
         mod.miningSounds = transform<StringList>(
-            jsonToStringList(modConfig.get("miningSounds")), bind(AssetPath::relativeTo, file, _1));
+            jsonToStringList(modConfig.get("miningSounds")), [file](String const& s) { return AssetPath::relativeTo(file, s); });
       if (modConfig.contains("footstepSound"))
         mod.footstepSound = AssetPath::relativeTo(file, modConfig.getString("footstepSound"));
 

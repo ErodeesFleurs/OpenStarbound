@@ -215,7 +215,7 @@ namespace Tiled {
         typename GetterReturn = T,
         typename Getter = function<GetterReturn(PropertyType, Tiled::Properties&)>>
     void optRead(List<T>& list, String const& propertyName, Getter getter, Tiled::Properties& properties) {
-      auto appendFn = bind(&List<T>::append, &list, _1);
+      auto appendFn = [&list](auto&& item) { list.append(std::forward<decltype(item)>(item)); };
       read<PropertyType, Getter>(propertyName, getter, properties).exec(appendFn);
     }
 

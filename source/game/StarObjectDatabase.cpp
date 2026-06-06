@@ -467,8 +467,8 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
     objectConfig->category = config.getString("category", "other");
     objectConfig->colonyTags = jsonToStringList(config.get("colonyTags", JsonArray()));
 
-    objectConfig->scripts = jsonToStringList(config.get("scripts", JsonArray())).transformed(bind(AssetPath::relativeTo, path, _1));
-    objectConfig->animationScripts = jsonToStringList(config.get("animationScripts", JsonArray())).transformed(bind(AssetPath::relativeTo, path, _1));
+    objectConfig->scripts = jsonToStringList(config.get("scripts", JsonArray())).transformed([path](String const& s) { return AssetPath::relativeTo(path, s); });
+    objectConfig->animationScripts = jsonToStringList(config.get("animationScripts", JsonArray())).transformed([path](String const& s) { return AssetPath::relativeTo(path, s); });
 
     objectConfig->price = config.getInt("price", 0);
     if (objectConfig->price == 0)

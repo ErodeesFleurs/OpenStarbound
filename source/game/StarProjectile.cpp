@@ -91,7 +91,7 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
       m_scriptComponent.setUpdateDelta(m_parameters.getUInt("scriptDelta", m_config->config.getUInt("scriptDelta", 1)));
 
       m_scriptComponent.addCallbacks("projectile", makeProjectileCallbacks());
-      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Projectile::configValue, this, _1, _2)));
+      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
       m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(m_movementController.get()));
       m_scriptComponent.init(world);
@@ -624,7 +624,7 @@ void Projectile::processAction(Json const& action) {
 
     auto materialDatabase = Root::singleton().materialDatabase();
     Maybe<ModId> previousMod =
-        parameters.optString("previousMod").apply(bind(&MaterialDatabase::modId, materialDatabase, _1));
+        parameters.optString("previousMod").apply([materialDatabase](String const& modName) { return materialDatabase->modId(modName); });
     ModId newMod = materialDatabase->modId(parameters.getString("newMod"));
     int radius = parameters.getInt("radius", 0);
     float chance = parameters.getFloat("chance", 1.0f);

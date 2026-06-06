@@ -156,7 +156,7 @@ void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
 
       m_scriptComponent.addCallbacks("itemDrop", makeItemDropCallbacks());
       m_scriptComponent.addCallbacks("item", LuaBindings::makeItemCallbacks(m_item.get()));
-      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&ItemDrop::configValue, this, _1, _2)));
+      m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
       m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
       m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(&m_movementController));
       m_scriptComponent.init(world);

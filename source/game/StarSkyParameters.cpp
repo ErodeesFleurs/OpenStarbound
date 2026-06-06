@@ -89,7 +89,7 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
 
   if (config.contains("satellites"))
     nearbyMoons =
-        jsonToList<pair<List<pair<String, float>>, Vec2F>>(config.get("satellites"), bind(extractLayerData, _1, seed));
+        jsonToList<pair<List<pair<String, float>>, Vec2F>>(config.get("satellites"), [extractLayerData, thisSeed = seed](Json const& v) { return extractLayerData(v, thisSeed); });
 
   if (config.contains("horizonImages")) {
     horizonImages = jsonToList<pair<String, String>>(config.get("horizonImages"),

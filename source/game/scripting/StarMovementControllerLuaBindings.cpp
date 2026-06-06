@@ -10,12 +10,12 @@ LuaCallbacks LuaBindings::makeMovementControllerCallbacks(MovementController* mo
   callbacks.registerCallback(
       "parameters", [movementController]() { return movementController->parameters().toJson(); });
   callbacks.registerCallbackWithSignature<void, Json>(
-      "applyParameters", bind(&MovementController::applyParameters, movementController, _1));
+      "applyParameters", [movementController](auto&&... args) { return movementController->applyParameters(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, Json>(
-      "resetParameters", bind(&MovementController::resetParameters, movementController, _1));
-  callbacks.registerCallbackWithSignature<float>("mass", bind(&MovementController::mass, movementController));
+      "resetParameters", [movementController](auto&&... args) { return movementController->resetParameters(std::forward<decltype(args)>(args)...); });
+  callbacks.registerCallbackWithSignature<float>("mass", [movementController]() { return movementController->mass(); });
   callbacks.registerCallbackWithSignature<PolyF>(
-      "collisionPoly", bind(&MovementController::collisionPoly, movementController));
+      "collisionPoly", [movementController]() { return movementController->collisionPoly(); });
   callbacks.registerCallback("boundBox", [movementController]() -> RectF {
       return movementController->collisionPoly().boundBox();
     });
@@ -23,66 +23,66 @@ LuaCallbacks LuaBindings::makeMovementControllerCallbacks(MovementController* mo
       return movementController->collisionPoly().convexArea();
     });
 
-  callbacks.registerCallbackWithSignature<Vec2F>("position", bind(&MovementController::position, movementController));
-  callbacks.registerCallbackWithSignature<float>("xPosition", bind(&MovementController::xPosition, movementController));
-  callbacks.registerCallbackWithSignature<float>("yPosition", bind(&MovementController::yPosition, movementController));
-  callbacks.registerCallbackWithSignature<Vec2F>("velocity", bind(&MovementController::velocity, movementController));
-  callbacks.registerCallbackWithSignature<float>("xVelocity", bind(&MovementController::xVelocity, movementController));
-  callbacks.registerCallbackWithSignature<float>("yVelocity", bind(&MovementController::yVelocity, movementController));
-  callbacks.registerCallbackWithSignature<float>("rotation", bind(&MovementController::rotation, movementController));
+  callbacks.registerCallbackWithSignature<Vec2F>("position", [movementController]() { return movementController->position(); });
+  callbacks.registerCallbackWithSignature<float>("xPosition", [movementController]() { return movementController->xPosition(); });
+  callbacks.registerCallbackWithSignature<float>("yPosition", [movementController]() { return movementController->yPosition(); });
+  callbacks.registerCallbackWithSignature<Vec2F>("velocity", [movementController]() { return movementController->velocity(); });
+  callbacks.registerCallbackWithSignature<float>("xVelocity", [movementController]() { return movementController->xVelocity(); });
+  callbacks.registerCallbackWithSignature<float>("yVelocity", [movementController]() { return movementController->yVelocity(); });
+  callbacks.registerCallbackWithSignature<float>("rotation", [movementController]() { return movementController->rotation(); });
   callbacks.registerCallbackWithSignature<PolyF>(
-      "collisionBody", bind(&MovementController::collisionBody, movementController));
+      "collisionBody", [movementController]() { return movementController->collisionBody(); });
   callbacks.registerCallbackWithSignature<RectF>(
-      "collisionBoundBox", bind(&MovementController::collisionBoundBox, movementController));
+      "collisionBoundBox", [movementController]() { return movementController->collisionBoundBox(); });
   callbacks.registerCallbackWithSignature<RectF>(
-      "localBoundBox", bind(&MovementController::localBoundBox, movementController));
+      "localBoundBox", [movementController]() { return movementController->localBoundBox(); });
   callbacks.registerCallbackWithSignature<bool>(
-      "isColliding", bind(&MovementController::isColliding, movementController));
+      "isColliding", [movementController]() { return movementController->isColliding(); });
   callbacks.registerCallbackWithSignature<bool>(
-      "isNullColliding", bind(&MovementController::isNullColliding, movementController));
+      "isNullColliding", [movementController]() { return movementController->isNullColliding(); });
   callbacks.registerCallbackWithSignature<bool>(
-      "isCollisionStuck", bind(&MovementController::isCollisionStuck, movementController));
+      "isCollisionStuck", [movementController]() { return movementController->isCollisionStuck(); });
   callbacks.registerCallbackWithSignature<Maybe<float>>(
-      "stickingDirection", bind(&MovementController::stickingDirection, movementController));
+      "stickingDirection", [movementController]() { return movementController->stickingDirection(); });
   callbacks.registerCallbackWithSignature<float>(
-      "liquidPercentage", bind(&MovementController::liquidPercentage, movementController));
+      "liquidPercentage", [movementController]() { return movementController->liquidPercentage(); });
   callbacks.registerCallbackWithSignature<LiquidId>(
-      "liquidId", bind(&MovementController::liquidId, movementController));
-  callbacks.registerCallbackWithSignature<bool>("onGround", bind(&MovementController::onGround, movementController));
-  callbacks.registerCallbackWithSignature<bool>("zeroG", bind(&MovementController::zeroG, movementController));
-  callbacks.registerCallbackWithSignature<bool, bool>("atWorldLimit", bind(&MovementController::atWorldLimit, movementController, _1));
+      "liquidId", [movementController]() { return movementController->liquidId(); });
+  callbacks.registerCallbackWithSignature<bool>("onGround", [movementController]() { return movementController->onGround(); });
+  callbacks.registerCallbackWithSignature<bool>("zeroG", [movementController]() { return movementController->zeroG(); });
+  callbacks.registerCallbackWithSignature<bool, bool>("atWorldLimit", [movementController](auto&&... args) { return movementController->atWorldLimit(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "setPosition", bind(&MovementController::setPosition, movementController, _1));
+      "setPosition", [movementController](auto&&... args) { return movementController->setPosition(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, float>(
-      "setXPosition", bind(&MovementController::setXPosition, movementController, _1));
+      "setXPosition", [movementController](auto&&... args) { return movementController->setXPosition(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, float>(
-      "setYPosition", bind(&MovementController::setYPosition, movementController, _1));
+      "setYPosition", [movementController](auto&&... args) { return movementController->setYPosition(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "translate", bind(&MovementController::translate, movementController, _1));
+      "translate", [movementController](auto&&... args) { return movementController->translate(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "setVelocity", bind(&MovementController::setVelocity, movementController, _1));
+      "setVelocity", [movementController](auto&&... args) { return movementController->setVelocity(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, float>(
-      "setXVelocity", bind(&MovementController::setXVelocity, movementController, _1));
+      "setXVelocity", [movementController](auto&&... args) { return movementController->setXVelocity(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, float>(
-      "setYVelocity", bind(&MovementController::setYVelocity, movementController, _1));
+      "setYVelocity", [movementController](auto&&... args) { return movementController->setYVelocity(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "addMomentum", bind(&MovementController::addMomentum, movementController, _1));
+      "addMomentum", [movementController](auto&&... args) { return movementController->addMomentum(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, float>(
-      "setRotation", bind(&MovementController::setRotation, movementController, _1));
+      "setRotation", [movementController](auto&&... args) { return movementController->setRotation(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, float>(
-      "rotate", bind(&MovementController::rotate, movementController, _1));
+      "rotate", [movementController](auto&&... args) { return movementController->rotate(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "accelerate", bind(&MovementController::accelerate, movementController, _1));
+      "accelerate", [movementController](auto&&... args) { return movementController->accelerate(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, Vec2F>(
-      "force", bind(&MovementController::force, movementController, _1));
+      "force", [movementController](auto&&... args) { return movementController->force(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, Vec2F, float>(
-      "approachVelocity", bind(&MovementController::approachVelocity, movementController, _1, _2));
+      "approachVelocity", [movementController](auto&&... args) { return movementController->approachVelocity(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, float, float, float, bool>("approachVelocityAlongAngle",
-      bind(&MovementController::approachVelocityAlongAngle, movementController, _1, _2, _3, _4));
+      [movementController](auto&&... args) { return movementController->approachVelocityAlongAngle(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, float, float>(
-      "approachXVelocity", bind(&MovementController::approachXVelocity, movementController, _1, _2));
+      "approachXVelocity", [movementController](auto&&... args) { return movementController->approachXVelocity(std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, float, float>(
-      "approachYVelocity", bind(&MovementController::approachYVelocity, movementController, _1, _2));
+      "approachYVelocity", [movementController](auto&&... args) { return movementController->approachYVelocity(std::forward<decltype(args)>(args)...); });
 
   return callbacks;
 }

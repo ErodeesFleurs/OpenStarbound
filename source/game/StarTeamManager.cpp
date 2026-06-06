@@ -17,12 +17,12 @@ TeamManager::TeamManager() {
 
 JsonRpcHandlers TeamManager::rpcHandlers() {
   return JsonRpcHandlers{
-    {"team.fetchTeamStatus", bind(&TeamManager::fetchTeamStatus, this, _1)},
-    {"team.updateStatus", bind(&TeamManager::updateStatus, this, _1)},
-    {"team.invite", bind(&TeamManager::invite, this, _1)},
-    {"team.pollInvitation", bind(&TeamManager::pollInvitation, this, _1)},
-    {"team.acceptInvitation", bind(&TeamManager::acceptInvitation, this, _1)},
-    {"team.makeLeader", bind(&TeamManager::makeLeader, this, _1)},
+    {"team.fetchTeamStatus", [this](Json const& args) { return fetchTeamStatus(args); }},
+    {"team.updateStatus", [this](Json const& args) { return updateStatus(args); }},
+    {"team.invite", [this](Json const& args) { return invite(args); }},
+    {"team.pollInvitation", [this](Json const& args) { return pollInvitation(args); }},
+    {"team.acceptInvitation", [this](Json const& args) { return acceptInvitation(args); }},
+    {"team.makeLeader", [this](Json const& args) { return makeLeader(args); }},
     {"team.removeFromTeam", [&](Json request) -> Json { return removeFromTeam(request); }}
   };
 }
@@ -35,12 +35,12 @@ JsonRpcHandlers TeamManager::authenticatedRpcHandlers(Uuid const& callerUuid) {
   };
 
   return JsonRpcHandlers{
-    wrap("team.fetchTeamStatus", bind(&TeamManager::fetchTeamStatus, this, _1)),
-    wrap("team.updateStatus", bind(&TeamManager::updateStatus, this, _1)),
-    wrap("team.invite", bind(&TeamManager::invite, this, _1)),
-    wrap("team.pollInvitation", bind(&TeamManager::pollInvitation, this, _1)),
-    wrap("team.acceptInvitation", bind(&TeamManager::acceptInvitation, this, _1)),
-    wrap("team.makeLeader", bind(&TeamManager::makeLeader, this, _1)),
+    wrap("team.fetchTeamStatus", [this](Json const& args) { return fetchTeamStatus(args); }),
+    wrap("team.updateStatus", [this](Json const& args) { return updateStatus(args); }),
+    wrap("team.invite", [this](Json const& args) { return invite(args); }),
+    wrap("team.pollInvitation", [this](Json const& args) { return pollInvitation(args); }),
+    wrap("team.acceptInvitation", [this](Json const& args) { return acceptInvitation(args); }),
+    wrap("team.makeLeader", [this](Json const& args) { return makeLeader(args); }),
     wrap("team.removeFromTeam", [this](Json const& request) -> Json { return removeFromTeam(request); })
   };
 }

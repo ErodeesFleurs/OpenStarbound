@@ -127,8 +127,8 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
   m_netGroup.addNetElement(m_tileDamageStatus.get());
   m_netGroup.addNetElement(m_networkedAnimator.get());
 
-  m_netGroup.setNeedsLoadCallback(bind(&Object::getNetStates, this, _1));
-  m_netGroup.setNeedsStoreCallback(bind(&Object::setNetStates, this));
+  m_netGroup.setNeedsLoadCallback([this](bool initial) { return getNetStates(initial); });
+  m_netGroup.setNeedsStoreCallback([this]() { return setNetStates(); });
 
   m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
@@ -212,13 +212,13 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
     auto jScripts = configValue("scripts", JsonArray());
     if (jScripts.isType(Json::Type::Array))
-      m_scriptComponent.setScripts(jsonToStringList(jScripts).transformed(bind(AssetPath::relativeTo, m_config->path, _1)));
+      m_scriptComponent.setScripts(jsonToStringList(jScripts).transformed([path = m_config->path](String const& s) { return AssetPath::relativeTo(path, s); }));
     else
       m_scriptComponent.setScripts(m_config->scripts);
     m_scriptComponent.setUpdateDelta(configValue("scriptDelta", 5).toInt());
 
     m_scriptComponent.addCallbacks("object", makeObjectCallbacks());
-    m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Object::configValue, this, _1, _2)));
+    m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
     m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(m_networkedAnimator.get()));
     m_scriptComponent.init(world);
@@ -232,7 +232,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
         return m_scriptedAnimationParameters.value(name, defaultValue);
       }));
     m_scriptedAnimator.addCallbacks("objectAnimator", makeAnimatorObjectCallbacks());
-    m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks(bind(&Object::configValue, this, _1, _2)));
+    m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
     m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
     m_scriptedAnimator.init(world);
   }
@@ -951,8 +951,8 @@ LuaCallbacks Object::makeObjectCallbacks() {
       m_interactive.set(interactive);
     });
 
-  callbacks.registerCallbackWithSignature<Maybe<String>>("uniqueId", bind(&Object::uniqueId, this));
-  callbacks.registerCallbackWithSignature<void, Maybe<String>>("setUniqueId", bind(&Object::setUniqueId, this, _1));
+  callbacks.registerCallbackWithSignature<Maybe<String>>("uniqueId", [this]() { return uniqueId(); });
+  callbacks.registerCallbackWithSignature<void, Maybe<String>>("setUniqueId", [this](Maybe<String> const& id) { return setUniqueId(id); });
 
   callbacks.registerCallback("boundBox", [this]() {
       return metaBoundBox().translated(position());

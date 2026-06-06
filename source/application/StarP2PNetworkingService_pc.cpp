@@ -41,10 +41,10 @@ PcP2PNetworkingService::PcP2PNetworkingService(PcPlatformServicesStatePtr state)
         Logger::info("Received join request from user '{}'", userName);
         m_discordJoinRequests.emplace_back(make_pair(user.GetId(), userName));
       });
-    m_discordOnReceiveMessage = m_state->discordCore->LobbyManager().OnNetworkMessage.Connect(bind(&PcP2PNetworkingService::discordOnReceiveMessage, this, _1, _2, _3, _4, _5));
-    m_discordOnLobbyMemberConnect = m_state->discordCore->LobbyManager().OnMemberConnect.Connect(bind(&PcP2PNetworkingService::discordOnLobbyMemberConnect, this, _1, _2));
-    m_discordOnLobbyMemberUpdate = m_state->discordCore->LobbyManager().OnMemberUpdate.Connect(bind(&PcP2PNetworkingService::discordOnLobbyMemberUpdate, this, _1, _2));
-    m_discordOnLobbyMemberDisconnect = m_state->discordCore->LobbyManager().OnMemberDisconnect.Connect(bind(&PcP2PNetworkingService::discordOnLobbyMemberDisconnect, this, _1, _2));
+    m_discordOnReceiveMessage = m_state->discordCore->LobbyManager().OnNetworkMessage.Connect([this](auto&&... args) { return discordOnReceiveMessage(std::forward<decltype(args)>(args)...); });
+    m_discordOnLobbyMemberConnect = m_state->discordCore->LobbyManager().OnMemberConnect.Connect([this](auto&&... args) { return discordOnLobbyMemberConnect(std::forward<decltype(args)>(args)...); });
+    m_discordOnLobbyMemberUpdate = m_state->discordCore->LobbyManager().OnMemberUpdate.Connect([this](auto&&... args) { return discordOnLobbyMemberUpdate(std::forward<decltype(args)>(args)...); });
+    m_discordOnLobbyMemberDisconnect = m_state->discordCore->LobbyManager().OnMemberDisconnect.Connect([this](auto&&... args) { return discordOnLobbyMemberDisconnect(std::forward<decltype(args)>(args)...); });
   }
 #endif
 }

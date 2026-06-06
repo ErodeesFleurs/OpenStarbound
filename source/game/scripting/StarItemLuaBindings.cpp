@@ -10,31 +10,31 @@ namespace Star {
 LuaCallbacks LuaBindings::makeItemCallbacks(Item* item) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<String>("name", bind(ItemCallbacks::name, item));
-  callbacks.registerCallbackWithSignature<size_t>("count", bind(ItemCallbacks::count, item));
-  callbacks.registerCallbackWithSignature<size_t, size_t>("setCount", bind(ItemCallbacks::setCount, item, _1));
-  callbacks.registerCallbackWithSignature<size_t>("maxStack", bind(ItemCallbacks::maxStack, item));
-  callbacks.registerCallbackWithSignature<bool, Json, Maybe<bool>>("matches", bind(ItemCallbacks::matches, item, _1, _2));
-  callbacks.registerCallbackWithSignature<bool, size_t>("consume", bind(ItemCallbacks::consume, item, _1));
-  callbacks.registerCallbackWithSignature<bool>("empty", bind(ItemCallbacks::empty, item));
-  callbacks.registerCallbackWithSignature<Json>("descriptor", bind(ItemCallbacks::descriptor, item));
-  callbacks.registerCallbackWithSignature<String>("description", bind(ItemCallbacks::description, item));
-  callbacks.registerCallbackWithSignature<String>("friendlyName", bind(ItemCallbacks::friendlyName, item));
-  callbacks.registerCallbackWithSignature<int>("rarity", bind(ItemCallbacks::rarity, item));
-  callbacks.registerCallbackWithSignature<String>("rarityString", bind(ItemCallbacks::rarityString, item));
-  callbacks.registerCallbackWithSignature<size_t>("price", bind(ItemCallbacks::price, item));
-  callbacks.registerCallbackWithSignature<Json>("fuelAmount", bind(ItemCallbacks::fuelAmount, item));
-  callbacks.registerCallbackWithSignature<Json>("iconDrawables", bind(ItemCallbacks::iconDrawables, item));
-  callbacks.registerCallbackWithSignature<Json>("dropDrawables", bind(ItemCallbacks::dropDrawables, item));
-  callbacks.registerCallbackWithSignature<String>("largeImage", bind(ItemCallbacks::largeImage, item));
-  callbacks.registerCallbackWithSignature<String>("tooltipKind", bind(ItemCallbacks::tooltipKind, item));
-  callbacks.registerCallbackWithSignature<String>("category", bind(ItemCallbacks::category, item));
-  callbacks.registerCallbackWithSignature<String>("pickupSound", bind(ItemCallbacks::pickupSound, item));
-  callbacks.registerCallbackWithSignature<bool>("twoHanded", bind(ItemCallbacks::twoHanded, item));
-  callbacks.registerCallbackWithSignature<float>("timeToLive", bind(ItemCallbacks::timeToLive, item));
-  callbacks.registerCallbackWithSignature<Json>("learnBlueprintsOnPickup", bind(ItemCallbacks::learnBlueprintsOnPickup, item));
-  callbacks.registerCallbackWithSignature<bool, String>("hasItemTag", bind(ItemCallbacks::hasItemTag, item, _1));
-  callbacks.registerCallbackWithSignature<Json>("pickupQuestTemplates", bind(ItemCallbacks::pickupQuestTemplates, item));
+  callbacks.registerCallbackWithSignature<String>("name", [item]() { return ItemCallbacks::name(item); });
+  callbacks.registerCallbackWithSignature<size_t>("count", [item]() { return ItemCallbacks::count(item); });
+  callbacks.registerCallbackWithSignature<size_t, size_t>("setCount", [item](size_t count) { return ItemCallbacks::setCount(item, count); });
+  callbacks.registerCallbackWithSignature<size_t>("maxStack", [item]() { return ItemCallbacks::maxStack(item); });
+  callbacks.registerCallbackWithSignature<bool, Json, Maybe<bool>>("matches", [item](Json const& descriptor, Maybe<bool> const& exactMatch) { return ItemCallbacks::matches(item, descriptor, exactMatch); });
+  callbacks.registerCallbackWithSignature<bool, size_t>("consume", [item](size_t count) { return ItemCallbacks::consume(item, count); });
+  callbacks.registerCallbackWithSignature<bool>("empty", [item]() { return ItemCallbacks::empty(item); });
+  callbacks.registerCallbackWithSignature<Json>("descriptor", [item]() { return ItemCallbacks::descriptor(item); });
+  callbacks.registerCallbackWithSignature<String>("description", [item]() { return ItemCallbacks::description(item); });
+  callbacks.registerCallbackWithSignature<String>("friendlyName", [item]() { return ItemCallbacks::friendlyName(item); });
+  callbacks.registerCallbackWithSignature<int>("rarity", [item]() { return ItemCallbacks::rarity(item); });
+  callbacks.registerCallbackWithSignature<String>("rarityString", [item]() { return ItemCallbacks::rarityString(item); });
+  callbacks.registerCallbackWithSignature<size_t>("price", [item]() { return ItemCallbacks::price(item); });
+  callbacks.registerCallbackWithSignature<Json>("fuelAmount", [item]() { return ItemCallbacks::fuelAmount(item); });
+  callbacks.registerCallbackWithSignature<Json>("iconDrawables", [item]() { return ItemCallbacks::iconDrawables(item); });
+  callbacks.registerCallbackWithSignature<Json>("dropDrawables", [item]() { return ItemCallbacks::dropDrawables(item); });
+  callbacks.registerCallbackWithSignature<String>("largeImage", [item]() { return ItemCallbacks::largeImage(item); });
+  callbacks.registerCallbackWithSignature<String>("tooltipKind", [item]() { return ItemCallbacks::tooltipKind(item); });
+  callbacks.registerCallbackWithSignature<String>("category", [item]() { return ItemCallbacks::category(item); });
+  callbacks.registerCallbackWithSignature<String>("pickupSound", [item]() { return ItemCallbacks::pickupSound(item); });
+  callbacks.registerCallbackWithSignature<bool>("twoHanded", [item]() { return ItemCallbacks::twoHanded(item); });
+  callbacks.registerCallbackWithSignature<float>("timeToLive", [item]() { return ItemCallbacks::timeToLive(item); });
+  callbacks.registerCallbackWithSignature<Json>("learnBlueprintsOnPickup", [item]() { return ItemCallbacks::learnBlueprintsOnPickup(item); });
+  callbacks.registerCallbackWithSignature<bool, String>("hasItemTag", [item](String const& tag) { return ItemCallbacks::hasItemTag(item, tag); });
+  callbacks.registerCallbackWithSignature<Json>("pickupQuestTemplates", [item]() { return ItemCallbacks::pickupQuestTemplates(item); });
 
   return callbacks;
 }

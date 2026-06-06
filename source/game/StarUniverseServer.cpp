@@ -49,7 +49,7 @@ UniverseServer::UniverseServer(String const& storageDir)
 
   m_commandProcessor = make_shared<CommandProcessor>(this, m_luaRoot);
   m_chatProcessor = make_shared<ChatProcessor>();
-  m_chatProcessor->setCommandHandler(bind(&CommandProcessor::userCommand, m_commandProcessor.get(), _1, _2, _3));
+  m_chatProcessor->setCommandHandler([this](ConnectionId clientId, String const& command, String const& argumentString) { return m_commandProcessor->userCommand(clientId, command, argumentString); });
 
   Logger::info("UniverseServer: Acquiring universe lock file");
 
@@ -88,7 +88,7 @@ UniverseServer::UniverseServer(String const& storageDir)
 
   size_t networkWorkerThreads = universeConfig.optUInt("networkWorkerThreads").value(0);
   m_connectionServer = make_shared<UniverseConnectionServer>(
-    bind(&UniverseServer::packetsReceived, this, _1, _2, _3),
+    [this](UniverseConnectionServer* connectionServer, ConnectionId clientId, List<PacketPtr> packets) { return packetsReceived(connectionServer, clientId, std::move(packets)); },
     networkWorkerThreads);
 
   m_pause = make_shared<atomic<bool>>(false);
@@ -2343,7 +2343,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
     shipWorldThread->setPause(m_pause);
     clientContext->updateShipChunks(shipWorldThread->readChunks());
     shipWorldThread->start();
-    shipWorldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
+    shipWorldThread->setUpdateAction([this](WorldServerThread* worldServer, WorldServer*) { return worldUpdated(worldServer); });
 
     return shipWorldThread;
   });
@@ -2384,7 +2384,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
     auto worldThread = make_shared<WorldServerThread>(worldServer, celestialWorldId);
     worldThread->setPause(m_pause);
     worldThread->start();
-    worldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
+    worldThread->setUpdateAction([this](WorldServerThread* worldServer, WorldServer*) { return worldUpdated(worldServer); });
 
     return worldThread;
   });
@@ -2505,7 +2505,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
     auto worldThread = make_shared<WorldServerThread>(worldServer, instanceWorldId);
     worldThread->setPause(m_pause);
     worldThread->start();
-    worldThread->setUpdateAction(bind(&UniverseServer::worldUpdated, this, _1));
+    worldThread->setUpdateAction([this](WorldServerThread* worldServer, WorldServer*) { return worldUpdated(worldServer); });
 
     return worldThread;
   });
@@ -2539,7 +2539,7 @@ SystemWorldServerThreadPtr UniverseServer::createSystemWorld(Vec3I const& locati
     }
 
     auto systemThread = make_shared<SystemWorldServerThread>(location, systemWorld, storageFile);
-    systemThread->setUpdateAction(bind(&UniverseServer::systemWorldUpdated, this, _1));
+    systemThread->setUpdateAction([this](SystemWorldServerThread* systemWorldServer) { return systemWorldUpdated(systemWorldServer); });
     systemThread->start();
     m_systemWorlds.set(location, systemThread);
   }

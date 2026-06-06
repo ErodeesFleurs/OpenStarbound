@@ -9,82 +9,82 @@ LuaCallbacks LuaBindings::makeStatusControllerCallbacks(StatusController* statCo
   LuaCallbacks callbacks;
 
   callbacks.registerCallbackWithSignature<Json, String, Json>(
-      "statusProperty", bind(StatusControllerCallbacks::statusProperty, statController, _1, _2));
+      "statusProperty", [statController](auto&&... args) { return StatusControllerCallbacks::statusProperty(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String, Json>(
-      "setStatusProperty", bind(StatusControllerCallbacks::setStatusProperty, statController, _1, _2));
+      "setStatusProperty", [statController](auto&&... args) { StatusControllerCallbacks::setStatusProperty(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<float, String>(
-      "stat", bind(StatusControllerCallbacks::stat, statController, _1));
+      "stat", [statController](auto&&... args) { return StatusControllerCallbacks::stat(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<bool, String>(
-      "statPositive", bind(StatusControllerCallbacks::statPositive, statController, _1));
+      "statPositive", [statController](auto&&... args) { return StatusControllerCallbacks::statPositive(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<StringList>(
-      "resourceNames", bind(StatusControllerCallbacks::resourceNames, statController));
+      "resourceNames", [statController]() { return StatusControllerCallbacks::resourceNames(statController); });
   callbacks.registerCallbackWithSignature<bool, String>(
-      "isResource", bind(StatusControllerCallbacks::isResource, statController, _1));
+      "isResource", [statController](auto&&... args) { return StatusControllerCallbacks::isResource(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<float, String>(
-      "resource", bind(StatusControllerCallbacks::resource, statController, _1));
+      "resource", [statController](auto&&... args) { return StatusControllerCallbacks::resource(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<bool, String>(
-      "resourcePositive", bind(StatusControllerCallbacks::resourcePositive, statController, _1));
+      "resourcePositive", [statController](auto&&... args) { return StatusControllerCallbacks::resourcePositive(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String, float>(
-      "setResource", bind(StatusControllerCallbacks::setResource, statController, _1, _2));
+      "setResource", [statController](auto&&... args) { StatusControllerCallbacks::setResource(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String, float>(
-      "modifyResource", bind(StatusControllerCallbacks::modifyResource, statController, _1, _2));
+      "modifyResource", [statController](auto&&... args) { StatusControllerCallbacks::modifyResource(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<float, String, float>(
-      "giveResource", bind(StatusControllerCallbacks::giveResource, statController, _1, _2));
+      "giveResource", [statController](auto&&... args) { return StatusControllerCallbacks::giveResource(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<bool, String, float>(
-      "consumeResource", bind(StatusControllerCallbacks::consumeResource, statController, _1, _2));
+      "consumeResource", [statController](auto&&... args) { return StatusControllerCallbacks::consumeResource(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<bool, String, float>(
-      "overConsumeResource", bind(StatusControllerCallbacks::overConsumeResource, statController, _1, _2));
+      "overConsumeResource", [statController](auto&&... args) { return StatusControllerCallbacks::overConsumeResource(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<bool, String>(
-      "resourceLocked", bind(StatusControllerCallbacks::resourceLocked, statController, _1));
+      "resourceLocked", [statController](auto&&... args) { return StatusControllerCallbacks::resourceLocked(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String, bool>(
-      "setResourceLocked", bind(StatusControllerCallbacks::setResourceLocked, statController, _1, _2));
+      "setResourceLocked", [statController](auto&&... args) { StatusControllerCallbacks::setResourceLocked(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String>(
-      "resetResource", bind(StatusControllerCallbacks::resetResource, statController, _1));
+      "resetResource", [statController](auto&&... args) { StatusControllerCallbacks::resetResource(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void>(
-      "resetAllResources", bind(StatusControllerCallbacks::resetAllResources, statController));
+      "resetAllResources", [statController]() { StatusControllerCallbacks::resetAllResources(statController); });
   callbacks.registerCallbackWithSignature<Maybe<float>, String>(
-      "resourceMax", bind(StatusControllerCallbacks::resourceMax, statController, _1));
+      "resourceMax", [statController](auto&&... args) { return StatusControllerCallbacks::resourceMax(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<Maybe<float>, String>(
-      "resourcePercentage", bind(StatusControllerCallbacks::resourcePercentage, statController, _1));
+      "resourcePercentage", [statController](auto&&... args) { return StatusControllerCallbacks::resourcePercentage(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<float, String, float>(
-      "setResourcePercentage", bind(StatusControllerCallbacks::setResourcePercentage, statController, _1, _2));
+      "setResourcePercentage", [statController](auto&&... args) { return StatusControllerCallbacks::setResourcePercentage(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<float, String, float>(
-      "modifyResourcePercentage", bind(StatusControllerCallbacks::modifyResourcePercentage, statController, _1, _2));
+      "modifyResourcePercentage", [statController](auto&&... args) { return StatusControllerCallbacks::modifyResourcePercentage(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<JsonArray, String>(
-      "getPersistentEffects", bind(StatusControllerCallbacks::getPersistentEffects, statController, _1));
+      "getPersistentEffects", [statController](auto&&... args) { return StatusControllerCallbacks::getPersistentEffects(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String, Json>(
-      "addPersistentEffect", bind(StatusControllerCallbacks::addPersistentEffect, statController, _1, _2));
+      "addPersistentEffect", [statController](auto&&... args) { StatusControllerCallbacks::addPersistentEffect(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String, JsonArray>(
-      "addPersistentEffects", bind(StatusControllerCallbacks::addPersistentEffects, statController, _1, _2));
+      "addPersistentEffects", [statController](auto&&... args) { StatusControllerCallbacks::addPersistentEffects(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String, JsonArray>(
-      "setPersistentEffects", bind(StatusControllerCallbacks::setPersistentEffects, statController, _1, _2));
+      "setPersistentEffects", [statController](auto&&... args) { StatusControllerCallbacks::setPersistentEffects(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String>(
-      "clearPersistentEffects", bind(StatusControllerCallbacks::clearPersistentEffects, statController, _1));
+      "clearPersistentEffects", [statController](auto&&... args) { StatusControllerCallbacks::clearPersistentEffects(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void>(
-      "clearAllPersistentEffects", bind(StatusControllerCallbacks::clearAllPersistentEffects, statController));
+      "clearAllPersistentEffects", [statController]() { StatusControllerCallbacks::clearAllPersistentEffects(statController); });
   callbacks.registerCallbackWithSignature<void, String, Maybe<float>, Maybe<EntityId>>(
-      "addEphemeralEffect", bind(StatusControllerCallbacks::addEphemeralEffect, statController, _1, _2, _3));
+      "addEphemeralEffect", [statController](auto&&... args) { StatusControllerCallbacks::addEphemeralEffect(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, JsonArray, Maybe<EntityId>>(
-      "addEphemeralEffects", bind(StatusControllerCallbacks::addEphemeralEffects, statController, _1, _2));
+      "addEphemeralEffects", [statController](auto&&... args) { StatusControllerCallbacks::addEphemeralEffects(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void, String>(
-      "removeEphemeralEffect", bind(StatusControllerCallbacks::removeEphemeralEffect, statController, _1));
+      "removeEphemeralEffect", [statController](auto&&... args) { StatusControllerCallbacks::removeEphemeralEffect(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<void>(
-      "clearEphemeralEffects", bind(StatusControllerCallbacks::clearEphemeralEffects, statController));
+      "clearEphemeralEffects", [statController]() { StatusControllerCallbacks::clearEphemeralEffects(statController); });
   callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, uint64_t>, Maybe<uint64_t>>(
-      "damageTakenSince", bind(StatusControllerCallbacks::damageTakenSince, statController, _1));
+      "damageTakenSince", [statController](auto&&... args) { return StatusControllerCallbacks::damageTakenSince(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, uint64_t>, Maybe<uint64_t>>(
-      "inflictedHitsSince", bind(StatusControllerCallbacks::inflictedHitsSince, statController, _1));
+      "inflictedHitsSince", [statController](auto&&... args) { return StatusControllerCallbacks::inflictedHitsSince(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<LuaTupleReturn<List<Json>, uint64_t>, Maybe<uint64_t>>(
-      "inflictedDamageSince", bind(StatusControllerCallbacks::inflictedDamageSince, statController, _1));
+      "inflictedDamageSince", [statController](auto&&... args) { return StatusControllerCallbacks::inflictedDamageSince(statController, std::forward<decltype(args)>(args)...); });
   callbacks.registerCallbackWithSignature<List<JsonArray>>("activeUniqueStatusEffectSummary",
-      bind(&StatusControllerCallbacks::activeUniqueStatusEffectSummary, statController));
+      [statController]() { return StatusControllerCallbacks::activeUniqueStatusEffectSummary(statController); });
   callbacks.registerCallbackWithSignature<bool, String>("uniqueStatusEffectActive",
-      bind(&StatusControllerCallbacks::uniqueStatusEffectActive, statController, _1));
+      [statController](auto&&... args) { return StatusControllerCallbacks::uniqueStatusEffectActive(statController, std::forward<decltype(args)>(args)...); });
 
-  callbacks.registerCallbackWithSignature<Directives>("primaryDirectives", bind(&StatusController::primaryDirectives, statController));
+  callbacks.registerCallbackWithSignature<Directives>("primaryDirectives", [statController]() { return statController->primaryDirectives(); });
   callbacks.registerCallback("setPrimaryDirectives", [statController](Maybe<String> const& directives) { statController->setPrimaryDirectives(directives.value()); });
 
-  callbacks.registerCallbackWithSignature<void, DamageRequest>("applySelfDamageRequest", bind(&StatusController::applySelfDamageRequest, statController, _1));
+  callbacks.registerCallbackWithSignature<void, DamageRequest>("applySelfDamageRequest", [statController](auto&&... args) { return statController->applySelfDamageRequest(std::forward<decltype(args)>(args)...); });
 
   return callbacks;
 }

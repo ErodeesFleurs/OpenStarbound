@@ -46,14 +46,14 @@ AiInterface::AiInterface(UniverseClientPtr client, CinematicPtr cinematic, MainI
   auto assets = Root::singleton().assets();
 
   GuiReader reader;
-  reader.registerCallback("close", bind(mem_fn(&AiInterface::dismiss), this));
-  reader.registerCallback("missionItemList", bind(mem_fn(&AiInterface::selectMission), this));
-  reader.registerCallback("startMission", bind(mem_fn(&AiInterface::startMission), this));
-  reader.registerCallback("crewItemList", bind(mem_fn(&AiInterface::selectRecruit), this));
-  reader.registerCallback("dismissRecruit", bind(mem_fn(&AiInterface::dismissRecruit), this));
-  reader.registerCallback("showMissions", bind(mem_fn(&AiInterface::showMissions), this));
-  reader.registerCallback("showCrew", bind(mem_fn(&AiInterface::showCrew), this));
-  reader.registerCallback("goBack", bind(mem_fn(&AiInterface::goBack), this));
+  reader.registerCallback("close", [this](Widget*) { dismiss(); });
+  reader.registerCallback("missionItemList", [this](Widget*) { selectMission(); });
+  reader.registerCallback("startMission", [this](Widget*) { startMission(); });
+  reader.registerCallback("crewItemList", [this](Widget*) { selectRecruit(); });
+  reader.registerCallback("dismissRecruit", [this](Widget*) { dismissRecruit(); });
+  reader.registerCallback("showMissions", [this](Widget*) { showMissions(); });
+  reader.registerCallback("showCrew", [this](Widget*) { showCrew(); });
+  reader.registerCallback("goBack", [this](Widget*) { goBack(); });
 
   reader.construct(assets->json("/interface/ai/ai.config:guiConfig"), this);
 

@@ -6,8 +6,8 @@ namespace Star {
 LuaCallbacks LuaBindings::makeTeamClientCallbacks(TeamClient* teamClient) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<void>("isMemberOfTeam", bind(mem_fn(&TeamClient::isMemberOfTeam), teamClient));
-  callbacks.registerCallbackWithSignature<void, String>("invitePlayer", bind(mem_fn(&TeamClient::invitePlayer), teamClient, _1));
+  callbacks.registerCallbackWithSignature<void>("isMemberOfTeam", [teamClient]() { return teamClient->isMemberOfTeam(); });
+  callbacks.registerCallbackWithSignature<void, String>("invitePlayer", [teamClient](String const& playerName) { return teamClient->invitePlayer(playerName); });
 
   callbacks.registerCallback("isTeamLeader", [teamClient](Maybe<String>  const& playerUuid) -> bool {
       if (playerUuid)

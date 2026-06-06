@@ -10,13 +10,13 @@ LuaCallbacks LuaBindings::makeRenderingCallbacks(ClientApplication* app) {
   LuaCallbacks callbacks;
   
   // if the last argument is defined and true, this change will also be saved to starbound.config and read on next game start, use for things such as an interface that does this
-  callbacks.registerCallbackWithSignature<unsigned>("framesSkipped", bind(mem_fn(&ClientApplication::framesSkipped), app));
-  callbacks.registerCallbackWithSignature<void, String, bool, Maybe<bool>>("setPostProcessGroupEnabled", bind(mem_fn(&ClientApplication::setPostProcessGroupEnabled), app, _1, _2, _3));
-  callbacks.registerCallbackWithSignature<bool, String>("postProcessGroupEnabled", bind(mem_fn(&ClientApplication::postProcessGroupEnabled), app, _1));
-  
-  
+  callbacks.registerCallbackWithSignature<unsigned>("framesSkipped", [app]() { return app->framesSkipped(); });
+  callbacks.registerCallbackWithSignature<void, String, bool, Maybe<bool>>("setPostProcessGroupEnabled", [app](String const& group, bool const& enabled, Maybe<bool> const& save) { app->setPostProcessGroupEnabled(group, enabled, save); });
+  callbacks.registerCallbackWithSignature<bool, String>("postProcessGroupEnabled", [app](String const& group) { return app->postProcessGroupEnabled(group); });
+
+
   // not entirely necessary (root.assetJson can achieve the same purpose) but may as well
-  callbacks.registerCallbackWithSignature<Json>("postProcessGroups", bind(mem_fn(&ClientApplication::postProcessGroups), app));
+  callbacks.registerCallbackWithSignature<Json>("postProcessGroups", [app]() { return app->postProcessGroups(); });
   
   // typedef Variant<float, int, Vec4F, Vec3F, Vec2F, bool> RenderEffectParameter;
   // TODO: maybe we should be checking the effect's type and converting lua based on that instead of converting to a Variant and relying on the Variant's ordering
@@ -40,7 +40,7 @@ LuaCallbacks LuaBindings::makeRenderingCallbacks(ClientApplication* app) {
   });
   
   // not saved; should be loaded by Lua again
-  callbacks.registerCallbackWithSignature<void, String, unsigned>("setPostProcessLayerPasses", bind(mem_fn(&ClientApplication::setPostProcessLayerPasses), app, _1, _2));
+  callbacks.registerCallbackWithSignature<void, String, unsigned>("setPostProcessLayerPasses", [app](String const& layer, unsigned const& passes) { app->setPostProcessLayerPasses(layer, passes); });
 
   return callbacks;
 }

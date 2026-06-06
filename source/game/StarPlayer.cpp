@@ -205,8 +205,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_humanoidDanceNetState.setCompatibilityVersion(13);
   m_netGroup.addNetElement(&m_humanoidDanceNetState);
 
-  m_netGroup.setNeedsLoadCallback(bind(&Player::getNetStates, this, _1));
-  m_netGroup.setNeedsStoreCallback(bind(&Player::setNetStates, this));
+  m_netGroup.setNeedsLoadCallback([this](bool initial) { return getNetStates(initial); });
+  m_netGroup.setNeedsStoreCallback([this]() { return setNetStates(); });
 }
 
 Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules) : Player(config) {

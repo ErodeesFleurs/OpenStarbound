@@ -6,14 +6,14 @@ namespace Star {
 LuaCallbacks LuaBindings::makeSongbookCallbacks(Songbook* songbook) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<void, Json, String>("play", bind(mem_fn(&Songbook::play), songbook, _1, _2));
-  callbacks.registerCallbackWithSignature<void, String, Vec2F>("keepAlive", bind(mem_fn(&Songbook::keepAlive), songbook, _1, _2));
-  callbacks.registerCallbackWithSignature<void>("stop", bind(mem_fn(&Songbook::stop), songbook));
-  callbacks.registerCallbackWithSignature<bool>("active", bind(mem_fn(&Songbook::active), songbook));
-  callbacks.registerCallbackWithSignature<Maybe<String>>("band", bind(mem_fn(&Songbook::timeSource), songbook));
-  callbacks.registerCallbackWithSignature<Maybe<String>>("instrument", bind(mem_fn(&Songbook::instrument), songbook));
-  callbacks.registerCallbackWithSignature<bool>("instrumentPlaying", bind(mem_fn(&Songbook::instrumentPlaying), songbook));
-  callbacks.registerCallbackWithSignature<Json>("song", bind(mem_fn(&Songbook::song), songbook));
+  callbacks.registerCallbackWithSignature<void, Json, String>("play", [songbook](Json const& music, String const& name) { songbook->play(music, name); });
+  callbacks.registerCallbackWithSignature<void, String, Vec2F>("keepAlive", [songbook](String const& name, Vec2F const& pos) { songbook->keepAlive(name, pos); });
+  callbacks.registerCallbackWithSignature<void>("stop", [songbook]() { songbook->stop(); });
+  callbacks.registerCallbackWithSignature<bool>("active", [songbook]() { return songbook->active(); });
+  callbacks.registerCallbackWithSignature<Maybe<String>>("band", [songbook]() { return songbook->timeSource(); });
+  callbacks.registerCallbackWithSignature<Maybe<String>>("instrument", [songbook]() { return songbook->instrument(); });
+  callbacks.registerCallbackWithSignature<bool>("instrumentPlaying", [songbook]() { return songbook->instrumentPlaying(); });
+  callbacks.registerCallbackWithSignature<Json>("song", [songbook]() { return songbook->song(); });
 
   return callbacks;
 }
