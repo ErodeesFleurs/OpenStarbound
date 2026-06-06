@@ -60,21 +60,24 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     int radius = !shifting ? m_blockRadius : m_altBlockRadius;
     String blockSound;
     List<Vec2I> brushArea;
+    List<Particle> miningParticles;
 
     auto layer = (mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background);
     if (owner()->isAdmin() || owner()->inToolRange()) {
       brushArea = tileAreaBrush(radius, owner()->aimPosition(), true);
       for (auto const& pos : brushArea) {
-        blockSound = materialDatabase->miningSound(world()->material(pos, layer), world()->mod(pos, layer));
-        if (!blockSound.empty())
-          break;
-      }
-      if (blockSound.empty()) {
-        for (auto const& pos : brushArea) {
-          blockSound = materialDatabase->footstepSound(world()->material(pos, layer), world()->mod(pos, layer));
-          if (!blockSound.empty()
-              && blockSound != Root::singleton().assets()->json("/client.config:defaultFootstepSound").toString())
-            break;
+        auto [mat, modId] = world()->materialAndMod(pos, layer);
+        if (auto sound = materialDatabase->miningSound(mat, modId); !sound.empty()) {
+          blockSound = sound;
+        } else if (blockSound.empty()) {
+          auto fs = materialDatabase->footstepSound(mat, modId);
+          if (!fs.empty() && fs != materialDatabase->defaultFootstepSound())
+            blockSound = fs;
+        }
+        if (auto miningParticleConfig = materialDatabase->miningParticle(mat, modId)) {
+          auto miningParticle = miningParticleConfig->instance();
+          miningParticle.position += static_cast<Vec2F>(pos);
+          miningParticles.append(miningParticle);
         }
       }
 
@@ -104,14 +107,6 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     if (used) {
       owner()->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
       owner()->addSound(blockSound, m_blockVolume);
-      List<Particle> miningParticles;
-      for (auto const& pos : brushArea) {
-        if (auto miningParticleConfig = materialDatabase->miningParticle(world()->material(pos, layer), world()->mod(pos, layer))) {
-          auto miningParticle = miningParticleConfig->instance();
-          miningParticle.position += static_cast<Vec2F>(pos);
-          miningParticles.append(miningParticle);
-        }
-      }
       owner()->addParticles(miningParticles);
       SwingableItem::fire(mode, shifting, edgeTriggered);
     }

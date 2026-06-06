@@ -34,6 +34,7 @@ public:
   // values are valid world indexes.
 
   virtual MaterialId material(Vec2I const& position, TileLayer layer) const = 0;
+  virtual std::tuple<MaterialId, ModId> materialAndMod(Vec2I const& position, TileLayer layer) const = 0;
   virtual MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const = 0;
   virtual ModId mod(Vec2I const& position, TileLayer layer) const = 0;
   virtual MaterialHue modHueShift(Vec2I const& position, TileLayer layer) const = 0;

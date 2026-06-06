@@ -645,13 +645,23 @@ void WorldServer::update(float dt) {
     m_needsGlobalBreakCheck = false;
 
   List<EntityId> toRemove;
+
+  HashSet<Vec2S> activeSectors;
+  for (auto const& pair : m_clientInfo) {
+    auto window = pair.second->clientState.window().padded(WorldSectorSize);
+    activeSectors.addAll(m_tileArray->validSectorsFor(window));
+  }
+
   m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
+      auto sector = m_tileArray->sectorFor(Vec2I::floor(entity->position()));
+      if (!activeSectors.contains(Vec2S(sector[0], sector[1]))) {
+        if (entity->entityMode() != EntityMode::Master)
+          return;
+      }
+
       entity->update(dt, m_currentStep);
 
       if (auto tileEntity = as<TileEntity>(entity)) {
-        // Only do break checks on objects if all sectors the object touches
-        // *and surrounding sectors* are active.  Objects that this object
-        // rests on can be up to an entire sector large in any direction.
         if (doBreakChecks && regionActive(RectI::integral(tileEntity->metaBoundBox().translated(tileEntity->position())).padded(WorldSectorSize)))
           tileEntity->checkBroken();
         updateTileEntityTiles(tileEntity);
@@ -748,6 +758,10 @@ uint64_t WorldServer::currentStep() const {
 
 MaterialId WorldServer::material(Vec2I const& pos, TileLayer layer) const {
   return m_tileArray->tile(pos).material(layer);
+}
+
+std::tuple<MaterialId, ModId> WorldServer::materialAndMod(Vec2I const& pos, TileLayer layer) const {
+  return m_tileArray->tile(pos).materialAndMod(layer);
 }
 
 MaterialHue WorldServer::materialHueShift(Vec2I const& position, TileLayer layer) const {

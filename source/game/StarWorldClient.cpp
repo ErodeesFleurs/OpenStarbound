@@ -1351,6 +1351,12 @@ MaterialId WorldClient::material(Vec2I const& pos, TileLayer layer) const {
   return m_tileArray->tile(pos).material(layer);
 }
 
+std::tuple<MaterialId, ModId> WorldClient::materialAndMod(Vec2I const& pos, TileLayer layer) const {
+  if (!inWorld())
+    return {NullMaterialId, NoModId};
+  return m_tileArray->tile(pos).materialAndMod(layer);
+}
+
 MaterialHue WorldClient::materialHueShift(Vec2I const& position, TileLayer layer) const {
   if (!inWorld())
     return MaterialHue();
