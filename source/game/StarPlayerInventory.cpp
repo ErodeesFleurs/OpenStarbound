@@ -234,7 +234,7 @@ ItemPtr PlayerInventory::addToBags(ItemPtr items) {
   if (!items || items->empty())
     return {};
 
-  for (auto pair : m_bags) {
+  for (auto const& pair : m_bags) {
     if (!itemAllowedInBag(items, pair.first))
       continue;
 
@@ -313,7 +313,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
   auto one = descriptor.singular();
 
   Map<String, uint64_t> consumeFromItemBags;
-  for (auto pair : m_bags)
+  for (auto const& pair : m_bags)
     consumeFromItemBags[pair.first] = pair.second->available(one);
 
   uint64_t consumeFromEquipment = 0;
@@ -331,7 +331,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
     consumeFromTrash += m_trashSlot->matches(one, exactMatch) ? m_trashSlot->count() : 0;
 
   auto totalAvailable = consumeFromEquipment + consumeFromSwap + consumeFromTrash;
-  for (auto pair : consumeFromItemBags)
+  for (auto const& pair : consumeFromItemBags)
     totalAvailable += pair.second;
 
   if (totalAvailable < descriptor.count())
@@ -339,7 +339,7 @@ bool PlayerInventory::consumeItems(ItemDescriptor const& descriptor, bool exactM
 
   uint64_t leftoverCount = descriptor.count();
   uint64_t quantity;
-  for (auto pair : m_bags) {
+  for (auto const& pair : m_bags) {
     quantity = min(leftoverCount, consumeFromItemBags[pair.first]);
     if (quantity > 0) {
       [[maybe_unused]] auto res = pair.second->consumeItems(one.multiply(quantity), exactMatch);
@@ -594,7 +594,7 @@ bool PlayerInventory::clearSwap() {
   trySlot(EquipmentSlot::Legs);
   trySlot(EquipmentSlot::Back);
 
-  for (auto bagType : m_bags.keys())
+  for (auto const& bagType : m_bags.keys())
     tryBag(bagType);
 
   return !m_swapSlot;
@@ -930,7 +930,7 @@ Map<String, uint64_t> PlayerInventory::itemSummary() const {
 }
 
 void PlayerInventory::cleanup() {
-  for (auto pair : m_bags)
+  for (auto const& pair : m_bags)
     pair.second->cleanup();
 
   for (auto& p : m_equipment)
@@ -1115,7 +1115,7 @@ void PlayerInventory::netElementsNeedLoad(bool) {
 
   deserializeItemMap(m_equipmentNetState, m_equipment);
 
-  for (auto bagType : m_bagsNetState.keys())
+  for (auto const& bagType : m_bagsNetState.keys())
     deserializeItemList(m_bagsNetState[bagType], m_bags[bagType]->items());
 
   deserializeItem(m_swapSlotNetState, m_swapSlot);
@@ -1154,7 +1154,7 @@ void PlayerInventory::netElementsNeedStore() {
 
   serializeItemMap(m_equipmentNetState, m_equipment);
 
-  for (auto bagType : m_bagsNetState.keys())
+  for (auto const& bagType : m_bagsNetState.keys())
     serializeItemList(m_bagsNetState[bagType], m_bags[bagType]->items());
 
   serializeItem(m_swapSlotNetState, m_swapSlot);

@@ -1309,10 +1309,10 @@ void Player::giveItem(ItemPtr const& item) {
 
 void Player::triggerPickupEvents(ItemPtr const& item) {
   if (item) {
-    for (auto b : item->learnBlueprintsOnPickup())
+    for (auto const& b : item->learnBlueprintsOnPickup())
       addBlueprint(b);
 
-    for (auto pair : item->collectablesOnPickup())
+    for (auto const& pair : item->collectablesOnPickup())
       addCollectable(pair.first, pair.second);
 
     for (auto m : item->instanceValue("radioMessagesOnPickup", JsonArray()).iterateArray()) {
@@ -1516,7 +1516,7 @@ InteractiveEntityPtr Player::bestInteractionEntity(bool includeNearby) {
 
 void Player::interactWithEntity(InteractiveEntityPtr entity) {
   bool questIntercepted = false;
-  for (auto quest : m_questManager->listActiveQuests()) {
+  for (auto const& quest : m_questManager->listActiveQuests()) {
     if (quest->interactWithEntity(entity->entityId()))
       questIntercepted = true;
   }
@@ -1537,7 +1537,7 @@ void Player::interactWithEntity(InteractiveEntityPtr entity) {
   if (anyTurnedIn)
     return;
 
-  for (auto questArc : entity->offeredQuests()) {
+  for (auto const& questArc : entity->offeredQuests()) {
     if (m_questManager->canStart(questArc)) {
       auto quest = make_shared<Quest>(questArc, 0, this);
       quest->setWorldId(clientContext()->playerWorldId());
@@ -1980,7 +1980,7 @@ String Player::getFootstepSound(Vec2I const& sensor) const {
 
   String fallback = materialDatabase->defaultFootstepSound();
   List<Vec2I> scanOrder{{0, 0}, {0, -1}, {-1, 0}, {1, 0}, {-1, -1}, {1, -1}};
-  for (auto subSensor : scanOrder) {
+  for (auto const& subSensor : scanOrder) {
     String footstepSound = materialDatabase->footstepSound(world()->material(sensor + subSensor, TileLayer::Foreground),
         world()->mod(sensor + subSensor, TileLayer::Foreground));
     if (!footstepSound.empty()) {

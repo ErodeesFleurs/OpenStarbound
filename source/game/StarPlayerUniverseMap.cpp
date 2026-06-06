@@ -53,7 +53,7 @@ PlayerUniverseMap::PlayerUniverseMap(Json const& json) {
 
 Json PlayerUniverseMap::toJson() const {
   JsonObject json;
-  for (auto p : m_universeMaps)
+  for (auto const& p : m_universeMaps)
     json.set(p.first.hex(), p.second.toJson());
   return json;
 }
@@ -63,7 +63,7 @@ List<pair<Vec3I, OrbitBookmark>> PlayerUniverseMap::orbitBookmarks() const {
     return {};
 
   List<pair<Vec3I, OrbitBookmark>> bookmarks;
-  for (auto p : universeMap().systems) {
+  for (auto const& p : universeMap().systems) {
     bookmarks.appendAll(p.second.bookmarks.values().transformed([&p](OrbitBookmark const& b) {
       return pair<Vec3I, OrbitBookmark>(p.first, b);
     }));
@@ -223,7 +223,7 @@ Json PlayerUniverseMap::SystemMap::toJson() const {
   json.set("mappedPlanets", planets);
 
   JsonObject objects;
-  for (auto o : mappedObjects) {
+  for (auto const& o : mappedObjects) {
     JsonObject object;
     objects.set(o.first.hex(), JsonObject{
       {"typeName", o.second.typeName},
@@ -249,7 +249,7 @@ PlayerUniverseMap::UniverseMap PlayerUniverseMap::UniverseMap::fromJson(Json con
     map.systems.set(location, SystemMap::fromJson(s.get(1)));
   }
 
-  for (auto bookmark : json.getArray("teleportBookmarks").transformed(&TeleportBookmark::fromJson))
+  for (auto const& bookmark : json.getArray("teleportBookmarks").transformed(&TeleportBookmark::fromJson))
     map.teleportBookmarks.add(bookmark);
 
   return map;
@@ -260,7 +260,7 @@ Json PlayerUniverseMap::UniverseMap::toJson() const {
 
   JsonArray s;
   s.reserve(systems.size());
-  for (auto p : systems) {
+  for (auto const& p : systems) {
     s.append(JsonArray{jsonFromVec3I(p.first), p.second.toJson()});
   }
   json.set("systems", s);

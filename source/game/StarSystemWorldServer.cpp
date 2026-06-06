@@ -179,7 +179,7 @@ bool SystemWorldServer::addObject(SystemObjectPtr object, bool doRangeCheck) {
     for (auto planet : planets()) {
       orbitDistances.append({planetOrbitDistance(planet), clusterSize(planet) / 2.0});
     }
-    for (auto o : m_objects.values()) {
+    for (auto const& o : m_objects.values()) {
       if (o->permanent())
         orbitDistances.append({o->position().magnitude(), 0.0});
     }
@@ -209,10 +209,10 @@ bool SystemWorldServer::addObject(SystemObjectPtr object, bool doRangeCheck) {
 }
 
 void SystemWorldServer::update(float dt) {
-  for (auto p : m_ships)
+  for (auto const& p : m_ships)
     p.second->serverUpdate(this, dt);
 
-  for (auto p : m_objects) {
+  for (auto const& p : m_objects) {
     p.second->serverUpdate(this, dt);
 
     // don't destroy objects that still have players at them
@@ -226,7 +226,7 @@ void SystemWorldServer::update(float dt) {
 
   // remove objects and ships after queueing update packets to ensure they're not updated after being removed
   for (auto objectUuid : take(m_objectDestroyQueue)) {
-    for (auto p : m_clientNetVersions) {
+    for (auto& p : m_clientNetVersions) {
       p.second.objects.remove(objectUuid);
       m_outgoingPackets[p.first].append(make_shared<SystemObjectDestroyPacket>(objectUuid));
     }
@@ -234,7 +234,7 @@ void SystemWorldServer::update(float dt) {
     m_triggerStorage = true;
   }
   for (auto shipUuid : take(m_shipDestroyQueue)) {
-    for (auto p : m_clientNetVersions) {
+    for (auto& p : m_clientNetVersions) {
       p.second.ships.remove(shipUuid);
       m_outgoingPackets[p.first].append(make_shared<SystemShipDestroyPacket>(shipUuid));
     }
@@ -264,7 +264,7 @@ void SystemWorldServer::queueUpdatePackets() {
     auto versions = m_clientNetVersions.ptr(clientId);
 
     HashMap<Uuid, ByteArray> shipUpdates;
-    for (auto ship : m_ships.values()) {
+    for (auto const& ship : m_ships.values()) {
       uint64_t version = versions->ships.maybe(ship->uuid()).value(0);
       auto shipUpdate = ship->writeNetState(version, {});
       versions->ships.set(ship->uuid(), shipUpdate.second);
@@ -273,7 +273,7 @@ void SystemWorldServer::queueUpdatePackets() {
     }
 
     HashMap<Uuid, ByteArray> objectUpdates;
-    for (auto object : m_objects.values()) {
+    for (auto const& object : m_objects.values()) {
       uint64_t version = versions->objects.maybe(object->uuid()).value(0);
       auto objectUpdate = object->writeNetState(version, {});
       versions->objects.set(object->uuid(), objectUpdate.second);
@@ -305,7 +305,7 @@ bool SystemWorldServer::triggeredStorage() {
 
 Json SystemWorldServer::diskStore() {
   JsonArray storedObjects;
-  for (auto o : m_objects)
+  for (auto const& o : m_objects)
     storedObjects.append(o.second->diskStore());
 
   JsonObject store;

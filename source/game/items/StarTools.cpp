@@ -64,13 +64,13 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
     auto layer = (mode == FireMode::Primary ? TileLayer::Foreground : TileLayer::Background);
     if (owner()->isAdmin() || owner()->inToolRange()) {
       brushArea = tileAreaBrush(radius, owner()->aimPosition(), true);
-      for (auto pos : brushArea) {
+      for (auto const& pos : brushArea) {
         blockSound = materialDatabase->miningSound(world()->material(pos, layer), world()->mod(pos, layer));
         if (!blockSound.empty())
           break;
       }
       if (blockSound.empty()) {
-        for (auto pos : brushArea) {
+        for (auto const& pos : brushArea) {
           blockSound = materialDatabase->footstepSound(world()->material(pos, layer), world()->mod(pos, layer));
           if (!blockSound.empty()
               && blockSound != Root::singleton().assets()->json("/client.config:defaultFootstepSound").toString())
@@ -105,7 +105,7 @@ void MiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       owner()->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
       owner()->addSound(blockSound, m_blockVolume);
       List<Particle> miningParticles;
-      for (auto pos : brushArea) {
+      for (auto const& pos : brushArea) {
         if (auto miningParticleConfig = materialDatabase->miningParticle(world()->material(pos, layer), world()->mod(pos, layer))) {
           auto miningParticle = miningParticleConfig->instance();
           miningParticle.position += static_cast<Vec2F>(pos);
@@ -372,7 +372,7 @@ List<PreviewTile> BeamMiningTool::previewTiles(bool shifting) const {
         lightColor *= Color::rgbaf(0.75f, 0.75f, 0.75f, 1.0f);
       Vec3B light = lightColor.toRgb();
       int radius = !shifting ? m_blockRadius : m_altBlockRadius;
-      for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
+      for (auto const& pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
         if (worldp->tileIsOccupied(pos, TileLayer::Foreground, true)) {
           result.append({pos, true, light, true});
         } else if (worldp->tileIsOccupied(pos, TileLayer::Background, true)) {
@@ -423,13 +423,13 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       brushArea = tileAreaBrush(radius, ownerp->aimPosition(), true);
       auto aimPosition = Vec2I(ownerp->aimPosition());
 
-      for (auto pos : brushArea) {
+      for (auto const& pos : brushArea) {
         blockSound = materialDatabase->miningSound(worldp->material(pos, layer), worldp->mod(pos, layer));
         if (!blockSound.empty())
           break;
       }
       if (blockSound.empty()) {
-        for (auto pos : brushArea) {
+        for (auto const& pos : brushArea) {
           blockSound = materialDatabase->footstepSound(worldp->material(pos, layer), worldp->mod(pos, layer));
           if (!blockSound.empty()
               && blockSound != Root::singleton().assets()->json("/client.config:defaultFootstepSound").toString())
@@ -448,7 +448,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
         auto targetLiquid = worldp->liquidLevel(aimPosition).liquid;
         List<Vec2I> drainTiles;
         float totalLiquid = 0;
-        for (auto pos : brushArea) {
+        for (auto const& pos : brushArea) {
           if (worldp->isTileProtected(pos))
             continue;
 
@@ -480,7 +480,7 @@ void BeamMiningTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       ownerp->addSound(Random::randValueFrom(m_strikeSounds), m_toolVolume);
       ownerp->addSound(blockSound, m_blockVolume);
       List<Particle> miningParticles;
-      for (auto pos : brushArea) {
+      for (auto const& pos : brushArea) {
         if (auto miningParticleConfig = materialDatabase->miningParticle(worldp->material(pos, layer), worldp->mod(pos, layer))) {
           auto miningParticle = miningParticleConfig->instance();
           miningParticle.position += static_cast<Vec2F>(pos);
@@ -656,7 +656,7 @@ List<PreviewTile> PaintingBeamTool::previewTiles(bool shifting) const {
     if (ownerp->isAdmin() || ownerp->inToolRange()) {
       int radius = !shifting ? m_blockRadius : m_altBlockRadius;
 
-      for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
+      for (auto const& pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
         if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Foreground, static_cast<MaterialColorVariant>(m_colorIndex)}, true)) {
           result.append({pos, true, NullMaterialId, MaterialHue(), false, light, true, static_cast<MaterialColorVariant>(m_colorIndex)});
         } else if (worldp->canModifyTile(pos, PlaceMaterialColor{TileLayer::Background, static_cast<MaterialColorVariant>(m_colorIndex)}, true)) {
@@ -704,7 +704,7 @@ void PaintingBeamTool::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       int radius = !shifting ? m_blockRadius : m_altBlockRadius;
 
       if (ownerp->isAdmin() || ownerp->inToolRange()) {
-        for (auto pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
+        for (auto const& pos : tileAreaBrush(radius, ownerp->aimPosition(), true)) {
           TileModificationList modifications = {
             {pos, PlaceMaterialColor{TileLayer::Foreground, static_cast<MaterialColorVariant>(m_colorIndex)}},
             {pos, PlaceMaterialColor{TileLayer::Background, static_cast<MaterialColorVariant>(m_colorIndex)}}

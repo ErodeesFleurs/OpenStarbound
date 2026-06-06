@@ -72,7 +72,7 @@ bool ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) 
     };
 
   bool anyValid = false;
-  for (auto anchor : anchors) {
+  for (auto const& anchor : anchors) {
     auto valid = anchorValid(anchor);
     if (valid)
       anyValid = true;
@@ -185,7 +185,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
     orientation->animationCycle = orientationSettings.getDouble("animationCycle", 1.0);
 
     if (orientationSettings.contains("spaces")) {
-      for (auto v : orientationSettings.getArray("spaces"))
+      for (auto const& v : orientationSettings.getArray("spaces"))
         orientation->spaces.append(jsonToVec2I(v));
     } else {
       orientation->spaces = {{0, 0}};
@@ -223,40 +223,40 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
     if (auto anchorMaterialName = orientationSettings.optString("anchorMaterial"))
       anchorMaterial = materialDatabase->materialId(*anchorMaterialName);
 
-    for (auto type : orientationSettings.getArray("anchors", {})) {
+    for (auto const& type : orientationSettings.getArray("anchors", {})) {
       String anchorType = type.toString();
       if (anchorType == "left") {
-        for (auto space : orientation->spaces) {
+        for (auto const& space : orientation->spaces) {
           if (space[0] == orientation->boundBox.xMin())
             orientation->anchors.append({TileLayer::Foreground, space + Vec2I(-1, 0), tilled, soil, anchorMaterial});
         }
       } else if (anchorType == "bottom") {
-        for (auto space : orientation->spaces) {
+        for (auto const& space : orientation->spaces) {
           if (space[1] == orientation->boundBox.yMin())
             orientation->anchors.append({TileLayer::Foreground, space + Vec2I(0, -1), tilled, soil, anchorMaterial});
         }
       } else if (anchorType == "right") {
-        for (auto space : orientation->spaces) {
+        for (auto const& space : orientation->spaces) {
           if (space[0] == orientation->boundBox.xMax())
             orientation->anchors.append({TileLayer::Foreground, space + Vec2I(1, 0), tilled, soil, anchorMaterial});
         }
       } else if (anchorType == "top") {
-        for (auto space : orientation->spaces) {
+        for (auto const& space : orientation->spaces) {
           if (space[1] == orientation->boundBox.yMax())
             orientation->anchors.append({TileLayer::Foreground, space + Vec2I(0, 1), tilled, soil, anchorMaterial});
         }
       } else if (anchorType == "background") {
-        for (auto space : orientation->spaces)
+        for (auto const& space : orientation->spaces)
           orientation->anchors.append({TileLayer::Background, space, tilled, soil, anchorMaterial});
       } else {
         throw ObjectException(strf("Unknown anchor type: {}", anchorType));
       }
     }
 
-    for (auto v : orientationSettings.getArray("bgAnchors", {}))
+    for (auto const& v : orientationSettings.getArray("bgAnchors", {}))
       orientation->anchors.append({TileLayer::Background, jsonToVec2I(v), tilled, soil, anchorMaterial});
 
-    for (auto v : orientationSettings.getArray("fgAnchors", {}))
+    for (auto const& v : orientationSettings.getArray("fgAnchors", {}))
       orientation->anchors.append({TileLayer::Foreground, jsonToVec2I(v), tilled, soil, anchorMaterial});
 
     orientation->anchorAny = orientationSettings.getBool("anchorAny", false);
@@ -266,24 +266,24 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
 
     auto collisionType = orientationSettings.getString("collision", "none");
     if (orientationSettings.contains("materialSpaces")) {
-      for (auto space : orientationSettings.get("materialSpaces").iterateArray()) {
+      for (auto const& space : orientationSettings.get("materialSpaces").iterateArray()) {
         String materialName = space.get(1).toString();
         orientation->materialSpaces.append({jsonToVec2I(space.get(0)), materialDatabase->materialId(materialName)});
       }
     } else if (collisionType == "solid") {
       if (orientationSettings.contains("collisionSpaces")) {
-        for (auto space : orientationSettings.get("collisionSpaces").iterateArray())
+        for (auto const& space : orientationSettings.get("collisionSpaces").iterateArray())
           orientation->materialSpaces.append({jsonToVec2I(space), ObjectSolidMaterialId});
       } else {
-        for (auto space : orientation->spaces)
+        for (auto const& space : orientation->spaces)
           orientation->materialSpaces.append({space, ObjectSolidMaterialId});
       }
     } else if (collisionType == "platform") {
       if (orientationSettings.contains("collisionSpaces")) {
-        for (auto space : orientationSettings.get("collisionSpaces").iterateArray())
+        for (auto const& space : orientationSettings.get("collisionSpaces").iterateArray())
           orientation->materialSpaces.append({jsonToVec2I(space), ObjectPlatformMaterialId});
       } else {
-        for (auto space : orientation->spaces) {
+        for (auto const& space : orientation->spaces) {
           if (space[1] == orientation->boundBox.yMax())
             orientation->materialSpaces.append({space, ObjectPlatformMaterialId});
         }
@@ -292,7 +292,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
 
     if (orientationSettings.contains("interactiveSpaces")) {
       List<Vec2I> iSpaces;
-      for (auto space : orientationSettings.get("interactiveSpaces").iterateArray())
+      for (auto const& space : orientationSettings.get("interactiveSpaces").iterateArray())
         iSpaces.append(jsonToVec2I(space));
       orientation->interactiveSpaces = iSpaces;
     }
@@ -303,7 +303,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(String const& path,
     if (orientationSettings.contains("particleEmitter"))
       orientation->particleEmitters.append(
           ObjectOrientation::parseParticleEmitter(path, orientationSettings.get("particleEmitter")));
-    for (auto particleEmitterConfig : orientationSettings.getArray("particleEmitters", {}))
+    for (auto const& particleEmitterConfig : orientationSettings.getArray("particleEmitters", {}))
       orientation->particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig));
 
     orientation->statusEffectArea = orientationSettings.opt("statusEffectArea").apply(jsonToPolyF);
@@ -485,9 +485,9 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
       objectConfig->breakDropPool = config.getString("breakDropPool");
 
     if (config.contains("breakDropOptions")) {
-      for (auto dropChoiceGroups : config.get("breakDropOptions").iterateArray()) {
+      for (auto const& dropChoiceGroups : config.get("breakDropOptions").iterateArray()) {
         List<ItemDescriptor> group;
-        for (auto dropChoiceEntry : dropChoiceGroups.iterateArray())
+        for (auto const& dropChoiceEntry : dropChoiceGroups.iterateArray())
           group.append(
               {dropChoiceEntry.getString(0), static_cast<size_t>(dropChoiceEntry.getUInt(1)), dropChoiceEntry.getObject(2)});
         objectConfig->breakDropOptions.append(group);
@@ -501,9 +501,9 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
     if (config.contains("smashDropPool"))
       objectConfig->smashDropPool = config.getString("smashDropPool");
 
-    for (auto dropChoiceGroups : config.get("smashDropOptions", JsonArray()).iterateArray()) {
+    for (auto const& dropChoiceGroups : config.get("smashDropOptions", JsonArray()).iterateArray()) {
       List<ItemDescriptor> group;
-      for (auto dropChoiceEntry : dropChoiceGroups.iterateArray())
+      for (auto const& dropChoiceEntry : dropChoiceGroups.iterateArray())
         group.append(ItemDescriptor(dropChoiceEntry));
       objectConfig->smashDropOptions.append(group);
     }
@@ -584,10 +584,10 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
     List<ObjectOrientation::ParticleEmissionEntry> particleEmitters;
     if (config.contains("particleEmitter"))
       particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, config.get("particleEmitter")));
-    for (auto particleEmitterConfig : config.getArray("particleEmitters", {}))
+    for (auto const& particleEmitterConfig : config.getArray("particleEmitters", {}))
       particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig));
 
-    for (auto orientation : objectConfig->orientations)
+    for (auto const& orientation : objectConfig->orientations)
       orientation->particleEmitters.appendAll(particleEmitters);
 
     objectConfig->rooting = config.getBool("rooting", false);

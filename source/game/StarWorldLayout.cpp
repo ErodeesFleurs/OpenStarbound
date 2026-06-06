@@ -551,7 +551,7 @@ void WorldLayout::addBiomeRegion(
       if (layer.layerMinHeight == targetLayer.yStart)
         terrestrialLayer = layer;
     };
-  for (auto undergroundLayer : terrestrialParameters.undergroundLayers)
+  for (auto const& undergroundLayer : terrestrialParameters.undergroundLayers)
     checkLayer(undergroundLayer);
   checkLayer(terrestrialParameters.subsurfaceLayer);
   checkLayer(terrestrialParameters.surfaceLayer);
@@ -717,7 +717,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
 
     // check the current width to see how much (if any) to expand
     int currentWidth = 0;
-    for (auto regionCell : targetCells)
+    for (auto const& regionCell : targetCells)
       currentWidth += (regionCell.rBound - regionCell.lBound);
 
     if (currentWidth >= newWidth) {
@@ -741,7 +741,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
 
     // split any target cells that now cross the world wrap
     List<RegionCell> wrappedTargetCells;
-    for (auto cell : targetCells) {
+    for (auto const& cell : targetCells) {
       if (cell.lBound < 0) {
         wrappedTargetCells.append(RegionCell{0, cell.rBound, cell.region});
         wrappedTargetCells.append(RegionCell{worldWidth + cell.lBound, worldWidth, cell.region});
@@ -756,9 +756,9 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
     targetCells = wrappedTargetCells;
 
     // modify/delete any overlapped cells
-    for (auto targetCell : targetCells) {
+    for (auto const& targetCell : targetCells) {
       List<RegionCell> newOtherCells;
-      for (auto otherCell : otherCells) {
+      for (auto const& otherCell : otherCells) {
         bool rInside = otherCell.rBound <= targetCell.rBound && otherCell.rBound >= targetCell.lBound;
         bool lInside = otherCell.lBound <= targetCell.rBound && otherCell.lBound >= targetCell.lBound;
         if (rInside && lInside)
@@ -949,7 +949,7 @@ void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& p
   int yRange = Root::singleton().assets()->json("/world_template.config:playerStartSearchYRange").toInt();
   int i = 0;
   int lastBoundary = 0;
-  for (auto region : layer.cells) {
+  for (auto const& region : layer.cells) {
     int nextBoundary = i < static_cast<int>(layer.boundaries.size()) ? layer.boundaries[i] : worldWidth;
     if (spawnBiomeIndexes.contains(region->blockBiomeIndex))
       m_playerStartSearchRegions.append(RectI(lastBoundary, std::max(0, yBase - yRange), nextBoundary, std::min(worldHeight, yBase + yRange)));
