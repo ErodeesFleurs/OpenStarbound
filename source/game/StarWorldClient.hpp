@@ -301,6 +301,7 @@ private:
   SkyPtr m_sky;
 
   CollisionGenerator m_collisionGenerator;
+  HashMap<Vec2I, StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace>> m_collisionCache;
 
   WorldClientState m_clientState;
   Maybe<ConnectionId> m_clientId;

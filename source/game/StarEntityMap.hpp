@@ -132,6 +132,7 @@ private:
   EntityId m_endIdSpace;
 
   List<SpatialMap::Entry const*> m_entrySortBuffer;
+  mutable List<EntityPtr const*> m_forAllBuffer;
 };
 
 template <typename EntityT>

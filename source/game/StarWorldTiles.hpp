@@ -20,6 +20,7 @@ struct WorldTile {
 
   MaterialId material(TileLayer layer) const;
   ModId mod(TileLayer layer) const;
+  tuple<MaterialId, ModId> materialAndMod(TileLayer layer) const;
   MaterialColorVariant materialColor(TileLayer layer) const;
   CollisionKind getCollision() const;
   tuple<MaterialId, MaterialHue, MaterialColorVariant> materialAndColor(TileLayer layer) const;
@@ -41,7 +42,8 @@ struct WorldTile {
   CollisionKind collision;
 
   bool collisionCacheDirty;
-  StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace> collisionCache;
+  // Collision cache moved to external WorldServer/WorldClient storage
+  // to reduce per-tile memory from ~300B to ~50B.
 
   BiomeIndex blockBiomeIndex;
   BiomeIndex environmentBiomeIndex;
@@ -277,6 +279,13 @@ inline tuple<MaterialId, MaterialHue, MaterialColorVariant> WorldTile::materialA
   else
     return std::tuple<MaterialId, MaterialHue, MaterialColorVariant>{
         background, backgroundHueShift, backgroundColorVariant};
+}
+
+inline tuple<MaterialId, ModId> WorldTile::materialAndMod(TileLayer layer) const {
+  if (layer == TileLayer::Foreground)
+    return std::tuple<MaterialId, ModId>{foreground, foregroundMod};
+  else
+    return std::tuple<MaterialId, ModId>{background, backgroundMod};
 }
 
 inline ClientTile::ClientTile() : backgroundLightTransparent(true), foregroundLightTransparent(true), gravity() {}

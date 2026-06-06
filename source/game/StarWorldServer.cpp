@@ -304,7 +304,7 @@ List<PacketPtr> WorldServer::removeClient(ConnectionId clientId) {
       auto response = m_entityMessageResponses[uuid].second;
       if (response.is<ConnectionId>()) {
         if (auto clientInfo = m_clientInfo.value(response.get<ConnectionId>()))
-          clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Client disconnected"), uuid));
+          clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeLeft("Client disconnected"), uuid));
       } else {
         response.get<RpcPromiseKeeper<Json>>().fail("Client disconnected");
       }
@@ -386,12 +386,12 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
     } else if (auto mtpacket = as<ModifyTileListPacket>(packet)) {
       auto unappliedModifications = applyTileModifications(mtpacket->modifications, mtpacket->allowEntityOverlap);
       if (!unappliedModifications.empty())
-        clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
+        clientInfo->outgoingPackets.append(makePooled<TileModificationFailurePacket>(unappliedModifications));
 
     } else if (auto rtpacket = as<ReplaceTileListPacket>(packet)) {
       auto unappliedModifications = replaceTiles(rtpacket->modifications, rtpacket->tileDamage, rtpacket->applyDamage);
       if (!unappliedModifications.empty())
-        clientInfo->outgoingPackets.append(make_shared<TileModificationFailurePacket>(unappliedModifications));
+        clientInfo->outgoingPackets.append(makePooled<TileModificationFailurePacket>(unappliedModifications));
 
     } else if (auto dtgpacket = as<DamageTileGroupPacket>(packet)) {
       damageTiles(dtgpacket->tilePositions, dtgpacket->layer, dtgpacket->sourcePosition, dtgpacket->tileDamage, dtgpacket->sourceEntity);
@@ -429,7 +429,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       m_damageManager->pushRemoteDamageNotification(damage->remoteDamageNotification);
       for (auto const& pair : m_clientInfo) {
         if (pair.first != clientId && pair.second->needsDamageNotification(damage->remoteDamageNotification))
-          pair.second->outgoingPackets.append(make_shared<DamageNotificationPacket>(damage->remoteDamageNotification));
+          pair.second->outgoingPackets.append(makePooled<DamageNotificationPacket>(damage->remoteDamageNotification));
       }
 
     } else if (auto entityInteract = as<EntityInteractPacket>(packet)) {
@@ -513,14 +513,14 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
         entity = m_entityMap->entity(loadUniqueEntity(entityMessagePacket->entityId.get<String>()));
 
       if (!entity) {
-        clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Unknown entity"), entityMessagePacket->uuid));
+        clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeLeft("Unknown entity"), entityMessagePacket->uuid));
       } else {
         if (entity->isMaster()) {
           auto response = entity->receiveMessage(clientId, entityMessagePacket->message, entityMessagePacket->args);
           if (response)
-            clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeRight(response.take()), entityMessagePacket->uuid));
+            clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeRight(response.take()), entityMessagePacket->uuid));
           else
-            clientInfo->outgoingPackets.append(make_shared<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
+            clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
         } else if (auto const& clientInfo = m_clientInfo.value(connectionForEntity(entity->entityId()))) {
           m_entityMessageResponses[entityMessagePacket->uuid] = {clientInfo->clientId, clientId};
           entityMessagePacket->fromConnection = clientId;
@@ -555,7 +555,7 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
           m_worldProperties[pair.first] = pair.second;
       }
       for (auto const& pair : m_clientInfo)
-        pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(updateWorldProperties->updatedProperties));
+        pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(updateWorldProperties->updatedProperties));
 
     } else if (auto updateWorldTemplate = as<UpdateWorldTemplatePacket>(packet)) {
       if (!clientInfo->admin)
@@ -827,12 +827,13 @@ CollisionKind WorldServer::tileCollisionKind(Vec2I const& pos) const {
 
 void WorldServer::forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const {
   const_cast<WorldServer*>(this)->freshenCollision(region);
-  m_tileArray->tileEach(region, [iterator](Vec2I const& pos, ServerTile const& tile) {
+  m_tileArray->tileEach(region, [&](Vec2I const& pos, ServerTile const& tile) {
       if (tile.getCollision() == CollisionKind::Null) {
         iterator(CollisionBlock::nullBlock(pos));
       } else {
         starAssert(!tile.collisionCacheDirty);
-        for (auto const& block : tile.collisionCache)
+        auto const& cache = m_collisionCache.get(pos);
+        for (auto const& block : cache)
           iterator(block);
       }
     });
@@ -2057,7 +2058,7 @@ void WorldServer::updateDamage(float dt) {
   for (auto const& remoteDamageNotification : m_damageManager->pullRemoteDamageNotifications()) {
     for (auto const& pair : m_clientInfo) {
       if (pair.second->needsDamageNotification(remoteDamageNotification))
-        pair.second->outgoingPackets.append(make_shared<DamageNotificationPacket>(remoteDamageNotification));
+        pair.second->outgoingPackets.append(makePooled<DamageNotificationPacket>(remoteDamageNotification));
     }
   }
 }
@@ -2202,14 +2203,13 @@ void WorldServer::freshenCollision(RectI const& region) {
       for (int y = freshenRegion.yMin(); y < freshenRegion.yMax(); ++y) {
         if (auto tile = m_tileArray->modifyTile({x, y})) {
           tile->collisionCacheDirty = false;
-          tile->collisionCache.clear();
+          m_collisionCache.remove({x, y});
         }
       }
     }
 
     for (auto& collisionBlock : m_collisionGenerator.getBlocks(freshenRegion)) {
-      if (auto tile = m_tileArray->modifyTile(collisionBlock.space))
-        tile->collisionCache.append(std::move(collisionBlock));
+      m_collisionCache[collisionBlock.space].append(std::move(collisionBlock));
     }
   }
 }
@@ -2326,7 +2326,7 @@ void WorldServer::setProperty(String const& propertyName, Json const& property) 
     else
       entry->second = property;
     for (auto const& pair : m_clientInfo)
-      pair.second->outgoingPackets.append(make_shared<UpdateWorldPropertiesPacket>(JsonObject{ {propertyName, property} }));
+      pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(JsonObject{ {propertyName, property} }));
   }
   auto listener = m_worldPropertyListeners.find(propertyName);
   if (listener != m_worldPropertyListeners.end())

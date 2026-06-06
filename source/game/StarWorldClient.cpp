@@ -285,12 +285,13 @@ void WorldClient::forEachCollisionBlock(RectI const& region, function<void(Colli
     return;
 
   const_cast<WorldClient*>(this)->freshenCollision(region);
-  m_tileArray->tileEach(region, [iterator](Vec2I const& pos, ClientTile const& tile) {
+  m_tileArray->tileEach(region, [&](Vec2I const& pos, ClientTile const& tile) {
       if (tile.getCollision() == CollisionKind::Null) {
         iterator(CollisionBlock::nullBlock(pos));
       } else {
         starAssert(!tile.collisionCacheDirty);
-        for (auto const& block : tile.collisionCache)
+        auto const& cache = m_collisionCache.get(pos);
+        for (auto const& block : cache)
           iterator(block);
       }
     });
@@ -494,34 +495,9 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   renderData.geometry = m_geometry;
 
-  ClientRenderCallback lightingRenderCallback;
-  m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-    if (m_startupHiddenEntities.contains(entity->entityId()))
-      return;
-
-    entity->renderLightSources(&lightingRenderCallback);
-  });
-
-  renderLightSources = std::move(lightingRenderCallback.lightSources);
-
   RectI window = m_clientState.window();
   RectI tileRange = window.padded(bufferTiles);
   renderData.tileMinPosition = tileRange.min();
-
-  if (!m_fullBright) {
-    {
-      MutexLocker m_prepLocker(m_lightMapPrepMutex);
-      m_pendingLights = std::move(renderLightSources);
-      m_pendingParticleLights = m_particles->lightSources();
-      m_pendingLightRange = window.padded(1);
-      m_pendingLightReady = true;
-    } //Kae: Padded by one to fix light spread issues at the edges of the frame.
-
-    if (m_asyncLighting)
-      m_lightingCond.signal();
-    else
-      lightingCalc();
-  }
 
   float pulseLevel = 1 - m_interactivePulseAmount * 0.5 * (sin(2 * Constants::pi * m_interactivePulseRate * Time::monotonicMilliseconds() / 1000.0) + 1);
 
@@ -540,9 +516,13 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       if (auto& globalDirectives = parameters->globalDirectives)
         directives = &globalDirectives.get();
   }
+
+  ClientRenderCallback lightingRenderCallback;
   m_entityMap->forAllEntities([&](EntityPtr const& entity) {
       if (m_startupHiddenEntities.contains(entity->entityId()))
         return;
+
+      entity->renderLightSources(&lightingRenderCallback);
 
       ClientRenderCallback renderCallback;
 
@@ -567,7 +547,6 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
           renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
         }
       }
-      
 
       EntityDrawables ed;
       for (auto& p : renderCallback.drawables) {
@@ -601,7 +580,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         for (auto& p : renderCallback.particles)
           p.directives.append(directives->get(directiveIndex));
       }
-      
+
       m_particles->addParticles(std::move(renderCallback.particles));
       m_samples.appendAll(std::move(renderCallback.audios));
       m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
@@ -610,6 +589,23 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     }, [](EntityPtr const& a, EntityPtr const& b) {
       return a->entityId() < b->entityId();
     });
+
+  renderLightSources = std::move(lightingRenderCallback.lightSources);
+
+  if (!m_fullBright) {
+    {
+      MutexLocker m_prepLocker(m_lightMapPrepMutex);
+      m_pendingLights = std::move(renderLightSources);
+      m_pendingParticleLights = m_particles->lightSources();
+      m_pendingLightRange = window.padded(1);
+      m_pendingLightReady = true;
+    } //Kae: Padded by one to fix light spread issues at the edges of the frame.
+
+    if (m_asyncLighting)
+      m_lightingCond.signal();
+    else
+      lightingCalc();
+  }
 
   m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
       renderTile.foreground = clientTile.foreground;
@@ -1188,7 +1184,11 @@ void WorldClient::update(float dt) {
 
   List<EntityId> toRemove;
   List<EntityId> clientPresenceEntities;
+  RectF clientWindow = RectF(m_clientState.window()).padded(20); // spatial culling margin
   m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
+      if (!clientWindow.intersects(entity->metaBoundBox().translated(entity->position())))
+        return;
+
       try { entity->update(dt, m_currentStep); }
       catch (StarException const& e) {
         if (entity->isMaster()) // this is YOUR problem!!
@@ -2113,14 +2113,13 @@ void WorldClient::freshenCollision(RectI const& region) {
       for (int y = freshenRegion.yMin(); y < freshenRegion.yMax(); ++y) {
         if (auto tile = m_tileArray->modifyTile({x, y})) {
           tile->collisionCacheDirty = false;
-          tile->collisionCache.clear();
+          m_collisionCache.remove({x, y});
         }
       }
     }
 
     for (auto& collisionBlock : m_collisionGenerator.getBlocks(freshenRegion)) {
-      if (auto tile = m_tileArray->modifyTile(collisionBlock.space))
-        tile->collisionCache.append(std::move(collisionBlock));
+      m_collisionCache[collisionBlock.space].append(std::move(collisionBlock));
     }
   }
 }

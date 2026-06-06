@@ -107,7 +107,6 @@ bool ServerTile::updateCollision(CollisionKind kind) {
   if (collision != kind) {
     collision = kind;
     collisionCacheDirty = true;
-    collisionCache.clear();
     return true;
   }
   return false;
@@ -117,7 +116,6 @@ bool ServerTile::updateObjectCollision(CollisionKind kind) {
   if (objectCollision != kind) {
     objectCollision = kind;
     collisionCacheDirty = true;
-    collisionCache.clear();
     return true;
   }
   return false;

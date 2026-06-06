@@ -400,6 +400,7 @@ private:
   ClockPtr m_referenceClock;
 
   CollisionGenerator m_collisionGenerator;
+  HashMap<Vec2I, StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace>> m_collisionCache;
   List<CollisionBlock> m_workingCollisionBlocks;
 
   HashMap<NetCompatibilityRules, HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>>> m_netStateCache;

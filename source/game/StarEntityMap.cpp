@@ -207,20 +207,20 @@ void EntityMap::forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntit
 }
 
 void EntityMap::forAllEntities(EntityCallback const& callback, function<bool(EntityPtr const&, EntityPtr const&)> sortOrder) const {
-  // Even if there is no sort order, we still copy pointers to a temporary
-  // list, so that it is safe to call addEntity from the callback.
-  List<EntityPtr const*> allEntities;
-  allEntities.reserve(m_spatialMap.size());
+  // Copy pointers to a reusable buffer, so that it is safe to call addEntity
+  // from the callback.
+  m_forAllBuffer.clear();
+  m_forAllBuffer.reserve(m_spatialMap.size());
   for (auto const& entry : m_spatialMap.entries())
-    allEntities.append(&entry.second.value);
+    m_forAllBuffer.append(&entry.second.value);
 
   if (sortOrder) {
-    allEntities.sort([&sortOrder](EntityPtr const* a, EntityPtr const* b) {
+    m_forAllBuffer.sort([&sortOrder](EntityPtr const* a, EntityPtr const* b) {
         return sortOrder(*a, *b);
       });
   }
 
-  for (auto ptr : allEntities) {
+  for (auto const& ptr : m_forAllBuffer) {
     auto& entity = *ptr;
     try {
       callback(entity);
