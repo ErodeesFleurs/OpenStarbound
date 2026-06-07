@@ -55,7 +55,7 @@ void TeamClient::invitePlayer(String const& playerName) {
     else if (response == "inviteeNotFound")
       m_pendingInviteResults.append(make_pair(playerName, false));
     else if (response.isType(Json::Type::Array)) {
-      m_pendingInviteResults.push_back(StringList());
+      m_pendingInviteResults.emplace_back(StringList{});
       StringList& invited = m_pendingInviteResults.back().get<StringList>();
       for (auto& entry : response.toArray()) {
         if (!entry.isType(Json::Type::Array))

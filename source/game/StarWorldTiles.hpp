@@ -339,11 +339,11 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
   if (FastHash) {
     hasher.push(reinterpret_cast<char const*>(this), TerrainEndOffset);
   } else {
-    char buffer[TotalTerrainSize];
+    std::array<char, TotalTerrainSize> buffer{};
     size_t bufferSize = 0;
 
     auto hashTilePart = [&](void const* data, size_t size) {
-      memcpy(buffer + bufferSize, data, size);
+      memcpy(buffer.data() + bufferSize, data, size);
       bufferSize += size;
     };
 
@@ -365,18 +365,18 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
     hashTilePart(&backgroundDamageType, sizeof(backgroundDamageType));
     hashTilePart(&backgroundDamageLevel, sizeof(backgroundDamageLevel));
 
-    hasher.push(buffer, TotalTerrainSize);
+    hasher.push(buffer.data(), TotalTerrainSize);
   }
 }
 
 template <typename Hasher>
 inline void RenderTile::hashPushLiquid(Hasher& hasher) const {
-  char buffer[sizeof(liquidLevel) + sizeof(liquidId)];
+  std::array<char, sizeof(liquidLevel) + sizeof(liquidId)> buffer{};
 
-  memcpy(buffer, &liquidLevel, sizeof(liquidLevel));
-  memcpy(buffer + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
+  memcpy(buffer.data(), &liquidLevel, sizeof(liquidLevel));
+  memcpy(buffer.data() + sizeof(liquidLevel), &liquidId, sizeof(liquidId));
 
-  hasher.push(buffer, sizeof(liquidLevel) + sizeof(liquidId));
+  hasher.push(buffer.data(), sizeof(liquidLevel) + sizeof(liquidId));
 }
 
 }

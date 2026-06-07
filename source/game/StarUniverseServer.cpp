@@ -20,6 +20,8 @@
 #include "StarVersioningDatabase.hpp"
 #include "StarWorldTemplate.hpp"
 
+constexpr unsigned DefaultShipWorldDim = 2048;
+
 namespace Star {
 
 UniverseServer::UniverseServer(String const& storageDir)
@@ -742,7 +744,7 @@ void UniverseServer::updateShips() {
         p.second->setShipSpecies(species);
         auto const& speciesShips = m_speciesShips.get(species);
         Json jOldShipLevel = shipWorld->getProperty("ship.level");
-        unsigned newShipLevel = min<unsigned>(speciesShips.size() - 1, newShipUpgrades.shipLevel);
+        unsigned newShipLevel = min<unsigned>(static_cast<unsigned>(speciesShips.size() - 1), newShipUpgrades.shipLevel);
 
         if (jOldShipLevel.isType(Json::Type::Int)) {
           auto oldShipLevel = jOldShipLevel.toUInt();
@@ -2297,7 +2299,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
       Logger::info("UniverseServer: Creating new client ship world {}", clientShipWorldId);
       auto& species = clientContext->shipSpecies();
       auto shipStructure = WorldStructure(speciesShips.get(species).first());
-      Vec2U worldSize(2048, 2048);
+      Vec2U worldSize(DefaultShipWorldDim, DefaultShipWorldDim);
       if (auto jWorldSize = shipStructure.configValue("worldSize"))
         worldSize = jsonToVec2U(jWorldSize);
       shipWorld = make_shared<WorldServer>(worldSize, File::ephemeralFile());

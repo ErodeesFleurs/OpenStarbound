@@ -39,11 +39,11 @@ OutputProxy outputStack(StackCapture stack) {
       for (size_t i = 0; i < stack.second; ++i) {
         os << symbols[i];
         if (i + 1 < stack.second)
-          os << std::endl;
+          os << '\n';
       }
 
       if (stack.second == StackLimit)
-        os << std::endl << "[Stack Output Limit Reached]";
+        os << '\n' << "[Stack Output Limit Reached]";
 
       ::free(symbols);
     });
@@ -84,12 +84,12 @@ StarException::StarException(char const* type, std::string message, bool genStac
 
 #ifdef STAR_USE_CPPTRACE
     if (fullStacktrace && !stack.empty()) {
-      os << std::endl;
+      os << '\n';
       os << stack;
     }
 #else
     if (fullStacktrace && stack) {
-      os << std::endl;
+      os << '\n';
       os << outputStack(*stack);
     }
 #endif
@@ -109,7 +109,7 @@ StarException::StarException(char const* type, std::string message, std::excepti
   : StarException(type, std::move(message)) {
   auto printException = [](std::ostream& os, bool fullStacktrace, function<void(std::ostream&, bool)> self, function<void(std::ostream&, bool)> cause) {
     self(os, fullStacktrace);
-    os << std::endl << "Caused by: ";
+    os << '\n' << "Caused by: ";
     cause(os, fullStacktrace);
   };
 

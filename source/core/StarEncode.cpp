@@ -70,8 +70,8 @@ size_t base64Encode(char const* data, size_t len, char* output, size_t outLen) {
     return 0;
   size_t written = 0;
 
-  unsigned char ca3[3] = {0, 0, 0};
-  unsigned char ca4[4] = {0, 0, 0, 0};
+  std::array<unsigned char, 3> ca3{};
+  std::array<unsigned char, 4> ca4{};
   auto inPtr = reinterpret_cast<unsigned char const*>(data);
   int i = 0, j = 0, in_len = len;
 

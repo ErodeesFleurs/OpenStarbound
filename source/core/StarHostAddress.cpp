@@ -6,11 +6,11 @@ namespace Star {
 
 HostAddress HostAddress::localhost(NetworkMode mode) {
   if (mode == NetworkMode::IPv4) {
-    uint8_t addr[4] = {127, 0, 0, 1};
-    return HostAddress(mode, addr);
+    std::array<uint8_t, 4> addr = {127, 0, 0, 1};
+    return HostAddress(mode, addr.data());
   } else if (mode == NetworkMode::IPv6) {
-    uint8_t addr[16] = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
-    return HostAddress(mode, addr);
+    std::array<uint8_t, 16> addr = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1};
+    return HostAddress(mode, addr.data());
   }
 
   return HostAddress();
@@ -108,15 +108,13 @@ void HostAddress::set(String const& address) {
     return;
 
   if (address.compare("*") == 0 || address.compare("0.0.0.0") == 0) {
-    uint8_t inaddr_any[4];
-    memset(inaddr_any, 0, sizeof(inaddr_any));
-    set(NetworkMode::IPv4, inaddr_any);
+    std::array<uint8_t, 4> inaddr_any{};
+    set(NetworkMode::IPv4, inaddr_any.data());
   } else if (address.compare("::") == 0) {
     // NOTE: This will likely bind to both IPv6 and IPv4, but it does depending
     // on the OS settings
-    uint8_t inaddr_any[16];
-    memset(inaddr_any, 0, sizeof(inaddr_any));
-    set(NetworkMode::IPv6, inaddr_any);
+    std::array<uint8_t, 16> inaddr_any{};
+    set(NetworkMode::IPv6, inaddr_any.data());
   } else {
     struct addrinfo* result = nullptr;
     struct addrinfo* ptr = nullptr;

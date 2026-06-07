@@ -26,6 +26,8 @@
 #include "StarStagehand.hpp"
 #include "StarVehicleDatabase.hpp"
 
+constexpr float WireEntityQueryHalfExtent = 16.0f;
+
 namespace Star {
 
 static int const PlantAdjustmentLimit = 2;
@@ -448,7 +450,7 @@ void DungeonGeneratorWorld::connectWireGroup(List<Vec2I> const& wireGroup) {
   for (auto entry : wireGroup) {
     bool found = false;
     Vec2F posf = centerOfTile(entry);
-    RectF bounds = {posf - Vec2F(16, 16), posf + Vec2F(16, 16)};
+    RectF bounds = {posf - Vec2F(WireEntityQueryHalfExtent, WireEntityQueryHalfExtent), posf + Vec2F(WireEntityQueryHalfExtent, WireEntityQueryHalfExtent)};
     for (auto const& entity : m_worldServer->query<WireEntity>(bounds)) {
       for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
         if (entity->tilePosition() + entity->nodePosition({WireDirection::Input, i}) == entry) {

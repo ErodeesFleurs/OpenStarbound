@@ -3,6 +3,8 @@
 #include "StarCompression.hpp"
 #include "StarLogging.hpp"
 
+constexpr size_t PacketReceiveBufferSize = 1024;
+
 namespace Star {
 
 PacketStatCollector::PacketStatCollector(float calculationWindow)
@@ -314,17 +316,17 @@ bool TcpPacketSocket::writeData() {
 bool TcpPacketSocket::readData() {
   bool dataReceived = false;
   try {
-    char readBuffer[1024];
+    std::array<char, PacketReceiveBufferSize> readBuffer{};
     while (true) {
-      size_t readAmount = m_socket->receive(readBuffer, 1024);
+      size_t readAmount = m_socket->receive(readBuffer.data(), readBuffer.size());
       if (readAmount == 0)
         break;
       dataReceived = true;
       if (compressionStreamEnabled()) {
         m_incomingStats.mix(readAmount);
-        m_decompressionStream.decompress(readBuffer, readAmount, m_inputBuffer);
+        m_decompressionStream.decompress(readBuffer.data(), readAmount, m_inputBuffer);
       } else {
-        m_inputBuffer.append(readBuffer, readAmount);
+        m_inputBuffer.append(readBuffer.data(), readAmount);
       }
     }
   } catch (SocketClosedException const& e) {

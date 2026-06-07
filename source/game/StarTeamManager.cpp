@@ -6,6 +6,8 @@
 #include "StarText.hpp"
 #include "StarLogging.hpp"
 
+constexpr int MaxPvpTeamAssignmentAttempts = 256;
+
 namespace Star {
 
 TeamManager::TeamManager() {
@@ -123,7 +125,7 @@ Uuid TeamManager::createTeam(Uuid const& leaderUuid) {
   Uuid teamUuid;
   auto& team = m_teams[teamUuid]; // create
 
-  int limiter = 256;
+  int limiter = MaxPvpTeamAssignmentAttempts;
   while (true) {
     team.pvpTeamNumber = m_pvpTeamCounter++;
     if (m_pvpTeamCounter == 0)

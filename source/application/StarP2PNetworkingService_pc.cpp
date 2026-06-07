@@ -159,7 +159,7 @@ Maybe<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> Star::PcP2PNetworking
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   if (auto request = m_discordJoinRequests.maybeTakeLast()) {
     auto promisePair = RpcPromise<P2PJoinRequestReply>::createPair();
-    m_pendingDiscordJoinRequests.push_back(make_pair(request->first, promisePair.first));
+    m_pendingDiscordJoinRequests.emplace_back(request->first, promisePair.first);
     return make_pair(request->second, promisePair.second);
   }
 #endif

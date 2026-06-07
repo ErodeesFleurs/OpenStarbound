@@ -640,7 +640,7 @@ void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back, Gender g
   }
 }
 
-const uint8_t ChestLegsSortOrder[21] = {255, 14, 8, 2, 0, 15, 9, 3, 1, 4, 5, 6, 7, 10, 11, 12, 13, 16, 17, 18, 19};
+constexpr std::array<uint8_t, 21> ChestLegsSortOrder = {255, 14, 8, 2, 0, 15, 9, 3, 1, 4, 5, 6, 7, 10, 11, 12, 13, 16, 17, 18, 19};
 
 void Humanoid::refreshWearables(Fashion& fashion) {
   bool wornHeadsChanged = fashion.wornHeadsChanged;

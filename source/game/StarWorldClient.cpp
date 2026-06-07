@@ -22,6 +22,8 @@
 #include "StarInspectableEntity.hpp"
 #include "StarCurve25519.hpp"
 
+constexpr unsigned DefaultClientWindowTiles = 100;
+
 namespace Star {
 
 const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";
@@ -56,7 +58,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
 
   m_mainPlayer = mainPlayer;
 
-  centerClientWindowOnPlayer(Vec2U(100, 100));
+  centerClientWindowOnPlayer(Vec2U(DefaultClientWindowTiles, DefaultClientWindowTiles));
 
   m_collisionGenerator.init([this](int x, int y) {
     if (!m_predictedTiles.empty()) {

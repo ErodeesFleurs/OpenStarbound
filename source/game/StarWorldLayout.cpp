@@ -522,8 +522,8 @@ String WorldLayout::setLayerEnvironmentBiome(Vec2I const& position) {
   auto targetLayer = m_layers[layerAndCell.first];
   auto targetBiomeIndex = targetLayer.cells[layerAndCell.second]->blockBiomeIndex;
 
-  for (size_t i = 0; i < targetLayer.cells.size(); ++i)
-    targetLayer.cells[i]->environmentBiomeIndex = targetBiomeIndex;
+  for (auto& cell : targetLayer.cells)
+    cell->environmentBiomeIndex = targetBiomeIndex;
 
   m_layers[layerAndCell.first] = targetLayer;
 

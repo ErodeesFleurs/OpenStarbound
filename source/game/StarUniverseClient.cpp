@@ -24,6 +24,8 @@
 #include "StarPlayerUniverseMap.hpp"
 #include "StarWorldTemplate.hpp"
 
+constexpr float MaxClientGlobalTimescale = 1024.0f;
+
 namespace Star {
 
 UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics) {
@@ -782,7 +784,7 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
         m_celestialDatabase->invalidateCacheFor(planetTypeUpdate->coordinate);
       } else if (auto pausePacket = as<PausePacket>(packet)) {
         setPause(pausePacket->pause);
-        GlobalTimescale = clamp(pausePacket->timescale, 0.0f, 1024.f);
+        GlobalTimescale = clamp(pausePacket->timescale, 0.0f, MaxClientGlobalTimescale);
       } else if (auto serverInfoPacket = as<ServerInfoPacket>(packet)) {
         m_serverInfo = ServerInfo{serverInfoPacket->players, serverInfoPacket->maxPlayers};
       } else if (!m_systemWorldClient->handleIncomingPacket(packet)) {

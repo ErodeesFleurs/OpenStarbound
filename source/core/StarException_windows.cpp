@@ -145,11 +145,11 @@ OutputProxy outputStack(StackCapture stack) {
         format(os, " {}", symbol->Name);
 
       if (i + 1 < stack.second)
-        os << std::endl;
+        os << '\n';
     }
 
     if (stack.second == StackLimit)
-      os << std::endl << "[Stack Output Limit Reached]";
+      os << '\n' << "[Stack Output Limit Reached]";
 
     g_dbgHelpLock.unlock();
   });
@@ -184,7 +184,7 @@ StarException::StarException(char const* type, std::string message, bool genStac
       os << " " << message;
 
     if (fullStacktrace && stack) {
-      os << std::endl;
+      os << '\n';
       os << outputStack(*stack);
     }
   };
@@ -201,7 +201,7 @@ StarException::StarException(char const* type, std::string message, std::excepti
       function<void(std::ostream&, bool)> self,
       function<void(std::ostream&, bool)> cause) {
     self(os, fullStacktrace);
-    os << std::endl << "Caused by: ";
+    os << '\n' << "Caused by: ";
     cause(os, fullStacktrace);
   };
 
@@ -246,7 +246,7 @@ void printStack(char const* message) {
 void fatalError(char const* message, bool showStackTrace) {
   std::ostringstream ss;
   ss << "v" << OpenStarVersionString << " (" << StarSourceIdentifierString << ")\n"
-     << "Fatal Error: " << message << std::endl;
+     << "Fatal Error: " << message << '\n';
   if (showStackTrace)
     ss << outputStack(captureStack());
 
@@ -259,9 +259,9 @@ void fatalError(char const* message, bool showStackTrace) {
 void fatalException(std::exception const& e, bool showStackTrace) {
   std::ostringstream ss;
   ss << "v" << OpenStarVersionString << " (" << StarSourceIdentifierString << ")\n"
-     << "Fatal Exception: " << outputException(e, showStackTrace) << std::endl;
+     << "Fatal Exception: " << outputException(e, showStackTrace) << '\n';
   if (showStackTrace)
-    ss << "Caught at:" << std::endl << outputStack(captureStack());
+    ss << "Caught at:" << '\n' << outputStack(captureStack());
 
   Logger::log(LogLevel::Error, ss.str().c_str());
   MessageBoxW(nullptr, stringToUtf16(ss.str()).get(), stringToUtf16("Error").get(), MB_OK | MB_ICONERROR | MB_SYSTEMMODAL);

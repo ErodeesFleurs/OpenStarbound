@@ -23,6 +23,8 @@
 #include "StarUniverseServerLuaBindings.hpp"
 #include "StarString.hpp"
 
+constexpr float MaxWarpSearchRadius = 1024;
+
 namespace Star {
 
 CommandProcessor::CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot)
@@ -206,7 +208,7 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
 			}
 		}
 
-		if (size.magnitude() > 1024)
+    if (size.magnitude() > MaxWarpSearchRadius)
 			return "could not find a matching world";
 		size *= 2;
 	}

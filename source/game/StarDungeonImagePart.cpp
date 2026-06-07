@@ -11,7 +11,7 @@ namespace Dungeon {
 
   void ImagePartReader::readAsset(String const& asset) {
     auto assets = Root::singleton().assets();
-    m_images.push_back(make_pair(asset, assets->image(asset)));
+    m_images.emplace_back(asset, assets->image(asset));
   }
 
   Vec2U ImagePartReader::size() const {

@@ -242,7 +242,7 @@ ItemPtr PlayerInventory::addToBags(ItemPtr items) {
     if (!items)
       break;
 
-    for (unsigned i = 0; i < pair.second->size(); ++i) {
+    for (size_t i = 0; i < pair.second->size(); ++i) {
       if (!pair.second->at(i)) {
         pair.second->setItem(i, take(items));
         autoAddToCustomBar(BagSlot(pair.first, i));
@@ -579,7 +579,7 @@ bool PlayerInventory::clearSwap() {
   };
 
   auto tryBag = [&](String const& bagType) {
-    for (unsigned i = 0; i < m_bags[bagType]->size(); ++i) {
+    for (size_t i = 0; i < m_bags[bagType]->size(); ++i) {
       if (!m_swapSlot || !itemAllowedInBag(m_swapSlot, bagType))
         break;
       trySlot(BagSlot(bagType, i));
