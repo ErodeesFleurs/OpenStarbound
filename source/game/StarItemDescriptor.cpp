@@ -1,4 +1,5 @@
 #include "StarItemDescriptor.hpp"
+#include "StarDataStream.hpp"
 #include "StarItem.hpp"
 #include "StarRoot.hpp"
 #include "StarVersioningDatabase.hpp"

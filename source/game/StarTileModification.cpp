@@ -1,4 +1,5 @@
 #include "StarTileModification.hpp"
+#include "StarDataStream.hpp"
 #include "StarDataStreamExtra.hpp"
 
 namespace Star {

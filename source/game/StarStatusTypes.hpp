@@ -2,10 +2,10 @@
 
 #include "StarJson.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarDataStream.hpp"
 #include "StarIdMap.hpp"
 
 namespace Star {
+class DataStream;
 
 struct StatusExceptionTag { static constexpr char const* typeName = "StatusException"; };
 using StatusException = TypedException<StarException, StatusExceptionTag>;

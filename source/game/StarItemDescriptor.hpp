@@ -1,10 +1,10 @@
 #pragma once
 
 #include "StarJson.hpp"
-#include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 
 namespace Star {
+class DataStream;
 
 class Item;
 using ItemConstPtr = SharedPtr<Item const>;

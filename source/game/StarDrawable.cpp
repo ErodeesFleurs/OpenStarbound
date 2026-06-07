@@ -1,4 +1,5 @@
 #include "StarDrawable.hpp"
+#include "StarDataStream.hpp"
 #include "StarColor.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"

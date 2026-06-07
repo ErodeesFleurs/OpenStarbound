@@ -2,9 +2,9 @@
 
 #include "StarGameTypes.hpp"
 #include "StarWorldGeometry.hpp"
-#include "StarDataStream.hpp"
 
 namespace Star {
+class DataStream;
 
 enum class WireDirection {
   Input,

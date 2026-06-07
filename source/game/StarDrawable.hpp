@@ -1,13 +1,13 @@
 #pragma once
 
 #include "StarString.hpp"
-#include "StarDataStream.hpp"
 #include "StarPoly.hpp"
 #include "StarColor.hpp"
 #include "StarJson.hpp"
 #include "StarAssetPath.hpp"
 
 namespace Star {
+class DataStream;
 
 struct Drawable {
   struct LinePart {

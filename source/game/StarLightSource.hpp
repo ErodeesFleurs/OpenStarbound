@@ -1,10 +1,10 @@
 #pragma once
 
 #include "StarVector.hpp"
-#include "StarDataStream.hpp"
 #include "StarBiMap.hpp"
 
 namespace Star {
+class DataStream;
 
 enum class LightType : uint8_t {
   Spread = 0,
