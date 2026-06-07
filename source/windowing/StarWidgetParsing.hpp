@@ -26,7 +26,7 @@ using ConstuctorFunc = std::function<WidgetConstructResult(String const& name, J
 class WidgetParser {
 public:
   WidgetParser();
-  virtual ~WidgetParser() {}
+  virtual ~WidgetParser() = default;
 
   virtual void construct(Json const& config, Widget* widget = nullptr);
   void registerCallback(String const& name, WidgetCallbackFunc callback);

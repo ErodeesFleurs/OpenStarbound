@@ -10,7 +10,7 @@ using FuelWidgetPtr = SharedPtr<FuelWidget>;
 class FuelWidget : public Widget {
 public:
   FuelWidget();
-  virtual ~FuelWidget() {}
+  virtual ~FuelWidget() = default;
 
   virtual void update(float dt);
 

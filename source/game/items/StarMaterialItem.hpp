@@ -18,7 +18,7 @@ using PlayerPtr = SharedPtr<Player>;
 class MaterialItem : public Item, public FireableItem, public PreviewTileTool, public RenderableItem, public PreviewableItem, public BeamItem {
 public:
   MaterialItem(Json const& config, String const& directory, Json const& settings);
-  virtual ~MaterialItem() {}
+  virtual ~MaterialItem() = default;
 
   ItemPtr clone() const override;
 

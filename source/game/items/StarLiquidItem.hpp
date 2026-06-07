@@ -13,7 +13,7 @@ class LiquidItem;
 class LiquidItem : public Item, public FireableItem, public PreviewTileTool, public BeamItem {
 public:
   LiquidItem(Json const& config, String const& directory, Json const& settings);
-  virtual ~LiquidItem() {}
+  virtual ~LiquidItem() = default;
 
   ItemPtr clone() const override;
 

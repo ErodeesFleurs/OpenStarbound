@@ -19,7 +19,7 @@ using WorldAction = function<void(World*)>;
 
 class World {
 public:
-  virtual ~World() {}
+  virtual ~World() = default;
 
   // Will remain constant throughout the life of the world.
   virtual ConnectionId connection() const = 0;

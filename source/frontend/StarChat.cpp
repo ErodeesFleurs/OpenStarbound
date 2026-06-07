@@ -285,7 +285,7 @@ void Chat::renderImpl() {
   if (m_textBox->hasFocus())
     m_timeChatLastActive = Time::monotonicMilliseconds();
   Vec4B fade = {255, 255, 255, 255};
-  fade[3] = (uint8_t)(visible() * 255);
+  fade[3] = static_cast<uint8_t>(visible() * 255);
   if (!visible()) {
     hide();
     return;

@@ -9,7 +9,7 @@ class PointableItem;
 
 class PointableItem {
 public:
-  virtual ~PointableItem() {}
+  virtual ~PointableItem() = default;
 
   virtual float getAngleDir(float aimAngle, Direction facingDirection);
   virtual float getAngle(float angle);

@@ -13,13 +13,13 @@ namespace {
 
   ByteArray toByteArray(uint32_t k) {
     k = toBigEndian(k);
-    return ByteArray((char*)(&k), sizeof(k));
+    return ByteArray(reinterpret_cast<char*>(&k), sizeof(k));
   }
 
   ByteArray genBlock(uint32_t k) {
     // Make sure not empty, because we test for existence with empty()
     size_t size = (RandFactor * k) % (MaxSize - 1) + 1;
-    uint8_t val = (uint8_t)(k % 256);
+    uint8_t val = static_cast<uint8_t>(k % 256);
 
     ByteArray b(size, 0);
 

@@ -12,7 +12,7 @@ class JoinRequestDialog : public Pane {
 public:
   JoinRequestDialog();
 
-  virtual ~JoinRequestDialog() {}
+  virtual ~JoinRequestDialog() = default;
 
   void displayRequest(String const& userName, function<void(P2PJoinRequestReply)> callback);
 

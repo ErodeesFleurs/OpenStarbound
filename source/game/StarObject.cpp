@@ -603,7 +603,7 @@ String Object::category() const {
 
 ObjectOrientationPtr Object::currentOrientation() const {
   if (m_orientationIndex != NPos)
-    return const_cast<ObjectOrientationPtr&>(getOrientations().at(m_orientationIndex));
+    return getOrientations().at(m_orientationIndex);
   else
     return {};
 }

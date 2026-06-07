@@ -9,7 +9,7 @@ class PreviewTileTool;
 
 class PreviewTileTool {
 public:
-  virtual ~PreviewTileTool() {}
+  virtual ~PreviewTileTool() = default;
   virtual List<PreviewTile> previewTiles(bool shifting) const = 0;
 };
 

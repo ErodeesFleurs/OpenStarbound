@@ -8,7 +8,7 @@ class EffectSourceItem;
 
 class EffectSourceItem {
 public:
-  virtual ~EffectSourceItem() {}
+  virtual ~EffectSourceItem() = default;
   virtual StringSet effectSources() const = 0;
 };
 

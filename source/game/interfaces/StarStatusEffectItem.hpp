@@ -8,7 +8,7 @@ class StatusEffectItem;
 
 class StatusEffectItem {
 public:
-  virtual ~StatusEffectItem() {}
+  virtual ~StatusEffectItem() = default;
   virtual List<PersistentStatusEffect> statusEffects() const = 0;
 };
 

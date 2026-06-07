@@ -865,7 +865,7 @@ bool Humanoid::movingBackwards() const {
 
 void Humanoid::setHandParameters(ToolHand hand, bool holdingItem, float angle, float itemAngle, bool twoHanded,
     bool recoil, bool outsideOfHand) {
-  auto& handInfo = const_cast<HandDrawingInfo&>(getHand(hand));
+  auto& handInfo = getHand(hand);
   handInfo.holdingItem = holdingItem;
   handInfo.angle = angle;
   handInfo.itemAngle = itemAngle;
@@ -876,7 +876,7 @@ void Humanoid::setHandParameters(ToolHand hand, bool holdingItem, float angle, f
 }
 
 void Humanoid::setHandFrameOverrides(ToolHand hand, StringView back, StringView front) {
-  auto& handInfo = const_cast<HandDrawingInfo&>(getHand(hand));
+  auto& handInfo = getHand(hand);
   // some users stick directives in these?? better make sure they don't break with custom clothing
   size_t  backEnd =  back.utf8().find('?');
   size_t frontEnd = front.utf8().find('?');
@@ -891,11 +891,11 @@ void Humanoid::setHandFrameOverrides(ToolHand hand, StringView back, StringView 
 }
 
 void Humanoid::setHandDrawables(ToolHand hand, List<Drawable> drawables) {
-  const_cast<HandDrawingInfo&>(getHand(hand)).itemDrawables = std::move(drawables);
+  getHand(hand).itemDrawables = std::move(drawables);
 }
 
 void Humanoid::setHandNonRotatedDrawables(ToolHand hand, List<Drawable> drawables) {
-  const_cast<HandDrawingInfo&>(getHand(hand)).nonRotatedDrawables = std::move(drawables);
+  getHand(hand).nonRotatedDrawables = std::move(drawables);
 }
 
 bool Humanoid::handHoldingItem(ToolHand hand) const {
@@ -1918,6 +1918,10 @@ Vec2F Humanoid::altHandOffset(Direction facingDirection) const {
 }
 
 Humanoid::HandDrawingInfo const& Humanoid::getHand(ToolHand hand) const {
+  return hand == ToolHand::Primary ? m_primaryHand : m_altHand;
+}
+
+Humanoid::HandDrawingInfo& Humanoid::getHand(ToolHand hand) {
   return hand == ToolHand::Primary ? m_primaryHand : m_altHand;
 }
 

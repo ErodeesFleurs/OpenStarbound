@@ -25,8 +25,7 @@ String utf16ToString(WCHAR const* s) {
 
 unique_ptr<WCHAR[]> stringToUtf16(String const& s) {
   int utf16Len = MultiByteToWideChar(CP_UTF8, 0, s.utf8Ptr(), s.utf8Size() + 1, nullptr, 0);
-  unique_ptr<WCHAR[]> result;
-  result.reset(new WCHAR[utf16Len]);
+  auto result = make_unique<WCHAR[]>(utf16Len);
   MultiByteToWideChar(CP_UTF8, 0, s.utf8Ptr(), s.utf8Size() + 1, result.get(), utf16Len);
   return result;
 }

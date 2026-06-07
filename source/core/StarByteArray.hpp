@@ -13,6 +13,10 @@ using ByteArrayConstPtr = SharedPtr<ByteArray const>;
 // Class to hold an array of bytes.  Contains an internal buffer that may be
 // larger than what is reported by size(), to avoid repeated allocations when a
 // ByteArray grows.
+struct ByteArrayDeleter {
+  void operator()(char* p) const noexcept { Star::free(p); }
+};
+
 class ByteArray {
 public:
   using value_type = char;
@@ -113,7 +117,7 @@ public:
   bool operator!=(ByteArray const& b) const;
 
 private:
-  char* m_data;
+  std::unique_ptr<char[], ByteArrayDeleter> m_data;
   size_t m_capacity;
   size_t m_size;
 };
@@ -140,7 +144,7 @@ inline void ByteArray::append(ByteArray const& b) {
 
 inline void ByteArray::append(const char* data, size_t len) {
   resize(m_size + len);
-  std::memcpy(m_data + m_size - len, data, len);
+  std::memcpy(m_data.get() + m_size - len, data, len);
 }
 
 inline void ByteArray::appendByte(char b) {
@@ -153,11 +157,11 @@ inline bool ByteArray::empty() const {
 }
 
 inline char const* ByteArray::ptr() const {
-  return m_data;
+  return m_data.get();
 }
 
 inline char* ByteArray::ptr() {
-  return m_data;
+  return m_data.get();
 }
 
 inline size_t ByteArray::size() const {
@@ -170,7 +174,7 @@ inline size_t ByteArray::capacity() const {
 
 inline void ByteArray::copyTo(char* data, size_t len) const {
   len = min(m_size, len);
-  std::memcpy(data, m_data, len);
+  std::memcpy(data, m_data.get(), len);
 }
 
 inline void ByteArray::copyTo(char* data) const {
@@ -182,14 +186,14 @@ inline void ByteArray::copyTo(char* data, size_t pos, size_t len) const {
     return;
 
   len = min(m_size - pos, len);
-  std::memcpy(data, m_data + pos, len);
+  std::memcpy(data, m_data.get() + pos, len);
 }
 
 inline void ByteArray::writeFrom(const char* data, size_t pos, size_t len) {
   if (pos + len > m_size)
     resize(pos + len);
 
-  std::memcpy(m_data + pos, data, len);
+  std::memcpy(m_data.get() + pos, data, len);
 }
 
 template <typename Combiner>
@@ -216,19 +220,20 @@ ByteArray ByteArray::combineWith(Combiner&& combine, ByteArray const& rhs, bool 
 }
 
 inline ByteArray::iterator ByteArray::begin() {
-  return m_data;
+  return m_data.get();
+
 }
 
 inline ByteArray::iterator ByteArray::end() {
-  return m_data + m_size;
+  return m_data.get() + m_size;
 }
 
 inline ByteArray::const_iterator ByteArray::begin() const {
-  return m_data;
+  return m_data.get();
 }
 
 inline ByteArray::const_iterator ByteArray::end() const {
-  return m_data + m_size;
+  return m_data.get() + m_size;
 }
 
 inline char& ByteArray::operator[](size_t i) {

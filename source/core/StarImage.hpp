@@ -25,6 +25,10 @@ class Image;
 using ImagePtr = SharedPtr<Image>;
 using ImageConstPtr = SharedPtr<Image const>;
 
+struct ImageDeleter {
+  void operator()(uint8_t* p) const noexcept { Star::free(p); }
+};
+
 // Holds an image of PixelFormat in row major order, with no padding, with (0,
 // 0) defined to be the *lower left* corner.
 class Image {
@@ -140,7 +144,7 @@ public:
   void writePng(IODevicePtr device) const;
 
 private:
-  uint8_t* m_data;
+  std::unique_ptr<uint8_t[], ImageDeleter> m_data;
   unsigned m_width;
   unsigned m_height;
   PixelFormat m_pixelFormat;
@@ -209,11 +213,11 @@ inline PixelFormat Image::pixelFormat() const {
 }
 
 inline const uint8_t* Image::data() const {
-  return m_data;
+  return m_data.get();
 }
 
 inline uint8_t* Image::data() {
-  return m_data;
+  return m_data.get();
 }
 
 inline void Image::set(unsigned x, unsigned y, Vec4B const& c) {

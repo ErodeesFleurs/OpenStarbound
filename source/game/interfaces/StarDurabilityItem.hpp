@@ -8,7 +8,7 @@ class DurabilityItem;
 
 class DurabilityItem {
 public:
-  virtual ~DurabilityItem() {}
+  virtual ~DurabilityItem() = default;
   virtual float durabilityStatus() = 0;
 };
 

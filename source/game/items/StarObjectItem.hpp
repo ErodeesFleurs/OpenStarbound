@@ -12,7 +12,7 @@ using ObjectItemPtr = SharedPtr<ObjectItem>;
 class ObjectItem : public Item, public FireableItem, public BeamItem {
 public:
   ObjectItem(Json const& config, String const& directory, Json const& objectParameters);
-  virtual ~ObjectItem() {}
+  virtual ~ObjectItem() = default;
 
   ItemPtr clone() const override;
 

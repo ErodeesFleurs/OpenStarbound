@@ -9,7 +9,7 @@ class WireEntity;
 
 class WireEntity : public virtual TileEntity {
 public:
-  virtual ~WireEntity() {}
+  virtual ~WireEntity() = default;
 
   virtual size_t nodeCount(WireDirection direction) const = 0;
   virtual Vec2I nodePosition(WireNode wireNode) const = 0;

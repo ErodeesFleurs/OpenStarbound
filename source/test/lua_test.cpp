@@ -778,8 +778,8 @@ TEST(LuaTest, GarbageCollection) {
 TEST(LuaTest, IntTest) {
   auto engine = LuaEngine::create();
   auto context = engine->createContext();
-  context.setPath("test", (uint64_t)-1);
-  EXPECT_EQ(context.getPath<uint64_t>("test"), (uint64_t)-1);
+  context.setPath("test", static_cast<uint64_t>(-1));
+  EXPECT_EQ(context.getPath<uint64_t>("test"), static_cast<uint64_t>(-1));
 }
 
 TEST(LuaTest, VariantTest) {

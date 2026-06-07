@@ -43,7 +43,7 @@ struct WorldGeneratorFacade {
   using Sector = ServerTileSectorArray::Sector;
 
   WorldGeneratorFacade() {}
-  virtual ~WorldGeneratorFacade() {}
+  virtual ~WorldGeneratorFacade() = default;
 
   // Should bring a given sector from generationLevel - 1 to generationLevel.
   virtual void generateSectorLevel(WorldStorage* storage, Sector const& sector, SectorGenerationLevel generationLevel) = 0;

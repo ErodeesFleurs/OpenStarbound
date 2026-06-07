@@ -12,7 +12,7 @@ public:
       String const& overlay,
       ImageStretchSet const& progressSet,
       GuiDirection direction);
-  virtual ~ProgressWidget() {}
+  virtual ~ProgressWidget() = default;
 
   void setCurrentProgressLevel(float amount);
   void setMaxProgressLevel(float amount);

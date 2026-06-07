@@ -214,18 +214,13 @@ Image::Image(unsigned width, unsigned height, PixelFormat pf)
   reset(width, height, pf);
 }
 
-Image::~Image() {
-  if (m_data)
-    Star::free(m_data);
-}
+Image::~Image() = default;
 
 Image::Image(Image const& image) : Image() {
   operator=(image);
 }
 
-Image::Image(Image&& image) : Image() {
-  operator=(std::move(image));
-}
+Image::Image(Image&& image) = default;
 
 Image& Image::operator=(Image const& image) {
   reset(image.m_width, image.m_height, image.m_pixelFormat);
@@ -233,15 +228,7 @@ Image& Image::operator=(Image const& image) {
   return *this;
 }
 
-Image& Image::operator=(Image&& image) {
-  reset(0, 0, m_pixelFormat);
-
-  m_data = take(image.m_data);
-  m_width = take(image.m_width);
-  m_height = take(image.m_height);
-  m_pixelFormat = take(image.m_pixelFormat);
-  return *this;
-}
+Image& Image::operator=(Image&& image) = default;
 
 void Image::reset(Vec2U size, Maybe<PixelFormat> pf) {
   reset(size[0], size[1], pf);
@@ -256,22 +243,23 @@ void Image::reset(unsigned width, unsigned height, Maybe<PixelFormat> pf) {
 
   size_t imageSize = width * height * Star::bytesPerPixel(*pf);
   if (imageSize == 0) {
-    if (m_data) {
-      Star::free(m_data);
-      m_data = nullptr;
-    }
+    m_data.reset();
   } else {
+    uint8_t* oldPtr = m_data.release();
     uint8_t* newData = nullptr;
-    if (!m_data)
+    if (!oldPtr)
       newData = static_cast<uint8_t*>(Star::malloc(imageSize));
     else
-      newData = static_cast<uint8_t*>(Star::realloc(m_data, imageSize));
+      newData = static_cast<uint8_t*>(Star::realloc(oldPtr, imageSize));
 
-    if (!newData)
+    if (!newData) {
+      if (oldPtr)
+        Star::free(oldPtr);
       throw MemoryException::format("Could not allocate memory for new Image size {}\n", imageSize);
+    }
 
-    m_data = newData;
-    memset(m_data, 0, imageSize);
+    memset(newData, 0, imageSize);
+    m_data.reset(newData);
   }
 
   m_pixelFormat = *pf;
@@ -513,7 +501,7 @@ void Image::writePng(IODevicePtr device) const {
   size_t stride = m_width * 8 * channels / 8;
   for (size_t i = 0; i < m_height; ++i) {
     size_t q = (m_height - i - 1) * stride;
-    row_ptrs[i] = reinterpret_cast<png_bytep>(m_data) + q;
+    row_ptrs[i] = reinterpret_cast<png_bytep>(m_data.get()) + q;
   }
 
   png_set_write_fn(png_ptr, device.get(), writePngData, flushPngData);

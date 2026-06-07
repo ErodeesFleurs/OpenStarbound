@@ -116,7 +116,7 @@ private:
   size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const;
   size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const;
 
-  List<ItemPtr> m_items;
+  mutable List<ItemPtr> m_items;
 };
 
 }

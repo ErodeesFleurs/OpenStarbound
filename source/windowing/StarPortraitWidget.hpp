@@ -14,7 +14,7 @@ class PortraitWidget : public Widget {
 public:
   PortraitWidget(PortraitEntityPtr entity, PortraitMode mode = PortraitMode::Full);
   PortraitWidget();
-  virtual ~PortraitWidget() {}
+  virtual ~PortraitWidget() = default;
 
   void setEntity(PortraitEntityPtr entity);
   void setMode(PortraitMode mode);

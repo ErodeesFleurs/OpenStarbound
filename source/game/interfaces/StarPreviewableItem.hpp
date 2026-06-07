@@ -10,7 +10,7 @@ class PreviewableItem;
 
 class PreviewableItem {
 public:
-  virtual ~PreviewableItem() {}
+  virtual ~PreviewableItem() = default;
   virtual List<Drawable> preview(PlayerPtr const& viewer = {}) const = 0;
 };
 

@@ -9,7 +9,7 @@ namespace Star {
 class ScrollThumb : public Widget {
 public:
   ScrollThumb(GuiDirection direction);
-  virtual ~ScrollThumb() {}
+  virtual ~ScrollThumb() = default;
 
   void setDirection(GuiDirection direction);
   void setImages(ImageStretchSet const& base,

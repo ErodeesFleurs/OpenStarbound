@@ -341,6 +341,7 @@ private:
   };
 
   HandDrawingInfo const& getHand(ToolHand hand) const;
+  HandDrawingInfo& getHand(ToolHand hand);
 
   void wearableRemoved(Wearable const& wearable);
 

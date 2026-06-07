@@ -20,7 +20,7 @@ using ItemBagPtr = SharedPtr<ItemBag>;
 class QuestLogInterface : public Pane {
 public:
   QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client);
-  virtual ~QuestLogInterface() {}
+  virtual ~QuestLogInterface() = default;
 
   virtual void displayed() override;
   virtual void tick(float dt) override;
