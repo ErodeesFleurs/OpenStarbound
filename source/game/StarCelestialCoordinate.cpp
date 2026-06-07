@@ -134,21 +134,6 @@ CelestialCoordinate::operator bool() const {
   return !isNull();
 }
 
-bool CelestialCoordinate::operator<(CelestialCoordinate const& rhs) const {
-  return tie(m_location, m_planetaryOrbitNumber, m_satelliteOrbitNumber)
-      < tie(rhs.m_location, rhs.m_planetaryOrbitNumber, rhs.m_satelliteOrbitNumber);
-}
-
-bool CelestialCoordinate::operator==(CelestialCoordinate const& rhs) const {
-  return tie(m_location, m_planetaryOrbitNumber, m_satelliteOrbitNumber)
-      == tie(rhs.m_location, rhs.m_planetaryOrbitNumber, rhs.m_satelliteOrbitNumber);
-}
-
-bool CelestialCoordinate::operator!=(CelestialCoordinate const& rhs) const {
-  return tie(m_location, m_planetaryOrbitNumber, m_satelliteOrbitNumber)
-      != tie(rhs.m_location, rhs.m_planetaryOrbitNumber, rhs.m_satelliteOrbitNumber);
-}
-
 std::ostream& operator<<(std::ostream& os, CelestialCoordinate const& coord) {
   if (coord.isNull()) {
     os << "null";

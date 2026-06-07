@@ -75,9 +75,7 @@ public:
   // Returns true if not null
   explicit operator bool() const;
 
-  bool operator<(CelestialCoordinate const& rhs) const;
-  bool operator==(CelestialCoordinate const& rhs) const;
-  bool operator!=(CelestialCoordinate const& rhs) const;
+  auto operator<=>(CelestialCoordinate const&) const = default;
 
   // Prints in the same format accepted by parser.  Each coordinate is unique.
   friend std::ostream& operator<<(std::ostream& os, CelestialCoordinate const& coord);

@@ -77,29 +77,7 @@ struct StrongTypedefBuiltin {
     return t;
   }
 
-  bool operator==(StrongTypedefBuiltin const& rhs) const {
-    return t == rhs.t;
-  }
-
-  bool operator!=(StrongTypedefBuiltin const& rhs) const {
-    return t != rhs.t;
-  }
-
-  bool operator<(StrongTypedefBuiltin const& rhs) const {
-    return t < rhs.t;
-  }
-
-  bool operator>(StrongTypedefBuiltin const& rhs) const {
-    return t > rhs.t;
-  }
-
-  bool operator<=(StrongTypedefBuiltin const& rhs) const {
-    return t <= rhs.t;
-  }
-
-  bool operator>=(StrongTypedefBuiltin const& rhs) const {
-    return t >= rhs.t;
-  }
+  auto operator<=>(StrongTypedefBuiltin const&) const = default;
 };
 
 }
