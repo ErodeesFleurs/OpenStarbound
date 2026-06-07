@@ -2,6 +2,8 @@
 #include "StarLexicalCast.hpp"
 #include "StarNetImpl.hpp"
 
+#include <array>
+
 namespace Star {
 
 HostAddress HostAddress::localhost(NetworkMode mode) {
