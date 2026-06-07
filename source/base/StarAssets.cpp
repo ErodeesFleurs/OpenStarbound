@@ -673,19 +673,19 @@ bool Assets::JsonData::shouldPersist() const {
 }
 
 bool Assets::ImageData::shouldPersist() const {
-  return forcePersist || (!alias && !image.unique());
+  return forcePersist || (!alias && image.use_count() != 1);
 }
 
 bool Assets::AudioData::shouldPersist() const {
-  return forcePersist || !audio.unique();
+  return forcePersist || audio.use_count() != 1;
 }
 
 bool Assets::FontData::shouldPersist() const {
-  return forcePersist || !font.unique();
+  return forcePersist || font.use_count() != 1;
 }
 
 bool Assets::BytesData::shouldPersist() const {
-  return forcePersist || !bytes.unique();
+  return forcePersist || bytes.use_count() != 1;
 }
 
 FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, String path) {

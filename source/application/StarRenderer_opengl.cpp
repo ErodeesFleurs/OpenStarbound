@@ -650,7 +650,7 @@ void OpenGlRenderer::finishFrame() {
   filter(m_liveTextureGroups, [](auto const& p) {
         unsigned const CompressionsPerFrame = 1;
 
-        if (!p.unique() || p->textureAtlasSet.totalTextures() > 0) {
+        if (p.use_count() != 1 || p->textureAtlasSet.totalTextures() > 0) {
           p->textureAtlasSet.compressionPass(CompressionsPerFrame);
           return true;
         }
