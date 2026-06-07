@@ -124,8 +124,9 @@ ParametricTable<IndexType, ValueType>::ParametricTable(PairContainer indexValueP
       });
 
   for (auto const& pair : indexValuePairs) {
-    m_indexes.push_back(std::move(std::get<0>(pair)));
-    m_values.push_back(std::move(std::get<1>(pair)));
+    auto [idx, val] = std::move(pair);
+    m_indexes.push_back(std::move(idx));
+    m_values.push_back(std::move(val));
   }
 
   for (size_t i = 0; i < size() - 1; ++i) {
