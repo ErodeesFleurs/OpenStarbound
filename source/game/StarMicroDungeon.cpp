@@ -12,6 +12,7 @@ namespace Star {
 MicroDungeonFactory::MicroDungeonFactory() {
   m_generating = false;
 
+  m_placementshifts.reserve(7);
   m_placementshifts.push_back(0);
   for (int i = 1; i < 4; ++i)
     m_placementshifts.push_back(i);

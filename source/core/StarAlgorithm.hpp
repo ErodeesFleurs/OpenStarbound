@@ -526,23 +526,14 @@ decltype(auto) tupleApplyFunction(Function&& function, Tuple&& args) {
 // or your function returns void.  This version DOES happen in a predictable
 // order, first argument first, last argument last.
 
+template <typename Function, typename Tuple, size_t... Is>
+void tupleCallFunctionImpl(Tuple&& t, Function&& f, std::index_sequence<Is...>) {
+  (f(std::get<Is>(std::forward<Tuple>(t))), ...);
+}
+
 template <typename Function, typename Tuple>
-void tupleCallFunctionCaller(Function&&, Tuple&&) {}
-
-template <typename Tuple, typename Function, typename First, typename... Rest>
-void tupleCallFunctionCaller(Tuple&& t, Function&& function) {
-  tupleCallFunctionCaller<Tuple, Function, Rest...>(std::forward<Tuple>(t), std::forward<Function>(function));
-  function(get<sizeof...(Rest)>(std::forward<Tuple>(t)));
-}
-
-template <typename Tuple, typename Function, typename... T>
-void tupleCallFunctionExpander(Tuple&& t, Function&& function, tuple<T...> const&) {
-  tupleCallFunctionCaller<Tuple, Function, T...>(std::forward<Tuple>(t), std::forward<Function>(function));
-}
-
-template <typename Tuple, typename Function>
-void tupleCallFunction(Tuple&& t, Function&& function) {
-  tupleCallFunctionExpander<Tuple, Function>(std::forward<Tuple>(t), std::forward<Function>(function), std::forward<Tuple>(t));
+void tupleCallFunction(Tuple&& t, Function&& f) {
+  tupleCallFunctionImpl(std::forward<Tuple>(t), std::forward<Function>(f), std::make_index_sequence<std::tuple_size_v<std::decay_t<Tuple>>>{});
 }
 
 // Get a subset of a tuple
@@ -564,13 +555,9 @@ decltype(auto) trimTuple(Tuple&& t) {
 
 // Unpack a parameter expansion into a container
 
-template <typename Container>
-void unpackVariadicImpl(Container&) {}
-
-template <typename Container, typename TFirst, typename... TRest>
-void unpackVariadicImpl(Container& container, TFirst&& tfirst, TRest&&... trest) {
-  container.insert(container.end(), std::forward<TFirst>(tfirst));
-  unpackVariadicImpl(container, std::forward<TRest>(trest)...);
+template <typename Container, typename... Ts>
+void unpackVariadicImpl(Container& container, Ts&&... ts) {
+  (container.insert(container.end(), std::forward<Ts>(ts)), ...);
 }
 
 template <typename Container, typename... T>
@@ -582,13 +569,9 @@ Container unpackVariadic(T&&... t) {
 
 // Call a function on each entry in a variadic parameter set
 
-template <typename Function>
-void callFunctionVariadic(Function&&) {}
-
-template <typename Function, typename Arg1, typename... ArgRest>
-void callFunctionVariadic(Function&& function, Arg1&& arg1, ArgRest&&... argRest) {
-  function(arg1);
-  callFunctionVariadic(std::forward<Function>(function), std::forward<ArgRest>(argRest)...);
+template <typename Function, typename... Args>
+void callFunctionVariadic(Function&& function, Args&&... args) {
+  (function(std::forward<Args>(args)), ...);
 }
 
 template <typename... Rest>

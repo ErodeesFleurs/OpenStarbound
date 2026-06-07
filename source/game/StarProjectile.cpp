@@ -599,6 +599,7 @@ void Projectile::processAction(Json const& action) {
     for (auto sets : parameters.getArray("materials")) {
       unsigned numDrops = sets.getUInt("quantity", 1);
       auto mat = materialDatabase->materialId(sets.getString("kind"));
+      tileDrops.reserve(tileDrops.size() + numDrops);
       for (unsigned i = 0; i < numDrops; i++)
         tileDrops.push_back(mat);
       totalDrops += numDrops;
@@ -612,8 +613,9 @@ void Projectile::processAction(Json const& action) {
 
     Random::shuffle(tileDrops);
     for (auto& tile : zip(openSpaces, tileDrops)) {
-      if (!world()->modifyTile(std::get<0>(tile), PlaceMaterial{TileLayer::Foreground, std::get<1>(tile), MaterialHue()}, allowEntityOverlap)) {
-        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(std::get<1>(tile)), static_cast<Vec2F>(std::get<0>(tile)));
+      auto [tilePos, tileMat] = tile;
+      if (!world()->modifyTile(tilePos, PlaceMaterial{TileLayer::Foreground, tileMat, MaterialHue()}, allowEntityOverlap)) {
+        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(tileMat), static_cast<Vec2F>(tilePos));
         world()->addEntity(itemDrop);
       }
     }

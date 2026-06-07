@@ -71,6 +71,7 @@ namespace Dungeon {
 
   List<RuleConstPtr> Rule::readRules(Json const& rules) {
     List<RuleConstPtr> result;
+    result.reserve(rules.size());
     for (auto const& list : rules.iterateArray()) {
       Maybe<RuleConstPtr> rule = Rule::parse(list);
       if (rule.isValid())
@@ -81,6 +82,7 @@ namespace Dungeon {
 
   List<BrushConstPtr> Brush::readBrushes(Json const& brushes) {
     List<BrushConstPtr> result;
+    result.reserve(brushes.size());
     for (auto const& list : brushes.iterateArray())
       result.push_back(Brush::parse(list));
     return result;

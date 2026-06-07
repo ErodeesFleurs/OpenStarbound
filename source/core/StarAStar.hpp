@@ -206,7 +206,7 @@ namespace AStar {
       m_getAdjacent(current, neighbors);
 
       for (Edge const& edge : neighbors) {
-        if (m_closedSet.find(edge.target) != m_closedSet.end() || m_nodeMeta.contains(edge.target))
+        if (m_closedSet.contains(edge.target) || m_nodeMeta.contains(edge.target))
           // We've already visited this node.
           continue;
 
@@ -258,7 +258,7 @@ namespace AStar {
   template <class Edge, class Node>
   Path<Edge> Search<Edge, Node>::reconstructPath(Node currentNode) {
     Path<Edge> res; // this will be backwards, we reverse it before returning it.
-    while (m_nodeMeta.find(currentNode) != m_nodeMeta.end()) {
+    while (m_nodeMeta.contains(currentNode)) {
       Maybe<Edge> currentEdge = m_nodeMeta[currentNode].cameFrom;
       if (currentEdge.isNothing())
         break;

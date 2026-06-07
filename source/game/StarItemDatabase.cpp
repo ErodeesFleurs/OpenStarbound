@@ -358,7 +358,9 @@ ItemRecipe ItemDatabase::parseRecipe(Json const& config) const {
     res.currencyInputs = jsonToMapV<StringMap<uint64_t>>(config.get("currencyInputs", JsonObject()), mem_fn(&Json::toUInt));
 
     // parse currency items into currency inputs
-    for (auto input : config.getArray("input")) {
+    auto inputArray = config.getArray("input");
+    res.inputs.reserve(res.inputs.size() + inputArray.size());
+    for (auto input : inputArray) {
       auto id = ItemDescriptor(input);
       if (itemType(id.name()) == ItemType::CurrencyItem) {
         auto currencyItem = as<CurrencyItem>(itemShared(id));

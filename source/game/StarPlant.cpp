@@ -694,6 +694,7 @@ void Plant::scanSpacesAndRoots() {
 
   m_boundBox = RectI::boundBoxOfPoints(m_spaces);
 
+  m_roots.reserve(m_roots.size() + m_spaces.size());
   for (auto space : m_spaces) {
     if (space[1] == 0) {
       if (m_ceiling)

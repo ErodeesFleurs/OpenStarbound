@@ -2239,6 +2239,7 @@ List<Particle> Humanoid::particles(String const& name) const {
   auto particleDatabase = Root::singleton().particleDatabase();
   List<Particle> res;
   Json particles = m_particleEmitters.get(name).get("particles", {});
+  res.reserve(particles.size());
   for (auto& particle : particles.toArray()) {
     auto particleSpec = particle.get("particle", {});
     res.push_back(particleDatabase->particle(particleSpec));
@@ -2262,6 +2263,7 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
   size_t toReserve = 0;
   Maybe<Vec2F> scale;
 
+  entries.reserve(directives->entries.size());
   for (auto& entry : directives->entries) {
     auto string = entry.string(*directives);
     const ScaleImageOperation* op = nullptr;

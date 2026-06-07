@@ -244,7 +244,7 @@ bool ServerQueryThread::validChallenge(HostAddressWithPort const& address, char 
     return false;
   }
 
-  if (m_validChallenges.count(address.address()) == 0) {
+  if (!m_validChallenges.contains(address.address())) {
     // Don't know this source address ignore
     return false;
   }

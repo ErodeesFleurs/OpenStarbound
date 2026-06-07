@@ -126,6 +126,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
     Directives const* directives = materialRenderProfile->colorDirectives.empty()
       ? nullptr
       : &materialRenderProfile->colorDirectives.wrap(materialColorVariant);
+    drawList.reserve(drawList.size() + pieces.size());
     for (auto const& piecePair : pieces) {
       auto variant = piecePair.first->variants.ptr(materialColorVariant);
       if (!variant) variant = piecePair.first->variants.ptr(0);
@@ -147,6 +148,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
     Directives const* directives = modRenderProfile->colorDirectives.empty()
       ? nullptr
       : &modRenderProfile->colorDirectives.wrap(modColorVariant);
+    drawList.reserve(drawList.size() + pieces.size());
     for (auto const& piecePair : pieces) {
       auto variant = piecePair.first->variants.ptr(modColorVariant);
       if (!variant) variant = piecePair.first->variants.ptr(0);
