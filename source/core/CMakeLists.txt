@@ -207,7 +207,6 @@ IF (STAR_SYSTEM_FAMILY_UNIX)
       StarLockFile_unix.cpp
       StarSecureRandom_unix.cpp
       StarSignalHandler_unix.cpp
-      StarThread_unix.cpp
       StarTime_unix.cpp
     )
 ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
@@ -222,7 +221,6 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
       StarMiniDump_windows.cpp
       StarSignalHandler_windows.cpp
       StarString_windows.cpp
-      StarThread_windows.cpp
       StarTime_windows.cpp
       StarException_windows.cpp
       StarSecureRandom_windows.cpp
