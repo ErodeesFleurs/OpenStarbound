@@ -186,16 +186,22 @@ jobs:
     name: Build OpenStarbound Linux x86_64
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name != 'pull_request') && (inputs.linux == true) }}
+    env:
+      CC: gcc-13
+      CXX: g++-13
     steps:
       - name: Install Packages
         run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           sudo apt-get update
           sudo apt-get install -y pkgconf libxmu-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
           libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
           libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
-          autoconf autoconf-archive automake libtool patchelf
+          autoconf autoconf-archive automake libtool patchelf gcc-13 g++-13
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -282,12 +288,15 @@ jobs:
       - name: Install Packages
         run: |
           sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
           sudo apt-get install -y pkgconf libxmu-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
           libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
           libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
-          autoconf autoconf-archive automake libtool patchelf
+          autoconf autoconf-archive automake libtool patchelf g++-13
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -361,22 +370,28 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: OpenStarbound-Linux-Clang-Server
-          path: server.tar
+          path: client.tar
 
   build_linux_arm:
     name: Build OpenStarbound Linux arm64
     runs-on: ubuntu-22.04-arm
     if: ${{ (github.event_name != 'pull_request') && (inputs.linux == true) }}
+    env:
+      CC: gcc-13
+      CXX: g++-13
     steps:
       - name: Install Packages
         run: |
+          sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
           sudo apt-get update
           sudo apt-get install -y pkgconf libxmu-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
           libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
           libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
-          autoconf autoconf-archive automake libtool patchelf
+          autoconf autoconf-archive automake libtool patchelf gcc-13 g++-13
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -463,12 +478,15 @@ jobs:
       - name: Install Packages
         run: |
           sudo apt-get update
+          sudo apt-get install -y software-properties-common
+          sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+          sudo apt-get update
           sudo apt-get install -y pkgconf libxmu-dev libgl-dev libglu1-mesa-dev libasound2-dev libpulse-dev \
           libaudio-dev libjack-dev libsndio-dev libx11-dev libxext-dev \
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
           libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
-          autoconf autoconf-archive automake libtool patchelf
+          autoconf autoconf-archive automake libtool patchelf g++-13
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
