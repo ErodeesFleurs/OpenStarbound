@@ -50,12 +50,12 @@ public:
   // members are drawn strictly in the order they are added,
   // so add them in the correct order.
 
-  virtual bool sendEvent(InputEvent const& event);
+  virtual bool sendEvent(InputEvent const& event) override;
   virtual void setFocus(Widget const* focus);
   virtual void removeFocus(Widget const* focus);
   virtual void removeFocus();
 
-  virtual void update(float dt);
+  virtual void update(float dt) override;
   virtual void tick(float dt);
 
   bool dragActive() const;
@@ -81,8 +81,8 @@ public:
   String subTitle() const;
   WidgetPtr titleIcon() const;
 
-  virtual Pane* window();
-  virtual Pane const* window() const;
+  virtual Pane* window() override;
+  virtual Pane const* window() const override;
 
   PaneAnchor anchor();
   void setAnchor(PaneAnchor anchor);
@@ -99,7 +99,7 @@ public:
   virtual LuaCallbacks makePaneCallbacks();
 protected:
   virtual GuiReaderPtr reader();
-  virtual void renderImpl();
+  virtual void renderImpl() override;
 
   String m_bgHeader;
   String m_bgBody;

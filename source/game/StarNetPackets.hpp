@@ -166,7 +166,7 @@ struct PacketBase : public Packet {
 
 struct ProtocolRequestPacket : PacketBase<PacketType::ProtocolRequest> {
   ProtocolRequestPacket();
-  ProtocolRequestPacket(VersionNumber requestProtocolVersion);
+  explicit ProtocolRequestPacket(VersionNumber requestProtocolVersion);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -175,7 +175,7 @@ struct ProtocolRequestPacket : PacketBase<PacketType::ProtocolRequest> {
 };
 
 struct ProtocolResponsePacket : PacketBase<PacketType::ProtocolResponse> {
-  ProtocolResponsePacket(bool allowed = false, Json info = {});
+  explicit ProtocolResponsePacket(bool allowed = false, Json info = {});
 
   void read(DataStream& ds) override;
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
@@ -186,7 +186,7 @@ struct ProtocolResponsePacket : PacketBase<PacketType::ProtocolResponse> {
 
 struct ServerDisconnectPacket : PacketBase<PacketType::ServerDisconnect> {
   ServerDisconnectPacket();
-  ServerDisconnectPacket(String reason);
+  explicit ServerDisconnectPacket(String reason);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -208,7 +208,7 @@ struct ConnectSuccessPacket : PacketBase<PacketType::ConnectSuccess> {
 
 struct ConnectFailurePacket : PacketBase<PacketType::ConnectFailure> {
   ConnectFailurePacket();
-  ConnectFailurePacket(String reason);
+  explicit ConnectFailurePacket(String reason);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -218,7 +218,7 @@ struct ConnectFailurePacket : PacketBase<PacketType::ConnectFailure> {
 
 struct HandshakeChallengePacket : PacketBase<PacketType::HandshakeChallenge> {
   HandshakeChallengePacket();
-  HandshakeChallengePacket(ByteArray const& passwordSalt);
+  explicit HandshakeChallengePacket(ByteArray const& passwordSalt);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -228,7 +228,7 @@ struct HandshakeChallengePacket : PacketBase<PacketType::HandshakeChallenge> {
 
 struct ChatReceivePacket : PacketBase<PacketType::ChatReceive> {
   ChatReceivePacket();
-  ChatReceivePacket(ChatReceivedMessage receivedMessage);
+  explicit ChatReceivePacket(ChatReceivedMessage receivedMessage);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -241,7 +241,7 @@ struct ChatReceivePacket : PacketBase<PacketType::ChatReceive> {
 
 struct UniverseTimeUpdatePacket : PacketBase<PacketType::UniverseTimeUpdate> {
   UniverseTimeUpdatePacket();
-  UniverseTimeUpdatePacket(double universeTime);
+  explicit UniverseTimeUpdatePacket(double universeTime);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -252,7 +252,7 @@ struct UniverseTimeUpdatePacket : PacketBase<PacketType::UniverseTimeUpdate> {
 
 struct CelestialResponsePacket : PacketBase<PacketType::CelestialResponse> {
   CelestialResponsePacket();
-  CelestialResponsePacket(List<CelestialResponse> responses);
+  explicit CelestialResponsePacket(List<CelestialResponse> responses);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -274,7 +274,7 @@ struct PlayerWarpResultPacket : PacketBase<PacketType::PlayerWarpResult> {
 
 struct PlanetTypeUpdatePacket : PacketBase<PacketType::PlanetTypeUpdate> {
   PlanetTypeUpdatePacket();
-  PlanetTypeUpdatePacket(CelestialCoordinate coordinate);
+  explicit PlanetTypeUpdatePacket(CelestialCoordinate coordinate);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -284,7 +284,7 @@ struct PlanetTypeUpdatePacket : PacketBase<PacketType::PlanetTypeUpdate> {
 
 struct PausePacket : PacketBase<PacketType::Pause> {
   PausePacket();
-  PausePacket(bool pause, float timescale = 1.0f);
+  explicit PausePacket(bool pause, float timescale = 1.0f);
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
@@ -340,7 +340,7 @@ struct ClientDisconnectRequestPacket : PacketBase<PacketType::ClientDisconnectRe
 
 struct HandshakeResponsePacket : PacketBase<PacketType::HandshakeResponse> {
   HandshakeResponsePacket();
-  HandshakeResponsePacket(ByteArray const& passHash);
+  explicit HandshakeResponsePacket(ByteArray const& passHash);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -386,7 +386,7 @@ struct ChatSendPacket : PacketBase<PacketType::ChatSend> {
 
 struct CelestialRequestPacket : PacketBase<PacketType::CelestialRequest> {
   CelestialRequestPacket();
-  CelestialRequestPacket(List<CelestialRequest> requests);
+  explicit CelestialRequestPacket(List<CelestialRequest> requests);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -396,7 +396,7 @@ struct CelestialRequestPacket : PacketBase<PacketType::CelestialRequest> {
 
 struct ClientContextUpdatePacket : PacketBase<PacketType::ClientContextUpdate> {
   ClientContextUpdatePacket();
-  ClientContextUpdatePacket(ByteArray updateData);
+  explicit ClientContextUpdatePacket(ByteArray updateData);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -428,7 +428,7 @@ struct WorldStartPacket : PacketBase<PacketType::WorldStart> {
 // Sent when a client is leaving a world
 struct WorldStopPacket : PacketBase<PacketType::WorldStop> {
   WorldStopPacket();
-  WorldStopPacket(String const& reason);
+  explicit WorldStopPacket(String const& reason);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -439,7 +439,7 @@ struct WorldStopPacket : PacketBase<PacketType::WorldStop> {
 // Sent when the region data for the client's current world changes
 struct WorldLayoutUpdatePacket : PacketBase<PacketType::WorldLayoutUpdate> {
   WorldLayoutUpdatePacket();
-  WorldLayoutUpdatePacket(Json const& layoutData);
+  explicit WorldLayoutUpdatePacket(Json const& layoutData);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -450,7 +450,7 @@ struct WorldLayoutUpdatePacket : PacketBase<PacketType::WorldLayoutUpdate> {
 // Sent when the environment status effect list for the client's current world changes
 struct WorldParametersUpdatePacket : PacketBase<PacketType::WorldParametersUpdate> {
   WorldParametersUpdatePacket();
-  WorldParametersUpdatePacket(ByteArray const& parametersData);
+  explicit WorldParametersUpdatePacket(ByteArray const& parametersData);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -460,7 +460,7 @@ struct WorldParametersUpdatePacket : PacketBase<PacketType::WorldParametersUpdat
 
 struct CentralStructureUpdatePacket : PacketBase<PacketType::CentralStructureUpdate> {
   CentralStructureUpdatePacket();
-  CentralStructureUpdatePacket(Json structureData);
+  explicit CentralStructureUpdatePacket(Json structureData);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -515,7 +515,7 @@ struct TileDamageUpdatePacket : PacketBase<PacketType::TileDamageUpdate> {
 
 struct TileModificationFailurePacket : PacketBase<PacketType::TileModificationFailure> {
   TileModificationFailurePacket();
-  TileModificationFailurePacket(TileModificationList modifications);
+  explicit TileModificationFailurePacket(TileModificationList modifications);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -525,7 +525,7 @@ struct TileModificationFailurePacket : PacketBase<PacketType::TileModificationFa
 
 struct GiveItemPacket : PacketBase<PacketType::GiveItem> {
   GiveItemPacket();
-  GiveItemPacket(ItemDescriptor const& item);
+  explicit GiveItemPacket(ItemDescriptor const& item);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -616,7 +616,7 @@ struct FindUniqueEntityResponsePacket : PacketBase<PacketType::FindUniqueEntityR
 
 struct PongPacket : PacketBase<PacketType::Pong> {
   PongPacket();
-  PongPacket(int64_t time);
+  explicit PongPacket(int64_t time);
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
@@ -674,7 +674,7 @@ struct CollectLiquidPacket : PacketBase<PacketType::CollectLiquid> {
 
 struct RequestDropPacket : PacketBase<PacketType::RequestDrop> {
   RequestDropPacket();
-  RequestDropPacket(EntityId dropEntityId);
+  explicit RequestDropPacket(EntityId dropEntityId);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -718,7 +718,7 @@ struct DisconnectAllWiresPacket : PacketBase<PacketType::DisconnectAllWires> {
 
 struct WorldClientStateUpdatePacket : PacketBase<PacketType::WorldClientStateUpdate> {
   WorldClientStateUpdatePacket();
-  WorldClientStateUpdatePacket(ByteArray const& worldClientStateDelta);
+  explicit WorldClientStateUpdatePacket(ByteArray const& worldClientStateDelta);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -728,7 +728,7 @@ struct WorldClientStateUpdatePacket : PacketBase<PacketType::WorldClientStateUpd
 
 struct FindUniqueEntityPacket : PacketBase<PacketType::FindUniqueEntity> {
   FindUniqueEntityPacket();
-  FindUniqueEntityPacket(String uniqueEntityId);
+  explicit FindUniqueEntityPacket(String uniqueEntityId);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -745,7 +745,7 @@ struct WorldStartAcknowledgePacket : PacketBase<PacketType::WorldStartAcknowledg
 
 struct PingPacket : PacketBase<PacketType::Ping> {
   PingPacket();
-  PingPacket(int64_t time);
+  explicit PingPacket(int64_t time);
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
@@ -770,7 +770,7 @@ struct EntityCreatePacket : PacketBase<PacketType::EntityCreate> {
 // where they are master, any entities whose master is from that connection can
 // be assumed to have produced a blank delta.
 struct EntityUpdateSetPacket : PacketBase<PacketType::EntityUpdateSet> {
-  EntityUpdateSetPacket(ConnectionId forConnection = ServerConnectionId);
+  explicit EntityUpdateSetPacket(ConnectionId forConnection = ServerConnectionId);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -818,7 +818,7 @@ struct EntityInteractResultPacket : PacketBase<PacketType::EntityInteractResult>
 
 struct HitRequestPacket : PacketBase<PacketType::HitRequest> {
   HitRequestPacket();
-  HitRequestPacket(RemoteHitRequest remoteHitRequest);
+  explicit HitRequestPacket(RemoteHitRequest remoteHitRequest);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -828,7 +828,7 @@ struct HitRequestPacket : PacketBase<PacketType::HitRequest> {
 
 struct DamageRequestPacket : PacketBase<PacketType::DamageRequest> {
   DamageRequestPacket();
-  DamageRequestPacket(RemoteDamageRequest remoteDamageRequest);
+  explicit DamageRequestPacket(RemoteDamageRequest remoteDamageRequest);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -838,7 +838,7 @@ struct DamageRequestPacket : PacketBase<PacketType::DamageRequest> {
 
 struct DamageNotificationPacket : PacketBase<PacketType::DamageNotification> {
   DamageNotificationPacket();
-  DamageNotificationPacket(RemoteDamageNotification remoteDamageNotification);
+  explicit DamageNotificationPacket(RemoteDamageNotification remoteDamageNotification);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -876,7 +876,7 @@ struct EntityMessageResponsePacket : PacketBase<PacketType::EntityMessageRespons
 
 struct UpdateWorldPropertiesPacket : PacketBase<PacketType::UpdateWorldProperties> {
   UpdateWorldPropertiesPacket();
-  UpdateWorldPropertiesPacket(JsonObject const& updatedProperties);
+  explicit UpdateWorldPropertiesPacket(JsonObject const& updatedProperties);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -889,7 +889,7 @@ struct UpdateWorldPropertiesPacket : PacketBase<PacketType::UpdateWorldPropertie
 
 struct StepUpdatePacket : PacketBase<PacketType::StepUpdate> {
   StepUpdatePacket();
-  StepUpdatePacket(double remoteTime);
+  explicit StepUpdatePacket(double remoteTime);
 
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
@@ -923,7 +923,7 @@ struct SystemWorldUpdatePacket : PacketBase<PacketType::SystemWorldUpdate> {
 
 struct SystemObjectCreatePacket : PacketBase<PacketType::SystemObjectCreate> {
   SystemObjectCreatePacket();
-  SystemObjectCreatePacket(ByteArray objectStore);
+  explicit SystemObjectCreatePacket(ByteArray objectStore);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -933,7 +933,7 @@ struct SystemObjectCreatePacket : PacketBase<PacketType::SystemObjectCreate> {
 
 struct SystemObjectDestroyPacket : PacketBase<PacketType::SystemObjectDestroy> {
   SystemObjectDestroyPacket();
-  SystemObjectDestroyPacket(Uuid objectUuid);
+  explicit SystemObjectDestroyPacket(Uuid objectUuid);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -943,7 +943,7 @@ struct SystemObjectDestroyPacket : PacketBase<PacketType::SystemObjectDestroy> {
 
 struct SystemShipCreatePacket : PacketBase<PacketType::SystemShipCreate> {
   SystemShipCreatePacket();
-  SystemShipCreatePacket(ByteArray shipStore);
+  explicit SystemShipCreatePacket(ByteArray shipStore);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -953,7 +953,7 @@ struct SystemShipCreatePacket : PacketBase<PacketType::SystemShipCreate> {
 
 struct SystemShipDestroyPacket : PacketBase<PacketType::SystemShipDestroy> {
   SystemShipDestroyPacket();
-  SystemShipDestroyPacket(Uuid shipUuid);
+  explicit SystemShipDestroyPacket(Uuid shipUuid);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
@@ -976,7 +976,7 @@ struct SystemObjectSpawnPacket : PacketBase<PacketType::SystemObjectSpawn> {
 
 struct UpdateWorldTemplatePacket : PacketBase<PacketType::UpdateWorldTemplate> {
   UpdateWorldTemplatePacket();
-  UpdateWorldTemplatePacket(Json templateData);
+  explicit UpdateWorldTemplatePacket(Json templateData);
 
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;

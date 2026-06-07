@@ -19,7 +19,7 @@ public:
     Vec2F offset;
   };
 
-  FontTextureGroup(TextureGroupPtr textureGroup);
+  explicit FontTextureGroup(TextureGroupPtr textureGroup);
 
   const GlyphTexture& glyphTexture(String::Char, unsigned fontSize, Directives const* processingDirectives = nullptr);
 
