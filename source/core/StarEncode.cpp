@@ -1,5 +1,7 @@
 #include "StarEncode.hpp"
 
+#include <array>
+
 namespace Star {
 
 size_t hexEncode(char const* data, size_t len, char* output, size_t outLen) {

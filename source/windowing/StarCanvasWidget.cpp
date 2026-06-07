@@ -42,7 +42,7 @@ void CanvasWidget::drawDrawable(Drawable drawable, Vec2F const& screenPos) {
   m_renderOps.append(make_tuple(std::move(drawable), screenPos));
 }
 
-void CanvasWidget::drawDrawables(List<Drawable> drawables, Vec2F const& screenPos) {
+void CanvasWidget::drawDrawables(List<Drawable> const& drawables, Vec2F const& screenPos) {
   for (auto& drawable : drawables)
     drawDrawable(std::move(drawable), screenPos);
 }

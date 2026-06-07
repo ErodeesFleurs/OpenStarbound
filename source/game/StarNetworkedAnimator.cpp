@@ -481,10 +481,10 @@ void NetworkedAnimator::setLocalTag(String tagName, Maybe<String> tagValue) {
     m_localTags.remove(tagName);
 }
 
-void NetworkedAnimator::setPartDrawables(String const& partName, List<Drawable> drawables) {
+void NetworkedAnimator::setPartDrawables(String const& partName, List<Drawable> const& drawables) {
   m_partDrawables.set(partName, drawables);
 }
-void NetworkedAnimator::addPartDrawables(String const& partName, List<Drawable> drawables) {
+void NetworkedAnimator::addPartDrawables(String const& partName, List<Drawable> const& drawables) {
   m_partDrawables.ptr(partName)->appendAll(drawables);
 }
 String NetworkedAnimator::applyPartTags(String const& partName, String apply) const {

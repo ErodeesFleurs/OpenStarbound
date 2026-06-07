@@ -744,12 +744,12 @@ void UniverseServer::updateShips() {
         p.second->setShipSpecies(species);
         auto const& speciesShips = m_speciesShips.get(species);
         Json jOldShipLevel = shipWorld->getProperty("ship.level");
-        unsigned newShipLevel = min<unsigned>(static_cast<unsigned>(speciesShips.size() - 1), newShipUpgrades.shipLevel);
+        size_t newShipLevel = min(speciesShips.size() - 1, static_cast<size_t>(newShipUpgrades.shipLevel));
 
         if (jOldShipLevel.isType(Json::Type::Int)) {
           auto oldShipLevel = jOldShipLevel.toUInt();
           if (oldShipLevel < newShipLevel) {
-            for (unsigned i = oldShipLevel + 1; i <= newShipLevel; ++i) {
+            for (size_t i = oldShipLevel + 1; i <= newShipLevel; ++i) {
               auto shipStructure = WorldStructure(speciesShips[i]);
               shipWorld->setCentralStructure(shipStructure);
               newShipUpgrades.apply(shipStructure.configValue("shipUpgrades"));

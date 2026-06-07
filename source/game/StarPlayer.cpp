@@ -844,7 +844,7 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
     setPendingCinematic(args.get(0), unique);
   } else if (message == "playAltMusic" && args.size() > 0) {
     float fadeTime = args.size() > 1 ? args.get(1).toFloat() : 0.f;
-    int loops = args.size() > 2 ? args.get(2).toInt() : -1;
+    int loops = args.size() > 2u ? args.get(2).toInt() : -1;
     StringList trackList;
     if (args.get(0).canConvert(Json::Type::Array))
       trackList = jsonToStringList(args.get(0).toArray());

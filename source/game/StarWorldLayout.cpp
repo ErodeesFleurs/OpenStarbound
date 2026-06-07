@@ -947,10 +947,10 @@ void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& p
   layer.cells.prepend(layer.cells.last());
 
   int yRange = Root::singleton().assets()->json("/world_template.config:playerStartSearchYRange").toInt();
-  int i = 0;
+  size_t i = 0;
   int lastBoundary = 0;
   for (auto const& region : layer.cells) {
-    int nextBoundary = i < static_cast<int>(layer.boundaries.size()) ? layer.boundaries[i] : worldWidth;
+    int nextBoundary = i < layer.boundaries.size() ? layer.boundaries[i] : worldWidth;
     if (spawnBiomeIndexes.contains(region->blockBiomeIndex))
       m_playerStartSearchRegions.append(RectI(lastBoundary, std::max(0, yBase - yRange), nextBoundary, std::min(worldHeight, yBase + yRange)));
     lastBoundary = nextBoundary;

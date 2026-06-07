@@ -136,8 +136,8 @@ public:
   void setPartTag(String const& partType, String tagName, Maybe<String> tagValue = {});
   void setLocalTag(String tagName, Maybe<String> tagValue = {});
 
-  void setPartDrawables(String const& partName, List<Drawable> drawables);
-  void addPartDrawables(String const& partName, List<Drawable> drawables);
+  void setPartDrawables(String const& partName, List<Drawable> const& drawables);
+  void addPartDrawables(String const& partName, List<Drawable> const& drawables);
 
   String applyPartTags(String const& partName, String apply) const;
 

@@ -248,7 +248,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
   double noteDuration = 0;
   double barDuration = 0;
   Map<int, size_t> pendingTies;
-  int groupStartIndex = 0;
+  size_t groupStartIndex = 0;
 
   int tupleCount = 0;
   double tupleDurationFactor = 0;
@@ -398,7 +398,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
             tupleCount--;
           auto duration = readDuration();
           if (duration != 1) {
-            for (int index = groupStartIndex; index < static_cast<int>(result.size()); index++) {
+            for (size_t index = groupStartIndex; index < result.size(); index++) {
               auto& entry = result[index];
               entry.duration *= duration;
             }
