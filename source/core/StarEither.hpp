@@ -54,6 +54,12 @@ public:
   [[nodiscard]] bool isLeft() const;
   [[nodiscard]] bool isRight() const;
 
+  template <typename Function>
+  auto apply(Function&& function) const -> Either<Left, decltype(function(std::declval<Right>()))>;
+
+  template <typename Function>
+  auto sequence(Function&& function) const -> decltype(function(std::declval<Right>()));
+
   void setLeft(Left left);
   void setRight(Right left);
 
@@ -236,6 +242,22 @@ Right* Either<Left, Right>::rightPtr() {
   if (auto r = m_value.template ptr<RightType>())
     return &r->value;
   return nullptr;
+}
+
+template <typename Left, typename Right>
+template <typename Function>
+auto Either<Left, Right>::apply(Function&& function) const -> Either<Left, decltype(function(std::declval<Right>()))> {
+  if (auto* r = rightPtr())
+    return makeRight(function(*r));
+  return makeLeft(*leftPtr());
+}
+
+template <typename Left, typename Right>
+template <typename Function>
+auto Either<Left, Right>::sequence(Function&& function) const -> decltype(function(std::declval<Right>())) {
+  if (auto* r = rightPtr())
+    return function(*r);
+  return makeLeft(*leftPtr());
 }
 
 }

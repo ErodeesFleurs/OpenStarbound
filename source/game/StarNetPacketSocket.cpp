@@ -89,7 +89,7 @@ void LocalPacketSocket::close() {
 }
 
 void LocalPacketSocket::sendPackets(List<PacketPtr> packets) {
-  if (!isOpen() || packets.empty())
+  if (!isOpen() || packets.empty()) [[unlikely]]
     return;
 
   if (auto outgoingPipe = m_outgoingPipe.lock()) {

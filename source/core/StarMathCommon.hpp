@@ -79,9 +79,8 @@ bool nearEqual(T x, T2 y) {
 }
 
 template <typename T>
-bool nearZero(T x, unsigned ulp = 2) {
+bool nearZero(T x, [[maybe_unused]] unsigned ulp = 2) {
   if constexpr (std::numeric_limits<T>::is_integer) {
-    (void)ulp;
     return x == 0;
   } else {
     return abs(x) <= std::numeric_limits<T>::min() * ulp;

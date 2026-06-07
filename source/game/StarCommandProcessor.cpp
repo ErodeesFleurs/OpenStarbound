@@ -76,23 +76,28 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
     };
 
   String basicHelpFormat = assets->json("/help.config:basicHelpText").toString();
-  res = res + strf(basicHelpFormat.utf8Ptr(), commandDescriptions(basicCommands));
+  res.append(strf(basicHelpFormat.utf8Ptr(), commandDescriptions(basicCommands)));
 
   String openSbHelpFormat = assets->json("/help.config:openSbHelpText").toString();
-  res = res + "\n" + strf(openSbHelpFormat.utf8Ptr(), commandDescriptions(openSbCommands));
+  res.append("\n");
+  res.append(strf(openSbHelpFormat.utf8Ptr(), commandDescriptions(openSbCommands)));
 
-  if (!adminCheck(connectionId, "")) {
+  if (!adminCheck(connectionId, "")) [[unlikely]] {
     String adminHelpFormat = assets->json("/help.config:adminHelpText").toString();
-    res = res + "\n" + strf(adminHelpFormat.utf8Ptr(), commandDescriptions(adminCommands));
+    res.append("\n");
+    res.append(strf(adminHelpFormat.utf8Ptr(), commandDescriptions(adminCommands)));
 
     String debugHelpFormat = assets->json("/help.config:debugHelpText").toString();
-    res = res + "\n" + strf(debugHelpFormat.utf8Ptr(), commandDescriptions(debugCommands));
+    res.append("\n");
+    res.append(strf(debugHelpFormat.utf8Ptr(), commandDescriptions(debugCommands)));
 
     String openSbDebugHelpFormat = assets->json("/help.config:openSbDebugHelpText").toString();
-    res = res + "\n" + strf(openSbDebugHelpFormat.utf8Ptr(), commandDescriptions(openSbDebugCommands));
+    res.append("\n");
+    res.append(strf(openSbDebugHelpFormat.utf8Ptr(), commandDescriptions(openSbDebugCommands)));
   }
 
-  res = res + "\n" + basicCommands.getString("help");
+  res.append("\n");
+  res.append(basicCommands.getString("help"));
 
   return res;
 }
@@ -1037,8 +1042,7 @@ const StringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> 
 }();
 
 String CommandProcessor::handleCommand(ConnectionId connectionId, String const& command, String const& argumentString) {
-  auto it = s_commandMap.find(command);
-  if (it != s_commandMap.end()) {
+  if (auto it = s_commandMap.find(command); it != s_commandMap.end()) {
     return it->second(this, connectionId, argumentString);
   }
   if (auto res = m_scriptComponent.invoke("command", command, connectionId, jsonFromStringList(m_parser.tokenizeToStringList(argumentString)))) {

@@ -172,7 +172,7 @@ void EnvironmentPainter::renderPlanetHorizon(float pixelRatio, Vec2F const& scre
       allLoaded = false;
   }
 
-  if (!allLoaded)
+  if (!allLoaded) [[unlikely]]
     return;
 
   float planetPixelRatio = pixelRatio * planetHorizon.scale;

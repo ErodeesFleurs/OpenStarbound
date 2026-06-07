@@ -3,6 +3,37 @@
 
 namespace Star {
 
+void swap(WorldTile& a, WorldTile& b) noexcept {
+  using std::swap;
+  swap(a.foreground, b.foreground);
+  swap(a.foregroundHueShift, b.foregroundHueShift);
+  swap(a.foregroundMod, b.foregroundMod);
+  swap(a.foregroundModHueShift, b.foregroundModHueShift);
+  swap(a.foregroundColorVariant, b.foregroundColorVariant);
+  swap(a.background, b.background);
+  swap(a.backgroundHueShift, b.backgroundHueShift);
+  swap(a.backgroundMod, b.backgroundMod);
+  swap(a.backgroundModHueShift, b.backgroundModHueShift);
+  swap(a.backgroundColorVariant, b.backgroundColorVariant);
+  swap(a.collision, b.collision);
+  swap(a.collisionCacheDirty, b.collisionCacheDirty);
+  swap(a.blockBiomeIndex, b.blockBiomeIndex);
+  swap(a.environmentBiomeIndex, b.environmentBiomeIndex);
+  swap(a.biomeTransition, b.biomeTransition);
+  swap(a.foregroundDamage, b.foregroundDamage);
+  swap(a.backgroundDamage, b.backgroundDamage);
+  swap(a.dungeonId, b.dungeonId);
+}
+
+void swap(ClientTile& a, ClientTile& b) noexcept {
+  using std::swap;
+  swap(static_cast<WorldTile&>(a), static_cast<WorldTile&>(b));
+  swap(a.backgroundLightTransparent, b.backgroundLightTransparent);
+  swap(a.foregroundLightTransparent, b.foregroundLightTransparent);
+  swap(a.liquid, b.liquid);
+  swap(a.gravity, b.gravity);
+}
+
 bool WorldTile::isConnectable(TileLayer layer, bool materialOnly) const {
   if (layer == TileLayer::Foreground) {
     if (isConnectableMaterial(foreground))

@@ -49,8 +49,7 @@ namespace Star {
     ::free(ptr);
   }
 
-  void free(void* ptr, size_t size) {
-    (void)size;
+  void free(void* ptr, [[maybe_unused]] size_t size) {
     ::free(ptr);
   }
 #endif

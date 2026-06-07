@@ -17,12 +17,12 @@ InstanceWorldId::InstanceWorldId() {}
 InstanceWorldId::InstanceWorldId(String instance, Maybe<Uuid> uuid, Maybe<float> level)
   : instance(std::move(instance)), uuid(std::move(uuid)), level(std::move(level)) {}
 
-bool InstanceWorldId::operator==(InstanceWorldId const& rhs) const {
-  return tie(instance, uuid, level) == tie(rhs.instance, rhs.uuid, rhs.level);
+bool InstanceWorldId::operator==(InstanceWorldId const& other) const {
+  return tie(instance, uuid, level) == tie(other.instance, other.uuid, other.level);
 }
 
-bool InstanceWorldId::operator<(InstanceWorldId const& rhs) const {
-  return tie(instance, uuid, rhs.level) < tie(rhs.instance, rhs.uuid, rhs.level);
+bool InstanceWorldId::operator<(InstanceWorldId const& other) const {
+  return tie(instance, uuid, level) < tie(other.instance, other.uuid, other.level);
 }
 
 size_t hash<InstanceWorldId>::operator()(InstanceWorldId const& id) const {

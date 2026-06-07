@@ -171,7 +171,7 @@ shared_ptr<TilePainter::TerrainChunk const> TilePainter::getTerrainChunk(WorldRe
         for (int y = tileRange.yMin(); y < tileRange.yMax(); ++y) {
           bool occluded = this->produceTerrainPrimitives(terrainPrimitives[TerrainLayer::Foreground], TerrainLayer::Foreground, {x, y}, renderData);
           occluded = this->produceTerrainPrimitives(terrainPrimitives[TerrainLayer::Midground], TerrainLayer::Midground, {x, y}, renderData) || occluded;
-          if (!occluded)
+          if (!occluded) [[likely]]
             this->produceTerrainPrimitives(terrainPrimitives[TerrainLayer::Background], TerrainLayer::Background, {x, y}, renderData);
         }
       }
@@ -282,7 +282,7 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
     for (auto const& piecePair : pieces) {
       TexturePtr texture = getPieceTexture(material, piecePair.first, materialHue, directives, false);
       auto variant = piecePair.first->variants.ptr(materialColorVariant);
-      if (!variant) variant = piecePair.first->variants.ptr(0);
+      if (!variant) [[unlikely]] variant = piecePair.first->variants.ptr(0);
       if (!variant) continue;
       RectF textureCoords = variant->wrap(variance);
       RectF worldCoords = RectF::withSize(piecePair.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);

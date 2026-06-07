@@ -16,7 +16,7 @@ struct WorldTile {
 
   // Copy constructor and operator= do not preserve collision cache.
   WorldTile(WorldTile const& worldTile);
-  WorldTile& operator=(WorldTile const& worldTile);
+  WorldTile& operator=(WorldTile other) noexcept;
 
   MaterialId material(TileLayer layer) const;
   ModId mod(TileLayer layer) const;
@@ -58,6 +58,8 @@ struct WorldTile {
   DungeonId dungeonId;
 };
 
+void swap(WorldTile& a, WorldTile& b) noexcept;
+
 struct ServerTile : public WorldTile {
   static VersionNumber const CurrentSerializationVersion;
 
@@ -96,7 +98,7 @@ struct ClientTile : public WorldTile {
   ClientTile();
 
   ClientTile(ClientTile const& clientTile);
-  ClientTile& operator=(ClientTile const& clientTile);
+  ClientTile& operator=(ClientTile other) noexcept;
 
   bool backgroundLightTransparent;
   bool foregroundLightTransparent;
@@ -105,6 +107,9 @@ struct ClientTile : public WorldTile {
 
   float gravity;
 };
+
+void swap(ClientTile& a, ClientTile& b) noexcept;
+
 using ClientTileSectorArray = TileSectorArray<ClientTile, WorldSectorSize>;
 using ClientTileSectorArrayPtr = shared_ptr<ClientTileSectorArray>;
 
@@ -219,31 +224,8 @@ inline WorldTile::WorldTile(WorldTile const& worldTile) {
   *this = worldTile;
 }
 
-inline WorldTile& WorldTile::operator=(WorldTile const& worldTile) {
-  foreground = worldTile.foreground;
-  foregroundHueShift = worldTile.foregroundHueShift;
-  foregroundMod = worldTile.foregroundMod;
-  foregroundModHueShift = worldTile.foregroundModHueShift;
-  foregroundColorVariant = worldTile.foregroundColorVariant;
-
-  background = worldTile.background;
-  backgroundHueShift = worldTile.backgroundHueShift;
-  backgroundMod = worldTile.backgroundMod;
-  backgroundModHueShift = worldTile.backgroundModHueShift;
-  backgroundColorVariant = worldTile.backgroundColorVariant;
-
-  // Don't bother copying collision cache
-  collisionCacheDirty = true;
-
-  collision = worldTile.collision;
-  blockBiomeIndex = worldTile.blockBiomeIndex;
-  environmentBiomeIndex = worldTile.environmentBiomeIndex;
-
-  foregroundDamage = worldTile.foregroundDamage;
-  backgroundDamage = worldTile.backgroundDamage;
-
-  dungeonId = worldTile.dungeonId;
-
+inline WorldTile& WorldTile::operator=(WorldTile other) noexcept {
+  swap(*this, other);
   return *this;
 }
 
@@ -294,14 +276,8 @@ inline ClientTile::ClientTile(ClientTile const& clientTile) : WorldTile() {
   *this = clientTile;
 }
 
-inline ClientTile& ClientTile::operator=(ClientTile const& clientTile) {
-  WorldTile::operator=(clientTile);
-
-  backgroundLightTransparent = clientTile.backgroundLightTransparent;
-  foregroundLightTransparent = clientTile.foregroundLightTransparent;
-  liquid = clientTile.liquid;
-  gravity = clientTile.gravity;
-
+inline ClientTile& ClientTile::operator=(ClientTile other) noexcept {
+  swap(*this, other);
   return *this;
 }
 

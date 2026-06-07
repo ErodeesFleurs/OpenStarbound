@@ -64,7 +64,7 @@ TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTe
   else
     image = assets->image(imagePath);
 
-  if (!image)
+  if (!image) [[unlikely]]
     return {};
 
   // Assets will return the same image ptr if two different asset paths point

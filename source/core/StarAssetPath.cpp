@@ -141,17 +141,8 @@ AssetPath::AssetPath(String const& path) {
   *this = AssetPath::split(path);
 }
 
-AssetPath::AssetPath(String&& basePath, Maybe<String>&& subPath, DirectivesGroup&& directives) {
-  this->basePath = std::move(basePath);
-  this->subPath = std::move(subPath);
-  this->directives = std::move(directives);
-}
-
-AssetPath::AssetPath(String const& basePath, Maybe<String> const& subPath, DirectivesGroup const& directives) {
-  this->basePath = basePath;
-  this->subPath = subPath;
-  this->directives = directives;
-}
+AssetPath::AssetPath(String basePath, Maybe<String> subPath, DirectivesGroup directives)
+  : basePath(std::move(basePath)), subPath(std::move(subPath)), directives(std::move(directives)) {}
 
 std::ostream& operator<<(std::ostream& os, AssetPath const& rhs) {
   os << rhs.basePath;
