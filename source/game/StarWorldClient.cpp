@@ -2092,44 +2092,13 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool upd
 void WorldClient::dirtyCollision(RectI const& region) {
   if (!inWorld())
     return;
-
-  auto dirtyRegion = region.padded(CollisionGenerator::BlockInfluenceRadius);
-  for (int x = dirtyRegion.xMin(); x < dirtyRegion.xMax(); ++x) {
-    for (int y = dirtyRegion.yMin(); y < dirtyRegion.yMax(); ++y) {
-      if (auto tile = m_tileArray->modifyTile({x, y}))
-        tile->collisionCacheDirty = true;
-    }
-  }
+  dirtyCollisionImpl(m_tileArray, region);
 }
 
 void WorldClient::freshenCollision(RectI const& region) {
   if (!inWorld())
     return;
-
-  RectI freshenRegion = RectI::null();
-  for (int x = region.xMin(); x < region.xMax(); ++x) {
-    for (int y = region.yMin(); y < region.yMax(); ++y) {
-      if (auto tile = m_tileArray->modifyTile({x, y})) {
-        if (tile->collisionCacheDirty)
-          freshenRegion.combine(RectI(x, y, x + 1, y + 1));
-      }
-    }
-  }
-
-  if (!freshenRegion.isNull()) {
-    for (int x = freshenRegion.xMin(); x < freshenRegion.xMax(); ++x) {
-      for (int y = freshenRegion.yMin(); y < freshenRegion.yMax(); ++y) {
-        if (auto tile = m_tileArray->modifyTile({x, y})) {
-          tile->collisionCacheDirty = false;
-          m_collisionCache.remove({x, y});
-        }
-      }
-    }
-
-    for (auto& collisionBlock : m_collisionGenerator.getBlocks(freshenRegion)) {
-      m_collisionCache[collisionBlock.space].append(std::move(collisionBlock));
-    }
-  }
+  freshenCollisionImpl(m_tileArray, m_collisionGenerator, m_collisionCache, region);
 }
 
 float WorldClient::lightLevel(Vec2F const& pos) const {

@@ -355,4 +355,43 @@ inline void RenderTile::hashPushLiquid(Hasher& hasher) const {
   hasher.push(buffer.data(), sizeof(liquidLevel) + sizeof(liquidId));
 }
 
+template <typename TileArrayPtr>
+inline void dirtyCollisionImpl(TileArrayPtr& tileArray, RectI const& region) {
+  auto dirtyRegion = region.padded(CollisionGenerator::BlockInfluenceRadius);
+  for (int x = dirtyRegion.xMin(); x < dirtyRegion.xMax(); ++x) {
+    for (int y = dirtyRegion.yMin(); y < dirtyRegion.yMax(); ++y) {
+      if (auto tile = tileArray->modifyTile({x, y}))
+        tile->collisionCacheDirty = true;
+    }
+  }
+}
+
+template <typename TileArrayPtr, typename CollisionCache>
+inline void freshenCollisionImpl(TileArrayPtr& tileArray, CollisionGenerator& collisionGenerator, CollisionCache& collisionCache, RectI const& region) {
+  RectI freshenRegion = RectI::null();
+  for (int x = region.xMin(); x < region.xMax(); ++x) {
+    for (int y = region.yMin(); y < region.yMax(); ++y) {
+      if (auto tile = tileArray->modifyTile({x, y})) {
+        if (tile->collisionCacheDirty)
+          freshenRegion.combine(RectI(x, y, x + 1, y + 1));
+      }
+    }
+  }
+
+  if (!freshenRegion.isNull()) {
+    for (int x = freshenRegion.xMin(); x < freshenRegion.xMax(); ++x) {
+      for (int y = freshenRegion.yMin(); y < freshenRegion.yMax(); ++y) {
+        if (auto tile = tileArray->modifyTile({x, y})) {
+          tile->collisionCacheDirty = false;
+          collisionCache.remove({x, y});
+        }
+      }
+    }
+
+    for (auto& collisionBlock : collisionGenerator.getBlocks(freshenRegion)) {
+      collisionCache[collisionBlock.space].append(std::move(collisionBlock));
+    }
+  }
+}
+
 }
