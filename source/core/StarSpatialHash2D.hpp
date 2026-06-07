@@ -30,13 +30,13 @@ public:
 
   SpatialHash2D(Scalar const& sectorSize);
 
-  List<Key> keys() const;
-  List<Value> values() const;
+  [[nodiscard]] List<Key> keys() const;
+  [[nodiscard]] List<Value> values() const;
   EntryMap const& entries() const;
 
-  size_t size() const;
+  [[nodiscard]] size_t size() const;
 
-  bool contains(Key const& key) const;
+  [[nodiscard]] bool contains(Key const& key) const;
 
   Value const& get(Key const& key) const;
   Value& get(Key const& key);
@@ -45,9 +45,9 @@ public:
   Value value(Key const& key) const;
 
   // Query values from several bounding boxes at once with no duplicates.
-  List<Value> queryValues(Rect const& rect) const;
+  [[nodiscard]] List<Value> queryValues(Rect const& rect) const;
   template <typename RectCollection>
-  List<Value> queryValues(RectCollection const& rects) const;
+  [[nodiscard]] List<Value> queryValues(RectCollection const& rects) const;
 
   // Iterate over entries in the given bounding boxes without duplication.  It
   // is safe to modify rects or add entries from the given callback, but it is
@@ -69,7 +69,7 @@ public:
   template <typename RectCollection>
   void set(Key const& key, RectCollection const& rects, Value value);
 
-  Maybe<Value> remove(Key const& key);
+  [[nodiscard]] Maybe<Value> remove(Key const& key);
 
   // Recalculates every item in sector map
   void setSectorSize(Scalar const& sectorSize);
@@ -102,12 +102,12 @@ SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::SpatialHash2D(Sc
   : m_sectorSize(sectorSize) {}
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-List<KeyT> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::keys() const {
+[[nodiscard]] List<KeyT> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::keys() const {
   return m_entryMap.keys();
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-List<typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::values() const {
+[[nodiscard]] List<typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::values() const {
   List<Value> values;
   for (auto const& pair : m_entryMap)
     values.append(pair.second.value);
@@ -122,12 +122,12 @@ SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::entries() const 
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-size_t SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::size() const {
+[[nodiscard]] size_t SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::size() const {
   return m_entryMap.size();
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-bool SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::contains(Key const& key) const {
+[[nodiscard]] bool SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::contains(Key const& key) const {
   return m_entryMap.contains(key);
 }
 
@@ -154,13 +154,13 @@ typename SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Value S
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-List<ValueT> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::queryValues(Rect const& rect) const {
+[[nodiscard]] List<ValueT> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::queryValues(Rect const& rect) const {
   return queryValues(initializer_list<Rect>{rect});
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 template <typename RectCollection>
-List<ValueT> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::queryValues(RectCollection const& rects) const {
+[[nodiscard]] List<ValueT> SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::queryValues(RectCollection const& rects) const {
   List<Value> values;
   forEach(rects, [&values](Value const& value) {
       values.append(value);
@@ -255,7 +255,7 @@ void SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::set(Key con
 }
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::remove(Key const& key) -> Maybe<Value> {
+[[nodiscard]] auto SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::remove(Key const& key) -> Maybe<Value> {
   auto iter = m_entryMap.find(key);
   if (iter == m_entryMap.end())
     return {};

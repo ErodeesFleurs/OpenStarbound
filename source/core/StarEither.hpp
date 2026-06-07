@@ -51,8 +51,8 @@ public:
   template <typename T>
   Either& operator=(EitherRightValue<T> right);
 
-  bool isLeft() const;
-  bool isRight() const;
+  [[nodiscard]] bool isLeft() const;
+  [[nodiscard]] bool isRight() const;
 
   void setLeft(Left left);
   void setRight(Right left);
@@ -65,16 +65,16 @@ public:
   Left& left();
   Right& right();
 
-  Maybe<Left> maybeLeft() const;
-  Maybe<Right> maybeRight() const;
+  [[nodiscard]] Maybe<Left> maybeLeft() const;
+  [[nodiscard]] Maybe<Right> maybeRight() const;
 
   // leftPtr() and rightPtr() do not throw on invalid access
 
-  Left const* leftPtr() const;
-  Right const* rightPtr() const;
+  [[nodiscard]] Left const* leftPtr() const;
+  [[nodiscard]] Right const* rightPtr() const;
 
-  Left* leftPtr();
-  Right* rightPtr();
+  [[nodiscard]] Left* leftPtr();
+  [[nodiscard]] Right* rightPtr();
 
 private:
   using LeftType = EitherLeftValue<Left>;

@@ -16,17 +16,17 @@ CompressionLevel const MediumCompression = 5;
 CompressionLevel const HighCompression = 9;
 
 void compressData(ByteArray const& in, ByteArray& out, CompressionLevel compression = MediumCompression);
-ByteArray compressData(ByteArray const& in, CompressionLevel compression = MediumCompression);
+[[nodiscard]] ByteArray compressData(ByteArray const& in, CompressionLevel compression = MediumCompression);
 
 void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit = 0);
-ByteArray uncompressData(const char* in, size_t inLen, size_t limit = 0);
+[[nodiscard]] ByteArray uncompressData(const char* in, size_t inLen, size_t limit = 0);
 void uncompressData(ByteArray const& in, ByteArray& out, size_t limit = 0);
-ByteArray uncompressData(ByteArray const& in, size_t limit = 0);
+[[nodiscard]] ByteArray uncompressData(ByteArray const& in, size_t limit = 0);
 
 // Random access to a (potentially) compressed file.
 class CompressedFile : public IODevice {
 public:
-  static CompressedFilePtr open(String const& filename, IOMode mode, CompressionLevel comp = MediumCompression);
+  [[nodiscard]] static CompressedFilePtr open(String const& filename, IOMode mode, CompressionLevel comp = MediumCompression);
 
   CompressedFile();
   CompressedFile(String filename);

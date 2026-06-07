@@ -17,23 +17,23 @@ enum class NetworkMode {
 
 class HostAddress {
 public:
-  static HostAddress localhost(NetworkMode mode = NetworkMode::IPv4);
+  [[nodiscard]] static HostAddress localhost(NetworkMode mode = NetworkMode::IPv4);
 
   // Returns either error or valid HostAddress
-  static Either<String, HostAddress> lookup(String const& address);
+  [[nodiscard]] static Either<String, HostAddress> lookup(String const& address);
 
   // If address is nullptr, constructs the zero address.
   HostAddress(NetworkMode mode = NetworkMode::IPv4, uint8_t* address = nullptr);
   // Throws if address is not valid
   explicit HostAddress(String const& address);
 
-  NetworkMode mode() const;
-  uint8_t const* bytes() const;
-  uint8_t octet(size_t i) const;
-  size_t size() const;
+  [[nodiscard]] NetworkMode mode() const;
+  [[nodiscard]] uint8_t const* bytes() const;
+  [[nodiscard]] uint8_t octet(size_t i) const;
+  [[nodiscard]] size_t size() const;
 
-  bool isLocalHost() const;
-  bool isZero() const;
+  [[nodiscard]] bool isLocalHost() const;
+  [[nodiscard]] bool isZero() const;
 
   bool operator==(HostAddress const& a) const;
 
@@ -55,10 +55,10 @@ struct hash<HostAddress> {
 class HostAddressWithPort {
 public:
   // Returns either error or valid HostAddressWithPort
-  static Either<String, HostAddressWithPort> lookup(String const& address, uint16_t port);
+  [[nodiscard]] static Either<String, HostAddressWithPort> lookup(String const& address, uint16_t port);
   // Format may have [] brackets around address or not, to distinguish address
   // portion from port portion.
-  static Either<String, HostAddressWithPort> lookupWithPort(String const& address);
+  [[nodiscard]] static Either<String, HostAddressWithPort> lookupWithPort(String const& address);
 
   HostAddressWithPort();
   HostAddressWithPort(HostAddress const& address, uint16_t port);
@@ -67,8 +67,8 @@ public:
   HostAddressWithPort(String const& address, uint16_t port);
   explicit HostAddressWithPort(String const& address);
 
-  HostAddress address() const;
-  uint16_t port() const;
+  [[nodiscard]] HostAddress address() const;
+  [[nodiscard]] uint16_t port() const;
 
   bool operator==(HostAddressWithPort const& a) const;
 

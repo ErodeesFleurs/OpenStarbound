@@ -33,13 +33,13 @@ struct ImageDeleter {
 // 0) defined to be the *lower left* corner.
 class Image {
 public:
-  static Image readPng(IODevicePtr device);
-  static bool isPng(IODevicePtr device);
+  [[nodiscard]] static Image readPng(IODevicePtr device);
+  [[nodiscard]] static bool isPng(IODevicePtr device);
   // Returns the size and pixel format that would be constructed from the given
   // png file, without actually loading it.
-  static tuple<Vec2U, PixelFormat> readPngMetadata(IODevicePtr device);
+  [[nodiscard]] static tuple<Vec2U, PixelFormat> readPngMetadata(IODevicePtr device);
 
-  static Image filled(Vec2U size, Vec4B color, PixelFormat pf = PixelFormat::RGBA32);
+  [[nodiscard]] static Image filled(Vec2U size, Vec4B color, PixelFormat pf = PixelFormat::RGBA32);
 
   // Creates a zero size image
   Image(PixelFormat pf = PixelFormat::RGBA32);
@@ -53,20 +53,20 @@ public:
   Image& operator=(Image const& image);
   Image& operator=(Image&& image);
 
-  uint8_t bitsPerPixel() const;
-  uint8_t bytesPerPixel() const;
+  [[nodiscard]] uint8_t bitsPerPixel() const;
+  [[nodiscard]] uint8_t bytesPerPixel() const;
 
-  unsigned width() const;
-  unsigned height() const;
-  Vec2U size() const;
+  [[nodiscard]] unsigned width() const;
+  [[nodiscard]] unsigned height() const;
+  [[nodiscard]] Vec2U size() const;
   // width or height is 0
-  bool empty() const;
+  [[nodiscard]] bool empty() const;
 
-  PixelFormat pixelFormat() const;
+  [[nodiscard]] PixelFormat pixelFormat() const;
 
   // If the image is empty, the data ptr will be null
-  uint8_t const* data() const;
-  uint8_t* data();
+  [[nodiscard]] uint8_t const* data() const;
+  [[nodiscard]] uint8_t* data();
 
   // Reallocate the image with the given width, height, and pixel format.  The
   // contents of the image are always zeroed after a call to reset.
@@ -86,41 +86,41 @@ public:
   // the position is out of range, then throws an exception.
   void set(Vec2U const& pos, Vec4B const& c);
   void set(Vec2U const& pos, Vec3B const& c);
-  Vec4B get(Vec2U const& pos) const;
+  [[nodiscard]] Vec4B get(Vec2U const& pos) const;
 
   // Same as set / get, except color parameters / return values here are always
   // RGB[A], and converts if necessary.
   void setrgb(Vec2U const& pos, Vec4B const& c);
   void setrgb(Vec2U const& pos, Vec3B const& c);
-  Vec4B getrgb(Vec2U const& pos) const;
+  [[nodiscard]] Vec4B getrgb(Vec2U const& pos) const;
 
   // Get pixel value, but if pos is out of the normal pixel range, it is
   // clamped back into the valid pixel range.  Returns (0, 0, 0, 0) if image is
   // empty.
-  Vec4B clamp(Vec2I const& pos) const;
-  Vec4B clamprgb(Vec2I const& pos) const;
+  [[nodiscard]] Vec4B clamp(Vec2I const& pos) const;
+  [[nodiscard]] Vec4B clamprgb(Vec2I const& pos) const;
 
   // x / y versions of set / get, for compatibility
   void set(unsigned x, unsigned y, Vec4B const& c);
   void set(unsigned x, unsigned y, Vec3B const& c);
-  Vec4B get(unsigned x, unsigned y) const;
   void setrgb(unsigned x, unsigned y, Vec4B const& c);
   void setrgb(unsigned x, unsigned y, Vec3B const& c);
-  Vec4B getrgb(unsigned x, unsigned y) const;
-  Vec4B clamp(int x, int y) const;
-  Vec4B clamprgb(int x, int y) const;
+  [[nodiscard]] Vec4B get(unsigned x, unsigned y) const;
+  [[nodiscard]] Vec4B getrgb(unsigned x, unsigned y) const;
+  [[nodiscard]] Vec4B clamp(int x, int y) const;
+  [[nodiscard]] Vec4B clamprgb(int x, int y) const;
 
   // Must be 32 bitsPerPixel, no format conversion or bounds checking takes
   // place.  Very fast inline versions.
   void set32(Vec2U const& pos, Vec4B const& c);
   void set32(unsigned x, unsigned y, Vec4B const& c);
-  Vec4B get32(unsigned x, unsigned y) const;
+  [[nodiscard]] Vec4B get32(unsigned x, unsigned y) const;
 
   // Must be 24 bitsPerPixel, no format conversion or bounds checking takes
   // place.  Very fast inline versions.
   void set24(Vec2U const& pos, Vec3B const& c);
   void set24(unsigned x, unsigned y, Vec3B const& c);
-  Vec3B get24(unsigned x, unsigned y) const;
+  [[nodiscard]] Vec3B get24(unsigned x, unsigned y) const;
 
   // Called as callback(unsigned x, unsigned y, Vec4B const& pixel)
   template <typename CallbackType>
@@ -131,7 +131,7 @@ public:
   void forEachPixel(CallbackType&& callback);
 
   // Pixel rectangle, lower left position and size of rectangle.
-  Image subImage(Vec2U const& pos, Vec2U const& size) const;
+  [[nodiscard]] Image subImage(Vec2U const& pos, Vec2U const& size) const;
 
   // Copy given image into this one at pos
   void copyInto(Vec2U const& pos, Image const& image);
@@ -139,7 +139,7 @@ public:
   void drawInto(Vec2U const& pos, Image const& image);
 
   // Convert this image into the given pixel format
-  Image convert(PixelFormat pixelFormat) const;
+  [[nodiscard]] Image convert(PixelFormat pixelFormat) const;
 
   void writePng(IODevicePtr device) const;
 
@@ -327,7 +327,7 @@ void Image::forEachPixel(CallbackType&& callback) {
 
 struct ImageView {
   inline bool empty() const { return size.x() == 0 || size.y() == 0; }
-  ImageView() = default;
+  ImageView() noexcept = default;
   ImageView(Image const& image);
 
   Vec2U size{0, 0};

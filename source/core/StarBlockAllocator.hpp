@@ -33,6 +33,8 @@ public:
   using propagate_on_container_move_assignment = std::true_type;
   using propagate_on_container_swap = std::true_type;
 
+  static constexpr size_t DefaultBlockPreallocation = 32;
+
   template <class U>
   struct rebind {
     using other = BlockAllocator<U, BlockSize>;
@@ -42,13 +44,13 @@ public:
   // Copy constructed BlockAllocators of the same type share underlying
   // resources.
   BlockAllocator(BlockAllocator const& other) = default;
-  BlockAllocator(BlockAllocator&& other) = default;
+  BlockAllocator(BlockAllocator&& other) noexcept = default;
   // Copy constructed BlockAllocators of different type share no resources
   template <class U>
   BlockAllocator(BlockAllocator<U, BlockSize> const& other);
 
   BlockAllocator& operator=(BlockAllocator const& rhs) = default;
-  BlockAllocator& operator=(BlockAllocator&& rhs) = default;
+  BlockAllocator& operator=(BlockAllocator&& rhs) noexcept = default;
 
   // If n is != 1, will fall back on std::allocator<T>
   T* allocate(size_t n);
@@ -124,7 +126,7 @@ template <typename T, size_t BlockSize>
 BlockAllocator<T, BlockSize>::BlockAllocator() {
   m_family = make_shared<BlockAllocatorFamily>();
   m_data = getAllocatorData(*m_family);
-  m_data->blocks.reserve(32);
+  m_data->blocks.reserve(DefaultBlockPreallocation);
   m_data->unfilledBlock = nullptr;
 }
 

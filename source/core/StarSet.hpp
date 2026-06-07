@@ -23,36 +23,36 @@ public:
 
   using Base::Base;
 
-  List<value_type> values() const;
+  [[nodiscard]] List<value_type> values() const;
 
-  bool contains(value_type const& v) const;
+  [[nodiscard]] bool contains(value_type const& v) const;
 
-  bool add(value_type const& v);
+  [[nodiscard]] bool add(value_type const& v);
 
   // Like add, but always adds new value, potentially replacing another equal
   // (comparing equal, may not be actually equal) value.  Returns whether an
   // existing value was replaced.
-  bool replace(value_type v);
+  [[nodiscard]] bool replace(value_type v);
 
   template <typename Container>
   void addAll(Container const& s);
 
-  bool remove(value_type const& v);
+  [[nodiscard]] bool remove(value_type const& v);
 
   template <typename Container>
   void removeAll(Container const& s);
 
   value_type first();
-  Maybe<value_type> maybeFirst();
+  [[nodiscard]] Maybe<value_type> maybeFirst();
   value_type takeFirst();
-  Maybe<value_type> maybeTakeFirst();
+  [[nodiscard]] Maybe<value_type> maybeTakeFirst();
 
   value_type last();
-  Maybe<value_type> maybeLast();
+  [[nodiscard]] Maybe<value_type> maybeLast();
   value_type takeLast();
-  Maybe<value_type> maybeTakeLast();
+  [[nodiscard]] Maybe<value_type> maybeTakeLast();
 
-  bool hasIntersection(SetMixin const& s) const;
+  [[nodiscard]] bool hasIntersection(SetMixin const& s) const;
 };
 
 template <typename BaseSet>
@@ -112,7 +112,7 @@ template <typename Value, typename Hash = hash<Value>, typename Equals = std::eq
 using StableHashSet = HashSetMixin<std::unordered_set<Value, Hash, Equals, Allocator>>;
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::values() const -> List<value_type> {
+[[nodiscard]] auto SetMixin<BaseSet>::values() const -> List<value_type> {
   List<value_type> values;
   values.reserve(Base::size());
   for (auto const& value : *this)
@@ -121,17 +121,17 @@ auto SetMixin<BaseSet>::values() const -> List<value_type> {
 }
 
 template <typename BaseSet>
-bool SetMixin<BaseSet>::contains(value_type const& v) const {
+[[nodiscard]] bool SetMixin<BaseSet>::contains(value_type const& v) const {
   return Base::find(v) != Base::end();
 }
 
 template <typename BaseSet>
-bool SetMixin<BaseSet>::add(value_type const& v) {
+[[nodiscard]] bool SetMixin<BaseSet>::add(value_type const& v) {
   return Base::insert(v).second;
 }
 
 template <typename BaseSet>
-bool SetMixin<BaseSet>::replace(value_type v) {
+[[nodiscard]] bool SetMixin<BaseSet>::replace(value_type v) {
   bool replaced = remove(v);
   Base::insert(std::move(v));
   return replaced;
@@ -144,7 +144,7 @@ void SetMixin<BaseSet>::addAll(Container const& s) {
 }
 
 template <typename BaseSet>
-bool SetMixin<BaseSet>::remove(value_type const& v) {
+[[nodiscard]] bool SetMixin<BaseSet>::remove(value_type const& v) {
   return Base::erase(v) != 0;
 }
 
@@ -163,7 +163,7 @@ auto SetMixin<BaseSet>::first() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeFirst() -> Maybe<value_type> {
+[[nodiscard]] auto SetMixin<BaseSet>::maybeFirst() -> Maybe<value_type> {
   if (Base::empty())
     return {};
   return *Base::begin();
@@ -180,7 +180,7 @@ auto SetMixin<BaseSet>::takeFirst() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeTakeFirst() -> Maybe<value_type> {
+[[nodiscard]] auto SetMixin<BaseSet>::maybeTakeFirst() -> Maybe<value_type> {
   if (Base::empty())
     return {};
   auto i = Base::begin();
@@ -197,7 +197,7 @@ auto SetMixin<BaseSet>::last() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeLast() -> Maybe<value_type> {
+[[nodiscard]] auto SetMixin<BaseSet>::maybeLast() -> Maybe<value_type> {
   if (Base::empty())
     return {};
   return *prev(Base::end());
@@ -214,7 +214,7 @@ auto SetMixin<BaseSet>::takeLast() -> value_type {
 }
 
 template <typename BaseSet>
-auto SetMixin<BaseSet>::maybeTakeLast() -> Maybe<value_type> {
+[[nodiscard]] auto SetMixin<BaseSet>::maybeTakeLast() -> Maybe<value_type> {
   if (Base::empty())
     return {};
   auto i = prev(Base::end());
@@ -224,7 +224,7 @@ auto SetMixin<BaseSet>::maybeTakeLast() -> Maybe<value_type> {
 }
 
 template <typename BaseSet>
-bool SetMixin<BaseSet>::hasIntersection(SetMixin const& s) const {
+[[nodiscard]] bool SetMixin<BaseSet>::hasIntersection(SetMixin const& s) const {
   for (auto const& v : s) {
     if (contains(v)) {
       return true;

@@ -16,8 +16,8 @@ public:
   IODeviceCallbacks& operator=(IODeviceCallbacks const&) = delete;
   
   // Moving is ok
-  IODeviceCallbacks(IODeviceCallbacks&&) = default;
-  IODeviceCallbacks& operator=(IODeviceCallbacks&&) = default;
+  IODeviceCallbacks(IODeviceCallbacks&&) noexcept = default;
+  IODeviceCallbacks& operator=(IODeviceCallbacks&&) noexcept = default;
 
   // Get the underlying device
   IODevicePtr const& device() const;
