@@ -101,7 +101,10 @@ void SystemWorldServer::addClientShip(ConnectionId clientId, Uuid const& uuid, f
   m_clientNetVersions.set(clientId, {{}, {} });
   m_outgoingPackets.set(clientId, {});
 
-  List<ByteArray> objectStores = m_objects.values().transformed([](SystemObjectPtr const& o) { return o->netStore(); });
+  List<ByteArray> objectStores;
+  objectStores.reserve(m_objects.size());
+  for (auto const& [_, o] : m_objects)
+    objectStores.append(o->netStore());
   List<ByteArray> shipStores = m_ships.values().filtered([uuid](SystemClientShipPtr const& s) {
     return s->uuid() != uuid;
   }).transformed([](SystemClientShipPtr const& s) {

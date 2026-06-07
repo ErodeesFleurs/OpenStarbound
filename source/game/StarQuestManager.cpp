@@ -59,8 +59,6 @@ void QuestManager::diskLoad(Json const& quests) {
 Json QuestManager::diskStore() {
   auto questPtrToJson = [](QuestPtr const& quest) { return quest->diskStore(); };
 
-  auto quests = m_quests.values();
-
   return JsonObject{
       {"quests", jsonFromMapV<StringMap<QuestPtr>>(m_quests, questPtrToJson)},
       {"currentQuest", jsonFromMaybe(m_trackedQuestId)}
@@ -73,7 +71,7 @@ void QuestManager::setUniverseClient(UniverseClient* client) {
 
 void QuestManager::init(World* world) {
   m_world = world;
-  for (auto& quest : m_quests.values()) {
+  for (auto& [_, quest] : m_quests) {
     if (!questValidOnServer(quest))
       continue;
     quest->init(m_player, world, m_client);
@@ -91,7 +89,8 @@ void QuestManager::init(World* world) {
 }
 
 void QuestManager::uninit() {
-  m_quests.values().exec([](QuestPtr const& quest) { quest->uninit(); });
+  for (auto const& [_, quest] : m_quests)
+    quest->uninit();
   m_world = nullptr;
 }
 
@@ -354,18 +353,18 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) c
 
 StringSet QuestManager::interestingObjects() {
   StringSet result;
-  m_quests.values().exec([&result](QuestPtr const& quest) {
+  for (auto const& [_, quest] : m_quests) {
     if (auto questObjects = quest->receiveMessage("interestingObjects", true, JsonArray()))
       result.addAll(jsonToStringSet(*questObjects));
-  });
+  }
   return result;
 }
 
 Maybe<Json> QuestManager::receiveMessage(String const& message, bool localMessage, JsonArray const& args) {
   starAssert(m_world);
   Maybe<Json> result;
-  m_quests.values().exec([&result, message, localMessage, args](
-      QuestPtr const& quest) { result = result.orMaybe(quest->receiveMessage(message, localMessage, args)); });
+  for (auto const& [_, quest] : m_quests)
+    result = result.orMaybe(quest->receiveMessage(message, localMessage, args));
   return result;
 }
 
@@ -412,7 +411,7 @@ void QuestManager::update(float dt) {
   for (auto& questId : expiredQuests)
     m_quests.remove(questId);
 
-  for (auto& q : m_quests.values()) {
+  for (auto& [_, q] : m_quests) {
     if (questValidOnServer(q))
       q->update(dt);
   }
