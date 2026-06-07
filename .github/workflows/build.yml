@@ -187,8 +187,8 @@ jobs:
     runs-on: ubuntu-22.04
     if: ${{ (github.event_name != 'pull_request') && (inputs.linux == true) }}
     env:
-      CC: gcc-13
-      CXX: g++-13
+      CC: gcc-14
+      CXX: g++-14
     steps:
       - name: Install Packages
         run: |
@@ -201,7 +201,7 @@ jobs:
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
           libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
-          autoconf autoconf-archive automake libtool patchelf gcc-13 g++-13
+          autoconf autoconf-archive automake libtool patchelf gcc-14 g++-14
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -296,7 +296,7 @@ jobs:
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
           libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
-          autoconf autoconf-archive automake libtool patchelf g++-13
+          autoconf autoconf-archive automake libtool patchelf g++-14
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -377,8 +377,8 @@ jobs:
     runs-on: ubuntu-22.04-arm
     if: ${{ (github.event_name != 'pull_request') && (inputs.linux == true) }}
     env:
-      CC: gcc-13
-      CXX: g++-13
+      CC: gcc-14
+      CXX: g++-14
     steps:
       - name: Install Packages
         run: |
@@ -391,7 +391,7 @@ jobs:
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
           libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
-          autoconf autoconf-archive automake libtool patchelf gcc-13 g++-13
+          autoconf autoconf-archive automake libtool patchelf gcc-14 g++-14
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
@@ -486,7 +486,7 @@ jobs:
           libxrandr-dev libxcursor-dev libxfixes-dev libxi-dev libxss-dev libxtst-dev \
           libxkbcommon-dev libdrm-dev libgbm-dev libgl1-mesa-dev libgles2-mesa-dev \
           libegl1-mesa-dev libdbus-1-dev libibus-1.0-dev libudev-dev libpipewire-0.3-dev libwayland-dev libdecor-0-dev liburing-dev \
-          autoconf autoconf-archive automake libtool patchelf g++-13
+          autoconf autoconf-archive automake libtool patchelf g++-14
 
       - name: Install CMake & Ninja
         uses: lukka/get-cmake@latest
