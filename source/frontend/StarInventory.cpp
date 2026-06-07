@@ -132,15 +132,15 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   for (auto name : bagOrder) {
     auto itemGrid = itemBagConfig.get(name).getString("itemGrid");
     invWindowReader.registerCallback(itemGrid, [this, leftClickCallback, name](Widget* widget) { leftClickCallback(name, widget); });
-    invWindowReader.registerCallback(itemGrid + ".right", [bagGridCallback, rightClickCallback, name](Widget* widget) { bagGridCallback(name, widget); });
-    invWindowReader.registerCallback(itemGrid + ".middle", [this, middleClickCallback, name](Widget* widget) { middleClickCallback(name, widget); });
+    invWindowReader.registerCallback(itemGrid + ".right", [bagGridCallback, name](Widget* widget) { bagGridCallback(name, widget); });
+    invWindowReader.registerCallback(itemGrid + ".middle", [middleClickCallback, name](Widget* widget) { middleClickCallback(name, widget); });
   }
 
-  invWindowReader.registerCallback("close", [=, this](Widget*) {
+    invWindowReader.registerCallback("close", [this](Widget*) {
       dismiss();
     });
 
-  invWindowReader.registerCallback("sort", [=, this](Widget*) {
+    invWindowReader.registerCallback("sort", [this](Widget*) {
       m_player->inventory()->condenseBagStacks(m_selectedTab);
       m_player->inventory()->sortBag(m_selectedTab);
       // Don't show sorted items as new items
@@ -148,19 +148,19 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
       m_itemGrids[m_selectedTab]->clearChangedSlots();
     });
 
-  invWindowReader.registerCallback("gridModeSelector", [=, this](Widget* widget) {
+      invWindowReader.registerCallback("gridModeSelector", [this](Widget* widget) {
       auto selected = convert<ButtonWidget>(widget)->data().toString();
       selectTab(m_tabButtonData.keyOf(selected));
     });
 
   auto registerSlotCallbacks = [&](String name, InventorySlot slot) {
-    invWindowReader.registerCallback(name, [=, this](Widget* paneObj) {
+    invWindowReader.registerCallback(name, [this, slot](Widget* paneObj) {
         if (as<ItemSlotWidget>(paneObj))
           m_player->inventory()->shiftSwap(slot);
         else
           throw GuiException("Invalid object type, expected ItemSlotWidget");
       });
-    invWindowReader.registerCallback(name + ".right", [=](Widget* paneObj) {
+    invWindowReader.registerCallback(name + ".right", [rightClickCallback, slot](Widget* paneObj) {
         if (as<ItemSlotWidget>(paneObj))
           rightClickCallback(slot);
         else
