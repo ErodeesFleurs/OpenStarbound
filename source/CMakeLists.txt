@@ -531,7 +531,7 @@ if (NOT STAR_SYSTEM_HAIKU)
 	find_package(Opus CONFIG REQUIRED)
 	find_package(re2 CONFIG REQUIRED)
 endif()
-include_directories(SYSTEM
+list(APPEND STAR_SYSTEM_INCLUDE_DIRS
     ${FREETYPE_INCLUDE_DIRS}
     ${OGGVORBIS_INCLUDE_DIR}
 )
@@ -575,7 +575,7 @@ if(STAR_BUILD_GUI)
   find_package(OpenGL REQUIRED)
   find_package(GLEW REQUIRED)
 
-  include_directories(SYSTEM ${GLEW_INCLUDE_DIR})
+  list(APPEND STAR_SYSTEM_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
   set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
       ${OPENGL_LIBRARY}
       $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
@@ -587,7 +587,7 @@ if(STAR_BUILD_GUI)
 
   if(STAR_ENABLE_STEAM_INTEGRATION)
     find_package(SteamApi REQUIRED)
-    include_directories(SYSTEM ${STEAM_API_INCLUDE_DIR})
+    list(APPEND STAR_SYSTEM_INCLUDE_DIRS ${STEAM_API_INCLUDE_DIR})
     set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${STEAM_API_LIBRARY})
   endif()
 
@@ -597,8 +597,14 @@ if(STAR_BUILD_GUI)
   endif()
 endif()
 
+add_library(star_system_includes INTERFACE)
+if(STAR_SYSTEM_INCLUDE_DIRS)
+  target_include_directories(star_system_includes SYSTEM INTERFACE ${STAR_SYSTEM_INCLUDE_DIRS})
+endif()
+
 add_library(star_build_definitions INTERFACE)
 target_compile_definitions(star_build_definitions INTERFACE ${STAR_COMPILE_DEFINITIONS})
+target_link_libraries(star_build_definitions INTERFACE star_system_includes)
 
 # Set basic build flags, include all the relevant source directories, based on
 # build settings...
