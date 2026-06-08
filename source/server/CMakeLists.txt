@@ -1,25 +1,15 @@
-set(star_server_HEADERS
-    StarServerQueryThread.hpp
-    StarServerRconClient.hpp
-    StarServerRconThread.hpp
-  )
-
-set(star_server_SOURCES
-    StarServerQueryThread.cpp
-    StarServerRconClient.cpp
-    StarServerRconThread.cpp
-    main.cpp
-  )
-
-if(STAR_SYSTEM_WINDOWS)
-  set(star_server_RESOURCES
-      starbound_server.rc
-    )
-endif()
-
 add_executable(starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-  ${star_server_HEADERS} ${star_server_SOURCES} ${star_server_RESOURCES})
+  StarServerQueryThread.hpp
+  StarServerRconClient.hpp
+  StarServerRconThread.hpp
+  StarServerQueryThread.cpp
+  StarServerRconClient.cpp
+  StarServerRconThread.cpp
+  main.cpp)
+if(STAR_SYSTEM_WINDOWS)
+  target_sources(starbound_server PRIVATE starbound_server.rc)
+endif()
 target_compile_features(starbound_server PRIVATE cxx_std_20)
 target_include_directories(starbound_server PRIVATE
     ${STAR_GAME_INCLUDES}
