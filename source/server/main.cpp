@@ -62,7 +62,7 @@ int main(int argc, char** argv) {
         Logger::info("Configured tick rate is {:4.2f}hz", updateRate);
       }
 
-      UniverseServerUPtr server = make_unique<UniverseServer>(root->toStoragePath("universe"));
+      UniquePtr<UniverseServer> server = make_unique<UniverseServer>(root->toStoragePath("universe"));
       server->setListeningTcp(true);
       server->start();
 
