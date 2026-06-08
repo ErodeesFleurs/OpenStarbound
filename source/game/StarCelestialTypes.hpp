@@ -7,9 +7,9 @@
 
 namespace Star {
 
-STAR_STRUCT(CelestialSystemObjects);
-STAR_STRUCT(CelestialChunk);
-STAR_STRUCT(CelestialBaseInformation);
+struct CelestialSystemObjects;
+struct CelestialChunk;
+struct CelestialBaseInformation;
 
 using CelestialConstellation = List<pair<Vec2I, Vec2I>>;
 

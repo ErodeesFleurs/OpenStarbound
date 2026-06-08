@@ -14,9 +14,10 @@
 
 namespace Star {
 
-STAR_CLASS(Quest);
-STAR_CLASS(Player);
-STAR_CLASS(UniverseClient);
+class Quest;
+using QuestPtr = SharedPtr<Quest>;
+class Player;
+class UniverseClient;
 
 enum class QuestState {
   // New - being set up and quest hasn't been offered yet (or was offered and declined)
