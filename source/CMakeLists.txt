@@ -449,9 +449,7 @@ endif()
 
 # Set other global build settings based on environment...
 
-if(STAR_SYSTEM_MACOS)
-  set(CMAKE_MODULE_LINKER_FLAGS "-flat_namespace -undefined suppress")
-elseif(STAR_SYSTEM_WINDOWS)
+if(STAR_SYSTEM_WINDOWS)
   set(CMAKE_RC_COMPILER_INIT windres)
 
   enable_language(RC)
