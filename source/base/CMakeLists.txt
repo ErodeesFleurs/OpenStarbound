@@ -1,4 +1,5 @@
-set(star_base_HEADERS
+add_library(star_base OBJECT)
+target_sources(star_base PRIVATE
     StarAnimatedPartSet.hpp
     StarAssets.hpp
     StarAssetSource.hpp
@@ -15,9 +16,6 @@ set(star_base_HEADERS
     StarVersionOptionParser.hpp
     StarWorldGeometry.hpp
     scripting/StarImageLuaBindings.hpp
-  )
-
-set(star_base_SOURCES
     StarAnimatedPartSet.cpp
     StarAssets.cpp
     StarCellularLightArray.cpp
@@ -33,7 +31,6 @@ set(star_base_SOURCES
     scripting/StarImageLuaBindings.cpp
   )
 
-add_library(star_base OBJECT ${star_base_SOURCES} ${star_base_HEADERS})
 target_compile_features(star_base PUBLIC cxx_std_20)
 target_include_directories(star_base PUBLIC ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
 target_link_libraries(star_base PUBLIC star_build_definitions)
