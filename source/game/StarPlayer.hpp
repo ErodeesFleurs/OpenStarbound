@@ -28,26 +28,43 @@
 
 namespace Star {
 
-STAR_STRUCT(PlayerConfig);
-STAR_CLASS(Songbook);
-STAR_CLASS(WireConnector);
-STAR_CLASS(PlayerInventory);
-STAR_CLASS(PlayerBlueprints);
-STAR_CLASS(PlayerTech);
-STAR_CLASS(PlayerCompanions);
-STAR_CLASS(PlayerDeployment);
-STAR_CLASS(PlayerLog);
-STAR_CLASS(TechController);
-STAR_CLASS(ClientContext);
-STAR_CLASS(Statistics);
-STAR_CLASS(StatusController);
-STAR_CLASS(PlayerCodexes);
-STAR_CLASS(QuestManager);
-STAR_CLASS(InteractiveEntity);
-STAR_CLASS(PlayerUniverseMap);
-STAR_CLASS(UniverseClient);
+struct PlayerConfig;
+using PlayerConfigPtr = SharedPtr<PlayerConfig>;
+class Songbook;
+using SongbookPtr = SharedPtr<Songbook>;
+class WireConnector;
+class PlayerInventory;
+using PlayerInventoryPtr = SharedPtr<PlayerInventory>;
+class PlayerBlueprints;
+using PlayerBlueprintsPtr = SharedPtr<PlayerBlueprints>;
+class PlayerTech;
+using PlayerTechPtr = SharedPtr<PlayerTech>;
+class PlayerCompanions;
+using PlayerCompanionsPtr = SharedPtr<PlayerCompanions>;
+class PlayerDeployment;
+using PlayerDeploymentPtr = SharedPtr<PlayerDeployment>;
+class PlayerLog;
+using PlayerLogPtr = SharedPtr<PlayerLog>;
+class TechController;
+using TechControllerPtr = SharedPtr<TechController>;
+class ClientContext;
+using ClientContextPtr = SharedPtr<ClientContext>;
+class Statistics;
+using StatisticsPtr = SharedPtr<Statistics>;
+class StatusController;
+using StatusControllerPtr = SharedPtr<StatusController>;
+class PlayerCodexes;
+using PlayerCodexesPtr = SharedPtr<PlayerCodexes>;
+class QuestManager;
+using QuestManagerPtr = SharedPtr<QuestManager>;
+class InteractiveEntity;
+using InteractiveEntityPtr = SharedPtr<InteractiveEntity>;
+class PlayerUniverseMap;
+using PlayerUniverseMapPtr = SharedPtr<PlayerUniverseMap>;
+class UniverseClient;
 
-STAR_CLASS(Player);
+class Player;
+using PlayerPtr = SharedPtr<Player>;
 
 class Player :
   public virtual ToolUserEntity,
