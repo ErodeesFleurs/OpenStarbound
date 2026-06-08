@@ -303,16 +303,6 @@ function(star_clear_cmake_config_flags)
   endforeach()
 endfunction()
 
-function(star_append_config_compile_options config)
-  foreach(option IN LISTS ARGN)
-    list(APPEND STAR_C_COMPILE_OPTIONS "$<$<CONFIG:${config}>:${option}>")
-    list(APPEND STAR_CXX_COMPILE_OPTIONS "$<$<CONFIG:${config}>:${option}>")
-  endforeach()
-
-  set(STAR_C_COMPILE_OPTIONS "${STAR_C_COMPILE_OPTIONS}" PARENT_SCOPE)
-  set(STAR_CXX_COMPILE_OPTIONS "${STAR_CXX_COMPILE_OPTIONS}" PARENT_SCOPE)
-endfunction()
-
 function(star_add_c_compile_options)
   target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:C>:${ARGN}>")
 endfunction()
@@ -459,15 +449,15 @@ elseif(STAR_COMPILER_MSVC)
   target_compile_definitions(star_build_definitions INTERFACE UNICODE _UNICODE NOMINMAX)
 
 else()
-  list(APPEND STAR_C_COMPILE_OPTIONS -Wall)
-  list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall)
+  star_add_c_compile_options(-Wall)
+  star_add_cxx_compile_options(-Wall)
   target_compile_definitions(star_build_definitions INTERFACE _REENTRANT)
   star_clear_cmake_config_flags()
 
-  star_append_config_compile_options(Debug -g)
-  star_append_config_compile_options(RelWithAsserts -g -O2)
-  star_append_config_compile_options(RelWithDebInfo -DNDEBUG -g -O2)
-  star_append_config_compile_options(Release -DNDEBUG -O2)
+  star_add_config_compile_options(Debug -g)
+  star_add_config_compile_options(RelWithAsserts -g -O2)
+  star_add_config_compile_options(RelWithDebInfo -DNDEBUG -g -O2)
+  star_add_config_compile_options(Release -DNDEBUG -O2)
 
 endif()
 
