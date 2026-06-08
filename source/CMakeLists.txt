@@ -503,6 +503,7 @@ elseif(STAR_SYSTEM_HAIKU)
 endif()
 
 # Find all required external libraries, based on build settings...
+add_library(star_system_includes INTERFACE)
 add_library(star_external_libraries INTERFACE)
 find_package(PkgConfig)
 
@@ -531,7 +532,7 @@ if (NOT STAR_SYSTEM_HAIKU)
 	find_package(Opus CONFIG REQUIRED)
 	find_package(re2 CONFIG REQUIRED)
 endif()
-list(APPEND STAR_SYSTEM_INCLUDE_DIRS
+target_include_directories(star_system_includes SYSTEM INTERFACE
     ${FREETYPE_INCLUDE_DIRS}
     ${OGGVORBIS_INCLUDE_DIR}
 )
@@ -576,7 +577,7 @@ if(STAR_BUILD_GUI)
   find_package(OpenGL REQUIRED)
   find_package(GLEW REQUIRED)
 
-  list(APPEND STAR_SYSTEM_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
+  target_include_directories(star_system_includes SYSTEM INTERFACE ${GLEW_INCLUDE_DIR})
   target_link_libraries(star_external_gui_libraries INTERFACE
       ${OPENGL_LIBRARY}
       $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
@@ -588,7 +589,7 @@ if(STAR_BUILD_GUI)
 
   if(STAR_ENABLE_STEAM_INTEGRATION)
     find_package(SteamApi REQUIRED)
-    list(APPEND STAR_SYSTEM_INCLUDE_DIRS ${STEAM_API_INCLUDE_DIR})
+    target_include_directories(star_system_includes SYSTEM INTERFACE ${STEAM_API_INCLUDE_DIR})
     target_link_libraries(star_external_gui_libraries INTERFACE ${STEAM_API_LIBRARY})
   endif()
 
@@ -596,11 +597,6 @@ if(STAR_BUILD_GUI)
     find_package(DiscordApi REQUIRED)
     target_link_libraries(star_external_gui_libraries INTERFACE ${DISCORD_API_LIBRARY})
   endif()
-endif()
-
-add_library(star_system_includes INTERFACE)
-if(STAR_SYSTEM_INCLUDE_DIRS)
-  target_include_directories(star_system_includes SYSTEM INTERFACE ${STAR_SYSTEM_INCLUDE_DIRS})
 endif()
 
 add_library(star_build_options INTERFACE)
