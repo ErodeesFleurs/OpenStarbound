@@ -1,11 +1,5 @@
 function(star_configure_utility_target target)
   target_compile_features(${target} PRIVATE cxx_std_20)
-  target_include_directories(${target} PRIVATE
-      ${STAR_GAME_INCLUDES}
-      ${STAR_PLATFORM_INCLUDES}
-      ${STAR_BASE_INCLUDES}
-      ${STAR_CORE_INCLUDES}
-      ${STAR_EXTERN_INCLUDES})
   target_link_libraries(${target} PRIVATE star_build_definitions)
 endfunction()
 
