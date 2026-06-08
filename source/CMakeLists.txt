@@ -536,13 +536,17 @@ target_link_libraries(star_external_libraries INTERFACE
     ZLIB::ZLIB
     PNG::PNG
     cpr::cpr
-    $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
-    $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
-    $<IF:$<TARGET_EXISTS:Opus::opus>,Opus::opus,opus>
-    $<IF:$<TARGET_EXISTS:re2::re2>,re2::re2,re2>
+    Freetype::Freetype
+    zstd::libzstd
     imgui::imgui
     OggVorbis::OggVorbis
 )
+
+if(NOT STAR_SYSTEM_HAIKU)
+  target_link_libraries(star_external_libraries INTERFACE Opus::opus re2::re2)
+else()
+  target_link_libraries(star_external_libraries INTERFACE opus re2)
+endif()
 
 pkg_check_modules(PKG_WAYLAND "wayland-client>=1.18" wayland-egl wayland-cursor egl "xkbcommon>=0.5.0")
 if(PKG_WAYLAND_FOUND)
