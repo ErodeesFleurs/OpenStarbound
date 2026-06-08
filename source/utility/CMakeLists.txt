@@ -6,6 +6,7 @@ FUNCTION (STAR_CONFIGURE_UTILITY_TARGET target)
       ${STAR_BASE_INCLUDES}
       ${STAR_CORE_INCLUDES}
       ${STAR_EXTERN_INCLUDES})
+  TARGET_LINK_LIBRARIES (${target} star_build_definitions)
 ENDFUNCTION ()
 
 ADD_EXECUTABLE (asset_packer

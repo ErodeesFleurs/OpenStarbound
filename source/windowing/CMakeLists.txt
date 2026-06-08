@@ -75,3 +75,4 @@ TARGET_INCLUDE_DIRECTORIES (star_windowing PUBLIC
     ${STAR_BASE_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_EXTERN_INCLUDES})
+TARGET_LINK_LIBRARIES (star_windowing PUBLIC star_build_definitions)

@@ -214,7 +214,7 @@ message(STATUS "Using rpmalloc: ${STAR_USE_RPMALLOC}")
 # Set a cmake variable to true and define a corresponding C/C++ definition
 function(SET_FLAG flagValue)
   set(${flagValue} TRUE PARENT_SCOPE)
-  add_definitions(-D${flagValue})
+  set(STAR_COMPILE_DEFINITIONS ${STAR_COMPILE_DEFINITIONS} ${flagValue} PARENT_SCOPE)
 endfunction()
 
 if(STAR_LITTLE_ENDIAN)
@@ -258,33 +258,33 @@ elseif(STAR_COMPILER STREQUAL "msvc")
 endif()
 
 if(STAR_LUA_APICHECK)
-  add_definitions(-DLUA_USE_APICHECK)
+  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_APICHECK)
 endif()
 
 if(STAR_SYSTEM_WINDOWS)
   # LUA_USE_WINDOWS is automatically defined in luaconf if _WIN32 is defined
 elseif(STAR_SYSTEM_MACOS)
-  add_definitions(-DLUA_USE_MACOSX)
+  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_MACOSX)
 elseif(STAR_SYSTEM_LINUX)
-  add_definitions(-DLUA_USE_LINUX)
+  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_LINUX)
 elseif(STAR_SYSTEM_FAMILY_UNIX)
-  add_definitions(-DLUA_USE_POSIX)
+  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_POSIX)
 endif()
 
 if(STAR_ENABLE_STEAM_INTEGRATION)
-  add_definitions(-DSTAR_ENABLE_STEAM_INTEGRATION)
+  list(APPEND STAR_COMPILE_DEFINITIONS STAR_ENABLE_STEAM_INTEGRATION)
 endif()
 
 if(STAR_ENABLE_DISCORD_INTEGRATION)
-  add_definitions(-DSTAR_ENABLE_DISCORD_INTEGRATION)
+  list(APPEND STAR_COMPILE_DEFINITIONS STAR_ENABLE_DISCORD_INTEGRATION)
 endif()
 
 if(STAR_USE_JEMALLOC)
-  add_definitions(-DSTAR_USE_JEMALLOC)
+  list(APPEND STAR_COMPILE_DEFINITIONS STAR_USE_JEMALLOC)
 elseif(STAR_USE_MIMALLOC)
-  add_definitions(-DSTAR_USE_MIMALLOC)
+  list(APPEND STAR_COMPILE_DEFINITIONS STAR_USE_MIMALLOC)
 elseif(STAR_USE_RPMALLOC)
-  add_definitions(-DSTAR_USE_RPMALLOC -DENABLE_PRELOAD)
+  list(APPEND STAR_COMPILE_DEFINITIONS STAR_USE_RPMALLOC ENABLE_PRELOAD)
 endif()
 
 # Set C/C++ compiler flags based on build environment...
@@ -435,9 +435,7 @@ elseif(STAR_COMPILER_MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /arch:SSE2")
   endif()
 
-  add_definitions(/DUNICODE)
-  add_definitions(/D_UNICODE)
-  add_definitions(/DNOMINMAX)
+  list(APPEND STAR_COMPILE_DEFINITIONS UNICODE _UNICODE NOMINMAX)
 
 else()
   set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pthread -D_REENTRANT")
@@ -598,6 +596,9 @@ if(STAR_BUILD_GUI)
     set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${DISCORD_API_LIBRARY})
   endif()
 endif()
+
+add_library(star_build_definitions INTERFACE)
+target_compile_definitions(star_build_definitions INTERFACE ${STAR_COMPILE_DEFINITIONS})
 
 # Set basic build flags, include all the relevant source directories, based on
 # build settings...
