@@ -10,7 +10,6 @@
 namespace Star {
 
 class PacketSocket;
-using PacketSocketUPtr = UniquePtr<PacketSocket>;
 class LocalPacketSocket;
 class TcpPacketSocket;
 class P2PPacketSocket;

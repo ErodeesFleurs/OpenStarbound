@@ -7,7 +7,7 @@ using namespace Star;
 
 int main(int argc, char** argv) {
   RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
-  RootUPtr root;
+  UniquePtr<Root> root;
   OptionParser::Options options;
   tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

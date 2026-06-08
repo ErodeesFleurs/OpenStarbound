@@ -14,7 +14,7 @@ using UniverseConnectionException = TypedException<StarException, UniverseConnec
 // UniverseClient.
 class UniverseConnection {
 public:
-  explicit UniverseConnection(PacketSocketUPtr packetSocket);
+  explicit UniverseConnection(UniquePtr<PacketSocket> packetSocket);
   UniverseConnection(UniverseConnection&& rhs);
   ~UniverseConnection();
 
@@ -64,7 +64,7 @@ private:
   UniverseConnection() = default;
 
   mutable Mutex m_mutex;
-  PacketSocketUPtr m_packetSocket;
+  UniquePtr<PacketSocket> m_packetSocket;
   List<PacketPtr> m_sendQueue;
   Deque<PacketPtr> m_receiveQueue;
 };
@@ -102,7 +102,7 @@ public:
 private:
   struct Connection {
     Mutex mutex;
-    PacketSocketUPtr packetSocket;
+    UniquePtr<PacketSocket> packetSocket;
     List<PacketPtr> sendQueue;
     Deque<PacketPtr> receiveQueue;
     int64_t lastActivityTime;

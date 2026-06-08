@@ -84,7 +84,7 @@ int main(int argc, char* argv[]) {
     rootLoader.addArgument("searchRoot", OptionParser::Required);
     rootLoader.addArgument("tilesetsPath", OptionParser::Required);
 
-    RootUPtr root;
+    UniquePtr<Root> root;
     OptionParser::Options options;
     tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

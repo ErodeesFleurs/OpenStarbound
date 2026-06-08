@@ -94,7 +94,7 @@ private:
 
   void updateCamera(float dt);
 
-  RootUPtr m_root;
+  UniquePtr<Root> m_root;
   ThreadFunction<void> m_rootLoader;
   CallbackListenerPtr m_reloadListener;
 

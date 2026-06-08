@@ -73,7 +73,4 @@ constexpr size_t NPos = static_cast<size_t>(-1);
 
 using StreamOffset = int64_t;
 
-#define STAR_QUOTE(name) #name
-#define STAR_STR(macro) STAR_QUOTE(macro)
-
 }

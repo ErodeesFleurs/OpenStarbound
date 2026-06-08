@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     SetThreadStackGuarantee(&exceptionStackSize);
     #endif
     RootLoader rootLoader({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
-    RootUPtr root = rootLoader.commandInitOrDie(argc, argv).first;
+    UniquePtr<Root> root = rootLoader.commandInitOrDie(argc, argv).first;
     root->fullyLoad();
 
     SignalHandler signalHandler;
@@ -66,13 +66,13 @@ int main(int argc, char** argv) {
       server->setListeningTcp(true);
       server->start();
 
-      ServerQueryThreadUPtr queryServer;
+      UniquePtr<ServerQueryThread> queryServer;
       if (configuration->get("runQueryServer").toBool()) {
         queryServer = make_unique<ServerQueryThread>(server.get(), HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()));
         queryServer->start();
       }
 
-      ServerRconThreadUPtr rconServer;
+      UniquePtr<ServerRconThread> rconServer;
       if (configuration->get("runRconServer").toBool()) {
         rconServer = make_unique<ServerRconThread>(server.get(), HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()));
         rconServer->start();

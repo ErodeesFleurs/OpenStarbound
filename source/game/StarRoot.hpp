@@ -161,7 +161,6 @@ using CollectionDatabasePtr = SharedPtr<CollectionDatabase>;
 using CollectionDatabaseConstPtr = SharedPtr<CollectionDatabase const>;
 
 class Root;
-using RootUPtr = UniquePtr<Root>;
 
 // Singleton Root object for starbound providing access to the unique
 // Configuration class, as well as the assets, root factories, and databases.

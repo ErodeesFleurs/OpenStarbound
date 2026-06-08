@@ -20,7 +20,7 @@ int main(int argc, char** argv) {
     rootLoader.addSwitch("weightingblocknoise", "apply layout block noise before outputting weighting");
     rootLoader.addSwitch("transition", "show biome transition regions");
 
-    RootUPtr root;
+    UniquePtr<Root> root;
     OptionParser::Options options;
     tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 

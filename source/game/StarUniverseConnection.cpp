@@ -7,8 +7,8 @@ namespace Star {
 
 static const int PacketSocketPollSleep = 1;
 
-UniverseConnection::UniverseConnection(PacketSocketUPtr packetSocket)
-    : m_packetSocket(std::move(packetSocket)) {}
+UniverseConnection::UniverseConnection(UniquePtr<PacketSocket> packetSocket)
+  : m_packetSocket(std::move(packetSocket)) {}
 
 UniverseConnection::UniverseConnection(UniverseConnection&& rhs) {
   operator=(std::move(rhs));

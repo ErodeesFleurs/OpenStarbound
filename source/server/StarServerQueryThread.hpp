@@ -12,7 +12,6 @@ namespace Star {
 
 class UniverseServer;
 class ServerQueryThread;
-using ServerQueryThreadUPtr = UniquePtr<ServerQueryThread>;
 
 class ServerQueryThread : public Thread {
 public:
