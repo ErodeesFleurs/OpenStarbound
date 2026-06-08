@@ -64,7 +64,7 @@ SET (star_windowing_SOURCES
         StarWidgetParsing.cpp
     )
 
-ADD_LIBRARY (star_windowing OBJECT ${star_windowing_SOURCES} ${star_windowing_HEADERS})
+add_library(star_windowing OBJECT ${star_windowing_SOURCES} ${star_windowing_HEADERS})
 target_compile_features(star_windowing PUBLIC cxx_std_20)
 target_include_directories(star_windowing PUBLIC
     ${STAR_WINDOWING_INCLUDES}

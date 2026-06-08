@@ -14,7 +14,7 @@ IF (STAR_SYSTEM_WINDOWS)
     )
 ENDIF ()
 
-ADD_EXECUTABLE (starbound WIN32
+add_executable(starbound WIN32
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   $<TARGET_OBJECTS:star_application> $<TARGET_OBJECTS:star_rendering> $<TARGET_OBJECTS:star_windowing> $<TARGET_OBJECTS:star_frontend>
   ${star_client_HEADERS} ${star_client_SOURCES} ${star_client_RESOURCES})
@@ -35,13 +35,13 @@ IF (STAR_PRECOMPILED_HEADERS)
 ENDIF()
 
 IF(STAR_SYSTEM_MACOS)
-  SET_TARGET_PROPERTIES (starbound PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
+  set_target_properties(starbound PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
 ELSEIF (UNIX)
-  SET_TARGET_PROPERTIES (starbound PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
+  set_target_properties(starbound PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
 ENDIF()
 
 IF (STAR_SYSTEM_MACOS)
-  SET_TARGET_PROPERTIES (starbound PROPERTIES XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES)
+  set_target_properties(starbound PROPERTIES XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES)
 ENDIF()
 
 target_link_libraries(starbound PRIVATE star_build_definitions star_external_libraries star_external_gui_libraries)

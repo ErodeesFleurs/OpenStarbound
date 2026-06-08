@@ -16,7 +16,7 @@ SET (star_mod_uploader_SOURCES
     main.cpp
   )
 
-ADD_EXECUTABLE (mod_uploader WIN32
+add_executable(mod_uploader WIN32
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   ${star_mod_uploader_HEADERS} ${star_mod_uploader_SOURCES})
 target_include_directories(mod_uploader PRIVATE ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})

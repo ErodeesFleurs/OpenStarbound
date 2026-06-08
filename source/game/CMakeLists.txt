@@ -511,7 +511,7 @@ SET (star_game_SOURCES
     terrain/StarWormCave.cpp
   )
 
-ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
+add_library(star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
 target_compile_features(star_game PUBLIC cxx_std_20)
 target_include_directories(star_game PUBLIC
     ${STAR_GAME_INCLUDES}

@@ -20,7 +20,7 @@ SET (star_rendering_SOURCES
       StarWorldPainter.cpp
     )
 
-ADD_LIBRARY (star_rendering OBJECT ${star_rendering_SOURCES} ${star_rendering_HEADERS})
+add_library(star_rendering OBJECT ${star_rendering_SOURCES} ${star_rendering_HEADERS})
 target_compile_features(star_rendering PUBLIC cxx_std_20)
 target_include_directories(star_rendering PUBLIC
     ${STAR_RENDERING_INCLUDES}

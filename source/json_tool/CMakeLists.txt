@@ -4,7 +4,7 @@ FIND_PACKAGE (Qt5Widgets)
 SET (CMAKE_INCLUDE_CURRENT_DIR ON)
 SET (CMAKE_AUTOMOC ON)
 
-ADD_EXECUTABLE (json_tool WIN32
+add_executable(json_tool WIN32
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
   json_tool.cpp editor_gui.cpp)
 target_include_directories(json_tool PRIVATE ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})

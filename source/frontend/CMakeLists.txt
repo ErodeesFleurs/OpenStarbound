@@ -106,7 +106,7 @@ SET (star_frontend_SOURCES
     StarWireInterface.cpp
   )
 
-ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
+add_library(star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
 target_compile_features(star_frontend PUBLIC cxx_std_20)
 target_include_directories(star_frontend PUBLIC
     ${STAR_FRONTEND_INCLUDES}

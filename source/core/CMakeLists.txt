@@ -223,8 +223,8 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
 
 ENDIF ()
 
-CONFIGURE_FILE (StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
-ADD_LIBRARY (star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
+configure_file(StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
+add_library(star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 target_compile_features(star_core PUBLIC cxx_std_20)
 target_include_directories(star_core PUBLIC ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
 target_link_libraries(star_core PUBLIC star_build_definitions)
@@ -234,11 +234,11 @@ IF(STAR_PRECOMPILED_HEADERS)
 ENDIF()
 
 IF(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
-  SET_SOURCE_FILES_PROPERTIES(StarColor.cpp PROPERTIES COMPILE_FLAGS "-fno-fast-math -fassociative-math -freciprocal-math")
+  set_source_files_properties(StarColor.cpp PROPERTIES COMPILE_FLAGS "-fno-fast-math -fassociative-math -freciprocal-math")
 ENDIF()
 
 IF(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
-  SET_SOURCE_FILES_PROPERTIES(StarMemory.cpp PROPERTIES
+  set_source_files_properties(StarMemory.cpp PROPERTIES
           COMPILE_DEFINITIONS STAR_JEMALLOC_IS_PREFIXED
           )
 ENDIF()

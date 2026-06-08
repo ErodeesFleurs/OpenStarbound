@@ -45,16 +45,16 @@ SET (star_core_tests_SOURCES
       variant_test.cpp
       vlq_test.cpp
     )
-ADD_EXECUTABLE (core_tests
+add_executable(core_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
   ${star_core_tests_SOURCES})
-SET_TARGET_PROPERTIES (core_tests PROPERTIES UNITY_BUILD OFF)
+set_target_properties(core_tests PROPERTIES UNITY_BUILD OFF)
 target_compile_features(core_tests PRIVATE cxx_std_20)
 target_include_directories(core_tests PRIVATE . ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
 target_compile_options(core_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
 target_link_libraries(core_tests PRIVATE star_build_definitions star_external_libraries)
-ADD_TEST (NAME core_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/core_tests)
-SET_TESTS_PROPERTIES(core_tests PROPERTIES
+add_test(NAME core_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/core_tests)
+set_tests_properties(core_tests PROPERTIES
                      LABELS "NoAssets"
                      TIMEOUT 120)
 
@@ -75,10 +75,10 @@ SET (star_game_tests_SOURCES
       world_geometry_test.cpp
       universe_connection_test.cpp
     )
-ADD_EXECUTABLE (game_tests
+add_executable(game_tests
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   ${star_game_tests_SOURCES})
-SET_TARGET_PROPERTIES (game_tests PROPERTIES UNITY_BUILD OFF)
+set_target_properties(game_tests PROPERTIES UNITY_BUILD OFF)
 target_compile_features(game_tests PRIVATE cxx_std_20)
 target_include_directories(game_tests PRIVATE
     .
@@ -117,8 +117,8 @@ IF (EXISTS ${STAR_BASE_ASSET_PACKAGE})
     }
   }
   ")
-  ADD_TEST (NAME game_tests WORKING_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
-  SET_TESTS_PROPERTIES(game_tests PROPERTIES
+  add_test(NAME game_tests WORKING_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/game_tests)
+  set_tests_properties(game_tests PROPERTIES
                        LABELS "Assets"
                        TIMEOUT 300
                        RESOURCE_LOCK game_assets)

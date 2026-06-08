@@ -55,7 +55,7 @@ IF (STAR_ENABLE_DISCORD_INTEGRATION)
     )
 ENDIF ()
 
-ADD_LIBRARY (star_application OBJECT ${star_application_SOURCES} ${star_application_HEADERS})
+add_library(star_application OBJECT ${star_application_SOURCES} ${star_application_HEADERS})
 target_compile_features(star_application PUBLIC cxx_std_20)
 target_include_directories(star_application PUBLIC
     ${STAR_APPLICATION_INCLUDES}

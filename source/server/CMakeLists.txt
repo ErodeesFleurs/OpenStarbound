@@ -17,7 +17,7 @@ IF (STAR_SYSTEM_WINDOWS)
     )
 ENDIF ()
 
-ADD_EXECUTABLE (starbound_server
+add_executable(starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   ${star_server_HEADERS} ${star_server_SOURCES} ${star_server_RESOURCES})
 target_compile_features(starbound_server PRIVATE cxx_std_20)
@@ -33,9 +33,9 @@ IF(STAR_PRECOMPILED_HEADERS)
 ENDIF()
 
 IF(STAR_SYSTEM_MACOS)
-  SET_TARGET_PROPERTIES (starbound_server PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
+  set_target_properties(starbound_server PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
 ELSEIF (UNIX)
-  SET_TARGET_PROPERTIES (starbound_server PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
+  set_target_properties(starbound_server PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
 ENDIF()
 
 target_link_libraries(starbound_server PRIVATE star_build_definitions star_external_libraries)
