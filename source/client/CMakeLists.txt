@@ -44,4 +44,4 @@ IF (STAR_SYSTEM_MACOS)
   SET_TARGET_PROPERTIES (starbound PROPERTIES XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES)
 ENDIF()
 
-TARGET_LINK_LIBRARIES (starbound star_build_definitions star_external_libraries ${STAR_EXT_GUI_LIBS})
+TARGET_LINK_LIBRARIES (starbound star_build_definitions star_external_libraries star_external_gui_libraries)

@@ -611,6 +611,11 @@ if(STAR_EXT_LIBS)
   target_link_libraries(star_external_libraries INTERFACE ${STAR_EXT_LIBS})
 endif()
 
+add_library(star_external_gui_libraries INTERFACE)
+if(STAR_EXT_GUI_LIBS)
+  target_link_libraries(star_external_gui_libraries INTERFACE ${STAR_EXT_GUI_LIBS})
+endif()
+
 add_library(star_build_options INTERFACE)
 target_compile_features(star_build_options INTERFACE cxx_std_20)
 if(STAR_C_COMPILE_OPTIONS)
