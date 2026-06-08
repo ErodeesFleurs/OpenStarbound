@@ -1,5 +1,4 @@
 add_executable(core_tests
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
   gtest/gtest-all.cc
 
   core_tests_main.cpp
@@ -49,14 +48,13 @@ set_target_properties(core_tests PROPERTIES UNITY_BUILD OFF)
 target_compile_features(core_tests PRIVATE cxx_std_20)
 target_include_directories(core_tests PRIVATE . ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
 target_compile_options(core_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
-target_link_libraries(core_tests PRIVATE star_build_definitions star_external_libraries)
+target_link_libraries(core_tests PRIVATE star_extern star_core star_build_definitions star_external_libraries)
 add_test(NAME core_tests WORKING_DIRECTORY ${CMAKE_RUNTIME_OUTPUT_DIRECTORY} COMMAND ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/core_tests)
 set_tests_properties(core_tests PROPERTIES
                      LABELS "NoAssets"
                      TIMEOUT 120)
 
 add_executable(game_tests
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   gtest/gtest-all.cc
 
   game_tests_main.cpp
@@ -82,7 +80,7 @@ target_include_directories(game_tests PRIVATE
     ${STAR_CORE_INCLUDES}
     ${STAR_EXTERN_INCLUDES})
 target_compile_options(game_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
-target_link_libraries(game_tests PRIVATE star_build_definitions star_external_libraries)
+target_link_libraries(game_tests PRIVATE star_extern star_core star_base star_game star_build_definitions star_external_libraries)
 
 set(STAR_BASE_ASSET_PACKAGE ${PROJECT_SOURCE_DIR}/../assets/packed.pak)
 if(EXISTS ${STAR_BASE_ASSET_PACKAGE})
