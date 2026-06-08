@@ -503,12 +503,13 @@ elseif(STAR_SYSTEM_HAIKU)
 endif()
 
 # Find all required external libraries, based on build settings...
+add_library(star_external_libraries INTERFACE)
 find_package(PkgConfig)
 
 if(STAR_USE_JEMALLOC)
   pkg_check_modules(JEMALLOC REQUIRED IMPORTED_TARGET GLOBAL jemalloc)
 
-  set(STAR_EXT_LIBS PkgConfig::JEMALLOC)
+  target_link_libraries(star_external_libraries INTERFACE PkgConfig::JEMALLOC)
   if (STAR_SYSTEM_WINDOWS OR STAR_SYSTEM_MACOS)
     set_flag(STAR_JEMALLOC_IS_PREFIXED)
   endif()
@@ -516,7 +517,7 @@ endif()
 
 if (STAR_USE_MIMALLOC)
   find_package(mimalloc CONFIG REQUIRED)
-  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} $<IF:$<TARGET_EXISTS:mimalloc-static>,mimalloc-static,mimalloc>)
+  target_link_libraries(star_external_libraries INTERFACE $<IF:$<TARGET_EXISTS:mimalloc-static>,mimalloc-static,mimalloc>)
 endif()
 
 find_package(ZLIB REQUIRED)
@@ -535,7 +536,7 @@ list(APPEND STAR_SYSTEM_INCLUDE_DIRS
     ${OGGVORBIS_INCLUDE_DIR}
 )
 
-set(STAR_EXT_LIBS ${STAR_EXT_LIBS}
+target_link_libraries(star_external_libraries INTERFACE
     ZLIB::ZLIB
     PNG::PNG
     cpr::cpr
@@ -559,7 +560,7 @@ endif()
 if(STAR_SYSTEM_FAMILY STREQUAL "unix" AND NOT STAR_SYSTEM_HAIKU)
   set_flag(STAR_USE_CPPTRACE)
   find_package(cpptrace CONFIG REQUIRED)
-  set(STAR_EXT_LIBS ${STAR_EXT_LIBS} cpptrace::cpptrace)
+  target_link_libraries(star_external_libraries INTERFACE cpptrace::cpptrace)
   message(STATUS "Using cpptrace")
 endif()
 
@@ -604,11 +605,6 @@ endif()
 add_library(star_system_libraries INTERFACE)
 if(STAR_SYSTEM_LIBRARIES)
   target_link_libraries(star_system_libraries INTERFACE ${STAR_SYSTEM_LIBRARIES})
-endif()
-
-add_library(star_external_libraries INTERFACE)
-if(STAR_EXT_LIBS)
-  target_link_libraries(star_external_libraries INTERFACE ${STAR_EXT_LIBS})
 endif()
 
 add_library(star_external_gui_libraries INTERFACE)
