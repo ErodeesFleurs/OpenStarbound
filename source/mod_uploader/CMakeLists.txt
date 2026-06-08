@@ -13,7 +13,7 @@ add_executable(mod_uploader WIN32
   StarSPlainTextEdit.cpp
   main.cpp)
 target_include_directories(mod_uploader PRIVATE ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
-target_link_libraries(mod_uploader PRIVATE star_build_definitions star_external_libraries ${STEAM_API_LIBRARY} Qt5::Core Qt5::Gui Qt5::Widgets)
+target_link_libraries(mod_uploader PRIVATE star_build_definitions star_external_libraries SteamApi::SteamApi Qt5::Core Qt5::Gui Qt5::Widgets)
 
 set(CMAKE_AUTOMOC OFF)
 set(CMAKE_INCLUDE_CURRENT_DIR OFF)
