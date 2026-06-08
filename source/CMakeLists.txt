@@ -609,6 +609,7 @@ if(STAR_SYSTEM_LIBRARIES)
 endif()
 
 add_library(star_build_options INTERFACE)
+target_compile_features(star_build_options INTERFACE cxx_std_20)
 if(STAR_C_COMPILE_OPTIONS)
   target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:C>:${STAR_C_COMPILE_OPTIONS}>")
 endif()
