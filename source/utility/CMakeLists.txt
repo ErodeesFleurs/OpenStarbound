@@ -6,32 +6,32 @@ FUNCTION (STAR_CONFIGURE_UTILITY_TARGET target)
       ${STAR_BASE_INCLUDES}
       ${STAR_CORE_INCLUDES}
       ${STAR_EXTERN_INCLUDES})
-  TARGET_LINK_LIBRARIES (${target} star_build_definitions)
+  target_link_libraries(${target} PRIVATE star_build_definitions)
 ENDFUNCTION ()
 
 ADD_EXECUTABLE (asset_packer
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   asset_packer.cpp)
 STAR_CONFIGURE_UTILITY_TARGET (asset_packer)
-TARGET_LINK_LIBRARIES (asset_packer star_external_libraries)
+target_link_libraries(asset_packer PRIVATE star_external_libraries)
 
 ADD_EXECUTABLE (asset_unpacker
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   asset_unpacker.cpp)
 STAR_CONFIGURE_UTILITY_TARGET (asset_unpacker)
-TARGET_LINK_LIBRARIES (asset_unpacker star_external_libraries)
+target_link_libraries(asset_unpacker PRIVATE star_external_libraries)
 
 ADD_EXECUTABLE (btree_repacker
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   btree_repacker.cpp)
 STAR_CONFIGURE_UTILITY_TARGET (btree_repacker)
-TARGET_LINK_LIBRARIES (btree_repacker star_external_libraries)
+target_link_libraries(btree_repacker PRIVATE star_external_libraries)
 
 ADD_EXECUTABLE (dump_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   dump_versioned_json.cpp)
 STAR_CONFIGURE_UTILITY_TARGET (dump_versioned_json)
-TARGET_LINK_LIBRARIES (dump_versioned_json star_external_libraries)
+target_link_libraries(dump_versioned_json PRIVATE star_external_libraries)
 
 #ADD_EXECUTABLE (game_repl
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
@@ -42,7 +42,7 @@ ADD_EXECUTABLE (make_versioned_json
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   make_versioned_json.cpp)
 STAR_CONFIGURE_UTILITY_TARGET (make_versioned_json)
-TARGET_LINK_LIBRARIES (make_versioned_json star_external_libraries)
+target_link_libraries(make_versioned_json PRIVATE star_external_libraries)
 
 #ADD_EXECUTABLE (planet_mapgen
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
