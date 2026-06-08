@@ -446,18 +446,12 @@ else()
   list(APPEND STAR_C_COMPILE_OPTIONS -Wall)
   list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall)
   list(APPEND STAR_COMPILE_DEFINITIONS _REENTRANT)
+  star_clear_cmake_config_flags()
 
-  set(CMAKE_C_FLAGS_DEBUG "-g")
-  set(CMAKE_CXX_FLAGS_DEBUG "-g")
-
-  set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O2")
-  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O2")
-
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-DNDEBUG -g -O2")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-DNDEBUG -g -O2")
-
-  set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O2")
-  set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O2")
+  star_append_config_compile_options(Debug -g)
+  star_append_config_compile_options(RelWithAsserts -g -O2)
+  star_append_config_compile_options(RelWithDebInfo -DNDEBUG -g -O2)
+  star_append_config_compile_options(Release -DNDEBUG -O2)
 
 endif()
 
