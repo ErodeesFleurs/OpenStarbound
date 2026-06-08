@@ -313,6 +313,20 @@ function(star_append_config_compile_options config)
   set(STAR_CXX_COMPILE_OPTIONS "${STAR_CXX_COMPILE_OPTIONS}" PARENT_SCOPE)
 endfunction()
 
+function(star_add_c_compile_options)
+  target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:C>:${ARGN}>")
+endfunction()
+
+function(star_add_cxx_compile_options)
+  target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:${ARGN}>")
+endfunction()
+
+function(star_add_config_compile_options config)
+  target_compile_options(star_build_options INTERFACE
+      "$<$<AND:$<COMPILE_LANGUAGE:C>,$<CONFIG:${config}>>:${ARGN}>"
+      "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<CONFIG:${config}>>:${ARGN}>")
+endfunction()
+
 if(STAR_COMPILER_GNU)
   list(APPEND STAR_C_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough)
   list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate)
@@ -352,8 +366,8 @@ if(STAR_COMPILER_GNU)
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 elseif(STAR_COMPILER_CLANG)
-  list(APPEND STAR_C_COMPILE_OPTIONS -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
-  list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
+  star_add_c_compile_options(-Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
+  star_add_cxx_compile_options(-Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
   star_clear_cmake_config_flags()
 
   if(STAR_SYSTEM_MACOS)
@@ -369,14 +383,14 @@ elseif(STAR_COMPILER_CLANG)
   endif()
 
   if(STAR_ENABLE_FRAME_POINTERS)
-    list(APPEND STAR_C_COMPILE_OPTIONS -fno-omit-frame-pointer)
-    list(APPEND STAR_CXX_COMPILE_OPTIONS -fno-omit-frame-pointer)
+    star_add_c_compile_options(-fno-omit-frame-pointer)
+    star_add_cxx_compile_options(-fno-omit-frame-pointer)
   endif()
 
-  star_append_config_compile_options(Debug -g)
-  star_append_config_compile_options(RelWithAsserts -g -O3 -ffast-math)
-  star_append_config_compile_options(RelWithDebInfo -gline-tables-only -gz=zlib -DNDEBUG -O3 -ffast-math)
-  star_append_config_compile_options(Release -DNDEBUG -O3 -ffast-math)
+  star_add_config_compile_options(Debug -g)
+  star_add_config_compile_options(RelWithAsserts -g -O3 -ffast-math)
+  star_add_config_compile_options(RelWithDebInfo -gline-tables-only -gz=zlib -DNDEBUG -O3 -ffast-math)
+  star_add_config_compile_options(Release -DNDEBUG -O3 -ffast-math)
 
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
