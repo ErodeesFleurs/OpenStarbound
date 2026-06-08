@@ -522,8 +522,4 @@ StringList StringList::sorted(Comparator&& comparator) const {
 
 }
 
-template <> struct std::formatter<Star::String> : formatter<std::string> {
-  format_context::iterator format(Star::String const& s, format_context& ctx) const;
-};
-
 template <> struct std::formatter<Star::StringList> : Star::OstreamFormatter {};

@@ -10,6 +10,8 @@
 
 namespace Star {
 
+class String;
+
 template <typename... T>
 std::string strf(std::string_view fmt, T&&... args);
 
@@ -134,3 +136,5 @@ StarException StarException::format(std::string_view fmt, Args const&... args) {
 }
 
 }
+
+template <> struct std::formatter<Star::String> : Star::OstreamFormatter {};
