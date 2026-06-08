@@ -416,8 +416,7 @@ elseif(STAR_COMPILER_MSVC)
   star_add_cxx_compile_options(/nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
 
   if(STAR_ENABLE_STATIC_MSVC_RUNTIME)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
   endif()
 
   set(CMAKE_C_FLAGS_DEBUG "/Z7 /Od")
