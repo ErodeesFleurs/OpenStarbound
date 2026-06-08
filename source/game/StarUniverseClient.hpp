@@ -13,24 +13,43 @@
 
 namespace Star {
 
-STAR_CLASS(WorldTemplate);
-STAR_CLASS(ClientContext);
-STAR_CLASS(Sky);
-STAR_STRUCT(Packet);
-STAR_CLASS(WorldClient);
-STAR_CLASS(SystemWorldClient);
-STAR_CLASS(Player);
-STAR_CLASS(PlayerStorage);
-STAR_CLASS(Statistics);
-STAR_CLASS(Clock);
-STAR_CLASS(CelestialLog);
-STAR_CLASS(CelestialSlaveDatabase);
-STAR_CLASS(CelestialDatabase);
-STAR_CLASS(JsonRpcInterface);
-STAR_CLASS(TeamClient);
-STAR_CLASS(QuestManager);
-STAR_CLASS(UniverseClient);
-STAR_CLASS(LuaRoot);
+class WorldTemplate;
+using WorldTemplateConstPtr = SharedPtr<WorldTemplate const>;
+class ClientContext;
+using ClientContextPtr = SharedPtr<ClientContext>;
+class Sky;
+using SkyConstPtr = SharedPtr<Sky const>;
+struct Packet;
+using PacketPtr = SharedPtr<Packet>;
+class WorldClient;
+using WorldClientPtr = SharedPtr<WorldClient>;
+class SystemWorldClient;
+using SystemWorldClientPtr = SharedPtr<SystemWorldClient>;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class PlayerStorage;
+using PlayerStoragePtr = SharedPtr<PlayerStorage>;
+class Statistics;
+using StatisticsPtr = SharedPtr<Statistics>;
+class Clock;
+using ClockPtr = SharedPtr<Clock>;
+using ClockConstPtr = SharedPtr<Clock const>;
+class CelestialLog;
+using CelestialLogConstPtr = SharedPtr<CelestialLog const>;
+class CelestialSlaveDatabase;
+using CelestialSlaveDatabasePtr = SharedPtr<CelestialSlaveDatabase>;
+class CelestialDatabase;
+using CelestialDatabasePtr = SharedPtr<CelestialDatabase>;
+class JsonRpcInterface;
+using JsonRpcInterfacePtr = SharedPtr<JsonRpcInterface>;
+class TeamClient;
+using TeamClientPtr = SharedPtr<TeamClient>;
+class QuestManager;
+using QuestManagerPtr = SharedPtr<QuestManager>;
+class UniverseClient;
+using UniverseClientPtr = SharedPtr<UniverseClient>;
+class LuaRoot;
+using LuaRootPtr = SharedPtr<LuaRoot>;
 
 class UniverseClient {
 public:
