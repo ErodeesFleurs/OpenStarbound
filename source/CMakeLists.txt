@@ -292,9 +292,6 @@ endif()
 add_library(star_build_options INTERFACE)
 target_compile_features(star_build_options INTERFACE cxx_std_20)
 
-set(STAR_C_COMPILE_OPTIONS)
-set(STAR_CXX_COMPILE_OPTIONS)
-
 function(star_clear_cmake_config_flags)
   foreach(config Debug RelWithAsserts RelWithDebInfo Release)
     string(TOUPPER "${config}" config_upper)
@@ -413,8 +410,8 @@ elseif(STAR_COMPILER_MSVC)
   # /wd4624  - Silence implicitly deleted destructor warnings that show up when
   #            using unions in interesting ways.
 
-  list(APPEND STAR_C_COMPILE_OPTIONS /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
-  list(APPEND STAR_CXX_COMPILE_OPTIONS /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
+  star_add_c_compile_options(/nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
+  star_add_cxx_compile_options(/nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
 
   if(STAR_ENABLE_STATIC_MSVC_RUNTIME)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
@@ -605,13 +602,6 @@ if(STAR_BUILD_GUI)
     find_package(DiscordApi REQUIRED)
     target_link_libraries(star_external_gui_libraries INTERFACE ${DISCORD_API_LIBRARY})
   endif()
-endif()
-
-if(STAR_C_COMPILE_OPTIONS)
-  target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:C>:${STAR_C_COMPILE_OPTIONS}>")
-endif()
-if(STAR_CXX_COMPILE_OPTIONS)
-  target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:${STAR_CXX_COMPILE_OPTIONS}>")
 endif()
 
 target_link_libraries(star_build_definitions INTERFACE star_system_includes star_system_libraries star_build_options)
