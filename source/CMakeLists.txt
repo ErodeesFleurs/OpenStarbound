@@ -289,9 +289,14 @@ endif()
 
 # Set C/C++ compiler flags based on build environment...
 
+set(STAR_C_COMPILE_OPTIONS)
+set(STAR_CXX_COMPILE_OPTIONS)
+
 if(STAR_COMPILER_GNU)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -rdynamic -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -no-pie")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate -no-pie")
+  list(APPEND STAR_C_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough)
+  list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -rdynamic -no-pie")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -rdynamic -no-pie")
 
   if(STAR_SYSTEM_FAMILY_WINDOWS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthreads")
@@ -335,8 +340,8 @@ if(STAR_COMPILER_GNU)
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 elseif(STAR_COMPILER_CLANG)
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled")
+  list(APPEND STAR_C_COMPILE_OPTIONS -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
+  list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
 
   if(STAR_SYSTEM_MACOS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
@@ -402,8 +407,8 @@ elseif(STAR_COMPILER_MSVC)
   # /wd4624  - Silence implicitly deleted destructor warnings that show up when
   #            using unions in interesting ways.
 
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624")
+  list(APPEND STAR_C_COMPILE_OPTIONS /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
+  list(APPEND STAR_CXX_COMPILE_OPTIONS /nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
 
   if(STAR_ENABLE_STATIC_MSVC_RUNTIME)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
@@ -438,8 +443,10 @@ elseif(STAR_COMPILER_MSVC)
   list(APPEND STAR_COMPILE_DEFINITIONS UNICODE _UNICODE NOMINMAX)
 
 else()
-  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -pthread -D_REENTRANT")
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -pthread -D_REENTRANT")
+  list(APPEND STAR_C_COMPILE_OPTIONS -Wall)
+  list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall)
+  set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pthread -D_REENTRANT")
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -D_REENTRANT")
 
   set(CMAKE_C_FLAGS_DEBUG "-g")
   set(CMAKE_CXX_FLAGS_DEBUG "-g")
@@ -602,9 +609,17 @@ if(STAR_SYSTEM_INCLUDE_DIRS)
   target_include_directories(star_system_includes SYSTEM INTERFACE ${STAR_SYSTEM_INCLUDE_DIRS})
 endif()
 
+add_library(star_build_options INTERFACE)
+if(STAR_C_COMPILE_OPTIONS)
+  target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:C>:${STAR_C_COMPILE_OPTIONS}>")
+endif()
+if(STAR_CXX_COMPILE_OPTIONS)
+  target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:CXX>:${STAR_CXX_COMPILE_OPTIONS}>")
+endif()
+
 add_library(star_build_definitions INTERFACE)
 target_compile_definitions(star_build_definitions INTERFACE ${STAR_COMPILE_DEFINITIONS})
-target_link_libraries(star_build_definitions INTERFACE star_system_includes)
+target_link_libraries(star_build_definitions INTERFACE star_system_includes star_build_options)
 
 # Set basic build flags, include all the relevant source directories, based on
 # build settings...
