@@ -318,8 +318,9 @@ if(STAR_COMPILER_GNU)
   endif()
 
   if(STAR_ENABLE_GCC_PROFILING)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -pg")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pg")
+    list(APPEND STAR_C_COMPILE_OPTIONS -pg)
+    list(APPEND STAR_CXX_COMPILE_OPTIONS -pg)
+    list(APPEND STAR_LINK_OPTIONS -pg)
   endif()
 
   set(CMAKE_C_FLAGS_DEBUG "-g -Og")
