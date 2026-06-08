@@ -209,10 +209,12 @@ message(STATUS "Using rpmalloc: ${STAR_USE_RPMALLOC}")
 # Set C defines and cmake variables based on the build settings we have now
 # determined...
 
+add_library(star_build_definitions INTERFACE)
+
 # Set a cmake variable to true and define a corresponding C/C++ definition
 function(SET_FLAG flagValue)
   set(${flagValue} TRUE PARENT_SCOPE)
-  set(STAR_COMPILE_DEFINITIONS ${STAR_COMPILE_DEFINITIONS} ${flagValue} PARENT_SCOPE)
+  target_compile_definitions(star_build_definitions INTERFACE ${flagValue})
 endfunction()
 
 if(STAR_LITTLE_ENDIAN)
@@ -256,33 +258,33 @@ elseif(STAR_COMPILER STREQUAL "msvc")
 endif()
 
 if(STAR_LUA_APICHECK)
-  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_APICHECK)
+  target_compile_definitions(star_build_definitions INTERFACE LUA_USE_APICHECK)
 endif()
 
 if(STAR_SYSTEM_WINDOWS)
   # LUA_USE_WINDOWS is automatically defined in luaconf if _WIN32 is defined
 elseif(STAR_SYSTEM_MACOS)
-  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_MACOSX)
+  target_compile_definitions(star_build_definitions INTERFACE LUA_USE_MACOSX)
 elseif(STAR_SYSTEM_LINUX)
-  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_LINUX)
+  target_compile_definitions(star_build_definitions INTERFACE LUA_USE_LINUX)
 elseif(STAR_SYSTEM_FAMILY_UNIX)
-  list(APPEND STAR_COMPILE_DEFINITIONS LUA_USE_POSIX)
+  target_compile_definitions(star_build_definitions INTERFACE LUA_USE_POSIX)
 endif()
 
 if(STAR_ENABLE_STEAM_INTEGRATION)
-  list(APPEND STAR_COMPILE_DEFINITIONS STAR_ENABLE_STEAM_INTEGRATION)
+  target_compile_definitions(star_build_definitions INTERFACE STAR_ENABLE_STEAM_INTEGRATION)
 endif()
 
 if(STAR_ENABLE_DISCORD_INTEGRATION)
-  list(APPEND STAR_COMPILE_DEFINITIONS STAR_ENABLE_DISCORD_INTEGRATION)
+  target_compile_definitions(star_build_definitions INTERFACE STAR_ENABLE_DISCORD_INTEGRATION)
 endif()
 
 if(STAR_USE_JEMALLOC)
-  list(APPEND STAR_COMPILE_DEFINITIONS STAR_USE_JEMALLOC)
+  target_compile_definitions(star_build_definitions INTERFACE STAR_USE_JEMALLOC)
 elseif(STAR_USE_MIMALLOC)
-  list(APPEND STAR_COMPILE_DEFINITIONS STAR_USE_MIMALLOC)
+  target_compile_definitions(star_build_definitions INTERFACE STAR_USE_MIMALLOC)
 elseif(STAR_USE_RPMALLOC)
-  list(APPEND STAR_COMPILE_DEFINITIONS STAR_USE_RPMALLOC ENABLE_PRELOAD)
+  target_compile_definitions(star_build_definitions INTERFACE STAR_USE_RPMALLOC ENABLE_PRELOAD)
 endif()
 
 # Set C/C++ compiler flags based on build environment...
@@ -319,7 +321,7 @@ if(STAR_COMPILER_GNU)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthreads")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mthreads")
   else()
-    list(APPEND STAR_COMPILE_DEFINITIONS _REENTRANT)
+    target_compile_definitions(star_build_definitions INTERFACE _REENTRANT)
     if(STAR_USE_LLD)
       list(APPEND STAR_LINK_OPTIONS -fuse-ld=lld)
     endif()
@@ -357,7 +359,7 @@ elseif(STAR_COMPILER_CLANG)
     list(APPEND STAR_LINK_OPTIONS -Wl,-export_dynamic)
     set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
   else()
-    list(APPEND STAR_COMPILE_DEFINITIONS _REENTRANT)
+    target_compile_definitions(star_build_definitions INTERFACE _REENTRANT)
     list(APPEND STAR_LINK_OPTIONS -Wl,--export-dynamic)
     if(STAR_USE_LLD)
       list(APPEND STAR_LINK_OPTIONS -fuse-ld=lld)
@@ -438,12 +440,12 @@ elseif(STAR_COMPILER_MSVC)
     set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /arch:SSE2")
   endif()
 
-  list(APPEND STAR_COMPILE_DEFINITIONS UNICODE _UNICODE NOMINMAX)
+  target_compile_definitions(star_build_definitions INTERFACE UNICODE _UNICODE NOMINMAX)
 
 else()
   list(APPEND STAR_C_COMPILE_OPTIONS -Wall)
   list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall)
-  list(APPEND STAR_COMPILE_DEFINITIONS _REENTRANT)
+  target_compile_definitions(star_build_definitions INTERFACE _REENTRANT)
   star_clear_cmake_config_flags()
 
   star_append_config_compile_options(Debug -g)
@@ -611,8 +613,6 @@ if(STAR_LINK_OPTIONS)
   target_link_options(star_build_options INTERFACE ${STAR_LINK_OPTIONS})
 endif()
 
-add_library(star_build_definitions INTERFACE)
-target_compile_definitions(star_build_definitions INTERFACE ${STAR_COMPILE_DEFINITIONS})
 target_link_libraries(star_build_definitions INTERFACE star_system_includes star_system_libraries star_build_options)
 
 # Set basic build flags, include all the relevant source directories, based on
