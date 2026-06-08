@@ -23,9 +23,9 @@ if(STAR_PRECOMPILED_HEADERS)
 endif()
 
 if(STAR_SYSTEM_MACOS)
-  set_target_properties(starbound_server PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
+  target_link_options(starbound_server PRIVATE "LINKER:-rpath,@executable_path")
 elseif(UNIX)
-  set_target_properties(starbound_server PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
+  target_link_options(starbound_server PRIVATE "LINKER:--export-dynamic,-rpath,$ORIGIN")
 endif()
 
 target_link_libraries(starbound_server PRIVATE star_build_definitions star_external_libraries)
