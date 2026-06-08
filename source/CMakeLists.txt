@@ -479,26 +479,26 @@ if(STAR_COMPILER STREQUAL "msvc")
   set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "${CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS} /DEBUG")
 endif()
 
-set(STAR_SYSTEM_LIBRARIES)
+add_library(star_system_libraries INTERFACE)
 if(NOT STAR_SYSTEM_WINDOWS)
   find_package(Threads REQUIRED)
-  list(APPEND STAR_SYSTEM_LIBRARIES Threads::Threads)
+  target_link_libraries(star_system_libraries INTERFACE Threads::Threads)
 endif()
 
 if(STAR_SYSTEM_WINDOWS)
-  list(APPEND STAR_SYSTEM_LIBRARIES ws2_32.lib iphlpapi.lib shlwapi.lib dbghelp.lib)
+  target_link_libraries(star_system_libraries INTERFACE ws2_32.lib iphlpapi.lib shlwapi.lib dbghelp.lib)
 
 elseif(STAR_SYSTEM_LINUX)
-  list(APPEND STAR_SYSTEM_LIBRARIES dl rt)
+  target_link_libraries(star_system_libraries INTERFACE dl rt)
 
 elseif(STAR_SYSTEM_FREEBSD)
-  list(APPEND STAR_SYSTEM_LIBRARIES rt)
+  target_link_libraries(star_system_libraries INTERFACE rt)
 
 elseif(STAR_SYSTEM_NETBSD)
-  list(APPEND STAR_SYSTEM_LIBRARIES rt execinfo)
+  target_link_libraries(star_system_libraries INTERFACE rt execinfo)
 
 elseif(STAR_SYSTEM_HAIKU)
-  list(APPEND STAR_SYSTEM_LIBRARIES execinfo network)
+  target_link_libraries(star_system_libraries INTERFACE execinfo network)
 
 endif()
 
@@ -601,11 +601,6 @@ endif()
 add_library(star_system_includes INTERFACE)
 if(STAR_SYSTEM_INCLUDE_DIRS)
   target_include_directories(star_system_includes SYSTEM INTERFACE ${STAR_SYSTEM_INCLUDE_DIRS})
-endif()
-
-add_library(star_system_libraries INTERFACE)
-if(STAR_SYSTEM_LIBRARIES)
-  target_link_libraries(star_system_libraries INTERFACE ${STAR_SYSTEM_LIBRARIES})
 endif()
 
 add_library(star_build_options INTERFACE)
