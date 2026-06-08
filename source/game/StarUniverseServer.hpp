@@ -13,16 +13,21 @@
 
 namespace Star {
 
-STAR_CLASS(Clock);
-STAR_CLASS(File);
-STAR_CLASS(Player);
-STAR_CLASS(ChatProcessor);
-STAR_CLASS(CommandProcessor);
-STAR_CLASS(TeamManager);
-STAR_CLASS(UniverseServer);
-STAR_CLASS(WorldTemplate);
-STAR_CLASS(WorldServer);
-STAR_CLASS(UniverseSettings);
+class Clock;
+class File;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class ChatProcessor;
+using ChatProcessorPtr = SharedPtr<ChatProcessor>;
+class CommandProcessor;
+using CommandProcessorPtr = SharedPtr<CommandProcessor>;
+class TeamManager;
+using TeamManagerPtr = SharedPtr<TeamManager>;
+class UniverseServer;
+using UniverseServerPtr = SharedPtr<UniverseServer>;
+class WorldTemplate;
+class WorldServer;
+class UniverseSettings;
 
 struct UniverseServerExceptionTag { static constexpr char const* typeName = "UniverseServerException"; };
 using UniverseServerException = TypedException<StarException, UniverseServerExceptionTag>;
