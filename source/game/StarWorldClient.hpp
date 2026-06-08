@@ -18,21 +18,34 @@
 
 namespace Star {
 
-STAR_STRUCT(Biome);
-STAR_CLASS(WorldTemplate);
-STAR_CLASS(Sky);
-STAR_CLASS(Parallax);
-STAR_CLASS(LuaRoot);
-STAR_CLASS(DamageManager);
-STAR_CLASS(EntityMap);
-STAR_CLASS(ParticleManager);
-STAR_CLASS(WorldClient);
-STAR_CLASS(Player);
-STAR_CLASS(Item);
-STAR_CLASS(CelestialLog);
-STAR_CLASS(ClientContext);
-STAR_CLASS(PlayerStorage);
-STAR_STRUCT(OverheadBar);
+struct Biome;
+using BiomeConstPtr = SharedPtr<Biome const>;
+class WorldTemplate;
+using WorldTemplatePtr = SharedPtr<WorldTemplate>;
+using WorldTemplateConstPtr = SharedPtr<WorldTemplate const>;
+class Sky;
+using SkyPtr = SharedPtr<Sky>;
+using SkyConstPtr = SharedPtr<Sky const>;
+class Parallax;
+using ParallaxPtr = SharedPtr<Parallax>;
+class LuaRoot;
+using LuaRootPtr = SharedPtr<LuaRoot>;
+class DamageManager;
+using DamageManagerPtr = SharedPtr<DamageManager>;
+class EntityMap;
+using EntityMapPtr = SharedPtr<EntityMap>;
+class ParticleManager;
+using ParticleManagerPtr = SharedPtr<ParticleManager>;
+class WorldClient;
+using WorldClientPtr = SharedPtr<WorldClient>;
+class Player;
+using PlayerPtr = SharedPtr<Player>;
+class Item;
+using ItemPtr = SharedPtr<Item>;
+class CelestialLog;
+class ClientContext;
+class PlayerStorage;
+struct OverheadBar;
 
 struct WorldClientExceptionTag { static constexpr char const* typeName = "WorldClientException"; };
 using WorldClientException = TypedException<StarException, WorldClientExceptionTag>;
