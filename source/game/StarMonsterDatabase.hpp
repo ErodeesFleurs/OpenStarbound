@@ -10,11 +10,15 @@
 
 namespace Star {
 
-STAR_CLASS(LuaRoot);
-STAR_CLASS(Rebuilder);
-STAR_CLASS(RandomSource);
-STAR_CLASS(Monster);
-STAR_CLASS(MonsterDatabase);
+class LuaRoot;
+class Rebuilder;
+using RebuilderPtr = SharedPtr<Rebuilder>;
+class RandomSource;
+class Monster;
+using MonsterPtr = SharedPtr<Monster>;
+class MonsterDatabase;
+using MonsterDatabasePtr = SharedPtr<MonsterDatabase>;
+using MonsterDatabaseConstPtr = SharedPtr<MonsterDatabase const>;
 
 struct MonsterExceptionTag { static constexpr char const* typeName = "MonsterException"; };
 using MonsterException = TypedException<StarException, MonsterExceptionTag>;
