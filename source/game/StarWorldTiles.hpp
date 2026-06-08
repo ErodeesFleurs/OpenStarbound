@@ -325,11 +325,7 @@ inline void RenderTile::hashPushTerrain(Hasher& hasher) const {
   static size_t const TotalTerrainSize =
     sizeof(MaterialId) * 2 + sizeof(ModId) * 2 + sizeof(MaterialHue) * 4 + sizeof(MaterialColorVariant) * 2 * sizeof(TileDamageType) * 2 + 2;
 
-#ifdef STAR_DEBUG
-  static bool const FastHash = false;
-#else
-  static bool const FastHash = TerrainEndOffset == TotalTerrainSize;
-#endif
+  static bool const FastHash = !DebugEnabled && TerrainEndOffset == TotalTerrainSize;
 
   if (FastHash) {
     hasher.push(reinterpret_cast<char const*>(this), TerrainEndOffset);

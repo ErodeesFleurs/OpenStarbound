@@ -77,7 +77,7 @@ void printStack(char const* message);
 void fatalError(char const* message, bool showStackTrace);
 void fatalException(std::exception const& e, bool showStackTrace);
 
-#ifdef STAR_DEBUG
+#ifndef NDEBUG
 inline void debugPrintStack(std::source_location location = std::source_location::current()) {
   auto message = strf("Debug: file {} line {}", location.file_name(), location.line());
   Star::printStack(message.c_str());
@@ -92,7 +92,7 @@ inline void assertionFailure(std::source_location location = std::source_locatio
   Star::fatalError(message.c_str(), true);
 }
 
-#ifdef STAR_DEBUG
+#ifndef NDEBUG
 #define starAssert(COND)                                                                                \
   {                                                                                                     \
     if (COND)                                                                                           \

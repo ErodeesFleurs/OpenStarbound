@@ -61,7 +61,6 @@ template <typename T>
 using UniquePtr = std::unique_ptr<T>;
 
 #ifndef NDEBUG
-#define STAR_DEBUG 1
 constexpr bool DebugEnabled = true;
 #else
 constexpr bool DebugEnabled = false;
