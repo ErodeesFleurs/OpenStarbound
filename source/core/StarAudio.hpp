@@ -1,7 +1,6 @@
 #pragma once
 
 #include "StarIODevice.hpp"
-//#define STAR_STREAM_AUDIO
 
 namespace Star {
 
