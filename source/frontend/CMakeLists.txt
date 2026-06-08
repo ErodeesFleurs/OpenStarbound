@@ -107,8 +107,8 @@ SET (star_frontend_SOURCES
   )
 
 ADD_LIBRARY (star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
-TARGET_COMPILE_FEATURES (star_frontend PUBLIC cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (star_frontend PUBLIC
+target_compile_features(star_frontend PUBLIC cxx_std_20)
+target_include_directories(star_frontend PUBLIC
     ${STAR_FRONTEND_INCLUDES}
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_RENDERING_INCLUDES}
@@ -121,5 +121,5 @@ TARGET_INCLUDE_DIRECTORIES (star_frontend PUBLIC
 target_link_libraries(star_frontend PUBLIC star_build_definitions)
 
 IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_frontend REUSE_FROM star_core)
+  target_precompile_headers(star_frontend REUSE_FROM star_core)
 ENDIF()

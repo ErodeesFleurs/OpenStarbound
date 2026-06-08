@@ -19,7 +19,7 @@ SET (star_mod_uploader_SOURCES
 ADD_EXECUTABLE (mod_uploader WIN32
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   ${star_mod_uploader_HEADERS} ${star_mod_uploader_SOURCES})
-TARGET_INCLUDE_DIRECTORIES (mod_uploader PRIVATE ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
+target_include_directories(mod_uploader PRIVATE ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
 target_link_libraries(mod_uploader PRIVATE star_build_definitions star_external_libraries ${STEAM_API_LIBRARY} Qt5::Core Qt5::Gui Qt5::Widgets)
 
 SET (CMAKE_AUTOMOC OFF)

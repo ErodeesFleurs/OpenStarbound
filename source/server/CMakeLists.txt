@@ -20,8 +20,8 @@ ENDIF ()
 ADD_EXECUTABLE (starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   ${star_server_HEADERS} ${star_server_SOURCES} ${star_server_RESOURCES})
-TARGET_COMPILE_FEATURES (starbound_server PRIVATE cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (starbound_server PRIVATE
+target_compile_features(starbound_server PRIVATE cxx_std_20)
+target_include_directories(starbound_server PRIVATE
     ${STAR_GAME_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_BASE_INCLUDES}
@@ -29,7 +29,7 @@ TARGET_INCLUDE_DIRECTORIES (starbound_server PRIVATE
     ${STAR_EXTERN_INCLUDES})
 
 IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (starbound_server REUSE_FROM star_core)
+  target_precompile_headers(starbound_server REUSE_FROM star_core)
 ENDIF()
 
 IF(STAR_SYSTEM_MACOS)

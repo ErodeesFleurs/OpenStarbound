@@ -21,8 +21,8 @@ SET (star_rendering_SOURCES
     )
 
 ADD_LIBRARY (star_rendering OBJECT ${star_rendering_SOURCES} ${star_rendering_HEADERS})
-TARGET_COMPILE_FEATURES (star_rendering PUBLIC cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (star_rendering PUBLIC
+target_compile_features(star_rendering PUBLIC cxx_std_20)
+target_include_directories(star_rendering PUBLIC
     ${STAR_RENDERING_INCLUDES}
     ${STAR_APPLICATION_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
@@ -33,5 +33,5 @@ TARGET_INCLUDE_DIRECTORIES (star_rendering PUBLIC
 target_link_libraries(star_rendering PUBLIC star_build_definitions)
 
 IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_rendering REUSE_FROM star_core)
+  target_precompile_headers(star_rendering REUSE_FROM star_core)
 ENDIF()

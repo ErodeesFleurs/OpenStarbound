@@ -1,6 +1,6 @@
 FUNCTION (STAR_CONFIGURE_UTILITY_TARGET target)
-  TARGET_COMPILE_FEATURES (${target} PRIVATE cxx_std_20)
-  TARGET_INCLUDE_DIRECTORIES (${target} PRIVATE
+  target_compile_features(${target} PRIVATE cxx_std_20)
+  target_include_directories(${target} PRIVATE
       ${STAR_GAME_INCLUDES}
       ${STAR_PLATFORM_INCLUDES}
       ${STAR_BASE_INCLUDES}

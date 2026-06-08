@@ -65,8 +65,8 @@ SET (star_windowing_SOURCES
     )
 
 ADD_LIBRARY (star_windowing OBJECT ${star_windowing_SOURCES} ${star_windowing_HEADERS})
-TARGET_COMPILE_FEATURES (star_windowing PUBLIC cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (star_windowing PUBLIC
+target_compile_features(star_windowing PUBLIC cxx_std_20)
+target_include_directories(star_windowing PUBLIC
     ${STAR_WINDOWING_INCLUDES}
     ${STAR_RENDERING_INCLUDES}
     ${STAR_APPLICATION_INCLUDES}

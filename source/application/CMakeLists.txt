@@ -56,8 +56,8 @@ IF (STAR_ENABLE_DISCORD_INTEGRATION)
 ENDIF ()
 
 ADD_LIBRARY (star_application OBJECT ${star_application_SOURCES} ${star_application_HEADERS})
-TARGET_COMPILE_FEATURES (star_application PUBLIC cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (star_application PUBLIC
+target_compile_features(star_application PUBLIC cxx_std_20)
+target_include_directories(star_application PUBLIC
     ${STAR_APPLICATION_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_CORE_INCLUDES}
@@ -65,5 +65,5 @@ TARGET_INCLUDE_DIRECTORIES (star_application PUBLIC
 target_link_libraries(star_application PUBLIC star_build_definitions)
 
 IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_application REUSE_FROM star_core)
+  target_precompile_headers(star_application REUSE_FROM star_core)
 ENDIF()

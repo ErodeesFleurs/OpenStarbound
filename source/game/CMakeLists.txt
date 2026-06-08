@@ -512,8 +512,8 @@ SET (star_game_SOURCES
   )
 
 ADD_LIBRARY (star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
-TARGET_COMPILE_FEATURES (star_game PUBLIC cxx_std_20)
-TARGET_INCLUDE_DIRECTORIES (star_game PUBLIC
+target_compile_features(star_game PUBLIC cxx_std_20)
+target_include_directories(star_game PUBLIC
     ${STAR_GAME_INCLUDES}
     ${STAR_PLATFORM_INCLUDES}
     ${STAR_BASE_INCLUDES}
@@ -522,5 +522,5 @@ TARGET_INCLUDE_DIRECTORIES (star_game PUBLIC
 target_link_libraries(star_game PUBLIC star_build_definitions)
 
 IF(STAR_PRECOMPILED_HEADERS)
-  TARGET_PRECOMPILE_HEADERS (star_game REUSE_FROM star_core)
+  target_precompile_headers(star_game REUSE_FROM star_core)
 ENDIF()
