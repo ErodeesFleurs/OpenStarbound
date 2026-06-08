@@ -12,9 +12,13 @@
 #include <stdio.h>
 #include <windows.h>
 
-#ifndef MAX_PATH
-#define MAX_PATH 1024
+namespace {
+#ifdef MAX_PATH
+constexpr DWORD StarMaxPath = MAX_PATH;
+#else
+constexpr DWORD StarMaxPath = 1024;
 #endif
+}
 
 namespace Star {
 
@@ -30,8 +34,8 @@ String File::convertDirSeparators(String const& path) {
 }
 
 String File::currentDirectory() {
-  WCHAR buffer[MAX_PATH];
-  size_t len = GetCurrentDirectoryW(MAX_PATH, buffer);
+  WCHAR buffer[StarMaxPath];
+  size_t len = GetCurrentDirectoryW(StarMaxPath, buffer);
   if (len == 0)
     throw IOException("GetCurrentDirectory failed");
 
@@ -76,15 +80,15 @@ bool File::isDirectory(String const& path) {
 }
 
 String File::fullPath(const String& path) {
-  WCHAR buffer[MAX_PATH];
+  WCHAR buffer[StarMaxPath];
 
   size_t fullpath_size;
   WCHAR* lpszLastNamePart;
 
-  fullpath_size = GetFullPathNameW(stringToUtf16(path).get(), (DWORD)MAX_PATH, buffer, (WCHAR**)&lpszLastNamePart);
+  fullpath_size = GetFullPathNameW(stringToUtf16(path).get(), StarMaxPath, buffer, (WCHAR**)&lpszLastNamePart);
   if (0 == fullpath_size)
     throw IOException::format("GetFullPathName failed on path: '{}'", path);
-  if (fullpath_size >= MAX_PATH)
+  if (fullpath_size >= StarMaxPath)
     throw IOException::format("GetFullPathName failed on path: '{}'", path);
 
   return utf16ToString(buffer);
@@ -153,8 +157,8 @@ String File::relativeTo(String const& relativeTo, String const& path) {
 }
 
 String File::temporaryFileName() {
-  WCHAR tempPath[MAX_PATH];
-  if (!GetTempPathW(MAX_PATH, tempPath)) {
+  WCHAR tempPath[StarMaxPath];
+  if (!GetTempPathW(StarMaxPath, tempPath)) {
     auto error = GetLastError();
     throw IOException(strf("Could not call GetTempPath {}", error));
   }
@@ -174,8 +178,8 @@ FilePtr File::ephemeralFile() {
 }
 
 String File::temporaryDirectory() {
-  WCHAR tempPath[MAX_PATH];
-  if (!GetTempPathW(MAX_PATH, tempPath)) {
+  WCHAR tempPath[StarMaxPath];
+  if (!GetTempPathW(StarMaxPath, tempPath)) {
     auto error = GetLastError();
     throw IOException(strf("Could not call GetTempPath {}", error));
   }

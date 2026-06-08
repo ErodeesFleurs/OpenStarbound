@@ -25,11 +25,13 @@
 
 #include "StarHostAddress.hpp"
 
-#ifndef AI_ADDRCONFIG
-#define AI_ADDRCONFIG 0
-#endif
-
 namespace Star {
+
+#ifdef AI_ADDRCONFIG
+inline constexpr int AddrConfigFlag = AI_ADDRCONFIG;
+#else
+inline constexpr int AddrConfigFlag = 0;
+#endif
 
 #ifdef STAR_SYSTEM_FAMILY_WINDOWS
 struct WindowsSocketInitializer {
