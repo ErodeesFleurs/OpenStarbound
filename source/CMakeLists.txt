@@ -315,6 +315,7 @@ if(STAR_COMPILER_GNU)
   list(APPEND STAR_C_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough)
   list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate)
   list(APPEND STAR_LINK_OPTIONS -rdynamic -no-pie)
+  star_clear_cmake_config_flags()
 
   if(STAR_SYSTEM_FAMILY_WINDOWS)
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthreads")
@@ -341,17 +342,10 @@ if(STAR_COMPILER_GNU)
     list(APPEND STAR_LINK_OPTIONS -pg)
   endif()
 
-  set(CMAKE_C_FLAGS_DEBUG "-g -Og")
-  set(CMAKE_CXX_FLAGS_DEBUG "-g -Og")
-
-  set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
-
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-g -DNDEBUG -O3 -ffast-math")
-
-  set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
+  star_append_config_compile_options(Debug -g -Og)
+  star_append_config_compile_options(RelWithAsserts -g -O3 -ffast-math)
+  star_append_config_compile_options(RelWithDebInfo -g -DNDEBUG -O3 -ffast-math)
+  star_append_config_compile_options(Release -DNDEBUG -O3 -ffast-math)
 
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
