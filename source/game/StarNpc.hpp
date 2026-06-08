@@ -26,11 +26,13 @@
 
 namespace Star {
 
-STAR_CLASS(Songbook);
-STAR_CLASS(Item);
-STAR_CLASS(RenderCallback);
-STAR_CLASS(Npc);
-STAR_CLASS(StatusController);
+class Songbook;
+using SongbookPtr = SharedPtr<Songbook>;
+class Item;
+class RenderCallback;
+class Npc;
+class StatusController;
+using StatusControllerPtr = SharedPtr<StatusController>;
 
 class Npc
   : public virtual DamageBarEntity,
