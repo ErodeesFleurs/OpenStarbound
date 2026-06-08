@@ -488,25 +488,21 @@ if(STAR_COMPILER STREQUAL "msvc")
   set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "${CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS} /DEBUG")
 endif()
 
+set(STAR_SYSTEM_LIBRARIES)
 if(STAR_SYSTEM_WINDOWS)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} ws2_32.lib iphlpapi.lib shlwapi.lib dbghelp.lib")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} ws2_32.lib iphlpapi.lib shlwapi.lib dbghelp.lib")
+  list(APPEND STAR_SYSTEM_LIBRARIES ws2_32.lib iphlpapi.lib shlwapi.lib dbghelp.lib)
 
 elseif(STAR_SYSTEM_LINUX)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -ldl -lrt")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -ldl -lrt")
+  list(APPEND STAR_SYSTEM_LIBRARIES pthread dl rt)
 
 elseif(STAR_SYSTEM_FREEBSD)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -lrt")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -lrt")
+  list(APPEND STAR_SYSTEM_LIBRARIES pthread rt)
 
 elseif(STAR_SYSTEM_NETBSD)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -lrt -lexecinfo")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -lrt -lexecinfo")
+  list(APPEND STAR_SYSTEM_LIBRARIES pthread rt execinfo)
 
 elseif(STAR_SYSTEM_HAIKU)
-  set(CMAKE_C_STANDARD_LIBRARIES "${CMAKE_C_STANDARD_LIBRARIES} -lpthread -lexecinfo -lnetwork")
-  set(CMAKE_CXX_STANDARD_LIBRARIES "${CMAKE_CXX_STANDARD_LIBRARIES} -lpthread -lexecinfo -lnetwork")
+  list(APPEND STAR_SYSTEM_LIBRARIES pthread execinfo network)
 
 endif()
 
@@ -609,6 +605,11 @@ if(STAR_SYSTEM_INCLUDE_DIRS)
   target_include_directories(star_system_includes SYSTEM INTERFACE ${STAR_SYSTEM_INCLUDE_DIRS})
 endif()
 
+add_library(star_system_libraries INTERFACE)
+if(STAR_SYSTEM_LIBRARIES)
+  target_link_libraries(star_system_libraries INTERFACE ${STAR_SYSTEM_LIBRARIES})
+endif()
+
 add_library(star_build_options INTERFACE)
 if(STAR_C_COMPILE_OPTIONS)
   target_compile_options(star_build_options INTERFACE "$<$<COMPILE_LANGUAGE:C>:${STAR_C_COMPILE_OPTIONS}>")
@@ -622,7 +623,7 @@ endif()
 
 add_library(star_build_definitions INTERFACE)
 target_compile_definitions(star_build_definitions INTERFACE ${STAR_COMPILE_DEFINITIONS})
-target_link_libraries(star_build_definitions INTERFACE star_system_includes star_build_options)
+target_link_libraries(star_build_definitions INTERFACE star_system_includes star_system_libraries star_build_options)
 
 # Set basic build flags, include all the relevant source directories, based on
 # build settings...
