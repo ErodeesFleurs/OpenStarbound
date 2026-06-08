@@ -10,28 +10,24 @@ function(star_configure_utility_target target)
 endfunction()
 
 add_executable(asset_packer
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   asset_packer.cpp)
 star_configure_utility_target(asset_packer)
-target_link_libraries(asset_packer PRIVATE star_external_libraries)
+target_link_libraries(asset_packer PRIVATE star_extern star_core star_base star_external_libraries)
 
 add_executable(asset_unpacker
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   asset_unpacker.cpp)
 star_configure_utility_target(asset_unpacker)
-target_link_libraries(asset_unpacker PRIVATE star_external_libraries)
+target_link_libraries(asset_unpacker PRIVATE star_extern star_core star_base star_external_libraries)
 
 add_executable(btree_repacker
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
   btree_repacker.cpp)
 star_configure_utility_target(btree_repacker)
-target_link_libraries(btree_repacker PRIVATE star_external_libraries)
+target_link_libraries(btree_repacker PRIVATE star_extern star_core star_base star_external_libraries)
 
 add_executable(dump_versioned_json
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   dump_versioned_json.cpp)
 star_configure_utility_target(dump_versioned_json)
-target_link_libraries(dump_versioned_json PRIVATE star_external_libraries)
+target_link_libraries(dump_versioned_json PRIVATE star_extern star_core star_base star_game star_external_libraries)
 
 #add_executable(game_repl
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
@@ -39,10 +35,9 @@ target_link_libraries(dump_versioned_json PRIVATE star_external_libraries)
 #target_link_libraries(game_repl PRIVATE star_external_libraries)
 
 add_executable(make_versioned_json
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   make_versioned_json.cpp)
 star_configure_utility_target(make_versioned_json)
-target_link_libraries(make_versioned_json PRIVATE star_external_libraries)
+target_link_libraries(make_versioned_json PRIVATE star_extern star_core star_base star_game star_external_libraries)
 
 #add_executable(planet_mapgen
 #  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
