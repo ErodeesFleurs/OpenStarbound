@@ -10,12 +10,6 @@ if(STAR_SYSTEM_WINDOWS)
   target_sources(starbound_server PRIVATE starbound_server.rc)
 endif()
 target_compile_features(starbound_server PRIVATE cxx_std_20)
-target_include_directories(starbound_server PRIVATE
-    ${STAR_GAME_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_EXTERN_INCLUDES})
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(starbound_server REUSE_FROM star_core)
