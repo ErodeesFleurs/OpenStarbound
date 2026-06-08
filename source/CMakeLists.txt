@@ -8,7 +8,6 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 set(CMAKE_CONFIGURATION_TYPES Debug RelWithAsserts RelWithDebInfo Release)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
-set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "" CACHE STRING "" FORCE)
 
 if(STAR_USE_COMPILER_CACHE)
   find_program(SCCACHE_PATH sccache)
@@ -468,10 +467,10 @@ if(STAR_COMPILER STREQUAL "msvc")
   # /OPT:REF           - Eliminates functions and data that are never referenced
   # /OPT:ICF           - Performs identical COMDAT folding
   # /PDBCompress       - Hint to windows that it should compress the resulting PDB files
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /largeaddressaware /OPT:REF /OPT:ICF /PDBCompress")
+  target_link_options(star_build_options INTERFACE /largeaddressaware /OPT:REF /OPT:ICF /PDBCompress)
 
   # Make sure RelWithAsserts has debugging enabled
-  set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "${CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS} /DEBUG")
+  target_link_options(star_build_options INTERFACE $<$<CONFIG:RelWithAsserts>:/DEBUG>)
 endif()
 
 add_library(star_system_libraries INTERFACE)
