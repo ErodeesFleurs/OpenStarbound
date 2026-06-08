@@ -314,8 +314,7 @@ if(STAR_COMPILER_GNU)
   endif()
 
   if(STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -static-libgcc")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -static-libgcc -static-libstdc++")
+    list(APPEND STAR_LINK_OPTIONS -static-libgcc $<$<LINK_LANGUAGE:CXX>:-static-libstdc++>)
   endif()
 
   if(STAR_ENABLE_GCC_PROFILING)
