@@ -293,6 +293,24 @@ set(STAR_C_COMPILE_OPTIONS)
 set(STAR_CXX_COMPILE_OPTIONS)
 set(STAR_LINK_OPTIONS)
 
+function(star_clear_cmake_config_flags)
+  foreach(config Debug RelWithAsserts RelWithDebInfo Release)
+    string(TOUPPER "${config}" config_upper)
+    set(CMAKE_C_FLAGS_${config_upper} "" PARENT_SCOPE)
+    set(CMAKE_CXX_FLAGS_${config_upper} "" PARENT_SCOPE)
+  endforeach()
+endfunction()
+
+function(star_append_config_compile_options config)
+  foreach(option IN LISTS ARGN)
+    list(APPEND STAR_C_COMPILE_OPTIONS "$<$<CONFIG:${config}>:${option}>")
+    list(APPEND STAR_CXX_COMPILE_OPTIONS "$<$<CONFIG:${config}>:${option}>")
+  endforeach()
+
+  set(STAR_C_COMPILE_OPTIONS "${STAR_C_COMPILE_OPTIONS}" PARENT_SCOPE)
+  set(STAR_CXX_COMPILE_OPTIONS "${STAR_CXX_COMPILE_OPTIONS}" PARENT_SCOPE)
+endfunction()
+
 if(STAR_COMPILER_GNU)
   list(APPEND STAR_C_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough)
   list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate)
@@ -340,6 +358,7 @@ if(STAR_COMPILER_GNU)
 elseif(STAR_COMPILER_CLANG)
   list(APPEND STAR_C_COMPILE_OPTIONS -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
   list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
+  star_clear_cmake_config_flags()
 
   if(STAR_SYSTEM_MACOS)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
@@ -358,17 +377,10 @@ elseif(STAR_COMPILER_CLANG)
     list(APPEND STAR_CXX_COMPILE_OPTIONS -fno-omit-frame-pointer)
   endif()
 
-  set(CMAKE_C_FLAGS_DEBUG "-g")
-  set(CMAKE_CXX_FLAGS_DEBUG "-g")
-
-  set(CMAKE_C_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "-g -O3 -ffast-math")
-
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "-gline-tables-only -gz=zlib -DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "-gline-tables-only -gz=zlib -DNDEBUG -O3 -ffast-math")
-
-  set(CMAKE_C_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
-  set(CMAKE_CXX_FLAGS_RELEASE "-DNDEBUG -O3 -ffast-math")
+  star_append_config_compile_options(Debug -g)
+  star_append_config_compile_options(RelWithAsserts -g -O3 -ffast-math)
+  star_append_config_compile_options(RelWithDebInfo -gline-tables-only -gz=zlib -DNDEBUG -O3 -ffast-math)
+  star_append_config_compile_options(Release -DNDEBUG -O3 -ffast-math)
 
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
