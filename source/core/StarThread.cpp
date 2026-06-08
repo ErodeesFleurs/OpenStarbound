@@ -311,43 +311,42 @@ RecursiveMutex::~RecursiveMutex() {}
 
 RecursiveMutex& RecursiveMutex::operator=(RecursiveMutex&&) = default;
 
-#ifdef STAR_MUTEX_LOG
 void RecursiveMutex::setLogged(bool logged) {
-  m_log = logged;
+  if constexpr (LogRecursiveMutex)
+    m_log = logged;
 }
-#endif
 
 void RecursiveMutex::lock() {
-#ifdef STAR_MUTEX_LOG
-  if (m_log)
-    printStack("RecursiveMutex lock waiting");
-#endif
+  if constexpr (LogRecursiveMutex) {
+    if (m_log)
+      printStack("RecursiveMutex lock waiting");
+  }
   m_impl->mutex.lock();
-#ifdef STAR_MUTEX_LOG
-  if (m_log)
-    printStack("RecursiveMutex locked");
-#endif
+  if constexpr (LogRecursiveMutex) {
+    if (m_log)
+      printStack("RecursiveMutex locked");
+  }
 }
 
 bool RecursiveMutex::tryLock() {
-#ifdef STAR_MUTEX_LOG
-  if (m_log)
-    printStack("RecursiveMutex tryLock waiting");
-#endif
+  if constexpr (LogRecursiveMutex) {
+    if (m_log)
+      printStack("RecursiveMutex tryLock waiting");
+  }
   bool result = m_impl->mutex.try_lock();
-#ifdef STAR_MUTEX_LOG
-  if (result && m_log)
-    printStack("RecursiveMutex tryLock success");
-#endif
+  if constexpr (LogRecursiveMutex) {
+    if (result && m_log)
+      printStack("RecursiveMutex tryLock success");
+  }
   return result;
 }
 
 void RecursiveMutex::unlock() {
   m_impl->mutex.unlock();
-#ifdef STAR_MUTEX_LOG
-  if (m_log)
-    printStack("RecursiveMutex unlocked");
-#endif
+  if constexpr (LogRecursiveMutex) {
+    if (m_log)
+      printStack("RecursiveMutex unlocked");
+  }
 }
 
 // ---- ReadersWriterMutex ----
