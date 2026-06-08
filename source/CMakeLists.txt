@@ -414,34 +414,23 @@ elseif(STAR_COMPILER_MSVC)
 
   star_add_c_compile_options(/nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
   star_add_cxx_compile_options(/nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
+  star_clear_cmake_config_flags()
 
   if(STAR_ENABLE_STATIC_MSVC_RUNTIME)
     set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
   endif()
 
-  set(CMAKE_C_FLAGS_DEBUG "/Z7 /Od")
-  set(CMAKE_CXX_FLAGS_DEBUG "/Z7 /Od")
-
-  set(CMAKE_C_FLAGS_RELWITHASSERTS "/Ox /fp:fast /GA /GS- /Z7 /Gy")
-  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "/Ox /fp:fast /GA /GS- /Z7 /Gy")
-
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "/Ox /fp:fast /GA /GS- /Z7 /Gy /DNDEBUG")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/Ox /fp:fast /GA /GS- /Z7 /Gy /DNDEBUG")
-
-  set(CMAKE_C_FLAGS_RELEASE "/Ox /fp:fast /GA /GS- /Gy /DNDEBUG")
-  set(CMAKE_CXX_FLAGS_RELEASE "/Ox /fp:fast /GA /GS- /Gy /DNDEBUG")
+  star_add_config_compile_options(Debug /Z7 /Od)
+  star_add_config_compile_options(RelWithAsserts /Ox /fp:fast /GA /GS- /Z7 /Gy)
+  star_add_config_compile_options(RelWithDebInfo /Ox /fp:fast /GA /GS- /Z7 /Gy /DNDEBUG)
+  star_add_config_compile_options(Release /Ox /fp:fast /GA /GS- /Gy /DNDEBUG)
 
   if(STAR_ARCHITECTURE_I386)
     # Assume all 32 bit target cpus support MMX, SSE, and SSE2
 
-    set(CMAKE_C_FLAGS_RELWITHASSERTS "${CMAKE_C_FLAGS_RELWITHASSERTS} /arch:SSE2")
-    set(CMAKE_CXX_FLAGS_RELWITHASSERTS "${CMAKE_CXX_FLAGS_RELWITHASSERTS} /arch:SSE2")
-
-    set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} /arch:SSE2")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /arch:SSE2")
-
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /arch:SSE2")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /arch:SSE2")
+    star_add_config_compile_options(RelWithAsserts /arch:SSE2)
+    star_add_config_compile_options(RelWithDebInfo /arch:SSE2)
+    star_add_config_compile_options(Release /arch:SSE2)
   endif()
 
   target_compile_definitions(star_build_definitions INTERFACE UNICODE _UNICODE NOMINMAX)
