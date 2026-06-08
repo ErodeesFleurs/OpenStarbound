@@ -118,8 +118,8 @@ template <typename T>
 void BubbleSeparator<T>::filter(function<bool(Bubble const&, T&)> func) {
   m_bubbles.filter([this, func](Bubble& bubble) {
     if (!func(bubble, bubble.contents)) {
-      m_sortedLeftEdges.remove(bubble.separatedBox);
-      m_sortedRightEdges.remove(bubble.separatedBox);
+      (void)m_sortedLeftEdges.remove(bubble.separatedBox);
+      (void)m_sortedRightEdges.remove(bubble.separatedBox);
       return false;
     }
     return true;
@@ -147,8 +147,8 @@ void BubbleSeparator<T>::forEach(function<void(Bubble&, T&)> func) {
     // stops bubble sorting on bubbles that haven't moved, which causes problems.
 
     Vec2F sizeDelta = bubble.boundBox.size() - oldBoundBox.size();
-    leftEdges.remove(bubble.separatedBox);
-    rightEdges.remove(bubble.separatedBox);
+    (void)leftEdges.remove(bubble.separatedBox);
+    (void)rightEdges.remove(bubble.separatedBox);
     RectF boundBox = RectF::withCenter(bubble.idealDestination, bubble.boundBox.size());
     RectF separated = separateBubble(leftEdges, rightEdges, m_sortedLeftEdges, m_sortedRightEdges, boundBox);
     leftEdges.insertSorted(bubble.separatedBox, compareLeft);

@@ -846,9 +846,10 @@ void WorldServer::forEachCollisionBlock(RectI const& region, function<void(Colli
         iterator(CollisionBlock::nullBlock(pos));
       } else {
         starAssert(!tile.collisionCacheDirty);
-        auto const& cache = m_collisionCache.get(pos);
-        for (auto const& block : cache)
-          iterator(block);
+        if (auto cache = m_collisionCache.ptr(pos)) {
+          for (auto const& block : *cache)
+            iterator(block);
+        }
       }
     });
 }

@@ -539,8 +539,7 @@ String ClientCommandProcessor::render(String const& path) {
   auto assets = Root::singleton().assets();
   ImageConstPtr image;
   if (outputSheet) {
-    auto sheet = make_shared<Image>(*assets->image(assetPath.basePath));
-    sheet->convert(PixelFormat::RGBA32);
+    auto sheet = make_shared<Image>(assets->image(assetPath.basePath)->convert(PixelFormat::RGBA32));
     AssetPath framePath = assetPath;
 
     StringMap<pair<RectU, ImageConstPtr>> frames;

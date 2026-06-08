@@ -45,12 +45,18 @@ TestUniverse::~TestUniverse() {
 
 bool TestUniverse::warpPlayer(WorldId worldId) {
   m_client->warpPlayer(WarpToWorld(worldId), true);
-  for (unsigned i = 0; i < 1200 && (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()); ++i) {
+  for (unsigned i = 0; i < 1200; ++i) {
+    bool teleporting = m_mainPlayer->isTeleporting();
+    bool worldEmpty = m_client->playerWorld().empty();
+    bool hasWorldClient = static_cast<bool>(m_client->worldClient());
+    if (!teleporting && !worldEmpty && hasWorldClient)
+      break;
+
     m_client->update(0.016f);
     Thread::sleep(16);
   }
 
-  if (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty()) {
+  if (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty() || !m_client->worldClient()) {
     ADD_FAILURE() << "Timed out while warping test player";
     return false;
   }
@@ -72,6 +78,11 @@ void TestUniverse::update(unsigned times) {
 List<Drawable> TestUniverse::currentClientDrawables() {
   WorldRenderData renderData;
   auto worldClient = m_client->worldClient();
+  if (!worldClient) {
+    ADD_FAILURE() << "World client is not available";
+    return {};
+  }
+
   worldClient->centerClientWindowOnPlayer(m_clientWindowSize);
   worldClient->render(renderData, 0);
 

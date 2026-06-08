@@ -582,7 +582,7 @@ auto BTreeDatabase::BTreeImpl::storeIndex(Index index) -> Pointer {
   if (index->self != InvalidBlockIndex) {
     if (!parent->m_uncommitted.contains(index->self)) {
       parent->freeBlock(index->self);
-      parent->m_indexCache.remove(index->self);
+      (void)parent->m_indexCache.remove(index->self);
       index->self = InvalidBlockIndex;
     }
   }
@@ -609,7 +609,7 @@ auto BTreeDatabase::BTreeImpl::storeIndex(Index index) -> Pointer {
 }
 
 void BTreeDatabase::BTreeImpl::deleteIndex(Index index) {
-  parent->m_indexCache.remove(index->self);
+  (void)parent->m_indexCache.remove(index->self);
   parent->freeBlock(index->self);
 }
 

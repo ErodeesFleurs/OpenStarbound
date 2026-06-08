@@ -1,6 +1,7 @@
 #include "StarLogging.hpp"
 #include "StarFile.hpp"
 #include "StarRootLoader.hpp"
+#include "StarSignalHandler.hpp"
 
 #include "gtest/gtest.h"
 
@@ -37,6 +38,9 @@ public:
 };
 
 GTEST_API_ int main(int argc, char** argv) {
+  SignalHandler signalHandler;
+  signalHandler.setHandleFatal(true);
+
   testing::InitGoogleTest(&argc, argv);
   testing::AddGlobalTestEnvironment(new TestEnvironment(RootLoader({{}, {}, {}, LogLevel::Error, true, {}}).commandParseOrDie(argc, argv).first));
   return RUN_ALL_TESTS();

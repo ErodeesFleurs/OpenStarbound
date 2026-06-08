@@ -27,7 +27,7 @@ public:
 
   [[nodiscard]] bool contains(value_type const& v) const;
 
-  [[nodiscard]] bool add(value_type const& v);
+  bool add(value_type const& v);
 
   // Like add, but always adds new value, potentially replacing another equal
   // (comparing equal, may not be actually equal) value.  Returns whether an
@@ -37,7 +37,7 @@ public:
   template <typename Container>
   void addAll(Container const& s);
 
-  [[nodiscard]] bool remove(value_type const& v);
+  bool remove(value_type const& v);
 
   template <typename Container>
   void removeAll(Container const& s);
@@ -126,7 +126,7 @@ template <typename BaseSet>
 }
 
 template <typename BaseSet>
-[[nodiscard]] bool SetMixin<BaseSet>::add(value_type const& v) {
+bool SetMixin<BaseSet>::add(value_type const& v) {
   return Base::insert(v).second;
 }
 
@@ -140,11 +140,11 @@ template <typename BaseSet>
 template <typename BaseSet>
 template <typename Container>
 void SetMixin<BaseSet>::addAll(Container const& s) {
-  return Base::insert(s.begin(), s.end());
+  Base::insert(s.begin(), s.end());
 }
 
 template <typename BaseSet>
-[[nodiscard]] bool SetMixin<BaseSet>::remove(value_type const& v) {
+bool SetMixin<BaseSet>::remove(value_type const& v) {
   return Base::erase(v) != 0;
 }
 

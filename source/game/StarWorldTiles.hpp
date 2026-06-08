@@ -220,9 +220,25 @@ inline WorldTile::WorldTile()
     environmentBiomeIndex(),
     dungeonId(NoDungeonId) {}
 
-inline WorldTile::WorldTile(WorldTile const& worldTile) {
-  *this = worldTile;
-}
+inline WorldTile::WorldTile(WorldTile const& worldTile)
+  : foreground(worldTile.foreground),
+    foregroundHueShift(worldTile.foregroundHueShift),
+    foregroundMod(worldTile.foregroundMod),
+    foregroundModHueShift(worldTile.foregroundModHueShift),
+    foregroundColorVariant(worldTile.foregroundColorVariant),
+    background(worldTile.background),
+    backgroundHueShift(worldTile.backgroundHueShift),
+    backgroundMod(worldTile.backgroundMod),
+    backgroundModHueShift(worldTile.backgroundModHueShift),
+    backgroundColorVariant(worldTile.backgroundColorVariant),
+    collision(worldTile.collision),
+    collisionCacheDirty(true),
+    blockBiomeIndex(worldTile.blockBiomeIndex),
+    environmentBiomeIndex(worldTile.environmentBiomeIndex),
+    biomeTransition(worldTile.biomeTransition),
+    foregroundDamage(worldTile.foregroundDamage),
+    backgroundDamage(worldTile.backgroundDamage),
+    dungeonId(worldTile.dungeonId) {}
 
 inline WorldTile& WorldTile::operator=(WorldTile other) noexcept {
   swap(*this, other);
@@ -272,9 +288,12 @@ inline tuple<MaterialId, ModId> WorldTile::materialAndMod(TileLayer layer) const
 
 inline ClientTile::ClientTile() : backgroundLightTransparent(true), foregroundLightTransparent(true), gravity() {}
 
-inline ClientTile::ClientTile(ClientTile const& clientTile) : WorldTile() {
-  *this = clientTile;
-}
+inline ClientTile::ClientTile(ClientTile const& clientTile)
+  : WorldTile(clientTile),
+    backgroundLightTransparent(clientTile.backgroundLightTransparent),
+    foregroundLightTransparent(clientTile.foregroundLightTransparent),
+    liquid(clientTile.liquid),
+    gravity(clientTile.gravity) {}
 
 inline ClientTile& ClientTile::operator=(ClientTile other) noexcept {
   swap(*this, other);
