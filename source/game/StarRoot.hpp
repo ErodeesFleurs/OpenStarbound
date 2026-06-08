@@ -8,46 +8,160 @@
 
 namespace Star {
 
-STAR_CLASS(ItemDatabase);
-STAR_CLASS(MaterialDatabase);
-STAR_CLASS(ObjectDatabase);
-STAR_CLASS(PlantDatabase);
-STAR_CLASS(ProjectileDatabase);
-STAR_CLASS(MonsterDatabase);
-STAR_CLASS(NpcDatabase);
-STAR_CLASS(StagehandDatabase);
-STAR_CLASS(VehicleDatabase);
-STAR_CLASS(PlayerFactory);
-STAR_CLASS(EntityFactory);
-STAR_CLASS(TerrainDatabase);
-STAR_CLASS(BiomeDatabase);
-STAR_CLASS(LiquidsDatabase);
-STAR_CLASS(StatusEffectDatabase);
-STAR_CLASS(DamageDatabase);
-STAR_CLASS(ParticleDatabase);
-STAR_CLASS(EffectSourceDatabase);
-STAR_CLASS(FunctionDatabase);
-STAR_CLASS(TreasureDatabase);
-STAR_CLASS(DungeonDefinitions);
-STAR_CLASS(TilesetDatabase);
-STAR_CLASS(StatisticsDatabase);
-STAR_CLASS(EmoteProcessor);
-STAR_CLASS(SpeciesDatabase);
-STAR_CLASS(ImageMetadataDatabase);
-STAR_CLASS(VersioningDatabase);
-STAR_CLASS(QuestTemplateDatabase);
-STAR_CLASS(AiDatabase);
-STAR_CLASS(TechDatabase);
-STAR_CLASS(CodexDatabase);
-STAR_CLASS(BehaviorDatabase);
-STAR_CLASS(TenantDatabase);
-STAR_CLASS(PatternedNameGenerator);
-STAR_CLASS(DanceDatabase);
-STAR_CLASS(SpawnTypeDatabase);
-STAR_CLASS(RadioMessageDatabase);
-STAR_CLASS(CollectionDatabase);
+class ItemDatabase;
+using ItemDatabasePtr = SharedPtr<ItemDatabase>;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 
-STAR_CLASS(Root);
+class MaterialDatabase;
+using MaterialDatabasePtr = SharedPtr<MaterialDatabase>;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
+
+class ObjectDatabase;
+using ObjectDatabasePtr = SharedPtr<ObjectDatabase>;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+
+class PlantDatabase;
+using PlantDatabasePtr = SharedPtr<PlantDatabase>;
+using PlantDatabaseConstPtr = SharedPtr<PlantDatabase const>;
+
+class ProjectileDatabase;
+using ProjectileDatabasePtr = SharedPtr<ProjectileDatabase>;
+using ProjectileDatabaseConstPtr = SharedPtr<ProjectileDatabase const>;
+
+class MonsterDatabase;
+using MonsterDatabasePtr = SharedPtr<MonsterDatabase>;
+using MonsterDatabaseConstPtr = SharedPtr<MonsterDatabase const>;
+
+class NpcDatabase;
+using NpcDatabasePtr = SharedPtr<NpcDatabase>;
+using NpcDatabaseConstPtr = SharedPtr<NpcDatabase const>;
+
+class StagehandDatabase;
+using StagehandDatabasePtr = SharedPtr<StagehandDatabase>;
+using StagehandDatabaseConstPtr = SharedPtr<StagehandDatabase const>;
+
+class VehicleDatabase;
+using VehicleDatabasePtr = SharedPtr<VehicleDatabase>;
+using VehicleDatabaseConstPtr = SharedPtr<VehicleDatabase const>;
+
+class PlayerFactory;
+using PlayerFactoryPtr = SharedPtr<PlayerFactory>;
+using PlayerFactoryConstPtr = SharedPtr<PlayerFactory const>;
+
+class EntityFactory;
+using EntityFactoryPtr = SharedPtr<EntityFactory>;
+using EntityFactoryConstPtr = SharedPtr<EntityFactory const>;
+
+class TerrainDatabase;
+using TerrainDatabasePtr = SharedPtr<TerrainDatabase>;
+using TerrainDatabaseConstPtr = SharedPtr<TerrainDatabase const>;
+
+class BiomeDatabase;
+using BiomeDatabasePtr = SharedPtr<BiomeDatabase>;
+using BiomeDatabaseConstPtr = SharedPtr<BiomeDatabase const>;
+
+class LiquidsDatabase;
+using LiquidsDatabasePtr = SharedPtr<LiquidsDatabase>;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+
+class StatusEffectDatabase;
+using StatusEffectDatabasePtr = SharedPtr<StatusEffectDatabase>;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
+
+class DamageDatabase;
+using DamageDatabasePtr = SharedPtr<DamageDatabase>;
+using DamageDatabaseConstPtr = SharedPtr<DamageDatabase const>;
+
+class ParticleDatabase;
+using ParticleDatabasePtr = SharedPtr<ParticleDatabase>;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+
+class EffectSourceDatabase;
+using EffectSourceDatabasePtr = SharedPtr<EffectSourceDatabase>;
+using EffectSourceDatabaseConstPtr = SharedPtr<EffectSourceDatabase const>;
+
+class FunctionDatabase;
+using FunctionDatabasePtr = SharedPtr<FunctionDatabase>;
+using FunctionDatabaseConstPtr = SharedPtr<FunctionDatabase const>;
+
+class TreasureDatabase;
+using TreasureDatabasePtr = SharedPtr<TreasureDatabase>;
+using TreasureDatabaseConstPtr = SharedPtr<TreasureDatabase const>;
+
+class DungeonDefinitions;
+using DungeonDefinitionsPtr = SharedPtr<DungeonDefinitions>;
+using DungeonDefinitionsConstPtr = SharedPtr<DungeonDefinitions const>;
+
+class TilesetDatabase;
+using TilesetDatabasePtr = SharedPtr<TilesetDatabase>;
+using TilesetDatabaseConstPtr = SharedPtr<TilesetDatabase const>;
+
+class StatisticsDatabase;
+using StatisticsDatabasePtr = SharedPtr<StatisticsDatabase>;
+using StatisticsDatabaseConstPtr = SharedPtr<StatisticsDatabase const>;
+
+class EmoteProcessor;
+using EmoteProcessorPtr = SharedPtr<EmoteProcessor>;
+using EmoteProcessorConstPtr = SharedPtr<EmoteProcessor const>;
+
+class SpeciesDatabase;
+using SpeciesDatabasePtr = SharedPtr<SpeciesDatabase>;
+using SpeciesDatabaseConstPtr = SharedPtr<SpeciesDatabase const>;
+
+class ImageMetadataDatabase;
+using ImageMetadataDatabasePtr = SharedPtr<ImageMetadataDatabase>;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
+
+class VersioningDatabase;
+using VersioningDatabasePtr = SharedPtr<VersioningDatabase>;
+using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
+
+class QuestTemplateDatabase;
+using QuestTemplateDatabasePtr = SharedPtr<QuestTemplateDatabase>;
+using QuestTemplateDatabaseConstPtr = SharedPtr<QuestTemplateDatabase const>;
+
+class AiDatabase;
+using AiDatabasePtr = SharedPtr<AiDatabase>;
+using AiDatabaseConstPtr = SharedPtr<AiDatabase const>;
+
+class TechDatabase;
+using TechDatabasePtr = SharedPtr<TechDatabase>;
+using TechDatabaseConstPtr = SharedPtr<TechDatabase const>;
+
+class CodexDatabase;
+using CodexDatabasePtr = SharedPtr<CodexDatabase>;
+using CodexDatabaseConstPtr = SharedPtr<CodexDatabase const>;
+
+class BehaviorDatabase;
+using BehaviorDatabasePtr = SharedPtr<BehaviorDatabase>;
+using BehaviorDatabaseConstPtr = SharedPtr<BehaviorDatabase const>;
+
+class TenantDatabase;
+using TenantDatabasePtr = SharedPtr<TenantDatabase>;
+using TenantDatabaseConstPtr = SharedPtr<TenantDatabase const>;
+
+class PatternedNameGenerator;
+using PatternedNameGeneratorPtr = SharedPtr<PatternedNameGenerator>;
+using PatternedNameGeneratorConstPtr = SharedPtr<PatternedNameGenerator const>;
+
+class DanceDatabase;
+using DanceDatabasePtr = SharedPtr<DanceDatabase>;
+using DanceDatabaseConstPtr = SharedPtr<DanceDatabase const>;
+
+class SpawnTypeDatabase;
+using SpawnTypeDatabasePtr = SharedPtr<SpawnTypeDatabase>;
+using SpawnTypeDatabaseConstPtr = SharedPtr<SpawnTypeDatabase const>;
+
+class RadioMessageDatabase;
+using RadioMessageDatabasePtr = SharedPtr<RadioMessageDatabase>;
+using RadioMessageDatabaseConstPtr = SharedPtr<RadioMessageDatabase const>;
+
+class CollectionDatabase;
+using CollectionDatabasePtr = SharedPtr<CollectionDatabase>;
+using CollectionDatabaseConstPtr = SharedPtr<CollectionDatabase const>;
+
+class Root;
+using RootUPtr = UniquePtr<Root>;
 
 // Singleton Root object for starbound providing access to the unique
 // Configuration class, as well as the assets, root factories, and databases.
