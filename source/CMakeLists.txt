@@ -570,10 +570,10 @@ if(STAR_BUILD_GUI)
   find_package(OpenGL REQUIRED)
   find_package(GLEW REQUIRED)
 
-  target_include_directories(star_system_includes SYSTEM INTERFACE ${GLEW_INCLUDE_DIR})
+  target_include_directories(star_system_includes SYSTEM INTERFACE ${GLEW_INCLUDE_DIRS})
   target_link_libraries(star_external_gui_libraries INTERFACE
-      ${OPENGL_LIBRARY}
-      $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
+    OpenGL::GL
+    GLEW::GLEW
   )
 
   if(STAR_SYSTEM_MACOS)
