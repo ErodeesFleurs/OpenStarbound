@@ -1,6 +1,4 @@
 add_executable(starbound WIN32
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-  $<TARGET_OBJECTS:star_application> $<TARGET_OBJECTS:star_rendering> $<TARGET_OBJECTS:star_windowing> $<TARGET_OBJECTS:star_frontend>
   StarClientApplication.hpp
   StarRenderingLuaBindings.hpp
   StarClientApplication.cpp
@@ -34,4 +32,15 @@ if(STAR_SYSTEM_MACOS)
   set_target_properties(starbound PROPERTIES XCODE_ATTRIBUTE_ENABLE_HARDENED_RUNTIME YES)
 endif()
 
-target_link_libraries(starbound PRIVATE star_build_definitions star_external_libraries star_external_gui_libraries)
+target_link_libraries(starbound PRIVATE
+  star_extern
+  star_core
+  star_base
+  star_game
+  star_application
+  star_rendering
+  star_windowing
+  star_frontend
+  star_build_definitions
+  star_external_libraries
+  star_external_gui_libraries)
