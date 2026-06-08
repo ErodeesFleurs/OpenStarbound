@@ -1,4 +1,5 @@
-set(star_game_HEADERS
+add_library(star_game OBJECT)
+target_sources(star_game PRIVATE
     StarActorMovementController.hpp
     StarAiDatabase.hpp
     StarAiTypes.hpp
@@ -264,9 +265,6 @@ set(star_game_HEADERS
     terrain/StarRidgeBlocksSelector.hpp
     terrain/StarRotateSelector.hpp
     terrain/StarWormCave.hpp
-  )
-
-set(star_game_SOURCES
     StarActorMovementController.cpp
     StarAiDatabase.cpp
     StarAiTypes.cpp
@@ -511,7 +509,6 @@ set(star_game_SOURCES
     terrain/StarWormCave.cpp
   )
 
-add_library(star_game OBJECT ${star_game_SOURCES} ${star_game_HEADERS})
 target_compile_features(star_game PUBLIC cxx_std_20)
 target_include_directories(star_game PUBLIC
     ${STAR_GAME_INCLUDES}
