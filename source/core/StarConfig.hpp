@@ -73,27 +73,6 @@ constexpr size_t NPos = static_cast<size_t>(-1);
 
 using StreamOffset = int64_t;
 
-// Forward declare a class or struct, and define a lot of typedefs for
-// different pointer types all at once.
-
-#define STAR_CLASS(ClassName)                                     \
-  class ClassName;                                                \
-  using ClassName##Ptr = Star::SharedPtr<ClassName>;              \
-  using ClassName##ConstPtr = Star::SharedPtr<ClassName const>;   \
-  using ClassName##WeakPtr = Star::WeakPtr<ClassName>;            \
-  using ClassName##ConstWeakPtr = Star::WeakPtr<ClassName const>; \
-  using ClassName##UPtr = Star::UniquePtr<ClassName>;             \
-  using ClassName##ConstUPtr = Star::UniquePtr<ClassName const>
-
-#define STAR_STRUCT(StructName)                                     \
-  struct StructName;                                                \
-  using StructName##Ptr = Star::SharedPtr<StructName>;              \
-  using StructName##ConstPtr = Star::SharedPtr<StructName const>;   \
-  using StructName##WeakPtr = Star::WeakPtr<StructName>;            \
-  using StructName##ConstWeakPtr = Star::WeakPtr<StructName const>; \
-  using StructName##UPtr = Star::UniquePtr<StructName>;             \
-  using StructName##ConstUPtr = Star::UniquePtr<StructName const>
-
 #define STAR_QUOTE(name) #name
 #define STAR_STR(macro) STAR_QUOTE(macro)
 
