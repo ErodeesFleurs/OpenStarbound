@@ -519,7 +519,7 @@ TARGET_INCLUDE_DIRECTORIES (star_game PUBLIC
     ${STAR_BASE_INCLUDES}
     ${STAR_CORE_INCLUDES}
     ${STAR_EXTERN_INCLUDES})
-TARGET_LINK_LIBRARIES (star_game PUBLIC star_build_definitions)
+target_link_libraries(star_game PUBLIC star_build_definitions)
 
 IF(STAR_PRECOMPILED_HEADERS)
   TARGET_PRECOMPILE_HEADERS (star_game REUSE_FROM star_core)

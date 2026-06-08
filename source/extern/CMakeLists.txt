@@ -72,5 +72,5 @@ ENDIF()
 
 ADD_LIBRARY (star_extern OBJECT ${star_extern_SOURCES} ${star_extern_HEADERS})
 TARGET_INCLUDE_DIRECTORIES (star_extern PUBLIC ${STAR_EXTERN_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/lua)
-TARGET_LINK_LIBRARIES (star_extern PUBLIC star_build_definitions)
+target_link_libraries(star_extern PUBLIC star_build_definitions)
 SET_TARGET_PROPERTIES (star_extern PROPERTIES UNITY_BUILD OFF)
