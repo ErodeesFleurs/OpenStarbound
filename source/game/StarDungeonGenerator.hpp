@@ -14,9 +14,13 @@ namespace Star {
 struct DungeonExceptionTag { static constexpr char const* typeName = "DungeonException"; };
 using DungeonException = TypedException<StarException, DungeonExceptionTag>;
 
-STAR_CLASS(DungeonGeneratorWorldFacade);
-STAR_CLASS(DungeonDefinition);
-STAR_CLASS(DungeonDefinitions);
+class DungeonGeneratorWorldFacade;
+using DungeonGeneratorWorldFacadePtr = SharedPtr<DungeonGeneratorWorldFacade>;
+class DungeonDefinition;
+using DungeonDefinitionPtr = SharedPtr<DungeonDefinition>;
+using DungeonDefinitionConstPtr = SharedPtr<DungeonDefinition const>;
+class DungeonDefinitions;
+using DungeonDefinitionsPtr = SharedPtr<DungeonDefinitions>;
 
 class DungeonGeneratorWorldFacade {
 public:
@@ -57,13 +61,19 @@ public:
 };
 
 namespace Dungeon {
-  STAR_CLASS(DungeonGeneratorWriter);
-  STAR_CLASS(PartReader);
-  STAR_CLASS(Part);
-  STAR_CLASS(Rule);
-  STAR_CLASS(Brush);
-  STAR_STRUCT(Tile);
-  STAR_CLASS(Connector);
+  class DungeonGeneratorWriter;
+  class PartReader;
+  using PartReaderPtr = SharedPtr<PartReader>;
+  using PartReaderConstPtr = SharedPtr<PartReader const>;
+  class Part;
+  using PartConstPtr = SharedPtr<Part const>;
+  class Rule;
+  using RuleConstPtr = SharedPtr<Rule const>;
+  class Brush;
+  using BrushConstPtr = SharedPtr<Brush const>;
+  struct Tile;
+  class Connector;
+  using ConnectorConstPtr = SharedPtr<Connector const>;
 
   class DungeonGeneratorWriter {
   public:
