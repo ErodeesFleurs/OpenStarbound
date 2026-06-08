@@ -564,10 +564,11 @@ if(STAR_SYSTEM_FAMILY STREQUAL "unix" AND NOT STAR_SYSTEM_HAIKU)
   message(STATUS "Using cpptrace")
 endif()
 
+add_library(star_external_gui_libraries INTERFACE)
 if(STAR_BUILD_GUI)
   find_package(SDL3 CONFIG REQUIRED)
 
-  set(STAR_EXT_GUI_LIBS
+  target_link_libraries(star_external_gui_libraries INTERFACE
     $<TARGET_NAME_IF_EXISTS:SDL3::SDL3main>
     $<IF:$<TARGET_EXISTS:SDL3::SDL3>,SDL3::SDL3,SDL3::SDL3-static>
   )
@@ -576,24 +577,24 @@ if(STAR_BUILD_GUI)
   find_package(GLEW REQUIRED)
 
   list(APPEND STAR_SYSTEM_INCLUDE_DIRS ${GLEW_INCLUDE_DIR})
-  set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS}
+  target_link_libraries(star_external_gui_libraries INTERFACE
       ${OPENGL_LIBRARY}
       $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
   )
 
   if(STAR_SYSTEM_MACOS)
-    set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} "-framework CoreAudio")
+    target_link_libraries(star_external_gui_libraries INTERFACE "-framework CoreAudio")
   endif()
 
   if(STAR_ENABLE_STEAM_INTEGRATION)
     find_package(SteamApi REQUIRED)
     list(APPEND STAR_SYSTEM_INCLUDE_DIRS ${STEAM_API_INCLUDE_DIR})
-    set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${STEAM_API_LIBRARY})
+    target_link_libraries(star_external_gui_libraries INTERFACE ${STEAM_API_LIBRARY})
   endif()
 
   if(STAR_ENABLE_DISCORD_INTEGRATION)
     find_package(DiscordApi REQUIRED)
-    set(STAR_EXT_GUI_LIBS ${STAR_EXT_GUI_LIBS} ${DISCORD_API_LIBRARY})
+    target_link_libraries(star_external_gui_libraries INTERFACE ${DISCORD_API_LIBRARY})
   endif()
 endif()
 
@@ -605,11 +606,6 @@ endif()
 add_library(star_system_libraries INTERFACE)
 if(STAR_SYSTEM_LIBRARIES)
   target_link_libraries(star_system_libraries INTERFACE ${STAR_SYSTEM_LIBRARIES})
-endif()
-
-add_library(star_external_gui_libraries INTERFACE)
-if(STAR_EXT_GUI_LIBS)
-  target_link_libraries(star_external_gui_libraries INTERFACE ${STAR_EXT_GUI_LIBS})
 endif()
 
 add_library(star_build_options INTERFACE)
