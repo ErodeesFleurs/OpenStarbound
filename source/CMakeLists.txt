@@ -50,7 +50,7 @@ set(CMAKE_UNITY_BUILD ${STAR_ENABLE_UNITY_BUILD})
 
 # Update the docstring on CMAKE_BUILD_TYPE to show what options we actually
 # allow
-# SET (CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug RelWithAsserts RelWithDebInfo Release" FORCE)
+# set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug RelWithAsserts RelWithDebInfo Release" FORCE)
 
 # Discover all the relevant environment / system information and place the
 # result in STAR_* cmake variables.

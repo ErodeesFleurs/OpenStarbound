@@ -1,4 +1,4 @@
-SET (star_frontend_HEADERS
+set(star_frontend_HEADERS
     StarActionBar.hpp
     StarAiInterface.hpp
     StarBaseScriptPane.hpp
@@ -52,7 +52,7 @@ SET (star_frontend_HEADERS
     StarWireInterface.hpp
   )
 
-SET (star_frontend_SOURCES
+set(star_frontend_SOURCES
     StarActionBar.cpp
     StarAiInterface.cpp
     StarBaseScriptPane.cpp

@@ -1,4 +1,4 @@
-SET (star_base_HEADERS
+set(star_base_HEADERS
     StarAnimatedPartSet.hpp
     StarAssets.hpp
     StarAssetSource.hpp
@@ -17,7 +17,7 @@ SET (star_base_HEADERS
     scripting/StarImageLuaBindings.hpp
   )
 
-SET (star_base_SOURCES
+set(star_base_SOURCES
     StarAnimatedPartSet.cpp
     StarAssets.cpp
     StarCellularLightArray.cpp

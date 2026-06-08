@@ -1,4 +1,4 @@
-SET (star_extern_HEADERS
+set(star_extern_HEADERS
     curve25519/include/curve25519_dh.h
     curve25519/include/ed25519_signature.h
     curve25519/include/external_calls.h
@@ -13,7 +13,7 @@ SET (star_extern_HEADERS
     xxhash.h
   )
 
-SET (star_extern_SOURCES
+set(star_extern_SOURCES
     curve25519/source/sha512.c
     curve25519/source/curve25519_dh.c
     curve25519/source/curve25519_mehdi.c
@@ -61,11 +61,11 @@ SET (star_extern_SOURCES
 
   
 IF (STAR_USE_RPMALLOC)
-  SET(star_extern_HEADERS ${star_extern_HEADERS}
+  set(star_extern_HEADERS ${star_extern_HEADERS}
     rpmalloc.h
     rpnew.h
   )
-  SET(star_extern_SOURCES ${star_extern_SOURCES}
+  set(star_extern_SOURCES ${star_extern_SOURCES}
     rpmalloc.c
   )
 ENDIF()

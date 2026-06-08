@@ -1,15 +1,15 @@
-SET (star_client_HEADERS
+set(star_client_HEADERS
       StarClientApplication.hpp
       StarRenderingLuaBindings.hpp
     )
 
-SET (star_client_SOURCES
+set(star_client_SOURCES
       StarClientApplication.cpp
       StarRenderingLuaBindings.cpp
     )
 
 IF (STAR_SYSTEM_WINDOWS)
-  SET (star_client_RESOURCES
+  set(star_client_RESOURCES
       starbound.rc
     )
 ENDIF ()

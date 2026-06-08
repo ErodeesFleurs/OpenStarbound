@@ -1,4 +1,4 @@
-SET (star_game_HEADERS
+set(star_game_HEADERS
     StarActorMovementController.hpp
     StarAiDatabase.hpp
     StarAiTypes.hpp
@@ -266,7 +266,7 @@ SET (star_game_HEADERS
     terrain/StarWormCave.hpp
   )
 
-SET (star_game_SOURCES
+set(star_game_SOURCES
     StarActorMovementController.cpp
     StarAiDatabase.cpp
     StarAiTypes.cpp

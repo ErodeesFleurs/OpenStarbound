@@ -1,4 +1,4 @@
-SET (star_core_tests_SOURCES
+set(star_core_tests_SOURCES
       gtest/gtest-all.cc
 
       core_tests_main.cpp
@@ -58,7 +58,7 @@ set_tests_properties(core_tests PROPERTIES
                      LABELS "NoAssets"
                      TIMEOUT 120)
 
-SET (star_game_tests_SOURCES
+set(star_game_tests_SOURCES
       gtest/gtest-all.cc
 
       game_tests_main.cpp
@@ -90,11 +90,11 @@ target_include_directories(game_tests PRIVATE
 target_compile_options(game_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-character-conversion>)
 target_link_libraries(game_tests PRIVATE star_build_definitions star_external_libraries)
 
-SET (STAR_BASE_ASSET_PACKAGE ${PROJECT_SOURCE_DIR}/../assets/packed.pak)
+set(STAR_BASE_ASSET_PACKAGE ${PROJECT_SOURCE_DIR}/../assets/packed.pak)
 IF (EXISTS ${STAR_BASE_ASSET_PACKAGE})
-  SET (STAR_GAME_TEST_RUNTIME_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/game-test-runtime)
-  FILE (MAKE_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs)
-  FILE (WRITE ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/sbinit.config
+  set(STAR_GAME_TEST_RUNTIME_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/game-test-runtime)
+  file(MAKE_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs)
+  file(WRITE ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/sbinit.config
   "{
     \"assetDirectories\" : [
       \"${PROJECT_SOURCE_DIR}/../assets/\",
@@ -123,5 +123,5 @@ IF (EXISTS ${STAR_BASE_ASSET_PACKAGE})
                        TIMEOUT 300
                        RESOURCE_LOCK game_assets)
 ELSE ()
-  MESSAGE (STATUS "Skipping game_tests registration because ${STAR_BASE_ASSET_PACKAGE} was not found")
+  message(STATUS "Skipping game_tests registration because ${STAR_BASE_ASSET_PACKAGE} was not found")
 ENDIF ()

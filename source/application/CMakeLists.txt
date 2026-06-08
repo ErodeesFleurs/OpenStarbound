@@ -1,22 +1,22 @@
-SET (star_application_HEADERS
+set(star_application_HEADERS
     StarApplication.hpp
     StarApplicationController.hpp
     StarMainApplication.hpp
     StarRenderer.hpp
   )
 
-SET (star_application_SOURCES
+set(star_application_SOURCES
     StarApplication.cpp
     StarRenderer.cpp
   )
 
-SET (star_application_HEADERS ${star_application_HEADERS}
+set(star_application_HEADERS ${star_application_HEADERS}
     StarP2PNetworkingService_pc.hpp
     StarPlatformServices_pc.hpp
     StarRenderer_opengl.hpp
   )
 
-SET (star_application_SOURCES ${star_application_SOURCES}
+set(star_application_SOURCES ${star_application_SOURCES}
     StarMainApplication_sdl.cpp
     StarP2PNetworkingService_pc.cpp
     StarPlatformServices_pc.cpp
@@ -24,12 +24,12 @@ SET (star_application_SOURCES ${star_application_SOURCES}
   )
 
 IF (STAR_ENABLE_STEAM_INTEGRATION)
-  SET (star_application_HEADERS ${star_application_HEADERS}
+  set(star_application_HEADERS ${star_application_HEADERS}
       StarDesktopService_pc_steam.hpp
       StarStatisticsService_pc_steam.hpp
       StarUserGeneratedContentService_pc_steam.hpp
     )
-  SET (star_application_SOURCES ${star_application_SOURCES}
+  set(star_application_SOURCES ${star_application_SOURCES}
       StarDesktopService_pc_steam.cpp
       StarStatisticsService_pc_steam.cpp
       StarUserGeneratedContentService_pc_steam.cpp
@@ -37,7 +37,7 @@ IF (STAR_ENABLE_STEAM_INTEGRATION)
 ENDIF ()
 
 IF (STAR_ENABLE_DISCORD_INTEGRATION)
-  SET (star_application_SOURCES ${star_application_SOURCES}
+  set(star_application_SOURCES ${star_application_SOURCES}
       discord/core.cpp
       discord/image_manager.cpp
       discord/lobby_manager.cpp

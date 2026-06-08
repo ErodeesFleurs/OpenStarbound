@@ -1,8 +1,8 @@
-FIND_PACKAGE (Qt5Core)
-FIND_PACKAGE (Qt5Widgets)
+find_package(Qt5Core)
+find_package(Qt5Widgets)
 
-SET (CMAKE_INCLUDE_CURRENT_DIR ON)
-SET (CMAKE_AUTOMOC ON)
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+set(CMAKE_AUTOMOC ON)
 
 add_executable(json_tool WIN32
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core>
@@ -10,5 +10,5 @@ add_executable(json_tool WIN32
 target_include_directories(json_tool PRIVATE ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
 target_link_libraries(json_tool PRIVATE star_build_definitions star_external_libraries Qt5::Core Qt5::Gui Qt5::Widgets)
 
-SET (CMAKE_AUTOMOC OFF)
-SET (CMAKE_INCLUDE_CURRENT_DIR OFF)
+set(CMAKE_AUTOMOC OFF)
+set(CMAKE_INCLUDE_CURRENT_DIR OFF)

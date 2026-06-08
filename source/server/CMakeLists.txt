@@ -1,10 +1,10 @@
-SET (star_server_HEADERS
+set(star_server_HEADERS
     StarServerQueryThread.hpp
     StarServerRconClient.hpp
     StarServerRconThread.hpp
   )
 
-SET (star_server_SOURCES
+set(star_server_SOURCES
     StarServerQueryThread.cpp
     StarServerRconClient.cpp
     StarServerRconThread.cpp
@@ -12,7 +12,7 @@ SET (star_server_SOURCES
   )
 
 IF (STAR_SYSTEM_WINDOWS)
-  SET (star_server_RESOURCES
+  set(star_server_RESOURCES
       starbound_server.rc
     )
 ENDIF ()

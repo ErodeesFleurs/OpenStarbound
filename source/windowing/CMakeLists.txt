@@ -1,4 +1,4 @@
-SET (star_windowing_HEADERS
+set(star_windowing_HEADERS
         StarButtonGroup.hpp
         StarButtonWidget.hpp
         StarCanvasWidget.hpp
@@ -31,7 +31,7 @@ SET (star_windowing_HEADERS
         StarWidgetParsing.hpp
     )
 
-SET (star_windowing_SOURCES
+set(star_windowing_SOURCES
         StarButtonGroup.cpp
         StarButtonWidget.cpp
         StarCanvasWidget.cpp

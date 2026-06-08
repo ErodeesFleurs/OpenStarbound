@@ -1,4 +1,4 @@
-SET (star_core_HEADERS
+set(star_core_HEADERS
     StarAStar.hpp
     StarAlgorithm.hpp
     StarArray.hpp
@@ -132,7 +132,7 @@ SET (star_core_HEADERS
     scripting/StarUtilityLuaBindings.hpp
   )
 
-SET (star_core_SOURCES
+set(star_core_SOURCES
     StarAudio.cpp
     StarAssetPath.cpp
     StarBTreeDatabase.cpp
@@ -195,7 +195,7 @@ SET (star_core_SOURCES
   )
 
 IF (STAR_SYSTEM_FAMILY_UNIX)
-  SET (star_core_SOURCES ${star_core_SOURCES}
+  set(star_core_SOURCES ${star_core_SOURCES}
       StarDynamicLib_unix.cpp
       StarException_unix.cpp
       StarFile_unix.cpp
@@ -205,11 +205,11 @@ IF (STAR_SYSTEM_FAMILY_UNIX)
       StarTime_unix.cpp
     )
 ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
-  SET (star_core_HEADERS ${star_core_HEADERS}
+  set(star_core_HEADERS ${star_core_HEADERS}
       StarString_windows.hpp
     )
 
-  SET (star_core_SOURCES ${star_core_SOURCES}
+  set(star_core_SOURCES ${star_core_SOURCES}
       StarDynamicLib_windows.cpp
       StarFile_windows.cpp
       StarLockFile_windows.cpp
