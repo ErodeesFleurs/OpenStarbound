@@ -9,7 +9,6 @@ namespace Star {
 
 class P2PSocket;
 using P2PSocketPtr = SharedPtr<P2PSocket>;
-using P2PSocketUPtr = UniquePtr<P2PSocket>;
 class P2PNetworkingService;
 using P2PNetworkingServicePtr = SharedPtr<P2PNetworkingService>;
   
@@ -56,10 +55,10 @@ public:
   virtual Maybe<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() = 0;
 
   virtual void setAcceptingP2PConnections(bool acceptingP2PConnections) = 0;
-  virtual List<P2PSocketUPtr> acceptP2PConnections() = 0;
+  virtual List<UniquePtr<P2PSocket>> acceptP2PConnections() = 0;
   virtual void update() = 0;
 
-  virtual Either<String, P2PSocketUPtr> connectToPeer(P2PNetworkingPeerId peerId) = 0;
+  virtual Either<String, UniquePtr<P2PSocket>> connectToPeer(P2PNetworkingPeerId peerId) = 0;
 };
 
 };

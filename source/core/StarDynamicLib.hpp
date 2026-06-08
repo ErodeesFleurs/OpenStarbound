@@ -5,7 +5,6 @@
 namespace Star {
 
 class DynamicLib;
-using DynamicLibUPtr = UniquePtr<DynamicLib>;
 
 class DynamicLib {
 public:
@@ -15,21 +14,21 @@ public:
 
   // Load a dll from the given filename.  If the library is found and
   // succesfully loaded, returns a handle to the library, otherwise nullptr.
-  static DynamicLibUPtr loadLibrary(String const& fileName);
+  static UniquePtr<DynamicLib> loadLibrary(String const& fileName);
 
   // Load a dll from the given name, minus extension.
-  static DynamicLibUPtr loadLibraryBase(String const& baseName);
+  static UniquePtr<DynamicLib> loadLibraryBase(String const& baseName);
 
   // Should return handle to currently running executable.  Will always
   // succeed.
-  static DynamicLibUPtr currentExecutable();
+  static UniquePtr<DynamicLib> currentExecutable();
 
   virtual ~DynamicLib() = default;
 
   virtual void* funcPtr(char const* name) = 0;
 };
 
-inline DynamicLibUPtr DynamicLib::loadLibraryBase(String const& baseName) {
+inline UniquePtr<DynamicLib> DynamicLib::loadLibraryBase(String const& baseName) {
   return loadLibrary(baseName + libraryExtension());
 }
 

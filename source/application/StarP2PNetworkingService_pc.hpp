@@ -22,9 +22,9 @@ public:
   Maybe<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> pullJoinRequest() override;
 
   void setAcceptingP2PConnections(bool acceptingP2PConnections) override;
-  List<P2PSocketUPtr> acceptP2PConnections() override;
+  List<UniquePtr<P2PSocket>> acceptP2PConnections() override;
   void update() override;
-  Either<String, P2PSocketUPtr> connectToPeer(P2PNetworkingPeerId peerId) override;
+  Either<String, UniquePtr<P2PSocket>> connectToPeer(P2PNetworkingPeerId peerId) override;
 
   void addPendingJoin(String connectionString);
 
@@ -89,7 +89,7 @@ private:
     Deque<ByteArray> incoming;
   };
 
-  P2PSocketUPtr discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
+  UniquePtr<P2PSocket> discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret);
   void discordCloseSocket(DiscordP2PSocket* socket);
 
   void discordOnReceiveMessage(discord::LobbyId lobbyId, discord::UserId userId, discord::NetworkChannelId channel, uint8_t* data, uint32_t size);
@@ -106,7 +106,7 @@ private:
   Mutex m_mutex;
   JoinLocation m_joinLocation;
   bool m_acceptingP2PConnections = false;
-  List<P2PSocketUPtr> m_pendingIncomingConnections;
+  List<UniquePtr<P2PSocket>> m_pendingIncomingConnections;
   MVariant<P2PNetworkingPeerId, HostAddressWithPort> m_pendingJoin;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION

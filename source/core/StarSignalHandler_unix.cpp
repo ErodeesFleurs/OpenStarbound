@@ -56,7 +56,7 @@ struct SignalHandlerImpl {
   }
 };
 
-SignalHandlerImplUPtr SignalHandler::s_singleton;
+UniquePtr<SignalHandlerImpl> SignalHandler::s_singleton;
 
 SignalHandler::SignalHandler() {
   if (s_singleton)

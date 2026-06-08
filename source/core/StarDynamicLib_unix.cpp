@@ -30,14 +30,14 @@ String DynamicLib::libraryExtension() {
 #endif
 }
 
-DynamicLibUPtr DynamicLib::loadLibrary(String const& libraryName) {
+UniquePtr<DynamicLib> DynamicLib::loadLibrary(String const& libraryName) {
   void* handle = dlopen(libraryName.utf8Ptr(), RTLD_NOW);
   if (handle == nullptr)
     return {};
   return make_unique<PrivateDynLib>(handle);
 }
 
-DynamicLibUPtr DynamicLib::currentExecutable() {
+UniquePtr<DynamicLib> DynamicLib::currentExecutable() {
   void* handle = dlopen(nullptr, 0);
   starAssert(handle);
   return make_unique<PrivateDynLib>(handle);

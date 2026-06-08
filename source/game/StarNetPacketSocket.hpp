@@ -12,11 +12,8 @@ namespace Star {
 class PacketSocket;
 using PacketSocketUPtr = UniquePtr<PacketSocket>;
 class LocalPacketSocket;
-using LocalPacketSocketUPtr = UniquePtr<LocalPacketSocket>;
 class TcpPacketSocket;
-using TcpPacketSocketUPtr = UniquePtr<TcpPacketSocket>;
 class P2PPacketSocket;
-using P2PPacketSocketUPtr = UniquePtr<P2PPacketSocket>;
 
 struct PacketStats {
   HashMap<PacketType, float> packetBytesPerSecond;
@@ -103,7 +100,7 @@ protected:
 // PacketSocket for local communication.
 class LocalPacketSocket : public PacketSocket {
 public:
-  static pair<LocalPacketSocketUPtr, LocalPacketSocketUPtr> openPair();
+  static pair<UniquePtr<LocalPacketSocket>, UniquePtr<LocalPacketSocket>> openPair();
 
   bool isOpen() const override;
   void close() override;
@@ -133,7 +130,7 @@ private:
 // Wraps a TCP socket into a PacketSocket.
 class TcpPacketSocket : public CompressedPacketSocket {
 public:
-  static TcpPacketSocketUPtr open(TcpSocketPtr socket);
+  static UniquePtr<TcpPacketSocket> open(TcpSocketPtr socket);
 
   bool isOpen() const override;
   void close() override;
@@ -163,7 +160,7 @@ private:
 // Wraps a P2PSocket into a PacketSocket
 class P2PPacketSocket : public CompressedPacketSocket {
 public:
-  static P2PPacketSocketUPtr open(P2PSocketUPtr socket);
+  static UniquePtr<P2PPacketSocket> open(UniquePtr<P2PSocket> socket);
 
   bool isOpen() const override;
   void close() override;

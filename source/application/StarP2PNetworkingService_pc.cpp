@@ -174,7 +174,7 @@ void PcP2PNetworkingService::setAcceptingP2PConnections(bool acceptingP2PConnect
     m_pendingIncomingConnections.clear();
 }
 
-List<P2PSocketUPtr> PcP2PNetworkingService::acceptP2PConnections() {
+List<UniquePtr<P2PSocket>> PcP2PNetworkingService::acceptP2PConnections() {
   MutexLocker serviceLocker(m_mutex);
   return take(m_pendingIncomingConnections);
 }
@@ -213,7 +213,7 @@ void Star::PcP2PNetworkingService::update() {
 #endif
 }
 
-Either<String, P2PSocketUPtr> PcP2PNetworkingService::connectToPeer(P2PNetworkingPeerId peerId) {
+Either<String, UniquePtr<P2PSocket>> PcP2PNetworkingService::connectToPeer(P2PNetworkingPeerId peerId) {
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   MutexLocker discordLocker(m_state->discordMutex);
 #endif
@@ -435,7 +435,7 @@ void PcP2PNetworkingService::discordCloseSocket(DiscordP2PSocket* socket) {
   }
 }
 
-P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret) {
+UniquePtr<P2PSocket> PcP2PNetworkingService::discordConnectRemote(discord::UserId remoteUserId, discord::LobbyId lobbyId, String const& lobbySecret) {
   if (auto oldSocket = m_discordOpenSockets.value(remoteUserId)) {
     MutexLocker socketLocker(oldSocket->mutex);
     discordCloseSocket(oldSocket);
