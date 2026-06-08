@@ -1,4 +1,5 @@
-set(star_extern_HEADERS
+add_library(star_extern OBJECT)
+target_sources(star_extern PRIVATE
     curve25519/include/curve25519_dh.h
     curve25519/include/ed25519_signature.h
     curve25519/include/external_calls.h
@@ -11,9 +12,6 @@ set(star_extern_HEADERS
     luaconf.h
     lualib.h
     xxhash.h
-  )
-
-set(star_extern_SOURCES
     curve25519/source/sha512.c
     curve25519/source/curve25519_dh.c
     curve25519/source/curve25519_mehdi.c
@@ -59,18 +57,14 @@ set(star_extern_SOURCES
     lua/lzio.c
   )
 
-  
 if(STAR_USE_RPMALLOC)
-  set(star_extern_HEADERS ${star_extern_HEADERS}
+  target_sources(star_extern PRIVATE
     rpmalloc.h
     rpnew.h
-  )
-  set(star_extern_SOURCES ${star_extern_SOURCES}
     rpmalloc.c
   )
 endif()
 
-add_library(star_extern OBJECT ${star_extern_SOURCES} ${star_extern_HEADERS})
 target_include_directories(star_extern PUBLIC ${STAR_EXTERN_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/lua)
 target_link_libraries(star_extern PUBLIC star_build_definitions)
 set_target_properties(star_extern PROPERTIES UNITY_BUILD OFF)
