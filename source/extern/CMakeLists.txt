@@ -1,8 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    lua
-  )
-
 SET (star_extern_HEADERS
     curve25519/include/curve25519_dh.h
     curve25519/include/ed25519_signature.h

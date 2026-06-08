@@ -1,13 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_APPLICATION_INCLUDES}
-    ${STAR_RENDERING_INCLUDES}
-  )
-
 SET (star_rendering_HEADERS
       StarAnchorTypes.hpp
       StarAssetTextureGroup.hpp

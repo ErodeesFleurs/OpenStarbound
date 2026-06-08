@@ -1,10 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_APPLICATION_INCLUDES}
-  )
-
 SET (star_application_HEADERS
     StarApplication.hpp
     StarApplicationController.hpp

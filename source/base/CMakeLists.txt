@@ -1,9 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-  )
-
 SET (star_base_HEADERS
     StarAnimatedPartSet.hpp
     StarAssets.hpp

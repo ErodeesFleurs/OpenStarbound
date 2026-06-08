@@ -1,8 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-  )
-
 SET (star_core_HEADERS
     StarAStar.hpp
     StarAlgorithm.hpp

@@ -1,11 +1,3 @@
-INCLUDE_DIRECTORIES (
-    ${STAR_EXTERN_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_GAME_INCLUDES}
-  )
-
 SET (star_server_HEADERS
     StarServerQueryThread.hpp
     StarServerRconClient.hpp
