@@ -10,15 +10,17 @@
 namespace Star {
 
 // Required for renderDummy
-STAR_CLASS(ArmorItem);
-STAR_CLASS(HeadArmor);
-STAR_CLASS(ChestArmor);
-STAR_CLASS(LegsArmor);
-STAR_CLASS(BackArmor);
+class ArmorItem;
+class HeadArmor;
+class ChestArmor;
+class LegsArmor;
+class BackArmor;
 
-STAR_CLASS(Humanoid);
+class Humanoid;
+using HumanoidPtr = SharedPtr<Humanoid>;
 
-STAR_STRUCT(Dance);
+struct Dance;
+using DancePtr = SharedPtr<Dance>;
 
 enum class HumanoidEmote {
   Idle,
