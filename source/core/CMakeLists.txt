@@ -194,7 +194,7 @@ set(star_core_SOURCES
     scripting/StarUtilityLuaBindings.cpp
   )
 
-IF (STAR_SYSTEM_FAMILY_UNIX)
+if(STAR_SYSTEM_FAMILY_UNIX)
   set(star_core_SOURCES ${star_core_SOURCES}
       StarDynamicLib_unix.cpp
       StarException_unix.cpp
@@ -204,7 +204,7 @@ IF (STAR_SYSTEM_FAMILY_UNIX)
       StarSignalHandler_unix.cpp
       StarTime_unix.cpp
     )
-ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
+elseif(STAR_SYSTEM_FAMILY_WINDOWS)
   set(star_core_HEADERS ${star_core_HEADERS}
       StarString_windows.hpp
     )
@@ -221,7 +221,7 @@ ELSEIF (STAR_SYSTEM_FAMILY_WINDOWS)
       StarSecureRandom_windows.cpp
     )
 
-ENDIF ()
+endif()
 
 configure_file(StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 add_library(star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
@@ -229,16 +229,16 @@ target_compile_features(star_core PUBLIC cxx_std_20)
 target_include_directories(star_core PUBLIC ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
 target_link_libraries(star_core PUBLIC star_build_definitions)
 
-IF(STAR_PRECOMPILED_HEADERS)
+if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_core PUBLIC StarPch.hpp)
-ENDIF()
+endif()
 
-IF(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
+if(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
   set_source_files_properties(StarColor.cpp PROPERTIES COMPILE_FLAGS "-fno-fast-math -fassociative-math -freciprocal-math")
-ENDIF()
+endif()
 
-IF(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
+if(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
   set_source_files_properties(StarMemory.cpp PROPERTIES
           COMPILE_DEFINITIONS STAR_JEMALLOC_IS_PREFIXED
           )
-ENDIF()
+endif()

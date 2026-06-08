@@ -120,6 +120,6 @@ target_include_directories(star_frontend PUBLIC
     ${STAR_EXTERN_INCLUDES})
 target_link_libraries(star_frontend PUBLIC star_build_definitions)
 
-IF(STAR_PRECOMPILED_HEADERS)
+if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_frontend REUSE_FROM star_core)
-ENDIF()
+endif()

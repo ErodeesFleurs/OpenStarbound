@@ -60,7 +60,7 @@ set(star_extern_SOURCES
   )
 
   
-IF (STAR_USE_RPMALLOC)
+if(STAR_USE_RPMALLOC)
   set(star_extern_HEADERS ${star_extern_HEADERS}
     rpmalloc.h
     rpnew.h
@@ -68,7 +68,7 @@ IF (STAR_USE_RPMALLOC)
   set(star_extern_SOURCES ${star_extern_SOURCES}
     rpmalloc.c
   )
-ENDIF()
+endif()
 
 add_library(star_extern OBJECT ${star_extern_SOURCES} ${star_extern_HEADERS})
 target_include_directories(star_extern PUBLIC ${STAR_EXTERN_INCLUDES} ${CMAKE_CURRENT_SOURCE_DIR}/lua)

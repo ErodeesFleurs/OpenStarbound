@@ -1,4 +1,4 @@
-FUNCTION (STAR_CONFIGURE_UTILITY_TARGET target)
+function(STAR_CONFIGURE_UTILITY_TARGET target)
   target_compile_features(${target} PRIVATE cxx_std_20)
   target_include_directories(${target} PRIVATE
       ${STAR_GAME_INCLUDES}
@@ -7,7 +7,7 @@ FUNCTION (STAR_CONFIGURE_UTILITY_TARGET target)
       ${STAR_CORE_INCLUDES}
       ${STAR_EXTERN_INCLUDES})
   target_link_libraries(${target} PRIVATE star_build_definitions)
-ENDFUNCTION ()
+endfunction()
 
 add_executable(asset_packer
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>

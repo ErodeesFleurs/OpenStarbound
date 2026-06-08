@@ -38,6 +38,6 @@ target_compile_features(star_base PUBLIC cxx_std_20)
 target_include_directories(star_base PUBLIC ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
 target_link_libraries(star_base PUBLIC star_build_definitions)
 
-IF(STAR_PRECOMPILED_HEADERS)
+if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_base REUSE_FROM star_core)
-ENDIF()
+endif()

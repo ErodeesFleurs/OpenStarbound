@@ -91,7 +91,7 @@ target_compile_options(game_tests PRIVATE $<$<CXX_COMPILER_ID:Clang>:-Wno-charac
 target_link_libraries(game_tests PRIVATE star_build_definitions star_external_libraries)
 
 set(STAR_BASE_ASSET_PACKAGE ${PROJECT_SOURCE_DIR}/../assets/packed.pak)
-IF (EXISTS ${STAR_BASE_ASSET_PACKAGE})
+if(EXISTS ${STAR_BASE_ASSET_PACKAGE})
   set(STAR_GAME_TEST_RUNTIME_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/game-test-runtime)
   file(MAKE_DIRECTORY ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/storage ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/logs)
   file(WRITE ${STAR_GAME_TEST_RUNTIME_DIRECTORY}/sbinit.config
@@ -122,6 +122,6 @@ IF (EXISTS ${STAR_BASE_ASSET_PACKAGE})
                        LABELS "Assets"
                        TIMEOUT 300
                        RESOURCE_LOCK game_assets)
-ELSE ()
+else()
   message(STATUS "Skipping game_tests registration because ${STAR_BASE_ASSET_PACKAGE} was not found")
-ENDIF ()
+endif()

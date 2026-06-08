@@ -11,11 +11,11 @@ set(star_server_SOURCES
     main.cpp
   )
 
-IF (STAR_SYSTEM_WINDOWS)
+if(STAR_SYSTEM_WINDOWS)
   set(star_server_RESOURCES
       starbound_server.rc
     )
-ENDIF ()
+endif()
 
 add_executable(starbound_server
   $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
@@ -28,14 +28,14 @@ target_include_directories(starbound_server PRIVATE
     ${STAR_CORE_INCLUDES}
     ${STAR_EXTERN_INCLUDES})
 
-IF(STAR_PRECOMPILED_HEADERS)
+if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(starbound_server REUSE_FROM star_core)
-ENDIF()
+endif()
 
-IF(STAR_SYSTEM_MACOS)
+if(STAR_SYSTEM_MACOS)
   set_target_properties(starbound_server PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
-ELSEIF (UNIX)
+elseif(UNIX)
   set_target_properties(starbound_server PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
-ENDIF()
+endif()
 
 target_link_libraries(starbound_server PRIVATE star_build_definitions star_external_libraries)
