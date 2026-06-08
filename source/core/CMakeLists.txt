@@ -229,7 +229,9 @@ if(STAR_PRECOMPILED_HEADERS)
 endif()
 
 if(STAR_COMPILER_CLANG AND STAR_SYSTEM_MACOS)
-  set_source_files_properties(StarColor.cpp PROPERTIES COMPILE_FLAGS "-fno-fast-math -fassociative-math -freciprocal-math")
+  set_source_files_properties(StarColor.cpp PROPERTIES
+      COMPILE_OPTIONS "-fno-fast-math;-fassociative-math;-freciprocal-math"
+    )
 endif()
 
 if(STAR_USE_JEMALLOC AND JEMALLOC_IS_PREFIXED)
