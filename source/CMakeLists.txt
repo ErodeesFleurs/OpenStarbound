@@ -328,8 +328,8 @@ function(star_add_config_compile_options config)
 endfunction()
 
 if(STAR_COMPILER_GNU)
-  list(APPEND STAR_C_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough)
-  list(APPEND STAR_CXX_COMPILE_OPTIONS -Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate)
+  star_add_c_compile_options(-Wall -Wextra -Wno-unused -Wno-implicit-fallthrough)
+  star_add_cxx_compile_options(-Wall -Wextra -Wno-unused -Wno-implicit-fallthrough -Wno-array-bounds -Wno-dangling-reference -Wno-maybe-uninitialized -Wno-redundant-move -Wno-tautological-compare -Wno-terminate)
   target_link_options(star_build_options INTERFACE -rdynamic -no-pie)
   star_clear_cmake_config_flags()
 
@@ -344,8 +344,8 @@ if(STAR_COMPILER_GNU)
   endif()
 
   if(STAR_ENABLE_FRAME_POINTERS)
-    list(APPEND STAR_C_COMPILE_OPTIONS -fno-omit-frame-pointer)
-    list(APPEND STAR_CXX_COMPILE_OPTIONS -fno-omit-frame-pointer)
+    star_add_c_compile_options(-fno-omit-frame-pointer)
+    star_add_cxx_compile_options(-fno-omit-frame-pointer)
   endif()
 
   if(STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX)
@@ -353,15 +353,15 @@ if(STAR_COMPILER_GNU)
   endif()
 
   if(STAR_ENABLE_GCC_PROFILING)
-    list(APPEND STAR_C_COMPILE_OPTIONS -pg)
-    list(APPEND STAR_CXX_COMPILE_OPTIONS -pg)
+    star_add_c_compile_options(-pg)
+    star_add_cxx_compile_options(-pg)
     target_link_options(star_build_options INTERFACE -pg)
   endif()
 
-  star_append_config_compile_options(Debug -g -Og)
-  star_append_config_compile_options(RelWithAsserts -g -O3 -ffast-math)
-  star_append_config_compile_options(RelWithDebInfo -g -DNDEBUG -O3 -ffast-math)
-  star_append_config_compile_options(Release -DNDEBUG -O3 -ffast-math)
+  star_add_config_compile_options(Debug -g -Og)
+  star_add_config_compile_options(RelWithAsserts -g -O3 -ffast-math)
+  star_add_config_compile_options(RelWithDebInfo -g -DNDEBUG -O3 -ffast-math)
+  star_add_config_compile_options(Release -DNDEBUG -O3 -ffast-math)
 
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
