@@ -9,8 +9,11 @@
 
 namespace Star {
 
-STAR_STRUCT(LiquidSettings);
-STAR_CLASS(LiquidsDatabase);
+struct LiquidSettings;
+using LiquidSettingsConstPtr = SharedPtr<LiquidSettings const>;
+class LiquidsDatabase;
+using LiquidsDatabasePtr = SharedPtr<LiquidsDatabase>;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
 
 struct LiquidExceptionTag { static constexpr char const* typeName = "LiquidException"; };
 using LiquidException = TypedException<StarException, LiquidExceptionTag>;

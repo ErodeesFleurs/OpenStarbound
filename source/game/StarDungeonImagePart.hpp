@@ -6,8 +6,9 @@ namespace Star {
 
 namespace Dungeon {
 
-  STAR_CLASS(ImagePartReader);
-  STAR_CLASS(ImageTileset);
+  class ImagePartReader;
+  class ImageTileset;
+  using ImageTilesetConstPtr = SharedPtr<ImageTileset const>;
 
   class ImagePartReader : public PartReader {
   public:
