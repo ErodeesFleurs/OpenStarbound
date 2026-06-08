@@ -3,7 +3,7 @@
 #
 #  OGGVORBIS_FOUND - system has OggVorbis
 #  OGGVORBIS_VERSION - set either to 1 or 2
-#  OGGVORBIS_INCLUDE_DIR - the OggVorbis include directory
+#  OGGVORBIS_INCLUDE_DIRS - the OggVorbis include directories
 #  OGGVORBIS_LIBRARIES - The libraries needed to use OggVorbis
 #  OGG_LIBRARY         - The Ogg library
 #  VORBIS_LIBRARY      - The Vorbis library
@@ -14,8 +14,7 @@
 # Redistribution and use is allowed according to the terms of the BSD license.
 # For details see the accompanying COPYING-CMAKE-SCRIPTS file.
 
-
-include(CheckLibraryExists)
+include(FindPackageHandleStandardArgs)
 
 find_path(VORBIS_INCLUDE_DIR vorbis/vorbisfile.h)
 find_path(OGG_INCLUDE_DIR ogg/ogg.h)
@@ -27,31 +26,18 @@ find_library(VORBISFILE_LIBRARY NAMES vorbisfile)
 mark_as_advanced(VORBIS_INCLUDE_DIR OGG_INCLUDE_DIR
                  OGG_LIBRARY VORBIS_LIBRARY VORBISFILE_LIBRARY)
 
+set(OGGVORBIS_INCLUDE_DIRS ${OGG_INCLUDE_DIR} ${VORBIS_INCLUDE_DIR})
+set(OGGVORBIS_INCLUDE_DIR ${VORBIS_INCLUDE_DIR})
+set(OGGVORBIS_LIBRARIES ${OGG_LIBRARY} ${VORBIS_LIBRARY} ${VORBISFILE_LIBRARY})
 
-if(VORBIS_INCLUDE_DIR AND VORBIS_LIBRARY AND VORBISFILE_LIBRARY)
-  set(OGGVORBIS_FOUND TRUE)
+find_package_handle_standard_args(OggVorbis
+  REQUIRED_VARS OGG_INCLUDE_DIR VORBIS_INCLUDE_DIR OGG_LIBRARY VORBIS_LIBRARY VORBISFILE_LIBRARY
+)
 
-  set(OGGVORBIS_LIBRARIES ${OGG_LIBRARY} ${VORBIS_LIBRARY} ${VORBISFILE_LIBRARY})
-
-  set(_CMAKE_REQUIRED_LIBRARIES_TMP ${CMAKE_REQUIRED_LIBRARIES})
-  set(CMAKE_REQUIRED_LIBRARIES ${CMAKE_REQUIRED_LIBRARIES} ${OGGVORBIS_LIBRARIES})
-  set(CMAKE_REQUIRED_LIBRARIES ${_CMAKE_REQUIRED_LIBRARIES_TMP})
-
-else()
-  set(OGGVORBIS_VERSION)
-  set(OGGVORBIS_FOUND FALSE)
-endif()
-
-
-if(OGGVORBIS_FOUND)
-  if(NOT OggVorbis_FIND_QUIETLY)
-    message(STATUS "Found OggVorbis: ${OGGVORBIS_LIBRARIES}")
-  endif()
-else()
-  if(OggVorbis_FIND_REQUIRED)
-    message(FATAL_ERROR "Could NOT find OggVorbis libraries")
-  endif()
-  if(NOT OggVorbis_FIND_QUIETLY)
-    message(STATUS "Could NOT find OggVorbis libraries")
-  endif()
+if(OGGVORBIS_FOUND AND NOT TARGET OggVorbis::OggVorbis)
+  add_library(OggVorbis::OggVorbis INTERFACE IMPORTED)
+  set_target_properties(OggVorbis::OggVorbis PROPERTIES
+    INTERFACE_INCLUDE_DIRECTORIES "${OGGVORBIS_INCLUDE_DIRS}"
+    INTERFACE_LINK_LIBRARIES "${OGGVORBIS_LIBRARIES}"
+  )
 endif()

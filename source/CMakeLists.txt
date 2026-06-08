@@ -524,12 +524,12 @@ find_package(OggVorbis REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 if(NOT STAR_SYSTEM_HAIKU)
-	find_package(Opus CONFIG REQUIRED)
-	find_package(re2 CONFIG REQUIRED)
+  find_package(Opus CONFIG REQUIRED)
+  find_package(re2 CONFIG REQUIRED)
 endif()
 target_include_directories(star_system_includes SYSTEM INTERFACE
     ${FREETYPE_INCLUDE_DIRS}
-    ${OGGVORBIS_INCLUDE_DIR}
+    ${OGGVORBIS_INCLUDE_DIRS}
 )
 
 target_link_libraries(star_external_libraries INTERFACE
@@ -541,9 +541,7 @@ target_link_libraries(star_external_libraries INTERFACE
     $<IF:$<TARGET_EXISTS:Opus::opus>,Opus::opus,opus>
     $<IF:$<TARGET_EXISTS:re2::re2>,re2::re2,re2>
     imgui::imgui
-    ${VORBISFILE_LIBRARY}
-    ${VORBIS_LIBRARY}
-    ${OGG_LIBRARY}
+    OggVorbis::OggVorbis
 )
 
 pkg_check_modules(PKG_WAYLAND "wayland-client>=1.18" wayland-egl wayland-cursor egl "xkbcommon>=0.5.0")
