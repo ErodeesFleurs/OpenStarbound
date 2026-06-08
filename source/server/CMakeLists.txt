@@ -1,5 +1,4 @@
 add_executable(starbound_server
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
   StarServerQueryThread.hpp
   StarServerRconClient.hpp
   StarServerRconThread.hpp
@@ -28,4 +27,4 @@ elseif(UNIX)
   target_link_options(starbound_server PRIVATE "LINKER:--export-dynamic,-rpath,$ORIGIN")
 endif()
 
-target_link_libraries(starbound_server PRIVATE star_build_definitions star_external_libraries)
+target_link_libraries(starbound_server PRIVATE star_extern star_core star_base star_game star_build_definitions star_external_libraries)
