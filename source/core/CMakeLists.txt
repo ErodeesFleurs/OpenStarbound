@@ -1,4 +1,6 @@
-set(star_core_HEADERS
+configure_file(StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
+add_library(star_core OBJECT)
+target_sources(star_core PRIVATE
     StarAStar.hpp
     StarAlgorithm.hpp
     StarArray.hpp
@@ -130,9 +132,6 @@ set(star_core_HEADERS
     StarXXHash.hpp
     StarZSTDCompression.hpp
     scripting/StarUtilityLuaBindings.hpp
-  )
-
-set(star_core_SOURCES
     StarAudio.cpp
     StarAssetPath.cpp
     StarBTreeDatabase.cpp
@@ -192,10 +191,11 @@ set(star_core_SOURCES
     StarWorkerPool.cpp
     StarZSTDCompression.cpp
     scripting/StarUtilityLuaBindings.cpp
+    ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp
   )
 
 if(STAR_SYSTEM_FAMILY_UNIX)
-  set(star_core_SOURCES ${star_core_SOURCES}
+  target_sources(star_core PRIVATE
       StarDynamicLib_unix.cpp
       StarException_unix.cpp
       StarFile_unix.cpp
@@ -205,11 +205,8 @@ if(STAR_SYSTEM_FAMILY_UNIX)
       StarTime_unix.cpp
     )
 elseif(STAR_SYSTEM_FAMILY_WINDOWS)
-  set(star_core_HEADERS ${star_core_HEADERS}
+  target_sources(star_core PRIVATE
       StarString_windows.hpp
-    )
-
-  set(star_core_SOURCES ${star_core_SOURCES}
       StarDynamicLib_windows.cpp
       StarFile_windows.cpp
       StarLockFile_windows.cpp
@@ -223,8 +220,6 @@ elseif(STAR_SYSTEM_FAMILY_WINDOWS)
 
 endif()
 
-configure_file(StarVersion.cpp.in ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
-add_library(star_core OBJECT ${star_core_SOURCES} ${star_core_HEADERS} ${CMAKE_CURRENT_BINARY_DIR}/StarVersion.cpp)
 target_compile_features(star_core PUBLIC cxx_std_20)
 target_include_directories(star_core PUBLIC ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
 target_link_libraries(star_core PUBLIC star_build_definitions)
