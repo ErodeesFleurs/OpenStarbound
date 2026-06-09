@@ -512,11 +512,8 @@ target_sources(star_game PRIVATE
 target_compile_features(star_game PUBLIC cxx_std_20)
 target_include_directories(star_game PUBLIC
     ${STAR_GAME_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_EXTERN_INCLUDES})
-target_link_libraries(star_game PUBLIC star_build_definitions)
+    ${STAR_PLATFORM_INCLUDES})
+target_link_libraries(star_game PUBLIC star_base star_build_definitions)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_game REUSE_FROM star_core)
