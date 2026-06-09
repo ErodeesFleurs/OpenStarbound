@@ -98,22 +98,22 @@ bool CanvasWidget::sendEvent(InputEvent const& event) {
   if (!m_visible)
     return false;
 
-  auto& context = GuiContext::singleton();
-  auto interfaceScale = m_ignoreInterfaceScale ? 1 : context.interfaceScale();
+  auto* context = this->context();
+  auto interfaceScale = m_ignoreInterfaceScale ? 1 : context->interfaceScale();
   if (auto mouseButtonDown = event.ptr<MouseButtonDownEvent>()) {
-    if (inMember(*context.mousePosition(event, interfaceScale)) && m_captureMouse) {
-      m_clickEvents.append({*context.mousePosition(event, interfaceScale) - screenPosition(), mouseButtonDown->mouseButton, true});
+    if (inMember(*context->mousePosition(event, interfaceScale)) && m_captureMouse) {
+      m_clickEvents.append({*context->mousePosition(event, interfaceScale) - screenPosition(), mouseButtonDown->mouseButton, true});
       m_clickEvents.limitSizeBack(MaximumEventBuffer);
       return true;
     }
   } else if (auto mouseButtonUp = event.ptr<MouseButtonUpEvent>()) {
     if (m_captureMouse) {
-      m_clickEvents.append({*context.mousePosition(event, interfaceScale) - screenPosition(), mouseButtonUp->mouseButton, false});
+      m_clickEvents.append({*context->mousePosition(event, interfaceScale) - screenPosition(), mouseButtonUp->mouseButton, false});
       m_clickEvents.limitSizeBack(MaximumEventBuffer);
       return true;
     }
   } else if (event.is<MouseMoveEvent>()) {
-    m_mousePosition = *context.mousePosition(event, interfaceScale) - screenPosition();
+    m_mousePosition = *context->mousePosition(event, interfaceScale) - screenPosition();
     return false;
   } else if (auto keyDown = event.ptr<KeyDownEvent>()) {
     if (m_captureKeyboard) {
@@ -161,41 +161,41 @@ void CanvasWidget::renderImpl() {
 }
 
 void CanvasWidget::renderImage(Vec2F const& renderingOffset, String const& texName, Vec2F const& position, float scale, Vec4B const& color, bool centered) {
-  auto& context = GuiContext::singleton();
-  auto texSize = Vec2F(context.textureSize(texName));
+  auto* context = this->context();
+  auto texSize = Vec2F(context->textureSize(texName));
   Vec2F pos = centered ? (position - scale * texSize / 2.0f) : position;
 
   RectF screenCoords;
   if (m_ignoreInterfaceScale)
     screenCoords = RectF::withSize(renderingOffset + pos, texSize * scale);
   else
-    screenCoords = RectF::withSize(renderingOffset * context.interfaceScale() + pos * context.interfaceScale(), texSize * scale * context.interfaceScale());
+    screenCoords = RectF::withSize(renderingOffset * context->interfaceScale() + pos * context->interfaceScale(), texSize * scale * context->interfaceScale());
 
-  context.drawQuad(texName, screenCoords, color);
+  context->drawQuad(texName, screenCoords, color);
 }
 
 void CanvasWidget::renderImageRect(Vec2F const& renderingOffset, String const& texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
-  auto& context = GuiContext::singleton();
+  auto* context = this->context();
   if (m_ignoreInterfaceScale)
-    context.drawQuad(texName, texCoords, screenCoords.translated(renderingOffset), color);
+    context->drawQuad(texName, texCoords, screenCoords.translated(renderingOffset), color);
   else
-    context.drawQuad(texName, texCoords, screenCoords.scaled(context.interfaceScale()).translated(renderingOffset * context.interfaceScale()), color);
+    context->drawQuad(texName, texCoords, screenCoords.scaled(context->interfaceScale()).translated(renderingOffset * context->interfaceScale()), color);
 }
 
 void CanvasWidget::renderDrawable(Vec2F const& renderingOffset, Drawable drawable, Vec2F const& screenPos) {
-  auto& context = GuiContext::singleton();
+  auto* context = this->context();
   if (m_ignoreInterfaceScale)
-    context.drawDrawable(std::move(drawable), renderingOffset + screenPos, 1);
+    context->drawDrawable(std::move(drawable), renderingOffset + screenPos, 1);
   else {
-    drawable.scale(context.interfaceScale());
-    context.drawDrawable(std::move(drawable), renderingOffset * context.interfaceScale() + screenPos * context.interfaceScale(), 1);
+    drawable.scale(context->interfaceScale());
+    context->drawDrawable(std::move(drawable), renderingOffset * context->interfaceScale() + screenPos * context->interfaceScale(), 1);
   }
 }
 
 void CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color) {
-  auto& context = GuiContext::singleton();
+  auto* context = this->context();
 
-  Vec2F texSize = Vec2F(context.textureSize(texName));
+  Vec2F texSize = Vec2F(context->textureSize(texName));
   Vec2F texScaledSize = texSize * textureScale;
   Vec2I textureCount = Vec2I::ceil(screenCoords.size().piecewiseDivide(texScaledSize)) + Vec2I(2, 2);
   Vec2F screenLowerLeft = screenCoords.min() - Vec2F(pfmod<double>(texScaledSize[0] - offset[0], texScaledSize[0]), pfmod<double>(texScaledSize[1] - offset[1], texScaledSize[1]));
@@ -217,68 +217,68 @@ void CanvasWidget::renderTiledImage(Vec2F const& renderingOffset, String const& 
         continue;
 
       if (m_ignoreInterfaceScale)
-        context.drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset), color);
+        context->drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset), color);
       else
-        context.drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset).scaled(context.interfaceScale()), color);
+        context->drawQuad(texName, limitedTexRect, limitedScreenRect.translated(renderingOffset).scaled(context->interfaceScale()), color);
     }
   }
 }
 
 void CanvasWidget::renderLine(Vec2F const& renderingOffset, Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
-  auto& context = GuiContext::singleton();
+  auto* context = this->context();
   if (m_ignoreInterfaceScale)
-    context.drawLine(renderingOffset + begin, renderingOffset + end, color, lineWidth);
+    context->drawLine(renderingOffset + begin, renderingOffset + end, color, lineWidth);
   else {
-    context.drawLine(
-      renderingOffset * context.interfaceScale() + begin * context.interfaceScale(),
-      renderingOffset * context.interfaceScale() + end * context.interfaceScale(),
+    context->drawLine(
+      renderingOffset * context->interfaceScale() + begin * context->interfaceScale(),
+      renderingOffset * context->interfaceScale() + end * context->interfaceScale(),
       color, lineWidth);
   }
 }
 
 void CanvasWidget::renderRect(Vec2F const& renderingOffset, RectF const& coords, Vec4B const& color) {
-  auto& context = GuiContext::singleton();
+  auto* context = this->context();
 
   if (m_ignoreInterfaceScale)
-    context.drawQuad(coords.translated(renderingOffset), color);
+    context->drawQuad(coords.translated(renderingOffset), color);
   else
-    context.drawQuad(coords.scaled(context.interfaceScale()).translated(renderingOffset * context.interfaceScale()), color);
+    context->drawQuad(coords.scaled(context->interfaceScale()).translated(renderingOffset * context->interfaceScale()), color);
 }
 
 void CanvasWidget::renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B const& color, float lineWidth) {
-  auto& context = GuiContext::singleton();
+  auto* context = this->context();
   poly.translate(renderingOffset);
   if (m_ignoreInterfaceScale)
-    context.drawPolyLines(poly, color, lineWidth);
+    context->drawPolyLines(poly, color, lineWidth);
   else
-    context.drawInterfacePolyLines(poly, color, lineWidth);
+    context->drawInterfacePolyLines(poly, color, lineWidth);
 }
 
 void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
-  auto& context = GuiContext::singleton();
+  auto* context = this->context();
   auto translated = triangles.transformed([&renderingOffset](tuple<Vec2F, Vec2F, Vec2F> const& poly) {
       return tuple<Vec2F, Vec2F, Vec2F>(get<0>(poly) + renderingOffset,
         get<1>(poly) + renderingOffset,
         get<2>(poly) + renderingOffset);
     });
   if (m_ignoreInterfaceScale)
-    context.drawTriangles(translated, color);
+    context->drawTriangles(translated, color);
   else
-    context.drawInterfaceTriangles(translated, color);
+    context->drawInterfaceTriangles(translated, color);
 }
 
 void CanvasWidget::renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, TextStyle const& style) {
-  auto& context = GuiContext::singleton();
-  context.setTextStyle(style, m_ignoreInterfaceScale ? 1 : context.interfaceScale());
+  auto* context = this->context();
+  context->setTextStyle(style, m_ignoreInterfaceScale ? 1 : context->interfaceScale());
 
   TextPositioning translatedPosition = position;
   translatedPosition.pos += renderingOffset;
   if (m_ignoreInterfaceScale)
-    context.renderText(s, translatedPosition);
+    context->renderText(s, translatedPosition);
   else
-    context.renderInterfaceText(s, translatedPosition);
+    context->renderInterfaceText(s, translatedPosition);
 
-  context.clearTextStyle();
+  context->clearTextStyle();
 }
 
 }

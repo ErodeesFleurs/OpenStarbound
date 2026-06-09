@@ -71,20 +71,20 @@ void FuelWidget::renderImpl() {
   context()->drawInterfaceQuad("/interface/fuel/fuelgauge.png", shift(0, fuel, entireTex), shift(0, fuel, entirePosition));
   context()->drawInterfaceQuad("/interface/fuel/fuelgaugemarkings.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
 
-  auto& guiContext = GuiContext::singleton();
-  guiContext.setTextStyle(m_textStyle);
+  auto* guiContext = context();
+  guiContext->setTextStyle(m_textStyle);
   if (m_potential != 0) {
-    guiContext.setFontColor(Color::White.toRgba());
+    guiContext->setFontColor(Color::White.toRgba());
   } else if (m_fuelLevel == 0) {
     if ((m_requested != 0) && (m_requested == m_fuelLevel))
-      guiContext.setFontColor(Color::Orange.toRgba());
+      guiContext->setFontColor(Color::Orange.toRgba());
     else
-      guiContext.setFontColor(Color::Red.toRgba());
+      guiContext->setFontColor(Color::Red.toRgba());
   } else {
-    guiContext.setFontColor(Color::White.toRgba());
+    guiContext->setFontColor(Color::White.toRgba());
   }
 
-  guiContext.renderInterfaceText(strf("Fuel {}/{}", std::min(m_fuelLevel + m_potential, m_maxLevel), static_cast<int>(m_maxLevel)),
+  guiContext->renderInterfaceText(strf("Fuel {}/{}", std::min(m_fuelLevel + m_potential, m_maxLevel), static_cast<int>(m_maxLevel)),
       {textPosition, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor});
 }
 
