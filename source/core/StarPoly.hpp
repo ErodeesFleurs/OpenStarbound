@@ -547,15 +547,15 @@ typename Polygon<DataType>::IntersectResult Polygon<DataType>::satIntersection(P
     DataType targetProjectionHigh = std::numeric_limits<DataType>::lowest();
 
     for (auto const& v : m_vertexes) {
-      DataType p = axis[0] * v[0] + axis[1] * v[1];
-      if (p < myProjectionLow)
-        myProjectionLow = p;
+      DataType proj = axis[0] * v[0] + axis[1] * v[1];
+      if (proj < myProjectionLow)
+        myProjectionLow = proj;
     }
 
     for (auto const& v : p.m_vertexes) {
-      DataType p = axis[0] * v[0] + axis[1] * v[1];
-      if (p > targetProjectionHigh)
-        targetProjectionHigh = p;
+      DataType proj = axis[0] * v[0] + axis[1] * v[1];
+      if (proj > targetProjectionHigh)
+        targetProjectionHigh = proj;
     }
 
     float overlap = targetProjectionHigh - myProjectionLow;
@@ -610,15 +610,15 @@ typename Polygon<DataType>::IntersectResult Polygon<DataType>::directionalSatInt
     DataType targetProjectionHigh = std::numeric_limits<DataType>::lowest();
 
     for (auto const& v : m_vertexes) {
-      DataType p = axis[0] * v[0] + axis[1] * v[1];
-      if (p < myProjectionLow)
-        myProjectionLow = p;
+      DataType proj = axis[0] * v[0] + axis[1] * v[1];
+      if (proj < myProjectionLow)
+        myProjectionLow = proj;
     }
 
     for (auto const& v : p.m_vertexes) {
-      DataType p = axis[0] * v[0] + axis[1] * v[1];
-      if (p > targetProjectionHigh)
-        targetProjectionHigh = p;
+      DataType proj = axis[0] * v[0] + axis[1] * v[1];
+      if (proj > targetProjectionHigh)
+        targetProjectionHigh = proj;
     }
 
     float overlap = targetProjectionHigh - myProjectionLow;

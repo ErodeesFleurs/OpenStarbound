@@ -1291,8 +1291,8 @@ void ClientApplication::updateRunning(float dt) {
       m_mainInterface->handleInteractAction(interactAction);
 
     if (m_universeServer) {
-      if (auto p2pNetworkingService = app->p2pNetworkingService()) {
-        for (auto& p2pClient : p2pNetworkingService->acceptP2PConnections())
+      if (auto p2pService = app->p2pNetworkingService()) {
+        for (auto& p2pClient : p2pService->acceptP2PConnections())
           m_universeServer->addClient(UniverseConnection(P2PPacketSocket::open(std::move(p2pClient))));
       }
 

@@ -656,19 +656,19 @@ public:
             if (hex.size() == 4) {
               write('\\');
               write('u');
-              for (auto c : hex) {
-                write(c);
+              for (auto ch : hex) {
+                write(ch);
               }
             } else if (hex.size() == 8) {
               write('\\');
               write('u');
-              for (auto c : hex.substr(0, 4)) {
-                write(c);
+              for (auto ch : hex.substr(0, 4)) {
+                write(ch);
               }
               write('\\');
               write('u');
-              for (auto c : hex.substr(4)) {
-                write(c);
+              for (auto ch : hex.substr(4)) {
+                write(ch);
               }
             } else {
               throw UnicodeException("Internal Error: Received invalid unicode hex from hexStringFromUtf32.");

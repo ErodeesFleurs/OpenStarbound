@@ -399,9 +399,9 @@ void TechController::TechAnimator::blankNetDelta(float interpolationTime) {
   netGroup.blankNetDelta(interpolationTime);
 }
 
-void TechController::TechAnimator::setVisible(bool visible) {
-  this->visible.set(visible);
-  if (!visible)
+void TechController::TechAnimator::setVisible(bool vis) {
+  this->visible.set(vis);
+  if (!vis)
     dynamicTarget.stopAudio();
 }
 

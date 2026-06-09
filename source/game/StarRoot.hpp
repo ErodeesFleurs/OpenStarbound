@@ -313,7 +313,7 @@ private:
   Settings m_settings;
 
   Mutex m_modsMutex;
-  StringList m_modDirectories;
+  StringList m_modDirectories __attribute__((guarded_by(m_modsMutex)));
 
   ListenerGroup m_reloadListeners;
 
@@ -325,124 +325,124 @@ private:
   ConditionVariable m_maintenanceStopCondition;
   bool m_stopMaintenanceThread;
 
-  AssetsPtr m_assets;
+  AssetsPtr m_assets __attribute__((guarded_by(m_assetsMutex)));
   Mutex m_assetsMutex;
 
-  ConfigurationPtr m_configuration;
+  ConfigurationPtr m_configuration __attribute__((guarded_by(m_configurationMutex)));
   Mutex m_configurationMutex;
 
-  ObjectDatabasePtr m_objectDatabase;
+  ObjectDatabasePtr m_objectDatabase __attribute__((guarded_by(m_objectDatabaseMutex)));
   Mutex m_objectDatabaseMutex;
 
-  PlantDatabasePtr m_plantDatabase;
+  PlantDatabasePtr m_plantDatabase __attribute__((guarded_by(m_plantDatabaseMutex)));
   Mutex m_plantDatabaseMutex;
 
-  ProjectileDatabasePtr m_projectileDatabase;
+  ProjectileDatabasePtr m_projectileDatabase __attribute__((guarded_by(m_projectileDatabaseMutex)));
   Mutex m_projectileDatabaseMutex;
 
-  MonsterDatabasePtr m_monsterDatabase;
+  MonsterDatabasePtr m_monsterDatabase __attribute__((guarded_by(m_monsterDatabaseMutex)));
   Mutex m_monsterDatabaseMutex;
 
-  NpcDatabasePtr m_npcDatabase;
+  NpcDatabasePtr m_npcDatabase __attribute__((guarded_by(m_npcDatabaseMutex)));
   Mutex m_npcDatabaseMutex;
 
-  StagehandDatabasePtr m_stagehandDatabase;
+  StagehandDatabasePtr m_stagehandDatabase __attribute__((guarded_by(m_stagehandDatabaseMutex)));
   Mutex m_stagehandDatabaseMutex;
 
-  VehicleDatabasePtr m_vehicleDatabase;
+  VehicleDatabasePtr m_vehicleDatabase __attribute__((guarded_by(m_vehicleDatabaseMutex)));
   Mutex m_vehicleDatabaseMutex;
 
-  PlayerFactoryPtr m_playerFactory;
+  PlayerFactoryPtr m_playerFactory __attribute__((guarded_by(m_playerFactoryMutex)));
   Mutex m_playerFactoryMutex;
 
-  EntityFactoryPtr m_entityFactory;
+  EntityFactoryPtr m_entityFactory __attribute__((guarded_by(m_entityFactoryMutex)));
   Mutex m_entityFactoryMutex;
 
-  PatternedNameGeneratorPtr m_nameGenerator;
+  PatternedNameGeneratorPtr m_nameGenerator __attribute__((guarded_by(m_nameGeneratorMutex)));
   Mutex m_nameGeneratorMutex;
 
-  ItemDatabasePtr m_itemDatabase;
+  ItemDatabasePtr m_itemDatabase __attribute__((guarded_by(m_itemDatabaseMutex)));
   Mutex m_itemDatabaseMutex;
 
-  MaterialDatabasePtr m_materialDatabase;
+  MaterialDatabasePtr m_materialDatabase __attribute__((guarded_by(m_materialDatabaseMutex)));
   Mutex m_materialDatabaseMutex;
 
-  TerrainDatabasePtr m_terrainDatabase;
+  TerrainDatabasePtr m_terrainDatabase __attribute__((guarded_by(m_terrainDatabaseMutex)));
   Mutex m_terrainDatabaseMutex;
 
-  BiomeDatabasePtr m_biomeDatabase;
+  BiomeDatabasePtr m_biomeDatabase __attribute__((guarded_by(m_biomeDatabaseMutex)));
   Mutex m_biomeDatabaseMutex;
 
-  LiquidsDatabasePtr m_liquidsDatabase;
+  LiquidsDatabasePtr m_liquidsDatabase __attribute__((guarded_by(m_liquidsDatabaseMutex)));
   Mutex m_liquidsDatabaseMutex;
 
-  StatusEffectDatabasePtr m_statusEffectDatabase;
+  StatusEffectDatabasePtr m_statusEffectDatabase __attribute__((guarded_by(m_statusEffectDatabaseMutex)));
   Mutex m_statusEffectDatabaseMutex;
 
-  DamageDatabasePtr m_damageDatabase;
+  DamageDatabasePtr m_damageDatabase __attribute__((guarded_by(m_damageDatabaseMutex)));
   Mutex m_damageDatabaseMutex;
 
-  ParticleDatabasePtr m_particleDatabase;
+  ParticleDatabasePtr m_particleDatabase __attribute__((guarded_by(m_particleDatabaseMutex)));
   Mutex m_particleDatabaseMutex;
 
-  EffectSourceDatabasePtr m_effectSourceDatabase;
+  EffectSourceDatabasePtr m_effectSourceDatabase __attribute__((guarded_by(m_effectSourceDatabaseMutex)));
   Mutex m_effectSourceDatabaseMutex;
 
-  FunctionDatabasePtr m_functionDatabase;
+  FunctionDatabasePtr m_functionDatabase __attribute__((guarded_by(m_functionDatabaseMutex)));
   Mutex m_functionDatabaseMutex;
 
-  TreasureDatabasePtr m_treasureDatabase;
+  TreasureDatabasePtr m_treasureDatabase __attribute__((guarded_by(m_treasureDatabaseMutex)));
   Mutex m_treasureDatabaseMutex;
 
-  DungeonDefinitionsPtr m_dungeonDefinitions;
+  DungeonDefinitionsPtr m_dungeonDefinitions __attribute__((guarded_by(m_dungeonDefinitionsMutex)));
   Mutex m_dungeonDefinitionsMutex;
 
-  TilesetDatabasePtr m_tilesetDatabase;
+  TilesetDatabasePtr m_tilesetDatabase __attribute__((guarded_by(m_tilesetDatabaseMutex)));
   Mutex m_tilesetDatabaseMutex;
 
-  StatisticsDatabasePtr m_statisticsDatabase;
+  StatisticsDatabasePtr m_statisticsDatabase __attribute__((guarded_by(m_statisticsDatabaseMutex)));
   Mutex m_statisticsDatabaseMutex;
 
-  EmoteProcessorPtr m_emoteProcessor;
+  EmoteProcessorPtr m_emoteProcessor __attribute__((guarded_by(m_emoteProcessorMutex)));
   Mutex m_emoteProcessorMutex;
 
-  SpeciesDatabasePtr m_speciesDatabase;
+  SpeciesDatabasePtr m_speciesDatabase __attribute__((guarded_by(m_speciesDatabaseMutex)));
   Mutex m_speciesDatabaseMutex;
 
-  ImageMetadataDatabasePtr m_imageMetadataDatabase;
+  ImageMetadataDatabasePtr m_imageMetadataDatabase __attribute__((guarded_by(m_imageMetadataDatabaseMutex)));
   Mutex m_imageMetadataDatabaseMutex;
 
-  VersioningDatabasePtr m_versioningDatabase;
+  VersioningDatabasePtr m_versioningDatabase __attribute__((guarded_by(m_versioningDatabaseMutex)));
   Mutex m_versioningDatabaseMutex;
 
-  QuestTemplateDatabasePtr m_questTemplateDatabase;
+  QuestTemplateDatabasePtr m_questTemplateDatabase __attribute__((guarded_by(m_questTemplateDatabaseMutex)));
   Mutex m_questTemplateDatabaseMutex;
 
-  AiDatabasePtr m_aiDatabase;
+  AiDatabasePtr m_aiDatabase __attribute__((guarded_by(m_aiDatabaseMutex)));
   Mutex m_aiDatabaseMutex;
 
-  TechDatabasePtr m_techDatabase;
+  TechDatabasePtr m_techDatabase __attribute__((guarded_by(m_techDatabaseMutex)));
   Mutex m_techDatabaseMutex;
 
-  CodexDatabasePtr m_codexDatabase;
+  CodexDatabasePtr m_codexDatabase __attribute__((guarded_by(m_codexDatabaseMutex)));
   Mutex m_codexDatabaseMutex;
 
-  BehaviorDatabasePtr m_behaviorDatabase;
+  BehaviorDatabasePtr m_behaviorDatabase __attribute__((guarded_by(m_behaviorDatabaseMutex)));
   Mutex m_behaviorDatabaseMutex;
 
-  TenantDatabasePtr m_tenantDatabase;
+  TenantDatabasePtr m_tenantDatabase __attribute__((guarded_by(m_tenantDatabaseMutex)));
   Mutex m_tenantDatabaseMutex;
 
-  DanceDatabasePtr m_danceDatabase;
+  DanceDatabasePtr m_danceDatabase __attribute__((guarded_by(m_danceDatabaseMutex)));
   Mutex m_danceDatabaseMutex;
 
-  SpawnTypeDatabasePtr m_spawnTypeDatabase;
+  SpawnTypeDatabasePtr m_spawnTypeDatabase __attribute__((guarded_by(m_spawnTypeDatabaseMutex)));
   Mutex m_spawnTypeDatabaseMutex;
 
-  RadioMessageDatabasePtr m_radioMessageDatabase;
+  RadioMessageDatabasePtr m_radioMessageDatabase __attribute__((guarded_by(m_radioMessageDatabaseMutex)));
   Mutex m_radioMessageDatabaseMutex;
 
-  CollectionDatabasePtr m_collectionDatabase;
+  CollectionDatabasePtr m_collectionDatabase __attribute__((guarded_by(m_collectionDatabaseMutex)));
   Mutex m_collectionDatabaseMutex;
 };
 

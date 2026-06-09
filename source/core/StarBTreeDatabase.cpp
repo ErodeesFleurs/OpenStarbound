@@ -1206,8 +1206,8 @@ bool BTreeDatabase::flattenVisitor(BTreeImpl::Index& index, BlockIndex& count) {
         bool leafNeedsStore = m_availableBlocks.first() < indexPointer;
 
         if (!leafNeedsStore)
-          for (size_t i = 0; !leafNeedsStore && i != tailBlocks.size(); ++i)
-            if (m_availableBlocks.first() < tailBlocks[i])
+          for (size_t j = 0; !leafNeedsStore && j != tailBlocks.size(); ++j)
+            if (m_availableBlocks.first() < tailBlocks[j])
               leafNeedsStore = true;
 
         if (leafNeedsStore) {

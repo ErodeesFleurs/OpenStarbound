@@ -1162,10 +1162,10 @@ namespace LuaDetail {
       if (auto l = ret.ptr<LuaValue>()) {
         return {engine.luaTo<T>(*l)};
       } else if (auto vec = ret.ptr<LuaVariadic<LuaValue>>()) {
-        LuaVariadic<T> ret(vec->size());
+        LuaVariadic<T> result(vec->size());
         for (size_t i = 0; i < vec->size(); ++i)
-          ret[i] = engine.luaTo<T>((*vec)[i]);
-        return ret;
+          result[i] = engine.luaTo<T>((*vec)[i]);
+        return result;
       } else {
         return {};
       }
