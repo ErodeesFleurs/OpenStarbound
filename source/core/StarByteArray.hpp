@@ -33,6 +33,7 @@ public:
   ByteArray();
   ByteArray(size_t dataSize, char c);
   ByteArray(char const* data, size_t dataSize);
+  explicit ByteArray(std::span<char const> data) : ByteArray(data.data(), data.size()) {}
   ByteArray(ByteArray const& b);
   ByteArray(ByteArray&& b) noexcept;
   ~ByteArray();

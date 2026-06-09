@@ -17,6 +17,7 @@
 #include <atomic>
 #include <string>
 #include <string_view>
+#include <span>
 #include <iterator>
 #include <type_traits>
 #include <vector>

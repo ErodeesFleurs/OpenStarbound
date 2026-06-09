@@ -26,13 +26,13 @@ public:
     bool glances;
   };
 
-  Line() {}
+  constexpr Line() {}
 
   template <typename T2>
-  explicit Line(Line<T2, N> const& line)
+  constexpr explicit Line(Line<T2, N> const& line)
     : m_min(line.min()), m_max(line.max()) {}
 
-  Line(VectorType const& a, VectorType const& b)
+  constexpr Line(VectorType const& a, VectorType const& b)
     : m_min(a), m_max(b) {}
 
   VectorType direction() const {
@@ -47,43 +47,43 @@ public:
     return diff().angle();
   }
 
-  VectorType eval(T t) const {
+  constexpr VectorType eval(T t) const {
     return m_min + diff() * t;
   }
 
-  VectorType diff() const {
+  constexpr VectorType diff() const {
     return (m_max - m_min);
   }
 
-  VectorType center() const {
+  constexpr VectorType center() const {
     return (m_min + m_max) / 2;
   }
 
-  void setCenter(VectorType c) {
+  constexpr void setCenter(VectorType c) {
     return translate(c - center());
   }
 
-  VectorType& min() {
+  constexpr VectorType& min() {
     return m_min;
   }
 
-  VectorType& max() {
+  constexpr VectorType& max() {
     return m_max;
   }
 
-  VectorType const& min() const {
+  constexpr VectorType const& min() const {
     return m_min;
   }
 
-  VectorType const& max() const {
+  constexpr VectorType const& max() const {
     return m_max;
   }
 
-  VectorType midpoint() const {
+  constexpr VectorType midpoint() const {
     return (m_max + m_min) / 2;
   }
 
-  bool makePositive() {
+  constexpr bool makePositive() {
     bool changed = false;
     for (unsigned i = 0; i < N; i++) {
       if (m_min[i] < m_max[i]) {
@@ -97,29 +97,29 @@ public:
     return changed;
   }
 
-  void reverse() {
+  constexpr void reverse() {
     std::swap(m_min, m_max);
   }
 
-  Line reversed() {
+  constexpr Line reversed() {
     return Line(m_max, m_min);
   }
 
-  void translate(VectorType const& trans) {
+  constexpr void translate(VectorType const& trans) {
     m_min += trans;
     m_max += trans;
   }
 
-  Line translated(VectorType const& trans) {
+  constexpr Line translated(VectorType const& trans) {
     return Line(m_min + trans, m_max + trans);
   }
 
-  void scale(VectorType const& s, VectorType const& c = VectorType()) {
+  constexpr void scale(VectorType const& s, VectorType const& c = VectorType()) {
     m_min = vmult(m_min - c, s) + c;
     m_max = vmult(m_max - c, s) + c;
   }
 
-  void scale(T s, VectorType const& c = VectorType()) {
+  constexpr void scale(T s, VectorType const& c = VectorType()) {
     scale(VectorType::filled(s), c);
   }
 
@@ -213,7 +213,7 @@ public:
   // Returns t value for closest point on the line.  t value is *not* clamped
   // from 0.0 to 1.0
   template <size_t P = N>
-  std::enable_if_t<P == 2 && N == P, T> lineProjection(VectorType const& l2) const {
+  constexpr std::enable_if_t<P == 2 && N == P, T> lineProjection(VectorType const& l2) const {
     VectorType d = diff();
     return ((l2[0] - min()[0]) * d[0] + (l2[1] - min()[1]) * d[1]) / d.magnitudeSquared();
   }
@@ -235,24 +235,24 @@ public:
   }
 
   template <typename T2, size_t P = N>
-  std::enable_if_t<P == 2 && N == P, void> transform(Matrix3<T2> const& transform) {
+  constexpr std::enable_if_t<P == 2 && N == P, void> transform(Matrix3<T2> const& transform) {
     min() = transform.transformVec2(min());
     max() = transform.transformVec2(max());
   }
 
   template <typename T2, size_t P = N>
-  std::enable_if_t<P == 2 && N == P, Line> transformed(Matrix3<T2> const& transform) const {
+  constexpr std::enable_if_t<P == 2 && N == P, Line> transformed(Matrix3<T2> const& transform) const {
     return Line(transform.transformVec2(min()), transform.transformVec2(max()));
   }
 
   template <size_t P = N>
-  std::enable_if_t<P == 2 && N == P, void> flipHorizontal(T horizontalPos) {
+  constexpr std::enable_if_t<P == 2 && N == P, void> flipHorizontal(T horizontalPos) {
     m_min[0] = horizontalPos + (horizontalPos - m_min[0]);
     m_max[0] = horizontalPos + (horizontalPos - m_max[0]);
   }
 
   template <size_t P = N>
-  std::enable_if_t<P == 2 && N == P, void> flipVertical(T verticalPos) {
+  constexpr std::enable_if_t<P == 2 && N == P, void> flipVertical(T verticalPos) {
     m_min[1] = verticalPos + (verticalPos - m_min[1]);
     m_max[1] = verticalPos + (verticalPos - m_max[1]);
   }

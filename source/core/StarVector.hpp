@@ -30,7 +30,7 @@ public:
   template <size_t P, typename T2 = void>
   using Enable4DOrHigher = std::enable_if_t<P >= 4 && N == P, T2>;
 
-  static Vector filled(T const& t);
+  static constexpr Vector filled(T const& t);
 
   template <typename T2>
   static Vector floor(Vector<T2, N> const& v);
@@ -42,43 +42,43 @@ public:
   static Vector round(Vector<T2, N> const& v);
 
   template <typename Iterator>
-  static Vector copyFrom(Iterator p);
+  static constexpr Vector copyFrom(Iterator p);
 
   // Is zero-initialized (from Array)
-  Vector();
+  constexpr Vector();
 
-  explicit Vector(T const& e1);
+  explicit constexpr Vector(T const& e1);
 
   template <typename... TN>
-  Vector(T const& e1, TN const&... rest);
+  constexpr Vector(T const& e1, TN const&... rest);
 
   template <typename T2>
-  explicit Vector(Array<T2, N> const& v);
+  explicit constexpr Vector(Array<T2, N> const& v);
 
   template <typename T2, typename T3>
-  Vector(Array<T2, N - 1> const& u, T3 const& v);
+  constexpr Vector(Array<T2, N - 1> const& u, T3 const& v);
 
   template <size_t N2>
-  Vector<T, N2> toSize() const;
-  Vector<T, 2> vec2() const;
-  Vector<T, 3> vec3() const;
-  Vector<T, 4> vec4() const;
+  constexpr Vector<T, N2> toSize() const;
+  constexpr Vector<T, 2> vec2() const;
+  constexpr Vector<T, 3> vec3() const;
+  constexpr Vector<T, 4> vec4() const;
 
-  Vector piecewiseMultiply(Vector const& v2) const;
-  Vector piecewiseDivide(Vector const& v2) const;
+  constexpr Vector piecewiseMultiply(Vector const& v2) const;
+  constexpr Vector piecewiseDivide(Vector const& v2) const;
 
-  Vector piecewiseMin(Vector const& v2) const;
-  Vector piecewiseMax(Vector const& v2) const;
-  Vector piecewiseClamp(Vector const& min, Vector const& max) const;
+  constexpr Vector piecewiseMin(Vector const& v2) const;
+  constexpr Vector piecewiseMax(Vector const& v2) const;
+  constexpr Vector piecewiseClamp(Vector const& min, Vector const& max) const;
 
-  T min() const;
-  T max() const;
+  constexpr T min() const;
+  constexpr T max() const;
 
-  T sum() const;
-  T product() const;
+  constexpr T sum() const;
+  constexpr T product() const;
 
   template <typename Function>
-  Vector combine(Vector const& v, Function f) const;
+  constexpr Vector combine(Vector const& v, Function f) const;
 
   // Outputs angles in the range [0, pi]
   T angleBetween(Vector const& v) const;
@@ -86,7 +86,7 @@ public:
   // Angle between two normalized vectors.
   T angleBetweenNormalized(Vector const& v) const;
 
-  T magnitudeSquared() const;
+  constexpr T magnitudeSquared() const;
   T magnitude() const;
 
   void normalize();
@@ -94,12 +94,12 @@ public:
 
   Vector projectOnto(Vector const& v) const;
 
-  Vector projectOntoNormalized(Vector const& v) const;
+  constexpr Vector projectOntoNormalized(Vector const& v) const;
 
-  void negate();
+  constexpr void negate();
 
   // Reverses order of components of vector
-  void reverse();
+  constexpr void reverse();
 
   Vector abs() const;
   Vector floor() const;
@@ -107,7 +107,7 @@ public:
   Vector round() const;
 
   void fill(T const& v);
-  void clamp(T const& min, T const& max);
+  constexpr void clamp(T const& min, T const& max);
 
   template <typename Function>
   void transform(Function&& function);
@@ -115,17 +115,17 @@ public:
   template <typename Function>
   Vector<decltype(std::declval<Function>()(std::declval<T>())), N> transformed(Function&& function) const;
 
-  Vector operator-() const;
+  constexpr Vector operator-() const;
 
-  Vector operator+(Vector const& v) const;
-  Vector operator-(Vector const& v) const;
-  T operator*(Vector const& v) const;
-  Vector operator*(T s) const;
-  Vector operator/(T s) const;
-  Vector& operator+=(Vector const& v);
-  Vector& operator-=(Vector const& v);
-  Vector& operator*=(T s);
-  Vector& operator/=(T s);
+  constexpr Vector operator+(Vector const& v) const;
+  constexpr Vector operator-(Vector const& v) const;
+  constexpr T operator*(Vector const& v) const;
+  constexpr Vector operator*(T s) const;
+  constexpr Vector operator/(T s) const;
+  constexpr Vector& operator+=(Vector const& v);
+  constexpr Vector& operator-=(Vector const& v);
+  constexpr Vector& operator*=(T s);
+  constexpr Vector& operator/=(T s);
 
   // Vector2
 
@@ -145,7 +145,7 @@ public:
 
   // Faster than rotate(Constants::pi/2).
   template <size_t P = N>
-  Enable2D<P, Vector> rot90() const;
+  constexpr Enable2D<P, Vector> rot90() const;
 
   // Angle of vector on 2d plane, in the range [-pi, pi]
   template <size_t P = N>
@@ -160,14 +160,14 @@ public:
   Enable2D<P, Vector> toCartesian() const;
 
   template <size_t P = N>
-  Enable2DOrHigher<P, T> const& x() const;
+  constexpr Enable2DOrHigher<P, T> const& x() const;
   template <size_t P = N>
-  Enable2DOrHigher<P, T> const& y() const;
+  constexpr Enable2DOrHigher<P, T> const& y() const;
 
   template <size_t P = N>
-  Enable2DOrHigher<P> setX(T const& t);
+  constexpr Enable2DOrHigher<P> setX(T const& t);
   template <size_t P = N>
-  Enable2DOrHigher<P> setY(T const& t);
+  constexpr Enable2DOrHigher<P> setY(T const& t);
 
   // Vector3
 
@@ -176,7 +176,7 @@ public:
   template <size_t P = N>
   static Enable3D<P, Vector> fromAnglesEnu(T psi, T theta);
   template <size_t P = N>
-  static Enable3D<P, T> tripleScalarProduct(Vector const& u, Vector const& v, Vector const& w);
+  static constexpr Enable3D<P, T> tripleScalarProduct(Vector const& u, Vector const& v, Vector const& w);
   template <size_t P = N>
   static Enable3D<P, T> angle(Vector const& v1, Vector const& v2);
 
@@ -193,23 +193,23 @@ public:
   Enable3D<P, T> thetaEnu() const;
 
   template <size_t P = N>
-  Enable3D<P, Vector> nedToEnu() const;
+  constexpr Enable3D<P, Vector> nedToEnu() const;
   template <size_t P = N>
-  Enable3D<P, Vector> enuToNed() const;
+  constexpr Enable3D<P, Vector> enuToNed() const;
 
   template <size_t P = N>
-  Enable3DOrHigher<P, T> const& z() const;
+  constexpr Enable3DOrHigher<P, T> const& z() const;
 
   template <size_t P = N>
-  Enable3DOrHigher<P> setZ(T const& t);
+  constexpr Enable3DOrHigher<P> setZ(T const& t);
 
   // Vector4
 
   template <size_t P = N>
-  Enable4DOrHigher<P, T> const& w() const;
+  constexpr Enable4DOrHigher<P, T> const& w() const;
 
   template <size_t P = N>
-  Enable4DOrHigher<P> setW(T const& t);
+  constexpr Enable4DOrHigher<P> setW(T const& t);
 
   using Base::size;
   using Base::empty;
@@ -240,7 +240,7 @@ template <typename T, size_t N>
 std::ostream& operator<<(std::ostream& os, Vector<T, N> const& v);
 
 template <typename T, size_t N>
-Vector<T, N> operator*(T s, Vector<T, N> v);
+constexpr Vector<T, N> operator*(T s, Vector<T, N> v);
 
 template <typename T, size_t N>
 Vector<T, N> vnorm(Vector<T, N> v);
@@ -249,36 +249,36 @@ template <typename T, size_t N>
 T vmag(Vector<T, N> const& v);
 
 template <typename T, size_t N>
-T vmagSquared(Vector<T, N> const& v);
+constexpr T vmagSquared(Vector<T, N> const& v);
 
 template <typename T, size_t N>
-Vector<T, N> vmin(Vector<T, N> const& a, Vector<T, N> const& b);
+constexpr Vector<T, N> vmin(Vector<T, N> const& a, Vector<T, N> const& b);
 
 template <typename T, size_t N>
-Vector<T, N> vmax(Vector<T, N> const& a, Vector<T, N> const& b);
+constexpr Vector<T, N> vmax(Vector<T, N> const& a, Vector<T, N> const& b);
 
 template <typename T, size_t N>
-Vector<T, N> vclamp(Vector<T, N> const& a, Vector<T, N> const& min, Vector<T, N> const& max);
+constexpr Vector<T, N> vclamp(Vector<T, N> const& a, Vector<T, N> const& min, Vector<T, N> const& max);
 
 template <typename VectorType>
-VectorType vmult(VectorType const& a, VectorType const& b);
+constexpr VectorType vmult(VectorType const& a, VectorType const& b);
 
 template <typename VectorType>
-VectorType vdiv(VectorType const& a, VectorType const& b);
+constexpr VectorType vdiv(VectorType const& a, VectorType const& b);
 
 // Returns the cross product
 template <typename T>
-Vector<T, 3> operator^(Vector<T, 3> v1, Vector<T, 3> v2);
+constexpr Vector<T, 3> operator^(Vector<T, 3> v1, Vector<T, 3> v2);
 
 // Returns the cross product / determinant
 template <typename T>
-T operator^(Vector<T, 2> const& v1, Vector<T, 2> const& v2);
+constexpr T operator^(Vector<T, 2> const& v1, Vector<T, 2> const& v2);
 
 template <typename T, size_t N>
 struct hash<Vector<T, N>> : hash<Array<T, N>> {};
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::filled(T const& t) {
+constexpr Vector<T, N> Vector<T, N>::filled(T const& t) {
   Vector v;
   for (size_t i = 0; i < N; ++i)
     v[i] = t;
@@ -314,7 +314,7 @@ Vector<T, N> Vector<T, N>::round(Vector<T2, N> const& v) {
 
 template <typename T, size_t N>
 template <typename Iterator>
-Vector<T, N> Vector<T, N>::copyFrom(Iterator p) {
+constexpr Vector<T, N> Vector<T, N>::copyFrom(Iterator p) {
   Vector v;
   for (size_t i = 0; i < N; ++i)
     v[i] = *(p++);
@@ -322,25 +322,25 @@ Vector<T, N> Vector<T, N>::copyFrom(Iterator p) {
 }
 
 template <typename T, size_t N>
-Vector<T, N>::Vector() {}
+constexpr Vector<T, N>::Vector() {}
 
 template <typename T, size_t N>
-Vector<T, N>::Vector(T const& e1)
+constexpr Vector<T, N>::Vector(T const& e1)
   : Base(e1) {}
 
 template <typename T, size_t N>
 template <typename... TN>
-Vector<T, N>::Vector(T const& e1, TN const&... rest)
+constexpr Vector<T, N>::Vector(T const& e1, TN const&... rest)
   : Base(e1, rest...) {}
 
 template <typename T, size_t N>
 template <typename T2>
-Vector<T, N>::Vector(Array<T2, N> const& v)
+constexpr Vector<T, N>::Vector(Array<T2, N> const& v)
   : Base(v) {}
 
 template <typename T, size_t N>
 template <typename T2, typename T3>
-Vector<T, N>::Vector(Array<T2, N - 1> const& u, T3 const& v) {
+constexpr Vector<T, N>::Vector(Array<T2, N - 1> const& u, T3 const& v) {
   for (size_t i = 0; i < N - 1; ++i) {
     Base::operator[](i) = u[i];
   }
@@ -349,7 +349,7 @@ Vector<T, N>::Vector(Array<T2, N - 1> const& u, T3 const& v) {
 
 template <typename T, size_t N>
 template <size_t N2>
-Vector<T, N2> Vector<T, N>::toSize() const {
+constexpr Vector<T, N2> Vector<T, N>::toSize() const {
   Vector<T, N2> r;
   size_t ns = Star::min(N2, N);
   for (size_t i = 0; i < ns; ++i)
@@ -358,32 +358,32 @@ Vector<T, N2> Vector<T, N>::toSize() const {
 }
 
 template <typename T, size_t N>
-Vector<T, 2> Vector<T, N>::vec2() const {
+constexpr Vector<T, 2> Vector<T, N>::vec2() const {
   return toSize<2>();
 }
 
 template <typename T, size_t N>
-Vector<T, 3> Vector<T, N>::vec3() const {
+constexpr Vector<T, 3> Vector<T, N>::vec3() const {
   return toSize<3>();
 }
 
 template <typename T, size_t N>
-Vector<T, 4> Vector<T, N>::vec4() const {
+constexpr Vector<T, 4> Vector<T, N>::vec4() const {
   return toSize<4>();
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::piecewiseMultiply(Vector const& v2) const {
+constexpr Vector<T, N> Vector<T, N>::piecewiseMultiply(Vector const& v2) const {
   return combine(v2, std::multiplies<T>());
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::piecewiseDivide(Vector const& v2) const {
+constexpr Vector<T, N> Vector<T, N>::piecewiseDivide(Vector const& v2) const {
   return combine(v2, std::divides<T>());
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::piecewiseMin(Vector const& v2) const {
+constexpr Vector<T, N> Vector<T, N>::piecewiseMin(Vector const& v2) const {
   Vector r;
   for (size_t i = 0; i < N; ++i)
     r[i] = Star::min((*this)[i], v2[i]);
@@ -391,7 +391,7 @@ Vector<T, N> Vector<T, N>::piecewiseMin(Vector const& v2) const {
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::piecewiseMax(Vector const& v2) const {
+constexpr Vector<T, N> Vector<T, N>::piecewiseMax(Vector const& v2) const {
   Vector r;
   for (size_t i = 0; i < N; ++i)
     r[i] = Star::max((*this)[i], v2[i]);
@@ -399,7 +399,7 @@ Vector<T, N> Vector<T, N>::piecewiseMax(Vector const& v2) const {
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::piecewiseClamp(Vector const& min, Vector const& max) const {
+constexpr Vector<T, N> Vector<T, N>::piecewiseClamp(Vector const& min, Vector const& max) const {
   Vector r;
   for (size_t i = 0; i < N; ++i)
     r[i] = Star::max(Star::min((*this)[i], max[i]), min[i]);
@@ -407,7 +407,7 @@ Vector<T, N> Vector<T, N>::piecewiseClamp(Vector const& min, Vector const& max) 
 }
 
 template <typename T, size_t N>
-T Vector<T, N>::min() const {
+constexpr T Vector<T, N>::min() const {
   T s = (*this)[0];
   for (size_t i = 1; i < N; ++i)
     s = Star::min(s, (*this)[i]);
@@ -415,7 +415,7 @@ T Vector<T, N>::min() const {
 }
 
 template <typename T, size_t N>
-T Vector<T, N>::max() const {
+constexpr T Vector<T, N>::max() const {
   T s = (*this)[0];
   for (size_t i = 1; i < N; ++i)
     s = Star::max(s, (*this)[i]);
@@ -423,7 +423,7 @@ T Vector<T, N>::max() const {
 }
 
 template <typename T, size_t N>
-T Vector<T, N>::sum() const {
+constexpr T Vector<T, N>::sum() const {
   T s = (*this)[0];
   for (size_t i = 1; i < N; ++i)
     s += (*this)[i];
@@ -431,7 +431,7 @@ T Vector<T, N>::sum() const {
 }
 
 template <typename T, size_t N>
-T Vector<T, N>::product() const {
+constexpr T Vector<T, N>::product() const {
   T p = (*this)[0];
   for (size_t i = 1; i < N; ++i)
     p *= (*this)[i];
@@ -440,7 +440,7 @@ T Vector<T, N>::product() const {
 
 template <typename T, size_t N>
 template <typename Function>
-Vector<T, N> Vector<T, N>::combine(Vector const& v, Function f) const {
+constexpr Vector<T, N> Vector<T, N>::combine(Vector const& v, Function f) const {
   Vector r;
   for (size_t i = 0; i < N; ++i)
     r[i] = f((*this)[i], v[i]);
@@ -458,7 +458,7 @@ T Vector<T, N>::angleBetweenNormalized(Vector const& v) const {
 }
 
 template <typename T, size_t N>
-T Vector<T, N>::magnitudeSquared() const {
+constexpr T Vector<T, N>::magnitudeSquared() const {
   T m = 0;
   for (size_t i = 0; i < N; ++i)
     m += square((*this)[i]);
@@ -496,19 +496,19 @@ Vector<T, N> Vector<T, N>::projectOnto(Vector const& v) const {
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::projectOntoNormalized(Vector const& v) const {
+constexpr Vector<T, N> Vector<T, N>::projectOntoNormalized(Vector const& v) const {
   return ((*this) * v) * v;
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::operator-() const {
+constexpr Vector<T, N> Vector<T, N>::operator-() const {
   auto v = *this;
   v.negate();
   return v;
 }
 
 template <typename T, size_t N>
-void Vector<T, N>::negate() {
+constexpr void Vector<T, N>::negate() {
   for (size_t i = 0; i < N; ++i)
     (*this)[i] = -(*this)[i];
 }
@@ -537,7 +537,7 @@ Vector<T, N> Vector<T, N>::round() const {
 }
 
 template <typename T, size_t N>
-void Vector<T, N>::reverse() {
+constexpr void Vector<T, N>::reverse() {
   std::reverse(Base::begin(), Base::end());
 }
 
@@ -547,7 +547,7 @@ void Vector<T, N>::fill(T const& v) {
 }
 
 template <typename T, size_t N>
-void Vector<T, N>::clamp(T const& min, T const& max) {
+constexpr void Vector<T, N>::clamp(T const& min, T const& max) {
   for (size_t i = 0; i < N; ++i)
     (*this)[i] = Star::max(min, Star::min(max, (*this)[i]));
 }
@@ -566,7 +566,7 @@ Vector<decltype(std::declval<Function>()(std::declval<T>())), N> Vector<T, N>::t
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::operator+(Vector const& v) const {
+constexpr Vector<T, N> Vector<T, N>::operator+(Vector const& v) const {
   Vector r;
   for (size_t i = 0; i < N; ++i)
     r[i] = (*this)[i] + v[i];
@@ -574,7 +574,7 @@ Vector<T, N> Vector<T, N>::operator+(Vector const& v) const {
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::operator-(Vector const& v) const {
+constexpr Vector<T, N> Vector<T, N>::operator-(Vector const& v) const {
   Vector r;
   for (size_t i = 0; i < N; ++i)
     r[i] = (*this)[i] - v[i];
@@ -582,7 +582,7 @@ Vector<T, N> Vector<T, N>::operator-(Vector const& v) const {
 }
 
 template <typename T, size_t N>
-T Vector<T, N>::operator*(Vector const& v) const {
+constexpr T Vector<T, N>::operator*(Vector const& v) const {
   T sum = 0;
   for (size_t i = 0; i < N; ++i)
     sum += (*this)[i] * v[i];
@@ -590,7 +590,7 @@ T Vector<T, N>::operator*(Vector const& v) const {
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::operator*(T s) const {
+constexpr Vector<T, N> Vector<T, N>::operator*(T s) const {
   Vector r;
   for (size_t i = 0; i < N; ++i)
     r[i] = (*this)[i] * s;
@@ -598,7 +598,7 @@ Vector<T, N> Vector<T, N>::operator*(T s) const {
 }
 
 template <typename T, size_t N>
-Vector<T, N> Vector<T, N>::operator/(T s) const {
+constexpr Vector<T, N> Vector<T, N>::operator/(T s) const {
   Vector r;
   for (size_t i = 0; i < N; ++i)
     r[i] = (*this)[i] / s;
@@ -606,22 +606,22 @@ Vector<T, N> Vector<T, N>::operator/(T s) const {
 }
 
 template <typename T, size_t N>
-Vector<T, N>& Vector<T, N>::operator+=(Vector const& v) {
+constexpr Vector<T, N>& Vector<T, N>::operator+=(Vector const& v) {
   return (*this = *this + v);
 }
 
 template <typename T, size_t N>
-Vector<T, N>& Vector<T, N>::operator-=(Vector const& v) {
+constexpr Vector<T, N>& Vector<T, N>::operator-=(Vector const& v) {
   return (*this = *this - v);
 }
 
 template <typename T, size_t N>
-Vector<T, N>& Vector<T, N>::operator*=(T s) {
+constexpr Vector<T, N>& Vector<T, N>::operator*=(T s) {
   return (*this = *this * s);
 }
 
 template <typename T, size_t N>
-Vector<T, N>& Vector<T, N>::operator/=(T s) {
+constexpr Vector<T, N>& Vector<T, N>::operator/=(T s) {
   return (*this = *this / s);
 }
 
@@ -672,7 +672,7 @@ auto Vector<T, N>::rotate(T a) const -> Enable2D<P, Vector<T, N>> {
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::rot90() const -> Enable2D<P, Vector<T, N>> {
+constexpr auto Vector<T, N>::rot90() const -> Enable2D<P, Vector<T, N>> {
   return Vector(-y(), x());
 }
 
@@ -690,25 +690,25 @@ auto Vector<T, N>::toCartesian() const -> Enable2D<P, Vector<T, N>> {
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::x() const -> Enable2DOrHigher<P, T> const & {
+constexpr auto Vector<T, N>::x() const -> Enable2DOrHigher<P, T> const & {
   return Base::operator[](0);
 }
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::y() const -> Enable2DOrHigher<P, T> const & {
+constexpr auto Vector<T, N>::y() const -> Enable2DOrHigher<P, T> const & {
   return Base::operator[](1);
 }
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::setX(T const& t) -> Enable2DOrHigher<P> {
+constexpr auto Vector<T, N>::setX(T const& t) -> Enable2DOrHigher<P> {
   Base::operator[](0) = t;
 }
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::setY(T const& t) -> Enable2DOrHigher<P> {
+constexpr auto Vector<T, N>::setY(T const& t) -> Enable2DOrHigher<P> {
   Base::operator[](1) = t;
 }
 
@@ -716,7 +716,7 @@ auto Vector<T, N>::setY(T const& t) -> Enable2DOrHigher<P> {
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::tripleScalarProduct(Vector const& a, Vector const& b, Vector const& c) -> Enable3D<P, T> {
+constexpr auto Vector<T, N>::tripleScalarProduct(Vector const& a, Vector const& b, Vector const& c) -> Enable3D<P, T> {
   return a * (b ^ c);
 }
 
@@ -813,25 +813,25 @@ auto Vector<T, N>::angle(Vector const& v1, Vector const& v2) -> Enable3D<P, T> {
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::nedToEnu() const -> Enable3D<P, Vector<T, N>> {
+constexpr auto Vector<T, N>::nedToEnu() const -> Enable3D<P, Vector<T, N>> {
   return Vector(y(), x(), -z());
 }
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::enuToNed() const -> Enable3D<P, Vector<T, N>> {
+constexpr auto Vector<T, N>::enuToNed() const -> Enable3D<P, Vector<T, N>> {
   return Vector(y(), x(), -z());
 }
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::z() const -> Enable3DOrHigher<P, T> const & {
+constexpr auto Vector<T, N>::z() const -> Enable3DOrHigher<P, T> const & {
   return Base::operator[](2);
 }
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::setZ(T const& t) -> Enable3DOrHigher<P> {
+constexpr auto Vector<T, N>::setZ(T const& t) -> Enable3DOrHigher<P> {
   Base::operator[](2) = t;
 }
 
@@ -839,13 +839,13 @@ auto Vector<T, N>::setZ(T const& t) -> Enable3DOrHigher<P> {
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::w() const -> Enable4DOrHigher<P, T> const & {
+constexpr auto Vector<T, N>::w() const -> Enable4DOrHigher<P, T> const & {
   return Base::operator[](3);
 }
 
 template <typename T, size_t N>
 template <size_t P>
-auto Vector<T, N>::setW(T const& t) -> Enable4DOrHigher<P> {
+constexpr auto Vector<T, N>::setW(T const& t) -> Enable4DOrHigher<P> {
   Base::operator[](3) = t;
 }
 
@@ -871,7 +871,7 @@ struct std::formatter<Star::Vector<T, N>> : Star::OstreamFormatter {};
 namespace Star {
 
 template <typename T, size_t N>
-Vector<T, N> operator*(T s, Vector<T, N> v) {
+constexpr Vector<T, N> operator*(T s, Vector<T, N> v) {
   return v * s;
 }
 
@@ -886,42 +886,42 @@ T vmag(Vector<T, N> const& v) {
 }
 
 template <typename T, size_t N>
-T vmagSquared(Vector<T, N> const& v) {
+constexpr T vmagSquared(Vector<T, N> const& v) {
   return v.magnitudeSquared();
 }
 
 template <typename T, size_t N>
-Vector<T, N> vmin(Vector<T, N> const& a, Vector<T, N> const& b) {
+constexpr Vector<T, N> vmin(Vector<T, N> const& a, Vector<T, N> const& b) {
   return a.piecewiseMin(b);
 }
 
 template <typename T, size_t N>
-Vector<T, N> vmax(Vector<T, N> const& a, Vector<T, N> const& b) {
+constexpr Vector<T, N> vmax(Vector<T, N> const& a, Vector<T, N> const& b) {
   return a.piecewiseMax(b);
 }
 
 template <typename T, size_t N>
-Vector<T, N> vclamp(Vector<T, N> const& a, Vector<T, N> const& min, Vector<T, N> const& max) {
+constexpr Vector<T, N> vclamp(Vector<T, N> const& a, Vector<T, N> const& min, Vector<T, N> const& max) {
   return a.piecewiseClamp(min, max);
 }
 
 template <typename VectorType>
-VectorType vmult(VectorType const& a, VectorType const& b) {
+constexpr VectorType vmult(VectorType const& a, VectorType const& b) {
   return a.piecewiseMultiply(b);
 }
 
 template <typename VectorType>
-VectorType vdiv(VectorType const& a, VectorType const& b) {
+constexpr VectorType vdiv(VectorType const& a, VectorType const& b) {
   return a.piecewiseDivide(b);
 }
 
 template <typename T>
-Vector<T, 3> operator^(Vector<T, 3> v1, Vector<T, 3> v2) {
+constexpr Vector<T, 3> operator^(Vector<T, 3> v1, Vector<T, 3> v2) {
   return Vector<T, 3>(v1[1] * v2[2] - v1[2] * v2[1], v1[2] * v2[0] - v1[0] * v2[2], v1[0] * v2[1] - v1[1] * v2[0]);
 }
 
 template <typename T>
-T operator^(Vector<T, 2> const& v1, Vector<T, 2> const& v2) {
+constexpr T operator^(Vector<T, 2> const& v1, Vector<T, 2> const& v2) {
   return v1[0] * v2[1] - v1[1] * v2[0];
 }
 

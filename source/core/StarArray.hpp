@@ -25,20 +25,20 @@ public:
 
   using value_type = Element;
 
-  static Array filled(Element const& e);
+  static constexpr Array filled(Element const& e);
 
   template <typename Iterator>
-  static Array copyFrom(Iterator p, size_t n = NPos);
+  static constexpr Array copyFrom(Iterator p, size_t n = NPos);
 
-  Array();
+  constexpr Array();
 
-  explicit Array(Element const& e1);
+  explicit constexpr Array(Element const& e1);
 
   template <typename... T>
-  Array(Element const& e1, T const&... rest);
+  constexpr Array(Element const& e1, T const&... rest);
 
   template <typename Element2>
-  explicit Array(Array<Element2, SizeN> const& a);
+  explicit constexpr Array(Array<Element2, SizeN> const& a);
 
   template <size_t i>
   reference get();
@@ -49,15 +49,15 @@ public:
   template <typename T2>
   Array& operator=(Array<T2, SizeN> const& array);
 
-  Element* ptr();
-  Element const* ptr() const;
+  constexpr Element* ptr();
+  constexpr Element const* ptr() const;
 
-  bool operator==(Array const& a) const;
-  bool operator!=(Array const& a) const;
-  bool operator<(Array const& a) const;
-  bool operator<=(Array const& a) const;
-  bool operator>(Array const& a) const;
-  bool operator>=(Array const& a) const;
+  constexpr bool operator==(Array const& a) const;
+  constexpr bool operator!=(Array const& a) const;
+  constexpr bool operator<(Array const& a) const;
+  constexpr bool operator<=(Array const& a) const;
+  constexpr bool operator>(Array const& a) const;
+  constexpr bool operator>=(Array const& a) const;
 
   template <size_t Size2>
   Array<ElementT, Size2> toSize() const;
@@ -66,8 +66,8 @@ private:
   // Instead of {} array initialization, use recursive assignment to mimic old
   // C++ style construction with less strict narrowing rules.
   template <typename T, typename... TL>
-  void set(T const& e, TL const&... rest);
-  void set();
+  constexpr void set(T const& e, TL const&... rest);
+  constexpr void set();
 };
 
 template <typename DataT, size_t SizeT>
@@ -95,7 +95,7 @@ using Array4F = Array<float, 4>;
 using Array4D = Array<double, 4>;
 
 template <typename Element, size_t Size>
-Array<Element, Size> Array<Element, Size>::filled(Element const& e) {
+constexpr Array<Element, Size> Array<Element, Size>::filled(Element const& e) {
   Array a;
   a.fill(e);
   return a;
@@ -103,7 +103,7 @@ Array<Element, Size> Array<Element, Size>::filled(Element const& e) {
 
 template <typename Element, size_t Size>
 template <typename Iterator>
-Array<Element, Size> Array<Element, Size>::copyFrom(Iterator p, size_t n) {
+constexpr Array<Element, Size> Array<Element, Size>::copyFrom(Iterator p, size_t n) {
   Array a;
   for (size_t i = 0; i < n && i < Size; ++i)
     a[i] = *(p++);
@@ -111,25 +111,25 @@ Array<Element, Size> Array<Element, Size>::copyFrom(Iterator p, size_t n) {
 }
 
 template <typename Element, size_t Size>
-Array<Element, Size>::Array()
+constexpr Array<Element, Size>::Array()
   : Base() {}
 
 template <typename Element, size_t Size>
-Array<Element, Size>::Array(Element const& e1) {
+constexpr Array<Element, Size>::Array(Element const& e1) {
   static_assert(Size == 1, "Incorrect size in Array constructor");
   set(e1);
 }
 
 template <typename Element, size_t Size>
 template <typename... T>
-Array<Element, Size>::Array(Element const& e1, T const&... rest) {
+constexpr Array<Element, Size>::Array(Element const& e1, T const&... rest) {
   static_assert(sizeof...(rest) == Size - 1, "Incorrect size in Array constructor");
   set(e1, rest...);
 }
 
 template <typename Element, size_t Size>
 template <typename Element2>
-Array<Element, Size>::Array(Array<Element2, Size> const& a) {
+constexpr Array<Element, Size>::Array(Array<Element2, Size> const& a) {
   std::copy(a.begin(), a.end(), Base::begin());
 }
 
@@ -155,17 +155,17 @@ Array<Element, Size>& Array<Element, Size>::operator=(Array<T2, Size> const& arr
 }
 
 template <typename Element, size_t Size>
-Element* Array<Element, Size>::ptr() {
+constexpr Element* Array<Element, Size>::ptr() {
   return Base::data();
 }
 
 template <typename Element, size_t Size>
-Element const* Array<Element, Size>::ptr() const {
+constexpr Element const* Array<Element, Size>::ptr() const {
   return Base::data();
 }
 
 template <typename Element, size_t Size>
-bool Array<Element, Size>::operator==(Array const& a) const {
+constexpr bool Array<Element, Size>::operator==(Array const& a) const {
   for (size_t i = 0; i < Size; ++i)
     if ((*this)[i] != a[i])
       return false;
@@ -173,12 +173,12 @@ bool Array<Element, Size>::operator==(Array const& a) const {
 }
 
 template <typename Element, size_t Size>
-bool Array<Element, Size>::operator!=(Array const& a) const {
+constexpr bool Array<Element, Size>::operator!=(Array const& a) const {
   return !operator==(a);
 }
 
 template <typename Element, size_t Size>
-bool Array<Element, Size>::operator<(Array const& a) const {
+constexpr bool Array<Element, Size>::operator<(Array const& a) const {
   for (size_t i = 0; i < Size; ++i) {
     if ((*this)[i] < a[i])
       return true;
@@ -189,7 +189,7 @@ bool Array<Element, Size>::operator<(Array const& a) const {
 }
 
 template <typename Element, size_t Size>
-bool Array<Element, Size>::operator<=(Array const& a) const {
+constexpr bool Array<Element, Size>::operator<=(Array const& a) const {
   for (size_t i = 0; i < Size; ++i) {
     if ((*this)[i] < a[i])
       return true;
@@ -200,12 +200,12 @@ bool Array<Element, Size>::operator<=(Array const& a) const {
 }
 
 template <typename Element, size_t Size>
-bool Array<Element, Size>::operator>(Array const& a) const {
+constexpr bool Array<Element, Size>::operator>(Array const& a) const {
   return a < *this;
 }
 
 template <typename Element, size_t Size>
-bool Array<Element, Size>::operator>=(Array const& a) const {
+constexpr bool Array<Element, Size>::operator>=(Array const& a) const {
   return a <= *this;
 }
 
@@ -220,11 +220,11 @@ Array<Element, Size2> Array<Element, Size>::toSize() const {
 }
 
 template <typename Element, size_t Size>
-void Array<Element, Size>::set() {}
+constexpr void Array<Element, Size>::set() {}
 
 template <typename Element, size_t Size>
 template <typename T, typename... TL>
-void Array<Element, Size>::set(T const& e, TL const&... rest) {
+constexpr void Array<Element, Size>::set(T const& e, TL const&... rest) {
   Base::operator[](Size - 1 - sizeof...(rest)) = e;
   set(rest...);
 }
