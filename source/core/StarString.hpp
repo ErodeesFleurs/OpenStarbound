@@ -464,13 +464,13 @@ Maybe<String> String::maybeLookupTagsView(Lookup&& lookup) const {
 
   std::string finalString;
   size_t finalSize = 0;
-  for (auto& view : finalViews)
-    finalSize += view.size();
+  for (auto& sv : finalViews)
+    finalSize += sv.size();
 
   finalString.reserve(finalSize);
 
-  for (auto& view : finalViews)
-    finalString += view;
+  for (auto& sv : finalViews)
+    finalString += sv;
 
   return String(finalString);
 }

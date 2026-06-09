@@ -370,8 +370,8 @@ if(STAR_COMPILER_GNU)
   set(CMAKE_SKIP_BUILD_RPATH TRUE)
 
 elseif(STAR_COMPILER_CLANG)
-  star_add_c_compile_options(-Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
-  star_add_cxx_compile_options(-Wall -Wextra -Wuninitialized -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
+  star_add_c_compile_options(-Wall -Wextra -Wuninitialized -Wshadow -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
+  star_add_cxx_compile_options(-Wall -Wextra -Wuninitialized -Wshadow -Wno-parentheses-equality -Wno-deprecated-declarations -Wno-nan-infinity-disabled)
   star_clear_cmake_config_flags()
 
   if(STAR_SYSTEM_MACOS)

@@ -3,6 +3,7 @@
 #include "StarWorld.hpp"
 #include "StarBlocksAlongLine.hpp"
 #include "StarSky.hpp"
+#include "StarLuaBindingHelpers.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarMonster.hpp"

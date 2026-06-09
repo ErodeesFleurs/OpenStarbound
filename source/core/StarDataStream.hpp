@@ -406,4 +406,26 @@ void DataStream::readMapContainer(Container& container) {
     });
 }
 
+// Serialization helpers: write/read multiple members via member pointers.
+// Eliminates field-name repetition in manual operator<< / operator>>.
+//
+// Usage:
+//   friend DataStream& operator<<(DataStream& ds, MyType const& v) {
+//     return streamWriteMembers(ds, v, &MyType::a, &MyType::b);
+//   }
+//   friend DataStream& operator>>(DataStream& ds, MyType& v) {
+//     return streamReadMembers(ds, v, &MyType::a, &MyType::b);
+//   }
+template <typename T, typename... Members>
+DataStream& streamWriteMembers(DataStream& ds, T const& obj, Members T::*... members) {
+  ((ds << (obj.*members)), ...);
+  return ds;
+}
+
+template <typename T, typename... Members>
+DataStream& streamReadMembers(DataStream& ds, T& obj, Members T::*... members) {
+  ((ds >> (obj.*members)), ...);
+  return ds;
+}
+
 }

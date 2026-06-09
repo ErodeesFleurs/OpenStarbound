@@ -25,7 +25,7 @@ private:
     Bucket& operator=(Bucket const& rhs);
     Bucket& operator=(Bucket&& rhs);
 
-    void setFilled(size_t hash, Value value);
+    void setFilled(size_t newHash, Value value);
     void setEmpty();
     void setEnd();
 
@@ -173,12 +173,12 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::operato
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
-void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::setFilled(size_t hash, Value value) {
+void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::Bucket::setFilled(size_t newHash, Value value) {
   if (auto s = valuePtr())
     *s = std::move(value);
   else
     std::construct_at(&this->value, std::move(value));
-  this->hash = hash | FilledHashBit;
+  this->hash = newHash | FilledHashBit;
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>

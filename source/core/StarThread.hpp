@@ -145,7 +145,7 @@ private:
 };
 
 // *Non* recursive mutex lock, for use with ConditionVariable
-class Mutex {
+class __attribute__((capability("mutex"))) Mutex {
 public:
   Mutex();
   Mutex(Mutex&&);
@@ -153,12 +153,12 @@ public:
 
   Mutex& operator=(Mutex&&);
 
-  void lock();
+  void lock() __attribute__((acquire_capability));
 
   // Attempt to acquire the mutex without blocking.
-  bool tryLock();
+  bool tryLock() __attribute__((try_acquire_capability(true)));
 
-  void unlock();
+  void unlock() __attribute__((release_capability));
 
 private:
   friend struct ConditionVariableImpl;
