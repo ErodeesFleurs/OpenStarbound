@@ -20,6 +20,8 @@ constexpr uint16_t VOICE_VERSION = 1;
 
 namespace Star {
 
+using namespace std::string_literals;
+
 EnumMap<VoiceInputMode> const VoiceInputModeNames{
   {VoiceInputMode::VoiceActivity, "VoiceActivity"},
   {VoiceInputMode::PushToTalk, "PushToTalk"}

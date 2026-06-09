@@ -197,6 +197,58 @@
       }
     },
     {
+      "inherits": "linux-release-clang",
+      "name": "linux-sanitize-address-clang",
+      "displayName": "Linux Clang x64 ASan",
+      "binaryDir": "${sourceParentDir}/build/linux-sanitize-address-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "STAR_USE_JEMALLOC": false,
+        "STAR_USE_MIMALLOC": false,
+        "STAR_USE_RPMALLOC": false,
+        "STAR_ENABLE_SANITIZER": "address"
+      }
+    },
+    {
+      "inherits": "linux-release-clang",
+      "name": "linux-sanitize-undefined-clang",
+      "displayName": "Linux Clang x64 UBSan",
+      "binaryDir": "${sourceParentDir}/build/linux-sanitize-undefined-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "STAR_USE_JEMALLOC": false,
+        "STAR_USE_MIMALLOC": false,
+        "STAR_USE_RPMALLOC": false,
+        "STAR_ENABLE_SANITIZER": "undefined"
+      }
+    },
+    {
+      "inherits": "linux-release-clang",
+      "name": "linux-sanitize-thread-clang",
+      "displayName": "Linux Clang x64 TSan",
+      "binaryDir": "${sourceParentDir}/build/linux-sanitize-thread-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "STAR_USE_JEMALLOC": false,
+        "STAR_USE_MIMALLOC": false,
+        "STAR_USE_RPMALLOC": false,
+        "STAR_ENABLE_SANITIZER": "thread"
+      }
+    },
+    {
+      "inherits": "linux-release-clang",
+      "name": "linux-coverage-clang",
+      "displayName": "Linux Clang x64 Coverage",
+      "binaryDir": "${sourceParentDir}/build/linux-coverage-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "STAR_USE_JEMALLOC": false,
+        "STAR_USE_MIMALLOC": false,
+        "STAR_USE_RPMALLOC": false,
+        "STAR_ENABLE_COVERAGE": true
+      }
+    },
+    {
       "inherits": "linux-arm-release",
       "name": "linux-arm-release-clang",
       "displayName": "Linux Clang ARM",
@@ -292,6 +344,22 @@
       "configurePreset": "linux-profile-clang-mimalloc"
     },
     {
+      "name": "linux-sanitize-address-clang",
+      "configurePreset": "linux-sanitize-address-clang"
+    },
+    {
+      "name": "linux-sanitize-undefined-clang",
+      "configurePreset": "linux-sanitize-undefined-clang"
+    },
+    {
+      "name": "linux-sanitize-thread-clang",
+      "configurePreset": "linux-sanitize-thread-clang"
+    },
+    {
+      "name": "linux-coverage-clang",
+      "configurePreset": "linux-coverage-clang"
+    },
+    {
       "name": "linux-release-gcc",
       "configurePreset": "linux-release-gcc"
     },
@@ -372,6 +440,26 @@
       "inherits": "base",
       "name": "linux-profile-clang-mimalloc",
       "configurePreset": "linux-profile-clang-mimalloc"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-sanitize-address-clang",
+      "configurePreset": "linux-sanitize-address-clang"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-sanitize-undefined-clang",
+      "configurePreset": "linux-sanitize-undefined-clang"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-sanitize-thread-clang",
+      "configurePreset": "linux-sanitize-thread-clang"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-coverage-clang",
+      "configurePreset": "linux-coverage-clang"
     },
     {
       "inherits": "base",

@@ -155,6 +155,11 @@ option(STAR_USE_JEMALLOC "Use jemalloc allocators" OFF)
 option(STAR_USE_MIMALLOC "Use mimalloc allocators" OFF)
 option(STAR_USE_RPMALLOC "Use rpmalloc allocators" OFF)
 
+set(STAR_ENABLE_SANITIZER "" CACHE STRING "Enable sanitizer: none, address, undefined, thread, leak, or memory")
+set_property(CACHE STAR_ENABLE_SANITIZER PROPERTY STRINGS "none" "address" "undefined" "thread" "leak" "memory")
+
+option(STAR_ENABLE_COVERAGE "Enable code coverage instrumentation (--coverage)" OFF)
+
 # Report all the discovered system / environment settings and all options.
 
 message(STATUS "Source ID: ${STAR_SOURCE_IDENTIFIER}")
@@ -345,6 +350,18 @@ if(STAR_COMPILER_GNU)
     target_link_options(star_build_options INTERFACE -pg)
   endif()
 
+  if(STAR_ENABLE_SANITIZER)
+    star_add_c_compile_options(-fno-omit-frame-pointer -fsanitize=${STAR_ENABLE_SANITIZER})
+    star_add_cxx_compile_options(-fno-omit-frame-pointer -fsanitize=${STAR_ENABLE_SANITIZER})
+    target_link_options(star_build_options INTERFACE -fsanitize=${STAR_ENABLE_SANITIZER})
+  endif()
+
+  if(STAR_ENABLE_COVERAGE)
+    star_add_c_compile_options(--coverage)
+    star_add_cxx_compile_options(--coverage)
+    target_link_options(star_build_options INTERFACE --coverage)
+  endif()
+
   star_add_config_compile_options(Debug -g -Og)
   star_add_config_compile_options(RelWithAsserts -g -O3 -ffast-math)
   star_add_config_compile_options(RelWithDebInfo -g -DNDEBUG -O3 -ffast-math)
@@ -373,6 +390,18 @@ elseif(STAR_COMPILER_CLANG)
   if(STAR_ENABLE_FRAME_POINTERS)
     star_add_c_compile_options(-fno-omit-frame-pointer)
     star_add_cxx_compile_options(-fno-omit-frame-pointer)
+  endif()
+
+  if(STAR_ENABLE_SANITIZER)
+    star_add_c_compile_options(-fno-omit-frame-pointer -fsanitize=${STAR_ENABLE_SANITIZER})
+    star_add_cxx_compile_options(-fno-omit-frame-pointer -fsanitize=${STAR_ENABLE_SANITIZER})
+    target_link_options(star_build_options INTERFACE -fsanitize=${STAR_ENABLE_SANITIZER})
+  endif()
+
+  if(STAR_ENABLE_COVERAGE)
+    star_add_c_compile_options(--coverage)
+    star_add_cxx_compile_options(--coverage)
+    target_link_options(star_build_options INTERFACE --coverage)
   endif()
 
   star_add_config_compile_options(Debug -g)

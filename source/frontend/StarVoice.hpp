@@ -18,7 +18,7 @@ using OpusEncoderPtr = std::unique_ptr<OpusEncoder, void(*)(OpusEncoder*)>;
 
 namespace Star {
 
-String const VoiceBroadcastPrefix = "Voice\0"s;
+inline String const VoiceBroadcastPrefix = String("Voice\0", 7);
 
 struct VoiceExceptionTag { static constexpr char const* typeName = "VoiceException"; };
 using VoiceException = TypedException<StarException, VoiceExceptionTag>;

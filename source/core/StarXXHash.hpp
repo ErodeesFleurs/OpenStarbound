@@ -69,6 +69,7 @@ namespace Detail {
   template <> struct XXHashPrimitiveType<unsigned int> { using Type = uint32_t; };
   template <> struct XXHashPrimitiveType<unsigned long> { using Type = uint64_t; };
   template <> struct XXHashPrimitiveType<unsigned long long> { using Type = uint64_t; };
+  template <> struct XXHashPrimitiveType<unsigned short> { using Type = uint16_t; };
   template <> struct XXHashPrimitiveType<float> { using Type = float; };
   template <> struct XXHashPrimitiveType<double> { using Type = double; };
 

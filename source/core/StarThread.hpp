@@ -3,6 +3,8 @@
 #include "StarException.hpp"
 #include "StarString.hpp"
 
+#include <shared_mutex>
+
 namespace Star {
 
 inline constexpr bool LogRecursiveMutex = false;
@@ -244,24 +246,18 @@ using RecursiveMutexLocker = MLocker<RecursiveMutex>;
 
 class ReadersWriterMutex {
 public:
-  ReadersWriterMutex();
+  ReadersWriterMutex() = default;
 
-  void readLock();
-  bool tryReadLock();
-  void readUnlock();
+  void readLock()       { m_mutex.lock_shared(); }
+  bool tryReadLock()    { return m_mutex.try_lock_shared(); }
+  void readUnlock()     { m_mutex.unlock_shared(); }
 
-  void writeLock();
-  bool tryWriteLock();
-  void writeUnlock();
+  void writeLock()      { m_mutex.lock(); }
+  bool tryWriteLock()   { return m_mutex.try_lock(); }
+  void writeUnlock()    { m_mutex.unlock(); }
 
 private:
-  Mutex m_mutex;
-  ConditionVariable m_readCond;
-  ConditionVariable m_writeCond;
-  unsigned m_readers;
-  unsigned m_writers;
-  unsigned m_readWaiters;
-  unsigned m_writeWaiters;
+  std::shared_mutex m_mutex;
 };
 
 class ReadLocker {

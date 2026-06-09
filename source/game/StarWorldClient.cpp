@@ -26,6 +26,8 @@ constexpr unsigned DefaultClientWindowTiles = 100;
 
 namespace Star {
 
+using namespace std::string_literals;
+
 const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";
 const std::string SECRET_BROADCAST_PREFIX = "\0Broadcast\0"s;
 

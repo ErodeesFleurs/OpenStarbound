@@ -43,6 +43,8 @@ extern "C" __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
 
 namespace Star {
 
+using namespace std::string_literals;
+
 Json const AdditionalAssetsSettings = Json::parseJson(R"JSON(
     {
       "missingImage" : "/assetmissing.png",

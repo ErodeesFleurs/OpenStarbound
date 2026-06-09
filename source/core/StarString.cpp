@@ -8,43 +8,8 @@
 
 namespace Star {
 
-bool String::isSpace(Char c) {
-  return
-    c == 0x20 || // space
-    c == 0x09 || // horizontal tab
-    c == 0x0a || // newline
-    c == 0x0d || // carriage return
-    c == 0xfeff; // BOM or ZWNBSP
-}
-
-bool String::isAsciiNumber(Char c) {
-  return c >= '0' && c <= '9';
-}
-
-bool String::isAsciiLetter(Char c) {
-  return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z');
-}
-
-String::Char String::toLower(Char c) {
-  if (c >= 'A' && c <= 'Z')
-    return c + 32;
-  else
-    return c;
-}
-
-String::Char String::toUpper(Char c) {
-  if (c >= 'a' && c <= 'z')
-    return c - 32;
-  else
-    return c;
-}
-
-bool String::charEqual(Char c1, Char c2, CaseSensitivity cs) {
-  if (cs == CaseInsensitive)
-    return toLower(c1) == toLower(c2);
-  else
-    return c1 == c2;
-}
+// isSpace, isAsciiNumber, isAsciiLetter, toLower, toUpper, charEqual are now
+// inline free functions in StarUtf8.hpp
 
 String String::joinWith(String const& join, String const& left, String const& right) {
   if (left.empty())

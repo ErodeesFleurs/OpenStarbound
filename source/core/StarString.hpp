@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarUnicode.hpp"
+#include "StarUtf8.hpp"
 #include "StarHash.hpp"
 #include "StarByteArray.hpp"
 #include "StarList.hpp"
@@ -40,21 +41,22 @@ public:
   using value_type = Char;
   using const_reference = value_type const&;
 
-  enum CaseSensitivity {
-    CaseSensitive,
-    CaseInsensitive
-  };
+  // Delegates to Star::CaseSensitivity (defined in StarUtf8.hpp)
+  using CaseSensitivity = Star::CaseSensitivity;
+
+  static constexpr auto CaseSensitive = Star::CaseSensitivity::CaseSensitive;
+  static constexpr auto CaseInsensitive = Star::CaseSensitivity::CaseInsensitive;
 
   // Space, horizontal tab, newline, carriage return, and BOM / ZWNBSP
-  static bool isSpace(Char c);
-  static bool isAsciiNumber(Char c);
-  static bool isAsciiLetter(Char c);
+  static bool isSpace(Char c) { return Star::isSpace(c); }
+  static bool isAsciiNumber(Char c) { return Star::isAsciiNumber(c); }
+  static bool isAsciiLetter(Char c) { return Star::isAsciiLetter(c); }
 
   // These methods only actually work on unicode characters below 127, i.e.
   // ASCII subset.
-  static Char toLower(Char c);
-  static Char toUpper(Char c);
-  static bool charEqual(Char c1, Char c2, CaseSensitivity cs);
+  static Char toLower(Char c) { return Star::toLower(c); }
+  static Char toUpper(Char c) { return Star::toUpper(c); }
+  static bool charEqual(Char c1, Char c2, CaseSensitivity cs) { return Star::charEqual(c1, c2, cs); }
 
   // Join two strings together with a joiner, so that only one instance of the
   // joiner is in between the left and right strings.  For example, joins "foo"

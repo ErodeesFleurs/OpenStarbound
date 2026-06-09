@@ -43,6 +43,8 @@
 
 namespace Star {
 
+using namespace std::string_literals;
+
 EnumMap<Player::State> const Player::StateNames{
   {Player::State::Idle, "idle"},
   {Player::State::Walk, "walk"},
