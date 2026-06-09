@@ -73,6 +73,10 @@ StatusController::StatusController(Json const& config) : m_statCollection(config
     m_primaryAnimatorId = EffectAnimatorGroup::NullElementId;
 }
 
+StatusController::StatusController(Entity* parentEntity, ActorMovementController* movementController) : StatusController(Json()) {
+  init(parentEntity, movementController);
+}
+
 Json StatusController::diskStore() const {
   JsonObject resourceValues;
   JsonObject resourcesLocked;

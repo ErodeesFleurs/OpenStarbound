@@ -212,6 +212,10 @@ MovementController::MovementController(MovementParameters const& parameters) {
   resetParameters(parameters);
 }
 
+MovementController::MovementController(MovementParameters const& parameters, World* world) : MovementController(parameters) {
+  init(world);
+}
+
 MovementParameters const& MovementController::parameters() const {
   return m_parameters;
 }

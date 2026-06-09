@@ -81,7 +81,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_identityUpdated = true;
 
   m_questManager = make_shared<QuestManager>(this);
-  m_tools = make_shared<ToolUser>();
+  m_tools = make_shared<ToolUser>(this);
   m_armor = make_shared<ArmorWearer>();
   m_companions = make_shared<PlayerCompanions>(config->companionsConfig);
 
@@ -99,8 +99,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid) {
   m_movementController = make_shared<ActorMovementController>(movementParameters);
   m_zeroGMovementParameters = ActorMovementParameters(m_config->zeroGMovementParameters);
 
-  m_techController = make_shared<TechController>();
   m_statusController = make_shared<StatusController>(m_config->statusControllerSettings);
+  m_techController = make_shared<TechController>(this, m_movementController.get(), m_statusController.get());
   m_deployment = make_shared<PlayerDeployment>(m_config->deploymentConfig);
 
   m_inventory = make_shared<PlayerInventory>();
@@ -349,11 +349,9 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
 
 
-  m_tools->init(this);
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
   m_statusController->init(this, m_movementController.get());
-  m_techController->init(this, m_movementController.get(), m_statusController.get());
   auto speciesDefinition = Root::singleton().speciesDatabase()->species(m_identity.species);
 
   if (mode == EntityMode::Master) {

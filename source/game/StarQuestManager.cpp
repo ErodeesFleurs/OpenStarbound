@@ -18,6 +18,10 @@ QuestManager::QuestManager(Player* player) {
   m_trackOnWorldQuests = false;
 }
 
+QuestManager::QuestManager(Player* player, World* world) : QuestManager(player) {
+  init(world);
+}
+
 QuestTemplatePtr getTemplate(String const& templateId) {
   return Root::singleton().questTemplateDatabase()->questTemplate(templateId);
 }

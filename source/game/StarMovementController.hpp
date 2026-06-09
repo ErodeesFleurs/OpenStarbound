@@ -80,6 +80,8 @@ public:
   // defaults, and the given parameters (if any) applied on top of them.
   explicit MovementController(MovementParameters const& parameters = MovementParameters());
 
+  MovementController(MovementParameters const& parameters, World* world);
+
   MovementParameters const& parameters() const;
 
   // Apply any set parameters from the given set on top of the current set.

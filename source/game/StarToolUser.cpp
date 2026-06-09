@@ -57,6 +57,10 @@ ToolUser::ToolUser()
   m_altTimeFiringNetState.setInterpolator(interpolateTimer);
 }
 
+ToolUser::ToolUser(ToolUserEntity* user) : ToolUser() {
+  init(user);
+}
+
 Json ToolUser::diskStore() const {
   JsonObject res;
   if (m_primaryHandItem.get())

@@ -20,6 +20,8 @@ class StatusController : public NetElement {
 public:
   StatusController(Json const& config);
 
+  StatusController(Entity* parentEntity, ActorMovementController* movementController);
+
   Json diskStore() const;
   void diskLoad(Json const& store);
 

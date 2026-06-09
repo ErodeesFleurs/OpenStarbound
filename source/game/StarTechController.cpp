@@ -62,6 +62,10 @@ TechController::TechController() {
   m_yParentOffset.setInterpolator(lerp<float, float>);
 }
 
+TechController::TechController(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController) : TechController() {
+  init(parentEntity, movementController, statusController);
+}
+
 Json TechController::diskStore() {
   if (m_overriddenTech) {
     auto modules = JsonArray();
