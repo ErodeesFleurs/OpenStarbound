@@ -25,6 +25,7 @@
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarLuaAnimationComponent.hpp"
+#include "StarPlayerAppearance.hpp"
 
 namespace Star {
 
@@ -62,6 +63,14 @@ using InteractiveEntityPtr = SharedPtr<InteractiveEntity>;
 class PlayerUniverseMap;
 using PlayerUniverseMapPtr = SharedPtr<PlayerUniverseMap>;
 class UniverseClient;
+class PlayerNarrativeQueue;
+using PlayerNarrativeQueuePtr = SharedPtr<PlayerNarrativeQueue>;
+class PlayerChatAndEmotes;
+using PlayerChatAndEmotesPtr = SharedPtr<PlayerChatAndEmotes>;
+class PlayerDamagePipeline;
+using PlayerDamagePipelinePtr = SharedPtr<PlayerDamagePipeline>;
+class PlayerTeleporter;
+using PlayerTeleporterPtr = SharedPtr<PlayerTeleporter>;
 
 class Player;
 using PlayerPtr = SharedPtr<Player>;
@@ -562,11 +571,11 @@ private:
 
   HumanoidEmote detectEmotes(String const& chatter);
 
-  NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
-  NetElementData<Maybe<String>> m_deathParticleBurst;
-  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
-  NetElementHashMap<String, Json> m_scriptedAnimationParameters;
-  NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
+  friend class PlayerChatAndEmotes;
+  friend class PlayerDamagePipeline;
+  friend class PlayerTeleporter;
+  friend class PlayerAppearance;
+
 
   PlayerConfigPtr m_config;
 
@@ -589,18 +598,14 @@ private:
   StringMap<GenericScriptComponentPtr> m_genericScriptContexts;
   JsonObject m_genericProperties;
 
-  State m_state;
-  HumanoidEmote m_emoteState;
+  PlayerChatAndEmotesPtr m_chatAndEmotes;
 
-  Maybe<String> m_dance;
-  GameTimer m_danceCooldownTimer;
+  State m_state;
 
   float m_footstepTimer;
-  float m_teleportTimer;
-  GameTimer m_emoteCooldownTimer;
-  GameTimer m_blinkCooldownTimer;
-  float m_lastDamagedOtherTimer;
-  EntityId m_lastDamagedTarget;
+  PlayerTeleporterPtr m_teleporter;
+  PlayerAppearance m_appearance{this};
+  LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   GameTimer m_ageItemsTimer;
 
   float m_footstepVolumeVariance;
@@ -608,19 +613,15 @@ private:
   bool m_landingNoisePending;
   bool m_footstepPending;
 
-  String m_teleportAnimationType;
   NetworkedAnimatorPtr m_effectsAnimator;
   NetworkedAnimator::DynamicTarget m_effectsAnimatorDynamicTarget;
-
-  float m_emoteCooldown;
-  Vec2F m_blinkInterval;
 
   HashSet<MoveControlType> m_pendingMoves;
   Vec2F m_moveVector;
   bool m_shifting;
   ActorMovementParameters m_zeroGMovementParameters;
 
-  List<DamageSource> m_damageSources;
+  PlayerDamagePipelinePtr m_damagePipeline;
 
   String m_description;
 
@@ -648,11 +649,6 @@ private:
   List<PersistentStatusEffect> m_foodLowStatusEffects;
   List<PersistentStatusEffect> m_foodEmptyStatusEffects;
 
-  List<PersistentStatusEffect> m_inCinematicStatusEffects;
-
-  HumanoidIdentity m_identity;
-  bool m_identityUpdated;
-
   bool m_isAdmin;
   float m_interactRadius; // hand interact radius
   Vec2F m_walkIntoInteractBias; // offset on position to find an interactable
@@ -667,29 +663,14 @@ private:
   List<String> m_queuedMessages;
   List<ItemPtr> m_queuedItemPickups;
 
-  List<ChatAction> m_pendingChatActions;
-
-  StringSet m_missionRadioMessages;
-  bool m_interruptRadioMessage;
-  List<pair<GameTimer, RadioMessage>> m_delayedRadioMessages;
-  Deque<RadioMessage> m_pendingRadioMessages;
-  Maybe<Json> m_pendingCinematic;
-  Maybe<pair<Maybe<pair<StringList, int>>, float>> m_pendingAltMusic;
-  Maybe<PlayerWarpRequest> m_pendingWarp;
-  Deque<pair<Json, RpcPromiseKeeper<Json>>> m_pendingConfirmations;
+  PlayerNarrativeQueuePtr m_narrativeQueue;
 
   AiState m_aiState;
-
-  String m_chatMessage;
-  bool m_chatMessageChanged;
-  bool m_chatMessageUpdated;
 
   EffectEmitterPtr m_effectEmitter;
 
   SongbookPtr m_songbook;
 
-  int m_hitDamageNotificationLimiter;
-  int m_hitDamageNotificationLimit;
 
   StringSet m_interestingObjects;
 
@@ -697,15 +678,11 @@ private:
   NetElementBool m_shiftingNetState;
   NetElementFloat m_xAimPositionNetState;
   NetElementFloat m_yAimPositionNetState;
-  NetElementData<HumanoidIdentity> m_identityNetState;
-  NetElementEvent m_refreshedHumanoidParameters;
-  JsonObject m_humanoidParameters = JsonObject();
   NetElementData<EntityDamageTeam> m_teamNetState;
   NetElementEvent m_landedNetState;
   NetElementString m_chatMessageNetState;
   NetElementEvent m_newChatMessageNetState;
   NetElementString m_emoteNetState;
-  NetElementData<Maybe<String>> m_humanoidDanceNetState;
 };
 
 }

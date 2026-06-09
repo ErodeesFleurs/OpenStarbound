@@ -351,6 +351,11 @@ target_sources(star_game PRIVATE
     StarPlatformerAStar.cpp
     StarPlatformerAStarTypes.cpp
     StarPlayer.cpp
+    StarPlayerNarrativeQueue.cpp
+    StarPlayerChatAndEmotes.cpp
+    StarPlayerDamagePipeline.cpp
+    StarPlayerTeleporter.cpp
+    StarPlayerAppearance.cpp
     StarPlayerBlueprints.cpp
     StarPlayerCodexes.cpp
     StarPlayerCompanions.cpp
