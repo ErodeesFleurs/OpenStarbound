@@ -221,8 +221,8 @@ elseif(STAR_SYSTEM_FAMILY_WINDOWS)
 endif()
 
 target_compile_features(star_core PUBLIC cxx_std_20)
-target_include_directories(star_core PUBLIC ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
-target_link_libraries(star_core PUBLIC star_build_definitions)
+target_include_directories(star_core PUBLIC ${STAR_CORE_INCLUDES})
+target_link_libraries(star_core PUBLIC star_extern star_build_definitions)
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(star_core PUBLIC StarPch.hpp)
