@@ -272,7 +272,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
     } catch (std::exception const& e) {
       Logger::error("WorldServerThread exception caught handling incoming packets for client {}: {}",
           clientId, outputException(e, true));
-      RecursiveMutexLocker queueLocker(m_queueMutex);
+      RecursiveMutexLocker errorQueueLocker(m_queueMutex);
       m_outgoingPacketQueue[clientId].appendAll(m_worldServer->removeClient(clientId));
       (void)unerroredClientIds.remove(clientId);
     }
@@ -285,7 +285,7 @@ void WorldServerThread::update(WorldServerFidelity fidelity) {
 
   List<Message> messages;
   {
-    RecursiveMutexLocker locker(m_messageMutex);
+    RecursiveMutexLocker messageLocker(m_messageMutex);
     messages = std::move(m_messages);
   }
   for (auto& message : messages) {

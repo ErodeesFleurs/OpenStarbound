@@ -313,7 +313,7 @@ private:
   Settings m_settings;
 
   Mutex m_modsMutex;
-  StringList m_modDirectories [[clang::guarded_by(m_modsMutex)]];
+  StringList m_modDirectories;
 
   ListenerGroup m_reloadListeners;
 
@@ -325,124 +325,124 @@ private:
   ConditionVariable m_maintenanceStopCondition;
   bool m_stopMaintenanceThread;
 
-  AssetsPtr m_assets [[clang::guarded_by(m_assetsMutex)]];
+  AssetsPtr m_assets;
   Mutex m_assetsMutex;
 
-  ConfigurationPtr m_configuration [[clang::guarded_by(m_configurationMutex)]];
+  ConfigurationPtr m_configuration;
   Mutex m_configurationMutex;
 
-  ObjectDatabasePtr m_objectDatabase [[clang::guarded_by(m_objectDatabaseMutex)]];
+  ObjectDatabasePtr m_objectDatabase;
   Mutex m_objectDatabaseMutex;
 
-  PlantDatabasePtr m_plantDatabase [[clang::guarded_by(m_plantDatabaseMutex)]];
+  PlantDatabasePtr m_plantDatabase;
   Mutex m_plantDatabaseMutex;
 
-  ProjectileDatabasePtr m_projectileDatabase [[clang::guarded_by(m_projectileDatabaseMutex)]];
+  ProjectileDatabasePtr m_projectileDatabase;
   Mutex m_projectileDatabaseMutex;
 
-  MonsterDatabasePtr m_monsterDatabase [[clang::guarded_by(m_monsterDatabaseMutex)]];
+  MonsterDatabasePtr m_monsterDatabase;
   Mutex m_monsterDatabaseMutex;
 
-  NpcDatabasePtr m_npcDatabase [[clang::guarded_by(m_npcDatabaseMutex)]];
+  NpcDatabasePtr m_npcDatabase;
   Mutex m_npcDatabaseMutex;
 
-  StagehandDatabasePtr m_stagehandDatabase [[clang::guarded_by(m_stagehandDatabaseMutex)]];
+  StagehandDatabasePtr m_stagehandDatabase;
   Mutex m_stagehandDatabaseMutex;
 
-  VehicleDatabasePtr m_vehicleDatabase [[clang::guarded_by(m_vehicleDatabaseMutex)]];
+  VehicleDatabasePtr m_vehicleDatabase;
   Mutex m_vehicleDatabaseMutex;
 
-  PlayerFactoryPtr m_playerFactory [[clang::guarded_by(m_playerFactoryMutex)]];
+  PlayerFactoryPtr m_playerFactory;
   Mutex m_playerFactoryMutex;
 
-  EntityFactoryPtr m_entityFactory [[clang::guarded_by(m_entityFactoryMutex)]];
+  EntityFactoryPtr m_entityFactory;
   Mutex m_entityFactoryMutex;
 
-  PatternedNameGeneratorPtr m_nameGenerator [[clang::guarded_by(m_nameGeneratorMutex)]];
+  PatternedNameGeneratorPtr m_nameGenerator;
   Mutex m_nameGeneratorMutex;
 
-  ItemDatabasePtr m_itemDatabase [[clang::guarded_by(m_itemDatabaseMutex)]];
+  ItemDatabasePtr m_itemDatabase;
   Mutex m_itemDatabaseMutex;
 
-  MaterialDatabasePtr m_materialDatabase [[clang::guarded_by(m_materialDatabaseMutex)]];
+  MaterialDatabasePtr m_materialDatabase;
   Mutex m_materialDatabaseMutex;
 
-  TerrainDatabasePtr m_terrainDatabase [[clang::guarded_by(m_terrainDatabaseMutex)]];
+  TerrainDatabasePtr m_terrainDatabase;
   Mutex m_terrainDatabaseMutex;
 
-  BiomeDatabasePtr m_biomeDatabase [[clang::guarded_by(m_biomeDatabaseMutex)]];
+  BiomeDatabasePtr m_biomeDatabase;
   Mutex m_biomeDatabaseMutex;
 
-  LiquidsDatabasePtr m_liquidsDatabase [[clang::guarded_by(m_liquidsDatabaseMutex)]];
+  LiquidsDatabasePtr m_liquidsDatabase;
   Mutex m_liquidsDatabaseMutex;
 
-  StatusEffectDatabasePtr m_statusEffectDatabase [[clang::guarded_by(m_statusEffectDatabaseMutex)]];
+  StatusEffectDatabasePtr m_statusEffectDatabase;
   Mutex m_statusEffectDatabaseMutex;
 
-  DamageDatabasePtr m_damageDatabase [[clang::guarded_by(m_damageDatabaseMutex)]];
+  DamageDatabasePtr m_damageDatabase;
   Mutex m_damageDatabaseMutex;
 
-  ParticleDatabasePtr m_particleDatabase [[clang::guarded_by(m_particleDatabaseMutex)]];
+  ParticleDatabasePtr m_particleDatabase;
   Mutex m_particleDatabaseMutex;
 
-  EffectSourceDatabasePtr m_effectSourceDatabase [[clang::guarded_by(m_effectSourceDatabaseMutex)]];
+  EffectSourceDatabasePtr m_effectSourceDatabase;
   Mutex m_effectSourceDatabaseMutex;
 
-  FunctionDatabasePtr m_functionDatabase [[clang::guarded_by(m_functionDatabaseMutex)]];
+  FunctionDatabasePtr m_functionDatabase;
   Mutex m_functionDatabaseMutex;
 
-  TreasureDatabasePtr m_treasureDatabase [[clang::guarded_by(m_treasureDatabaseMutex)]];
+  TreasureDatabasePtr m_treasureDatabase;
   Mutex m_treasureDatabaseMutex;
 
-  DungeonDefinitionsPtr m_dungeonDefinitions [[clang::guarded_by(m_dungeonDefinitionsMutex)]];
+  DungeonDefinitionsPtr m_dungeonDefinitions;
   Mutex m_dungeonDefinitionsMutex;
 
-  TilesetDatabasePtr m_tilesetDatabase [[clang::guarded_by(m_tilesetDatabaseMutex)]];
+  TilesetDatabasePtr m_tilesetDatabase;
   Mutex m_tilesetDatabaseMutex;
 
-  StatisticsDatabasePtr m_statisticsDatabase [[clang::guarded_by(m_statisticsDatabaseMutex)]];
+  StatisticsDatabasePtr m_statisticsDatabase;
   Mutex m_statisticsDatabaseMutex;
 
-  EmoteProcessorPtr m_emoteProcessor [[clang::guarded_by(m_emoteProcessorMutex)]];
+  EmoteProcessorPtr m_emoteProcessor;
   Mutex m_emoteProcessorMutex;
 
-  SpeciesDatabasePtr m_speciesDatabase [[clang::guarded_by(m_speciesDatabaseMutex)]];
+  SpeciesDatabasePtr m_speciesDatabase;
   Mutex m_speciesDatabaseMutex;
 
-  ImageMetadataDatabasePtr m_imageMetadataDatabase [[clang::guarded_by(m_imageMetadataDatabaseMutex)]];
+  ImageMetadataDatabasePtr m_imageMetadataDatabase;
   Mutex m_imageMetadataDatabaseMutex;
 
-  VersioningDatabasePtr m_versioningDatabase [[clang::guarded_by(m_versioningDatabaseMutex)]];
+  VersioningDatabasePtr m_versioningDatabase;
   Mutex m_versioningDatabaseMutex;
 
-  QuestTemplateDatabasePtr m_questTemplateDatabase [[clang::guarded_by(m_questTemplateDatabaseMutex)]];
+  QuestTemplateDatabasePtr m_questTemplateDatabase;
   Mutex m_questTemplateDatabaseMutex;
 
-  AiDatabasePtr m_aiDatabase [[clang::guarded_by(m_aiDatabaseMutex)]];
+  AiDatabasePtr m_aiDatabase;
   Mutex m_aiDatabaseMutex;
 
-  TechDatabasePtr m_techDatabase [[clang::guarded_by(m_techDatabaseMutex)]];
+  TechDatabasePtr m_techDatabase;
   Mutex m_techDatabaseMutex;
 
-  CodexDatabasePtr m_codexDatabase [[clang::guarded_by(m_codexDatabaseMutex)]];
+  CodexDatabasePtr m_codexDatabase;
   Mutex m_codexDatabaseMutex;
 
-  BehaviorDatabasePtr m_behaviorDatabase [[clang::guarded_by(m_behaviorDatabaseMutex)]];
+  BehaviorDatabasePtr m_behaviorDatabase;
   Mutex m_behaviorDatabaseMutex;
 
-  TenantDatabasePtr m_tenantDatabase [[clang::guarded_by(m_tenantDatabaseMutex)]];
+  TenantDatabasePtr m_tenantDatabase;
   Mutex m_tenantDatabaseMutex;
 
-  DanceDatabasePtr m_danceDatabase [[clang::guarded_by(m_danceDatabaseMutex)]];
+  DanceDatabasePtr m_danceDatabase;
   Mutex m_danceDatabaseMutex;
 
-  SpawnTypeDatabasePtr m_spawnTypeDatabase [[clang::guarded_by(m_spawnTypeDatabaseMutex)]];
+  SpawnTypeDatabasePtr m_spawnTypeDatabase;
   Mutex m_spawnTypeDatabaseMutex;
 
-  RadioMessageDatabasePtr m_radioMessageDatabase [[clang::guarded_by(m_radioMessageDatabaseMutex)]];
+  RadioMessageDatabasePtr m_radioMessageDatabase;
   Mutex m_radioMessageDatabaseMutex;
 
-  CollectionDatabasePtr m_collectionDatabase [[clang::guarded_by(m_collectionDatabaseMutex)]];
+  CollectionDatabasePtr m_collectionDatabase;
   Mutex m_collectionDatabaseMutex;
 };
 

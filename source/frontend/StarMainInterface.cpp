@@ -1556,8 +1556,8 @@ void MainInterface::renderCursor() {
     auto rawCursorOffset = jsonToVec2I(config.get("offset"));
 
     Vec2I tooltipSize = Vec2I(imgDb->imageSize(backgroundImage)) * interfaceScale();
-    Vec2I cursorOffset = (Vec2I{0, -m_cursor.size().y()} + rawCursorOffset) * cursorScale;
-    Vec2I tooltipOffset = m_cursorScreenIPos + cursorOffset;
+    Vec2I tooltipCursorOffset = (Vec2I{0, -m_cursor.size().y()} + rawCursorOffset) * cursorScale;
+    Vec2I tooltipOffset = m_cursorScreenIPos + tooltipCursorOffset;
     TextStyle textStyle = config.get("textStyle");
     size_t fontSize = config.get("fontSize").toUInt();
     Vec4B fontColor = jsonToColor(config.get("color")).toRgba();

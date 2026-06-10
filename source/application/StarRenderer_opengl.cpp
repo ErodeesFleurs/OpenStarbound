@@ -204,10 +204,10 @@ void OpenGlRenderer::loadConfig(Json const& config) {
   m_frameBuffers.clear();
 
   for (auto& pair : config.getObject("frameBuffers", {})) {
-    Json config = pair.second;
-    config = config.set("multisample", m_multiSampling);
+    Json fbConfig = pair.second;
+    fbConfig = fbConfig.set("multisample", m_multiSampling);
     Logger::info("Creating framebuffer {}", pair.first);
-    m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(config);
+    m_frameBuffers[pair.first] = make_ref<GlFrameBuffer>(fbConfig);
 
   }
   setScreenSize(m_screenSize);
@@ -388,16 +388,16 @@ void OpenGlRenderer::setEffectParameter(String const& parameterName, RenderEffec
 
   if (auto v = value.ptr<bool>())
     glUniform1i(ptr->parameterUniform, *v);
-  else if (auto v = value.ptr<int>())
-    glUniform1i(ptr->parameterUniform, *v);
-  else if (auto v = value.ptr<float>())
-    glUniform1f(ptr->parameterUniform, *v);
-  else if (auto v = value.ptr<Vec2F>())
-    glUniform2f(ptr->parameterUniform, (*v)[0], (*v)[1]);
-  else if (auto v = value.ptr<Vec3F>())
-    glUniform3f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2]);
-  else if (auto v = value.ptr<Vec4F>())
-    glUniform4f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2], (*v)[3]);
+  else if (auto vi = value.ptr<int>())
+    glUniform1i(ptr->parameterUniform, *vi);
+  else if (auto vf = value.ptr<float>())
+    glUniform1f(ptr->parameterUniform, *vf);
+  else if (auto v2 = value.ptr<Vec2F>())
+    glUniform2f(ptr->parameterUniform, (*v2)[0], (*v2)[1]);
+  else if (auto v3 = value.ptr<Vec3F>())
+    glUniform3f(ptr->parameterUniform, (*v3)[0], (*v3)[1], (*v3)[2]);
+  else if (auto v4 = value.ptr<Vec4F>())
+    glUniform4f(ptr->parameterUniform, (*v4)[0], (*v4)[1], (*v4)[2], (*v4)[3]);
 
   ptr->parameterValue = value;
 }
@@ -1133,16 +1133,16 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
       RenderEffectParameter value = mvalue.value();
       if (auto v = value.ptr<bool>())
         glUniform1i(ptr->parameterUniform, *v);
-      else if (auto v = value.ptr<int>())
-        glUniform1i(ptr->parameterUniform, *v);
-      else if (auto v = value.ptr<float>())
-        glUniform1f(ptr->parameterUniform, *v);
-      else if (auto v = value.ptr<Vec2F>())
-        glUniform2f(ptr->parameterUniform, (*v)[0], (*v)[1]);
-      else if (auto v = value.ptr<Vec3F>())
-        glUniform3f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2]);
-      else if (auto v = value.ptr<Vec4F>())
-        glUniform4f(ptr->parameterUniform, (*v)[0], (*v)[1], (*v)[2], (*v)[3]);
+      else if (auto vi = value.ptr<int>())
+        glUniform1i(ptr->parameterUniform, *vi);
+      else if (auto vf = value.ptr<float>())
+        glUniform1f(ptr->parameterUniform, *vf);
+      else if (auto v2 = value.ptr<Vec2F>())
+        glUniform2f(ptr->parameterUniform, (*v2)[0], (*v2)[1]);
+      else if (auto v3 = value.ptr<Vec3F>())
+        glUniform3f(ptr->parameterUniform, (*v3)[0], (*v3)[1], (*v3)[2]);
+      else if (auto v4 = value.ptr<Vec4F>())
+        glUniform4f(ptr->parameterUniform, (*v4)[0], (*v4)[1], (*v4)[2], (*v4)[3]);
     }
   }
 }

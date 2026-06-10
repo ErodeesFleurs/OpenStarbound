@@ -62,8 +62,8 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
         it.remove();
       } else {
         try {
-          auto entityFactory = Root::singleton().entityFactory();
-          auto player = as<Player>(entityFactory->diskLoadEntity(EntityType::Player, entry.second));
+          auto ef = Root::singleton().entityFactory();
+          auto player = as<Player>(ef->diskLoadEntity(EntityType::Player, entry.second));
           if (player->uuid() != entry.first)
             throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", entry.first.hex()));
         } catch (StarException const& e) {
@@ -122,8 +122,8 @@ Maybe<Uuid> PlayerStorage::playerUuidByName(String const& name, Maybe<Uuid> exce
   for (auto& cache : m_savedPlayersCache) {
     if (except && *except == cache.first)
       continue;
-    else if (auto name = cache.second.optQueryString("identity.name")) {
-      auto cleanName = Text::stripEscapeCodes(*name).toLower();
+    else if (auto playerName = cache.second.optQueryString("identity.name")) {
+      auto cleanName = Text::stripEscapeCodes(*playerName).toLower();
       auto len = cleanName.size();
       if (len < longest && cleanName.utf8().rfind(cleanMatch.utf8()) == 0) {
         longest = len;
@@ -144,8 +144,8 @@ List<Uuid> PlayerStorage::playerUuidListByName(String const& name, Maybe<Uuid> e
   for (auto& cache : m_savedPlayersCache) {
     if (except && *except == cache.first)
       continue;
-    else if (auto name = cache.second.optQueryString("identity.name")) {
-      auto cleanName = Text::stripEscapeCodes(*name).toLower();
+    else if (auto playerName = cache.second.optQueryString("identity.name")) {
+      auto cleanName = Text::stripEscapeCodes(*playerName).toLower();
       if (cleanMatch == "" || cleanName.utf8().rfind(cleanMatch.utf8()) != NPos) {
         list.append(cache.first);
       }

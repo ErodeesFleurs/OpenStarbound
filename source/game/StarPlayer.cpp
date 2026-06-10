@@ -1410,8 +1410,8 @@ InteractiveEntityPtr Player::bestInteractionEntity(bool includeNearby) {
       interactBias[0] *= -1;
     Vec2F pos = position() + interactBias;
 
-    if (auto entity = world()->getInteractiveInRange(pos, position(), m_interactRadius))
-      interactiveEntity = entity;
+    if (auto nearbyEntity = world()->getInteractiveInRange(pos, position(), m_interactRadius))
+      interactiveEntity = nearbyEntity;
   }
 
   if (interactiveEntity && (isAdmin() || world()->canReachEntity(position(), interactRadius(), interactiveEntity->entityId())))
@@ -1710,16 +1710,16 @@ void Player::processControls() {
   if (loungeAnchor && loungeAnchor->controllable) {
     auto anchorState = m_movementController->anchorState();
     if (auto loungeableEntity = world()->get<LoungeableEntity>(anchorState->entityId)) {
-      for (auto move : m_pendingMoves) {
-        if (move == MoveControlType::Up)
+      for (auto movement : m_pendingMoves) {
+        if (movement == MoveControlType::Up)
           loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Up);
-        else if (move == MoveControlType::Down)
+        else if (movement == MoveControlType::Down)
           loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Down);
-        else if (move == MoveControlType::Left)
+        else if (movement == MoveControlType::Left)
           loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Left);
-        else if (move == MoveControlType::Right)
+        else if (movement == MoveControlType::Right)
           loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Right);
-        else if (move == MoveControlType::Jump)
+        else if (movement == MoveControlType::Jump)
           loungeableEntity->loungeControl(anchorState->positionIndex, LoungeControl::Jump);
       }
       if (m_tools->firingPrimary())
@@ -1736,8 +1736,8 @@ void Player::processControls() {
   m_techController->setShouldRun(run);
 
   if (move) {
-    for (auto move : m_pendingMoves) {
-      switch (move) {
+    for (auto movement : m_pendingMoves) {
+      switch (movement) {
         case MoveControlType::Right:
           m_techController->moveRight();
           break;

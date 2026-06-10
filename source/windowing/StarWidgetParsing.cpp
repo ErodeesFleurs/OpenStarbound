@@ -491,13 +491,13 @@ WidgetConstructResult WidgetParser::itemSlotHandler(String const& name, Json con
   else
     throw WidgetParserException::format("Failed to find ItemSlot callback named: '{}'", callback);
 
-  if (auto callback = m_callbacks.ptr(rightClickCallback))
-    itemSlot->setRightClickCallback(*callback);
+  if (auto rightCallback = m_callbacks.ptr(rightClickCallback))
+    itemSlot->setRightClickCallback(*rightCallback);
   else
     throw WidgetParserException::format("Failed to find ItemSlot rightClickCallback named: '{}'", rightClickCallback);
 
-  if (auto callback = m_callbacks.ptr(middleClickCallback))
-    itemSlot->setMiddleClickCallback(*callback);
+  if (auto middleCallback = m_callbacks.ptr(middleClickCallback))
+    itemSlot->setMiddleClickCallback(*middleCallback);
 
   itemSlot->setBackingImageAffinity(config.getBool("showBackingImageWhenFull", false), config.getBool("showBackingImageWhenEmpty", true));
   itemSlot->showDurability(config.getBool("showDurability", false));
@@ -547,13 +547,13 @@ WidgetConstructResult WidgetParser::itemGridHandler(String const& name, Json con
   else
     throw WidgetParserException::format("Failed to find ItemGrid callback named: '{}'", callback);
   
-  if (auto callback = m_callbacks.ptr(rightClickCallback))
-    itemGrid->setRightClickCallback(*callback);
+  if (auto rightCallback = m_callbacks.ptr(rightClickCallback))
+    itemGrid->setRightClickCallback(*rightCallback);
   else
     throw WidgetParserException::format("Failed to find ItemGrid rightClickCallback named: '{}'", rightClickCallback);
 
-  if (auto callback = m_callbacks.ptr(middleClickCallback))
-    itemGrid->setMiddleClickCallback(*callback);
+  if (auto middleCallback = m_callbacks.ptr(middleClickCallback))
+    itemGrid->setMiddleClickCallback(*middleCallback);
 
   common(itemGrid, config);
 

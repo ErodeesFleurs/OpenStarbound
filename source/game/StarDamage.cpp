@@ -84,8 +84,8 @@ Json DamageSource::toJson() const {
   Json knockbackJson;
   if (auto p = knockback.ptr<float>())
     knockbackJson = *p;
-  else if (auto p = knockback.ptr<Vec2F>())
-    knockbackJson = jsonFromVec2F(*p);
+  else if (auto v = knockback.ptr<Vec2F>())
+    knockbackJson = jsonFromVec2F(*v);
 
   return JsonObject{{"damageType", DamageTypeNames.getRight(damageType)},
       {"damageArea", damageAreaJson},

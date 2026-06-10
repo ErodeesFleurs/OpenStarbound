@@ -569,30 +569,30 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 
       {
         MutexLocker lock(speaker->audioStream->mutex);
-        auto& samples = speaker->audioStream->samples;
+        auto& streamSamples = speaker->audioStream->samples;
 
         auto now = Time::monotonicMilliseconds();
         if (now - speaker->lastReceiveTime < 1000) {
           auto limit = static_cast<size_t>(speaker->minimumPlaySamples) + 22050;
-          if (samples.size() > limit) { // skip ahead if we're getting too far
-            for (size_t i = samples.size(); i >= limit; --i)
-              samples.pop();
+          if (streamSamples.size() > limit) { // skip ahead if we're getting too far
+            for (size_t i = streamSamples.size(); i >= limit; --i)
+              streamSamples.pop();
           }
         }
         else
-          samples = std::queue<int16_t>();
+          streamSamples = std::queue<int16_t>();
 
         speaker->lastReceiveTime = now;
 
         if (mono) {
           for (int16_t sample : m_resampleBuffer) {
-            samples.push(sample);
-            samples.push(sample);
+            streamSamples.push(sample);
+            streamSamples.push(sample);
           }
         }
         else {
           for (int16_t sample : m_resampleBuffer)
-            samples.push(sample);
+            streamSamples.push(sample);
         }
       }
       playSpeaker(speaker, channels);
@@ -703,7 +703,7 @@ void Voice::thread() {
       return;
 
     {
-      MutexLocker locker(m_captureMutex);
+      MutexLocker captureLocker(m_captureMutex);
       ByteArray encoded(VOICE_MAX_PACKET_SIZE, 0);
       size_t frameSamples = VOICE_FRAME_SIZE * static_cast<size_t>(m_deviceChannels);
       while (m_capturedChunksFrames >= VOICE_FRAME_SIZE) {
@@ -731,7 +731,7 @@ void Voice::thread() {
           encoded.resize(encodedSize);
 
           {
-            MutexLocker locker(m_encodeMutex);
+            MutexLocker encodeLocker(m_encodeMutex);
             m_encodedChunks.emplace_back(std::move(encoded));
             m_encodedChunksLength += encodedSize;
 

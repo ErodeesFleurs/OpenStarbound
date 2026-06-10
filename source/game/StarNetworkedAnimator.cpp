@@ -135,8 +135,8 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath) : Network
     emitter.rotationGroup = particleEmitterConfig.optString("rotationGroup");
     emitter.rotationCenter = particleEmitterConfig.opt("rotationCenter").apply(jsonToVec2F);
 
-    for (auto const& config : particleEmitterConfig.get("particles").iterateArray()) {
-      auto creator = root.particleDatabase()->particleCreator(config.get("particle"), relativePath);
+    for (auto const& particleConfig : particleEmitterConfig.get("particles").iterateArray()) {
+      auto creator = root.particleDatabase()->particleCreator(particleConfig.get("particle"), relativePath);
       unsigned count = config.getUInt("count", 1);
       Vec2F offset = jsonToVec2F(config.get("offset", JsonArray{0, 0}));
       bool flip = config.getBool("flip", false);
@@ -505,16 +505,16 @@ String NetworkedAnimator::applyPartTags(String const& partName, String apply) co
     for (auto& stateTypeName : m_animatedParts.stateTypes()) {
       auto& activeState = m_animatedParts.activeState(stateTypeName);
       unsigned stateFrame = activeState.frame;
-      Maybe<unsigned> frame;
-      String frameStr;
-      String frameIndexStr;
+      Maybe<unsigned> tagFrame;
+      String tagFrameStr;
+      String tagFrameIndexStr;
 
-      frame = stateFrame;
-      frameStr = static_cast<String>(toString(stateFrame + 1));
-      frameIndexStr = static_cast<String>(toString(stateFrame));
-      if (frame) {
-        animationTags.set(stateTypeName + "_frame", frameStr);
-        animationTags.set(stateTypeName + "_frameIndex", frameIndexStr);
+      tagFrame = stateFrame;
+      tagFrameStr = static_cast<String>(toString(stateFrame + 1));
+      tagFrameIndexStr = static_cast<String>(toString(stateFrame));
+      if (tagFrame) {
+        animationTags.set(stateTypeName + "_frame", tagFrameStr);
+        animationTags.set(stateTypeName + "_frameIndex", tagFrameIndexStr);
       }
       animationTags.set(stateTypeName + "_state", activeState.stateName);
 
@@ -536,13 +536,12 @@ String NetworkedAnimator::applyPartTags(String const& partName, String apply) co
         return frameIndexStr;
     } else if (auto p = animationTags.ptr(tag)) {
       return StringView(*p);
-    } else if (auto p = partTags.ptr(tag)) {
-      return StringView(*p);
-    } else if (auto p = m_globalTags.ptr(tag)) {
-      return StringView(*p);
+    } else if (auto pPart = partTags.ptr(tag)) {
+      return StringView(*pPart);
+    } else if (auto pGlobal = m_globalTags.ptr(tag)) {
+      return StringView(*pGlobal);
     }
-
-    return StringView("default");
+    return StringView();
   });
   return applied ? applied.get() : apply;
 }
@@ -872,10 +871,10 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
         directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
           if (auto p = animationTags.ptr(tag)) {
             return StringView(*p);
-          } else if (auto p = partTags.ptr(tag)) {
-            return StringView(*p);
-          } else if (auto p = m_globalTags.ptr(tag)) {
-            return StringView(*p);
+          } else if (auto pPart = partTags.ptr(tag)) {
+            return StringView(*pPart);
+          } else if (auto pGlobal = m_globalTags.ptr(tag)) {
+            return StringView(*pGlobal);
           }
           return StringView("default");
         });
@@ -897,10 +896,10 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
           directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
             if (auto p = animationTags.ptr(tag)) {
               return StringView(*p);
-            } else if (auto p = partTags.ptr(tag)) {
-              return StringView(*p);
-            } else if (auto p = m_globalTags.ptr(tag)) {
-              return StringView(*p);
+            } else if (auto pPart = partTags.ptr(tag)) {
+              return StringView(*pPart);
+            } else if (auto pGlobal = m_globalTags.ptr(tag)) {
+              return StringView(*pGlobal);
             }
             return StringView("default");
           });
@@ -918,12 +917,11 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
           return frameIndexStr;
       } else if (auto p = animationTags.ptr(tag)) {
         return StringView(*p);
-      } else if (auto p = partTags.ptr(tag)) {
-        return StringView(*p);
-      } else if (auto p = m_globalTags.ptr(tag)) {
-        return StringView(*p);
+      } else if (auto pPart = partTags.ptr(tag)) {
+        return StringView(*pPart);
+      } else if (auto pGlobal = m_globalTags.ptr(tag)) {
+        return StringView(*pGlobal);
       }
-
       return StringView("default");
     });
     String const& usedImage = processedImage ? processedImage.get() : image;
@@ -1222,8 +1220,8 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
             List<ParticleEmitter::ParticleConfig> shuffledList = pair.second.particleList;
             Random::shuffle(shuffledList);
 
-            for (unsigned i = 0; i < numToSelect; ++i)
-              addParticles(shuffledList.at(i), rect, transformation);
+            for (unsigned j = 0; j < numToSelect; ++j)
+              addParticles(shuffledList.at(j), rect, transformation);
           }
         }
       }

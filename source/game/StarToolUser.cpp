@@ -427,9 +427,9 @@ void ToolUser::tick(float dt, bool shifting, HashSet<MoveControlType> const& mov
       }
 
       if (m_fireAlt) {
-        FireableItemPtr fireableItem = as<FireableItem>(m_altHandItem.get());
-        if (fireableItem)
-          fireableItem->fire(FireMode::Alt, shifting, edgeTriggeredAlt);
+        FireableItemPtr altFireableItem = as<FireableItem>(m_altHandItem.get());
+        if (altFireableItem)
+          altFireableItem->fire(FireMode::Alt, shifting, edgeTriggeredAlt);
         ActivatableItemPtr activatableItem = as<ActivatableItem>(m_altHandItem.get());
         if (activatableItem && activatableItem->usable())
           activatableItem->activate();
@@ -443,9 +443,9 @@ void ToolUser::tick(float dt, bool shifting, HashSet<MoveControlType> const& mov
       }
 
       if (m_fireMain) {
-        FireableItemPtr fireableItem = as<FireableItem>(m_primaryHandItem.get());
-        if (fireableItem)
-          fireableItem->fire(FireMode::Primary, shifting, edgeTriggeredMain);
+        FireableItemPtr primaryFireableItem = as<FireableItem>(m_primaryHandItem.get());
+        if (primaryFireableItem)
+          primaryFireableItem->fire(FireMode::Primary, shifting, edgeTriggeredMain);
         ActivatableItemPtr activatableItem = as<ActivatableItem>(m_primaryHandItem.get());
         if (activatableItem && activatableItem->usable())
           activatableItem->activate();

@@ -130,11 +130,11 @@ MonsterDatabase::MonsterDatabase() : m_rebuilder(make_shared<Rebuilder>("monster
 
       ColorReplaceMap colorSwaps;
       for (auto const& swapSet : config.getArray("swaps")) {
-        ColorReplaceMap colorSwaps;
+        ColorReplaceMap swapMap;
         for (auto const& swap : swapSet.iterateObject()) {
-          colorSwaps[Color::fromHex(swap.first).toRgba()] = Color::fromHex(swap.second.toString()).toRgba();
+          swapMap[Color::fromHex(swap.first).toRgba()] = Color::fromHex(swap.second.toString()).toRgba();
         }
-        m_colorSwaps[paletteName].append(colorSwaps);
+        m_colorSwaps[paletteName].append(swapMap);
       }
     } catch (StarException const& e) {
       throw MonsterException(strf("Error loading monster colors '{}'", file), e);

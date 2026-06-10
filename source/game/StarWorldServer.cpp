@@ -425,11 +425,11 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       else
         m_clientInfo.get(damage->remoteDamageRequest.destinationConnection())->outgoingPackets.append(make_shared<DamageRequestPacket>(damage->remoteDamageRequest));
 
-    } else if (auto damage = as<DamageNotificationPacket>(packet)) {
-      m_damageManager->pushRemoteDamageNotification(damage->remoteDamageNotification);
+    } else if (auto damageNotify = as<DamageNotificationPacket>(packet)) {
+      m_damageManager->pushRemoteDamageNotification(damageNotify->remoteDamageNotification);
       for (auto const& pair : m_clientInfo) {
-        if (pair.first != clientId && pair.second->needsDamageNotification(damage->remoteDamageNotification))
-          pair.second->outgoingPackets.append(makePooled<DamageNotificationPacket>(damage->remoteDamageNotification));
+        if (pair.first != clientId && pair.second->needsDamageNotification(damageNotify->remoteDamageNotification))
+          pair.second->outgoingPackets.append(makePooled<DamageNotificationPacket>(damageNotify->remoteDamageNotification));
       }
 
     } else if (auto entityInteract = as<EntityInteractPacket>(packet)) {
@@ -521,10 +521,10 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
             clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeRight(response.take()), entityMessagePacket->uuid));
           else
             clientInfo->outgoingPackets.append(makePooled<EntityMessageResponsePacket>(makeLeft("Message not handled by entity"), entityMessagePacket->uuid));
-        } else if (auto const& clientInfo = m_clientInfo.value(connectionForEntity(entity->entityId()))) {
-          m_entityMessageResponses[entityMessagePacket->uuid] = {clientInfo->clientId, clientId};
+        } else if (auto const& targetClientInfo = m_clientInfo.value(connectionForEntity(entity->entityId()))) {
+          m_entityMessageResponses[entityMessagePacket->uuid] = {targetClientInfo->clientId, clientId};
           entityMessagePacket->fromConnection = clientId;
-          clientInfo->outgoingPackets.append(std::move(entityMessagePacket));
+          targetClientInfo->outgoingPackets.append(std::move(entityMessagePacket));
         }
       }
 
@@ -534,8 +534,8 @@ void WorldServer::handleIncomingPackets(ConnectionId clientId, List<PacketPtr> c
       else {
         auto response = m_entityMessageResponses.take(entityMessageResponsePacket->uuid).second;
         if (response.is<ConnectionId>()) {
-          if (auto clientInfo = m_clientInfo.value(response.get<ConnectionId>()))
-            clientInfo->outgoingPackets.append(std::move(entityMessageResponsePacket));
+          if (auto responseClientInfo = m_clientInfo.value(response.get<ConnectionId>()))
+            responseClientInfo->outgoingPackets.append(std::move(entityMessageResponsePacket));
         } else {
           if (entityMessageResponsePacket->response.isRight())
             response.get<RpcPromiseKeeper<Json>>().fulfill(entityMessageResponsePacket->response.right());
@@ -1180,10 +1180,10 @@ bool WorldServer::placeDungeon(String const& dungeonName, Vec2I const& position,
   auto facade = make_shared<DungeonGeneratorWorld>(this, true);
   bool placed = false;
   DungeonGenerator dungeonGenerator(dungeonName, seed, m_worldTemplate->threatLevel(), dungeonId);
-  if (auto generateResult = dungeonGenerator.generate(facade, position, false, forcePlacement)) {
+    if (auto generateResult = dungeonGenerator.generate(facade, position, false, forcePlacement)) {
     auto worldGenerator = make_shared<WorldGenerator>(this);
-    for (auto const& position : generateResult->second) {
-      if (ServerTile* tile = modifyServerTile(position))
+    for (auto const& dungeonPosition : generateResult->second) {
+      if (ServerTile* tile = modifyServerTile(dungeonPosition))
         worldGenerator->replaceBiomeBlocks(tile);
     }
     placed = true;

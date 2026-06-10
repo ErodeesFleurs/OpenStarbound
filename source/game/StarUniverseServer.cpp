@@ -956,9 +956,9 @@ void UniverseServer::warpPlayers() {
             m_chatProcessor->joinChannel(clientId, printWorldId(warpToWorld.world));
 
             if (warpToWorld.world.is<ClientShipWorldId>()) {
-              if (auto clientId = getClientForUuid(warpToWorld.world.get<ClientShipWorldId>())) {
-                if (auto systemWorld = m_clients.get(*clientId)->systemWorld())
-                  clientContext->setOrbitWarpAction(systemWorld->clientWarpAction(*clientId));
+              if (auto shipOwnerId = getClientForUuid(warpToWorld.world.get<ClientShipWorldId>())) {
+                if (auto systemWorld = m_clients.get(*shipOwnerId)->systemWorld())
+                  clientContext->setOrbitWarpAction(systemWorld->clientWarpAction(*shipOwnerId));
               }
             }
           } else if (auto returnWarp = clientContext->playerReturnWarp()) {
@@ -1072,9 +1072,9 @@ void UniverseServer::flyShips() {
 
     clientContext->setShipCoordinate(CelestialCoordinate(system));
     clientContext->setOrbitWarpAction({});
-    for (auto clientId : clients) {
-      if (auto& clientContext = m_clients.get(clientId))
-        clientContext->setOrbitWarpAction({});
+    for (auto shipClientId : clients) {
+      if (auto& shipClientContext = m_clients.get(shipClientId))
+        shipClientContext->setOrbitWarpAction({});
     }
 
     m_pendingArrivals.set(clientId, destination);
@@ -1135,8 +1135,8 @@ void UniverseServer::arriveShips() {
       locker.lock();
 
       for (auto shipClientId : clients) {
-        if (auto& clientContext = m_clients.get(shipClientId))
-          clientContext->setOrbitWarpAction(clientSystem->clientWarpAction(clientId));
+        if (auto& shipClientCtx = m_clients.get(shipClientId))
+          shipClientCtx->setOrbitWarpAction(clientSystem->clientWarpAction(clientId));
       }
     }
     return true;
@@ -1486,10 +1486,10 @@ void UniverseServer::loadTempWorldIndex() {
   auto tempWorldFiles = m_tempWorldIndex.keys().transformed([this](InstanceWorldId const& worldId) { return tempWorldFile(worldId); });
   for (auto p : File::dirList(m_storageDirectory)) {
     if (p.second == false && p.first.endsWith(".tempworld")) {
-      String storageFile = File::relativeTo(m_storageDirectory, p.first);
-      if (!tempWorldFiles.contains(storageFile)) {
+      String tempWorldStorageFile = File::relativeTo(m_storageDirectory, p.first);
+      if (!tempWorldFiles.contains(tempWorldStorageFile)) {
         Logger::info("UniverseServer: Removing unindexed temporary world {}", p.first);
-        File::remove(storageFile);
+        File::remove(tempWorldStorageFile);
       }
     }
   }
@@ -2003,8 +2003,8 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   auto clients = m_clients.keys();
   clientsReadLocker.unlock();
 
-  for (auto clientId : clients) {
-    m_connectionServer->sendPackets(clientId, {make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))});
+  for (auto existingClientId : clients) {
+    m_connectionServer->sendPackets(existingClientId, {make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))});
   }
 
   for (auto& p : m_scriptContexts)
@@ -2059,8 +2059,8 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
         spawnTarget = returnWarp.target;
       }
     } else if (*shortcut == WarpAlias::OrbitedWorld) {
-      if (auto warpAction = clientContext->orbitWarpAction()) {
-        if (auto warpToWorld = warpAction->first.maybe<WarpToWorld>()) {
+      if (auto orbitWarp = clientContext->orbitWarpAction()) {
+        if (auto warpToWorld = orbitWarp->first.maybe<WarpToWorld>()) {
           toWorldId = warpToWorld->world;
           spawnTarget = warpToWorld->target;
         }
@@ -2172,8 +2172,8 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
     Logger::info("UniverseServer: Client {} disconnected for reason: {}", clientContext->descriptiveName(), reason);
 
     auto players = static_cast<uint16_t>(m_clients.size());
-    for (auto clientId : m_clients.keys()) {
-      m_connectionServer->sendPackets(clientId, {make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))});
+    for (auto existingClientId : m_clients.keys()) {
+      m_connectionServer->sendPackets(existingClientId, {make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))});
     }
     clientsLocker.unlock();
 

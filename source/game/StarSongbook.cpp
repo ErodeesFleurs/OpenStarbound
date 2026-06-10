@@ -575,23 +575,23 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
           if (tupleCount > 0)
             duration *= tupleDurationFactor;
 
-          double noteDuration = duration;
+          double playedDuration = duration;
           if (staccato)
-            noteDuration *= 0.5;
+            playedDuration *= 0.5;
 
           if (peek() == '-') {
             if (note != 0) {
               note += transpose();
               if (pendingTies.contains(note)) {
                 auto& noteInstance = result[pendingTies.get(note)];
-                noteInstance.duration += noteDuration;
+                noteInstance.duration += playedDuration;
               } else {
                 auto mapping = noteMapping(m_instrument, m_species, note);
                 result.append(Note{
                     m_instrument,
                     Random::randFrom(mapping.files),
                     now,
-                    noteDuration,
+                    playedDuration,
                     mapping.fadeout,
                     mapping.velocity
                   });
@@ -603,14 +603,14 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
               note += transpose();
               if (pendingTies.contains(note)) {
                 auto& noteInstance = result[pendingTies.take(note)];
-                noteInstance.duration += noteDuration;
+                noteInstance.duration += playedDuration;
               } else {
                 auto mapping = noteMapping(m_instrument, m_species, note);
                 result.append(Note{
                     m_instrument,
                     Random::randFrom(mapping.files),
                     now,
-                    noteDuration,
+                    playedDuration,
                     mapping.fadeout,
                     mapping.velocity
                   });

@@ -225,14 +225,14 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
       drawDrawable(std::move(drawable));
 
     } else if (particle.type == Particle::Type::Text) {
-      Vec2F position = m_camera.worldToScreen(particle.position);
-      int size = min(128.0f, round(static_cast<float>(textParticleFontSize) * m_camera.pixelRatio() * particle.size));
-      if (size > 0) {
-        m_textPainter->setFontSize(size);
+      Vec2F textPosition = m_camera.worldToScreen(particle.position);
+      int fontPixelSize = min(128.0f, round(static_cast<float>(textParticleFontSize) * m_camera.pixelRatio() * particle.size));
+      if (fontPixelSize > 0) {
+        m_textPainter->setFontSize(fontPixelSize);
         m_textPainter->setFontColor(particle.color.toRgba());
         m_textPainter->setProcessingDirectives("");
         m_textPainter->setFont("");
-        m_textPainter->renderText(particle.string, {position, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor});
+        m_textPainter->renderText(particle.string, {textPosition, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor});
       }
     }
   }

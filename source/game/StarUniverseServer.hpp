@@ -242,7 +242,7 @@ private:
 
   mutable ReadersWriterMutex m_clientsLock;
   unsigned m_maxPlayers;
-  IdMap<ConnectionId, ServerClientContextPtr> m_clients [[clang::guarded_by(m_clientsLock)]];
+  IdMap<ConnectionId, ServerClientContextPtr> m_clients;
 
   shared_ptr<atomic<bool>> m_pause;
   bool m_secureWarps;

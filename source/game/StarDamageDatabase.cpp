@@ -32,11 +32,11 @@ DamageDatabase::DamageDatabase() {
       TargetMaterial material = effect.first;
       kind.effects.set(material, {});
       for (auto const& hit : effect.second.iterateObject()) {
-        DamageEffect effect = DamageEffect {
+        DamageEffect dmgEffect = DamageEffect {
           hit.second.get("sounds", JsonArray()),
           hit.second.get("particles", JsonArray())
         };
-        kind.effects[material].set(HitTypeNames.getLeft(hit.first), effect);
+        kind.effects[material].set(HitTypeNames.getLeft(hit.first), dmgEffect);
       }
     }
     kind.elementalType = config.getString("elementalType", "default");

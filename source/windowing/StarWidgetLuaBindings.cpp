@@ -59,8 +59,8 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
         auto drawable = Drawable::makeImage(image, 1.0, true, {0.0, 0.0}, color.value(Color::White));
         if (auto s = scale.maybe<Vec2F>())
           drawable.transform(Mat3F::scaling(*s));
-        else if(auto s = scale.maybe<float>())
-          drawable.transform(Mat3F::scaling(*s));
+        else if(auto floatScale = scale.maybe<float>())
+          drawable.transform(Mat3F::scaling(*floatScale));
         if (rotation)
           drawable.rotate(*rotation);
         canvasWidget->drawDrawable(drawable, position);

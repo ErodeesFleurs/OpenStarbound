@@ -20,23 +20,23 @@ WeatherType::WeatherType(Json config, String path) {
   name = config.getString("name");
 
   for (auto v : config.getArray("particles", JsonArray())) {
-    ParticleConfig config;
-    config.particle = Particle(v.get("particle"), path);
-    config.density = v.getFloat("density");
-    config.autoRotate = v.getBool("autoRotate", false);
-    particles.append(std::move(config));
+    ParticleConfig particleConfig;
+    particleConfig.particle = Particle(v.get("particle"), path);
+    particleConfig.density = v.getFloat("density");
+    particleConfig.autoRotate = v.getBool("autoRotate", false);
+    particles.append(std::move(particleConfig));
   }
 
   for (auto v : config.getArray("projectiles", JsonArray())) {
-    ProjectileConfig config;
-    config.projectile = v.getString("projectile");
-    config.parameters = v.get("parameters", {});
-    config.velocity = jsonToVec2F(v.get("velocity"));
-    config.ratePerX = v.getFloat("ratePerX");
-    config.spawnAboveRegion = v.getInt("spawnAboveRegion");
-    config.spawnHorizontalPad = v.getInt("spawnHorizontalPad");
-    config.windAffectAmount = v.getFloat("windAffectAmount", 0.0f);
-    projectiles.append(std::move(config));
+    ProjectileConfig projectileConfig;
+    projectileConfig.projectile = v.getString("projectile");
+    projectileConfig.parameters = v.get("parameters", {});
+    projectileConfig.velocity = jsonToVec2F(v.get("velocity"));
+    projectileConfig.ratePerX = v.getFloat("ratePerX");
+    projectileConfig.spawnAboveRegion = v.getInt("spawnAboveRegion");
+    projectileConfig.spawnHorizontalPad = v.getInt("spawnHorizontalPad");
+    projectileConfig.windAffectAmount = v.getFloat("windAffectAmount", 0.0f);
+    projectiles.append(std::move(projectileConfig));
   }
 
   maximumWind = config.getFloat("maximumWind", 0.0f);

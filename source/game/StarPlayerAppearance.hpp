@@ -9,7 +9,7 @@
 namespace Star {
 
 class Player;
-class PlayerConfig;
+struct PlayerConfig;
 using PlayerConfigPtr = SharedPtr<PlayerConfig>;
 class ArmorWearer;
 using ArmorWearerPtr = SharedPtr<ArmorWearer>;

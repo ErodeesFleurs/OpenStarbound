@@ -988,14 +988,14 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
     } else if (auto damage = as<DamageRequestPacket>(packet)) {
       m_damageManager->pushRemoteDamageRequest(damage->remoteDamageRequest);
 
-    } else if (auto damage = as<DamageNotificationPacket>(packet)) {
-      std::string_view view = damage->remoteDamageNotification.damageNotification.targetMaterialKind.utf8();
+    } else if (auto damageNotify = as<DamageNotificationPacket>(packet)) {
+      std::string_view view = damageNotify->remoteDamageNotification.damageNotification.targetMaterialKind.utf8();
       static const size_t FULL_SIZE = SECRET_BROADCAST_PREFIX.size() + Curve25519::SignatureSize;
       static const std::string LEGACY_VOICE_PREFIX = "data\0voice\0"s;
 
       if (view.size() >= FULL_SIZE && view.rfind(SECRET_BROADCAST_PREFIX, 0) != NPos) {
         // this is actually a secret broadcast!!
-        if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
+        if (auto player = m_entityMap->get<Player>(damageNotify->remoteDamageNotification.sourceEntityId)) {
           if (auto publicKey = player->getSecretPropertyView(SECRET_BROADCAST_PUBLIC_KEY)) {
             if (publicKey->utf8Size() == Curve25519::PublicKeySize) {
               auto signature = view.substr(SECRET_BROADCAST_PREFIX.size(), Curve25519::SignatureSize);
@@ -1016,7 +1016,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       else if (view.size() > 75 && view.rfind(LEGACY_VOICE_PREFIX, 0) != NPos) {
         // this is a StarExtensions voice packet
         // (remove this and stop transmitting like this once most SE features are ported over)
-        if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
+        if (auto player = m_entityMap->get<Player>(damageNotify->remoteDamageNotification.sourceEntityId)) {
           if (auto publicKey = player->effectsAnimator()->globalTagPtr("\0SE_VOICE_SIGNING_KEY"s)) {
             auto raw = view.substr(75);
             if (m_broadcastCallback && Curve25519::verify(
@@ -1033,7 +1033,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         }
       }
       else {
-        m_damageManager->pushRemoteDamageNotification(damage->remoteDamageNotification);
+        m_damageManager->pushRemoteDamageNotification(damageNotify->remoteDamageNotification);
       }
 
     } else if (auto entityMessagePacket = as<EntityMessagePacket>(packet)) {

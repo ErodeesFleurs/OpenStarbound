@@ -114,10 +114,10 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
     JsonObject baseLeaves = config.foliageSettings.getObject("baseLeaves", {});
     if (baseLeaves.contains(baseKey)) {
       JsonObject baseLeavesSettings = baseLeaves.get(baseKey).toObject();
-      JsonObject attachmentSettings = baseLeavesSettings["attachment"].toObject();
+      JsonObject leavesAttachSettings = baseLeavesSettings["attachment"].toObject();
 
-      float xOf = xOffset + attachmentSettings.get("bx").toDouble() / TilePixels;
-      float yOf = yOffset + attachmentSettings.get("by").toDouble() / TilePixels;
+      float xOf = xOffset + leavesAttachSettings.get("bx").toDouble() / TilePixels;
+      float yOf = yOffset + leavesAttachSettings.get("by").toDouble() / TilePixels;
 
       if (baseLeavesSettings.contains("image") && !baseLeavesSettings.get("image").toString().empty()) {
         String baseLeavesFile =
@@ -200,10 +200,10 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
       JsonObject trunkLeaves = config.foliageSettings.getObject("trunkLeaves", {});
       if (trunkLeaves.contains(middleKey)) {
         JsonObject trunkLeavesSettings = trunkLeaves.get(middleKey).toObject();
-        JsonObject attachmentSettings = trunkLeavesSettings["attachment"].toObject();
+        JsonObject trunkLeavesAttach = trunkLeavesSettings["attachment"].toObject();
 
-        float xOf = xOffset + attachmentSettings.get("bx").toDouble() / TilePixels;
-        float yOf = yOffset + attachmentSettings.get("by").toDouble() / TilePixels;
+        float xOf = xOffset + trunkLeavesAttach.get("bx").toDouble() / TilePixels;
+        float yOf = yOffset + trunkLeavesAttach.get("by").toDouble() / TilePixels;
 
         if (trunkLeavesSettings.contains("image") && !trunkLeavesSettings.get("image").toString().empty()) {
           String trunkLeavesFile =
@@ -243,9 +243,9 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
       while (hasBranches && (yOffset >= branchYOffset) && ((middleHeight - i) > 0)) {
         String branchKey = branches.keys()[rnd.randInt(branches.size() - 1)];
         JsonObject branchSettings = branches[branchKey].toObject();
-        JsonObject attachmentSettings = branchSettings["attachment"].toObject();
+        JsonObject branchAttach = branchSettings["attachment"].toObject();
 
-        float h = attachmentSettings.get("h").toDouble() / TilePixels;
+        float h = branchAttach.get("h").toDouble() / TilePixels;
         if (yOffset < branchYOffset + (h / 2.0f))
           break;
 
@@ -273,10 +273,10 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
           JsonObject branchLeaves = config.foliageSettings.getObject("branchLeaves", {});
           if (branchLeaves.contains(branchKey)) {
             JsonObject branchLeavesSettings = branchLeaves.get(branchKey).toObject();
-            JsonObject attachmentSettings = branchLeavesSettings["attachment"].toObject();
+            JsonObject branchLeavesAttach = branchLeavesSettings["attachment"].toObject();
 
-            float xOf = xO + attachmentSettings.get("bx").toDouble() / TilePixels;
-            float yOf = yO + attachmentSettings.get("by").toDouble() / TilePixels;
+            float xOf = xO + branchLeavesAttach.get("bx").toDouble() / TilePixels;
+            float yOf = yO + branchLeavesAttach.get("by").toDouble() / TilePixels;
 
             if (branchLeavesSettings.contains("image") && !branchLeavesSettings.get("image").toString().empty()) {
               String branchLeavesFile =
@@ -351,10 +351,10 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
       if (crownLeaves.contains(crownKey)) {
         JsonObject crownLeavesSettings = crownLeaves.get(crownKey).toObject();
 
-        JsonObject attachmentSettings = crownLeavesSettings["attachment"].toObject();
+        JsonObject crownLeavesAttach = crownLeavesSettings["attachment"].toObject();
 
-        float xO = xOffset + attachmentSettings.get("bx").toDouble() / TilePixels;
-        float yO = yOffset + attachmentSettings.get("by").toDouble() / TilePixels;
+        float xO = xOffset + crownLeavesAttach.get("bx").toDouble() / TilePixels;
+        float yO = yOffset + crownLeavesAttach.get("by").toDouble() / TilePixels;
 
         if (crownLeavesSettings.contains("image") && !crownLeavesSettings.get("image").toString().empty()) {
           String crownLeavesFile =
@@ -1027,8 +1027,8 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   float random = Random::randf(-0.3f, 0.3f);
   auto fallVector = (worldSpaceBreakPoint - sourcePosition).normalized();
   bool first = true;
-  for (auto segmentIdx : segmentOrder) {
-    auto segment = segments[segmentIdx];
+  for (auto segIdx : segmentOrder) {
+    auto segment = segments[segIdx];
     world()->addEntity(make_shared<PlantDrop>(segment,
         worldSpaceBreakPoint,
         fallVector,

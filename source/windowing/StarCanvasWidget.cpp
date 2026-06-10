@@ -139,24 +139,24 @@ void CanvasWidget::renderImpl() {
   auto renderingOffset = Vec2F(screenPosition());
 
   for (auto const& op : m_renderOps) {
-    if (auto args = op.ptr<ImageOp>())
-      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderImage(renderingOffset, std::forward<decltype(args)>(args)...); }, *args);
-    else if (auto args = op.ptr<ImageRectOp>())
-      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderImageRect(renderingOffset, std::forward<decltype(args)>(args)...); }, *args);
-    else if (auto args = op.ptr<DrawableOp>())
-      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderDrawable(renderingOffset, std::forward<decltype(args)>(args)...); }, *args);
-    else if (auto args = op.ptr<TiledImageOp>())
-      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderTiledImage(renderingOffset, std::forward<decltype(args)>(args)...); }, *args);
-    else if (auto args = op.ptr<LineOp>())
-      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderLine(renderingOffset, std::forward<decltype(args)>(args)...); }, *args);
-    else if (auto args = op.ptr<RectOp>())
-      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderRect(renderingOffset, std::forward<decltype(args)>(args)...); }, *args);
-    else if (auto args = op.ptr<PolyOp>())
-      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderPoly(renderingOffset, std::forward<decltype(args)>(args)...); }, *args);
-    else if (auto args = op.ptr<TrianglesOp>())
-      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderTriangles(renderingOffset, std::forward<decltype(args)>(args)...); }, *args);
-    else if (auto args = op.ptr<TextOp>())
-      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderText(renderingOffset, std::forward<decltype(args)>(args)...); }, *args);
+    if (auto imageArgs = op.ptr<ImageOp>())
+      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderImage(renderingOffset, std::forward<decltype(args)>(args)...); }, *imageArgs);
+    else if (auto imageRectArgs = op.ptr<ImageRectOp>())
+      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderImageRect(renderingOffset, std::forward<decltype(args)>(args)...); }, *imageRectArgs);
+    else if (auto drawableArgs = op.ptr<DrawableOp>())
+      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderDrawable(renderingOffset, std::forward<decltype(args)>(args)...); }, *drawableArgs);
+    else if (auto tiledImageArgs = op.ptr<TiledImageOp>())
+      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderTiledImage(renderingOffset, std::forward<decltype(args)>(args)...); }, *tiledImageArgs);
+    else if (auto lineArgs = op.ptr<LineOp>())
+      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderLine(renderingOffset, std::forward<decltype(args)>(args)...); }, *lineArgs);
+    else if (auto rectArgs = op.ptr<RectOp>())
+      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderRect(renderingOffset, std::forward<decltype(args)>(args)...); }, *rectArgs);
+    else if (auto polyArgs = op.ptr<PolyOp>())
+      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderPoly(renderingOffset, std::forward<decltype(args)>(args)...); }, *polyArgs);
+    else if (auto trianglesArgs = op.ptr<TrianglesOp>())
+      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderTriangles(renderingOffset, std::forward<decltype(args)>(args)...); }, *trianglesArgs);
+    else if (auto textArgs = op.ptr<TextOp>())
+      tupleUnpackFunction([this, renderingOffset](auto&&... args) { return renderText(renderingOffset, std::forward<decltype(args)>(args)...); }, *textArgs);
   }
 }
 

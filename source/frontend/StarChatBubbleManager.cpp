@@ -188,12 +188,12 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
   float pixelRatio = m_guiContext->interfaceScale();
 
   for (auto action : chatActions) {
-    Json config = JsonObject{};
+    Json actionConfig = JsonObject{};
     Vec2F position;
 
     if (action.is<SayChatAction>()) {
       auto sayAction = action.get<SayChatAction>();
-      config = sayAction.config.optObject().value(JsonObject{});
+      actionConfig = sayAction.config.optObject().value(JsonObject{});
       position = sayAction.position;
 
       // TODO: Get rid of this stupid fucking bullshit, this is the ugliest
@@ -216,7 +216,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       int middleIdx = (innerTiles[0] - 1) / 2;
 
       List<BubbleImage> backgroundImages;
-      if (config.getBool("drawBorder", true)) {
+      if (actionConfig.getBool("drawBorder", true)) {
         for (int y = 0; y < innerTiles[1]; y++) {
           for (int x = 0; x < innerTiles[0]; x++) {
             auto partPosition = [partSize](int x, int y) {
@@ -255,14 +255,14 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       float textMultiLineShift = textHeight;
       float horizontalCenter = partSize * innerTiles[0] * 0.5f;
       float verticalShift = (partSize * innerTiles[1] - textMultiLineShift) * 0.5f + textMultiLineShift - 1.0f;
-      Vec2F position = Vec2F(horizontalCenter, verticalShift);
+      Vec2F textPos = Vec2F(horizontalCenter, verticalShift);
       List<BubbleText> bubbleTexts;
       TextStyle textStyle = m_textStyle;
-      textStyle.fontSize = config.getUInt("fontSize", textStyle.fontSize);
-      if (auto jColor = config.opt("color"))
+      textStyle.fontSize = actionConfig.getUInt("fontSize", textStyle.fontSize);
+      if (auto jColor = actionConfig.opt("color"))
         textStyle.color = jsonToColor(*jColor).toRgba();
-      textStyle.loadJson(config.get("style", Json()));
-      bubbleTexts.append(make_tuple(sayAction.text, textStyle, true, position));
+      textStyle.loadJson(actionConfig.get("style", Json()));
+      bubbleTexts.append(make_tuple(sayAction.text, textStyle, true, textPos));
 
       for (auto& backgroundImage : backgroundImages)
         get<1>(backgroundImage) += Vec2F(-horizontalCenter, partSize);
@@ -280,17 +280,17 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       m_bubbles.filter([&sayAction](BubbleState<Bubble> const&, Bubble const& bubble) { return bubble.entity != sayAction.entity; });
       m_bubbles.addBubble(pos, boundBox, std::move(bubble), m_interBubbleMargin * pixelRatio);
       oldBubbles.sort([](BubbleState<Bubble> const& a, BubbleState<Bubble> const& b) { return a.contents.age < b.contents.age; });
-      for (auto& bubble : oldBubbles.slice(0, m_maxMessagePerEntity - 1))
-        m_bubbles.addBubble(bubble.idealDestination, bubble.boundBox, bubble.contents, 0);
+      for (auto& oldBubble : oldBubbles.slice(0, m_maxMessagePerEntity - 1))
+        m_bubbles.addBubble(oldBubble.idealDestination, oldBubble.boundBox, oldBubble.contents, 0);
 
     } else if (action.is<PortraitChatAction>()) {
       auto portraitAction = action.get<PortraitChatAction>();
-      config = portraitAction.config.optObject().value(JsonObject{});
+      actionConfig = portraitAction.config.optObject().value(JsonObject{});
       position = portraitAction.position;
 
       List<BubbleImage> backgroundImages;
       backgroundImages.append(make_tuple(m_portraitBackgroundImage, Vec2F()));
-      if (config.getBool("drawMoreIndicator", false))
+      if (actionConfig.getBool("drawMoreIndicator", false))
         backgroundImages.append(make_tuple(m_portraitMoreImage, Vec2F(m_portraitMorePosition)));
       backgroundImages.append(make_tuple(portraitAction.portrait, Vec2F(m_portraitPosition)));
       List<BubbleText> bubbleTexts;
@@ -315,12 +315,12 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
     }
 
     if (!silent) {
-      if (auto sound = config.optString("sound")) {
-        auto assets = Root::singleton().assets();
-        AudioInstancePtr audioInstance = make_shared<AudioInstance>(*assets->audio(*sound));
+      if (auto sound = actionConfig.optString("sound")) {
+        auto soundAssets = Root::singleton().assets();
+        AudioInstancePtr audioInstance = make_shared<AudioInstance>(*soundAssets->audio(*sound));
         audioInstance->setPosition(position);
-        audioInstance->setVolume(config.getFloat("volume", 1.0f));
-        audioInstance->setPitchMultiplier(config.getFloat("pitch", 1.0f));
+        audioInstance->setVolume(actionConfig.getFloat("volume", 1.0f));
+        audioInstance->setPitchMultiplier(actionConfig.getFloat("pitch", 1.0f));
         m_guiContext->playAudio(audioInstance);
       }
     }

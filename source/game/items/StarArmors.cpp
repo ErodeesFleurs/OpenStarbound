@@ -155,10 +155,10 @@ void ArmorItem::refreshStatusEffects() {
       auto statModifier = jsonToStatModifier(effectConfig);
       if (auto p = statModifier.ptr<StatBaseMultiplier>())
         p->baseMultiplier = 1 + (p->baseMultiplier - 1) * levelFunctionFactor;
-      else if (auto p = statModifier.ptr<StatValueModifier>())
-        p->value *= levelFunctionFactor;
-      else if (auto p = statModifier.ptr<StatEffectiveMultiplier>())
-        p->effectiveMultiplier = 1 + (p->effectiveMultiplier - 1) * levelFunctionFactor;
+      else if (auto valueModifier = statModifier.ptr<StatValueModifier>())
+        valueModifier->value *= levelFunctionFactor;
+      else if (auto effectiveModifier = statModifier.ptr<StatEffectiveMultiplier>())
+        effectiveModifier->effectiveMultiplier = 1 + (effectiveModifier->effectiveMultiplier - 1) * levelFunctionFactor;
       m_statusEffects.append(statModifier);
     }
   }

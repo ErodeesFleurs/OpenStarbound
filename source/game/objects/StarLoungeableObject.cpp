@@ -88,8 +88,8 @@ void LoungeableObject::setOrientationIndex(size_t orientationIndex) {
       m_sitPositions = {jsonToVec2F(configValue("sitPosition")) / TilePixels};
     } else if (auto sps = configValue("sitPositions")) {
       m_sitPositions.clear();
-      for (auto const& sp : sps.toArray())
-        m_sitPositions.append(jsonToVec2F(sp) / TilePixels);
+      for (auto const& sitPos : sps.toArray())
+        m_sitPositions.append(jsonToVec2F(sitPos) / TilePixels);
     }
     m_sitFlipDirection = configValue("sitFlipDirection", false).toBool();
     m_sitOrientation = LoungeOrientationNames.getLeft(configValue("sitOrientation", "sit").toString());
