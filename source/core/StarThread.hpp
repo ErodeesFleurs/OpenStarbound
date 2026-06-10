@@ -145,7 +145,7 @@ private:
 };
 
 // *Non* recursive mutex lock, for use with ConditionVariable
-class __attribute__((capability("mutex"))) Mutex {
+class [[clang::capability("mutex")]] Mutex {
 public:
   Mutex();
   Mutex(Mutex&&);
@@ -153,12 +153,12 @@ public:
 
   Mutex& operator=(Mutex&&);
 
-  void lock() __attribute__((acquire_capability));
+  void lock() [[clang::acquire_capability]];
 
   // Attempt to acquire the mutex without blocking.
-  bool tryLock() __attribute__((try_acquire_capability(true)));
+  bool tryLock() [[clang::try_acquire_capability(true)]];
 
-  void unlock() __attribute__((release_capability));
+  void unlock() [[clang::release_capability]];
 
 private:
   friend struct ConditionVariableImpl;
