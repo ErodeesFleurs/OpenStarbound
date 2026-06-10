@@ -153,12 +153,12 @@ public:
 
   Mutex& operator=(Mutex&&);
 
-  void lock() [[clang::acquire_capability]];
+  [[clang::acquire_capability]] void lock();
 
   // Attempt to acquire the mutex without blocking.
-  bool tryLock() [[clang::try_acquire_capability(true)]];
+  [[clang::try_acquire_capability(true)]] bool tryLock();
 
-  void unlock() [[clang::release_capability]];
+  [[clang::release_capability]] void unlock();
 
 private:
   friend struct ConditionVariableImpl;
