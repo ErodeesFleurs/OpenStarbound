@@ -1,22 +1,27 @@
 #include "StarTilePainter.hpp"
+#include "StarException.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarXXHash.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarAssets.hpp"
-#include "StarRoot.hpp"
 #include "StarTileDrawer.hpp"
 
 namespace Star {
 
-TilePainter::TilePainter(AssetsConstPtr assets, RendererPtr renderer) : TileDrawer(assets) {
+TilePainter::TilePainter(AssetsConstPtr assets, RendererPtr renderer, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase)
+  : TileDrawer(assets) {
   m_renderer = std::move(renderer);
   m_textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
 
-  auto& root = Root::singleton();
   m_assets = std::move(assets);
-  m_materialDatabase = root.materialDatabase();
+  m_materialDatabase = std::move(materialDatabase);
+  auto liquidDatabase = std::move(liquidsDatabase);
+  if (!m_materialDatabase)
+    throw StarException("TilePainter requires material database service");
+  if (!liquidDatabase)
+    throw StarException("TilePainter requires liquids database service");
 
   m_terrainChunkCache.setTimeToLive(m_assets->json("/rendering.config:chunkCacheTimeout").toInt());
   m_terrainChunkCache.setTimeSmear(m_terrainChunkCache.timeToLive() / 4);
@@ -26,7 +31,7 @@ TilePainter::TilePainter(AssetsConstPtr assets, RendererPtr renderer) : TileDraw
 
   m_textureCache.setTimeToLive(m_assets->json("/rendering.config:textureTimeout").toInt());
 
-  for (auto const& liquid : root.liquidsDatabase()->allLiquidSettings()) {
+  for (auto const& liquid : liquidDatabase->allLiquidSettings()) {
     m_liquids.set(liquid->id, LiquidInfo{
         m_renderer->createTexture(*m_assets->image(liquid->config.getString("texture")), TextureAddressing::Wrap),
         jsonToColor(liquid->config.get("color")).toRgba(),

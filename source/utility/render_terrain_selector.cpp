@@ -55,7 +55,7 @@ int main(int argc, char** argv) {
         {"commonality", commonality}
       });
 
-    auto selector = Root::singleton().terrainDatabase()->createNamedSelector(options.parameters["selector"].first(), selectorParameters);
+    auto selector = root->terrainDatabase()->createNamedSelector(options.parameters["selector"].first(), selectorParameters);
 
     MultiArray<float, 2> terrainResult({size[0], size[1]}, 0.0f);
     for (size_t x = 0; x < size[0]; ++x) {

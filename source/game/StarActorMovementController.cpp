@@ -1,20 +1,11 @@
 #include "StarActorMovementController.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarPlatformerAStar.hpp"
 #include "StarObject.hpp"
 
 namespace Star {
-
-namespace {
-
-IAssetsConstPtr actorMovementAssets(IAssetsConstPtr assets) {
-  return assets ? std::move(assets) : Root::singleton().assets();
-}
-
-}
 
 ActorJumpProfile::ActorJumpProfile() {}
 
@@ -89,7 +80,9 @@ DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameter
 }
 
 ActorMovementParameters ActorMovementParameters::sensibleDefaults(IAssetsConstPtr assets) {
-  return ActorMovementParameters(actorMovementAssets(std::move(assets))->json("/default_actor_movement.config").toObject());
+  if (!assets)
+    throw ActorMovementControllerException("ActorMovementParameters requires assets service");
+  return ActorMovementParameters(assets->json("/default_actor_movement.config").toObject());
 }
 
 ActorMovementParameters::ActorMovementParameters(Json const& config) {
@@ -430,7 +423,9 @@ DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementMod
 
 ActorMovementController::ActorMovementController(ActorMovementParameters const& parameters, IAssetsConstPtr assets)
   : MovementController(MovementParameters(), assets) {
-  m_assets = actorMovementAssets(std::move(assets));
+  m_assets = std::move(assets);
+  if (!m_assets)
+    throw ActorMovementControllerException("ActorMovementController requires assets service");
 
   m_controlRotationRate = 0.0f;
   m_controlRun = false;

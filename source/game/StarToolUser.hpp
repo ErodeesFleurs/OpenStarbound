@@ -10,6 +10,8 @@
 #include "StarEntityRenderingTypes.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarIAssets.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarObjectDatabase.hpp"
 
 namespace Star {
 
@@ -23,9 +25,9 @@ using ToolUserPtr = SharedPtr<ToolUser>;
 
 class ToolUser : public NetElementSyncGroup {
 public:
-  ToolUser(IAssetsConstPtr assets);
+  ToolUser(IAssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
-  ToolUser(IAssetsConstPtr assets, ToolUserEntity* user);
+  ToolUser(IAssetsConstPtr assets, ToolUserEntity* user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
   Json diskStore() const;
   void diskLoad(Json const& diskStore);
@@ -83,6 +85,8 @@ public:
 private:
   class NetItem : public NetElement {
   public:
+    NetItem(ItemDatabaseConstPtr itemDatabase = {});
+
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
     void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
@@ -106,6 +110,7 @@ private:
 
     NetElementData<ItemDescriptor> m_itemDescriptor;
     ItemPtr m_item;
+    ItemDatabaseConstPtr m_itemDatabase;
     NetElementVersion const* m_netVersion = nullptr;
     bool m_netInterpolationEnabled = false;
     float m_netExtrapolationHint = 0;
@@ -126,6 +131,8 @@ private:
   float m_objectPreviewOuterAlpha;
 
   ToolUserEntity* m_user;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
 
   NetItem m_primaryHandItem;
   NetItem m_altHandItem;

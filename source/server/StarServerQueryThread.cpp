@@ -1,19 +1,22 @@
 #include "StarServerQueryThread.hpp"
 #include "StarLogging.hpp"
-#include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
+#include "StarException.hpp"
+#include "StarIConfiguration.hpp"
 #include "StarVersion.hpp"
 #include "StarUniverseServer.hpp"
 #include "StarIterator.hpp"
 
 namespace Star {
 
-ServerQueryThread::ServerQueryThread(UniverseServer* universe, HostAddressWithPort const& bindAddress)
+ServerQueryThread::ServerQueryThread(UniverseServer* universe, HostAddressWithPort const& bindAddress, IConfigurationPtr configuration)
   : Thread("QueryServer"),
     m_universe(universe),
     m_queryServer(bindAddress),
     m_stop(true),
     m_lastChallengeCheck(Time::monotonicMilliseconds()) {
+  if (!configuration)
+    throw StarException("ServerQueryThread requires configuration service");
+
   m_playersResponse.resize(A2S_PACKET_SIZE);
   m_playersResponse.setByteOrder(ByteOrder::LittleEndian);
   m_playersResponse.setNullTerminatedStrings(true);
@@ -29,11 +32,8 @@ ServerQueryThread::ServerQueryThread(UniverseServer* universe, HostAddressWithPo
   m_serverPort = 0;
   m_lastActiveTime = 0;
 
-  auto& root = Root::singleton();
-  auto cfg = root.configuration();
-
-  m_maxPlayers = cfg->get("maxPlayers").toUInt();
-  m_serverName = cfg->get("serverName").toString();
+  m_maxPlayers = configuration->get("maxPlayers").toUInt();
+  m_serverName = configuration->get("serverName").toString();
 
   m_lastPlayersResponse = 0;
   m_lastRulesResponse = 0;

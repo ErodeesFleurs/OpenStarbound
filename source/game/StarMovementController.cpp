@@ -1,23 +1,16 @@
 #include "StarMovementController.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarWorld.hpp"
 #include "StarAssets.hpp"
 #include "StarRandom.hpp"
 
 namespace Star {
 
-namespace {
-
-IAssetsConstPtr movementAssets(IAssetsConstPtr assets) {
-  return assets ? std::move(assets) : Root::singleton().assets();
-}
-
-}
-
 MovementParameters MovementParameters::sensibleDefaults(IAssetsConstPtr assets) {
-  return MovementParameters(movementAssets(std::move(assets))->json("/default_movement.config").toObject());
+  if (!assets)
+    throw MovementControllerException("MovementParameters requires assets service");
+  return MovementParameters(assets->json("/default_movement.config").toObject());
 }
 
 MovementParameters::MovementParameters(Json const& config) {
@@ -176,7 +169,9 @@ DataStream& operator<<(DataStream& ds, MovementParameters const& movementParamet
 }
 
 MovementController::MovementController(MovementParameters const& parameters, IAssetsConstPtr assets) {
-  m_assets = movementAssets(std::move(assets));
+  m_assets = std::move(assets);
+  if (!m_assets)
+    throw MovementControllerException("MovementController requires assets service");
 
   m_resting = false;
 

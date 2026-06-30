@@ -27,11 +27,15 @@ constexpr float MaxClientGlobalTimescale = 1024.0f;
 
 namespace Star {
 
-UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, IAssetsConstPtr assets) {
+UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase) {
   m_storageTriggerDeadline = 0;
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
+  m_itemDatabase = std::move(itemDatabase);
+  m_objectDatabase = std::move(objectDatabase);
+  if (!m_objectDatabase)
+    throw StarException("UniverseClient requires object database service");
   m_pause = false;
   m_luaRoot = make_shared<LuaRoot>(m_assets);
   reset();
@@ -161,7 +165,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_teamClient = make_shared<TeamClient>(assets, m_mainPlayer, m_clientContext);
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
-    m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot, m_assets);
+    m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot, m_assets, nullptr, m_itemDatabase, m_objectDatabase);
     m_worldClient->clientState().setNetCompatibilityRules(compatibilityRules);
     m_worldClient->setAsyncLighting(true);
 

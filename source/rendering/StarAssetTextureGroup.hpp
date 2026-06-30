@@ -19,7 +19,7 @@ class AssetTextureGroup {
 public:
   // Creates a texture group using the given renderer and textureFiltering for
   // the managed textures.
-  explicit AssetTextureGroup(TextureGroupPtr textureGroup, AssetsConstPtr assets = {}, function<void(ListenerWeakPtr)> registerReloadListener = {});
+  explicit AssetTextureGroup(TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener);
 
   // Load the given texture into the texture group if it is not loaded, and
   // return the texture pointer.

@@ -3,7 +3,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
 #include "StarImageMetadataDatabase.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -74,7 +73,10 @@ pair<String, Vec2F> const& MaterialRenderProfile::damageImage(float damageLevel,
   return crackingFrames.at(clamp<unsigned>(damageLevel * crackingFrames.size(), 0, crackingFrames.size() - 1));
 }
 
-MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const& relativePath) {
+MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& spec, String const& relativePath) {
+  if (!imageMetadataDatabase)
+    throw MaterialRenderProfileException("Material render profile requires image metadata database service");
+
   MaterialRenderProfile profile;
 
   bool lightTransparent = spec.getBool("lightTransparent", false);
@@ -124,7 +126,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
 
     // Need to flip texture coordinates because material rendering configs
     // assume top down image coordinates
-    unsigned imageHeight = Root::singleton().imageMetadataDatabase()->imageSize(renderPiece->texture)[1];
+    unsigned imageHeight = imageMetadataDatabase->imageSize(renderPiece->texture)[1];
     auto flipTextureCoordinates = [imageHeight](
         RectF const& rect) { return RectF::withSize(Vec2F(rect.xMin(), imageHeight - rect.yMax()), rect.size()); };
     for (unsigned v = 0; v < variants; ++v) {

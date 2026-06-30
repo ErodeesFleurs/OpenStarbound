@@ -232,7 +232,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("itemAllowedInBag", [player](String const& bagName, Json const& item) {
     auto inventory = player->inventory();
-    auto itemDatabase = Root::singleton().itemDatabase();
+    auto itemDatabase = player->itemDatabase();
     if (!inventory->bagContents(bagName))
       return false;
     else
@@ -249,7 +249,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("setItem", [player](InventorySlot const& slot, Json const& item) {
     if (!player->inventory()->slotValid(slot)) return;
-    auto itemDatabase = Root::singleton().itemDatabase();
+    auto itemDatabase = player->itemDatabase();
     player->inventory()->setItem(slot, itemDatabase->item(ItemDescriptor(item)));
   });
 
@@ -298,7 +298,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("blueprintKnown", [player](Json const& item) { return player->blueprintKnown(ItemDescriptor(item)); });
 
   callbacks.registerCallback("availableRecipes", [player](Maybe<StringSet> const& filter) {
-    auto itemDatabase = Root::singleton().itemDatabase();
+    auto itemDatabase = player->itemDatabase();
     auto inventory = player->inventory();
     auto recipes = itemDatabase->recipesFromBagContents(inventory->availableItems(), inventory->availableCurrencies(), filter.value());
     JsonArray result;
@@ -350,7 +350,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     });
 
   callbacks.registerCallback("giveEssentialItem", [player](String const& slotName, Json const& item) {
-      auto itemDatabase = Root::singleton().itemDatabase();
+      auto itemDatabase = player->itemDatabase();
       player->inventory()->setEssentialItem(EssentialItemNames.getLeft(slotName), itemDatabase->item(ItemDescriptor(item)));
     });
 
@@ -363,7 +363,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     });
 
   callbacks.registerCallback("setEquippedItem", [player](String const& slotName, Json const& item) {
-      auto itemDatabase = Root::singleton().itemDatabase();
+      auto itemDatabase = player->itemDatabase();
       auto slot = InventorySlot(EquipmentSlotNames.getLeft(slotName));
       player->inventory()->setItem(slot, itemDatabase->item(ItemDescriptor(item)));
     });
@@ -492,7 +492,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     });
 
   callbacks.registerCallback("setSwapSlotItem", [player](Json const& item) {
-      auto itemDatabase = Root::singleton().itemDatabase();
+      auto itemDatabase = player->itemDatabase();
       player->inventory()->setSwapSlotItem(itemDatabase->item(ItemDescriptor(item)));
     });
 
@@ -501,7 +501,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("startQuest", [player](Json const& quest, Maybe<String> const& serverUuid, Maybe<String> const& worldId) {
       auto questArc = QuestArcDescriptor::fromJson(quest);
-      auto followUp = make_shared<Quest>(player->questManager()->assets(), questArc, 0, player);
+      auto followUp = make_shared<Quest>(player->questManager()->assets(), questArc, 0, player, player->questManager()->itemDatabase(), player->questManager()->objectDatabase(), player->questManager()->questTemplateDatabase(), player->questManager()->versioningDatabase());
       if (serverUuid)
         followUp->setServerUuid(Uuid(*serverUuid));
       if (worldId)

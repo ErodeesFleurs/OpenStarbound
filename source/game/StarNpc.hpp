@@ -21,6 +21,7 @@
 #include "StarItemBag.hpp"
 #include "StarArmorWearer.hpp"
 #include "StarToolUser.hpp"
+#include "StarObjectDatabase.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarLuaAnimationComponent.hpp"
 #include "StarIAssets.hpp"
@@ -30,6 +31,8 @@ namespace Star {
 class Songbook;
 using SongbookPtr = SharedPtr<Songbook>;
 class Item;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 class RenderCallback;
 class Npc;
 class StatusController;
@@ -48,8 +51,8 @@ class Npc
     public virtual EmoteEntity {
 public:
   Npc(ByteArray const& netStore, NetCompatibilityRules rules = {});
-  Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant);
-  Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, Json const& initialState);
+  Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, Json const& initialState, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});
@@ -248,6 +251,8 @@ private:
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   IAssetsConstPtr m_assets;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;

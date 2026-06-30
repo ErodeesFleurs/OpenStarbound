@@ -1,5 +1,4 @@
 #include "StarToolUser.hpp"
-#include "StarRoot.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
@@ -18,12 +17,15 @@
 
 namespace Star {
 
-ToolUser::ToolUser(IAssetsConstPtr assets)
+ToolUser::ToolUser(IAssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
   : m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(), m_user(nullptr),
+    m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_primaryHandItem(m_itemDatabase), m_altHandItem(m_itemDatabase),
     m_fireMain(), m_fireAlt(), m_edgeTriggeredMain(), m_edgeTriggeredAlt(), m_edgeSuppressedMain(), m_edgeSuppressedAlt(),
     m_suppress() {
   if (!assets)
     throw StarException("ToolUser requires assets service");
+  if (!m_objectDatabase)
+    throw StarException("ToolUser requires object database service");
 
   m_beamGunRadius = assets->json("/player.config:initialBeamGunRadius").toFloat();
   m_beamGunGlowBorder = assets->json("/player.config:previewGlowBorder").toInt();
@@ -58,7 +60,8 @@ ToolUser::ToolUser(IAssetsConstPtr assets)
   m_altTimeFiringNetState.setInterpolator(interpolateTimer);
 }
 
-ToolUser::ToolUser(IAssetsConstPtr assets, ToolUserEntity* user) : ToolUser(std::move(assets)) {
+ToolUser::ToolUser(IAssetsConstPtr assets, ToolUserEntity* user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
+  : ToolUser(std::move(assets), std::move(itemDatabase), std::move(objectDatabase)) {
   init(user);
 }
 
@@ -73,9 +76,8 @@ Json ToolUser::diskStore() const {
 }
 
 void ToolUser::diskLoad(Json const& diskStore) {
-  auto itemDb = Root::singleton().itemDatabase();
-  m_primaryHandItem.set(itemDb->diskLoad(diskStore.get("primaryHandItem", {})));
-  m_altHandItem.set(itemDb->diskLoad(diskStore.get("altHandItem", {})));
+  m_primaryHandItem.set(m_itemDatabase->diskLoad(diskStore.get("primaryHandItem", {})));
+  m_altHandItem.set(m_itemDatabase->diskLoad(diskStore.get("altHandItem", {})));
 }
 
 ItemPtr ToolUser::primaryHandItem() const {
@@ -183,15 +185,13 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
     if ((aimPos == m_cachedObjectPreviewPosition) && (item == m_cachedObjectItem))
       return m_cachedObjectPreview;
 
-    auto objectDatabase = Root::singleton().objectDatabase();
-
-    auto drawables = objectDatabase->cursorHintDrawables(m_user->world(), item->objectName(),
+    auto drawables = m_objectDatabase->cursorHintDrawables(m_user->world(), item->objectName(),
         aimPos, walkingDirection, item->objectParameters());
 
     Color opacityMask = Color::White;
     opacityMask.setAlphaF(item->getAppropriateOpacity());
     Color favoriteColorTrans = favoriteColor;
-    if (!inToolRange || !objectDatabase->canPlaceObject(m_user->world(), aimPos, item->objectName()))
+    if (!inToolRange || !m_objectDatabase->canPlaceObject(m_user->world(), aimPos, item->objectName()))
       favoriteColorTrans.setHue(favoriteColor.hue() + 120);
 
     favoriteColorTrans.setAlphaF(m_objectPreviewOuterAlpha);
@@ -623,6 +623,9 @@ float ToolUser::beamGunRadius() const {
   return m_beamGunRadius + m_user->statusController()->statusProperty("bonusBeamGunRadius", 0).toFloat();
 }
 
+ToolUser::NetItem::NetItem(ItemDatabaseConstPtr itemDatabase)
+  : m_itemDatabase(std::move(itemDatabase)) {}
+
 void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
   m_netVersion = version;
   m_itemDescriptor.initNetVersion(m_netVersion);
@@ -642,8 +645,7 @@ void ToolUser::NetItem::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
   m_itemDescriptor.netLoad(ds, rules);
 
-  auto itemDatabase = Root::singleton().itemDatabase();
-  if (itemDatabase->loadItem(m_itemDescriptor.get(), m_item)) {
+  if (m_itemDatabase->loadItem(m_itemDescriptor.get(), m_item)) {
     m_newItem = true;
     if (auto netItem = as<NetElement>(m_item.get())) {
       netItem->initNetVersion(m_netVersion);
@@ -715,8 +717,7 @@ void ToolUser::NetItem::readNetDelta(DataStream& ds, float interpolationTime, Ne
     } else if (code == 1) {
       m_itemDescriptor.readNetDelta(ds, 0.0f, rules);
       if (!m_item || !m_item->matches(m_itemDescriptor.get(), true)) {
-        auto itemDatabase = Root::singleton().itemDatabase();
-        if (itemDatabase->loadItem(m_itemDescriptor.get(), m_item)) {
+        if (m_itemDatabase->loadItem(m_itemDescriptor.get(), m_item)) {
           m_newItem = true;
           if (auto netItem = as<NetElement>(m_item.get())) {
             netItem->initNetVersion(m_netVersion);

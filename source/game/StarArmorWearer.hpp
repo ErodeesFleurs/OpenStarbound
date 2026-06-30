@@ -7,6 +7,7 @@
 #include "StarStatusTypes.hpp"
 #include "StarLightSource.hpp"
 #include "StarDamage.hpp"
+#include "StarItemDatabase.hpp"
 
 namespace Star {
 
@@ -30,7 +31,7 @@ using ArmorWearerPtr = SharedPtr<ArmorWearer>;
 
 class ArmorWearer : public NetElementSyncGroup {
 public:
-  ArmorWearer();
+  ArmorWearer(ItemDatabaseConstPtr itemDatabase);
 
   // returns true if movement parameters changed
   bool setupHumanoid(Humanoid& humanoid, bool forceNude);
@@ -92,6 +93,7 @@ private:
 
   Array<Armor, 20> m_armors;
   Array<uint8_t, 4> m_wornCosmeticTypes;
+  ItemDatabaseConstPtr m_itemDatabase;
   // only works under the assumption that this ArmorWearer
   // will only ever touch one Humanoid (which is true!)
   Maybe<Gender> m_lastGender;

@@ -2,6 +2,7 @@
 
 #include "StarMathCommon.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarIItemDatabase.hpp"
 
 namespace Star {
 
@@ -26,11 +27,11 @@ public:
     List<size_t> slots;
   };
 
-  ItemBag();
-  explicit ItemBag(size_t size);
+  ItemBag(IItemDatabaseConstPtr itemDatabase);
+  explicit ItemBag(size_t size, IItemDatabaseConstPtr itemDatabase);
 
-  static ItemBag fromJson(Json const& spec);
-  static ItemBag loadStore(Json const& store);
+  static ItemBag fromJson(Json const& spec, IItemDatabaseConstPtr itemDatabase);
+  static ItemBag loadStore(Json const& store, IItemDatabaseConstPtr itemDatabase);
 
   Json toJson() const;
   Json diskStore() const;
@@ -117,6 +118,7 @@ private:
   size_t bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly) const;
 
   mutable List<ItemPtr> m_items;
+  IItemDatabaseConstPtr m_itemDatabase;
 };
 
 }

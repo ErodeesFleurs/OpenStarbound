@@ -13,6 +13,8 @@ namespace Star {
 
 class SpeciesDefinition;
 using SpeciesDefinitionPtr = SharedPtr<SpeciesDefinition>;
+class PatternedNameGenerator;
+using PatternedNameGeneratorConstPtr = SharedPtr<PatternedNameGenerator const>;
 class SpeciesDatabase;
 using SpeciesDatabasePtr = SharedPtr<SpeciesDatabase>;
 using SpeciesDatabaseConstPtr = SharedPtr<SpeciesDatabase const>;
@@ -110,7 +112,7 @@ private:
 
 class SpeciesDatabase : public ISpeciesDatabase {
 public:
-  SpeciesDatabase(AssetsConstPtr assets);
+  SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator);
 
   bool hasSpecies(String const& kind) const override;
   SpeciesDefinitionPtr species(String const& kind) const override;
@@ -123,6 +125,7 @@ public:
   CharacterCreationResult generateHumanoid(String species, int64_t seed, Maybe<Gender> = {}) const;
 
 private:
+  PatternedNameGeneratorConstPtr m_nameGenerator;
   StringMap<SpeciesDefinitionPtr> m_species;
 
   mutable RecursiveMutex m_luaMutex;

@@ -26,8 +26,8 @@ constexpr float MaxWarpSearchRadius = 1024;
 
 namespace Star {
 
-CommandProcessor::CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot, IAssetsConstPtr assets)
-  : m_universe(universe), m_assets(std::move(assets)) {
+CommandProcessor::CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase)
+  : m_universe(universe), m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)) {
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
   m_scriptComponent.setScripts(jsonToStringList(m_assets->json("/universe_server.config:commandProcessorScripts")));
@@ -371,9 +371,9 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
     if (arguments.size() >= 5)
       seed = lexicalCast<uint64_t>(arguments.at(4));
 
-    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
-        auto itemDatabase = Root::singleton().itemDatabase();
-        world->addEntity(ItemDrop::createRandomizedDrop(itemDatabase->item(ItemDescriptor(kind, amount, parameters), level, seed, true), player->aimPosition(), false, world->assets()));
+    auto itemDatabase = m_itemDatabase;
+    bool done = m_universe->executeForClient(connectionId, [&, itemDatabase](WorldServer* world, PlayerPtr const& player) {
+        world->addEntity(ItemDrop::createRandomizedDrop(itemDatabase->item(ItemDescriptor(kind, amount, parameters), level, seed, true), player->aimPosition(), false, world->assets(), itemDatabase));
       });
 
     return done ? "" : "Invalid client state";
@@ -411,7 +411,7 @@ String CommandProcessor::spawnTreasure(ConnectionId connectionId, String const& 
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
         auto treasureDatabase = Root::singleton().treasureDatabase();
         for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, level, Random::randu64()))
-          world->addEntity(ItemDrop::createRandomizedDrop(treasureItem, player->aimPosition(), false, world->assets()));
+          world->addEntity(ItemDrop::createRandomizedDrop(treasureItem, player->aimPosition(), false, world->assets(), m_itemDatabase));
       });
 
     return done ? "" : "Invalid client state";

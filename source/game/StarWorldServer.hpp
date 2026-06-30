@@ -57,6 +57,8 @@ using TileEntityPtr = SharedPtr<TileEntity>;
 class UniverseSettings;
 using UniverseSettingsPtr = SharedPtr<UniverseSettings>;
 class UniverseServer;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 
 struct WorldServerExceptionTag { static constexpr char const* typeName = "WorldServerException"; };
 using WorldServerException = TypedException<StarException, WorldServerExceptionTag>;
@@ -79,13 +81,13 @@ public:
   using WorldPropertyListener = function<void(Json const&)>;
 
   // Create a new world with the given template, writing new storage file.
-  WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
+  WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
   // Synonym for WorldServer(make_shared<WorldTemplate>(assets, size), storage);
-  WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
+  WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
   // Load an existing world from the given storage files
-  WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
+  WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
   // Load an existing world from the given in-memory chunks
-  WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
+  WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
   // Load an existing world from an in-memory representation
   ~WorldServer();
 
@@ -95,6 +97,8 @@ public:
   void setUniverseSettings(UniverseSettingsPtr universeSettings);
   UniverseSettingsPtr universeSettings() const;
   IAssetsConstPtr assets() const override;
+  IItemDatabaseConstPtr itemDatabase() const override;
+  ObjectDatabaseConstPtr objectDatabase() const override;
 
   void setPause(bool pause);
   void setReferenceClock(ClockPtr clock);
@@ -393,6 +397,7 @@ private:
   IConfigurationPtr m_configuration;
   IMaterialDatabaseConstPtr m_materialDatabase;
   IItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
   ISpeciesDatabaseConstPtr m_speciesDatabase;
   IEntityFactoryConstPtr m_entityFactory;
   ILiquidsDatabaseConstPtr m_liquidsDatabase;

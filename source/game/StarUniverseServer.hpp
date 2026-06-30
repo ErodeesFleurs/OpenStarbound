@@ -22,6 +22,10 @@
 
 namespace Star {
 
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 class Clock;
 class File;
 class Player;
@@ -46,7 +50,7 @@ using UniverseServerException = TypedException<StarException, UniverseServerExce
 // and routes packets between them.
 class UniverseServer : public Thread {
 public:
-  UniverseServer(String const& storageDir, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
+  UniverseServer(String const& storageDir, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase);
   ~UniverseServer();
 
   // If enabled, will listen on the configured server port for incoming
@@ -245,6 +249,7 @@ private:
   IConfigurationPtr m_configuration;
   IMaterialDatabaseConstPtr m_materialDatabase;
   IItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
   ISpeciesDatabaseConstPtr m_speciesDatabase;
   IEntityFactoryConstPtr m_entityFactory;
   ILiquidsDatabaseConstPtr m_liquidsDatabase;

@@ -19,6 +19,7 @@ class World;
 class Image;
 using ImageConstPtr = SharedPtr<Image const>;
 class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 class RecipeDatabase;
 class Object;
 using ObjectPtr = SharedPtr<Object>;
@@ -32,6 +33,10 @@ using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 class LuaRoot;
 class Rebuilder;
 using RebuilderPtr = SharedPtr<Rebuilder>;
+class MaterialDatabase;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 
 struct ObjectExceptionTag { static constexpr char const* typeName = "ObjectException"; };
 using ObjectException = TypedException<StarException, ObjectExceptionTag>;
@@ -107,6 +112,7 @@ struct ObjectOrientation {
 
   Maybe<PolyF> statusEffectArea;
   Json touchDamageConfig;
+  MaterialDatabaseConstPtr materialDatabase;
 
   static ParticleEmissionEntry parseParticleEmitter(String const& path, Json const& config);
   bool placementValid(World const* world, Vec2I const& position) const;
@@ -125,6 +131,8 @@ struct ObjectConfig {
 
   String path;
   IAssetsConstPtr assets;
+  MaterialDatabaseConstPtr materialDatabase;
+  ImageMetadataDatabaseConstPtr imageMetadataDatabase;
   // The JSON values that were used to configure this Object
   Json config;
 
@@ -196,9 +204,10 @@ class ObjectDatabase {
 public:
   static List<Vec2I> scanImageSpaces(ImageConstPtr const& image, Vec2F const& position, float fillLimit, bool flip = false);
   static Json parseTouchDamage(IAssetsConstPtr assets, String const& path, Json const& touchDamage);
-  static List<ObjectOrientationPtr> parseOrientations(IAssetsConstPtr assets, String const& path, Json const& configList, Json const& baseConfig);
+  static List<ObjectOrientationPtr> parseOrientations(
+      IAssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig);
 
-  ObjectDatabase(AssetsConstPtr assets);
+  ObjectDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, function<ItemDatabaseConstPtr()> itemDatabase);
 
   void cleanup();
 
@@ -226,6 +235,9 @@ private:
   ObjectConfigPtr readConfig(String const& path) const;
 
   AssetsConstPtr m_assets;
+  MaterialDatabaseConstPtr m_materialDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
+  function<ItemDatabaseConstPtr()> m_itemDatabase;
   StringMap<String> m_paths;
   mutable Mutex m_cacheMutex;
   mutable HashTtlCache<String, ObjectConfigPtr> m_configCache;

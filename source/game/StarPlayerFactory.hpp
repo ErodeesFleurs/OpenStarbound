@@ -11,6 +11,14 @@ class Rebuilder;
 using RebuilderPtr = SharedPtr<Rebuilder>;
 class Player;
 using PlayerPtr = SharedPtr<Player>;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class QuestTemplateDatabase;
+using QuestTemplateDatabaseConstPtr = SharedPtr<QuestTemplateDatabase const>;
+class VersioningDatabase;
+using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
 struct PlayerConfig;
 using PlayerConfigPtr = SharedPtr<PlayerConfig>;
 
@@ -61,7 +69,7 @@ struct PlayerConfig {
 
 class PlayerFactory {
 public:
-  PlayerFactory(AssetsConstPtr assets);
+  PlayerFactory(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
   PlayerPtr create() const;
   PlayerPtr diskLoadPlayer(Json const& diskStore) const;
@@ -69,6 +77,10 @@ public:
 
 private:
   AssetsConstPtr m_assets;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  QuestTemplateDatabaseConstPtr m_questTemplateDatabase;
+  VersioningDatabaseConstPtr m_versioningDatabase;
   PlayerConfigPtr m_config;
 
   RebuilderPtr m_rebuilder;

@@ -1,5 +1,6 @@
 #include "StarRootLoader.hpp"
 #include "StarCelestialDatabase.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarWorldServer.hpp"
 
@@ -51,7 +52,7 @@ int main(int argc, char** argv) {
 
     auto rand = RandomSource(worldTemplate->worldSeed());
 
-    WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
+    WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile(), root->assets(), root->configuration(), root->itemDatabase(), root->objectDatabase());
     Vec2U worldSize = worldServer.geometry().size();
 
     double start = Time::monotonicTime();

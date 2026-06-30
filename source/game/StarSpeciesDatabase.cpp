@@ -3,7 +3,6 @@
 #include "StarRandom.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarNameGenerator.hpp"
-#include "StarRoot.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarConfigLuaBindings.hpp"
@@ -26,9 +25,12 @@ SpeciesOption::SpeciesOption()
     undyColorDirectives(),
     hairColorDirectives() {}
 
-SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets) : m_luaRoot(make_shared<LuaRoot>(assets)) {
+SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator)
+  : m_nameGenerator(std::move(nameGenerator)), m_luaRoot(make_shared<LuaRoot>(assets)) {
   if (!assets)
     throw StarException("SpeciesDatabase requires assets service");
+  if (!m_nameGenerator)
+    throw StarException("SpeciesDatabase requires name generator service");
 
   auto& files = assets->scanExtension("species");
   assets->queueJsons(files);
@@ -202,7 +204,7 @@ CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, 
   auto speciesDefinition = species(speciesChoice);
   auto chosenGender = gender.value(randSource.randb() ? Gender::Male : Gender::Female);
   return createHumanoid(
-    Root::singleton().nameGenerator()->generateName(speciesDefinition->nameGen(chosenGender), randSource),
+    m_nameGenerator->generateName(speciesDefinition->nameGen(chosenGender), randSource),
     speciesChoice,
     static_cast<unsigned>(chosenGender),
     randSource.randu32(),

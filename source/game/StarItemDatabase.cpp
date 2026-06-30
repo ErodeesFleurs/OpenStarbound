@@ -133,10 +133,12 @@ bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescripto
   return true;
 }
 
-ItemDatabase::ItemDatabase(AssetsConstPtr assets)
-  : m_assets(std::move(assets)), m_luaRoot(make_shared<LuaRoot>(m_assets)), m_rebuilder(make_shared<Rebuilder>(m_assets, "item")) {
+ItemDatabase::ItemDatabase(AssetsConstPtr assets, function<ObjectDatabaseConstPtr()> objectDatabase)
+  : m_assets(std::move(assets)), m_objectDatabase(std::move(objectDatabase)), m_luaRoot(make_shared<LuaRoot>(m_assets)), m_rebuilder(make_shared<Rebuilder>(m_assets, "item")) {
   if (!m_assets)
     throw ItemException("ItemDatabase requires assets service");
+  if (!m_objectDatabase)
+    throw ItemException("ItemDatabase requires object database provider");
 
   scanItems();
   addObjectItems();
@@ -164,6 +166,10 @@ ItemPtr ItemDatabase::diskLoad(Json const& diskStore) const {
 
 ItemPtr ItemDatabase::fromJson(Json const& spec) const {
   return item(ItemDescriptor(spec));
+}
+
+bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, ItemPtr& itemPtr) const {
+  return loadItem<Item>(descriptor, itemPtr);
 }
 
 Json ItemDatabase::diskStore(ItemConstPtr const& itemPtr) const {
@@ -458,7 +464,7 @@ List<String> ItemDatabase::allItems() const {
   return m_items.keys();
 }
 
-ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemType type, ItemConfig const& config) {
+ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemDatabase const* itemDatabase, ItemType type, ItemConfig const& config) {
   if (type == ItemType::Generic) {
     return make_shared<GenericItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::LiquidItem) {
@@ -466,7 +472,7 @@ ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemType type, ItemConfi
   } else if (type == ItemType::MaterialItem) {
     return make_shared<MaterialItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::ObjectItem) {
-    return make_shared<ObjectItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<ObjectItem>(assets, config.config, config.directory, config.parameters, itemDatabase->m_objectDatabase());
   } else if (type == ItemType::CurrencyItem) {
     return make_shared<CurrencyItem>(assets, config.config, config.directory);
   } else if (type == ItemType::MiningTool) {
@@ -508,7 +514,7 @@ ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemType type, ItemConfi
   } else if (type == ItemType::ActiveItem) {
     return make_shared<ActiveItem>(assets, config.config, config.directory, config.parameters);
   } else if (type == ItemType::AugmentItem) {
-    return make_shared<AugmentItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<AugmentItem>(assets, config.config, config.directory, itemDatabase, config.parameters);
   } else {
     throw ItemException(strf("Unknown item type {}", static_cast<int>(type)));
   }
@@ -521,14 +527,14 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
   try {
     if (newDescriptor.name() == "perfectlygenericitem" && newDescriptor.parameters().contains("genericItemStorage"))
       newDescriptor = ItemDescriptor(descriptor.parameters().get("genericItemStorage"));
-    result = createItem(m_assets, m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
+    result = createItem(m_assets, this, m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
     result->setCount(descriptor.count());
   } catch (std::exception const& e) {
     if (!ignoreInvalid) {
       bool success = m_rebuilder->rebuild(descriptor.toJson(), strf("{}", outputException(e, false)), [&](Json const& store) -> String {
         try {
           ItemDescriptor newDescriptor(store);
-          result = createItem(m_assets, m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
+          result = createItem(m_assets, this, m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
           result->setCount(newDescriptor.count());
         }
         catch (std::exception const& e) {
@@ -540,10 +546,10 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
       if (!success) {
         if (descriptor.name() == "perfectlygenericitem") {
           Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
-          result = createItem(m_assets, m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
+          result = createItem(m_assets, this, m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
         } else {
           Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
-          result = createItem(m_assets, m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
+          result = createItem(m_assets, this, m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
             {"genericItemStorage", descriptor.toJson()},
             {"shortdescription", descriptor.name()},
             {"description", "Reinstall the parent mod to return this item to normal"}
@@ -671,7 +677,7 @@ void ItemDatabase::scanItems() {
 }
 
 void ItemDatabase::addObjectItems() {
-  auto objectDatabase = Root::singleton().objectDatabase();
+  auto objectDatabase = m_objectDatabase();
 
   for (auto const& objectName : objectDatabase->allObjects()) {
     auto objectConfig = objectDatabase->getConfig(objectName);

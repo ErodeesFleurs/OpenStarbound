@@ -1,6 +1,5 @@
 #include "StarTreasure.hpp"
 #include "StarObjectDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarItemBag.hpp"
 #include "StarWorld.hpp"
@@ -9,9 +8,12 @@
 
 namespace Star {
 
-TreasureDatabase::TreasureDatabase(AssetsConstPtr assets) {
+TreasureDatabase::TreasureDatabase(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
+  : m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)) {
   if (!assets)
     throw TreasureException("TreasureDatabase requires assets service");
+  if (!m_objectDatabase)
+    throw TreasureException("TreasureDatabase requires object database service");
 
   auto& treasurePools = assets->scanExtension("treasurepools");
   auto& treasureChests = assets->scanExtension("treasurechests");
@@ -127,8 +129,6 @@ List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float
   if (!visitedPools.add(treasurePool))
     throw TreasureException(strf("Loop detected in treasure pool generation - set '{}' already contains '{}'", visitedPools, treasurePool));
 
-  auto itemDatabase = Root::singleton().itemDatabase();
-
   List<ItemPtr> treasureItems;
   HashSet<ItemDescriptor> previousDescriptors;
   auto itemPool = m_treasurePools.get(treasurePool).get(level);
@@ -143,7 +143,7 @@ List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float
       }
     } else {
       float itemLevel = level + itemPool.levelVariance[0] + staticRandomFloat(seed, ++mix, "FillLevelVariance") * (itemPool.levelVariance[1] - itemPool.levelVariance[0]);
-      auto fillItem = itemDatabase->item(fillEntry.get<ItemDescriptor>(), itemLevel, seed + ++mix);
+      auto fillItem = m_itemDatabase->item(fillEntry.get<ItemDescriptor>(), itemLevel, seed + ++mix);
       if (itemPool.allowDuplication || previousDescriptors.add(fillItem->descriptor().singular()))
         treasureItems.append(fillItem);
     }
@@ -165,7 +165,7 @@ List<ItemPtr> TreasureDatabase::createTreasure(String const& treasurePool, float
         float itemLevel = level + itemPool.levelVariance[0] + staticRandomFloat(staticRandomU64(seed, i, "TreasureLevelSeedMixer"), "PoolLevelVariance") * (itemPool.levelVariance[1] - itemPool.levelVariance[0]);
         auto roundItem = poolEntry.get<ItemDescriptor>();
         if (itemPool.allowDuplication || previousDescriptors.add(roundItem.singular()))
-          treasureItems.append(itemDatabase->item(roundItem, itemLevel, seed + ++mix));
+          treasureItems.append(m_itemDatabase->item(roundItem, itemLevel, seed + ++mix));
       }
     }
   }
@@ -194,8 +194,6 @@ ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String co
 }
 
 ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const {
-  auto objectDatabase = Root::singleton().objectDatabase();
-
   if (!m_treasureChestSets.contains(treasureChestSet))
     throw StarException(strf("Unknown treasure chest set '{}'", treasureChestSet));
 
@@ -210,7 +208,7 @@ ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String co
   auto const& containerName = staticRandomFrom(treasureChest.containers, seed, "ContainerName");
   ContainerObjectPtr containerObject;
   auto parameters = JsonObject{{"treasurePools", JsonArray{treasureChest.treasurePool}}, {"treasureSeed", seed}};
-  if (auto object = objectDatabase->createForPlacement(world, containerName, position, direction, parameters))
+  if (auto object = m_objectDatabase->createForPlacement(world, containerName, position, direction, parameters))
     containerObject = convert<ContainerObject>(object);
 
   return containerObject;

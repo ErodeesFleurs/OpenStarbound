@@ -4,7 +4,6 @@
 #include "StarAnchorTypes.hpp"
 #include "StarAssets.hpp"
 #include "StarListener.hpp"
-#include "StarRoot.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
 
@@ -48,7 +47,7 @@ struct TextPositioning {
 // kerning*.
 class TextPainter {
 public:
-  TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup, AssetsConstPtr assets = {}, function<void(ListenerWeakPtr)> registerReloadListener = {});
+  TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener);
 
   RectF renderText(StringView s, TextPositioning const& position);
   RectF renderLine(StringView s, TextPositioning const& position);

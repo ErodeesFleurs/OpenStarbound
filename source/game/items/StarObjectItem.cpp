@@ -1,5 +1,4 @@
 #include "StarObjectItem.hpp"
-#include "StarRoot.hpp"
 #include "StarObject.hpp"
 #include "StarLogging.hpp"
 #include "StarObjectDatabase.hpp"
@@ -8,8 +7,11 @@
 
 namespace Star {
 
-ObjectItem::ObjectItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& objectParameters)
-  : Item(assets, config, directory, objectParameters), FireableItem(config), BeamItem(std::move(assets), config) {
+ObjectItem::ObjectItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& objectParameters, ObjectDatabaseConstPtr objectDatabase)
+  : Item(assets, config, directory, objectParameters), FireableItem(config), BeamItem(std::move(assets), config), m_objectDatabase(std::move(objectDatabase)) {
+  if (!m_objectDatabase)
+    throw ItemException("ObjectItem requires object database service");
+
   setTwoHanded(config.getBool("twoHanded", true));
 
   // Make sure that all script objects that have retainObjectParametersInItem
@@ -74,9 +76,8 @@ bool ObjectItem::placeInWorld(FireMode, bool shifting) {
     return false;
 
   auto pos = Vec2I(owner()->aimPosition().floor());
-  auto objectDatabase = Root::singleton().objectDatabase();
   try {
-    if (auto object = objectDatabase->createForPlacement(world(), objectName(), pos, owner()->walkingDirection(), objectParameters())) {
+    if (auto object = m_objectDatabase->createForPlacement(world(), objectName(), pos, owner()->walkingDirection(), objectParameters())) {
       if (consume(1)) {
         world()->addEntity(object);
         return true;
@@ -97,8 +98,7 @@ bool ObjectItem::canPlace(bool) const {
   if (initialized()) {
     if (owner()->isAdmin() || owner()->inToolRange()) {
       auto pos = Vec2I(owner()->aimPosition().floor());
-      auto objectDatabase = Root::singleton().objectDatabase();
-      return objectDatabase->canPlaceObject(world(), pos, objectName());
+      return m_objectDatabase->canPlaceObject(world(), pos, objectName());
     }
   }
   return false;

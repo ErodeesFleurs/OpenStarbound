@@ -203,7 +203,9 @@ Humanoid::HumanoidTiming::HumanoidTiming(Json config) {
 }
 
 Humanoid::HumanoidTiming Humanoid::HumanoidTiming::sensibleDefaults(IAssetsConstPtr assets) {
-  return HumanoidTiming((assets ? std::move(assets) : Root::singleton().assets())->json("/humanoid.config:humanoidTiming"));
+  if (!assets)
+    throw StarException("HumanoidTiming requires assets service");
+  return HumanoidTiming(assets->json("/humanoid.config:humanoidTiming"));
 }
 
 bool Humanoid::HumanoidTiming::cyclicState(State state) {

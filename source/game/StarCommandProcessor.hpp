@@ -9,12 +9,14 @@
 namespace Star {
 
 class UniverseServer;
+class IItemDatabase;
+using IItemDatabaseConstPtr = SharedPtr<IItemDatabase const>;
 class CommandProcessor;
 using CommandProcessorPtr = SharedPtr<CommandProcessor>;
 
 class CommandProcessor {
 public:
-  CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot, IAssetsConstPtr assets);
+  CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase);
 
   String adminCommand(String const& command, String const& argumentString);
   String userCommand(ConnectionId clientId, String const& command, String const& argumentString);
@@ -74,6 +76,7 @@ private:
 
   UniverseServer* m_universe;
   IAssetsConstPtr m_assets;
+  IItemDatabaseConstPtr m_itemDatabase;
   ShellParser m_parser;
 
   LuaBaseComponent m_scriptComponent;

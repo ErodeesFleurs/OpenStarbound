@@ -900,7 +900,7 @@ namespace LuaBindings {
       Vec2I const& worldPosition,
       Maybe<int> const& objectDirection,
       Json const& objectParameters) {
-    auto objectDatabase = Root::singleton().objectDatabase();
+    auto objectDatabase = world->objectDatabase();
 
     try {
       Direction direction = Direction::Right;
@@ -944,7 +944,7 @@ namespace LuaBindings {
         descriptor = ItemDescriptor(itemType);
       }
 
-      if (auto itemDrop = ItemDrop::createRandomizedDrop(descriptor, position, false, world->assets())) {
+      if (auto itemDrop = ItemDrop::createRandomizedDrop(descriptor, position, false, world->assets(), world->itemDatabase())) {
         if (initialVelocity)
           itemDrop->setVelocity(*initialVelocity);
         if (intangibleTime)
@@ -967,7 +967,7 @@ namespace LuaBindings {
     auto treasureDatabase = Root::singleton().treasureDatabase();
     try {
       for (auto const& treasureItem : treasureDatabase->createTreasure(pool, level, seed.value(Random::randu64()))) {
-        ItemDropPtr entity = ItemDrop::createRandomizedDrop(treasureItem, position, false, world->assets());
+        ItemDropPtr entity = ItemDrop::createRandomizedDrop(treasureItem, position, false, world->assets(), world->itemDatabase());
         entities.append(entity->entityId());
         world->addEntity(entity);
       }
@@ -1639,9 +1639,8 @@ namespace LuaBindings {
   Json WorldEntityCallbacks::containerItems(World* world, EntityId entityId) {
     if (auto container = world->get<ContainerObject>(entityId)) {
       JsonArray res;
-      auto itemDb = Root::singleton().itemDatabase();
       for (auto const& item : container->itemBag()->items())
-        res.append(itemDb->toJson(item));
+        res.append(itemSafeDescriptor(item).toJson());
       return res;
     }
 
@@ -1650,10 +1649,9 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerItemAt(World* world, EntityId entityId, size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
       auto items = container->itemBag()->items();
       if (offset < items.size()) {
-        return itemDb->toJson(items.at(offset));
+        return itemSafeDescriptor(items.at(offset)).toJson();
       }
     }
 
@@ -1690,12 +1688,11 @@ namespace LuaBindings {
   }
 
   Json WorldEntityCallbacks::containerTakeAll(World* world, EntityId entityId) {
-    auto itemDb = Root::singleton().itemDatabase();
     if (auto container = world->get<ContainerObject>(entityId)) {
       if (auto itemList = container->clearContainer().result()) {
         JsonArray res;
         for (auto item : *itemList)
-          res.append(itemDb->toJson(item));
+          res.append(itemSafeDescriptor(item).toJson());
         return res;
       }
     }
@@ -1705,10 +1702,9 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerTakeAt(World* world, EntityId entityId, size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
       if (offset < container->containerSize()) {
         if (auto res = container->takeItems(offset).result())
-          return itemDb->toJson(*res);
+          return itemSafeDescriptor(*res).toJson();
       }
     }
 
@@ -1717,10 +1713,9 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerTakeNumItemsAt(World* world, EntityId entityId, size_t offset, int const& count) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
       if (offset < container->containerSize()) {
         if (auto res = container->takeItems(offset, count).result())
-          return itemDb->toJson(*res);
+          return itemSafeDescriptor(*res).toJson();
       }
     }
 
@@ -1729,9 +1724,9 @@ namespace LuaBindings {
 
   Maybe<size_t> WorldEntityCallbacks::containerItemsCanFit(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->itemDatabase();
       auto itemBag = container->itemBag();
-      auto toSearch = itemDb->fromJson(items);
+      auto toSearch = itemDb->item(ItemDescriptor(items));
       return itemBag->itemsCanFit(toSearch);
     }
 
@@ -1740,9 +1735,9 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerItemsFitWhere(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
+      auto itemDb = world->itemDatabase();
       auto itemBag = container->itemBag();
-      auto toSearch = itemDb->fromJson(items);
+      auto toSearch = itemDb->item(ItemDescriptor(items));
       auto res = itemBag->itemsFitWhere(toSearch);
       return JsonObject{
         {"leftover", res.leftover},
@@ -1755,10 +1750,10 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerAddItems(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
-      auto toInsert = itemDb->fromJson(items);
+      auto itemDb = world->itemDatabase();
+      auto toInsert = itemDb->item(ItemDescriptor(items));
       if (auto res = container->addItems(toInsert).result())
-        return itemDb->toJson(*res);
+        return itemSafeDescriptor(*res).toJson();
     }
 
     return items;
@@ -1766,10 +1761,10 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerStackItems(World* world, EntityId entityId, Json const& items) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
-      auto toInsert = itemDb->fromJson(items);
+      auto itemDb = world->itemDatabase();
+      auto toInsert = itemDb->item(ItemDescriptor(items));
       if (auto res = container->addItems(toInsert).result())
-        return itemDb->toJson(*res);
+        return itemSafeDescriptor(*res).toJson();
     }
 
     return items;
@@ -1777,11 +1772,11 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerPutItemsAt(World* world, EntityId entityId, Json const& items, size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
-      auto toInsert = itemDb->fromJson(items);
+      auto itemDb = world->itemDatabase();
+      auto toInsert = itemDb->item(ItemDescriptor(items));
       if (offset < container->containerSize()) {
         if (auto res = container->putItems(offset, toInsert).result())
-          return itemDb->toJson(*res);
+          return itemSafeDescriptor(*res).toJson();
       }
     }
 
@@ -1790,11 +1785,11 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerSwapItems(World* world, EntityId entityId, Json const& items, size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
-      auto toSwap = itemDb->fromJson(items);
+      auto itemDb = world->itemDatabase();
+      auto toSwap = itemDb->item(ItemDescriptor(items));
       if (offset < container->containerSize()) {
         if (auto res = container->swapItems(offset, toSwap, true).result())
-          return itemDb->toJson(*res);
+          return itemSafeDescriptor(*res).toJson();
       }
     }
 
@@ -1803,11 +1798,11 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerSwapItemsNoCombine(World* world, EntityId entityId, Json const& items, size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
-      auto toSwap = itemDb->fromJson(items);
+      auto itemDb = world->itemDatabase();
+      auto toSwap = itemDb->item(ItemDescriptor(items));
       if (offset < container->containerSize()) {
         if (auto res = container->swapItems(offset, toSwap, false).result())
-          return itemDb->toJson(*res);
+          return itemSafeDescriptor(*res).toJson();
       }
     }
 
@@ -1816,11 +1811,11 @@ namespace LuaBindings {
 
   Json WorldEntityCallbacks::containerItemApply(World* world, EntityId entityId, Json const& items, size_t offset) {
     if (auto container = world->get<ContainerObject>(entityId)) {
-      auto itemDb = Root::singleton().itemDatabase();
-      auto toSwap = itemDb->fromJson(items);
+      auto itemDb = world->itemDatabase();
+      auto toSwap = itemDb->item(ItemDescriptor(items));
       if (offset < container->containerSize()) {
         if (auto res = container->swapItems(offset, toSwap, false).result())
-          return itemDb->toJson(*res);
+          return itemSafeDescriptor(*res).toJson();
       }
     }
 

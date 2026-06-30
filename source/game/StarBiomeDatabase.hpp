@@ -10,10 +10,14 @@ namespace Star {
 class BiomeDatabase;
 using BiomeDatabasePtr = SharedPtr<BiomeDatabase>;
 using BiomeDatabaseConstPtr = SharedPtr<BiomeDatabase const>;
+class FunctionDatabase;
+using FunctionDatabaseConstPtr = SharedPtr<FunctionDatabase const>;
+class MaterialDatabase;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
 
 class BiomeDatabase {
 public:
-  BiomeDatabase(AssetsConstPtr assets);
+  BiomeDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, FunctionDatabaseConstPtr functionDatabase);
 
   StringList biomeNames() const;
 
@@ -49,6 +53,8 @@ private:
   ConfigMap m_biomes;
   ConfigMap m_weathers;
   AssetsConstPtr m_assets;
+  MaterialDatabaseConstPtr m_materialDatabase;
+  FunctionDatabaseConstPtr m_functionDatabase;
   Json m_spawnGroups;
 };
 

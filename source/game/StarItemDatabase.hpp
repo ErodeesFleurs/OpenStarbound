@@ -12,6 +12,8 @@ namespace Star {
 
 class RecipeDatabase;
 class AugmentItem;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 
 class ItemDatabase;
 using ItemDatabasePtr = SharedPtr<ItemDatabase>;
@@ -79,9 +81,9 @@ public:
   static HashSet<ItemRecipe> recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies, HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes);
   static String guiFilterString(ItemPtr const& item);
 
-  ItemDatabase(AssetsConstPtr assets);
+  ItemDatabase(AssetsConstPtr assets, function<ObjectDatabaseConstPtr()> objectDatabase);
 
-  void cleanup();
+  void cleanup() override;
 
   // Load an item based on item descriptor.  If loadItem is called with a
   // live ptr, and the ptr matches the descriptor read, then no new item is
@@ -92,23 +94,24 @@ public:
   // default item.
   template <typename ItemT>
   bool loadItem(ItemDescriptor const& descriptor, SharedPtr<ItemT>& itemPtr) const;
+  bool loadItem(ItemDescriptor const& descriptor, ItemPtr& itemPtr) const override;
 
   // Protects against re-instantiating an item in the same was as loadItem
   template <typename ItemT>
   bool diskLoad(Json const& diskStore, SharedPtr<ItemT>& itemPtr) const;
 
-  ItemPtr diskLoad(Json const& diskStore) const;
-  ItemPtr fromJson(Json const& spec) const;
+  ItemPtr diskLoad(Json const& diskStore) const override;
+  ItemPtr fromJson(Json const& spec) const override;
 
-  Json diskStore(ItemConstPtr const& itemPtr) const;
+  Json diskStore(ItemConstPtr const& itemPtr) const override;
 
-  Json toJson(ItemConstPtr const& itemPtr) const;
+  Json toJson(ItemConstPtr const& itemPtr) const override;
 
-  bool hasItem(String const& itemName) const;
+  bool hasItem(String const& itemName) const override;
   ItemType itemType(String const& itemName) const;
   // Friendly name here can be different than the final friendly name, as it
   // can be modified by custom config or builder scripts.
-  String itemFriendlyName(String const& itemName) const;
+  String itemFriendlyName(String const& itemName) const override;
   StringSet itemTags(String const& itemName) const;
 
   // Generate an item config for the given itemName, parameters, level and seed.
@@ -124,9 +127,9 @@ public:
   // item, will return a default item instead.  If item is passed a null
   // ItemDescriptor, it will return a null pointer.
   // The returned item pointer will be shared. Either call ->clone() or use item() instead for a copy.
-  ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const;
+  ItemPtr itemShared(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}) const override;
   // Same as itemShared, but makes a copy instead. Does not cache.
-  ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
+  ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const override;
 
 
   bool hasRecipeToMake(ItemDescriptor const& item) const;
@@ -151,7 +154,7 @@ public:
   HashSet<ItemRecipe> allRecipes(StringSet const& types) const;
 
   ItemPtr applyAugment(ItemPtr const item, AugmentItem* augment) const;
-  bool ageItem(ItemPtr& item, double aging) const;
+  bool ageItem(ItemPtr& item, double aging) const override;
 
   List<String> allItems() const;
 
@@ -168,7 +171,7 @@ private:
     String filename;
   };
 
-  static ItemPtr createItem(AssetsConstPtr assets, ItemType type, ItemConfig const& config);
+  static ItemPtr createItem(AssetsConstPtr assets, ItemDatabase const* itemDatabase, ItemType type, ItemConfig const& config);
   ItemPtr tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
   ItemData const& itemData(String const& name) const;
@@ -184,6 +187,7 @@ private:
   void addCodexes();
 
   AssetsConstPtr m_assets;
+  function<ObjectDatabaseConstPtr()> m_objectDatabase;
   StringMap<ItemData> m_items;
   HashSet<ItemRecipe> m_recipes;
 

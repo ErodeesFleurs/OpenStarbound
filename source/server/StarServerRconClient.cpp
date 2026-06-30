@@ -1,27 +1,21 @@
 #include "StarServerRconThread.hpp"
 #include "StarServerRconClient.hpp"
 #include "StarLogging.hpp"
-#include "StarRoot.hpp"
-#include "StarConfiguration.hpp"
 #include "StarUniverseServer.hpp"
 #include "StarLexicalCast.hpp"
 
 namespace Star {
 
-ServerRconClient::ServerRconClient(UniverseServer* universe, TcpSocketPtr socket)
+ServerRconClient::ServerRconClient(UniverseServer* universe, TcpSocketPtr socket, String rconPassword)
   : Thread("RconClient"),
     m_universe(universe),
     m_socket(socket),
     m_packetBuffer(MaxPacketSize),
     m_stop(true),
-    m_authed(false) {
-  auto& root = Root::singleton();
-  auto cfg = root.configuration();
-
+    m_authed(false),
+    m_rconPassword(std::move(rconPassword)) {
   m_packetBuffer.setByteOrder(ByteOrder::LittleEndian);
   m_packetBuffer.setNullTerminatedStrings(true);
-
-  m_rconPassword = cfg->get("rconServerPassword").toString();
 }
 
 ServerRconClient::~ServerRconClient() {

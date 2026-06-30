@@ -12,6 +12,16 @@ namespace Star {
 
 class Rebuilder;
 using RebuilderPtr = SharedPtr<Rebuilder>;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class SpeciesDatabase;
+using SpeciesDatabaseConstPtr = SharedPtr<SpeciesDatabase const>;
+class PatternedNameGenerator;
+using PatternedNameGeneratorConstPtr = SharedPtr<PatternedNameGenerator const>;
+class FunctionDatabase;
+using FunctionDatabaseConstPtr = SharedPtr<FunctionDatabase const>;
 class Npc;
 using NpcPtr = SharedPtr<Npc>;
 class NpcDatabase;
@@ -63,7 +73,12 @@ struct NpcVariant {
 
 class NpcDatabase {
 public:
-  NpcDatabase(AssetsConstPtr assets);
+  NpcDatabase(AssetsConstPtr assets,
+      ItemDatabaseConstPtr itemDatabase,
+      ObjectDatabaseConstPtr objectDatabase,
+      SpeciesDatabaseConstPtr speciesDatabase,
+      PatternedNameGeneratorConstPtr nameGenerator,
+      FunctionDatabaseConstPtr functionDatabase);
 
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level) const;
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const;
@@ -89,6 +104,11 @@ private:
 
   RebuilderPtr m_rebuilder;
   AssetsConstPtr m_assets;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  SpeciesDatabaseConstPtr m_speciesDatabase;
+  PatternedNameGeneratorConstPtr m_nameGenerator;
+  FunctionDatabaseConstPtr m_functionDatabase;
 
   StringMap<Json> m_npcTypes;
 };

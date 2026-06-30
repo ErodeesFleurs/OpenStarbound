@@ -12,7 +12,7 @@ using StatisticsPtr = SharedPtr<Statistics>;
 
 class Statistics {
 public:
-  Statistics(String const& storageDirectory, StatisticsServicePtr service = {});
+  Statistics(String const& storageDirectory, VersioningDatabaseConstPtr versioningDatabase, StatisticsDatabaseConstPtr statisticsDatabase, StatisticsServicePtr service = {});
 
   void writeStatistics();
 
@@ -51,6 +51,8 @@ private:
   Maybe<Result> runStatScript(StringList const& scripts, Json const& config, String const& functionName, V&&... args);
 
   StatisticsServicePtr m_service;
+  VersioningDatabaseConstPtr m_versioningDatabase;
+  StatisticsDatabaseConstPtr m_statisticsDatabase;
   String m_storageDirectory;
   bool m_initialized;
 

@@ -40,6 +40,7 @@ EntityFactory::EntityFactory(IAssetsConstPtr assets) {
   m_vehicleDatabase = root.vehicleDatabase();
   m_versioningDatabase = root.versioningDatabase();
   m_assets = assets ? std::move(assets) : root.assets();
+  m_itemDatabase = root.itemDatabase();
 }
 
 EntityPtr EntityFactory::create(String const& entityName, Json const& extraParams) const {
@@ -117,7 +118,7 @@ EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStor
   } else if (type == EntityType::Projectile) {
     return m_projectileDatabase->netLoadProjectile(netStore, rules);
   } else if (type == EntityType::ItemDrop) {
-    return make_shared<ItemDrop>(netStore, rules, m_assets);
+    return make_shared<ItemDrop>(netStore, rules, m_assets, m_itemDatabase);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->netLoadNpc(netStore, rules);
   } else if (type == EntityType::Stagehand) {
@@ -165,7 +166,7 @@ EntityPtr EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) 
   } else if (type == EntityType::Plant) {
     return make_shared<Plant>(m_assets, diskStore);
   } else if (type == EntityType::ItemDrop) {
-    return make_shared<ItemDrop>(diskStore, m_assets);
+    return make_shared<ItemDrop>(diskStore, m_assets, m_itemDatabase);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->diskLoadNpc(diskStore);
   } else if (type == EntityType::Stagehand) {

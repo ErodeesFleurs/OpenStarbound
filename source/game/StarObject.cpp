@@ -36,7 +36,7 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters)
     auto orientations = jOrientations->toArray();
     for (size_t i = 0; i != orientations.size(); ++i)
       base.set(i, jsonMergeNulling(base.get(i), orientations.get(i)));
-    m_orientations = ObjectDatabase::parseOrientations(m_config->assets, m_config->path, base, m_config->config);
+    m_orientations = ObjectDatabase::parseOrientations(m_config->assets, m_config->materialDatabase, m_config->imageMetadataDatabase, m_config->path, base, m_config->config);
   }
 
   m_animationTimer = 0.0f;
@@ -505,23 +505,23 @@ void Object::destroy(RenderCallback* renderCallback) {
         auto smashDropPool = configValue("smashDropPool", "").toString();
         if (!smashDropPool.empty()) {
           for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(smashDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
         } else if (!m_config->smashDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->smashDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position(), false, world()->assets()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(o, position(), false, world()->assets(), world()->itemDatabase()));
         }
       } else {
         auto breakDropPool = configValue("breakDropPool", "").toString();
         if (!breakDropPool.empty()) {
           for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(breakDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
         } else if (!m_config->breakDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->breakDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position(), false, world()->assets()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(o, position(), false, world()->assets(), world()->itemDatabase()));
         } else if (m_config->hasObjectItem) {
           ItemDescriptor objectItem(m_config->name, 1);
           if (configValue("retainObjectParametersInItem", m_config->retainObjectParametersInItem).optBool().value()) {
@@ -530,7 +530,7 @@ void Object::destroy(RenderCallback* renderCallback) {
             parameters["scriptStorage"] = m_scriptComponent.getScriptStorage();
             objectItem = objectItem.applyParameters(parameters);
           }
-          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position(), false, world()->assets()));
+          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position(), false, world()->assets(), world()->itemDatabase()));
         }
       }
     } catch (StarException const& e) {

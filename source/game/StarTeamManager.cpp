@@ -1,7 +1,7 @@
 #include "StarTeamManager.hpp"
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarAssets.hpp"
 #include "StarText.hpp"
 #include "StarLogging.hpp"
@@ -10,11 +10,13 @@ constexpr int MaxPvpTeamAssignmentAttempts = 256;
 
 namespace Star {
 
-TeamManager::TeamManager() {
+TeamManager::TeamManager(IConfigurationPtr configuration) {
+  if (!configuration)
+    throw StarException("TeamManager requires configuration service");
   m_pvpTeamCounter = 1;
-  m_maxTeamSize = Root::singleton().configuration()->get("maxTeamSize").toUInt();
-  m_polledInvitationTimeout = Root::singleton().configuration()->getPath("teamInvitationTimeout", Json(600.0)).toDouble();
-  m_secureTeams = Root::singleton().configuration()->getPath("security.secureTeams").optBool().value(true);
+  m_maxTeamSize = configuration->get("maxTeamSize").toUInt();
+  m_polledInvitationTimeout = configuration->getPath("teamInvitationTimeout", Json(600.0)).toDouble();
+  m_secureTeams = configuration->getPath("security.secureTeams").optBool().value(true);
 }
 
 JsonRpcHandlers TeamManager::rpcHandlers() {

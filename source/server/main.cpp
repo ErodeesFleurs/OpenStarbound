@@ -62,19 +62,19 @@ int main(int argc, char** argv) {
         Logger::info("Configured tick rate is {:4.2f}hz", updateRate);
       }
 
-      UniquePtr<UniverseServer> server = make_unique<UniverseServer>(root->toStoragePath("universe"));
+      UniquePtr<UniverseServer> server = make_unique<UniverseServer>(root->toStoragePath("universe"), root->assets(), root->configuration(), root->itemDatabase());
       server->setListeningTcp(true);
       server->start();
 
       UniquePtr<ServerQueryThread> queryServer;
       if (configuration->get("runQueryServer").toBool()) {
-        queryServer = make_unique<ServerQueryThread>(server.get(), HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()));
+        queryServer = make_unique<ServerQueryThread>(server.get(), HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()), configuration);
         queryServer->start();
       }
 
       UniquePtr<ServerRconThread> rconServer;
       if (configuration->get("runRconServer").toBool()) {
-        rconServer = make_unique<ServerRconThread>(server.get(), HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()));
+        rconServer = make_unique<ServerRconThread>(server.get(), HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()), configuration);
         rconServer->start();
       }
 

@@ -406,7 +406,7 @@ void Monster::destroy(RenderCallback* renderCallback) {
     }
 
     for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, *m_monsterLevel))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
   }
 
   if (renderCallback) {

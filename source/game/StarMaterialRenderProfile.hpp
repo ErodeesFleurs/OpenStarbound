@@ -10,6 +10,9 @@
 
 namespace Star {
 
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
+
 struct MaterialRenderProfileExceptionTag { static constexpr char const* typeName = "MaterialRenderProfileException"; };
 using MaterialRenderProfileException = TypedException<StarException, MaterialRenderProfileExceptionTag>;
 
@@ -125,6 +128,6 @@ struct MaterialRenderProfile {
   pair<String, Vec2F> const& damageImage(float damageLevel, TileDamageType damageType) const;
 };
 
-MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const& relativePath = "");
+MaterialRenderProfile parseMaterialRenderProfile(ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& spec, String const& relativePath = "");
 
 }

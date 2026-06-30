@@ -19,7 +19,7 @@ int main(int argc, char** argv) {
     tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
     StringMap<int> wordCounts;
-    auto assets = Root::singleton().assets();
+    auto assets = root->assets();
 
     auto countWordsInType = [&](String const& type, function<int(Json const&)> countFunction, Maybe<function<bool(String const&)>> filterFunction = {}, Maybe<String> wordCountKey = {}) {
       auto files = assets->scanExtension(type).values();

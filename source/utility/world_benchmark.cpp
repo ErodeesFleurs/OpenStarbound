@@ -1,4 +1,5 @@
 #include "StarLexicalCast.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarLogging.hpp"
 #include "StarRootLoader.hpp"
 #include "StarWorldServer.hpp"
@@ -61,7 +62,7 @@ int main(int argc, char** argv) {
 
     double sumTime = 0.0;
     for (uint64_t i = 0; i < times; ++i) {
-      WorldServer worldServer(worldTemplate, File::ephemeralFile());
+      WorldServer worldServer(worldTemplate, File::ephemeralFile(), root->assets(), root->configuration(), root->itemDatabase(), root->objectDatabase());
 
       coutf("Starting world simulation for {} steps\n", steps);
       double start = Time::monotonicTime();

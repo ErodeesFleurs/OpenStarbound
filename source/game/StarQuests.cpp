@@ -1,7 +1,6 @@
 #include "StarQuests.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
-#include "StarRoot.hpp"
 #include "StarTime.hpp"
 #include "StarRandom.hpp"
 #include "StarItemDatabase.hpp"
@@ -32,10 +31,16 @@ EnumMap<QuestState> const QuestStateNames {
   {QuestState::Failed, "Failed"}
 };
 
-Quest::Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player)
-  : m_assets(std::move(assets)) {
+Quest::Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+  : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
   if (!m_assets)
     throw StarException("Quest requires assets service");
+  if (!m_objectDatabase)
+    throw StarException("Quest requires object database service");
+  if (!m_questTemplateDatabase)
+    throw StarException("Quest requires quest template database service");
+  if (!m_versioningDatabase)
+    throw StarException("Quest requires versioning database service");
 
   m_trackedIndicator = m_assets->json("/quests/quests.config:trackedCustomIndicator").toString();
   m_untrackedIndicator = m_assets->json("/quests/quests.config:untrackedCustomIndicator").toString();
@@ -48,9 +53,7 @@ Quest::Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t 
   m_arc = questArc;
   m_arcPos = arcPos;
 
-  auto itemDatabase = Root::singleton().itemDatabase();
-  auto templateDatabase = Root::singleton().questTemplateDatabase();
-  auto questTemplate = templateDatabase->questTemplate(templateId());
+  auto questTemplate = m_questTemplateDatabase->questTemplate(templateId());
 
   m_parameters = questDescriptor().parameters;
   m_displayParameters = DisplayParameters {
@@ -66,7 +69,7 @@ Quest::Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t 
 
   m_money = Random::randUInt(questTemplate->moneyRange[0], questTemplate->moneyRange[1]);
   m_rewards = Random::randValueFrom(questTemplate->rewards, {}).transformed(
-      [&itemDatabase](ItemDescriptor const& item) -> ItemConstPtr { return itemDatabase->item(item); });
+      [this](ItemDescriptor const& item) -> ItemConstPtr { return m_itemDatabase->item(item); });
 
   for (String const& rewardParamName : questTemplate->rewardParameters) {
     if (!m_parameters.contains(rewardParamName))
@@ -95,16 +98,21 @@ Quest::Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t 
   m_inited = false;
 }
 
-Quest::Quest(IAssetsConstPtr assets, Json const& spec)
-  : m_assets(std::move(assets)) {
+Quest::Quest(IAssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+  : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
   if (!m_assets)
     throw StarException("Quest requires assets service");
+  if (!m_objectDatabase)
+    throw StarException("Quest requires object database service");
+  if (!m_questTemplateDatabase)
+    throw StarException("Quest requires quest template database service");
+  if (!m_versioningDatabase)
+    throw StarException("Quest requires versioning database service");
 
   m_trackedIndicator = m_assets->json("/quests/quests.config:trackedCustomIndicator").toString();
   m_untrackedIndicator = m_assets->json("/quests/quests.config:untrackedCustomIndicator").toString();
 
-  auto versioningDatabase = Root::singleton().versioningDatabase();
-  Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "Quest");
+  Json diskStore = m_versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "Quest");
 
   m_state = QuestStateNames.getLeft(diskStore.getString("state"));
 
@@ -118,9 +126,8 @@ Quest::Quest(IAssetsConstPtr assets, Json const& spec)
   m_serverUuid = diskStore.optString("serverUuid").apply(construct<Uuid>());
   m_money = diskStore.getUInt("money");
 
-  auto itemDatabase = Root::singleton().itemDatabase();
   m_rewards = diskStore.getArray("rewards").transformed(
-      [&itemDatabase](Json const& json) -> ItemConstPtr { return itemDatabase->diskLoad(json); });
+      [this](Json const& json) -> ItemConstPtr { return m_itemDatabase->diskLoad(json); });
 
   m_lastUpdatedOn = diskStore.getInt("lastUpdatedOn");
   m_unread = diskStore.getBool("unread", true);
@@ -128,8 +135,7 @@ Quest::Quest(IAssetsConstPtr assets, Json const& spec)
   m_indicators = jsonToStringSet(diskStore.get("indicators", JsonArray{}));
   m_scriptComponent.setScriptStorage(diskStore.getObject("scriptStorage", JsonObject{}));
 
-  auto templateDatabase = Root::singleton().questTemplateDatabase();
-  auto questTemplate = templateDatabase->questTemplate(templateId());
+  auto questTemplate = m_questTemplateDatabase->questTemplate(templateId());
   m_displayParameters = DisplayParameters{
     questTemplate->ephemeral,
     questTemplate->showInLog,
@@ -157,8 +163,6 @@ Quest::Quest(IAssetsConstPtr assets, Json const& spec)
 }
 
 Json Quest::diskStore() const {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
-
   JsonObject result;
   result["state"] = QuestStateNames.getRight(m_state);
   result["arc"] = m_arc.diskStore();
@@ -172,9 +176,8 @@ Json Quest::diskStore() const {
     }));
   result["serverUuid"] = jsonFromMaybe(m_serverUuid.apply(mem_fn(&Uuid::hex)));
 
-  auto itemDatabase = Root::singleton().itemDatabase();
   result["rewards"] =
-      m_rewards.transformed([&itemDatabase](ItemConstPtr const& item) { return itemDatabase->diskStore(item); });
+      m_rewards.transformed([this](ItemConstPtr const& item) { return m_itemDatabase->diskStore(item); });
 
   result["lastUpdatedOn"] = m_lastUpdatedOn;
   result["unread"] = m_unread;
@@ -193,11 +196,11 @@ Json Quest::diskStore() const {
   result["portraitTitles"] = jsonFromMap(m_portraitTitles);
   result["showDialog"] = m_showDialog;
 
-  return versioningDatabase->makeCurrentVersionedJson("Quest", result).toJson();
+  return m_versioningDatabase->makeCurrentVersionedJson("Quest", result).toJson();
 }
 
 QuestTemplatePtr Quest::getTemplate() const {
-  return Root::singleton().questTemplateDatabase()->questTemplate(templateId());
+  return m_questTemplateDatabase->questTemplate(templateId());
 }
 
 void Quest::init(Player* player, World* world, UniverseClient* client) {
@@ -286,7 +289,7 @@ void Quest::complete(Maybe<size_t> followupIndex) {
   bool trackNewQuest = m_player->questManager()->isTracked(questId());
   size_t nextArcPos = followupIndex.value(questArcPosition() + 1);
   if (nextArcPos < m_arc.quests.size()) {
-    auto followUp = make_shared<Quest>(m_player->questManager()->assets(), m_arc, nextArcPos, m_player);
+    auto followUp = make_shared<Quest>(m_player->questManager()->assets(), m_arc, nextArcPos, m_player, m_player->questManager()->itemDatabase(), m_player->questManager()->objectDatabase(), m_player->questManager()->questTemplateDatabase(), m_player->questManager()->versioningDatabase());
     followUp->setWorldId(worldId());
     followUp->setLocation(location());
     followUp->setServerUuid(serverUuid());
@@ -445,7 +448,7 @@ String Quest::questReceiverIndicator() const {
   return getTemplate()->questReceiverIndicator;
 }
 
-bool hasItemIndicator(EntityPtr const& entity, List<ItemDescriptor> indicatedItems) {
+bool hasItemIndicator(EntityPtr const& entity, List<ItemDescriptor> indicatedItems, ObjectDatabaseConstPtr const& objectDatabase) {
   if (auto itemDrop = as<ItemDrop>(entity)) {
     for (auto const& itemDesc : indicatedItems) {
       if (itemDrop->item()->matches(itemDesc, true)) {
@@ -453,7 +456,7 @@ bool hasItemIndicator(EntityPtr const& entity, List<ItemDescriptor> indicatedIte
       }
     }
   } else if (auto object = as<Object>(entity)) {
-    ObjectConfigPtr objectConfig = Root::singleton().objectDatabase()->getConfig(object->name());
+    ObjectConfigPtr objectConfig = objectDatabase->getConfig(object->name());
     if (!objectConfig->hasObjectItem)
       return false;
     for (auto const& itemDesc : indicatedItems) {
@@ -478,7 +481,7 @@ Maybe<String> Quest::customIndicator(EntityPtr const& entity) const {
 
     } else if (param.detail.is<QuestItem>()) {
       QuestItem questItem = param.detail.get<QuestItem>();
-      if (hasItemIndicator(entity, {questItem.descriptor()}))
+      if (hasItemIndicator(entity, {questItem.descriptor()}, m_objectDatabase))
         return param.indicator.value(defaultCustomIndicator());
 
     } else if (param.detail.is<QuestItemTag>()) {
@@ -490,7 +493,7 @@ Maybe<String> Quest::customIndicator(EntityPtr const& entity) const {
 
     } else if (param.detail.is<QuestItemList>()) {
       QuestItemList questItemList = param.detail.get<QuestItemList>();
-      if (hasItemIndicator(entity, questItemList))
+      if (hasItemIndicator(entity, questItemList, m_objectDatabase))
         return param.indicator.value(defaultCustomIndicator());
 
     } else if (param.detail.is<QuestMonsterType>()) {
@@ -744,8 +747,7 @@ void Quest::addReward(ItemDescriptor const& reward) {
     m_money += reward.count();
     return;
   }
-  auto itemDatabase = Root::singleton().itemDatabase();
-  m_rewards.append(itemDatabase->item(reward));
+  m_rewards.append(m_itemDatabase->item(reward));
 }
 
 String const& Quest::defaultCustomIndicator() const {
@@ -754,7 +756,7 @@ String const& Quest::defaultCustomIndicator() const {
 
 QuestPtr createPreviewQuest(
     String const& templateId, String const& position, String const& questGiverSpecies, Player* player) {
-  auto questTemplates = Root::singleton().questTemplateDatabase();
+  auto questTemplates = player->questManager()->questTemplateDatabase();
   auto questTemplate = questTemplates->questTemplate(templateId);
   if (!questTemplate)
     return {};
@@ -784,7 +786,7 @@ QuestPtr createPreviewQuest(
     arcPos = 2;
   }
 
-  auto quest = make_shared<Quest>(player->questManager()->assets(), arc, arcPos, player);
+  auto quest = make_shared<Quest>(player->questManager()->assets(), arc, arcPos, player, player->questManager()->itemDatabase(), player->questManager()->objectDatabase(), player->questManager()->questTemplateDatabase(), player->questManager()->versioningDatabase());
   quest->setParameter("questGiver", QuestParam{QuestEntity{{}, questGiverSpecies, {}}, {"Quest Giver"}, portrait, {}});
   return quest;
 }

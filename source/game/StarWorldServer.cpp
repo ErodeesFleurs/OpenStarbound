@@ -37,17 +37,20 @@ EnumMap<WorldServerFidelity> const WorldServerFidelityNames{
   {WorldServerFidelity::High, "high"}
 };
 
-WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration)
+WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
   : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
     m_spawner(m_assets) {
   m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
   m_materialDatabase = Root::singleton().materialDatabase();
-  m_itemDatabase = Root::singleton().itemDatabase();
+  m_itemDatabase = std::move(itemDatabase);
+  m_objectDatabase = std::move(objectDatabase);
+  if (!m_objectDatabase)
+    throw WorldServerException("WorldServer requires object database service");
   m_speciesDatabase = Root::singleton().speciesDatabase();
   m_entityFactory = Root::singleton().entityFactory();
   m_liquidsDatabase = Root::singleton().liquidsDatabase();
   m_worldTemplate = worldTemplate;
-  m_worldStorage = make_shared<WorldStorage>(m_assets, m_worldTemplate->size(), storage, make_shared<WorldGenerator>(this));
+  m_worldStorage = make_shared<WorldStorage>(m_assets, m_worldTemplate->size(), storage, make_shared<WorldGenerator>(this, m_objectDatabase));
   m_spawnFinder.m_adjustPlayerStart = true;
   m_spawnFinder.m_respawnInWorld = false;
   m_dungeonProtection.m_tileProtectionEnabled = true;
@@ -59,19 +62,22 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr stor
   writeMetadata();
 }
 
-WorldServer::WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration)
-  : WorldServer(make_shared<WorldTemplate>(assets ? assets : Root::singleton().assets(), size), storage, assets, configuration) {}
+WorldServer::WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
+  : WorldServer(make_shared<WorldTemplate>(assets ? assets : Root::singleton().assets(), size), storage, assets, configuration, std::move(itemDatabase), std::move(objectDatabase)) {}
 
-WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, IConfigurationPtr configuration)
+WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
   : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
     m_spawner(m_assets) {
   m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
   m_materialDatabase = Root::singleton().materialDatabase();
-  m_itemDatabase = Root::singleton().itemDatabase();
+  m_itemDatabase = std::move(itemDatabase);
+  m_objectDatabase = std::move(objectDatabase);
+  if (!m_objectDatabase)
+    throw WorldServerException("WorldServer requires object database service");
   m_speciesDatabase = Root::singleton().speciesDatabase();
   m_entityFactory = Root::singleton().entityFactory();
   m_liquidsDatabase = Root::singleton().liquidsDatabase();
-  m_worldStorage = make_shared<WorldStorage>(m_assets, storage, make_shared<WorldGenerator>(this));
+  m_worldStorage = make_shared<WorldStorage>(m_assets, storage, make_shared<WorldGenerator>(this, m_objectDatabase));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
       for (auto const& pair : m_clientInfo)
         pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
@@ -84,16 +90,19 @@ WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, ICo
   init(false);
 }
 
-WorldServer::WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets, IConfigurationPtr configuration)
+WorldServer::WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets, IConfigurationPtr configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
   : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
     m_spawner(m_assets) {
   m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
   m_materialDatabase = Root::singleton().materialDatabase();
-  m_itemDatabase = Root::singleton().itemDatabase();
+  m_itemDatabase = std::move(itemDatabase);
+  m_objectDatabase = std::move(objectDatabase);
+  if (!m_objectDatabase)
+    throw WorldServerException("WorldServer requires object database service");
   m_speciesDatabase = Root::singleton().speciesDatabase();
   m_entityFactory = Root::singleton().entityFactory();
   m_liquidsDatabase = Root::singleton().liquidsDatabase();
-  m_worldStorage = make_shared<WorldStorage>(m_assets, chunks, make_shared<WorldGenerator>(this));
+  m_worldStorage = make_shared<WorldStorage>(m_assets, chunks, make_shared<WorldGenerator>(this, m_objectDatabase));
   m_worldProperties = WorldServerProperties([this](JsonObject const& update) {
       for (auto const& pair : m_clientInfo)
         pair.second->outgoingPackets.append(makePooled<UpdateWorldPropertiesPacket>(update));
@@ -195,10 +204,9 @@ WorldStructure WorldServer::setCentralStructure(WorldStructure centralStructure)
     }
   }
 
-  auto objectDatabase = Root::singleton().objectDatabase();
   for (auto const& structureObject : m_centralStructure.objects()) {
     generateRegion(RectI::withSize(structureObject.position, {1, 1}));
-    if (auto object = objectDatabase->createForPlacement(this, structureObject.name, structureObject.position, structureObject.direction, structureObject.parameters))
+    if (auto object = m_objectDatabase->createForPlacement(this, structureObject.name, structureObject.position, structureObject.direction, structureObject.parameters))
       addEntity(object);
   }
 
@@ -980,7 +988,7 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
       Vec2F dropPosition = centerOfTile(pos);
 
       for (auto const& drop : destroyBlock(placeMaterial->layer, pos, harvested, !tileDamageIsPenetrating(damage.damageType()), false))
-        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition, false, m_assets));
+        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition, false, m_assets, m_itemDatabase));
       
       return true;
     }
@@ -1215,11 +1223,11 @@ bool WorldServer::placeDungeon(String const& dungeonName, Vec2I const& position,
   m_dungeonProtection.m_tileProtectionEnabled = false;
 
   auto seed = worldTemplate()->seedFor(position[0], position[1]);
-  auto facade = make_shared<DungeonGeneratorWorld>(this, true);
+  auto facade = make_shared<DungeonGeneratorWorld>(this, m_objectDatabase, true);
   bool placed = false;
   DungeonGenerator dungeonGenerator(dungeonName, seed, m_worldTemplate->threatLevel(), dungeonId);
     if (auto generateResult = dungeonGenerator.generate(facade, position, false, forcePlacement)) {
-    auto worldGenerator = make_shared<WorldGenerator>(this);
+    auto worldGenerator = make_shared<WorldGenerator>(this, m_objectDatabase);
     for (auto const& dungeonPosition : generateResult->second) {
       if (ServerTile* tile = modifyServerTile(dungeonPosition))
         worldGenerator->replaceBiomeBlocks(tile);
@@ -1501,7 +1509,7 @@ void WorldServer::init(bool firstTime) {
         int retryCounter = m_serverConfig.getInt("spawnDungeonRetries");
         while (retryCounter > 0) {
           --retryCounter;
-          auto dungeonFacade = make_shared<DungeonGeneratorWorld>(this, true);
+          auto dungeonFacade = make_shared<DungeonGeneratorWorld>(this, m_objectDatabase, true);
           Vec2I position = Vec2I((dungeon.baseX + rnd.randInt(0, dungeon.xVariance)) % m_geometry.width(), dungeon.baseHeight);
           DungeonGenerator dungeonGenerator(dungeon.dungeon, m_worldTemplate->worldSeed(), m_worldTemplate->threatLevel(), currentDungeonId);
           if (auto generateResult = dungeonGenerator.generate(dungeonFacade, position, dungeon.blendWithTerrain, dungeon.force)) {
@@ -1870,6 +1878,14 @@ IAssetsConstPtr WorldServer::assets() const {
   return m_assets;
 }
 
+IItemDatabaseConstPtr WorldServer::itemDatabase() const {
+  return m_itemDatabase;
+}
+
+ObjectDatabaseConstPtr WorldServer::objectDatabase() const {
+  return m_objectDatabase;
+}
+
 SkyPtr WorldServer::sky() const {
   return m_sky;
 }
@@ -2141,7 +2157,7 @@ void WorldServer::updateDamagedBlocks(float dt) {
     if (tile->foregroundDamage.dead()) {
       bool harvested = tile->foregroundDamage.harvested();
       for (auto const& drop : destroyBlock(TileLayer::Foreground, pos, harvested, !tileDamageIsPenetrating(tile->foregroundDamage.damageType())))
-        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition, false, m_assets));
+        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition, false, m_assets, m_itemDatabase));
 
     } else if (tile->foregroundDamage.damaged()) {
       if (isRealMaterial(tile->foreground)) {
@@ -2163,7 +2179,7 @@ void WorldServer::updateDamagedBlocks(float dt) {
     if (tile->backgroundDamage.dead()) {
       bool harvested = tile->backgroundDamage.harvested();
       for (auto const& drop : destroyBlock(TileLayer::Background, pos, harvested, !tileDamageIsPenetrating(tile->backgroundDamage.damageType())))
-        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition, false, m_assets));
+        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition, false, m_assets, m_itemDatabase));
 
     } else if (tile->backgroundDamage.damaged()) {
       if (isRealMaterial(tile->background)) {

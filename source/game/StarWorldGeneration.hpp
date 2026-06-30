@@ -13,6 +13,8 @@ namespace Star {
 class WorldServer;
 class Plant;
 using PlantPtr = SharedPtr<Plant>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 class LiquidsDatabase;
 using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
 
@@ -47,7 +49,7 @@ private:
 
 class DungeonGeneratorWorld : public DungeonGeneratorWorldFacade {
 public:
-  DungeonGeneratorWorld(WorldServer* worldServer, bool markForActivation);
+  DungeonGeneratorWorld(WorldServer* worldServer, ObjectDatabaseConstPtr objectDatabase, bool markForActivation);
 
   void markRegion(RectI const& region) override;
   void markTerrain(PolyF const& region) override;
@@ -83,6 +85,7 @@ private:
   void placeBiomeItems(Vec2I const& pos, List<BiomeItemPlacement>& potentialItems);
 
   WorldServer* m_worldServer;
+  ObjectDatabaseConstPtr m_objectDatabase;
   bool m_markForActivation;
 };
 
@@ -112,7 +115,7 @@ private:
 
 class WorldGenerator : public WorldGeneratorFacade {
 public:
-  WorldGenerator(WorldServer* server);
+  WorldGenerator(WorldServer* server, ObjectDatabaseConstPtr objectDatabase);
 
   void generateSectorLevel(WorldStorage* worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) override;
   void sectorLoadLevelChanged(WorldStorage* worldStorage, Sector const& sector, SectorLoadLevel loadLevel) override;
@@ -152,6 +155,7 @@ private:
   bool placePlant(WorldStorage* worldStorage, PlantPtr const& plant, Vec2I const& position);
 
   WorldServer* m_worldServer;
+  ObjectDatabaseConstPtr m_objectDatabase;
   MicroDungeonFactoryPtr m_microDungeonFactory;
   List<QueuedPlacement> m_queuedPlacements;
 };

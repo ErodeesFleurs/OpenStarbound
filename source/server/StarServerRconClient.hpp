@@ -16,7 +16,7 @@ public:
   static const uint32_t SERVERDATA_RESPONSE_VALUE = 0x00;
   static const uint32_t SERVERDATA_AUTH_RESPONSE = 0x02;
   static const uint32_t SERVERDATA_AUTH_FAILURE = 0xffffffff;
-  ServerRconClient(UniverseServer* universe, TcpSocketPtr socket);
+  ServerRconClient(UniverseServer* universe, TcpSocketPtr socket, String rconPassword);
   ~ServerRconClient();
 
   void start();

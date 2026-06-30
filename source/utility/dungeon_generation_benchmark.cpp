@@ -1,5 +1,6 @@
 #include "StarRootLoader.hpp"
 #include "StarCelestialDatabase.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarWorldServer.hpp"
 
@@ -47,7 +48,7 @@ int main(int argc, char** argv) {
 
       VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
       auto worldTemplate = make_shared<WorldTemplate>(root->assets(), worldParameters, SkyParameters(), 1234);
-      WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile());
+      WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile(), root->assets(), root->configuration(), root->itemDatabase(), root->objectDatabase());
     }
 
     coutf("Finished {} generations of dungeonWorld {} in {} seconds", repetitions, dungeonWorldName, Time::monotonicTime() - start);

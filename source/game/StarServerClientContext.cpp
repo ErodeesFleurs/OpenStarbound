@@ -4,14 +4,12 @@
 #include "StarWorldServerThread.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarContainerEntity.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarUniverseSettings.hpp"
 
 namespace Star {
 
 ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddress> remoteAddress, NetCompatibilityRules netRules, Uuid playerUuid,
-    String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks)
+    String playerName, String shipSpecies, bool canBecomeAdmin, WorldChunks initialShipChunks, IItemDatabaseConstPtr itemDatabase)
   : m_clientId(clientId),
     m_remoteAddress(remoteAddress),
     m_netRules(netRules),
@@ -19,7 +17,11 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
     m_playerName(playerName),
     m_shipSpecies(shipSpecies),
     m_canBecomeAdmin(canBecomeAdmin),
+    m_itemDatabase(std::move(itemDatabase)),
     m_shipChunks(std::move(initialShipChunks)) {
+  if (!m_itemDatabase)
+    throw StarException("ServerClientContext requires item database service");
+
   m_rpc.registerHandler("ship.applyShipUpgrades", [this](Json const& args) -> Json {
       RecursiveMutexLocker locker(m_mutex);
       setShipUpgrades(shipUpgrades().apply(args));
@@ -36,10 +38,10 @@ ServerClientContext::ServerClientContext(ConnectionId clientId, Maybe<HostAddres
       List<ItemDescriptor> overflow = args.getArray("items").transformed(construct<ItemDescriptor>());
       RecursiveMutexLocker locker(m_mutex);
       if (m_worldThread) {
-        m_worldThread->executeAction([args, &overflow](WorldServerThread*, WorldServer* server) {
+        auto itemDatabase = m_itemDatabase;
+        m_worldThread->executeAction([args, &overflow, itemDatabase](WorldServerThread*, WorldServer* server) {
           EntityId entityId = args.getInt("entityId");
           Json items = args.get("items");
-          auto itemDatabase = Root::singleton().itemDatabase();
           if (auto containerEntity = as<ContainerEntity>(server->entity(entityId))) {
             overflow.clear();
             for (auto const& itemDescriptor : items.iterateArray()) {

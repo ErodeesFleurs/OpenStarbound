@@ -1,27 +1,19 @@
 #include "StarAssetTextureGroup.hpp"
+#include "StarException.hpp"
 #include "StarIterator.hpp"
 #include "StarTime.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
-namespace {
-
-AssetsConstPtr assetTextureAssets(AssetsConstPtr assets) {
-  return assets ? std::move(assets) : Root::singleton().assets();
-}
-
-}
-
 AssetTextureGroup::AssetTextureGroup(TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener)
   : m_textureGroup(std::move(textureGroup)),
-    m_assets(assetTextureAssets(std::move(assets))) {
+    m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("AssetTextureGroup requires assets service");
   if (!registerReloadListener)
-    registerReloadListener = [](ListenerWeakPtr reloadListener) {
-      Root::singleton().registerReloadListener(std::move(reloadListener));
-    };
+    throw StarException("AssetTextureGroup requires reload listener registrar service");
   m_reloadTracker = make_shared<TrackerListener>();
   registerReloadListener(m_reloadTracker);
 }

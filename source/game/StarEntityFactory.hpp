@@ -4,6 +4,7 @@
 #include "StarEntity.hpp"
 #include "StarIEntityFactory.hpp"
 #include "StarIAssets.hpp"
+#include "StarIItemDatabase.hpp"
 
 namespace Star {
 
@@ -61,6 +62,7 @@ private:
   VehicleDatabaseConstPtr m_vehicleDatabase;
   VersioningDatabaseConstPtr m_versioningDatabase;
   IAssetsConstPtr m_assets;
+  IItemDatabaseConstPtr m_itemDatabase;
 };
 
 }

@@ -9,6 +9,9 @@
 
 namespace Star {
 
+class IItemDatabase;
+using IItemDatabaseConstPtr = SharedPtr<IItemDatabase const>;
+
 // Item name - always one single item. QuestItem and QuestItemList are
 // distinct due to how the surrounding text interacts with the parameter
 // in the quest text. For a single item we might want to say "the <bandage>" or
@@ -114,8 +117,8 @@ struct QuestArcDescriptor {
   Maybe<String> stagehandUniqueId;
 };
 
-String questParamText(QuestParam const& param);
-StringMap<String> questParamTags(StringMap<QuestParam> const& parameters);
+String questParamText(QuestParam const& param, IItemDatabaseConstPtr itemDatabase);
+StringMap<String> questParamTags(StringMap<QuestParam> const& parameters, IItemDatabaseConstPtr itemDatabase);
 
 StringMap<QuestParam> questParamsFromJson(Json const& json);
 StringMap<QuestParam> questParamsDiskLoad(Json const& json);

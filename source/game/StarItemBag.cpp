@@ -1,40 +1,36 @@
 #include "StarItemBag.hpp"
-#include "StarRoot.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
 
-ItemBag::ItemBag() {}
+ItemBag::ItemBag(IItemDatabaseConstPtr itemDatabase)
+  : m_itemDatabase(std::move(itemDatabase)) {}
 
-ItemBag::ItemBag(size_t size) {
+ItemBag::ItemBag(size_t size, IItemDatabaseConstPtr itemDatabase)
+  : ItemBag(std::move(itemDatabase)) {
   m_items.resize(size);
 }
 
-ItemBag ItemBag::fromJson(Json const& store) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  ItemBag res;
+ItemBag ItemBag::fromJson(Json const& store, IItemDatabaseConstPtr itemDatabase) {
+  ItemBag res(itemDatabase);
   res.m_items = store.toArray().transformed([itemDatabase](Json const& v) { return itemDatabase->fromJson(v); });
 
   return res;
 }
 
-ItemBag ItemBag::loadStore(Json const& store) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  ItemBag res;
+ItemBag ItemBag::loadStore(Json const& store, IItemDatabaseConstPtr itemDatabase) {
+  ItemBag res(itemDatabase);
   res.m_items = store.toArray().transformed([itemDatabase](Json const& v) { return itemDatabase->diskLoad(v); });
 
   return res;
 }
 
 Json ItemBag::toJson() const {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  return m_items.transformed([itemDatabase](ItemConstPtr const& item) { return itemDatabase->toJson(item); });
+  return m_items.transformed([this](ItemConstPtr const& item) { return m_itemDatabase->toJson(item); });
 }
 
 Json ItemBag::diskStore() const {
-  auto itemDatabase = Root::singleton().itemDatabase();
-  return m_items.transformed([itemDatabase](ItemConstPtr const& item) { return itemDatabase->diskStore(item); });
+  return m_items.transformed([this](ItemConstPtr const& item) { return m_itemDatabase->diskStore(item); });
 }
 
 size_t ItemBag::size() const {
@@ -320,14 +316,12 @@ void ItemBag::condenseStacks() {
 }
 
 void ItemBag::read(DataStream& ds) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-
   m_items.clear();
   m_items.resize(ds.readVlqU());
 
   size_t setItemsSize = ds.readVlqU();
   for (size_t i = 0; i < setItemsSize; ++i)
-    itemDatabase->loadItem(ds.read<ItemDescriptor>(), at(i));
+    m_itemDatabase->loadItem(ds.read<ItemDescriptor>(), at(i));
 }
 
 void ItemBag::write(DataStream& ds) const {

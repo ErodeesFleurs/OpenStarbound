@@ -34,8 +34,10 @@ const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";
 const std::string SECRET_BROADCAST_PREFIX = "\0Broadcast\0"s;
 
 const float WorldClient::DropDist = 6.0f;
-WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstPtr _assets, IConfigurationPtr _configuration)
-  : m_luaRoot(std::move(luaRoot)), m_assets(_assets ? std::move(_assets) : Root::singleton().assets()), m_clientState(m_assets), m_mainPlayer(std::move(mainPlayer)), m_configuration(_configuration ? std::move(_configuration) : Root::singleton().configuration()), m_materialDatabase(Root::singleton().materialDatabase()), m_itemDatabase(Root::singleton().itemDatabase()), m_speciesDatabase(Root::singleton().speciesDatabase()), m_entityFactory(Root::singleton().entityFactory()), m_liquidsDatabase(Root::singleton().liquidsDatabase()) {
+WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstPtr _assets, IConfigurationPtr _configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
+  : m_luaRoot(std::move(luaRoot)), m_assets(_assets ? std::move(_assets) : Root::singleton().assets()), m_clientState(m_assets), m_mainPlayer(std::move(mainPlayer)), m_configuration(_configuration ? std::move(_configuration) : Root::singleton().configuration()), m_materialDatabase(Root::singleton().materialDatabase()), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_speciesDatabase(Root::singleton().speciesDatabase()), m_entityFactory(Root::singleton().entityFactory()), m_liquidsDatabase(Root::singleton().liquidsDatabase()) {
+  if (!m_objectDatabase)
+    throw WorldClientException("WorldClient requires object database service");
 
   m_clientConfig = m_assets->json("/client.config");
   m_lighting.m_lightingConfig = m_assets->json("/lighting.config:lighting");
@@ -1356,6 +1358,14 @@ IAssetsConstPtr WorldClient::assets() const {
   return m_assets;
 }
 
+IItemDatabaseConstPtr WorldClient::itemDatabase() const {
+  return m_itemDatabase;
+}
+
+ObjectDatabaseConstPtr WorldClient::objectDatabase() const {
+  return m_objectDatabase;
+}
+
 MaterialId WorldClient::material(Vec2I const& pos, TileLayer layer) const {
   if (!inWorld())
     return NullMaterialId;
@@ -1949,7 +1959,7 @@ void WorldClient::clearWorld() {
 
 void WorldClient::tryGiveMainPlayerItem(ItemPtr item, bool silent) {
   if (auto spill = m_mainPlayer->pickupItems(item, silent))
-    addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), m_mainPlayer->position(), false, m_assets));
+    addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), m_mainPlayer->position(), false, m_assets, m_itemDatabase));
 }
 
 void WorldClient::notifyEntityCreate(EntityPtr const& entity) {

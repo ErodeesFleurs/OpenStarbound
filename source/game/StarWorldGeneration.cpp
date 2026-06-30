@@ -171,7 +171,7 @@ void FallingBlocksWorld::moveBlock(Vec2I const& from, Vec2I const& to) {
 
   if (m_worldServer->isTileProtected(to)) {
     for (auto const& drop : m_worldServer->destroyBlock(TileLayer::Foreground, from, true, true))
-      m_worldServer->addEntity(ItemDrop::createRandomizedDrop(drop, Vec2F(to), false, m_worldServer->assets()));
+      m_worldServer->addEntity(ItemDrop::createRandomizedDrop(drop, Vec2F(to), false, m_worldServer->assets(), m_worldServer->itemDatabase()));
   } else {
     toTile->foreground = fromTile->foreground;
     toTile->foregroundMod = NoModId;
@@ -187,8 +187,11 @@ void FallingBlocksWorld::moveBlock(Vec2I const& from, Vec2I const& to) {
   }
 }
 
-DungeonGeneratorWorld::DungeonGeneratorWorld(WorldServer* worldServer, bool markForActivation)
-  : m_worldServer(worldServer), m_markForActivation(markForActivation) {}
+DungeonGeneratorWorld::DungeonGeneratorWorld(WorldServer* worldServer, ObjectDatabaseConstPtr objectDatabase, bool markForActivation)
+  : m_worldServer(worldServer), m_objectDatabase(std::move(objectDatabase)), m_markForActivation(markForActivation) {
+  if (!m_objectDatabase)
+    throw StarException("DungeonGeneratorWorld requires object database service");
+}
 
 WorldGeometry DungeonGeneratorWorld::getWorldGeometry() const {
   return m_worldServer->geometry();
@@ -247,8 +250,7 @@ void DungeonGeneratorWorld::setBackgroundMaterial(Vec2I const& position, Materia
 void DungeonGeneratorWorld::placeObject(Vec2I const& pos, String const& objectName, Star::Direction direction, Json const& parameters) {
   m_worldServer->signalRegion(RectI::withSize(pos, {1, 1}));
 
-  auto objectDatabase = Root::singleton().objectDatabase();
-  if (auto object = objectDatabase->createForPlacement(m_worldServer, objectName, pos, direction, parameters))
+  if (auto object = m_objectDatabase->createForPlacement(m_worldServer, objectName, pos, direction, parameters))
     m_worldServer->addEntity(object);
   else
     Logger::warn("Failed to place dungeon object: {} direction: {} position: {}", objectName, static_cast<int>(direction), pos);
@@ -383,7 +385,7 @@ void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlac
       auto& objectPool = placement.item.get<ObjectPool>();
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
       auto objectPair = objectPool.select(seed);
-      if (auto object = Root::singleton().objectDatabase()->createForPlacement(
+      if (auto object = m_objectDatabase->createForPlacement(
               m_worldServer, objectPair.first, placement.position, direction, objectPair.second))
         m_worldServer->addEntity(object);
     } else if (placement.item.is<TreasureBoxSet>()) {
@@ -396,7 +398,7 @@ void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlac
 }
 
 void DungeonGeneratorWorld::addDrop(Vec2F const& position, ItemDescriptor const& item) {
-  m_worldServer->addEntity(ItemDrop::createRandomizedDrop(item, position, false, m_worldServer->assets()));
+  m_worldServer->addEntity(ItemDrop::createRandomizedDrop(item, position, false, m_worldServer->assets(), m_worldServer->itemDatabase()));
 }
 
 void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& parameters) {
@@ -645,7 +647,11 @@ EntityPtr SpawnerWorld::getEntity(EntityId entityId) const {
   return m_worldServer->entity(entityId);
 }
 
-WorldGenerator::WorldGenerator(WorldServer* server) : m_worldServer(server) {
+WorldGenerator::WorldGenerator(WorldServer* server, ObjectDatabaseConstPtr objectDatabase)
+  : m_worldServer(server), m_objectDatabase(std::move(objectDatabase)) {
+  if (!m_objectDatabase)
+    throw StarException("WorldGenerator requires object database service");
+
   m_microDungeonFactory = make_shared<MicroDungeonFactory>();
 }
 
@@ -814,7 +820,7 @@ void WorldGenerator::prepareTiles(WorldStorage* worldStorage, ServerTileSectorAr
 }
 
 void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto facade = make_shared<DungeonGeneratorWorld>(m_worldServer, false);
+  auto facade = make_shared<DungeonGeneratorWorld>(m_worldServer, m_objectDatabase, false);
 
   RectI sectorTiles = worldStorage->tileArray()->sectorRegion(sector);
   RectI bounds = sectorTiles.padded(WorldSectorSize - 1);
@@ -1069,7 +1075,7 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
       auto& objectPool = placement.item.get<ObjectPool>();
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
       auto objectPair = objectPool.select(seed);
-      if (auto object = Root::singleton().objectDatabase()->createForPlacement(
+      if (auto object = m_objectDatabase->createForPlacement(
               m_worldServer, objectPair.first, placement.position, direction, objectPair.second))
         m_worldServer->addEntity(object);
     } else if (placement.item.is<TreasureBoxSet>()) {
@@ -1378,7 +1384,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
         auto& objectPool = biomeItemPlacement.item.get<ObjectPool>();
         auto direction = seed % 2 ? Direction::Left : Direction::Right;
         auto objectPair = objectPool.select(seed);
-        if (auto object = Root::singleton().objectDatabase()->createForPlacement(m_worldServer, objectPair.first, position, direction, objectPair.second)) {
+        if (auto object = m_objectDatabase->createForPlacement(m_worldServer, objectPair.first, position, direction, objectPair.second)) {
           if (object->biomePlaced())
             m_worldServer->addEntity(object);
         }

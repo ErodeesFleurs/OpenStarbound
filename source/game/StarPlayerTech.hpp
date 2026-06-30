@@ -14,8 +14,8 @@ using PlayerTechPtr = SharedPtr<PlayerTech>;
 // enabled, enabled but not equipped, or equipped.
 class PlayerTech {
 public:
-  PlayerTech();
-  PlayerTech(Json const& json);
+  PlayerTech(TechDatabaseConstPtr techDatabase = {});
+  PlayerTech(Json const& json, TechDatabaseConstPtr techDatabase = {});
 
   Json toJson() const;
 
@@ -37,6 +37,7 @@ public:
   StringList techModules() const;
 
 private:
+  TechDatabaseConstPtr m_techDatabase;
   StringSet m_availableTechs;
   StringSet m_enabledTechs;
   HashMap<TechType, String> m_equippedTechs;

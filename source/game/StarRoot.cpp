@@ -197,12 +197,14 @@ void Root::reload() {
     // Species database depends on the item database.
     MutexLocker speciesDatabaseLock(m_speciesDatabaseMutex);
 
+    // Player factory depends on the item database.
+    MutexLocker playerFactoryLock(m_playerFactoryMutex);
+
     // Item database depends on object database and codex database
     MutexLocker itemDatabaseLock(m_itemDatabaseMutex);
 
     // These databases depend on various things below, but not the item database
     MutexLocker objectDatabaseLock(m_objectDatabaseMutex);
-    MutexLocker playerFactoryLock(m_playerFactoryMutex);
     MutexLocker npcDatabaseLock(m_npcDatabaseMutex);
     MutexLocker stagehandDatabaseLock(m_stagehandDatabaseMutex);
     MutexLocker vehicleDatabaseLock(m_vehicleDatabaseMutex);
@@ -437,7 +439,9 @@ ConfigurationPtr Root::configuration() {
 }
 
 ObjectDatabaseConstPtr Root::objectDatabase() {
-  return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase", assets());
+  return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase", assets(), materialDatabase(), imageMetadataDatabase(), [this]() {
+      return itemDatabase();
+    });
 }
 
 PlantDatabaseConstPtr Root::plantDatabase() {
@@ -453,7 +457,7 @@ MonsterDatabaseConstPtr Root::monsterDatabase() {
 }
 
 NpcDatabaseConstPtr Root::npcDatabase() {
-  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase", assets());
+  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase", assets(), itemDatabase(), objectDatabase(), speciesDatabase(), nameGenerator(), functionDatabase());
 }
 
 StagehandDatabaseConstPtr Root::stagehandDatabase() {
@@ -465,7 +469,9 @@ VehicleDatabaseConstPtr Root::vehicleDatabase() {
 }
 
 PlayerFactoryConstPtr Root::playerFactory() {
-  return loadMember(m_playerFactory, m_playerFactoryMutex, "PlayerFactory", assets());
+  return loadMemberFunction<PlayerFactory>(m_playerFactory, m_playerFactoryMutex, "PlayerFactory", [this]() {
+      return make_shared<PlayerFactory>(assets(), itemDatabase(), objectDatabase(), questTemplateDatabase(), versioningDatabase());
+    });
 }
 
 EntityFactoryConstPtr Root::entityFactory() {
@@ -477,11 +483,13 @@ PatternedNameGeneratorConstPtr Root::nameGenerator() {
 }
 
 ItemDatabaseConstPtr Root::itemDatabase() {
-  return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase", assets());
+  return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase", assets(), [this]() {
+      return objectDatabase();
+    });
 }
 
 MaterialDatabaseConstPtr Root::materialDatabase() {
-  return loadMember(m_materialDatabase, m_materialDatabaseMutex, "MaterialDatabase", assets(), particleDatabase());
+  return loadMember(m_materialDatabase, m_materialDatabaseMutex, "MaterialDatabase", assets(), particleDatabase(), imageMetadataDatabase());
 }
 
 TerrainDatabaseConstPtr Root::terrainDatabase() {
@@ -489,7 +497,7 @@ TerrainDatabaseConstPtr Root::terrainDatabase() {
 }
 
 BiomeDatabaseConstPtr Root::biomeDatabase() {
-  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase", assets());
+  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase", assets(), materialDatabase(), functionDatabase());
 }
 
 LiquidsDatabaseConstPtr Root::liquidsDatabase() {
@@ -517,7 +525,7 @@ FunctionDatabaseConstPtr Root::functionDatabase() {
 }
 
 TreasureDatabaseConstPtr Root::treasureDatabase() {
-  return loadMember(m_treasureDatabase, m_treasureDatabaseMutex, "TreasureDatabase", assets());
+  return loadMember(m_treasureDatabase, m_treasureDatabaseMutex, "TreasureDatabase", assets(), itemDatabase(), objectDatabase());
 }
 
 DungeonDefinitionsConstPtr Root::dungeonDefinitions() {
@@ -537,7 +545,7 @@ EmoteProcessorConstPtr Root::emoteProcessor() {
 }
 
 SpeciesDatabaseConstPtr Root::speciesDatabase() {
-  return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase", assets());
+  return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase", assets(), nameGenerator());
 }
 
 ImageMetadataDatabaseConstPtr Root::imageMetadataDatabase() {

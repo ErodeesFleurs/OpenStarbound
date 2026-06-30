@@ -17,7 +17,6 @@
 #include "StarItemDrop.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarItem.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -621,9 +620,8 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     [&](EntityPtr const& entity) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
             JsonArray res;
-            auto itemDb = Root::singleton().itemDatabase();
             for (auto const& item : container->itemBag()->items())
-                res.append(itemDb->toJson(item));
+                res.append(itemSafeDescriptor(item).toJson());
             return res;
         }
 
@@ -633,10 +631,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerItemAt",
     [&](EntityPtr const& entity, size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
             auto items = container->itemBag()->items();
             if (offset < items.size()) {
-                return itemDb->toJson(items.at(offset));
+                return itemSafeDescriptor(items.at(offset)).toJson();
             }
         }
 
@@ -677,12 +674,11 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
 
     methods.registerMethod("containerTakeAll",
     [&](EntityPtr const& entity) -> Json {
-        auto itemDb = Root::singleton().itemDatabase();
         if (auto container = as<ContainerObject>(entity)) {
             if (auto itemList = container->clearContainer().result()) {
                 JsonArray res;
                 for (auto item : *itemList)
-                    res.append(itemDb->toJson(item));
+                    res.append(itemSafeDescriptor(item).toJson());
                 return res;
             }
         }
@@ -693,10 +689,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerTakeAt",
     [&](EntityPtr const& entity, size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
             if (offset < container->containerSize()) {
                 if (auto res = container->takeItems(offset).result())
-                    return itemDb->toJson(*res);
+                    return itemSafeDescriptor(*res).toJson();
             }
         }
 
@@ -706,10 +701,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerTakeNumItemsAt",
     [&](EntityPtr const& entity, size_t offset, int const& count) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
             if (offset < container->containerSize()) {
                 if (auto res = container->takeItems(offset, count).result())
-                    return itemDb->toJson(*res);
+                    return itemSafeDescriptor(*res).toJson();
             }
         }
 
@@ -719,9 +713,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerItemsCanFit",
     [&](EntityPtr const& entity, Json const& items) -> Maybe<size_t> {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->world()->itemDatabase();
             auto itemBag = container->itemBag();
-            auto toSearch = itemDb->fromJson(items);
+            auto toSearch = itemDb->item(ItemDescriptor(items));
             return itemBag->itemsCanFit(toSearch);
         }
 
@@ -731,9 +725,9 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerItemsFitWhere",
     [&](EntityPtr const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
+            auto itemDb = entity->world()->itemDatabase();
             auto itemBag = container->itemBag();
-            auto toSearch = itemDb->fromJson(items);
+            auto toSearch = itemDb->item(ItemDescriptor(items));
             auto res = itemBag->itemsFitWhere(toSearch);
             return JsonObject{
                 {"leftover", res.leftover},
@@ -747,10 +741,10 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerAddItems",
     [&](EntityPtr const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
-            auto toInsert = itemDb->fromJson(items);
+            auto itemDb = entity->world()->itemDatabase();
+            auto toInsert = itemDb->item(ItemDescriptor(items));
             if (auto res = container->addItems(toInsert).result())
-                return itemDb->toJson(*res);
+                return itemSafeDescriptor(*res).toJson();
         }
 
         return items;
@@ -759,10 +753,10 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerStackItems",
     [&](EntityPtr const& entity, Json const& items) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
-            auto toInsert = itemDb->fromJson(items);
+            auto itemDb = entity->world()->itemDatabase();
+            auto toInsert = itemDb->item(ItemDescriptor(items));
             if (auto res = container->addItems(toInsert).result())
-                return itemDb->toJson(*res);
+                return itemSafeDescriptor(*res).toJson();
         }
 
         return items;
@@ -771,11 +765,11 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerPutItemsAt",
     [&](EntityPtr const& entity, Json const& items, size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
-            auto toInsert = itemDb->fromJson(items);
+            auto itemDb = entity->world()->itemDatabase();
+            auto toInsert = itemDb->item(ItemDescriptor(items));
             if (offset < container->containerSize()) {
                 if (auto res = container->putItems(offset, toInsert).result())
-                    return itemDb->toJson(*res);
+                    return itemSafeDescriptor(*res).toJson();
             }
         }
 
@@ -785,11 +779,11 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerSwapItems",
     [&](EntityPtr const& entity, Json const& items, size_t offset, bool noCombine) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
-            auto toSwap = itemDb->fromJson(items);
+            auto itemDb = entity->world()->itemDatabase();
+            auto toSwap = itemDb->item(ItemDescriptor(items));
             if (offset < container->containerSize()) {
                 if (auto res = container->swapItems(offset, toSwap, !noCombine).result())
-                    return itemDb->toJson(*res);
+                    return itemSafeDescriptor(*res).toJson();
             }
         }
 
@@ -799,11 +793,11 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     methods.registerMethod("containerItemApply",
     [&](EntityPtr const& entity, Json const& items, size_t offset) -> Json {
         if (auto container = as<ContainerObject>(entity)) {
-            auto itemDb = Root::singleton().itemDatabase();
-            auto toSwap = itemDb->fromJson(items);
+            auto itemDb = entity->world()->itemDatabase();
+            auto toSwap = itemDb->item(ItemDescriptor(items));
             if (offset < container->containerSize()) {
                 if (auto res = container->swapItems(offset, toSwap, false).result())
-                    return itemDb->toJson(*res);
+                    return itemSafeDescriptor(*res).toJson();
             }
         }
 

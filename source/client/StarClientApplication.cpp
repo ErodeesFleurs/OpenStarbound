@@ -287,7 +287,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels, MainMixer::Services{assets, configuration});
   m_mainMixer->setVolume(0.5);
   
-  m_worldPainter = make_shared<WorldPainter>(assets, configuration, registerReloadListener);
+  m_worldPainter = make_shared<WorldPainter>(assets, configuration, registerReloadListener, root->materialDatabase(), root->liquidsDatabase());
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController, GuiContextServices{assets, configuration, root->imageMetadataDatabase(), root->itemDatabase(), registerReloadListener});
   m_input = make_shared<Input>(assets);
   m_voice = make_shared<Voice>(appController, VoiceServices{configuration});
@@ -709,9 +709,9 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_cinematicOverlay->stop();
 
-    m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"));
-    m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), app->statisticsService());
-    m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics);
+    m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"), m_root->configuration(), m_root->entityFactory());
+    m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), m_root->versioningDatabase(), m_root->statisticsDatabase(), app->statisticsService());
+    m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics, m_root->assets(), m_root->itemDatabase(), m_root->objectDatabase());
 
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
     m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
@@ -848,7 +848,7 @@ void ClientApplication::changeState(MainAppState newState) {
     } else {
       if (!m_universeServer) {
         try {
-          m_universeServer = make_shared<UniverseServer>(m_root->toStoragePath("universe"));
+          m_universeServer = make_shared<UniverseServer>(m_root->toStoragePath("universe"), m_root->assets(), m_root->configuration(), m_root->itemDatabase());
           m_universeServer->start();
         } catch (StarException const& e) {
           setError("Unable to start local server", e);

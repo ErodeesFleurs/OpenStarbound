@@ -1,7 +1,7 @@
 #include "StarSky.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarCelestialGraphics.hpp"
 #include "StarTime.hpp"
@@ -11,16 +11,10 @@
 
 namespace Star {
 
-namespace {
-
-IAssetsConstPtr skyAssets(IAssetsConstPtr assets) {
-  return assets ? std::move(assets) : Root::singleton().assets();
-}
-
-}
-
 Sky::Sky(IAssetsConstPtr assets) {
-  m_assets = skyAssets(std::move(assets));
+  m_assets = std::move(assets);
+  if (!m_assets)
+    throw StarException("Sky requires assets service");
   skyParametersUpdated();
 
   m_netInit = false;

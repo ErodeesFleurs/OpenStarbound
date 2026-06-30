@@ -6,10 +6,11 @@
 namespace Star {
 
 class AugmentItem;
+class ItemDatabase;
 
 class AugmentItem : public Item {
 public:
-  AugmentItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  AugmentItem(IAssetsConstPtr assets, Json const& config, String const& directory, ItemDatabase const* itemDatabase, Json const& parameters = JsonObject());
   AugmentItem(AugmentItem const& rhs);
 
   ItemPtr clone() const override;
@@ -20,6 +21,9 @@ public:
   // Consumes itself and returns true if the augment is applied.
   // Has no effect if augmentation fails.
   ItemPtr applyTo(ItemPtr const item);
+
+private:
+  ItemDatabase const* m_itemDatabase;
 };
 
 }

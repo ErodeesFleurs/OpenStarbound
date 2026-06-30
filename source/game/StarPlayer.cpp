@@ -64,17 +64,25 @@ EnumMap<Player::State> const Player::StateNames{
   {Player::State::Lounge, "lounge"}
 };
 
-Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfigurationPtr configuration)
+Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
   : m_scriptedAnimator(assets) {
 
   m_config = config;
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
   m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
   m_materialDatabase = Root::singleton().materialDatabase();
-  m_itemDatabase = Root::singleton().itemDatabase();
+  m_itemDatabase = std::move(itemDatabase);
+  m_objectDatabase = std::move(objectDatabase);
+  m_questTemplateDatabase = std::move(questTemplateDatabase);
+  m_versioningDatabase = std::move(versioningDatabase);
+  if (!m_questTemplateDatabase)
+    throw PlayerException("Player requires quest template database service");
+  if (!m_versioningDatabase)
+    throw PlayerException("Player requires versioning database service");
   m_speciesDatabase = Root::singleton().speciesDatabase();
   m_entityFactory = Root::singleton().entityFactory();
   m_liquidsDatabase = Root::singleton().liquidsDatabase();
+  m_techDatabase = Root::singleton().techDatabase();
   m_client = nullptr;
 
   m_state = State::Idle;
@@ -88,9 +96,9 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
   setUniqueId(uuid.hex());
   m_appearance.init();
 
-  m_questManager = make_shared<QuestManager>(m_assets, this);
-  m_tools = make_shared<ToolUser>(m_assets, this);
-  m_armor = make_shared<ArmorWearer>();
+  m_questManager = make_shared<QuestManager>(m_assets, this, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase);
+  m_tools = make_shared<ToolUser>(m_assets, this, m_itemDatabase, m_objectDatabase);
+  m_armor = make_shared<ArmorWearer>(m_itemDatabase);
   m_companions = make_shared<PlayerCompanions>(config->companionsConfig);
 
   for (auto& p : config->genericScriptContexts) {
@@ -110,13 +118,13 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
   m_techController = make_shared<TechController>(this, m_movementController.get(), m_statusController.get());
   m_deployment = make_shared<PlayerDeployment>(m_config->deploymentConfig, m_assets);
 
-  m_inventory = make_shared<PlayerInventory>(m_assets);
+  m_inventory = make_shared<PlayerInventory>(m_assets, m_itemDatabase);
   m_inventory->setPlayer(this);
 
   m_blueprints = make_shared<PlayerBlueprints>();
   m_universeMap = make_shared<PlayerUniverseMap>();
   m_codexes = make_shared<PlayerCodexes>(m_assets);
-  m_techs = make_shared<PlayerTech>();
+  m_techs = make_shared<PlayerTech>(m_techDatabase);
   m_log = make_shared<PlayerLog>();
   m_narrativeQueue = make_shared<PlayerNarrativeQueue>(this);
   m_chatAndEmotes = make_shared<PlayerChatAndEmotes>(this);
@@ -211,8 +219,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
   m_netGroup.setNeedsStoreCallback([this]() { return setNetStates(); });
 }
 
-Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, IAssetsConstPtr assets, IConfigurationPtr configuration)
-  : Player(config, Uuid(), std::move(assets), std::move(configuration)) {
+Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+  : Player(config, Uuid(), std::move(assets), std::move(configuration), std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase)) {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
 
@@ -232,8 +240,8 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
 }
 
 
-Player::Player(PlayerConfigPtr config, Json const& diskStore, IAssetsConstPtr assets, IConfigurationPtr configuration)
-  : Player(config, Uuid(), std::move(assets), std::move(configuration)) {
+Player::Player(PlayerConfigPtr config, Json const& diskStore, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+  : Player(config, Uuid(), std::move(assets), std::move(configuration), std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase)) {
   diskLoad(diskStore);
 }
 
@@ -248,7 +256,7 @@ void Player::diskLoad(Json const& diskStore) {
     m_universeMap->setServerUuid(m_clientContext->serverUuid());
 
   m_codexes = make_shared<PlayerCodexes>(m_assets, diskStore.get("codexes"));
-  m_techs = make_shared<PlayerTech>(diskStore.get("techs"));
+  m_techs = make_shared<PlayerTech>(diskStore.get("techs"), m_techDatabase);
   m_appearance.m_identity = HumanoidIdentity(diskStore.get("identity"));
   m_appearance.identityUpdated() = true;
 
@@ -380,7 +388,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
     }
 
     for (auto& p : m_inventory->pullOverflow()) {
-      world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true, m_assets));
+      world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true, m_assets, m_itemDatabase));
     }
 
     setNetArmorSecrets();
@@ -605,7 +613,7 @@ void Player::destroy(RenderCallback* renderCallback) {
             return ItemTypeNames.getLeft(typeName);
           });
         Set<ItemType> dropSet = Set<ItemType>::from(dropList);
-        auto itemDb = Root::singleton().itemDatabase();
+        auto itemDb = m_itemDatabase;
         dropSelectedItems([dropSet, itemDb](ItemPtr item) {
             return dropSet.contains(itemDb->itemType(item->name()));
           });
@@ -757,7 +765,7 @@ void Player::dropItem() {
   for (auto& throwSlot : {m_inventory->primaryHeldSlot(), m_inventory->secondaryHeldSlot()}) {
     if (throwSlot) {
       if (auto drop = m_inventory->takeSlot(*throwSlot)) {
-        world()->addEntity(ItemDrop::throwDrop(drop, position(), velocity(), throwDirection, false, m_assets));
+        world()->addEntity(ItemDrop::throwDrop(drop, position(), velocity(), throwDirection, false, m_assets, m_itemDatabase));
         break;
       }
     }
@@ -1212,8 +1220,7 @@ ItemPtr Player::pickupItems(ItemPtr const& items, bool silent) {
       m_effectsAnimator->setSoundPitchMultiplier("pickup", clamp(pitch * Random::randf(0.8f, 1.2f), 0.f, 2.f));
       m_effectsAnimator->playSound("pickup");
     }
-    auto itemDb = Root::singleton().itemDatabase();
-    queueItemPickupMessage(itemDb->itemShared(items->descriptor()));
+    queueItemPickupMessage(m_itemDatabase->itemShared(items->descriptor()));
   }
 
   return m_inventory->addItems(items);
@@ -1221,7 +1228,7 @@ ItemPtr Player::pickupItems(ItemPtr const& items, bool silent) {
 
 void Player::giveItem(ItemPtr const& item) {
   if (auto spill = pickupItems(item))
-    world()->addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), position(), false, m_assets));
+    world()->addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), position(), false, m_assets, m_itemDatabase));
 }
 
 void Player::triggerPickupEvents(ItemPtr const& item) {
@@ -1246,7 +1253,7 @@ void Player::triggerPickupEvents(ItemPtr const& item) {
 
     for (auto const& quest : item->pickupQuestTemplates()) {
       if (m_questManager->canStart(quest))
-        m_questManager->offer(make_shared<Quest>(m_questManager->assets(), quest, 0, this));
+        m_questManager->offer(make_shared<Quest>(m_questManager->assets(), quest, 0, this, m_questManager->itemDatabase(), m_questManager->objectDatabase(), m_questManager->questTemplateDatabase(), m_questManager->versioningDatabase()));
     }
 
     if (auto consume = item->instanceValue("consumeOnPickup", Json())) {
@@ -1287,7 +1294,7 @@ void Player::clearSwap() {
   // world.
   if (!m_inventory->clearSwap()) {
     if (auto world = worldPtr())
-      world->addEntity(ItemDrop::createRandomizedDrop(m_inventory->takeSlot(SwapSlot()), position(), false, m_assets));
+      world->addEntity(ItemDrop::createRandomizedDrop(m_inventory->takeSlot(SwapSlot()), position(), false, m_assets, m_itemDatabase));
   }
 
   // Interrupt all firing in case the item being dropped was in use.
@@ -1344,9 +1351,7 @@ bool Player::addBlueprint(ItemDescriptor const& descriptor, bool showFailure) {
   if (descriptor.isNull())
     return false;
 
-  auto itemDb = Root::singleton().itemDatabase();
-  auto item = itemDb->item(descriptor);
-  auto assets = m_assets;
+  auto item = m_itemDatabase->item(descriptor);
   if (!m_blueprints->isKnown(descriptor)) {
     m_blueprints->add(descriptor);
     queueUIMessage(m_assets->json("/player.config:blueprintUnlock").toString().replace("<ItemName>", item->friendlyName()));
@@ -1456,7 +1461,7 @@ void Player::interactWithEntity(InteractiveEntityPtr entity) {
 
   for (auto const& questArc : entity->offeredQuests()) {
     if (m_questManager->canStart(questArc)) {
-      auto quest = make_shared<Quest>(m_questManager->assets(), questArc, 0, this);
+      auto quest = make_shared<Quest>(m_questManager->assets(), questArc, 0, this, m_questManager->itemDatabase(), m_questManager->objectDatabase(), m_questManager->questTemplateDatabase(), m_questManager->versioningDatabase());
       quest->setWorldId(clientContext()->playerWorldId());
       quest->setServerUuid(clientContext()->serverUuid());
       quest->setEntityParameter("questGiver", entity);
@@ -2014,7 +2019,7 @@ void Player::getNetArmorSecrets() {
       if (newVersion > curVersion) {
         curVersion = newVersion;
         ArmorItemPtr item;
-        Root::singleton().itemDatabase()->diskLoad(getSecretProperty(strf("armorWearer.{}.data", slotName)), item);
+        m_itemDatabase->diskLoad(getSecretProperty(strf("armorWearer.{}.data", slotName)), item);
         m_inventory->setItem(slot, item);
         m_armor->setCosmeticItem(i, item);
       }
@@ -2388,6 +2393,10 @@ QuestManagerPtr Player::questManager() const {
   return m_questManager;
 }
 
+ItemDatabaseConstPtr Player::itemDatabase() const {
+  return m_itemDatabase;
+}
+
 Json Player::diskStore() {
   JsonObject genericScriptStorage;
   for (auto& p : m_genericScriptContexts) {
@@ -2439,7 +2448,7 @@ ByteArray Player::netStore(NetCompatibilityRules rules) {
 
 void Player::finalizeCreation() {
   m_blueprints = make_shared<PlayerBlueprints>();
-  m_techs = make_shared<PlayerTech>();
+  m_techs = make_shared<PlayerTech>(m_techDatabase);
 
   auto itemDatabase = m_itemDatabase;
   for (auto const& descriptor : m_config->defaultItems)
@@ -2491,7 +2500,7 @@ void Player::dropSelectedItems(function<bool(ItemPtr)> filter) {
 
   m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
       if (item && (!filter || filter(item)))
-        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true, m_assets));
+        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true, m_assets, m_itemDatabase));
     });
 }
 

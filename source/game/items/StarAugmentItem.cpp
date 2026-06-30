@@ -1,5 +1,4 @@
 #include "StarAugmentItem.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarLuaComponents.hpp"
@@ -9,8 +8,8 @@
 
 namespace Star {
 
-AugmentItem::AugmentItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(std::move(assets), config, directory, parameters) {}
+AugmentItem::AugmentItem(IAssetsConstPtr assets, Json const& config, String const& directory, ItemDatabase const* itemDatabase, Json const& parameters)
+  : Item(std::move(assets), config, directory, parameters), m_itemDatabase(itemDatabase) {}
 
 AugmentItem::AugmentItem(AugmentItem const& rhs) = default;
 
@@ -23,7 +22,7 @@ StringList AugmentItem::augmentScripts() const {
 }
 
 ItemPtr AugmentItem::applyTo(ItemPtr const item) {
-  return Root::singleton().itemDatabase()->applyAugment(item, this);
+  return m_itemDatabase->applyAugment(item, this);
 }
 
 }

@@ -23,8 +23,8 @@ using SkyConstPtr = SharedPtr<Sky const>;
 // dividing by the pixel ratio.
 class Sky {
 public:
-  explicit Sky(IAssetsConstPtr assets = {});
-  Sky(SkyParameters const& skyParameters, bool inOrbit, IAssetsConstPtr assets = {});
+  explicit Sky(IAssetsConstPtr assets);
+  Sky(SkyParameters const& skyParameters, bool inOrbit, IAssetsConstPtr assets);
 
   // Controls the space sky "flight" system
   void startFlying(bool enterHyperspace, bool startInWarp, Json settings = {});

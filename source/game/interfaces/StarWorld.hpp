@@ -15,6 +15,10 @@
 namespace Star {
 
 class World;
+class IItemDatabase;
+using IItemDatabaseConstPtr = SharedPtr<IItemDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 class TileEntity;
 class ScriptedEntity;
 
@@ -29,6 +33,8 @@ public:
   virtual WorldGeometry geometry() const = 0;
   virtual uint64_t currentStep() const = 0;
   virtual IAssetsConstPtr assets() const = 0;
+  virtual IItemDatabaseConstPtr itemDatabase() const = 0;
+  virtual ObjectDatabaseConstPtr objectDatabase() const = 0;
 
   // Environment
   virtual float gravity(Vec2F const& pos) const = 0;

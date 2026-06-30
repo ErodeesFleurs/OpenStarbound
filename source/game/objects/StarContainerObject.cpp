@@ -13,7 +13,11 @@
 
 namespace Star {
 
-ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parameters) : Object(config, parameters) {
+ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parameters, ItemDatabaseConstPtr itemDatabase)
+  : Object(config, parameters), m_itemDatabase(std::move(itemDatabase)) {
+  if (!m_itemDatabase)
+    throw ObjectException("ContainerObject requires item database service");
+
   m_opened.set(0);
   m_count = 0;
   m_currentState = 0;
@@ -27,7 +31,7 @@ ContainerObject::ContainerObject(ObjectConfigConstPtr config, Json const& parame
   m_itemsUpdated = true;
   m_runUpdatedCallback = true;
 
-  m_items = make_shared<ItemBag>(configValue("slotCount").toInt());
+  m_items = make_shared<ItemBag>(configValue("slotCount").toInt(), m_itemDatabase);
 
   m_netGroup.addNetElement(&m_opened);
   m_netGroup.addNetElement(&m_crafting);
@@ -52,7 +56,7 @@ void ContainerObject::init(World* world, EntityId entityId, EntityMode mode) {
       if (!configValue("initialItems").isNull()) {
         List<ItemDescriptor> items;
         for (auto const& spec : configValue("initialItems").iterateArray())
-          m_items->addItems({Root::singleton().itemDatabase()->item(ItemDescriptor(spec), level, ++seed)});
+          m_items->addItems({m_itemDatabase->item(ItemDescriptor(spec), level, ++seed)});
       }
       if (!configValue("treasurePools").isNull()) {
         String treasurePool = Random::randValueFrom(configValue("treasurePools").toArray()).toString();
@@ -68,7 +72,7 @@ void ContainerObject::update(float dt, uint64_t currentStep) {
 
   if (isMaster()) {
     for (auto const& drop : take(m_lostItems))
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position(), false, world()->assets()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position(), false, world()->assets(), m_itemDatabase));
 
     if (m_crafting.get())
       tickCrafting(dt);
@@ -90,7 +94,7 @@ void ContainerObject::update(float dt, uint64_t currentStep) {
     if (m_ageItemsTimer.elapsedTime() > configValue("ageItemsEvery", 10).toDouble()) {
       double elapsedTime = m_ageItemsTimer.elapsedTime() * configValue("itemAgeMultiplier", 1.0f).toDouble();
       for (auto& item : m_items->items()) {
-        if (Root::singleton().itemDatabase()->ageItem(item, elapsedTime))
+        if (m_itemDatabase->ageItem(item, elapsedTime))
           itemsUpdated();
       }
       m_ageItemsTimer.setElapsedTime(0.0);
@@ -148,12 +152,12 @@ void ContainerObject::destroy(RenderCallback* renderCallback) {
   Object::destroy(renderCallback);
   if (isMaster()) {
     for (auto const& drop : m_items->items())
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position(), false, world()->assets()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position(), false, world()->assets(), m_itemDatabase));
   }
 }
 
 Maybe<Json> ContainerObject::receiveMessage(ConnectionId sendingConnection, String const& message, JsonArray const& args) {
-  auto itemDb = Root::singleton().itemDatabase();
+  auto itemDb = m_itemDatabase;
 
   if (message.equalsIgnoreCase("startCrafting")) {
     startCrafting();
@@ -241,8 +245,9 @@ void ContainerObject::containerClose() {
 
 RpcPromise<ItemPtr> ContainerObject::addItems(ItemPtr const& items) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "addItems", {itemSafeDescriptor(items).toJson()}).wrap([](Json res) {
-        return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
+    auto itemDatabase = m_itemDatabase;
+    return world()->sendEntityMessage(entityId(), "addItems", {itemSafeDescriptor(items).toJson()}).wrap([itemDatabase](Json res) {
+        return itemDatabase->item(ItemDescriptor(res));
       });
   } else {
     return RpcPromise<ItemPtr>::createFulfilled(doAddItems(items));
@@ -251,8 +256,9 @@ RpcPromise<ItemPtr> ContainerObject::addItems(ItemPtr const& items) {
 
 RpcPromise<ItemPtr> ContainerObject::putItems(size_t pos, ItemPtr const& items) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "putItems", {itemSafeDescriptor(items).toJson()}).wrap([](Json res) {
-        return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
+    auto itemDatabase = m_itemDatabase;
+    return world()->sendEntityMessage(entityId(), "putItems", {itemSafeDescriptor(items).toJson()}).wrap([itemDatabase](Json res) {
+        return itemDatabase->item(ItemDescriptor(res));
       });
   } else {
     return RpcPromise<ItemPtr>::createFulfilled(doPutItems(pos, items));
@@ -261,8 +267,9 @@ RpcPromise<ItemPtr> ContainerObject::putItems(size_t pos, ItemPtr const& items) 
 
 RpcPromise<ItemPtr> ContainerObject::takeItems(size_t slot, size_t count) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "takeItems", {slot, count}).wrap([](Json res) {
-        return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
+    auto itemDatabase = m_itemDatabase;
+    return world()->sendEntityMessage(entityId(), "takeItems", {slot, count}).wrap([itemDatabase](Json res) {
+        return itemDatabase->item(ItemDescriptor(res));
       });
   } else {
     return RpcPromise<ItemPtr>::createFulfilled(doTakeItems(slot, count));
@@ -271,8 +278,9 @@ RpcPromise<ItemPtr> ContainerObject::takeItems(size_t slot, size_t count) {
 
 RpcPromise<ItemPtr> ContainerObject::swapItems(size_t slot, ItemPtr const& items, bool tryCombine) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "swapItems", {slot, itemSafeDescriptor(items).toJson(), tryCombine}).wrap([](Json res) {
-        return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
+    auto itemDatabase = m_itemDatabase;
+    return world()->sendEntityMessage(entityId(), "swapItems", {slot, itemSafeDescriptor(items).toJson(), tryCombine}).wrap([itemDatabase](Json res) {
+        return itemDatabase->item(ItemDescriptor(res));
       });
   } else {
     return RpcPromise<ItemPtr>::createFulfilled(doSwapItems(slot, items, tryCombine));
@@ -281,8 +289,9 @@ RpcPromise<ItemPtr> ContainerObject::swapItems(size_t slot, ItemPtr const& items
 
 RpcPromise<ItemPtr> ContainerObject::applyAugment(size_t slot, ItemPtr const& augment) {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "applyAugment", {slot, itemSafeDescriptor(augment).toJson()}).wrap([](Json res) {
-        return Root::singleton().itemDatabase()->item(ItemDescriptor(res));
+    auto itemDatabase = m_itemDatabase;
+    return world()->sendEntityMessage(entityId(), "applyAugment", {slot, itemSafeDescriptor(augment).toJson()}).wrap([itemDatabase](Json res) {
+        return itemDatabase->item(ItemDescriptor(res));
       });
   } else {
     return RpcPromise<ItemPtr>::createFulfilled(doApplyAugment(slot, augment));
@@ -311,8 +320,8 @@ RpcPromise<bool> ContainerObject::consumeItems(size_t pos, size_t count) {
 
 RpcPromise<List<ItemPtr>> ContainerObject::clearContainer() {
   if (isSlave()) {
-    return world()->sendEntityMessage(entityId(), "clearContainer", {}).wrap([](Json res) {
-        auto itemDb = Root::singleton().itemDatabase();
+    auto itemDb = m_itemDatabase;
+    return world()->sendEntityMessage(entityId(), "clearContainer", {}).wrap([itemDb](Json res) {
         return res.toArray().transformed([itemDb](Json const& item) {
             return itemDb->item(ItemDescriptor(item));
           });
@@ -415,7 +424,7 @@ void ContainerObject::readStoredData(Json const& diskStore) {
   m_crafting.set(diskStore.getBool("crafting"));
   m_craftingProgress.set(diskStore.getFloat("craftingProgress"));
   m_initialized = diskStore.getBool("initialized");
-  m_items = make_shared<ItemBag>(ItemBag::loadStore(diskStore.get("items")));
+  m_items = make_shared<ItemBag>(ItemBag::loadStore(diskStore.get("items"), m_itemDatabase));
   m_ageItemsTimer = EpochTimer(diskStore.get("ageItemsTimer"));
 
   m_lostItems.appendAll(m_items->resize(configValue("slotCount").toUInt()));
@@ -434,12 +443,9 @@ Json ContainerObject::writeStoredData() const {
 }
 
 ItemRecipe ContainerObject::recipeForMaterials(List<ItemPtr> const& inputItems) {
-  auto& root = Root::singleton();
-  auto itemDatabase = root.itemDatabase();
-
   Json recipeGroup = configValue("recipeGroup");
   if (!recipeGroup.isNull())
-    return itemDatabase->getPreciseRecipeForMaterials(recipeGroup.toString(), inputItems, {});
+    return m_itemDatabase->getPreciseRecipeForMaterials(recipeGroup.toString(), inputItems, {});
 
   Maybe<Json> result = m_scriptComponent.invoke<Json>("craftingRecipe", inputItems.filtered([](ItemPtr const& item) {
       return static_cast<bool>(item);
@@ -448,7 +454,7 @@ ItemRecipe ContainerObject::recipeForMaterials(List<ItemPtr> const& inputItems) 
     }));
   if (!result || result->isNull())
     return ItemRecipe();
-  return itemDatabase->parseRecipe(*result);
+  return m_itemDatabase->parseRecipe(*result);
 }
 
 void ContainerObject::tickCrafting(float dt) {
@@ -484,10 +490,9 @@ void ContainerObject::tickCrafting(float dt) {
       [[maybe_unused]] bool consumed = m_items->consumeItems(input);
       starAssert(consumed);
     }
-    ItemPtr overflow =
-        m_items->putItems(m_items->size() - 1, Root::singleton().itemDatabase()->item(m_goalRecipe.output));
+    ItemPtr overflow = m_items->putItems(m_items->size() - 1, m_itemDatabase->item(m_goalRecipe.output));
     if (overflow)
-      world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position(), false, world()->assets()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position(), false, world()->assets(), m_itemDatabase));
     itemsUpdated();
   }
 }

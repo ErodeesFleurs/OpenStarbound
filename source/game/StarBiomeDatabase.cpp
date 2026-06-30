@@ -1,5 +1,4 @@
 #include "StarBiomeDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarParallax.hpp"
@@ -10,9 +9,14 @@
 
 namespace Star {
 
-BiomeDatabase::BiomeDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)) {
+BiomeDatabase::BiomeDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, FunctionDatabaseConstPtr functionDatabase)
+  : m_assets(std::move(assets)), m_materialDatabase(std::move(materialDatabase)), m_functionDatabase(std::move(functionDatabase)) {
   if (!m_assets)
     throw BiomeException("BiomeDatabase requires assets service");
+  if (!m_materialDatabase)
+    throw BiomeException("BiomeDatabase requires material database service");
+  if (!m_functionDatabase)
+    throw BiomeException("BiomeDatabase requires function database service");
 
   m_spawnGroups = m_assets->json("/spawning.config:spawnGroups");
 
@@ -108,10 +112,7 @@ StringList BiomeDatabase::biomeOres(String const& biomeName, float threatLevel) 
   auto const& config = m_biomes.get(biomeName);
   auto oreDistribution = config.parameters.get("ores", {});
   if (!oreDistribution.isNull()) {
-    auto& root = Root::singleton();
-    auto functionDatabase = root.functionDatabase();
-
-    auto oresList = functionDatabase->configFunction(oreDistribution)->get(threatLevel);
+    auto oresList = m_functionDatabase->configFunction(oreDistribution)->get(threatLevel);
     for (Json v : oresList.iterateArray()) {
       if (v.getFloat(1) > 0)
         res.append(v.getString(0));
@@ -142,9 +143,6 @@ BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, floa
   if (!m_biomes.contains(biomeName))
     throw BiomeException(strf("No such biome '{}'", biomeName));
 
-  auto& root = Root::singleton();
-  auto materialDatabase = root.materialDatabase();
-
   try {
     RandomSource random(seed);
     auto config = m_biomes.get(biomeName);
@@ -156,10 +154,10 @@ BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, floa
     biome->description = config.parameters.getString("description", "");
 
     if (config.parameters.contains("mainBlock"))
-      biome->mainBlock = materialDatabase->materialId(config.parameters.getString("mainBlock"));
+      biome->mainBlock = m_materialDatabase->materialId(config.parameters.getString("mainBlock"));
 
     for (Json v : config.parameters.getArray("subBlocks", {}))
-      biome->subBlocks.append(materialDatabase->materialId(v.toString()));
+      biome->subBlocks.append(m_materialDatabase->materialId(v.toString()));
 
     biome->ores = readOres(config.parameters.get("ores", {}), threatLevel);
 
@@ -204,14 +202,13 @@ float BiomeDatabase::pickHueShiftFromJson(Json source, uint64_t seed, String con
 }
 
 BiomePlaceables BiomeDatabase::readBiomePlaceables(Json const& config, uint64_t seed, float biomeHueShift) const {
-  auto& root = Root::singleton();
   RandomSource rand(seed);
   BiomePlaceables placeables;
   if (config.contains("grassMod") && !config.getArray("grassMod").empty())
-    placeables.grassMod = root.materialDatabase()->modId(rand.randFrom(config.getArray("grassMod")).toString());
+    placeables.grassMod = m_materialDatabase->modId(rand.randFrom(config.getArray("grassMod")).toString());
   placeables.grassModDensity = config.getFloat("grassModDensity", 0);
   if (config.contains("ceilingGrassMod") && !config.getArray("ceilingGrassMod").empty())
-    placeables.ceilingGrassMod = root.materialDatabase()->modId(rand.randFrom(config.getArray("ceilingGrassMod")).toString());
+    placeables.ceilingGrassMod = m_materialDatabase->modId(rand.randFrom(config.getArray("ceilingGrassMod")).toString());
   placeables.ceilingGrassModDensity = config.getFloat("ceilingGrassModDensity", 0);
 
   for (auto const& itemConfig : config.getArray("items", {}))
@@ -223,14 +220,10 @@ BiomePlaceables BiomeDatabase::readBiomePlaceables(Json const& config, uint64_t 
 List<pair<ModId, float>> BiomeDatabase::readOres(Json const& oreDistribution, float threatLevel) const {
   List<pair<ModId, float>> ores;
   if (!oreDistribution.isNull()) {
-    auto& root = Root::singleton();
-    auto functionDatabase = root.functionDatabase();
-    auto materialDatabase = root.materialDatabase();
-
-    auto oresList = functionDatabase->configFunction(oreDistribution)->get(threatLevel);
+    auto oresList = m_functionDatabase->configFunction(oreDistribution)->get(threatLevel);
     for (Json v : oresList.iterateArray()) {
       if (v.getFloat(1) > 0)
-        ores.append({materialDatabase->modId(v.getString(0)), v.getFloat(1)});
+        ores.append({m_materialDatabase->modId(v.getString(0)), v.getFloat(1)});
     }
   }
   return ores;

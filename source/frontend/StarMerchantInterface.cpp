@@ -52,7 +52,7 @@ MerchantPane::MerchantPane(
   m_buyFactor = m_settings.getFloat("buyFactor", m_assets->json("/merchant.config:defaultBuyFactor").toFloat());
   m_sellFactor = m_settings.getFloat("sellFactor", m_assets->json("/merchant.config:defaultSellFactor").toFloat());
 
-  m_itemBag = make_shared<ItemBag>(m_settings.getUInt("sellContainerSize"));
+  m_itemBag = make_shared<ItemBag>(m_settings.getUInt("sellContainerSize"), m_itemDatabase);
 
   m_maxBuyCount = m_settings.getUInt("maxSpinCount", m_assets->json("/interface/windowconfig/crafting.config:default").getUInt("maxSpinCount", 1000));
 

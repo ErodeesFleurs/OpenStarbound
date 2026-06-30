@@ -31,10 +31,12 @@
 
 namespace Star {
 
-Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant)
+Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
   : m_scriptedAnimator(assets) {
 
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
+  m_itemDatabase = std::move(itemDatabase);
+  m_objectDatabase = std::move(objectDatabase);
   m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json(), m_assets));
   m_disableWornArmor.set(npcVariant.disableWornArmor);
 
@@ -89,8 +91,8 @@ Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant)
 
   m_blinkCooldownTimer = GameTimer();
 
-  m_armor = make_shared<ArmorWearer>();
-  m_tools = make_shared<ToolUser>(m_assets, this);
+  m_armor = make_shared<ArmorWearer>(m_itemDatabase);
+  m_tools = make_shared<ToolUser>(m_assets, this, m_itemDatabase, m_objectDatabase);
 
   m_aggressive.set(false);
 
@@ -100,7 +102,8 @@ Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant)
   setupNetStates();
 }
 
-Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, Json const& diskStore) : Npc(assets, npcVariant) {
+Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, Json const& diskStore, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
+  : Npc(assets, npcVariant, std::move(itemDatabase), std::move(objectDatabase)) {
   m_movementController->loadState(diskStore.get("movementController"));
   m_statusController->diskLoad(diskStore.get("statusController"));
   auto aimPosition = jsonToVec2F(diskStore.get("aimPosition"));
@@ -182,7 +185,6 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
   if (isMaster()) {
     m_movementController->resetAnchorState();
 
-    auto itemDatabase = Root::singleton().itemDatabase();
     for (auto const& item : m_npcVariant.items)
       setItemSlot(item.first, item.second);
     m_scriptComponent.addCallbacks("npc", makeNpcCallbacks());
@@ -384,7 +386,7 @@ void Npc::destroy(RenderCallback* renderCallback) {
     auto treasureDatabase = Root::singleton().treasureDatabase();
     for (auto const& treasureItem :
         treasureDatabase->createTreasure(staticRandomFrom(m_dropPools.get(), m_npcVariant.seed), m_npcVariant.level))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), m_itemDatabase));
   }
 
   if (renderCallback && m_deathParticleBurst.get())
@@ -1092,7 +1094,7 @@ Vec2F Npc::questIndicatorPosition() const {
 }
 
 bool Npc::setItemSlot(String const& slot, ItemDescriptor itemDescriptor) {
-  auto item = Root::singleton().itemDatabase()->item(ItemDescriptor(itemDescriptor), m_npcVariant.level, m_npcVariant.seed);
+  auto item = m_itemDatabase->item(ItemDescriptor(itemDescriptor), m_npcVariant.level, m_npcVariant.seed);
 
   if (auto equipmentSlot = EquipmentSlotNames.leftPtr(slot)) {
     m_armor->setItem(static_cast<uint8_t>(*equipmentSlot), as<ArmorItem>(item));

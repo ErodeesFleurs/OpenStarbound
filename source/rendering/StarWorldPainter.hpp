@@ -10,13 +10,17 @@
 
 namespace Star {
 
+class MaterialDatabase;
+using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
 class WorldPainter;
 using WorldPainterPtr = SharedPtr<WorldPainter>;
 
 // Will update client rendering window internally
 class WorldPainter {
 public:
-  WorldPainter(AssetsConstPtr assets = {}, IConfigurationPtr configuration = {}, function<void(ListenerWeakPtr)> registerReloadListener = {});
+  WorldPainter(AssetsConstPtr assets, IConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase);
 
   void renderInit(RendererPtr renderer);
 
@@ -60,6 +64,8 @@ private:
   AssetsConstPtr m_assets;
   IConfigurationPtr m_configuration;
   function<void(ListenerWeakPtr)> m_registerReloadListener;
+  MaterialDatabaseConstPtr m_materialDatabase;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
   RectF m_worldScreenRect;
 
   Vec2F m_previousCameraCenter;

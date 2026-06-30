@@ -15,15 +15,19 @@ struct QuestIndicator {
 
 class QuestManager {
 public:
-  QuestManager(IAssetsConstPtr assets, Player* player);
+  QuestManager(IAssetsConstPtr assets, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
-  QuestManager(IAssetsConstPtr assets, Player* player, World* world);
+  QuestManager(IAssetsConstPtr assets, Player* player, World* world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
   void diskLoad(Json const& quests);
   Json diskStore();
 
   void setUniverseClient(UniverseClient* client);
   IAssetsConstPtr assets() const;
+  ItemDatabaseConstPtr itemDatabase() const;
+  ObjectDatabaseConstPtr objectDatabase() const;
+  QuestTemplateDatabaseConstPtr questTemplateDatabase() const;
+  VersioningDatabaseConstPtr versioningDatabase() const;
 
   void init(World* world);
   void uninit();
@@ -78,6 +82,10 @@ private:
   World* m_world;
   UniverseClient* m_client;
   IAssetsConstPtr m_assets;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  QuestTemplateDatabaseConstPtr m_questTemplateDatabase;
+  VersioningDatabaseConstPtr m_versioningDatabase;
 
   StringMap<QuestPtr> m_quests;
 

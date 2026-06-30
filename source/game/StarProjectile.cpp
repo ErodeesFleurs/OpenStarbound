@@ -619,7 +619,7 @@ void Projectile::processAction(Json const& action) {
     for (auto& tile : zip(openSpaces, tileDrops)) {
       auto [tilePos, tileMat] = tile;
       if (!world()->modifyTile(tilePos, PlaceMaterial{TileLayer::Foreground, tileMat, MaterialHue()}, allowEntityOverlap)) {
-        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(tileMat), static_cast<Vec2F>(tilePos), false, m_assets);
+        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(tileMat), static_cast<Vec2F>(tilePos), false, m_assets, world()->itemDatabase());
         world()->addEntity(itemDrop);
       }
     }
@@ -827,7 +827,7 @@ void Projectile::processAction(Json const& action) {
     size_t count = parameters.getInt("count", 1);
     JsonObject data = parameters.getObject("data", JsonObject{});
 
-    auto itemDrop = ItemDrop::createRandomizedDrop(ItemDescriptor(name, count, data), position(), false, m_assets);
+    auto itemDrop = ItemDrop::createRandomizedDrop(ItemDescriptor(name, count, data), position(), false, m_assets, world()->itemDatabase());
     world()->addEntity(itemDrop);
 
   } else if (command == "sound") {

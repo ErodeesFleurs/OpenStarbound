@@ -14,6 +14,8 @@ class ParticleConfig;
 using ParticleConfigPtr = SharedPtr<ParticleConfig>;
 class ParticleDatabase;
 using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 class MaterialDatabase;
 using MaterialDatabasePtr = SharedPtr<MaterialDatabase>;
 using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
@@ -35,7 +37,7 @@ struct LiquidModInteraction {
 
 class MaterialDatabase : public IMaterialDatabase {
 public:
-  MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase);
+  MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   StringList materialNames() const;
   bool isMetaMaterialName(String const& name) const;

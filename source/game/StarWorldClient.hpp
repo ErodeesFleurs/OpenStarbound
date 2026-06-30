@@ -65,13 +65,15 @@ using WorldClientException = TypedException<StarException, WorldClientExceptionT
 
 class WorldClient : public World {
 public:
-  WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstPtr _assets = {}, IConfigurationPtr _configuration = {});
+  WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstPtr _assets, IConfigurationPtr _configuration, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
   ~WorldClient();
 
   ConnectionId connection() const override;
   WorldGeometry geometry() const override;
   uint64_t currentStep() const override;
   IAssetsConstPtr assets() const override;
+  IItemDatabaseConstPtr itemDatabase() const override;
+  ObjectDatabaseConstPtr objectDatabase() const override;
   MaterialId material(Vec2I const& position, TileLayer layer) const override;
   std::tuple<MaterialId, ModId> materialAndMod(Vec2I const& position, TileLayer layer) const override;
   MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const override;
@@ -319,6 +321,7 @@ private:
   IConfigurationPtr m_configuration;
   IMaterialDatabaseConstPtr m_materialDatabase;
   IItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
   ISpeciesDatabaseConstPtr m_speciesDatabase;
   IEntityFactoryConstPtr m_entityFactory;
   ILiquidsDatabaseConstPtr m_liquidsDatabase;

@@ -70,7 +70,7 @@ InteractAction FarmableObject::interact(InteractRequest const&) {
 bool FarmableObject::harvest() {
   if (isMaster() && m_stages.get(m_stage).contains("harvestPool")) {
     for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(m_stages.get(m_stage).getString("harvestPool"), world()->threatLevel()))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), world()->itemDatabase()));
 
     if (m_stages.get(m_stage).contains("resetToStage")) {
       m_nextStageTime = world()->epochTime();

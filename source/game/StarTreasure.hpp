@@ -10,6 +10,10 @@
 namespace Star {
 
 class World;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 class Item;
 using ItemPtr = SharedPtr<Item>;
 class ItemBag;
@@ -25,7 +29,7 @@ using TreasureException = TypedException<StarException, TreasureExceptionTag>;
 
 class TreasureDatabase {
 public:
-  TreasureDatabase(AssetsConstPtr assets);
+  TreasureDatabase(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
   StringList treasurePools() const;
   bool isTreasurePool(String const& treasurePool) const;
@@ -92,6 +96,8 @@ private:
 
   StringMap<TreasurePool> m_treasurePools;
   StringMap<TreasureChestSet> m_treasureChestSets;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
 };
 
 }

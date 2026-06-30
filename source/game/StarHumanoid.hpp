@@ -134,7 +134,7 @@ public:
 
   struct HumanoidTiming {
     explicit HumanoidTiming(Json config = Json());
-    static HumanoidTiming sensibleDefaults(IAssetsConstPtr assets = {});
+    static HumanoidTiming sensibleDefaults(IAssetsConstPtr assets);
 
     static bool cyclicState(State state);
     static bool cyclicEmoteState(HumanoidEmote state);

@@ -1,5 +1,4 @@
 #include "StarPlayerInventory.hpp"
-#include "StarRoot.hpp"
 #include "StarCurrency.hpp"
 #include "StarArmors.hpp"
 #include "StarLiquidItem.hpp"
@@ -38,10 +37,13 @@ bool PlayerInventory::itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot 
     return is<ArmorItem>(item);
 }
 
-PlayerInventory::PlayerInventory(IAssetsConstPtr assets)
-  : m_assets(std::move(assets)) {
+PlayerInventory::PlayerInventory(IAssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase)
+  : m_assets(std::move(assets)),
+    m_itemDatabase(std::move(itemDatabase)) {
   if (!m_assets)
     throw InventoryException("PlayerInventory requires assets service");
+  if (!m_itemDatabase)
+    throw InventoryException("PlayerInventory requires item database service");
 
   auto config = m_assets->json("/player.config:inventory");
 
@@ -51,7 +53,7 @@ PlayerInventory::PlayerInventory(IAssetsConstPtr assets)
   });
   for (auto name : bagOrder) {
     size_t size = bags.get(name).getUInt("size");
-    m_bags[name] = make_shared<ItemBag>(size);
+    m_bags[name] = make_shared<ItemBag>(size, m_itemDatabase);
     m_bagsNetState[name].resize(size);
   }
 
@@ -503,15 +505,14 @@ void PlayerInventory::sortBag(String const& bagType) {
       }
     });
 
-  auto itemDatabase = Root::singletonPtr()->itemDatabase();
-  bag->items().sort([itemDatabase](ItemPtr const& a, ItemPtr const& b) {
+  bag->items().sort([this](ItemPtr const& a, ItemPtr const& b) {
       if (a && !b)
         return true;
       if (!a)
         return false;
 
-      auto aType = itemDatabase->itemType(a->name());
-      auto bType = itemDatabase->itemType(b->name());
+      auto aType = m_itemDatabase->itemType(a->name());
+      auto bType = m_itemDatabase->itemType(b->name());
       if (aType != bType)
         return aType < bType;
 
@@ -793,11 +794,9 @@ void PlayerInventory::setEquipmentVisibility(EquipmentSlot slot, bool visible) {
 }
 
 void PlayerInventory::load(Json const& store) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-
   for (auto slot : EquipmentSlotNames) {
     auto jItem = store.get(strf("{}Slot", slot.second), Json());
-    m_equipment[slot.first] = itemDatabase->diskLoad(jItem);
+    m_equipment[slot.first] = m_itemDatabase->diskLoad(jItem);
   }
 
   //reuse ItemBags so the Inventory pane still works after load()'ing into the same PlayerInventory again (from swap)
@@ -805,7 +804,7 @@ void PlayerInventory::load(Json const& store) {
   m_inventoryLoadOverflow.clear();
   for (auto const& p : itemBags) {
     auto& bagType = p.first;
-    auto newBag = ItemBag::loadStore(p.second);
+    auto newBag = ItemBag::loadStore(p.second, m_itemDatabase);
     if (m_bags.contains(bagType)) {
       auto& bag = m_bags.at(bagType);
       m_inventoryLoadOverflow.appendAll(newBag.resize(bag->size()));
@@ -815,8 +814,8 @@ void PlayerInventory::load(Json const& store) {
     }
   }
 
-  m_swapSlot = itemDatabase->diskLoad(store.get("swapSlot"));
-  m_trashSlot = itemDatabase->diskLoad(store.get("trashSlot"));
+  m_swapSlot = m_itemDatabase->diskLoad(store.get("swapSlot"));
+  m_trashSlot = m_itemDatabase->diskLoad(store.get("trashSlot"));
 
   m_currencies = jsonToMapV<StringMap<uint64_t>>(store.get("currencies"), mem_fn(&Json::toUInt));
 
@@ -845,17 +844,15 @@ void PlayerInventory::load(Json const& store) {
   m_selectedActionBar = jsonToSelectedActionBarLocation(store.get("selectedActionBar"));
 
   m_essential.clear();
-  m_essential[EssentialItem::BeamAxe] = itemDatabase->diskLoad(store.get("beamAxe"));
-  m_essential[EssentialItem::WireTool] = itemDatabase->diskLoad(store.get("wireTool"));
-  m_essential[EssentialItem::PaintTool] = itemDatabase->diskLoad(store.get("paintTool"));
-  m_essential[EssentialItem::InspectionTool] = itemDatabase->diskLoad(store.get("inspectionTool"));
+  m_essential[EssentialItem::BeamAxe] = m_itemDatabase->diskLoad(store.get("beamAxe"));
+  m_essential[EssentialItem::WireTool] = m_itemDatabase->diskLoad(store.get("wireTool"));
+  m_essential[EssentialItem::PaintTool] = m_itemDatabase->diskLoad(store.get("paintTool"));
+  m_essential[EssentialItem::InspectionTool] = m_itemDatabase->diskLoad(store.get("inspectionTool"));
 
   m_equipmentVisibilityMask = static_cast<unsigned>(store.optUInt("equipmentVisibilityMask").value(0xFFFFFFFF));
 }
 
 Json PlayerInventory::store() const {
-  auto itemDatabase = Root::singleton().itemDatabase();
-
   JsonArray customBar;
   for (size_t i = 0; i < m_customBar.size(0); ++i) {
     JsonArray customBarGroup;
@@ -872,21 +869,21 @@ Json PlayerInventory::store() const {
 
   auto data = JsonObject{
     {"itemBags", itemBags},
-    {"swapSlot", itemDatabase->diskStore(m_swapSlot)},
-    {"trashSlot", itemDatabase->diskStore(m_trashSlot)},
+    {"swapSlot", m_itemDatabase->diskStore(m_swapSlot)},
+    {"trashSlot", m_itemDatabase->diskStore(m_trashSlot)},
     {"currencies", jsonFromMap(m_currencies)},
     {"customBarGroup", m_customBarGroup},
     {"customBar", std::move(customBar)},
     {"selectedActionBar", jsonFromSelectedActionBarLocation(m_selectedActionBar)},
-    {"beamAxe", itemDatabase->diskStore(m_essential.value(EssentialItem::BeamAxe))},
-    {"wireTool", itemDatabase->diskStore(m_essential.value(EssentialItem::WireTool))},
-    {"paintTool", itemDatabase->diskStore(m_essential.value(EssentialItem::PaintTool))},
-    {"inspectionTool", itemDatabase->diskStore(m_essential.value(EssentialItem::InspectionTool))}
+    {"beamAxe", m_itemDatabase->diskStore(m_essential.value(EssentialItem::BeamAxe))},
+    {"wireTool", m_itemDatabase->diskStore(m_essential.value(EssentialItem::WireTool))},
+    {"paintTool", m_itemDatabase->diskStore(m_essential.value(EssentialItem::PaintTool))},
+    {"inspectionTool", m_itemDatabase->diskStore(m_essential.value(EssentialItem::InspectionTool))}
   };
 
   for (auto& equipment : m_equipment) {
     if (equipment.first <= EquipmentSlot::BackCosmetic || equipment.second)
-      data.set(strf("{}Slot", EquipmentSlotNames.getRight(equipment.first)), itemDatabase->diskStore(equipment.second));
+      data.set(strf("{}Slot", EquipmentSlotNames.getRight(equipment.first)), m_itemDatabase->diskStore(equipment.second));
   }
 
   data.set("equipmentVisibilityMask", m_equipmentVisibilityMask);
@@ -973,7 +970,7 @@ void PlayerInventory::setPlayer(Player* player) {
 PlayerInventory const& PlayerInventory::blankInventory() const {
   static thread_local PlayerInventoryPtr inventory;
   if (!inventory || inventory->m_assets != m_assets)
-    inventory = make_shared<PlayerInventory>(m_assets);
+    inventory = make_shared<PlayerInventory>(m_assets, m_itemDatabase);
   return *inventory;
 }
 
@@ -1010,8 +1007,7 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
   }
 
   // filter by item type if an itemTypes filter is set
-  auto itemDatabase = Root::singleton().itemDatabase();
-  auto itemTypeName = ItemTypeNames.getRight(itemDatabase->itemType(items->name()));
+  auto itemTypeName = ItemTypeNames.getRight(m_itemDatabase->itemType(items->name()));
   if (filterConfig.contains("typeWhitelist") && !filterConfig.getArray("typeWhitelist").contains(itemTypeName))
     return false;
 
@@ -1020,7 +1016,7 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
 
   // filter by item tags if an itemTags filter is set
   // this is an inclusive filter
-  auto itemTags = itemDatabase->itemTags(items->name());
+  auto itemTags = m_itemDatabase->itemTags(items->name());
   if (filterConfig.contains("tagWhitelist")) {
     auto whitelistedTags = filterConfig.getArray("tagWhitelist").filtered([itemTags](Json const& tag) {
         return itemTags.contains(tag.toString());
@@ -1101,11 +1097,9 @@ void PlayerInventory::autoAddToCustomBar(InventorySlot slot) {
 }
 
 void PlayerInventory::netElementsNeedLoad(bool) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-
-  auto deserializeItem = [&itemDatabase](NetElementData<ItemDescriptor>& netState, ItemPtr& item) {
+  auto deserializeItem = [this](NetElementData<ItemDescriptor>& netState, ItemPtr& item) {
     if (netState.pullUpdated())
-      itemDatabase->loadItem(netState.get(), item);
+      m_itemDatabase->loadItem(netState.get(), item);
   };
 
   auto deserializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<ItemPtr>& itemList) {

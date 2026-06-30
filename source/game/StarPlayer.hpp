@@ -28,7 +28,7 @@
 #include "StarIAssets.hpp"
 #include "StarIConfiguration.hpp"
 #include "StarIMaterialDatabase.hpp"
-#include "StarIItemDatabase.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarISpeciesDatabase.hpp"
 #include "StarIEntityFactory.hpp"
 #include "StarEntityFactory.hpp"
@@ -51,6 +51,14 @@ class PlayerBlueprints;
 using PlayerBlueprintsPtr = SharedPtr<PlayerBlueprints>;
 class PlayerTech;
 using PlayerTechPtr = SharedPtr<PlayerTech>;
+class TechDatabase;
+using TechDatabaseConstPtr = SharedPtr<TechDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class QuestTemplateDatabase;
+using QuestTemplateDatabaseConstPtr = SharedPtr<QuestTemplateDatabase const>;
+class VersioningDatabase;
+using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
 class PlayerCompanions;
 using PlayerCompanionsPtr = SharedPtr<PlayerCompanions>;
 class PlayerDeployment;
@@ -113,9 +121,9 @@ public:
   };
   static EnumMap<State> const StateNames;
 
-  Player(PlayerConfigPtr config, Uuid uuid = Uuid(), IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
-  Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules = {}, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
-  Player(PlayerConfigPtr config, Json const& diskStore, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
+  Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  Player(PlayerConfigPtr config, Json const& diskStore, IAssetsConstPtr assets, IConfigurationPtr configuration, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
   void diskLoad(Json const& diskStore);
 
@@ -129,6 +137,7 @@ public:
   UniverseClient* universeClient() const;
 
   QuestManagerPtr questManager() const;
+  ItemDatabaseConstPtr itemDatabase() const;
 
   Json diskStore();
   ByteArray netStore(NetCompatibilityRules rules = {});
@@ -602,10 +611,14 @@ private:
   IAssetsConstPtr m_assets;
   IConfigurationPtr m_configuration;
   IMaterialDatabaseConstPtr m_materialDatabase;
-  IItemDatabaseConstPtr m_itemDatabase;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  QuestTemplateDatabaseConstPtr m_questTemplateDatabase;
+  VersioningDatabaseConstPtr m_versioningDatabase;
   ISpeciesDatabaseConstPtr m_speciesDatabase;
   IEntityFactoryConstPtr m_entityFactory;
   ILiquidsDatabaseConstPtr m_liquidsDatabase;
+  TechDatabaseConstPtr m_techDatabase;
   PlayerCodexesPtr m_codexes;
   PlayerTechPtr m_techs;
   PlayerCompanionsPtr m_companions;

@@ -12,16 +12,13 @@ String const InboundNode = "/tilesets/inboundnode.png";
 String const OutboundNode = "/tilesets/outboundnode.png";
 Vec3B const SourceLiquidBorderColor(0x80, 0x80, 0x00);
 
-void scanMaterials(TilesetUpdater& updater) {
-  auto& root = Root::singleton();
-  auto materials = root.materialDatabase();
-
+void scanMaterials(TilesetUpdater& updater, AssetsConstPtr assets, MaterialDatabaseConstPtr materials) {
   for (String materialName : materials->materialNames()) {
     MaterialId id = materials->materialId(materialName);
     Maybe<String> path = materials->materialPath(id);
     if (!path)
       continue;
-    String source = root.assets()->assetSource(*path);
+    String source = assets->assetSource(*path);
 
     auto renderProfile = materials->materialRenderProfile(id);
     if (renderProfile == nullptr)
@@ -29,7 +26,7 @@ void scanMaterials(TilesetUpdater& updater) {
 
     String tileset = materials->materialCategory(id);
     String imagePath = renderProfile->pieceImage(renderProfile->representativePiece, 0);
-    ImageConstPtr image = root.assets()->image(imagePath);
+    ImageConstPtr image = assets->image(imagePath);
 
     Tiled::Properties properties;
     properties.set("material", materialName);
@@ -59,14 +56,9 @@ Vec2U objectPositionPadding(Vec2I imagePosition) {
   return Vec2U(padX, padY);
 }
 
-StringSet categorizeObject(String const& objectName, Vec2U imageSize) {
+StringSet categorizeObject(String const& objectName, Vec2U imageSize, AssetsConstPtr assets, ObjectDatabaseConstPtr objects) {
   if (imageSize[0] >= 256 || imageSize[1] >= 256)
     return StringSet{"huge-objects"};
-
-  auto& root = Root::singleton();
-  auto assets = root.assets();
-  auto objects = root.objectDatabase();
-
   Json defaultCategories = assets->json("/objects/defaultCategories.config");
 
   auto objectConfig = objects->getConfig(objectName);
@@ -87,8 +79,8 @@ StringSet categorizeObject(String const& objectName, Vec2U imageSize) {
   return transform<StringSet>(categories, [](String const& category) { return category.toLower(); });
 }
 
-void drawNodes(ImagePtr const& image, Vec2I imagePosition, JsonArray nodes, String nodeImagePath) {
-  ImageConstPtr nodeImage = Root::singleton().assets()->image(nodeImagePath);
+void drawNodes(ImagePtr const& image, Vec2I imagePosition, JsonArray nodes, String nodeImagePath, AssetsConstPtr assets) {
+  ImageConstPtr nodeImage = assets->image(nodeImagePath);
   for (Json const& node : nodes) {
     Vec2I nodePos = jsonToVec2I(node) * TilePixels + Vec2I(0, TilePixels - nodeImage->height());
     Vec2U nodeImagePos = Vec2U(nodePos - imagePosition);
@@ -99,11 +91,9 @@ void drawNodes(ImagePtr const& image, Vec2I imagePosition, JsonArray nodes, Stri
 void defineObjectOrientation(TilesetUpdater& updater,
     String const& objectName,
     List<ObjectOrientationPtr> const& orientations,
-    int orientationIndex) {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
-  auto objects = root.objectDatabase();
-
+    int orientationIndex,
+    AssetsConstPtr assets,
+    ObjectDatabaseConstPtr objects) {
   ObjectOrientationPtr orientation = orientations[orientationIndex];
 
   Vec2I imagePosition = Vec2I(orientation->imagePosition * TilePixels);
@@ -135,8 +125,8 @@ void defineObjectOrientation(TilesetUpdater& updater,
   // Overlay the image with the wiring nodes:
   auto objectConfig = objects->getConfig(objectName);
 
-  drawNodes(combinedImage, imagePosition, objectConfig->config.getArray("inputNodes", {}), InboundNode);
-  drawNodes(combinedImage, imagePosition, objectConfig->config.getArray("outputNodes", {}), OutboundNode);
+  drawNodes(combinedImage, imagePosition, objectConfig->config.getArray("inputNodes", {}), InboundNode, assets);
+  drawNodes(combinedImage, imagePosition, objectConfig->config.getArray("outputNodes", {}), OutboundNode, assets);
 
   ObjectPtr example = objects->createObject(objectName);
 
@@ -154,7 +144,7 @@ void defineObjectOrientation(TilesetUpdater& updater,
     properties.set("tilesetDirection", DirectionNames.getRight(direction));
   }
 
-  StringSet tilesets = categorizeObject(objectName, imageSize);
+  StringSet tilesets = categorizeObject(objectName, imageSize, assets, objects);
 
   // tileName becomes part of the filename for the tile's image. Different
   // orientations require different images, so the tileName must be different
@@ -172,10 +162,7 @@ void defineObjectOrientation(TilesetUpdater& updater,
   }
 }
 
-void scanObjects(TilesetUpdater& updater) {
-  auto& root = Root::singleton();
-  auto objects = root.objectDatabase();
-
+void scanObjects(TilesetUpdater& updater, AssetsConstPtr assets, ObjectDatabaseConstPtr objects) {
   for (String const& objectName : objects->allObjects()) {
     auto orientations = objects->getOrientations(objectName);
     if (orientations.size() < 1) {
@@ -185,7 +172,7 @@ void scanObjects(TilesetUpdater& updater) {
 
     // Always export the first orientation
     ObjectOrientationPtr orientation = orientations[0];
-    defineObjectOrientation(updater, objectName, orientations, 0);
+    defineObjectOrientation(updater, objectName, orientations, 0, assets, objects);
 
     // If there are more than 2 orientations or the imagePositions are different
     // then horizontal flipping in the editor is not enough to get all the
@@ -193,16 +180,12 @@ void scanObjects(TilesetUpdater& updater) {
     // as a separate tile.
     for (unsigned i = 1; i < orientations.size(); ++i) {
       if (i >= 2 || orientation->imagePosition != orientations[i]->imagePosition)
-        defineObjectOrientation(updater, objectName, orientations, i);
+        defineObjectOrientation(updater, objectName, orientations, i, assets, objects);
     }
   }
 }
 
-void scanLiquids(TilesetUpdater& updater) {
-  auto& root = Root::singleton();
-  auto liquids = root.liquidsDatabase();
-  auto assets = root.assets();
-
+void scanLiquids(TilesetUpdater& updater, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquids) {
   Vec2U imageSize(TilePixels, TilePixels);
 
   for (auto liquid : liquids->allLiquidSettings()) {
@@ -248,9 +231,10 @@ int main(int argc, char** argv) {
       updater.defineAssetSource(source);
     }
 
-    scanMaterials(updater);
-    scanObjects(updater);
-    scanLiquids(updater);
+    auto assets = root->assets();
+    scanMaterials(updater, assets, root->materialDatabase());
+    scanObjects(updater, assets, root->objectDatabase());
+    scanLiquids(updater, assets, root->liquidsDatabase());
 
     updater.exportTilesets();
 

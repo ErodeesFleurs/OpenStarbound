@@ -5,14 +5,14 @@
 #include "StarWeightedPool.hpp"
 #include "StarContainerEntity.hpp"
 #include "StarItemRecipe.hpp"
+#include "StarItemDatabase.hpp"
 
 namespace Star {
 
 class ContainerObject;
-
 class ContainerObject : public Object, public virtual ContainerEntity {
 public:
-  ContainerObject(ObjectConfigConstPtr config, Json const& parameters);
+  ContainerObject(ObjectConfigConstPtr config, Json const& parameters, ItemDatabaseConstPtr itemDatabase);
 
   void init(World* world, EntityId entityId, EntityMode mode) override;
 
@@ -83,6 +83,7 @@ private:
   NetElementBool m_crafting;
   NetElementFloat m_craftingProgress;
 
+  ItemDatabaseConstPtr m_itemDatabase;
   ItemBagPtr m_items;
   NetElementBytes m_itemsNetState;
 

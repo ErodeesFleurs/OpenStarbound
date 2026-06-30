@@ -17,6 +17,14 @@ namespace Star {
 
 class Quest;
 using QuestPtr = SharedPtr<Quest>;
+class ItemDatabase;
+using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class QuestTemplateDatabase;
+using QuestTemplateDatabaseConstPtr = SharedPtr<QuestTemplateDatabase const>;
+class VersioningDatabase;
+using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
 class Player;
 class UniverseClient;
 
@@ -36,9 +44,9 @@ extern EnumMap<QuestState> const QuestStateNames;
 
 class Quest {
 public:
-  Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player);
+  Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
-  Quest(IAssetsConstPtr assets, Json const& diskStore);
+  Quest(IAssetsConstPtr assets, Json const& diskStore, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
   Json diskStore() const;
 
   QuestTemplatePtr getTemplate() const;
@@ -177,6 +185,10 @@ private:
   String m_trackedIndicator;
   String m_untrackedIndicator;
   IAssetsConstPtr m_assets;
+  ItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
+  QuestTemplateDatabaseConstPtr m_questTemplateDatabase;
+  VersioningDatabaseConstPtr m_versioningDatabase;
 
   String m_title;
   String m_text;

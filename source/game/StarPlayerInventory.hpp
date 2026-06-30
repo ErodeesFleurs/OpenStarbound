@@ -5,6 +5,7 @@
 #include "StarNetElementSystem.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarIAssets.hpp"
+#include "StarItemDatabase.hpp"
 
 namespace Star {
 
@@ -55,7 +56,7 @@ public:
   bool itemAllowedInBag(ItemPtr const& item, String const& bagType) const;
   static bool itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot equipmentSlot);
 
-  PlayerInventory(IAssetsConstPtr assets);
+  PlayerInventory(IAssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
 
   ItemPtr itemsAt(InventorySlot const& slot) const;
 
@@ -248,6 +249,7 @@ private:
   NetElementData<SelectedActionBarLocation> m_selectedActionBarNetState;
 
   IAssetsConstPtr m_assets;
+  ItemDatabaseConstPtr m_itemDatabase;
   List<ItemPtr> m_inventoryLoadOverflow;
   unsigned m_equipmentVisibilityMask;
 

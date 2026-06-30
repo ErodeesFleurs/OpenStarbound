@@ -27,14 +27,15 @@ constexpr unsigned DefaultShipWorldDim = 2048;
 
 namespace Star {
 
-UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets, IConfigurationPtr _configuration)
+UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets, IConfigurationPtr _configuration, ItemDatabaseConstPtr _itemDatabase)
     : Thread("UniverseServer"),
       m_workerPool("UniverseServerWorkerPool"),
       m_clients(MinClientConnectionId, MaxClientConnectionId) {
-  m_assets = _assets ? std::move(_assets) : Root::singleton().assets();
-  m_configuration = _configuration ? std::move(_configuration) : Root::singleton().configuration();
+  m_assets = std::move(_assets);
+  m_configuration = std::move(_configuration);
   m_materialDatabase = Root::singleton().materialDatabase();
-  m_itemDatabase = Root::singleton().itemDatabase();
+  m_itemDatabase = std::move(_itemDatabase);
+  m_objectDatabase = Root::singleton().objectDatabase();
   m_speciesDatabase = Root::singleton().speciesDatabase();
   m_entityFactory = Root::singleton().entityFactory();
   m_liquidsDatabase = Root::singleton().liquidsDatabase();
@@ -58,7 +59,7 @@ UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets
 
   startLuaScripts();
 
-  m_commandProcessor = make_shared<CommandProcessor>(this, m_luaRoot, m_assets);
+  m_commandProcessor = make_shared<CommandProcessor>(this, m_luaRoot, m_assets, m_itemDatabase);
   m_chatProcessor = make_shared<ChatProcessor>();
   m_chatProcessor->setCommandHandler([this](ConnectionId clientId, String const& command, String const& argumentString) { return m_commandProcessor->userCommand(clientId, command, argumentString); });
 
@@ -94,7 +95,7 @@ UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets
   for (auto const& pair : universeConfig.get("speciesShips").iterateObject())
     m_speciesShips[pair.first] = jsonToStringList(pair.second);
 
-  m_teamManager = make_shared<TeamManager>();
+  m_teamManager = make_shared<TeamManager>(m_configuration);
   m_workerPool.start(universeConfig.getUInt("workerPoolThreads"));
 
   size_t networkWorkerThreads = universeConfig.optUInt("networkWorkerThreads").value(0);
@@ -1921,7 +1922,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
 
   ConnectionId clientId = m_clients.nextId();
   auto clientContext = make_shared<ServerClientContext>(clientId, remoteAddress, netRules, clientConnect->playerUuid,
-                                                        clientConnect->playerName, clientConnect->shipSpecies, administrator, clientConnect->shipChunks);
+                                                        clientConnect->playerName, clientConnect->shipSpecies, administrator, clientConnect->shipChunks, m_itemDatabase);
   clientContext->registerRpcHandlers(m_teamManager->authenticatedRpcHandlers(clientContext->playerUuid()));
 
   String clientContextFile = File::relativeTo(m_storageDirectory, strf("{}.clientcontext", clientConnect->playerUuid.hex()));
@@ -2296,7 +2297,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
     if (!shipChunks.empty()) {
       try {
         Logger::info("UniverseServer: Loading client ship world {}", clientShipWorldId);
-        shipWorld = make_shared<WorldServer>(shipChunks, m_assets, m_configuration);
+        shipWorld = make_shared<WorldServer>(shipChunks, m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
       } catch (std::exception const& e) {
         Logger::error("UniverseServer: Could not load client ship {}, resetting ship to default state! {}",
                       clientShipWorldId, outputException(e, false));
@@ -2310,7 +2311,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
       Vec2U worldSize(DefaultShipWorldDim, DefaultShipWorldDim);
       if (auto jWorldSize = shipStructure.configValue("worldSize"))
         worldSize = jsonToVec2U(jWorldSize);
-      shipWorld = make_shared<WorldServer>(worldSize, File::ephemeralFile(), m_assets, m_configuration);
+      shipWorld = make_shared<WorldServer>(worldSize, File::ephemeralFile(), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
       shipStructure = shipWorld->setCentralStructure(shipStructure);
 
       ShipUpgrades currentUpgrades = clientContext->shipUpgrades();
@@ -2373,7 +2374,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
     if (File::isFile(storageFile)) {
       try {
         Logger::info("UniverseServer: Loading celestial world {}", celestialWorldId);
-        worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration);
+        worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
       } catch (std::exception const& e) {
         Logger::error("UniverseServer: Could not load celestial world {}, removing! Cause: {}",
                       celestialWorldId, outputException(e, false));
@@ -2384,7 +2385,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
     if (!worldServer) {
       Logger::info("UniverseServer: Creating celestial world {}", celestialWorldId);
       auto worldTemplate = make_shared<WorldTemplate>(m_assets, celestialWorldId, celestialDatabase);
-      worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate), m_assets, m_configuration);
+      worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
     }
 
     worldServer->setUniverseSettings(m_universeSettings);
@@ -2451,7 +2452,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
       if (File::isFile(storageFile)) {
         try {
           Logger::info("UniverseServer: Loading persistent unique instance world {}", instanceWorldId.instance);
-          worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration);
+          worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
           worldExisted = true;
         } catch (std::exception const& e) {
           Logger::error("UniverseServer: Could not load persistent unique instance world {}, removing! Cause: {}",
@@ -2462,7 +2463,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
 
       if (!worldServer) {
         Logger::info("UniverseServer: Creating persistent unique instance world {}", instanceWorldId.instance);
-        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate), m_assets, m_configuration);
+        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
       }
     } else {
       String storageFile = tempWorldFile(instanceWorldId);
@@ -2473,7 +2474,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
           if (file->size() > 0) {
             Logger::info("UniverseServer: Loading temporary instance world {} from storage", instanceWorldId);
             try {
-              worldServer = make_shared<WorldServer>(file, m_assets, m_configuration);
+              worldServer = make_shared<WorldServer>(file, m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
               worldExisted = true;
             } catch (std::exception const& e) {
               Logger::error("UniverseServer: Could not load temporary instance world '{}', re-creating cause: {}",
@@ -2488,7 +2489,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
       if (!worldServer) {
         Logger::info("UniverseServer: Creating temporary instance world '{}' with expiry time {}", instanceWorldId, deleteTime);
 
-        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration);
+        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration, m_itemDatabase, m_objectDatabase);
         m_tempWorldIndex.set(instanceWorldId, pair<uint64_t, uint64_t>(m_universeClock->milliseconds(), deleteTime));
       }
     }

@@ -13,6 +13,8 @@ class Assets;
 using AssetsConstPtr = SharedPtr<Assets const>;
 class MaterialDatabase;
 using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
 class TilePainter;
 using TilePainterPtr = SharedPtr<TilePainter>;
 
@@ -30,7 +32,7 @@ public:
   static unsigned const RenderChunkSize = 16;
   static unsigned const BorderTileSize = RenderChunkSize + MaterialRenderProfileMaxNeighborDistance - 1;
 
-  TilePainter(AssetsConstPtr assets, RendererPtr renderer);
+  TilePainter(AssetsConstPtr assets, RendererPtr renderer, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase);
 
   // Adjusts lighting levels for liquids.
   void adjustLighting(WorldRenderData& renderData) const;

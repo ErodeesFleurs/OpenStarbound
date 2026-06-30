@@ -4,15 +4,24 @@
 
 namespace Star {
 
-PlayerTech::PlayerTech() {}
+namespace {
 
-PlayerTech::PlayerTech(Json const& json) {
+TechDatabaseConstPtr playerTechDatabase(TechDatabaseConstPtr techDatabase) {
+  return techDatabase ? std::move(techDatabase) : Root::singleton().techDatabase();
+}
+
+}
+
+PlayerTech::PlayerTech(TechDatabaseConstPtr techDatabase)
+  : m_techDatabase(playerTechDatabase(std::move(techDatabase))) {}
+
+PlayerTech::PlayerTech(Json const& json, TechDatabaseConstPtr techDatabase)
+  : PlayerTech(std::move(techDatabase)) {
   m_availableTechs = jsonToStringSet(json.get("availableTechs"));
   m_enabledTechs = jsonToStringSet(json.get("enabledTechs"));
-  auto techDatabase = Root::singleton().techDatabase();
   for (auto& p : json.getObject("equippedTechs")) {
     String techName = p.second.toString();
-    if (techDatabase->contains(techName))
+    if (m_techDatabase->contains(techName))
       m_equippedTechs.set(TechTypeNames.getLeft(p.first), techName);
     else
       Logger::warn("Unequipping unknown tech '{}' from slot '{}'", techName, p.first);
@@ -69,8 +78,7 @@ void PlayerTech::equip(String const& techModule) {
   if (!m_enabledTechs.contains(techModule))
     throw PlayerTechException::format("Equipping tech module '{}' when not enabled", techModule);
 
-  auto techDatabase = Root::singleton().techDatabase();
-  m_equippedTechs[techDatabase->tech(techModule).type] = techModule;
+  m_equippedTechs[m_techDatabase->tech(techModule).type] = techModule;
 }
 
 void PlayerTech::unequip(String const& techModule) {

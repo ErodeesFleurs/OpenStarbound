@@ -1,16 +1,8 @@
 #include "StarTextPainter.hpp"
+#include "StarException.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
-
-namespace {
-
-AssetsConstPtr textPainterAssets(AssetsConstPtr assets) {
-  return assets ? std::move(assets) : Root::singleton().assets();
-}
-
-}
 
 TextPositioning::TextPositioning() {
   pos = Vec2F();
@@ -45,16 +37,16 @@ TextPositioning TextPositioning::translated(Vec2F translation) const {
 
 TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener)
   : m_renderer(renderer),
-    m_assets(textPainterAssets(std::move(assets))),
+    m_assets(std::move(assets)),
     m_registerReloadListener(std::move(registerReloadListener)),
     m_fontTextureGroup(textureGroup),
     m_defaultRenderSettings(),
     m_renderSettings(),
     m_savedRenderSettings() {
+  if (!m_assets)
+    throw StarException("TextPainter requires assets service");
   if (!m_registerReloadListener)
-    m_registerReloadListener = [](ListenerWeakPtr reloadListener) {
-      Root::singleton().registerReloadListener(std::move(reloadListener));
-    };
+    throw StarException("TextPainter requires reload listener registrar service");
 
   reloadFonts();
   m_reloadTracker = make_shared<TrackerListener>();

@@ -7,12 +7,17 @@
 #include "StarPlayer.hpp"
 #include "StarAssets.hpp"
 #include "StarEntityFactory.hpp"
-#include "StarRoot.hpp"
 #include "StarText.hpp"
 
 namespace Star {
 
-PlayerStorage::PlayerStorage(String const& storageDir) {
+PlayerStorage::PlayerStorage(String const& storageDir, IConfigurationPtr configuration, EntityFactoryConstPtr entityFactory)
+  : m_configuration(std::move(configuration)), m_entityFactory(std::move(entityFactory)) {
+  if (!m_configuration)
+    throw PlayerException("PlayerStorage requires configuration service");
+  if (!m_entityFactory)
+    throw PlayerException("PlayerStorage requires entity factory service");
+
   m_storageDirectory = storageDir;
   m_backupDirectory = File::relativeTo(m_storageDirectory, "backup");
   if (!File::isDirectory(m_storageDirectory)) {
@@ -21,17 +26,13 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
     return;
   }
 
-  auto configuration = Root::singleton().configuration();
-  if (configuration->get("clearPlayerFiles").toBool()) {
+  if (m_configuration->get("clearPlayerFiles").toBool()) {
     Logger::info("Clearing all player files");
     for (auto file : File::dirList(m_storageDirectory)) {
       if (!file.second)
         File::remove(File::relativeTo(m_storageDirectory, file.first));
     }
   } else {
-    auto versioningDatabase = Root::singleton().versioningDatabase();
-    auto entityFactory = Root::singleton().entityFactory();
-
     for (auto file : File::dirList(m_storageDirectory)) {
       if (file.second)
         continue;
@@ -43,7 +44,7 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
           Uuid uuid(json.content.getString("uuid"));
           if (m_playerFileNames.insert(uuid, file.first.rsplit('.', 1).at(0))) {
             auto& playerCacheData = m_savedPlayersCache[uuid];
-            playerCacheData = entityFactory->loadVersionedJson(json, EntityType::Player);
+            playerCacheData = m_entityFactory->loadVersionedJson(json, EntityType::Player);
           } else {
             Logger::warn("Duplicate player? Skipping player file {} because it has the same UUID as {}.player ({})", file.first, m_playerFileNames.getRight(uuid), uuid.hex());
           }
@@ -62,8 +63,7 @@ PlayerStorage::PlayerStorage(String const& storageDir) {
         it.remove();
       } else {
         try {
-          auto ef = Root::singleton().entityFactory();
-          auto player = as<Player>(ef->diskLoadEntity(EntityType::Player, entry.second));
+          auto player = as<Player>(m_entityFactory->diskLoadEntity(EntityType::Player, entry.second));
           if (player->uuid() != entry.first)
             throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", entry.first.hex()));
         } catch (StarException const& e) {
@@ -157,9 +157,6 @@ List<Uuid> PlayerStorage::playerUuidListByName(String const& name, Maybe<Uuid> e
 
 
 Json PlayerStorage::savePlayer(PlayerPtr const& player) {
-  auto entityFactory = Root::singleton().entityFactory();
-  auto versioningDatabase = Root::singleton().versioningDatabase();
-
   RecursiveMutexLocker locker(m_mutex);
 
   auto uuid = player->uuid();
@@ -170,7 +167,7 @@ Json PlayerStorage::savePlayer(PlayerPtr const& player) {
   auto newPlayerData = player->diskStore();
   if (playerCacheData != newPlayerData) {
     playerCacheData = newPlayerData;
-    VersionedJson versionedJson = entityFactory->storeVersionedJson(EntityType::Player, playerCacheData);
+    VersionedJson versionedJson = m_entityFactory->storeVersionedJson(EntityType::Player, playerCacheData);
     auto fileName = strf("{}.player", uuidFileName(uuid));
     VersionedJson::writeFile(versionedJson, File::relativeTo(m_storageDirectory, fileName));
     Logger::debug("Saved player {} to {}", Text::stripEscapeCodes(player->name()), fileName);
@@ -196,9 +193,8 @@ Json PlayerStorage::getPlayerData(Uuid const& uuid) {
 
 PlayerPtr PlayerStorage::loadPlayer(Uuid const& uuid) {
   auto playerCacheData = getPlayerData(uuid);
-  auto entityFactory = Root::singleton().entityFactory();
   try {
-    auto player = convert<Player>(entityFactory->diskLoadEntity(EntityType::Player, playerCacheData));
+    auto player = convert<Player>(m_entityFactory->diskLoadEntity(EntityType::Player, playerCacheData));
     if (player->uuid() != uuid)
       throw PlayerException(strf("Uuid mismatch in loaded player with filename uuid '{}'", uuid.hex()));
     return player;
@@ -230,8 +226,7 @@ void PlayerStorage::deletePlayer(Uuid const& uuid) {
   removeIfExists(storagePrefix, ".player");
   removeIfExists(storagePrefix, ".shipworld");
 
-  auto configuration = Root::singleton().configuration();
-  unsigned playerBackupFileCount = configuration->get("playerBackupFileCount").toUInt();
+  unsigned playerBackupFileCount = m_configuration->get("playerBackupFileCount").toUInt();
 
   for (unsigned i = 1; i <= playerBackupFileCount; ++i) {
     removeIfExists(backupPrefix, strf(".player.bak{}", i));
@@ -275,8 +270,7 @@ void PlayerStorage::moveToFront(Uuid const& uuid) {
 void PlayerStorage::backupCycle(Uuid const& uuid) {
   RecursiveMutexLocker locker(m_mutex);
 
-  auto configuration = Root::singleton().configuration();
-  unsigned playerBackupFileCount = configuration->get("playerBackupFileCount").toUInt();
+  unsigned playerBackupFileCount = m_configuration->get("playerBackupFileCount").toUInt();
   auto& fileName = uuidFileName(uuid);
 
   auto path = [&](String const& dir, String const& extension) {

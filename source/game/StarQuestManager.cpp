@@ -1,5 +1,4 @@
 #include "StarQuestManager.hpp"
-#include "StarRoot.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarItemDatabase.hpp"
@@ -11,28 +10,32 @@
 
 namespace Star {
 
-QuestManager::QuestManager(IAssetsConstPtr assets, Player* player)
-  : m_assets(std::move(assets)) {
+QuestManager::QuestManager(IAssetsConstPtr assets, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+  : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
   if (!m_assets)
     throw StarException("QuestManager requires assets service");
+  if (!m_objectDatabase)
+    throw StarException("QuestManager requires object database service");
+  if (!m_questTemplateDatabase)
+    throw StarException("QuestManager requires quest template database service");
+  if (!m_versioningDatabase)
+    throw StarException("QuestManager requires versioning database service");
 
   m_player = player;
   m_world = nullptr;
   m_trackOnWorldQuests = false;
 }
 
-QuestManager::QuestManager(IAssetsConstPtr assets, Player* player, World* world) : QuestManager(std::move(assets), player) {
+QuestManager::QuestManager(IAssetsConstPtr assets, Player* player, World* world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+  : QuestManager(std::move(assets), player, std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase)) {
   init(world);
 }
 
-QuestTemplatePtr getTemplate(String const& templateId) {
-  return Root::singleton().questTemplateDatabase()->questTemplate(templateId);
+QuestTemplatePtr getTemplate(QuestTemplateDatabaseConstPtr const& questTemplateDatabase, String const& templateId) {
+  return questTemplateDatabase->questTemplate(templateId);
 }
 
-StringMap<QuestPtr> readQuests(IAssetsConstPtr assets, Json const& json) {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
-  auto questTemplateDatabase = Root::singleton().questTemplateDatabase();
-
+StringMap<QuestPtr> readQuests(IAssetsConstPtr assets, Json const& json, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase) {
   auto validateArc = [questTemplateDatabase](QuestArcDescriptor const& arc) {
       for (auto quest : arc.quests) {
         if (!questTemplateDatabase->questTemplate(quest.templateId))
@@ -47,7 +50,7 @@ StringMap<QuestPtr> readQuests(IAssetsConstPtr assets, Json const& json) {
     Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(questPair.second), "Quest");
     auto questArc = QuestArcDescriptor::diskLoad(diskStore.get("arc"));
     if (validateArc(questArc))
-      result[questPair.first] = make_shared<Quest>(assets, questPair.second);
+      result[questPair.first] = make_shared<Quest>(assets, questPair.second, itemDatabase, objectDatabase, questTemplateDatabase, versioningDatabase);
   }
   return result;
 }
@@ -59,7 +62,7 @@ function<bool (QuestPtr const&)> questFilter(QuestState state) {
 }
 
 void QuestManager::diskLoad(Json const& quests) {
-  m_quests = readQuests(m_assets, quests.get("quests", JsonObject{}));
+  m_quests = readQuests(m_assets, quests.get("quests", JsonObject{}), m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase);
   m_trackedQuestId = quests.optString("currentQuest");
 }
 
@@ -78,6 +81,22 @@ void QuestManager::setUniverseClient(UniverseClient* client) {
 
 IAssetsConstPtr QuestManager::assets() const {
   return m_assets;
+}
+
+ItemDatabaseConstPtr QuestManager::itemDatabase() const {
+  return m_itemDatabase;
+}
+
+ObjectDatabaseConstPtr QuestManager::objectDatabase() const {
+  return m_objectDatabase;
+}
+
+QuestTemplateDatabaseConstPtr QuestManager::questTemplateDatabase() const {
+  return m_questTemplateDatabase;
+}
+
+VersioningDatabaseConstPtr QuestManager::versioningDatabase() const {
+  return m_versioningDatabase;
 }
 
 void QuestManager::init(World* world) {
@@ -110,7 +129,7 @@ bool QuestManager::canStart(QuestArcDescriptor const& questArc) const {
     return false;
 
   for (auto questDesc : questArc.quests) {
-    auto questTemplate = getTemplate(questDesc.templateId);
+    auto questTemplate = getTemplate(m_questTemplateDatabase, questDesc.templateId);
     if (!questTemplate)
       return false;
     if (auto quest = m_quests.maybe(questDesc.questId))
@@ -329,11 +348,10 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) c
     }
 
     if (!indicatorType) {
-      auto questTemplateDatabase = Root::singleton().questTemplateDatabase();
       for (auto& questArc : questGiver->offeredQuests()) {
         if (canStart(questArc) && questArc.quests.size() > 0) {
           auto& questDesc = questArc.quests[0];
-          auto questTemplate = questTemplateDatabase->questTemplate(questDesc.templateId);
+          auto questTemplate = m_questTemplateDatabase->questTemplate(questDesc.templateId);
           indicatorType = questTemplate->questGiverIndicator;
           break;
         }
@@ -434,7 +452,7 @@ void QuestManager::startInitialQuests() {
   for (auto const& questArcJson : startingQuests) {
     QuestArcDescriptor quest = QuestArcDescriptor::fromJson(questArcJson);
     if (canStart(quest))
-      offer(make_shared<Quest>(m_assets, quest, 0, m_player));
+      offer(make_shared<Quest>(m_assets, quest, 0, m_player, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase));
   }
 }
 

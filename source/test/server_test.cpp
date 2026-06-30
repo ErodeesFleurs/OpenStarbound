@@ -6,7 +6,8 @@
 using namespace Star;
 
 TEST(ServerTest, Run) {
-  UniverseServer server(Root::singleton().toStoragePath("universe"));
+  auto& root = Root::singleton();
+  UniverseServer server(root.toStoragePath("universe"), root.assets(), root.configuration(), root.itemDatabase());
   server.start();
   server.stop();
   server.join();

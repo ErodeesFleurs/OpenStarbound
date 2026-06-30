@@ -6,11 +6,13 @@
 
 namespace Star {
 
-MaterialDatabase::MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase) {
+MaterialDatabase::MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
   if (!assets)
     throw MaterialException("MaterialDatabase requires assets service");
   if (!particleDatabase)
     throw MaterialException("MaterialDatabase requires particle database");
+  if (!imageMetadataDatabase)
+    throw MaterialException("MaterialDatabase requires image metadata database");
 
   m_metaModIndex = {
       {"metamod:none", NoModId},
@@ -102,7 +104,7 @@ MaterialDatabase::MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstP
       if (matConfig.contains("renderTemplate")) {
         auto renderTemplate = assets->fetchJson(matConfig.get("renderTemplate"), file);
         auto renderParameters = matConfig.get("renderParameters");
-        material.materialRenderProfile = make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(jsonMerge(renderTemplate, renderParameters), file));
+        material.materialRenderProfile = make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(imageMetadataDatabase, jsonMerge(renderTemplate, renderParameters), file));
       }
 
       material.damageParameters =
@@ -178,7 +180,7 @@ MaterialDatabase::MaterialDatabase(AssetsConstPtr assets, ParticleDatabaseConstP
       if (modConfig.contains("renderTemplate")) {
         auto renderTemplate = assets->fetchJson(modConfig.get("renderTemplate"));
         auto renderParameters = modConfig.get("renderParameters");
-        mod.modRenderProfile = make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(jsonMerge(renderTemplate, renderParameters), file));
+        mod.modRenderProfile = make_shared<MaterialRenderProfile>(parseMaterialRenderProfile(imageMetadataDatabase, jsonMerge(renderTemplate, renderParameters), file));
       }
 
       mod.damageParameters =

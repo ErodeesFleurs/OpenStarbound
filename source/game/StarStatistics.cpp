@@ -7,8 +7,15 @@
 
 namespace Star {
 
-Statistics::Statistics(String const& storageDirectory, StatisticsServicePtr service) {
+Statistics::Statistics(String const& storageDirectory, VersioningDatabaseConstPtr versioningDatabase, StatisticsDatabaseConstPtr statisticsDatabase, StatisticsServicePtr service) {
   m_service = std::move(service);
+  m_versioningDatabase = std::move(versioningDatabase);
+  m_statisticsDatabase = std::move(statisticsDatabase);
+  if (!m_versioningDatabase)
+    throw StarException("Statistics requires versioning database service");
+  if (!m_statisticsDatabase)
+    throw StarException("Statistics requires statistics database service");
+
   m_initialized = !m_service;
   m_storageDirectory = storageDirectory;
   readStatistics();
@@ -17,7 +24,6 @@ Statistics::Statistics(String const& storageDirectory, StatisticsServicePtr serv
 }
 
 void Statistics::writeStatistics() {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
   String filename = File::relativeTo(m_storageDirectory, "statistics");
 
   Json stats = JsonObject::from(m_stats.pairs().transformed([](auto const& entry) {
@@ -28,7 +34,7 @@ void Statistics::writeStatistics() {
       { "achievements", jsonFromStringSet(m_achievements) }
     };
 
-  auto versionedStorage = versioningDatabase->makeCurrentVersionedJson("Statistics", storage);
+  auto versionedStorage = m_versioningDatabase->makeCurrentVersionedJson("Statistics", storage);
   VersionedJson::writeFile(versionedStorage, filename);
 }
 
@@ -115,8 +121,7 @@ void Statistics::processEvent(String const& name, Json const& fields) {
     m_service->reportEvent(name, fields);
   Logger::debug("Event {} {}", name, fields);
 
-  auto statisticsDatabase = Root::singleton().statisticsDatabase();
-  if (auto const& event = statisticsDatabase->event(name)) {
+  if (auto const& event = m_statisticsDatabase->event(name)) {
     runStatScript(event->scripts, event->config, "event", name, fields);
   }
 }
@@ -127,8 +132,7 @@ void Statistics::setStat(String const& name, String const& type, Json const& val
   if (m_service)
     m_service->setStat(name, type, value);
 
-  auto statisticsDatabase = Root::singleton().statisticsDatabase();
-  m_pendingAchievementChecks.addAll(statisticsDatabase->achievementsForStat(name));
+  m_pendingAchievementChecks.addAll(m_statisticsDatabase->achievementsForStat(name));
 }
 
 void Statistics::unlockAchievement(String const& name) {
@@ -141,8 +145,7 @@ void Statistics::unlockAchievement(String const& name) {
 }
 
 bool Statistics::checkAchievement(String const& achievementName) {
-  auto statisticsDatabase = Root::singleton().statisticsDatabase();
-  auto achievement = statisticsDatabase->achievement(achievementName);
+  auto achievement = m_statisticsDatabase->achievement(achievementName);
   if (achievementUnlocked(achievement->name))
     return true;
 
@@ -151,11 +154,10 @@ bool Statistics::checkAchievement(String const& achievementName) {
 }
 
 void Statistics::readStatistics() {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
   try {
     String filename = File::relativeTo(m_storageDirectory, "statistics");
     if (File::exists(filename)) {
-      Json storage = versioningDatabase->loadVersionedJson(VersionedJson::readFile(filename), "Statistics");
+      Json storage = m_versioningDatabase->loadVersionedJson(VersionedJson::readFile(filename), "Statistics");
 
       m_stats = StringMap<Stat>::from(storage.getObject("stats", {}).pairs().transformed([](auto const& entry) {
           return make_pair(entry.first, Stat::fromJson(entry.second));

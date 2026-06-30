@@ -51,10 +51,14 @@ class UniverseClient;
 using UniverseClientPtr = SharedPtr<UniverseClient>;
 class LuaRoot;
 using LuaRootPtr = SharedPtr<LuaRoot>;
+class IItemDatabase;
+using IItemDatabaseConstPtr = SharedPtr<IItemDatabase const>;
+class ObjectDatabase;
+using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 
 class UniverseClient {
 public:
-  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, IAssetsConstPtr assets = {});
+  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, IAssetsConstPtr assets, IItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
   ~UniverseClient();
 
   void setMainPlayer(PlayerPtr player);
@@ -148,6 +152,8 @@ private:
   PlayerStoragePtr m_playerStorage;
   StatisticsPtr m_statistics;
   IAssetsConstPtr m_assets;
+  IItemDatabaseConstPtr m_itemDatabase;
+  ObjectDatabaseConstPtr m_objectDatabase;
   PlayerPtr m_mainPlayer;
 
   bool m_pause;

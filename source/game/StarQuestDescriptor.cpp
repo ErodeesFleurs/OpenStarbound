@@ -271,11 +271,9 @@ bool QuestArcDescriptor::operator==(QuestArcDescriptor const& rhs) const {
   return quests == rhs.quests && stagehandUniqueId == rhs.stagehandUniqueId;
 }
 
-String questParamText(QuestParam const& parameter) {
+String questParamText(QuestParam const& parameter, IItemDatabaseConstPtr itemDatabase) {
   if (parameter.name)
     return *parameter.name;
-
-  auto itemDatabase = Root::singleton().itemDatabase();
 
   if (parameter.detail.is<QuestItem>()) {
     QuestItem item = parameter.detail.get<QuestItem>();
@@ -301,8 +299,10 @@ StringMap<RetType> transformedMapValues(StringMap<ArgType> const& map, Fun fun) 
       [fun](pair<String, ArgType> entry) { return make_pair(entry.first, fun(entry.second)); }));
 }
 
-StringMap<String> questParamTags(StringMap<QuestParam> const& parameters) {
-  return transformedMapValues(parameters, questParamText);
+StringMap<String> questParamTags(StringMap<QuestParam> const& parameters, IItemDatabaseConstPtr itemDatabase) {
+  return transformedMapValues(parameters, [itemDatabase](QuestParam const& parameter) {
+      return questParamText(parameter, itemDatabase);
+    });
 }
 
 StringMap<QuestParam> questParamsFromJson(Json const& json) {

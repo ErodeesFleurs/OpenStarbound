@@ -5,7 +5,6 @@
 #include "StarWorld.hpp"
 #include "StarAssets.hpp"
 #include "StarMaterialDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarLogging.hpp"
 #include "StarLoungeableObject.hpp"
@@ -49,8 +48,8 @@ bool ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) 
 
   if (anchors.size() == 0)
     return true;
-
-  auto materialDatabase = Root::singleton().materialDatabase();
+  if (!materialDatabase)
+    throw ObjectException("ObjectOrientation requires material database service");
 
   auto anchorValid = [&](Anchor const& anchor) -> bool {
       auto space = position + anchor.position;
@@ -116,12 +115,15 @@ Json ObjectDatabase::parseTouchDamage(IAssetsConstPtr assets, String const& path
   return touchDamage;
 }
 
-List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(IAssetsConstPtr assets, String const& path, Json const& configList, Json const& baseConfig) {
+List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
+    IAssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig) {
   if (!assets)
     throw ObjectException("ObjectDatabase::parseOrientations requires assets service");
+  if (!materialDatabase)
+    throw ObjectException("ObjectDatabase::parseOrientations requires material database service");
+  if (!imageMetadataDatabase)
+    throw ObjectException("ObjectDatabase::parseOrientations requires image metadata database service");
 
-  auto& root = Root::singleton();
-  auto materialDatabase = root.materialDatabase();
   List<ObjectOrientationPtr> res;
   JsonArray configs = configList.toArray();
 
@@ -163,6 +165,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(IAssetsConstPtr ass
   for (auto const& orientationSettings : configs) {
     auto orientation = make_shared<ObjectOrientation>();
     orientation->config = orientationSettings;
+    orientation->materialDatabase = materialDatabase;
 
     if (orientationSettings.contains("imageLayers")) {
       for (Json layer : orientationSettings.get("imageLayers").iterateArray()) {
@@ -206,7 +209,7 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(IAssetsConstPtr ass
 
       for (auto const& layer : orientation->imageLayers) {
         if (layer.isImage())
-          spaceScanSpaces.addAll(root.imageMetadataDatabase()->imageSpaces(
+          spaceScanSpaces.addAll(imageMetadataDatabase->imageSpaces(
             AssetPath::join(layer.imagePart().image).replaceTags(imageKeys, true, "default"),
             imagePosition + (layer.position + layer.imagePart().transformation.transformVec2(Vec2F())) * TilePixels,
             orientationSettings.getDouble("spaceScan"),
@@ -321,10 +324,20 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(IAssetsConstPtr ass
   return res;
 }
 
-ObjectDatabase::ObjectDatabase(AssetsConstPtr assets)
-  : m_assets(std::move(assets)), m_rebuilder(make_shared<Rebuilder>(m_assets, "object")) {
+ObjectDatabase::ObjectDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, function<ItemDatabaseConstPtr()> itemDatabase)
+  : m_assets(std::move(assets)),
+    m_materialDatabase(std::move(materialDatabase)),
+    m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+    m_itemDatabase(std::move(itemDatabase)),
+    m_rebuilder(make_shared<Rebuilder>(m_assets, "object")) {
   if (!m_assets)
     throw ObjectException("ObjectDatabase requires assets service");
+  if (!m_materialDatabase)
+    throw ObjectException("ObjectDatabase requires material database service");
+  if (!m_imageMetadataDatabase)
+    throw ObjectException("ObjectDatabase requires image metadata database service");
+  if (!m_itemDatabase)
+    throw ObjectException("ObjectDatabase requires item database provider");
 
   auto& files = m_assets->scanExtension("object");
   m_assets->queueJsons(files);
@@ -378,7 +391,7 @@ ObjectPtr ObjectDatabase::createObject(String const& objectName, Json const& par
   } else if (config->type == "loungeable") {
     return make_shared<LoungeableObject>(config, parameters);
   } else if (config->type == "container") {
-    return make_shared<ContainerObject>(config, parameters);
+    return make_shared<ContainerObject>(config, parameters, m_itemDatabase());
   } else if (config->type == "farmable") {
     return make_shared<FarmableObject>(config, parameters);
   } else if (config->type == "teleporter") {
@@ -465,6 +478,8 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
     auto objectConfig = make_shared<ObjectConfig>();
     objectConfig->path = path;
     objectConfig->assets = m_assets;
+    objectConfig->materialDatabase = m_materialDatabase;
+    objectConfig->imageMetadataDatabase = m_imageMetadataDatabase;
     objectConfig->config = config;
 
     objectConfig->name = config.getString("objectName");
@@ -582,7 +597,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
         objectConfig->animationConfig = jsonMerge(objectConfig->animationConfig, m_assets->fetchJson(customConfig, path));
     }
 
-    objectConfig->orientations = ObjectDatabase::parseOrientations(m_assets, path, config.get("orientations"), config);
+    objectConfig->orientations = ObjectDatabase::parseOrientations(m_assets, m_materialDatabase, m_imageMetadataDatabase, path, config.get("orientations"), config);
 
     // For compatibility, allow particle emitter specs in the base config as
     // well as in individual orientations.

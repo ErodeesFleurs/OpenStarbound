@@ -1,5 +1,4 @@
 #include "StarArmorWearer.hpp"
-#include "StarRoot.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
@@ -16,7 +15,9 @@
 
 namespace Star {
 
-ArmorWearer::ArmorWearer() : m_lastNude(true) {
+ArmorWearer::ArmorWearer(ItemDatabaseConstPtr itemDatabase)
+  : m_itemDatabase(std::move(itemDatabase)),
+    m_lastNude(true) {
   for (size_t i = 0; i != m_armors.size(); ++i) {
     auto& armor = m_armors[i];
     armor.isCosmetic = i >= 4;
@@ -177,9 +178,8 @@ Json ArmorWearer::diskStore() const {
 }
 
 void ArmorWearer::diskLoad(Json const& diskStore) {
-  auto itemDb = Root::singleton().itemDatabase();
   auto load = [&](uint8_t slot, String const& id) {
-    if (auto item = as<ArmorItem>(itemDb->diskLoad(diskStore.get(id, {}))))
+    if (auto item = as<ArmorItem>(m_itemDatabase->diskLoad(diskStore.get(id, {}))))
       setItem(slot, item);
   };
 
@@ -323,16 +323,13 @@ ItemDescriptor ArmorWearer::cosmeticItemDescriptor(uint8_t slot) const {
 }
 
 void ArmorWearer::netElementsNeedLoad(bool) {
-  auto itemDatabase = Root::singleton().itemDatabase();
-
   for (auto& armor : m_armors) {
     if (armor.netState.pullUpdated())
-      armor.needsStore |= armor.needsSync |= itemDatabase->loadItem(armor.netState.get(), armor.item);
+      armor.needsStore |= armor.needsSync |= m_itemDatabase->loadItem(armor.netState.get(), armor.item);
   }
 }
 
 void ArmorWearer::netElementsNeedStore() {
-  auto itemDatabase = Root::singleton().itemDatabase();
   for (auto& armor : m_armors) {
     if (armor.needsStore) {
       armor.netState.set(armor.visible ? itemSafeDescriptor(armor.item) : ItemDescriptor());

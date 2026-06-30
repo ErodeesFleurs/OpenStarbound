@@ -144,7 +144,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   if (auto countWidget = fetchChild<LabelWidget>("count"))
     countWidget->setText(countWidget->text().replace("<slots>", toString(container->containerSize())));
 
-  m_itemBag = make_shared<ItemBag>(container->containerSize());
+  m_itemBag = make_shared<ItemBag>(container->containerSize(), m_itemDatabase);
   auto items = container->containerItems();
 
   fetchChild<ItemGridWidget>("itemGrid")->setItemBag(m_itemBag);

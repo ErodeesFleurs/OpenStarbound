@@ -1,32 +1,28 @@
 #include "StarWorldPainter.hpp"
 #include "StarAnimation.hpp"
-#include "StarRoot.hpp"
+#include "StarException.hpp"
 #include "StarConfiguration.hpp"
 #include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
 
-namespace {
-
-AssetsConstPtr worldPainterAssets(AssetsConstPtr assets) {
-  return assets ? std::move(assets) : Root::singleton().assets();
-}
-
-IConfigurationPtr worldPainterConfiguration(IConfigurationPtr configuration) {
-  return configuration ? std::move(configuration) : Root::singleton().configuration();
-}
-
-}
-
-WorldPainter::WorldPainter(AssetsConstPtr assets, IConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener)
-  : m_assets(worldPainterAssets(std::move(assets))),
-    m_configuration(worldPainterConfiguration(std::move(configuration))),
-    m_registerReloadListener(std::move(registerReloadListener)) {
+WorldPainter::WorldPainter(AssetsConstPtr assets, IConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase)
+  : m_assets(std::move(assets)),
+    m_configuration(std::move(configuration)),
+    m_registerReloadListener(std::move(registerReloadListener)),
+    m_materialDatabase(std::move(materialDatabase)),
+    m_liquidsDatabase(std::move(liquidsDatabase)) {
+  if (!m_assets)
+    throw StarException("WorldPainter requires assets service");
+  if (!m_configuration)
+    throw StarException("WorldPainter requires configuration service");
   if (!m_registerReloadListener)
-    m_registerReloadListener = [](ListenerWeakPtr reloadListener) {
-      Root::singleton().registerReloadListener(std::move(reloadListener));
-    };
+    throw StarException("WorldPainter requires reload listener registrar service");
+  if (!m_materialDatabase)
+    throw StarException("WorldPainter requires material database service");
+  if (!m_liquidsDatabase)
+    throw StarException("WorldPainter requires liquids database service");
 
   m_camera.setScreenSize({800, 600});
   m_camera.setCenterWorldPosition(Vec2F());
@@ -48,7 +44,7 @@ void WorldPainter::renderInit(RendererPtr renderer) {
   m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
   m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup, m_assets, m_registerReloadListener);
-  m_tilePainter = make_shared<TilePainter>(m_assets, m_renderer);
+  m_tilePainter = make_shared<TilePainter>(m_assets, m_renderer, m_materialDatabase, m_liquidsDatabase);
   m_drawablePainter = make_shared<DrawablePainter>(m_renderer, make_shared<AssetTextureGroup>(textureGroup, m_assets, m_registerReloadListener));
   m_environmentPainter = make_shared<EnvironmentPainter>(m_renderer, m_assets, m_registerReloadListener);
 }
