@@ -1,26 +1,22 @@
-find_package(Qt5Core)
-find_package(Qt5Widgets)
-
-set(CMAKE_INCLUDE_CURRENT_DIR ON)
-set(CMAKE_AUTOMOC ON)
-
-set(star_mod_uploader_HEADERS
-    StarStringConversion.hpp
-    StarModUploader.hpp
-    StarSPlainTextEdit.hpp
-  )
-
-set(star_mod_uploader_SOURCES
-    StarModUploader.cpp
-    StarSPlainTextEdit.cpp
-    main.cpp
-  )
+find_package(Qt5 REQUIRED COMPONENTS Core Gui Widgets)
 
 add_executable(mod_uploader WIN32
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base>
-  ${star_mod_uploader_HEADERS} ${star_mod_uploader_SOURCES})
-target_include_directories(mod_uploader PRIVATE ${STAR_BASE_INCLUDES} ${STAR_CORE_INCLUDES} ${STAR_EXTERN_INCLUDES})
-target_link_libraries(mod_uploader PRIVATE star_build_definitions star_external_libraries ${STEAM_API_LIBRARY} Qt5::Core Qt5::Gui Qt5::Widgets)
+  StarStringConversion.hpp
+  StarModUploader.hpp
+  StarSPlainTextEdit.hpp
+  StarModUploader.cpp
+  StarSPlainTextEdit.cpp
+  main.cpp)
 
-set(CMAKE_AUTOMOC OFF)
-set(CMAKE_INCLUDE_CURRENT_DIR OFF)
+set_target_properties(mod_uploader PROPERTIES AUTOMOC ON)
+target_include_directories(mod_uploader PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
+target_link_libraries(mod_uploader PRIVATE
+  star_extern
+  star_core
+  star_base
+  star_build_definitions
+  star_external_libraries
+  SteamApi::SteamApi
+  Qt5::Core
+  Qt5::Gui
+  Qt5::Widgets)

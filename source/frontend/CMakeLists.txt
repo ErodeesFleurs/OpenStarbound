@@ -1,4 +1,5 @@
-set(star_frontend_HEADERS
+add_library(star_frontend OBJECT)
+target_sources(star_frontend PRIVATE
     StarActionBar.hpp
     StarAiInterface.hpp
     StarBaseScriptPane.hpp
@@ -50,9 +51,6 @@ set(star_frontend_HEADERS
     StarVoiceLuaBindings.hpp
     StarVoiceSettingsMenu.hpp
     StarWireInterface.hpp
-  )
-
-set(star_frontend_SOURCES
     StarActionBar.cpp
     StarAiInterface.cpp
     StarBaseScriptPane.cpp
@@ -106,7 +104,6 @@ set(star_frontend_SOURCES
     StarWireInterface.cpp
   )
 
-add_library(star_frontend OBJECT ${star_frontend_SOURCES} ${star_frontend_HEADERS})
 target_compile_features(star_frontend PUBLIC cxx_std_20)
 target_include_directories(star_frontend PUBLIC
     ${STAR_FRONTEND_INCLUDES}

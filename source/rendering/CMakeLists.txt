@@ -1,4 +1,5 @@
-set(star_rendering_HEADERS
+add_library(star_rendering OBJECT)
+target_sources(star_rendering PRIVATE
       StarAnchorTypes.hpp
       StarAssetTextureGroup.hpp
       StarDrawablePainter.hpp
@@ -7,9 +8,6 @@ set(star_rendering_HEADERS
       StarTextPainter.hpp
       StarTilePainter.hpp
       StarWorldPainter.hpp
-    )
-
-set(star_rendering_SOURCES
       StarAnchorTypes.cpp
       StarAssetTextureGroup.cpp
       StarDrawablePainter.cpp
@@ -20,7 +18,6 @@ set(star_rendering_SOURCES
       StarWorldPainter.cpp
     )
 
-add_library(star_rendering OBJECT ${star_rendering_SOURCES} ${star_rendering_HEADERS})
 target_compile_features(star_rendering PUBLIC cxx_std_20)
 target_include_directories(star_rendering PUBLIC
     ${STAR_RENDERING_INCLUDES}

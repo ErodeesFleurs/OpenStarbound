@@ -1,4 +1,5 @@
-set(star_windowing_HEADERS
+add_library(star_windowing OBJECT)
+target_sources(star_windowing PRIVATE
         StarButtonGroup.hpp
         StarButtonWidget.hpp
         StarCanvasWidget.hpp
@@ -29,9 +30,6 @@ set(star_windowing_HEADERS
         StarWidget.hpp
         StarWidgetLuaBindings.hpp
         StarWidgetParsing.hpp
-    )
-
-set(star_windowing_SOURCES
         StarButtonGroup.cpp
         StarButtonWidget.cpp
         StarCanvasWidget.cpp
@@ -64,7 +62,6 @@ set(star_windowing_SOURCES
         StarWidgetParsing.cpp
     )
 
-add_library(star_windowing OBJECT ${star_windowing_SOURCES} ${star_windowing_HEADERS})
 target_compile_features(star_windowing PUBLIC cxx_std_20)
 target_include_directories(star_windowing PUBLIC
     ${STAR_WINDOWING_INCLUDES}

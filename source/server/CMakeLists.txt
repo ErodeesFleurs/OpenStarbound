@@ -1,41 +1,24 @@
-set(star_server_HEADERS
-    StarServerQueryThread.hpp
-    StarServerRconClient.hpp
-    StarServerRconThread.hpp
-  )
-
-set(star_server_SOURCES
-    StarServerQueryThread.cpp
-    StarServerRconClient.cpp
-    StarServerRconThread.cpp
-    main.cpp
-  )
-
-if(STAR_SYSTEM_WINDOWS)
-  set(star_server_RESOURCES
-      starbound_server.rc
-    )
-endif()
-
 add_executable(starbound_server
-  $<TARGET_OBJECTS:star_extern> $<TARGET_OBJECTS:star_core> $<TARGET_OBJECTS:star_base> $<TARGET_OBJECTS:star_game>
-  ${star_server_HEADERS} ${star_server_SOURCES} ${star_server_RESOURCES})
+  StarServerQueryThread.hpp
+  StarServerRconClient.hpp
+  StarServerRconThread.hpp
+  StarServerQueryThread.cpp
+  StarServerRconClient.cpp
+  StarServerRconThread.cpp
+  main.cpp)
+if(STAR_SYSTEM_WINDOWS)
+  target_sources(starbound_server PRIVATE starbound_server.rc)
+endif()
 target_compile_features(starbound_server PRIVATE cxx_std_20)
-target_include_directories(starbound_server PRIVATE
-    ${STAR_GAME_INCLUDES}
-    ${STAR_PLATFORM_INCLUDES}
-    ${STAR_BASE_INCLUDES}
-    ${STAR_CORE_INCLUDES}
-    ${STAR_EXTERN_INCLUDES})
 
 if(STAR_PRECOMPILED_HEADERS)
   target_precompile_headers(starbound_server REUSE_FROM star_core)
 endif()
 
 if(STAR_SYSTEM_MACOS)
-  set_target_properties(starbound_server PROPERTIES LINK_FLAGS "-Wl,-rpath,'@executable_path'")
+  target_link_options(starbound_server PRIVATE "LINKER:-rpath,@executable_path")
 elseif(UNIX)
-  set_target_properties(starbound_server PROPERTIES LINK_FLAGS "-Wl,--export-dynamic,-rpath,'$ORIGIN'")
+  target_link_options(starbound_server PRIVATE "LINKER:--export-dynamic,-rpath,$ORIGIN")
 endif()
 
-target_link_libraries(starbound_server PRIVATE star_build_definitions star_external_libraries)
+target_link_libraries(starbound_server PRIVATE star_extern star_core star_base star_game star_build_definitions star_external_libraries)

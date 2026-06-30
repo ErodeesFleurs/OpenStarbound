@@ -8,7 +8,6 @@ set(CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/../cmake)
 set(CMAKE_CONFIGURATION_TYPES Debug RelWithAsserts RelWithDebInfo Release)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON CACHE INTERNAL "")
-set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "" CACHE STRING "" FORCE)
 
 if(STAR_USE_COMPILER_CACHE)
   find_program(SCCACHE_PATH sccache)
@@ -83,15 +82,15 @@ endif()
 if(NOT DEFINED STAR_SYSTEM)
   if(WIN32)
     set(STAR_SYSTEM "windows")
-  elseif(APPLE AND ${CMAKE_SYSTEM_NAME} STREQUAL "Darwin")
+  elseif(APPLE AND CMAKE_SYSTEM_NAME STREQUAL "Darwin")
     set(STAR_SYSTEM "macos")
-  elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Linux")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
     set(STAR_SYSTEM "linux")
-  elseif(${CMAKE_SYSTEM_NAME} STREQUAL "FreeBSD")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "FreeBSD")
     set(STAR_SYSTEM "freebsd")
-  elseif(${CMAKE_SYSTEM_NAME} STREQUAL "NetBSD")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "NetBSD")
     set(STAR_SYSTEM "netbsd")
-  elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Haiku")
+  elseif(CMAKE_SYSTEM_NAME STREQUAL "Haiku")
     set(STAR_SYSTEM "haiku")
   elseif(UNIX)
     set(STAR_SYSTEM "unix")
@@ -118,7 +117,7 @@ if(NOT DEFINED STAR_COMPILER)
 
   if(CMAKE_C_COMPILER_ID STREQUAL "Clang" OR CMAKE_C_COMPILER_ID STREQUAL "AppleClang")
     set(STAR_COMPILER "clang")
-  elseif(CMAKE_COMPILER_IS_GNUC)
+  elseif(CMAKE_C_COMPILER_ID STREQUAL "GNU")
     set(STAR_COMPILER "gnu")
   elseif(MSVC)
     set(STAR_COMPILER "msvc")
@@ -321,8 +320,9 @@ if(STAR_COMPILER_GNU)
   star_clear_cmake_config_flags()
 
   if(STAR_SYSTEM_FAMILY_WINDOWS)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -mthreads")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -mthreads")
+    star_add_c_compile_options(-mthreads)
+    star_add_cxx_compile_options(-mthreads)
+    target_link_options(star_build_options INTERFACE -mthreads)
   else()
     target_compile_definitions(star_build_definitions INTERFACE _REENTRANT)
     if(STAR_USE_LLD)
@@ -358,7 +358,8 @@ elseif(STAR_COMPILER_CLANG)
   star_clear_cmake_config_flags()
 
   if(STAR_SYSTEM_MACOS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    star_add_cxx_compile_options(-stdlib=libc++)
+    target_link_options(star_build_options INTERFACE -stdlib=libc++)
     target_link_options(star_build_options INTERFACE -Wl,-export_dynamic)
     set(CMAKE_XCODE_ATTRIBUTE_CLANG_CXX_LIBRARY "libc++")
   else()
@@ -412,35 +413,23 @@ elseif(STAR_COMPILER_MSVC)
 
   star_add_c_compile_options(/nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
   star_add_cxx_compile_options(/nologo /MP /EHsc /bigobj /wd4996 /wd4351 /wd4800 /wd4244 /wd4305 /wd4267 /wd4456 /wd4503 /wd4250 /wd4624)
+  star_clear_cmake_config_flags()
 
   if(STAR_ENABLE_STATIC_MSVC_RUNTIME)
-    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} /MT")
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /MT")
+    set(CMAKE_MSVC_RUNTIME_LIBRARY MultiThreaded)
   endif()
 
-  set(CMAKE_C_FLAGS_DEBUG "/Z7 /Od")
-  set(CMAKE_CXX_FLAGS_DEBUG "/Z7 /Od")
-
-  set(CMAKE_C_FLAGS_RELWITHASSERTS "/Ox /fp:fast /GA /GS- /Z7 /Gy")
-  set(CMAKE_CXX_FLAGS_RELWITHASSERTS "/Ox /fp:fast /GA /GS- /Z7 /Gy")
-
-  set(CMAKE_C_FLAGS_RELWITHDEBINFO "/Ox /fp:fast /GA /GS- /Z7 /Gy /DNDEBUG")
-  set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/Ox /fp:fast /GA /GS- /Z7 /Gy /DNDEBUG")
-
-  set(CMAKE_C_FLAGS_RELEASE "/Ox /fp:fast /GA /GS- /Gy /DNDEBUG")
-  set(CMAKE_CXX_FLAGS_RELEASE "/Ox /fp:fast /GA /GS- /Gy /DNDEBUG")
+  star_add_config_compile_options(Debug /Z7 /Od)
+  star_add_config_compile_options(RelWithAsserts /Ox /fp:fast /GA /GS- /Z7 /Gy)
+  star_add_config_compile_options(RelWithDebInfo /Ox /fp:fast /GA /GS- /Z7 /Gy /DNDEBUG)
+  star_add_config_compile_options(Release /Ox /fp:fast /GA /GS- /Gy /DNDEBUG)
 
   if(STAR_ARCHITECTURE_I386)
     # Assume all 32 bit target cpus support MMX, SSE, and SSE2
 
-    set(CMAKE_C_FLAGS_RELWITHASSERTS "${CMAKE_C_FLAGS_RELWITHASSERTS} /arch:SSE2")
-    set(CMAKE_CXX_FLAGS_RELWITHASSERTS "${CMAKE_CXX_FLAGS_RELWITHASSERTS} /arch:SSE2")
-
-    set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} /arch:SSE2")
-    set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /arch:SSE2")
-
-    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} /arch:SSE2")
-    set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} /arch:SSE2")
+    star_add_config_compile_options(RelWithAsserts /arch:SSE2)
+    star_add_config_compile_options(RelWithDebInfo /arch:SSE2)
+    star_add_config_compile_options(Release /arch:SSE2)
   endif()
 
   target_compile_definitions(star_build_definitions INTERFACE UNICODE _UNICODE NOMINMAX)
@@ -460,9 +449,7 @@ endif()
 
 # Set other global build settings based on environment...
 
-if(STAR_SYSTEM_MACOS)
-  set(CMAKE_MODULE_LINKER_FLAGS "-flat_namespace -undefined suppress")
-elseif(STAR_SYSTEM_WINDOWS)
+if(STAR_SYSTEM_WINDOWS)
   set(CMAKE_RC_COMPILER_INIT windres)
 
   enable_language(RC)
@@ -478,10 +465,10 @@ if(STAR_COMPILER STREQUAL "msvc")
   # /OPT:REF           - Eliminates functions and data that are never referenced
   # /OPT:ICF           - Performs identical COMDAT folding
   # /PDBCompress       - Hint to windows that it should compress the resulting PDB files
-  set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /largeaddressaware /OPT:REF /OPT:ICF /PDBCompress")
+  target_link_options(star_build_options INTERFACE /largeaddressaware /OPT:REF /OPT:ICF /PDBCompress)
 
   # Make sure RelWithAsserts has debugging enabled
-  set(CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS "${CMAKE_EXE_LINKER_FLAGS_RELWITHASSERTS} /DEBUG")
+  target_link_options(star_build_options INTERFACE $<$<CONFIG:RelWithAsserts>:/DEBUG>)
 endif()
 
 add_library(star_system_libraries INTERFACE)
@@ -534,27 +521,29 @@ find_package(OggVorbis REQUIRED)
 find_package(zstd CONFIG REQUIRED)
 find_package(imgui CONFIG REQUIRED)
 if(NOT STAR_SYSTEM_HAIKU)
-	find_package(Opus CONFIG REQUIRED)
-	find_package(re2 CONFIG REQUIRED)
+  find_package(Opus CONFIG REQUIRED)
+  find_package(re2 CONFIG REQUIRED)
 endif()
 target_include_directories(star_system_includes SYSTEM INTERFACE
     ${FREETYPE_INCLUDE_DIRS}
-    ${OGGVORBIS_INCLUDE_DIR}
+    ${OGGVORBIS_INCLUDE_DIRS}
 )
 
 target_link_libraries(star_external_libraries INTERFACE
     ZLIB::ZLIB
     PNG::PNG
     cpr::cpr
-    $<IF:$<TARGET_EXISTS:Freetype::Freetype>,Freetype::Freetype,freetype>
-    $<IF:$<TARGET_EXISTS:zstd::libzstd_shared>,zstd::libzstd_shared,zstd::libzstd_static>
-    $<IF:$<TARGET_EXISTS:Opus::opus>,Opus::opus,opus>
-    $<IF:$<TARGET_EXISTS:re2::re2>,re2::re2,re2>
+    Freetype::Freetype
+    zstd::libzstd
     imgui::imgui
-    ${VORBISFILE_LIBRARY}
-    ${VORBIS_LIBRARY}
-    ${OGG_LIBRARY}
+    OggVorbis::OggVorbis
 )
+
+if(NOT STAR_SYSTEM_HAIKU)
+  target_link_libraries(star_external_libraries INTERFACE Opus::opus re2::re2)
+else()
+  target_link_libraries(star_external_libraries INTERFACE opus re2)
+endif()
 
 pkg_check_modules(PKG_WAYLAND "wayland-client>=1.18" wayland-egl wayland-cursor egl "xkbcommon>=0.5.0")
 if(PKG_WAYLAND_FOUND)
@@ -582,10 +571,10 @@ if(STAR_BUILD_GUI)
   find_package(OpenGL REQUIRED)
   find_package(GLEW REQUIRED)
 
-  target_include_directories(star_system_includes SYSTEM INTERFACE ${GLEW_INCLUDE_DIR})
+  target_include_directories(star_system_includes SYSTEM INTERFACE ${GLEW_INCLUDE_DIRS})
   target_link_libraries(star_external_gui_libraries INTERFACE
-      ${OPENGL_LIBRARY}
-      $<IF:$<TARGET_EXISTS:GLEW::glew_s>,GLEW::glew_s,GLEW>
+    OpenGL::GL
+    GLEW::GLEW
   )
 
   if(STAR_SYSTEM_MACOS)
@@ -595,12 +584,12 @@ if(STAR_BUILD_GUI)
   if(STAR_ENABLE_STEAM_INTEGRATION)
     find_package(SteamApi REQUIRED)
     target_include_directories(star_system_includes SYSTEM INTERFACE ${STEAM_API_INCLUDE_DIR})
-    target_link_libraries(star_external_gui_libraries INTERFACE ${STEAM_API_LIBRARY})
+    target_link_libraries(star_external_gui_libraries INTERFACE SteamApi::SteamApi)
   endif()
 
   if(STAR_ENABLE_DISCORD_INTEGRATION)
     find_package(DiscordApi REQUIRED)
-    target_link_libraries(star_external_gui_libraries INTERFACE ${DISCORD_API_LIBRARY})
+    target_link_libraries(star_external_gui_libraries INTERFACE DiscordApi::DiscordApi)
   endif()
 endif()
 
@@ -618,7 +607,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/../dist)
 foreach(OUTPUTCONFIG ${CMAKE_CONFIGURATION_TYPES})
   string(TOUPPER ${OUTPUTCONFIG} OUTPUTCONFIG)
   set(CMAKE_RUNTIME_OUTPUT_DIRECTORY_${OUTPUTCONFIG} ${PROJECT_SOURCE_DIR}/../dist)
-endforeach(OUTPUTCONFIG CMAKE_CONFIGURATION_TYPES)
+endforeach()
 
 # External code included with starbound source, which core depends on
 set(STAR_EXTERN_INCLUDES ${PROJECT_SOURCE_DIR}/extern)

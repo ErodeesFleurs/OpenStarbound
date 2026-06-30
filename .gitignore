@@ -49,3 +49,8 @@ _deps
 
 # Built Visual Studio Code Extensions
 *.vsix
+
+# Agent
+.agents/
+.codex/
+.opencode/
