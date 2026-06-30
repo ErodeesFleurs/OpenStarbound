@@ -50,6 +50,7 @@ namespace Star {
   }
 
   void free(void* ptr, size_t size) {
+    (void)size;
     ::free(ptr);
   }
 #endif
@@ -157,4 +158,4 @@ void operator delete[](void* ptr, std::size_t size) noexcept {
   Star::free(ptr, size);
 }
 
-#endif 
+#endif

@@ -60,6 +60,8 @@ local function pasteItem()
 end
 
 function module.update()
+  if not input then return end
+
   if input.bindDown("opensb", "editingCopyItemJson") then
     copyItem()
   end

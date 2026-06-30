@@ -1,4 +1,7 @@
 include($ENV{VCPKG_ROOT}/scripts/toolchains/linux.cmake)
 
-set(CMAKE_C_COMPILER "/usr/bin/clang")
-set(CMAKE_CXX_COMPILER "/usr/bin/clang++")
+find_program(STAR_CLANG_C_COMPILER NAMES "$ENV{CC}" clang REQUIRED)
+find_program(STAR_CLANG_CXX_COMPILER NAMES "$ENV{CXX}" clang++ REQUIRED)
+
+set(CMAKE_C_COMPILER "${STAR_CLANG_C_COMPILER}")
+set(CMAKE_CXX_COMPILER "${STAR_CLANG_CXX_COMPILER}")

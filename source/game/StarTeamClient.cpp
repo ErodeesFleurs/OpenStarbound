@@ -49,7 +49,7 @@ void TeamClient::invitePlayer(String const& playerName) {
   request["inviteeName"] = playerName;
   request["inviterUuid"] = m_clientContext->playerUuid().hex();
   request["inviterName"] = m_mainPlayer->name();
-  invokeRemote("team.invite", request, [=](Json response) {
+  invokeRemote("team.invite", request, [=, this](Json response) {
     if (!response)
       m_pendingInviteResults.append(make_pair(playerName, true));
     else if (response == "inviteeNotFound")

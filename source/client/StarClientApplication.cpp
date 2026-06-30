@@ -452,14 +452,14 @@ void ClientApplication::render() {
       renderer->switchEffectConfig("world");
       auto clientStart = totalStart;
       worldClient->render(m_renderData, TilePainter::BorderTileSize);
-      LogMap::set("client_render_world_client", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - clientStart));
+      LogMap::set("client_render_world_client", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - clientStart));
 
       auto paintStart = Time::monotonicMicroseconds();
       m_worldPainter->render(m_renderData, [&]() -> bool {
         return worldClient->waitForLighting(&m_renderData);
       });
-      LogMap::set("client_render_world_painter", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - paintStart));
-      LogMap::set("client_render_world_total", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - totalStart));
+      LogMap::set("client_render_world_painter", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - paintStart));
+      LogMap::set("client_render_world_total", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - totalStart));
       
       auto size = Vec2F(renderer->screenSize());
       auto quad = renderFlatRect(RectF::withSize(size / -2, size), Vec4B::filled(0), 0.0f);
@@ -479,7 +479,7 @@ void ClientApplication::render() {
     m_mainInterface->renderInWorldElements();
     m_mainInterface->render();
     m_cinematicOverlay->render();
-    LogMap::set("client_render_interface", strf(u8"{:05d}\u00b5s", Time::monotonicMicroseconds() - start));
+    LogMap::set("client_render_interface", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - start));
   }
 
   if (!m_errorScreen->accepted())
@@ -820,7 +820,7 @@ void ClientApplication::changeState(MainAppState newState) {
       const auto paneManager = mainInterface->paneManager();
       const auto httpTrustDialog = paneManager->registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
 
-      httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool remember) {
+      httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool) {
         const bool allowed = (reply == HttpTrustReply::Allow);
         LuaBindings::handleHttpTrustReply(domain, allowed);
       });
@@ -1296,17 +1296,21 @@ void ClientApplication::updateRunning(float dt) {
       m_universeServer->setPause(m_mainInterface->escapeDialogOpen());
     }
 
-    Vec2F aimPosition = m_player->aimPosition();
-    float fps = app->renderFps();
-    LogMap::set("client_render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / app->renderFps()) * 1000.0f));
-    LogMap::set("client_update_rate", strf("{:4.2f}Hz", app->updateRate()));
-    LogMap::set("player_pos", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->position()[0], m_player->position()[1]));
-    LogMap::set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
-    LogMap::set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));
-    if (auto world = m_universeClient->worldClient()) {
-      auto aim = Vec2I::floor(aimPosition);
-      LogMap::set("tile_liquid_level", toString(world->liquidLevel(aim).level));
-      LogMap::set("tile_dungeon_id", world->isTileProtected(aim) ? strf("^red;{}", world->dungeonId(aim)) : toString(world->dungeonId(aim)));
+    m_statusLogTimer += dt;
+    if (m_statusLogTimer >= 0.25f) {
+      m_statusLogTimer = 0.0f;
+      Vec2F aimPosition = m_player->aimPosition();
+      float fps = app->renderFps();
+      LogMap::set("client_render_rate", strf("{:4.2f} FPS ({:4.2f}ms)", fps, (1.0f / app->renderFps()) * 1000.0f));
+      LogMap::set("client_update_rate", strf("{:4.2f}Hz", app->updateRate()));
+      LogMap::set("player_pos", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->position()[0], m_player->position()[1]));
+      LogMap::set("player_vel", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", m_player->velocity()[0], m_player->velocity()[1]));
+      LogMap::set("player_aim", strf("[ ^#f45;{:4.2f}^reset;, ^#49f;{:4.2f}^reset; ]", aimPosition[0], aimPosition[1]));
+      if (auto world = m_universeClient->worldClient()) {
+        auto aim = Vec2I::floor(aimPosition);
+        LogMap::set("tile_liquid_level", toString(world->liquidLevel(aim).level));
+        LogMap::set("tile_dungeon_id", world->isTileProtected(aim) ? strf("^red;{}", world->dungeonId(aim)) : toString(world->dungeonId(aim)));
+      }
     }
 
     if (m_mainInterface->currentState() == MainInterface::ReturnToTitle)

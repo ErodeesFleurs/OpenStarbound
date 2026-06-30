@@ -131,6 +131,7 @@ public:
   iterator erase(const_iterator first, const_iterator last);
   size_t erase(key_type const& key);
 
+  bool contains(key_type const& key) const;
   size_t count(key_type const& key) const;
   const_iterator find(key_type const& key) const;
   iterator find(key_type const& key);
@@ -435,11 +436,13 @@ size_t FlatHashSet<Key, Hash, Equals, Allocator>::erase(key_type const& key) {
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>
+bool FlatHashSet<Key, Hash, Equals, Allocator>::contains(key_type const& key) const {
+  return m_table.find(key) != m_table.end();
+}
+
+template <typename Key, typename Hash, typename Equals, typename Allocator>
 size_t FlatHashSet<Key, Hash, Equals, Allocator>::count(Key const& key) const {
-  if (m_table.find(key) != m_table.end())
-    return 1;
-  else
-    return 0;
+  return contains(key) ? 1 : 0;
 }
 
 template <typename Key, typename Hash, typename Equals, typename Allocator>

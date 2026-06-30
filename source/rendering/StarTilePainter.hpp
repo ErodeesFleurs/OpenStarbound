@@ -92,6 +92,8 @@ private:
 
   RendererPtr m_renderer;
   TextureGroupPtr m_textureGroup;
+  AssetsConstPtr m_assets;
+  MaterialDatabaseConstPtr m_materialDatabase;
 
   HashTtlCache<TextureKey, TexturePtr, TextureKeyHash> m_textureCache;
   HashTtlCache<pair<Vec2I, ChunkHash>, shared_ptr<TerrainChunk const>> m_terrainChunkCache;

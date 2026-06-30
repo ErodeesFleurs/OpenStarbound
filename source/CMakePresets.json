@@ -13,7 +13,7 @@
       "generator": "Ninja",
       "toolchainFile": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake",
       "cacheVariables": {
-        "CMAKE_CXX_STANDARD": "17",
+        "CMAKE_CXX_STANDARD": "20",
         "CMAKE_INSTALL_PREFIX": "${sourceParentDir}/install",
         "VCPKG_OVERLAY_TRIPLETS": "${sourceParentDir}/triplets",
         "CMAKE_VERBOSE_MAKEFILE": true,
@@ -96,6 +96,47 @@
     },
     {
       "inherits": "linux-release",
+      "name": "linux-release-gcc",
+      "displayName": "Linux GCC x64",
+      "binaryDir": "${sourceParentDir}/build/linux-release-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++",
+        "VCPKG_TARGET_TRIPLET": "x64-linux-mixed",
+        "STAR_USE_JEMALLOC": true
+      }
+    },
+    {
+      "inherits": "linux-release-gcc",
+      "name": "linux-debug-gcc",
+      "displayName": "Linux GCC x64 Debug",
+      "binaryDir": "${sourceParentDir}/build/linux-debug-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "inherits": "linux-release-gcc",
+      "name": "linux-optimized-gcc",
+      "displayName": "Linux GCC x64 Release",
+      "binaryDir": "${sourceParentDir}/build/linux-optimized-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "inherits": "linux-release-gcc",
+      "name": "linux-profile-gcc",
+      "displayName": "Linux GCC x64 Profiling",
+      "binaryDir": "${sourceParentDir}/build/linux-profile-gcc",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "STAR_ENABLE_FRAME_POINTERS": true
+      }
+    },
+    {
+      "inherits": "linux-release",
       "name": "linux-release-clang",
       "displayName": "Linux Clang x64",
       "binaryDir": "${sourceParentDir}/build/linux-release-clang",
@@ -105,6 +146,34 @@
         "CMAKE_CXX_COMPILER": "clang++",
         "VCPKG_TARGET_TRIPLET": "x64-linux-mixed-clang",
         "STAR_USE_JEMALLOC": true
+      }
+    },
+    {
+      "inherits": "linux-release-clang",
+      "name": "linux-debug-clang",
+      "displayName": "Linux Clang x64 Debug",
+      "binaryDir": "${sourceParentDir}/build/linux-debug-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug"
+      }
+    },
+    {
+      "inherits": "linux-release-clang",
+      "name": "linux-optimized-clang",
+      "displayName": "Linux Clang x64 Release",
+      "binaryDir": "${sourceParentDir}/build/linux-optimized-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release"
+      }
+    },
+    {
+      "inherits": "linux-release-clang",
+      "name": "linux-profile-clang",
+      "displayName": "Linux Clang x64 Profiling",
+      "binaryDir": "${sourceParentDir}/build/linux-profile-clang",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "RelWithDebInfo",
+        "STAR_ENABLE_FRAME_POINTERS": true
       }
     },
     {
@@ -183,6 +252,34 @@
       "configurePreset": "linux-release-clang"
     },
     {
+      "name": "linux-debug-clang",
+      "configurePreset": "linux-debug-clang"
+    },
+    {
+      "name": "linux-optimized-clang",
+      "configurePreset": "linux-optimized-clang"
+    },
+    {
+      "name": "linux-profile-clang",
+      "configurePreset": "linux-profile-clang"
+    },
+    {
+      "name": "linux-release-gcc",
+      "configurePreset": "linux-release-gcc"
+    },
+    {
+      "name": "linux-debug-gcc",
+      "configurePreset": "linux-debug-gcc"
+    },
+    {
+      "name": "linux-optimized-gcc",
+      "configurePreset": "linux-optimized-gcc"
+    },
+    {
+      "name": "linux-profile-gcc",
+      "configurePreset": "linux-profile-gcc"
+    },
+    {
       "name": "linux-arm-release-clang",
       "configurePreset": "linux-arm-release-clang"
     },
@@ -212,6 +309,36 @@
       "inherits": "base",
       "name": "linux-release",
       "configurePreset": "linux-release"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-release-clang",
+      "configurePreset": "linux-release-clang"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-release-gcc",
+      "configurePreset": "linux-release-gcc"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-debug-clang",
+      "configurePreset": "linux-debug-clang"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-debug-gcc",
+      "configurePreset": "linux-debug-gcc"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-profile-clang",
+      "configurePreset": "linux-profile-clang"
+    },
+    {
+      "inherits": "base",
+      "name": "linux-profile-gcc",
+      "configurePreset": "linux-profile-gcc"
     },
     {
       "inherits": "base",

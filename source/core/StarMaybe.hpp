@@ -3,6 +3,8 @@
 #include "StarException.hpp"
 #include "StarHash.hpp"
 
+#include <type_traits>
+
 namespace Star {
 
 STAR_EXCEPTION(InvalidMaybeAccessException, StarException);
@@ -21,14 +23,14 @@ public:
   Maybe(T&& t);
 
   Maybe(Maybe const& rhs);
-  Maybe(Maybe&& rhs);
+  Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value);
   template <typename T2>
   Maybe(Maybe<T2> const& rhs);
 
   ~Maybe();
 
   Maybe& operator=(Maybe const& rhs);
-  Maybe& operator=(Maybe&& rhs);
+  Maybe& operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value);
   template <typename T2>
   Maybe& operator=(Maybe<T2> const& rhs);
 
@@ -132,6 +134,7 @@ Maybe<T>::Maybe(Maybe const& rhs)
 
 template <typename T>
 Maybe<T>::Maybe(Maybe&& rhs)
+  noexcept(std::is_nothrow_move_constructible<T>::value)
   : Maybe() {
   if (rhs.m_initialized) {
     new (&m_data) T(std::move(rhs.m_data));
@@ -180,7 +183,7 @@ Maybe<T>& Maybe<T>::operator=(Maybe<T2> const& rhs) {
 }
 
 template <typename T>
-Maybe<T>& Maybe<T>::operator=(Maybe&& rhs) {
+Maybe<T>& Maybe<T>::operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible<T>::value) {
   if (&rhs == this)
     return *this;
 

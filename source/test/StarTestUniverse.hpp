@@ -10,7 +10,7 @@ public:
   TestUniverse(Vec2U clientWindowSize);
   ~TestUniverse();
 
-  void warpPlayer(WorldId worldId);
+  bool warpPlayer(WorldId worldId);
   WorldId currentPlayerWorld() const;
 
   void update(unsigned times = 1);

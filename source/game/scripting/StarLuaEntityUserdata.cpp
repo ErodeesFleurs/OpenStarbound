@@ -68,7 +68,7 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
 
     methods.registerMethod("typeName",
-    [&](EntityPtr const& entity, LuaEngine& engine) -> Maybe<String> {
+    [&](EntityPtr const& entity, LuaEngine&) -> Maybe<String> {
         if (auto monster = as<Monster>(entity))
             return monster->typeName();
         if (auto npc = as<Npc>(entity))

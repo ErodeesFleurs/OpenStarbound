@@ -775,7 +775,7 @@ void Projectile::processAction(Json const& action) {
     unsigned harvestLevel = parameters.getUInt("harvestLevel", 0);
     Vec2F explosionPosition = position();
 
-    doWithDelay(parameters.getUInt("delaySteps", 0), [=](World* world) {
+    doWithDelay(parameters.getUInt("delaySteps", 0), [=, this](World* world) {
         world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
             TileLayer::Foreground,
             explosionPosition,

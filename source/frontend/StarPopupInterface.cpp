@@ -12,8 +12,8 @@ PopupInterface::PopupInterface() {
 
   GuiReader reader;
 
-  reader.registerCallback("close", [=](Widget*) { dismiss(); });
-  reader.registerCallback("ok", [=](Widget*) { dismiss(); });
+  reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
+  reader.registerCallback("ok", [=, this](Widget*) { dismiss(); });
 
   reader.construct(assets->json("/interface/windowconfig/popup.config:paneLayout"), this);
 }

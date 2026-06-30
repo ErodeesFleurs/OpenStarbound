@@ -5,23 +5,23 @@
 namespace Star {
 
 GuiReader::GuiReader() {
-  m_constructors["background"] = [=](
+  m_constructors["background"] = [=, this](
       String const& name, Json const& config) { return backgroundHandler(name, config); };
-  m_constructors["button"] = [=](String const& name, Json const& config) { return buttonHandler(name, config); };
-  m_constructors["itemslot"] = [=](String const& name, Json const& config) { return itemSlotHandler(name, config); };
-  m_constructors["itemgrid"] = [=](String const& name, Json const& config) { return itemGridHandler(name, config); };
-  m_constructors["list"] = [=](String const& name, Json const& config) { return listHandler(name, config); };
-  m_constructors["panefeature"] = [=](
+  m_constructors["button"] = [=, this](String const& name, Json const& config) { return buttonHandler(name, config); };
+  m_constructors["itemslot"] = [=, this](String const& name, Json const& config) { return itemSlotHandler(name, config); };
+  m_constructors["itemgrid"] = [=, this](String const& name, Json const& config) { return itemGridHandler(name, config); };
+  m_constructors["list"] = [=, this](String const& name, Json const& config) { return listHandler(name, config); };
+  m_constructors["panefeature"] = [=, this](
       String const& name, Json const& config) { return paneFeatureHandler(name, config); };
-  m_constructors["radioGroup"] = [=](
+  m_constructors["radioGroup"] = [=, this](
       String const& name, Json const& config) { return radioGroupHandler(name, config); };
-  m_constructors["spinner"] = [=](String const& name, Json const& config) { return spinnerHandler(name, config); };
-  m_constructors["slider"] = [=](String const& name, Json const& config) { return sliderHandler(name, config); };
-  m_constructors["textbox"] = [=](String const& name, Json const& config) { return textboxHandler(name, config); };
-  m_constructors["title"] = [=](String const& name, Json const& config) { return titleHandler(name, config); };
-  m_constructors["stack"] = [=](String const& name, Json const& config) { return stackHandler(name, config); };
-  m_constructors["tabSet"] = [=](String const& name, Json const& config) { return tabSetHandler(name, config); };
-  m_constructors["scrollArea"] = [=](
+  m_constructors["spinner"] = [=, this](String const& name, Json const& config) { return spinnerHandler(name, config); };
+  m_constructors["slider"] = [=, this](String const& name, Json const& config) { return sliderHandler(name, config); };
+  m_constructors["textbox"] = [=, this](String const& name, Json const& config) { return textboxHandler(name, config); };
+  m_constructors["title"] = [=, this](String const& name, Json const& config) { return titleHandler(name, config); };
+  m_constructors["stack"] = [=, this](String const& name, Json const& config) { return stackHandler(name, config); };
+  m_constructors["tabSet"] = [=, this](String const& name, Json const& config) { return tabSetHandler(name, config); };
+  m_constructors["scrollArea"] = [=, this](
       String const& name, Json const& config) { return scrollAreaHandler(name, config); };
 }
 

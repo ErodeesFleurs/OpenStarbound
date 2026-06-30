@@ -40,7 +40,7 @@ IslandColumn IslandSurfaceSelector::generateColumn(int x) const {
 }
 
 float IslandSurfaceSelector::get(int x, int y) const {
-  auto col = columnCache.get(x, [=](int x) {
+  auto col = columnCache.get(x, [=, this](int x) {
       return IslandSurfaceSelector::generateColumn(x);
     });
 

@@ -220,7 +220,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::pairs() const ->
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::contains(key_type const& k) const {
-  return m_map.find(k) != m_map.end();
+  return m_map.contains(k);
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>

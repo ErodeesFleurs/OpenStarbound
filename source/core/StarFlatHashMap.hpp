@@ -144,6 +144,7 @@ public:
   mapped_type& operator[](key_type const& key);
   mapped_type& operator[](key_type&& key);
 
+  bool contains(key_type const& key) const;
   size_t count(key_type const& key) const;
   const_iterator find(key_type const& key) const;
   iterator find(key_type const& key);
@@ -483,11 +484,13 @@ auto FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::operator[](key_type&& ke
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
+bool FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::contains(key_type const& key) const {
+  return m_table.find(key) != m_table.end();
+}
+
+template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>
 size_t FlatHashMap<Key, Mapped, Hash, Equals, Allocator>::count(key_type const& key) const {
-  if (m_table.find(key) != m_table.end())
-    return 1;
-  else
-    return 0;
+  return contains(key) ? 1 : 0;
 }
 
 template <typename Key, typename Mapped, typename Hash, typename Equals, typename Allocator>

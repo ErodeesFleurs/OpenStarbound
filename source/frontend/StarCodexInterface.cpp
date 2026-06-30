@@ -20,11 +20,11 @@ CodexInterface::CodexInterface(PlayerPtr player) {
 
   GuiReader reader;
 
-  reader.registerCallback("close", [=](Widget*) { dismiss(); });
-  reader.registerCallback("prevButton", [=](Widget*) { backwardPage(); });
-  reader.registerCallback("nextButton", [=](Widget*) { forwardPage(); });
-  reader.registerCallback("selectCodex", [=](Widget*) { showSelectedContents(); });
-  reader.registerCallback("updateSpecies", [=](Widget*) { updateSpecies(); });
+  reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
+  reader.registerCallback("prevButton", [=, this](Widget*) { backwardPage(); });
+  reader.registerCallback("nextButton", [=, this](Widget*) { forwardPage(); });
+  reader.registerCallback("selectCodex", [=, this](Widget*) { showSelectedContents(); });
+  reader.registerCallback("updateSpecies", [=, this](Widget*) { updateSpecies(); });
 
   reader.construct(assets->json("/interface/windowconfig/codex.config:paneLayout"), this);
 
