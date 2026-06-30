@@ -1,6 +1,5 @@
 #include "StarText.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarPythonic.hpp"
 #include <re2/re2.h>
 
 namespace Star {
@@ -74,46 +73,6 @@ namespace Text {
     }
   }
 
-  // The below two functions aren't used anymore, not bothering with StringView for them
-  String preprocessEscapeCodes(String const& s) {
-    bool escape = false;
-    std::string result = s.utf8();
-
-    size_t escapeStartIdx = 0;
-    for (auto charAndIndex : enumerateIterator(result)) {
-      auto& [c, charIndex] = charAndIndex;
-      if (isEscapeCode(c)) {
-        escape = true;
-        escapeStartIdx = charIndex;
-      }
-      if ((c <= SpecialCharLimit) && !(c == StartEsc))
-        escape = false;
-      if ((c == EndEsc) && escape)
-        result[escapeStartIdx] = StartEsc;
-    }
-    return {result};
-  }
-
-  String extractCodes(String const& s) {
-    bool escape = false;
-    StringList result;
-    String escapeCode;
-    for (auto c : preprocessEscapeCodes(s)) {
-      if (c == StartEsc)
-        escape = true;
-      if (c == EndEsc) {
-        escape = false;
-        for (auto command : escapeCode.split(','))
-          result.append(command);
-        escapeCode = "";
-      }
-      if (escape && (c != StartEsc))
-        escapeCode.append(c);
-    }
-    if (!result.size())
-      return "";
-    return "^" + result.join(",") + ";";
-  }
 }
 
 }

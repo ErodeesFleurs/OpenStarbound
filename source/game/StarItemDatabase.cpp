@@ -98,7 +98,7 @@ EnumMap<ItemType> ItemTypeNames{
 }
 
 [[nodiscard]] HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies,
-                                                    HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes) {
+                                                                  HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes) {
   HashSet<ItemRecipe> res;
   for (auto const& recipe : subset) {
     // is it the right kind of recipe for this check ?
@@ -357,11 +357,16 @@ bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, ItemPtr& itemPtr) 
     bool usesAllItemTypes = true;
     for (auto const& item : bag) {
       bool match = false;
-      for (auto const& input : recipe.inputs)
-        if (item->matches(input, recipe.matchInputParameters))
+      for (auto const& input : recipe.inputs) {
+        if (item->matches(input, recipe.matchInputParameters)) {
           match = true;
-      if (!match)
+          break;
+        }
+      }
+      if (!match) {
         usesAllItemTypes = false;
+        break;
+      }
     }
     if (!usesAllItemTypes)
       continue;

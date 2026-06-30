@@ -103,10 +103,6 @@ private:
 
   ItemDrop(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase);
 
-  // Set the movement controller's collision poly to match the
-  // item drop drawables
-  void updateCollisionPoly();
-
   void updateTaken(bool master);
   
   [[nodiscard]] LuaCallbacks makeItemDropCallbacks();

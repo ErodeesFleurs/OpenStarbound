@@ -85,8 +85,6 @@ ItemDrop::ItemDrop(ItemPtr item, AssetsConstPtr assets, ItemDatabaseConstPtr ite
 
   m_parameters = m_item->instanceValueOfType("itemDrop",Json::Type::Object,JsonObject{});
 
-  updateCollisionPoly();
-
   m_owningEntity.set(NullEntityId);
   m_mode.set(Mode::Available);
   m_itemDescriptor.set(m_item->descriptor());
@@ -103,7 +101,6 @@ ItemDrop::ItemDrop(Json const& diskStore, AssetsConstPtr assets, ItemDatabaseCon
   m_dropAge = EpochTimer(diskStore.get("dropAge"));
   m_ageItemsTimer = EpochTimer(diskStore.get("ageItemsTimer"));
 
-  updateCollisionPoly();
   m_owningEntity.set(NullEntityId);
   m_itemDescriptor.set(m_item->descriptor());
   m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
@@ -119,7 +116,6 @@ ItemDrop::ItemDrop(ByteArray store, NetCompatibilityRules rules, AssetsConstPtr 
   ds.read(m_dropAge);
   ds.read(m_intangibleTimer);
 
-  updateCollisionPoly();
   m_itemDescriptor.set(m_item->descriptor());
   m_clientEntityMode = ClientEntityModeNames.getLeft(configValue("clientEntityMode", "ClientSlaveOnly").toString());
 }
@@ -301,7 +297,6 @@ void ItemDrop::update(float dt, uint64_t) {
     if (m_mode.get() <= Mode::Available && m_ageItemsTimer.elapsedTime() > m_ageItemsEvery) {
       if (m_itemDatabase->ageItem(m_item, m_ageItemsTimer.elapsedTime())) {
         m_itemDescriptor.set(m_item->descriptor());
-        updateCollisionPoly();
       }
       m_ageItemsTimer.setElapsedTime(0.0);
     }
@@ -504,19 +499,6 @@ ItemDrop::ItemDrop(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase)
   m_overForeground = false;
   m_clientEntityMode = ClientEntityMode::ClientSlaveOnly;
 }
-
-void ItemDrop::updateCollisionPoly() {
-  /* // currently disabled due to causing items to get stuck
-  if (!as<MaterialItem>(m_item.get())) {
-    m_boundBox = Drawable::boundBoxAll(m_item->dropDrawables(), true);
-    m_boundBox.rangeSetIfEmpty(m_defaultBoundBox);
-    MovementParameters parameters;
-    parameters.collisionPoly = PolyF(collisionArea());
-    m_movementController.applyParameters(parameters);
-  }
-  */
-}
-
 
 void ItemDrop::updateTaken(bool master) {
   if (auto owningEntity = world().entity(m_owningEntity.get())) {

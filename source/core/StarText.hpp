@@ -39,8 +39,6 @@ namespace Text {
   using TextCallback = function<bool(StringView text)>;
   using CommandsCallback = function<bool(StringView commands)>;
   [[nodiscard]] bool processText(StringView text, TextCallback textFunc, CommandsCallback commandsFunc = CommandsCallback(), bool includeCommandSides = false);
-  [[nodiscard]] String preprocessEscapeCodes(String const& s);
-  [[nodiscard]] String extractCodes(String const& s);
 }
 
 }

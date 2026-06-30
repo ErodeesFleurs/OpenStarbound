@@ -1,9 +1,9 @@
 #include "StarDamageManager.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarIterator.hpp"
-#include "StarEntityMap.hpp"
-#include "StarLogging.hpp"
 #include "StarColor.hpp"
+#include "StarDataStreamExtra.hpp"
+#include "StarEntityMap.hpp"
+#include "StarIterator.hpp"
+#include "StarLogging.hpp"
 #include "StarWorld.hpp"
 
 namespace Star {
@@ -97,11 +97,15 @@ void DamageManager::update(float dt) {
         bool allowDamage = true;
         for (auto const& event : eventList) {
           if (damageSource.damageRepeatGroup) {
-            if (event.timeoutGroup == *damageSource.damageRepeatGroup)
+            if (event.timeoutGroup == *damageSource.damageRepeatGroup) {
               allowDamage = false;
+              break;
+            }
           } else {
-            if (event.timeoutGroup == causingEntity->entityId())
+            if (event.timeoutGroup == causingEntity->entityId()) {
               allowDamage = false;
+              break;
+            }
           }
         }
         if (allowDamage) {
@@ -112,8 +116,8 @@ void DamageManager::update(float dt) {
             eventList.append({causingEntity->entityId(), timeout});
 
           auto damageRequest = DamageRequest(hitResult, damageSource.damageType, damageSource.damage,
-              damageSource.knockbackMomentum(m_world.geometry(), targetEntity->position()),
-              damageSource.sourceEntityId, damageSource.damageSourceKind, damageSource.statusEffects);
+                                             damageSource.knockbackMomentum(m_world.geometry(), targetEntity->position()),
+                                             damageSource.sourceEntityId, damageSource.damageSourceKind, damageSource.statusEffects);
           addHitRequest({causingEntity->entityId(), targetEntity->entityId(), damageRequest});
 
           if (damageSource.damageType != NoDamage)
@@ -261,4 +265,4 @@ void DamageManager::addDamageNotification(RemoteDamageNotification remoteDamageN
   m_pendingRemoteNotifications.append(std::move(remoteDamageNotification));
 }
 
-}
+}// namespace Star

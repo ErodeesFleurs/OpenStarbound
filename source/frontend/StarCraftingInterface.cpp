@@ -711,9 +711,10 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
         bool match = true;
         auto guiFilterString = recipe.guiFilterString;
         for (auto const& bit : bits) {
-          match &= guiFilterString.contains(bit);
-          if (!match)
+          if (!guiFilterString.contains(bit)) {
+            match = false;
             break;
+          }
         }
         if (match)
           recipes.add(recipe);
