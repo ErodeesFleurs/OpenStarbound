@@ -1,7 +1,6 @@
 #include "StarItemDescriptor.hpp"
 #include "StarDataStream.hpp"
 #include "StarItem.hpp"
-#include "StarRoot.hpp"
 #include "StarVersioningDatabase.hpp"
 
 namespace Star {
@@ -9,7 +8,7 @@ namespace Star {
 ItemDescriptor::ItemDescriptor() : m_count(0), m_parameters(JsonObject()) {}
 
 ItemDescriptor::ItemDescriptor(String name, uint64_t count, Json parameters)
-  : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)) {
+    : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)) {
   if (m_parameters.isNull())
     m_parameters = JsonObject();
   if (!m_parameters.isType(Json::Type::Object))
@@ -42,8 +41,9 @@ ItemDescriptor::ItemDescriptor(Json const& spec) {
   }
 }
 
-ItemDescriptor ItemDescriptor::loadStore(Json const& spec) {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+ItemDescriptor ItemDescriptor::loadStore(Json const& spec, VersioningDatabaseConstPtr versioningDatabase) {
+  if (!versioningDatabase)
+    throw ItemException("ItemDescriptor::loadStore requires versioning database service");
   return ItemDescriptor{versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "Item")};
 }
 
@@ -103,10 +103,13 @@ bool ItemDescriptor::matches(ItemConstPtr const& other, bool exactMatch) const {
   return other->name() == m_name && (!exactMatch || other->parameters() == m_parameters);
 }
 
-Json ItemDescriptor::diskStore() const {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+Json ItemDescriptor::diskStore(VersioningDatabaseConstPtr versioningDatabase) const {
+  if (!versioningDatabase)
+    throw ItemException("ItemDescriptor::diskStore requires versioning database service");
   auto res = JsonObject{
-      {"name", m_name}, {"count", m_count}, {"parameters", m_parameters},
+    {"name", m_name},
+    {"count", m_count},
+    {"parameters", m_parameters},
   };
 
   return versioningDatabase->makeCurrentVersionedJson("Item", res).toJson();
@@ -117,13 +120,15 @@ Json ItemDescriptor::toJson() const {
     return Json();
   } else {
     return JsonObject{
-        {"name", m_name}, {"count", m_count}, {"parameters", m_parameters},
+      {"name", m_name},
+      {"count", m_count},
+      {"parameters", m_parameters},
     };
   }
 }
 
 ItemDescriptor::ItemDescriptor(String name, uint64_t count, Json parameters, Maybe<size_t> parametersHash)
-  : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)), m_parametersHash(parametersHash) {}
+    : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)), m_parametersHash(parametersHash) {}
 
 size_t ItemDescriptor::parametersHash() const {
   if (!m_parametersHash)
@@ -158,4 +163,4 @@ size_t hash<ItemDescriptor>::operator()(ItemDescriptor const& v) const {
   return hashOf(v.m_name, v.m_count, v.m_parametersHash);
 }
 
-}
+}// namespace Star

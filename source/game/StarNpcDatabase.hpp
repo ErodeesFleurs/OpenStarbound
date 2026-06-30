@@ -1,12 +1,13 @@
 #pragma once
 
 #include "StarAssets.hpp"
-#include "StarThread.hpp"
-#include "StarHumanoid.hpp"
 #include "StarDamageTypes.hpp"
-#include "StarStatusTypes.hpp"
 #include "StarEntitySplash.hpp"
+#include "StarHumanoid.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarStatusTypes.hpp"
+#include "StarThread.hpp"
 
 namespace Star {
 
@@ -26,13 +27,23 @@ class DanceDatabase;
 using DanceDatabaseConstPtr = SharedPtr<DanceDatabase const>;
 class EmoteProcessor;
 using EmoteProcessorConstPtr = SharedPtr<EmoteProcessor const>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 class Npc;
 using NpcPtr = SharedPtr<Npc>;
 class NpcDatabase;
 using NpcDatabasePtr = SharedPtr<NpcDatabase>;
 using NpcDatabaseConstPtr = SharedPtr<NpcDatabase const>;
 
-struct NpcExceptionTag { static constexpr char const* typeName = "NpcException"; };
+struct NpcExceptionTag {
+  static constexpr char const* typeName = "NpcException";
+};
 using NpcException = TypedException<StarException, NpcExceptionTag>;
 
 struct NpcVariant {
@@ -78,13 +89,19 @@ struct NpcVariant {
 class NpcDatabase : public enable_shared_from_this<NpcDatabase> {
 public:
   NpcDatabase(AssetsConstPtr assets,
-      ItemDatabaseConstPtr itemDatabase,
-      ObjectDatabaseConstPtr objectDatabase,
-      SpeciesDatabaseConstPtr speciesDatabase,
-      PatternedNameGeneratorConstPtr nameGenerator,
-      FunctionDatabaseConstPtr functionDatabase,
-      DanceDatabaseConstPtr danceDatabase,
-      EmoteProcessorConstPtr emoteProcessor);
+              ItemDatabaseConstPtr itemDatabase,
+              ObjectDatabaseConstPtr objectDatabase,
+              SpeciesDatabaseConstPtr speciesDatabase,
+              PatternedNameGeneratorConstPtr nameGenerator,
+              FunctionDatabaseConstPtr functionDatabase,
+              DanceDatabaseConstPtr danceDatabase,
+              EmoteProcessorConstPtr emoteProcessor,
+              VersioningDatabaseConstPtr versioningDatabase,
+              LiquidsDatabaseConstPtr liquidsDatabase,
+              StatusEffectDatabaseConstPtr statusEffectDatabase,
+              ParticleDatabaseConstPtr particleDatabase,
+              ImageMetadataDatabaseConstPtr imageMetadataDatabase,
+              LuaRootServices luaRootServices);
 
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level) const;
   NpcVariant generateNpcVariant(String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const;
@@ -117,8 +134,13 @@ private:
   FunctionDatabaseConstPtr m_functionDatabase;
   DanceDatabaseConstPtr m_danceDatabase;
   EmoteProcessorConstPtr m_emoteProcessor;
+  VersioningDatabaseConstPtr m_versioningDatabase;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
 
   StringMap<Json> m_npcTypes;
 };
 
-}
+}// namespace Star

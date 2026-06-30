@@ -15,11 +15,13 @@ class Cinematic;
 using CinematicPtr = SharedPtr<Cinematic>;
 class Player;
 using PlayerPtr = SharedPtr<Player>;
+class GuiContext;
 
 class Cinematic {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   explicit Cinematic(Services services);
@@ -112,6 +114,7 @@ private:
   List<AudioCue> m_audioCues;
   std::vector<AudioInstancePtr> m_activeAudio;
   AssetsConstPtr m_assets;
+  GuiContext& m_guiContext;
 
   // these include the time for background fades so they may not reflect the completion timecode
   Clock m_timer;

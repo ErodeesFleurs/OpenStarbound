@@ -1,11 +1,13 @@
 #pragma once
 
-#include "StarJson.hpp"
+#include "StarAssets.hpp"
+#include "StarBiomeDatabase.hpp"
 #include "StarDataStream.hpp"
+#include "StarJson.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarLuaRoot.hpp"
 #include "StarThread.hpp"
 #include "StarVersion.hpp"
-#include "StarLuaRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -13,9 +15,13 @@ class VersioningDatabase;
 using VersioningDatabasePtr = SharedPtr<VersioningDatabase>;
 using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
 
-struct VersionedJsonExceptionTag { static constexpr char const* typeName = "VersionedJsonException"; };
+struct VersionedJsonExceptionTag {
+  static constexpr char const* typeName = "VersionedJsonException";
+};
 using VersionedJsonException = TypedException<StarException, VersionedJsonExceptionTag>;
-struct VersioningDatabaseExceptionTag { static constexpr char const* typeName = "VersioningDatabaseException"; };
+struct VersioningDatabaseExceptionTag {
+  static constexpr char const* typeName = "VersioningDatabaseException";
+};
 using VersioningDatabaseException = TypedException<StarException, VersioningDatabaseExceptionTag>;
 
 struct VersionedJson {
@@ -53,7 +59,7 @@ DataStream& operator<<(DataStream& ds, VersionedJson const& versionedJson);
 
 class VersioningDatabase {
 public:
-  VersioningDatabase(AssetsConstPtr assets);
+  VersioningDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, function<String(String const&)> toStoragePath, LuaRootServices luaRootServices);
 
   // Converts the given content Json to a VersionedJson by marking it with the
   // given identifier and the current version configured in the versioning
@@ -85,12 +91,15 @@ private:
   mutable RecursiveMutex m_mutex;
   mutable LuaRoot m_luaRoot;
   AssetsConstPtr m_assets;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  BiomeDatabaseConstPtr m_biomeDatabase;
+  function<String(String const&)> m_toStoragePath;
 
   StringMap<VersionNumber> m_currentVersions;
   StringMap<List<VersionUpdateScript>> m_versionUpdateScripts;
 
   StringMap<StringMap<VersionNumber>> m_currentSubVersions;
-  StringMap<HashMap<VersionNumber,StringMap<List<VersionUpdateScript>>>> m_subVersionUpdateScripts;
+  StringMap<HashMap<VersionNumber, StringMap<List<VersionUpdateScript>>>> m_subVersionUpdateScripts;
 };
 
-}
+}// namespace Star

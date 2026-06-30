@@ -1,25 +1,31 @@
 #pragma once
 
-#include "StarNetElementSystem.hpp"
-#include "StarEntity.hpp"
-#include "StarNetworkedAnimator.hpp"
-#include "StarMovementController.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLoungingEntities.hpp"
-#include "StarScriptedEntity.hpp"
-#include "StarLuaAnimationComponent.hpp"
 #include "StarAssets.hpp"
+#include "StarEntity.hpp"
+#include "StarLoungingEntities.hpp"
+#include "StarLuaAnimationComponent.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarMovementController.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarScriptedEntity.hpp"
 
 namespace Star {
 
-struct VehicleExceptionTag { static constexpr char const* typeName = "VehicleException"; };
+struct VehicleExceptionTag {
+  static constexpr char const* typeName = "VehicleException";
+};
 using VehicleException = TypedException<StarException, VehicleExceptionTag>;
 class Vehicle;
 using VehiclePtr = SharedPtr<Vehicle>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 
 class Vehicle : public virtual LoungeableEntity, public virtual InteractiveEntity, public virtual PhysicsEntity, public virtual ScriptedEntity {
 public:
-  Vehicle(AssetsConstPtr assets, Json baseConfig, String path, Json dynamicConfig);
+  Vehicle(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json baseConfig, String path, Json dynamicConfig);
 
   String name() const override;
 
@@ -135,7 +141,9 @@ private:
     NetElementBool enabled;
   };
 
-  enum class VehicleLayer { Back, Passenger, Front };
+  enum class VehicleLayer { Back,
+                            Passenger,
+                            Front };
 
   EntityRenderLayer renderLayer(VehicleLayer vehicleLayer) const;
 
@@ -144,6 +152,8 @@ private:
 
   String m_typeName;
   Json m_baseConfig;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   String m_path;
   Json m_dynamicConfig;
   RectF m_boundBox;
@@ -161,7 +171,7 @@ private:
   NetworkedAnimator m_networkedAnimator;
   NetworkedAnimator::DynamicTarget m_networkedAnimatorDynamicTarget;
   LuaMessageHandlingComponent<LuaStorableComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>> m_scriptComponent;
-  
+
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 
@@ -172,8 +182,8 @@ private:
 
   EntityRenderLayer m_baseRenderLayer;
   Maybe<EntityRenderLayer> m_overrideRenderLayer;
-  
+
   GameTimer m_slaveHeartbeatTimer;
 };
 
-}
+}// namespace Star

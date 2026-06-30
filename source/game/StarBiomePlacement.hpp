@@ -47,10 +47,10 @@ public:
     PerlinF weight;
   };
 
-  static Maybe<BiomeItem> createItem(Json const& itemSettings, RandomSource& rand, float biomeHueShift);
+  static Maybe<BiomeItem> createItem(PlantDatabaseConstPtr plantDatabase, Json const& itemSettings, RandomSource& rand, float biomeHueShift);
 
   BiomeItemDistribution();
-  BiomeItemDistribution(AssetsConstPtr assets, Json const& config, uint64_t seed, float biomeHueShift = 0.0f);
+  BiomeItemDistribution(AssetsConstPtr assets, PlantDatabaseConstPtr plantDatabase, Json const& config, uint64_t seed, float biomeHueShift = 0.0f);
   BiomeItemDistribution(Json const& store);
 
   Json toJson() const;

@@ -12,6 +12,7 @@ class Companion;
 using CompanionPtr = SharedPtr<Companion>;
 class PlayerCompanions;
 using PlayerCompanionsPtr = SharedPtr<PlayerCompanions>;
+class Player;
 
 class Companion {
 public:
@@ -43,7 +44,7 @@ public:
 
   List<CompanionPtr> getCompanions(String const& category) const;
 
-  void init(Entity* player, World* world);
+  void init(Player& player, World& world);
   void uninit();
 
   void dismissCompanion(String const& category, Uuid const& podUuid);

@@ -12,15 +12,14 @@ using RootException = TypedException<StarException, RootExceptionTag>;
 
 class RootBase {
 public:
-  static RootBase* singletonPtr();
-  static RootBase& singleton();
-
   virtual AssetsConstPtr assets() = 0;
   virtual ConfigurationPtr configuration() = 0;
+
 protected:
   RootBase();
+  ~RootBase();
 
-  static atomic<RootBase*> s_singleton;
+  static atomic<RootBase*> s_activeRoot;
 };
 
 }

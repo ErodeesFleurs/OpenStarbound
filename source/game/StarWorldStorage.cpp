@@ -304,7 +304,7 @@ void WorldStorage::tick(float dt, String const* worldId) {
       List<EntityPtr> zombieEntities;
       m_entityMap->forEachEntity(RectF(m_tileArray->sectorRegion(sector)), [&](EntityPtr const& entity) {
           if (belongsInSector(sector, entity->position())) {
-            if (!keepAlive && m_generatorFacade->entityKeepAlive(this, entity))
+            if (!keepAlive && m_generatorFacade->entityKeepAlive(*this, entity))
               keepAlive = true;
             else if (metadata.loadLevel < SectorLoadLevel::Entities)
               zombieEntities.append(entity);
@@ -319,7 +319,7 @@ void WorldStorage::tick(float dt, String const* worldId) {
         List<EntityPtr> zombiesToStore;
         List<EntityPtr> zombiesToRemove;
         for (auto const& entity : zombieEntities) {
-          if (m_generatorFacade->entityPersistent(this, entity))
+          if (m_generatorFacade->entityPersistent(*this, entity))
             zombiesToStore.append(entity);
           else
             zombiesToRemove.append(entity);
@@ -327,7 +327,7 @@ void WorldStorage::tick(float dt, String const* worldId) {
 
         for (auto const& entity : zombiesToRemove) {
           m_entityMap->removeEntity(entity->entityId());
-          m_generatorFacade->destructEntity(this, entity);
+          m_generatorFacade->destructEntity(*this, entity);
         }
 
         if (!zombiesToStore.empty()) {
@@ -338,7 +338,7 @@ void WorldStorage::tick(float dt, String const* worldId) {
           UniqueIndexStore storedUniques;
           for (auto const& entity : zombiesToStore) {
             m_entityMap->removeEntity(entity->entityId());
-            m_generatorFacade->destructEntity(this, entity);
+            m_generatorFacade->destructEntity(*this, entity);
             if (auto uniqueId = entity->uniqueId())
               storedUniques.add(*uniqueId, {sector, entity->position()});
             sectorStore.append(entityFactory->storeVersionedEntity(entity));
@@ -636,7 +636,7 @@ pair<bool, size_t> WorldStorage::generateSectorToLevel(Sector const& sector, Sec
   auto& metadata = m_sectorMetadata[sector];
 
   if (targetGenerationLevel == SectorGenerationLevel::Complete && metadata.generationLevel == SectorGenerationLevel::Terraform) {
-    m_generatorFacade->terraformSector(this, sector);
+    m_generatorFacade->terraformSector(*this, sector);
     metadata.generationLevel = SectorGenerationLevel::Complete;
     metadata.timeToLive = randomizedSectorTTL();
     return {true, 1};
@@ -661,7 +661,7 @@ pair<bool, size_t> WorldStorage::generateSectorToLevel(Sector const& sector, Sec
       }
     }
 
-    m_generatorFacade->generateSectorLevel(this, sector, currentGeneration);
+    m_generatorFacade->generateSectorLevel(*this, sector, currentGeneration);
     metadata.generationLevel = currentGeneration;
 
     ++totalGeneratedLevels;
@@ -706,7 +706,7 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
       }
 
       metadata.loadLevel = currentLoad;
-      m_generatorFacade->sectorLoadLevelChanged(this, sector, currentLoad);
+      m_generatorFacade->sectorLoadLevelChanged(*this, sector, currentLoad);
 
     } else if (currentLoad == SectorLoadLevel::Entities) {
       List<EntityPtr> addedEntities;
@@ -723,7 +723,7 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
 
       UniqueIndexStore readUniques;
       for (auto const& entity : addedEntities) {
-        m_generatorFacade->initEntity(this, m_entityMap->reserveEntityId(), entity);
+        m_generatorFacade->initEntity(*this, m_entityMap->reserveEntityId(), entity);
         m_entityMap->addEntity(entity);
         if (auto uniqueId = entity->uniqueId())
           readUniques.add(*uniqueId, {sector, entity->position()});
@@ -734,7 +734,7 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
       updateSectorUniques(sector, readUniques);
 
       metadata.loadLevel = currentLoad;
-      m_generatorFacade->sectorLoadLevelChanged(this, sector, currentLoad);
+      m_generatorFacade->sectorLoadLevelChanged(*this, sector, currentLoad);
     }
   }
 }
@@ -763,11 +763,11 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
         continue;
       }
 
-      bool keepAlive = m_generatorFacade->entityKeepAlive(this, entity);
+      bool keepAlive = m_generatorFacade->entityKeepAlive(*this, entity);
       if (keepAlive && !force)
         return false;
 
-      if (m_generatorFacade->entityPersistent(this, entity))
+      if (m_generatorFacade->entityPersistent(*this, entity))
         entitiesToStore.append(std::move(entity));
       else
         entitiesToRemove.append(std::move(entity));
@@ -775,7 +775,7 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
 
     for (auto const& entity : entitiesToRemove) {
       m_entityMap->removeEntity(entity->entityId());
-      m_generatorFacade->destructEntity(this, entity);
+      m_generatorFacade->destructEntity(*this, entity);
     }
 
     if (metadata.loadLevel == SectorLoadLevel::Entities || !entitiesToStore.empty()) {
@@ -792,7 +792,7 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
       UniqueIndexStore storedUniques;
       for (auto const& entity : entitiesToStore) {
         m_entityMap->removeEntity(entity->entityId());
-        m_generatorFacade->destructEntity(this, entity);
+        m_generatorFacade->destructEntity(*this, entity);
         auto position = entity->position();
         if (auto uniqueId = entity->uniqueId())
           storedUniques.add(*uniqueId, {sector, position});
@@ -806,7 +806,7 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
 
       if (metadata.loadLevel == SectorLoadLevel::Entities) {
         metadata.loadLevel = SectorLoadLevel::Tiles;
-        m_generatorFacade->sectorLoadLevelChanged(this, sector, SectorLoadLevel::Tiles);
+        m_generatorFacade->sectorLoadLevelChanged(*this, sector, SectorLoadLevel::Tiles);
       }
     }
   }
@@ -818,7 +818,7 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
       sectorStore.generationLevel = metadata.generationLevel;
       (void)m_db.insert(tileSectorKey(sector), writeTileSector(sectorStore));
       (void)m_sectorMetadata.remove(sector);
-      m_generatorFacade->sectorLoadLevelChanged(this, sector, SectorLoadLevel::None);
+      m_generatorFacade->sectorLoadLevelChanged(*this, sector, SectorLoadLevel::None);
       return true;
     }
     return false;
@@ -845,7 +845,7 @@ void WorldStorage::syncSector(Sector const& sector) {
       if (!belongsInSector(sector, entity->position()))
         continue;
 
-      if (m_generatorFacade->entityPersistent(this, entity)) {
+      if (m_generatorFacade->entityPersistent(*this, entity)) {
         if (auto uniqueId = entity->uniqueId())
           storedUniques.add(*uniqueId, {sector, entity->position()});
         sectorStore.append(entityFactory->storeVersionedEntity(entity));

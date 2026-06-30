@@ -1,38 +1,36 @@
 #pragma once
 
-#include "StarLockFile.hpp"
-#include "StarIdMap.hpp"
-#include "StarWorkerPool.hpp"
-#include "StarGameTypes.hpp"
-#include "StarCelestialCoordinate.hpp"
-#include "StarServerClientContext.hpp"
-#include "StarWorldServerThread.hpp"
-#include "StarSystemWorldServerThread.hpp"
-#include "StarUniverseConnection.hpp"
 #include "StarAssets.hpp"
-#include "StarConfiguration.hpp"
 #include "StarBiomeDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
+#include "StarCelestialCoordinate.hpp"
+#include "StarConfiguration.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarGameTypes.hpp"
+#include "StarIdMap.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarItemDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarLockFile.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarMaterialDatabase.hpp"
 #include "StarMonsterDatabase.hpp"
+#include "StarNameGenerator.hpp"
 #include "StarNpcDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
 #include "StarPlantDatabase.hpp"
 #include "StarProjectileDatabase.hpp"
+#include "StarServerClientContext.hpp"
 #include "StarSpawnTypeDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
 #include "StarStagehandDatabase.hpp"
+#include "StarSystemWorldServerThread.hpp"
+#include "StarTerrainDatabase.hpp"
 #include "StarTreasure.hpp"
-#include "StarVehicleDatabase.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarNameGenerator.hpp"
+#include "StarUniverseConnection.hpp"
 #include "StarUniverseSettings.hpp"
+#include "StarVehicleDatabase.hpp"
 #include "StarVersioningDatabase.hpp"
+#include "StarWorkerPool.hpp"
+#include "StarWorldServerThread.hpp"
 
 namespace Star {
 
@@ -42,6 +40,10 @@ class ObjectDatabase;
 using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 class VehicleDatabase;
 using VehicleDatabaseConstPtr = SharedPtr<VehicleDatabase const>;
+class DungeonDefinitions;
+using DungeonDefinitionsConstPtr = SharedPtr<DungeonDefinitions const>;
+class BehaviorDatabase;
+using BehaviorDatabaseConstPtr = SharedPtr<BehaviorDatabase const>;
 class Clock;
 class File;
 class Player;
@@ -58,7 +60,9 @@ class WorldTemplate;
 class WorldServer;
 class UniverseSettings;
 
-struct UniverseServerExceptionTag { static constexpr char const* typeName = "UniverseServerException"; };
+struct UniverseServerExceptionTag {
+  static constexpr char const* typeName = "UniverseServerException";
+};
 using UniverseServerException = TypedException<StarException, UniverseServerExceptionTag>;
 
 // Manages all running worlds, listens for new client connections and marshalls
@@ -67,31 +71,36 @@ using UniverseServerException = TypedException<StarException, UniverseServerExce
 class UniverseServer : public Thread {
 public:
   UniverseServer(String const& storageDir,
-      AssetsConstPtr assets,
-      ConfigurationPtr configuration,
-      MaterialDatabaseConstPtr materialDatabase,
-      ImageMetadataDatabaseConstPtr imageMetadataDatabase,
-      ItemDatabaseConstPtr itemDatabase,
-      ObjectDatabaseConstPtr objectDatabase,
-      ProjectileDatabaseConstPtr projectileDatabase,
-      PlantDatabaseConstPtr plantDatabase,
-      TreasureDatabaseConstPtr treasureDatabase,
-      NpcDatabaseConstPtr npcDatabase,
-      MonsterDatabaseConstPtr monsterDatabase,
-      SpawnTypeDatabaseConstPtr spawnTypeDatabase,
-      StagehandDatabaseConstPtr stagehandDatabase,
-      VehicleDatabaseConstPtr vehicleDatabase,
-      SpeciesDatabaseConstPtr speciesDatabase,
-      EntityFactoryConstPtr entityFactory,
-      LiquidsDatabaseConstPtr liquidsDatabase,
-      BiomeDatabaseConstPtr biomeDatabase,
-      PatternedNameGeneratorConstPtr nameGenerator,
-      VersioningDatabaseConstPtr versioningDatabase,
-      FunctionDatabaseConstPtr functionDatabase,
-      EffectSourceDatabaseConstPtr effectSourceDatabase,
-      ParticleDatabaseConstPtr particleDatabase,
-      TechDatabaseConstPtr techDatabase,
-      StatusEffectDatabaseConstPtr statusEffectDatabase);
+                 AssetsConstPtr assets,
+                 ConfigurationPtr configuration,
+                 MaterialDatabaseConstPtr materialDatabase,
+                 ImageMetadataDatabaseConstPtr imageMetadataDatabase,
+                 ItemDatabaseConstPtr itemDatabase,
+                 ObjectDatabaseConstPtr objectDatabase,
+                 ProjectileDatabaseConstPtr projectileDatabase,
+                 PlantDatabaseConstPtr plantDatabase,
+                 TreasureDatabaseConstPtr treasureDatabase,
+                 NpcDatabaseConstPtr npcDatabase,
+                 MonsterDatabaseConstPtr monsterDatabase,
+                 SpawnTypeDatabaseConstPtr spawnTypeDatabase,
+                 StagehandDatabaseConstPtr stagehandDatabase,
+                 VehicleDatabaseConstPtr vehicleDatabase,
+                 SpeciesDatabaseConstPtr speciesDatabase,
+                 EntityFactoryConstPtr entityFactory,
+                 LiquidsDatabaseConstPtr liquidsDatabase,
+                 TerrainDatabaseConstPtr terrainDatabase,
+                 BiomeDatabaseConstPtr biomeDatabase,
+                 PatternedNameGeneratorConstPtr nameGenerator,
+                 VersioningDatabaseConstPtr versioningDatabase,
+                 FunctionDatabaseConstPtr functionDatabase,
+                 EffectSourceDatabaseConstPtr effectSourceDatabase,
+                 ParticleDatabaseConstPtr particleDatabase,
+                 TechDatabaseConstPtr techDatabase,
+                 StatusEffectDatabaseConstPtr statusEffectDatabase,
+                 DungeonDefinitionsConstPtr dungeonDefinitions,
+                 BehaviorDatabaseConstPtr behaviorDatabase,
+                 LuaRootServices luaRootServices,
+                 function<void()> reloadRoot);
   ~UniverseServer();
 
   // If enabled, will listen on the configured server port for incoming
@@ -151,7 +160,7 @@ public:
   ClockPtr universeClock() const;
   UniverseSettingsPtr universeSettings() const;
 
-	CelestialDatabase& celestialDatabase();
+  CelestialDatabase& celestialDatabase();
 
   // If the client exists and is in a valid connection state, executes the
   // given function on the client world and player object in a thread safe way.
@@ -184,7 +193,9 @@ private:
     Maybe<Uuid> uuid;
   };
 
-  enum class TcpState : uint8_t { No, Yes, Fuck };
+  enum class TcpState : uint8_t { No,
+                                  Yes,
+                                  Fuck };
 
   void processUniverseFlags();
   void sendPendingChat();
@@ -290,12 +301,15 @@ private:
   UniverseSettingsPtr m_universeSettings;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
+  LuaRootServices m_luaRootServices;
   MaterialDatabaseConstPtr m_materialDatabase;
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   EffectSourceDatabaseConstPtr m_effectSourceDatabase;
   ParticleDatabaseConstPtr m_particleDatabase;
   TechDatabaseConstPtr m_techDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  DungeonDefinitionsConstPtr m_dungeonDefinitions;
+  BehaviorDatabaseConstPtr m_behaviorDatabase;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   ProjectileDatabaseConstPtr m_projectileDatabase;
@@ -309,10 +323,12 @@ private:
   SpeciesDatabaseConstPtr m_speciesDatabase;
   EntityFactoryConstPtr m_entityFactory;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
+  TerrainDatabaseConstPtr m_terrainDatabase;
   BiomeDatabaseConstPtr m_biomeDatabase;
   PatternedNameGeneratorConstPtr m_nameGenerator;
   VersioningDatabaseConstPtr m_versioningDatabase;
   FunctionDatabaseConstPtr m_functionDatabase;
+  function<void()> m_reloadRoot;
   WorkerPool m_workerPool;
 
   int64_t m_storageTriggerDeadline;
@@ -360,4 +376,4 @@ private:
   StringMap<ScriptComponentPtr> m_scriptContexts;
 };
 
-}
+}// namespace Star

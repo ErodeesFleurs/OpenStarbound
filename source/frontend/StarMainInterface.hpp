@@ -73,9 +73,12 @@ using ScriptPanePtr = SharedPtr<ScriptPane>;
 class ChatBubbleManager;
 using ChatBubbleManagerPtr = SharedPtr<ChatBubbleManager>;
 class CanvasWidget;
+class Voice;
 using CanvasWidgetPtr = SharedPtr<CanvasWidget>;
+class GuiContext;
 class FunctionDatabase;
 using FunctionDatabaseConstPtr = SharedPtr<FunctionDatabase const>;
+class Input;
 class ItemDatabase;
 using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 class ObjectDatabase;
@@ -104,6 +107,10 @@ struct GuiMessage {
 };
 
 struct MainInterfaceServices {
+  MainInterfaceServices(GuiContext& guiContext, Input& input, Voice& voice);
+
+  GuiContext& guiContext;
+  Input& input;
   AssetsConstPtr assets;
   ConfigurationPtr configuration;
   ImageMetadataDatabaseConstPtr imageMetadata;
@@ -119,6 +126,7 @@ struct MainInterfaceServices {
   function<void()> reloadRootForCommand;
   function<void()> hotReloadRoot;
   String outputDirectory;
+  Voice& voice;
 };
 
 class MainInterface {
@@ -137,7 +145,9 @@ public:
 
   RunningState currentState() const;
 
-  MainInterfacePaneManager* paneManager();
+  MainInterfacePaneManager& paneManager();
+
+  float interfaceScale() const;
 
   bool escapeDialogOpen() const;
 
@@ -205,7 +215,6 @@ private:
   PanePtr createEscapeDialog();
   void initHttpTrustDialog();
 
-  float interfaceScale() const;
   unsigned windowHeight() const;
   unsigned windowWidth() const;
   Vec2F mainBarPosition() const;
@@ -227,7 +236,9 @@ private:
 
   void displayScriptPane(ScriptPanePtr& scriptPane, EntityId sourceEntity);
 
-  GuiContext* m_guiContext{nullptr};
+  GuiContext& m_guiContext;
+  Input& m_input;
+  Voice& m_voice;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
   ImageMetadataDatabaseConstPtr m_imageMetadata;

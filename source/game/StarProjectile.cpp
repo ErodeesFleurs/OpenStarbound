@@ -1,23 +1,22 @@
 #include "StarProjectile.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarWorld.hpp"
-#include "StarWorldServer.hpp"
-#include "StarLogging.hpp"
-#include "StarRoot.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarMonster.hpp"
-#include "StarStoredFunctions.hpp"
-#include "StarDamageDatabase.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarAssets.hpp"
+#include "StarConfigLuaBindings.hpp"
+#include "StarDamageDatabase.hpp"
+#include "StarDataStreamExtra.hpp"
+#include "StarEntityLuaBindings.hpp"
 #include "StarItemDrop.hpp"
 #include "StarIterator.hpp"
-#include "StarConfigLuaBindings.hpp"
-#include "StarEntityLuaBindings.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarLogging.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarMonster.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
 #include "StarParticleDatabase.hpp"
+#include "StarProjectileDatabase.hpp"
+#include "StarStoredFunctions.hpp"
+#include "StarWorld.hpp"
+#include "StarWorldServer.hpp"
 
 namespace Star {
 
@@ -71,7 +70,7 @@ Json Projectile::configValue(String const& name, Json const& def) const {
 
 void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
-  m_movementController->init(world);
+  m_movementController->init(*world);
   m_movementController->setIgnorePhysicsEntities({entityId});
 
   m_timeToLive = m_parameters.getFloat("timeToLive", m_config->timeToLive);
@@ -95,9 +94,9 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
 
       m_scriptComponent.addCallbacks("projectile", makeProjectileCallbacks());
       m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
-      m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(m_movementController.get()));
-      m_scriptComponent.init(world);
+      m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+      m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(*m_movementController));
+      m_scriptComponent.init(*world);
     }
   }
   m_travelLine = Line2F(position(), position());
@@ -219,7 +218,7 @@ List<DamageSource> Projectile::damageSources() const {
   List<DamageSource> res;
   auto addDamageSource = [&](DamageSource::DamageArea damageArea) {
     res.append(DamageSource(m_damageType, damageArea, m_power * m_powerMultiplier, true, m_sourceEntity, sourceTeam,
-        m_damageRepeatGroup, m_damageRepeatTimeout, m_damageKind, statusEffects, knockback, m_rayCheckToSource));
+                            m_damageRepeatGroup, m_damageRepeatTimeout, m_damageKind, statusEffects, knockback, m_rayCheckToSource));
   };
 
   Vec2F positionDelta = world()->geometry().diff(m_travelLine.min(), m_travelLine.max());
@@ -376,8 +375,8 @@ void Projectile::render(RenderCallback* renderCallback) {
   m_effectEmitter->render(renderCallback, world()->particleDatabase());
 
   String image = strf("{}:{}{}", m_config->image, m_frame, m_imageSuffix);
-  Drawable drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F());
-  drawable.imagePart().addDirectives(m_imageDirectives, true);
+  Drawable drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F(), world()->imageMetadataDatabase());
+  drawable.imagePart().addDirectives(m_imageDirectives, true, world()->imageMetadataDatabase());
   if (m_config->flippable) {
     auto angleSide = getAngleSide(m_movementController->rotation(), true);
     if (angleSide.second == Direction::Left)
@@ -504,23 +503,23 @@ Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) 
   return collision;
 }
 
-List<Particle> Projectile::sparkBlock(AssetsConstPtr assets, World* world, Vec2I const& position, Vec2F const& damageSource) {
+List<Particle> Projectile::sparkBlock(AssetsConstPtr assets, World& world, Vec2I const& position, Vec2F const& damageSource) {
   if (!assets)
     throw StarException("Projectile::sparkBlock requires assets service");
 
-  auto materialDatabase = world->materialDatabase();
+  auto materialDatabase = world.materialDatabase();
 
   auto blockDamageParticle = Particle(assets->json("/client.config:blockDamageParticle"), "/", assets);
   auto blockDamageVariance = Particle(assets->json("/client.config:blockDamageParticleVariance"), "/", assets);
 
   List<Particle> result;
   for (auto layer : {TileLayer::Background, TileLayer::Foreground}) {
-    auto material = world->material(position, layer);
-    auto hueShift = world->materialHueShift(position, layer);
+    auto material = world.material(position, layer);
+    auto hueShift = world.materialHueShift(position, layer);
     if (isRealMaterial(material)) {
       auto particle = blockDamageParticle;
       particle.position += centerOfTile(position);
-      particle.velocity = particle.velocity.magnitude() * vnorm(world->geometry().diff(damageSource, particle.position));
+      particle.velocity = particle.velocity.magnitude() * vnorm(world.geometry().diff(damageSource, particle.position));
       particle.color = materialDatabase->materialParticleColor(material, hueShift);
       particle.applyVariance(blockDamageVariance);
 
@@ -544,7 +543,7 @@ int Projectile::getFrame() const {
       return floor(m_animationTimer / time_per_frame);
     } else if (m_timeToLive < time_per_frame * m_config->winddownFrames) {
       return m_config->windupFrames + m_config->frameNumber
-          + clamp<int>((time_per_frame * m_config->winddownFrames - m_timeToLive) / time_per_frame, 0, m_config->winddownFrames - 1);
+        + clamp<int>((time_per_frame * m_config->winddownFrames - m_timeToLive) / time_per_frame, 0, m_config->winddownFrames - 1);
     } else {
       float time_within_cycle = std::fmod(m_animationTimer, m_animationCycle);
       return m_config->windupFrames + floor(time_within_cycle / time_per_frame);
@@ -630,7 +629,7 @@ void Projectile::processAction(Json const& action) {
 
     auto materialDatabase = world()->materialDatabase();
     Maybe<ModId> previousMod =
-        parameters.optString("previousMod").apply([materialDatabase](String const& modName) { return materialDatabase->modId(modName); });
+      parameters.optString("previousMod").apply([materialDatabase](String const& modName) { return materialDatabase->modId(modName); });
     ModId newMod = materialDatabase->modId(parameters.getString("newMod"));
     int radius = parameters.getInt("radius", 0);
     float chance = parameters.getFloat("chance", 1.0f);
@@ -695,8 +694,7 @@ void Projectile::processAction(Json const& action) {
     if (parameters.contains("inheritSpeedFactor"))
       projectileParameters = projectileParameters.set("speed", (m_movementController->velocity() - m_referenceVelocity.value()).magnitude() * parameters.getFloat("inheritSpeedFactor"));
 
-    auto projectileDb = as<WorldServer>(world()) ? as<WorldServer>(world())->projectileDatabase() : Root::singleton().projectileDatabase();
-    auto projectile = projectileDb->createProjectile(type, projectileParameters);
+    auto projectile = world()->projectileDatabase()->createProjectile(type, projectileParameters);
     Vec2F offset;
     if (parameters.contains("offset")) {
       offset = jsonToVec2F(parameters.getArray("offset", {0.0f, 0.0f}));
@@ -731,7 +729,7 @@ void Projectile::processAction(Json const& action) {
     }
     projectile->setSourceEntity(m_sourceEntity, false);
     projectile->setPowerMultiplier(m_powerMultiplier);
-    
+
     // if the entity no longer exists and no explicit damage team is set, inherit damage team
     if (!projectile->m_damageTeam && !world()->entity(m_sourceEntity))
       projectile->setTeam(getTeam());
@@ -746,7 +744,7 @@ void Projectile::processAction(Json const& action) {
     if (!m_collision || collisionMaterial == EmptyMaterialId)
       return;
 
-    for (auto& particle : sparkBlock(m_assets, world(), m_collisionTile, position())) {
+    for (auto& particle : sparkBlock(m_assets, *world(), m_collisionTile, position())) {
       // enable trails and such
       particle.approach += Vec2F(0.0f, 5.0f);
       particle.velocity += Vec2F(Random::randf() - 0.5f, 5.0f + Random::randf());
@@ -783,17 +781,17 @@ void Projectile::processAction(Json const& action) {
     Vec2F explosionPosition = position();
 
     doWithDelay(parameters.getUInt("delaySteps", 0), [=, this](World* world) {
-        world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
-            TileLayer::Foreground,
-            explosionPosition,
-            {damageType, explosiveDamageAmount, harvestLevel},
-            sourceEntity());
-        world->damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
-            TileLayer::Background,
-            explosionPosition,
-            {damageType, explosiveDamageAmount, harvestLevel},
-            sourceEntity());
-      });
+      world->damageTiles(tileAreaBrush(foregroundRadius, explosionPosition, false),
+                         TileLayer::Foreground,
+                         explosionPosition,
+                         {damageType, explosiveDamageAmount, harvestLevel},
+                         sourceEntity());
+      world->damageTiles(tileAreaBrush(backgroundRadius, explosionPosition, false),
+                         TileLayer::Background,
+                         explosionPosition,
+                         {damageType, explosiveDamageAmount, harvestLevel},
+                         sourceEntity());
+    });
 
   } else if (command == "spawnmonster") {
     if (isMaster()) {
@@ -803,7 +801,10 @@ void Projectile::processAction(Json const& action) {
 
       float level = parameters.getFloat("level", m_parameters.getFloat("level", 0.0f));
 
-      auto monsterDatabase = as<WorldServer>(world()) ? as<WorldServer>(world())->monsterDatabase() : Root::singleton().monsterDatabase();
+      auto worldServer = as<WorldServer>(world());
+      if (!worldServer)
+        throw StarException("Projectile action requires server world monster database");
+      auto monsterDatabase = worldServer->monsterDatabase();
       auto monster = monsterDatabase->createMonster(monsterDatabase->randomMonster(type, arguments), level);
 
       auto spawnPosition = position();
@@ -846,13 +847,12 @@ void Projectile::processAction(Json const& action) {
       return;
 
     m_pendingRenderables.append(LightSource{
-        position(),
-        jsonToColor(parameters.get("color")).toRgbF(),
-        static_cast<LightType>(parameters.getBool("pointLight", true)),
-        0.0f,
-        0.0f,
-        0.0f
-      });
+      position(),
+      jsonToColor(parameters.get("color")).toRgbF(),
+      static_cast<LightType>(parameters.getBool("pointLight", true)),
+      0.0f,
+      0.0f,
+      0.0f});
 
   } else if (command == "option") {
     JsonArray options = parameters.getArray("options");
@@ -922,18 +922,16 @@ void Projectile::setup() {
   m_acceleration = m_parameters.getFloat("acceleration", m_config->acceleration);
   m_power = m_parameters.getFloat("power", m_config->power);
   m_powerMultiplier = m_parameters.getFloat("powerMultiplier", 1.0f);
-  { // it is possible to shove a frame name in processing. I hope nobody actually does this but account for it...
+  {// it is possible to shove a frame name in processing. I hope nobody actually does this but account for it...
     String processing = m_parameters.getString("processing", "");
     auto begin = processing.utf8().find_first_of('?');
     if (begin == NPos) {
       m_imageDirectives = "";
       m_imageSuffix = std::move(processing);
-    }
-    else if (begin == 0) {
+    } else if (begin == 0) {
       m_imageDirectives = std::move(processing);
       m_imageSuffix = "";
-    }
-    else {
+    } else {
       m_imageDirectives = static_cast<String>(processing.utf8().substr(begin));
       m_imageSuffix = processing.utf8().substr(0, begin);
     }
@@ -1004,15 +1002,15 @@ void Projectile::setup() {
 LuaCallbacks Projectile::makeProjectileCallbacks() {
   LuaCallbacks callbacks;
   callbacks.registerCallback("getParameter", [this](String const& name, Json const& def) {
-      return configValue(name,def);
-    });
+    return configValue(name, def);
+  });
   callbacks.registerCallback("die", [this]() { m_timeToLive = 0.0f; });
   callbacks.registerCallback("sourceEntity", [this]() -> Maybe<EntityId> {
-      if (m_sourceEntity == NullEntityId)
-        return {};
-      else
-        return m_sourceEntity;
-    });
+    if (m_sourceEntity == NullEntityId)
+      return {};
+    else
+      return m_sourceEntity;
+  });
   callbacks.registerCallback("powerMultiplier", [this]() { return powerMultiplier(); });
   callbacks.registerCallback("timeToLive", [this]() { return m_timeToLive; });
   callbacks.registerCallback("setTimeToLive", [this](float const& timeToLive) { return m_timeToLive = timeToLive; });
@@ -1034,4 +1032,4 @@ void Projectile::renderPendingRenderables(RenderCallback* renderCallback) {
   m_pendingRenderables.clear();
 }
 
-}
+}// namespace Star

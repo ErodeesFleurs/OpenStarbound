@@ -2,6 +2,8 @@
 
 namespace Star {
 
+StackWidget::StackWidget(GuiContext& context) : Widget(context) {}
+
 void StackWidget::showPage(size_t page) {
   if (m_shownPage)
     m_shownPage->hide();

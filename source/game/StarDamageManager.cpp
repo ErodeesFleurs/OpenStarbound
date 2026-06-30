@@ -56,7 +56,7 @@ DataStream& operator>>(DataStream& ds, RemoteDamageNotification& damageNotificat
   return ds;
 }
 
-DamageManager::DamageManager(World* world, ConnectionId connectionId) : m_world(world), m_connectionId(connectionId) {}
+DamageManager::DamageManager(World& world, ConnectionId connectionId) : m_world(world), m_connectionId(connectionId) {}
 
 void DamageManager::update(float dt) {
   float const DefaultDamageTimeout = 1.0f;
@@ -69,14 +69,14 @@ void DamageManager::update(float dt) {
       auto& event = eventIt.next();
       event.timeout -= dt;
       auto entityIdTimeoutGroup = event.timeoutGroup.maybe<EntityId>();
-      if (event.timeout <= 0.0f || (entityIdTimeoutGroup && !m_world->entity(*entityIdTimeoutGroup)))
+      if (event.timeout <= 0.0f || (entityIdTimeoutGroup && !m_world.entity(*entityIdTimeoutGroup)))
         eventIt.remove();
     }
     if (events.empty())
       damageIt.remove();
   }
 
-  m_world->forAllEntities([&](EntityPtr const& causingEntity) {
+  m_world.forAllEntities([&](EntityPtr const& causingEntity) {
     for (auto& damageSource : causingEntity->damageSources()) {
       if (damageSource.trackSourceEntity)
         damageSource.translate(causingEntity->position());
@@ -87,7 +87,7 @@ void DamageManager::update(float dt) {
         SpatialLogger::logLine("world", *line, Color::Orange.toRgba());
 
       for (auto const& hitResultPair : queryHit(damageSource, causingEntity->entityId())) {
-        auto targetEntity = m_world->entity(hitResultPair.first);
+        auto targetEntity = m_world.entity(hitResultPair.first);
         if (!isAuthoritative(causingEntity, targetEntity))
           continue;
 
@@ -112,7 +112,7 @@ void DamageManager::update(float dt) {
             eventList.append({causingEntity->entityId(), timeout});
 
           auto damageRequest = DamageRequest(hitResultPair.second, damageSource.damageType, damageSource.damage,
-              damageSource.knockbackMomentum(m_world->geometry(), targetEntity->position()),
+              damageSource.knockbackMomentum(m_world.geometry(), targetEntity->position()),
               damageSource.sourceEntityId, damageSource.damageSourceKind, damageSource.statusEffects);
           addHitRequest({causingEntity->entityId(), targetEntity->entityId(), damageRequest});
 
@@ -131,7 +131,7 @@ void DamageManager::pushRemoteHitRequest(RemoteHitRequest const& remoteHitReques
   if (remoteHitRequest.destinationConnection() != m_connectionId)
     throw StarException("RemoteDamageRequest routed to wrong DamageManager");
 
-  if (auto causingEntity = m_world->entity(remoteHitRequest.causingEntityId)) {
+  if (auto causingEntity = m_world.entity(remoteHitRequest.causingEntityId)) {
     starAssert(causingEntity->isMaster());
     causingEntity->hitOther(remoteHitRequest.targetEntityId, remoteHitRequest.damageRequest);
   }
@@ -141,7 +141,7 @@ void DamageManager::pushRemoteDamageRequest(RemoteDamageRequest const& remoteDam
   if (remoteDamageRequest.destinationConnection() != m_connectionId)
     throw StarException("RemoteDamageRequest routed to wrong DamageManager");
 
-  if (auto targetEntity = m_world->entity(remoteDamageRequest.targetEntityId)) {
+  if (auto targetEntity = m_world.entity(remoteDamageRequest.targetEntityId)) {
     starAssert(targetEntity->isMaster());
     for (auto& damageNotification : targetEntity->applyDamage(remoteDamageRequest.damageRequest))
       addDamageNotification({remoteDamageRequest.damageRequest.sourceEntityId, std::move(damageNotification)});
@@ -149,7 +149,7 @@ void DamageManager::pushRemoteDamageRequest(RemoteDamageRequest const& remoteDam
 }
 
 void DamageManager::pushRemoteDamageNotification(RemoteDamageNotification remoteDamageNotification) {
-  if (auto sourceEntity = m_world->entity(remoteDamageNotification.sourceEntityId)) {
+  if (auto sourceEntity = m_world.entity(remoteDamageNotification.sourceEntityId)) {
     if (sourceEntity->isMaster()
         && sourceEntity->entityId() != remoteDamageNotification.damageNotification.targetEntityId)
       sourceEntity->damagedOther(remoteDamageNotification.damageNotification);
@@ -185,15 +185,15 @@ SmallList<pair<EntityId, HitType>, 4> DamageManager::queryHit(DamageSource const
 
     if (source.rayCheck) {
       if (auto poly = source.damageArea.ptr<PolyF>()) {
-        if (auto sourceEntity = m_world->entity(source.sourceEntityId)) {
-          auto overlap = m_world->geometry().rectOverlap(targetEntity->metaBoundBox().translated(targetEntity->position()), poly->boundBox());
-          if (!overlap.isEmpty() && m_world->lineTileCollision(overlap.center(), sourceEntity->position()))
+        if (auto sourceEntity = m_world.entity(source.sourceEntityId)) {
+          auto overlap = m_world.geometry().rectOverlap(targetEntity->metaBoundBox().translated(targetEntity->position()), poly->boundBox());
+          if (!overlap.isEmpty() && m_world.lineTileCollision(overlap.center(), sourceEntity->position()))
             return;
         }
       } else if (auto line = source.damageArea.ptr<Line2F>()) {
         if (auto hitPoly = targetEntity->hitPoly()) {
-          if (auto intersection = m_world->geometry().lineIntersectsPolyAt(*line, *hitPoly)) {
-            if (m_world->lineTileCollision(line->min(), *intersection))
+          if (auto intersection = m_world.geometry().lineIntersectsPolyAt(*line, *hitPoly)) {
+            if (m_world.lineTileCollision(line->min(), *intersection))
               return;
           }
         }
@@ -207,9 +207,9 @@ SmallList<pair<EntityId, HitType>, 4> DamageManager::queryHit(DamageSource const
   };
 
   if (auto poly = source.damageArea.ptr<PolyF>())
-    m_world->forEachEntity(poly->boundBox(), doQueryHit);
+    m_world.forEachEntity(poly->boundBox(), doQueryHit);
   else if (auto line = source.damageArea.ptr<Line2F>())
-    m_world->forEachEntityLine(line->min(), line->max(), doQueryHit);
+    m_world.forEachEntityLine(line->min(), line->max(), doQueryHit);
 
   return resultList;
 }

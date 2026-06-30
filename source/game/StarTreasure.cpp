@@ -189,15 +189,15 @@ List<ItemPtr> TreasureDatabase::fillWithTreasure(
   return overflowItems;
 }
 
-ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction) const {
+ContainerObjectPtr TreasureDatabase::createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction) const {
   return createTreasureChest(world, treasureChestSet, position, direction, Random::randu64());
 }
 
-ContainerObjectPtr TreasureDatabase::createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const {
+ContainerObjectPtr TreasureDatabase::createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const {
   if (!m_treasureChestSets.contains(treasureChestSet))
     throw StarException(strf("Unknown treasure chest set '{}'", treasureChestSet));
 
-  auto level = world->threatLevel();
+  auto level = world.threatLevel();
   auto boxSet = m_treasureChestSets.get(treasureChestSet);
   eraseWhere(boxSet, [level](TreasureChest const& treasureChest) { return level < treasureChest.minimumLevel; });
 

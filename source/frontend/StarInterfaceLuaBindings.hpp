@@ -10,8 +10,8 @@ class UniverseClient;
 using UniverseClientPtr = SharedPtr<UniverseClient>;
 
 namespace LuaBindings {
-  LuaCallbacks makeInterfaceCallbacks(MainInterface* mainInterface);
-  LuaCallbacks makeChatCallbacks(MainInterface* mainInterface, UniverseClient* client);
+  LuaCallbacks makeInterfaceCallbacks(MainInterface& mainInterface);
+  LuaCallbacks makeChatCallbacks(MainInterface& mainInterface, UniverseClient& client);
 }
 
 }

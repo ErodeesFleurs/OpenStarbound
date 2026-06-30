@@ -8,6 +8,7 @@
 
 namespace Star {
 
+class GuiContext;
 class WorldClient;
 using WorldClientPtr = SharedPtr<WorldClient>;
 class NameplatePainter;
@@ -17,6 +18,7 @@ class NameplatePainter {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   explicit NameplatePainter(Services services);
@@ -37,6 +39,7 @@ private:
   TextPositioning statusPosition(Vec2F bubblePosition) const;
   RectF determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const;
 
+  GuiContext& m_guiContext;
   bool m_showMasterNames;
   float m_opacityRate;
   float m_inspectOpacityRate;

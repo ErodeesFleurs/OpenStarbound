@@ -13,6 +13,7 @@ class WorldPainter;
 using WorldPainterPtr = SharedPtr<WorldPainter>;
 class MainMixer;
 using MainMixerPtr = SharedPtr<MainMixer>;
+class Voice;
 
 class MainMixer {
 public:
@@ -21,7 +22,7 @@ public:
     ConfigurationPtr configuration;
   };
 
-  MainMixer(unsigned sampleRate, unsigned channels, Services services);
+  MainMixer(unsigned sampleRate, unsigned channels, Voice& voice, Services services);
 
   void setUniverseClient(UniverseClientPtr universeClient);
   void setWorldPainter(WorldPainterPtr worldPainter);
@@ -37,6 +38,7 @@ public:
 private:
   UniverseClientPtr m_universeClient;
   WorldPainterPtr m_worldPainter;
+  Voice& m_voice;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
   MixerPtr m_mixer;

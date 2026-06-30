@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarCelestialDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
 
 namespace Star {
 
@@ -21,17 +22,17 @@ public:
   // Specify the shadowing parameters in order to use the shadowing
   // information from that body instead of the primary one.
   static List<pair<String, float>> drawWorld(
-      CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& shadowingParameters = {}, AssetsConstPtr assets = {});
-  static List<pair<String, String>> worldHorizonImages(CelestialParameters const& celestialParameters, AssetsConstPtr assets = {});
-  static int worldRadialPosition(CelestialParameters const& celestialParameters, AssetsConstPtr assets = {});
+    CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& shadowingParameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
+  static List<pair<String, String>> worldHorizonImages(CelestialParameters const& celestialParameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
+  static int worldRadialPosition(CelestialParameters const& celestialParameters, AssetsConstPtr assets);
 
   // Each orbiting body will occupy a unique orbital slot, but to give
   // graphical diversity, will also fit into exactly one radial slot for
   // display purposes.  The range of radial numbers is [0, RadialPosiitons)
-  static int planetRadialPositions(AssetsConstPtr assets = {});
-  static int satelliteRadialPositions(AssetsConstPtr assets = {});
+  static int planetRadialPositions(AssetsConstPtr assets);
+  static int satelliteRadialPositions(AssetsConstPtr assets);
 
-  static List<pair<String, float>> drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double twinkleTime, AssetsConstPtr assets = {});
+  static List<pair<String, float>> drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double twinkleTime, AssetsConstPtr assets);
 
   // Returns the small graphic for the given planetary object appropriate for a
   // system-level view.
@@ -41,15 +42,15 @@ public:
   // Returns the graphics appropriate to draw an entire world (planetary object
   // or satellite object) in a map view.  Shadows the satellite the same as
   // its parent planetary object.
-  static List<pair<String, float>> drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets = {});
+  static List<pair<String, float>> drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
 
   // Draw all of the left and right image pairs for all the layers for the
   // world horizon.
-  static List<pair<String, String>> worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets = {});
+  static List<pair<String, String>> worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
 
-  static int worldRadialPosition(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets = {});
+  static int worldRadialPosition(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets);
 
 private:
 };
 
-}
+}// namespace Star

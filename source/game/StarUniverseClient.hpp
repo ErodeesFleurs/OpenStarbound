@@ -1,33 +1,34 @@
 #pragma once
 
-#include "StarMaybe.hpp"
-#include "StarHostAddress.hpp"
-#include "StarGameTimers.hpp"
+#include "StarAiTypes.hpp"
+#include "StarAssets.hpp"
+#include "StarBiomeDatabase.hpp"
 #include "StarCelestialParameters.hpp"
 #include "StarChatTypes.hpp"
-#include "StarWarping.hpp"
-#include "StarAiTypes.hpp"
-#include "StarSky.hpp"
-#include "StarUniverseConnection.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
-#include "StarBiomeDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
-#include "StarEntityFactory.hpp"
 #include "StarDamageDatabase.hpp"
+#include "StarEffectSourceDatabase.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarGameTimers.hpp"
+#include "StarHostAddress.hpp"
+#include "StarImageMetadataDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarMaybe.hpp"
 #include "StarNameGenerator.hpp"
 #include "StarParticleDatabase.hpp"
-#include "StarProjectileDatabase.hpp"
-#include "StarStoredFunctions.hpp"
-#include "StarEffectSourceDatabase.hpp"
-#include "StarTechDatabase.hpp"
-#include "StarStatusEffectDatabase.hpp"
 #include "StarPlantDatabase.hpp"
+#include "StarProjectileDatabase.hpp"
+#include "StarSky.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarStatusEffectDatabase.hpp"
+#include "StarStoredFunctions.hpp"
+#include "StarTechDatabase.hpp"
 #include "StarTreasure.hpp"
-#include "StarImageMetadataDatabase.hpp"
+#include "StarUniverseConnection.hpp"
+#include "StarWarping.hpp"
 
 namespace Star {
 
@@ -72,32 +73,39 @@ class ItemDatabase;
 using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 class ObjectDatabase;
 using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class TerrainDatabase;
+using TerrainDatabaseConstPtr = SharedPtr<TerrainDatabase const>;
+class DungeonDefinitions;
+using DungeonDefinitionsConstPtr = SharedPtr<DungeonDefinitions const>;
 
 class UniverseClient {
 public:
   UniverseClient(PlayerStoragePtr playerStorage,
-      StatisticsPtr statistics,
-      AssetsConstPtr assets,
-      ConfigurationPtr configuration,
-      MaterialDatabaseConstPtr materialDatabase,
-      ItemDatabaseConstPtr itemDatabase,
-      ObjectDatabaseConstPtr objectDatabase,
-      SpeciesDatabaseConstPtr speciesDatabase,
-      EntityFactoryConstPtr entityFactory,
-      LiquidsDatabaseConstPtr liquidsDatabase,
-      BiomeDatabaseConstPtr biomeDatabase,
-      PatternedNameGeneratorConstPtr nameGenerator,
-      FunctionDatabaseConstPtr functionDatabase,
-      BehaviorDatabaseConstPtr behaviorDatabase,
-      ParticleDatabaseConstPtr particleDatabase,
-      DamageDatabaseConstPtr damageDatabase,
-      ProjectileDatabaseConstPtr projectileDatabase,
-      EffectSourceDatabaseConstPtr effectSourceDatabase,
-      TechDatabaseConstPtr techDatabase,
-      StatusEffectDatabaseConstPtr statusEffectDatabase,
-      PlantDatabaseConstPtr plantDatabase,
-      TreasureDatabaseConstPtr treasureDatabase,
-      ImageMetadataDatabaseConstPtr imageMetadataDatabase);
+                 StatisticsPtr statistics,
+                 AssetsConstPtr assets,
+                 ConfigurationPtr configuration,
+                 MaterialDatabaseConstPtr materialDatabase,
+                 ItemDatabaseConstPtr itemDatabase,
+                 ObjectDatabaseConstPtr objectDatabase,
+                 SpeciesDatabaseConstPtr speciesDatabase,
+                 EntityFactoryConstPtr entityFactory,
+                 LiquidsDatabaseConstPtr liquidsDatabase,
+                 TerrainDatabaseConstPtr terrainDatabase,
+                 BiomeDatabaseConstPtr biomeDatabase,
+                 PatternedNameGeneratorConstPtr nameGenerator,
+                 FunctionDatabaseConstPtr functionDatabase,
+                 BehaviorDatabaseConstPtr behaviorDatabase,
+                 ParticleDatabaseConstPtr particleDatabase,
+                 DamageDatabaseConstPtr damageDatabase,
+                 ProjectileDatabaseConstPtr projectileDatabase,
+                 EffectSourceDatabaseConstPtr effectSourceDatabase,
+                 TechDatabaseConstPtr techDatabase,
+                 StatusEffectDatabaseConstPtr statusEffectDatabase,
+                 PlantDatabaseConstPtr plantDatabase,
+                 TreasureDatabaseConstPtr treasureDatabase,
+                 ImageMetadataDatabaseConstPtr imageMetadataDatabase,
+                 DungeonDefinitionsConstPtr dungeonDefinitions,
+                 LuaRootServices luaRootServices);
   ~UniverseClient();
 
   void setMainPlayer(PlayerPtr player);
@@ -114,6 +122,7 @@ public:
   // WorldClient may be null if the UniverseClient is not connected.
   WorldClientPtr worldClient() const;
   SystemWorldClientPtr systemWorldClient() const;
+  LiquidsDatabaseConstPtr liquidsDatabase() const;
 
   // Updates internal world client in addition to handling universe level
   // commands.
@@ -193,12 +202,14 @@ private:
   StatisticsPtr m_statistics;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
+  LuaRootServices m_luaRootServices;
   MaterialDatabaseConstPtr m_materialDatabase;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   SpeciesDatabaseConstPtr m_speciesDatabase;
   EntityFactoryConstPtr m_entityFactory;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
+  TerrainDatabaseConstPtr m_terrainDatabase;
   BiomeDatabaseConstPtr m_biomeDatabase;
   PatternedNameGeneratorConstPtr m_nameGenerator;
   FunctionDatabaseConstPtr m_functionDatabase;
@@ -212,6 +223,7 @@ private:
   PlantDatabaseConstPtr m_plantDatabase;
   TreasureDatabaseConstPtr m_treasureDatabase;
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
+  DungeonDefinitionsConstPtr m_dungeonDefinitions;
   PlayerPtr m_mainPlayer;
 
   bool m_pause;
@@ -251,4 +263,4 @@ private:
   ReloadPlayerCallback m_playerReloadCallback;
 };
 
-}
+}// namespace Star

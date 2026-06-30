@@ -348,10 +348,10 @@ SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& po
   init();
 }
 
-SystemObject::SystemObject(SystemWorld* system, Json const& diskStore) {
+SystemObject::SystemObject(SystemWorld& system, Json const& diskStore) {
   m_uuid = Uuid(diskStore.getString("uuid"));
   auto name = diskStore.getString("name");
-  m_config = system->systemObjectConfig(name, m_uuid);
+  m_config = system.systemObjectConfig(name, m_uuid);
   m_parameters = diskStore.getObject("parameters", {});
 
   m_orbit.set(jsonToMaybe<CelestialOrbit>(diskStore.get("orbit"), [](Json const& json) {
@@ -433,34 +433,34 @@ void SystemObject::clientUpdate(float dt) {
   m_netGroup.tickNetInterpolation(dt);
 }
 
-void SystemObject::serverUpdate(SystemWorldServer* system, float dt) {
-  if (!m_config.permanent && m_spawnTime > 0.0 && system->time() > m_spawnTime + m_config.lifeTime)
+void SystemObject::serverUpdate(SystemWorldServer& system, float dt) {
+  if (!m_config.permanent && m_spawnTime > 0.0 && system.time() > m_spawnTime + m_config.lifeTime)
     m_shouldDestroy = true;
 
   if (m_orbit.get()) {
-    setPosition(system->orbitPosition(*m_orbit.get()));
+    setPosition(system.orbitPosition(*m_orbit.get()));
   } else if (m_config.permanent || !m_config.moving) {
     // permanent locations always have a solar orbit
-    enterOrbit(CelestialCoordinate(system->location()), {0.0, 0.0}, system->time());
+    enterOrbit(CelestialCoordinate(system.location()), {0.0, 0.0}, system.time());
   } else if (m_approach && !m_approach->isNull()) {
 
-    if (system->shipsAtLocation(m_uuid).size() > 0)
+    if (system.shipsAtLocation(m_uuid).size() > 0)
       return;
 
     if (m_approach->isPlanetaryBody()) {
-      auto approach = system->planetPosition(*m_approach);
+      auto approach = system.planetPosition(*m_approach);
       auto toApproach = (approach - position());
       auto pos = position();
       setPosition(pos + toApproach.normalized() * m_config.speed * dt);
 
-      if ((approach - position()).magnitude() < system->planetSize(*m_approach) + m_config.orbitDistance)
-        enterOrbit(*m_approach, approach, system->time());
+      if ((approach - position()).magnitude() < system.planetSize(*m_approach) + m_config.orbitDistance)
+        enterOrbit(*m_approach, approach, system.time());
     } else {
-      enterOrbit(*m_approach, {0.0, 0.0}, system->time());
+      enterOrbit(*m_approach, {0.0, 0.0}, system.time());
     }
   } else {
-    auto planets = system->planets().filtered([system](CelestialCoordinate const& p) {
-        auto objectsAtPlanet = system->objects().filtered([p](SystemObjectPtr const& o) { return o->orbitTarget() == p; });
+    auto planets = system.planets().filtered([&system](CelestialCoordinate const& p) {
+        auto objectsAtPlanet = system.objects().filtered([p](SystemObjectPtr const& o) { return o->orbitTarget() == p; });
         return objectsAtPlanet.size() == 0;
       });
 
@@ -504,13 +504,13 @@ void SystemObject::setPosition(Vec2F const& position) {
   m_yPosition.set(position[1]);
 }
 
-SystemClientShip::SystemClientShip(SystemWorld* system, Uuid uuid, float speed, SystemLocation const& location)
+SystemClientShip::SystemClientShip(SystemWorld& system, Uuid uuid, float speed, SystemLocation const& location)
   : m_uuid(std::move(uuid)) {
   m_systemLocation.set(location);
-  setPosition(system->systemLocationPosition(location).value({}));
+  setPosition(system.systemLocationPosition(location).value({}));
 
   // temporary
-  auto shipConfig = system->assets()->json("/systemworld.config:clientShip");
+  auto shipConfig = system.assets()->json("/systemworld.config:clientShip");
   m_config = ClientShipConfig{
     shipConfig.getFloat("orbitDistance"),
     shipConfig.getFloat("departTime"),
@@ -532,7 +532,7 @@ SystemClientShip::SystemClientShip(SystemWorld* system, Uuid uuid, float speed, 
   m_yPosition.setInterpolator(lerp<float, float>);
 }
 
-SystemClientShip::SystemClientShip(SystemWorld* system, Uuid uuid, SystemLocation const& location)
+SystemClientShip::SystemClientShip(SystemWorld& system, Uuid uuid, SystemLocation const& location)
   : SystemClientShip(system, uuid, 0.0f, location) {}
 
 Uuid SystemClientShip::uuid() const {
@@ -573,18 +573,18 @@ void SystemClientShip::clientUpdate(float dt) {
   m_netGroup.tickNetInterpolation(dt);
 }
 
-void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
+void SystemClientShip::serverUpdate(SystemWorld& system, float dt) {
   // if destination is an orbit we haven't started orbiting yet, update the time
   if (auto orbit = m_destination.get().maybe<CelestialOrbit>())
-    orbit->enterTime = system->time();
+    orbit->enterTime = system.time();
 
-  auto nearPlanetOrbit = [this,system](CelestialCoordinate const& planet) -> CelestialOrbit {
-    Vec2F toShip = system->planetPosition(planet) - position();
+  auto nearPlanetOrbit = [this, &system](CelestialCoordinate const& planet) -> CelestialOrbit {
+    Vec2F toShip = system.planetPosition(planet) - position();
     return CelestialOrbit {
       planet,
       1,
-      system->time(),
-      Vec2F::withAngle(toShip.angle(), system->planetSize(planet) / 2.0 + m_config.orbitDistance)
+      system.time(),
+      Vec2F::withAngle(toShip.angle(), system.planetSize(planet) / 2.0 + m_config.orbitDistance)
     };
   };
 
@@ -606,10 +606,10 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
     Vec2F pos = position();
     Vec2F destination;
     if (m_orbit) {
-      m_orbit->enterTime = system->time();
-      destination = system->orbitPosition(*m_orbit);
+      m_orbit->enterTime = system.time();
+      destination = system.orbitPosition(*m_orbit);
     } else {
-      destination = system->systemLocationPosition(m_destination.get()).value(pos);
+      destination = system.systemLocationPosition(m_destination.get()).value(pos);
     }
 
     auto toTarget = destination - pos;
@@ -625,9 +625,9 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
   }
 
   if (m_orbit) {
-    setPosition(system->systemLocationPosition(*m_orbit).get());
+    setPosition(system.systemLocationPosition(*m_orbit).get());
   } else {
-    setPosition(system->systemLocationPosition(m_systemLocation.get()).get());
+    setPosition(system.systemLocationPosition(m_systemLocation.get()).get());
   }
 }
 

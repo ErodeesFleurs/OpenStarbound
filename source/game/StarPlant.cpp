@@ -1,7 +1,6 @@
 #include "StarPlant.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWorld.hpp"
-#include "StarRoot.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarPlantDrop.hpp"
 #include "StarImageMetadataDatabase.hpp"
@@ -12,10 +11,6 @@
 namespace Star {
 
 float const Plant::PlantScanThreshold = 0.1f;
-
-static ImageMetadataDatabaseConstPtr resolveImageMetadata(World* world) {
-  return world ? world->imageMetadataDatabase() : Root::singleton().imageMetadataDatabase();
-}
 
 EnumMap<Plant::RotationType> const Plant::RotationTypeNames{
   {Plant::RotationType::DontRotate, "dontRotate"},
@@ -39,8 +34,8 @@ Plant::PlantPiece::PlantPiece() {
   flip = false;
 }
 
-Plant::Plant(AssetsConstPtr assets, TreeVariant const& config, uint64_t seed)
-  : Plant(std::move(assets)) {
+Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, TreeVariant const& config, uint64_t seed)
+  : Plant(std::move(assets), std::move(imageMetadataDatabase)) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_windTime = 0.0f;
@@ -432,8 +427,8 @@ ByteArray Plant::netStore(NetCompatibilityRules rules) const {
   return ds.takeData();
 }
 
-Plant::Plant(AssetsConstPtr assets, GrassVariant const& config, uint64_t seed)
-  : Plant(std::move(assets)) {
+Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, GrassVariant const& config, uint64_t seed)
+  : Plant(std::move(assets), std::move(imageMetadataDatabase)) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -454,8 +449,7 @@ Plant::Plant(AssetsConstPtr assets, GrassVariant const& config, uint64_t seed)
   // If this is a ceiling plant, offset the image so that the [0, 0] space is
   // at the top
   if (config.ceiling) {
-    auto imgMetadata = resolveImageMetadata(worldPtr());
-    float imageHeight = imgMetadata->imageSize(imageName)[1];
+    float imageHeight = m_imageMetadataDatabase->imageSize(imageName)[1];
     offset = Vec2F(0.0f, 1.0f - imageHeight / TilePixels);
   }
 
@@ -472,8 +466,8 @@ Plant::Plant(AssetsConstPtr assets, GrassVariant const& config, uint64_t seed)
   setupNetStates();
 }
 
-Plant::Plant(AssetsConstPtr assets, BushVariant const& config, uint64_t seed)
-  : Plant(std::move(assets)) {
+Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, BushVariant const& config, uint64_t seed)
+  : Plant(std::move(assets), std::move(imageMetadataDatabase)) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -522,8 +516,8 @@ Plant::Plant(AssetsConstPtr assets, BushVariant const& config, uint64_t seed)
   setupNetStates();
 }
 
-Plant::Plant(AssetsConstPtr assets, Json const& diskStore)
-  : Plant(std::move(assets)) {
+Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& diskStore)
+  : Plant(std::move(assets), std::move(imageMetadataDatabase)) {
   m_tilePosition = jsonToVec2I(diskStore.get("tilePosition"));
   m_ceiling = diskStore.getBool("ceiling");
   m_stemDropConfig = diskStore.get("stemDropConfig");
@@ -538,8 +532,8 @@ Plant::Plant(AssetsConstPtr assets, Json const& diskStore)
   setupNetStates();
 }
 
-Plant::Plant(AssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules)
-  : Plant(std::move(assets)) {
+Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ByteArray const& netStore, NetCompatibilityRules rules)
+  : Plant(std::move(assets), std::move(imageMetadataDatabase)) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -567,10 +561,12 @@ Plant::Plant(AssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityR
   setupNetStates();
 }
 
-Plant::Plant(AssetsConstPtr assets)
-  : m_assets(std::move(assets)) {
+Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+  : m_assets(std::move(assets)), m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
   if (!m_assets)
     throw PlantException("Plant requires assets service");
+  if (!m_imageMetadataDatabase)
+    throw PlantException("Plant requires image metadata database service");
 
   m_ephemeral = false;
   m_piecesUpdated = true;
@@ -683,8 +679,6 @@ RectF Plant::interactiveBoundBox() const {
 }
 
 void Plant::scanSpacesAndRoots() {
-  auto imageMetadataDatabase = resolveImageMetadata(worldPtr());
-
   // build spaces
   Set<Vec2I> spaces;
 
@@ -692,9 +686,9 @@ void Plant::scanSpacesAndRoots() {
   spaces.add({0, 0});
 
   for (auto& piece : m_pieces) {
-    piece.imageSize = imageMetadataDatabase->imageSize(piece.image);
+    piece.imageSize = m_imageMetadataDatabase->imageSize(piece.image);
     piece.spaces = Set<Vec2I>::from(
-        imageMetadataDatabase->imageSpaces(piece.image, piece.offset * TilePixels, PlantScanThreshold, piece.flip));
+        m_imageMetadataDatabase->imageSpaces(piece.image, piece.offset * TilePixels, PlantScanThreshold, piece.flip));
     spaces.addAll(piece.spaces);
   }
 

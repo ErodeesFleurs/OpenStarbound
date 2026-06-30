@@ -2,6 +2,7 @@
 
 #include "StarPane.hpp"
 #include "StarLuaComponents.hpp"
+#include "StarLuaRoot.hpp"
 #include "StarGuiReader.hpp"
 #include "StarAssets.hpp"
 
@@ -21,6 +22,8 @@ struct BaseScriptPaneServices {
   ItemDatabaseConstPtr itemDatabase = {};
   ObjectDatabaseConstPtr objectDatabase = {};
   StatusEffectDatabaseConstPtr statusEffectDatabase = {};
+  LuaRootServices luaRootServices = {};
+  GuiContext& guiContext;
 };
 
 // A more 'raw' script pane that doesn't depend on a world being present.
@@ -58,6 +61,7 @@ protected:
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  LuaRootServices m_luaRootServices;
 
   GuiReaderPtr m_reader;
 

@@ -10,7 +10,8 @@
 namespace Star {
 
 JoinRequestDialog::JoinRequestDialog(Services services)
-  : m_assets(std::move(services.assets)), m_confirmed(false) {
+  : Pane(services.guiContext),
+    m_assets(std::move(services.assets)), m_confirmed(false) {
   if (!m_assets)
     throw StarException("JoinRequestDialog requires assets service");
 }
@@ -18,7 +19,7 @@ JoinRequestDialog::JoinRequestDialog(Services services)
 void JoinRequestDialog::displayRequest(String const& userName, function<void(P2PJoinRequestReply)> callback) {
   removeAllChildren();
 
-  GuiReader reader;
+  GuiReader reader(context());
 
   m_callback = std::move(callback);
 

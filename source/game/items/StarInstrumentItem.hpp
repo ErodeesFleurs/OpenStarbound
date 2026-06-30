@@ -22,7 +22,7 @@ class InstrumentItem : public Item,
                        public ActivatableItem,
                        public PointableItem {
 public:
-  InstrumentItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
+  InstrumentItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data);
 
   ItemPtr clone() const override;
 

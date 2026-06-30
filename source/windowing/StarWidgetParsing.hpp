@@ -25,10 +25,10 @@ using ConstuctorFunc = std::function<WidgetConstructResult(String const& name, J
 
 class WidgetParser {
 public:
-  WidgetParser();
+  explicit WidgetParser(GuiContext& context);
   virtual ~WidgetParser() = default;
 
-  virtual void construct(Json const& config, Widget* widget = nullptr);
+  virtual void construct(Json const& config, Widget* widget);
   void registerCallback(String const& name, WidgetCallbackFunc callback);
   WidgetPtr makeSingle(String const& name, Json const& config);
 
@@ -67,7 +67,9 @@ protected:
   // Utilities
   void common(WidgetPtr widget, Json const& config, bool getChildren = true);
   ImageStretchSet parseImageStretchSet(Json const& config);
+  GuiContext& guiContext() const;
 
+  GuiContext& m_context;
   Pane* m_pane;
   StringMap<ConstuctorFunc> m_constructors;
   StringMap<WidgetCallbackFunc> m_callbacks;

@@ -12,8 +12,8 @@ using ItemGridWidgetPtr = SharedPtr<ItemGridWidget>;
 
 class ItemGridWidget : public Widget {
 public:
-  ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset);
-  ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset);
+  ItemGridWidget(GuiContext& context, ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset);
+  ItemGridWidget(GuiContext& context, ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset);
 
   ItemBagConstPtr bag() const;
 

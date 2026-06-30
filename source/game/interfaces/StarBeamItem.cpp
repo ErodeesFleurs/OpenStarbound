@@ -8,9 +8,12 @@
 
 namespace Star {
 
-BeamItem::BeamItem(AssetsConstPtr assets, Json config) {
+BeamItem::BeamItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config)
+  : m_beamImageMetadataDatabase(std::move(imageMetadataDatabase)) {
   if (!assets)
     throw ItemException("BeamItem requires assets service");
+  if (!m_beamImageMetadataDatabase)
+    throw ItemException("BeamItem requires image metadata database service");
 
   config = assets->json("/player.config:beamGunConfig").setAll(config.toObject());
 
@@ -44,14 +47,14 @@ BeamItem::BeamItem(AssetsConstPtr assets, Json config) {
   m_inRangeLastUpdate = false;
 }
 
-void BeamItem::init(ToolUserEntity* owner, ToolHand hand) {
+void BeamItem::init(ToolUserEntity& owner, ToolHand hand) {
   ToolUserItem::init(owner, hand);
 
   m_beamCurve = CSplineF();
 
   if (initialized()) {
-    m_color = owner->favoriteColor();
-    m_range = owner->beamGunRadius();
+    m_color = owner.favoriteColor();
+    m_range = owner.beamGunRadius();
     return;
   }
 
@@ -101,7 +104,7 @@ float BeamItem::getAngle(float angle) {
 }
 
 List<Drawable> BeamItem::drawables() const {
-  return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+  return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_beamImageMetadataDatabase)};
 }
 
 Vec2F BeamItem::handPosition() const {
@@ -177,7 +180,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
           endImage = strf("{}?{}", endImage, imageOperationToString(op));
         }
 
-        Drawable ball = Drawable::makeImage(endImage, 1.0f / TilePixels, true, m_beamCurve.dest());
+        Drawable ball = Drawable::makeImage(endImage, 1.0f / TilePixels, true, m_beamCurve.dest(), Color::White, m_beamImageMetadataDatabase);
         Color ballColor = Color::White;
         ballColor.setAlphaF(getAppropriateOpacity());
         ball.color = ballColor;

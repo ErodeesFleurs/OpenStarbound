@@ -50,7 +50,7 @@ PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr cons
   if (!item) {
     return {};
   } else {
-    PanePtr tooltip = make_shared<Pane>();
+    PanePtr tooltip = make_shared<Pane>(services.guiContext);
     tooltip->removeAllChildren();
 
     String title;
@@ -65,7 +65,7 @@ PanePtr ItemTooltipBuilder::buildItemTooltip(ItemPtr const& item, PlayerPtr cons
 
     buildItemDescriptionInner(tooltip, item, tooltipKind, title, subTitle, viewer, services);
 
-    auto titleIcon = make_shared<ItemSlotWidget>(item, "/interface/inventory/portrait.png");
+    auto titleIcon = make_shared<ItemSlotWidget>(services.guiContext, item, "/interface/inventory/portrait.png");
     titleIcon->setBackingImageAffinity(true, true);
     titleIcon->showRarity(false);
     tooltip->setTitle(titleIcon, title, subTitle);
@@ -89,7 +89,7 @@ void ItemTooltipBuilder::buildItemDescription(WidgetPtr const& container, ItemPt
 
 void ItemTooltipBuilder::buildItemDescriptionInner(
     WidgetPtr const& container, ItemPtr const& item, String const& tooltipKind, String& title, String& subTitle, PlayerPtr const& viewer, Services services) {
-  GuiReader reader;
+  GuiReader reader(services.guiContext);
   auto assets = tooltipAssets(services);
   title = item->friendlyName();
   subTitle = categoryDisplayName(item->category(), services);

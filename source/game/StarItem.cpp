@@ -7,12 +7,15 @@
 
 namespace Star {
 
-Item::Item(AssetsConstPtr assets, Json config, String directory, Json parameters) {
+Item::Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String directory, Json parameters) {
   if (!assets)
     throw ItemException("Item requires assets service");
+  if (!imageMetadataDatabase)
+    throw ItemException("Item requires image metadata database service");
 
   m_config = std::move(config);
   m_directory = std::move(directory);
+  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
   m_parameters = std::move(parameters);
   m_name = m_config.getString("itemName");
   m_count = 1;
@@ -27,23 +30,23 @@ Item::Item(AssetsConstPtr assets, Json config, String directory, Json parameters
   if (inventoryIcon.type() == Json::Type::Array) {
     setIconDrawables(inventoryIcon.toArray().transformed([&](Json config) -> Drawable {
       if (auto image = config.optString("image"))
-        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)));
-      return Drawable(config);
+        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)), m_imageMetadataDatabase);
+      return Drawable(config, m_imageMetadataDatabase);
     }));
   } else {
     auto image = AssetPath::relativeTo(m_directory, inventoryIcon.toString());
-    setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F())});
+    setIconDrawables({Drawable::makeImage(image, 1.0f, true, Vec2F(), Color::White, m_imageMetadataDatabase)});
   }
   auto secondaryIcon = instanceValue("secondaryIcon", Json());
   if (secondaryIcon.type() == Json::Type::Array) {
     setSecondaryIconDrawables(secondaryIcon.toArray().transformed([&](Json config) -> Drawable {
       if (auto image = config.optString("image"))
-        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)));
-      return Drawable(config);
+        return Drawable(config.set("image", AssetPath::relativeTo(m_directory, *image)), m_imageMetadataDatabase);
+      return Drawable(config, m_imageMetadataDatabase);
     }));
   } else if (secondaryIcon.type() == Json::Type::String) {
     auto image = AssetPath::relativeTo(m_directory, secondaryIcon.toString());
-    setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F())}));
+    setSecondaryIconDrawables(Maybe<List<Drawable>>({Drawable::makeImage(image, 1.0f, true, Vec2F(), Color::White, m_imageMetadataDatabase)}));
   } else {
     setSecondaryIconDrawables(Maybe<List<Drawable>>());
   }
@@ -235,7 +238,7 @@ void Item::setPrice(uint64_t price) {
 
 void Item::setIconDrawables(List<Drawable> drawables) {
   m_iconDrawables = std::move(drawables);
-  auto boundBox = Drawable::boundBoxAll(m_iconDrawables, true);
+  auto boundBox = Drawable::boundBoxAll(m_iconDrawables, true, m_imageMetadataDatabase);
   if (!boundBox.isEmpty()) {
     for (auto& drawable : m_iconDrawables)
       drawable.translate(-boundBox.center());
@@ -254,7 +257,7 @@ void Item::setSecondaryIconDrawables(Maybe<List<Drawable>> drawables) {
   if (m_secondaryIconDrawables.isNothing())
     return;
 
-  auto boundBox = Drawable::boundBoxAll(*m_secondaryIconDrawables, true);
+  auto boundBox = Drawable::boundBoxAll(*m_secondaryIconDrawables, true, m_imageMetadataDatabase);
   if (!boundBox.isEmpty()) {
     for (auto& drawable : *m_secondaryIconDrawables)
       drawable.translate(-boundBox.center());
@@ -329,7 +332,10 @@ StringMap<String> Item::collectablesOnPickup() const {
 }
 
 GenericItem::GenericItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(std::move(assets), config, directory, parameters) {}
+  : GenericItem(std::move(assets), {}, config, directory, parameters) {}
+
+GenericItem::GenericItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
+  : Item(std::move(assets), std::move(imageMetadataDatabase), config, directory, parameters) {}
 
 ItemPtr GenericItem::clone() const {
   return make_shared<GenericItem>(*this);

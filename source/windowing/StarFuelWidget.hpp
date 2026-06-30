@@ -9,7 +9,7 @@ using FuelWidgetPtr = SharedPtr<FuelWidget>;
 
 class FuelWidget : public Widget {
 public:
-  FuelWidget();
+  explicit FuelWidget(GuiContext& context);
   virtual ~FuelWidget() = default;
 
   virtual void update(float dt) override;

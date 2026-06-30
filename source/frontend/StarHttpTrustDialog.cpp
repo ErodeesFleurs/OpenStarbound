@@ -9,7 +9,8 @@
 namespace Star {
 
 HttpTrustDialog::HttpTrustDialog(Services services)
-  : m_assets(std::move(services.assets)),
+  : Pane(services.guiContext),
+    m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)),
     m_confirmed(false) {
   if (!m_assets)
@@ -21,7 +22,7 @@ HttpTrustDialog::HttpTrustDialog(Services services)
 void HttpTrustDialog::displayRequest(String const& domain, function<void(HttpTrustReply, bool)> callback) {
   removeAllChildren();
 
-  GuiReader reader;
+  GuiReader reader(context());
 
   m_domain = domain;
   m_callback = std::move(callback);
@@ -88,5 +89,3 @@ void HttpTrustDialog::dismissed() {
 }
 
 }
-
-

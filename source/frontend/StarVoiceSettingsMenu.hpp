@@ -6,10 +6,11 @@ namespace Star {
 
 class VoiceSettingsMenu;
 using VoiceSettingsMenuPtr = SharedPtr<VoiceSettingsMenu>;
+class Voice;
 
 class VoiceSettingsMenu : public BaseScriptPane {
 public:
-  VoiceSettingsMenu(Json const& config, BaseScriptPaneServices services);
+  VoiceSettingsMenu(Json const& config, BaseScriptPaneServices services, Voice& voice);
 
   virtual void show() override;
   void displayed() override;

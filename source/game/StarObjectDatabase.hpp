@@ -1,17 +1,18 @@
 #pragma once
 
-#include "StarPeriodicFunction.hpp"
-#include "StarTtlCache.hpp"
+#include "StarAssets.hpp"
+#include "StarDamageTypes.hpp"
+#include "StarEntityRendering.hpp"
 #include "StarGameTypes.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarLuaRoot.hpp"
 #include "StarParticle.hpp"
+#include "StarPeriodicFunction.hpp"
 #include "StarSet.hpp"
-#include "StarTileDamage.hpp"
-#include "StarDamageTypes.hpp"
 #include "StarStatusTypes.hpp"
-#include "StarEntityRendering.hpp"
+#include "StarTileDamage.hpp"
 #include "StarTileEntity.hpp"
-#include "StarAssets.hpp"
+#include "StarTtlCache.hpp"
 
 namespace Star {
 
@@ -37,8 +38,12 @@ class MaterialDatabase;
 using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
 class ImageMetadataDatabase;
 using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
 
-struct ObjectExceptionTag { static constexpr char const* typeName = "ObjectException"; };
+struct ObjectExceptionTag {
+  static constexpr char const* typeName = "ObjectException";
+};
 using ObjectException = TypedException<StarException, ObjectExceptionTag>;
 
 struct ObjectOrientation {
@@ -114,7 +119,7 @@ struct ObjectOrientation {
   Json touchDamageConfig;
   MaterialDatabaseConstPtr materialDatabase;
 
-  static ParticleEmissionEntry parseParticleEmitter(String const& path, Json const& config, AssetsConstPtr assets);
+  static ParticleEmissionEntry parseParticleEmitter(String const& path, Json const& config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
   bool placementValid(World const* world, Vec2I const& position) const;
   bool anchorsValid(World const* world, Vec2I const& position) const;
 };
@@ -133,6 +138,7 @@ struct ObjectConfig {
   AssetsConstPtr assets;
   MaterialDatabaseConstPtr materialDatabase;
   ImageMetadataDatabaseConstPtr imageMetadataDatabase;
+  ParticleDatabaseConstPtr particleDatabase;
   // The JSON values that were used to configure this Object
   Json config;
 
@@ -205,9 +211,9 @@ public:
   static List<Vec2I> scanImageSpaces(ImageConstPtr const& image, Vec2F const& position, float fillLimit, bool flip = false);
   static Json parseTouchDamage(AssetsConstPtr assets, String const& path, Json const& touchDamage);
   static List<ObjectOrientationPtr> parseOrientations(
-      AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig);
+    AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig);
 
-  ObjectDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, function<ItemDatabaseConstPtr()> itemDatabase);
+  ObjectDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase, function<ItemDatabaseConstPtr()> itemDatabase, LuaRootServices luaRootServices);
 
   void cleanup();
 
@@ -221,15 +227,15 @@ public:
   ObjectPtr diskLoadObject(Json const& diskStore) const;
   ObjectPtr netLoadObject(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
-  bool canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const;
+  bool canPlaceObject(World const& world, Vec2I const& position, String const& objectName) const;
   // If the object is placeable in the given position, creates the given object
   // and sets its position and direction and returns it, otherwise returns
   // null.
-  ObjectPtr createForPlacement(World const* world, String const& objectName, Vec2I const& position,
-      Direction direction, Json const& parameters = JsonObject()) const;
+  ObjectPtr createForPlacement(World const& world, String const& objectName, Vec2I const& position,
+                               Direction direction, Json const& parameters = JsonObject()) const;
 
   List<Drawable> cursorHintDrawables(World const* world, String const& objectName, Vec2I const& position,
-      Direction direction, Json parameters = {}) const;
+                                     Direction direction, Json parameters = {}) const;
 
 private:
   ObjectConfigPtr readConfig(String const& path) const;
@@ -237,6 +243,7 @@ private:
   AssetsConstPtr m_assets;
   MaterialDatabaseConstPtr m_materialDatabase;
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
   function<ItemDatabaseConstPtr()> m_itemDatabase;
   StringMap<String> m_paths;
   mutable Mutex m_cacheMutex;
@@ -245,4 +252,4 @@ private:
   RebuilderPtr m_rebuilder;
 };
 
-}
+}// namespace Star

@@ -8,8 +8,8 @@
 
 namespace Star {
 
-AugmentItem::AugmentItem(AssetsConstPtr assets, Json const& config, String const& directory, ItemDatabase const* itemDatabase, Json const& parameters)
-  : Item(std::move(assets), config, directory, parameters), m_itemDatabase(itemDatabase) {}
+AugmentItem::AugmentItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, ItemDatabase const& itemDatabase, Json const& parameters)
+  : Item(std::move(assets), std::move(imageMetadataDatabase), config, directory, parameters), m_itemDatabase(itemDatabase) {}
 
 AugmentItem::AugmentItem(AugmentItem const& rhs) = default;
 
@@ -22,7 +22,7 @@ StringList AugmentItem::augmentScripts() const {
 }
 
 ItemPtr AugmentItem::applyTo(ItemPtr const item) {
-  return m_itemDatabase->applyAugment(item, this);
+  return m_itemDatabase.applyAugment(item, *this);
 }
 
 }

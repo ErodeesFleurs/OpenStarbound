@@ -4,9 +4,11 @@
 
 namespace Star {
 
-TextBoxWidget::TextBoxWidget(String const& startingText, String const& hint, WidgetCallbackFunc callback)
-  : m_text(startingText), m_hint(hint), m_callback(callback) {
-  auto const& assets = GuiContext::singleton().assets();
+TextBoxWidget::TextBoxWidget(GuiContext& context, String const& startingText, String const& hint, WidgetCallbackFunc callback)
+  : Widget(context),
+    m_text(startingText), m_hint(hint), m_callback(callback) {
+  auto& guiContext = this->context();
+  auto const& assets = guiContext.assets();
   m_textHidden = false;
   m_regex = ".*";
   m_repeatKeyThreshold = 0;
@@ -38,32 +40,32 @@ void TextBoxWidget::renderImpl() {
   else
     blueRate = 0.0f;
   
-  float cursorOffset = static_cast<float>(getCursorDrawOffset()) / context()->interfaceScale();
+  float cursorOffset = static_cast<float>(getCursorDrawOffset()) / context().interfaceScale();
   Vec2F pos(screenPosition());
   if (m_hAnchor == HorizontalAnchor::HMidAnchor)
     pos[0] += size()[0] / 2.0f;
   else if (m_hAnchor == HorizontalAnchor::RightAnchor)
     pos[0] += size()[0];
 
-  context()->setTextStyle(m_textStyle);
+  context().setTextStyle(m_textStyle);
   if ((m_maxWidth != -1) && m_overfillMode) {
     float shift = std::max(0.f, cursorOffset - m_maxWidth);
     pos[0] -= shift;
   }
 
   if (m_text.empty()) {
-    context()->setFontColor(Color::rgba(m_textStyle.color).mix(Color::rgbf(0.3f, 0.3f, 0.3f), 0.8f).mix(Color::rgbf(0.0f, 0.0f, 1.0f), blueRate).toRgba());
-    context()->renderInterfaceText(m_hint, {pos, m_hAnchor, m_vAnchor});
+    context().setFontColor(Color::rgba(m_textStyle.color).mix(Color::rgbf(0.3f, 0.3f, 0.3f), 0.8f).mix(Color::rgbf(0.0f, 0.0f, 1.0f), blueRate).toRgba());
+    context().renderInterfaceText(m_hint, {pos, m_hAnchor, m_vAnchor});
   } else {
-    context()->setFontColor(Color::rgba(m_textStyle.color).mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
+    context().setFontColor(Color::rgba(m_textStyle.color).mix(Color::rgbf(0, 0, 1), blueRate).toRgba());
     if (m_textHidden) {
       String hiddenText('*', m_text.length());
-      context()->renderInterfaceText(hiddenText, { pos, m_hAnchor, m_vAnchor });
+      context().renderInterfaceText(hiddenText, { pos, m_hAnchor, m_vAnchor });
     }
     else
-      context()->renderInterfaceText(m_text, { pos, m_hAnchor, m_vAnchor });
+      context().renderInterfaceText(m_text, { pos, m_hAnchor, m_vAnchor });
   }
-  context()->clearTextStyle();
+  context().clearTextStyle();
 
   if (hasFocus()) {
     // render cursor
@@ -71,23 +73,23 @@ void TextBoxWidget::renderImpl() {
     Color cursorColor = Color::rgbf(cc, cc, cc);
 
     float fontSize = m_textStyle.fontSize;
-    context()->drawInterfaceLine(
+    context().drawInterfaceLine(
         pos + Vec2F(cursorOffset, fontSize * m_cursorVert[0]),
         pos + Vec2F(cursorOffset, fontSize * m_cursorVert[1]),
         cursorColor.toRgba());
-    context()->drawInterfaceLine(
+    context().drawInterfaceLine(
         pos + Vec2F(cursorOffset + fontSize * m_cursorHoriz[0], fontSize * m_cursorVert[0]),
         pos + Vec2F(cursorOffset + fontSize * m_cursorHoriz[1], fontSize * m_cursorVert[0]),
         cursorColor.toRgba());
   }
 
   if (m_drawBorder)
-    context()->drawInterfacePolyLines(PolyF(screenBoundRect()), Color(Color::White).toRgba());
+    context().drawInterfacePolyLines(PolyF(screenBoundRect()), Color(Color::White).toRgba());
 }
 
 int TextBoxWidget::getCursorDrawOffset() const { // horizontal only
   float scale;
-  context()->setTextStyle(m_textStyle);
+  context().setTextStyle(m_textStyle);
   if (m_hAnchor == HorizontalAnchor::LeftAnchor) {
     scale = 1.0;
   } else if (m_hAnchor == HorizontalAnchor::HMidAnchor) {
@@ -95,24 +97,24 @@ int TextBoxWidget::getCursorDrawOffset() const { // horizontal only
   } else if (m_hAnchor == HorizontalAnchor::RightAnchor) {
     scale = -1.0;
     if (m_textHidden) {
-      int width = context()->stringWidth("*");
+      int width = context().stringWidth("*");
       size_t chars = m_text.size();
       return (width * chars) * scale + (width * (chars - m_cursorOffset));
     } else {
-      return context()->stringWidth(m_text) * scale
-           + context()->stringWidth(m_text.substr(m_cursorOffset, m_text.size()));
+      return context().stringWidth(m_text) * scale
+           + context().stringWidth(m_text.substr(m_cursorOffset, m_text.size()));
     }
   } else {
     throw GuiException("Somehow, the value of m_hAnchor became bad");
   }
 
   if (m_textHidden) {
-    int width = context()->stringWidth("*");
+    int width = context().stringWidth("*");
     size_t chars = m_text.size();
     return static_cast<int>(std::ceil((width * chars) * scale - (width * (chars - m_cursorOffset))));
   } else {
-  return static_cast<int>(std::ceil(context()->stringWidth(m_text) * scale
-                      - context()->stringWidth(m_text.substr(m_cursorOffset, m_text.size()))));
+  return static_cast<int>(std::ceil(context().stringWidth(m_text) * scale
+                      - context().stringWidth(m_text.substr(m_cursorOffset, m_text.size()))));
   }
 }
 
@@ -277,7 +279,7 @@ KeyboardCaptureMode TextBoxWidget::keyboardCaptureMode() const {
 
 Maybe<pair<RectI, int>> TextBoxWidget::keyboardCaptureArea() const {
   if (active() && hasFocus()) {
-    return make_pair(screenBoundRect().scaled(context()->interfaceScale()), getCursorDrawOffset());
+    return make_pair(screenBoundRect().scaled(context().interfaceScale()), getCursorDrawOffset());
   }
   return {};
 }
@@ -338,17 +340,17 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
     }
     if ((keyDown->mods & (KeyMod::LCtrl | KeyMod::RCtrl)) != KeyMod::NoMod) {
       if (keyDown->key == Key::C) {
-        context()->setClipboard(m_text);
+        context().setClipboard(m_text);
         return true;
       }
       if (keyDown->key == Key::X) {
-        context()->setClipboard(m_text);
+        context().setClipboard(m_text);
         if (modText(""))
           m_cursorOffset = 0;
         return true;
       }
       if (keyDown->key == Key::V) {
-        String clipboard = context()->getClipboard();
+        String clipboard = context().getClipboard();
         if (modText(m_text.substr(0, m_cursorOffset) + clipboard + m_text.substr(m_cursorOffset)))
           m_cursorOffset += clipboard.size();
         return true;
@@ -448,8 +450,8 @@ bool TextBoxWidget::newTextValid(String const& text) const {
   if (!text.regexMatch(m_regex))
     return false;
   if ((m_maxWidth != -1) && !m_overfillMode) {
-    context()->setTextStyle(m_textStyle);
-    return context()->stringInterfaceWidth(text) <= m_maxWidth;
+    context().setTextStyle(m_textStyle);
+    return context().stringInterfaceWidth(text) <= m_maxWidth;
   }
   return true;
 }

@@ -1,9 +1,10 @@
 #pragma once
 
-#include "StarSkyTypes.hpp"
-#include "StarEither.hpp"
-#include "StarCelestialCoordinate.hpp"
 #include "StarAssets.hpp"
+#include "StarCelestialCoordinate.hpp"
+#include "StarEither.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarSkyTypes.hpp"
 
 namespace Star {
 
@@ -26,7 +27,7 @@ using VisitableWorldParametersConstPtr = SharedPtr<VisitableWorldParameters cons
 // parameters, e.g. for terraforming
 struct SkyParameters {
   SkyParameters();
-  SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase, AssetsConstPtr assets = {});
+  SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase);
   SkyParameters(SkyParameters const& oldSkyParameters, VisitableWorldParametersConstPtr newVisitableParameters);
   explicit SkyParameters(Json const& config);
 
@@ -53,4 +54,4 @@ struct SkyParameters {
 
 DataStream& operator>>(DataStream& ds, SkyParameters& sky);
 DataStream& operator<<(DataStream& ds, SkyParameters const& sky);
-}
+}// namespace Star

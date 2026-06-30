@@ -10,7 +10,7 @@ class ItemDatabase;
 
 class AugmentItem : public Item {
 public:
-  AugmentItem(AssetsConstPtr assets, Json const& config, String const& directory, ItemDatabase const* itemDatabase, Json const& parameters = JsonObject());
+  AugmentItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, ItemDatabase const& itemDatabase, Json const& parameters = JsonObject());
   AugmentItem(AugmentItem const& rhs);
 
   ItemPtr clone() const override;
@@ -23,7 +23,7 @@ public:
   ItemPtr applyTo(ItemPtr const item);
 
 private:
-  ItemDatabase const* m_itemDatabase;
+  ItemDatabase const& m_itemDatabase;
 };
 
 }

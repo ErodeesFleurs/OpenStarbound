@@ -19,7 +19,7 @@ struct LuaUserDataMethods<CanvasWidgetPtr> {
 };
 
 namespace LuaBindings {
-  LuaCallbacks makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader = {});
+  LuaCallbacks makeWidgetCallbacks(Widget& parentWidget, GuiReaderPtr reader = {});
 }
 
 }

@@ -1,9 +1,13 @@
 #include "StarImageLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
 #include "StarImage.hpp"
-#include "StarRootBase.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
+
+void LuaBindings::registerImageLuaAssets(LuaEngine& engine, AssetsConstPtr assets) {
+  engine.setService<Assets const>(std::move(assets));
+}
 
 LuaMethods<Image> LuaUserDataMethods<Image>::make() {
   LuaMethods<Image> methods;
@@ -23,12 +27,10 @@ LuaMethods<Image> LuaUserDataMethods<Image>::make() {
     return image.subImage(min, size);
   });
 
-  methods.registerMethod("process", [](Image& image, String const& directives) {
-    return processImageOperations(parseImageOperations(directives), image, [](String const& path) -> Image const* {
-      if (auto root = RootBase::singletonPtr())
-        return root->assets()->image(path).get();
-      else
-        return nullptr;
+  methods.registerMethod("process", [](Image& image, LuaEngine& engine, String const& directives) {
+    auto assets = engine.service<Assets const>();
+    return processImageOperations(parseImageOperations(directives), image, [assets](String const& path) -> Image const* {
+      return assets ? assets->image(path).get() : nullptr;
     });
   });
 

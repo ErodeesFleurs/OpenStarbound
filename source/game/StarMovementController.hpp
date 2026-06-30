@@ -81,7 +81,7 @@ public:
   // defaults, and the given parameters (if any) applied on top of them.
   MovementController(MovementParameters const& parameters, AssetsConstPtr assets);
 
-  MovementController(MovementParameters const& parameters, World* world, AssetsConstPtr assets);
+  MovementController(MovementParameters const& parameters, World& world, AssetsConstPtr assets);
 
   MovementParameters const& parameters() const;
 
@@ -182,7 +182,7 @@ public:
   void approachXVelocity(float targetXVelocity, float maxControlForce);
   void approachYVelocity(float targetYVelocity, float maxControlForce);
 
-  void init(World* world);
+  void init(World& world);
   void uninit();
 
   // Stores dt value for Lua calls.

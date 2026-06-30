@@ -6,6 +6,7 @@
 #include "StarGameTypes.hpp"
 #include "StarMainInterface.hpp"
 #include "StarMainMixer.hpp"
+#include "StarRoot.hpp"
 #include "StarTitleScreen.hpp"
 #include "StarErrorScreen.hpp"
 #include "StarCinematic.hpp"
@@ -15,6 +16,7 @@
 
 namespace Star {
 
+class GuiContext;
 class Input;
 class Voice;
 using VoicePtr = SharedPtr<Voice>;
@@ -102,7 +104,7 @@ private:
 
   // Valid after applicationInit is called
   MainMixerPtr m_mainMixer;
-  GuiContextPtr m_guiContext;
+  SharedPtr<GuiContext> m_guiContext;
   InputPtr m_input;
   VoicePtr m_voice;
 

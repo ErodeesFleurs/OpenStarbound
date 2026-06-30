@@ -12,7 +12,8 @@
 namespace Star {
 
 KeybindingsMenu::KeybindingsMenu(KeybindingsMenuServices services)
-  : m_activeKeybinding(nullptr),
+  : Pane(services.guiContext),
+    m_activeKeybinding(nullptr),
     m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)) {
   if (!m_assets)
@@ -20,7 +21,7 @@ KeybindingsMenu::KeybindingsMenu(KeybindingsMenuServices services)
   if (!m_configuration)
     throw StarException("KeybindingsMenu requires configuration service");
 
-  GuiReader reader;
+  GuiReader reader(context());
   reader.registerCallback("cancel",
       [&](Widget*) {
         revert();
@@ -52,12 +53,12 @@ bool KeybindingsMenu::sendEvent(InputEvent const& event) {
     return false;
 
   if (m_activeKeybinding) {
-    if (m_context->actions(event).contains(InterfaceAction::KeybindingClear)) {
+    if (context().actions(event).contains(InterfaceAction::KeybindingClear)) {
       clearActive();
       return true;
     }
 
-    if (m_context->actions(event).contains(InterfaceAction::KeybindingCancel)) {
+    if (context().actions(event).contains(InterfaceAction::KeybindingCancel)) {
       exitActiveMode();
       return true;
     }
@@ -87,7 +88,7 @@ bool KeybindingsMenu::sendEvent(InputEvent const& event) {
     }
   }
 
-  if (m_context->actions(event).contains(InterfaceAction::GuiClose)) {
+  if (context().actions(event).contains(InterfaceAction::GuiClose)) {
     dismiss();
     return true;
   }
@@ -229,7 +230,7 @@ void KeybindingsMenu::exitActiveMode() {
 }
 
 void KeybindingsMenu::apply() {
-  m_context->refreshKeybindings();
+  context().refreshKeybindings();
 }
 
 void KeybindingsMenu::revert() {

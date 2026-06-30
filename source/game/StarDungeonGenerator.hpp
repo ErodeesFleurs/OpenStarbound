@@ -543,13 +543,13 @@ namespace Dungeon {
 
   class Connector {
   public:
-    Connector(Part* part, String value, bool forwardOnly, Direction direction, Vec2I offset);
+    Connector(Part& part, String value, bool forwardOnly, Direction direction, Vec2I offset);
 
-    bool connectsTo(ConnectorConstPtr connector) const;
+    bool connectsTo(Connector const& connector) const;
 
     String value() const;
     Vec2I positionAdjustment() const;
-    Part* part() const;
+    Part const& part() const;
     Vec2I offset() const;
 
   private:
@@ -557,7 +557,7 @@ namespace Dungeon {
     bool m_forwardOnly;
     Direction m_direction;
     Vec2I m_offset;
-    Part* m_part;
+    Part& m_part;
   };
 
   using TileCallback = function<bool(Vec2I, Tile const&)>;
@@ -586,7 +586,7 @@ namespace Dungeon {
 
   class Part {
   public:
-    Part(DungeonDefinition* dungeon, Json const& part, PartReaderPtr reader);
+    Part(DungeonDefinition& dungeon, Json const& part, PartReaderPtr reader);
 
     String const& name() const;
     Vec2U size() const;
@@ -600,7 +600,7 @@ namespace Dungeon {
     bool ignoresPartMaximum() const;
     bool allowsPlacement(int currentPlacementCount) const;
     List<ConnectorConstPtr> const& connections() const;
-    bool doesNotConnectTo(Part* part) const;
+    bool doesNotConnectTo(Part const& part) const;
     bool checkPartCombinationsAllowed(StringMap<int> const& placementCounts) const;
     bool collidesWithPlaces(Vec2I pos, Set<Vec2I>& places) const;
 
@@ -623,7 +623,6 @@ namespace Dungeon {
 
     String m_name;
     List<RuleConstPtr> m_rules;
-    DungeonDefinition* m_dungeon;
     List<ConnectorConstPtr> m_connections;
     Vec2I m_anchorPoint;
     bool m_overrideAllowAlways;

@@ -19,6 +19,8 @@ public:
 
   static int const NoButton = -1;
 
+  ButtonGroup();
+
   // Callback is called when any child buttons checked state is changed, and
   // its parameter is the button being checked.
   void setCallback(WidgetCallbackFunc callback);
@@ -55,5 +57,8 @@ private:
   bool m_toggle;
 };
 
-class ButtonGroupWidget : public ButtonGroup, public Widget {};
+class ButtonGroupWidget : public ButtonGroup, public Widget {
+public:
+  explicit ButtonGroupWidget(GuiContext& context);
+};
 }

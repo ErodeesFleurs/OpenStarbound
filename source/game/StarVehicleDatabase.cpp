@@ -1,16 +1,24 @@
 #include "StarVehicleDatabase.hpp"
-#include "StarVehicle.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarAssets.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarRebuilder.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRebuilder.hpp"
+#include "StarVehicle.hpp"
 
 namespace Star {
 
-VehicleDatabase::VehicleDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)), m_rebuilder(make_shared<Rebuilder>(m_assets, "vehicle")) {
+VehicleDatabase::VehicleDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices)
+    : m_assets(std::move(assets)),
+      m_particleDatabase(std::move(particleDatabase)),
+      m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+      m_rebuilder(make_shared<Rebuilder>(m_assets, "vehicle", std::move(luaRootServices))) {
   if (!m_assets)
     throw VehicleDatabaseException("VehicleDatabase requires assets service");
+  if (!m_particleDatabase)
+    throw VehicleDatabaseException("VehicleDatabase requires particle database service");
+  if (!m_imageMetadataDatabase)
+    throw VehicleDatabaseException("VehicleDatabase requires image metadata database service");
   auto& files = m_assets->scanExtension("vehicle");
   m_assets->queueJsons(files);
   for (String file : files) {
@@ -32,7 +40,7 @@ VehiclePtr VehicleDatabase::create(String const& vehicleName, Json const& extraC
   auto configPair = m_vehicles.ptr(vehicleName);
   if (!configPair)
     throw VehicleDatabaseException::format("No such vehicle named '{}'", vehicleName);
-  return make_shared<Vehicle>(m_assets, configPair->second, configPair->first, extraConfig);
+  return make_shared<Vehicle>(m_assets, m_particleDatabase, m_imageMetadataDatabase, configPair->second, configPair->first, extraConfig);
 }
 
 ByteArray VehicleDatabase::netStore(VehiclePtr const& vehicle, NetCompatibilityRules rules) const {
@@ -59,8 +67,7 @@ Json VehicleDatabase::diskStore(VehiclePtr const& vehicle) const {
   return JsonObject{
     {"name", vehicle->baseConfig().getString("name")},
     {"dynamicConfig", vehicle->dynamicConfig()},
-    {"state", vehicle->diskStore()}
-  };
+    {"state", vehicle->diskStore()}};
 }
 
 VehiclePtr VehicleDatabase::diskLoad(Json const& diskStore) const {
@@ -89,4 +96,4 @@ VehiclePtr VehicleDatabase::diskLoad(Json const& diskStore) const {
   return vehicle;
 }
 
-}
+}// namespace Star

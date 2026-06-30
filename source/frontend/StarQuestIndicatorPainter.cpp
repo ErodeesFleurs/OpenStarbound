@@ -9,13 +9,13 @@
 namespace Star {
 
 QuestIndicatorPainter::QuestIndicatorPainter(UniverseClientPtr const& client, Services services)
-  : m_client(client), m_assets(std::move(services.assets)) {
+  : m_client(client), m_assets(std::move(services.assets)), m_guiContext(services.guiContext) {
   if (!m_assets)
     throw StarException("QuestIndicatorPainter requires assets service");
 }
 
 AnimationPtr QuestIndicatorPainter::indicatorAnimation(String const& indicatorPath) const {
-  return make_shared<Animation>(m_assets->json(indicatorPath), indicatorPath, m_assets);
+  return make_shared<Animation>(m_assets->json(indicatorPath), indicatorPath, m_assets, m_guiContext.imageMetadata());
 }
 
 void QuestIndicatorPainter::update(float dt, WorldClientPtr const& world, WorldCamera const& camera) {
@@ -57,12 +57,10 @@ Drawable QuestIndicatorPainter::Indicator::render(float pixelRatio) const {
 }
 
 void QuestIndicatorPainter::render() {
-  auto& context = GuiContext::singleton();
-
   for (auto const& indicator : m_indicators.values()) {
     Drawable drawable = indicator.render(m_camera.pixelRatio());
     drawable.fullbright = true;
-    context.drawDrawable(drawable, Vec2F(indicator.screenPos), 1, Vec4B(255, 255, 255, 255));
+    m_guiContext.drawDrawable(drawable, Vec2F(indicator.screenPos), 1, Vec4B(255, 255, 255, 255));
   }
 }
 

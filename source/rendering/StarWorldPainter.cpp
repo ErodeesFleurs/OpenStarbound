@@ -3,16 +3,18 @@
 #include "StarException.hpp"
 #include "StarConfiguration.hpp"
 #include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
 #include "StarJsonExtra.hpp"
 
 namespace Star {
 
-WorldPainter::WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase)
+WorldPainter::WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
   : m_assets(std::move(assets)),
     m_configuration(std::move(configuration)),
     m_registerReloadListener(std::move(registerReloadListener)),
     m_materialDatabase(std::move(materialDatabase)),
-    m_liquidsDatabase(std::move(liquidsDatabase)) {
+    m_liquidsDatabase(std::move(liquidsDatabase)),
+    m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
   if (!m_assets)
     throw StarException("WorldPainter requires assets service");
   if (!m_configuration)
@@ -23,6 +25,8 @@ WorldPainter::WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration
     throw StarException("WorldPainter requires material database service");
   if (!m_liquidsDatabase)
     throw StarException("WorldPainter requires liquids database service");
+  if (!m_imageMetadataDatabase)
+    throw StarException("WorldPainter requires image metadata database service");
 
   m_camera.setScreenSize({800, 600});
   m_camera.setCenterWorldPosition(Vec2F());
@@ -219,14 +223,14 @@ void WorldPainter::renderParticles(WorldRenderData& renderData, Particle::Layer 
     } else if (particle.type == Particle::Type::Textured || particle.type == Particle::Type::Animated) {
       Drawable drawable;
       if (particle.type == Particle::Type::Textured)
-        drawable = Drawable::makeImage(particle.image, 1.0f / TilePixels, true, Vec2F(0, 0));
+        drawable = Drawable::makeImage(particle.image, 1.0f / TilePixels, true, Vec2F(0, 0), Color::White, m_imageMetadataDatabase);
       else
         drawable = particle.animation->drawable(1.0f / TilePixels);
 
       if (particle.flip && particle.flippable)
         drawable.scale(Vec2F(-1, 1));
       if (drawable.isImage() && particle.type != Particle::Type::Animated)
-        drawable.imagePart().addDirectivesGroup(particle.directives, true);
+        drawable.imagePart().addDirectivesGroup(particle.directives, true, m_imageMetadataDatabase);
       drawable.fullbright = particle.fullbright;
       drawable.color = particle.color;
       drawable.rotate(particle.rotation);
@@ -257,7 +261,7 @@ void WorldPainter::renderBars(WorldRenderData& renderData) {
     offset += m_entityBarSpacing;
     if (bar.icon) {
       auto iconDrawPosition = position - (m_entityBarSize / 2).round() + m_entityBarIconOffset;
-      drawDrawable(Drawable::makeImage(*bar.icon, 1.0f / TilePixels, true, iconDrawPosition));
+      drawDrawable(Drawable::makeImage(*bar.icon, 1.0f / TilePixels, true, iconDrawPosition, Color::White, m_imageMetadataDatabase));
     }
 
     if (!bar.detailOnly) {
@@ -285,7 +289,7 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
           auto underlayDrawable = Drawable(d);
           underlayDrawable.fullbright = true;
           underlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level * d.color.alphaF());
-          underlayDrawable.imagePart().addDirectives(underlayDirectives, true);
+          underlayDrawable.imagePart().addDirectives(underlayDirectives, true, m_imageMetadataDatabase);
           drawDrawable(std::move(underlayDrawable));
         }
       }
@@ -299,7 +303,7 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
         auto overlayDrawable = Drawable(d);
         overlayDrawable.fullbright = true;
         overlayDrawable.color = Color::rgbaf(1, 1, 1, highlightEffect.level * d.color.alphaF());
-        overlayDrawable.imagePart().addDirectives(overlayDirectives, true);
+        overlayDrawable.imagePart().addDirectives(overlayDirectives, true, m_imageMetadataDatabase);
         drawDrawable(std::move(overlayDrawable));
       }
     }
@@ -319,7 +323,7 @@ void WorldPainter::drawDrawable(Drawable drawable) {
   // draw the drawable if it's on screen
   // if it's not on screen, there's a random chance to pre-load
   // pre-load is not done on every tick because it's expensive to look up images with long paths
-  if (RectF::withSize(Vec2F(), Vec2F(m_camera.screenSize())).intersects(drawable.boundBox(false)))
+  if (RectF::withSize(Vec2F(), Vec2F(m_camera.screenSize())).intersects(drawable.boundBox(false, m_imageMetadataDatabase)))
     m_drawablePainter->drawDrawable(drawable);
   else if (drawable.isImage() && Random::randf() < m_preloadTextureChance)
     m_assets->tryImage(drawable.imagePart().image);

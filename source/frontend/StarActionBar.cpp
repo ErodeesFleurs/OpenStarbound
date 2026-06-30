@@ -19,8 +19,9 @@
 
 namespace Star {
 
-ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player, ActionBarServices services)
-  : m_paneManager(paneManager),
+ActionBar::ActionBar(MainInterfacePaneManager& paneManager, PlayerPtr player, ActionBarServices services)
+  : Pane(services.guiContext),
+    m_paneManager(paneManager),
     m_player(std::move(player)),
     m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)),
@@ -40,7 +41,7 @@ ActionBar::ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player, Ac
   m_actionBarSelectOffset = jsonToVec2I(m_config.get("actionBarSelectOffset"));
   m_switchSounds = jsonToStringList(m_config.get("sounds").get("switch"));
 
-  GuiReader reader;
+  GuiReader reader(context());
 
   for (uint8_t i = 0; i < m_player->inventory()->customBarIndexes(); ++i) {
     reader.registerCallback(strf("customBar{}L", i + 1), [this, i](Widget*) { customBarClick(i, true); });
@@ -122,7 +123,7 @@ PanePtr ActionBar::createTooltip(Vec2I const& screenPosition) {
   if (!item)
     return {};
 
-  return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
+  return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
 }
 
 bool ActionBar::sendEvent(InputEvent const& event) {
@@ -165,14 +166,14 @@ bool ActionBar::sendEvent(InputEvent const& event) {
       abl = static_cast<CustomBarIndex>(index - EssentialItemCount);
 
     inventory->selectActionBarLocation(abl);
-    context()->playAudio(RandomSource().randFrom(m_switchSounds));
+    context().playAudio(RandomSource().randFrom(m_switchSounds));
 
     return true;
   }
 
   if (event.is<MouseMoveEvent>()) {
     m_customBarHover.reset();
-    Vec2I screenPosition = *GuiContext::singleton().mousePosition(event);
+    Vec2I screenPosition = *context().mousePosition(event);
     for (uint8_t i = 0; i < customBarIndexes; ++i) {
       if (m_customBarWidgets[i].left->screenBoundRect().contains(screenPosition))
         m_customBarHover = make_pair(static_cast<CustomBarIndex>(i), false);
@@ -181,7 +182,7 @@ bool ActionBar::sendEvent(InputEvent const& event) {
     }
   }
 
-  for (auto action : context()->actions(event)) {
+  for (auto action : context().actions(event)) {
     if (action >= InterfaceAction::InterfaceBar1 && action <= InterfaceAction::InterfaceBar10
       && (static_cast<int>(action) - static_cast<int>(InterfaceAction::InterfaceBar1)) < inventory->customBarIndexes())
       inventory->selectActionBarLocation(static_cast<CustomBarIndex>(static_cast<int>(action) - static_cast<int>(InterfaceAction::InterfaceBar1)));
@@ -331,7 +332,7 @@ void ActionBar::customBarClick(uint8_t index, bool primary) {
 }
 
 void ActionBar::customBarClickRight(uint8_t index, bool primary) {
-  if (m_paneManager->registeredPaneIsDisplayed(MainInterfacePanes::Inventory)) {
+  if (m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory)) {
     auto inventory = m_player->inventory();
     auto primarySlot = inventory->customBarPrimarySlot(index);
     auto secondarySlot = inventory->customBarSecondarySlot(index);

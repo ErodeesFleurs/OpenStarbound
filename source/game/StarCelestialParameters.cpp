@@ -1,25 +1,29 @@
 #include "StarCelestialParameters.hpp"
-#include "StarStaticRandom.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarAssets.hpp"
 #include "StarDataStreamDevices.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarAssets.hpp"
-#include "StarRoot.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarStaticRandom.hpp"
 #include "StarWeatherTypes.hpp"
 
 namespace Star {
 
 CelestialParameters::CelestialParameters() : m_seed(0) {}
 
-CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters, AssetsConstPtr assets)
-  : m_coordinate(std::move(coordinate)), m_seed(seed), m_name(std::move(name)), m_parameters(std::move(parameters)) {
-  assets = assets ? std::move(assets) : Root::singleton().assets();
+CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase)
+    : m_coordinate(std::move(coordinate)), m_seed(seed), m_name(std::move(name)), m_parameters(std::move(parameters)) {
+  if (!assets)
+    throw StarException("CelestialParameters requires assets service");
+  if (!liquidsDatabase)
+    throw StarException("CelestialParameters requires liquids database service");
+  if (!biomeDatabase)
+    throw StarException("CelestialParameters requires biome database service");
 
   if (auto worldType = getParameter("worldType").optString()) {
     if (worldType->equalsIgnoreCase("Terrestrial")) {
       auto worldSize = getParameter("worldSize").toString();
       auto type = randomizeParameterList("terrestrialType").toString();
-      m_visitableParameters = generateTerrestrialWorldParameters(assets, type, worldSize, m_seed);
+      m_visitableParameters = generateTerrestrialWorldParameters(assets, liquidsDatabase, biomeDatabase, type, worldSize, m_seed);
     } else if (worldType->equalsIgnoreCase("Asteroids")) {
       m_visitableParameters = generateAsteroidsWorldParameters(assets, m_seed);
     } else if (worldType->equalsIgnoreCase("FloatingDungeon")) {
@@ -47,10 +51,10 @@ CelestialParameters::CelestialParameters(Json const& variant) {
 
 Json CelestialParameters::diskStore() const {
   return JsonObject{{"coordinate", m_coordinate.toJson()},
-      {"seed", m_seed},
-      {"name", m_name},
-      {"parameters", m_parameters},
-      {"visitableParameters", diskStoreVisitableWorldParameters(m_visitableParameters)}};
+                    {"seed", m_seed},
+                    {"name", m_name},
+                    {"parameters", m_parameters},
+                    {"visitableParameters", diskStoreVisitableWorldParameters(m_visitableParameters)}};
 }
 
 ByteArray CelestialParameters::netStore() const {
@@ -99,14 +103,14 @@ Json CelestialParameters::randomizeParameterRange(String const& name, int32_t mi
     JsonArray list = parameter.toArray();
     if (list.size() != 2)
       throw CelestialException(
-          strf("Parameter '{}' does not appear to be a range in CelestialParameters::randomizeRange", name));
+        strf("Parameter '{}' does not appear to be a range in CelestialParameters::randomizeRange", name));
 
     return randomizeParameterRange(list, mix, name);
   }
 }
 
 Json CelestialParameters::randomizeParameterRange(
-    JsonArray const& range, int32_t mix, Maybe<String> const& name) const {
+  JsonArray const& range, int32_t mix, Maybe<String> const& name) const {
   if (range[0].type() == Json::Type::Int) {
     int64_t min = range[0].toInt();
     int64_t max = range[1].toInt();
@@ -130,4 +134,4 @@ void CelestialParameters::setVisitableParameters(VisitableWorldParametersPtr con
   m_visitableParameters = newVisitableParameters;
 }
 
-}
+}// namespace Star

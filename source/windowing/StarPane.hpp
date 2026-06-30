@@ -30,7 +30,7 @@ extern EnumMap<PaneAnchor> const PaneAnchorNames;
 
 class Pane : public Widget {
 public:
-  Pane();
+  explicit Pane(GuiContext& context);
 
   struct BGResult {
     String header;

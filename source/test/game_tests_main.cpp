@@ -2,10 +2,25 @@
 #include "StarFile.hpp"
 #include "StarRootLoader.hpp"
 #include "StarSignalHandler.hpp"
+#include "StarTestRoot.hpp"
 
 #include "gtest/gtest.h"
 
 using namespace Star;
+
+namespace Star {
+
+namespace {
+Root* g_testRoot = nullptr;
+}
+
+Root& testRoot() {
+  if (!g_testRoot)
+    throw RootException("testRoot() called with no test Root instance available");
+  return *g_testRoot;
+}
+
+}
 
 struct ErrorLogSink : public LogSink {
   ErrorLogSink() {
@@ -28,11 +43,13 @@ public:
   virtual void SetUp() {
     Logger::addSink(make_shared<ErrorLogSink>());
     root = make_unique<Root>(settings);
+    g_testRoot = root.get();
     root->configuration()->set("clearUniverseFiles", true);
     root->configuration()->set("clearPlayerFiles", true);
   }
 
   virtual void TearDown() {
+    g_testRoot = nullptr;
     root.reset();
   }
 };

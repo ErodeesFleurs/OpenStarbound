@@ -19,6 +19,7 @@ using ErrorScreenPtr = SharedPtr<ErrorScreen>;
 struct ErrorScreenServices {
   AssetsConstPtr assets;
   ImageMetadataDatabaseConstPtr imageMetadata;
+  GuiContext& guiContext;
 };
 
 class ErrorScreen {
@@ -42,7 +43,7 @@ private:
   unsigned windowHeight() const;
   unsigned windowWidth() const;
 
-  GuiContext* m_guiContext;
+  GuiContext& m_guiContext;
   PaneManagerPtr m_paneManager;
   PanePtr m_errorPane;
   AssetsConstPtr m_assets;

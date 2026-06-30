@@ -24,7 +24,7 @@ public:
   using ScriptComponent = LuaMessageHandlingComponent<LuaUpdatableComponent<LuaBaseComponent>>;
   using ScriptComponentPtr = SharedPtr<ScriptComponent>;
 
-  ScriptableThread(Json parameters);
+  ScriptableThread(Json parameters, LuaRootServices luaRootServices);
   ~ScriptableThread();
 
   void start();

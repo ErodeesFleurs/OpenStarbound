@@ -208,7 +208,7 @@ public:
   void cleanup();
 
   // The given player pointer must be valid for the lifetime of this inventory
-  void setPlayer(Player*);
+  void setPlayer(Player& player);
 
   PlayerInventory const& blankInventory() const;
 

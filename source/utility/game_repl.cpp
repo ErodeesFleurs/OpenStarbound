@@ -1,4 +1,5 @@
 #include "StarRootLoader.hpp"
+#include "StarImageLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
 #include "StarRootLuaBindings.hpp"
@@ -12,9 +13,10 @@ int main(int argc, char** argv) {
   tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
   auto engine = LuaEngine::create(true);
+  LuaBindings::registerImageLuaAssets(*engine, root->assets());
   auto context = engine->createContext();
   context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-  context.setCallbacks("root", LuaBindings::makeRootCallbacks());
+  context.setCallbacks("root", LuaBindings::makeRootCallbacks(*root));
 
   String code;
   bool continuation = false;

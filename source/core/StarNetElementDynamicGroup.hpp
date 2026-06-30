@@ -1,9 +1,9 @@
 #pragma once
 
-#include "StarNetElement.hpp"
-#include "StarIdMap.hpp"
-#include "StarStrongTypedef.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarIdMap.hpp"
+#include "StarNetElement.hpp"
+#include "StarStrongTypedef.hpp"
 
 namespace Star {
 
@@ -26,6 +26,7 @@ public:
 
   // Must not call addNetElement / removeNetElement when being used as a slave,
   // id errors will result.
+  void setElementFactory(function<ElementPtr()> elementFactory);
   ElementId addNetElement(ElementPtr element);
   void removeNetElement(ElementId id);
 
@@ -77,6 +78,7 @@ private:
   float m_extrapolationHint = 0.0f;
 
   ElementMap m_idMap = ElementMap(1, highest<ElementId>());
+  function<ElementPtr()> m_elementFactory = []() { return make_shared<Element>(); };
 
   Deque<pair<uint64_t, ElementChange>> m_changeData;
   uint64_t m_changeDataLastVersion = 0;
@@ -86,11 +88,18 @@ private:
 };
 
 template <typename Element>
+void NetElementDynamicGroup<Element>::setElementFactory(function<ElementPtr()> elementFactory) {
+  if (!elementFactory)
+    throw StarException("NetElementDynamicGroup requires element factory");
+  m_elementFactory = std::move(elementFactory);
+}
+
+template <typename Element>
 auto NetElementDynamicGroup<Element>::addNetElement(ElementPtr element) -> ElementId {
   readyElement(element);
   auto id = m_idMap.add(std::move(element));
 
-  addChangeData(ElementAddition(id, {})); // we will write the data stream once we know the rules for the one recieving
+  addChangeData(ElementAddition(id, {}));// we will write the data stream once we know the rules for the one recieving
 
   return id;
 }
@@ -131,7 +140,7 @@ void NetElementDynamicGroup<Element>::initNetVersion(NetElementVersion const* ve
   addChangeData(ElementReset());
   for (auto& pair : m_idMap) {
     pair.second->initNetVersion(m_netVersion);
-    addChangeData(ElementAddition(pair.first, {})); // we will write the data stream once we know the rules for the one recieving
+    addChangeData(ElementAddition(pair.first, {}));// we will write the data stream once we know the rules for the one recieving
   }
 }
 
@@ -159,7 +168,8 @@ void NetElementDynamicGroup<Element>::tickNetInterpolation(float dt) {
 
 template <typename Element>
 void NetElementDynamicGroup<Element>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   ds.writeVlqU(m_idMap.size());
 
   m_buffer.setStreamCompatibilityVersion(rules);
@@ -173,7 +183,8 @@ void NetElementDynamicGroup<Element>::netStore(DataStream& ds, NetCompatibilityR
 
 template <typename Element>
 void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   m_changeData.clear();
   m_changeDataLastVersion = m_netVersion ? m_netVersion->current() : 0;
   m_idMap.clear();
@@ -186,7 +197,7 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRu
     ElementId id = ds.readVlqU();
     DataStreamBuffer storeBuffer(ds.read<ByteArray>());
 
-    ElementPtr element = make_shared<Element>();
+    ElementPtr element = m_elementFactory();
     element->netLoad(storeBuffer, rules);
     readyElement(element);
 
@@ -197,7 +208,8 @@ void NetElementDynamicGroup<Element>::netLoad(DataStream& ds, NetCompatibilityRu
 
 template <typename Element>
 bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return false;
+  if (!checkWithRules(rules))
+    return false;
   if (fromVersion < m_changeDataLastVersion) {
     ds.write<bool>(true);
     netStore(ds, rules);
@@ -250,7 +262,8 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
 
 template <typename Element>
 void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   bool isFull = ds.read<bool>();
   if (isFull) {
     netLoad(ds, rules);
@@ -267,7 +280,7 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
         if (changeUpdate.template is<ElementReset>()) {
           m_idMap.clear();
         } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
-          ElementPtr element = make_shared<Element>();
+          ElementPtr element = m_elementFactory();
           DataStreamBuffer storeBuffer(std::move(get<1>(*addition)));
           element->netLoad(storeBuffer, rules);
           readyElement(element);
@@ -324,4 +337,4 @@ void NetElementDynamicGroup<Element>::readyElement(ElementPtr const& element) {
     element->disableNetInterpolation();
 }
 
-}
+}// namespace Star

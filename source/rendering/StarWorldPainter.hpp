@@ -14,13 +14,15 @@ class MaterialDatabase;
 using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
 class LiquidsDatabase;
 using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 class WorldPainter;
 using WorldPainterPtr = SharedPtr<WorldPainter>;
 
 // Will update client rendering window internally
 class WorldPainter {
 public:
-  WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase);
+  WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener, MaterialDatabaseConstPtr materialDatabase, LiquidsDatabaseConstPtr liquidsDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   void renderInit(RendererPtr renderer);
 
@@ -66,6 +68,7 @@ private:
   function<void(ListenerWeakPtr)> m_registerReloadListener;
   MaterialDatabaseConstPtr m_materialDatabase;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   RectF m_worldScreenRect;
 
   Vec2F m_previousCameraCenter;

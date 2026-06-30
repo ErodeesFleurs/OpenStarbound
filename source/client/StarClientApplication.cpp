@@ -1,45 +1,44 @@
 #include "StarClientApplication.hpp"
-#include "StarConfiguration.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarFile.hpp"
-#include "StarEncode.hpp"
-#include "StarLogging.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarVersion.hpp"
-#include "StarPlayer.hpp"
-#include "StarPlayerStorage.hpp"
-#include "StarPlayerLog.hpp"
 #include "StarAssets.hpp"
-#include "StarWorldTemplate.hpp"
-#include "StarWorldClient.hpp"
-#include "StarRootLoader.hpp"
-#include "StarInput.hpp"
-#include "StarVoice.hpp"
+#include "StarConfiguration.hpp"
 #include "StarCurve25519.hpp"
+#include "StarEncode.hpp"
+#include "StarFile.hpp"
+#include "StarInput.hpp"
 #include "StarInterpolation.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
+#include "StarPlayer.hpp"
+#include "StarPlayerLog.hpp"
+#include "StarPlayerStorage.hpp"
+#include "StarRoot.hpp"
+#include "StarRootLoader.hpp"
+#include "StarVersion.hpp"
+#include "StarVoice.hpp"
+#include "StarWorldClient.hpp"
+#include "StarWorldTemplate.hpp"
 
 #include "StarCameraLuaBindings.hpp"
 #include "StarCelestialLuaBindings.hpp"
 #include "StarClipboardLuaBindings.hpp"
+#include "StarHttpTrustDialog.hpp"
 #include "StarInputLuaBindings.hpp"
 #include "StarInterfaceLuaBindings.hpp"
 #include "StarLuaHttpBindings.hpp"
+#include "StarMainInterfaceTypes.hpp"
 #include "StarRenderingLuaBindings.hpp"
 #include "StarTeamClientLuaBindings.hpp"
 #include "StarVoiceLuaBindings.hpp"
-#include "StarHttpTrustDialog.hpp"
-#include "StarMainInterfaceTypes.hpp"
 
 #include "imgui.h"
 #include "imgui_freetype.h"
 
 #if defined STAR_SYSTEM_WINDOWS
-#include <windows.h>
 #include <shellapi.h>
+#include <windows.h>
 extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
-#endif // graphics driver is told by these exports to default to the dedicated GPU
+#endif// graphics driver is told by these exports to default to the dedicated GPU
 
 namespace Star {
 
@@ -157,52 +156,55 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
     }
   )JSON");
 
-function<void(ListenerWeakPtr)> rootReloadListenerRegistrar(Root* root) {
-  return [root](ListenerWeakPtr reloadListener) {
+function<void(ListenerWeakPtr)> rootReloadListenerRegistrar(Root& root) {
+  return [root = &root](ListenerWeakPtr reloadListener) {
     root->registerReloadListener(std::move(reloadListener));
   };
 }
 
-MainInterfaceServices makeMainInterfaceServices(Root* root) {
-  MainInterfaceServices services;
-  auto assets = root->assets();
+MainInterfaceServices makeMainInterfaceServices(Root& root, GuiContext& guiContext, Input& input, Voice& voice) {
+  MainInterfaceServices services(guiContext, input, voice);
+  auto assets = root.assets();
   services.assets = assets;
-  services.configuration = root->configuration();
-  services.imageMetadata = root->imageMetadataDatabase();
-  services.functionDatabase = root->functionDatabase();
-  services.itemDatabase = root->itemDatabase();
-  services.objectDatabase = root->objectDatabase();
-  services.aiDatabase = root->aiDatabase();
-  services.techDatabase = root->techDatabase();
-  services.statusEffectDatabase = root->statusEffectDatabase();
+  services.configuration = root.configuration();
+  services.imageMetadata = root.imageMetadataDatabase();
+  services.functionDatabase = root.functionDatabase();
+  services.itemDatabase = root.itemDatabase();
+  services.objectDatabase = root.objectDatabase();
+  services.aiDatabase = root.aiDatabase();
+  services.techDatabase = root.techDatabase();
+  services.statusEffectDatabase = root.statusEffectDatabase();
   services.imageFrames = [assets](String const& path) {
     return assets->imageFrames(path);
   };
   services.registerReloadListener = rootReloadListenerRegistrar(root);
-  services.reloadRoot = [root]() {
+  services.reloadRoot = [root = &root]() {
     root->reload();
     root->fullyLoad();
   };
-  services.reloadRootForCommand = [root]() {
+  services.reloadRootForCommand = [root = &root]() {
     root->reload();
   };
-  services.hotReloadRoot = [root]() {
+  services.hotReloadRoot = [root = &root]() {
     root->hotReload();
   };
-  services.outputDirectory = root->toStoragePath("output");
+  services.outputDirectory = root.toStoragePath("output");
   return services;
 }
 
-TitleScreenServices makeTitleScreenServices(Root* root) {
-  TitleScreenServices services;
-  services.assets = root->assets();
-  services.configuration = root->configuration();
-  services.playerFactory = root->playerFactory();
-  services.speciesDatabase = root->speciesDatabase();
-  services.nameGenerator = root->nameGenerator();
-  services.itemDatabase = root->itemDatabase();
-  services.imageMetadata = root->imageMetadataDatabase();
-  services.versioningDatabase = root->versioningDatabase();
+TitleScreenServices makeTitleScreenServices(Root& root, GuiContext& guiContext, Voice& voice, Input& input) {
+  TitleScreenServices services(guiContext, voice, input);
+  services.assets = root.assets();
+  services.configuration = root.configuration();
+  services.playerFactory = root.playerFactory();
+  services.speciesDatabase = root.speciesDatabase();
+  services.nameGenerator = root.nameGenerator();
+  services.itemDatabase = root.itemDatabase();
+  services.liquidsDatabase = root.liquidsDatabase();
+  services.biomeDatabase = root.biomeDatabase();
+  services.imageMetadata = root.imageMetadataDatabase();
+  services.versioningDatabase = root.versioningDatabase();
+  services.luaRootServices = root.luaRootServices();
   return services;
 }
 
@@ -250,10 +252,10 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   bool borderless = configuration->get("borderless").toBool();
   bool maximized = configuration->get("maximized").toBool();
   m_controllerInput = configuration->get("controllerInput").optBool().value();
-  
-  #ifdef STAR_SYSTEM_WINDOWS
-    appController->setBorderlessWorkaround(configuration->get("borderlessWorkaround", true).toBool());
-  #endif
+
+#ifdef STAR_SYSTEM_WINDOWS
+  appController->setBorderlessWorkaround(configuration->get("borderlessWorkaround", true).toBool());
+#endif
 
   if (fullscreen)
     appController->setFullscreenWindow(fullscreenSize);
@@ -279,20 +281,22 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
 
   // Must be called before anything that can invoke an asset load.
   loadMods();
-  
+
   AudioFormat audioFormat = appController->enableAudio();
-  auto root = m_root.get();
-  auto assets = root->assets();
+  auto& root = *m_root;
+  auto assets = root.assets();
   auto registerReloadListener = rootReloadListenerRegistrar(root);
 
-  m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels, MainMixer::Services{assets, configuration});
-  m_mainMixer->setVolume(0.5);
-  
-  m_worldPainter = make_shared<WorldPainter>(assets, configuration, registerReloadListener, root->materialDatabase(), root->liquidsDatabase());
-  m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController, GuiContextServices{assets, configuration, root->imageMetadataDatabase(), root->itemDatabase(), registerReloadListener});
-  m_input = make_shared<Input>(assets, configuration);
   m_voice = make_shared<Voice>(appController, VoiceServices{configuration});
+  m_mainMixer = make_shared<MainMixer>(audioFormat.sampleRate, audioFormat.channels, *m_voice, MainMixer::Services{assets, configuration});
+  m_mainMixer->setVolume(0.5);
 
+  m_worldPainter = make_shared<WorldPainter>(assets, configuration, registerReloadListener, root.materialDatabase(), root.liquidsDatabase(), root.imageMetadataDatabase());
+  m_input = make_shared<Input>(InputServices{assets, configuration, registerReloadListener});
+  m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController, GuiContextServices{assets, configuration, root.imageMetadataDatabase(), root.itemDatabase(), registerReloadListener, [this](function<void()> callback) {
+                                                                                                   auto unlocker = m_input->unlockClipboard();
+                                                                                                   callback();
+                                                                                                 }});
   {
     auto& io = ImGui::GetIO();
     io.ConfigFlags |= ImGuiConfigFlags_NoMouseCursorChange;
@@ -301,17 +305,17 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
     config.FontDataOwnedByAtlas = false;
     config.FontBuilderFlags = ImGuiFreeTypeBuilderFlags_ForceAutoHint;
     io.Fonts->AddFontFromMemoryTTF(m_immediateFont.ptr(), m_immediateFont.size(),
-      16, &config, io.Fonts->GetGlyphRangesDefault());
+                                   16, &config, io.Fonts->GetGlyphRangesDefault());
   }
 
   m_minInterfaceScale = assets->json("/interface.config:minInterfaceScale").toFloat();
   m_maxInterfaceScale = assets->json("/interface.config:maxInterfaceScale").toFloat();
   m_crossoverRes = jsonToVec2F(assets->json("/interface.config:interfaceCrossoverRes"));
-  
+
   appController->setApplicationTitle(assets->json("/client.config:windowTitle").toString());
   appController->setMaxFrameSkip(assets->json("/client.config:maxFrameSkip").toUInt());
   appController->setUpdateTrackWindow(assets->json("/client.config:updateTrackWindow").toFloat());
-  
+
   if (auto jVoice = configuration->get("voice"))
     m_voice->loadJson(jVoice.toObject(), true);
 
@@ -331,16 +335,16 @@ void ClientApplication::renderInit(RendererPtr renderer) {
 
   m_guiContext->renderInit(renderer);
 
-  m_cinematicOverlay = make_shared<Cinematic>(Cinematic::Services{m_root->assets()});
-  m_errorScreen = make_shared<ErrorScreen>(ErrorScreenServices{m_root->assets(), m_root->imageMetadataDatabase()});
+  m_cinematicOverlay = make_shared<Cinematic>(Cinematic::Services{m_root->assets(), *m_guiContext});
+  m_errorScreen = make_shared<ErrorScreen>(ErrorScreenServices{m_root->assets(), m_root->imageMetadataDatabase(), *m_guiContext});
 
   if (m_titleScreen)
     m_titleScreen->renderInit(renderer);
   if (m_worldPainter)
     m_worldPainter->renderInit(renderer);
 
-  #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  #ifdef STAR_SYSTEM_LINUX
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#ifdef STAR_SYSTEM_LINUX
   if (g_steamIsFlatpak) {
     auto config = m_root->configuration();
     if (!config->get("steamFlatpakWarningShown").optBool().value()) {
@@ -350,8 +354,8 @@ void ClientApplication::renderInit(RendererPtr renderer) {
       return;
     }
   }
-  #endif
-  #endif
+#endif
+#endif
 
   changeState(MainAppState::Mods);
 }
@@ -391,8 +395,7 @@ void ClientApplication::processInput(InputEvent const& event) {
       m_heldKeyEvents.transform([&](auto& keyEvent) {
         return KeyDownEvent{keyEvent.key, keyEvent.mods & ~*modKey};
       });
-  }
-  else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
+  } else if (auto cAxis = event.ptr<ControllerAxisEvent>()) {
     if (cAxis->controllerAxis == ControllerAxis::LeftX)
       m_controllerLeftStick[0] = cAxis->controllerAxisValue;
     else if (cAxis->controllerAxis == ControllerAxis::LeftY)
@@ -430,7 +433,7 @@ void ClientApplication::update() {
         m_pendingMultiPlayerConnection = PendingMultiPlayerConnection{join.takeValue(), {}, {}, false};
         changeState(MainAppState::Title);
       }
-      
+
       if (auto req = p2pNetworkingService->pullJoinRequest())
         m_mainInterface->queueJoinRequest(*req);
 
@@ -441,16 +444,16 @@ void ClientApplication::update() {
   if (!m_errorScreen->accepted())
     m_errorScreen->update(dt);
 
-  // This warning is only applicable to Linux systems so no need to process it otherwise.
-  #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  #ifdef STAR_SYSTEM_LINUX
+// This warning is only applicable to Linux systems so no need to process it otherwise.
+#ifdef STAR_ENABLE_STEAM_INTEGRATION
+#ifdef STAR_SYSTEM_LINUX
   if (m_state == MainAppState::SteamFlatpakWarning)
     updateSteamFlatpakWarning(dt);
   else
-  #endif
-  #endif
+#endif
+#endif
 
-  if (m_state == MainAppState::Mods)
+    if (m_state == MainAppState::Mods)
     updateMods(dt);
   else if (m_state == MainAppState::ModsWarning)
     updateModsWarning(dt);
@@ -463,12 +466,12 @@ void ClientApplication::update() {
     updateTitle(dt);
   else if (m_state > MainAppState::Title)
     updateRunning(dt);
-  
+
   // Swallow leftover encoded voice data if we aren't in-game to allow mic read to continue for settings.
   if (m_state <= MainAppState::Title) {
     DataStreamBuffer ext;
     m_voice->send(ext);
-  } // TODO: directly disable encoding at menu so we don't have to do this
+  }// TODO: directly disable encoding at menu so we don't have to do this
 
   m_guiContext->cleanup();
   m_edgeKeyEvents.clear();
@@ -514,7 +517,7 @@ void ClientApplication::render() {
       });
       LogMap::set("client_render_world_painter", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - paintStart));
       LogMap::set("client_render_world_total", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - totalStart));
-      
+
       auto size = Vec2F(renderer->screenSize());
       auto quad = renderFlatRect(RectF::withSize(size / -2, size), Vec4B::filled(0), 0.0f);
       for (auto& layer : m_postProcessLayers) {
@@ -578,27 +581,27 @@ void ClientApplication::renderReload() {
   };
 
   renderer->loadConfig(assets->json("/rendering/opengl.config"));
-  
+
   loadEffectConfig("world");
-  
+
   // define post process groups and set them to be enabled/disabled based on config
-  
+
   auto config = m_root->configuration();
   if (!config->get(postProcessGroupsRoot).isType(Json::Type::Object))
     config->set(postProcessGroupsRoot, JsonObject());
   auto groupsConfig = config->get(postProcessGroupsRoot);
-  
+
   m_postProcessGroups.clear();
   auto postProcessGroups = assets->json("/client.config:postProcessGroups").toObject();
   for (auto& pair : postProcessGroups) {
     auto name = pair.first;
     auto groupConfig = groupsConfig.opt(name);
-    auto def = pair.second.getBool("enabledDefault",true);
+    auto def = pair.second.getBool("enabledDefault", true);
     if (!groupConfig)
-      config->setPath(strf("{}.{}", postProcessGroupsRoot, name),JsonObject());
-    m_postProcessGroups.add(name,PostProcessGroup{ groupConfig ? groupConfig.value().getBool("enabled", def) : def });
+      config->setPath(strf("{}.{}", postProcessGroupsRoot, name), JsonObject());
+    m_postProcessGroups.add(name, PostProcessGroup{groupConfig ? groupConfig.value().getBool("enabled", def) : def});
   }
-  
+
   // define post process layers and optionally assign them to groups
   m_postProcessLayers.clear();
   m_labelledPostProcessLayers.clear();
@@ -617,9 +620,9 @@ void ClientApplication::renderReload() {
     // I tried pointers but for whatever reason the behaviour was highly inconsistent and only worked after reload...
     auto label = layer.optString("name");
     if (label) {
-      m_labelledPostProcessLayers.add(label.value(),m_postProcessLayers.count());
+      m_labelledPostProcessLayers.add(label.value(), m_postProcessLayers.count());
     }
-    m_postProcessLayers.append(PostProcessLayer{ std::move(effects), static_cast<unsigned>(layer.getUInt("passes", 1)), group });
+    m_postProcessLayers.append(PostProcessLayer{std::move(effects), static_cast<unsigned>(layer.getUInt("passes", 1)), group});
   }
 
   loadEffectConfig("interface");
@@ -631,7 +634,7 @@ void ClientApplication::setPostProcessLayerPasses(String const& layer, unsigned 
 void ClientApplication::setPostProcessGroupEnabled(String const& group, bool const& enabled, Maybe<bool> const& save) {
   m_postProcessGroups.get(group).enabled = enabled;
   if (save && save.value())
-    m_root->configuration()->setPath(strf("{}.{}.enabled", postProcessGroupsRoot, group),enabled);
+    m_root->configuration()->setPath(strf("{}.{}.enabled", postProcessGroupsRoot, group), enabled);
 }
 bool ClientApplication::postProcessGroupEnabled(String const& group) {
   return m_postProcessGroups.get(group).enabled;
@@ -659,8 +662,8 @@ void ClientApplication::changeState(MainAppState newState) {
   if (newState == MainAppState::Splash) {
     m_cinematicOverlay->load(m_root->assets()->json("/cinematics/splash.cinematic"));
     m_rootLoader = Thread::invoke("Async root loader", [this]() {
-        m_root->fullyLoad();
-      });
+      m_root->fullyLoad();
+    });
   }
 
   if (oldState > MainAppState::Title && m_state <= MainAppState::Title) {
@@ -711,19 +714,27 @@ void ClientApplication::changeState(MainAppState newState) {
     m_cinematicOverlay->stop();
 
     m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"), m_root->configuration(), m_root->entityFactory());
-    m_statistics = make_shared<Statistics>(m_root->toStoragePath("player"), m_root->versioningDatabase(), m_root->statisticsDatabase(), app->statisticsService());
-    m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics, m_root->assets(), m_root->configuration(), m_root->materialDatabase(), m_root->itemDatabase(), m_root->objectDatabase(), m_root->speciesDatabase(), m_root->entityFactory(), m_root->liquidsDatabase(), m_root->biomeDatabase(), m_root->nameGenerator(), m_root->functionDatabase(), m_root->behaviorDatabase(), m_root->particleDatabase(), m_root->damageDatabase(), m_root->projectileDatabase(), m_root->effectSourceDatabase(), m_root->techDatabase(), m_root->statusEffectDatabase(), m_root->plantDatabase(), m_root->treasureDatabase(), m_root->imageMetadataDatabase());
+    auto luaRootServices = m_root->luaRootServices();
+    m_statistics = make_shared<Statistics>(
+        m_root->toStoragePath("player"),
+        m_root->versioningDatabase(),
+        m_root->statisticsDatabase(),
+        luaRootServices,
+        app->statisticsService());
+    m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics, m_root->assets(), m_root->configuration(), m_root->materialDatabase(), m_root->itemDatabase(), m_root->objectDatabase(), m_root->speciesDatabase(), m_root->entityFactory(), m_root->liquidsDatabase(), m_root->terrainDatabase(), m_root->biomeDatabase(), m_root->nameGenerator(), m_root->functionDatabase(), m_root->behaviorDatabase(), m_root->particleDatabase(), m_root->damageDatabase(), m_root->projectileDatabase(), m_root->effectSourceDatabase(), m_root->techDatabase(), m_root->statusEffectDatabase(), m_root->plantDatabase(), m_root->treasureDatabase(), m_root->imageMetadataDatabase(), m_root->dungeonDefinitions(), luaRootServices);
 
-    m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks());
-    m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks());
-    m_universeClient->setLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(&m_worldPainter->camera(), m_root->configuration()));
-    m_universeClient->setLuaCallbacks("renderer", LuaBindings::makeRenderingCallbacks(this));
+    m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks(*m_input));
+    m_universeClient->setLuaCallbacks("voice", LuaBindings::makeVoiceCallbacks(*m_voice));
+    m_universeClient->setLuaCallbacks("camera", LuaBindings::makeCameraCallbacks(m_worldPainter->camera(), m_root->configuration()));
+    m_universeClient->setLuaCallbacks("renderer", LuaBindings::makeRenderingCallbacks(*this));
 
     Json alwaysAllow = m_root->configuration()->getPath("safe.alwaysAllowClipboard");
-    m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(app, alwaysAllow && alwaysAllow.toBool()));
+    m_universeClient->setLuaCallbacks("clipboard", LuaBindings::makeClipboardCallbacks(app, m_root->assets(), alwaysAllow && alwaysAllow.toBool(), [this]() {
+                                        return m_input->clipboardAllowed();
+                                      }));
     const bool luaHttpEnabled = m_root->configuration()->getPath("safe.luaHttp.enabled").optBool().value(false);
 
-    m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled));
+    m_universeClient->setLuaCallbacks("http", LuaBindings::makeHttpCallbacks(luaHttpEnabled, m_root->configuration()));
 
     auto heldScriptPanes = make_shared<List<MainInterface::ScriptPaneInfo>>();
 
@@ -735,8 +746,8 @@ void ClientApplication::changeState(MainAppState newState) {
     };
 
     m_universeClient->playerReloadCallback() = [&, heldScriptPanes](bool resetInterface) {
-      auto paneManager = m_mainInterface->paneManager();
-      if (auto inventory = paneManager->registeredPane<InventoryPane>(MainInterfacePanes::Inventory))
+      auto& paneManager = m_mainInterface->paneManager();
+      if (auto inventory = paneManager.registeredPane<InventoryPane>(MainInterfacePanes::Inventory))
         inventory->clearChangedSlots();
 
       if (resetInterface) {
@@ -747,9 +758,9 @@ void ClientApplication::changeState(MainAppState newState) {
 
     m_mainMixer->setUniverseClient(m_universeClient);
     m_titleScreen = make_shared<TitleScreen>(m_playerStorage,
-      m_mainMixer->mixer(),
-      m_universeClient,
-      makeTitleScreenServices(m_root.get()));
+                                             m_mainMixer->mixer(),
+                                             m_universeClient,
+                                             makeTitleScreenServices(*m_root, *m_guiContext, *m_voice, *m_input));
     if (auto renderer = Application::renderer())
       m_titleScreen->renderInit(renderer);
   }
@@ -836,7 +847,7 @@ void ClientApplication::changeState(MainAppState newState) {
 
       bool allowAssetsMismatch = m_root->configuration()->get("allowAssetsMismatch").toBool();
       if (auto errorMessage = m_universeClient->connect(UniverseConnection(std::move(packetSocket)), allowAssetsMismatch,
-            multiPlayerConnection.account, multiPlayerConnection.password, multiPlayerConnection.forceLegacy)) {
+                                                        multiPlayerConnection.account, multiPlayerConnection.password, multiPlayerConnection.forceLegacy)) {
         setError(*errorMessage);
         return;
       }
@@ -849,8 +860,12 @@ void ClientApplication::changeState(MainAppState newState) {
     } else {
       if (!m_universeServer) {
         try {
+          auto luaRootServices = m_root->luaRootServices();
           m_universeServer = make_shared<UniverseServer>(
-              m_root->toStoragePath("universe"), m_root->assets(), m_root->configuration(), m_root->materialDatabase(), m_root->imageMetadataDatabase(), m_root->itemDatabase(), m_root->objectDatabase(), m_root->projectileDatabase(), m_root->plantDatabase(), m_root->treasureDatabase(), m_root->npcDatabase(), m_root->monsterDatabase(), m_root->spawnTypeDatabase(), m_root->stagehandDatabase(), m_root->vehicleDatabase(), m_root->speciesDatabase(), m_root->entityFactory(), m_root->liquidsDatabase(), m_root->biomeDatabase(), m_root->nameGenerator(), m_root->versioningDatabase(), m_root->functionDatabase(), m_root->effectSourceDatabase(), m_root->particleDatabase(), m_root->techDatabase(), m_root->statusEffectDatabase());
+            m_root->toStoragePath("universe"), m_root->assets(), m_root->configuration(), m_root->materialDatabase(), m_root->imageMetadataDatabase(), m_root->itemDatabase(), m_root->objectDatabase(), m_root->projectileDatabase(), m_root->plantDatabase(), m_root->treasureDatabase(), m_root->npcDatabase(), m_root->monsterDatabase(), m_root->spawnTypeDatabase(), m_root->stagehandDatabase(), m_root->vehicleDatabase(), m_root->speciesDatabase(), m_root->entityFactory(), m_root->liquidsDatabase(), m_root->terrainDatabase(), m_root->biomeDatabase(), m_root->nameGenerator(), m_root->versioningDatabase(), m_root->functionDatabase(), m_root->effectSourceDatabase(), m_root->particleDatabase(), m_root->techDatabase(), m_root->statusEffectDatabase(), m_root->dungeonDefinitions(), m_root->behaviorDatabase(), luaRootServices, [this]() {
+              m_root->reload();
+              m_root->fullyLoad();
+            });
           m_universeServer->start();
         } catch (StarException const& e) {
           setError("Unable to start local server", e);
@@ -867,25 +882,24 @@ void ClientApplication::changeState(MainAppState newState) {
     m_titleScreen->stopMusic();
 
     m_universeClient->restartLua();
-    auto services = makeMainInterfaceServices(m_root.get());
+    auto services = makeMainInterfaceServices(*m_root, *m_guiContext, *m_input, *m_voice);
     m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay, std::move(services));
-    m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get()));
-    m_universeClient->setLuaCallbacks("chat", LuaBindings::makeChatCallbacks(m_mainInterface.get(), m_universeClient.get()));
-    m_universeClient->setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universeClient.get(), m_universeClient->biomeDatabase()));
-    m_universeClient->setLuaCallbacks("team", LuaBindings::makeTeamClientCallbacks(m_universeClient->teamClient().get()));
-    m_universeClient->setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(m_universeClient->worldClient().get()));
+    m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(*m_mainInterface));
+    m_universeClient->setLuaCallbacks("chat", LuaBindings::makeChatCallbacks(*m_mainInterface, *m_universeClient));
+    m_universeClient->setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(*m_universeClient, m_universeClient->biomeDatabase()));
+    m_universeClient->setLuaCallbacks("team", LuaBindings::makeTeamClientCallbacks(*m_universeClient->teamClient()));
+    m_universeClient->setLuaCallbacks("world", LuaBindings::makeWorldCallbacks(*(World*)m_universeClient->worldClient().get()));
 
     LuaBindings::setHttpTrustRequestCallback([mainInterface = m_mainInterface.get()](String const& domain) {
-      const auto paneManager = mainInterface->paneManager();
-      const auto httpTrustDialog = paneManager->registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
+      auto& paneManager = mainInterface->paneManager();
+      const auto httpTrustDialog = paneManager.registeredPane<HttpTrustDialog>(MainInterfacePanes::HttpTrustDialog);
 
       httpTrustDialog->displayRequest(domain, [domain](const HttpTrustReply reply, bool) {
         const bool allowed = (reply == HttpTrustReply::Allow);
         LuaBindings::handleHttpTrustReply(domain, allowed);
       });
-      paneManager->displayRegisteredPane(MainInterfacePanes::HttpTrustDialog);
+      paneManager.displayRegisteredPane(MainInterfacePanes::HttpTrustDialog);
     });
-
 
     m_mainInterface->displayDefaultPanes();
     m_universeClient->startLuaScripts();
@@ -952,7 +966,7 @@ void ClientApplication::updateMods(float dt) {
       Logger::info("Checking for user generated content updates...");
       m_loggedUGCCheck = true;
     }
-    
+
     if (ugcService->triggerContentDownload() == UserGeneratedContentService::UGCState::NoDownload) {
       changeState(MainAppState::Splash);
     } else {
@@ -1023,7 +1037,7 @@ void ClientApplication::updateTitle(float dt) {
   bool inputActive = m_titleScreen->textInputActive();
   m_input->setTextInputActive(inputActive);
   if (inputActive)
-    app->setTextArea(m_titleScreen->paneManager()->keyboardCapturedWidget()->keyboardCaptureArea());
+    app->setTextArea(m_titleScreen->paneManager().keyboardCapturedWidget()->keyboardCaptureArea());
   else
     app->setTextArea();
   app->setAcceptingTextInput(inputActive);
@@ -1032,28 +1046,28 @@ void ClientApplication::updateTitle(float dt) {
   if (p2pNetworkingService) {
     auto getStateString = [](TitleState state) -> const char* {
       switch (state) {
-        case TitleState::Main:
-          return "In Main Menu";
-        case TitleState::Options:
-          return "In Options";
-        case TitleState::Mods:
-          return "In Mods";
-        case TitleState::SinglePlayerSelectCharacter:
-          return "Selecting a character for singleplayer";
-        case TitleState::SinglePlayerCreateCharacter:
-          return "Creating a character for singleplayer";
-        case TitleState::MultiPlayerSelectCharacter:
-          return "Selecting a character for multiplayer";
-        case TitleState::MultiPlayerCreateCharacter:
-          return "Creating a character for multiplayer";
-        case TitleState::MultiPlayerConnect:
-          return "Awaiting multiplayer connection info";
-        case TitleState::StartSinglePlayer:
-          return "Loading Singleplayer";
-        case TitleState::StartMultiPlayer:
-          return "Connecting to Multiplayer";
-        default:
-          return "";
+      case TitleState::Main:
+        return "In Main Menu";
+      case TitleState::Options:
+        return "In Options";
+      case TitleState::Mods:
+        return "In Mods";
+      case TitleState::SinglePlayerSelectCharacter:
+        return "Selecting a character for singleplayer";
+      case TitleState::SinglePlayerCreateCharacter:
+        return "Creating a character for singleplayer";
+      case TitleState::MultiPlayerSelectCharacter:
+        return "Selecting a character for multiplayer";
+      case TitleState::MultiPlayerCreateCharacter:
+        return "Creating a character for multiplayer";
+      case TitleState::MultiPlayerConnect:
+        return "Awaiting multiplayer connection info";
+      case TitleState::StartSinglePlayer:
+        return "Loading Singleplayer";
+      case TitleState::StartMultiPlayer:
+        return "Connecting to Multiplayer";
+      default:
+        return "";
       }
     };
 
@@ -1077,8 +1091,7 @@ void ClientApplication::updateTitle(float dt) {
             address.right(),
             m_titleScreen->multiPlayerAccount(),
             m_titleScreen->multiPlayerPassword(),
-            m_titleScreen->multiPlayerForceLegacy()
-          };
+            m_titleScreen->multiPlayerForceLegacy()};
 
           auto configuration = m_root->configuration();
           configuration->setPath("title.multiPlayerAddress", m_titleScreen->multiPlayerAddress());
@@ -1129,7 +1142,7 @@ void ClientApplication::updateRunning(float dt) {
         }
       }
     }
-    
+
     if (p2pNetworkingService) {
       auto getActivityDetail = [&](String const& tag) -> String {
         if (tag == "playerName")
@@ -1159,8 +1172,7 @@ void ClientApplication::updateRunning(float dt) {
               return "In World";
             else
               return Text::stripEscapeCodes(worldName);
-          }
-          else
+          } else
             return "Nowhere";
         }
         return "";
@@ -1192,6 +1204,9 @@ void ClientApplication::updateRunning(float dt) {
         m_player->moveDown();
       if (isActionTaken(InterfaceAction::PlayerJump))
         m_player->jump();
+
+      for (auto bindId : {"materialCollisionCycle", "buildingRadiusGrow", "buildingRadiusShrink", "blockSwapToggle"})
+        m_player->setBuildToolControlPresses(bindId, m_input->bindDown("opensb", bindId));
 
       if (isActionTaken(InterfaceAction::PlayerTechAction1))
         m_player->special(1);
@@ -1315,7 +1330,7 @@ void ClientApplication::updateRunning(float dt) {
           std::string_view signatureView(reinterpret_cast<char const*>(signature.data()), signature.size());
           std::string_view audioDataView(voiceData.ptr(), voiceData.size());
           auto broadcast = strf("data\0voice\0{}{}"s, signatureView, audioDataView);
-          worldClient->sendSecretBroadcast(broadcast, true, false); // Already compressed by Opus.
+          worldClient->sendSecretBroadcast(broadcast, true, false);// Already compressed by Opus.
         }
         if (auto mainPlayer = m_universeClient->mainPlayer()) {
           auto localSpeaker = m_voice->localSpeaker();
@@ -1337,7 +1352,7 @@ void ClientApplication::updateRunning(float dt) {
     bool inputActive = m_mainInterface->textInputActive();
     m_input->setTextInputActive(inputActive);
     if (inputActive)
-      app->setTextArea(m_mainInterface->paneManager()->keyboardCapturedWidget()->keyboardCaptureArea());
+      app->setTextArea(m_mainInterface->paneManager().keyboardCapturedWidget()->keyboardCaptureArea());
     else
       app->setTextArea();
     app->setAcceptingTextInput(inputActive);
@@ -1476,7 +1491,7 @@ void ClientApplication::updateCamera(float dt) {
   m_universeClient->worldClient()->setClientWindow(camera.worldTileRect());
 }
 
-}
+}// namespace Star
 
 #if defined STAR_SYSTEM_WINDOWS
 int __stdcall WinMain(HINSTANCE, HINSTANCE, LPSTR, int) {

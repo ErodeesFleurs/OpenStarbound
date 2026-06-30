@@ -2,11 +2,9 @@
 #include "StarJson.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarMaterialDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarWorld.hpp"
 #include "StarWorldClient.hpp"
 #include "StarWorldTemplate.hpp"
-#include "StarInput.hpp"
 #include "StarTileDrawer.hpp"
 #include "StarPlayer.hpp"
 
@@ -18,14 +16,16 @@ const String AltBlockRadiusPropertyKey = "building.altBlockRadius";
 const String CollisionOverridePropertyKey = "building.collisionOverride";
 const String BlockSwapPropertyKey = "building.blockSwap";
 
-MaterialItem::MaterialItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& settings, MaterialDatabaseConstPtr materialDatabase)
-  : Item(assets, config, directory, settings), FireableItem(config), BeamItem(assets, config), m_assets(std::move(assets)) {
+MaterialItem::MaterialItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& settings, MaterialDatabaseConstPtr materialDatabase)
+  : Item(assets, imageMetadataDatabase, config, directory, settings), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("MaterialItem requires assets service");
+  if (!materialDatabase)
+    throw ItemException("MaterialItem requires material database service");
 
   m_material = config.getInt("materialId");
   m_materialHueShift = materialHueFromDegrees(instanceValue("materialHueShift", 0).toFloat());
-  auto materialDatabasePtr = materialDatabase ? std::move(materialDatabase) : Root::singleton().materialDatabase();
+  auto materialDatabasePtr = std::move(materialDatabase);
 
   if (materialHueShift() != MaterialHue()) {
     auto drawables = iconDrawables();
@@ -67,12 +67,12 @@ ItemPtr MaterialItem::clone() const {
   return make_shared<MaterialItem>(*this);
 }
 
-void MaterialItem::init(ToolUserEntity* owner, ToolHand hand) {
+void MaterialItem::init(ToolUserEntity& owner, ToolHand hand) {
   FireableItem::init(owner, hand);
   BeamItem::init(owner, hand);
-  owner->addSound(Random::randValueFrom(m_placeSounds), 1.0f, 2.0f);
-  if (auto player = as<Player>(owner))
-    updatePropertiesFromPlayer(player);
+  owner.addSound(Random::randValueFrom(m_placeSounds), 1.0f, 2.0f);
+  if (auto player = as<Player>(&owner))
+    updatePropertiesFromPlayer(*player);
 }
 
 void MaterialItem::uninit() {
@@ -92,8 +92,7 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
 
   if (Player* player = as<Player>(owner())) {
     if (owner()->isMaster()) {
-      Input& input = Input::singleton();
-      if (auto presses = input.bindDown("opensb", "materialCollisionCycle")) {
+      if (auto presses = player->buildToolControlPresses("materialCollisionCycle")) {
         CollisionKind baseKind = world()->materialDatabase()->materialCollisionKind(m_material);
         for (size_t i = 0; i != *presses; ++i) {
           constexpr auto limit = static_cast<uint8_t>(TileCollisionOverride::Block) + 1;
@@ -107,19 +106,19 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
         owner()->addSound("/sfx/tools/cyclematcollision.ogg", 1.0f, Random::randf(0.9f, 1.1f));
       }
 
-      if (auto presses = input.bindDown("opensb", "buildingRadiusGrow")) {
+      if (auto presses = player->buildToolControlPresses("buildingRadiusGrow")) {
         m_blockRadius = min(BlockRadiusLimit, int(m_blockRadius + *presses));
         player->setSecretProperty(BlockRadiusPropertyKey, m_blockRadius);
         owner()->addSound("/sfx/tools/buildradiusgrow.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
       }
 
-      if (auto presses = input.bindDown("opensb", "buildingRadiusShrink")) {
+      if (auto presses = player->buildToolControlPresses("buildingRadiusShrink")) {
         m_blockRadius = max(1, int(m_blockRadius - *presses));
         player->setSecretProperty(BlockRadiusPropertyKey, m_blockRadius);
         owner()->addSound("/sfx/tools/buildradiusshrink.wav", 1.0f, 1.0f + m_blockRadius / BlockRadiusLimit);
       }
 
-      if (auto presses = input.bindDown("opensb", "blockSwapToggle")) {
+      if (auto presses = player->buildToolControlPresses("blockSwapToggle")) {
         if (*presses % 2 != 0)
           m_blockSwap = !m_blockSwap;
         player->setSecretProperty(BlockSwapPropertyKey, m_blockSwap);
@@ -127,7 +126,7 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
       }
     }
     else
-      updatePropertiesFromPlayer(player);
+      updatePropertiesFromPlayer(*player);
   }
 }
 
@@ -141,7 +140,7 @@ void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
     color.setAlphaF(alpha * pulseA * 0.95f);
     auto addIndicator = [&](String const& path) {
       Vec2F basePosition = Vec2F(0.5f, 0.5f);
-      auto indicator = Drawable::makeImage(path, 1.0f / TilePixels, true, basePosition);
+      auto indicator = Drawable::makeImage(path, 1.0f / TilePixels, true, basePosition, Color::White, m_imageMetadataDatabase);
       indicator.fullbright = true;
       indicator.color = color;
       for (auto& tilePos : tileArea(calcRadius(m_shifting), owner()->aimPosition())) {
@@ -347,59 +346,56 @@ MaterialId MaterialItem::materialId() const {
 
 List<Drawable> const& MaterialItem::generatedPreview(Vec2I position) const {
   if (!m_generatedPreviewCache) {
-    if (TileDrawer* tileDrawer = TileDrawer::singletonPtr()) {
-      auto locker = tileDrawer->lockRenderData();
-      WorldRenderData& renderData = tileDrawer->renderData();
-      renderData.geometry = WorldGeometry(3, 3);
-      renderData.tiles.resize({ 3, 3 });
-      renderData.tiles.fill(TileDrawer::DefaultRenderTile);
-      renderData.tileMinPosition = { 0, 0 };
-      RenderTile& tile = renderData.tiles.at({ 1, 1 });
-      tile.foreground = m_material;
-      tile.foregroundHueShift = m_materialHueShift;
-      tile.foregroundColorVariant = 0;
+    TileDrawer tileDrawer(m_assets, world()->materialDatabase());
+    auto locker = tileDrawer.lockRenderData();
+    WorldRenderData& renderData = tileDrawer.renderData();
+    renderData.geometry = WorldGeometry(3, 3);
+    renderData.tiles.resize({3, 3});
+    renderData.tiles.fill(TileDrawer::DefaultRenderTile);
+    renderData.tileMinPosition = {0, 0};
+    RenderTile& tile = renderData.tiles.at({1, 1});
+    tile.foreground = m_material;
+    tile.foregroundHueShift = m_materialHueShift;
+    tile.foregroundColorVariant = 0;
 
-      List<Drawable> drawables;
-      TileDrawer::Drawables tileDrawables;
-      bool isBlock = BlockCollisionSet.contains(world()->materialDatabase()->materialCollisionKind(m_material));
-      TileDrawer::TerrainLayer layer = isBlock ? TileDrawer::TerrainLayer::Foreground : TileDrawer::TerrainLayer::Midground;
-      for (int x = 0; x != 3; ++x) {
-        for (int y = 0; y != 3; ++y)
-          tileDrawer->produceTerrainDrawables(tileDrawables, layer, { x, y }, renderData, 1.0f / TilePixels, position - Vec2I(1, 1));
-      }
-
-      locker.unlock();
-      for (auto& index : tileDrawables.keys())
-        drawables.appendAll(tileDrawables.take(index));
-
-      auto boundBox = Drawable::boundBoxAll(drawables, true);
-      if (!boundBox.isEmpty()) {
-        for (auto& drawable : drawables)
-          drawable.translate(-boundBox.center());
-      }
-
-      m_generatedPreviewCache.emplace(std::move(drawables));
+    List<Drawable> drawables;
+    TileDrawer::Drawables tileDrawables;
+    bool isBlock = BlockCollisionSet.contains(world()->materialDatabase()->materialCollisionKind(m_material));
+    TileDrawer::TerrainLayer layer = isBlock ? TileDrawer::TerrainLayer::Foreground : TileDrawer::TerrainLayer::Midground;
+    for (int x = 0; x != 3; ++x) {
+      for (int y = 0; y != 3; ++y)
+        tileDrawer.produceTerrainDrawables(tileDrawables, layer, {x, y}, renderData, 1.0f / TilePixels, position - Vec2I(1, 1));
     }
-    else
-      m_generatedPreviewCache.emplace(iconDrawables());
+
+    locker.unlock();
+    for (auto& index : tileDrawables.keys())
+      drawables.appendAll(tileDrawables.take(index));
+
+    auto boundBox = Drawable::boundBoxAll(drawables, true, m_imageMetadataDatabase);
+    if (!boundBox.isEmpty()) {
+      for (auto& drawable : drawables)
+        drawable.translate(-boundBox.center());
+    }
+
+    m_generatedPreviewCache.emplace(std::move(drawables));
   }
   return *m_generatedPreviewCache;
 }
 
-void MaterialItem::updatePropertiesFromPlayer(Player* player) {
-  auto blockRadius = player->getSecretProperty(BlockRadiusPropertyKey);
+void MaterialItem::updatePropertiesFromPlayer(Player& player) {
+  auto blockRadius = player.getSecretProperty(BlockRadiusPropertyKey);
   if (blockRadius.isType(Json::Type::Float))
     m_blockRadius = blockRadius.toFloat();
 
-  auto altBlockRadius = player->getSecretProperty(AltBlockRadiusPropertyKey);
+  auto altBlockRadius = player.getSecretProperty(AltBlockRadiusPropertyKey);
   if (altBlockRadius.isType(Json::Type::Float))
     m_altBlockRadius = altBlockRadius.toFloat();
 
-  auto collisionOverride = player->getSecretProperty(CollisionOverridePropertyKey);
+  auto collisionOverride = player.getSecretProperty(CollisionOverridePropertyKey);
   if (collisionOverride.isType(Json::Type::String))
     m_collisionOverride = TileCollisionOverrideNames.maybeLeft(collisionOverride.toString()).value(TileCollisionOverride::None);
-  
-  auto blockSwap = player->getSecretProperty(BlockSwapPropertyKey);
+
+  auto blockSwap = player.getSecretProperty(BlockSwapPropertyKey);
   if (blockSwap.isType(Json::Type::Bool))
     m_blockSwap = blockSwap.toBool();
 }

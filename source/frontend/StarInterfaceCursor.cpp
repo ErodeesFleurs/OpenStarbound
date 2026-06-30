@@ -33,8 +33,8 @@ void InterfaceCursor::setCursor(String const& configFile) {
     m_drawable = config.getString("image");
     m_size = Vec2I{m_imageMetadata->imageSize(config.getString("image"))};
   } else {
-    m_drawable = Animation(config.get("animation"), "/interface", m_assets);
-    m_size = Vec2I(m_drawable.get<Animation>().drawable(1.0f).boundBox(false).size());
+    m_drawable = Animation(config.get("animation"), "/interface", m_assets, m_imageMetadata);
+    m_size = Vec2I(m_drawable.get<Animation>().drawable(1.0f).boundBox(false, m_imageMetadata).size());
   }
 
   m_scale = config.getUInt("scale", 0);
@@ -42,7 +42,7 @@ void InterfaceCursor::setCursor(String const& configFile) {
 
 Drawable InterfaceCursor::drawable() const {
   if (m_drawable.is<String>())
-    return Drawable::makeImage(m_drawable.get<String>(), 1.0f, false, {});
+    return Drawable::makeImage(m_drawable.get<String>(), 1.0f, false, {}, Color::White, m_imageMetadata);
   else
     return m_drawable.get<Animation>().drawable(1.0f);
 }

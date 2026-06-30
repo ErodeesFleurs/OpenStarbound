@@ -6,12 +6,13 @@
 #include "StarAssets.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarGameTypes.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
 static ImageMetadataDatabaseConstPtr resolveImageMetadata(ImageMetadataDatabaseConstPtr const& ptr) {
-  return ptr ? ptr : Root::singleton().imageMetadataDatabase();
+  if (!ptr)
+    throw StarException("Drawable operation requires image metadata database service");
+  return ptr;
 }
 
 Drawable::ImagePart& Drawable::ImagePart::addDirectives(Directives const& directives, bool keepImageCenterPosition, ImageMetadataDatabaseConstPtr imageMetadata) {
@@ -108,6 +109,10 @@ Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Ve
   drawable.color = color;
 
   return drawable;
+}
+
+Drawable Drawable::makeImage(AssetPath image, float pixelSize, bool centered, Vec2F const& position, ImageMetadataDatabaseConstPtr imageMetadata) {
+  return makeImage(std::move(image), pixelSize, centered, position, Color::White, std::move(imageMetadata));
 }
 
 Drawable::Drawable()

@@ -22,7 +22,7 @@ public:
   Songbook(AssetsConstPtr assets, String const& species);
   ~Songbook();
 
-  void update(EntityMode mode, World* world);
+  void update(EntityMode mode, World& world);
   void render(RenderCallback* renderCallback);
 
   // instrument needs to tell the songbook what type it is, and needs to keep

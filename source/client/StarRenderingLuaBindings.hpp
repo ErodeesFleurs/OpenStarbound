@@ -7,7 +7,7 @@ namespace Star {
 class ClientApplication;
 
 namespace LuaBindings {
-  LuaCallbacks makeRenderingCallbacks(ClientApplication* app);
+  LuaCallbacks makeRenderingCallbacks(ClientApplication& app);
 }
 
 }

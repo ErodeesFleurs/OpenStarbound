@@ -22,7 +22,7 @@ EnumMap<PaneAnchor> const PaneAnchorNames{
     {PaneAnchor::Center, "center"},
 };
 
-Pane::Pane() {
+Pane::Pane(GuiContext& context) : Widget(context) {
   m_dragActive = m_lockPosition = false;
   m_dismissed = true;
   m_centerOffset = Vec2I();
@@ -31,7 +31,8 @@ Pane::Pane() {
   m_visible = false;
   m_hasDisplayed = false;
 
-  auto const& assets = GuiContext::singleton().assets();
+  auto& guiContext = this->context();
+  auto const& assets = guiContext.assets();
   m_textStyle = assets->json("/interface.config:paneTextStyle");
   m_iconOffset = jsonToVec2I(assets->json("/interface.config:paneIconOffset"));
   m_titleOffset = jsonToVec2I(assets->json("/interface.config:paneTitleOffset"));
@@ -73,7 +74,7 @@ bool Pane::sendEvent(InputEvent const& event) {
   if (m_visible) {
     if (event.is<MouseButtonDownEvent>() || event.is<MouseButtonUpEvent>() || event.is<MouseMoveEvent>()
         || event.is<MouseWheelEvent>()) {
-      Vec2I mousePos = *m_context->mousePosition(event);
+      Vec2I mousePos = *context().mousePosition(event);
       // First, handle preliminary mouse out / click up events
       if (m_mouseOver) {
         if (!m_mouseOver->inMember(mousePos) || !m_mouseOver->active()) {
@@ -149,7 +150,7 @@ bool Pane::sendEvent(InputEvent const& event) {
     }
 
     if (event.is<MouseButtonDownEvent>()) {
-      Vec2I mousePos = *m_context->mousePosition(event);
+      Vec2I mousePos = *context().mousePosition(event);
       if (inDragArea(mousePos) && !m_lockPosition) {
         setDragActive(true, mousePos);
         return true;
@@ -257,17 +258,17 @@ void Pane::setBG(String const& header, String const& body, String const& footer)
   m_bgBody = body;
   m_bgFooter = footer;
   if (m_bgHeader != "") {
-    m_headerSize = Vec2I(m_context->textureSize(m_bgHeader));
+    m_headerSize = Vec2I(context().textureSize(m_bgHeader));
   } else {
     m_headerSize = {};
   }
   if (m_bgBody != "") {
-    m_bodySize = Vec2I(m_context->textureSize(m_bgBody));
+    m_bodySize = Vec2I(context().textureSize(m_bgBody));
   } else {
     m_bodySize = {};
   }
   if (m_bgFooter != "") {
-    m_footerSize = Vec2I(m_context->textureSize(m_bgFooter));
+    m_footerSize = Vec2I(context().textureSize(m_bgFooter));
   } else {
     m_footerSize = {};
   }
@@ -359,19 +360,18 @@ LuaCallbacks Pane::makePaneCallbacks() {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("toWidget", [this]() -> LuaCallbacks {
-    return LuaBindings::makeWidgetCallbacks(this, reader());
+    return LuaBindings::makeWidgetCallbacks(*this, reader());
   });
 
   callbacks.registerCallback("dismiss", [this]() { dismiss(); });
 
   callbacks.registerCallback("playSound",
     [this](String const& audio, Maybe<int> loops, Maybe<float> volume) {
-      auto const& assets = context()->assets();
+      auto const& assets = context().assets();
       auto audioInstance = make_shared<AudioInstance>(*assets->audio(audio));
       audioInstance->setVolume(volume.value(1.0));
       audioInstance->setLoops(loops.value(0));
-      auto* guiContext = context();
-      guiContext->playAudio(audioInstance);
+      context().playAudio(audioInstance);
       m_playingSounds.append({audio, std::move(audioInstance)});
     });
 
@@ -403,7 +403,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
       String name = newWidgetName.value(toString(Random::randu64()));
       if (auto newWidget = reader()->makeSingle(name, newWidgetConfig)) {
         this->addChild(name, newWidget);
-        return LuaBindings::makeWidgetCallbacks(newWidget.get(), reader());
+        return LuaBindings::makeWidgetCallbacks(*newWidget, reader());
       } else {
         return {};
       }
@@ -412,7 +412,8 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("removeWidget", [this](String const& widgetName) -> bool
     { return this->removeChild(widgetName); });
 
-  callbacks.registerCallback("scale", []() { return GuiContext::singleton().interfaceScale(); });
+  auto* guiContext = &context();
+  callbacks.registerCallback("scale", [guiContext]() { return guiContext->interfaceScale(); });
   callbacks.registerCallback("isDisplayed", [this]() { return isDisplayed(); });
   callbacks.registerCallback("hasFocus", [this]() { return hasFocus(); });
   callbacks.registerCallback("show", [this]() { show(); });
@@ -424,7 +425,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
   callbacks.registerCallback("anchorOffset", [this]() { return anchorOffset(); });
   callbacks.registerCallback("setAnchorOffset", [this](Vec2I offset) { setAnchorOffset(offset); });
   callbacks.registerCallback("getScreenPosition", [this]() -> Vec2I {
-    Vec2I windowSize = Vec2I(m_context->windowInterfaceSize());
+    Vec2I windowSize = Vec2I(context().windowInterfaceSize());
     Vec2I sz = size();
     Vec2I offset;
     switch (anchor()) {
@@ -463,7 +464,7 @@ LuaCallbacks Pane::makePaneCallbacks() {
   });
 
   callbacks.registerCallback("setScreenPosition", [this](Vec2I screenPos) {
-    Vec2I windowSize = Vec2I(m_context->windowInterfaceSize());
+    Vec2I windowSize = Vec2I(context().windowInterfaceSize());
     Vec2I sz = size();
     Vec2I offset;
     switch (anchor()) {
@@ -506,33 +507,33 @@ LuaCallbacks Pane::makePaneCallbacks() {
 }
 
 GuiReaderPtr Pane::reader() {
-  return make_shared<GuiReader>();
+  return make_shared<GuiReader>(context());
 }
 
 void Pane::renderImpl() {
   if (m_bgFooter != "")
-    m_context->drawInterfaceQuad(m_bgFooter, Vec2F(position()));
+    context().drawInterfaceQuad(m_bgFooter, Vec2F(position()));
 
   if (m_bgBody != "")
-    m_context->drawInterfaceQuad(m_bgBody, Vec2F(position()) + Vec2F(0, m_footerSize[1]));
+    context().drawInterfaceQuad(m_bgBody, Vec2F(position()) + Vec2F(0, m_footerSize[1]));
 
   if (m_bgHeader != "") {
     auto headerPos = Vec2F(position()) + Vec2F(0, m_footerSize[1] + m_bodySize[1]);
-    m_context->drawInterfaceQuad(m_bgHeader, headerPos);
+    context().drawInterfaceQuad(m_bgHeader, headerPos);
 
     if (m_icon) {
       m_icon->setPosition(Vec2I(0, m_footerSize[1] + m_bodySize[1]) + m_iconOffset);
       m_icon->render(m_drawingArea);
-      m_context->resetInterfaceScissorRect();
+      context().resetInterfaceScissorRect();
     }
 
-    m_context->setTextStyle(m_textStyle);
-    m_context->setFontColor(m_titleColor.toRgba());
-    m_context->setFontMode(FontMode::Shadow);
-    m_context->renderInterfaceText(m_title, {headerPos + Vec2F(m_titleOffset)});
-    m_context->setFontColor(m_subTitleColor.toRgba());
-    m_context->renderInterfaceText(m_subTitle, {headerPos + Vec2F(m_subTitleOffset)});
-    m_context->clearTextStyle();
+    context().setTextStyle(m_textStyle);
+    context().setFontColor(m_titleColor.toRgba());
+    context().setFontMode(FontMode::Shadow);
+    context().renderInterfaceText(m_title, {headerPos + Vec2F(m_titleOffset)});
+    context().setFontColor(m_subTitleColor.toRgba());
+    context().renderInterfaceText(m_subTitle, {headerPos + Vec2F(m_subTitleOffset)});
+    context().clearTextStyle();
   }
 }
 

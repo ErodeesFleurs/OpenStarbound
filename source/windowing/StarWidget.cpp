@@ -6,9 +6,9 @@
 
 namespace Star {
 
-Widget::Widget() {
+Widget::Widget(GuiContext& context) {
   m_parent = nullptr;
-  m_context = GuiContext::singletonPtr();
+  m_context = &context;
   m_visible = true;
   m_focus = false;
   m_doScissor = true;
@@ -25,8 +25,14 @@ void Widget::update(float dt) {
     widget->update(dt);
 }
 
-GuiContext* Widget::context() const {
-  return m_context;
+GuiContext& Widget::context() const {
+  return *m_context;
+}
+
+void Widget::setContext(GuiContext& context) {
+  m_context = &context;
+  for (auto& child : m_members)
+    child->setContext(context);
 }
 
 void Widget::render(RectI const& region) {
@@ -66,7 +72,7 @@ bool Widget::setupDrawRegion(RectI const& region) {
   if (m_drawingArea.isEmpty())
     return false;
 
-  m_context->setInterfaceScissorRect(m_drawingArea);
+  context().setInterfaceScissorRect(m_drawingArea);
   return true;
 }
 
@@ -269,15 +275,15 @@ void Widget::blur() {
 }
 
 unsigned Widget::windowHeight() const {
-  return context()->windowHeight();
+  return context().windowHeight();
 }
 
 unsigned Widget::windowWidth() const {
-  return context()->windowWidth();
+  return context().windowWidth();
 }
 
 Vec2I Widget::windowSize() const {
-  return Vec2I(context()->windowSize());
+  return Vec2I(context().windowSize());
 }
 
 Pane* Widget::window() {
@@ -294,6 +300,7 @@ Pane const* Widget::window() const {
 
 void Widget::addChild(String const& name, WidgetPtr member) {
   member->setName(name);
+  member->setContext(*m_context);
   m_members.push_back(member);
   m_memberHash[member->name()] = member;
   member->setParent(this);
@@ -306,6 +313,7 @@ void Widget::addChildAt(String const& name, WidgetPtr member, size_t at) {
   m_members.insert(m_members.begin() + at, member);
   m_memberHash[name] = member;
   member->setName(name);
+  member->setContext(*m_context);
   member->setParent(this);
 }
 

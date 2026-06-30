@@ -5,7 +5,6 @@
 #include "StarWorldServer.hpp"
 #include "StarUniverseServer.hpp"
 #include "StarUniverseSettings.hpp"
-#include "StarRoot.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarConfiguration.hpp"
 #include "StarItemDrop.hpp"
@@ -26,7 +25,7 @@ constexpr float MaxWarpSearchRadius = 1024;
 
 namespace Star {
 
-CommandProcessor::CommandProcessor(UniverseServer* universe,
+CommandProcessor::CommandProcessor(UniverseServer& universe,
     LuaRootPtr luaRoot,
     AssetsConstPtr assets,
     ConfigurationPtr configuration,
@@ -36,7 +35,8 @@ CommandProcessor::CommandProcessor(UniverseServer* universe,
     NpcDatabaseConstPtr npcDatabase,
     VehicleDatabaseConstPtr vehicleDatabase,
     StagehandDatabaseConstPtr stagehandDatabase,
-    LiquidsDatabaseConstPtr liquidsDatabase)
+    LiquidsDatabaseConstPtr liquidsDatabase,
+    function<void()> reloadRoot)
   : m_universe(universe),
     m_assets(std::move(assets)),
     m_configuration(std::move(configuration)),
@@ -46,7 +46,8 @@ CommandProcessor::CommandProcessor(UniverseServer* universe,
     m_npcDatabase(std::move(npcDatabase)),
     m_vehicleDatabase(std::move(vehicleDatabase)),
     m_stagehandDatabase(std::move(stagehandDatabase)),
-    m_liquidsDatabase(std::move(liquidsDatabase)) {
+    m_liquidsDatabase(std::move(liquidsDatabase)),
+    m_reloadRoot(std::move(reloadRoot)) {
   if (!m_assets)
     throw StarException("CommandProcessor requires assets service");
   if (!m_configuration)
@@ -65,6 +66,8 @@ CommandProcessor::CommandProcessor(UniverseServer* universe,
     throw StarException("CommandProcessor requires stagehand database service");
   if (!m_liquidsDatabase)
     throw StarException("CommandProcessor requires liquids database service");
+  if (!m_reloadRoot)
+    throw StarException("CommandProcessor requires root reload service");
 
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
@@ -152,7 +155,7 @@ String CommandProcessor::admin(ConnectionId connectionId, String const& argument
 
     targetClientId = *targetCid;
   } else {
-    if (!m_universe->canBecomeAdmin(connectionId) && !m_universe->isAdmin(connectionId))
+    if (!m_universe.canBecomeAdmin(connectionId) && !m_universe.isAdmin(connectionId))
       return "Insufficient privileges to make self admin.";
   }
 
@@ -162,27 +165,27 @@ String CommandProcessor::admin(ConnectionId connectionId, String const& argument
   if (!m_configuration->get("allowAdminCommands").toBool())
     return "Admin commands disabled on this server.";
 
-  bool wasAdmin = m_universe->isAdmin(targetClientId);
-  m_universe->setAdmin(targetClientId, !wasAdmin);
+  bool wasAdmin = m_universe.isAdmin(targetClientId);
+  m_universe.setAdmin(targetClientId, !wasAdmin);
 
   if (!wasAdmin)
-    return strf("Admin privileges now given to {}", m_universe->clientNick(targetClientId));
+    return strf("Admin privileges now given to {}", m_universe.clientNick(targetClientId));
   else
-    return strf("Admin privileges taken away from {}", m_universe->clientNick(targetClientId));
+    return strf("Admin privileges taken away from {}", m_universe.clientNick(targetClientId));
 }
 
 String CommandProcessor::pvp(ConnectionId connectionId, String const&) {
-  if (!m_universe->isPvp(connectionId)) {
-    m_universe->setPvp(connectionId, true);
-    if (m_universe->isPvp(connectionId))
-      m_universe->adminBroadcast(strf("Player {} is now PVP", m_universe->clientNick(connectionId)));
+  if (!m_universe.isPvp(connectionId)) {
+    m_universe.setPvp(connectionId, true);
+    if (m_universe.isPvp(connectionId))
+      m_universe.adminBroadcast(strf("Player {} is now PVP", m_universe.clientNick(connectionId)));
   } else {
-    m_universe->setPvp(connectionId, false);
-    if (!m_universe->isPvp(connectionId))
-      m_universe->adminBroadcast(strf("Player {} is a big wimp and is no longer PVP", m_universe->clientNick(connectionId)));
+    m_universe.setPvp(connectionId, false);
+    if (!m_universe.isPvp(connectionId))
+      m_universe.adminBroadcast(strf("Player {} is a big wimp and is no longer PVP", m_universe.clientNick(connectionId)));
   }
 
-  if (m_universe->isPvp(connectionId))
+  if (m_universe.isPvp(connectionId))
     return "PVP active";
   else
     return "PVP inactive";
@@ -190,8 +193,8 @@ String CommandProcessor::pvp(ConnectionId connectionId, String const&) {
 
 String CommandProcessor::whoami(ConnectionId connectionId, String const&) {
   return strf("Server: You are {}. You are {}an Admin",
-      m_universe->clientNick(connectionId),
-      m_universe->isAdmin(connectionId) ? "" : "not ");
+      m_universe.clientNick(connectionId),
+      m_universe.isAdmin(connectionId) ? "" : "not ");
 }
 
 String CommandProcessor::warp(ConnectionId connectionId, String const& argumentString) {
@@ -199,7 +202,7 @@ String CommandProcessor::warp(ConnectionId connectionId, String const& argumentS
     return *errorMsg;
 
   try {
-    m_universe->clientWarpPlayer(connectionId, parseWarpAction(argumentString));
+    m_universe.clientWarpPlayer(connectionId, parseWarpAction(argumentString));
     return "Lets do the space warp again";
   } catch (StarException const& e) {
     Logger::warn("Could not parse warp target: {}", outputException(e, false));
@@ -212,7 +215,7 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
     return *errorMsg;
 
 	Vec2I size = {2, 2};
-	auto& celestialDatabase = m_universe->celestialDatabase();
+	auto& celestialDatabase = m_universe.celestialDatabase();
 	Maybe<CelestialCoordinate> target = {};
 
 	auto validPlanet = [&celestialDatabase, &typeName](CelestialCoordinate const& p) {
@@ -252,7 +255,7 @@ String CommandProcessor::warpRandom(ConnectionId connectionId, String const& typ
 		size *= 2;
 	}
 
-	m_universe->clientWarpPlayer(connectionId, WarpToWorld(CelestialWorldId(*target)));
+	m_universe.clientWarpPlayer(connectionId, WarpToWorld(CelestialWorldId(*target)));
 	return strf("warping to {}", *target);
 }
 
@@ -271,7 +274,7 @@ String CommandProcessor::timewarp(ConnectionId connectionId, String const& argum
     else if (time < 0.0 && (arguments.size() < 2 || arguments[1] != "please"))
       return "Great Scott! We can't go back in time!";
 
-    m_universe->universeClock()->adjustTime(time);
+    m_universe.universeClock()->adjustTime(time);
     return time > 0.0 ? "It's just a jump to the left..." : "And then a step to the right...";
   } catch (BadLexicalCast const&) {
     return strf("Could not parse the argument {} as a time adjustment", arguments[0]);
@@ -288,7 +291,7 @@ String CommandProcessor::timescale(ConnectionId connectionId, String const& argu
     return strf("Current timescale is {:6.6f}x", GlobalTimescale);
 
   float timescale = clamp(lexicalCast<float>(arguments[0]), 0.001f, 32.0f);
-  m_universe->setTimescale(timescale);
+  m_universe.setTimescale(timescale);
   return strf("Set timescale to {:6.6f}x", timescale);
 }
 
@@ -302,7 +305,7 @@ String CommandProcessor::tickrate(ConnectionId connectionId, String const& argum
     return strf("Current tick rate is {:4.2f}Hz", 1.0f / ServerGlobalTimestep);
 
   float tickRate = clamp(lexicalCast<float>(arguments[0]), 5.f, 500.f);
-  m_universe->setTickRate(tickRate);
+  m_universe.setTickRate(tickRate);
   return strf("Set tick rate to {:4.2f}Hz", tickRate);
 }
 
@@ -335,7 +338,7 @@ String CommandProcessor::setTileProtection(ConnectionId connectionId, String con
       }
     }
     size_t changed = 0;
-    if (!m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const&) {
+    if (!m_universe.executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const&) {
        changed = world->setTileProtection(dungeonIds, isProtected);
       })) {
       return "Invalid client state";
@@ -359,7 +362,7 @@ String CommandProcessor::setDungeonId(ConnectionId connectionId, String const& a
   try {
     DungeonId dungeonId = lexicalCast<DungeonId>(arguments.at(0));
 
-    bool done = m_universe->executeForClient(connectionId, [dungeonId](WorldServer* world, PlayerPtr const& player) {
+    bool done = m_universe.executeForClient(connectionId, [dungeonId](WorldServer* world, PlayerPtr const& player) {
         world->setDungeonId(RectI::withSize(Vec2I(player->aimPosition()), Vec2I(1, 1)), dungeonId);
       });
 
@@ -373,7 +376,7 @@ String CommandProcessor::setPlayerStart(ConnectionId connectionId, String const&
   if (auto errorMsg = adminCheck(connectionId, "modify world properties"))
     return *errorMsg;
 
-  m_universe->executeForClient(connectionId, [](WorldServer* world, PlayerPtr const& player) {
+  m_universe.executeForClient(connectionId, [](WorldServer* world, PlayerPtr const& player) {
       world->setPlayerStart(player->position() + player->feetOffset());
     });
 
@@ -409,7 +412,7 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
       seed = lexicalCast<uint64_t>(arguments.at(4));
 
     auto itemDatabase = m_itemDatabase;
-    bool done = m_universe->executeForClient(connectionId, [&, itemDatabase](WorldServer* world, PlayerPtr const& player) {
+    bool done = m_universe.executeForClient(connectionId, [&, itemDatabase](WorldServer* world, PlayerPtr const& player) {
         world->addEntity(ItemDrop::createRandomizedDrop(itemDatabase->item(ItemDescriptor(kind, amount, parameters), level, seed, true), player->aimPosition(), false, world->assets(), itemDatabase));
       });
 
@@ -445,7 +448,7 @@ String CommandProcessor::spawnTreasure(ConnectionId connectionId, String const& 
     if (arguments.size() >= 2)
       level = lexicalCast<float>(arguments.at(1));
 
-    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
+    bool done = m_universe.executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
         for (auto const& treasureItem : m_treasureDatabase->createTreasure(treasurePool, level, Random::randu64()))
           world->addEntity(ItemDrop::createRandomizedDrop(treasureItem, player->aimPosition(), false, world->assets(), m_itemDatabase));
       });
@@ -484,7 +487,7 @@ String CommandProcessor::spawnMonster(ConnectionId connectionId, String const& a
       parameters = parameters.setAll(Json::parse(arguments.at(2)).toObject());
 
     monster = m_monsterDatabase->createMonster(m_monsterDatabase->randomMonster(arguments.at(0), parameters.toObject()), level);
-    bool done = m_universe->executeForClient(connectionId,
+    bool done = m_universe.executeForClient(connectionId,
         [&](WorldServer* world, PlayerPtr const& player) {
           monster->setPosition(player->aimPosition());
           world->addEntity(monster);
@@ -519,7 +522,7 @@ String CommandProcessor::spawnNpc(ConnectionId connectionId, String const& argum
       overrides = Json::parse(arguments.at(4)).toObject();
 
     auto npc = m_npcDatabase->createNpc(m_npcDatabase->generateNpcVariant(arguments.at(0), arguments.at(1), npcLevel, seed, overrides));
-    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
+    bool done = m_universe.executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
         npc->setPosition(player->aimPosition());
         world->addEntity(npc);
       });
@@ -547,7 +550,7 @@ String CommandProcessor::spawnVehicle(ConnectionId connectionId, String const& a
       parameters = Json::parse(arguments.at(1)).toObject();
 
     vehicle = m_vehicleDatabase->create(name, parameters);
-    bool done = m_universe->executeForClient(connectionId,
+    bool done = m_universe.executeForClient(connectionId,
         [&](WorldServer* world, PlayerPtr const& player) {
           vehicle->setPosition(player->aimPosition());
           world->addEntity(std::move(vehicle));
@@ -572,7 +575,7 @@ String CommandProcessor::spawnStagehand(ConnectionId connectionId, String const&
       parameters = Json::parse(arguments.at(1)).toObject();
 
     auto stagehand = m_stagehandDatabase->createStagehand(arguments.at(0), parameters);
-    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr player) {
+    bool done = m_universe.executeForClient(connectionId, [&](WorldServer* world, PlayerPtr player) {
         stagehand->setPosition(player->aimPosition());
         world->addEntity(stagehand);
       });
@@ -589,7 +592,7 @@ String CommandProcessor::clearStagehand(ConnectionId connectionId, String const&
     return *errorMsg;
 
   unsigned removed = 0;
-  bool done = m_universe->executeForClient(connectionId,
+  bool done = m_universe.executeForClient(connectionId,
       [&](WorldServer* world, PlayerPtr player) {
         auto queryRect = RectF::withCenter(player->aimPosition(), Vec2F{2, 2});
         for (auto stagehand : world->query<Stagehand>(queryRect)) {
@@ -620,7 +623,7 @@ String CommandProcessor::spawnLiquid(ConnectionId connectionId, String const& ar
         return strf("Could not parse quantity value '{}'", arguments.at(1));
     }
 
-    bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
+    bool done = m_universe.executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
         world->modifyTile(Vec2I(player->aimPosition().floor()), PlaceLiquid{liquid, quantity}, true);
       });
     return done ? "" : "Invalid client state";
@@ -647,9 +650,9 @@ String CommandProcessor::kick(ConnectionId connectionId, String const& argumentS
 
   // Like IRC, if only the nick is passed then the nick is used as the reason
   if (arguments.size() == 1)
-    arguments.append(m_universe->clientNick(*toKick));
+    arguments.append(m_universe.clientNick(*toKick));
 
-  m_universe->disconnectClient(*toKick, arguments[1]);
+  m_universe.disconnectClient(*toKick, arguments[1]);
 
   return strf("Successfully kicked user with specifier {}. ConnectionId: {}. Reason given: {}",
       arguments[0],
@@ -672,7 +675,7 @@ String CommandProcessor::ban(ConnectionId connectionId, String const& argumentSt
 
   String reason = arguments[0];
   if (arguments.size() < 2)
-    reason = m_universe->clientNick(*toKick);
+    reason = m_universe.clientNick(*toKick);
   else
     reason = arguments[1];
 
@@ -699,7 +702,7 @@ String CommandProcessor::ban(ConnectionId connectionId, String const& argumentSt
     }
   }
 
-  m_universe->banUser(*toKick, reason, type, banTime);
+  m_universe.banUser(*toKick, reason, type, banTime);
 
   return strf("Successfully kicked user with specifier {}. ConnectionId: {}. Reason given: {}",
       arguments[0], toKick, reason);
@@ -714,7 +717,7 @@ String CommandProcessor::unbanIp(ConnectionId connectionId, String const& argume
   if (arguments.empty())
     return "No IP specified";
 
-  bool success = m_universe->unbanIp(arguments[0]);
+  bool success = m_universe.unbanIp(arguments[0]);
 
   if (success)
     return strf("Successfully removed IP {} from ban list", arguments[0]);
@@ -731,7 +734,7 @@ String CommandProcessor::unbanUuid(ConnectionId connectionId, String const& argu
   if (arguments.empty())
     return "No UUID specified";
 
-  bool success = m_universe->unbanUuid(arguments[0]);
+  bool success = m_universe.unbanUuid(arguments[0]);
 
   if (success)
     return strf("Successfully removed UUID {} from ban list", arguments[0]);
@@ -745,8 +748,8 @@ String CommandProcessor::list(ConnectionId connectionId, String const&) {
 
   StringList res;
 
-  for (auto cid : m_universe->clientIds())
-    res.append(strf("${} : {} : $${}", cid, m_universe->clientNick(cid), m_universe->uuidForClient(cid)->hex()));
+  for (auto cid : m_universe.clientIds())
+    res.append(strf("${} : {} : $${}", cid, m_universe.clientNick(cid), m_universe.uuidForClient(cid)->hex()));
 
   return res.join("\n");
 }
@@ -766,7 +769,7 @@ String CommandProcessor::clientCoordinate(ConnectionId connectionId, String cons
   }
 
   if (targetClientId) {
-    auto worldId = m_universe->clientWorld(targetClientId);
+    auto worldId = m_universe.clientWorld(targetClientId);
     return strf("{} current location is {}", targetLabel, worldId);
   } else {
     return "";
@@ -777,9 +780,7 @@ String CommandProcessor::serverReload(ConnectionId connectionId, String const&) 
   if (auto errorMsg = adminCheck(connectionId, "trigger root reload"))
     return *errorMsg;
 
-  auto& root = Root::singleton();
-  root.reload();
-  root.fullyLoad();
+  m_reloadRoot();
   return "";
 }
 
@@ -801,7 +802,7 @@ String CommandProcessor::entityEval(ConnectionId connectionId, String const& lua
     return *errorMsg;
 
   String message;
-  bool done = m_universe->executeForClient(connectionId,
+  bool done = m_universe.executeForClient(connectionId,
       [&lua, &message](WorldServer* world, PlayerPtr const& player) {
         auto queryRect = RectF::withCenter(player->aimPosition(), Vec2F{2, 2});
         auto entities = world->query<ScriptedEntity>(queryRect);
@@ -831,7 +832,7 @@ String CommandProcessor::enableSpawning(ConnectionId connectionId, String const&
   if (auto errorMsg = adminCheck(connectionId, "enable world spawning"))
     return *errorMsg;
 
-  bool done = m_universe->executeForClient(
+  bool done = m_universe.executeForClient(
       connectionId, [](WorldServer* world, PlayerPtr const&) { world->setSpawningEnabled(true); });
   return done ? "enabled monster spawning" : "enabling monster spawning failed";
 }
@@ -840,7 +841,7 @@ String CommandProcessor::disableSpawning(ConnectionId connectionId, String const
   if (auto errorMsg = adminCheck(connectionId, "disable world spawning"))
     return *errorMsg;
 
-  bool done = m_universe->executeForClient(
+  bool done = m_universe.executeForClient(
       connectionId, [](WorldServer* world, PlayerPtr const&) { world->setSpawningEnabled(false); });
   return done ? "disabled monster spawning" : "disabling monster spawning failed";
 }
@@ -858,7 +859,7 @@ String CommandProcessor::placeDungeon(ConnectionId connectionId, String const& a
     targetPosition = Vec2I(lexicalCast<int>(pos.at(0)), lexicalCast<int>(pos.at(1)));
   }
 
-  bool done = m_universe->executeForClient(connectionId,
+  bool done = m_universe.executeForClient(connectionId,
       [dungeonName, targetPosition](WorldServer* world, PlayerPtr const& player) {
         world->placeDungeon(dungeonName, targetPosition.value(Vec2I::floor(player->aimPosition())), true);
       });
@@ -872,7 +873,7 @@ String CommandProcessor::setUniverseFlag(ConnectionId connectionId, String const
 
   auto arguments = m_parser.tokenizeToStringList(argumentString);
   String flag = arguments.at(0);
-  m_universe->universeSettings()->setFlag(flag);
+  m_universe.universeSettings()->setFlag(flag);
 
   return "set universe flag " + flag;
 }
@@ -881,7 +882,7 @@ String CommandProcessor::resetUniverseFlags(ConnectionId connectionId, String co
   if (auto errorMsg = adminCheck(connectionId, "reset universe flags"))
     return *errorMsg;
 
-  m_universe->universeSettings()->resetFlags();
+  m_universe.universeSettings()->resetFlags();
   return "universe flags reset!";
 }
 
@@ -898,7 +899,7 @@ String CommandProcessor::addBiomeRegion(ConnectionId connectionId, String const&
   if (arguments.size() > 2)
     subBlockSelector = arguments.at(2);
 
-  bool done = m_universe->executeForClient(connectionId,
+  bool done = m_universe.executeForClient(connectionId,
       [biomeName, width, subBlockSelector](WorldServer* world, PlayerPtr const& player) {
         world->addBiomeRegion(Vec2I::floor(player->aimPosition()), biomeName, subBlockSelector, width);
       });
@@ -914,7 +915,7 @@ String CommandProcessor::expandBiomeRegion(ConnectionId connectionId, String con
 
   int newWidth = lexicalCast<int>(arguments.at(0));
 
-  bool done = m_universe->executeForClient(connectionId,
+  bool done = m_universe.executeForClient(connectionId,
       [newWidth](WorldServer* world, PlayerPtr const& player) {
         world->expandBiomeRegion(Vec2I::floor(player->aimPosition()), newWidth);
       });
@@ -932,7 +933,7 @@ String CommandProcessor::updatePlanetType(ConnectionId connectionId, String cons
   auto newType = arguments.at(1);
   auto weatherBiome = arguments.at(2);
 
-  bool done = m_universe->updatePlanetType(coordinate, newType, weatherBiome);
+  bool done = m_universe.updatePlanetType(coordinate, newType, weatherBiome);
 
   return done ? strf("set planet at {} to type {} weatherBiome {}", coordinate, newType, weatherBiome) : "failed to update planet type";
 }
@@ -945,7 +946,7 @@ String CommandProcessor::setWeather(ConnectionId connectionId, String const& arg
 
   if (arguments.empty()) {
     StringList list;
-    bool done = m_universe->executeForClient(connectionId,
+    bool done = m_universe.executeForClient(connectionId,
                                              [&list](WorldServer* world, PlayerPtr const&) { list = world->weatherList(); });
     return done ? strf("weathers: {}", list.join(", ")) : "failed to query weather";
   }
@@ -966,10 +967,10 @@ String CommandProcessor::setWeather(ConnectionId connectionId, String const& arg
 
   bool done;
   if (coordinate.isNull()) {
-    done = m_universe->executeForClient(connectionId,
+    done = m_universe.executeForClient(connectionId,
                                         [weatherName, force](WorldServer* world, PlayerPtr const&) { world->setWeather(weatherName, force); });
   } else {
-    done = m_universe->setWeather(coordinate, weatherName, force);
+    done = m_universe.setWeather(coordinate, weatherName, force);
   }
 
   return done ? (coordinate.isNull() ? strf("set weather to {}{}", weatherName, force ? " (forced)" : "") : strf("set weather for {} to {}{}", coordinate, weatherName, force ? " (forced)" : "")) : "failed to set weather";
@@ -980,7 +981,7 @@ String CommandProcessor::setEnvironmentBiome(ConnectionId connectionId, String c
   if (auto errorMsg = adminCheck(connectionId, "update layer environment biome"))
     return *errorMsg;
 
-  bool done = m_universe->executeForClient(connectionId,
+  bool done = m_universe.executeForClient(connectionId,
       [](WorldServer* world, PlayerPtr const& player) {
         world->setLayerEnvironmentBiome(Vec2I::floor(player->aimPosition()));
       });
@@ -988,28 +989,28 @@ String CommandProcessor::setEnvironmentBiome(ConnectionId connectionId, String c
   return done ? "set environment biome for world layer" : "failed to set environment biome";
 }
 
-Maybe<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player, UniverseServer* universe) {
+Maybe<ConnectionId> CommandProcessor::playerCidFromCommand(String const& player, UniverseServer& universe) {
   char const* const UsernamePrefix = "@";
   char const* const CidPrefix = "$";
   char const* const UUIDPrefix = "$$";
 
   if (player.beginsWith(UsernamePrefix)) {
-    return universe->findNick(player.substr(strlen(UsernamePrefix)));
+    return universe.findNick(player.substr(strlen(UsernamePrefix)));
   } else if (player.beginsWith(UUIDPrefix)) {
     try {
       auto uuidString = player.substr(strlen(UUIDPrefix));
-      return universe->clientForUuid(Uuid(uuidString));
+      return universe.clientForUuid(Uuid(uuidString));
     } catch (UuidException const&) {
       // pass to base case
     }
   } else if (player.beginsWith(CidPrefix)) {
     auto cidString = player.substr(strlen(CidPrefix));
     auto cid = maybeLexicalCast<ConnectionId>(cidString).value(ServerConnectionId);
-    if (universe->isConnectedClient(cid))
+    if (universe.isConnectedClient(cid))
       return cid;
   }
 
-  return universe->findNick(player);
+  return universe.findNick(player);
 }
 
 const StringMap<std::function<String(CommandProcessor*, ConnectionId, String)>> CommandProcessor::s_commandMap = []() {
@@ -1083,7 +1084,7 @@ Maybe<String> CommandProcessor::adminCheck(ConnectionId connectionId, String con
   if (!m_configuration->get("allowAdminCommands").toBool())
     return {"Admin commands disabled on this server."};
   if (!m_configuration->get("allowAdminCommandsFromAnyone").toBool()) {
-    if (!m_universe->isAdmin(connectionId))
+    if (!m_universe.isAdmin(connectionId))
       return {strf("Insufficient privileges to {}.", commandDescription)};
   }
 
@@ -1094,7 +1095,7 @@ Maybe<String> CommandProcessor::localCheck(ConnectionId connectionId, String con
   if (connectionId == ServerConnectionId)
     return {};
 
-  if (!m_universe->isLocal(connectionId))
+  if (!m_universe.isLocal(connectionId))
     return {strf("The {} command can only be used locally.", commandDescription)};
 
   return {};

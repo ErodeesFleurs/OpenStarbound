@@ -11,8 +11,7 @@ class WorldServerSpawnFinder {
 public:
   friend class WorldServer;
 
-  WorldServerSpawnFinder() = default;
-  explicit WorldServerSpawnFinder(WorldServer* worldServer);
+  explicit WorldServerSpawnFinder(WorldServer& worldServer);
 
   Vec2F findPlayerStart(Maybe<Vec2F> firstTry = {});
   Vec2F findPlayerSpaceStart(float targetX);
@@ -22,7 +21,7 @@ public:
   bool respawnInWorld() const;
 
 private:
-  WorldServer* m_worldServer = nullptr;
+  WorldServer& m_worldServer;
 
   Vec2F m_playerStart;
   bool m_adjustPlayerStart = true;

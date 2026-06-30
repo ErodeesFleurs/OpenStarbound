@@ -40,12 +40,12 @@ namespace PlatformerAStar {
       CollisionKind::Slippery,
       CollisionKind::Block};
 
-  PathFinder::PathFinder(World* world,
+  PathFinder::PathFinder(World& world,
       Vec2F searchFrom,
       Vec2F searchTo,
       ActorMovementParameters movementParameters,
       Parameters searchParameters)
-    : m_world(world),
+    : m_world(&world),
       m_searchFrom(searchFrom),
       m_searchTo(searchTo),
       m_movementParams(std::move(movementParameters)),

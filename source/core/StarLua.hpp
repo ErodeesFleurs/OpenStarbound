@@ -619,6 +619,18 @@ public:
   // Disables null-termination enforcement
   void setNullTerminated(bool nullTerminated);
   void addImGui();
+
+  template <typename T>
+  void setService(shared_ptr<T> service) {
+    m_services[typeid(T)] = std::move(service);
+  }
+
+  template <typename T>
+  shared_ptr<T> service() const {
+    if (!m_services.contains(typeid(T)))
+      return {};
+    return std::static_pointer_cast<T>(m_services.get(typeid(T)));
+  }
 private:
   friend struct LuaDetail::LuaHandle;
   friend class LuaReference;
@@ -735,6 +747,7 @@ private:
   int m_wrappedFunctionMetatableRegistryId;
   int m_requireFunctionMetatableRegistryId;
   HashMap<std::type_index, int> m_registeredUserDataTypes;
+  HashMap<std::type_index, shared_ptr<void const>> m_services;
 
   lua_State* m_handleThread;
   int m_handleStackSize;
@@ -753,4 +766,3 @@ private:
 };
 
 #include "StarLua_inl.hpp"
-

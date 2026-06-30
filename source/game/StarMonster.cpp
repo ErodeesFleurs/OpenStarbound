@@ -1,29 +1,33 @@
 #include "StarMonster.hpp"
-#include "StarWorld.hpp"
-#include "StarLogging.hpp"
-#include "StarRoot.hpp"
-#include "StarDamageManager.hpp"
-#include "StarDamageDatabase.hpp"
-#include "StarTreasure.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarConfigLuaBindings.hpp"
-#include "StarEntityLuaBindings.hpp"
-#include "StarWorldLuaBindings.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
-#include "StarScriptedAnimatorLuaBindings.hpp"
-#include "StarRootLuaBindings.hpp"
 #include "StarBehaviorLuaBindings.hpp"
-#include "StarStoredFunctions.hpp"
+#include "StarConfigLuaBindings.hpp"
+#include "StarDamageDatabase.hpp"
+#include "StarDamageManager.hpp"
+#include "StarEntityLuaBindings.hpp"
 #include "StarItemDrop.hpp"
-#include "StarTime.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarRoot.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarStatusController.hpp"
+#include "StarStatusControllerLuaBindings.hpp"
+#include "StarStoredFunctions.hpp"
+#include "StarTime.hpp"
+#include "StarTreasure.hpp"
+#include "StarWorld.hpp"
+#include "StarWorldLuaBindings.hpp"
 
 namespace Star {
 
-Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, MonsterVariant const& monsterVariant, Maybe<float> level)
-  : m_scriptedAnimator(assets) {
+Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, MonsterVariant const& monsterVariant, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Maybe<float> level)
+    : m_scriptedAnimator(assets) {
   m_monsterDatabase = std::move(monsterDatabase);
+  m_liquidsDatabase = std::move(liquidsDatabase);
+  m_statusEffectDatabase = std::move(statusEffectDatabase);
+  m_particleDatabase = std::move(particleDatabase);
+  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
   m_monsterLevel = level;
 
   m_damageOnTouch = false;
@@ -40,7 +44,7 @@ Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase,
 
   setTeam(EntityDamageTeam(m_monsterVariant.damageTeamType, m_monsterVariant.damageTeam));
 
-  m_networkedAnimator = NetworkedAnimator(m_monsterVariant.animatorConfig);
+  m_networkedAnimator = NetworkedAnimator(m_monsterVariant.animatorConfig, String(), assets, m_imageMetadataDatabase, m_particleDatabase);
   for (auto const& pair : m_monsterVariant.animatorPartTags)
     m_networkedAnimator.setPartTag(pair.first, "partImage", pair.second);
   m_networkedAnimator.setZoom(m_monsterVariant.animatorZoom);
@@ -48,7 +52,7 @@ Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase,
   if (!colorSwap.empty())
     m_networkedAnimator.setProcessingDirectives(imageOperationToString(ColorReplaceImageOperation{colorSwap}));
 
-  m_statusController = make_shared<StatusController>(m_monsterVariant.statusSettings);
+  m_statusController = make_shared<StatusController>(m_monsterVariant.statusSettings, assets, m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase);
 
   m_scriptComponent.setScripts(m_monsterVariant.parameters.optArray("scripts").apply(jsonToStringList).value(m_monsterVariant.scripts));
   m_scriptComponent.setUpdateDelta(m_monsterVariant.initialScriptDelta);
@@ -73,8 +77,8 @@ Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase,
   setNetStates();
 }
 
-Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, Json const& diskStore)
-  : Monster(std::move(assets), monsterDatabase, monsterDatabase->readMonsterVariantFromJson(diskStore.get("monsterVariant"))) {
+Monster::Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, Json const& diskStore, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+    : Monster(std::move(assets), monsterDatabase, monsterDatabase->readMonsterVariantFromJson(diskStore.get("monsterVariant")), std::move(liquidsDatabase), std::move(statusEffectDatabase), std::move(particleDatabase), std::move(imageMetadataDatabase)) {
   m_monsterLevel = diskStore.optFloat("monsterLevel");
   m_movementController->loadState(diskStore.get("movementState"));
   m_statusController->diskLoad(diskStore.get("statusController"));
@@ -107,8 +111,7 @@ Json Monster::diskStore() const {
     {"monsterVariant", m_monsterDatabase->writeMonsterVariantToJson(m_monsterVariant)},
     {"scriptStorage", m_scriptComponent.getScriptStorage()},
     {"uniqueId", jsonFromMaybe(uniqueId())},
-    {"team", getTeam().toJson()}
-  };
+    {"team", getTeam().toJson()}};
 }
 
 ByteArray Monster::netStore(NetCompatibilityRules rules) {
@@ -126,9 +129,9 @@ ClientEntityMode Monster::clientEntityMode() const {
 void Monster::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
 
-  m_movementController->init(world);
+  m_movementController->init(*world);
   m_movementController->setIgnorePhysicsEntities({entityId});
-  m_statusController->init(this, m_movementController.get());
+  m_statusController->init(*this, *m_movementController);
 
   if (!m_monsterLevel)
     m_monsterLevel = world->threatLevel();
@@ -140,28 +143,27 @@ void Monster::init(World* world, EntityId entityId, EntityMode mode) {
 
     m_scriptComponent.addCallbacks("monster", makeMonsterCallbacks());
     m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
-        return m_monsterVariant.parameters.query(name, def);
-      }));
-    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_networkedAnimator));
-    m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
-    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors, world->behaviorDatabase()));
+                                     return m_monsterVariant.parameters.query(name, def);
+                                   }));
+    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+    m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(m_networkedAnimator));
+    m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_statusController));
+    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(m_behaviors, world->behaviorDatabase()));
     m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
-    m_scriptComponent.init(world);
+    m_scriptComponent.init(*world);
   }
 
   if (world->isClient()) {
     m_scriptedAnimator.setScripts(m_monsterVariant.animationScripts);
 
-    m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(&m_networkedAnimator,
-      [this](String const& name, Json const& defaultValue) -> Json {
-        return m_scriptedAnimationParameters.value(name, defaultValue);
-      }));
+    m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(m_networkedAnimator, [this](String const& name, Json const& defaultValue) -> Json {
+                                      return m_scriptedAnimationParameters.value(name, defaultValue);
+                                    }));
     m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
-        return m_monsterVariant.parameters.query(name, def);
-      }));
-    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptedAnimator.init(world);
+                                      return m_monsterVariant.parameters.query(name, def);
+                                    }));
+    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+    m_scriptedAnimator.init(*world);
   }
 
   setPosition(position());
@@ -263,12 +265,7 @@ List<DamageNotification> Monster::applyDamage(DamageRequest const& damage) {
     totalDamage += notification.healthLost;
 
   if (totalDamage > 0.0f) {
-    m_scriptComponent.invoke("damage", JsonObject{
-        {"sourceId", damage.sourceEntityId},
-        {"damage", totalDamage},
-        {"sourceDamage", damage.damage},
-        {"sourceKind", damage.damageSourceKind}
-      });
+    m_scriptComponent.invoke("damage", JsonObject{{"sourceId", damage.sourceEntityId}, {"damage", totalDamage}, {"sourceDamage", damage.damage}, {"sourceKind", damage.damageSourceKind}});
   }
 
   if (!m_statusController->resourcePositive("health"))
@@ -303,7 +300,7 @@ List<DamageSource> Monster::damageSources() const {
     String anchorPart = pair.second.getString("anchorPart");
     DamageSource ds = DamageSource(pair.second.get("damageSource"));
     ds.damage *= levelPowerMultiplier * m_statusController->stat("powerMultiplier");
-    ds.damageArea.call([this,&anchorPart](auto& poly) {
+    ds.damageArea.call([this, &anchorPart](auto& poly) {
       poly.transform(m_networkedAnimator.partTransformation(anchorPart));
       if (m_networkedAnimator.flipped())
         poly.flipHorizontal(m_networkedAnimator.flippedRelativeCenterLine());
@@ -487,14 +484,14 @@ void Monster::update(float dt, uint64_t) {
 
     m_scriptedAnimator.update();
 
-    SpatialLogger::logPoly("world", m_movementController->collisionBody(), { 255, 0, 0, 255 });
+    SpatialLogger::logPoly("world", m_movementController->collisionBody(), {255, 0, 0, 255});
   }
 }
 
 void Monster::render(RenderCallback* renderCallback) {
   for (auto& drawable : m_networkedAnimator.drawables(position())) {
     if (drawable.isImage())
-      drawable.imagePart().addDirectivesGroup(m_statusController->parentDirectives(), true);
+      drawable.imagePart().addDirectivesGroup(m_statusController->parentDirectives(), true, m_imageMetadataDatabase);
     renderCallback->addDrawable(std::move(drawable), m_monsterVariant.renderLayer);
   }
 
@@ -562,122 +559,122 @@ LuaCallbacks Monster::makeMonsterCallbacks() {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("type", [this]() {
-      return m_monsterVariant.type;
-    });
+    return m_monsterVariant.type;
+  });
 
   callbacks.registerCallback("seed", [this]() {
-      return toString(m_monsterVariant.seed);
-    });
+    return toString(m_monsterVariant.seed);
+  });
 
   callbacks.registerCallback("uniqueParameters", [this]() {
-      return m_monsterVariant.uniqueParameters;
-    });
+    return m_monsterVariant.uniqueParameters;
+  });
 
   callbacks.registerCallback("level", [this]() {
-      return *m_monsterLevel;
-    });
+    return *m_monsterLevel;
+  });
 
   callbacks.registerCallback("setDamageOnTouch", [this](bool arg1) {
-      m_damageOnTouch = arg1;
-    });
+    m_damageOnTouch = arg1;
+  });
 
   callbacks.registerCallback("setDamageSources", [this](Maybe<JsonArray> const& damageSources) {
-      m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
-    });
+    m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
+  });
 
   callbacks.registerCallback("setDamageParts", [this](StringSet const& parts) {
-      m_animationDamageParts.set(parts);
-    });
+    m_animationDamageParts.set(parts);
+  });
 
   callbacks.registerCallback("setAggressive", [this](bool arg1) {
-      m_aggressive = arg1;
-    });
+    m_aggressive = arg1;
+  });
 
   callbacks.registerCallback("setActiveSkillName", [this](Maybe<String> const& activeSkillName) {
-      m_activeSkillName = activeSkillName.value();
-    });
+    m_activeSkillName = activeSkillName.value();
+  });
 
   callbacks.registerCallback("setDropPool", [this](Json dropPool) {
-      m_dropPool = std::move(dropPool);
-    });
+    m_dropPool = std::move(dropPool);
+  });
 
   callbacks.registerCallback("toAbsolutePosition", [this](Vec2F const& p) {
-      return getAbsolutePosition(p);
-    });
+    return getAbsolutePosition(p);
+  });
 
   callbacks.registerCallback("mouthPosition", [this]() {
-      return mouthPosition();
-    });
+    return mouthPosition();
+  });
 
   // This callback is registered here rather than in
   // makeActorMovementControllerCallbacks
   // because it requires access to world
   callbacks.registerCallback("flyTo", [this](Vec2F const& arg1) {
-      m_movementController->controlFly(world()->geometry().diff(arg1, position()));
-    });
+    m_movementController->controlFly(world()->geometry().diff(arg1, position()));
+  });
 
   callbacks.registerCallback("setDeathParticleBurst", [this](Maybe<String> const& arg1) {
-      m_deathParticleBurst = arg1.value();
-    });
+    m_deathParticleBurst = arg1.value();
+  });
 
   callbacks.registerCallback("setDeathSound", [this](Maybe<String> const& arg1) {
-      m_deathSound = arg1.value();
-    });
+    m_deathSound = arg1.value();
+  });
 
   callbacks.registerCallback("setPhysicsForces", [this](JsonArray const& forces) {
-      m_physicsForces.set(forces.transformed(jsonToPhysicsForceRegion));
-    });
+    m_physicsForces.set(forces.transformed(jsonToPhysicsForceRegion));
+  });
 
   callbacks.registerCallback("setName", [this](String const& name) {
-      m_name.set(name);
-    });
+    m_name.set(name);
+  });
   callbacks.registerCallback("setDisplayNametag", [this](bool display) {
-      m_displayNametag.set(display);
-    });
+    m_displayNametag.set(display);
+  });
 
   callbacks.registerCallback("say", [this](String line, Maybe<StringMap<String>> const& tags) {
-      if (tags)
-        line = line.replaceTags(*tags, false);
+    if (tags)
+      line = line.replaceTags(*tags, false);
 
-      if (!line.empty()) {
-        addChatMessage(line);
-        return true;
-      }
+    if (!line.empty()) {
+      addChatMessage(line);
+      return true;
+    }
 
-      return false;
-    });
+    return false;
+  });
 
   callbacks.registerCallback("sayPortrait", [this](String line, String portrait, Maybe<StringMap<String>> const& tags) {
-      if (tags)
-        line = line.replaceTags(*tags, false);
+    if (tags)
+      line = line.replaceTags(*tags, false);
 
-      if (!line.empty()) {
-        addChatMessage(line, portrait);
-        return true;
-      }
+    if (!line.empty()) {
+      addChatMessage(line, portrait);
+      return true;
+    }
 
-      return false;
-    });
+    return false;
+  });
 
   callbacks.registerCallback("setDamageTeam", [this](Json const& team) {
-      setTeam(EntityDamageTeam(team));
-    });
+    setTeam(EntityDamageTeam(team));
+  });
 
   callbacks.registerCallback("setUniqueId", [this](Maybe<String> uniqueId) {
-      setUniqueId(uniqueId);
-    });
+    setUniqueId(uniqueId);
+  });
 
   callbacks.registerCallback("setDamageBar", [this](String const& damageBarType) {
-      m_damageBar.set(DamageBarTypeNames.getLeft(damageBarType));
-    });
+    m_damageBar.set(DamageBarTypeNames.getLeft(damageBarType));
+  });
 
   callbacks.registerCallback("setInteractive", [this](bool interactive) {
-      m_interactive.set(interactive);
-    });
+    m_interactive.set(interactive);
+  });
 
   callbacks.registerCallback("setAnimationParameter", [this](String name, Json value) {
-      m_scriptedAnimationParameters.set(std::move(name), std::move(value));
-    });
+    m_scriptedAnimationParameters.set(std::move(name), std::move(value));
+  });
 
   return callbacks;
 }
@@ -720,7 +717,7 @@ void Monster::setupNetStates() {
   m_netGroup.addNetElement(&m_damageBar);
   m_netGroup.addNetElement(&m_interactive);
 
-    // don't interpolate scripted animation parameters or animationdamageparts
+  // don't interpolate scripted animation parameters or animationdamageparts
   m_netGroup.addNetElement(&m_animationDamageParts, false);
   m_netGroup.addNetElement(&m_scriptedAnimationParameters, false);
 
@@ -762,7 +759,7 @@ void Monster::getNetStates(bool initial) {
       m_pendingChatActions.append(SayChatAction{entityId(), m_chatMessage.get(), mouthPosition()});
     else
       m_pendingChatActions.append(
-          PortraitChatAction{entityId(), m_chatPortrait.get(), m_chatMessage.get(), mouthPosition()});
+        PortraitChatAction{entityId(), m_chatPortrait.get(), m_chatMessage.get(), mouthPosition()});
   }
 }
 
@@ -784,7 +781,7 @@ Monster::SkillInfo Monster::activeSkillInfo() const {
 
 List<Drawable> Monster::portrait(PortraitMode) const {
   if (m_monsterVariant.portraitIcon) {
-    return {Drawable::makeImage(*m_monsterVariant.portraitIcon, 1.0f, true, Vec2F())};
+    return {Drawable::makeImage(*m_monsterVariant.portraitIcon, 1.0f, true, Vec2F(), m_imageMetadataDatabase)};
   } else {
     auto animator = m_networkedAnimator;
     animator.setFlipped(!m_monsterVariant.reversed);
@@ -880,5 +877,4 @@ StatusController* Monster::statusController() {
   return m_statusController.get();
 }
 
-
-}
+}// namespace Star

@@ -2,7 +2,7 @@
 
 namespace Star {
 
-FlowLayout::FlowLayout() : m_wrap(true) {}
+FlowLayout::FlowLayout(GuiContext& context) : Layout(context), m_wrap(true) {}
 
 void FlowLayout::update(float dt) {
   Layout::update(dt);

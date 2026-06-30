@@ -10,11 +10,12 @@
 namespace Star {
 
 ModsMenu::ModsMenu(Services services)
-  : m_assets(std::move(services.assets)) {
+  : Pane(services.guiContext),
+    m_assets(std::move(services.assets)) {
   if (!m_assets)
     throw StarException("ModsMenu requires assets service");
 
-  GuiReader reader;
+  GuiReader reader(context());
   reader.registerCallback("linkbutton", [this](Widget*) { openLink(); });
   reader.registerCallback("workshopbutton", [this](Widget*) { openWorkshop(); });
   reader.construct(m_assets->json("/interface/modsmenu/modsmenu.config:paneLayout"), this);
@@ -45,7 +46,7 @@ ModsMenu::ModsMenu(Services services)
   auto copyLinkLabel = fetchChild<LabelWidget>("copylinklabel");
   auto workshopLinkButton = fetchChild<ButtonWidget>("workshopbutton");
 
-  auto& guiContext = GuiContext::singleton();
+  auto& guiContext = context();
   bool hasDesktopService = static_cast<bool>(guiContext.applicationController()->desktopService());
 
   workshopLinkButton->setEnabled(hasDesktopService);
@@ -111,7 +112,7 @@ void ModsMenu::openLink() {
   if (link.empty())
     return;
 
-  auto& guiContext = GuiContext::singleton();
+  auto& guiContext = context();
   if (auto desktopService = guiContext.applicationController()->desktopService())
     desktopService->openUrl(link);
   else
@@ -119,7 +120,7 @@ void ModsMenu::openLink() {
 }
 
 void ModsMenu::openWorkshop() {
-  auto& guiContext = GuiContext::singleton();
+  auto& guiContext = context();
   if (auto desktopService = guiContext.applicationController()->desktopService())
     desktopService->openUrl(m_assets->json("/interface/modsmenu/modsmenu.config:workshopLink").toString());
 }

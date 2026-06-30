@@ -11,7 +11,7 @@ namespace PlatformerAStar {
 
   class PathFinder {
   public:
-    PathFinder(World* world,
+    PathFinder(World& world,
         Vec2F searchFrom,
         Vec2F searchTo,
         ActorMovementParameters movementParameters,

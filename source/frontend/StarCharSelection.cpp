@@ -14,7 +14,8 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
     SelectCharacterCallback selectCallback,
     DeleteCharacterCallback deleteCallback,
     CharSelectionServices services)
-  : m_playerStorage(playerStorage),
+  : Pane(services.guiContext),
+    m_playerStorage(playerStorage),
     m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)),
     m_downScroll(0),
@@ -28,7 +29,7 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
   if (!m_configuration)
     throw StarException("CharSelectionPane requires configuration service");
 
-  GuiReader guiReader;
+  GuiReader guiReader(context());
 
   guiReader.registerCallback("playerUpButton", [=, this](Widget*) { shiftCharacters(-1); });
   guiReader.registerCallback("playerDownButton", [=, this](Widget*) { shiftCharacters(1); });
@@ -55,7 +56,7 @@ CharSelectionPane::CharSelectionPane(PlayerStoragePtr playerStorage,
 bool CharSelectionPane::sendEvent(InputEvent const& event) {
   if (m_visible) {
     if (auto mouseWheel = event.ptr<MouseWheelEvent>()) {
-      if (inMember(*context()->mousePosition(event))) {
+      if (inMember(*context().mousePosition(event))) {
         if (mouseWheel->mouseWheel == MouseWheel::Down)
           shiftCharacters(1);
         else if (mouseWheel->mouseWheel == MouseWheel::Up)
@@ -89,7 +90,7 @@ void CharSelectionPane::selectCharacter(unsigned buttonIndex) {
                        m_assets->json("/interface.config:buttonClickFailSound").toArray(), "")
                        .toString();
       if (!sound.empty())
-        context()->playAudio(sound);
+        context().playAudio(sound);
     } else
       m_selectCallback(player);
   } else

@@ -12,15 +12,17 @@ class GraphicsMenu;
 using GraphicsMenuPtr = SharedPtr<GraphicsMenu>;
 class ShadersMenu;
 using ShadersMenuPtr = SharedPtr<ShadersMenu>;
+class GuiContext;
 
 struct GraphicsMenuServices {
   AssetsConstPtr assets;
   ConfigurationPtr configuration;
+  GuiContext& guiContext;
 };
 
 class GraphicsMenu : public Pane {
 public:
-  GraphicsMenu(PaneManager* manager, UniverseClientPtr client, GraphicsMenuServices services);
+  GraphicsMenu(PaneManager& manager, UniverseClientPtr client, GraphicsMenuServices services);
 
   void show() override;
   void dismissed() override;
@@ -46,7 +48,7 @@ private:
   JsonObject m_localChanges;
   
   ShadersMenuPtr m_shadersMenu;
-  PaneManager* m_paneManager;
+  PaneManager& m_paneManager;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
 };

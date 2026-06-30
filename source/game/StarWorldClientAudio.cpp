@@ -5,35 +5,35 @@
 
 namespace Star {
 
-StarWorldClientAudio::StarWorldClientAudio(WorldClient* worldClient)
+StarWorldClientAudio::StarWorldClientAudio(WorldClient& worldClient)
   : m_worldClient(worldClient) {}
 
 Vec2I StarWorldClientAudio::environmentBiomeTrackPosition() const {
-  if (!m_worldClient->inWorld())
+  if (!m_worldClient.inWorld())
     return {};
 
-  auto pos = Vec2I::floor(m_worldClient->m_clientState.windowCenter());
-  return {m_worldClient->m_geometry.xwrap(pos[0]), pos[1]};
+  auto pos = Vec2I::floor(m_worldClient.m_clientState.windowCenter());
+  return {m_worldClient.m_geometry.xwrap(pos[0]), pos[1]};
 }
 
 AmbientNoisesDescriptionPtr StarWorldClientAudio::currentAmbientNoises() const {
-  if (!m_worldClient->inWorld())
+  if (!m_worldClient.inWorld())
     return {};
 
   Vec2I pos = environmentBiomeTrackPosition();
-  return m_worldClient->m_worldTemplate->ambientNoises(pos[0], pos[1]);
+  return m_worldClient.m_worldTemplate->ambientNoises(pos[0], pos[1]);
 }
 
 AmbientNoisesDescriptionPtr StarWorldClientAudio::currentMusicTrack() const {
-  if (!m_worldClient->inWorld())
+  if (!m_worldClient.inWorld())
     return {};
 
   Vec2I pos = environmentBiomeTrackPosition();
-  return m_worldClient->m_worldTemplate->musicTrack(pos[0], pos[1]);
+  return m_worldClient.m_worldTemplate->musicTrack(pos[0], pos[1]);
 }
 
 AmbientNoisesDescriptionPtr StarWorldClientAudio::currentAltMusicTrack() const {
-  if (!m_worldClient->inWorld())
+  if (!m_worldClient.inWorld())
     return {};
 
   return m_altMusicTrackDescription;

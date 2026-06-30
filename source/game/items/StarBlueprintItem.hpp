@@ -11,7 +11,7 @@ class BlueprintItem;
 
 class BlueprintItem : public Item, public SwingableItem {
 public:
-  BlueprintItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
+  BlueprintItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data);
   virtual ItemPtr clone() const override;
 
   virtual List<Drawable> drawables() const override;

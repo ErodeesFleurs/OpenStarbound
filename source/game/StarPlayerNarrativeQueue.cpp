@@ -10,7 +10,7 @@
 
 namespace Star {
 
-PlayerNarrativeQueue::PlayerNarrativeQueue(Player* player, RadioMessageDatabaseConstPtr radioMessageDatabase, ConfigurationPtr configuration, AiDatabaseConstPtr aiDatabase)
+PlayerNarrativeQueue::PlayerNarrativeQueue(Player& player, RadioMessageDatabaseConstPtr radioMessageDatabase, ConfigurationPtr configuration, AiDatabaseConstPtr aiDatabase)
   : m_player(player),
     m_radioMessageDatabase(std::move(radioMessageDatabase)),
     m_configuration(std::move(configuration)),
@@ -44,7 +44,7 @@ void PlayerNarrativeQueue::requestInterrupt() {
 Maybe<RadioMessage> PlayerNarrativeQueue::pullPendingRadioMessage() {
   if (m_pendingRadioMessages.count()) {
     if (m_pendingRadioMessages.at(0).unique)
-      m_player->log()->addRadioMessage(m_pendingRadioMessages.at(0).messageId);
+      m_player.log()->addRadioMessage(m_pendingRadioMessages.at(0).messageId);
     return m_pendingRadioMessages.takeFirst();
   }
   return {};
@@ -55,20 +55,20 @@ void PlayerNarrativeQueue::queueRadioMessage(Json const& messageConfig, float de
   try {
     message = m_radioMessageDatabase->createRadioMessage(messageConfig);
 
-    while (message.speciesAiMessage.contains(m_player->shipSpecies()) || message.speciesMessage.contains(m_player->species()))
-      message = message.speciesAiMessage.value(m_player->shipSpecies(), message.speciesMessage.value(m_player->species()));
+    while (message.speciesAiMessage.contains(m_player.shipSpecies()) || message.speciesMessage.contains(m_player.species()))
+      message = message.speciesAiMessage.value(m_player.shipSpecies(), message.speciesMessage.value(m_player.species()));
 
     if (message.type == RadioMessageType::Tutorial && !m_configuration->get("tutorialMessages").toBool())
       return;
 
     if (!message.portraitImage.empty() && message.portraitImage[0] != '/')
-      message.portraitImage = m_aiDatabase->portraitImage(m_player->shipSpecies(), message.portraitImage);
+      message.portraitImage = m_aiDatabase->portraitImage(m_player.shipSpecies(), message.portraitImage);
   } catch (RadioMessageDatabaseException const& e) {
     Logger::error("Couldn't queue radio message '{}': {}", messageConfig, e.what());
     return;
   }
 
-  if (m_player->log()->radioMessages().contains(message.messageId)) {
+  if (m_player.log()->radioMessages().contains(message.messageId)) {
     return;
   } else {
     if (message.type == RadioMessageType::Mission) {
@@ -117,21 +117,21 @@ void PlayerNarrativeQueue::tickDelayedRadio(float dt) {
 
 Maybe<Json> PlayerNarrativeQueue::pullPendingCinematic() {
   if (m_pendingCinematic && m_pendingCinematic->isType(Json::Type::String))
-    m_player->log()->addCinematic(m_pendingCinematic->toString());
+    m_player.log()->addCinematic(m_pendingCinematic->toString());
   return take(m_pendingCinematic);
 }
 
 void PlayerNarrativeQueue::setPendingCinematic(Json const& cinematic, bool unique) {
-  if (unique && cinematic.isType(Json::Type::String) && m_player->log()->cinematics().contains(cinematic.toString()))
+  if (unique && cinematic.isType(Json::Type::String) && m_player.log()->cinematics().contains(cinematic.toString()))
     return;
   m_pendingCinematic = cinematic;
 }
 
 void PlayerNarrativeQueue::setInCinematic(bool inCinematic) {
   if (inCinematic)
-    m_player->statusController()->setPersistentEffects("cinematic", m_inCinematicStatusEffects);
+    m_player.statusController()->setPersistentEffects("cinematic", m_inCinematicStatusEffects);
   else
-    m_player->statusController()->setPersistentEffects("cinematic", {});
+    m_player.statusController()->setPersistentEffects("cinematic", {});
 }
 
 Maybe<pair<Maybe<pair<StringList, int>>, float>> PlayerNarrativeQueue::pullPendingAltMusic() {

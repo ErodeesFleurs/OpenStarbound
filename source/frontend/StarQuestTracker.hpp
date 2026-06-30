@@ -23,6 +23,7 @@ class QuestTrackerPane : public Pane {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   explicit QuestTrackerPane(Services services);

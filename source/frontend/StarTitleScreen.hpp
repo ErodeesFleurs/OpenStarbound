@@ -1,12 +1,12 @@
 #pragma once
 
-#include "StarSky.hpp"
 #include "StarAmbient.hpp"
-#include "StarRegisteredPaneManager.hpp"
-#include "StarInterfaceCursor.hpp"
 #include "StarConfiguration.hpp"
-#include "StarUniverseClient.hpp"
+#include "StarInterfaceCursor.hpp"
 #include "StarListWidget.hpp"
+#include "StarRegisteredPaneManager.hpp"
+#include "StarSky.hpp"
+#include "StarUniverseClient.hpp"
 
 namespace Star {
 
@@ -15,7 +15,6 @@ using PlayerPtr = SharedPtr<Player>;
 class PlayerStorage;
 using PlayerStoragePtr = SharedPtr<PlayerStorage>;
 class GuiContext;
-using GuiContextPtr = SharedPtr<GuiContext>;
 class Pane;
 using PanePtr = SharedPtr<Pane>;
 class Mixer;
@@ -36,19 +35,33 @@ class PatternedNameGenerator;
 using PatternedNameGeneratorConstPtr = SharedPtr<PatternedNameGenerator const>;
 class ItemDatabase;
 using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+class BiomeDatabase;
+using BiomeDatabaseConstPtr = SharedPtr<BiomeDatabase const>;
+class Voice;
+class Input;
 
 class TitleScreen;
 using TitleScreenPtr = SharedPtr<TitleScreen>;
 
 struct TitleScreenServices {
+  TitleScreenServices(GuiContext& guiContext, Voice& voice, Input& input);
+
+  GuiContext& guiContext;
+  Voice& voice;
+  Input& input;
   AssetsConstPtr assets;
   ConfigurationPtr configuration;
   PlayerFactoryConstPtr playerFactory;
   SpeciesDatabaseConstPtr speciesDatabase;
   PatternedNameGeneratorConstPtr nameGenerator;
   ItemDatabaseConstPtr itemDatabase;
+  LiquidsDatabaseConstPtr liquidsDatabase;
+  BiomeDatabaseConstPtr biomeDatabase;
   ImageMetadataDatabaseConstPtr imageMetadata;
   VersioningDatabaseConstPtr versioningDatabase;
+  LuaRootServices luaRootServices;
 };
 
 enum class TitleState {
@@ -68,9 +81,9 @@ enum class TitleState {
 class TitleScreen {
 public:
   TitleScreen(PlayerStoragePtr playerStorage,
-      MixerPtr mixer,
-      UniverseClientPtr client,
-      TitleScreenServices services);
+              MixerPtr mixer,
+              UniverseClientPtr client,
+              TitleScreenServices services);
 
   void renderInit(RendererPtr renderer);
 
@@ -82,7 +95,7 @@ public:
   bool textInputActive() const;
 
   using TitlePaneManager = RegisteredPaneManager<String>;
-  TitlePaneManager* paneManager();
+  TitlePaneManager& paneManager();
 
   TitleState currentState() const;
   // TitleState is StartSinglePlayer, StartMultiPlayer, or Quit
@@ -134,7 +147,10 @@ private:
   using ScriptComponent = LuaUpdatableComponent<LuaBaseComponent>;
   SharedPtr<ScriptComponent> m_scriptComponent;
 
-  GuiContext* m_guiContext;
+  GuiContext& m_guiContext;
+  LuaRootServices m_luaRootServices;
+  Voice& m_voice;
+  Input& m_input;
 
   RendererPtr m_renderer;
   EnvironmentPainterPtr m_environmentPainter;
@@ -152,6 +168,8 @@ private:
   SpeciesDatabaseConstPtr m_speciesDatabase;
   PatternedNameGeneratorConstPtr m_nameGenerator;
   ItemDatabaseConstPtr m_itemDatabase;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  BiomeDatabaseConstPtr m_biomeDatabase;
   ImageMetadataDatabaseConstPtr m_imageMetadata;
   VersioningDatabaseConstPtr m_versioningDatabase;
   InterfaceCursor m_cursor;
@@ -182,4 +200,4 @@ private:
   AmbientManager m_musicTrackManager;
 };
 
-}
+}// namespace Star

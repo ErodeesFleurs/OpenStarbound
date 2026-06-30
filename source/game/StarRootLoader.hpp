@@ -5,8 +5,7 @@
 
 namespace Star {
 
-// Parses command line flags and loads and returns the Root singleton based on
-// them.
+// Parses command line flags and returns the active Root configured from them.
 //
 // It is designed to load settings first from the settings passed into the
 // constructor, then from the required boot config file , then from any passed

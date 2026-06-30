@@ -15,12 +15,12 @@ class LiquidItem;
 
 class LiquidItem : public Item, public FireableItem, public PreviewTileTool, public BeamItem {
 public:
-  LiquidItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& settings, LiquidsDatabaseConstPtr liquidsDatabase);
+  LiquidItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& settings, LiquidsDatabaseConstPtr liquidsDatabase);
   virtual ~LiquidItem() = default;
 
   ItemPtr clone() const override;
 
-  void init(ToolUserEntity* owner, ToolHand hand) override;
+  void init(ToolUserEntity& owner, ToolHand hand) override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
   List<Drawable> nonRotatedDrawables() const override;

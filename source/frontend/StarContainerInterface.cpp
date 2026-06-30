@@ -18,11 +18,12 @@
 #include "StarStatusControllerLuaBindings.hpp"
 #include "StarWidgetLuaBindings.hpp"
 #include "StarAugmentItem.hpp"
-#include "StarInput.hpp"
 
 namespace Star {
 
-ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor, ContainerPaneServices services) {
+ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, ContainerInteractorPtr containerInteractor, ContainerPaneServices services)
+  : Pane(services.guiContext),
+    m_reader(services.guiContext) {
   m_worldClient = worldClient;
   m_player = player;
   m_containerInteractor = std::move(containerInteractor);
@@ -30,6 +31,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
   m_assets = std::move(services.assets);
   m_objectDatabase = std::move(services.objectDatabase);
   m_statusEffectDatabase = std::move(services.statusEffectDatabase);
+  m_takeAllPressed = std::move(services.takeAllPressed);
   if (!m_itemDatabase)
     throw StarException("ContainerPane requires item database service");
   if (!m_assets)
@@ -38,6 +40,8 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
     throw StarException("ContainerPane requires object database service");
   if (!m_statusEffectDatabase)
     throw StarException("ContainerPane requires status effect database service");
+  if (!m_takeAllPressed)
+    throw StarException("ContainerPane requires take all input service");
 
   auto container = m_containerInteractor->openContainer();
   auto guiConfig = container->containerGuiConfig();
@@ -47,12 +51,12 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
       m_script.emplace();
       m_script->setScripts(*scripts);
     }
-    m_script->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(this));
+    m_script->addCallbacks("widget", LuaBindings::makeWidgetCallbacks(*this));
     m_script->addCallbacks("config", LuaBindings::makeConfigCallbacks( [guiConfig](String const& name, Json const& def) {
         return guiConfig.query(name, def);
       }));
-    m_script->addCallbacks("player", LuaBindings::makePlayerCallbacks(m_player.get()));
-    m_script->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_player->statusController()));
+    m_script->addCallbacks("player", LuaBindings::makePlayerCallbacks(*m_player));
+    m_script->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_player->statusController()));
 
     LuaCallbacks containerPaneCallbacks;
     containerPaneCallbacks.registerCallback("containerEntityId", [this]() -> Maybe<EntityId> {
@@ -73,7 +77,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
       auto swapItem = m_player->inventory()->swapSlotItem();
       if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
         size_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
-        if (context()->shiftHeld())
+        if (context().shiftHeld())
           count = max<uint64_t>(1, min<uint64_t>(count, slotItem->count() / 2));
         else
           count = 1;
@@ -155,7 +159,7 @@ ContainerPane::ContainerPane(WorldClientPtr worldClient, PlayerPtr player, Conta
 
   if (container->iconItem()) {
     auto iconItem = m_itemDatabase->itemShared(container->iconItem());
-    auto icon = make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
+    auto icon = make_shared<ItemSlotWidget>(context(), iconItem, "/interface/inventory/portrait.png");
     icon->showDurability(false);
     icon->showRarity(false);
     icon->setBackingImageAffinity(true, true);
@@ -176,7 +180,7 @@ void ContainerPane::displayed() {
 
   if (m_script) {
     if (m_worldClient && m_worldClient->inWorld())
-      m_script->init(m_worldClient.get());
+      m_script->init(*m_worldClient);
 
     m_script->invoke("displayed");
   }
@@ -228,13 +232,13 @@ PanePtr ContainerPane::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
   return {};
 }
 
 void ContainerPane::swapSlot(ItemGridWidget* grid) {
   auto inv = m_player->inventory();
-  if (context()->shiftHeld()) {
+  if (context().shiftHeld()) {
     auto containerItem = grid->selectedItem();
     if (containerItem && inv->itemsCanFit(containerItem) >= containerItem->count()) {
       m_containerInteractor->swapInContainer(grid->selectedIndex(), {});
@@ -277,8 +281,6 @@ void ContainerPane::update(float dt) {
     m_script->update(m_script->updateDt(dt));
 
   m_itemBag->clearItems();
-  Input& input = Input::singleton();
-
   if (!m_containerInteractor->containerOpen()) {
     dismiss();
 
@@ -310,7 +312,7 @@ void ContainerPane::update(float dt) {
         fuelGauge->setRequestedFuelAmount(0);
       }
    
-      if (input.bindDown("opensb", "takeAll")) {
+      if (m_takeAllPressed()) {
         m_containerInteractor->clearContainer();
       }
     }

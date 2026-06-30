@@ -16,6 +16,7 @@ using SongbookInterfacePtr = SharedPtr<SongbookInterface>;
 struct SongbookInterfaceServices {
   AssetsConstPtr assets;
   function<void(ListenerWeakPtr)> registerReloadListener;
+  GuiContext& guiContext;
 };
 
 class SongbookInterface : public Pane {

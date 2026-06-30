@@ -123,22 +123,7 @@ Json Voice::Speaker::toJson() const {
   };
 }
 
-Voice* Voice::s_singleton;
-
-Voice* Voice::singletonPtr() {
-  return s_singleton;
-}
-
-Voice& Voice::singleton() {
-  if (!s_singleton)
-    throw VoiceException("Voice::singleton() called with no Voice instance available");
-  else
-    return *s_singleton;
-}
-
 Voice::Voice(ApplicationControllerPtr appController, VoiceServices services) : m_encoder(nullptr, opus_encoder_destroy) {
-  if (s_singleton)
-    throw VoiceException("Singleton Voice has been constructed twice");
   if (!services.configuration)
     throw VoiceException("Voice requires configuration service");
 
@@ -150,8 +135,6 @@ Voice::Voice(ApplicationControllerPtr appController, VoiceServices services) : m
 
   m_stopThread = false;
   m_thread = Thread::invoke("Voice::thread", mem_fn(&Voice::thread), this);
-
-  s_singleton = this;
 }
 
 Voice::~Voice() {
@@ -168,8 +151,6 @@ Voice::~Voice() {
     save();
 
   closeDevice();
-
-  s_singleton = nullptr;
 }
 
 void Voice::init() {

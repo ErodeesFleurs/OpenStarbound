@@ -9,8 +9,9 @@ using ButtonWidgetPtr = SharedPtr<ButtonWidget>;
 
 class ButtonWidget : public Widget {
 public:
-  ButtonWidget();
-  ButtonWidget(WidgetCallbackFunc callback,
+  explicit ButtonWidget(GuiContext& context);
+  ButtonWidget(GuiContext& context,
+      WidgetCallbackFunc callback,
       String const& baseImage,
       String const& hoverImage = "",
       String const& pressedImage = "",

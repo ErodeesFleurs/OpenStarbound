@@ -1,47 +1,64 @@
 #include "StarNpc.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarWorld.hpp"
-#include "StarRoot.hpp"
-#include "StarSongbook.hpp"
-#include "StarSongbookLuaBindings.hpp"
-#include "StarDamageManager.hpp"
-#include "StarDamageDatabase.hpp"
-#include "StarLogging.hpp"
-#include "StarConfigLuaBindings.hpp"
-#include "StarEntityLuaBindings.hpp"
-#include "StarWorldLuaBindings.hpp"
-#include "StarRootLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
+#include "StarArmors.hpp"
 #include "StarBehaviorLuaBindings.hpp"
+#include "StarConfigLuaBindings.hpp"
+#include "StarDamageDatabase.hpp"
+#include "StarDamageManager.hpp"
+#include "StarDanceDatabase.hpp"
+#include "StarDataStreamExtra.hpp"
 #include "StarEmoteProcessor.hpp"
-#include "StarTreasure.hpp"
 #include "StarEncode.hpp"
+#include "StarEntityLuaBindings.hpp"
+#include "StarEntityRendering.hpp"
+#include "StarFireableItem.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarItemDrop.hpp"
-#include "StarEntityRendering.hpp"
-#include "StarTime.hpp"
-#include "StarArmors.hpp"
-#include "StarFireableItem.hpp"
-#include "StarStatusController.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarDanceDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
+#include "StarLogging.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarRootLuaBindings.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
+#include "StarSongbook.hpp"
+#include "StarSongbookLuaBindings.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarStatusController.hpp"
+#include "StarStatusControllerLuaBindings.hpp"
+#include "StarTime.hpp"
+#include "StarTreasure.hpp"
+#include "StarWorld.hpp"
+#include "StarWorldLuaBindings.hpp"
 
 namespace Star {
 
-Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : m_scriptedAnimator(assets) {
+namespace {
 
-  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+AssetsConstPtr requireNpcAssets(AssetsConstPtr assets) {
+  if (!assets)
+    throw StarException("Npc requires assets service");
+  return assets;
+}
+
+}// namespace
+
+Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase)
+    : m_scriptedAnimator(requireNpcAssets(assets)) {
+  m_assets = std::move(assets);
   m_npcDatabase = std::move(npcDatabase);
+  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
   m_speciesDatabase = std::move(speciesDatabase);
   m_danceDatabase = std::move(danceDatabase);
   m_emoteProcessor = std::move(emoteProcessor);
   m_itemDatabase = std::move(itemDatabase);
   m_objectDatabase = std::move(objectDatabase);
-  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json(), m_assets, m_speciesDatabase, m_danceDatabase));
+  m_liquidsDatabase = std::move(liquidsDatabase);
+  m_statusEffectDatabase = std::move(statusEffectDatabase);
+  m_particleDatabase = std::move(particleDatabase);
+  if (!m_imageMetadataDatabase)
+    throw StarException("Npc requires image metadata database service");
+  m_netHumanoid.setElementFactory([this]() {
+    return make_shared<NetHumanoid>(HumanoidIdentity(), JsonObject(), Json(), m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase);
+  });
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json(), m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase));
   m_disableWornArmor.set(npcVariant.disableWornArmor);
 
   m_emoteState = HumanoidEmote::Idle;
@@ -78,7 +95,7 @@ Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabase
   m_identityUpdated = false;
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 
-  m_statusController = make_shared<StatusController>(m_npcVariant.statusControllerSettings);
+  m_statusController = make_shared<StatusController>(m_npcVariant.statusControllerSettings, m_assets, m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase);
   m_statusController->setPersistentEffects("innate", m_npcVariant.innateStatusEffects);
   auto speciesDefinition = m_speciesDatabase->species(species());
   m_statusController->setPersistentEffects("species", speciesDefinition->statusEffects());
@@ -96,7 +113,7 @@ Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabase
   m_blinkCooldownTimer = GameTimer();
 
   m_armor = make_shared<ArmorWearer>(m_itemDatabase);
-  m_tools = make_shared<ToolUser>(m_assets, this, m_itemDatabase, m_objectDatabase);
+  m_tools = make_shared<ToolUser>(m_assets, *this, m_itemDatabase, m_objectDatabase);
 
   m_aggressive.set(false);
 
@@ -106,8 +123,8 @@ Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabase
   setupNetStates();
 }
 
-Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, Json const& diskStore, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : Npc(std::move(assets), std::move(npcDatabase), std::move(speciesDatabase), std::move(danceDatabase), std::move(emoteProcessor), npcVariant, std::move(itemDatabase), std::move(objectDatabase)) {
+Npc::Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, Json const& diskStore, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase)
+    : Npc(std::move(assets), std::move(npcDatabase), std::move(imageMetadataDatabase), std::move(speciesDatabase), std::move(danceDatabase), std::move(emoteProcessor), npcVariant, std::move(itemDatabase), std::move(objectDatabase), std::move(liquidsDatabase), std::move(statusEffectDatabase), std::move(particleDatabase)) {
   m_movementController->loadState(diskStore.get("movementController"));
   m_statusController->diskLoad(diskStore.get("statusController"));
   auto aimPosition = jsonToVec2F(diskStore.get("aimPosition"));
@@ -161,8 +178,7 @@ Json Npc::diskStore() const {
     {"team", getTeam().toJson()},
     {"deathParticleBurst", jsonFromMaybe(m_deathParticleBurst.get())},
     {"dropPools", m_dropPools.get().transformed(construct<Json>())},
-    {"aggressive", m_aggressive.get()}
-  };
+    {"aggressive", m_aggressive.get()}};
 }
 
 ByteArray Npc::netStore(NetCompatibilityRules rules) {
@@ -179,10 +195,10 @@ ClientEntityMode Npc::clientEntityMode() const {
 
 void Npc::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
-  m_movementController->init(world);
+  m_movementController->init(*world);
   m_movementController->setIgnorePhysicsEntities({entityId});
-  m_statusController->init(this, m_movementController.get());
-  m_tools->init(this);
+  m_statusController->init(*this, *m_movementController);
+  m_tools->init(*this);
 
   m_armor->setupHumanoid(*humanoid(), forceNude());
 
@@ -193,29 +209,25 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
       setItemSlot(item.first, item.second);
     m_scriptComponent.addCallbacks("npc", makeNpcCallbacks());
     m_scriptComponent.addCallbacks("config",
-        LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def)
-            { return m_npcVariant.scriptConfig.query(name, def); }));
-    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
-    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors, world->behaviorDatabase()));
-    m_scriptComponent.addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
-    m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
+                                   LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return m_npcVariant.scriptConfig.query(name, def); }));
+    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+    m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_statusController));
+    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(m_behaviors, world->behaviorDatabase()));
+    m_scriptComponent.addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(*m_songbook));
+    m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(*humanoid()->networkedAnimator()));
     m_scriptComponent.addActorMovementCallbacks(m_movementController.get());
-    m_scriptComponent.init(world);
+    m_scriptComponent.init(*world);
   }
   if (world->isClient()) {
     m_scriptedAnimator.setScripts(humanoid()->animationScripts());
-    m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
-      [this](String const& name, Json const& defaultValue) -> Json {
-        return m_scriptedAnimationParameters.value(name, defaultValue);
-      }));
+    m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(*humanoid()->networkedAnimator(), [this](String const& name, Json const& defaultValue) -> Json {
+                                      return m_scriptedAnimationParameters.value(name, defaultValue);
+                                    }));
     m_scriptedAnimator.addCallbacks("config",
-        LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def)
-            { return m_npcVariant.scriptConfig.query(name, def); }));
-    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptedAnimator.init(world);
+                                    LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return m_npcVariant.scriptConfig.query(name, def); }));
+    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+    m_scriptedAnimator.init(*world);
   }
-
 }
 
 void Npc::uninit() {
@@ -261,7 +273,7 @@ RectF Npc::metaBoundBox() const {
 
 Vec2F Npc::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F{humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(humanoid()->facingDirection()),
-      humanoid()->mouthOffset(ignoreAdjustments)[1]};
+               humanoid()->mouthOffset(ignoreAdjustments)[1]};
 }
 
 Vec2F Npc::feetOffset() const {
@@ -295,7 +307,7 @@ pair<ByteArray, uint64_t> Npc::writeNetState(uint64_t fromVersion, NetCompatibil
     if (auto mode = entityMode()) {
       if (*mode == EntityMode::Master && connectionForEntity(entityId()) != ServerConnectionId) {
         PolyF poly = m_movementController->collisionPoly();
-        m_movementController->setCollisionPoly({ { 0.0f, -3.402823466e+38F }});
+        m_movementController->setCollisionPoly({{0.0f, -3.402823466e+38F}});
         auto result = m_netGroup.writeNetState(fromVersion, rules);
         m_movementController->setCollisionPoly(poly);
         return result;
@@ -358,12 +370,7 @@ List<DamageNotification> Npc::applyDamage(DamageRequest const& damage) {
     totalDamage += notification.healthLost;
 
   if (totalDamage > 0 && m_hitDamageNotificationLimiter < m_hitDamageNotificationLimit) {
-    m_scriptComponent.invoke("damage", JsonObject{
-        {"sourceId", damage.sourceEntityId},
-        {"damage", totalDamage},
-        {"sourceDamage", damage.damage},
-        {"sourceKind", damage.damageSourceKind}
-      });
+    m_scriptComponent.invoke("damage", JsonObject{{"sourceId", damage.sourceEntityId}, {"damage", totalDamage}, {"sourceDamage", damage.damage}, {"sourceKind", damage.damageSourceKind}});
     m_hitDamageNotificationLimiter++;
   }
 
@@ -389,7 +396,7 @@ void Npc::destroy(RenderCallback* renderCallback) {
   if (isMaster() && !m_dropPools.get().empty()) {
     auto treasureDatabase = world()->treasureDatabase();
     for (auto const& treasureItem :
-        treasureDatabase->createTreasure(staticRandomFrom(m_dropPools.get(), m_npcVariant.seed), m_npcVariant.level))
+         treasureDatabase->createTreasure(staticRandomFrom(m_dropPools.get(), m_npcVariant.seed), m_npcVariant.level))
       world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets(), m_itemDatabase));
   }
 
@@ -424,18 +431,18 @@ void Npc::update(float dt, uint64_t) {
       m_statusController->setPersistentEffects("lounging", loungeAnchor->statusEffects);
       m_effectEmitter->addEffectSources("normal", loungeAnchor->effectEmitters);
       switch (loungeAnchor->orientation) {
-        case LoungeOrientation::Sit:
-          humanoid()->setState(Humanoid::Sit);
-          break;
-        case LoungeOrientation::Lay:
-          humanoid()->setState(Humanoid::Lay);
-          break;
-        case LoungeOrientation::Stand:
-          humanoid()->setState(Humanoid::Idle); // currently the same as "standard"
-          // idle, but this is lounging idle
-          break;
-        default:
-          humanoid()->setState(Humanoid::Idle);
+      case LoungeOrientation::Sit:
+        humanoid()->setState(Humanoid::Sit);
+        break;
+      case LoungeOrientation::Lay:
+        humanoid()->setState(Humanoid::Lay);
+        break;
+      case LoungeOrientation::Stand:
+        humanoid()->setState(Humanoid::Idle);// currently the same as "standard"
+        // idle, but this is lounging idle
+        break;
+      default:
+        humanoid()->setState(Humanoid::Idle);
       }
     } else {
       m_statusController->setPersistentEffects("lounging", {});
@@ -527,7 +534,7 @@ void Npc::render(RenderCallback* renderCallback) {
   for (auto& drawable : humanoid()->render()) {
     drawable.translate(position());
     if (drawable.isImage())
-      drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
+      drawable.imagePart().addDirectivesGroup(humanoidDirectives, true, m_imageMetadataDatabase);
     renderCallback->addDrawable(std::move(drawable), renderLayer);
   }
 
@@ -538,7 +545,7 @@ void Npc::render(RenderCallback* renderCallback) {
   renderCallback->addParticles(m_statusController->pullNewParticles());
   renderCallback->addAudios(m_statusController->pullNewAudios());
 
-  renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), world()));
+  renderCallback->addParticles(m_npcVariant.splashConfig.doSplash(position(), m_movementController->velocity(), *world()));
 
   m_tools->render(renderCallback, inToolRange(), m_shifting.get(), renderLayer);
 
@@ -618,7 +625,7 @@ void Npc::tickShared(float dt) {
   if (m_hitDamageNotificationLimiter)
     m_hitDamageNotificationLimiter--;
 
-  m_songbook->update(*entityMode(), world());
+  m_songbook->update(*entityMode(), *world());
 
   m_effectEmitter->setSourcePosition("normal", position());
   m_effectEmitter->setSourcePosition("mouth", position() + mouthOffset());
@@ -689,24 +696,24 @@ LuaCallbacks Npc::makeNpcCallbacks() {
   callbacks.registerCallback("refreshHumanoidParameters", [this]() { refreshHumanoidParameters(); });
   callbacks.registerCallback("humanoidConfig", [this](bool withOverrides) -> Json { return humanoid()->humanoidConfig(withOverrides); });
 
-  callbacks.registerCallback(   "bodyDirectives", [this]()   { return identity().bodyDirectives;      });
+  callbacks.registerCallback("bodyDirectives", [this]() { return identity().bodyDirectives; });
   callbacks.registerCallback("setBodyDirectives", [this](String const& str) { setBodyDirectives(str); });
 
-  callbacks.registerCallback(   "emoteDirectives", [this]()   { return identity().emoteDirectives;      });
+  callbacks.registerCallback("emoteDirectives", [this]() { return identity().emoteDirectives; });
   callbacks.registerCallback("setEmoteDirectives", [this](String const& str) { setEmoteDirectives(str); });
 
-  callbacks.registerCallback(   "hairGroup",      [this]()   { return identity().hairGroup;      });
-  callbacks.registerCallback("setHairGroup",      [this](String const& str) { setHairGroup(str); });
-  callbacks.registerCallback(   "hairType",       [this]()   { return identity().hairType;      });
-  callbacks.registerCallback("setHairType",       [this](String const& str) { setHairType(str); });
-  callbacks.registerCallback(   "hairDirectives", [this]()   { return identity().hairDirectives;     });
+  callbacks.registerCallback("hairGroup", [this]() { return identity().hairGroup; });
+  callbacks.registerCallback("setHairGroup", [this](String const& str) { setHairGroup(str); });
+  callbacks.registerCallback("hairType", [this]() { return identity().hairType; });
+  callbacks.registerCallback("setHairType", [this](String const& str) { setHairType(str); });
+  callbacks.registerCallback("hairDirectives", [this]() { return identity().hairDirectives; });
   callbacks.registerCallback("setHairDirectives", [this](String const& str) { setHairDirectives(str); });
 
-  callbacks.registerCallback(   "facialHairGroup",      [this]()   { return identity().facialHairGroup;      });
-  callbacks.registerCallback("setFacialHairGroup",      [this](String const& str) { setFacialHairGroup(str); });
-  callbacks.registerCallback(   "facialHairType",       [this]()   { return identity().facialHairType;      });
-  callbacks.registerCallback("setFacialHairType",       [this](String const& str) { setFacialHairType(str); });
-  callbacks.registerCallback(   "facialHairDirectives", [this]()   { return identity().facialHairDirectives;      });
+  callbacks.registerCallback("facialHairGroup", [this]() { return identity().facialHairGroup; });
+  callbacks.registerCallback("setFacialHairGroup", [this](String const& str) { setFacialHairGroup(str); });
+  callbacks.registerCallback("facialHairType", [this]() { return identity().facialHairType; });
+  callbacks.registerCallback("setFacialHairType", [this](String const& str) { setFacialHairType(str); });
+  callbacks.registerCallback("facialHairDirectives", [this]() { return identity().facialHairDirectives; });
   callbacks.registerCallback("setFacialHairDirectives", [this](String const& str) { setFacialHairDirectives(str); });
 
   callbacks.registerCallback("hair", [this]() {
@@ -728,9 +735,12 @@ LuaCallbacks Npc::makeNpcCallbacks() {
     if (group && type && directives)
       setFacialHair(*group, *type, *directives);
     else {
-      if (group)      setFacialHairGroup(*group);
-      if (type)       setFacialHairType(*type);
-      if (directives) setFacialHairDirectives(*directives);
+      if (group)
+        setFacialHairGroup(*group);
+      if (type)
+        setFacialHairType(*type);
+      if (directives)
+        setFacialHairDirectives(*directives);
     }
   });
 
@@ -738,9 +748,12 @@ LuaCallbacks Npc::makeNpcCallbacks() {
     if (group && type && directives)
       setFacialMask(*group, *type, *directives);
     else {
-      if (group)      setFacialMaskGroup(*group);
-      if (type)       setFacialMaskType(*type);
-      if (directives) setFacialMaskDirectives(*directives);
+      if (group)
+        setFacialMaskGroup(*group);
+      if (type)
+        setFacialMaskType(*type);
+      if (directives)
+        setFacialMaskDirectives(*directives);
     }
   });
 
@@ -748,35 +761,37 @@ LuaCallbacks Npc::makeNpcCallbacks() {
     if (group && type && directives)
       setHair(*group, *type, *directives);
     else {
-      if (group)      setHairGroup(*group);
-      if (type)       setHairType(*type);
-      if (directives) setHairDirectives(*directives);
+      if (group)
+        setHairGroup(*group);
+      if (type)
+        setHairType(*type);
+      if (directives)
+        setHairDirectives(*directives);
     }
   });
 
-  callbacks.registerCallback(   "description", [this]()                          { return description(); });
+  callbacks.registerCallback("description", [this]() { return description(); });
   callbacks.registerCallback("setDescription", [this](String const& description) { setDescription(description); });
 
-  callbacks.registerCallback(   "name", [this]()                   { return name(); });
+  callbacks.registerCallback("name", [this]() { return name(); });
   callbacks.registerCallback("setName", [this](String const& name) { setName(name); });
 
   callbacks.registerCallback("setSpecies", [this](String const& species) { setSpecies(species); });
 
-  callbacks.registerCallback(   "imagePath", [this]()                        { return identity().imagePath;    });
+  callbacks.registerCallback("imagePath", [this]() { return identity().imagePath; });
   callbacks.registerCallback("setImagePath", [this](Maybe<String> const& imagePath) { setImagePath(imagePath); });
 
   callbacks.registerCallback("setGender", [this](String const& gender) { setGender(GenderNames.getLeft(gender)); });
 
-  callbacks.registerCallback(   "personality", [this]() { return jsonFromPersonality(identity().personality); });
+  callbacks.registerCallback("personality", [this]() { return jsonFromPersonality(identity().personality); });
   callbacks.registerCallback("setPersonality", [this](Json const& personalityConfig) {
     Personality const& oldPersonality = identity().personality;
     Personality newPersonality = oldPersonality;
     setPersonality(parsePersonality(newPersonality, personalityConfig));
   });
 
-  callbacks.registerCallback(   "favoriteColor", [this]()            { return favoriteColor();  });
+  callbacks.registerCallback("favoriteColor", [this]() { return favoriteColor(); });
   callbacks.registerCallback("setFavoriteColor", [this](Color color) { setFavoriteColor(color); });
-
 
   callbacks.registerCallback("npcType", [this]() { return npcType(); });
 
@@ -793,28 +808,28 @@ LuaCallbacks Npc::makeNpcCallbacks() {
   callbacks.registerCallback("maxEnergy", [this]() { return m_statusController->resourceMax("energy"); });
 
   callbacks.registerCallback("say", [this](String line, Maybe<StringMap<String>> const& tags, Json const& config) {
-      if (tags)
-        line = line.replaceTags(*tags, false);
+    if (tags)
+      line = line.replaceTags(*tags, false);
 
-      if (!line.empty()) {
-        addChatMessage(line, config);
-        return true;
-      }
+    if (!line.empty()) {
+      addChatMessage(line, config);
+      return true;
+    }
 
-      return false;
-    });
+    return false;
+  });
 
   callbacks.registerCallback("sayPortrait", [this](String line, String portrait, Maybe<StringMap<String>> const& tags, Json const& config) {
-      if (tags)
-        line = line.replaceTags(*tags, false);
+    if (tags)
+      line = line.replaceTags(*tags, false);
 
-      if (!line.empty()) {
-        addChatMessage(line, config, portrait);
-        return true;
-      }
+    if (!line.empty()) {
+      addChatMessage(line, config, portrait);
+      return true;
+    }
 
-      return false;
-    });
+    return false;
+  });
 
   callbacks.registerCallback("emote", [this](String const& arg1) { addEmote(HumanoidEmoteNames.getLeft(arg1)); });
 
@@ -823,53 +838,53 @@ LuaCallbacks Npc::makeNpcCallbacks() {
   callbacks.registerCallback("setInteractive", [this](bool interactive) { m_isInteractive.set(interactive); });
 
   callbacks.registerCallback("setLounging", [this](EntityId loungeableEntityId, Maybe<size_t> maybeAnchorIndex) {
-      size_t anchorIndex = maybeAnchorIndex.value(0);
-      auto loungeableEntity = world()->get<LoungeableEntity>(loungeableEntityId);
-      if (!loungeableEntity || anchorIndex >= loungeableEntity->anchorCount()
-          || !loungeableEntity->entitiesLoungingIn(anchorIndex).empty()
-          || !loungeableEntity->loungeAnchor(anchorIndex))
-        return false;
+    size_t anchorIndex = maybeAnchorIndex.value(0);
+    auto loungeableEntity = world()->get<LoungeableEntity>(loungeableEntityId);
+    if (!loungeableEntity || anchorIndex >= loungeableEntity->anchorCount()
+        || !loungeableEntity->entitiesLoungingIn(anchorIndex).empty()
+        || !loungeableEntity->loungeAnchor(anchorIndex))
+      return false;
 
-      m_movementController->setAnchorState({loungeableEntityId, anchorIndex});
-      return true;
-    });
+    m_movementController->setAnchorState({loungeableEntityId, anchorIndex});
+    return true;
+  });
 
   callbacks.registerCallback("resetLounging", [this]() { m_movementController->resetAnchorState(); });
 
   callbacks.registerCallback("isLounging", [this]() { return is<LoungeAnchor>(m_movementController->entityAnchor()); });
 
   callbacks.registerCallback("loungingIn", [this]() -> Maybe<EntityId> {
-      auto loungingState = loungingIn();
-      if (loungingState)
-        return loungingState.value().entityId;
-      else
-        return {};
-    });
+    auto loungingState = loungingIn();
+    if (loungingState)
+      return loungingState.value().entityId;
+    else
+      return {};
+  });
 
   callbacks.registerCallback("setOfferedQuests", [this](Maybe<JsonArray> const& offeredQuests) {
-      m_offeredQuests.set(offeredQuests.value().transformed(&QuestArcDescriptor::fromJson));
-    });
+    m_offeredQuests.set(offeredQuests.value().transformed(&QuestArcDescriptor::fromJson));
+  });
 
   callbacks.registerCallback("setTurnInQuests", [this](Maybe<StringList> const& turnInQuests) {
-      m_turnInQuests.set(StringSet::from(turnInQuests.value()));
-    });
+    m_turnInQuests.set(StringSet::from(turnInQuests.value()));
+  });
 
   callbacks.registerCallback("setItemSlot", [this](String const& slot, Json const& itemDescriptor) -> Json {
-      return setItemSlot(slot, ItemDescriptor(itemDescriptor));
-    });
+    return setItemSlot(slot, ItemDescriptor(itemDescriptor));
+  });
 
   callbacks.registerCallback("getItemSlot", [this](String const& entry) -> Json {
-      if (auto equipmentSlot = EquipmentSlotNames.leftPtr(entry)) {
-        return m_armor->itemDescriptor(static_cast<uint8_t>(*equipmentSlot)).toJson();
-      } else if (entry.equalsIgnoreCase("primary"))
-        return m_tools->primaryHandItemDescriptor().toJson();
-      else if (entry.equalsIgnoreCase("alt"))
-        return m_tools->altHandItemDescriptor().toJson();
-      else if (m_npcVariant.items.contains(entry))
-        return m_npcVariant.items.get(entry).toJson();
+    if (auto equipmentSlot = EquipmentSlotNames.leftPtr(entry)) {
+      return m_armor->itemDescriptor(static_cast<uint8_t>(*equipmentSlot)).toJson();
+    } else if (entry.equalsIgnoreCase("primary"))
+      return m_tools->primaryHandItemDescriptor().toJson();
+    else if (entry.equalsIgnoreCase("alt"))
+      return m_tools->altHandItemDescriptor().toJson();
+    else if (m_npcVariant.items.contains(entry))
+      return m_npcVariant.items.get(entry).toJson();
 
-      return {};
-    });
+    return {};
+  });
 
   callbacks.registerCallback("disableWornArmor", [this](bool disable) { m_disableWornArmor.set(disable); });
 
@@ -883,14 +898,14 @@ LuaCallbacks Npc::makeNpcCallbacks() {
   callbacks.registerCallback("aimPosition", [this]() { return jsonFromVec2F(aimPosition()); });
 
   callbacks.registerCallback("setAimPosition", [this](Vec2F const& pos) {
-      auto aimPosition = world()->geometry().diff(pos, position());
-      m_xAimPosition.set(aimPosition[0]);
-      m_yAimPosition.set(aimPosition[1]);
-    });
+    auto aimPosition = world()->geometry().diff(pos, position());
+    m_xAimPosition.set(aimPosition[0]);
+    m_yAimPosition.set(aimPosition[1]);
+  });
 
   callbacks.registerCallback("setDeathParticleBurst", [this](Maybe<String> const& deathParticleBurst) {
-      m_deathParticleBurst.set(deathParticleBurst);
-    });
+    m_deathParticleBurst.set(deathParticleBurst);
+  });
 
   callbacks.registerCallback("setStatusText", [this](Maybe<String> const& status) { m_statusText.set(status); });
   callbacks.registerCallback("setDisplayNametag", [this](bool display) { m_displayNametag.set(display); });
@@ -1010,7 +1025,7 @@ void Npc::getNetStates(bool initial) {
       m_pendingChatActions.append(SayChatAction{entityId(), m_chatMessage.get(), mouthPosition(), m_chatConfig.get()});
     else
       m_pendingChatActions.append(PortraitChatAction{
-          entityId(), m_chatPortrait.get(), m_chatMessage.get(), mouthPosition(), m_chatConfig.get()});
+        entityId(), m_chatPortrait.get(), m_chatMessage.get(), mouthPosition(), m_chatConfig.get()});
   }
 }
 
@@ -1061,7 +1076,8 @@ bool Npc::isInteractive() const {
 
 InteractAction Npc::interact(InteractRequest const& request) {
   auto result = m_scriptComponent.invoke<Json>("interact",
-      JsonObject{{"sourceId", request.sourceId}, {"sourcePosition", jsonFromVec2F(request.sourcePosition)}}).value();
+                                               JsonObject{{"sourceId", request.sourceId}, {"sourcePosition", jsonFromVec2F(request.sourcePosition)}})
+                  .value();
 
   if (result.isNull())
     return {};
@@ -1306,7 +1322,6 @@ List<PhysicsForceRegion> Npc::forceRegions() const {
   return m_tools->forceRegions();
 }
 
-
 HumanoidIdentity const& Npc::identity() const {
   return m_npcVariant.humanoidIdentity;
 }
@@ -1345,43 +1360,64 @@ void Npc::setHumanoidParameters(JsonObject parameters) {
   m_netHumanoid.netElements().last()->setHumanoidParameters(m_npcVariant.humanoidParameters);
 }
 
-
 JsonObject Npc::getHumanoidParameters() {
   return m_npcVariant.humanoidParameters;
 }
 
-void Npc::setBodyDirectives(String const& directives)
-{ m_npcVariant.humanoidIdentity.bodyDirectives = directives; updateIdentity(); }
+void Npc::setBodyDirectives(String const& directives) {
+  m_npcVariant.humanoidIdentity.bodyDirectives = directives;
+  updateIdentity();
+}
 
-void Npc::setEmoteDirectives(String const& directives)
-{ m_npcVariant.humanoidIdentity.emoteDirectives = directives; updateIdentity(); }
+void Npc::setEmoteDirectives(String const& directives) {
+  m_npcVariant.humanoidIdentity.emoteDirectives = directives;
+  updateIdentity();
+}
 
-void Npc::setHairGroup(String const& group)
-{ m_npcVariant.humanoidIdentity.hairGroup = group; updateIdentity(); }
+void Npc::setHairGroup(String const& group) {
+  m_npcVariant.humanoidIdentity.hairGroup = group;
+  updateIdentity();
+}
 
-void Npc::setHairType(String const& type)
-{ m_npcVariant.humanoidIdentity.hairType = type; updateIdentity(); }
+void Npc::setHairType(String const& type) {
+  m_npcVariant.humanoidIdentity.hairType = type;
+  updateIdentity();
+}
 
-void Npc::setHairDirectives(String const& directives)
-{ m_npcVariant.humanoidIdentity.hairDirectives = directives; updateIdentity(); }
+void Npc::setHairDirectives(String const& directives) {
+  m_npcVariant.humanoidIdentity.hairDirectives = directives;
+  updateIdentity();
+}
 
-void Npc::setFacialHairGroup(String const& group)
-{ m_npcVariant.humanoidIdentity.facialHairGroup = group; updateIdentity(); }
+void Npc::setFacialHairGroup(String const& group) {
+  m_npcVariant.humanoidIdentity.facialHairGroup = group;
+  updateIdentity();
+}
 
-void Npc::setFacialHairType(String const& type)
-{ m_npcVariant.humanoidIdentity.facialHairType = type; updateIdentity(); }
+void Npc::setFacialHairType(String const& type) {
+  m_npcVariant.humanoidIdentity.facialHairType = type;
+  updateIdentity();
+}
 
-void Npc::setFacialHairDirectives(String const& directives)
-{ m_npcVariant.humanoidIdentity.facialHairDirectives = directives; updateIdentity(); }
+void Npc::setFacialHairDirectives(String const& directives) {
+  m_npcVariant.humanoidIdentity.facialHairDirectives = directives;
+  updateIdentity();
+}
 
-void Npc::setFacialMaskGroup(String const& group)
-{ m_npcVariant.humanoidIdentity.facialMaskGroup = group; updateIdentity(); }
+void Npc::setFacialMaskGroup(String const& group) {
+  m_npcVariant.humanoidIdentity.facialMaskGroup = group;
+  updateIdentity();
+}
 
-void Npc::setFacialMaskType(String const& type)
-{ m_npcVariant.humanoidIdentity.facialMaskType = type; updateIdentity(); }
+void Npc::setFacialMaskType(String const& type) {
+  m_npcVariant.humanoidIdentity.facialMaskType = type;
+  updateIdentity();
+}
 
-void Npc::setFacialMaskDirectives(String const& directives)
-{ m_npcVariant.humanoidIdentity.facialMaskDirectives = directives; updateIdentity(); }
+void Npc::setFacialMaskDirectives(String const& directives) {
+  m_npcVariant.humanoidIdentity.facialMaskDirectives = directives;
+  updateIdentity();
+}
 
 void Npc::setHair(String const& group, String const& type, String const& directives) {
   m_npcVariant.humanoidIdentity.hairGroup = group;
@@ -1453,9 +1489,9 @@ void Npc::refreshHumanoidParameters() {
     m_refreshedHumanoidParameters.trigger();
     m_scriptedAnimationParameters.clear();
     m_netHumanoid.clearNetElements();
-    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.humanoidParameters, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json(), m_assets, m_speciesDatabase, m_danceDatabase));
+    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.humanoidParameters, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json(), m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase));
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
-  }else {
+  } else {
     m_npcVariant.humanoidParameters = m_netHumanoid.netElements().last()->humanoidParameters();
   }
 
@@ -1470,7 +1506,7 @@ void Npc::refreshHumanoidParameters() {
     if (isMaster()) {
       if (m_scriptComponent.initialized()) {
         m_scriptComponent.removeCallbacks("animator");
-        m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
+        m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(*humanoid()->networkedAnimator()));
         m_scriptComponent.invoke("refreshHumanoidParameters");
       }
     }
@@ -1481,15 +1517,13 @@ void Npc::refreshHumanoidParameters() {
       m_scriptedAnimator.removeCallbacks("entity");
 
       m_scriptedAnimator.setScripts(humanoid()->animationScripts());
-      m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
-        [this](String const& name, Json const& defaultValue) -> Json {
-          return m_scriptedAnimationParameters.value(name, defaultValue);
-        }));
+      m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(*humanoid()->networkedAnimator(), [this](String const& name, Json const& defaultValue) -> Json {
+                                        return m_scriptedAnimationParameters.value(name, defaultValue);
+                                      }));
       m_scriptedAnimator.addCallbacks("config",
-          LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def)
-              { return m_npcVariant.scriptConfig.query(name, def); }));
-      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptedAnimator.init(world());
+                                      LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return m_npcVariant.scriptConfig.query(name, def); }));
+      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+      m_scriptedAnimator.init(*world());
     }
   }
 }
@@ -1498,4 +1532,4 @@ bool Npc::forceNude() const {
   return m_statusController->statPositive("nude");
 }
 
-}
+}// namespace Star

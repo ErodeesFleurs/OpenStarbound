@@ -1,13 +1,14 @@
 #pragma once
 
-#include "StarAssets.hpp"
-#include "StarNetworkedAnimator.hpp"
 #include "StarActorMovementController.hpp"
-#include "StarTtlCache.hpp"
+#include "StarAssets.hpp"
 #include "StarDamageTypes.hpp"
-#include "StarStatusTypes.hpp"
-#include "StarImageProcessing.hpp"
 #include "StarEntityRenderingTypes.hpp"
+#include "StarImageProcessing.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarStatusTypes.hpp"
+#include "StarTtlCache.hpp"
 
 namespace Star {
 
@@ -17,11 +18,21 @@ using RebuilderPtr = SharedPtr<Rebuilder>;
 class RandomSource;
 class Monster;
 using MonsterPtr = SharedPtr<Monster>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 class MonsterDatabase;
 using MonsterDatabasePtr = SharedPtr<MonsterDatabase>;
 using MonsterDatabaseConstPtr = SharedPtr<MonsterDatabase const>;
 
-struct MonsterExceptionTag { static constexpr char const* typeName = "MonsterException"; };
+struct MonsterExceptionTag {
+  static constexpr char const* typeName = "MonsterException";
+};
 using MonsterException = TypedException<StarException, MonsterExceptionTag>;
 
 struct MonsterVariant {
@@ -95,7 +106,7 @@ struct MonsterVariant {
 
 class MonsterDatabase : public enable_shared_from_this<MonsterDatabase> {
 public:
-  MonsterDatabase(AssetsConstPtr assets);
+  MonsterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices);
 
   void cleanup();
 
@@ -202,6 +213,10 @@ private:
   StringMap<List<ColorReplaceMap>> m_colorSwaps;
 
   AssetsConstPtr m_assets;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   mutable Mutex m_cacheMutex;
 
   RebuilderPtr m_rebuilder;
@@ -210,4 +225,4 @@ private:
   mutable HashTtlCache<tuple<String, uint64_t, Json>, MonsterVariant> m_monsterCache;
 };
 
-}
+}// namespace Star

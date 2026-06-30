@@ -11,8 +11,9 @@
 
 namespace Star {
 
-MainMixer::MainMixer(unsigned sampleRate, unsigned channels, Services services)
-  : m_assets(std::move(services.assets)),
+MainMixer::MainMixer(unsigned sampleRate, unsigned channels, Voice& voice, Services services)
+  : m_voice(voice),
+    m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)) {
   if (!m_assets)
     throw StarException("MainMixer requires assets service");
@@ -116,8 +117,7 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
       return pow(clamp(diffMagnitude / maxDistance, 0.0f, 1.0f), 1.0f / attenuationGamma);
     };
 
-    if (Voice* voice = Voice::singletonPtr())
-      voice->update(dt, attenuationFunction);
+    m_voice.update(dt, attenuationFunction);
 
     m_mixer->update(dt, attenuationFunction);
 
@@ -127,8 +127,7 @@ void MainMixer::update(float dt, bool muteSfx, bool muteMusic) {
     if (m_mixer->hasEffect("echo"))
       m_mixer->removeEffect("echo", 0);
 
-    if (Voice* voice = Voice::singletonPtr())
-      voice->update(dt);
+    m_voice.update(dt);
 
     m_mixer->update(dt);
   }

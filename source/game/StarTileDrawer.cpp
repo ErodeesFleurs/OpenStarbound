@@ -26,19 +26,6 @@ RenderTile TileDrawer::DefaultRenderTile{
     0
 };
 
-TileDrawer* TileDrawer::s_singleton;
-
-TileDrawer* TileDrawer::singletonPtr() {
-  return s_singleton;
-}
-
-TileDrawer& TileDrawer::singleton() {
-  if (!s_singleton)
-    throw StarException("TileDrawer::singleton() called with no TileDrawer instance available");
-  else
-    return *s_singleton;
-}
-
 TileDrawer::TileDrawer(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase)
   : m_assets(std::move(assets)),
     m_materialDatabase(std::move(materialDatabase)) {
@@ -48,13 +35,9 @@ TileDrawer::TileDrawer(AssetsConstPtr assets, MaterialDatabaseConstPtr materialD
   m_backgroundLayerColor = jsonToColor(m_assets->json("/rendering.config:backgroundLayerColor")).toRgba();
   m_foregroundLayerColor = jsonToColor(m_assets->json("/rendering.config:foregroundLayerColor")).toRgba();
   m_liquidDrawLevels = jsonToVec2F(m_assets->json("/rendering.config:liquidDrawLevels"));
-  s_singleton = this;
 }
 
-TileDrawer::~TileDrawer() {
-  if (s_singleton == this)
-    s_singleton = nullptr;
-}
+TileDrawer::~TileDrawer() = default;
 
 bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData, float scale, Vec2I offset, Maybe<TerrainLayer> variantLayer) {

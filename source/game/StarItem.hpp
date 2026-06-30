@@ -5,6 +5,7 @@
 #include "StarItemDescriptor.hpp"
 #include "StarQuests.hpp"
 #include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
@@ -21,7 +22,7 @@ public:
   // Config here is the configuration loaded directly from assets, directory is
   // the asset path this config was found in, that other assets should be
   // loaded relative to.
-  Item(AssetsConstPtr assets, Json config, String directory, Json parameters = JsonObject());
+  Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String directory, Json parameters = JsonObject());
 
   // For items which do not come from files
   Item();
@@ -143,7 +144,10 @@ protected:
 private:
   Json m_config;
   String m_directory;
+protected:
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
 
+private:
   String m_name;
   uint64_t m_count;
   Json m_parameters;
@@ -170,6 +174,7 @@ private:
 class GenericItem : public Item {
 public:
   GenericItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters);
+  GenericItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters);
   virtual ItemPtr clone() const;
 };
 

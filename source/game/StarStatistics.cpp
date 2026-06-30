@@ -7,7 +7,7 @@
 
 namespace Star {
 
-Statistics::Statistics(String const& storageDirectory, VersioningDatabaseConstPtr versioningDatabase, StatisticsDatabaseConstPtr statisticsDatabase, StatisticsServicePtr service) {
+Statistics::Statistics(String const& storageDirectory, VersioningDatabaseConstPtr versioningDatabase, StatisticsDatabaseConstPtr statisticsDatabase, LuaRootServices luaRootServices, StatisticsServicePtr service) {
   m_service = std::move(service);
   m_versioningDatabase = std::move(versioningDatabase);
   m_statisticsDatabase = std::move(statisticsDatabase);
@@ -20,7 +20,7 @@ Statistics::Statistics(String const& storageDirectory, VersioningDatabaseConstPt
   m_storageDirectory = storageDirectory;
   readStatistics();
 
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = make_shared<LuaRoot>(std::move(luaRootServices));
 }
 
 void Statistics::writeStatistics() {

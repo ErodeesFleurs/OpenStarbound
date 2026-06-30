@@ -1,12 +1,13 @@
 #include "StarTestUniverse.hpp"
+#include "StarTestRoot.hpp"
+#include "StarAssets.hpp"
 #include "StarFile.hpp"
-#include "StarQuests.hpp"
+#include "StarPlayer.hpp"
 #include "StarPlayerFactory.hpp"
 #include "StarPlayerStorage.hpp"
+#include "StarQuests.hpp"
 #include "StarStatistics.hpp"
 #include "StarStatisticsService.hpp"
-#include "StarPlayer.hpp"
-#include "StarAssets.hpp"
 #include "StarWorldClient.hpp"
 
 #include "gtest/gtest.h"
@@ -14,15 +15,23 @@
 namespace Star {
 
 TestUniverse::TestUniverse(Vec2U clientWindowSize) {
-  auto& root = Root::singleton();
+  auto& root = testRoot();
 
   m_clientWindowSize = clientWindowSize;
 
   m_storagePath = File::temporaryDirectory();
   auto playerStorage = make_shared<PlayerStorage>(File::relativeTo(m_storagePath, "player"), root.configuration(), root.entityFactory());
-  auto statistics = make_shared<Statistics>(File::relativeTo(m_storagePath, "statistics"), root.versioningDatabase(), root.statisticsDatabase());
-  m_server = make_shared<UniverseServer>(File::relativeTo(m_storagePath, "universe"), root.assets(), root.configuration(), root.materialDatabase(), root.imageMetadataDatabase(), root.itemDatabase(), root.objectDatabase(), root.projectileDatabase(), root.plantDatabase(), root.treasureDatabase(), root.npcDatabase(), root.monsterDatabase(), root.spawnTypeDatabase(), root.stagehandDatabase(), root.vehicleDatabase(), root.speciesDatabase(), root.entityFactory(), root.liquidsDatabase(), root.biomeDatabase(), root.nameGenerator(), root.versioningDatabase(), root.functionDatabase(), root.effectSourceDatabase(), root.particleDatabase(), root.techDatabase(), root.statusEffectDatabase());
-  m_client = make_shared<UniverseClient>(playerStorage, statistics, root.assets(), root.configuration(), root.materialDatabase(), root.itemDatabase(), root.objectDatabase(), root.speciesDatabase(), root.entityFactory(), root.liquidsDatabase(), root.biomeDatabase(), root.nameGenerator(), root.functionDatabase(), root.behaviorDatabase(), root.particleDatabase(), root.damageDatabase(), root.projectileDatabase(), root.effectSourceDatabase(), root.techDatabase(), root.statusEffectDatabase(), root.plantDatabase(), root.treasureDatabase(), root.imageMetadataDatabase());
+  auto luaRootServices = root.luaRootServices();
+  auto statistics = make_shared<Statistics>(
+      File::relativeTo(m_storagePath, "statistics"),
+      root.versioningDatabase(),
+      root.statisticsDatabase(),
+      luaRootServices);
+  m_server = make_shared<UniverseServer>(File::relativeTo(m_storagePath, "universe"), root.assets(), root.configuration(), root.materialDatabase(), root.imageMetadataDatabase(), root.itemDatabase(), root.objectDatabase(), root.projectileDatabase(), root.plantDatabase(), root.treasureDatabase(), root.npcDatabase(), root.monsterDatabase(), root.spawnTypeDatabase(), root.stagehandDatabase(), root.vehicleDatabase(), root.speciesDatabase(), root.entityFactory(), root.liquidsDatabase(), root.terrainDatabase(), root.biomeDatabase(), root.nameGenerator(), root.versioningDatabase(), root.functionDatabase(), root.effectSourceDatabase(), root.particleDatabase(), root.techDatabase(), root.statusEffectDatabase(), root.dungeonDefinitions(), root.behaviorDatabase(), luaRootServices, [&root]() {
+    root.reload();
+    root.fullyLoad();
+  });
+  m_client = make_shared<UniverseClient>(playerStorage, statistics, root.assets(), root.configuration(), root.materialDatabase(), root.itemDatabase(), root.objectDatabase(), root.speciesDatabase(), root.entityFactory(), root.liquidsDatabase(), root.terrainDatabase(), root.biomeDatabase(), root.nameGenerator(), root.functionDatabase(), root.behaviorDatabase(), root.particleDatabase(), root.damageDatabase(), root.projectileDatabase(), root.effectSourceDatabase(), root.techDatabase(), root.statusEffectDatabase(), root.plantDatabase(), root.treasureDatabase(), root.imageMetadataDatabase(), root.dungeonDefinitions(), luaRootServices);
 
   m_server->start();
 
@@ -98,4 +107,4 @@ List<Drawable> TestUniverse::currentClientDrawables() {
   return drawables;
 }
 
-}
+}// namespace Star

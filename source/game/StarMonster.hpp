@@ -1,50 +1,58 @@
 #pragma once
 
-#include "StarEntity.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarEntityRendering.hpp"
-#include "StarActorMovementController.hpp"
-#include "StarNetworkedAnimator.hpp"
-#include "StarEffectEmitter.hpp"
-#include "StarMonsterDatabase.hpp"
-#include "StarDamageBarEntity.hpp"
-#include "StarNametagEntity.hpp"
-#include "StarPortraitEntity.hpp"
-#include "StarAggressiveEntity.hpp"
-#include "StarScriptedEntity.hpp"
-#include "StarChattyEntity.hpp"
-#include "StarPhysicsEntity.hpp"
-#include "StarBehaviorState.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaAnimationComponent.hpp"
-#include "StarLuaActorMovementComponent.hpp"
 #include "StarActorEntity.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarAggressiveEntity.hpp"
 #include "StarAssets.hpp"
+#include "StarBehaviorState.hpp"
+#include "StarChattyEntity.hpp"
+#include "StarDamageBarEntity.hpp"
+#include "StarEffectEmitter.hpp"
+#include "StarEntity.hpp"
+#include "StarEntityRendering.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarMonsterDatabase.hpp"
+#include "StarNametagEntity.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarPhysicsEntity.hpp"
+#include "StarPortraitEntity.hpp"
+#include "StarScriptedEntity.hpp"
 
 namespace Star {
 
 class Monster;
 using MonsterPtr = SharedPtr<Monster>;
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 class StatusController;
 using StatusControllerPtr = SharedPtr<StatusController>;
 
 class Monster
-  : public virtual DamageBarEntity,
-    public virtual AggressiveEntity,
-    public virtual ScriptedEntity,
-    public virtual PhysicsEntity,
-    public virtual NametagEntity,
-    public virtual ChattyEntity,
-    public virtual InteractiveEntity,
-    public virtual ActorEntity {
+    : public virtual DamageBarEntity,
+      public virtual AggressiveEntity,
+      public virtual ScriptedEntity,
+      public virtual PhysicsEntity,
+      public virtual NametagEntity,
+      public virtual ChattyEntity,
+      public virtual InteractiveEntity,
+      public virtual ActorEntity {
 public:
   struct SkillInfo {
     String label;
     String image;
   };
 
-  Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, MonsterVariant const& variant, Maybe<float> level = {});
-  Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, Json const& diskStore);
+  Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, MonsterVariant const& variant, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Maybe<float> level = {});
+  Monster(AssetsConstPtr assets, MonsterDatabaseConstPtr monsterDatabase, Json const& diskStore, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});
@@ -160,6 +168,10 @@ private:
   NetElementData<EntityDamageTeam> m_teamNetState;
   MonsterVariant m_monsterVariant;
   MonsterDatabaseConstPtr m_monsterDatabase;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   Maybe<float> m_monsterLevel;
 
   NetworkedAnimator m_networkedAnimator;
@@ -216,4 +228,4 @@ private:
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 };
 
-}
+}// namespace Star

@@ -1,34 +1,35 @@
 #pragma once
 
+#include "StarAssets.hpp"
+#include "StarDurabilityItem.hpp"
+#include "StarItem.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarNetElementBasicFields.hpp"
 #include "StarNetElementFloatFields.hpp"
-#include "StarItem.hpp"
-#include "StarToolUserItem.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
 #include "StarNetworkedAnimator.hpp"
-#include "StarLuaAnimationComponent.hpp"
-#include "StarDurabilityItem.hpp"
-#include "StarAssets.hpp"
+#include "StarToolUserItem.hpp"
 
 namespace Star {
 
 class AudioInstance;
 using AudioInstancePtr = SharedPtr<AudioInstance>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
 class ActiveItem;
 
-class ActiveItem :
-  public Item,
-  public DurabilityItem,
-  public virtual ToolUserItem,
-  public virtual NetElementGroup {
+class ActiveItem : public Item,
+                   public DurabilityItem,
+                   public virtual ToolUserItem,
+                   public virtual NetElementGroup {
 public:
-  ActiveItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  ActiveItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
   ActiveItem(ActiveItem const& rhs);
 
   ItemPtr clone() const override;
 
-  void init(ToolUserEntity* owner, ToolHand hand) override;
+  void init(ToolUserEntity& owner, ToolHand hand) override;
   void uninit() override;
 
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
@@ -69,6 +70,7 @@ private:
   LuaCallbacks makeScriptedAnimationCallbacks();
 
   AssetsConstPtr m_assets;
+  ParticleDatabaseConstPtr m_particleDatabase;
 
   mutable LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaStorableComponent<LuaWorldComponent<LuaBaseComponent>>>>> m_script;
 
@@ -99,4 +101,4 @@ private:
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
 };
 
-}
+}// namespace Star

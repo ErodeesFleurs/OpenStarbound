@@ -647,7 +647,7 @@ void ActorMovementController::controlFly(Vec2F const& velocity) {
 
 Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position, bool, Maybe<PlatformerAStar::Parameters> const& parameters) {
   if (!m_pathController)
-    m_pathController = make_shared<PathController>(world());
+    m_pathController = make_shared<PathController>(*world());
 
   // set new parameters if they have changed
   if (m_pathController->targetPosition().isNothing() || (parameters && m_pathController->parameters() != *parameters)) {
@@ -1092,7 +1092,7 @@ void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorSt
 }
 
 
-PathController::PathController(World* world)
+PathController::PathController(World& world)
   : m_world(world), m_edgeTimer(0.0) { }
 
 PlatformerAStar::Parameters const& PathController::parameters() {
@@ -1136,13 +1136,13 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
   using namespace PlatformerAStar;
 
   // reached the end of the last path and we have a new target position to move toward
-  if (m_path && m_edgeIndex == m_path->size() && m_world->geometry().diff(*m_targetPosition, targetPosition).magnitude() > 0.001) {
+  if (m_path && m_edgeIndex == m_path->size() && m_world.geometry().diff(*m_targetPosition, targetPosition).magnitude() > 0.001) {
     reset();
     m_targetPosition = targetPosition;
   }
 
   // starting a new path, or the target position moved by more than 2 blocks
-  if (!m_targetPosition || (!m_path && !m_pathFinder) || m_world->geometry().diff(*m_targetPosition, targetPosition).magnitude() > 2.0) {
+  if (!m_targetPosition || (!m_path && !m_pathFinder) || m_world.geometry().diff(*m_targetPosition, targetPosition).magnitude() > 2.0) {
     auto grounded = movementController.onGround();
     if (m_path) {
       // if already moving on a path, collision will be disabled and we can't use MovementController::onGround() to check for ground collision
@@ -1265,7 +1265,7 @@ Maybe<bool> PathController::move(ActorMovementController& movementController, Ac
 
   while (m_edgeIndex < m_path->size()) {
     auto& edge = m_path->at(m_edgeIndex);
-    Vec2F delta =  m_world->geometry().diff(edge.target.position, edge.source.position);
+    Vec2F delta =  m_world.geometry().diff(edge.target.position, edge.source.position);
 
     Vec2F sourceVelocity;
     Vec2F targetVelocity;
@@ -1368,14 +1368,14 @@ bool PathController::validateEdge(ActorMovementController& movementController, P
   auto const solidCollision = CollisionSet{ CollisionKind::Null, CollisionKind::Block, CollisionKind::Slippery };
 
   auto const openDoors = [&](RectF const& bounds) {
-  auto objects = m_world->entityQuery(bounds, entityTypeFilter<Object>());
+  auto objects = m_world.entityQuery(bounds, entityTypeFilter<Object>());
   auto opened = objects.filtered([&](EntityPtr const& e) -> bool {
       if (auto object = as<Object>(e)) {
         if (object->isMaster()) {
-          auto arg = m_world->luaRoot()->luaEngine().createString("closedDoor");
+          auto arg = m_world.luaRoot()->luaEngine().createString("closedDoor");
           auto res = object->callScript("hasCapability", LuaVariadic<LuaValue>{arg});
           if (res && res->is<LuaBoolean>() && res->get<LuaBoolean>()){
-            m_world->sendEntityMessage(e->entityId(), "openDoor");
+            m_world.sendEntityMessage(e->entityId(), "openDoor");
             return true;
           }
         }
@@ -1387,12 +1387,12 @@ bool PathController::validateEdge(ActorMovementController& movementController, P
 
   auto poly = movementController.collisionPoly();
   poly.translate(edge.target.position);
-  if (m_world->polyCollision(poly) || movingCollision(movementController, poly)) {
+  if (m_world.polyCollision(poly) || movingCollision(movementController, poly)) {
     auto bounds = RectI::integral(poly.boundBox());
     // for (auto line : bounds.edges()) {
     //   SpatialLogger::logLine("world", Line2F(line), Color::Magenta.toRgba());
     // }
-    if (m_world->rectTileCollision(bounds) && !m_world->rectTileCollision(bounds, solidCollision)) {
+    if (m_world.rectTileCollision(bounds) && !m_world.rectTileCollision(bounds, solidCollision)) {
       if (!openDoors(poly.boundBox())) {
         // SpatialLogger::logPoly("world", poly, Color::Yellow.toRgba());
         return false;
@@ -1406,7 +1406,7 @@ bool PathController::validateEdge(ActorMovementController& movementController, P
 
   auto inLiquid = [&](Vec2F const& position) -> bool {
     auto bounds = movementController.localBoundBox().translated(position);
-    auto liquidLevel = m_world->liquidLevel(bounds);
+    auto liquidLevel = m_world.liquidLevel(bounds);
     if (liquidLevel.level >= movementController.baseParameters().minimumLiquidPercentage.value(1.0)) {
       // for (auto line : bounds.edges()) {
       //   SpatialLogger::logLine("world", line, Color::Blue.toRgba());
@@ -1452,9 +1452,9 @@ bool PathController::onGround(ActorMovementController const& movementController,
     Vec2I min = Vec2I(bounds.xMin(), bounds.yMin() - 1);
     Vec2I max = Vec2I(bounds.xMax(), bounds.yMin());
     // for (auto line : RectF(Vec2F(min), Vec2F(max)).edges()) {
-    //   SpatialLogger::logLine("world", line, m_world->rectTileCollision(RectI(min, max), collisionSet) ? Color::Blue.toRgba() : Color::Red.toRgba());
+    //   SpatialLogger::logLine("world", line, m_world.rectTileCollision(RectI(min, max), collisionSet) ? Color::Blue.toRgba() : Color::Red.toRgba());
     // }
-    return m_world->rectTileCollision(RectI(min, max), collisionSet);
+    return m_world.rectTileCollision(RectI(min, max), collisionSet);
 }
 
 }

@@ -26,7 +26,7 @@ using WidgetCallbackFunc = function<void(Widget*)>;
 
 class Widget {
 public:
-  Widget();
+  explicit Widget(GuiContext& context);
   virtual ~Widget();
 
   Widget(Widget const& copy) = delete;
@@ -35,7 +35,8 @@ public:
   virtual void render(RectI const& region) final;
   virtual void update(float dt);
 
-  GuiContext* context() const;
+  GuiContext& context() const;
+  void setContext(GuiContext& context);
 
   // Position of widget with drawing offset (useful for drawing)
   virtual Vec2I position() const;
@@ -141,8 +142,6 @@ protected:
 
   Widget* m_parent;
 
-  GuiContext* m_context;
-
   bool m_visible;
   PolyF m_boundPoly;
 
@@ -160,6 +159,9 @@ protected:
   bool m_mouseTransparent;
 
   Json m_data;
+
+private:
+  GuiContext* m_context;
 };
 
 std::ostream& operator<<(std::ostream& os, Widget const& widget);

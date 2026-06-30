@@ -32,7 +32,7 @@ using BackArmorPtr = SharedPtr<BackArmor>;
 
 class ArmorItem : public Item, public EffectSourceItem, public SwingableItem {
 public:
-  ArmorItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
+  ArmorItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~ArmorItem() = default;
 
   virtual List<PersistentStatusEffect> statusEffects() const override;
@@ -87,7 +87,7 @@ private:
 
 class HeadArmor : public ArmorItem, public PreviewableItem {
 public:
-  HeadArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
+  HeadArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~HeadArmor() = default;
 
   virtual ItemPtr clone() const override;
@@ -107,7 +107,7 @@ private:
 
 class ChestArmor : public ArmorItem, public PreviewableItem {
 public:
-  ChestArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
+  ChestArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~ChestArmor() = default;
 
   virtual ItemPtr clone() const override;
@@ -136,7 +136,7 @@ private:
 
 class LegsArmor : public ArmorItem, public PreviewableItem {
 public:
-  LegsArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
+  LegsArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~LegsArmor() = default;
 
   virtual ItemPtr clone() const override;
@@ -155,7 +155,7 @@ private:
 
 class BackArmor : public ArmorItem, public PreviewableItem {
 public:
-  BackArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
+  BackArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase);
   virtual ~BackArmor() = default;
 
   virtual ItemPtr clone() const override;

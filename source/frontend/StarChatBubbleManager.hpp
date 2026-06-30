@@ -24,6 +24,7 @@ struct ChatBubbleManagerServices {
   ConfigurationPtr configuration;
   FunctionDatabaseConstPtr functionDatabase;
   ImageMetadataDatabaseConstPtr imageMetadata;
+  GuiContext& guiContext;
 };
 
 class ChatBubbleManager {
@@ -71,11 +72,11 @@ private:
   void drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha);
   void drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait);
 
-  GuiContext* m_guiContext;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
   FunctionDatabaseConstPtr m_functionDatabase;
   ImageMetadataDatabaseConstPtr m_imageMetadata;
+  GuiContext& m_guiContext;
 
   WorldCamera m_camera;
 

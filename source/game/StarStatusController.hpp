@@ -1,26 +1,35 @@
 #pragma once
 
-#include "StarObserverStream.hpp"
-#include "StarNetElementSystem.hpp"
+#include "StarDamage.hpp"
+#include "StarEntityRenderingTypes.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarNetElementExt.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarObserverStream.hpp"
 #include "StarStatCollection.hpp"
 #include "StarStatusEffectDatabase.hpp"
-#include "StarDamage.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarNetworkedAnimator.hpp"
-#include "StarEntityRenderingTypes.hpp"
 
 namespace Star {
+
+class LiquidsDatabase;
+using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
+class Assets;
+using AssetsConstPtr = SharedPtr<Assets const>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 
 class StatusController;
 using StatusControllerPtr = SharedPtr<StatusController>;
 
 class StatusController : public NetElement {
 public:
-  StatusController(Json const& config);
+  StatusController(Json const& config, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  StatusController(Entity* parentEntity, ActorMovementController* movementController);
+  StatusController(Entity& parentEntity, ActorMovementController& movementController, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   Json diskStore() const;
   void diskLoad(Json const& store);
@@ -102,7 +111,7 @@ public:
   pair<List<pair<EntityId, DamageRequest>>, uint64_t> inflictedHitsSince(uint64_t since = 0) const;
   pair<List<DamageNotification>, uint64_t> inflictedDamageSince(uint64_t since = 0) const;
 
-  void init(Entity* parentEntity, ActorMovementController* movementController);
+  void init(Entity& parentEntity, ActorMovementController& movementController);
   void uninit();
 
   void initNetVersion(NetElementVersion const* version = nullptr) override;
@@ -137,7 +146,7 @@ private:
   using StatScript = LuaMessageHandlingComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>;
 
   struct EffectAnimator : public NetElement {
-    EffectAnimator(Maybe<String> animationConfig = {});
+    EffectAnimator(Maybe<String> animationConfig = {}, AssetsConstPtr assets = {}, ParticleDatabaseConstPtr particleDatabase = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {});
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -153,6 +162,9 @@ private:
     void blankNetDelta(float interpolationTime) override;
 
     Maybe<String> animationConfig;
+    AssetsConstPtr assets;
+    ParticleDatabaseConstPtr particleDatabase;
+    ImageMetadataDatabaseConstPtr imageMetadataDatabase;
     NetworkedAnimator animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
   };
@@ -218,6 +230,11 @@ private:
 
   Entity* m_parentEntity;
   ActorMovementController* m_movementController;
+  AssetsConstPtr m_assets;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
 
   // Members below are only valid on the master entity
 
@@ -242,4 +259,4 @@ private:
   ObserverStream<DamageNotification> m_recentDamageTaken;
 };
 
-}
+}// namespace Star

@@ -24,15 +24,22 @@ class BindingsMenu;
 using BindingsMenuPtr = SharedPtr<BindingsMenu>;
 class OptionsMenu;
 using OptionsMenuPtr = SharedPtr<OptionsMenu>;
+class Input;
+class Voice;
+class GuiContext;
 
 struct OptionsMenuServices {
   AssetsConstPtr assets;
   ConfigurationPtr configuration;
+  LuaRootServices luaRootServices;
+  Voice& voice;
+  Input& input;
+  GuiContext& guiContext;
 };
 
 class OptionsMenu : public Pane {
 public:
-  OptionsMenu(PaneManager* manager, UniverseClientPtr client, OptionsMenuServices services);
+  OptionsMenu(PaneManager& manager, UniverseClientPtr client, OptionsMenuServices services);
 
   virtual void show() override;
 
@@ -85,9 +92,12 @@ private:
   BindingsMenuPtr m_modBindingsMenu;
   KeybindingsMenuPtr m_keybindingsMenu;
   GraphicsMenuPtr m_graphicsMenu;
-  PaneManager* m_paneManager;
+  PaneManager& m_paneManager;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
+  LuaRootServices m_luaRootServices;
+  Voice& m_voice;
+  Input& m_input;
 };
 
 }

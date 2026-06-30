@@ -24,7 +24,7 @@ using PlayerLogPtr = SharedPtr<PlayerLog>;
 
 class PlayerNarrativeQueue {
 public:
-  PlayerNarrativeQueue(Player* player, RadioMessageDatabaseConstPtr radioMessageDatabase, ConfigurationPtr configuration, AiDatabaseConstPtr aiDatabase);
+  PlayerNarrativeQueue(Player& player, RadioMessageDatabaseConstPtr radioMessageDatabase, ConfigurationPtr configuration, AiDatabaseConstPtr aiDatabase);
 
   void init(List<PersistentStatusEffect> inCinematicStatusEffects);
 
@@ -49,7 +49,7 @@ public:
   void queueConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> const& resultPromise);
 
 private:
-  Player* m_player;
+  Player& m_player;
   RadioMessageDatabaseConstPtr m_radioMessageDatabase;
   ConfigurationPtr m_configuration;
   AiDatabaseConstPtr m_aiDatabase;

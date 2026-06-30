@@ -5,8 +5,9 @@
 
 namespace Star {
 
-FuelWidget::FuelWidget() {
-  auto const& assets = GuiContext::singleton().assets();
+FuelWidget::FuelWidget(GuiContext& context) : Widget(context) {
+  auto& guiContext = this->context();
+  auto const& assets = guiContext.assets();
 
   m_textStyle.fontSize = assets->json("/interface.config:font.buttonSize").toInt();
   m_textStyle.loadJson(assets->json("/interface.config:textStyle"));
@@ -26,9 +27,9 @@ void FuelWidget::update(float dt) {
 }
 
 void FuelWidget::renderImpl() {
-  context()->resetInterfaceScissorRect();
+  context().resetInterfaceScissorRect();
 
-  Vec2F textureSize = Vec2F(context()->textureSize("/interface/fuel/fuelgauge.png"));
+  Vec2F textureSize = Vec2F(context().textureSize("/interface/fuel/fuelgauge.png"));
   RectF entireTex = RectF::withSize({}, textureSize);
   RectF entirePosition = RectF::withSize(Vec2F(screenPosition()), textureSize);
   Vec2F textPosition = entirePosition.center();
@@ -55,35 +56,35 @@ void FuelWidget::renderImpl() {
   };
 
   if (std::fmod(m_pingTimeout, 0.2f) > 0.1f)
-    context()->drawInterfaceQuad("/interface/fuel/fuelgaugebackgroundflash.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
+    context().drawInterfaceQuad("/interface/fuel/fuelgaugebackgroundflash.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
   else
-    context()->drawInterfaceQuad("/interface/fuel/fuelgaugebackground.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
+    context().drawInterfaceQuad("/interface/fuel/fuelgaugebackground.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
 
-  context()->drawInterfaceQuad("/interface/fuel/fuelgaugegreen.png",
+  context().drawInterfaceQuad("/interface/fuel/fuelgaugegreen.png",
       shift(fuel, fuelPotential, entireTex),
       shift(fuel, fuelPotential, entirePosition));
 
-  context()->drawInterfaceQuad("/interface/fuel/fuelgaugered.png",
+  context().drawInterfaceQuad("/interface/fuel/fuelgaugered.png",
       shift(fuel, fuelRequested, entireTex),
       shift(fuel, fuelRequested, entirePosition));
 
-  context()->drawInterfaceQuad("/interface/fuel/fuelgauge.png", shift(0, fuel, entireTex), shift(0, fuel, entirePosition));
-  context()->drawInterfaceQuad("/interface/fuel/fuelgaugemarkings.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
+  context().drawInterfaceQuad("/interface/fuel/fuelgauge.png", shift(0, fuel, entireTex), shift(0, fuel, entirePosition));
+  context().drawInterfaceQuad("/interface/fuel/fuelgaugemarkings.png", shift(0, 1, entireTex), shift(0, 1, entirePosition));
 
-  auto* guiContext = context();
-  guiContext->setTextStyle(m_textStyle);
+  auto& guiContext = context();
+  guiContext.setTextStyle(m_textStyle);
   if (m_potential != 0) {
-    guiContext->setFontColor(Color::White.toRgba());
+    guiContext.setFontColor(Color::White.toRgba());
   } else if (m_fuelLevel == 0) {
     if ((m_requested != 0) && (m_requested == m_fuelLevel))
-      guiContext->setFontColor(Color::Orange.toRgba());
+      guiContext.setFontColor(Color::Orange.toRgba());
     else
-      guiContext->setFontColor(Color::Red.toRgba());
+      guiContext.setFontColor(Color::Red.toRgba());
   } else {
-    guiContext->setFontColor(Color::White.toRgba());
+    guiContext.setFontColor(Color::White.toRgba());
   }
 
-  guiContext->renderInterfaceText(strf("Fuel {}/{}", std::min(m_fuelLevel + m_potential, m_maxLevel), static_cast<int>(m_maxLevel)),
+  guiContext.renderInterfaceText(strf("Fuel {}/{}", std::min(m_fuelLevel + m_potential, m_maxLevel), static_cast<int>(m_maxLevel)),
       {textPosition, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor});
 }
 

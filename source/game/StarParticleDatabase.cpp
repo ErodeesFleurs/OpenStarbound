@@ -4,10 +4,10 @@
 
 namespace Star {
 
-ParticleConfig::ParticleConfig(Json const& config, AssetsConstPtr assets) {
+ParticleConfig::ParticleConfig(Json const& config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
   m_kind = config.getString("kind");
-  m_particle = Particle(config.queryObject("definition"), "/", assets);
-  m_variance = Particle(config.queryObject("definition.variance", {}), "/", std::move(assets));
+  m_particle = Particle(config.queryObject("definition"), "/", assets, imageMetadataDatabase);
+  m_variance = Particle(config.queryObject("definition.variance", {}), "/", std::move(assets), std::move(imageMetadataDatabase));
 }
 
 String const& ParticleConfig::kind() {
@@ -20,14 +20,17 @@ Particle ParticleConfig::instance() {
   return particle;
 }
 
-ParticleDatabase::ParticleDatabase(AssetsConstPtr assets) {
+ParticleDatabase::ParticleDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
   if (!assets)
     throw StarException("ParticleDatabase requires assets service");
+  if (!imageMetadataDatabase)
+    throw StarException("ParticleDatabase requires image metadata database service");
   m_assets = std::move(assets);
+  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
   auto& files = m_assets->scanExtension("particle");
   m_assets->queueJsons(files);
   for (auto& file : files) {
-    auto particleConfig = make_shared<ParticleConfig>(m_assets->json(file), m_assets);
+    auto particleConfig = make_shared<ParticleConfig>(m_assets->json(file), m_assets, m_imageMetadataDatabase);
     if (m_configs.contains(particleConfig->kind()))
       throw StarException(strf("Duplicate particle asset kind Name {}. configfile {}", particleConfig->kind(), file));
     m_configs[particleConfig->kind()] = particleConfig;
@@ -46,8 +49,8 @@ ParticleVariantCreator ParticleDatabase::particleCreator(Json const& kindOrConfi
     auto pconfig = config(kindOrConfig.toString());
     return [pconfig]() { return pconfig->instance(); };
   } else {
-    Particle particle(kindOrConfig.toObject(), relativePath, m_assets);
-    Particle variance(kindOrConfig.getObject("variance", {}), relativePath, m_assets);
+    Particle particle(kindOrConfig.toObject(), relativePath, m_assets, m_imageMetadataDatabase);
+    Particle variance(kindOrConfig.getObject("variance", {}), relativePath, m_assets, m_imageMetadataDatabase);
     return makeParticleVariantCreator(std::move(particle), std::move(variance));
   }
 }

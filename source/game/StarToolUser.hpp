@@ -27,12 +27,12 @@ class ToolUser : public NetElementSyncGroup {
 public:
   ToolUser(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
-  ToolUser(AssetsConstPtr assets, ToolUserEntity* user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  ToolUser(AssetsConstPtr assets, ToolUserEntity& user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
 
   Json diskStore() const;
   void diskLoad(Json const& diskStore);
 
-  void init(ToolUserEntity* user);
+  void init(ToolUserEntity& user);
   void uninit();
 
   ItemPtr primaryHandItem() const;

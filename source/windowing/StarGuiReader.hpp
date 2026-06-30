@@ -11,7 +11,7 @@ using GuiReaderPtr = SharedPtr<GuiReader>;
 
 class GuiReader : public WidgetParser {
 public:
-  GuiReader();
+  explicit GuiReader(GuiContext& context);
 
 protected:
   WidgetConstructResult titleHandler(String const&, Json const& config);

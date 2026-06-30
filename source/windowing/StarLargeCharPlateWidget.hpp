@@ -14,7 +14,7 @@ class LargeCharPlateWidget;
 using LargeCharPlateWidgetPtr = SharedPtr<LargeCharPlateWidget>;
 class LargeCharPlateWidget : public ButtonWidget {
 public:
-  LargeCharPlateWidget(WidgetCallbackFunc mainCallback, PlayerPtr player = PlayerPtr());
+  LargeCharPlateWidget(GuiContext& context, WidgetCallbackFunc mainCallback, PlayerPtr player = PlayerPtr());
 
   void mouseOut() override;
 

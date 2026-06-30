@@ -23,7 +23,7 @@ public:
     Maybe<EntityId> entityId = {};
   };
 
-  InspectionTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
+  InspectionTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   ItemPtr clone() const override;
 

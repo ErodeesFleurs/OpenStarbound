@@ -16,8 +16,7 @@ class WorldServerCollision {
 public:
   friend class WorldServer;
 
-  WorldServerCollision() = default;
-  explicit WorldServerCollision(WorldServer* worldServer);
+  explicit WorldServerCollision(WorldServer& worldServer);
 
   bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const;
   bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const;
@@ -32,7 +31,7 @@ public:
   void freshenCollision(RectI const& region);
 
 private:
-  WorldServer* m_worldServer = nullptr;
+  WorldServer& m_worldServer;
 
   CollisionGenerator m_collisionGenerator;
   HashMap<Vec2I, StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace>> m_collisionCache;

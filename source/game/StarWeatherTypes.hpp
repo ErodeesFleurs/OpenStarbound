@@ -6,6 +6,9 @@
 
 namespace Star {
 
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
+
 struct WeatherType {
   struct ParticleConfig {
     Particle particle;
@@ -24,7 +27,7 @@ struct WeatherType {
   };
 
   WeatherType();
-  WeatherType(AssetsConstPtr assets, Json config, String path = String());
+  WeatherType(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String path = String());
 
   Json toJson() const;
 

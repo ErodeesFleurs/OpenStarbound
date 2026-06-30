@@ -1,17 +1,31 @@
 #include "StarMonsterDatabase.hpp"
-#include "StarMonster.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRandom.hpp"
 #include "StarLexicalCast.hpp"
+#include "StarMonster.hpp"
+#include "StarRandom.hpp"
+#include "StarRebuilder.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRebuilder.hpp"
 
 namespace Star {
 
-MonsterDatabase::MonsterDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)), m_rebuilder(make_shared<Rebuilder>(m_assets, "monster")) {
+MonsterDatabase::MonsterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices)
+    : m_assets(std::move(assets)),
+      m_liquidsDatabase(std::move(liquidsDatabase)),
+      m_statusEffectDatabase(std::move(statusEffectDatabase)),
+      m_particleDatabase(std::move(particleDatabase)),
+      m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+      m_rebuilder(make_shared<Rebuilder>(m_assets, "monster", std::move(luaRootServices))) {
   if (!m_assets)
     throw MonsterException("MonsterDatabase requires assets service");
+  if (!m_liquidsDatabase)
+    throw MonsterException("MonsterDatabase requires liquids database service");
+  if (!m_statusEffectDatabase)
+    throw MonsterException("MonsterDatabase requires status effect database service");
+  if (!m_particleDatabase)
+    throw MonsterException("MonsterDatabase requires particle database service");
+  if (!m_imageMetadataDatabase)
+    throw MonsterException("MonsterDatabase requires image metadata database service");
 
   auto& monsterTypes = m_assets->scanExtension("monstertype");
   auto& monsterParts = m_assets->scanExtension("monsterpart");
@@ -168,8 +182,8 @@ MonsterVariant MonsterDatabase::randomMonster(String const& typeName, Json const
 MonsterVariant MonsterDatabase::monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters) const {
   MutexLocker locker(m_cacheMutex);
   return m_monsterCache.get(make_tuple(typeName, seed, uniqueParameters), [this](tuple<String, uint64_t, Json> const& key) {
-      return produceMonster(get<0>(key), get<1>(key), get<2>(key));
-    });
+    return produceMonster(get<0>(key), get<1>(key), get<2>(key));
+  });
 }
 
 ByteArray MonsterDatabase::writeMonsterVariant(MonsterVariant const& variant, NetCompatibilityRules rules) const {
@@ -196,9 +210,9 @@ MonsterVariant MonsterDatabase::readMonsterVariant(ByteArray const& data, NetCom
 
 Json MonsterDatabase::writeMonsterVariantToJson(MonsterVariant const& mVar) const {
   return JsonObject{
-      {"type", mVar.type},
-      {"seed", mVar.seed},
-      {"uniqueParameters", mVar.uniqueParameters},
+    {"type", mVar.type},
+    {"seed", mVar.seed},
+    {"uniqueParameters", mVar.uniqueParameters},
   };
 }
 
@@ -207,25 +221,25 @@ MonsterVariant MonsterDatabase::readMonsterVariantFromJson(Json const& variant) 
 }
 
 MonsterPtr MonsterDatabase::createMonster(
-    MonsterVariant monsterVariant, Maybe<float> level, Json uniqueParameters) const {
+  MonsterVariant monsterVariant, Maybe<float> level, Json uniqueParameters) const {
   if (uniqueParameters) {
     monsterVariant.uniqueParameters = jsonMerge(monsterVariant.uniqueParameters, uniqueParameters);
     monsterVariant.parameters = jsonMerge(monsterVariant.parameters, monsterVariant.uniqueParameters);
     readCommonParameters(monsterVariant);
   }
-  return make_shared<Monster>(m_assets, MonsterDatabaseConstPtr(shared_from_this()), monsterVariant, level);
+  return make_shared<Monster>(m_assets, MonsterDatabaseConstPtr(shared_from_this()), monsterVariant, m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase, level);
 }
 
 MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
   MonsterPtr monster;
   try {
-    monster = make_shared<Monster>(m_assets, MonsterDatabaseConstPtr(shared_from_this()), diskStore);
+    monster = make_shared<Monster>(m_assets, MonsterDatabaseConstPtr(shared_from_this()), diskStore, m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     auto self = MonsterDatabaseConstPtr(shared_from_this());
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&, self](Json const& store) -> String {
       try {
-        monster = make_shared<Monster>(m_assets, self, store);
+        monster = make_shared<Monster>(m_assets, self, store, m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -240,11 +254,11 @@ MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
 }
 
 MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Monster>(m_assets, MonsterDatabaseConstPtr(shared_from_this()), readMonsterVariant(netStore, rules));
+  return make_shared<Monster>(m_assets, MonsterDatabaseConstPtr(shared_from_this()), readMonsterVariant(netStore, rules), m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase);
 }
 
 List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) const {
-  NetworkedAnimator animator(variant.animatorConfig);
+  NetworkedAnimator animator(variant.animatorConfig, String(), m_assets, m_imageMetadataDatabase, m_particleDatabase);
   for (auto const& pair : variant.animatorPartTags)
     animator.setPartTag(pair.first, "partImage", pair.second);
   animator.setZoom(variant.animatorZoom);
@@ -400,12 +414,12 @@ void MonsterDatabase::readCommonParameters(MonsterVariant& variant) {
   variant.nametagColor = jsonToVec3B(variant.parameters.get("nametagColor", JsonArray{255, 255, 255}));
 
   variant.colorSwap = variant.parameters.optObject("colorSwap").apply([](JsonObject const& json) -> ColorReplaceMap {
-      ColorReplaceMap swaps;
-      for (auto pair : json) {
-        swaps.insert(Color::fromHex(pair.first).toRgba(), Color::fromHex(pair.second.toString()).toRgba());
-      }
-      return swaps;
-    });
+    ColorReplaceMap swaps;
+    for (auto pair : json) {
+      swaps.insert(Color::fromHex(pair.first).toRgba(), Color::fromHex(pair.second.toString()).toRgba());
+    }
+    return swaps;
+  });
 }
 
 MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t seed, Json const& uniqueParameters) const {
@@ -467,7 +481,7 @@ MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t 
 }
 
 pair<Json, Json> MonsterDatabase::chooseSkills(
-    Json const& parameters, Json const& animatorConfig, RandomSource& rand) const {
+  Json const& parameters, Json const& animatorConfig, RandomSource& rand) const {
   // Pick a subset of skills, then merge in any params from those skills
   if (parameters.contains("baseSkills") || parameters.contains("specialSkills")) {
     auto skillCount = parameters.getUInt("skillCount", 2);
@@ -539,7 +553,6 @@ Json MonsterDatabase::MonsterType::toJson() const {
     {"dropPools", dropPools},
     {"baseParameters", baseParameters},
     {"partParameters", partParameterOverrides},
-    {"partParameterDescription", partParameterDescription}
-  };
+    {"partParameterDescription", partParameterDescription}};
 }
-}
+}// namespace Star

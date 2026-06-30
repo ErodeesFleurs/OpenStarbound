@@ -1,6 +1,6 @@
 #include "StarAssets.hpp"
 #include "StarCelestialDatabase.hpp"
-#include "StarRoot.hpp"
+#include "StarTestRoot.hpp"
 
 #include "StarTestUniverse.hpp"
 #include "gtest/gtest.h"
@@ -14,7 +14,7 @@ void validateWorld(TestUniverse& testUniverse) {
   // include more than this.
   EXPECT_GE(testUniverse.currentClientDrawables().size(), 1u) << strf("world: {}", testUniverse.currentPlayerWorld());
 
-  auto assets = Root::singleton().assets();
+  auto assets = testRoot().assets();
   for (auto const& drawable : testUniverse.currentClientDrawables()) {
     if (drawable.isImage())
       assets->image(drawable.imagePart().image);
@@ -22,10 +22,11 @@ void validateWorld(TestUniverse& testUniverse) {
 }
 
 TEST(SpawnTest, RandomCelestialWorld) {
-  CelestialMasterDatabase celestialDatabase(Root::singleton().assets());
+  auto& root = testRoot();
+  CelestialMasterDatabase celestialDatabase(root.assets(), root.liquidsDatabase(), root.biomeDatabase());
   Maybe<CelestialCoordinate> celestialWorld = celestialDatabase.findRandomWorld(10, 50, [&](CelestialCoordinate const& coord) {
-      return celestialDatabase.parameters(coord)->isVisitable();
-    });
+    return celestialDatabase.parameters(coord)->isVisitable();
+  });
   ASSERT_TRUE(static_cast<bool>(celestialWorld));
 
   TestUniverse testUniverse(Vec2U(100, 100));
@@ -36,7 +37,7 @@ TEST(SpawnTest, RandomCelestialWorld) {
 }
 
 TEST(SpawnTest, RandomInstanceWorld) {
-  auto& root = Root::singleton();
+  auto& root = testRoot();
   StringList instanceWorlds = root.assets()->json("/instance_worlds.config").toObject().keys();
   ASSERT_GT(instanceWorlds.size(), 0u);
   WorldId instanceWorld = InstanceWorldId(instanceWorlds.contains("outpost") ? "outpost" : instanceWorlds.first());

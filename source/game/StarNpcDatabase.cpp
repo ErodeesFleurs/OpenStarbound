@@ -1,37 +1,47 @@
 #include "StarNpcDatabase.hpp"
-#include "StarEncode.hpp"
-#include "StarRandom.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarNpc.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
-#include "StarNameGenerator.hpp"
-#include "StarStoredFunctions.hpp"
-#include "StarEncode.hpp"
 #include "StarArmors.hpp"
-#include "StarRootLuaBindings.hpp"
-#include "StarUtilityLuaBindings.hpp"
+#include "StarEncode.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarNameGenerator.hpp"
+#include "StarNpc.hpp"
+#include "StarRandom.hpp"
 #include "StarRebuilder.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarStoredFunctions.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
 NpcDatabase::NpcDatabase(AssetsConstPtr assets,
-    ItemDatabaseConstPtr itemDatabase,
-    ObjectDatabaseConstPtr objectDatabase,
-    SpeciesDatabaseConstPtr speciesDatabase,
-    PatternedNameGeneratorConstPtr nameGenerator,
-    FunctionDatabaseConstPtr functionDatabase,
-    DanceDatabaseConstPtr danceDatabase,
-    EmoteProcessorConstPtr emoteProcessor)
-  : m_rebuilder(make_shared<Rebuilder>(assets, "npc")),
-    m_assets(std::move(assets)),
-    m_itemDatabase(std::move(itemDatabase)),
-    m_objectDatabase(std::move(objectDatabase)),
-    m_speciesDatabase(std::move(speciesDatabase)),
-    m_nameGenerator(std::move(nameGenerator)),
-    m_functionDatabase(std::move(functionDatabase)),
-    m_danceDatabase(std::move(danceDatabase)),
-    m_emoteProcessor(std::move(emoteProcessor)) {
+                         ItemDatabaseConstPtr itemDatabase,
+                         ObjectDatabaseConstPtr objectDatabase,
+                         SpeciesDatabaseConstPtr speciesDatabase,
+                         PatternedNameGeneratorConstPtr nameGenerator,
+                         FunctionDatabaseConstPtr functionDatabase,
+                         DanceDatabaseConstPtr danceDatabase,
+                         EmoteProcessorConstPtr emoteProcessor,
+                         VersioningDatabaseConstPtr versioningDatabase,
+                         LiquidsDatabaseConstPtr liquidsDatabase,
+                         StatusEffectDatabaseConstPtr statusEffectDatabase,
+                         ParticleDatabaseConstPtr particleDatabase,
+                         ImageMetadataDatabaseConstPtr imageMetadataDatabase,
+                         LuaRootServices luaRootServices)
+    : m_rebuilder(make_shared<Rebuilder>(assets, "npc", std::move(luaRootServices))),
+      m_assets(std::move(assets)),
+      m_itemDatabase(std::move(itemDatabase)),
+      m_objectDatabase(std::move(objectDatabase)),
+      m_speciesDatabase(std::move(speciesDatabase)),
+      m_nameGenerator(std::move(nameGenerator)),
+      m_functionDatabase(std::move(functionDatabase)),
+      m_danceDatabase(std::move(danceDatabase)),
+      m_emoteProcessor(std::move(emoteProcessor)),
+      m_versioningDatabase(std::move(versioningDatabase)),
+      m_liquidsDatabase(std::move(liquidsDatabase)),
+      m_statusEffectDatabase(std::move(statusEffectDatabase)),
+      m_particleDatabase(std::move(particleDatabase)),
+      m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
   if (!m_assets)
     throw NpcException("NpcDatabase requires assets service");
   if (!m_itemDatabase)
@@ -44,6 +54,16 @@ NpcDatabase::NpcDatabase(AssetsConstPtr assets,
     throw NpcException("NpcDatabase requires name generator service");
   if (!m_functionDatabase)
     throw NpcException("NpcDatabase requires function database service");
+  if (!m_versioningDatabase)
+    throw NpcException("NpcDatabase requires versioning database service");
+  if (!m_liquidsDatabase)
+    throw NpcException("NpcDatabase requires liquids database service");
+  if (!m_statusEffectDatabase)
+    throw NpcException("NpcDatabase requires status effect database service");
+  if (!m_particleDatabase)
+    throw NpcException("NpcDatabase requires particle database service");
+  if (!m_imageMetadataDatabase)
+    throw NpcException("NpcDatabase requires image metadata database service");
 
   auto& files = m_assets->scanExtension("npctype");
   m_assets->queueJsons(files);
@@ -68,7 +88,7 @@ NpcVariant NpcDatabase::generateNpcVariant(String const& species, String const& 
 }
 
 NpcVariant NpcDatabase::generateNpcVariant(
-    String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const {
+  String const& species, String const& typeName, float level, uint64_t seed, Json const& overrides) const {
   NpcVariant variant;
   variant.species = species;
   variant.typeName = typeName;
@@ -107,7 +127,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
     identity = HumanoidIdentity(jsonMerge(identity.toJson(), config.get("identity")));
 
   variant.uniqueHumanoidConfig = config.contains("humanoidConfig");
-  if (variant.uniqueHumanoidConfig){
+  if (variant.uniqueHumanoidConfig) {
     variant.humanoidConfig = m_assets->json(config.getString("humanoidConfig"));
     auto usedHumanoidConfig = m_speciesDatabase->humanoidConfig(identity, variant.humanoidParameters, variant.humanoidConfig);
     // this only needs to be done if the npc has a unique humanoid config, otherwise the output from generateHumanoid should be fine
@@ -207,7 +227,7 @@ ByteArray NpcDatabase::writeNpcVariant(NpcVariant const& variant, NetCompatibili
 
   ds.write(variant.initialScriptDelta);
   ds.write(variant.humanoidIdentity);
-  if (rules.version() >= 11 ) {
+  if (rules.version() >= 11) {
     ds.write(variant.humanoidParameters);
     ds.write(variant.description);
   }
@@ -236,13 +256,12 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 
   auto config = buildConfig(variant.typeName, variant.overrides);
 
-
   variant.scripts = jsonToStringList(config.get("scripts"));
   variant.scriptConfig = config.get("scriptConfig");
 
   ds.read(variant.initialScriptDelta);
   ds.read(variant.humanoidIdentity);
-  if (rules.version() >= 11){
+  if (rules.version() >= 11) {
     ds.read(variant.humanoidParameters);
     ds.read(variant.description);
   } else {
@@ -261,13 +280,13 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
   variant.statusControllerSettings = config.get("statusControllerSettings");
 
   float powerMultiplierModifier =
-      m_functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
+    m_functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
   float protectionMultiplier = m_functionDatabase->function("npcLevelProtectionMultiplier")->evaluate(variant.level);
   float maxHealthMultiplier = m_functionDatabase->function("npcLevelHealthMultiplier")->evaluate(variant.level);
   float maxEnergyMultiplier = m_functionDatabase->function("npcLevelEnergyMultiplier")->evaluate(variant.level);
 
   variant.innateStatusEffects =
-      config.get("innateStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
+    config.get("innateStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
   variant.innateStatusEffects.append(StatModifier(StatValueModifier{"powerMultiplier", powerMultiplierModifier}));
   variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"protection", protectionMultiplier}));
   variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"maxHealth", maxHealthMultiplier}));
@@ -293,7 +312,7 @@ NpcVariant NpcDatabase::readNpcVariant(ByteArray const& data, NetCompatibilityRu
 }
 
 Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
-  JsonObject store {
+  JsonObject store{
     {"species", variant.species},
     {"typeName", variant.typeName},
     {"level", variant.level},
@@ -301,13 +320,14 @@ Json NpcDatabase::writeNpcVariantToJson(NpcVariant const& variant) const {
     {"overrides", variant.overrides},
     {"initialScriptDelta", variant.initialScriptDelta},
     {"humanoidIdentity", variant.humanoidIdentity.toJson()},
-    {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, mem_fn(&ItemDescriptor::diskStore))},
+    {"items", jsonFromMapV<StringMap<ItemDescriptor>>(variant.items, [this](ItemDescriptor const& item) {
+       return item.diskStore(m_versioningDatabase);
+     })},
     {"persistent", variant.persistent},
     {"keepAlive", variant.keepAlive},
     {"damageTeam", variant.damageTeam},
     {"damageTeamType", TeamTypeNames.getRight(variant.damageTeamType)},
-    {"humanoidParameters", variant.humanoidParameters}
-  };
+    {"humanoidParameters", variant.humanoidParameters}};
   if (variant.description.isValid())
     store.set("description", variant.description.value());
   return store;
@@ -340,18 +360,17 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
   else
     variant.humanoidConfig = speciesDefinition->humanoidConfig();
 
-
   variant.movementParameters = config.get("movementParameters", {});
   variant.statusControllerSettings = config.get("statusControllerSettings", {});
 
   float powerMultiplierModifier =
-      m_functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
+    m_functionDatabase->function("npcLevelPowerMultiplierModifier")->evaluate(variant.level);
   float protectionMultiplier = m_functionDatabase->function("npcLevelProtectionMultiplier")->evaluate(variant.level);
   float maxHealthMultiplier = m_functionDatabase->function("npcLevelHealthMultiplier")->evaluate(variant.level);
   float maxEnergyMultiplier = m_functionDatabase->function("npcLevelEnergyMultiplier")->evaluate(variant.level);
 
   variant.innateStatusEffects =
-      config.get("innateStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
+    config.get("innateStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
   variant.innateStatusEffects.append(StatModifier(StatValueModifier{"powerMultiplier", powerMultiplierModifier}));
   variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"protection", protectionMultiplier}));
   variant.innateStatusEffects.append(StatModifier(StatBaseMultiplier{"maxHealth", maxHealthMultiplier}));
@@ -359,7 +378,9 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 
   variant.touchDamageConfig = config.get("touchDamage", {});
 
-  variant.items = jsonToMapV<StringMap<ItemDescriptor>>(data.get("items"), ItemDescriptor::loadStore);
+  variant.items = jsonToMapV<StringMap<ItemDescriptor>>(data.get("items"), [this](Json const& item) {
+    return ItemDescriptor::loadStore(item, m_versioningDatabase);
+  });
 
   variant.disableWornArmor = config.getBool("disableWornArmor", true);
   variant.dropPools = jsonToStringList(config.get("dropPools", JsonArray{}));
@@ -377,7 +398,7 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 }
 
 NpcPtr NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
-  return make_shared<Npc>(m_assets, NpcDatabaseConstPtr(shared_from_this()), m_speciesDatabase, m_danceDatabase, m_emoteProcessor, npcVariant, m_itemDatabase, m_objectDatabase);
+  return make_shared<Npc>(m_assets, NpcDatabaseConstPtr(shared_from_this()), m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_emoteProcessor, npcVariant, m_itemDatabase, m_objectDatabase, m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase);
 }
 
 NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
@@ -385,13 +406,13 @@ NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
   auto self = NpcDatabaseConstPtr(shared_from_this());
   try {
     NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
-    npc = make_shared<Npc>(m_assets, self, m_speciesDatabase, m_danceDatabase, m_emoteProcessor, npcVariant, diskStore, m_itemDatabase, m_objectDatabase);
+    npc = make_shared<Npc>(m_assets, self, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_emoteProcessor, npcVariant, diskStore, m_itemDatabase, m_objectDatabase, m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&, self](Json const& store) -> String {
       try {
         NpcVariant npcVariant = readNpcVariantFromJson(store.get("npcVariant"));
-        npc = make_shared<Npc>(m_assets, self, m_speciesDatabase, m_danceDatabase, m_emoteProcessor, npcVariant, store, m_itemDatabase, m_objectDatabase);
+        npc = make_shared<Npc>(m_assets, self, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_emoteProcessor, npcVariant, store, m_itemDatabase, m_objectDatabase, m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -406,11 +427,11 @@ NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
 }
 
 NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Npc>(m_assets, NpcDatabaseConstPtr(shared_from_this()), m_speciesDatabase, m_danceDatabase, m_emoteProcessor, readNpcVariant(netStore, rules), m_itemDatabase, m_objectDatabase);
+  return make_shared<Npc>(m_assets, NpcDatabaseConstPtr(shared_from_this()), m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_emoteProcessor, readNpcVariant(netStore, rules), m_itemDatabase, m_objectDatabase, m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase);
 }
 
 List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const {
-  Humanoid humanoid(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json());
+  Humanoid humanoid(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json(), m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase);
 
   auto items = StringMap<ItemDescriptor, CaseInsensitiveStringHash, CaseInsensitiveStringCompare>::from(npcVariant.items);
 
@@ -458,4 +479,4 @@ Json NpcDatabase::mergeConfigValues(Json const& base, Json const& merger) const 
   }
 }
 
-}
+}// namespace Star

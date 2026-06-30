@@ -5,8 +5,9 @@
 
 namespace Star {
 
-SliderBarWidget::SliderBarWidget(String const& grid, bool showSpinner)
-  : m_grid(make_shared<ImageWidget>(grid)),
+SliderBarWidget::SliderBarWidget(GuiContext& context, String const& grid, bool showSpinner)
+  : Widget(context),
+    m_grid(make_shared<ImageWidget>(context, grid)),
     m_low(0),
     m_high(1),
     m_delta(1),
@@ -15,15 +16,16 @@ SliderBarWidget::SliderBarWidget(String const& grid, bool showSpinner)
     m_jogDragActive(false),
     m_enabled(true) {
 
-  auto const& assets = GuiContext::singleton().assets();
-  auto const& imgMetadata = GuiContext::singleton().imageMetadata();
+  auto& guiContext = this->context();
+  auto const& assets = guiContext.assets();
+  auto const& imgMetadata = guiContext.imageMetadata();
 
-  m_jog = make_shared<ButtonWidget>();
+  m_jog = make_shared<ButtonWidget>(guiContext);
   m_jog->setImages(assets->json("/interface.config:slider.jog").toString());
   m_jog->setPressedOffset({0, 0});
 
   if (showSpinner) {
-    GuiReader guiReader;
+    GuiReader guiReader(guiContext);
     guiReader.registerCallback("spinner.down", [this](Widget*) { leftCallback(); });
     guiReader.registerCallback("spinner.up", [this](Widget*) { rightCallback(); });
 
@@ -155,16 +157,16 @@ bool SliderBarWidget::sendEvent(InputEvent const& event) {
 
   if (m_enabled) {
     if (event.is<MouseButtonDownEvent>()) {
-      if (m_jog->inMember(*context()->mousePosition(event))) {
+      if (m_jog->inMember(*context().mousePosition(event))) {
         focus();
-        m_jogDragPos = *context()->mousePosition(event) - screenPosition();
+        m_jogDragPos = *context().mousePosition(event) - screenPosition();
         m_jogDragActive = true;
       }
     }
 
     if (event.is<MouseMoveEvent>()) {
       if (m_jogDragActive)
-        m_jogDragPos = *context()->mousePosition(event) - screenPosition();
+        m_jogDragPos = *context().mousePosition(event) - screenPosition();
     }
   }
 

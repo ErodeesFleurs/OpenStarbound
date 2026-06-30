@@ -5,6 +5,7 @@
 #include "StarBiMap.hpp"
 #include "StarAnimation.hpp"
 #include "StarAssetPath.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
@@ -40,7 +41,7 @@ struct Particle {
   Particle();
   // If particle is type Textured, then the image name is considered relative
   // to the given asset path
-  explicit Particle(Json const& config, String const& assetsPath = "/", AssetsConstPtr assets = {});
+  explicit Particle(Json const& config, String const& assetsPath = "/", AssetsConstPtr assets = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {});
 
   Json toJson() const;
 
@@ -64,7 +65,7 @@ struct Particle {
   // Internally called by update() / collide() / destruct()
   void destructionUpdate();
 
-  void initializeAnimation(AssetsConstPtr assets);
+  void initializeAnimation(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   Type type;
 
@@ -116,6 +117,7 @@ struct Particle {
 
   // Non-serialized: assets used for lazy animation initialization in update()
   AssetsConstPtr assets;
+  ImageMetadataDatabaseConstPtr imageMetadataDatabase;
 };
 
 DataStream& operator<<(DataStream& ds, Particle const& particle);

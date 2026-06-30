@@ -13,7 +13,7 @@
 
 namespace Star {
 
-QuestTrackerPane::QuestTrackerPane(Services services) {
+QuestTrackerPane::QuestTrackerPane(Services services) : Pane(services.guiContext) {
   auto assets = std::move(services.assets);
   if (!assets)
     throw StarException("QuestTrackerPane requires assets service");
@@ -37,7 +37,7 @@ QuestTrackerPane::QuestTrackerPane(Services services) {
   m_compassAcceleration = config.getFloat("compassAcceleration");
   m_compassFriction = config.getFloat("compassFriction");
 
-  GuiReader reader;
+  GuiReader reader(context());
   reader.construct(config.get("paneLayout"), this);
 
   m_frame = fetchChild<ImageWidget>("imgFrame");
@@ -63,7 +63,7 @@ bool QuestTrackerPane::sendEvent(InputEvent const& event) {
     return true;
 
   if (event.is<MouseButtonDownEvent>() && event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left) {
-    auto mousePos = *context()->mousePosition(event);
+    auto mousePos = *context().mousePosition(event);
     if ((m_expanded && m_expandedFrame->inMember(mousePos)) ||
         (!m_expanded && m_frame->inMember(mousePos))) {
       setExpanded(!m_expanded);

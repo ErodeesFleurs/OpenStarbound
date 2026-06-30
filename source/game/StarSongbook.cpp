@@ -69,13 +69,13 @@ Songbook::NoteMapping& Songbook::noteMapping(String const& instrument, String co
   return m_noteMapping[instrument][note];
 }
 
-void Songbook::update(EntityMode mode, World* world) {
-  m_serverMode = world->isServer();
+void Songbook::update(EntityMode mode, World& world) {
+  m_serverMode = world.isServer();
 
   if (m_serverMode)
     return;
 
-  m_globalNowDelta = world->epochTime() * 1000 - Time::millisecondsSinceEpoch();
+  m_globalNowDelta = world.epochTime() * 1000 - Time::millisecondsSinceEpoch();
   if (m_epochUpdated) {
     m_epochUpdated = false;
     m_timeSourceEpoch -= m_globalNowDelta;

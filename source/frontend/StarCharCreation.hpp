@@ -24,6 +24,7 @@ struct CharCreationServices {
   SpeciesDatabaseConstPtr speciesDatabase;
   PatternedNameGeneratorConstPtr nameGenerator;
   ItemDatabaseConstPtr itemDatabase;
+  GuiContext& guiContext;
 };
 
 struct CharCreationExceptionTag { static constexpr char const* typeName = "CharCreationException"; };

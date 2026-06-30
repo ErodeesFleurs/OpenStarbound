@@ -21,12 +21,12 @@ using PlayerPtr = SharedPtr<Player>;
 
 class MaterialItem : public Item, public FireableItem, public PreviewTileTool, public RenderableItem, public PreviewableItem, public BeamItem {
 public:
-  MaterialItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& settings, MaterialDatabaseConstPtr materialDatabase = {});
+  MaterialItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& settings, MaterialDatabaseConstPtr materialDatabase);
   virtual ~MaterialItem() = default;
 
   ItemPtr clone() const override;
 
-  void init(ToolUserEntity* owner, ToolHand hand) override;
+  void init(ToolUserEntity& owner, ToolHand hand) override;
   void uninit() override;
   void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
   void render(RenderCallback* renderCallback, EntityRenderLayer renderLayer) override;
@@ -52,7 +52,7 @@ public:
   List<Drawable> const& generatedPreview(Vec2I position = {}) const;
 private:
   size_t blockSwap(float radius, TileLayer layer);
-  void updatePropertiesFromPlayer(Player* player);
+  void updatePropertiesFromPlayer(Player& player);
   float calcRadius(bool shifting) const;
   List<Vec2I>& tileArea(float radius, Vec2F const& position) const;
   MaterialHue placementHueShift(Vec2I const& position) const;

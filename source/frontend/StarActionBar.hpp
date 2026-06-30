@@ -28,11 +28,12 @@ struct ActionBarServices {
   ConfigurationPtr configuration;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
+  GuiContext& guiContext;
 };
 
 class ActionBar : public Pane {
 public:
-  ActionBar(MainInterfacePaneManager* paneManager, PlayerPtr player, ActionBarServices services);
+  ActionBar(MainInterfacePaneManager& paneManager, PlayerPtr player, ActionBarServices services);
 
   PanePtr createTooltip(Vec2I const& screenPosition) override;
   bool sendEvent(InputEvent const& event) override;
@@ -54,7 +55,7 @@ private:
   void essentialBarClick(uint8_t index);
   void swapCustomBar();
 
-  MainInterfacePaneManager* m_paneManager;
+  MainInterfacePaneManager& m_paneManager;
   PlayerPtr m_player;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;

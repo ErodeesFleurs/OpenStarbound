@@ -967,8 +967,8 @@ void PlayerInventory::cleanup() {
     });
 }
 
-void PlayerInventory::setPlayer(Player* player) {
-  m_player = player;
+void PlayerInventory::setPlayer(Player& player) {
+  m_player = &player;
 }
 
 PlayerInventory const& PlayerInventory::blankInventory() const {

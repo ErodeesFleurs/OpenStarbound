@@ -24,14 +24,15 @@
 
 namespace Star {
 
-InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services) {
-  m_parent = parent;
-  m_player = std::move(player);
-  m_containerInteractor = std::move(containerInteractor);
-  m_assets = std::move(services.assets);
-  m_techDatabase = std::move(services.techDatabase);
-  m_objectDatabase = std::move(services.objectDatabase);
-  m_statusEffectDatabase = std::move(services.statusEffectDatabase);
+InventoryPane::InventoryPane(MainInterface& parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services)
+  : Pane(services.guiContext),
+    m_parent(parent),
+    m_player(std::move(player)),
+    m_containerInteractor(std::move(containerInteractor)),
+    m_assets(std::move(services.assets)),
+    m_techDatabase(std::move(services.techDatabase)),
+    m_objectDatabase(std::move(services.objectDatabase)),
+    m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
   if (!m_assets)
     throw StarException("InventoryPane requires assets service");
   if (!m_techDatabase)
@@ -41,7 +42,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   if (!m_statusEffectDatabase)
     throw StarException("InventoryPane requires status effect database service");
 
-  GuiReader invWindowReader;
+  GuiReader invWindowReader(context());
   m_config = m_assets->json("/interface/windowconfig/playerinventory.config");
 
   auto leftClickCallback = [this](String const& bagType, Widget* widget) {
@@ -49,9 +50,9 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
     InventorySlot inventorySlot = BagSlot(bagType, itemGrid->selectedIndex());
 
     auto inventory = m_player->inventory();
-    if (context()->shiftHeld()) {
+    if (context().shiftHeld()) {
       if (auto sourceItem = itemGrid->selectedItem()) {
-        if (auto activeMerchantPane = m_parent->activeMerchantPane()) {
+        if (auto activeMerchantPane = m_parent.activeMerchantPane()) {
           auto remainder = activeMerchantPane->addItems(inventory->takeSlot(inventorySlot));
           if (remainder && !remainder->empty())
             inventory->setItem(inventorySlot, remainder);
@@ -61,7 +62,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
           m_containerSource = inventorySlot;
           m_expectingSwap = true;
         } else {
-          for (PanePtr& pane : m_parent->paneManager()->getAllPanes()) {
+          for (PanePtr& pane : m_parent.paneManager().getAllPanes()) {
             auto remainder = pane->shiftItemFromInventory(inventory->itemsAt(inventorySlot));
             if (remainder.isValid()) {
               inventory->setItem(inventorySlot, remainder.value());
@@ -81,7 +82,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
       auto swapItem = inventory->swapSlotItem();
       if (!swapItem || swapItem->empty() || swapItem->couldStack(slotItem)) {
         uint64_t count = swapItem ? swapItem->couldStack(slotItem) : slotItem->maxStack();
-        if (context()->shiftHeld())
+        if (context().shiftHeld())
           count = max<uint64_t>(1, min<uint64_t>(count, slotItem->count() / 2));
         else
           count = 1;
@@ -221,7 +222,7 @@ InventoryPane::InventoryPane(MainInterface* parent, PlayerPtr player, ContainerI
   auto centralPortrait = fetchChild<PortraitWidget>("portrait");
   centralPortrait->setEntity(m_player);
 
-  auto portrait = make_shared<PortraitWidget>(m_player, PortraitMode::Bust);
+  auto portrait = make_shared<PortraitWidget>(context(), m_player, PortraitMode::Bust);
   portrait->setIconMode();
   setTitle(portrait, m_player->name(), m_config.getString("subtitle"));
 
@@ -262,7 +263,7 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
         auto widgetData = itemSlot->data();
         if (widgetData && widgetData.type() == Json::Type::Object) {
           if (auto text = widgetData.optString("tooltipText"))
-            return SimpleTooltipBuilder::buildTooltip(*text, SimpleTooltipServices{m_assets});
+            return SimpleTooltipBuilder::buildTooltip(*text, SimpleTooltipServices{m_assets, context()});
         }
       }
     }
@@ -270,14 +271,14 @@ PanePtr InventoryPane::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
 
   for (auto const& p : TechTypeNames) {
     if (auto techIcon = fetchChild<ImageWidget>(strf("tech{}", p.second))) {
       if (techIcon->screenBoundRect().contains(screenPosition)) {
         if (auto techModule = m_player->techs()->equippedTechs().maybe(p.first))
           if (m_techDatabase->contains(*techModule))
-            return SimpleTooltipBuilder::buildTooltip(m_techDatabase->tech(*techModule).description, SimpleTooltipServices{m_assets});
+            return SimpleTooltipBuilder::buildTooltip(m_techDatabase->tech(*techModule).description, SimpleTooltipServices{m_assets, context()});
       }
     }
   }
@@ -289,7 +290,7 @@ bool InventoryPane::sendEvent(InputEvent const& event) {
   if (m_alwaysDisplayCosmetics)
     return Pane::sendEvent(event);
 
-  if (auto mousePosition = Widget::context()->mousePosition(event)) {
+  if (auto mousePosition = Widget::context().mousePosition(event)) {
     bool displayingCosmetics = false;
     for (auto const& p : EquipmentSlotNames) {
       if (p.first >= EquipmentSlot::HeadCosmetic) {
@@ -353,7 +354,7 @@ void InventoryPane::clearChangedSlots() {
 
 void InventoryPane::update(float dt) {
   auto inventory = m_player->inventory();
-  auto context = Widget::context();
+  auto& context = Widget::context();
 
   HashSet<ItemPtr> customBarItems;
   for (uint8_t i = 0; i < inventory->customBarIndexes(); ++i) {
@@ -520,16 +521,16 @@ void InventoryPane::update(float dt) {
   if (auto item = inventory->swapSlotItem()) {
     float pitch = 1.f - (static_cast<float>(item->count()) / static_cast<float>(item->maxStack())) * .2f;
     if (!m_currentSwapSlotItem || !item->matches(*m_currentSwapSlotItem, true))
-      context->playAudio(RandomSource().randFrom(m_pickUpSounds), 0, 1.f, pitch);
+      context.playAudio(RandomSource().randFrom(m_pickUpSounds), 0, 1.f, pitch);
     else if (item->count() > m_currentSwapSlotItem->count())
-      context->playAudio(RandomSource().randFrom(m_someUpSounds), 0, 1.f, pitch);
+      context.playAudio(RandomSource().randFrom(m_someUpSounds), 0, 1.f, pitch);
     else if (item->count() < m_currentSwapSlotItem->count())
-      context->playAudio(RandomSource().randFrom(m_someDownSounds), 0, 1.f, pitch);
+      context.playAudio(RandomSource().randFrom(m_someDownSounds), 0, 1.f, pitch);
 
     m_currentSwapSlotItem = item->descriptor();
   } else {
     if (m_currentSwapSlotItem)
-      context->playAudio(RandomSource().randFrom(m_putDownSounds));
+      context.playAudio(RandomSource().randFrom(m_putDownSounds));
     m_currentSwapSlotItem = {};
   }
 

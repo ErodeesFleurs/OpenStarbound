@@ -20,7 +20,8 @@
 
 namespace Star {
 
-QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client, QuestInterfaceServices services) {
+QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, CinematicPtr cinematic, UniverseClientPtr client, QuestInterfaceServices services)
+  : Pane(services.guiContext) {
   m_manager = manager;
   m_player = player;
   m_cinematic = cinematic;
@@ -40,7 +41,7 @@ QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, 
   m_trackLabel = config.getString("trackLabel");
   m_untrackLabel = config.getString("untrackLabel");
 
-  GuiReader reader;
+  GuiReader reader(context());
 
   reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
   reader.registerCallback("btnToggleTracking",
@@ -80,21 +81,21 @@ QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, 
   m_refreshTimer = 0;
 }
 
-void QuestLogInterface::pollDialog(PaneManager* paneManager) {
-  if (paneManager->topPane({PaneLayer::ModalWindow}))
+void QuestLogInterface::pollDialog(PaneManager& paneManager) {
+  if (paneManager.topPane({PaneLayer::ModalWindow}))
     return;
 
   if (auto failableQuest = m_manager->getFirstFailableQuest()) {
-    auto qfi = make_shared<QuestFailedInterface>(failableQuest.value(), m_player, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
+    auto qfi = make_shared<QuestFailedInterface>(failableQuest.value(), m_player, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
     (*failableQuest)->setDialogShown();
-    paneManager->displayPane(PaneLayer::ModalWindow, qfi);
+    paneManager.displayPane(PaneLayer::ModalWindow, qfi);
   } else if (auto completableQuest = m_manager->getFirstCompletableQuest()) {
-    auto qci = make_shared<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
+    auto qci = make_shared<QuestCompleteInterface>(completableQuest.value(), m_player, m_cinematic, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
     (*completableQuest)->setDialogShown();
-    paneManager->displayPane(PaneLayer::ModalWindow, qci);
+    paneManager.displayPane(PaneLayer::ModalWindow, qci);
   } else if (auto newQuest = m_manager->getFirstNewQuest()) {
-    auto nqd = make_shared<NewQuestInterface>(m_manager, newQuest.value(), m_player, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
-    paneManager->displayPane(PaneLayer::ModalWindow, nqd);
+    auto nqd = make_shared<NewQuestInterface>(m_manager, newQuest.value(), m_player, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
+    paneManager.displayPane(PaneLayer::ModalWindow, nqd);
   }
 }
 
@@ -188,7 +189,7 @@ PanePtr QuestLogInterface::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
   return {};
 }
 
@@ -295,7 +296,7 @@ void QuestLogInterface::showQuests(List<QuestPtr> quests) {
 }
 
 QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services)
-  : Pane(),
+  : Pane(services.guiContext),
     m_quest(quest),
     m_player(std::move(player)),
     m_assets(std::move(services.assets)),
@@ -310,7 +311,7 @@ QuestPane::QuestPane(QuestPtr const& quest, PlayerPtr player, QuestInterfaceServ
 }
 
 void QuestPane::commonSetup(Json config, String bodyText, String const& portraitName) {
-  GuiReader reader;
+  GuiReader reader(context());
 
   reader.registerCallback("close", [=, this](Widget*) { close(); });
   reader.registerCallback("btnDecline", [=, this](Widget*) { decline(); });
@@ -343,7 +344,7 @@ void QuestPane::commonSetup(Json config, String bodyText, String const& portrait
 
   auto sound = Random::randValueFrom(config.get("onShowSound").toArray(), "").toString();
   if (!sound.empty())
-    context()->playAudio(sound);
+    context().playAudio(sound);
 }
 
 void QuestPane::close() {
@@ -367,7 +368,7 @@ PanePtr QuestPane::createTooltip(Vec2I const& screenPosition) {
       item = itemGrid->itemAt(screenPosition);
   }
   if (item)
-    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
+    return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
   return {};
 }
 

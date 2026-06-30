@@ -1,15 +1,19 @@
 #include "StarClipboardLuaBindings.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarInput.hpp"
 #include "StarBuffer.hpp"
-#include "StarRootBase.hpp"
+#include "StarException.hpp"
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appController, bool alwaysAllow) {
+LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appController, AssetsConstPtr assets, bool alwaysAllow, function<bool()> clipboardAllowed) {
   LuaCallbacks callbacks;
 
-  auto available = [=]() { return alwaysAllow || (appController->isFocused() && Input::singleton().clipboardAllowed()); };
+  if (!assets)
+    throw StarException("Clipboard callbacks require assets service");
+  if (!clipboardAllowed)
+    throw StarException("Clipboard callbacks require clipboard allowed service");
+
+  auto available = [=]() { return alwaysAllow || (appController->isFocused() && clipboardAllowed()); };
 
   callbacks.registerCallback("available", [=]() -> bool {
     return available();
@@ -53,7 +57,7 @@ LuaCallbacks LuaBindings::makeClipboardCallbacks(ApplicationControllerPtr appCon
         image.writePng(buffer);
         return appController->setClipboardImage(image, &buffer->data());
       } else {
-        auto image = RootBase::singleton().assets()->image(imgOrPath.get<LuaString>().toString());
+        auto image = assets->image(imgOrPath.get<LuaString>().toString());
         image->writePng(buffer);
         return appController->setClipboardImage(*image, &buffer->data());
       }

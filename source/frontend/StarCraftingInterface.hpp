@@ -36,6 +36,7 @@ struct CraftingPaneServices {
   ItemDatabaseConstPtr itemDatabase;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
+  GuiContext& guiContext;
 };
 
 class CraftingPane : public Pane {

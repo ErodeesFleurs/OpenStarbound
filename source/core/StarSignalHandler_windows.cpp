@@ -156,43 +156,43 @@ struct SignalHandlerImpl {
   }
 
   static BOOL WINAPI consoleCtrlHandler(DWORD) {
-    if (SignalHandler::s_singleton)
-      SignalHandler::s_singleton->interrupted = true;
+    if (SignalHandler::s_activeHandler)
+      SignalHandler::s_activeHandler->interrupted = true;
     return true;
   }
 };
 
-UniquePtr<SignalHandlerImpl> SignalHandler::s_singleton;
+UniquePtr<SignalHandlerImpl> SignalHandler::s_activeHandler;
 
 SignalHandler::SignalHandler() {
-  if (s_singleton)
-    throw StarException("Singleton SignalHandler has been constructed twice!");
+  if (s_activeHandler)
+    throw StarException("SignalHandler has been constructed twice!");
 
-  s_singleton = make_unique<SignalHandlerImpl>();
+  s_activeHandler = make_unique<SignalHandlerImpl>();
 }
 
 SignalHandler::~SignalHandler() {
-  s_singleton.reset();
+  s_activeHandler.reset();
 }
 
 void SignalHandler::setHandleFatal(bool handleFatal) {
-  s_singleton->setHandleFatal(handleFatal);
+  s_activeHandler->setHandleFatal(handleFatal);
 }
 
 bool SignalHandler::handlingFatal() const {
-  return s_singleton->handlingFatal;
+  return s_activeHandler->handlingFatal;
 }
 
 void SignalHandler::setHandleInterrupt(bool handleInterrupt) {
-  s_singleton->setHandleInterrupt(handleInterrupt);
+  s_activeHandler->setHandleInterrupt(handleInterrupt);
 }
 
 bool SignalHandler::handlingInterrupt() const {
-  return s_singleton->handlingInterrupt;
+  return s_activeHandler->handlingInterrupt;
 }
 
 bool SignalHandler::interruptCaught() const {
-  return s_singleton->interrupted;
+  return s_activeHandler->interrupted;
 }
 
 }

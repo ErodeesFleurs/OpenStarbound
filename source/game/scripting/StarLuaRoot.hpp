@@ -3,19 +3,29 @@
 #include "StarThread.hpp"
 #include "StarLua.hpp"
 #include "StarAssets.hpp"
-#include "StarRoot.hpp"
+#include "StarConfiguration.hpp"
+#include "StarListener.hpp"
 
 namespace Star {
 
 class LuaRoot;
 using LuaRootPtr = SharedPtr<LuaRoot>;
+class Root;
+
+struct LuaRootServices {
+  Root* root = nullptr;
+  AssetsConstPtr assets;
+  ConfigurationPtr configuration;
+  function<void(ListenerWeakPtr)> registerReloadListener;
+  String storageDirectory;
+};
 
 // Loads and caches lua scripts from assets.  Automatically clears cache on
 // root reload.  Uses an internal LuaEngine, so this and all contexts are meant
 // for single threaded access and have no locking.
 class LuaRoot {
 public:
-  explicit LuaRoot(AssetsConstPtr assets = {});
+  explicit LuaRoot(LuaRootServices services);
   ~LuaRoot();
 
   void loadScript(String const& assetPath);
@@ -44,6 +54,8 @@ public:
   void clearScriptCache() const;
 
   void addCallbacks(String const& groupName, LuaCallbacks const& callbacks);
+  void registerReloadListener(ListenerWeakPtr reloadListener);
+  LuaRootServices const& services() const;
 
   LuaEngine& luaEngine() const;
 private:
@@ -65,11 +77,13 @@ private:
   };
 
   AssetsConstPtr m_assets;
+  LuaRootServices m_services;
   LuaEnginePtr m_luaEngine;
   StringMap<LuaCallbacks> m_luaCallbacks;
   SharedPtr<ScriptCache> m_scriptCache;
 
   ListenerPtr m_rootReloadListener;
+  ListenerGroup m_reloadListeners;
 
   String m_storageDirectory;
 };

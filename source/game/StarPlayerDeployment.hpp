@@ -7,6 +7,7 @@
 namespace Star {
 
 class RenderCallback;
+class Player;
 
 class PlayerDeployment;
 using PlayerDeploymentPtr = SharedPtr<PlayerDeployment>;
@@ -23,7 +24,7 @@ public:
   bool isDeploying() const;
   bool isDeployed() const;
 
-  void init(Entity* player, World* world);
+  void init(Player& player, World& world);
   void uninit();
 
   void teleportOut();

@@ -1,29 +1,31 @@
 #include "StarToolUser.hpp"
-#include "StarItemDatabase.hpp"
+#include "StarActivatableItem.hpp"
+#include "StarActiveItem.hpp"
 #include "StarArmors.hpp"
 #include "StarCasting.hpp"
 #include "StarImageProcessing.hpp"
+#include "StarInspectionTool.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarLiquidItem.hpp"
 #include "StarMaterialItem.hpp"
 #include "StarObject.hpp"
-#include "StarTools.hpp"
-#include "StarActivatableItem.hpp"
-#include "StarObjectItem.hpp"
 #include "StarObjectDatabase.hpp"
-#include "StarWorld.hpp"
-#include "StarActiveItem.hpp"
+#include "StarObjectItem.hpp"
 #include "StarStatusController.hpp"
-#include "StarInspectionTool.hpp"
+#include "StarTools.hpp"
+#include "StarWorld.hpp"
 
 namespace Star {
 
 ToolUser::ToolUser(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(), m_user(nullptr),
-    m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_primaryHandItem(m_itemDatabase), m_altHandItem(m_itemDatabase),
-    m_fireMain(), m_fireAlt(), m_edgeTriggeredMain(), m_edgeTriggeredAlt(), m_edgeSuppressedMain(), m_edgeSuppressedAlt(),
-    m_suppress() {
+    : m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(), m_user(nullptr),
+      m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_primaryHandItem(m_itemDatabase), m_altHandItem(m_itemDatabase),
+      m_fireMain(), m_fireAlt(), m_edgeTriggeredMain(), m_edgeTriggeredAlt(), m_edgeSuppressedMain(), m_edgeSuppressedAlt(),
+      m_suppress() {
   if (!assets)
     throw StarException("ToolUser requires assets service");
+  if (!m_itemDatabase)
+    throw StarException("ToolUser requires item database service");
   if (!m_objectDatabase)
     throw StarException("ToolUser requires object database service");
 
@@ -60,17 +62,17 @@ ToolUser::ToolUser(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, Obj
   m_altTimeFiringNetState.setInterpolator(interpolateTimer);
 }
 
-ToolUser::ToolUser(AssetsConstPtr assets, ToolUserEntity* user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-  : ToolUser(std::move(assets), std::move(itemDatabase), std::move(objectDatabase)) {
+ToolUser::ToolUser(AssetsConstPtr assets, ToolUserEntity& user, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
+    : ToolUser(std::move(assets), std::move(itemDatabase), std::move(objectDatabase)) {
   init(user);
 }
 
 Json ToolUser::diskStore() const {
   JsonObject res;
   if (m_primaryHandItem.get())
-    res["primaryHandItem"] = m_primaryHandItem.get()->descriptor().diskStore();
+    res["primaryHandItem"] = m_itemDatabase->diskStore(m_primaryHandItem.get());
   if (m_altHandItem.get())
-    res["altHandItem"] = m_altHandItem.get()->descriptor().diskStore();
+    res["altHandItem"] = m_itemDatabase->diskStore(m_altHandItem.get());
 
   return res;
 }
@@ -100,8 +102,8 @@ ItemDescriptor ToolUser::altHandItemDescriptor() const {
   return {};
 }
 
-void ToolUser::init(ToolUserEntity* user) {
-  m_user = user;
+void ToolUser::init(ToolUserEntity& user) {
+  m_user = &user;
 
   initPrimaryHandItem();
   if (!itemSafeTwoHanded(m_primaryHandItem.get()))
@@ -186,12 +188,12 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
       return m_cachedObjectPreview;
 
     auto drawables = m_objectDatabase->cursorHintDrawables(m_user->world(), item->objectName(),
-        aimPos, walkingDirection, item->objectParameters());
+                                                           aimPos, walkingDirection, item->objectParameters());
 
     Color opacityMask = Color::White;
     opacityMask.setAlphaF(item->getAppropriateOpacity());
     Color favoriteColorTrans = favoriteColor;
-    if (!inToolRange || !m_objectDatabase->canPlaceObject(m_user->world(), aimPos, item->objectName()))
+    if (!inToolRange || !m_objectDatabase->canPlaceObject(*m_user->world(), aimPos, item->objectName()))
       favoriteColorTrans.setHue(favoriteColor.hue() + 120);
 
     favoriteColorTrans.setAlphaF(m_objectPreviewOuterAlpha);
@@ -203,7 +205,7 @@ List<Drawable> ToolUser::renderObjectPreviews(Vec2F aimPosition, Direction walki
 
     for (Drawable& drawable : drawables) {
       if (drawable.isImage())
-        drawable.imagePart().addDirectives(imageOperationToString(op), true);
+        drawable.imagePart().addDirectives(imageOperationToString(op), true, m_user->world()->imageMetadataDatabase());
       drawable.color = opacityMask;
     }
     m_cachedObjectPreview = drawables;
@@ -253,7 +255,7 @@ Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F posi
 
     } else if (auto activeItem = as<ActiveItem>(handItem)) {
       setRotation(activeItem->holdingItem(), activeItem->armAngle(), activeItem->armAngle(),
-          activeItem->twoHandedGrip(), activeItem->recoil(), activeItem->outsideOfHand());
+                  activeItem->twoHandedGrip(), activeItem->recoil(), activeItem->outsideOfHand());
       if (auto fd = activeItem->facingDirection())
         overrideFacingDirection = *fd;
 
@@ -318,7 +320,7 @@ void ToolUser::setupHumanoidHandItemDrawables(Humanoid& humanoid) const {
 
     } else if (auto activeItem = as<ActiveItem>(handItem)) {
       setRotated(activeItem->backArmFrame().value(), activeItem->frontArmFrame().value(),
-          activeItem->handDrawables(), activeItem->twoHandedGrip());
+                 activeItem->handDrawables(), activeItem->twoHandedGrip());
 
     } else if (auto beamItem = as<BeamItem>(handItem)) {
       setRotated("", "", beamItem->drawables(), false);
@@ -624,7 +626,7 @@ float ToolUser::beamGunRadius() const {
 }
 
 ToolUser::NetItem::NetItem(ItemDatabaseConstPtr itemDatabase)
-  : m_itemDatabase(std::move(itemDatabase)) {}
+    : m_itemDatabase(std::move(itemDatabase)) {}
 
 void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
   m_netVersion = version;
@@ -634,7 +636,8 @@ void ToolUser::NetItem::initNetVersion(NetElementVersion const* version) {
 }
 
 void ToolUser::NetItem::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   const_cast<NetItem*>(this)->updateItemDescriptor();
   m_itemDescriptor.netStore(ds, rules);
   if (auto netItem = as<NetElement>(m_item.get()))
@@ -642,7 +645,8 @@ void ToolUser::NetItem::netStore(DataStream& ds, NetCompatibilityRules rules) co
 }
 
 void ToolUser::NetItem::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   m_itemDescriptor.netLoad(ds, rules);
 
   if (m_itemDatabase->loadItem(m_itemDescriptor.get(), m_item)) {
@@ -680,7 +684,8 @@ void ToolUser::NetItem::tickNetInterpolation(float dt) {
 }
 
 bool ToolUser::NetItem::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return false;
+  if (!checkWithRules(rules))
+    return false;
   bool deltaWritten = false;
   const_cast<NetItem*>(this)->updateItemDescriptor();
   m_buffer.clear();
@@ -709,7 +714,8 @@ bool ToolUser::NetItem::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetC
 }
 
 void ToolUser::NetItem::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   while (true) {
     uint8_t code = ds.read<uint8_t>();
     if (code == 0) {
@@ -784,7 +790,7 @@ void ToolUser::initPrimaryHandItem() {
     return;
   if (m_user && m_user->inWorld() && m_primaryHandItem.get()) {
     if (auto toolUserItem = as<ToolUserItem>(m_primaryHandItem.get()))
-      toolUserItem->init(m_user, ToolHand::Primary);
+      toolUserItem->init(*m_user, ToolHand::Primary);
 
     if (auto fireable = as<FireableItem>(m_primaryHandItem.get()))
       fireable->triggerCooldown();
@@ -801,7 +807,7 @@ void ToolUser::initAltHandItem() {
     return;
   if (m_user && m_user->inWorld() && m_altHandItem.get()) {
     if (auto toolUserItem = as<ToolUserItem>(m_altHandItem.get()))
-      toolUserItem->init(m_user, ToolHand::Alt);
+      toolUserItem->init(*m_user, ToolHand::Alt);
 
     if (auto fireable = as<FireableItem>(m_altHandItem.get()))
       fireable->triggerCooldown();
@@ -881,4 +887,4 @@ void ToolUser::netElementsNeedStore() {
     m_altItemActiveNetState.set(false);
 }
 
-}
+}// namespace Star

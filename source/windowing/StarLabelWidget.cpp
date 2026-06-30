@@ -3,16 +3,19 @@
 
 namespace Star {
 
-LabelWidget::LabelWidget(String text,
+LabelWidget::LabelWidget(GuiContext& context,
+    String text,
     Color const& color,
     HorizontalAnchor const& hAnchor,
     VerticalAnchor const& vAnchor,
     Maybe<unsigned> wrapWidth,
     Maybe<float> lineSpacing)
-  : m_hAnchor(hAnchor),
+  : Widget(context),
+    m_hAnchor(hAnchor),
     m_vAnchor(vAnchor),
     m_wrapWidth(std::move(wrapWidth)) {
-  auto const& assets = GuiContext::singleton().assets();
+  auto& guiContext = this->context();
+  auto const& assets = guiContext.assets();
   m_style = assets->json("/interface.config:labelTextStyle");
   m_style.color = color.toRgba();
   if (lineSpacing)
@@ -92,13 +95,13 @@ RectI LabelWidget::getScissorRect() const {
 }
 
 void LabelWidget::renderImpl() {
-  context()->setTextStyle(m_style);
-  context()->renderInterfaceText(m_text, {Vec2F(screenPosition()), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
+  context().setTextStyle(m_style);
+  context().renderInterfaceText(m_text, {Vec2F(screenPosition()), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit});
 }
 
 void LabelWidget::updateTextRegion() {
-  context()->setTextStyle(m_style);
-  m_textRegion = RectI(context()->determineInterfaceTextSize(m_text, {Vec2F(), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit}));
+  context().setTextStyle(m_style);
+  m_textRegion = RectI(context().determineInterfaceTextSize(m_text, {Vec2F(), m_hAnchor, m_vAnchor, m_wrapWidth, m_textCharLimit}));
   setSize(m_textRegion.size());
 }
 

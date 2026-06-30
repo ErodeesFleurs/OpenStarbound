@@ -16,6 +16,7 @@ using KeybindingsMenuPtr = SharedPtr<KeybindingsMenu>;
 struct KeybindingsMenuServices {
   AssetsConstPtr assets;
   ConfigurationPtr configuration;
+  GuiContext& guiContext;
 };
 
 class KeybindingsMenu : public Pane {

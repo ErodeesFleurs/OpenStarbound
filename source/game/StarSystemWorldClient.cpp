@@ -147,7 +147,7 @@ bool SystemWorldClient::handleIncomingPacket(PacketPtr packet) {
       auto ship = netLoadShip(netStore);
       m_clientShips.set(ship->uuid(), ship);
     }
-    m_ship = make_shared<SystemClientShip>(this, startPacket->clientShip.first, startPacket->clientShip.second);
+    m_ship = make_shared<SystemClientShip>(*this, startPacket->clientShip.first, startPacket->clientShip.second);
 
     m_universeMap->addMappedCoordinate(CelestialCoordinate(m_location));
     m_universeMap->filterMappedObjects(CelestialCoordinate(m_location), m_objects.keys());
@@ -182,7 +182,7 @@ SystemClientShipPtr SystemWorldClient::netLoadShip(ByteArray netStore)
   DataStreamBuffer ds(std::move(netStore));
   Uuid uuid = ds.read<Uuid>();
   SystemLocation location = ds.read<SystemLocation>();
-  return make_shared<SystemClientShip>(this, uuid, location);
+  return make_shared<SystemClientShip>(*this, uuid, location);
 }
 
 }

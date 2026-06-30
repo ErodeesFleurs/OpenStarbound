@@ -4,8 +4,8 @@ namespace Star {
 
 ToolUserItem::ToolUserItem() : m_owner(nullptr) {}
 
-void ToolUserItem::init(ToolUserEntity* owner, ToolHand hand) {
-  m_owner = owner;
+void ToolUserItem::init(ToolUserEntity& owner, ToolHand hand) {
+  m_owner = &owner;
   m_hand = hand;
 }
 

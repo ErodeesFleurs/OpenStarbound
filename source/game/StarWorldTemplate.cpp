@@ -1,23 +1,22 @@
 #include "StarWorldTemplate.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarBiome.hpp"
+#include "StarDungeonGenerator.hpp"
 #include "StarInterpolation.hpp"
 #include "StarIterator.hpp"
-#include "StarBiome.hpp"
-#include "StarRoot.hpp"
-#include "StarTerrainDatabase.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarLogging.hpp"
-#include "StarDungeonGenerator.hpp"
+#include "StarTerrainDatabase.hpp"
 
 namespace Star {
 
 WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, Vec2U const& size, DungeonDefinitionsConstPtr dungeonDefinitions)
-  : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
+    : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
   m_geometry = size;
 }
 
-WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase, DungeonDefinitionsConstPtr dungeonDefinitions)
-  : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
+WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, LiquidsDatabaseConstPtr liquidsDatabase, CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase, DungeonDefinitionsConstPtr dungeonDefinitions)
+    : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
   auto celestialParameters = celestialDatabase->parameters(celestialCoordinate);
   if (!celestialParameters)
     throw StarException("Celestial parameters for constructing WorldTemplate not found!");
@@ -27,7 +26,7 @@ WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terr
   if (!m_worldParameters)
     throw StarException("Cannot create WorldTemplate from non-visitable world");
 
-  m_skyParameters = SkyParameters(celestialCoordinate, celestialDatabase, m_assets);
+  m_skyParameters = SkyParameters(celestialCoordinate, celestialDatabase, m_assets, std::move(liquidsDatabase));
   m_seed = m_celestialParameters->seed();
   m_geometry = WorldGeometry(m_worldParameters->worldSize);
 
@@ -42,7 +41,7 @@ WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terr
 }
 
 WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed, DungeonDefinitionsConstPtr dungeonDefinitions)
-  : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
+    : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
   if (!worldParameters)
     throw StarException("Cannot create WorldTemplate from non-visitable world");
 
@@ -62,7 +61,7 @@ WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terr
 }
 
 WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, Json const& store, DungeonDefinitionsConstPtr dungeonDefinitions)
-  : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
+    : WorldTemplate(std::move(assets), std::move(terrainDatabase), std::move(biomeDatabase), std::move(dungeonDefinitions)) {
   m_celestialParameters = jsonToMaybe<CelestialParameters>(store.get("celestialParameters", {}));
   m_worldParameters = diskLoadVisitableWorldParameters(store.get("worldParameters", {}));
   m_skyParameters = SkyParameters(store.get("skyParameters"));
@@ -73,10 +72,10 @@ WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terr
     m_layout = make_shared<WorldLayout>(regionData.take(), m_terrainDatabase, m_biomeDatabase);
 
   m_customTerrainRegions = store.getArray("customTerrainRegions", JsonArray()).transformed([](Json const& config) {
-      CustomTerrainRegion ctr = {jsonToPolyF(config.get("region")), {}, config.getBool("solid")};
-      ctr.regionBounds = ctr.region.boundBox();
-      return ctr;
-    });
+    CustomTerrainRegion ctr = {jsonToPolyF(config.get("region")), {}, config.getBool("solid")};
+    ctr.regionBounds = ctr.region.boundBox();
+    return ctr;
+  });
 
   determineWorldName();
 }
@@ -90,9 +89,8 @@ Json WorldTemplate::store() const {
     {"size", jsonFromVec2U(m_geometry.size())},
     {"regionData", m_layout ? m_layout->toJson() : Json()},
     {"customTerrainRegions", transform<JsonArray>(m_customTerrainRegions, [](CustomTerrainRegion const& region) {
-        return JsonObject{{"region", jsonFromPolyF(region.region)}, {"solid", region.solid}};
-      })}
-  };
+       return JsonObject{{"region", jsonFromPolyF(region.region)}, {"solid", region.solid}};
+     })}};
 }
 
 Maybe<CelestialParameters> const& WorldTemplate::celestialParameters() const {
@@ -205,8 +203,8 @@ List<RectI> WorldTemplate::previewAddBiomeRegion(Vec2I const& position, int widt
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
     auto regionRects = m_layout->previewAddBiomeRegion(position, width);
     regionRects.transform([terrestrialParameters](RectI const& rect) {
-        return rect.padded(ceil(terrestrialParameters->blendSize));
-      });
+      return rect.padded(ceil(terrestrialParameters->blendSize));
+    });
     return regionRects;
   } else {
     Logger::error("Cannot add biome region to non-terrestrial world!");
@@ -219,8 +217,8 @@ List<RectI> WorldTemplate::previewExpandBiomeRegion(Vec2I const& position, int n
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
     auto regionRects = m_layout->previewExpandBiomeRegion(position, newWidth);
     regionRects.transform([terrestrialParameters](RectI const& rect) {
-        return rect.padded(ceil(terrestrialParameters->blendSize));
-      });
+      return rect.padded(ceil(terrestrialParameters->blendSize));
+    });
     return regionRects;
   } else {
     Logger::error("Cannot expand biome region on non-terrestrial world!");
@@ -416,11 +414,11 @@ AmbientNoisesDescriptionPtr WorldTemplate::ambientNoises(int x, int y) const {
   if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
     if (floatingDungeonParameters->dayAmbientNoises || floatingDungeonParameters->nightAmbientNoises) {
       auto dayTracks = floatingDungeonParameters->dayAmbientNoises
-          ? AmbientTrackGroup(StringList{*floatingDungeonParameters->dayAmbientNoises})
-          : AmbientTrackGroup();
+        ? AmbientTrackGroup(StringList{*floatingDungeonParameters->dayAmbientNoises})
+        : AmbientTrackGroup();
       auto nightTracks = floatingDungeonParameters->nightAmbientNoises
-          ? AmbientTrackGroup(StringList{*floatingDungeonParameters->nightAmbientNoises})
-          : AmbientTrackGroup();
+        ? AmbientTrackGroup(StringList{*floatingDungeonParameters->nightAmbientNoises})
+        : AmbientTrackGroup();
       return make_shared<AmbientNoisesDescription>(dayTracks, nightTracks);
     }
   }
@@ -433,11 +431,11 @@ AmbientNoisesDescriptionPtr WorldTemplate::musicTrack(int x, int y) const {
   if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
     if (floatingDungeonParameters->dayMusicTrack || floatingDungeonParameters->nightMusicTrack) {
       auto dayTracks = floatingDungeonParameters->dayMusicTrack
-          ? AmbientTrackGroup(StringList{*floatingDungeonParameters->dayMusicTrack})
-          : AmbientTrackGroup();
+        ? AmbientTrackGroup(StringList{*floatingDungeonParameters->dayMusicTrack})
+        : AmbientTrackGroup();
       auto nightTracks = floatingDungeonParameters->nightMusicTrack
-          ? AmbientTrackGroup(StringList{*floatingDungeonParameters->nightMusicTrack})
-          : AmbientTrackGroup();
+        ? AmbientTrackGroup(StringList{*floatingDungeonParameters->nightMusicTrack})
+        : AmbientTrackGroup();
       return make_shared<AmbientNoisesDescription>(dayTracks, nightTracks);
     }
   }
@@ -487,7 +485,6 @@ void WorldTemplate::addPotentialBiomeItems(int x, int y, PotentialBiomeItems& it
     }
   }
 }
-
 
 WorldTemplate::PotentialBiomeItems WorldTemplate::potentialBiomeItemsAt(int x, int y) const {
   if (!m_layout || y <= 0 || y >= static_cast<int>(m_geometry.height()) - 1)
@@ -573,12 +570,13 @@ uint64_t WorldTemplate::seedFor(int x, int y) const {
 }
 
 WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, DungeonDefinitionsConstPtr dungeonDefinitions)
-  : m_assets(std::move(assets))
-  , m_terrainDatabase(terrainDatabase ? std::move(terrainDatabase) : Root::singleton().terrainDatabase())
-  , m_biomeDatabase(biomeDatabase ? std::move(biomeDatabase) : Root::singleton().biomeDatabase())
-  , m_dungeonDefinitions(std::move(dungeonDefinitions)) {
+    : m_assets(std::move(assets)), m_terrainDatabase(std::move(terrainDatabase)), m_biomeDatabase(std::move(biomeDatabase)), m_dungeonDefinitions(std::move(dungeonDefinitions)) {
   if (!m_assets)
     throw StarException("WorldTemplate requires assets service");
+  if (!m_terrainDatabase)
+    throw StarException("WorldTemplate requires terrain database service");
+  if (!m_biomeDatabase)
+    throw StarException("WorldTemplate requires biome database service");
 
   m_templateConfig = m_assets->json("/world_template.config");
   m_customTerrainBlendSize = m_templateConfig.getFloat("customTerrainBlendSize");
@@ -592,9 +590,11 @@ WorldTemplate::WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terr
 void WorldTemplate::determineWorldName() {
   if (m_celestialParameters)
     m_worldName = m_celestialParameters->name();
-  else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_worldName = (m_dungeonDefinitions ? m_dungeonDefinitions : Root::singleton().dungeonDefinitions())->get(floatingDungeonParameters->primaryDungeon)->displayName();
-  else
+  else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters)) {
+    if (!m_dungeonDefinitions)
+      throw StarException("WorldTemplate requires dungeon definitions service for floating dungeon world name");
+    m_worldName = m_dungeonDefinitions->get(floatingDungeonParameters->primaryDungeon)->displayName();
+  } else
     m_worldName = "";
 }
 
@@ -630,181 +630,179 @@ pair<float, float> WorldTemplate::customTerrainWeighting(int x, int y) const {
 
 WorldTemplate::BlockInfo WorldTemplate::getBlockInfo(uint32_t x, uint32_t y) const {
   return m_blockCache.get(Vector<uint32_t, 2>(x, y), [this, x, y](Vector<uint32_t, 2>) {
-      BlockInfo blockInfo;
+    BlockInfo blockInfo;
 
-      if (!m_layout)
-        return blockInfo;
-
-      // The environment biome is calculated with weighting based on the flat coordinates.
-      List<WorldLayout::RegionWeighting> flatWeighting = m_layout->getWeighting(x, y);
-
-      // The block biome is calculated optionally with higher frequency noise
-      // added to prevent straight lines appearing on the boundaries of
-      // regions.
-
-      int blendNoiseOffset = 0;
-      if (auto const& blendNoise = m_layout->blendNoise())
-        blendNoiseOffset = static_cast<int>(blendNoise->get(x, y));
-
-      Vec2I blockPos;
-      List<WorldLayout::RegionWeighting> blockWeighting;
-      List<WorldLayout::RegionWeighting> transitionWeighting;
-      if (auto const& blockNoise = m_layout->blockNoise()) {
-        blockPos = blockNoise->apply(Vec2I(x, y), m_geometry.size());
-        blockWeighting = m_layout->getWeighting(blockPos[0] + blendNoiseOffset, blockPos[1]);
-        transitionWeighting = m_layout->getWeighting(blockPos[0], blockPos[1]);
-      } else {
-        blockPos = Vec2I(x, y);
-        blockWeighting = flatWeighting;
-        transitionWeighting = flatWeighting;
-      }
-
-      if (flatWeighting.empty() || blockWeighting.empty())
-        return blockInfo;
-
-      auto const& primaryFlatWeighting = flatWeighting.first();
-      auto const& primaryBlockWeighting = blockWeighting.first();
-
-      blockInfo.blockBiomeIndex = primaryBlockWeighting.region->blockBiomeIndex;
-      blockInfo.environmentBiomeIndex = primaryFlatWeighting.region->environmentBiomeIndex;
-
-      blockInfo.biomeTransition = transitionWeighting.first().weight < m_templateConfig.getFloat("biomeTransitionThreshold", 0);
-
-      float terrainSelect = 0.0f;
-      float foregroundCaveSelect = 0.0f;
-      float backgroundCaveSelect = 0.0f;
-
-      // Terrain weighting uses the flat weighting, and weights each selector
-      // to blend among them.
-      for (auto const& weighting : flatWeighting) {
-        if (weighting.region->terrainSelectorIndex != NullTerrainSelectorIndex) {
-          auto const& terrainSelector = m_layout->getTerrainSelector(weighting.region->terrainSelectorIndex);
-          float select = terrainSelector->get(weighting.xValue, y) * weighting.weight;
-          terrainSelect += select;
-        }
-      }
-
-      // This is a bit of a cheat. Since customTerrainWeighting is always flat,
-      // there are some odd effects that come from linearly interpolating from
-      // the generally non-flat terrain sources to flat regions of space.  By
-      // using an interpolator that has an exaggerated S curve between the
-      // points, this hides some of these effects.
-      auto ctweighting = customTerrainWeighting(x, y);
-      terrainSelect = quintic2(ctweighting.second, terrainSelect, ctweighting.first);
-
-      if (terrainSelect > 0.0f) {
-        blockInfo.terrain = true;
-
-        for (auto const& weighting : flatWeighting) {
-          if (weighting.region->foregroundCaveSelectorIndex != NullTerrainSelectorIndex) {
-            auto const& foregroundCaveSelector = m_layout->getTerrainSelector(weighting.region->foregroundCaveSelectorIndex);
-            foregroundCaveSelect += foregroundCaveSelector->get(weighting.xValue, y) * weighting.weight;
-          }
-
-          if (weighting.region->backgroundCaveSelectorIndex != NullTerrainSelectorIndex) {
-            auto const& backgroundCaveSelector = m_layout->getTerrainSelector(weighting.region->backgroundCaveSelectorIndex);
-            backgroundCaveSelect += backgroundCaveSelector->get(weighting.xValue, y) * weighting.weight;
-          }
-        }
-
-        auto surfaceCaveAttenuationDist = m_templateConfig.getFloat("surfaceCaveAttenuationDist", 0);
-        if (terrainSelect < surfaceCaveAttenuationDist) {
-          auto surfaceCaveAttenuationFactor = m_templateConfig.getFloat("surfaceCaveAttenuationFactor", 1);
-          foregroundCaveSelect -= (surfaceCaveAttenuationDist - terrainSelect) * surfaceCaveAttenuationFactor;
-          backgroundCaveSelect -= (surfaceCaveAttenuationDist - terrainSelect) * surfaceCaveAttenuationFactor;
-        }
-      }
-
-      blockInfo.foregroundCave = foregroundCaveSelect > 0.0f;
-      blockInfo.backgroundCave = backgroundCaveSelect > 0.0f;
-
-      auto const& regionLiquids = primaryFlatWeighting.region->regionLiquids;
-      blockInfo.caveLiquid = regionLiquids.caveLiquid;
-      blockInfo.caveLiquidSeedDensity = regionLiquids.caveLiquidSeedDensity;
-      blockInfo.oceanLiquid = regionLiquids.oceanLiquid;
-      blockInfo.oceanLiquidLevel = regionLiquids.oceanLiquidLevel;
-      blockInfo.encloseLiquids = regionLiquids.encloseLiquids;
-      blockInfo.fillMicrodungeons = regionLiquids.fillMicrodungeons;
-
-      if (!blockInfo.terrain && blockInfo.encloseLiquids && static_cast<int>(y) < blockInfo.oceanLiquidLevel) {
-        blockInfo.terrain = true;
-        blockInfo.foregroundCave = true;
-      }
-
-      if (blockInfo.terrain) {
-        if (auto blockBiome = biome(blockInfo.blockBiomeIndex)) {
-          if (!blockInfo.foregroundCave) {
-            blockInfo.foreground = blockBiome->mainBlock;
-            blockInfo.background = blockInfo.foreground;
-          } else if (!blockInfo.backgroundCave) {
-            blockInfo.background = blockBiome->mainBlock;
-          }
-
-          // subBlock, foregroundOre, and backgroundOre selectors can be empty
-          // if they are not enabled, otherwise they will always have the
-          // correct count
-
-          if (!primaryBlockWeighting.region->subBlockSelectorIndexes.empty()) {
-            for (size_t i = 0; i < blockBiome->subBlocks.size(); ++i) {
-              auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->subBlockSelectorIndexes.at(i));
-              if (selector->get(primaryBlockWeighting.xValue - blendNoiseOffset, blockPos[1]) > 0.0f) {
-                if (!blockInfo.foregroundCave) {
-                  blockInfo.foreground = blockBiome->subBlocks.at(i);
-                  blockInfo.background = blockInfo.foreground;
-                } else if (!blockInfo.backgroundCave) {
-                  blockInfo.background = blockBiome->subBlocks.at(i);
-                }
-
-                break;
-              }
-            }
-          }
-
-          if (!blockInfo.foregroundCave && !primaryBlockWeighting.region->foregroundOreSelectorIndexes.empty()) {
-            for (size_t i = 0; i < blockBiome->ores.size(); ++i) {
-              auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->foregroundOreSelectorIndexes.at(i));
-              if (selector->get(x, y) > 0.0f) {
-                blockInfo.foregroundMod = blockBiome->ores.at(i).first;
-                break;
-              }
-            }
-          }
-
-          if (!blockInfo.backgroundCave && !primaryBlockWeighting.region->backgroundOreSelectorIndexes.empty()) {
-            for (size_t i = 0; i < blockBiome->ores.size(); ++i) {
-              auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->backgroundOreSelectorIndexes.at(i));
-              if (selector->get(x, y) > 0.0f) {
-                blockInfo.backgroundMod = blockBiome->ores.at(i).first;
-                break;
-              }
-            }
-          }
-        }
-      }
-
+    if (!m_layout)
       return blockInfo;
-    });
-}
 
-Json WorldTemplate::BlockInfo::toJson() const {
-  return JsonObject({
-    {"blockBiomeIndex", blockBiomeIndex},
-    {"environmentBiomeIndex", environmentBiomeIndex},
-    {"biomeTransition", biomeTransition},
-    {"terrain", terrain},
-    {"foregroundCave", foregroundCave},
-    {"backgroundCave", backgroundCave},
-    {"foreground", foreground},
-    {"foregroundMod", foregroundMod},
-    {"background", background},
-    {"backgroundMod", backgroundMod},
-    {"caveLiquid", caveLiquid},
-    {"caveLiquidSeedDensity", caveLiquidSeedDensity},
-    {"oceanLiquid", oceanLiquid},
-    {"oceanLiquidLevel", oceanLiquidLevel},
-    {"encloseLiquids", encloseLiquids},
-    {"fillMicrodungeons", fillMicrodungeons}
+    // The environment biome is calculated with weighting based on the flat coordinates.
+    List<WorldLayout::RegionWeighting> flatWeighting = m_layout->getWeighting(x, y);
+
+    // The block biome is calculated optionally with higher frequency noise
+    // added to prevent straight lines appearing on the boundaries of
+    // regions.
+
+    int blendNoiseOffset = 0;
+    if (auto const& blendNoise = m_layout->blendNoise())
+      blendNoiseOffset = static_cast<int>(blendNoise->get(x, y));
+
+    Vec2I blockPos;
+    List<WorldLayout::RegionWeighting> blockWeighting;
+    List<WorldLayout::RegionWeighting> transitionWeighting;
+    if (auto const& blockNoise = m_layout->blockNoise()) {
+      blockPos = blockNoise->apply(Vec2I(x, y), m_geometry.size());
+      blockWeighting = m_layout->getWeighting(blockPos[0] + blendNoiseOffset, blockPos[1]);
+      transitionWeighting = m_layout->getWeighting(blockPos[0], blockPos[1]);
+    } else {
+      blockPos = Vec2I(x, y);
+      blockWeighting = flatWeighting;
+      transitionWeighting = flatWeighting;
+    }
+
+    if (flatWeighting.empty() || blockWeighting.empty())
+      return blockInfo;
+
+    auto const& primaryFlatWeighting = flatWeighting.first();
+    auto const& primaryBlockWeighting = blockWeighting.first();
+
+    blockInfo.blockBiomeIndex = primaryBlockWeighting.region->blockBiomeIndex;
+    blockInfo.environmentBiomeIndex = primaryFlatWeighting.region->environmentBiomeIndex;
+
+    blockInfo.biomeTransition = transitionWeighting.first().weight < m_templateConfig.getFloat("biomeTransitionThreshold", 0);
+
+    float terrainSelect = 0.0f;
+    float foregroundCaveSelect = 0.0f;
+    float backgroundCaveSelect = 0.0f;
+
+    // Terrain weighting uses the flat weighting, and weights each selector
+    // to blend among them.
+    for (auto const& weighting : flatWeighting) {
+      if (weighting.region->terrainSelectorIndex != NullTerrainSelectorIndex) {
+        auto const& terrainSelector = m_layout->getTerrainSelector(weighting.region->terrainSelectorIndex);
+        float select = terrainSelector->get(weighting.xValue, y) * weighting.weight;
+        terrainSelect += select;
+      }
+    }
+
+    // This is a bit of a cheat. Since customTerrainWeighting is always flat,
+    // there are some odd effects that come from linearly interpolating from
+    // the generally non-flat terrain sources to flat regions of space.  By
+    // using an interpolator that has an exaggerated S curve between the
+    // points, this hides some of these effects.
+    auto ctweighting = customTerrainWeighting(x, y);
+    terrainSelect = quintic2(ctweighting.second, terrainSelect, ctweighting.first);
+
+    if (terrainSelect > 0.0f) {
+      blockInfo.terrain = true;
+
+      for (auto const& weighting : flatWeighting) {
+        if (weighting.region->foregroundCaveSelectorIndex != NullTerrainSelectorIndex) {
+          auto const& foregroundCaveSelector = m_layout->getTerrainSelector(weighting.region->foregroundCaveSelectorIndex);
+          foregroundCaveSelect += foregroundCaveSelector->get(weighting.xValue, y) * weighting.weight;
+        }
+
+        if (weighting.region->backgroundCaveSelectorIndex != NullTerrainSelectorIndex) {
+          auto const& backgroundCaveSelector = m_layout->getTerrainSelector(weighting.region->backgroundCaveSelectorIndex);
+          backgroundCaveSelect += backgroundCaveSelector->get(weighting.xValue, y) * weighting.weight;
+        }
+      }
+
+      auto surfaceCaveAttenuationDist = m_templateConfig.getFloat("surfaceCaveAttenuationDist", 0);
+      if (terrainSelect < surfaceCaveAttenuationDist) {
+        auto surfaceCaveAttenuationFactor = m_templateConfig.getFloat("surfaceCaveAttenuationFactor", 1);
+        foregroundCaveSelect -= (surfaceCaveAttenuationDist - terrainSelect) * surfaceCaveAttenuationFactor;
+        backgroundCaveSelect -= (surfaceCaveAttenuationDist - terrainSelect) * surfaceCaveAttenuationFactor;
+      }
+    }
+
+    blockInfo.foregroundCave = foregroundCaveSelect > 0.0f;
+    blockInfo.backgroundCave = backgroundCaveSelect > 0.0f;
+
+    auto const& regionLiquids = primaryFlatWeighting.region->regionLiquids;
+    blockInfo.caveLiquid = regionLiquids.caveLiquid;
+    blockInfo.caveLiquidSeedDensity = regionLiquids.caveLiquidSeedDensity;
+    blockInfo.oceanLiquid = regionLiquids.oceanLiquid;
+    blockInfo.oceanLiquidLevel = regionLiquids.oceanLiquidLevel;
+    blockInfo.encloseLiquids = regionLiquids.encloseLiquids;
+    blockInfo.fillMicrodungeons = regionLiquids.fillMicrodungeons;
+
+    if (!blockInfo.terrain && blockInfo.encloseLiquids && static_cast<int>(y) < blockInfo.oceanLiquidLevel) {
+      blockInfo.terrain = true;
+      blockInfo.foregroundCave = true;
+    }
+
+    if (blockInfo.terrain) {
+      if (auto blockBiome = biome(blockInfo.blockBiomeIndex)) {
+        if (!blockInfo.foregroundCave) {
+          blockInfo.foreground = blockBiome->mainBlock;
+          blockInfo.background = blockInfo.foreground;
+        } else if (!blockInfo.backgroundCave) {
+          blockInfo.background = blockBiome->mainBlock;
+        }
+
+        // subBlock, foregroundOre, and backgroundOre selectors can be empty
+        // if they are not enabled, otherwise they will always have the
+        // correct count
+
+        if (!primaryBlockWeighting.region->subBlockSelectorIndexes.empty()) {
+          for (size_t i = 0; i < blockBiome->subBlocks.size(); ++i) {
+            auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->subBlockSelectorIndexes.at(i));
+            if (selector->get(primaryBlockWeighting.xValue - blendNoiseOffset, blockPos[1]) > 0.0f) {
+              if (!blockInfo.foregroundCave) {
+                blockInfo.foreground = blockBiome->subBlocks.at(i);
+                blockInfo.background = blockInfo.foreground;
+              } else if (!blockInfo.backgroundCave) {
+                blockInfo.background = blockBiome->subBlocks.at(i);
+              }
+
+              break;
+            }
+          }
+        }
+
+        if (!blockInfo.foregroundCave && !primaryBlockWeighting.region->foregroundOreSelectorIndexes.empty()) {
+          for (size_t i = 0; i < blockBiome->ores.size(); ++i) {
+            auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->foregroundOreSelectorIndexes.at(i));
+            if (selector->get(x, y) > 0.0f) {
+              blockInfo.foregroundMod = blockBiome->ores.at(i).first;
+              break;
+            }
+          }
+        }
+
+        if (!blockInfo.backgroundCave && !primaryBlockWeighting.region->backgroundOreSelectorIndexes.empty()) {
+          for (size_t i = 0; i < blockBiome->ores.size(); ++i) {
+            auto const& selector = m_layout->getTerrainSelector(primaryBlockWeighting.region->backgroundOreSelectorIndexes.at(i));
+            if (selector->get(x, y) > 0.0f) {
+              blockInfo.backgroundMod = blockBiome->ores.at(i).first;
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    return blockInfo;
   });
 }
 
+Json WorldTemplate::BlockInfo::toJson() const {
+  return JsonObject({{"blockBiomeIndex", blockBiomeIndex},
+                     {"environmentBiomeIndex", environmentBiomeIndex},
+                     {"biomeTransition", biomeTransition},
+                     {"terrain", terrain},
+                     {"foregroundCave", foregroundCave},
+                     {"backgroundCave", backgroundCave},
+                     {"foreground", foreground},
+                     {"foregroundMod", foregroundMod},
+                     {"background", background},
+                     {"backgroundMod", backgroundMod},
+                     {"caveLiquid", caveLiquid},
+                     {"caveLiquidSeedDensity", caveLiquidSeedDensity},
+                     {"oceanLiquid", oceanLiquid},
+                     {"oceanLiquidLevel", oceanLiquidLevel},
+                     {"encloseLiquids", encloseLiquids},
+                     {"fillMicrodungeons", fillMicrodungeons}});
 }
+
+}// namespace Star

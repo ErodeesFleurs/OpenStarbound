@@ -327,7 +327,7 @@ private:
 
 class PathController {
 public:
-  PathController(World* world);
+  PathController(World& world);
 
   PlatformerAStar::Parameters const& parameters();
   void setParameters(PlatformerAStar::Parameters const& parameters);
@@ -347,7 +347,7 @@ private:
 private:
   bool onGround(ActorMovementController const& movementController, Vec2F const& position, CollisionSet const& collisionSet) const;
 
-  World* m_world;
+  World& m_world;
   PlatformerAStar::Parameters m_parameters;
 
   Maybe<Vec2F> m_startPosition;

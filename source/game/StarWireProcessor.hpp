@@ -30,7 +30,7 @@ private:
 
   // Add the given WireEntity to the working entities set, populating inbound /
   // outbound nodes and states.
-  void populateWorking(WireEntity* wireEntity);
+  void populateWorking(WireEntity& wireEntity);
   // Scans a wire network, starting at an entity at the given position, while
   // also loading any unloaded entries in the network and marking each entry as
   // now having been 'networkLoaded'.

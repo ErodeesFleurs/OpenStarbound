@@ -1,20 +1,26 @@
 #pragma once
 
-#include "StarPeriodicFunction.hpp"
 #include "StarAnimatedPartSet.hpp"
-#include "StarNetElementSystem.hpp"
+#include "StarAssets.hpp"
 #include "StarDrawable.hpp"
-#include "StarParticle.hpp"
 #include "StarLightSource.hpp"
 #include "StarMixer.hpp"
-#include "StarAssets.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarParticle.hpp"
+#include "StarPeriodicFunction.hpp"
 
 namespace Star {
 
 class NetworkedAnimator;
 using NetworkedAnimatorPtr = SharedPtr<NetworkedAnimator>;
-struct NetworkedAnimatorExceptionTag { static constexpr char const* typeName = "NetworkedAnimatorException"; };
+struct NetworkedAnimatorExceptionTag {
+  static constexpr char const* typeName = "NetworkedAnimatorException";
+};
 using NetworkedAnimatorException = TypedException<StarException, NetworkedAnimatorExceptionTag>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 
 // Wraps an AnimatedPartSet with a set of optional light sources and particle
 // emitters to produce a network capable animation system.
@@ -65,10 +71,13 @@ public:
     HashMap<AudioInstancePtr, Vec2F> currentAudioBasePositions;
   };
 
-  NetworkedAnimator(AssetsConstPtr assets = {});
+  NetworkedAnimator();
+  NetworkedAnimator(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase);
+  NetworkedAnimator(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase);
   // If passed a string as config, NetworkedAnimator will interpret this as a
   // config path, otherwise it is interpreted as the literal config.
-  NetworkedAnimator(Json config, String relativePath = String(), AssetsConstPtr assets = {});
+  NetworkedAnimator(Json config, String relativePath, AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase);
+  NetworkedAnimator(Json config, String relativePath, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase);
 
   NetworkedAnimator(NetworkedAnimator&& animator);
   NetworkedAnimator(NetworkedAnimator const& animator);
@@ -106,7 +115,7 @@ public:
   Json stateProperty(String const& stateType, String const& propertyName, Maybe<String> state = {}, Maybe<int> frame = {}) const;
   Json stateNextProperty(String const& stateType, String const& propertyName) const;
   Json partProperty(String const& partName, String const& propertyName, Maybe<String> stateType = {}, Maybe<String> state = {}, Maybe<int> frame = {}) const;
-  Json partNextProperty(String const & partName, String const & propertyName) const;
+  Json partNextProperty(String const& partName, String const& propertyName) const;
 
   // Returns the transformation from flipping and zooming that is applied to
   // all parts in the NetworkedAnimator.
@@ -275,7 +284,6 @@ private:
     float yScaleAnimation;
     float xShearAnimation;
     float yShearAnimation;
-
   };
 
   struct ParticleEmitter {
@@ -363,6 +371,8 @@ private:
   Json mergeIncludes(Json config, Json includes, String relativePath);
 
   AssetsConstPtr m_assets;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
   String m_relativePath;
   uint8_t m_animatorVersion;
 
@@ -387,9 +397,9 @@ private:
   StableStringMap<NetElementHashMap<String, String>> m_partTags;
   HashMap<String, String> m_localTags;
 
-  HashMap<String,List<Drawable>> m_partDrawables;
+  HashMap<String, List<Drawable>> m_partDrawables;
 
   mutable StringMap<std::pair<size_t, Drawable>> m_cachedPartDrawables;
 };
 
-}
+}// namespace Star

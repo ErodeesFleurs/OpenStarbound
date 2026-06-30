@@ -150,7 +150,7 @@ EntityType PlantDrop::entityType() const {
 
 void PlantDrop::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
-  m_movementController.init(world);
+  m_movementController.init(*world);
 
   PolyF collisionPoly = PolyF(RectF::withCenter(m_collisionRect.center(), m_collisionRect.size() / 2.0f));
   MovementParameters parameters;

@@ -13,8 +13,7 @@ class StarWorldClientLighting {
 public:
   friend class WorldClient;
 
-  StarWorldClientLighting() = default;
-  explicit StarWorldClientLighting(WorldClient* worldClient);
+  explicit StarWorldClientLighting(WorldClient& worldClient);
 
   bool fullBright() const;
   void setFullBright(bool fullBright);
@@ -33,7 +32,7 @@ private:
   void lightingTileGather();
   void lightingCalc();
 
-  WorldClient* m_worldClient = nullptr;
+  WorldClient& m_worldClient;
 
   Json m_lightingConfig;
   bool m_fullBright = false;

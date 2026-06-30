@@ -28,18 +28,11 @@ struct GuiContextServices {
   ImageMetadataDatabaseConstPtr imageMetadata;
   ItemDatabaseConstPtr itemDatabase;
   function<void(ListenerWeakPtr)> registerReloadListener;
+  function<void(function<void()>)> withClipboardUnlock;
 };
 
 class GuiContext {
 public:
-  // Get pointer to the singleton root instance, if it exists.  Otherwise,
-  // returns nullptr.
-  static GuiContext* singletonPtr();
-
-  // Gets reference to GuiContext singleton, throws GuiContextException if root
-  // is not initialized.
-  static GuiContext& singleton();
-
   GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, GuiContextServices services);
   ~GuiContext();
 
@@ -148,13 +141,12 @@ public:
   bool setClipboardData(StringMap<ByteArray> data);
   bool setClipboardImage(Image const& image, ByteArray* png, String const* path = nullptr);
   bool setClipboardFile(String const& path);
+  void withClipboardUnlock(function<void()> callback);
   float getDisplayScale() const;
 
   void cleanup();
 
 private:
-  static GuiContext* s_singleton;
-
   MixerPtr m_mixer;
   ApplicationControllerPtr m_applicationController;
   AssetsConstPtr m_assets;
@@ -162,6 +154,7 @@ private:
   ImageMetadataDatabaseConstPtr m_imageMetadata;
   ItemDatabaseConstPtr m_itemDatabase;
   function<void(ListenerWeakPtr)> m_registerReloadListener;
+  function<void(function<void()>)> m_withClipboardUnlock;
   RendererPtr m_renderer;
 
   AssetTextureGroupPtr m_textureCollection;

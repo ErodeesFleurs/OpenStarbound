@@ -111,7 +111,7 @@ private:
 
 class SpeciesDatabase {
 public:
-  SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator);
+  SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator, LuaRootServices luaRootServices);
 
   bool hasSpecies(String const& kind) const;
   SpeciesDefinitionPtr species(String const& kind) const;

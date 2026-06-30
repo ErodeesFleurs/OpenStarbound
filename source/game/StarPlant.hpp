@@ -7,6 +7,7 @@
 #include "StarInspectableEntity.hpp"
 #include "StarAssetPath.hpp"
 #include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
@@ -55,11 +56,11 @@ public:
     float zLevel;
   };
 
-  Plant(AssetsConstPtr assets, TreeVariant const& config, uint64_t seed);
-  Plant(AssetsConstPtr assets, GrassVariant const& config, uint64_t seed);
-  Plant(AssetsConstPtr assets, BushVariant const& config, uint64_t seed);
-  Plant(AssetsConstPtr assets, Json const& diskStore);
-  Plant(AssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules = {});
+  Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, TreeVariant const& config, uint64_t seed);
+  Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, GrassVariant const& config, uint64_t seed);
+  Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, BushVariant const& config, uint64_t seed);
+  Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& diskStore);
+  Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {}) const;
@@ -112,7 +113,7 @@ public:
   RectF interactiveBoundBox() const override;
 
 private:
-  Plant(AssetsConstPtr assets);
+  Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   void breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition);
   Vec2I baseDamagePosition(List<Vec2I> const& positions) const;
@@ -165,6 +166,7 @@ private:
   TileDamageParameters m_tileDamageParameters;
   EntityTileDamageStatus m_tileDamageStatus;
   AssetsConstPtr m_assets;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   float m_tileDamageX;
   float m_tileDamageY;
   bool m_tileDamageEventTrigger;

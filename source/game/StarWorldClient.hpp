@@ -1,45 +1,43 @@
 #pragma once
 
-#include "StarWorldClientState.hpp"
+#include "StarAmbient.hpp"
 #include "StarAssets.hpp"
-#include "StarConfiguration.hpp"
 #include "StarBiomeDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarEntityFactory.hpp"
+#include "StarCellularLighting.hpp"
+#include "StarChatAction.hpp"
+#include "StarConfiguration.hpp"
 #include "StarDamageDatabase.hpp"
-#include "StarStoredFunctions.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarParticleDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
+#include "StarDungeonGenerator.hpp"
 #include "StarEffectSourceDatabase.hpp"
-#include "StarTechDatabase.hpp"
-#include "StarStatusEffectDatabase.hpp"
-#include "StarPlantDatabase.hpp"
-#include "StarTreasure.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarEntityRendering.hpp"
+#include "StarGameTimers.hpp"
 #include "StarImageMetadataDatabase.hpp"
-#include "StarWorldClientLighting.hpp"
+#include "StarInterpolationTracker.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarNetPackets.hpp"
+#include "StarParticleDatabase.hpp"
+#include "StarPlantDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarStatusEffectDatabase.hpp"
+#include "StarStoredFunctions.hpp"
+#include "StarTechDatabase.hpp"
+#include "StarTerrainDatabase.hpp"
+#include "StarTickRateMonitor.hpp"
+#include "StarTreasure.hpp"
+#include "StarWeather.hpp"
+#include "StarWiring.hpp"
+#include "StarWorld.hpp"
 #include "StarWorldClientAudio.hpp"
 #include "StarWorldClientDamageFX.hpp"
+#include "StarWorldClientLighting.hpp"
+#include "StarWorldClientState.hpp"
 #include "StarWorldClientTilePrediction.hpp"
-#include "StarNetPackets.hpp"
 #include "StarWorldRenderData.hpp"
-#include "StarAmbient.hpp"
-#include "StarCellularLighting.hpp"
-#include "StarWeather.hpp"
-#include "StarInterpolationTracker.hpp"
 #include "StarWorldStructure.hpp"
-#include "StarChatAction.hpp"
-#include "StarWiring.hpp"
-#include "StarEntityRendering.hpp"
-#include "StarWorld.hpp"
-#include "StarGameTimers.hpp"
-#include "StarLuaRoot.hpp"
-#include "StarTickRateMonitor.hpp"
 
 namespace Star {
 
@@ -72,32 +70,37 @@ class ClientContext;
 class PlayerStorage;
 struct OverheadBar;
 
-struct WorldClientExceptionTag { static constexpr char const* typeName = "WorldClientException"; };
+struct WorldClientExceptionTag {
+  static constexpr char const* typeName = "WorldClientException";
+};
 using WorldClientException = TypedException<StarException, WorldClientExceptionTag>;
 
 class WorldClient : public World {
 public:
   WorldClient(PlayerPtr mainPlayer,
-      LuaRootPtr luaRoot,
-      AssetsConstPtr assets,
-      ConfigurationPtr configuration,
-      MaterialDatabaseConstPtr materialDatabase,
-      ItemDatabaseConstPtr itemDatabase,
-      ObjectDatabaseConstPtr objectDatabase,
-      SpeciesDatabaseConstPtr speciesDatabase,
-      EntityFactoryConstPtr entityFactory,
-      LiquidsDatabaseConstPtr liquidsDatabase,
-      BiomeDatabaseConstPtr biomeDatabase,
-      FunctionDatabaseConstPtr functionDatabase,
-      BehaviorDatabaseConstPtr behaviorDatabase,
-      ParticleDatabaseConstPtr particleDatabase,
-      DamageDatabaseConstPtr damageDatabase,
-      EffectSourceDatabaseConstPtr effectSourceDatabase,
-      TechDatabaseConstPtr techDatabase,
-      StatusEffectDatabaseConstPtr statusEffectDatabase,
-      PlantDatabaseConstPtr plantDatabase,
-      TreasureDatabaseConstPtr treasureDatabase,
-      ImageMetadataDatabaseConstPtr imageMetadataDatabase);
+              LuaRootPtr luaRoot,
+              AssetsConstPtr assets,
+              ConfigurationPtr configuration,
+              MaterialDatabaseConstPtr materialDatabase,
+              ItemDatabaseConstPtr itemDatabase,
+              ObjectDatabaseConstPtr objectDatabase,
+              SpeciesDatabaseConstPtr speciesDatabase,
+              EntityFactoryConstPtr entityFactory,
+              LiquidsDatabaseConstPtr liquidsDatabase,
+              TerrainDatabaseConstPtr terrainDatabase,
+              BiomeDatabaseConstPtr biomeDatabase,
+              FunctionDatabaseConstPtr functionDatabase,
+              BehaviorDatabaseConstPtr behaviorDatabase,
+              ParticleDatabaseConstPtr particleDatabase,
+              ProjectileDatabaseConstPtr projectileDatabase,
+              DamageDatabaseConstPtr damageDatabase,
+              EffectSourceDatabaseConstPtr effectSourceDatabase,
+              TechDatabaseConstPtr techDatabase,
+              StatusEffectDatabaseConstPtr statusEffectDatabase,
+              PlantDatabaseConstPtr plantDatabase,
+              TreasureDatabaseConstPtr treasureDatabase,
+              ImageMetadataDatabaseConstPtr imageMetadataDatabase,
+              DungeonDefinitionsConstPtr dungeonDefinitions);
   ~WorldClient();
 
   ConnectionId connection() const override;
@@ -109,6 +112,7 @@ public:
   MaterialDatabaseConstPtr materialDatabase() const override;
   LiquidsDatabaseConstPtr liquidsDatabase() const override;
   ParticleDatabaseConstPtr particleDatabase() const override;
+  ProjectileDatabaseConstPtr projectileDatabase() const override;
   EffectSourceDatabaseConstPtr effectSourceDatabase() const override;
   TechDatabaseConstPtr techDatabase() const override;
   StatusEffectDatabaseConstPtr statusEffectDatabase() const override;
@@ -255,8 +259,6 @@ public:
   using BroadcastCallback = std::function<bool(PlayerPtr, StringView)>;
   BroadcastCallback& broadcastCallback();
 
-
-
 private:
   static const float DropDist;
 
@@ -276,7 +278,7 @@ private:
     List<OverheadBar> overheadBars;
   };
 
-  using ClientTileGetter = function<ClientTile const& (Vec2I)>;
+  using ClientTileGetter = function<ClientTile const&(Vec2I)>;
 
   void initWorld(WorldStartPacket const& packet);
   void clearWorld();
@@ -305,10 +307,10 @@ private:
   friend class StarWorldClientAudio;
   friend class StarWorldClientDamageFX;
   friend class StarWorldClientTilePrediction;
-  StarWorldClientLighting m_lighting{this};
-  StarWorldClientAudio m_audio{this};
-  StarWorldClientDamageFX m_damageFX{this};
-  StarWorldClientTilePrediction m_tilePrediction{this};
+  StarWorldClientLighting m_lighting{*this};
+  StarWorldClientAudio m_audio{*this};
+  StarWorldClientDamageFX m_damageFX{*this};
+  StarWorldClientTilePrediction m_tilePrediction{*this};
   WorldTemplatePtr m_worldTemplate;
   WorldStructure m_centralStructure;
   Vec2F m_playerStart;
@@ -324,7 +326,6 @@ private:
   WorldGeometry m_geometry;
   uint64_t m_currentStep;
   double m_currentTime;
-
 
   List<PreviewTile> m_previewTiles;
 
@@ -346,10 +347,12 @@ private:
   SpeciesDatabaseConstPtr m_speciesDatabase;
   EntityFactoryConstPtr m_entityFactory;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
+  TerrainDatabaseConstPtr m_terrainDatabase;
   BiomeDatabaseConstPtr m_biomeDatabase;
   FunctionDatabaseConstPtr m_functionDatabase;
   BehaviorDatabaseConstPtr m_behaviorDatabase;
   ParticleDatabaseConstPtr m_particleDatabase;
+  ProjectileDatabaseConstPtr m_projectileDatabase;
   DamageDatabaseConstPtr m_damageDatabase;
   EffectSourceDatabaseConstPtr m_effectSourceDatabase;
   TechDatabaseConstPtr m_techDatabase;
@@ -357,6 +360,7 @@ private:
   PlantDatabaseConstPtr m_plantDatabase;
   TreasureDatabaseConstPtr m_treasureDatabase;
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
+  DungeonDefinitionsConstPtr m_dungeonDefinitions;
 
   bool m_collisionDebug;
   float m_interactivePulseAmount;
@@ -371,7 +375,6 @@ private:
   GameTimer m_worldDimTimer;
   float m_worldDimLevel;
   Vec3B m_worldDimColor;
-
 
   GameTimer m_parallaxFadeTimer;
   ParallaxPtr m_currentParallax;
@@ -424,4 +427,4 @@ private:
   HashSet<uint64_t> m_entityExceptionsLogged;
 };
 
-}
+}// namespace Star

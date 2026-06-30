@@ -23,9 +23,6 @@ public:
 
   static RenderTile DefaultRenderTile;
 
-  static TileDrawer* singletonPtr();
-  static TileDrawer& singleton();
-
   TileDrawer(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase);
   ~TileDrawer();
 
@@ -39,8 +36,6 @@ public:
   static void forEachRenderTile(WorldRenderData const& renderData, RectI const& worldCoordRange, Function&& function);
 private:
   friend class TilePainter;
-
-  static TileDrawer* s_singleton;
 
   static RenderTile const& getRenderTile(WorldRenderData const& renderData, Vec2I const& worldPos);
 

@@ -1,9 +1,10 @@
 #pragma once
 
 #include "StarAssets.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarHumanoid.hpp"
 #include "StarEntitySplash.hpp"
+#include "StarHumanoid.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarLuaRoot.hpp"
 
 namespace Star {
 
@@ -43,10 +44,18 @@ class LiquidsDatabase;
 using LiquidsDatabaseConstPtr = SharedPtr<LiquidsDatabase const>;
 class TechDatabase;
 using TechDatabaseConstPtr = SharedPtr<TechDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 struct PlayerConfig;
 using PlayerConfigPtr = SharedPtr<PlayerConfig>;
 
-struct PlayerExceptionTag { static constexpr char const* typeName = "PlayerException"; };
+struct PlayerExceptionTag {
+  static constexpr char const* typeName = "PlayerException";
+};
 using PlayerException = TypedException<StarException, PlayerExceptionTag>;
 
 // The player has a large number of shared config states, so this is a shared
@@ -93,7 +102,7 @@ struct PlayerConfig {
 
 class PlayerFactory {
 public:
-  PlayerFactory(AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, function<EntityFactoryConstPtr()> entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase);
+  PlayerFactory(AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, function<EntityFactoryConstPtr()> entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices);
 
   PlayerPtr create() const;
   PlayerPtr diskLoadPlayer(Json const& diskStore) const;
@@ -117,9 +126,12 @@ private:
   function<EntityFactoryConstPtr()> m_entityFactory;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
   TechDatabaseConstPtr m_techDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   PlayerConfigPtr m_config;
 
   RebuilderPtr m_rebuilder;
 };
 
-}
+}// namespace Star

@@ -38,7 +38,8 @@ EntityFactory::EntityFactory(
     NpcDatabaseConstPtr npcDatabase,
     VehicleDatabaseConstPtr vehicleDatabase,
     VersioningDatabaseConstPtr versioningDatabase,
-    ItemDatabaseConstPtr itemDatabase)
+    ItemDatabaseConstPtr itemDatabase,
+    ImageMetadataDatabaseConstPtr imageMetadataDatabase)
   : m_playerFactory(std::move(playerFactory))
   , m_monsterDatabase(std::move(monsterDatabase))
   , m_objectDatabase(std::move(objectDatabase))
@@ -47,7 +48,11 @@ EntityFactory::EntityFactory(
   , m_vehicleDatabase(std::move(vehicleDatabase))
   , m_versioningDatabase(std::move(versioningDatabase))
   , m_assets(std::move(assets))
-  , m_itemDatabase(std::move(itemDatabase)) {}
+  , m_itemDatabase(std::move(itemDatabase))
+  , m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
+  if (!m_imageMetadataDatabase)
+    throw EntityFactoryException("EntityFactory requires image metadata database service");
+}
 
 EntityPtr EntityFactory::create(String const& entityName, Json const& extraParams) const {
   RecursiveMutexLocker locker(m_mutex);
@@ -118,7 +123,7 @@ EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStor
   } else if (type == EntityType::Object) {
     return m_objectDatabase->netLoadObject(netStore, rules);
   } else if (type == EntityType::Plant) {
-    return make_shared<Plant>(m_assets, netStore, rules);
+    return make_shared<Plant>(m_assets, m_imageMetadataDatabase, netStore, rules);
   } else if (type == EntityType::PlantDrop) {
     return make_shared<PlantDrop>(m_assets, netStore, rules);
   } else if (type == EntityType::Projectile) {
@@ -170,7 +175,7 @@ EntityPtr EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) 
   } else if (type == EntityType::Object) {
     return m_objectDatabase->diskLoadObject(diskStore);
   } else if (type == EntityType::Plant) {
-    return make_shared<Plant>(m_assets, diskStore);
+    return make_shared<Plant>(m_assets, m_imageMetadataDatabase, diskStore);
   } else if (type == EntityType::ItemDrop) {
     return make_shared<ItemDrop>(diskStore, m_assets, m_itemDatabase);
   } else if (type == EntityType::Npc) {

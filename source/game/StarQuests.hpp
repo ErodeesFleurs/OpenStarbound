@@ -44,14 +44,14 @@ extern EnumMap<QuestState> const QuestStateNames;
 
 class Quest {
 public:
-  Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
   Quest(AssetsConstPtr assets, Json const& diskStore, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
   Json diskStore() const;
 
   QuestTemplatePtr getTemplate() const;
 
-  void init(Player* player, World* world, UniverseClient* client);
+  void init(Player& player, World& world, UniverseClient* client);
   void uninit();
 
   Maybe<Json> receiveMessage(String const& message, bool localMessage, JsonArray const& args = {});
@@ -153,7 +153,7 @@ private:
 
   void initScript();
   void uninitScript();
-  LuaCallbacks makeQuestCallbacks(Player* player);
+  LuaCallbacks makeQuestCallbacks(Player& player);
 
   void setEntityParameter(String const& paramName, Entity const* entity);
   void addReward(ItemDescriptor const& reward);
@@ -209,5 +209,5 @@ private:
 // in with examples. Doesn't necessarily make a valid quest that can be completed, since
 // its purpose is for previewing dialogs only.
 QuestPtr createPreviewQuest(
-    String const& templateId, String const& position, String const& questGiverSpecies, Player* player);
+    String const& templateId, String const& position, String const& questGiverSpecies, Player& player);
 }

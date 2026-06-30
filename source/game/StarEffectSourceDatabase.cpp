@@ -1,7 +1,6 @@
 #include "StarEffectSourceDatabase.hpp"
 #include "StarGameTypes.hpp"
 #include "StarParticleDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarMixer.hpp"
@@ -141,6 +140,9 @@ String EffectSource::suggestedSpawnLocation() const {
 }
 
 List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position, ParticleDatabaseConstPtr particleDatabase) {
+  if (!particleDatabase)
+    throw StarException("particlesFromDefinition requires particle database service");
+
   Json particles;
   if (config.type() == Json::Type::Array)
     particles = Random::randValueFrom(config.toArray(), Json());
@@ -149,13 +151,12 @@ List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position
   if (!particles.isNull()) {
     if (particles.type() != Json::Type::Array)
       particles = JsonArray{particles};
-    auto particleDb = particleDatabase ? particleDatabase : Root::singleton().particleDatabase();
     List<Particle> result;
     for (auto entry : particles.iterateArray()) {
       if (entry.type() != Json::Type::Object) {
-        result.append(particleDb->particle(entry.toString()));
+        result.append(particleDatabase->particle(entry.toString()));
       } else {
-        Particle particle = particleDb->particle(entry);
+        Particle particle = particleDatabase->particle(entry);
         particle.position += position;
         result.append(particle);
       }

@@ -6,6 +6,7 @@
 
 namespace Star {
 
+class GuiContext;
 class UniverseClient;
 using UniverseClientPtr = SharedPtr<UniverseClient>;
 class QuestIndicatorPainter;
@@ -15,6 +16,7 @@ class QuestIndicatorPainter {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   QuestIndicatorPainter(UniverseClientPtr const& client, Services services);
@@ -36,6 +38,7 @@ private:
 
   UniverseClientPtr m_client;
   AssetsConstPtr m_assets;
+  GuiContext& m_guiContext;
   WorldCamera m_camera;
   Map<EntityId, Indicator> m_indicators;
 };

@@ -8,7 +8,7 @@ class ImageWidget;
 using ImageWidgetPtr = SharedPtr<ImageWidget>;
 class ImageWidget : public Widget {
 public:
-  ImageWidget(String const& image = {});
+  ImageWidget(GuiContext& context, String const& image = {});
 
   bool interactive() const override;
   void setImage(String const& image);

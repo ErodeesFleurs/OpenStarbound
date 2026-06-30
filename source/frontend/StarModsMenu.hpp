@@ -16,6 +16,7 @@ class ModsMenu : public Pane {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   explicit ModsMenu(Services services);

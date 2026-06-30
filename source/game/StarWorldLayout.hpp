@@ -1,12 +1,12 @@
 #pragma once
 
-#include "StarPerlin.hpp"
-#include "StarWeatherTypes.hpp"
-#include "StarGameTypes.hpp"
-#include "StarCelestialParameters.hpp"
 #include "StarAssets.hpp"
 #include "StarBiomeDatabase.hpp"
+#include "StarCelestialParameters.hpp"
+#include "StarGameTypes.hpp"
+#include "StarPerlin.hpp"
 #include "StarTerrainDatabase.hpp"
+#include "StarWeatherTypes.hpp"
 
 namespace Star {
 
@@ -88,7 +88,7 @@ public:
   static WorldLayout buildFloatingDungeonLayout(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed);
 
   WorldLayout();
-  WorldLayout(Json const& store, TerrainDatabaseConstPtr terrainDatabase = {}, BiomeDatabaseConstPtr biomeDatabase = {});
+  WorldLayout(Json const& store, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase);
 
   Json toJson() const;
 
@@ -145,10 +145,10 @@ private:
   WorldRegion buildRegion(uint64_t seed, RegionParams const& regionParams);
   void addLayer(uint64_t seed, int yStart, RegionParams regionParams);
   void addLayer(uint64_t seed, int yStart, int yBase, String const& primaryBiome,
-      RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
-      List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
-      Vec2F secondaryRegionSize, Vec2F subRegionSize,
-      bool useSecondaryEnvironmentBiomeIndex, int playerStartSearchYRange);
+                RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
+                List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
+                Vec2F secondaryRegionSize, Vec2F subRegionSize,
+                bool useSecondaryEnvironmentBiomeIndex, int playerStartSearchYRange);
   void finalize(Color mainSkyColor);
 
   pair<size_t, int> findContainingCell(WorldLayer const& layer, int x) const;
@@ -186,4 +186,4 @@ inline TerrainSelectorConstPtr const& WorldLayout::getTerrainSelector(TerrainSel
   return m_terrainSelectors[index - 1];
 }
 
-}
+}// namespace Star

@@ -28,6 +28,8 @@ struct ContainerPaneServices {
   AssetsConstPtr assets;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
+  function<bool()> takeAllPressed;
+  GuiContext& guiContext;
 };
 
 class ContainerPane : public Pane {
@@ -65,6 +67,7 @@ private:
   AssetsConstPtr m_assets;
   ObjectDatabaseConstPtr m_objectDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  function<bool()> m_takeAllPressed;
   ItemBagPtr m_itemBag;
 
   ExpectingSwap m_expectingSwap;

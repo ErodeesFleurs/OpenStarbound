@@ -2,8 +2,8 @@
 
 namespace Star {
 
-ImageStretchWidget::ImageStretchWidget(ImageStretchSet const& imageStretchSet, GuiDirection direction)
-  : m_imageStretchSet(imageStretchSet), m_direction(direction) {
+ImageStretchWidget::ImageStretchWidget(GuiContext& context, ImageStretchSet const& imageStretchSet, GuiDirection direction)
+  : Widget(context), m_imageStretchSet(imageStretchSet), m_direction(direction) {
 
 }
 
@@ -14,7 +14,7 @@ void ImageStretchWidget::setImageStretchSet(String const& beginImage, String con
 }
 
 void ImageStretchWidget::renderImpl() {
-  context()->drawImageStretchSet(m_imageStretchSet, RectF(screenBoundRect()), m_direction);
+  context().drawImageStretchSet(m_imageStretchSet, RectF(screenBoundRect()), m_direction);
 }
 
 }

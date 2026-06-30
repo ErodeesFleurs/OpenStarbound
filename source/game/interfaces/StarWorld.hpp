@@ -1,26 +1,26 @@
 #pragma once
 
-#include "StarTileEntity.hpp"
-#include "StarInteractionTypes.hpp"
-#include "StarCollisionBlock.hpp"
-#include "StarForceRegions.hpp"
-#include "StarWorldGeometry.hpp"
-#include "StarTileModification.hpp"
-#include "StarLuaRoot.hpp"
-#include "StarRpcPromise.hpp"
-#include "StarTileWorldInterface.hpp"
-#include "StarEntityWorldInterface.hpp"
 #include "StarAssets.hpp"
-#include "StarLiquidsDatabase.hpp"
+#include "StarCollisionBlock.hpp"
 #include "StarEffectSourceDatabase.hpp"
-#include "StarParticleDatabase.hpp"
-#include "StarTechDatabase.hpp"
-#include "StarStatusEffectDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarPlantDatabase.hpp"
-#include "StarTreasure.hpp"
+#include "StarEntityWorldInterface.hpp"
+#include "StarForceRegions.hpp"
 #include "StarImageMetadataDatabase.hpp"
+#include "StarInteractionTypes.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarParticleDatabase.hpp"
+#include "StarPlantDatabase.hpp"
+#include "StarRpcPromise.hpp"
+#include "StarStatusEffectDatabase.hpp"
 #include "StarStoredFunctions.hpp"
+#include "StarTechDatabase.hpp"
+#include "StarTileEntity.hpp"
+#include "StarTileModification.hpp"
+#include "StarTileWorldInterface.hpp"
+#include "StarTreasure.hpp"
+#include "StarWorldGeometry.hpp"
 
 namespace Star {
 
@@ -29,6 +29,8 @@ class ItemDatabase;
 using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
 class ObjectDatabase;
 using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
+class ProjectileDatabase;
+using ProjectileDatabaseConstPtr = SharedPtr<ProjectileDatabase const>;
 class TileEntity;
 class ScriptedEntity;
 class BehaviorDatabase;
@@ -51,6 +53,7 @@ public:
   virtual LiquidsDatabaseConstPtr liquidsDatabase() const = 0;
   virtual EffectSourceDatabaseConstPtr effectSourceDatabase() const = 0;
   virtual ParticleDatabaseConstPtr particleDatabase() const = 0;
+  virtual ProjectileDatabaseConstPtr projectileDatabase() const = 0;
   virtual TechDatabaseConstPtr techDatabase() const = 0;
   virtual StatusEffectDatabaseConstPtr statusEffectDatabase() const = 0;
   virtual PlantDatabaseConstPtr plantDatabase() const = 0;
@@ -152,11 +155,11 @@ template <typename EntityT>
 List<SharedPtr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<EntityT> selector) const {
   List<SharedPtr<EntityT>> list;
   forEachEntity(boundBox, [&](EntityPtr const& entity) {
-      if (auto e = as<EntityT>(entity)) {
-        if (!selector || selector(e))
-          list.append(std::move(e));
-      }
-    });
+    if (auto e = as<EntityT>(entity)) {
+      if (!selector || selector(e))
+        list.append(std::move(e));
+    }
+  });
 
   return list;
 }
@@ -168,20 +171,20 @@ SharedPtr<EntityT> World::closest(Vec2F const& center, float radius, EntityFilte
 
 template <typename EntityT>
 SharedPtr<EntityT> World::closestInSight(
-    Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector) const {
+  Vec2F const& center, float radius, CollisionSet const& collisionSet, EntityFilterOf<EntityT> selector) const {
   return as<EntityT>(closestEntityInSight(center, radius, collisionSet, entityTypeFilter<EntityT>(selector)));
 }
 
 template <typename EntityT>
 List<SharedPtr<EntityT>> World::lineQuery(
-    Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector) const {
+  Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector) const {
   List<SharedPtr<EntityT>> list;
   forEachEntityLine(begin, end, [&](EntityPtr entity) {
-      if (auto e = as<EntityT>(std::move(entity))) {
-        if (!selector || selector(e))
-          list.append(std::move(e));
-      }
-    });
+    if (auto e = as<EntityT>(std::move(entity))) {
+      if (!selector || selector(e))
+        list.append(std::move(e));
+    }
+  });
 
   return list;
 }
@@ -190,9 +193,9 @@ template <typename EntityT>
 List<SharedPtr<EntityT>> World::atTile(Vec2I const& pos) const {
   List<SharedPtr<EntityT>> list;
   forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
-      if (auto e = as<EntityT>(entity))
-        list.append(std::move(e));
-    });
+    if (auto e = as<EntityT>(entity))
+      list.append(std::move(e));
+  });
   return list;
 }
-}
+}// namespace Star

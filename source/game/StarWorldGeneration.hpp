@@ -28,7 +28,7 @@ using VehicleDatabaseConstPtr = SharedPtr<VehicleDatabase const>;
 
 class LiquidWorld : public CellularLiquidWorld<LiquidId> {
 public:
-  LiquidWorld(WorldServer* world);
+  LiquidWorld(WorldServer& world);
 
   Vec2I uniqueLocation(Vec2I const& location) const override;
   CellularLiquidCell<LiquidId> cell(Vec2I const& location) const override;
@@ -38,26 +38,26 @@ public:
   void liquidCollision(Vec2I const& pos, LiquidId liquid, Vec2I const& blockPos) override;
 
 private:
-  WorldServer* m_worldServer;
+  WorldServer& m_worldServer;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
   MaterialDatabaseConstPtr m_materialDatabase;
 };
 
 class FallingBlocksWorld : public FallingBlocksFacade {
 public:
-  FallingBlocksWorld(WorldServer* world);
+  FallingBlocksWorld(WorldServer& world);
 
   FallingBlockType blockType(Vec2I const& pos) override;
   void moveBlock(Vec2I const& from, Vec2I const& to) override;
 
 private:
-  WorldServer* m_worldServer;
+  WorldServer& m_worldServer;
   MaterialDatabaseConstPtr m_materialDatabase;
 };
 
 class DungeonGeneratorWorld : public DungeonGeneratorWorldFacade {
 public:
-  DungeonGeneratorWorld(WorldServer* worldServer, ObjectDatabaseConstPtr objectDatabase, bool markForActivation);
+  DungeonGeneratorWorld(WorldServer& worldServer, ObjectDatabaseConstPtr objectDatabase, bool markForActivation);
 
   void markRegion(RectI const& region) override;
   void markTerrain(PolyF const& region) override;
@@ -94,7 +94,7 @@ private:
   void placePlant(PlantPtr const& plant, Vec2I const& position);
   void placeBiomeItems(Vec2I const& pos, List<BiomeItemPlacement>& potentialItems);
 
-  WorldServer* m_worldServer;
+  WorldServer& m_worldServer;
   ObjectDatabaseConstPtr m_objectDatabase;
   MaterialDatabaseConstPtr m_materialDatabase;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
@@ -109,7 +109,7 @@ private:
 
 class SpawnerWorld : public SpawnerFacade {
 public:
-  SpawnerWorld(WorldServer* worldServer);
+  SpawnerWorld(WorldServer& worldServer);
 
   WorldGeometry geometry() const override;
   List<RectF> clientWindows() const override;
@@ -128,23 +128,23 @@ public:
   EntityPtr getEntity(EntityId entityId) const override;
 
 private:
-  WorldServer* m_worldServer;
+  WorldServer& m_worldServer;
 };
 
 class WorldGenerator : public WorldGeneratorFacade {
 public:
-  WorldGenerator(WorldServer* server, ObjectDatabaseConstPtr objectDatabase);
+  WorldGenerator(WorldServer& server, ObjectDatabaseConstPtr objectDatabase);
 
-  void generateSectorLevel(WorldStorage* worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) override;
-  void sectorLoadLevelChanged(WorldStorage* worldStorage, Sector const& sector, SectorLoadLevel loadLevel) override;
-  void terraformSector(WorldStorage* worldStorage, Sector const& sector) override;
-  void initEntity(WorldStorage* worldStorage, EntityId entityId, EntityPtr const& entity) override;
-  void destructEntity(WorldStorage* worldStorage, EntityPtr const& entity) override;
-  bool entityKeepAlive(WorldStorage* worldStorage, EntityPtr const& entity) const override;
-  bool entityPersistent(WorldStorage* worldStorage, EntityPtr const& entity) const override;
+  void generateSectorLevel(WorldStorage& worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) override;
+  void sectorLoadLevelChanged(WorldStorage& worldStorage, Sector const& sector, SectorLoadLevel loadLevel) override;
+  void terraformSector(WorldStorage& worldStorage, Sector const& sector) override;
+  void initEntity(WorldStorage& worldStorage, EntityId entityId, EntityPtr const& entity) override;
+  void destructEntity(WorldStorage& worldStorage, EntityPtr const& entity) override;
+  bool entityKeepAlive(WorldStorage& worldStorage, EntityPtr const& entity) const override;
+  bool entityPersistent(WorldStorage& worldStorage, EntityPtr const& entity) const override;
   RpcPromise<Vec2I> enqueuePlacement(List<BiomeItemDistribution> distributions, Maybe<DungeonId> id) override;
 
-  void replaceBiomeBlocks(ServerTile* tile);
+  void replaceBiomeBlocks(ServerTile& tile);
 
 private:
   struct QueuedPlacement {
@@ -154,25 +154,25 @@ private:
     bool fulfilled;
   };
 
-  void prepareTiles(WorldStorage* worldStorage, Sector const& sector);
-  void generateMicroDungeons(WorldStorage* worldStorage, Sector const& sector);
-  void generateCaveLiquid(WorldStorage* worldStorage, Sector const& sector);
-  void prepareSector(WorldStorage* worldStorage, Sector const& sector);
-  void prepareSectorBiomeBlocks(WorldStorage* worldStorage, Sector const& sector);
+  void prepareTiles(WorldStorage& worldStorage, Sector const& sector);
+  void generateMicroDungeons(WorldStorage& worldStorage, Sector const& sector);
+  void generateCaveLiquid(WorldStorage& worldStorage, Sector const& sector);
+  void prepareSector(WorldStorage& worldStorage, Sector const& sector);
+  void prepareSectorBiomeBlocks(WorldStorage& worldStorage, Sector const& sector);
 
-  void placeBiomeGrass(WorldStorage* worldStorage, ServerTile* tile, Vec2I const& position);
+  void placeBiomeGrass(WorldStorage& worldStorage, ServerTile& tile, Vec2I const& position);
 
-  void reapplyBiome(WorldStorage* worldStorage, Sector const& sector);
+  void reapplyBiome(WorldStorage& worldStorage, Sector const& sector);
 
-  Set<Vec2I> caveLiquidSeeds(WorldStorage* worldStorage, Sector const& sector);
+  Set<Vec2I> caveLiquidSeeds(WorldStorage& worldStorage, Sector const& sector);
   Map<Vec2I, float> determineLiquidLevel(Set<Vec2I> const& spots, Set<Vec2I> const& filled);
   void levelCluster(Set<Vec2I>& cluster, Set<Vec2I> const& filled, Map<Vec2I, float>& results);
 
   // Special plant placement routine that does slight terrain adjustments to
   // fit plants.
-  bool placePlant(WorldStorage* worldStorage, PlantPtr const& plant, Vec2I const& position);
+  bool placePlant(WorldStorage& worldStorage, PlantPtr const& plant, Vec2I const& position);
 
-  WorldServer* m_worldServer;
+  WorldServer& m_worldServer;
   ObjectDatabaseConstPtr m_objectDatabase;
   MaterialDatabaseConstPtr m_materialDatabase;
   PlantDatabaseConstPtr m_plantDatabase;

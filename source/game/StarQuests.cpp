@@ -1,39 +1,38 @@
 #include "StarQuests.hpp"
-#include "StarUniverseClient.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarFile.hpp"
-#include "StarTime.hpp"
-#include "StarRandom.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarItemDrop.hpp"
-#include "StarMonster.hpp"
-#include "StarNpc.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarObject.hpp"
-#include "StarPlayer.hpp"
-#include "StarPlayerInventory.hpp"
-#include "StarPlayerTech.hpp"
+#include "StarCelestialLuaBindings.hpp"
+#include "StarClientContext.hpp"
 #include "StarConfigLuaBindings.hpp"
 #include "StarEntityLuaBindings.hpp"
+#include "StarFile.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarItemDrop.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarMonster.hpp"
+#include "StarNpc.hpp"
+#include "StarObject.hpp"
+#include "StarObjectDatabase.hpp"
+#include "StarPlayer.hpp"
+#include "StarPlayerInventory.hpp"
 #include "StarPlayerLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
+#include "StarPlayerTech.hpp"
 #include "StarQuestManager.hpp"
-#include "StarClientContext.hpp"
+#include "StarRandom.hpp"
+#include "StarStatusControllerLuaBindings.hpp"
+#include "StarTime.hpp"
+#include "StarUniverseClient.hpp"
 #include "StarUuid.hpp"
-#include "StarCelestialLuaBindings.hpp"
 
 namespace Star {
 
-EnumMap<QuestState> const QuestStateNames {
+EnumMap<QuestState> const QuestStateNames{
   {QuestState::New, "New"},
   {QuestState::Offer, "Offer"},
   {QuestState::Active, "Active"},
   {QuestState::Complete, "Complete"},
-  {QuestState::Failed, "Failed"}
-};
+  {QuestState::Failed, "Failed"}};
 
-Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
-  : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
+Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+    : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
   if (!m_assets)
     throw StarException("Quest requires assets service");
   if (!m_objectDatabase)
@@ -57,20 +56,18 @@ Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t a
   auto questTemplate = m_questTemplateDatabase->questTemplate(templateId());
 
   m_parameters = questDescriptor().parameters;
-  m_displayParameters = DisplayParameters {
-     questTemplate->ephemeral,
-     questTemplate->showInLog,
-     questTemplate->showAcceptDialog,
-     questTemplate->showCompleteDialog,
-     questTemplate->showFailDialog,
-     questTemplate->mainQuest,
-     questTemplate->hideCrossServer
-  };
-  setEntityParameter("player", player);
+  m_displayParameters = DisplayParameters{
+    questTemplate->ephemeral,
+    questTemplate->showInLog,
+    questTemplate->showAcceptDialog,
+    questTemplate->showCompleteDialog,
+    questTemplate->showFailDialog,
+    questTemplate->mainQuest,
+    questTemplate->hideCrossServer};
+  setEntityParameter("player", &player);
 
   m_money = Random::randUInt(questTemplate->moneyRange[0], questTemplate->moneyRange[1]);
-  m_rewards = Random::randValueFrom(questTemplate->rewards, {}).transformed(
-      [this](ItemDescriptor const& item) -> ItemConstPtr { return m_itemDatabase->item(item); });
+  m_rewards = Random::randValueFrom(questTemplate->rewards, {}).transformed([this](ItemDescriptor const& item) -> ItemConstPtr { return m_itemDatabase->item(item); });
 
   for (String const& rewardParamName : questTemplate->rewardParameters) {
     if (!m_parameters.contains(rewardParamName))
@@ -100,7 +97,7 @@ Quest::Quest(AssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t a
 }
 
 Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
-  : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
+    : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
   if (!m_assets)
     throw StarException("Quest requires assets service");
   if (!m_objectDatabase)
@@ -117,9 +114,9 @@ Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemD
 
   m_state = QuestStateNames.getLeft(diskStore.getString("state"));
 
-  m_arc = QuestArcDescriptor::diskLoad(diskStore.get("arc"));
+  m_arc = QuestArcDescriptor::diskLoad(diskStore.get("arc"), m_versioningDatabase);
   m_arcPos = diskStore.getUInt("arcPos");
-  m_parameters = questParamsDiskLoad(diskStore.get("parameters"));
+  m_parameters = questParamsDiskLoad(diskStore.get("parameters"), m_versioningDatabase);
   m_worldId = diskStore.optString("worldId").apply(parseWorldId);
   m_location = diskStore.opt("location").apply([](Json const& json) {
     return make_pair(jsonToVec3I(json.get("system")), jsonToSystemLocation(json.get("location")));
@@ -128,7 +125,7 @@ Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemD
   m_money = diskStore.getUInt("money");
 
   m_rewards = diskStore.getArray("rewards").transformed(
-      [this](Json const& json) -> ItemConstPtr { return m_itemDatabase->diskLoad(json); });
+    [this](Json const& json) -> ItemConstPtr { return m_itemDatabase->diskLoad(json); });
 
   m_lastUpdatedOn = diskStore.getInt("lastUpdatedOn");
   m_unread = diskStore.getBool("unread", true);
@@ -144,8 +141,7 @@ Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemD
     questTemplate->showCompleteDialog,
     questTemplate->showFailDialog,
     questTemplate->mainQuest,
-    questTemplate->hideCrossServer
-  };
+    questTemplate->hideCrossServer};
 
   m_title = diskStore.getString("title", questTemplate->title);
   m_text = diskStore.getString("text", questTemplate->text);
@@ -153,8 +149,8 @@ Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemD
   m_failureText = diskStore.getString("failureText", questTemplate->failureText);
 
   m_portraits = jsonToMapV<StringMap<List<Drawable>>>(diskStore.get("portraits", JsonObject{}), [](Json const& portrait) {
-      return portrait.toArray().transformed(construct<Drawable>());
-    });
+    return portrait.toArray().transformed(construct<Drawable>());
+  });
   m_portraitTitles = jsonToMapV<StringMap<String>>(diskStore.get("portraitTitles", JsonObject{}), mem_fn(&Json::toString));
   m_showDialog = diskStore.getBool("showDialog", false);
 
@@ -166,19 +162,19 @@ Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemD
 Json Quest::diskStore() const {
   JsonObject result;
   result["state"] = QuestStateNames.getRight(m_state);
-  result["arc"] = m_arc.diskStore();
+  result["arc"] = m_arc.diskStore(m_versioningDatabase);
   result["arcPos"] = m_arcPos;
-  result["parameters"] = questParamsDiskStore(m_parameters);
+  result["parameters"] = questParamsDiskStore(m_parameters, m_versioningDatabase);
   result["money"] = m_money;
 
   result["worldId"] = jsonFromMaybe(m_worldId.apply(printWorldId));
   result["location"] = jsonFromMaybe(m_location.apply([](pair<Vec3I, SystemLocation> const& location) {
-      return JsonObject{{"system", jsonFromVec3I(location.first)}, {"location", jsonFromSystemLocation(location.second)}};
-    }));
+    return JsonObject{{"system", jsonFromVec3I(location.first)}, {"location", jsonFromSystemLocation(location.second)}};
+  }));
   result["serverUuid"] = jsonFromMaybe(m_serverUuid.apply(mem_fn(&Uuid::hex)));
 
   result["rewards"] =
-      m_rewards.transformed([this](ItemConstPtr const& item) { return m_itemDatabase->diskStore(item); });
+    m_rewards.transformed([this](ItemConstPtr const& item) { return m_itemDatabase->diskStore(item); });
 
   result["lastUpdatedOn"] = m_lastUpdatedOn;
   result["unread"] = m_unread;
@@ -192,8 +188,8 @@ Json Quest::diskStore() const {
   result["failureText"] = m_failureText;
 
   result["portraits"] = jsonFromMapV(m_portraits, [](List<Drawable> const& portrait) {
-      return portrait.transformed(mem_fn(&Drawable::toJson));
-    });
+    return portrait.transformed(mem_fn(&Drawable::toJson));
+  });
   result["portraitTitles"] = jsonFromMap(m_portraitTitles);
   result["showDialog"] = m_showDialog;
 
@@ -204,9 +200,9 @@ QuestTemplatePtr Quest::getTemplate() const {
   return m_questTemplateDatabase->questTemplate(templateId());
 }
 
-void Quest::init(Player* player, World* world, UniverseClient* client) {
-  m_player = player;
-  m_world = world;
+void Quest::init(Player& player, World& world, UniverseClient* client) {
+  m_player = &player;
+  m_world = &world;
   m_client = client;
 
   if (m_state == QuestState::Offer || m_state == QuestState::Active)
@@ -226,7 +222,6 @@ Maybe<Json> Quest::receiveMessage(String const& message, bool localMessage, Json
     return {};
   return m_scriptComponent.handleMessage(message, localMessage, args);
 }
-
 
 Maybe<LuaValue> Quest::callScript(String const& func, LuaVariadic<LuaValue> const& args) {
   if (!m_inited)
@@ -290,7 +285,7 @@ void Quest::complete(Maybe<size_t> followupIndex) {
   bool trackNewQuest = m_player->questManager()->isTracked(questId());
   size_t nextArcPos = followupIndex.value(questArcPosition() + 1);
   if (nextArcPos < m_arc.quests.size()) {
-    auto followUp = make_shared<Quest>(m_player->questManager()->assets(), m_arc, nextArcPos, m_player, m_player->questManager()->itemDatabase(), m_player->questManager()->objectDatabase(), m_player->questManager()->questTemplateDatabase(), m_player->questManager()->versioningDatabase());
+    auto followUp = make_shared<Quest>(m_player->questManager()->assets(), m_arc, nextArcPos, *m_player, m_player->questManager()->itemDatabase(), m_player->questManager()->objectDatabase(), m_player->questManager()->questTemplateDatabase(), m_player->questManager()->versioningDatabase());
     followUp->setWorldId(worldId());
     followUp->setLocation(location());
     followUp->setServerUuid(serverUuid());
@@ -506,7 +501,6 @@ Maybe<String> Quest::customIndicator(EntityPtr const& entity) const {
             return param.indicator.value(defaultCustomIndicator());
         }
       }
-
     }
   }
   return {};
@@ -588,18 +582,18 @@ void Quest::initScript() {
     m_scriptComponent.setScripts(StringList{});
   m_scriptComponent.setUpdateDelta(questTemplate->updateDelta);
 
-  m_scriptComponent.addCallbacks("quest", makeQuestCallbacks(m_player));
-  m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client, m_client->biomeDatabase()));
-  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_player));
+  m_scriptComponent.addCallbacks("quest", makeQuestCallbacks(*m_player));
+  m_scriptComponent.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(*m_client, m_client->biomeDatabase()));
+  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(*m_player));
   m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
-      return Json(getTemplate()->scriptConfig).query(name, def);
-    }));
-  m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_player));
-  m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_player->statusController()));
+                                   return Json(getTemplate()->scriptConfig).query(name, def);
+                                 }));
+  m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*m_player));
+  m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_player->statusController()));
   m_scriptComponent.addActorMovementCallbacks(m_player->movementController());
   m_inited = true;
 
-  m_scriptComponent.init(m_world);
+  m_scriptComponent.init(*m_world);
 }
 
 void Quest::uninitScript() {
@@ -614,7 +608,7 @@ void Quest::uninitScript() {
   m_inited = false;
 }
 
-LuaCallbacks Quest::makeQuestCallbacks(Player* player) {
+LuaCallbacks Quest::makeQuestCallbacks(Player& player) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("context", [this]() { m_scriptComponent.context(); });
@@ -653,70 +647,69 @@ LuaCallbacks Quest::makeQuestCallbacks(Player* player) {
 
   callbacks.registerCallback("setServerUuid", [this](String const& serverUuid) { setServerUuid(Uuid(serverUuid)); });
 
-  callbacks.registerCallback("isCurrent", [this, player]() -> bool { return player->questManager()->isCurrent(questId()); });
+  callbacks.registerCallback("isCurrent", [this, &player]() -> bool { return player.questManager()->isCurrent(questId()); });
 
   callbacks.registerCallback("location", [this]() -> Json {
-      if (auto loc = location()) {
-        return JsonObject{
-          {"system", jsonFromVec3I(loc.get().first)},
-          {"location", jsonFromSystemLocation(loc.get().second)}
-        };
-      }
-      return {};
-    });
+    if (auto loc = location()) {
+      return JsonObject{
+        {"system", jsonFromVec3I(loc.get().first)},
+        {"location", jsonFromSystemLocation(loc.get().second)}};
+    }
+    return {};
+  });
 
   callbacks.registerCallback("setLocation", [this](Json const& json) {
-      if (json.isNull()) {
-        setLocation({});
-      } else {
-        Vec3I system = jsonToVec3I(json.get("system"));
-        SystemLocation location = jsonToSystemLocation(json.opt("location").value({}));
-        setLocation(make_pair(system, location));
-      }
-    });
+    if (json.isNull()) {
+      setLocation({});
+    } else {
+      Vec3I system = jsonToVec3I(json.get("system"));
+      SystemLocation location = jsonToSystemLocation(json.opt("location").value({}));
+      setLocation(make_pair(system, location));
+    }
+  });
 
   callbacks.registerCallback("parameters", [this]() { return questParamsToJson(parameters()); });
 
   callbacks.registerCallback("setParameter",
-      [this](String const& name, Json paramJson) { m_parameters[name] = QuestParam::fromJson(paramJson); });
+                             [this](String const& name, Json paramJson) { m_parameters[name] = QuestParam::fromJson(paramJson); });
 
   callbacks.registerCallback(
-      "setIndicators", [this](StringList indicators) { m_indicators = StringSet::from(indicators); });
+    "setIndicators", [this](StringList indicators) { m_indicators = StringSet::from(indicators); });
 
   callbacks.registerCallbackWithSignature<void, Maybe<JsonArray>>("setObjectiveList", [this](Maybe<JsonArray> const& objectiveList) { return setObjectiveList(objectiveList); });
   callbacks.registerCallbackWithSignature<void, Maybe<float>>("setProgress", [this](Maybe<float> const& progress) { return setProgress(progress); });
   callbacks.registerCallbackWithSignature<void, Maybe<float>>("setCompassDirection", [this](Maybe<float> const& direction) { return setCompassDirection(direction); });
 
   callbacks.registerCallbackWithSignature<void, String>("setTitle", [this](String const& title) {
-      m_title = title;
-    });
+    m_title = title;
+  });
   callbacks.registerCallbackWithSignature<void, String>("setText", [this](String const& text) {
-      m_text = text;
-    });
+    m_text = text;
+  });
   callbacks.registerCallbackWithSignature<void, String>("setCompletionText", [this](String const& completionText) {
-      m_completionText = completionText;
-    });
+    m_completionText = completionText;
+  });
   callbacks.registerCallbackWithSignature<void, String>("setFailureText", [this](String const& failureText) {
-      m_failureText = failureText;
-    });
+    m_failureText = failureText;
+  });
 
   callbacks.registerCallbackWithSignature<void, String, Maybe<JsonArray>>("setPortrait", [this](String const& portraitName, Maybe<JsonArray> const& portrait) {
-      if (portrait) {
-        m_portraits[portraitName] = portrait->transformed(construct<Drawable>());
-      } else {
-        m_portraits.remove(portraitName);
-      }
-    });
+    if (portrait) {
+      m_portraits[portraitName] = portrait->transformed(construct<Drawable>());
+    } else {
+      m_portraits.remove(portraitName);
+    }
+  });
   callbacks.registerCallbackWithSignature<void, String, Maybe<String>>("setPortraitTitle", [this](String const& portraitName, Maybe<String> const& portrait) {
-      if (portrait) {
-        m_portraitTitles[portraitName] = *portrait;
-      } else {
-        m_portraitTitles.remove(portraitName);
-      }
-    });
+    if (portrait) {
+      m_portraitTitles[portraitName] = *portrait;
+    } else {
+      m_portraitTitles.remove(portraitName);
+    }
+  });
   callbacks.registerCallbackWithSignature<void, Json>("addReward", [this](Json const& reward) {
-      addReward(ItemDescriptor(reward));
-    });
+    addReward(ItemDescriptor(reward));
+  });
 
   return callbacks;
 }
@@ -756,13 +749,13 @@ String const& Quest::defaultCustomIndicator() const {
 }
 
 QuestPtr createPreviewQuest(
-    String const& templateId, String const& position, String const& questGiverSpecies, Player* player) {
-  auto questTemplates = player->questManager()->questTemplateDatabase();
+    String const& templateId, String const& position, String const& questGiverSpecies, Player& player) {
+  auto questTemplates = player.questManager()->questTemplateDatabase();
   auto questTemplate = questTemplates->questTemplate(templateId);
   if (!questTemplate)
     return {};
 
-  Json portrait = player->portrait(PortraitMode::Full).transformed(mem_fn(&Drawable::toJson));
+  Json portrait = player.portrait(PortraitMode::Full).transformed(mem_fn(&Drawable::toJson));
 
   JsonObject paramJson = questTemplate->parameterExamples;
   for (auto const& paramName : paramJson.keys()) {
@@ -787,9 +780,9 @@ QuestPtr createPreviewQuest(
     arcPos = 2;
   }
 
-  auto quest = make_shared<Quest>(player->questManager()->assets(), arc, arcPos, player, player->questManager()->itemDatabase(), player->questManager()->objectDatabase(), player->questManager()->questTemplateDatabase(), player->questManager()->versioningDatabase());
+  auto quest = make_shared<Quest>(player.questManager()->assets(), arc, arcPos, player, player.questManager()->itemDatabase(), player.questManager()->objectDatabase(), player.questManager()->questTemplateDatabase(), player.questManager()->versioningDatabase());
   quest->setParameter("questGiver", QuestParam{QuestEntity{{}, questGiverSpecies, {}}, {"Quest Giver"}, portrait, {}});
   return quest;
 }
 
-}
+}// namespace Star

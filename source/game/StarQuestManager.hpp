@@ -15,9 +15,9 @@ struct QuestIndicator {
 
 class QuestManager {
 public:
-  QuestManager(AssetsConstPtr assets, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  QuestManager(AssetsConstPtr assets, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
-  QuestManager(AssetsConstPtr assets, Player* player, World* world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
+  QuestManager(AssetsConstPtr assets, Player& player, World& world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase);
 
   void diskLoad(Json const& quests);
   Json diskStore();
@@ -29,7 +29,7 @@ public:
   QuestTemplateDatabaseConstPtr questTemplateDatabase() const;
   VersioningDatabaseConstPtr versioningDatabase() const;
 
-  void init(World* world);
+  void init(World& world);
   void uninit();
 
   bool canStart(QuestArcDescriptor const& questArc) const;

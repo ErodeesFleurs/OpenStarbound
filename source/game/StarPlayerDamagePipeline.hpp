@@ -10,7 +10,7 @@ class Player;
 
 class PlayerDamagePipeline {
 public:
-  explicit PlayerDamagePipeline(Player* player);
+  explicit PlayerDamagePipeline(Player& player);
 
   void init();
 
@@ -29,7 +29,7 @@ public:
   EntityId lastDamagedTarget() const;
 
 private:
-  Player* m_player;
+  Player& m_player;
 
   List<DamageSource> m_damageSources;
   float m_lastDamagedOtherTimer;
@@ -37,4 +37,3 @@ private:
 };
 
 }
-

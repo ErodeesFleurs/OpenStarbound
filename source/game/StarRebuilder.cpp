@@ -6,11 +6,11 @@
 
 namespace Star {
 
-Rebuilder::Rebuilder(AssetsConstPtr assets, String const& id) {
+Rebuilder::Rebuilder(AssetsConstPtr assets, String const& id, LuaRootServices luaRootServices) {
   if (!assets)
     throw StarException("Rebuilder requires assets service");
 
-  m_luaRoot = make_shared<LuaRoot>(assets);
+  m_luaRoot = make_shared<LuaRoot>(std::move(luaRootServices));
   m_contexts = make_shared<List<LuaContext>>();
 
   for (auto& path : assets->assetSources()) {
@@ -19,7 +19,6 @@ Rebuilder::Rebuilder(AssetsConstPtr assets, String const& id) {
       if (auto scriptPaths = scripts.value().optArray(id)) {
         for (auto& scriptPath : *scriptPaths) {
           auto context = m_luaRoot->createContext(scriptPath.toString());
-          context.setCallbacks("root", LuaBindings::makeRootCallbacks());
           context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
           m_contexts->push_back(context);
         }

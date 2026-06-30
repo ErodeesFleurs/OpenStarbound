@@ -11,13 +11,13 @@
 
 namespace Star {
 
-ScriptableThread::ScriptableThread(Json parameters)
+ScriptableThread::ScriptableThread(Json parameters, LuaRootServices luaRootServices)
   : Thread("ScriptableThread: " + parameters.getString("name")),
     m_parameters(std::move(parameters)),
     m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(true) {
-      m_luaRoot = make_shared<LuaRoot>();
+      m_luaRoot = make_shared<LuaRoot>(std::move(luaRootServices));
       m_luaRoot->luaEngine().setNullTerminated(false);
       m_luaRoot->tuneAutoGarbageCollection(m_parameters.getFloat("luaGcPause",1.2), m_parameters.getFloat("luaGcStepMultiplier",1.2));
       m_name = m_parameters.getString("name");

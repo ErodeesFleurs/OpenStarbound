@@ -7,6 +7,6 @@ namespace Star {
 class Player;
 
 namespace LuaBindings {
-  LuaCallbacks makePlayerCallbacks(Player* player);
+  LuaCallbacks makePlayerCallbacks(Player& player);
 }
 }

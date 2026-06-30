@@ -11,7 +11,7 @@ namespace Star {
 // implement it in.
 class SliderBarWidget : public Widget {
 public:
-  SliderBarWidget(String const& grid, bool showSpinner = true);
+  SliderBarWidget(GuiContext& context, String const& grid, bool showSpinner = true);
 
   void setJogImages(String const& baseImage, String const& hoverImage = "", String const& pressedImage = "", String const& disabledImage = "");
 

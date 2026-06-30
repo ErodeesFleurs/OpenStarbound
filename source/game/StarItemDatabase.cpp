@@ -1,31 +1,31 @@
 #include "StarItemDatabase.hpp"
-#include "StarCodexDatabase.hpp"
-#include "StarJsonExtra.hpp"
+#include "StarActiveItem.hpp"
+#include "StarArmors.hpp"
 #include "StarAssets.hpp"
-#include "StarCasting.hpp"
-#include "StarCurrency.hpp"
-#include "StarConsumableItem.hpp"
+#include "StarAugmentItem.hpp"
 #include "StarBlueprintItem.hpp"
+#include "StarCasting.hpp"
+#include "StarCodexDatabase.hpp"
 #include "StarCodexItem.hpp"
-#include "StarLiquidItem.hpp"
-#include "StarMaterialItem.hpp"
-#include "StarObjectItem.hpp"
-#include "StarItemDrop.hpp"
+#include "StarConfigLuaBindings.hpp"
+#include "StarConsumableItem.hpp"
+#include "StarCurrency.hpp"
 #include "StarInspectionTool.hpp"
 #include "StarInstrumentItem.hpp"
-#include "StarThrownItem.hpp"
-#include "StarUnlockItem.hpp"
-#include "StarActiveItem.hpp"
-#include "StarAugmentItem.hpp"
-#include "StarTools.hpp"
-#include "StarArmors.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarRootLuaBindings.hpp"
+#include "StarItemDrop.hpp"
 #include "StarItemLuaBindings.hpp"
-#include "StarConfigLuaBindings.hpp"
-#include "StarUtilityLuaBindings.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLiquidItem.hpp"
 #include "StarLuaRoot.hpp"
+#include "StarMaterialItem.hpp"
+#include "StarObjectDatabase.hpp"
+#include "StarObjectItem.hpp"
 #include "StarRebuilder.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarThrownItem.hpp"
+#include "StarTools.hpp"
+#include "StarUnlockItem.hpp"
+#include "StarUtilityLuaBindings.hpp"
 
 namespace Star {
 
@@ -54,8 +54,7 @@ EnumMap<ItemType> ItemTypeNames{
   {ItemType::ThrownItem, "thrownitem"},
   {ItemType::UnlockItem, "unlockitem"},
   {ItemType::ActiveItem, "activeitem"},
-  {ItemType::AugmentItem, "augmentitem"}
-};
+  {ItemType::AugmentItem, "augmentitem"}};
 
 uint64_t ItemDatabase::getCountOfItem(List<ItemPtr> const& bag, ItemDescriptor const& item, bool exactMatch) {
   auto normalizedBag = normalizeBag(bag);
@@ -98,7 +97,7 @@ HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint
 }
 
 HashSet<ItemRecipe> ItemDatabase::recipesFromSubset(HashMap<ItemDescriptor, uint64_t> const& normalizedBag, StringMap<uint64_t> const& availableCurrencies,
-    HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes) {
+                                                    HashSet<ItemRecipe> const& subset, StringSet const& allowedTypes) {
   HashSet<ItemRecipe> res;
   for (auto const& recipe : subset) {
     // is it the right kind of recipe for this check ?
@@ -133,19 +132,26 @@ bool ItemDatabase::canMakeRecipe(ItemRecipe const& recipe, HashMap<ItemDescripto
 }
 
 ItemDatabase::ItemDatabase(AssetsConstPtr assets,
-    function<ObjectDatabaseConstPtr()> objectDatabase,
-    LiquidsDatabaseConstPtr liquidsDatabase,
-    FunctionDatabaseConstPtr functionDatabase,
-    CodexDatabaseConstPtr codexDatabase,
-    MaterialDatabaseConstPtr materialDatabase)
-  : m_assets(std::move(assets)),
-    m_objectDatabase(std::move(objectDatabase)),
-    m_liquidsDatabase(std::move(liquidsDatabase)),
-    m_functionDatabase(std::move(functionDatabase)),
-    m_codexDatabase(std::move(codexDatabase)),
-    m_materialDatabase(std::move(materialDatabase)),
-    m_luaRoot(make_shared<LuaRoot>(m_assets)),
-    m_rebuilder(make_shared<Rebuilder>(m_assets, "item")) {
+                           function<ObjectDatabaseConstPtr()> objectDatabase,
+                           LiquidsDatabaseConstPtr liquidsDatabase,
+                           FunctionDatabaseConstPtr functionDatabase,
+                           CodexDatabaseConstPtr codexDatabase,
+                           MaterialDatabaseConstPtr materialDatabase,
+                           VersioningDatabaseConstPtr versioningDatabase,
+                           ParticleDatabaseConstPtr particleDatabase,
+                           ImageMetadataDatabaseConstPtr imageMetadataDatabase,
+                           LuaRootServices luaRootServices)
+    : m_assets(std::move(assets)),
+      m_objectDatabase(std::move(objectDatabase)),
+      m_liquidsDatabase(std::move(liquidsDatabase)),
+      m_functionDatabase(std::move(functionDatabase)),
+      m_codexDatabase(std::move(codexDatabase)),
+      m_materialDatabase(std::move(materialDatabase)),
+      m_versioningDatabase(std::move(versioningDatabase)),
+      m_particleDatabase(std::move(particleDatabase)),
+      m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+      m_luaRoot(make_shared<LuaRoot>(luaRootServices)),
+      m_rebuilder(make_shared<Rebuilder>(m_assets, "item", std::move(luaRootServices))) {
   if (!m_assets)
     throw ItemException("ItemDatabase requires assets service");
   if (!m_objectDatabase)
@@ -156,6 +162,12 @@ ItemDatabase::ItemDatabase(AssetsConstPtr assets,
     throw ItemException("ItemDatabase requires function database service");
   if (!m_codexDatabase)
     throw ItemException("ItemDatabase requires codex database service");
+  if (!m_versioningDatabase)
+    throw ItemException("ItemDatabase requires versioning database service");
+  if (!m_particleDatabase)
+    throw ItemException("ItemDatabase requires particle database service");
+  if (!m_imageMetadataDatabase)
+    throw ItemException("ItemDatabase requires image metadata database service");
 
   scanItems();
   addObjectItems();
@@ -175,7 +187,7 @@ void ItemDatabase::cleanup() {
 
 ItemPtr ItemDatabase::diskLoad(Json const& diskStore) const {
   if (diskStore) {
-    return item(ItemDescriptor::loadStore(diskStore));
+    return item(ItemDescriptor::loadStore(diskStore, m_versioningDatabase));
   } else {
     return {};
   }
@@ -191,7 +203,7 @@ bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, ItemPtr& itemPtr) 
 
 Json ItemDatabase::diskStore(ItemConstPtr const& itemPtr) const {
   if (itemPtr)
-    return itemPtr->descriptor().diskStore();
+    return itemPtr->descriptor().diskStore(m_versioningDatabase);
   else
     return Json();
 }
@@ -232,10 +244,9 @@ ItemDatabase::ItemConfig ItemDatabase::itemConfig(String const& itemName, Json p
   if (auto builder = itemConfig.config.optString("builder")) {
     RecursiveMutexLocker locker(m_luaMutex);
     auto context = m_luaRoot->createContext(*builder);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
     context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
     luaTie(itemConfig.config, itemConfig.parameters) = context.invokePath<LuaTupleReturn<Json, Json>>(
-        "build", itemConfig.directory, itemConfig.config, itemConfig.parameters, level, seed);
+      "build", itemConfig.directory, itemConfig.config, itemConfig.parameters, level, seed);
   }
 
   return itemConfig;
@@ -253,7 +264,7 @@ ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, 
   if (!descriptor)
     return {};
 
-  ItemCacheEntry entry{ descriptor, level, seed };
+  ItemCacheEntry entry{descriptor, level, seed};
   MutexLocker locker(m_cacheMutex);
   if (ItemPtr* cached = m_itemCache.ptr(entry))
     return *cached;
@@ -261,7 +272,7 @@ ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, 
     locker.unlock();
 
     ItemPtr item = tryCreateItem(descriptor, level, seed);
-    get<2>(entry) = item->parameters().optUInt("seed"); // Seed could've been changed by the buildscript
+    get<2>(entry) = item->parameters().optUInt("seed");// Seed could've been changed by the buildscript
 
     locker.lock();
     return m_itemCache.get(entry, [&](ItemCacheEntry const&) -> ItemPtr { return std::move(item); });
@@ -426,14 +437,14 @@ HashSet<ItemRecipe> ItemDatabase::allRecipes(StringSet const& types) const {
   return res;
 }
 
-ItemPtr ItemDatabase::applyAugment(ItemPtr const item, AugmentItem* augment) const {
+ItemPtr ItemDatabase::applyAugment(ItemPtr const item, AugmentItem& augment) const {
   if (item) {
     RecursiveMutexLocker locker(m_luaMutex);
     LuaBaseComponent script;
     script.setLuaRoot(m_luaRoot);
-    script.setScripts(augment->augmentScripts());
+    script.setScripts(augment.augmentScripts());
     script.addCallbacks("item", LuaBindings::makeItemCallbacks(augment));
-    script.addCallbacks("config", LuaBindings::makeConfigCallbacks([augment](String const& name, Json const& def) { return augment->instanceValue(name, def); }));
+    script.addCallbacks("config", LuaBindings::makeConfigCallbacks([&augment](String const& name, Json const& def) { return augment.instanceValue(name, def); }));
     script.init();
     auto luaResult = script.invoke<LuaTupleReturn<Json, Maybe<uint64_t>>>("apply", item->descriptor().toJson());
     script.uninit();
@@ -441,7 +452,7 @@ ItemPtr ItemDatabase::applyAugment(ItemPtr const item, AugmentItem* augment) con
 
     if (luaResult) {
       if (!get<0>(*luaResult).isNull()) {
-        augment->take(get<1>(*luaResult).value(1));
+        augment.take(get<1>(*luaResult).value(1));
         return ItemDatabase::item(ItemDescriptor(get<0>(*luaResult)));
       }
     }
@@ -481,57 +492,57 @@ List<String> ItemDatabase::allItems() const {
   return m_items.keys();
 }
 
-ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemDatabase const* itemDatabase, ItemType type, ItemConfig const& config) {
+ItemPtr ItemDatabase::createItem(AssetsConstPtr assets, ItemDatabase const& itemDatabase, ItemType type, ItemConfig const& config) {
   if (type == ItemType::Generic) {
-    return make_shared<GenericItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<GenericItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::LiquidItem) {
-    return make_shared<LiquidItem>(assets, config.config, config.directory, config.parameters, itemDatabase->m_liquidsDatabase);
+    return make_shared<LiquidItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters, itemDatabase.m_liquidsDatabase);
   } else if (type == ItemType::MaterialItem) {
-    return make_shared<MaterialItem>(assets, config.config, config.directory, config.parameters, itemDatabase->m_materialDatabase);
+    return make_shared<MaterialItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters, itemDatabase.m_materialDatabase);
   } else if (type == ItemType::ObjectItem) {
-    return make_shared<ObjectItem>(assets, config.config, config.directory, config.parameters, itemDatabase->m_objectDatabase());
+    return make_shared<ObjectItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters, itemDatabase.m_objectDatabase());
   } else if (type == ItemType::CurrencyItem) {
-    return make_shared<CurrencyItem>(assets, config.config, config.directory);
+    return make_shared<CurrencyItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory);
   } else if (type == ItemType::MiningTool) {
-    return make_shared<MiningTool>(assets, config.config, config.directory, config.parameters);
+    return make_shared<MiningTool>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::Flashlight) {
-    return make_shared<Flashlight>(assets, config.config, config.directory, config.parameters);
+    return make_shared<Flashlight>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::WireTool) {
-    return make_shared<WireTool>(assets, config.config, config.directory, config.parameters);
+    return make_shared<WireTool>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::BeamMiningTool) {
-    return make_shared<BeamMiningTool>(assets, config.config, config.directory, config.parameters);
+    return make_shared<BeamMiningTool>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::PaintingBeamTool) {
-    return make_shared<PaintingBeamTool>(assets, config.config, config.directory, config.parameters);
+    return make_shared<PaintingBeamTool>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::TillingTool) {
-    return make_shared<TillingTool>(assets, config.config, config.directory, config.parameters);
+    return make_shared<TillingTool>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::HarvestingTool) {
-    return make_shared<HarvestingTool>(assets, config.config, config.directory, config.parameters);
+    return make_shared<HarvestingTool>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::HeadArmor) {
-    return make_shared<HeadArmor>(assets, config.config, config.directory, config.parameters, itemDatabase->m_functionDatabase);
+    return make_shared<HeadArmor>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters, itemDatabase.m_functionDatabase);
   } else if (type == ItemType::ChestArmor) {
-    return make_shared<ChestArmor>(assets, config.config, config.directory, config.parameters, itemDatabase->m_functionDatabase);
+    return make_shared<ChestArmor>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters, itemDatabase.m_functionDatabase);
   } else if (type == ItemType::LegsArmor) {
-    return make_shared<LegsArmor>(assets, config.config, config.directory, config.parameters, itemDatabase->m_functionDatabase);
+    return make_shared<LegsArmor>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters, itemDatabase.m_functionDatabase);
   } else if (type == ItemType::BackArmor) {
-    return make_shared<BackArmor>(assets, config.config, config.directory, config.parameters, itemDatabase->m_functionDatabase);
+    return make_shared<BackArmor>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters, itemDatabase.m_functionDatabase);
   } else if (type == ItemType::Consumable) {
-    return make_shared<ConsumableItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<ConsumableItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::Blueprint) {
-    return make_shared<BlueprintItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<BlueprintItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::Codex) {
-    return make_shared<CodexItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<CodexItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::InspectionTool) {
-    return make_shared<InspectionTool>(assets, config.config, config.directory, config.parameters);
+    return make_shared<InspectionTool>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::InstrumentItem) {
-    return make_shared<InstrumentItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<InstrumentItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::ThrownItem) {
-    return make_shared<ThrownItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<ThrownItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::UnlockItem) {
-    return make_shared<UnlockItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<UnlockItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::ActiveItem) {
-    return make_shared<ActiveItem>(assets, config.config, config.directory, config.parameters);
+    return make_shared<ActiveItem>(assets, itemDatabase.m_imageMetadataDatabase, itemDatabase.m_particleDatabase, config.config, config.directory, config.parameters);
   } else if (type == ItemType::AugmentItem) {
-    return make_shared<AugmentItem>(assets, config.config, config.directory, itemDatabase, config.parameters);
+    return make_shared<AugmentItem>(assets, itemDatabase.m_imageMetadataDatabase, config.config, config.directory, itemDatabase, config.parameters);
   } else {
     throw ItemException(strf("Unknown item type {}", static_cast<int>(type)));
   }
@@ -544,17 +555,16 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
   try {
     if (newDescriptor.name() == "perfectlygenericitem" && newDescriptor.parameters().contains("genericItemStorage"))
       newDescriptor = ItemDescriptor(descriptor.parameters().get("genericItemStorage"));
-    result = createItem(m_assets, this, m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
+    result = createItem(m_assets, *this, m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
     result->setCount(descriptor.count());
   } catch (std::exception const& e) {
     if (!ignoreInvalid) {
       bool success = m_rebuilder->rebuild(descriptor.toJson(), strf("{}", outputException(e, false)), [&](Json const& store) -> String {
         try {
           ItemDescriptor newDescriptor(store);
-          result = createItem(m_assets, this, m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
+          result = createItem(m_assets, *this, m_items.get(newDescriptor.name()).type, itemConfig(newDescriptor.name(), newDescriptor.parameters(), level, seed));
           result->setCount(newDescriptor.count());
-        }
-        catch (std::exception const& e) {
+        } catch (std::exception const& e) {
           return strf("{}", outputException(e, false));
         }
         return {};
@@ -563,14 +573,10 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
       if (!success) {
         if (descriptor.name() == "perfectlygenericitem") {
           Logger::error("Could not re-instantiate item '{}'. {}", descriptor, outputException(e, false));
-          result = createItem(m_assets, this, m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
+          result = createItem(m_assets, *this, m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", descriptor.parameters(), level, seed));
         } else {
           Logger::error("Could not instantiate item '{}'. {}", descriptor, outputException(e, false));
-          result = createItem(m_assets, this, m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({
-            {"genericItemStorage", descriptor.toJson()},
-            {"shortdescription", descriptor.name()},
-            {"description", "Reinstall the parent mod to return this item to normal"}
-          }), {}, {}));
+          result = createItem(m_assets, *this, m_items.get("perfectlygenericitem").type, itemConfig("perfectlygenericitem", JsonObject({{"genericItemStorage", descriptor.toJson()}, {"shortdescription", descriptor.name()}, {"description", "Reinstall the parent mod to return this item to normal"}}), {}, {}));
         }
       }
     } else
@@ -796,4 +802,4 @@ void ItemDatabase::addCodexes() {
   }
 }
 
-}
+}// namespace Star

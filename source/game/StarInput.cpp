@@ -1,6 +1,7 @@
 #include "StarInput.hpp"
-#include "StarRoot.hpp"
+#include "StarConfiguration.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 
@@ -233,7 +234,9 @@ Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory con
 }
 
 void Input::BindEntry::updated() {
-  auto config = Input::singleton().m_configuration;
+  auto config = category->configuration;
+  if (!config)
+    throw InputException("BindEntry requires configuration service");
 
   JsonArray array;
   array.reserve(customBinds.size());
@@ -254,7 +257,9 @@ void Input::BindEntry::updated() {
     config->setPath(path, array);
   }
 
-  Input::singleton().rebuildMappings();
+  if (!category->rebuildMappings)
+    throw InputException("BindEntry requires mapping rebuild callback");
+  category->rebuildMappings();
 }
 
 Input::BindRef::BindRef(BindEntry& bindEntry, KeyBind& keyBind) {
@@ -275,13 +280,16 @@ Input::BindRef::BindRef(BindEntry& bindEntry) {
   mods = KeyMod::NoMod;
 }
 
-Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig) {
+Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig, ConfigurationPtr configuration, function<void()> rebuildMappings)
+  : configuration(std::move(configuration)), rebuildMappings(std::move(rebuildMappings)) {
   id = categoryId;
   config = categoryConfig;
   name = config.getString("name", id);
 
-  ConfigurationPtr userConfig = Input::singleton().m_configuration;
-  auto userBindings = userConfig->get(InputBindingConfigRoot);
+  if (!this->configuration)
+    throw InputException("BindCategory requires configuration service");
+
+  auto userBindings = this->configuration->get(InputBindingConfigRoot);
 
   for (auto& pair : config.getObject("binds", {})) {
     String const& bindId = pair.first;
@@ -343,36 +351,23 @@ Input::InputState* Input::bindStatePtr(String const& categoryId, String const& b
     return nullptr;
 }
 
-Input::InputState& Input::addBindState(BindEntry const* bindEntry) {
-  auto insertion = m_bindStates.insert(bindEntry, InputState());
+Input::InputState& Input::addBindState(BindEntry const& bindEntry) {
+  auto insertion = m_bindStates.insert(&bindEntry, InputState());
   if (insertion.second) {
-    for (auto& tag : bindEntry->tags)
+    for (auto& tag : bindEntry.tags)
       ++m_activeTags[tag];
   }
   return insertion.first->second;
 }
 
-Input* Input::s_singleton;
-
-Input* Input::singletonPtr() {
-  return s_singleton;
-}
-
-Input& Input::singleton() {
-  if (!s_singleton)
-    throw InputException("Input::singleton() called with no Input instance available");
-  else
-    return *s_singleton;
-}
-
-Input::Input(AssetsConstPtr assets, ConfigurationPtr configuration)
-  : m_assets(std::move(assets)), m_configuration(std::move(configuration)) {
-  if (s_singleton)
-    throw InputException("Singleton Input has been constructed twice");
+Input::Input(InputServices services)
+  : m_assets(std::move(services.assets)), m_configuration(std::move(services.configuration)) {
   if (!m_assets)
     throw InputException("Input requires assets service");
-
-  s_singleton = this;
+  if (!m_configuration)
+    throw InputException("Input requires configuration service");
+  if (!services.registerReloadListener)
+    throw InputException("Input requires reload listener registrar");
 
   m_pressedMods = KeyMod::NoMod;
 
@@ -382,12 +377,10 @@ Input::Input(AssetsConstPtr assets, ConfigurationPtr configuration)
     reload();
   });
 
-  Root::singletonPtr()->registerReloadListener(m_rootReloadListener);
+  services.registerReloadListener(m_rootReloadListener);
 }
 
-Input::~Input() {
-  s_singleton = nullptr;
-}
+Input::~Input() = default;
 
 List<std::pair<InputEvent, bool>> const& Input::inputEventsThisFrame() const {
   return m_inputEvents;
@@ -447,7 +440,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       
       if (auto binds = m_bindMappings.ptr(keyDown->key)) {
         for (auto bind : filterBindEntries(*binds, keyDown->mods))
-          addBindState(bind).press();
+          addBindState(*bind).press();
       }
     }
   }
@@ -479,7 +472,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
 
       if (auto binds = m_bindMappings.ptr(mouseDown->mouseButton)) {
         for (auto bind : filterBindEntries(*binds, m_pressedMods))
-          addBindState(bind).press();
+          addBindState(*bind).press();
       }
     }
   }
@@ -507,7 +500,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
 
       if (auto binds = m_bindMappings.ptr(controllerDown->controllerButton)) {
         for (auto bind : filterBindEntries(*binds, m_pressedMods))
-          addBindState(bind).press();
+          addBindState(*bind).press();
       }
     }
   }
@@ -560,7 +553,9 @@ void Input::reload() {;
       if (!categoryConfig.isType(Json::Type::Object))
         continue;
 
-      m_bindCategories.try_emplace(categoryId, categoryId, categoryConfig);
+      m_bindCategories.try_emplace(categoryId, categoryId, categoryConfig, m_configuration, [this]() {
+        rebuildMappings();
+      });
     }
   }
 

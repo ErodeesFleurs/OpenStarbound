@@ -1,76 +1,65 @@
 #include "StarRoot.hpp"
-#include "StarIterator.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarFile.hpp"
-#include "StarEncode.hpp"
-#include "StarConfiguration.hpp"
+#include "StarAiDatabase.hpp"
 #include "StarAssets.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarTerrainDatabase.hpp"
+#include "StarBehaviorDatabase.hpp"
 #include "StarBiomeDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarStatusEffectDatabase.hpp"
+#include "StarCodexDatabase.hpp"
+#include "StarCollectionDatabase.hpp"
+#include "StarConfiguration.hpp"
 #include "StarDamageDatabase.hpp"
-#include "StarParticleDatabase.hpp"
-#include "StarProjectile.hpp"
+#include "StarDanceDatabase.hpp"
+#include "StarDirectoryAssetSource.hpp"
+#include "StarDungeonGenerator.hpp"
+#include "StarEffectSourceDatabase.hpp"
+#include "StarEmoteProcessor.hpp"
+#include "StarEncode.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarFile.hpp"
+#include "StarImageMetadataDatabase.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarItemDrop.hpp"
+#include "StarIterator.hpp"
+#include "StarJsonBuilder.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarLogging.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarMaterialDatabase.hpp"
 #include "StarMonster.hpp"
+#include "StarNameGenerator.hpp"
 #include "StarNpc.hpp"
 #include "StarObject.hpp"
+#include "StarObjectDatabase.hpp"
+#include "StarPackedAssetSource.hpp"
+#include "StarParticleDatabase.hpp"
 #include "StarPlant.hpp"
 #include "StarPlantDrop.hpp"
-#include "StarStagehandDatabase.hpp"
-#include "StarVehicleDatabase.hpp"
 #include "StarPlayer.hpp"
-#include "StarItemDrop.hpp"
-#include "StarEffectSourceDatabase.hpp"
-#include "StarStoredFunctions.hpp"
-#include "StarTreasure.hpp"
-#include "StarDungeonGenerator.hpp"
-#include "StarTilesetDatabase.hpp"
-#include "StarStatisticsDatabase.hpp"
-#include "StarEmoteProcessor.hpp"
-#include "StarSpeciesDatabase.hpp"
-#include "StarImageMetadataDatabase.hpp"
-#include "StarLogging.hpp"
-#include "StarProjectileDatabase.hpp"
 #include "StarPlayerFactory.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarDirectoryAssetSource.hpp"
-#include "StarPackedAssetSource.hpp"
-#include "StarJsonBuilder.hpp"
+#include "StarProjectile.hpp"
+#include "StarProjectileDatabase.hpp"
 #include "StarQuestTemplateDatabase.hpp"
-#include "StarAiDatabase.hpp"
-#include "StarTechDatabase.hpp"
-#include "StarWorkerPool.hpp"
-#include "StarCodexDatabase.hpp"
-#include "StarBehaviorDatabase.hpp"
-#include "StarTenantDatabase.hpp"
-#include "StarNameGenerator.hpp"
-#include "StarDanceDatabase.hpp"
-#include "StarSpawnTypeDatabase.hpp"
 #include "StarRadioMessageDatabase.hpp"
-#include "StarCollectionDatabase.hpp"
+#include "StarSpawnTypeDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarStagehandDatabase.hpp"
+#include "StarStatisticsDatabase.hpp"
+#include "StarStatusEffectDatabase.hpp"
+#include "StarStoredFunctions.hpp"
+#include "StarTechDatabase.hpp"
+#include "StarTenantDatabase.hpp"
+#include "StarTerrainDatabase.hpp"
+#include "StarTilesetDatabase.hpp"
+#include "StarTreasure.hpp"
+#include "StarVehicleDatabase.hpp"
+#include "StarWorkerPool.hpp"
 
 namespace Star {
 
 namespace {
-  unsigned const RootMaintenanceSleep = 5000;
-  unsigned const RootLoadThreads = 4;
-}
-
-Root* Root::singletonPtr() {
-  return dynamic_cast<Root*>(s_singleton.load());
-}
-
-Root& Root::singleton() {
-  auto ptr = singletonPtr();
-  if (!ptr)
-    throw RootException("Root::singleton() called with no Root instance available");
-  else
-    return *ptr;
-}
+unsigned const RootMaintenanceSleep = 5000;
+unsigned const RootLoadThreads = 4;
+}// namespace
 
 Root::Root(Settings settings) : RootBase() {
   m_settings = std::move(settings);
@@ -98,63 +87,63 @@ Root::Root(Settings settings) : RootBase() {
 
   m_stopMaintenanceThread = false;
   m_maintenanceThread = Thread::invoke("Root::maintenanceMain", [this]() {
-      MutexLocker locker(m_maintenanceStopMutex);
-      while (!m_stopMaintenanceThread) {
-        m_reloadListeners.clearExpiredListeners();
+    MutexLocker locker(m_maintenanceStopMutex);
+    while (!m_stopMaintenanceThread) {
+      m_reloadListeners.clearExpiredListeners();
 
-        {
-          MutexLocker objectDbLocker(m_objectDatabaseMutex);
-          if (ObjectDatabasePtr objectDb = m_objectDatabase) {
-            objectDbLocker.unlock();
-            objectDb->cleanup();
-          }
+      {
+        MutexLocker objectDbLocker(m_objectDatabaseMutex);
+        if (ObjectDatabasePtr objectDb = m_objectDatabase) {
+          objectDbLocker.unlock();
+          objectDb->cleanup();
         }
-        {
-          MutexLocker itemDbLocker(m_itemDatabaseMutex);
-          if (ItemDatabasePtr itemDb = m_itemDatabase) {
-            itemDbLocker.unlock();
-            itemDb->cleanup();
-          }
-        }
-        {
-          MutexLocker monsterDbLocker(m_monsterDatabaseMutex);
-          if (MonsterDatabasePtr monsterDb = m_monsterDatabase) {
-            monsterDbLocker.unlock();
-            monsterDb->cleanup();
-          }
-        }
-        {
-          MutexLocker assetsLocker(m_assetsMutex);
-          if (AssetsPtr assets = m_assets) {
-            assetsLocker.unlock();
-            assets->cleanup();
-          }
-        }
-        {
-          MutexLocker tenantDbLocker(m_tenantDatabaseMutex);
-          if (TenantDatabasePtr tenantDb = m_tenantDatabase) {
-            tenantDbLocker.unlock();
-            tenantDb->cleanup();
-          }
-        }
-        {
-          MutexLocker imgMetaDbLocker(m_imageMetadataDatabaseMutex);
-          if (ImageMetadataDatabasePtr imgMetaDb = m_imageMetadataDatabase) {
-            imgMetaDbLocker.unlock();
-            imgMetaDb->cleanup();
-          }
-        }
-
-        Random::addEntropy();
-
-        {
-          MutexLocker configLocker(m_configurationMutex);
-          writeConfig();
-        }
-
-        m_maintenanceStopCondition.wait(m_maintenanceStopMutex, RootMaintenanceSleep);
       }
-    });
+      {
+        MutexLocker itemDbLocker(m_itemDatabaseMutex);
+        if (ItemDatabasePtr itemDb = m_itemDatabase) {
+          itemDbLocker.unlock();
+          itemDb->cleanup();
+        }
+      }
+      {
+        MutexLocker monsterDbLocker(m_monsterDatabaseMutex);
+        if (MonsterDatabasePtr monsterDb = m_monsterDatabase) {
+          monsterDbLocker.unlock();
+          monsterDb->cleanup();
+        }
+      }
+      {
+        MutexLocker assetsLocker(m_assetsMutex);
+        if (AssetsPtr assets = m_assets) {
+          assetsLocker.unlock();
+          assets->cleanup();
+        }
+      }
+      {
+        MutexLocker tenantDbLocker(m_tenantDatabaseMutex);
+        if (TenantDatabasePtr tenantDb = m_tenantDatabase) {
+          tenantDbLocker.unlock();
+          tenantDb->cleanup();
+        }
+      }
+      {
+        MutexLocker imgMetaDbLocker(m_imageMetadataDatabaseMutex);
+        if (ImageMetadataDatabasePtr imgMetaDb = m_imageMetadataDatabase) {
+          imgMetaDbLocker.unlock();
+          imgMetaDb->cleanup();
+        }
+      }
+
+      Random::addEntropy();
+
+      {
+        MutexLocker configLocker(m_configurationMutex);
+        writeConfig();
+      }
+
+      m_maintenanceStopCondition.wait(m_maintenanceStopMutex, RootMaintenanceSleep);
+    }
+  });
 
   Logger::info("Root: Done preparing Root.");
 }
@@ -172,8 +161,6 @@ Root::~Root() {
   m_reloadListeners.clearAllListeners();
 
   writeConfig();
-
-  s_singleton.store(nullptr);
 }
 
 void Root::reload() {
@@ -305,13 +292,13 @@ void Root::reload() {
 }
 
 void Root::loadMods(StringList modDirectories, bool _reload) {
-  // Need to clear mod directories because there was an update for UGC, which have been added already as it assumes an update isn't needed.  
+  // Need to clear mod directories because there was an update for UGC, which have been added already as it assumes an update isn't needed.
   if (_reload)
     m_modDirectories.clear();
 
   MutexLocker locker(m_modsMutex);
   m_modDirectories = std::move(modDirectories);
-  
+
   if (_reload)
     reload();
 }
@@ -390,62 +377,62 @@ String Root::toStoragePath(String const& path) const {
 
 AssetsConstPtr Root::assets() {
   return loadMemberFunction<Assets>(m_assets, m_assetsMutex, "Assets", [this]() {
-      StringList assetDirectories = m_settings.assetDirectories;
-      assetDirectories.appendAll(m_modDirectories);
-      StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
+    StringList assetDirectories = m_settings.assetDirectories;
+    assetDirectories.appendAll(m_modDirectories);
+    StringList assetSources = scanForAssetSources(assetDirectories, m_settings.assetSources);
 
-      auto assets = make_shared<Assets>(m_settings.assetsSettings, assetSources);
-      Logger::info("Assets digest is {}", hexEncode(assets->digest()));
-      return assets;
-    });
+    auto assets = make_shared<Assets>(m_settings.assetsSettings, assetSources);
+    Logger::info("Assets digest is {}", hexEncode(assets->digest()));
+    return assets;
+  });
 }
 
 ConfigurationPtr Root::configuration() {
   return loadMemberFunction<Configuration>(m_configuration, m_configurationMutex, "Configuration", [this]() {
-      Json currentConfig;
+    Json currentConfig;
 
-      if (m_runtimeConfigFile) {
-        if (!File::isFile(*m_runtimeConfigFile)) {
-          Logger::info("Root: no runtime config file, creating new default runtime config");
-          currentConfig = m_settings.defaultConfiguration;
-        } else {
-          try {
-            Json jConfig = Json::parseJson(File::readFileString(*m_runtimeConfigFile));
-            if (!jConfig.isType(Json::Type::Object))
-              throw ConfigurationException("User config is not of JSON type Object");
-
-            if (jConfig.get("configurationVersion", {}) != m_settings.defaultConfiguration.get("configurationVersion", {}))
-              throw ConfigurationException("User config version does not match default config version");
-
-            auto config = jConfig.toObject();
-            for (auto& entry : *m_settings.defaultConfiguration.objectPtr()) {
-              if (!config.contains(entry.first))
-                config.insert(entry.first, entry.second);
-            }
-
-            currentConfig = config;
-          } catch (std::exception const& e) {
-            Logger::warn("Root: Failed to load user configuration file {}, resetting user config: {}", *m_runtimeConfigFile, outputException(e, false));
-            currentConfig = m_settings.defaultConfiguration;
-            File::rename(*m_runtimeConfigFile, *m_runtimeConfigFile + ".old");
-          }
-        }
-      } else {
+    if (m_runtimeConfigFile) {
+      if (!File::isFile(*m_runtimeConfigFile)) {
+        Logger::info("Root: no runtime config file, creating new default runtime config");
         currentConfig = m_settings.defaultConfiguration;
-      }
+      } else {
+        try {
+          Json jConfig = Json::parseJson(File::readFileString(*m_runtimeConfigFile));
+          if (!jConfig.isType(Json::Type::Object))
+            throw ConfigurationException("User config is not of JSON type Object");
 
-      return make_shared<Configuration>(m_settings.defaultConfiguration, currentConfig);
-    });
+          if (jConfig.get("configurationVersion", {}) != m_settings.defaultConfiguration.get("configurationVersion", {}))
+            throw ConfigurationException("User config version does not match default config version");
+
+          auto config = jConfig.toObject();
+          for (auto& entry : *m_settings.defaultConfiguration.objectPtr()) {
+            if (!config.contains(entry.first))
+              config.insert(entry.first, entry.second);
+          }
+
+          currentConfig = config;
+        } catch (std::exception const& e) {
+          Logger::warn("Root: Failed to load user configuration file {}, resetting user config: {}", *m_runtimeConfigFile, outputException(e, false));
+          currentConfig = m_settings.defaultConfiguration;
+          File::rename(*m_runtimeConfigFile, *m_runtimeConfigFile + ".old");
+        }
+      }
+    } else {
+      currentConfig = m_settings.defaultConfiguration;
+    }
+
+    return make_shared<Configuration>(m_settings.defaultConfiguration, currentConfig);
+  });
 }
 
 ObjectDatabaseConstPtr Root::objectDatabase() {
-  return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase", assets(), materialDatabase(), imageMetadataDatabase(), [this]() {
-      return itemDatabase();
-    });
+  return loadMember(m_objectDatabase, m_objectDatabaseMutex, "ObjectDatabase", assets(), materialDatabase(), imageMetadataDatabase(), particleDatabase(), [this]() {
+    return itemDatabase();
+  }, luaRootServices());
 }
 
 PlantDatabaseConstPtr Root::plantDatabase() {
-  return loadMember(m_plantDatabase, m_plantDatabaseMutex, "PlantDatabase", assets());
+  return loadMember(m_plantDatabase, m_plantDatabaseMutex, "PlantDatabase", assets(), imageMetadataDatabase());
 }
 
 ProjectileDatabaseConstPtr Root::projectileDatabase() {
@@ -453,11 +440,11 @@ ProjectileDatabaseConstPtr Root::projectileDatabase() {
 }
 
 MonsterDatabaseConstPtr Root::monsterDatabase() {
-  return loadMember(m_monsterDatabase, m_monsterDatabaseMutex, "MonsterDatabase", assets());
+  return loadMember(m_monsterDatabase, m_monsterDatabaseMutex, "MonsterDatabase", assets(), liquidsDatabase(), statusEffectDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
 }
 
 NpcDatabaseConstPtr Root::npcDatabase() {
-  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase", assets(), itemDatabase(), objectDatabase(), speciesDatabase(), nameGenerator(), functionDatabase(), danceDatabase(), emoteProcessor());
+  return loadMember(m_npcDatabase, m_npcDatabaseMutex, "NpcDatabase", assets(), itemDatabase(), objectDatabase(), speciesDatabase(), nameGenerator(), functionDatabase(), danceDatabase(), emoteProcessor(), versioningDatabase(), liquidsDatabase(), statusEffectDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
 }
 
 StagehandDatabaseConstPtr Root::stagehandDatabase() {
@@ -465,23 +452,21 @@ StagehandDatabaseConstPtr Root::stagehandDatabase() {
 }
 
 VehicleDatabaseConstPtr Root::vehicleDatabase() {
-  return loadMember(m_vehicleDatabase, m_vehicleDatabaseMutex, "VehicleDatabase", assets());
+  return loadMember(m_vehicleDatabase, m_vehicleDatabaseMutex, "VehicleDatabase", assets(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
 }
 
 PlayerFactoryConstPtr Root::playerFactory() {
   return loadMemberFunction<PlayerFactory>(m_playerFactory, m_playerFactoryMutex, "PlayerFactory", [this]() {
-      return make_shared<PlayerFactory>(assets(), configuration(), materialDatabase(), itemDatabase(), objectDatabase(), questTemplateDatabase(), versioningDatabase(), codexDatabase(), danceDatabase(), emoteProcessor(), radioMessageDatabase(), aiDatabase(), collectionDatabase(), speciesDatabase(), [this]() {
-          return entityFactory();
-        }, liquidsDatabase(), techDatabase());
-    });
+    return make_shared<PlayerFactory>(assets(), configuration(), materialDatabase(), itemDatabase(), objectDatabase(), questTemplateDatabase(), versioningDatabase(), codexDatabase(), danceDatabase(), emoteProcessor(), radioMessageDatabase(), aiDatabase(), collectionDatabase(), speciesDatabase(), [this]() { return entityFactory(); }, liquidsDatabase(), techDatabase(), statusEffectDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
+  });
 }
 
 EntityFactoryConstPtr Root::entityFactory() {
   return loadMemberFunction<EntityFactory>(m_entityFactory, m_entityFactoryMutex, "EntityFactory", [this]() {
-      return make_shared<EntityFactory>(assets(), playerFactory(), monsterDatabase(),
-          objectDatabase(), projectileDatabase(), npcDatabase(), vehicleDatabase(),
-          versioningDatabase(), itemDatabase());
-    });
+    return make_shared<EntityFactory>(assets(), playerFactory(), monsterDatabase(),
+                                      objectDatabase(), projectileDatabase(), npcDatabase(), vehicleDatabase(),
+                                      versioningDatabase(), itemDatabase(), imageMetadataDatabase());
+  });
 }
 
 PatternedNameGeneratorConstPtr Root::nameGenerator() {
@@ -489,9 +474,7 @@ PatternedNameGeneratorConstPtr Root::nameGenerator() {
 }
 
 ItemDatabaseConstPtr Root::itemDatabase() {
-  return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase", assets(), [this]() {
-      return objectDatabase();
-    }, liquidsDatabase(), functionDatabase(), codexDatabase(), materialDatabase());
+  return loadMember(m_itemDatabase, m_itemDatabaseMutex, "ItemDatabase", assets(), [this]() { return objectDatabase(); }, liquidsDatabase(), functionDatabase(), codexDatabase(), materialDatabase(), versioningDatabase(), particleDatabase(), imageMetadataDatabase(), luaRootServices());
 }
 
 MaterialDatabaseConstPtr Root::materialDatabase() {
@@ -503,7 +486,7 @@ TerrainDatabaseConstPtr Root::terrainDatabase() {
 }
 
 BiomeDatabaseConstPtr Root::biomeDatabase() {
-  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase", assets(), materialDatabase(), functionDatabase(), imageMetadataDatabase());
+  return loadMember(m_biomeDatabase, m_biomeDatabaseMutex, "BiomeDatabase", assets(), materialDatabase(), functionDatabase(), imageMetadataDatabase(), plantDatabase());
 }
 
 LiquidsDatabaseConstPtr Root::liquidsDatabase() {
@@ -519,7 +502,7 @@ DamageDatabaseConstPtr Root::damageDatabase() {
 }
 
 ParticleDatabaseConstPtr Root::particleDatabase() {
-  return loadMember(m_particleDatabase, m_particleDatabaseMutex, "ParticleDatabase", assets());
+  return loadMember(m_particleDatabase, m_particleDatabaseMutex, "ParticleDatabase", assets(), imageMetadataDatabase());
 }
 
 EffectSourceDatabaseConstPtr Root::effectSourceDatabase() {
@@ -551,7 +534,7 @@ EmoteProcessorConstPtr Root::emoteProcessor() {
 }
 
 SpeciesDatabaseConstPtr Root::speciesDatabase() {
-  return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase", assets(), nameGenerator());
+  return loadMember(m_speciesDatabase, m_speciesDatabaseMutex, "SpeciesDatabase", assets(), nameGenerator(), luaRootServices());
 }
 
 ImageMetadataDatabaseConstPtr Root::imageMetadataDatabase() {
@@ -559,7 +542,7 @@ ImageMetadataDatabaseConstPtr Root::imageMetadataDatabase() {
 }
 
 VersioningDatabaseConstPtr Root::versioningDatabase() {
-  return loadMember(m_versioningDatabase, m_versioningDatabaseMutex, "VersioningDatabase", assets());
+  return loadMember(m_versioningDatabase, m_versioningDatabaseMutex, "VersioningDatabase", assets(), liquidsDatabase(), biomeDatabase(), [this](String const& path) { return toStoragePath(path); }, luaRootServices());
 }
 
 QuestTemplateDatabaseConstPtr Root::questTemplateDatabase() {
@@ -567,7 +550,7 @@ QuestTemplateDatabaseConstPtr Root::questTemplateDatabase() {
 }
 
 AiDatabaseConstPtr Root::aiDatabase() {
-  return loadMember(m_aiDatabase, m_aiDatabaseMutex, "AiDatabase", assets());
+  return loadMember(m_aiDatabase, m_aiDatabaseMutex, "AiDatabase", assets(), imageMetadataDatabase());
 }
 
 TechDatabaseConstPtr Root::techDatabase() {
@@ -645,18 +628,19 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
 
     if (assetSource->name.value() == "opensb_base" && assetSource->version.value() != OpenStarVersionString) {
       throw AssetSourceException(strf("\n\nOpenStarbound assets version mismatch!\nOpenStarbound v{}, but opensb.pak is v{}\n",
-        OpenStarVersionString, assetSource->version.value()), false);
+                                      OpenStarVersionString, assetSource->version.value()),
+                                 false);
     }
 
     if (assetSource->name) {
       if (auto oldAssetSource = namedSources.value(*assetSource->name)) {
         if (oldAssetSource->priority <= assetSource->priority) {
           Logger::warn("Root: Overriding duplicate asset source '{}' named '{}' with higher or equal priority source '{}",
-              oldAssetSource->path, *assetSource->name, assetSource->path);
+                       oldAssetSource->path, *assetSource->name, assetSource->path);
           *oldAssetSource = *assetSource;
         } else {
           Logger::warn("Root: Skipping duplicate asset source '{}' named '{}', previous source '{}' has higher priority",
-              assetSource->path, *assetSource->name, oldAssetSource->priority);
+                       assetSource->path, *assetSource->name, oldAssetSource->priority);
         }
       } else {
         namedSources[*assetSource->name] = assetSource;
@@ -693,11 +677,8 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
   // priority ones
 
   assetSources.sort([](auto const& a, auto const& b) {
-      return 
-        a->priority == b->priority ? 
-          a->name.value(a->path) < b->name.value(b->path) : 
-          a->priority < b->priority;
-    });
+    return a->priority == b->priority ? a->name.value(a->path) < b->name.value(b->path) : a->priority < b->priority;
+  });
 
   // Finally, sort asset sources so that sources that have dependencies come
   // after their dependencies.
@@ -725,9 +706,9 @@ StringList Root::scanForAssetSources(StringList const& directories, StringList c
         dependencySortVisit(*requirement);
       else
         throw AssetSourceException(strf("Asset source '{}' is missing dependency '{}'{}", source->name ? *source->name : "<unnamed>", requirementName,
-          requirementName != "base" ? "" :
-            "\n\nThe base Starbound asset package could not be found, please copy it from another Starbound install!\n"
-            "(Locate 'packed.pak' in vanilla Starbound's assets folder, then copy it to OpenStarbound's assets folder.)\n"), false);
+                                        requirementName != "base" ? "" : "\n\nThe base Starbound asset package could not be found, please copy it from another Starbound install!\n"
+                                                                         "(Locate 'packed.pak' in vanilla Starbound's assets folder, then copy it to OpenStarbound's assets folder.)\n"),
+                                   false);
     }
 
     workingSet.remove(source);
@@ -764,11 +745,20 @@ void Root::writeConfig() {
   }
 }
 
+LuaRootServices Root::luaRootServices() {
+  return LuaRootServices{
+    this,
+    assets(),
+    configuration(),
+    [this](ListenerWeakPtr reloadListener) { registerReloadListener(std::move(reloadListener)); },
+    toStoragePath("lua")};
+}
+
 template <typename T, typename... Params>
 shared_ptr<T> Root::loadMember(shared_ptr<T>& ptr, Mutex& mutex, char const* name, Params&&... params) {
   return loadMemberFunction<T>(ptr, mutex, name, [&]() {
-      return make_shared<T>(std::forward<Params>(params)...);
-    });
+    return make_shared<T>(std::forward<Params>(params)...);
+  });
 }
 
 template <typename T>
@@ -782,4 +772,4 @@ shared_ptr<T> Root::loadMemberFunction(shared_ptr<T>& ptr, Mutex& mutex, char co
   return ptr;
 }
 
-}
+}// namespace Star

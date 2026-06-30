@@ -13,6 +13,7 @@ class JoinRequestDialog : public Pane {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   explicit JoinRequestDialog(Services services);

@@ -48,13 +48,16 @@ static String formatShortSize(uint64_t n) {
       return strf("{}.{:02d}{:c}", whole, frac / 10, suffix);
 }
 
-ItemSlotWidget::ItemSlotWidget(ItemPtr const& item, String const& backingImage)
-  : m_item(item), m_backingImage(backingImage) {
+ItemSlotWidget::ItemSlotWidget(GuiContext& context, ItemPtr const& item, String const& backingImage)
+  : Widget(context), m_item(item), m_backingImage(backingImage) {
   m_drawBackingImageWhenFull = false;
   m_drawBackingImageWhenEmpty = true;
   m_progress = 1;
 
-  auto const& assets = GuiContext::singleton().assets();
+  auto& guiContext = this->context();
+
+  auto const& assets = guiContext.assets();
+  auto const& imageMetadata = guiContext.imageMetadata();
   auto interfaceConfig = assets->json("/interface.config");
   m_countPosition = TextPositioning(jsonToVec2F(interfaceConfig.get("itemCountRightAnchor")), HorizontalAnchor::RightAnchor);
   m_countFontMode = FontMode::Normal;
@@ -63,22 +66,21 @@ ItemSlotWidget::ItemSlotWidget(ItemPtr const& item, String const& backingImage)
   m_durabilityOffset = jsonToVec2I(interfaceConfig.get("itemIconDurabilityOffset"));
 
   auto newItemIndicatorConfig = interfaceConfig.get("newItemAnimation");
-  m_newItemIndicator = Animation(newItemIndicatorConfig, {}, assets);
+  m_newItemIndicator = Animation(newItemIndicatorConfig, {}, assets, imageMetadata);
   // End animation before it begins, only display when triggered
   m_newItemIndicator.update(newItemIndicatorConfig.getDouble("animationCycle") * newItemIndicatorConfig.getDouble("loops", 1.0f));
 
   Json highlightAnimationConfig = interfaceConfig.get("highlightAnimation");
-  m_highlightAnimation = Animation(highlightAnimationConfig, {}, assets);
+  m_highlightAnimation = Animation(highlightAnimationConfig, {}, assets, imageMetadata);
   m_highlightEnabled = false;
 
   Vec2I backingImageSize;
   if (m_backingImage.size()) {
-    auto const& imgMetadata = GuiContext::singleton().imageMetadata();
-    backingImageSize = Vec2I(imgMetadata->imageSize(m_backingImage));
+    backingImageSize = Vec2I(imageMetadata->imageSize(m_backingImage));
   }
   setSize(m_itemDraggableArea.max().piecewiseMax(backingImageSize));
 
-  WidgetParser parser;
+  WidgetParser parser(guiContext);
 
   parser.construct(assets->json("/interface/itemSlot.config").get("config"), this);
   m_durabilityBar = fetchChild<ProgressWidget>("durabilityBar");
@@ -105,7 +107,7 @@ bool ItemSlotWidget::sendEvent(InputEvent const& event) {
       if (mouseButton->mouseButton == MouseButton::Left
         || (m_rightClickCallback && mouseButton->mouseButton == MouseButton::Right)
         || (m_middleClickCallback && mouseButton->mouseButton == MouseButton::Middle)) {
-        Vec2I mousePos = *context()->mousePosition(event);
+        Vec2I mousePos = *context().mousePosition(event);
         RectI itemArea = m_itemDraggableArea.translated(screenPosition());
         if (itemArea.contains(mousePos)) {
           if (mouseButton->mouseButton == MouseButton::Right)
@@ -193,29 +195,29 @@ void ItemSlotWidget::setHighlightEnabled(bool highlight) {
 void ItemSlotWidget::renderImpl() {
   auto drawCooldown = [this]() {
     int frame = static_cast<int>(roundf(m_progress * 18));// TODO: Hardcoded lol
-    context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:{}", frame)), Vec2F(screenPosition()));
+    context().drawInterfaceQuad(String(strf("/interface/cooldown.png:{}", frame)), Vec2F(screenPosition()));
   };
   if (m_item) {
     if (m_drawBackingImageWhenFull && m_backingImage != "")
-      context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
+      context().drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
 
     List<Drawable> iconDrawables = m_showSecondaryIcon ? m_item->secondaryDrawables().value(m_item->iconDrawables()) : m_item->iconDrawables();
 
     if (m_showRarity) {
       String border = rarityBorder(m_item->rarity());
-      context()->drawInterfaceQuad(border, Vec2F(screenPosition()));
+      context().drawInterfaceQuad(border, Vec2F(screenPosition()));
     }
 
     if (m_showLinkIndicator) {
       // TODO: Hardcoded
-      context()->drawInterfaceQuad(String("/interface/inventory/itemlinkindicator.png"), Vec2F(screenPosition() - Vec2I(1, 1)));
+      context().drawInterfaceQuad(String("/interface/inventory/itemlinkindicator.png"), Vec2F(screenPosition() - Vec2I(1, 1)));
     }
 
     for (auto i : iconDrawables)
-      context()->drawInterfaceDrawable(i, Vec2F(screenPosition() + size() / 2));
+      context().drawInterfaceDrawable(i, Vec2F(screenPosition() + size() / 2));
 
     if (!m_newItemIndicator.isComplete())
-      context()->drawInterfaceDrawable(m_newItemIndicator.drawable(1.0), Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
+      context().drawInterfaceDrawable(m_newItemIndicator.drawable(1.0), Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
 
     if (m_showDurability) {
       if (auto durabilityItem = as<DurabilityItem>(m_item)) {
@@ -233,18 +235,18 @@ void ItemSlotWidget::renderImpl() {
 
     drawCooldown();
     if (m_item->count() > 1 && m_showCount) {// we don't need to tell people that there's only 1 of something
-      context()->setTextStyle(m_textStyle);
-      context()->setFontMode(m_countFontMode);
-      context()->renderInterfaceText(formatShortSize(m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
-      context()->clearTextStyle();
+      context().setTextStyle(m_textStyle);
+      context().setFontMode(m_countFontMode);
+      context().renderInterfaceText(formatShortSize(m_item->count()), m_countPosition.translated(Vec2F(screenPosition())));
+      context().clearTextStyle();
     }
   } else if (m_drawBackingImageWhenEmpty && m_backingImage != "") {
-    context()->drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
+    context().drawInterfaceQuad(m_backingImage, Vec2F(screenPosition()));
     drawCooldown();
   }
 
   if (m_highlightEnabled) {
-    context()->drawInterfaceDrawable(m_highlightAnimation.drawable(1.0), Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
+    context().drawInterfaceDrawable(m_highlightAnimation.drawable(1.0), Vec2F(screenPosition() + size() / 2), Color::White.toRgba());
   }
 
   if (!m_item)

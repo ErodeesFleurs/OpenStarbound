@@ -2,12 +2,13 @@
 
 #include "StarAiTypes.hpp"
 #include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
 class AiDatabase {
 public:
-  AiDatabase(AssetsConstPtr assets);
+  AiDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   AiMission mission(String const& missionName) const;
 

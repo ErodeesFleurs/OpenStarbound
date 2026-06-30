@@ -12,6 +12,7 @@ namespace Star {
 
 class TeamBar;
 class MainInterface;
+class GuiContext;
 class UniverseClient;
 using UniverseClientPtr = SharedPtr<UniverseClient>;
 
@@ -24,12 +25,12 @@ using TeamMemberMenuPtr = SharedPtr<TeamMemberMenu>;
 
 class TeamInvite : public Pane {
 public:
-  TeamInvite(TeamBar* owner);
+  TeamInvite(TeamBar& owner);
 
   virtual void show() override;
 
 private:
-  TeamBar* m_owner;
+  TeamBar& m_owner;
 
   void ok();
   void close();
@@ -37,12 +38,12 @@ private:
 
 class TeamInvitation : public Pane {
 public:
-  TeamInvitation(TeamBar* owner);
+  TeamInvitation(TeamBar& owner);
 
   void open(Uuid const& inviterUuid, String const& inviterName);
 
 private:
-  TeamBar* m_owner;
+  TeamBar& m_owner;
   Uuid m_inviterUuid;
 
   void ok();
@@ -51,7 +52,7 @@ private:
 
 class TeamMemberMenu : public Pane {
 public:
-  TeamMemberMenu(TeamBar* owner);
+  TeamMemberMenu(TeamBar& owner);
 
   void open(Uuid memberUuid, Vec2I position);
 
@@ -65,7 +66,7 @@ private:
   void makeLeader();
   void removeFromTeam();
 
-  TeamBar* m_owner;
+  TeamBar& m_owner;
   Uuid m_memberUuid;
   bool m_canBeam;
 };
@@ -75,9 +76,10 @@ public:
   struct Services {
     AssetsConstPtr assets;
     ConfigurationPtr configuration;
+    GuiContext& guiContext;
   };
 
-  TeamBar(MainInterface* mainInterface, UniverseClientPtr client, Services services);
+  TeamBar(MainInterface& mainInterface, UniverseClientPtr client, Services services);
 
   bool sendEvent(InputEvent const& event) override;
 
@@ -96,12 +98,12 @@ private:
 
   void showMemberMenu(Uuid memberUuid, Vec2I position);
 
-  MainInterface* m_mainInterface;
+  MainInterface& m_mainInterface;
   UniverseClientPtr m_client;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
 
-  GuiContext* m_guiContext;
+  GuiContext& m_guiContext;
 
   TextStyle m_nameStyle;
   Vec2F m_nameOffset;

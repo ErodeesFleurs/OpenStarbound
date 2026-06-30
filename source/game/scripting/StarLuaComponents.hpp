@@ -102,6 +102,7 @@ private:
   StringList m_scripts;
   StringMap<LuaCallbacks> m_callbacks;
   LuaRootPtr m_luaRoot;
+  bool m_autoReInit;
   TrackerListenerPtr m_reloadTracker;
   Maybe<LuaContext> m_context;
   Maybe<String> m_error;
@@ -164,7 +165,7 @@ private:
 template <typename Base>
 class LuaWorldComponent : public Base {
 public:
-  void init(World* world);
+  void init(World& world);
   void uninit();
 
 protected:
@@ -309,11 +310,11 @@ Maybe<Ret> LuaUpdatableComponent<Base>::update(V&&... args) {
 }
 
 template <typename Base>
-void LuaWorldComponent<Base>::init(World* world) {
+void LuaWorldComponent<Base>::init(World& world) {
   if (Base::initialized())
     uninit();
 
-  Base::setLuaRoot(world->luaRoot());
+  Base::setLuaRoot(world.luaRoot());
   Base::addCallbacks("world", LuaBindings::makeWorldCallbacks(world));
   Base::init();
 }

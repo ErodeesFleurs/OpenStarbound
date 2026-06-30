@@ -1,16 +1,16 @@
 #include "StarSkyParameters.hpp"
+#include "StarCasting.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarCelestialGraphics.hpp"
-#include "StarCasting.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarJsonExtra.hpp"
 
 namespace Star {
 
 SkyParameters::SkyParameters() : seed(), skyType(SkyType::Barren), skyColoring(makeRight(Color::Black)), settings(JsonObject()) {}
 
-SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase, AssetsConstPtr assets)
-  : SkyParameters() {
+SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase)
+    : SkyParameters() {
   if (!coordinate || coordinate.isSystem())
     return;
   auto params = celestialDatabase->parameters(coordinate);
@@ -30,7 +30,7 @@ SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDat
       pos[1] = staticRandomFloat(params->seed(), planet->seed(), "y");
 
       // My parent's parent is no one.
-      nearbyPlanet = {{CelestialGraphics::drawWorld(*planet, {}, assets), pos}};
+      nearbyPlanet = {{CelestialGraphics::drawWorld(*planet, {}, assets, liquidsDatabase), pos}};
     }
   }
 
@@ -42,13 +42,13 @@ SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDat
         pos[1] = staticRandomFloat(params->seed(), satellite->seed(), "y");
 
         nearbyMoons.append(
-            {CelestialGraphics::drawWorld(*satellite, celestialDatabase->parameters(satelliteCoordinate.parent()), assets),
-                pos});
+          {CelestialGraphics::drawWorld(*satellite, celestialDatabase->parameters(satelliteCoordinate.parent()), assets, liquidsDatabase),
+           pos});
       }
     }
   }
 
-  horizonImages = CelestialGraphics::worldHorizonImages(*params, assets);
+  horizonImages = CelestialGraphics::worldHorizonImages(*params, assets, liquidsDatabase);
 
   readVisitableParameters(params->visitableParameters());
 
@@ -89,13 +89,13 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
 
   if (config.contains("satellites"))
     nearbyMoons =
-        jsonToList<pair<List<pair<String, float>>, Vec2F>>(config.get("satellites"), [extractLayerData, thisSeed = seed](Json const& v) { return extractLayerData(v, thisSeed); });
+      jsonToList<pair<List<pair<String, float>>, Vec2F>>(config.get("satellites"), [extractLayerData, thisSeed = seed](Json const& v) { return extractLayerData(v, thisSeed); });
 
   if (config.contains("horizonImages")) {
     horizonImages = jsonToList<pair<String, String>>(config.get("horizonImages"),
-        [](Json const& v) -> pair<String, String> {
-          return {v.getString("left"), v.getString("right")};
-        });
+                                                     [](Json const& v) -> pair<String, String> {
+                                                       return {v.getString("left"), v.getString("right")};
+                                                     });
   }
 
   horizonClouds = config.getBool("horizonClouds", true);
@@ -119,46 +119,46 @@ SkyParameters::SkyParameters(Json const& config) : SkyParameters() {
 
 Json SkyParameters::toJson() const {
   return JsonObject{
-      {"seed", seed},
-      {"dayLength", jsonFromMaybe<float>(dayLength)},
-      {"planet",
-          jsonFromMaybe<pair<List<pair<String, float>>, Vec2F>>(nearbyPlanet,
-              [](pair<List<pair<String, float>>, Vec2F> p) -> Json {
-                return JsonObject{
-                    {"layers",
-                        p.first.transformed([](pair<String, float> const& p) -> Json {
-                          return JsonObject{{"image", p.first}, {"scale", p.second}};
-                        })},
-                    {"pos", jsonFromVec2F(p.second)},
-                };
-              })},
-      {"satellites",
-          jsonFromList<pair<List<pair<String, float>>, Vec2F>>(nearbyMoons,
-              [](pair<List<pair<String, float>>, Vec2F> const& p) {
-                return JsonObject{
-                    {"layers",
-                        p.first.transformed([](pair<String, float> const& p) -> Json {
-                          return JsonObject{{"image", p.first}, {"scale", p.second}};
-                        })},
-                    {"pos", jsonFromVec2F(p.second)},
-                };
-              })},
-      {"horizonImages",
-          jsonFromList<pair<String, String>>(horizonImages,
-              [](pair<String, String> p) {
-                return JsonObject{
-                    {"left", p.first}, {"right", p.second},
-                };
-              })},
-      {"horizonClouds", horizonClouds},
-      {"skyType", SkyTypeNames.getRight(skyType)},
-      {"skyColoring", jsonFromMaybe<SkyColoring>(skyColoring.maybeLeft(), [](SkyColoring c) { return c.toJson(); })},
-      {"ambientLightLevel", jsonFromMaybe<Color>(skyColoring.maybeRight(), [](Color c) { return jsonFromColor(c); })},
-      {"spaceLevel", jsonFromMaybe<float>(spaceLevel)},
-      {"surfaceLevel", jsonFromMaybe<float>(surfaceLevel)},
-      {"sunType", sunType},
-      {"settings", settings}
-  };
+    {"seed", seed},
+    {"dayLength", jsonFromMaybe<float>(dayLength)},
+    {"planet",
+     jsonFromMaybe<pair<List<pair<String, float>>, Vec2F>>(nearbyPlanet,
+                                                           [](pair<List<pair<String, float>>, Vec2F> p) -> Json {
+                                                             return JsonObject{
+                                                               {"layers",
+                                                                p.first.transformed([](pair<String, float> const& p) -> Json {
+                                                                  return JsonObject{{"image", p.first}, {"scale", p.second}};
+                                                                })},
+                                                               {"pos", jsonFromVec2F(p.second)},
+                                                             };
+                                                           })},
+    {"satellites",
+     jsonFromList<pair<List<pair<String, float>>, Vec2F>>(nearbyMoons,
+                                                          [](pair<List<pair<String, float>>, Vec2F> const& p) {
+                                                            return JsonObject{
+                                                              {"layers",
+                                                               p.first.transformed([](pair<String, float> const& p) -> Json {
+                                                                 return JsonObject{{"image", p.first}, {"scale", p.second}};
+                                                               })},
+                                                              {"pos", jsonFromVec2F(p.second)},
+                                                            };
+                                                          })},
+    {"horizonImages",
+     jsonFromList<pair<String, String>>(horizonImages,
+                                        [](pair<String, String> p) {
+                                          return JsonObject{
+                                            {"left", p.first},
+                                            {"right", p.second},
+                                          };
+                                        })},
+    {"horizonClouds", horizonClouds},
+    {"skyType", SkyTypeNames.getRight(skyType)},
+    {"skyColoring", jsonFromMaybe<SkyColoring>(skyColoring.maybeLeft(), [](SkyColoring c) { return c.toJson(); })},
+    {"ambientLightLevel", jsonFromMaybe<Color>(skyColoring.maybeRight(), [](Color c) { return jsonFromColor(c); })},
+    {"spaceLevel", jsonFromMaybe<float>(spaceLevel)},
+    {"surfaceLevel", jsonFromMaybe<float>(surfaceLevel)},
+    {"sunType", sunType},
+    {"settings", settings}};
 }
 
 void SkyParameters::read(DataStream& ds) {
@@ -232,4 +232,4 @@ DataStream& operator<<(DataStream& ds, SkyParameters const& sky) {
   return ds;
 }
 
-}
+}// namespace Star

@@ -23,8 +23,11 @@ Animation::Animation() {
   m_completed = false;
 }
 
-Animation::Animation(Json config, String const& directory, AssetsConstPtr assets) {
+Animation::Animation(Json config, String const& directory, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+  : m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
   m_directory = directory;
+  if (!m_imageMetadataDatabase)
+    throw StarException("Animation requires image metadata database service");
   if (m_directory.empty()) {
     if (config.isType(Json::Type::String))
       m_directory = AssetPath::directory(config.toString());
@@ -84,8 +87,8 @@ Drawable Animation::drawable(float pixelSize) const {
   if (m_appendFrame)
     baseFrame += ":" + toString(m_frame);
 
-  Drawable drawable = Drawable::makeImage(std::move(baseFrame), pixelSize, m_centered, m_offset);
-  drawable.imagePart().addDirectivesGroup(m_processing, true);
+  Drawable drawable = Drawable::makeImage(std::move(baseFrame), pixelSize, m_centered, m_offset, Color::White, m_imageMetadataDatabase);
+  drawable.imagePart().addDirectivesGroup(m_processing, true, m_imageMetadataDatabase);
   drawable.rotate(m_angle);
   drawable.color = m_color;
   return drawable;

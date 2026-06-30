@@ -8,7 +8,7 @@
 
 namespace Star {
 
-ServerRconThread::ServerRconThread(UniverseServer* universe, HostAddressWithPort const& address, ConfigurationPtr configuration)
+ServerRconThread::ServerRconThread(UniverseServer& universe, HostAddressWithPort const& address, ConfigurationPtr configuration)
   : Thread("RconServer"), m_universe(universe), m_rconServer(address), m_rconPassword(), m_rconTimeout(0), m_stop(true) {
   if (!configuration)
     throw StarException("ServerRconThread requires configuration service");

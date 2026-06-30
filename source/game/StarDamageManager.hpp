@@ -45,7 +45,7 @@ DataStream& operator>>(DataStream& ds, RemoteDamageNotification& damageNotificat
 // is applied within the damage cutoff time from the same causing entity.
 class DamageManager {
 public:
-  DamageManager(World* world, ConnectionId connectionId);
+  DamageManager(World& world, ConnectionId connectionId);
 
   // Notify entities that they have caused damage, apply damage to master
   // entities, produce damage notifications, and run down damage timeouts.
@@ -82,7 +82,7 @@ private:
   void addDamageRequest(RemoteDamageRequest remoteDamageRequest);
   void addDamageNotification(RemoteDamageNotification remoteDamageNotification);
 
-  World* m_world;
+  World& m_world;
   ConnectionId m_connectionId;
 
   // Maps target entity to all of the recent damage events that entity has

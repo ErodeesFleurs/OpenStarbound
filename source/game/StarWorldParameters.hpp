@@ -1,10 +1,12 @@
 #pragma once
 
+#include "StarAssets.hpp"
+#include "StarBiomeDatabase.hpp"
+#include "StarForceRegions.hpp"
 #include "StarGameTypes.hpp"
+#include "StarLiquidsDatabase.hpp"
 #include "StarSkyTypes.hpp"
 #include "StarWeatherTypes.hpp"
-#include "StarForceRegions.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -112,7 +114,7 @@ struct TerrestrialWorldParameters : VisitableWorldParameters {
   TerrestrialWorldParameters(TerrestrialWorldParameters const& terrestrialWorldParameters) = default;
   explicit TerrestrialWorldParameters(Json const& store);
 
-  TerrestrialWorldParameters &operator=(TerrestrialWorldParameters const& terrestrialWorldParameters);
+  TerrestrialWorldParameters& operator=(TerrestrialWorldParameters const& terrestrialWorldParameters);
 
   WorldParametersType type() const override;
 
@@ -188,11 +190,8 @@ VisitableWorldParametersPtr diskLoadVisitableWorldParameters(Json const& store);
 ByteArray netStoreVisitableWorldParameters(VisitableWorldParametersConstPtr const& parameters);
 VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data);
 
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, uint64_t seed);
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr assets, String const& typeName, String const& sizeName, uint64_t seed);
-AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed);
+TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, String const& typeName, String const& sizeName, uint64_t seed);
 AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr assets, uint64_t seed);
-FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String const& dungeonWorldName);
 FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(AssetsConstPtr assets, String const& dungeonWorldName);
 
-}
+}// namespace Star

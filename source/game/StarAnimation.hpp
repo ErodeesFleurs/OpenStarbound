@@ -3,6 +3,7 @@
 #include "StarDrawable.hpp"
 #include "StarBiMap.hpp"
 #include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
@@ -13,7 +14,7 @@ class Animation {
 public:
   Animation();
   // config can be either a path to a config or a literal config.
-  Animation(Json config, String const& directory, AssetsConstPtr assets);
+  Animation(Json config, String const& directory, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {});
 
   void setAngle(float angle);
 
@@ -48,6 +49,7 @@ private:
   DirectivesGroup m_processing;
   Color m_color;
   int m_variantOffset;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
 
   StringMap<String> m_tagValues;
   int m_frame;

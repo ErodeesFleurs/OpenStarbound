@@ -14,32 +14,31 @@
 namespace Star {
 
 StatusPane::StatusPane(UniverseClientPtr client, StatusPaneServices services)
-  : m_client(std::move(client)),
+  : Pane(services.guiContext),
+    m_client(std::move(client)),
     m_assets(std::move(services.assets)),
     m_imageMetadataDatabase(std::move(services.imageMetadataDatabase)),
-    m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
+    m_statusEffectDatabase(std::move(services.statusEffectDatabase)),
+    m_guiContext(services.guiContext) {
   if (!m_assets)
     throw StarException("StatusPane requires assets service");
   if (!m_imageMetadataDatabase)
     throw StarException("StatusPane requires image metadata service");
   if (!m_statusEffectDatabase)
     throw StarException("StatusPane requires status effect database service");
-
   m_player = m_client->mainPlayer();
 
-  m_guiContext = GuiContext::singletonPtr();
-
-  GuiReader reader;
+  GuiReader reader(m_guiContext);
   reader.construct(m_assets->json("/interface/windowconfig/statuspane.config:paneLayout"), this);
   disableScissoring();
 }
 
 PanePtr StatusPane::createTooltip(Vec2I const& screenPosition) {
-  auto interfaceScale = m_guiContext->interfaceScale();
+  auto interfaceScale = m_guiContext.interfaceScale();
   for (auto const& indicator : m_statusIndicators) {
     if (indicator.screenRect.contains(Vec2F(screenPosition * interfaceScale))) {
       if (!indicator.label.empty())
-        return SimpleTooltipBuilder::buildTooltip(indicator.label, SimpleTooltipServices{m_assets});
+        return SimpleTooltipBuilder::buildTooltip(indicator.label, SimpleTooltipServices{m_assets, m_guiContext});
     }
   }
   return {};
@@ -48,7 +47,7 @@ PanePtr StatusPane::createTooltip(Vec2I const& screenPosition) {
 void StatusPane::renderImpl() {
   Pane::renderImpl();
 
-  auto interfaceScale = m_guiContext->interfaceScale();
+  auto interfaceScale = m_guiContext.interfaceScale();
 
   String statusIconDarkenImage = m_assets->json("/interface.config:statusIconDarkenImage").toString();
 
@@ -60,14 +59,14 @@ void StatusPane::renderImpl() {
       image += "?" + imageOperationToString(BlendImageOperation{
                          BlendImageOperation::Multiply, {statusIconDarkenImage}, Vec2I(0, yOffset)});
     }
-    m_guiContext->drawQuad(image, entry.screenRect.min(), interfaceScale);
+    m_guiContext.drawQuad(image, entry.screenRect.min(), interfaceScale);
   }
 }
 
 void StatusPane::update(float dt) {
   Pane::update(dt);
 
-  auto interfaceScale = m_guiContext->interfaceScale();
+  auto interfaceScale = m_guiContext.interfaceScale();
   int roundWindowHeight = ceil(windowHeight() / interfaceScale) * interfaceScale;
 
   Vec2I statusIconOffset = jsonToVec2I(m_assets->json("/interface.config:statusIconPos"));

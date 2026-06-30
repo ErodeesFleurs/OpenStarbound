@@ -15,21 +15,21 @@ bool StarWorldClientDamageFX::DamageNumberKey::operator<(DamageNumberKey const& 
       < tie(other.sourceEntityId, other.targetEntityId, other.damageNumberParticleKind);
 }
 
-StarWorldClientDamageFX::StarWorldClientDamageFX(WorldClient* worldClient)
+StarWorldClientDamageFX::StarWorldClientDamageFX(WorldClient& worldClient)
   : m_worldClient(worldClient) {}
 
 void StarWorldClientDamageFX::handleDamageNotifications() {
-  if (!m_worldClient->inWorld())
+  if (!m_worldClient.inWorld())
     return;
 
   auto renderParticle = [&](Vec2F position, float amount, String const& damageNumberParticleKind) {
     int displayValue = static_cast<int>(ceil(amount - 0.1f));
     if (displayValue <= 0)
       return;
-    Particle particle = m_worldClient->m_particleDatabase->particle(damageNumberParticleKind);
+    Particle particle = m_worldClient.m_particleDatabase->particle(damageNumberParticleKind);
     particle.position += position;
     particle.string = particle.string.replace("$dmg$", toString(displayValue));
-    m_worldClient->m_particles->add(particle);
+    m_worldClient.m_particles->add(particle);
   };
 
   eraseWhere(m_damageNumbers, [&](std::pair<DamageNumberKey, DamageNumber> const& entry) -> bool {
@@ -40,8 +40,8 @@ void StarWorldClientDamageFX::handleDamageNotifications() {
       return false;
     });
 
-  for (auto const& damageNotification : m_worldClient->m_damageManager->pullPendingNotifications()) {
-    auto damageDatabase = m_worldClient->m_damageDatabase;
+  for (auto const& damageNotification : m_worldClient.m_damageManager->pullPendingNotifications()) {
+    auto damageDatabase = m_worldClient.m_damageDatabase;
     DamageKind const& damageKind = damageDatabase->damageKind(damageNotification.damageSourceKind);
     ElementalType const& elementalType = damageDatabase->elementalType(damageKind.elementalType);
 
@@ -73,12 +73,12 @@ void StarWorldClientDamageFX::handleDamageNotifications() {
     String material = damageNotification.targetMaterialKind;
     if (!material.empty() && damageKind.effects.contains(material)) {
       HitType effectHitType = damageKind.effects.get(material).contains(damageNotification.hitType) ? damageNotification.hitType : HitType::Hit;
-      m_worldClient->m_samples.appendAll(soundsFromDefinition(m_worldClient->m_assets, damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
+      m_worldClient.m_samples.appendAll(soundsFromDefinition(m_worldClient.m_assets, damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
 
-      auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position, m_worldClient->particleDatabase());
+      auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position, m_worldClient.particleDatabase());
 
       const List<Directives>* directives = nullptr;
-      if (auto& worldTemplate = m_worldClient->m_worldTemplate) {
+      if (auto& worldTemplate = m_worldClient.m_worldTemplate) {
         if (const auto& parameters = worldTemplate->worldParameters())
           if (auto& globalDirectives = parameters->globalDirectives)
             directives = &globalDirectives.get();
@@ -89,35 +89,35 @@ void StarWorldClientDamageFX::handleDamageNotifications() {
           p.directives.append(directives->get(directiveIndex));
       }
 
-      m_worldClient->m_particles->addParticles(hitParticles);
+      m_worldClient.m_particles->addParticles(hitParticles);
     }
   }
 }
 
 void StarWorldClientDamageFX::sparkDamagedBlocks() {
-  if (!m_worldClient->inWorld())
+  if (!m_worldClient.inWorld())
     return;
 
-  auto materialDatabase = m_worldClient->m_materialDatabase;
+  auto materialDatabase = m_worldClient.m_materialDatabase;
 
-  for (auto pos : m_worldClient->m_damagedBlocks.values()) {
-    if (auto tile = m_worldClient->m_tileArray->modifyTile(pos)) {
+  for (auto pos : m_worldClient.m_damagedBlocks.values()) {
+    if (auto tile = m_worldClient.m_tileArray->modifyTile(pos)) {
       if (tile->backgroundDamage.healthy() && tile->foregroundDamage.healthy())
-        m_worldClient->m_damagedBlocks.remove(pos);
+        m_worldClient.m_damagedBlocks.remove(pos);
 
       if (isRealMaterial(tile->foreground) && tile->foregroundDamage.damageEffectPercentage() - Random::randf() > 0.0f
           && (Random::randf() < m_blockDamageParticleProbability)) {
         auto particle = m_blockDamageParticle;
         particle.color = materialDatabase->materialParticleColor(tile->foreground, tile->foregroundHueShift);
 
-        if (m_worldClient->isTileProtected(pos))
+        if (m_worldClient.isTileProtected(pos))
           particle = m_blockDingParticle;
 
         particle.position += centerOfTile(pos);
         particle.velocity = particle.velocity.magnitude()
-            * vnorm(m_worldClient->m_geometry.diff(tile->foregroundDamage.sourcePosition(), particle.position));
+            * vnorm(m_worldClient.m_geometry.diff(tile->foregroundDamage.sourcePosition(), particle.position));
         particle.applyVariance(m_blockDamageParticleVariance);
-        m_worldClient->m_particles->add(particle);
+        m_worldClient.m_particles->add(particle);
       }
 
       if (isRealMaterial(tile->background) && tile->backgroundDamage.damageEffectPercentage() - Random::randf() > 0.0f
@@ -125,14 +125,14 @@ void StarWorldClientDamageFX::sparkDamagedBlocks() {
         auto particle = m_blockDamageParticle;
         particle.color = materialDatabase->materialParticleColor(tile->background, tile->backgroundHueShift);
 
-        if (m_worldClient->isTileProtected(pos))
+        if (m_worldClient.isTileProtected(pos))
           particle = m_blockDingParticle;
 
         particle.position += centerOfTile(pos);
         particle.velocity = particle.velocity.magnitude()
-            * vnorm(m_worldClient->m_geometry.diff(tile->backgroundDamage.sourcePosition(), particle.position));
+            * vnorm(m_worldClient.m_geometry.diff(tile->backgroundDamage.sourcePosition(), particle.position));
         particle.applyVariance(m_blockDamageParticleVariance);
-        m_worldClient->m_particles->add(particle);
+        m_worldClient.m_particles->add(particle);
       }
     }
   }

@@ -6,7 +6,7 @@
 
 namespace Star {
 
-PlayerChatAndEmotes::PlayerChatAndEmotes(Player* player, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor)
+PlayerChatAndEmotes::PlayerChatAndEmotes(Player& player, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor)
   : m_player(player),
     m_danceDatabase(std::move(danceDatabase)),
     m_emoteProcessor(std::move(emoteProcessor)),
@@ -29,15 +29,15 @@ void PlayerChatAndEmotes::init(float emoteCooldown, Vec2F blinkInterval) {
 }
 
 void PlayerChatAndEmotes::addChatMessage(String const& message, Json const& config) {
-  starAssert(!m_player->isSlave());
+  starAssert(!m_player.isSlave());
   m_chatMessage = message;
   m_chatMessageUpdated = true;
   m_chatMessageChanged = true;
-  m_pendingChatActions.append(SayChatAction{m_player->entityId(), message, m_player->mouthPosition(), config});
+  m_pendingChatActions.append(SayChatAction{m_player.entityId(), message, m_player.mouthPosition(), config});
 }
 
 void PlayerChatAndEmotes::addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown) {
-  starAssert(!m_player->isSlave());
+  starAssert(!m_player.isSlave());
   m_emoteState = emote;
   m_emoteCooldownTimer = GameTimer(emoteCooldown.value(m_emoteCooldown));
 }
@@ -87,7 +87,7 @@ void PlayerChatAndEmotes::tickChatAndEmotes(float dt) {
 void PlayerChatAndEmotes::tickBlink(float dt) {
   if (m_blinkCooldownTimer.tick(dt)) {
     m_blinkCooldownTimer = GameTimer(Random::randf(m_blinkInterval[0], m_blinkInterval[1]));
-    auto loungeAnchor = as<LoungeAnchor>(m_player->movementController()->entityAnchor());
+    auto loungeAnchor = as<LoungeAnchor>(m_player.movementController()->entityAnchor());
     if (m_emoteState == HumanoidEmote::Idle && (!loungeAnchor || !loungeAnchor->emote))
       addEmote(HumanoidEmote::Blink);
   }

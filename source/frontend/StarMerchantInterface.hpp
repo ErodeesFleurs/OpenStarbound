@@ -38,6 +38,7 @@ struct MerchantPaneServices {
   ItemDatabaseConstPtr itemDatabase;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
+  GuiContext& guiContext;
 };
 
 class MerchantPane : public Pane {

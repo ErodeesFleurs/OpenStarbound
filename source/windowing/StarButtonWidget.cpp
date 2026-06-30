@@ -2,11 +2,10 @@
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarAssets.hpp"
-#include "StarInput.hpp"
 
 namespace Star {
 
-ButtonWidget::ButtonWidget() {
+ButtonWidget::ButtonWidget(GuiContext& context) : Widget(context) {
   m_hovered = false;
   m_pressed = false;
   m_checkable = false;
@@ -20,7 +19,8 @@ ButtonWidget::ButtonWidget() {
   m_fontColor = Color::White;
   m_fontColorDisabled = Color::Gray;
 
-  auto const& assets = GuiContext::singleton().assets();
+  auto& guiContext = this->context();
+  auto const& assets = guiContext.assets();
 
   auto interfaceConfig = assets->json("/interface.config");
   m_pressedOffset = jsonToVec2I(interfaceConfig.get("buttonPressedOffset"));
@@ -31,12 +31,13 @@ ButtonWidget::ButtonWidget() {
   m_hoverOffSounds = jsonToStringList(interfaceConfig.get("buttonHoverOffSound"));
 }
 
-ButtonWidget::ButtonWidget(WidgetCallbackFunc callback,
+ButtonWidget::ButtonWidget(GuiContext& context,
+    WidgetCallbackFunc callback,
     String const& baseImage,
     String const& hoverImage,
     String const& pressedImage,
     String const& disabledImage)
-  : ButtonWidget() {
+  : ButtonWidget(context) {
   setCallback(callback);
   setImages(baseImage, hoverImage, pressedImage, disabledImage);
 }
@@ -49,8 +50,9 @@ ButtonWidget::~ButtonWidget() {
 void ButtonWidget::renderImpl() {
   if (isPressed() && sustainCallbackOnDownHold()) {
     if (m_callback) {
-      auto unlocker = Input::singleton().unlockClipboard();
-      m_callback(this);
+      context().withClipboardUnlock([this]() {
+          m_callback(this);
+        });
     }
   }
 
@@ -94,27 +96,27 @@ void ButtonWidget::renderImpl() {
     drawButtonPart(m_overlayImage, position);
 
   if (!m_text.empty()) {
-    auto* guiContext = context();
-    guiContext->setTextStyle(m_textStyle);
+    auto& guiContext = context();
+    guiContext.setTextStyle(m_textStyle);
     if (m_disabled)
-      guiContext->setFontColor(m_fontColorDisabled.toRgba());
+      guiContext.setFontColor(m_fontColorDisabled.toRgba());
     else if (m_fontColorChecked && m_checked)
-      guiContext->setFontColor(m_fontColorChecked.value().toRgba());
+      guiContext.setFontColor(m_fontColorChecked.value().toRgba());
     else
-      guiContext->setFontColor(m_fontColor.toRgba());
-    guiContext->renderInterfaceText(m_text, {textPosition, m_hTextAnchor, VerticalAnchor::VMidAnchor});
-    guiContext->clearTextStyle();
+      guiContext.setFontColor(m_fontColor.toRgba());
+    guiContext.renderInterfaceText(m_text, {textPosition, m_hTextAnchor, VerticalAnchor::VMidAnchor});
+    guiContext.clearTextStyle();
   }
 }
 
 bool ButtonWidget::sendEvent(InputEvent const& event) {
   if (m_visible && !m_disabled) {
     if (event.is<MouseButtonDownEvent>() && event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left) {
-      if (inMember(*context()->mousePosition(event))) {
+      if (inMember(*context().mousePosition(event))) {
         if (!isPressed()) {
           auto sound = Random::randValueFrom(m_clickSounds, "");
           if (!sound.empty())
-            context()->playAudio(sound);
+            context().playAudio(sound);
         }
         setPressed(true);
         if (m_callback) {
@@ -129,7 +131,7 @@ bool ButtonWidget::sendEvent(InputEvent const& event) {
       if (isPressed()) {
         auto sound = Random::randValueFrom(m_releaseSounds, "");
         if (!sound.empty())
-          context()->playAudio(sound);
+          context().playAudio(sound);
       }
       setPressed(false);
       return false;
@@ -145,7 +147,7 @@ void ButtonWidget::mouseOver() {
     if (!m_hovered) {
       auto sound = Random::randValueFrom(m_hoverSounds);
       if (!sound.empty())
-        context()->playAudio(sound);
+        context().playAudio(sound);
     }
     m_hovered = true;
   }
@@ -156,7 +158,7 @@ void ButtonWidget::mouseOut() {
   if (!m_disabled && m_hovered) {
     auto sound = Random::randValueFrom(m_hoverOffSounds);
     if (!sound.empty())
-      context()->playAudio(sound);
+      context().playAudio(sound);
   }
   m_hovered = false;
   m_pressed = false;
@@ -167,7 +169,7 @@ void ButtonWidget::mouseReturnStillDown() {
   if (!isPressed()) {
     auto sound = Random::randValueFrom(m_clickSounds, "");
     if (!sound.empty())
-      context()->playAudio(sound);
+      context().playAudio(sound);
   }
   m_hovered = true;
   m_pressed = true;
@@ -222,8 +224,9 @@ void ButtonWidget::setPressed(bool pressed) {
     if (m_pressed) {
       check();
       if (m_callback) {
-        auto unlocker = Input::singleton().unlockClipboard();
-        m_callback(this);
+        context().withClipboardUnlock([this]() {
+            m_callback(this);
+          });
       }
     }
     m_pressed = pressed;
@@ -285,7 +288,7 @@ void ButtonWidget::setImages(String const& baseImage, String const& hoverImage, 
   m_pressedImage = pressedImage;
   m_disabledImage = disabledImage;
   if (m_disabledImage.empty() && !m_baseImage.empty())
-    m_disabledImage = m_baseImage + context()->assets()->json("/interface.config:disabledButton").toString();
+    m_disabledImage = m_baseImage + context().assets()->json("/interface.config:disabledButton").toString();
   updateSize();
 }
 
@@ -296,7 +299,7 @@ void ButtonWidget::setCheckedImages(String const& baseImage, String const& hover
   m_pressedImageChecked = pressedImage;
   m_disabledImageChecked = disabledImage;
   if (m_hasCheckedImages && m_disabledImageChecked.empty())
-    m_disabledImageChecked = m_baseImageChecked + context()->assets()->json("/interface.config:disabledButton").toString();
+    m_disabledImageChecked = m_baseImageChecked + context().assets()->json("/interface.config:disabledButton").toString();
   updateSize();
 }
 
@@ -379,28 +382,28 @@ RectI ButtonWidget::getScissorRect() const {
 }
 
 void ButtonWidget::drawButtonPart(String const& image, Vec2F const& position) {
-  auto* guiContext = context();
-  auto imageSize = guiContext->textureSize(image);
-  guiContext->drawInterfaceQuad(image, position + Vec2F(m_buttonBoundSize - imageSize) / 2);
+  auto& guiContext = context();
+  auto imageSize = guiContext.textureSize(image);
+  guiContext.drawInterfaceQuad(image, position + Vec2F(m_buttonBoundSize - imageSize) / 2);
 }
 
 void ButtonWidget::updateSize() {
   if (m_invisible || m_baseImage.empty())
     return;
-  auto* guiContext = context();
-  m_buttonBoundSize = guiContext->textureSize(m_baseImage);
+  auto& guiContext = context();
+  m_buttonBoundSize = guiContext.textureSize(m_baseImage);
   if (!m_hoverImage.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_hoverImage));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_hoverImage));
   if (!m_pressedImage.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_pressedImage));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_pressedImage));
   if (!m_baseImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_baseImageChecked));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_baseImageChecked));
   if (!m_hoverImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_hoverImageChecked));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_hoverImageChecked));
   if (!m_pressedImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_pressedImageChecked));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_pressedImageChecked));
   if (!m_disabledImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_disabledImageChecked));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_disabledImageChecked));
 
   setSize(Vec2I(m_buttonBoundSize));
 }

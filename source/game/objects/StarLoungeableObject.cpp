@@ -1,6 +1,5 @@
 #include "StarLoungeableObject.hpp"
 #include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarObjectDatabase.hpp"
 
 namespace Star {
@@ -16,9 +15,9 @@ void LoungeableObject::render(RenderCallback* renderCallback) {
     if (!entitiesLounging().empty()) {
       if (auto orientation = currentOrientation()) {
         Drawable drawable =
-            Drawable::makeImage(m_sitCoverImage, 1.0f / TilePixels, false, position() + orientation->imagePosition);
+            Drawable::makeImage(m_sitCoverImage, 1.0f / TilePixels, false, position() + orientation->imagePosition, config()->imageMetadataDatabase);
         if (m_flipImages)
-          drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center());
+          drawable.scale(Vec2F(-1, 1), drawable.boundBox(false, config()->imageMetadataDatabase).center());
         renderCallback->addDrawable(std::move(drawable), RenderLayerObject + 2);
       }
     }

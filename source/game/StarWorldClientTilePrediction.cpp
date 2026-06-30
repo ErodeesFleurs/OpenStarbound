@@ -5,7 +5,7 @@
 
 namespace Star {
 
-StarWorldClientTilePrediction::StarWorldClientTilePrediction(WorldClient* worldClient)
+StarWorldClientTilePrediction::StarWorldClientTilePrediction(WorldClient& worldClient)
   : m_worldClient(worldClient) {}
 
 void StarWorldClientTilePrediction::informTilePrediction(Vec2I const& pos, TileModification const& modification) {
@@ -14,19 +14,19 @@ void StarWorldClientTilePrediction::informTilePrediction(Vec2I const& pos, TileM
   p.time = now;
   if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
     if (placeMaterial->layer == TileLayer::Foreground) {
-      auto materialDatabase = m_worldClient->m_materialDatabase;
+      auto materialDatabase = m_worldClient.m_materialDatabase;
       if (!materialDatabase->isCascadingFallingMaterial(placeMaterial->material)
-       && !materialDatabase->         isFallingMaterial(placeMaterial->material)) {
+          && !materialDatabase->isFallingMaterial(placeMaterial->material)) {
         p.foreground = placeMaterial->material;
         p.foregroundHueShift = placeMaterial->materialHueShift;
-      }
-      else
+      } else {
         p.foreground = StructureMaterialId;
+      }
       if (placeMaterial->collisionOverride != TileCollisionOverride::None)
         p.collision = collisionKindFromOverride(placeMaterial->collisionOverride);
       else
         p.collision = materialDatabase->materialCollisionKind(placeMaterial->material);
-      m_worldClient->dirtyCollision(RectI::withSize(pos, { 1, 1 }));
+      m_worldClient.dirtyCollision(RectI::withSize(pos, {1, 1}));
     } else {
       p.background = placeMaterial->material;
       p.backgroundHueShift = placeMaterial->materialHueShift;
@@ -53,7 +53,7 @@ void StarWorldClientTilePrediction::informTilePrediction(Vec2I const& pos, TileM
 }
 
 bool StarWorldClientTilePrediction::readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision) {
-  ClientTile* tile = m_worldClient->m_tileArray->modifyTile(pos);
+  ClientTile* tile = m_worldClient.m_tileArray->modifyTile(pos);
   if (!tile)
     return false;
 
@@ -103,19 +103,19 @@ bool StarWorldClientTilePrediction::readNetTile(Vec2I const& pos, NetTile const&
   tile->liquid = netTile.liquid.liquidLevel();
   tile->dungeonId = netTile.dungeonId;
 
-  auto materialDatabase = m_worldClient->m_materialDatabase;
+  auto materialDatabase = m_worldClient.m_materialDatabase;
   tile->backgroundLightTransparent = materialDatabase->backgroundLightTransparent(tile->background);
   tile->foregroundLightTransparent =
       materialDatabase->foregroundLightTransparent(tile->foreground) && tile->collision != CollisionKind::Dynamic;
 
   if (updateCollision)
-    m_worldClient->dirtyCollision(RectI::withSize(pos, {1, 1}));
+    m_worldClient.dirtyCollision(RectI::withSize(pos, {1, 1}));
 
   return true;
 }
 
 void StarWorldClientTilePrediction::expirePredictedTiles() {
-  float expireTime = min(float(m_worldClient->m_latency + 800), 2000.f);
+  float expireTime = min(float(m_worldClient.m_latency + 800), 2000.f);
   auto now = Time::monotonicMilliseconds();
   eraseWhere(m_predictedTiles, [&](auto& pair) {
     float expiry = static_cast<float>(now - pair.second.time) / expireTime;
@@ -124,7 +124,7 @@ void StarWorldClientTilePrediction::expirePredictedTiles() {
     auto poly = PolyF(RectF::withCenter(center, size));
     SpatialLogger::logPoly("world", poly, Color::Cyan.mix(Color::Red, expiry).toRgba());
     if (expiry >= 1.0f) {
-      m_worldClient->dirtyCollision(RectI::withSize(pair.first, { 1, 1 }));
+      m_worldClient.dirtyCollision(RectI::withSize(pair.first, { 1, 1 }));
       return true;
     } else {
       return false;

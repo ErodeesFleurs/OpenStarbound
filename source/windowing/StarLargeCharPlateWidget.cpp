@@ -5,12 +5,14 @@
 
 namespace Star {
 
-LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, PlayerPtr player) : m_player(player) {
+LargeCharPlateWidget::LargeCharPlateWidget(GuiContext& context, WidgetCallbackFunc mainCallback, PlayerPtr player)
+  : ButtonWidget(context), m_player(std::move(player)) {
   m_portraitScale = 0;
 
   setSize(ButtonWidget::size());
 
-  auto const& assets = GuiContext::singleton().assets();
+  auto& guiContext = this->context();
+  auto const& assets = guiContext.assets();
   m_config = assets->json("/interface.config:largeCharPlate");
   auto charPlateImage = m_config.getString("backingImage");
 
@@ -27,7 +29,7 @@ LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, Play
   String switchText = m_config.getString("switchText");
   String createText = m_config.getString("createText");
 
-  m_portrait = make_shared<PortraitWidget>();
+  m_portrait = make_shared<PortraitWidget>(guiContext);
   m_portrait->setScale(m_portraitScale);
   m_portrait->setPosition(m_portraitOffset);
   m_portrait->setRenderHumanoid(true);
@@ -42,14 +44,14 @@ LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, Play
 
   auto modeNameHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("modeNameHAnchor", "mid"));
   auto modeNameVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("modeNameVAnchor", "bottom"));
-  m_modeName = make_shared<LabelWidget>(modeLabelText, Color::White, modeNameHAnchor);
+  m_modeName = make_shared<LabelWidget>(guiContext, modeLabelText, Color::White, modeNameHAnchor);
   addChild("modeName", m_modeName);
   m_modeName->setPosition(m_modeNameOffset);
   m_modeName->setAnchor(modeNameHAnchor, modeNameVAnchor);
 
   auto modeHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("modeHAnchor", "left"));
   auto modeVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("modeVAnchor", "bottom"));
-  m_mode = make_shared<LabelWidget>();
+  m_mode = make_shared<LabelWidget>(guiContext);
   addChild("mode", m_mode);
   m_mode->setPosition(m_modeOffset);
   m_mode->setAnchor(modeHAnchor, modeVAnchor);
@@ -60,7 +62,7 @@ LargeCharPlateWidget::LargeCharPlateWidget(WidgetCallbackFunc mainCallback, Play
 
   auto playerNameHAnchor = HorizontalAnchorNames.getLeft(m_config.getString("playerNameHAnchor", "mid"));
   auto playerNameVAnchor = VerticalAnchorNames  .getLeft(m_config.getString("playerNameVAnchor", "bottom"));
-  m_playerName = make_shared<LabelWidget>();
+  m_playerName = make_shared<LabelWidget>(guiContext);
   m_playerName->setColor(m_createCharTextColor);
   m_playerName->setPosition(m_playerNameOffset);
   m_playerName->setAnchor(playerNameHAnchor, playerNameVAnchor);
@@ -111,7 +113,7 @@ void LargeCharPlateWidget::setPlayer(PlayerPtr player) {
     m_playerName->setText(m_createCharText);
   }
 
-  auto modeTypeTextAndColor = context()->assets()->json("/interface.config:modeTypeTextAndColor").toArray();
+  auto modeTypeTextAndColor = context().assets()->json("/interface.config:modeTypeTextAndColor").toArray();
   int modeType;
   if (m_player) {
     modeType = 1 + static_cast<int>(m_player->modeType());
@@ -135,7 +137,7 @@ void LargeCharPlateWidget::enableDelete(WidgetCallbackFunc const& callback) {
   auto disabledImage = trashButton.getString("disabledImage");
   auto offset = jsonToVec2I(trashButton.get("offset"));
 
-  m_delete = make_shared<ButtonWidget>(callback, baseImage, hoverImage, pressedImage, disabledImage);
+  m_delete = make_shared<ButtonWidget>(context(), callback, baseImage, hoverImage, pressedImage, disabledImage);
   addChild("trashButton", m_delete);
   m_delete->setPosition(offset);
   m_deleteOffset = offset;
@@ -151,7 +153,7 @@ void LargeCharPlateWidget::disableDelete() {
 
 bool LargeCharPlateWidget::sendEvent(InputEvent const& event) {
   if (event.is<MouseMoveEvent>() && m_delete) {
-    if (m_delete->inMember(*m_context->mousePosition(event)))
+    if (m_delete->inMember(*context().mousePosition(event)))
       m_delete->mouseOver();
     else
       m_delete->mouseOut();

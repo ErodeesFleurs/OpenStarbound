@@ -29,7 +29,7 @@ using CommandProcessorPtr = SharedPtr<CommandProcessor>;
 
 class CommandProcessor {
 public:
-  CommandProcessor(UniverseServer* universe,
+  CommandProcessor(UniverseServer& universe,
       LuaRootPtr luaRoot,
       AssetsConstPtr assets,
       ConfigurationPtr configuration,
@@ -39,13 +39,14 @@ public:
       NpcDatabaseConstPtr npcDatabase,
       VehicleDatabaseConstPtr vehicleDatabase,
       StagehandDatabaseConstPtr stagehandDatabase,
-      LiquidsDatabaseConstPtr liquidsDatabase);
+      LiquidsDatabaseConstPtr liquidsDatabase,
+      function<void()> reloadRoot);
 
   String adminCommand(String const& command, String const& argumentString);
   String userCommand(ConnectionId clientId, String const& command, String const& argumentString);
 
 private:
-  static Maybe<ConnectionId> playerCidFromCommand(String const& player, UniverseServer* universe);
+  static Maybe<ConnectionId> playerCidFromCommand(String const& player, UniverseServer& universe);
 
   String help(ConnectionId connectionId, String const& argumentString);
   String admin(ConnectionId connectionId, String const& argumentString);
@@ -97,7 +98,7 @@ private:
   Maybe<String> localCheck(ConnectionId connectionId, String const& commandDescription) const;
   LuaCallbacks makeCommandCallbacks();
 
-  UniverseServer* m_universe;
+  UniverseServer& m_universe;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
   ItemDatabaseConstPtr m_itemDatabase;
@@ -107,6 +108,7 @@ private:
   VehicleDatabaseConstPtr m_vehicleDatabase;
   StagehandDatabaseConstPtr m_stagehandDatabase;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
+  function<void()> m_reloadRoot;
   ShellParser m_parser;
 
   LuaBaseComponent m_scriptComponent;

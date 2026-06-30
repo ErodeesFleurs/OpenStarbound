@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarLiquidsDatabase.hpp"
 #include "StarSystemWorld.hpp"
 #include "StarUuid.hpp"
 
@@ -13,9 +14,9 @@ using PacketPtr = SharedPtr<Packet>;
 class SystemWorldServer : public SystemWorld {
 public:
   // create new system world server
-  SystemWorldServer(AssetsConstPtr assets, Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator);
+  SystemWorldServer(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator);
   // load system world server from storage
-  SystemWorldServer(AssetsConstPtr assets, Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator);
+  SystemWorldServer(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator);
 
   void setClientDestination(ConnectionId const& clientId, SystemLocation const& destination);
 
@@ -69,7 +70,7 @@ private:
 
   // setting this to true asynchronously triggers storage from the server thread
   bool m_triggerStorage;
-  
+
   double m_lastSpawn;
   double m_objectSpawnTime;
 
@@ -86,7 +87,7 @@ private:
   List<ConnectionId> m_shipFlights;
 
   HashMap<ConnectionId, List<PacketPtr>> m_outgoingPackets;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
 };
 
-
-}
+}// namespace Star

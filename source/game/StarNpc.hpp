@@ -1,30 +1,30 @@
 #pragma once
 
-#include "StarNpcDatabase.hpp"
-#include "StarEntity.hpp"
-#include "StarNetElementSystem.hpp"
 #include "StarActorMovementController.hpp"
-#include "StarHumanoid.hpp"
-#include "StarEffectEmitter.hpp"
-#include "StarEntitySplash.hpp"
-#include "StarDamageBarEntity.hpp"
-#include "StarNametagEntity.hpp"
-#include "StarPortraitEntity.hpp"
-#include "StarScriptedEntity.hpp"
-#include "StarChattyEntity.hpp"
-#include "StarEmoteEntity.hpp"
-#include "StarInteractiveEntity.hpp"
-#include "StarLoungingEntities.hpp"
-#include "StarToolUserEntity.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
-#include "StarItemBag.hpp"
 #include "StarArmorWearer.hpp"
-#include "StarToolUser.hpp"
+#include "StarAssets.hpp"
+#include "StarChattyEntity.hpp"
+#include "StarDamageBarEntity.hpp"
+#include "StarEffectEmitter.hpp"
+#include "StarEmoteEntity.hpp"
+#include "StarEntity.hpp"
+#include "StarEntitySplash.hpp"
+#include "StarHumanoid.hpp"
+#include "StarInteractiveEntity.hpp"
+#include "StarItemBag.hpp"
+#include "StarLoungingEntities.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaAnimationComponent.hpp"
+#include "StarLuaComponents.hpp"
+#include "StarNametagEntity.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNpcDatabase.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarPhysicsEntity.hpp"
-#include "StarLuaAnimationComponent.hpp"
-#include "StarAssets.hpp"
+#include "StarPortraitEntity.hpp"
+#include "StarScriptedEntity.hpp"
+#include "StarToolUser.hpp"
+#include "StarToolUserEntity.hpp"
 
 namespace Star {
 
@@ -39,19 +39,19 @@ class StatusController;
 using StatusControllerPtr = SharedPtr<StatusController>;
 
 class Npc
-  : public virtual DamageBarEntity,
-    public virtual PortraitEntity,
-    public virtual NametagEntity,
-    public virtual ScriptedEntity,
-    public virtual ChattyEntity,
-    public virtual InteractiveEntity,
-    public virtual LoungingEntity,
-    public virtual ToolUserEntity,
-    public virtual PhysicsEntity,
-    public virtual EmoteEntity {
+    : public virtual DamageBarEntity,
+      public virtual PortraitEntity,
+      public virtual NametagEntity,
+      public virtual ScriptedEntity,
+      public virtual ChattyEntity,
+      public virtual InteractiveEntity,
+      public virtual LoungingEntity,
+      public virtual ToolUserEntity,
+      public virtual PhysicsEntity,
+      public virtual EmoteEntity {
 public:
-  Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
-  Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, Json const& initialState, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase);
+  Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase);
+  Npc(AssetsConstPtr assets, NpcDatabaseConstPtr npcDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, NpcVariant const& npcVariant, Json const& initialState, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, LiquidsDatabaseConstPtr liquidsDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase);
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});
@@ -208,7 +208,7 @@ public:
   void setFacialMaskType(String const& type);
   void setFacialMaskDirectives(String const& directives);
 
-  void setHair      (String const& group, String const& type, String const& directives);
+  void setHair(String const& group, String const& type, String const& directives);
   void setFacialHair(String const& group, String const& type, String const& directives);
   void setFacialMask(String const& group, String const& type, String const& directives);
 
@@ -251,11 +251,15 @@ private:
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   AssetsConstPtr m_assets;
   NpcDatabaseConstPtr m_npcDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   SpeciesDatabaseConstPtr m_speciesDatabase;
   DanceDatabaseConstPtr m_danceDatabase;
   EmoteProcessorConstPtr m_emoteProcessor;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;
@@ -328,4 +332,4 @@ private:
   int m_hitDamageNotificationLimit;
 };
 
-}
+}// namespace Star

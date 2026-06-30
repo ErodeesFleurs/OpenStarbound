@@ -23,7 +23,7 @@
 namespace Star {
 
 Chat::Chat(UniverseClientPtr client, Json const& baseConfig, ChatServices services)
-  : BaseScriptPane(baseConfig, false, BaseScriptPaneServices{services.assets, {}}),
+  : BaseScriptPane(baseConfig, false, BaseScriptPaneServices{services.assets, {}, {}, {}, {}, services.guiContext}),
     m_client(std::move(client)),
     m_assets(std::move(services.assets)) {
   if (!m_assets)
@@ -31,7 +31,7 @@ Chat::Chat(UniverseClientPtr client, Json const& baseConfig, ChatServices servic
 
   m_scripted = baseConfig.get("scripts", Json()).isType(Json::Type::Array);
   m_script.setLuaRoot(m_client->luaRoot());
-  m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks((World*)m_client->worldClient().get()));
+  m_script.addCallbacks("world", LuaBindings::makeWorldCallbacks(*(World*)m_client->worldClient().get()));
   m_chatPrevIndex = 0;
   m_historyOffset = 0;
   
@@ -95,9 +95,9 @@ Chat::Chat(UniverseClientPtr client, Json const& baseConfig, ChatServices servic
 
     m_chatHistory.appendAll(m_client->playerStorage()->getMetadata("chatHistory").opt().apply(jsonToStringList).value());
   } else {
-    m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(m_client->mainPlayer().get()));
-    m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_client->mainPlayer()->statusController()));
-    m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client.get(), m_client->biomeDatabase()));
+    m_script.addCallbacks("player", LuaBindings::makePlayerCallbacks(*m_client->mainPlayer()));
+    m_script.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_client->mainPlayer()->statusController()));
+    m_script.addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(*m_client, m_client->biomeDatabase()));
   }
 
   show();
@@ -223,7 +223,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     return;
   }
 
-  GuiContext& guiContext = GuiContext::singleton();
+  GuiContext& guiContext = context();
 
   for (auto const& message : messages) {
     Maybe<unsigned> wrapWidth;
@@ -303,7 +303,7 @@ void Chat::renderImpl() {
   Vec2I chatMin = m_chatLogPadding;
   int messageIndex = -m_historyOffset;
 
-  GuiContext& guiContext = GuiContext::singleton();
+  GuiContext& guiContext = context();
   float lineHeight = m_chatTextStyle.lineSpacing;
   float fontSize = m_chatTextStyle.fontSize;
   guiContext.setTextStyle(m_chatTextStyle);
@@ -375,7 +375,7 @@ bool Chat::sendEvent(InputEvent const& event) {
   if (!m_scripted && active()) {
     if (hasFocus()) {
       if (event.is<KeyDownEvent>()) {
-        auto actions = context()->actions(event);
+        auto actions = context().actions(event);
         if (actions.contains(InterfaceAction::ChatStop)) {
           stopChat();
           return true;
@@ -396,7 +396,7 @@ bool Chat::sendEvent(InputEvent const& event) {
     }
 
     if (auto mouseWheel = event.ptr<MouseWheelEvent>()) {
-      if (inMember(*context()->mousePosition(event))) {
+      if (inMember(*context().mousePosition(event))) {
         if (mouseWheel->mouseWheel == MouseWheel::Down)
           scrollDown();
         else
@@ -405,11 +405,11 @@ bool Chat::sendEvent(InputEvent const& event) {
       }
     }
 
-    if (event.is<MouseMoveEvent>() && inMember(*context()->mousePosition(event)))
+    if (event.is<MouseMoveEvent>() && inMember(*context().mousePosition(event)))
       m_timeChatLastActive = Time::monotonicMilliseconds();
 
     if (event.is<MouseButtonDownEvent>()) {
-      if (m_chatLog->inMember(*context()->mousePosition(event))) {
+      if (m_chatLog->inMember(*context().mousePosition(event))) {
         m_expanded = !m_expanded;
         updateSize();
         return true;

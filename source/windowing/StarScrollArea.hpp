@@ -8,7 +8,7 @@ namespace Star {
 
 class ScrollThumb : public Widget {
 public:
-  ScrollThumb(GuiDirection direction);
+  ScrollThumb(GuiContext& context, GuiDirection direction);
   virtual ~ScrollThumb() = default;
 
   void setDirection(GuiDirection direction);
@@ -47,7 +47,7 @@ using ScrollThumbPtr = shared_ptr<ScrollThumb>;
 
 class ScrollBar : public Widget {
 public:
-  ScrollBar(GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc);
+  ScrollBar(GuiContext& context, GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc);
 
   void setButtonImages(Json const& images);
 
@@ -77,7 +77,7 @@ using ScrollBarPtr = shared_ptr<ScrollBar>;
 
 class ScrollArea : public Widget {
 public:
-  ScrollArea();
+  explicit ScrollArea(GuiContext& context);
 
   void setButtonImages(Json const& images);
   void setThumbImages(Json const& images);

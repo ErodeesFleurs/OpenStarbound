@@ -14,8 +14,7 @@ class WorldServerDungeonProtection {
 public:
   friend class WorldServer;
 
-  WorldServerDungeonProtection() = default;
-  explicit WorldServerDungeonProtection(WorldServer* worldServer);
+  explicit WorldServerDungeonProtection(WorldServer& worldServer);
 
   bool isTileProtected(Vec2I const& pos) const;
   bool getTileProtection(DungeonId dungeonId) const;
@@ -29,7 +28,7 @@ public:
   bool isPlayerModified(RectI const& region) const;
 
 private:
-  WorldServer* m_worldServer = nullptr;
+  WorldServer& m_worldServer;
 
   StableHashSet<DungeonId> m_protectedDungeonIds;
   bool m_tileProtectionEnabled = true;

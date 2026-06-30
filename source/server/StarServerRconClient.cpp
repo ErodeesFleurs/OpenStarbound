@@ -6,7 +6,7 @@
 
 namespace Star {
 
-ServerRconClient::ServerRconClient(UniverseServer* universe, TcpSocketPtr socket, String rconPassword)
+ServerRconClient::ServerRconClient(UniverseServer& universe, TcpSocketPtr socket, String rconPassword)
   : Thread("RconClient"),
     m_universe(universe),
     m_socket(socket),
@@ -29,13 +29,13 @@ String ServerRconClient::handleCommand(String commandLine) {
   if (command == "echo") {
     return commandLine;
   } else if (command == "broadcast" || command == "say") {
-    m_universe->adminBroadcast(commandLine);
+    m_universe.adminBroadcast(commandLine);
     return strf("OK: said {}", commandLine);
   } else if (command == "stop") {
-    m_universe->stop();
+    m_universe.stop();
     return "OK: shutting down";
   } else {
-    return m_universe->adminCommand(strf("{} {}", command, commandLine));
+    return m_universe.adminCommand(strf("{} {}", command, commandLine));
   }
 }
 

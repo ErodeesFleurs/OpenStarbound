@@ -8,7 +8,7 @@
 
 namespace Star {
 
-NameplatePainter::NameplatePainter(Services services) {
+NameplatePainter::NameplatePainter(Services services) : m_guiContext(services.guiContext) {
   auto assets = std::move(services.assets);
   if (!assets)
     throw StarException("NameplatePainter requires assets service");
@@ -74,7 +74,7 @@ void NameplatePainter::update(float dt, WorldClientPtr const& world, WorldCamera
 }
 
 void NameplatePainter::render() {
-  auto& context = GuiContext::singleton();
+  auto& context = m_guiContext;
 
   m_nametags.forEach([&context, this](BubbleState<Nametag> const& bubble, Nametag const& nametag) {
     if (nametag.opacity == 0.0f)
@@ -100,14 +100,13 @@ TextPositioning NameplatePainter::namePosition(Vec2F bubblePosition) const {
 }
 
 TextPositioning NameplatePainter::statusPosition(Vec2F bubblePosition) const {
-  auto& context = GuiContext::singleton();
   return TextPositioning(
-      bubblePosition + m_statusOffset * context.interfaceScale(),
+      bubblePosition + m_statusOffset * m_guiContext.interfaceScale(),
       HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor);
 }
 
 RectF NameplatePainter::determineBoundBox(Vec2F bubblePosition, Nametag const& nametag) const {
-  auto& context = GuiContext::singleton();
+  auto& context = m_guiContext;
   context.setTextStyle(m_textStyle);
   RectF nametagBox = context.determineTextSize(nametag.name, namePosition(bubblePosition));
   if (nametag.statusText) {

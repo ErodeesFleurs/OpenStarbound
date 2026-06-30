@@ -15,12 +15,13 @@
 namespace Star {
 
 BaseScriptPane::BaseScriptPane(Json config, bool construct, BaseScriptPaneServices services)
-  : Pane(),
+  : Pane(services.guiContext),
     m_rawConfig(config),
     m_assets(std::move(services.assets)),
     m_itemDatabase(std::move(services.itemDatabase)),
     m_objectDatabase(std::move(services.objectDatabase)),
-    m_statusEffectDatabase(std::move(services.statusEffectDatabase)) {
+    m_statusEffectDatabase(std::move(services.statusEffectDatabase)),
+    m_luaRootServices(std::move(services.luaRootServices)) {
   if (!m_assets)
     throw StarException("BaseScriptPane requires assets service");
 
@@ -32,7 +33,7 @@ BaseScriptPane::BaseScriptPane(Json config, bool construct, BaseScriptPaneServic
   }
   
   m_interactive = m_config.getBool("interactive", true);
-  m_reader = make_shared<GuiReader>();
+  m_reader = make_shared<GuiReader>(context());
   m_reader->registerCallback("close", [this](Widget*) { dismiss(); });
 
   for (auto const& callbackName : jsonToStringList(m_config.get("scriptWidgetCallbacks", JsonArray{}))) {
@@ -55,7 +56,7 @@ void BaseScriptPane::displayed() {
   Pane::displayed();
   if (!m_callbacksAdded) {
     m_script.addCallbacks("pane", makePaneCallbacks());
-    m_script.addCallbacks("widget", LuaBindings::makeWidgetCallbacks(this, m_reader));
+    m_script.addCallbacks("widget", LuaBindings::makeWidgetCallbacks(*this, m_reader));
     m_script.addCallbacks("config", LuaBindings::makeConfigCallbacks( [this](String const& name, Json const& def) {
       return m_config.query(name, def);
     }));
@@ -89,7 +90,7 @@ void BaseScriptPane::tick(float dt) {
 bool BaseScriptPane::sendEvent(InputEvent const& event) {
   // Intercept GuiClose before the canvas child so GuiClose always closes
   // BaseScriptPanes without having to support it in the script.
-  if (context()->actions(event).contains(InterfaceAction::GuiClose)
+  if (context().actions(event).contains(InterfaceAction::GuiClose)
     && m_config.getBool("dismissable", true)) {
     dismiss();
     return true;
@@ -107,9 +108,9 @@ PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
   auto result = m_script.invoke<Json>("createTooltip", screenPosition);
   if (result && !result.value().isNull()) {
     if (result->type() == Json::Type::String) {
-      return SimpleTooltipBuilder::buildTooltip(result->toString(), SimpleTooltipServices{m_assets});
+      return SimpleTooltipBuilder::buildTooltip(result->toString(), SimpleTooltipServices{m_assets, context()});
     } else {
-      PanePtr tooltip = make_shared<Pane>();
+      PanePtr tooltip = make_shared<Pane>(context());
       m_reader->construct(*result, tooltip.get());
       return tooltip;
     }
@@ -122,7 +123,7 @@ PanePtr BaseScriptPane::createTooltip(Vec2I const& screenPosition) {
         item = itemGrid->itemAt(screenPosition);
     }
     if (item)
-      return ItemTooltipBuilder::buildItemTooltip(item, {}, {m_assets, m_objectDatabase, m_statusEffectDatabase});
+      return ItemTooltipBuilder::buildItemTooltip(item, {}, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
     return {};
   }
 }

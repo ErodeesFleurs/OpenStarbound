@@ -5,7 +5,7 @@
 
 namespace Star {
 
-PlayerDamagePipeline::PlayerDamagePipeline(Player* player)
+PlayerDamagePipeline::PlayerDamagePipeline(Player& player)
   : m_player(player), m_lastDamagedOtherTimer(0), m_lastDamagedTarget(NullEntityId) {}
 
 void PlayerDamagePipeline::init() {
@@ -14,49 +14,49 @@ void PlayerDamagePipeline::init() {
 }
 
 Maybe<HitType> PlayerDamagePipeline::queryHit(DamageSource const& source) const {
-  if (!m_player->inWorld() || m_player->isDead() || m_player->isAdmin() || m_player->isTeleporting() || m_player->statusController()->statPositive("invulnerable"))
+  if (!m_player.inWorld() || m_player.isDead() || m_player.isAdmin() || m_player.isTeleporting() || m_player.statusController()->statPositive("invulnerable"))
     return {};
 
-  if (m_player->m_tools->queryShieldHit(source))
+  if (m_player.m_tools->queryShieldHit(source))
     return HitType::ShieldHit;
 
-  if (source.intersectsWithPoly(m_player->world()->geometry(), m_player->movementController()->collisionBody()))
+  if (source.intersectsWithPoly(m_player.world()->geometry(), m_player.movementController()->collisionBody()))
     return HitType::Hit;
 
   return {};
 }
 
 Maybe<PolyF> PlayerDamagePipeline::hitPoly() const {
-  return m_player->movementController()->collisionBody();
+  return m_player.movementController()->collisionBody();
 }
 
 List<DamageNotification> PlayerDamagePipeline::applyDamage(DamageRequest const& request) {
-  if (!m_player->inWorld() || m_player->isDead() || m_player->isAdmin())
+  if (!m_player.inWorld() || m_player.isDead() || m_player.isAdmin())
     return {};
 
-  return m_player->statusController()->applyDamageRequest(request);
+  return m_player.statusController()->applyDamageRequest(request);
 }
 
 List<DamageNotification> PlayerDamagePipeline::selfDamageNotifications() {
-  return m_player->statusController()->pullSelfDamageNotifications();
+  return m_player.statusController()->pullSelfDamageNotifications();
 }
 
 void PlayerDamagePipeline::hitOther(EntityId targetEntityId, DamageRequest const& damageRequest) {
-  if (!m_player->isMaster())
+  if (!m_player.isMaster())
     return;
 
-  m_player->statusController()->hitOther(targetEntityId, damageRequest);
-  if (as<DamageBarEntity>(m_player->world()->entity(targetEntityId))) {
+  m_player.statusController()->hitOther(targetEntityId, damageRequest);
+  if (as<DamageBarEntity>(m_player.world()->entity(targetEntityId))) {
     m_lastDamagedOtherTimer = 0;
     m_lastDamagedTarget = targetEntityId;
   }
 }
 
 void PlayerDamagePipeline::damagedOther(DamageNotification const& damage) {
-  if (!m_player->isMaster())
+  if (!m_player.isMaster())
     return;
 
-  m_player->statusController()->damagedOther(damage);
+  m_player.statusController()->damagedOther(damage);
 }
 
 List<DamageSource> PlayerDamagePipeline::damageSources() const {
@@ -68,10 +68,10 @@ void PlayerDamagePipeline::tick(float dt) {
 }
 
 void PlayerDamagePipeline::tickBuildSources() {
-  m_damageSources = m_player->m_tools->damageSources();
+  m_damageSources = m_player.m_tools->damageSources();
   for (auto& damageSource : m_damageSources) {
-    damageSource.sourceEntityId = m_player->entityId();
-    damageSource.team = m_player->getTeam();
+    damageSource.sourceEntityId = m_player.entityId();
+    damageSource.team = m_player.getTeam();
   }
 }
 

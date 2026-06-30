@@ -9,7 +9,7 @@ namespace Star {
 
 class ConsumableItem : public Item, public SwingableItem {
 public:
-  ConsumableItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
+  ConsumableItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data);
 
   ItemPtr clone() const override;
 

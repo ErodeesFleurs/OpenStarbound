@@ -14,7 +14,7 @@ void WireProcessor::process() {
   // First, populate all the working entities that are already live
   m_worldStorage->entityMap()->forAllEntities([&](EntityPtr const& entity) {
     if (auto wireEntity = as<WireEntity>(entity.get()))
-      populateWorking(wireEntity);
+      populateWorking(*wireEntity);
   });
 
   // Then, scan the network of each entity in the working set.  This may, as a
@@ -46,15 +46,15 @@ bool WireProcessor::readInputConnection(WireConnection const& connection) {
   return false;
 }
 
-void WireProcessor::populateWorking(WireEntity* wireEntity) {
-  auto p = m_workingWireEntities.insert(wireEntity->tilePosition(), WireEntityState{nullptr, {}, false});
+void WireProcessor::populateWorking(WireEntity& wireEntity) {
+  auto p = m_workingWireEntities.insert(wireEntity.tilePosition(), WireEntityState{nullptr, {}, false});
   if (!p.second) {
-    if (p.first->second.wireEntity != wireEntity)
-      Logger::debug("Multiple wire entities share tile position: {}", wireEntity->position());
+    if (p.first->second.wireEntity != &wireEntity)
+      Logger::debug("Multiple wire entities share tile position: {}", wireEntity.position());
     return;
   }
   auto& wes = p.first->second;
-  wes.wireEntity = wireEntity;
+  wes.wireEntity = &wireEntity;
   size_t outputNodeCount = wes.wireEntity->nodeCount(WireDirection::Output);
   wes.outputStates.resize(outputNodeCount);
   for (size_t i = 0; i < outputNodeCount; ++i)
@@ -85,7 +85,7 @@ void WireProcessor::loadNetwork(Vec2I tilePosition) {
       m_worldStorage->loadSector(*sector);
       m_worldStorage->entityMap()->forEachEntity(RectF(*m_worldStorage->regionForSector(*sector)), [&](EntityPtr const& entity) {
           if (auto wireEntity = as<WireEntity>(entity.get()))
-            populateWorking(wireEntity);
+            populateWorking(*wireEntity);
         });
     }
 

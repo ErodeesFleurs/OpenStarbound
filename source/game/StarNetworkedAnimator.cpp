@@ -1,15 +1,25 @@
 #include "StarNetworkedAnimator.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarIterator.hpp"
-#include "StarParticleDatabase.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarRandom.hpp"
 #include "StarGameTypes.hpp"
+#include "StarIterator.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarParticleDatabase.hpp"
+#include "StarRandom.hpp"
 
 namespace Star {
+
+namespace {
+
+template <typename ServicePtr>
+ServicePtr requireNetworkedAnimatorService(ServicePtr service, char const* name) {
+  if (!service)
+    throw NetworkedAnimatorException::format("NetworkedAnimator requires {} service", name);
+  return service;
+}
+
+}// namespace
 
 NetworkedAnimator::DynamicTarget::~DynamicTarget() {
   stopAudio();
@@ -61,12 +71,11 @@ void NetworkedAnimator::DynamicTarget::clearFinishedAudio() {
     eraseWhere(p.second, [](AudioInstancePtr const& audio) { return audio->finished(); });
 
   eraseWhere(currentAudioBasePositions, [](pair<AudioInstancePtr, Vec2F> const& pair) {
-      return pair.first->finished();
-    });
+    return pair.first->finished();
+  });
 }
 
-NetworkedAnimator::NetworkedAnimator(AssetsConstPtr assets) {
-  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+NetworkedAnimator::NetworkedAnimator() {
   m_zoom.set(1.0f);
   m_flipped.set(false);
   m_flippedRelativeCenterLine.set(0.0f);
@@ -75,7 +84,21 @@ NetworkedAnimator::NetworkedAnimator(AssetsConstPtr assets) {
   setupNetStates();
 }
 
-NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsConstPtr assets) : NetworkedAnimator(std::move(assets)) {
+NetworkedAnimator::NetworkedAnimator(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase)
+    : NetworkedAnimator(std::move(assets), {}, std::move(particleDatabase)) {}
+
+NetworkedAnimator::NetworkedAnimator(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase)
+    : NetworkedAnimator() {
+  m_assets = requireNetworkedAnimatorService(std::move(assets), "assets");
+  m_imageMetadataDatabase = requireNetworkedAnimatorService(std::move(imageMetadataDatabase), "image metadata database");
+  m_particleDatabase = requireNetworkedAnimatorService(std::move(particleDatabase), "particle database");
+}
+
+NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase)
+    : NetworkedAnimator(std::move(config), std::move(relativePath), std::move(assets), {}, std::move(particleDatabase)) {}
+
+NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase)
+    : NetworkedAnimator(std::move(assets), std::move(imageMetadataDatabase), std::move(particleDatabase)) {
   if (config.isNull())
     return;
 
@@ -135,7 +158,7 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsCon
     emitter.rotationCenter = particleEmitterConfig.opt("rotationCenter").apply(jsonToVec2F);
 
     for (auto const& particleConfig : particleEmitterConfig.get("particles").iterateArray()) {
-      auto creator = Root::singleton().particleDatabase()->particleCreator(particleConfig.get("particle"), relativePath);
+      auto creator = m_particleDatabase->particleCreator(particleConfig.get("particle"), relativePath);
       unsigned count = config.getUInt("count", 1);
       Vec2F offset = jsonToVec2F(config.get("offset", JsonArray{0, 0}));
       bool flip = config.getBool("flip", false);
@@ -168,12 +191,11 @@ NetworkedAnimator::NetworkedAnimator(Json config, String relativePath, AssetsCon
 
     if (lightConfig.contains("flickerPeriod")) {
       light.flicker = PeriodicFunction<float>(
-          lightConfig.getFloat("flickerPeriod"),
-          lightConfig.getFloat("flickerMinIntensity", 0.0),
-          lightConfig.getFloat("flickerMaxIntensity", 0.0),
-          lightConfig.getFloat("flickerPeriodVariance", 0.0),
-          lightConfig.getFloat("flickerIntensityVariance", 0.0)
-        );
+        lightConfig.getFloat("flickerPeriod"),
+        lightConfig.getFloat("flickerMinIntensity", 0.0),
+        lightConfig.getFloat("flickerMaxIntensity", 0.0),
+        lightConfig.getFloat("flickerPeriodVariance", 0.0),
+        lightConfig.getFloat("flickerIntensityVariance", 0.0));
     }
 
     light.pointAngle.set(lightConfig.getFloat("pointAngle", 0.0f) * Constants::deg2rad);
@@ -250,6 +272,8 @@ NetworkedAnimator::NetworkedAnimator(NetworkedAnimator const& animator) {
 
 NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator&& animator) {
   m_assets = std::move(animator.m_assets);
+  m_imageMetadataDatabase = std::move(animator.m_imageMetadataDatabase);
+  m_particleDatabase = std::move(animator.m_particleDatabase);
   m_relativePath = std::move(animator.m_relativePath);
   m_animatedParts = std::move(animator.m_animatedParts);
   m_stateInfo = std::move(animator.m_stateInfo);
@@ -277,6 +301,8 @@ NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator&& animator) {
 
 NetworkedAnimator& NetworkedAnimator::operator=(NetworkedAnimator const& animator) {
   m_assets = animator.m_assets;
+  m_imageMetadataDatabase = animator.m_imageMetadataDatabase;
+  m_particleDatabase = animator.m_particleDatabase;
   m_relativePath = animator.m_relativePath;
   m_animatedParts = animator.m_animatedParts;
   m_stateInfo = animator.m_stateInfo;
@@ -350,7 +376,7 @@ int NetworkedAnimator::stateFrames(String const& stateType, Maybe<String> state)
   return m_animatedParts.getState(stateType, state.value(m_animatedParts.activeState(stateType).stateName)).frames;
 }
 
-bool NetworkedAnimator::hasState(String const & stateType, Maybe<String> const & state) const {
+bool NetworkedAnimator::hasState(String const& stateType, Maybe<String> const& state) const {
   if (m_animatedParts.stateTypes().contains(stateType)) {
     if (state) {
       return m_animatedParts.states(stateType).contains(*state);
@@ -467,7 +493,6 @@ String const* NetworkedAnimator::globalTagPtr(String const& tagName) const {
   return m_globalTags.ptr(tagName);
 }
 
-
 void NetworkedAnimator::setPartTag(String const& partType, String tagName, Maybe<String> tagValue) {
   if (tagValue)
     m_partTags[partType].set(std::move(tagName), std::move(*tagValue));
@@ -527,7 +552,6 @@ String NetworkedAnimator::applyPartTags(String const& partName, String apply) co
     }
   }
 
-
   auto applied = apply.maybeLookupTagsView([&](StringView tag) -> StringView {
     if (tag == "frame") {
       if (frame)
@@ -546,7 +570,6 @@ String NetworkedAnimator::applyPartTags(String const& partName, String apply) co
   });
   return applied ? applied.get() : apply;
 }
-
 
 void NetworkedAnimator::setProcessingDirectives(Directives const& directives) {
   m_processingDirectives.set(directives);
@@ -605,25 +628,25 @@ void NetworkedAnimator::translateTransformationGroup(String const& transformatio
 }
 
 void NetworkedAnimator::rotateTransformationGroup(
-    String const& transformationGroup, float rotation, Vec2F const& rotationCenter) {
+  String const& transformationGroup, float rotation, Vec2F const& rotationCenter) {
   auto& group = m_transformationGroups.get(transformationGroup);
   group.setAffineTransform(Mat3F::rotation(rotation, rotationCenter) * group.affineTransform());
 }
 
 void NetworkedAnimator::scaleTransformationGroup(
-    String const& transformationGroup, float scale, Vec2F const& scaleCenter) {
+  String const& transformationGroup, float scale, Vec2F const& scaleCenter) {
   auto& group = m_transformationGroups.get(transformationGroup);
   group.setAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.affineTransform());
 }
 
 void NetworkedAnimator::scaleTransformationGroup(
-    String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter) {
+  String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter) {
   auto& group = m_transformationGroups.get(transformationGroup);
   group.setAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.affineTransform());
 }
 
 void NetworkedAnimator::transformTransformationGroup(
-    String const& transformationGroup, float a, float b, float c, float d, float tx, float ty) {
+  String const& transformationGroup, float a, float b, float c, float d, float tx, float ty) {
   auto& group = m_transformationGroups.get(transformationGroup);
   Mat3F transform = Mat3F(a, b, tx, c, d, ty, 0, 0, 1);
   group.setAffineTransform(transform * group.affineTransform());
@@ -646,25 +669,25 @@ void NetworkedAnimator::translateLocalTransformationGroup(String const& transfor
 }
 
 void NetworkedAnimator::rotateLocalTransformationGroup(
-    String const& transformationGroup, float rotation, Vec2F const& rotationCenter) {
+  String const& transformationGroup, float rotation, Vec2F const& rotationCenter) {
   auto& group = m_transformationGroups.get(transformationGroup);
   group.setLocalAffineTransform(Mat3F::rotation(rotation, rotationCenter) * group.localAffineTransform());
 }
 
 void NetworkedAnimator::scaleLocalTransformationGroup(
-    String const& transformationGroup, float scale, Vec2F const& scaleCenter) {
+  String const& transformationGroup, float scale, Vec2F const& scaleCenter) {
   auto& group = m_transformationGroups.get(transformationGroup);
   group.setLocalAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.localAffineTransform());
 }
 
 void NetworkedAnimator::scaleLocalTransformationGroup(
-    String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter) {
+  String const& transformationGroup, Vec2F const& scale, Vec2F const& scaleCenter) {
   auto& group = m_transformationGroups.get(transformationGroup);
   group.setLocalAffineTransform(Mat3F::scaling(scale, scaleCenter) * group.localAffineTransform());
 }
 
 void NetworkedAnimator::transformLocalTransformationGroup(
-    String const& transformationGroup, float a, float b, float c, float d, float tx, float ty) {
+  String const& transformationGroup, float a, float b, float c, float d, float tx, float ty) {
   auto& group = m_transformationGroups.get(transformationGroup);
   Mat3F transform = Mat3F(a, b, tx, c, d, ty, 0, 0, 1);
   group.setLocalAffineTransform(transform * group.localAffineTransform());
@@ -782,7 +805,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
   if (!partCount)
     return {};
 
-  List<Directives> baseProcessingDirectives = { m_processingDirectives.get() };
+  List<Directives> baseProcessingDirectives = {m_processingDirectives.get()};
   for (auto& pair : m_effects) {
     auto const& effectState = pair.second;
 
@@ -868,7 +891,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
     auto const& partTags = m_partTags.get(partName);
 
     if (auto directives = activePart.properties.value("processingDirectives").optString()) {
-      if (version() > 0){
+      if (version() > 0) {
         directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
           if (auto p = animationTags.ptr(tag)) {
             return StringView(*p);
@@ -893,7 +916,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       frameIndexStr = static_cast<String>(toString(stateFrame));
 
       if (auto directives = activePart.activeState->properties.value("processingDirectives").optString()) {
-        if (version() > 0){
+        if (version() > 0) {
           directives = directives->maybeLookupTagsView([&](StringView tag) -> StringView {
             if (auto p = animationTags.ptr(tag)) {
               return StringView(*p);
@@ -938,9 +961,9 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
         if (usedImage[0] != '/')
           relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
 
-        Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F());
+        Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F(), m_imageMetadataDatabase);
         if (find == m_cachedPartDrawables.end())
-          find = m_cachedPartDrawables.emplace(partName, std::pair{ hash, std::move(drawable) }).first;
+          find = m_cachedPartDrawables.emplace(partName, std::pair{hash, std::move(drawable)}).first;
         else {
           find->second.first = hash;
           find->second.second = std::move(drawable);
@@ -950,7 +973,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       Drawable drawable = find->second.second;
       auto& imagePart = drawable.imagePart();
       for (Directives const& directives : baseProcessingDirectives)
-        imagePart.addDirectives(directives, centered);
+        imagePart.addDirectives(directives, centered, m_imageMetadataDatabase);
       drawable.fullbright = fullbright;
       drawable.transform(transformation);
       drawables.append({std::move(drawable), get<2>(entry)});
@@ -960,7 +983,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       auto partDrawables = m_partDrawables.get(partName);
       Drawable::transformAll(partDrawables, transformation);
       for (auto drawable : partDrawables) {
-      drawables.append({drawable, get<2>(entry)});
+        drawables.append({drawable, get<2>(entry)});
       }
     }
 
@@ -987,7 +1010,7 @@ List<LightSource> NetworkedAnimator::lightSources(Vec2F const& translate) const 
     if (pair.second.rotationGroup) {
       auto const& rg = m_rotationGroups.get(*pair.second.rotationGroup);
       position = (position - pair.second.rotationCenter.value(rg.rotationCenter)).rotate(rg.currentAngle)
-          + pair.second.rotationCenter.value(rg.rotationCenter);
+        + pair.second.rotationCenter.value(rg.rotationCenter);
       pointAngle += rg.currentAngle;
     }
     position = globalTransformation().transformVec2(position);
@@ -1008,8 +1031,7 @@ List<LightSource> NetworkedAnimator::lightSources(Vec2F const& translate) const 
       pair.second.pointLight ? LightType::Point : LightType::Spread,
       pair.second.pointBeam,
       pointAngle,
-      pair.second.beamAmbience
-    });
+      pair.second.beamAmbience});
   }
   return lightSources;
 }
@@ -1020,85 +1042,83 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
   m_animatedParts.update(dt);
 
   m_animatedParts.forEachActiveState([&](String const& stateTypeName, AnimatedPartSet::ActiveStateInformation const& activeState) {
-      if (dynamicTarget) {
-        dynamicTarget->clearFinishedAudio();
+    if (dynamicTarget) {
+      dynamicTarget->clearFinishedAudio();
 
-        Json persistentSound = activeState.properties.value("persistentSound", "");
-        String persistentSoundFile;
+      Json persistentSound = activeState.properties.value("persistentSound", "");
+      String persistentSoundFile;
 
-        if (persistentSound.isType(Json::Type::String))
-          persistentSoundFile = persistentSound.toString();
-        else if (persistentSound.isType(Json::Type::Array))
-          persistentSoundFile = Random::randValueFrom(persistentSound.toArray(), "").toString();
+      if (persistentSound.isType(Json::Type::String))
+        persistentSoundFile = persistentSound.toString();
+      else if (persistentSound.isType(Json::Type::Array))
+        persistentSoundFile = Random::randValueFrom(persistentSound.toArray(), "").toString();
 
-        if (!persistentSoundFile.empty())
-          persistentSoundFile = AssetPath::relativeTo(m_relativePath, persistentSoundFile);
+      if (!persistentSoundFile.empty())
+        persistentSoundFile = AssetPath::relativeTo(m_relativePath, persistentSoundFile);
 
-        auto& activePersistentSound = dynamicTarget->statePersistentSounds[stateTypeName];
+      auto& activePersistentSound = dynamicTarget->statePersistentSounds[stateTypeName];
 
-        bool changedPersistentSound = persistentSound != activePersistentSound.sound;
-        if (changedPersistentSound || !activePersistentSound.audio) {
-          activePersistentSound.sound = std::move(persistentSound);
-          if (activePersistentSound.audio)
-            activePersistentSound.audio->stop(activePersistentSound.stopRampTime);
+      bool changedPersistentSound = persistentSound != activePersistentSound.sound;
+      if (changedPersistentSound || !activePersistentSound.audio) {
+        activePersistentSound.sound = std::move(persistentSound);
+        if (activePersistentSound.audio)
+          activePersistentSound.audio->stop(activePersistentSound.stopRampTime);
 
-          if (!persistentSoundFile.empty()) {
-            activePersistentSound.audio = make_shared<AudioInstance>(*m_assets->audio(persistentSoundFile));
-            activePersistentSound.audio->setRangeMultiplier(activeState.properties.value("persistentSoundRangeMultiplier", 1.0f).toFloat());
-            activePersistentSound.audio->setLoops(-1);
-            activePersistentSound.audio->setPosition(globalTransformation().transformVec2(Vec2F()));
-            activePersistentSound.stopRampTime = activeState.properties.value("persistentSoundStopTime", 0.0f).toFloat();
-            dynamicTarget->pendingAudios.append(activePersistentSound.audio);
-          } else {
-            dynamicTarget->statePersistentSounds.remove(stateTypeName);
-          }
-        }
-
-        Json immediateSound = activeState.properties.value("immediateSound", "");
-        String immediateSoundFile = "";
-
-        if (immediateSound.isType(Json::Type::String))
-          immediateSoundFile = immediateSound.toString();
-        else if (immediateSound.isType(Json::Type::Array))
-          immediateSoundFile = Random::randValueFrom(immediateSound.toArray(), "").toString();
-
-        if (!immediateSoundFile.empty())
-          immediateSoundFile = AssetPath::relativeTo(m_relativePath, immediateSoundFile);
-
-        auto& activeImmediateSound = dynamicTarget->stateImmediateSounds[stateTypeName];
-
-        bool changedImmediateSound = immediateSound != activeImmediateSound.sound;
-        if (changedImmediateSound) {
-          activeImmediateSound.sound = std::move(immediateSound);
-          if (!immediateSoundFile.empty()) {
-            activeImmediateSound.audio = make_shared<AudioInstance>(*m_assets->audio(immediateSoundFile));
-            activeImmediateSound.audio->setRangeMultiplier(activeState.properties.value("immediateSoundRangeMultiplier", 1.0f).toFloat());
-            activeImmediateSound.audio->setPosition(globalTransformation().transformVec2(Vec2F()));
-            dynamicTarget->pendingAudios.append(activeImmediateSound.audio);
-          }
+        if (!persistentSoundFile.empty()) {
+          activePersistentSound.audio = make_shared<AudioInstance>(*m_assets->audio(persistentSoundFile));
+          activePersistentSound.audio->setRangeMultiplier(activeState.properties.value("persistentSoundRangeMultiplier", 1.0f).toFloat());
+          activePersistentSound.audio->setLoops(-1);
+          activePersistentSound.audio->setPosition(globalTransformation().transformVec2(Vec2F()));
+          activePersistentSound.stopRampTime = activeState.properties.value("persistentSoundStopTime", 0.0f).toFloat();
+          dynamicTarget->pendingAudios.append(activePersistentSound.audio);
+        } else {
+          dynamicTarget->statePersistentSounds.remove(stateTypeName);
         }
       }
 
-      if (auto lightsOn = activeState.properties.ptr("lightsOn")) {
-        for (auto const& name : lightsOn->iterateArray())
-          m_lights.get(name.toString()).active.set(true);
-      }
-      if (auto lightsOff = activeState.properties.ptr("lightsOff")) {
-        for (auto const& name : lightsOff->iterateArray())
-          m_lights.get(name.toString()).active.set(false);
-      }
+      Json immediateSound = activeState.properties.value("immediateSound", "");
+      String immediateSoundFile = "";
 
-      if (auto particleEmittersOn = activeState.properties.ptr("particleEmittersOn")) {
-        for (auto const& name : particleEmittersOn->iterateArray())
-          m_particleEmitters.get(name.toString()).active.set(true);
-      }
-      if (auto particleEmittersOff = activeState.properties.ptr("particleEmittersOff")) {
-        for (auto const& name : particleEmittersOff->iterateArray())
-          m_particleEmitters.get(name.toString()).active.set(false);
-      }
+      if (immediateSound.isType(Json::Type::String))
+        immediateSoundFile = immediateSound.toString();
+      else if (immediateSound.isType(Json::Type::Array))
+        immediateSoundFile = Random::randValueFrom(immediateSound.toArray(), "").toString();
 
+      if (!immediateSoundFile.empty())
+        immediateSoundFile = AssetPath::relativeTo(m_relativePath, immediateSoundFile);
 
-    });
+      auto& activeImmediateSound = dynamicTarget->stateImmediateSounds[stateTypeName];
+
+      bool changedImmediateSound = immediateSound != activeImmediateSound.sound;
+      if (changedImmediateSound) {
+        activeImmediateSound.sound = std::move(immediateSound);
+        if (!immediateSoundFile.empty()) {
+          activeImmediateSound.audio = make_shared<AudioInstance>(*m_assets->audio(immediateSoundFile));
+          activeImmediateSound.audio->setRangeMultiplier(activeState.properties.value("immediateSoundRangeMultiplier", 1.0f).toFloat());
+          activeImmediateSound.audio->setPosition(globalTransformation().transformVec2(Vec2F()));
+          dynamicTarget->pendingAudios.append(activeImmediateSound.audio);
+        }
+      }
+    }
+
+    if (auto lightsOn = activeState.properties.ptr("lightsOn")) {
+      for (auto const& name : lightsOn->iterateArray())
+        m_lights.get(name.toString()).active.set(true);
+    }
+    if (auto lightsOff = activeState.properties.ptr("lightsOff")) {
+      for (auto const& name : lightsOff->iterateArray())
+        m_lights.get(name.toString()).active.set(false);
+    }
+
+    if (auto particleEmittersOn = activeState.properties.ptr("particleEmittersOn")) {
+      for (auto const& name : particleEmittersOn->iterateArray())
+        m_particleEmitters.get(name.toString()).active.set(true);
+    }
+    if (auto particleEmittersOff = activeState.properties.ptr("particleEmittersOff")) {
+      for (auto const& name : particleEmittersOff->iterateArray())
+        m_particleEmitters.get(name.toString()).active.set(false);
+    }
+  });
   if (version() > 0) {
     auto processTransforms = [](Mat3F mat, JsonArray transforms, JsonObject properties) -> Mat3F {
       for (auto const& v : transforms) {
@@ -1108,11 +1128,11 @@ void NetworkedAnimator::update(float dt, DynamicTarget* dynamicTarget) {
         } else if (action == "translate") {
           mat.translate(jsonToVec2F(v.getArray(1)));
         } else if (action == "rotate") {
-          mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
-        } else if (action == "rotateDegrees") { // because radians are fucking annoying
-          mat.rotate(v.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0,0})).toArray())));
+          mat.rotate(v.getFloat(1), jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0, 0})).toArray())));
+        } else if (action == "rotateDegrees") {// because radians are fucking annoying
+          mat.rotate(v.getFloat(1) * Star::Constants::pi / 180, jsonToVec2F(v.getArray(2, properties.maybe("rotationCenter").value(JsonArray({0, 0})).toArray())));
         } else if (action == "scale") {
-          mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0,0})).toArray())));
+          mat.scale(jsonToVec2F(v.getArray(1)), jsonToVec2F(v.getArray(2, properties.maybe("scalingCenter").value(JsonArray({0, 0})).toArray())));
         } else if (action == "transform") {
           mat = Mat3F(v.getFloat(1), v.getFloat(2), v.getFloat(3), v.getFloat(4), v.getFloat(5), v.getFloat(6), 0, 0, 1) * mat;
         }
@@ -1283,10 +1303,9 @@ void NetworkedAnimator::finishAnimations() {
 
 Mat3F NetworkedAnimator::TransformationGroup::affineTransform() const {
   return Mat3F(
-      xScale.get() * cos(xShear.get()), xScale.get() * sin(xShear.get()), xTranslation.get(),
-      yScale.get() * sin(yShear.get()), yScale.get() * cos(yShear.get()), yTranslation.get(),
-      0, 0, 1
-    );
+    xScale.get() * cos(xShear.get()), xScale.get() * sin(xShear.get()), xTranslation.get(),
+    yScale.get() * sin(yShear.get()), yScale.get() * cos(yShear.get()), yTranslation.get(),
+    0, 0, 1);
 }
 
 void NetworkedAnimator::TransformationGroup::setAffineTransform(Mat3F const& matrix) {
@@ -1325,10 +1344,9 @@ void NetworkedAnimator::TransformationGroup::setAnimationAffineTransform(Mat3F c
 
 Mat3F NetworkedAnimator::TransformationGroup::animationAffineTransform() const {
   return Mat3F(
-      xScaleAnimation * cos(xShearAnimation), xScaleAnimation * sin(xShearAnimation), xTranslationAnimation,
-      yScaleAnimation * sin(yShearAnimation), yScaleAnimation * cos(yShearAnimation), yTranslationAnimation,
-      0, 0, 1
-    );
+    xScaleAnimation * cos(xShearAnimation), xScaleAnimation * sin(xShearAnimation), xTranslationAnimation,
+    yScaleAnimation * sin(yShearAnimation), yScaleAnimation * cos(yShearAnimation), yTranslationAnimation,
+    0, 0, 1);
 }
 
 void NetworkedAnimator::setupNetStates() {
@@ -1424,7 +1442,6 @@ void NetworkedAnimator::setupNetStates() {
 
   for (auto& pair : m_effects)
     addNetElement(&pair.second.enabled);
-
 }
 
 void NetworkedAnimator::netElementsNeedLoad(bool initial) {
@@ -1453,7 +1470,7 @@ uint8_t NetworkedAnimator::version() const {
   return m_animatorVersion;
 }
 
-Json NetworkedAnimator::mergeIncludes(Json config, Json includes, String relativePath){
+Json NetworkedAnimator::mergeIncludes(Json config, Json includes, String relativePath) {
   Json includedConfigs;
   for (Json const& path : includes.iterateArray()) {
     auto includeConfig = m_assets->json(AssetPath::relativeTo(relativePath, path.toString()));
@@ -1464,4 +1481,4 @@ Json NetworkedAnimator::mergeIncludes(Json config, Json includes, String relativ
   return jsonMerge(includedConfigs, config);
 }
 
-}
+}// namespace Star

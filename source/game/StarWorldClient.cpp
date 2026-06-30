@@ -1,28 +1,28 @@
 #include "StarWorldClient.hpp"
-#include "StarIterator.hpp"
-#include "StarLogging.hpp"
+#include "StarAggressiveEntity.hpp"
 #include "StarBiome.hpp"
+#include "StarCurve25519.hpp"
+#include "StarDamageDatabase.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarInspectableEntity.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarItemDrop.hpp"
+#include "StarIterator.hpp"
+#include "StarLiquidTypes.hpp"
+#include "StarLogging.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarMaterialRenderProfile.hpp"
-#include "StarLiquidTypes.hpp"
-#include "StarDamageDatabase.hpp"
+#include "StarObject.hpp"
+#include "StarObjectDatabase.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarParticleManager.hpp"
-#include "StarWorldImpl.hpp"
+#include "StarPhysicsEntity.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLog.hpp"
-#include "StarAggressiveEntity.hpp"
-#include "StarPhysicsEntity.hpp"
-#include "StarItemDrop.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarObject.hpp"
-#include "StarEntityFactory.hpp"
 #include "StarSpeciesDatabase.hpp"
-#include "StarWorldTemplate.hpp"
 #include "StarStoredFunctions.hpp"
-#include "StarInspectableEntity.hpp"
-#include "StarCurve25519.hpp"
+#include "StarWorldImpl.hpp"
+#include "StarWorldTemplate.hpp"
 
 constexpr unsigned DefaultClientWindowTiles = 100;
 
@@ -35,48 +35,54 @@ const std::string SECRET_BROADCAST_PREFIX = "\0Broadcast\0"s;
 
 const float WorldClient::DropDist = 6.0f;
 WorldClient::WorldClient(PlayerPtr mainPlayer,
-    LuaRootPtr luaRoot,
-    AssetsConstPtr assets,
-    ConfigurationPtr configuration,
-    MaterialDatabaseConstPtr materialDatabase,
-    ItemDatabaseConstPtr itemDatabase,
-    ObjectDatabaseConstPtr objectDatabase,
-    SpeciesDatabaseConstPtr speciesDatabase,
-    EntityFactoryConstPtr entityFactory,
-    LiquidsDatabaseConstPtr liquidsDatabase,
-    BiomeDatabaseConstPtr biomeDatabase,
-    FunctionDatabaseConstPtr functionDatabase,
-    BehaviorDatabaseConstPtr behaviorDatabase,
-    ParticleDatabaseConstPtr particleDatabase,
-    DamageDatabaseConstPtr damageDatabase,
-    EffectSourceDatabaseConstPtr effectSourceDatabase,
-    TechDatabaseConstPtr techDatabase,
-    StatusEffectDatabaseConstPtr statusEffectDatabase,
-    PlantDatabaseConstPtr plantDatabase,
-    TreasureDatabaseConstPtr treasureDatabase,
-    ImageMetadataDatabaseConstPtr imageMetadataDatabase)
-  : m_luaRoot(std::move(luaRoot)),
-    m_assets(std::move(assets)),
-    m_clientState(m_assets),
-    m_mainPlayer(std::move(mainPlayer)),
-    m_configuration(std::move(configuration)),
-    m_materialDatabase(std::move(materialDatabase)),
-    m_itemDatabase(std::move(itemDatabase)),
-    m_objectDatabase(std::move(objectDatabase)),
-    m_speciesDatabase(std::move(speciesDatabase)),
-    m_entityFactory(std::move(entityFactory)),
-    m_liquidsDatabase(std::move(liquidsDatabase)),
-    m_biomeDatabase(std::move(biomeDatabase)),
-    m_functionDatabase(std::move(functionDatabase)),
-    m_behaviorDatabase(std::move(behaviorDatabase)),
-    m_particleDatabase(std::move(particleDatabase)),
-    m_damageDatabase(std::move(damageDatabase)),
-    m_effectSourceDatabase(std::move(effectSourceDatabase)),
-    m_techDatabase(std::move(techDatabase)),
-    m_statusEffectDatabase(std::move(statusEffectDatabase)),
-    m_plantDatabase(std::move(plantDatabase)),
-    m_treasureDatabase(std::move(treasureDatabase)),
-    m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
+                         LuaRootPtr luaRoot,
+                         AssetsConstPtr assets,
+                         ConfigurationPtr configuration,
+                         MaterialDatabaseConstPtr materialDatabase,
+                         ItemDatabaseConstPtr itemDatabase,
+                         ObjectDatabaseConstPtr objectDatabase,
+                         SpeciesDatabaseConstPtr speciesDatabase,
+                         EntityFactoryConstPtr entityFactory,
+                         LiquidsDatabaseConstPtr liquidsDatabase,
+                         TerrainDatabaseConstPtr terrainDatabase,
+                         BiomeDatabaseConstPtr biomeDatabase,
+                         FunctionDatabaseConstPtr functionDatabase,
+                         BehaviorDatabaseConstPtr behaviorDatabase,
+                         ParticleDatabaseConstPtr particleDatabase,
+                         ProjectileDatabaseConstPtr projectileDatabase,
+                         DamageDatabaseConstPtr damageDatabase,
+                         EffectSourceDatabaseConstPtr effectSourceDatabase,
+                         TechDatabaseConstPtr techDatabase,
+                         StatusEffectDatabaseConstPtr statusEffectDatabase,
+                         PlantDatabaseConstPtr plantDatabase,
+                         TreasureDatabaseConstPtr treasureDatabase,
+                         ImageMetadataDatabaseConstPtr imageMetadataDatabase,
+                         DungeonDefinitionsConstPtr dungeonDefinitions)
+    : m_luaRoot(std::move(luaRoot)),
+      m_assets(std::move(assets)),
+      m_clientState(m_assets),
+      m_mainPlayer(std::move(mainPlayer)),
+      m_configuration(std::move(configuration)),
+      m_materialDatabase(std::move(materialDatabase)),
+      m_itemDatabase(std::move(itemDatabase)),
+      m_objectDatabase(std::move(objectDatabase)),
+      m_speciesDatabase(std::move(speciesDatabase)),
+      m_entityFactory(std::move(entityFactory)),
+      m_liquidsDatabase(std::move(liquidsDatabase)),
+      m_terrainDatabase(std::move(terrainDatabase)),
+      m_biomeDatabase(std::move(biomeDatabase)),
+      m_functionDatabase(std::move(functionDatabase)),
+      m_behaviorDatabase(std::move(behaviorDatabase)),
+      m_particleDatabase(std::move(particleDatabase)),
+      m_projectileDatabase(std::move(projectileDatabase)),
+      m_damageDatabase(std::move(damageDatabase)),
+      m_effectSourceDatabase(std::move(effectSourceDatabase)),
+      m_techDatabase(std::move(techDatabase)),
+      m_statusEffectDatabase(std::move(statusEffectDatabase)),
+      m_plantDatabase(std::move(plantDatabase)),
+      m_treasureDatabase(std::move(treasureDatabase)),
+      m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+      m_dungeonDefinitions(std::move(dungeonDefinitions)) {
   if (!m_assets)
     throw WorldClientException("WorldClient requires assets service");
   if (!m_configuration)
@@ -93,12 +99,18 @@ WorldClient::WorldClient(PlayerPtr mainPlayer,
     throw WorldClientException("WorldClient requires entity factory service");
   if (!m_liquidsDatabase)
     throw WorldClientException("WorldClient requires liquids database service");
+  if (!m_terrainDatabase)
+    throw WorldClientException("WorldClient requires terrain database service");
   if (!m_biomeDatabase)
     throw WorldClientException("WorldClient requires biome database service");
+  if (!m_dungeonDefinitions)
+    throw WorldClientException("WorldClient requires dungeon definitions service");
   if (!m_functionDatabase)
     throw WorldClientException("WorldClient requires function database service");
   if (!m_particleDatabase)
     throw WorldClientException("WorldClient requires particle database service");
+  if (!m_projectileDatabase)
+    throw WorldClientException("WorldClient requires projectile database service");
   if (!m_damageDatabase)
     throw WorldClientException("WorldClient requires damage database service");
 
@@ -355,16 +367,16 @@ void WorldClient::forEachCollisionBlock(RectI const& region, function<void(Colli
 
   const_cast<WorldClient*>(this)->freshenCollision(region);
   m_tileArray->tileEach(region, [&](Vec2I const& pos, ClientTile const& tile) {
-      if (tile.getCollision() == CollisionKind::Null) {
-        iterator(CollisionBlock::nullBlock(pos));
-      } else {
-        starAssert(!tile.collisionCacheDirty);
-        if (auto cache = m_collisionCache.ptr(pos)) {
-          for (auto const& block : *cache)
-            iterator(block);
-        }
+    if (tile.getCollision() == CollisionKind::Null) {
+      iterator(CollisionBlock::nullBlock(pos));
+    } else {
+      starAssert(!tile.collisionCacheDirty);
+      if (auto cache = m_collisionCache.ptr(pos)) {
+        for (auto const& block : *cache)
+          iterator(block);
       }
-    });
+    }
+  });
 }
 
 bool WorldClient::isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly) const {
@@ -396,7 +408,7 @@ Maybe<pair<Vec2F, Vec2I>> WorldClient::lineTileCollisionPoint(Vec2F const& begin
 }
 
 List<Vec2I> WorldClient::collidingTilesAlongLine(
-    Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, int maxSize, bool includeEdges) const {
+  Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, int maxSize, bool includeEdges) const {
   if (!inWorld())
     return {};
 
@@ -427,16 +439,17 @@ TileModificationList WorldClient::validTileModifications(TileModificationList co
     return {};
 
   return WorldImpl::splitTileModifications(m_entityMap, modificationList, allowEntityOverlap, m_tileGetterFunction, m_materialDatabase, [this](Vec2I pos, TileModification) {
-      return !isTileProtected(pos);
-    }).first;
+           return !isTileProtected(pos);
+         })
+    .first;
 }
 
 TileModificationList WorldClient::applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) {
   if (!inWorld())
     return {};
-  
+
   // thanks to new prediction: do each one by one so that previous modifications affect placeability
-  
+
   TileModificationList success, failures, temp;
   TileModificationList const* list = &modificationList;
 
@@ -460,8 +473,8 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
       list = &(temp = std::move(failures));
       failures = {};
       continue;
-    }
-    else break;
+    } else
+      break;
   }
 
   if (!success.empty())
@@ -473,12 +486,12 @@ TileModificationList WorldClient::applyTileModifications(TileModificationList co
 TileModificationList WorldClient::replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage) {
   if (!inWorld())
     return {};
-  
+
   // Tell client it can't send a replace packet
   auto netRules = m_clientState.netCompatibilityRules();
   if (netRules.isLegacy() || netRules.version() <= 3)
     return modificationList;
-  
+
   TileModificationList success, failures;
   for (auto const& pair : modificationList) {
     if (!isTileProtected(pair.first) && WorldImpl::validateTileReplacement(pair.second, m_materialDatabase))
@@ -550,7 +563,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   // Spends 80% of the time at pitch black with 10% ramp up and down
 
-  m_worldDimColor = {}; // always reset this to prevent persistent dimming from other sources
+  m_worldDimColor = {};// always reset this to prevent persistent dimming from other sources
   if (dimRatio) {
     if (dimRatio <= 0.1f)
       m_worldDimLevel = dimRatio / 0.1f;
@@ -589,76 +602,76 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   ClientRenderCallback lightingRenderCallback;
   m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-      if (m_startupHiddenEntities.contains(entity->entityId()))
-        return;
+    if (m_startupHiddenEntities.contains(entity->entityId()))
+      return;
 
-      entity->renderLightSources(&lightingRenderCallback);
+    entity->renderLightSources(&lightingRenderCallback);
 
-      ClientRenderCallback renderCallback;
+    ClientRenderCallback renderCallback;
 
-      try { entity->render(&renderCallback); }
-      catch (StarException const& e) {
-        if (entity->isMaster()) // this is YOUR problem!!
-          throw e; 
-        else { // this is THEIR problem!!
-          auto issue = printException(e, true);
-          auto hash = hashOf(issue);
-          if (!m_entityExceptionsLogged.contains(hash))
-            m_entityExceptionsLogged.insert(hash);
-          else
-            issue = e.what();
+    try {
+      entity->render(&renderCallback);
+    } catch (StarException const& e) {
+      if (entity->isMaster())// this is YOUR problem!!
+        throw e;
+      else {// this is THEIR problem!!
+        auto issue = printException(e, true);
+        auto hash = hashOf(issue);
+        if (!m_entityExceptionsLogged.contains(hash))
+          m_entityExceptionsLogged.insert(hash);
+        else
+          issue = e.what();
 
-          Logger::error("WorldClient: Exception caught in {}::render ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), issue);
-          auto toolUser = as<ToolUserEntity>(entity);
-          String image = toolUser ? strf("/rendering/sprites/error_{}.png", DirectionNames.getRight(toolUser->facingDirection())) : "/rendering/sprites/error.png";
-          Color color = Color::rgbf(0.8f + static_cast<float>(sin(m_currentTime * Constants::pi * 2.0)) * 0.2f, 0.0f, 0.0f);
-          auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, entity->position(), color);
-          drawable.fullbright = true;
-          renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
-        }
+        Logger::error("WorldClient: Exception caught in {}::render ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), issue);
+        auto toolUser = as<ToolUserEntity>(entity);
+        String image = toolUser ? strf("/rendering/sprites/error_{}.png", DirectionNames.getRight(toolUser->facingDirection())) : "/rendering/sprites/error.png";
+        Color color = Color::rgbf(0.8f + static_cast<float>(sin(m_currentTime * Constants::pi * 2.0)) * 0.2f, 0.0f, 0.0f);
+        auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, entity->position(), color, m_imageMetadataDatabase);
+        drawable.fullbright = true;
+        renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
       }
+    }
 
-      EntityDrawables ed;
-      for (auto& p : renderCallback.drawables) {
-        if (directives) {
-          int directiveIndex = unsigned(entity->entityId()) % directives->size();
-          for (auto& d : p.second) {
-            if (d.isImage())
-              d.imagePart().addDirectives(directives->at(directiveIndex), true);
-          }
-        }
-        ed.layers[p.first] = std::move(p.second);
-      }
-
-      if (m_lighting.m_interactiveHighlightMode || (!inspecting && entity->entityId() == playerAimInteractive)) {
-        if (auto interactive = as<InteractiveEntity>(entity)) {
-          if (interactive->isInteractive()) {
-            ed.highlightEffect.type = EntityHighlightEffectType::Interactive;
-            ed.highlightEffect.level = pulseLevel;
-          }
-        }
-      } else if (inspecting) {
-        if (auto inspectable = as<InspectableEntity>(entity)) {
-          ed.highlightEffect = m_mainPlayer->inspectionHighlight(inspectable);
-          ed.highlightEffect.level *= inspectionFlickerMultiplier;
-        }
-      }
-      renderData.entityDrawables.append(std::move(ed));
-
+    EntityDrawables ed;
+    for (auto& p : renderCallback.drawables) {
       if (directives) {
         int directiveIndex = unsigned(entity->entityId()) % directives->size();
-        for (auto& p : renderCallback.particles)
-          p.directives.append(directives->get(directiveIndex));
+        for (auto& d : p.second) {
+          if (d.isImage())
+            d.imagePart().addDirectives(directives->at(directiveIndex), true, m_imageMetadataDatabase);
+        }
       }
+      ed.layers[p.first] = std::move(p.second);
+    }
 
-      m_particles->addParticles(std::move(renderCallback.particles));
-      m_audio.m_samples.appendAll(std::move(renderCallback.audios));
-      m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
-      renderData.overheadBars.appendAll(std::move(renderCallback.overheadBars));
+    if (m_lighting.m_interactiveHighlightMode || (!inspecting && entity->entityId() == playerAimInteractive)) {
+      if (auto interactive = as<InteractiveEntity>(entity)) {
+        if (interactive->isInteractive()) {
+          ed.highlightEffect.type = EntityHighlightEffectType::Interactive;
+          ed.highlightEffect.level = pulseLevel;
+        }
+      }
+    } else if (inspecting) {
+      if (auto inspectable = as<InspectableEntity>(entity)) {
+        ed.highlightEffect = m_mainPlayer->inspectionHighlight(inspectable);
+        ed.highlightEffect.level *= inspectionFlickerMultiplier;
+      }
+    }
+    renderData.entityDrawables.append(std::move(ed));
 
-    }, [](EntityPtr const& a, EntityPtr const& b) {
-      return a->entityId() < b->entityId();
-    });
+    if (directives) {
+      int directiveIndex = unsigned(entity->entityId()) % directives->size();
+      for (auto& p : renderCallback.particles)
+        p.directives.append(directives->get(directiveIndex));
+    }
+
+    m_particles->addParticles(std::move(renderCallback.particles));
+    m_audio.m_samples.appendAll(std::move(renderCallback.audios));
+    m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
+    renderData.overheadBars.appendAll(std::move(renderCallback.overheadBars)); },
+                              [](EntityPtr const& a, EntityPtr const& b) {
+                                return a->entityId() < b->entityId();
+                              });
 
   renderLightSources = std::move(lightingRenderCallback.lightSources);
 
@@ -669,7 +682,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       m_lighting.m_pendingParticleLights = m_particles->lightSources();
       m_lighting.m_pendingLightRange = window.padded(1);
       m_lighting.m_pendingLightReady = true;
-    } //Kae: Padded by one to fix light spread issues at the edges of the frame.
+    }//Kae: Padded by one to fix light spread issues at the edges of the frame.
 
     if (m_lighting.m_asyncLighting)
       m_lighting.m_lightingCond.signal();
@@ -678,27 +691,27 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   }
 
   m_tileArray->tileEachTo(renderData.tiles, tileRange, [&](RenderTile& renderTile, Vec2I const&, ClientTile const& clientTile) {
-      renderTile.foreground = clientTile.foreground;
-      renderTile.foregroundMod = clientTile.foregroundMod;
+    renderTile.foreground = clientTile.foreground;
+    renderTile.foregroundMod = clientTile.foregroundMod;
 
-      renderTile.background = clientTile.background;
-      renderTile.backgroundMod = clientTile.backgroundMod;
+    renderTile.background = clientTile.background;
+    renderTile.backgroundMod = clientTile.backgroundMod;
 
-      renderTile.foregroundHueShift = clientTile.foregroundHueShift;
-      renderTile.foregroundModHueShift = clientTile.foregroundModHueShift;
-      renderTile.foregroundColorVariant = clientTile.foregroundColorVariant;
-      renderTile.foregroundDamageType = clientTile.foregroundDamage.damageType();
-      renderTile.foregroundDamageLevel = floatToByte(clientTile.foregroundDamage.damageEffectPercentage());
+    renderTile.foregroundHueShift = clientTile.foregroundHueShift;
+    renderTile.foregroundModHueShift = clientTile.foregroundModHueShift;
+    renderTile.foregroundColorVariant = clientTile.foregroundColorVariant;
+    renderTile.foregroundDamageType = clientTile.foregroundDamage.damageType();
+    renderTile.foregroundDamageLevel = floatToByte(clientTile.foregroundDamage.damageEffectPercentage());
 
-      renderTile.backgroundHueShift = clientTile.backgroundHueShift;
-      renderTile.backgroundModHueShift = clientTile.backgroundModHueShift;
-      renderTile.backgroundColorVariant = clientTile.backgroundColorVariant;
-      renderTile.backgroundDamageType = clientTile.backgroundDamage.damageType();
-      renderTile.backgroundDamageLevel = floatToByte(clientTile.backgroundDamage.damageEffectPercentage());
+    renderTile.backgroundHueShift = clientTile.backgroundHueShift;
+    renderTile.backgroundModHueShift = clientTile.backgroundModHueShift;
+    renderTile.backgroundColorVariant = clientTile.backgroundColorVariant;
+    renderTile.backgroundDamageType = clientTile.backgroundDamage.damageType();
+    renderTile.backgroundDamageLevel = floatToByte(clientTile.backgroundDamage.damageEffectPercentage());
 
-      renderTile.liquidId = clientTile.liquid.liquid;
-      renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
-    });
+    renderTile.liquidId = clientTile.liquid.liquid;
+    renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
+  });
 
   for (auto& pair : m_tilePrediction.m_predictedTiles) {
     Vec2I tileArrayPos = m_geometry.diff(pair.first, renderData.tileMinPosition);
@@ -712,8 +725,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         if (liquid.liquid == renderTile.liquidId) {
           uint8_t added = floatToByte(liquid.level, true);
           renderTile.liquidLevel = (renderTile.liquidLevel > 255 - added) ? 255 : renderTile.liquidLevel + added;
-        }
-        else {
+        } else {
           renderTile.liquidId = liquid.liquid;
           renderTile.liquidLevel = floatToByte(liquid.level, true);
         }
@@ -792,8 +804,8 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   }
 
   stableSort(renderData.parallaxLayers, [](ParallaxLayer const& a, ParallaxLayer const& b) {
-      return tie(a.zLevel, a.verticalOrigin) > tie(b.zLevel, b.verticalOrigin);
-    });
+    return tie(a.zLevel, a.verticalOrigin) > tie(b.zLevel, b.verticalOrigin);
+  });
 
   auto overlayToDrawable = [](WorldStructure::Overlay const& overlay) -> Drawable {
     Drawable drawable = Drawable::makeImage(overlay.image, 1.0f / TilePixels, false, overlay.min);
@@ -913,19 +925,19 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         // state.
         m_startupHiddenEntities.add(entityCreate->entityId);
         timer(m_interpolationTracker.interpolationLeadTime(), [this, entityId = entityCreate->entityId](World*) {
-            m_startupHiddenEntities.remove(entityId);
-          });
+          m_startupHiddenEntities.remove(entityId);
+        });
       }
 
     } else if (auto entityUpdateSet = as<EntityUpdateSetPacket>(packet)) {
       float interpolationLeadTime = m_interpolationTracker.interpolationLeadTime();
       m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-          EntityId entityId = entity->entityId();
-          if (connectionForEntity(entityId) == entityUpdateSet->forConnection) {
-            starAssert(entity->isSlave());
-            entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime, m_clientState.netCompatibilityRules());
-          }
-        });
+        EntityId entityId = entity->entityId();
+        if (connectionForEntity(entityId) == entityUpdateSet->forConnection) {
+          starAssert(entity->isSlave());
+          entity->readNetState(entityUpdateSet->deltas.value(entityId), interpolationLeadTime, m_clientState.netCompatibilityRules());
+        }
+      });
 
     } else if (auto entityDestroy = as<EntityDestroyPacket>(packet)) {
       if (auto entity = m_entityMap->entity(entityDestroy->entityId)) {
@@ -938,9 +950,9 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
           // Delay death packets by the interpolation step to give time for
           // interpolation to catch up.
           timer(m_interpolationTracker.interpolationLeadTime(), [this, entity, entityDestroy](World*) {
-              entity->disableInterpolation();
-              removeEntity(entityDestroy->entityId, entityDestroy->death);
-            });
+            entity->disableInterpolation();
+            removeEntity(entityDestroy->entityId, entityDestroy->death);
+          });
         } else {
           entity->disableInterpolation();
           removeEntity(entityDestroy->entityId, entityDestroy->death);
@@ -994,10 +1006,9 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
               p.foregroundHueShift.reset();
               if (p.collision) {
                 p.collision.reset();
-                dirtyCollision(RectI::withSize(modification.first, { 1, 1 }));
+                dirtyCollision(RectI::withSize(modification.first, {1, 1}));
               }
-            }
-            else {
+            } else {
               p.background.reset();
               p.backgroundHueShift.reset();
             }
@@ -1005,8 +1016,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
             if (placeMod->layer == TileLayer::Foreground) {
               p.foregroundMod.reset();
               p.foregroundModHueShift.reset();
-            }
-            else {
+            } else {
               p.backgroundMod.reset();
               p.backgroundModHueShift.reset();
             }
@@ -1067,37 +1077,29 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
               auto rawBroadcast = view.substr(FULL_SIZE);
               if (Curve25519::verify(
-                reinterpret_cast<uint8_t const*>(signature.data()),
-                reinterpret_cast<uint8_t const*>(publicKey->utf8Ptr()),
-                rawBroadcast.data(),
-                       rawBroadcast.size()
-              )) {
+                    reinterpret_cast<uint8_t const*>(signature.data()),
+                    reinterpret_cast<uint8_t const*>(publicKey->utf8Ptr()),
+                    rawBroadcast.data(),
+                    rawBroadcast.size())) {
                 handleSecretBroadcast(player, rawBroadcast);
               }
             }
           }
         }
-      }
-      else if (view.size() > 75 && view.rfind(LEGACY_VOICE_PREFIX, 0) != NPos) {
+      } else if (view.size() > 75 && view.rfind(LEGACY_VOICE_PREFIX, 0) != NPos) {
         // this is a StarExtensions voice packet
         // (remove this and stop transmitting like this once most SE features are ported over)
         if (auto player = m_entityMap->get<Player>(damageNotify->remoteDamageNotification.sourceEntityId)) {
           if (auto publicKey = player->effectsAnimator()->globalTagPtr("\0SE_VOICE_SIGNING_KEY"s)) {
             auto raw = view.substr(75);
-            if (m_broadcastCallback && Curve25519::verify(
-              reinterpret_cast<uint8_t const*>(view.data()) + LEGACY_VOICE_PREFIX.size(),
-              reinterpret_cast<uint8_t const*>(publicKey->utf8Ptr()),
-              raw.data(),
-                     raw.size()
-            )) {
+            if (m_broadcastCallback && Curve25519::verify(reinterpret_cast<uint8_t const*>(view.data()) + LEGACY_VOICE_PREFIX.size(), reinterpret_cast<uint8_t const*>(publicKey->utf8Ptr()), raw.data(), raw.size())) {
               auto broadcastData = "Voice\0"s;
               broadcastData.append(raw.data(), raw.size());
               m_broadcastCallback(player, broadcastData);
             }
           }
         }
-      }
-      else {
+      } else {
         m_damageManager->pushRemoteDamageNotification(damageNotify->remoteDamageNotification);
       }
 
@@ -1117,7 +1119,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
 
       } else {
         ConnectionId fromConnection = entityMessagePacket->fromConnection;
-        if (fromConnection == *m_clientId) // Kae: The server should not be able to forge entity messages that appear as if they're from us
+        if (fromConnection == *m_clientId)// Kae: The server should not be able to forge entity messages that appear as if they're from us
           fromConnection = ServerConnectionId;
 
         auto response = entity->receiveMessage(entityMessagePacket->fromConnection, entityMessagePacket->message, entityMessagePacket->args);
@@ -1185,7 +1187,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       }
 
     } else if (auto worldLayoutUpdate = as<WorldLayoutUpdatePacket>(packet)) {
-      m_worldTemplate->setWorldLayout(make_shared<WorldLayout>(worldLayoutUpdate->layoutData));
+      m_worldTemplate->setWorldLayout(make_shared<WorldLayout>(worldLayoutUpdate->layoutData, m_terrainDatabase, m_biomeDatabase));
 
     } else if (auto worldParametersUpdate = as<WorldParametersUpdatePacket>(packet)) {
       m_worldTemplate->setWorldParameters(netLoadVisitableWorldParameters(worldParametersUpdate->parametersData));
@@ -1193,7 +1195,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
     } else if (auto pongPacket = as<PongPacket>(packet)) {
       if (pongPacket->time)
         m_latency = Time::monotonicMilliseconds() - pongPacket->time;
-      else if (m_pingTime) 
+      else if (m_pingTime)
         m_latency = Time::monotonicMilliseconds() - m_pingTime.take();
 
     } else {
@@ -1226,19 +1228,19 @@ void WorldClient::update(float dt) {
 
   List<WorldAction> triggeredActions;
   eraseWhere(m_timers, [&triggeredActions, dt](pair<float, WorldAction>& timer) {
-      if ((timer.first -= dt) <= 0) {
-        triggeredActions.append(timer.second);
-        return true;
-      }
-      return false;
-    });
+    if ((timer.first -= dt) <= 0) {
+      triggeredActions.append(timer.second);
+      return true;
+    }
+    return false;
+  });
 
   for (auto const& action : triggeredActions)
     action(this);
 
   List<EntityId> toRemove;
   List<EntityId> clientPresenceEntities;
-  RectF clientWindow = RectF(m_clientState.window()).padded(20); // spatial culling margin
+  RectF clientWindow = RectF(m_clientState.window()).padded(20);// spatial culling margin
   m_entityMap->updateAllEntities([&](EntityPtr const& entity) {
       if (!clientWindow.intersects(entity->metaBoundBox().translated(entity->position())))
         return;
@@ -1262,10 +1264,7 @@ void WorldClient::update(float dt) {
       if (entity->shouldDestroy() && entity->entityMode() == EntityMode::Master)
         toRemove.append(entity->entityId());
       if (entity->isMaster() && entity->clientEntityMode() == ClientEntityMode::ClientPresenceMaster)
-        clientPresenceEntities.append(entity->entityId());
-    }, [](EntityPtr const& a, EntityPtr const& b) {
-      return a->entityType() < b->entityType();
-    });
+        clientPresenceEntities.append(entity->entityId()); }, [](EntityPtr const& a, EntityPtr const& b) { return a->entityType() < b->entityType(); });
 
   m_clientState.setPlayer(m_mainPlayer->entityId());
   m_clientState.setClientPresenceEntities(std::move(clientPresenceEntities));
@@ -1366,10 +1365,10 @@ void WorldClient::update(float dt) {
   // Remove active sectors that are outside of the current monitoring region
   Set<ClientTileSectorArray::Sector> neededSectors;
   auto monitoredRegions = m_clientState.monitoringRegions([this](EntityId entityId) -> Maybe<RectI> {
-      if (auto entity = this->entity(entityId))
-        return RectI::integral(entity->metaBoundBox().translated(entity->position()));
-      return {};
-    });
+    if (auto entity = this->entity(entityId))
+      return RectI::integral(entity->metaBoundBox().translated(entity->position()));
+    return {};
+  });
   for (auto const& monitoredRegion : monitoredRegions)
     neededSectors.addAll(m_tileArray->validSectorsFor(monitoredRegion.padded(WorldSectorSize)));
 
@@ -1421,6 +1420,10 @@ LiquidsDatabaseConstPtr WorldClient::liquidsDatabase() const {
 
 ParticleDatabaseConstPtr WorldClient::particleDatabase() const {
   return m_particleDatabase;
+}
+
+ProjectileDatabaseConstPtr WorldClient::projectileDatabase() const {
+  return m_projectileDatabase;
 }
 
 EffectSourceDatabaseConstPtr WorldClient::effectSourceDatabase() const {
@@ -1629,13 +1632,13 @@ void WorldClient::queueUpdatePackets(bool sendEntityUpdates) {
     entityUpdateSet->forConnection = *m_clientId;
     auto netRules = m_clientState.netCompatibilityRules();
     m_entityMap->forAllEntities([&](EntityPtr const& entity) {
-        if (auto version = m_masterEntitiesNetVersion.ptr(entity->entityId())) {
-          auto updateAndVersion = entity->writeNetState(*version, netRules);
-          if (!updateAndVersion.first.empty())
-            entityUpdateSet->deltas[entity->entityId()] = std::move(updateAndVersion.first);
-          *version = updateAndVersion.second;
-        }
-      });
+      if (auto version = m_masterEntitiesNetVersion.ptr(entity->entityId())) {
+        auto updateAndVersion = entity->writeNetState(*version, netRules);
+        if (!updateAndVersion.first.empty())
+          entityUpdateSet->deltas[entity->entityId()] = std::move(updateAndVersion.first);
+        *version = updateAndVersion.second;
+      }
+    });
     m_outgoingPackets.append(std::move(entityUpdateSet));
   }
 
@@ -1695,7 +1698,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_clientId = startPacket.clientId;
   m_mainPlayer->clientContext()->setConnectionId(startPacket.clientId);
   auto entitySpace = connectionEntitySpace(startPacket.clientId);
-  m_worldTemplate = make_shared<WorldTemplate>(m_assets, TerrainDatabaseConstPtr{}, m_biomeDatabase, startPacket.templateData);
+  m_worldTemplate = make_shared<WorldTemplate>(m_assets, m_terrainDatabase, m_biomeDatabase, startPacket.templateData, m_dungeonDefinitions);
   m_entityMap = make_shared<EntityMap>(m_worldTemplate->size(), entitySpace.first, entitySpace.second);
   m_tileArray = make_shared<ClientTileSectorArray>(m_worldTemplate->size());
   m_tileGetterFunction = [&, tile = ClientTile()](Vec2I pos) mutable -> ClientTile const& {
@@ -1715,7 +1718,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
     }
     return m_tileArray->tile(pos);
   };
-  m_damageManager = make_shared<DamageManager>(this, startPacket.clientId);
+  m_damageManager = make_shared<DamageManager>(*this, startPacket.clientId);
   m_playerStart = startPacket.playerRespawn;
   m_respawnInWorld = startPacket.respawnInWorld;
   m_worldProperties = startPacket.worldProperties.optObject().value();
@@ -1735,8 +1738,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
 
   m_weather.setup(m_geometry, [this](Vec2I const& pos) {
       auto const& tile = m_tileArray->tile(pos);
-      return !isRealMaterial(tile.background) && !isSolidColliding(tile.getCollision());
-    }, m_biomeDatabase);
+      return !isRealMaterial(tile.background) && !isSolidColliding(tile.getCollision()); }, m_biomeDatabase);
   m_weather.readUpdate(startPacket.weatherData, m_clientState.netCompatibilityRules());
 
   m_lighting.m_lightingCalculator.setMonochrome(m_configuration->get("monochromeLighting").toBool());
@@ -1744,7 +1746,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_lighting.m_lightIntensityCalculator.setParameters(m_assets->json("/lighting.config:intensity"));
 
   m_inWorld = true;
-  
+
   if (!m_mainPlayer->isDead()) {
     m_mainPlayer->init(this, m_entityMap->reserveEntityId(), EntityMode::Master);
     m_entityMap->addEntity(m_mainPlayer);
@@ -1828,7 +1830,7 @@ void WorldClient::notifyEntityCreate(EntityPtr const& entity) {
     auto firstNetState = entity->writeNetState(0, netRules);
     m_masterEntitiesNetVersion[entity->entityId()] = firstNetState.second;
     m_outgoingPackets.append(make_shared<EntityCreatePacket>(entity->entityType(),
-      m_entityFactory->netStoreEntity(entity, netRules), std::move(firstNetState.first), entity->entityId()));
+                                                             m_entityFactory->netStoreEntity(entity, netRules), std::move(firstNetState.first), entity->entityId()));
   }
 }
 
@@ -1873,7 +1875,7 @@ bool WorldClient::breathable(Vec2F const& pos) const {
   if (!inWorld())
     return true;
 
-  return WorldImpl::breathable(this, m_tileArray, m_dungeonIdBreathable, m_worldTemplate, pos);
+  return WorldImpl::breathable(*this, m_tileArray, m_dungeonIdBreathable, m_worldTemplate, pos);
 }
 
 float WorldClient::threatLevel() const {
@@ -1894,7 +1896,7 @@ StringList WorldClient::weatherStatusEffects(Vec2F const& pos) const {
     return {};
 
   if (!m_weather.statusEffects().empty()) {
-     if (exposedToWeather(pos))
+    if (exposedToWeather(pos))
       return m_weather.statusEffects();
   }
 
@@ -2000,7 +2002,6 @@ bool WorldClient::handleSecretBroadcast(PlayerPtr player, StringView broadcast) 
   else
     return false;
 }
-
 
 void WorldClient::ClientRenderCallback::addDrawable(Drawable drawable, EntityRenderLayer renderLayer) {
   drawables[renderLayer].append(std::move(drawable));
@@ -2122,8 +2123,8 @@ void WorldClient::renderCollisionDebug() {
   };
 
   forEachCollisionBlock(clientWindow, [&](auto const& block) {
-      logPoly(block.poly, Vec2F{}, 1.0f, 0.0f, 0.0f);
-    });
+    logPoly(block.poly, Vec2F{}, 1.0f, 0.0f, 0.0f);
+  });
 
   for (auto const& object : query<TileEntity>(RectF(clientWindow))) {
     for (auto const& space : object->spaces())
@@ -2170,11 +2171,10 @@ void WorldClient::setupForceRegions() {
 
   if (addTopRegion) {
     auto topForceRegion = GradientForceRegion();
-    topForceRegion.region = PolyF({
-        {0, worldSize[1] - regionHeight},
-        {worldSize[0], worldSize[1] - regionHeight},
-        (worldSize),
-        {0, worldSize[1]}});
+    topForceRegion.region = PolyF({{0, worldSize[1] - regionHeight},
+                                   {worldSize[0], worldSize[1] - regionHeight},
+                                   (worldSize),
+                                   {0, worldSize[1]}});
     topForceRegion.gradient = Line2F({0, worldSize[1]}, {0, worldSize[1] - regionHeight});
     topForceRegion.baseTargetVelocity = regionVelocity;
     topForceRegion.baseControlForce = regionForce;
@@ -2184,11 +2184,10 @@ void WorldClient::setupForceRegions() {
 
   if (addBottomRegion) {
     auto bottomForceRegion = GradientForceRegion();
-    bottomForceRegion.region = PolyF({
-        {0, 0},
-        {worldSize[0], 0},
-        {worldSize[0], regionHeight},
-        {0, regionHeight}});
+    bottomForceRegion.region = PolyF({{0, 0},
+                                      {worldSize[0], 0},
+                                      {worldSize[0], regionHeight},
+                                      {0, regionHeight}});
     bottomForceRegion.gradient = Line2F({0, 0}, {0, regionHeight});
     bottomForceRegion.baseTargetVelocity = regionVelocity;
     bottomForceRegion.baseControlForce = regionForce;
@@ -2197,4 +2196,4 @@ void WorldClient::setupForceRegions() {
   }
 }
 
-}
+}// namespace Star

@@ -1,17 +1,23 @@
 #pragma once
 
+#include "StarDirectives.hpp"
+#include "StarLuaActorMovementComponent.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarNetworkedAnimator.hpp"
-#include "StarLuaComponents.hpp"
-#include "StarLuaActorMovementComponent.hpp"
 #include "StarTechDatabase.hpp"
-#include "StarDirectives.hpp"
 
 namespace Star {
 
 class TechController;
 using TechControllerPtr = SharedPtr<TechController>;
 class StatusController;
+class Assets;
+using AssetsConstPtr = SharedPtr<Assets const>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 
 // Class that acts as a movement controller for the parent entity that supports
 // a variety scriptable "Tech" that the entity can use that affect movement,
@@ -33,14 +39,14 @@ public:
   };
   static EnumMap<ParentState> const ParentStateNames;
 
-  TechController();
+  TechController(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  TechController(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController);
+  TechController(Entity& parentEntity, ActorMovementController& movementController, StatusController& statusController, AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   Json diskStore();
   void diskLoad(Json const& store);
 
-  void init(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController);
+  void init(Entity& parentEntity, ActorMovementController& movementController, StatusController& statusController);
   void uninit();
 
   void setLoadedTech(StringList const& techModules, bool forceLoad = false);
@@ -89,7 +95,7 @@ public:
 
 private:
   struct TechAnimator : public NetElement {
-    TechAnimator(Maybe<String> animationConfig = {});
+    TechAnimator(Maybe<String> animationConfig = {}, AssetsConstPtr assets = {}, ParticleDatabaseConstPtr particleDatabase = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {});
 
     void initNetVersion(NetElementVersion const* version = nullptr) override;
 
@@ -109,6 +115,9 @@ private:
     bool isVisible() const;
 
     Maybe<String> animationConfig;
+    AssetsConstPtr assets;
+    ParticleDatabaseConstPtr particleDatabase;
+    ImageMetadataDatabaseConstPtr imageMetadataDatabase;
     NetworkedAnimator animator;
     NetworkedAnimator::DynamicTarget dynamicTarget;
     NetElementBool visible;
@@ -121,7 +130,7 @@ private:
     TechConfig config;
 
     LuaMessageHandlingComponent<LuaStorableComponent<LuaActorMovementComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>>>>
-        scriptComponent;
+      scriptComponent;
     bool visible;
     bool toolUsageSuppressed;
     Directives parentDirectives;
@@ -147,6 +156,9 @@ private:
   Entity* m_parentEntity;
   ActorMovementController* m_movementController;
   StatusController* m_statusController;
+  AssetsConstPtr m_assets;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
 
   bool m_moveRun;
   bool m_movePrimaryFire;
@@ -170,4 +182,4 @@ private:
   NetElementBool m_toolUsageSuppressed;
 };
 
-}
+}// namespace Star

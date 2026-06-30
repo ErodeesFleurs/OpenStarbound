@@ -1,21 +1,22 @@
 #pragma once
 
-#include "StarLuaComponents.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarLightSource.hpp"
+#include "StarAssets.hpp"
 #include "StarDrawable.hpp"
 #include "StarEntityRenderingTypes.hpp"
-#include "StarMixer.hpp"
-#include "StarParticleDatabase.hpp"
-#include "StarParticle.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
-#include "StarAssets.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLightSource.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarLuaConverters.hpp"
+#include "StarMixer.hpp"
+#include "StarParticle.hpp"
+#include "StarParticleDatabase.hpp"
+#include "StarWorld.hpp"
 
 namespace Star {
 
-struct LuaAnimationComponentExceptionTag { static constexpr char const* typeName = "LuaAnimationComponentException"; };
+struct LuaAnimationComponentExceptionTag {
+  static constexpr char const* typeName = "LuaAnimationComponentException";
+};
 using LuaAnimationComponentException = TypedException<LuaComponentException, LuaAnimationComponentExceptionTag>;
 
 // Lua component that allows lua to directly produce drawables, light sources,
@@ -24,6 +25,8 @@ template <typename Base>
 class LuaAnimationComponent : public Base {
 public:
   LuaAnimationComponent(AssetsConstPtr assets = {});
+  void init(World& world);
+  void uninit();
 
   List<pair<Drawable, Maybe<EntityRenderLayer>>> const& drawables();
   List<LightSource> const& lightSources();
@@ -37,6 +40,7 @@ protected:
 
 private:
   AssetsConstPtr m_assets;
+  ParticleDatabaseConstPtr m_particleDatabase;
 
   List<Particle> m_pendingParticles;
   List<AudioInstancePtr> m_pendingAudios;
@@ -48,60 +52,74 @@ private:
 
 template <typename Base>
 LuaAnimationComponent<Base>::LuaAnimationComponent(AssetsConstPtr assets) {
-  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+  if (!assets)
+    throw LuaAnimationComponentException("LuaAnimationComponent requires assets service");
+  m_assets = std::move(assets);
 
   LuaCallbacks animationCallbacks;
   animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) {
-      auto audio = make_shared<AudioInstance>(*m_assets->audio(sound));
-      audio->setLoops(loops.value(0));
-      audio->setVolume(volume.value(1.0f));
-      m_pendingAudios.append(audio);
-      m_activeAudio.append(audio);
-    });
+    auto audio = make_shared<AudioInstance>(*m_assets->audio(sound));
+    audio->setLoops(loops.value(0));
+    audio->setVolume(volume.value(1.0f));
+    m_pendingAudios.append(audio);
+    m_activeAudio.append(audio);
+  });
   animationCallbacks.registerCallback("spawnParticle", [this](Json const& particleConfig, Maybe<Vec2F> const& position) {
-      auto particle = Root::singleton().particleDatabase()->particle(particleConfig);
-      particle.translate(position.value());
-      m_pendingParticles.append(particle);
-    });
+    if (!m_particleDatabase)
+      throw LuaAnimationComponentException("LuaAnimationComponent requires initialized particle database service");
+    auto particle = m_particleDatabase->particle(particleConfig);
+    particle.translate(position.value());
+    m_pendingParticles.append(particle);
+  });
   animationCallbacks.registerCallback("clearDrawables", [this]() {
-      m_drawables.clear();
-    });
+    m_drawables.clear();
+  });
   animationCallbacks.registerCallback("addDrawable", [this](Drawable drawable, Maybe<String> renderLayerName) {
-      Maybe<EntityRenderLayer> renderLayer;
-      if (renderLayerName)
-        renderLayer = parseRenderLayer(*renderLayerName);
+    Maybe<EntityRenderLayer> renderLayer;
+    if (renderLayerName)
+      renderLayer = parseRenderLayer(*renderLayerName);
 
-      if (auto image = drawable.part.ptr<Drawable::ImagePart>())
-        image->transformation.scale(0.125f);
+    if (auto image = drawable.part.ptr<Drawable::ImagePart>())
+      image->transformation.scale(0.125f);
 
-      m_drawables.append({std::move(drawable), renderLayer});
-    });
+    m_drawables.append({std::move(drawable), renderLayer});
+  });
   animationCallbacks.registerCallback("addJsonDrawable", [this](Json drawableConfig, Maybe<String> renderLayerName) {
-      Maybe<EntityRenderLayer> renderLayer;
-      Drawable drawable(drawableConfig);
-      if (renderLayerName)
-        renderLayer = parseRenderLayer(*renderLayerName);
+    Maybe<EntityRenderLayer> renderLayer;
+    Drawable drawable(drawableConfig);
+    if (renderLayerName)
+      renderLayer = parseRenderLayer(*renderLayerName);
 
-      if (auto image = drawable.part.ptr<Drawable::ImagePart>())
-        image->transformation.scale(0.125f);
+    if (auto image = drawable.part.ptr<Drawable::ImagePart>())
+      image->transformation.scale(0.125f);
 
-      m_drawables.append({std::move(drawable), renderLayer});
-    });
+    m_drawables.append({std::move(drawable), renderLayer});
+  });
 
   animationCallbacks.registerCallback("clearLightSources", [this]() {
-      m_lightSources.clear();
-    });
+    m_lightSources.clear();
+  });
   animationCallbacks.registerCallback("addLightSource", [this](LuaTable const& lightSourceTable) {
-      m_lightSources.append({
-          lightSourceTable.get<Vec2F>("position"),
-          lightSourceTable.get<Color>("color").toRgbF(),
-          static_cast<LightType>(lightSourceTable.get<Maybe<bool>>("pointLight").value()),
-          lightSourceTable.get<Maybe<float>>("pointBeam").value(),
-          lightSourceTable.get<Maybe<float>>("beamAngle").value(),
-          lightSourceTable.get<Maybe<float>>("beamAmbience").value()
-        });
-    });
+    m_lightSources.append({lightSourceTable.get<Vec2F>("position"),
+                           lightSourceTable.get<Color>("color").toRgbF(),
+                           static_cast<LightType>(lightSourceTable.get<Maybe<bool>>("pointLight").value()),
+                           lightSourceTable.get<Maybe<float>>("pointBeam").value(),
+                           lightSourceTable.get<Maybe<float>>("beamAngle").value(),
+                           lightSourceTable.get<Maybe<float>>("beamAmbience").value()});
+  });
   Base::addCallbacks("localAnimator", std::move(animationCallbacks));
+}
+
+template <typename Base>
+void LuaAnimationComponent<Base>::init(World& world) {
+  m_particleDatabase = world.particleDatabase();
+  Base::init(world);
+}
+
+template <typename Base>
+void LuaAnimationComponent<Base>::uninit() {
+  m_particleDatabase.reset();
+  Base::uninit();
 }
 
 template <typename Base>
@@ -122,8 +140,8 @@ List<Particle> LuaAnimationComponent<Base>::pullNewParticles() {
 template <typename Base>
 List<AudioInstancePtr> LuaAnimationComponent<Base>::pullNewAudios() {
   eraseWhere(m_activeAudio, [](AudioInstancePtr const& audio) {
-      return audio->finished();
-    });
+    return audio->finished();
+  });
   return take(m_pendingAudios);
 }
 
@@ -135,4 +153,4 @@ void LuaAnimationComponent<Base>::contextShutdown() {
   Base::contextShutdown();
 }
 
-}
+}// namespace Star

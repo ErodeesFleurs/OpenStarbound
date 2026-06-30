@@ -74,7 +74,7 @@ private:
   StringMap<EffectSourceConfigPtr> m_sourceConfigs;
 };
 
-List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position = Vec2F(), ParticleDatabaseConstPtr particleDatabase = {});
+List<Particle> particlesFromDefinition(Json const& config, Vec2F const& position, ParticleDatabaseConstPtr particleDatabase);
 List<AudioInstancePtr> soundsFromDefinition(AssetsConstPtr assets, Json const& config, Vec2F const& position = Vec2F());
 
 }

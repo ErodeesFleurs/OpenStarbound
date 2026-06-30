@@ -43,13 +43,14 @@ using AiInterfaceException = TypedException<StarException, AiInterfaceExceptionT
 struct AiInterfaceServices {
   AssetsConstPtr assets;
   AiDatabaseConstPtr aiDatabase;
+  GuiContext& guiContext;
 };
 
 class AiInterface : public Pane {
 public:
   AiInterface(UniverseClientPtr client,
       CinematicPtr cinematic,
-      MainInterfacePaneManager* paneManager,
+      MainInterfacePaneManager& paneManager,
       AiInterfaceServices services);
 
   void update(float dt) override;
@@ -92,7 +93,7 @@ private:
 
   UniverseClientPtr m_client;
   CinematicPtr m_cinematic;
-  MainInterfacePaneManager* m_paneManager;
+  MainInterfacePaneManager& m_paneManager;
   QuestManagerPtr m_questManager;
   AssetsConstPtr m_assets;
 

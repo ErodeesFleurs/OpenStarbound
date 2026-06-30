@@ -6,8 +6,8 @@
 
 namespace Star {
 
-CodexItem::CodexItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
-  : Item(assets, config, directory, data), SwingableItem(config), m_assets(std::move(assets)) {
+CodexItem::CodexItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data)
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, data), SwingableItem(config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("CodexItem requires assets service");
 
@@ -16,8 +16,8 @@ CodexItem::CodexItem(AssetsConstPtr assets, Json const& config, String const& di
   m_requireEdgeTrigger = true;
   m_codexId = instanceValue("codexId").toString();
   String iconPath = instanceValue("codexIcon").toString();
-  m_iconDrawables = {Drawable::makeImage(iconPath, 1.0f, true, Vec2F())};
-  m_worldDrawables = {Drawable::makeImage(iconPath, 1.0f / TilePixels, true, Vec2F())};
+  m_iconDrawables = {Drawable::makeImage(iconPath, 1.0f, true, Vec2F(), Color::White, m_imageMetadataDatabase)};
+  m_worldDrawables = {Drawable::makeImage(iconPath, 1.0f / TilePixels, true, Vec2F(), Color::White, m_imageMetadataDatabase)};
 }
 
 ItemPtr CodexItem::clone() const {

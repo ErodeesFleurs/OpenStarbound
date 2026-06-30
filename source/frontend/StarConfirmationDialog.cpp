@@ -10,7 +10,8 @@
 namespace Star {
 
 ConfirmationDialog::ConfirmationDialog(Services services)
-  : m_assets(std::move(services.assets)) {
+  : Pane(services.guiContext),
+    m_assets(std::move(services.assets)) {
   if (!m_assets)
     throw StarException("ConfirmationDialog requires assets service");
 }
@@ -29,7 +30,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
 
   removeAllChildren();
 
-  GuiReader reader;
+  GuiReader reader(context());
 
   m_okCallback = std::move(okCallback);
   m_cancelCallback = std::move(cancelCallback);
@@ -46,7 +47,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
 
   ImageWidgetPtr titleIcon = {};
   if (config.contains("icon"))
-    titleIcon = make_shared<ImageWidget>(config.getString("icon"));
+    titleIcon = make_shared<ImageWidget>(context(), config.getString("icon"));
 
   setTitle(titleIcon, config.getString("title", ""), config.getString("subtitle", ""));
   fetchChild<LabelWidget>("message")->setText(config.getString("message"));
@@ -75,7 +76,7 @@ void ConfirmationDialog::displayConfirmation(Json const& dialogConfig, WidgetCal
   auto sound = Random::randValueFrom(m_assets->json("/interface/windowconfig/confirmation.config:onShowSound").toArray(), "").toString();
 
   if (!sound.empty())
-    context()->playAudio(sound);
+    context().playAudio(sound);
 }
 
 Maybe<EntityId> ConfirmationDialog::sourceEntityId() {

@@ -2,7 +2,7 @@
 
 namespace Star {
 
-VerticalLayout::VerticalLayout(VerticalAnchor verticalAnchor, int verticalSpacing) {
+VerticalLayout::VerticalLayout(GuiContext& context, VerticalAnchor verticalAnchor, int verticalSpacing) : Layout(context) {
   setVerticalAnchor(verticalAnchor);
   setVerticalSpacing(verticalSpacing);
 

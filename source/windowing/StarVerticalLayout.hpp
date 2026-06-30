@@ -9,7 +9,7 @@ using VerticalLayoutPtr = SharedPtr<VerticalLayout>;
 
 class VerticalLayout : public Layout {
 public:
-  VerticalLayout(VerticalAnchor verticalAnchor = VerticalAnchor::TopAnchor, int verticalSpacing = 0);
+  VerticalLayout(GuiContext& context, VerticalAnchor verticalAnchor = VerticalAnchor::TopAnchor, int verticalSpacing = 0);
 
   void update(float dt) override;
   Vec2I size() const override;

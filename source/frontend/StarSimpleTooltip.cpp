@@ -11,9 +11,9 @@ PanePtr SimpleTooltipBuilder::buildTooltip(String const& text, SimpleTooltipServ
   if (!assets)
     throw StarException("SimpleTooltipBuilder requires assets service");
 
-  PanePtr tooltip = make_shared<Pane>();
+  PanePtr tooltip = make_shared<Pane>(services.guiContext);
   tooltip->removeAllChildren();
-  GuiReader reader;
+  GuiReader reader(services.guiContext);
   reader.construct(assets->json("/interface/tooltips/simpletooltip.tooltip"), tooltip.get());
   tooltip->setLabel("contentLabel", text);
 

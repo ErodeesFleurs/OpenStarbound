@@ -1,52 +1,51 @@
 #include "StarPlayer.hpp"
-#include "StarEncode.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarUniverseClient.hpp"
-#include "StarSongbook.hpp"
-#include "StarSongbookLuaBindings.hpp"
-#include "StarEmoteProcessor.hpp"
-#include "StarSpeciesDatabase.hpp"
-#include "StarDamageManager.hpp"
-#include "StarTools.hpp"
-#include "StarItemDrop.hpp"
-#include "StarMaterialDatabase.hpp"
+#include "StarAiDatabase.hpp"
 #include "StarArmors.hpp"
-#include "StarPlayerFactory.hpp"
 #include "StarAssets.hpp"
-#include "StarPlayerInventory.hpp"
-#include "StarTechController.hpp"
+#include "StarCelestialLuaBindings.hpp"
 #include "StarClientContext.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarItemBag.hpp"
+#include "StarCollectionDatabase.hpp"
+#include "StarDamageManager.hpp"
+#include "StarDanceDatabase.hpp"
+#include "StarEmoteProcessor.hpp"
+#include "StarEncode.hpp"
+#include "StarEntityLuaBindings.hpp"
 #include "StarEntitySplash.hpp"
-#include "StarWorld.hpp"
-#include "StarStatusController.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
+#include "StarInspectionTool.hpp"
+#include "StarItemBag.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarItemDrop.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarPlayerAppearance.hpp"
 #include "StarPlayerBlueprints.hpp"
-#include "StarPlayerUniverseMap.hpp"
+#include "StarPlayerChatAndEmotes.hpp"
 #include "StarPlayerCodexes.hpp"
-#include "StarPlayerTech.hpp"
 #include "StarPlayerCompanions.hpp"
+#include "StarPlayerDamagePipeline.hpp"
 #include "StarPlayerDeployment.hpp"
+#include "StarPlayerFactory.hpp"
+#include "StarPlayerInventory.hpp"
 #include "StarPlayerLog.hpp"
 #include "StarPlayerLuaBindings.hpp"
-#include "StarQuestManager.hpp"
-#include "StarAiDatabase.hpp"
-#include "StarCollectionDatabase.hpp"
-#include "StarStatistics.hpp"
-#include "StarInspectionTool.hpp"
-#include "StarUtilityLuaBindings.hpp"
-#include "StarCelestialLuaBindings.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
-#include "StarScriptedAnimatorLuaBindings.hpp"
-#include "StarEntityLuaBindings.hpp"
-#include "StarDanceDatabase.hpp"
 #include "StarPlayerNarrativeQueue.hpp"
-#include "StarPlayerChatAndEmotes.hpp"
-#include "StarPlayerDamagePipeline.hpp"
+#include "StarPlayerTech.hpp"
 #include "StarPlayerTeleporter.hpp"
-#include "StarPlayerAppearance.hpp"
+#include "StarPlayerUniverseMap.hpp"
+#include "StarQuestManager.hpp"
+#include "StarScriptedAnimatorLuaBindings.hpp"
+#include "StarSongbook.hpp"
+#include "StarSongbookLuaBindings.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarStatistics.hpp"
+#include "StarStatusController.hpp"
+#include "StarStatusControllerLuaBindings.hpp"
+#include "StarTechController.hpp"
+#include "StarTools.hpp"
+#include "StarUniverseClient.hpp"
+#include "StarUtilityLuaBindings.hpp"
+#include "StarWorld.hpp"
 
 namespace Star {
 
@@ -63,11 +62,10 @@ EnumMap<Player::State> const Player::StateNames{
   {Player::State::TeleportIn, "teleportIn"},
   {Player::State::TeleportOut, "teleportOut"},
   {Player::State::Crouch, "crouch"},
-  {Player::State::Lounge, "lounge"}
-};
+  {Player::State::Lounge, "lounge"}};
 
-Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase)
-  : m_scriptedAnimator(assets) {
+Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+    : m_scriptedAnimator(assets) {
 
   m_config = config;
   m_assets = std::move(assets);
@@ -87,6 +85,9 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, Configu
   m_entityFactory = std::move(entityFactory);
   m_liquidsDatabase = std::move(liquidsDatabase);
   m_techDatabase = std::move(techDatabase);
+  m_statusEffectDatabase = std::move(statusEffectDatabase);
+  m_particleDatabase = std::move(particleDatabase);
+  m_imageMetadataDatabase = std::move(imageMetadataDatabase);
   if (!m_assets)
     throw PlayerException("Player requires assets service");
   if (!m_configuration)
@@ -121,6 +122,12 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, Configu
     throw PlayerException("Player requires liquids database service");
   if (!m_techDatabase)
     throw PlayerException("Player requires tech database service");
+  if (!m_statusEffectDatabase)
+    throw PlayerException("Player requires status effect database service");
+  if (!m_particleDatabase)
+    throw PlayerException("Player requires particle database service");
+  if (!m_imageMetadataDatabase)
+    throw PlayerException("Player requires image metadata database service");
   m_client = nullptr;
 
   m_state = State::Idle;
@@ -134,8 +141,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, Configu
   setUniqueId(uuid.hex());
   m_appearance.init();
 
-  m_questManager = make_shared<QuestManager>(m_assets, this, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase);
-  m_tools = make_shared<ToolUser>(m_assets, this, m_itemDatabase, m_objectDatabase);
+  m_questManager = make_shared<QuestManager>(m_assets, *this, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase);
+  m_tools = make_shared<ToolUser>(m_assets, *this, m_itemDatabase, m_objectDatabase);
   m_armor = make_shared<ArmorWearer>(m_itemDatabase);
   m_companions = make_shared<PlayerCompanions>(config->companionsConfig);
 
@@ -152,22 +159,22 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, Configu
   m_movementController = make_shared<ActorMovementController>(movementParameters, m_assets);
   m_zeroGMovementParameters = ActorMovementParameters(m_config->zeroGMovementParameters);
 
-  m_statusController = make_shared<StatusController>(m_config->statusControllerSettings);
-  m_techController = make_shared<TechController>(this, m_movementController.get(), m_statusController.get());
+  m_statusController = make_shared<StatusController>(m_config->statusControllerSettings, m_assets, m_liquidsDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase);
+  m_techController = make_shared<TechController>(*this, *m_movementController, *m_statusController, m_assets, m_particleDatabase, m_imageMetadataDatabase);
   m_deployment = make_shared<PlayerDeployment>(m_config->deploymentConfig, m_assets);
 
   m_inventory = make_shared<PlayerInventory>(m_assets, m_itemDatabase, m_configuration);
-  m_inventory->setPlayer(this);
+  m_inventory->setPlayer(*this);
 
   m_blueprints = make_shared<PlayerBlueprints>();
   m_universeMap = make_shared<PlayerUniverseMap>();
   m_codexes = make_shared<PlayerCodexes>(m_assets, m_codexDatabase);
   m_techs = make_shared<PlayerTech>(m_techDatabase);
   m_log = make_shared<PlayerLog>();
-  m_narrativeQueue = make_shared<PlayerNarrativeQueue>(this, m_radioMessageDatabase, m_configuration, m_aiDatabase);
-  m_chatAndEmotes = make_shared<PlayerChatAndEmotes>(this, m_danceDatabase, m_emoteProcessor);
-  m_damagePipeline = make_shared<PlayerDamagePipeline>(this);
-  m_teleporter = make_shared<PlayerTeleporter>(this);
+  m_narrativeQueue = make_shared<PlayerNarrativeQueue>(*this, m_radioMessageDatabase, m_configuration, m_aiDatabase);
+  m_chatAndEmotes = make_shared<PlayerChatAndEmotes>(*this, m_danceDatabase, m_emoteProcessor);
+  m_damagePipeline = make_shared<PlayerDamagePipeline>(*this);
+  m_teleporter = make_shared<PlayerTeleporter>(*this);
 
   setModeType(PlayerMode::Casual);
 
@@ -178,7 +185,7 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, Configu
   m_footstepVolumeVariance = m_assets->json("/sfx.config:footstepVolumeVariance").toFloat();
   m_landingVolume = m_assets->json("/sfx.config:landingVolume").toFloat();
 
-  m_effectsAnimator = make_shared<NetworkedAnimator>(m_assets->fetchJson(m_config->effectsAnimator));
+  m_effectsAnimator = make_shared<NetworkedAnimator>(m_assets->fetchJson(m_config->effectsAnimator), String(), m_assets, m_imageMetadataDatabase, m_particleDatabase);
   m_effectEmitter = make_shared<EffectEmitter>();
 
   m_interactRadius = m_assets->json("/player.config:interactRadius").toFloat();
@@ -193,7 +200,6 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, Configu
   m_chatAndEmotes->init(m_assets->json("/player.config:emoteCooldown").toFloat(), jsonToVec2F(m_assets->json("/player.config:blinkInterval")));
 
   m_songbook = make_shared<Songbook>(m_assets, species());
-
 
   m_ageItemsTimer = GameTimer(m_assets->json("/player.config:ageItemsEvery").toFloat());
 
@@ -257,8 +263,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, Configu
   m_netGroup.setNeedsStoreCallback([this]() { return setNetStates(); });
 }
 
-Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase)
-  : Player(config, Uuid(), std::move(assets), std::move(configuration), std::move(materialDatabase), std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase), std::move(codexDatabase), std::move(danceDatabase), std::move(emoteProcessor), std::move(radioMessageDatabase), std::move(aiDatabase), std::move(collectionDatabase), std::move(speciesDatabase), std::move(entityFactory), std::move(liquidsDatabase), std::move(techDatabase)) {
+Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+    : Player(config, Uuid(), std::move(assets), std::move(configuration), std::move(materialDatabase), std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase), std::move(codexDatabase), std::move(danceDatabase), std::move(emoteProcessor), std::move(radioMessageDatabase), std::move(aiDatabase), std::move(collectionDatabase), std::move(speciesDatabase), std::move(entityFactory), std::move(liquidsDatabase), std::move(techDatabase), std::move(statusEffectDatabase), std::move(particleDatabase), std::move(imageMetadataDatabase)) {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
 
@@ -272,14 +278,13 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
   }
 
   m_appearance.netHumanoid().clearNetElements();
-  m_appearance.netHumanoid().addNetElement(make_shared<NetHumanoid>(m_appearance.m_identity, m_appearance.m_humanoidParameters, Json(), m_assets));
+  m_appearance.netHumanoid().addNetElement(make_shared<NetHumanoid>(m_appearance.m_identity, m_appearance.m_humanoidParameters, Json(), m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase));
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_appearance.deathParticleBurst().set(humanoid()->defaultDeathParticles());
 }
 
-
-Player::Player(PlayerConfigPtr config, Json const& diskStore, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase)
-  : Player(config, Uuid(), std::move(assets), std::move(configuration), std::move(materialDatabase), std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase), std::move(codexDatabase), std::move(danceDatabase), std::move(emoteProcessor), std::move(radioMessageDatabase), std::move(aiDatabase), std::move(collectionDatabase), std::move(speciesDatabase), std::move(entityFactory), std::move(liquidsDatabase), std::move(techDatabase)) {
+Player::Player(PlayerConfigPtr config, Json const& diskStore, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+    : Player(config, Uuid(), std::move(assets), std::move(configuration), std::move(materialDatabase), std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase), std::move(codexDatabase), std::move(danceDatabase), std::move(emoteProcessor), std::move(radioMessageDatabase), std::move(aiDatabase), std::move(collectionDatabase), std::move(speciesDatabase), std::move(entityFactory), std::move(liquidsDatabase), std::move(techDatabase), std::move(statusEffectDatabase), std::move(particleDatabase), std::move(imageMetadataDatabase)) {
   diskLoad(diskStore);
 }
 
@@ -321,7 +326,7 @@ void Player::diskLoad(Json const& diskStore) {
   m_appearance.m_humanoidParameters = diskStore.getObject("humanoidParameters", JsonObject());
 
   m_appearance.netHumanoid().clearNetElements();
-  m_appearance.netHumanoid().addNetElement(make_shared<NetHumanoid>(m_appearance.m_identity, m_appearance.m_humanoidParameters, Json(), m_assets));
+  m_appearance.netHumanoid().addNetElement(make_shared<NetHumanoid>(m_appearance.m_identity, m_appearance.m_humanoidParameters, Json(), m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase));
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
   m_appearance.deathParticleBurst().set(humanoid()->defaultDeathParticles());
@@ -396,11 +401,10 @@ ClientEntityMode Player::clientEntityMode() const {
 void Player::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
 
-
-  m_movementController->init(world);
+  m_movementController->init(*world);
   m_movementController->setIgnorePhysicsEntities({entityId});
-  m_statusController->init(this, m_movementController.get());
-  m_tools->init(this);
+  m_statusController->init(*this, *m_movementController);
+  m_tools->init(*this);
   auto speciesDefinition = m_speciesDatabase->species(m_appearance.m_identity.species);
 
   if (mode == EntityMode::Master) {
@@ -408,21 +412,21 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
     m_movementController->setRotation(0);
     m_statusController->setStatusProperty("ouchNoise", speciesDefinition->ouchNoise(m_appearance.m_identity.gender));
 
-    m_questManager->init(world);
-    m_companions->init(this, world);
-    m_deployment->init(this, world);
+    m_questManager->init(*world);
+    m_companions->init(*this, *world);
+    m_deployment->init(*this, *world);
 
     m_statusController->setPersistentEffects("species", speciesDefinition->statusEffects());
 
     for (auto& p : m_genericScriptContexts) {
       p.second->addActorMovementCallbacks(m_movementController.get());
-      p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(this));
-      p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController.get()));
-      p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(m_songbook.get()));
-      p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(humanoid()->networkedAnimator()));
+      p.second->addCallbacks("player", LuaBindings::makePlayerCallbacks(*this));
+      p.second->addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_statusController));
+      p.second->addCallbacks("songbook", LuaBindings::makeSongbookCallbacks(*m_songbook));
+      p.second->addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(*humanoid()->networkedAnimator()));
       if (m_client)
-        p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_client, m_client->biomeDatabase()));
-      p.second->init(world);
+        p.second->addCallbacks("celestial", LuaBindings::makeCelestialCallbacks(*m_client, m_client->biomeDatabase()));
+      p.second->init(*world);
     }
 
     for (auto& p : m_inventory->pullOverflow()) {
@@ -433,13 +437,12 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
   }
 
   if (world->isClient()) {
-      m_scriptedAnimator.setScripts(humanoid()->animationScripts());
-      m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(humanoid()->networkedAnimator(),
-        [this](String const& name, Json const& defaultValue) -> Json {
-          return m_appearance.scriptedAnimationParameters().value(name, defaultValue);
-        }));
-      m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptedAnimator.init(world);
+    m_scriptedAnimator.setScripts(humanoid()->animationScripts());
+    m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(*humanoid()->networkedAnimator(), [this](String const& name, Json const& defaultValue) -> Json {
+                                      return m_appearance.scriptedAnimationParameters().value(name, defaultValue);
+                                    }));
+    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+    m_scriptedAnimator.init(*world);
   }
 
   m_xAimPositionNetState.setInterpolator(world->geometry().xLerpFunction());
@@ -504,11 +507,11 @@ List<Drawable> Player::drawables() const {
       for (auto& drawable : humanoid()->render()) {
         drawable.translate(position() + m_techController->parentOffset());
         if (drawable.isImage()) {
-          drawable.imagePart().addDirectivesGroup(humanoidDirectives, true);
+          drawable.imagePart().addDirectivesGroup(humanoidDirectives, true, m_imageMetadataDatabase);
 
           if (auto anchor = as<LoungeAnchor>(m_movementController->entityAnchor())) {
             if (auto& directives = anchor->directives)
-              drawable.imagePart().addDirectives(*directives, true);
+              drawable.imagePart().addDirectives(*directives, true, m_imageMetadataDatabase);
           }
         }
         drawables.append(std::move(drawable));
@@ -532,7 +535,7 @@ List<OverheadBar> Player::bars() const {
 
 List<Particle> Player::particles() {
   List<Particle> particles;
-  particles.appendAll(m_config->splashConfig.doSplash(position(), m_movementController->velocity(), world()));
+  particles.appendAll(m_config->splashConfig.doSplash(position(), m_movementController->velocity(), *world()));
   particles.appendAll(take(m_callbackParticles));
   particles.appendAll(m_appearance.humanoidDynamicTarget().pullNewParticles());
   particles.appendAll(m_techController->pullNewParticles());
@@ -635,7 +638,7 @@ bool Player::shouldDestroy() const {
 
 void Player::destroy(RenderCallback* renderCallback) {
   m_state = State::Idle;
-    m_chatAndEmotes->setEmoteState(HumanoidEmote::Idle);
+  m_chatAndEmotes->setEmoteState(HumanoidEmote::Idle);
   if (renderCallback && m_appearance.deathParticleBurst().get())
     renderCallback->addParticles(humanoid()->particles(*m_appearance.deathParticleBurst().get()), position());
 
@@ -648,13 +651,13 @@ void Player::destroy(RenderCallback* renderCallback) {
           dropEverything();
       } else {
         List<ItemType> dropList = modeConfig().deathDropItemTypes.right().transformed([](String typeName) {
-            return ItemTypeNames.getLeft(typeName);
-          });
+          return ItemTypeNames.getLeft(typeName);
+        });
         Set<ItemType> dropSet = Set<ItemType>::from(dropList);
         auto itemDb = m_itemDatabase;
         dropSelectedItems([dropSet, itemDb](ItemPtr item) {
-            return dropSet.contains(itemDb->itemType(item->name()));
-          });
+          return dropSet.contains(itemDb->itemType(item->name()));
+        });
       }
     }
   }
@@ -701,7 +704,7 @@ Vec2F Player::velocity() const {
 
 Vec2F Player::mouthOffset(bool ignoreAdjustments) const {
   return Vec2F(
-      humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), humanoid()->mouthOffset(ignoreAdjustments)[1]);
+    humanoid()->mouthOffset(ignoreAdjustments)[0] * numericalDirection(facingDirection()), humanoid()->mouthOffset(ignoreAdjustments)[1]);
 }
 
 Vec2F Player::feetOffset() const {
@@ -710,22 +713,22 @@ Vec2F Player::feetOffset() const {
 
 Vec2F Player::headArmorOffset() const {
   return Vec2F(
-      humanoid()->headArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->headArmorOffset()[1]);
+    humanoid()->headArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->headArmorOffset()[1]);
 }
 
 Vec2F Player::chestArmorOffset() const {
   return Vec2F(
-      humanoid()->chestArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->chestArmorOffset()[1]);
+    humanoid()->chestArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->chestArmorOffset()[1]);
 }
 
 Vec2F Player::backArmorOffset() const {
   return Vec2F(
-      humanoid()->backArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->backArmorOffset()[1]);
+    humanoid()->backArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->backArmorOffset()[1]);
 }
 
 Vec2F Player::legsArmorOffset() const {
   return Vec2F(
-      humanoid()->legsArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->legsArmorOffset()[1]);
+    humanoid()->legsArmorOffset()[0] * numericalDirection(facingDirection()), humanoid()->legsArmorOffset()[1]);
 }
 
 Vec2F Player::mouthPosition() const {
@@ -767,6 +770,17 @@ void Player::special(int specialKey) {
     }
   }
   m_techController->special(specialKey);
+}
+
+void Player::setBuildToolControlPresses(String const& bindId, Maybe<unsigned> presses) {
+  if (presses)
+    m_buildToolControlPresses[bindId] = *presses;
+  else
+    m_buildToolControlPresses.remove(bindId);
+}
+
+Maybe<unsigned> Player::buildToolControlPresses(String const& bindId) const {
+  return m_buildToolControlPresses.maybe(bindId);
 }
 
 void Player::setMoveVector(Vec2F const& vec) {
@@ -950,9 +964,9 @@ void Player::update(float dt, uint64_t) {
 
       m_tools->effects(*m_effectEmitter);
 
-      auto aimRelative = world()->geometry().diff(m_aimPosition, position()); // dumb, but due to how things are ordered
+      auto aimRelative = world()->geometry().diff(m_aimPosition, position());// dumb, but due to how things are ordered
       m_movementController->tickMaster(dt);
-      m_aimPosition = position() + aimRelative;                               // it's gonna have to be like this for now
+      m_aimPosition = position() + aimRelative;// it's gonna have to be like this for now
 
       m_techController->tickMaster(dt);
 
@@ -1004,8 +1018,8 @@ void Player::update(float dt, uint64_t) {
     if (m_ageItemsTimer.wrapTick(dt)) {
       auto itemDatabase = m_itemDatabase;
       m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
-          itemDatabase->ageItem(item, m_ageItemsTimer.time);
-        });
+        itemDatabase->ageItem(item, m_ageItemsTimer.time);
+      });
     }
 
     for (auto& tool : {m_tools->primaryHandItem(), m_tools->altHandItem()}) {
@@ -1016,13 +1030,7 @@ void Player::update(float dt, uint64_t) {
             m_log->addScannedObject(*ir.objectName);
           }
 
-          addChatMessage(ir.message, JsonObject{
-            {"message", JsonObject{
-              {"context", JsonObject{{"mode", "RadioMessage"}}},
-              {"fromConnection", world()->connection()},
-              {"text", ir.message}
-            }}
-          });
+          addChatMessage(ir.message, JsonObject{{"message", JsonObject{{"context", JsonObject{{"mode", "RadioMessage"}}}, {"fromConnection", world()->connection()}, {"text", ir.message}}}});
         }
       }
     }
@@ -1041,12 +1049,12 @@ void Player::update(float dt, uint64_t) {
   bool suppressedItems = !canUseTool();
 
   auto loungeAnchor = as<LoungeAnchor>(m_movementController->entityAnchor());
-  if (loungeAnchor && loungeAnchor->dance){
+  if (loungeAnchor && loungeAnchor->dance) {
     humanoid()->setDance(*loungeAnchor->dance);
   } else if (m_chatAndEmotes->dance()) {
     humanoid()->setDance(m_chatAndEmotes->dance());
   } else if ((!suppressedItems && (m_tools->primaryHandItem() || m_tools->altHandItem()))
-    || humanoid()->danceCyclicOrEnded() || m_movementController->running()) {
+             || humanoid()->danceCyclicOrEnded() || m_movementController->running()) {
     humanoid()->setDance({});
   }
   bool isClient = world()->isClient();
@@ -1087,7 +1095,7 @@ void Player::update(float dt, uint64_t) {
 
   m_damagePipeline->tickBuildSources();
 
-  m_songbook->update(*entityMode(), world());
+  m_songbook->update(*entityMode(), *world());
 
   m_effectEmitter->setSourcePosition("normal", position());
   m_effectEmitter->setSourcePosition("mouth", mouthOffset() + position());
@@ -1105,6 +1113,9 @@ void Player::update(float dt, uint64_t) {
   m_effectEmitter->tick(dt, *entityMode(), world()->effectSourceDatabase());
 
   if (isClient) {
+    bool headRotationEnabled = m_configuration->get("humanoidHeadRotation").optBool().value(true);
+    humanoid()->setHeadRotationEnabled(headRotationEnabled);
+
     bool calculateHeadRotation = isMaster();
     if (!calculateHeadRotation) {
       auto headRotationProperty = getSecretProperty("humanoid.headRotation");
@@ -1113,16 +1124,16 @@ void Player::update(float dt, uint64_t) {
       } else
         calculateHeadRotation = true;
     }
-    if (calculateHeadRotation) { // master or not an OpenStarbound player
+    if (calculateHeadRotation) {// master or not an OpenStarbound player
       float headRotation = 0.f;
-      if (Humanoid::globalHeadRotation() && (humanoid()->handHoldingItem(ToolHand::Primary) || humanoid()->handHoldingItem(ToolHand::Alt) || humanoid()->dance())) {
+      if (headRotationEnabled && (humanoid()->handHoldingItem(ToolHand::Primary) || humanoid()->handHoldingItem(ToolHand::Alt) || humanoid()->dance())) {
         auto primary = m_tools->primaryHandItem();
         auto alt = m_tools->altHandItem();
         String const disableFlag = "disableHeadRotation";
         auto statusFlag = m_statusController->statusProperty(disableFlag);
         if (!(statusFlag.isType(Json::Type::Bool) && statusFlag.toBool())
-         && !(primary && primary->instanceValue(disableFlag))
-         && !(alt && alt->instanceValue(disableFlag))) {
+            && !(primary && primary->instanceValue(disableFlag))
+            && !(alt && alt->instanceValue(disableFlag))) {
           auto diff = world()->geometry().diff(aimPosition(), mouthPosition());
           diff.setX(fabsf(diff.x()));
           headRotation = diff.angle() * .25f * numericalDirection(humanoid()->facingDirection());
@@ -1133,13 +1144,14 @@ void Player::update(float dt, uint64_t) {
         setSecretProperty("humanoid.headRotation", headRotation);
     }
   }
-  
+
   if (isMaster()) {
     for (auto& p : m_genericScriptContexts)
       p.second->invoke("postUpdate");
   }
 
   m_pendingMoves.clear();
+  m_buildToolControlPresses.clear();
 
   if (isClient)
     SpatialLogger::logPoly("world", m_movementController->collisionBody(), isMaster() ? Color::Orange.toRgba() : Color::Yellow.toRgba());
@@ -1291,7 +1303,7 @@ void Player::triggerPickupEvents(ItemPtr const& item) {
 
     for (auto const& quest : item->pickupQuestTemplates()) {
       if (m_questManager->canStart(quest))
-        m_questManager->offer(make_shared<Quest>(m_questManager->assets(), quest, 0, this, m_questManager->itemDatabase(), m_questManager->objectDatabase(), m_questManager->questTemplateDatabase(), m_questManager->versioningDatabase()));
+        m_questManager->offer(make_shared<Quest>(m_questManager->assets(), quest, 0, *this, m_questManager->itemDatabase(), m_questManager->objectDatabase(), m_questManager->questTemplateDatabase(), m_questManager->versioningDatabase()));
     }
 
     if (auto consume = item->instanceValue("consumeOnPickup", Json())) {
@@ -1299,11 +1311,7 @@ void Player::triggerPickupEvents(ItemPtr const& item) {
         item->consume(item->count());
     }
 
-    statistics()->recordEvent("item", JsonObject{
-        {"itemName", item->name()},
-        {"count", item->count()},
-        {"category", item->instanceValue("eventCategory", item->category())}
-      });
+    statistics()->recordEvent("item", JsonObject{{"itemName", item->name()}, {"count", item->count()}, {"category", item->instanceValue("eventCategory", item->category())}});
   }
 }
 
@@ -1369,10 +1377,9 @@ void Player::refreshHumanoid() const {
     if (m_armor->setupHumanoid(*humanoid(), forceNude())) {
       m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
     }
-  }
-  catch (std::exception const&) {
-    if (isMaster()) // it's your problem,
-      throw;        // deal with it!
+  } catch (std::exception const&) {
+    if (isMaster())// it's your problem,
+      throw;       // deal with it!
   }
 }
 
@@ -1497,7 +1504,7 @@ void Player::interactWithEntity(InteractiveEntityPtr entity) {
 
   for (auto const& questArc : entity->offeredQuests()) {
     if (m_questManager->canStart(questArc)) {
-      auto quest = make_shared<Quest>(m_questManager->assets(), questArc, 0, this, m_questManager->itemDatabase(), m_questManager->objectDatabase(), m_questManager->questTemplateDatabase(), m_questManager->versioningDatabase());
+      auto quest = make_shared<Quest>(m_questManager->assets(), questArc, 0, *this, m_questManager->itemDatabase(), m_questManager->objectDatabase(), m_questManager->questTemplateDatabase(), m_questManager->versioningDatabase());
       quest->setWorldId(clientContext()->playerWorldId());
       quest->setServerUuid(clientContext()->serverUuid());
       quest->setEntityParameter("questGiver", entity);
@@ -1507,7 +1514,7 @@ void Player::interactWithEntity(InteractiveEntityPtr entity) {
   }
 
   m_pendingInteractActions.append(world()->interact(InteractRequest{
-        entityId(), position(), entity->entityId(), aimPosition()}));
+    entityId(), position(), entity->entityId(), aimPosition()}));
 }
 
 void Player::aim(Vec2F const& position) {
@@ -1608,10 +1615,10 @@ void Player::setInteractRadius(float interactRadius) {
 List<InteractAction> Player::pullInteractActions() {
   List<InteractAction> results;
   eraseWhere(m_pendingInteractActions, [&results](auto& promise) {
-      if (auto res = promise.result())
-        results.append(res.take());
-      return promise.finished();
-    });
+    if (auto res = promise.result())
+      results.append(res.take());
+    return promise.finished();
+  });
   return results;
 }
 
@@ -1733,8 +1740,7 @@ void Player::processControls() {
   if (useMoveVector) {
     m_pendingMoves.insert(m_moveVector.x() < 0.0f ? MoveControlType::Left : MoveControlType::Right);
     m_movementController->setMoveSpeedMultiplier(clamp(abs(m_moveVector.x()), 0.0f, 1.0f));
-  }
-  else
+  } else
     m_movementController->setMoveSpeedMultiplier(1.0f);
 
   if (auto fireableMain = as<FireableItem>(m_tools->primaryHandItem())) {
@@ -1791,21 +1797,21 @@ void Player::processControls() {
   if (move) {
     for (auto movement : m_pendingMoves) {
       switch (movement) {
-        case MoveControlType::Right:
-          m_techController->moveRight();
-          break;
-        case MoveControlType::Left:
-          m_techController->moveLeft();
-          break;
-        case MoveControlType::Up:
-          m_techController->moveUp();
-          break;
-        case MoveControlType::Down:
-          m_techController->moveDown();
-          break;
-        case MoveControlType::Jump:
-          m_techController->jump();
-          break;
+      case MoveControlType::Right:
+        m_techController->moveRight();
+        break;
+      case MoveControlType::Left:
+        m_techController->moveLeft();
+        break;
+      case MoveControlType::Up:
+        m_techController->moveUp();
+        break;
+      case MoveControlType::Down:
+        m_techController->moveDown();
+        break;
+      case MoveControlType::Jump:
+        m_techController->jump();
+        break;
       }
     }
   }
@@ -1859,7 +1865,7 @@ void Player::processStateChanges(float dt) {
     }
 
     if (m_moveVector.x() != 0.0f && (m_state == State::Run))
-        m_state = abs(m_moveVector.x()) > 0.5f ? State::Run : State::Walk;
+      m_state = abs(m_moveVector.x()) > 0.5f ? State::Run : State::Walk;
 
     if (m_state == State::Jump && (oldState == State::Idle || oldState == State::Run || oldState == State::Walk || oldState == State::Crouch))
       m_effectsAnimator->burstParticleEmitter("jump");
@@ -1940,7 +1946,7 @@ String Player::getFootstepSound(Vec2I const& sensor) const {
   List<Vec2I> scanOrder{{0, 0}, {0, -1}, {-1, 0}, {1, 0}, {-1, -1}, {1, -1}};
   for (auto const& subSensor : scanOrder) {
     String footstepSound = materialDatabase->footstepSound(world()->material(sensor + subSensor, TileLayer::Foreground),
-        world()->mod(sensor + subSensor, TileLayer::Foreground));
+                                                           world()->mod(sensor + subSensor, TileLayer::Foreground));
     if (!footstepSound.empty()) {
       if (footstepSound != fallback) {
         return footstepSound;
@@ -2023,7 +2029,7 @@ void Player::setNetStates() {
 void Player::setNetArmorSecret(EquipmentSlot slot, ArmorItemPtr const& armor, bool visible) {
   String const& slotName = EquipmentSlotNames.getRight(slot);
   ItemDescriptor descriptor = visible ? itemSafeDescriptor(armor) : ItemDescriptor();
-  setSecretProperty(strf("armorWearer.{}.data", slotName), descriptor.diskStore());
+  setSecretProperty(strf("armorWearer.{}.data", slotName), descriptor.diskStore(m_versioningDatabase));
   if (m_armorSecretNetVersions.empty())
     setSecretProperty("armorWearer.replicating", true);
   setSecretProperty(strf("armorWearer.{}.version", slotName), ++m_armorSecretNetVersions[slot]);
@@ -2408,7 +2414,6 @@ List<PhysicsForceRegion> Player::forceRegions() const {
   return m_tools->forceRegions();
 }
 
-
 StatusControllerPtr Player::statusControllerPtr() {
   return m_statusController;
 }
@@ -2502,7 +2507,7 @@ void Player::finalizeCreation() {
   refreshEquipment();
 
   m_state = State::Idle;
-    m_chatAndEmotes->setEmoteState(HumanoidEmote::Idle);
+  m_chatAndEmotes->setEmoteState(HumanoidEmote::Idle);
 
   m_statusController->setPersistentEffects("armor", m_armor->statusEffects());
   m_statusController->setPersistentEffects("tools", m_tools->statusEffects());
@@ -2511,8 +2516,8 @@ void Player::finalizeCreation() {
   m_effectEmitter->reset();
 
   m_description = strf("This {} seems to have nothing to say for {}self.",
-    m_appearance.m_identity.gender == Gender::Male ? "guy" : "gal",
-    m_appearance.m_identity.gender == Gender::Male ? "him" : "her");
+                       m_appearance.m_identity.gender == Gender::Male ? "guy" : "gal",
+                       m_appearance.m_identity.gender == Gender::Male ? "him" : "her");
 }
 
 bool Player::invisible() const {
@@ -2527,7 +2532,7 @@ bool Player::isOutside() {
   if (!inWorld())
     return false;
   return !world()->isUnderground(position())
-      && !world()->tileIsOccupied(Vec2I::floor(mouthPosition()), TileLayer::Background);
+    && !world()->tileIsOccupied(Vec2I::floor(mouthPosition()), TileLayer::Background);
 }
 
 void Player::dropSelectedItems(function<bool(ItemPtr)> filter) {
@@ -2535,9 +2540,9 @@ void Player::dropSelectedItems(function<bool(ItemPtr)> filter) {
     return;
 
   m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
-      if (item && (!filter || filter(item)))
-        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true, m_assets, m_itemDatabase));
-    });
+    if (item && (!filter || filter(item)))
+      world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true, m_assets, m_itemDatabase));
+  });
 }
 
 void Player::dropEverything() {
@@ -2672,8 +2677,7 @@ Maybe<StringView> Player::getSecretPropertyView(String const& name) const {
         if (pos + len == buffer.size())
           return StringView(buffer.ptr() + pos, len);
       }
-    }
-    catch (StarException const& e) {}
+    } catch (StarException const& e) {}
   }
 
   return {};
@@ -2686,10 +2690,9 @@ String const* Player::getSecretPropertyPtr(String const& name) const {
 Json Player::getSecretProperty(String const& name, Json defaultValue) const {
   if (auto tag = m_effectsAnimator->globalTagPtr(secretProprefix + name)) {
     DataStreamExternalBuffer buffer(tag->utf8Ptr(), tag->utf8Size());
-    try
-      { return buffer.read<Json>(); }
-    catch (StarException const& e)
-      { Logger::error("Exception reading secret player property '{}': {}", name, e.what()); }
+    try {
+      return buffer.read<Json>();
+    } catch (StarException const& e) { Logger::error("Exception reading secret player property '{}': {}", name, e.what()); }
   }
 
   return defaultValue;
@@ -2701,8 +2704,7 @@ void Player::setSecretProperty(String const& name, Json const& value) {
     ds.write(value);
     auto& data = ds.data();
     m_effectsAnimator->setGlobalTag(secretProprefix + name, String(data.ptr(), data.size()));
-  }
-  else
+  } else
     m_effectsAnimator->removeGlobalTag(secretProprefix + name);
 }
 
@@ -2714,4 +2716,4 @@ void Player::setAnimationParameter(String name, Json value) {
   m_appearance.setAnimationParameter(name, value);
 }
 
-}
+}// namespace Star

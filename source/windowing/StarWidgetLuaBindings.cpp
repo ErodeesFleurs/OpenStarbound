@@ -56,7 +56,7 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
       });
   methods.registerMethod("drawImageDrawable",
       [](CanvasWidgetPtr canvasWidget, String image, Vec2F position, MVariant<Vec2F, float> scale, Maybe<Color> color, Maybe<float> rotation) {
-        auto drawable = Drawable::makeImage(image, 1.0, true, {0.0, 0.0}, color.value(Color::White));
+        auto drawable = Drawable::makeImage(image, 1.0, true, {0.0, 0.0}, color.value(Color::White), canvasWidget->context().imageMetadata());
         if (auto s = scale.maybe<Vec2F>())
           drawable.transform(Mat3F::scaling(*s));
         else if(auto floatScale = scale.maybe<float>())
@@ -102,153 +102,153 @@ LuaMethods<CanvasWidgetPtr> LuaUserDataMethods<CanvasWidgetPtr>::make() {
   return methods;
 }
 
-LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr reader) {
+LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget& parentWidget, GuiReaderPtr reader) {
   if (!reader)
-    reader = make_shared<GuiReader>();
+    reader = make_shared<GuiReader>(parentWidget.context());
 
   LuaCallbacks callbacks;
 
   // a bit miscellaneous, but put this here since widgets have access to gui context
 
   callbacks.registerCallback("playSound",
-      [parentWidget](String const& audio, Maybe<int> loops, Maybe<float> volume) {
-        parentWidget->context()->playAudio(audio, loops.value(0), volume.value(1.0f));
+      [&parentWidget](String const& audio, Maybe<int> loops, Maybe<float> volume) {
+        parentWidget.context().playAudio(audio, loops.value(0), volume.value(1.0f));
       });
 
   // widget userdata methods
 
-  callbacks.registerCallback("bindCanvas", [parentWidget](String const& widgetName) -> Maybe<CanvasWidgetPtr> {
-      if (auto canvas = parentWidget->fetchChild<CanvasWidget>(widgetName))
+  callbacks.registerCallback("bindCanvas", [&parentWidget](String const& widgetName) -> Maybe<CanvasWidgetPtr> {
+      if (auto canvas = parentWidget.fetchChild<CanvasWidget>(widgetName))
         return canvas;
       return {};
     });
 
   // generic widget callbacks
 
-  callbacks.registerCallback("getPosition", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("getPosition", [&parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         return widget->relativePosition();
       return {};
     });
-  callbacks.registerCallback("setPosition", [parentWidget](String const& widgetName, Vec2I const& position) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("setPosition", [&parentWidget](String const& widgetName, Vec2I const& position) {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         widget->setPosition(position);
     });
 
-  callbacks.registerCallback("getSize", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("getSize", [&parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         return widget->size();
       return {};
     });
-  callbacks.registerCallback("setSize", [parentWidget](String const& widgetName, Vec2I const& size) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("setSize", [&parentWidget](String const& widgetName, Vec2I const& size) {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         widget->setSize(size);
     });
 
-  callbacks.registerCallback("setVisible", [parentWidget](String const& widgetName, bool visible) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("setVisible", [&parentWidget](String const& widgetName, bool visible) {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         widget->setVisibility(visible);
     });
 
-  callbacks.registerCallback("active", [parentWidget](String const& widgetName) -> Maybe<bool> {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("active", [&parentWidget](String const& widgetName) -> Maybe<bool> {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         return widget->active();
       return {};
     });
 
-  callbacks.registerCallback("focus", [parentWidget](String const& widgetName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("focus", [&parentWidget](String const& widgetName) {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         widget->focus();
     });
 
-  callbacks.registerCallback("hasFocus", [parentWidget](String const& widgetName) -> Maybe<bool> {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("hasFocus", [&parentWidget](String const& widgetName) -> Maybe<bool> {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         return widget->hasFocus();
       return {};
     });
 
-  callbacks.registerCallback("blur", [parentWidget](String const& widgetName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("blur", [&parentWidget](String const& widgetName) {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         widget->blur();
     });
 
-  callbacks.registerCallback("getData", [parentWidget](String const& widgetName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("getData", [&parentWidget](String const& widgetName) {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         return widget->data();
       return Json();
     });
 
-  callbacks.registerCallback("setData", [parentWidget](String const& widgetName, Json const& data) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("setData", [&parentWidget](String const& widgetName, Json const& data) {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         widget->setData(data);
     });
 
-  callbacks.registerCallback("getChildAt", [parentWidget](Vec2I const& screenPosition) -> Maybe<String> {
-      if (auto widget = parentWidget->getChildAt(screenPosition))
+  callbacks.registerCallback("getChildAt", [&parentWidget](Vec2I const& screenPosition) -> Maybe<String> {
+      if (auto widget = parentWidget.getChildAt(screenPosition))
         return widget->fullName();
       else
         return{};
     });
 
-  callbacks.registerCallback("inMember", [parentWidget](String const& widgetName, Vec2I const& screenPosition) -> Maybe<bool> {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("inMember", [&parentWidget](String const& widgetName, Vec2I const& screenPosition) -> Maybe<bool> {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         return widget->inMember(screenPosition);
       else
         return {};
     });
 
-  callbacks.registerCallback("addChild", [parentWidget, reader](String const& widgetName, Json const& newChildConfig, Maybe<String> const& newChildName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName)) {
+  callbacks.registerCallback("addChild", [&parentWidget, reader](String const& widgetName, Json const& newChildConfig, Maybe<String> const& newChildName) {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName)) {
         String name = newChildName.value(toString(Random::randu64()));
         if (auto newChild = reader->makeSingle(name, newChildConfig))
           widget->addChild(name, newChild);
       }
     });
 
-  callbacks.registerCallback("removeAllChildren", [parentWidget](String const& widgetName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("removeAllChildren", [&parentWidget](String const& widgetName) {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         widget->removeAllChildren();
     });
 
-  callbacks.registerCallback("removeChild", [parentWidget](String const& widgetName, String const& childName) {
-      if (auto widget = parentWidget->fetchChild<Widget>(widgetName))
+  callbacks.registerCallback("removeChild", [&parentWidget](String const& widgetName, String const& childName) {
+      if (auto widget = parentWidget.fetchChild<Widget>(widgetName))
         widget->removeChild(childName);
     });
 
   // callbacks only valid for specific widget types
 
-  callbacks.registerCallback("setHint", [parentWidget](String const& widgetName, String const& hint) {
-    if (auto widget = parentWidget->fetchChild(widgetName)) {
+  callbacks.registerCallback("setHint", [&parentWidget](String const& widgetName, String const& hint) {
+    if (auto widget = parentWidget.fetchChild(widgetName)) {
       if (auto textBox = as<TextBoxWidget>(widget))
         textBox->setHint(hint);
     }
   });
 
-  callbacks.registerCallback("getHint", [parentWidget](String const& widgetName) -> Maybe<String> {
-    if (auto widget = parentWidget->fetchChild(widgetName)) {
+  callbacks.registerCallback("getHint", [&parentWidget](String const& widgetName) -> Maybe<String> {
+    if (auto widget = parentWidget.fetchChild(widgetName)) {
       if (auto textBox = as<TextBoxWidget>(widget))
         return textBox->getHint();
     }
     return {};
   });
 
-  callbacks.registerCallback("setCursorPosition", [parentWidget](String const& widgetName, int cursorPosition) {
-    if (auto widget = parentWidget->fetchChild(widgetName)) {
+  callbacks.registerCallback("setCursorPosition", [&parentWidget](String const& widgetName, int cursorPosition) {
+    if (auto widget = parentWidget.fetchChild(widgetName)) {
       if (auto textBox = as<TextBoxWidget>(widget))
         textBox->setCursorPosition(cursorPosition);
     }
   });
 
-  callbacks.registerCallback("getCursorPosition", [parentWidget](String const& widgetName) -> Maybe<int> {
-    if (auto widget = parentWidget->fetchChild(widgetName)) {
+  callbacks.registerCallback("getCursorPosition", [&parentWidget](String const& widgetName) -> Maybe<int> {
+    if (auto widget = parentWidget.fetchChild(widgetName)) {
       if (auto textBox = as<TextBoxWidget>(widget))
         return textBox->getCursorPosition();
     }
     return {};
   });
 
-  callbacks.registerCallback("getText", [parentWidget](String const& widgetName) -> Maybe<String> {
-      if (auto widget = parentWidget->fetchChild(widgetName)) {
+  callbacks.registerCallback("getText", [&parentWidget](String const& widgetName) -> Maybe<String> {
+      if (auto widget = parentWidget.fetchChild(widgetName)) {
         if (auto label = as<LabelWidget>(widget))
           return label->text();
         else if (auto button = as<ButtonWidget>(widget))
@@ -259,8 +259,8 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
       return {};
     });
 
-  callbacks.registerCallback("setText", [parentWidget](String const& widgetName, String const& text) {
-      if (auto widget = parentWidget->fetchChild(widgetName)) {
+  callbacks.registerCallback("setText", [&parentWidget](String const& widgetName, String const& text) {
+      if (auto widget = parentWidget.fetchChild(widgetName)) {
         if (auto label = as<LabelWidget>(widget))
           label->setText(text);
         else if (auto button = as<ButtonWidget>(widget))
@@ -270,8 +270,8 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
       }
     });
 
-  callbacks.registerCallback("setFontColor", [parentWidget](String const& widgetName, Color const& color) {
-      if (auto widget = parentWidget->fetchChild(widgetName)) {
+  callbacks.registerCallback("setFontColor", [&parentWidget](String const& widgetName, Color const& color) {
+      if (auto widget = parentWidget.fetchChild(widgetName)) {
         if (auto label = as<LabelWidget>(widget))
           label->setColor(color);
         else if (auto button = as<ButtonWidget>(widget))
@@ -281,208 +281,208 @@ LuaCallbacks LuaBindings::makeWidgetCallbacks(Widget* parentWidget, GuiReaderPtr
       }
     });
 
-  callbacks.registerCallback("setImage", [parentWidget](String const& widgetName, String const& imagePath) {
-      if (auto image = parentWidget->fetchChild<ImageWidget>(widgetName))
+  callbacks.registerCallback("setImage", [&parentWidget](String const& widgetName, String const& imagePath) {
+      if (auto image = parentWidget.fetchChild<ImageWidget>(widgetName))
         image->setImage(imagePath);
     });
 
-  callbacks.registerCallback("setImageScale", [parentWidget](String const& widgetName, float const& imageScale) {
-      if (auto image = parentWidget->fetchChild<ImageWidget>(widgetName))
+  callbacks.registerCallback("setImageScale", [&parentWidget](String const& widgetName, float const& imageScale) {
+      if (auto image = parentWidget.fetchChild<ImageWidget>(widgetName))
         image->setScale(imageScale);
     });
 
-  callbacks.registerCallback("setImageRotation", [parentWidget](String const& widgetName, float const& imageRotation) {
-      if (auto image = parentWidget->fetchChild<ImageWidget>(widgetName))
+  callbacks.registerCallback("setImageRotation", [&parentWidget](String const& widgetName, float const& imageRotation) {
+      if (auto image = parentWidget.fetchChild<ImageWidget>(widgetName))
         image->setRotation(imageRotation);
     });
 
-  callbacks.registerCallback("setButtonEnabled", [parentWidget](String const& widgetName, bool enabled) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
+  callbacks.registerCallback("setButtonEnabled", [&parentWidget](String const& widgetName, bool enabled) {
+      if (auto button = parentWidget.fetchChild<ButtonWidget>(widgetName))
         button->setEnabled(enabled);
     });
 
-  callbacks.registerCallback("setButtonImage", [parentWidget](String const& widgetName, String const& baseImage) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
+  callbacks.registerCallback("setButtonImage", [&parentWidget](String const& widgetName, String const& baseImage) {
+      if (auto button = parentWidget.fetchChild<ButtonWidget>(widgetName))
         button->setImages(baseImage);
     });
 
-  callbacks.registerCallback("setButtonImages", [parentWidget](String const& widgetName, Json const& imageSet) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
+  callbacks.registerCallback("setButtonImages", [&parentWidget](String const& widgetName, Json const& imageSet) {
+      if (auto button = parentWidget.fetchChild<ButtonWidget>(widgetName))
         button->setImages(imageSet.getString("base"), imageSet.getString("hover", ""), imageSet.getString("pressed", ""), imageSet.getString("disabled", ""));
     });
 
-  callbacks.registerCallback("setButtonCheckedImages", [parentWidget](String const& widgetName, Json const& imageSet) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
+  callbacks.registerCallback("setButtonCheckedImages", [&parentWidget](String const& widgetName, Json const& imageSet) {
+      if (auto button = parentWidget.fetchChild<ButtonWidget>(widgetName))
         button->setCheckedImages(imageSet.getString("base"), imageSet.getString("hover", ""), imageSet.getString("pressed", ""), imageSet.getString("disabled", ""));
     });
 
-  callbacks.registerCallback("setButtonOverlayImage", [parentWidget](String const& widgetName, String const& overlayImage) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
+  callbacks.registerCallback("setButtonOverlayImage", [&parentWidget](String const& widgetName, String const& overlayImage) {
+      if (auto button = parentWidget.fetchChild<ButtonWidget>(widgetName))
         button->setOverlayImage(overlayImage);
     });
 
-  callbacks.registerCallback("getChecked", [parentWidget](String const& widgetName) -> Maybe<bool> {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
+  callbacks.registerCallback("getChecked", [&parentWidget](String const& widgetName) -> Maybe<bool> {
+      if (auto button = parentWidget.fetchChild<ButtonWidget>(widgetName))
         return button->isChecked();
       return {};
     });
 
-  callbacks.registerCallback("setChecked", [parentWidget](String const& widgetName, bool checked) {
-      if (auto button = parentWidget->fetchChild<ButtonWidget>(widgetName))
+  callbacks.registerCallback("setChecked", [&parentWidget](String const& widgetName, bool checked) {
+      if (auto button = parentWidget.fetchChild<ButtonWidget>(widgetName))
         button->setChecked(checked);
     });
 
-  callbacks.registerCallback("getSelectedOption", [parentWidget](String const& widgetName) -> Maybe<int> {
-      if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName))
+  callbacks.registerCallback("getSelectedOption", [&parentWidget](String const& widgetName) -> Maybe<int> {
+      if (auto buttonGroup = parentWidget.fetchChild<ButtonGroupWidget>(widgetName))
         return buttonGroup->checkedId();
       return {};
     });
 
-  callbacks.registerCallback("getSelectedData", [parentWidget](String const& widgetName) -> Json {
-      if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName)) {
+  callbacks.registerCallback("getSelectedData", [&parentWidget](String const& widgetName) -> Json {
+      if (auto buttonGroup = parentWidget.fetchChild<ButtonGroupWidget>(widgetName)) {
         if (auto button = buttonGroup->checkedButton())
           return button->data();
       }
       return {};
     });
 
-  callbacks.registerCallback("setSelectedOption", [parentWidget](String const& widgetName, Maybe<int> index) {
-      if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName))
+  callbacks.registerCallback("setSelectedOption", [&parentWidget](String const& widgetName, Maybe<int> index) {
+      if (auto buttonGroup = parentWidget.fetchChild<ButtonGroupWidget>(widgetName))
         buttonGroup->select(index.value(ButtonGroup::NoButton));
     });
 
-  callbacks.registerCallback("setOptionEnabled", [parentWidget](String const& widgetName, int index, bool enabled) {
-      if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName)) {
+  callbacks.registerCallback("setOptionEnabled", [&parentWidget](String const& widgetName, int index, bool enabled) {
+      if (auto buttonGroup = parentWidget.fetchChild<ButtonGroupWidget>(widgetName)) {
         if (auto button = buttonGroup->button(index))
           button->setEnabled(enabled);
       }
     });
 
-  callbacks.registerCallback("setOptionVisible", [parentWidget](String const& widgetName, int index, bool visible) {
-      if (auto buttonGroup = parentWidget->fetchChild<ButtonGroupWidget>(widgetName)) {
+  callbacks.registerCallback("setOptionVisible", [&parentWidget](String const& widgetName, int index, bool visible) {
+      if (auto buttonGroup = parentWidget.fetchChild<ButtonGroupWidget>(widgetName)) {
         if (auto button = buttonGroup->button(index))
           button->setVisibility(visible);
       }
     });
 
-  callbacks.registerCallback("setProgress", [parentWidget](String const& widgetName, float const& value) {
-      if (auto progress = parentWidget->fetchChild<ProgressWidget>(widgetName))
+  callbacks.registerCallback("setProgress", [&parentWidget](String const& widgetName, float const& value) {
+      if (auto progress = parentWidget.fetchChild<ProgressWidget>(widgetName))
         progress->setCurrentProgressLevel(value);
     });
 
-  callbacks.registerCallback("setSliderEnabled", [parentWidget](String const& widgetName, bool enabled) {
-      if (auto slider = parentWidget->fetchChild<SliderBarWidget>(widgetName))
+  callbacks.registerCallback("setSliderEnabled", [&parentWidget](String const& widgetName, bool enabled) {
+      if (auto slider = parentWidget.fetchChild<SliderBarWidget>(widgetName))
         slider->setEnabled(enabled);
     });
 
-  callbacks.registerCallback("getSliderValue", [parentWidget](String const& widgetName) -> Maybe<int> {
-      if (auto slider = parentWidget->fetchChild<SliderBarWidget>(widgetName))
+  callbacks.registerCallback("getSliderValue", [&parentWidget](String const& widgetName) -> Maybe<int> {
+      if (auto slider = parentWidget.fetchChild<SliderBarWidget>(widgetName))
         return slider->val();
       return {};
     });
 
-  callbacks.registerCallback("setSliderValue", [parentWidget](String const& widgetName, int newValue) {
-      if (auto slider = parentWidget->fetchChild<SliderBarWidget>(widgetName))
+  callbacks.registerCallback("setSliderValue", [&parentWidget](String const& widgetName, int newValue) {
+      if (auto slider = parentWidget.fetchChild<SliderBarWidget>(widgetName))
         return slider->setVal(newValue);
     });
 
-  callbacks.registerCallback("setSliderRange", [parentWidget](String const& widgetName, int newMin, int newMax, Maybe<int> newDelta) {
-      if (auto slider = parentWidget->fetchChild<SliderBarWidget>(widgetName))
+  callbacks.registerCallback("setSliderRange", [&parentWidget](String const& widgetName, int newMin, int newMax, Maybe<int> newDelta) {
+      if (auto slider = parentWidget.fetchChild<SliderBarWidget>(widgetName))
         return slider->setRange(newMin, newMax, newDelta.value(1));
     });
 
-  callbacks.registerCallback("clearListItems", [parentWidget](String const& widgetName) {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
+  callbacks.registerCallback("clearListItems", [&parentWidget](String const& widgetName) {
+      if (auto list = parentWidget.fetchChild<ListWidget>(widgetName))
         list->clear();
     });
 
-  callbacks.registerCallback("addListItem", [parentWidget](String const& widgetName) -> Maybe<String> {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName)) {
+  callbacks.registerCallback("addListItem", [&parentWidget](String const& widgetName) -> Maybe<String> {
+      if (auto list = parentWidget.fetchChild<ListWidget>(widgetName)) {
         auto newItem = list->addItem();
         return newItem->name();
       }
       return {};
     });
 
-  callbacks.registerCallback("removeListItem", [parentWidget](String const& widgetName, size_t at) {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
+  callbacks.registerCallback("removeListItem", [&parentWidget](String const& widgetName, size_t at) {
+      if (auto list = parentWidget.fetchChild<ListWidget>(widgetName))
         list->removeItem(at);
     });
 
-  callbacks.registerCallback("getListSelected", [parentWidget](String const& widgetName) -> Maybe<String> {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
+  callbacks.registerCallback("getListSelected", [&parentWidget](String const& widgetName) -> Maybe<String> {
+      if (auto list = parentWidget.fetchChild<ListWidget>(widgetName))
         if (list->selectedItem() != NPos)
           return list->selectedWidget()->name();
       return {};
     });
 
-  callbacks.registerCallback("setListSelected", [parentWidget](String const& widgetName, String const& selectedName) {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName))
+  callbacks.registerCallback("setListSelected", [&parentWidget](String const& widgetName, String const& selectedName) {
+      if (auto list = parentWidget.fetchChild<ListWidget>(widgetName))
         if (auto selected = list->fetchChild(selectedName))
           list->setSelectedWidget(selected);
     });
 
-  callbacks.registerCallback("registerMemberCallback", [parentWidget](String const& widgetName, String const& name, LuaFunction callback) {
-      if (auto list = parentWidget->fetchChild<ListWidget>(widgetName)){
+  callbacks.registerCallback("registerMemberCallback", [&parentWidget](String const& widgetName, String const& name, LuaFunction callback) {
+      if (auto list = parentWidget.fetchChild<ListWidget>(widgetName)){
         list->registerMemberCallback(name, [callback](Widget* widget) {
             callback.invoke(widget->name(), widget->data());
           });
       }
     });
 
-  callbacks.registerCallback("itemGridItems", [parentWidget](String const& widgetName) {
-      if (auto itemGrid = parentWidget->fetchChild<ItemGridWidget>(widgetName))
+  callbacks.registerCallback("itemGridItems", [&parentWidget](String const& widgetName) {
+      if (auto itemGrid = parentWidget.fetchChild<ItemGridWidget>(widgetName))
         return itemGrid->bag()->toJson();
       return Json();
     });
 
-  callbacks.registerCallback("itemSlotItem", [parentWidget](String const& widgetName) -> Maybe<Json> {
-      if (auto itemSlot = parentWidget->fetchChild<ItemSlotWidget>(widgetName)) {
+  callbacks.registerCallback("itemSlotItem", [&parentWidget](String const& widgetName) -> Maybe<Json> {
+      if (auto itemSlot = parentWidget.fetchChild<ItemSlotWidget>(widgetName)) {
         if (itemSlot->item())
           return itemSlot->item()->descriptor().toJson();
       }
       return {};
     });
 
-  callbacks.registerCallback("setItemSlotItem", [parentWidget](String const& widgetName, Json const& item) {
-      if (auto itemSlot = parentWidget->fetchChild<ItemSlotWidget>(widgetName)) {
-        auto const& itemDb = parentWidget->context()->itemDatabase();
+  callbacks.registerCallback("setItemSlotItem", [&parentWidget](String const& widgetName, Json const& item) {
+      if (auto itemSlot = parentWidget.fetchChild<ItemSlotWidget>(widgetName)) {
+        auto const& itemDb = parentWidget.context().itemDatabase();
         itemSlot->setItem(itemDb->fromJson(item));
       }
     });
 
-  callbacks.registerCallback("setItemSlotProgress", [parentWidget](String const& widgetName, float progress) {
-      if (auto itemSlot = parentWidget->fetchChild<ItemSlotWidget>(widgetName)) {
+  callbacks.registerCallback("setItemSlotProgress", [&parentWidget](String const& widgetName, float progress) {
+      if (auto itemSlot = parentWidget.fetchChild<ItemSlotWidget>(widgetName)) {
         itemSlot->setProgress(progress);
       }
     });
 
-  callbacks.registerCallback("addFlowImage", [parentWidget](String const& widgetName, String const& childName, String const& image) {
-      if (auto flow = parentWidget->fetchChild<FlowLayout>(widgetName)) {
-        WidgetPtr newChild = make_shared<ImageWidget>(image);
+  callbacks.registerCallback("addFlowImage", [&parentWidget](String const& widgetName, String const& childName, String const& image) {
+      if (auto flow = parentWidget.fetchChild<FlowLayout>(widgetName)) {
+        WidgetPtr newChild = make_shared<ImageWidget>(parentWidget.context(), image);
         flow->addChild(childName, newChild);
       }
     });
 
-  callbacks.registerCallback("setImageStretchSet", [parentWidget](String const& widgetName, Json const& imageSet) {
-      if (auto imageStretch = parentWidget->fetchChild<ImageStretchWidget>(widgetName)) {
+  callbacks.registerCallback("setImageStretchSet", [&parentWidget](String const& widgetName, Json const& imageSet) {
+      if (auto imageStretch = parentWidget.fetchChild<ImageStretchWidget>(widgetName)) {
         imageStretch->setImageStretchSet(imageSet.getString("begin", ""), imageSet.getString("inner", ""), imageSet.getString("end", ""));
       }
     });
 
-  callbacks.registerCallback("getScrollOffset", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
-    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
+  callbacks.registerCallback("getScrollOffset", [&parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+    if (auto scrollArea = parentWidget.fetchChild<ScrollArea>(widgetName))
         return scrollArea->scrollOffset();
       return {};
   });
 
-  callbacks.registerCallback("setScrollOffset", [parentWidget](String const& widgetName, Vec2I const& offset) {
-    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
+  callbacks.registerCallback("setScrollOffset", [&parentWidget](String const& widgetName, Vec2I const& offset) {
+    if (auto scrollArea = parentWidget.fetchChild<ScrollArea>(widgetName))
         scrollArea->scrollAreaBy(offset - scrollArea->scrollOffset());
   });
 
-  callbacks.registerCallback("getMaxScrollPosition", [parentWidget](String const& widgetName) -> Maybe<Vec2I> {
-    if (auto scrollArea = parentWidget->fetchChild<ScrollArea>(widgetName))
+  callbacks.registerCallback("getMaxScrollPosition", [&parentWidget](String const& widgetName) -> Maybe<Vec2I> {
+    if (auto scrollArea = parentWidget.fetchChild<ScrollArea>(widgetName))
         return scrollArea->maxScrollPosition();
       return {};
   });

@@ -3,28 +3,28 @@
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeTeamClientCallbacks(TeamClient* teamClient) {
+LuaCallbacks LuaBindings::makeTeamClientCallbacks(TeamClient& teamClient) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<void>("isMemberOfTeam", [teamClient]() { return teamClient->isMemberOfTeam(); });
-  callbacks.registerCallbackWithSignature<void, String>("invitePlayer", [teamClient](String const& playerName) { return teamClient->invitePlayer(playerName); });
+  callbacks.registerCallbackWithSignature<void>("isMemberOfTeam", [&teamClient]() { return teamClient.isMemberOfTeam(); });
+  callbacks.registerCallbackWithSignature<void, String>("invitePlayer", [&teamClient](String const& playerName) { return teamClient.invitePlayer(playerName); });
 
-  callbacks.registerCallback("isTeamLeader", [teamClient](Maybe<String>  const& playerUuid) -> bool {
+  callbacks.registerCallback("isTeamLeader", [&teamClient](Maybe<String>  const& playerUuid) -> bool {
       if (playerUuid)
-        return teamClient->isTeamLeader(Uuid(*playerUuid));
-      return teamClient->isTeamLeader();
+        return teamClient.isTeamLeader(Uuid(*playerUuid));
+      return teamClient.isTeamLeader();
     });
-  callbacks.registerCallback("currentTeam", [teamClient]() -> Maybe<String> {
-      auto teamUuid = teamClient->currentTeam();
+  callbacks.registerCallback("currentTeam", [&teamClient]() -> Maybe<String> {
+      auto teamUuid = teamClient.currentTeam();
       if (teamUuid)
         return teamUuid->hex();
       return {};
     });
-  callbacks.registerCallback("makeLeader", [teamClient](String const& playerUuid) {
-      teamClient->makeLeader(Uuid(playerUuid));
+  callbacks.registerCallback("makeLeader", [&teamClient](String const& playerUuid) {
+      teamClient.makeLeader(Uuid(playerUuid));
     });
-  callbacks.registerCallback("removeFromTeam", [teamClient](String const& playerUuid) {
-      teamClient->removeFromTeam(Uuid(playerUuid));
+  callbacks.registerCallback("removeFromTeam", [&teamClient](String const& playerUuid) {
+      teamClient.removeFromTeam(Uuid(playerUuid));
     });
 
   return callbacks;

@@ -8,7 +8,8 @@ class LabelWidget;
 using LabelWidgetPtr = SharedPtr<LabelWidget>;
 class LabelWidget : public Widget {
 public:
-  LabelWidget(String text = String(),
+  LabelWidget(GuiContext& context,
+      String text = String(),
       Color const& color = Color::White,
       HorizontalAnchor const& hAnchor = HorizontalAnchor::LeftAnchor,
       VerticalAnchor const& vAnchor = VerticalAnchor::BottomAnchor,

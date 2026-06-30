@@ -4,6 +4,7 @@
 #include "StarThread.hpp"
 #include "StarParticle.hpp"
 #include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
@@ -15,7 +16,7 @@ using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
 
 class ParticleConfig {
 public:
-  ParticleConfig(Json const& config, AssetsConstPtr assets);
+  ParticleConfig(Json const& config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   String const& kind();
   Particle instance();
@@ -28,7 +29,7 @@ private:
 
 class ParticleDatabase {
 public:
-  ParticleDatabase(AssetsConstPtr assets);
+  ParticleDatabase(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   ParticleConfigPtr config(String const& kind) const;
 
@@ -43,6 +44,7 @@ public:
 
 private:
   AssetsConstPtr m_assets;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   StringMap<ParticleConfigPtr> m_configs;
 };
 

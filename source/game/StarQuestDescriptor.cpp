@@ -52,10 +52,9 @@ QuestParamDetail questParamDetailFromJson(Json const& json) {
 
   } else if (type == "entity") {
     return QuestEntity{
-        json.optString("uniqueId"),
-        json.optString("species"),
-        json.optString("gender").apply([](String const& gender) { return GenderNames.getLeft(gender); })
-      };
+      json.optString("uniqueId"),
+      json.optString("species"),
+      json.optString("gender").apply([](String const& gender) { return GenderNames.getLeft(gender); })};
 
   } else if (type == "location") {
     return QuestLocation{json.optString("uniqueId"), jsonToRectF(json.get("region"))};
@@ -65,14 +64,13 @@ QuestParamDetail questParamDetailFromJson(Json const& json) {
 
   } else if (type == "npcType") {
     return QuestNpcType{
-        json.getString("species"),
-        json.getString("typeName"),
-        json.getObject("parameters", JsonObject{}),
-        json.optUInt("seed")
-    };
+      json.getString("species"),
+      json.getString("typeName"),
+      json.getObject("parameters", JsonObject{}),
+      json.optUInt("seed")};
 
   } else if (type == "coordinate") {
-    return QuestCoordinate{ CelestialCoordinate(json.get("coordinate")) };
+    return QuestCoordinate{CelestialCoordinate(json.get("coordinate"))};
 
   } else if (type == "json") {
     return json;
@@ -87,26 +85,28 @@ QuestParamDetail questParamDetailFromJson(Json const& json) {
 
 QuestParam QuestParam::fromJson(Json const& json) {
   return QuestParam{
-      questParamDetailFromJson(json), json.optString("name"), json.opt("portrait"), json.optString("indicator")};
+    questParamDetailFromJson(json), json.optString("name"), json.opt("portrait"), json.optString("indicator")};
 }
 
-QuestParamDetail questParamDetailDiskLoad(Json const& json) {
+QuestParamDetail questParamDetailDiskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase) {
   String type = json.getString("type");
   if (type == "item") {
-    ItemDescriptor itemDescriptor = ItemDescriptor::loadStore(json.get("item"));
+    ItemDescriptor itemDescriptor = ItemDescriptor::loadStore(json.get("item"), versioningDatabase);
     return QuestItem{itemDescriptor.name(), itemDescriptor.parameters()};
 
   } else if (type == "itemList") {
-    return QuestItemList(json.getArray("items").transformed(&ItemDescriptor::loadStore));
+    return QuestItemList(json.getArray("items").transformed([versioningDatabase](Json const& item) {
+      return ItemDescriptor::loadStore(item, versioningDatabase);
+    }));
 
   } else {
     return questParamDetailFromJson(json);
   }
 }
 
-QuestParam QuestParam::diskLoad(Json const& json) {
+QuestParam QuestParam::diskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase) {
   return QuestParam{
-      questParamDetailDiskLoad(json), json.optString("name"), json.opt("portrait"), json.optString("indicator")};
+    questParamDetailDiskLoad(json, versioningDatabase), json.optString("name"), json.opt("portrait"), json.optString("indicator")};
 }
 
 Json questParamDetailToJson(QuestParamDetail const& detail) {
@@ -125,40 +125,37 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
   } else if (detail.is<QuestEntity>()) {
     QuestEntity entity = detail.get<QuestEntity>();
     return JsonObject{
-        {"type", "entity"},
-        {"uniqueId", jsonFromMaybe(entity.uniqueId)},
-        {"species", jsonFromMaybe(entity.species)},
-        {"gender", jsonFromMaybe(entity.gender.apply([](Gender gender) { return GenderNames.getRight(gender); }))}
-      };
+      {"type", "entity"},
+      {"uniqueId", jsonFromMaybe(entity.uniqueId)},
+      {"species", jsonFromMaybe(entity.species)},
+      {"gender", jsonFromMaybe(entity.gender.apply([](Gender gender) { return GenderNames.getRight(gender); }))}};
 
   } else if (detail.is<QuestLocation>()) {
     QuestLocation location = detail.get<QuestLocation>();
     return JsonObject{
-        {"type", "location"},
-        {"uniqueId", jsonFromMaybe<String>(location.uniqueId)},
-        {"region", jsonFromRectF(location.region)}
-      };
+      {"type", "location"},
+      {"uniqueId", jsonFromMaybe<String>(location.uniqueId)},
+      {"region", jsonFromRectF(location.region)}};
 
   } else if (detail.is<QuestMonsterType>()) {
     QuestMonsterType monsterType = detail.get<QuestMonsterType>();
     return JsonObject{
-        {"type", "monsterType"}, {"typeName", monsterType.typeName}, {"parameters", monsterType.parameters}};
+      {"type", "monsterType"},
+      {"typeName", monsterType.typeName},
+      {"parameters", monsterType.parameters}};
 
-  }
-  else if (detail.is<QuestNpcType>()) {
+  } else if (detail.is<QuestNpcType>()) {
     QuestNpcType npcType = detail.get<QuestNpcType>();
-    return JsonObject{ {"type", "npcType"},
-        {"species", npcType.species},
-        {"typeName", npcType.typeName},
-        {"parameters", npcType.parameters},
-        {"seed", jsonFromMaybe(npcType.seed)}
-    };
+    return JsonObject{{"type", "npcType"},
+                      {"species", npcType.species},
+                      {"typeName", npcType.typeName},
+                      {"parameters", npcType.parameters},
+                      {"seed", jsonFromMaybe(npcType.seed)}};
 
   } else if (detail.is<QuestCoordinate>()) {
     return JsonObject{
       {"type", "coordinate"},
-      {"coordinate", detail.get<QuestCoordinate>().coordinate.toJson()}
-    };
+      {"coordinate", detail.get<QuestCoordinate>().coordinate.toJson()}};
 
   } else if (detail.is<QuestJson>()) {
     return detail.get<QuestJson>().set("type", "json");
@@ -172,28 +169,30 @@ Json questParamDetailToJson(QuestParamDetail const& detail) {
 Json QuestParam::toJson() const {
   Json detailJson = questParamDetailToJson(detail);
   return detailJson.set("name", jsonFromMaybe(name))
-      .set("portrait", jsonFromMaybe(portrait))
-      .set("indicator", jsonFromMaybe(indicator));
+    .set("portrait", jsonFromMaybe(portrait))
+    .set("indicator", jsonFromMaybe(indicator));
 }
 
-Json questParamDetailDiskStore(QuestParamDetail const& detail) {
+Json questParamDetailDiskStore(QuestParamDetail const& detail, VersioningDatabaseConstPtr versioningDatabase) {
   if (detail.is<QuestItem>()) {
     QuestItem item = detail.get<QuestItem>();
-    return JsonObject{{"type", "item"}, {"item", item.descriptor().diskStore()}};
+    return JsonObject{{"type", "item"}, {"item", item.descriptor().diskStore(versioningDatabase)}};
 
   } else if (detail.is<QuestItemList>()) {
     List<ItemDescriptor> itemList = detail.get<QuestItemList>();
-    return JsonObject{{"type", "itemList"}, {"items", itemList.transformed(mem_fn(&ItemDescriptor::diskStore))}};
+    return JsonObject{{"type", "itemList"}, {"items", itemList.transformed([versioningDatabase](ItemDescriptor const& item) {
+                                               return item.diskStore(versioningDatabase);
+                                             })}};
   } else {
     return questParamDetailToJson(detail);
   }
 }
 
-Json QuestParam::diskStore() const {
-  Json detailJson = questParamDetailDiskStore(detail);
+Json QuestParam::diskStore(VersioningDatabaseConstPtr versioningDatabase) const {
+  Json detailJson = questParamDetailDiskStore(detail, versioningDatabase);
   return detailJson.set("name", jsonFromMaybe(name))
-      .set("portrait", jsonFromMaybe(portrait))
-      .set("indicator", jsonFromMaybe(indicator));
+    .set("portrait", jsonFromMaybe(portrait))
+    .set("indicator", jsonFromMaybe(indicator));
 }
 
 bool QuestParam::operator==(QuestParam const& rhs) const {
@@ -205,32 +204,33 @@ QuestDescriptor QuestDescriptor::fromJson(Json const& json) {
     return {json.toString(), json.toString(), {}, Random::randu64()};
   } else {
     return {json.getString("questId"),
-        json.getString("templateId"),
-        questParamsFromJson(json.get("parameters")),
-        json.getUInt("seed", Random::randu64())};
+            json.getString("templateId"),
+            questParamsFromJson(json.get("parameters")),
+            json.getUInt("seed", Random::randu64())};
   }
 }
 
-QuestDescriptor QuestDescriptor::diskLoad(Json const& spec) {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+QuestDescriptor QuestDescriptor::diskLoad(Json const& spec, VersioningDatabaseConstPtr versioningDatabase) {
   Json json = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "QuestDescriptor");
   return {json.getString("questId"),
-      json.getString("templateId"),
-      questParamsDiskLoad(json.get("parameters")),
-      json.getUInt("seed", Random::randu64())};
+          json.getString("templateId"),
+          questParamsDiskLoad(json.get("parameters"), versioningDatabase),
+          json.getUInt("seed", Random::randu64())};
 }
 
 Json QuestDescriptor::toJson() const {
   return JsonObject{
-      {"questId", questId}, {"templateId", templateId}, {"parameters", questParamsToJson(parameters)}, {"seed", seed}};
+    {"questId", questId},
+    {"templateId", templateId},
+    {"parameters", questParamsToJson(parameters)},
+    {"seed", seed}};
 }
 
-Json QuestDescriptor::diskStore() const {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+Json QuestDescriptor::diskStore(VersioningDatabaseConstPtr versioningDatabase) const {
   auto res = JsonObject{{"questId", questId},
-      {"templateId", templateId},
-      {"parameters", questParamsDiskStore(parameters)},
-      {"seed", seed}};
+                        {"templateId", templateId},
+                        {"parameters", questParamsDiskStore(parameters, versioningDatabase)},
+                        {"seed", seed}};
   return versioningDatabase->makeCurrentVersionedJson("QuestDescriptor", res).toJson();
 }
 
@@ -241,28 +241,31 @@ bool QuestDescriptor::operator==(QuestDescriptor const& rhs) const {
 QuestArcDescriptor QuestArcDescriptor::fromJson(Json const& json) {
   if (json.isType(Json::Type::Object) && json.contains("quests")) {
     return QuestArcDescriptor{
-        json.getArray("quests").transformed(&QuestDescriptor::fromJson), json.optString("stagehandUniqueId")};
+      json.getArray("quests").transformed(&QuestDescriptor::fromJson), json.optString("stagehandUniqueId")};
   } else {
     return QuestArcDescriptor{{QuestDescriptor::fromJson(json)}, {}};
   }
 }
 
-QuestArcDescriptor QuestArcDescriptor::diskLoad(Json const& spec) {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
+QuestArcDescriptor QuestArcDescriptor::diskLoad(Json const& spec, VersioningDatabaseConstPtr versioningDatabase) {
   Json json = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "QuestArcDescriptor");
   return QuestArcDescriptor{
-      json.getArray("quests").transformed(&QuestDescriptor::diskLoad), json.optString("stagehandUniqueId")};
+    json.getArray("quests").transformed([versioningDatabase](Json const& quest) {
+      return QuestDescriptor::diskLoad(quest, versioningDatabase);
+    }),
+    json.optString("stagehandUniqueId")};
 }
 
 Json QuestArcDescriptor::toJson() const {
   return JsonObject{{"quests", quests.transformed(mem_fn(&QuestDescriptor::toJson))},
-      {"stagehandUniqueId", jsonFromMaybe(stagehandUniqueId)}};
+                    {"stagehandUniqueId", jsonFromMaybe(stagehandUniqueId)}};
 }
 
-Json QuestArcDescriptor::diskStore() const {
-  auto versioningDatabase = Root::singleton().versioningDatabase();
-  auto res = JsonObject{{"quests", quests.transformed(mem_fn(&QuestDescriptor::diskStore))},
-      {"stagehandUniqueId", jsonFromMaybe(stagehandUniqueId)}};
+Json QuestArcDescriptor::diskStore(VersioningDatabaseConstPtr versioningDatabase) const {
+  auto res = JsonObject{{"quests", quests.transformed([versioningDatabase](QuestDescriptor const& quest) {
+                           return quest.diskStore(versioningDatabase);
+                         })},
+                        {"stagehandUniqueId", jsonFromMaybe(stagehandUniqueId)}};
 
   return versioningDatabase->makeCurrentVersionedJson("QuestArcDescriptor", res).toJson();
 }
@@ -292,33 +295,37 @@ String questParamText(QuestParam const& parameter, ItemDatabaseConstPtr itemData
 }
 
 template <typename Fun,
-    typename ArgType = typename FunctionTraits<Fun>::template Arg<0>,
-    typename RetType = typename FunctionTraits<Fun>::Return>
+          typename ArgType = typename FunctionTraits<Fun>::template Arg<0>,
+          typename RetType = typename FunctionTraits<Fun>::Return>
 StringMap<RetType> transformedMapValues(StringMap<ArgType> const& map, Fun fun) {
   return StringMap<RetType>::from(map.pairs().transformed(
-      [fun](pair<String, ArgType> entry) { return make_pair(entry.first, fun(entry.second)); }));
+    [fun](pair<String, ArgType> entry) { return make_pair(entry.first, fun(entry.second)); }));
 }
 
 StringMap<String> questParamTags(StringMap<QuestParam> const& parameters, ItemDatabaseConstPtr itemDatabase) {
   return transformedMapValues(parameters, [itemDatabase](QuestParam const& parameter) {
-      return questParamText(parameter, itemDatabase);
-    });
+    return questParamText(parameter, itemDatabase);
+  });
 }
 
 StringMap<QuestParam> questParamsFromJson(Json const& json) {
   return transformedMapValues(json.toObject(), &QuestParam::fromJson);
 }
 
-StringMap<QuestParam> questParamsDiskLoad(Json const& json) {
-  return transformedMapValues(json.toObject(), &QuestParam::diskLoad);
+StringMap<QuestParam> questParamsDiskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase) {
+  return transformedMapValues(json.toObject(), [versioningDatabase](Json const& quest) {
+    return QuestParam::diskLoad(quest, versioningDatabase);
+  });
 }
 
 Json questParamsToJson(StringMap<QuestParam> const& parameters) {
   return transformedMapValues(parameters, [](QuestParam const& quest) { return quest.toJson(); });
 }
 
-Json questParamsDiskStore(StringMap<QuestParam> const& parameters) {
-  return transformedMapValues(parameters, [](QuestParam const& quest) { return quest.diskStore(); });
+Json questParamsDiskStore(StringMap<QuestParam> const& parameters, VersioningDatabaseConstPtr versioningDatabase) {
+  return transformedMapValues(parameters, [versioningDatabase](QuestParam const& quest) {
+    return quest.diskStore(versioningDatabase);
+  });
 }
 
 DataStream& operator>>(DataStream& ds, QuestItem& item) {
@@ -441,4 +448,4 @@ DataStream& operator<<(DataStream& ds, QuestArcDescriptor const& questArc) {
   return ds;
 }
 
-}
+}// namespace Star

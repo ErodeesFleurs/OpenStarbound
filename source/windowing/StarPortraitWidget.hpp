@@ -12,8 +12,8 @@ using PortraitWidgetPtr = SharedPtr<PortraitWidget>;
 
 class PortraitWidget : public Widget {
 public:
-  PortraitWidget(PortraitEntityPtr entity, PortraitMode mode = PortraitMode::Full);
-  PortraitWidget();
+  PortraitWidget(GuiContext& context, PortraitEntityPtr entity, PortraitMode mode = PortraitMode::Full);
+  explicit PortraitWidget(GuiContext& context);
   virtual ~PortraitWidget() = default;
 
   void setEntity(PortraitEntityPtr entity);

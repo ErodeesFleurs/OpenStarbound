@@ -9,14 +9,16 @@
 
 namespace Star {
 
-BiomeDatabase::BiomeDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, FunctionDatabaseConstPtr functionDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
-  : m_assets(std::move(assets)), m_materialDatabase(std::move(materialDatabase)), m_functionDatabase(std::move(functionDatabase)), m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
+BiomeDatabase::BiomeDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, FunctionDatabaseConstPtr functionDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, PlantDatabaseConstPtr plantDatabase)
+  : m_assets(std::move(assets)), m_materialDatabase(std::move(materialDatabase)), m_functionDatabase(std::move(functionDatabase)), m_imageMetadataDatabase(std::move(imageMetadataDatabase)), m_plantDatabase(std::move(plantDatabase)) {
   if (!m_assets)
     throw BiomeException("BiomeDatabase requires assets service");
   if (!m_materialDatabase)
     throw BiomeException("BiomeDatabase requires material database service");
   if (!m_functionDatabase)
     throw BiomeException("BiomeDatabase requires function database service");
+  if (!m_plantDatabase)
+    throw BiomeException("BiomeDatabase requires plant database service");
 
   m_spawnGroups = m_assets->json("/spawning.config:spawnGroups");
 
@@ -133,7 +135,7 @@ WeatherType BiomeDatabase::weatherType(String const& name) const {
   auto config = m_weathers.get(name);
 
   try {
-    return WeatherType(m_assets, config.parameters, config.path);
+    return WeatherType(m_assets, m_imageMetadataDatabase, config.parameters, config.path);
   } catch (MapException const& e) {
     throw BiomeException(strf("Required key not found in weather config {}", config.path), e);
   }
@@ -212,7 +214,7 @@ BiomePlaceables BiomeDatabase::readBiomePlaceables(Json const& config, uint64_t 
   placeables.ceilingGrassModDensity = config.getFloat("ceilingGrassModDensity", 0);
 
   for (auto const& itemConfig : config.getArray("items", {}))
-    placeables.itemDistributions.append(BiomeItemDistribution(m_assets, itemConfig, rand.randu64(), biomeHueShift));
+    placeables.itemDistributions.append(BiomeItemDistribution(m_assets, m_plantDatabase, itemConfig, rand.randu64(), biomeHueShift));
 
   return placeables;
 }

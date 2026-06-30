@@ -7,8 +7,6 @@
 
 namespace Star {
 
-GuiContext* GuiContext::s_singleton;
-
 namespace {
 
 template <typename Service>
@@ -20,23 +18,7 @@ Service requireGuiContextService(Service service, char const* name) {
 
 }
 
-GuiContext* GuiContext::singletonPtr() {
-  return s_singleton;
-}
-
-GuiContext& GuiContext::singleton() {
-  if (!s_singleton)
-    throw GuiContextException("GuiContext::singleton() called with no GuiContext instance available");
-  else
-    return *s_singleton;
-}
-
 GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, GuiContextServices services) {
-  if (s_singleton)
-    throw GuiContextException("Singleton GuiContext has been constructed twice");
-
-  s_singleton = this;
-
   m_mixer = std::move(mixer);
   m_applicationController = std::move(appController);
   m_assets = requireGuiContextService(std::move(services.assets), "assets");
@@ -44,6 +26,7 @@ GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, G
   m_imageMetadata = requireGuiContextService(std::move(services.imageMetadata), "image metadata");
   m_itemDatabase = requireGuiContextService(std::move(services.itemDatabase), "item database");
   m_registerReloadListener = requireGuiContextService(std::move(services.registerReloadListener), "reload listener registrar");
+  m_withClipboardUnlock = requireGuiContextService(std::move(services.withClipboardUnlock), "clipboard unlock");
 
   m_interfaceScale = 1;
 
@@ -52,9 +35,7 @@ GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, G
   refreshKeybindings();
 }
 
-GuiContext::~GuiContext() {
-  s_singleton = nullptr;
-}
+GuiContext::~GuiContext() = default;
 
 void GuiContext::renderInit(RendererPtr renderer) {
   m_renderer = std::move(renderer);
@@ -493,6 +474,10 @@ bool GuiContext::setClipboardImage(Image const& image, ByteArray* png, String co
 
 bool GuiContext::setClipboardFile(String const& path) {
   return m_applicationController->setClipboardFile(path);
+}
+
+void GuiContext::withClipboardUnlock(function<void()> callback) {
+  m_withClipboardUnlock(std::move(callback));
 }
 
 float GuiContext::getDisplayScale() const {

@@ -36,11 +36,12 @@ namespace Star {
 
 AiInterface::AiInterface(UniverseClientPtr client,
     CinematicPtr cinematic,
-    MainInterfacePaneManager* paneManager,
-    AiInterfaceServices services) {
+    MainInterfacePaneManager& paneManager,
+    AiInterfaceServices services)
+  : Pane(services.guiContext),
+    m_paneManager(paneManager) {
   m_client = client;
   m_cinematic = cinematic;
-  m_paneManager = paneManager;
   m_assets = std::move(services.assets);
   if (!m_assets)
     throw StarException("AiInterface requires assets service");
@@ -52,7 +53,7 @@ AiInterface::AiInterface(UniverseClientPtr client,
   if (!m_aiDatabase)
     throw StarException("AiInterface requires ai database service");
 
-  GuiReader reader;
+  GuiReader reader(context());
   reader.registerCallback("close", [this](Widget*) { dismiss(); });
   reader.registerCallback("missionItemList", [this](Widget*) { selectMission(); });
   reader.registerCallback("startMission", [this](Widget*) { startMission(); });
@@ -128,7 +129,7 @@ void AiInterface::update(float dt) {
       if (!m_chatterSound || m_chatterSound->finished()) {
         m_chatterSound = make_shared<AudioInstance>(*m_assets->audio(m_assets->json("/interface/ai/ai.config:chatterSound").toString()));
         m_chatterSound->setLoops(-1);
-        GuiContext::singleton().playAudio(m_chatterSound);
+        context().playAudio(m_chatterSound);
       }
     } else {
       setFaceAnimation("idle");

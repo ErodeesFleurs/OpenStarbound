@@ -1,23 +1,16 @@
 #include "StarRootBase.hpp"
 
 namespace Star {
-  atomic<RootBase*> RootBase::s_singleton;
-
-  RootBase* RootBase::singletonPtr() {
-    return s_singleton.load();
-  }
-
-  RootBase& RootBase::singleton() {
-    auto ptr = s_singleton.load();
-    if (!ptr)
-      throw RootException("RootBase::singleton() called with no Root instance available");
-    else
-      return *ptr;
-  }
+  atomic<RootBase*> RootBase::s_activeRoot;
 
   RootBase::RootBase() {
     RootBase* oldRoot = nullptr;
-    if (!s_singleton.compare_exchange_strong(oldRoot, this))
-      throw RootException("Singleton Root has been constructed twice");
+    if (!s_activeRoot.compare_exchange_strong(oldRoot, this))
+      throw RootException("Root has been constructed twice");
+  }
+
+  RootBase::~RootBase() {
+    RootBase* activeRoot = this;
+    s_activeRoot.compare_exchange_strong(activeRoot, nullptr);
   }
 }

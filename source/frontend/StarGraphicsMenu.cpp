@@ -13,8 +13,9 @@
 
 namespace Star {
 
-GraphicsMenu::GraphicsMenu(PaneManager* manager, UniverseClientPtr client, GraphicsMenuServices services)
-  : m_paneManager(manager),
+GraphicsMenu::GraphicsMenu(PaneManager& manager, UniverseClientPtr client, GraphicsMenuServices services)
+  : Pane(services.guiContext),
+    m_paneManager(manager),
     m_assets(std::move(services.assets)),
     m_configuration(std::move(services.configuration)) {
   if (!m_assets)
@@ -22,7 +23,7 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager, UniverseClientPtr client, Graph
   if (!m_configuration)
     throw StarException("GraphicsMenu requires configuration service");
 
-  GuiReader reader;
+  GuiReader reader(context());
   reader.registerCallback("cancel",
       [&](Widget*) {
         dismiss();
@@ -98,7 +99,7 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager, UniverseClientPtr client, Graph
     bool checked = fetchChild<ButtonWidget>("hardwareCursorCheckbox")->isChecked();
     m_localChanges.set("hardwareCursor", checked);
     m_configuration->set("hardwareCursor", checked);
-    GuiContext::singleton().applicationController()->setCursorHardware(checked);
+    context().applicationController()->setCursorHardware(checked);
   });
   reader.registerCallback("monochromeCheckbox", [=, this](Widget*) {
       bool checked = fetchChild<ButtonWidget>("monochromeCheckbox")->isChecked();
@@ -134,7 +135,7 @@ GraphicsMenu::GraphicsMenu(PaneManager* manager, UniverseClientPtr client, Graph
   initConfig();
   syncGui();
   
-  m_shadersMenu = make_shared<ShadersMenu>(m_assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client, BaseScriptPaneServices{m_assets});
+  m_shadersMenu = make_shared<ShadersMenu>(m_assets->json(config.getString("shadersPanePath", "/interface/opensb/shaders/shaders.config")), client, BaseScriptPaneServices{m_assets, {}, {}, {}, {}, context()});
 }
 
 void GraphicsMenu::show() {
@@ -251,11 +252,11 @@ void GraphicsMenu::apply() {
 }
 
 void GraphicsMenu::displayShaders() {
-  m_paneManager->displayPane(PaneLayer::ModalWindow, m_shadersMenu);
+  m_paneManager.displayPane(PaneLayer::ModalWindow, m_shadersMenu);
 }
 
 void GraphicsMenu::applyWindowSettings() {
-  auto appController = GuiContext::singleton().applicationController();
+  auto appController = context().applicationController();
   if (m_configuration->get("fullscreen").toBool())
     appController->setFullscreenWindow(jsonToVec2U(m_configuration->get("fullscreenResolution")));
   else if (m_configuration->get("borderless").toBool())

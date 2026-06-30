@@ -21,7 +21,7 @@ class World;
 
 class PlayerAppearance {
 public:
-  explicit PlayerAppearance(Player* player);
+  explicit PlayerAppearance(Player& player);
   void init();
 
   String name() const;
@@ -92,7 +92,7 @@ public:
   JsonObject m_humanoidParameters;
 
 private:
-  Player* m_player;
+  Player& m_player;
 
   bool m_identityUpdated;
 
@@ -106,4 +106,3 @@ private:
 };
 
 }
-

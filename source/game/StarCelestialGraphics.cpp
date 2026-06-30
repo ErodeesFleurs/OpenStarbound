@@ -1,25 +1,32 @@
 #include "StarCelestialGraphics.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarLexicalCast.hpp"
+#include "StarAssets.hpp"
+#include "StarBiomeDatabase.hpp"
+#include "StarCelestialDatabase.hpp"
 #include "StarFormat.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarCelestialDatabase.hpp"
-#include "StarParallax.hpp"
-#include "StarRoot.hpp"
-#include "StarBiomeDatabase.hpp"
-#include "StarTerrainDatabase.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLexicalCast.hpp"
 #include "StarLiquidsDatabase.hpp"
-#include "StarAssets.hpp"
+#include "StarParallax.hpp"
+#include "StarTerrainDatabase.hpp"
 
 namespace Star {
 
 namespace {
 
-AssetsConstPtr celestialGraphicsAssets(AssetsConstPtr assets) {
-  return assets ? std::move(assets) : Root::singleton().assets();
+AssetsConstPtr requireCelestialGraphicsAssets(AssetsConstPtr assets) {
+  if (!assets)
+    throw StarException("CelestialGraphics requires assets service");
+  return assets;
 }
 
+LiquidsDatabaseConstPtr requireCelestialGraphicsLiquidsDatabase(LiquidsDatabaseConstPtr liquidsDatabase) {
+  if (!liquidsDatabase)
+    throw StarException("CelestialGraphics requires liquids database service");
+  return liquidsDatabase;
 }
+
+}// namespace
 
 List<pair<String, float>> CelestialGraphics::drawSystemPlanetaryObject(CelestialParameters const& parameters) {
   return {{parameters.getParameter("smallImage").toString(), parameters.getParameter("smallImageScale").toFloat()}};
@@ -30,10 +37,9 @@ List<pair<String, float>> CelestialGraphics::drawSystemCentralBody(CelestialPara
 }
 
 List<pair<String, float>> CelestialGraphics::drawWorld(
-    CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& overrideShadowParameters, AssetsConstPtr assets) {
-  auto& root = Root::singleton();
-  assets = celestialGraphicsAssets(std::move(assets));
-  auto liquidsDatabase = root.liquidsDatabase();
+  CelestialParameters const& celestialParameters, Maybe<CelestialParameters> const& overrideShadowParameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase) {
+  assets = requireCelestialGraphicsAssets(std::move(assets));
+  liquidsDatabase = requireCelestialGraphicsLiquidsDatabase(std::move(liquidsDatabase));
 
   CelestialParameters shadowParameters = overrideShadowParameters.value(celestialParameters);
 
@@ -47,7 +53,7 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
       return {};
 
     auto gfxConfig = jsonMerge(assets->json("/celestial.config:terrestrialGraphics").get("default"),
-        assets->json("/celestial.config:terrestrialGraphics").get(terrestrialParameters->typeName, JsonObject()));
+                               assets->json("/celestial.config:terrestrialGraphics").get(terrestrialParameters->typeName, JsonObject()));
 
     auto liquidImages = gfxConfig.getString("liquidImages", "");
     auto baseImages = gfxConfig.getString("baseImages", "");
@@ -63,8 +69,7 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
       layers.append({std::move(liquidBaseImage), imageScale});
     } else {
       if (baseCount > 0) {
-        String baseLayer = strf("{}?hueshift={}", baseImages.replace("<biome>",
-            terrestrialParameters->primaryBiome).replace("<num>", toString(baseCount)), terrestrialParameters->hueShift);
+        String baseLayer = strf("{}?hueshift={}", baseImages.replace("<biome>", terrestrialParameters->primaryBiome).replace("<num>", toString(baseCount)), terrestrialParameters->hueShift);
         layers.append({std::move(baseLayer), imageScale});
       }
     }
@@ -142,10 +147,9 @@ List<pair<String, float>> CelestialGraphics::drawWorld(
   return layers;
 }
 
-List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParameters const& celestialParameters, AssetsConstPtr assets) {
-  auto& root = Root::singleton();
-  assets = celestialGraphicsAssets(std::move(assets));
-  auto liquidsDatabase = root.liquidsDatabase();
+List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParameters const& celestialParameters, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase) {
+  assets = requireCelestialGraphicsAssets(std::move(assets));
+  liquidsDatabase = requireCelestialGraphicsLiquidsDatabase(std::move(liquidsDatabase));
 
   auto getLR = [](String const& base) -> pair<String, String> {
     return pair<String, String>(base.replace("<selector>", "l"), base.replace("<selector>", "r"));
@@ -161,7 +165,7 @@ List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParame
       return {};
 
     auto gfxConfig = jsonMerge(assets->json("/celestial.config:terrestrialHorizonGraphics").get("default"),
-        assets->json("/celestial.config:terrestrialHorizonGraphics").get(terrestrialParameters->typeName, JsonObject()));
+                               assets->json("/celestial.config:terrestrialHorizonGraphics").get(terrestrialParameters->typeName, JsonObject()));
 
     String baseImages = gfxConfig.getString("baseImages");
     String atmoTextures = gfxConfig.getString("atmosphereTextures");
@@ -233,11 +237,11 @@ int CelestialGraphics::worldRadialPosition(CelestialParameters const& parameters
 }
 
 int CelestialGraphics::planetRadialPositions(AssetsConstPtr assets) {
-  return celestialGraphicsAssets(std::move(assets))->json("/celestial.config:planetRadialSlots").toInt();
+  return requireCelestialGraphicsAssets(std::move(assets))->json("/celestial.config:planetRadialSlots").toInt();
 }
 
 int CelestialGraphics::satelliteRadialPositions(AssetsConstPtr assets) {
-  return celestialGraphicsAssets(std::move(assets))->json("/celestial.config:satelliteRadialSlots").toInt();
+  return requireCelestialGraphicsAssets(std::move(assets))->json("/celestial.config:satelliteRadialSlots").toInt();
 }
 
 List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& system, double time, AssetsConstPtr assets) {
@@ -245,7 +249,7 @@ List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabase
   if (!parameters)
     return {};
 
-  assets = celestialGraphicsAssets(std::move(assets));
+  assets = requireCelestialGraphicsAssets(std::move(assets));
 
   int twinkleFrameCount = assets->json("/celestial.config:twinkleFrames").toInt();
   float twinkleScale = assets->json("/celestial.config:twinkleScale").toFloat();
@@ -270,20 +274,20 @@ List<pair<String, float>> CelestialGraphics::drawSystemCentralBody(CelestialData
   return {};
 }
 
-List<pair<String, float>> CelestialGraphics::drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets) {
+List<pair<String, float>> CelestialGraphics::drawWorld(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase) {
   auto params = celestialDatabase->parameters(coordinate);
   if (!params)
     return {};
 
   if (coordinate.isSatelliteBody())
-    return drawWorld(params.take(), celestialDatabase->parameters(coordinate.parent()), std::move(assets));
+    return drawWorld(params.take(), celestialDatabase->parameters(coordinate.parent()), std::move(assets), std::move(liquidsDatabase));
   else
-    return drawWorld(params.take(), {}, std::move(assets));
+    return drawWorld(params.take(), {}, std::move(assets), std::move(liquidsDatabase));
 }
 
-List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets) {
+List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialDatabasePtr celestialDatabase, CelestialCoordinate const& coordinate, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase) {
   if (auto params = celestialDatabase->parameters(coordinate))
-    return worldHorizonImages(params.take(), std::move(assets));
+    return worldHorizonImages(params.take(), std::move(assets), std::move(liquidsDatabase));
   return {};
 }
 
@@ -293,4 +297,4 @@ int CelestialGraphics::worldRadialPosition(CelestialDatabasePtr celestialDatabas
   return 0;
 }
 
-}
+}// namespace Star

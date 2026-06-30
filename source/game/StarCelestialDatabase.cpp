@@ -1,14 +1,14 @@
 #include "StarCelestialDatabase.hpp"
-#include "StarLexicalCast.hpp"
 #include "StarCasting.hpp"
-#include "StarRandom.hpp"
 #include "StarCompression.hpp"
-#include "StarFile.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarVersioningDatabase.hpp"
+#include "StarFile.hpp"
 #include "StarIterator.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarLogging.hpp"
+#include "StarRandom.hpp"
+#include "StarVersioningDatabase.hpp"
 
 namespace Star {
 
@@ -33,7 +33,7 @@ Vec2I CelestialDatabase::chunkIndexFor(CelestialCoordinate const& coordinate) co
 
 Vec2I CelestialDatabase::chunkIndexFor(Vec2I const& systemXY) const {
   return {(systemXY[0] - pmod(systemXY[0], m_baseInformation.chunkSize)) / m_baseInformation.chunkSize,
-      (systemXY[1] - pmod(systemXY[1], m_baseInformation.chunkSize)) / m_baseInformation.chunkSize};
+          (systemXY[1] - pmod(systemXY[1], m_baseInformation.chunkSize)) / m_baseInformation.chunkSize};
 }
 
 List<Vec2I> CelestialDatabase::chunkIndexesFor(RectI const& region) const {
@@ -53,11 +53,17 @@ RectI CelestialDatabase::chunkRegion(Vec2I const& chunkIndex) const {
   return RectI(chunkIndex * m_baseInformation.chunkSize, (chunkIndex + Vec2I(1, 1)) * m_baseInformation.chunkSize);
 }
 
-CelestialMasterDatabase::CelestialMasterDatabase(AssetsConstPtr assets, Maybe<VersioningDatabaseConstPtr> versioningDatabase, Maybe<String> databaseFile) {
+CelestialMasterDatabase::CelestialMasterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, Maybe<VersioningDatabaseConstPtr> versioningDatabase, Maybe<String> databaseFile) {
   if (!assets)
     throw CelestialException("CelestialMasterDatabase requires assets service");
+  if (!liquidsDatabase)
+    throw CelestialException("CelestialMasterDatabase requires liquids database service");
+  if (!biomeDatabase)
+    throw CelestialException("CelestialMasterDatabase requires biome database service");
 
   m_assets = std::move(assets);
+  m_liquidsDatabase = std::move(liquidsDatabase);
+  m_biomeDatabase = std::move(biomeDatabase);
   if (versioningDatabase)
     m_versioningDatabase = std::move(*versioningDatabase);
   auto config = m_assets->json("/celestial.config");
@@ -106,7 +112,7 @@ CelestialMasterDatabase::CelestialMasterDatabase(AssetsConstPtr assets, Maybe<Ve
     planetaryType.typeName = planetaryPair.first;
     planetaryType.satelliteProbability = planetaryPair.second.getFloat("satelliteProbability");
     planetaryType.maxSatelliteCount =
-        planetaryPair.second.getUInt("maxSatelliteCount", m_baseInformation.satelliteOrbitalLevels);
+      planetaryPair.second.getUInt("maxSatelliteCount", m_baseInformation.satelliteOrbitalLevels);
     planetaryType.baseParameters = planetaryPair.second.get("baseParameters");
     planetaryType.variationParameters = planetaryPair.second.getArray("variationParameters", JsonArray());
     planetaryType.orbitParameters = planetaryPair.second.getObject("orbitParameters", JsonObject());
@@ -149,7 +155,7 @@ CelestialMasterDatabase::CelestialMasterDatabase(AssetsConstPtr assets, Maybe<Ve
       openDatabase();
     } catch (std::exception const& e) {
       Logger::error("CelestialMasterDatabase could not load celestial database '{}', moving it out of the way and recreating. Cause: {}",
-          *databaseFile, outputException(e, false));
+                    *databaseFile, outputException(e, false));
       m_database.close(true);
       if (File::isFile(*databaseFile))
         File::rename(*databaseFile, strf("{}.{}.fail", *databaseFile, Time::millisecondsSinceEpoch()));
@@ -218,7 +224,7 @@ bool CelestialMasterDatabase::coordinateValid(CelestialCoordinate const& coordin
 }
 
 Maybe<CelestialCoordinate> CelestialMasterDatabase::findRandomWorld(unsigned tries, unsigned trySpatialRange,
-    function<bool(CelestialCoordinate)> filter, Maybe<uint64_t> seed) {
+                                                                    function<bool(CelestialCoordinate)> filter, Maybe<uint64_t> seed) {
   RandomSource randSource;
   if (seed)
     randSource.init(*seed);
@@ -253,8 +259,8 @@ Maybe<CelestialParameters> CelestialMasterDatabase::parameters(CelestialCoordina
 
   if (coordinate.isSatelliteBody())
     return chunk.systemObjects.get(coordinate.location())
-        .get(coordinate.parent().orbitNumber())
-        .satelliteParameters.get(coordinate.orbitNumber());
+      .get(coordinate.parent().orbitNumber())
+      .satelliteParameters.get(coordinate.orbitNumber());
 
   if (coordinate.isPlanetaryBody())
     return chunk.systemObjects.get(coordinate.location()).get(coordinate.orbitNumber()).planetParameters;
@@ -363,8 +369,8 @@ void CelestialMasterDatabase::updateParameters(CelestialCoordinate const& coordi
   bool updated = false;
   if (coordinate.isSatelliteBody()) {
     chunk.systemObjects.get(coordinate.location())
-        .get(coordinate.parent().orbitNumber())
-        .satelliteParameters.set(coordinate.orbitNumber(), parameters);
+      .get(coordinate.parent().orbitNumber())
+      .satelliteParameters.set(coordinate.orbitNumber(), parameters);
     updated = true;
   } else if (coordinate.isPlanetaryBody()) {
     chunk.systemObjects.get(coordinate.location()).get(coordinate.orbitNumber()).planetParameters = parameters;
@@ -388,7 +394,7 @@ void CelestialMasterDatabase::updateParameters(CelestialCoordinate const& coordi
 }
 
 Maybe<CelestialOrbitRegion> CelestialMasterDatabase::orbitRegion(
-    List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber) {
+  List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber) {
   for (auto const& region : orbitRegions) {
     if (planetaryOrbitNumber >= region.orbitRange[0] && planetaryOrbitNumber <= region.orbitRange[1])
       return region;
@@ -398,38 +404,38 @@ Maybe<CelestialOrbitRegion> CelestialMasterDatabase::orbitRegion(
 
 CelestialChunk const& CelestialMasterDatabase::getChunk(Vec2I const& chunkIndex, UnlockDuringFunction unlockDuring) {
   return m_chunkCache.get(chunkIndex, [&](Vec2I const& chunkIndex) -> CelestialChunk {
-      auto versioningDatabase = m_versioningDatabase;
+    auto versioningDatabase = m_versioningDatabase;
 
-      if (m_database.isOpen()) {
-        if (auto chunkData = m_database.find(DataStreamBuffer::serialize(chunkIndex))) {
-          auto versionedChunk = DataStreamBuffer::deserialize<VersionedJson>(uncompressData(chunkData.take()));
-          if (!versioningDatabase->versionedJsonCurrent(versionedChunk)) {
-            versionedChunk = versioningDatabase->updateVersionedJson(versionedChunk);
-            DataStreamBuffer ds;
-            ds.write(versionedChunk);
-            VersionedJson::writeSubVersioning(ds, versionedChunk);
-            (void)m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
-          }
-          return CelestialChunk(versionedChunk.content);
+    if (m_database.isOpen()) {
+      if (auto chunkData = m_database.find(DataStreamBuffer::serialize(chunkIndex))) {
+        auto versionedChunk = DataStreamBuffer::deserialize<VersionedJson>(uncompressData(chunkData.take()));
+        if (!versioningDatabase->versionedJsonCurrent(versionedChunk)) {
+          versionedChunk = versioningDatabase->updateVersionedJson(versionedChunk);
+          DataStreamBuffer ds;
+          ds.write(versionedChunk);
+          VersionedJson::writeSubVersioning(ds, versionedChunk);
+          (void)m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
         }
+        return CelestialChunk(versionedChunk.content);
       }
+    }
 
-      CelestialChunk newChunk;
-      auto producer = [&]() { newChunk = produceChunk(chunkIndex); };
-      if (unlockDuring)
-        unlockDuring(producer);
-      else
-        producer();
-      if (m_database.isOpen()) {
-        auto versionedChunk = versioningDatabase->makeCurrentVersionedJson("CelestialChunk", newChunk.toJson());
-        DataStreamBuffer ds;
-        ds.write(versionedChunk);
-        VersionedJson::writeSubVersioning(ds, versionedChunk);
-        (void)m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
-      }
+    CelestialChunk newChunk;
+    auto producer = [&]() { newChunk = produceChunk(chunkIndex); };
+    if (unlockDuring)
+      unlockDuring(producer);
+    else
+      producer();
+    if (m_database.isOpen()) {
+      auto versionedChunk = versioningDatabase->makeCurrentVersionedJson("CelestialChunk", newChunk.toJson());
+      DataStreamBuffer ds;
+      ds.write(versionedChunk);
+      VersionedJson::writeSubVersioning(ds, versionedChunk);
+      (void)m_database.insert(DataStreamBuffer::serialize(chunkIndex), compressData(ds.data()));
+    }
 
-      return newChunk;
-    });
+    return newChunk;
+  });
 }
 
 CelestialChunk CelestialMasterDatabase::produceChunk(Vec2I const& chunkIndex) const {
@@ -446,7 +452,7 @@ CelestialChunk CelestialMasterDatabase::produceChunk(Vec2I const& chunkIndex) co
     for (int y = region.yMin(); y < region.yMax(); ++y) {
       if (random.randf() < m_generationInformation.systemProbability) {
         auto z = random.randi32() % (m_baseInformation.zCoordRange[1] - m_baseInformation.zCoordRange[0])
-            + m_baseInformation.zCoordRange[0];
+          + m_baseInformation.zCoordRange[0];
         systemLocations.append(Vec3I(x, y, z));
       }
     }
@@ -470,7 +476,7 @@ CelestialChunk CelestialMasterDatabase::produceChunk(Vec2I const& chunkIndex) co
 }
 
 Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterDatabase::produceSystem(
-    RandomSource& random, Vec3I const& location) const {
+  RandomSource& random, Vec3I const& location) const {
   float typeSelector = m_generationInformation.systemTypePerlin.get(location[0], location[1]);
   String systemTypeName = binnedChoiceFromJson(m_generationInformation.systemTypeBins, typeSelector, "").toString();
   if (systemTypeName.empty())
@@ -492,10 +498,12 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
   systemName = systemName.replace("<fourdigit>", strf("{:04d}", random.randu32() % 10000));
 
   CelestialParameters systemParameters = CelestialParameters(systemCoordinate,
-      systemSeed,
-      systemName,
-      jsonMerge(systemType.baseParameters, random.randValueFrom(systemType.variationParameters)),
-      m_assets);
+                                                             systemSeed,
+                                                             systemName,
+                                                             jsonMerge(systemType.baseParameters, random.randValueFrom(systemType.variationParameters)),
+                                                             m_assets,
+                                                             m_liquidsDatabase,
+                                                             m_biomeDatabase);
 
   List<int> planetaryOrbits;
   for (int i = 1; i <= m_baseInformation.planetOrbitalLevels; ++i) {
@@ -513,7 +521,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
     if (m_generationInformation.planetaryTypes.contains(planetaryTypeName)) {
       auto planetaryType = m_generationInformation.planetaryTypes.get(planetaryTypeName);
       auto planetaryParameters =
-          jsonMerge(planetaryType.baseParameters, random.randValueFrom(planetaryType.variationParameters));
+        jsonMerge(planetaryType.baseParameters, random.randValueFrom(planetaryType.variationParameters));
 
       CelestialCoordinate planetCoordinate(location, planetPair.first);
       uint64_t planetarySeed = random.randu64();
@@ -521,7 +529,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
 
       CelestialPlanet planet;
       planet.planetParameters =
-          CelestialParameters(planetCoordinate, planetarySeed, planetaryName, planetaryParameters, m_assets);
+        CelestialParameters(planetCoordinate, planetarySeed, planetaryName, planetaryParameters, m_assets, m_liquidsDatabase, m_biomeDatabase);
 
       List<int> satelliteOrbits;
       for (int i = 1; i <= m_baseInformation.satelliteOrbitalLevels; ++i) {
@@ -535,17 +543,17 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
         if (m_generationInformation.satelliteTypes.contains(satelliteTypeName)) {
           auto satelliteType = m_generationInformation.satelliteTypes.get(satelliteTypeName);
           auto satelliteParameters = jsonMerge(satelliteType.baseParameters,
-              random.randValueFrom(satelliteType.variationParameters),
-              random.randValueFrom(
-                  satelliteType.orbitParameters.value(systemOrbitRegion->regionName, JsonArray()).toArray()));
+                                               random.randValueFrom(satelliteType.variationParameters),
+                                               random.randValueFrom(
+                                                 satelliteType.orbitParameters.value(systemOrbitRegion->regionName, JsonArray()).toArray()));
 
           CelestialCoordinate satelliteCoordinate(location, planetPair.first, satellitePair.first);
           uint64_t satelliteSeed = random.randu64();
           String satelliteName =
-              strf("{} {}", planetaryName, m_generationInformation.satelliteSuffixes.at(satellitePair.second));
+            strf("{} {}", planetaryName, m_generationInformation.satelliteSuffixes.at(satellitePair.second));
 
           planet.satelliteParameters[satellitePair.first] =
-              CelestialParameters(satelliteCoordinate, satelliteSeed, satelliteName, satelliteParameters, m_assets);
+            CelestialParameters(satelliteCoordinate, satelliteSeed, satelliteName, satelliteParameters, m_assets, m_liquidsDatabase, m_biomeDatabase);
         }
       }
 
@@ -557,12 +565,12 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
 }
 
 List<CelestialConstellation> CelestialMasterDatabase::produceConstellations(
-    RandomSource& random, List<Vec2I> const& constellationCandidates) const {
+  RandomSource& random, List<Vec2I> const& constellationCandidates) const {
   List<CelestialConstellation> constellations;
 
   if (random.randf() < m_generationInformation.constellationProbability && constellationCandidates.size() > 2) {
     unsigned targetConstellationLineCount = random.randUInt(
-        m_generationInformation.constellationLineCountRange[0], m_generationInformation.constellationLineCountRange[1]);
+      m_generationInformation.constellationLineCountRange[0], m_generationInformation.constellationLineCountRange[1]);
     Set<Vec2I> constellationPoints;
     Set<Line2I> constellationLines;
 
@@ -607,14 +615,14 @@ List<CelestialConstellation> CelestialMasterDatabase::produceConstellations(
 
         if (proposedLine.min() != constellationLine.min() && proposedLine.min() != constellationLine.max()
             && constellationLineD.distanceTo(proposedLineD.min())
-                < m_generationInformation.minimumConstellationLineCloseness) {
+              < m_generationInformation.minimumConstellationLineCloseness) {
           valid = false;
           break;
         }
 
         if (proposedLine.max() != constellationLine.min() && proposedLine.max() != constellationLine.max()
             && constellationLineD.distanceTo(proposedLineD.max())
-                < m_generationInformation.minimumConstellationLineCloseness) {
+              < m_generationInformation.minimumConstellationLineCloseness) {
           valid = false;
           break;
         }
@@ -860,4 +868,4 @@ void CelestialSlaveDatabase::invalidateCacheFor(CelestialCoordinate const& coord
   (void)m_chunkCache.remove(chunkIndexFor(coordinate));
 }
 
-}
+}// namespace Star

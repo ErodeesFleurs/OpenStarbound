@@ -16,6 +16,7 @@ public:
   struct Services {
     AssetsConstPtr assets;
     ConfigurationPtr configuration;
+    GuiContext& guiContext;
   };
 
   explicit HttpTrustDialog(Services services);

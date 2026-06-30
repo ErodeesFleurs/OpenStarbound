@@ -1,8 +1,8 @@
-#include "StarFile.hpp"
-#include "StarLexicalCast.hpp"
-#include "StarImage.hpp"
-#include "StarRootLoader.hpp"
 #include "StarCelestialDatabase.hpp"
+#include "StarFile.hpp"
+#include "StarImage.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarRootLoader.hpp"
 #include "StarWorldTemplate.hpp"
 
 using namespace Star;
@@ -24,14 +24,14 @@ int main(int argc, char** argv) {
     OptionParser::Options options;
     tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
 
-    CelestialMasterDatabasePtr celestialDatabase = make_shared<CelestialMasterDatabase>(root->assets(), root->versioningDatabase());
+    CelestialMasterDatabasePtr celestialDatabase = make_shared<CelestialMasterDatabase>(root->assets(), root->liquidsDatabase(), root->biomeDatabase(), root->versioningDatabase());
 
     Maybe<CelestialCoordinate> coordinate;
     if (!options.parameters["coordinate"].empty())
       coordinate = CelestialCoordinate(options.parameters["coordinate"].first());
     else if (!options.parameters["coordseed"].empty())
       coordinate = celestialDatabase->findRandomWorld(
-          10, 50, {}, lexicalCast<uint64_t>(options.parameters["coordseed"].first()));
+        10, 50, {}, lexicalCast<uint64_t>(options.parameters["coordseed"].first()));
     else
       coordinate = celestialDatabase->findRandomWorld();
 
@@ -40,12 +40,12 @@ int main(int argc, char** argv) {
 
     coutf("Generating world with coordinate {}\n", *coordinate);
 
-    WorldTemplate worldTemplate(root->assets(), TerrainDatabaseConstPtr{}, BiomeDatabaseConstPtr{}, *coordinate, celestialDatabase);
+    WorldTemplate worldTemplate(root->assets(), root->terrainDatabase(), root->biomeDatabase(), root->liquidsDatabase(), *coordinate, celestialDatabase, root->dungeonDefinitions());
     auto size = worldTemplate.size();
 
     if (!options.parameters["size"].empty()) {
       auto regionSize = Vec2U(lexicalCast<unsigned>(options.parameters["size"].first().split(",")[0]),
-          lexicalCast<unsigned>(options.parameters["size"].first().split(",")[1]));
+                              lexicalCast<unsigned>(options.parameters["size"].first().split(",")[1]));
       size = regionSize.piecewiseClamp(Vec2U(0, 0), size);
     } else if (size[0] > 1000) {
       size[0] = 1000;

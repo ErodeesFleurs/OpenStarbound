@@ -5,16 +5,16 @@
 
 namespace Star {
 
-InstrumentItem::InstrumentItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data) : Item(std::move(assets), config, directory, data) {
+InstrumentItem::InstrumentItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data) : Item(std::move(assets), std::move(imageMetadataDatabase), config, directory, data) {
   m_activeCooldown = 0;
 
   auto image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   Vec2F position = jsonToVec2F(instanceValue("handPosition", JsonArray{0, 0}));
-  m_drawables.append(Drawable::makeImage(image, 1.0f / TilePixels, true, position));
+  m_drawables.append(Drawable::makeImage(image, 1.0f / TilePixels, true, position, Color::White, m_imageMetadataDatabase));
 
   image = AssetPath::relativeTo(directory, instanceValue("activeImage").toString());
   position = jsonToVec2F(instanceValue("activeHandPosition", JsonArray{0, 0}));
-  m_activeDrawables.append(Drawable::makeImage(image, 1.0f / TilePixels, true, position));
+  m_activeDrawables.append(Drawable::makeImage(image, 1.0f / TilePixels, true, position, Color::White, m_imageMetadataDatabase));
 
   m_activeAngle = (instanceValue("activeAngle").toFloat() / 180.0f) * Constants::pi;
 

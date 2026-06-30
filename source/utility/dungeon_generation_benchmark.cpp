@@ -1,8 +1,8 @@
-#include "StarRootLoader.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarItemDatabase.hpp"
-#include "StarWorldTemplate.hpp"
+#include "StarRootLoader.hpp"
 #include "StarWorldServer.hpp"
+#include "StarWorldTemplate.hpp"
 
 using namespace Star;
 
@@ -46,9 +46,10 @@ int main(int argc, char** argv) {
         coutf("[{}] {}s | Generations Per Second: {}\n", i, Time::monotonicTime() - start, gps);
       }
 
-      VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeonWorldName);
-      auto worldTemplate = make_shared<WorldTemplate>(root->assets(), TerrainDatabaseConstPtr{}, BiomeDatabaseConstPtr{}, worldParameters, SkyParameters(), 1234);
-      WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile(), WorldServerServices{root->assets(), root->configuration(), root->materialDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->biomeDatabase(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase(), root->imageMetadataDatabase(), root->dungeonDefinitions(), root->behaviorDatabase()});
+      VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(root->assets(), dungeonWorldName);
+      auto worldTemplate = make_shared<WorldTemplate>(root->assets(), root->terrainDatabase(), root->biomeDatabase(), worldParameters, SkyParameters(), 1234, root->dungeonDefinitions());
+      auto luaRootServices = root->luaRootServices();
+      WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile(), WorldServerServices{root->assets(), root->configuration(), root->materialDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->terrainDatabase(), root->biomeDatabase(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase(), root->imageMetadataDatabase(), root->dungeonDefinitions(), root->behaviorDatabase(), luaRootServices});
     }
 
     coutf("Finished {} generations of dungeonWorld {} in {} seconds", repetitions, dungeonWorldName, Time::monotonicTime() - start);

@@ -1,7 +1,6 @@
 #include "StarBiomePlacement.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
-#include "StarRoot.hpp"
 
 namespace Star {
 
@@ -60,24 +59,25 @@ bool BiomeItemPlacement::operator<(BiomeItemPlacement const& rhs) const {
   return priority < rhs.priority;
 }
 
-Maybe<BiomeItem> BiomeItemDistribution::createItem(Json const& config, RandomSource& rand, float biomeHueShift) {
-  auto& root = Root::singleton();
+Maybe<BiomeItem> BiomeItemDistribution::createItem(PlantDatabaseConstPtr plantDatabase, Json const& config, RandomSource& rand, float biomeHueShift) {
+  if (!plantDatabase)
+    throw BiomeException("BiomeItemDistribution requires plant database service");
 
   auto type = config.getString("type");
   if (type.equalsIgnoreCase("grass")) {
     auto grassList = jsonToStringList(config.get("grasses"));
-    return BiomeItem{root.plantDatabase()->buildGrassVariant(rand.randFrom(grassList), biomeHueShift)};
+    return BiomeItem{plantDatabase->buildGrassVariant(rand.randFrom(grassList), biomeHueShift)};
 
   } else if (type.equalsIgnoreCase("bush")) {
     auto bushList = config.getArray("bushes", {});
     auto bushSettings = rand.randValueFrom(bushList);
 
     auto bushName = bushSettings.getString("name");
-    auto bushMod = rand.randValueFrom(root.plantDatabase()->bushMods(bushName));
+    auto bushMod = rand.randValueFrom(plantDatabase->bushMods(bushName));
     float bushBaseHueShift = rand.randf(-1.0f, 1.0f) * bushSettings.getFloat("baseHueShiftMax");
     float bushModHueShift = rand.randf(-1.0f, 1.0f) * bushSettings.getFloat("modHueShiftMax");
 
-    return BiomeItem{root.plantDatabase()->buildBushVariant(bushName, bushBaseHueShift, bushMod, bushModHueShift)};
+    return BiomeItem{plantDatabase->buildBushVariant(bushName, bushBaseHueShift, bushMod, bushModHueShift)};
 
   } else if (type.equalsIgnoreCase("tree")) {
     auto stemList = jsonToStringList(config.get("treeStemList", JsonArray()));
@@ -87,7 +87,7 @@ Maybe<BiomeItem> BiomeItemDistribution::createItem(Json const& config, RandomSou
     List<pair<String, String>> matchingPairs;
     for (auto stem : stemList) {
       for (auto foliage : foliageList) {
-        if (foliage.empty() || root.plantDatabase()->treeStemShape(stem) == root.plantDatabase()->treeFoliageShape(foliage))
+        if (foliage.empty() || plantDatabase->treeStemShape(stem) == plantDatabase->treeFoliageShape(foliage))
           matchingPairs.append({stem, foliage});
       }
     }
@@ -105,12 +105,12 @@ Maybe<BiomeItem> BiomeItemDistribution::createItem(Json const& config, RandomSou
       TreeVariant altTree;
       if (chosenPair.second.empty()) {
         // Foliage-less trees
-        primaryTree = root.plantDatabase()->buildTreeVariant(chosenPair.first, treeStemHueShift);
-        altTree = root.plantDatabase()->buildTreeVariant(chosenPair.first, treeStemHueShift);
+        primaryTree = plantDatabase->buildTreeVariant(chosenPair.first, treeStemHueShift);
+        altTree = plantDatabase->buildTreeVariant(chosenPair.first, treeStemHueShift);
       } else {
-        primaryTree = root.plantDatabase()->buildTreeVariant(
+        primaryTree = plantDatabase->buildTreeVariant(
             chosenPair.first, treeStemHueShift, chosenPair.second, treeFoliageHueShift);
-        altTree = root.plantDatabase()->buildTreeVariant(
+        altTree = plantDatabase->buildTreeVariant(
             chosenPair.first, treeStemHueShift, chosenPair.second, treeAltFoliageHueShift);
       }
       return BiomeItem{TreePair{primaryTree, altTree}};
@@ -153,7 +153,10 @@ BiomeItemDistribution::BiomeItemDistribution() {
   m_priority = 0.0f;
 }
 
-BiomeItemDistribution::BiomeItemDistribution(AssetsConstPtr assets, Json const& config, uint64_t seed, float biomeHueShift) {
+BiomeItemDistribution::BiomeItemDistribution(AssetsConstPtr assets, PlantDatabaseConstPtr plantDatabase, Json const& config, uint64_t seed, float biomeHueShift) {
+  if (!plantDatabase)
+    throw BiomeException("BiomeItemDistribution requires plant database service");
+
   RandomSource rand(seed);
 
   m_mode = BiomePlacementModeNames.getLeft(config.getString("mode", "floor"));
@@ -178,7 +181,7 @@ BiomeItemDistribution::BiomeItemDistribution(AssetsConstPtr assets, Json const& 
     m_blockProbability = distributionSettings.getFloat("blockProbability");
     m_blockSeed = rand.randu64();
     for (int i = 0; i < variants; ++i) {
-      if (auto item = createItem(config, rand, biomeHueShift))
+      if (auto item = createItem(plantDatabase, config, rand, biomeHueShift))
         m_randomItems.append(item.take());
     }
 
@@ -202,7 +205,7 @@ BiomeItemDistribution::BiomeItemDistribution(AssetsConstPtr assets, Json const& 
     m_modulusDistortion = PerlinF(octaves, 1.0f / m_modulus, modulusVariance, modulusVariance * 2, alpha, beta, rand.randu64());
 
     for (int i = 0; i < variants; ++i) {
-      if (auto item = createItem(config, rand, biomeHueShift)) {
+      if (auto item = createItem(plantDatabase, config, rand, biomeHueShift)) {
         PerlinF weight(octaves, 1.0f / typePeriod, 1.0, 0.0, alpha, beta, rand.randu64());
         m_weightedItems.append({item.take(), weight});
       }

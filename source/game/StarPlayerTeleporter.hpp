@@ -9,7 +9,7 @@ class Player;
 
 class PlayerTeleporter {
 public:
-  explicit PlayerTeleporter(Player* player);
+  explicit PlayerTeleporter(Player& player);
   void init();
 
   void teleportOut(String const& animationType = "default", bool deploy = false);
@@ -29,11 +29,10 @@ public:
   void tick(float dt);
 
 private:
-  Player* m_player;
+  Player& m_player;
 
   float m_teleportTimer;
   String m_teleportAnimationType;
 };
 
 }
-

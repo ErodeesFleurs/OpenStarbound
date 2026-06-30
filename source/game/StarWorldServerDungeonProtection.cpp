@@ -6,14 +6,14 @@
 
 namespace Star {
 
-WorldServerDungeonProtection::WorldServerDungeonProtection(WorldServer* worldServer)
+WorldServerDungeonProtection::WorldServerDungeonProtection(WorldServer& worldServer)
   : m_worldServer(worldServer) {}
 
 bool WorldServerDungeonProtection::isTileProtected(Vec2I const& pos) const {
   if (!m_tileProtectionEnabled)
     return false;
 
-  auto const& tile = m_worldServer->m_tileArray->tile(pos);
+  auto const& tile = m_worldServer.m_tileArray->tile(pos);
   return m_protectedDungeonIds.contains(tile.dungeonId);
 }
 
@@ -30,7 +30,7 @@ void WorldServerDungeonProtection::setTileProtection(DungeonId dungeonId, bool i
   }
 
   if (updated) {
-    for (auto const& pair : m_worldServer->m_clientInfo)
+    for (auto const& pair : m_worldServer.m_clientInfo)
       pair.second->outgoingPackets.append(make_shared<UpdateTileProtectionPacket>(dungeonId, isProtected));
 
     Logger::info("Protected dungeonIds for world set to {}", m_protectedDungeonIds);
@@ -47,7 +47,7 @@ size_t WorldServerDungeonProtection::setTileProtection(List<DungeonId> const& du
   if (updates.empty())
     return 0;
 
-  for (auto const& pair : m_worldServer->m_clientInfo)
+  for (auto const& pair : m_worldServer.m_clientInfo)
     pair.second->outgoingPackets.appendAll(updates);
 
   auto newDungeonIds = m_protectedDungeonIds.values();
@@ -64,16 +64,16 @@ void WorldServerDungeonProtection::setDungeonId(RectI const& tileArea, DungeonId
   for (int x = tileArea.xMin(); x < tileArea.xMax(); ++x) {
     for (int y = tileArea.yMin(); y < tileArea.yMax(); ++y) {
       auto pos = Vec2I{x, y};
-      if (auto tile = m_worldServer->m_tileArray->modifyTile(pos)) {
+      if (auto tile = m_worldServer.m_tileArray->modifyTile(pos)) {
         tile->dungeonId = dungeonId;
-        m_worldServer->queueTileUpdates(pos);
+        m_worldServer.queueTileUpdates(pos);
       }
     }
   }
 }
 
 DungeonId WorldServerDungeonProtection::dungeonId(Vec2I const& pos) const {
-  return m_worldServer->m_tileArray->tile(pos).dungeonId;
+  return m_worldServer.m_tileArray->tile(pos).dungeonId;
 }
 
 void WorldServerDungeonProtection::setDungeonGravity(DungeonId dungeonId, Maybe<float> gravity) {
@@ -84,7 +84,7 @@ void WorldServerDungeonProtection::setDungeonGravity(DungeonId dungeonId, Maybe<
     else
       m_dungeonIdGravity.remove(dungeonId);
 
-    for (auto const& p : m_worldServer->m_clientInfo)
+    for (auto const& p : m_worldServer.m_clientInfo)
       p.second->outgoingPackets.append(make_shared<SetDungeonGravityPacket>(dungeonId, gravity));
   }
 }
@@ -97,13 +97,13 @@ void WorldServerDungeonProtection::setDungeonBreathable(DungeonId dungeonId, May
     else
       m_dungeonIdBreathable.remove(dungeonId);
 
-    for (auto const& p : m_worldServer->m_clientInfo)
+    for (auto const& p : m_worldServer.m_clientInfo)
       p.second->outgoingPackets.append(make_shared<SetDungeonBreathablePacket>(dungeonId, breathable));
   }
 }
 
 bool WorldServerDungeonProtection::isPlayerModified(RectI const& region) const {
-  return m_worldServer->m_tileArray->tileSatisfies(region, [](Vec2I const&, ServerTile const& tile) {
+  return m_worldServer.m_tileArray->tileSatisfies(region, [](Vec2I const&, ServerTile const& tile) {
       return tile.dungeonId == ConstructionDungeonId || tile.dungeonId == DestroyedBlockDungeonId;
     });
 }

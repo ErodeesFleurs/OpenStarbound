@@ -7,34 +7,34 @@
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeItemCallbacks(Item* item) {
+LuaCallbacks LuaBindings::makeItemCallbacks(Item& item) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallbackWithSignature<String>("name", [item]() { return ItemCallbacks::name(item); });
-  callbacks.registerCallbackWithSignature<size_t>("count", [item]() { return ItemCallbacks::count(item); });
-  callbacks.registerCallbackWithSignature<size_t, size_t>("setCount", [item](size_t count) { return ItemCallbacks::setCount(item, count); });
-  callbacks.registerCallbackWithSignature<size_t>("maxStack", [item]() { return ItemCallbacks::maxStack(item); });
-  callbacks.registerCallbackWithSignature<bool, Json, Maybe<bool>>("matches", [item](Json const& descriptor, Maybe<bool> const& exactMatch) { return ItemCallbacks::matches(item, descriptor, exactMatch); });
-  callbacks.registerCallbackWithSignature<bool, size_t>("consume", [item](size_t count) { return ItemCallbacks::consume(item, count); });
-  callbacks.registerCallbackWithSignature<bool>("empty", [item]() { return ItemCallbacks::empty(item); });
-  callbacks.registerCallbackWithSignature<Json>("descriptor", [item]() { return ItemCallbacks::descriptor(item); });
-  callbacks.registerCallbackWithSignature<String>("description", [item]() { return ItemCallbacks::description(item); });
-  callbacks.registerCallbackWithSignature<String>("friendlyName", [item]() { return ItemCallbacks::friendlyName(item); });
-  callbacks.registerCallbackWithSignature<int>("rarity", [item]() { return ItemCallbacks::rarity(item); });
-  callbacks.registerCallbackWithSignature<String>("rarityString", [item]() { return ItemCallbacks::rarityString(item); });
-  callbacks.registerCallbackWithSignature<size_t>("price", [item]() { return ItemCallbacks::price(item); });
-  callbacks.registerCallbackWithSignature<Json>("fuelAmount", [item]() { return ItemCallbacks::fuelAmount(item); });
-  callbacks.registerCallbackWithSignature<Json>("iconDrawables", [item]() { return ItemCallbacks::iconDrawables(item); });
-  callbacks.registerCallbackWithSignature<Json>("dropDrawables", [item]() { return ItemCallbacks::dropDrawables(item); });
-  callbacks.registerCallbackWithSignature<String>("largeImage", [item]() { return ItemCallbacks::largeImage(item); });
-  callbacks.registerCallbackWithSignature<String>("tooltipKind", [item]() { return ItemCallbacks::tooltipKind(item); });
-  callbacks.registerCallbackWithSignature<String>("category", [item]() { return ItemCallbacks::category(item); });
-  callbacks.registerCallbackWithSignature<String>("pickupSound", [item]() { return ItemCallbacks::pickupSound(item); });
-  callbacks.registerCallbackWithSignature<bool>("twoHanded", [item]() { return ItemCallbacks::twoHanded(item); });
-  callbacks.registerCallbackWithSignature<float>("timeToLive", [item]() { return ItemCallbacks::timeToLive(item); });
-  callbacks.registerCallbackWithSignature<Json>("learnBlueprintsOnPickup", [item]() { return ItemCallbacks::learnBlueprintsOnPickup(item); });
-  callbacks.registerCallbackWithSignature<bool, String>("hasItemTag", [item](String const& tag) { return ItemCallbacks::hasItemTag(item, tag); });
-  callbacks.registerCallbackWithSignature<Json>("pickupQuestTemplates", [item]() { return ItemCallbacks::pickupQuestTemplates(item); });
+  callbacks.registerCallbackWithSignature<String>("name", [&item]() { return ItemCallbacks::name(item); });
+  callbacks.registerCallbackWithSignature<size_t>("count", [&item]() { return ItemCallbacks::count(item); });
+  callbacks.registerCallbackWithSignature<size_t, size_t>("setCount", [&item](size_t count) { return ItemCallbacks::setCount(item, count); });
+  callbacks.registerCallbackWithSignature<size_t>("maxStack", [&item]() { return ItemCallbacks::maxStack(item); });
+  callbacks.registerCallbackWithSignature<bool, Json, Maybe<bool>>("matches", [&item](Json const& descriptor, Maybe<bool> const& exactMatch) { return ItemCallbacks::matches(item, descriptor, exactMatch); });
+  callbacks.registerCallbackWithSignature<bool, size_t>("consume", [&item](size_t count) { return ItemCallbacks::consume(item, count); });
+  callbacks.registerCallbackWithSignature<bool>("empty", [&item]() { return ItemCallbacks::empty(item); });
+  callbacks.registerCallbackWithSignature<Json>("descriptor", [&item]() { return ItemCallbacks::descriptor(item); });
+  callbacks.registerCallbackWithSignature<String>("description", [&item]() { return ItemCallbacks::description(item); });
+  callbacks.registerCallbackWithSignature<String>("friendlyName", [&item]() { return ItemCallbacks::friendlyName(item); });
+  callbacks.registerCallbackWithSignature<int>("rarity", [&item]() { return ItemCallbacks::rarity(item); });
+  callbacks.registerCallbackWithSignature<String>("rarityString", [&item]() { return ItemCallbacks::rarityString(item); });
+  callbacks.registerCallbackWithSignature<size_t>("price", [&item]() { return ItemCallbacks::price(item); });
+  callbacks.registerCallbackWithSignature<Json>("fuelAmount", [&item]() { return ItemCallbacks::fuelAmount(item); });
+  callbacks.registerCallbackWithSignature<Json>("iconDrawables", [&item]() { return ItemCallbacks::iconDrawables(item); });
+  callbacks.registerCallbackWithSignature<Json>("dropDrawables", [&item]() { return ItemCallbacks::dropDrawables(item); });
+  callbacks.registerCallbackWithSignature<String>("largeImage", [&item]() { return ItemCallbacks::largeImage(item); });
+  callbacks.registerCallbackWithSignature<String>("tooltipKind", [&item]() { return ItemCallbacks::tooltipKind(item); });
+  callbacks.registerCallbackWithSignature<String>("category", [&item]() { return ItemCallbacks::category(item); });
+  callbacks.registerCallbackWithSignature<String>("pickupSound", [&item]() { return ItemCallbacks::pickupSound(item); });
+  callbacks.registerCallbackWithSignature<bool>("twoHanded", [&item]() { return ItemCallbacks::twoHanded(item); });
+  callbacks.registerCallbackWithSignature<float>("timeToLive", [&item]() { return ItemCallbacks::timeToLive(item); });
+  callbacks.registerCallbackWithSignature<Json>("learnBlueprintsOnPickup", [&item]() { return ItemCallbacks::learnBlueprintsOnPickup(item); });
+  callbacks.registerCallbackWithSignature<bool, String>("hasItemTag", [&item](String const& tag) { return ItemCallbacks::hasItemTag(item, tag); });
+  callbacks.registerCallbackWithSignature<Json>("pickupQuestTemplates", [&item]() { return ItemCallbacks::pickupQuestTemplates(item); });
 
   return callbacks;
 }
@@ -43,31 +43,31 @@ LuaCallbacks LuaBindings::makeItemCallbacks(Item* item) {
 //
 // @return A string containing the name of the item as specified in its
 // configuration
-String LuaBindings::ItemCallbacks::name(Item* item) {
-  return item->name();
+String LuaBindings::ItemCallbacks::name(Item& item) {
+  return item.name();
 }
 
 // Returns the number of items in this stack
 //
 // @return An integer containing the number of items in this stack
-size_t LuaBindings::ItemCallbacks::count(Item* item) {
-  return item->count();
+size_t LuaBindings::ItemCallbacks::count(Item& item) {
+  return item.count();
 }
 
 // Sets the number of items in the stack (up to maxStack)
 //
 // @param count The desired amount
 // @return An integer containing the number of items that overflowed
-size_t LuaBindings::ItemCallbacks::setCount(Item* item, size_t count) {
-  return item->setCount(count);
+size_t LuaBindings::ItemCallbacks::setCount(Item& item, size_t count) {
+  return item.setCount(count);
 }
 
 // Returns the maximum number of items in this item's stack
 //
 // @return An integer containing the number of items in this item's maximum
 // stack
-size_t LuaBindings::ItemCallbacks::maxStack(Item* item) {
-  return item->maxStack();
+size_t LuaBindings::ItemCallbacks::maxStack(Item& item) {
+  return item.maxStack();
 }
 
 // Returns whether or not the serialized item descriptor passed logically
@@ -79,9 +79,9 @@ size_t LuaBindings::ItemCallbacks::maxStack(Item* item) {
 // @param descriptor A properly serialized item descriptor
 // @return A bool true if matches, false if not.
 //
-bool LuaBindings::ItemCallbacks::matches(Item* item, Json const& desc, Maybe<bool> exactMatch) {
+bool LuaBindings::ItemCallbacks::matches(Item& item, Json const& desc, Maybe<bool> exactMatch) {
   ItemDescriptor itemDesc = ItemDescriptor(desc);
-  return item->matches(itemDesc, exactMatch.value(false));
+  return item.matches(itemDesc, exactMatch.value(false));
 }
 
 // If the given number of this item is available, consumes that number and
@@ -90,36 +90,36 @@ bool LuaBindings::ItemCallbacks::matches(Item* item, Json const& desc, Maybe<boo
 //
 // @param toConsume The number of items you'd like to consume from this stack
 // @return true if items were successfully consumed, false otherwise
-bool LuaBindings::ItemCallbacks::consume(Item* item, size_t count) {
-  return item->consume(count);
+bool LuaBindings::ItemCallbacks::consume(Item& item, size_t count) {
+  return item.consume(count);
 }
 
 // Returns the number of items in the stack is equal to 0
 //
 // @return true if stack is empty, false otherwise
-bool LuaBindings::ItemCallbacks::empty(Item* item) {
-  return item->empty();
+bool LuaBindings::ItemCallbacks::empty(Item& item) {
+  return item.empty();
 }
 
 // Returns the descriptor of this item
 //
 // @return a table containing a serialized item descriptor
-Json LuaBindings::ItemCallbacks::descriptor(Item* item) {
-  return item->descriptor().toJson();
+Json LuaBindings::ItemCallbacks::descriptor(Item& item) {
+  return item.descriptor().toJson();
 }
 
 // Returns the item description
 //
 // @return a string containing the item's description
-String LuaBindings::ItemCallbacks::description(Item* item) {
-  return item->description();
+String LuaBindings::ItemCallbacks::description(Item& item) {
+  return item.description();
 }
 
 // Returns the friendly name of the item
 //
 // @return a string containing the friendly name of the item
-String LuaBindings::ItemCallbacks::friendlyName(Item* item) {
-  return item->friendlyName();
+String LuaBindings::ItemCallbacks::friendlyName(Item& item) {
+  return item.friendlyName();
 }
 
 // Returns the rarity of the item as an integer
@@ -130,90 +130,90 @@ String LuaBindings::ItemCallbacks::friendlyName(Item* item) {
 // Essential = 4
 //
 // @return an integer representing the rarity of the item
-int LuaBindings::ItemCallbacks::rarity(Item* item) {
-  return static_cast<int>(item->rarity());
+int LuaBindings::ItemCallbacks::rarity(Item& item) {
+  return static_cast<int>(item.rarity());
 }
 
 // Returns the rarity of the item as a string
 //
 // @return a string representing the rarity of the item
-String LuaBindings::ItemCallbacks::rarityString(Item* item) {
-  return RarityNames.getRight(item->rarity());
+String LuaBindings::ItemCallbacks::rarityString(Item& item) {
+  return RarityNames.getRight(item.rarity());
 }
 
 // Returns the shop price of the item
 //
 // @return an integer representing the shop price of the item in pixels (before
 // modifiers)
-size_t LuaBindings::ItemCallbacks::price(Item* item) {
-  return item->price();
+size_t LuaBindings::ItemCallbacks::price(Item& item) {
+  return item.price();
 }
 
 // Returns the amount of fuel given for buring this item stack in an engine
 //
 // @return an integer representing the amount of fuel in the entire stack
-unsigned LuaBindings::ItemCallbacks::fuelAmount(Item* item) {
-  return item->instanceValue("fuelAmount", 0).toUInt();
+unsigned LuaBindings::ItemCallbacks::fuelAmount(Item& item) {
+  return item.instanceValue("fuelAmount", 0).toUInt();
 }
 
 // Returns the iconDrawables for this item serialized into json
 //
 // @return List of tables containing the serialized icon drawables for this
 // item.
-Json LuaBindings::ItemCallbacks::iconDrawables(Item* item) {
-  return jsonFromList<Drawable>(item->iconDrawables(), [](Drawable const& drawable) { return drawable.toJson(); });
+Json LuaBindings::ItemCallbacks::iconDrawables(Item& item) {
+  return jsonFromList<Drawable>(item.iconDrawables(), [](Drawable const& drawable) { return drawable.toJson(); });
 }
 
 // Returns the dropDrawables for this item serialized into json
 //
 // @return List of tables containing the serialized drop drawables for this
 // item.
-Json LuaBindings::ItemCallbacks::dropDrawables(Item* item) {
-  return jsonFromList<Drawable>(item->dropDrawables(), [](Drawable const& drawable) { return drawable.toJson(); });
+Json LuaBindings::ItemCallbacks::dropDrawables(Item& item) {
+  return jsonFromList<Drawable>(item.dropDrawables(), [](Drawable const& drawable) { return drawable.toJson(); });
 }
 
 // Returns the large image for this item as displayed on mouseover in the
 // tooltip
 //
 // @return String containing a path to the largeImage for this item
-String LuaBindings::ItemCallbacks::largeImage(Item* item) {
-  return item->largeImage();
+String LuaBindings::ItemCallbacks::largeImage(Item& item) {
+  return item.largeImage();
 }
 
 // Returns the inspection kind of this item (as defined in item config, defaults
 // to empty string)
 //
 // @return String containing the inspection kind
-String LuaBindings::ItemCallbacks::tooltipKind(Item* item) {
-  return item->tooltipKind();
+String LuaBindings::ItemCallbacks::tooltipKind(Item& item) {
+  return item.tooltipKind();
 }
 
 // Returns the category of this item (as defined in item config)
 //
 // @return String containing the category
-String LuaBindings::ItemCallbacks::category(Item* item) {
-  return item->category();
+String LuaBindings::ItemCallbacks::category(Item& item) {
+  return item.category();
 }
 
 // Returns the pickup sound for the item
 //
 // @return string containing the path to the pickup sound for this item
-String LuaBindings::ItemCallbacks::pickupSound(Item* item) {
-  return item->pickupSound();
+String LuaBindings::ItemCallbacks::pickupSound(Item& item) {
+  return item.pickupSound();
 }
 
 // Returns whether or not the item is two handed
 //
 // @return bool containing true if the item is twoHanded, false otherwise
-bool LuaBindings::ItemCallbacks::twoHanded(Item* item) {
-  return item->twoHanded();
+bool LuaBindings::ItemCallbacks::twoHanded(Item& item) {
+  return item.twoHanded();
 }
 
 // Returns the time to live for this item as an item drop
 //
 // @return float containing the time to live for this item
-float LuaBindings::ItemCallbacks::timeToLive(Item* item) {
-  return item->timeToLive();
+float LuaBindings::ItemCallbacks::timeToLive(Item& item) {
+  return item.timeToLive();
 }
 
 // Returns a list of item descriptors representing recipes whose blueprints you
@@ -221,17 +221,17 @@ float LuaBindings::ItemCallbacks::timeToLive(Item* item) {
 // this item up
 //
 // @return a list of tables containing serialize item descriptors
-Json LuaBindings::ItemCallbacks::learnBlueprintsOnPickup(Item* item) {
+Json LuaBindings::ItemCallbacks::learnBlueprintsOnPickup(Item& item) {
   return jsonFromList<ItemDescriptor>(
-      item->learnBlueprintsOnPickup(), [](ItemDescriptor const& descriptor) { return descriptor.toJson(); });
+      item.learnBlueprintsOnPickup(), [](ItemDescriptor const& descriptor) { return descriptor.toJson(); });
 }
 
 // Returns whether or not this items has a specific item tag
 //
 // @param itemTag a string containing the tag value
 // @return a bool representing whether or not this item contains that tag
-bool LuaBindings::ItemCallbacks::hasItemTag(Item* item, String const& itemTag) {
-  return item->hasItemTag(itemTag);
+bool LuaBindings::ItemCallbacks::hasItemTag(Item& item, String const& itemTag) {
+  return item.hasItemTag(itemTag);
 }
 
 // Returns the pickup Quest Templates for this item
@@ -239,8 +239,8 @@ bool LuaBindings::ItemCallbacks::hasItemTag(Item* item, String const& itemTag) {
 // @return a list of string containing the different quest templates triggered
 // by this item on
 // pickup
-Json LuaBindings::ItemCallbacks::pickupQuestTemplates(Item* item) {
-  return item->pickupQuestTemplates().transformed(mem_fn(&QuestArcDescriptor::toJson));
+Json LuaBindings::ItemCallbacks::pickupQuestTemplates(Item& item) {
+  return item.pickupQuestTemplates().transformed(mem_fn(&QuestArcDescriptor::toJson));
 }
 
 }

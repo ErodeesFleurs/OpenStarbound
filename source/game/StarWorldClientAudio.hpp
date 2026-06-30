@@ -11,8 +11,7 @@ class StarWorldClientAudio {
 public:
   friend class WorldClient;
 
-  StarWorldClientAudio() = default;
-  explicit StarWorldClientAudio(WorldClient* worldClient);
+  explicit StarWorldClientAudio(WorldClient& worldClient);
 
   Vec2I environmentBiomeTrackPosition() const;
   AmbientNoisesDescriptionPtr currentAmbientNoises() const;
@@ -26,7 +25,7 @@ public:
   List<AudioInstancePtr> pullPendingMusic();
 
 private:
-  WorldClient* m_worldClient = nullptr;
+  WorldClient& m_worldClient;
 
   AmbientManager m_ambientSounds;
   AmbientManager m_musicTrack;

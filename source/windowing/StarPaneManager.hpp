@@ -37,7 +37,7 @@ class PaneManager {
 public:
   using DismissCallback = function<void(PanePtr const&)>;
 
-  PaneManager();
+  explicit PaneManager(GuiContext& context);
 
   // Display a pane on any given layer.  The pane lifetime in this class is
   // only during display, once dismissed, the pane is forgotten completely.
@@ -88,7 +88,7 @@ private:
   Vec2I calculateNewInterfacePosition(PanePtr const& pane, float interfaceScaleRatio) const;
   bool dismiss(PanePtr const& pane);
 
-  GuiContext* m_context;
+  GuiContext& m_context;
   float m_prevInterfaceScale;
 
   // Map of each pane layer, where the 0th pane is the topmost pane in each layer.

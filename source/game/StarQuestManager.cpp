@@ -1,17 +1,17 @@
 #include "StarQuestManager.hpp"
+#include "StarClientContext.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerInventory.hpp"
-#include "StarItemDatabase.hpp"
 #include "StarRandom.hpp"
-#include "StarJsonExtra.hpp"
 #include "StarTime.hpp"
-#include "StarClientContext.hpp"
 #include "StarUniverseClient.hpp"
 
 namespace Star {
 
-QuestManager::QuestManager(AssetsConstPtr assets, Player* player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
-  : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
+QuestManager::QuestManager(AssetsConstPtr assets, Player& player, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+    : m_assets(std::move(assets)), m_itemDatabase(std::move(itemDatabase)), m_objectDatabase(std::move(objectDatabase)), m_questTemplateDatabase(std::move(questTemplateDatabase)), m_versioningDatabase(std::move(versioningDatabase)) {
   if (!m_assets)
     throw StarException("QuestManager requires assets service");
   if (!m_objectDatabase)
@@ -21,13 +21,13 @@ QuestManager::QuestManager(AssetsConstPtr assets, Player* player, ItemDatabaseCo
   if (!m_versioningDatabase)
     throw StarException("QuestManager requires versioning database service");
 
-  m_player = player;
+  m_player = &player;
   m_world = nullptr;
   m_trackOnWorldQuests = false;
 }
 
-QuestManager::QuestManager(AssetsConstPtr assets, Player* player, World* world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
-  : QuestManager(std::move(assets), player, std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase)) {
+QuestManager::QuestManager(AssetsConstPtr assets, Player& player, World& world, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase)
+    : QuestManager(std::move(assets), player, std::move(itemDatabase), std::move(objectDatabase), std::move(questTemplateDatabase), std::move(versioningDatabase)) {
   init(world);
 }
 
@@ -37,28 +37,28 @@ QuestTemplatePtr getTemplate(QuestTemplateDatabaseConstPtr const& questTemplateD
 
 StringMap<QuestPtr> readQuests(AssetsConstPtr assets, Json const& json, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase) {
   auto validateArc = [questTemplateDatabase](QuestArcDescriptor const& arc) {
-      for (auto quest : arc.quests) {
-        if (!questTemplateDatabase->questTemplate(quest.templateId))
-          return false;
-      }
-      return true;
-    };
+    for (auto quest : arc.quests) {
+      if (!questTemplateDatabase->questTemplate(quest.templateId))
+        return false;
+    }
+    return true;
+  };
 
   StringMap<QuestPtr> result;
   for (auto const& questPair : json.iterateObject()) {
     // don't load the quest unless all quests in the arc exist
     Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(questPair.second), "Quest");
-    auto questArc = QuestArcDescriptor::diskLoad(diskStore.get("arc"));
+    auto questArc = QuestArcDescriptor::diskLoad(diskStore.get("arc"), versioningDatabase);
     if (validateArc(questArc))
       result[questPair.first] = make_shared<Quest>(assets, questPair.second, itemDatabase, objectDatabase, questTemplateDatabase, versioningDatabase);
   }
   return result;
 }
 
-function<bool (QuestPtr const&)> questFilter(QuestState state) {
+function<bool(QuestPtr const&)> questFilter(QuestState state) {
   return [state](QuestPtr const& quest) {
-      return quest->state() == state;
-    };
+    return quest->state() == state;
+  };
 }
 
 void QuestManager::diskLoad(Json const& quests) {
@@ -70,9 +70,8 @@ Json QuestManager::diskStore() {
   auto questPtrToJson = [](QuestPtr const& quest) { return quest->diskStore(); };
 
   return JsonObject{
-      {"quests", jsonFromMapV<StringMap<QuestPtr>>(m_quests, questPtrToJson)},
-      {"currentQuest", jsonFromMaybe(m_trackedQuestId)}
-    };
+    {"quests", jsonFromMapV<StringMap<QuestPtr>>(m_quests, questPtrToJson)},
+    {"currentQuest", jsonFromMaybe(m_trackedQuestId)}};
 }
 
 void QuestManager::setUniverseClient(UniverseClient* client) {
@@ -99,12 +98,12 @@ VersioningDatabaseConstPtr QuestManager::versioningDatabase() const {
   return m_versioningDatabase;
 }
 
-void QuestManager::init(World* world) {
-  m_world = world;
+void QuestManager::init(World& world) {
+  m_world = &world;
   for (auto& [_, quest] : m_quests) {
     if (!questValidOnServer(quest))
       continue;
-    quest->init(m_player, world, m_client);
+    quest->init(*m_player, world, m_client);
   }
   m_trackOnWorldQuests = true;
 
@@ -152,8 +151,9 @@ bool QuestManager::canStart(QuestArcDescriptor const& questArc) const {
 }
 
 void QuestManager::offer(QuestPtr const& quest) {
+  starAssert(m_world);
   m_quests[quest->questId()] = quest;
-  quest->init(m_player, m_world, m_client);
+  quest->init(*m_player, *m_world, m_client);
   quest->offer();
 }
 
@@ -265,21 +265,21 @@ Maybe<QuestPtr> QuestManager::getFirstMainQuest() {
 
 void sortQuests(List<QuestPtr>& quests) {
   std::sort(quests.begin(),
-      quests.end(),
-      [](QuestPtr const& left, QuestPtr const& right) -> bool {
-        int64_t leftUpdated = left->lastUpdatedOn();
-        int64_t rightUpdated = right->lastUpdatedOn();
-        String leftQuestId = left->templateId();
-        String rightQuestId = right->templateId();
-        return std::tie(leftUpdated, leftQuestId) < std::tie(rightUpdated, rightQuestId);
-      });
+            quests.end(),
+            [](QuestPtr const& left, QuestPtr const& right) -> bool {
+              int64_t leftUpdated = left->lastUpdatedOn();
+              int64_t rightUpdated = right->lastUpdatedOn();
+              String leftQuestId = left->templateId();
+              String rightQuestId = right->templateId();
+              return std::tie(leftUpdated, leftQuestId) < std::tie(rightUpdated, rightQuestId);
+            });
 }
 
 List<QuestPtr> QuestManager::listActiveQuests() const {
   List<QuestPtr> result = serverQuests().values();
   result.filter([&](QuestPtr quest) {
-      return quest->state() == QuestState::Active && quest->showInLog();
-    });
+    return quest->state() == QuestState::Active && quest->showInLog();
+  });
   sortQuests(result);
   return result;
 }
@@ -287,8 +287,8 @@ List<QuestPtr> QuestManager::listActiveQuests() const {
 List<QuestPtr> QuestManager::listCompletedQuests() const {
   List<QuestPtr> result = serverQuests().values();
   result.filter([](QuestPtr quest) {
-      return quest->state() == QuestState::Complete && quest->showInLog();
-    });
+    return quest->state() == QuestState::Complete && quest->showInLog();
+  });
   sortQuests(result);
   return result;
 }
@@ -296,8 +296,8 @@ List<QuestPtr> QuestManager::listCompletedQuests() const {
 List<QuestPtr> QuestManager::listFailedQuests() const {
   List<QuestPtr> result = serverQuests().values();
   result.filter([](QuestPtr quest) {
-      return quest->state() == QuestState::Failed && quest->showInLog();
-    });
+    return quest->state() == QuestState::Failed && quest->showInLog();
+  });
   sortQuests(result);
   return result;
 }
@@ -372,7 +372,7 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) c
       if (auto indicatorImage = pair.second->customIndicator(entity)) {
         if (questGiver)
           indicatorPos = questGiver->questIndicatorPosition();
-        return QuestIndicator{ *indicatorImage, indicatorPos };
+        return QuestIndicator{*indicatorImage, indicatorPos};
       }
     }
   }
@@ -420,7 +420,7 @@ void QuestManager::update(float dt) {
       for (auto quest : listActiveQuests()) {
         if (auto questWorld = quest->worldId()) {
           if (playerWorldId == *questWorld)
-            m_onWorldQuestId = quest->questId();  
+            m_onWorldQuestId = quest->questId();
         }
       }
     }
@@ -448,11 +448,11 @@ void QuestManager::update(float dt) {
 
 void QuestManager::startInitialQuests() {
   auto startingQuests =
-      m_assets->json(strf("/quests/quests.config:initialquests.{}", m_player->species())).toArray();
+    m_assets->json(strf("/quests/quests.config:initialquests.{}", m_player->species())).toArray();
   for (auto const& questArcJson : startingQuests) {
     QuestArcDescriptor quest = QuestArcDescriptor::fromJson(questArcJson);
     if (canStart(quest))
-      offer(make_shared<Quest>(m_assets, quest, 0, m_player, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase));
+      offer(make_shared<Quest>(m_assets, quest, 0, *m_player, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase));
   }
 }
 
@@ -466,4 +466,4 @@ bool QuestManager::questValidOnServer(QuestPtr q) const {
   return !(q->hideCrossServer() && q->serverUuid().isValid() && *q->serverUuid() != m_player->clientContext()->serverUuid());
 }
 
-}
+}// namespace Star

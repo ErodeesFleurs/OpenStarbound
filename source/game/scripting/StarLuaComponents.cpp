@@ -9,9 +9,9 @@ namespace Star {
 
 LuaBaseComponent::LuaBaseComponent() {
   addCallbacks("sb", LuaBindings::makeUtilityCallbacks());
-  addCallbacks("root", LuaBindings::makeRootCallbacks());
   addCallbacks("threads", makeThreadsCallbacks());
-  setAutoReInit(true);
+  m_autoReInit = true;
+  m_reloadTracker = make_shared<TrackerListener>();
 }
 
 LuaBaseComponent::~LuaBaseComponent() {
@@ -51,13 +51,15 @@ bool LuaBaseComponent::removeCallbacks(String const& groupName) {
 }
 
 bool LuaBaseComponent::autoReInit() const {
-  return static_cast<bool>(m_reloadTracker);
+  return m_autoReInit;
 }
 
 void LuaBaseComponent::setAutoReInit(bool autoReInit) {
-  if (autoReInit) {
+  m_autoReInit = autoReInit;
+  if (m_autoReInit) {
     m_reloadTracker = make_shared<TrackerListener>();
-    Root::singleton().registerReloadListener(m_reloadTracker);
+    if (m_luaRoot)
+      m_luaRoot->registerReloadListener(m_reloadTracker);
   } else {
     m_reloadTracker.reset();
   }
@@ -65,6 +67,8 @@ void LuaBaseComponent::setAutoReInit(bool autoReInit) {
 
 void LuaBaseComponent::setLuaRoot(LuaRootPtr luaRoot) {
   m_luaRoot = std::move(luaRoot);
+  if (m_luaRoot && m_reloadTracker)
+    m_luaRoot->registerReloadListener(m_reloadTracker);
 }
 
 LuaRootPtr const& LuaBaseComponent::luaRoot() {
@@ -170,7 +174,7 @@ LuaCallbacks LuaBaseComponent::makeThreadsCallbacks() {
       m_threads.get(name)->stop();
       m_threads.remove(name);
     }
-    auto thread = make_shared<ScriptableThread>(parameters);
+    auto thread = make_shared<ScriptableThread>(parameters, m_luaRoot->services());
     thread->setPause(false);
     thread->start();
     m_threads.set(name,thread);

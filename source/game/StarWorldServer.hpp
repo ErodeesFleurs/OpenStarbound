@@ -1,18 +1,14 @@
 #pragma once
 
+#include "StarAssets.hpp"
+#include "StarBiomeDatabase.hpp"
 #include "StarCellularLighting.hpp"
 #include "StarCellularLiquid.hpp"
-#include "StarBiomeDatabase.hpp"
 #include "StarCollisionGenerator.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarAssets.hpp"
 #include "StarConfiguration.hpp"
 #include "StarEntityFactory.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
 #include "StarInterpolationTracker.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaRoot.hpp"
@@ -23,13 +19,14 @@
 #include "StarPlantDatabase.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarRpcThreadPromise.hpp"
-#include "StarSpawner.hpp"
 #include "StarSpawnTypeDatabase.hpp"
+#include "StarSpawner.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarStagehandDatabase.hpp"
+#include "StarTerrainDatabase.hpp"
 #include "StarTreasure.hpp"
-#include "StarVersioningDatabase.hpp"
 #include "StarVehicleDatabase.hpp"
+#include "StarVersioningDatabase.hpp"
 #include "StarWarping.hpp"
 #include "StarWeather.hpp"
 #include "StarWorld.hpp"
@@ -48,6 +45,8 @@ class Player;
 using PlayerPtr = SharedPtr<Player>;
 class WorldTemplate;
 using WorldTemplatePtr = SharedPtr<WorldTemplate>;
+class DungeonDefinitions;
+using DungeonDefinitionsConstPtr = SharedPtr<DungeonDefinitions const>;
 
 // Aggregate of all service dependencies required by WorldServer.
 // Construct via Root::makeWorldServerServices().
@@ -68,6 +67,7 @@ struct WorldServerServices {
   SpeciesDatabaseConstPtr speciesDatabase;
   EntityFactoryConstPtr entityFactory;
   LiquidsDatabaseConstPtr liquidsDatabase;
+  TerrainDatabaseConstPtr terrainDatabase;
   BiomeDatabaseConstPtr biomeDatabase;
   VersioningDatabaseConstPtr versioningDatabase;
   FunctionDatabaseConstPtr functionDatabase;
@@ -78,6 +78,7 @@ struct WorldServerServices {
   ImageMetadataDatabaseConstPtr imageMetadataDatabase;
   DungeonDefinitionsConstPtr dungeonDefinitions;
   BehaviorDatabaseConstPtr behaviorDatabase;
+  LuaRootServices luaRootServices;
 };
 class Sky;
 using SkyPtr = SharedPtr<Sky>;
@@ -160,10 +161,12 @@ public:
   BehaviorDatabaseConstPtr behaviorDatabase() const override;
   NpcDatabaseConstPtr npcDatabase() const;
   MonsterDatabaseConstPtr monsterDatabase() const;
-  ProjectileDatabaseConstPtr projectileDatabase() const;
+  ProjectileDatabaseConstPtr projectileDatabase() const override;
   SpawnTypeDatabaseConstPtr spawnTypeDatabase() const;
   StagehandDatabaseConstPtr stagehandDatabase() const;
   VehicleDatabaseConstPtr vehicleDatabase() const;
+  TerrainDatabaseConstPtr terrainDatabase() const;
+  BiomeDatabaseConstPtr biomeDatabase() const;
   DungeonDefinitionsConstPtr dungeonDefinitions() const;
   LiquidsDatabaseConstPtr liquidsDatabase() const override;
   EffectSourceDatabaseConstPtr effectSourceDatabase() const override;
@@ -174,7 +177,7 @@ public:
   void setPause(bool pause);
   void setReferenceClock(ClockPtr clock);
 
-  void initLua(UniverseServer* universe);
+  void initLua(UniverseServer& universe);
 
   // Give this world a central structure.  If there is a previous central
   // structure it is removed first.  Returns the structure with transformed
@@ -467,6 +470,7 @@ private:
   Json m_serverConfig;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
+  LuaRootServices m_luaRootServices;
   MaterialDatabaseConstPtr m_materialDatabase;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
@@ -481,6 +485,7 @@ private:
   SpeciesDatabaseConstPtr m_speciesDatabase;
   EntityFactoryConstPtr m_entityFactory;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
+  TerrainDatabaseConstPtr m_terrainDatabase;
   BiomeDatabaseConstPtr m_biomeDatabase;
   VersioningDatabaseConstPtr m_versioningDatabase;
   FunctionDatabaseConstPtr m_functionDatabase;
@@ -499,7 +504,7 @@ private:
 
   WorldTemplatePtr m_worldTemplate;
   WorldStructure m_centralStructure;
-  WorldServerSpawnFinder m_spawnFinder{this};
+  WorldServerSpawnFinder m_spawnFinder{*this};
   WorldServerProperties m_worldProperties;
 
   Maybe<pair<String, String>> m_newPlanetType;
@@ -530,7 +535,7 @@ private:
 
   ClockPtr m_referenceClock;
 
-  WorldServerCollision m_collision{this};
+  WorldServerCollision m_collision{*this};
 
   HashMap<NetCompatibilityRules, HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>>> m_netStateCache;
   OrderedHashMap<ConnectionId, shared_ptr<ClientInfo>> m_clientInfo;
@@ -538,7 +543,7 @@ private:
   GameTimer m_entityUpdateTimer;
   GameTimer m_tileEntityBreakCheckTimer;
 
-  WorldServerLiquid m_liquid{this};
+  WorldServerLiquid m_liquid{*this};
   FallingBlocksAgentPtr m_fallingBlocksAgent;
   Spawner m_spawner;
 
@@ -551,7 +556,7 @@ private:
 
   bool m_needsGlobalBreakCheck;
 
-  WorldServerDungeonProtection m_dungeonProtection{this};
+  WorldServerDungeonProtection m_dungeonProtection{*this};
 
   HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;
 

@@ -115,6 +115,7 @@ using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 class VersioningDatabase;
 using VersioningDatabasePtr = SharedPtr<VersioningDatabase>;
 using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
+struct LuaRootServices;
 
 class QuestTemplateDatabase;
 using QuestTemplateDatabasePtr = SharedPtr<QuestTemplateDatabase>;
@@ -162,7 +163,7 @@ using CollectionDatabaseConstPtr = SharedPtr<CollectionDatabase const>;
 
 class Root;
 
-// Singleton Root object for starbound providing access to the unique
+// Root object for starbound providing access to the unique
 // Configuration class, as well as the assets, root factories, and databases.
 // Root, and all members of Root, should be thread safe.  Root initialization
 // should be completed before any code dependent on Root is started in any
@@ -208,14 +209,6 @@ public:
     // storage directory.
     Maybe<String> runtimeConfigFile;
   };
-
-  // Get pointer to the singleton root instance, if it exists.  Otherwise,
-  // returns nullptr.
-  static Root* singletonPtr();
-
-  // Gets reference to root singleton, throws RootException if root is not
-  // initialized.
-  static Root& singleton();
 
   // Initializes the starbound root object and does the initial load.  All of
   // the Root members will be just in time loaded as they are accessed, unless
@@ -297,6 +290,7 @@ public:
   SpawnTypeDatabaseConstPtr spawnTypeDatabase();
   RadioMessageDatabaseConstPtr radioMessageDatabase();
   CollectionDatabaseConstPtr collectionDatabase();
+  LuaRootServices luaRootServices();
 
   Settings& settings();
 

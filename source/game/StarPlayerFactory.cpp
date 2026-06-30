@@ -1,16 +1,16 @@
 #include "StarPlayerFactory.hpp"
+#include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarAssets.hpp"
+#include "StarRebuilder.hpp"
 #include "StarRoot.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarUtilityLuaBindings.hpp"
-#include "StarRebuilder.hpp"
 
 namespace Star {
 
 PlayerConfig::PlayerConfig(JsonObject const& cfg, AssetsConstPtr assets)
-  : humanoidTiming(cfg.contains("humanoidTiming") ? Humanoid::HumanoidTiming(cfg.value("humanoidTiming")) : Humanoid::HumanoidTiming::sensibleDefaults(std::move(assets))) {
+    : humanoidTiming(cfg.contains("humanoidTiming") ? Humanoid::HumanoidTiming(cfg.value("humanoidTiming")) : Humanoid::HumanoidTiming::sensibleDefaults(std::move(assets))) {
   defaultIdentity = HumanoidIdentity(cfg.value("defaultHumanoidIdentity"));
 
   for (Json v : cfg.value("defaultItems", JsonArray()).toArray())
@@ -51,25 +51,28 @@ PlayerConfig::PlayerConfig(JsonObject const& cfg, AssetsConstPtr assets)
     genericScriptContexts[p.first] = p.second.toString();
 }
 
-PlayerFactory::PlayerFactory(AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, function<EntityFactoryConstPtr()> entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase)
-  : m_assets(std::move(assets)),
-    m_configuration(std::move(configuration)),
-    m_materialDatabase(std::move(materialDatabase)),
-    m_itemDatabase(std::move(itemDatabase)),
-    m_objectDatabase(std::move(objectDatabase)),
-    m_questTemplateDatabase(std::move(questTemplateDatabase)),
-    m_versioningDatabase(std::move(versioningDatabase)),
-    m_codexDatabase(std::move(codexDatabase)),
-    m_danceDatabase(std::move(danceDatabase)),
-    m_emoteProcessor(std::move(emoteProcessor)),
-    m_radioMessageDatabase(std::move(radioMessageDatabase)),
-    m_aiDatabase(std::move(aiDatabase)),
-    m_collectionDatabase(std::move(collectionDatabase)),
-    m_speciesDatabase(std::move(speciesDatabase)),
-    m_entityFactory(std::move(entityFactory)),
-    m_liquidsDatabase(std::move(liquidsDatabase)),
-    m_techDatabase(std::move(techDatabase)),
-    m_rebuilder(make_shared<Rebuilder>(m_assets, "player")) {
+PlayerFactory::PlayerFactory(AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, function<EntityFactoryConstPtr()> entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices)
+    : m_assets(std::move(assets)),
+      m_configuration(std::move(configuration)),
+      m_materialDatabase(std::move(materialDatabase)),
+      m_itemDatabase(std::move(itemDatabase)),
+      m_objectDatabase(std::move(objectDatabase)),
+      m_questTemplateDatabase(std::move(questTemplateDatabase)),
+      m_versioningDatabase(std::move(versioningDatabase)),
+      m_codexDatabase(std::move(codexDatabase)),
+      m_danceDatabase(std::move(danceDatabase)),
+      m_emoteProcessor(std::move(emoteProcessor)),
+      m_radioMessageDatabase(std::move(radioMessageDatabase)),
+      m_aiDatabase(std::move(aiDatabase)),
+      m_collectionDatabase(std::move(collectionDatabase)),
+      m_speciesDatabase(std::move(speciesDatabase)),
+      m_entityFactory(std::move(entityFactory)),
+      m_liquidsDatabase(std::move(liquidsDatabase)),
+      m_techDatabase(std::move(techDatabase)),
+      m_statusEffectDatabase(std::move(statusEffectDatabase)),
+      m_particleDatabase(std::move(particleDatabase)),
+      m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+      m_rebuilder(make_shared<Rebuilder>(m_assets, "player", std::move(luaRootServices))) {
   if (!m_assets)
     throw PlayerException("PlayerFactory requires assets service");
   if (!m_configuration)
@@ -104,23 +107,29 @@ PlayerFactory::PlayerFactory(AssetsConstPtr assets, ConfigurationPtr configurati
     throw PlayerException("PlayerFactory requires liquids database service");
   if (!m_techDatabase)
     throw PlayerException("PlayerFactory requires tech database service");
+  if (!m_statusEffectDatabase)
+    throw PlayerException("PlayerFactory requires status effect database service");
+  if (!m_particleDatabase)
+    throw PlayerException("PlayerFactory requires particle database service");
+  if (!m_imageMetadataDatabase)
+    throw PlayerException("PlayerFactory requires image metadata database service");
 
   m_config = make_shared<PlayerConfig>(m_assets->json("/player.config").toObject(), m_assets);
 }
 
 PlayerPtr PlayerFactory::create() const {
-  return make_shared<Player>(m_config, Uuid(), m_assets, m_configuration, m_materialDatabase, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase, m_codexDatabase, m_danceDatabase, m_emoteProcessor, m_radioMessageDatabase, m_aiDatabase, m_collectionDatabase, m_speciesDatabase, m_entityFactory(), m_liquidsDatabase, m_techDatabase);
+  return make_shared<Player>(m_config, Uuid(), m_assets, m_configuration, m_materialDatabase, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase, m_codexDatabase, m_danceDatabase, m_emoteProcessor, m_radioMessageDatabase, m_aiDatabase, m_collectionDatabase, m_speciesDatabase, m_entityFactory(), m_liquidsDatabase, m_techDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase);
 }
 
 PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
   PlayerPtr player;
   try {
-    player = make_shared<Player>(m_config, diskStore, m_assets, m_configuration, m_materialDatabase, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase, m_codexDatabase, m_danceDatabase, m_emoteProcessor, m_radioMessageDatabase, m_aiDatabase, m_collectionDatabase, m_speciesDatabase, m_entityFactory(), m_liquidsDatabase, m_techDatabase);
+    player = make_shared<Player>(m_config, diskStore, m_assets, m_configuration, m_materialDatabase, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase, m_codexDatabase, m_danceDatabase, m_emoteProcessor, m_radioMessageDatabase, m_aiDatabase, m_collectionDatabase, m_speciesDatabase, m_entityFactory(), m_liquidsDatabase, m_techDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
-        player = make_shared<Player>(m_config, store, m_assets, m_configuration, m_materialDatabase, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase, m_codexDatabase, m_danceDatabase, m_emoteProcessor, m_radioMessageDatabase, m_aiDatabase, m_collectionDatabase, m_speciesDatabase, m_entityFactory(), m_liquidsDatabase, m_techDatabase);
+        player = make_shared<Player>(m_config, store, m_assets, m_configuration, m_materialDatabase, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase, m_codexDatabase, m_danceDatabase, m_emoteProcessor, m_radioMessageDatabase, m_aiDatabase, m_collectionDatabase, m_speciesDatabase, m_entityFactory(), m_liquidsDatabase, m_techDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -135,7 +144,7 @@ PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
 }
 
 PlayerPtr PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Player>(m_config, netStore, rules, m_assets, m_configuration, m_materialDatabase, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase, m_codexDatabase, m_danceDatabase, m_emoteProcessor, m_radioMessageDatabase, m_aiDatabase, m_collectionDatabase, m_speciesDatabase, m_entityFactory(), m_liquidsDatabase, m_techDatabase);
+  return make_shared<Player>(m_config, netStore, rules, m_assets, m_configuration, m_materialDatabase, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase, m_codexDatabase, m_danceDatabase, m_emoteProcessor, m_radioMessageDatabase, m_aiDatabase, m_collectionDatabase, m_speciesDatabase, m_entityFactory(), m_liquidsDatabase, m_techDatabase, m_statusEffectDatabase, m_particleDatabase, m_imageMetadataDatabase);
 }
 
-}
+}// namespace Star

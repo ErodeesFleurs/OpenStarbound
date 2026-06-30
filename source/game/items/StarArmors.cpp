@@ -16,8 +16,8 @@ EnumMap<ArmorType> ArmorTypeNames{
   {ArmorType::Back, "Back"}
 };
 
-ArmorItem::ArmorItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
-  : Item(assets, config, directory, data), SwingableItem(config), m_functionDatabase(std::move(functionDatabase)) {
+ArmorItem::ArmorItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, data), SwingableItem(config), m_functionDatabase(std::move(functionDatabase)) {
   m_assets = std::move(assets);
   if (!m_functionDatabase)
     throw ItemException("ArmorItem requires function database service");
@@ -141,8 +141,8 @@ void ArmorItem::refreshIconDrawables() {
   auto drawables = iconDrawables();
   for (auto& drawable : drawables) {
     if (drawable.isImage()) {
-      drawable.imagePart().removeDirectives(true);
-      drawable.imagePart().addDirectives(m_directives, true);
+      drawable.imagePart().removeDirectives(true, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(m_directives, true, m_imageMetadataDatabase);
     }
   }
   setIconDrawables(std::move(drawables));
@@ -169,8 +169,8 @@ void ArmorItem::refreshStatusEffects() {
     m_statusEffects.appendAll(augmentConfig.getArray("effects", JsonArray()).transformed(jsonToPersistentStatusEffect));
 }
 
-HeadArmor::HeadArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
-  : ArmorItem(std::move(assets), config, directory, data, std::move(functionDatabase)) {
+HeadArmor::HeadArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
+  : ArmorItem(std::move(assets), std::move(imageMetadataDatabase), config, directory, data, std::move(functionDatabase)) {
   m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 
@@ -202,12 +202,12 @@ Directives const& HeadArmor::maskDirectives() const {
 
 List<Drawable> HeadArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets, m_imageMetadataDatabase);
   return humanoid->renderDummy(gender, this, nullptr, nullptr, nullptr);
 }
 
-ChestArmor::ChestArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
-  : ArmorItem(std::move(assets), config, directory, data, std::move(functionDatabase)) {
+ChestArmor::ChestArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
+  : ArmorItem(std::move(assets), std::move(imageMetadataDatabase), config, directory, data, std::move(functionDatabase)) {
   Json maleImages = config.get("maleFrames");
   m_maleBodyImage = AssetPath::relativeTo(directory, maleImages.getString("body"));
   m_maleFrontSleeveImage = AssetPath::relativeTo(directory, maleImages.getString("frontSleeve"));
@@ -250,12 +250,12 @@ String const& ChestArmor::backSleeveFrameset(Gender gender) const {
 
 List<Drawable> ChestArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets, m_imageMetadataDatabase);
   return humanoid->renderDummy(gender, nullptr, this, nullptr, nullptr);
 }
 
-LegsArmor::LegsArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
-  : ArmorItem(std::move(assets), config, directory, data, std::move(functionDatabase)) {
+LegsArmor::LegsArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
+  : ArmorItem(std::move(assets), std::move(imageMetadataDatabase), config, directory, data, std::move(functionDatabase)) {
   m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 }
@@ -277,12 +277,12 @@ String const& LegsArmor::frameset(Gender gender) const {
 
 List<Drawable> LegsArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets, m_imageMetadataDatabase);
   return humanoid->renderDummy(gender, nullptr, nullptr, this, nullptr);
 }
 
-BackArmor::BackArmor(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
-  : ArmorItem(std::move(assets), config, directory, data, std::move(functionDatabase)) {
+BackArmor::BackArmor(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data, FunctionDatabaseConstPtr functionDatabase)
+  : ArmorItem(std::move(assets), std::move(imageMetadataDatabase), config, directory, data, std::move(functionDatabase)) {
   m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 }
@@ -304,7 +304,7 @@ String const& BackArmor::frameset(Gender gender) const {
 
 List<Drawable> BackArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets, m_imageMetadataDatabase);
   return humanoid->renderDummy(gender, nullptr, nullptr, nullptr, this);
 }
 

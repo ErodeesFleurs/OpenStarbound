@@ -1,13 +1,15 @@
 #pragma once
 
+#include "StarAssets.hpp"
+#include "StarBTreeDatabase.hpp"
+#include "StarBiomeDatabase.hpp"
+#include "StarCelestialTypes.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarPerlin.hpp"
 #include "StarRect.hpp"
+#include "StarThread.hpp"
 #include "StarTtlCache.hpp"
 #include "StarWeightedPool.hpp"
-#include "StarThread.hpp"
-#include "StarBTreeDatabase.hpp"
-#include "StarCelestialTypes.hpp"
-#include "StarPerlin.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -77,7 +79,7 @@ protected:
 
 class CelestialMasterDatabase : public CelestialDatabase {
 public:
-  CelestialMasterDatabase(AssetsConstPtr assets, Maybe<VersioningDatabaseConstPtr> versioningDatabase = {}, Maybe<String> databaseFile = {});
+  CelestialMasterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, Maybe<VersioningDatabaseConstPtr> versioningDatabase = {}, Maybe<String> databaseFile = {});
 
   CelestialBaseInformation baseInformation() const;
   CelestialResponse respondToRequest(CelestialRequest const& requests);
@@ -93,7 +95,7 @@ public:
   // celestial space that satisfies the given parameters.  May fail to find
   // anything, though with the defaults this is vanishingly unlikely.
   Maybe<CelestialCoordinate> findRandomWorld(unsigned tries = 10, unsigned trySpatialRange = 50,
-      function<bool(CelestialCoordinate)> filter = {}, Maybe<uint64_t> seed = {});
+                                             function<bool(CelestialCoordinate)> filter = {}, Maybe<uint64_t> seed = {});
 
   // CelestialMasterDatabase always returns actual data, as it does just in
   // time generation.
@@ -165,19 +167,21 @@ protected:
   };
 
   static Maybe<CelestialOrbitRegion> orbitRegion(
-      List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber);
+    List<CelestialOrbitRegion> const& orbitRegions, int planetaryOrbitNumber);
 
   using UnlockDuringFunction = std::function<void(std::function<void()>&&)>&&;
   CelestialChunk const& getChunk(Vec2I const& chunkLocation, UnlockDuringFunction unlockDuring = {});
 
   CelestialChunk produceChunk(Vec2I const& chunkLocation) const;
   Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> produceSystem(
-      RandomSource& random, Vec3I const& location) const;
+    RandomSource& random, Vec3I const& location) const;
   List<CelestialConstellation> produceConstellations(
-      RandomSource& random, List<Vec2I> const& constellationCandidates) const;
+    RandomSource& random, List<Vec2I> const& constellationCandidates) const;
 
   GenerationInformation m_generationInformation;
   AssetsConstPtr m_assets;
+  LiquidsDatabaseConstPtr m_liquidsDatabase;
+  BiomeDatabaseConstPtr m_biomeDatabase;
   VersioningDatabaseConstPtr m_versioningDatabase;
 
   mutable RecursiveMutex m_mutex;
@@ -231,4 +235,4 @@ private:
   HashMap<Vec3I, Timer> m_pendingSystemRequests;
 };
 
-}
+}// namespace Star

@@ -15,6 +15,7 @@ using CinematicPtr = SharedPtr<Cinematic>;
 class UniverseClient;
 using UniverseClientPtr = SharedPtr<UniverseClient>;
 class PaneManager;
+class GuiContext;
 class ItemBag;
 using ItemBagPtr = SharedPtr<ItemBag>;
 class ObjectDatabase;
@@ -26,6 +27,7 @@ struct QuestInterfaceServices {
   AssetsConstPtr assets;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
+  GuiContext& guiContext;
 };
 
 class QuestLogInterface : public Pane {
@@ -39,7 +41,7 @@ public:
 
   void fetchData();
 
-  void pollDialog(PaneManager* paneManager);
+  void pollDialog(PaneManager& paneManager);
 
 private:
   WidgetPtr getSelected();

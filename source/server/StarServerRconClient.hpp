@@ -16,7 +16,7 @@ public:
   static const uint32_t SERVERDATA_RESPONSE_VALUE = 0x00;
   static const uint32_t SERVERDATA_AUTH_RESPONSE = 0x02;
   static const uint32_t SERVERDATA_AUTH_FAILURE = 0xffffffff;
-  ServerRconClient(UniverseServer* universe, TcpSocketPtr socket, String rconPassword);
+  ServerRconClient(UniverseServer& universe, TcpSocketPtr socket, String rconPassword);
   ~ServerRconClient();
 
   void start();
@@ -38,7 +38,7 @@ private:
   void processRequest();
   String handleCommand(String commandLine);
 
-  UniverseServer* m_universe;
+  UniverseServer& m_universe;
   TcpSocketPtr m_socket;
   DataStreamBuffer m_packetBuffer;
   bool m_stop;

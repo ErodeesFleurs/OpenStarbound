@@ -3,6 +3,7 @@
 #include "StarVersioningDatabase.hpp"
 #include "StarStatisticsDatabase.hpp"
 #include "StarLuaComponents.hpp"
+#include "StarLuaRoot.hpp"
 #include "StarStatisticsService.hpp"
 
 namespace Star {
@@ -12,7 +13,7 @@ using StatisticsPtr = SharedPtr<Statistics>;
 
 class Statistics {
 public:
-  Statistics(String const& storageDirectory, VersioningDatabaseConstPtr versioningDatabase, StatisticsDatabaseConstPtr statisticsDatabase, StatisticsServicePtr service = {});
+  Statistics(String const& storageDirectory, VersioningDatabaseConstPtr versioningDatabase, StatisticsDatabaseConstPtr statisticsDatabase, LuaRootServices luaRootServices, StatisticsServicePtr service = {});
 
   void writeStatistics();
 

@@ -19,6 +19,7 @@ struct StatusPaneServices {
   AssetsConstPtr assets;
   ImageMetadataDatabaseConstPtr imageMetadataDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
+  GuiContext& guiContext;
 };
 
 class StatusPane : public Pane {
@@ -45,7 +46,7 @@ private:
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   StatusEffectDatabaseConstPtr m_statusEffectDatabase;
 
-  GuiContext* m_guiContext;
+  GuiContext& m_guiContext;
   List<StatusEffectIndicator> m_statusIndicators;
 };
 

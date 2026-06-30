@@ -13,9 +13,9 @@ EnumMap<PaneLayer> const PaneLayerNames{
   {PaneLayer::World, "World"}
 };
 
-PaneManager::PaneManager()
-  : m_context(GuiContext::singletonPtr()), m_prevInterfaceScale(1) {
-  auto const& assets = GuiContext::singleton().assets();
+PaneManager::PaneManager(GuiContext& context)
+  : m_context(context), m_prevInterfaceScale(1) {
+  auto const& assets = m_context.assets();
   m_tooltipMouseoverRadius = assets->json("/panes.config:tooltipMouseoverRadius").toFloat();
   m_tooltipMouseOffset = jsonToVec2I(assets->json("/panes.config:tooltipMouseoverOffset"));
   m_tooltipShowTimer = GameTimer(assets->json("/panes.config:tooltipMouseoverTime").toFloat());
@@ -193,12 +193,12 @@ bool PaneManager::keyboardCapturedForTextInput() const {
 
 bool PaneManager::sendInputEvent(InputEvent const& event) {
   if (event.is<MouseMoveEvent>()) {
-    m_tooltipLastMousePos = *m_context->mousePosition(event);
+    m_tooltipLastMousePos = *m_context.mousePosition(event);
 
     for (auto const& layerPair : m_displayedPanes) {
       for (auto const& panePair : layerPair.second) {
         if (panePair.first->dragActive()) {
-          panePair.first->drag(*m_context->mousePosition(event));
+          panePair.first->drag(*m_context.mousePosition(event));
           return true;
         }
       }
@@ -230,7 +230,7 @@ bool PaneManager::sendInputEvent(InputEvent const& event) {
   // the keyboard otherwise it will always be used to close first before being
   // a normal event. This is so a window can control its own closing if it
   // really needs to (like the keybindings window).
-  if (event.is<KeyDownEvent>() && m_context->actions(event).contains(InterfaceAction::GuiClose)) {
+  if (event.is<KeyDownEvent>() && m_context.actions(event).contains(InterfaceAction::GuiClose)) {
     if (auto top = topPane({PaneLayer::ModalWindow, PaneLayer::Window})) {
       dismiss(top);
       return true;
@@ -276,9 +276,9 @@ void PaneManager::render() {
   for (auto const& layerPair : reverseIterate(m_displayedPanes)) {
     for (auto const& panePair : reverseIterate(layerPair.second)) {
       if (panePair.first->active()) {
-        if (m_prevInterfaceScale != m_context->interfaceScale())
+        if (m_prevInterfaceScale != m_context.interfaceScale())
           panePair.first->setPosition(
-              calculateNewInterfacePosition(panePair.first, static_cast<float>(m_context->interfaceScale()) / m_prevInterfaceScale));
+              calculateNewInterfacePosition(panePair.first, static_cast<float>(m_context.interfaceScale()) / m_prevInterfaceScale));
 
         panePair.first->setDrawingOffset(calculatePaneOffset(panePair.first));
         panePair.first->render(RectI(Vec2I(), windowSize()));
@@ -286,8 +286,8 @@ void PaneManager::render() {
     }
   }
 
-  m_context->resetInterfaceScissorRect();
-  m_prevInterfaceScale = m_context->interfaceScale();
+  m_context.resetInterfaceScissorRect();
+  m_prevInterfaceScale = m_context.interfaceScale();
 }
 
 void PaneManager::update(float dt) {
@@ -320,7 +320,7 @@ void PaneManager::update(float dt) {
     Vec2I offsetDirection = Vec2I::filled(1);
     Vec2I offsetAdjust = Vec2I();
 
-    if (m_tooltipLastMousePos[0] + m_tooltipMouseOffset[0] + m_activeTooltip->size()[0] > static_cast<int>(m_context->windowWidth()) / m_context->interfaceScale()) {
+    if (m_tooltipLastMousePos[0] + m_tooltipMouseOffset[0] + m_activeTooltip->size()[0] > static_cast<int>(m_context.windowWidth()) / m_context.interfaceScale()) {
       offsetDirection[0] = -1;
       offsetAdjust[0] = -m_activeTooltip->size()[0];
     }
@@ -350,7 +350,7 @@ void PaneManager::update(float dt) {
 }
 
 Vec2I PaneManager::windowSize() const {
-  return Vec2I(m_context->windowInterfaceSize());
+  return Vec2I(m_context.windowInterfaceSize());
 }
 
 Vec2I PaneManager::calculatePaneOffset(PanePtr const& pane) const {

@@ -42,9 +42,9 @@ void Stagehand::init(World* world, EntityId entityId, EntityMode mode) {
     m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) {
         return m_config.query(name, def);
       }));
-    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(&m_behaviors, world->behaviorDatabase()));
-    m_scriptComponent.init(world);
+    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+    m_scriptComponent.addCallbacks("behavior", LuaBindings::makeBehaviorCallbacks(m_behaviors, world->behaviorDatabase()));
+    m_scriptComponent.init(*world);
   }
 }
 

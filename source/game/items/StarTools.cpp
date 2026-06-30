@@ -10,8 +10,8 @@
 
 namespace Star {
 
-MiningTool::MiningTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(assets, config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
+MiningTool::MiningTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("MiningTool requires assets service");
 
@@ -39,10 +39,10 @@ ItemPtr MiningTool::clone() const {
 
 List<Drawable> MiningTool::drawables() const {
   if (m_frameTiming == 0) {
-    return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_imageMetadataDatabase)};
   } else {
     int frame = std::max(0, std::min(m_frames - 1, static_cast<int>(std::floor((m_frameTiming / m_frameCycle) * m_frames))));
-    return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_imageMetadataDatabase)};
   }
 }
 
@@ -142,8 +142,8 @@ void MiningTool::changeDurability(float amount) {
   }
 }
 
-HarvestingTool::HarvestingTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(assets, config, directory, parameters), SwingableItem(config) {
+HarvestingTool::HarvestingTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters), SwingableItem(config) {
   if (!assets)
     throw ItemException("HarvestingTool requires assets service");
 
@@ -167,10 +167,10 @@ ItemPtr HarvestingTool::clone() const {
 
 List<Drawable> HarvestingTool::drawables() const {
   if (m_frameTiming == 0)
-    return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_imageMetadataDatabase)};
   else {
     int frame = std::max(0, std::min(m_frames - 1, static_cast<int>(std::floor((m_frameTiming / m_frameCycle) * m_frames))));
-    return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_imageMetadataDatabase)};
   }
 }
 
@@ -212,8 +212,8 @@ float HarvestingTool::getAngle(float aimAngle) {
   return aimAngle;
 }
 
-Flashlight::Flashlight(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(std::move(assets), config, directory, parameters) {
+Flashlight::Flashlight(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
+  : Item(std::move(assets), std::move(imageMetadataDatabase), config, directory, parameters) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_lightPosition = jsonToVec2F(instanceValue("lightPosition"));
@@ -227,7 +227,7 @@ ItemPtr Flashlight::clone() const {
 }
 
 List<Drawable> Flashlight::drawables() const {
-  return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -m_handPosition / TilePixels)};
+  return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -m_handPosition / TilePixels, Color::White, m_imageMetadataDatabase)};
 }
 
 List<LightSource> Flashlight::lightSources() const {
@@ -245,8 +245,8 @@ List<LightSource> Flashlight::lightSources() const {
   return {std::move(lightSource)};
 }
 
-WireTool::WireTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(assets, config, directory, parameters), FireableItem(config), BeamItem(assets, config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
+WireTool::WireTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
+  : Item(assets, imageMetadataDatabase, config, directory, parameters), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("WireTool requires assets service");
 
@@ -261,7 +261,7 @@ ItemPtr WireTool::clone() const {
   return make_shared<WireTool>(*this);
 }
 
-void WireTool::init(ToolUserEntity* owner, ToolHand hand) {
+void WireTool::init(ToolUserEntity& owner, ToolHand hand) {
   FireableItem::init(owner, hand);
   BeamItem::init(owner, hand);
   m_wireConnector = 0;
@@ -321,8 +321,8 @@ void WireTool::setConnector(WireConnector* connector) {
   m_wireConnector = connector;
 }
 
-BeamMiningTool::BeamMiningTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(assets, config, directory, parameters), FireableItem(config), BeamItem(assets, config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
+BeamMiningTool::BeamMiningTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
+  : Item(assets, imageMetadataDatabase, config, directory, parameters), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("BeamMiningTool requires assets service");
 
@@ -383,7 +383,7 @@ List<PreviewTile> BeamMiningTool::previewTiles(bool shifting) const {
   return result;
 }
 
-void BeamMiningTool::init(ToolUserEntity* owner, ToolHand hand) {
+void BeamMiningTool::init(ToolUserEntity& owner, ToolHand hand) {
   FireableItem::init(owner, hand);
   BeamItem::init(owner, hand);
 }
@@ -496,8 +496,8 @@ float BeamMiningTool::getAngle(float angle) {
   return BeamItem::getAngle(angle);
 }
 
-TillingTool::TillingTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(assets, config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
+TillingTool::TillingTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("TillingTool requires assets service");
 
@@ -520,10 +520,10 @@ ItemPtr TillingTool::clone() const {
 
 List<Drawable> TillingTool::drawables() const {
   if (m_frameTiming == 0)
-    return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(m_idleFrame, 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_imageMetadataDatabase)};
   else {
     int frame = std::max(0, std::min(m_frames - 1, static_cast<int>(std::floor((m_frameTiming / m_frameCycle) * m_frames))));
-    return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels)};
+    return {Drawable::makeImage(m_animationFrame[frame], 1.0f / TilePixels, true, -handPosition() / TilePixels, Color::White, m_imageMetadataDatabase)};
   }
 }
 
@@ -593,8 +593,8 @@ float TillingTool::getAngle(float aimAngle) {
   return aimAngle;
 }
 
-PaintingBeamTool::PaintingBeamTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(assets, config, directory, parameters), FireableItem(config), BeamItem(assets, config) {
+PaintingBeamTool::PaintingBeamTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
+  : Item(assets, imageMetadataDatabase, config, directory, parameters), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config) {
   if (!assets)
     throw ItemException("PaintingBeamTool requires assets service");
 
@@ -674,7 +674,7 @@ List<PreviewTile> PaintingBeamTool::previewTiles(bool shifting) const {
   return result;
 }
 
-void PaintingBeamTool::init(ToolUserEntity* owner, ToolHand hand) {
+void PaintingBeamTool::init(ToolUserEntity& owner, ToolHand hand) {
   FireableItem::init(owner, hand);
   BeamItem::init(owner, hand);
   m_color = m_colors[m_colorIndex];

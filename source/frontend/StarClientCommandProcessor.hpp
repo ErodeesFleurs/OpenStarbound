@@ -15,12 +15,18 @@ namespace Star {
 
 struct FramesSpecification;
 using FramesSpecificationConstPtr = SharedPtr<FramesSpecification const>;
+class ByteArray;
+class Image;
+class Input;
+class GuiContext;
 class ObjectDatabase;
 using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 class StatusEffectDatabase;
 using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
 
 struct ClientCommandProcessorServices {
+  ClientCommandProcessorServices(GuiContext& guiContext, Input& input);
+
   AssetsConstPtr assets;
   ConfigurationPtr configuration;
   ItemDatabaseConstPtr itemDatabase;
@@ -30,12 +36,15 @@ struct ClientCommandProcessorServices {
   String outputDirectory;
   function<void()> reloadRoot;
   function<void()> hotReloadRoot;
+  GuiContext& guiContext;
+  Input& input;
+  function<bool(Image const&, ByteArray*, String const*)> setClipboardImage;
 };
 
 class ClientCommandProcessor {
 public:
   ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
-      MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands, ClientCommandProcessorServices services);
+      MainInterfacePaneManager& paneManager, StringMap<StringList> macroCommands, ClientCommandProcessorServices services);
 
   StringList handleCommand(String const& commandLine, bool userInput = false);
 
@@ -86,7 +95,7 @@ private:
 
   UniverseClientPtr m_universeClient;
   CinematicPtr m_cinematicOverlay;
-  MainInterfacePaneManager* m_paneManager;
+  MainInterfacePaneManager& m_paneManager;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
   ItemDatabaseConstPtr m_itemDatabase;
@@ -96,6 +105,9 @@ private:
   String m_outputDirectory;
   function<void()> m_reloadRoot;
   function<void()> m_hotReloadRoot;
+  GuiContext& m_guiContext;
+  Input& m_input;
+  function<bool(Image const&, ByteArray*, String const*)> m_setClipboardImage;
   CaseInsensitiveStringMap<function<String(String const&)>> m_builtinCommands;
   StringMap<StringList> m_macroCommands;
   ShellParser m_parser;

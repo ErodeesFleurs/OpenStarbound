@@ -4,8 +4,8 @@
 #include "StarException.hpp"
 #include "StarFormat.hpp"
 #include "StarHttpClient.hpp"
+#include "StarLogging.hpp"
 #include "StarLuaGameConverters.hpp"
-#include "StarRoot.hpp"
 #include "StarRpcPromise.hpp"
 namespace Star {
 
@@ -49,10 +49,8 @@ uint64_t s_nextRequestId = 1;
 HashMap<uint64_t, shared_ptr<AsyncHttpRequest>> s_asyncRequests;
 
 // Check if a domain is in the trusted list
-bool isTrustedDomain(String const& domain) {
-  auto& root = Root::singleton();
-  const auto config = root.configuration();
-  if (auto trustedSites = config->getPath("safe.luaHttp.trustedSites").optArray()) {
+bool isTrustedDomain(ConfigurationPtr const& configuration, String const& domain) {
+  if (auto trustedSites = configuration->getPath("safe.luaHttp.trustedSites").optArray()) {
     for (auto const& site : *trustedSites) {
       if (site.toString() == domain)
         return true;
@@ -60,25 +58,6 @@ bool isTrustedDomain(String const& domain) {
   }
   return false;
 }
-
-// // Add domain to trusted list
-// void addTrustedDomain(String const& domain) {
-//   auto& root = Root::singleton();
-//   auto config = root.configuration();
-//
-//   JsonArray trustedSites;
-//   if (auto existing = config->getPath("safe.luaHttp.trustedSites").optArray())
-//     trustedSites = *existing;
-//
-//   // Check if already exists
-//   for (auto const& site : trustedSites) {
-//     if (site.toString() == domain)
-//       return;
-//   }
-//
-//   trustedSites.append(domain);
-//   config->setPath("safe.luaHttp.trustedSites", trustedSites);
-// }
 
 String extractDomain(String const& url) {
   const size_t end = url.find("://");
@@ -235,7 +214,10 @@ struct LuaConverter<LuaHttpResponse> {
   }
 };
 
-LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
+LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled, ConfigurationPtr configuration) {
+  if (!configuration)
+    throw StarException("HTTP Lua bindings require configuration service");
+
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("available", [enabled]() { return enabled; });
@@ -244,7 +226,7 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
   //   return RpcPromise<LuaHttpResponse>::createFailed(std::move(message));
   // };
 
-  auto requestForMethod = [enabled](LuaEngine& engine, String const& method, String const& url, Maybe<LuaTable> const& options) -> RpcPromise<LuaHttpResponse> {
+  auto requestForMethod = [enabled, configuration](LuaEngine& engine, String const& method, String const& url, Maybe<LuaTable> const& options) -> RpcPromise<LuaHttpResponse> {
     if (!enabled)
       return RpcPromise<LuaHttpResponse>::createFailed("luaHttp disabled by configuration");
 
@@ -294,7 +276,7 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
       auto [fst, snd] = RpcPromise<LuaHttpResponse>::createPair();
 
       // if domain is trusted
-      if (isTrustedDomain(domain)) {
+      if (isTrustedDomain(configuration, domain)) {
         //  is trasted execute
         executeHttpRequest(httpReq, std::move(snd));
       } else {
@@ -344,8 +326,8 @@ LuaCallbacks LuaBindings::makeHttpCallbacks(bool enabled) {
     return requestForMethod(engine, "PATCH", url, options);
   });
 
-  callbacks.registerCallback("isTrusted", [](String const& domain) -> bool {
-    return isTrustedDomain(domain);
+  callbacks.registerCallback("isTrusted", [configuration](String const& domain) -> bool {
+    return isTrustedDomain(configuration, domain);
   });
 
   return callbacks;

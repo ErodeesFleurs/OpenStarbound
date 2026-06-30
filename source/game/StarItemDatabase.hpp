@@ -1,11 +1,13 @@
 #pragma once
 
-#include "StarThread.hpp"
-#include "StarItemRecipe.hpp"
-#include "StarItem.hpp"
-#include "StarCasting.hpp"
-#include "StarTtlCache.hpp"
 #include "StarAssets.hpp"
+#include "StarCasting.hpp"
+#include "StarItem.hpp"
+#include "StarItemRecipe.hpp"
+#include "StarThread.hpp"
+#include "StarTtlCache.hpp"
+#include "StarImageMetadataDatabase.hpp"
+#include "StarLuaRoot.hpp"
 
 namespace Star {
 
@@ -27,8 +29,14 @@ class Rebuilder;
 using RebuilderPtr = SharedPtr<Rebuilder>;
 class MaterialDatabase;
 using MaterialDatabaseConstPtr = SharedPtr<MaterialDatabase const>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 
-struct ItemDatabaseExceptionTag { static constexpr char const* typeName = "ItemDatabaseException"; };
+struct ItemDatabaseExceptionTag {
+  static constexpr char const* typeName = "ItemDatabaseException";
+};
 using ItemDatabaseException = TypedException<ItemException, ItemDatabaseExceptionTag>;
 
 enum class ItemType {
@@ -89,11 +97,15 @@ public:
   static String guiFilterString(ItemPtr const& item);
 
   ItemDatabase(AssetsConstPtr assets,
-      function<ObjectDatabaseConstPtr()> objectDatabase,
-      LiquidsDatabaseConstPtr liquidsDatabase,
-      FunctionDatabaseConstPtr functionDatabase,
-      CodexDatabaseConstPtr codexDatabase,
-      MaterialDatabaseConstPtr materialDatabase);
+               function<ObjectDatabaseConstPtr()> objectDatabase,
+               LiquidsDatabaseConstPtr liquidsDatabase,
+               FunctionDatabaseConstPtr functionDatabase,
+               CodexDatabaseConstPtr codexDatabase,
+               MaterialDatabaseConstPtr materialDatabase,
+               VersioningDatabaseConstPtr versioningDatabase,
+               ParticleDatabaseConstPtr particleDatabase,
+               ImageMetadataDatabaseConstPtr imageMetadataDatabase,
+               LuaRootServices luaRootServices);
 
   void cleanup();
 
@@ -143,7 +155,6 @@ public:
   // Same as itemShared, but makes a copy instead. Does not cache.
   ItemPtr item(ItemDescriptor descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
-
   bool hasRecipeToMake(ItemDescriptor const& item) const;
   bool hasRecipeToMake(ItemDescriptor const& item, StringSet const& allowedTypes) const;
 
@@ -165,7 +176,7 @@ public:
   HashSet<ItemRecipe> const& allRecipes() const;
   HashSet<ItemRecipe> allRecipes(StringSet const& types) const;
 
-  ItemPtr applyAugment(ItemPtr const item, AugmentItem* augment) const;
+  ItemPtr applyAugment(ItemPtr const item, AugmentItem& augment) const;
   bool ageItem(ItemPtr& item, double aging) const;
 
   List<String> allItems() const;
@@ -183,7 +194,7 @@ private:
     String filename;
   };
 
-  static ItemPtr createItem(AssetsConstPtr assets, ItemDatabase const* itemDatabase, ItemType type, ItemConfig const& config);
+  static ItemPtr createItem(AssetsConstPtr assets, ItemDatabase const& itemDatabase, ItemType type, ItemConfig const& config);
   ItemPtr tryCreateItem(ItemDescriptor const& descriptor, Maybe<float> level = {}, Maybe<uint64_t> seed = {}, bool ignoreInvalid = false) const;
 
   ItemData const& itemData(String const& name) const;
@@ -204,6 +215,9 @@ private:
   FunctionDatabaseConstPtr m_functionDatabase;
   CodexDatabaseConstPtr m_codexDatabase;
   MaterialDatabaseConstPtr m_materialDatabase;
+  VersioningDatabaseConstPtr m_versioningDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   StringMap<ItemData> m_items;
   HashSet<ItemRecipe> m_recipes;
 
@@ -239,9 +253,9 @@ bool ItemDatabase::loadItem(ItemDescriptor const& descriptor, SharedPtr<ItemT>& 
 template <typename ItemT>
 bool ItemDatabase::diskLoad(Json const& diskStore, SharedPtr<ItemT>& itemPtr) const {
   try {
-    return loadItem(ItemDescriptor::loadStore(diskStore), itemPtr);
+    return loadItem(ItemDescriptor::loadStore(diskStore, m_versioningDatabase), itemPtr);
   } catch (StarException const&) {
     return false;
   }
 }
-}
+}// namespace Star

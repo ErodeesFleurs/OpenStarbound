@@ -29,6 +29,7 @@
 #include "StarLabelWidget.hpp"
 #include "StarItemSlotWidget.hpp"
 #include "StarButtonWidget.hpp"
+#include "StarInput.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLog.hpp"
 #include "StarMonster.hpp"
@@ -85,11 +86,16 @@ GuiMessage::GuiMessage() : message(), cooldown(), springState() {}
 GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
   : message(message), cooldown(cooldown), springState(spring) {}
 
+MainInterfaceServices::MainInterfaceServices(GuiContext& guiContext, Input& input, Voice& voice)
+  : guiContext(guiContext), input(input), voice(voice) {}
+
 MainInterface::MainInterface(UniverseClientPtr client,
     WorldPainterPtr painter,
     CinematicPtr cinematicOverlay,
     MainInterfaceServices services)
-  : m_guiContext(GuiContext::singletonPtr())
+  : m_guiContext(services.guiContext)
+  , m_input(services.input)
+  , m_voice(services.voice)
   , m_assets(requireMainInterfaceService(std::move(services.assets), "assets"))
   , m_configuration(requireMainInterfaceService(std::move(services.configuration), "configuration"))
   , m_imageMetadata(requireMainInterfaceService(std::move(services.imageMetadata), "image metadata"))
@@ -110,9 +116,10 @@ MainInterface::MainInterface(UniverseClientPtr client,
   , m_client(std::move(client))
   , m_worldPainter(std::move(painter))
   , m_cinematicOverlay(std::move(cinematicOverlay))
+  , m_paneManager(m_guiContext)
   , m_containerInteractor(make_shared<ContainerInteractor>())
 {
-  GuiReader itemSlotReader;
+  GuiReader itemSlotReader(m_guiContext);
   m_cursorItem = convert<ItemSlotWidget>(itemSlotReader.makeSingle("cursorItemSlot", m_config->cursorItemSlot));
 
   m_planetNameTimer = GameTimer(m_config->planetNameTime);
@@ -122,7 +129,7 @@ MainInterface::MainInterface(UniverseClientPtr client,
 
   m_stickyTargetingTimer = GameTimer(m_config->monsterHealthBarTime);
 
-  m_inventoryWindow = make_shared<InventoryPane>(this, m_client->mainPlayer(), m_containerInteractor, InventoryPaneServices{m_assets, m_techDatabase, m_objectDatabase, m_statusEffectDatabase});
+  m_inventoryWindow = make_shared<InventoryPane>(*this, m_client->mainPlayer(), m_containerInteractor, InventoryPaneServices{m_assets, m_techDatabase, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::Inventory, PaneLayer::Window, m_inventoryWindow, [this](PanePtr const&) {
       if (auto player = m_client->mainPlayer())
           player->clearSwap();
@@ -143,52 +150,52 @@ MainInterface::MainInterface(UniverseClientPtr client,
       m_client->mainPlayer(),
       JsonObject{{"filter", JsonArray{"plain"}}},
       m_client->mainPlayer()->entityId(),
-      CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
+      CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::CraftingPlain, PaneLayer::Window, m_plainCraftingWindow);
 
   m_paneManager.registerPane(MainInterfacePanes::EscapeDialog, PaneLayer::ModalWindow, createEscapeDialog());
 
-  auto songbookInterface = make_shared<SongbookInterface>(m_client->mainPlayer(), SongbookInterfaceServices{m_assets, m_registerReloadListener});
+  auto songbookInterface = make_shared<SongbookInterface>(m_client->mainPlayer(), SongbookInterfaceServices{m_assets, m_registerReloadListener, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::Songbook, PaneLayer::Window, songbookInterface);
 
-  m_questLogInterface = make_shared<QuestLogInterface>(m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay, m_client, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
+  m_questLogInterface = make_shared<QuestLogInterface>(m_client->questManager(), m_client->mainPlayer(), m_cinematicOverlay, m_client, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::QuestLog, PaneLayer::Window, m_questLogInterface);
 
-  auto aiInterface = make_shared<AiInterface>(m_client, m_cinematicOverlay, &m_paneManager, AiInterfaceServices{m_assets, m_aiDatabase});
+  auto aiInterface = make_shared<AiInterface>(m_client, m_cinematicOverlay, m_paneManager, AiInterfaceServices{m_assets, m_aiDatabase, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::Ai, PaneLayer::Window, aiInterface);
 
-  m_codexInterface = make_shared<CodexInterface>(m_client->mainPlayer(), CodexInterface::Services{m_assets});
+  m_codexInterface = make_shared<CodexInterface>(m_client->mainPlayer(), CodexInterface::Services{m_assets, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::Codex, PaneLayer::Window, m_codexInterface);
 
-  m_optionsMenu = make_shared<OptionsMenu>(&m_paneManager, m_client, OptionsMenuServices{m_assets, m_configuration});
+  m_optionsMenu = make_shared<OptionsMenu>(m_paneManager, m_client, OptionsMenuServices{m_assets, m_configuration, m_client->luaRoot()->services(), m_voice, m_input, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::Options, PaneLayer::ModalWindow, m_optionsMenu);
 
-  m_popupInterface = make_shared<PopupInterface>(PopupInterface::Services{m_assets});
+  m_popupInterface = make_shared<PopupInterface>(PopupInterface::Services{m_assets, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::Popup, PaneLayer::Window, m_popupInterface);
 
-  m_confirmationDialog = make_shared<ConfirmationDialog>(ConfirmationDialog::Services{m_assets});
+  m_confirmationDialog = make_shared<ConfirmationDialog>(ConfirmationDialog::Services{m_assets, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::Confirmation, PaneLayer::ModalWindow, m_confirmationDialog);
 
   initHttpTrustDialog();
 
-  m_joinRequestDialog = make_shared<JoinRequestDialog>(JoinRequestDialog::Services{m_assets});
+  m_joinRequestDialog = make_shared<JoinRequestDialog>(JoinRequestDialog::Services{m_assets, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::JoinRequest, PaneLayer::ModalWindow, m_joinRequestDialog);
 
-  m_actionBar = make_shared<ActionBar>(&m_paneManager, m_client->mainPlayer(), ActionBarServices{m_assets, m_configuration, m_objectDatabase, m_statusEffectDatabase});
+  m_actionBar = make_shared<ActionBar>(m_paneManager, m_client->mainPlayer(), ActionBarServices{m_assets, m_configuration, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::ActionBar, PaneLayer::Hud, m_actionBar);
 
-  m_questTracker = make_shared<QuestTrackerPane>(QuestTrackerPane::Services{m_assets});
+  m_questTracker = make_shared<QuestTrackerPane>(QuestTrackerPane::Services{m_assets, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::QuestTracker, PaneLayer::Hud, m_questTracker);
 
-  m_mmUpgrade = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
+  m_mmUpgrade = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::MmUpgrade, PaneLayer::Window, m_mmUpgrade);
 
-  m_collections = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
+  m_collections = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"), NullEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::Collections, PaneLayer::Window, m_collections);
 
-  m_chat = make_shared<Chat>(m_client, m_assets->json("/interface/chat/chat.config"), ChatServices{m_assets});
+  m_chat = make_shared<Chat>(m_client, m_assets->json("/interface/chat/chat.config"), ChatServices{m_assets, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::Chat, PaneLayer::Hud, m_chat);
-  ClientCommandProcessorServices commandServices;
+  ClientCommandProcessorServices commandServices(m_guiContext, m_input);
   commandServices.assets = m_assets;
   commandServices.configuration = m_configuration;
   commandServices.itemDatabase = m_itemDatabase;
@@ -198,23 +205,26 @@ MainInterface::MainInterface(UniverseClientPtr client,
   commandServices.outputDirectory = m_outputDirectory;
   commandServices.reloadRoot = m_reloadRootForCommand;
   commandServices.hotReloadRoot = m_hotReloadRoot;
-  m_clientCommandProcessor = make_shared<ClientCommandProcessor>(m_client, m_cinematicOverlay, &m_paneManager, m_config->macroCommands, std::move(commandServices));
+  commandServices.setClipboardImage = [this](Image const& image, ByteArray* png, String const* path) {
+    return m_guiContext.setClipboardImage(image, png, path);
+  };
+  m_clientCommandProcessor = make_shared<ClientCommandProcessor>(m_client, m_cinematicOverlay, m_paneManager, m_config->macroCommands, std::move(commandServices));
 
-  m_radioMessagePopup = make_shared<RadioMessagePopup>(RadioMessagePopup::Services{m_assets});
+  m_radioMessagePopup = make_shared<RadioMessagePopup>(RadioMessagePopup::Services{m_assets, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::RadioMessagePopup, PaneLayer::Hud, m_radioMessagePopup);
 
-  m_wireInterface = make_shared<WirePane>(m_client->worldClient(), m_client->mainPlayer(), m_worldPainter, WirePane::Services{m_assets});
+  m_wireInterface = make_shared<WirePane>(m_client->worldClient(), m_client->mainPlayer(), m_worldPainter, WirePane::Services{m_assets, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::WireInterface, PaneLayer::World, m_wireInterface);
   m_client->mainPlayer()->setWireConnector(m_wireInterface.get());
 
-  auto teamBar = make_shared<TeamBar>(this, m_client, TeamBar::Services{m_assets, m_configuration});
+  auto teamBar = make_shared<TeamBar>(*this, m_client, TeamBar::Services{m_assets, m_configuration, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::TeamBar, PaneLayer::Hud, teamBar);
 
-  auto statusPane = make_shared<StatusPane>(m_client, StatusPaneServices{m_assets, m_imageMetadata, m_statusEffectDatabase});
+  auto statusPane = make_shared<StatusPane>(m_client, StatusPaneServices{m_assets, m_imageMetadata, m_statusEffectDatabase, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::StatusPane, PaneLayer::Hud, statusPane);
 
-  auto planetName = make_shared<Pane>();
-  m_planetText = make_shared<LabelWidget>();
+  auto planetName = make_shared<Pane>(m_guiContext);
+  m_planetText = make_shared<LabelWidget>(m_guiContext);
   m_planetText->setTextStyle(m_config->planetNameTextStyle);
   m_planetText->setAnchor(HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor);
   planetName->disableScissoring();
@@ -231,7 +241,7 @@ MainInterface::MainInterface(UniverseClientPtr client,
         m_client->playerStorage()->moveToFront(mainPlayer->uuid());
       if (configuration->get("characterSwapDismisses", false).toBool())
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::CharacterSwap);
-    }, [=](Uuid) {}, CharSelectionServices{m_assets, m_configuration});
+    }, [=](Uuid) {}, CharSelectionServices{m_assets, m_configuration, m_guiContext});
   charSelectionMenu->setReadOnly(true);
   charSelectionMenu->setAnchor(PaneAnchor::Center);
   charSelectionMenu->unlockPosition();
@@ -245,9 +255,9 @@ MainInterface::MainInterface(UniverseClientPtr client,
 
   m_paneManager.registerPane(MainInterfacePanes::CharacterSwap, PaneLayer::Window, charSelectionMenu);
 
-  m_nameplatePainter = make_shared<NameplatePainter>(NameplatePainter::Services{m_assets});
-  m_questIndicatorPainter = make_shared<QuestIndicatorPainter>(m_client, QuestIndicatorPainter::Services{m_assets});
-  m_chatBubbleManager = make_shared<ChatBubbleManager>(ChatBubbleManagerServices{m_assets, m_configuration, m_functionDatabase, m_imageMetadata});
+  m_nameplatePainter = make_shared<NameplatePainter>(NameplatePainter::Services{m_assets, m_guiContext});
+  m_questIndicatorPainter = make_shared<QuestIndicatorPainter>(m_client, QuestIndicatorPainter::Services{m_assets, m_guiContext});
+  m_chatBubbleManager = make_shared<ChatBubbleManager>(ChatBubbleManagerServices{m_assets, m_configuration, m_functionDatabase, m_imageMetadata, m_guiContext});
 }
 
 MainInterface::~MainInterface() {
@@ -258,8 +268,8 @@ MainInterface::RunningState MainInterface::currentState() const {
   return m_state;
 }
 
-MainInterfacePaneManager* MainInterface::paneManager() {
-  return &m_paneManager;
+MainInterfacePaneManager& MainInterface::paneManager() {
+  return m_paneManager;
 }
 
 bool MainInterface::escapeDialogOpen() const {
@@ -276,7 +286,7 @@ void MainInterface::openCraftingWindow(Json const& config, EntityId sourceEntity
   }
 
   m_craftingWindow = make_shared<CraftingPane>(
-      m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId, CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
+      m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId, CraftingPaneServices{m_assets, m_configuration, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   m_paneManager.displayPane(PaneLayer::Window, m_craftingWindow, [this](PanePtr const&) {
     if (auto player = m_client->mainPlayer())
       player->clearSwap();
@@ -295,7 +305,7 @@ void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntity
   bool openWithInventory = config.getBool("openWithInventory", true);
   bool closeWithInventory = config.getBool("closeWithInventory", !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory));
   m_merchantWindow = make_shared<MerchantPane>(
-      m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId, MerchantPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
+      m_client->worldClient(), m_client->mainPlayer(), config, sourceEntityId, MerchantPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   m_paneManager.displayPane(PaneLayer::Window, m_merchantWindow, [this, closeWithInventory](PanePtr const&) {
     if (closeWithInventory)
       m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
@@ -342,7 +352,7 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
 
   if (event.is<KeyDownEvent>()) {
     if (m_chat->hasFocus()) {
-      if (m_guiContext->actions(event).contains(InterfaceAction::ChatSendLine)) {
+      if (m_guiContext.actions(event).contains(InterfaceAction::ChatSendLine)) {
         doChat(m_chat->currentChat(), true);
         m_chat->clearCurrentChat();
         m_chat->stopChat();
@@ -351,12 +361,12 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
     } else if (!m_paneManager.keyboardCapturedWidget()) {
       Maybe<InventorySlot> swapSlot;
 
-      for (auto action : m_guiContext->actions(event)) {
+      for (auto action : m_guiContext.actions(event)) {
         switch (action) {
           default:
             break;
           case InterfaceAction::GuiShifting:
-            m_guiContext->setShiftHeld(true);
+            m_guiContext.setShiftHeld(true);
             break;
           case InterfaceAction::ChatBegin:
             m_chat->startChat();
@@ -409,8 +419,8 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
     return false;
 
   } else if (auto keyUp = event.ptr<KeyUpEvent>()) {
-    if (m_guiContext->actionsForKey(keyUp->key).contains(InterfaceAction::GuiShifting))
-      m_guiContext->setShiftHeld(false);
+    if (m_guiContext.actionsForKey(keyUp->key).contains(InterfaceAction::GuiShifting))
+      m_guiContext.setShiftHeld(false);
 
     return false;
 
@@ -476,7 +486,9 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     bool closeWithInventory = !m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory);
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
-    m_containerPane = make_shared<ContainerPane>(world, m_client->mainPlayer(), m_containerInteractor, ContainerPaneServices{m_itemDatabase, m_assets, m_objectDatabase, m_statusEffectDatabase});
+    m_containerPane = make_shared<ContainerPane>(world, m_client->mainPlayer(), m_containerInteractor, ContainerPaneServices{m_itemDatabase, m_assets, m_objectDatabase, m_statusEffectDatabase, [this]() {
+        return static_cast<bool>(m_input.bindDown("opensb", "takeAll"));
+      }, m_guiContext});
     m_paneManager.displayPane(PaneLayer::Window, m_containerPane, [this, closeWithInventory](PanePtr const&) {
       if (closeWithInventory)
         m_paneManager.dismissRegisteredPane(MainInterfacePanes::Inventory);
@@ -548,7 +560,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
           };
 
           if (!m_client->mainPlayer()->universeMap()->teleportBookmarks().contains(currentLocation) || !config.getBool("canTeleport", true)) {
-            auto editBookmarkDialog = make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap(), EditBookmarkDialog::Services{m_assets});
+            auto editBookmarkDialog = make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap(), EditBookmarkDialog::Services{m_assets, m_guiContext});
             editBookmarkDialog->setBookmark(currentLocation);
             m_paneManager.displayPane(PaneLayer::ModalWindow, editBookmarkDialog);
             return;
@@ -558,7 +570,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     }
 
     if (config.getBool("canTeleport", true)) {
-      m_teleportDialog = make_shared<TeleportDialog>(m_client, &m_paneManager, interactAction.data, interactAction.entityId, currentLocation, TeleportDialog::Services{m_assets});
+      m_teleportDialog = make_shared<TeleportDialog>(m_client, m_paneManager, interactAction.data, interactAction.entityId, currentLocation, TeleportDialog::Services{m_assets, m_guiContext});
       m_paneManager.displayPane(PaneLayer::ModalWindow, m_teleportDialog);
     }
   } else if (interactAction.type == InteractActionType::ShowPopup) {
@@ -570,7 +582,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     if (sourceEntity != NullEntityId && m_interactionScriptPanes.contains(sourceEntity) && m_paneManager.isDisplayed(m_interactionScriptPanes[sourceEntity]))
       m_paneManager.dismissPane(m_interactionScriptPanes[sourceEntity]);
 
-    ScriptPanePtr scriptPane = make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
+    ScriptPanePtr scriptPane = make_shared<ScriptPane>(m_client, interactAction.data, sourceEntity, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
     displayScriptPane(scriptPane, sourceEntity);
 
   } else if (interactAction.type == InteractActionType::Message) {
@@ -596,7 +608,7 @@ void MainInterface::update(float dt) {
   m_paneManager.update(dt);
   m_cursor.update(dt);
 
-  m_questLogInterface->pollDialog(&m_paneManager);
+  m_questLogInterface->pollDialog(m_paneManager);
 
   if (!m_paneManager.topPane({PaneLayer::ModalWindow}) && m_codexInterface->showNewCodex())
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Codex);
@@ -887,9 +899,9 @@ void MainInterface::update(float dt) {
   for (auto& pair : m_canvases) {
     pair.second->setPosition(Vec2I());
     if (pair.second->ignoreInterfaceScale())
-      pair.second->setSize(Vec2I(m_guiContext->windowSize()));
+      pair.second->setSize(Vec2I(m_guiContext.windowSize()));
     else
-      pair.second->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
+      pair.second->setSize(Vec2I(m_guiContext.windowInterfaceSize()));
     pair.second->update(dt);
   }
 }
@@ -898,7 +910,7 @@ void MainInterface::renderInWorldElements() {
   if (m_disableHud)
     return;
 
-  m_guiContext->clearTextStyle();
+  m_guiContext.clearTextStyle();
   m_questIndicatorPainter->render();
   m_nameplatePainter->render();
   m_chatBubbleManager->render();
@@ -908,7 +920,7 @@ void MainInterface::render() {
   if (m_disableHud)
     return;
 
-  m_guiContext->clearTextStyle();
+  m_guiContext.clearTextStyle();
   renderBreath();
   renderMessages();
   renderMonsterHealthBar();
@@ -916,7 +928,7 @@ void MainInterface::render() {
   renderMainBar();
   renderDebug();
 
-  RectI screenRect = RectI::withSize(Vec2I(), Vec2I(m_guiContext->windowSize()));
+  RectI screenRect = RectI::withSize(Vec2I(), Vec2I(m_guiContext.windowSize()));
   for (auto& pair : m_canvases)
     pair.second->render(screenRect);
 
@@ -999,14 +1011,14 @@ void MainInterface::warpToOrbitedWorld(bool deploy) {
       m_client->warpPlayer(WarpAlias::OrbitedWorld, true, "beam");
     return;
   }
-  m_guiContext->playAudio("/sfx/interface/clickon_error.ogg");
+  m_guiContext.playAudio("/sfx/interface/clickon_error.ogg");
 }
 
 void MainInterface::warpToOwnShip() {
   if (m_client->canBeamUp()) {
     warpTo(WarpAlias::OwnShip);
   } else {
-    m_guiContext->playAudio("/sfx/interface/clickon_error.ogg");
+    m_guiContext.playAudio("/sfx/interface/clickon_error.ogg");
   }
 }
 
@@ -1030,12 +1042,12 @@ CanvasWidgetPtr MainInterface::fetchCanvas(String const& canvasName, bool ignore
   if (auto canvasPtr = m_canvases.ptr(canvasName))
     canvas = *canvasPtr;
   else {
-    m_canvases.emplace(canvasName, canvas = make_shared<CanvasWidget>());
+    m_canvases.emplace(canvasName, canvas = make_shared<CanvasWidget>(m_guiContext));
     canvas->setPosition(Vec2I());
     if (ignoreInterfaceScale)
-      canvas->setSize(Vec2I(m_guiContext->windowSize()));
+      canvas->setSize(Vec2I(m_guiContext.windowSize()));
     else
-      canvas->setSize(Vec2I(m_guiContext->windowInterfaceSize()));
+      canvas->setSize(Vec2I(m_guiContext.windowInterfaceSize()));
   }
 
   canvas->setIgnoreInterfaceScale(ignoreInterfaceScale);
@@ -1071,7 +1083,7 @@ void MainInterface::takeScriptPanes(List<ScriptPaneInfo>& out) {
 void MainInterface::reviveScriptPanes(List<ScriptPaneInfo>& panes) {
   for (auto& info : panes) { // this is evil and stupid
     info.scriptPane->~ScriptPane();
-    new(info.scriptPane.get()) ScriptPane(m_client, info.config, info.sourceEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase});
+    new(info.scriptPane.get()) ScriptPane(m_client, info.config, info.sourceEntityId, BaseScriptPaneServices{m_assets, m_itemDatabase, m_objectDatabase, m_statusEffectDatabase, {}, m_guiContext});
     info.scriptPane->setVisibility(info.visible);
     displayScriptPane(info.scriptPane, info.sourceEntityId);
     info.scriptPane->setPosition(info.position);
@@ -1088,10 +1100,10 @@ void MainInterface::displayDefaultPanes() {
 PanePtr MainInterface::createEscapeDialog() {
   auto const& assets = m_assets;
 
-  auto escapeDialog = make_shared<Pane>();
+  auto escapeDialog = make_shared<Pane>(m_guiContext);
   auto escapeDialogPtr = escapeDialog.get();
 
-  GuiReader escapeDialogReader;
+  GuiReader escapeDialogReader(m_guiContext);
   escapeDialogReader.registerCallback("returnToGame", [escapeDialogPtr](Widget*) {
       escapeDialogPtr->dismiss();
     });
@@ -1110,15 +1122,15 @@ PanePtr MainInterface::createEscapeDialog() {
 }
 
 float MainInterface::interfaceScale() const {
-  return m_guiContext->interfaceScale();
+  return m_guiContext.interfaceScale();
 }
 
 unsigned MainInterface::windowHeight() const {
-  return m_guiContext->windowHeight();
+  return m_guiContext.windowHeight();
 }
 
 unsigned MainInterface::windowWidth() const {
-  return m_guiContext->windowWidth();
+  return m_guiContext.windowWidth();
 }
 
 Vec2F MainInterface::mainBarPosition() const {
@@ -1129,7 +1141,7 @@ void MainInterface::renderBreath() {
   auto const& assets = m_assets;
   auto imgMetadata = m_imageMetadata;
 
-  Vec2I breathBarSize = Vec2I(m_guiContext->textureSize("/interface/breath/empty.png")) * interfaceScale();
+  Vec2I breathBarSize = Vec2I(m_guiContext.textureSize("/interface/breath/empty.png")) * interfaceScale();
   Vec2I breathOffset = jsonToVec2I(assets->json("/interface.config:breathPos"));
 
   Vec2F breathBackgroundCenterPos(windowWidth() * 0.5f + breathOffset[0] * interfaceScale(), windowHeight() - breathOffset[1] * interfaceScale());
@@ -1142,15 +1154,15 @@ void MainInterface::renderBreath() {
 
   if (blocks < 10) {
     String breathPath = "/interface/breath/breath.png";
-    m_guiContext->drawQuad(breathPath, RectF::withCenter(breathBackgroundCenterPos, Vec2F(imgMetadata->imageSize(breathPath)) * interfaceScale()));
+    m_guiContext.drawQuad(breathPath, RectF::withCenter(breathBackgroundCenterPos, Vec2F(imgMetadata->imageSize(breathPath)) * interfaceScale()));
     for (size_t i = 0; i < 10; i++) {
       if (i >= blocks) {
         if (blocks == 0 && Time::monotonicMilliseconds() % 500 > 250)
-          m_guiContext->drawQuad("/interface/breath/warning.png", breathBarPos + Vec2F(breathBarSize[0] * i, 0), interfaceScale());
+          m_guiContext.drawQuad("/interface/breath/warning.png", breathBarPos + Vec2F(breathBarSize[0] * i, 0), interfaceScale());
         else
-          m_guiContext->drawQuad("/interface/breath/empty.png", breathBarPos + Vec2F(breathBarSize[0] * i, 0), interfaceScale());
+          m_guiContext.drawQuad("/interface/breath/empty.png", breathBarPos + Vec2F(breathBarSize[0] * i, 0), interfaceScale());
       } else {
-        m_guiContext->drawQuad("/interface/breath/breathbar.png", breathBarPos + Vec2F(breathBarSize[0] * i, 0), interfaceScale());
+        m_guiContext.drawQuad("/interface/breath/breathbar.png", breathBarPos + Vec2F(breathBarSize[0] * i, 0), interfaceScale());
       }
     }
   }
@@ -1184,11 +1196,11 @@ void MainInterface::renderMessages() {
     else
       message->springState = (message->springState * m_config->messageWindowSpring) / (m_config->messageWindowSpring + 1.0f);
 
-    m_guiContext->drawQuad(m_config->messageTextContainer,
+    m_guiContext.drawQuad(m_config->messageTextContainer,
         RectF::withCenter(backgroundTextCenterPos, Vec2F(imgMetadata->imageSize(m_config->messageTextContainer)) * interfaceScale()));
 
-    m_guiContext->setTextStyle(m_config->textStyle);
-    m_guiContext->renderText(message->message, {messageTextOffset, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor});
+    m_guiContext.setTextStyle(m_config->textStyle);
+    m_guiContext.renderText(message->message, {messageTextOffset, HorizontalAnchor::HMidAnchor, VerticalAnchor::VMidAnchor});
   }
 }
 
@@ -1210,11 +1222,11 @@ void MainInterface::renderMonsterHealthBar() {
 
     auto container = assets->json("/interface.config:monsterHealth.container").toString();
     auto offset = jsonToVec2F(assets->json("/interface.config:monsterHealth.offset")) * interfaceScale();
-    m_guiContext->drawQuad(container, RectF::withCenter(backgroundCenterPos + offset, Vec2F(imgMetadata->imageSize(container) * interfaceScale())));
+    m_guiContext.drawQuad(container, RectF::withCenter(backgroundCenterPos + offset, Vec2F(imgMetadata->imageSize(container) * interfaceScale())));
 
     auto nameTextOffset = jsonToVec2F(assets->json("/interface.config:monsterHealth.nameTextOffset")) * interfaceScale();
-    m_guiContext->setTextStyle(m_config->textStyle);
-    m_guiContext->renderText(showDamageEntity->name(), backgroundCenterPos + nameTextOffset);
+    m_guiContext.setTextStyle(m_config->textStyle);
+    m_guiContext.renderText(showDamageEntity->name(), backgroundCenterPos + nameTextOffset);
 
     auto empty = assets->json("/interface.config:monsterHealth.progressEmpty").toString();
     auto filled = assets->json("/interface.config:monsterHealth.progressFilled").toString();
@@ -1225,30 +1237,30 @@ void MainInterface::renderMonsterHealthBar() {
     Vec2F barItemOffset = Vec2F(imgMetadata->imageSize(filled)) * interfaceScale();
     barItemOffset[1] = 0;
 
-    m_guiContext->drawQuad(empty, RectF::withSize(backgroundCenterPos + barPos, Vec2F(imgMetadata->imageSize(empty)) * interfaceScale()));
+    m_guiContext.drawQuad(empty, RectF::withSize(backgroundCenterPos + barPos, Vec2F(imgMetadata->imageSize(empty)) * interfaceScale()));
 
     for (int i = 0; i < blocks; i++)
-      m_guiContext->drawQuad(filled, barPos + barItemOffset * i, interfaceScale());
+      m_guiContext.drawQuad(filled, barPos + barItemOffset * i, interfaceScale());
 
     auto portraitOffset = jsonToVec2F(assets->json("/interface.config:monsterHealth.portraitOffset")) * interfaceScale();
     auto portraitScale = assets->json("/interface.config:monsterHealth.portraitScale").toFloat() * interfaceScale();
 
     auto portraitScissorRect = jsonToRectF(assets->json("/interface.config:monsterHealth.portraitScissorRect")).scaled(interfaceScale());
     auto rect = portraitScissorRect.translated(backgroundCenterPos + portraitOffset);
-    m_guiContext->setInterfaceScissorRect(RectI(RectF(rect).scaled(1.0f / interfaceScale())));
+    m_guiContext.setInterfaceScissorRect(RectI(RectF(rect).scaled(1.0f / interfaceScale())));
     auto portraitMaxSize = jsonToVec2I(assets->json("/interface.config:monsterHealth.portraitMaxSize"));
     List<Drawable> portrait = showDamageEntity->portrait(PortraitMode::Full);
 
-    auto bounds = Drawable::boundBoxAll(portrait, true);
+    auto bounds = Drawable::boundBoxAll(portrait, true, m_guiContext.imageMetadata());
     if (m_portraitScale == 0)
       m_portraitScale = max<int>(1, ceil(max(bounds.size().x() / portraitMaxSize.x(), bounds.size().y() / portraitMaxSize.y())));
     Drawable::translateAll(portrait, {-bounds.xMin() - (bounds.width() * 0.5f), -bounds.yMin() }); // crop out whitespace, align bottom center
     Drawable::scaleAll(portrait, 1.0f / m_portraitScale);
 
     for (auto drawable : portrait)
-      m_guiContext->drawDrawable(std::move(drawable), backgroundCenterPos + portraitOffset, portraitScale);
+      m_guiContext.drawDrawable(std::move(drawable), backgroundCenterPos + portraitOffset, portraitScale);
 
-    m_guiContext->resetInterfaceScissorRect();
+    m_guiContext.resetInterfaceScissorRect();
   }
 }
 
@@ -1293,19 +1305,19 @@ void MainInterface::renderSpecialDamageBar() {
         Vec2F bottomCenter = Vec2F(center + (allOffset + hSpacing*i)*hScale, 0);
 
         auto screenPos = RectF::withSize(bottomCenter + backgroundOffset, backgroundImageSize);
-        m_guiContext->drawQuad(background, screenPos);
+        m_guiContext.drawQuad(background, screenPos);
 
         Vec2F size = Vec2F(barConfig.getInt("fillWidth") * bar.second, imgMetadata->imageSize(fill).y());
         size.setX(size.x()*hScale);
 
-        m_guiContext->drawQuad(fill, RectF::withSize(bottomCenter + fillOffset, size * interfaceScale()));
+        m_guiContext.drawQuad(fill, RectF::withSize(bottomCenter + fillOffset, size * interfaceScale()));
 
-        m_guiContext->setFontColor(jsonToColor(barConfig.get("nameColor")).toRgba());
-        m_guiContext->setFontSize(barConfig.getUInt("nameSize"));
+        m_guiContext.setFontColor(jsonToColor(barConfig.get("nameColor")).toRgba());
+        m_guiContext.setFontSize(barConfig.getUInt("nameSize"));
         if (auto style = barConfig.get("nameStyle"))
-          m_guiContext->setTextStyle(style);
-        m_guiContext->renderText(target->name(), TextPositioning(bottomCenter + nameOffset, HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor));
-        m_guiContext->clearTextStyle();
+          m_guiContext.setTextStyle(style);
+        m_guiContext.renderText(target->name(), TextPositioning(bottomCenter + nameOffset, HorizontalAnchor::HMidAnchor, VerticalAnchor::BottomAnchor));
+        m_guiContext.clearTextStyle();
     }
     i++;
   }
@@ -1321,38 +1333,38 @@ void MainInterface::renderMainBar() {
   Vec2F inventoryButtonPos = barPos + Vec2F(m_config->mainBarInventoryButtonOffset) * interfaceScale();
   if (m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory)) {
     if (overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenPos)) {
-      m_guiContext->drawQuad(m_config->inventoryImageOpenHover, Vec2F(inventoryButtonPos), interfaceScale());
+      m_guiContext.drawQuad(m_config->inventoryImageOpenHover, Vec2F(inventoryButtonPos), interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.inventoryText").toString();
     } else {
-      m_guiContext->drawQuad(m_config->inventoryImageOpen, Vec2F(inventoryButtonPos), interfaceScale());
+      m_guiContext.drawQuad(m_config->inventoryImageOpen, Vec2F(inventoryButtonPos), interfaceScale());
     }
   } else if (overButton(m_config->mainBarInventoryButtonPoly, m_cursorScreenPos)) {
     if (m_inventoryWindow->containsNewItems())
-      m_guiContext->drawQuad(m_config->inventoryImageGlowHover, Vec2F(inventoryButtonPos), interfaceScale());
+      m_guiContext.drawQuad(m_config->inventoryImageGlowHover, Vec2F(inventoryButtonPos), interfaceScale());
     else
-      m_guiContext->drawQuad(m_config->inventoryImageHover, Vec2F(inventoryButtonPos), interfaceScale());
+      m_guiContext.drawQuad(m_config->inventoryImageHover, Vec2F(inventoryButtonPos), interfaceScale());
     m_cursorTooltip = assets->json("/interface.config:cursorTooltip.inventoryText").toString();
   } else {
     if (m_inventoryWindow->containsNewItems())
-      m_guiContext->drawQuad(m_config->inventoryImageGlow, Vec2F(inventoryButtonPos), interfaceScale());
+      m_guiContext.drawQuad(m_config->inventoryImageGlow, Vec2F(inventoryButtonPos), interfaceScale());
     else
-      m_guiContext->drawQuad(m_config->inventoryImage, Vec2F(inventoryButtonPos), interfaceScale());
+      m_guiContext.drawQuad(m_config->inventoryImage, Vec2F(inventoryButtonPos), interfaceScale());
   }
 
   auto drawStateButton = [this](MainInterfacePanes paneType, Vec2F pos, PolyI poly,
       String image, String hoverImage, String openImage, String hoverOpenImage, String toolTip) {
     if (m_paneManager.registeredPaneIsDisplayed(paneType)) {
       if (overButton(poly, m_cursorScreenPos)) {
-        m_guiContext->drawQuad(hoverOpenImage, pos, interfaceScale());
+        m_guiContext.drawQuad(hoverOpenImage, pos, interfaceScale());
         m_cursorTooltip = toolTip;
       } else {
-        m_guiContext->drawQuad(openImage, pos, interfaceScale());
+        m_guiContext.drawQuad(openImage, pos, interfaceScale());
       }
     } else if (overButton(poly, m_cursorScreenPos)) {
-      m_guiContext->drawQuad(hoverImage, pos, interfaceScale());
+      m_guiContext.drawQuad(hoverImage, pos, interfaceScale());
       m_cursorTooltip = toolTip;
     } else {
-      m_guiContext->drawQuad(image, pos, interfaceScale());
+      m_guiContext.drawQuad(image, pos, interfaceScale());
     }
   };
 
@@ -1415,29 +1427,29 @@ void MainInterface::renderMainBar() {
   Vec2F deployButtonPos(Vec2F(barPos) + Vec2F(m_config->mainBarDeployButtonOffset) * interfaceScale());
   if (m_client->canBeamUp()) {
     if (overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenPos)) {
-      m_guiContext->drawQuad(m_config->beamUpImageHover, deployButtonPos, interfaceScale());
+      m_guiContext.drawQuad(m_config->beamUpImageHover, deployButtonPos, interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.beamUpText").toString();
     } else {
-      m_guiContext->drawQuad(m_config->beamUpImage, deployButtonPos, interfaceScale());
+      m_guiContext.drawQuad(m_config->beamUpImage, deployButtonPos, interfaceScale());
     }
   } else if (m_client->canBeamDown(true)) {
     if (overButton(m_config->mainBarDeployButtonPoly, m_cursorScreenPos)) {
-      m_guiContext->drawQuad(m_config->deployImageHover, deployButtonPos, interfaceScale());
+      m_guiContext.drawQuad(m_config->deployImageHover, deployButtonPos, interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.deployText").toString();
     } else {
-      m_guiContext->drawQuad(m_config->deployImage, deployButtonPos, interfaceScale());
+      m_guiContext.drawQuad(m_config->deployImage, deployButtonPos, interfaceScale());
     }
   } else {
-    m_guiContext->drawQuad(m_config->deployImageDisabled, deployButtonPos, interfaceScale());
+    m_guiContext.drawQuad(m_config->deployImageDisabled, deployButtonPos, interfaceScale());
   }
 
   Vec2F beamButtonPos(Vec2F(barPos) + Vec2F(m_config->mainBarBeamButtonOffset) * interfaceScale());
   if (m_client->canBeamDown()) {
     if (overButton(m_config->mainBarBeamButtonPoly, m_cursorScreenPos)) {
-      m_guiContext->drawQuad(m_config->beamDownImageHover, beamButtonPos, interfaceScale());
+      m_guiContext.drawQuad(m_config->beamDownImageHover, beamButtonPos, interfaceScale());
       m_cursorTooltip = assets->json("/interface.config:cursorTooltip.beamDownText").toString();
     } else {
-      m_guiContext->drawQuad(m_config->beamDownImage, beamButtonPos, interfaceScale());
+      m_guiContext.drawQuad(m_config->beamDownImage, beamButtonPos, interfaceScale());
     }
   }
 
@@ -1467,8 +1479,8 @@ void MainInterface::renderDebug() {
   SpatialLogger::setObserved(true);
 
   if (m_clientCommandProcessor->debugHudEnabled()) {
-    m_guiContext->setTextStyle(m_config->debugTextStyle);
-    m_guiContext->setLineSpacing(0.5f);
+    m_guiContext.setTextStyle(m_config->debugTextStyle);
+    m_guiContext.setLineSpacing(0.5f);
 
     bool clearMap = m_debugMapClearTimer.wrapTick();
     auto logMapValues = LogMap::getValues();
@@ -1482,11 +1494,11 @@ void MainInterface::renderDebug() {
     for (auto const& pair : logMapValues) {
       TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->textStyle.fontSize * interfaceScale() * counter++) };
       String& text = formatted.emplace_back(strf("{}^lightgray;:^green,set; {}", pair.first, pair.second));
-      m_debugTextRect.combine(m_guiContext->determineTextSize(text, positioning).padded(m_config->debugBackgroundPad));
+      m_debugTextRect.combine(m_guiContext.determineTextSize(text, positioning).padded(m_config->debugBackgroundPad));
     }
 
     if (!m_debugTextRect.isNull()) {
-      RenderQuad& quad = m_guiContext->renderer()->immediatePrimitives()
+      RenderQuad& quad = m_guiContext.renderer()->immediatePrimitives()
         .emplace_back(std::in_place_type_t<RenderQuad>(), m_debugTextRect, m_config->debugBackgroundColor.toRgba(), 0.0f).get<RenderQuad>();
 
       quad.b.color[3] = quad.c.color[3] = 0;
@@ -1496,7 +1508,7 @@ void MainInterface::renderDebug() {
 
     for (size_t index = 0; index != formatted.size(); ++index) {
       TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->textStyle.fontSize * interfaceScale() * index) };
-      m_guiContext->renderText(formatted[index], positioning);
+      m_guiContext.renderText(formatted[index], positioning);
     }
   }
 
@@ -1507,40 +1519,40 @@ void MainInterface::renderDebug() {
   for (auto const& line : SpatialLogger::getLines("world", clearSpatial)) {
     Vec2F begin = camera.worldToScreen(line.begin);
     Vec2F end = camera.worldGeometry().diff(line.end, line.begin) * camera.pixelRatio() * TilePixels + begin;
-    m_guiContext->drawLine(begin, end, line.color, 1);
+    m_guiContext.drawLine(begin, end, line.color, 1);
   }
 
   for (auto const& line : SpatialLogger::getLines("screen", clearSpatial))
-    m_guiContext->drawLine(Vec2F(line.begin), Vec2F(line.end), line.color, 1);
+    m_guiContext.drawLine(Vec2F(line.begin), Vec2F(line.end), line.color, 1);
 
   for (auto const& point : SpatialLogger::getPoints("world", clearSpatial)) {
     auto position = camera.worldToScreen(point.position);
-    m_guiContext->drawLine(position + Vec2F(-2, -2), position + Vec2F(-2, 2), point.color, 1);
-    m_guiContext->drawLine(position + Vec2F(-2, 2), position + Vec2F(2, 2), point.color, 1);
-    m_guiContext->drawLine(position + Vec2F(2, 2), position + Vec2F(2, -2), point.color, 1);
-    m_guiContext->drawLine(position + Vec2F(2, -2), position + Vec2F(-2, -2), point.color, 1);
+    m_guiContext.drawLine(position + Vec2F(-2, -2), position + Vec2F(-2, 2), point.color, 1);
+    m_guiContext.drawLine(position + Vec2F(-2, 2), position + Vec2F(2, 2), point.color, 1);
+    m_guiContext.drawLine(position + Vec2F(2, 2), position + Vec2F(2, -2), point.color, 1);
+    m_guiContext.drawLine(position + Vec2F(2, -2), position + Vec2F(-2, -2), point.color, 1);
   }
 
   for (auto const& point : SpatialLogger::getPoints("screen", clearSpatial)) {
     auto position = point.position;
-    m_guiContext->drawLine(position + Vec2F(-2, -2), position + Vec2F(-2, 2), point.color, 1);
-    m_guiContext->drawLine(position + Vec2F(-2, 2), position + Vec2F(2, 2), point.color, 1);
-    m_guiContext->drawLine(position + Vec2F(2, 2), position + Vec2F(2, -2), point.color, 1);
-    m_guiContext->drawLine(position + Vec2F(2, -2), position + Vec2F(-2, -2), point.color, 1);
+    m_guiContext.drawLine(position + Vec2F(-2, -2), position + Vec2F(-2, 2), point.color, 1);
+    m_guiContext.drawLine(position + Vec2F(-2, 2), position + Vec2F(2, 2), point.color, 1);
+    m_guiContext.drawLine(position + Vec2F(2, 2), position + Vec2F(2, -2), point.color, 1);
+    m_guiContext.drawLine(position + Vec2F(2, -2), position + Vec2F(-2, -2), point.color, 1);
   }
 
-  m_guiContext->setTextStyle(m_config->debugTextStyle);
+  m_guiContext.setTextStyle(m_config->debugTextStyle);
 
   for (auto const& logText : SpatialLogger::getText("world", clearSpatial)) {
-    m_guiContext->setFontColor(logText.color);
-    m_guiContext->renderText(logText.text.utf8Ptr(), camera.worldToScreen(logText.position));
+    m_guiContext.setFontColor(logText.color);
+    m_guiContext.renderText(logText.text.utf8Ptr(), camera.worldToScreen(logText.position));
   }
 
   for (auto const& logText : SpatialLogger::getText("screen", clearSpatial)) {
-    m_guiContext->setFontColor(logText.color);
-    m_guiContext->renderText(logText.text.utf8Ptr(), logText.position);
+    m_guiContext.setFontColor(logText.color);
+    m_guiContext.renderText(logText.text.utf8Ptr(), logText.position);
   }
-  m_guiContext->clearTextStyle();
+  m_guiContext.clearTextStyle();
 }
 
 void MainInterface::updateCursor() {
@@ -1582,7 +1594,7 @@ void MainInterface::updateCursor() {
 void MainInterface::renderCursor() {
   // if we're currently playing a cinematic, we should not render the mouse.
   if (m_cinematicOverlay && !m_cinematicOverlay->completed())
-    return m_guiContext->applicationController()->setCursorVisible(false);
+    return m_guiContext.applicationController()->setCursorVisible(false);
 
   Vec2I cursorPos = m_cursorScreenIPos;
   Vec2I cursorSize = m_cursor.size();
@@ -1592,8 +1604,8 @@ void MainInterface::renderCursor() {
 
   cursorPos[0] -= cursorOffset[0] * cursorScale;
   cursorPos[1] -= (cursorSize[1] - cursorOffset[1]) * cursorScale;
-  if (!m_guiContext->trySetCursor(cursorDrawable, cursorOffset, cursorScale))
-    m_guiContext->drawDrawable(cursorDrawable, Vec2F(cursorPos), cursorScale);
+  if (!m_guiContext.trySetCursor(cursorDrawable, cursorOffset, cursorScale))
+    m_guiContext.drawDrawable(cursorDrawable, Vec2F(cursorPos), cursorScale);
 
   if (m_cursorTooltip) {
     auto const& assets = m_assets;
@@ -1610,15 +1622,15 @@ void MainInterface::renderCursor() {
     size_t fontSize = config.get("fontSize").toUInt();
     Vec4B fontColor = jsonToColor(config.get("color")).toRgba();
 
-    m_guiContext->drawQuad(backgroundImage, Vec2F(tooltipOffset) + Vec2F(-tooltipSize.x(), 0), interfaceScale());
-    m_guiContext->setTextStyle(textStyle);
-    m_guiContext->setFontSize(fontSize);
-    m_guiContext->setFontColor(fontColor);
-    m_guiContext->renderText(*m_cursorTooltip,
+    m_guiContext.drawQuad(backgroundImage, Vec2F(tooltipOffset) + Vec2F(-tooltipSize.x(), 0), interfaceScale());
+    m_guiContext.setTextStyle(textStyle);
+    m_guiContext.setFontSize(fontSize);
+    m_guiContext.setFontColor(fontColor);
+    m_guiContext.renderText(*m_cursorTooltip,
         TextPositioning(Vec2F(tooltipOffset) + Vec2F(-tooltipSize.x(), tooltipSize.y()) / 2,
             HorizontalAnchor::HMidAnchor,
             VerticalAnchor::VMidAnchor));
-    m_guiContext->clearTextStyle();
+    m_guiContext.clearTextStyle();
   }
 
   m_cursorItem->setPosition(Vec2I::round(m_cursorScreenPos / interfaceScale() + Vec2F(m_config->inventoryItemMouseOffset)));
@@ -1629,7 +1641,7 @@ void MainInterface::renderCursor() {
     m_cursorItem->setItem({});
 
   m_cursorItem->render(RectI::withSize({}, {static_cast<int>(windowWidth()), static_cast<int>(windowHeight())}));
-  m_guiContext->resetInterfaceScissorRect();
+  m_guiContext.resetInterfaceScissorRect();
 }
 
 bool MainInterface::overButton(PolyI const& buttonPoly, Vec2F const& mousePos) const {
@@ -1695,7 +1707,7 @@ bool MainInterface::overlayClick(Vec2F const& mousePos, MouseButton) {
 }
 
 void MainInterface::initHttpTrustDialog() {
-  const auto httpTrustDialog = make_shared<HttpTrustDialog>(HttpTrustDialog::Services{m_assets, m_configuration});
+  const auto httpTrustDialog = make_shared<HttpTrustDialog>(HttpTrustDialog::Services{m_assets, m_configuration, m_guiContext});
   m_paneManager.registerPane(MainInterfacePanes::HttpTrustDialog, PaneLayer::ModalWindow, httpTrustDialog);
 }
 

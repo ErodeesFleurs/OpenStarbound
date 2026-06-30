@@ -6,7 +6,7 @@ namespace Star {
 
 struct SignalHandlerImpl;
 
-// Singleton signal handler that registers handlers for segfault, fpe,
+// Process signal handler that registers handlers for segfault, fpe,
 // illegal instructions etc as well as non-fatal interrupts.
 class SignalHandler {
 public:
@@ -28,7 +28,7 @@ public:
 private:
   friend SignalHandlerImpl;
 
-  static UniquePtr<SignalHandlerImpl> s_singleton;
+  static UniquePtr<SignalHandlerImpl> s_activeHandler;
 };
 
 }

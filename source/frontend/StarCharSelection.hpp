@@ -12,6 +12,7 @@ using PlayerStoragePtr = SharedPtr<PlayerStorage>;
 struct CharSelectionServices {
   AssetsConstPtr assets;
   ConfigurationPtr configuration;
+  GuiContext& guiContext;
 };
 
 class CharSelectionPane : public Pane {

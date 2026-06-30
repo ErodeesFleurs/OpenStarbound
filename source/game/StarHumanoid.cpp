@@ -1,12 +1,11 @@
 #include "StarHumanoid.hpp"
-#include "StarRoot.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
 #include "StarArmors.hpp"
-#include "StarParticleDatabase.hpp"
 #include "StarAssets.hpp"
-#include "StarSpeciesDatabase.hpp"
 #include "StarDanceDatabase.hpp"
+#include "StarDataStreamExtra.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarParticleDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
 
 namespace Star {
 
@@ -24,8 +23,7 @@ extern EnumMap<HumanoidEmote> const HumanoidEmoteNames{
   {HumanoidEmote::Blink, "Blink"},
   {HumanoidEmote::Wink, "Wink"},
   {HumanoidEmote::Eat, "Eat"},
-  {HumanoidEmote::Sleep, "Sleep"}
-};
+  {HumanoidEmote::Sleep, "Sleep"}};
 
 // Raptor - I hate the fact that its inconsistent between the strings used in the map above and with the switch case down below
 extern EnumMap<HumanoidEmote> const HumanoidEmoteFrameBaseNames{
@@ -42,8 +40,7 @@ extern EnumMap<HumanoidEmote> const HumanoidEmoteFrameBaseNames{
   {HumanoidEmote::Blink, "blink"},
   {HumanoidEmote::Wink, "wink"},
   {HumanoidEmote::Eat, "eat"},
-  {HumanoidEmote::Sleep, "sleep"}
-};
+  {HumanoidEmote::Sleep, "sleep"}};
 
 Personality parsePersonalityArray(Json const& config) {
   return Personality{config.getString(0), config.getString(1), jsonToVec2F(config.get(2)), jsonToVec2F(config.get(3))};
@@ -69,11 +66,10 @@ Personality parsePersonality(Json const& config) {
 
 Json jsonFromPersonality(Personality const& personality) {
   return JsonObject{
-    { "idle", personality.idle },
-    { "armIdle", personality.armIdle },
-    { "headOffset", jsonFromVec2F(personality.headOffset) },
-    { "armOffset", jsonFromVec2F(personality.armOffset)   }
-  };
+    {"idle", personality.idle},
+    {"armIdle", personality.armIdle},
+    {"headOffset", jsonFromVec2F(personality.headOffset)},
+    {"armOffset", jsonFromVec2F(personality.armOffset)}};
 }
 
 HumanoidIdentity::HumanoidIdentity(Json config) {
@@ -87,7 +83,7 @@ HumanoidIdentity::HumanoidIdentity(Json config) {
   hairType = config.getString("hairType", "male1");
   hairDirectives = config.getString("hairDirectives", "");
   bodyDirectives = config.getString("bodyDirectives", "");
-  if (auto jEmoteDirectives = config.optString("emoteDirectives")) // Passing Directives as a default arg would be inefficient
+  if (auto jEmoteDirectives = config.optString("emoteDirectives"))// Passing Directives as a default arg would be inefficient
     emoteDirectives = jEmoteDirectives.take();
   else
     emoteDirectives = bodyDirectives;
@@ -107,7 +103,6 @@ HumanoidIdentity::HumanoidIdentity(Json config) {
   color = jsonToColor(config.get("color", JsonArray({51, 117, 237, 255}))).toRgba();
 
   imagePath = config.optString("imagePath");
-
 }
 
 Json HumanoidIdentity::toJson() const {
@@ -210,26 +205,26 @@ Humanoid::HumanoidTiming Humanoid::HumanoidTiming::sensibleDefaults(AssetsConstP
 
 bool Humanoid::HumanoidTiming::cyclicState(State state) {
   switch (state) {
-    case State::Walk:
-    case State::Run:
-    case State::Swim:
-      return true;
-    default:
-      return false;
+  case State::Walk:
+  case State::Run:
+  case State::Swim:
+    return true;
+  default:
+    return false;
   }
 }
 
 bool Humanoid::HumanoidTiming::cyclicEmoteState(HumanoidEmote state) {
   switch (state) {
-    case HumanoidEmote::Blabbering:
-    case HumanoidEmote::Shouting:
-    case HumanoidEmote::Sad:
-    case HumanoidEmote::Laugh:
-    case HumanoidEmote::Eat:
-    case HumanoidEmote::Sleep:
-      return true;
-    default:
-      return false;
+  case HumanoidEmote::Blabbering:
+  case HumanoidEmote::Shouting:
+  case HumanoidEmote::Sad:
+  case HumanoidEmote::Laugh:
+  case HumanoidEmote::Eat:
+  case HumanoidEmote::Sleep:
+    return true;
+  default:
+    return false;
   }
 }
 
@@ -253,28 +248,32 @@ int Humanoid::HumanoidTiming::genericSeq(float timer, float cycle, unsigned fram
 }
 
 EnumMap<Humanoid::State> const Humanoid::StateNames{
-    {Humanoid::State::Idle, "idle"},
-    {Humanoid::State::Walk, "walk"},
-    {Humanoid::State::Run, "run"},
-    {Humanoid::State::Jump, "jump"},
-    {Humanoid::State::Fall, "fall"},
-    {Humanoid::State::Swim, "swim"},
-    {Humanoid::State::SwimIdle, "swimIdle"},
-    {Humanoid::State::Duck, "duck"},
-    {Humanoid::State::Sit, "sit"},
-    {Humanoid::State::Lay, "lay"},
+  {Humanoid::State::Idle, "idle"},
+  {Humanoid::State::Walk, "walk"},
+  {Humanoid::State::Run, "run"},
+  {Humanoid::State::Jump, "jump"},
+  {Humanoid::State::Fall, "fall"},
+  {Humanoid::State::Swim, "swim"},
+  {Humanoid::State::SwimIdle, "swimIdle"},
+  {Humanoid::State::Duck, "duck"},
+  {Humanoid::State::Sit, "sit"},
+  {Humanoid::State::Lay, "lay"},
 };
 
-// gross, but I don't want to make config calls more than I need to
-bool& Humanoid::globalHeadRotation() {
-  static Maybe<bool> s_headRotation;
-  if (!s_headRotation)
-    s_headRotation = Root::singleton().configuration()->get("humanoidHeadRotation").optBool().value(true);
-  return *s_headRotation;
-};
+namespace {
 
-Humanoid::Humanoid(AssetsConstPtr assets, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase) {
-  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+template <typename ServicePtr>
+ServicePtr requireHumanoidService(ServicePtr service, char const* name) {
+  if (!service)
+    throw StarException::format("Humanoid requires {} service", name);
+  return service;
+}
+
+}// namespace
+
+Humanoid::Humanoid(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase) {
+  m_assets = requireHumanoidService(std::move(assets), "assets");
+  m_imageMetadataDatabase = requireHumanoidService(std::move(imageMetadataDatabase), "image metadata database");
   m_speciesDatabase = std::move(speciesDatabase);
   m_danceDatabase = std::move(danceDatabase);
   m_particleDatabase = std::move(particleDatabase);
@@ -288,6 +287,7 @@ Humanoid::Humanoid(AssetsConstPtr assets, SpeciesDatabaseConstPtr speciesDatabas
   m_altHand.angle = 0;
   m_facingDirection = Direction::Left;
   m_headRotationTarget = m_headRotation = m_rotation = 0;
+  m_headRotationEnabled = true;
   m_scale = Vec2F::filled(1.f);
   m_drawVaporTrail = false;
   m_state = State::Idle;
@@ -298,17 +298,17 @@ Humanoid::Humanoid(AssetsConstPtr assets, SpeciesDatabaseConstPtr speciesDatabas
   m_animationTimer = m_emoteAnimationTimer = m_danceTimer = 0.0f;
 }
 
-Humanoid::Humanoid(Json const& config, AssetsConstPtr assets, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase)
-  : Humanoid(std::move(assets), std::move(speciesDatabase), std::move(danceDatabase), std::move(particleDatabase)) {
+Humanoid::Humanoid(Json const& config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase)
+    : Humanoid(std::move(assets), std::move(imageMetadataDatabase), std::move(speciesDatabase), std::move(danceDatabase), std::move(particleDatabase)) {
   m_baseConfig = config;
   loadConfig(JsonObject());
   loadAnimation();
 }
 
-Humanoid::Humanoid(HumanoidIdentity const& identity, JsonObject parameters, Json config, AssetsConstPtr assets, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase)
-  : Humanoid(std::move(assets), std::move(speciesDatabase), std::move(danceDatabase), std::move(particleDatabase)) {
+Humanoid::Humanoid(HumanoidIdentity const& identity, JsonObject parameters, Json config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase)
+    : Humanoid(std::move(assets), std::move(imageMetadataDatabase), std::move(speciesDatabase), std::move(danceDatabase), std::move(particleDatabase)) {
   m_identity = identity;
-  m_baseConfig = (m_speciesDatabase ? m_speciesDatabase->humanoidConfig(identity, parameters, config) : Root::singleton().speciesDatabase()->humanoidConfig(identity, parameters, config));
+  m_baseConfig = requireHumanoidService(m_speciesDatabase, "species database")->humanoidConfig(identity, parameters, config);
   loadConfig(JsonObject());
   loadAnimation();
   setIdentity(identity);
@@ -367,7 +367,7 @@ HumanoidIdentity const& Humanoid::identity() const {
   return m_identity;
 }
 
-void Humanoid::setHumanoidParameters(JsonObject parameters){
+void Humanoid::setHumanoidParameters(JsonObject parameters) {
   m_baseConfig = jsonMerge(m_baseConfig, parameters);
   loadConfig(take(m_mergeConfig), true);
 }
@@ -437,8 +437,7 @@ bool Humanoid::loadConfig(Json merger, bool forceRefresh) {
 
   m_mergeConfig = merger;
 
-
-  m_headRotationCenter = jsonToVec2F(config.getArray("headRotationCenter", JsonArray{0,-2})) / TilePixels;
+  m_headRotationCenter = jsonToVec2F(config.getArray("headRotationCenter", JsonArray{0, -2})) / TilePixels;
 
   return movementParametersChanged;
 }
@@ -455,7 +454,7 @@ void Humanoid::loadAnimation() {
   m_portraitAnimationStates.clear();
 
   String animationPath = ("/humanoid/" + m_identity.imagePath.value(m_identity.species) + "/");
-  m_networkedAnimator = m_useAnimation ? NetworkedAnimator(*animationConfig, animationPath, m_assets) : NetworkedAnimator(m_assets);
+  m_networkedAnimator = m_useAnimation ? NetworkedAnimator(*animationConfig, animationPath, m_assets, m_imageMetadataDatabase, m_particleDatabase) : NetworkedAnimator(m_assets, m_imageMetadataDatabase, m_particleDatabase);
 
   if (m_useAnimation) {
     m_frontItemPart = m_baseConfig.getString("frontHandItemPart", "frontHandItem");
@@ -477,37 +476,36 @@ void Humanoid::loadAnimation() {
     m_identityFramesetTags = jsonToMapV<StringMap<String>>(m_baseConfig.getObject("identityFramesetTags", JsonObject()), mem_fn(&Json::toString));
 
     for (auto const& pair : m_baseConfig.getObject("stateAnimations", JsonObject())) {
-      HashMap<String,AnimationStateArgs> animations;
-      for (auto const& anim : pair.second.iterateObject()){
+      HashMap<String, AnimationStateArgs> animations;
+      for (auto const& anim : pair.second.iterateObject()) {
         auto args = anim.second.toArray();
         animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
       m_animationStates.set(StateNames.getLeft(pair.first), animations);
     }
     for (auto const& pair : m_baseConfig.getObject("stateAnimationsBackwards", JsonObject())) {
-      HashMap<String,AnimationStateArgs> animations;
-      for (auto const& anim : pair.second.iterateObject()){
+      HashMap<String, AnimationStateArgs> animations;
+      for (auto const& anim : pair.second.iterateObject()) {
         auto args = anim.second.toArray();
         animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
       m_animationStatesBackwards.set(StateNames.getLeft(pair.first), animations);
     }
     for (auto const& pair : m_baseConfig.getObject("emoteAnimations", JsonObject())) {
-      HashMap<String,AnimationStateArgs> animations;
-      for (auto const& anim : pair.second.iterateObject()){
+      HashMap<String, AnimationStateArgs> animations;
+      for (auto const& anim : pair.second.iterateObject()) {
         auto args = anim.second.toArray();
         animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
       m_emoteAnimationStates.set(HumanoidEmoteFrameBaseNames.getLeft(pair.first), animations);
     }
     for (auto const& pair : m_baseConfig.getObject("portraitAnimations", JsonObject())) {
-      HashMap<String,AnimationStateArgs> animations;
-      for (auto const& anim : pair.second.iterateObject()){
+      HashMap<String, AnimationStateArgs> animations;
+      for (auto const& anim : pair.second.iterateObject()) {
         auto args = anim.second.toArray();
         animations.set(anim.first, {args[0].toString(), args[1].toBool(), args[2].toBool()});
       }
       m_portraitAnimationStates.set(PortraitModeNames.getLeft(pair.first), animations);
-
     }
   }
 }
@@ -515,7 +513,7 @@ void Humanoid::loadAnimation() {
 void Humanoid::wearableRemoved(Wearable const& wearable) {
   auto& fashion = *m_fashion;
 
-  auto setTags = [&](HashMap<String,String> tags) {
+  auto setTags = [&](HashMap<String, String> tags) {
     if (m_useAnimation)
       for (auto const& tag : tags) {
         m_networkedAnimator.setLocalTag(tag.first);
@@ -527,13 +525,13 @@ void Humanoid::wearableRemoved(Wearable const& wearable) {
     if (!head->maskDirectives.empty())
       fashion.helmetMasksChanged = true;
     setTags(head->animationTags);
-  } else if (auto chest = wearable.ptr<WornChest>()){
+  } else if (auto chest = wearable.ptr<WornChest>()) {
     fashion.wornChestsLegsChanged = true;
     setTags(chest->animationTags);
-  } else if (auto legs = wearable.ptr<WornLegs>()){
+  } else if (auto legs = wearable.ptr<WornLegs>()) {
     fashion.wornChestsLegsChanged = true;
     setTags(legs->animationTags);
-  } else if (auto back = wearable.ptr<WornBack>()){
+  } else if (auto back = wearable.ptr<WornBack>()) {
     fashion.wornBacksChanged = true;
     setTags(back->animationTags);
   }
@@ -563,13 +561,12 @@ void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender g
   wornHead.frameset = head.frameset(gender);
   wornHead.maskDirectives = head.maskDirectives();
   wornHead.animationTags.clear();
-  wornHead.animationTags.set(strf("headCosmetic{}Frameset", slot+1), wornHead.frameset);
-  wornHead.animationTags.set(strf("headCosmetic{}Directives", slot+1), wornHead.directives.string());
+  wornHead.animationTags.set(strf("headCosmetic{}Frameset", slot + 1), wornHead.frameset);
+  wornHead.animationTags.set(strf("headCosmetic{}Directives", slot + 1), wornHead.directives.string());
   for (auto const& tag : head.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornHead.animationTags.set(
       m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.second.toString())
-    );
+      m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.second.toString()));
   }
 }
 
@@ -589,15 +586,14 @@ void Humanoid::setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gende
   wornChest.backSleeveFrameset = chest.backSleeveFrameset(gender);
   wornChest.frontSleeveFrameset = chest.frontSleeveFrameset(gender);
   wornChest.animationTags.clear();
-  wornChest.animationTags.set(strf("chestCosmetic{}Frameset", slot+1), wornChest.frameset);
-  wornChest.animationTags.set(strf("frontSleeve{}Frameset", slot+1), wornChest.frontSleeveFrameset);
-  wornChest.animationTags.set(strf("backSleeve{}Frameset", slot+1), wornChest.backSleeveFrameset);
-  wornChest.animationTags.set(strf("chestCosmetic{}Directives", slot+1), wornChest.directives.string());
+  wornChest.animationTags.set(strf("chestCosmetic{}Frameset", slot + 1), wornChest.frameset);
+  wornChest.animationTags.set(strf("frontSleeve{}Frameset", slot + 1), wornChest.frontSleeveFrameset);
+  wornChest.animationTags.set(strf("backSleeve{}Frameset", slot + 1), wornChest.backSleeveFrameset);
+  wornChest.animationTags.set(strf("chestCosmetic{}Directives", slot + 1), wornChest.directives.string());
   for (auto const& tag : chest.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornChest.animationTags.set(
       m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.second.toString())
-    );
+      m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.second.toString()));
   }
 }
 
@@ -615,13 +611,12 @@ void Humanoid::setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender g
   wornLegs.fullbright = legs.fullbright();
   wornLegs.frameset = legs.frameset(gender);
   wornLegs.animationTags.clear();
-  wornLegs.animationTags.set(strf("legsCosmetic{}Frameset", slot+1), wornLegs.frameset);
-  wornLegs.animationTags.set(strf("legsCosmetic{}Directives", slot+1), wornLegs.directives.string());
+  wornLegs.animationTags.set(strf("legsCosmetic{}Frameset", slot + 1), wornLegs.frameset);
+  wornLegs.animationTags.set(strf("legsCosmetic{}Directives", slot + 1), wornLegs.directives.string());
   for (auto const& tag : legs.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornLegs.animationTags.set(
       m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.second.toString())
-    );
+      m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.second.toString()));
   }
 }
 
@@ -640,13 +635,12 @@ void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back, Gender g
   wornBack.frameset = back.frameset(gender);
   wornBack.rotateWithHead = back.instanceValue("rotateWithHead", false).optBool().value();
   wornBack.animationTags.clear();
-  wornBack.animationTags.set(strf("backCosmetic{}Frameset", slot+1), wornBack.frameset);
-  wornBack.animationTags.set(strf("backCosmetic{}Directives", slot+1), wornBack.directives.string());
+  wornBack.animationTags.set(strf("backCosmetic{}Frameset", slot + 1), wornBack.frameset);
+  wornBack.animationTags.set(strf("backCosmetic{}Directives", slot + 1), wornBack.directives.string());
   for (auto const& tag : back.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornBack.animationTags.set(
       m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.second.toString())
-    );
+      m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.second.toString()));
   }
 }
 
@@ -669,7 +663,7 @@ void Humanoid::refreshWearables(Fashion& fashion) {
   if (helmetMasksChanged)
     fashion.helmetMaskDirectivesGroup.clear();
 
-  auto setTags = [&](HashMap<String,String> tags) {
+  auto setTags = [&](HashMap<String, String> tags) {
     if (m_useAnimation)
       for (auto const& tag : tags) {
         m_networkedAnimator.setLocalTag(tag.first, tag.second);
@@ -789,7 +783,6 @@ void Humanoid::setState(State state) {
     m_animationTimer = 0.0f;
     if (m_useAnimation)
       refreshAnimationState();
-
   }
 }
 
@@ -832,6 +825,10 @@ void Humanoid::setHeadRotation(float headRotation) {
   m_headRotationTarget = headRotation;
 }
 
+void Humanoid::setHeadRotationEnabled(bool enabled) {
+  m_headRotationEnabled = enabled;
+}
+
 void Humanoid::setRotation(float rotation) {
   m_rotation = rotation;
 }
@@ -860,9 +857,13 @@ bool Humanoid::danceCyclicOrEnded() const {
   if (!m_dance)
     return false;
 
-  auto danceDatabase = m_danceDatabase ? m_danceDatabase : Root::singleton().danceDatabase();
+  auto danceDatabase = requireHumanoidService(m_danceDatabase, "dance database");
   auto dance = danceDatabase->getDance(*m_dance);
   return dance->cyclic || m_danceTimer > dance->duration;
+}
+
+bool Humanoid::headRotationEnabled() const {
+  return m_headRotationEnabled;
 }
 
 Direction Humanoid::facingDirection() const {
@@ -874,7 +875,7 @@ bool Humanoid::movingBackwards() const {
 }
 
 void Humanoid::setHandParameters(ToolHand hand, bool holdingItem, float angle, float itemAngle, bool twoHanded,
-    bool recoil, bool outsideOfHand) {
+                                 bool recoil, bool outsideOfHand) {
   auto& handInfo = getHand(hand);
   handInfo.holdingItem = holdingItem;
   handInfo.angle = angle;
@@ -888,15 +889,17 @@ void Humanoid::setHandParameters(ToolHand hand, bool holdingItem, float angle, f
 void Humanoid::setHandFrameOverrides(ToolHand hand, StringView back, StringView front) {
   auto& handInfo = getHand(hand);
   // some users stick directives in these?? better make sure they don't break with custom clothing
-  size_t  backEnd =  back.utf8().find('?');
+  size_t backEnd = back.utf8().find('?');
   size_t frontEnd = front.utf8().find('?');
-  Directives  backDirectives =  backEnd == NPos ? Directives() : Directives( back.utf8().substr( backEnd));
+  Directives backDirectives = backEnd == NPos ? Directives() : Directives(back.utf8().substr(backEnd));
   Directives frontDirectives = frontEnd == NPos ? Directives() : Directives(front.utf8().substr(frontEnd));
-  if ( backEnd != NPos)  back =  back.utf8().substr(0,  backEnd);
-  if (frontEnd != NPos) front = front.utf8().substr(0, frontEnd);
-  handInfo. backFrame = ! back.empty() ? std::move( back) : "rotation";
+  if (backEnd != NPos)
+    back = back.utf8().substr(0, backEnd);
+  if (frontEnd != NPos)
+    front = front.utf8().substr(0, frontEnd);
+  handInfo.backFrame = !back.empty() ? std::move(back) : "rotation";
   handInfo.frontFrame = !front.empty() ? std::move(front) : "rotation";
-  handInfo. backDirectives = ! backDirectives.empty() ? std::move( backDirectives) : Directives();
+  handInfo.backDirectives = !backDirectives.empty() ? std::move(backDirectives) : Directives();
   handInfo.frontDirectives = !frontDirectives.empty() ? std::move(frontDirectives) : Directives();
 }
 
@@ -912,11 +915,11 @@ bool Humanoid::handHoldingItem(ToolHand hand) const {
   return getHand(hand).holdingItem;
 }
 
-void Humanoid::animate(float dt, NetworkedAnimator::DynamicTarget * dynamicTarget) {
+void Humanoid::animate(float dt, NetworkedAnimator::DynamicTarget* dynamicTarget) {
   m_animationTimer += dt;
   m_emoteAnimationTimer += dt;
   m_danceTimer += dt;
-  float headRotationTarget = globalHeadRotation() ? m_headRotationTarget : 0.f;
+  float headRotationTarget = m_headRotationEnabled ? m_headRotationTarget : 0.f;
   m_headRotation = (headRotationTarget - (headRotationTarget - m_headRotation) * powf(.333333f, dt * 60.f));
 
   m_networkedAnimator.update(dt, dynamicTarget);
@@ -926,7 +929,7 @@ void Humanoid::resetAnimation() {
   m_animationTimer = 0.0f;
   m_emoteAnimationTimer = 0.0f;
   m_danceTimer = 0.0f;
-  m_headRotation = globalHeadRotation() ? 0.f : m_headRotationTarget;
+  m_headRotation = m_headRotationEnabled ? 0.f : m_headRotationTarget;
 
   if (m_useAnimation) {
     m_networkedAnimator.finishAnimations();
@@ -979,8 +982,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       float headX = (m_headRotation / (static_cast<float>(Constants::pi) * 2.f));
       Vec2F translate = {
         -(state() == State::Run ? (fmaxf(headX, 0.f) * 2.f) : headX),
-        -(fabsf(m_headRotation / (static_cast<float>(Constants::pi) * 4.f)))
-      };
+        -(fabsf(m_headRotation / (static_cast<float>(Constants::pi) * 4.f)))};
       auto rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_headRotationPoint.first, m_headRotationPoint.second));
       auto bodyHeadRotationCenter = networkedAnimator()->partTransformation(m_headRotationPoint.first).transformVec2(rotationCenter);
       m_networkedAnimator.rotateLocalTransformationGroup("headRotation", m_headRotation * dir, rotationCenter);
@@ -1045,9 +1047,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       m_networkedAnimator.setLocalState("backArmDance", "idle");
       m_networkedAnimator.setLocalTag("backArmDanceFrame");
       m_networkedAnimator.rotateLocalTransformationGroup("backArmRotation",
-        backHand.angle,
-        jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second))
-      );
+                                                         backHand.angle,
+                                                         jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second)));
       if (backHand.recoil)
         m_networkedAnimator.translateLocalTransformationGroup("backArmRotation", m_recoilOffset);
       if (backHand.holdingItem && withItems) {
@@ -1063,9 +1064,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       m_networkedAnimator.setLocalState("frontArmDance", "idle");
       m_networkedAnimator.setLocalTag("frontArmDanceFrame");
       m_networkedAnimator.rotateLocalTransformationGroup("frontArmRotation",
-        frontHand.angle,
-        jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second))
-      );
+                                                         frontHand.angle,
+                                                         jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second)));
       if (frontHand.recoil)
         m_networkedAnimator.translateLocalTransformationGroup("frontArmRotation", m_recoilOffset);
       if (frontHand.holdingItem && withItems) {
@@ -1104,9 +1104,9 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
     auto backArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
       String image = strf("{}:{}{}", frameSet, backHand.backFrame, directives.prefix());
-      Drawable backArm = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, backArmFrameOffset);
-      backArm.imagePart().addDirectives(directives, true);
-      backArm.imagePart().addDirectives(backHand.backDirectives, true);
+      Drawable backArm = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, backArmFrameOffset, m_imageMetadataDatabase);
+      backArm.imagePart().addDirectives(directives, true, m_imageMetadataDatabase);
+      backArm.imagePart().addDirectives(backHand.backDirectives, true, m_imageMetadataDatabase);
       backArm.rotate(backHand.angle, backArmFrameOffset + m_backArmRotationCenter + m_backArmOffset);
       return backArm;
     };
@@ -1156,8 +1156,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         else
           image = strf("{}:{}.{}{}", back.frameset, frameGroup, bodyStateSeq, prefix);
 
-        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, Vec2F());
-        drawable.imagePart().addDirectives(back.directives, true);
+        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, Vec2F(), m_imageMetadataDatabase);
+        drawable.imagePart().addDirectives(back.directives, true, m_imageMetadataDatabase);
         Drawable& applied = addDrawable(std::move(drawable), back.fullbright);
         if (back.rotateWithHead)
           applyHeadRotation(applied);
@@ -1180,8 +1180,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
           position = m_identity.personality.armOffset / TilePixels;
         } else
           image = strf("{}:{}.{}{}", m_backArmFrameset, frameBase(m_state), armStateSeq, prefix);
-        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
-        drawable.imagePart().addDirectives(bodyDirectives, true);
+        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position, m_imageMetadataDatabase);
+        drawable.imagePart().addDirectives(bodyDirectives, true, m_imageMetadataDatabase);
         if (dance.isValid())
           drawable.rotate(danceStep->backArmRotation);
         addDrawable(std::move(drawable), m_bodyFullbright);
@@ -1205,8 +1205,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
               position = m_identity.personality.armOffset / TilePixels;
             } else
               image = strf("{}:{}.{}{}", chest->backSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
-            auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
-            drawable.imagePart().addDirectives(chest->directives, true);
+            auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position, m_imageMetadataDatabase);
+            drawable.imagePart().addDirectives(chest->directives, true, m_imageMetadataDatabase);
             if (dance.isValid())
               drawable.rotate(danceStep->backArmRotation);
             addDrawable(std::move(drawable), chest->fullbright);
@@ -1244,23 +1244,23 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
     if (!m_headFrameset.empty() && !m_bodyHidden) {
       String image = strf("{}:normal", m_headFrameset);
-      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-      drawable.imagePart().addDirectives(getBodyDirectives(), true);
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(getBodyDirectives(), true, m_imageMetadataDatabase);
       addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
 
     if (!m_emoteFrameset.empty() && !m_bodyHidden) {
       auto emoteDirectives = getEmoteDirectives();
       String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
-      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-      drawable.imagePart().addDirectives(emoteDirectives, true);
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(emoteDirectives, true, m_imageMetadataDatabase);
       addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
 
     if (!m_hairFrameset.empty() && !m_bodyHidden) {
       String image = strf("{}:normal", m_hairFrameset);
-      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-      drawable.imagePart().addDirectives(getHairDirectives(), true).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true);
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(getHairDirectives(), true, m_imageMetadataDatabase).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true, m_imageMetadataDatabase);
       addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
 
@@ -1274,21 +1274,21 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
         frameName = strf("{}{}", m_identity.personality.idle, prefix);
       else
         frameName = strf("{}.{}{}", frameBase(m_state), bodyStateSeq, prefix);
-      String image = strf("{}:{}",m_bodyFrameset,frameName);
-      auto drawable = Drawable::makeImage(m_useBodyHeadMask ? image : std::move(image), 1.0f / TilePixels, true, {});
-      drawable.imagePart().addDirectives(bodyDirectives, true);
+      String image = strf("{}:{}", m_bodyFrameset, frameName);
+      auto drawable = Drawable::makeImage(m_useBodyHeadMask ? image : std::move(image), 1.0f / TilePixels, true, {}, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(bodyDirectives, true, m_imageMetadataDatabase);
       if (m_useBodyMask && !m_bodyMaskFrameset.empty()) {
-        String maskImage = strf("{}:{}",m_bodyMaskFrameset,frameName);
-        Directives maskDirectives = "?addmask="+maskImage+";0;0";
-        drawable.imagePart().addDirectives(maskDirectives, true);
+        String maskImage = strf("{}:{}", m_bodyMaskFrameset, frameName);
+        Directives maskDirectives = "?addmask=" + maskImage + ";0;0";
+        drawable.imagePart().addDirectives(maskDirectives, true, m_imageMetadataDatabase);
       }
       addDrawable(std::move(drawable), m_bodyFullbright);
       if (m_useBodyHeadMask && !m_bodyHeadMaskFrameset.empty()) {
-        String maskImage = strf("{}:{}",m_bodyHeadMaskFrameset,frameName);
-        Directives maskDirectives = "?addmask="+maskImage+";0;0";
-        auto maskDrawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
-        maskDrawable.imagePart().addDirectives(bodyDirectives, true);
-        maskDrawable.imagePart().addDirectives(maskDirectives, true);
+        String maskImage = strf("{}:{}", m_bodyHeadMaskFrameset, frameName);
+        Directives maskDirectives = "?addmask=" + maskImage + ";0;0";
+        auto maskDrawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {}, m_imageMetadataDatabase);
+        maskDrawable.imagePart().addDirectives(bodyDirectives, true, m_imageMetadataDatabase);
+        maskDrawable.imagePart().addDirectives(maskDirectives, true, m_imageMetadataDatabase);
         addHeadDrawable(std::move(maskDrawable), m_bodyFullbright);
       }
     }
@@ -1307,8 +1307,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
           image = strf("{}:{}{}", legs->frameset, m_identity.personality.idle, prefix);
         else
           image = strf("{}:{}.{}{}", legs->frameset, frameBase(m_state), bodyStateSeq, prefix);
-        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
-        drawable.imagePart().addDirectives(legs->directives, true);
+        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {}, m_imageMetadataDatabase);
+        drawable.imagePart().addDirectives(legs->directives, true, m_imageMetadataDatabase);
         addDrawable(std::move(drawable), legs->fullbright);
       } else {
         auto* chest = wearable.ptr<WornChest>();
@@ -1330,8 +1330,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
             image = strf("{}:chest.1{}", chest->frameset, prefix);
           if (m_state != Duck)
             position[1] += bobYOffset;
-          auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
-          drawable.imagePart().addDirectives(chest->directives, true);
+          auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position, m_imageMetadataDatabase);
+          drawable.imagePart().addDirectives(chest->directives, true, m_imageMetadataDatabase);
           addDrawable(std::move(drawable), chest->fullbright);
         }
       }
@@ -1339,15 +1339,15 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
     if (!m_facialHairFrameset.empty() && !m_bodyHidden) {
       String image = strf("{}:normal", m_facialHairFrameset);
-      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-      drawable.imagePart().addDirectives(getFacialHairDirectives(), true).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true);
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(getFacialHairDirectives(), true, m_imageMetadataDatabase).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true, m_imageMetadataDatabase);
       addHeadDrawable(std::move(drawable), m_bodyFullbright);
     }
 
     if (!m_facialMaskFrameset.empty() && !m_bodyHidden) {
       String image = strf("{}:normal", m_facialMaskFrameset);
-      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-      drawable.imagePart().addDirectives(getFacialMaskDirectives(), true).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true);
+      auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(getFacialMaskDirectives(), true, m_imageMetadataDatabase).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true, m_imageMetadataDatabase);
       addHeadDrawable(std::move(drawable));
     }
 
@@ -1357,21 +1357,20 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       auto& head = fashion.wearables[size_t(i) - 1].get<WornHead>();
       if (!head.frameset.empty()) {
         String image = strf("{}:normal{}", head.frameset, head.directives.prefix());
-        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition);
-        drawable.imagePart().addDirectives(head.directives, true);
+        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, headPosition, m_imageMetadataDatabase);
+        drawable.imagePart().addDirectives(head.directives, true, m_imageMetadataDatabase);
         addHeadDrawable(std::move(drawable), head.fullbright);
       }
     }
 
     auto frontArmDrawable = [&](String const& frameSet, Directives const& directives) -> Drawable {
       String image = strf("{}:{}{}", frameSet, frontHand.frontFrame, directives.prefix());
-      Drawable frontArm = Drawable::makeImage(image, 1.0f / TilePixels, true, frontArmFrameOffset);
-      frontArm.imagePart().addDirectives(directives, true);
-      frontArm.imagePart().addDirectives(frontHand.frontDirectives, true);
+      Drawable frontArm = Drawable::makeImage(image, 1.0f / TilePixels, true, frontArmFrameOffset, m_imageMetadataDatabase);
+      frontArm.imagePart().addDirectives(directives, true, m_imageMetadataDatabase);
+      frontArm.imagePart().addDirectives(frontHand.frontDirectives, true, m_imageMetadataDatabase);
       frontArm.rotate(frontHand.angle, frontArmFrameOffset + m_frontArmRotationCenter);
       return frontArm;
     };
-
 
     auto drawFrontArmAndSleeves = [&](bool holdingItem) {
       auto& bodyDirectives = getBodyDirectives();
@@ -1389,8 +1388,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
           position = m_identity.personality.armOffset / TilePixels;
         } else
           image = strf("{}:{}.{}{}", m_frontArmFrameset, frameBase(m_state), armStateSeq, prefix);
-        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position);
-        drawable.imagePart().addDirectives(bodyDirectives, true);
+        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, position, m_imageMetadataDatabase);
+        drawable.imagePart().addDirectives(bodyDirectives, true, m_imageMetadataDatabase);
         if (dance.isValid())
           drawable.rotate(danceStep->frontArmRotation);
         addDrawable(drawable, m_bodyFullbright);
@@ -1414,8 +1413,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
               position = m_identity.personality.armOffset / TilePixels;
             } else
               image = strf("{}:{}.{}{}", chest->frontSleeveFrameset, frameBase(m_state), armStateSeq, prefix);
-            auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, position);
-            drawable.imagePart().addDirectives(chest->directives, true);
+            auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, position, m_imageMetadataDatabase);
+            drawable.imagePart().addDirectives(chest->directives, true, m_imageMetadataDatabase);
             if (dance.isValid())
               drawable.rotate(danceStep->frontArmRotation);
             addDrawable(drawable, chest->fullbright);
@@ -1445,9 +1444,9 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
     if (m_drawVaporTrail) {
       auto image = strf("{}:{}",
-          m_vaporTrailFrameset,
-          m_timing.genericSeq(m_animationTimer, m_vaporTrailCycle, m_vaporTrailFrames, true));
-      addDrawable(Drawable::makeImage(AssetPath::split(image), 1.0f / TilePixels, true, {}));
+                        m_vaporTrailFrameset,
+                        m_timing.genericSeq(m_animationTimer, m_vaporTrailCycle, m_vaporTrailFrames, true));
+      addDrawable(Drawable::makeImage(AssetPath::split(image), 1.0f / TilePixels, true, {}, m_imageMetadataDatabase));
     }
 
     if (withItems) {
@@ -1474,7 +1473,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
 
 List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
   auto& fashion = *m_fashion;
-  ((Humanoid*)this)->refreshWearables(fashion); // bleh
+  ((Humanoid*)this)->refreshWearables(fashion);// bleh
   List<Drawable> drawables;
 
   if (m_useAnimation) {
@@ -1498,7 +1497,7 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
         portraitAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
 
     if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude) {
-      auto personality = (m_speciesDatabase ? m_speciesDatabase : Root::singleton().speciesDatabase())->species(m_identity.species)->personalities()[0];
+      auto personality = requireHumanoidService(m_speciesDatabase, "species database")->species(m_identity.species)->personalities()[0];
       portraitAnimator.setLocalTag("personalityIdle", personality.idle);
       portraitAnimator.setLocalTag("personalityArmIdle", personality.armIdle);
       portraitAnimator.resetLocalTransformationGroup("personalityHeadOffset");
@@ -1508,11 +1507,11 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
     }
     if (mode == PortraitMode::FullNude || mode == PortraitMode::FullNeutralNude) {
       portraitAnimator.setLocalTag("helmetMaskDirectives");
-      auto setTags = [&](HashMap<String,String> tags) {
-      if (m_useAnimation)
-        for (auto const& tag : tags) {
-          portraitAnimator.setLocalTag(tag.first);
-        }
+      auto setTags = [&](HashMap<String, String> tags) {
+        if (m_useAnimation)
+          for (auto const& tag : tags) {
+            portraitAnimator.setLocalTag(tag.first);
+          }
       };
       for (uint8_t i = 0; i != fashion.wearables.size(); ++i) {
         auto& wearable = fashion.wearables[i];
@@ -1520,11 +1519,11 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
           continue;
         if (auto head = wearable.ptr<WornHead>()) {
           setTags(head->animationTags);
-        } else if (auto chest = wearable.ptr<WornChest>()){
+        } else if (auto chest = wearable.ptr<WornChest>()) {
           setTags(chest->animationTags);
-        } else if (auto legs = wearable.ptr<WornLegs>()){
+        } else if (auto legs = wearable.ptr<WornLegs>()) {
           setTags(legs->animationTags);
-        } else if (auto back = wearable.ptr<WornBack>()){
+        } else if (auto back = wearable.ptr<WornBack>()) {
           setTags(back->animationTags);
         }
       }
@@ -1538,7 +1537,7 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
     auto addDrawable = [&](Drawable&& drawable) -> Drawable& {
       if (mode != PortraitMode::Full && mode != PortraitMode::FullNeutral
-        && mode != PortraitMode::FullNude && mode != PortraitMode::FullNeutralNude) {
+          && mode != PortraitMode::FullNude && mode != PortraitMode::FullNeutralNude) {
         // TODO: make this configurable
         drawable.imagePart().addDirectives(String("addmask=/humanoid/portraitMask.png;0;0"), false);
       }
@@ -1550,14 +1549,14 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
     auto personality = m_identity.personality;
     if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude)
-      personality = (m_speciesDatabase ? m_speciesDatabase : Root::singleton().speciesDatabase())->species(m_identity.species)->personalities()[0];
+      personality = requireHumanoidService(m_speciesDatabase, "species database")->species(m_identity.species)->personalities()[0];
 
     if (mode != PortraitMode::Head) {
       if (!m_backArmFrameset.empty()) {
         auto& bodyDirectives = getBodyDirectives();
         String image = strf("{}:{}{}", m_backArmFrameset, personality.armIdle, bodyDirectives.prefix());
-        Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-        drawable.imagePart().addDirectives(bodyDirectives, true);
+        Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset, m_imageMetadataDatabase);
+        drawable.imagePart().addDirectives(bodyDirectives, true, m_imageMetadataDatabase);
         addDrawable(std::move(drawable));
       }
       if (dressed) {
@@ -1567,8 +1566,8 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
           auto chest = fashion.wearables[size_t(i) - 1].ptr<WornChest>();
           if (chest && !chest->backSleeveFrameset.empty()) {
             String image = strf("{}:{}{}", chest->backSleeveFrameset, personality.armIdle, chest->directives.prefix());
-            Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-            drawable.imagePart().addDirectives(chest->directives, true);
+            Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset, m_imageMetadataDatabase);
+            drawable.imagePart().addDirectives(chest->directives, true, m_imageMetadataDatabase);
             addDrawable(std::move(drawable));
           }
         }
@@ -1581,8 +1580,8 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
           if (!back.frameset.empty()) {
             auto backDirectives = back.directives;
             String image = strf("{}:{}{}", back.frameset, personality.idle, backDirectives.prefix());
-            Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-            drawable.imagePart().addDirectives(backDirectives, true);
+            Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {}, m_imageMetadataDatabase);
+            drawable.imagePart().addDirectives(backDirectives, true, m_imageMetadataDatabase);
             addDrawable(std::move(drawable));
           }
         }
@@ -1592,32 +1591,32 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
     if (!m_headFrameset.empty()) {
       auto& bodyDirectives = getBodyDirectives();
       String image = strf("{}:normal{}", m_headFrameset, bodyDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-      drawable.imagePart().addDirectives(bodyDirectives, true);
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(bodyDirectives, true, m_imageMetadataDatabase);
       addDrawable(std::move(drawable));
     }
 
     if (!m_emoteFrameset.empty()) {
       auto& emoteDirectives = getEmoteDirectives();
       String image = strf("{}:{}.{}{}", m_emoteFrameset, emoteFrameBase(m_emoteState), emoteStateSeq, emoteDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-      drawable.imagePart().addDirectives(emoteDirectives, true);
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(emoteDirectives, true, m_imageMetadataDatabase);
       addDrawable(std::move(drawable));
     }
 
     if (!m_hairFrameset.empty()) {
       auto& hairDirectives = getHairDirectives();
       String image = strf("{}:normal{}", m_hairFrameset, hairDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-      drawable.imagePart().addDirectives(hairDirectives, true).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true);
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(hairDirectives, true, m_imageMetadataDatabase).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true, m_imageMetadataDatabase);
       addDrawable(std::move(drawable));
     }
 
     if (!m_bodyFrameset.empty()) {
       auto& bodyDirectives = getBodyDirectives();
       String image = strf("{}:{}{}", m_bodyFrameset, personality.idle, bodyDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-      drawable.imagePart().addDirectives(bodyDirectives, true);
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {}, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(bodyDirectives, true, m_imageMetadataDatabase);
       addDrawable(std::move(drawable));
     }
 
@@ -1629,15 +1628,15 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
         auto* legs = wearable.ptr<WornLegs>();
         if (legs && !legs->frameset.empty()) {
           String image = strf("{}:{}{}", legs->frameset, personality.idle, legs->directives.prefix());
-          Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-          drawable.imagePart().addDirectives(legs->directives, true);
+          Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {}, m_imageMetadataDatabase);
+          drawable.imagePart().addDirectives(legs->directives, true, m_imageMetadataDatabase);
           addDrawable(std::move(drawable));
         } else {
           auto* chest = wearable.ptr<WornChest>();
           if (chest && !chest->frameset.empty()) {
             String image = strf("{}:{}{}", chest->frameset, personality.idle, chest->directives.prefix());
-            Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {});
-            drawable.imagePart().addDirectives(chest->directives, true);
+            Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, {}, m_imageMetadataDatabase);
+            drawable.imagePart().addDirectives(chest->directives, true, m_imageMetadataDatabase);
             addDrawable(std::move(drawable));
           }
         }
@@ -1647,16 +1646,16 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
     if (!m_facialHairFrameset.empty()) {
       auto facialHairDirectives = getFacialHairDirectives();
       String image = strf("{}:normal{}", m_facialHairFrameset, facialHairDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-      drawable.imagePart().addDirectives(facialHairDirectives, true).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true);
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(facialHairDirectives, true, m_imageMetadataDatabase).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true, m_imageMetadataDatabase);
       addDrawable(std::move(drawable));
     }
 
     if (!m_facialMaskFrameset.empty()) {
       auto facialMaskDirectives = getFacialMaskDirectives();
       String image = strf("{}:normal{}", m_facialMaskFrameset, facialMaskDirectives.prefix());
-      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-      drawable.imagePart().addDirectives(facialMaskDirectives, true).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true);
+      Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset, m_imageMetadataDatabase);
+      drawable.imagePart().addDirectives(facialMaskDirectives, true, m_imageMetadataDatabase).addDirectivesGroup(fashion.helmetMaskDirectivesGroup, true, m_imageMetadataDatabase);
       addDrawable(std::move(drawable));
     }
 
@@ -1667,8 +1666,8 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
         auto& head = fashion.wearables[size_t(i) - 1].get<WornHead>();
         if (!head.frameset.empty()) {
           String image = strf("{}:normal{}", head.frameset, head.directives.prefix());
-          Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset);
-          drawable.imagePart().addDirectives(head.directives, true);
+          Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.headOffset, m_imageMetadataDatabase);
+          drawable.imagePart().addDirectives(head.directives, true, m_imageMetadataDatabase);
           addDrawable(std::move(drawable));
         }
       }
@@ -1678,8 +1677,8 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
       if (!m_frontArmFrameset.empty()) {
         auto bodyDirectives = getBodyDirectives();
         String image = strf("{}:{}{}", m_frontArmFrameset, personality.armIdle, bodyDirectives.prefix());
-        Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-        drawable.imagePart().addDirectives(bodyDirectives, true);
+        Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset, m_imageMetadataDatabase);
+        drawable.imagePart().addDirectives(bodyDirectives, true, m_imageMetadataDatabase);
         addDrawable(std::move(drawable));
       }
 
@@ -1690,8 +1689,8 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
           auto chest = fashion.wearables[size_t(i) - 1].ptr<WornChest>();
           if (chest && !chest->frontSleeveFrameset.empty()) {
             String image = strf("{}:{}{}", chest->frontSleeveFrameset, personality.armIdle, chest->directives.prefix());
-            Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset);
-            drawable.imagePart().addDirectives(chest->directives, true);
+            Drawable drawable = Drawable::makeImage(std::move(image), 1.0f, true, personality.armOffset, m_imageMetadataDatabase);
+            drawable.imagePart().addDirectives(chest->directives, true, m_imageMetadataDatabase);
             addDrawable(std::move(drawable));
           }
         }
@@ -1704,12 +1703,12 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
 
 List<Drawable> Humanoid::renderSkull() const {
   return {Drawable::makeImage(
-      (m_speciesDatabase ? m_speciesDatabase : Root::singleton().speciesDatabase())->species(m_identity.species)->skull(), 1.0f, true, Vec2F())};
+    requireHumanoidService(m_speciesDatabase, "species database")->species(m_identity.species)->skull(), 1.0f, true, Vec2F(), m_imageMetadataDatabase)};
 }
 
-HumanoidPtr Humanoid::makeDummy(Gender, AssetsConstPtr assets) {
-  assets = assets ? std::move(assets) : Root::singleton().assets();
-  HumanoidPtr humanoid = make_shared<Humanoid>(assets->json("/humanoid.config"), assets);
+HumanoidPtr Humanoid::makeDummy(Gender, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
+  assets = requireHumanoidService(std::move(assets), "assets");
+  HumanoidPtr humanoid = make_shared<Humanoid>(assets->json("/humanoid.config"), assets, std::move(imageMetadataDatabase));
 
   humanoid->m_headFrameset = assets->json("/humanoid/any/dummy.config:head").toString();
   humanoid->m_bodyFrameset = assets->json("/humanoid/any/dummy.config:body").toString();
@@ -1768,7 +1767,7 @@ Vec2F Humanoid::altHandPosition(Vec2F const& offset) const {
 }
 
 Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const {
-  if (m_useAnimation){
+  if (m_useAnimation) {
     // does the animator being configurable overcomplicate some things? yeah probably
     Vec2F rotationCenter;
     String anchor;
@@ -1778,16 +1777,16 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
       rotationTransformGroup = "frontArmRotation";
       auto state = m_networkedAnimator.hasState("frontArm", m_primaryHand.frontFrame) ? m_primaryHand.frontFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second,{"frontArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"},state,1));
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second, {"frontArm"}, state, 1));
+      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"}, state, 1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"}, state, 1));
     } else {
       rotationTransformGroup = "backArmRotation";
       auto state = m_networkedAnimator.hasState("backArm", m_primaryHand.backFrame) ? m_primaryHand.backFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second,{"backArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"},state,1));
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second, {"backArm"}, state, 1));
+      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"}, state, 1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"}, state, 1));
     }
     // and now, we do the group transformations for the part, but where it would do the rotation, we do some finagling to do it here instead of
     // using the rotation stored in the animator
@@ -1797,12 +1796,12 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
     auto i = transformationGroups.indexOf(rotationTransformGroup);
     if (i != NPos) {
       if (i > 0)
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i-1));
+        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i - 1));
       auto rotated = Mat3F::identity();
       rotated.rotate(armAngle, rotationCenter);
       mat = rotated * mat;
-      if (i < (transformationGroups.size() -1))
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(i+1, transformationGroups.size() -1)) * mat;
+      if (i < (transformationGroups.size() - 1))
+        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(i + 1, transformationGroups.size() - 1)) * mat;
     } else {
       mat = m_networkedAnimator.groupTransformation(transformationGroups);
     }
@@ -1835,7 +1834,7 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
 }
 
 Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F const& offset) const {
-  if (m_useAnimation){
+  if (m_useAnimation) {
     // does the animator being configurable overcomplicate some things? yeah probably
     Vec2F rotationCenter;
     String anchor;
@@ -1845,16 +1844,16 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
       rotationTransformGroup = "frontArmRotation";
       auto state = m_networkedAnimator.hasState("frontArm", m_primaryHand.frontFrame) ? m_primaryHand.frontFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second,{"frontArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"},state,1));
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second, {"frontArm"}, state, 1));
+      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"}, state, 1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"}, state, 1));
     } else {
       rotationTransformGroup = "backArmRotation";
       auto state = m_networkedAnimator.hasState("backArm", m_primaryHand.backFrame) ? m_primaryHand.backFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second,{"backArm"},state,1));
-      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"},state,1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"},state,1));
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second, {"backArm"}, state, 1));
+      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"}, state, 1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"}, state, 1));
     }
     // and now, we do the group transformations for the part, but where it would do the rotation, we do some finagling to do it here instead of
     // using the rotation stored in the animator
@@ -1864,12 +1863,12 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
     auto i = transformationGroups.indexOf(rotationTransformGroup);
     if (i != NPos) {
       if (i > 0)
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i-1));
+        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(0, i - 1));
       auto rotated = Mat3F::identity();
       rotated.rotate(armAngle, rotationCenter);
       mat = rotated * mat;
-      if (i < (transformationGroups.size() -1))
-        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(i+1, transformationGroups.size() -1)) * mat;
+      if (i < (transformationGroups.size() - 1))
+        mat = m_networkedAnimator.groupTransformation(transformationGroups.slice(i + 1, transformationGroups.size() - 1)) * mat;
     } else {
       mat = m_networkedAnimator.groupTransformation(transformationGroups);
     }
@@ -1902,11 +1901,11 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
 }
 
 Vec2F Humanoid::primaryHandOffset(Direction facingDirection) const {
-  if (m_useAnimation){
+  if (m_useAnimation) {
     if (facingDirection == Direction::Left || m_twoHanded)
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second));
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second));
     else
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second));
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second));
   }
   if (facingDirection == Direction::Left || m_twoHanded)
     return m_frontHandPosition - m_frontArmRotationCenter;
@@ -1915,11 +1914,11 @@ Vec2F Humanoid::primaryHandOffset(Direction facingDirection) const {
 }
 
 Vec2F Humanoid::altHandOffset(Direction facingDirection) const {
-  if (m_useAnimation){
+  if (m_useAnimation) {
     if (facingDirection == Direction::Left || m_twoHanded)
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first,m_backArmRotationPoint.second));
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second));
     else
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart,"offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first,m_frontArmRotationPoint.second));
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second));
   }
   if (facingDirection == Direction::Left || m_twoHanded)
     return m_frontHandPosition - m_backArmRotationCenter;
@@ -1937,90 +1936,90 @@ Humanoid::HandDrawingInfo& Humanoid::getHand(ToolHand hand) {
 
 String Humanoid::frameBase(State state) const {
   switch (state) {
-    case State::Idle:
-      return "idle";
-    case State::Walk:
-      return "walk";
-    case State::Run:
-      return "run";
-    case State::Jump:
-      return "jump";
-    case State::Swim:
-      return "swim";
-    case State::SwimIdle:
-      return "swimIdle";
-    case State::Duck:
-      return "duck";
-    case State::Fall:
-      return "fall";
-    case State::Sit:
-      return "sit";
-    case State::Lay:
-      return "lay";
+  case State::Idle:
+    return "idle";
+  case State::Walk:
+    return "walk";
+  case State::Run:
+    return "run";
+  case State::Jump:
+    return "jump";
+  case State::Swim:
+    return "swim";
+  case State::SwimIdle:
+    return "swimIdle";
+  case State::Duck:
+    return "duck";
+  case State::Fall:
+    return "fall";
+  case State::Sit:
+    return "sit";
+  case State::Lay:
+    return "lay";
 
-    default:
-      throw StarException(strf("No such state '{}'", StateNames.getRight(state)));
+  default:
+    throw StarException(strf("No such state '{}'", StateNames.getRight(state)));
   }
 }
 
 String Humanoid::emoteFrameBase(HumanoidEmote state) const {
   switch (state) {
-    case HumanoidEmote::Idle:
-      return "idle";
-    case HumanoidEmote::Blabbering:
-      return "blabber";
-    case HumanoidEmote::Shouting:
-      return "shout";
-    case HumanoidEmote::Happy:
-      return "happy";
-    case HumanoidEmote::Sad:
-      return "sad";
-    case HumanoidEmote::NEUTRAL:
-      return "neutral";
-    case HumanoidEmote::Laugh:
-      return "laugh";
-    case HumanoidEmote::Annoyed:
-      return "annoyed";
-    case HumanoidEmote::Oh:
-      return "oh";
-    case HumanoidEmote::OOOH:
-      return "oooh";
-    case HumanoidEmote::Blink:
-      return "blink";
-    case HumanoidEmote::Wink:
-      return "wink";
-    case HumanoidEmote::Eat:
-      return "eat";
-    case HumanoidEmote::Sleep:
-      return "sleep";
+  case HumanoidEmote::Idle:
+    return "idle";
+  case HumanoidEmote::Blabbering:
+    return "blabber";
+  case HumanoidEmote::Shouting:
+    return "shout";
+  case HumanoidEmote::Happy:
+    return "happy";
+  case HumanoidEmote::Sad:
+    return "sad";
+  case HumanoidEmote::NEUTRAL:
+    return "neutral";
+  case HumanoidEmote::Laugh:
+    return "laugh";
+  case HumanoidEmote::Annoyed:
+    return "annoyed";
+  case HumanoidEmote::Oh:
+    return "oh";
+  case HumanoidEmote::OOOH:
+    return "oooh";
+  case HumanoidEmote::Blink:
+    return "blink";
+  case HumanoidEmote::Wink:
+    return "wink";
+  case HumanoidEmote::Eat:
+    return "eat";
+  case HumanoidEmote::Sleep:
+    return "sleep";
 
-    default:
-      throw StarException(strf("No such emote state '{}'", HumanoidEmoteNames.getRight(state)));
+  default:
+    throw StarException(strf("No such emote state '{}'", HumanoidEmoteNames.getRight(state)));
   }
 }
 
 String Humanoid::getHeadFromIdentity() const {
   return strf("/humanoid/{}/{}head.png",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      GenderNames.getRight(m_identity.gender));
+              m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+              GenderNames.getRight(m_identity.gender));
 }
 
 String Humanoid::getBodyFromIdentity() const {
   return strf("/humanoid/{}/{}body.png",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      GenderNames.getRight(m_identity.gender));
+              m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+              GenderNames.getRight(m_identity.gender));
 }
 
 String Humanoid::getBodyMaskFromIdentity() const {
   return strf("/humanoid/{}/mask/{}body.png",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      GenderNames.getRight(m_identity.gender));
+              m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+              GenderNames.getRight(m_identity.gender));
 }
 
 String Humanoid::getBodyHeadMaskFromIdentity() const {
   return strf("/humanoid/{}/headmask/{}body.png",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      GenderNames.getRight(m_identity.gender));
+              m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+              GenderNames.getRight(m_identity.gender));
 }
 
 String Humanoid::getFacialEmotesFromIdentity() const {
@@ -2031,27 +2030,27 @@ String Humanoid::getHairFromIdentity() const {
   if (m_identity.hairType.empty())
     return "";
   return strf("/humanoid/{}/{}/{}.png",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      m_identity.hairGroup,
-      m_identity.hairType);
+              m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+              m_identity.hairGroup,
+              m_identity.hairType);
 }
 
 String Humanoid::getFacialHairFromIdentity() const {
   if (m_identity.facialHairType.empty())
     return "";
   return strf("/humanoid/{}/{}/{}.png",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      m_identity.facialHairGroup,
-      m_identity.facialHairType);
+              m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+              m_identity.facialHairGroup,
+              m_identity.facialHairType);
 }
 
 String Humanoid::getFacialMaskFromIdentity() const {
   if (m_identity.facialMaskType.empty())
     return "";
   return strf("/humanoid/{}/{}/{}.png",
-      m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
-      m_identity.facialMaskGroup,
-      m_identity.facialMaskType);
+              m_identity.imagePath ? *m_identity.imagePath : m_identity.species,
+              m_identity.facialMaskGroup,
+              m_identity.facialMaskType);
 }
 
 String Humanoid::getBackArmFromIdentity() const {
@@ -2125,7 +2124,7 @@ Maybe<DancePtr> Humanoid::getDance() const {
   if (m_dance.isNothing())
     return {};
 
-  auto danceDatabase = m_danceDatabase ? m_danceDatabase : Root::singleton().danceDatabase();
+  auto danceDatabase = requireHumanoidService(m_danceDatabase, "dance database");
   return danceDatabase->getDance(*m_dance);
 }
 
@@ -2246,7 +2245,7 @@ String Humanoid::defaultDeathParticles() const {
 }
 
 List<Particle> Humanoid::particles(String const& name) const {
-  auto particleDatabase = m_particleDatabase ? m_particleDatabase : Root::singleton().particleDatabase();
+  auto particleDatabase = requireHumanoidService(m_particleDatabase, "particle database");
   List<Particle> res;
   Json particles = m_particleEmitters.get(name).get("particles", {});
   res.reserve(particles.size());
@@ -2302,7 +2301,7 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
   return make_pair(*scale, Directives(mergedDirectives));
 }
 
-NetworkedAnimator * Humanoid::networkedAnimator() {
+NetworkedAnimator* Humanoid::networkedAnimator() {
   return &m_networkedAnimator;
 }
 NetworkedAnimator const* Humanoid::networkedAnimator() const {
@@ -2319,19 +2318,21 @@ Json Humanoid::humanoidConfig(bool withOverrides) {
   return m_baseConfig;
 }
 
-NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config, AssetsConstPtr assets, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase) {
-  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, SpeciesDatabaseConstPtr speciesDatabase, DanceDatabaseConstPtr danceDatabase, ParticleDatabaseConstPtr particleDatabase) {
+  m_assets = requireHumanoidService(std::move(assets), "assets");
+  m_imageMetadataDatabase = requireHumanoidService(std::move(imageMetadataDatabase), "image metadata database");
   m_speciesDatabase = std::move(speciesDatabase);
   m_danceDatabase = std::move(danceDatabase);
   m_particleDatabase = std::move(particleDatabase);
   m_config = config;
   m_humanoidParameters.reset(parameters);
-  m_humanoid = make_shared<Humanoid>(identity, parameters, config, m_assets, m_speciesDatabase, m_danceDatabase, m_particleDatabase);
+  m_humanoid = make_shared<Humanoid>(identity, parameters, config, m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase);
   setupNetElements();
 }
 
 void NetHumanoid::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   auto identity = m_humanoid->identity();
   ds.write(identity);
   JsonObject parameters = m_humanoidParameters.baseMap();
@@ -2341,14 +2342,15 @@ void NetHumanoid::netStore(DataStream& ds, NetCompatibilityRules rules) const {
 }
 
 void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   HumanoidIdentity identity;
   ds.read(identity);
   JsonObject parameters;
   ds.read(parameters);
   m_humanoidParameters.reset(parameters);
   ds.read(m_config);
-  m_humanoid = make_shared<Humanoid>(identity, parameters, m_config, m_assets);
+  m_humanoid = make_shared<Humanoid>(identity, parameters, m_config, m_assets, m_imageMetadataDatabase, m_speciesDatabase, m_danceDatabase, m_particleDatabase);
   setupNetElements();
   NetElementSyncGroup::netLoad(ds, rules);
 }
@@ -2380,4 +2382,4 @@ void NetHumanoid::setupNetElements() {
   addNetElement(m_humanoid->networkedAnimator());
   addNetElement(&m_humanoidParameters);
 }
-}
+}// namespace Star

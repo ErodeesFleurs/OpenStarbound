@@ -1,23 +1,26 @@
 #include "StarArmorWearer.hpp"
-#include "StarItemDatabase.hpp"
+#include "StarActivatableItem.hpp"
 #include "StarArmors.hpp"
+#include "StarAssets.hpp"
 #include "StarCasting.hpp"
 #include "StarImageProcessing.hpp"
+#include "StarItemDatabase.hpp"
 #include "StarLiquidItem.hpp"
 #include "StarMaterialItem.hpp"
 #include "StarObject.hpp"
-#include "StarTools.hpp"
-#include "StarActivatableItem.hpp"
-#include "StarObjectItem.hpp"
-#include "StarAssets.hpp"
 #include "StarObjectDatabase.hpp"
+#include "StarObjectItem.hpp"
+#include "StarTools.hpp"
 #include "StarWorld.hpp"
 
 namespace Star {
 
 ArmorWearer::ArmorWearer(ItemDatabaseConstPtr itemDatabase)
-  : m_itemDatabase(std::move(itemDatabase)),
-    m_lastNude(true) {
+    : m_itemDatabase(std::move(itemDatabase)),
+      m_lastNude(true) {
+  if (!m_itemDatabase)
+    throw StarException("ArmorWearer requires item database service");
+
   for (size_t i = 0; i != m_armors.size(); ++i) {
     auto& armor = m_armors[i];
     armor.isCosmetic = i >= 4;
@@ -106,10 +109,9 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
       } else
         humanoid.removeWearable(i);
     }
-    try
-      { movementParametersChanged = humanoid.loadConfig(humanoidConfig); }
-    catch (std::exception const&)
-      { configException = std::current_exception(); }
+    try {
+      movementParametersChanged = humanoid.loadConfig(humanoidConfig);
+    } catch (std::exception const&) { configException = std::current_exception(); }
     humanoid.setBodyHidden(bodyHidden);
   }
   m_wornCosmeticTypes = wornCosmeticTypes;
@@ -159,7 +161,7 @@ Json ArmorWearer::diskStore() const {
   auto save = [&](uint8_t slot, String const& id) {
     auto& armor = m_armors[slot];
     if (armor.item)
-      res[id] = armor.item->descriptor().diskStore();
+      res[id] = m_itemDatabase->diskStore(armor.item);
   };
 
   save(0, "headItem");
@@ -202,7 +204,7 @@ List<PersistentStatusEffect> ArmorWearer::statusEffects(bool cosmeticOnly) const
   for (size_t i = 0; i != m_armors.size(); ++i) {
     if (!m_armors[i].item)
       continue;
-    if (!cosmeticOnly && ((i < 4) ||  m_armors[i].item->statusEffectsInCosmeticSlot()))
+    if (!cosmeticOnly && ((i < 4) || m_armors[i].item->statusEffectsInCosmeticSlot()))
       statusEffects.appendAll(m_armors[i].item->statusEffects());
     if (m_armors[i].isCurrentlyVisible)
       statusEffects.appendAll(m_armors[i].item->cosmeticStatusEffects());
@@ -245,19 +247,19 @@ ArmorItemPtr ArmorWearer::item(uint8_t slot) const {
   return {};
 }
 
- HeadArmorPtr ArmorWearer:: headItem() const { return as< HeadArmor>(item(0)); }
+HeadArmorPtr ArmorWearer::headItem() const { return as<HeadArmor>(item(0)); }
 ChestArmorPtr ArmorWearer::chestItem() const { return as<ChestArmor>(item(1)); }
- LegsArmorPtr ArmorWearer:: legsItem() const { return as< LegsArmor>(item(2)); }
- BackArmorPtr ArmorWearer:: backItem() const { return as< BackArmor>(item(3)); }
- HeadArmorPtr ArmorWearer:: headCosmeticItem() const { return as< HeadArmor>(item(4)); }
+LegsArmorPtr ArmorWearer::legsItem() const { return as<LegsArmor>(item(2)); }
+BackArmorPtr ArmorWearer::backItem() const { return as<BackArmor>(item(3)); }
+HeadArmorPtr ArmorWearer::headCosmeticItem() const { return as<HeadArmor>(item(4)); }
 ChestArmorPtr ArmorWearer::chestCosmeticItem() const { return as<ChestArmor>(item(5)); }
- LegsArmorPtr ArmorWearer:: legsCosmeticItem() const { return as< LegsArmor>(item(6)); }
- BackArmorPtr ArmorWearer:: backCosmeticItem() const { return as< BackArmor>(item(7)); }
+LegsArmorPtr ArmorWearer::legsCosmeticItem() const { return as<LegsArmor>(item(6)); }
+BackArmorPtr ArmorWearer::backCosmeticItem() const { return as<BackArmor>(item(7)); }
 
 ItemDescriptor ArmorWearer::itemDescriptor(uint8_t slot) const {
-   if (auto foundItem = item(slot))
-     return foundItem->descriptor();
-   return {};
+  if (auto foundItem = item(slot))
+    return foundItem->descriptor();
+  return {};
 }
 
 ItemDescriptor ArmorWearer::headItemDescriptor() const {
@@ -338,4 +340,4 @@ void ArmorWearer::netElementsNeedStore() {
   }
 }
 
-}
+}// namespace Star

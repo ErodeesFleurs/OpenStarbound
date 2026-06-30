@@ -20,10 +20,11 @@ class TeleportDialog : public Pane {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   TeleportDialog(UniverseClientPtr client,
-      PaneManager* paneManager,
+      PaneManager& paneManager,
       Json config,
       EntityId sourceEntityId,
       TeleportBookmark currentLocation,
@@ -38,7 +39,7 @@ public:
 private:
   EntityId m_sourceEntityId;
   UniverseClientPtr m_client;
-  PaneManager* m_paneManager;
+  PaneManager& m_paneManager;
   AssetsConstPtr m_assets;
   List<pair<WarpAction, bool>> m_destinations;
   TeleportBookmark m_currentLocation;

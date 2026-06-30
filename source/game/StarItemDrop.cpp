@@ -152,7 +152,7 @@ EntityType ItemDrop::entityType() const {
 void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
   Entity::init(world, entityId, mode);
 
-  m_movementController.init(world);
+  m_movementController.init(*world);
   if (isMaster()) {
     auto scripts = configValue("scripts").optArray().apply(jsonToStringList);
     if (scripts && !(*scripts).empty()) {
@@ -160,11 +160,11 @@ void ItemDrop::init(World* world, EntityId entityId, EntityMode mode) {
       m_scriptComponent.setUpdateDelta(configValue("scriptDelta",1).toUInt());
 
       m_scriptComponent.addCallbacks("itemDrop", makeItemDropCallbacks());
-      m_scriptComponent.addCallbacks("item", LuaBindings::makeItemCallbacks(m_item.get()));
+      m_scriptComponent.addCallbacks("item", LuaBindings::makeItemCallbacks(*m_item));
       m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
-      m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-      m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(&m_movementController));
-      m_scriptComponent.init(world);
+      m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+      m_scriptComponent.addCallbacks("mcontroller", LuaBindings::makeMovementControllerCallbacks(m_movementController));
+      m_scriptComponent.init(*world);
     }
   }
 }
@@ -371,7 +371,7 @@ void ItemDrop::render(RenderCallback* renderCallback) {
     if (Directives dropDirectives = m_config.getString("directives", "")) {
       for (auto& drawable : *m_drawables) {
         if (drawable.isImage())
-          drawable.imagePart().addDirectives(dropDirectives, true);
+          drawable.imagePart().addDirectives(dropDirectives, true, world()->imageMetadataDatabase());
       }
     }
   }

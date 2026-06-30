@@ -14,13 +14,14 @@
 namespace Star {
 
 RadioMessagePopup::RadioMessagePopup(Services services)
-  : m_assets(std::move(services.assets)) {
+  : Pane(services.guiContext),
+    m_assets(std::move(services.assets)) {
   if (!m_assets)
     throw StarException("RadioMessagePopup requires assets service");
 
   auto config = m_assets->json("/interface/radiomessage/radiomessage.config");
 
-  GuiReader reader;
+  GuiReader reader(context());
   reader.construct(config.get("paneLayout"), this);
 
   m_messageLabel = fetchChild<LabelWidget>("lblMessage");
@@ -147,7 +148,7 @@ void RadioMessagePopup::enterStage(PopupStage newStage) {
       m_messageLabel->setTextCharLimit(0);
       setBG(m_backgroundImage);
       if (m_chatterSound)
-        GuiContext::singleton().playAudio(m_chatterSound);
+        context().playAudio(m_chatterSound);
     }
   } else if (m_popupStage == PopupStage::Persist) {
     m_stageTimer = GameTimer(m_message.persistTime);

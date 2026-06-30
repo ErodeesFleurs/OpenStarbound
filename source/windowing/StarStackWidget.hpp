@@ -9,6 +9,8 @@ class StackWidget;
 using StackWidgetPtr = SharedPtr<StackWidget>;
 class StackWidget : public Widget {
 public:
+  explicit StackWidget(GuiContext& context);
+
   void showPage(size_t page);
   void showPage(String const& name);
 

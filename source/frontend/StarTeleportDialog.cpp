@@ -18,12 +18,13 @@
 namespace Star {
 
 TeleportDialog::TeleportDialog(UniverseClientPtr client,
-    PaneManager* paneManager,
+    PaneManager& paneManager,
     Json config,
     EntityId sourceEntityId,
     TeleportBookmark currentLocation,
     Services services)
-  : m_sourceEntityId(sourceEntityId),
+  : Pane(services.guiContext),
+    m_sourceEntityId(sourceEntityId),
     m_client(std::move(client)),
     m_paneManager(paneManager),
     m_assets(std::move(services.assets)),
@@ -31,7 +32,7 @@ TeleportDialog::TeleportDialog(UniverseClientPtr client,
   if (!m_assets)
     throw StarException("TeleportDialog requires assets service");
 
-  GuiReader reader;
+  GuiReader reader(context());
 
   reader.registerCallback("dismiss", [this](Widget*) { Pane::dismiss(); });
   reader.registerCallback("teleport", [this](Widget*) { teleport(); });
@@ -164,9 +165,9 @@ void TeleportDialog::editBookmark() {
     bookmarks.sort([](auto const& a, auto const& b) { return a.bookmarkName.toLower() < b.bookmarkName.toLower(); });
     selectedItem = selectedItem - (m_destinations.size() - bookmarks.size());
     if (bookmarks.size() > selectedItem) {
-      auto editBookmarkDialog = make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap(), EditBookmarkDialog::Services{m_assets});
+      auto editBookmarkDialog = make_shared<EditBookmarkDialog>(m_client->mainPlayer()->universeMap(), EditBookmarkDialog::Services{m_assets, context()});
       editBookmarkDialog->setBookmark(bookmarks[selectedItem]);
-      m_paneManager->displayPane(PaneLayer::ModalWindow, editBookmarkDialog);
+      m_paneManager.displayPane(PaneLayer::ModalWindow, editBookmarkDialog);
     }
     dismiss();
   }

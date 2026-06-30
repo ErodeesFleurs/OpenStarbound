@@ -11,11 +11,12 @@ static int const ScrollThumbOverhead = ScrollThumbSize + ScrollThumbSize;
 static int const ScrollBarTrackOverhead = ScrollButtonStackSize + ScrollButtonStackSize + ScrollThumbOverhead;
 static int64_t const ScrollAdvanceTimer = 100;
 
-ScrollThumb::ScrollThumb(GuiDirection direction) {
+ScrollThumb::ScrollThumb(GuiContext& context, GuiDirection direction) : Widget(context) {
   m_hovered = false;
   m_pressed = false;
   m_direction = direction;
-  auto const& assets = GuiContext::singleton().assets();
+  auto& guiContext = this->context();
+  auto const& assets = guiContext.assets();
   setImages(assets->json("/interface.config:scrollArea.thumbs"));
 }
 
@@ -78,31 +79,33 @@ void ScrollThumb::renderImpl() {
     workingSet = m_pressedThumb;
 
   if (workingSet.fullyPopulated()) {
-    context()->drawImageStretchSet(workingSet,
+    context().drawImageStretchSet(workingSet,
         RectF::withSize(Vec2F(m_parent->screenPosition() + position()), Vec2F(size())),
         m_direction);
   }
 }
 
 Vec2U ScrollThumb::baseSize() const {
-  return context()->textureSize(m_baseThumb.begin);
+  return context().textureSize(m_baseThumb.begin);
 }
 
-ScrollBar::ScrollBar(GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc)
-  : m_direction(direction) {
-  m_forward = make_shared<ButtonWidget>();
+ScrollBar::ScrollBar(GuiContext& context, GuiDirection direction, WidgetCallbackFunc forwardFunc, WidgetCallbackFunc backwardFunc)
+  : Widget(context), m_direction(direction) {
+  auto& guiContext = this->context();
+
+  m_forward = make_shared<ButtonWidget>(guiContext);
   m_forward->setCallback(forwardFunc);
   m_forward->setSustainCallbackOnDownHold(true);
   m_forward->setPressedOffset({0, 0});
 
-  m_backward = make_shared<ButtonWidget>();
+  m_backward = make_shared<ButtonWidget>(guiContext);
   m_backward->setCallback(backwardFunc);
   m_backward->setSustainCallbackOnDownHold(true);
   m_backward->setPressedOffset({0, 0});
 
-  m_thumb = make_shared<ScrollThumb>(m_direction);
+  m_thumb = make_shared<ScrollThumb>(guiContext, m_direction);
 
-  auto const& assets = GuiContext::singleton().assets();
+  auto const& assets = guiContext.assets();
   setButtonImages(assets->json("/interface.config:scrollArea.buttons"));
 
   addChild("thumb", m_thumb);
@@ -243,8 +246,9 @@ Vec2I ScrollBar::offsetFromThumbPosition(Vec2I const& thumbPosition) const {
   }
 }
 
-ScrollArea::ScrollArea() {
-  auto const& assets = GuiContext::singleton().assets();
+ScrollArea::ScrollArea(GuiContext& context) : Widget(context) {
+  auto& guiContext = this->context();
+  auto const& assets = guiContext.assets();
   m_buttonAdvance = assets->json("/interface.config:scrollArea.buttonAdvance").toInt();
   m_advanceLimiter = Time::monotonicMilliseconds();
 
@@ -253,8 +257,8 @@ ScrollArea::ScrollArea() {
   WidgetCallbackFunc hAdvance = [this](Widget*) { scrollAreaBy({advanceFactorHelper(), 0}); };
   WidgetCallbackFunc hRetreat = [this](Widget*) { scrollAreaBy({-advanceFactorHelper(), 0}); };
 
-  m_vBar = make_shared<ScrollBar>(GuiDirection::Vertical, vAdvance, vRetreat);
-  m_hBar = make_shared<ScrollBar>(GuiDirection::Horizontal, hAdvance, hRetreat);
+  m_vBar = make_shared<ScrollBar>(guiContext, GuiDirection::Vertical, vAdvance, vRetreat);
+  m_hBar = make_shared<ScrollBar>(guiContext, GuiDirection::Horizontal, hAdvance, hRetreat);
 
   m_dragActive = false;
 
@@ -337,7 +341,7 @@ bool ScrollArea::sendEvent(InputEvent const& event) {
       m_hBar->thumb()->setPressed(false);
       return true;
     } else if (event.is<MouseMoveEvent>()) {
-      auto thumbDragPosition = *context()->mousePosition(event) - screenPosition() - m_dragOffset;
+      auto thumbDragPosition = *context().mousePosition(event) - screenPosition() - m_dragOffset;
       if (m_dragDirection == GuiDirection::Vertical) {
         m_scrollOffset = m_vBar->offsetFromThumbPosition(thumbDragPosition);
       } else {
@@ -347,7 +351,7 @@ bool ScrollArea::sendEvent(InputEvent const& event) {
     }
   }
 
-  auto mousePos = context()->mousePosition(event);
+  auto mousePos = context().mousePosition(event);
   if (mousePos && !inMember(*mousePos))
     return false;
 

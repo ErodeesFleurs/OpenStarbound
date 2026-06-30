@@ -12,7 +12,7 @@ const float vWidth = 960.0f;
 const float vHeight = 540.0f;
 
 Cinematic::Cinematic(Services services)
-  : m_assets(std::move(services.assets)) {
+  : m_assets(std::move(services.assets)), m_guiContext(services.guiContext) {
   if (!m_assets)
     throw StarException("Cinematic requires assets service");
 
@@ -132,10 +132,9 @@ void Cinematic::render() {
   if (completed())
     return;
 
-  auto& guiContext = GuiContext::singleton();
-  auto mixer = guiContext.mixer();
-  auto renderer = guiContext.renderer();
-  auto textPainter = guiContext.textPainter();
+  auto mixer = m_guiContext.mixer();
+  auto renderer = m_guiContext.renderer();
+  auto textPainter = m_guiContext.textPainter();
 
   m_windowSize = Vec2F(renderer->screenSize());
   Vec2F screenWindowSize = Vec2F(vWidth * m_drawableScale, vHeight * m_drawableScale);
@@ -249,9 +248,8 @@ void Cinematic::render() {
 }
 
 void Cinematic::drawDrawable(Drawable const& drawable, float drawableScale, Vec2F const& drawableTranslation) {
-  auto& guiContext = GuiContext::singleton();
-  auto& renderer = guiContext.renderer();
-  auto& textureGroup = guiContext.assetTextureGroup();
+  auto& renderer = m_guiContext.renderer();
+  auto& textureGroup = m_guiContext.assetTextureGroup();
 
   auto& primitives = renderer->immediatePrimitives();
 
@@ -547,7 +545,7 @@ bool Cinematic::handleInputEvent(InputEvent const& event) {
     if (m_currentTimeSkip) {
       setTime(m_currentTimeSkip.take().skipToTime);
       return true;
-    } else if (m_skippable && GuiContext::singleton().actions(event).contains(InterfaceAction::CinematicSkip)) {
+    } else if (m_skippable && m_guiContext.actions(event).contains(InterfaceAction::CinematicSkip)) {
       stop();
       return true;
     }

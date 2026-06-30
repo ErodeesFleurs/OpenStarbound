@@ -117,7 +117,7 @@ private:
     NetElementBool enabled;
   };
 
-  static List<Particle> sparkBlock(AssetsConstPtr assets, World* world, Vec2I const& position, Vec2F const& damageSource);
+  static List<Particle> sparkBlock(AssetsConstPtr assets, World& world, Vec2I const& position, Vec2F const& damageSource);
 
   int getFrame() const;
   void setFrame(int frame);

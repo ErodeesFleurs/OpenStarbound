@@ -15,8 +15,7 @@ class WorldServerLiquid {
 public:
   friend class WorldServer;
 
-  WorldServerLiquid() = default;
-  explicit WorldServerLiquid(WorldServer* worldServer);
+  explicit WorldServerLiquid(WorldServer& worldServer);
 
   LiquidLevel liquidLevel(Vec2I const& pos) const;
   LiquidLevel liquidLevel(RectF const& region) const;
@@ -27,7 +26,7 @@ public:
   shared_ptr<LiquidCellEngine<LiquidId>> liquidEngine() const;
 
 private:
-  WorldServer* m_worldServer = nullptr;
+  WorldServer& m_worldServer;
 
   shared_ptr<LiquidCellEngine<LiquidId>> m_liquidEngine;
 };

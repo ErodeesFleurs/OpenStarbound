@@ -12,7 +12,8 @@
 namespace Star {
 
 WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr worldPainter, Services services)
-  : m_worldClient(std::move(worldClient)),
+  : Pane(services.guiContext),
+    m_worldClient(std::move(worldClient)),
     m_player(std::move(player)),
     m_worldPainter(std::move(worldPainter)),
     m_assets(std::move(services.assets)) {
@@ -21,7 +22,7 @@ WirePane::WirePane(WorldClientPtr worldClient, PlayerPtr player, WorldPainterPtr
 
   m_connecting = false;
 
-  GuiReader reader;
+  GuiReader reader(context());
   reader.construct(m_assets->json("/interface/wires/wires.config:gui"), this);
 
   m_nodeSize = Vec2F(1.8f, 1.8f);
@@ -87,9 +88,9 @@ void WirePane::renderWire(Vec2F from, Vec2F to, Color baseColor) {
   innerStripe.setSaturation(innerStripe.saturation() / m_innerBrightnessScale);
   Color secondStripe = innerStripe;
 
-  context()->drawLine(from, to, baseColor.toRgba(), lineThickness);
-  context()->drawLine(from, to, firstStripe.toRgba(), lineThickness * m_firstStripeThickness);
-  context()->drawLine(from, to, secondStripe.toRgba(), lineThickness * m_secondStripeThickness);
+  context().drawLine(from, to, baseColor.toRgba(), lineThickness);
+  context().drawLine(from, to, firstStripe.toRgba(), lineThickness * m_firstStripeThickness);
+  context().drawLine(from, to, secondStripe.toRgba(), lineThickness * m_secondStripeThickness);
 }
 
 void WirePane::renderImpl() {
@@ -109,8 +110,8 @@ void WirePane::renderImpl() {
       Vec2I position = entity->tilePosition() + entity->nodePosition({WireDirection::Input, i});
       if (!m_worldClient->isTileProtected(position)) {
         auto icon = entity->nodeIcon({WireDirection::Input, i});
-        context()->drawQuad(icon,
-            camera.worldToScreen(centerOfTile(position) - ((Vec2F(context()->textureSize(icon)) / TilePixels) / 2.0f)),
+        context().drawQuad(icon,
+            camera.worldToScreen(centerOfTile(position) - ((Vec2F(context().textureSize(icon)) / TilePixels) / 2.0f)),
             camera.pixelRatio(), white);
       }
     }
@@ -119,8 +120,8 @@ void WirePane::renderImpl() {
       Vec2I position = entity->tilePosition() + entity->nodePosition({WireDirection::Output, i});
       if (!m_worldClient->isTileProtected(position)) {
         auto icon = entity->nodeIcon({WireDirection::Output, i});
-        context()->drawQuad(icon,
-            camera.worldToScreen(centerOfTile(position) - ((Vec2F(context()->textureSize(icon)) / TilePixels) / 2.0f)),
+        context().drawQuad(icon,
+            camera.worldToScreen(centerOfTile(position) - ((Vec2F(context().textureSize(icon)) / TilePixels) / 2.0f)),
             camera.pixelRatio(), white);
       }
     }
@@ -178,7 +179,7 @@ void WirePane::renderImpl() {
   }
 
   if (m_connecting) {
-    Vec2F aimPos = m_worldPainter->camera().screenToWorld(Vec2F(m_mousePos) * m_context->interfaceScale());
+    Vec2F aimPos = m_worldPainter->camera().screenToWorld(Vec2F(m_mousePos) * context().interfaceScale());
     Vec2I sourcePosition = m_sourceConnector.entityLocation;
     if (auto sourceEntity = m_worldClient->atTile<WireEntity>(m_sourceConnector.entityLocation).get(0)) {
       if (m_sourceDirection == WireDirection::Input){
@@ -195,10 +196,10 @@ void WirePane::renderImpl() {
 
 bool WirePane::sendEvent(InputEvent const& event) {
   if (event.is<MouseMoveEvent>())
-    m_mousePos = *context()->mousePosition(event);
+    m_mousePos = *context().mousePosition(event);
 
   if (event.is<MouseButtonDownEvent>())
-    m_mousePos = *context()->mousePosition(event);
+    m_mousePos = *context().mousePosition(event);
 
   return false;
 }

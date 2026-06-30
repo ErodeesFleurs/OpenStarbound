@@ -8,11 +8,12 @@
 namespace Star {
 
 PopupInterface::PopupInterface(Services services)
-  : m_assets(std::move(services.assets)) {
+  : Pane(services.guiContext),
+    m_assets(std::move(services.assets)) {
   if (!m_assets)
     throw StarException("PopupInterface requires assets service");
 
-  GuiReader reader;
+  GuiReader reader(context());
 
   reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
   reader.registerCallback("ok", [=, this](Widget*) { dismiss(); });
@@ -26,7 +27,7 @@ void PopupInterface::displayMessage(String const& message, String const& title, 
   show();
   auto sound = onShowSound.value(Random::randValueFrom(m_assets->json("/interface/windowconfig/popup.config:onShowSound").toArray(), "").toString());
   if (!sound.empty())
-    context()->playAudio(sound);
+    context().playAudio(sound);
 }
 
 }

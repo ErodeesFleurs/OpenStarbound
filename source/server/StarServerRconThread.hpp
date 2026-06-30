@@ -13,7 +13,7 @@ class ServerRconThread;
 
 class ServerRconThread : public Thread {
 public:
-  ServerRconThread(UniverseServer* universe, HostAddressWithPort const& address, ConfigurationPtr configuration);
+  ServerRconThread(UniverseServer& universe, HostAddressWithPort const& address, ConfigurationPtr configuration);
   ~ServerRconThread();
 
   void start();
@@ -25,7 +25,7 @@ protected:
 private:
   void clearClients(bool all = false);
 
-  UniverseServer* m_universe;
+  UniverseServer& m_universe;
   TcpServer m_rconServer;
   String m_rconPassword;
   int m_rconTimeout;

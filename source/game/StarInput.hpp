@@ -16,6 +16,12 @@ using InputPtr = SharedPtr<Input>;
 struct InputExceptionTag { static constexpr char const* typeName = "InputException"; };
 using InputException = TypedException<StarException, InputExceptionTag>;
 
+struct InputServices {
+  AssetsConstPtr assets;
+  ConfigurationPtr configuration;
+  function<void(ListenerWeakPtr)> registerReloadListener;
+};
+
 using InputVariant = Variant<Key, MouseButton, ControllerButton>;
 
 template <>
@@ -93,10 +99,12 @@ public:
     String id;
     String name;
     Json config;
+    ConfigurationPtr configuration;
+    function<void()> rebuildMappings;
 
     StableHashMap<String, BindEntry> entries;
 
-    BindCategory(String categoryId, Json const& categoryConfig);
+    BindCategory(String categoryId, Json const& categoryConfig, ConfigurationPtr configuration, function<void()> rebuildMappings);
   };
 
   struct InputState {
@@ -135,15 +143,7 @@ public:
 
   using ControllerInputState = InputState;
 
-  // Get pointer to the singleton Input instance, if it exists.  Otherwise,
-  // returns nullptr.
-  static Input* singletonPtr();
-
-  // Gets reference to Input singleton, throws InputException if root
-  // is not initialized.
-  static Input& singleton();
-
-  Input(AssetsConstPtr assets, ConfigurationPtr configuration);
+  Input(InputServices services);
   ~Input();
 
   Input(Input const&) = delete;
@@ -208,9 +208,7 @@ private:
 
   InputState* bindStatePtr(String const& categoryId, String const& bindId);
 
-  InputState& addBindState(BindEntry const* bindEntry);
-
-  static Input* s_singleton;
+  InputState& addBindState(BindEntry const& bindEntry);
 
   // Regenerated on reload.
   StableHashMap<String, BindCategory> m_bindCategories;

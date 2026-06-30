@@ -19,34 +19,33 @@
 
 namespace Star {
 
-TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client, Services services)
-  : m_mainInterface(mainInterface),
+TeamBar::TeamBar(MainInterface& mainInterface, UniverseClientPtr client, Services services)
+  : Pane(services.guiContext),
+    m_mainInterface(mainInterface),
     m_client(std::move(client)),
     m_assets(std::move(services.assets)),
-    m_configuration(std::move(services.configuration)) {
+    m_configuration(std::move(services.configuration)),
+    m_guiContext(services.guiContext) {
   if (!m_assets)
     throw StarException("TeamBar requires assets service");
   if (!m_configuration)
     throw StarException("TeamBar requires configuration service");
-
-  m_guiContext = GuiContext::singletonPtr();
-
-  m_teamInvite = make_shared<TeamInvite>(this);
-  m_teamInvitation = make_shared<TeamInvitation>(this);
-  m_teamMemberMenu = make_shared<TeamMemberMenu>(this);
+  m_teamInvite = make_shared<TeamInvite>(*this);
+  m_teamInvitation = make_shared<TeamInvitation>(*this);
+  m_teamMemberMenu = make_shared<TeamMemberMenu>(*this);
 
   m_nameStyle = m_assets->json("/interface.config:teamBarNameStyle");
   m_nameStyle.fontSize = m_assets->json("/interface.config:font.nameSize").toInt();
   m_nameOffset = jsonToVec2F(m_assets->json("/interface.config:nameOffset"));
 
-  GuiReader reader;
+  GuiReader reader(m_guiContext);
 
   reader.registerCallback("inviteButton", [this](Widget*) { inviteButton(); });
   reader.registerCallback("showSelfMenu", [this](Widget*) {
       if (!m_client->teamClient()->isMemberOfTeam())
         return;
       auto position = jsonToVec2I(m_assets->json("/interface/windowconfig/teambar.config:selfMenuOffset"));
-      position[1] += windowHeight() / m_guiContext->interfaceScale();
+      position[1] += windowHeight() / m_guiContext.interfaceScale();
       showMemberMenu(m_client->mainPlayer()->clientContext()->playerUuid(), position);
     });
 
@@ -73,7 +72,7 @@ TeamBar::TeamBar(MainInterface* mainInterface, UniverseClientPtr client, Service
 bool TeamBar::sendEvent(InputEvent const& event) {
   if (event.is<MouseButtonDownEvent>()
       && (event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left || event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Right)) {
-    if (m_teamMemberMenu->isDisplayed() && !m_teamMemberMenu->inMember(*context()->mousePosition(event)))
+    if (m_teamMemberMenu->isDisplayed() && !m_teamMemberMenu->inMember(*context().mousePosition(event)))
       m_teamMemberMenu->dismiss();
   }
   return Pane::sendEvent(event);
@@ -99,7 +98,7 @@ void TeamBar::update(float dt) {
       auto invitation = teamClient->pullInvitation();
       m_teamInvitation->open(invitation.first, invitation.second);
       if (!m_teamInvitation->isDisplayed())
-        m_mainInterface->paneManager()->displayPane(PaneLayer::Window, m_teamInvitation);
+        m_mainInterface.paneManager().displayPane(PaneLayer::Window, m_teamInvitation);
     }
   }
 
@@ -144,7 +143,7 @@ void TeamBar::updatePlayerResources() {
 
 void TeamBar::inviteButton() {
   if (!m_teamInvite->isDisplayed())
-    m_mainInterface->paneManager()->displayPane(PaneLayer::Window, m_teamInvite);
+    m_mainInterface.paneManager().displayPane(PaneLayer::Window, m_teamInvite);
 }
 
 void TeamBar::buildTeamBar() {
@@ -170,8 +169,8 @@ void TeamBar::buildTeamBar() {
     WidgetPtr cell = list->fetchChild(cellName);
 
     if (!cell) {
-      GuiReader reader;
-      cell = make_shared<Widget>();
+      GuiReader reader(m_guiContext);
+      cell = make_shared<Widget>(m_guiContext);
       cell->disableScissoring();
       cell->markAsContainer();
 
@@ -249,16 +248,16 @@ void TeamBar::buildTeamBar() {
 void TeamBar::showMemberMenu(Uuid memberUuid, Vec2I position) {
   m_teamMemberMenu->open(memberUuid, position);
   if (!m_teamMemberMenu->isDisplayed())
-    m_mainInterface->paneManager()->displayPane(PaneLayer::Window, m_teamMemberMenu);
+    m_mainInterface.paneManager().displayPane(PaneLayer::Window, m_teamMemberMenu);
 }
 
-TeamInvite::TeamInvite(TeamBar* owner) {
-  m_owner = owner;
-  GuiReader reader;
+TeamInvite::TeamInvite(TeamBar& owner)
+  : Pane(owner.context()), m_owner(owner) {
+  GuiReader reader(context());
   reader.registerCallback("ok", [this](Widget*) { ok(); });
   reader.registerCallback("close", [this](Widget*) { close(); });
   reader.registerCallback("name", [](Widget*) {});
-  reader.construct(m_owner->m_assets->json("/interface/windowconfig/teaminvite.config:paneLayout"), this);
+  reader.construct(m_owner.m_assets->json("/interface/windowconfig/teaminvite.config:paneLayout"), this);
   dismiss();
 }
 
@@ -269,7 +268,7 @@ void TeamInvite::show() {
 }
 
 void TeamInvite::ok() {
-  m_owner->invitePlayer(fetchChild<TextBoxWidget>("name")->getText());
+  m_owner.invitePlayer(fetchChild<TextBoxWidget>("name")->getText());
   dismiss();
 }
 
@@ -277,14 +276,14 @@ void TeamInvite::close() {
   dismiss();
 }
 
-TeamInvitation::TeamInvitation(TeamBar* owner) {
-  m_owner = owner;
-  GuiReader reader;
+TeamInvitation::TeamInvitation(TeamBar& owner)
+  : Pane(owner.context()), m_owner(owner) {
+  GuiReader reader(context());
 
   reader.registerCallback("ok", [this](Widget*) { ok(); });
   reader.registerCallback("close", [this](Widget*) { close(); });
 
-  reader.construct(m_owner->m_assets->json("/interface/windowconfig/teaminvitation.config:paneLayout"), this);
+  reader.construct(m_owner.m_assets->json("/interface/windowconfig/teaminvitation.config:paneLayout"), this);
   dismiss();
 }
 
@@ -297,7 +296,7 @@ void TeamInvitation::open(Uuid const& inviterUuid, String const& inviterName) {
 }
 
 void TeamInvitation::ok() {
-  m_owner->acceptInvitation(m_inviterUuid);
+  m_owner.acceptInvitation(m_inviterUuid);
   dismiss();
 }
 
@@ -305,15 +304,14 @@ void TeamInvitation::close() {
   dismiss();
 }
 
-TeamMemberMenu::TeamMemberMenu(TeamBar* owner) {
-  m_owner = owner;
-
-  GuiReader reader;
+TeamMemberMenu::TeamMemberMenu(TeamBar& owner)
+  : Pane(owner.context()), m_owner(owner) {
+  GuiReader reader(context());
   reader.registerCallback("beamToShip", [this](Widget*) { beamToShip(); });
   reader.registerCallback("close", [this](Widget*) { close(); });
   reader.registerCallback("makeLeader", [this](Widget*) { makeLeader(); });
   reader.registerCallback("removeFromTeam", [this](Widget*) { removeFromTeam(); });
-  reader.construct(m_owner->m_assets->json("/interface/windowconfig/teammembermenu.config:paneLayout"), this);
+  reader.construct(m_owner.m_assets->json("/interface/windowconfig/teammembermenu.config:paneLayout"), this);
 }
 
 void TeamMemberMenu::open(Uuid memberUuid, Vec2I position) {
@@ -323,7 +321,7 @@ void TeamMemberMenu::open(Uuid memberUuid, Vec2I position) {
   setPosition(position);
 
   m_memberUuid = memberUuid;
-  auto members = m_owner->m_client->teamClient()->members();
+  auto members = m_owner.m_client->teamClient()->members();
   for (auto member : members) {
     if (member.uuid == m_memberUuid) {
       fetchChild<LabelWidget>("name")->setText(member.name);
@@ -338,11 +336,11 @@ void TeamMemberMenu::open(Uuid memberUuid, Vec2I position) {
 
 void TeamMemberMenu::update(float dt) {
   auto stillValid = false;
-  auto members = m_owner->m_client->teamClient()->members();
+  auto members = m_owner.m_client->teamClient()->members();
   for (auto member : members) {
     if (member.uuid == m_memberUuid) {
       stillValid = true;
-      m_canBeam = member.warpMode != WarpMode::None && m_owner->m_client->canBeamToTeamShip();
+      m_canBeam = member.warpMode != WarpMode::None && m_owner.m_client->canBeamToTeamShip();
     }
   }
 
@@ -357,22 +355,22 @@ void TeamMemberMenu::update(float dt) {
 }
 
 void TeamMemberMenu::updateWidgets() {
-  bool isLeader = m_owner->m_client->teamClient()->isTeamLeader();
-  bool isSelf = m_owner->m_client->mainPlayer()->clientContext()->playerUuid() == m_memberUuid;
+  bool isLeader = m_owner.m_client->teamClient()->isTeamLeader();
+  bool isSelf = m_owner.m_client->mainPlayer()->clientContext()->playerUuid() == m_memberUuid;
 
   fetchChild<ButtonWidget>("beamToShip")->setEnabled(m_canBeam);
   fetchChild<ButtonWidget>("makeLeader")->setEnabled(isLeader && !isSelf);
   fetchChild<ButtonWidget>("removeFromTeam")->setEnabled(isLeader || isSelf);
 
   if (isSelf)
-    fetchChild<ButtonWidget>("removeFromTeam")->setText(m_owner->m_assets->json("/interface/windowconfig/teammembermenu.config:removeSelfText").toString());
+    fetchChild<ButtonWidget>("removeFromTeam")->setText(m_owner.m_assets->json("/interface/windowconfig/teammembermenu.config:removeSelfText").toString());
   else
-    fetchChild<ButtonWidget>("removeFromTeam")->setText(m_owner->m_assets->json("/interface/windowconfig/teammembermenu.config:removeOtherText").toString());
+    fetchChild<ButtonWidget>("removeFromTeam")->setText(m_owner.m_assets->json("/interface/windowconfig/teammembermenu.config:removeOtherText").toString());
 }
 
 void TeamMemberMenu::beamToShip() {
   if (m_canBeam)
-    m_owner->m_mainInterface->warpTo(WarpToWorld{ClientShipWorldId(m_memberUuid), {}});
+    m_owner.m_mainInterface.warpTo(WarpToWorld{ClientShipWorldId(m_memberUuid), {}});
   dismiss();
 }
 
@@ -381,12 +379,12 @@ void TeamMemberMenu::close() {
 }
 
 void TeamMemberMenu::makeLeader() {
-  m_owner->m_client->teamClient()->makeLeader(m_memberUuid);
+  m_owner.m_client->teamClient()->makeLeader(m_memberUuid);
   dismiss();
 }
 
 void TeamMemberMenu::removeFromTeam() {
-  m_owner->m_client->teamClient()->removeFromTeam(m_memberUuid);
+  m_owner.m_client->teamClient()->removeFromTeam(m_memberUuid);
   dismiss();
 }
 

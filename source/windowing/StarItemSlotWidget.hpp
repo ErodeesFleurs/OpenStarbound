@@ -15,7 +15,7 @@ static float const ItemIndicateNewTime = 1.5f;
 
 class ItemSlotWidget : public Widget {
 public:
-  ItemSlotWidget(ItemPtr const& item, String const& backingImage);
+  ItemSlotWidget(GuiContext& context, ItemPtr const& item, String const& backingImage);
 
   virtual void update(float dt) override;
   bool sendEvent(InputEvent const& event) override;

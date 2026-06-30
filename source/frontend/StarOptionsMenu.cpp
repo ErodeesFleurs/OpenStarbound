@@ -10,22 +10,25 @@
 #include "StarVoiceSettingsMenu.hpp"
 #include "StarBindingsMenu.hpp"
 #include "StarGraphicsMenu.hpp"
-#include "StarHumanoid.hpp"
 
 namespace Star {
 
-OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client, OptionsMenuServices services)
-  : m_sfxRange(0, 100),
+OptionsMenu::OptionsMenu(PaneManager& manager, UniverseClientPtr client, OptionsMenuServices services)
+  : Pane(services.guiContext),
+    m_sfxRange(0, 100),
     m_musicRange(0, 100),
     m_paneManager(manager),
     m_assets(std::move(services.assets)),
-    m_configuration(std::move(services.configuration)) {
+    m_configuration(std::move(services.configuration)),
+    m_luaRootServices(std::move(services.luaRootServices)),
+    m_voice(services.voice),
+    m_input(services.input) {
   if (!m_assets)
     throw StarException("OptionsMenu requires assets service");
   if (!m_configuration)
     throw StarException("OptionsMenu requires configuration service");
 
-  GuiReader reader;
+  GuiReader reader(context());
 
   reader.registerCallback("instrumentSlider", [=, this](Widget*) {
     updateInstrumentVol();
@@ -98,10 +101,10 @@ OptionsMenu::OptionsMenu(PaneManager* manager, UniverseClientPtr client, Options
   m_sfxSlider->setRange(m_sfxRange, m_assets->json("/interface/optionsmenu/optionsmenu.config:sfxDelta").toInt());
   m_musicSlider->setRange(m_musicRange, m_assets->json("/interface/optionsmenu/optionsmenu.config:musicDelta").toInt());
 
-  m_voiceSettingsMenu = make_shared<VoiceSettingsMenu>(m_assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")), BaseScriptPaneServices{m_assets});
-  m_modBindingsMenu = make_shared<BindingsMenu>(m_assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")), BaseScriptPaneServices{m_assets});
-  m_keybindingsMenu = make_shared<KeybindingsMenu>(KeybindingsMenuServices{m_assets, m_configuration});
-  m_graphicsMenu = make_shared<GraphicsMenu>(manager, client, GraphicsMenuServices{m_assets, m_configuration});
+  m_voiceSettingsMenu = make_shared<VoiceSettingsMenu>(m_assets->json(config.getString("voiceSettingsPanePath", "/interface/opensb/voicechat/voicechat.config")), BaseScriptPaneServices{m_assets, {}, {}, {}, m_luaRootServices, context()}, m_voice);
+  m_modBindingsMenu = make_shared<BindingsMenu>(m_assets->json(config.getString("bindingsPanePath", "/interface/opensb/bindings/bindings.config")), BaseScriptPaneServices{m_assets, {}, {}, {}, m_luaRootServices, context()}, m_input);
+  m_keybindingsMenu = make_shared<KeybindingsMenu>(KeybindingsMenuServices{m_assets, m_configuration, context()});
+  m_graphicsMenu = make_shared<GraphicsMenu>(manager, client, GraphicsMenuServices{m_assets, m_configuration, context()});
 
   initConfig();
 }
@@ -179,7 +182,6 @@ void OptionsMenu::updateAllowAssetsMismatch() {
 void OptionsMenu::updateHeadRotation() {
   m_localChanges.set("humanoidHeadRotation", m_headRotationButton->isChecked());
   m_configuration->set("humanoidHeadRotation", m_headRotationButton->isChecked());
-  Humanoid::globalHeadRotation() = m_headRotationButton->isChecked();
 }
 
 void OptionsMenu::syncGuiToConf() {
@@ -198,7 +200,7 @@ void OptionsMenu::syncGuiToConf() {
   m_allowAssetsMismatchButton->setChecked(m_localChanges.get("allowAssetsMismatch").toBool());
   m_headRotationButton->setChecked(m_localChanges.get("humanoidHeadRotation").optBool().value(true));
 
-  auto appController = GuiContext::singleton().applicationController();
+  auto appController = context().applicationController();
   if (!appController->p2pNetworkingService()) {
     m_p2pJoinableLabel->setColor(Color::DarkGray);
     m_clientP2PJoinableButton->setEnabled(false);
@@ -207,19 +209,19 @@ void OptionsMenu::syncGuiToConf() {
 }
 
 void OptionsMenu::displayControls() {
-  m_paneManager->displayPane(PaneLayer::ModalWindow, m_keybindingsMenu);
+  m_paneManager.displayPane(PaneLayer::ModalWindow, m_keybindingsMenu);
 }
 
 void OptionsMenu::displayVoiceSettings() {
-  m_paneManager->displayPane(PaneLayer::ModalWindow, m_voiceSettingsMenu);
+  m_paneManager.displayPane(PaneLayer::ModalWindow, m_voiceSettingsMenu);
 }
 
 void OptionsMenu::displayModBindings() {
-  m_paneManager->displayPane(PaneLayer::ModalWindow, m_modBindingsMenu);
+  m_paneManager.displayPane(PaneLayer::ModalWindow, m_modBindingsMenu);
 }
 
 void OptionsMenu::displayGraphics() {
-  m_paneManager->displayPane(PaneLayer::ModalWindow, m_graphicsMenu);
+  m_paneManager.displayPane(PaneLayer::ModalWindow, m_graphicsMenu);
 }
 
 }

@@ -3,6 +3,7 @@
 #include "StarVersioningDatabase.hpp"
 #include "StarEntity.hpp"
 #include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
 #include "StarItemDatabase.hpp"
 
 namespace Star {
@@ -19,6 +20,8 @@ class ProjectileDatabase;
 using ProjectileDatabaseConstPtr = SharedPtr<ProjectileDatabase const>;
 class NpcDatabase;
 using NpcDatabaseConstPtr = SharedPtr<NpcDatabase const>;
+class VehicleDatabase;
+using VehicleDatabaseConstPtr = SharedPtr<VehicleDatabase const>;
 
 class EntityFactory;
 using EntityFactoryPtr = SharedPtr<EntityFactory>;
@@ -38,7 +41,8 @@ public:
       NpcDatabaseConstPtr npcDatabase,
       VehicleDatabaseConstPtr vehicleDatabase,
       VersioningDatabaseConstPtr versioningDatabase,
-      ItemDatabaseConstPtr itemDatabase);
+      ItemDatabaseConstPtr itemDatabase,
+      ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   EntityPtr create(String const& entityName, Json const& extraParams = {}) const;
 
@@ -71,6 +75,7 @@ private:
   VersioningDatabaseConstPtr m_versioningDatabase;
   AssetsConstPtr m_assets;
   ItemDatabaseConstPtr m_itemDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
 };
 
 }

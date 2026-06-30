@@ -8,7 +8,8 @@ class ProgressWidget;
 using ProgressWidgetPtr = SharedPtr<ProgressWidget>;
 class ProgressWidget : public Widget {
 public:
-  ProgressWidget(String const& background,
+  ProgressWidget(GuiContext& context,
+      String const& background,
       String const& overlay,
       ImageStretchSet const& progressSet,
       GuiDirection direction);

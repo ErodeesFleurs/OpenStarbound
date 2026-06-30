@@ -1,20 +1,45 @@
 #include "StarLuaRoot.hpp"
+#include "StarException.hpp"
+#include "StarFile.hpp"
+#include "StarLogging.hpp"
+#include "StarImageLuaBindings.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarTime.hpp"
 
 namespace Star {
 
-LuaRoot::LuaRoot(AssetsConstPtr assets) {
-  auto& root = Root::singleton();
-  m_assets = assets ? std::move(assets) : root.assets();
+namespace {
+
+LuaRootServices requireLuaRootServices(LuaRootServices services) {
+  if (!services.assets)
+    throw StarException("LuaRoot requires assets service");
+  if (!services.configuration)
+    throw StarException("LuaRoot requires configuration service");
+  if (!services.root)
+    throw StarException("LuaRoot requires root service");
+  if (services.storageDirectory.empty())
+    throw StarException("LuaRoot requires storage directory service");
+  return services;
+}
+
+}
+
+LuaRoot::LuaRoot(LuaRootServices services) {
+  m_services = requireLuaRootServices(std::move(services));
+  m_assets = m_services.assets;
   m_scriptCache = make_shared<ScriptCache>(m_assets);
+  addCallbacks("root", LuaBindings::makeRootCallbacks(*m_services.root));
 
   restart();
 
-  m_rootReloadListener = make_shared<CallbackListener>([cache = m_scriptCache]() {
-      cache->clear();
-    });
-  root.registerReloadListener(m_rootReloadListener);
+  m_rootReloadListener = make_shared<CallbackListener>([this, cache = m_scriptCache]() {
+    cache->clear();
+    m_reloadListeners.trigger();
+  });
+  if (m_services.registerReloadListener)
+    m_services.registerReloadListener(m_rootReloadListener);
 
-  m_storageDirectory = root.toStoragePath("lua");
+  m_storageDirectory = m_services.storageDirectory;
 }
 
 LuaRoot::~LuaRoot() {
@@ -36,14 +61,14 @@ void LuaRoot::unloadScript(String const& assetPath) {
 void LuaRoot::restart() {
   shutdown();
 
-  auto& root = Root::singleton();
+  auto const& configuration = m_services.configuration;
+  m_luaEngine = LuaEngine::create(configuration->get("safeScripts").toBool());
+  LuaBindings::registerImageLuaAssets(*m_luaEngine, m_services.assets);
 
-  m_luaEngine = LuaEngine::create(root.configuration()->get("safeScripts").toBool());
-
-  m_luaEngine->setRecursionLimit(root.configuration()->get("scriptRecursionLimit").toUInt());
-  m_luaEngine->setInstructionLimit(root.configuration()->get("scriptInstructionLimit").toUInt());
-  m_luaEngine->setProfilingEnabled(root.configuration()->get("scriptProfilingEnabled").toBool());
-  m_luaEngine->setInstructionMeasureInterval(root.configuration()->get("scriptInstructionMeasureInterval").toUInt());
+  m_luaEngine->setRecursionLimit(configuration->get("scriptRecursionLimit").toUInt());
+  m_luaEngine->setInstructionLimit(configuration->get("scriptInstructionLimit").toUInt());
+  m_luaEngine->setProfilingEnabled(configuration->get("scriptProfilingEnabled").toBool());
+  m_luaEngine->setInstructionMeasureInterval(configuration->get("scriptInstructionMeasureInterval").toUInt());
 }
 
 void LuaRoot::shutdown() {
@@ -148,6 +173,14 @@ void LuaRoot::clearScriptCache() const {
 
 void LuaRoot::addCallbacks(String const& groupName, LuaCallbacks const& callbacks) {
   m_luaCallbacks[groupName] = callbacks;
+}
+
+void LuaRoot::registerReloadListener(ListenerWeakPtr reloadListener) {
+  m_reloadListeners.addListener(std::move(reloadListener));
+}
+
+LuaRootServices const& LuaRoot::services() const {
+  return m_services;
 }
 
 LuaEngine& LuaRoot::luaEngine() const {

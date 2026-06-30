@@ -1,16 +1,18 @@
 #pragma once
 
+#include "StarCelestialCoordinate.hpp"
+#include "StarGameTypes.hpp"
+#include "StarItemDescriptor.hpp"
 #include "StarJson.hpp"
 #include "StarPoly.hpp"
-#include "StarGameTypes.hpp"
 #include "StarStrongTypedef.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarCelestialCoordinate.hpp"
 
 namespace Star {
 
 class ItemDatabase;
 using ItemDatabaseConstPtr = SharedPtr<ItemDatabase const>;
+class VersioningDatabase;
+using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
 
 // Item name - always one single item. QuestItem and QuestItemList are
 // distinct due to how the surrounding text interacts with the parameter
@@ -76,10 +78,10 @@ using QuestParamDetail = MVariant<QuestItem, QuestItemTag, QuestItemList, QuestE
 
 struct QuestParam {
   static QuestParam fromJson(Json const& json);
-  static QuestParam diskLoad(Json const& json);
+  static QuestParam diskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
 
   Json toJson() const;
-  Json diskStore() const;
+  Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
 
   bool operator==(QuestParam const& rhs) const;
 
@@ -91,10 +93,10 @@ struct QuestParam {
 
 struct QuestDescriptor {
   static QuestDescriptor fromJson(Json const& json);
-  static QuestDescriptor diskLoad(Json const& json);
+  static QuestDescriptor diskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
 
   Json toJson() const;
-  Json diskStore() const;
+  Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
 
   bool operator==(QuestDescriptor const& rhs) const;
 
@@ -106,10 +108,10 @@ struct QuestDescriptor {
 
 struct QuestArcDescriptor {
   static QuestArcDescriptor fromJson(Json const& json);
-  static QuestArcDescriptor diskLoad(Json const& json);
+  static QuestArcDescriptor diskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
 
   Json toJson() const;
-  Json diskStore() const;
+  Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
 
   bool operator==(QuestArcDescriptor const& rhs) const;
 
@@ -121,9 +123,9 @@ String questParamText(QuestParam const& param, ItemDatabaseConstPtr itemDatabase
 StringMap<String> questParamTags(StringMap<QuestParam> const& parameters, ItemDatabaseConstPtr itemDatabase);
 
 StringMap<QuestParam> questParamsFromJson(Json const& json);
-StringMap<QuestParam> questParamsDiskLoad(Json const& json);
+StringMap<QuestParam> questParamsDiskLoad(Json const& json, VersioningDatabaseConstPtr versioningDatabase);
 Json questParamsToJson(StringMap<QuestParam> const& parameters);
-Json questParamsDiskStore(StringMap<QuestParam> const& parameters);
+Json questParamsDiskStore(StringMap<QuestParam> const& parameters, VersioningDatabaseConstPtr versioningDatabase);
 
 DataStream& operator>>(DataStream& ds, QuestItem& param);
 DataStream& operator<<(DataStream& ds, QuestItem const& param);
@@ -141,4 +143,4 @@ DataStream& operator>>(DataStream& ds, QuestDescriptor& quest);
 DataStream& operator<<(DataStream& ds, QuestDescriptor const& quest);
 DataStream& operator>>(DataStream& ds, QuestArcDescriptor& questArc);
 DataStream& operator<<(DataStream& ds, QuestArcDescriptor const& questArc);
-}
+}// namespace Star

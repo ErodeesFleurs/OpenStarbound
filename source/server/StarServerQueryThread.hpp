@@ -16,7 +16,7 @@ class ServerQueryThread;
 
 class ServerQueryThread : public Thread {
 public:
-  ServerQueryThread(UniverseServer* universe, HostAddressWithPort const& bindAddress, ConfigurationPtr configuration);
+  ServerQueryThread(UniverseServer& universe, HostAddressWithPort const& bindAddress, ConfigurationPtr configuration);
   ~ServerQueryThread();
 
   void start();
@@ -76,7 +76,7 @@ private:
   const char* serverPlugins();
   String serverWorldNames();
 
-  UniverseServer* m_universe;
+  UniverseServer& m_universe;
   UdpServer m_queryServer;
   bool m_stop;
   DataStreamBuffer m_playersResponse;

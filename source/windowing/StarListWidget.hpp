@@ -10,8 +10,8 @@ using ListWidgetPtr = SharedPtr<ListWidget>;
 
 class ListWidget : public Widget {
 public:
-  ListWidget(Json const& schema);
-  ListWidget();
+  ListWidget(GuiContext& context, Json const& schema);
+  explicit ListWidget(GuiContext& context);
 
   RectI relativeBoundRect() const override;
 
@@ -48,7 +48,7 @@ private:
   void updateSizeAndPosition();
 
   Json m_schema;
-  GuiReader m_reader;
+  GuiReaderPtr m_reader;
 
   Set<size_t> m_disabledItems;
   size_t m_selectedItem;

@@ -217,7 +217,7 @@ MovementController::MovementController(MovementParameters const& parameters, Ass
   resetParameters(parameters);
 }
 
-MovementController::MovementController(MovementParameters const& parameters, World* world, AssetsConstPtr assets) : MovementController(parameters, std::move(assets)) {
+MovementController::MovementController(MovementParameters const& parameters, World& world, AssetsConstPtr assets) : MovementController(parameters, std::move(assets)) {
   init(world);
 }
 
@@ -468,8 +468,8 @@ void MovementController::approachYVelocity(float targetYVelocity, float maxContr
   approachVelocityAlongAngle(Constants::pi / 2, targetYVelocity, maxControlForce);
 }
 
-void MovementController::init(World* world) {
-  m_world = world;
+void MovementController::init(World& world) {
+  m_world = &world;
   setPosition(position());
   updatePositionInterpolators();
 }

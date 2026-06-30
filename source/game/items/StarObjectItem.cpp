@@ -7,8 +7,8 @@
 
 namespace Star {
 
-ObjectItem::ObjectItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& objectParameters, ObjectDatabaseConstPtr objectDatabase)
-  : Item(assets, config, directory, objectParameters), FireableItem(config), BeamItem(std::move(assets), config), m_objectDatabase(std::move(objectDatabase)) {
+ObjectItem::ObjectItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& objectParameters, ObjectDatabaseConstPtr objectDatabase)
+  : Item(assets, imageMetadataDatabase, config, directory, objectParameters), FireableItem(config), BeamItem(std::move(assets), std::move(imageMetadataDatabase), config), m_objectDatabase(std::move(objectDatabase)) {
   if (!m_objectDatabase)
     throw ItemException("ObjectItem requires object database service");
 
@@ -25,7 +25,7 @@ ItemPtr ObjectItem::clone() const {
   return make_shared<ObjectItem>(*this);
 }
 
-void ObjectItem::init(ToolUserEntity* owner, ToolHand hand) {
+void ObjectItem::init(ToolUserEntity& owner, ToolHand hand) {
   FireableItem::init(owner, hand);
   BeamItem::init(owner, hand);
 }
@@ -77,7 +77,7 @@ bool ObjectItem::placeInWorld(FireMode, bool shifting) {
 
   auto pos = Vec2I(owner()->aimPosition().floor());
   try {
-    if (auto object = m_objectDatabase->createForPlacement(world(), objectName(), pos, owner()->walkingDirection(), objectParameters())) {
+    if (auto object = m_objectDatabase->createForPlacement(*world(), objectName(), pos, owner()->walkingDirection(), objectParameters())) {
       if (consume(1)) {
         world()->addEntity(object);
         return true;
@@ -98,7 +98,7 @@ bool ObjectItem::canPlace(bool) const {
   if (initialized()) {
     if (owner()->isAdmin() || owner()->inToolRange()) {
       auto pos = Vec2I(owner()->aimPosition().floor());
-      return m_objectDatabase->canPlaceObject(world(), pos, objectName());
+      return m_objectDatabase->canPlaceObject(*world(), pos, objectName());
     }
   }
   return false;

@@ -10,6 +10,7 @@ class EditBookmarkDialog : public Pane {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   EditBookmarkDialog(PlayerUniverseMapPtr playerUniverseMap, Services services);

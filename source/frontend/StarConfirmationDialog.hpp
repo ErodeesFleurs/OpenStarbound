@@ -13,6 +13,7 @@ class ConfirmationDialog : public Pane {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   explicit ConfirmationDialog(Services services);

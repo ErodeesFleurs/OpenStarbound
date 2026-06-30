@@ -24,6 +24,7 @@ class CodexInterface : public Pane {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   CodexInterface(PlayerPtr player, Services services);

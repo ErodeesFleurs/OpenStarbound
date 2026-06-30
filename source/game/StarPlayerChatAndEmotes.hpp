@@ -18,7 +18,7 @@ using EmoteProcessorConstPtr = SharedPtr<EmoteProcessor const>;
 
 class PlayerChatAndEmotes {
 public:
-  PlayerChatAndEmotes(Player* player, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor);
+  PlayerChatAndEmotes(Player& player, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor);
 
   void init(float emoteCooldown, Vec2F blinkInterval);
 
@@ -43,7 +43,7 @@ public:
 private:
   HumanoidEmote detectEmotes(String const& chatter);
 
-  Player* m_player;
+  Player& m_player;
   DanceDatabaseConstPtr m_danceDatabase;
   EmoteProcessorConstPtr m_emoteProcessor;
 

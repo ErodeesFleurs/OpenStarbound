@@ -58,10 +58,10 @@ namespace Dungeon {
   ConnectorConstPtr chooseOption(List<ConnectorConstPtr>& options, RandomSource& rnd) {
     float distribution = 0;
     for (size_t i = 0; i < options.size(); i++)
-      distribution += options[i]->part()->chance();
+      distribution += options[i]->part().chance();
     float pick = rnd.randf() * distribution;
     for (size_t i = 0; i < options.size(); i++) {
-      pick -= options[i]->part()->chance();
+      pick -= options[i]->part().chance();
       if (pick <= 0)
         return options.takeAt(i);
     }
@@ -562,7 +562,7 @@ namespace Dungeon {
     return false;
   }
 
-  PartConstPtr parsePart(DungeonDefinition* dungeon, Json const& definition, AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase, Maybe<ImageTilesetConstPtr> tileset) {
+  PartConstPtr parsePart(DungeonDefinition& dungeon, Json const& definition, AssetsConstPtr assets, TilesetDatabaseConstPtr tilesetDatabase, Maybe<ImageTilesetConstPtr> tileset) {
     String kind = definition.get("def").getString(0);
     if (kind == "image") {
       if (tileset.isNothing())
@@ -573,8 +573,7 @@ namespace Dungeon {
     throw DungeonException::format("Unknown dungeon part kind: {}", kind);
   }
 
-  Part::Part(DungeonDefinition* dungeon, Json const& part, PartReaderPtr reader) {
-    m_dungeon = dungeon;
+  Part::Part(DungeonDefinition& dungeon, Json const& part, PartReaderPtr reader) {
     m_name = part.getString("name");
     m_rules = Rule::readRules(part.get("rules"));
     m_chance = part.getFloat("chance", 1);
@@ -589,10 +588,10 @@ namespace Dungeon {
     m_reader = reader;
     Json const& def = part.get("def");
     if (def.get(1).type() == Json::Type::String) {
-      reader->readAsset(AssetPath::relativeTo(dungeon->directory(), def.get(1).toString()));
+      reader->readAsset(AssetPath::relativeTo(dungeon.directory(), def.get(1).toString()));
     } else {
       for (auto const& asset : def.get(1).iterateArray())
-        reader->readAsset(AssetPath::relativeTo(dungeon->directory(), asset.toString()));
+        reader->readAsset(AssetPath::relativeTo(dungeon.directory(), asset.toString()));
     }
     m_size = m_reader->size();
     scanConnectors();
@@ -676,12 +675,12 @@ namespace Dungeon {
     return m_connections;
   }
 
-  bool Part::doesNotConnectTo(Part* part) const {
+  bool Part::doesNotConnectTo(Part const& part) const {
     for (size_t i = 0; i < m_rules.size(); i++)
-      if (m_rules[i]->doesNotConnectToPart(part->name()))
+      if (m_rules[i]->doesNotConnectToPart(part.name()))
         return true;
-    for (size_t i = 0; i < part->m_rules.size(); i++)
-      if (part->m_rules[i]->doesNotConnectToPart(m_name))
+    for (size_t i = 0; i < part.m_rules.size(); i++)
+      if (part.m_rules[i]->doesNotConnectToPart(m_name))
         return true;
     return false;
   }
@@ -835,7 +834,7 @@ namespace Dungeon {
           if (d == Direction::Unknown)
             d = pickByEdge(position, m_size);
           Logger::debug("Found connector on {} at {} group {} direction {}", m_name, position, tile.connector->value, static_cast<int>(d));
-          m_connections.append(make_shared<Connector>(this, tile.connector->value, tile.connector->forwardOnly, d, position));
+          m_connections.append(make_shared<Connector>(*this, tile.connector->value, tile.connector->forwardOnly, d, position));
         }
 
         return false;
@@ -914,17 +913,17 @@ namespace Dungeon {
     return !writer->checkLiquid(position);
   }
 
-  Connector::Connector(Part* part, String value, bool forwardOnly, Direction direction, Vec2I offset)
+  Connector::Connector(Part& part, String value, bool forwardOnly, Direction direction, Vec2I offset)
     : m_value(value), m_forwardOnly(forwardOnly), m_direction(direction), m_offset(offset), m_part(part) {}
 
-  bool Connector::connectsTo(ConnectorConstPtr connector) const {
+  bool Connector::connectsTo(Connector const& connector) const {
     if (m_forwardOnly)
       return false;
-    if (m_value != connector->m_value)
+    if (m_value != connector.m_value)
       return false;
-    if (m_direction == Direction::Any || connector->m_direction == Direction::Any)
+    if (m_direction == Direction::Any || connector.m_direction == Direction::Any)
       return true;
-    if (m_direction != flipDirection(connector->m_direction))
+    if (m_direction != flipDirection(connector.m_direction))
       return false;
     return true;
   }
@@ -946,7 +945,7 @@ namespace Dungeon {
     return Vec2I(0, -1);
   }
 
-  Part* Connector::part() const {
+  Part const& Connector::part() const {
     return m_part;
   }
 
@@ -1380,7 +1379,7 @@ DungeonDefinition::DungeonDefinition(AssetsConstPtr assets, TilesetDatabaseConst
     });
 
   for (auto const& partsDefMap : definition.get("parts").iterateArray()) {
-    Dungeon::PartConstPtr part = parsePart(this, partsDefMap, assets, tilesetDatabase, tileset);
+    Dungeon::PartConstPtr part = parsePart(*this, partsDefMap, assets, tilesetDatabase, tileset);
     if (m_parts.contains(part->name()))
       throw DungeonException::format("Duplicate dungeon part name: {}", part->name());
     m_parts.insert(part->name(), part);
@@ -1487,41 +1486,41 @@ pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstP
 
   Logger::debug("Placing dungeon entrance at {}", basePos);
 
-  auto placePart = [&](Dungeon::Part const* part, Vec2I const& placePos) {
-      Set<Vec2I> clearTileEntityPositions;
-      part->forEachTile([&](Vec2I tilePos, Dungeon::Tile const& tile) -> bool {
-          if (tile.modifiesPlaces())
-            clearTileEntityPositions.insert(writer->wrapPosition(placePos + tilePos));
-          return false;
-        });
-      auto partBounds = RectI::withSize(placePos, Vec2I(part->size()));
-      writer->clearTileEntities(partBounds, clearTileEntityPositions, part->clearAnchoredObjects());
+  auto placePart = [&](Dungeon::Part const& part, Vec2I const& placePos) {
+    Set<Vec2I> clearTileEntityPositions;
+    part.forEachTile([&](Vec2I tilePos, Dungeon::Tile const& tile) -> bool {
+      if (tile.modifiesPlaces())
+        clearTileEntityPositions.insert(writer->wrapPosition(placePos + tilePos));
+      return false;
+    });
+    auto partBounds = RectI::withSize(placePos, Vec2I(part.size()));
+    writer->clearTileEntities(partBounds, clearTileEntityPositions, part.clearAnchoredObjects());
 
-      if (part->markDungeonId())
-        writer->setMarkDungeonId(m_dungeonId);
-      else
-        writer->setMarkDungeonId();
+    if (part.markDungeonId())
+      writer->setMarkDungeonId(m_dungeonId);
+    else
+      writer->setMarkDungeonId();
 
-      part->place(placePos, preserveTiles, writer);
-      writer->finishPart();
+    part.place(placePos, preserveTiles, writer);
+    writer->finishPart();
 
-      part->forEachTile([&](Vec2I tilePos, Dungeon::Tile const& tile) -> bool {
-          if (tile.usesPlaces())
-            preserveTiles.insert(placePos + tilePos);
-          if (tile.modifiesPlaces())
-            modifiedTiles.insert(placePos + tilePos);
-          return false;
-        });
+    part.forEachTile([&](Vec2I tilePos, Dungeon::Tile const& tile) -> bool {
+      if (tile.usesPlaces())
+        preserveTiles.insert(placePos + tilePos);
+      if (tile.modifiesPlaces())
+        modifiedTiles.insert(placePos + tilePos);
+      return false;
+    });
 
-      openSet.append({part, placePos});
+    openSet.append({&part, placePos});
 
-      placementCounter[part->name()]++;
-      piecesPlaced++;
+    placementCounter[part.name()]++;
+    piecesPlaced++;
 
-      Logger::debug("placed {}", part->name());
-    };
+    Logger::debug("placed {}", part.name());
+  };
 
-  placePart(anchor.get(), basePos);
+  placePart(*anchor, basePos);
 
   Vec2I origin = basePos + Vec2I(anchor->size()) / 2;
 
@@ -1539,10 +1538,11 @@ pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstP
       List<Dungeon::ConnectorConstPtr> options = findConnectablePart(connector);
       while (options.size()) {
         Dungeon::ConnectorConstPtr option = chooseOption(options, m_rand);
-        Logger::debug("Trying part {}", option->part()->name());
+        auto const& optionPart = option->part();
+        Logger::debug("Trying part {}", optionPart.name());
         Vec2I partPos = connectorPos - option->offset() + option->positionAdjustment();
         Vec2I optionPos = connectorPos + option->positionAdjustment();
-        if (!option->part()->ignoresPartMaximum()) {
+        if (!optionPart.ignoresPartMaximum()) {
           if (piecesPlaced >= m_def->maxParts())
             continue;
 
@@ -1551,28 +1551,28 @@ pair<List<RectI>, Set<Vec2I>> DungeonGenerator::buildDungeon(Dungeon::PartConstP
             continue;
           }
         }
-        if (!option->part()->allowsPlacement(placementCounter[option->part()->name()])) {
+        if (!optionPart.allowsPlacement(placementCounter[optionPart.name()])) {
           Logger::debug("part failed in allowsPlacement");
           continue;
         }
-        if (!option->part()->checkPartCombinationsAllowed(placementCounter)) {
+        if (!optionPart.checkPartCombinationsAllowed(placementCounter)) {
           Logger::debug("part failed in checkPartCombinationsAllowed");
           continue;
         }
-        if (option->part()->collidesWithPlaces(partPos, preserveTiles)) {
+        if (optionPart.collidesWithPlaces(partPos, preserveTiles)) {
           Logger::debug("part failed in collidesWithPlaces");
           continue;
         }
-        if (option->part()->minimumThreatLevel() && m_threatLevel < *option->part()->minimumThreatLevel()) {
+        if (optionPart.minimumThreatLevel() && m_threatLevel < *optionPart.minimumThreatLevel()) {
           Logger::debug("part failed in minimumThreatLevel");
           continue;
         }
-        if (option->part()->maximumThreatLevel() && m_threatLevel > *option->part()->maximumThreatLevel()) {
+        if (optionPart.maximumThreatLevel() && m_threatLevel > *optionPart.maximumThreatLevel()) {
           Logger::debug("part failed in maximumThreatLevel");
           continue;
         }
-        if (forcePlacement || option->part()->canPlace(partPos, writer)) {
-          placePart(option->part(), partPos);
+        if (forcePlacement || optionPart.canPlace(partPos, writer)) {
+          placePart(optionPart, partPos);
           closedConnectors.add(connectorPos);
           closedConnectors.add(optionPos);
           break;
@@ -1609,7 +1609,7 @@ List<Dungeon::ConnectorConstPtr> DungeonGenerator::findConnectablePart(Dungeon::
     if (partPair.second->doesNotConnectTo(connector->part()))
       continue;
     for (auto const& connection : partPair.second->connections()) {
-      if (connection->connectsTo(connector))
+      if (connection->connectsTo(*connector))
         result.append(connection);
     }
   }

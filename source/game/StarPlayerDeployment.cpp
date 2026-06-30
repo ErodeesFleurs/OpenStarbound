@@ -25,8 +25,8 @@ Json PlayerDeployment::diskStore() const {
   return result;
 }
 
-void PlayerDeployment::init(Entity* player, World* world) {
-  m_world = world;
+void PlayerDeployment::init(Player& player, World& world) {
+  m_world = &world;
 
   if (m_deploying) {
     m_deployed = true;
@@ -39,8 +39,8 @@ void PlayerDeployment::init(Entity* player, World* world) {
   m_scriptComponent.setUpdateDelta(m_config.getInt("scriptDelta", 10));
 
   m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(player));
-  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(as<Player>(player)));
-  m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController()));
+  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(player));
+  m_scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*player.statusController()));
   m_scriptComponent.addCallbacks("config",
       LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return m_config.query(name, def); }));
 

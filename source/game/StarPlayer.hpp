@@ -1,42 +1,38 @@
 #pragma once
 
-#include "StarUuid.hpp"
-#include "StarNetElementSystem.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarHumanoid.hpp"
-#include "StarToolUserEntity.hpp"
-#include "StarLoungingEntities.hpp"
+#include "StarActorMovementController.hpp"
+#include "StarAiTypes.hpp"
+#include "StarArmorWearer.hpp"
+#include "StarAssets.hpp"
 #include "StarChattyEntity.hpp"
-#include "StarEmoteEntity.hpp"
+#include "StarConfiguration.hpp"
 #include "StarDamageBarEntity.hpp"
-#include "StarNametagEntity.hpp"
-#include "StarPortraitEntity.hpp"
+#include "StarEmoteEntity.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarEntityRendering.hpp"
+#include "StarHumanoid.hpp"
 #include "StarInspectableEntity.hpp"
 #include "StarInventoryTypes.hpp"
-#include "StarActorMovementController.hpp"
-#include "StarNetworkedAnimator.hpp"
-#include "StarAiTypes.hpp"
 #include "StarItemBag.hpp"
-#include "StarArmorWearer.hpp"
-#include "StarEntityRendering.hpp"
-#include "StarToolUser.hpp"
-#include "StarPlayerTypes.hpp"
-#include "StarRadioMessageDatabase.hpp"
-#include "StarLuaComponents.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarLoungingEntities.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarLuaAnimationComponent.hpp"
-#include "StarAssets.hpp"
-#include "StarConfiguration.hpp"
+#include "StarLuaComponents.hpp"
 #include "StarMaterialDatabase.hpp"
-#include "StarItemDatabase.hpp"
-#include "StarSpeciesDatabase.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarLiquidsDatabase.hpp"
-#include "StarEntityFactory.hpp"
-#include "StarLiquidsDatabase.hpp"
+#include "StarNametagEntity.hpp"
+#include "StarNetElementSystem.hpp"
+#include "StarNetworkedAnimator.hpp"
 #include "StarPlayerAppearance.hpp"
+#include "StarPlayerTypes.hpp"
+#include "StarPortraitEntity.hpp"
+#include "StarRadioMessageDatabase.hpp"
+#include "StarSpeciesDatabase.hpp"
+#include "StarToolUser.hpp"
+#include "StarToolUserEntity.hpp"
+#include "StarUuid.hpp"
 
 namespace Star {
 
@@ -53,6 +49,12 @@ class PlayerTech;
 using PlayerTechPtr = SharedPtr<PlayerTech>;
 class TechDatabase;
 using TechDatabaseConstPtr = SharedPtr<TechDatabase const>;
+class StatusEffectDatabase;
+using StatusEffectDatabaseConstPtr = SharedPtr<StatusEffectDatabase const>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 class ObjectDatabase;
 using ObjectDatabaseConstPtr = SharedPtr<ObjectDatabase const>;
 class QuestTemplateDatabase;
@@ -104,16 +106,15 @@ using PlayerTeleporterPtr = SharedPtr<PlayerTeleporter>;
 class Player;
 using PlayerPtr = SharedPtr<Player>;
 
-class Player :
-  public virtual ToolUserEntity,
-  public virtual LoungingEntity,
-  public virtual ChattyEntity,
-  public virtual InspectableEntity,
-  public virtual DamageBarEntity,
-  public virtual PortraitEntity,
-  public virtual NametagEntity,
-  public virtual PhysicsEntity,
-  public virtual EmoteEntity {
+class Player : public virtual ToolUserEntity,
+               public virtual LoungingEntity,
+               public virtual ChattyEntity,
+               public virtual InspectableEntity,
+               public virtual DamageBarEntity,
+               public virtual PortraitEntity,
+               public virtual NametagEntity,
+               public virtual PhysicsEntity,
+               public virtual EmoteEntity {
 
 public:
   enum class State {
@@ -131,9 +132,9 @@ public:
   };
   static EnumMap<State> const StateNames;
 
-  Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase);
-  Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase);
-  Player(PlayerConfigPtr config, Json const& diskStore, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase);
+  Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
+  Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
+  Player(PlayerConfigPtr config, Json const& diskStore, AssetsConstPtr assets, ConfigurationPtr configuration, MaterialDatabaseConstPtr materialDatabase, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase, QuestTemplateDatabaseConstPtr questTemplateDatabase, VersioningDatabaseConstPtr versioningDatabase, CodexDatabaseConstPtr codexDatabase, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor, RadioMessageDatabaseConstPtr radioMessageDatabase, AiDatabaseConstPtr aiDatabase, CollectionDatabaseConstPtr collectionDatabase, SpeciesDatabaseConstPtr speciesDatabase, EntityFactoryConstPtr entityFactory, LiquidsDatabaseConstPtr liquidsDatabase, TechDatabaseConstPtr techDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
   void diskLoad(Json const& diskStore);
 
@@ -208,6 +209,8 @@ public:
   bool shifting() const;
   void setShifting(bool shifting);
   void special(int specialKey);
+  void setBuildToolControlPresses(String const& bindId, Maybe<unsigned> presses);
+  Maybe<unsigned> buildToolControlPresses(String const& bindId) const;
 
   void setMoveVector(Vec2F const& vec);
   void moveLeft();
@@ -401,7 +404,7 @@ public:
   void setFacialMaskType(String const& type);
   void setFacialMaskDirectives(String const& directives);
 
-  void setHair      (String const& group, String const& type, String const& directives);
+  void setHair(String const& group, String const& type, String const& directives);
   void setFacialHair(String const& group, String const& type, String const& directives);
   void setFacialMask(String const& group, String const& type, String const& directives);
 
@@ -469,7 +472,7 @@ public:
 
   void addChatMessage(String const& message, Json const& config = {});
   void addEmote(HumanoidEmote const& emote, Maybe<float> emoteCooldown = {});
-  void setDance(Maybe<String> const & danceName);
+  void setDance(Maybe<String> const& danceName);
   pair<HumanoidEmote, float> currentEmote() const;
 
   State currentState() const;
@@ -606,7 +609,6 @@ private:
   friend class PlayerTeleporter;
   friend class PlayerAppearance;
 
-
   PlayerConfigPtr m_config;
 
   NetElementTopGroup m_netGroup;
@@ -635,13 +637,16 @@ private:
   EntityFactoryConstPtr m_entityFactory;
   LiquidsDatabaseConstPtr m_liquidsDatabase;
   TechDatabaseConstPtr m_techDatabase;
+  StatusEffectDatabaseConstPtr m_statusEffectDatabase;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   PlayerCodexesPtr m_codexes;
   PlayerTechPtr m_techs;
   PlayerCompanionsPtr m_companions;
   PlayerDeploymentPtr m_deployment;
   PlayerLogPtr m_log;
 
-  UniverseClient* m_client; // required for celestial callbacks in scripts
+  UniverseClient* m_client;// required for celestial callbacks in scripts
   StringMap<GenericScriptComponentPtr> m_genericScriptContexts;
   JsonObject m_genericProperties;
 
@@ -651,7 +656,7 @@ private:
 
   float m_footstepTimer;
   PlayerTeleporterPtr m_teleporter;
-  PlayerAppearance m_appearance{this};
+  PlayerAppearance m_appearance{*this};
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   GameTimer m_ageItemsTimer;
 
@@ -664,6 +669,7 @@ private:
   NetworkedAnimator::DynamicTarget m_effectsAnimatorDynamicTarget;
 
   HashSet<MoveControlType> m_pendingMoves;
+  StringMap<unsigned> m_buildToolControlPresses;
   Vec2F m_moveVector;
   bool m_shifting;
   ActorMovementParameters m_zeroGMovementParameters;
@@ -697,8 +703,8 @@ private:
   List<PersistentStatusEffect> m_foodEmptyStatusEffects;
 
   bool m_isAdmin;
-  float m_interactRadius; // hand interact radius
-  Vec2F m_walkIntoInteractBias; // offset on position to find an interactable
+  float m_interactRadius;      // hand interact radius
+  Vec2F m_walkIntoInteractBias;// offset on position to find an interactable
   // when not pointing at
   // an interactable with the mouse
 
@@ -718,7 +724,6 @@ private:
 
   SongbookPtr m_songbook;
 
-
   StringSet m_interestingObjects;
 
   NetElementUInt m_stateNetState;
@@ -732,4 +737,4 @@ private:
   NetElementString m_emoteNetState;
 };
 
-}
+}// namespace Star

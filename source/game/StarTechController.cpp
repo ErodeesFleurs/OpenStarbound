@@ -1,20 +1,20 @@
 #include "StarTechController.hpp"
-#include "StarStatusController.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarLuaGameConverters.hpp"
-#include "StarWorldLuaBindings.hpp"
 #include "StarConfigLuaBindings.hpp"
+#include "StarDataStreamExtra.hpp"
 #include "StarEntityLuaBindings.hpp"
-#include "StarPlayerLuaBindings.hpp"
-#include "StarPlayer.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
+#include "StarLoungingEntities.hpp"
+#include "StarLuaGameConverters.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
-#include "StarStatusControllerLuaBindings.hpp"
+#include "StarPlayer.hpp"
+#include "StarPlayerLuaBindings.hpp"
 #include "StarRoot.hpp"
 #include "StarScriptedEntity.hpp"
-#include "StarLoungingEntities.hpp"
+#include "StarStatusController.hpp"
+#include "StarStatusControllerLuaBindings.hpp"
 #include "StarWorld.hpp"
-#include "StarLogging.hpp"
+#include "StarWorldLuaBindings.hpp"
 
 namespace Star {
 
@@ -28,13 +28,21 @@ EnumMap<TechController::ParentState> const TechController::ParentStateNames{
   {TechController::ParentState::Walk, "Walk"},
   {TechController::ParentState::Run, "Run"},
   {TechController::ParentState::Swim, "Swim"},
-  {TechController::ParentState::SwimIdle, "SwimIdle"}
-};
+  {TechController::ParentState::SwimIdle, "SwimIdle"}};
 
-TechController::TechController() {
+TechController::TechController(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+    : m_assets(std::move(assets)),
+      m_particleDatabase(std::move(particleDatabase)),
+      m_imageMetadataDatabase(std::move(imageMetadataDatabase)) {
   m_parentEntity = nullptr;
   m_movementController = nullptr;
   m_statusController = nullptr;
+  if (!m_assets)
+    throw StarException("TechController requires assets service");
+  if (!m_particleDatabase)
+    throw StarException("TechController requires particle database service");
+  if (!m_imageMetadataDatabase)
+    throw StarException("TechController requires image metadata database service");
 
   m_moveRun = false;
   m_movePrimaryFire = false;
@@ -48,6 +56,9 @@ TechController::TechController() {
   m_moveSpecial2 = false;
   m_moveSpecial3 = false;
 
+  m_techAnimators.setElementFactory([this]() {
+    return make_shared<TechAnimator>(Maybe<String>(), m_assets, m_particleDatabase, m_imageMetadataDatabase);
+  });
   addNetElement(&m_techAnimators);
   addNetElement(&m_parentState);
   addNetElement(&m_parentDirectives);
@@ -62,7 +73,8 @@ TechController::TechController() {
   m_yParentOffset.setInterpolator(lerp<float, float>);
 }
 
-TechController::TechController(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController) : TechController() {
+TechController::TechController(Entity& parentEntity, ActorMovementController& movementController, StatusController& statusController, AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
+    : TechController(std::move(assets), std::move(particleDatabase), std::move(imageMetadataDatabase)) {
   init(parentEntity, movementController, statusController);
 }
 
@@ -74,25 +86,23 @@ Json TechController::diskStore() {
     return JsonObject{{"techModules", modules}};
   } else {
     return JsonObject{{"techModules", transform<JsonArray>(m_techModules, [](TechModule const& tm) {
-        return JsonObject{
-            {"module", tm.config.name},
-            {"scriptData", tm.scriptComponent.getScriptStorage()}
-          };
-      })
-    }};
+                         return JsonObject{
+                           {"module", tm.config.name},
+                           {"scriptData", tm.scriptComponent.getScriptStorage()}};
+                       })}};
   }
 }
 
 void TechController::diskLoad(Json const& store) {
-  setupTechModules( store.getArray("techModules", {}).transformed([](Json const& v) {
-      return make_tuple(v.getString("module"), v.getObject("scriptData", {}));
-    }));
+  setupTechModules(store.getArray("techModules", {}).transformed([](Json const& v) {
+    return make_tuple(v.getString("module"), v.getObject("scriptData", {}));
+  }));
 }
 
-void TechController::init(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController) {
-  m_parentEntity = parentEntity;
-  m_movementController = movementController;
-  m_statusController = statusController;
+void TechController::init(Entity& parentEntity, ActorMovementController& movementController, StatusController& statusController) {
+  m_parentEntity = &parentEntity;
+  m_movementController = &movementController;
+  m_statusController = &statusController;
 
   m_moveRun = false;
   m_movePrimaryFire = false;
@@ -241,8 +251,7 @@ void TechController::tickMaster(float dt) {
       {"altFire", m_moveAltFire},
       {"special1", m_moveSpecial1},
       {"special2", m_moveSpecial2},
-      {"special3", m_moveSpecial3}
-    };
+      {"special3", m_moveSpecial3}};
 
     module.scriptComponent.update(JsonObject{{"moves", moves}, {"dt", module.scriptComponent.updateDt(dt)}});
   }
@@ -351,9 +360,12 @@ Maybe<Json> TechController::receiveMessage(String const& message, bool localMess
   return {};
 }
 
-TechController::TechAnimator::TechAnimator(Maybe<String> ac) {
+TechController::TechAnimator::TechAnimator(Maybe<String> ac, AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
   animationConfig = std::move(ac);
-  animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
+  this->assets = std::move(assets);
+  this->particleDatabase = std::move(particleDatabase);
+  this->imageMetadataDatabase = std::move(imageMetadataDatabase);
+  animator = animationConfig ? NetworkedAnimator(*animationConfig, String(), this->assets, this->imageMetadataDatabase, this->particleDatabase) : NetworkedAnimator();
   netGroup.addNetElement(&animator);
   netGroup.addNetElement(&visible);
 }
@@ -363,15 +375,17 @@ void TechController::TechAnimator::initNetVersion(NetElementVersion const* versi
 }
 
 void TechController::TechAnimator::netStore(DataStream& ds, NetCompatibilityRules rules) const {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   ds << animationConfig;
   netGroup.netStore(ds, rules);
 }
 
 void TechController::TechAnimator::netLoad(DataStream& ds, NetCompatibilityRules rules) {
-  if (!checkWithRules(rules)) return;
+  if (!checkWithRules(rules))
+    return;
   ds >> animationConfig;
-  animator = animationConfig ? NetworkedAnimator(*animationConfig) : NetworkedAnimator();
+  animator = animationConfig ? NetworkedAnimator(*animationConfig, String(), assets, imageMetadataDatabase, particleDatabase) : NetworkedAnimator();
   netGroup.netLoad(ds, rules);
 }
 
@@ -431,7 +445,7 @@ void TechController::setupTechModules(List<tuple<String, JsonObject>> const& mod
 
       module.toolUsageSuppressed = false;
 
-      auto moduleAnimator = make_shared<TechAnimator>(module.config.animationConfig);
+      auto moduleAnimator = make_shared<TechAnimator>(module.config.animationConfig, m_assets, m_particleDatabase, m_imageMetadataDatabase);
       for (auto const& pair : module.config.parameters.get("animationParts", JsonObject()).iterateObject())
         moduleAnimator->animator.setPartTag(pair.first, "partImage", pair.second.toString());
       module.animatorId = m_techAnimators.addNetElement(moduleAnimator);
@@ -456,16 +470,16 @@ void TechController::initializeModules() {
   for (auto& module : m_techModules) {
     module.scriptComponent.addCallbacks("tech", makeTechCallbacks(module));
     module.scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([&module](String const& name, Json const& def) {
-        return module.config.parameters.query(name, def);
-      }));
-    module.scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(m_parentEntity));
-    module.scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(&m_techAnimators.getNetElement(module.animatorId)->animator));
-    module.scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(m_statusController));
+                                          return module.config.parameters.query(name, def);
+                                        }));
+    module.scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*m_parentEntity));
+    module.scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(m_techAnimators.getNetElement(module.animatorId)->animator));
+    module.scriptComponent.addCallbacks("status", LuaBindings::makeStatusControllerCallbacks(*m_statusController));
     if (auto player = as<Player>(m_parentEntity))
-      module.scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(player));
+      module.scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(*player));
     module.scriptComponent.addActorMovementCallbacks(m_movementController);
 
-    module.scriptComponent.init(m_parentEntity->world());
+    module.scriptComponent.init(*m_parentEntity->world());
   }
 }
 
@@ -499,55 +513,55 @@ LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("aimPosition", [this]() {
-      return m_aimPosition;
-    });
+    return m_aimPosition;
+  });
 
   callbacks.registerCallback("setVisible", [&techModule](bool visible) {
-      techModule.visible = visible;
-    });
+    techModule.visible = visible;
+  });
 
   callbacks.registerCallback("setParentState", [this](Maybe<String> const& state) {
-      if (state)
-        m_parentState.set(ParentStateNames.getLeft(*state));
-      else
-        m_parentState.set({});
-    });
+    if (state)
+      m_parentState.set(ParentStateNames.getLeft(*state));
+    else
+      m_parentState.set({});
+  });
 
   callbacks.registerCallback("setParentDirectives", [this, &techModule](Maybe<String> const& directives) {
-      techModule.parentDirectives = directives.value();
+    techModule.parentDirectives = directives.value();
 
-      DirectivesGroup newParentDirectives;
-      for (auto& module : m_techModules)
-        newParentDirectives.append(module.parentDirectives);
-      m_parentDirectives.set(std::move(newParentDirectives));
-    });
+    DirectivesGroup newParentDirectives;
+    for (auto& module : m_techModules)
+      newParentDirectives.append(module.parentDirectives);
+    m_parentDirectives.set(std::move(newParentDirectives));
+  });
 
   callbacks.registerCallback("setParentHidden", [this](bool hidden) {
-      m_parentHidden.set(hidden);
-    });
+    m_parentHidden.set(hidden);
+  });
 
   callbacks.registerCallback("setParentOffset", [this](Vec2F const& po) {
-      m_xParentOffset.set(po[0]);
-      m_yParentOffset.set(po[1]);
-    });
+    m_xParentOffset.set(po[0]);
+    m_yParentOffset.set(po[1]);
+  });
 
   callbacks.registerCallback("parentLounging", [this]() {
-      if (auto loungingEntity = as<LoungingEntity>(m_parentEntity))
-        return loungingEntity->loungingIn().isValid();
-      return false;
-    });
+    if (auto loungingEntity = as<LoungingEntity>(m_parentEntity))
+      return loungingEntity->loungingIn().isValid();
+    return false;
+  });
 
   callbacks.registerCallback("setToolUsageSuppressed", [this, &techModule](bool suppressed) {
-      if (techModule.toolUsageSuppressed == suppressed)
-        return;
-      techModule.toolUsageSuppressed = suppressed;
-      bool anySuppressed = false;
-      for (auto& module : m_techModules)
-        anySuppressed = anySuppressed || module.toolUsageSuppressed;
-      m_toolUsageSuppressed.set(anySuppressed);
-    });
+    if (techModule.toolUsageSuppressed == suppressed)
+      return;
+    techModule.toolUsageSuppressed = suppressed;
+    bool anySuppressed = false;
+    for (auto& module : m_techModules)
+      anySuppressed = anySuppressed || module.toolUsageSuppressed;
+    m_toolUsageSuppressed.set(anySuppressed);
+  });
 
   return callbacks;
 }
 
-}
+}// namespace Star

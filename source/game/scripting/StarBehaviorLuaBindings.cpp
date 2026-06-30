@@ -3,10 +3,10 @@
 
 namespace Star {
 
-LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<BehaviorStatePtr>* list, BehaviorDatabaseConstPtr behaviorDatabase) {
+LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<BehaviorStatePtr>& list, BehaviorDatabaseConstPtr behaviorDatabase) {
   LuaCallbacks callbacks;
 
-  callbacks.registerCallback("behavior", [list, behaviorDatabase](Json const& config, JsonObject const& parameters, LuaTable context, Maybe<LuaUserData> blackboard) -> BehaviorStateWeakPtr {
+  callbacks.registerCallback("behavior", [&list, behaviorDatabase](Json const& config, JsonObject const& parameters, LuaTable context, Maybe<LuaUserData> blackboard) -> BehaviorStateWeakPtr {
     Maybe<BlackboardWeakPtr> board = {};
     if (blackboard && blackboard->is<BlackboardWeakPtr>())
       board = blackboard->get<BlackboardWeakPtr>();
@@ -25,7 +25,7 @@ LuaCallbacks LuaBindings::makeBehaviorCallbacks(List<BehaviorStatePtr>* list, Be
     }
 
     BehaviorStatePtr state = make_shared<BehaviorState>(tree, context, board);
-    list->append(state);
+    list.append(state);
     return weak_ptr<BehaviorState>(state);
   });
 

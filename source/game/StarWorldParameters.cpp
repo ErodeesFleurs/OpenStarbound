@@ -1,25 +1,16 @@
 #include "StarWorldParameters.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
 #include "StarBiomeDatabase.hpp"
+#include "StarDataStreamExtra.hpp"
+#include "StarJsonExtra.hpp"
 #include "StarLiquidsDatabase.hpp"
 
 namespace Star {
 
-namespace {
-
-AssetsConstPtr worldParameterAssets() {
-  return Root::singleton().assets();
-}
-
-}
-
 EnumMap<WorldParametersType> const WorldParametersTypeNames{
-    {WorldParametersType::TerrestrialWorldParameters, "TerrestrialWorldParameters"},
-    {WorldParametersType::AsteroidsWorldParameters, "AsteroidsWorldParameters"},
-    {WorldParametersType::FloatingDungeonWorldParameters, "FloatingDungeonWorldParameters"}};
+  {WorldParametersType::TerrestrialWorldParameters, "TerrestrialWorldParameters"},
+  {WorldParametersType::AsteroidsWorldParameters, "AsteroidsWorldParameters"},
+  {WorldParametersType::FloatingDungeonWorldParameters, "FloatingDungeonWorldParameters"}};
 
 EnumMap<BeamUpRule> const BeamUpRuleNames{
   {BeamUpRule::Nowhere, "Nowhere"},
@@ -51,18 +42,18 @@ VisitableWorldParameters::VisitableWorldParameters(Json const& store) {
 
 Json VisitableWorldParameters::store() const {
   return JsonObject{{"typeName", typeName},
-      {"threatLevel", threatLevel},
-      {"worldSize", jsonFromVec2U(worldSize)},
-      {"gravity", gravity},
-      {"airless", airless},
-      {"weatherPool", jsonFromWeightedPool<String>(weatherPool)},
-      {"environmentStatusEffects", jsonFromStringList(environmentStatusEffects)},
-      {"overrideTech", jsonFromMaybe(overrideTech.apply(&jsonFromStringList))},
-      {"globalDirectives", jsonFromMaybe(globalDirectives.apply(&jsonFromDirectivesList))},
-      {"beamUpRule", BeamUpRuleNames.getRight(beamUpRule)},
-      {"disableDeathDrops", disableDeathDrops},
-      {"terraformed", terraformed},
-      {"worldEdgeForceRegions", WorldEdgeForceRegionTypeNames.getRight(worldEdgeForceRegions)}};
+                    {"threatLevel", threatLevel},
+                    {"worldSize", jsonFromVec2U(worldSize)},
+                    {"gravity", gravity},
+                    {"airless", airless},
+                    {"weatherPool", jsonFromWeightedPool<String>(weatherPool)},
+                    {"environmentStatusEffects", jsonFromStringList(environmentStatusEffects)},
+                    {"overrideTech", jsonFromMaybe(overrideTech.apply(&jsonFromStringList))},
+                    {"globalDirectives", jsonFromMaybe(globalDirectives.apply(&jsonFromDirectivesList))},
+                    {"beamUpRule", BeamUpRuleNames.getRight(beamUpRule)},
+                    {"disableDeathDrops", disableDeathDrops},
+                    {"terraformed", terraformed},
+                    {"worldEdgeForceRegions", WorldEdgeForceRegionTypeNames.getRight(worldEdgeForceRegions)}};
 }
 
 void VisitableWorldParameters::read(DataStream& ds) {
@@ -100,31 +91,31 @@ void VisitableWorldParameters::write(DataStream& ds) const {
 TerrestrialWorldParameters::TerrestrialWorldParameters(Json const& store) : VisitableWorldParameters(store) {
   auto loadTerrestrialRegion = [](Json const& config) {
     return TerrestrialRegion{config.getString("biome"),
-        config.getString("blockSelector"),
-        config.getString("fgCaveSelector"),
-        config.getString("bgCaveSelector"),
-        config.getString("fgOreSelector"),
-        config.getString("bgOreSelector"),
-        config.getString("subBlockSelector"),
-        static_cast<LiquidId>(config.getUInt("caveLiquid")),
-        config.getFloat("caveLiquidSeedDensity"),
-        static_cast<LiquidId>(config.getUInt("oceanLiquid")),
-        static_cast<int>(config.getInt("oceanLiquidLevel")),
-        config.getBool("encloseLiquids"),
-        config.getBool("fillMicrodungeons")};
+                             config.getString("blockSelector"),
+                             config.getString("fgCaveSelector"),
+                             config.getString("bgCaveSelector"),
+                             config.getString("fgOreSelector"),
+                             config.getString("bgOreSelector"),
+                             config.getString("subBlockSelector"),
+                             static_cast<LiquidId>(config.getUInt("caveLiquid")),
+                             config.getFloat("caveLiquidSeedDensity"),
+                             static_cast<LiquidId>(config.getUInt("oceanLiquid")),
+                             static_cast<int>(config.getInt("oceanLiquidLevel")),
+                             config.getBool("encloseLiquids"),
+                             config.getBool("fillMicrodungeons")};
   };
 
   auto loadTerrestrialLayer = [loadTerrestrialRegion](Json const& config) {
     return TerrestrialLayer{static_cast<int>(config.getInt("layerMinHeight")),
-        static_cast<int>(config.getInt("layerBaseHeight")),
-        jsonToStringList(config.get("dungeons")),
-        static_cast<int>(config.getInt("dungeonXVariance")),
-        loadTerrestrialRegion(config.get("primaryRegion")),
-        loadTerrestrialRegion(config.get("primarySubRegion")),
-        config.getArray("secondaryRegions").transformed(loadTerrestrialRegion),
-        config.getArray("secondarySubRegions").transformed(loadTerrestrialRegion),
-        jsonToVec2F(config.get("secondaryRegionSizeRange")),
-        jsonToVec2F(config.get("subRegionSizeRange"))};
+                            static_cast<int>(config.getInt("layerBaseHeight")),
+                            jsonToStringList(config.get("dungeons")),
+                            static_cast<int>(config.getInt("dungeonXVariance")),
+                            loadTerrestrialRegion(config.get("primaryRegion")),
+                            loadTerrestrialRegion(config.get("primarySubRegion")),
+                            config.getArray("secondaryRegions").transformed(loadTerrestrialRegion),
+                            config.getArray("secondarySubRegions").transformed(loadTerrestrialRegion),
+                            jsonToVec2F(config.get("secondaryRegionSizeRange")),
+                            jsonToVec2F(config.get("subRegionSizeRange"))};
   };
 
   primaryBiome = store.getString("primaryBiome");
@@ -145,7 +136,7 @@ TerrestrialWorldParameters::TerrestrialWorldParameters(Json const& store) : Visi
   coreLayer = loadTerrestrialLayer(store.get("coreLayer"));
 }
 
-TerrestrialWorldParameters &TerrestrialWorldParameters::operator=(TerrestrialWorldParameters const& terrestrialWorldParameters) {
+TerrestrialWorldParameters& TerrestrialWorldParameters::operator=(TerrestrialWorldParameters const& terrestrialWorldParameters) {
   this->primaryBiome = terrestrialWorldParameters.primaryBiome;
   this->primarySurfaceLiquid = terrestrialWorldParameters.primarySurfaceLiquid;
   this->sizeName = terrestrialWorldParameters.sizeName;
@@ -174,47 +165,47 @@ WorldParametersType TerrestrialWorldParameters::type() const {
 Json TerrestrialWorldParameters::store() const {
   auto storeTerrestrialRegion = [](TerrestrialRegion const& region) -> Json {
     return JsonObject{{"biome", region.biome},
-        {"blockSelector", region.blockSelector},
-        {"fgCaveSelector", region.fgCaveSelector},
-        {"bgCaveSelector", region.bgCaveSelector},
-        {"fgOreSelector", region.fgOreSelector},
-        {"bgOreSelector", region.bgOreSelector},
-        {"subBlockSelector", region.subBlockSelector},
-        {"caveLiquid", region.caveLiquid},
-        {"caveLiquidSeedDensity", region.caveLiquidSeedDensity},
-        {"oceanLiquid", region.oceanLiquid},
-        {"oceanLiquidLevel", region.oceanLiquidLevel},
-        {"encloseLiquids", region.encloseLiquids},
-        {"fillMicrodungeons", region.fillMicrodungeons}};
+                      {"blockSelector", region.blockSelector},
+                      {"fgCaveSelector", region.fgCaveSelector},
+                      {"bgCaveSelector", region.bgCaveSelector},
+                      {"fgOreSelector", region.fgOreSelector},
+                      {"bgOreSelector", region.bgOreSelector},
+                      {"subBlockSelector", region.subBlockSelector},
+                      {"caveLiquid", region.caveLiquid},
+                      {"caveLiquidSeedDensity", region.caveLiquidSeedDensity},
+                      {"oceanLiquid", region.oceanLiquid},
+                      {"oceanLiquidLevel", region.oceanLiquidLevel},
+                      {"encloseLiquids", region.encloseLiquids},
+                      {"fillMicrodungeons", region.fillMicrodungeons}};
   };
   auto storeTerrestrialLayer = [storeTerrestrialRegion](TerrestrialLayer const& layer) -> Json {
     return JsonObject{{"layerMinHeight", layer.layerMinHeight},
-        {"layerBaseHeight", layer.layerBaseHeight},
-        {"dungeons", jsonFromStringList(layer.dungeons)},
-        {"dungeonXVariance", layer.dungeonXVariance},
-        {"primaryRegion", storeTerrestrialRegion(layer.primaryRegion)},
-        {"primarySubRegion", storeTerrestrialRegion(layer.primarySubRegion)},
-        {"secondaryRegions", layer.secondaryRegions.transformed(storeTerrestrialRegion)},
-        {"secondarySubRegions", layer.secondarySubRegions.transformed(storeTerrestrialRegion)},
-        {"secondaryRegionSizeRange", jsonFromVec2F(layer.secondaryRegionSizeRange)},
-        {"subRegionSizeRange", jsonFromVec2F(layer.subRegionSizeRange)}};
+                      {"layerBaseHeight", layer.layerBaseHeight},
+                      {"dungeons", jsonFromStringList(layer.dungeons)},
+                      {"dungeonXVariance", layer.dungeonXVariance},
+                      {"primaryRegion", storeTerrestrialRegion(layer.primaryRegion)},
+                      {"primarySubRegion", storeTerrestrialRegion(layer.primarySubRegion)},
+                      {"secondaryRegions", layer.secondaryRegions.transformed(storeTerrestrialRegion)},
+                      {"secondarySubRegions", layer.secondarySubRegions.transformed(storeTerrestrialRegion)},
+                      {"secondaryRegionSizeRange", jsonFromVec2F(layer.secondaryRegionSizeRange)},
+                      {"subRegionSizeRange", jsonFromVec2F(layer.subRegionSizeRange)}};
   };
 
   return VisitableWorldParameters::store().setAll(JsonObject{{"primaryBiome", primaryBiome},
-      {"sizeName", sizeName},
-      {"hueShift", hueShift},
-      {"surfaceLiquid", primarySurfaceLiquid},
-      {"skyColoring", skyColoring.toJson()},
-      {"dayLength", dayLength},
-      {"blockNoise", blockNoiseConfig},
-      {"blendNoise", blendNoiseConfig},
-      {"blendSize", blendSize},
-      {"spaceLayer", storeTerrestrialLayer(spaceLayer)},
-      {"atmosphereLayer", storeTerrestrialLayer(atmosphereLayer)},
-      {"surfaceLayer", storeTerrestrialLayer(surfaceLayer)},
-      {"subsurfaceLayer", storeTerrestrialLayer(subsurfaceLayer)},
-      {"undergroundLayers", undergroundLayers.transformed(storeTerrestrialLayer)},
-      {"coreLayer", storeTerrestrialLayer(coreLayer)}});
+                                                             {"sizeName", sizeName},
+                                                             {"hueShift", hueShift},
+                                                             {"surfaceLiquid", primarySurfaceLiquid},
+                                                             {"skyColoring", skyColoring.toJson()},
+                                                             {"dayLength", dayLength},
+                                                             {"blockNoise", blockNoiseConfig},
+                                                             {"blendNoise", blendNoiseConfig},
+                                                             {"blendSize", blendSize},
+                                                             {"spaceLayer", storeTerrestrialLayer(spaceLayer)},
+                                                             {"atmosphereLayer", storeTerrestrialLayer(atmosphereLayer)},
+                                                             {"surfaceLayer", storeTerrestrialLayer(surfaceLayer)},
+                                                             {"subsurfaceLayer", storeTerrestrialLayer(subsurfaceLayer)},
+                                                             {"undergroundLayers", undergroundLayers.transformed(storeTerrestrialLayer)},
+                                                             {"coreLayer", storeTerrestrialLayer(coreLayer)}});
 }
 
 DataStream& operator>>(DataStream& ds, TerrestrialWorldParameters::TerrestrialRegion& region) {
@@ -333,10 +324,10 @@ WorldParametersType AsteroidsWorldParameters::type() const {
 
 Json AsteroidsWorldParameters::store() const {
   return VisitableWorldParameters::store().setAll(JsonObject{{"asteroidTopLevel", asteroidTopLevel},
-      {"asteroidBottomLevel", asteroidBottomLevel},
-      {"blendSize", blendSize},
-      {"asteroidBiome", asteroidBiome},
-      {"ambientLightLevel", jsonFromColor(ambientLightLevel)}});
+                                                             {"asteroidBottomLevel", asteroidBottomLevel},
+                                                             {"blendSize", blendSize},
+                                                             {"asteroidBiome", asteroidBiome},
+                                                             {"ambientLightLevel", jsonFromColor(ambientLightLevel)}});
 }
 
 void AsteroidsWorldParameters::read(DataStream& ds) {
@@ -376,15 +367,15 @@ WorldParametersType FloatingDungeonWorldParameters::type() const {
 
 Json FloatingDungeonWorldParameters::store() const {
   return VisitableWorldParameters::store().setAll(JsonObject{{"dungeonBaseHeight", dungeonBaseHeight},
-      {"dungeonSurfaceHeight", dungeonSurfaceHeight},
-      {"dungeonUndergroundLevel", dungeonUndergroundLevel},
-      {"primaryDungeon", primaryDungeon},
-      {"biome", jsonFromMaybe(biome)},
-      {"ambientLightLevel", jsonFromColor(ambientLightLevel)},
-      {"dayMusicTrack", jsonFromMaybe(dayMusicTrack)},
-      {"nightMusicTrack", jsonFromMaybe(nightMusicTrack)},
-      {"dayAmbientNoises", jsonFromMaybe(dayAmbientNoises)},
-      {"nightAmbientNoises", jsonFromMaybe(nightAmbientNoises)}});
+                                                             {"dungeonSurfaceHeight", dungeonSurfaceHeight},
+                                                             {"dungeonUndergroundLevel", dungeonUndergroundLevel},
+                                                             {"primaryDungeon", primaryDungeon},
+                                                             {"biome", jsonFromMaybe(biome)},
+                                                             {"ambientLightLevel", jsonFromColor(ambientLightLevel)},
+                                                             {"dayMusicTrack", jsonFromMaybe(dayMusicTrack)},
+                                                             {"nightMusicTrack", jsonFromMaybe(nightMusicTrack)},
+                                                             {"dayAmbientNoises", jsonFromMaybe(dayAmbientNoises)},
+                                                             {"nightAmbientNoises", jsonFromMaybe(nightAmbientNoises)}});
 }
 
 void FloatingDungeonWorldParameters::read(DataStream& ds) {
@@ -468,17 +459,13 @@ VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data) {
   return parameters;
 }
 
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, uint64_t seed) {
-  return generateTerrestrialWorldParameters(worldParameterAssets(), typeName, sizeName, seed);
-}
-
-TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr assets, String const& typeName, String const& sizeName, uint64_t seed) {
+TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, BiomeDatabaseConstPtr biomeDatabase, String const& typeName, String const& sizeName, uint64_t seed) {
   if (!assets)
     throw StarException("generateTerrestrialWorldParameters requires assets service");
-
-  auto& root = Root::singleton();
-  auto liquidsDatabase = root.liquidsDatabase();
-  auto biomeDatabase = root.biomeDatabase();
+  if (!liquidsDatabase)
+    throw StarException("generateTerrestrialWorldParameters requires liquids database service");
+  if (!biomeDatabase)
+    throw StarException("generateTerrestrialWorldParameters requires biome database service");
 
   auto terrestrialConfig = assets->json("/terrestrial_worlds.config");
 
@@ -513,10 +500,10 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr 
       auto caveLiquidSeedDensityRange = jsonToVec2F(regionConfig.get("caveLiquidSeedDensityRange"));
       region.caveLiquid = liquidsDatabase->liquidId(*caveLiquid);
       region.caveLiquidSeedDensity = staticRandomFloatRange(caveLiquidSeedDensityRange[0],
-          caveLiquidSeedDensityRange[1],
-          seed,
-          "caveLiquidSeedDensity",
-          layerName.utf8Ptr());
+                                                            caveLiquidSeedDensityRange[1],
+                                                            seed,
+                                                            "caveLiquidSeedDensity",
+                                                            layerName.utf8Ptr());
     } else {
       region.caveLiquid = EmptyLiquidId;
       region.caveLiquidSeedDensity = 0.0f;
@@ -627,8 +614,8 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr 
   parameters->hueShift = biomeDatabase->biomeHueShift(parameters->primaryBiome, surfaceBiomeSeed);
 
   parameters->primarySurfaceLiquid = surfaceLayer.primaryRegion.oceanLiquid != EmptyLiquidId
-      ? surfaceLayer.primaryRegion.oceanLiquid
-      : surfaceLayer.primaryRegion.caveLiquid;
+    ? surfaceLayer.primaryRegion.oceanLiquid
+    : surfaceLayer.primaryRegion.caveLiquid;
 
   parameters->skyColoring = biomeDatabase->biomeSkyColoring(parameters->primaryBiome, seed);
   parameters->dayLength = staticRandomFloatRange(dayLengthRange[0], dayLengthRange[1], seed, "DayLength");
@@ -648,10 +635,6 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(AssetsConstPtr 
   parameters->coreLayer = readLayer("core").take();
 
   return parameters;
-}
-
-AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed) {
-  return generateAsteroidsWorldParameters(worldParameterAssets(), seed);
 }
 
 AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr assets, uint64_t seed) {
@@ -683,10 +666,6 @@ AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(AssetsConstPtr asse
   parameters->ambientLightLevel = jsonToColor(asteroidsConfig.get("ambientLightLevel"));
 
   return parameters;
-}
-
-FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String const& dungeonWorldName) {
-  return generateFloatingDungeonWorldParameters(worldParameterAssets(), dungeonWorldName);
 }
 
 FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(AssetsConstPtr assets, String const& dungeonWorldName) {
@@ -735,4 +714,4 @@ FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(AssetsC
   return parameters;
 }
 
-}
+}// namespace Star

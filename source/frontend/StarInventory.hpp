@@ -34,11 +34,12 @@ struct InventoryPaneServices {
   TechDatabaseConstPtr techDatabase;
   ObjectDatabaseConstPtr objectDatabase;
   StatusEffectDatabaseConstPtr statusEffectDatabase;
+  GuiContext& guiContext;
 };
 
 class InventoryPane : public Pane {
 public:
-  InventoryPane(MainInterface* parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services);
+  InventoryPane(MainInterface& parent, PlayerPtr player, ContainerInteractorPtr containerInteractor, InventoryPaneServices services);
 
   void displayed() override;
   PanePtr createTooltip(Vec2I const& screenPosition) override;
@@ -58,7 +59,7 @@ protected:
   void selectTab(String const& selected);
 
 private:
-  MainInterface* m_parent;
+  MainInterface& m_parent;
   PlayerPtr m_player;
   ContainerInteractorPtr m_containerInteractor;
   AssetsConstPtr m_assets;

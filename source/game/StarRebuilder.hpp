@@ -1,6 +1,7 @@
 #pragma once
 #include "StarAssets.hpp"
 #include "StarJson.hpp"
+#include "StarLuaRoot.hpp"
 #include "StarThread.hpp"
 
 namespace Star {
@@ -11,7 +12,7 @@ using LuaRootPtr = SharedPtr<LuaRoot>;
 
 class Rebuilder {
 public:
-  Rebuilder(AssetsConstPtr assets, String const& id);
+  Rebuilder(AssetsConstPtr assets, String const& id, LuaRootServices luaRootServices);
   ~Rebuilder() = default;
 
   using AttemptCallback = function<String(Json const&)>;

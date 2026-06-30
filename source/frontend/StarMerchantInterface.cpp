@@ -26,7 +26,8 @@ MerchantPane::MerchantPane(
     PlayerPtr player,
     Json const& settings,
     EntityId sourceEntityId,
-    MerchantPaneServices services) {
+    MerchantPaneServices services)
+  : Pane(services.guiContext) {
   m_worldClient = std::move(worldClient);
   m_player = std::move(player);
   m_assets = std::move(services.assets);
@@ -56,7 +57,7 @@ MerchantPane::MerchantPane(
 
   m_maxBuyCount = m_settings.getUInt("maxSpinCount", m_assets->json("/interface/windowconfig/crafting.config:default").getUInt("maxSpinCount", 1000));
 
-  GuiReader reader;
+  GuiReader reader(context());
   reader.registerCallback("spinCount.up", [=, this](Widget*) {
       if (m_selectedIndex != NPos) {
         if (m_buyCount < maxBuyCount())
@@ -147,12 +148,12 @@ PanePtr MerchantPane::createTooltip(Vec2I const& screenPosition) {
       if (entry->getChildAt(screenPosition)) {
         auto itemConfig = m_itemList.get(i);
         ItemPtr item = m_itemDatabase->itemShared(ItemDescriptor(itemConfig.get("item")));
-        return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
+        return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
       }
     }
   } else {
     if (auto item = m_itemGrid->itemAt(screenPosition))
-      return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase});
+      return ItemTooltipBuilder::buildItemTooltip(item, m_player, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
   }
   return {};
 }
@@ -194,7 +195,7 @@ ItemPtr MerchantPane::addItems(ItemPtr const& items) {
 void MerchantPane::swapSlot() {
   ItemPtr source = m_player->inventory()->swapSlotItem();
   auto inv = m_player->inventory();
-  if (context()->shiftHeld()) {
+  if (context().shiftHeld()) {
     if (m_itemGrid->selectedItem()) {
       auto remainder = inv->addItems(m_itemBag->takeItems(m_itemGrid->selectedIndex()));
       if (remainder && !remainder->empty())
@@ -334,7 +335,7 @@ void MerchantPane::buy() {
     if (m_sourceEntityId != NullEntityId)
       m_worldClient->sendEntityMessage(m_sourceEntityId, "onBuy", {buySummary});
 
-    auto& guiContext = GuiContext::singleton();
+    auto& guiContext = context();
     guiContext.playAudio(m_assets->json("/merchant.config:buySound").toString());
 
     buildItemList();
@@ -365,7 +366,7 @@ void MerchantPane::sell() {
     m_itemBag->clearItems();
     updateSellTotal();
 
-    auto& guiContext = GuiContext::singleton();
+    auto& guiContext = context();
     guiContext.playAudio(m_assets->json("/merchant.config:sellSound").toString());
   }
 }

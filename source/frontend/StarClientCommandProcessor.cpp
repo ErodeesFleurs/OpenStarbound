@@ -16,8 +16,11 @@
 
 namespace Star {
 
+ClientCommandProcessorServices::ClientCommandProcessorServices(GuiContext& guiContext, Input& input)
+  : guiContext(guiContext), input(input) {}
+
 ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient, CinematicPtr cinematicOverlay,
-  MainInterfacePaneManager* paneManager, StringMap<StringList> macroCommands, ClientCommandProcessorServices services)
+  MainInterfacePaneManager& paneManager, StringMap<StringList> macroCommands, ClientCommandProcessorServices services)
   : m_universeClient(std::move(universeClient)), m_cinematicOverlay(std::move(cinematicOverlay)),
   m_paneManager(paneManager),
   m_assets(std::move(services.assets)),
@@ -29,6 +32,9 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
   m_outputDirectory(std::move(services.outputDirectory)),
   m_reloadRoot(std::move(services.reloadRoot)),
   m_hotReloadRoot(std::move(services.hotReloadRoot)),
+  m_guiContext(services.guiContext),
+  m_input(services.input),
+  m_setClipboardImage(std::move(services.setClipboardImage)),
   m_macroCommands(std::move(macroCommands)) {
   if (!m_assets)
     throw StarException("ClientCommandProcessor requires assets service");
@@ -48,6 +54,8 @@ ClientCommandProcessor::ClientCommandProcessor(UniverseClientPtr universeClient,
     throw StarException("ClientCommandProcessor requires reload root service");
   if (!m_hotReloadRoot)
     throw StarException("ClientCommandProcessor requires hot reload root service");
+  if (!m_setClipboardImage)
+    throw StarException("ClientCommandProcessor requires clipboard image service");
 
   m_builtinCommands = {
     {"reload", [this](String const&) { return reload(); }},
@@ -97,9 +105,9 @@ bool ClientCommandProcessor::adminCommandAllowed() const {
 String ClientCommandProcessor::previewQuestPane(StringList const& arguments, function<PanePtr(QuestPtr)> createPane) {
   Maybe<String> templateId = {};
   templateId = arguments[0];
-  if (auto quest = createPreviewQuest(*templateId, arguments.at(1), arguments.at(2), m_universeClient->mainPlayer().get())) {
+  if (auto quest = createPreviewQuest(*templateId, arguments.at(1), arguments.at(2), *m_universeClient->mainPlayer())) {
     auto pane = createPane(quest);
-    m_paneManager->displayPane(PaneLayer::ModalWindow, pane);
+    m_paneManager.displayPane(PaneLayer::ModalWindow, pane);
     return "Previewed quest";
   }
   return "No such quest";
@@ -108,7 +116,7 @@ String ClientCommandProcessor::previewQuestPane(StringList const& arguments, fun
 StringList ClientCommandProcessor::handleCommand(String const& commandLine, bool userInput) {
   Maybe<Input::ClipboardUnlock> unlock;
   if (userInput) // allow clipboard usage during this code
-    unlock = Input::singleton().unlockClipboard();
+    unlock = m_input.unlockClipboard();
   try {
     if (!commandLine.beginsWith("/"))
       throw StarException("ClientCommandProcessor expected command, does not start with '/'");
@@ -275,7 +283,7 @@ String ClientCommandProcessor::startQuest(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   auto questArc = QuestArcDescriptor::fromJson(Json::parseSequence(arguments.at(0)).get(0));
-  m_universeClient->questManager()->offer(make_shared<Quest>(m_universeClient->questManager()->assets(), questArc, 0, m_universeClient->mainPlayer().get(), m_universeClient->questManager()->itemDatabase(), m_universeClient->questManager()->objectDatabase(), m_universeClient->questManager()->questTemplateDatabase(), m_universeClient->questManager()->versioningDatabase()));
+  m_universeClient->questManager()->offer(make_shared<Quest>(m_universeClient->questManager()->assets(), questArc, 0, *m_universeClient->mainPlayer(), m_universeClient->questManager()->itemDatabase(), m_universeClient->questManager()->objectDatabase(), m_universeClient->questManager()->questTemplateDatabase(), m_universeClient->questManager()->versioningDatabase()));
   return "Quest started";
 }
 
@@ -303,7 +311,7 @@ String ClientCommandProcessor::previewNewQuest(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
+    return make_shared<NewQuestInterface>(m_universeClient->questManager(), quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   });
 }
 
@@ -313,7 +321,7 @@ String ClientCommandProcessor::previewQuestComplete(String const& argumentsStrin
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{}, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
+    return make_shared<QuestCompleteInterface>(quest, m_universeClient->mainPlayer(), CinematicPtr{}, QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   });
 }
 
@@ -323,7 +331,7 @@ String ClientCommandProcessor::previewQuestFailed(String const& argumentsString)
     return "You must be an admin to use this command.";
 
   return previewQuestPane(arguments, [this](QuestPtr const& quest) {
-    return make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase});
+    return make_shared<QuestFailedInterface>(quest, m_universeClient->mainPlayer(), QuestInterfaceServices{m_assets, m_objectDatabase, m_statusEffectDatabase, m_guiContext});
   });
 }
 
@@ -449,7 +457,7 @@ String ClientCommandProcessor::swap(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
 
   if (arguments.size() == 0) {
-    m_paneManager->displayRegisteredPane(MainInterfacePanes::CharacterSwap);
+    m_paneManager.displayRegisteredPane(MainInterfacePanes::CharacterSwap);
     return "";
   }
 
@@ -624,7 +632,7 @@ String ClientCommandProcessor::render(String const& path) {
   file->writeFull(buffer->ptr(), buffer->size());
   file->close();
   auto fullPath = File::fullPath(outputPath);
-  GuiContext::singleton().setClipboardImage(*image, &buffer->data(), &fullPath);
+  m_setClipboardImage(*image, &buffer->data(), &fullPath);
   return strf("Saved '{}.png' ({}x{}) and copied to clipboard", outputName, image->width(), image->height());
 }
 

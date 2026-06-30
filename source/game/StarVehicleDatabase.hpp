@@ -1,20 +1,27 @@
 #pragma once
 
-#include "StarJson.hpp"
-#include "StarVehicle.hpp"
 #include "StarAssets.hpp"
+#include "StarJson.hpp"
+#include "StarLuaRoot.hpp"
+#include "StarVehicle.hpp"
 
 namespace Star {
 
 class Rebuilder;
 using RebuilderPtr = SharedPtr<Rebuilder>;
+class ParticleDatabase;
+using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 
-struct VehicleDatabaseExceptionTag { static constexpr char const* typeName = "VehicleDatabaseException"; };
+struct VehicleDatabaseExceptionTag {
+  static constexpr char const* typeName = "VehicleDatabaseException";
+};
 using VehicleDatabaseException = TypedException<StarException, VehicleDatabaseExceptionTag>;
 
 class VehicleDatabase {
 public:
-  VehicleDatabase(AssetsConstPtr assets);
+  VehicleDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, LuaRootServices luaRootServices);
 
   VehiclePtr create(String const& vehicleName, Json const& extraConfig = Json()) const;
 
@@ -26,10 +33,12 @@ public:
 
 private:
   AssetsConstPtr m_assets;
+  ParticleDatabaseConstPtr m_particleDatabase;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   StringMap<pair<String, Json>> m_vehicles;
 
   mutable RecursiveMutex m_luaMutex;
   RebuilderPtr m_rebuilder;
 };
 
-}
+}// namespace Star

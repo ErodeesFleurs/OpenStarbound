@@ -18,16 +18,16 @@ EntitySplashConfig::EntitySplashConfig(Json const& config, AssetsConstPtr assets
   splashParticleVariance = Particle(config.get("splashParticleVariance").toObject(), "/", assets);
 }
 
-List<Particle> EntitySplashConfig::doSplash(Vec2F position, Vec2F velocity, World* world) const {
+List<Particle> EntitySplashConfig::doSplash(Vec2F position, Vec2F velocity, World& world) const {
   List<Particle> particles;
   if (std::fabs(velocity[1]) >= splashSpeedMin) {
-    auto liquidDb = world->liquidsDatabase();
+    auto liquidDb = world.liquidsDatabase();
     Vec2I bottom = Vec2I::floor(position + splashBottomSensor);
     Vec2I top = Vec2I::floor(position + splashTopSensor);
-    if (world->liquidLevel(bottom).level - world->liquidLevel(top).level >= splashMinWaterLevel) {
+    if (world.liquidLevel(bottom).level - world.liquidLevel(top).level >= splashMinWaterLevel) {
       LiquidId liquidType;
-      auto bottomLiquid = world->liquidLevel(bottom);
-      auto topLiquid = world->liquidLevel(top);
+      auto bottomLiquid = world.liquidLevel(bottom);
+      auto topLiquid = world.liquidLevel(top);
       if (bottomLiquid.level > 0 && static_cast<int>(bottomLiquid.liquid))
         liquidType = bottomLiquid.liquid;
       else

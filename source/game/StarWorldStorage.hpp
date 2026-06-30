@@ -55,28 +55,28 @@ struct WorldGeneratorFacade {
   virtual ~WorldGeneratorFacade() = default;
 
   // Should bring a given sector from generationLevel - 1 to generationLevel.
-  virtual void generateSectorLevel(WorldStorage* storage, Sector const& sector, SectorGenerationLevel generationLevel) = 0;
+  virtual void generateSectorLevel(WorldStorage& storage, Sector const& sector, SectorGenerationLevel generationLevel) = 0;
 
-  virtual void sectorLoadLevelChanged(WorldStorage* storage, Sector const& sector, SectorLoadLevel loadLevel) = 0;
+  virtual void sectorLoadLevelChanged(WorldStorage& storage, Sector const& sector, SectorLoadLevel loadLevel) = 0;
 
   // Perform terraforming operations (biome reapplication) on the given sector
-  virtual void terraformSector(WorldStorage* storage, Sector const& sector) = 0;
+  virtual void terraformSector(WorldStorage& storage, Sector const& sector) = 0;
 
   // Called after an entity is loaded, but before the entity is added to the
   // EntityMap.
-  virtual void initEntity(WorldStorage* storage, EntityId newEntityId, EntityPtr const& entity) = 0;
+  virtual void initEntity(WorldStorage& storage, EntityId newEntityId, EntityPtr const& entity) = 0;
 
   // Called after the entity is removed from the entity map but before it is
   // stored.
-  virtual void destructEntity(WorldStorage* storage, EntityPtr const& entity) = 0;
+  virtual void destructEntity(WorldStorage& storage, EntityPtr const& entity) = 0;
 
   // Should return true if this entity should maintain the sector, false
   // otherwise.
-  virtual bool entityKeepAlive(WorldStorage* storage, EntityPtr const& entity) const = 0;
+  virtual bool entityKeepAlive(WorldStorage& storage, EntityPtr const& entity) const = 0;
 
   // Should return true if this entity should be stored along with the world,
   // false otherwise.
-  virtual bool entityPersistent(WorldStorage* storage, EntityPtr const& entity) const = 0;
+  virtual bool entityPersistent(WorldStorage& storage, EntityPtr const& entity) const = 0;
 
   // Queues up a microdungeon. Fulfills the rpc promise with the position the
   // microdungeon was placed at

@@ -7,7 +7,7 @@
 
 namespace Star {
 
-StarWorldClientLighting::StarWorldClientLighting(WorldClient* worldClient)
+StarWorldClientLighting::StarWorldClientLighting(WorldClient& worldClient)
   : m_worldClient(worldClient) {}
 
 bool StarWorldClientLighting::fullBright() const {
@@ -35,18 +35,18 @@ void StarWorldClientLighting::setInteractiveHighlightMode(bool enabled) {
 }
 
 float StarWorldClientLighting::lightLevel(Vec2F const& pos) const {
-  if (!m_worldClient->inWorld())
+  if (!m_worldClient.inWorld())
     return 0.0f;
-  return WorldImpl::lightLevel(m_worldClient->m_tileArray, m_worldClient->m_entityMap, m_worldClient->m_geometry, m_worldClient->m_worldTemplate, m_worldClient->m_sky, m_lightIntensityCalculator, pos, m_worldClient->m_materialDatabase, m_worldClient->m_liquidsDatabase);
+  return WorldImpl::lightLevel(m_worldClient.m_tileArray, m_worldClient.m_entityMap, m_worldClient.m_geometry, m_worldClient.m_worldTemplate, m_worldClient.m_sky, m_lightIntensityCalculator, pos, m_worldClient.m_materialDatabase, m_worldClient.m_liquidsDatabase);
 }
 
 bool StarWorldClientLighting::waitForLighting(WorldRenderData* renderData) {
   MutexLocker prepLocker(m_lightMapPrepMutex);
   MutexLocker lightMapLocker(m_lightMapMutex);
   if (renderData && !m_lightMap.empty()) {
-    for (auto& previewTile : m_worldClient->m_previewTiles) {
+    for (auto& previewTile : m_worldClient.m_previewTiles) {
       if (previewTile.updateLight) {
-        Vec2I lightArrayPos = m_worldClient->m_geometry.diff(previewTile.position, m_lightMinPosition);
+        Vec2I lightArrayPos = m_worldClient.m_geometry.diff(previewTile.position, m_lightMinPosition);
         if (lightArrayPos[0] >= 0 && lightArrayPos[0] < static_cast<int>(m_lightMap.width())
          && lightArrayPos[1] >= 0 && lightArrayPos[1] < static_cast<int>(m_lightMap.height()))
           m_lightMap.set(lightArrayPos[0], lightArrayPos[1], Color::v3bToFloat(previewTile.light));
@@ -61,12 +61,12 @@ bool StarWorldClientLighting::waitForLighting(WorldRenderData* renderData) {
 
 void StarWorldClientLighting::lightingTileGather() {
   int64_t start = Time::monotonicMicroseconds();
-  Vec3F environmentLight = m_worldClient->m_sky->environmentLight().toRgbF();
-  float undergroundLevel = m_worldClient->m_worldTemplate->undergroundLevel();
-  auto liquidsDatabase = m_worldClient->m_liquidsDatabase;
-  auto materialDatabase = m_worldClient->m_materialDatabase;
+  Vec3F environmentLight = m_worldClient.m_sky->environmentLight().toRgbF();
+  float undergroundLevel = m_worldClient.m_worldTemplate->undergroundLevel();
+  auto liquidsDatabase = m_worldClient.m_liquidsDatabase;
+  auto materialDatabase = m_worldClient.m_materialDatabase;
 
-  m_worldClient->m_tileArray->tileEvalColumnsParallel(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
+  m_worldClient.m_tileArray->tileEvalColumnsParallel(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
     size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
     for (size_t y = 0; y < ySize; ++y) {
       auto& tile = column[y];
@@ -96,8 +96,8 @@ void StarWorldClientLighting::lightingCalc() {
   RectI lightRange = m_pendingLightRange;
   List<LightSource> lights = std::move(m_pendingLights);
   List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_pendingParticleLights);
-  bool newLighting = m_worldClient->m_configuration->get("newLighting").optBool().value(true);
-  bool monochrome = m_worldClient->m_configuration->get("monochromeLighting").toBool();
+  bool newLighting = m_worldClient.m_configuration->get("newLighting").optBool().value(true);
+  bool monochrome = m_worldClient.m_configuration->get("monochromeLighting").toBool();
   m_lightingCalculator.setParameters(m_lightingConfig.set("pointAdditive", newLighting));
   m_lightingCalculator.setMonochrome(monochrome);
   m_lightingCalculator.begin(lightRange);
@@ -106,7 +106,7 @@ void StarWorldClientLighting::lightingCalc() {
   prepLocker.unlock();
 
   for (auto const& light : lights) {
-    Vec2F position = m_worldClient->m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
+    Vec2F position = m_worldClient.m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
     if (light.type == LightType::Spread)
       m_lightingCalculator.addSpreadLight(position, light.color);
     else {
@@ -124,7 +124,7 @@ void StarWorldClientLighting::lightingCalc() {
   }
 
   for (auto const& lightPair : particleLights) {
-    Vec2F position = m_worldClient->m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
+    Vec2F position = m_worldClient.m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
     m_lightingCalculator.addSpreadLight(position, lightPair.second);
   }
 

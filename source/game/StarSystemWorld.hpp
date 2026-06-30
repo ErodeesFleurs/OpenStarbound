@@ -138,7 +138,7 @@ class SystemObject {
 public:
   SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters = {});
   SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, double spawnTime, PatternedNameGeneratorConstPtr nameGenerator, JsonObject parameters = {});
-  SystemObject(SystemWorld* system, Json const& diskStore);
+  SystemObject(SystemWorld& system, Json const& diskStore);
 
   void init();
 
@@ -159,7 +159,7 @@ public:
   Maybe<CelestialOrbit> orbit() const;
 
   void clientUpdate(float dt);
-  void serverUpdate(SystemWorldServer* system, float dt);
+  void serverUpdate(SystemWorldServer& system, float dt);
 
   pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion, NetCompatibilityRules rules = {});
   void readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});
@@ -187,8 +187,8 @@ private:
 
 class SystemClientShip {
 public:
-  SystemClientShip(SystemWorld* world, Uuid uuid, float speed, SystemLocation const& position);
-  SystemClientShip(SystemWorld* world, Uuid uuid, SystemLocation const& position);
+  SystemClientShip(SystemWorld& world, Uuid uuid, float speed, SystemLocation const& position);
+  SystemClientShip(SystemWorld& world, Uuid uuid, SystemLocation const& position);
 
   Uuid uuid() const;
   Vec2F position() const;
@@ -202,7 +202,7 @@ public:
 
   // update is only called on master
   void clientUpdate(float dt);
-  void serverUpdate(SystemWorld* system, float dt);
+  void serverUpdate(SystemWorld& system, float dt);
 
   pair<ByteArray, uint64_t> writeNetState(uint64_t fromVersion, NetCompatibilityRules rules = {});
   void readNetState(ByteArray data, float interpolationTime, NetCompatibilityRules rules = {});

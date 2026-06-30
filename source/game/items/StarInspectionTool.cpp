@@ -7,8 +7,8 @@
 
 namespace Star {
 
-InspectionTool::InspectionTool(AssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(std::move(assets), config, directory, parameters) {
+InspectionTool::InspectionTool(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& parameters)
+  : Item(std::move(assets), std::move(imageMetadataDatabase), config, directory, parameters) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_lightPosition = jsonToVec2F(instanceValue("lightPosition"));
@@ -55,7 +55,7 @@ void InspectionTool::update(float, FireMode fireMode, bool, HashSet<MoveControlT
 }
 
 List<Drawable> InspectionTool::drawables() const {
-  return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -m_handPosition)};
+  return {Drawable::makeImage(m_image, 1.0f / TilePixels, true, -m_handPosition, Color::White, m_imageMetadataDatabase)};
 }
 
 List<LightSource> InspectionTool::lightSources() const {

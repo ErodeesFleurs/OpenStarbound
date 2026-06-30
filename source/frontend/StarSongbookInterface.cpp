@@ -10,7 +10,8 @@ namespace Star {
 
 String const SongPathPrefix = "/songs/";
 
-SongbookInterface::SongbookInterface(PlayerPtr player, SongbookInterfaceServices services) {
+SongbookInterface::SongbookInterface(PlayerPtr player, SongbookInterfaceServices services)
+  : Pane(services.guiContext) {
   m_player = std::move(player);
   m_assets = std::move(services.assets);
   m_registerReloadListener = std::move(services.registerReloadListener);
@@ -19,7 +20,7 @@ SongbookInterface::SongbookInterface(PlayerPtr player, SongbookInterfaceServices
   if (!m_registerReloadListener)
     throw StarException("SongbookInterface requires reload listener service");
 
-  GuiReader reader;
+  GuiReader reader(context());
 
   reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
   reader.registerCallback("btnPlay",

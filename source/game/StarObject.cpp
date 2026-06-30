@@ -1,31 +1,31 @@
 #include "StarObject.hpp"
-#include "StarDataStreamExtra.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarWorld.hpp"
-#include "StarLexicalCast.hpp"
-#include "StarRoot.hpp"
-#include "StarLogging.hpp"
-#include "StarDamageManager.hpp"
-#include "StarTreasure.hpp"
-#include "StarItemDrop.hpp"
-#include "StarItemDescriptor.hpp"
-#include "StarObjectDatabase.hpp"
-#include "StarMixer.hpp"
-#include "StarEntityRendering.hpp"
 #include "StarAssets.hpp"
 #include "StarConfigLuaBindings.hpp"
+#include "StarDamageManager.hpp"
+#include "StarDataStreamExtra.hpp"
 #include "StarEntityLuaBindings.hpp"
-#include "StarRootLuaBindings.hpp"
-#include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarEntityRendering.hpp"
+#include "StarItemDescriptor.hpp"
+#include "StarItemDrop.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarLogging.hpp"
 #include "StarLuaGameConverters.hpp"
-#include "StarParticleDatabase.hpp"
 #include "StarMaterialDatabase.hpp"
+#include "StarMixer.hpp"
+#include "StarNetworkedAnimatorLuaBindings.hpp"
+#include "StarObjectDatabase.hpp"
+#include "StarParticleDatabase.hpp"
+#include "StarRoot.hpp"
+#include "StarRootLuaBindings.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
+#include "StarTreasure.hpp"
+#include "StarWorld.hpp"
 
 namespace Star {
 
 Object::Object(ObjectConfigConstPtr config, Json const& parameters)
-  : m_scriptedAnimator(config->assets) {
+    : m_scriptedAnimator(config->assets) {
   m_config = config;
   if (!parameters.isNull())
     m_parameters.reset(parameters.toObject());
@@ -59,7 +59,7 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters)
   m_currentFrame = -1;
 
   if (m_config->animationConfig)
-    m_networkedAnimator = make_shared<NetworkedAnimator>(m_config->animationConfig, m_config->path);
+    m_networkedAnimator = make_shared<NetworkedAnimator>(m_config->animationConfig, m_config->path, m_config->assets, m_config->imageMetadataDatabase, m_config->particleDatabase);
   else
     m_networkedAnimator = make_shared<NetworkedAnimator>();
 
@@ -88,7 +88,6 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters)
   m_imageKeys.set("color", colorName);
   for (auto const& p : configValue("imageKeys", JsonObject()).iterateObject())
     m_imageKeys.set(p.first, p.second.toString());
-
 
   setUniqueId(configValue("uniqueId").optString());
 
@@ -184,8 +183,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
     m_colorSuffix = std::move(colorSuffix);
     m_colorDirectives = std::move(colorDirectives);
-  }
-  else
+  } else
     m_colorDirectives = m_colorSuffix = "";
 
   m_directives = "";
@@ -220,22 +218,21 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
 
     m_scriptComponent.addCallbacks("object", makeObjectCallbacks());
     m_scriptComponent.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
-    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(m_networkedAnimator.get()));
-    m_scriptComponent.init(world);
+    m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+    m_scriptComponent.addCallbacks("animator", LuaBindings::makeNetworkedAnimatorCallbacks(*m_networkedAnimator));
+    m_scriptComponent.init(*world);
   }
 
   if (world->isClient()) {
     m_scriptedAnimator.setScripts(m_config->animationScripts);
 
-    m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(m_networkedAnimator.get(),
-      [this](String const& name, Json const& defaultValue) -> Json {
-        return m_scriptedAnimationParameters.value(name, defaultValue);
-      }));
+    m_scriptedAnimator.addCallbacks("animationConfig", LuaBindings::makeScriptedAnimatorCallbacks(*m_networkedAnimator, [this](String const& name, Json const& defaultValue) -> Json {
+                                      return m_scriptedAnimationParameters.value(name, defaultValue);
+                                    }));
     m_scriptedAnimator.addCallbacks("objectAnimator", makeAnimatorObjectCallbacks());
     m_scriptedAnimator.addCallbacks("config", LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return configValue(name, def); }));
-    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(this));
-    m_scriptedAnimator.init(world);
+    m_scriptedAnimator.addCallbacks("entity", LuaBindings::makeEntityCallbacks(*this));
+    m_scriptedAnimator.init(*world);
   }
 
   m_xTilePosition.set(world->geometry().xwrap(static_cast<int>(m_xTilePosition.get())));
@@ -249,7 +246,7 @@ void Object::init(World* world, EntityId entityId, EntityMode mode) {
   m_animationPosition = jsonToVec2F(configValue("animationPosition", JsonArray{0, 0})) / TilePixels;
 
   m_networkedAnimator->setFlipped(false);
-  m_animationCenterLine = configValue("animationCenterLine", Drawable::boundBoxAll(m_networkedAnimator->drawables(), false).center()[0]).toFloat();
+  m_animationCenterLine = configValue("animationCenterLine", Drawable::boundBoxAll(m_networkedAnimator->drawables(), false, m_config->imageMetadataDatabase).center()[0]).toFloat();
   m_networkedAnimator->setFlipped(direction() == Direction::Left, m_animationCenterLine);
 
   // Don't animate the initial state when first spawned IF you're dumb, which by default
@@ -592,9 +589,7 @@ Maybe<String> Object::inspectionLogName() const {
 }
 
 Maybe<String> Object::inspectionDescription(String const& species) const {
-  return configValue("inspectionDescription").optString()
-    .orMaybe(configValue(strf("{}Description", species)).optString())
-    .value(description());
+  return configValue("inspectionDescription").optString().orMaybe(configValue(strf("{}Description", species)).optString()).value(description());
 }
 
 String Object::category() const {
@@ -614,7 +609,7 @@ List<Drawable> Object::cursorHintDrawables() const {
     if (m_direction.get() == Direction::Left)
       placementImage += "?flipx";
     Drawable imageDrawable = Drawable::makeImage(AssetPath::relativeTo(m_config->path, placementImage),
-        1.0 / TilePixels, false, jsonToVec2F(configValue("placementImagePosition", jsonFromVec2F(Vec2F()))) / TilePixels);
+                                                 1.0 / TilePixels, false, jsonToVec2F(configValue("placementImagePosition", jsonFromVec2F(Vec2F()))) / TilePixels);
     return {imageDrawable};
   } else {
     if (m_orientationIndex != NPos) {
@@ -746,9 +741,8 @@ Json Object::writeStoredData() const {
       connections.append(JsonArray{jsonFromVec2I(node.entityLocation), node.nodeIndex});
 
     inputNodes.append(JsonObject{
-        {"connections", std::move(connections)},
-        {"state", in.state.get()}
-      });
+      {"connections", std::move(connections)},
+      {"state", in.state.get()}});
   }
 
   JsonArray outputNodes;
@@ -759,9 +753,8 @@ Json Object::writeStoredData() const {
       connections.append(JsonArray{jsonFromVec2I(node.entityLocation), node.nodeIndex});
 
     outputNodes.append(JsonObject{
-        {"connections", std::move(connections)},
-        {"state", in.state.get()}
-      });
+      {"connections", std::move(connections)},
+      {"state", in.state.get()}});
   }
 
   return JsonObject{
@@ -772,8 +765,7 @@ Json Object::writeStoredData() const {
     {"scriptStorage", m_scriptComponent.getScriptStorage()},
     {"interactive", m_interactive.get()},
     {"inputWireNodes", std::move(inputNodes)},
-    {"outputWireNodes", std::move(outputNodes)}
-  };
+    {"outputWireNodes", std::move(outputNodes)}};
 }
 
 void Object::breakObject(bool smash) {
@@ -816,7 +808,7 @@ String Object::nodeIcon(WireNode wireNode) const {
     return m_outputNodes.at(wireNode.nodeIndex).icon;
 }
 
-Color Object::nodeColor(WireNode wireNode) const { // only output nodes determine color
+Color Object::nodeColor(WireNode wireNode) const {// only output nodes determine color
   if (wireNode.direction == WireDirection::Input)
     return m_inputNodes.at(wireNode.nodeIndex).color;
   else
@@ -830,22 +822,22 @@ void Object::addNodeConnection(WireNode wireNode, WireConnection nodeConnection)
       return;
     }
     m_inputNodes.at(wireNode.nodeIndex).connections.update([&](auto& list) {
-        if (list.contains(nodeConnection))
-          return false;
-        list.append(nodeConnection);
-        return true;
-      });
+      if (list.contains(nodeConnection))
+        return false;
+      list.append(nodeConnection);
+      return true;
+    });
   } else {
     if (m_outputNodes.empty()) {
       Logger::info("Tried to add wire connection to output node on object with no output nodes");
       return;
     }
     m_outputNodes.at(wireNode.nodeIndex).connections.update([&](auto& list) {
-        if (list.contains(nodeConnection))
-          return false;
-        list.append(nodeConnection);
-        return true;
-      });
+      if (list.contains(nodeConnection))
+        return false;
+      list.append(nodeConnection);
+      return true;
+    });
   }
   m_scriptComponent.invoke("onNodeConnectionChange");
 }
@@ -853,12 +845,12 @@ void Object::addNodeConnection(WireNode wireNode, WireConnection nodeConnection)
 void Object::removeNodeConnection(WireNode wireNode, WireConnection nodeConnection) {
   if (wireNode.direction == WireDirection::Input) {
     m_inputNodes.at(wireNode.nodeIndex).connections.update([&](auto& list) {
-        return list.remove(nodeConnection);
-      });
+      return list.remove(nodeConnection);
+    });
   } else {
     m_outputNodes.at(wireNode.nodeIndex).connections.update([&](auto& list) {
-        return list.remove(nodeConnection);
-      });
+      return list.remove(nodeConnection);
+    });
   }
   m_scriptComponent.invoke("onNodeConnectionChange");
 }
@@ -872,10 +864,7 @@ void Object::evaluate(WireCoordinator* coordinator) {
 
     if (in.state.get() != nextState) {
       in.state.set(nextState);
-      m_scriptComponent.invoke("onInputNodeChange", JsonObject{
-          {"node", i},
-          {"level", nextState}
-        });
+      m_scriptComponent.invoke("onInputNodeChange", JsonObject{{"node", i}, {"level", nextState}});
     }
   }
 }
@@ -936,184 +925,184 @@ LuaCallbacks Object::makeObjectCallbacks() {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("name", [this]() {
-      return name();
-    });
+    return name();
+  });
 
   callbacks.registerCallback("direction", [this]() {
-      return numericalDirection(direction());
-    });
+    return numericalDirection(direction());
+  });
 
   callbacks.registerCallback("position", [this]() {
-      return position();
-    });
+    return position();
+  });
 
   callbacks.registerCallback("setInteractive", [this](bool interactive) {
-      m_interactive.set(interactive);
-    });
+    m_interactive.set(interactive);
+  });
 
   callbacks.registerCallbackWithSignature<Maybe<String>>("uniqueId", [this]() { return uniqueId(); });
   callbacks.registerCallbackWithSignature<void, Maybe<String>>("setUniqueId", [this](Maybe<String> const& id) { return setUniqueId(id); });
 
   callbacks.registerCallback("boundBox", [this]() {
-      return metaBoundBox().translated(position());
-    });
+    return metaBoundBox().translated(position());
+  });
 
   callbacks.registerCallback("spaces", [this]() {
-      return spaces();
-    });
+    return spaces();
+  });
 
   callbacks.registerCallback("setProcessingDirectives", [this](String const& directives) {
-      m_networkedAnimator->setProcessingDirectives(directives);
-    });
+    m_networkedAnimator->setProcessingDirectives(directives);
+  });
 
   callbacks.registerCallback("setSoundEffectEnabled", [this](bool soundEffectEnabled) {
-      m_soundEffectEnabled.set(soundEffectEnabled);
-    });
+    m_soundEffectEnabled.set(soundEffectEnabled);
+  });
 
   callbacks.registerCallback("smash", [this](Maybe<bool> smash) {
-      breakObject(smash.value(false));
-    });
+    breakObject(smash.value(false));
+  });
 
   callbacks.registerCallback("level", [this]() {
-      return configValue("level", this->world()->threatLevel());
-    });
+    return configValue("level", this->world()->threatLevel());
+  });
 
   callbacks.registerCallback("toAbsolutePosition", [this](Vec2F const& p) {
-      return p + position();
-    });
+    return p + position();
+  });
 
   callbacks.registerCallback("say", [this](String line, Maybe<StringMap<String>> const& tags, Json const& config) {
-      if (tags)
-        line = line.replaceTags(*tags, false);
+    if (tags)
+      line = line.replaceTags(*tags, false);
 
-      if (!line.empty()) {
-        addChatMessage(line, config);
-        return true;
-      }
+    if (!line.empty()) {
+      addChatMessage(line, config);
+      return true;
+    }
 
-      return false;
-    });
+    return false;
+  });
 
   callbacks.registerCallback("sayPortrait", [this](String line, String portrait, Maybe<StringMap<String>> const& tags, Json const& config) {
-      if (tags)
-        line = line.replaceTags(*tags, false);
+    if (tags)
+      line = line.replaceTags(*tags, false);
 
-      if (!line.empty()) {
-        addChatMessage(line, config, portrait);
-        return true;
-      }
+    if (!line.empty()) {
+      addChatMessage(line, config, portrait);
+      return true;
+    }
 
-      return false;
-    });
+    return false;
+  });
 
   callbacks.registerCallback("isTouching", [this](EntityId entityId) {
-      if (auto entity = this->world()->entity(entityId))
-        return !entity->collisionArea().overlap(volume().boundBox()).isEmpty();
-      return false;
-    });
+    if (auto entity = this->world()->entity(entityId))
+      return !entity->collisionArea().overlap(volume().boundBox()).isEmpty();
+    return false;
+  });
 
   callbacks.registerCallback("setLightColor", [this](Color const& color) {
-      m_lightSourceColor.set(color);
-    });
+    m_lightSourceColor.set(color);
+  });
 
   callbacks.registerCallback("getLightColor", [this]() {
-      return m_lightSourceColor.get();
-    });
+    return m_lightSourceColor.get();
+  });
 
   callbacks.registerCallback("inputNodeCount", [this]() {
-      return m_inputNodes.size();
-    });
+    return m_inputNodes.size();
+  });
 
   callbacks.registerCallback("outputNodeCount", [this]() {
-      return m_outputNodes.size();
-    });
+    return m_outputNodes.size();
+  });
 
   callbacks.registerCallback("getInputNodePosition", [this](size_t i) {
-      return m_inputNodes.at(i).position;
-    });
+    return m_inputNodes.at(i).position;
+  });
 
   callbacks.registerCallback("getOutputNodePosition", [this](size_t i) {
-      return m_outputNodes.at(i).position;
-    });
+    return m_outputNodes.at(i).position;
+  });
 
   callbacks.registerCallback("getInputNodeLevel", [this](size_t i) {
-      return m_inputNodes.at(i).state.get();
-    });
+    return m_inputNodes.at(i).state.get();
+  });
 
   callbacks.registerCallback("getOutputNodeLevel", [this](size_t i) {
-      return m_outputNodes.at(i).state.get();
-    });
+    return m_outputNodes.at(i).state.get();
+  });
 
   callbacks.registerCallback("isInputNodeConnected", [this](size_t i) {
-      return !m_inputNodes.at(i).connections.get().empty();
-    });
+    return !m_inputNodes.at(i).connections.get().empty();
+  });
 
   callbacks.registerCallback("isOutputNodeConnected", [this](size_t i) {
-      return !m_outputNodes.at(i).connections.get().empty();
-    });
+    return !m_outputNodes.at(i).connections.get().empty();
+  });
 
   callbacks.registerCallback("getInputNodeIds", [this](LuaEngine& engine, size_t i) {
-      auto result = engine.createTable();
-      for (auto const& conn : m_inputNodes.at(i).connections.get()) {
-        for (auto const& entity : worldPtr()->atTile<WireEntity>(conn.entityLocation))
-          result.set(entity->entityId(), conn.nodeIndex);
-      }
-      return result;
-    });
+    auto result = engine.createTable();
+    for (auto const& conn : m_inputNodes.at(i).connections.get()) {
+      for (auto const& entity : worldPtr()->atTile<WireEntity>(conn.entityLocation))
+        result.set(entity->entityId(), conn.nodeIndex);
+    }
+    return result;
+  });
 
   callbacks.registerCallback("getOutputNodeIds", [this](LuaEngine& engine, size_t i) {
-      auto result = engine.createTable();
-      for (auto const& conn : m_outputNodes.at(i).connections.get()) {
-        for (auto const& entity : worldPtr()->atTile<WireEntity>(conn.entityLocation))
-          result.set(entity->entityId(), conn.nodeIndex);
-      }
-      return result;
-    });
+    auto result = engine.createTable();
+    for (auto const& conn : m_outputNodes.at(i).connections.get()) {
+      for (auto const& entity : worldPtr()->atTile<WireEntity>(conn.entityLocation))
+        result.set(entity->entityId(), conn.nodeIndex);
+    }
+    return result;
+  });
 
   callbacks.registerCallback("setOutputNodeLevel", [this](size_t i, bool l) {
-      m_outputNodes.at(i).state.set(l);
-    });
+    m_outputNodes.at(i).state.set(l);
+  });
 
   callbacks.registerCallback("setAllOutputNodes", [this](bool l) {
-      for (auto& out : m_outputNodes)
-        out.state.set(l);
-    });
+    for (auto& out : m_outputNodes)
+      out.state.set(l);
+  });
 
   callbacks.registerCallback("setOfferedQuests", [this](Maybe<JsonArray> const& offeredQuests) {
-      m_offeredQuests.set(offeredQuests.value().transformed(&QuestArcDescriptor::fromJson));
-    });
+    m_offeredQuests.set(offeredQuests.value().transformed(&QuestArcDescriptor::fromJson));
+  });
 
   callbacks.registerCallback("setTurnInQuests", [this](Maybe<StringList> const& turnInQuests) {
-      m_turnInQuests.set(StringSet::from(turnInQuests.value()));
-    });
+    m_turnInQuests.set(StringSet::from(turnInQuests.value()));
+  });
 
   callbacks.registerCallback("setConfigParameter", [this](String key, Json value) {
-      m_parameters.set(std::move(key), std::move(value));
-    });
+    m_parameters.set(std::move(key), std::move(value));
+  });
 
   callbacks.registerCallback("setAnimationParameter", [this](String key, Json value) {
-      m_scriptedAnimationParameters.set(std::move(key), std::move(value));
-    });
+    m_scriptedAnimationParameters.set(std::move(key), std::move(value));
+  });
 
   callbacks.registerCallback("setMaterialSpaces", [this](Maybe<JsonArray> const& newSpaces) {
-      List<MaterialSpace> materialSpaces;
-      auto materialDatabase = world()->materialDatabase();
-      for (auto space : newSpaces.value())
-        materialSpaces.append({jsonToVec2I(space.get(0)), materialDatabase->materialId(space.get(1).toString())});
-      m_materialSpaces.set(materialSpaces);
-    });
+    List<MaterialSpace> materialSpaces;
+    auto materialDatabase = world()->materialDatabase();
+    for (auto space : newSpaces.value())
+      materialSpaces.append({jsonToVec2I(space.get(0)), materialDatabase->materialId(space.get(1).toString())});
+    m_materialSpaces.set(materialSpaces);
+  });
 
   callbacks.registerCallback("setDamageSources", [this](Maybe<JsonArray> damageSources) {
-      m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
-    });
+    m_damageSources.set(damageSources.value().transformed(construct<DamageSource>()));
+  });
 
   callbacks.registerCallback("health", [this]() {
-      return m_health.get();
-    });
+    return m_health.get();
+  });
 
   callbacks.registerCallback("setHealth", [this](float health) {
-      m_health.set(health);
-    });
+    m_health.set(health);
+  });
 
   return callbacks;
 }
@@ -1122,16 +1111,16 @@ LuaCallbacks Object::makeAnimatorObjectCallbacks() {
   LuaCallbacks callbacks;
 
   callbacks.registerCallback("getParameter", [this](String const& name, Json const& def) {
-      return configValue(name, def);
-    });
+    return configValue(name, def);
+  });
 
   callbacks.registerCallback("direction", [this]() {
-      return numericalDirection(direction());
-    });
+    return numericalDirection(direction());
+  });
 
   callbacks.registerCallback("position", [this]() {
-      return position();
-    });
+    return position();
+  });
 
   return callbacks;
 }
@@ -1198,16 +1187,14 @@ List<DamageNotification> Object::applyDamage(DamageRequest const& damage) {
   float dmg = std::min(m_health.get(), damage.damage);
   m_health.set(m_health.get() - dmg);
 
-  return {{
-    damage.sourceEntityId,
-    entityId(),
-    position(),
-    damage.damage,
-    dmg,
-    m_health.get() <= 0 ? HitType::Kill : HitType::Hit,
-    damage.damageSourceKind,
-    m_config->damageMaterialKind
-  }};
+  return {{damage.sourceEntityId,
+           entityId(),
+           position(),
+           damage.damage,
+           dmg,
+           m_health.get() <= 0 ? HitType::Kill : HitType::Hit,
+           damage.damageSourceKind,
+           m_config->damageMaterialKind}};
 }
 
 RectF Object::interactiveBoundBox() const {
@@ -1227,7 +1214,7 @@ bool Object::isInteractive() const {
 InteractAction Object::interact(InteractRequest const& request) {
   Vec2F diff = world()->geometry().diff(request.sourcePosition, position());
   auto result = m_scriptComponent.invoke<Json>(
-      "onInteraction", JsonObject{{"source", JsonArray{diff[0], diff[1]}}, {"sourceId", request.sourceId}});
+    "onInteraction", JsonObject{{"source", JsonArray{diff[0], diff[1]}}, {"sourceId", request.sourceId}});
 
   if (result) {
     if (result->isNull())
@@ -1310,7 +1297,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
       auto& imagePart = drawable.imagePart();
       imagePart.image.directives.clear();
       String imagePath = AssetPath::join(imagePart.image);
-      if ((m_colorDirectives || !m_colorSuffix.empty()) && m_imageKeys.contains("color")) { // We had to leave color untouched despite separating its directives for server-side compatibility reasons, temporarily substr it in the image key
+      if ((m_colorDirectives || !m_colorSuffix.empty()) && m_imageKeys.contains("color")) {// We had to leave color untouched despite separating its directives for server-side compatibility reasons, temporarily substr it in the image key
         String& color = m_imageKeys.find("color")->second;
         String backup = std::move(color);
         color = backup.substr(0, backup.find('?'));
@@ -1330,8 +1317,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
           imagePart.addDirectives(m_colorDirectives);
         if (suffix != NPos)
           imagePart.addDirectives(m_colorSuffix + String(image.substr(suffix)).replaceTags(m_imageKeys, true, "default"));
-      }
-      else {
+      } else {
         imagePart.image = imagePath.replaceTags(m_imageKeys, true, "default");
         imagePart.image.directives = layer.imagePart().image.directives;
       }
@@ -1339,7 +1325,7 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
       imagePart.addDirectives(m_directives);
 
       if (orientation->flipImages)
-        drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
+        drawable.scale(Vec2F(-1, 1), drawable.boundBox(false, m_config->imageMetadataDatabase).center() - drawable.position);
 
       m_orientationDrawablesCache->second.append(std::move(drawable));
     }

@@ -5,8 +5,8 @@
 
 namespace Star {
 
-BlueprintItem::BlueprintItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
-  : Item(assets, config, directory, data), SwingableItem(config) {
+BlueprintItem::BlueprintItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data)
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, data), SwingableItem(config) {
   if (!assets)
     throw ItemException("BlueprintItem requires assets service");
 
@@ -15,12 +15,14 @@ BlueprintItem::BlueprintItem(AssetsConstPtr assets, Json const& config, String c
   m_requireEdgeTrigger = true;
   m_recipe = ItemDescriptor(instanceValue("recipe"));
 
-  m_recipeIconUnderlay = Drawable(assets->json("/blueprint.config:iconUnderlay"));
+  m_recipeIconUnderlay = Drawable(assets->json("/blueprint.config:iconUnderlay"), m_imageMetadataDatabase);
   m_inHandDrawable = {Drawable::makeImage(
       assets->json("/blueprint.config:inHandImage").toString(),
       1.0f / TilePixels,
       true,
-      Vec2F())};
+      Vec2F(),
+      Color::White,
+      m_imageMetadataDatabase)};
 
   setPrice(int(price() * assets->json("/items/defaultParameters.config:blueprintPriceFactor").toFloat()));
 }

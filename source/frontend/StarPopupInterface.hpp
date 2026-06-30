@@ -11,6 +11,7 @@ class PopupInterface : public Pane {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   explicit PopupInterface(Services services);

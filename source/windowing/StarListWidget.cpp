@@ -7,14 +7,14 @@
 
 namespace Star {
 
-ListWidget::ListWidget(Json const& schema) : m_schema(schema) {
+ListWidget::ListWidget(GuiContext& context, Json const& schema) : Widget(context), m_schema(schema) {
   m_selectedItem = NPos;
   m_columns = 1;
   setSchema(m_schema);
   updateSizeAndPosition();
 }
 
-ListWidget::ListWidget() {
+ListWidget::ListWidget(GuiContext& context) : Widget(context) {
   m_selectedItem = NPos;
   m_columns = 1;
   updateSizeAndPosition();
@@ -38,12 +38,12 @@ bool ListWidget::sendEvent(InputEvent const& event) {
   for (size_t i = m_members.size(); i != 0; --i) {
     auto child = m_members[i - 1];
     if (child->sendEvent(event)
-        || (event.is<MouseButtonDownEvent>() && child->inMember(*context()->mousePosition(event))
+        || (event.is<MouseButtonDownEvent>() && child->inMember(*context().mousePosition(event))
               && event.get<MouseButtonDownEvent>().mouseButton == MouseButton::Left)) {
       setSelected(i - 1);
       return true;
     }
-    setHovered(i - 1, event.is<MouseMoveEvent>() && child->inMember(*context()->mousePosition(event)));
+    setHovered(i - 1, event.is<MouseMoveEvent>() && child->inMember(*context().mousePosition(event)));
   }
 
   return false;
@@ -57,8 +57,10 @@ void ListWidget::setSchema(Json const& schema) {
     m_unselectedBG = schema.getString("unselectedBG", "");
     m_hoverBG = schema.getString("hoverBG", "");
     m_disabledBG = schema.getString("disabledBG", "");
-    if (m_disabledBG.empty() && !m_unselectedBG.empty())
-      m_disabledBG = m_unselectedBG + GuiContext::singleton().assets()->json("/interface.config:disabledButton").toString();
+    if (m_disabledBG.empty() && !m_unselectedBG.empty()) {
+      auto& guiContext = context();
+      m_disabledBG = m_unselectedBG + guiContext.assets()->json("/interface.config:disabledButton").toString();
+    }
     m_spacing = jsonToVec2I(schema.get("spacing"));
     m_memberSize = jsonToVec2I(schema.get("memberSize"));
   } catch (JsonException const& e) {
@@ -94,8 +96,10 @@ WidgetPtr ListWidget::addItem(WidgetPtr existingItem) {
 }
 
 WidgetPtr ListWidget::constructWidget() {
-  WidgetPtr newItem = make_shared<Widget>();
-  m_reader.construct(m_schema.get("listTemplate"), newItem.get());
+  WidgetPtr newItem = make_shared<Widget>(context());
+  if (!m_reader)
+    m_reader = make_shared<GuiReader>(context());
+  m_reader->construct(m_schema.get("listTemplate"), newItem.get());
   newItem->setSize(m_memberSize);
   m_doScissor ? newItem->enableScissoring() : newItem->disableScissoring();
   return newItem;
@@ -186,7 +190,9 @@ void ListWidget::setSelectedWidget(WidgetPtr selected) {
 }
 
 void ListWidget::registerMemberCallback(String const& name, WidgetCallbackFunc const& callback) {
-  m_reader.registerCallback(name, callback);
+  if (!m_reader)
+    m_reader = make_shared<GuiReader>(context());
+  m_reader->registerCallback(name, callback);
 }
 
 void ListWidget::setFillDown(bool fillDown) {

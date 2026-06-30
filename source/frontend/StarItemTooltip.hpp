@@ -21,15 +21,17 @@ class Pane;
 using PanePtr = SharedPtr<Pane>;
 class Player;
 using PlayerPtr = SharedPtr<Player>;
+class GuiContext;
 
 namespace ItemTooltipBuilder {
   struct Services {
-    Services(AssetsConstPtr assets, ObjectDatabaseConstPtr objectDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase)
-      : assets(std::move(assets)), objectDatabase(std::move(objectDatabase)), statusEffectDatabase(std::move(statusEffectDatabase)) {}
+    Services(AssetsConstPtr assets, ObjectDatabaseConstPtr objectDatabase, StatusEffectDatabaseConstPtr statusEffectDatabase, GuiContext& guiContext)
+      : assets(std::move(assets)), objectDatabase(std::move(objectDatabase)), statusEffectDatabase(std::move(statusEffectDatabase)), guiContext(guiContext) {}
 
     AssetsConstPtr assets;
     ObjectDatabaseConstPtr objectDatabase;
     StatusEffectDatabaseConstPtr statusEffectDatabase;
+    GuiContext& guiContext;
   };
 
   PanePtr buildItemTooltip(ItemPtr const& item, PlayerPtr const& viewer, Services services);

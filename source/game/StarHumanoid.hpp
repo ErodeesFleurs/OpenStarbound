@@ -1,12 +1,12 @@
 #pragma once
 
-#include "StarDataStream.hpp"
-#include "StarGameTypes.hpp"
-#include "StarDrawable.hpp"
-#include "StarParticle.hpp"
-#include "StarNetworkedAnimator.hpp"
-#include "StarNetElement.hpp"
 #include "StarAssets.hpp"
+#include "StarDataStream.hpp"
+#include "StarDrawable.hpp"
+#include "StarGameTypes.hpp"
+#include "StarNetElement.hpp"
+#include "StarNetworkedAnimator.hpp"
+#include "StarParticle.hpp"
 
 namespace Star {
 
@@ -26,6 +26,8 @@ class DanceDatabase;
 using DanceDatabaseConstPtr = SharedPtr<DanceDatabase const>;
 class ParticleDatabase;
 using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
+class ImageMetadataDatabase;
+using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 
 struct Dance;
 using DancePtr = SharedPtr<Dance>;
@@ -109,7 +111,6 @@ struct HumanoidIdentity {
   Vec4B color;
 
   Maybe<String> imagePath;
-
 };
 
 DataStream& operator>>(DataStream& ds, HumanoidIdentity& identity);
@@ -118,25 +119,23 @@ DataStream& operator<<(DataStream& ds, HumanoidIdentity const& identity);
 class Humanoid {
 public:
   enum State {
-    Idle, // 1 idle frame
-    Walk, // 8 walking frames
-    Run, // 8 run frames
-    Jump, // 4 jump frames
-    Fall, // 4 fall frames
-    Swim, // 7 swim frames
-    SwimIdle, // 2 swim idle frame
-    Duck, // 1 ducking frame
-    Sit, // 1 sitting frame
-    Lay, // 1 laying frame
+    Idle,    // 1 idle frame
+    Walk,    // 8 walking frames
+    Run,     // 8 run frames
+    Jump,    // 4 jump frames
+    Fall,    // 4 fall frames
+    Swim,    // 7 swim frames
+    SwimIdle,// 2 swim idle frame
+    Duck,    // 1 ducking frame
+    Sit,     // 1 sitting frame
+    Lay,     // 1 laying frame
     STATESIZE
   };
   static EnumMap<State> const StateNames;
 
-  static bool& globalHeadRotation();
-
-  explicit Humanoid(AssetsConstPtr assets = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
-  Humanoid(Json const& config, AssetsConstPtr assets = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
-  Humanoid(HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json(), AssetsConstPtr assets = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
+  explicit Humanoid(AssetsConstPtr assets = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
+  Humanoid(Json const& config, AssetsConstPtr assets = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
+  Humanoid(HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json(), AssetsConstPtr assets = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
   Humanoid(Humanoid const&) = default;
 
   struct HumanoidTiming {
@@ -238,6 +237,7 @@ public:
   void setFacingDirection(Direction facingDirection);
   void setMovingBackwards(bool movingBackwards);
   void setHeadRotation(float headRotation);
+  void setHeadRotationEnabled(bool enabled);
   void setRotation(float rotation);
   void setScale(Vec2F scale);
 
@@ -247,6 +247,7 @@ public:
   HumanoidEmote emoteState() const;
   Maybe<String> dance() const;
   bool danceCyclicOrEnded() const;
+  bool headRotationEnabled() const;
   Direction facingDirection() const;
   bool movingBackwards() const;
 
@@ -254,7 +255,7 @@ public:
   // angle parameter should be in the range [-pi/2, pi/2] (the facing direction
   // should not be included in the angle).
   void setHandParameters(ToolHand hand, bool holdingItem, float angle, float itemAngle, bool twoHanded,
-      bool recoil, bool outsideOfHand);
+                         bool recoil, bool outsideOfHand);
   void setHandFrameOverrides(ToolHand hand, StringView back, StringView front);
   void setHandDrawables(ToolHand hand, List<Drawable> drawables);
   void setHandNonRotatedDrawables(ToolHand hand, List<Drawable> drawables);
@@ -262,7 +263,7 @@ public:
 
   // Updates the animation based on whatever the current animation state is,
   // wrapping or clamping animation time as appropriate.
-  void animate(float dt, NetworkedAnimator::DynamicTarget * dynamicTarget);
+  void animate(float dt, NetworkedAnimator::DynamicTarget* dynamicTarget);
 
   // Reset animation time to 0.0f
   void resetAnimation();
@@ -277,11 +278,11 @@ public:
 
   List<Drawable> renderSkull() const;
 
-  static HumanoidPtr makeDummy(Gender gender, AssetsConstPtr assets = {});
+  static HumanoidPtr makeDummy(Gender gender, AssetsConstPtr assets = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {});
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
   List<Drawable> renderDummy(Gender gender, HeadArmor const* head = {}, ChestArmor const* chest = {},
-      LegsArmor const* legs = {}, BackArmor const* back = {});
+                             LegsArmor const* legs = {}, BackArmor const* back = {});
 
   Vec2F primaryHandPosition(Vec2F const& offset) const;
   Vec2F altHandPosition(Vec2F const& offset) const;
@@ -325,7 +326,7 @@ public:
   String getFrontArmFromIdentity() const;
   String getVaporTrailFrameset() const;
 
-  NetworkedAnimator * networkedAnimator();
+  NetworkedAnimator* networkedAnimator();
   NetworkedAnimator const* networkedAnimator() const;
   List<String> animationScripts() const;
 
@@ -377,6 +378,7 @@ private:
   Json m_baseConfig;
   Json m_mergeConfig;
   AssetsConstPtr m_assets;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   SpeciesDatabaseConstPtr m_speciesDatabase;
   DanceDatabaseConstPtr m_danceDatabase;
   ParticleDatabaseConstPtr m_particleDatabase;
@@ -444,6 +446,7 @@ private:
   bool m_movingBackwards;
   float m_headRotation;
   float m_headRotationTarget;
+  bool m_headRotationEnabled;
   float m_rotation;
   Vec2F m_scale;
   bool m_drawVaporTrail;
@@ -476,10 +479,10 @@ private:
     bool startNew;
     bool reverse;
   };
-  HashMap<Humanoid::State, HashMap<String,AnimationStateArgs>> m_animationStates;
-  HashMap<Humanoid::State, HashMap<String,AnimationStateArgs>> m_animationStatesBackwards;
-  HashMap<HumanoidEmote, HashMap<String,AnimationStateArgs>> m_emoteAnimationStates;
-  HashMap<PortraitMode, HashMap<String,AnimationStateArgs>> m_portraitAnimationStates;
+  HashMap<Humanoid::State, HashMap<String, AnimationStateArgs>> m_animationStates;
+  HashMap<Humanoid::State, HashMap<String, AnimationStateArgs>> m_animationStatesBackwards;
+  HashMap<HumanoidEmote, HashMap<String, AnimationStateArgs>> m_emoteAnimationStates;
+  HashMap<PortraitMode, HashMap<String, AnimationStateArgs>> m_portraitAnimationStates;
 
   HashMap<String, String> m_identityFramesetTags;
 
@@ -498,15 +501,13 @@ private:
   pair<String, String> m_feetOffsetPoint;
   pair<String, String> m_throwPoint;
   pair<String, String> m_interactPoint;
-
 };
-
 
 // this is because species can be changed on the fly and therefore the humanoid needs to re-initialize as the new species when it changes
 // therefore we need to have these in a dynamic group in players and NPCs for the sake of the networked animator not breaking the game
 class NetHumanoid : public NetElementSyncGroup {
 public:
-  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), JsonObject parameters = JsonObject(), Json config = Json(), AssetsConstPtr assets = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
+  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), JsonObject parameters = JsonObject(), Json config = Json(), AssetsConstPtr assets = {}, ImageMetadataDatabaseConstPtr imageMetadataDatabase = {}, SpeciesDatabaseConstPtr speciesDatabase = {}, DanceDatabaseConstPtr danceDatabase = {}, ParticleDatabaseConstPtr particleDatabase = {});
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -523,10 +524,11 @@ private:
 
   Json m_config;
   AssetsConstPtr m_assets;
+  ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   SpeciesDatabaseConstPtr m_speciesDatabase;
   DanceDatabaseConstPtr m_danceDatabase;
   ParticleDatabaseConstPtr m_particleDatabase;
-  NetElementHashMap<String,Json> m_humanoidParameters;
+  NetElementHashMap<String, Json> m_humanoidParameters;
   HumanoidPtr m_humanoid;
 };
 
@@ -539,4 +541,4 @@ inline T const* Humanoid::getLastWearableOfType() const {
   return nullptr;
 }
 
-}
+}// namespace Star

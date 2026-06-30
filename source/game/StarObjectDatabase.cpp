@@ -1,30 +1,30 @@
 #include "StarObjectDatabase.hpp"
-#include "StarObject.hpp"
-#include "StarJsonExtra.hpp"
-#include "StarIterator.hpp"
-#include "StarWorld.hpp"
 #include "StarAssets.hpp"
-#include "StarMaterialDatabase.hpp"
-#include "StarImageMetadataDatabase.hpp"
-#include "StarLogging.hpp"
-#include "StarLoungeableObject.hpp"
 #include "StarContainerObject.hpp"
 #include "StarFarmableObject.hpp"
-#include "StarTeleporterObject.hpp"
+#include "StarImageMetadataDatabase.hpp"
+#include "StarIterator.hpp"
+#include "StarJsonExtra.hpp"
+#include "StarLogging.hpp"
+#include "StarLoungeableObject.hpp"
+#include "StarMaterialDatabase.hpp"
+#include "StarObject.hpp"
 #include "StarPhysicsObject.hpp"
-#include "StarRootLuaBindings.hpp"
-#include "StarUtilityLuaBindings.hpp"
 #include "StarRebuilder.hpp"
+#include "StarRootLuaBindings.hpp"
+#include "StarTeleporterObject.hpp"
+#include "StarUtilityLuaBindings.hpp"
+#include "StarWorld.hpp"
 
 namespace Star {
 
 ObjectOrientation::ParticleEmissionEntry ObjectOrientation::parseParticleEmitter(
-    String const& path, Json const& config, AssetsConstPtr assets) {
+  String const& path, Json const& config, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
   ObjectOrientation::ParticleEmissionEntry result;
   result.particleEmissionRate = config.getFloat("emissionRate", 0.0);
   result.particleEmissionRateVariance = config.getFloat("emissionVariance", 0.0);
-  result.particle = Particle(config.getObject("particle", {}), path, assets);
-  result.particleVariance = Particle(config.getObject("particleVariance", {}), path, assets);
+  result.particle = Particle(config.getObject("particle", {}), path, assets, imageMetadataDatabase);
+  result.particleVariance = Particle(config.getObject("particleVariance", {}), path, assets, imageMetadataDatabase);
   result.particle.position += jsonToVec2F(config.get("pixelOrigin", JsonArray{TilePixels / 2, TilePixels / 2})) / TilePixels;
   result.placeInSpaces = config.getBool("placeInSpaces", false);
   return result;
@@ -52,23 +52,23 @@ bool ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) 
     throw ObjectException("ObjectOrientation requires material database service");
 
   auto anchorValid = [&](Anchor const& anchor) -> bool {
-      auto space = position + anchor.position;
-      if (!world->isTileConnectable(space, anchor.layer))
+    auto space = position + anchor.position;
+    if (!world->isTileConnectable(space, anchor.layer))
+      return false;
+    if (anchor.tilled) {
+      if (!materialDatabase->isTilledMod(world->mod(space, anchor.layer)))
         return false;
-      if (anchor.tilled) {
-        if (!materialDatabase->isTilledMod(world->mod(space, anchor.layer)))
-          return false;
-      }
-      if (anchor.soil) {
-        if (!materialDatabase->isSoil(world->material(space, anchor.layer)))
-          return false;
-      }
-      if (anchor.material) {
-        if (world->material(space, anchor.layer) != *anchor.material)
-          return false;
-      }
-      return true;
-    };
+    }
+    if (anchor.soil) {
+      if (!materialDatabase->isSoil(world->material(space, anchor.layer)))
+        return false;
+    }
+    if (anchor.material) {
+      if (world->material(space, anchor.layer) != *anchor.material)
+        return false;
+    }
+    return true;
+  };
 
   bool anyValid = false;
   for (auto const& anchor : anchors) {
@@ -116,7 +116,7 @@ Json ObjectDatabase::parseTouchDamage(AssetsConstPtr assets, String const& path,
 }
 
 List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
-    AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig) {
+  AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& path, Json const& configList, Json const& baseConfig) {
   if (!assets)
     throw ObjectException("ObjectDatabase::parseOrientations requires assets service");
   if (!materialDatabase)
@@ -171,13 +171,13 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
       for (Json layer : orientationSettings.get("imageLayers").iterateArray()) {
         if (auto image = layer.opt("image"))
           layer = layer.set("image", AssetPath::relativeTo(path, image->toString()));
-        Drawable drawable(layer.set("centered", layer.getBool("centered", false)));
+        Drawable drawable(layer.set("centered", layer.getBool("centered", false)), imageMetadataDatabase);
         drawable.scale(1.0f / TilePixels);
         orientation->imageLayers.append(drawable);
       }
     } else {
       Drawable drawable = Drawable::makeImage(
-          AssetPath::relativeTo(path, orientationSettings.getString("image")), 1.0 / TilePixels, false, {});
+        AssetPath::relativeTo(path, orientationSettings.getString("image")), 1.0 / TilePixels, false, {}, Color::White, imageMetadataDatabase);
       drawable.fullbright = orientationSettings.getBool("fullbright", false);
       orientation->imageLayers.append(drawable);
     }
@@ -310,9 +310,9 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
 
     if (orientationSettings.contains("particleEmitter"))
       orientation->particleEmitters.append(
-          ObjectOrientation::parseParticleEmitter(path, orientationSettings.get("particleEmitter"), assets));
+        ObjectOrientation::parseParticleEmitter(path, orientationSettings.get("particleEmitter"), assets, imageMetadataDatabase));
     for (auto const& particleEmitterConfig : orientationSettings.getArray("particleEmitters", {}))
-      orientation->particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig, assets));
+      orientation->particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig, assets, imageMetadataDatabase));
 
     orientation->statusEffectArea = orientationSettings.opt("statusEffectArea").apply(jsonToPolyF);
 
@@ -324,18 +324,21 @@ List<ObjectOrientationPtr> ObjectDatabase::parseOrientations(
   return res;
 }
 
-ObjectDatabase::ObjectDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, function<ItemDatabaseConstPtr()> itemDatabase)
-  : m_assets(std::move(assets)),
-    m_materialDatabase(std::move(materialDatabase)),
-    m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
-    m_itemDatabase(std::move(itemDatabase)),
-    m_rebuilder(make_shared<Rebuilder>(m_assets, "object")) {
+ObjectDatabase::ObjectDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, ParticleDatabaseConstPtr particleDatabase, function<ItemDatabaseConstPtr()> itemDatabase, LuaRootServices luaRootServices)
+    : m_assets(std::move(assets)),
+      m_materialDatabase(std::move(materialDatabase)),
+      m_imageMetadataDatabase(std::move(imageMetadataDatabase)),
+      m_particleDatabase(std::move(particleDatabase)),
+      m_itemDatabase(std::move(itemDatabase)),
+      m_rebuilder(make_shared<Rebuilder>(m_assets, "object", std::move(luaRootServices))) {
   if (!m_assets)
     throw ObjectException("ObjectDatabase requires assets service");
   if (!m_materialDatabase)
     throw ObjectException("ObjectDatabase requires material database service");
   if (!m_imageMetadataDatabase)
     throw ObjectException("ObjectDatabase requires image metadata database service");
+  if (!m_particleDatabase)
+    throw ObjectException("ObjectDatabase requires particle database service");
   if (!m_itemDatabase)
     throw ObjectException("ObjectDatabase requires item database provider");
 
@@ -357,8 +360,8 @@ ObjectDatabase::ObjectDatabase(AssetsConstPtr assets, MaterialDatabaseConstPtr m
 void ObjectDatabase::cleanup() {
   MutexLocker locker(m_cacheMutex);
   m_configCache.cleanup([](String const&, ObjectConfigPtr const& config) {
-      return config.use_count() != 1;
-    });
+    return config.use_count() != 1;
+  });
 }
 
 StringList ObjectDatabase::allObjects() const {
@@ -372,11 +375,11 @@ bool ObjectDatabase::isObject(String const& objectName) const {
 ObjectConfigPtr ObjectDatabase::getConfig(String const& objectName) const {
   MutexLocker locker(m_cacheMutex);
   return m_configCache.get(objectName,
-      [this](String const& objectName) -> ObjectConfigPtr {
-        if (auto path = m_paths.maybe(objectName))
-          return readConfig(*path);
-        throw ObjectException(strf("No such object named '{}'", objectName));
-      });
+                           [this](String const& objectName) -> ObjectConfigPtr {
+                             if (auto path = m_paths.maybe(objectName))
+                               return readConfig(*path);
+                             throw ObjectException(strf("No such object named '{}'", objectName));
+                           });
 }
 
 List<ObjectOrientationPtr> const& ObjectDatabase::getOrientations(String const& objectName) const {
@@ -435,11 +438,9 @@ ObjectPtr ObjectDatabase::diskLoadObject(Json const& diskStore) const {
         object = createObject(originalName, originalParams);
       } else {
         Logger::error("Could not instantiate object '{}'. {}", diskStore, outputException(e, false));
-        Json newParameters = JsonObject({
-          {"genericItemStorage", diskStore},
-          {"shortdescription", originalName},
-          {"description", "Reinstall the parent mod to return this item to normal"}
-        });
+        Json newParameters = JsonObject({{"genericItemStorage", diskStore},
+                                         {"shortdescription", originalName},
+                                         {"description", "Reinstall the parent mod to return this item to normal"}});
         object = createObject("perfectlygenericitem", newParameters);
       }
     }
@@ -455,17 +456,17 @@ ObjectPtr ObjectDatabase::netLoadObject(ByteArray const& netStore, NetCompatibil
   return createObject(name, parameters);
 }
 
-bool ObjectDatabase::canPlaceObject(World const* world, Vec2I const& position, String const& objectName) const {
-  return getConfig(objectName)->findValidOrientation(world, position) != NPos;
+bool ObjectDatabase::canPlaceObject(World const& world, Vec2I const& position, String const& objectName) const {
+  return getConfig(objectName)->findValidOrientation(&world, position) != NPos;
 }
 
-ObjectPtr ObjectDatabase::createForPlacement(World const* world, String const& objectName, Vec2I const& position,
-    Direction direction, Json const& parameters) const {
+ObjectPtr ObjectDatabase::createForPlacement(World const& world, String const& objectName, Vec2I const& position,
+                                             Direction direction, Json const& parameters) const {
   if (!canPlaceObject(world, position, objectName))
     return {};
 
   ObjectPtr object = createObject(objectName, parameters);
-  object->setTilePosition(world->geometry().xwrap(position));
+  object->setTilePosition(world.geometry().xwrap(position));
   object->setDirection(direction);
 
   return object;
@@ -480,6 +481,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
     objectConfig->assets = m_assets;
     objectConfig->materialDatabase = m_materialDatabase;
     objectConfig->imageMetadataDatabase = m_imageMetadataDatabase;
+    objectConfig->particleDatabase = m_particleDatabase;
     objectConfig->config = config;
 
     objectConfig->name = config.getString("objectName");
@@ -510,7 +512,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
         List<ItemDescriptor> group;
         for (auto const& dropChoiceEntry : dropChoiceGroups.iterateArray())
           group.append(
-              {dropChoiceEntry.getString(0), static_cast<size_t>(dropChoiceEntry.getUInt(1)), dropChoiceEntry.getObject(2)});
+            {dropChoiceEntry.getString(0), static_cast<size_t>(dropChoiceEntry.getUInt(1)), dropChoiceEntry.getObject(2)});
         objectConfig->breakDropOptions.append(group);
       }
       // If breakDropOptions is set but empty, then the object should always
@@ -544,9 +546,9 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
       objectConfig->smashable = false;
 
     objectConfig->tileDamageParameters = TileDamageParameters(
-        m_assets->fetchJson(config.get("damageTable", "/objects/defaultParameters.config:damageTable")),
-        config.optFloat("health"),
-        config.optUInt("harvestLevel"));
+      m_assets->fetchJson(config.get("damageTable", "/objects/defaultParameters.config:damageTable")),
+      config.optFloat("health"),
+      config.optUInt("harvestLevel"));
 
     objectConfig->damageShakeMagnitude = config.getFloat("damageShakeMagnitude", 0.2f);
     objectConfig->damageMaterialKind = config.getString("damageMaterialKind", "solid");
@@ -573,10 +575,10 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
 
     if (config.contains("flickerPeriod")) {
       objectConfig->lightFlickering = PeriodicFunction<float>(config.getFloat("flickerPeriod"),
-          config.getFloat("flickerMinIntensity", 0.0),
-          config.getFloat("flickerMaxIntensity", 0.0),
-          config.getFloat("flickerPeriodVariance", 0.0),
-          config.getFloat("flickerIntensityVariance", 0.0));
+                                                              config.getFloat("flickerMinIntensity", 0.0),
+                                                              config.getFloat("flickerMaxIntensity", 0.0),
+                                                              config.getFloat("flickerPeriodVariance", 0.0),
+                                                              config.getFloat("flickerIntensityVariance", 0.0));
     }
 
     objectConfig->soundEffect = config.getString("soundEffect", "");
@@ -604,9 +606,9 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
 
     List<ObjectOrientation::ParticleEmissionEntry> particleEmitters;
     if (config.contains("particleEmitter"))
-      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, config.get("particleEmitter"), m_assets));
+      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, config.get("particleEmitter"), m_assets, m_imageMetadataDatabase));
     for (auto const& particleEmitterConfig : config.getArray("particleEmitters", {}))
-      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig, m_assets));
+      particleEmitters.append(ObjectOrientation::parseParticleEmitter(path, particleEmitterConfig, m_assets, m_imageMetadataDatabase));
 
     for (auto const& orientation : objectConfig->orientations)
       orientation->particleEmitters.appendAll(particleEmitters);
@@ -622,7 +624,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) const {
 }
 
 List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String const& objectName, Vec2I const& position,
-    Direction direction, Json parameters) const {
+                                                   Direction direction, Json parameters) const {
   List<Drawable> drawables;
 
   auto config = getConfig(objectName);
@@ -632,7 +634,7 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
     if (direction == Direction::Left)
       *placementImage += "?flipx";
     drawables = {Drawable::makeImage(AssetPath::relativeTo(config->path, *placementImage),
-        1.0 / TilePixels, false, Vec2F(position) + jsonToVec2F(mergeConfig.get("placementImagePosition")) / TilePixels)};
+                                     1.0 / TilePixels, false, Vec2F(position) + jsonToVec2F(mergeConfig.get("placementImagePosition")) / TilePixels, Color::White, m_imageMetadataDatabase)};
   } else {
     size_t orientationIndex = config->findValidOrientation(world, position, direction);
     if (orientationIndex == NPos) {
@@ -662,7 +664,7 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
 
       image = AssetPath::join(image).replaceTags(imageKeys, true, "default");
       if (orientation->flipImages)
-        drawable.scale(Vec2F(-1, 1), drawable.boundBox(false).center() - drawable.position);
+        drawable.scale(Vec2F(-1, 1), drawable.boundBox(false, m_imageMetadataDatabase).center() - drawable.position);
       drawables.append(std::move(drawable));
     }
     Drawable::translateAll(drawables, Vec2F(position) + orientation->imagePosition);
@@ -671,4 +673,4 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
   return drawables;
 }
 
-}
+}// namespace Star

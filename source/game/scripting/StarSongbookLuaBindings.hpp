@@ -6,6 +6,6 @@
 namespace Star {
 
 namespace LuaBindings {
-  LuaCallbacks makeSongbookCallbacks(Songbook* songbook);
+  LuaCallbacks makeSongbookCallbacks(Songbook& songbook);
 }
 }

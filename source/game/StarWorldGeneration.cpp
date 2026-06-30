@@ -31,21 +31,20 @@ namespace Star {
 
 static int const PlantAdjustmentLimit = 2;
 
-LiquidWorld::LiquidWorld(WorldServer* world) {
-  m_worldServer = world;
-  m_liquidsDatabase = world->liquidsDatabase();
-  m_materialDatabase = world->materialDatabase();
-}
+LiquidWorld::LiquidWorld(WorldServer& world)
+  : m_worldServer(world),
+    m_liquidsDatabase(world.liquidsDatabase()),
+    m_materialDatabase(world.materialDatabase()) {}
 
 Vec2I LiquidWorld::uniqueLocation(Vec2I const& location) const {
-  return m_worldServer->geometry().xwrap(location);
+  return m_worldServer.geometry().xwrap(location);
 }
 
 float LiquidWorld::drainLevel(Vec2I const& location) const {
-  if (location[1] > m_worldServer->worldTemplate()->undergroundLevel()) {
-    auto const& tile = m_worldServer->getServerTile(location);
+  if (location[1] > m_worldServer.worldTemplate()->undergroundLevel()) {
+    auto const& tile = m_worldServer.getServerTile(location);
     if (!m_materialDatabase->blocksLiquidFlow(tile.background)) {
-      auto const& belowTile = m_worldServer->getServerTile(location + Vec2I(0, -1));
+      auto const& belowTile = m_worldServer.getServerTile(location + Vec2I(0, -1));
       if (m_materialDatabase->blocksLiquidFlow(belowTile.background) || m_materialDatabase->blocksLiquidFlow(belowTile.foreground) || belowTile.liquid.source)
         return m_liquidsDatabase->backgroundDrain();
     }
@@ -54,7 +53,7 @@ float LiquidWorld::drainLevel(Vec2I const& location) const {
 }
 
 CellularLiquidCell<LiquidId> LiquidWorld::cell(Vec2I const& location) const {
-  auto const& tile = m_worldServer->getServerTile(location);
+  auto const& tile = m_worldServer.getServerTile(location);
   if (m_materialDatabase->blocksLiquidFlow(tile.foreground)) {
     return CellularLiquidCollisionCell();
   } else {
@@ -69,29 +68,29 @@ CellularLiquidCell<LiquidId> LiquidWorld::cell(Vec2I const& location) const {
 
 void LiquidWorld::setFlow(Vec2I const& location, CellularLiquidFlowCell<LiquidId> const& flow) {
   if (flow.liquid) {
-    m_worldServer->setLiquid(location, *flow.liquid, flow.level, flow.pressure);
+    m_worldServer.setLiquid(location, *flow.liquid, flow.level, flow.pressure);
 
-    auto const& tile = m_worldServer->getServerTile(location);
+    auto const& tile = m_worldServer.getServerTile(location);
     if (auto materialInteraction = m_materialDatabase->liquidMaterialInteraction(*flow.liquid, tile.background)) {
       if (!materialInteraction->topOnly && tile.liquid.level >= materialInteraction->consumeLiquid) {
-        if (auto modifyTile = m_worldServer->modifyServerTile(location)) {
+        if (auto modifyTile = m_worldServer.modifyServerTile(location)) {
           modifyTile->liquid.take(materialInteraction->consumeLiquid);
           modifyTile->background = materialInteraction->transformTo;
-          m_worldServer->activateLiquidLocation(location);
+          m_worldServer.activateLiquidLocation(location);
         }
       }
     }
     if (auto modInteraction = m_materialDatabase->liquidModInteraction(*flow.liquid, tile.backgroundMod)) {
       if (!modInteraction->topOnly && tile.liquid.level >= modInteraction->consumeLiquid) {
-        if (auto modifyTile = m_worldServer->modifyServerTile(location)) {
+        if (auto modifyTile = m_worldServer.modifyServerTile(location)) {
           modifyTile->liquid.take(modInteraction->consumeLiquid);
           modifyTile->backgroundMod = modInteraction->transformTo;
-          m_worldServer->activateLiquidLocation(location);
+          m_worldServer.activateLiquidLocation(location);
         }
       }
     }
   } else {
-    m_worldServer->setLiquid(location, EmptyLiquidId, 0.0f, 0.0f);
+    m_worldServer.setLiquid(location, EmptyLiquidId, 0.0f, 0.0f);
   }
 }
 
@@ -99,10 +98,10 @@ void LiquidWorld::liquidInteraction(Vec2I const& a, LiquidId aLiquid, Vec2I cons
   auto handleInteraction = [this](Vec2I const& target, Maybe<LiquidInteractionResult> interaction) {
     if (interaction) {
       if (interaction->isLeft()) {
-        m_worldServer->modifyTile(target, PlaceMaterial{TileLayer::Foreground, interaction->left(), 0}, false);
+        m_worldServer.modifyTile(target, PlaceMaterial{TileLayer::Foreground, interaction->left(), 0}, false);
       } else {
-        auto liquidLevel = m_worldServer->liquidLevel(target);
-        m_worldServer->setLiquid(target, interaction->right(), liquidLevel.level, liquidLevel.level);
+        auto liquidLevel = m_worldServer.liquidLevel(target);
+        m_worldServer.setLiquid(target, interaction->right(), liquidLevel.level, liquidLevel.level);
       }
     }
   };
@@ -112,43 +111,43 @@ void LiquidWorld::liquidInteraction(Vec2I const& a, LiquidId aLiquid, Vec2I cons
 }
 
 void LiquidWorld::liquidCollision(Vec2I const& liquidPos, LiquidId liquidId, Vec2I const& blockPos) {
-  auto const& blockTile = m_worldServer->getServerTile(blockPos);
+  auto const& blockTile = m_worldServer.getServerTile(blockPos);
 
   if (auto materialInteraction = m_materialDatabase->liquidMaterialInteraction(liquidId, blockTile.foreground)) {
-    if ((!materialInteraction->topOnly || liquidPos[1] > blockPos[1]) && m_worldServer->liquidLevel(liquidPos).level >= materialInteraction->consumeLiquid) {
-      auto modifyLiquidTile = m_worldServer->modifyServerTile(liquidPos);
-      auto modifyBlockTile = m_worldServer->modifyServerTile(blockPos);
+    if ((!materialInteraction->topOnly || liquidPos[1] > blockPos[1]) && m_worldServer.liquidLevel(liquidPos).level >= materialInteraction->consumeLiquid) {
+      auto modifyLiquidTile = m_worldServer.modifyServerTile(liquidPos);
+      auto modifyBlockTile = m_worldServer.modifyServerTile(blockPos);
       if (modifyLiquidTile && modifyBlockTile) {
         modifyLiquidTile->liquid.take(materialInteraction->consumeLiquid);
         modifyBlockTile->foreground = materialInteraction->transformTo;
         if (!m_materialDatabase->isMultiColor(materialInteraction->transformTo))
           modifyBlockTile->foregroundColorVariant = DefaultMaterialColorVariant;
-        m_worldServer->activateLiquidLocation(liquidPos);
+        m_worldServer.activateLiquidLocation(liquidPos);
       }
     }
   }
   if (auto modInteraction = m_materialDatabase->liquidModInteraction(liquidId, blockTile.foregroundMod)) {
-    if ((!modInteraction->topOnly || liquidPos[1] > blockPos[1]) && m_worldServer->liquidLevel(liquidPos).level >= modInteraction->consumeLiquid) {
-      auto modifyLiquidTile = m_worldServer->modifyServerTile(liquidPos);
-      auto modifyBlockTile = m_worldServer->modifyServerTile(blockPos);
+    if ((!modInteraction->topOnly || liquidPos[1] > blockPos[1]) && m_worldServer.liquidLevel(liquidPos).level >= modInteraction->consumeLiquid) {
+      auto modifyLiquidTile = m_worldServer.modifyServerTile(liquidPos);
+      auto modifyBlockTile = m_worldServer.modifyServerTile(blockPos);
       if (modifyLiquidTile && modifyBlockTile) {
         modifyLiquidTile->liquid.take(modInteraction->consumeLiquid);
         modifyBlockTile->foregroundMod = modInteraction->transformTo;
-        m_worldServer->activateLiquidLocation(liquidPos);
+        m_worldServer.activateLiquidLocation(liquidPos);
       }
     }
   }
 }
 
-FallingBlocksWorld::FallingBlocksWorld(WorldServer* w)
-  : m_worldServer(w), m_materialDatabase(w->materialDatabase()) {}
+FallingBlocksWorld::FallingBlocksWorld(WorldServer& w)
+  : m_worldServer(w), m_materialDatabase(w.materialDatabase()) {}
 
 FallingBlockType FallingBlocksWorld::blockType(Vec2I const& pos) {
-  auto const& tile =  m_worldServer->getServerTile(pos, true);
+  auto const& tile =  m_worldServer.getServerTile(pos, true);
   if (tile.rootSource) {
     return FallingBlockType::Immovable;
   } if (tile.foreground == EmptyMaterialId) {
-    if (m_worldServer->tileIsOccupied(pos, TileLayer::Foreground))
+    if (m_worldServer.tileIsOccupied(pos, TileLayer::Foreground))
       return FallingBlockType::Immovable;
     else
       return FallingBlockType::Open;
@@ -162,14 +161,14 @@ FallingBlockType FallingBlocksWorld::blockType(Vec2I const& pos) {
 }
 
 void FallingBlocksWorld::moveBlock(Vec2I const& from, Vec2I const& to) {
-  auto fromTile = m_worldServer->modifyServerTile(from, true);
-  auto toTile = m_worldServer->modifyServerTile(to, true);
+  auto fromTile = m_worldServer.modifyServerTile(from, true);
+  auto toTile = m_worldServer.modifyServerTile(to, true);
   if (!fromTile || !toTile)
     return;
 
-  if (m_worldServer->isTileProtected(to)) {
-    for (auto const& drop : m_worldServer->destroyBlock(TileLayer::Foreground, from, true, true))
-      m_worldServer->addEntity(ItemDrop::createRandomizedDrop(drop, Vec2F(to), false, m_worldServer->assets(), m_worldServer->itemDatabase()));
+  if (m_worldServer.isTileProtected(to)) {
+    for (auto const& drop : m_worldServer.destroyBlock(TileLayer::Foreground, from, true, true))
+      m_worldServer.addEntity(ItemDrop::createRandomizedDrop(drop, Vec2F(to), false, m_worldServer.assets(), m_worldServer.itemDatabase()));
   } else {
     toTile->foreground = fromTile->foreground;
     toTile->foregroundMod = NoModId;
@@ -181,21 +180,21 @@ void FallingBlocksWorld::moveBlock(Vec2I const& from, Vec2I const& to) {
     fromTile->foregroundMod = NoModId;
     fromTile->updateCollision(CollisionKind::None);
 
-    m_worldServer->requestGlobalBreakCheck();
+    m_worldServer.requestGlobalBreakCheck();
   }
 }
 
-DungeonGeneratorWorld::DungeonGeneratorWorld(WorldServer* worldServer, ObjectDatabaseConstPtr objectDatabase, bool markForActivation)
+DungeonGeneratorWorld::DungeonGeneratorWorld(WorldServer& worldServer, ObjectDatabaseConstPtr objectDatabase, bool markForActivation)
   : m_worldServer(worldServer),
     m_objectDatabase(std::move(objectDatabase)),
-    m_materialDatabase(worldServer->materialDatabase()),
-    m_liquidsDatabase(worldServer->liquidsDatabase()),
-    m_plantDatabase(worldServer->plantDatabase()),
-    m_treasureDatabase(worldServer->treasureDatabase()),
-    m_npcDatabase(worldServer->npcDatabase()),
-    m_monsterDatabase(worldServer->monsterDatabase()),
-    m_stagehandDatabase(worldServer->stagehandDatabase()),
-    m_vehicleDatabase(worldServer->vehicleDatabase()),
+    m_materialDatabase(worldServer.materialDatabase()),
+    m_liquidsDatabase(worldServer.liquidsDatabase()),
+    m_plantDatabase(worldServer.plantDatabase()),
+    m_treasureDatabase(worldServer.treasureDatabase()),
+    m_npcDatabase(worldServer.npcDatabase()),
+    m_monsterDatabase(worldServer.monsterDatabase()),
+    m_stagehandDatabase(worldServer.stagehandDatabase()),
+    m_vehicleDatabase(worldServer.vehicleDatabase()),
     m_markForActivation(markForActivation) {
   if (!m_objectDatabase)
     throw StarException("DungeonGeneratorWorld requires object database service");
@@ -218,7 +217,7 @@ DungeonGeneratorWorld::DungeonGeneratorWorld(WorldServer* worldServer, ObjectDat
 }
 
 WorldGeometry DungeonGeneratorWorld::getWorldGeometry() const {
-  return m_worldServer->geometry();
+  return m_worldServer.geometry();
 }
 
 MaterialDatabaseConstPtr DungeonGeneratorWorld::materialDatabase() const {
@@ -235,8 +234,8 @@ void DungeonGeneratorWorld::markRegion(RectI const& region) {
 
   Logger::debug("Marking {} as dungeon region", region);
 
-  m_worldServer->signalRegion(region);
-  m_worldServer->activateLiquidRegion(region);
+  m_worldServer.signalRegion(region);
+  m_worldServer.activateLiquidRegion(region);
 }
 
 void DungeonGeneratorWorld::markTerrain(PolyF const& region) {
@@ -244,7 +243,7 @@ void DungeonGeneratorWorld::markTerrain(PolyF const& region) {
     return;
 
   Logger::debug("Marking poly as dungeon terrain region: {}", region);
-  m_worldServer->worldTemplate()->addCustomTerrainRegion(region);
+  m_worldServer.worldTemplate()->addCustomTerrainRegion(region);
 }
 
 void DungeonGeneratorWorld::markSpace(PolyF const& region) {
@@ -252,12 +251,12 @@ void DungeonGeneratorWorld::markSpace(PolyF const& region) {
     return;
 
   Logger::debug("Marking poly as dungeon space region: {}", region);
-  m_worldServer->worldTemplate()->addCustomSpaceRegion(region);
+  m_worldServer.worldTemplate()->addCustomSpaceRegion(region);
 }
 
 void DungeonGeneratorWorld::setForegroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant) {
-  if (ServerTile* tile = m_worldServer->modifyServerTile(position)) {
-    m_worldServer->modifyLiquid(position, EmptyLiquidId, 0);
+  if (ServerTile* tile = m_worldServer.modifyServerTile(position)) {
+    m_worldServer.modifyLiquid(position, EmptyLiquidId, 0);
     tile->foreground = material;
     tile->foregroundHueShift = hueshift;
     tile->foregroundColorVariant = colorVariant;
@@ -269,8 +268,8 @@ void DungeonGeneratorWorld::setForegroundMaterial(Vec2I const& position, Materia
 }
 
 void DungeonGeneratorWorld::setBackgroundMaterial(Vec2I const& position, MaterialId material, MaterialHue hueshift, MaterialColorVariant colorVariant) {
-  if (ServerTile* tile = m_worldServer->modifyServerTile(position)) {
-    m_worldServer->modifyLiquid(position, EmptyLiquidId, 0);
+  if (ServerTile* tile = m_worldServer.modifyServerTile(position)) {
+    m_worldServer.modifyLiquid(position, EmptyLiquidId, 0);
     tile->background = material;
     tile->backgroundHueShift = hueshift;
     tile->backgroundColorVariant = colorVariant;
@@ -280,31 +279,31 @@ void DungeonGeneratorWorld::setBackgroundMaterial(Vec2I const& position, Materia
 }
 
 void DungeonGeneratorWorld::placeObject(Vec2I const& pos, String const& objectName, Star::Direction direction, Json const& parameters) {
-  m_worldServer->signalRegion(RectI::withSize(pos, {1, 1}));
+  m_worldServer.signalRegion(RectI::withSize(pos, {1, 1}));
 
   if (auto object = m_objectDatabase->createForPlacement(m_worldServer, objectName, pos, direction, parameters))
-    m_worldServer->addEntity(object);
+    m_worldServer.addEntity(object);
   else
     Logger::warn("Failed to place dungeon object: {} direction: {} position: {}", objectName, static_cast<int>(direction), pos);
 }
 
 void DungeonGeneratorWorld::placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters) {
-  m_worldServer->signalRegion(RectI::withSize(Vec2I(pos), {1, 1}));
+  m_worldServer.signalRegion(RectI::withSize(Vec2I(pos), {1, 1}));
 
   auto vehicle = m_vehicleDatabase->create(vehicleName, parameters.opt().value(JsonObject{}).set("persistent", true));
   vehicle->setPosition(pos);
-  m_worldServer->addEntity(vehicle);
+  m_worldServer.addEntity(vehicle);
 }
 
 void DungeonGeneratorWorld::placeSurfaceBiomeItems(Vec2I const& pos) {
-  List<BiomeItemPlacement> surfaceItems = m_worldServer->worldTemplate()->potentialBiomeItemsAt(pos[0], pos[1]).surfaceBiomeItems;
+  List<BiomeItemPlacement> surfaceItems = m_worldServer.worldTemplate()->potentialBiomeItemsAt(pos[0], pos[1]).surfaceBiomeItems;
   placeBiomeItems(pos, surfaceItems);
 }
 
 void DungeonGeneratorWorld::placeBiomeTree(Vec2I const& pos) {
-  if (auto biome = m_worldServer->worldTemplate()->blockBiome(pos[0], pos[1])) {
-    m_worldServer->signalRegion(RectI::withSize(pos, {1, 1}));
-    auto seed = m_worldServer->worldTemplate()->seedFor(pos[0], pos[1]);
+  if (auto biome = m_worldServer.worldTemplate()->blockBiome(pos[0], pos[1])) {
+    m_worldServer.signalRegion(RectI::withSize(pos, {1, 1}));
+    auto seed = m_worldServer.worldTemplate()->seedFor(pos[0], pos[1]);
     if (auto treeVariant = biome->surfacePlaceables.firstTreeType())
       placePlant(m_plantDatabase->createPlant(*treeVariant, seed), pos);
   }
@@ -319,7 +318,7 @@ void DungeonGeneratorWorld::placePlant(PlantPtr const& plant, Vec2I const& posit
   auto roots = plant->roots();
   auto const& primaryRoot = plant->primaryRoot();
 
-  auto background = m_worldServer->getServerTile(position).background;
+  auto background = m_worldServer.getServerTile(position).background;
   bool adjustBackground = background == EmptyMaterialId || background == NullMaterialId;
 
   auto withinAdjustment = [=](Vec2I const& pos) {
@@ -328,8 +327,8 @@ void DungeonGeneratorWorld::placePlant(PlantPtr const& plant, Vec2I const& posit
 
   // Bail out if we don't have at least one free space, and root in the primary
   // root position, or if we're in a dungeon region.
-  auto primaryTile = m_worldServer->getServerTile(position);
-  auto rootTile = m_worldServer->getServerTile(position + primaryRoot);
+  auto primaryTile = m_worldServer.getServerTile(position);
+  auto rootTile = m_worldServer.getServerTile(position + primaryRoot);
   if (isConnectableMaterial(primaryTile.foreground) || !isConnectableMaterial(rootTile.foreground))
     return;
 
@@ -337,12 +336,12 @@ void DungeonGeneratorWorld::placePlant(PlantPtr const& plant, Vec2I const& posit
   for (auto space : spaces) {
     Vec2I pspace = space + position;
 
-    if (withinAdjustment(space) && !m_worldServer->atTile<Plant>(pspace).empty())
+    if (withinAdjustment(space) && !m_worldServer.atTile<Plant>(pspace).empty())
       return;
 
     // Bail out if we hit a different plant's root tile, or if we're not in the
     // adjustment space and we hit a non-empty tile.
-    auto tile = m_worldServer->getServerTile(pspace);
+    auto tile = m_worldServer.getServerTile(pspace);
     if (tile.rootSource || (!withinAdjustment(space) && !(tile.foreground == EmptyMaterialId || tile.foreground == NullMaterialId)))
       return;
   }
@@ -350,7 +349,7 @@ void DungeonGeneratorWorld::placePlant(PlantPtr const& plant, Vec2I const& posit
   // Check all the roots outside of the adjustment limit
   for (auto root : roots) {
     root += position;
-    if (!withinAdjustment(root) && !isConnectableMaterial(m_worldServer->getServerTile(root).foreground))
+    if (!withinAdjustment(root) && !isConnectableMaterial(m_worldServer.getServerTile(root).foreground))
       return;
   }
 
@@ -360,7 +359,7 @@ void DungeonGeneratorWorld::placePlant(PlantPtr const& plant, Vec2I const& posit
       continue;
 
     space += position;
-    if (auto tile = m_worldServer->modifyServerTile(space)) {
+    if (auto tile = m_worldServer.modifyServerTile(space)) {
       if (isConnectableMaterial(tile->foreground))
         *tile = primaryTile;
       if (adjustBackground)
@@ -376,7 +375,7 @@ void DungeonGeneratorWorld::placePlant(PlantPtr const& plant, Vec2I const& posit
   // Make all the root blocks a real material based on the primary root.
   for (auto root : roots) {
     root += position;
-    if (auto tile = m_worldServer->modifyServerTile(root)) {
+    if (auto tile = m_worldServer.modifyServerTile(root)) {
       if (!isRealMaterial(tile->foreground)) {
         *tile = rootTile;
         tile->collision = m_materialDatabase->materialCollisionKind(tile->foreground);
@@ -388,15 +387,15 @@ void DungeonGeneratorWorld::placePlant(PlantPtr const& plant, Vec2I const& posit
   }
 
   plant->setTilePosition(position);
-  m_worldServer->addEntity(plant);
+  m_worldServer.addEntity(plant);
   return;
 }
 
 void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlacement>& potentialItems) {
-  m_worldServer->signalRegion(RectI::withSize(pos, {1, 1}));
+  m_worldServer.signalRegion(RectI::withSize(pos, {1, 1}));
   sort(potentialItems);
   for (auto const& placement : potentialItems) {
-    auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
+    auto seed = m_worldServer.worldTemplate()->seedFor(placement.position[0], placement.position[1]);
     if (placement.item.is<GrassVariant>()) {
       auto& grass = placement.item.get<GrassVariant>();
       placePlant(m_plantDatabase->createPlant(grass, seed), placement.position);
@@ -418,18 +417,18 @@ void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlac
       auto objectPair = objectPool.select(seed);
       if (auto object = m_objectDatabase->createForPlacement(
               m_worldServer, objectPair.first, placement.position, direction, objectPair.second))
-        m_worldServer->addEntity(object);
+        m_worldServer.addEntity(object);
     } else if (placement.item.is<TreasureBoxSet>()) {
       auto& treasureBoxSet = placement.item.get<TreasureBoxSet>();
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
       if (auto treasureContainer = m_treasureDatabase->createTreasureChest(m_worldServer, treasureBoxSet, placement.position, direction, seed))
-        m_worldServer->addEntity(treasureContainer);
+        m_worldServer.addEntity(treasureContainer);
     }
   }
 }
 
 void DungeonGeneratorWorld::addDrop(Vec2F const& position, ItemDescriptor const& item) {
-  m_worldServer->addEntity(ItemDrop::createRandomizedDrop(item, position, false, m_worldServer->assets(), m_worldServer->itemDatabase()));
+  m_worldServer.addEntity(ItemDrop::createRandomizedDrop(item, position, false, m_worldServer.assets(), m_worldServer.itemDatabase()));
 }
 
 void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& parameters) {
@@ -441,9 +440,9 @@ void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& paramete
     JsonObject uniqueParameters = parameters.getObject("parameters", {});
     if (!uniqueParameters.contains("persistent"))
       uniqueParameters["persistent"] = true;
-    auto npc = m_npcDatabase->createNpc(m_npcDatabase->generateNpcVariant(species, typeName, m_worldServer->threatLevel(), seed, uniqueParameters));
+    auto npc = m_npcDatabase->createNpc(m_npcDatabase->generateNpcVariant(species, typeName, m_worldServer.threatLevel(), seed, uniqueParameters));
     npc->setPosition(position - npc->feetOffset());
-    m_worldServer->addEntity(npc);
+    m_worldServer.addEntity(npc);
   } else if (kind.equals("monster", String::CaseInsensitive)) {
     uint64_t seed = parameters.getUInt("seed", Random::randu64());
     String typeName = parameters.getString("typeName");
@@ -452,7 +451,7 @@ void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& paramete
       uniqueParameters["persistent"] = true;
     auto monster = m_monsterDatabase->createMonster(m_monsterDatabase->monsterVariant(typeName, seed, uniqueParameters));
     monster->setPosition(position);
-    m_worldServer->addEntity(monster);
+    m_worldServer.addEntity(monster);
   } else
     throw StarException(strf("Unknown spawnable kind '{}'", kind));
 }
@@ -460,18 +459,18 @@ void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& paramete
 void DungeonGeneratorWorld::spawnStagehand(Vec2F const& position, Json const& definition) {
   auto stagehand = m_stagehandDatabase->createStagehand(definition.getString("type"), definition.get("parameters", Json()));
   stagehand->setPosition(position);
-  m_worldServer->addEntity(stagehand);
+  m_worldServer.addEntity(stagehand);
 }
 
 void DungeonGeneratorWorld::setLiquid(Vec2I const& pos, LiquidStore const& liquid) {
-  ServerTile* tile = m_worldServer->modifyServerTile(pos);
+  ServerTile* tile = m_worldServer.modifyServerTile(pos);
   starAssert(tile);
   if (tile)
     tile->liquid = liquid;
 }
 
 void DungeonGeneratorWorld::setPlayerStart(Vec2F const& startPosition) {
-  m_worldServer->setPlayerStart(startPosition);
+  m_worldServer.setPlayerStart(startPosition);
 }
 
 void DungeonGeneratorWorld::connectWireGroup(List<Vec2I> const& wireGroup) {
@@ -482,7 +481,7 @@ void DungeonGeneratorWorld::connectWireGroup(List<Vec2I> const& wireGroup) {
     bool found = false;
     Vec2F posf = centerOfTile(entry);
     RectF bounds = {posf - Vec2F(WireEntityQueryHalfExtent, WireEntityQueryHalfExtent), posf + Vec2F(WireEntityQueryHalfExtent, WireEntityQueryHalfExtent)};
-    for (auto const& entity : m_worldServer->query<WireEntity>(bounds)) {
+    for (auto const& entity : m_worldServer.query<WireEntity>(bounds)) {
       for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
         if (entity->tilePosition() + entity->nodePosition({WireDirection::Input, i}) == entry) {
           inbounds.append(WireConnection{entity->tilePosition(), i});
@@ -506,9 +505,9 @@ void DungeonGeneratorWorld::connectWireGroup(List<Vec2I> const& wireGroup) {
   }
 
   for (auto outbound : outbounds) {
-    auto out = m_worldServer->atTile<WireEntity>(outbound.entityLocation).first();
+    auto out = m_worldServer.atTile<WireEntity>(outbound.entityLocation).first();
     for (auto inbound : inbounds) {
-      auto in = m_worldServer->atTile<WireEntity>(inbound.entityLocation).first();
+      auto in = m_worldServer.atTile<WireEntity>(inbound.entityLocation).first();
       in->addNodeConnection({WireDirection::Input, inbound.nodeIndex}, outbound);
       out->addNodeConnection({WireDirection::Output, outbound.nodeIndex}, inbound);
     }
@@ -516,7 +515,7 @@ void DungeonGeneratorWorld::connectWireGroup(List<Vec2I> const& wireGroup) {
 }
 
 void DungeonGeneratorWorld::setForegroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift) {
-  ServerTile* tile = m_worldServer->modifyServerTile(position);
+  ServerTile* tile = m_worldServer.modifyServerTile(position);
   if (tile) {
     tile->foregroundMod = mod;
     tile->foregroundModHueShift = hueshift;
@@ -524,7 +523,7 @@ void DungeonGeneratorWorld::setForegroundMod(Vec2I const& position, ModId mod, M
 }
 
 void DungeonGeneratorWorld::setBackgroundMod(Vec2I const& position, ModId mod, MaterialHue hueshift) {
-  ServerTile* tile = m_worldServer->modifyServerTile(position);
+  ServerTile* tile = m_worldServer.modifyServerTile(position);
   if (tile) {
     tile->backgroundMod = mod;
     tile->foregroundModHueShift = hueshift;
@@ -532,36 +531,36 @@ void DungeonGeneratorWorld::setBackgroundMod(Vec2I const& position, ModId mod, M
 }
 
 void DungeonGeneratorWorld::setTileProtection(DungeonId dungeonId, bool isProtected) {
-  m_worldServer->setTileProtection(dungeonId, isProtected);
+  m_worldServer.setTileProtection(dungeonId, isProtected);
 }
 
 bool DungeonGeneratorWorld::checkSolid(Vec2I const& position, TileLayer layer) {
-  auto const& tile = m_worldServer->getServerTile(position);
+  auto const& tile = m_worldServer.getServerTile(position);
   return tile.material(layer) != EmptyMaterialId && tile.material(layer) != NullMaterialId;
 }
 
 bool DungeonGeneratorWorld::checkOpen(Vec2I const& position, TileLayer layer) {
-  auto const& tile = m_worldServer->getServerTile(position);
+  auto const& tile = m_worldServer.getServerTile(position);
   return tile.material(layer) == EmptyMaterialId || tile.material(layer) == NullMaterialId;
 }
 
 bool DungeonGeneratorWorld::checkOceanLiquid(Vec2I const& position) {
-  auto const& block = m_worldServer->worldTemplate()->blockInfo(position[0], position[1]);
+  auto const& block = m_worldServer.worldTemplate()->blockInfo(position[0], position[1]);
   return block.oceanLiquid != EmptyLiquidId && position[1] < block.oceanLiquidLevel;
 }
 
 DungeonId DungeonGeneratorWorld::getDungeonIdAt(Vec2I const& position) {
-  return m_worldServer->getServerTile(position).dungeonId;
+  return m_worldServer.getServerTile(position).dungeonId;
 }
 
 void DungeonGeneratorWorld::setDungeonIdAt(Vec2I const& position, DungeonId dungeonId) {
-  if (auto tile = m_worldServer->modifyServerTile(position))
+  if (auto tile = m_worldServer.modifyServerTile(position))
     tile->dungeonId = dungeonId;
 }
 
 void DungeonGeneratorWorld::clearTileEntities(RectI const& bounds, Set<Vec2I> const& positions, bool clearAnchoredObjects) {
-  auto entities = m_worldServer->entityQuery(RectF(bounds).padded(1), entityTypeFilter<TileEntity>());
-  auto geometry = m_worldServer->geometry();
+  auto entities = m_worldServer.entityQuery(RectF(bounds).padded(1), entityTypeFilter<TileEntity>());
+  auto geometry = m_worldServer.geometry();
   entities.filter([positions, geometry, clearAnchoredObjects](EntityPtr entity) {
       auto tileEntity = as<TileEntity>(entity);
       for (auto pos : tileEntity->spaces()) {
@@ -585,41 +584,41 @@ void DungeonGeneratorWorld::clearTileEntities(RectI const& bounds, Set<Vec2I> co
     });
 
   for (auto const& entity : entities)
-    m_worldServer->removeEntity(entity->entityId(), false);
+    m_worldServer.removeEntity(entity->entityId(), false);
 }
 
-SpawnerWorld::SpawnerWorld(WorldServer* server)
+SpawnerWorld::SpawnerWorld(WorldServer& server)
   : m_worldServer(server) {}
 
 WorldGeometry SpawnerWorld::geometry() const {
-  return m_worldServer->geometry();
+  return m_worldServer.geometry();
 }
 
 List<RectF> SpawnerWorld::clientWindows() const {
   List<RectF> windows;
-  for (auto clientId : m_worldServer->clientIds())
-    windows.append(m_worldServer->clientWindow(clientId));
+  for (auto clientId : m_worldServer.clientIds())
+    windows.append(m_worldServer.clientWindow(clientId));
   return windows;
 }
 
 bool SpawnerWorld::signalRegion(RectF const& region) const {
-  return m_worldServer->signalRegion(RectI::integral(region));
+  return m_worldServer.signalRegion(RectI::integral(region));
 }
 
 CollisionKind SpawnerWorld::collision(Vec2I const& position) const {
-  return m_worldServer->getServerTile(position + Vec2I(0, 1)).collision;
+  return m_worldServer.getServerTile(position + Vec2I(0, 1)).collision;
 }
 
 bool SpawnerWorld::isFreeSpace(RectF const& area) const {
-  return !m_worldServer->polyCollision(PolyF(area));
+  return !m_worldServer.polyCollision(PolyF(area));
 }
 
 bool SpawnerWorld::isBackgroundEmpty(Vec2I const& pos) const {
-  return m_worldServer->getServerTile(pos).background == EmptyMaterialId;
+  return m_worldServer.getServerTile(pos).background == EmptyMaterialId;
 }
 
 LiquidLevel SpawnerWorld::liquidLevel(Vec2I const& position) const {
-  return m_worldServer->liquidLevel(position);
+  return m_worldServer.liquidLevel(position);
 }
 
 bool SpawnerWorld::spawningProhibited(RectF const& area) const {
@@ -628,7 +627,7 @@ bool SpawnerWorld::spawningProhibited(RectF const& area) const {
   // Don't spawn the entity if its region overlaps with a dungeon
   for (int x = region.xMin(); x < region.xMax(); ++x) {
     for (int y = region.yMin(); y < region.yMax(); ++y) {
-      auto const& tile = m_worldServer->getServerTile({x, y});
+      auto const& tile = m_worldServer.getServerTile({x, y});
       if (tile.getCollision() == CollisionKind::Null || tile.dungeonId != NoDungeonId)
         return true;
     }
@@ -638,17 +637,17 @@ bool SpawnerWorld::spawningProhibited(RectF const& area) const {
 }
 
 uint64_t SpawnerWorld::spawnSeed() const {
-  return m_worldServer->worldTemplate()->worldSeed();
+  return m_worldServer.worldTemplate()->worldSeed();
 }
 
 SpawnProfile SpawnerWorld::spawnProfile(Vec2F const& position) const {
   Vec2I ipos = Vec2I::floor(position);
   // Block biome, *not* environment biome, includes things like detached
   // biomes.
-  if (auto biome = m_worldServer->worldTemplate()->blockBiome(ipos[0], ipos[1])) {
+  if (auto biome = m_worldServer.worldTemplate()->blockBiome(ipos[0], ipos[1])) {
     // Dungeons, including ConstructionDungeonId (player constructed areas)
     // should be immune from spawning.
-    auto tile = m_worldServer->getServerTile(ipos);
+    auto tile = m_worldServer.getServerTile(ipos);
     if (tile.dungeonId == NoDungeonId)
       return biome->spawnProfile;
   }
@@ -656,36 +655,36 @@ SpawnProfile SpawnerWorld::spawnProfile(Vec2F const& position) const {
 }
 
 float SpawnerWorld::dayLevel() const {
-  return m_worldServer->sky()->dayLevel();
+  return m_worldServer.sky()->dayLevel();
 }
 
 float SpawnerWorld::threatLevel() const {
-  return m_worldServer->threatLevel();
+  return m_worldServer.threatLevel();
 }
 
 EntityId SpawnerWorld::spawnEntity(EntityPtr entity) const {
-  m_worldServer->addEntity(entity);
+  m_worldServer.addEntity(entity);
   return entity->entityId();
 }
 
 void SpawnerWorld::despawnEntity(EntityId entityId) {
-  m_worldServer->removeEntity(entityId, false);
+  m_worldServer.removeEntity(entityId, false);
 }
 
 EntityPtr SpawnerWorld::getEntity(EntityId entityId) const {
-  return m_worldServer->entity(entityId);
+  return m_worldServer.entity(entityId);
 }
 
-WorldGenerator::WorldGenerator(WorldServer* server, ObjectDatabaseConstPtr objectDatabase)
+WorldGenerator::WorldGenerator(WorldServer& server, ObjectDatabaseConstPtr objectDatabase)
   : m_worldServer(server),
     m_objectDatabase(std::move(objectDatabase)),
-    m_materialDatabase(server->materialDatabase()),
-    m_plantDatabase(server->plantDatabase()),
-    m_treasureDatabase(server->treasureDatabase()),
-    m_npcDatabase(server->npcDatabase()),
-    m_monsterDatabase(server->monsterDatabase()),
-    m_stagehandDatabase(server->stagehandDatabase()),
-    m_vehicleDatabase(server->vehicleDatabase()) {
+    m_materialDatabase(server.materialDatabase()),
+    m_plantDatabase(server.plantDatabase()),
+    m_treasureDatabase(server.treasureDatabase()),
+    m_npcDatabase(server.npcDatabase()),
+    m_monsterDatabase(server.monsterDatabase()),
+    m_stagehandDatabase(server.stagehandDatabase()),
+    m_vehicleDatabase(server.vehicleDatabase()) {
   if (!m_objectDatabase)
     throw StarException("WorldGenerator requires object database service");
   if (!m_materialDatabase)
@@ -706,55 +705,55 @@ WorldGenerator::WorldGenerator(WorldServer* server, ObjectDatabaseConstPtr objec
   m_microDungeonFactory = make_shared<MicroDungeonFactory>();
 }
 
-void WorldGenerator::generateSectorLevel(WorldStorage* worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) {
+void WorldGenerator::generateSectorLevel(WorldStorage& worldStorage, Sector const& sector, SectorGenerationLevel generationLevel) {
   if (generationLevel == SectorGenerationLevel::BaseTiles) {
     prepareTiles(worldStorage, sector);
   } else if (generationLevel == SectorGenerationLevel::MicroDungeons) {
-    if (!worldStorage->floatingDungeonWorld())
+    if (!worldStorage.floatingDungeonWorld())
       generateMicroDungeons(worldStorage, sector);
   } else if (generationLevel == SectorGenerationLevel::CaveLiquid) {
-    if (!worldStorage->floatingDungeonWorld())
+    if (!worldStorage.floatingDungeonWorld())
       generateCaveLiquid(worldStorage, sector);
   } else if (generationLevel == SectorGenerationLevel::Finalize) {
-    if (!worldStorage->floatingDungeonWorld())
+    if (!worldStorage.floatingDungeonWorld())
       prepareSector(worldStorage, sector);
     else
       prepareSectorBiomeBlocks(worldStorage, sector);
-    m_worldServer->activateLiquidRegion(worldStorage->tileArray()->sectorRegion(sector));
+    m_worldServer.activateLiquidRegion(worldStorage.tileArray()->sectorRegion(sector));
   }
 }
 
-void WorldGenerator::sectorLoadLevelChanged(WorldStorage* worldStorage, Sector const& sector, SectorLoadLevel loadLevel) {
+void WorldGenerator::sectorLoadLevelChanged(WorldStorage& worldStorage, Sector const& sector, SectorLoadLevel loadLevel) {
   if (loadLevel == SectorLoadLevel::Loaded) {
-    if (worldStorage->sectorGenerationLevel(sector) == SectorGenerationLevel::Complete)
-      m_worldServer->activateLiquidRegion(worldStorage->tileArray()->sectorRegion(sector));
+    if (worldStorage.sectorGenerationLevel(sector) == SectorGenerationLevel::Complete)
+      m_worldServer.activateLiquidRegion(worldStorage.tileArray()->sectorRegion(sector));
   }
 }
 
-void WorldGenerator::terraformSector(WorldStorage* worldStorage, Sector const& sector) {
+void WorldGenerator::terraformSector(WorldStorage& worldStorage, Sector const& sector) {
   // Logger::info("terraforming sector {}...", sector);
   reapplyBiome(worldStorage, sector);
 }
 
-void WorldGenerator::initEntity(WorldStorage*, EntityId entityId, EntityPtr const& entity) {
-  entity->init(m_worldServer, entityId, EntityMode::Master);
+void WorldGenerator::initEntity(WorldStorage&, EntityId entityId, EntityPtr const& entity) {
+  entity->init(&m_worldServer, entityId, EntityMode::Master);
   if (auto tileEntity = as<TileEntity>(entity))
-    m_worldServer->updateTileEntityTiles(tileEntity, false, false);
+    m_worldServer.updateTileEntityTiles(tileEntity, false, false);
 }
 
-void WorldGenerator::destructEntity(WorldStorage*, EntityPtr const& entity) {
+void WorldGenerator::destructEntity(WorldStorage&, EntityPtr const& entity) {
   if (entity->isSlave())
     throw StarException("Cannot destruct slave entity in WorldStorage, something has gone wrong!");
   if (auto tileEntity = as<TileEntity>(entity))
-    m_worldServer->updateTileEntityTiles(tileEntity, true, false);
+    m_worldServer.updateTileEntityTiles(tileEntity, true, false);
   entity->uninit();
 }
 
-bool WorldGenerator::entityKeepAlive(WorldStorage*, EntityPtr const& entity) const {
+bool WorldGenerator::entityKeepAlive(WorldStorage&, EntityPtr const& entity) const {
   return entity->isSlave() || (entity->isMaster() && entity->keepAlive());
 }
 
-bool WorldGenerator::entityPersistent(WorldStorage*, EntityPtr const& entity) const {
+bool WorldGenerator::entityPersistent(WorldStorage&, EntityPtr const& entity) const {
   return entity->isMaster() && entity->persistent();
 }
 
@@ -769,57 +768,57 @@ RpcPromise<Vec2I> WorldGenerator::enqueuePlacement(List<BiomeItemDistribution> d
   return promise.first;
 }
 
-void WorldGenerator::replaceBiomeBlocks(ServerTile* tile) {
-  if (auto blockBiome = m_worldServer->worldTemplate()->biome(tile->blockBiomeIndex)) {
-    if (tile->foreground == BiomeMaterialId) {
-      tile->foreground = blockBiome->mainBlock;
-      tile->foregroundHueShift = m_worldServer->worldTemplate()->biomeMaterialHueShift(tile->blockBiomeIndex, tile->foreground);
-    } else if ((tile->foreground >= Biome1MaterialId) && (tile->foreground <= Biome5MaterialId)) {
+void WorldGenerator::replaceBiomeBlocks(ServerTile& tile) {
+  if (auto blockBiome = m_worldServer.worldTemplate()->biome(tile.blockBiomeIndex)) {
+    if (tile.foreground == BiomeMaterialId) {
+      tile.foreground = blockBiome->mainBlock;
+      tile.foregroundHueShift = m_worldServer.worldTemplate()->biomeMaterialHueShift(tile.blockBiomeIndex, tile.foreground);
+    } else if ((tile.foreground >= Biome1MaterialId) && (tile.foreground <= Biome5MaterialId)) {
       auto& subblocks = blockBiome->subBlocks;
       if (subblocks.size())
-        tile->foreground = subblocks[(tile->foreground - Biome1MaterialId) % subblocks.size()];
+        tile.foreground = subblocks[(tile.foreground - Biome1MaterialId) % subblocks.size()];
       else
-        tile->foreground = blockBiome->mainBlock;
-      tile->foregroundHueShift = m_worldServer->worldTemplate()->biomeMaterialHueShift(tile->blockBiomeIndex, tile->foreground);
+        tile.foreground = blockBiome->mainBlock;
+      tile.foregroundHueShift = m_worldServer.worldTemplate()->biomeMaterialHueShift(tile.blockBiomeIndex, tile.foreground);
     }
 
-    if (tile->background == BiomeMaterialId) {
-      tile->background = blockBiome->mainBlock;
-      tile->backgroundHueShift =
-          m_worldServer->worldTemplate()->biomeMaterialHueShift(tile->blockBiomeIndex, tile->background);
-    } else if ((tile->background >= Biome1MaterialId) && (tile->background <= Biome5MaterialId)) {
+    if (tile.background == BiomeMaterialId) {
+      tile.background = blockBiome->mainBlock;
+      tile.backgroundHueShift =
+          m_worldServer.worldTemplate()->biomeMaterialHueShift(tile.blockBiomeIndex, tile.background);
+    } else if ((tile.background >= Biome1MaterialId) && (tile.background <= Biome5MaterialId)) {
       auto& subblocks = blockBiome->subBlocks;
       if (subblocks.size())
-        tile->background = subblocks[(tile->background - Biome1MaterialId) % subblocks.size()];
+        tile.background = subblocks[(tile.background - Biome1MaterialId) % subblocks.size()];
       else
-        tile->background = blockBiome->mainBlock;
-      tile->backgroundHueShift = m_worldServer->worldTemplate()->biomeMaterialHueShift(tile->blockBiomeIndex, tile->background);
+        tile.background = blockBiome->mainBlock;
+      tile.backgroundHueShift = m_worldServer.worldTemplate()->biomeMaterialHueShift(tile.blockBiomeIndex, tile.background);
     }
   } else {
-    if (isBiomeMaterial(tile->foreground)) {
-      tile->foreground = EmptyMaterialId;
-      tile->foregroundHueShift = 0;
+    if (isBiomeMaterial(tile.foreground)) {
+      tile.foreground = EmptyMaterialId;
+      tile.foregroundHueShift = 0;
     }
-    if (isBiomeMod(tile->foregroundMod)) {
-      tile->foregroundMod = NoModId;
-      tile->foregroundModHueShift = 0;
+    if (isBiomeMod(tile.foregroundMod)) {
+      tile.foregroundMod = NoModId;
+      tile.foregroundModHueShift = 0;
     }
-    if (isBiomeMaterial(tile->background)) {
-      tile->background = EmptyMaterialId;
-      tile->backgroundHueShift = 0;
+    if (isBiomeMaterial(tile.background)) {
+      tile.background = EmptyMaterialId;
+      tile.backgroundHueShift = 0;
     }
-    if (isBiomeMod(tile->backgroundMod)) {
-      tile->backgroundMod = NoModId;
-      tile->backgroundModHueShift = 0;
+    if (isBiomeMod(tile.backgroundMod)) {
+      tile.backgroundMod = NoModId;
+      tile.backgroundModHueShift = 0;
     }
   }
 }
 
-void WorldGenerator::prepareTiles(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
+void WorldGenerator::prepareTiles(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
   auto materialDatabase = m_materialDatabase;
-  auto planet = m_worldServer->worldTemplate();
+  auto planet = m_worldServer.worldTemplate();
   // Generate sector.
-  auto tileArray = worldStorage->tileArray();
+  auto tileArray = worldStorage.tileArray();
   RectI sectorRegion = tileArray->sectorRegion(sector);
   for (int x = sectorRegion.xMin(); x < sectorRegion.xMax(); ++x) {
     for (int y = sectorRegion.yMin(); y < sectorRegion.yMax(); ++y) {
@@ -870,24 +869,24 @@ void WorldGenerator::prepareTiles(WorldStorage* worldStorage, ServerTileSectorAr
   }
 }
 
-void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
+void WorldGenerator::generateMicroDungeons(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
   auto facade = make_shared<DungeonGeneratorWorld>(m_worldServer, m_objectDatabase, false);
 
-  RectI sectorTiles = worldStorage->tileArray()->sectorRegion(sector);
+  RectI sectorTiles = worldStorage.tileArray()->sectorRegion(sector);
   RectI bounds = sectorTiles.padded(WorldSectorSize - 1);
 
   List<pair<BiomeItemPlacement, QueuedPlacement*>> placementQueue;
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
-      auto potential = m_worldServer->worldTemplate()->potentialBiomeItemsAt(x, y);
-      for (auto const& placement : m_worldServer->worldTemplate()->validBiomeItems(x, y, potential))
+      auto potential = m_worldServer.worldTemplate()->potentialBiomeItemsAt(x, y);
+      for (auto const& placement : m_worldServer.worldTemplate()->validBiomeItems(x, y, potential))
         placementQueue.append({placement, {}});
 
       for (auto& p : m_queuedPlacements) {
         WorldTemplate::PotentialBiomeItems queuedItems;
-        m_worldServer->worldTemplate()->addPotentialBiomeItems(x, y, queuedItems, p.distributions, BiomePlacementArea::Surface);
-        m_worldServer->worldTemplate()->addPotentialBiomeItems(x, y, queuedItems, p.distributions, BiomePlacementArea::Underground);
-        for (auto placement : m_worldServer->worldTemplate()->validBiomeItems(x, y, queuedItems))
+        m_worldServer.worldTemplate()->addPotentialBiomeItems(x, y, queuedItems, p.distributions, BiomePlacementArea::Surface);
+        m_worldServer.worldTemplate()->addPotentialBiomeItems(x, y, queuedItems, p.distributions, BiomePlacementArea::Underground);
+        for (auto placement : m_worldServer.worldTemplate()->validBiomeItems(x, y, queuedItems))
           placementQueue.append({std::move(placement), &p});
       }
     }
@@ -901,19 +900,19 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
       continue;
 
     if (placement.item.is<MicroDungeonNames>()) {
-      auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
+      auto seed = m_worldServer.worldTemplate()->seedFor(placement.position[0], placement.position[1]);
       auto const& dungeonName = staticRandomFrom(placement.item.get<MicroDungeonNames>(), seed);
       Maybe<DungeonId> dungeonId;
       starAssert(!dungeonName.empty());
-      if (auto generateResult = m_microDungeonFactory->generate(bounds, m_worldServer->dungeonDefinitions(), dungeonName, placement.position, seed, m_worldServer->threatLevel(), facade)) {
+      if (auto generateResult = m_microDungeonFactory->generate(bounds, m_worldServer.dungeonDefinitions(), dungeonName, placement.position, seed, m_worldServer.threatLevel(), facade)) {
         if (queued) {
           dungeonId = queued->dungeonId;
           queued->promise.fulfill(placement.position);
           queued->fulfilled = true;
         }
         for (auto position : generateResult->second) {
-          if (ServerTile* tile = m_worldServer->modifyServerTile(position)) {
-            replaceBiomeBlocks(tile);
+          if (ServerTile* tile = m_worldServer.modifyServerTile(position)) {
+            replaceBiomeBlocks(*tile);
             tile->dungeonId = dungeonId.value(tile->dungeonId);
           }
         }
@@ -926,13 +925,13 @@ void WorldGenerator::generateMicroDungeons(WorldStorage* worldStorage, ServerTil
     });
 }
 
-void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
+void WorldGenerator::generateCaveLiquid(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
   Set<Vec2I> openNodes = caveLiquidSeeds(worldStorage, sector);
 
   if (!openNodes.size())
     return;
 
-  auto tileArray = worldStorage->tileArray();
+  auto tileArray = worldStorage.tileArray();
 
   Vec2I dimensions(tileArray->size());
 
@@ -947,7 +946,7 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
   auto materialDatabase = m_materialDatabase;
 
   auto samplePoint = sectorTiles.center();
-  auto blockInfo = m_worldServer->worldTemplate()->blockInfo(samplePoint[0], samplePoint[1]);
+  auto blockInfo = m_worldServer.worldTemplate()->blockInfo(samplePoint[0], samplePoint[1]);
   LiquidId fillLiquid = blockInfo.caveLiquid;
   bool fillMicrodungeons = blockInfo.fillMicrodungeons;
   bool encloseLiquids = blockInfo.encloseLiquids;
@@ -1038,7 +1037,7 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
     solids(position + Vec2I(0, -1));
   }
 
-  MaterialId biomeBlock = m_worldServer->worldTemplate()->biome(tileArray->tile(samplePoint).blockBiomeIndex)->mainBlock;
+  MaterialId biomeBlock = m_worldServer.worldTemplate()->biome(tileArray->tile(samplePoint).blockBiomeIndex)->mainBlock;
   Map<Vec2I, float> drops = determineLiquidLevel(candidateNodes, solidSurroundings);
   for (auto iter = drops.begin(); iter != drops.end(); ++iter) {
     auto tile = tileArray->modifyTile(wrapCoords(iter->first));
@@ -1052,10 +1051,10 @@ void WorldGenerator::generateCaveLiquid(WorldStorage* worldStorage, ServerTileSe
   }
 }
 
-void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
+void WorldGenerator::prepareSector(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
   auto materialDatabase = m_materialDatabase;
-  auto planet = m_worldServer->worldTemplate();
-  auto tileArray = worldStorage->tileArray();
+  auto planet = m_worldServer.worldTemplate();
+  auto tileArray = worldStorage.tileArray();
   RectI sectorTiles = tileArray->sectorRegion(sector);
 
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
@@ -1085,8 +1084,8 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
       if (!isRealMaterial(tile->background))
         tile->backgroundColorVariant = DefaultMaterialColorVariant;
 
-      replaceBiomeBlocks(tile);
-      placeBiomeGrass(worldStorage, tile, position);
+      replaceBiomeBlocks(*tile);
+      placeBiomeGrass(worldStorage, *tile, position);
 
       tile->collision = maxCollision(tile->collision, materialDatabase->materialCollisionKind(tile->foreground));
     }
@@ -1097,8 +1096,8 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       auto tile = tileArray->tile(Vec2I(x, y));
       if (tile.dungeonId == NoDungeonId) {
-        auto potential = m_worldServer->worldTemplate()->potentialBiomeItemsAt(x, y);
-        for (auto const& placement : m_worldServer->worldTemplate()->validBiomeItems(x, y, potential))
+        auto potential = m_worldServer.worldTemplate()->potentialBiomeItemsAt(x, y);
+        for (auto const& placement : m_worldServer.worldTemplate()->validBiomeItems(x, y, potential))
           placementQueue.append(placement);
       }
     }
@@ -1106,7 +1105,7 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
 
   sort(placementQueue);
   for (auto const& placement : placementQueue) {
-    auto seed = m_worldServer->worldTemplate()->seedFor(placement.position[0], placement.position[1]);
+    auto seed = m_worldServer.worldTemplate()->seedFor(placement.position[0], placement.position[1]);
     if (placement.item.is<GrassVariant>()) {
       auto& grass = placement.item.get<GrassVariant>();
       placePlant(worldStorage, m_plantDatabase->createPlant(grass, seed), placement.position);
@@ -1128,25 +1127,25 @@ void WorldGenerator::prepareSector(WorldStorage* worldStorage, ServerTileSectorA
       auto objectPair = objectPool.select(seed);
       if (auto object = m_objectDatabase->createForPlacement(
               m_worldServer, objectPair.first, placement.position, direction, objectPair.second))
-        m_worldServer->addEntity(object);
+        m_worldServer.addEntity(object);
     } else if (placement.item.is<TreasureBoxSet>()) {
       auto& treasureBoxSet = placement.item.get<TreasureBoxSet>();
       auto direction = seed % 2 ? Direction::Left : Direction::Right;
       if (auto treasureContainer = m_treasureDatabase->createTreasureChest(m_worldServer, treasureBoxSet, placement.position, direction, seed))
-        m_worldServer->addEntity(treasureContainer);
+        m_worldServer.addEntity(treasureContainer);
     }
   }
 
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
-      if (auto* tile = worldStorage->tileArray()->modifyTile({x, y}))
+      if (auto* tile = worldStorage.tileArray()->modifyTile({x, y}))
         tile->collisionCacheDirty = true;
     }
   }
 }
 
-void WorldGenerator::prepareSectorBiomeBlocks(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  auto tileArray = worldStorage->tileArray();
+void WorldGenerator::prepareSectorBiomeBlocks(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
+  auto tileArray = worldStorage.tileArray();
   auto materialDatabase = m_materialDatabase;
   RectI sectorTiles = tileArray->sectorRegion(sector);
 
@@ -1155,28 +1154,28 @@ void WorldGenerator::prepareSectorBiomeBlocks(WorldStorage* worldStorage, Server
       Vec2I position(x, y);
       ServerTile* tile = tileArray->modifyTile(position);
 
-      replaceBiomeBlocks(tile);
-      placeBiomeGrass(worldStorage, tile, position);
+      replaceBiomeBlocks(*tile);
+      placeBiomeGrass(worldStorage, *tile, position);
 
       tile->collision = maxCollision(tile->collision, materialDatabase->materialCollisionKind(tile->foreground));
     }
   }
 }
 
-void WorldGenerator::placeBiomeGrass(WorldStorage* worldStorage, ServerTile* tile, Vec2I const& position) {
-  if (auto blockBiome = m_worldServer->worldTemplate()->biome(tile->blockBiomeIndex)) {
+void WorldGenerator::placeBiomeGrass(WorldStorage& worldStorage, ServerTile& tile, Vec2I const& position) {
+  if (auto blockBiome = m_worldServer.worldTemplate()->biome(tile.blockBiomeIndex)) {
     // determine layer for grass mod calculation
-    TileLayer modLayer = tile->foreground != EmptyMaterialId ? TileLayer::Foreground : TileLayer::Background;
+    TileLayer modLayer = tile.foreground != EmptyMaterialId ? TileLayer::Foreground : TileLayer::Background;
 
     // don't place mods in dungeons unless explicitly specified, also don't
     // touch non-grass mods
-    if (tile->mod(modLayer) == BiomeModId || tile->mod(modLayer) == UndergroundBiomeModId
-        || (tile->dungeonId == NoDungeonId && tile->mod(modLayer) == NoModId)) {
+    if (tile.mod(modLayer) == BiomeModId || tile.mod(modLayer) == UndergroundBiomeModId
+        || (tile.dungeonId == NoDungeonId && tile.mod(modLayer) == NoModId)) {
       // check whether we're floor or ceiling
-      auto tileAbove = worldStorage->tileArray()->tile(position + Vec2I(0, 1));
-      auto tileBelow = worldStorage->tileArray()->tile(position + Vec2I(0, -1));
-      bool isFloor = (tile->foreground != EmptyMaterialId && tileAbove.foreground == EmptyMaterialId) || (tile->background != EmptyMaterialId && tileAbove.background == EmptyMaterialId);
-      bool isCeiling = !isFloor && ((tile->foreground != EmptyMaterialId && tileBelow.foreground == EmptyMaterialId) || (tile->background != EmptyMaterialId && tileBelow.background == EmptyMaterialId));
+      auto tileAbove = worldStorage.tileArray()->tile(position + Vec2I(0, 1));
+      auto tileBelow = worldStorage.tileArray()->tile(position + Vec2I(0, -1));
+      bool isFloor = (tile.foreground != EmptyMaterialId && tileAbove.foreground == EmptyMaterialId) || (tile.background != EmptyMaterialId && tileAbove.background == EmptyMaterialId);
+      bool isCeiling = !isFloor && ((tile.foreground != EmptyMaterialId && tileBelow.foreground == EmptyMaterialId) || (tile.background != EmptyMaterialId && tileBelow.background == EmptyMaterialId));
 
       // get the appropriate placeables for above/below ground
       BiomePlaceables const* placeables;
@@ -1188,40 +1187,40 @@ void WorldGenerator::placeBiomeGrass(WorldStorage* worldStorage, ServerTile* til
       // determine the proper grass mod or lack thereof
       ModId grassModId = NoModId;
       if (isFloor) {
-        auto grassChance = staticRandomFloat(m_worldServer->worldTemplate()->worldSeed(), position[0], position[1]);
+        auto grassChance = staticRandomFloat(m_worldServer.worldTemplate()->worldSeed(), position[0], position[1]);
         if (isRealMod(placeables->grassMod) && grassChance <= placeables->grassModDensity)
           grassModId = placeables->grassMod;
       } else if (isCeiling) {
-        auto grassChance = staticRandomFloat(m_worldServer->worldTemplate()->worldSeed(), position[0], position[1]);
+        auto grassChance = staticRandomFloat(m_worldServer.worldTemplate()->worldSeed(), position[0], position[1]);
         if (isRealMod(placeables->ceilingGrassMod) && grassChance <= placeables->ceilingGrassModDensity)
           grassModId = placeables->ceilingGrassMod;
       }
 
       // set the selected grass mod
       if (modLayer == TileLayer::Foreground) {
-        tile->foregroundMod = grassModId;
-        tile->backgroundMod = NoModId;
+        tile.foregroundMod = grassModId;
+        tile.backgroundMod = NoModId;
       } else {
-        tile->foregroundMod = NoModId;
-        tile->backgroundMod = grassModId;
+        tile.foregroundMod = NoModId;
+        tile.backgroundMod = grassModId;
       }
     }
 
     // update hue shifts appropriately
-    tile->foregroundModHueShift = m_worldServer->worldTemplate()->biomeModHueShift(tile->blockBiomeIndex, tile->foregroundMod);
-    tile->backgroundModHueShift = m_worldServer->worldTemplate()->biomeModHueShift(tile->blockBiomeIndex, tile->backgroundMod);
+    tile.foregroundModHueShift = m_worldServer.worldTemplate()->biomeModHueShift(tile.blockBiomeIndex, tile.foregroundMod);
+    tile.backgroundModHueShift = m_worldServer.worldTemplate()->biomeModHueShift(tile.blockBiomeIndex, tile.backgroundMod);
   }
 }
 
-void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
+void WorldGenerator::reapplyBiome(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
   auto materialDatabase = m_materialDatabase;
-  auto planet = m_worldServer->worldTemplate();
-  auto tileArray = worldStorage->tileArray();
+  auto planet = m_worldServer.worldTemplate();
+  auto tileArray = worldStorage.tileArray();
   RectI sectorTiles = tileArray->sectorRegion(sector);
 
   // Logger::info("Reapplying biome in sector {}...", sectorTiles);
 
-  auto entities = m_worldServer->entityQuery(RectF(sectorTiles.padded(1)));
+  auto entities = m_worldServer.entityQuery(RectF(sectorTiles.padded(1)));
   List<TileEntityPtr> biomeTileEntities;
   for (auto const& entity : entities) {
     if (auto plant = as<Plant>(entity)) {
@@ -1237,7 +1236,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
   for (int x = sectorTiles.xMin(); x < sectorTiles.xMax(); ++x) {
     for (int y = sectorTiles.yMin(); y < sectorTiles.yMax(); ++y) {
       Vec2I position(x, y);
-      ServerTile* tile = m_worldServer->modifyServerTile(position);
+      ServerTile* tile = m_worldServer.modifyServerTile(position);
       starAssert(tile);
       if (!tile)
         continue;
@@ -1249,7 +1248,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
 
         biomeTileEntities.filter([&, position](TileEntityPtr tileEntity) {
             if (tileEntity->tilePosition() == position) {
-              m_worldServer->removeEntity(tileEntity->entityId(), false);
+              m_worldServer.removeEntity(tileEntity->entityId(), false);
               return false;
             }
             return true;
@@ -1296,8 +1295,8 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
 
           if (tile->mod(modLayer) == NoModId) {
             // check whether we're floor or ceiling
-            auto tileAbove = worldStorage->tileArray()->tile(position + Vec2I(0, 1));
-            auto tileBelow = worldStorage->tileArray()->tile(position + Vec2I(0, -1));
+            auto tileAbove = worldStorage.tileArray()->tile(position + Vec2I(0, 1));
+            auto tileBelow = worldStorage.tileArray()->tile(position + Vec2I(0, -1));
             bool isFloor = tile->foreground != EmptyMaterialId && tileAbove.foreground == EmptyMaterialId;
             bool isCeiling = !isFloor && tile->foreground != EmptyMaterialId && tileBelow.foreground == EmptyMaterialId;
             bool isModFloor, isModCeiling;
@@ -1319,11 +1318,11 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
             // determine the proper grass mod or lack thereof
             ModId grassModId = NoModId;
             if (isModFloor) {
-              auto grassChance = staticRandomFloat(m_worldServer->worldTemplate()->worldSeed(), position[0], position[1]);
+              auto grassChance = staticRandomFloat(m_worldServer.worldTemplate()->worldSeed(), position[0], position[1]);
               if (isRealMod(placeables->grassMod) && grassChance <= placeables->grassModDensity)
                 grassModId = placeables->grassMod;
             } else if (isModCeiling) {
-              auto grassChance = staticRandomFloat(m_worldServer->worldTemplate()->worldSeed(), position[0], position[1]);
+              auto grassChance = staticRandomFloat(m_worldServer.worldTemplate()->worldSeed(), position[0], position[1]);
               if (isRealMod(placeables->ceilingGrassMod) && grassChance <= placeables->ceilingGrassModDensity)
                 grassModId = placeables->ceilingGrassMod;
             }
@@ -1361,16 +1360,16 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
       auto roots = plant->roots();
       auto const& primaryRoot = plant->primaryRoot();
 
-      auto blockBiome = planet->worldLayout()->getBiome(worldStorage->tileArray()->tile(position).blockBiomeIndex);
+      auto blockBiome = planet->worldLayout()->getBiome(worldStorage.tileArray()->tile(position).blockBiomeIndex);
 
       auto positionValid = [&](Vec2I const& pos) {
-          auto primaryTile = worldStorage->tileArray()->tile(pos);
-          auto primaryRootTile = worldStorage->tileArray()->tile(pos + primaryRoot);
+          auto primaryTile = worldStorage.tileArray()->tile(pos);
+          auto primaryRootTile = worldStorage.tileArray()->tile(pos + primaryRoot);
           if (isConnectableMaterial(primaryTile.foreground) || !isConnectableMaterial(primaryRootTile.foreground))
             return false;
 
           for (auto root : roots) {
-            auto rootTile = worldStorage->tileArray()->tile(root + pos);
+            auto rootTile = worldStorage.tileArray()->tile(root + pos);
             if (!isConnectableMaterial(rootTile.foreground) || rootTile.blockBiomeIndex != primaryTile.blockBiomeIndex ||
                 (rootTile.foreground != blockBiome->mainBlock && !blockBiome->subBlocks.contains(rootTile.foreground)))
               return false;
@@ -1379,10 +1378,10 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
           for (auto space : spaces) {
             Vec2I pspace = space + pos;
 
-            if (!m_worldServer->atTile<TileEntity>(pspace).empty())
+            if (!m_worldServer.atTile<TileEntity>(pspace).empty())
               return false;
 
-            auto tile = worldStorage->tileArray()->tile(pspace);
+            auto tile = worldStorage.tileArray()->tile(pspace);
             if (tile.foreground != EmptyMaterialId)
               return false;
           }
@@ -1405,7 +1404,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
       for (auto pos : tryPositions) {
         if (positionValid(pos)) {
           plant->setTilePosition(pos);
-          m_worldServer->addEntity(plant);
+          m_worldServer.addEntity(plant);
           return true;
         }
       }
@@ -1414,7 +1413,7 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
     };
 
   auto placeBiomeItem = [&](BiomeItemPlacement biomeItemPlacement, Vec2I position) {
-      auto seed = m_worldServer->worldTemplate()->seedFor(position[0], position[1]);
+      auto seed = m_worldServer.worldTemplate()->seedFor(position[0], position[1]);
       if (biomeItemPlacement.item.is<GrassVariant>()) {
         auto& grass = biomeItemPlacement.item.get<GrassVariant>();
         simplePlacePlant(m_plantDatabase->createPlant(grass, seed), position);
@@ -1436,17 +1435,17 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
         auto objectPair = objectPool.select(seed);
         if (auto object = m_objectDatabase->createForPlacement(m_worldServer, objectPair.first, position, direction, objectPair.second)) {
           if (object->biomePlaced())
-            m_worldServer->addEntity(object);
+            m_worldServer.addEntity(object);
         }
       }
     };
 
   for (auto position : biomeItemTiles) {
-    ServerTile* tile = m_worldServer->modifyServerTile(position);
+    ServerTile* tile = m_worldServer.modifyServerTile(position);
 
     auto blockBiome = planet->worldLayout()->getBiome(tile->blockBiomeIndex);
-    auto tileAbove = m_worldServer->getServerTile(position + Vec2I{0, 1});
-    auto tileBelow = m_worldServer->getServerTile(position + Vec2I{0, -1});
+    auto tileAbove = m_worldServer.getServerTile(position + Vec2I{0, 1});
+    auto tileBelow = m_worldServer.getServerTile(position + Vec2I{0, -1});
 
     if (tile->background != EmptyMaterialId) {
       for (auto const& itemDistribution : blockBiome->undergroundPlaceables.itemDistributions) {
@@ -1486,10 +1485,10 @@ void WorldGenerator::reapplyBiome(WorldStorage* worldStorage, ServerTileSectorAr
   }
 }
 
-Set<Vec2I> WorldGenerator::caveLiquidSeeds(WorldStorage* worldStorage, ServerTileSectorArray::Sector const& sector) {
-  RectI sectorTiles = worldStorage->tileArray()->sectorRegion(sector);
+Set<Vec2I> WorldGenerator::caveLiquidSeeds(WorldStorage& worldStorage, ServerTileSectorArray::Sector const& sector) {
+  RectI sectorTiles = worldStorage.tileArray()->sectorRegion(sector);
   auto samplePoint = sectorTiles.center();
-  auto blockInfo = m_worldServer->worldTemplate()->blockInfo(samplePoint[0], samplePoint[1]);
+  auto blockInfo = m_worldServer.worldTemplate()->blockInfo(samplePoint[0], samplePoint[1]);
   float seedDensity = blockInfo.caveLiquidSeedDensity;
   Set<Vec2I> nodes;
   if (seedDensity > 0) {
@@ -1508,7 +1507,7 @@ Map<Vec2I, float> WorldGenerator::determineLiquidLevel(Set<Vec2I> const& spots, 
   Set<Vec2I> openSet(spots);
   Map<Vec2I, float> results;
 
-  auto geometry = m_worldServer->geometry();
+  auto geometry = m_worldServer.geometry();
 
   while (openSet.size() > 0) {
     Set<Vec2I> cluster;
@@ -1557,7 +1556,7 @@ void WorldGenerator::levelCluster(Set<Vec2I>& cluster, Set<Vec2I> const& filled,
   }
 }
 
-bool WorldGenerator::placePlant(WorldStorage* worldStorage, PlantPtr const& plant, Vec2I const& position) {
+bool WorldGenerator::placePlant(WorldStorage& worldStorage, PlantPtr const& plant, Vec2I const& position) {
   if (!plant)
     return false;
 
@@ -1565,7 +1564,7 @@ bool WorldGenerator::placePlant(WorldStorage* worldStorage, PlantPtr const& plan
   auto roots = plant->roots();
   auto const& primaryRoot = plant->primaryRoot();
 
-  auto background = m_worldServer->getServerTile(position).background;
+  auto background = m_worldServer.getServerTile(position).background;
   bool adjustBackground = background == EmptyMaterialId || background == NullMaterialId;
 
   auto withinAdjustment = [=](Vec2I const& pos) {
@@ -1574,8 +1573,8 @@ bool WorldGenerator::placePlant(WorldStorage* worldStorage, PlantPtr const& plan
 
   // Bail out if we don't have at least one free space, and root in the primary
   // root position, or if we're in a dungeon region.
-  auto primaryTile = worldStorage->tileArray()->tile(position);
-  auto rootTile = worldStorage->tileArray()->tile(position + primaryRoot);
+  auto primaryTile = worldStorage.tileArray()->tile(position);
+  auto rootTile = worldStorage.tileArray()->tile(position + primaryRoot);
   if (primaryTile.dungeonId != NoDungeonId || rootTile.dungeonId != NoDungeonId)
     return false;
   if (isConnectableMaterial(primaryTile.foreground) || !isConnectableMaterial(rootTile.foreground))
@@ -1585,12 +1584,12 @@ bool WorldGenerator::placePlant(WorldStorage* worldStorage, PlantPtr const& plan
   for (auto space : spaces) {
     Vec2I pspace = space + position;
 
-    if (withinAdjustment(space) && !m_worldServer->atTile<Plant>(pspace).empty())
+    if (withinAdjustment(space) && !m_worldServer.atTile<Plant>(pspace).empty())
       return false;
 
     // Bail out if we hit a different plant's root tile, or if we're not in the
     // adjustment space and we hit a non-empty tile.
-    auto tile = worldStorage->tileArray()->tile(pspace);
+    auto tile = worldStorage.tileArray()->tile(pspace);
     if (tile.rootSource || (!withinAdjustment(space) && tile.foreground != EmptyMaterialId))
       return false;
   }
@@ -1598,7 +1597,7 @@ bool WorldGenerator::placePlant(WorldStorage* worldStorage, PlantPtr const& plan
   // Check all the roots outside of the adjustment limit
   for (auto root : roots) {
     root += position;
-    if (!withinAdjustment(root) && !isConnectableMaterial(worldStorage->tileArray()->tile(root).foreground))
+    if (!withinAdjustment(root) && !isConnectableMaterial(worldStorage.tileArray()->tile(root).foreground))
       return false;
   }
 
@@ -1608,7 +1607,7 @@ bool WorldGenerator::placePlant(WorldStorage* worldStorage, PlantPtr const& plan
       continue;
 
     space += position;
-    if (auto tile = worldStorage->tileArray()->modifyTile(space)) {
+    if (auto tile = worldStorage.tileArray()->modifyTile(space)) {
       if (isConnectableMaterial(tile->foreground))
         *tile = primaryTile;
       if (adjustBackground)
@@ -1623,7 +1622,7 @@ bool WorldGenerator::placePlant(WorldStorage* worldStorage, PlantPtr const& plan
   // Make all the root blocks a real material based on the primary root.
   for (auto root : roots) {
     root += position;
-    if (auto tile = worldStorage->tileArray()->modifyTile(root)) {
+    if (auto tile = worldStorage.tileArray()->modifyTile(root)) {
       if (!isRealMaterial(tile->foreground)) {
         *tile = rootTile;
         tile->collision = m_materialDatabase->materialCollisionKind(tile->foreground);
@@ -1635,7 +1634,7 @@ bool WorldGenerator::placePlant(WorldStorage* worldStorage, PlantPtr const& plan
   }
 
   plant->setTilePosition(position);
-  m_worldServer->addEntity(plant);
+  m_worldServer.addEntity(plant);
   return true;
 }
 

@@ -8,7 +8,7 @@
 
 namespace Star {
 
-ServerQueryThread::ServerQueryThread(UniverseServer* universe, HostAddressWithPort const& bindAddress, ConfigurationPtr configuration)
+ServerQueryThread::ServerQueryThread(UniverseServer& universe, HostAddressWithPort const& bindAddress, ConfigurationPtr configuration)
   : Thread("QueryServer"),
     m_universe(universe),
     m_queryServer(bindAddress),
@@ -60,7 +60,7 @@ void ServerQueryThread::sendTo(HostAddressWithPort const& address, DataStreamBuf
 }
 
 uint8_t ServerQueryThread::serverPlayerCount() {
-  return m_universe->numberOfClients();
+  return m_universe.numberOfClients();
 }
 
 bool ServerQueryThread::serverPassworded() {
@@ -69,7 +69,7 @@ bool ServerQueryThread::serverPassworded() {
 }
 
 String ServerQueryThread::serverWorldNames() {
-  auto activeWorlds = m_universe->activeWorlds();
+  auto activeWorlds = m_universe.activeWorlds();
   if (activeWorlds.empty())
     return String("Unknown");
 
@@ -155,7 +155,7 @@ void ServerQueryThread::buildPlayerResponse() {
     return;
   }
 
-  auto clientIds = m_universe->clientIdsAndCreationTime();
+  auto clientIds = m_universe.clientIdsAndCreationTime();
   uint8_t cnt = static_cast<uint8_t>(clientIds.count());
   int32_t kills = 0; // Not currently supported
 
@@ -165,7 +165,7 @@ void ServerQueryThread::buildPlayerResponse() {
   uint8_t i = 0;
   for (auto& pair : clientIds) {
     auto timeConnected = float(now - pair.second) / 1000.f;
-    m_playersResponse << i++ << m_universe->clientNick(pair.first) << kills << timeConnected;
+    m_playersResponse << i++ << m_universe.clientNick(pair.first) << kills << timeConnected;
   }
 
   m_lastPlayersResponse = now;

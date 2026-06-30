@@ -53,7 +53,7 @@ FireableItem::FireableItem(FireableItem const& rhs) : ToolUserItem(rhs), StatusE
   m_mode = rhs.m_mode;
 }
 
-void FireableItem::init(ToolUserEntity* owner, ToolHand hand) {
+void FireableItem::init(ToolUserEntity& owner, ToolHand hand) {
   ToolUserItem::init(owner, hand);
 
   m_fireWhenReady = false;
@@ -67,9 +67,9 @@ void FireableItem::init(ToolUserEntity* owner, ToolHand hand) {
     }
     m_scriptComponent->addCallbacks(
         "config", LuaBindings::makeConfigCallbacks([item = as<Item>(this)](String const& name, Json const& def) { return item->instanceValue(name, def); }));
-    m_scriptComponent->addCallbacks("fireableItem", LuaBindings::makeFireableItemCallbacks(this));
-    m_scriptComponent->addCallbacks("item", LuaBindings::makeItemCallbacks(as<Item>(this)));
-    m_scriptComponent->init(world());
+    m_scriptComponent->addCallbacks("fireableItem", LuaBindings::makeFireableItemCallbacks(*this));
+    m_scriptComponent->addCallbacks("item", LuaBindings::makeItemCallbacks(*as<Item>(this)));
+    m_scriptComponent->init(*world());
   }
 }
 

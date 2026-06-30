@@ -11,6 +11,7 @@ template <typename KeyT>
 class RegisteredPaneManager : public PaneManager {
 public:
   using Key = KeyT;
+  using PaneManager::PaneManager;
 
   void registerPane(KeyT paneId, PaneLayer paneLayer, PanePtr pane, DismissCallback onDismiss = {});
   PanePtr deregisterPane(KeyT const& paneId);

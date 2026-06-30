@@ -1,10 +1,12 @@
 #pragma once
 
-#include "StarJson.hpp"
 #include "StarBiMap.hpp"
+#include "StarJson.hpp"
 
 namespace Star {
 class DataStream;
+class VersioningDatabase;
+using VersioningDatabaseConstPtr = SharedPtr<VersioningDatabase const>;
 
 class Item;
 using ItemConstPtr = SharedPtr<Item const>;
@@ -12,7 +14,7 @@ using ItemConstPtr = SharedPtr<Item const>;
 class ItemDescriptor {
 public:
   // Loads ItemDescriptor from store format.
-  static ItemDescriptor loadStore(Json const& store);
+  static ItemDescriptor loadStore(Json const& store, VersioningDatabaseConstPtr versioningDatabase);
 
   ItemDescriptor();
   ItemDescriptor(String name, uint64_t count, Json parameters = Json());
@@ -47,7 +49,7 @@ public:
   bool matches(ItemConstPtr const& other, bool exactMatch = false) const;
 
   // Stores ItemDescriptor to versioned structure not meant for human reading / writing.
-  Json diskStore() const;
+  Json diskStore(VersioningDatabaseConstPtr versioningDatabase) const;
 
   // Converts ItemDescriptor to spec format
   Json toJson() const;
@@ -75,6 +77,7 @@ struct hash<ItemDescriptor> {
   size_t operator()(ItemDescriptor const& v) const;
 };
 
-}
+}// namespace Star
 
-template <> struct std::formatter<Star::ItemDescriptor> : Star::OstreamFormatter {};
+template <>
+struct std::formatter<Star::ItemDescriptor> : Star::OstreamFormatter {};

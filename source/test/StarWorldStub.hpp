@@ -21,6 +21,7 @@ public:
   LiquidsDatabaseConstPtr liquidsDatabase() const override { return {}; }
   EffectSourceDatabaseConstPtr effectSourceDatabase() const override { return {}; }
   ParticleDatabaseConstPtr particleDatabase() const override { return {}; }
+  ProjectileDatabaseConstPtr projectileDatabase() const override { return {}; }
   TechDatabaseConstPtr techDatabase() const override { return {}; }
   StatusEffectDatabaseConstPtr statusEffectDatabase() const override { return {}; }
   PlantDatabaseConstPtr plantDatabase() const override { return {}; }
@@ -98,4 +99,4 @@ public:
   RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const&, String const&, JsonArray const&) override { return RpcPromise<Json>(); }
 };
 
-}
+}// namespace Star

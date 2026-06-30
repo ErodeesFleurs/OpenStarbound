@@ -1,5 +1,5 @@
-#include "StarLexicalCast.hpp"
 #include "StarItemDatabase.hpp"
+#include "StarLexicalCast.hpp"
 #include "StarLogging.hpp"
 #include "StarRootLoader.hpp"
 #include "StarWorldServer.hpp"
@@ -28,11 +28,11 @@ int main(int argc, char** argv) {
     coutf(" done\n");
 
     String dungeon = options.arguments.first();
-    VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(dungeon);
+    VisitableWorldParametersPtr worldParameters = generateFloatingDungeonWorldParameters(root->assets(), dungeon);
     uint64_t worldSeed = Random::randu64();
     if (options.parameters.contains("seed"))
       worldSeed = lexicalCast<uint64_t>(options.parameters.get("seed").first());
-    auto worldTemplate = make_shared<WorldTemplate>(root->assets(), TerrainDatabaseConstPtr{}, BiomeDatabaseConstPtr{}, worldParameters, SkyParameters(), worldSeed);
+    auto worldTemplate = make_shared<WorldTemplate>(root->assets(), root->terrainDatabase(), root->biomeDatabase(), worldParameters, SkyParameters(), worldSeed, root->dungeonDefinitions());
 
     auto fidelity = options.parameters.maybe("fidelity").apply([](StringList p) { return p.maybeFirst(); }).value({});
     root->configuration()->set("serverFidelity", fidelity.value("high"));
@@ -62,7 +62,8 @@ int main(int argc, char** argv) {
 
     double sumTime = 0.0;
     for (uint64_t i = 0; i < times; ++i) {
-      WorldServer worldServer(worldTemplate, File::ephemeralFile(), WorldServerServices{root->assets(), root->configuration(), root->materialDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->biomeDatabase(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase(), root->imageMetadataDatabase(), root->dungeonDefinitions(), root->behaviorDatabase()});
+      auto luaRootServices = root->luaRootServices();
+      WorldServer worldServer(worldTemplate, File::ephemeralFile(), WorldServerServices{root->assets(), root->configuration(), root->materialDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->terrainDatabase(), root->biomeDatabase(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase(), root->imageMetadataDatabase(), root->dungeonDefinitions(), root->behaviorDatabase(), luaRootServices});
 
       coutf("Starting world simulation for {} steps\n", steps);
       double start = Time::monotonicTime();
@@ -72,9 +73,9 @@ int main(int argc, char** argv) {
         if (j % signalEvery == 0) {
           entityCount = 0;
           worldServer.forEachEntity(RectF(Vec2F(), Vec2F(worldServer.geometry().size())), [&](auto const& entity) {
-              ++entityCount;
-              worldServer.signalRegion(RectI::integral(entity->metaBoundBox().translated(entity->position())));
-            });
+            ++entityCount;
+            worldServer.signalRegion(RectI::integral(entity->metaBoundBox().translated(entity->position())));
+          });
         }
 
         if (reportEvery != 0 && j % reportEvery == 0) {

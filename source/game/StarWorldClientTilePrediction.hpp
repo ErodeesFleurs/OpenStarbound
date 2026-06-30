@@ -11,15 +11,14 @@ class StarWorldClientTilePrediction {
 public:
   friend class WorldClient;
 
-  StarWorldClientTilePrediction() = default;
-  explicit StarWorldClientTilePrediction(WorldClient* worldClient);
+  explicit StarWorldClientTilePrediction(WorldClient& worldClient);
 
   void informTilePrediction(Vec2I const& pos, TileModification const& modification);
   bool readNetTile(Vec2I const& pos, NetTile const& netTile, bool updateCollision = true);
   void expirePredictedTiles();
 
 private:
-  WorldClient* m_worldClient = nullptr;
+  WorldClient& m_worldClient;
 
   HashMap<Vec2I, PredictedTile> m_predictedTiles;
   int m_modifiedTilePredictionTimeout = 0;

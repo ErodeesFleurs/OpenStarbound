@@ -6,8 +6,8 @@
 
 namespace Star {
 
-UnlockItem::UnlockItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& itemParameters)
-  : Item(assets, config, directory, itemParameters), SwingableItem(config), m_assets(std::move(assets)) {
+UnlockItem::UnlockItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& itemParameters)
+  : Item(assets, std::move(imageMetadataDatabase), config, directory, itemParameters), SwingableItem(config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("UnlockItem requires assets service");
 
@@ -15,7 +15,7 @@ UnlockItem::UnlockItem(AssetsConstPtr assets, Json const& config, String const& 
   m_shipUpgrade = instanceValue("shipUpgrade").optUInt();
   m_unlockMessage = instanceValue("unlockMessage").optString().value();
   auto image = AssetPath::relativeTo(directory, instanceValue("image").toString());
-  m_drawables = {Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F())};
+  m_drawables = {Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F(), Color::White, m_imageMetadataDatabase)};
 }
 
 ItemPtr UnlockItem::clone() const {

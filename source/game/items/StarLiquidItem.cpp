@@ -5,8 +5,8 @@
 
 namespace Star {
 
-LiquidItem::LiquidItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& settings, LiquidsDatabaseConstPtr liquidsDatabase)
-  : Item(assets, config, directory, settings), FireableItem(config), BeamItem(assets, config) {
+LiquidItem::LiquidItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& settings, LiquidsDatabaseConstPtr liquidsDatabase)
+  : Item(assets, imageMetadataDatabase, config, directory, settings), FireableItem(config), BeamItem(assets, std::move(imageMetadataDatabase), config) {
   if (!assets)
     throw ItemException("LiquidItem requires assets service");
   if (!liquidsDatabase)
@@ -27,7 +27,7 @@ ItemPtr LiquidItem::clone() const {
   return make_shared<LiquidItem>(*this);
 }
 
-void LiquidItem::init(ToolUserEntity* owner, ToolHand hand) {
+void LiquidItem::init(ToolUserEntity& owner, ToolHand hand) {
   FireableItem::init(owner, hand);
   BeamItem::init(owner, hand);
 }

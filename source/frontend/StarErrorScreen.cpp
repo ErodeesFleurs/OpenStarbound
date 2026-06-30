@@ -10,22 +10,20 @@
 namespace Star {
 
 ErrorScreen::ErrorScreen(ErrorScreenServices services)
-  : m_assets(std::move(services.assets)),
+  : m_guiContext(services.guiContext),
+    m_assets(std::move(services.assets)),
     m_imageMetadata(std::move(services.imageMetadata)),
     m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata}) {
   if (!m_assets)
     throw StarException("ErrorScreen requires assets service");
   if (!m_imageMetadata)
     throw StarException("ErrorScreen requires image metadata service");
-
-  m_paneManager = make_shared<PaneManager>();
+  m_paneManager = make_shared<PaneManager>(m_guiContext);
 
   m_accepted = true;
 
-  m_guiContext = GuiContext::singletonPtr();
-
-  m_errorPane = make_shared<Pane>();
-  GuiReader reader;
+  m_errorPane = make_shared<Pane>(m_guiContext);
+  GuiReader reader(m_guiContext);
   reader.registerCallback("btnOk", [this](Widget*) {
       m_accepted = true;
     });
@@ -72,20 +70,20 @@ void ErrorScreen::renderCursor() {
 
   cursorPos[0] -= cursorOffset[0] * cursorScale;
   cursorPos[1] -= (cursorSize[1] - cursorOffset[1]) * cursorScale;
-  if (!m_guiContext->trySetCursor(cursorDrawable, cursorOffset, cursorScale))
-    m_guiContext->drawDrawable(cursorDrawable, Vec2F(cursorPos), cursorScale);
+  if (!m_guiContext.trySetCursor(cursorDrawable, cursorOffset, cursorScale))
+    m_guiContext.drawDrawable(cursorDrawable, Vec2F(cursorPos), cursorScale);
 }
 
 float ErrorScreen::interfaceScale() const {
-  return m_guiContext->interfaceScale();
+  return m_guiContext.interfaceScale();
 }
 
 unsigned ErrorScreen::windowHeight() const {
-  return m_guiContext->windowHeight();
+  return m_guiContext.windowHeight();
 }
 
 unsigned ErrorScreen::windowWidth() const {
-  return m_guiContext->windowWidth();
+  return m_guiContext.windowWidth();
 }
 
 }

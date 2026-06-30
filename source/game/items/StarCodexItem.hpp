@@ -9,7 +9,7 @@ namespace Star {
 
 class CodexItem : public Item, public SwingableItem {
 public:
-  CodexItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
+  CodexItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& data);
   virtual ItemPtr clone() const override;
 
   virtual List<Drawable> drawables() const override;

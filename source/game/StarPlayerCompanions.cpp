@@ -77,16 +77,16 @@ List<CompanionPtr> PlayerCompanions::getCompanions(String const& category) const
   return {};
 }
 
-void PlayerCompanions::init(Entity* player, World* world) {
-  m_world = world;
+void PlayerCompanions::init(Player& player, World& world) {
+  m_world = &world;
 
   m_scriptComponent.setScripts(jsonToStringList(m_config.getArray("scripts", JsonArray())));
   m_scriptComponent.setUpdateDelta(m_config.getInt("scriptDelta", 10));
 
   m_scriptComponent.addCallbacks("entity", LuaBindings::makeEntityCallbacks(player));
-  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(as<Player>(player)));
+  m_scriptComponent.addCallbacks("player", LuaBindings::makePlayerCallbacks(player));
   m_scriptComponent.addCallbacks(
-      "status", LuaBindings::makeStatusControllerCallbacks(as<Player>(player)->statusController()));
+      "status", LuaBindings::makeStatusControllerCallbacks(*player.statusController()));
   m_scriptComponent.addCallbacks("playerCompanions", makeCompanionsCallbacks());
 
   m_scriptComponent.addCallbacks("config",

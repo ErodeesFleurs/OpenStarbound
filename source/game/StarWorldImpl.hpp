@@ -38,7 +38,7 @@ namespace WorldImpl {
   List<Vec2I> collidingTilesAlongLine(WorldGeometry const& worldGeometry, shared_ptr<TileSectorArray> const& tileSectorArray,
       Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet, size_t maxSize, bool includeEdges);
 
-  inline TileDamageParameters tileDamageParameters(WorldTile* tile, TileLayer layer, TileDamage const& tileDamage, MaterialDatabaseConstPtr const& materialDatabase);
+  inline TileDamageParameters tileDamageParameters(WorldTile& tile, TileLayer layer, TileDamage const& tileDamage, MaterialDatabaseConstPtr const& materialDatabase);
   template <typename TileSectorArray>
   bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage, MaterialDatabaseConstPtr const& materialDatabase);
   
@@ -71,7 +71,7 @@ namespace WorldImpl {
       SkyConstPtr const& sky, Vec2F const& pos);
 
   template <typename TileSectorArray>
-  bool breathable(World const* world, shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate, Vec2F const& pos);
+  bool breathable(World const& world, shared_ptr<TileSectorArray> const& tileSectorArray, WorldTemplateConstPtr const& worldTemplate, Vec2F const& pos);
 
   template <typename TileSectorArray>
   float lightLevel(shared_ptr<TileSectorArray> const& tileSectorArray, EntityMapPtr const& entityMap, WorldGeometry const& worldGeometry,
@@ -222,10 +222,10 @@ namespace WorldImpl {
     return res;
   }
 
-  inline TileDamageParameters tileDamageParameters(WorldTile* tile, TileLayer layer, TileDamage const& tileDamage, MaterialDatabaseConstPtr const& materialDatabase) {
+  inline TileDamageParameters tileDamageParameters(WorldTile& tile, TileLayer layer, TileDamage const& tileDamage, MaterialDatabaseConstPtr const& materialDatabase) {
     bool foreground = layer == TileLayer::Foreground;
-    auto target = foreground ? tile->foreground : tile->background;
-    auto mod = foreground ? tile->foregroundMod : tile->backgroundMod;
+    auto target = foreground ? tile.foreground : tile.background;
+    auto mod = foreground ? tile.foregroundMod : tile.backgroundMod;
 
     if (!isRealMod(mod))
       return materialDatabase->materialDamageParameters(target);
@@ -242,7 +242,7 @@ namespace WorldImpl {
   template <typename TileSectorArray>
   bool damageWouldDestroy(shared_ptr<TileSectorArray> const& tileSectorArray, Vec2I pos, TileLayer layer, TileDamage const& tileDamage, MaterialDatabaseConstPtr const& materialDatabase) {
     if (auto tile = tileSectorArray->modifyTile(pos)) {
-      auto damageParameters = tileDamageParameters(tile, layer, tileDamage, materialDatabase);
+      auto damageParameters = tileDamageParameters(*tile, layer, tileDamage, materialDatabase);
       float percentageDelta = damageParameters.damageDone(tileDamage) / damageParameters.totalHealth();
       auto damage = layer == TileLayer::Foreground ? tile->foregroundDamage : tile->backgroundDamage;
       return percentageDelta + damage.damagePercentage() >= 1.0f;
@@ -429,7 +429,7 @@ namespace WorldImpl {
   }
 
   template <typename TileSectorArray>
-  bool breathable(World const* world, shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
+  bool breathable(World const& world, shared_ptr<TileSectorArray> const& tileSectorArray, HashMap<DungeonId, bool> const& breathableMap,
       WorldTemplateConstPtr const& worldTemplate, Vec2F const& pos) {
     Vec2I ipos = Vec2I::floor(pos);
     float remainder = pos[1] - ipos[1];
@@ -437,7 +437,7 @@ namespace WorldImpl {
     auto tile = tileSectorArray->tile(ipos);
     bool environmentBreathable = breathableMap.maybe(tile.dungeonId).value(worldTemplate->breathable(ipos[0], ipos[1]));
     bool liquidBreathable = remainder >= tile.liquid.level;
-    bool foregroundBreathable = tile.getCollision() != CollisionKind::Block || !world->pointCollision(pos);
+    bool foregroundBreathable = tile.getCollision() != CollisionKind::Block || !world.pointCollision(pos);
 
     return environmentBreathable && foregroundBreathable && liquidBreathable;
   }

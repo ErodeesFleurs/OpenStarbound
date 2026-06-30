@@ -32,7 +32,8 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
     PlayerPtr player,
     Json const& settings,
     EntityId sourceEntityId,
-    CraftingPaneServices services) {
+    CraftingPaneServices services)
+  : Pane(services.guiContext) {
   m_worldClient = std::move(worldClient);
   m_player = std::move(player);
   m_blueprints = m_player->blueprints();
@@ -63,7 +64,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
   m_filter = StringSet::from(jsonToStringList(m_settings.get("filter", JsonArray())));
   m_maxSpinCount = m_settings.getUInt("maxSpinCount", 1000);
 
-  GuiReader reader;
+  GuiReader reader(context());
   reader.registerCallback("spinCount.up", [=, this](Widget*) {
       if (m_count < maxCraft())
         m_count++;
@@ -149,7 +150,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
     if (auto container = as<ContainerEntity>(entity)) {
       if (container->iconItem()) {
         auto iconItem = m_itemDatabase->itemShared(container->iconItem());
-        auto icon = make_shared<ItemSlotWidget>(iconItem, "/interface/inventory/portrait.png");
+        auto icon = make_shared<ItemSlotWidget>(context(), iconItem, "/interface/inventory/portrait.png");
         String title = this->title();
         if (title.empty())
           title = container->containerDescription();
@@ -161,7 +162,7 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
       }
     }
     if (auto portaitEntity = as<PortraitEntity>(entity)) {
-      auto portrait = make_shared<PortraitWidget>(portaitEntity, PortraitMode::Bust);
+      auto portrait = make_shared<PortraitWidget>(context(), portaitEntity, PortraitMode::Bust);
       portrait->setIconMode();
       String title = this->title();
       if (title.empty())
@@ -280,7 +281,7 @@ void CraftingPane::update(float dt) {
       description->removeAllChildren();
 
       auto item = m_itemDatabase->itemShared(recipe.output);
-      ItemTooltipBuilder::buildItemDescription(description, item, {m_assets, m_objectDatabase, m_statusEffectDatabase});
+      ItemTooltipBuilder::buildItemDescription(description, item, {m_assets, m_objectDatabase, m_statusEffectDatabase, context()});
     }
   }
 
@@ -463,8 +464,8 @@ void CraftingPane::setupWidget(WidgetPtr const& widget, ItemRecipe const& recipe
 }
 
 PanePtr CraftingPane::setupTooltip(ItemRecipe const& recipe) {
-  auto tooltip = make_shared<Pane>();
-  GuiReader reader;
+  auto tooltip = make_shared<Pane>(context());
+  GuiReader reader(context());
   reader.construct(m_assets->json("/interface/craftingtooltip/craftingtooltip.config"), tooltip.get());
 
   auto guiList = tooltip->fetchChild<ListWidget>("itemList");
@@ -560,7 +561,7 @@ void CraftingPane::toggleCraft() {
       if (auto craftingSound = m_settings.optString("craftingSound")) {
         m_craftingSound = make_shared<AudioInstance>(*m_assets->audio(*craftingSound));
         m_craftingSound->setLoops(-1);
-        GuiContext::singleton().playAudio(m_craftingSound);
+        context().playAudio(m_craftingSound);
       }
     } else {
       craft(m_count);

@@ -48,7 +48,7 @@ Particle::Particle() {
   flip = false;
 }
 
-Particle::Particle(Json const& config, String const& path, AssetsConstPtr assetsPtr) {
+Particle::Particle(Json const& config, String const& path, AssetsConstPtr assetsPtr, ImageMetadataDatabaseConstPtr imageMetadataDatabasePtr) {
   type = TypeNames.getLeft(config.getString("type", "variance"));
   if (type == Type::Variance) {
     size = 0.0f;
@@ -75,7 +75,8 @@ Particle::Particle(Json const& config, String const& path, AssetsConstPtr assets
     else
       directives = string.substr(pathEnd);
     this->assets = assetsPtr;
-    initializeAnimation(std::move(assetsPtr));
+    imageMetadataDatabase = imageMetadataDatabasePtr;
+    initializeAnimation(std::move(assetsPtr), std::move(imageMetadataDatabasePtr));
   }
 
   if (config.contains("color"))
@@ -181,7 +182,7 @@ void Particle::update(float dt, Vec2F const& wind) {
     destructionUpdate();
 
   if (type == Type::Animated) {
-    initializeAnimation(assets);
+    initializeAnimation(assets, imageMetadataDatabase);
     animation->update(dt);
   }
 }
@@ -242,9 +243,9 @@ void Particle::destructionUpdate() {
   }
 }
 
-void Particle::initializeAnimation(AssetsConstPtr assetsPtr) {
+void Particle::initializeAnimation(AssetsConstPtr assetsPtr, ImageMetadataDatabaseConstPtr imageMetadataDatabasePtr) {
   if (!animation) {
-    animation = Animation(AssetPath::removeDirectives(string), {}, std::move(assetsPtr));
+    animation = Animation(AssetPath::removeDirectives(string), {}, std::move(assetsPtr), std::move(imageMetadataDatabasePtr));
     animation->setProcessing(directives);
   }
 }

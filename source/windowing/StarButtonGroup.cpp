@@ -3,6 +3,10 @@
 
 namespace Star {
 
+ButtonGroup::ButtonGroup() {
+  m_toggle = false;
+}
+
 void ButtonGroup::setCallback(WidgetCallbackFunc callback) {
   m_callback = callback;
 }
@@ -86,5 +90,7 @@ bool ButtonGroup::toggle() const {
 void ButtonGroup::setToggle(bool toggleMode) {
   m_toggle = toggleMode;
 }
+
+ButtonGroupWidget::ButtonGroupWidget(GuiContext& context) : Widget(context) {}
 
 }

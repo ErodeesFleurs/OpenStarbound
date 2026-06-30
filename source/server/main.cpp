@@ -1,14 +1,14 @@
+#include "StarConfiguration.hpp"
 #include "StarFile.hpp"
-#include "StarRandom.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarLogging.hpp"
-#include "StarUniverseServer.hpp"
+#include "StarRandom.hpp"
 #include "StarRootLoader.hpp"
-#include "StarConfiguration.hpp"
-#include "StarVersion.hpp"
 #include "StarServerQueryThread.hpp"
 #include "StarServerRconThread.hpp"
 #include "StarSignalHandler.hpp"
+#include "StarUniverseServer.hpp"
+#include "StarVersion.hpp"
 
 using namespace Star;
 
@@ -39,10 +39,10 @@ Json const AdditionalDefaultConfiguration = Json::parseJson(R"JSON(
 
 int main(int argc, char** argv) {
   try {
-    #if defined STAR_SYSTEM_WINDOWS
+#if defined STAR_SYSTEM_WINDOWS
     unsigned long exceptionStackSize = 131072;
     SetThreadStackGuarantee(&exceptionStackSize);
-    #endif
+#endif
     RootLoader rootLoader({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
     UniquePtr<Root> root = rootLoader.commandInitOrDie(argc, argv).first;
     root->fullyLoad();
@@ -62,19 +62,24 @@ int main(int argc, char** argv) {
         Logger::info("Configured tick rate is {:4.2f}hz", updateRate);
       }
 
-      UniquePtr<UniverseServer> server = make_unique<UniverseServer>(root->toStoragePath("universe"), root->assets(), root->configuration(), root->materialDatabase(), root->imageMetadataDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->biomeDatabase(), root->nameGenerator(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase());
+      auto luaRootServices = root->luaRootServices();
+      Root& rootRef = *root;
+      UniquePtr<UniverseServer> server = make_unique<UniverseServer>(root->toStoragePath("universe"), root->assets(), root->configuration(), root->materialDatabase(), root->imageMetadataDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->terrainDatabase(), root->biomeDatabase(), root->nameGenerator(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase(), root->dungeonDefinitions(), root->behaviorDatabase(), luaRootServices, [&rootRef]() {
+        rootRef.reload();
+        rootRef.fullyLoad();
+      });
       server->setListeningTcp(true);
       server->start();
 
       UniquePtr<ServerQueryThread> queryServer;
       if (configuration->get("runQueryServer").toBool()) {
-        queryServer = make_unique<ServerQueryThread>(server.get(), HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()), configuration);
+        queryServer = make_unique<ServerQueryThread>(*server, HostAddressWithPort(configuration->get("queryServerBind").toString(), configuration->get("queryServerPort").toInt()), configuration);
         queryServer->start();
       }
 
       UniquePtr<ServerRconThread> rconServer;
       if (configuration->get("runRconServer").toBool()) {
-        rconServer = make_unique<ServerRconThread>(server.get(), HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()), configuration);
+        rconServer = make_unique<ServerRconThread>(*server, HostAddressWithPort(configuration->get("rconServerBind").toString(), configuration->get("rconServerPort").toInt()), configuration);
         rconServer->start();
       }
 

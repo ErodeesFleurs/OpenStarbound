@@ -8,23 +8,23 @@
 
 namespace Star {
 
-WorldServerLiquid::WorldServerLiquid(WorldServer* worldServer)
+WorldServerLiquid::WorldServerLiquid(WorldServer& worldServer)
   : m_worldServer(worldServer) {}
 
 LiquidLevel WorldServerLiquid::liquidLevel(Vec2I const& pos) const {
-  return m_worldServer->m_tileArray->tile(pos).liquid;
+  return m_worldServer.m_tileArray->tile(pos).liquid;
 }
 
 LiquidLevel WorldServerLiquid::liquidLevel(RectF const& region) const {
-  return WorldImpl::liquidLevel(m_worldServer->m_tileArray, region);
+  return WorldImpl::liquidLevel(m_worldServer.m_tileArray, region);
 }
 
 void WorldServerLiquid::modifyLiquid(Vec2I const& pos, LiquidId liquid, float quantity, bool additive) {
   if (liquid == EmptyLiquidId)
     quantity = 0;
 
-  if (ServerTile* tile = m_worldServer->m_tileArray->modifyTile(pos)) {
-    auto materialDatabase = m_worldServer->m_materialDatabase;
+  if (ServerTile* tile = m_worldServer.m_tileArray->modifyTile(pos)) {
+    auto materialDatabase = m_worldServer.m_materialDatabase;
     if (tile->foreground == EmptyMaterialId || !isSolidColliding(materialDatabase->materialCollisionKind(tile->foreground))) {
       if (additive && liquid == tile->liquid.liquid)
         quantity += tile->liquid.level;
@@ -36,13 +36,13 @@ void WorldServerLiquid::modifyLiquid(Vec2I const& pos, LiquidId liquid, float qu
 }
 
 void WorldServerLiquid::setLiquid(Vec2I const& pos, LiquidId liquid, float level, float pressure) {
-  if (ServerTile* tile = m_worldServer->m_tileArray->modifyTile(pos)) {
+  if (ServerTile* tile = m_worldServer.m_tileArray->modifyTile(pos)) {
     if (liquid == EmptyLiquidId)
       level = 0;
 
     if (auto netUpdate = tile->liquid.update(liquid, level, pressure)) {
-      for (auto const& pair : m_worldServer->m_clientInfo) {
-        if (pair.second->activeSectors.contains(m_worldServer->m_tileArray->sectorFor(pos)))
+      for (auto const& pair : m_worldServer.m_clientInfo) {
+        if (pair.second->activeSectors.contains(m_worldServer.m_tileArray->sectorFor(pos)))
           pair.second->pendingLiquidUpdates.add(pos);
       }
     }
@@ -54,14 +54,14 @@ void WorldServerLiquid::activateLiquidRegion(RectI const& region) {
 }
 
 ItemDescriptor WorldServerLiquid::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId) {
-  float bucketSize = m_worldServer->m_assets->json("/items/defaultParameters.config:liquidItems.bucketSize").toFloat();
+  float bucketSize = m_worldServer.m_assets->json("/items/defaultParameters.config:liquidItems.bucketSize").toFloat();
   unsigned drainedUnits = 0;
   float nextUnit = bucketSize;
   List<ServerTile*> maybeDrainTiles;
 
   for (auto const& pos : tilePositions) {
-    ServerTile* tile = m_worldServer->m_tileArray->modifyTile(pos);
-    if (tile->liquid.liquid == liquidId && !m_worldServer->isTileProtected(pos)) {
+    ServerTile* tile = m_worldServer.m_tileArray->modifyTile(pos);
+    if (tile->liquid.liquid == liquidId && !m_worldServer.isTileProtected(pos)) {
       if (tile->liquid.level >= nextUnit) {
         tile->liquid.take(nextUnit);
         nextUnit = bucketSize;
@@ -78,8 +78,8 @@ ItemDescriptor WorldServerLiquid::collectLiquid(List<Vec2I> const& tilePositions
         maybeDrainTiles.append(tile);
       }
 
-      for (auto const& pair : m_worldServer->m_clientInfo) {
-        if (pair.second->activeSectors.contains(m_worldServer->m_tileArray->sectorFor(pos)))
+      for (auto const& pair : m_worldServer.m_clientInfo) {
+        if (pair.second->activeSectors.contains(m_worldServer.m_tileArray->sectorFor(pos)))
           pair.second->pendingLiquidUpdates.add(pos);
       }
       m_liquidEngine->visitLocation(pos);
@@ -87,7 +87,7 @@ ItemDescriptor WorldServerLiquid::collectLiquid(List<Vec2I> const& tilePositions
   }
 
   if (drainedUnits > 0) {
-    auto liquidConfig = m_worldServer->m_liquidsDatabase->liquidSettings(liquidId);
+    auto liquidConfig = m_worldServer.m_liquidsDatabase->liquidSettings(liquidId);
     if (liquidConfig && liquidConfig->itemDrop)
       return liquidConfig->itemDrop.multiply(drainedUnits);
   }

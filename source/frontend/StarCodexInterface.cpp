@@ -13,13 +13,13 @@
 
 namespace Star {
 
-CodexInterface::CodexInterface(PlayerPtr player, Services services) {
+CodexInterface::CodexInterface(PlayerPtr player, Services services) : Pane(services.guiContext) {
   m_player = player;
   auto assets = std::move(services.assets);
   if (!assets)
     throw StarException("CodexInterface requires assets service");
 
-  GuiReader reader;
+  GuiReader reader(context());
 
   reader.registerCallback("close", [=, this](Widget*) { dismiss(); });
   reader.registerCallback("prevButton", [=, this](Widget*) { backwardPage(); });

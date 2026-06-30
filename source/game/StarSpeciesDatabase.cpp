@@ -25,8 +25,8 @@ SpeciesOption::SpeciesOption()
     undyColorDirectives(),
     hairColorDirectives() {}
 
-SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator)
-  : m_nameGenerator(std::move(nameGenerator)), m_luaRoot(make_shared<LuaRoot>(assets)) {
+SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator, LuaRootServices luaRootServices)
+  : m_nameGenerator(std::move(nameGenerator)), m_luaRoot(make_shared<LuaRoot>(std::move(luaRootServices))) {
   if (!assets)
     throw StarException("SpeciesDatabase requires assets service");
   if (!m_nameGenerator)
@@ -67,7 +67,6 @@ Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject param
   if (speciesDef->m_buildScripts.size() > 0) {
     RecursiveMutexLocker locker(m_luaMutex);
     auto context = m_luaRoot->createContext(speciesDef->m_buildScripts);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
     context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
 
     // NPCs can have their own custom humanoidConfig that don't align with their species
@@ -103,7 +102,6 @@ CharacterCreationResult SpeciesDatabase::createHumanoid(
   if (speciesDefinition->m_creationScripts.size() > 0) {
     RecursiveMutexLocker locker(m_luaMutex);
     auto context = m_luaRoot->createContext(speciesDefinition->m_creationScripts);
-    context.setCallbacks("root", LuaBindings::makeRootCallbacks());
     context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
     Json identityReturn;
     luaTie(identityReturn, result.humanoidParameters, result.armor) = context.invokePath<LuaTupleReturn<Json, JsonObject, JsonObject>>(

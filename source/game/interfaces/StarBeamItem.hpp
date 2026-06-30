@@ -5,6 +5,7 @@
 #include "StarNonRotatedDrawablesItem.hpp"
 #include "StarToolUserItem.hpp"
 #include "StarAssets.hpp"
+#include "StarImageMetadataDatabase.hpp"
 
 namespace Star {
 
@@ -14,10 +15,10 @@ class BeamItem : public virtual NonRotatedDrawablesItem, public virtual ToolUser
 public:
   enum class EndType { Invalid = -1, Object, Tile, TileGroup, Wire };
 
-  BeamItem(AssetsConstPtr assets, Json config);
+  BeamItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config);
   virtual ~BeamItem() = default;
 
-  virtual void init(ToolUserEntity* owner, ToolHand hand) override;
+  virtual void init(ToolUserEntity& owner, ToolHand hand) override;
   virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 
   virtual List<Drawable> nonRotatedDrawables() const override;
@@ -67,6 +68,7 @@ protected:
   mutable float m_particleGenerateCooldown;
 
   CSplineF m_beamCurve;
+  ImageMetadataDatabaseConstPtr m_beamImageMetadataDatabase;
 };
 
 }

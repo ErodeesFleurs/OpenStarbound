@@ -1,8 +1,8 @@
-#include "StarRootLoader.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarItemDatabase.hpp"
-#include "StarWorldTemplate.hpp"
+#include "StarRootLoader.hpp"
 #include "StarWorldServer.hpp"
+#include "StarWorldTemplate.hpp"
 
 using namespace Star;
 
@@ -22,15 +22,16 @@ int main(int argc, char** argv) {
     root->fullyLoad();
     coutf(" done\n");
 
-    CelestialMasterDatabase celestialDatabase(root->assets());
+    CelestialMasterDatabase celestialDatabase(root->assets(), root->liquidsDatabase(), root->biomeDatabase());
 
     CelestialCoordinate coordinate;
     if (auto coordinateOption = options.parameters.maybe("coordinate")) {
       coordinate = CelestialCoordinate(coordinateOption->first());
     } else {
       coordinate = celestialDatabase.findRandomWorld(100, 50, [&](CelestialCoordinate const& coord) {
-          return celestialDatabase.parameters(coord)->isVisitable();
-        }).take();
+                                      return celestialDatabase.parameters(coord)->isVisitable();
+                                    })
+                     .take();
     }
 
     unsigned regionsToGenerate = 1000;
@@ -48,11 +49,12 @@ int main(int argc, char** argv) {
     coutf("testing generation on coordinate {}\n", coordinate);
 
     auto worldParameters = celestialDatabase.parameters(coordinate).take();
-    auto worldTemplate = make_shared<WorldTemplate>(root->assets(), TerrainDatabaseConstPtr{}, BiomeDatabaseConstPtr{}, worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed());
+    auto worldTemplate = make_shared<WorldTemplate>(root->assets(), root->terrainDatabase(), root->biomeDatabase(), worldParameters.visitableParameters(), SkyParameters(), worldParameters.seed(), root->dungeonDefinitions());
 
     auto rand = RandomSource(worldTemplate->worldSeed());
 
-    WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile(), WorldServerServices{root->assets(), root->configuration(), root->materialDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->biomeDatabase(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase(), root->imageMetadataDatabase(), root->dungeonDefinitions(), root->behaviorDatabase()});
+    auto luaRootServices = root->luaRootServices();
+    WorldServer worldServer(std::move(worldTemplate), File::ephemeralFile(), WorldServerServices{root->assets(), root->configuration(), root->materialDatabase(), root->itemDatabase(), root->objectDatabase(), root->projectileDatabase(), root->plantDatabase(), root->treasureDatabase(), root->npcDatabase(), root->monsterDatabase(), root->spawnTypeDatabase(), root->stagehandDatabase(), root->vehicleDatabase(), root->speciesDatabase(), root->entityFactory(), root->liquidsDatabase(), root->terrainDatabase(), root->biomeDatabase(), root->versioningDatabase(), root->functionDatabase(), root->effectSourceDatabase(), root->particleDatabase(), root->techDatabase(), root->statusEffectDatabase(), root->imageMetadataDatabase(), root->dungeonDefinitions(), root->behaviorDatabase(), luaRootServices});
     Vec2U worldSize = worldServer.geometry().size();
 
     double start = Time::monotonicTime();

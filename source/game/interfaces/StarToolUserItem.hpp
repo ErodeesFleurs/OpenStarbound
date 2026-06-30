@@ -19,7 +19,7 @@ public:
 
   // Owner must be initialized when a ToolUserItem is initialized and
   // uninitialized before the owner is uninitialized.
-  virtual void init(ToolUserEntity* owner, ToolHand hand);
+  virtual void init(ToolUserEntity& owner, ToolHand hand);
   virtual void uninit();
 
   // Default implementation does nothing

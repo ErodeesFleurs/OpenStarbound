@@ -1,4 +1,5 @@
 #include "StarItemDatabase.hpp"
+#include "StarTestRoot.hpp"
 
 #include <list>
 
@@ -42,7 +43,7 @@ TEST(ItemTest, ItemDescriptorConstruction) {
 }
 
 TEST(ItemTest, ItemComparison) {
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = testRoot().itemDatabase();
   ItemPtr testItem = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1));
   ItemPtr testItemParams = itemDatabase->item(ItemDescriptor("perfectlygenericitem", 1, JsonObject{{"testParameter", "testValue"}}));
   ItemDescriptor testItemExact = testItem->descriptor();
@@ -118,7 +119,7 @@ TEST(ItemTest, ItemComparison) {
 }
 
 TEST(ItemTest, ConstructItems) {
-  auto itemDatabase = Root::singleton().itemDatabase();
+  auto itemDatabase = testRoot().itemDatabase();
 
   for (auto itemName : itemDatabase->allItems())
     ItemPtr item = itemDatabase->item(ItemDescriptor(itemName, 1));

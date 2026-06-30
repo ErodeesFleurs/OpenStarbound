@@ -48,8 +48,8 @@ public:
   // If the given container does not fit at this position, or if the treasure
   // box set does not have an entry with a minimum level less than the given
   // world threat level, this method will return null.
-  ContainerObjectPtr createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction) const;
-  ContainerObjectPtr createTreasureChest(World* world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const;
+  ContainerObjectPtr createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction) const;
+  ContainerObjectPtr createTreasureChest(World& world, String const& treasureChestSet, Vec2I const& position, Direction direction, uint64_t seed) const;
 
 private:
   List<ItemPtr> createTreasure(String const& treasurePool, float level, uint64_t seed, StringSet visitedPools) const;

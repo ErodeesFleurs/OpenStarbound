@@ -40,7 +40,7 @@ public:
   virtual Vec2F firePosition() const;
   virtual Vec2F handPosition() const;
 
-  virtual void init(ToolUserEntity* owner, ToolHand hand) override;
+  virtual void init(ToolUserEntity& owner, ToolHand hand) override;
   virtual void uninit() override;
   virtual void update(float dt, FireMode fireMode, bool shifting, HashSet<MoveControlType> const& moves) override;
 

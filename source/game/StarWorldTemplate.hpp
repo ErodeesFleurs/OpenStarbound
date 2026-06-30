@@ -1,15 +1,16 @@
 #pragma once
 
-#include "StarOrderedMap.hpp"
-#include "StarLruCache.hpp"
-#include "StarWorldLayout.hpp"
-#include "StarBiomePlacement.hpp"
-#include "StarCelestialDatabase.hpp"
-#include "StarSkyParameters.hpp"
 #include "StarAmbient.hpp"
 #include "StarAssets.hpp"
-#include "StarTerrainDatabase.hpp"
 #include "StarBiomeDatabase.hpp"
+#include "StarBiomePlacement.hpp"
+#include "StarCelestialDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarLruCache.hpp"
+#include "StarOrderedMap.hpp"
+#include "StarSkyParameters.hpp"
+#include "StarTerrainDatabase.hpp"
+#include "StarWorldLayout.hpp"
 
 namespace Star {
 
@@ -79,7 +80,7 @@ public:
   // Creates a blank world with the given size
   WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, Vec2U const& size, DungeonDefinitionsConstPtr dungeonDefinitions = {});
   // Creates a world from the given visitable celestial object.
-  WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase, DungeonDefinitionsConstPtr dungeonDefinitions = {});
+  WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, LiquidsDatabaseConstPtr liquidsDatabase, CelestialCoordinate const& celestialCoordinate, CelestialDatabasePtr const& celestialDatabase, DungeonDefinitionsConstPtr dungeonDefinitions = {});
   // Creates a world from a bare VisitableWorldParameters structure
   WorldTemplate(AssetsConstPtr assets, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase, VisitableWorldParametersConstPtr const& worldParameters, SkyParameters const& skyParameters, uint64_t seed, DungeonDefinitionsConstPtr dungeonDefinitions = {});
   // Load a world template from the given stored data.
@@ -166,11 +167,11 @@ public:
   WeatherPool weathers() const;
 
   // Return potential items that would spawn at the given block.
-	void addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, Maybe<BiomePlacementMode> mode = {}) const;
+  void addPotentialBiomeItems(int x, int y, PotentialBiomeItems& items, List<BiomeItemDistribution> const& distributions, BiomePlacementArea area, Maybe<BiomePlacementMode> mode = {}) const;
   PotentialBiomeItems potentialBiomeItemsAt(int x, int y) const;
 
   // Return only the potential items that can spawn at the given block.
-	List<BiomeItemPlacement> validBiomeItems(int x, int y, PotentialBiomeItems potentialBiomeItems) const;
+  List<BiomeItemPlacement> validBiomeItems(int x, int y, PotentialBiomeItems potentialBiomeItems) const;
 
   float gravity() const;
   float threatLevel() const;
@@ -215,4 +216,4 @@ private:
   mutable HashLruCache<Vector<uint32_t, 2>, BlockInfo> m_blockCache;
 };
 
-}
+}// namespace Star

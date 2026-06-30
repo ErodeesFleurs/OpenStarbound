@@ -2,7 +2,7 @@
 
 namespace Star {
 
-Layout::Layout() {
+Layout::Layout(GuiContext& context) : Widget(context) {
   markAsContainer();
 }
 

@@ -9,7 +9,7 @@ class CurrencyItem;
 
 class CurrencyItem : public Item {
 public:
-  CurrencyItem(AssetsConstPtr assets, Json const& config, String const& directory);
+  CurrencyItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory);
 
   virtual ItemPtr clone() const override;
 

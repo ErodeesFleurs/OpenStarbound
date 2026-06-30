@@ -17,6 +17,7 @@ ChatBubbleManager::ChatBubbleManager(ChatBubbleManagerServices services)
     m_configuration(std::move(services.configuration)),
     m_functionDatabase(std::move(services.functionDatabase)),
     m_imageMetadata(std::move(services.imageMetadata)),
+    m_guiContext(services.guiContext),
     m_textTemplate(Vec2F()),
     m_portraitTextTemplate(Vec2F()) {
   if (!m_assets)
@@ -27,9 +28,7 @@ ChatBubbleManager::ChatBubbleManager(ChatBubbleManagerServices services)
     throw StarException("ChatBubbleManager requires function database service");
   if (!m_imageMetadata)
     throw StarException("ChatBubbleManager requires image metadata service");
-
-  m_guiContext = GuiContext::singletonPtr();
-  m_cachedInterfaceScale = m_guiContext->interfaceScale();
+  m_cachedInterfaceScale = m_guiContext.interfaceScale();
 
   auto jsonData = m_assets->json("/interface/windowconfig/chatbubbles.config");
 
@@ -80,7 +79,7 @@ void ChatBubbleManager::setCamera(WorldCamera const& camera) {
   float oldPixelRatio = m_camera.pixelRatio();
   float oldInterfaceScale = m_cachedInterfaceScale;
   m_camera = camera;
-  m_cachedInterfaceScale = m_guiContext->interfaceScale();
+  m_cachedInterfaceScale = m_guiContext.interfaceScale();
   if (m_camera.pixelRatio() != oldPixelRatio || m_cachedInterfaceScale != oldInterfaceScale) {
     List<ChatAction> actions;
     m_bubbles.forEach([&actions](BubbleState<Bubble> const& state, Bubble& bubble) {
@@ -162,7 +161,7 @@ void ChatBubbleManager::render() {
   if (!m_configuration->get("speechBubbles").toBool())
     return;
 
-  float pixelRatio = m_guiContext->interfaceScale();
+  float pixelRatio = m_guiContext.interfaceScale();
 
   m_bubbles.forEach([this, pixelRatio](BubbleState<Bubble> const& state, Bubble& bubble) {
       if (bubble.onscreen) {
@@ -196,7 +195,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
   auto config = m_assets->json("/interface/windowconfig/chatbubbles.config");
 
   float partSize = config.getFloat("partSize");
-  float pixelRatio = m_guiContext->interfaceScale();
+  float pixelRatio = m_guiContext.interfaceScale();
 
   for (auto action : chatActions) {
     Json actionConfig = JsonObject{};
@@ -212,10 +211,10 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       // bother me so bad if it weren't so fucking easy to do right.
 
       // yea I agree
-      m_guiContext->setTextStyle(m_textStyle, pixelRatio);
+      m_guiContext.setTextStyle(m_textStyle, pixelRatio);
       TextPositioning tp = m_textTemplate;
       tp.wrapWidth = tp.wrapWidth.apply([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
-      auto result = m_guiContext->determineTextSize(sayAction.text, tp);
+      auto result = m_guiContext.determineTextSize(sayAction.text, tp);
       float textWidth = result.width() / pixelRatio + m_textPadding[0];
       float textHeight = result.height() / pixelRatio + m_textPadding[1];
 
@@ -331,7 +330,7 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
         audioInstance->setPosition(position);
         audioInstance->setVolume(actionConfig.getFloat("volume", 1.0f));
         audioInstance->setPitchMultiplier(actionConfig.getFloat("pitch", 1.0f));
-        m_guiContext->playAudio(audioInstance);
+        m_guiContext.playAudio(audioInstance);
       }
     }
   }
@@ -345,18 +344,18 @@ RectF ChatBubbleManager::bubbleImageRect(Vec2F screenPos, BubbleImage const& bub
 void ChatBubbleManager::drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha) {
   auto& image = get<0>(bubbleImage);
   auto offset = get<1>(bubbleImage) * pixelRatio;
-  m_guiContext->drawQuad(image, screenPos + offset, pixelRatio, {255, 255, 255, alpha});
+  m_guiContext.drawQuad(image, screenPos + offset, pixelRatio, {255, 255, 255, alpha});
 }
 
 void ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait) {
   TextStyle style = get<1>(bubbleText);
   style.color[3] *= (static_cast<float>(alpha) / 255.f);
-  m_guiContext->setTextStyle(style, pixelRatio);
+  m_guiContext.setTextStyle(style, pixelRatio);
   auto offset = get<3>(bubbleText) * pixelRatio;
   TextPositioning tp = isPortrait ? m_portraitTextTemplate : m_textTemplate;
   tp.pos = screenPos + offset;
   tp.wrapWidth = tp.wrapWidth.apply([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
-  m_guiContext->renderText(get<0>(bubbleText), tp);
+  m_guiContext.renderText(get<0>(bubbleText), tp);
 }
 
 }

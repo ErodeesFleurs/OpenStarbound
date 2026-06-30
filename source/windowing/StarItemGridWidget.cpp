@@ -4,11 +4,11 @@
 
 namespace Star {
 
-ItemGridWidget::ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset)
-  : ItemGridWidget(bag, dimensions, {spacing[0], 0}, {0, spacing[1]}, backingImage, bagOffset) {}
+ItemGridWidget::ItemGridWidget(GuiContext& context, ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& spacing, String const& backingImage, unsigned bagOffset)
+  : ItemGridWidget(context, bag, dimensions, {spacing[0], 0}, {0, spacing[1]}, backingImage, bagOffset) {}
 
-ItemGridWidget::ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset)
-  : m_bagOffset(bagOffset), m_dimensions(dimensions), m_rowSpacing(rowSpacing), m_columnSpacing(columnSpacing), m_backingImage(backingImage) {
+ItemGridWidget::ItemGridWidget(GuiContext& context, ItemBagConstPtr bag, Vec2I const& dimensions, Vec2I const& rowSpacing, Vec2I const& columnSpacing, String const& backingImage, unsigned bagOffset)
+  : Widget(context), m_bagOffset(bagOffset), m_dimensions(dimensions), m_rowSpacing(rowSpacing), m_columnSpacing(columnSpacing), m_backingImage(backingImage) {
   m_selectedIndex = 0;
   m_progress = 1;
 
@@ -19,7 +19,8 @@ ItemGridWidget::ItemGridWidget(ItemBagConstPtr bag, Vec2I const& dimensions, Vec
 
   setItemBag(bag);
 
-  auto const& assets = GuiContext::singleton().assets();
+  auto& guiContext = this->context();
+  auto const& assets = guiContext.assets();
   m_itemDraggableArea = jsonToRectI(assets->json("/interface.config:itemDraggableArea"));
   Vec2I calculatedSize = {
     m_dimensions[0] * m_rowSpacing[0] + m_dimensions[1] * m_columnSpacing[0],
@@ -108,7 +109,7 @@ bool ItemGridWidget::sendEvent(InputEvent const& event) {
       if (mouseButton->mouseButton == MouseButton::Left
         || (m_rightClickCallback && mouseButton->mouseButton == MouseButton::Right)
         || (m_middleClickCallback && mouseButton->mouseButton == MouseButton::Middle)) {
-        Vec2I mousePos = *context()->mousePosition(event);
+        Vec2I mousePos = *context().mousePosition(event);
         for (size_t i = 0; i < (m_bag->size() - m_bagOffset) && i < unsigned(m_dimensions[0] * m_dimensions[1]); ++i) {
           Vec2I loc = locOfItemSlot(i);
           RectI bagItemArea = RectI(m_itemDraggableArea).translated(screenPosition() + loc);
@@ -161,7 +162,7 @@ void ItemGridWidget::setItemBag(ItemBagConstPtr bag) {
   removeAllChildren();
   m_slots.clear();
   for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < static_cast<unsigned>(m_dimensions[0]) * m_dimensions[1]; ++i) {
-    auto itemSlot = make_shared<ItemSlotWidget>(m_bag->at(i), m_backingImage);
+    auto itemSlot = make_shared<ItemSlotWidget>(context(), m_bag->at(i), m_backingImage);
     addChild(toString(i), itemSlot);
     m_slots.append(itemSlot);
     itemSlot->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
@@ -278,7 +279,7 @@ void ItemGridWidget::showDurability(bool show) {
 }
 
 RectI ItemGridWidget::getScissorRect() const {
-  auto const& assets = context()->assets();
+  auto const& assets = context().assets();
   auto durabilityOffset = jsonToVec2I(assets->json("/interface.config:itemIconDurabilityOffset"));
   auto itemCountRightAnchor = jsonToVec2I(assets->json("/interface.config:itemCountRightAnchor"));
 

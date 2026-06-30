@@ -1,21 +1,20 @@
 #include "StarThrownItem.hpp"
-#include "StarProjectile.hpp"
-#include "StarRoot.hpp"
 #include "StarAssets.hpp"
+#include "StarProjectile.hpp"
 #include "StarProjectileDatabase.hpp"
 #include "StarWorld.hpp"
 #include "StarWorldServer.hpp"
 
 namespace Star {
 
-ThrownItem::ThrownItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& itemParameters)
-  : Item(std::move(assets), config, directory, itemParameters), SwingableItem(config) {
+ThrownItem::ThrownItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& itemParameters)
+    : Item(std::move(assets), std::move(imageMetadataDatabase), config, directory, itemParameters), SwingableItem(config) {
   m_projectileType = instanceValue("projectileType").toString();
   m_projectileConfig = instanceValue("projectileConfig", {});
   m_ammoUsage = instanceValue("ammoUsage", 1).toUInt();
 
   auto image = AssetPath::relativeTo(directory, instanceValue("image").toString());
-  m_drawables = {Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F())};
+  m_drawables = {Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F(), Color::White, m_imageMetadataDatabase)};
 }
 
 ItemPtr ThrownItem::clone() const {
@@ -31,8 +30,6 @@ List<Drawable> ThrownItem::preview(PlayerPtr const&) const {
 }
 
 void ThrownItem::fireTriggered() {
-  auto& root = Root::singleton();
-
   if (initialized()) {
     Vec2F direction = world()->geometry().diff(owner()->aimPosition(), owner()->position()).normalized();
     Vec2F firePosition = owner()->position() + ownerFirePosition();
@@ -40,7 +37,10 @@ void ThrownItem::fireTriggered() {
       return;
 
     if (consume(m_ammoUsage)) {
-      auto projectileDb = as<WorldServer>(world()) ? as<WorldServer>(world())->projectileDatabase() : root.projectileDatabase();
+      auto worldServer = as<WorldServer>(world());
+      if (!worldServer)
+        throw ItemException("Thrown item requires server world projectile database");
+      auto projectileDb = worldServer->projectileDatabase();
       auto projectile = projectileDb->createProjectile(m_projectileType, m_projectileConfig);
       projectile->setInitialPosition(firePosition);
       projectile->setInitialDirection(direction);
@@ -55,4 +55,4 @@ void ThrownItem::fireTriggered() {
   }
 }
 
-}
+}// namespace Star

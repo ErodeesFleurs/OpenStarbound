@@ -2,14 +2,17 @@
 #include "StarCelestialDatabase.hpp"
 #include "StarCelestialGraphics.hpp"
 #include "StarClientContext.hpp"
-#include "StarNetPackets.hpp"
-#include "StarMathCommon.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarMathCommon.hpp"
+#include "StarNetPackets.hpp"
 
 namespace Star {
 
-SystemWorldServer::SystemWorldServer(AssetsConstPtr assets, Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
-  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase), std::move(nameGenerator)) {
+SystemWorldServer::SystemWorldServer(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, Vec3I location, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
+    : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase), std::move(nameGenerator)) {
+  m_liquidsDatabase = std::move(liquidsDatabase);
+  if (!m_liquidsDatabase)
+    throw StarException("SystemWorldServer requires liquids database service");
   m_location = std::move(location);
 
   placeInitialObjects();
@@ -19,12 +22,15 @@ SystemWorldServer::SystemWorldServer(AssetsConstPtr assets, Vec3I location, Cloc
   spawnObjects();
 }
 
-SystemWorldServer::SystemWorldServer(AssetsConstPtr assets, Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
-  : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase), std::move(nameGenerator)) {
+SystemWorldServer::SystemWorldServer(AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase, Json const& diskStore, ClockConstPtr universeClock, CelestialDatabasePtr celestialDatabase, PatternedNameGeneratorConstPtr nameGenerator)
+    : SystemWorld(std::move(assets), std::move(universeClock), std::move(celestialDatabase), std::move(nameGenerator)) {
+  m_liquidsDatabase = std::move(liquidsDatabase);
+  if (!m_liquidsDatabase)
+    throw StarException("SystemWorldServer requires liquids database service");
   m_location = jsonToVec3I(diskStore.get("location"));
 
   for (auto objectStore : diskStore.getArray("objects")) {
-    auto object = make_shared<SystemObject>(this, objectStore);
+    auto object = make_shared<SystemObject>(*this, objectStore);
     m_objects.set(object->uuid(), object);
   }
 
@@ -68,7 +74,7 @@ Maybe<pair<WarpAction, WarpMode>> SystemWorldServer::clientWarpAction(Connection
         if (auto awp = as<AsteroidsWorldParameters>(parameters->visitableParameters())) {
           float targetX = (position->angle() / (2 * Constants::pi)) * awp->worldSize[0];
           return pair<WarpAction, WarpMode>(WarpAction(WarpToWorld(CelestialWorldId(planet), SpawnTargetX(targetX))),
-            WarpMode::DeployOnly);
+                                            WarpMode::DeployOnly);
         }
       }
     }
@@ -94,10 +100,10 @@ void SystemWorldServer::addClientShip(ConnectionId clientId, Uuid const& uuid, f
   if (!location)
     location = randomArrivalPosition();
 
-  SystemClientShipPtr ship = make_shared<SystemClientShip>(this, uuid, shipSpeed, location);
+  SystemClientShipPtr ship = make_shared<SystemClientShip>(*this, uuid, shipSpeed, location);
   m_clientShips.set(clientId, ship->uuid());
   m_ships.set(ship->uuid(), ship);
-  m_clientNetVersions.set(clientId, {{}, {} });
+  m_clientNetVersions.set(clientId, {{}, {}});
   m_outgoingPackets.set(clientId, {});
 
   List<ByteArray> objectStores;
@@ -105,10 +111,11 @@ void SystemWorldServer::addClientShip(ConnectionId clientId, Uuid const& uuid, f
   for (auto const& [_, o] : m_objects)
     objectStores.append(o->netStore());
   List<ByteArray> shipStores = m_ships.values().filtered([uuid](SystemClientShipPtr const& s) {
-    return s->uuid() != uuid;
-  }).transformed([](SystemClientShipPtr const& s) {
-    return s->netStore();
-  });
+                                                 return s->uuid() != uuid;
+                                               })
+                                 .transformed([](SystemClientShipPtr const& s) {
+                                   return s->netStore();
+                                 });
   pair<Uuid, SystemLocation> clientShip = {ship->uuid(), ship->systemLocation()};
   m_outgoingPackets[clientId].append(make_shared<SystemWorldStartPacket>(m_location, objectStores, shipStores, clientShip));
 
@@ -132,20 +139,20 @@ List<SystemClientShipPtr> SystemWorldServer::shipsAtLocation(SystemLocation cons
 List<InstanceWorldId> SystemWorldServer::activeInstanceWorlds() const {
   // Find the warp actions for all ships located at objects
   List<Maybe<WarpAction>> warpActions = m_clientShips.keys().transformed([this](ConnectionId const& clientId) -> Maybe<WarpAction> {
-      return clientWarpAction(clientId).apply([](auto const& p) { return p.first; });
-    });
+    return clientWarpAction(clientId).apply([](auto const& p) { return p.first; });
+  });
   // Return a list of the ones which lead to instance worlds
   return warpActions.filtered([](Maybe<WarpAction> const& action) {
-      if (action.isNothing())
-        return false;
+                      if (action.isNothing())
+                        return false;
 
-      if (auto warpToWorld = action->maybe<WarpToWorld>()) {
-        if (auto instanceWorldId = warpToWorld->world.maybe<InstanceWorldId>())
-          return true;
-      }
-      return false;
-  }).transformed([](Maybe<WarpAction> const& action) { return action->get<WarpToWorld>().world.get<InstanceWorldId>(); });
-
+                      if (auto warpToWorld = action->maybe<WarpToWorld>()) {
+                        if (auto instanceWorldId = warpToWorld->world.maybe<InstanceWorldId>())
+                          return true;
+                      }
+                      return false;
+                    })
+    .transformed([](Maybe<WarpAction> const& action) { return action->get<WarpToWorld>().world.get<InstanceWorldId>(); });
 }
 
 void SystemWorldServer::removeObject(Uuid objectUuid) {
@@ -212,10 +219,10 @@ bool SystemWorldServer::addObject(SystemObjectPtr object, bool doRangeCheck) {
 
 void SystemWorldServer::update(float dt) {
   for (auto const& p : m_ships)
-    p.second->serverUpdate(this, dt);
+    p.second->serverUpdate(*this, dt);
 
   for (auto const& p : m_objects) {
-    p.second->serverUpdate(this, dt);
+    p.second->serverUpdate(*this, dt);
 
     // don't destroy objects that still have players at them
     if (p.second->shouldDestroy() && shipsAtLocation(p.first).size() == 0)
@@ -333,7 +340,7 @@ void SystemWorldServer::placeInitialObjects() {
       Vec2F position = randomObjectSpawnPosition(rand);
 
       auto object = make_shared<SystemObject>(objectConfig, uuid, position, time(), nameGenerator());
-      object->enterOrbit(CelestialCoordinate(m_location), { 0.0, 0.0 }, time()); // orbit center of system
+      object->enterOrbit(CelestialCoordinate(m_location), {0.0, 0.0}, time());// orbit center of system
       m_objects.set(uuid, object);
     }
   }
@@ -385,7 +392,7 @@ Vec2F SystemWorldServer::randomObjectSpawnPosition(RandomSource& rand) const {
   auto config = systemConfig();
   auto orbits = m_celestialDatabase->childOrbits(CelestialCoordinate(m_location)).sorted();
 
-  auto addSpawn = [this,&config,&spawnRanges](CelestialCoordinate const& inner, CelestialCoordinate const& outer) {
+  auto addSpawn = [this, &config, &spawnRanges](CelestialCoordinate const& inner, CelestialCoordinate const& outer) {
     float min = planetOrbitDistance(inner) + (clusterSize(inner) / 2.0) + config.objectSpawnPadding;
     float max = planetOrbitDistance(outer) - (clusterSize(outer) / 2.0) - config.objectSpawnPadding;
     spawnRanges.append(Vec2F(min, max));
@@ -407,7 +414,7 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
   SkyParameters skyParameters = systemConfig().emptySkyParameters;
 
   if (auto coordinate = location.maybe<CelestialCoordinate>()) {
-    return SkyParameters(*coordinate, m_celestialDatabase, assets());
+    return SkyParameters(*coordinate, m_celestialDatabase, assets(), m_liquidsDatabase);
   } else if (auto position = location.maybe<Vec2F>()) {
     for (auto planet : planets()) {
       if (abs(position->magnitude() - planetPosition(planet).magnitude()) > systemConfig().asteroidBeamDistance)
@@ -415,7 +422,7 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
 
       if (auto parameters = m_celestialDatabase->parameters(planet)) {
         if (auto asteroidsParameters = as<AsteroidsWorldParameters>(parameters->visitableParameters())) {
-          return SkyParameters(planet, m_celestialDatabase, assets());
+          return SkyParameters(planet, m_celestialDatabase, assets(), m_liquidsDatabase);
         }
       }
     }
@@ -448,14 +455,13 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
             auto world = worlds.get(i);
             Vec2F pos = {
               staticRandomFloat(seed, world.seed(), "x"),
-              staticRandomFloat(seed, world.seed(), "y")
-            };
+              staticRandomFloat(seed, world.seed(), "y")};
             CelestialParameters parent = i > 0 ? worlds[0] : CelestialParameters();
-            skyParameters.nearbyMoons.append({CelestialGraphics::drawWorld(world, parent, assets()), pos});
+            skyParameters.nearbyMoons.append({CelestialGraphics::drawWorld(world, parent, assets(), m_liquidsDatabase), pos});
           }
         } else {
           // put orbited horizon behind existing horizon images
-          skyParameters.horizonImages.insertAllAt(0, CelestialGraphics::worldHorizonImages(*parameters, assets()));
+          skyParameters.horizonImages.insertAllAt(0, CelestialGraphics::worldHorizonImages(*parameters, assets(), m_liquidsDatabase));
         }
       }
     }
@@ -465,4 +471,4 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
   return skyParameters;
 }
 
-}
+}// namespace Star

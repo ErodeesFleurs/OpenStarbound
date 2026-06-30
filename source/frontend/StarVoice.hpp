@@ -108,14 +108,6 @@ public:
 
   using SpeakerPtr = std::shared_ptr<Speaker>;
 
-  // Get pointer to the singleton Voice instance, if it exists.  Otherwise,
-  // returns nullptr.
-  static Voice* singletonPtr();
-
-  // Gets reference to Voice singleton, throws VoiceException if root
-  // is not initialized.
-  static Voice& singleton();
-
   Voice(ApplicationControllerPtr appController, VoiceServices services);
   ~Voice();
 
@@ -161,7 +153,6 @@ public:
   static OpusDecoder* createDecoder(int channels);
   static OpusEncoder* createEncoder(int channels);
 private:
-  static Voice* s_singleton;
   void resetEncoder();
   void resetDevice();
   void openDevice();

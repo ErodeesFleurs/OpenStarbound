@@ -12,7 +12,7 @@ class UnlockItem;
 
 class UnlockItem : public Item, public SwingableItem, public PreviewableItem {
 public:
-  UnlockItem(AssetsConstPtr assets, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
+  UnlockItem(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json const& config, String const& directory, Json const& itemParameters = JsonObject());
 
   ItemPtr clone() const override;
 

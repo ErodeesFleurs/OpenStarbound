@@ -25,14 +25,13 @@ public:
     bool operator<(DamageNumberKey const& other) const;
   };
 
-  StarWorldClientDamageFX() = default;
-  explicit StarWorldClientDamageFX(WorldClient* worldClient);
+  explicit StarWorldClientDamageFX(WorldClient& worldClient);
 
   void handleDamageNotifications();
   void sparkDamagedBlocks();
 
 private:
-  WorldClient* m_worldClient = nullptr;
+  WorldClient& m_worldClient;
 
   Map<DamageNumberKey, DamageNumber> m_damageNumbers;
   float m_damageNotificationBatchDuration = 0.0f;

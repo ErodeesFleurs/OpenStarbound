@@ -10,7 +10,7 @@ class FlowLayout;
 using FlowLayoutPtr = SharedPtr<FlowLayout>;
 class FlowLayout : public Layout {
 public:
-  FlowLayout();
+  explicit FlowLayout(GuiContext& context);
   virtual void update(float dt) override;
   void setSpacing(Vec2I const& spacing);
   void setWrapping(bool wrap);

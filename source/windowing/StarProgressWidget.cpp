@@ -4,11 +4,13 @@
 
 namespace Star {
 
-ProgressWidget::ProgressWidget(String const& background,
+ProgressWidget::ProgressWidget(GuiContext& context,
+    String const& background,
     String const& overlay,
     ImageStretchSet const& progressSet,
     GuiDirection direction)
-  : m_background(background),
+  : Widget(context),
+    m_background(background),
     m_overlay(overlay),
     m_bar(progressSet),
     m_direction(direction) {
@@ -17,9 +19,9 @@ ProgressWidget::ProgressWidget(String const& background,
   m_maxLevel = 1;
 
   if (!m_background.empty())
-    setSize(Vec2I(context()->textureSize(m_background)));
+    setSize(Vec2I(this->context().textureSize(m_background)));
   else if (!m_overlay.empty())
-    setSize(Vec2I(context()->textureSize(m_overlay)));
+    setSize(Vec2I(this->context().textureSize(m_overlay)));
 
   m_color = Color::White;
 }
@@ -44,12 +46,12 @@ void ProgressWidget::renderImpl() {
   };
 
   if (!m_background.empty())
-    context()->drawInterfaceQuad(m_background, shift(0, 1, RectF(Vec2F(), Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
+    context().drawInterfaceQuad(m_background, shift(0, 1, RectF(Vec2F(), Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
 
-  context()->drawImageStretchSet(m_bar, shift(0, progress, RectF(screenBoundRect())), m_direction, m_color.toRgba());
+  context().drawImageStretchSet(m_bar, shift(0, progress, RectF(screenBoundRect())), m_direction, m_color.toRgba());
 
   if (!m_overlay.empty())
-    context()->drawInterfaceQuad(m_overlay, shift(0, 1, RectF({}, Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
+    context().drawInterfaceQuad(m_overlay, shift(0, 1, RectF({}, Vec2F(size()))), shift(0, 1, RectF(screenBoundRect())));
 }
 
 void ProgressWidget::setCurrentProgressLevel(float amount) {

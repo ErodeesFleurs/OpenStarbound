@@ -22,6 +22,7 @@ class RadioMessagePopup : public Pane {
 public:
   struct Services {
     AssetsConstPtr assets;
+    GuiContext& guiContext;
   };
 
   explicit RadioMessagePopup(Services services);

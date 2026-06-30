@@ -23,6 +23,7 @@ using ChatPtr = SharedPtr<Chat>;
 
 struct ChatServices {
   AssetsConstPtr assets;
+  GuiContext& guiContext;
 };
 
 class Chat : public BaseScriptPane {

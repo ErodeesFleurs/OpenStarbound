@@ -22,7 +22,8 @@ namespace Star {
 
 CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFunc,
     CharCreationServices services)
-  : m_assets(std::move(services.assets)),
+  : Pane(services.guiContext),
+    m_assets(std::move(services.assets)),
     m_playerFactory(std::move(services.playerFactory)),
     m_speciesDatabase(std::move(services.speciesDatabase)),
     m_nameGenerator(std::move(services.nameGenerator)),
@@ -40,7 +41,7 @@ CharCreationPane::CharCreationPane(std::function<void(PlayerPtr)> requestCloseFu
 
   m_speciesList = jsonToStringList(m_assets->json("/interface/windowconfig/charcreation.config:speciesOrdering"));
 
-  GuiReader guiReader;
+  GuiReader guiReader(context());
   guiReader.registerCallback("cancel", [=](Widget*) { requestCloseFunc({}); });
   guiReader.registerCallback("saveChar", [=, this](Widget*) {
       if (fetchChild<ButtonWidget>("btnSkipIntro")->isChecked())
@@ -210,7 +211,7 @@ void CharCreationPane::tick(float dt) {
 bool CharCreationPane::sendEvent(InputEvent const& event) {
   if (active() && m_previewPlayer) {
     if (event.is<KeyDownEvent>()) {
-      auto actions = context()->actions(event);
+      auto actions = context().actions(event);
       if (actions.contains(InterfaceAction::EmoteBlabbering))
         m_previewPlayer->addEmote(HumanoidEmote::Blabbering);
       if (actions.contains(InterfaceAction::EmoteShouting))
@@ -370,16 +371,16 @@ PanePtr CharCreationPane::createTooltip(Vec2I const& screenPosition) {
       Star::SpeciesDefinitionPtr speciesDefinition = m_speciesDatabase->species(speciesName);
 
       // make a tooltip from the config file
-      PanePtr tooltip = make_shared<Pane>();
+      PanePtr tooltip = make_shared<Pane>(context());
       tooltip->removeAllChildren();
-      GuiReader reader;
+      GuiReader reader(context());
       String tooltipKind = "/interface/tooltips/species.tooltip";
       reader.construct(m_assets->json(tooltipKind), tooltip.get());
 
       // find out the gender option block from the currently selected gender
       auto genderOption = speciesDefinition->options().genderOptions.wrap(m_genderChoice);
       // makes an icon out of the default gendered character image
-      WidgetPtr titleIcon = make_shared<ImageWidget>(genderOption.characterImage);
+      WidgetPtr titleIcon = make_shared<ImageWidget>(context(), genderOption.characterImage);
 
       // read the description out of the already loaded species database.
       String title = speciesDefinition->tooltip().title;

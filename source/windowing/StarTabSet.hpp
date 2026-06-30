@@ -25,7 +25,7 @@ struct TabSetConfig {
 
 class TabSetWidget : public Widget {
 public:
-  TabSetWidget(TabSetConfig const& tabSetconfig);
+  TabSetWidget(GuiContext& context, TabSetConfig const& tabSetconfig);
 
   virtual void setSize(Vec2I const& size) override;
 
