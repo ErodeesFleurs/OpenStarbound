@@ -505,7 +505,12 @@ private:
   WorldServerSpawnFinder m_spawnFinder{*this};
   WorldServerProperties m_worldProperties;
 
-  Maybe<pair<String, String>> m_newPlanetType;
+  struct NewPlanetType {
+    String planetType;
+    String primaryBiomeName;
+  };
+
+  Maybe<NewPlanetType> m_newPlanetType;
 
   UniverseSettingsPtr m_universeSettings;
 
@@ -550,7 +555,11 @@ private:
   // is removed / uninitialized
   HashMap<EntityId, TileEntitySpaces> m_tileEntitySpaces;
 
-  List<pair<float, WorldAction>> m_timers;
+  struct WorldTimer {
+    float remainingTime;
+    WorldAction action;
+  };
+  List<WorldTimer> m_timers;
 
   bool m_needsGlobalBreakCheck;
 

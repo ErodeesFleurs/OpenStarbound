@@ -17,9 +17,7 @@ int main(int argc, char** argv) {
     rootLoader.addParameter("repetitions", "repetitions", OptionParser::Optional, strf("number of times to generate, default {}", repetitions));
     rootLoader.addParameter("reportevery", "report repetitions", OptionParser::Optional, strf("number of repetitions before each progress report, default {}", reportEvery));
 
-    UniquePtr<Root> root;
-    OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    auto [root, options] = rootLoader.commandInitOrDie(argc, argv);
 
     coutf("Fully loading root...");
     root->fullyLoad();

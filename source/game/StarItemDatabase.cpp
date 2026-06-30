@@ -256,7 +256,8 @@ ItemPtr ItemDatabase::itemShared(ItemDescriptor descriptor, Maybe<float> level, 
     locker.unlock();
 
     ItemPtr item = tryCreateItem(descriptor, level, seed);
-    get<2>(entry) = item->parameters().optUInt("seed");// Seed could've been changed by the buildscript
+    [[maybe_unused]] auto& [entryDescriptor, entryLevel, entrySeed] = entry;
+    entrySeed = item->parameters().optUInt("seed");// Seed could've been changed by the buildscript
 
     locker.lock();
     return m_itemCache.get(entry, [&](ItemCacheEntry const&) -> ItemPtr { return std::move(item); });
@@ -570,8 +571,8 @@ ItemPtr ItemDatabase::tryCreateItem(ItemDescriptor const& descriptor, Maybe<floa
 }
 
 ItemDatabase::ItemData const& ItemDatabase::itemData(String const& name) const {
-  if (auto p = m_items.ptr(name))
-    return *p;
+  if (auto itemData = m_items.ptr(name))
+    return *itemData;
   throw ItemException::format("No such item '{}'", name);
 }
 
@@ -651,7 +652,7 @@ void ItemDatabase::addObjectDropItem(String const& objectPath, Json const& objec
 void ItemDatabase::scanItems() {
   List<std::pair<ItemType, String>> itemSets;
   auto scanItemType = [this, &itemSets](ItemType type, String const& extension) {
-    itemSets.append(make_pair(type, extension));
+    itemSets.append({type, extension});
     m_assets->queueJsons(m_assets->scanExtension(extension));
   };
 
@@ -679,8 +680,8 @@ void ItemDatabase::scanItems() {
   scanItemType(ItemType::ActiveItem, "activeitem");
   scanItemType(ItemType::AugmentItem, "augment");
 
-  for (auto const& itemset : itemSets)
-    addItemSet(itemset.first, itemset.second);
+  for (auto const& [itemSetName, itemSetConfig] : itemSets)
+    addItemSet(itemSetName, itemSetConfig);
 }
 
 void ItemDatabase::addObjectItems() {

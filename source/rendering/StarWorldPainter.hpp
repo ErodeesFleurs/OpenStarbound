@@ -53,7 +53,11 @@ private:
   TilePainterPtr m_tilePainter;
 
   Json m_highlightConfig;
-  Map<EntityHighlightEffectType, pair<Directives, Directives>> m_highlightDirectives;
+  struct HighlightDirectives {
+    Directives underlay;
+    Directives overlay;
+  };
+  Map<EntityHighlightEffectType, HighlightDirectives> m_highlightDirectives;
 
   Vec2F m_entityBarOffset;
   Vec2F m_entityBarSpacing;

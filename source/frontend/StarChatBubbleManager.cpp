@@ -174,8 +174,10 @@ void ChatBubbleManager::render() {
       if (portraitBubble.age <= m_portraitChatterDuration)
         frame = int((portraitBubble.age / m_portraitChatterFramerate) * 2) % 2;
       // 255 here because portrait bubbles are always full opacity
-      for (auto const& bubbleImage : portraitBubble.backgroundImages)
-        drawBubbleImage(screenPos, make_tuple(get<0>(bubbleImage).replace("<frame>", toString(frame)), get<1>(bubbleImage)), pixelRatio, 255);
+      for (auto const& bubbleImage : portraitBubble.backgroundImages) {
+        auto const& [image, offset] = bubbleImage;
+        drawBubbleImage(screenPos, BubbleImage{image.replace("<frame>", toString(frame)), offset}, pixelRatio, 255);
+      }
       // 255 here because portrait bubbles are always full opacity
       for (auto const& bubbleText : portraitBubble.bubbleText)
         drawBubbleText(screenPos, bubbleText, pixelRatio, 255, true);
@@ -226,29 +228,29 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
             };
             if (y == 0) {
               if (x == 0) {
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerBottomLeft.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/cornerBottomLeft.png", partPosition(x, y)});
               } else if (x == innerTiles[0] - 1) {
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerBottomRight.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/cornerBottomRight.png", partPosition(x, y)});
               } else {
                 if (middleIdx == x)
-                  backgroundImages.append(make_tuple("/interface/chatbubbles/point.png", partPosition(x, y - 1)));
+                  backgroundImages.append(BubbleImage{"/interface/chatbubbles/point.png", partPosition(x, y - 1)});
                 else
-                  backgroundImages.append(make_tuple("/interface/chatbubbles/sideDown.png", partPosition(x, y)));
+                  backgroundImages.append(BubbleImage{"/interface/chatbubbles/sideDown.png", partPosition(x, y)});
               }
             } else if (y == innerTiles[1] - 1) {
               if (x == 0)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerTopLeft.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/cornerTopLeft.png", partPosition(x, y)});
               else if (x == innerTiles[0] - 1)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/cornerTopRight.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/cornerTopRight.png", partPosition(x, y)});
               else
-                backgroundImages.append(make_tuple("/interface/chatbubbles/sideUp.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/sideUp.png", partPosition(x, y)});
             } else {
               if (x == 0)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/sideLeft.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/sideLeft.png", partPosition(x, y)});
               else if (x == innerTiles[0] - 1)
-                backgroundImages.append(make_tuple("/interface/chatbubbles/sideRight.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/sideRight.png", partPosition(x, y)});
               else
-                backgroundImages.append(make_tuple("/interface/chatbubbles/center.png", partPosition(x, y)));
+                backgroundImages.append(BubbleImage{"/interface/chatbubbles/center.png", partPosition(x, y)});
             }
           }
         }
@@ -264,12 +266,16 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       if (auto jColor = actionConfig.opt("color"))
         textStyle.color = jsonToColor(*jColor).toRgba();
       textStyle.loadJson(actionConfig.get("style", Json()));
-      bubbleTexts.append(make_tuple(sayAction.text, textStyle, true, textPos));
+      bubbleTexts.append(BubbleText{sayAction.text, textStyle, true, textPos});
 
-      for (auto& backgroundImage : backgroundImages)
-        get<1>(backgroundImage) += Vec2F(-horizontalCenter, partSize);
-      for (auto& bubbleText : bubbleTexts)
-        get<3>(bubbleText) += Vec2F(-horizontalCenter, partSize);
+      for (auto& backgroundImage : backgroundImages) {
+        auto& [image, offset] = backgroundImage;
+        offset += Vec2F(-horizontalCenter, partSize);
+      }
+      for (auto& bubbleText : bubbleTexts) {
+        auto& [text, style, centered, offset] = bubbleText;
+        offset += Vec2F(-horizontalCenter, partSize);
+      }
 
       auto pos = m_camera.worldToScreen(sayAction.position + m_bubbleOffset);
       RectF boundBox = fold(backgroundImages, RectF::null(), [pos, pixelRatio, this](RectF const& boundBox, BubbleImage const& bubbleImage) {
@@ -291,17 +297,21 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
       position = portraitAction.position;
 
       List<BubbleImage> backgroundImages;
-      backgroundImages.append(make_tuple(m_portraitBackgroundImage, Vec2F()));
+      backgroundImages.append(BubbleImage{m_portraitBackgroundImage, Vec2F()});
       if (actionConfig.getBool("drawMoreIndicator", false))
-        backgroundImages.append(make_tuple(m_portraitMoreImage, Vec2F(m_portraitMorePosition)));
-      backgroundImages.append(make_tuple(portraitAction.portrait, Vec2F(m_portraitPosition)));
+        backgroundImages.append(BubbleImage{m_portraitMoreImage, Vec2F(m_portraitMorePosition)});
+      backgroundImages.append(BubbleImage{portraitAction.portrait, Vec2F(m_portraitPosition)});
       List<BubbleText> bubbleTexts;
-      bubbleTexts.append(make_tuple(portraitAction.text, m_textStyle, false, Vec2F(m_portraitTextPosition)));
+      bubbleTexts.append(BubbleText{portraitAction.text, m_textStyle, false, Vec2F(m_portraitTextPosition)});
 
-      for (auto& backgroundImage : backgroundImages)
-        get<1>(backgroundImage) += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
-      for (auto& bubbleText : bubbleTexts)
-        get<3>(bubbleText) += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
+      for (auto& backgroundImage : backgroundImages) {
+        auto& [image, offset] = backgroundImage;
+        offset += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
+      }
+      for (auto& bubbleText : bubbleTexts) {
+        auto& [text, style, centered, offset] = bubbleText;
+        offset += Vec2F(-m_portraitBackgroundSize[0] / 2, 0);
+      }
 
       m_portraitBubbles.prepend({
           portraitAction.entity,
@@ -329,25 +339,24 @@ void ChatBubbleManager::addChatActions(List<ChatAction> chatActions, bool silent
 }
 
 RectF ChatBubbleManager::bubbleImageRect(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio) {
-  auto& image = get<0>(bubbleImage);
-  return RectF::withSize(screenPos + get<1>(bubbleImage) * pixelRatio, Vec2F(m_imageMetadata->imageSize(image)) * pixelRatio);
+  auto const& [image, offset] = bubbleImage;
+  return RectF::withSize(screenPos + offset * pixelRatio, Vec2F(m_imageMetadata->imageSize(image)) * pixelRatio);
 }
 
 void ChatBubbleManager::drawBubbleImage(Vec2F screenPos, BubbleImage const& bubbleImage, float pixelRatio, int alpha) {
-  auto& image = get<0>(bubbleImage);
-  auto offset = get<1>(bubbleImage) * pixelRatio;
-  m_guiContext.drawQuad(image, screenPos + offset, pixelRatio, {255, 255, 255, alpha});
+  auto const& [image, offset] = bubbleImage;
+  m_guiContext.drawQuad(image, screenPos + offset * pixelRatio, pixelRatio, {255, 255, 255, alpha});
 }
 
 void ChatBubbleManager::drawBubbleText(Vec2F screenPos, BubbleText const& bubbleText, float pixelRatio, int alpha, bool isPortrait) {
-  TextStyle style = get<1>(bubbleText);
+  auto const& [text, textStyle, centered, offset] = bubbleText;
+  TextStyle style = textStyle;
   style.color[3] *= (static_cast<float>(alpha) / 255.f);
   m_guiContext.setTextStyle(style, pixelRatio);
-  auto offset = get<3>(bubbleText) * pixelRatio;
   TextPositioning tp = isPortrait ? m_portraitTextTemplate : m_textTemplate;
-  tp.pos = screenPos + offset;
+  tp.pos = screenPos + offset * pixelRatio;
   tp.wrapWidth = tp.wrapWidth.apply([&](unsigned w) { return (unsigned)(w * pixelRatio / m_zoom); });
-  m_guiContext.renderText(get<0>(bubbleText), tp);
+  m_guiContext.renderText(text, tp);
 }
 
 }

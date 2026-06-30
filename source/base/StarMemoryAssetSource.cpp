@@ -69,13 +69,13 @@ IODevicePtr MemoryAssetSource::open(String const& path) {
     String name;
   };
 
-  auto p = m_files.ptr(path);
-  if (!p)
+  auto assetData = m_files.ptr(path);
+  if (!assetData)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
-  else if (auto byteArray = p->ptr<ByteArray>())
+  else if (auto byteArray = assetData->ptr<ByteArray>())
     return make_shared<AssetReader>(byteArray->ptr(), byteArray->size(), path);
   else {
-    auto image = p->get<ImagePtr>().get();
+    auto image = assetData->get<ImagePtr>().get();
     return make_shared<AssetReader>((char*)image->data(), image->width() * image->height() * image->bytesPerPixel(), path);
   }
 }
@@ -105,22 +105,22 @@ void MemoryAssetSource::set(String const& path, Image&& image) {
 }
 
 ByteArray MemoryAssetSource::read(String const& path) {
-  auto p = m_files.ptr(path);
-  if (!p)
+  auto assetData = m_files.ptr(path);
+  if (!assetData)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
-  else if (auto bytes = p->ptr<ByteArray>())
+  else if (auto bytes = assetData->ptr<ByteArray>())
     return *bytes;
   else {
-    Image const* image = p->get<ImagePtr>().get();
+    Image const* image = assetData->get<ImagePtr>().get();
     return ByteArray((char const*)image->data(), image->width() * image->height() * image->bytesPerPixel());
   }
 }
 
 ImageConstPtr MemoryAssetSource::image(String const& path) {
-  auto p = m_files.ptr(path);
-  if (!p)
+  auto assetData = m_files.ptr(path);
+  if (!assetData)
     throw AssetSourceException::format("Requested file '{}' does not exist in memory", path);
-  else if (auto imagePtr = p->ptr<ImagePtr>())
+  else if (auto imagePtr = assetData->ptr<ImagePtr>())
     return *imagePtr;
   else
     return nullptr;

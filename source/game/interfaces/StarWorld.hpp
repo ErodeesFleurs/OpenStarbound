@@ -155,9 +155,9 @@ template <typename EntityT>
 List<SharedPtr<EntityT>> World::query(RectF const& boundBox, EntityFilterOf<EntityT> selector) const {
   List<SharedPtr<EntityT>> list;
   forEachEntity(boundBox, [&](EntityPtr const& entity) {
-    if (auto e = as<EntityT>(entity)) {
-      if (!selector || selector(e))
-        list.append(std::move(e));
+    if (auto typedEntity = as<EntityT>(entity)) {
+      if (!selector || selector(typedEntity))
+        list.append(std::move(typedEntity));
     }
   });
 
@@ -180,9 +180,9 @@ List<SharedPtr<EntityT>> World::lineQuery(
   Vec2F const& begin, Vec2F const& end, EntityFilterOf<EntityT> selector) const {
   List<SharedPtr<EntityT>> list;
   forEachEntityLine(begin, end, [&](EntityPtr entity) {
-    if (auto e = as<EntityT>(std::move(entity))) {
-      if (!selector || selector(e))
-        list.append(std::move(e));
+    if (auto typedEntity = as<EntityT>(std::move(entity))) {
+      if (!selector || selector(typedEntity))
+        list.append(std::move(typedEntity));
     }
   });
 
@@ -193,8 +193,8 @@ template <typename EntityT>
 List<SharedPtr<EntityT>> World::atTile(Vec2I const& pos) const {
   List<SharedPtr<EntityT>> list;
   forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
-    if (auto e = as<EntityT>(entity))
-      list.append(std::move(e));
+    if (auto typedEntity = as<EntityT>(entity))
+      list.append(std::move(typedEntity));
   });
   return list;
 }

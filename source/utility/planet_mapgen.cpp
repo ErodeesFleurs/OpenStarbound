@@ -20,9 +20,7 @@ int main(int argc, char** argv) {
     rootLoader.addSwitch("weightingblocknoise", "apply layout block noise before outputting weighting");
     rootLoader.addSwitch("transition", "show biome transition regions");
 
-    UniquePtr<Root> root;
-    OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    auto [root, options] = rootLoader.commandInitOrDie(argc, argv);
 
     CelestialMasterDatabasePtr celestialDatabase = make_shared<CelestialMasterDatabase>(root->assets(), root->liquidsDatabase(), root->biomeDatabase(), root->versioningDatabase());
 

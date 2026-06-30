@@ -283,7 +283,8 @@ Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig,
     if (!bindConfig.isType(Json::Type::Object))
       continue;
 
-    BindEntry& entry = entries.try_emplace(bindId, bindId, bindConfig, *this).first->second;
+    auto [entryIt, _] = entries.try_emplace(bindId, bindId, bindConfig, *this);
+    BindEntry& entry = entryIt->second;
 
     if (userBindings.isType(Json::Type::Object)) {
       for (auto& jBind : userBindings.queryArray(strf("{}.{}", id, bindId), {})) {
@@ -337,12 +338,12 @@ Input::InputState* Input::bindStatePtr(String const& categoryId, String const& b
 }
 
 Input::InputState& Input::addBindState(BindEntry const& bindEntry) {
-  auto insertion = m_bindStates.insert(&bindEntry, InputState());
-  if (insertion.second) {
+  auto [entry, inserted] = m_bindStates.insert(&bindEntry, InputState());
+  if (inserted) {
     for (auto& tag : bindEntry.tags)
       ++m_activeTags[tag];
   }
-  return insertion.first->second;
+  return entry->second;
 }
 
 Input::Input(InputServices services)

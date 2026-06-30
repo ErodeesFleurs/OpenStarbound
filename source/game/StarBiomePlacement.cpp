@@ -15,7 +15,7 @@ BiomeItem variantToBiomeItem(Json const& store) {
     return TreePair(TreeVariant(store.get(1).get(0)), TreeVariant(store.get(1).get(1)));
   } else if (type == "objectPool") {
     return ObjectPool(store.getArray(1).transformed([](Json const& pair) {
-        return make_pair(pair.getFloat(0), make_pair(pair.get(1).getString(0), pair.get(1).get(1)));
+        return std::pair<double, std::pair<String, Json>>{pair.getFloat(0), {pair.get(1).getString(0), pair.get(1).get(1)}};
       }));
   } else if (type == "treasureBoxSet") {
     return TreasureBoxSet(store.getString(1));
@@ -97,23 +97,23 @@ Maybe<BiomeItem> BiomeItemDistribution::createItem(PlantDatabaseConstPtr plantDa
     if (matchingPairs.empty() && !stemList.empty() && !foliageList.empty())
       Logger::warn("Specified stemList and foliageList, but no matching pairs found.");
 
-    auto chosenPair = rand.randValueFrom(matchingPairs);
+    auto [stemName, foliageName] = rand.randValueFrom(matchingPairs);
     float treeStemHueShift = rand.randf(-1.0f, 1.0f) * config.getFloat("treeStemHueShiftMax", 0);
     float treeFoliageHueShift = rand.randf(-1.0f, 1.0f) * config.getFloat("treeFoliageHueShiftMax", 0);
     float treeAltFoliageHueShift = rand.randf(-1.0f, 1.0f) * config.getFloat("treeFoliageHueShiftMax", 0);
 
-    if (!chosenPair.first.empty()) {
+    if (!stemName.empty()) {
       TreeVariant primaryTree;
       TreeVariant altTree;
-      if (chosenPair.second.empty()) {
+      if (foliageName.empty()) {
         // Foliage-less trees
-        primaryTree = plantDatabase->buildTreeVariant(chosenPair.first, treeStemHueShift);
-        altTree = plantDatabase->buildTreeVariant(chosenPair.first, treeStemHueShift);
+        primaryTree = plantDatabase->buildTreeVariant(stemName, treeStemHueShift);
+        altTree = plantDatabase->buildTreeVariant(stemName, treeStemHueShift);
       } else {
         primaryTree = plantDatabase->buildTreeVariant(
-            chosenPair.first, treeStemHueShift, chosenPair.second, treeFoliageHueShift);
+            stemName, treeStemHueShift, foliageName, treeFoliageHueShift);
         altTree = plantDatabase->buildTreeVariant(
-            chosenPair.first, treeStemHueShift, chosenPair.second, treeAltFoliageHueShift);
+            stemName, treeStemHueShift, foliageName, treeAltFoliageHueShift);
       }
       return BiomeItem{TreePair{primaryTree, altTree}};
     }
@@ -218,7 +218,7 @@ BiomeItemDistribution::BiomeItemDistribution(Json const& store) {
   m_modulus = store.getInt("modulus");
   m_modulusOffset = store.getInt("modulusOffset");
   m_weightedItems = store.getArray("weightedItems") .transformed([](Json const& v) {
-      return make_pair(variantToBiomeItem(v.get(0)), PerlinF(v.get(1)));
+      return pair<BiomeItem, PerlinF>{variantToBiomeItem(v.get(0)), PerlinF(v.get(1))};
     });
 }
 
@@ -268,11 +268,11 @@ Maybe<BiomeItemPlacement> BiomeItemDistribution::itemToPlace(int x, int y) const
     if (m_densityFunction.get(x, y) > 0) {
       if (static_cast<int>(x + m_modulusOffset + m_modulusDistortion.get(x, y)) % m_modulus == 0) {
         float maxWeight = lowest<float>();
-        for (auto const& weightedItem : m_weightedItems) {
-          float weight = weightedItem.second.get(x, y);
+        for (auto const& [item, weighting] : m_weightedItems) {
+          float weight = weighting.get(x, y);
           if (weight > maxWeight) {
             maxWeight = weight;
-            biomeItem = &weightedItem.first;
+            biomeItem = &item;
           }
         }
       }

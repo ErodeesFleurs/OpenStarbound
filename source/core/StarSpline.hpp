@@ -32,8 +32,8 @@ public:
       Logger::warn("Passed out of range time to Spline::pointAt");
     }
 
-    if (auto p = m_pointCache.ptr(t))
-      return *p;
+    if (auto cachedPoint = m_pointCache.ptr(t))
+      return *cachedPoint;
 
     PointData intermediates(*this);
     PointData temp;
@@ -70,8 +70,8 @@ public:
     }
 
     if (!begin) {
-      if (auto p = m_lengthCache.ptr(end))
-        return *p;
+      if (auto cachedLength = m_lengthCache.ptr(end))
+        return *cachedLength;
     }
 
     DataT res = 0;

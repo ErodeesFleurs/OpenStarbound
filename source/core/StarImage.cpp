@@ -201,7 +201,7 @@ tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
   Vec2U imageSize{img_width, img_height};
   PixelFormat pixelFormat = channels == 3 ? PixelFormat::RGB24 : PixelFormat::RGBA32;
 
-  return make_tuple(imageSize, pixelFormat);
+  return {imageSize, pixelFormat};
 }
 
 Image Image::filled(Vec2U size, Vec4B color, PixelFormat pf) {

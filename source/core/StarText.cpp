@@ -81,10 +81,10 @@ namespace Text {
 
     size_t escapeStartIdx = 0;
     for (auto charAndIndex : enumerateIterator(result)) {
-      auto& c = charAndIndex.first;
+      auto& [c, charIndex] = charAndIndex;
       if (isEscapeCode(c)) {
         escape = true;
-        escapeStartIdx = charAndIndex.second;
+        escapeStartIdx = charIndex;
       }
       if ((c <= SpecialCharLimit) && !(c == StartEsc))
         escape = false;

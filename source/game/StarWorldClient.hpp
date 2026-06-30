@@ -401,7 +401,11 @@ private:
 
   HashSet<Vec2I> m_damagedBlocks;
 
-  List<pair<float, WorldAction>> m_timers;
+  struct WorldTimer {
+    float remainingTime;
+    WorldAction action;
+  };
+  List<WorldTimer> m_timers;
 
   AudioInstancePtr m_spaceSound;
   String m_activeSpaceSound;

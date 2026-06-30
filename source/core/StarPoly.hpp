@@ -735,10 +735,12 @@ auto Polygon<DataType>::sideAt(size_t i) const -> Line {
 template <typename DataType>
 std::ostream& operator<<(std::ostream& os, Polygon<DataType> const& poly) {
   os << "[Poly: ";
-  for (auto i = poly.begin(); i != poly.end(); ++i) {
-    if (i != poly.begin())
+  bool first = true;
+  for (auto const& vertex : poly) {
+    if (!first)
       os << ", ";
-    os << *i;
+    first = false;
+    os << vertex;
   }
   os << "]";
   return os;

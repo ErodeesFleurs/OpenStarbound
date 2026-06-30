@@ -905,7 +905,7 @@ pair<size_t, bool> BTreeMixin<Base>::leafFind(Leaf const& leaf, Key const& key) 
       len = half;
     }
   }
-  return make_pair(first, first < size && !(key < Base::leafKey(leaf, first)));
+  return pair<size_t, bool>{first, first < size && !(key < Base::leafKey(leaf, first))};
 }
 
 template <typename Base>

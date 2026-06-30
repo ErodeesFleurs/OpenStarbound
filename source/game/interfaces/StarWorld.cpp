@@ -124,7 +124,7 @@ Maybe<pair<Vec2F, Maybe<Vec2F>>> World::lineCollision(Line2F const& line, Collis
   if (closestIntersection) {
     auto point = line.eval(closestIntersection->along);
     auto normal = closestIntersection->intersectedSide.apply([&](uint64_t side) { return intersectPoly->normal(side); });
-    return make_pair(point, normal);
+    return pair<Vec2F, Maybe<Vec2F>>{point, normal};
   }
   return {};
 }

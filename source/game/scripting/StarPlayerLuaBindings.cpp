@@ -264,8 +264,8 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player& player) {
   });
 
   callbacks.registerCallback("currentEmote", [&player]() {
-    auto currentEmote = player.currentEmote();
-    return luaTupleReturn(HumanoidEmoteNames.getRight(currentEmote.first), currentEmote.second);
+    auto [currentEmote, cooldown] = player.currentEmote();
+    return luaTupleReturn(HumanoidEmoteNames.getRight(currentEmote), cooldown);
   });
 
   callbacks.registerCallback("dance", [&player](Maybe<String> const& dance) {

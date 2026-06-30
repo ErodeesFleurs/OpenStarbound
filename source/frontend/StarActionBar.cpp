@@ -167,9 +167,9 @@ bool ActionBar::sendEvent(InputEvent const& event) {
     Vec2I screenPosition = *context().mousePosition(event);
     for (uint8_t i = 0; i < customBarIndexes; ++i) {
       if (m_customBarWidgets[i].left->screenBoundRect().contains(screenPosition))
-        m_customBarHover = make_pair(static_cast<CustomBarIndex>(i), false);
+        m_customBarHover = CustomBarHover{static_cast<CustomBarIndex>(i), false};
       else if (m_customBarWidgets[i].right->screenBoundRect().contains(screenPosition))
-        m_customBarHover = make_pair(static_cast<CustomBarIndex>(i), true);
+        m_customBarHover = CustomBarHover{static_cast<CustomBarIndex>(i), true};
     }
   }
 
@@ -243,8 +243,8 @@ void ActionBar::update(float) {
     bool secondaryPreview = false;
 
     ItemPtr swapSlotItem = inventory->swapSlotItem();
-    if (swapSlotItem && m_customBarHover && m_customBarHover->first == i) {
-      if (!m_customBarHover->second || swapSlotItem->twoHanded()) {
+    if (swapSlotItem && m_customBarHover && m_customBarHover->index == i) {
+      if (!m_customBarHover->secondary || swapSlotItem->twoHanded()) {
         if (!primaryItem && swapSlotItem == secondaryItem)
           secondaryItem = {};
         primaryItem = swapSlotItem;

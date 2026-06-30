@@ -829,8 +829,8 @@ TEST(LuaTest, ProfilingTest) {
 
   StringSet names;
   List<LuaProfileEntry> profile = luaEngine->getProfile();
-  for (auto const& p : profile[0].calls)
-    names.add(p.second->name.value());
+  for (auto const& [_, call] : profile[0].calls)
+    names.add(call->name.value());
 
   EXPECT_TRUE(names.contains("function1"));
   EXPECT_TRUE(names.contains("function2"));

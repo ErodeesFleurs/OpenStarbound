@@ -9,10 +9,10 @@ EmoteProcessor::EmoteProcessor(AssetsConstPtr assets) {
 
   m_emoteBindings.clear();
   auto cfg = assets->json("/emotes.config");
-  for (auto binding : cfg.get("emoteBindings").iterateObject()) {
-    for (auto text : binding.second.toArray()) {
+  for (auto [emoteName, textOptions] : cfg.get("emoteBindings").iterateObject()) {
+    for (auto text : textOptions.toArray()) {
       EmoteBinding emoteBinding;
-      emoteBinding.emote = HumanoidEmoteNames.getLeft(binding.first);
+      emoteBinding.emote = HumanoidEmoteNames.getLeft(emoteName);
       emoteBinding.text = text.toString();
       m_emoteBindings.append(emoteBinding);
     }
@@ -45,10 +45,10 @@ HumanoidEmote EmoteProcessor::detectEmotes(String const& chatter) const {
   float bestMatch = -1;
 
   for (auto option : m_emoteBindings) {
-    auto p = chatter.find(option.text);
-    if (p == NPos)
+    auto matchPosition = chatter.find(option.text);
+    if (matchPosition == NPos)
       continue;
-    float r = p + static_cast<float>(option.text.length()) * 0.01f;
+    float r = matchPosition + static_cast<float>(option.text.length()) * 0.01f;
     if (r > bestMatch) {
       bestMatch = r;
       result = option.emote;

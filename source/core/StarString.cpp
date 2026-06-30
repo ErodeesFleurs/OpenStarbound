@@ -1078,11 +1078,13 @@ StringList StringList::sorted() const {
 
 std::ostream& operator<<(std::ostream& os, const StringList& list) {
   os << "(";
-  for (auto i = list.begin(); i != list.end(); ++i) {
-    if (i != list.begin())
+  bool first = true;
+  for (auto const& string : list) {
+    if (!first)
       os << ", ";
+    first = false;
 
-    os << '\'' << *i << '\'';
+    os << '\'' << string << '\'';
   }
   os << ")";
   return os;

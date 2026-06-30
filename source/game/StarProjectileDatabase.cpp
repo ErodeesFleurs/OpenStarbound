@@ -98,7 +98,7 @@ ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {
   projectileConfig->actionOnTimeout = config.getArray("actionOnTimeout", {});
 
   for (auto const& c : config.getArray("periodicActions", {}))
-    projectileConfig->periodicActions.append(make_tuple(c.getFloat("time"), c.getBool("repeat", true), c));
+    projectileConfig->periodicActions.append(tuple<float, bool, Json>{c.getFloat("time"), c.getBool("repeat", true), c});
 
   projectileConfig->image = AssetPath::relativeTo(path, config.getString("image"));
   projectileConfig->frameNumber = config.getUInt("frameNumber", 1);

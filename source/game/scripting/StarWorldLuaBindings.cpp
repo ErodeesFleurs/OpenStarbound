@@ -86,7 +86,7 @@ LuaTable entityQueryImpl(World& world, LuaEngine& engine, LuaTable const& option
   Maybe<RectF> rectQuery = options.get<Maybe<RectF>>("rect");
   Maybe<pair<Vec2F, float>> radiusQuery;
   if (auto radius = options.get<Maybe<float>>("radius"))
-    radiusQuery = make_pair(options.get<Vec2F>("center"), *radius);
+    radiusQuery = pair<Vec2F, float>{options.get<Vec2F>("center"), *radius};
 
   EntityBoundMode boundMode = EntityBoundModeNames.getLeft(options.get<Maybe<String>>("boundMode").value("CollisionArea"));
   Maybe<LuaString> order = options.get<Maybe<LuaString>>("order");

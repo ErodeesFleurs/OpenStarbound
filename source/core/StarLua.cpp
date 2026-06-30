@@ -644,7 +644,7 @@ void LuaEngine::countHook(lua_State* state, lua_Debug* ar) {
       if (lua_getinfo(state, "nS", ar) == 0)
         break;
 
-      auto key = make_tuple(String(ar->short_src), static_cast<unsigned>(ar->linedefined));
+      tuple<String, unsigned> key{String(ar->short_src), static_cast<unsigned>(ar->linedefined)};
       auto& entryMap = parentEntry ? parentEntry->calls : self->m_profileEntries;
       if (!entryMap.contains(key)) {
         auto e = make_shared<LuaProfileEntry>();

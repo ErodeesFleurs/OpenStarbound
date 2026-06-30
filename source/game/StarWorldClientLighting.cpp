@@ -95,7 +95,7 @@ void StarWorldClientLighting::lightingCalc() {
   m_pendingLightReady = false;
   RectI lightRange = m_pendingLightRange;
   List<LightSource> lights = std::move(m_pendingLights);
-  List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_pendingParticleLights);
+  List<PendingParticleLight> particleLights = std::move(m_pendingParticleLights);
   bool newLighting = m_worldClient.m_configuration->get("newLighting").optBool().value(true);
   bool monochrome = m_worldClient.m_configuration->get("monochromeLighting").toBool();
   m_lightingCalculator.setParameters(m_lightingConfig.set("pointAdditive", newLighting));
@@ -123,9 +123,9 @@ void StarWorldClientLighting::lightingCalc() {
     }
   }
 
-  for (auto const& [lightPosition, lightSource] : particleLights) {
-    Vec2F position = m_worldClient.m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPosition);
-    m_lightingCalculator.addSpreadLight(position, lightSource);
+  for (auto const& particleLight : particleLights) {
+    Vec2F position = m_worldClient.m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), particleLight.position);
+    m_lightingCalculator.addSpreadLight(position, particleLight.light);
   }
 
   m_lightingCalculator.calculate(m_pendingLightMap);

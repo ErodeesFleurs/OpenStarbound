@@ -398,9 +398,9 @@ namespace WorldImpl {
     TileModificationList failures;
     for (auto const& [position, modification] : modificationList) {
 
-      bool good = false, perhaps = false;
-      if (!extraCheck || extraCheck(position, modification))
-        std::tie(good, perhaps) = validateTileModification(entityMap, position, modification, allowEntityOverlap, getTile, materialDatabase);
+      auto [good, perhaps] = (!extraCheck || extraCheck(position, modification))
+          ? validateTileModification(entityMap, position, modification, allowEntityOverlap, getTile, materialDatabase)
+          : pair<bool, bool>{};
 
       if (good)
         success.append({position, modification});

@@ -128,8 +128,8 @@ OpenGlRenderer::OpenGlRenderer() {
 }
 
 OpenGlRenderer::~OpenGlRenderer() {
-  for (auto& effect : m_effects)
-    glDeleteProgram(effect.second.program);
+  for (auto& [_, effect] : m_effects)
+    glDeleteProgram(effect.program);
 
   m_frameBuffers.clear();
   logGlErrorSummary("OpenGL errors during shutdown");
@@ -278,7 +278,8 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
 
   glUseProgram(m_program = program);
 
-  auto& effect = m_effects.emplace(name, Effect()).first->second;
+  auto [effectIt, _] = m_effects.emplace(name, Effect());
+  auto& effect = effectIt->second;
   effect.program = m_program;
   effect.config = effectConfig;
   effect.includeVBTextures = effectConfig.getBool("includeVBTextures",true);
@@ -611,13 +612,13 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
   glViewport(0, 0, m_screenSize[0], m_screenSize[1]);
   glUniform2f(m_screenSizeUniform, m_screenSize[0], m_screenSize[1]);
 
-  for (auto& frameBuffer : m_frameBuffers) {
-    unsigned sizeDiv = frameBuffer.second->sizeDiv;
-    if (unsigned multisample = frameBuffer.second->multisample) {
-      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frameBuffer.second->texture->glTextureId());
+  for (auto& [_, frameBuffer] : m_frameBuffers) {
+    unsigned sizeDiv = frameBuffer->sizeDiv;
+    if (unsigned multisample = frameBuffer->multisample) {
+      glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, frameBuffer->texture->glTextureId());
       glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
     } else {
-      glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
+      glBindTexture(GL_TEXTURE_2D, frameBuffer->texture->glTextureId());
       glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     }
   }
@@ -627,10 +628,10 @@ void OpenGlRenderer::startFrame() {
   if (m_scissorRect)
     glDisable(GL_SCISSOR_TEST);
   
-  for (auto& frameBuffer : m_frameBuffers) {
-    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer.second->id);
+  for (auto& [_, frameBuffer] : m_frameBuffers) {
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, frameBuffer->id);
     glClear(GL_COLOR_BUFFER_BIT);
-    frameBuffer.second->blitted = false;
+    frameBuffer->blitted = false;
   }
 
   glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -918,14 +919,18 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
   Vec2F textureOffset = {};
   for (auto& primitive : primitives) {
     if (auto tri = primitive.ptr<RenderTriangle>()) {
-      tie(textureIndex, textureOffset) = addCurrentTexture(std::move(tri->texture));
+      auto [currentTextureIndex, currentTextureOffset] = addCurrentTexture(std::move(tri->texture));
+      textureIndex = currentTextureIndex;
+      textureOffset = currentTextureOffset;
 
       appendBufferVertex(tri->a, textureIndex, textureOffset, tri->c, tri->b);
       appendBufferVertex(tri->b, textureIndex, textureOffset, tri->a, tri->c);
       appendBufferVertex(tri->c, textureIndex, textureOffset, tri->b, tri->a);
 
     } else if (auto quad = primitive.ptr<RenderQuad>()) {
-      tie(textureIndex, textureOffset) = addCurrentTexture(std::move(quad->texture));
+      auto [currentTextureIndex, currentTextureOffset] = addCurrentTexture(std::move(quad->texture));
+      textureIndex = currentTextureIndex;
+      textureOffset = currentTextureOffset;
 
       // = prev and next are altered - the diagonal across the quad is bad for the rounding check
       appendBufferVertex(quad->a, textureIndex, textureOffset, quad->d, quad->b);
@@ -938,7 +943,9 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
 
     } else if (auto poly = primitive.ptr<RenderPoly>()) {
       if (poly->vertexes.size() > 2) {
-        tie(textureIndex, textureOffset) = addCurrentTexture(std::move(poly->texture));
+        auto [currentTextureIndex, currentTextureOffset] = addCurrentTexture(std::move(poly->texture));
+        textureIndex = currentTextureIndex;
+        textureOffset = currentTextureOffset;
 
         for (size_t i = 1; i < poly->vertexes.size() - 1; ++i) {
             RenderVertex const& a = poly->vertexes[0],
@@ -1127,8 +1134,8 @@ void OpenGlRenderer::setupGlUniforms(Effect& effect, Vec2U screenSize) {
 
   glUniform2f(m_screenSizeUniform, screenSize[0], screenSize[1]);
   
-  for (auto& param : effect.scriptables) {
-    auto ptr = &param.second;
+  for (auto& [_, parameter] : effect.scriptables) {
+    auto ptr = &parameter;
     auto mvalue = ptr->parameterValue;
     if (mvalue) {
       RenderEffectParameter value = mvalue.value();

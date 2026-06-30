@@ -79,10 +79,10 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
   m_periodicActions.clear();
   if (m_parameters.contains("periodicActions")) {
     for (auto const& c : m_parameters.getArray("periodicActions", {}))
-      m_periodicActions.append(make_tuple(GameTimer(c.getFloat("time")), c.getBool("repeat", true), c));
+      m_periodicActions.append(tuple<GameTimer, bool, Json>{GameTimer(c.getFloat("time")), c.getBool("repeat", true), c});
   } else {
-    for (auto const& periodicAction : m_config->periodicActions)
-      m_periodicActions.append(make_tuple(GameTimer(get<0>(periodicAction)), get<1>(periodicAction), get<2>(periodicAction)));
+    for (auto const& [time, repeat, action] : m_config->periodicActions)
+      m_periodicActions.append(tuple<GameTimer, bool, Json>{GameTimer(time), repeat, action});
   }
 
   if (isMaster()) {
@@ -230,10 +230,10 @@ List<DamageSource> Projectile::damageSources() const {
   if (!m_config->damagePoly.isNull()) {
     PolyF damagePoly = m_config->damagePoly;
     if (m_config->flippable) {
-      auto angleSide = getAngleSide(m_movementController->rotation(), true);
-      if (angleSide.second == Direction::Left)
+      auto [angle, facingDirection] = getAngleSide(m_movementController->rotation(), true);
+      if (facingDirection == Direction::Left)
         damagePoly.flipHorizontal(0);
-      damagePoly.rotate(angleSide.first);
+      damagePoly.rotate(angle);
     } else {
       damagePoly.rotate(m_movementController->rotation());
     }
@@ -378,10 +378,10 @@ void Projectile::render(RenderCallback* renderCallback) {
   Drawable drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, Vec2F(), world()->imageMetadataDatabase());
   drawable.imagePart().addDirectives(m_imageDirectives, true, world()->imageMetadataDatabase());
   if (m_config->flippable) {
-    auto angleSide = getAngleSide(m_movementController->rotation(), true);
-    if (angleSide.second == Direction::Left)
+    auto [angle, facingDirection] = getAngleSide(m_movementController->rotation(), true);
+    if (facingDirection == Direction::Left)
       drawable.scale(Vec2F(-1, 1));
-    drawable.rotate(angleSide.first);
+    drawable.rotate(angle);
   } else {
     drawable.rotate(m_movementController->rotation());
   }
@@ -889,7 +889,8 @@ void Projectile::tickShared(float dt) {
   setFrame(getFrame());
 
   m_effectEmitter->setSourcePosition("normal", position());
-  m_effectEmitter->setDirection(getAngleSide(m_movementController->rotation(), true).second);
+  auto [_, facingDirection] = getAngleSide(m_movementController->rotation(), true);
+  m_effectEmitter->setDirection(facingDirection);
   m_effectEmitter->tick(dt, *entityMode(), world()->effectSourceDatabase());
 
   if (m_collisionEvent.pullOccurred()) {
@@ -899,13 +900,13 @@ void Projectile::tickShared(float dt) {
 
   auto periodicActionIt = makeSMutableIterator(m_periodicActions);
   while (periodicActionIt.hasNext()) {
-    auto& periodicAction = periodicActionIt.next();
-    if (get<1>(periodicAction)) {
-      if (get<0>(periodicAction).wrapTick())
-        processAction(get<2>(periodicAction));
+    auto& [timer, repeat, action] = periodicActionIt.next();
+    if (repeat) {
+      if (timer.wrapTick())
+        processAction(action);
     } else {
-      if (get<0>(periodicAction).tick(dt)) {
-        processAction(get<2>(periodicAction));
+      if (timer.tick(dt)) {
+        processAction(action);
         periodicActionIt.remove();
       }
     }

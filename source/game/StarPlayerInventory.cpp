@@ -15,6 +15,15 @@
 
 namespace Star {
 
+namespace {
+
+struct SavedCustomBarItems {
+  ItemPtr primary;
+  ItemPtr secondary;
+};
+
+}
+
 bool PlayerInventory::itemAllowedInBag(ItemPtr const& items, String const& bagType) const {
   // any inventory type can have empty slots
   if (!items)
@@ -65,16 +74,16 @@ PlayerInventory::PlayerInventory(AssetsConstPtr assets, ItemDatabaseConstPtr ite
   m_customBarGroup = 0;
   m_customBar.resize(customBarGroups, customBarIndexes);
 
-  for (auto slot : EquipmentSlotNames) {
-    auto& element = m_equipmentNetState[slot.first];
-    if (slot.first > EquipmentSlot::BackCosmetic)
+  for (auto [equipmentSlot, _] : EquipmentSlotNames) {
+    auto& element = m_equipmentNetState[equipmentSlot];
+    if (equipmentSlot > EquipmentSlot::BackCosmetic)
       element.setCompatibilityVersion(9);
     addNetElement(&element);
   }
 
-  for (auto& p : m_bagsNetState) {
-    for (auto& e : p.second)
-      addNetElement(&e);
+  for (auto& bagNetState : m_bagsNetState.values()) {
+    for (auto& itemNetState : bagNetState)
+      addNetElement(&itemNetState);
   }
 
   addNetElement(&m_swapSlotNetState);
@@ -166,9 +175,9 @@ bool PlayerInventory::setItem(InventorySlot const& slot, ItemPtr const& item) {
     m_trashSlot = item;
     return true;
   } else {
-    auto bs = slot.get<BagSlot>();
-    if (itemAllowedInBag(item, bs.first)) {
-      m_bags[bs.first]->setItem(bs.second, item);
+    auto [bagType, bagIndex] = slot.get<BagSlot>();
+    if (itemAllowedInBag(item, bagType)) {
+      m_bags[bagType]->setItem(bagIndex, item);
       return true;
     }
   }
@@ -468,16 +477,17 @@ void PlayerInventory::condenseBagStacks(String const& bagType) {
   bag->condenseStacks();
 
   m_customBar.forEach([&](auto const&, CustomBarLink& link) {
-      if (link.first) {
-        if (auto bs = link.first->ptr<BagSlot>()) {
+      auto& [primaryLink, secondaryLink] = link;
+      if (primaryLink) {
+        if (auto bs = primaryLink->ptr<BagSlot>()) {
           if (bs->first == bagType && !bag->at(bs->second))
-            link.first = {};
+            primaryLink = {};
         }
       }
-      if (link.second) {
-        if (auto bs = link.second->ptr<BagSlot>()) {
+      if (secondaryLink) {
+        if (auto bs = secondaryLink->ptr<BagSlot>()) {
           if (bs->first == bagType && !bag->at(bs->second))
-            link.second = {};
+            secondaryLink = {};
         }
       }
     });
@@ -488,18 +498,19 @@ void PlayerInventory::sortBag(String const& bagType) {
 
   // When sorting bags, we need to record where all the action bar links were
   // pointing if any of them were pointing to the bag we are about to sort.
-  MultiArray<pair<ItemPtr, ItemPtr>, 2> savedCustomBar(m_customBar.size());
+  MultiArray<SavedCustomBarItems, 2> savedCustomBar(m_customBar.size());
   m_customBar.forEach([&](auto const& index, CustomBarLink const& link) {
-      if (link.first) {
-        if (auto bs = link.first->ptr<BagSlot>()) {
+      auto const& [primaryLink, secondaryLink] = link;
+      if (primaryLink) {
+        if (auto bs = primaryLink->ptr<BagSlot>()) {
           if (bs->first == bagType)
-            savedCustomBar(index).first = bag->at(bs->second);
+            savedCustomBar(index).primary = bag->at(bs->second);
         }
       }
-      if (link.second) {
-        if (auto bs = link.second->ptr<BagSlot>()) {
+      if (secondaryLink) {
+        if (auto bs = secondaryLink->ptr<BagSlot>()) {
           if (bs->first == bagType)
-            savedCustomBar(index).second = bag->at(bs->second);
+            savedCustomBar(index).secondary = bag->at(bs->second);
         }
       }
     });
@@ -536,11 +547,12 @@ void PlayerInventory::sortBag(String const& bagType) {
       itemIndexes[item] = i;
   }
 
-  savedCustomBar.forEach([&](auto const& index, auto const& savedItems) {
-      if (savedItems.first)
-        m_customBar.at(index).first.set(BagSlot(bagType, itemIndexes.get(savedItems.first)));
-      if (savedItems.second)
-        m_customBar.at(index).second.set(BagSlot(bagType, itemIndexes.get(savedItems.second)));
+  savedCustomBar.forEach([&](auto const& index, SavedCustomBarItems const& savedItems) {
+      auto& [primaryLink, secondaryLink] = m_customBar.at(index);
+      if (savedItems.primary)
+        primaryLink.set(BagSlot(bagType, itemIndexes.get(savedItems.primary)));
+      if (savedItems.secondary)
+        secondaryLink.set(BagSlot(bagType, itemIndexes.get(savedItems.secondary)));
     });
 }
 
@@ -665,18 +677,18 @@ void PlayerInventory::setCustomBarPrimarySlot(CustomBarIndex customBarIndex, May
       slot = {};
   }
 
-  auto& cbl = m_customBar.at(m_customBarGroup, customBarIndex);
-  if (slot && cbl.second == slot) {
+  auto& [primaryLink, secondaryLink] = m_customBar.at(m_customBarGroup, customBarIndex);
+  if (slot && secondaryLink == slot) {
     // If we match the secondary slot, just swap the slots for primary and
     // secondary
-    swap(cbl.first, cbl.second);
+    swap(primaryLink, secondaryLink);
   } else {
-    cbl.first = slot;
+    primaryLink = slot;
   }
 }
 
 void PlayerInventory::setCustomBarSecondarySlot(CustomBarIndex customBarIndex, Maybe<InventorySlot> slot) {
-  auto& cbl = m_customBar.at(m_customBarGroup, customBarIndex);
+  auto& [primaryLink, secondaryLink] = m_customBar.at(m_customBarGroup, customBarIndex);
   // The secondary slot is not allowed to point to an empty item or a two
   // handed item.
   if (slot) {
@@ -684,23 +696,23 @@ void PlayerInventory::setCustomBarSecondarySlot(CustomBarIndex customBarIndex, M
       slot = {};
   }
 
-  if (cbl.first && cbl.first == slot && !itemSafeTwoHanded(itemsAt(*cbl.first))) {
+  if (primaryLink && primaryLink == slot && !itemSafeTwoHanded(itemsAt(*primaryLink))) {
     // If we match the primary slot and the primary slot is not a two handed
     // item, then just swap the two slots.
-    swap(cbl.first, cbl.second);
+    swap(primaryLink, secondaryLink);
   } else {
-    cbl.second = slot;
+    secondaryLink = slot;
     // If the primary slot was two handed, it is no longer valid so clear it.
-    if (cbl.first && itemSafeTwoHanded(itemsAt(*cbl.first)))
-      cbl.first = {};
+    if (primaryLink && itemSafeTwoHanded(itemsAt(*primaryLink)))
+      primaryLink = {};
   }
 }
 
 void PlayerInventory::addToCustomBar(InventorySlot slot) {
   for (size_t j = 0; j < m_customBar.size(1); ++j) {
-    auto& cbl = m_customBar.at(m_customBarGroup, j);
-    if (!cbl.first && !cbl.second) {
-      cbl.first.set(slot);
+    auto& [primaryLink, secondaryLink] = m_customBar.at(m_customBarGroup, j);
+    if (!primaryLink && !secondaryLink) {
+      primaryLink.set(slot);
       break;
     }
   }
@@ -738,7 +750,8 @@ ItemPtr PlayerInventory::primaryHeldItem() const {
     return m_essential.value(m_selectedActionBar.get<EssentialItem>());
 
   if (m_selectedActionBar.is<CustomBarIndex>()) {
-    if (auto slot = m_customBar.at(m_customBarGroup, m_selectedActionBar.get<CustomBarIndex>()).first)
+    auto const& primaryLink = m_customBar.at(m_customBarGroup, m_selectedActionBar.get<CustomBarIndex>()).first;
+    if (auto slot = primaryLink)
       return itemsAt(*slot);
   }
 
@@ -750,13 +763,13 @@ ItemPtr PlayerInventory::secondaryHeldItem() const {
   if (itemSafeTwoHanded(pri) || m_swapSlot || !m_selectedActionBar || m_selectedActionBar.is<EssentialItem>())
     return {};
 
-  auto const& cbl = m_customBar.at(m_customBarGroup, m_selectedActionBar.get<CustomBarIndex>());
+  auto const& [primaryLink, secondaryLink] = m_customBar.at(m_customBarGroup, m_selectedActionBar.get<CustomBarIndex>());
 
-  if (cbl.first && itemSafeTwoHanded(itemsAt(*cbl.first)))
+  if (primaryLink && itemSafeTwoHanded(itemsAt(*primaryLink)))
     return {};
 
-  if (cbl.second)
-    return itemsAt(*cbl.second);
+  if (secondaryLink)
+    return itemsAt(*secondaryLink);
 
   return {};
 }
@@ -793,9 +806,9 @@ void PlayerInventory::setEquipmentVisibility(EquipmentSlot slot, bool visible) {
 }
 
 void PlayerInventory::load(Json const& store) {
-  for (auto slot : EquipmentSlotNames) {
-    auto jItem = store.get(strf("{}Slot", slot.second), Json());
-    m_equipment[slot.first] = m_itemDatabase->diskLoad(jItem);
+  for (auto [equipmentSlot, equipmentSlotName] : EquipmentSlotNames) {
+    auto jItem = store.get(strf("{}Slot", equipmentSlotName), Json());
+    m_equipment[equipmentSlot] = m_itemDatabase->diskLoad(jItem);
   }
 
   //reuse ItemBags so the Inventory pane still works after load()'ing into the same PlayerInventory again (from swap)
@@ -824,8 +837,8 @@ void PlayerInventory::load(Json const& store) {
       Json cbl = store.get("customBar").get(i, JsonArray()).get(j, JsonArray());
       auto validateLink = [this](Maybe<InventorySlot> link) -> Maybe<InventorySlot> {
         if (link && link->is<BagSlot>()) {
-          auto& slot = link->get<BagSlot>();
-          if (m_bags.contains(slot.first) && size_t(slot.second) < m_bags[slot.first]->size())
+          auto const& [bagType, bagIndex] = link->get<BagSlot>();
+          if (m_bags.contains(bagType) && size_t(bagIndex) < m_bags[bagType]->size())
             return link;
           else
             return {};
@@ -855,15 +868,15 @@ Json PlayerInventory::store() const {
   for (size_t i = 0; i < m_customBar.size(0); ++i) {
     JsonArray customBarGroup;
     for (size_t j = 0; j < m_customBar.size(1); ++j) {
-      auto const& cbl  = m_customBar.at(i, j);
-      customBarGroup.append(JsonArray{jsonFromMaybe(cbl.first, jsonFromInventorySlot), jsonFromMaybe(cbl.second, jsonFromInventorySlot)});
+      auto const& [primaryLink, secondaryLink] = m_customBar.at(i, j);
+      customBarGroup.append(JsonArray{jsonFromMaybe(primaryLink, jsonFromInventorySlot), jsonFromMaybe(secondaryLink, jsonFromInventorySlot)});
     }
     customBar.append(take(customBarGroup));
   }
 
   JsonObject itemBags;
-  for (auto& bag : m_bags)
-    itemBags.add(bag.first, bag.second->diskStore());
+  for (auto& [bagType, bag] : m_bags)
+    itemBags.add(bagType, bag->diskStore());
 
   auto data = JsonObject{
     {"itemBags", itemBags},
@@ -879,9 +892,9 @@ Json PlayerInventory::store() const {
     {"inspectionTool", m_itemDatabase->diskStore(m_essential.value(EssentialItem::InspectionTool))}
   };
 
-  for (auto& equipment : m_equipment) {
-    if (equipment.first <= EquipmentSlot::BackCosmetic || equipment.second)
-      data.set(strf("{}Slot", EquipmentSlotNames.getRight(equipment.first)), m_itemDatabase->diskStore(equipment.second));
+  for (auto& [equipmentSlot, item] : m_equipment) {
+    if (equipmentSlot <= EquipmentSlot::BackCosmetic || item)
+      data.set(strf("{}Slot", EquipmentSlotNames.getRight(equipmentSlot)), m_itemDatabase->diskStore(item));
   }
 
   data.set("equipmentVisibilityMask", m_equipmentVisibilityMask);
@@ -941,23 +954,24 @@ void PlayerInventory::cleanup() {
   if (m_trashSlot && m_trashSlot->empty())
     m_trashSlot = ItemPtr();
 
-  m_customBar.forEach([this](Array2S const&, CustomBarLink& p) {
-      ItemPtr primary = p.first ? retrieve(*p.first) : ItemPtr();
-      ItemPtr secondary = p.second ? retrieve(*p.second) : ItemPtr();
+  m_customBar.forEach([this](Array2S const&, CustomBarLink& customBarLink) {
+      auto& [primaryLink, secondaryLink] = customBarLink;
+      ItemPtr primary = primaryLink ? retrieve(*primaryLink) : ItemPtr();
+      ItemPtr secondary = secondaryLink ? retrieve(*secondaryLink) : ItemPtr();
 
       // Reset the primary and secondary action bar link if the item is gone
       if (!primary)
-        p.first.reset();
+        primaryLink.reset();
       if (!secondary)
-        p.second.reset();
+        secondaryLink.reset();
 
       // If the primary hand item is two handed, the secondary hand should not be
       // set
       if (itemSafeTwoHanded(primary))
-        p.second.reset();
+        secondaryLink.reset();
       // Two handed items are not allowed in the secondary slot
       if (itemSafeTwoHanded(secondary))
-        p.second.reset();
+        secondaryLink.reset();
     });
 }
 
@@ -1072,16 +1086,17 @@ ItemPtr& PlayerInventory::retrieve(InventorySlot const& slot) {
 }
 
 void PlayerInventory::swapCustomBarLinks(InventorySlot a, InventorySlot b) {
-  m_customBar.forEach([&](Array2S const&, CustomBarLink& p) {
-      if (p.first == a)
-        p.first = b;
-      else if (p.first == b)
-        p.first = a;
+  m_customBar.forEach([&](Array2S const&, CustomBarLink& customBarLink) {
+      auto& [primaryLink, secondaryLink] = customBarLink;
+      if (primaryLink == a)
+        primaryLink = b;
+      else if (primaryLink == b)
+        primaryLink = a;
 
-      if (p.second == a)
-        p.second = b;
-      else if (p.second == b)
-        p.second = a;
+      if (secondaryLink == a)
+        secondaryLink = b;
+      else if (secondaryLink == b)
+        secondaryLink = a;
     });
 }
 
@@ -1160,8 +1175,8 @@ void PlayerInventory::netElementsNeedStore() {
   m_currenciesNetState.set(m_currencies);
 
   m_customBarGroupNetState.set(m_customBarGroup);
-  m_customBar.forEach([&](auto const& index, auto& cbl) {
-      m_customBarNetState.at(index).set(cbl);
+  m_customBar.forEach([&](auto const& index, auto& customBarLink) {
+      m_customBarNetState.at(index).set(customBarLink);
     });
 
   m_selectedActionBarNetState.set(m_selectedActionBar);

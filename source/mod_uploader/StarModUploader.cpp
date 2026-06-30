@@ -5,6 +5,8 @@
 #include <QProgressDialog>
 #include <QMessageBox>
 
+#include <vector>
+
 #include "StarModUploader.hpp"
 #include "StarFile.hpp"
 #include "StarThread.hpp"
@@ -66,8 +68,8 @@ ModUploader::ModUploader()
   connect(resetModIdButton, SIGNAL(clicked()), this, SLOT(resetModId()));
   connect(uploadButton, SIGNAL(clicked()), this, SLOT(uploadToSteam()));
 
-  for (auto pair : m_categorySelectors) {
-    connect(pair.second, SIGNAL(clicked()), this, SLOT(writeMetadata()));
+  for (auto [_, categorySelector] : m_categorySelectors) {
+    connect(categorySelector, SIGNAL(clicked()), this, SLOT(writeMetadata()));
   }
 
   auto loadDirectoryLayout = new QHBoxLayout();
@@ -172,8 +174,8 @@ void ModUploader::loadDirectory() {
   m_versionEditor->setText(toQString(metadata.value("version", "").toString()));
   m_descriptionEditor->setPlainText(toQString(metadata.value("description", "").toString()));
 
-  for (auto pair : m_categorySelectors)
-    pair.second->setChecked(false);
+  for (auto [_, categorySelector] : m_categorySelectors)
+    categorySelector->setChecked(false);
 
   auto tagString = metadata.value("tags", "").toString();
   auto tagList = tagString.split('|');
@@ -230,9 +232,9 @@ void ModUploader::writeMetadata() {
   setMetadata("description", toSString(m_descriptionEditor->toPlainText()));
 
   auto tagList = StringList();
-  for (auto pair : m_categorySelectors) {
-    if (pair.second->isChecked())
-      tagList.append(pair.first);
+  for (auto [categoryName, categorySelector] : m_categorySelectors) {
+    if (categorySelector->isChecked())
+      tagList.append(categoryName);
   }
   auto tagString = tagList.join("|");
   setMetadata("tags", tagString);
@@ -287,27 +289,27 @@ void ModUploader::uploadToSteam() {
       Thread::sleep(20);
     }
 
-    if (m_steamItemCreateResult->second) {
+    if (m_steamItemCreateResult->ioFailure) {
       QMessageBox::critical(this, "Error", "There was an IO error creating a new Steam UGC item");
       return;
     }
 
-    if (m_steamItemCreateResult->first.m_bUserNeedsToAcceptWorkshopLegalAgreement) {
+    if (m_steamItemCreateResult->result.m_bUserNeedsToAcceptWorkshopLegalAgreement) {
       QMessageBox::critical(this, "Error", "The current Steam user has not agreed to the workshop legal agreement");
       return;
     }
 
-    if (m_steamItemCreateResult->first.m_eResult == k_EResultInsufficientPrivilege) {
+    if (m_steamItemCreateResult->result.m_eResult == k_EResultInsufficientPrivilege) {
       QMessageBox::critical(this, "Error", "Insufficient privileges to create a new Steam UGC item");
       return;
     }
 
-    if (m_steamItemCreateResult->first.m_eResult != k_EResultOK) {
-      QMessageBox::critical(this, "Error", strf("Error creating new Steam UGC Item ({})", static_cast<int>(m_steamItemCreateResult->first.m_eResult)).c_str());
+    if (m_steamItemCreateResult->result.m_eResult != k_EResultOK) {
+      QMessageBox::critical(this, "Error", strf("Error creating new Steam UGC Item ({})", static_cast<int>(m_steamItemCreateResult->result.m_eResult)).c_str());
       return;
     }
 
-    modIdString = toString(m_steamItemCreateResult->first.m_nPublishedFileId);
+    modIdString = toString(m_steamItemCreateResult->result.m_nPublishedFileId);
     String modUrl = strf("steam://url/CommunityFilePage/{}", modIdString);
 
     metadata.set("steamContentId", modIdString);
@@ -339,16 +341,16 @@ void ModUploader::uploadToSteam() {
 
   // construct tags
   auto tagList = StringList();
-  for (auto entry : m_categorySelectors.pairs()) {
-    if (entry.second->isChecked())
-      tagList.append(entry.first);
+  for (auto [categoryName, categorySelector] : m_categorySelectors.pairs()) {
+    if (categorySelector->isChecked())
+      tagList.append(categoryName);
   }
-  const char** tagStrings = new const char*[tagList.size()];
+  std::vector<const char*> tagStrings(tagList.size());
   for (int i = 0; i < tagList.size(); ++i) {
     tagStrings[i] = tagList[i].utf8Ptr();
   }
 
-  SteamParamStringArray_t itemTags = {tagStrings, static_cast<int32_t>(tagList.size())};
+  SteamParamStringArray_t itemTags = {tagStrings.data(), static_cast<int32_t>(tagList.size())};
   SteamUGC()->SetItemTags(updateHandle, &itemTags);
 
   CCallResult<ModUploader, SubmitItemUpdateResult_t> callResultSubmit;
@@ -369,28 +371,28 @@ void ModUploader::uploadToSteam() {
 
   File::removeDirectoryRecursive(steamUploadDir);
 
-  if (m_steamItemSubmitResult->second) {
+  if (m_steamItemSubmitResult->ioFailure) {
     QMessageBox::critical(this, "Error", "There was an IO error submitting changes to the Steam UGC item");
     return;
   }
 
-  if (m_steamItemSubmitResult->first.m_bUserNeedsToAcceptWorkshopLegalAgreement) {
+  if (m_steamItemSubmitResult->result.m_bUserNeedsToAcceptWorkshopLegalAgreement) {
     QMessageBox::critical(this, "Error", "The current Steam user has not agreed to the workshop legal agreement");
     return;
   }
 
-  if (m_steamItemSubmitResult->first.m_eResult != k_EResultOK) {
-    QMessageBox::critical(this, "Error", strf("Error submitting changes to the Steam UGC item ({})", static_cast<int>(m_steamItemSubmitResult->first.m_eResult)).c_str());
+  if (m_steamItemSubmitResult->result.m_eResult != k_EResultOK) {
+    QMessageBox::critical(this, "Error", strf("Error submitting changes to the Steam UGC item ({})", static_cast<int>(m_steamItemSubmitResult->result.m_eResult)).c_str());
     return;
   }
 }
 
 void ModUploader::onSteamCreateItem(CreateItemResult_t* result, bool ioFailure) {
-  m_steamItemCreateResult = make_pair(*result, ioFailure);
+  m_steamItemCreateResult = SteamItemCreateResult{*result, ioFailure};
 }
 
 void ModUploader::onSteamSubmitItem(SubmitItemUpdateResult_t* result, bool ioFailure) {
-  m_steamItemSubmitResult = make_pair(*result, ioFailure);
+  m_steamItemSubmitResult = SteamItemSubmitResult{*result, ioFailure};
 }
 
 }

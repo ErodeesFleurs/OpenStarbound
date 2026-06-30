@@ -1049,7 +1049,7 @@ void DungeonGeneratorWriter::placeObject(Vec2I const& pos, String const& objectT
 }
 
 void DungeonGeneratorWriter::placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters) {
-  m_vehicles[pos] = make_pair(vehicleName, parameters);
+  m_vehicles[pos] = pair<String, Json>{vehicleName, parameters};
   markPosition(pos);
 }
 
@@ -1128,8 +1128,8 @@ void DungeonGeneratorWriter::clearTileEntities(RectI const& bounds, Set<Vec2I> c
 }
 
 void DungeonGeneratorWriter::finishPart() {
-  for (auto& entries : m_openLocalWires)
-    m_localWires.append(entries.second);
+  for (auto& [_, wirePositions] : m_openLocalWires)
+    m_localWires.append(wirePositions);
   m_openLocalWires.clear();
 
   if (m_currentBounds.xMin() > m_currentBounds.xMax())
@@ -1144,11 +1144,10 @@ void DungeonGeneratorWriter::flushLiquid() {
   // pressurize that region based on the highest position in the region
 
   Map<LiquidId, Set<Vec2I>> unpressurizedLiquids;
-  for (auto& p : m_pendingLiquids)
-    unpressurizedLiquids[p.second.liquid].add(p.first);
+  for (auto& [position, liquidStore] : m_pendingLiquids)
+    unpressurizedLiquids[liquidStore.liquid].add(position);
 
-  for (auto& liquidPair : unpressurizedLiquids) {
-    auto& unpressurized = liquidPair.second;
+  for (auto& unpressurized : unpressurizedLiquids.values()) {
     while (!unpressurized.empty()) {
       // Start with the first unpressurized block as the open set.
       Vec2I firstBlock = unpressurized.takeFirst();
@@ -1183,8 +1182,8 @@ void DungeonGeneratorWriter::flushLiquid() {
     }
   }
 
-  for (auto& p : m_pendingLiquids)
-    setLiquid(p.first, p.second);
+  for (auto& [position, liquidStore] : m_pendingLiquids)
+    setLiquid(position, liquidStore);
 
   m_pendingLiquids.clear();
 }
@@ -1227,14 +1226,14 @@ void DungeonGeneratorWriter::flush() {
   if (!spaceBlendingVertexes.empty())
     m_facade->markSpace(PolyF::convexHull(spaceBlendingVertexes));
 
-  for (auto iter = m_backgroundMaterial.begin(); iter != m_backgroundMaterial.end(); iter++)
-    m_facade->setBackgroundMaterial(displace(iter->first), iter->second.material, iter->second.hueshift, iter->second.colorVariant);
-  for (auto iter = m_foregroundMaterial.begin(); iter != m_foregroundMaterial.end(); iter++)
-    m_facade->setForegroundMaterial(displace(iter->first), iter->second.material, iter->second.hueshift, iter->second.colorVariant);
-  for (auto iter = m_foregroundMod.begin(); iter != m_foregroundMod.end(); iter++)
-    m_facade->setForegroundMod(displace(iter->first), iter->second.mod, iter->second.hueshift);
-  for (auto iter = m_backgroundMod.begin(); iter != m_backgroundMod.end(); iter++)
-    m_facade->setBackgroundMod(displace(iter->first), iter->second.mod, iter->second.hueshift);
+  for (auto const& [position, material] : m_backgroundMaterial)
+    m_facade->setBackgroundMaterial(displace(position), material.material, material.hueshift, material.colorVariant);
+  for (auto const& [position, material] : m_foregroundMaterial)
+    m_facade->setForegroundMaterial(displace(position), material.material, material.hueshift, material.colorVariant);
+  for (auto const& [position, mod] : m_foregroundMod)
+    m_facade->setForegroundMod(displace(position), mod.mod, mod.hueshift);
+  for (auto const& [position, mod] : m_backgroundMod)
+    m_facade->setBackgroundMod(displace(position), mod.mod, mod.hueshift);
 
   List<Vec2I> sortedPositions = m_objects.keys();
   sortByComputedValue(sortedPositions, [](Vec2I pos) { return pos[1] + pos[0] / 1000.0f; });
@@ -1244,9 +1243,7 @@ void DungeonGeneratorWriter::flush() {
   }
 
   for (auto const& [position, vehicle] : m_vehicles) {
-    String vehicleName;
-    Json parameters;
-    tie(vehicleName, parameters) = vehicle;
+    auto const& [vehicleName, parameters] = vehicle;
     m_facade->placeVehicle(displaceF(position), vehicleName, parameters);
   }
 
@@ -1262,17 +1259,17 @@ void DungeonGeneratorWriter::flush() {
     m_facade->placeSurfaceBiomeItems(pos);
   }
 
-  for (auto& npc : m_npcs) {
-    m_facade->spawnNpc(displaceF(npc.first), npc.second);
+  for (auto& [position, definition] : m_npcs) {
+    m_facade->spawnNpc(displaceF(position), definition);
   }
 
-  for (auto& stagehand : m_stagehands) {
-    m_facade->spawnStagehand(displaceF(stagehand.first), stagehand.second);
+  for (auto& [position, definition] : m_stagehands) {
+    m_facade->spawnStagehand(displaceF(position), definition);
   }
 
-  for (auto& wires : m_globalWires) {
+  for (auto& [_, wirePositions] : m_globalWires) {
     List<Vec2I> wireGroup;
-    for (auto& pos : wires.second)
+    for (auto& pos : wirePositions)
       wireGroup.append(displace(pos));
     m_facade->connectWireGroup(wireGroup);
   }
@@ -1283,14 +1280,14 @@ void DungeonGeneratorWriter::flush() {
     m_facade->connectWireGroup(wireGroup);
   }
 
-  for (auto iter = m_drops.begin(); iter != m_drops.end(); iter++)
-    m_facade->addDrop(displaceF(iter->first), iter->second);
+  for (auto const& [position, drop] : m_drops)
+    m_facade->addDrop(displaceF(position), drop);
 
-  for (auto iter = m_liquids.begin(); iter != m_liquids.end(); iter++)
-    m_facade->setLiquid(displace(iter->first), iter->second);
+  for (auto const& [position, liquid] : m_liquids)
+    m_facade->setLiquid(displace(position), liquid);
 
-  for (auto const& dungeonId : m_dungeonIds)
-    m_facade->setDungeonIdAt(dungeonId.first, dungeonId.second);
+  for (auto const& [position, dungeonId] : m_dungeonIds)
+    m_facade->setDungeonIdAt(position, dungeonId);
 }
 
 List<RectI> DungeonGeneratorWriter::boundingBoxes() const {
@@ -1597,10 +1594,10 @@ Dungeon::PartConstPtr DungeonGenerator::pickAnchor() {
 
 List<Dungeon::ConnectorConstPtr> DungeonGenerator::findConnectablePart(Dungeon::ConnectorConstPtr connector) const {
   List<Dungeon::ConnectorConstPtr> result;
-  for (auto const& partPair : m_def->parts()) {
-    if (partPair.second->doesNotConnectTo(connector->part()))
+  for (auto const& [_, part] : m_def->parts()) {
+    if (part->doesNotConnectTo(connector->part()))
       continue;
-    for (auto const& connection : partPair.second->connections()) {
+    for (auto const& connection : part->connections()) {
       if (connection->connectsTo(*connector))
         result.append(connection);
     }

@@ -69,6 +69,11 @@ private:
     CrewPage
   };
 
+  struct FaceAnimation {
+    String name;
+    Animation animation;
+  };
+
   void updateBreadcrumbs();
   void showStatus();
 
@@ -103,7 +108,7 @@ private:
 
   Animation m_staticAnimation;
   Animation m_scanlineAnimation;
-  pair<String, Animation> m_faceAnimation;
+  FaceAnimation m_faceAnimation;
 
   AudioInstancePtr m_chatterSound;
 

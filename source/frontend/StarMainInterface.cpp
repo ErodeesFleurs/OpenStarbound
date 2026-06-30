@@ -645,15 +645,15 @@ void MainInterface::update(float dt) {
   size_t maxBars = barConfig.getUInt("maxCount",10);
 
   for (auto it = m_specialDamageBars.begin(); it != m_specialDamageBars.end();) {
-    auto& bar = *it;
-    auto damageBarEntity = as<DamageBarEntity>(m_client->worldClient()->entity(bar.first));
+    auto& [entityId, currentHealth] = *it;
+    auto damageBarEntity = as<DamageBarEntity>(m_client->worldClient()->entity(entityId));
     if (damageBarEntity && damageBarEntity->damageBar() == DamageBarType::Special) {
       float targetHealth = damageBarEntity->health() / damageBarEntity->maxHealth();
       float fillSpeed = 1.0f / barConfig.getFloat("fillTime");
-      if (abs(targetHealth - bar.second) < fillSpeed * dt)
-        bar.second = targetHealth;
+      if (abs(targetHealth - currentHealth) < fillSpeed * dt)
+        currentHealth = targetHealth;
       else
-        bar.second += copysign(1.0f, targetHealth - bar.second) * fillSpeed * dt;
+        currentHealth += copysign(1.0f, targetHealth - currentHealth) * fillSpeed * dt;
 
       it++;
     } else {
@@ -742,8 +742,8 @@ void MainInterface::update(float dt) {
   if (!m_joinRequestDialog->isDisplayed()) {
     if (auto req = m_queuedJoinRequests.maybeTakeLast()) {
       m_paneManager.displayRegisteredPane(MainInterfacePanes::JoinRequest);
-      m_joinRequestDialog->displayRequest(req->first, [req](P2PJoinRequestReply reply) mutable {
-          req->second.fulfill(reply);
+      m_joinRequestDialog->displayRequest(req->playerName, [req](P2PJoinRequestReply reply) mutable {
+          req->responsePromise.fulfill(reply);
         });
     }
   }
@@ -781,8 +781,8 @@ void MainInterface::update(float dt) {
   }
 
   for (auto it = m_itemDropMessages.begin(); it != m_itemDropMessages.end();) {
-    auto& message = *it;
-    if (message.second.second->cooldown < 0)
+    auto& itemDropMessage = it->second;
+    if (itemDropMessage.message->cooldown < 0)
       it = m_itemDropMessages.erase(it);
     else
       it++;
@@ -957,22 +957,23 @@ void MainInterface::queueMessage(String const& message) {
 
 void MainInterface::queueJoinRequest(pair<String, RpcPromiseKeeper<P2PJoinRequestReply>> request)
 {
-  m_queuedJoinRequests.push_back(request);
+  auto& [playerName, responsePromise] = request;
+  m_queuedJoinRequests.push_back(QueuedJoinRequest{playerName, std::move(responsePromise)});
 }
 
 void MainInterface::queueItemPickupText(ItemPtr const& item) {
   auto descriptor = item->descriptor();
   if (m_itemDropMessages.contains(descriptor.singular())) {
-    auto [previousCount, previousMessage] = m_itemDropMessages.get(descriptor.singular());
-    auto newCount = item->count() + previousCount;
-    auto message = previousMessage;
+    auto previousItemDropMessage = m_itemDropMessages.get(descriptor.singular());
+    auto newCount = item->count() + previousItemDropMessage.count;
+    auto message = previousItemDropMessage.message;
     message->message = strf("{} - {}", item->friendlyName(), newCount);
     message->cooldown = m_config->messageTime;
-    m_itemDropMessages[descriptor.singular()] = {newCount, message};
+    m_itemDropMessages[descriptor.singular()] = ItemDropMessage{newCount, message};
   } else {
     auto message = make_shared<GuiMessage>(strf("{} - {}", item->friendlyName(), item->count()), m_config->messageTime);
     m_messages.append(message);
-    m_itemDropMessages[descriptor.singular()] = {item->count(), message};
+    m_itemDropMessages[descriptor.singular()] = ItemDropMessage{item->count(), message};
   }
 }
 
@@ -1284,15 +1285,15 @@ void MainInterface::renderSpecialDamageBar() {
   auto nameOffset = jsonToVec2F(barConfig.get("nameOffset")) * interfaceScale();
   nameOffset.setX(nameOffset.x()*hScale);
 
-  for (auto& bar : m_specialDamageBars) {
-      if (auto target = as<DamageBarEntity>(m_client->worldClient()->entity(bar.first))) {
+  for (auto& [entityId, currentHealth] : m_specialDamageBars) {
+      if (auto target = as<DamageBarEntity>(m_client->worldClient()->entity(entityId))) {
 
         Vec2F bottomCenter = Vec2F(center + (allOffset + hSpacing*i)*hScale, 0);
 
         auto screenPos = RectF::withSize(bottomCenter + backgroundOffset, backgroundImageSize);
         m_guiContext.drawQuad(background, screenPos);
 
-        Vec2F size = Vec2F(barConfig.getInt("fillWidth") * bar.second, imgMetadata->imageSize(fill).y());
+        Vec2F size = Vec2F(barConfig.getInt("fillWidth") * currentHealth, imgMetadata->imageSize(fill).y());
         size.setX(size.x()*hScale);
 
         m_guiContext.drawQuad(fill, RectF::withSize(bottomCenter + fillOffset, size * interfaceScale()));

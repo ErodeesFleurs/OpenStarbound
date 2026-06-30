@@ -355,7 +355,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::insert(Value va
     auto& target = m_buckets[currentBucket];
     if (auto entryValue = target.valuePtr()) {
       if (target.hash == hash && m_equals(m_getKey(*entryValue), m_getKey(value)))
-        return make_pair(iterator{m_buckets.data() + currentBucket}, false);
+        return pair<iterator, bool>{iterator{m_buckets.data() + currentBucket}, false};
 
       size_t entryTargetBucket = hashBucket(target.hash);
       size_t entryError = bucketError(currentBucket, entryTargetBucket);
@@ -376,7 +376,7 @@ auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::insert(Value va
       if (insertedBucket == NPos)
         insertedBucket = currentBucket;
 
-      return make_pair(iterator{m_buckets.data() + insertedBucket}, true);
+      return pair<iterator, bool>{iterator{m_buckets.data() + insertedBucket}, true};
     }
   }
 }

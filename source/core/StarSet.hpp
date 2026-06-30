@@ -236,10 +236,12 @@ template <typename BaseSet>
 template <typename BaseSet>
 std::ostream& operator<<(std::ostream& os, SetMixin<BaseSet> const& set) {
   os << "(";
-  for (auto i = set.begin(); i != set.end(); ++i) {
-    if (i != set.begin())
+  bool first = true;
+  for (auto const& value : set) {
+    if (!first)
       os << ", ";
-    os << *i;
+    first = false;
+    os << value;
   }
   os << ")";
   return os;

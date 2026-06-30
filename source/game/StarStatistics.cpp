@@ -24,7 +24,7 @@ void Statistics::writeStatistics() {
 
   Json stats = JsonObject::from(m_stats.pairs().transformed([](auto const& entry) {
       auto const& [statName, stat] = entry;
-      return make_pair(statName, stat.toJson());
+      return pair<String, Json>{statName, stat.toJson()};
     }));
   JsonObject storage = {
       { "stats", stats },
@@ -52,7 +52,7 @@ bool Statistics::achievementUnlocked(String const& name) const {
 }
 
 void Statistics::recordEvent(String const& name, Json const& fields) {
-  m_pendingEvents.append(make_pair(name, fields));
+  m_pendingEvents.append(PendingEvent{name, fields});
 }
 
 bool Statistics::reset() {
@@ -84,8 +84,8 @@ void Statistics::update() {
     }
   }
 
-  for (auto const& [eventName, eventFields] : m_pendingEvents) {
-    processEvent(eventName, eventFields);
+  for (auto const& pendingEvent : m_pendingEvents) {
+    processEvent(pendingEvent.name, pendingEvent.fields);
   }
 
   for (String const& achievement : m_pendingAchievementChecks) {
@@ -158,7 +158,7 @@ void Statistics::readStatistics() {
 
       m_stats = StringMap<Stat>::from(storage.getObject("stats", {}).pairs().transformed([](auto const& entry) {
           auto const& [statName, statJson] = entry;
-          return make_pair(statName, Stat::fromJson(statJson));
+          return pair<String, Stat>{statName, Stat::fromJson(statJson)};
         }));
       m_achievements = jsonToStringSet(storage.get("achievements", JsonArray{}));
 

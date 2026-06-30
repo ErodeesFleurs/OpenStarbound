@@ -40,7 +40,7 @@ PcP2PNetworkingService::PcP2PNetworkingService(PcPlatformServicesStatePtr state)
         MutexLocker serviceLocker(m_mutex);
         String userName = String(user.GetUsername());
         Logger::info("Received join request from user '{}'", userName);
-        m_discordJoinRequests.emplace_back(make_pair(user.GetId(), userName));
+        m_discordJoinRequests.emplace_back(DiscordJoinRequest{user.GetId(), userName});
       });
     m_discordOnReceiveMessage = m_state->discordCore->LobbyManager().OnNetworkMessage.Connect([this](auto&&... args) { return discordOnReceiveMessage(std::forward<decltype(args)>(args)...); });
     m_discordOnLobbyMemberConnect = m_state->discordCore->LobbyManager().OnMemberConnect.Connect([this](auto&&... args) { return discordOnLobbyMemberConnect(std::forward<decltype(args)>(args)...); });
@@ -159,9 +159,9 @@ Maybe<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> Star::PcP2PNetworking
 
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
   if (auto request = m_discordJoinRequests.maybeTakeLast()) {
-    auto promisePair = RpcPromise<P2PJoinRequestReply>::createPair();
-    m_pendingDiscordJoinRequests.emplace_back(request->first, promisePair.first);
-    return make_pair(request->second, promisePair.second);
+    auto [promise, promiseKeeper] = RpcPromise<P2PJoinRequestReply>::createPair();
+    m_pendingDiscordJoinRequests.emplace_back(PendingDiscordJoinRequest{request->userId, promise});
+    return pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>{request->userName, promiseKeeper};
   }
 #endif
 
@@ -187,8 +187,8 @@ void Star::PcP2PNetworkingService::update() {
   MutexLocker serviceLocker(m_mutex);
   
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
-  for (auto& [discordUserId, replyPromise] : m_pendingDiscordJoinRequests) {
-    if (auto res = replyPromise.result()) {
+  for (auto& pendingRequest : m_pendingDiscordJoinRequests) {
+    if (auto res = pendingRequest.replyPromise.result()) {
       auto reply = discord::ActivityJoinRequestReply::Ignore;
       switch (*res) {
         case P2PJoinRequestReply::Yes:
@@ -202,15 +202,14 @@ void Star::PcP2PNetworkingService::update() {
           break;
       }
 
-      m_state->discordCore->ActivityManager().SendRequestReply(discordUserId, reply, [](discord::Result res) {
+      m_state->discordCore->ActivityManager().SendRequestReply(pendingRequest.userId, reply, [](discord::Result res) {
           if (res != discord::Result::Ok)
             Logger::error("Could not send Discord activity join response (err {})", static_cast<int>(res));
         });
     }
   }
-  m_pendingDiscordJoinRequests = m_pendingDiscordJoinRequests.filtered([](pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>& request) {
-      auto& [discordUserId, replyPromise] = request;
-      return !replyPromise.finished();
+  m_pendingDiscordJoinRequests = m_pendingDiscordJoinRequests.filtered([](PendingDiscordJoinRequest& pendingRequest) {
+      return !pendingRequest.replyPromise.finished();
     });
 #endif
 }
@@ -472,7 +471,7 @@ UniquePtr<P2PSocket> PcP2PNetworkingService::discordConnectRemote(discord::UserI
               socket->mode = DiscordSocketMode::Connected;
               Logger::info("Discord P2P connection opened to remote user {} via lobby {}", remoteUserId, lobbyId);
 
-              m_discordServerLobby = make_pair(lobbyId, String());
+              m_discordServerLobby = pair<discord::LobbyId, String>{lobbyId, String()};
               m_discordForceUpdateActivity = true;
         } else {
           Logger::error("discord::Lobbies::Connect callback no matching remoteUserId {} found", remoteUserId);
@@ -597,7 +596,7 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
             if (res == discord::Result::Ok) {
               res = m_state->discordCore->LobbyManager().OpenNetworkChannel(lobbyId, DiscordMainNetworkChannel, true);
               if (res == discord::Result::Ok) {
-                m_discordServerLobby = make_pair(lobbyId, String(lobby.GetSecret()));
+                m_discordServerLobby = pair<discord::LobbyId, String>{lobbyId, String(lobby.GetSecret())};
             m_discordForceUpdateActivity = true;
 
                 // successfully joined lobby network

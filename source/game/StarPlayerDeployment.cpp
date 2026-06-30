@@ -86,9 +86,9 @@ void PlayerDeployment::update(float dt) {
 }
 
 void PlayerDeployment::render(RenderCallback* renderCallback, Vec2F const& position) {
-  for (auto drawablePair : m_scriptComponent.drawables()) {
-    drawablePair.first.translate(position);
-    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(RenderLayerPlayer));
+  for (auto [drawable, maybeRenderLayer] : m_scriptComponent.drawables()) {
+    drawable.translate(position);
+    renderCallback->addDrawable(drawable, maybeRenderLayer.value(RenderLayerPlayer));
   }
   renderCallback->addParticles(m_scriptComponent.pullNewParticles());
   for (auto audio : m_scriptComponent.pullNewAudios()) {

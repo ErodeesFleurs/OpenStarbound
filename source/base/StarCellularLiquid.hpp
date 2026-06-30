@@ -454,7 +454,7 @@ void LiquidCellEngine<LiquidId>::findInteractions() {
           adjacentPos += Vec2I(0, -1);
         else if (adjacency == Adjacency::Top)
           adjacentPos += Vec2I(0, 1);
-        m_liquidCollisions.add(make_tuple(selfCell->position, *selfCell->liquid, adjacentPos));
+        m_liquidCollisions.add(tuple<Vec2I, LiquidId, Vec2I>{selfCell->position, *selfCell->liquid, adjacentPos});
 
       } else if (targetCell->liquid && *targetCell->liquid != *selfCell->liquid) {
         if (targetCell->level <= m_engineParameters.interactTransformationLevel
@@ -467,9 +467,9 @@ void LiquidCellEngine<LiquidId>::findInteractions() {
           // Make sure to add the point pair in a predictable order so that any
           // combination of Vec2I points will be unique in m_liquidInteractions
           if (selfCell->position < targetCell->position)
-            m_liquidInteractions.add(make_tuple(selfCell->position, *selfCell->liquid, targetCell->position, *targetCell->liquid));
+            m_liquidInteractions.add(tuple<Vec2I, LiquidId, Vec2I, LiquidId>{selfCell->position, *selfCell->liquid, targetCell->position, *targetCell->liquid});
           else
-            m_liquidInteractions.add(make_tuple(targetCell->position, *targetCell->liquid, selfCell->position, *selfCell->liquid));
+            m_liquidInteractions.add(tuple<Vec2I, LiquidId, Vec2I, LiquidId>{targetCell->position, *targetCell->liquid, selfCell->position, *selfCell->liquid});
         }
       }
     }
@@ -498,11 +498,11 @@ void LiquidCellEngine<LiquidId>::finish() {
     }
   }
 
-  for (auto const& interaction : take(m_liquidInteractions))
-    m_cellWorld->liquidInteraction(get<0>(interaction), get<1>(interaction), get<2>(interaction), get<3>(interaction));
+  for (auto const& [pos, liquid, level, flow] : take(m_liquidInteractions))
+    m_cellWorld->liquidInteraction(pos, liquid, level, flow);
 
-  for (auto const& interaction : take(m_liquidCollisions))
-    m_cellWorld->liquidCollision(get<0>(interaction), get<1>(interaction), get<2>(interaction));
+  for (auto const& [pos, liquid, level] : take(m_liquidCollisions))
+    m_cellWorld->liquidCollision(pos, liquid, level);
 
   for (auto const& c : take(m_nextActiveCells)) {
     auto visit = [this](Vec2I p) {
@@ -519,8 +519,9 @@ void LiquidCellEngine<LiquidId>::finish() {
     visit(c + Vec2I(0, 1));
   }
 
-  eraseWhere(m_activeCells, [](auto const& p) {
-    return p.second.empty();
+  eraseWhere(m_activeCells, [](auto const& activeCell) {
+    auto const& [position, liquid] = activeCell;
+    return liquid.empty();
   });
 }
 
@@ -528,7 +529,7 @@ template <typename LiquidId>
 typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::workingCell(Vec2I p) {
   p = m_cellWorld->uniqueLocation(p);
 
-  auto res = m_workingCells.insert(make_pair(p, Maybe<WorkingCell>()));
+  auto res = m_workingCells.insert(pair<Vec2I, Maybe<WorkingCell>>{p, Maybe<WorkingCell>()});
   if (res.second) {
     auto cellData = m_cellWorld->cell(p);
     if (auto flowCell = cellData.template ptr<CellularLiquidFlowCell<LiquidId>>())

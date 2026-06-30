@@ -326,9 +326,9 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insert(value_typ
   if (i == m_map.end()) {
     iterator orderIt = m_order.insert(m_order.end(), v);
     m_map.insert(i, typename MapType::value_type(std::cref(orderIt->first), orderIt));
-    return std::make_pair(orderIt, true);
+    return pair<iterator, bool>{orderIt, true};
   } else {
-    return std::make_pair(i->second, false);
+    return pair<iterator, bool>{i->second, false};
   }
 }
 
@@ -343,9 +343,9 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insertFront(valu
   if (i == m_map.end()) {
     iterator orderIt = m_order.insert(m_order.begin(), v);
     m_map.insert(i, typename MapType::value_type(std::cref(orderIt->first), orderIt));
-    return std::make_pair(orderIt, true);
+    return pair<iterator, bool>{orderIt, true};
   } else {
-    return std::make_pair(i->second, false);
+    return pair<iterator, bool>{i->second, false};
   }
 }
 
@@ -356,11 +356,11 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::insertFront(key_
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::add(key_type k, mapped_type v) -> mapped_type& {
-  auto pair = insert(value_type(std::move(k), std::move(v)));
-  if (!pair.second)
+  auto [entry, inserted] = insert(value_type(std::move(k), std::move(v)));
+  if (!inserted)
     throw MapException(strf("Entry with key '{}' already present.", outputAny(k)));
   else
-    return pair.first->second;
+    return entry->second;
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>

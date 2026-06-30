@@ -35,12 +35,16 @@ private:
     Signal signal;
     bool received;
   };
+  struct PendingSignal {
+    float timeToSend;
+    Signal signal;
+  };
 
   size_t m_maxSignalQueue;
   NetElementVersion const* m_netVersion = nullptr;
   bool m_netInterpolationEnabled = false;
   Deque<SignalEntry> m_signals;
-  Deque<pair<float, Signal>> m_pendingSignals;
+  Deque<PendingSignal> m_pendingSignals;
 };
 
 template <typename Signal>
@@ -69,25 +73,27 @@ void NetElementSignal<Signal>::enableNetInterpolation(float) {
 template <typename Signal>
 void NetElementSignal<Signal>::disableNetInterpolation() {
   m_netInterpolationEnabled = false;
-  for (auto& [timeToSend, signal] : take(m_pendingSignals))
-    send(std::move(signal));
+  for (auto& pendingSignal : take(m_pendingSignals))
+    send(std::move(pendingSignal.signal));
 }
 
 template <typename Signal>
 void NetElementSignal<Signal>::tickNetInterpolation(float dt) {
-  for (auto& [timeToSend, signal] : m_pendingSignals)
-    timeToSend -= dt;
+  for (auto& pendingSignal : m_pendingSignals)
+    pendingSignal.timeToSend -= dt;
 
-  while (!m_pendingSignals.empty() && m_pendingSignals.first().first <= 0.0f)
-    send(m_pendingSignals.takeFirst().second);
+  while (!m_pendingSignals.empty() && m_pendingSignals.first().timeToSend <= 0.0f) {
+    auto pendingSignal = m_pendingSignals.takeFirst();
+    send(std::move(pendingSignal.signal));
+  }
 }
 
 template <typename Signal>
 bool NetElementSignal<Signal>::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return false;
   size_t numToWrite = 0;
-  for (auto const& p : m_signals) {
-    if (p.version >= fromVersion)
+  for (auto const& signalEntry : m_signals) {
+    if (signalEntry.version >= fromVersion)
       ++numToWrite;
   }
   if (numToWrite == 0)
@@ -95,9 +101,9 @@ bool NetElementSignal<Signal>::writeNetDelta(DataStream& ds, uint64_t fromVersio
 
   ds.writeVlqU(numToWrite);
 
-  for (auto const& p : m_signals) {
-    if (p.version >= fromVersion)
-      ds.write(p.signal);
+  for (auto const& signalEntry : m_signals) {
+    if (signalEntry.version >= fromVersion)
+      ds.write(signalEntry.signal);
   }
 
   return true;
@@ -111,11 +117,11 @@ void NetElementSignal<Signal>::readNetDelta(DataStream& ds, float interpolationT
     Signal s;
     ds.read(s);
     if (m_netInterpolationEnabled && interpolationTime > 0.0f) {
-      if (!m_pendingSignals.empty() && m_pendingSignals.last().first > interpolationTime) {
-        for (auto& [timeToSend, signal] : take(m_pendingSignals))
-          send(std::move(signal));
+      if (!m_pendingSignals.empty() && m_pendingSignals.last().timeToSend > interpolationTime) {
+        for (auto& pendingSignal : take(m_pendingSignals))
+          send(std::move(pendingSignal.signal));
       }
-      m_pendingSignals.append({interpolationTime, std::move(s)});
+      m_pendingSignals.append(PendingSignal{interpolationTime, std::move(s)});
     } else {
       send(std::move(s));
     }
@@ -132,10 +138,10 @@ void NetElementSignal<Signal>::send(Signal signal) {
 template <typename Signal>
 List<Signal> NetElementSignal<Signal>::receive() {
   List<Signal> received;
-  for (auto& p : m_signals) {
-    if (!p.received) {
-      received.append(p.signal);
-      p.received = true;
+  for (auto& signalEntry : m_signals) {
+    if (!signalEntry.received) {
+      received.append(signalEntry.signal);
+      signalEntry.received = true;
     }
   }
   return received;

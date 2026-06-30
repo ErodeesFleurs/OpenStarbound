@@ -290,8 +290,8 @@ namespace Dungeon {
     Maybe<Json> objectProperties = tmx.opt("properties").apply([](Json const& properties) -> Json {
         if (properties.type() == Json::Type::Array) {
           JsonObject objectProperties;
-          for (auto& p : properties.toArray())
-            objectProperties.set(p.getString("name"), p.get("value"));
+          for (auto& property : properties.toArray())
+            objectProperties.set(property.getString("name"), property.get("value"));
           return objectProperties;
         } else {
           return properties.toObject();
@@ -418,8 +418,8 @@ namespace Dungeon {
     Maybe<JsonObject> groupProperties = tmx.opt("properties").apply([](Json const& properties) {
         if (properties.type() == Json::Type::Array) {
           JsonObject objectProperties;
-          for (auto& p : properties.toArray())
-            objectProperties.set(p.getString("name"), p.get("value"));
+          for (auto& property : properties.toArray())
+            objectProperties.set(property.getString("name"), property.get("value"));
           return objectProperties;
         } else {
           return properties.toObject();
@@ -432,7 +432,7 @@ namespace Dungeon {
   }
 
   void TMXPartReader::readAsset(String const& asset) {
-    m_maps.append(make_pair(asset, make_shared<const TMXMap>(m_assets->json(asset), m_tilesetDatabase)));
+    m_maps.append(pair<String, TMXMapConstPtr>{asset, make_shared<const TMXMap>(m_assets->json(asset), m_tilesetDatabase)});
   }
 
   Vec2U TMXPartReader::size() const {
@@ -457,8 +457,8 @@ namespace Dungeon {
   }
 
   void TMXPartReader::forEachMap(function<bool(TMXMapConstPtr const&)> func) const {
-    for (auto const& map : m_maps) {
-      func(map.second);
+    for (auto const& [_, map] : m_maps) {
+      func(map);
     }
   }
 }

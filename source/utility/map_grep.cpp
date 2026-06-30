@@ -26,9 +26,7 @@ Maybe<String> matchTile(SearchParameters const& search, Tiled::Tile const& tile)
       if (tileName->regexMatch(search.criteria.get<TileName>()))
         return tileName;
   } else {
-    String propertyName;
-    String matchValue;
-    tie(propertyName, matchValue) = search.criteria.get<TileProperty>();
+    auto [propertyName, matchValue] = search.criteria.get<TileProperty>();
     if (auto propertyValue = properties.opt<String>(propertyName))
       if (propertyValue->regexMatch(matchValue))
         return properties.opt<String>("//name").value("?");
@@ -67,11 +65,11 @@ void grepMap(SearchParameters const& search, String file) {
 }
 
 void grepDirectory(SearchParameters const& search, String directory) {
-  for (pair<String, bool> entry : File::dirList(directory)) {
-    if (entry.second)
-      grepDirectory(search, File::relativeTo(directory, entry.first));
-    else if (entry.first.endsWith(MapFilenameSuffix))
-      grepMap(search, File::relativeTo(directory, entry.first));
+  for (auto [entryName, isDirectory] : File::dirList(directory)) {
+    if (isDirectory)
+      grepDirectory(search, File::relativeTo(directory, entryName));
+    else if (entryName.endsWith(MapFilenameSuffix))
+      grepMap(search, File::relativeTo(directory, entryName));
   }
 }
 
@@ -86,7 +84,7 @@ void grepPath(SearchParameters const& search, String path) {
 MatchCriteria parseMatchCriteria(String const& criteriaStr) {
   if (criteriaStr.contains("=")) {
     StringList parts = criteriaStr.split('=', 1);
-    return make_pair(parts[0], parts[1]);
+    return TileProperty{parts[0], parts[1]};
   }
   return TileName(criteriaStr);
 }
@@ -98,9 +96,7 @@ int main(int argc, char* argv[]) {
     rootLoader.addArgument("MaterialId|ObjectName|Property=Value", OptionParser::Required);
     rootLoader.addArgument("JsonMapFile", OptionParser::Multiple);
 
-    UniquePtr<Root> root;
-    OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    auto [root, options] = rootLoader.commandInitOrDie(argc, argv);
 
     SearchParameters search = {parseMatchCriteria(options.arguments[0])};
     StringList files = options.arguments.slice(1);

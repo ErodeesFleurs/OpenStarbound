@@ -128,8 +128,8 @@ bool RegisteredPaneManager<KeyT>::toggleRegisteredPane(KeyT const& paneId) {
 template <typename KeyT>
 typename RegisteredPaneManager<KeyT>::PaneInfo const& RegisteredPaneManager<KeyT>::getRegisteredPaneInfo(
     KeyT const& paneId) const {
-  if (auto p = m_registeredPanes.ptr(paneId))
-    return *p;
+  if (auto paneInfo = m_registeredPanes.ptr(paneId))
+    return *paneInfo;
   throw GuiException(strf("No registered pane with name '{}' found in  RegisteredPaneManager", outputAny(paneId)));
 }
 }

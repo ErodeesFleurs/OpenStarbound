@@ -371,8 +371,13 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
       && m_configuration->getPath("compatibility.customDungeonWorld").optBool().value(false))
     worldStartPacket->templateData = worldStartPacket->templateData.setPath("worldParameters.primaryDungeon", "testarena");
 
-  tie(worldStartPacket->skyData, clientInfo->skyNetVersion) = m_sky->writeUpdate(0, netRules);
-  tie(worldStartPacket->weatherData, clientInfo->weatherNetVersion) = m_weather.writeUpdate(0, netRules);
+  auto [skyData, skyNetVersion] = m_sky->writeUpdate(0, netRules);
+  worldStartPacket->skyData = std::move(skyData);
+  clientInfo->skyNetVersion = skyNetVersion;
+
+  auto [weatherData, weatherNetVersion] = m_weather.writeUpdate(0, netRules);
+  worldStartPacket->weatherData = std::move(weatherData);
+  clientInfo->weatherNetVersion = weatherNetVersion;
   worldStartPacket->playerStart = playerStart;
   worldStartPacket->playerRespawn = m_spawnFinder.m_playerStart;
   worldStartPacket->respawnInWorld = m_spawnFinder.m_respawnInWorld;
@@ -732,10 +737,9 @@ void WorldServer::update(float dt) {
     clientInfo->interpolationTracker.update(m_currentTime);
 
   List<WorldAction> triggeredActions;
-  eraseWhere(m_timers, [&triggeredActions, dt](pair<float, WorldAction>& timer) {
-    auto& [remainingTime, action] = timer;
-    if ((remainingTime -= dt) <= 0) {
-      triggeredActions.append(action);
+  eraseWhere(m_timers, [&triggeredActions, dt](WorldTimer& timer) {
+    if ((timer.remainingTime -= dt) <= 0) {
+      triggeredActions.append(timer.action);
       return true;
     }
     return false;
@@ -1396,7 +1400,7 @@ void WorldServer::setPlanetType(String const& planetType, String const& primaryB
         auto const& tile = m_tileArray->tile(pos);
         return !isRealMaterial(tile.background); }, m_biomeDatabase, m_projectileDatabase);
 
-      m_newPlanetType = pair<String, String>{planetType, primaryBiomeName};
+      m_newPlanetType = NewPlanetType{planetType, primaryBiomeName};
     }
   }
 }
@@ -1414,8 +1418,10 @@ StringList WorldServer::weatherList() const {
 }
 
 Maybe<pair<String, String>> WorldServer::pullNewPlanetType() {
-  if (m_newPlanetType)
-    return m_newPlanetType.take();
+  if (m_newPlanetType) {
+    auto newPlanetType = m_newPlanetType.take();
+    return pair<String, String>{newPlanetType.planetType, newPlanetType.primaryBiomeName};
+  }
   return {};
 }
 
@@ -1621,9 +1627,7 @@ TileModificationList WorldServer::doApplyTileModifications(TileModificationList 
   size_t unappliedSize = unapplied.size();
   auto it = makeSMutableIterator(unapplied);
   while (it.hasNext()) {
-    Vec2I pos;
-    TileModification modification;
-    std::tie(pos, modification) = it.next();
+    auto [pos, modification] = it.next();
 
     if (!ignoreTileProtection && isTileProtected(pos))
       continue;
@@ -2133,11 +2137,11 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
   clientInfo->outgoingPackets.append(makePooled<StepUpdatePacket>(m_currentTime));
 
   if (shouldRunThisStep("environmentUpdate")) {
-    ByteArray skyDelta;
-    tie(skyDelta, clientInfo->skyNetVersion) = m_sky->writeUpdate(clientInfo->skyNetVersion, clientInfo->clientState.netCompatibilityRules());
+    auto [skyDelta, skyNetVersion] = m_sky->writeUpdate(clientInfo->skyNetVersion, clientInfo->clientState.netCompatibilityRules());
+    clientInfo->skyNetVersion = skyNetVersion;
 
-    ByteArray weatherDelta;
-    tie(weatherDelta, clientInfo->weatherNetVersion) = m_weather.writeUpdate(clientInfo->weatherNetVersion, clientInfo->clientState.netCompatibilityRules());
+    auto [weatherDelta, weatherNetVersion] = m_weather.writeUpdate(clientInfo->weatherNetVersion, clientInfo->clientState.netCompatibilityRules());
+    clientInfo->weatherNetVersion = weatherNetVersion;
 
     if (!skyDelta.empty() || !weatherDelta.empty())
       clientInfo->outgoingPackets.append(makePooled<EnvironmentUpdatePacket>(std::move(skyDelta), std::move(weatherDelta)));
@@ -2214,7 +2218,7 @@ void WorldServer::queueUpdatePackets(ConnectionId clientId, bool sendRemoteUpdat
       auto netRules = clientInfo->clientState.netCompatibilityRules();
       if (auto version = clientInfo->clientSlavesNetVersion.ptr(entityId)) {
         if (auto updateSetPacket = updateSetPackets.value(connectionId)) {
-          auto cacheKey = make_pair(entityId, *version);
+          pair<EntityId, uint64_t> cacheKey{entityId, *version};
           auto& cache = m_netStateCache[netRules];
           auto i = cache.find(cacheKey);
           if (i == cache.end())
@@ -2396,7 +2400,7 @@ void WorldServer::removeEntity(EntityId entityId, bool andDie) {
   for (auto const& [_, clientInfo] : m_clientInfo) {
     if (auto version = clientInfo->clientSlavesNetVersion.maybeTake(entity->entityId())) {
       auto netRules = clientInfo->clientState.netCompatibilityRules();
-      ByteArray finalDelta = entity->writeNetState(*version, netRules).first;
+      auto [finalDelta, _] = entity->writeNetState(*version, netRules);
       clientInfo->outgoingPackets.append(make_shared<EntityDestroyPacket>(entity->entityId(), std::move(finalDelta), andDie));
     }
   }
@@ -2484,7 +2488,7 @@ void WorldServer::setProperty(String const& propertyName, Json const& property) 
 }
 
 void WorldServer::timer(float delay, WorldAction worldAction) {
-  m_timers.append({delay, worldAction});
+  m_timers.append(WorldTimer{delay, worldAction});
 }
 
 void WorldServer::startFlyingSky(bool enterHyperspace, bool startInWarp, Json settings) {
@@ -2579,11 +2583,11 @@ void WorldServer::readMetadata() {
   m_spawner.setActive(metadata.getBool("spawningEnabled"));
 
   m_dungeonProtection.m_dungeonIdGravity = transform<HashMap<DungeonId, float>>(metadata.getArray("dungeonIdGravity"), [](Json const& p) {
-    return make_pair(p.getInt(0), p.getFloat(1));
+    return pair<DungeonId, float>{p.getInt(0), p.getFloat(1)};
   });
 
   m_dungeonProtection.m_dungeonIdBreathable = transform<HashMap<DungeonId, bool>>(metadata.getArray("dungeonIdBreathable"), [](Json const& p) {
-    return make_pair(p.getInt(0), p.getBool(1));
+    return pair<DungeonId, bool>{p.getInt(0), p.getBool(1)};
   });
 }
 

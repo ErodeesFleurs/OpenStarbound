@@ -86,8 +86,8 @@ void StarWorldClientDamageFX::handleDamageNotifications() {
       }
       if (directives) {
         int directiveIndex = unsigned(damageNotification.targetEntityId) % directives->size();
-        for (auto& p : hitParticles)
-          p.directives.append(directives->get(directiveIndex));
+        for (auto& particle : hitParticles)
+          particle.directives.append(directives->get(directiveIndex));
       }
 
       m_worldClient.m_particles->addParticles(hitParticles);

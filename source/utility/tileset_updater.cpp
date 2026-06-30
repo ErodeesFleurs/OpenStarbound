@@ -54,7 +54,7 @@ Maybe<pair<String, String>> parseAssetSource(String const& source) {
   String sourcePath = source.trimEnd("/\\");
   String sourceName = sourcePath.splitAny("/\\").last();
 
-  return make_pair(sourceName, sourcePath);
+  return pair<String, String>{sourceName, sourcePath};
 }
 
 String tilesetExportDir(String const& sourcePath, String const& sourceName) {
@@ -67,8 +67,7 @@ void Tileset::exportTileset() const {
     // Don't export tilesets into packed assets
     return;
 
-  String sourceName, sourcePath;
-  tie(sourceName, sourcePath) = *parsedSource;
+  auto [sourceName, sourcePath] = *parsedSource;
   String exportDir = tilesetExportDir(sourcePath, sourceName);
   String tilesetPath = unixFileJoin(exportDir, m_name + ".json");
   File::makeDirectoryRecursive(File::dirName(tilesetPath));
@@ -81,9 +80,7 @@ void Tileset::exportTileset() const {
   JsonObject tileProperties = root.getObject("tileproperties", JsonObject{});
 
   // Scan the tiles already in the tileset
-  StringMap<size_t> existingTiles;
-  size_t nextId = 0;
-  tie(existingTiles, nextId) = indexExistingTiles(root);
+  auto [existingTiles, nextId] = indexExistingTiles(root);
 
   // Add new tiles and update existing ones
   StringSet updatedTiles = updateTiles(tileProperties, tileImages, existingTiles, nextId, tilesetPath);
@@ -184,15 +181,15 @@ Json Tileset::getTilesetJson(String const& tilesetPath) const {
 pair<StringMap<size_t>, size_t> Tileset::indexExistingTiles(Json tileset) const {
   StringMap<size_t> existingTiles;
   size_t nextId = 0;
-  for (auto const& entry : tileset.getObject("tileproperties")) {
-    size_t id = lexicalCast<size_t>(entry.first);
-    Tiled::Properties properties = entry.second;
+  for (auto const& [idString, propertiesJson] : tileset.getObject("tileproperties")) {
+    size_t id = lexicalCast<size_t>(idString);
+    Tiled::Properties properties = propertiesJson;
     if (properties.contains("//name")) {
       existingTiles[properties.get<String>("//name")] = id;
       nextId = max(id + 1, nextId);
     }
   }
-  return make_pair(existingTiles, nextId);
+  return {existingTiles, nextId};
 }
 
 StringSet Tileset::updateTiles(JsonObject& tileProperties,
@@ -248,9 +245,7 @@ void TilesetUpdater::defineAssetSource(String const& source) {
     // Don't change anything about images in packed assets
     return;
 
-  String sourceName;
-  String sourcePath;
-  tie(sourceName, sourcePath) = *parsedSource;
+  auto [sourceName, sourcePath] = *parsedSource;
   String tilesetDir = tilesetExportDir(sourcePath, sourceName);
   String imageDir = imageExportDirName(tilesetDir, sourceName);
 
@@ -258,15 +253,15 @@ void TilesetUpdater::defineAssetSource(String const& source) {
   if (!File::isDirectory(imageDir))
     return;
 
-  for (pair<String, bool> entry : File::dirList(imageDir)) {
-    if (entry.second) {
-      String databaseName = entry.first;
+  for (auto [entryName, isDirectory] : File::dirList(imageDir)) {
+    if (isDirectory) {
+      String databaseName = entryName;
       String databasePath = unixFileJoin(imageDir, databaseName);
       Logger::info("Scanning database {}...", databaseName);
-      for (pair<String, bool> image : File::dirList(databasePath)) {
-        starAssert(!image.second);
-        starAssert(image.first.endsWith(".png"));
-        String tileName = image.first.substr(0, image.first.findLast(".png"));
+      for (auto [imageName, isImageDirectory] : File::dirList(databasePath)) {
+        starAssert(!isImageDirectory);
+        starAssert(imageName.endsWith(".png"));
+        String tileName = imageName.substr(0, imageName.findLast(".png"));
         m_preexistingImages[sourceName][databaseName].add(tileName);
       }
     }
@@ -279,24 +274,22 @@ void TilesetUpdater::defineTile(TilePtr const& tile) {
 }
 
 void TilesetUpdater::exportTilesets() {
-  for (auto const& tilesets : m_tilesets) {
-    auto parsedAssetSource = parseAssetSource(tilesets.first);
+  for (auto const& [assetSource, tilesets] : m_tilesets) {
+    auto parsedAssetSource = parseAssetSource(assetSource);
     if (!parsedAssetSource) {
-      Logger::info("Not updating tilesets in {} because it is packed", tilesets.first);
+      Logger::info("Not updating tilesets in {} because it is packed", assetSource);
       continue;
     }
-    String sourceName;
-    String sourcePath;
-    tie(sourceName, sourcePath) = *parsedAssetSource;
+    auto [sourceName, sourcePath] = *parsedAssetSource;
 
     String tilesetDir = tilesetExportDir(sourcePath, sourceName);
     String imageDir = imageExportDirName(tilesetDir, sourceName);
 
-    for (auto const& tileset : tilesets.second.values()) {
+    for (auto const& tileset : tilesets.values()) {
       tileset->exportTileset();
     }
 
-    for (auto const& database : m_databases[tilesets.first].values()) {
+    for (auto const& database : m_databases[assetSource].values()) {
       String databaseImagePath = unixFileJoin(imageDir, database->name());
       StringSet unusedImages = m_preexistingImages[sourceName][database->name()].difference(database->tileNames());
       for (String tileName : unusedImages) {

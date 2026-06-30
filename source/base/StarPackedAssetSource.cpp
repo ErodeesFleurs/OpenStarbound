@@ -150,20 +150,20 @@ IODevicePtr PackedAssetSource::open(String const& path) {
     StreamOffset assetPos;
   };
 
-  auto p = m_index.ptr(path);
-  if (!p)
+  auto indexEntry = m_index.ptr(path);
+  if (!indexEntry)
     throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
 
-  return make_shared<AssetReader>(m_packedFile, path, p->first, p->second);
+  return make_shared<AssetReader>(m_packedFile, path, indexEntry->first, indexEntry->second);
 }
 
 ByteArray PackedAssetSource::read(String const& path) {
-  auto p = m_index.ptr(path);
-  if (!p)
+  auto indexEntry = m_index.ptr(path);
+  if (!indexEntry)
     throw AssetSourceException::format("Requested file '{}' does not exist in the packed assets file", path);
 
-  ByteArray data(p->second, 0);
-  m_packedFile->readFullAbsolute(p->first, data.ptr(), p->second);
+  ByteArray data(indexEntry->second, 0);
+  m_packedFile->readFullAbsolute(indexEntry->first, data.ptr(), indexEntry->second);
   return data;
 }
 

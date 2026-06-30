@@ -303,8 +303,16 @@ private:
 
   Maybe<Vec2F> m_controlFly;
 
-  Maybe<pair<Vec2F, bool>> m_controlPathMove;
-  Maybe<pair<Vec2F, bool>> m_pathMoveResult;
+  struct ControlPathMove {
+    Vec2F position;
+    bool run;
+  };
+  struct PathMoveResult {
+    Vec2F position;
+    bool succeeded;
+  };
+  Maybe<ControlPathMove> m_controlPathMove;
+  Maybe<PathMoveResult> m_pathMoveResult;
   PathControllerPtr m_pathController;
 
   ActorMovementParameters m_controlParameters;

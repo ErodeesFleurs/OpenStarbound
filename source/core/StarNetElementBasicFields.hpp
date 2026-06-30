@@ -51,11 +51,16 @@ protected:
   virtual void updated();
 
 private:
+  struct PendingInterpolatedValue {
+    float timeToApply;
+    T value;
+  };
+
   NetElementVersion const* m_netVersion = nullptr;
   uint64_t m_latestUpdateVersion = 0;
   T m_value = T();
   bool m_updated = false;
-  Maybe<Deque<pair<float, T>>> m_pendingInterpolatedValues;
+  Maybe<Deque<PendingInterpolatedValue>> m_pendingInterpolatedValues;
 };
 
 template <typename T>
@@ -193,7 +198,7 @@ template <typename T>
 void NetElementBasicField<T>::disableNetInterpolation() {
   if (m_pendingInterpolatedValues) {
     if (!m_pendingInterpolatedValues->empty())
-      m_value = m_pendingInterpolatedValues->takeLast().second;
+      m_value = m_pendingInterpolatedValues->takeLast().value;
     m_pendingInterpolatedValues.reset();
   }
 }
@@ -201,10 +206,10 @@ void NetElementBasicField<T>::disableNetInterpolation() {
 template <typename T>
 void NetElementBasicField<T>::tickNetInterpolation(float dt) {
   if (m_pendingInterpolatedValues) {
-    for (auto& p : *m_pendingInterpolatedValues)
-      p.first -= dt;
-    while (!m_pendingInterpolatedValues->empty() && m_pendingInterpolatedValues->first().first <= 0.0f) {
-      m_value = m_pendingInterpolatedValues->takeFirst().second;
+    for (auto& pendingValue : *m_pendingInterpolatedValues)
+      pendingValue.timeToApply -= dt;
+    while (!m_pendingInterpolatedValues->empty() && m_pendingInterpolatedValues->first().timeToApply <= 0.0f) {
+      m_value = m_pendingInterpolatedValues->takeFirst().value;
       updated();
     }
   }
@@ -214,7 +219,7 @@ template <typename T>
 void NetElementBasicField<T>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return;
   if (m_pendingInterpolatedValues && !m_pendingInterpolatedValues->empty())
-    writeData(ds, m_pendingInterpolatedValues->last().second);
+    writeData(ds, m_pendingInterpolatedValues->last().value);
   else
     writeData(ds, m_value);
 }
@@ -238,7 +243,7 @@ bool NetElementBasicField<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion
     return false;
 
   if (m_pendingInterpolatedValues && !m_pendingInterpolatedValues->empty())
-    writeData(ds, m_pendingInterpolatedValues->last().second);
+    writeData(ds, m_pendingInterpolatedValues->last().value);
   else
     writeData(ds, m_value);
 
@@ -256,8 +261,8 @@ void NetElementBasicField<T>::readNetDelta(DataStream& ds, float interpolationTi
     // step is forward in time of every other pending value.  In any other
     // case, this is an error or the step tracking is wildly off, so just clear
     // any other incoming values.
-    if (interpolationTime > 0.0f && (m_pendingInterpolatedValues->empty() || interpolationTime >= m_pendingInterpolatedValues->last().first)) {
-      m_pendingInterpolatedValues->append({interpolationTime, std::move(t)});
+    if (interpolationTime > 0.0f && (m_pendingInterpolatedValues->empty() || interpolationTime >= m_pendingInterpolatedValues->last().timeToApply)) {
+      m_pendingInterpolatedValues->append(PendingInterpolatedValue{interpolationTime, std::move(t)});
     } else {
       m_value = std::move(t);
       m_pendingInterpolatedValues->clear();

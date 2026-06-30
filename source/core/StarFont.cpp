@@ -156,10 +156,10 @@ tuple<Image, Vec2I, bool> Font::render(String::Char c) {
     return {};
   }
 
-  return make_tuple(
+  return {
     std::move(image),
     Vec2I(slot->bitmap_left - 1, (slot->bitmap_top - height) + (m_pixelSize / 4) - 1),
-    colored);
+    colored};
 }
 
 bool Font::exists(String::Char c) {

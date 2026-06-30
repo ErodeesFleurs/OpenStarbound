@@ -504,8 +504,8 @@ void Humanoid::wearableRemoved(Wearable const& wearable) {
 
   auto setTags = [&](HashMap<String, String> tags) {
     if (m_useAnimation)
-      for (auto const& tag : tags) {
-        m_networkedAnimator.setLocalTag(tag.first);
+      for (auto const& [tagName, _] : tags) {
+        m_networkedAnimator.setLocalTag(tagName);
       }
   };
 
@@ -552,10 +552,10 @@ void Humanoid::setWearableFromHead(uint8_t slot, HeadArmor const& head, Gender g
   wornHead.animationTags.clear();
   wornHead.animationTags.set(strf("headCosmetic{}Frameset", slot + 1), wornHead.frameset);
   wornHead.animationTags.set(strf("headCosmetic{}Directives", slot + 1), wornHead.directives.string());
-  for (auto const& tag : head.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
+  for (auto const& [tagName, tagValue] : head.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornHead.animationTags.set(
-      m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.first, tag.second.toString()));
+      m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.partName, tagName.replace("<slot>", toString(slot + 1))),
+      m_networkedAnimator.applyPartTags(m_headArmorOffsetPoint.partName, tagValue.toString()));
   }
 }
 
@@ -579,10 +579,10 @@ void Humanoid::setWearableFromChest(uint8_t slot, ChestArmor const& chest, Gende
   wornChest.animationTags.set(strf("frontSleeve{}Frameset", slot + 1), wornChest.frontSleeveFrameset);
   wornChest.animationTags.set(strf("backSleeve{}Frameset", slot + 1), wornChest.backSleeveFrameset);
   wornChest.animationTags.set(strf("chestCosmetic{}Directives", slot + 1), wornChest.directives.string());
-  for (auto const& tag : chest.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
+  for (auto const& [tagName, tagValue] : chest.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornChest.animationTags.set(
-      m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.first, tag.second.toString()));
+      m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.partName, tagName.replace("<slot>", toString(slot + 1))),
+      m_networkedAnimator.applyPartTags(m_chestArmorOffsetPoint.partName, tagValue.toString()));
   }
 }
 
@@ -602,10 +602,10 @@ void Humanoid::setWearableFromLegs(uint8_t slot, LegsArmor const& legs, Gender g
   wornLegs.animationTags.clear();
   wornLegs.animationTags.set(strf("legsCosmetic{}Frameset", slot + 1), wornLegs.frameset);
   wornLegs.animationTags.set(strf("legsCosmetic{}Directives", slot + 1), wornLegs.directives.string());
-  for (auto const& tag : legs.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
+  for (auto const& [tagName, tagValue] : legs.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornLegs.animationTags.set(
-      m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.first, tag.second.toString()));
+      m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.partName, tagName.replace("<slot>", toString(slot + 1))),
+      m_networkedAnimator.applyPartTags(m_legsArmorOffsetPoint.partName, tagValue.toString()));
   }
 }
 
@@ -626,10 +626,10 @@ void Humanoid::setWearableFromBack(uint8_t slot, BackArmor const& back, Gender g
   wornBack.animationTags.clear();
   wornBack.animationTags.set(strf("backCosmetic{}Frameset", slot + 1), wornBack.frameset);
   wornBack.animationTags.set(strf("backCosmetic{}Directives", slot + 1), wornBack.directives.string());
-  for (auto const& tag : back.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
+  for (auto const& [tagName, tagValue] : back.instanceValue("humanoidAnimationTags", JsonObject()).iterateObject()) {
     wornBack.animationTags.set(
-      m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.first.replace("<slot>", toString(slot + 1))),
-      m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.first, tag.second.toString()));
+      m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.partName, tagName.replace("<slot>", toString(slot + 1))),
+      m_networkedAnimator.applyPartTags(m_backArmorOffsetPoint.partName, tagValue.toString()));
   }
 }
 
@@ -654,8 +654,8 @@ void Humanoid::refreshWearables(Fashion& fashion) {
 
   auto setTags = [&](HashMap<String, String> tags) {
     if (m_useAnimation)
-      for (auto const& tag : tags) {
-        m_networkedAnimator.setLocalTag(tag.first, tag.second);
+      for (auto const& [tagName, tagValue] : tags) {
+        m_networkedAnimator.setLocalTag(tagName, tagValue);
       }
   };
 
@@ -781,8 +781,8 @@ void Humanoid::setEmoteState(HumanoidEmote state) {
     m_emoteAnimationTimer = 0.0f;
     if (m_useAnimation) {
       if (auto animationStates = m_emoteAnimationStates.maybe(m_emoteState))
-        for (auto const& args : *animationStates)
-          m_networkedAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
+        for (auto const& [stateType, stateArgs] : *animationStates)
+          m_networkedAnimator.setLocalState(stateType, stateArgs.state, stateArgs.startNew, stateArgs.reverse);
     }
   }
 }
@@ -924,8 +924,8 @@ void Humanoid::resetAnimation() {
     m_networkedAnimator.finishAnimations();
     // reset set all animations and force startnew
     if (auto animationStates = m_emoteAnimationStates.maybe(m_emoteState))
-      for (auto const& args : *animationStates)
-        m_networkedAnimator.setLocalState(args.first, args.second.state, true, args.second.reverse);
+      for (auto const& [stateType, stateArgs] : *animationStates)
+        m_networkedAnimator.setLocalState(stateType, stateArgs.state, true, stateArgs.reverse);
     refreshAnimationState(true);
   }
 }
@@ -972,8 +972,8 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       Vec2F translate = {
         -(state() == State::Run ? (fmaxf(headX, 0.f) * 2.f) : headX),
         -(fabsf(m_headRotation / (static_cast<float>(Constants::pi) * 4.f)))};
-      auto rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_headRotationPoint.first, m_headRotationPoint.second));
-      auto bodyHeadRotationCenter = networkedAnimator()->partTransformation(m_headRotationPoint.first).transformVec2(rotationCenter);
+      auto rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_headRotationPoint.partName, m_headRotationPoint.pointName));
+      auto bodyHeadRotationCenter = networkedAnimator()->partTransformation(m_headRotationPoint.partName).transformVec2(rotationCenter);
       m_networkedAnimator.rotateLocalTransformationGroup("headRotation", m_headRotation * dir, rotationCenter);
       m_networkedAnimator.translateLocalTransformationGroup("headRotation", translate);
       m_networkedAnimator.rotateLocalTransformationGroup("bodyHeadRotation", m_headRotation * dir, rotationCenter);
@@ -1037,7 +1037,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       m_networkedAnimator.setLocalTag("backArmDanceFrame");
       m_networkedAnimator.rotateLocalTransformationGroup("backArmRotation",
                                                          backHand.angle,
-                                                         jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second)));
+                                                         jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.partName, m_backArmRotationPoint.pointName)));
       if (backHand.recoil)
         m_networkedAnimator.translateLocalTransformationGroup("backArmRotation", m_recoilOffset);
       if (backHand.holdingItem && withItems) {
@@ -1054,7 +1054,7 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       m_networkedAnimator.setLocalTag("frontArmDanceFrame");
       m_networkedAnimator.rotateLocalTransformationGroup("frontArmRotation",
                                                          frontHand.angle,
-                                                         jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second)));
+                                                         jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.partName, m_frontArmRotationPoint.pointName)));
       if (frontHand.recoil)
         m_networkedAnimator.translateLocalTransformationGroup("frontArmRotation", m_recoilOffset);
       if (frontHand.holdingItem && withItems) {
@@ -1482,8 +1482,8 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
     portraitAnimator.setLocalState("backArm", "idle");
 
     if (auto animationStates = m_portraitAnimationStates.maybe(mode))
-      for (auto const& args : *animationStates)
-        portraitAnimator.setLocalState(args.first, args.second.state, args.second.startNew, args.second.reverse);
+      for (auto const& [stateType, stateArgs] : *animationStates)
+        portraitAnimator.setLocalState(stateType, stateArgs.state, stateArgs.startNew, stateArgs.reverse);
 
     if (mode == PortraitMode::FullNeutral || mode == PortraitMode::FullNeutralNude) {
       auto personality = requireServiceValueAs<StarException>(m_speciesDatabase, "Humanoid", "species database")->species(m_identity.species)->personalities()[0];
@@ -1498,8 +1498,8 @@ List<Drawable> Humanoid::renderPortrait(PortraitMode mode) const {
       portraitAnimator.setLocalTag("helmetMaskDirectives");
       auto setTags = [&](HashMap<String, String> tags) {
         if (m_useAnimation)
-          for (auto const& tag : tags) {
-            portraitAnimator.setLocalTag(tag.first);
+          for (auto const& [tagName, _] : tags) {
+            portraitAnimator.setLocalTag(tagName);
           }
       };
       for (uint8_t i = 0; i != fashion.wearables.size(); ++i) {
@@ -1766,16 +1766,16 @@ Vec2F Humanoid::primaryArmPosition(Direction facingDirection, float armAngle, Ve
       rotationTransformGroup = "frontArmRotation";
       auto state = m_networkedAnimator.hasState("frontArm", m_primaryHand.frontFrame) ? m_primaryHand.frontFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second, {"frontArm"}, state, 1));
-      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"}, state, 1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"}, state, 1));
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.partName, m_frontArmRotationPoint.pointName, {"frontArm"}, state, 1));
+      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.partName, "anchorPart", {"frontArm"}, state, 1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.partName, "transformationGroups", {"frontArm"}, state, 1));
     } else {
       rotationTransformGroup = "backArmRotation";
       auto state = m_networkedAnimator.hasState("backArm", m_primaryHand.backFrame) ? m_primaryHand.backFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second, {"backArm"}, state, 1));
-      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"}, state, 1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"}, state, 1));
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.partName, m_backArmRotationPoint.pointName, {"backArm"}, state, 1));
+      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.partName, "anchorPart", {"backArm"}, state, 1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.partName, "transformationGroups", {"backArm"}, state, 1));
     }
     // and now, we do the group transformations for the part, but where it would do the rotation, we do some finagling to do it here instead of
     // using the rotation stored in the animator
@@ -1833,16 +1833,16 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
       rotationTransformGroup = "frontArmRotation";
       auto state = m_networkedAnimator.hasState("frontArm", m_primaryHand.frontFrame) ? m_primaryHand.frontFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second, {"frontArm"}, state, 1));
-      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "anchorPart", {"frontArm"}, state, 1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, "transformationGroups", {"frontArm"}, state, 1));
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.partName, m_frontArmRotationPoint.pointName, {"frontArm"}, state, 1));
+      anchor = m_networkedAnimator.partProperty(m_frontArmRotationPoint.partName, "anchorPart", {"frontArm"}, state, 1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_frontArmRotationPoint.partName, "transformationGroups", {"frontArm"}, state, 1));
     } else {
       rotationTransformGroup = "backArmRotation";
       auto state = m_networkedAnimator.hasState("backArm", m_primaryHand.backFrame) ? m_primaryHand.backFrame : "rotation";
       // make sure we ge the properties for the arm rotation state
-      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second, {"backArm"}, state, 1));
-      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "anchorPart", {"backArm"}, state, 1).toString();
-      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, "transformationGroups", {"backArm"}, state, 1));
+      rotationCenter = jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.partName, m_backArmRotationPoint.pointName, {"backArm"}, state, 1));
+      anchor = m_networkedAnimator.partProperty(m_backArmRotationPoint.partName, "anchorPart", {"backArm"}, state, 1).toString();
+      transformationGroups = jsonToStringList(m_networkedAnimator.partProperty(m_backArmRotationPoint.partName, "transformationGroups", {"backArm"}, state, 1));
     }
     // and now, we do the group transformations for the part, but where it would do the rotation, we do some finagling to do it here instead of
     // using the rotation stored in the animator
@@ -1892,9 +1892,9 @@ Vec2F Humanoid::altArmPosition(Direction facingDirection, float armAngle, Vec2F 
 Vec2F Humanoid::primaryHandOffset(Direction facingDirection) const {
   if (m_useAnimation) {
     if (facingDirection == Direction::Left || m_twoHanded)
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second));
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.partName, m_frontArmRotationPoint.pointName));
     else
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second));
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.partName, m_backArmRotationPoint.pointName));
   }
   if (facingDirection == Direction::Left || m_twoHanded)
     return m_frontHandPosition - m_frontArmRotationCenter;
@@ -1905,9 +1905,9 @@ Vec2F Humanoid::primaryHandOffset(Direction facingDirection) const {
 Vec2F Humanoid::altHandOffset(Direction facingDirection) const {
   if (m_useAnimation) {
     if (facingDirection == Direction::Left || m_twoHanded)
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.first, m_backArmRotationPoint.second));
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_backItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_backArmRotationPoint.partName, m_backArmRotationPoint.pointName));
     else
-      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.first, m_frontArmRotationPoint.second));
+      return jsonToVec2F(m_networkedAnimator.partProperty(m_frontItemPart, "offset")) - jsonToVec2F(m_networkedAnimator.partProperty(m_frontArmRotationPoint.partName, m_frontArmRotationPoint.pointName));
   }
   if (facingDirection == Direction::Left || m_twoHanded)
     return m_frontHandPosition - m_backArmRotationCenter;
@@ -2120,13 +2120,13 @@ Maybe<DancePtr> Humanoid::getDance() const {
 void Humanoid::refreshAnimationState(bool startNew) {
   if (m_movingBackwards)
     if (auto animationStates = m_animationStatesBackwards.maybe(m_state)) {
-      for (auto const& args : *animationStates)
-        m_networkedAnimator.setLocalState(args.first, args.second.state, startNew || args.second.startNew, args.second.reverse);
+      for (auto const& [stateType, stateArgs] : *animationStates)
+        m_networkedAnimator.setLocalState(stateType, stateArgs.state, startNew || stateArgs.startNew, stateArgs.reverse);
       return;
     }
   if (auto animationStates = m_animationStates.maybe(m_state))
-    for (auto const& args : *animationStates)
-      m_networkedAnimator.setLocalState(args.first, args.second.state, startNew || args.second.startNew, args.second.reverse);
+    for (auto const& [stateType, stateArgs] : *animationStates)
+      m_networkedAnimator.setLocalState(stateType, stateArgs.state, startNew || stateArgs.startNew, stateArgs.reverse);
 }
 
 float Humanoid::getBobYOffset() const {
@@ -2161,7 +2161,7 @@ Vec2F Humanoid::mouthOffset(bool ignoreAdjustments) const {
     return (m_mouthOffset).rotate(m_rotation);
   } else {
     if (m_useAnimation)
-      return m_networkedAnimator.partPoint(m_mouthOffsetPoint.first, m_mouthOffsetPoint.second).value(m_mouthOffset).rotate(m_rotation);
+      return m_networkedAnimator.partPoint(m_mouthOffsetPoint.partName, m_mouthOffsetPoint.pointName).value(m_mouthOffset).rotate(m_rotation);
 
     Vec2F headPosition(0, getBobYOffset());
     if (m_state == Idle)
@@ -2183,13 +2183,13 @@ Vec2F Humanoid::mouthOffset(bool ignoreAdjustments) const {
 
 Vec2F Humanoid::feetOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_feetOffsetPoint.first, m_feetOffsetPoint.second).value(m_feetOffset).rotate(m_rotation);
+    return m_networkedAnimator.partPoint(m_feetOffsetPoint.partName, m_feetOffsetPoint.pointName).value(m_feetOffset).rotate(m_rotation);
   return m_feetOffset.rotate(m_rotation);
 }
 
 Vec2F Humanoid::headArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_headArmorOffsetPoint.first, m_headArmorOffsetPoint.second).value(m_headArmorOffset).rotate(m_rotation);
+    return m_networkedAnimator.partPoint(m_headArmorOffsetPoint.partName, m_headArmorOffsetPoint.pointName).value(m_headArmorOffset).rotate(m_rotation);
 
   Vec2F headPosition(0, getBobYOffset());
   if (m_state == Idle)
@@ -2210,7 +2210,7 @@ Vec2F Humanoid::headArmorOffset() const {
 
 Vec2F Humanoid::chestArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_chestArmorOffsetPoint.first, m_chestArmorOffsetPoint.second).value(m_chestArmorOffset).rotate(m_rotation);
+    return m_networkedAnimator.partPoint(m_chestArmorOffsetPoint.partName, m_chestArmorOffsetPoint.pointName).value(m_chestArmorOffset).rotate(m_rotation);
 
   Vec2F position(0, getBobYOffset());
   return (m_chestArmorOffset + position).rotate(m_rotation);
@@ -2218,13 +2218,13 @@ Vec2F Humanoid::chestArmorOffset() const {
 
 Vec2F Humanoid::legsArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_legsArmorOffsetPoint.first, m_legsArmorOffsetPoint.second).value(m_legsArmorOffset).rotate(m_rotation);
+    return m_networkedAnimator.partPoint(m_legsArmorOffsetPoint.partName, m_legsArmorOffsetPoint.pointName).value(m_legsArmorOffset).rotate(m_rotation);
   return m_legsArmorOffset.rotate(m_rotation);
 }
 
 Vec2F Humanoid::backArmorOffset() const {
   if (m_useAnimation)
-    return m_networkedAnimator.partPoint(m_backArmorOffsetPoint.first, m_backArmorOffsetPoint.second).value(m_backArmorOffset).rotate(m_rotation);
+    return m_networkedAnimator.partPoint(m_backArmorOffsetPoint.partName, m_backArmorOffsetPoint.pointName).value(m_backArmorOffset).rotate(m_rotation);
   Vec2F position(0, getBobYOffset());
   return (m_backArmorOffset + position).rotate(m_rotation);
 }
@@ -2255,7 +2255,7 @@ Maybe<Json> const& Humanoid::playerMovementParameters() const {
 
 pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& directives) {
   if (!directives)
-    return make_pair(Vec2F::filled(1.f), Directives());
+    return {Vec2F::filled(1.f), Directives()};
 
   List<Directives::Entry const*> entries;
   size_t toReserve = 0;
@@ -2277,7 +2277,7 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
   }
 
   if (!scale)
-    return make_pair(Vec2F::filled(1.f), directives);
+    return {Vec2F::filled(1.f), directives};
 
   String mergedDirectives;
   mergedDirectives.reserve(toReserve);
@@ -2287,7 +2287,7 @@ pair<Vec2F, Directives> Humanoid::extractScaleFromDirectives(Directives const& d
     mergedDirectives.append(entry->string(*directives));
   }
 
-  return make_pair(*scale, Directives(mergedDirectives));
+  return {*scale, Directives(mergedDirectives)};
 }
 
 NetworkedAnimator* Humanoid::networkedAnimator() {

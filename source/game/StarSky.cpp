@@ -506,7 +506,9 @@ SkyRenderData Sky::renderData() const {
 
   renderData.environmentLight = environmentLight();
   renderData.mainSkyColor = mainSkyColor();
-  tie(renderData.topRectColor, renderData.bottomRectColor) = skyRectColors();
+  auto [topRectColor, bottomRectColor] = skyRectColors();
+  renderData.topRectColor = topRectColor;
+  renderData.bottomRectColor = bottomRectColor;
   renderData.flashColor = skyFlashColor();
 
   return renderData;

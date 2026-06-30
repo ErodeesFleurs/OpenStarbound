@@ -932,12 +932,11 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   Vec2I internalPos = geometry.diff(position, tilePosition());
   size_t idx = highest<size_t>();
   int segmentIdx = highest<int>();
-  for (auto pieceAndIndex : enumerateIterator(m_pieces)) {
-    auto& piece = pieceAndIndex.first;
+  for (auto&& [piece, pieceIndex] : enumerateIterator(m_pieces)) {
     if (piece.structuralSegment && piece.spaces.contains(internalPos)) {
       if (piece.segmentIdx < segmentIdx) {
         segmentIdx = piece.segmentIdx;
-        idx = pieceAndIndex.second;
+        idx = pieceIndex;
       }
     }
   }

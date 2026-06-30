@@ -50,6 +50,11 @@ private:
     ImageWidgetPtr rightOverlay;
   };
 
+  struct CustomBarHover {
+    CustomBarIndex index;
+    bool secondary;
+  };
+
   void customBarClick(uint8_t index, bool primary);
   void customBarClickRight(uint8_t index, bool primary);
   void essentialBarClick(uint8_t index);
@@ -73,7 +78,7 @@ private:
   ImageWidgetPtr m_essentialSelectedWidget;
 
   SelectedActionBarLocation m_emptyHandsPreviousActionBarLocation;
-  Maybe<pair<CustomBarIndex, bool>> m_customBarHover;
+  Maybe<CustomBarHover> m_customBarHover;
 };
 
 }

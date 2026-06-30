@@ -189,9 +189,9 @@ void GuiContext::drawPolyLines(PolyF const& poly, Vec4B const& color, float line
 }
 
 void GuiContext::drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
-  for (auto& poly : triangles) {
+  for (auto const& [a, b, c] : triangles) {
     renderer()->immediatePrimitives().emplace_back(std::in_place_type_t<RenderTriangle>(),
-      get<0>(poly), get<1>(poly), get<2>(poly), color, 0.0f);
+      a, b, c, color, 0.0f);
   }
 }
 
@@ -226,7 +226,8 @@ void GuiContext::drawInterfaceQuad(AssetPath const& texName, RectF const& texCoo
 
 void GuiContext::drawInterfaceTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
   drawTriangles(triangles.transformed([this](tuple<Vec2F, Vec2F, Vec2F> const& poly) {
-    return tuple<Vec2F, Vec2F, Vec2F>(get<0>(poly) * interfaceScale(), get<1>(poly) * interfaceScale(), get<2>(poly) * interfaceScale());
+    auto const& [a, b, c] = poly;
+    return tuple<Vec2F, Vec2F, Vec2F>(a * interfaceScale(), b * interfaceScale(), c * interfaceScale());
   }), color);
 }
 

@@ -44,7 +44,7 @@ int main(int argc, char** argv) {
     SetThreadStackGuarantee(&exceptionStackSize);
 #endif
     RootLoader rootLoader({{}, AdditionalDefaultConfiguration, String("starbound_server.log"), LogLevel::Info, false, String("starbound_server.config")});
-    UniquePtr<Root> root = rootLoader.commandInitOrDie(argc, argv).first;
+    auto [root, _] = rootLoader.commandInitOrDie(argc, argv);
     root->fullyLoad();
 
     SignalHandler signalHandler;

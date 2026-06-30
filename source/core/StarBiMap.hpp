@@ -195,8 +195,8 @@ List<RightT> BiMap<LeftT, RightT, LeftMapT, RightMapT>::rightValues() const {
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::pairs() const -> List<value_type> {
   List<value_type> values;
-  for (auto const& p : *this)
-    values.append(p);
+  for (auto const& value : *this)
+    values.append(value);
   return values;
 }
 
@@ -296,19 +296,19 @@ template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT
 BiMap<LeftT, RightT, LeftMapT, RightMapT>& BiMap<LeftT, RightT, LeftMapT, RightMapT>::operator=(BiMap const& map) {
   if (this != &map) {
     clear();
-    for (auto const& p : map)
-      insert(p);
+    for (auto const& value : map)
+      insert(value);
   }
   return *this;
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(value_type const& val) -> pair<iterator, bool> {
-  auto leftRes = m_leftMap.insert(make_pair(val.first, nullptr));
+  auto leftRes = m_leftMap.insert(typename LeftMap::value_type{val.first, nullptr});
   if (!leftRes.second)
     return {BiMapIterator{leftRes.first}, false};
 
-  auto rightRes = m_rightMap.insert(make_pair(val.second, nullptr));
+  auto rightRes = m_rightMap.insert(typename RightMap::value_type{val.second, nullptr});
   starAssert(rightRes.second == true);
   leftRes.first->second = &rightRes.first->first;
   rightRes.first->second = &leftRes.first->first;
@@ -317,7 +317,7 @@ auto BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(value_type const& val) ->
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::insert(Left const& left, Right const& right) {
-  return insert(make_pair(left, right)).second;
+  return insert(value_type{left, right}).second;
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
@@ -404,9 +404,10 @@ bool BiMap<LeftT, RightT, LeftMapT, RightMapT>::operator==(BiMap const& m) const
   if (size() != m.size())
     return false;
 
-  for (auto const& pair : *this) {
-    if (auto p = m.rightPtr(pair.first))
-      if (!p || *p != pair.second)
+  for (auto const& value : *this) {
+    auto const& [left, right] = value;
+    if (auto rightValue = m.rightPtr(left))
+      if (!rightValue || *rightValue != right)
         return false;
   }
 

@@ -146,9 +146,10 @@ void ActiveItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Move
     m_itemAnimator.update(dt, nullptr);
   }
 
-  eraseWhere(m_activeAudio, [this](pair<AudioInstancePtr const, Vec2F> const& a) {
-    a.first->setPosition(owner()->position() + handPosition(a.second));
-    return a.first->finished();
+  eraseWhere(m_activeAudio, [this](auto const& activeAudio) {
+    auto const& [audioInstance, handPositionOffset] = activeAudio;
+    audioInstance->setPosition(owner()->position() + handPosition(handPositionOffset));
+    return audioInstance->finished();
   });
 
   for (auto shieldPoly : shieldPolys()) {
@@ -399,8 +400,8 @@ LuaCallbacks ActiveItem::makeActiveItemCallbacks() {
     // give you an intersect, so we just bail out and assume the target is at the
     // edge of the circle to retain continuity.
     float angleAdjust = -std::asin(clamp(aimVerticalOffset / toTargetDist, -1.0f, 1.0f));
-    auto angleSide = getAngleSide(toTarget.angle());
-    return luaTupleReturn(angleSide.first + angleAdjust, numericalDirection(angleSide.second));
+    auto [angle, facingDirection] = getAngleSide(toTarget.angle());
+    return luaTupleReturn(angle + angleAdjust, numericalDirection(facingDirection));
   });
 
   // Similar to aimAngleAndDirection, but only provides the offset-adjusted aimAngle for the current facing direction

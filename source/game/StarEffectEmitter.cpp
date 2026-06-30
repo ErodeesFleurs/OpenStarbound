@@ -11,8 +11,8 @@ EffectEmitter::EffectEmitter() {
 }
 
 void EffectEmitter::addEffectSources(String const& position, StringSet effectSources) {
-  for (auto& e : effectSources)
-    m_newSources.add({position, std::move(e)});
+  for (auto& effectSource : effectSources)
+    m_newSources.add({position, std::move(effectSource)});
 }
 
 void EffectEmitter::setSourcePosition(String name, Vec2F const& position) {
@@ -38,15 +38,15 @@ void EffectEmitter::tick(float dt, EntityMode mode, EffectSourceDatabaseConstPtr
   if (m_renders) {
     eraseWhere(m_sources, [](EffectSourcePtr const& source) { return source->expired(); });
 
-    for (auto& ps : m_sources)
-      ps->tick(dt);
+    for (auto& particleSource : m_sources)
+      particleSource->tick(dt);
 
     Set<pair<String, String>> current;
-    for (auto& ps : m_sources) {
-      pair<String, String> entry = {ps->suggestedSpawnLocation(), ps->kind()};
+    for (auto& particleSource : m_sources) {
+      pair<String, String> entry = {particleSource->suggestedSpawnLocation(), particleSource->kind()};
       current.add(entry);
       if (!m_activeSources.get().contains(entry)) {
-        ps->stop();
+        particleSource->stop();
       }
     }
     for (auto& c : m_activeSources.get()) {
@@ -68,10 +68,10 @@ void EffectEmitter::render(RenderCallback* renderCallback, ParticleDatabaseConst
   m_renders = true;
   if (m_sources.empty())
     return;
-  for (auto& ps : m_sources) {
-    Vec2F position = m_positions.get(ps->effectSpawnLocation());
-    for (auto& p : ps->particles()) {
-      Particle particle = particleDatabase->particle(p);
+  for (auto& particleSource : m_sources) {
+    Vec2F position = m_positions.get(particleSource->effectSpawnLocation());
+    for (auto& particleName : particleSource->particles()) {
+      Particle particle = particleDatabase->particle(particleName);
       if (m_direction == Direction::Left) {
         particle.flip = true;
         particle.position[0] = -particle.position[0];
@@ -83,11 +83,11 @@ void EffectEmitter::render(RenderCallback* renderCallback, ParticleDatabaseConst
       particle.position += position;
       renderCallback->addParticle(particle);
     }
-    for (auto& s : ps->sounds(position))
+    for (auto& s : particleSource->sounds(position))
       renderCallback->addAudio(s);
   }
-  for (auto& ps : m_sources)
-    ps->postRender();
+  for (auto& particleSource : m_sources)
+    particleSource->postRender();
 }
 
 Json EffectEmitter::toJson() const {

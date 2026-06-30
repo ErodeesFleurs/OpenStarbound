@@ -416,10 +416,12 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::difference(OrderedSetWra
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
 std::ostream& operator<<(std::ostream& os, OrderedSetWrapper<Map, Value, Allocator, Args...> const& set) {
   os << "(";
-  for (auto i = set.begin(); i != set.end(); ++i) {
-    if (i != set.begin())
+  bool first = true;
+  for (auto const& value : set) {
+    if (!first)
       os << ", ";
-    os << *i;
+    first = false;
+    os << value;
   }
   os << ")";
   return os;

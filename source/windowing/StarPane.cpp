@@ -205,8 +205,7 @@ void Pane::update(float dt) {
 
 void Pane::tick(float) {
   m_playingSounds.filter([](auto const& playingSound) {
-    auto const& [audioName, audioInstance] = playingSound;
-    return audioInstance->finished() == false;
+    return playingSound.instance->finished() == false;
   });
 }
 
@@ -369,14 +368,13 @@ LuaCallbacks Pane::makePaneCallbacks() {
       audioInstance->setVolume(volume.value(1.0));
       audioInstance->setLoops(loops.value(0));
       context().playAudio(audioInstance);
-      m_playingSounds.append({audio, std::move(audioInstance)});
+      m_playingSounds.append(PlayingSound{audio, std::move(audioInstance)});
     });
 
   callbacks.registerCallback("stopAllSounds", [this](Maybe<String> const& audio) {
       m_playingSounds.filter([audio](auto const& playingSound) {
-        auto const& [audioName, audioInstance] = playingSound;
-        if (!audio || audioName == *audio) {
-          audioInstance->stop();
+        if (!audio || playingSound.audioName == *audio) {
+          playingSound.instance->stop();
           return false;
         }
         return true;

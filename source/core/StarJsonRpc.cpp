@@ -39,10 +39,10 @@ RpcPromise<Json> JsonRpc::invokeRemote(String const& handler, Json const& argume
     {"handler", handler},
     {"arguments", arguments}});
 
-  auto pair = RpcPromise<Json>::createPair();
-  m_pendingResponse.add(id, pair.second);
+  auto [promise, promiseKeeper] = RpcPromise<Json>::createPair();
+  m_pendingResponse.add(id, promiseKeeper);
 
-  return pair.first;
+  return promise;
 }
 
 bool JsonRpc::sendPending() const {

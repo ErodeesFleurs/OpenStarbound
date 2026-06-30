@@ -40,7 +40,11 @@ public:
   float netExtrapolationHint() const;
 
 private:
-  List<pair<NetElement*, bool>> m_elements;
+  struct GroupElement {
+    NetElement* element;
+    bool propagateInterpolation;
+  };
+  List<GroupElement> m_elements;
   NetElementVersion const* m_version = nullptr;
   bool m_interpolationEnabled = false;
   float m_extrapolationHint = 0.0f;

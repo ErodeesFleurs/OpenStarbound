@@ -118,8 +118,18 @@ private:
 #ifdef STAR_ENABLE_DISCORD_INTEGRATION
 
   
-  List<pair<discord::UserId, String>> m_discordJoinRequests;
-  List<pair<discord::UserId, RpcPromise<P2PJoinRequestReply>>> m_pendingDiscordJoinRequests;
+  struct DiscordJoinRequest {
+    discord::UserId userId = {};
+    String userName;
+  };
+
+  struct PendingDiscordJoinRequest {
+    discord::UserId userId = {};
+    RpcPromise<P2PJoinRequestReply> replyPromise;
+  };
+
+  List<DiscordJoinRequest> m_discordJoinRequests;
+  List<PendingDiscordJoinRequest> m_pendingDiscordJoinRequests;
 
   HashMap<discord::UserId, DiscordP2PSocket*> m_discordOpenSockets;
   String m_discordActivityTitle;

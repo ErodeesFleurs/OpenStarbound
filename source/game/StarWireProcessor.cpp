@@ -47,13 +47,13 @@ bool WireProcessor::readInputConnection(WireConnection const& connection) {
 }
 
 void WireProcessor::populateWorking(WireEntity& wireEntity) {
-  auto p = m_workingWireEntities.insert(wireEntity.tilePosition(), WireEntityState{nullptr, {}, false});
-  if (!p.second) {
-    if (p.first->second.wireEntity != &wireEntity)
+  auto [workingWireEntity, inserted] = m_workingWireEntities.insert(wireEntity.tilePosition(), WireEntityState{nullptr, {}, false});
+  if (!inserted) {
+    if (workingWireEntity->second.wireEntity != &wireEntity)
       Logger::debug("Multiple wire entities share tile position: {}", wireEntity.position());
     return;
   }
-  auto& wes = p.first->second;
+  auto& wes = workingWireEntity->second;
   wes.wireEntity = &wireEntity;
   size_t outputNodeCount = wes.wireEntity->nodeCount(WireDirection::Output);
   wes.outputStates.resize(outputNodeCount);

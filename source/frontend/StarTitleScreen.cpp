@@ -134,8 +134,8 @@ bool TitleScreen::handleInputEvent(InputEvent const& event) {
 void TitleScreen::update(float dt) {
   m_cursor.update(dt);
 
-  for (auto const& [button, offset] : m_rightAnchoredButtons)
-    button->setPosition(Vec2I(m_guiContext.windowWidth() / m_guiContext.interfaceScale(), 0) + offset);
+  for (auto const& rightAnchoredButton : m_rightAnchoredButtons)
+    rightAnchoredButton.button->setPosition(Vec2I(m_guiContext.windowWidth() / m_guiContext.interfaceScale(), 0) + rightAnchoredButton.offset);
   m_mainMenu->determineSizeFromChildren();
   m_backgroundMenu->determineSizeFromChildren();
 
@@ -270,7 +270,7 @@ void TitleScreen::initMainMenu() {
     button->setPosition(offset);
 
     if (rightAnchored)
-      m_rightAnchoredButtons.append({button, offset});
+      m_rightAnchoredButtons.append(RightAnchoredButton{button, offset});
 
     if (key == "back")
       backMenu->addChild(key, button);

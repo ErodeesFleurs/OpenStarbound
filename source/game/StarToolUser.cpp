@@ -235,18 +235,18 @@ Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F posi
 
     ItemPtr handItem = primary ? m_primaryHandItem.get() : m_altHandItem.get();
 
-    auto angleSide = getAngleSide(m_user->world()->geometry().diff(aimPosition, position).angle());
+    auto [aimAngle, facingDirection] = getAngleSide(m_user->world()->geometry().diff(aimPosition, position).angle());
 
     if (auto swingItem = as<SwingableItem>(handItem)) {
-      float angle = swingItem->getAngleDir(angleSide.first, angleSide.second);
+      float angle = swingItem->getAngleDir(aimAngle, facingDirection);
       bool handedness = handItem->twoHanded();
-      setRotation(true, angle, swingItem->getItemAngle(angleSide.first), handedness, false, false);
-      overrideFacingDirection = angleSide.second;
+      setRotation(true, angle, swingItem->getItemAngle(aimAngle), handedness, false, false);
+      overrideFacingDirection = facingDirection;
 
     } else if (auto pointableItem = as<PointableItem>(handItem)) {
-      float angle = pointableItem->getAngleDir(angleSide.first, angleSide.second);
+      float angle = pointableItem->getAngleDir(aimAngle, facingDirection);
       setRotation(true, angle, angle, handItem->twoHanded(), false, false);
-      overrideFacingDirection = angleSide.second;
+      overrideFacingDirection = facingDirection;
 
     } else if (auto activeItem = as<ActiveItem>(handItem)) {
       setRotation(activeItem->holdingItem(), activeItem->armAngle(), activeItem->armAngle(),
@@ -255,9 +255,9 @@ Maybe<Direction> ToolUser::setupHumanoidHandItems(Humanoid& humanoid, Vec2F posi
         overrideFacingDirection = *fd;
 
     } else if (auto beamItem = as<BeamItem>(handItem)) {
-      float angle = beamItem->getAngle(angleSide.first);
+      float angle = beamItem->getAngle(aimAngle);
       setRotation(true, angle, angle, false, false, false);
-      overrideFacingDirection = angleSide.second;
+      overrideFacingDirection = facingDirection;
 
     } else {
       setRotation(false, 0.0f, 0.0f, false, false, false);
@@ -553,8 +553,8 @@ void ToolUser::render(RenderCallback* renderCallback, bool, bool shifting, Entit
 
   for (auto item : {m_primaryHandItem.get(), m_altHandItem.get()}) {
     if (auto activeItem = as<ActiveItem>(item)) {
-      for (auto drawablePair : activeItem->entityDrawables())
-        renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer));
+      for (auto const& [drawable, maybeRenderLayer] : activeItem->entityDrawables())
+        renderCallback->addDrawable(drawable, maybeRenderLayer.value(renderLayer));
       renderCallback->addAudios(activeItem->pullNewAudios());
       renderCallback->addParticles(activeItem->pullNewParticles());
     }

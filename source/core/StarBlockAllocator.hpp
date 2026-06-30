@@ -141,9 +141,9 @@ template <typename T, size_t BlockSize>
 T* BlockAllocator<T, BlockSize>::allocate(size_t n) {
   if (n == 1) {
     if (m_data->unfilledBlock == nullptr) {
-      for (auto const& p : m_data->blocks) {
-        if (!p->full()) {
-          m_data->unfilledBlock = p.get();
+      for (auto const& block : m_data->blocks) {
+        if (!block->full()) {
+          m_data->unfilledBlock = block.get();
           break;
         }
       }

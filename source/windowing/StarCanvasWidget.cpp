@@ -25,19 +25,19 @@ void CanvasWidget::clear() {
 }
 
 void CanvasWidget::drawImage(String texName, Vec2F const& position, float scale, Vec4B const& color) {
-  m_renderOps.append(make_tuple(std::move(texName), position, scale, color, false));
+  m_renderOps.append(RenderOp{std::in_place_type<ImageOp>, std::move(texName), position, scale, color, false});
 }
 
 void CanvasWidget::drawImageCentered(String texName, Vec2F const& position, float scale, Vec4B const& color) {
-  m_renderOps.append(make_tuple(std::move(texName), position, scale, color, true));
+  m_renderOps.append(RenderOp{std::in_place_type<ImageOp>, std::move(texName), position, scale, color, true});
 }
 
 void CanvasWidget::drawImageRect(String texName, RectF const& texCoords, RectF const& screenCoords, Vec4B const& color) {
-  m_renderOps.append(make_tuple(std::move(texName), texCoords, screenCoords, color));
+  m_renderOps.append(RenderOp{std::in_place_type<ImageRectOp>, std::move(texName), texCoords, screenCoords, color});
 }
 
 void CanvasWidget::drawDrawable(Drawable drawable, Vec2F const& screenPos) {
-  m_renderOps.append(make_tuple(std::move(drawable), screenPos));
+  m_renderOps.append(RenderOp{std::in_place_type<DrawableOp>, std::move(drawable), screenPos});
 }
 
 void CanvasWidget::drawDrawables(List<Drawable> const& drawables, Vec2F const& screenPos) {
@@ -46,23 +46,23 @@ void CanvasWidget::drawDrawables(List<Drawable> const& drawables, Vec2F const& s
 }
 
 void CanvasWidget::drawTiledImage(String texName, float textureScale, Vec2D const& offset, RectF const& screenCoords, Vec4B const& color) {
-  m_renderOps.append(make_tuple(std::move(texName), textureScale, offset, screenCoords, color));
+  m_renderOps.append(RenderOp{std::in_place_type<TiledImageOp>, std::move(texName), textureScale, offset, screenCoords, color});
 }
 
 void CanvasWidget::drawLine(Vec2F const& begin, Vec2F const end, Vec4B const& color, float lineWidth) {
-  m_renderOps.append(make_tuple(begin, end, color, lineWidth));
+  m_renderOps.append(RenderOp{std::in_place_type<LineOp>, begin, end, color, lineWidth});
 }
 
 void CanvasWidget::drawRect(RectF const& coords, Vec4B const& color) {
-  m_renderOps.append(make_tuple(coords, color));
+  m_renderOps.append(RenderOp{std::in_place_type<RectOp>, coords, color});
 }
 
 void CanvasWidget::drawPoly(PolyF const& poly, Vec4B const& color, float lineWidth) {
-  m_renderOps.append(make_tuple(poly, color, lineWidth));
+  m_renderOps.append(RenderOp{std::in_place_type<PolyOp>, poly, color, lineWidth});
 }
 
 void CanvasWidget::drawTriangles(List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
-  m_renderOps.append(make_tuple(triangles, color));
+  m_renderOps.append(RenderOp{std::in_place_type<TrianglesOp>, triangles, color});
 }
 
 void CanvasWidget::drawText(String s, TextPositioning position, unsigned fontSize, Vec4B const& color, FontMode mode, float lineSpacing, String font, String processingDirectives) {
@@ -73,11 +73,11 @@ void CanvasWidget::drawText(String s, TextPositioning position, unsigned fontSiz
   style.lineSpacing = lineSpacing;
   style.font = font;
   style.directives = processingDirectives;
-  m_renderOps.append(make_tuple(std::move(s), std::move(position), std::move(style)));
+  m_renderOps.append(RenderOp{std::in_place_type<TextOp>, std::move(s), std::move(position), std::move(style)});
 }
 
 void CanvasWidget::drawText(String s, TextPositioning position, TextStyle style) {
-  m_renderOps.append(make_tuple(std::move(s), std::move(position), std::move(style)));
+  m_renderOps.append(RenderOp{std::in_place_type<TextOp>, std::move(s), std::move(position), std::move(style)});
 }
 
 Vec2I CanvasWidget::mousePosition() const {
@@ -255,9 +255,8 @@ void CanvasWidget::renderPoly(Vec2F const& renderingOffset, PolyF poly, Vec4B co
 void CanvasWidget::renderTriangles(Vec2F const& renderingOffset, List<tuple<Vec2F, Vec2F, Vec2F>> const& triangles, Vec4B const& color) {
   auto& context = this->context();
   auto translated = triangles.transformed([&renderingOffset](tuple<Vec2F, Vec2F, Vec2F> const& poly) {
-      return tuple<Vec2F, Vec2F, Vec2F>(get<0>(poly) + renderingOffset,
-        get<1>(poly) + renderingOffset,
-        get<2>(poly) + renderingOffset);
+      auto const& [a, b, c] = poly;
+      return tuple<Vec2F, Vec2F, Vec2F>(a + renderingOffset, b + renderingOffset, c + renderingOffset);
     });
   if (m_ignoreInterfaceScale)
     context.drawTriangles(translated, color);

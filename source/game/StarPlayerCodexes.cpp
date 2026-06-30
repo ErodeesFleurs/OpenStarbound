@@ -23,7 +23,7 @@ PlayerCodexes::PlayerCodexes(AssetsConstPtr assets, CodexDatabaseConstPtr codexD
 }
 
 Json PlayerCodexes::toJson() const {
-  return jsonFromMapV<StringMap<CodexEntry>>(m_codexes, [](CodexEntry const& entry) { return entry.second; });
+  return jsonFromMapV<StringMap<CodexEntry>>(m_codexes, [](CodexEntry const& entry) { return entry.read; });
 }
 
 List<PlayerCodexes::CodexEntry> PlayerCodexes::codexes() const {
@@ -32,7 +32,7 @@ List<PlayerCodexes::CodexEntry> PlayerCodexes::codexes() const {
     result.append(codexEntry);
   sort(result,
       [](CodexEntry const& left, CodexEntry const& right) -> bool {
-        return make_tuple(left.second, left.first->title()) < make_tuple(right.second, right.first->title());
+        return tuple<bool, String>{left.read, left.codex->title()} < tuple<bool, String>{right.read, right.codex->title()};
       });
   return result;
 }
@@ -46,19 +46,19 @@ CodexConstPtr PlayerCodexes::learnCodex(String const& codexId, bool markRead) {
     if (auto codex = m_codexDatabase->codex(codexId)) {
       auto entry = CodexEntry{codex, markRead};
       m_codexes[codexId] = entry;
-      return entry.first;
+      return entry.codex;
     }
   }
   return {};
 }
 
 bool PlayerCodexes::codexRead(String const& codexId) const {
-  return m_codexes.contains(codexId) && m_codexes.get(codexId).second;
+  return m_codexes.contains(codexId) && m_codexes.get(codexId).read;
 }
 
 bool PlayerCodexes::markCodexRead(String const& codexId) {
   if (codexKnown(codexId) && !codexRead(codexId)) {
-    m_codexes[codexId].second = true;
+    m_codexes[codexId].read = true;
     return true;
   }
   return false;
@@ -66,7 +66,7 @@ bool PlayerCodexes::markCodexRead(String const& codexId) {
 
 bool PlayerCodexes::markCodexUnread(String const& codexId) {
   if (codexKnown(codexId) && codexRead(codexId)) {
-    m_codexes[codexId].second = false;
+    m_codexes[codexId].read = false;
     return true;
   }
   return false;
@@ -79,8 +79,8 @@ void PlayerCodexes::learnInitialCodexes(String const& playerSpecies) {
 
 CodexConstPtr PlayerCodexes::firstNewCodex() const {
   for (auto const& [codexId, codexEntry] : m_codexes) {
-    if (!codexEntry.second)
-      return codexEntry.first;
+    if (!codexEntry.read)
+      return codexEntry.codex;
   }
   return {};
 }

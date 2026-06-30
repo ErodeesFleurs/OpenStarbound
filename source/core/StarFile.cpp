@@ -16,20 +16,13 @@ void File::makeDirectoryRecursive(String const& fileName) {
 }
 
 void File::removeDirectoryRecursive(String const& fileName) {
-  {
-    String fileInDir;
-    bool isDir;
+  for (auto [fileInDir, isDir] : dirList(fileName)) {
+    fileInDir = relativeTo(fileName, fileInDir);
 
-    for (auto const& p : dirList(fileName)) {
-      std::tie(fileInDir, isDir) = p;
-
-      fileInDir = relativeTo(fileName, fileInDir);
-
-      if (isDir)
-        removeDirectoryRecursive(fileInDir);
-      else
-        remove(fileInDir);
-    }
+    if (isDir)
+      removeDirectoryRecursive(fileInDir);
+    else
+      remove(fileInDir);
   }
 
   remove(fileName);

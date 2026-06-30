@@ -279,10 +279,11 @@ LuaMethods<EntityPtr> LuaUserDataMethods<EntityPtr>::make() {
     });
     methods.registerMethod("activeUniqueStatusEffectSummary", [&](EntityPtr entity) -> Maybe<List<JsonArray>> {
         if (auto actor = as<ActorEntity>(entity))
-            return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](pair<UniqueStatusEffect, Maybe<float>> effect) {
-            JsonArray effectJson = {effect.first};
-            if (effect.second)
-                effectJson.append(*effect.second);
+            return actor->statusController()->activeUniqueStatusEffectSummary().transformed([](auto const& effect) {
+            auto const& [effectName, duration] = effect;
+            JsonArray effectJson = {effectName};
+            if (duration)
+                effectJson.append(*duration);
             return effectJson;
             });;
         return {};

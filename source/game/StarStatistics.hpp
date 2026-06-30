@@ -57,7 +57,11 @@ private:
   String m_storageDirectory;
   bool m_initialized;
 
-  List<pair<String, Json>> m_pendingEvents;
+  struct PendingEvent {
+    String name;
+    Json fields;
+  };
+  List<PendingEvent> m_pendingEvents;
   StringSet m_pendingAchievementChecks;
 
   StringMap<Stat> m_stats;

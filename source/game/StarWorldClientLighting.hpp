@@ -48,7 +48,11 @@ private:
   Lightmap m_pendingLightMap;
   Lightmap m_lightMap;
   List<LightSource> m_pendingLights;
-  List<std::pair<Vec2F, Vec3F>> m_pendingParticleLights;
+  struct PendingParticleLight {
+    Vec2F position;
+    Vec3F light;
+  };
+  List<PendingParticleLight> m_pendingParticleLights;
   RectI m_pendingLightRange;
   atomic<bool> m_pendingLightReady;
   Vec2I m_lightMinPosition;

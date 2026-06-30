@@ -49,8 +49,18 @@ private:
   Maybe<DirectoryAssetSource> m_assetSource;
   QImage m_modPreview;
 
-  Maybe<pair<CreateItemResult_t, bool>> m_steamItemCreateResult;
-  Maybe<pair<SubmitItemUpdateResult_t, bool>> m_steamItemSubmitResult;
+  struct SteamItemCreateResult {
+    CreateItemResult_t result = {};
+    bool ioFailure = false;
+  };
+
+  struct SteamItemSubmitResult {
+    SubmitItemUpdateResult_t result = {};
+    bool ioFailure = false;
+  };
+
+  Maybe<SteamItemCreateResult> m_steamItemCreateResult;
+  Maybe<SteamItemSubmitResult> m_steamItemSubmitResult;
 };
 
 }

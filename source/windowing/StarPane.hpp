@@ -133,7 +133,11 @@ protected:
   Vec2I m_anchorOffset;
   bool m_hasDisplayed = false;
 
-  List<pair<String, AudioInstancePtr>> m_playingSounds;
+  struct PlayingSound {
+    String audioName;
+    AudioInstancePtr instance;
+  };
+  List<PlayingSound> m_playingSounds;
 };
 
 }

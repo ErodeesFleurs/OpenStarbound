@@ -312,11 +312,20 @@ private:
   String m_lastCommand;
 
   LinkedList<GuiMessagePtr> m_messages;
-  HashMap<ItemDescriptor, std::pair<size_t, GuiMessagePtr>> m_itemDropMessages;
+
+  struct ItemDropMessage {
+    size_t count;
+    GuiMessagePtr message;
+  };
+  HashMap<ItemDescriptor, ItemDropMessage> m_itemDropMessages;
   unsigned m_messageOverflow{};
   GuiMessagePtr m_overflowMessage;
 
-  List<pair<String, RpcPromiseKeeper<P2PJoinRequestReply>>> m_queuedJoinRequests;
+  struct QueuedJoinRequest {
+    String playerName;
+    RpcPromiseKeeper<P2PJoinRequestReply> responsePromise;
+  };
+  List<QueuedJoinRequest> m_queuedJoinRequests;
 
   EntityId m_lastMouseoverTarget{NullEntityId};
   GameTimer m_stickyTargetingTimer;

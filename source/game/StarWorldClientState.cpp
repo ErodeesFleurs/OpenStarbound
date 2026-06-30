@@ -76,8 +76,8 @@ List<RectI> WorldClientState::monitoringRegions(function<Maybe<RectI>(EntityId)>
 }
 
 ByteArray WorldClientState::writeDelta() {
-  ByteArray delta;
-  tie(delta, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netCompatibilityRules);
+  auto [delta, nextNetVersion] = m_netGroup.writeNetState(m_netVersion, m_netCompatibilityRules);
+  m_netVersion = nextNetVersion;
   return delta;
 }
 

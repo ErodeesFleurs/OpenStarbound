@@ -400,7 +400,7 @@ void UniverseServer::clientFlyShip(ConnectionId clientId, Vec3I const& system, S
     return;
 
   if (system == Vec3I()) {
-    m_pendingFlights.set(clientId, make_tuple(Vec3I(), SystemLocation(), settings));// find starter world
+    m_pendingFlights.set(clientId, tuple<Vec3I, SystemLocation, Json>{Vec3I(), SystemLocation(), settings});// find starter world
     return;
   }
 
@@ -415,7 +415,7 @@ void UniverseServer::clientFlyShip(ConnectionId clientId, Vec3I const& system, S
 
   // don't switch systems while already flying
   if (!m_pendingArrivals.contains(clientId) || sameSystem)
-    m_pendingFlights.set(clientId, make_tuple(system, location, settings));
+    m_pendingFlights.set(clientId, tuple<Vec3I, SystemLocation, Json>{system, location, settings});
 }
 
 WorldId UniverseServer::clientWorld(ConnectionId clientId) const {
@@ -1116,7 +1116,7 @@ void UniverseServer::flyShips() {
       clientContext->setSystemWorld({});
 
       if (location)
-        m_queuedFlights.set(clientId, {make_tuple(system, location, settings), {}});
+        m_queuedFlights.set(clientId, {tuple<Vec3I, SystemLocation, Json>{system, location, settings}, {}});
 
       destination = CelestialCoordinate(system);
     }
@@ -1235,10 +1235,7 @@ void UniverseServer::processChat() {
 
   for (auto const& [clientId, pendingChat] : take(m_pendingChat)) {
     if (auto clientContext = m_clients.get(clientId)) {
-      for (auto const& chat : pendingChat) {
-        auto& message = get<0>(chat);
-        auto sendMode = get<1>(chat);
-        auto& data = get<2>(chat);
+      for (auto const& [message, sendMode, data] : pendingChat) {
         if (clientContext->remoteAddress())
           Logger::info("Chat: <{}> {}", clientContext->playerName(), message);
 
@@ -1380,7 +1377,8 @@ void UniverseServer::shutdownInactiveWorlds() {
 
   // Clear out empty system worlds
   eraseWhere(m_systemWorlds, [](auto const& worldEntry) {
-    return worldEntry.second->clients().empty();
+    auto const& [_, world] = worldEntry;
+    return world->clients().empty();
   });
 }
 
@@ -1739,7 +1737,7 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
 
       } else if (auto chatSend = as<ChatSendPacket>(packet)) {
         RecursiveMutexLocker locker(m_mainLock);
-        m_pendingChat[clientId].append(make_tuple(std::move(chatSend->text), chatSend->sendMode, std::move(chatSend->data)));
+        m_pendingChat[clientId].append(tuple<String, ChatSendMode, JsonObject>{std::move(chatSend->text), chatSend->sendMode, std::move(chatSend->data)});
 
       } else if (auto clientContextUpdatePacket = as<ClientContextUpdatePacket>(packet)) {
         clientContext->readUpdate(std::move(clientContextUpdatePacket->updateData));

@@ -50,9 +50,9 @@ void TeamClient::invitePlayer(String const& playerName) {
   request["inviterName"] = m_mainPlayer->name();
   invokeRemote("team.invite", request, [=, this](Json response) {
     if (!response)
-      m_pendingInviteResults.append(make_pair(playerName, true));
+      m_pendingInviteResults.append(pair<String, bool>{playerName, true});
     else if (response == "inviteeNotFound")
-      m_pendingInviteResults.append(make_pair(playerName, false));
+      m_pendingInviteResults.append(pair<String, bool>{playerName, false});
     else if (response.isType(Json::Type::Array)) {
       m_pendingInviteResults.emplace_back(StringList{});
       StringList& invited = m_pendingInviteResults.back().get<StringList>();
@@ -106,7 +106,7 @@ bool TeamClient::hasInvitationPending() {
 
 std::pair<Uuid, String> TeamClient::pullInvitation() {
   m_hasPendingInvitation = false;
-  return m_pendingInvitation;
+  return pair<Uuid, String>(m_pendingInvitation.inviterUuid, m_pendingInvitation.inviterName);
 }
 
 List<Variant<pair<String, bool>, StringList>> TeamClient::pullInviteResults() {
@@ -126,7 +126,7 @@ void TeamClient::update() {
             return;
           if (m_hasPendingInvitation)
             return;
-          m_pendingInvitation = {Uuid(response.getString("inviterUuid")), response.getString("inviterName")};
+          m_pendingInvitation = PendingInvitation{Uuid(response.getString("inviterUuid")), response.getString("inviterName")};
           m_hasPendingInvitation = true;
         });
     }
@@ -211,18 +211,17 @@ void TeamClient::forceUpdate() {
 
 void TeamClient::invokeRemote(String const& method, Json const& args, function<void(Json const&)> responseFunction) {
   auto promise = m_clientContext->rpcInterface()->invokeRemote(method, args);
-  m_pendingResponses.append({std::move(promise), std::move(responseFunction)});
+  m_pendingResponses.append(RpcResponseHandler{std::move(promise), std::move(responseFunction)});
 }
 
 void TeamClient::handleRpcResponses() {
   List<RpcResponseHandler> stillPendingResponses;
   while (!m_pendingResponses.empty()) {
     auto handler = m_pendingResponses.takeLast();
-    auto& [responsePromise, responseFunction] = handler;
-    if (responsePromise.finished()) {
-      if (auto const& res = responsePromise.result()) {
-        if (responseFunction)
-          responseFunction(*res);
+    if (handler.responsePromise.finished()) {
+      if (auto const& res = handler.responsePromise.result()) {
+        if (handler.responseFunction)
+          handler.responseFunction(*res);
       }
     } else {
       stillPendingResponses.append(std::move(handler));

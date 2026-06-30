@@ -61,14 +61,31 @@ private:
   ReadersWriterMutex m_mutex;
   ReadersWriterMutex m_queueMutex;
 
+  struct ClientShipState {
+    SystemLocation location;
+    SkyParameters skyParameters;
+  };
+  struct QueuedClientShipAction {
+    ConnectionId clientId;
+    ClientShipAction action;
+  };
+  struct QueuedIncomingPacket {
+    ConnectionId clientId;
+    PacketPtr packet;
+  };
+  struct ClientWarpAction {
+    WarpAction action;
+    WarpMode mode;
+  };
+
   HashSet<ConnectionId> m_clients;
   HashMap<ConnectionId, SystemLocation> m_clientShipDestinations;
-  HashMap<ConnectionId, pair<SystemLocation, SkyParameters>> m_clientShipLocations;
-  HashMap<ConnectionId, pair<WarpAction, WarpMode>> m_clientWarpActions;
-  List<pair<ConnectionId, ClientShipAction>> m_clientShipActions;
+  HashMap<ConnectionId, ClientShipState> m_clientShipLocations;
+  HashMap<ConnectionId, ClientWarpAction> m_clientWarpActions;
+  List<QueuedClientShipAction> m_clientShipActions;
   List<InstanceWorldId> m_activeInstanceWorlds;
   Map<ConnectionId, List<PacketPtr>> m_outgoingPacketQueue;
-  List<pair<ConnectionId, PacketPtr>> m_incomingPacketQueue;
+  List<QueuedIncomingPacket> m_incomingPacketQueue;
 };
 
 

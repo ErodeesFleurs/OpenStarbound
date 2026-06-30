@@ -13,7 +13,12 @@ using CodexDatabaseConstPtr = SharedPtr<CodexDatabase const>;
 
 class PlayerCodexes {
 public:
-  using CodexEntry = pair<CodexConstPtr, bool>;
+  struct CodexEntry {
+    CodexConstPtr codex;
+    bool read;
+
+    bool operator==(CodexEntry const&) const = default;
+  };
 
   PlayerCodexes(AssetsConstPtr assets, CodexDatabaseConstPtr codexDatabase, Json const& json = {});
 

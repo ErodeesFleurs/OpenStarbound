@@ -120,8 +120,9 @@ template <typename OrderedMapType>
 
 template <typename OrderedMapType>
 void LruCacheBase<OrderedMapType>::removeWhere(function<bool(Key const&, Value&)> filter) {
-  eraseWhere(m_map, [&filter](auto& p) {
-      return filter(p.first, p.second);
+  eraseWhere(m_map, [&filter](auto& entry) {
+      auto& [key, value] = entry;
+      return filter(key, value);
     });
 }
 

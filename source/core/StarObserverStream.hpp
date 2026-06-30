@@ -38,9 +38,14 @@ public:
   void reset();
 
 private:
+  struct StreamEntry {
+    uint64_t step;
+    T value;
+  };
+
   uint64_t m_historyLimit;
   uint64_t m_nextStep = 0;
-  Deque<pair<uint64_t, T>> m_values;
+  Deque<StreamEntry> m_values;
 };
 
 template <typename T>
@@ -60,7 +65,7 @@ void ObserverStream<T>::setHistoryLimit(uint64_t historyLimit) {
 
 template <typename T>
 void ObserverStream<T>::add(T value) {
-  m_values.append({m_nextStep, std::move(value)});
+  m_values.append(StreamEntry{m_nextStep, std::move(value)});
   tick(1);
 }
 
@@ -68,7 +73,7 @@ template <typename T>
 void ObserverStream<T>::tick(uint64_t delta) {
   m_nextStep += delta;
   uint64_t removeBefore = m_nextStep - min(m_nextStep, m_historyLimit);
-  while (!m_values.empty() && m_values.first().first < removeBefore)
+  while (!m_values.empty() && m_values.first().step < removeBefore)
     m_values.removeFirst();
 }
 
@@ -78,12 +83,11 @@ pair<List<T>, uint64_t> ObserverStream<T>::query(uint64_t since) const {
   auto i = std::lower_bound(m_values.begin(),
       m_values.end(),
       since,
-      [](pair<uint64_t, T> const& entry, uint64_t step) {
-        auto const& [entryStep, value] = entry;
-        return entryStep < step;
+      [](StreamEntry const& entry, uint64_t step) {
+        return entry.step < step;
       });
   while (i != m_values.end()) {
-    res.append(i->second);
+    res.append(i->value);
     ++i;
   }
   return {res, m_nextStep};

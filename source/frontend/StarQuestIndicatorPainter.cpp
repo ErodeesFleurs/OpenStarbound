@@ -49,8 +49,8 @@ void QuestIndicatorPainter::update(float dt, WorldClientPtr const& world, WorldC
     }
   }
 
-  m_indicators = Map<EntityId, Indicator>::from(m_indicators.pairs().filtered([&foundIndicators](pair<EntityId, Indicator> indicator) {
-      auto const& [entityId, indicatorInfo] = indicator;
+  m_indicators = Map<EntityId, Indicator>::from(m_indicators.pairs().filtered([&foundIndicators](auto const& indicatorEntry) {
+      auto const& [entityId, _] = indicatorEntry;
       return foundIndicators.contains(entityId);
     }));
 }

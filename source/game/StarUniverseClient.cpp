@@ -769,8 +769,8 @@ void UniverseClient::handlePackets(List<PacketPtr> const& packets) {
       bool skip = false;
       Maybe<Json> packetJson;
       auto functionName = strf("on{}Packet", PacketTypeNames.getRight(packet->type()));
-      for (auto& context : m_scriptContexts) {
-        auto& luaContext = *context.second->context();
+      for (auto& [_, scriptContext] : m_scriptContexts) {
+        auto& luaContext = *scriptContext->context();
         auto method = luaContext.get(functionName);
         if (method != LuaNil) {
           if (!packetJson)

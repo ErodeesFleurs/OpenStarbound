@@ -29,8 +29,8 @@ bool TechDatabase::contains(String const& techName) const {
 }
 
 TechConfig TechDatabase::tech(String const& techName) const {
-  if (auto p = m_tech.ptr(techName))
-    return *p;
+  if (auto techConfig = m_tech.ptr(techName))
+    return *techConfig;
   throw TechDatabaseException::format("No such tech '{}'", techName);
 }
 

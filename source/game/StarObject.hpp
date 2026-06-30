@@ -276,7 +276,11 @@ private:
   NetElementString m_chatPortrait;
   NetElementData<Json> m_chatConfig;
 
-  mutable Maybe<pair<size_t, List<Drawable>>> m_orientationDrawablesCache;
+  struct OrientationDrawablesCache {
+    size_t orientationIndex;
+    List<Drawable> drawables;
+  };
+  mutable Maybe<OrientationDrawablesCache> m_orientationDrawablesCache;
 
   List<InputNode> m_inputNodes;
   List<OutputNode> m_outputNodes;

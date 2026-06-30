@@ -104,8 +104,17 @@ private:
   void addPendingChangeData(ElementChange change, float interpolationTime);
   void applyChange(ElementChange change);
 
-  Deque<pair<uint64_t, ElementChange>> m_changeData;
-  Deque<pair<float, ElementChange>> m_pendingChangeData;
+  struct VersionedElementChange {
+    uint64_t version;
+    ElementChange change;
+  };
+  struct PendingElementChange {
+    float timeToApply;
+    ElementChange change;
+  };
+
+  Deque<VersionedElementChange> m_changeData;
+  Deque<PendingElementChange> m_pendingChangeData;
   NetElementVersion const* m_netVersion = nullptr;
   uint64_t m_changeDataLastVersion = 0;
   bool m_updated = false;
@@ -125,8 +134,8 @@ void NetElementMapWrapper<BaseMap>::initNetVersion(NetElementVersion const* vers
   m_changeData.clear();
   m_changeDataLastVersion = 0;
 
-  for (auto& change : Star::take(m_pendingChangeData))
-    applyChange(std::move(change.second));
+  for (auto& pendingChange : Star::take(m_pendingChangeData))
+    applyChange(std::move(pendingChange.change));
 
   addChangeData(ClearChange());
   for (auto const& [key, value] : *this)
@@ -141,17 +150,19 @@ void NetElementMapWrapper<BaseMap>::enableNetInterpolation(float) {
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::disableNetInterpolation() {
   m_interpolationEnabled = false;
-  for (auto& change : Star::take(m_pendingChangeData))
-    applyChange(std::move(change.second));
+  for (auto& pendingChange : Star::take(m_pendingChangeData))
+    applyChange(std::move(pendingChange.change));
 }
 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::tickNetInterpolation(float dt) {
-  for (auto& [timeToApply, change] : m_pendingChangeData)
-    timeToApply -= dt;
+  for (auto& pendingChange : m_pendingChangeData)
+    pendingChange.timeToApply -= dt;
 
-  while (!m_pendingChangeData.empty() && m_pendingChangeData.first().first <= 0.0f)
-    applyChange(m_pendingChangeData.takeFirst().second);
+  while (!m_pendingChangeData.empty() && m_pendingChangeData.first().timeToApply <= 0.0f) {
+    auto pendingChange = m_pendingChangeData.takeFirst();
+    applyChange(std::move(pendingChange.change));
+  }
 }
 
 template <typename BaseMap>
@@ -161,8 +172,8 @@ void NetElementMapWrapper<BaseMap>::netStore(DataStream& ds, NetCompatibilityRul
   for (auto const& [key, value] : *this)
     writeChange(ds, SetChange{key, value});
 
-  for (auto const& [timeToApply, change] : m_pendingChangeData)
-    writeChange(ds, change);
+  for (auto const& pendingChange : m_pendingChangeData)
+    writeChange(ds, pendingChange.change);
 }
 
 template <typename BaseMap>
@@ -191,8 +202,8 @@ bool NetElementMapWrapper<BaseMap>::shouldWriteNetDelta(uint64_t fromVersion, Ne
   if (fromVersion < m_changeDataLastVersion)
     return true;
 
-  for (auto const& [version, change] : m_changeData)
-    if (version >= fromVersion)
+  for (auto const& changeData : m_changeData)
+    if (changeData.version >= fromVersion)
       return true;
 
   return false;
@@ -209,11 +220,11 @@ bool NetElementMapWrapper<BaseMap>::writeNetDelta(DataStream& ds, uint64_t fromV
     netStore(ds, rules);
 
   } else {
-    for (auto const& [version, change] : m_changeData) {
-      if (version >= fromVersion) {
+    for (auto const& changeData : m_changeData) {
+      if (changeData.version >= fromVersion) {
         deltaWritten = true;
         ds.writeVlqU(2);
-        writeChange(ds, change);
+        writeChange(ds, changeData.change);
       }
     }
   }
@@ -442,22 +453,22 @@ auto NetElementMapWrapper<BaseMap>::readChange(DataStream& ds) -> ElementChange 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::addChangeData(ElementChange change) {
   uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
-  starAssert(m_changeData.empty() || m_changeData.last().first <= currentVersion);
+  starAssert(m_changeData.empty() || m_changeData.last().version <= currentVersion);
 
-  m_changeData.append({currentVersion, std::move(change)});
+  m_changeData.append(VersionedElementChange{currentVersion, std::move(change)});
 
   m_changeDataLastVersion = max<int64_t>(static_cast<int64_t>(currentVersion) - MaxChangeDataVersions, 0);
-  while (!m_changeData.empty() && m_changeData.first().first < m_changeDataLastVersion)
+  while (!m_changeData.empty() && m_changeData.first().version < m_changeDataLastVersion)
     m_changeData.removeFirst();
 }
 
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::addPendingChangeData(ElementChange change, float interpolationTime) {
-  if (!m_pendingChangeData.empty() && interpolationTime < m_pendingChangeData.last().first) {
-    for (auto& pending : Star::take(m_pendingChangeData))
-      applyChange(std::move(pending.second));
+  if (!m_pendingChangeData.empty() && interpolationTime < m_pendingChangeData.last().timeToApply) {
+    for (auto& pendingChange : Star::take(m_pendingChangeData))
+      applyChange(std::move(pendingChange.change));
   }
-  m_pendingChangeData.append({interpolationTime, std::move(change)});
+  m_pendingChangeData.append(PendingElementChange{interpolationTime, std::move(change)});
 }
 
 template <typename BaseMap>

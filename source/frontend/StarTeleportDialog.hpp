@@ -37,11 +37,16 @@ public:
   void editBookmark();
 
 private:
+  struct TeleportDestination {
+    WarpAction warpAction;
+    bool deploy;
+  };
+
   EntityId m_sourceEntityId;
   UniverseClientPtr m_client;
   PaneManager& m_paneManager;
   AssetsConstPtr m_assets;
-  List<pair<WarpAction, bool>> m_destinations;
+  List<TeleportDestination> m_destinations;
   TeleportBookmark m_currentLocation;
 };
 

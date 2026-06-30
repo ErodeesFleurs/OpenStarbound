@@ -217,9 +217,7 @@ Utf32Type hexStringToUtf32(std::string const& codepoint, Maybe<Utf32Type> previo
 std::string hexStringFromUtf32(Utf32Type character) {
   if (character > MAX_CODEPOINT)
     throw UnicodeException("Codepoint too big in hexStringFromUtf32");
-  Utf32Type lead;
-  Maybe<Utf32Type> trail;
-  tie(lead, trail) = utf32ToUtf16SurrogatePair(character);
+  auto [lead, trail] = utf32ToUtf16SurrogatePair(character);
 
   char16_t leadOut = toBigEndian(static_cast<char16_t>(lead));
   auto leadHex = hexEncode(reinterpret_cast<char*>(&leadOut), sizeof(leadOut)).takeUtf8();

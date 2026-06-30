@@ -45,6 +45,11 @@ public:
   void blankNetDelta(float interpolationTime = 0.0f) override;
 
 private:
+  struct InterpolationDataPoint {
+    float timeToApply;
+    T value;
+  };
+
   void writeValue(DataStream& ds, T t) const;
   T readValue(DataStream& ds) const;
 
@@ -57,7 +62,7 @@ private:
 
   function<T(T, T, T)> m_interpolator;
   float m_extrapolation = 0.0f;
-  Maybe<Deque<pair<float, T>>> m_interpolationDataPoints;
+  Maybe<Deque<InterpolationDataPoint>> m_interpolationDataPoints;
 };
 
 using NetElementFloat = NetElementFloating<float>;
@@ -80,7 +85,7 @@ void NetElementFloating<T>::set(T value) {
 
     if (m_interpolationDataPoints) {
       m_interpolationDataPoints->clear();
-      m_interpolationDataPoints->append({0.0f, m_value});
+      m_interpolationDataPoints->append(InterpolationDataPoint{0.0f, m_value});
     }
   }
 }
@@ -106,14 +111,14 @@ void NetElementFloating<T>::enableNetInterpolation(float extrapolationHint) {
   m_extrapolation = extrapolationHint;
   if (!m_interpolationDataPoints) {
     m_interpolationDataPoints.emplace();
-    m_interpolationDataPoints->append({0.0f, m_value});
+    m_interpolationDataPoints->append(InterpolationDataPoint{0.0f, m_value});
   }
 }
 
 template <typename T>
 void NetElementFloating<T>::disableNetInterpolation() {
   if (m_interpolationDataPoints) {
-    m_value = m_interpolationDataPoints->last().second;
+    m_value = m_interpolationDataPoints->last().value;
     m_interpolationDataPoints.reset();
   }
 }
@@ -121,10 +126,10 @@ void NetElementFloating<T>::disableNetInterpolation() {
 template <typename T>
 void NetElementFloating<T>::tickNetInterpolation(float dt) {
   if (m_interpolationDataPoints) {
-    for (auto& p : *m_interpolationDataPoints)
-      p.first -= dt;
+    for (auto& dataPoint : *m_interpolationDataPoints)
+      dataPoint.timeToApply -= dt;
 
-    while (m_interpolationDataPoints->size() > 2 && (*m_interpolationDataPoints)[1].first <= 0.0f)
+    while (m_interpolationDataPoints->size() > 2 && (*m_interpolationDataPoints)[1].timeToApply <= 0.0f)
       m_interpolationDataPoints->removeFirst();
 
     m_value = interpolate();
@@ -135,7 +140,7 @@ template <typename T>
 void NetElementFloating<T>::netStore(DataStream& ds, NetCompatibilityRules rules) const {
   if (!checkWithRules(rules)) return;
   if (m_interpolationDataPoints)
-    writeValue(ds, m_interpolationDataPoints->last().second);
+    writeValue(ds, m_interpolationDataPoints->last().value);
   else
     writeValue(ds, m_value);
 }
@@ -147,7 +152,7 @@ void NetElementFloating<T>::netLoad(DataStream& ds, NetCompatibilityRules rules)
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   if (m_interpolationDataPoints) {
     m_interpolationDataPoints->clear();
-    m_interpolationDataPoints->append({0.0f, m_value});
+    m_interpolationDataPoints->append(InterpolationDataPoint{0.0f, m_value});
   }
 }
 
@@ -158,7 +163,7 @@ bool NetElementFloating<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion, 
     return false;
 
   if (m_interpolationDataPoints)
-    writeValue(ds, m_interpolationDataPoints->last().second);
+    writeValue(ds, m_interpolationDataPoints->last().value);
   else
     writeValue(ds, m_value);
 
@@ -171,9 +176,9 @@ void NetElementFloating<T>::readNetDelta(DataStream& ds, float interpolationTime
 
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   if (m_interpolationDataPoints) {
-    if (interpolationTime < m_interpolationDataPoints->last().first)
+    if (interpolationTime < m_interpolationDataPoints->last().timeToApply)
       m_interpolationDataPoints->clear();
-    m_interpolationDataPoints->append({interpolationTime, t});
+    m_interpolationDataPoints->append(InterpolationDataPoint{interpolationTime, t});
     m_value = interpolate();
   } else {
     m_value = t;
@@ -184,8 +189,8 @@ template <typename T>
 void NetElementFloating<T>::blankNetDelta(float interpolationTime) {
   if (m_interpolationDataPoints) {
     auto lastPoint = m_interpolationDataPoints->last();
-    float lastTime = lastPoint.first;
-    lastPoint.first = interpolationTime;
+    float lastTime = lastPoint.timeToApply;
+    lastPoint.timeToApply = interpolationTime;
     if (interpolationTime < lastTime)
       *m_interpolationDataPoints = {lastPoint};
     else
@@ -219,9 +224,9 @@ T NetElementFloating<T>::interpolate() const {
 
   float ipos = inverseLinearInterpolateUpper(dataPoints.begin(), dataPoints.end(), 0.0f,
       [](float lhs, auto const& rhs) {
-        return lhs < rhs.first;
+        return lhs < rhs.timeToApply;
       }, [](auto const& dataPoint) {
-        return dataPoint.first;
+        return dataPoint.timeToApply;
       });
   auto bound = getBound2(ipos, dataPoints.size(), BoundMode::Extrapolate);
 
@@ -232,15 +237,15 @@ T NetElementFloating<T>::interpolate() const {
     // If step separation is less than 1.0, don't normalize extrapolation to
     // the very small step difference, because this can result in large jumps
     // during jitter.
-    float stepDist = max(maxPoint.first - minPoint.first, 1.0f);
+    float stepDist = max(maxPoint.timeToApply - minPoint.timeToApply, 1.0f);
     float offset = clamp<float>(bound.offset, 0.0f, 1.0f + m_extrapolation / stepDist);
-    return m_interpolator(offset, minPoint.second, maxPoint.second);
+    return m_interpolator(offset, minPoint.value, maxPoint.value);
 
   } else {
     if (bound.offset < 1.0f)
-      return dataPoints[bound.i0].second;
+      return dataPoints[bound.i0].value;
     else
-      return dataPoints[bound.i1].second;
+      return dataPoints[bound.i1].value;
   }
 }
 

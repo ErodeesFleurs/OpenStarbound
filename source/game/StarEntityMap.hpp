@@ -158,9 +158,9 @@ template <typename EntityT>
 List<SharedPtr<EntityT>> EntityMap::all(EntityFilterOf<EntityT> const& filter) const {
   List<SharedPtr<EntityT>> entities;
   forAllEntities([&](EntityPtr const& entity) {
-    if (auto e = as<EntityT>(entity)) {
-      if (!filter || filter(e))
-        entities.append(e);
+    if (auto typedEntity = as<EntityT>(entity)) {
+      if (!filter || filter(typedEntity))
+        entities.append(typedEntity);
     }
   });
 
@@ -185,8 +185,8 @@ template <typename EntityT>
 List<SharedPtr<EntityT>> EntityMap::atTile(Vec2I const& pos) const {
   List<SharedPtr<EntityT>> list;
   forEachEntityAtTile(pos, [&](TileEntityPtr const& entity) {
-      if (auto e = as<EntityT>(entity))
-        list.append(std::move(e));
+      if (auto typedEntity = as<EntityT>(entity))
+        list.append(std::move(typedEntity));
       return false;
     });
   return list;

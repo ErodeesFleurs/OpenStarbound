@@ -199,8 +199,8 @@ bool ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) {
   if (countLeft > 0)
     return false;
 
-  for (auto loc : consumeLocations) {
-    [[maybe_unused]] bool res = consumeItems(loc.first, loc.second);
+  for (auto [slot, count] : consumeLocations) {
+    [[maybe_unused]] bool res = consumeItems(slot, count);
     starAssert(res);
   }
 

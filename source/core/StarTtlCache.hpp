@@ -144,17 +144,17 @@ void TtlCacheBase<LruCacheType>::setTtlUpdateEnabled(bool enabled) {
 
 template <typename LruCacheType>
 auto TtlCacheBase<LruCacheType>::ptr(Key const& key) -> Value * {
-  if (auto p = m_cache.ptr(key)) {
+  if (auto cacheEntry = m_cache.ptr(key)) {
     if (m_ttlUpdateEnabled)
-      p->first = Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear);
-    return &p->second;
+      cacheEntry->first = Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear);
+    return &cacheEntry->second;
   }
   return nullptr;
 }
 
 template <typename LruCacheType>
 void TtlCacheBase<LruCacheType>::set(Key const& key, Value value) {
-  m_cache.set(key, make_pair(Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear), value));
+  m_cache.set(key, pair<int64_t, Value>{Time::monotonicMilliseconds() + Random::randInt(-m_timeSmear, m_timeSmear), value});
 }
 
 template <typename LruCacheType>

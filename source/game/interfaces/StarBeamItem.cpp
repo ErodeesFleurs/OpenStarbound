@@ -84,7 +84,7 @@ void BeamItem::update(float dt, FireMode, bool, HashSet<MoveControlType> const&)
 
   if (m_beamCurve.dest().magnitudeSquared() < m_beamCurve.origin().magnitudeSquared())
     m_beamCurve[1] = m_beamCurve.origin();
-  else if (owner()->facingDirection() != getAngleSide(m_beamCurve[1].angle()).second)
+  else if (auto [_, facingDirection] = getAngleSide(m_beamCurve[1].angle()); owner()->facingDirection() != facingDirection)
     m_beamCurve[1] = desiredNearControlPoint;
   else
     m_beamCurve[1] = m_beamCurve[1] + (desiredNearControlPoint - m_beamCurve[1]) * m_nearControlPointElasticity;
@@ -98,7 +98,8 @@ float BeamItem::getAngle(float angle) {
   if (m_beamCurve.dest().magnitudeSquared() < m_beamCurve.origin().magnitudeSquared()
       || m_beamCurve.origin() == m_beamCurve[1])
     return angle;
-  return getAngleSide(m_beamCurve[1].angle()).first;
+  auto [beamAngle, _] = getAngleSide(m_beamCurve[1].angle());
+  return beamAngle;
 }
 
 List<Drawable> BeamItem::drawables() const {

@@ -10,45 +10,45 @@ StarWorldClientTilePrediction::StarWorldClientTilePrediction(WorldClient& worldC
 
 void StarWorldClientTilePrediction::informTilePrediction(Vec2I const& pos, TileModification const& modification) {
   auto now = Time::monotonicMilliseconds();
-  auto& p = m_predictedTiles[pos];
-  p.time = now;
+  auto& predictedTile = m_predictedTiles[pos];
+  predictedTile.time = now;
   if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
     if (placeMaterial->layer == TileLayer::Foreground) {
       auto materialDatabase = m_worldClient.m_materialDatabase;
       if (!materialDatabase->isCascadingFallingMaterial(placeMaterial->material)
           && !materialDatabase->isFallingMaterial(placeMaterial->material)) {
-        p.foreground = placeMaterial->material;
-        p.foregroundHueShift = placeMaterial->materialHueShift;
+        predictedTile.foreground = placeMaterial->material;
+        predictedTile.foregroundHueShift = placeMaterial->materialHueShift;
       } else {
-        p.foreground = StructureMaterialId;
+        predictedTile.foreground = StructureMaterialId;
       }
       if (placeMaterial->collisionOverride != TileCollisionOverride::None)
-        p.collision = collisionKindFromOverride(placeMaterial->collisionOverride);
+        predictedTile.collision = collisionKindFromOverride(placeMaterial->collisionOverride);
       else
-        p.collision = materialDatabase->materialCollisionKind(placeMaterial->material);
+        predictedTile.collision = materialDatabase->materialCollisionKind(placeMaterial->material);
       m_worldClient.dirtyCollision(RectI::withSize(pos, {1, 1}));
     } else {
-      p.background = placeMaterial->material;
-      p.backgroundHueShift = placeMaterial->materialHueShift;
+      predictedTile.background = placeMaterial->material;
+      predictedTile.backgroundHueShift = placeMaterial->materialHueShift;
     }
   }
   else if (auto placeMod = modification.ptr<PlaceMod>()) {
     if (placeMod->layer == TileLayer::Foreground)
-      p.foregroundMod = placeMod->mod;
+      predictedTile.foregroundMod = placeMod->mod;
     else
-      p.backgroundMod = placeMod->mod;
+      predictedTile.backgroundMod = placeMod->mod;
   }
   else if (auto placeColor = modification.ptr<PlaceMaterialColor>()) {
     if (placeColor->layer == TileLayer::Foreground)
-      p.foregroundColorVariant = placeColor->color;
+      predictedTile.foregroundColorVariant = placeColor->color;
     else
-      p.backgroundColorVariant = placeColor->color;
+      predictedTile.backgroundColorVariant = placeColor->color;
   }
   else if (auto placeLiquid = modification.ptr<PlaceLiquid>()) {
-    if (!p.liquid || p.liquid->liquid != placeLiquid->liquid)
-      p.liquid = LiquidLevel(placeLiquid->liquid, placeLiquid->liquidLevel);
+    if (!predictedTile.liquid || predictedTile.liquid->liquid != placeLiquid->liquid)
+      predictedTile.liquid = LiquidLevel(placeLiquid->liquid, placeLiquid->liquidLevel);
     else
-      p.liquid->level += placeLiquid->liquidLevel;
+      predictedTile.liquid->level += placeLiquid->liquidLevel;
   }
 }
 
@@ -60,29 +60,29 @@ bool StarWorldClientTilePrediction::readNetTile(Vec2I const& pos, NetTile const&
   if (!m_predictedTiles.empty()) {
     auto findPrediction = m_predictedTiles.find(pos);
     if (findPrediction != m_predictedTiles.end()) {
-      auto& p = findPrediction->second;
+      auto& predictedTile = findPrediction->second;
 
-      if (p.collision && *p.collision == netTile.collision)
-        p.collision.reset();
-      if (p.foreground && (*p.foreground == StructureMaterialId || *p.foreground == netTile.foreground))
-        p.foreground.reset();
-      if (p.foregroundMod && *p.foregroundMod == netTile.foregroundMod)
-        p.foregroundMod.reset();
-      if (p.foregroundHueShift && *p.foregroundHueShift == netTile.foregroundHueShift)
-        p.foregroundHueShift.reset();
-      if (p.foregroundModHueShift && *p.foregroundModHueShift == netTile.foregroundModHueShift)
-        p.foregroundModHueShift.reset();
+      if (predictedTile.collision && *predictedTile.collision == netTile.collision)
+        predictedTile.collision.reset();
+      if (predictedTile.foreground && (*predictedTile.foreground == StructureMaterialId || *predictedTile.foreground == netTile.foreground))
+        predictedTile.foreground.reset();
+      if (predictedTile.foregroundMod && *predictedTile.foregroundMod == netTile.foregroundMod)
+        predictedTile.foregroundMod.reset();
+      if (predictedTile.foregroundHueShift && *predictedTile.foregroundHueShift == netTile.foregroundHueShift)
+        predictedTile.foregroundHueShift.reset();
+      if (predictedTile.foregroundModHueShift && *predictedTile.foregroundModHueShift == netTile.foregroundModHueShift)
+        predictedTile.foregroundModHueShift.reset();
 
-      if (p.background && *p.background == netTile.background)
-        p.background.reset();
-      if (p.backgroundMod && *p.backgroundMod == netTile.backgroundMod)
-        p.backgroundMod.reset();
-      if (p.backgroundHueShift && *p.backgroundHueShift == netTile.backgroundHueShift)
-        p.backgroundHueShift.reset();
-      if (p.backgroundModHueShift && *p.backgroundModHueShift == netTile.backgroundModHueShift)
-        p.backgroundModHueShift.reset();
+      if (predictedTile.background && *predictedTile.background == netTile.background)
+        predictedTile.background.reset();
+      if (predictedTile.backgroundMod && *predictedTile.backgroundMod == netTile.backgroundMod)
+        predictedTile.backgroundMod.reset();
+      if (predictedTile.backgroundHueShift && *predictedTile.backgroundHueShift == netTile.backgroundHueShift)
+        predictedTile.backgroundHueShift.reset();
+      if (predictedTile.backgroundModHueShift && *predictedTile.backgroundModHueShift == netTile.backgroundModHueShift)
+        predictedTile.backgroundModHueShift.reset();
 
-      if (!p)
+      if (!predictedTile)
         m_predictedTiles.erase(findPrediction);
     }
   }

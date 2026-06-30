@@ -341,18 +341,18 @@ void Vehicle::update(float dt, uint64_t) {
 }
 
 void Vehicle::render(RenderCallback* renderer) {
-  for (auto& drawable : m_networkedAnimator.drawablesWithZLevel(position())) {
-    if (drawable.second < 0.0f)
-      renderer->addDrawable(std::move(drawable.first), renderLayer(VehicleLayer::Back));
+  for (auto& [drawable, zLevel] : m_networkedAnimator.drawablesWithZLevel(position())) {
+    if (zLevel < 0.0f)
+      renderer->addDrawable(std::move(drawable), renderLayer(VehicleLayer::Back));
     else
-      renderer->addDrawable(std::move(drawable.first), renderLayer(VehicleLayer::Front));
+      renderer->addDrawable(std::move(drawable), renderLayer(VehicleLayer::Front));
   }
 
   renderer->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
   renderer->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
 
-  for (auto drawablePair : m_scriptedAnimator.drawables())
-    renderer->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer(VehicleLayer::Front)));
+  for (auto const& [drawable, maybeRenderLayer] : m_scriptedAnimator.drawables())
+    renderer->addDrawable(drawable, maybeRenderLayer.value(renderLayer(VehicleLayer::Front)));
   renderer->addAudios(m_scriptedAnimator.pullNewAudios());
   renderer->addParticles(m_scriptedAnimator.pullNewParticles());
 }
@@ -430,7 +430,7 @@ InteractAction Vehicle::interact(InteractRequest const& request) {
   Maybe<size_t> index;
   float bestDistance = 0.0f;
   for (auto const& [loungeEntry, loungeIndex] : enumerateIterator(m_loungePositions)) {
-    auto const& lounge = loungeEntry.second;
+    auto const& [_, lounge] = loungeEntry;
     if (!lounge.enabled.get())
       continue;
 

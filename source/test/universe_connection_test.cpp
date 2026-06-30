@@ -110,16 +110,16 @@ TEST(UniverseConnections, All) {
 
   LinkedList<ASyncClientThread> localASyncClients;
   for (unsigned i = 0; i < NumLocalASyncConnections; ++i) {
-    auto pair = LocalPacketSocket::openPair();
-    server.addConnection(++clientId, UniverseConnection(std::move(pair.first)));
-    localASyncClients.emplaceAppend(UniverseConnection(std::move(pair.second)));
+    auto [serverSocket, clientSocket] = LocalPacketSocket::openPair();
+    server.addConnection(++clientId, UniverseConnection(std::move(serverSocket)));
+    localASyncClients.emplaceAppend(UniverseConnection(std::move(clientSocket)));
   }
 
   LinkedList<SyncClientThread> localSyncClients;
   for (unsigned i = 0; i < NumLocalSyncConnections; ++i) {
-    auto pair = LocalPacketSocket::openPair();
-    server.addConnection(++clientId, UniverseConnection(std::move(pair.first)));
-    localSyncClients.emplaceAppend(UniverseConnection(std::move(pair.second)));
+    auto [serverSocket, clientSocket] = LocalPacketSocket::openPair();
+    server.addConnection(++clientId, UniverseConnection(std::move(serverSocket)));
+    localSyncClients.emplaceAppend(UniverseConnection(std::move(clientSocket)));
   }
 
   LinkedList<ASyncClientThread> remoteASyncClients;

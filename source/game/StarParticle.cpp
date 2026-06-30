@@ -286,9 +286,9 @@ DataStream& operator>>(DataStream& ds, Particle& particle) {
 
 ParticleVariantCreator makeParticleVariantCreator(Particle particle, Particle variance) {
   return [particle, variance]() -> Particle {
-    auto p = particle;
-    p.applyVariance(variance);
-    return p;
+    auto particleVariant = particle;
+    particleVariant.applyVariance(variance);
+    return particleVariant;
   };
 }
 

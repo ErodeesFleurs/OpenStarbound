@@ -24,7 +24,7 @@ VehicleDatabase::VehicleDatabase(AssetsConstPtr assets, ParticleDatabaseConstPtr
       if (m_vehicles.contains(name))
         throw VehicleDatabaseException::format("Repeat vehicle name '{}'", name);
 
-      m_vehicles.add(std::move(name), make_pair(std::move(file), std::move(config)));
+      m_vehicles.add(std::move(name), pair<String, Json>{std::move(file), std::move(config)});
     } catch (StarException const& e) {
       throw VehicleDatabaseException(strf("Error loading vehicle '{}'", file), e);
     }

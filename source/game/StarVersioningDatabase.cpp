@@ -212,13 +212,13 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
 
   try {
     for (auto const& updateScript : m_versionUpdateScripts.value(versionedJson.identifier.toLower())) {
-      for (auto const& subVersionScripts : m_subVersionUpdateScripts.value(versionedJson.identifier.toLower()).value(result.version)) {
-        auto targetSubVersion = m_currentSubVersions.value(result.identifier).value(subVersionScripts.first);
-        for (auto const& subVersionUpdateScript : subVersionScripts.second) {
-          if (result.subVersions.value(subVersionScripts.first) >= targetSubVersion)
+      for (auto const& [subIdentifier, subVersionUpdateScripts] : m_subVersionUpdateScripts.value(versionedJson.identifier.toLower()).value(result.version)) {
+        auto targetSubVersion = m_currentSubVersions.value(result.identifier).value(subIdentifier);
+        for (auto const& subVersionUpdateScript : subVersionUpdateScripts) {
+          if (result.subVersions.value(subIdentifier) >= targetSubVersion)
             break;
 
-          if (subVersionUpdateScript.fromVersion == result.subVersions.value(subVersionScripts.first)) {
+          if (subVersionUpdateScript.fromVersion == result.subVersions.value(subIdentifier)) {
             auto scriptContext = m_luaRoot.createContext();
             scriptContext.load(*m_assets->bytes(subVersionUpdateScript.script), subVersionUpdateScript.script);
             scriptContext.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
@@ -229,11 +229,11 @@ VersionedJson VersioningDatabase::updateVersionedJson(VersionedJson const& versi
             if (!result.content) {
               throw VersioningDatabaseException::format(
                 "Could not bring versionedJson with identifier '{}' and version {} forward to current version of {}, conversion script of sub identifier '{}' from {} to {} returned null (un-upgradeable)",
-                versionedJson.identifier, result.version, targetVersion, subVersionScripts.first, subVersionUpdateScript.fromVersion, subVersionUpdateScript.toVersion);
+                versionedJson.identifier, result.version, targetVersion, subIdentifier, subVersionUpdateScript.fromVersion, subVersionUpdateScript.toVersion);
             }
             Logger::debug("Brought versionedJson '{}' sub identifier '{}' from version {} to {}",
-                          versionedJson.identifier, subVersionScripts.first, result.subVersions.value(subVersionScripts.first), subVersionUpdateScript.toVersion);
-            result.subVersions[subVersionScripts.first] = subVersionUpdateScript.toVersion;
+                          versionedJson.identifier, subIdentifier, result.subVersions.value(subIdentifier), subVersionUpdateScript.toVersion);
+            result.subVersions[subIdentifier] = subVersionUpdateScript.toVersion;
           }
         }
       }

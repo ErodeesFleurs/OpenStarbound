@@ -332,8 +332,8 @@ bool Json::contains(String const& key) const {
 }
 
 Json Json::get(size_t index) const {
-  if (auto p = ptr(index))
-    return *p;
+  if (auto value = ptr(index))
+    return *value;
   throw JsonException(strf("Json::get({}) out of range", index));
 }
 
@@ -370,62 +370,62 @@ JsonObject Json::getObject(size_t index) const {
 }
 
 Json Json::get(size_t index, Json def) const {
-  if (auto p = ptr(index))
-    return *p;
+  if (auto value = ptr(index))
+    return *value;
   return def;
 }
 
 double Json::getDouble(size_t index, double def) const {
-  if (auto p = ptr(index))
-    return p->toDouble();
+  if (auto value = ptr(index))
+    return value->toDouble();
   return def;
 }
 
 float Json::getFloat(size_t index, float def) const {
-  if (auto p = ptr(index))
-    return p->toFloat();
+  if (auto value = ptr(index))
+    return value->toFloat();
   return def;
 }
 
 bool Json::getBool(size_t index, bool def) const {
-  if (auto p = ptr(index))
-    return p->toBool();
+  if (auto value = ptr(index))
+    return value->toBool();
   return def;
 }
 
 int64_t Json::getInt(size_t index, int64_t def) const {
-  if (auto p = ptr(index))
-    return p->toInt();
+  if (auto value = ptr(index))
+    return value->toInt();
   return def;
 }
 
 uint64_t Json::getUInt(size_t index, int64_t def) const {
-  if (auto p = ptr(index))
-    return p->toUInt();
+  if (auto value = ptr(index))
+    return value->toUInt();
   return def;
 }
 
 String Json::getString(size_t index, String def) const {
-  if (auto p = ptr(index))
-    return p->toString();
+  if (auto value = ptr(index))
+    return value->toString();
   return def;
 }
 
 JsonArray Json::getArray(size_t index, JsonArray def) const {
-  if (auto p = ptr(index))
-    return p->toArray();
+  if (auto value = ptr(index))
+    return value->toArray();
   return def;
 }
 
 JsonObject Json::getObject(size_t index, JsonObject def) const {
-  if (auto p = ptr(index))
-    return p->toObject();
+  if (auto value = ptr(index))
+    return value->toObject();
   return def;
 }
 
 Json Json::get(String const& key) const {
-  if (auto p = ptr(key))
-    return *p;
+  if (auto value = ptr(key))
+    return *value;
   throw JsonException(strf("No such key in Json::get(\"{}\")", key));
 }
 
@@ -462,127 +462,127 @@ JsonObject Json::getObject(String const& key) const {
 }
 
 Json Json::get(String const& key, Json def) const {
-  if (auto p = ptr(key))
-    return *p;
+  if (auto value = ptr(key))
+    return *value;
   return def;
 }
 
 double Json::getDouble(String const& key, double def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toDouble();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toDouble();
   return def;
 }
 
 float Json::getFloat(String const& key, float def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toFloat();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toFloat();
   return def;
 }
 
 bool Json::getBool(String const& key, bool def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toBool();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toBool();
   return def;
 }
 
 int64_t Json::getInt(String const& key, int64_t def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toInt();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toInt();
   return def;
 }
 
 uint64_t Json::getUInt(String const& key, int64_t def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toUInt();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toUInt();
   return def;
 }
 
 String Json::getString(String const& key, String def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toString();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toString();
   return def;
 }
 
 JsonArray Json::getArray(String const& key, JsonArray def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toArray();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toArray();
   return def;
 }
 
 JsonObject Json::getObject(String const& key, JsonObject def) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toObject();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toObject();
   return def;
 }
 
 Maybe<Json> Json::opt(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return *p;
+  auto value = ptr(key);
+  if (value && *value)
+    return *value;
   return {};
 }
 
 Maybe<double> Json::optDouble(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toDouble();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toDouble();
   return {};
 }
 
 Maybe<float> Json::optFloat(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toFloat();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toFloat();
   return {};
 }
 
 Maybe<bool> Json::optBool(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toBool();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toBool();
   return {};
 }
 
 Maybe<int64_t> Json::optInt(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toInt();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toInt();
   return {};
 }
 
 Maybe<uint64_t> Json::optUInt(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toUInt();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toUInt();
   return {};
 }
 
 Maybe<String> Json::optString(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toString();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toString();
   return {};
 }
 
 Maybe<JsonArray> Json::optArray(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toArray();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toArray();
   return {};
 }
 
 Maybe<JsonObject> Json::optObject(String const& key) const {
-  auto p = ptr(key);
-  if (p && *p)
-    return p->toObject();
+  auto value = ptr(key);
+  if (value && *value)
+    return value->toObject();
   return {};
 }
 
@@ -763,8 +763,8 @@ Json Json::erasePath(String path) const {
 
 Json Json::setAll(JsonObject values) const {
   auto map = toObject();
-  for (auto& p : values)
-    map[std::move(p.first)] = std::move(p.second);
+  for (auto& [key, value] : values)
+    map[std::move(key)] = std::move(value);
   return map;
 }
 
@@ -906,9 +906,9 @@ DataStream& operator<<(DataStream& os, const Json& v) {
   } else if (v.type() == Json::Type::Object) {
     auto const& m = v.toObject();
     os.writeVlqU(m.size());
-    for (auto const& v : m) {
-      os.write<String>(v.first);
-      os.write<Json>(v.second);
+    for (auto const& [key, value] : m) {
+      os.write<String>(key);
+      os.write<Json>(value);
     }
   }
   return os;
@@ -1039,9 +1039,9 @@ Json jsonMerge(Json const& base, Json const& merger) {
   if (base.type() == Json::Type::Object && merger.type() == Json::Type::Object) {
     JsonObject merged = base.toObject();
     for (auto const& [key, value] : merger.iterateObject()) {
-      auto res = merged.insert({key, value});
-      if (!res.second)
-        res.first->second = jsonMerge(res.first->second, value);
+      auto [entry, inserted] = merged.insert({key, value});
+      if (!inserted)
+        entry->second = jsonMerge(entry->second, value);
     }
     return merged;
   }
@@ -1055,9 +1055,9 @@ Json jsonMergeNulling(Json const& base, Json const& merger) {
       if (value.isNull())
         merged.erase(key);
       else {
-        auto res = merged.insert({key, value});
-        if (!res.second)
-          res.first->second = jsonMergeNulling(res.first->second, value);
+        auto [entry, inserted] = merged.insert({key, value});
+        if (!inserted)
+          entry->second = jsonMergeNulling(entry->second, value);
       }
     }
     return merged;

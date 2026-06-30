@@ -8,9 +8,7 @@ using namespace Star;
 
 int main(int argc, char** argv) {
   RootLoader rootLoader({{}, {}, {}, LogLevel::Error, false, {}});
-  UniquePtr<Root> root;
-  OptionParser::Options options;
-  tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+  auto [root, options] = rootLoader.commandInitOrDie(argc, argv);
 
   auto engine = LuaEngine::create(true);
   LuaBindings::registerImageLuaAssets(*engine, root->assets());

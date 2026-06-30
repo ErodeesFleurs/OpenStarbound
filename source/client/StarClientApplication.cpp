@@ -210,7 +210,8 @@ TitleScreenServices makeTitleScreenServices(Root& root, GuiContext& guiContext, 
 
 void ClientApplication::startup(StringList const& cmdLineArgs) {
   RootLoader rootLoader({AdditionalAssetsSettings, AdditionalDefaultConfiguration, String("starbound.log"), LogLevel::Info, false, String("starbound.config")});
-  m_root = rootLoader.initOrDie(cmdLineArgs).first;
+  auto [root, _] = rootLoader.initOrDie(cmdLineArgs);
+  m_root = std::move(root);
 
   Logger::info("OpenStarbound Client v{} for v{} ({}) Source ID: {} Protocol: {}", OpenStarVersionString, StarVersionString, StarArchitectureString, StarSourceIdentifierString, StarProtocolVersion);
 }
@@ -1119,7 +1120,7 @@ void ClientApplication::updateRunning(float dt) {
     auto p2pNetworkingService = app->p2pNetworkingService();
     bool clientIPJoinable = m_root->configuration()->get("clientIPJoinable").toBool();
     bool clientP2PJoinable = m_root->configuration()->get("clientP2PJoinable").toBool();
-    Maybe<pair<uint16_t, uint16_t>> party = make_pair(m_universeClient->players(), m_universeClient->maxPlayers());
+    Maybe<pair<uint16_t, uint16_t>> party = pair<uint16_t, uint16_t>{m_universeClient->players(), m_universeClient->maxPlayers()};
 
     if (m_state == MainAppState::MultiPlayer) {
       if (p2pNetworkingService) {

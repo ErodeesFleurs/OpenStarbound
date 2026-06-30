@@ -37,14 +37,13 @@ List<SkyOrbiter> SkyRenderData::backOrbiters(Vec2F const& viewSize) const {
 
   List<SkyOrbiter> orbiters;
 
-  for (auto const& object : orbitingCelestialObjects) {
-    auto const& layers = get<0>(object);
-    Vec2F pos = get<1>(object);
+  for (auto const& [layers, basePosition, parallax] : orbitingCelestialObjects) {
+    Vec2F pos = basePosition;
     pos = pos.piecewiseMultiply(satelliteArea);
     pos -= worldOffset;
     pos = rotMatrix.transformVec2(pos);
     for (auto const& l : layers)
-      orbiters.append(SkyOrbiter{SkyOrbiterType::Moon, get<2>(object) * l.second, 0.0f, l.first, pos});
+      orbiters.append(SkyOrbiter{SkyOrbiterType::Moon, parallax * l.second, 0.0f, l.first, pos});
   }
 
   return orbiters;

@@ -23,9 +23,7 @@ int main(int argc, char** argv) {
     rootLoader.addParameter("scale", "scale", OptionParser::Optional, "maximum distance from 0 for color range");
     rootLoader.addParameter("mode", "mode", OptionParser::Optional, "color mode: heatmap, terrain");
 
-    UniquePtr<Root> root;
-    OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    auto [root, options] = rootLoader.commandInitOrDie(argc, argv);
 
     auto size = Vec2U(lexicalCast<unsigned>(options.parameters["size"].first().split(",")[0]), lexicalCast<unsigned>(options.parameters["size"].first().split(",")[1]));
 

@@ -734,7 +734,7 @@ List<ItemRecipe> CraftingPane::determineRecipes() {
 
   List<ItemRecipe> sortedRecipes = recipes.values();
   sortByComputedValue(sortedRecipes, [itemDatabase = m_itemDatabase](ItemRecipe const& recipe) {
-      return make_tuple(itemDatabase->itemFriendlyName(recipe.output.name()).trim().toLower(), recipe.output.name());
+      return tuple<String, String>{itemDatabase->itemFriendlyName(recipe.output.name()).trim().toLower(), recipe.output.name()};
     });
 
   return sortedRecipes;

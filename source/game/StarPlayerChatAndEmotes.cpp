@@ -46,7 +46,7 @@ void PlayerChatAndEmotes::setDance(Maybe<String> const& danceName) {
 }
 
 pair<HumanoidEmote, float> PlayerChatAndEmotes::currentEmote() const {
-  return make_pair(m_emoteState, m_emoteCooldownTimer.timer);
+  return {m_emoteState, m_emoteCooldownTimer.timer};
 }
 
 List<ChatAction> PlayerChatAndEmotes::pullPendingChatActions() {

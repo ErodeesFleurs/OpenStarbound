@@ -77,17 +77,17 @@ void PlayerNarrativeQueue::queueRadioMessage(Json const& messageConfig, float de
       if (pendingMessage.messageId == message.messageId)
         return;
     }
-    for (auto& delayedMessagePair : m_delayedRadioMessages) {
-      if (delayedMessagePair.second.messageId == message.messageId) {
+    for (auto& delayedMessage : m_delayedRadioMessages) {
+      if (delayedMessage.message.messageId == message.messageId) {
         if (delay == 0)
-          delayedMessagePair.first.setDone();
+          delayedMessage.timer.setDone();
         return;
       }
     }
   }
 
   if (delay > 0) {
-    m_delayedRadioMessages.append(pair<GameTimer, RadioMessage>{GameTimer(delay), message});
+    m_delayedRadioMessages.append(DelayedRadioMessage{GameTimer(delay), message});
   } else {
     queueRadioMessage(message);
   }
@@ -103,13 +103,12 @@ void PlayerNarrativeQueue::queueRadioMessage(RadioMessage message) {
 }
 
 void PlayerNarrativeQueue::tickDelayedRadio(float dt) {
-  for (auto& [timer, radioMessage] : m_delayedRadioMessages) {
-    if (timer.tick(dt))
-      queueRadioMessage(radioMessage);
+  for (auto& delayedMessage : m_delayedRadioMessages) {
+    if (delayedMessage.timer.tick(dt))
+      queueRadioMessage(delayedMessage.message);
   }
-  m_delayedRadioMessages.filter([](pair<GameTimer, RadioMessage>& delayedMessage) {
-      auto& [timer, radioMessage] = delayedMessage;
-      return !timer.ready();
+  m_delayedRadioMessages.filter([](DelayedRadioMessage& delayedMessage) {
+      return !delayedMessage.timer.ready();
     });
 }
 
@@ -133,13 +132,15 @@ void PlayerNarrativeQueue::setInCinematic(bool inCinematic) {
 }
 
 Maybe<pair<Maybe<pair<StringList, int>>, float>> PlayerNarrativeQueue::pullPendingAltMusic() {
-  if (m_pendingAltMusic)
-    return m_pendingAltMusic.take();
+  if (m_pendingAltMusic) {
+    auto pendingAltMusic = m_pendingAltMusic.take();
+    return pair<Maybe<pair<StringList, int>>, float>(std::move(pendingAltMusic.tracks), pendingAltMusic.fadeTime);
+  }
   return {};
 }
 
 void PlayerNarrativeQueue::setPendingAltMusic(Maybe<pair<StringList, int>> tracks, float fadeTime) {
-  m_pendingAltMusic = pair<Maybe<pair<StringList, int>>, float>(std::move(tracks), fadeTime);
+  m_pendingAltMusic = PendingAltMusic{std::move(tracks), fadeTime};
 }
 
 Maybe<PlayerWarpRequest> PlayerNarrativeQueue::pullPendingWarp() {
@@ -153,13 +154,15 @@ void PlayerNarrativeQueue::setPendingWarp(String const& action, Maybe<String> co
 }
 
 Maybe<pair<Json, RpcPromiseKeeper<Json>>> PlayerNarrativeQueue::pullPendingConfirmation() {
-  if (m_pendingConfirmations.count() > 0)
-    return m_pendingConfirmations.takeFirst();
+  if (m_pendingConfirmations.count() > 0) {
+    auto pendingConfirmation = m_pendingConfirmations.takeFirst();
+    return pair<Json, RpcPromiseKeeper<Json>>(std::move(pendingConfirmation.dialogConfig), std::move(pendingConfirmation.resultPromise));
+  }
   return {};
 }
 
 void PlayerNarrativeQueue::queueConfirmation(Json const& dialogConfig, RpcPromiseKeeper<Json> const& resultPromise) {
-  m_pendingConfirmations.append(make_pair(dialogConfig, resultPromise));
+  m_pendingConfirmations.append(PendingConfirmation{dialogConfig, resultPromise});
 }
 
 }

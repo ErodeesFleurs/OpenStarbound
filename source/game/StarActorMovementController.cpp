@@ -649,7 +649,7 @@ Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position
   if (m_pathController->targetPosition().isNothing() || (parameters && m_pathController->parameters() != *parameters)) {
     if (parameters)
       m_pathController->setParameters(*parameters);
-    m_pathMoveResult = m_pathController->findPath(*this, position).apply([position](bool result) { return pair<Vec2F, bool>(position, result); });
+    m_pathMoveResult = m_pathController->findPath(*this, position).apply([position](bool result) { return PathMoveResult{position, result}; });
   }
 
   // update target position if it has changed
@@ -662,14 +662,16 @@ Maybe<pair<Vec2F, bool>> ActorMovementController::pathMove(Vec2F const& position
     m_pathController->reset();
   }
 
-  return take(m_pathMoveResult);
+  return take(m_pathMoveResult).apply([](PathMoveResult const& result) {
+      return pair<Vec2F, bool>(result.position, result.succeeded);
+    });
 }
 
 Maybe<pair<Vec2F, bool>> ActorMovementController::controlPathMove(Vec2F const& position, bool run, Maybe<PlatformerAStar::Parameters> const& parameters) {
   auto result = pathMove(position, run, parameters);
 
   if (result.isNothing())
-    m_controlPathMove = pair<Vec2F, bool>(position, run);
+    m_controlPathMove = ControlPathMove{position, run};
 
   return result;
 }
@@ -752,15 +754,15 @@ void ActorMovementController::tickMaster(float dt) {
       if (appliedForceRegion()) {
         m_pathController->reset();
       } else if (!m_pathController->pathfinding()) {
-        m_pathMoveResult = m_pathController->move(*this, activeParameters, activeModifiers, m_controlPathMove->second, dt)
-          .apply([this](bool result) { return pair<Vec2F, bool>(m_controlPathMove->first, result); });
+        m_pathMoveResult = m_pathController->move(*this, activeParameters, activeModifiers, m_controlPathMove->run, dt)
+          .apply([this](bool result) { return PathMoveResult{m_controlPathMove->position, result}; });
 
         auto action = m_pathController->curAction();
         bool onGround = false;
         if (auto a = action) {
           using namespace PlatformerAStar;
-          m_walking.set(a == Action::Walk && !m_controlPathMove->second);
-          m_running.set(a == Action::Walk && m_controlPathMove->second);
+          m_walking.set(a == Action::Walk && !m_controlPathMove->run);
+          m_running.set(a == Action::Walk && m_controlPathMove->run);
           m_flying.set(a == Action::Fly || a == Action::Swim);
           m_falling.set((a == Action::Arc && yVelocity() < 0.0f) || a == Action::Drop);
           m_jumping.set(a == Action::Arc && yVelocity() >= 0.0f);
@@ -794,8 +796,8 @@ void ActorMovementController::tickMaster(float dt) {
         clearControls();
         return;
       } else {
-        m_pathMoveResult = m_pathController->findPath(*this, m_controlPathMove->first).apply([this](bool result) {
-            return pair<Vec2F, bool>(m_controlPathMove->first, result);
+        m_pathMoveResult = m_pathController->findPath(*this, m_controlPathMove->position).apply([this](bool result) {
+            return PathMoveResult{m_controlPathMove->position, result};
           });
       }
     } else {

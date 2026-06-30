@@ -44,7 +44,11 @@ private:
 
   TextureGroupPtr m_textureGroup;
   AssetsConstPtr m_assets;
-  HashMap<AssetPath, pair<TexturePtr, int64_t>> m_textureMap;
+  struct TextureCacheEntry {
+    TexturePtr texture;
+    int64_t lastUsedTime;
+  };
+  HashMap<AssetPath, TextureCacheEntry> m_textureMap;
   HashMap<ImageConstPtr, TexturePtr> m_textureDeduplicationMap;
   TrackerListenerPtr m_reloadTracker;
 };

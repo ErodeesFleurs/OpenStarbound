@@ -398,19 +398,13 @@ List<WorldLayout::RegionWeighting> WorldLayout::getWeighting(int x, int y) const
     if (layer.cells.empty())
       return;
 
-    size_t innerCellIndex;
-    int innerCellXValue;
-    tie(innerCellIndex, innerCellXValue) = findContainingCell(layer, x);
+    auto [innerCellIndex, innerCellXValue] = findContainingCell(layer, x);
     float innerCellWeight = cellWeighting(layer, innerCellIndex, innerCellXValue);
 
-    size_t leftCellIndex;
-    int leftCellXValue;
-    tie(leftCellIndex, leftCellXValue) = leftCell(layer, innerCellIndex, innerCellXValue);
+    auto [leftCellIndex, leftCellXValue] = leftCell(layer, innerCellIndex, innerCellXValue);
     float leftCellWeight = cellWeighting(layer, leftCellIndex, leftCellXValue);
 
-    size_t rightCellIndex;
-    int rightCellXValue;
-    tie(rightCellIndex, rightCellXValue) = rightCell(layer, innerCellIndex, innerCellXValue);
+    auto [rightCellIndex, rightCellXValue] = rightCell(layer, innerCellIndex, innerCellXValue);
     float rightCellWeight = cellWeighting(layer, rightCellIndex, rightCellXValue);
 
     float totalWeight = innerCellWeight + leftCellWeight + rightCellWeight;
@@ -476,44 +470,44 @@ List<WorldLayout::RegionWeighting> WorldLayout::getWeighting(int x, int y) const
 }
 
 List<RectI> WorldLayout::previewAddBiomeRegion(Vec2I const& position, int width) const {
-  auto layerAndCell = findLayerAndCell(position[0], position[1]);
-  auto targetLayer = m_layers[layerAndCell.first];
-  auto targetRegion = targetLayer.cells[layerAndCell.second];
+  auto [layerIndex, cellIndex] = findLayerAndCell(position[0], position[1]);
+  auto targetLayer = m_layers[layerIndex];
+  auto targetRegion = targetLayer.cells[cellIndex];
 
   int insertX = position[0] > 0 ? position[0] : 1;
 
   // need a dummy region to expand
   std::shared_ptr<WorldRegion> dummyRegion;
 
-  targetLayer.boundaries.insertAt(layerAndCell.second, insertX);
-  targetLayer.cells.insertAt(layerAndCell.second, dummyRegion);
+  targetLayer.boundaries.insertAt(cellIndex, insertX);
+  targetLayer.cells.insertAt(cellIndex, dummyRegion);
 
-  targetLayer.boundaries.insertAt(layerAndCell.second, insertX - 1);
-  targetLayer.cells.insertAt(layerAndCell.second, targetRegion);
+  targetLayer.boundaries.insertAt(cellIndex, insertX - 1);
+  targetLayer.cells.insertAt(cellIndex, targetRegion);
 
-  auto expandResult = expandRegionInLayer(targetLayer, layerAndCell.second + 1, width);
+  auto [_, expandedRegions] = expandRegionInLayer(targetLayer, cellIndex + 1, width);
 
-  return expandResult.second;
+  return expandedRegions;
 }
 
 List<RectI> WorldLayout::previewExpandBiomeRegion(Vec2I const& position, int width) const {
-  auto layerAndCell = findLayerAndCell(position[0], position[1]);
-  auto targetLayer = m_layers[layerAndCell.first];
+  auto [layerIndex, cellIndex] = findLayerAndCell(position[0], position[1]);
+  auto targetLayer = m_layers[layerIndex];
 
-  auto expandResult = expandRegionInLayer(targetLayer, layerAndCell.second, width);
+  auto [_, expandedRegions] = expandRegionInLayer(targetLayer, cellIndex, width);
 
-  return expandResult.second;
+  return expandedRegions;
 }
 
 String WorldLayout::setLayerEnvironmentBiome(Vec2I const& position) {
-  auto layerAndCell = findLayerAndCell(position[0], position[1]);
-  auto targetLayer = m_layers[layerAndCell.first];
-  auto targetBiomeIndex = targetLayer.cells[layerAndCell.second]->blockBiomeIndex;
+  auto [layerIndex, cellIndex] = findLayerAndCell(position[0], position[1]);
+  auto targetLayer = m_layers[layerIndex];
+  auto targetBiomeIndex = targetLayer.cells[cellIndex]->blockBiomeIndex;
 
   for (auto& cell : targetLayer.cells)
     cell->environmentBiomeIndex = targetBiomeIndex;
 
-  m_layers[layerAndCell.first] = targetLayer;
+  m_layers[layerIndex] = targetLayer;
 
   return getBiome(targetBiomeIndex)->baseName;
 }
@@ -526,11 +520,11 @@ void WorldLayout::addBiomeRegion(
   String const& subBlockSelector,
   int width) {
 
-  auto layerAndCell = findLayerAndCell(position[0], position[1]);
+  auto [layerIndex, cellIndex] = findLayerAndCell(position[0], position[1]);
 
-  // Logger::info("inserting biome {} into region with layerIndex {} cellIndex {}", biomeName, layerAndCell.first, layerAndCell.second);
+  // Logger::info("inserting biome {} into region with layerIndex {} cellIndex {}", biomeName, layerIndex, cellIndex);
 
-  auto targetLayer = m_layers[layerAndCell.first];
+  auto targetLayer = m_layers[layerIndex];
 
   // do this annoying dance to figure out which terrestrial layer we're in, so
   // we can extract the base height
@@ -547,7 +541,7 @@ void WorldLayout::addBiomeRegion(
   checkLayer(terrestrialParameters.spaceLayer);
 
   // build a new region using the biomeName and the parameters from the target region
-  auto targetRegion = targetLayer.cells[layerAndCell.second];
+  auto targetRegion = targetLayer.cells[cellIndex];
 
   WorldRegion newRegion;
   newRegion.terrainSelectorIndex = targetRegion->terrainSelectorIndex;
@@ -586,30 +580,30 @@ void WorldLayout::addBiomeRegion(
   int insertX = position[0] > 0 ? position[0] : 1;
 
   // insert the new region boundary
-  targetLayer.boundaries.insertAt(layerAndCell.second, insertX);
-  targetLayer.cells.insertAt(layerAndCell.second, newRegionPtr);
+  targetLayer.boundaries.insertAt(cellIndex, insertX);
+  targetLayer.cells.insertAt(cellIndex, newRegionPtr);
 
   // insert the left side of the (now split) target region
-  targetLayer.boundaries.insertAt(layerAndCell.second, insertX - 1);
-  targetLayer.cells.insertAt(layerAndCell.second, targetRegion);
+  targetLayer.boundaries.insertAt(cellIndex, insertX - 1);
+  targetLayer.cells.insertAt(cellIndex, targetRegion);
 
   // Logger::info("boundaries after region insertion are {}", targetLayer.boundaries);
 
   // expand the cell to the desired size
-  auto expandResult = expandRegionInLayer(targetLayer, layerAndCell.second + 1, width);
+  auto [expandedLayer, _] = expandRegionInLayer(targetLayer, cellIndex + 1, width);
 
   // update the layer in the template
-  m_layers[layerAndCell.first] = expandResult.first;
+  m_layers[layerIndex] = expandedLayer;
 }
 
 void WorldLayout::expandBiomeRegion(Vec2I const& position, int newWidth) {
-  auto layerAndCell = findLayerAndCell(position[0], position[1]);
+  auto [layerIndex, cellIndex] = findLayerAndCell(position[0], position[1]);
 
-  auto targetLayer = m_layers[layerAndCell.first];
+  auto targetLayer = m_layers[layerIndex];
 
-  auto expandResult = expandRegionInLayer(targetLayer, layerAndCell.second, newWidth);
+  auto [expandedLayer, _] = expandRegionInLayer(targetLayer, cellIndex, newWidth);
 
-  m_layers[layerAndCell.first] = expandResult.first;
+  m_layers[layerIndex] = expandedLayer;
 }
 
 pair<size_t, size_t> WorldLayout::findLayerAndCell(int x, int y) const {

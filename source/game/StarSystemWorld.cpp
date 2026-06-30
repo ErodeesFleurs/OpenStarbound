@@ -221,9 +221,9 @@ float SystemWorld::planetSize(CelestialCoordinate const& coordinate) const {
         if (auto s = m_config.floatingDungeonWorldSizes.maybe(visitableParameters->typeName))
           return *s;
       }
-      for (auto s : m_config.planetSizes) {
-        if (visitableParameters->worldSize[0] >= s.first)
-          size = s.second;
+      for (auto [minimumWorldSize, worldSize] : m_config.planetSizes) {
+        if (visitableParameters->worldSize[0] >= minimumWorldSize)
+          size = worldSize;
         else
           break;
       }

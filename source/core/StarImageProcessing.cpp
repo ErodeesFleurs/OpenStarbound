@@ -28,8 +28,8 @@ StringList colorDirectivesFromConfig(JsonArray const& directives) {
 
 String paletteSwapDirectivesFromConfig(Json const& swaps) {
   ColorReplaceImageOperation paletteSwaps;
-  for (auto const& swap : swaps.iterateObject())
-    paletteSwaps.colorReplaceMap[Color::fromHex(swap.first).toRgba()] = Color::fromHex(swap.second.toString()).toRgba();
+  for (auto const& [sourceColor, replacementColor] : swaps.iterateObject())
+    paletteSwaps.colorReplaceMap[Color::fromHex(sourceColor).toRgba()] = Color::fromHex(replacementColor.toString()).toRgba();
   return "?" + imageOperationToString(paletteSwaps);
 }
 

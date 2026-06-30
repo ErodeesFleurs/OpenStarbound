@@ -81,7 +81,11 @@ private:
   ElementMap m_idMap = ElementMap(1, highest<ElementId>());
   function<ElementPtr()> m_elementFactory = []() { return make_shared<Element>(); };
 
-  Deque<pair<uint64_t, ElementChange>> m_changeData;
+  struct VersionedElementChange {
+    uint64_t version;
+    ElementChange change;
+  };
+  Deque<VersionedElementChange> m_changeData;
   uint64_t m_changeDataLastVersion = 0;
 
   mutable DataStreamBuffer m_buffer;
@@ -224,8 +228,9 @@ bool NetElementDynamicGroup<Element>::writeNetDelta(DataStream& ds, uint64_t fro
       }
     };
 
-    for (auto const& [version, change] : m_changeData) {
-      if (version >= fromVersion) {
+    for (auto const& changeData : m_changeData) {
+      if (changeData.version >= fromVersion) {
+        auto const& change = changeData.change;
         if (ElementAddition const* elementAddition = change.template ptr<ElementAddition>()) {
           ElementId id = elementAddition->first;
           if (shared_ptr<Element> const* element = m_idMap.ptr(id)) {
@@ -280,11 +285,12 @@ void NetElementDynamicGroup<Element>::readNetDelta(DataStream& ds, float interpo
         if (changeUpdate.template is<ElementReset>()) {
           m_idMap.clear();
         } else if (auto addition = changeUpdate.template ptr<ElementAddition>()) {
+          auto& [elementId, elementData] = *addition;
           ElementPtr element = m_elementFactory();
-          DataStreamBuffer storeBuffer(std::move(get<1>(*addition)));
+          DataStreamBuffer storeBuffer(std::move(elementData));
           element->netLoad(storeBuffer, rules);
           readyElement(element);
-          m_idMap.add(get<0>(*addition), std::move(element));
+          m_idMap.add(elementId, std::move(element));
         } else if (auto removal = changeUpdate.template ptr<ElementRemoval>()) {
           m_idMap.remove(*removal);
         }
@@ -319,12 +325,12 @@ void NetElementDynamicGroup<Element>::blankNetDelta(float interpolationTime) {
 template <typename Element>
 void NetElementDynamicGroup<Element>::addChangeData(ElementChange change) {
   uint64_t currentVersion = m_netVersion ? m_netVersion->current() : 0;
-  starAssert(m_changeData.empty() || m_changeData.last().first <= currentVersion);
+  starAssert(m_changeData.empty() || m_changeData.last().version <= currentVersion);
 
-  m_changeData.append({currentVersion, std::move(change)});
+  m_changeData.append(VersionedElementChange{currentVersion, std::move(change)});
 
   m_changeDataLastVersion = max<int64_t>(static_cast<int64_t>(currentVersion) - MaxChangeDataVersions, 0);
-  while (!m_changeData.empty() && m_changeData.first().first < m_changeDataLastVersion)
+  while (!m_changeData.empty() && m_changeData.first().version < m_changeDataLastVersion)
     m_changeData.removeFirst();
 }
 

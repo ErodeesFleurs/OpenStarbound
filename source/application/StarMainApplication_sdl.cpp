@@ -1142,8 +1142,8 @@ private:
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
         starEvent.set(ControllerButtonUpEvent{static_cast<ControllerId>(event.gbutton.which), controllerButtonFromSdlControllerButton(event.gbutton.button)});
       } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
-        auto insertion = m_SdlControllers.insert_or_assign(event.gdevice.which, SDLGameControllerUPtr(SDL_OpenGamepad(event.gdevice.which), SDL_CloseGamepad));
-        if (SDL_Gamepad* controller = insertion.first->second.get())
+        auto [controllerIt, _] = m_SdlControllers.insert_or_assign(event.gdevice.which, SDLGameControllerUPtr(SDL_OpenGamepad(event.gdevice.which), SDL_CloseGamepad));
+        if (SDL_Gamepad* controller = controllerIt->second.get())
           Logger::info("Controller device '{}' added", SDL_GetGamepadName(controller));
       } else if (event.type == SDL_EVENT_GAMEPAD_REMOVED) {
         auto find = m_SdlControllers.find(event.gdevice.which);

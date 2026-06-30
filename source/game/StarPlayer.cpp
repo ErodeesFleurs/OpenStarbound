@@ -389,8 +389,8 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
       scriptContext->init(*world);
     }
 
-    for (auto& p : m_inventory->pullOverflow()) {
-      world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true, m_assets, m_itemDatabase));
+    for (auto& overflowItem : m_inventory->pullOverflow()) {
+      world->addEntity(ItemDrop::createRandomizedDrop(overflowItem, m_movementController->position(), true, m_assets, m_itemDatabase));
     }
 
     setNetArmorSecrets();
@@ -817,7 +817,7 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
       trackList = jsonToStringList(args.get(0).toArray());
     else
       trackList = StringList();
-    m_narrativeQueue->setPendingAltMusic(make_pair(trackList, loops), fadeTime);
+    m_narrativeQueue->setPendingAltMusic(pair<StringList, int>{trackList, loops}, fadeTime);
   } else if (message == "stopAltMusic") {
     float fadeTime = 0;
     if (!args.empty())

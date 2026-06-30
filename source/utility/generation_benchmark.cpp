@@ -14,9 +14,7 @@ int main(int argc, char** argv) {
     rootLoader.addParameter("regionsize", "size", OptionParser::Optional, "width / height of each generation region, default 10");
     rootLoader.addParameter("reportevery", "report regions", OptionParser::Optional, "number of generation regions before each progress report, default 20");
 
-    UniquePtr<Root> root;
-    OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    auto [root, options] = rootLoader.commandInitOrDie(argc, argv);
 
     coutf("Fully loading root...");
     root->fullyLoad();

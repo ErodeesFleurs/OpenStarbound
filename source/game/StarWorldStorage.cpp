@@ -136,14 +136,14 @@ SectorLoadLevel WorldStorage::sectorLoadLevel(Sector sector) const {
 }
 
 Maybe<SectorGenerationLevel> WorldStorage::sectorGenerationLevel(Sector sector) const {
-  if (auto p = m_sectorMetadata.ptr(sector))
-    return p->generationLevel;
+  if (auto sectorMetadata = m_sectorMetadata.ptr(sector))
+    return sectorMetadata->generationLevel;
   return {};
 }
 
 bool WorldStorage::sectorActive(Sector sector) const {
-  if (auto p = m_sectorMetadata.ptr(sector)) {
-    if (p->loadLevel == SectorLoadLevel::Loaded && p->generationLevel == SectorGenerationLevel::Complete)
+  if (auto sectorMetadata = m_sectorMetadata.ptr(sector)) {
+    if (sectorMetadata->loadLevel == SectorLoadLevel::Loaded && sectorMetadata->generationLevel == SectorGenerationLevel::Complete)
       return true;
   }
   return false;
@@ -172,10 +172,10 @@ void WorldStorage::activateSector(Sector sector) {
 }
 
 void WorldStorage::queueSectorActivation(Sector sector) {
-  if (auto p = m_sectorMetadata.ptr(sector)) {
-    p->timeToLive = randomizedSectorTTL();
+  if (auto sectorMetadata = m_sectorMetadata.ptr(sector)) {
+    sectorMetadata->timeToLive = randomizedSectorTTL();
     // Don't bother queueing the sector if it is already fully loaded
-    if (p->loadLevel == SectorLoadLevel::Loaded && p->generationLevel == SectorGenerationLevel::Complete)
+    if (sectorMetadata->loadLevel == SectorLoadLevel::Loaded && sectorMetadata->generationLevel == SectorGenerationLevel::Complete)
       return;
   }
 
@@ -186,11 +186,11 @@ void WorldStorage::queueSectorActivation(Sector sector) {
 void WorldStorage::triggerTerraformSector(Sector sector) {
   try {
     loadSectorToLevel(sector, SectorLoadLevel::Loaded);
-    if (auto p = m_sectorMetadata.ptr(sector)) {
-      if (p->generationLevel < SectorGenerationLevel::Complete)
+    if (auto sectorMetadata = m_sectorMetadata.ptr(sector)) {
+      if (sectorMetadata->generationLevel < SectorGenerationLevel::Complete)
         generateSectorToLevel(sector, SectorGenerationLevel::Complete);
 
-      p->generationLevel = SectorGenerationLevel::Terraform;
+      sectorMetadata->generationLevel = SectorGenerationLevel::Terraform;
     } else {
       throw WorldStorageException(strf("Couldn't flag sector {} for terraforming; metadata unavailable", sector));
     }
@@ -206,14 +206,14 @@ RpcPromise<Vec2I> WorldStorage::enqueuePlacement(List<BiomeItemDistribution> dis
 }
 
 Maybe<float> WorldStorage::sectorTimeToLive(Sector sector) const {
-  if (auto p = m_sectorMetadata.ptr(sector))
-    return p->timeToLive;
+  if (auto sectorMetadata = m_sectorMetadata.ptr(sector))
+    return sectorMetadata->timeToLive;
   return {};
 }
 
 bool WorldStorage::setSectorTimeToLive(Sector sector, float newTimeToLive) {
-  if (auto p = m_sectorMetadata.ptr(sector)) {
-    p->timeToLive = newTimeToLive;
+  if (auto sectorMetadata = m_sectorMetadata.ptr(sector)) {
+    sectorMetadata->timeToLive = newTimeToLive;
     return true;
   }
   return false;
@@ -556,20 +556,22 @@ ByteArray WorldStorage::uniqueIndexKey(String const& uniqueId) {
 WorldStorage::UniqueIndexStore WorldStorage::readUniqueIndexStore(ByteArray const& data) {
   return DataStreamBuffer::deserializeMapContainer<UniqueIndexStore>(uncompressData(data),
       [](DataStream& ds, String& key, SectorAndPosition& value) {
+        auto& [sector, position] = value;
         ds.read(key);
-        ds.cread<uint16_t>(value.first[0]);
-        ds.cread<uint16_t>(value.first[1]);
-        ds.read(value.second);
+        ds.cread<uint16_t>(sector[0]);
+        ds.cread<uint16_t>(sector[1]);
+        ds.read(position);
       });
 }
 
 ByteArray WorldStorage::writeUniqueIndexStore(UniqueIndexStore const& store) {
   return compressData(DataStreamBuffer::serializeMapContainer(store,
       [](DataStream& ds, String const& key, SectorAndPosition const& value) {
+        auto const& [sector, position] = value;
         ds.write(key);
-        ds.cwrite<uint16_t>(value.first[0]);
-        ds.cwrite<uint16_t>(value.first[1]);
-        ds.write(value.second);
+        ds.cwrite<uint16_t>(sector[0]);
+        ds.cwrite<uint16_t>(sector[1]);
+        ds.write(position);
       }));
 }
 
@@ -750,8 +752,8 @@ bool WorldStorage::unloadSectorToLevel(Sector const& sector, SectorLoadLevel tar
       auto position = entity->position();
       if (!belongsInSector(sector, position)) {
         if (auto entitySector = sectorForPosition(Vec2I(position))) {
-          if (auto p = m_sectorMetadata.ptr(*entitySector))
-            entitiesOverlap |= p->timeToLive > 0.0f;
+          if (auto sectorMetadata = m_sectorMetadata.ptr(*entitySector))
+            entitiesOverlap |= sectorMetadata->timeToLive > 0.0f;
         }
         continue;
       }

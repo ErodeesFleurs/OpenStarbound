@@ -123,7 +123,9 @@ ParametricTable<IndexType, ValueType>::ParametricTable(PairContainer indexValueP
 
   sort(indexValuePairs,
       [](typename PairContainer::value_type const& a, typename PairContainer::value_type const& b) {
-        return std::get<0>(a) < std::get<0>(b);
+        auto const& [indexA, valueA] = a;
+        auto const& [indexB, valueB] = b;
+        return indexA < indexB;
       });
 
   m_indexes.reserve(indexValuePairs.size());

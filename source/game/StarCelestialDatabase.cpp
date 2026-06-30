@@ -337,9 +337,9 @@ List<pair<Vec2I, Vec2I>> CelestialMasterDatabase::scanConstellationLines(RectI c
   for (auto const& chunkLocation : chunkIndexesFor(region)) {
     auto const& chunkData = getChunk(chunkLocation);
     for (auto const& constellation : chunkData.constellations) {
-      for (auto const& line : constellation) {
-        if (region.intersects(Line2I(line.first, line.second)))
-          lines.append(line);
+      for (auto const& [lineStart, lineEnd] : constellation) {
+        if (region.intersects(Line2I(lineStart, lineEnd)))
+          lines.append({lineStart, lineEnd});
       }
     }
   }
@@ -454,10 +454,11 @@ CelestialChunk CelestialMasterDatabase::produceChunk(Vec2I const& chunkIndex) co
   List<Vec2I> constellationCandidates;
   for (auto const& systemLocation : systemLocations) {
     if (auto systemInformation = produceSystem(random, systemLocation)) {
-      chunkData.systemParameters[systemLocation] = systemInformation.get().first;
-      chunkData.systemObjects[systemLocation] = std::move(systemInformation.get().second);
+      auto& [systemParameters, systemObjects] = systemInformation.get();
+      chunkData.systemParameters[systemLocation] = systemParameters;
+      chunkData.systemObjects[systemLocation] = std::move(systemObjects);
 
-      if (systemInformation.get().first.getParameter("magnitude").toFloat()
+      if (systemParameters.getParameter("magnitude").toFloat()
           >= m_generationInformation.minimumConstellationMagnitude)
         constellationCandidates.append(systemLocation.vec2());
     }
@@ -507,8 +508,8 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
   }
 
   HashMap<int, CelestialPlanet> systemObjects;
-  for (auto planetPair : enumerateIterator(planetaryOrbits)) {
-    auto systemOrbitRegion = orbitRegion(systemType.orbitRegions, planetPair.first);
+  for (auto [planetaryOrbit, planetIndex] : enumerateIterator(planetaryOrbits)) {
+    auto systemOrbitRegion = orbitRegion(systemType.orbitRegions, planetaryOrbit);
 
     auto planetaryTypeName = systemOrbitRegion->planetaryTypes.select(random);
     if (m_generationInformation.planetaryTypes.contains(planetaryTypeName)) {
@@ -516,9 +517,9 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
       auto planetaryParameters =
         jsonMerge(planetaryType.baseParameters, random.randValueFrom(planetaryType.variationParameters));
 
-      CelestialCoordinate planetCoordinate(location, planetPair.first);
+      CelestialCoordinate planetCoordinate(location, planetaryOrbit);
       uint64_t planetarySeed = random.randu64();
-      String planetaryName = strf("{} {}", systemName, m_generationInformation.planetarySuffixes.at(planetPair.second));
+      String planetaryName = strf("{} {}", systemName, m_generationInformation.planetarySuffixes.at(planetIndex));
 
       CelestialPlanet planet;
       planet.planetParameters =
@@ -531,7 +532,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
           satelliteOrbits.append(i);
       }
 
-      for (auto satellitePair : enumerateIterator(satelliteOrbits)) {
+      for (auto [satelliteOrbit, satelliteIndex] : enumerateIterator(satelliteOrbits)) {
         auto satelliteTypeName = systemOrbitRegion->satelliteTypes.select(random);
         if (m_generationInformation.satelliteTypes.contains(satelliteTypeName)) {
           auto satelliteType = m_generationInformation.satelliteTypes.get(satelliteTypeName);
@@ -540,17 +541,17 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
                                                random.randValueFrom(
                                                  satelliteType.orbitParameters.value(systemOrbitRegion->regionName, JsonArray()).toArray()));
 
-          CelestialCoordinate satelliteCoordinate(location, planetPair.first, satellitePair.first);
+          CelestialCoordinate satelliteCoordinate(location, planetaryOrbit, satelliteOrbit);
           uint64_t satelliteSeed = random.randu64();
           String satelliteName =
-            strf("{} {}", planetaryName, m_generationInformation.satelliteSuffixes.at(satellitePair.second));
+            strf("{} {}", planetaryName, m_generationInformation.satelliteSuffixes.at(satelliteIndex));
 
-          planet.satelliteParameters[satellitePair.first] =
+          planet.satelliteParameters[satelliteOrbit] =
             CelestialParameters(satelliteCoordinate, satelliteSeed, satelliteName, satelliteParameters, m_assets, m_liquidsDatabase, m_biomeDatabase);
         }
       }
 
-      systemObjects[planetPair.first] = std::move(planet);
+      systemObjects[planetaryOrbit] = std::move(planet);
     }
   }
 
@@ -747,8 +748,8 @@ Maybe<CelestialParameters> CelestialSlaveDatabase::parameters(CelestialCoordinat
 }
 
 Maybe<String> CelestialSlaveDatabase::name(CelestialCoordinate const& coordinate) {
-  if (auto p = parameters(coordinate))
-    return p->name();
+  if (auto celestialParameters = parameters(coordinate))
+    return celestialParameters->name();
   return {};
 }
 
@@ -831,9 +832,9 @@ List<pair<Vec2I, Vec2I>> CelestialSlaveDatabase::scanConstellationLines(RectI co
   for (auto const& chunkLocation : chunkIndexesFor(region)) {
     if (auto chunkData = m_chunkCache.ptr(chunkLocation)) {
       for (auto const& constellation : chunkData->constellations) {
-        for (auto const& line : constellation) {
-          if (region.intersects(Line2I(line.first, line.second)))
-            lines.append(line);
+        for (auto const& [lineStart, lineEnd] : constellation) {
+          if (region.intersects(Line2I(lineStart, lineEnd)))
+            lines.append({lineStart, lineEnd});
         }
       }
     }

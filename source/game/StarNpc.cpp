@@ -194,8 +194,8 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
   if (isMaster()) {
     m_movementController->resetAnchorState();
 
-    for (auto const& item : m_npcVariant.items)
-      setItemSlot(item.first, item.second);
+    for (auto const& [itemSlot, item] : m_npcVariant.items)
+      setItemSlot(itemSlot, item);
     m_scriptComponent.addCallbacks("npc", makeNpcCallbacks());
     m_scriptComponent.addCallbacks("config",
                                    LuaBindings::makeConfigCallbacks([this](String const& name, Json const& def) { return m_npcVariant.scriptConfig.query(name, def); }));
@@ -514,9 +514,9 @@ void Npc::render(RenderCallback* renderCallback) {
   DirectivesGroup humanoidDirectives;
   Vec2F scale = Vec2F::filled(1.f);
   for (auto& directives : m_statusController->parentDirectives().list()) {
-    auto result = Humanoid::extractScaleFromDirectives(directives);
-    scale = scale.piecewiseMultiply(result.first);
-    humanoidDirectives.append(result.second);
+    auto [directivesScale, strippedDirectives] = Humanoid::extractScaleFromDirectives(directives);
+    scale = scale.piecewiseMultiply(directivesScale);
+    humanoidDirectives.append(strippedDirectives);
   }
   humanoid()->setScale(scale);
 

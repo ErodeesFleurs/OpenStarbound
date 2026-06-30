@@ -195,7 +195,7 @@ WorldStructure::WorldStructure(Json const& store) {
   m_flaggedBlocks = transform<StringMap<List<Vec2I>>>(store.getObject("flaggedBlocks"),
       [](pair<String, Json> const& flaggedBlockEntry) {
         auto const& [flagName, positionsJson] = flaggedBlockEntry;
-        return make_pair(flagName, positionsJson.toArray().transformed(jsonToVec2I));
+        return pair<String, List<Vec2I>>{flagName, positionsJson.toArray().transformed(jsonToVec2I)};
       });
 }
 

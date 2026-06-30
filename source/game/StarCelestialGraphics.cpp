@@ -178,9 +178,9 @@ List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParame
       StringList planetMaskListR;
       for (auto m : masks) {
         String base = maskTextures.replace("<mask>", toString(m));
-        auto lr = getLR(base);
-        planetMaskListL.append(lr.first);
-        planetMaskListR.append(lr.second);
+        auto [leftMaskTexture, rightMaskTexture] = getLR(base);
+        planetMaskListL.append(leftMaskTexture);
+        planetMaskListR.append(rightMaskTexture);
       }
 
       String leftMask, rightMask;
@@ -189,8 +189,8 @@ List<pair<String, String>> CelestialGraphics::worldHorizonImages(CelestialParame
       if (!planetMaskListR.empty())
         rightMask = "?" + imageOperationToString(AlphaMaskImageOperation{AlphaMaskImageOperation::Additive, planetMaskListR, {0, 0}});
 
-      auto toAppend = getLR(baseImages + biomeHueShift);
-      res.append({toAppend.first + leftMask, toAppend.second + rightMask});
+      auto [leftBaseImage, rightBaseImage] = getLR(baseImages + biomeHueShift);
+      res.append({leftBaseImage + leftMask, rightBaseImage + rightMask});
     } else {
       res.append(getLR(baseImages + biomeHueShift));
     }

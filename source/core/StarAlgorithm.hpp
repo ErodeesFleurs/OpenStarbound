@@ -75,12 +75,8 @@ decltype(auto) compose(FirstFunction firstFunction, SecondFunction secondFunctio
 
 template <typename Container, typename Value, typename Function>
 Value fold(Container const& l, Value v, Function f) {
-  auto i = l.begin();
-  auto e = l.end();
-  while (i != e) {
-    v = f(v, *i);
-    ++i;
-  }
+  for (auto const& element : l)
+    v = f(v, element);
   return v;
 }
 
@@ -114,12 +110,12 @@ Container intersect(Container const& a, Container const& b) {
 template <typename MapType1, typename MapType2>
 bool mapMerge(MapType1& targetMap, MapType2 const& sourceMap, bool overwrite = false) {
   bool noCommonKeys = true;
-  for (auto i = sourceMap.begin(); i != sourceMap.end(); ++i) {
-    auto [targetIt, inserted] = targetMap.insert(*i);
+  for (auto const& entry : sourceMap) {
+    auto [targetIt, inserted] = targetMap.insert(entry);
     if (!inserted) {
       noCommonKeys = false;
       if (overwrite)
-        targetIt->second = i->second;
+        targetIt->second = entry.second;
     }
   }
   return noCommonKeys;

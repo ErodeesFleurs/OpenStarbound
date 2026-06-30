@@ -57,12 +57,12 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
   Font* font = getFontForCharacter(c);
   if (font == m_emojiFont.get())
     processingDirectives = nullptr;
-  auto res = m_glyphs.insert(GlyphDescriptor{c, size, processingDirectives ? processingDirectives->hash() : 0, font}, GlyphTexture());
-  auto& glyphTexture = res.first->second;
-  if (res.second) {
+  auto [entry, inserted] = m_glyphs.insert(GlyphDescriptor{c, size, processingDirectives ? processingDirectives->hash() : 0, font}, GlyphTexture());
+  auto& glyphTexture = entry->second;
+  if (inserted) {
     font->setPixelSize(size);
     auto renderResult = font->render(c);
-    Image& image = get<0>(renderResult);
+    auto& [image, renderOffset, colored] = renderResult;
     if (processingDirectives) {
       Directives const& directives = *processingDirectives;
       Vec2F preSize = Vec2F(image.size());
@@ -102,8 +102,8 @@ const FontTextureGroup::GlyphTexture& FontTextureGroup::glyphTexture(String::Cha
       glyphTexture.offset = (preSize - Vec2F(image.size())) / 2;
     }
 
-    glyphTexture.colored |= get<2>(renderResult);
-    glyphTexture.offset += Vec2F(get<1>(renderResult));
+    glyphTexture.colored |= colored;
+    glyphTexture.offset += Vec2F(renderOffset);
     glyphTexture.texture = m_textureGroup->create(image);
   }
 

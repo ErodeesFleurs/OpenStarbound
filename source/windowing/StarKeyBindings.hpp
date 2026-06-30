@@ -109,9 +109,14 @@ public:
   Set<InterfaceAction> actionsForKey(Key key) const;
 
 private:
+  struct KeyBindingAction {
+    KeyMod requiredMods;
+    InterfaceAction action;
+  };
+
   // Maps the primary key to a list of InterfaceActions, and any mods that they
   // require to be held.
-  Map<Key, List<pair<KeyMod, InterfaceAction>>> m_actions;
+  Map<Key, List<KeyBindingAction>> m_actions;
 };
 
 }

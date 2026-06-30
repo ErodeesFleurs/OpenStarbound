@@ -145,7 +145,7 @@ String printInputDescriptor(KeyChord chord) {
 KeyBindings::KeyBindings() = default;
 
 KeyBindings::KeyBindings(Json const& json) {
-  Map<Key, List<pair<KeyMod, InterfaceAction>>> actions;
+  Map<Key, List<KeyBindingAction>> actions;
   try {
     for (auto const& [actionName, inputs] : json.iterateObject()) {
       InterfaceAction action = InterfaceActionNames.getLeft(actionName);
@@ -153,7 +153,7 @@ KeyBindings::KeyBindings(Json const& json) {
       for (auto const& input : inputs.iterateArray()) {
         try {
           auto chord = inputDescriptorFromJson(input);
-          actions[chord.key].append({chord.mods, action});
+          actions[chord.key].append(KeyBindingAction{chord.mods, action});
         } catch (StarException const& e) {
           Logger::warn("Could not load keybinding for {}: {}\n",
               InterfaceActionNames.getRight(action),
@@ -181,13 +181,13 @@ Set<InterfaceAction> KeyBindings::actions(InputEvent const& event) const {
 Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
   size_t mostMatchedMods = 0;
   Set<InterfaceAction> matching;
-  for (auto const& [bindingMods, action] : m_actions.value(chord.key)) {
+  for (auto const& bindingAction : m_actions.value(chord.key)) {
     // first make sure that all required mods for the binding are held
-    if ((bindingMods & chord.mods) == bindingMods) {
+    if ((bindingAction.requiredMods & chord.mods) == bindingAction.requiredMods) {
       // now count the number of mods in the binding
       size_t matchedMods = 0;
       for (auto mod : KeyChordMods.values()) {
-        if ((mod & bindingMods) == mod)
+        if ((mod & bindingAction.requiredMods) == mod)
           ++matchedMods;
       }
 
@@ -198,7 +198,7 @@ Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
 
       // only activate the binding(s) with the most mods
       if (matchedMods == mostMatchedMods)
-        matching.add(action);
+        matching.add(bindingAction.action);
     }
   }
   return matching;
@@ -206,8 +206,7 @@ Set<InterfaceAction> KeyBindings::actions(KeyChord chord) const {
 
 Set<InterfaceAction> KeyBindings::actionsForKey(Key key) const {
   return Set<InterfaceAction>::from(m_actions.value(key).transformed([](auto const& actionEntry) {
-    auto const& [source, action] = actionEntry;
-    return action;
+    return actionEntry.action;
   }));
 }
 

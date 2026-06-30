@@ -122,7 +122,11 @@ private:
   Maybe<String> m_formatting;
 
   Maybe<ElementLocation> m_lastKey, m_lastValue;
-  Map<String, pair<ElementLocation, ElementLocation>> m_objectEntryLocations;
+  struct ObjectEntryLocation {
+    ElementLocation key;
+    ElementLocation value;
+  };
+  Map<String, ObjectEntryLocation> m_objectEntryLocations;
   List<ElementLocation> m_arrayElementLocations;
 };
 

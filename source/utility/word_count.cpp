@@ -14,9 +14,7 @@ int main(int argc, char** argv) {
 
     rootLoader.setSummary("Calculate a (very approximate) word count of user-facing text in assets");
 
-    UniquePtr<Root> root;
-    OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    auto [root, options] = rootLoader.commandInitOrDie(argc, argv);
 
     StringMap<int> wordCounts;
     auto assets = root->assets();
@@ -100,8 +98,8 @@ int main(int argc, char** argv) {
 
     countWordsInType("radiomessages", [](Json const& json) {
         auto wordCount = 0;
-        for (auto messageConfigPair : json.iterateObject())
-          wordCount += messageConfigPair.second.getString("text", "").split(" ").count();
+        for (auto [_, messageConfig] : json.iterateObject())
+          wordCount += messageConfig.getString("text", "").split(" ").count();
         return wordCount;
       });
 
@@ -109,8 +107,8 @@ int main(int argc, char** argv) {
     countOnlyStrings = [&](Json const& json) {
       int wordCount = 0;
       if (json.isType(Json::Type::Object)) {
-        for (auto entry : json.iterateObject())
-          wordCount += countOnlyStrings(entry.second);
+        for (auto [_, value] : json.iterateObject())
+          wordCount += countOnlyStrings(value);
       } else if (json.isType(Json::Type::Array)) {
         for (auto entry : json.iterateArray())
           wordCount += countOnlyStrings(entry);
@@ -143,8 +141,8 @@ int main(int argc, char** argv) {
 
     countWordsInType("collection", [&](Json const& json) {
         int wordCount = 0;
-        for (auto entry : json.get("collectables", Json()).iterateObject())
-          wordCount += entry.second.getString("description", "").split(" ").count();
+        for (auto [_, collectable] : json.get("collectables", Json()).iterateObject())
+          wordCount += collectable.getString("description", "").split(" ").count();
         return wordCount;
       });
 
@@ -161,10 +159,10 @@ int main(int argc, char** argv) {
 
     countWordsInType("aimission", [&](Json const& json) {
         int wordCount = 0;
-        for (auto entry : json.get("speciesText", Json()).iterateObject()) {
-          wordCount += entry.second.getString("buttonText", "").split(" ").count();
-          wordCount += entry.second.getString("repeatButtonText", "").split(" ").count();
-          if (auto selectSpeech = entry.second.get("selectSpeech"))
+        for (auto [_, speciesText] : json.get("speciesText", Json()).iterateObject()) {
+          wordCount += speciesText.getString("buttonText", "").split(" ").count();
+          wordCount += speciesText.getString("repeatButtonText", "").split(" ").count();
+          if (auto selectSpeech = speciesText.get("selectSpeech"))
             wordCount += selectSpeech.getString("text", "").split(" ").count();
         }
         return wordCount;
@@ -177,9 +175,9 @@ int main(int argc, char** argv) {
     wordCounts["planet descriptions (cockpit.config)"] = cockpitWordCount;
 
     int totalWordCount = 0;
-    for (auto countPair : wordCounts) {
-      coutf("{} words in {}\n", countPair.second, countPair.first);
-      totalWordCount += countPair.second;
+    for (auto [wordCountLabel, wordCount] : wordCounts) {
+      coutf("{} words in {}\n", wordCount, wordCountLabel);
+      totalWordCount += wordCount;
     }
     coutf("approximately {} words total\n", totalWordCount);
 

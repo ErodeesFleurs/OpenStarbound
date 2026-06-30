@@ -119,10 +119,11 @@ LuaCallbacks LuaBindings::makeRootCallbacks(Root& root) {
         auto& patches = descriptor->patchSources;
         auto table = engine.createTable(patches.size(), 0);
         for (auto const& [patch, patchIndex] : enumerateIterator(patches)) {
+          auto const& [patchPath, assetSource] = patch;
           auto patchTable = engine.createTable(2, 0);
-          if (auto sourcePath = assets->assetSourcePath(patch.second))
+          if (auto sourcePath = assets->assetSourcePath(assetSource))
             patchTable.set(1, *sourcePath);
-          patchTable.set(2, patch.first);
+          patchTable.set(2, patchPath);
           table.set(patchIndex + 1, patchTable);
         }
         return table;

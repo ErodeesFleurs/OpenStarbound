@@ -110,7 +110,7 @@ Quest::Quest(AssetsConstPtr assets, Json const& spec, ItemDatabaseConstPtr itemD
   m_parameters = questParamsDiskLoad(diskStore.get("parameters"), m_versioningDatabase);
   m_worldId = diskStore.optString("worldId").apply(parseWorldId);
   m_location = diskStore.opt("location").apply([](Json const& json) {
-    return make_pair(jsonToVec3I(json.get("system")), jsonToSystemLocation(json.get("location")));
+    return pair<Vec3I, SystemLocation>{jsonToVec3I(json.get("system")), jsonToSystemLocation(json.get("location"))};
   });
   m_serverUuid = diskStore.optString("serverUuid").apply(construct<Uuid>());
   m_money = diskStore.getUInt("money");
@@ -655,7 +655,7 @@ LuaCallbacks Quest::makeQuestCallbacks(Player& player) {
     } else {
       Vec3I system = jsonToVec3I(json.get("system"));
       SystemLocation location = jsonToSystemLocation(json.opt("location").value({}));
-      setLocation(make_pair(system, location));
+      setLocation(pair<Vec3I, SystemLocation>{system, location});
     }
   });
 

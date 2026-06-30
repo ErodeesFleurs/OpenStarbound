@@ -124,15 +124,16 @@ List<ProjectilePtr> ServerWeather::pullNewProjectiles() {
 StringList ServerWeather::weatherList() const {
   StringList weatherList;
   weatherList.reserve(m_weatherPool.size());
-  for (auto const& weather : m_weatherPool.items())
-    weatherList.append(weather.second);
+  for (auto const& [_, weatherName] : m_weatherPool.items())
+    weatherList.append(weatherName);
   return weatherList;
 }
 
 void ServerWeather::setWeather(String const& weatherName, bool force) {
   size_t index = NPos;
   for (auto const& [weatherEntry, weatherIndex] : enumerateIterator(m_weatherPool.items())) {
-    if (weatherEntry.second == weatherName) {
+    auto const& [_, candidateWeatherName] = weatherEntry;
+    if (candidateWeatherName == weatherName) {
       index = weatherIndex;
       break;
     }
@@ -203,15 +204,15 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
     // spawning regions, so gather up every left and right edge of a spawn
     // region is a "split point"
     List<int> splitPoints;
-    for (auto const& baseSpawnRegion : baseSpawnRegions) {
-      splitPoints.append(baseSpawnRegion.first[0]);
-      splitPoints.append(baseSpawnRegion.first[1]);
+    for (auto const& [baseRegion, _] : baseSpawnRegions) {
+      splitPoints.append(baseRegion[0]);
+      splitPoints.append(baseRegion[1]);
     }
 
     // Split every spawn region on every split point.
     List<pair<Vec2I, int>> splitSpawnRegions;
-    for (auto const& baseSpawnRegion : baseSpawnRegions) {
-      List<Vec2I> regions = {baseSpawnRegion.first};
+    for (auto const& [baseRegion, spawnHeight] : baseSpawnRegions) {
+      List<Vec2I> regions = {baseRegion};
       for (auto splitPoint : splitPoints) {
         auto prevRegions = take(regions);
         for (auto const& region : prevRegions) {
@@ -224,14 +225,16 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
         }
       }
       for (auto const& region : regions)
-        splitSpawnRegions.append({region, baseSpawnRegion.second});
+        splitSpawnRegions.append({region, spawnHeight});
     }
 
     // Sort the split spawn regions by leftmost point then height, preparing to
     // remove the lower overlapping sections.
     sort(splitSpawnRegions,
-        [](pair<Vec2I, int> const& lhs, pair<Vec2I, int> rhs) {
-          return tie(lhs.first[0], lhs.second) < tie(rhs.first[0], rhs.second);
+        [](pair<Vec2I, int> const& lhs, pair<Vec2I, int> const& rhs) {
+          auto const& [lhsRegion, lhsHeight] = lhs;
+          auto const& [rhsRegion, rhsHeight] = rhs;
+          return tie(lhsRegion[0], lhsHeight) < tie(rhsRegion[0], rhsHeight);
         });
 
     // For each region, at this point, if the region to the right shares the
@@ -241,19 +244,19 @@ void ServerWeather::spawnWeatherProjectiles(float dt) {
     // removed.
     auto sit = makeSMutableIterator(splitSpawnRegions);
     while (sit.hasNext()) {
-      auto const& leftRegion = sit.next();
+      auto const& [leftRegion, _] = sit.next();
       if (sit.hasNext()) {
-        auto const& rightRegion = sit.peekNext();
-        if (leftRegion.first[0] == rightRegion.first[0])
+        auto const& [rightRegion, _] = sit.peekNext();
+        if (leftRegion[0] == rightRegion[0])
           sit.remove();
       }
     }
 
-    for (auto const& spawnRegion : splitSpawnRegions) {
-      RectF spawnRect = RectF(spawnRegion.first[0],
-          spawnRegion.second,
-          spawnRegion.first[1],
-          spawnRegion.second + projectileConfig.spawnAboveRegion);
+    for (auto const& [spawnRegion, spawnHeight] : splitSpawnRegions) {
+      RectF spawnRect = RectF(spawnRegion[0],
+          spawnHeight,
+          spawnRegion[1],
+          spawnHeight + projectileConfig.spawnAboveRegion);
 
       // Figure out a good target value based on the rate per x tile, making
       // sure to handle very low count values appropriately on average.

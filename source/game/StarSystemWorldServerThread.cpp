@@ -34,9 +34,9 @@ void SystemWorldServerThread::addClient(ConnectionId clientId, Uuid const& uuid,
 
   m_systemWorld->addClientShip(clientId, uuid, shipSpeed, location);
 
-  m_clientShipLocations.set(clientId, {m_systemWorld->clientShipLocation(clientId), m_systemWorld->clientSkyParameters(clientId)});
+  m_clientShipLocations.set(clientId, ClientShipState{m_systemWorld->clientShipLocation(clientId), m_systemWorld->clientSkyParameters(clientId)});
   if (auto warpAction = m_systemWorld->clientWarpAction(clientId))
-    m_clientWarpActions.set(clientId, *warpAction);
+    m_clientWarpActions.set(clientId, ClientWarpAction{warpAction->first, warpAction->second});
 }
 
 void SystemWorldServerThread::removeClient(ConnectionId clientId) {
@@ -86,11 +86,11 @@ void SystemWorldServerThread::update() {
   WriteLocker queueLocker(m_queueMutex);
   WriteLocker locker(m_mutex);
 
-  for (auto [clientId, packet] : take(m_incomingPacketQueue))
-    m_systemWorld->handleIncomingPacket(clientId, packet);
+  for (auto queuedPacket : take(m_incomingPacketQueue))
+    m_systemWorld->handleIncomingPacket(queuedPacket.clientId, queuedPacket.packet);
 
-  for (auto [clientId, action] : take(m_clientShipActions))
-    action(m_systemWorld->clientShip(clientId).get());
+  for (auto queuedAction : take(m_clientShipActions))
+    queuedAction.action(m_systemWorld->clientShip(queuedAction.clientId).get());
 
   if (!m_pause || *m_pause == false)
     m_systemWorld->update(SystemWorldTimestep * GlobalTimescale);
@@ -107,12 +107,12 @@ void SystemWorldServerThread::update() {
     m_outgoingPacketQueue[clientId].appendAll(m_systemWorld->pullOutgoingPackets(clientId));
     auto shipSystemLocation = m_systemWorld->clientShipLocation(clientId);
     auto& shipLocation = m_clientShipLocations[clientId];
-    if (shipLocation.first != shipSystemLocation) {
-      shipLocation.first = shipSystemLocation;
-      shipLocation.second = m_systemWorld->clientSkyParameters(clientId);
+    if (shipLocation.location != shipSystemLocation) {
+      shipLocation.location = shipSystemLocation;
+      shipLocation.skyParameters = m_systemWorld->clientSkyParameters(clientId);
     }
     if (auto warpAction = m_systemWorld->clientWarpAction(clientId))
-      m_clientWarpActions.set(clientId, *warpAction);
+      m_clientWarpActions.set(clientId, ClientWarpAction{warpAction->first, warpAction->second});
     else if (m_clientWarpActions.contains(clientId))
       m_clientWarpActions.remove(clientId);
   }
@@ -129,7 +129,7 @@ void SystemWorldServerThread::setClientDestination(ConnectionId clientId, System
 
 void SystemWorldServerThread::executeClientShipAction(ConnectionId clientId, ClientShipAction action) {
   WriteLocker locker(m_queueMutex);
-  m_clientShipActions.append({clientId, std::move(action)});
+  m_clientShipActions.append(QueuedClientShipAction{clientId, std::move(action)});
 }
 
 SystemLocation SystemWorldServerThread::clientShipLocation(ConnectionId clientId) {
@@ -137,19 +137,21 @@ SystemLocation SystemWorldServerThread::clientShipLocation(ConnectionId clientId
   // while a ship destination is pending the ship is assumed to be flying
   if (m_clientShipDestinations.contains(clientId))
     return {};
-  return m_clientShipLocations.get(clientId).first;
+  return m_clientShipLocations.get(clientId).location;
 }
 
 Maybe<pair<WarpAction, WarpMode>> SystemWorldServerThread::clientWarpAction(ConnectionId clientId) {
   ReadLocker locker(m_queueMutex);
   if (m_clientShipDestinations.contains(clientId))
     return {};
-  return m_clientWarpActions.maybe(clientId);
+  return m_clientWarpActions.maybe(clientId).apply([](ClientWarpAction const& warpAction) {
+      return pair<WarpAction, WarpMode>(warpAction.action, warpAction.mode);
+    });
 }
 
 SkyParameters SystemWorldServerThread::clientSkyParameters(ConnectionId clientId) {
   ReadLocker locker(m_queueMutex);
-  return m_clientShipLocations.get(clientId).second;
+  return m_clientShipLocations.get(clientId).skyParameters;
 }
 
 List<InstanceWorldId> SystemWorldServerThread::activeInstanceWorlds() const {
@@ -162,7 +164,7 @@ void SystemWorldServerThread::setUpdateAction(function<void(SystemWorldServerThr
 
 void SystemWorldServerThread::pushIncomingPacket(ConnectionId clientId, PacketPtr packet) {
   WriteLocker locker(m_queueMutex);
-  m_incomingPacketQueue.append({std::move(clientId), std::move(packet)});
+  m_incomingPacketQueue.append(QueuedIncomingPacket{clientId, std::move(packet)});
 }
 
 List<PacketPtr> SystemWorldServerThread::pullOutgoingPackets(ConnectionId clientId) {

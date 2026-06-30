@@ -152,14 +152,14 @@ void ArmorItem::refreshStatusEffects() {
   m_statusEffects = instanceValue("statusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
   m_cosmeticStatusEffects = instanceValue("cosmeticStatusEffects", JsonArray()).toArray().transformed(jsonToPersistentStatusEffect);
   if (auto leveledStatusEffects = instanceValue("leveledStatusEffects", Json())) {
-    float level = instanceValue("level", 1).toFloat();
-    for (auto effectConfig : leveledStatusEffects.iterateArray()) {
-      float levelFunctionFactor = m_functionDatabase->function(effectConfig.getString("levelFunction"))->evaluate(level);
-      auto statModifier = jsonToStatModifier(effectConfig);
-      if (auto p = statModifier.ptr<StatBaseMultiplier>())
-        p->baseMultiplier = 1 + (p->baseMultiplier - 1) * levelFunctionFactor;
-      else if (auto valueModifier = statModifier.ptr<StatValueModifier>())
-        valueModifier->value *= levelFunctionFactor;
+      float level = instanceValue("level", 1).toFloat();
+      for (auto effectConfig : leveledStatusEffects.iterateArray()) {
+        float levelFunctionFactor = m_functionDatabase->function(effectConfig.getString("levelFunction"))->evaluate(level);
+        auto statModifier = jsonToStatModifier(effectConfig);
+        if (auto baseMultiplier = statModifier.ptr<StatBaseMultiplier>())
+          baseMultiplier->baseMultiplier = 1 + (baseMultiplier->baseMultiplier - 1) * levelFunctionFactor;
+        else if (auto valueModifier = statModifier.ptr<StatValueModifier>())
+          valueModifier->value *= levelFunctionFactor;
       else if (auto effectiveModifier = statModifier.ptr<StatEffectiveMultiplier>())
         effectiveModifier->effectiveMultiplier = 1 + (effectiveModifier->effectiveMultiplier - 1) * levelFunctionFactor;
       m_statusEffects.append(statModifier);

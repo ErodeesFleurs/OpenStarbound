@@ -107,11 +107,11 @@ FormattedJson FormattedJson::get(String const& key) const {
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call get with key on FormattedJson type {}, must be Object type", typeName());
 
-  Maybe<pair<ElementLocation, ElementLocation>> entry = m_objectEntryLocations.maybe(key);
+  Maybe<ObjectEntryLocation> entry = m_objectEntryLocations.maybe(key);
   if (entry.isNothing())
     throw JsonException::format("No such key in FormattedJson::get(\"{}\")", key);
 
-  return getFormattedJson(entry->second);
+  return getFormattedJson(entry->value);
 }
 
 FormattedJson FormattedJson::get(size_t index) const {
@@ -264,14 +264,14 @@ FormattedJson FormattedJson::prepend(String const& key, FormattedJson const& val
 FormattedJson FormattedJson::insertBefore(String const& key, FormattedJson const& value, String const& beforeKey) const {
   if (!m_objectEntryLocations.contains(beforeKey))
     throw JsonException::format("Cannot insert before key \"{}\", which does not exist", beforeKey);
-  ElementLocation loc = m_objectEntryLocations.get(beforeKey).first;
+  ElementLocation loc = m_objectEntryLocations.get(beforeKey).key;
   return objectInsert(key, value, loc);
 }
 
 FormattedJson FormattedJson::insertAfter(String const& key, FormattedJson const& value, String const& afterKey) const {
   if (!m_objectEntryLocations.contains(afterKey))
     throw JsonException::format("Cannot insert after key \"{}\", which does not exist", afterKey);
-  ElementLocation loc = m_objectEntryLocations.get(afterKey).second;
+  ElementLocation loc = m_objectEntryLocations.get(afterKey).value;
   return objectInsert(key, value, loc + 1);
 }
 
@@ -305,13 +305,13 @@ FormattedJson FormattedJson::eraseKey(String const& key) const {
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call erase with key on FormattedJson type {}, must be Object type", typeName());
 
-  Maybe<pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
+  Maybe<ObjectEntryLocation> maybeEntry = m_objectEntryLocations.maybe(key);
   if (maybeEntry.isNothing())
     return *this;
 
-  ElementLocation loc = maybeEntry->first;
+  ElementLocation loc = maybeEntry->key;
   ElementList elements = m_elements;
-  elements.eraseAt(loc, maybeEntry->second); // Remove key, colon and whitespace up to the value
+  elements.eraseAt(loc, maybeEntry->value); // Remove key, colon and whitespace up to the value
   removeValueFromArray(elements, loc);
   return object(elements);
 }
@@ -456,10 +456,10 @@ FormattedJson FormattedJson::objectInsert(String const& key, FormattedJson const
   if (type() != Json::Type::Object)
     throw JsonException::format("Cannot call set with key on FormattedJson type {}, must be Object type", typeName());
 
-  Maybe<pair<ElementLocation, ElementLocation>> maybeEntry = m_objectEntryLocations.maybe(key);
+  Maybe<ObjectEntryLocation> maybeEntry = m_objectEntryLocations.maybe(key);
   if (maybeEntry.isValid()) {
     ElementList elements = m_elements;
-    elements.at(maybeEntry->second) = ValueElement{value};
+    elements.at(maybeEntry->value) = ValueElement{value};
     return object(elements);
   }
 
@@ -483,7 +483,7 @@ void FormattedJson::appendElement(JsonElement const& elem) {
       starAssert(isType(Json::Type::Object));
       String key = m_elements[*m_lastKey].get<ObjectKeyElement>().key;
 
-      m_objectEntryLocations[key] = make_pair(*m_lastKey, loc);
+      m_objectEntryLocations[key] = ObjectEntryLocation{*m_lastKey, loc};
       m_jsonValue = m_jsonValue.set(key, elemToJson(elem));
 
       m_lastKey = {};

@@ -90,7 +90,7 @@ Json TechController::diskStore() {
 
 void TechController::diskLoad(Json const& store) {
   setupTechModules(store.getArray("techModules", {}).transformed([](Json const& v) {
-    return make_tuple(v.getString("module"), v.getObject("scriptData", {}));
+    return tuple<String, JsonObject>{v.getString("module"), v.getObject("scriptData", {})};
   }));
 }
 
@@ -119,7 +119,7 @@ void TechController::uninit() {
 
 void TechController::setLoadedTech(StringList const& techModules, bool forceLoad) {
   if (forceLoad || loadedTech() != techModules) {
-    setupTechModules(techModules.transformed([](String const& module) { return make_tuple(module, JsonObject()); }));
+    setupTechModules(techModules.transformed([](String const& module) { return tuple<String, JsonObject>{module, JsonObject()}; }));
     if (m_parentEntity)
       initializeModules();
   }
@@ -434,14 +434,14 @@ void TechController::setupTechModules(List<tuple<String, JsonObject>> const& mod
 
   auto techDatabase = m_parentEntity->world()->techDatabase();
 
-  for (auto const& moduleInit : moduleInits) {
-    if (techDatabase->contains(get<0>(moduleInit))) {
+  for (auto const& [techName, scriptStorage] : moduleInits) {
+    if (techDatabase->contains(techName)) {
       auto& module = m_techModules.emplaceAppend();
 
-      module.config = techDatabase->tech(get<0>(moduleInit));
+      module.config = techDatabase->tech(techName);
 
       module.scriptComponent.setScripts(module.config.scripts);
-      module.scriptComponent.setScriptStorage(get<1>(moduleInit));
+      module.scriptComponent.setScriptStorage(scriptStorage);
 
       module.visible = module.config.parameters.getBool("visible", true);
 
@@ -452,7 +452,7 @@ void TechController::setupTechModules(List<tuple<String, JsonObject>> const& mod
         moduleAnimator->animator.setPartTag(partName, "partImage", partImage.toString());
       module.animatorId = m_techAnimators.addNetElement(moduleAnimator);
     } else {
-      Logger::warn("Tech module '{}' not found in tech database", get<0>(moduleInit));
+      Logger::warn("Tech module '{}' not found in tech database", techName);
     }
   }
 }

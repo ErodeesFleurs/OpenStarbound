@@ -114,8 +114,8 @@ template <typename BaseMap>
 auto MapMixin<BaseMap>::keys() const -> List<key_type> {
   List<key_type> klist;
   klist.reserve(Base::size());
-  for (const_iterator i = Base::begin(); i != Base::end(); ++i)
-    klist.push_back(i->first);
+  for (auto const& entry : *this)
+    klist.push_back(entry.first);
   return klist;
 }
 
@@ -123,8 +123,8 @@ template <typename BaseMap>
 auto MapMixin<BaseMap>::values() const -> List<mapped_type> {
   List<mapped_type> vlist;
   vlist.reserve(Base::size());
-  for (const_iterator i = Base::begin(); i != Base::end(); ++i)
-    vlist.push_back(i->second);
+  for (auto const& entry : *this)
+    vlist.push_back(entry.second);
   return vlist;
 }
 
@@ -132,8 +132,8 @@ template <typename BaseMap>
 auto MapMixin<BaseMap>::pairs() const -> List<pair<key_type, mapped_type>> {
   List<pair<key_type, mapped_type>> plist;
   plist.reserve(Base::size());
-  for (const_iterator i = Base::begin(); i != Base::end(); ++i)
-    plist.push_back(*i);
+  for (auto const& entry : *this)
+    plist.push_back(entry);
   return plist;
 }
 
@@ -235,9 +235,9 @@ auto MapMixin<BaseMap>::ptr(key_type const& k) -> mapped_ptr {
 
 template <typename BaseMap>
 auto MapMixin<BaseMap>::keyOf(mapped_type const& v) const -> key_type {
-  for (const_iterator i = Base::begin(); i != Base::end(); ++i) {
-    if (i->second == v)
-      return i->first;
+  for (auto const& [key, value] : *this) {
+    if (value == v)
+      return key;
   }
   throw MapException(strf("Value '{}' not found in Map::keyOf()", outputAny(v)));
 }
@@ -246,17 +246,17 @@ template <typename BaseMap>
 auto MapMixin<BaseMap>::keysOf(mapped_type const& v) const -> List<key_type> {
   List<key_type> keys;
   keys.reserve(Base::size());
-  for (const_iterator i = Base::begin(); i != Base::end(); ++i) {
-    if (i->second == v)
-      keys.append(i->first);
+  for (auto const& [key, value] : *this) {
+    if (value == v)
+      keys.append(key);
   }
   return keys;
 }
 
 template <typename BaseMap>
 auto MapMixin<BaseMap>::hasValue(mapped_type const& v) const -> bool {
-  for (const_iterator i = Base::begin(); i != Base::end(); ++i) {
-    if (i->second == v)
+  for (auto const& entry : *this) {
+    if (entry.second == v)
       return true;
   }
   return false;
@@ -269,11 +269,11 @@ auto MapMixin<BaseMap>::insert(key_type k, mapped_type v) -> pair<iterator, bool
 
 template <typename BaseMap>
 auto MapMixin<BaseMap>::add(key_type k, mapped_type v) -> mapped_type& {
-  auto pair = Base::insert(value_type(std::move(k), std::move(v)));
-  if (!pair.second)
+  auto [entry, inserted] = Base::insert(value_type(std::move(k), std::move(v)));
+  if (!inserted)
     throw MapException(strf("Entry with key '{}' already present.", outputAny(k)));
   else
-    return pair.first->second;
+    return entry->second;
 }
 
 template <typename BaseMap>
@@ -301,12 +301,14 @@ bool MapMixin<BaseMap>::operator==(MapMixin const& m) const {
 template <typename MapType>
 void printMap(std::ostream& os, MapType const& m) {
   os << "{ ";
-  for (auto i = m.begin(); i != m.end(); ++i) {
-    if (m.begin() == i)
+  bool first = true;
+  for (auto const& [key, value] : m) {
+    if (first)
       os << "\"";
     else
       os << ", \"";
-    os << i->first << "\" : \"" << i->second << "\"";
+    first = false;
+    os << key << "\" : \"" << value << "\"";
   }
   os << " }";
 }

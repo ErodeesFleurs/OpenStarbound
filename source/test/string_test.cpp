@@ -245,8 +245,8 @@ TEST(StringTest, CaseInsensitive) {
   EXPECT_FALSE(map.contains("two"));
 
   StringSet keys;
-  for (auto const& p : map)
-    keys.add(p.first);
+  for (auto const& [key, _] : map)
+    keys.add(key);
 
   StringSet keyCmp = {"One", "Three"};
   EXPECT_EQ(keys, keyCmp);

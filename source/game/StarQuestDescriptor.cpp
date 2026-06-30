@@ -301,7 +301,7 @@ StringMap<RetType> transformedMapValues(StringMap<ArgType> const& map, Fun fun) 
   return StringMap<RetType>::from(map.pairs().transformed(
     [fun](pair<String, ArgType> entry) {
       auto const& [key, value] = entry;
-      return make_pair(key, fun(value));
+      return pair<String, RetType>{key, fun(value)};
     }));
 }
 

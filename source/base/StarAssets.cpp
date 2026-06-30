@@ -204,24 +204,24 @@ Assets::Assets(Settings settings, StringList assetSources) {
         if (newFiles->contains(path)) {
           if (auto image = newFiles->image(path)) {
             if (newFiles->contains(patchPath)) {
-              newFiles->set(path, *applyImagePatches(image, path, {make_pair(patchPath, newFiles)}).get());
+              newFiles->set(path, *applyImagePatches(image, path, {pair<String, AssetSourcePtr>{patchPath, newFiles}}).get());
               return true;
             } else {
               if (auto asset = m_files.ptr(patchPath)) {
-                newFiles->set(path, *applyImagePatches(image, path, {make_pair(patchPath, asset->source)}).get());
+                newFiles->set(path, *applyImagePatches(image, path, {pair<String, AssetSourcePtr>{patchPath, asset->source}}).get());
                 return true;
               }
             }
           } else {
             if (newFiles->contains(patchPath)) {
               auto file = newFiles->read(path);
-              auto json = applyJsonPatches(inputUtf8Json(file.begin(), file.end(), JsonParseType::Top), path, {make_pair(patchPath, newFiles)}).repr();
+              auto json = applyJsonPatches(inputUtf8Json(file.begin(), file.end(), JsonParseType::Top), path, {pair<String, AssetSourcePtr>{patchPath, newFiles}}).repr();
               newFiles->set(path, ByteArray(json.utf8Ptr(), json.utf8Size()));
               return true;
             } else {
               if (auto asset = m_files.ptr(patchPath)) {
               auto file = newFiles->read(path);
-              auto json = applyJsonPatches(inputUtf8Json(file.begin(), file.end(), JsonParseType::Top), path, {make_pair(patchPath, asset->source)}).repr();
+              auto json = applyJsonPatches(inputUtf8Json(file.begin(), file.end(), JsonParseType::Top), path, {pair<String, AssetSourcePtr>{patchPath, asset->source}}).repr();
               newFiles->set(path, ByteArray(json.utf8Ptr(), json.utf8Size()));
                 return true;
               }
@@ -229,11 +229,11 @@ Assets::Assets(Settings settings, StringList assetSources) {
           }
         } else if (auto file = m_files.ptr(path)) {
           if (newFiles->contains(patchPath)) {
-            file->patchSources.append(make_pair(patchPath, newFiles));
+            file->patchSources.append({patchPath, newFiles});
             return true;
           } else {
             if (auto asset = m_files.ptr(patchPath)) {
-              file->patchSources.append(make_pair(patchPath, asset->source));
+              file->patchSources.append({patchPath, asset->source});
               return true;
             }
           }
@@ -262,25 +262,25 @@ Assets::Assets(Settings settings, StringList assetSources) {
       if (filename.contains(AssetsPatchSuffix, String::CaseInsensitive)) {
         if (filename.endsWith(AssetsPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
-            p->patchSources.append({filename, source});
+          if (auto assetFile = m_files.ptr(targetPatchFile))
+            assetFile->patchSources.append({filename, source});
         } else if (filename.endsWith(AssetsLuaPatchSuffix, String::CaseInsensitive)) {
           auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsLuaPatchSuffix));
-          if (auto p = m_files.ptr(targetPatchFile))
-            p->patchSources.append({filename, source});
+          if (auto assetFile = m_files.ptr(targetPatchFile))
+            assetFile->patchSources.append({filename, source});
         } else if (filename.endsWith(AssetsPatchListSuffix, String::CaseInsensitive)) {
           auto stream = source->read(filename);
           size_t patchIndex = 0;
           for (auto const& patchPair : inputUtf8Json(stream.begin(), stream.end(), JsonParseType::Top).iterateArray()) {
             auto patches = patchPair.getArray("patches");
             for (auto& path : patchPair.getArray("paths")) {
-              if (auto p = m_files.ptr(path.toString())) {
-                p->patchSources.reserve(p->patchSources.size() + patches.size());
+              if (auto assetFile = m_files.ptr(path.toString())) {
+                assetFile->patchSources.reserve(assetFile->patchSources.size() + patches.size());
                 for (auto const& [patch, patchListIndex] : enumerateIterator(patches)) {
                   if (patch.isType(Json::Type::String))
-                    p->patchSources.append({patch.toString(), source});
+                    assetFile->patchSources.append({patch.toString(), source});
                   else
-                    p->patchSources.append({strf("{}:[{}].patches[{}]", filename, patchIndex, patchListIndex), source});
+                    assetFile->patchSources.append({strf("{}:[{}].patches[{}]", filename, patchIndex, patchListIndex), source});
                 }
               }
             }
@@ -290,8 +290,8 @@ Assets::Assets(Settings settings, StringList assetSources) {
           for (int i = 0; i < 10; i++) {
             if (filename.endsWith(AssetsPatchSuffix + toString(i), String::CaseInsensitive)) {
               auto targetPatchFile = filename.substr(0, filename.size() - strlen(AssetsPatchSuffix) - 1);
-              if (auto p = m_files.ptr(targetPatchFile))
-                p->patchSources.append({filename, source});
+              if (auto assetFile = m_files.ptr(targetPatchFile))
+                assetFile->patchSources.append({filename, source});
               break;
             }
           }
@@ -347,7 +347,7 @@ Assets::Assets(Settings settings, StringList assetSources) {
       source = std::make_shared<PackedAssetSource>(sourcePath);
 
     addSource(sourcePath, source);
-    sources.append(make_pair(sourcePath, source));
+    sources.append({sourcePath, source});
 
     runLoadScripts("onLoad", sourcePath, source);
   }
@@ -448,8 +448,8 @@ Maybe<Assets::AssetFileDescriptor> Assets::assetDescriptor(String const& path) c
 
 String Assets::assetSource(String const& path) const {
   MutexLocker assetsLocker(m_assetsMutex);
-  if (auto p = m_files.ptr(path))
-    return m_assetSourcePaths.getLeft(p->source);
+  if (auto assetFile = m_files.ptr(path))
+    return m_assetSourcePaths.getLeft(assetFile->source);
   throw AssetException(strf("No such asset '{}'", path));
 }
 
@@ -964,27 +964,27 @@ FramesSpecificationConstPtr Assets::bestFramesSpecification(String const& image)
 }
 
 IODevicePtr Assets::open(String const& path) const {
-  if (auto p = m_files.ptr(path))
-    return p->source->open(p->sourceName);
+  if (auto assetFile = m_files.ptr(path))
+    return assetFile->source->open(assetFile->sourceName);
   throw AssetException(strf("No such asset '{}'", path));
 }
 
 ByteArray Assets::read(String const& path) const {
-  if (auto p = m_files.ptr(path))
-    return p->source->read(p->sourceName);
+  if (auto assetFile = m_files.ptr(path))
+    return assetFile->source->read(assetFile->sourceName);
   throw AssetException(strf("No such asset '{}'", path));
 }
 
 ImageConstPtr Assets::readImage(String const& path) const {
-  if (auto p = m_files.ptr(path)) {
+  if (auto assetFile = m_files.ptr(path)) {
     ImageConstPtr image;
-    if (auto memorySource = as<MemoryAssetSource>(p->source))
-      image = memorySource->image(p->sourceName);
+    if (auto memorySource = as<MemoryAssetSource>(assetFile->source))
+      image = memorySource->image(assetFile->sourceName);
     if (!image)
-      image = make_shared<Image>(Image::readPng(p->source->open(p->sourceName)));
+      image = make_shared<Image>(Image::readPng(assetFile->source->open(assetFile->sourceName)));
 
-    if (!p->patchSources.empty()) {
-      return applyImagePatches(image, path, p->patchSources);
+    if (!assetFile->patchSources.empty()) {
+      return applyImagePatches(image, path, assetFile->patchSources);
     }
     return image;
   }
@@ -999,7 +999,7 @@ ImageConstPtr Assets::applyImagePatches(ImageConstPtr image, String const& path,
   for (auto const& [patchPath, patchSource] : patches) {
     auto patchStream = patchSource->read(patchPath);
     if (patchPath.endsWith(".lua")) {
-      std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchPath);
+      std::pair<AssetSource*, String> contextKey{patchSource.get(), patchPath};
       luaLocker.lock();
       LuaContextPtr& context = m_patchContexts[contextKey];
       if (!context) {
@@ -1073,7 +1073,7 @@ Json Assets::applyJsonPatches(Json const& input, String const& path, List<pair<S
     auto& patchBasePath = patchAssetPath.basePath;
     auto patchStream = patchSource->read(patchBasePath);
     if (patchBasePath.endsWith(".lua")) {
-      std::pair<AssetSource*, String> contextKey = make_pair(patchSource.get(), patchBasePath);
+      std::pair<AssetSource*, String> contextKey{patchSource.get(), patchBasePath};
       RecursiveMutexLocker luaLocker(m_luaMutex);
       // Kae: i don't like that lock. perhaps have a LuaEngine and patch context cache per worker thread later on?
       LuaContextPtr& context = m_patchContexts[contextKey];

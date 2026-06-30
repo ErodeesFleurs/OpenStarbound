@@ -46,9 +46,9 @@ Maybe<Json> repairTileset(Json tileset, String const& mapPath, String const& til
 Maybe<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPath) {
   JsonArray tilesets = mapJson.getArray("tilesets");
   bool changed = false;
-  for (auto tilesetAndIndex : enumerateIterator(tilesets)) {
-    if (Maybe<Json> tileset = repairTileset(tilesetAndIndex.first, mapPath, tilesetPath)) {
-      tilesets[tilesetAndIndex.second] = *tileset;
+  for (auto [tilesetJson, tilesetIndex] : enumerateIterator(tilesets)) {
+    if (Maybe<Json> tileset = repairTileset(tilesetJson, mapPath, tilesetPath)) {
+      tilesets[tilesetIndex] = *tileset;
       changed = true;
     }
   }
@@ -58,11 +58,11 @@ Maybe<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPat
 }
 
 void forEachRecursiveFileMatch(String const& dirName, String const& filenameSuffix, function<void(String)> func) {
-  for (pair<String, bool> entry : File::dirList(dirName)) {
-    if (entry.second)
-      forEachRecursiveFileMatch(File::relativeTo(dirName, entry.first), filenameSuffix, func);
-    else if (entry.first.endsWith(filenameSuffix))
-      func(File::relativeTo(dirName, entry.first));
+  for (auto [entryName, isDirectory] : File::dirList(dirName)) {
+    if (isDirectory)
+      forEachRecursiveFileMatch(File::relativeTo(dirName, entryName), filenameSuffix, func);
+    else if (entryName.endsWith(filenameSuffix))
+      func(File::relativeTo(dirName, entryName));
   }
 }
 
@@ -85,9 +85,7 @@ int main(int argc, char* argv[]) {
     rootLoader.addArgument("searchRoot", OptionParser::Required);
     rootLoader.addArgument("tilesetsPath", OptionParser::Required);
 
-    UniquePtr<Root> root;
-    OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    auto [root, options] = rootLoader.commandInitOrDie(argc, argv);
 
     String searchRoot = options.arguments[0];
     String tilesetPath = options.arguments[1];

@@ -275,19 +275,19 @@ void SystemWorldServer::queueUpdatePackets() {
     HashMap<Uuid, ByteArray> shipUpdates;
     for (auto const& ship : m_ships.values()) {
       uint64_t version = versions->ships.maybe(ship->uuid()).value(0);
-      auto shipUpdate = ship->writeNetState(version, {});
-      versions->ships.set(ship->uuid(), shipUpdate.second);
-      if (!shipUpdate.first.empty())
-        shipUpdates.set(ship->uuid(), shipUpdate.first);
+      auto [delta, newVersion] = ship->writeNetState(version, {});
+      versions->ships.set(ship->uuid(), newVersion);
+      if (!delta.empty())
+        shipUpdates.set(ship->uuid(), delta);
     }
 
     HashMap<Uuid, ByteArray> objectUpdates;
     for (auto const& object : m_objects.values()) {
       uint64_t version = versions->objects.maybe(object->uuid()).value(0);
-      auto objectUpdate = object->writeNetState(version, {});
-      versions->objects.set(object->uuid(), objectUpdate.second);
-      if (!objectUpdate.first.empty())
-        objectUpdates.set(object->uuid(), objectUpdate.first);
+      auto [delta, newVersion] = object->writeNetState(version, {});
+      versions->objects.set(object->uuid(), newVersion);
+      if (!delta.empty())
+        objectUpdates.set(object->uuid(), delta);
     }
     m_outgoingPackets[clientId].append(make_shared<SystemWorldUpdatePacket>(objectUpdates, shipUpdates));
   }
@@ -314,8 +314,8 @@ bool SystemWorldServer::triggeredStorage() {
 
 Json SystemWorldServer::diskStore() {
   JsonArray storedObjects;
-  for (auto const& o : m_objects)
-    storedObjects.append(o.second->diskStore());
+  for (auto const& [_, object] : m_objects)
+    storedObjects.append(object->diskStore());
 
   JsonObject store;
   store.set("location", jsonFromVec3I(m_location));

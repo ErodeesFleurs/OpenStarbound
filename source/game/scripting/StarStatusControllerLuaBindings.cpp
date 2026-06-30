@@ -258,10 +258,11 @@ LuaTupleReturn<List<Json>, uint64_t> LuaBindings::StatusControllerCallbacks::inf
 List<JsonArray> LuaBindings::StatusControllerCallbacks::activeUniqueStatusEffectSummary(
     StatusController& statController) {
   auto summary = statController.activeUniqueStatusEffectSummary();
-  return summary.transformed([](pair<UniqueStatusEffect, Maybe<float>> effect) {
-    JsonArray effectJson = {effect.first};
-    if (effect.second)
-      effectJson.append(*effect.second);
+  return summary.transformed([](auto const& effect) {
+    auto const& [effectName, duration] = effect;
+    JsonArray effectJson = {effectName};
+    if (duration)
+      effectJson.append(*duration);
     return effectJson;
   });
 }

@@ -36,7 +36,7 @@ Vec2U ImageMetadataDatabase::imageSize(AssetPath const& path) const {
 }
 
 List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F position, float fillLimit, bool flip) const {
-  SpacesEntry key = make_tuple(path, Vec2I::round(position), fillLimit, flip);
+  SpacesEntry key{path, Vec2I::round(position), fillLimit, flip};
 
   MutexLocker locker(m_mutex);
   if (auto cached = m_spacesCache.ptr(key)) {
@@ -44,7 +44,7 @@ List<Vec2I> ImageMetadataDatabase::imageSpaces(AssetPath const& path, Vec2F posi
   }
 
   auto filteredPath = filterProcessing(path);
-  SpacesEntry filteredKey = make_tuple(filteredPath, Vec2I::round(position), fillLimit, flip);
+  SpacesEntry filteredKey{filteredPath, Vec2I::round(position), fillLimit, flip};
 
   if (auto cached = m_spacesCache.ptr(filteredKey)) {
     m_spacesCache.set(key, *cached);
@@ -189,10 +189,12 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
     } else {
       locker.unlock();
       auto file = m_assets->openFile(path.basePath);
-      if (Image::isPng(file))
-        imageSize = get<0>(Image::readPngMetadata(file));
-      else
+      if (Image::isPng(file)) {
+        [[maybe_unused]] auto const& [metadataSize, pixelFormat] = Image::readPngMetadata(file);
+        imageSize = metadataSize;
+      } else {
         imageSize = fallback();
+      }
       locker.lock();
       m_sizeCache.set(path.basePath, imageSize);
     }

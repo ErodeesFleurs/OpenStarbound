@@ -56,12 +56,25 @@ private:
 
   StringSet m_missionRadioMessages;
   bool m_interruptRadioMessage;
-  List<pair<GameTimer, RadioMessage>> m_delayedRadioMessages;
+
+  struct DelayedRadioMessage {
+    GameTimer timer;
+    RadioMessage message;
+  };
+  struct PendingAltMusic {
+    Maybe<pair<StringList, int>> tracks;
+    float fadeTime;
+  };
+  struct PendingConfirmation {
+    Json dialogConfig;
+    RpcPromiseKeeper<Json> resultPromise;
+  };
+  List<DelayedRadioMessage> m_delayedRadioMessages;
   Deque<RadioMessage> m_pendingRadioMessages;
   Maybe<Json> m_pendingCinematic;
-  Maybe<pair<Maybe<pair<StringList, int>>, float>> m_pendingAltMusic;
+  Maybe<PendingAltMusic> m_pendingAltMusic;
   Maybe<PlayerWarpRequest> m_pendingWarp;
-  Deque<pair<Json, RpcPromiseKeeper<Json>>> m_pendingConfirmations;
+  Deque<PendingConfirmation> m_pendingConfirmations;
   List<PersistentStatusEffect> m_inCinematicStatusEffects;
 };
 

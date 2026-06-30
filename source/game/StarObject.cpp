@@ -451,8 +451,8 @@ void Object::render(RenderCallback* renderCallback) {
       renderCallback->addDrawables(orientationDrawables(m_orientationIndex), renderLayer(), position());
   }
 
-  for (auto drawablePair : m_scriptedAnimator.drawables())
-    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(renderLayer()));
+  for (auto const& [drawable, maybeRenderLayer] : m_scriptedAnimator.drawables())
+    renderCallback->addDrawable(drawable, maybeRenderLayer.value(renderLayer()));
   renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
   renderCallback->addAudios(m_scriptedAnimator.pullNewAudios());
 }
@@ -871,9 +871,9 @@ void Object::setImageKey(String const& name, String const& value) {
   if (!isSlave())
     m_netImageKeys.set(name, value);
 
-  if (auto p = m_imageKeys.ptr(name)) {
-    if (*p != value) {
-      *p = value;
+  if (auto imageKey = m_imageKeys.ptr(name)) {
+    if (*imageKey != value) {
+      *imageKey = value;
       m_orientationDrawablesCache.reset();
     }
   } else {
@@ -1286,8 +1286,8 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
 
   auto& orientation = getOrientations().at(orientationIndex);
 
-  if (!m_orientationDrawablesCache || orientationIndex != m_orientationDrawablesCache->first) {
-    m_orientationDrawablesCache = make_pair(orientationIndex, List<Drawable>());
+  if (!m_orientationDrawablesCache || orientationIndex != m_orientationDrawablesCache->orientationIndex) {
+    m_orientationDrawablesCache = OrientationDrawablesCache{orientationIndex, List<Drawable>()};
     for (auto const& layer : orientation->imageLayers) {
       Drawable drawable = layer;
 
@@ -1324,11 +1324,11 @@ List<Drawable> Object::orientationDrawables(size_t orientationIndex) const {
       if (orientation->flipImages)
         drawable.scale(Vec2F(-1, 1), drawable.boundBox(false, m_config->imageMetadataDatabase).center() - drawable.position);
 
-      m_orientationDrawablesCache->second.append(std::move(drawable));
+      m_orientationDrawablesCache->drawables.append(std::move(drawable));
     }
   }
 
-  auto drawables = m_orientationDrawablesCache->second;
+  auto drawables = m_orientationDrawablesCache->drawables;
   Drawable::translateAll(drawables, orientation->imagePosition + damageShake());
   return drawables;
 }

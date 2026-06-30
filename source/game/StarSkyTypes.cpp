@@ -26,7 +26,9 @@ EnumMap<WarpPhase> const WarpPhaseNames{
 SkyColoring::SkyColoring() = default;
 
 SkyColoring::SkyColoring(Json const& variant) {
-  auto getColorPair = [](Json const& pair) { return make_pair(jsonToColor(pair.get(0)), jsonToColor(pair.get(1))); };
+  auto getColorPair = [](Json const& colorPair) {
+    return pair<Color, Color>{jsonToColor(colorPair.get(0)), jsonToColor(colorPair.get(1))};
+  };
 
   mainColor = jsonToColor(variant.get("mainColor"));
 

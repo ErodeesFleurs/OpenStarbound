@@ -135,21 +135,20 @@ void TeleportDialog::teleport() {
   auto destList = fetchChild<ListWidget>("bookmarkList.bookmarkItemList");
   if (destList->selectedItem() != NPos) {
     auto& destination = m_destinations[destList->selectedItem()];
-    auto const& [warpAction, deploy] = destination;
 
-    auto warp = [this, deploy](WarpAction const& action, String const& animation = "default") {
+    auto warp = [this, deploy = destination.deploy](WarpAction const& action, String const& animation = "default") {
       if (deploy)
         m_client->warpPlayer(action, true, "deploy", true);
       else
         m_client->warpPlayer(action, true, animation);
     };
 
-    m_client->worldClient()->sendEntityMessage(m_sourceEntityId, "onTeleport", {printWarpAction(warpAction)});
-    [[maybe_unused]] auto [selectedWarpAction, selectedDeploy] = take(destination);
-    if (selectedWarpAction.is<WarpAlias>() && selectedWarpAction.get<WarpAlias>() == WarpAlias::OrbitedWorld) {
-      warp(selectedWarpAction, "beam");
+    m_client->worldClient()->sendEntityMessage(m_sourceEntityId, "onTeleport", {printWarpAction(destination.warpAction)});
+    auto selectedDestination = take(destination);
+    if (selectedDestination.warpAction.is<WarpAlias>() && selectedDestination.warpAction.get<WarpAlias>() == WarpAlias::OrbitedWorld) {
+      warp(selectedDestination.warpAction, "beam");
     } else {
-      warp(selectedWarpAction);
+      warp(selectedDestination.warpAction);
     }
     dismiss();
   }

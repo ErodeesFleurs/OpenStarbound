@@ -40,18 +40,18 @@ Songbook::NoteMapping& Songbook::noteMapping(String const& instrument, String co
   if (!m_noteMapping.contains(instrument)) {
     Map<int, NoteMapping> notemap;
     auto tuning = m_assets->json(strf("/sfx/instruments/{}/tuning.config", instrument));
-    for (auto e : tuning.get("mapping").iterateObject()) {
-      int keyNumber = lexicalCast<int>(e.first);
+    for (auto const& [keyName, noteConfig] : tuning.get("mapping").iterateObject()) {
+      int keyNumber = lexicalCast<int>(keyName);
       NoteMapping nm;
-      if (e.second.contains("file")) {
-        nm.files.append(e.second.getString("file", "").replace("$instrument$", instrument).replace("$species$", species));
-      } else if (e.second.contains("files")) {
-        for (auto entry : e.second.getArray("files"))
+      if (noteConfig.contains("file")) {
+        nm.files.append(noteConfig.getString("file", "").replace("$instrument$", instrument).replace("$species$", species));
+      } else if (noteConfig.contains("files")) {
+        for (auto entry : noteConfig.getArray("files"))
           nm.files.append(entry.toString().replace("$instrument$", instrument).replace("$species$", species));
       }
-      nm.frequency = e.second.getDouble("f");
+      nm.frequency = noteConfig.getDouble("f");
       nm.velocity = 1;
-      nm.fadeout = e.second.getDouble("fadeOut", tuning.getDouble("fadeout"));
+      nm.fadeout = noteConfig.getDouble("fadeOut", tuning.getDouble("fadeout"));
       notemap[keyNumber] = nm;
     }
     for (int key = 21; key <= 108; ++key) {
@@ -180,26 +180,26 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
       m = "4/4";
     if (m.equalsIgnoreCase("C|"))
       m = "2/2";
-    auto p = m.split("/", 1);
-    return Vec2I{lexicalCast<int>(p[0]), lexicalCast<int>(p[1])};
+    auto meterParts = m.split("/", 1);
+    return Vec2I{lexicalCast<int>(meterParts[0]), lexicalCast<int>(meterParts[1])};
   };
 
   auto noteLength = [&]() -> Vec2I {
     auto m = fields.value("L", "C");
     if (m.equalsIgnoreCase("C"))
       return {1, meter()[1]};
-    auto p = m.split("/", 1);
-    return Vec2I{lexicalCast<int>(p[0]), lexicalCast<int>(p[1])};
+    auto lengthParts = m.split("/", 1);
+    return Vec2I{lexicalCast<int>(lengthParts[0]), lexicalCast<int>(lengthParts[1])};
   };
 
   auto secondsPerBeat = [&]() -> double {
     auto m = fields.value("Q", "120");
-    auto p = m.split("=", 1);
-    double secondsPerBeat = 60.0 / lexicalCast<double>(p.last());
-    if (p.size() > 1) {
-      auto pp = p[0].split("/", 1);
-      auto d = Vec2I{lexicalCast<int>(pp[0]), lexicalCast<int>(pp[1])};
-      secondsPerBeat = d[1] * secondsPerBeat / d[0];
+    auto tempoParts = m.split("=", 1);
+    double secondsPerBeat = 60.0 / lexicalCast<double>(tempoParts.last());
+    if (tempoParts.size() > 1) {
+      auto noteParts = tempoParts[0].split("/", 1);
+      auto noteDuration = Vec2I{lexicalCast<int>(noteParts[0]), lexicalCast<int>(noteParts[1])};
+      secondsPerBeat = noteDuration[1] * secondsPerBeat / noteDuration[0];
     } else
       secondsPerBeat = noteLength()[1] * secondsPerBeat / noteLength()[0];
     return secondsPerBeat;
@@ -227,8 +227,8 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
         continue;
       }
       List<int> keySignatureMapping;
-      for (auto e : signature.toArray())
-        keySignatureMapping.append(e.toInt());
+      for (auto signatureEntry : signature.toArray())
+        keySignatureMapping.append(signatureEntry.toInt());
       return keySignatureMapping;
     }
   };

@@ -258,8 +258,8 @@ List<WorldTemplate::Dungeon> WorldTemplate::dungeons() const {
       if (!layer.dungeons.empty()) {
         int dungeonSpacing = floor(m_geometry.width() / layer.dungeons.size());
         uint32_t dungeonOffset = staticRandomU32Range(0, m_geometry.width(), m_seed, layer.layerBaseHeight);
-        for (auto const& dp : enumerateIterator(layer.dungeons)) {
-          dungeonList.append({dp.first, layer.layerBaseHeight, static_cast<int>(dungeonOffset), layer.dungeonXVariance, false, true});
+        for (auto const& dungeonName : layer.dungeons) {
+          dungeonList.append({dungeonName, layer.layerBaseHeight, static_cast<int>(dungeonOffset), layer.dungeonXVariance, false, true});
           dungeonOffset = (dungeonOffset + dungeonSpacing) % m_geometry.width();
         }
       }

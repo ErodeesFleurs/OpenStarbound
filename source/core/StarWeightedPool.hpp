@@ -59,8 +59,8 @@ template <typename Item>
 template <typename Container>
 WeightedPool<Item>::WeightedPool(Container container)
   : WeightedPool() {
-  for (auto& pair : container)
-    add(get<0>(pair), std::move(get<1>(pair)));
+  for (auto& [weight, item] : container)
+    add(weight, std::move(item));
 }
 
 template <typename Item>
@@ -180,10 +180,11 @@ size_t WeightedPool<Item>::selectIndex(double target) const {
   // improvement.
 
   double accumulatedWeight = 0.0f;
-  for (auto const& itemAndIndex : enumerateIterator(m_items)) {
-    accumulatedWeight += itemAndIndex.first.first / m_totalWeight;
+  for (auto const& [weightedItem, itemIndex] : enumerateIterator(m_items)) {
+    auto const& [weight, _] = weightedItem;
+    accumulatedWeight += weight / m_totalWeight;
     if (target <= accumulatedWeight)
-      return itemAndIndex.second;
+      return itemIndex;
   }
 
   // If we haven't crossed the target, just assume floating point error has

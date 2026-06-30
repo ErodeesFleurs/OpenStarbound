@@ -38,9 +38,9 @@ void AssetTextureGroup::cleanup(int64_t textureTimeout) {
 
     List<Texture const*> liveTextures;
     filter(m_textureMap, [&](auto const& textureEntry) {
-        auto const& [texture, lastUsedTime] = textureEntry.second;
-        if (time - lastUsedTime < textureTimeout) {
-          liveTextures.append(texture.get());
+        auto const& [_, cacheEntry] = textureEntry;
+        if (time - cacheEntry.lastUsedTime < textureTimeout) {
+          liveTextures.append(cacheEntry.texture.get());
           return true;
         }
         return false;
@@ -49,15 +49,16 @@ void AssetTextureGroup::cleanup(int64_t textureTimeout) {
     liveTextures.sort();
 
     eraseWhere(m_textureDeduplicationMap, [&](auto const& textureEntry) {
-        return !liveTextures.containsSorted(textureEntry.second.get());
+        auto const& [_, texture] = textureEntry;
+        return !liveTextures.containsSorted(texture.get());
       });
   }
 }
 
 TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTexture) {
-  if (auto p = m_textureMap.ptr(imagePath)) {
-    p->second = Time::monotonicMilliseconds();
-    return p->first;
+  if (auto textureEntry = m_textureMap.ptr(imagePath)) {
+    textureEntry->lastUsedTime = Time::monotonicMilliseconds();
+    return textureEntry->texture;
   }
 
   ImageConstPtr image;
@@ -74,11 +75,11 @@ TexturePtr AssetTextureGroup::loadTexture(AssetPath const& imagePath, bool tryTe
   // in the texture group for these, so we keep track of the image pointers
   // returned to deduplicate them.
   if (auto existingTexture = m_textureDeduplicationMap.value(image)) {
-    m_textureMap.add(imagePath, {existingTexture, Time::monotonicMilliseconds()});
+    m_textureMap.add(imagePath, TextureCacheEntry{existingTexture, Time::monotonicMilliseconds()});
     return existingTexture;
   } else {
     auto texture = m_textureGroup->create(*image);
-    m_textureMap.add(imagePath, {texture, Time::monotonicMilliseconds()});
+    m_textureMap.add(imagePath, TextureCacheEntry{texture, Time::monotonicMilliseconds()});
     m_textureDeduplicationMap.add(image, texture);
     return texture;
   }

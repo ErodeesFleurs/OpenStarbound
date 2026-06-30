@@ -845,16 +845,21 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
 
     if (m_partDrawables.contains(partName))
       drawableCount += m_partDrawables.get(partName).size();
-    parts.append(make_tuple(&activePart, &partName, maybeZLevel.value(0.0f)));
+    parts.append(tuple<AnimatedPartSet::ActivePartInformation const*, String const*, float>{&activePart, &partName, maybeZLevel.value(0.0f)});
   });
 
-  sort(parts, [](auto const& a, auto const& b) { return get<2>(a) < get<2>(b); });
+  sort(parts, [](auto const& a, auto const& b) {
+    auto const& [activePartA, partNameA, zLevelA] = a;
+    auto const& [activePartB, partNameB, zLevelB] = b;
+    return zLevelA < zLevelB;
+  });
 
   List<pair<Drawable, float>> drawables;
   drawables.reserve(partCount + drawableCount);
   for (auto& entry : parts) {
-    auto& activePart = *get<0>(entry);
-    auto& partName = *get<1>(entry);
+    auto const& [activePartPtr, partNamePtr, zLevel] = entry;
+    auto& activePart = *activePartPtr;
+    auto& partName = *partNamePtr;
     // Make sure we don't copy the original image
     String fallback = "";
     Json jImage = activePart.properties.value("image", {});
@@ -941,8 +946,7 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
       bool missingCachedDrawable = find == m_cachedPartDrawables.end();
       bool staleCachedDrawable = false;
       if (!missingCachedDrawable) {
-        auto const& [cachedHash, cachedDrawable] = find->second;
-        staleCachedDrawable = cachedHash != hash;
+        staleCachedDrawable = find->second.imageHash != hash;
       }
       if (missingCachedDrawable || staleCachedDrawable) {
         String relativeImage;
@@ -950,30 +954,29 @@ List<pair<Drawable, float>> NetworkedAnimator::drawablesWithZLevel(Vec2F const& 
           relativeImage = AssetPath::relativeTo(m_relativePath, usedImage);
 
         Drawable drawable = Drawable::makeImage(!relativeImage.empty() ? relativeImage : usedImage, 1.0f / TilePixels, centered, Vec2F(), m_imageMetadataDatabase);
-        if (missingCachedDrawable)
-          find = m_cachedPartDrawables.emplace(partName, std::pair{hash, std::move(drawable)}).first;
-        else {
-          auto& [cachedHash, cachedDrawable] = find->second;
-          cachedHash = hash;
-          cachedDrawable = std::move(drawable);
+        if (missingCachedDrawable) {
+          auto [cachedDrawableIt, _] = m_cachedPartDrawables.emplace(partName, CachedPartDrawable{hash, std::move(drawable)});
+          find = cachedDrawableIt;
+        } else {
+          find->second.imageHash = hash;
+          find->second.drawable = std::move(drawable);
         }
       }
 
-      [[maybe_unused]] auto const& [cachedHash, cachedDrawable] = find->second;
-      Drawable drawable = cachedDrawable;
+      Drawable drawable = find->second.drawable;
       auto& imagePart = drawable.imagePart();
       for (Directives const& directives : baseProcessingDirectives)
         imagePart.addDirectives(directives, centered, m_imageMetadataDatabase);
       drawable.fullbright = fullbright;
       drawable.transform(transformation);
-      drawables.append({std::move(drawable), get<2>(entry)});
+      drawables.append({std::move(drawable), zLevel});
     }
 
     if (m_partDrawables.contains(partName)) {
       auto partDrawables = m_partDrawables.get(partName);
       Drawable::transformAll(partDrawables, transformation);
       for (auto drawable : partDrawables) {
-        drawables.append({drawable, get<2>(entry)});
+        drawables.append({drawable, zLevel});
       }
     }
 

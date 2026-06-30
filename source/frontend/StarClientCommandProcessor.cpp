@@ -558,34 +558,37 @@ String ClientCommandProcessor::render(String const& path) {
   auto assets = m_assets;
   ImageConstPtr image;
   if (outputSheet) {
+    struct FrameImage {
+      RectU frameBox;
+      ImageConstPtr image;
+    };
+
     auto sheet = make_shared<Image>(assets->image(assetPath.basePath)->convert(PixelFormat::RGBA32));
     AssetPath framePath = assetPath;
 
-    StringMap<pair<RectU, ImageConstPtr>> frames;
+    StringMap<FrameImage> frames;
     if (auto imageFrames = m_imageFrames(assetPath.basePath))
       for (auto const& [frameName, frameBox] : imageFrames->frames)
-        frames[frameName] = make_pair(frameBox, ImageConstPtr());
+        frames[frameName] = FrameImage{frameBox, ImageConstPtr()};
 
     if (frames.empty())
       return "^red;Failed to save image^reset;";
 
     for (auto& [frameName, frame] : frames) {
-      auto& [frameBox, frameImage] = frame;
       framePath.subPath = frameName;
-      frameImage = assets->image(framePath);
+      frame.image = assets->image(framePath);
     }
 
-    Vec2U frameSize = frames.begin()->second.first.size();
-    Vec2U imageSize = frames.begin()->second.second->size().piecewiseMin(Vec2U{256, 256});
+    Vec2U frameSize = frames.begin()->second.frameBox.size();
+    Vec2U imageSize = frames.begin()->second.image->size().piecewiseMin(Vec2U{256, 256});
     if (imageSize.min() == 0)
       return "^red;Resulting image is empty^reset;";
 
     for (auto& [frameName, frame] : frames) {
-      auto& [frameBox, frameImage] = frame;
-      frameBox.setXMin((frameBox.xMin() / frameSize[0]) * imageSize[0]);
-      frameBox.setYMin(((sheet->height() - frameBox.yMin() - frameBox.height()) / frameSize[1]) * imageSize[1]);
-      frameBox.setXMax(frameBox.xMin() + imageSize[0]);
-      frameBox.setYMax(frameBox.yMin() + imageSize[1]);
+      frame.frameBox.setXMin((frame.frameBox.xMin() / frameSize[0]) * imageSize[0]);
+      frame.frameBox.setYMin(((sheet->height() - frame.frameBox.yMin() - frame.frameBox.height()) / frameSize[1]) * imageSize[1]);
+      frame.frameBox.setXMax(frame.frameBox.xMin() + imageSize[0]);
+      frame.frameBox.setYMax(frame.frameBox.yMin() + imageSize[1]);
     }
 
     if (frameSize != imageSize) {
@@ -595,8 +598,7 @@ String ClientCommandProcessor::render(String const& path) {
     }
 
     for (auto const& [frameName, frame] : frames) {
-      auto const& [frameBox, frameImage] = frame;
-      sheet->copyInto(frameBox.min(), *frameImage);
+      sheet->copyInto(frame.frameBox.min(), *frame.image);
     }
 
     image = std::move(sheet);

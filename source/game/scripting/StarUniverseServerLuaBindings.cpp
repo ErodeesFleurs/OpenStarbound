@@ -152,7 +152,7 @@ void LuaBindings::UniverseServerCallbacks::disconnectClient(UniverseServer& univ
 }
 
 void LuaBindings::UniverseServerCallbacks::banClient(UniverseServer& universe, ConnectionId clientId, Maybe<String> const& reason, bool banIp, bool banUuid, Maybe<int> timeout) {
-  return universe.banUser(clientId, reason.value(), make_pair(banIp, banUuid), timeout);
+  return universe.banUser(clientId, reason.value(), pair<bool, bool>{banIp, banUuid}, timeout);
 }
 
 }

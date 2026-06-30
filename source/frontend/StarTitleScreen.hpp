@@ -177,7 +177,12 @@ private:
 
   PanePtr m_mainMenu;
   PanePtr m_backgroundMenu;
-  List<pair<ButtonWidgetPtr, Vec2I>> m_rightAnchoredButtons;
+
+  struct RightAnchoredButton {
+    ButtonWidgetPtr button;
+    Vec2I offset;
+  };
+  List<RightAnchoredButton> m_rightAnchoredButtons;
 
   PlayerPtr m_mainAppPlayer;
   PlayerStoragePtr m_playerStorage;

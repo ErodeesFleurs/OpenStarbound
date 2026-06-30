@@ -95,7 +95,7 @@ pair<float, Direction> getAngleSide(float angle, bool ccRotation) {
   if (direction == Direction::Left && ccRotation)
     angle *= -1;
 
-  return make_pair(angle, direction);
+  return {angle, direction};
 }
 
 }

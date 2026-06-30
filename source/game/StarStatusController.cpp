@@ -436,8 +436,8 @@ void StatusController::init(Entity& parentEntity, ActorMovementController& movem
 
   if (m_parentEntity->isMaster()) {
     initPrimaryScript();
-    for (auto& p : m_uniqueEffects.keys())
-      if (auto effect = m_uniqueEffects.ptr(p))
+    for (auto& effectKey : m_uniqueEffects.keys())
+      if (auto effect = m_uniqueEffects.ptr(effectKey))
         initUniqueEffectScript(*effect);
   }
 
@@ -448,8 +448,8 @@ void StatusController::uninit() {
   m_parentEntity = nullptr;
   m_movementController = nullptr;
 
-  for (auto& p : m_uniqueEffects.keys())
-    if (auto effect = m_uniqueEffects.ptr(p))
+  for (auto& effectKey : m_uniqueEffects.keys())
+    if (auto effect = m_uniqueEffects.ptr(effectKey))
       uninitUniqueEffectScript(*effect);
   uninitPrimaryScript();
 
@@ -718,8 +718,8 @@ void StatusController::updateAnimators(float dt) {
 
 void StatusController::updatePersistentUniqueEffects() {
   Set<UniqueStatusEffect> activePersistentUniqueEffects;
-  for (auto& categoryPair : m_persistentEffects) {
-    for (auto& uniqueEffectName : categoryPair.second.uniqueEffects) {
+  for (auto& [_, category] : m_persistentEffects) {
+    for (auto& uniqueEffectName : category.uniqueEffects) {
       // It is important to note here that if a unique effect exists, it *may*
       // not come from a persistent effect, it *may* be from an ephemeral effect.
       // Here, when a persistent effect overrides an ephemeral effect, it is
@@ -735,7 +735,7 @@ void StatusController::updatePersistentUniqueEffects() {
       else if (addUniqueEffect(uniqueEffectName, {}, {}))
         activePersistentUniqueEffects.add(uniqueEffectName);
       else
-        categoryPair.second.uniqueEffects.remove(uniqueEffectName);
+        category.uniqueEffects.remove(uniqueEffectName);
     }
   }
   // Again, here we are using "durationless" to mean "persistent"

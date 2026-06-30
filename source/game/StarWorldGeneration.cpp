@@ -1003,13 +1003,13 @@ void WorldGenerator::generateCaveLiquid(WorldStorage& worldStorage, ServerTileSe
 
   MaterialId biomeBlock = m_worldServer.worldTemplate()->biome(tileArray->tile(samplePoint).blockBiomeIndex)->mainBlock;
   Map<Vec2I, float> drops = determineLiquidLevel(candidateNodes, solidSurroundings);
-  for (auto iter = drops.begin(); iter != drops.end(); ++iter) {
-    auto tile = tileArray->modifyTile(wrapCoords(iter->first));
+  for (auto const& [position, pressure] : drops) {
+    auto tile = tileArray->modifyTile(wrapCoords(position));
     starAssert(tile);
     if (!tile)
       continue;
-    if (iter->second)
-      tile->liquid = LiquidStore::filled(fillLiquid, 1.0f, iter->second);
+    if (pressure)
+      tile->liquid = LiquidStore::filled(fillLiquid, 1.0f, pressure);
     if (encloseLiquids && tile->background == EmptyMaterialId)
       tile->background = biomeBlock;
   }
@@ -1497,8 +1497,7 @@ Map<Vec2I, float> WorldGenerator::determineLiquidLevel(Set<Vec2I> const& spots, 
 void WorldGenerator::levelCluster(Set<Vec2I>& cluster, Set<Vec2I> const& filled, Map<Vec2I, float>& results) {
   int maxY = std::numeric_limits<int>::min();
   int minY = std::numeric_limits<int>::max();
-  for (auto iter = cluster.begin(); iter != cluster.end(); iter++) {
-    auto droplet = (*iter);
+  for (auto const& droplet : cluster) {
     if (filled.contains(droplet + Vec2I(1, 0)) && filled.contains(droplet + Vec2I(-1, 0))
         && filled.contains(droplet + Vec2I(0, -1))) {
       if (droplet.y() > maxY)
@@ -1513,10 +1512,10 @@ void WorldGenerator::levelCluster(Set<Vec2I>& cluster, Set<Vec2I> const& filled,
     }
   }
   int liquidLevel = std::min(maxY, minY);
-  for (auto iter = cluster.begin(); iter != cluster.end(); iter++) {
-    int pressure = (liquidLevel - (*iter).y());
+  for (auto const& droplet : cluster) {
+    int pressure = (liquidLevel - droplet.y());
     if (pressure >= 0)
-      results[*iter] = 1.0f + pressure;
+      results[droplet] = 1.0f + pressure;
   }
 }
 

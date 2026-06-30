@@ -331,19 +331,19 @@ void Spawner::debugShowSpawnCells() {
     return false;
   };
 
-  for (auto const& debugInfo : m_debugSpawnInfo) {
-    RectF spawnRegion = Spawner::cellRegion(debugInfo.first);
+  for (auto const& [cell, debugInfo] : m_debugSpawnInfo) {
+    RectF spawnRegion = Spawner::cellRegion(cell);
     if (regionVisibleToClient(spawnRegion)) {
       SpatialLogger::logPoly("world", PolyF(spawnRegion), {128, 0, 0, 255});
       StringList areaList;
-      for (auto area : debugInfo.second.spawnParameters.areas)
+      for (auto area : debugInfo.spawnParameters.areas)
         areaList.append(SpawnParameters::AreaNames.getRight(area).slice(0, 3));
       SpatialLogger::logText("world", strf("Areas: {}", areaList.join(", ")), spawnRegion.min() + Vec2F(0.5, 2.5), {255, 255, 255, 255});
-      SpatialLogger::logText("world", strf("Region: {}", SpawnParameters::RegionNames.getRight(debugInfo.second.spawnParameters.region)), spawnRegion.min() + Vec2F(0.5, 1.5), {255, 255, 255, 255});
-      SpatialLogger::logText("world", strf("Time: {}", SpawnParameters::TimeNames.getRight(debugInfo.second.spawnParameters.time)), spawnRegion.min() + Vec2F(0.5, 0.5), {255, 255, 255, 255});
+      SpatialLogger::logText("world", strf("Region: {}", SpawnParameters::RegionNames.getRight(debugInfo.spawnParameters.region)), spawnRegion.min() + Vec2F(0.5, 1.5), {255, 255, 255, 255});
+      SpatialLogger::logText("world", strf("Time: {}", SpawnParameters::TimeNames.getRight(debugInfo.spawnParameters.time)), spawnRegion.min() + Vec2F(0.5, 0.5), {255, 255, 255, 255});
 
-      if (debugInfo.second.spawnAttempts > 0)
-        SpatialLogger::logText("world", strf("Spawns: {} / {}", debugInfo.second.spawns, debugInfo.second.spawnAttempts), spawnRegion.min() + Vec2F(0.5, 3.5), (debugInfo.second.spawnAttempts > debugInfo.second.spawns) ? Color::Red.toRgba() : Color::Green.toRgba());
+      if (debugInfo.spawnAttempts > 0)
+        SpatialLogger::logText("world", strf("Spawns: {} / {}", debugInfo.spawns, debugInfo.spawnAttempts), spawnRegion.min() + Vec2F(0.5, 3.5), (debugInfo.spawnAttempts > debugInfo.spawns) ? Color::Red.toRgba() : Color::Green.toRgba());
     }
   }
 }

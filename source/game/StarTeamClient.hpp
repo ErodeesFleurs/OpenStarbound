@@ -57,7 +57,14 @@ public:
   List<Member> members();
 
 private:
-  using RpcResponseHandler = pair<RpcPromise<Json>, function<void(Json const&)>>;
+  struct PendingInvitation {
+    Uuid inviterUuid;
+    String inviterName;
+  };
+  struct RpcResponseHandler {
+    RpcPromise<Json> responsePromise;
+    function<void(Json const&)> responseFunction;
+  };
 
   void invokeRemote(String const& method, Json const& args, function<void(Json const&)> responseFunction = {});
   void handleRpcResponses();
@@ -76,7 +83,7 @@ private:
   List<Member> m_members;
 
   bool m_hasPendingInvitation;
-  pair<Uuid, String> m_pendingInvitation;
+  PendingInvitation m_pendingInvitation;
   double m_pollInvitationsTimer;
   List<Variant<pair<String, bool>, StringList>> m_pendingInviteResults;
 

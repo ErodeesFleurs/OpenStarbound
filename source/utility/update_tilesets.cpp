@@ -220,9 +220,7 @@ int main(int argc, char** argv) {
 
     rootLoader.setSummary("Updates Tiled JSON tilesets in unpacked assets directories");
 
-    UniquePtr<Root> root;
-    OptionParser::Options options;
-    tie(root, options) = rootLoader.commandInitOrDie(argc, argv);
+    auto [root, options] = rootLoader.commandInitOrDie(argc, argv);
 
     TilesetUpdater updater;
 

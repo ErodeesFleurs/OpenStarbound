@@ -200,8 +200,8 @@ ByteArray ServerClientContext::writeUpdate() {
   if (!m_shipChunksUpdate.empty())
     shipChunksUpdate = DataStreamBuffer::serialize(take(m_shipChunksUpdate));
 
-  ByteArray netGroupUpdate;
-  tie(netGroupUpdate, m_netVersion) = m_netGroup.writeNetState(m_netVersion, m_netRules);
+  auto [netGroupUpdate, nextNetVersion] = m_netGroup.writeNetState(m_netVersion, m_netRules);
+  m_netVersion = nextNetVersion;
 
   if (rpcUpdate.empty() && shipChunksUpdate.empty() && netGroupUpdate.empty())
     return {};

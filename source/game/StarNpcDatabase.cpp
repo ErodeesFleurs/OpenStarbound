@@ -156,8 +156,8 @@ NpcVariant NpcDatabase::generateNpcVariant(
         int randomColorIndex = -1;
         bool matchColorIndices = config.getBool("matchColorIndices", false);
 
-        for (auto itemSlotConfig : randSource.randFrom(highestLevelItemsConfig.toArray()).toObject()) {
-          ItemDescriptor item = ItemDescriptor(randSource.randFrom(itemSlotConfig.second.toArray()));
+        for (auto [itemSlotName, itemOptions] : randSource.randFrom(highestLevelItemsConfig.toArray()).toObject()) {
+          ItemDescriptor item = ItemDescriptor(randSource.randFrom(itemOptions.toArray()));
 
           // Randomize color index if colorIndex is an array
           if (item.parameters().contains("colorIndex")) {
@@ -170,7 +170,7 @@ NpcVariant NpcDatabase::generateNpcVariant(
             }
           }
 
-          variant.items[itemSlotConfig.first] = std::move(item);
+          variant.items[itemSlotName] = std::move(item);
         }
       }
     }
@@ -418,9 +418,9 @@ List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMo
   };
 
   ArmorWearer armor(m_itemDatabase);
-  for (auto item : npcVariant.items) {
-    if (auto equipmentSlot = EquipmentSlotNames.maybeLeft(item.first)) {
-      armor.setItem(static_cast<uint8_t>(*equipmentSlot), as<ArmorItem>(makeItem(ItemDescriptor(item.second))));
+  for (auto [itemSlotName, itemDescriptor] : npcVariant.items) {
+    if (auto equipmentSlot = EquipmentSlotNames.maybeLeft(itemSlotName)) {
+      armor.setItem(static_cast<uint8_t>(*equipmentSlot), as<ArmorItem>(makeItem(ItemDescriptor(itemDescriptor))));
     }
   }
 

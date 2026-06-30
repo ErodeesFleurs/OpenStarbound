@@ -91,16 +91,18 @@ inline DataStream& operator>>(DataStream& ds, Color& color) {
 }
 
 template <typename First, typename Second>
-DataStream& operator<<(DataStream& ds, pair<First, Second> const& pair) {
-  ds << pair.first;
-  ds << pair.second;
+DataStream& operator<<(DataStream& ds, pair<First, Second> const& value) {
+  auto const& [first, second] = value;
+  ds << first;
+  ds << second;
   return ds;
 }
 
 template <typename First, typename Second>
-DataStream& operator>>(DataStream& ds, pair<First, Second>& pair) {
-  ds >> pair.first;
-  ds >> pair.second;
+DataStream& operator>>(DataStream& ds, pair<First, Second>& value) {
+  auto& [first, second] = value;
+  ds >> first;
+  ds >> second;
   return ds;
 }
 

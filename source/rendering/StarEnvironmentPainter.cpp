@@ -83,11 +83,12 @@ void EnvironmentPainter::renderStars(float pixelRatio, Vec2F const& screenSize, 
 
   auto& primitives = m_renderer->immediatePrimitives();
 
-  for (auto& star : stars) {
-    Vec2F screenPos = transform.transformVec2(star.first);
+  for (auto const& [starPosition, starTypeAndFrameOffset] : stars) {
+    auto const& [starType, frameOffset] = starTypeAndFrameOffset;
+    Vec2F screenPos = transform.transformVec2(starPosition);
     if (viewRect.contains(screenPos)) {
-      size_t starFrame = static_cast<size_t>(sky.epochTime + star.second.second) % sky.starFrames;
-      if (auto const& texture = m_starTextures[star.second.first * sky.starFrames + starFrame])
+      size_t starFrame = static_cast<size_t>(sky.epochTime + frameOffset) % sky.starFrames;
+      if (auto const& texture = m_starTextures[starType * sky.starFrames + starFrame])
         primitives.emplace_back(std::in_place_type_t<RenderQuad>(), texture, screenPos * pixelRatio - Vec2F(texture->size()) / 2, 1.0, color, 0.0f);
     }
   }
@@ -143,10 +144,11 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
 
     Vec2D debrisPositionOffset = viewMin + velocityOffset;
 
-    for (auto& debrisItem : debrisItems) {
-      Vec2F debrisPosition = rotMatrix.transformVec2(Vec2F(debrisItem.first - debrisPositionOffset));
-      float debrisAngle = fmod(Constants::deg2rad * debrisItem.second.second * sky.epochTime, Constants::pi * 2) + sky.starRotation;
-      drawOrbiter(pixelRatio, screenSize, sky, {SkyOrbiterType::SpaceDebris, 1.0f, debrisAngle, debrisItem.second.first, debrisPosition});
+    for (auto const& [debrisBasePosition, debrisImageAndAngularVelocity] : debrisItems) {
+      auto const& [debrisImage, debrisAngularVelocity] = debrisImageAndAngularVelocity;
+      Vec2F debrisPosition = rotMatrix.transformVec2(Vec2F(debrisBasePosition - debrisPositionOffset));
+      float debrisAngle = fmod(Constants::deg2rad * debrisAngularVelocity * sky.epochTime, Constants::pi * 2) + sky.starRotation;
+      drawOrbiter(pixelRatio, screenSize, sky, {SkyOrbiterType::SpaceDebris, 1.0f, debrisAngle, debrisImage, debrisPosition});
     }
   }
 
@@ -167,8 +169,8 @@ void EnvironmentPainter::renderPlanetHorizon(float pixelRatio, Vec2F const& scre
 
   // Can't bail sooner, need to queue all textures
   bool allLoaded = true;
-  for (auto const& layer : planetHorizon.layers) {
-    if (!m_textureGroup->tryTexture(layer.first) || !m_textureGroup->tryTexture(layer.second))
+  for (auto const& [leftLayerTexture, rightLayerTexture] : planetHorizon.layers) {
+    if (!m_textureGroup->tryTexture(leftLayerTexture) || !m_textureGroup->tryTexture(rightLayerTexture))
       allLoaded = false;
   }
 
@@ -180,10 +182,10 @@ void EnvironmentPainter::renderPlanetHorizon(float pixelRatio, Vec2F const& scre
 
   auto& primitives = m_renderer->immediatePrimitives();
 
-  for (auto const& layer : planetHorizon.layers) {
-    TexturePtr leftTexture = m_textureGroup->loadTexture(layer.first);
+  for (auto const& [leftLayerTexture, rightLayerTexture] : planetHorizon.layers) {
+    TexturePtr leftTexture = m_textureGroup->loadTexture(leftLayerTexture);
     Vec2F leftTextureSize(leftTexture->size());
-    TexturePtr rightTexture = m_textureGroup->loadTexture(layer.second);
+    TexturePtr rightTexture = m_textureGroup->loadTexture(rightLayerTexture);
     Vec2F rightTextureSize(rightTexture->size());
 
     Vec2F leftLayer = center;

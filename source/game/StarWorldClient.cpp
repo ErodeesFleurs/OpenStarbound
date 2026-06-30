@@ -106,9 +106,9 @@ WorldClient::WorldClient(PlayerPtr mainPlayer,
 
   m_collisionGenerator.init([this](int x, int y) {
     if (!m_tilePrediction.m_predictedTiles.empty()) {
-      if (auto p = m_tilePrediction.m_predictedTiles.ptr({x, y})) {
-        if (p->collision)
-          return *p->collision;
+      if (auto predictedTile = m_tilePrediction.m_predictedTiles.ptr({x, y})) {
+        if (predictedTile->collision)
+          return *predictedTile->collision;
       }
     }
     return m_tileArray->tile({x, y}).collision;
@@ -206,7 +206,7 @@ void WorldClient::resendEntity(EntityId entityId) {
 
   auto fromVersion = m_masterEntitiesNetVersion.take(entity->entityId());
   auto netRules = m_clientState.netCompatibilityRules();
-  ByteArray finalNetState = entity->writeNetState(fromVersion, netRules).first;
+  auto [finalNetState, _] = entity->writeNetState(fromVersion, netRules);
   m_outgoingPackets.append(make_shared<EntityDestroyPacket>(entity->entityId(), std::move(finalNetState), false));
   notifyEntityCreate(entity);
 }
@@ -228,8 +228,8 @@ void WorldClient::removeEntity(EntityId entityId, bool andDie) {
     }
     if (directives) {
       int directiveIndex = unsigned(entity->entityId()) % directives->size();
-      for (auto& p : renderCallback.particles)
-        p.directives.append(directives->get(directiveIndex));
+      for (auto& particle : renderCallback.particles)
+        particle.directives.append(directives->get(directiveIndex));
     }
 
     m_particles->addParticles(std::move(renderCallback.particles));
@@ -238,7 +238,7 @@ void WorldClient::removeEntity(EntityId entityId, bool andDie) {
 
   if (auto version = m_masterEntitiesNetVersion.maybeTake(entity->entityId())) {
     auto netRules = m_clientState.netCompatibilityRules();
-    ByteArray finalNetState = entity->writeNetState(*version, netRules).first;
+    auto [finalNetState, _] = entity->writeNetState(*version, netRules);
     m_outgoingPackets.append(make_shared<EntityDestroyPacket>(entity->entityId(), std::move(finalNetState), andDie));
   }
 
@@ -262,7 +262,7 @@ void WorldClient::timer(float delay, WorldAction worldAction) {
   if (!inWorld())
     return;
 
-  m_timers.append({delay, worldAction});
+  m_timers.append(WorldTimer{delay, worldAction});
 }
 
 EntityPtr WorldClient::closestEntity(Vec2F const& center, float radius, EntityFilter selector) const {
@@ -624,8 +624,8 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
     if (directives) {
       int directiveIndex = unsigned(entity->entityId()) % directives->size();
-      for (auto& p : renderCallback.particles)
-        p.directives.append(directives->get(directiveIndex));
+      for (auto& particle : renderCallback.particles)
+        particle.directives.append(directives->get(directiveIndex));
     }
 
     m_particles->addParticles(std::move(renderCallback.particles));
@@ -642,7 +642,10 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
     {
       MutexLocker m_prepLocker(m_lighting.m_lightMapPrepMutex);
       m_lighting.m_pendingLights = std::move(renderLightSources);
-      m_lighting.m_pendingParticleLights = m_particles->lightSources();
+      m_lighting.m_pendingParticleLights = m_particles->lightSources().transformed([](auto const& lightSource) {
+          auto const& [position, light] = lightSource;
+          return StarWorldClientLighting::PendingParticleLight{position, light};
+        });
       m_lighting.m_pendingLightRange = window.padded(1);
       m_lighting.m_pendingLightReady = true;
     }//Kae: Padded by one to fix light spread issues at the edges of the frame.
@@ -958,47 +961,47 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       // player, but this may not be true in the future.  In the future, there
       // may be context hints with tile modifications to figure out what to do
       // with failures.
-      for (auto& modification : tileModificationFailure->modifications) {
-        auto findPrediction = m_tilePrediction.m_predictedTiles.find(modification.first);
+      for (auto& [position, modification] : tileModificationFailure->modifications) {
+        auto findPrediction = m_tilePrediction.m_predictedTiles.find(position);
         if (findPrediction != m_tilePrediction.m_predictedTiles.end()) {
-          auto& p = findPrediction->second;
-          if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
+          auto& predictedTile = findPrediction->second;
+          if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
             if (placeMaterial->layer == TileLayer::Foreground) {
-              p.foreground.reset();
-              p.foregroundHueShift.reset();
-              if (p.collision) {
-                p.collision.reset();
-                dirtyCollision(RectI::withSize(modification.first, {1, 1}));
+              predictedTile.foreground.reset();
+              predictedTile.foregroundHueShift.reset();
+              if (predictedTile.collision) {
+                predictedTile.collision.reset();
+                dirtyCollision(RectI::withSize(position, {1, 1}));
               }
             } else {
-              p.background.reset();
-              p.backgroundHueShift.reset();
+              predictedTile.background.reset();
+              predictedTile.backgroundHueShift.reset();
             }
-          } else if (auto placeMod = modification.second.ptr<PlaceMod>()) {
+          } else if (auto placeMod = modification.ptr<PlaceMod>()) {
             if (placeMod->layer == TileLayer::Foreground) {
-              p.foregroundMod.reset();
-              p.foregroundModHueShift.reset();
+              predictedTile.foregroundMod.reset();
+              predictedTile.foregroundModHueShift.reset();
             } else {
-              p.backgroundMod.reset();
-              p.backgroundModHueShift.reset();
+              predictedTile.backgroundMod.reset();
+              predictedTile.backgroundModHueShift.reset();
             }
-          } else if (auto placeColor = modification.second.ptr<PlaceMaterialColor>()) {
+          } else if (auto placeColor = modification.ptr<PlaceMaterialColor>()) {
             if (placeColor->layer == TileLayer::Foreground)
-              p.foregroundColorVariant.reset();
+              predictedTile.foregroundColorVariant.reset();
             else
-              p.backgroundColorVariant.reset();
-          } else if (modification.second.is<PlaceLiquid>()) {
-            p.liquid.reset();
+              predictedTile.backgroundColorVariant.reset();
+          } else if (modification.is<PlaceLiquid>()) {
+            predictedTile.liquid.reset();
           }
 
-          if (!p)
+          if (!predictedTile)
             m_tilePrediction.m_predictedTiles.erase(findPrediction);
         }
 
-        if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
+        if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
           auto stack = materialDatabase->materialItemDrop(placeMaterial->material);
           tryGiveMainPlayerItem(itemDatabase->item(stack), true);
-        } else if (auto placeMod = modification.second.ptr<PlaceMod>()) {
+        } else if (auto placeMod = modification.ptr<PlaceMod>()) {
           auto stack = materialDatabase->modItemDrop(placeMod->mod);
           tryGiveMainPlayerItem(itemDatabase->item(stack), true);
         }
@@ -1189,9 +1192,9 @@ void WorldClient::update(float dt) {
   m_interpolationTracker.update(m_currentTime);
 
   List<WorldAction> triggeredActions;
-  eraseWhere(m_timers, [&triggeredActions, dt](pair<float, WorldAction>& timer) {
-    if ((timer.first -= dt) <= 0) {
-      triggeredActions.append(timer.second);
+  eraseWhere(m_timers, [&triggeredActions, dt](WorldTimer& timer) {
+    if ((timer.remainingTime -= dt) <= 0) {
+      triggeredActions.append(timer.action);
       return true;
     }
     return false;
@@ -1480,7 +1483,8 @@ void WorldClient::addEntity(EntityPtr const& entity, EntityId entityId) {
   } else {
     auto entityFactory = m_entityFactory;
     auto netRules = m_clientState.netCompatibilityRules();
-    m_outgoingPackets.append(make_shared<SpawnEntityPacket>(entity->entityType(), entityFactory->netStoreEntity(entity, netRules), entity->writeNetState(0, netRules).first));
+    auto [initialDelta, _] = entity->writeNetState(0, netRules);
+    m_outgoingPackets.append(make_shared<SpawnEntityPacket>(entity->entityType(), entityFactory->netStoreEntity(entity, netRules), std::move(initialDelta)));
   }
 }
 
@@ -1531,12 +1535,12 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
   for (auto& pos : tilePositions) {
     if (isTileProtected(pos))
       continue;
-    auto& p = m_tilePrediction.m_predictedTiles[pos];
+    auto& predictedTile = m_tilePrediction.m_predictedTiles[pos];
     auto const& tile = m_tileArray->tile(pos);
-    if ((p.liquid ? p.liquid->liquid : tile.liquid.liquid) == liquidId) {
-      if (!p.liquid)
-        p.liquid.emplace(tile.liquid.liquid, tile.liquid.level);
-      auto& liquid = *p.liquid;
+    if ((predictedTile.liquid ? predictedTile.liquid->liquid : tile.liquid.liquid) == liquidId) {
+      if (!predictedTile.liquid)
+        predictedTile.liquid.emplace(tile.liquid.liquid, tile.liquid.level);
+      auto& liquid = *predictedTile.liquid;
       if (liquid.level >= nextUnit) {
         liquid.take(nextUnit);
         nextUnit = bucketSize;
@@ -1595,10 +1599,10 @@ void WorldClient::queueUpdatePackets(bool sendEntityUpdates) {
     auto netRules = m_clientState.netCompatibilityRules();
     m_entityMap->forAllEntities([&](EntityPtr const& entity) {
       if (auto version = m_masterEntitiesNetVersion.ptr(entity->entityId())) {
-        auto updateAndVersion = entity->writeNetState(*version, netRules);
-        if (!updateAndVersion.first.empty())
-          entityUpdateSet->deltas[entity->entityId()] = std::move(updateAndVersion.first);
-        *version = updateAndVersion.second;
+        auto [delta, newVersion] = entity->writeNetState(*version, netRules);
+        if (!delta.empty())
+          entityUpdateSet->deltas[entity->entityId()] = std::move(delta);
+        *version = newVersion;
       }
     });
     m_outgoingPackets.append(std::move(entityUpdateSet));
@@ -1665,14 +1669,14 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_tileArray = make_shared<ClientTileSectorArray>(m_worldTemplate->size());
   m_tileGetterFunction = [&, tile = ClientTile()](Vec2I pos) mutable -> ClientTile const& {
     if (!m_tilePrediction.m_predictedTiles.empty()) {
-      if (auto p = m_tilePrediction.m_predictedTiles.ptr(pos)) {
-        p->apply(tile = m_tileArray->tile(pos));
-        if (p->liquid) {
-          if (p->liquid->liquid == tile.liquid.liquid)
-            tile.liquid.level += p->liquid->level;
+      if (auto predictedTile = m_tilePrediction.m_predictedTiles.ptr(pos)) {
+        predictedTile->apply(tile = m_tileArray->tile(pos));
+        if (predictedTile->liquid) {
+          if (predictedTile->liquid->liquid == tile.liquid.liquid)
+            tile.liquid.level += predictedTile->liquid->level;
           else {
-            tile.liquid.liquid = p->liquid->liquid;
-            tile.liquid.level = p->liquid->level;
+            tile.liquid.liquid = predictedTile->liquid->liquid;
+            tile.liquid.level = predictedTile->liquid->level;
           }
         }
         return tile;
@@ -1789,10 +1793,10 @@ void WorldClient::notifyEntityCreate(EntityPtr const& entity) {
   if (entity->isMaster() && !m_masterEntitiesNetVersion.contains(entity->entityId())) {
     // Server was unaware of this entity until now
     auto netRules = m_clientState.netCompatibilityRules();
-    auto firstNetState = entity->writeNetState(0, netRules);
-    m_masterEntitiesNetVersion[entity->entityId()] = firstNetState.second;
+    auto [initialDelta, initialVersion] = entity->writeNetState(0, netRules);
+    m_masterEntitiesNetVersion[entity->entityId()] = initialVersion;
     m_outgoingPackets.append(make_shared<EntityCreatePacket>(entity->entityType(),
-                                                             m_entityFactory->netStoreEntity(entity, netRules), std::move(firstNetState.first), entity->entityId()));
+                                                             m_entityFactory->netStoreEntity(entity, netRules), std::move(initialDelta), entity->entityId()));
   }
 }
 

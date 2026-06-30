@@ -404,7 +404,11 @@ private:
 
   HashMap<String, List<Drawable>> m_partDrawables;
 
-  mutable StringMap<std::pair<size_t, Drawable>> m_cachedPartDrawables;
+  struct CachedPartDrawable {
+    size_t imageHash;
+    Drawable drawable;
+  };
+  mutable StringMap<CachedPartDrawable> m_cachedPartDrawables;
 };
 
 }// namespace Star

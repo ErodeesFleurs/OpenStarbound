@@ -267,7 +267,7 @@ KeyboardCaptureMode TextBoxWidget::keyboardCaptureMode() const {
 
 Maybe<pair<RectI, int>> TextBoxWidget::keyboardCaptureArea() const {
   if (active() && hasFocus()) {
-    return make_pair(screenBoundRect().scaled(context().interfaceScale()), getCursorDrawOffset());
+    return pair<RectI, int>{screenBoundRect().scaled(context().interfaceScale()), getCursorDrawOffset()};
   }
   return {};
 }

@@ -568,7 +568,7 @@ auto BTreeDatabase::BTreeImpl::indexSplit(Index const& index) -> Maybe<pair<Key,
   auto right = make_shared<IndexNode>();
   right->self = InvalidBlockIndex;
   Key k = index->split(*right, (index->pointerCount() + 1) / 2);
-  return make_pair(k, right);
+  return pair<Key, Index>{k, right};
 }
 
 auto BTreeDatabase::BTreeImpl::storeIndex(Index index) -> Pointer {
@@ -589,10 +589,10 @@ auto BTreeDatabase::BTreeImpl::storeIndex(Index index) -> Pointer {
   buffer.write<uint8_t>(index->level);
   buffer.write<uint32_t>(index->pointers.size());
   buffer.write<BlockIndex>(*index->beginPointer);
-  for (auto i = index->pointers.begin(); i != index->pointers.end(); ++i) {
-    starAssert(i->key.size() == parent->m_keySize);
-    buffer.writeBytes(i->key);
-    buffer.write<BlockIndex>(i->pointer);
+  for (auto const& pointer : index->pointers) {
+    starAssert(pointer.key.size() == parent->m_keySize);
+    buffer.writeBytes(pointer.key);
+    buffer.write<BlockIndex>(pointer.pointer);
   }
 
   parent->updateBlock(index->self, buffer.data());
@@ -1146,8 +1146,8 @@ void BTreeDatabase::doCommit() {
 }
 
 void BTreeDatabase::commitWrites() {
-  for (auto& write : m_uncommittedWrites)
-    m_device->writeFullAbsolute(HeaderSize + write.first * static_cast<StreamOffset>(m_blockSize), write.second.ptr(), m_blockSize);
+  for (auto& [blockIndex, blockData] : m_uncommittedWrites)
+    m_device->writeFullAbsolute(HeaderSize + blockIndex * static_cast<StreamOffset>(m_blockSize), blockData.ptr(), m_blockSize);
 
   m_device->sync();
   m_uncommittedWrites.clear();

@@ -134,8 +134,8 @@ MonsterDatabase::MonsterDatabase(AssetsConstPtr assets, LiquidsDatabaseConstPtr 
       ColorReplaceMap colorSwaps;
       for (auto const& swapSet : config.getArray("swaps")) {
         ColorReplaceMap swapMap;
-        for (auto const& swap : swapSet.iterateObject()) {
-          swapMap[Color::fromHex(swap.first).toRgba()] = Color::fromHex(swap.second.toString()).toRgba();
+        for (auto const& [sourceColor, replacementColor] : swapSet.iterateObject()) {
+          swapMap[Color::fromHex(sourceColor).toRgba()] = Color::fromHex(replacementColor.toString()).toRgba();
         }
         m_colorSwaps[paletteName].append(swapMap);
       }
@@ -171,8 +171,9 @@ MonsterVariant MonsterDatabase::randomMonster(String const& typeName, Json const
 
 MonsterVariant MonsterDatabase::monsterVariant(String const& typeName, uint64_t seed, Json const& uniqueParameters) const {
   MutexLocker locker(m_cacheMutex);
-  return m_monsterCache.get(make_tuple(typeName, seed, uniqueParameters), [this](tuple<String, uint64_t, Json> const& key) {
-    return produceMonster(get<0>(key), get<1>(key), get<2>(key));
+  return m_monsterCache.get(tuple<String, uint64_t, Json>{typeName, seed, uniqueParameters}, [this](tuple<String, uint64_t, Json> const& key) {
+    auto const& [typeName, seed, uniqueParameters] = key;
+    return produceMonster(typeName, seed, uniqueParameters);
   });
 }
 
@@ -263,9 +264,9 @@ List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) c
 std::pair<String, String> MonsterDatabase::skillInfo(String const& skillName) const {
   if (m_skills.contains(skillName)) {
     auto& skill = m_skills.get(skillName);
-    return std::make_pair(skill.label, skill.image);
+    return {skill.label, skill.image};
   } else {
-    return std::make_pair("", "");
+    return {"", ""};
   }
 }
 
@@ -458,7 +459,9 @@ MonsterVariant MonsterDatabase::produceMonster(String const& typeName, uint64_t 
   monsterVariant.parameters = mergeFinalParameters({baseParameters, mergedPartParameters});
   monsterVariant.parameters = jsonMerge(monsterVariant.parameters, uniqueParameters);
 
-  tie(monsterVariant.parameters, monsterVariant.animatorConfig) = chooseSkills(monsterVariant.parameters, monsterVariant.animatorConfig, rand);
+  auto [parameters, animatorConfig] = chooseSkills(monsterVariant.parameters, monsterVariant.animatorConfig, rand);
+  monsterVariant.parameters = std::move(parameters);
+  monsterVariant.animatorConfig = std::move(animatorConfig);
   monsterVariant.animatorZoom = 1.0f;
   monsterVariant.dropPoolConfig = monsterType.dropPools;
 

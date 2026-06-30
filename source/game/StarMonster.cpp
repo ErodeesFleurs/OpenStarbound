@@ -505,8 +505,8 @@ void Monster::render(RenderCallback* renderCallback) {
 
   m_effectEmitter.render(renderCallback, world()->particleDatabase());
 
-  for (auto drawablePair : m_scriptedAnimator.drawables())
-    renderCallback->addDrawable(drawablePair.first, drawablePair.second.value(m_monsterVariant.renderLayer));
+  for (auto const& [drawable, maybeRenderLayer] : m_scriptedAnimator.drawables())
+    renderCallback->addDrawable(drawable, maybeRenderLayer.value(m_monsterVariant.renderLayer));
   renderCallback->addAudios(m_scriptedAnimator.pullNewAudios());
   renderCallback->addParticles(m_scriptedAnimator.pullNewParticles());
 }
@@ -772,9 +772,9 @@ Monster::SkillInfo Monster::activeSkillInfo() const {
   SkillInfo skillInfo;
 
   if (!m_activeSkillName.empty()) {
-    auto monsterSkillInfo = m_monsterDatabase->skillInfo(m_activeSkillName);
-    skillInfo.label = monsterSkillInfo.first;
-    skillInfo.image = monsterSkillInfo.second;
+    auto [skillLabel, skillImage] = m_monsterDatabase->skillInfo(m_activeSkillName);
+    skillInfo.label = skillLabel;
+    skillInfo.image = skillImage;
   }
 
   return skillInfo;

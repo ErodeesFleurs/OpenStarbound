@@ -62,8 +62,8 @@ template <typename Type, typename Ptr>
 auto convert(Ptr const& p) -> decltype(as<Type>(p)) {
   if (!p)
     throw PointerConvertException::format("Could not convert from nullptr to {}", typeid(Type).name());
-  else if (auto a = as<Type>(p))
-    return a;
+  else if (auto converted = as<Type>(p))
+    return converted;
   else
     throw PointerConvertException::format("Could not convert from {} to {}", typeid(*p).name(), typeid(Type).name());
 }

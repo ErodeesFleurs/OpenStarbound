@@ -110,9 +110,9 @@ FormattedJson Star::addOrSet(bool add,
 }
 
 void forEachFileRecursive(String const& directory, function<void(String)> func) {
-  for (pair<String, bool> entry : File::dirList(directory)) {
-    String filename = File::relativeTo(directory, entry.first);
-    if (entry.second)
+  for (auto [entryName, isDirectory] : File::dirList(directory)) {
+    String filename = File::relativeTo(directory, entryName);
+    if (isDirectory)
       forEachFileRecursive(filename, func);
     else
       func(filename);
@@ -231,7 +231,7 @@ pair<JsonPath::PathPtr, bool> parseGetPath(String path) {
     path = path.substr(0, path.size() - 3);
     children = true;
   }
-  return make_pair(parsePath(path), children);
+  return pair<JsonPath::PathPtr, bool>{parsePath(path), children};
 }
 
 Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
@@ -247,9 +247,7 @@ Maybe<ParsedArgs> parseArgs(int argc, char** argv) {
       // Retrieve values at a given path in the Json document
       if (!parsed.command.empty() || args.empty())
         return {};
-      JsonPath::PathPtr path;
-      bool children = false;
-      tie(path, children) = parseGetPath(args.takeFirst());
+      auto [path, children] = parseGetPath(args.takeFirst());
       parsed.command = GetCommand{path, arg == "--opt", children};
 
     } else if (arg == "--set") {

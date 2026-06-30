@@ -22,7 +22,7 @@ WorldPainter::WorldPainter(AssetsConstPtr assets, ConfigurationPtr configuration
 
   m_highlightConfig = m_assets->json("/highlights.config");
   for (auto [effectTypeName, directives] : m_highlightConfig.get("highlightDirectives").iterateObject())
-    m_highlightDirectives.set(EntityHighlightEffectTypeNames.getLeft(effectTypeName), {directives.getString("underlay", ""), directives.getString("overlay", "")});
+    m_highlightDirectives.set(EntityHighlightEffectTypeNames.getLeft(effectTypeName), HighlightDirectives{directives.getString("underlay", ""), directives.getString("overlay", "")});
 
   m_entityBarOffset = jsonToVec2F(m_assets->json("/rendering.config:entityBarOffset"));
   m_entityBarSpacing = jsonToVec2F(m_assets->json("/rendering.config:entityBarSpacing"));
@@ -110,10 +110,14 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
 
   // Main world layers
 
-  Map<EntityRenderLayer, List<pair<EntityHighlightEffect, List<Drawable>>>> entityDrawables;
+  struct EntityLayerDrawables {
+    EntityHighlightEffect highlightEffect;
+    List<Drawable> drawables;
+  };
+  Map<EntityRenderLayer, List<EntityLayerDrawables>> entityDrawables;
   for (auto& ed : renderData.entityDrawables) {
     for (auto& [layer, drawables] : ed.layers)
-      entityDrawables[layer].append({ed.highlightEffect, std::move(drawables)});
+      entityDrawables[layer].append(EntityLayerDrawables{ed.highlightEffect, std::move(drawables)});
   }
 
   auto entityDrawableIterator = entityDrawables.begin();
@@ -123,8 +127,8 @@ void WorldPainter::render(WorldRenderData& renderData, function<bool()> lightWai
         break;
       if (until && entityDrawableIterator->first >= *until)
         break;
-      for (auto& [highlightEffect, drawables] : entityDrawableIterator->second)
-        drawEntityLayer(std::move(drawables), highlightEffect);
+      for (auto& layerDrawables : entityDrawableIterator->second)
+        drawEntityLayer(std::move(layerDrawables.drawables), layerDrawables.highlightEffect);
       ++entityDrawableIterator;
     }
 
@@ -270,7 +274,7 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
   highlightEffect.level *= m_highlightConfig.getFloat("maxHighlightLevel", 1.0);
   if (m_highlightDirectives.contains(highlightEffect.type) && highlightEffect.level > 0) {
     // first pass, draw underlay
-    auto underlayDirectives = m_highlightDirectives[highlightEffect.type].first;
+    auto underlayDirectives = m_highlightDirectives[highlightEffect.type].underlay;
     if (!underlayDirectives.empty()) {
       for (auto& d : drawables) {
         if (d.isImage()) {
@@ -284,7 +288,7 @@ void WorldPainter::drawEntityLayer(List<Drawable> drawables, EntityHighlightEffe
     }
 
     // second pass, draw main drawables and overlays
-    auto overlayDirectives = m_highlightDirectives[highlightEffect.type].second;
+    auto overlayDirectives = m_highlightDirectives[highlightEffect.type].overlay;
     for (auto& d : drawables) {
       drawDrawable(d);
       if (!overlayDirectives.empty() && d.isImage()) {

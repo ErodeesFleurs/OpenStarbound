@@ -76,16 +76,16 @@ DamageSource::DamageSource(DamageType damageType,
 
 Json DamageSource::toJson() const {
   Json damageAreaJson;
-  if (auto p = damageArea.ptr<PolyF>())
-    damageAreaJson = jsonFromPolyF(*p);
-  else if (auto l = damageArea.ptr<Line2F>())
-    damageAreaJson = jsonFromLine2F(*l);
+  if (auto damagePoly = damageArea.ptr<PolyF>())
+    damageAreaJson = jsonFromPolyF(*damagePoly);
+  else if (auto damageLine = damageArea.ptr<Line2F>())
+    damageAreaJson = jsonFromLine2F(*damageLine);
 
   Json knockbackJson;
-  if (auto p = knockback.ptr<float>())
-    knockbackJson = *p;
-  else if (auto v = knockback.ptr<Vec2F>())
-    knockbackJson = jsonFromVec2F(*v);
+  if (auto knockbackMagnitude = knockback.ptr<float>())
+    knockbackJson = *knockbackMagnitude;
+  else if (auto knockbackVector = knockback.ptr<Vec2F>())
+    knockbackJson = jsonFromVec2F(*knockbackVector);
 
   return JsonObject{{"damageType", DamageTypeNames.getRight(damageType)},
       {"damageArea", damageAreaJson},

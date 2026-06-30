@@ -123,13 +123,13 @@ void OptionParser::printHelp(std::ostream& os) const {
     }
   }
 
-  for (auto const& p : m_arguments) {
-    if (p.requirementMode == Optional)
-      cmdLineText += strf(" [<{}>]", p.argumentName);
-    else if (p.requirementMode == Required)
-      cmdLineText += strf(" <{}>", p.argumentName);
+  for (auto const& argument : m_arguments) {
+    if (argument.requirementMode == Optional)
+      cmdLineText += strf(" [<{}>]", argument.argumentName);
+    else if (argument.requirementMode == Required)
+      cmdLineText += strf(" <{}>", argument.argumentName);
     else
-      cmdLineText += strf(" [<{}>...]", p.argumentName);
+      cmdLineText += strf(" [<{}>...]", argument.argumentName);
   }
 
   if (m_commandName.empty())
@@ -150,9 +150,9 @@ void OptionParser::printHelp(std::ostream& os) const {
     }
   }
 
-  for (auto const& p : m_arguments) {
-    if (!p.description.empty())
-      format(os, "  <{}>\t- {}\n", p.argumentName, p.description);
+  for (auto const& argument : m_arguments) {
+    if (!argument.description.empty())
+      format(os, "  <{}>\t- {}\n", argument.argumentName, argument.description);
   }
 
   if (!m_additionalHelp.empty())

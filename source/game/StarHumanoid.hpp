@@ -486,21 +486,26 @@ private:
 
   HashMap<String, String> m_identityFramesetTags;
 
-  pair<String, String> m_headRotationPoint;
-  pair<String, String> m_frontArmRotationPoint;
-  pair<String, String> m_backArmRotationPoint;
+  struct PartPointReference {
+    String partName;
+    String pointName;
+  };
+
+  PartPointReference m_headRotationPoint;
+  PartPointReference m_frontArmRotationPoint;
+  PartPointReference m_backArmRotationPoint;
 
   String m_frontItemPart;
   String m_backItemPart;
 
-  pair<String, String> m_mouthOffsetPoint;
-  pair<String, String> m_headArmorOffsetPoint;
-  pair<String, String> m_chestArmorOffsetPoint;
-  pair<String, String> m_legsArmorOffsetPoint;
-  pair<String, String> m_backArmorOffsetPoint;
-  pair<String, String> m_feetOffsetPoint;
-  pair<String, String> m_throwPoint;
-  pair<String, String> m_interactPoint;
+  PartPointReference m_mouthOffsetPoint;
+  PartPointReference m_headArmorOffsetPoint;
+  PartPointReference m_chestArmorOffsetPoint;
+  PartPointReference m_legsArmorOffsetPoint;
+  PartPointReference m_backArmorOffsetPoint;
+  PartPointReference m_feetOffsetPoint;
+  PartPointReference m_throwPoint;
+  PartPointReference m_interactPoint;
 };
 
 // this is because species can be changed on the fly and therefore the humanoid needs to re-initialize as the new species when it changes

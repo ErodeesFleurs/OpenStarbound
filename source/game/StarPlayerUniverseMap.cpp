@@ -197,14 +197,14 @@ PlayerUniverseMap::SystemMap PlayerUniverseMap::SystemMap::fromJson(Json const& 
   for (auto m : json.getArray("mappedPlanets"))
     map.mappedPlanets.add(CelestialCoordinate(m));
 
-  for (auto o : json.getObject("mappedObjects")) {
+  for (auto [objectUuid, objectJson] : json.getObject("mappedObjects")) {
     MappedObject object;
-    object.typeName = o.second.getString("typeName");
-    object.orbit = jsonToMaybe<CelestialOrbit>(o.second.get("orbit"), [](Json const& o ) {
+    object.typeName = objectJson.getString("typeName");
+    object.orbit = jsonToMaybe<CelestialOrbit>(objectJson.get("orbit"), [](Json const& o ) {
         return CelestialOrbit::fromJson(o);
       });
-    object.parameters = o.second.getObject("parameters", {});
-    map.mappedObjects.set(Uuid(o.first), object);
+    object.parameters = objectJson.getObject("parameters", {});
+    map.mappedObjects.set(Uuid(objectUuid), object);
   }
 
   for (auto b : json.getArray("bookmarks"))
@@ -223,13 +223,13 @@ Json PlayerUniverseMap::SystemMap::toJson() const {
   json.set("mappedPlanets", planets);
 
   JsonObject objects;
-  for (auto const& o : mappedObjects) {
+  for (auto const& [objectUuid, mappedObject] : mappedObjects) {
     JsonObject object;
-    objects.set(o.first.hex(), JsonObject{
-      {"typeName", o.second.typeName},
+    objects.set(objectUuid.hex(), JsonObject{
+      {"typeName", mappedObject.typeName},
       {"orbit", jsonFromMaybe<CelestialOrbit>(
-        o.second.orbit, [](CelestialOrbit const& orbit){ return orbit.toJson(); })},
-      {"parameters", o.second.parameters}
+        mappedObject.orbit, [](CelestialOrbit const& orbit){ return orbit.toJson(); })},
+      {"parameters", mappedObject.parameters}
     });
   }
   json.set("mappedObjects", objects);

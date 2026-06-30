@@ -329,14 +329,14 @@ bool TilePainter::produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimit
 
   if (materialRenderProfile && damageLevel > 0 && isBlock) {
     auto& quadList = primitives[damageZLevel()];
-    auto const& crackingImage = materialRenderProfile->damageImage(damageLevel, damageType);
+    auto const& [crackingImagePath, crackingImageOffset] = materialRenderProfile->damageImage(damageLevel, damageType);
 
-    TexturePtr texture = m_textureCache.get(AssetTextureKey(crackingImage.first),
-        [&](auto const&) { return m_textureGroup->create(*m_assets->image(crackingImage.first)); });
+    TexturePtr texture = m_textureCache.get(AssetTextureKey(crackingImagePath),
+        [&](auto const&) { return m_textureGroup->create(*m_assets->image(crackingImagePath)); });
 
     Vec2F textureSize(texture->size());
     RectF textureCoords = RectF::withSize(Vec2F(), textureSize);
-    RectF worldCoords = RectF::withSize(crackingImage.second / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
+    RectF worldCoords = RectF::withSize(crackingImageOffset / TilePixels + Vec2F(pos), textureCoords.size() / TilePixels);
 
     quadList.emplace_back(std::in_place_type_t<RenderQuad>(), std::move(texture),
         worldCoords.min(), textureCoords.min(),
