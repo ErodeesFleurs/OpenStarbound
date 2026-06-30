@@ -142,7 +142,7 @@ String printInputDescriptor(KeyChord chord) {
   return String::joinWith(" + ", modNames.join(" + "), KeyNames.getRight(chord.key));
 }
 
-KeyBindings::KeyBindings() {}
+KeyBindings::KeyBindings() = default;
 
 KeyBindings::KeyBindings(Json const& json) {
   Map<Key, List<pair<KeyMod, InterfaceAction>>> actions;

@@ -48,12 +48,11 @@ private:
   size_t selectIndex(double target) const;
 
   ItemsList m_items;
-  double m_totalWeight;
+  double m_totalWeight = 0.0;
 };
 
 template <typename Item>
-WeightedPool<Item>::WeightedPool()
-  : m_totalWeight(0.0) {}
+WeightedPool<Item>::WeightedPool() = default;
 
 template <typename Item>
 template <typename Container>

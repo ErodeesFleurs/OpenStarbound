@@ -16,9 +16,9 @@ class P2PPacketSocket;
 
 struct PacketStats {
   HashMap<PacketType, float> packetBytesPerSecond;
-  float bytesPerSecond;
-  PacketType worstPacketType;
-  size_t worstPacketSize;
+  float bytesPerSecond = 0;
+  PacketType worstPacketType = {};
+  size_t worstPacketSize = 0;
 };
 
 // Collects PacketStats over a given window of time.
@@ -40,8 +40,8 @@ private:
   float m_calculationWindow;
   PacketStats m_stats;
   Map<PacketType, float> m_unmixed;
-  size_t m_totalBytes;
-  int64_t m_lastMixTime;
+  size_t m_totalBytes = 0;
+  int64_t m_lastMixTime = 0;
 };
 
 // Interface for bidirectional communication using NetPackets, based around a

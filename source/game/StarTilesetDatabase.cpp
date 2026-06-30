@@ -9,7 +9,7 @@ namespace Tiled {
 
   EnumMap<TileLayer> const LayerNames{{TileLayer::Foreground, "front"}, {TileLayer::Background, "back"}};
 
-  Properties::Properties() : m_properties(JsonObject{}) {}
+  Properties::Properties() = default;
 
   Properties::Properties(Json const& json) : m_properties(json) {}
 
@@ -324,7 +324,7 @@ namespace Tiled {
 }
 
 TilesetDatabase::TilesetDatabase(AssetsConstPtr assets)
-  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "TilesetDatabase", "assets")), m_cacheMutex(), m_tilesetCache() {}
+  : m_assets(requireServiceValueAs<StarException>(std::move(assets), "TilesetDatabase", "assets")) {}
 
 Tiled::TilesetConstPtr TilesetDatabase::get(String const& path) const {
   MutexLocker locker(m_cacheMutex);

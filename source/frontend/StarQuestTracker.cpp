@@ -30,8 +30,6 @@ QuestTrackerPane::QuestTrackerPane(Services services) : Pane(services.guiContext
   m_expandedFrameMinHeight = config.getInt("expandedFrameMinHeight");
   m_expandedFramePadding = config.getInt("expandedFramePadding");
 
-  m_compassDirection = 0;
-  m_compassSpeed = 0;
   m_compassAcceleration = config.getFloat("compassAcceleration");
   m_compassFriction = config.getFloat("compassFriction");
 

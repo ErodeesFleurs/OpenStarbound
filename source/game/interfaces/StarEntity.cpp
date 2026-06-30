@@ -24,7 +24,7 @@ EnumMap<EntityType> const EntityTypeNames{
   {EntityType::Player, "player"}
 };
 
-Entity::~Entity() {}
+Entity::~Entity() = default;
 
 void Entity::init(World* world, EntityId entityId, EntityMode mode) {
   world = requireDependencyValueAs<EntityException>(world, "Entity::init", "world");

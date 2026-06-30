@@ -29,7 +29,7 @@ struct Collectable {
   Collectable(String const& name, int order, String const& title, String const& description, String const& icon);
 
   String name;
-  int order;
+  int order = 0;
   String title;
   String description;
   String icon;
@@ -41,7 +41,7 @@ struct Collection {
 
   String name;
   String title;
-  CollectionType type;
+  CollectionType type = CollectionType::Generic;
 };
 
 class CollectionDatabase {

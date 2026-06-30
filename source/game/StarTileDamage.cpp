@@ -45,7 +45,7 @@ bool tileDamageIsPenetrating(TileDamageType damageType) {
   return damageType == TileDamageType::Explosive;
 }
 
-TileDamage::TileDamage() : type(), amount(), harvestLevel() {}
+TileDamage::TileDamage() = default;
 
 TileDamage::TileDamage(TileDamageType type, float amount, unsigned harvestLevel)
   : type(type), amount(amount), harvestLevel(harvestLevel) {}
@@ -63,9 +63,6 @@ DataStream& operator<<(DataStream& ds, TileDamage const& tileDamage) {
   ds.write(tileDamage.harvestLevel);
   return ds;
 }
-
-TileDamageParameters::TileDamageParameters()
-  : m_damageRecoveryPerSecond(0.0f), m_maximumEffectTime(0.0f), m_totalHealth(0), m_requiredHarvestLevel(0) {}
 
 TileDamageParameters::TileDamageParameters(Json config, Maybe<float> healthOverride, Maybe<unsigned> harvestLevelOverride)
   : TileDamageParameters({}, std::move(config), healthOverride, harvestLevelOverride) {}
@@ -168,9 +165,7 @@ DataStream& operator<<(DataStream& ds, TileDamageParameters const& tileDamage) {
   return ds;
 }
 
-TileDamageStatus::TileDamageStatus() {
-  reset();
-}
+TileDamageStatus::TileDamageStatus() = default;
 
 void TileDamageStatus::reset() {
   m_damagePercentage = 0.0f;

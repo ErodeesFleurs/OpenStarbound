@@ -200,7 +200,7 @@ private:
   ThreadFunction<void> m_thread;
   Mutex m_threadMutex;
   ConditionVariable m_threadCond;
-  atomic<bool> m_stopThread;
+  atomic<bool> m_stopThread = false;
 
   std::vector<int16_t> m_decodeBuffer;
   std::vector<int16_t> m_resampleBuffer;

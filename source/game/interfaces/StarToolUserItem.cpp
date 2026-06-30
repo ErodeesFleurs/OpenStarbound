@@ -2,7 +2,7 @@
 
 namespace Star {
 
-ToolUserItem::ToolUserItem() : m_owner(nullptr) {}
+ToolUserItem::ToolUserItem() = default;
 
 void ToolUserItem::init(ToolUserEntity& owner, ToolHand hand) {
   m_owner = &owner;

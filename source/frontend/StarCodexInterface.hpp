@@ -52,7 +52,7 @@ private:
   ListWidgetPtr m_bookList;
 
   CodexConstPtr m_currentCodex;
-  size_t m_currentPage;
+  size_t m_currentPage = 0;
 
   ButtonGroupWidgetPtr m_speciesTabs;
   LabelWidgetPtr m_selectLabel;

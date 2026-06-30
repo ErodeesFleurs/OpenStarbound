@@ -40,8 +40,8 @@ struct MovingCollisionId {
   bool valid() const;
   operator bool() const;
 
-  EntityId physicsEntityId;
-  size_t collisionIndex;
+  EntityId physicsEntityId = NullEntityId;
+  size_t collisionIndex = 0;
 };
 
 DataStream& operator>>(DataStream& ds, MovingCollisionId& mci);

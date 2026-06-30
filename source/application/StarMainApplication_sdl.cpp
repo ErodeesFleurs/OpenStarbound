@@ -1340,10 +1340,10 @@ private:
   using SDLCursorUPtr = std::unique_ptr<SDL_Cursor, decltype(&SDL_DestroyCursor)>;
   struct CursorEntry {
     ImageConstPtr image = nullptr;
-    SDLSurfaceUPtr sdlSurface;
-    SDLCursorUPtr sdlCursor;
+    SDLSurfaceUPtr sdlSurface{nullptr, SDL_DestroySurface};
+    SDLCursorUPtr sdlCursor{nullptr, SDL_DestroyCursor};
 
-    CursorEntry() : image(nullptr), sdlSurface(nullptr, SDL_DestroySurface), sdlCursor(nullptr, SDL_DestroyCursor) {};
+    CursorEntry() = default;
   };
 
   using CursorDescriptor = tuple<unsigned, Vec2I, String>;

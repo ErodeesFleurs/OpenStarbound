@@ -45,7 +45,7 @@ public:
   using reference = U32Type&;
   using iterator_category = std::bidirectional_iterator_tag;
 
-  U8ToU32Iterator() : m_position(), m_value(pending_read) {}
+  U8ToU32Iterator() = default;
 
   U8ToU32Iterator(BaseIterator b) : m_position(b), m_value(pending_read) {}
 
@@ -164,7 +164,7 @@ private:
   }
 
   BaseIterator m_position;
-  mutable U32Type m_value;
+  mutable U32Type m_value = pending_read;
 };
 
 // Output iterator

@@ -63,11 +63,11 @@ bool all(Iterable const& iter) {
 // Python style container slicing
 
 struct SliceIndex {
-  SliceIndex() : index(0), given(false) {}
+  SliceIndex() = default;
   SliceIndex(int i) : index(i), given(true) {}
 
-  int index;
-  bool given;
+  int index{};
+  bool given{};
 };
 
 SliceIndex const SliceNil = SliceIndex();
@@ -146,14 +146,14 @@ class ZipWrapperIterator {
 private:
   IteratorT current;
   IteratorT last;
-  bool atEnd;
+  bool atEnd{true};
 
 public:
   using Iterator = IteratorT;
   using IteratorValue = decltype(*std::declval<Iterator>());
   using value_type = tuple<IteratorValue>;
 
-  ZipWrapperIterator() : atEnd(true) {}
+  ZipWrapperIterator() = default;
 
   ZipWrapperIterator(Iterator current, Iterator last) : current(current), last(last) {
     atEnd = current == last;
@@ -204,7 +204,7 @@ class ZipTupleIterator {
 private:
   TailIteratorT tailIterator;
   HeadIteratorT headIterator;
-  bool atEnd;
+  bool atEnd{true};
 
 public:
   using TailIterator = TailIteratorT;
@@ -215,7 +215,7 @@ public:
 
   using value_type = decltype(std::tuple_cat(std::declval<TailType>(), std::declval<HeadType>()));
 
-  ZipTupleIterator() : atEnd(true) {}
+  ZipTupleIterator() = default;
 
   ZipTupleIterator(TailIterator tailIterator, HeadIterator headIterator)
     : tailIterator(tailIterator), headIterator(headIterator) {
@@ -311,20 +311,16 @@ class RangeIterator {
   using reference = Value&;
 
 public:
-  RangeIterator() : m_start(), m_end(), m_diff(1), m_current(), m_stop(true) {}
+  RangeIterator() = default;
 
   RangeIterator(Value min, Value max, Diff diff)
     : m_start(min), m_end(max), m_diff(diff), m_current(min), m_stop(false) {
     sanity();
   }
 
-  RangeIterator(Value min, Value max) : m_start(min), m_end(max), m_diff(1), m_current(min), m_stop(false) {
-    sanity();
-  }
+  RangeIterator(Value min, Value max) : RangeIterator(min, max, 1) {}
 
-  RangeIterator(Value max) : m_start(), m_end(max), m_diff(1), m_current(), m_stop(false) {
-    sanity();
-  }
+  RangeIterator(Value max) : RangeIterator(Value(), max, 1) {}
 
   RangeIterator(RangeIterator const& rhs) {
     copy(rhs);
@@ -493,13 +489,13 @@ private:
     return static_cast<Value>(static_cast<Diff>(start) + travel);
   }
 
-  Value m_start;
-  Value m_end;
-  Diff m_diff;
+  Value m_start{};
+  Value m_end{};
+  Diff m_diff{1};
 
-  Value m_current;
+  Value m_current{};
 
-  bool m_stop;
+  bool m_stop{true};
 };
 
 template <typename Numeric, typename Diff>
@@ -541,16 +537,16 @@ struct EnumerateIterator {
 private:
   Iterator current;
   Iterator last;
-  size_t index;
-  bool atEnd;
+  size_t index{};
+  bool atEnd{true};
 
 public:
   using IteratorValue = decltype(*std::declval<Iterator>());
   using value_type = pair<IteratorValue&, size_t>;
 
-  EnumerateIterator() : index(0), atEnd(true) {}
+  EnumerateIterator() = default;
 
-  EnumerateIterator(Iterator begin, Iterator end) : current(begin), last(end), index(0) {
+  EnumerateIterator(Iterator begin, Iterator end) : current(begin), last(end) {
     atEnd = current == last;
   }
 

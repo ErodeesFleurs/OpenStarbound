@@ -329,7 +329,7 @@ Maybe<WarpAction> SystemWorld::objectWarpAction(Uuid const& uuid) const {
 }
 
 SystemObject::SystemObject(SystemObjectConfig config, Uuid uuid, Vec2F const& position, JsonObject parameters)
-  : m_config(std::move(config)), m_uuid(std::move(uuid)), m_spawnTime(0.0f), m_parameters(std::move(parameters)) {
+  : m_config(std::move(config)), m_uuid(std::move(uuid)), m_parameters(std::move(parameters)) {
   setPosition(position);
   init();
 }

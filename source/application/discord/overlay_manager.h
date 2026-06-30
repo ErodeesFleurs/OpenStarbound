@@ -50,7 +50,7 @@ private:
     OverlayManager(OverlayManager&& rhs) = delete;
     OverlayManager& operator=(OverlayManager&& rhs) = delete;
 
-    IDiscordOverlayManager* internal_;
+    IDiscordOverlayManager* internal_ = nullptr;
     static IDiscordOverlayEvents events_;
 };
 

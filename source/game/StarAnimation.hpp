@@ -36,26 +36,26 @@ private:
   enum AnimationMode { Stop, EndAndDisappear, LoopForever };
   static EnumMap<AnimationMode> AnimationModeNames;
 
-  AnimationMode m_mode;
+  AnimationMode m_mode = EndAndDisappear;
   String m_directory;
   String m_base;
-  bool m_appendFrame;
-  int m_frameNumber;
-  float m_animationCycle;
-  float m_animationTime;
-  float m_angle;
+  bool m_appendFrame = false;
+  int m_frameNumber = 1;
+  float m_animationCycle = 1.0f;
+  float m_animationTime = 1.0f;
+  float m_angle = 0.0f;
   Vec2F m_offset;
-  bool m_centered;
+  bool m_centered = true;
   DirectivesGroup m_processing;
-  Color m_color;
-  int m_variantOffset;
+  Color m_color = Color::White;
+  int m_variantOffset = 0;
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
 
   StringMap<String> m_tagValues;
-  int m_frame;
-  float m_animationTimer;
-  float m_timeToLive;
-  bool m_completed;
+  int m_frame = 0;
+  float m_animationTimer = 0.0f;
+  float m_timeToLive = 0.0f;
+  bool m_completed = false;
 };
 
 }

@@ -17,7 +17,7 @@
 namespace Star {
 
 PlayerAppearance::PlayerAppearance(Player& player)
-    : m_player(player), m_identityUpdated(true) {}
+    : m_player(player) {}
 
 void PlayerAppearance::init() {
   m_identity = m_player.m_config->defaultIdentity;

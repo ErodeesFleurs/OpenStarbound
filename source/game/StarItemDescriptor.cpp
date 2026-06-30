@@ -6,7 +6,7 @@
 
 namespace Star {
 
-ItemDescriptor::ItemDescriptor() : m_count(0), m_parameters(JsonObject()) {}
+ItemDescriptor::ItemDescriptor() = default;
 
 ItemDescriptor::ItemDescriptor(String name, uint64_t count, Json parameters)
     : m_name(std::move(name)), m_count(count), m_parameters(std::move(parameters)) {

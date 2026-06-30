@@ -42,9 +42,9 @@ struct TileDamage {
   TileDamage();
   TileDamage(TileDamageType type, float amount, unsigned harvestLevel = 1);
 
-  TileDamageType type;
-  float amount;
-  unsigned harvestLevel;
+  TileDamageType type{};
+  float amount{};
+  unsigned harvestLevel{};
 };
 
 DataStream& operator>>(DataStream& ds, TileDamage& tileDamage);
@@ -52,7 +52,7 @@ DataStream& operator<<(DataStream& ds, TileDamage const& tileDamage);
 
 class TileDamageParameters {
 public:
-  TileDamageParameters();
+  TileDamageParameters() = default;
 
   // If 'config' is a string type, it is assumed to be a descriptor file,
   // otherwise it should contain map configuration data.
@@ -74,10 +74,10 @@ public:
 
 private:
   Map<TileDamageType, float> m_damages;
-  float m_damageRecoveryPerSecond;
-  float m_maximumEffectTime;
-  float m_totalHealth;
-  unsigned m_requiredHarvestLevel;
+  float m_damageRecoveryPerSecond = 0.0f;
+  float m_maximumEffectTime = 0.0f;
+  float m_totalHealth = 0;
+  unsigned m_requiredHarvestLevel = 0;
 };
 
 class TileDamageStatus {
@@ -105,12 +105,12 @@ public:
 private:
   void updateDamageEffectPercentage();
 
-  float m_damagePercentage;
-  float m_damageEffectTimeFactor;
-  bool m_harvested;
+  float m_damagePercentage = 0.0f;
+  float m_damageEffectTimeFactor = 0.0f;
+  bool m_harvested = false;
   Vec2F m_damageSourcePosition;
-  TileDamageType m_damageType;
-  float m_damageEffectPercentage;
+  TileDamageType m_damageType = TileDamageType::Protected;
+  float m_damageEffectPercentage = 0.0f;
 };
 
 class EntityTileDamageStatus : public NetElementGroup {

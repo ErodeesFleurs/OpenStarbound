@@ -69,7 +69,7 @@ Item::Item(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDat
     m_collectablesOnPickup[pair.first] = pair.second.toString();
 }
 
-Item::~Item() {}
+Item::~Item() = default;
 
 String Item::name() const {
   return m_name;

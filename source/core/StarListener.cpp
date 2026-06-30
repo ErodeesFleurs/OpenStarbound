@@ -2,7 +2,7 @@
 
 namespace Star {
 
-Listener::~Listener() {}
+Listener::~Listener() = default;
 
 CallbackListener::CallbackListener(function<void()> callback)
   : callback(std::move(callback)) {}
@@ -12,7 +12,7 @@ void CallbackListener::trigger() {
     callback();
 }
 
-TrackerListener::TrackerListener() : triggered(false) {}
+TrackerListener::TrackerListener() = default;
 
 void ListenerGroup::addListener(ListenerWeakPtr listener) {
   MutexLocker locker(m_mutex);

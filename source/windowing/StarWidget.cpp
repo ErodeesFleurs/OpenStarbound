@@ -7,13 +7,7 @@
 namespace Star {
 
 Widget::Widget(GuiContext& context) {
-  m_parent = nullptr;
   m_context = &context;
-  m_visible = true;
-  m_focus = false;
-  m_doScissor = true;
-  m_container = false;
-  m_mouseTransparent = false;
 }
 
 Widget::~Widget() {

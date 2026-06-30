@@ -23,19 +23,7 @@ EnumMap<WarpPhase> const WarpPhaseNames{
     {WarpPhase::Maintain, "maintain"},
     {WarpPhase::SpeedingUp, "speedingup"}};
 
-SkyColoring::SkyColoring() {
-  mainColor = Color::Clear;
-
-  morningColors = {Color::Clear, Color::Clear};
-  dayColors = {Color::Clear, Color::Clear};
-  eveningColors = {Color::Clear, Color::Clear};
-  nightColors = {Color::Clear, Color::Clear};
-
-  morningLightColor = Color::Clear;
-  dayLightColor = Color::Clear;
-  eveningLightColor = Color::Clear;
-  nightLightColor = Color::Clear;
-}
+SkyColoring::SkyColoring() = default;
 
 SkyColoring::SkyColoring(Json const& variant) {
   auto getColorPair = [](Json const& pair) { return make_pair(jsonToColor(pair.get(0)), jsonToColor(pair.get(1))); };
@@ -97,12 +85,12 @@ DataStream& operator<<(DataStream& ds, SkyColoring const& skyColoring) {
   return ds;
 }
 
-SkyOrbiter::SkyOrbiter() : type(), scale(), angle() {}
+SkyOrbiter::SkyOrbiter() = default;
 
 SkyOrbiter::SkyOrbiter(SkyOrbiterType type, float scale, float angle, String const& image, Vec2F position)
   : type(type), scale(scale), angle(angle), image(image), position(position) {}
 
-SkyWorldHorizon::SkyWorldHorizon() : scale(), rotation() {}
+SkyWorldHorizon::SkyWorldHorizon() = default;
 
 SkyWorldHorizon::SkyWorldHorizon(Vec2F center, float scale, float rotation)
   : center(center), scale(scale), rotation(rotation) {}

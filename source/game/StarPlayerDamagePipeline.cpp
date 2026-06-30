@@ -6,7 +6,7 @@
 namespace Star {
 
 PlayerDamagePipeline::PlayerDamagePipeline(Player& player)
-  : m_player(player), m_lastDamagedOtherTimer(0), m_lastDamagedTarget(NullEntityId) {}
+  : m_player(player) {}
 
 void PlayerDamagePipeline::init() {
   m_lastDamagedOtherTimer = 0;
@@ -84,4 +84,3 @@ EntityId PlayerDamagePipeline::lastDamagedTarget() const {
 }
 
 }
-

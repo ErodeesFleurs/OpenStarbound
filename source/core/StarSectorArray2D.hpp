@@ -142,7 +142,7 @@ ElementT& SectorArray2D<ElementT, SectorSize>::Array::operator()(size_t x, size_
 }
 
 template <typename ElementT, size_t SectorSize>
-SectorArray2D<ElementT, SectorSize>::SectorArray2D() {}
+SectorArray2D<ElementT, SectorSize>::SectorArray2D() = default;
 
 template <typename ElementT, size_t SectorSize>
 SectorArray2D<ElementT, SectorSize>::SectorArray2D(size_t numSectorsWide, size_t numSectorsHigh) {

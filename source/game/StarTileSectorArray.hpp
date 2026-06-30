@@ -147,7 +147,7 @@ template <typename Tile, unsigned SectorSize>
 unsigned const TileSectorArray<Tile, SectorSize>::SectorSize;
 
 template <typename Tile, unsigned SectorSize>
-TileSectorArray<Tile, SectorSize>::TileSectorArray() {}
+TileSectorArray<Tile, SectorSize>::TileSectorArray() = default;
 
 template <typename Tile, unsigned SectorSize>
 TileSectorArray<Tile, SectorSize>::TileSectorArray(Vec2U const& size, Tile defaultTile) {

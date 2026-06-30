@@ -172,9 +172,9 @@ struct FloatingDungeonWorldParameters : VisitableWorldParameters {
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
-  int dungeonBaseHeight;
-  int dungeonSurfaceHeight;
-  int dungeonUndergroundLevel;
+  int dungeonBaseHeight{};
+  int dungeonSurfaceHeight{};
+  int dungeonUndergroundLevel{};
   String primaryDungeon;
   Color ambientLightLevel;
   Maybe<String> biome;

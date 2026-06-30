@@ -39,7 +39,7 @@ private:
 
     Mutex mutex;
     ConditionVariable condition;
-    atomic<bool> done;
+    atomic<bool> done = false;
     std::exception_ptr exception;
   };
 

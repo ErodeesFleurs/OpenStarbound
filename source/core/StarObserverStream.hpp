@@ -39,13 +39,13 @@ public:
 
 private:
   uint64_t m_historyLimit;
-  uint64_t m_nextStep;
+  uint64_t m_nextStep = 0;
   Deque<pair<uint64_t, T>> m_values;
 };
 
 template <typename T>
 ObserverStream<T>::ObserverStream(uint64_t historyLimit)
-  : m_historyLimit(historyLimit), m_nextStep(0) {}
+  : m_historyLimit(historyLimit) {}
 
 template <typename T>
 uint64_t ObserverStream<T>::historyLimit() const {

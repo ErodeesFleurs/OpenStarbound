@@ -30,7 +30,7 @@ String String::joinWith(String const& join, String const& left, String const& ri
   }
 }
 
-String::String() {}
+String::String() = default;
 String::String(String const& s) : m_string(s.m_string) {}
 String::String(String&& s) noexcept : m_string(std::move(s.m_string)) {}
 String::String(char const* s) : m_string(s) {}
@@ -991,7 +991,7 @@ int String::compare(size_t selfOffset, size_t selfLen, String const& other,
   }
 }
 
-StringList::StringList() : Base() {}
+StringList::StringList() = default;
 
 StringList::StringList(Base const& l) : Base(l) {}
 

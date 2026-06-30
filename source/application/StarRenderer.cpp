@@ -12,7 +12,7 @@ EnumMap<TextureFiltering> const TextureFilteringNames{
   {TextureFiltering::Linear, "Linear"}
 };
 
-RenderQuad::RenderQuad(Vec2F posA, Vec2F posB, Vec2F posC, Vec2F posD, Vec4B color, float param1) : texture() {
+RenderQuad::RenderQuad(Vec2F posA, Vec2F posB, Vec2F posC, Vec2F posD, Vec4B color, float param1) {
   a = { posA, { 0, 0 }, color, param1 };
   b = { posB, { 0, 0 }, color, param1 };
   c = { posC, { 0, 0 }, color, param1 };
@@ -58,7 +58,7 @@ RenderPoly::RenderPoly(List<Vec2F> const& verts, Vec4B color, float param1) {
     vertexes.append({ v, { 0, 0 }, color, param1 });
 }
 
-RenderTriangle::RenderTriangle(Vec2F posA, Vec2F posB, Vec2F posC, Vec4B color, float param1) : texture() {
+RenderTriangle::RenderTriangle(Vec2F posA, Vec2F posB, Vec2F posC, Vec4B color, float param1) {
   a = { posA, { 0, 0 }, color, param1 };
   b = { posB, { 0, 0 }, color, param1 };
   c = { posC, { 0, 0 }, color, param1 };

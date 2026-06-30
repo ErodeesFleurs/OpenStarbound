@@ -28,8 +28,8 @@ private:
   UniverseServer& m_universe;
   TcpServer m_rconServer;
   String m_rconPassword;
-  int m_rconTimeout;
-  bool m_stop;
+  int m_rconTimeout = 0;
+  bool m_stop = true;
   HashMap<HostAddress, ServerRconClientPtr> m_clients;
 };
 

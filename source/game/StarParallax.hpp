@@ -24,22 +24,22 @@ struct ParallaxLayer {
 
   List<String> textures;
   Directives directives;
-  unsigned frameNumber;
-  int frameOffset;
-  float animationCycle;
-  float alpha;
+  unsigned frameNumber = 1;
+  int frameOffset = 0;
+  float animationCycle = 1.0f;
+  float alpha = 1.0f;
   Vec2F parallaxValue;
   Vec2B repeat;
   Maybe<float> tileLimitTop;
   Maybe<float> tileLimitBottom;
-  float verticalOrigin;
-  float zLevel;
+  float verticalOrigin = 0.0f;
+  float zLevel = 0.0f;
   Vec2F parallaxOffset;
   String timeOfDayCorrelation;
   Vec2F speed;
-  bool unlit;
-  bool lightMapped;
-  float fadePercent;
+  bool unlit = false;
+  bool lightMapped = false;
+  float fadePercent = 0.0f;
 };
 using ParallaxLayers = List<ParallaxLayer>;
 

@@ -153,8 +153,8 @@ private:
   CompanionPtr m_selectedRecruit;
 
   Maybe<AiSpeech> m_currentSpeech;
-  float m_textLength;
-  float m_textMaxLength;
+  float m_textLength = 0.0f;
+  float m_textMaxLength = 0.0f;
 
   ButtonWidgetPtr m_startMissionButton;
   ButtonWidgetPtr m_dismissRecruitButton;

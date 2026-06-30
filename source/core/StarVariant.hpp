@@ -687,7 +687,7 @@ constexpr VariantTypeIndex MVariant<Types...>::typeIndexOf() {
 }
 
 template <typename... Types>
-MVariant<Types...>::MVariant() {}
+MVariant<Types...>::MVariant() = default;
 
 template <typename... Types>
 MVariant<Types...>::MVariant(MVariant const& x)
@@ -720,7 +720,7 @@ MVariant<Types...>::MVariant(T&& x)
   : m_variant(std::forward<T>(x)) {}
 
 template <typename... Types>
-MVariant<Types...>::~MVariant() {}
+MVariant<Types...>::~MVariant() = default;
 
 template <typename... Types>
 MVariant<Types...>& MVariant<Types...>::operator=(MVariant const& x) {

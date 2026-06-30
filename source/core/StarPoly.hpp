@@ -221,7 +221,7 @@ Polygon<DataType> Polygon<DataType>::clip(Polygon inputPoly, Polygon convexClipP
 }
 
 template <typename DataType>
-Polygon<DataType>::Polygon() {}
+Polygon<DataType>::Polygon() = default;
 
 template <typename DataType>
 Polygon<DataType>::Polygon(Polygon const& rhs)

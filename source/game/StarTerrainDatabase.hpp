@@ -24,10 +24,10 @@ struct TerrainSelectorParameters {
   TerrainSelectorParameters withSeed(uint64_t seed) const;
   TerrainSelectorParameters withCommonality(float commonality) const;
 
-  unsigned worldWidth;
-  float baseHeight;
+  unsigned worldWidth = 0;
+  float baseHeight = 0.0f;
   uint64_t seed;
-  float commonality;
+  float commonality = 1.0f;
 };
 
 struct TerrainSelector {

@@ -44,34 +44,19 @@ EntityRenderLayer parseRenderLayer(String renderLayer) {
   return RenderLayerMap.get(renderLayer) + offset;
 }
 
-PreviewTile::PreviewTile()
-  : foreground(false),
-    liqId(EmptyLiquidId),
-    matId(NullMaterialId),
-    hueShift(0),
-    updateMatId(false),
-    colorVariant(DefaultMaterialColorVariant),
-    updateLight(false) {}
+PreviewTile::PreviewTile() = default;
 
 PreviewTile::PreviewTile(
     Vec2I const& position, bool foreground, MaterialId matId, MaterialHue hueShift, bool updateMatId)
   : position(position),
     foreground(foreground),
-    liqId(EmptyLiquidId),
     matId(matId),
     hueShift(hueShift),
-    updateMatId(updateMatId),
-    colorVariant(DefaultMaterialColorVariant),
-    updateLight(false) {}
+    updateMatId(updateMatId) {}
 
 PreviewTile::PreviewTile(Vec2I const& position, bool foreground, Vec3B const& light, bool updateLight)
   : position(position),
     foreground(foreground),
-    liqId(EmptyLiquidId),
-    matId(NullMaterialId),
-    hueShift(0),
-    updateMatId(false),
-    colorVariant(DefaultMaterialColorVariant),
     light(light),
     updateLight(updateLight) {}
 
@@ -96,14 +81,9 @@ PreviewTile::PreviewTile(Vec2I const& position,
 PreviewTile::PreviewTile(Vec2I const& position, LiquidId liqId)
   : position(position),
     foreground(true),
-    liqId(liqId),
-    matId(NullMaterialId),
-    hueShift(0),
-    updateMatId(false),
-    colorVariant(DefaultMaterialColorVariant),
-    updateLight(false) {}
+    liqId(liqId) {}
 
-OverheadBar::OverheadBar() : percentage(0.0f), detailOnly(false) {}
+OverheadBar::OverheadBar() = default;
 
 OverheadBar::OverheadBar(Json const& json) {
   entityPosition = json.opt("position").apply(jsonToVec2F).value();

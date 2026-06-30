@@ -42,8 +42,8 @@ private:
   size_t len() const;
 
   std::unique_ptr<float[]> m_data;
-  unsigned m_width;
-  unsigned m_height;
+  unsigned m_width = 0;
+  unsigned m_height = 0;
 };
 
 inline void Lightmap::set(unsigned x, unsigned y, float v) {

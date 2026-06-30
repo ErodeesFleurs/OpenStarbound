@@ -40,17 +40,17 @@ struct SpeciesGenderOption {
 };
 
 struct SpeciesOption {
-  SpeciesOption();
+  SpeciesOption() = default;
 
   String species;
-  bool headOptionAsHairColor;
-  bool headOptionAsFacialhair;
-  bool altOptionAsUndyColor;
-  bool altOptionAsHairColor;
-  bool altOptionAsFacialMask;
-  bool hairColorAsBodySubColor;
-  bool bodyColorAsFacialMaskSubColor;
-  bool altColorAsFacialMaskSubColor;
+  bool headOptionAsHairColor = false;
+  bool headOptionAsFacialhair = false;
+  bool altOptionAsUndyColor = false;
+  bool altOptionAsHairColor = false;
+  bool altOptionAsFacialMask = false;
+  bool hairColorAsBodySubColor = false;
+  bool bodyColorAsFacialMaskSubColor = false;
+  bool altColorAsFacialMaskSubColor = false;
   List<SpeciesGenderOption> genderOptions;
   List<String> bodyColorDirectives;
   List<String> undyColorDirectives;

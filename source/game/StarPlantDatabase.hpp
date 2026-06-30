@@ -29,16 +29,16 @@ struct TreeVariant {
 
   String stemDirectory;
   Json stemSettings;
-  float stemHueShift;
+  float stemHueShift = 0.0f;
 
   String foliageDirectory;
   Json foliageSettings;
-  float foliageHueShift;
+  float foliageHueShift = 0.0f;
 
   Json descriptions;
-  bool ceiling;
+  bool ceiling = false;
 
-  bool ephemeral;
+  bool ephemeral = false;
 
   Json stemDropConfig;
   Json foliageDropConfig;
@@ -57,12 +57,12 @@ struct GrassVariant {
 
   String directory;
   StringList images;
-  float hueShift;
+  float hueShift = 0.0f;
 
   Json descriptions;
-  bool ceiling;
+  bool ceiling = false;
 
-  bool ephemeral;
+  bool ephemeral = false;
 
   TileDamageParameters tileDamageParameters;
 };
@@ -85,13 +85,13 @@ struct BushVariant {
   String directory;
   List<BushShape> shapes;
 
-  float baseHueShift;
-  float modHueShift;
+  float baseHueShift = 0.0f;
+  float modHueShift = 0.0f;
 
   Json descriptions;
-  bool ceiling;
+  bool ceiling = false;
 
-  bool ephemeral;
+  bool ephemeral = false;
 
   TileDamageParameters tileDamageParameters;
 };

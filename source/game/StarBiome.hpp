@@ -24,10 +24,10 @@ struct BiomePlaceables {
   // tree type.
   Maybe<TreeVariant> firstTreeType() const;
 
-  ModId grassMod;
-  float grassModDensity;
-  ModId ceilingGrassMod;
-  float ceilingGrassModDensity;
+  ModId grassMod = NoModId;
+  float grassModDensity = 0.0f;
+  ModId ceilingGrassMod = NoModId;
+  float ceilingGrassModDensity = 0.0f;
 
   List<BiomeItemDistribution> itemDistributions;
 };
@@ -41,13 +41,13 @@ struct Biome {
   String baseName;
   String description;
 
-  MaterialId mainBlock;
+  MaterialId mainBlock = EmptyMaterialId;
   List<MaterialId> subBlocks;
   // Pairs the ore type with the commonality multiplier.
   List<pair<ModId, float>> ores;
 
-  float hueShift;
-  MaterialHue materialHueShift;
+  float hueShift = 0.0f;
+  MaterialHue materialHueShift{};
 
   BiomePlaceables surfacePlaceables;
   BiomePlaceables undergroundPlaceables;

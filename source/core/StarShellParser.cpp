@@ -2,8 +2,7 @@
 
 namespace Star {
 
-ShellParser::ShellParser()
-  : m_current(), m_end(), m_quotedType('\0') {}
+ShellParser::ShellParser() = default;
 
 auto ShellParser::tokenize(String const& command) -> List<Token> {
   List<Token> res;

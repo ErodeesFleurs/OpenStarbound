@@ -24,7 +24,7 @@ private:
     UserManager(UserManager&& rhs) = delete;
     UserManager& operator=(UserManager&& rhs) = delete;
 
-    IDiscordUserManager* internal_;
+    IDiscordUserManager* internal_ = nullptr;
     static IDiscordUserEvents events_;
 };
 

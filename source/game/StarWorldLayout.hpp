@@ -119,7 +119,7 @@ private:
   struct WorldLayer {
     WorldLayer();
 
-    int yStart;
+    int yStart = 0;
     Deque<int> boundaries;
     Deque<WorldRegionPtr> cells;
   };
@@ -162,7 +162,7 @@ private:
 
   List<WorldLayer> m_layers;
 
-  float m_regionBlending;
+  float m_regionBlending = 0.0f;
   Maybe<BlockNoise> m_blockNoise;
   Maybe<PerlinF> m_blendNoise;
   List<RectI> m_playerStartSearchRegions;

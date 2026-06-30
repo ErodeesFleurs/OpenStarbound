@@ -67,8 +67,8 @@ private:
   size_t parametersHash() const;
 
   String m_name;
-  uint64_t m_count;
-  Json m_parameters;
+  uint64_t m_count = 0;
+  Json m_parameters = JsonObject();
   mutable Maybe<size_t> m_parametersHash;
 };
 

@@ -379,7 +379,7 @@ private:
   ImageMetadataDatabaseConstPtr m_imageMetadataDatabase;
   ParticleDatabaseConstPtr m_particleDatabase;
   String m_relativePath;
-  uint8_t m_animatorVersion;
+  uint8_t m_animatorVersion = 0;
 
   AnimatedPartSet m_animatedParts;
   OrderedHashMap<String, StateInfo> m_stateInfo;

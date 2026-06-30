@@ -23,7 +23,7 @@ private:
     ApplicationManager(ApplicationManager&& rhs) = delete;
     ApplicationManager& operator=(ApplicationManager&& rhs) = delete;
 
-    IDiscordApplicationManager* internal_;
+    IDiscordApplicationManager* internal_ = nullptr;
     static IDiscordApplicationEvents events_;
 };
 

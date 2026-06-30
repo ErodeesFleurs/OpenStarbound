@@ -70,9 +70,6 @@ QuestLogInterface::QuestLogInterface(QuestManagerPtr manager, PlayerPtr player, 
 
   m_rewardItems = make_shared<ItemBag>(5, m_manager->itemDatabase());
   fetchChild<ItemGridWidget>("rewardItems")->setItemBag(m_rewardItems);
-
-  m_refreshRate = 30;
-  m_refreshTimer = 0;
 }
 
 void QuestLogInterface::pollDialog(PaneManager& paneManager) {

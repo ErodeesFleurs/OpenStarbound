@@ -24,9 +24,9 @@ private:
   void enterStage(int newStage);
 
   int m_stage;
-  int m_stageAlt;
-  double m_stageEnterTime;
-  double m_nextStageTime;
+  int m_stageAlt = -1;
+  double m_stageEnterTime = 0.0;
+  double m_nextStageTime = 0.0;
 
   SlidingWindow m_immersion;
   float m_minImmersion;
@@ -35,7 +35,7 @@ private:
   bool m_consumeSoilMoisture;
 
   JsonArray m_stages;
-  bool m_finalStage;
+  bool m_finalStage = false;
 };
 
 }

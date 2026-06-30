@@ -7,7 +7,7 @@
 
 namespace Star {
 
-SkyParameters::SkyParameters() : seed(), skyType(SkyType::Barren), skyColoring(makeRight(Color::Black)), settings(JsonObject()) {}
+SkyParameters::SkyParameters() = default;
 
 SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase, AssetsConstPtr assets, LiquidsDatabaseConstPtr liquidsDatabase)
     : SkyParameters() {

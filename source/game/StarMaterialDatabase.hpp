@@ -121,7 +121,7 @@ private:
     MaterialInfo();
 
     String name;
-    MaterialId id;
+    MaterialId id = NullMaterialId;
     String path;
     Json config;
 
@@ -132,13 +132,13 @@ private:
     ParticleConfigPtr miningParticle;
     StringList miningSounds;
     String footstepSound;
-    ModId tillableMod;
+    ModId tillableMod = NoModId;
     CollisionKind collisionKind;
     bool foregroundOnly;
     bool supportsMods;
     bool soil;
-    bool falling;
-    bool cascading;
+    bool falling{};
+    bool cascading{};
     bool blocksLiquidFlow;
 
     shared_ptr<MaterialRenderProfile const> materialRenderProfile;
@@ -150,7 +150,7 @@ private:
     ModInfo();
 
     String name;
-    ModId id;
+    ModId id = NoModId;
     String path;
     Json config;
 
@@ -160,8 +160,8 @@ private:
     ParticleConfigPtr miningParticle;
     StringList miningSounds;
     String footstepSound;
-    bool tilled;
-    bool breaksWithTile;
+    bool tilled{};
+    bool breaksWithTile{};
 
     shared_ptr<MaterialRenderProfile const> modRenderProfile;
 

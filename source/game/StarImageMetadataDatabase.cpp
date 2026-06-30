@@ -200,9 +200,9 @@ Vec2U ImageMetadataDatabase::calculateImageSize(AssetPath const& path) const {
 
   struct OperationSizeAdjust {
     Vec2U& imageSize;
-    bool hasError;
+    bool hasError = false;
 
-    OperationSizeAdjust(Vec2U& size) : imageSize(size), hasError(false) {};
+    OperationSizeAdjust(Vec2U& size) : imageSize(size) {};
 
     void operator()(NullImageOperation const&) {}
 

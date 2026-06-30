@@ -39,7 +39,7 @@ template <typename InputIterator>
 class JsonParser {
 public:
   JsonParser(JsonStream& stream)
-    : m_line(0), m_column(0), m_error(nullptr), m_stream(stream) {}
+    : m_stream(stream) {}
   virtual ~JsonParser() = default;
 
   // Does not throw.  On error, returned iterator will not be equal to end, and
@@ -550,9 +550,9 @@ private:
   char32_t m_char;
   InputIterator m_current;
   InputIterator m_end;
-  size_t m_line;
-  size_t m_column;
-  const char* m_error;
+  size_t m_line = 0;
+  size_t m_column = 0;
+  const char* m_error = nullptr;
   JsonStream& m_stream;
 };
 

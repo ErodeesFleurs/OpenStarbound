@@ -10,7 +10,7 @@ constexpr size_t PacketReceiveBufferSize = 1024;
 namespace Star {
 
 PacketStatCollector::PacketStatCollector(float calculationWindow)
-  : m_calculationWindow(calculationWindow), m_stats(), m_totalBytes(0), m_lastMixTime(0) {}
+  : m_calculationWindow(calculationWindow) {}
 
 void PacketStatCollector::mix(size_t size) {
   calculate();

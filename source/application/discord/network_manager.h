@@ -56,7 +56,7 @@ private:
     NetworkManager(NetworkManager&& rhs) = delete;
     NetworkManager& operator=(NetworkManager&& rhs) = delete;
 
-    IDiscordNetworkManager* internal_;
+    IDiscordNetworkManager* internal_ = nullptr;
     static IDiscordNetworkEvents events_;
 };
 

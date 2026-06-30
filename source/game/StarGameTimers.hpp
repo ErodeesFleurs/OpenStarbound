@@ -9,8 +9,8 @@ struct GameTimer {
   GameTimer();
   explicit GameTimer(float time);
 
-  float time;
-  float timer;
+  float time{};
+  float timer{};
 
   bool tick(float dt = GlobalTimestep); // returns true if time is up
   bool wrapTick(float dt = GlobalTimestep); // auto resets
@@ -30,8 +30,8 @@ struct SlidingWindow {
   SlidingWindow(float windowSize, size_t resolution, float initialValue);
 
   GameTimer sampleTimer;
-  float windowSize;
-  size_t resolution;
+  float windowSize = 1.0f;
+  size_t resolution = 1;
 
   float currentMin;
   float currentMax;
@@ -68,7 +68,7 @@ public:
 
 private:
   Maybe<double> m_lastSeenEpochTime;
-  double m_elapsedTime;
+  double m_elapsedTime = 0.0;
 };
 
 }

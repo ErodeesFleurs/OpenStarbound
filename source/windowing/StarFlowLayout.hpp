@@ -17,7 +17,7 @@ public:
 
 private:
   Vec2I m_spacing;
-  bool m_wrap;
+  bool m_wrap = true;
 };
 
 }

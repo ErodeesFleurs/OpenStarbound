@@ -143,12 +143,12 @@ namespace Dungeon {
     };
 
     struct ObjectSettings {
-      ObjectSettings() : direction() {}
+      ObjectSettings() = default;
       ObjectSettings(String const& objectName, Direction direction, Json const& parameters)
         : objectName(objectName), direction(direction), parameters(parameters) {}
 
       String objectName;
-      Direction direction;
+      Direction direction{};
       Json parameters;
     };
 
@@ -206,7 +206,7 @@ namespace Dungeon {
     virtual bool requiresLiquid() const;
 
   protected:
-    Rule() {}
+    Rule() = default;
   };
 
   class WorldGenMustContainAirRule : public Rule {
@@ -237,7 +237,7 @@ namespace Dungeon {
 
   class WorldGenMustContainLiquidRule : public Rule {
   public:
-    WorldGenMustContainLiquidRule() {}
+    WorldGenMustContainLiquidRule() = default;
 
     virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
     
@@ -248,14 +248,14 @@ namespace Dungeon {
 
   class WorldGenMustNotContainLiquidRule : public Rule {
   public:
-    WorldGenMustNotContainLiquidRule() {}
+    WorldGenMustNotContainLiquidRule() = default;
 
     virtual bool checkTileCanPlace(Vec2I position, DungeonGeneratorWriter* writer) const override;
   };
 
   class AllowOverdrawingRule : public Rule {
   public:
-    AllowOverdrawingRule() {}
+    AllowOverdrawingRule() = default;
 
     virtual bool overdrawable() const override {
       return true;
@@ -264,7 +264,7 @@ namespace Dungeon {
 
   class IgnorePartMaximumRule : public Rule {
   public:
-    IgnorePartMaximumRule() {}
+    IgnorePartMaximumRule() = default;
 
     virtual bool ignorePartMaximum() const override {
       return true;
@@ -342,7 +342,7 @@ namespace Dungeon {
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const = 0;
 
   protected:
-    Brush() {}
+    Brush() = default;
   };
 
   class RandomBrush : public Brush {
@@ -358,7 +358,7 @@ namespace Dungeon {
 
   class ClearBrush : public Brush {
   public:
-    ClearBrush() {}
+    ClearBrush() = default;
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
   };
@@ -416,14 +416,14 @@ namespace Dungeon {
 
   class BiomeItemsBrush : public Brush {
   public:
-    BiomeItemsBrush() {}
+    BiomeItemsBrush() = default;
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
   };
 
   class BiomeTreeBrush : public Brush {
   public:
-    BiomeTreeBrush() {}
+    BiomeTreeBrush() = default;
 
     virtual void paint(Vec2I position, Phase phase, DungeonGeneratorWriter* writer) const override;
   };
@@ -581,7 +581,7 @@ namespace Dungeon {
     virtual void forEachTileAt(Vec2I pos, TileCallback const& callback) const = 0;
 
   protected:
-    PartReader() {}
+    PartReader() = default;
   };
 
   class Part {

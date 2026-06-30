@@ -12,18 +12,18 @@ using ImageMetadataDatabaseConstPtr = SharedPtr<ImageMetadataDatabase const>;
 struct WeatherType {
   struct ParticleConfig {
     Particle particle;
-    float density;
-    bool autoRotate;
+    float density{};
+    bool autoRotate = false;
   };
 
   struct ProjectileConfig {
     String projectile;
     Json parameters;
     Vec2F velocity;
-    float ratePerX;
-    int spawnAboveRegion;
-    int spawnHorizontalPad;
-    float windAffectAmount;
+    float ratePerX{};
+    int spawnAboveRegion{};
+    int spawnHorizontalPad{};
+    float windAffectAmount = 0.0f;
   };
 
   WeatherType();
@@ -37,7 +37,7 @@ struct WeatherType {
   List<ProjectileConfig> projectiles;
   StringList statusEffects;
 
-  float maximumWind;
+  float maximumWind = 0.0f;
   Vec2F duration;
   StringList weatherNoises;
 };

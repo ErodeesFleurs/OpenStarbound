@@ -267,13 +267,13 @@ private:
   BTreeMixin<BTreeImpl> m_impl;
 
   IODevicePtr m_device;
-  bool m_open;
+  bool m_open = false;
 
-  uint32_t m_blockSize;
+  uint32_t m_blockSize = 2048;
   String m_contentIdentifier;
-  uint32_t m_keySize;
+  uint32_t m_keySize = 0;
 
-  bool m_autoCommit;
+  bool m_autoCommit = true;
 
   // Reading values can mutate the index cache, so the index cache is kept
   // using a different lock.  It is only necessary to acquire this lock when
@@ -282,11 +282,11 @@ private:
   mutable SpinLock m_indexCacheSpinLock;
   LruCache<BlockIndex, shared_ptr<IndexNode>> m_indexCache;
 
-  BlockIndex m_headFreeIndexBlock;
-  StreamOffset m_deviceSize;
-  BlockIndex m_root;
-  bool m_rootIsLeaf;
-  bool m_usingAltRoot;
+  BlockIndex m_headFreeIndexBlock = InvalidBlockIndex;
+  StreamOffset m_deviceSize = 0;
+  BlockIndex m_root = InvalidBlockIndex;
+  bool m_rootIsLeaf = false;
+  bool m_usingAltRoot = false;
   bool m_dirty;
 
   // Blocks that can be freely allocated and written to without violating

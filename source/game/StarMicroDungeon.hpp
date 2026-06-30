@@ -27,7 +27,7 @@ public:
 
 private:
   List<int> m_placementshifts;
-  bool m_generating;
+  bool m_generating = false;
 };
 
 }

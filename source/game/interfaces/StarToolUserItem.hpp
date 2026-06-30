@@ -40,7 +40,7 @@ public:
   World* world() const;
 
 private:
-  ToolUserEntity* m_owner;
+  ToolUserEntity* m_owner = nullptr;
   Maybe<ToolHand> m_hand;
 };
 

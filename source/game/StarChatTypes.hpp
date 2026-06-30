@@ -29,7 +29,7 @@ struct MessageContext {
   MessageContext(Mode mode);
   MessageContext(Mode mode, String const& channelName);
 
-  Mode mode;
+  Mode mode{};
 
   // only for Local and Party modes
   String channelName;
@@ -50,7 +50,7 @@ struct ChatReceivedMessage {
 
   MessageContext context;
 
-  ConnectionId fromConnection;
+  ConnectionId fromConnection{};
   String fromNick;
   String portrait;
 

@@ -17,7 +17,7 @@ private:
 
   HashMap<PublishedFileId_t, bool> m_currentDownloadState;
 
-  bool m_checkedUGC;
+  bool m_checkedUGC = false;
 };
 
 }

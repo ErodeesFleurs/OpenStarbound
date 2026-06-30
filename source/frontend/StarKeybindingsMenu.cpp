@@ -14,7 +14,6 @@ namespace Star {
 
 KeybindingsMenu::KeybindingsMenu(KeybindingsMenuServices services)
   : Pane(services.guiContext),
-    m_activeKeybinding(nullptr),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "KeybindingsMenu", "assets")),
     m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "KeybindingsMenu", "configuration")) {
   GuiReader reader(context());

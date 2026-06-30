@@ -31,7 +31,7 @@ StringSet TileDatabase::tileNames() const {
 }
 
 Tileset::Tileset(String const& source, String const& name, TileDatabasePtr const& database)
-  : m_source(source), m_name(name), m_tiles(), m_database(database) {}
+  : m_source(source), m_name(name), m_database(database) {}
 
 void Tileset::defineTile(TilePtr const& tile) {
   // Each tileset must be exported from a single database. When a tile switches

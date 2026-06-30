@@ -18,11 +18,6 @@ FarmableObject::FarmableObject(ObjectConfigConstPtr config, Json const& paramete
   m_stages = configValue("stages", JsonArray({JsonObject()})).toArray();
   m_stage = configValue("startingStage", 0).toInt();
 
-  m_stageAlt = -1;
-  m_stageEnterTime = 0.0;
-  m_nextStageTime = 0.0;
-  m_finalStage = false;
-
   m_minImmersion = configValue("minImmersion", 0).toFloat();
   m_maxImmersion = configValue("maxImmersion", 2).toFloat();
   m_immersion = SlidingWindow(config->assets->json("/farming.config:immersionWindow").toFloat(),

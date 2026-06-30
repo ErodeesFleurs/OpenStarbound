@@ -96,7 +96,7 @@ private:
     T m_data;
   };
 
-  bool m_initialized;
+  bool m_initialized = false;
 };
 
 template <typename T>
@@ -109,8 +109,7 @@ struct hash<Maybe<T>> {
 };
 
 template <typename T>
-Maybe<T>::Maybe()
-  : m_initialized(false) {}
+Maybe<T>::Maybe() {}
 
 template <typename T>
 Maybe<T>::Maybe(T const& t)

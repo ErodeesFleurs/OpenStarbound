@@ -38,7 +38,7 @@ private:
 };
 
 template <typename T>
-AtomicSharedPtr<T>::AtomicSharedPtr() {}
+AtomicSharedPtr<T>::AtomicSharedPtr() = default;
 
 template <typename T>
 AtomicSharedPtr<T>::AtomicSharedPtr(AtomicSharedPtr const& p)

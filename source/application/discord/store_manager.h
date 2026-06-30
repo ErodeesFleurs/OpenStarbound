@@ -31,7 +31,7 @@ private:
     StoreManager(StoreManager&& rhs) = delete;
     StoreManager& operator=(StoreManager&& rhs) = delete;
 
-    IDiscordStoreManager* internal_;
+    IDiscordStoreManager* internal_ = nullptr;
     static IDiscordStoreEvents events_;
 };
 

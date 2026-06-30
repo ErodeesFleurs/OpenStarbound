@@ -27,35 +27,35 @@ struct WorldTile {
   bool isConnectable(TileLayer layer, bool materialOnly) const;
   bool isColliding(CollisionSet const& collisionSet) const;
 
-  MaterialId foreground;
-  MaterialHue foregroundHueShift;
-  ModId foregroundMod;
-  MaterialHue foregroundModHueShift;
-  MaterialColorVariant foregroundColorVariant;
+  MaterialId foreground = NullMaterialId;
+  MaterialHue foregroundHueShift{};
+  ModId foregroundMod = NoModId;
+  MaterialHue foregroundModHueShift{};
+  MaterialColorVariant foregroundColorVariant = DefaultMaterialColorVariant;
 
-  MaterialId background;
-  MaterialHue backgroundHueShift;
-  ModId backgroundMod;
-  MaterialHue backgroundModHueShift;
-  MaterialColorVariant backgroundColorVariant;
+  MaterialId background = NullMaterialId;
+  MaterialHue backgroundHueShift{};
+  ModId backgroundMod = NoModId;
+  MaterialHue backgroundModHueShift{};
+  MaterialColorVariant backgroundColorVariant = DefaultMaterialColorVariant;
 
-  CollisionKind collision;
+  CollisionKind collision = CollisionKind::Null;
 
-  bool collisionCacheDirty;
+  bool collisionCacheDirty = true;
   // Collision cache moved to external WorldServer/WorldClient storage
   // to reduce per-tile memory from ~300B to ~50B.
 
-  BiomeIndex blockBiomeIndex;
-  BiomeIndex environmentBiomeIndex;
+  BiomeIndex blockBiomeIndex{};
+  BiomeIndex environmentBiomeIndex{};
 
-  bool biomeTransition;
+  bool biomeTransition = false;
 
   TileDamageStatus foregroundDamage;
   TileDamageStatus backgroundDamage;
 
   // If block is part of a dungeon then that affects spawns/drops,
   // as well as governing block protection
-  DungeonId dungeonId;
+  DungeonId dungeonId = NoDungeonId;
 };
 
 void swap(WorldTile& a, WorldTile& b) noexcept;
@@ -89,7 +89,7 @@ struct ServerTile : public WorldTile {
   Maybe<Vec2I> rootSource;
 
   // Do not serialize - calculated at runtime
-  CollisionKind objectCollision;
+  CollisionKind objectCollision = CollisionKind::None;
 };
 using ServerTileSectorArray = TileSectorArray<ServerTile, WorldSectorSize>;
 using ServerTileSectorArrayPtr = shared_ptr<ServerTileSectorArray>;
@@ -100,12 +100,12 @@ struct ClientTile : public WorldTile {
   ClientTile(ClientTile const& clientTile);
   ClientTile& operator=(ClientTile other) noexcept;
 
-  bool backgroundLightTransparent;
-  bool foregroundLightTransparent;
+  bool backgroundLightTransparent = true;
+  bool foregroundLightTransparent = true;
 
   LiquidLevel liquid;
 
-  float gravity;
+  float gravity = 0.0f;
 };
 
 void swap(ClientTile& a, ClientTile& b) noexcept;
@@ -117,21 +117,21 @@ using ClientTileSectorArrayPtr = shared_ptr<ClientTileSectorArray>;
 struct NetTile {
   NetTile();
 
-  MaterialId background;
-  MaterialHue backgroundHueShift;
-  MaterialColorVariant backgroundColorVariant;
-  ModId backgroundMod;
-  MaterialHue backgroundModHueShift;
-  MaterialId foreground;
-  MaterialHue foregroundHueShift;
-  MaterialColorVariant foregroundColorVariant;
-  ModId foregroundMod;
-  MaterialHue foregroundModHueShift;
-  CollisionKind collision;
-  BiomeIndex blockBiomeIndex;
-  BiomeIndex environmentBiomeIndex;
+  MaterialId background = NullMaterialId;
+  MaterialHue backgroundHueShift{};
+  MaterialColorVariant backgroundColorVariant{};
+  ModId backgroundMod = NoModId;
+  MaterialHue backgroundModHueShift{};
+  MaterialId foreground = NullMaterialId;
+  MaterialHue foregroundHueShift{};
+  MaterialColorVariant foregroundColorVariant{};
+  ModId foregroundMod = NoModId;
+  MaterialHue foregroundModHueShift{};
+  CollisionKind collision{};
+  BiomeIndex blockBiomeIndex{};
+  BiomeIndex environmentBiomeIndex{};
   LiquidNetUpdate liquid;
-  DungeonId dungeonId;
+  DungeonId dungeonId = NoDungeonId;
 };
 DataStream& operator>>(DataStream& ds, NetTile& tile);
 DataStream& operator<<(DataStream& ds, NetTile const& tile);
@@ -203,22 +203,7 @@ DataStream& operator<<(DataStream& ds, RenderTile const& tile);
 
 using RenderTileArray = MultiArray<RenderTile, 2>;
 
-inline WorldTile::WorldTile()
-  : foreground(NullMaterialId),
-    foregroundHueShift(),
-    foregroundMod(NoModId),
-    foregroundModHueShift(),
-    foregroundColorVariant(DefaultMaterialColorVariant),
-    background(NullMaterialId),
-    backgroundHueShift(),
-    backgroundMod(NoModId),
-    backgroundModHueShift(),
-    backgroundColorVariant(DefaultMaterialColorVariant),
-    collision(CollisionKind::Null),
-    collisionCacheDirty(true),
-    blockBiomeIndex(),
-    environmentBiomeIndex(),
-    dungeonId(NoDungeonId) {}
+inline WorldTile::WorldTile() = default;
 
 inline WorldTile::WorldTile(WorldTile const& worldTile)
   : foreground(worldTile.foreground),
@@ -286,7 +271,7 @@ inline tuple<MaterialId, ModId> WorldTile::materialAndMod(TileLayer layer) const
     return std::tuple<MaterialId, ModId>{background, backgroundMod};
 }
 
-inline ClientTile::ClientTile() : backgroundLightTransparent(true), foregroundLightTransparent(true), gravity() {}
+inline ClientTile::ClientTile() = default;
 
 inline ClientTile::ClientTile(ClientTile const& clientTile)
   : WorldTile(clientTile),
@@ -300,21 +285,7 @@ inline ClientTile& ClientTile::operator=(ClientTile other) noexcept {
   return *this;
 }
 
-inline NetTile::NetTile()
-  : background(NullMaterialId),
-    backgroundHueShift(),
-    backgroundColorVariant(),
-    backgroundMod(NoModId),
-    backgroundModHueShift(),
-    foreground(NullMaterialId),
-    foregroundHueShift(),
-    foregroundColorVariant(),
-    foregroundMod(NoModId),
-    foregroundModHueShift(),
-    collision(),
-    blockBiomeIndex(),
-    environmentBiomeIndex(),
-    dungeonId(NoDungeonId) {}
+inline NetTile::NetTile() = default;
 
 template <typename Hasher>
 inline void RenderTile::hashPushTerrain(Hasher& hasher) const {

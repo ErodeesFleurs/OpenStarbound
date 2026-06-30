@@ -48,7 +48,7 @@ namespace Tiled {
     void set(String const& name, T const& value);
 
   private:
-    Json m_properties;
+    Json m_properties = JsonObject{};
   };
 
   class Tile : public Dungeon::Tile {

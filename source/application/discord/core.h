@@ -45,7 +45,7 @@ private:
     Core(Core&& rhs) = delete;
     Core& operator=(Core&& rhs) = delete;
 
-    IDiscordCore* internal_;
+    IDiscordCore* internal_ = nullptr;
     Event<LogLevel, char const*> setLogHook_;
     discord::ApplicationManager applicationManager_;
     discord::UserManager userManager_;

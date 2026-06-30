@@ -12,10 +12,7 @@ const float vWidth = 960.0f;
 const float vHeight = 540.0f;
 
 Cinematic::Cinematic(Services services)
-  : m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "Cinematic", "assets")), m_guiContext(services.guiContext) {
-  m_completable = false;
-  m_suppressInput = false;
-}
+  : m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "Cinematic", "assets")), m_guiContext(services.guiContext) {}
 
 void Cinematic::load(Json const& definition) {
   stop();

@@ -23,7 +23,7 @@ public:
   ByteArray compute();
 
 private:
-  bool m_finished;
+  bool m_finished = false;
   sha_state m_state;
 };
 

@@ -171,7 +171,7 @@ auto OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::from(Collection 
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
-OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::OrderedMapWrapper() {}
+OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::OrderedMapWrapper() = default;
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::OrderedMapWrapper(OrderedMapWrapper const& map) {

@@ -44,9 +44,6 @@ AiInterface::AiInterface(UniverseClientPtr client,
     m_paneManager(paneManager),
     m_assets(requireServiceValueAs<StarException>(std::move(services.assets), "AiInterface", "assets")),
     m_aiDatabase(requireServiceValueAs<StarException>(std::move(services.aiDatabase), "AiInterface", "ai database")) {
-  m_textLength = 0.0;
-  m_textMaxLength = 0.0;
-
   GuiReader reader(context());
   reader.registerCallback("close", [this](Widget*) { dismiss(); });
   reader.registerCallback("missionItemList", [this](Widget*) { selectMission(); });

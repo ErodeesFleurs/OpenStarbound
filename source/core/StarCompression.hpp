@@ -58,8 +58,8 @@ public:
 
 private:
   String m_filename;
-  void* m_file;
-  CompressionLevel m_compression;
+  void* m_file = nullptr;
+  CompressionLevel m_compression = MediumCompression;
 };
 
 }

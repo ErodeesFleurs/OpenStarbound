@@ -41,7 +41,7 @@ DataStream& operator<<(DataStream& ds, PhysicsMovingCollision const& pmc) {
   return ds;
 }
 
-MovingCollisionId::MovingCollisionId() : physicsEntityId(NullEntityId), collisionIndex(0) {}
+MovingCollisionId::MovingCollisionId() = default;
 
 MovingCollisionId::MovingCollisionId(EntityId physicsEntityId, size_t collisionIndex)
   : physicsEntityId(physicsEntityId), collisionIndex(collisionIndex) {}

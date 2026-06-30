@@ -12,7 +12,7 @@
 namespace Star {
 
 PlayerTeleporter::PlayerTeleporter(Player& player)
-  : m_player(player), m_teleportTimer(0.0f), m_teleportAnimationType("default") {}
+  : m_player(player) {}
 
 void PlayerTeleporter::init() {
   m_teleportTimer = 0.0f;

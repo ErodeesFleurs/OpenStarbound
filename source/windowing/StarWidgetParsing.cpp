@@ -26,12 +26,12 @@
 
 namespace Star {
 
-WidgetConstructResult::WidgetConstructResult() : zlevel() {}
+WidgetConstructResult::WidgetConstructResult() = default;
 
 WidgetConstructResult::WidgetConstructResult(WidgetPtr obj, String const& name, float zlevel)
   : obj(obj), name(name), zlevel(zlevel) {}
 
-WidgetParser::WidgetParser(GuiContext& context) : m_context(context), m_pane(nullptr) {
+WidgetParser::WidgetParser(GuiContext& context) : m_context(context) {
   // only the non-interactive ones by default
   m_constructors["widget"] = [=, this](String const& name, Json const& config) { return widgetHandler(name, config); };
   m_constructors["canvas"] = [=, this](String const& name, Json const& config) { return canvasHandler(name, config); };

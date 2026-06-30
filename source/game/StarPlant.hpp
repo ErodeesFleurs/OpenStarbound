@@ -45,15 +45,15 @@ public:
     String image;
     Vec2U imageSize;
     Vec2F offset;
-    int segmentIdx;
-    bool structuralSegment;
-    PlantPieceKind kind;
-    RotationType rotationType;
-    float rotationOffset;
+    int segmentIdx = 0;
+    bool structuralSegment = false;
+    PlantPieceKind kind = PlantPieceKind::None;
+    RotationType rotationType = RotationType::DontRotate;
+    float rotationOffset = 0.0f;
     Set<Vec2I> spaces;
-    bool flip;
+    bool flip = false;
     // no need to serialize
-    float zLevel;
+    float zLevel = 0.0f;
   };
 
   Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, TreeVariant const& config, uint64_t seed);

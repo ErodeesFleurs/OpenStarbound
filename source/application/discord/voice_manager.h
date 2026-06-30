@@ -30,7 +30,7 @@ private:
     VoiceManager(VoiceManager&& rhs) = delete;
     VoiceManager& operator=(VoiceManager&& rhs) = delete;
 
-    IDiscordVoiceManager* internal_;
+    IDiscordVoiceManager* internal_ = nullptr;
     static IDiscordVoiceEvents events_;
 };
 

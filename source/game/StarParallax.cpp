@@ -7,20 +7,7 @@
 
 namespace Star {
 
-ParallaxLayer::ParallaxLayer() {
-  timeOfDayCorrelation = "";
-  zLevel = 0;
-  verticalOrigin = 0;
-  speed = { 0, 0 };
-  unlit = false;
-  lightMapped = false;
-  fadePercent = 0;
-  directives = "";
-  frameNumber = 1;
-  frameOffset = 0;
-  animationCycle = 1.0f;
-  alpha = 1.0f;
-}
+ParallaxLayer::ParallaxLayer() = default;
 
 ParallaxLayer::ParallaxLayer(Json const& store) : ParallaxLayer() {
   textures = jsonToStringList(store.get("textures"));

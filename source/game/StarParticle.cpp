@@ -22,31 +22,7 @@ EnumMap<Particle::DestructionAction> const Particle::DestructionActionNames{{Par
 EnumMap<Particle::Layer> const Particle::LayerNames{
     {Particle::Layer::Back, "back"}, {Particle::Layer::Middle, "middle"}, {Particle::Layer::Front, "front"}};
 
-Particle::Particle() {
-  type = Type::Variance;
-  size = 0;
-  baseSize = 0;
-  color = Color::White;
-  light = Color::Clear;
-  fade = 0;
-  fullbright = false;
-  position = velocity = finalVelocity = approach = Vec2F();
-  rotation = 0.0f;
-  angularVelocity = 0.0f;
-  timeToLive = 0.0f;
-  layer = Layer::Middle;
-  collidesForeground = true;
-  collidesLiquid = true;
-  underwaterOnly = false;
-  ignoreWind = true;
-  length = 0;
-  destructionAction = DestructionAction::None;
-  destructionTime = 0.0f;
-  destructionSet = false;
-  trail = false;
-  flippable = true;
-  flip = false;
-}
+Particle::Particle() = default;
 
 Particle::Particle(Json const& config, String const& path, AssetsConstPtr assetsPtr, ImageMetadataDatabaseConstPtr imageMetadataDatabasePtr) {
   type = TypeNames.getLeft(config.getString("type", "variance"));

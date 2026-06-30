@@ -39,8 +39,8 @@ struct LiquidStore : LiquidLevel {
 
   LiquidLevel take(float amount);
 
-  float pressure;
-  bool source;
+  float pressure{};
+  bool source{};
 };
 
 inline LiquidLevel::LiquidLevel()

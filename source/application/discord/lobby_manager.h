@@ -81,7 +81,7 @@ private:
     LobbyManager(LobbyManager&& rhs) = delete;
     LobbyManager& operator=(LobbyManager&& rhs) = delete;
 
-    IDiscordLobbyManager* internal_;
+    IDiscordLobbyManager* internal_ = nullptr;
     static IDiscordLobbyEvents events_;
 };
 

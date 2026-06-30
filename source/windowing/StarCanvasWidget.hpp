@@ -84,9 +84,9 @@ protected:
   void renderText(Vec2F const& renderingOffset, String const& s, TextPositioning const& position, TextStyle const& style);
 
 private:
-  bool m_ignoreInterfaceScale;
-  bool m_captureKeyboard;
-  bool m_captureMouse;
+  bool m_ignoreInterfaceScale = false;
+  bool m_captureKeyboard = false;
+  bool m_captureMouse = false;
   Vec2I m_mousePosition;
   List<ClickEvent> m_clickEvents;
   List<KeyEvent> m_keyEvents;

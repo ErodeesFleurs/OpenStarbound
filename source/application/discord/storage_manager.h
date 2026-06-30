@@ -39,7 +39,7 @@ private:
     StorageManager(StorageManager&& rhs) = delete;
     StorageManager& operator=(StorageManager&& rhs) = delete;
 
-    IDiscordStorageManager* internal_;
+    IDiscordStorageManager* internal_ = nullptr;
     static IDiscordStorageEvents events_;
 };
 

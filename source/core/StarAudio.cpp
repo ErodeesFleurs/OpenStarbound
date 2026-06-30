@@ -177,7 +177,6 @@ public:
   CompressedAudioImpl(CompressedAudioImpl const& impl) {
     m_audioData = impl.m_audioData;
     m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
-    m_vorbisInfo = nullptr;
   }
 
   CompressedAudioImpl(IODevicePtr audioData) {
@@ -185,7 +184,6 @@ public:
     audioData->seek(0);
     m_audioData = make_shared<ByteArray>(audioData->readBytes(static_cast<size_t>(audioData->size())));
     m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
-    m_vorbisInfo = nullptr;
   }
 
   ~CompressedAudioImpl() {
@@ -268,7 +266,7 @@ private:
   ExternalBuffer m_memoryFile;
   ov_callbacks m_callbacks;
   OggVorbis_File m_vorbisFile;
-  vorbis_info* m_vorbisInfo;
+  vorbis_info* m_vorbisInfo = nullptr;
 };
 
 class UncompressedAudioImpl {

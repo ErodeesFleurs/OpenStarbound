@@ -13,14 +13,14 @@ class EntitySplashHelper;
 struct EntitySplashConfig {
   EntitySplashConfig();
   EntitySplashConfig(Json const& config, AssetsConstPtr assets);
-  float splashSpeedMin;
+  float splashSpeedMin = 0.0f;
   Vec2F splashBottomSensor;
   Vec2F splashTopSensor;
-  float splashMinWaterLevel;
-  int numSplashParticles;
+  float splashMinWaterLevel = 0.0f;
+  int numSplashParticles = 0;
   Particle splashParticle;
   Particle splashParticleVariance;
-  float splashYVelocityFactor;
+  float splashYVelocityFactor = 0.0f;
 
   List<Particle> doSplash(Vec2F position, Vec2F velocity, World& world) const;
 };

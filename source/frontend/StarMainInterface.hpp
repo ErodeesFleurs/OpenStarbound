@@ -102,8 +102,8 @@ struct GuiMessage {
   GuiMessage(String const& message, float cooldown, float spring = 0);
 
   String message;
-  float cooldown;
-  float springState;
+  float cooldown = 0.0f;
+  float springState = 0.0f;
 };
 
 struct MainInterfaceServices {

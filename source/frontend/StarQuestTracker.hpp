@@ -50,8 +50,8 @@ private:
   int m_expandedFrameMinHeight;
   int m_expandedFramePadding;
 
-  float m_compassDirection;
-  float m_compassSpeed;
+  float m_compassDirection = 0.0f;
+  float m_compassSpeed = 0.0f;
   float m_compassAcceleration;
   float m_compassFriction;
 

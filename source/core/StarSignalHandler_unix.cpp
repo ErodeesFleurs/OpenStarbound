@@ -5,11 +5,11 @@
 namespace Star {
 
 struct SignalHandlerImpl {
-  bool handlingFatal;
-  bool handlingInterrupt;
-  bool interrupted;
+  bool handlingFatal{};
+  bool handlingInterrupt{};
+  bool interrupted{};
 
-  SignalHandlerImpl() : handlingFatal(false), handlingInterrupt(false), interrupted(false) {}
+  SignalHandlerImpl() = default;
 
   ~SignalHandlerImpl() {
     setHandleFatal(false);

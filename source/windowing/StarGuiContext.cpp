@@ -17,10 +17,6 @@ GuiContext::GuiContext(MixerPtr mixer, ApplicationControllerPtr appController, G
   , m_itemDatabase(requireServiceValueAs<GuiContextException>(std::move(services.itemDatabase), "GuiContext", "item database"))
   , m_registerReloadListener(requireServiceValueAs<GuiContextException>(std::move(services.registerReloadListener), "GuiContext", "reload listener registrar"))
   , m_withClipboardUnlock(requireServiceValueAs<GuiContextException>(std::move(services.withClipboardUnlock), "GuiContext", "clipboard unlock")) {
-  m_interfaceScale = 1;
-
-  m_shiftHeld = false;
-
   refreshKeybindings();
 }
 

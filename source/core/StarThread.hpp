@@ -251,7 +251,7 @@ public:
 
 private:
   MutexType& m_mutex;
-  bool m_locked;
+  bool m_locked = false;
 };
 using MutexLocker = MLocker<Mutex>;
 using RecursiveMutexLocker = MLocker<RecursiveMutex>;
@@ -286,7 +286,7 @@ public:
 
 private:
   ReadersWriterMutex& m_lock;
-  bool m_locked;
+  bool m_locked = false;
 };
 
 class WriteLocker {
@@ -303,7 +303,7 @@ public:
 
 private:
   ReadersWriterMutex& m_lock;
-  bool m_locked;
+  bool m_locked = false;
 };
 
 class SpinLock {
@@ -321,7 +321,7 @@ using SpinLocker = MLocker<SpinLock>;
 
 template <typename MutexType>
 MLocker<MutexType>::MLocker(MutexType& ref, bool l)
-  : m_mutex(ref), m_locked(false) {
+  : m_mutex(ref) {
   if (l)
     lock();
 }
@@ -368,7 +368,7 @@ ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> Thre
 }
 
 template <typename Return>
-ThreadFunction<Return>::ThreadFunction() {}
+ThreadFunction<Return>::ThreadFunction() = default;
 
 template <typename Return>
 ThreadFunction<Return>::ThreadFunction(ThreadFunction&&) = default;

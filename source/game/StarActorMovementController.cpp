@@ -8,7 +8,7 @@
 
 namespace Star {
 
-ActorJumpProfile::ActorJumpProfile() {}
+ActorJumpProfile::ActorJumpProfile() = default;
 
 ActorJumpProfile::ActorJumpProfile(Json const& config) {
   jumpSpeed = config.optFloat("jumpSpeed");
@@ -1089,7 +1089,7 @@ void ActorMovementController::doSetAnchorState(Maybe<EntityAnchorState> anchorSt
 
 
 PathController::PathController(World& world)
-  : m_world(world), m_edgeTimer(0.0) { }
+  : m_world(world) {}
 
 PlatformerAStar::Parameters const& PathController::parameters() {
   return m_parameters;

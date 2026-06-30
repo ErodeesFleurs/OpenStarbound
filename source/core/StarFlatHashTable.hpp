@@ -110,7 +110,7 @@ private:
   void checkCapacity(size_t additionalCapacity);
 
   Buckets m_buckets;
-  size_t m_filledCount;
+  size_t m_filledCount = 0;
 
   GetKey m_getKey;
   Hash m_hash;
@@ -293,7 +293,7 @@ FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::iterator::operator t
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>
 FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::FlatHashTable(size_t bucketCount,
     GetKey const& getKey, Hash const& hash, Equals const& equal, Allocator const& alloc)
-  : m_buckets(alloc), m_filledCount(0), m_getKey(getKey),
+  : m_buckets(alloc), m_getKey(getKey),
     m_hash(hash), m_equals(equal) {
   if (bucketCount != 0)
     checkCapacity(bucketCount);

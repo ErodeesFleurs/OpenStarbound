@@ -2,9 +2,7 @@
 
 namespace Star {
 
-SayChatAction::SayChatAction() {
-  entity = NullEntityId;
-}
+SayChatAction::SayChatAction() = default;
 
 SayChatAction::SayChatAction(EntityId entity, String const& text, Vec2F const& position)
   : entity(entity), text(text), position(position) {}
@@ -16,9 +14,7 @@ SayChatAction::operator bool() const {
   return !text.empty();
 }
 
-PortraitChatAction::PortraitChatAction() {
-  entity = NullEntityId;
-}
+PortraitChatAction::PortraitChatAction() = default;
 
 PortraitChatAction::PortraitChatAction(
     EntityId entity, String const& portrait, String const& text, Vec2F const& position)

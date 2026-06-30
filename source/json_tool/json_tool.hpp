@@ -105,7 +105,7 @@ public:
 
 class ArrayOutput : public Output {
 public:
-  ArrayOutput(bool unique) : m_unique(unique), m_results() {}
+  ArrayOutput(bool unique) : m_unique(unique) {}
 
   virtual void out(FormattedJson const& json) override;
   virtual void flush() override;
@@ -116,11 +116,9 @@ private:
 };
 
 struct Options {
-  Options() : inPlace(false), insertLocation(), editFormat(nullptr), editorImages(), output() {}
-
-  bool inPlace;
+  bool inPlace = false;
   InsertLocation insertLocation;
-  JsonInputFormatPtr editFormat;
+  JsonInputFormatPtr editFormat = nullptr;
   List<JsonPath::PathPtr> editorImages;
   OutputPtr output;
 };
@@ -141,8 +139,6 @@ struct FindInput {
 using Input = MVariant<JsonLiteralInput, FileInput, FindInput>;
 
 struct ParsedArgs {
-  ParsedArgs() : inputs(), command(), options() {}
-
   List<Input> inputs;
   Command command;
   Options options;

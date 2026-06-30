@@ -8,7 +8,7 @@
 
 namespace Star {
 
-WorldStructure::WorldStructure() {}
+WorldStructure::WorldStructure() = default;
 
 WorldStructure::WorldStructure(AssetsConstPtr assets, MaterialDatabaseConstPtr materialDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase, String const& configPath) {
   materialDatabase = requireServiceValueAs<WorldStructureException>(std::move(materialDatabase), "WorldStructure", "material database");

@@ -100,7 +100,7 @@ private:
 };
 
 template <typename IndexType, typename ValueType>
-ParametricTable<IndexType, ValueType>::ParametricTable() {}
+ParametricTable<IndexType, ValueType>::ParametricTable() = default;
 
 template <typename IndexType, typename ValueType>
 template <typename OtherIndexType, typename OtherValueType>

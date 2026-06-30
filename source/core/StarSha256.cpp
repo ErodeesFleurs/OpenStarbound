@@ -218,7 +218,6 @@ static void sha_done(sha_state* md, uint8_t* hash) {
 }
 
 Sha256Hasher::Sha256Hasher() {
-  m_finished = false;
   sha_init(&m_state);
 }
 

@@ -9,10 +9,9 @@ EnumMap<LogLevel> const LogLevelNames{
   {LogLevel::Error, "Error"}
 };
 
-LogSink::LogSink()
-  : m_level(LogLevel::Info) {}
+LogSink::LogSink() = default;
 
-LogSink::~LogSink() {}
+LogSink::~LogSink() = default;
 
 void LogSink::setLevel(LogLevel level) {
   m_level = level;

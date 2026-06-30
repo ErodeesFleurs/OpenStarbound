@@ -15,9 +15,9 @@ namespace AStar {
   struct Score {
     Score();
 
-    double gScore;
-    double hScore;
-    double fScore;
+    double gScore = highest<double>();
+    double hScore = 0.0;
+    double fScore = highest<double>();
   };
 
   // 'Edge' should be implemented as a class with public fields compatible with
@@ -100,7 +100,7 @@ namespace AStar {
     Maybe<Path<Edge>> m_result;
   };
 
-  inline Score::Score() : gScore(highest<double>()), hScore(0), fScore(highest<double>()) {}
+  inline Score::Score() = default;
 
   template <class Edge, class Node>
   Search<Edge, Node>::Search(HeuristicFunction heuristicCost,

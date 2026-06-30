@@ -49,7 +49,7 @@ public:
 private:
   static uint8_t kindBit(CollisionKind kind);
 
-  uint8_t m_kinds;
+  uint8_t m_kinds = 0;
 };
 
 // The default CollisionSet consists of Null, Slippery, Dynamic and Block
@@ -79,8 +79,7 @@ struct CollisionBlock {
   RectF polyBounds;
 };
 
-inline CollisionSet::CollisionSet()
-  : m_kinds(0) {}
+inline CollisionSet::CollisionSet() = default;
 
 inline CollisionSet::CollisionSet(initializer_list<CollisionKind> kinds)
   : CollisionSet() {

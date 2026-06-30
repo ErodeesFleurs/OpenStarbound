@@ -124,7 +124,7 @@ DecoratorState::DecoratorState(LuaThread thread) : thread(std::move(thread)) {
   child = std::make_shared<NodeState>();
 }
 
-CompositeState::CompositeState(size_t childCount) : index() {
+CompositeState::CompositeState(size_t childCount) {
   for (size_t i = 0; i < childCount; i++)
     children.append(std::make_shared<NodeState>());
 }

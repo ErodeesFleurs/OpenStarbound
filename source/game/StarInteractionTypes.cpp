@@ -32,10 +32,7 @@ EnumMap<InteractActionType> const InteractActionTypeNames{{InteractActionType::N
     {InteractActionType::ScriptPane, "ScriptPane"},
     {InteractActionType::Message, "Message"}};
 
-InteractAction::InteractAction() {
-  type = InteractActionType::None;
-  entityId = NullEntityId;
-}
+InteractAction::InteractAction() = default;
 
 InteractAction::InteractAction(InteractActionType type, EntityId entityId, Json data)
   : type(type), entityId(entityId), data(data) {}

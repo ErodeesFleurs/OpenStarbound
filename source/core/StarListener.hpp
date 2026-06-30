@@ -39,7 +39,7 @@ protected:
   virtual void trigger() override;
 
 private:
-  atomic<bool> triggered;
+  atomic<bool> triggered = false;
 };
 
 class ListenerGroup {

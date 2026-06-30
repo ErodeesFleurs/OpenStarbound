@@ -24,9 +24,9 @@ public:
   void setParams(Json const& params);
 
 protected:
-  float m_swingStart;
-  float m_swingFinish;
-  float m_swingAimFactor;
+  float m_swingStart = 0.0f;
+  float m_swingFinish = 0.0f;
+  float m_swingAimFactor = 0.0f;
   Maybe<float> m_coolingDownAngle;
 };
 

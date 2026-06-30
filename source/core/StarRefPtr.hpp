@@ -48,7 +48,7 @@ private:
   template <typename T2>
   friend class RefPtr;
 
-  T* m_ptr;
+  T* m_ptr = nullptr;
 };
 
 template <typename T, typename U>
@@ -106,16 +106,15 @@ protected:
   virtual ~RefCounter() = default;
 
 private:
-  size_t m_refCounter;
+  size_t m_refCounter = 0;
 };
 
 template <typename T>
-RefPtr<T>::RefPtr()
-  : m_ptr(nullptr) {}
+RefPtr<T>::RefPtr() = default;
 
 template <typename T>
 RefPtr<T>::RefPtr(T* p, bool addRef)
-  : m_ptr(nullptr) {
+{
   reset(p, addRef);
 }
 
@@ -294,7 +293,6 @@ inline void refPtrDecRef(RefCounter* p) {
     delete p;
 }
 
-inline RefCounter::RefCounter()
-  : m_refCounter(0) {}
+inline RefCounter::RefCounter() = default;
 
 }

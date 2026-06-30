@@ -102,7 +102,7 @@ private:
 
   int m_maxSpinCount;
 
-  int m_recipeAutorefreshCooldown;
+  int m_recipeAutorefreshCooldown = 0;
 
   HashMap<ItemDescriptor, ItemPtr> m_itemCache;
 

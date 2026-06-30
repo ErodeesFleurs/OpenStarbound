@@ -70,7 +70,6 @@ void NetworkedAnimator::initializeNetStateDefaults() {
   m_flipped.set(false);
   m_flippedRelativeCenterLine.set(0.0f);
   m_animationRate.set(1.0f);
-  m_animatorVersion = 0;
   setupNetStates();
 }
 

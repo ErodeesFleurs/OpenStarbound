@@ -48,15 +48,10 @@ EffectSource::EffectSource(AssetsConstPtr assets, String const& kind, String sug
   : m_assets(requireServiceValueAs<StarException>(std::move(assets), "EffectSource", "assets")) {
   m_kind = kind;
   m_config = definition;
-  m_expired = false;
   m_loopDuration = m_config.getFloat("duration", 0);
   m_durationVariance = m_config.getFloat("durationVariance", 0);
   m_loops = m_config.getBool("loops", m_loopDuration != 0);
   m_timer = Random::randf() * (m_loopDuration + 0.5 * m_durationVariance);
-  m_stop = false;
-  m_initialTick = true;
-  m_loopTick = false;
-  m_finalTick = false;
   m_effectSpawnLocation = m_config.getString("location", "normal");
   m_suggestedSpawnLocation = suggestedSpawnLocation;
 }

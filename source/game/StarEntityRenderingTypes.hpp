@@ -46,15 +46,15 @@ struct PreviewTile {
   PreviewTile(Vec2I const& position, LiquidId liqId);
 
   Vec2I position;
-  bool foreground;
+  bool foreground = false;
 
-  LiquidId liqId;
-  MaterialId matId;
-  MaterialHue hueShift;
-  bool updateMatId;
-  MaterialColorVariant colorVariant;
+  LiquidId liqId = EmptyLiquidId;
+  MaterialId matId = NullMaterialId;
+  MaterialHue hueShift = 0;
+  bool updateMatId = false;
+  MaterialColorVariant colorVariant = DefaultMaterialColorVariant;
   Vec3B light;
-  bool updateLight;
+  bool updateLight = false;
 };
 
 struct OverheadBar {
@@ -64,9 +64,9 @@ struct OverheadBar {
 
   Vec2F entityPosition;
   Maybe<String> icon;
-  float percentage;
+  float percentage = 0.0f;
   Color color;
-  bool detailOnly;
+  bool detailOnly = false;
 };
 
 enum class EntityHighlightEffectType {

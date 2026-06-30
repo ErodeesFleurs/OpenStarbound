@@ -12,13 +12,7 @@
 
 namespace Star {
 
-PlantDrop::PlantDropPiece::PlantDropPiece() {
-  image = "";
-  offset = {};
-  segmentIdx = 0;
-  kind = Plant::PlantPieceKind::None;
-  flip = false;
-}
+PlantDrop::PlantDropPiece::PlantDropPiece() = default;
 
 PlantDrop::PlantDrop(AssetsConstPtr assets, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
     bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random)

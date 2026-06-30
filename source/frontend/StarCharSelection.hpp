@@ -37,7 +37,7 @@ private:
   PlayerStoragePtr m_playerStorage;
   AssetsConstPtr m_assets;
   ConfigurationPtr m_configuration;
-  unsigned m_downScroll;
+  unsigned m_downScroll = 0;
   String m_search;
   List<Uuid> m_filteredList;
   bool m_readOnly = false;

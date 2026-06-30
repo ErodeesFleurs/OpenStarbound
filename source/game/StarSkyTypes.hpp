@@ -40,17 +40,17 @@ struct SkyColoring {
 
   Json toJson() const;
 
-  Color mainColor;
+  Color mainColor = Color::Clear;
 
-  pair<Color, Color> morningColors;
-  pair<Color, Color> dayColors;
-  pair<Color, Color> eveningColors;
-  pair<Color, Color> nightColors;
+  pair<Color, Color> morningColors = {Color::Clear, Color::Clear};
+  pair<Color, Color> dayColors = {Color::Clear, Color::Clear};
+  pair<Color, Color> eveningColors = {Color::Clear, Color::Clear};
+  pair<Color, Color> nightColors = {Color::Clear, Color::Clear};
 
-  Color morningLightColor;
-  Color dayLightColor;
-  Color eveningLightColor;
-  Color nightLightColor;
+  Color morningLightColor = Color::Clear;
+  Color dayLightColor = Color::Clear;
+  Color eveningLightColor = Color::Clear;
+  Color nightLightColor = Color::Clear;
 };
 
 DataStream& operator>>(DataStream& ds, SkyColoring& skyColoring);
@@ -62,9 +62,9 @@ struct SkyOrbiter {
   SkyOrbiter();
   SkyOrbiter(SkyOrbiterType type, float scale, float angle, String const& image, Vec2F position);
 
-  SkyOrbiterType type;
-  float scale;
-  float angle;
+  SkyOrbiterType type = SkyOrbiterType::Sun;
+  float scale = 0.0f;
+  float angle = 0.0f;
   String image;
   Vec2F position;
 };
@@ -77,8 +77,8 @@ struct SkyWorldHorizon {
 
   Vec2F center;
 
-  float scale;
-  float rotation;
+  float scale = 0.0f;
+  float rotation = 0.0f;
 
   // List of L/R images for each layer of the world horizon, bottom to top.
   List<pair<String, String>> layers;

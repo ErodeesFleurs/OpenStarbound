@@ -28,7 +28,7 @@ private:
   AssetsConstPtr m_assets;
   TeleportBookmark m_bookmark;
 
-  bool m_isNew;
+  bool m_isNew = false;
 };
 
 void setupBookmarkEntry(WidgetPtr const& entry, TeleportBookmark const& bookmark);

@@ -106,11 +106,11 @@ struct DamageNotification {
 
   Json toJson() const;
 
-  EntityId sourceEntityId;
-  EntityId targetEntityId;
+  EntityId sourceEntityId{};
+  EntityId targetEntityId{};
   Vec2F position;
-  float damageDealt;
-  float healthLost;
+  float damageDealt{};
+  float healthLost{};
   HitType hitType;
   String damageSourceKind;
   String targetMaterialKind;

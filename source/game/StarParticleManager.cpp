@@ -5,7 +5,7 @@
 namespace Star {
 
 ParticleManager::ParticleManager(WorldGeometry const& worldGeometry, ClientTileSectorArrayPtr const& tileSectorArray)
-  : m_worldGeometry(worldGeometry), m_undergroundLevel(0.0f), m_tileSectorArray(tileSectorArray) {}
+  : m_worldGeometry(worldGeometry), m_tileSectorArray(tileSectorArray) {}
 
 void ParticleManager::add(Particle particle) {
   m_particles.push_back(std::move(particle));

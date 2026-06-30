@@ -5,11 +5,7 @@
 
 namespace Star {
 
-TextPositioning::TextPositioning() {
-  pos = Vec2F();
-  hAnchor = HorizontalAnchor::LeftAnchor;
-  vAnchor = VerticalAnchor::BottomAnchor;
-}
+TextPositioning::TextPositioning() = default;
 
 TextPositioning::TextPositioning(Vec2F pos, HorizontalAnchor hAnchor, VerticalAnchor vAnchor,
     Maybe<unsigned> wrapWidth, Maybe<unsigned> charLimit)

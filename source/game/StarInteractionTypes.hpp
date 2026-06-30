@@ -41,8 +41,8 @@ struct InteractAction {
 
   explicit operator bool() const;
 
-  InteractActionType type;
-  EntityId entityId;
+  InteractActionType type = InteractActionType::None;
+  EntityId entityId = NullEntityId;
   Json data;
 };
 

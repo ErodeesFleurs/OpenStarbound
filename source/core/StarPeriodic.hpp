@@ -11,7 +11,7 @@ namespace Star {
 class Periodic {
 public:
   Periodic(unsigned everyXSteps = 1)
-    : m_counter(0), m_everyXSteps(everyXSteps) {}
+    : m_everyXSteps(everyXSteps) {}
 
   unsigned stepCount() const {
     return m_everyXSteps;
@@ -50,7 +50,7 @@ public:
   }
 
 private:
-  unsigned m_counter;
+  unsigned m_counter = 0;
   unsigned m_everyXSteps;
 };
 
@@ -59,7 +59,7 @@ private:
 class RatePeriodic {
 public:
   RatePeriodic(double period = 1, double noise = 0)
-    : m_period(period), m_noise(noise), m_counter(period + Random::randf(-noise, noise)), m_elapsed(0.0) {}
+    : m_period(period), m_noise(noise), m_counter(period + Random::randf(-noise, noise)) {}
 
   double period() const {
     return m_period;
@@ -89,7 +89,7 @@ private:
   double m_period;
   double m_noise;
   double m_counter;
-  double m_elapsed;
+  double m_elapsed = 0.0;
 };
 
 }

@@ -8,21 +8,7 @@
 
 namespace Star {
 
-Animation::Animation() {
-  m_mode = EndAndDisappear;
-  m_appendFrame = false;
-  m_frameNumber = 1;
-  m_animationCycle = 1.0f;
-  m_animationTime = 1.0f;
-  m_angle = 0.0f;
-  m_centered = true;
-  m_color = Color::White;
-  m_variantOffset = 0;
-  m_frame = 0;
-  m_animationTimer = 0.0f;
-  m_timeToLive = 0.0f;
-  m_completed = false;
-}
+Animation::Animation() = default;
 
 Animation::Animation(Json config, String const& directory, AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase)
   : m_imageMetadataDatabase(requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "Animation", "image metadata database")) {

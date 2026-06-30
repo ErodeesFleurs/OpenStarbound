@@ -13,7 +13,6 @@ ServerQueryThread::ServerQueryThread(UniverseServer& universe, HostAddressWithPo
   : Thread("QueryServer"),
     m_universe(universe),
     m_queryServer(bindAddress),
-    m_stop(true),
     m_lastChallengeCheck(Time::monotonicMilliseconds()) {
   configuration = requireServiceValueAs<StarException>(std::move(configuration), "ServerQueryThread", "configuration");
 
@@ -29,14 +28,8 @@ ServerQueryThread::ServerQueryThread(UniverseServer& universe, HostAddressWithPo
   m_generalResponse.setByteOrder(ByteOrder::LittleEndian);
   m_generalResponse.setNullTerminatedStrings(true);
 
-  m_serverPort = 0;
-  m_lastActiveTime = 0;
-
   m_maxPlayers = configuration->get("maxPlayers").toUInt();
   m_serverName = configuration->get("serverName").toString();
-
-  m_lastPlayersResponse = 0;
-  m_lastRulesResponse = 0;
 }
 
 ServerQueryThread::~ServerQueryThread() {

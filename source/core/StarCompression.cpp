@@ -117,10 +117,10 @@ CompressedFilePtr CompressedFile::open(String const& filename, IOMode mode, Comp
 }
 
 CompressedFile::CompressedFile()
-  : IODevice(IOMode::Closed), m_file(nullptr), m_compression(MediumCompression) {}
+  : IODevice(IOMode::Closed) {}
 
 CompressedFile::CompressedFile(String filename)
-  : IODevice(IOMode::Closed), m_file(nullptr), m_compression(MediumCompression) {
+  : IODevice(IOMode::Closed) {
   setFilename(std::move(filename));
 }
 

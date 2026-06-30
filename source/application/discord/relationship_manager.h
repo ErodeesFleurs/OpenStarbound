@@ -25,7 +25,7 @@ private:
     RelationshipManager(RelationshipManager&& rhs) = delete;
     RelationshipManager& operator=(RelationshipManager&& rhs) = delete;
 
-    IDiscordRelationshipManager* internal_;
+    IDiscordRelationshipManager* internal_ = nullptr;
     static IDiscordRelationshipEvents events_;
 };
 

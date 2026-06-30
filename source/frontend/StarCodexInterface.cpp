@@ -40,7 +40,6 @@ CodexInterface::CodexInterface(PlayerPtr player, Services services)
 
   m_selectText = assets->json("/interface/windowconfig/codex.config:selectText").toString();
 
-  m_currentPage = 0;
   updateSpecies();
   setupPageText();
 }

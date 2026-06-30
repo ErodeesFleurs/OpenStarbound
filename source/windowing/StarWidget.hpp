@@ -140,9 +140,9 @@ protected:
   virtual RectI getScissorRect() const;
   virtual RectI noScissor() const;
 
-  Widget* m_parent;
+  Widget* m_parent = nullptr;
 
-  bool m_visible;
+  bool m_visible = true;
   PolyF m_boundPoly;
 
   Vec2I m_position;
@@ -153,15 +153,15 @@ protected:
   List<WidgetPtr> m_members;
   StringMap<WidgetPtr> m_memberHash;
   Vec2I m_memberSize;
-  bool m_focus;
-  bool m_doScissor;
-  bool m_container;
-  bool m_mouseTransparent;
+  bool m_focus = false;
+  bool m_doScissor = true;
+  bool m_container = false;
+  bool m_mouseTransparent = false;
 
   Json m_data;
 
 private:
-  GuiContext* m_context;
+  GuiContext* m_context = nullptr;
 };
 
 std::ostream& operator<<(std::ostream& os, Widget const& widget);

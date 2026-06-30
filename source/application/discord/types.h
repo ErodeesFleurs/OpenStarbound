@@ -534,7 +534,7 @@ public:
     IDiscordLobbyTransaction* Internal() { return internal_; }
 
 private:
-    IDiscordLobbyTransaction* internal_;
+    IDiscordLobbyTransaction* internal_ = nullptr;
 };
 
 class LobbyMemberTransaction final {
@@ -546,7 +546,7 @@ public:
     IDiscordLobbyMemberTransaction* Internal() { return internal_; }
 
 private:
-    IDiscordLobbyMemberTransaction* internal_;
+    IDiscordLobbyMemberTransaction* internal_ = nullptr;
 };
 
 class LobbySearchQuery final {
@@ -563,7 +563,7 @@ public:
     IDiscordLobbySearchQuery* Internal() { return internal_; }
 
 private:
-    IDiscordLobbySearchQuery* internal_;
+    IDiscordLobbySearchQuery* internal_ = nullptr;
 };
 
 } // namespace discord

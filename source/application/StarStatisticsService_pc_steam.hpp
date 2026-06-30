@@ -29,7 +29,7 @@ private:
   STEAM_CALLBACK(SteamStatisticsService, onAchievementStored, UserAchievementStored_t, m_callbackAchievementStored);
 
   uint64_t m_appId;
-  bool m_initialized;
+  bool m_initialized = false;
   Maybe<String> m_error;
 };
 

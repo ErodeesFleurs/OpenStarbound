@@ -116,7 +116,7 @@ Json Json::parseJson(String const& json) {
   return inputUtf32Json<String::const_iterator>(json.begin(), json.end(), JsonParseType::Top);
 }
 
-Json::Json() {}
+Json::Json() = default;
 
 Json::Json(double d) {
   m_data = d;

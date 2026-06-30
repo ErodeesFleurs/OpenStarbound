@@ -41,10 +41,8 @@ CraftingPane::CraftingPane(WorldClientPtr worldClient,
     m_configuration(requireServiceValueAs<StarException>(std::move(services.configuration), "CraftingPane", "configuration")),
     m_itemDatabase(requireServiceValueAs<StarException>(std::move(services.itemDatabase), "CraftingPane", "item database")),
     m_objectDatabase(requireServiceValueAs<StarException>(std::move(services.objectDatabase), "CraftingPane", "object database")),
-    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "CraftingPane", "status effect database")) {
-  m_recipeAutorefreshCooldown = 0;
-  m_sourceEntityId = sourceEntityId;
-
+    m_statusEffectDatabase(requireServiceValueAs<StarException>(std::move(services.statusEffectDatabase), "CraftingPane", "status effect database")),
+    m_sourceEntityId(sourceEntityId) {
   // get the config data for this crafting pane, default to "bare hands" crafting
   auto baseConfig = settings.get("config", "/interface/windowconfig/crafting.config");
   m_settings = jsonMerge(m_assets->json("/interface/windowconfig/crafting.config:default"),

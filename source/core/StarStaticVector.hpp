@@ -96,13 +96,12 @@ public:
   bool operator<(StaticVector const& other) const;
 
 private:
-  size_t m_size;
+  size_t m_size = 0;
   alignas(Element) unsigned char m_elements[(MaxSize != 0 ? MaxSize : 1) * sizeof(Element)];
 };
 
 template <typename Element, size_t MaxSize>
-StaticVector<Element, MaxSize>::StaticVector()
-  : m_size(0) {}
+StaticVector<Element, MaxSize>::StaticVector() = default;
 
 template <typename Element, size_t MaxSize>
 StaticVector<Element, MaxSize>::~StaticVector() {

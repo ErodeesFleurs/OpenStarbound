@@ -30,7 +30,7 @@ private:
   bool m_isAdmin = false;
 };
 
-inline NetCompatibilityRules::NetCompatibilityRules() : m_version(OpenProtocolVersion) {}
+inline NetCompatibilityRules::NetCompatibilityRules() = default;
 
 inline NetCompatibilityRules::NetCompatibilityRules(VersionNumber v) : m_version(v) {}
 

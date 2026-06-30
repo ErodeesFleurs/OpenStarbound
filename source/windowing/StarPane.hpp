@@ -109,10 +109,10 @@ protected:
   Vec2I m_bodySize;
   Vec2I m_headerSize;
 
-  bool m_dismissed;
-  bool m_dragActive;
+  bool m_dismissed = true;
+  bool m_dragActive = false;
   Vec2I m_dragMouseOrigin;
-  bool m_lockPosition;
+  bool m_lockPosition = false;
   Vec2I m_centerOffset;
 
   WidgetPtr m_mouseOver;
@@ -129,9 +129,9 @@ protected:
   Color m_titleColor;
   Color m_subTitleColor;
 
-  PaneAnchor m_anchor;
+  PaneAnchor m_anchor = PaneAnchor::None;
   Vec2I m_anchorOffset;
-  bool m_hasDisplayed;
+  bool m_hasDisplayed = false;
 
   List<pair<String, AudioInstancePtr>> m_playingSounds;
 };

@@ -78,7 +78,7 @@ private:
 
   UniverseServer& m_universe;
   UdpServer m_queryServer;
-  bool m_stop;
+  bool m_stop = true;
   DataStreamBuffer m_playersResponse;
   DataStreamBuffer m_rulesResponse;
   DataStreamBuffer m_generalResponse;
@@ -94,14 +94,14 @@ private:
     int32_t m_challenge;
   };
 
-  uint16_t m_serverPort;
+  uint16_t m_serverPort = 0;
   uint8_t m_maxPlayers;
   String m_serverName;
   HashMap<HostAddress, SharedPtr<RequestChallenge>> m_validChallenges;
   int64_t m_lastChallengeCheck;
-  int64_t m_lastPlayersResponse;
-  int64_t m_lastRulesResponse;
-  int64_t m_lastActiveTime;
+  int64_t m_lastPlayersResponse = 0;
+  int64_t m_lastRulesResponse = 0;
+  int64_t m_lastActiveTime = 0;
 };
 
 }

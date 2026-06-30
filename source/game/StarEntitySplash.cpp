@@ -5,7 +5,7 @@
 
 namespace Star {
 
-EntitySplashConfig::EntitySplashConfig() {}
+EntitySplashConfig::EntitySplashConfig() = default;
 
 EntitySplashConfig::EntitySplashConfig(Json const& config, AssetsConstPtr assets) {
   splashSpeedMin = config.get("splashSpeedMin").toFloat();

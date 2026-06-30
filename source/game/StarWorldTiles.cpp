@@ -57,7 +57,7 @@ bool WorldTile::isColliding(CollisionSet const& collisionSet) const {
 
 VersionNumber const ServerTile::CurrentSerializationVersion = 418;
 
-ServerTile::ServerTile() : objectCollision(CollisionKind::None) {}
+ServerTile::ServerTile() = default;
 
 ServerTile::ServerTile(ServerTile const& serverTile)
   : WorldTile(serverTile),

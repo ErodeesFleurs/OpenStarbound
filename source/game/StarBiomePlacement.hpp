@@ -72,22 +72,22 @@ private:
   };
   static EnumMap<DistributionType> const DistributionTypeNames;
 
-  BiomePlacementMode m_mode;
-  DistributionType m_distribution;
-  float m_priority;
+  BiomePlacementMode m_mode = BiomePlacementMode::Floor;
+  DistributionType m_distribution = DistributionType::Random;
+  float m_priority = 0.0f;
 
   // Used if the distribution type is Random
 
-  float m_blockProbability;
-  uint64_t m_blockSeed;
+  float m_blockProbability = 0.0f;
+  uint64_t m_blockSeed = 0;
   List<BiomeItem> m_randomItems;
 
   // Used if the distribution type is Periodic
 
   PerlinF m_densityFunction;
   PerlinF m_modulusDistortion;
-  int m_modulus;
-  int m_modulusOffset;
+  int m_modulus = 1;
+  int m_modulusOffset = 0;
   // Pairs items with a periodic weight.  Weight will vary over the space of
   // the distribution, If multiple items are present, this can be used to
   // select one of the items (with the highest weight) out of a list of items,

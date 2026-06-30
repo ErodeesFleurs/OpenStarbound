@@ -35,7 +35,7 @@ private:
     ActivityManager(ActivityManager&& rhs) = delete;
     ActivityManager& operator=(ActivityManager&& rhs) = delete;
 
-    IDiscordActivityManager* internal_;
+    IDiscordActivityManager* internal_ = nullptr;
     static IDiscordActivityEvents events_;
 };
 

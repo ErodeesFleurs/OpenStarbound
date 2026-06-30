@@ -159,7 +159,7 @@ BiMap<LeftT, RightT, LeftMapT, RightMapT> BiMap<LeftT, RightT, LeftMapT, RightMa
 }
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
-BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMap() {}
+BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMap() = default;
 
 template <typename LeftT, typename RightT, typename LeftMapT, typename RightMapT>
 BiMap<LeftT, RightT, LeftMapT, RightMapT>::BiMap(BiMap const& map)

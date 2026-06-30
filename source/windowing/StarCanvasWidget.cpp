@@ -2,9 +2,7 @@
 
 namespace Star {
 
-CanvasWidget::CanvasWidget(GuiContext& context) : Widget(context) {
-  m_ignoreInterfaceScale = m_captureKeyboard = m_captureMouse = false;
-}
+CanvasWidget::CanvasWidget(GuiContext& context) : Widget(context) {}
 
 void CanvasWidget::setCaptureMouseEvents(bool captureMouse) {
   m_captureMouse = captureMouse;

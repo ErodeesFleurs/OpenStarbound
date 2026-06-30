@@ -7,16 +7,7 @@ namespace Star {
 
 BTreeDatabase::BTreeDatabase() {
   m_impl.parent = this;
-  m_open = false;
-  m_deviceSize = 0;
-  m_blockSize = 2048;
-  m_headFreeIndexBlock = InvalidBlockIndex;
-  m_keySize = 0;
-  m_autoCommit = true;
   m_indexCache.setMaxSize(64);
-  m_root = InvalidBlockIndex;
-  m_rootIsLeaf = false;
-  m_usingAltRoot = false;
 }
 
 BTreeDatabase::BTreeDatabase(String const& contentIdentifier, size_t keySize)
@@ -1290,8 +1281,8 @@ BTreeSha256Database::BTreeSha256Database() {
   setKeySize(32);
 }
 
-BTreeSha256Database::BTreeSha256Database(String const& contentIdentifier) {
-  setKeySize(32);
+BTreeSha256Database::BTreeSha256Database(String const& contentIdentifier)
+  : BTreeSha256Database() {
   setContentIdentifier(contentIdentifier);
 }
 

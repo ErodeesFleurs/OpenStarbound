@@ -12,8 +12,6 @@ ServerRconClient::ServerRconClient(UniverseServer& universe, TcpSocketPtr socket
     m_universe(universe),
     m_socket(requireDependencyValueAs<StarException>(std::move(socket), "ServerRconClient", "socket")),
     m_packetBuffer(MaxPacketSize),
-    m_stop(true),
-    m_authed(false),
     m_rconPassword(std::move(rconPassword)) {
   m_packetBuffer.setByteOrder(ByteOrder::LittleEndian);
   m_packetBuffer.setNullTerminatedStrings(true);

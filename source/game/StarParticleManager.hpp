@@ -34,7 +34,7 @@ private:
   List<Particle> m_nextParticles;
 
   WorldGeometry m_worldGeometry;
-  float m_undergroundLevel;
+  float m_undergroundLevel = 0.0f;
   ClientTileSectorArrayPtr m_tileSectorArray;
 };
 

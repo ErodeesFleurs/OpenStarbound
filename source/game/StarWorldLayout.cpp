@@ -70,7 +70,7 @@ WorldLayout::BlockNoise WorldLayout::BlockNoise::build(Json const& config, uint6
   return blockNoise;
 }
 
-WorldLayout::BlockNoise::BlockNoise() {}
+WorldLayout::BlockNoise::BlockNoise() = default;
 
 WorldLayout::BlockNoise::BlockNoise(Json const& store) {
   horizontalNoise = PerlinF(store.get("horizontalNoise"));
@@ -311,11 +311,10 @@ WorldLayout WorldLayout::buildFloatingDungeonLayout(AssetsConstPtr assets, Terra
   return layout;
 }
 
-WorldLayout::WorldLayout() : m_regionBlending(0.0f) {}
+WorldLayout::WorldLayout() = default;
 
 WorldLayout::WorldLayout(Json const& store, TerrainDatabaseConstPtr terrainDatabase, BiomeDatabaseConstPtr biomeDatabase)
-  : m_regionBlending(0.0f)
-  , m_terrainDatabase(requireServiceValueAs<StarException>(std::move(terrainDatabase), "WorldLayout", "terrain database"))
+  : m_terrainDatabase(requireServiceValueAs<StarException>(std::move(terrainDatabase), "WorldLayout", "terrain database"))
   , m_biomeDatabase(requireServiceValueAs<StarException>(std::move(biomeDatabase), "WorldLayout", "biome database")) {
   m_worldSize = jsonToVec2U(store.get("worldSize"));
 
@@ -634,7 +633,7 @@ pair<size_t, size_t> WorldLayout::findLayerAndCell(int x, int y) const {
   return {targetLayerIndex, targetCell.first};
 }
 
-WorldLayout::WorldLayer::WorldLayer() : yStart(0) {}
+WorldLayout::WorldLayer::WorldLayer() = default;
 
 pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(WorldLayout::WorldLayer targetLayer, size_t cellIndex, int newWidth) const {
   struct RegionCell {

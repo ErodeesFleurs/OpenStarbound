@@ -81,7 +81,7 @@ private:
     // say a stack could actually be formed in an ItemBag, simply that the
     // Item::stackableWith method returns true.
     // Note that this flag does not apply to child pools
-    bool allowDuplication;
+    bool allowDuplication{};
   };
   using TreasurePool = ParametricTable<float, ItemPool>;
 
@@ -90,7 +90,7 @@ private:
 
     StringList containers;
     String treasurePool;
-    float minimumLevel;
+    float minimumLevel{};
   };
   using TreasureChestSet = List<TreasureChest>;
 

@@ -57,7 +57,7 @@ struct ThreadImpl {
   }
 
   ThreadImpl(std::function<void()> function, String name)
-    : function(std::move(function)), name(std::move(name)), stopped(true), joined(true) {}
+    : function(std::move(function)), name(std::move(name)) {}
 
   bool start() {
     MutexLocker mutexLocker(mutex);
@@ -90,8 +90,8 @@ struct ThreadImpl {
   std::function<void()> function;
   String name;
   std::thread thread;
-  std::atomic<bool> stopped;
-  bool joined;
+  std::atomic<bool> stopped = true;
+  bool joined = true;
   Mutex mutex;
 };
 
@@ -182,7 +182,7 @@ Thread::Thread(String const& name) {
 
 Thread::Thread(Thread&&) = default;
 
-Thread::~Thread() {}
+Thread::~Thread() = default;
 
 Thread& Thread::operator=(Thread&&) = default;
 
@@ -208,7 +208,7 @@ bool Thread::isRunning() const {
 
 // ---- ThreadFunction<void> methods ----
 
-ThreadFunction<void>::ThreadFunction() {}
+ThreadFunction<void>::ThreadFunction() = default;
 
 ThreadFunction<void>::ThreadFunction(ThreadFunction&&) = default;
 
@@ -258,7 +258,7 @@ Mutex::Mutex()
 
 Mutex::Mutex(Mutex&&) = default;
 
-Mutex::~Mutex() {}
+Mutex::~Mutex() = default;
 
 Mutex& Mutex::operator=(Mutex&&) = default;
 
@@ -281,7 +281,7 @@ ConditionVariable::ConditionVariable()
 
 ConditionVariable::ConditionVariable(ConditionVariable&&) = default;
 
-ConditionVariable::~ConditionVariable() {}
+ConditionVariable::~ConditionVariable() = default;
 
 ConditionVariable& ConditionVariable::operator=(ConditionVariable&&) = default;
 
@@ -307,7 +307,7 @@ RecursiveMutex::RecursiveMutex()
 
 RecursiveMutex::RecursiveMutex(RecursiveMutex&&) = default;
 
-RecursiveMutex::~RecursiveMutex() {}
+RecursiveMutex::~RecursiveMutex() = default;
 
 RecursiveMutex& RecursiveMutex::operator=(RecursiveMutex&&) = default;
 
@@ -354,7 +354,7 @@ void RecursiveMutex::unlock() {
 
 // ---- ReadLocker / WriteLocker ----
 
-ReadLocker::ReadLocker(ReadersWriterMutex& rwlock, bool startLocked) : m_lock(rwlock), m_locked(false) {
+ReadLocker::ReadLocker(ReadersWriterMutex& rwlock, bool startLocked) : m_lock(rwlock) {
   if (startLocked)
     lock();
 }
@@ -383,7 +383,7 @@ bool ReadLocker::tryLock() {
   return true;
 }
 
-WriteLocker::WriteLocker(ReadersWriterMutex& rwlock, bool startLocked) : m_lock(rwlock), m_locked(false) {
+WriteLocker::WriteLocker(ReadersWriterMutex& rwlock, bool startLocked) : m_lock(rwlock) {
   if (startLocked)
     lock();
 }

@@ -2,7 +2,7 @@
 
 namespace Star {
 
-Lightmap::Lightmap() : m_width(0), m_height(0) {}
+Lightmap::Lightmap() = default;
 
 Lightmap::Lightmap(unsigned width, unsigned height) : m_width(width), m_height(height) {
   m_data = std::make_unique<float[]>(len());

@@ -5,7 +5,7 @@
 
 namespace Star {
 
-AnimatedPartSet::AnimatedPartSet() {}
+AnimatedPartSet::AnimatedPartSet() = default;
 
 AnimatedPartSet::AnimatedPartSet(Json config, uint8_t animatorVersion) {
   m_animatorVersion = animatorVersion;

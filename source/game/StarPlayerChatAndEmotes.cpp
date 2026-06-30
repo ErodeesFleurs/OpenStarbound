@@ -10,10 +10,7 @@ namespace Star {
 PlayerChatAndEmotes::PlayerChatAndEmotes(Player& player, DanceDatabaseConstPtr danceDatabase, EmoteProcessorConstPtr emoteProcessor)
   : m_player(player),
     m_danceDatabase(requireServiceValueAs<StarException>(std::move(danceDatabase), "PlayerChatAndEmotes", "dance database")),
-    m_emoteProcessor(requireServiceValueAs<StarException>(std::move(emoteProcessor), "PlayerChatAndEmotes", "emote processor")),
-    m_emoteState(HumanoidEmote::Idle),
-    m_chatMessageChanged(false),
-    m_chatMessageUpdated(false) {
+    m_emoteProcessor(requireServiceValueAs<StarException>(std::move(emoteProcessor), "PlayerChatAndEmotes", "emote processor")) {
 }
 
 void PlayerChatAndEmotes::init(float emoteCooldown, Vec2F blinkInterval) {

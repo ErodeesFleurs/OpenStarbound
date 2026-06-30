@@ -216,7 +216,7 @@ Color Color::gray(uint8_t g) {
   return Color::rgb(g, g, g);
 }
 
-Color::Color() {}
+Color::Color() = default;
 
 Color::Color(StringView name) {
   if (name.utf8().rfind('#', 0) == 0)

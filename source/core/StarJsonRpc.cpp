@@ -4,11 +4,9 @@
 
 namespace Star {
 
-JsonRpcInterface::~JsonRpcInterface() {}
+JsonRpcInterface::~JsonRpcInterface() = default;
 
-JsonRpc::JsonRpc() {
-  m_requestId = 0;
-}
+JsonRpc::JsonRpc() = default;
 
 void JsonRpc::registerHandler(String const& handler, JsonRpcRemoteFunction func) {
   if (m_handlers.contains(handler))

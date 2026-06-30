@@ -37,8 +37,8 @@ struct TextPositioning {
   TextPositioning translated(Vec2F translation) const;
 
   Vec2F pos;
-  HorizontalAnchor hAnchor;
-  VerticalAnchor vAnchor;
+  HorizontalAnchor hAnchor = HorizontalAnchor::LeftAnchor;
+  VerticalAnchor vAnchor = VerticalAnchor::BottomAnchor;
   Maybe<unsigned> wrapWidth;
   Maybe<unsigned> charLimit;
 };

@@ -401,8 +401,7 @@ template <typename Container>
 typename ListEnumerateTypes<Container>::Result enumerate(Container&& container);
 
 template <typename BaseList>
-ListMixin<BaseList>::ListMixin()
-  : Base() {}
+ListMixin<BaseList>::ListMixin() = default;
 
 template <typename BaseList>
 ListMixin<BaseList>::ListMixin(Base const& list)

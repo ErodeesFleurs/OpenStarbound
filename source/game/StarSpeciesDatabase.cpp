@@ -11,21 +11,6 @@
 
 namespace Star {
 
-SpeciesOption::SpeciesOption()
-  : species(),
-    headOptionAsHairColor(),
-    headOptionAsFacialhair(),
-    altOptionAsUndyColor(),
-    altOptionAsHairColor(),
-    altOptionAsFacialMask(),
-    hairColorAsBodySubColor(),
-    bodyColorAsFacialMaskSubColor(),
-    altColorAsFacialMaskSubColor(),
-    genderOptions(),
-    bodyColorDirectives(),
-    undyColorDirectives(),
-    hairColorDirectives() {}
-
 SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets, PatternedNameGeneratorConstPtr nameGenerator, LuaRootServices luaRootServices)
   : m_nameGenerator(requireServiceValueAs<StarException>(std::move(nameGenerator), "SpeciesDatabase", "name generator")),
     m_luaRoot(make_shared<LuaRoot>(requireLuaRootServices(std::move(luaRootServices), "SpeciesDatabase"))) {

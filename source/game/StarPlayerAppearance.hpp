@@ -94,7 +94,7 @@ public:
 private:
   Player& m_player;
 
-  bool m_identityUpdated;
+  bool m_identityUpdated = true;
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
   NetElementData<Maybe<String>> m_deathParticleBurst;

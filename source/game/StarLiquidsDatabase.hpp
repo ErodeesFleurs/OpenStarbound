@@ -27,7 +27,7 @@ struct LiquidSettings {
   LiquidSettings();
 
   String name;
-  LiquidId id;
+  LiquidId id = EmptyLiquidId;
   String path;
   Json config;
   Json descriptions;

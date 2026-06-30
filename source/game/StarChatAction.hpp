@@ -12,7 +12,7 @@ struct SayChatAction {
 
   explicit operator bool() const;
 
-  EntityId entity;
+  EntityId entity = NullEntityId;
   String text;
   Vec2F position;
   Json config;
@@ -25,7 +25,7 @@ struct PortraitChatAction {
 
   explicit operator bool() const;
 
-  EntityId entity;
+  EntityId entity = NullEntityId;
   String portrait;
   String text;
   Vec2F position;

@@ -5,9 +5,7 @@
 
 namespace Star {
 
-WeatherType::WeatherType() {
-  maximumWind = 0;
-}
+WeatherType::WeatherType() = default;
 
 WeatherType::WeatherType(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase, Json config, String path) {
   if (config.isType(Json::Type::String)) {

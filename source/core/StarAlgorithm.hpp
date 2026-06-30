@@ -450,7 +450,7 @@ ReverseWrapper<Iterable> reverseIterate(Iterable& list) {
 template <typename Functor>
 class FinallyGuard {
 public:
-  FinallyGuard(Functor functor) : functor(std::move(functor)), dismiss(false) {}
+  FinallyGuard(Functor functor) : functor(std::move(functor)) {}
 
   FinallyGuard(FinallyGuard&& o) : functor(std::move(o.functor)), dismiss(o.dismiss) {
     o.cancel();
@@ -474,7 +474,7 @@ public:
 
 private:
   Functor functor;
-  bool dismiss;
+  bool dismiss = false;
 };
 
 template <typename Functor>

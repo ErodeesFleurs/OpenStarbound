@@ -128,7 +128,7 @@ auto OrderedSetWrapper<Map, Value, Allocator, Args...>::from(Collection const& c
 }
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
-OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper() {}
+OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper() = default;
 
 template <template <typename...> class Map, typename Value, typename Allocator, typename... Args>
 OrderedSetWrapper<Map, Value, Allocator, Args...>::OrderedSetWrapper(OrderedSetWrapper const& set) {

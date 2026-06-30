@@ -36,18 +36,18 @@ private:
   ButtonWidgetPtr m_rightButton;
   ImageWidgetPtr m_grid;
   ButtonWidgetPtr m_jog;
-  int m_low;
-  int m_high;
-  int m_delta;
-  int m_val;
+  int m_low = 0;
+  int m_high = 1;
+  int m_delta = 1;
+  int m_val = 0;
 
-  bool m_updateJog;
+  bool m_updateJog = true;
 
   Vec2I m_savedJogPos;
   Vec2I m_jogDragPos;
-  bool m_jogDragActive;
+  bool m_jogDragActive = false;
 
-  bool m_enabled;
+  bool m_enabled = true;
 
   WidgetCallbackFunc m_callback;
 };

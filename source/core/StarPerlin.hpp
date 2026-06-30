@@ -80,19 +80,19 @@ private:
   Float billow(Float x, Float y) const;
   Float billow(Float x, Float y, Float z) const;
 
-  PerlinType m_type;
-  uint64_t m_seed;
+  PerlinType m_type = PerlinType::Uninitialized;
+  uint64_t m_seed = 0;
 
-  int m_octaves;
-  Float m_frequency;
-  Float m_amplitude;
-  Float m_bias;
-  Float m_alpha;
-  Float m_beta;
+  int m_octaves = 0;
+  Float m_frequency = 0;
+  Float m_amplitude = 0;
+  Float m_bias = 0;
+  Float m_alpha = 0;
+  Float m_beta = 0;
 
   // Only used for RidgedMulti
-  Float m_offset;
-  Float m_gain;
+  Float m_offset = 0;
+  Float m_gain = 0;
 
   unique_ptr<int[]> p;
   unique_ptr<Float[][3]> g3;
@@ -130,18 +130,7 @@ Float Perlin<Float>::at3(Float* q, Float rx, Float ry, Float rz) {
 }
 
 template <typename Float>
-Perlin<Float>::Perlin() {
-  m_type = PerlinType::Uninitialized;
-  m_alpha = 0;
-  m_amplitude = 0;
-  m_frequency = 0;
-  m_seed = 0;
-  m_gain = 0;
-  m_beta = 0;
-  m_offset = 0;
-  m_bias = 0;
-  m_octaves = 0;
-}
+Perlin<Float>::Perlin() = default;
 
 template <typename Float>
 Perlin<Float>::Perlin(unsigned octaves, Float freq, Float amp, Float bias, Float alpha, Float beta, uint64_t seed) {

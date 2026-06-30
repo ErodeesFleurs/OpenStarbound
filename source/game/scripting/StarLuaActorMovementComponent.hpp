@@ -34,9 +34,9 @@ private:
   void clearControls();
 
   ActorMovementController* m_movementController;
-  bool m_autoClearControls;
+  bool m_autoClearControls = true;
 
-  float m_controlRotation;
+  float m_controlRotation = 0.0f;
   Vec2F m_controlAcceleration;
   Vec2F m_controlForce;
   Maybe<tuple<Vec2F, float>> m_controlApproachVelocity;
@@ -45,10 +45,10 @@ private:
   Maybe<ActorMovementModifiers> m_controlModifiers;
   Maybe<tuple<Direction, bool>> m_controlMove;
   Maybe<Direction> m_controlFace;
-  bool m_controlDown;
-  bool m_controlCrouch;
+  bool m_controlDown = false;
+  bool m_controlCrouch = false;
   Maybe<bool> m_controlJump;
-  bool m_controlHoldJump;
+  bool m_controlHoldJump = false;
   Maybe<Vec2F> m_controlFly;
 
   bool m_resetPathMove;
@@ -57,12 +57,7 @@ private:
 };
 
 template <typename Base>
-LuaActorMovementComponent<Base>::LuaActorMovementComponent()
-  : m_autoClearControls(true),
-    m_controlRotation(0.0f),
-    m_controlDown(false),
-    m_controlCrouch(false),
-    m_controlHoldJump(false) {}
+LuaActorMovementComponent<Base>::LuaActorMovementComponent() = default;
 
 template <typename Base>
 void LuaActorMovementComponent<Base>::addActorMovementCallbacks(ActorMovementController* actorMovementController) {

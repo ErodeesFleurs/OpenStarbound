@@ -357,7 +357,7 @@ private:
   Maybe<Direction> m_controlFace;
 
   size_t m_edgeIndex;
-  float m_edgeTimer;
+  float m_edgeTimer = 0.0f;
   Maybe<PlatformerAStar::Path> m_path;
 };
 

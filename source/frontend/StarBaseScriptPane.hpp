@@ -70,7 +70,7 @@ protected:
 
   bool m_interactive;
 
-  bool m_callbacksAdded;
+  bool m_callbacksAdded = false;
   mutable LuaUpdatableComponent<LuaBaseComponent> m_script;
 };
 

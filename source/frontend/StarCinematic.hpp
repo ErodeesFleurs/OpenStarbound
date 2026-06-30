@@ -89,11 +89,11 @@ private:
   };
 
   struct AudioCue {
-    AudioCue() : timecode(), endTimecode() {}
+    AudioCue() = default;
     String resource;
-    int loops;
-    float timecode;
-    float endTimecode;
+    int loops = 0;
+    float timecode{};
+    float endTimecode{};
   };
 
   void drawDrawable(Drawable const& drawable, float drawableScale, Vec2F const& drawableTranslation);

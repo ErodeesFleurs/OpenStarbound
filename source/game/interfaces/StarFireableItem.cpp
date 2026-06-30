@@ -9,24 +9,6 @@
 
 namespace Star {
 
-FireableItem::FireableItem()
-  : m_fireTimer(0),
-    m_cooldownTime(10),
-    m_windupTime(0),
-    m_fireWhenReady(false),
-    m_startWhenReady(false),
-    m_cooldown(false),
-    m_alreadyInit(false),
-    m_requireEdgeTrigger(false),
-    m_attemptedFire(false),
-    m_fireOnRelease(false),
-    m_timeFiring(0.0f),
-    m_startTimingFire(false),
-    m_inUse(false),
-    m_walkWhileFiring(false),
-    m_stopWhileFiring(false),
-    m_mode(FireMode::None) {}
-
 FireableItem::FireableItem(Json const& params) : FireableItem() {
   setParams(params);
   m_fireableParams = params;

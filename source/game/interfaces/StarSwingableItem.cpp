@@ -2,11 +2,7 @@
 
 namespace Star {
 
-SwingableItem::SwingableItem() {
-  m_swingAimFactor = 0;
-  m_swingStart = 0;
-  m_swingFinish = 0;
-}
+SwingableItem::SwingableItem() = default;
 
 SwingableItem::SwingableItem(Json const& params) : FireableItem(params) {
   setParams(params);

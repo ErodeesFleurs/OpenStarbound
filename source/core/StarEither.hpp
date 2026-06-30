@@ -100,7 +100,7 @@ EitherRightValue<Value> makeRight(Value value) {
 }
 
 template <typename Left, typename Right>
-Either<Left, Right>::Either() {}
+Either<Left, Right>::Either() = default;
 
 template <typename Left, typename Right>
 Either<Left, Right>::Either(EitherLeftValue<Left> left)

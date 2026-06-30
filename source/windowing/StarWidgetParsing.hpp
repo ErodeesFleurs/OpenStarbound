@@ -18,7 +18,7 @@ struct WidgetConstructResult {
 
   WidgetPtr obj;
   String name;
-  float zlevel;
+  float zlevel = 0.0f;
 };
 
 using ConstuctorFunc = std::function<WidgetConstructResult(String const& name, Json const& config)>;
@@ -70,7 +70,7 @@ protected:
   GuiContext& guiContext() const;
 
   GuiContext& m_context;
-  Pane* m_pane;
+  Pane* m_pane = nullptr;
   StringMap<ConstuctorFunc> m_constructors;
   StringMap<WidgetCallbackFunc> m_callbacks;
 };

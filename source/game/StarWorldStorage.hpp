@@ -51,7 +51,7 @@ enum class SectorGenerationLevel : uint8_t {
 struct WorldGeneratorFacade {
   using Sector = ServerTileSectorArray::Sector;
 
-  WorldGeneratorFacade() {}
+  WorldGeneratorFacade() = default;
   virtual ~WorldGeneratorFacade() = default;
 
   // Should bring a given sector from generationLevel - 1 to generationLevel.

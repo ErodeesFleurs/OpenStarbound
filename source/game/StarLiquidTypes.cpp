@@ -28,7 +28,7 @@ LiquidStore LiquidStore::endless(LiquidId liquid, float pressure) {
   return LiquidStore(liquid, 1.0f, pressure, true);
 }
 
-LiquidStore::LiquidStore() : LiquidLevel(), pressure(0), source(false) {}
+LiquidStore::LiquidStore() = default;
 
 LiquidStore::LiquidStore(LiquidId liquid, float level, float pressure, bool source)
   : LiquidLevel(liquid, level), pressure(pressure), source(source) {}

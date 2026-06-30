@@ -44,8 +44,8 @@ public:
 private:
   FontImplPtr m_fontImpl;
   ByteArrayConstPtr m_fontBuffer;
-  unsigned m_pixelSize;
-  uint8_t m_alphaThreshold;
+  unsigned m_pixelSize = 0;
+  uint8_t m_alphaThreshold = 0;
 
   void loadFontImpl();
   HashMap<pair<String::Char, unsigned>, unsigned> m_widthCache;

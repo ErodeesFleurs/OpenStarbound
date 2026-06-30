@@ -3,7 +3,7 @@
 
 namespace Star {
 
-PlayerBlueprints::PlayerBlueprints() {}
+PlayerBlueprints::PlayerBlueprints() = default;
 
 PlayerBlueprints::PlayerBlueprints(Json const& variant) {
   m_knownBlueprints =

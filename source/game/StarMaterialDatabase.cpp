@@ -530,9 +530,9 @@ bool MaterialDatabase::supportsMod(MaterialId materialId, ModId modId) const {
 MaterialDatabase::MetaMaterialInfo::MetaMaterialInfo(String name, MaterialId id, CollisionKind collisionKind, bool blocksLiquidFlow)
   : name(name), id(id), collisionKind(collisionKind), blocksLiquidFlow(blocksLiquidFlow) {}
 
-MaterialDatabase::MaterialInfo::MaterialInfo() : id(NullMaterialId), tillableMod(NoModId), falling(), cascading() {}
+MaterialDatabase::MaterialInfo::MaterialInfo() = default;
 
-MaterialDatabase::ModInfo::ModInfo() : id(NoModId), tilled(), breaksWithTile() {}
+MaterialDatabase::ModInfo::ModInfo() = default;
 
 size_t MaterialDatabase::metaMaterialIndex(MaterialId materialId) const {
   return materialId - FirstMetaMaterialId;

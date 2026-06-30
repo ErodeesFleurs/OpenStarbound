@@ -37,7 +37,7 @@ void WorkerPoolHandle::finish() const {
   return;
 }
 
-WorkerPoolHandle::Impl::Impl() : done(false) {}
+WorkerPoolHandle::Impl::Impl() = default;
 
 WorkerPoolHandle::WorkerPoolHandle(shared_ptr<Impl> impl) : m_impl(std::move(impl)) {}
 

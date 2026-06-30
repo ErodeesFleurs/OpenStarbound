@@ -172,7 +172,7 @@ private:
 
   SystemObjectConfig m_config;
   Uuid m_uuid;
-  double m_spawnTime;
+  double m_spawnTime = 0.0;
   JsonObject m_parameters;
 
   Maybe<CelestialCoordinate> m_approach;

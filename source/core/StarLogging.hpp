@@ -33,7 +33,7 @@ public:
   LogLevel level();
 
 private:
-  atomic<LogLevel> m_level;
+  atomic<LogLevel> m_level = LogLevel::Info;
 };
 
 class StdoutLogSink : public LogSink {

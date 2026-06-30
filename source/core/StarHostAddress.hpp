@@ -74,7 +74,7 @@ public:
 
 private:
   HostAddress m_address;
-  uint16_t m_port;
+  uint16_t m_port = 0;
 };
 
 std::ostream& operator<<(std::ostream& os, HostAddressWithPort const& address);

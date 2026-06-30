@@ -7,14 +7,7 @@ namespace Star {
 
 SliderBarWidget::SliderBarWidget(GuiContext& context, String const& grid, bool showSpinner)
   : Widget(context),
-    m_grid(make_shared<ImageWidget>(context, grid)),
-    m_low(0),
-    m_high(1),
-    m_delta(1),
-    m_val(0),
-    m_updateJog(true),
-    m_jogDragActive(false),
-    m_enabled(true) {
+    m_grid(make_shared<ImageWidget>(context, grid)) {
 
   auto& guiContext = this->context();
   auto const& assets = guiContext.assets();

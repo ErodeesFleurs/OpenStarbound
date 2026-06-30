@@ -11,7 +11,7 @@ using FireableItemPtr = SharedPtr<FireableItem>;
 
 class FireableItem : public virtual ToolUserItem, public virtual StatusEffectItem {
 public:
-  FireableItem();
+  FireableItem() = default;
   FireableItem(Json const& params);
   virtual ~FireableItem() = default;
 
@@ -60,22 +60,22 @@ protected:
   // firePosition translated by the hand in the owner's space
   Vec2F ownerFirePosition() const;
 
-  float m_fireTimer;
-  float m_cooldownTime;
-  float m_windupTime;
-  bool m_fireWhenReady;
-  bool m_startWhenReady;
-  bool m_cooldown;
-  bool m_alreadyInit;
-  bool m_requireEdgeTrigger;
+  float m_fireTimer = 0;
+  float m_cooldownTime = 10;
+  float m_windupTime = 0;
+  bool m_fireWhenReady = false;
+  bool m_startWhenReady = false;
+  bool m_cooldown = false;
+  bool m_alreadyInit = false;
+  bool m_requireEdgeTrigger = false;
 
-  bool m_attemptedFire;
-  bool m_fireOnRelease;
-  float m_timeFiring;
-  bool m_startTimingFire;
-  bool m_inUse;
-  bool m_walkWhileFiring;
-  bool m_stopWhileFiring;
+  bool m_attemptedFire = false;
+  bool m_fireOnRelease = false;
+  float m_timeFiring = 0.0f;
+  bool m_startTimingFire = false;
+  bool m_inUse = false;
+  bool m_walkWhileFiring = false;
+  bool m_stopWhileFiring = false;
 
   mutable Maybe<LuaWorldComponent<LuaBaseComponent>> m_scriptComponent;
 
@@ -83,7 +83,7 @@ protected:
 
   Vec2F m_handPosition;
 
-  FireMode m_mode;
+  FireMode m_mode = FireMode::None;
 };
 
 }

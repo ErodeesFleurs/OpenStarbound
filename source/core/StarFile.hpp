@@ -144,7 +144,7 @@ private:
   static void resize(void* file, StreamOffset size);
 
   String m_filename;
-  void* m_file;
+  void* m_file = nullptr;
 };
 
 }

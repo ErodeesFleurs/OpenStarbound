@@ -27,7 +27,7 @@ private:
     AchievementManager(AchievementManager&& rhs) = delete;
     AchievementManager& operator=(AchievementManager&& rhs) = delete;
 
-    IDiscordAchievementManager* internal_;
+    IDiscordAchievementManager* internal_ = nullptr;
     static IDiscordAchievementEvents events_;
 };
 

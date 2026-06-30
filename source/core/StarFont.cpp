@@ -44,7 +44,7 @@ FontPtr Font::loadFont(ByteArrayConstPtr const& bytes, unsigned pixelSize) {
   return font;
 }
 
-Font::Font() : m_pixelSize(0), m_alphaThreshold(0) {}
+Font::Font() = default;
 
 Font::~Font() {
   if (m_fontImpl)

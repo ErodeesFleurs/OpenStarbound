@@ -125,24 +125,24 @@ private:
   void netElementsNeedLoad(bool full) override;
   void netElementsNeedStore() override;
 
-  float m_beamGunRadius;
-  unsigned m_beamGunGlowBorder;
-  float m_objectPreviewInnerAlpha;
-  float m_objectPreviewOuterAlpha;
+  float m_beamGunRadius = 0;
+  unsigned m_beamGunGlowBorder = 0;
+  float m_objectPreviewInnerAlpha = 0;
+  float m_objectPreviewOuterAlpha = 0;
 
-  ToolUserEntity* m_user;
+  ToolUserEntity* m_user = nullptr;
   ItemDatabaseConstPtr m_itemDatabase;
   ObjectDatabaseConstPtr m_objectDatabase;
 
   NetItem m_primaryHandItem;
   NetItem m_altHandItem;
 
-  bool m_fireMain;
-  bool m_fireAlt;
-  bool m_edgeTriggeredMain;
-  bool m_edgeTriggeredAlt;
-  bool m_edgeSuppressedMain;
-  bool m_edgeSuppressedAlt;
+  bool m_fireMain = false;
+  bool m_fireAlt = false;
+  bool m_edgeTriggeredMain = false;
+  bool m_edgeTriggeredAlt = false;
+  bool m_edgeSuppressedMain = false;
+  bool m_edgeSuppressedAlt = false;
 
   NetElementBool m_suppress;
 

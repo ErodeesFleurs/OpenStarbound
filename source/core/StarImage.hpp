@@ -145,8 +145,8 @@ public:
 
 private:
   std::unique_ptr<uint8_t[], ImageDeleter> m_data;
-  unsigned m_width;
-  unsigned m_height;
+  unsigned m_width = 0;
+  unsigned m_height = 0;
   PixelFormat m_pixelFormat;
 };
 

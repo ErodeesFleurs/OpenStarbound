@@ -50,7 +50,7 @@ struct RenderVertex {
   Vec2F screenCoordinate;
   Vec2F textureCoordinate;
   Vec4B color;
-  float param1;
+  float param1 = 0.0f;
 };
 
 class RenderTriangle {

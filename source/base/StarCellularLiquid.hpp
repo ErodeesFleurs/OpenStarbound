@@ -148,7 +148,7 @@ private:
   BAHashMap<LiquidId, unsigned> m_liquidTickDeltas;
   Maybe<unsigned> m_processingLimit;
   List<RectI> m_noProcessingLimitRegions;
-  uint64_t m_step;
+  uint64_t m_step = 0;
 
   BAHashMap<Vec2I, Maybe<WorkingCell>> m_workingCells;
   List<WorkingCell*> m_currentActiveCells;
@@ -158,7 +158,7 @@ private:
 };
 
 template <typename LiquidId>
-CellularLiquidWorld<LiquidId>::~CellularLiquidWorld() {}
+CellularLiquidWorld<LiquidId>::~CellularLiquidWorld() = default;
 
 template <typename LiquidId>
 Vec2I CellularLiquidWorld<LiquidId>::uniqueLocation(Vec2I const& location) const {
@@ -178,7 +178,7 @@ void CellularLiquidWorld<LiquidId>::liquidCollision(Vec2I const&, LiquidId, Vec2
 
 template <typename LiquidId>
 LiquidCellEngine<LiquidId>::LiquidCellEngine(LiquidCellEngineParameters parameters, CellularLiquidWorldPtr cellWorld)
-  : m_engineParameters(parameters), m_cellWorld(cellWorld), m_step(0) {}
+  : m_engineParameters(parameters), m_cellWorld(cellWorld) {}
 
 template <typename LiquidId>
 unsigned LiquidCellEngine<LiquidId>::liquidTickDelta(LiquidId liquid) {

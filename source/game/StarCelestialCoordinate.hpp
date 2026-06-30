@@ -85,8 +85,8 @@ public:
 
 private:
   Vec3I m_location;
-  int m_planetaryOrbitNumber;
-  int m_satelliteOrbitNumber;
+  int m_planetaryOrbitNumber = 0;
+  int m_satelliteOrbitNumber = 0;
 };
 
 }

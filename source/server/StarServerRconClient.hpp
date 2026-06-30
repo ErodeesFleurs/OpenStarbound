@@ -41,8 +41,8 @@ private:
   UniverseServer& m_universe;
   TcpSocketPtr m_socket;
   DataStreamBuffer m_packetBuffer;
-  bool m_stop;
-  bool m_authed;
+  bool m_stop = true;
+  bool m_authed = false;
   String m_rconPassword;
 };
 using ServerRconClientPtr = shared_ptr<ServerRconClient>;

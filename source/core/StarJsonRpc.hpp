@@ -48,7 +48,7 @@ private:
   JsonRpcHandlers m_handlers;
   Map<uint64_t, RpcPromiseKeeper<Json>> m_pendingResponse;
   List<Json> m_pending;
-  uint64_t m_requestId;
+  uint64_t m_requestId = 0;
 };
 
 }

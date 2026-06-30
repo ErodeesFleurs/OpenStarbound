@@ -33,7 +33,7 @@ public:
   using WeightFunction4 = std::function<WeightArray4(Position)>;
   using InterpolateFunction = std::function<Element(PositionArray const&)>;
 
-  MultiTable() : m_interpolationMode(InterpolationMode::Linear), m_boundMode(BoundMode::Clamp) {}
+  MultiTable() = default;
 
   // Set input ranges on a particular dimension.  Will resize underlying storage
   // to fit range.
@@ -150,8 +150,8 @@ private:
 
   RangeArray m_ranges;
   MultiArray m_array;
-  InterpolationMode m_interpolationMode;
-  BoundMode m_boundMode;
+  InterpolationMode m_interpolationMode{InterpolationMode::Linear};
+  BoundMode m_boundMode{BoundMode::Clamp};
 };
 
 using MultiTable2F = MultiTable<float, float, 2>;

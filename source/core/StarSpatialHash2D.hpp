@@ -23,7 +23,7 @@ public:
     Entry();
 
     SmallList<Rect, 2> rects;
-    Value value;
+    Value value{};
   };
 
   using EntryMap = StableHashMap<Key, Entry, hash<Key>, std::equal_to<Key>, BlockAllocator<pair<Key const, Entry>, AllocatorBlockSize>>;
@@ -94,8 +94,7 @@ private:
 };
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
-SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Entry::Entry()
-  : value() {}
+SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::Entry::Entry() = default;
 
 template <typename KeyT, typename ScalarT, typename ValueT, typename IntT, size_t AllocatorBlockSize>
 SpatialHash2D<KeyT, ScalarT, ValueT, IntT, AllocatorBlockSize>::SpatialHash2D(Scalar const& sectorSize)

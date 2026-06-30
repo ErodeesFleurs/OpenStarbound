@@ -23,13 +23,9 @@ EnumMap<PaneAnchor> const PaneAnchorNames{
 };
 
 Pane::Pane(GuiContext& context) : Widget(context) {
-  m_dragActive = m_lockPosition = false;
-  m_dismissed = true;
   m_centerOffset = Vec2I();
-  m_anchor = PaneAnchor::None;
   m_anchorOffset = Vec2I();
   m_visible = false;
-  m_hasDisplayed = false;
 
   auto& guiContext = this->context();
   auto const& assets = guiContext.assets();

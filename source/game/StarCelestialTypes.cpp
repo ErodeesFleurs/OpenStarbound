@@ -40,7 +40,7 @@ DataStream& operator<<(DataStream& ds, CelestialSystemObjects const& systemObjec
   return ds;
 }
 
-CelestialChunk::CelestialChunk() {}
+CelestialChunk::CelestialChunk() = default;
 
 CelestialChunk::CelestialChunk(Json const& store) {
   chunkIndex = jsonToVec2I(store.get("chunkIndex"));

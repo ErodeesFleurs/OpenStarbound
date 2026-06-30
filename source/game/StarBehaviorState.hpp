@@ -74,7 +74,7 @@ struct CompositeState {
   CompositeState(size_t children);
   CompositeState(size_t children, size_t index);
 
-  size_t index;
+  size_t index = 0;
   List<NodeStatePtr> children;
 };
 

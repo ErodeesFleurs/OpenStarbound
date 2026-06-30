@@ -40,7 +40,7 @@ private:
   void revert();
   void resetDefaults();
 
-  Widget* m_activeKeybinding;
+  Widget* m_activeKeybinding = nullptr;
 
   Map<Widget*, InterfaceAction> m_childToAction;
   TabSetWidgetPtr m_tabSet;

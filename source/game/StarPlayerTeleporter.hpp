@@ -31,8 +31,8 @@ public:
 private:
   Player& m_player;
 
-  float m_teleportTimer;
-  String m_teleportAnimationType;
+  float m_teleportTimer = 0.0f;
+  String m_teleportAnimationType = "default";
 };
 
 }

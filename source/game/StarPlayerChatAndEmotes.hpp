@@ -47,7 +47,7 @@ private:
   DanceDatabaseConstPtr m_danceDatabase;
   EmoteProcessorConstPtr m_emoteProcessor;
 
-  HumanoidEmote m_emoteState;
+  HumanoidEmote m_emoteState = HumanoidEmote::Idle;
   Maybe<String> m_dance;
   GameTimer m_danceCooldownTimer;
   GameTimer m_emoteCooldownTimer;
@@ -56,8 +56,8 @@ private:
   Vec2F m_blinkInterval;
 
   String m_chatMessage;
-  bool m_chatMessageChanged;
-  bool m_chatMessageUpdated;
+  bool m_chatMessageChanged = false;
+  bool m_chatMessageUpdated = false;
 
   List<ChatAction> m_pendingChatActions;
 };

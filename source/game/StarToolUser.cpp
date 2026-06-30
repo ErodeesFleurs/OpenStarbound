@@ -19,12 +19,9 @@
 namespace Star {
 
 ToolUser::ToolUser(AssetsConstPtr assets, ItemDatabaseConstPtr itemDatabase, ObjectDatabaseConstPtr objectDatabase)
-    : m_beamGunRadius(), m_beamGunGlowBorder(), m_objectPreviewInnerAlpha(), m_objectPreviewOuterAlpha(), m_user(nullptr),
-      m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "ToolUser", "item database")),
+    : m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "ToolUser", "item database")),
       m_objectDatabase(requireServiceValueAs<StarException>(std::move(objectDatabase), "ToolUser", "object database")),
-      m_primaryHandItem(m_itemDatabase), m_altHandItem(m_itemDatabase),
-      m_fireMain(), m_fireAlt(), m_edgeTriggeredMain(), m_edgeTriggeredAlt(), m_edgeSuppressedMain(), m_edgeSuppressedAlt(),
-      m_suppress() {
+      m_primaryHandItem(m_itemDatabase), m_altHandItem(m_itemDatabase) {
   assets = requireServiceValueAs<StarException>(std::move(assets), "ToolUser", "assets");
 
   m_beamGunRadius = assets->json("/player.config:initialBeamGunRadius").toFloat();

@@ -67,51 +67,51 @@ struct Particle {
 
   void initializeAnimation(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataDatabase);
 
-  Type type;
+  Type type = Type::Variance;
 
   // Defaults to 1.0, 1.0 will produce a reasonable size particle for whatever
   // the type is.
-  float size;
-  float baseSize; // track the original size for shrink destruction action
+  float size = 0.0f;
+  float baseSize = 0.0f; // track the original size for shrink destruction action
 
   // Used differently depending on the type of the particle.
   String string;
   AssetPath image;
   DirectivesGroup directives;
 
-  Color color;
-  Color light;
-  float fade;
-  bool fullbright;
+  Color color = Color::White;
+  Color light = Color::Clear;
+  float fade = 0.0f;
+  bool fullbright = false;
 
   Vec2F position;
   Vec2F velocity;
   Vec2F finalVelocity;
   Vec2F approach;
 
-  bool flippable;
-  bool flip;
+  bool flippable = true;
+  bool flip = false;
 
-  float rotation;
-  float angularVelocity;
+  float rotation = 0.0f;
+  float angularVelocity = 0.0f;
 
-  float length;
+  float length = 0.0f;
 
-  DestructionAction destructionAction;
+  DestructionAction destructionAction = DestructionAction::None;
   AssetPath destructionImage;
-  float destructionTime;
-  bool destructionSet;
+  float destructionTime = 0.0f;
+  bool destructionSet = false;
 
-  float timeToLive;
-  Layer layer;
+  float timeToLive = 0.0f;
+  Layer layer = Layer::Middle;
 
-  bool collidesForeground;
-  bool collidesLiquid;
-  bool underwaterOnly;
+  bool collidesForeground = true;
+  bool collidesLiquid = true;
+  bool underwaterOnly = false;
 
-  bool ignoreWind;
+  bool ignoreWind = true;
 
-  bool trail;
+  bool trail = false;
 
   Maybe<Animation> animation;
 

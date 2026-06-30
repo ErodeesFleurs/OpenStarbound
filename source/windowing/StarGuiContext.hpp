@@ -163,9 +163,9 @@ private:
 
   KeyBindings m_keyBindings;
 
-  float m_interfaceScale;
+  float m_interfaceScale = 1.0f;
 
-  bool m_shiftHeld;
+  bool m_shiftHeld = false;
 };
 
 }

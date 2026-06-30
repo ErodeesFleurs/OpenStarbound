@@ -7,8 +7,6 @@
 namespace Star {
 
 EffectEmitter::EffectEmitter() {
-  m_renders = false;
-  m_direction = Direction::Right;
   addNetElement(&m_activeSources);
 }
 

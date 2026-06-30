@@ -211,7 +211,7 @@ Image Image::filled(Vec2U size, Vec4B color, PixelFormat pf) {
 }
 
 Image::Image(PixelFormat pf)
-  : m_data(nullptr), m_width(0), m_height(0), m_pixelFormat(pf) {}
+  : m_pixelFormat(pf) {}
 
 Image::Image(Vec2U size, PixelFormat pf)
   : Image(size[0], size[1], pf) {}

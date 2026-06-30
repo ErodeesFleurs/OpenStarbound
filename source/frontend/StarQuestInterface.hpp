@@ -62,8 +62,8 @@ private:
   String m_untrackLabel;
 
   ItemBagPtr m_rewardItems;
-  int m_refreshRate;
-  int m_refreshTimer;
+  int m_refreshRate = 30;
+  int m_refreshTimer = 0;
 };
 
 class QuestPane : public Pane {

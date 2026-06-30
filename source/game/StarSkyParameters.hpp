@@ -38,18 +38,18 @@ struct SkyParameters {
 
   void readVisitableParameters(VisitableWorldParametersConstPtr visitableParameters);
 
-  uint64_t seed;
+  uint64_t seed = 0;
   Maybe<float> dayLength;
   Maybe<pair<List<pair<String, float>>, Vec2F>> nearbyPlanet;
   List<pair<List<pair<String, float>>, Vec2F>> nearbyMoons;
   List<pair<String, String>> horizonImages;
-  bool horizonClouds;
-  SkyType skyType;
-  Either<SkyColoring, Color> skyColoring;
+  bool horizonClouds = false;
+  SkyType skyType = SkyType::Barren;
+  Either<SkyColoring, Color> skyColoring = makeRight(Color::Black);
   Maybe<float> spaceLevel;
   Maybe<float> surfaceLevel;
   String sunType;
-  Json settings;
+  Json settings = JsonObject();
 };
 
 DataStream& operator>>(DataStream& ds, SkyParameters& sky);

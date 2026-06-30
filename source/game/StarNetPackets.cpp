@@ -86,7 +86,7 @@ EnumMap<NetCompressionMode> const NetCompressionModeNames {
   {NetCompressionMode::Zstd, "Zstd"}
 };
 
-Packet::~Packet() {}
+Packet::~Packet() = default;
 
 void Packet::read(DataStream& ds, [[maybe_unused]] NetCompatibilityRules netRules) { read(ds); }
 void Packet::read([[maybe_unused]] DataStream& ds) {}
@@ -214,7 +214,7 @@ void ProtocolResponsePacket::write(DataStream& ds, NetCompatibilityRules netRule
     ds.write(info);
 }
 
-ConnectSuccessPacket::ConnectSuccessPacket() {}
+ConnectSuccessPacket::ConnectSuccessPacket() = default;
 
 ConnectSuccessPacket::ConnectSuccessPacket(
     ConnectionId clientId, Uuid serverUuid, CelestialBaseInformation celestialInformation)
@@ -232,19 +232,19 @@ void ConnectSuccessPacket::write(DataStream& ds) const {
   ds.write(celestialInformation);
 }
 
-ConnectFailurePacket::ConnectFailurePacket() {}
+ConnectFailurePacket::ConnectFailurePacket() = default;
 
 ConnectFailurePacket::ConnectFailurePacket(String reason) : reason(std::move(reason)) {}
 
 
 
-HandshakeChallengePacket::HandshakeChallengePacket() {}
+HandshakeChallengePacket::HandshakeChallengePacket() = default;
 
 HandshakeChallengePacket::HandshakeChallengePacket(ByteArray const& passwordSalt) : passwordSalt(passwordSalt) {}
 
 
 
-ChatReceivePacket::ChatReceivePacket() {}
+ChatReceivePacket::ChatReceivePacket() = default;
 
 ChatReceivePacket::ChatReceivePacket(ChatReceivedMessage receivedMessage) : receivedMessage(receivedMessage) {}
 
@@ -260,9 +260,7 @@ Json ChatReceivePacket::writeJson() const {
   };
 }
 
-UniverseTimeUpdatePacket::UniverseTimeUpdatePacket() {
-  universeTime = 0;
-}
+UniverseTimeUpdatePacket::UniverseTimeUpdatePacket() = default;
 
 UniverseTimeUpdatePacket::UniverseTimeUpdatePacket(double universeTime) : universeTime(universeTime) {}
 
@@ -274,27 +272,27 @@ void UniverseTimeUpdatePacket::write(DataStream& ds) const {
   ds.vfwrite(universeTime, 0.05);
 }
 
-CelestialResponsePacket::CelestialResponsePacket() {}
+CelestialResponsePacket::CelestialResponsePacket() = default;
 
 CelestialResponsePacket::CelestialResponsePacket(List<CelestialResponse> responses) : responses(std::move(responses)) {}
 
 
 
-PlayerWarpResultPacket::PlayerWarpResultPacket() : warpActionInvalid(false) {}
+PlayerWarpResultPacket::PlayerWarpResultPacket() = default;
 
 PlayerWarpResultPacket::PlayerWarpResultPacket(bool success, WarpAction warpAction, bool warpActionInvalid)
   : success(success), warpAction(std::move(warpAction)), warpActionInvalid(warpActionInvalid) {}
 
 
 
-PlanetTypeUpdatePacket::PlanetTypeUpdatePacket() {}
+PlanetTypeUpdatePacket::PlanetTypeUpdatePacket() = default;
 
 PlanetTypeUpdatePacket::PlanetTypeUpdatePacket(CelestialCoordinate coordinate)
   : coordinate(coordinate) {}
 
 
 
-PausePacket::PausePacket() {}
+PausePacket::PausePacket() = default;
 
 PausePacket::PausePacket(bool pause, float timescale) : pause(pause), timescale(timescale) {}
 
@@ -324,7 +322,7 @@ Json PausePacket::writeJson() const {
   };
 }
 
-ServerInfoPacket::ServerInfoPacket() {}
+ServerInfoPacket::ServerInfoPacket() = default;
 
 ServerInfoPacket::ServerInfoPacket(uint16_t players, uint16_t maxPlayers) :
   players(players),
@@ -344,7 +342,7 @@ Json ServerInfoPacket::writeJson() const {
   };
 }
 
-ClientConnectPacket::ClientConnectPacket() {}
+ClientConnectPacket::ClientConnectPacket() = default;
 
 ClientConnectPacket::ClientConnectPacket(ByteArray assetsDigest, bool allowAssetsMismatch, Uuid playerUuid,
     String playerName, String shipSpecies, WorldChunks shipChunks, ShipUpgrades shipUpgrades,
@@ -382,7 +380,7 @@ void ClientConnectPacket::write(DataStream& ds, NetCompatibilityRules netRules) 
     ds.write(info);
 }
 
-ClientDisconnectRequestPacket::ClientDisconnectRequestPacket() {}
+ClientDisconnectRequestPacket::ClientDisconnectRequestPacket() = default;
 
 void ClientDisconnectRequestPacket::read(DataStream& ds) {
   // Packets cannot be empty due to the way packet serialization is handled.
@@ -394,19 +392,19 @@ void ClientDisconnectRequestPacket::write(DataStream& ds) const {
   ds.write<uint8_t>(0);
 }
 
-HandshakeResponsePacket::HandshakeResponsePacket() {}
+HandshakeResponsePacket::HandshakeResponsePacket() = default;
 
 HandshakeResponsePacket::HandshakeResponsePacket(ByteArray const& passHash) : passHash(passHash) {}
 
 
 
-PlayerWarpPacket::PlayerWarpPacket() {}
+PlayerWarpPacket::PlayerWarpPacket() = default;
 
 PlayerWarpPacket::PlayerWarpPacket(WarpAction action, bool deploy) : action(std::move(action)), deploy(std::move(deploy)) {}
 
 
 
-FlyShipPacket::FlyShipPacket() {}
+FlyShipPacket::FlyShipPacket() = default;
 
 FlyShipPacket::FlyShipPacket(Vec3I system, SystemLocation location, Json settings) : system(std::move(system)), location(std::move(location)), settings(std::move(settings)) {}
 
@@ -424,7 +422,7 @@ void FlyShipPacket::write(DataStream& ds, NetCompatibilityRules netRules) const 
     ds.write(settings);
 }
 
-ChatSendPacket::ChatSendPacket() : sendMode(ChatSendMode::Broadcast) {}
+ChatSendPacket::ChatSendPacket() = default;
 
 ChatSendPacket::ChatSendPacket(String text, ChatSendMode sendMode) : text(std::move(text)), sendMode(sendMode) {}
 
@@ -444,47 +442,47 @@ void ChatSendPacket::write(DataStream& ds) const {
     ds.write(data);
 }
 
-CelestialRequestPacket::CelestialRequestPacket() {}
+CelestialRequestPacket::CelestialRequestPacket() = default;
 
 CelestialRequestPacket::CelestialRequestPacket(List<CelestialRequest> requests) : requests(std::move(requests)) {}
 
 
 
-ClientContextUpdatePacket::ClientContextUpdatePacket() {}
+ClientContextUpdatePacket::ClientContextUpdatePacket() = default;
 
 ClientContextUpdatePacket::ClientContextUpdatePacket(ByteArray updateData) : updateData(std::move(updateData)) {}
 
 
 
-WorldStartPacket::WorldStartPacket() : clientId(), localInterpolationMode() {}
+WorldStartPacket::WorldStartPacket() = default;
 
 
 
-WorldStopPacket::WorldStopPacket() {}
+WorldStopPacket::WorldStopPacket() = default;
 
 WorldStopPacket::WorldStopPacket(String const& reason) : reason(reason) {}
 
 
 
-WorldLayoutUpdatePacket::WorldLayoutUpdatePacket() {}
+WorldLayoutUpdatePacket::WorldLayoutUpdatePacket() = default;
 
 WorldLayoutUpdatePacket::WorldLayoutUpdatePacket(Json const& layoutData) : layoutData(layoutData) {}
 
 
 
-WorldParametersUpdatePacket::WorldParametersUpdatePacket() {}
+WorldParametersUpdatePacket::WorldParametersUpdatePacket() = default;
 
 WorldParametersUpdatePacket::WorldParametersUpdatePacket(ByteArray const& parametersData) : parametersData(parametersData) {}
 
 
 
-CentralStructureUpdatePacket::CentralStructureUpdatePacket() {}
+CentralStructureUpdatePacket::CentralStructureUpdatePacket() = default;
 
 CentralStructureUpdatePacket::CentralStructureUpdatePacket(Json structureData) : structureData(std::move(structureData)) {}
 
 
 
-TileArrayUpdatePacket::TileArrayUpdatePacket() {}
+TileArrayUpdatePacket::TileArrayUpdatePacket() = default;
 
 void TileArrayUpdatePacket::read(DataStream& ds) {
   ds.viread(min[0]);
@@ -523,7 +521,7 @@ void TileUpdatePacket::write(DataStream& ds) const {
   ds.write(tile);
 }
 
-TileLiquidUpdatePacket::TileLiquidUpdatePacket() {}
+TileLiquidUpdatePacket::TileLiquidUpdatePacket() = default;
 
 TileLiquidUpdatePacket::TileLiquidUpdatePacket(Vec2I const& position, LiquidNetUpdate liquidUpdate)
   : position(position), liquidUpdate(liquidUpdate) {}
@@ -542,7 +540,7 @@ void TileLiquidUpdatePacket::write(DataStream& ds) const {
   ds.write(liquidUpdate.level);
 }
 
-TileDamageUpdatePacket::TileDamageUpdatePacket() : layer(TileLayer::Foreground) {}
+TileDamageUpdatePacket::TileDamageUpdatePacket() = default;
 
 TileDamageUpdatePacket::TileDamageUpdatePacket(
     Vec2I const& position, TileLayer layer, TileDamageStatus const& tileDamage)
@@ -550,7 +548,7 @@ TileDamageUpdatePacket::TileDamageUpdatePacket(
 
 
 
-TileModificationFailurePacket::TileModificationFailurePacket() {}
+TileModificationFailurePacket::TileModificationFailurePacket() = default;
 
 TileModificationFailurePacket::TileModificationFailurePacket(TileModificationList modifications)
   : modifications(modifications) {}
@@ -563,7 +561,7 @@ void TileModificationFailurePacket::write(DataStream& ds) const {
   ds.writeContainer(modifications);
 }
 
-GiveItemPacket::GiveItemPacket() {}
+GiveItemPacket::GiveItemPacket() = default;
 
 GiveItemPacket::GiveItemPacket(ItemDescriptor const& item) : item(item) {}
 
@@ -579,14 +577,14 @@ Json GiveItemPacket::writeJson() const {
   };
 }
 
-EnvironmentUpdatePacket::EnvironmentUpdatePacket() {}
+EnvironmentUpdatePacket::EnvironmentUpdatePacket() = default;
 
 EnvironmentUpdatePacket::EnvironmentUpdatePacket(ByteArray skyDelta, ByteArray weatherDelta)
   : skyDelta(std::move(skyDelta)), weatherDelta(std::move(weatherDelta)) {}
 
 
 
-ModifyTileListPacket::ModifyTileListPacket() : allowEntityOverlap() {}
+ModifyTileListPacket::ModifyTileListPacket() = default;
 
 ModifyTileListPacket::ModifyTileListPacket(TileModificationList modifications, bool allowEntityOverlap)
   : modifications(modifications), allowEntityOverlap(allowEntityOverlap) {}
@@ -601,7 +599,7 @@ void ModifyTileListPacket::write(DataStream& ds) const {
   ds.write(allowEntityOverlap);
 }
 
-ReplaceTileListPacket::ReplaceTileListPacket() : applyDamage() {}
+ReplaceTileListPacket::ReplaceTileListPacket() = default;
 
 ReplaceTileListPacket::ReplaceTileListPacket(TileModificationList modifications, TileDamage tileDamage, bool applyDamage)
   : modifications(modifications), tileDamage(std::move(tileDamage)), applyDamage(applyDamage) {}
@@ -622,7 +620,7 @@ void ReplaceTileListPacket::write(DataStream& ds) const {
     ds.write(applyDamage);
 }
 
-DamageTileGroupPacket::DamageTileGroupPacket() : layer(TileLayer::Foreground) {}
+DamageTileGroupPacket::DamageTileGroupPacket() = default;
 
 DamageTileGroupPacket::DamageTileGroupPacket(
     List<Vec2I> tilePositions, TileLayer layer, Vec2F sourcePosition, TileDamage tileDamage, Maybe<EntityId> sourceEntity)
@@ -644,7 +642,7 @@ void DamageTileGroupPacket::write(DataStream& ds) const {
   ds.write(sourceEntity);
 }
 
-CollectLiquidPacket::CollectLiquidPacket() {}
+CollectLiquidPacket::CollectLiquidPacket() = default;
 
 CollectLiquidPacket::CollectLiquidPacket(List<Vec2I> tilePositions, LiquidId liquidId)
   : tilePositions(std::move(tilePositions)), liquidId(liquidId) {}
@@ -659,9 +657,7 @@ void CollectLiquidPacket::write(DataStream& ds) const {
   ds.write(liquidId);
 }
 
-RequestDropPacket::RequestDropPacket() {
-  dropEntityId = NullEntityId;
-}
+RequestDropPacket::RequestDropPacket() = default;
 
 RequestDropPacket::RequestDropPacket(EntityId dropEntityId) : dropEntityId(dropEntityId) {}
 
@@ -673,45 +669,43 @@ void RequestDropPacket::write(DataStream& ds) const {
   ds.viwrite(dropEntityId);
 }
 
-SpawnEntityPacket::SpawnEntityPacket() {}
+SpawnEntityPacket::SpawnEntityPacket() = default;
 
 SpawnEntityPacket::SpawnEntityPacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState)
   : entityType(entityType), storeData(std::move(storeData)), firstNetState(std::move(firstNetState)) {}
 
 
 
-EntityInteractPacket::EntityInteractPacket() {}
+EntityInteractPacket::EntityInteractPacket() = default;
 
 EntityInteractPacket::EntityInteractPacket(InteractRequest interactRequest, Uuid requestId)
   : interactRequest(interactRequest), requestId(requestId) {}
 
 
 
-EntityInteractResultPacket::EntityInteractResultPacket() {}
+EntityInteractResultPacket::EntityInteractResultPacket() = default;
 
 EntityInteractResultPacket::EntityInteractResultPacket(InteractAction action, Uuid requestId, EntityId sourceEntityId)
   : action(action), requestId(requestId), sourceEntityId(sourceEntityId) {}
 
 
 
-EntityCreatePacket::EntityCreatePacket() {
-  entityId = NullEntityId;
-}
+EntityCreatePacket::EntityCreatePacket() = default;
 
-ServerDisconnectPacket::ServerDisconnectPacket() {}
+ServerDisconnectPacket::ServerDisconnectPacket() = default;
 
 ServerDisconnectPacket::ServerDisconnectPacket(String reason) : reason(std::move(reason)) {}
 
 
 
-ConnectWirePacket::ConnectWirePacket() {}
+ConnectWirePacket::ConnectWirePacket() = default;
 
 ConnectWirePacket::ConnectWirePacket(WireConnection outputConnection, WireConnection inputConnection)
   : outputConnection(outputConnection), inputConnection(inputConnection) {}
 
 
 
-DisconnectAllWiresPacket::DisconnectAllWiresPacket() {}
+DisconnectAllWiresPacket::DisconnectAllWiresPacket() = default;
 
 DisconnectAllWiresPacket::DisconnectAllWiresPacket(Vec2I entityPosition, WireNode wireNode)
   : entityPosition(entityPosition), wireNode(wireNode) {}
@@ -728,21 +722,21 @@ void DisconnectAllWiresPacket::write(DataStream& ds) const {
   ds.write(wireNode);
 }
 
-WorldClientStateUpdatePacket::WorldClientStateUpdatePacket() {}
+WorldClientStateUpdatePacket::WorldClientStateUpdatePacket() = default;
 
 WorldClientStateUpdatePacket::WorldClientStateUpdatePacket(ByteArray const& worldClientStateDelta)
   : worldClientStateDelta(worldClientStateDelta) {}
 
 
 
-FindUniqueEntityPacket::FindUniqueEntityPacket() {}
+FindUniqueEntityPacket::FindUniqueEntityPacket() = default;
 
 FindUniqueEntityPacket::FindUniqueEntityPacket(String uniqueEntityId)
   : uniqueEntityId(std::move(uniqueEntityId)) {}
 
 
 
-WorldStartAcknowledgePacket::WorldStartAcknowledgePacket() {}
+WorldStartAcknowledgePacket::WorldStartAcknowledgePacket() = default;
 
 void WorldStartAcknowledgePacket::read(DataStream& ds) {
   // Packets can't be empty, read the trash data
@@ -754,7 +748,7 @@ void WorldStartAcknowledgePacket::write(DataStream& ds) const {
   ds.write<bool>(false);
 }
 
-PingPacket::PingPacket() {}
+PingPacket::PingPacket() = default;
 PingPacket::PingPacket(int64_t time) : time(time) {}
 
 void PingPacket::read(DataStream& ds, NetCompatibilityRules netRules) {
@@ -812,10 +806,7 @@ void EntityUpdateSetPacket::write(DataStream& ds) const {
     });
 }
 
-EntityDestroyPacket::EntityDestroyPacket() {
-  entityId = NullEntityId;
-  death = false;
-}
+EntityDestroyPacket::EntityDestroyPacket() = default;
 
 EntityDestroyPacket::EntityDestroyPacket(EntityId entityId, ByteArray finalNetState, bool death)
   : entityId(entityId), finalNetState(std::move(finalNetState)), death(death) {}
@@ -832,27 +823,27 @@ void EntityDestroyPacket::write(DataStream& ds) const {
   ds.write(death);
 }
 
-HitRequestPacket::HitRequestPacket() {}
+HitRequestPacket::HitRequestPacket() = default;
 
 HitRequestPacket::HitRequestPacket(RemoteHitRequest remoteHitRequest) : remoteHitRequest(std::move(remoteHitRequest)) {}
 
 
 
-DamageRequestPacket::DamageRequestPacket() {}
+DamageRequestPacket::DamageRequestPacket() = default;
 
 DamageRequestPacket::DamageRequestPacket(RemoteDamageRequest remoteDamageRequest)
   : remoteDamageRequest(std::move(remoteDamageRequest)) {}
 
 
 
-DamageNotificationPacket::DamageNotificationPacket() {}
+DamageNotificationPacket::DamageNotificationPacket() = default;
 
 DamageNotificationPacket::DamageNotificationPacket(RemoteDamageNotification remoteDamageNotification)
   : remoteDamageNotification(std::move(remoteDamageNotification)) {}
 
 
 
-EntityMessagePacket::EntityMessagePacket() {}
+EntityMessagePacket::EntityMessagePacket() = default;
 
 EntityMessagePacket::EntityMessagePacket(Variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection)
   : entityId(entityId), message(std::move(message)), args(std::move(args)), uuid(uuid), fromConnection(fromConnection) {}
@@ -881,14 +872,14 @@ Json EntityMessagePacket::writeJson() const {
   };
 }
 
-EntityMessageResponsePacket::EntityMessageResponsePacket() {}
+EntityMessageResponsePacket::EntityMessageResponsePacket() = default;
 
 EntityMessageResponsePacket::EntityMessageResponsePacket(Either<String, Json> response, Uuid uuid)
   : response(std::move(response)), uuid(uuid) {}
 
 
 
-UpdateWorldPropertiesPacket::UpdateWorldPropertiesPacket() {}
+UpdateWorldPropertiesPacket::UpdateWorldPropertiesPacket() = default;
 
 UpdateWorldPropertiesPacket::UpdateWorldPropertiesPacket(JsonObject const& updatedProperties)
   : updatedProperties(updatedProperties) {}
@@ -912,7 +903,7 @@ Json UpdateWorldPropertiesPacket::writeJson() const {
   };
 }
 
-UpdateTileProtectionPacket::UpdateTileProtectionPacket() {}
+UpdateTileProtectionPacket::UpdateTileProtectionPacket() = default;
 
 UpdateTileProtectionPacket::UpdateTileProtectionPacket(DungeonId dungeonId, bool isProtected)
   : dungeonId(dungeonId), isProtected(isProtected) {}
@@ -931,7 +922,7 @@ Json UpdateTileProtectionPacket::writeJson() const {
   };
 }
 
-SetDungeonGravityPacket::SetDungeonGravityPacket() {}
+SetDungeonGravityPacket::SetDungeonGravityPacket() = default;
 
 SetDungeonGravityPacket::SetDungeonGravityPacket(DungeonId dungeonId, Maybe<float> gravity)
   : dungeonId(std::move(dungeonId)), gravity(std::move(gravity)) {}
@@ -950,7 +941,7 @@ Json SetDungeonGravityPacket::writeJson() const {
   };
 }
 
-SetDungeonBreathablePacket::SetDungeonBreathablePacket() {}
+SetDungeonBreathablePacket::SetDungeonBreathablePacket() = default;
 
 SetDungeonBreathablePacket::SetDungeonBreathablePacket(DungeonId dungeonId, Maybe<bool> breathable)
   : dungeonId(std::move(dungeonId)), breathable(std::move(breathable)) {}
@@ -969,7 +960,7 @@ Json SetDungeonBreathablePacket::writeJson() const {
   };
 }
 
-SetPlayerStartPacket::SetPlayerStartPacket() {}
+SetPlayerStartPacket::SetPlayerStartPacket() = default;
 
 SetPlayerStartPacket::SetPlayerStartPacket(Vec2F playerStart, bool respawnInWorld) : playerStart(playerStart), respawnInWorld(respawnInWorld) {}
 
@@ -987,14 +978,14 @@ Json SetPlayerStartPacket::writeJson() const {
   };
 }
 
-FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket() {}
+FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket() = default;
 
 FindUniqueEntityResponsePacket::FindUniqueEntityResponsePacket(String uniqueEntityId, Maybe<Vec2F> entityPosition)
   : uniqueEntityId(std::move(uniqueEntityId)), entityPosition(std::move(entityPosition)) {}
 
 
 
-PongPacket::PongPacket() {}
+PongPacket::PongPacket() = default;
 PongPacket::PongPacket(int64_t time) : time(time) {}
 
 
@@ -1018,7 +1009,7 @@ void PongPacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   }
 }
 
-StepUpdatePacket::StepUpdatePacket() : remoteTime(0.0) {}
+StepUpdatePacket::StepUpdatePacket() = default;
 
 StepUpdatePacket::StepUpdatePacket(double remoteTime) : remoteTime(remoteTime) {}
 
@@ -1040,52 +1031,52 @@ void StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) con
   }
 }
 
-SystemWorldStartPacket::SystemWorldStartPacket() {}
+SystemWorldStartPacket::SystemWorldStartPacket() = default;
 
 SystemWorldStartPacket::SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, pair<Uuid, SystemLocation> clientShip)
   : location(std::move(location)), objectStores(std::move(objectStores)), shipStores(std::move(shipStores)), clientShip(std::move(clientShip)) {}
 
 
 
-SystemWorldUpdatePacket::SystemWorldUpdatePacket() {}
+SystemWorldUpdatePacket::SystemWorldUpdatePacket() = default;
 
 SystemWorldUpdatePacket::SystemWorldUpdatePacket(HashMap<Uuid, ByteArray> objectUpdates, HashMap<Uuid, ByteArray> shipUpdates)
   : objectUpdates(std::move(objectUpdates)), shipUpdates(std::move(shipUpdates)) {}
 
 
 
-SystemObjectCreatePacket::SystemObjectCreatePacket() {}
+SystemObjectCreatePacket::SystemObjectCreatePacket() = default;
 
 SystemObjectCreatePacket::SystemObjectCreatePacket(ByteArray objectStore) : objectStore(std::move(objectStore)) {}
 
 
 
-SystemObjectDestroyPacket::SystemObjectDestroyPacket() {}
+SystemObjectDestroyPacket::SystemObjectDestroyPacket() = default;
 
 SystemObjectDestroyPacket::SystemObjectDestroyPacket(Uuid objectUuid) : objectUuid(std::move(objectUuid)) {}
 
 
 
-SystemShipCreatePacket::SystemShipCreatePacket() {}
+SystemShipCreatePacket::SystemShipCreatePacket() = default;
 
 SystemShipCreatePacket::SystemShipCreatePacket(ByteArray shipStore) : shipStore(std::move(shipStore)) {}
 
 
 
-SystemShipDestroyPacket::SystemShipDestroyPacket() {}
+SystemShipDestroyPacket::SystemShipDestroyPacket() = default;
 
 SystemShipDestroyPacket::SystemShipDestroyPacket(Uuid shipUuid) : shipUuid(std::move(shipUuid)) {}
 
 
 
-SystemObjectSpawnPacket::SystemObjectSpawnPacket() {}
+SystemObjectSpawnPacket::SystemObjectSpawnPacket() = default;
 
 SystemObjectSpawnPacket::SystemObjectSpawnPacket(String typeName, Uuid uuid, Maybe<Vec2F> position, JsonObject parameters)
   : typeName(std::move(typeName)), uuid(std::move(uuid)), position(std::move(position)), parameters(std::move(parameters)) {}
 
 
 
-UpdateWorldTemplatePacket::UpdateWorldTemplatePacket() {}
+UpdateWorldTemplatePacket::UpdateWorldTemplatePacket() = default;
 
 UpdateWorldTemplatePacket::UpdateWorldTemplatePacket(Json templateData) : templateData(std::move(templateData)) {}
 

@@ -49,7 +49,7 @@ private:
   AssetsConstPtr m_assets;
   ImageMetadataDatabaseConstPtr m_imageMetadata;
 
-  bool m_accepted;
+  bool m_accepted = true;
   Vec2I m_cursorScreenPos;
   InterfaceCursor m_cursor;
 };

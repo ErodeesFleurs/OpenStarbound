@@ -21,7 +21,7 @@ private:
     ImageManager(ImageManager&& rhs) = delete;
     ImageManager& operator=(ImageManager&& rhs) = delete;
 
-    IDiscordImageManager* internal_;
+    IDiscordImageManager* internal_ = nullptr;
     static IDiscordImageEvents events_;
 };
 

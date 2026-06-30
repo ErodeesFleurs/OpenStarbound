@@ -53,9 +53,9 @@ private:
     PlantDropPiece();
     AssetPath image;
     Vec2F offset;
-    int segmentIdx;
-    Plant::PlantPieceKind kind;
-    bool flip;
+    int segmentIdx = 0;
+    Plant::PlantPieceKind kind = Plant::PlantPieceKind::None;
+    bool flip = false;
   };
 
   void particleForPlantPart(PlantDropPiece const& piece, String const& mode, Json const& mainConfig, RenderCallback* renderCallback);

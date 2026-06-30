@@ -16,8 +16,6 @@ ErrorScreen::ErrorScreen(ErrorScreenServices services)
     m_cursor(InterfaceCursorServices{m_assets, m_imageMetadata}) {
   m_paneManager = make_shared<PaneManager>(m_guiContext);
 
-  m_accepted = true;
-
   m_errorPane = make_shared<Pane>(m_guiContext);
   GuiReader reader(m_guiContext);
   reader.registerCallback("btnOk", [this](Widget*) {

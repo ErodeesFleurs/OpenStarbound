@@ -48,8 +48,8 @@ struct EntityDamageTeam {
 
   bool operator==(EntityDamageTeam const& rhs) const;
 
-  TeamType type;
-  TeamNumber team;
+  TeamType type = TeamType::Null;
+  TeamNumber team = 0;
 };
 DataStream& operator<<(DataStream& ds, EntityDamageTeam const& team);
 DataStream& operator>>(DataStream& ds, EntityDamageTeam& team);

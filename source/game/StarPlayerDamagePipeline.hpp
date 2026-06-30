@@ -32,8 +32,8 @@ private:
   Player& m_player;
 
   List<DamageSource> m_damageSources;
-  float m_lastDamagedOtherTimer;
-  EntityId m_lastDamagedTarget;
+  float m_lastDamagedOtherTimer = 0;
+  EntityId m_lastDamagedTarget = NullEntityId;
 };
 
 }

@@ -20,8 +20,6 @@ namespace Star {
 
 TerrainSelectorParameters::TerrainSelectorParameters() {
   seed = Random::randu64();
-  worldWidth = 0;
-  commonality = 1.0f;
 }
 
 TerrainSelectorParameters::TerrainSelectorParameters(Json const& v) {
@@ -51,7 +49,7 @@ TerrainSelectorParameters TerrainSelectorParameters::withCommonality(float newCo
 TerrainSelector::TerrainSelector(String type, Json config, TerrainSelectorParameters parameters)
   : type(std::move(type)), config(std::move(config)), parameters(std::move(parameters)) {}
 
-TerrainSelector::~TerrainSelector() {}
+TerrainSelector::~TerrainSelector() = default;
 
 TerrainDatabase::TerrainDatabase(AssetsConstPtr assets) {
   assets = requireServiceValueAs<TerrainException>(std::move(assets), "TerrainDatabase", "assets");

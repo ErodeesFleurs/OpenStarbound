@@ -34,10 +34,10 @@ private:
   NetElementData<Set<pair<String, String>>> m_activeSources;
 
   StringMap<Vec2F> m_positions;
-  Direction m_direction;
+  Direction m_direction = Direction::Right;
   Vec2F m_baseVelocity;
 
-  bool m_renders;
+  bool m_renders = false;
 };
 
 }

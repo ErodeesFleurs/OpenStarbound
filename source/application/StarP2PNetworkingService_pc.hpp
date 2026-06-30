@@ -32,7 +32,7 @@ private:
   using JoinUnavailable = StrongTypedef<Empty, struct JoinUnavailableTag>;
   struct JoinLocal {
     bool operator==(JoinLocal const& rhs) const { return capacity == rhs.capacity; };
-    uint32_t capacity;
+    uint32_t capacity = 0;
   };
   using JoinRemote = StrongTypedef<HostAddressWithPort, struct JoinRemoteTag>;
   using JoinLocation = Variant<JoinUnavailable, JoinLocal, JoinRemote>;
@@ -85,7 +85,7 @@ private:
     PcP2PNetworkingService* parent = nullptr;
     DiscordSocketMode mode = DiscordSocketMode::Disconnected;
     discord::LobbyId lobbyId = {};
-    discord::UserId remoteUserId;
+    discord::UserId remoteUserId = {};
     Deque<ByteArray> incoming;
   };
 

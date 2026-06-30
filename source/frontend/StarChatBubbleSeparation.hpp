@@ -82,7 +82,7 @@ RectF separateBubble(List<RectF> const& sortedLeftEdges, List<RectF> const& sort
 
 template <typename T>
 BubbleSeparator<T>::BubbleSeparator(float tweenFactor, float movementThreshold)
-  : m_tweenFactor(tweenFactor), m_movementThreshold(movementThreshold), m_sortedLeftEdges(), m_sortedRightEdges() {}
+  : m_tweenFactor(tweenFactor), m_movementThreshold(movementThreshold) {}
 
 template <typename T>
 float BubbleSeparator<T>::tweenFactor() const {

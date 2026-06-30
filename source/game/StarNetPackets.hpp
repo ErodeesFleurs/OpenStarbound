@@ -265,8 +265,8 @@ struct UniverseTimeUpdatePacket : PacketBase<PacketType::UniverseTimeUpdate> {
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
-  double universeTime;
-  float timescale;
+  double universeTime = 0.0;
+  float timescale = 1.0f;
 };
 
 struct CelestialResponsePacket : AutoPacket<CelestialResponsePacket, PacketType::CelestialResponse> {
@@ -284,9 +284,9 @@ struct PlayerWarpResultPacket : AutoPacket<PlayerWarpResultPacket, PacketType::P
   PlayerWarpResultPacket();
   PlayerWarpResultPacket(bool success, WarpAction warpAction, bool warpActionInvalid);
 
-  bool success;
+  bool success = false;
   WarpAction warpAction;
-  bool warpActionInvalid;
+  bool warpActionInvalid = false;
 
   static constexpr auto serializableFields() {
     return std::tuple{&PlayerWarpResultPacket::success, &PlayerWarpResultPacket::warpAction, &PlayerWarpResultPacket::warpActionInvalid};
@@ -405,7 +405,7 @@ struct ChatSendPacket : PacketBase<PacketType::ChatSend> {
   void write(DataStream& ds) const override;
 
   String text;
-  ChatSendMode sendMode;
+  ChatSendMode sendMode = ChatSendMode::Broadcast;
   JsonObject data;
 };
 
@@ -445,8 +445,8 @@ struct WorldStartPacket : AutoPacket<WorldStartPacket, PacketType::WorldStart> {
   HashMap<DungeonId, bool> dungeonIdBreathable;
   StableHashSet<DungeonId> protectedDungeonIds;
   Json worldProperties;
-  ConnectionId clientId;
-  bool localInterpolationMode;
+  ConnectionId clientId{};
+  bool localInterpolationMode = false;
 
   static constexpr auto serializableFields() {
     return std::tuple{&WorldStartPacket::templateData, &WorldStartPacket::skyData,
@@ -518,7 +518,7 @@ struct TileArrayUpdatePacket : PacketBase<PacketType::TileArrayUpdate> {
 };
 
 struct TileUpdatePacket : PacketBase<PacketType::TileUpdate> {
-  TileUpdatePacket() {}
+  TileUpdatePacket() = default;
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
@@ -542,7 +542,7 @@ struct TileDamageUpdatePacket : AutoPacket<TileDamageUpdatePacket, PacketType::T
   TileDamageUpdatePacket(Vec2I const& position, TileLayer layer, TileDamageStatus const& tileDamage);
 
   Vec2I position;
-  TileLayer layer;
+  TileLayer layer = TileLayer::Foreground;
   TileDamageStatus tileDamage;
 
   static constexpr auto serializableFields() {
@@ -676,7 +676,7 @@ struct ModifyTileListPacket : PacketBase<PacketType::ModifyTileList> {
   void write(DataStream& ds) const override;
 
   TileModificationList modifications;
-  bool allowEntityOverlap;
+  bool allowEntityOverlap = false;
 };
 
 struct ReplaceTileListPacket : PacketBase<PacketType::ReplaceTileList> {
@@ -688,7 +688,7 @@ struct ReplaceTileListPacket : PacketBase<PacketType::ReplaceTileList> {
 
   TileModificationList modifications;
   TileDamage tileDamage;
-  bool applyDamage;
+  bool applyDamage = false;
 };
 
 struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
@@ -699,7 +699,7 @@ struct DamageTileGroupPacket : PacketBase<PacketType::DamageTileGroup> {
   void write(DataStream& ds) const override;
 
   List<Vec2I> tilePositions;
-  TileLayer layer;
+  TileLayer layer = TileLayer::Foreground;
   Vec2F sourcePosition;
   TileDamage tileDamage;
   Maybe<EntityId> sourceEntity;
@@ -723,7 +723,7 @@ struct RequestDropPacket : PacketBase<PacketType::RequestDrop> {
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
-  EntityId dropEntityId;
+  EntityId dropEntityId = NullEntityId;
 };
 
 struct SpawnEntityPacket : AutoPacket<SpawnEntityPacket, PacketType::SpawnEntity> {
@@ -811,7 +811,7 @@ struct EntityCreatePacket : PacketBase<PacketType::EntityCreate> {
   EntityType entityType;
   ByteArray storeData;
   ByteArray firstNetState;
-  EntityId entityId;
+  EntityId entityId = NullEntityId;
 };
 
 // All entity deltas will be sent at the same time for the same connection
@@ -834,11 +834,11 @@ struct EntityDestroyPacket : PacketBase<PacketType::EntityDestroy> {
   void read(DataStream& ds) override;
   void write(DataStream& ds) const override;
 
-  EntityId entityId;
+  EntityId entityId = NullEntityId;
   ByteArray finalNetState;
   // If true, the entity removal is due to death rather simply for example
   // going out of range of the entity monitoring window.
-  bool death;
+  bool death = false;
 };
 
 struct EntityInteractPacket : AutoPacket<EntityInteractPacket, PacketType::EntityInteract> {
@@ -950,7 +950,7 @@ struct StepUpdatePacket : PacketBase<PacketType::StepUpdate> {
   void read(DataStream& ds, NetCompatibilityRules netRules) override;
   void write(DataStream& ds, NetCompatibilityRules netRules) const override;
 
-  double remoteTime;
+  double remoteTime = 0.0;
 };
 
 struct SystemWorldStartPacket : AutoPacket<SystemWorldStartPacket, PacketType::SystemWorldStart> {

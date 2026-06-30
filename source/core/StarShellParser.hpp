@@ -58,7 +58,7 @@ private:
   String::const_iterator m_current;
   String::const_iterator m_end;
 
-  Char m_quotedType;
+  Char m_quotedType = '\0';
 };
 
 }

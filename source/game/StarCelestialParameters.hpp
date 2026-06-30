@@ -38,7 +38,7 @@ public:
 
 private:
   CelestialCoordinate m_coordinate;
-  uint64_t m_seed;
+  uint64_t m_seed = 0;
   String m_name;
   Json m_parameters;
   VisitableWorldParametersConstPtr m_visitableParameters;

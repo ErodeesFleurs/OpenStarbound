@@ -42,12 +42,12 @@ private:
   String m_effectSpawnLocation;
   String m_suggestedSpawnLocation;
 
-  bool m_initialTick;
-  bool m_loopTick;
-  bool m_finalTick;
+  bool m_initialTick = true;
+  bool m_loopTick = false;
+  bool m_finalTick = false;
   float m_timer;
-  bool m_expired;
-  bool m_stop;
+  bool m_expired = false;
+  bool m_stop = false;
 
   List<AudioInstancePtr> m_mainSounds;
 };
