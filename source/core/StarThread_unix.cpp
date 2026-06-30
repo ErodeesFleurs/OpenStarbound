@@ -65,7 +65,7 @@ struct ThreadImpl {
 
     stopped = false;
     joined = false;
-    int ret = pthread_create(&pthread, nullptr, &runThread, (void*)this);
+    int ret = pthread_create(&pthread, nullptr, &runThread, static_cast<void*>(this));
     if (ret != 0) {
       stopped = true;
       joined = true;

@@ -79,7 +79,7 @@ void AtomicSharedPtr<T>::reset() {
 template <typename T>
 AtomicSharedPtr<T>::operator bool() const {
   SpinLocker locker(m_lock);
-  return (bool)m_ptr;
+  return m_ptr != nullptr;
 }
 
 template <typename T>

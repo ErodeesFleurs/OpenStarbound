@@ -12,11 +12,11 @@ public:
     : m_handle(handle) {}
 
   ~PrivateDynLib() {
-    FreeLibrary((HMODULE)m_handle);
+    FreeLibrary(static_cast<HMODULE>(m_handle));
   }
 
   void* funcPtr(const char* name) {
-    return (void*)GetProcAddress((HMODULE)m_handle, name);
+    return reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(m_handle), name));
   }
 
 private:
@@ -29,7 +29,7 @@ String DynamicLib::libraryExtension() {
 
 DynamicLibUPtr DynamicLib::loadLibrary(String const& libraryName) {
   void* handle = LoadLibraryW(stringToUtf16(libraryName).get());
-  if (handle == NULL)
+  if (handle == nullptr)
     return {};
   return make_unique<PrivateDynLib>(handle);
 }

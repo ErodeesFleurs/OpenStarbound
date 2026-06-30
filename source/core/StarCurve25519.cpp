@@ -13,7 +13,7 @@ struct KeySet {
 
   KeySet() {
     SecretKey secret;
-    Random::randBytes(SecretKeySize).copyTo((char*)secret.data());
+    Random::randBytes(SecretKeySize).copyTo(reinterpret_cast<char*>(secret.data()));
 
     secret[0]  &= 248;
     secret[31] &= 127;
@@ -33,14 +33,14 @@ PrivateKey const& privateKey() { return staticKeys().privateKey; }
 
 
 
-Signature sign(void* data, size_t len) {
+Signature sign(void const* data, size_t len) {
   Signature signature;
-  ed25519_SignMessage(signature.data(), privateKey().data(), nullptr, (unsigned char*)data, len);
+  ed25519_SignMessage(signature.data(), privateKey().data(), nullptr, const_cast<unsigned char*>(static_cast<unsigned char const*>(data)), len);
   return signature;
 }
 
-bool verify(uint8_t const* signature, uint8_t const* publicKey, void* data, size_t len) {
-  return ed25519_VerifySignature(signature, publicKey, (unsigned char*)data, len);
+bool verify(uint8_t const* signature, uint8_t const* publicKey, void const* data, size_t len) {
+  return ed25519_VerifySignature(signature, publicKey, const_cast<unsigned char*>(static_cast<unsigned char const*>(data)), len);
 }
 
 PublicKey  const& publicKey()  { return staticKeys().publicKey;  }

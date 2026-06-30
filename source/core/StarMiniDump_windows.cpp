@@ -17,11 +17,11 @@ namespace Star {
       hFile,
       MiniDumpNormal,
       &dumpExceptionInfo,
-      NULL,
-      NULL);
+      nullptr,
+      nullptr);
     CloseHandle(hFile);
     if (dumpExceptionInfo.ExceptionPointers->ExceptionRecord->ExceptionCode == EXCEPTION_STACK_OVERFLOW) {
-      MessageBoxA(NULL, "Stack overflow encountered\nA minidump has been generated", NULL, MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
+      MessageBoxA(nullptr, "Stack overflow encountered\nA minidump has been generated", nullptr, MB_OK | MB_ICONERROR | MB_SETFOREGROUND);
     }
     return 0;
   };

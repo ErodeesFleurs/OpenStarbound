@@ -47,7 +47,7 @@ void Buffer::seek(StreamOffset pos, IOSeek mode) {
 }
 
 void Buffer::resize(StreamOffset size) {
-  data().resize((size_t)size);
+  data().resize(static_cast<size_t>(size));
 }
 
 bool Buffer::atEnd() {
@@ -91,7 +91,7 @@ void Buffer::open(IOMode mode) {
 }
 
 String Buffer::deviceName() const {
-  return strf("Buffer <{}>", (void*)this);
+  return strf("Buffer <{}>", static_cast<void const*>(this));
 }
 
 StreamOffset Buffer::size() {
@@ -245,7 +245,7 @@ size_t ExternalBuffer::writeAbsolute(StreamOffset, char const*, size_t) {
 }
 
 String ExternalBuffer::deviceName() const {
-  return strf("ExternalBuffer <{}>", (void*)this);
+  return strf("ExternalBuffer <{}>", static_cast<void const*>(this));
 }
 
 StreamOffset ExternalBuffer::size() {

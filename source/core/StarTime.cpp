@@ -31,15 +31,15 @@ String Time::printDuration(double time) {
   String milliseconds;
 
   if (time >= 3600) {
-    int numHours = (int)time / 3600;
+    int numHours = static_cast<int>(time) / 3600;
     hours = strf("{} hour{}", numHours, numHours == 1 ? "" : "s");
   }
   if (time >= 60) {
-    int numMinutes = (int)(time / 60) % 60;
+    int numMinutes = static_cast<int>(time / 60) % 60;
     minutes = strf("{} minute{}", numMinutes, numMinutes == 1 ? "" : "s");
   }
   if (time >= 1) {
-    int numSeconds = (int)time % 60;
+    int numSeconds = static_cast<int>(time) % 60;
     seconds = strf("{} second{}", numSeconds, numSeconds == 1 ? "" : "s");
   }
 
@@ -54,7 +54,7 @@ String Time::printCurrentDateAndTime(String format) {
 }
 
 double Time::ticksToSeconds(int64_t ticks, int64_t tickFrequency) {
-  return ticks / (double)tickFrequency;
+  return ticks / static_cast<double>(tickFrequency);
 }
 
 int64_t Time::ticksToMilliseconds(int64_t ticks, int64_t tickFrequency) {

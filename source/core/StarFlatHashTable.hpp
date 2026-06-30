@@ -13,7 +13,7 @@ struct FlatHashTable {
 private:
   static size_t const EmptyHashValue = 0;
   static size_t const EndHashValue = 1;
-  static size_t const FilledHashBit = (size_t)1 << (sizeof(size_t) * 8 - 1);
+  static size_t const FilledHashBit = static_cast<size_t>(1) << (sizeof(size_t) * 8 - 1);
 
   struct Bucket {
     Bucket();
@@ -40,7 +40,7 @@ private:
     size_t hash;
   };
 
-  typedef std::vector<Bucket, typename std::allocator_traits<Allocator>::template rebind_alloc<Bucket>> Buckets;
+  using Buckets = std::vector<Bucket, typename std::allocator_traits<Allocator>::template rebind_alloc<Bucket>>;
 
 public:
   struct const_iterator {
@@ -526,7 +526,7 @@ void FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::checkCapacity(s
   else
     newSize = MinCapacity;
 
-  while ((double)(m_filledCount + additionalCapacity) / (double)newSize > MaxFillLevel)
+  while (static_cast<double>(m_filledCount + additionalCapacity) / static_cast<double>(newSize) > MaxFillLevel)
     newSize *= 2;
 
   if (newSize == m_buckets.size() - 1)

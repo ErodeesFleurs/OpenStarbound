@@ -68,11 +68,11 @@ uint64_t RandomSource::randu64() {
 }
 
 int32_t RandomSource::randi32() {
-  return (int32_t)(randu32());
+  return static_cast<int32_t>(randu32());
 }
 
 int64_t RandomSource::randi64() {
-  return (int64_t)(randu64());
+  return static_cast<int64_t>(randu64());
 }
 
 float RandomSource::randf() {
@@ -88,7 +88,7 @@ int64_t RandomSource::randInt(int64_t max) {
 }
 
 uint64_t RandomSource::randUInt(uint64_t max) {
-  uint64_t denom = (uint64_t)(-1) / ((uint64_t)max + 1);
+  uint64_t denom = static_cast<uint64_t>(-1) / (static_cast<uint64_t>(max) + 1);
   return randu64() / denom;
 }
 
@@ -131,7 +131,7 @@ void RandomSource::randBytes(char* buf, size_t len) {
     uint32_t ui = gen32();
     for (size_t i = 0; i < 4; ++i) {
       if (len) {
-        *buf = (char)(ui >> (i * 8));
+        *buf = static_cast<char>(ui >> (i * 8));
         --len;
         ++buf;
       }
@@ -195,7 +195,7 @@ namespace Random {
   static uint64_t produceRandomSeed() {
     int64_t seed = Time::monotonicTicks();
     seed *= 1099511628211;
-    seed ^= (((int64_t)rand()) << 32) | ((int64_t)rand());
+    seed ^= (static_cast<int64_t>(rand()) << 32) | static_cast<int64_t>(rand());
     return seed;
   }
 

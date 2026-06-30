@@ -60,21 +60,21 @@ uint64_t xxHash3(String const& in);
   inline void xxHash32Push(XXHash32& hash, TYPE const& v) { \
     CAST_TYPE cv = v;                                       \
     cv = toLittleEndian(cv);                                \
-    hash.push((char const*)(&cv), sizeof(cv));              \
+    hash.push(reinterpret_cast<char const*>(&cv), sizeof(cv)); \
   }
 
 #define XXHASH64_PRIMITIVE(TYPE, CAST_TYPE)                 \
   inline void xxHash64Push(XXHash64& hash, TYPE const& v) { \
     CAST_TYPE cv = v;                                       \
     cv = toLittleEndian(cv);                                \
-    hash.push((char const*)(&cv), sizeof(cv));              \
+    hash.push(reinterpret_cast<char const*>(&cv), sizeof(cv)); \
   }
 
 #define XXHASH3_PRIMITIVE(TYPE, CAST_TYPE)                  \
   inline void xxHash3Push(XXHash3& hash, TYPE const& v) {   \
     CAST_TYPE cv = v;                                       \
     cv = toLittleEndian(cv);                                \
-    hash.push((char const*)(&cv), sizeof(cv));              \
+    hash.push(reinterpret_cast<char const*>(&cv), sizeof(cv)); \
   }
 
 XXHASH32_PRIMITIVE(bool, bool);

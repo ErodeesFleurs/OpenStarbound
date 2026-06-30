@@ -11,9 +11,9 @@ STAR_CLASS(JsonRpc);
 
 STAR_EXCEPTION(JsonRpcException, StarException);
 
-typedef function<Json(Json const&)> JsonRpcRemoteFunction;
+using JsonRpcRemoteFunction = function<Json(Json const&)>;
 
-typedef StringMap<JsonRpcRemoteFunction> JsonRpcHandlers;
+using JsonRpcHandlers = StringMap<JsonRpcRemoteFunction>;
 
 // Simple interface to just the method invocation part of JsonRpc.
 class JsonRpcInterface {

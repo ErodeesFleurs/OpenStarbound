@@ -248,45 +248,45 @@ void DataStream::cwrite(Data const& data) {
 template <typename IntegralType>
 void DataStream::vuread(IntegralType& data) {
   uint64_t i = readVlqU();
-  data = (IntegralType)i;
+  data = static_cast<IntegralType>(i);
 }
 
 template <typename IntegralType>
 void DataStream::viread(IntegralType& data) {
   int64_t i = readVlqI();
-  data = (IntegralType)i;
+  data = static_cast<IntegralType>(i);
 }
 
 template <typename IntegralType>
 void DataStream::vsread(IntegralType& data) {
   size_t s = readVlqS();
-  data = (IntegralType)s;
+  data = static_cast<IntegralType>(s);
 }
 
 template <typename IntegralType>
 void DataStream::vuwrite(IntegralType const& data) {
-  writeVlqU((uint64_t)data);
+  writeVlqU(static_cast<uint64_t>(data));
 }
 
 template <typename IntegralType>
 void DataStream::viwrite(IntegralType const& data) {
-  writeVlqI((int64_t)data);
+  writeVlqI(static_cast<int64_t>(data));
 }
 
 template <typename IntegralType>
 void DataStream::vswrite(IntegralType const& data) {
-  writeVlqS((size_t)data);
+  writeVlqS(static_cast<size_t>(data));
 }
 
 template <typename FloatType>
 void DataStream::vfread(FloatType& data, FloatType base) {
   int64_t i = readVlqI();
-  data = (FloatType)i * base;
+  data = static_cast<FloatType>(i) * base;
 }
 
 template <typename FloatType>
 void DataStream::vfwrite(FloatType const& data, FloatType base) {
-  writeVlqI((int64_t)round(data / base));
+  writeVlqI(static_cast<int64_t>(round(data / base)));
 }
 
 template <typename PointerType, typename ReadFunction>

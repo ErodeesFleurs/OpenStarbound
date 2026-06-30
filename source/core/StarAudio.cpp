@@ -53,8 +53,8 @@ namespace {
   template <typename T>
   T readLEType(IODevicePtr const& device) {
     T t;
-    device->readFull((char*)&t, sizeof(t));
-    fromByteOrder(ByteOrder::LittleEndian, (char*)&t, sizeof(t));
+    device->readFull(reinterpret_cast<char*>(&t), sizeof(t));
+    fromByteOrder(ByteOrder::LittleEndian, reinterpret_cast<char*>(&t), sizeof(t));
     return t;
   }
 
@@ -145,8 +145,8 @@ namespace {
     }
 
     uint32_t wavDataSize = readLEType<uint32_t>(device);
-    size_t wavDataOffset = (size_t)device->pos();
-    if (wavDataSize + wavDataOffset > (size_t)device->size()) {
+    size_t wavDataOffset = static_cast<size_t>(device->pos());
+    if (wavDataSize + wavDataOffset > static_cast<size_t>(device->size())) {
       throw AudioException(strf("Wav file data size reported is inconsistent with file size, got {} but expected {}",
           device->size(), wavDataSize + wavDataOffset));
     }
@@ -208,16 +208,16 @@ public:
   }
   #else
   static size_t readFunc(void* ptr, size_t size, size_t nmemb, void* datasource) {
-    return static_cast<ExternalBuffer*>(datasource)->read((char*)ptr, size * nmemb) / size;
+    return static_cast<ExternalBuffer*>(datasource)->read(static_cast<char*>(ptr), size * nmemb) / size;
   }
 
   static int seekFunc(void* datasource, ogg_int64_t offset, int whence) {
-    static_cast<ExternalBuffer*>(datasource)->seek(offset, (IOSeek)whence);
+    static_cast<ExternalBuffer*>(datasource)->seek(offset, static_cast<IOSeek>(whence));
     return 0;
   };
 
   static long int tellFunc(void* datasource) {
-    return (long int)static_cast<ExternalBuffer*>(datasource)->pos();
+    return static_cast<long int>(static_cast<ExternalBuffer*>(datasource)->pos());
   };
 
     CompressedAudioImpl(CompressedAudioImpl const& impl) {
@@ -229,7 +229,7 @@ public:
   CompressedAudioImpl(IODevicePtr audioData) {
     audioData->open(IOMode::Read);
     audioData->seek(0);
-    m_audioData = make_shared<ByteArray>(audioData->readBytes((size_t)audioData->size()));
+    m_audioData = make_shared<ByteArray>(audioData->readBytes(static_cast<size_t>(audioData->size())));
     m_memoryFile.reset(m_audioData->ptr(), m_audioData->size());
     m_vorbisInfo = nullptr;
   }
@@ -312,9 +312,9 @@ public:
     bufferSize *= 2;
     do {
 #if STAR_LITTLE_ENDIAN
-      read = ov_read(&m_vorbisFile, (char*)buffer, bufferSize, 0, 2, 1, &bitstream);
+      read = ov_read(&m_vorbisFile, reinterpret_cast<char*>(buffer), bufferSize, 0, 2, 1, &bitstream);
 #else
-      read = ov_read(&m_vorbisFile, (char*)buffer, bufferSize, 1, 2, 1, &bitstream);
+      read = ov_read(&m_vorbisFile, reinterpret_cast<char*>(buffer), bufferSize, 1, 2, 1, &bitstream);
 #endif
     } while (read == OV_HOLE);
     if (read < 0)
@@ -366,7 +366,7 @@ public:
       size_t ramt = impl.readPartial(buffer, 1024);
       if (ramt == 0)
         break;
-      memDevice->writeFull((char*)buffer, ramt * 2);
+      memDevice->writeFull(reinterpret_cast<char*>(buffer), ramt * 2);
     }
 
     m_device = memDevice;
@@ -377,7 +377,7 @@ public:
     , m_channels(channels)
     , m_sampleRate(sampleRate)
     , m_dataSize(dataSize)
-    , m_dataStart((size_t)m_device->pos())  // Store current position as data start
+    , m_dataStart(static_cast<size_t>(m_device->pos()))  // Store current position as data start
   {
     if (!m_device->isOpen())
       m_device->open(IOMode::Read);
@@ -403,7 +403,7 @@ public:
         // End of stream reached
         break;
       } else {
-        uncompressBuffer.writeFull((char*)buffer, ramt * 2);
+        uncompressBuffer.writeFull(reinterpret_cast<char*>(buffer), ramt * 2);
       }
     }
 
@@ -432,7 +432,7 @@ public:
   }
 
   double totalTime() {
-    return (double)totalSamples() / m_sampleRate;
+    return static_cast<double>(totalSamples()) / m_sampleRate;
   }
 
   uint64_t totalSamples() {
@@ -444,7 +444,7 @@ public:
   }
 
   void seekTime(double time) {
-    seekSample((uint64_t)(time * m_sampleRate));
+    seekSample(static_cast<uint64_t>(time * m_sampleRate));
   }
 
   void seekSample(uint64_t pos) {
@@ -456,7 +456,7 @@ public:
   }
 
   double currentTime() {
-    return (double)currentSample() / m_sampleRate;
+    return static_cast<double>(currentSample()) / m_sampleRate;
   }
 
   uint64_t currentSample() {
@@ -472,7 +472,7 @@ public:
     if (bufferSize != NPos)
       bufferSize = bufferSize * 2;
     #ifndef STAR_STREAM_AUDIO
-    return m_memoryFile.read((char*)buffer, bufferSize) / 2;
+    return m_memoryFile.read(reinterpret_cast<char*>(buffer), bufferSize) / 2;
     #else
     // Calculate remaining valid data
     size_t currentPos = m_device->pos() - m_dataStart;
@@ -485,11 +485,11 @@ public:
     if (bufferSize == 0)
       return 0;
     
-    size_t bytesRead = m_device->read((char*)buffer, bufferSize);
+    size_t bytesRead = m_device->read(reinterpret_cast<char*>(buffer), bufferSize);
     
     // Handle endianness conversion
     for (size_t i = 0; i < bytesRead / 2; ++i)
-      fromByteOrder(ByteOrder::LittleEndian, ((char*)buffer) + i * 2, 2);
+      fromByteOrder(ByteOrder::LittleEndian, reinterpret_cast<char*>(buffer) + i * 2, 2);
       
     return bytesRead / 2;
     #endif
@@ -587,7 +587,7 @@ uint64_t Audio::totalSamples() const {
 }
 
 bool Audio::compressed() const {
-  return (bool)m_compressed;
+  return static_cast<bool>(m_compressed);
 }
 
 void Audio::uncompress() {
@@ -660,7 +660,7 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
   unsigned sourceSampleRate = sampleRate();
 
   if (velocity != 1.0)
-    sourceSampleRate = (unsigned)(sourceSampleRate * velocity);
+    sourceSampleRate = static_cast<unsigned>(sourceSampleRate * velocity);
 
   if (destinationChannels == sourceChannels && destinationSampleRate == sourceSampleRate) {
     // If the destination and source channel count and sample rate are the
@@ -675,7 +675,7 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
     unsigned sourceBufferSize = destinationSamples * sourceChannels;
 
     m_workingBuffer.resize(sourceBufferSize * sizeof(int16_t));
-    int16_t* sourceBuffer = (int16_t*)m_workingBuffer.ptr();
+    auto* sourceBuffer = reinterpret_cast<int16_t*>(m_workingBuffer.ptr());
 
     unsigned readSamples = read(sourceBuffer, sourceBufferSize) / sourceChannels;
 
@@ -697,11 +697,11 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
   } else {
     // Otherwise, we have to do a full resample.
 
-    unsigned sourceSamples = ((uint64_t)sourceSampleRate * destinationSamples + destinationSampleRate - 1) / destinationSampleRate;
+    unsigned sourceSamples = (static_cast<uint64_t>(sourceSampleRate) * destinationSamples + destinationSampleRate - 1) / destinationSampleRate;
     unsigned sourceBufferSize = sourceSamples * sourceChannels;
 
     m_workingBuffer.resize(sourceBufferSize * sizeof(int16_t));
-    int16_t* sourceBuffer = (int16_t*)m_workingBuffer.ptr();
+    auto* sourceBuffer = reinterpret_cast<int16_t*>(m_workingBuffer.ptr());
 
     unsigned readSamples = read(sourceBuffer, sourceBufferSize) / sourceChannels;
 
@@ -723,7 +723,7 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
         int sample = 0;
         int sampleCount = 0;
         for (int superSample = 0; superSample < SuperSampleFactor; ++superSample) {
-          unsigned sourceSample = (unsigned)((destinationSample * SuperSampleFactor + superSample) * sourceSamples / destinationSamples) / SuperSampleFactor;
+          unsigned sourceSample = static_cast<unsigned>((destinationSample * SuperSampleFactor + superSample) * sourceSamples / destinationSamples) / SuperSampleFactor;
           if (sourceSample < readSamples) {
             unsigned sourceBufferIndex = sourceSample * sourceChannels;
             starAssert(sourceBufferIndex + sourceChannel < sourceBufferSize);
@@ -738,7 +738,7 @@ size_t Audio::resample(unsigned destinationChannels, unsigned destinationSampleR
           return writtenSamples * destinationChannels;
 
         sample /= sampleCount;
-        destinationBuffer[destinationBufferIndex + destinationChannel] = (int16_t)sample;
+        destinationBuffer[destinationBufferIndex + destinationChannel] = static_cast<int16_t>(sample);
         writtenSamples = destinationSample + 1;
       }
     }

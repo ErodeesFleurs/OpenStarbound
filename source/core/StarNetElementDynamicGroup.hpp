@@ -310,7 +310,7 @@ void NetElementDynamicGroup<Element>::addChangeData(ElementChange change) {
 
   m_changeData.append({currentVersion, std::move(change)});
 
-  m_changeDataLastVersion = max<int64_t>((int64_t)currentVersion - MaxChangeDataVersions, 0);
+  m_changeDataLastVersion = max<int64_t>(static_cast<int64_t>(currentVersion) - MaxChangeDataVersions, 0);
   while (!m_changeData.empty() && m_changeData.first().first < m_changeDataLastVersion)
     m_changeData.removeFirst();
 }

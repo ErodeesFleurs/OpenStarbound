@@ -62,7 +62,7 @@ bool LockFile::lock(int64_t timeout) {
     return true;
   } else if (timeout == 0) {
     m_handle = doFLock(m_filename, false);
-    return (bool)m_handle;
+    return m_handle != nullptr;
   } else {
     int64_t startTime = Time::monotonicMilliseconds();
     while (true) {
@@ -80,7 +80,7 @@ bool LockFile::lock(int64_t timeout) {
 
 void LockFile::unlock() {
   if (m_handle) {
-    int fd = *(int*)m_handle.get();
+    int fd = *static_cast<int*>(m_handle.get());
     unlink(m_filename.utf8Ptr());
     close(fd);
     m_handle.reset();
@@ -88,7 +88,7 @@ void LockFile::unlock() {
 }
 
 bool LockFile::isLocked() const {
-  return (bool)m_handle;
+  return m_handle != nullptr;
 }
 
 }

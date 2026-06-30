@@ -301,7 +301,7 @@ void NetElementEnum<Enum>::readData(DataStream& ds, Enum& v) const {
   if (sizeof(Enum) == 1)
     ds.read(v);
   else
-    v = (Enum)ds.readVlqI();
+    v = static_cast<Enum>(ds.readVlqI());
 }
 
 template <typename Enum>
@@ -309,7 +309,7 @@ void NetElementEnum<Enum>::writeData(DataStream& ds, Enum const& v) const {
   if (sizeof(Enum) == 1)
     ds.write(v);
   else
-    ds.writeVlqI((int64_t)v);
+    ds.writeVlqI(static_cast<int64_t>(v));
 }
 
 template <typename T>

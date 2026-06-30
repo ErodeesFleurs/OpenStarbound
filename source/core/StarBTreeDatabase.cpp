@@ -928,7 +928,7 @@ auto BTreeDatabase::readFreeIndexBlock(BlockIndex blockIndex) -> FreeIndexBlock 
     throw DBException::format("Internal exception! block {} missing free index block marker!", blockIndex);
 
   FreeIndexBlock freeIndexBlock;
-  DataStreamBuffer buffer(max(sizeof(BlockIndex), (size_t)4));
+  DataStreamBuffer buffer(max(sizeof(BlockIndex), static_cast<size_t>(4)));
 
   rawReadBlock(blockIndex, 2, buffer.ptr(), sizeof(BlockIndex));
   buffer.seek(0);
@@ -951,7 +951,7 @@ void BTreeDatabase::writeFreeIndexBlock(BlockIndex blockIndex, FreeIndexBlock in
   checkBlockIndex(blockIndex);
 
   rawWriteBlock(blockIndex, 0, FreeIndexMagic, 2);
-  DataStreamBuffer buffer(max(sizeof(BlockIndex), (size_t)4));
+  DataStreamBuffer buffer(max(sizeof(BlockIndex), static_cast<size_t>(4)));
 
   buffer.seek(0);
   buffer.write<BlockIndex>(indexBlock.nextFreeBlock);

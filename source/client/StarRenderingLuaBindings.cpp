@@ -27,7 +27,7 @@ LuaCallbacks LuaBindings::makeRenderingCallbacks(ClientApplication* app) {
     if (mtype) {
       auto type = mtype.value();
       if (type == 1 && value.is<float>()) {
-        renderer->setEffectScriptableParameter(effectName, effectParameter, (int)value.get<float>());
+        renderer->setEffectScriptableParameter(effectName, effectParameter, static_cast<int>(value.get<float>()));
       } else {
         renderer->setEffectScriptableParameter(effectName, effectParameter, value);
       }

@@ -93,13 +93,13 @@ PcPlatformServicesState::PcPlatformServicesState()
         discord::User user;
         auto res = discordCore->UserManager().GetCurrentUser(&user);
         if (res != discord::Result::Ok)
-          Logger::error("Could not get current Discord user. (err {})", (int)res);
+          Logger::error("Could not get current Discord user. (err {})", static_cast<int>(res));
         else
           discordCurrentUser = user;
       });
 
   } else {
-    Logger::error("Failed to instantiate Discord core (err {})", (int)res);
+    Logger::error("Failed to instantiate Discord core (err {})", static_cast<int>(res));
   }
 
   if (discordAvailable) {

@@ -13,21 +13,21 @@ template <typename OutputIterator>
 size_t writeVlqU(uint64_t x, OutputIterator out) {
   size_t i;
   for (i = 9; i > 0; --i) {
-    if (x & ((uint64_t)(127) << (i * 7)))
+    if (x & (static_cast<uint64_t>(127) << (i * 7)))
       break;
   }
 
   for (size_t j = 0; j < i; ++j)
-    *out++ = (uint8_t)((x >> ((i - j) * 7)) & 127) | 128;
+    *out++ = static_cast<uint8_t>((x >> ((i - j) * 7)) & 127) | 128;
 
-  *out++ = (uint8_t)(x & 127);
+  *out++ = static_cast<uint8_t>(x & 127);
   return i + 1;
 }
 
 inline size_t vlqUSize(uint64_t x) {
   size_t i;
   for (i = 9; i > 0; --i) {
-    if (x & ((uint64_t)(127) << (i * 7)))
+    if (x & (static_cast<uint64_t>(127) << (i * 7)))
       break;
   }
   return i + 1;
@@ -42,7 +42,7 @@ size_t readVlqU(uint64_t& x, InputIterator in, size_t maxBytes = 10) {
   x = 0;
   for (size_t i = 0; i < min<size_t>(10, maxBytes); ++i) {
     uint8_t oct = *in++;
-    x = (x << 7) | (uint64_t)(oct & 127);
+    x = (x << 7) | static_cast<uint64_t>(oct & 127);
     if (!(oct & 128))
       return i + 1;
   }
@@ -93,9 +93,9 @@ size_t readVlqI(int64_t& v, InputIterator in, size_t maxBytes = 10) {
 
   // If negative, then need to undo the +1 transformation to encode -2^63
   if (negative)
-    v = -(int64_t)(source >> 1) - 1;
+    v = -static_cast<int64_t>(source >> 1) - 1;
   else
-    v = (int64_t)(source >> 1);
+    v = static_cast<int64_t>(source >> 1);
 
   return bytes;
 }

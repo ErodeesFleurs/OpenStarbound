@@ -40,7 +40,7 @@ TcpSocketPtr TcpSocket::accept() {
 #if defined STAR_SYSTEM_MACOS || defined STAR_SYSTEM_FREEBSD
   // Don't generate sigpipe
   int set = 1;
-  socketImpl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(int));
+  socketImpl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, &set, sizeof(int));
 #endif
 
   TcpSocketPtr sockPtr(new TcpSocket(m_localAddress.address().mode(), socketImpl));
@@ -57,7 +57,7 @@ void TcpSocket::setNoDelay(bool noDelay) {
   checkOpen("TcpSocket::setNoDelay");
 
   int flag = noDelay ? 1 : 0;
-  m_impl->setSockOpt(IPPROTO_TCP, TCP_NODELAY, (char*)&flag, sizeof(flag));
+  m_impl->setSockOpt(IPPROTO_TCP, TCP_NODELAY, &flag, sizeof(flag));
 }
 
 size_t TcpSocket::receive(char* data, size_t size) {
@@ -150,7 +150,7 @@ void TcpSocket::connect(HostAddressWithPort const& addressWithPort) {
 #if defined STAR_SYSTEM_MACOS || defined STAR_SYSTEM_FREEBSD
   // Don't generate sigpipe
   int set = 1;
-  m_impl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, (void*)&set, sizeof(set));
+  m_impl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, &set, sizeof(set));
 #endif
 
   m_socketMode = SocketMode::Connected;

@@ -107,11 +107,11 @@ private:
 };
 
 inline IOMode operator|(IOMode a, IOMode b) {
-  return (IOMode)((uint8_t)a | (uint8_t)b);
+  return static_cast<IOMode>(static_cast<uint8_t>(a) | static_cast<uint8_t>(b));
 }
 
 inline bool operator&(IOMode a, IOMode b) {
-  return (uint8_t)a & (uint8_t)b;
+  return static_cast<uint8_t>(a) & static_cast<uint8_t>(b);
 }
 
 inline IOMode IODevice::mode() const {

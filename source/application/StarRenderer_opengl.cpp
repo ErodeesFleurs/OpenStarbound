@@ -92,7 +92,7 @@ static void GLAPIENTRY GlMessageCallback(GLenum, GLenum type, GLuint, GLenum, GL
 OpenGlRenderer::OpenGlRenderer() {
   auto glewResult = glewInit();
   if (glewResult != GLEW_OK && glewResult != GLEW_ERROR_NO_GLX_DISPLAY)
-    throw RendererException::format("Could not initialize GLEW: {}", (char*)glewGetErrorString(glewResult));
+    throw RendererException::format("Could not initialize GLEW: {}", reinterpret_cast<char const*>(glewGetErrorString(glewResult)));
 
   if (!GLEW_VERSION_2_0)
     throw RendererException("OpenGL 2.0 not available!");
@@ -161,7 +161,7 @@ OpenGlRenderer::GlFrameBuffer::GlFrameBuffer(Json const& fbConfig) : config(fbCo
   if (multisample)
     glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, size[0], size[1], GL_TRUE);
   else {
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, size[0], size[1], 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
   }
   auto addressing = TextureAddressingNames.getLeft(config.getString("textureAddressing", "clamp"));
   auto filtering = TextureFilteringNames.getLeft(config.getString("textureFiltering", "nearest"));
@@ -230,12 +230,12 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
     if (!source)
       return 0;
     char const* sourcePtr = source->utf8Ptr();
-    glShaderSource(shader, 1, &sourcePtr, NULL);
+    glShaderSource(shader, 1, &sourcePtr, nullptr);
     glCompileShader(shader);
 
     glGetShaderiv(shader, GL_COMPILE_STATUS, &status);
     if (!status) {
-      glGetShaderInfoLog(shader, sizeof(logBuffer), NULL, logBuffer);
+      glGetShaderInfoLog(shader, sizeof(logBuffer), nullptr, logBuffer);
       throw RendererException(strf("Failed to compile {} shader: {}\n", name, logBuffer));
     }
 
@@ -270,7 +270,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
 
   glGetProgramiv(program, GL_LINK_STATUS, &status);
   if (!status) {
-    glGetProgramInfoLog(program, sizeof(logBuffer), NULL, logBuffer);
+    glGetProgramInfoLog(program, sizeof(logBuffer), nullptr, logBuffer);
     glDeleteProgram(program);
     throw RendererException(strf("Failed to link program: {}\n", logBuffer));
   }
@@ -311,17 +311,17 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
       if (p.second.getBool("scriptable",false)) {
         if (Json def = p.second.get("default", {})) {
           if (type == "bool") {
-            effectParameter.parameterValue = (RenderEffectParameter)def.toBool();
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(def.toBool());
           } else if (type == "int") {
-            effectParameter.parameterValue = (RenderEffectParameter)(int)def.toInt();
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(static_cast<int>(def.toInt()));
           } else if (type == "float") {
-            effectParameter.parameterValue = (RenderEffectParameter)def.toFloat();
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(def.toFloat());
           } else if (type == "vec2") {
-            effectParameter.parameterValue = (RenderEffectParameter)jsonToVec2F(def);
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(jsonToVec2F(def));
           } else if (type == "vec3") {
-            effectParameter.parameterValue = (RenderEffectParameter)jsonToVec3F(def);
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(jsonToVec3F(def));
           } else if (type == "vec4") {
-            effectParameter.parameterValue = (RenderEffectParameter)jsonToVec4F(def);
+            effectParameter.parameterValue = static_cast<RenderEffectParameter>(jsonToVec4F(def));
           }
         }
         effect.scriptables[p.first] = effectParameter;
@@ -331,7 +331,7 @@ void OpenGlRenderer::loadEffectConfig(String const& name, Json const& effectConf
           if (type == "bool") {
             setEffectParameter(p.first, def.toBool());
           } else if (type == "int") {
-            setEffectParameter(p.first, (int)def.toInt());
+            setEffectParameter(p.first, static_cast<int>(def.toInt()));
           } else if (type == "float") {
             setEffectParameter(p.first, def.toFloat());
           } else if (type == "vec2") {
@@ -617,7 +617,7 @@ void OpenGlRenderer::setScreenSize(Vec2U screenSize) {
       glTexImage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE, multisample, GL_RGBA8, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, GL_TRUE);
     } else {
       glBindTexture(GL_TEXTURE_2D, frameBuffer.second->texture->glTextureId());
-      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL);
+      glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, m_screenSize[0] / sizeDiv, m_screenSize[1] / sizeDiv, 0, GL_RGB, GL_UNSIGNED_BYTE, nullptr);
     }
   }
 }

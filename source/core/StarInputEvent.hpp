@@ -299,20 +299,20 @@ inline KeyMod operator&(KeyMod a, KeyMod b) {
 }
 
 inline KeyMod operator~(KeyMod a) {
-  return (KeyMod) ~(uint16_t)a;
+  return static_cast<KeyMod>(~static_cast<uint16_t>(a));
 }
 
 inline KeyMod& operator|=(KeyMod& a, KeyMod b) {
-  uint16_t a_cast = (uint16_t)a;
-  a_cast |= (uint16_t)b;
-  a = (KeyMod)a_cast;
+  uint16_t a_cast = static_cast<uint16_t>(a);
+  a_cast |= static_cast<uint16_t>(b);
+  a = static_cast<KeyMod>(a_cast);
   return a;
 }
 
 inline KeyMod& operator&=(KeyMod& a, KeyMod b) {
-  uint16_t a_cast = (uint16_t)a;
-  a_cast &= (uint16_t)b;
-  a = (KeyMod)a_cast;
+  uint16_t a_cast = static_cast<uint16_t>(a);
+  a_cast &= static_cast<uint16_t>(b);
+  a = static_cast<KeyMod>(a_cast);
   return a;
 }
 

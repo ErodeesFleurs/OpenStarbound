@@ -11,7 +11,7 @@ namespace Star {
 template <typename T>
 class RefPtr {
 public:
-  typedef T element_type;
+  using element_type = T;
 
   RefPtr();
   explicit RefPtr(T* p, bool addRef = true);
@@ -257,12 +257,12 @@ bool operator<(RefPtr<T> const& a, RefPtr<U> const& b) {
 
 template <typename Type1, typename Type2>
 bool is(RefPtr<Type2> const& p) {
-  return (bool)dynamic_cast<Type1*>(p.get());
+  return dynamic_cast<Type1*>(p.get()) != nullptr;
 }
 
 template <typename Type1, typename Type2>
 bool is(RefPtr<Type2 const> const& p) {
-  return (bool)dynamic_cast<Type1 const*>(p.get());
+  return dynamic_cast<Type1 const*>(p.get()) != nullptr;
 }
 
 template <typename Type1, typename Type2>

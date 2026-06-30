@@ -94,7 +94,7 @@ String LuaBindings::formatLua(String const& string, List<LuaValue> const& args) 
       else if (*next == 's')
         result += toString(popArg());
       else
-        throw StarException::format("Improper lua log format specifier {}", (char)*next);
+        throw StarException::format("Improper lua log format specifier {}", static_cast<char>(*next));
       ++next;
       stringIt = next;
     } else {
@@ -149,14 +149,14 @@ LuaCallbacks LuaBindings::makeUtilityCallbacks() {
   };
 
   callbacks.registerCallback("staticRandomI32",
-      [hash64LuaValues](LuaVariadic<LuaValue> const& hashValues) { return (int32_t)hash64LuaValues(hashValues); });
+      [hash64LuaValues](LuaVariadic<LuaValue> const& hashValues) { return static_cast<int32_t>(hash64LuaValues(hashValues)); });
 
   callbacks.registerCallback("staticRandomI32Range",
       [hash64LuaValues](int32_t min, int32_t max, LuaVariadic<LuaValue> const& hashValues) {
         if (max < min)
           throw LuaException("Maximum bound in staticRandomI32Range must be >= minimum bound!");
-        uint64_t denom = (uint64_t)(-1) / ((uint64_t)(max - min) + 1);
-        return (int32_t)(hash64LuaValues(hashValues) / denom + min);
+        uint64_t denom = static_cast<uint64_t>(-1) / (static_cast<uint64_t>(max - min) + 1);
+        return static_cast<int32_t>(hash64LuaValues(hashValues) / denom + min);
       });
 
   callbacks.registerCallback("staticRandomDouble",

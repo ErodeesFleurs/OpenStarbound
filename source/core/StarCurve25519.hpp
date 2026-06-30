@@ -17,7 +17,7 @@ using PrivateKey = Array<uint8_t, PrivateKeySize>;
 using Signature = Array<uint8_t, SignatureSize>;
 
 PublicKey const& publicKey();
-Signature sign(void* data, size_t len);
-bool verify(uint8_t const* signature, uint8_t const* publicKey, void* data, size_t len);
+Signature sign(void const* data, size_t len);
+bool verify(uint8_t const* signature, uint8_t const* publicKey, void const* data, size_t len);
 
 }

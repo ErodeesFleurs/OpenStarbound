@@ -24,11 +24,11 @@ namespace Star {
 
 namespace {
   int fdFromHandle(void* ptr) {
-    return (int)(intptr_t)ptr;
+    return static_cast<int>(reinterpret_cast<intptr_t>(ptr));
   }
 
   void* handleFromFd(int handle) {
-    return (void*)(intptr_t)handle;
+    return reinterpret_cast<void*>(static_cast<intptr_t>(handle));
   }
 }
 

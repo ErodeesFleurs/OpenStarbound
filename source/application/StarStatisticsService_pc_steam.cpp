@@ -21,7 +21,7 @@ Maybe<String> SteamStatisticsService::error() const {
 
 bool SteamStatisticsService::setStat(String const& name, String const& type, Json const& value) {
   if (type == "int")
-    return SteamUserStats()->SetStat(name.utf8Ptr(), (int32_t)value.toInt());
+    return SteamUserStats()->SetStat(name.utf8Ptr(), static_cast<int32_t>(value.toInt()));
 
   if (type == "float")
     return SteamUserStats()->SetStat(name.utf8Ptr(), value.toFloat());
@@ -94,7 +94,7 @@ void SteamStatisticsService::onUserStatsReceived(UserStatsReceived_t* callback) 
     return;
 
   if (callback->m_eResult != k_EResultOK) {
-    m_error = {strf("Steam RequestCurrentStats failed with code {}", (int)callback->m_eResult)};
+    m_error = {strf("Steam RequestCurrentStats failed with code {}", static_cast<int>(callback->m_eResult))};
     return;
   }
 
@@ -117,7 +117,7 @@ void SteamStatisticsService::onUserStatsStored(UserStatsStored_t* callback) {
     return;
   }
 
-  m_error = {strf("Steam StoreStats failed with code {}", (int)callback->m_eResult)};
+  m_error = {strf("Steam StoreStats failed with code {}", static_cast<int>(callback->m_eResult))};
 }
 
 void SteamStatisticsService::onAchievementStored(UserAchievementStored_t* callback) {
