@@ -41,7 +41,7 @@ Json ProjectileDatabase::projectileConfig(String const& type) const {
 ProjectilePtr ProjectileDatabase::createProjectile(String const& type, Json const& parameters) const {
   if (!m_configs.contains(type))
     throw ProjectileDatabaseException(strf("Unknown projectile with typeName {}.", type));
-  return make_shared<Projectile>(m_configs.get(type), parameters);
+  return make_shared<Projectile>(m_assets, m_configs.get(type), parameters);
 }
 
 String ProjectileDatabase::damageKindImage(String const& type) const {
@@ -62,7 +62,7 @@ ProjectilePtr ProjectileDatabase::netLoadProjectile(ByteArray const& netStore, N
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
   String typeName = ds.read<String>();
-  return make_shared<Projectile>(m_configs.get(typeName), ds, rules);
+  return make_shared<Projectile>(m_assets, m_configs.get(typeName), ds, rules);
 }
 
 ProjectileConfigPtr ProjectileDatabase::readConfig(String const& path) {

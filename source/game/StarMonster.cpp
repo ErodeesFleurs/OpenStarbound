@@ -16,13 +16,13 @@
 #include "StarBehaviorLuaBindings.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarItemDrop.hpp"
-#include "StarAssets.hpp"
 #include "StarTime.hpp"
 #include "StarStatusController.hpp"
 
 namespace Star {
 
-Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {
+Monster::Monster(IAssetsConstPtr assets, MonsterVariant const& monsterVariant, Maybe<float> level)
+  : m_scriptedAnimator(assets) {
   m_monsterLevel = level;
 
   m_damageOnTouch = false;
@@ -35,7 +35,7 @@ Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {
 
   m_monsterVariant = monsterVariant;
 
-  m_questIndicatorOffset = jsonToVec2F(Root::singleton().assets()->json("/quests/quests.config:defaultIndicatorOffset"));
+  m_questIndicatorOffset = jsonToVec2F(assets->json("/quests/quests.config:defaultIndicatorOffset"));
 
   setTeam(EntityDamageTeam(m_monsterVariant.damageTeamType, m_monsterVariant.damageTeam));
 
@@ -52,7 +52,7 @@ Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {
   m_scriptComponent.setScripts(m_monsterVariant.parameters.optArray("scripts").apply(jsonToStringList).value(m_monsterVariant.scripts));
   m_scriptComponent.setUpdateDelta(m_monsterVariant.initialScriptDelta);
 
-  auto movementParameters = ActorMovementParameters::sensibleDefaults().merge(ActorMovementParameters(monsterVariant.movementSettings));
+  auto movementParameters = ActorMovementParameters::sensibleDefaults(assets).merge(ActorMovementParameters(monsterVariant.movementSettings));
   if (movementParameters.standingPoly)
     movementParameters.standingPoly->scale(m_monsterVariant.animatorZoom);
   if (movementParameters.crouchingPoly)
@@ -64,7 +64,7 @@ Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {
   *movementParameters.mass *= monsterVariant.weightMultiplier;
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet{"monster"};
-  m_movementController = make_shared<ActorMovementController>(movementParameters);
+  m_movementController = make_shared<ActorMovementController>(movementParameters, assets);
 
   setPersistent(m_monsterVariant.persistent);
 
@@ -72,8 +72,8 @@ Monster::Monster(MonsterVariant const& monsterVariant, Maybe<float> level) {
   setNetStates();
 }
 
-Monster::Monster(Json const& diskStore)
-  : Monster(Root::singleton().monsterDatabase()->readMonsterVariantFromJson(diskStore.get("monsterVariant"))) {
+Monster::Monster(IAssetsConstPtr assets, Json const& diskStore)
+  : Monster(assets, Root::singleton().monsterDatabase()->readMonsterVariantFromJson(diskStore.get("monsterVariant"))) {
   m_monsterLevel = diskStore.optFloat("monsterLevel");
   m_movementController->loadState(diskStore.get("movementState"));
   m_statusController->diskLoad(diskStore.get("statusController"));
@@ -406,7 +406,7 @@ void Monster::destroy(RenderCallback* renderCallback) {
     }
 
     for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, *m_monsterLevel))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets()));
   }
 
   if (renderCallback) {

@@ -9,9 +9,9 @@
 
 namespace Star {
 
-PlayerConfig::PlayerConfig(JsonObject const& cfg) {
+PlayerConfig::PlayerConfig(JsonObject const& cfg, IAssetsConstPtr assets)
+  : humanoidTiming(cfg.contains("humanoidTiming") ? Humanoid::HumanoidTiming(cfg.value("humanoidTiming")) : Humanoid::HumanoidTiming::sensibleDefaults(std::move(assets))) {
   defaultIdentity = HumanoidIdentity(cfg.value("defaultHumanoidIdentity"));
-  humanoidTiming = Humanoid::HumanoidTiming(cfg.value("humanoidTiming"));
 
   for (Json v : cfg.value("defaultItems", JsonArray()).toArray())
     defaultItems.append(ItemDescriptor(v));
@@ -51,26 +51,27 @@ PlayerConfig::PlayerConfig(JsonObject const& cfg) {
     genericScriptContexts[p.first] = p.second.toString();
 }
 
-PlayerFactory::PlayerFactory(AssetsConstPtr assets) : m_rebuilder(make_shared<Rebuilder>(assets, "player")) {
-  if (!assets)
+PlayerFactory::PlayerFactory(AssetsConstPtr assets)
+  : m_assets(std::move(assets)), m_rebuilder(make_shared<Rebuilder>(m_assets, "player")) {
+  if (!m_assets)
     throw PlayerException("PlayerFactory requires assets service");
 
-  m_config = make_shared<PlayerConfig>(assets->json("/player.config").toObject());
+  m_config = make_shared<PlayerConfig>(m_assets->json("/player.config").toObject(), m_assets);
 }
 
 PlayerPtr PlayerFactory::create() const {
-  return make_shared<Player>(m_config);
+  return make_shared<Player>(m_config, Uuid(), m_assets);
 }
 
 PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
   PlayerPtr player;
   try {
-    player = make_shared<Player>(m_config, diskStore);
+    player = make_shared<Player>(m_config, diskStore, m_assets);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
-        player = make_shared<Player>(m_config, store);
+        player = make_shared<Player>(m_config, store, m_assets);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -85,7 +86,7 @@ PlayerPtr PlayerFactory::diskLoadPlayer(Json const& diskStore) const {
 }
 
 PlayerPtr PlayerFactory::netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Player>(m_config, netStore, rules);
+  return make_shared<Player>(m_config, netStore, rules, m_assets);
 }
 
 }

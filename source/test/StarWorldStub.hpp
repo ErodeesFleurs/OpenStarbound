@@ -14,6 +14,7 @@ public:
   ConnectionId connection() const override { return ConnectionId(0); }
   WorldGeometry geometry() const override { return WorldGeometry(Vec2U(4096, 4096)); }
   uint64_t currentStep() const override { return 0; }
+  IAssetsConstPtr assets() const override { return {}; }
 
   MaterialId material(Vec2I const&, TileLayer) const override { return EmptyMaterialId; }
   std::tuple<MaterialId, ModId> materialAndMod(Vec2I const&, TileLayer) const override { return {}; }

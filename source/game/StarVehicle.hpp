@@ -8,6 +8,7 @@
 #include "StarLoungingEntities.hpp"
 #include "StarScriptedEntity.hpp"
 #include "StarLuaAnimationComponent.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -18,7 +19,7 @@ using VehiclePtr = SharedPtr<Vehicle>;
 
 class Vehicle : public virtual LoungeableEntity, public virtual InteractiveEntity, public virtual PhysicsEntity, public virtual ScriptedEntity {
 public:
-  Vehicle(Json baseConfig, String path, Json dynamicConfig);
+  Vehicle(IAssetsConstPtr assets, Json baseConfig, String path, Json dynamicConfig);
 
   String name() const override;
 

@@ -2,7 +2,6 @@
 #include "StarEncode.hpp"
 #include "StarRoot.hpp"
 #include "StarGameTypes.hpp"
-#include "StarAssets.hpp"
 #include "StarCasting.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarRect.hpp"
@@ -434,8 +433,7 @@ namespace Dungeon {
   }
 
   void TMXPartReader::readAsset(String const& asset) {
-    auto assets = Root::singleton().assets();
-    m_maps.append(make_pair(asset, make_shared<const TMXMap>(assets->json(asset))));
+    m_maps.append(make_pair(asset, make_shared<const TMXMap>(m_assets->json(asset))));
   }
 
   Vec2U TMXPartReader::size() const {

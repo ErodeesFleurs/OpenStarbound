@@ -29,7 +29,7 @@ QuestTemplatePtr getTemplate(String const& templateId) {
   return Root::singleton().questTemplateDatabase()->questTemplate(templateId);
 }
 
-StringMap<QuestPtr> readQuests(Json const& json) {
+StringMap<QuestPtr> readQuests(IAssetsConstPtr assets, Json const& json) {
   auto versioningDatabase = Root::singleton().versioningDatabase();
   auto questTemplateDatabase = Root::singleton().questTemplateDatabase();
 
@@ -47,7 +47,7 @@ StringMap<QuestPtr> readQuests(Json const& json) {
     Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(questPair.second), "Quest");
     auto questArc = QuestArcDescriptor::diskLoad(diskStore.get("arc"));
     if (validateArc(questArc))
-      result[questPair.first] = make_shared<Quest>(questPair.second);
+      result[questPair.first] = make_shared<Quest>(assets, questPair.second);
   }
   return result;
 }
@@ -59,7 +59,7 @@ function<bool (QuestPtr const&)> questFilter(QuestState state) {
 }
 
 void QuestManager::diskLoad(Json const& quests) {
-  m_quests = readQuests(quests.get("quests", JsonObject{}));
+  m_quests = readQuests(m_assets, quests.get("quests", JsonObject{}));
   m_trackedQuestId = quests.optString("currentQuest");
 }
 
@@ -74,6 +74,10 @@ Json QuestManager::diskStore() {
 
 void QuestManager::setUniverseClient(UniverseClient* client) {
   m_client = client;
+}
+
+IAssetsConstPtr QuestManager::assets() const {
+  return m_assets;
 }
 
 void QuestManager::init(World* world) {
@@ -430,7 +434,7 @@ void QuestManager::startInitialQuests() {
   for (auto const& questArcJson : startingQuests) {
     QuestArcDescriptor quest = QuestArcDescriptor::fromJson(questArcJson);
     if (canStart(quest))
-      offer(make_shared<Quest>(quest, 0, m_player));
+      offer(make_shared<Quest>(m_assets, quest, 0, m_player));
   }
 }
 

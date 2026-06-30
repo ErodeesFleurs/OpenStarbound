@@ -1,7 +1,16 @@
 #include "StarTextPainter.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarRoot.hpp"
 
 namespace Star {
+
+namespace {
+
+AssetsConstPtr textPainterAssets(AssetsConstPtr assets) {
+  return assets ? std::move(assets) : Root::singleton().assets();
+}
+
+}
 
 TextPositioning::TextPositioning() {
   pos = Vec2F();
@@ -34,15 +43,22 @@ TextPositioning TextPositioning::translated(Vec2F translation) const {
   return {pos + translation, hAnchor, vAnchor, wrapWidth, charLimit};
 }
 
-TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup)
+TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener)
   : m_renderer(renderer),
+    m_assets(textPainterAssets(std::move(assets))),
+    m_registerReloadListener(std::move(registerReloadListener)),
     m_fontTextureGroup(textureGroup),
     m_defaultRenderSettings(),
     m_renderSettings(),
     m_savedRenderSettings() {
+  if (!m_registerReloadListener)
+    m_registerReloadListener = [](ListenerWeakPtr reloadListener) {
+      Root::singleton().registerReloadListener(std::move(reloadListener));
+    };
+
   reloadFonts();
   m_reloadTracker = make_shared<TrackerListener>();
-  Root::singleton().registerReloadListener(m_reloadTracker);
+  m_registerReloadListener(m_reloadTracker);
 }
 
 RectF TextPainter::renderText(StringView s, TextPositioning const& position) {
@@ -319,10 +335,9 @@ void TextPainter::addFont(FontPtr const& font, String const& name) {
 void TextPainter::reloadFonts() {
   m_fontTextureGroup.clearFonts();
   m_fontTextureGroup.cleanup(0);
-  auto assets = Root::singleton().assets();
   auto loadFontsByExtension = [&](String const& ext) {
-    for (auto& fontPath : assets->scanExtension(ext)) {
-      auto font = assets->font(fontPath);
+    for (auto& fontPath : m_assets->scanExtension(ext)) {
+      auto font = m_assets->font(fontPath);
       auto name = AssetPath::filename(fontPath);
       name = name.substr(0, name.findLast("."));
       addFont(loadFont(fontPath, name), name);
@@ -331,9 +346,9 @@ void TextPainter::reloadFonts() {
   loadFontsByExtension("ttf");
   loadFontsByExtension("woff2");
   m_fontTextureGroup.setFixedFonts(
-    assets->json("/interface.config:font.defaultFont").toString(),
-    assets->json("/interface.config:font.fallbackFont").toString(),
-    assets->json("/interface.config:font.emojiFont").toString());
+    m_assets->json("/interface.config:font.defaultFont").toString(),
+    m_assets->json("/interface.config:font.fallbackFont").toString(),
+    m_assets->json("/interface.config:font.emojiFont").toString());
 }
 
 void TextPainter::cleanup(int64_t timeout) {
@@ -532,10 +547,8 @@ FontPtr TextPainter::loadFont(String const& fontPath, Maybe<String> fontName) {
     fontName.emplace(name.substr(0, name.findLast(".")));
   }
 
-  auto assets = Root::singleton().assets();
-
-  auto font = assets->font(fontPath)->clone();
-  if (auto fontConfig = assets->json("/interface.config:font").opt(*fontName)) {
+  auto font = m_assets->font(fontPath)->clone();
+  if (auto fontConfig = m_assets->json("/interface.config:font").opt(*fontName)) {
     font->setAlphaThreshold(fontConfig->getUInt("alphaThreshold", 0));
   }
   return font;

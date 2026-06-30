@@ -46,9 +46,8 @@ UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets
     File::makeDirectory(m_storageDirectory);
   }
 
-  auto& root = Root::singleton();
-  auto assets = root.assets();
-  auto configuration = root.configuration();
+  auto assets = m_assets;
+  auto configuration = m_configuration;
 
   if (auto assetsDigestOverride = configuration->get("serverOverrideAssetsDigest").optString()) {
     m_assetsDigest = hexDecode(*assetsDigestOverride);
@@ -59,7 +58,7 @@ UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets
 
   startLuaScripts();
 
-  m_commandProcessor = make_shared<CommandProcessor>(this, m_luaRoot);
+  m_commandProcessor = make_shared<CommandProcessor>(this, m_luaRoot, m_assets);
   m_chatProcessor = make_shared<ChatProcessor>();
   m_chatProcessor->setCommandHandler([this](ConnectionId clientId, String const& command, String const& argumentString) { return m_commandProcessor->userCommand(clientId, command, argumentString); });
 
@@ -565,9 +564,8 @@ void UniverseServer::run() {
 
   while (!m_stop) {
     if (m_tcpState == TcpState::Yes && !tcpServer) {
-      auto& root = Root::singleton();
-      auto configuration = root.configuration();
-      auto assets = root.assets();
+      auto configuration = m_configuration;
+      auto assets = m_assets;
       HostAddressWithPort bindAddress(configuration->get("gameServerBind").toString(), configuration->get("gameServerPort").toUInt());
       unsigned maxPendingConnections = assets->json("/universe_server.config:maxPendingConnections").toInt();
 
@@ -760,7 +758,7 @@ void UniverseServer::updateShips() {
           auto oldShipLevel = jOldShipLevel.toUInt();
           if (oldShipLevel < newShipLevel) {
             for (size_t i = oldShipLevel + 1; i <= newShipLevel; ++i) {
-              auto shipStructure = WorldStructure(speciesShips[i]);
+              auto shipStructure = WorldStructure(m_assets, speciesShips[i]);
               shipWorld->setCentralStructure(shipStructure);
               newShipUpgrades.apply(shipStructure.configValue("shipUpgrades"));
             }
@@ -1746,8 +1744,8 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
 
 void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostAddress> remoteAddress) {
   auto& root = Root::singleton();
-  auto assets = root.assets();
-  auto configuration = root.configuration();
+  auto assets = m_assets;
+  auto configuration = m_configuration;
   auto versioningDatabase = root.versioningDatabase();
 
   int clientWaitLimit = assets->json("/universe_server.config:clientWaitLimit").toInt();
@@ -2298,7 +2296,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
     if (!shipChunks.empty()) {
       try {
         Logger::info("UniverseServer: Loading client ship world {}", clientShipWorldId);
-        shipWorld = make_shared<WorldServer>(shipChunks);
+        shipWorld = make_shared<WorldServer>(shipChunks, m_assets, m_configuration);
       } catch (std::exception const& e) {
         Logger::error("UniverseServer: Could not load client ship {}, resetting ship to default state! {}",
                       clientShipWorldId, outputException(e, false));
@@ -2308,11 +2306,11 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
     if (!shipWorld) {
       Logger::info("UniverseServer: Creating new client ship world {}", clientShipWorldId);
       auto& species = clientContext->shipSpecies();
-      auto shipStructure = WorldStructure(speciesShips.get(species).first());
+      auto shipStructure = WorldStructure(m_assets, speciesShips.get(species).first());
       Vec2U worldSize(DefaultShipWorldDim, DefaultShipWorldDim);
       if (auto jWorldSize = shipStructure.configValue("worldSize"))
         worldSize = jsonToVec2U(jWorldSize);
-      shipWorld = make_shared<WorldServer>(worldSize, File::ephemeralFile());
+      shipWorld = make_shared<WorldServer>(worldSize, File::ephemeralFile(), m_assets, m_configuration);
       shipStructure = shipWorld->setCentralStructure(shipStructure);
 
       ShipUpgrades currentUpgrades = clientContext->shipUpgrades();
@@ -2351,7 +2349,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
 
     shipWorld->initLua(this);
 
-    auto shipWorldThread = make_shared<WorldServerThread>(shipWorld, ClientShipWorldId(clientShipWorldId));
+    auto shipWorldThread = make_shared<WorldServerThread>(shipWorld, ClientShipWorldId(clientShipWorldId), m_assets, m_configuration);
     shipWorldThread->setPause(m_pause);
     clientContext->updateShipChunks(shipWorldThread->readChunks());
     shipWorldThread->start();
@@ -2375,7 +2373,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
     if (File::isFile(storageFile)) {
       try {
         Logger::info("UniverseServer: Loading celestial world {}", celestialWorldId);
-        worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite));
+        worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration);
       } catch (std::exception const& e) {
         Logger::error("UniverseServer: Could not load celestial world {}, removing! Cause: {}",
                       celestialWorldId, outputException(e, false));
@@ -2386,14 +2384,14 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::celestialWorldPro
     if (!worldServer) {
       Logger::info("UniverseServer: Creating celestial world {}", celestialWorldId);
       auto worldTemplate = make_shared<WorldTemplate>(m_assets, celestialWorldId, celestialDatabase);
-      worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate));
+      worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate), m_assets, m_configuration);
     }
 
     worldServer->setUniverseSettings(m_universeSettings);
     worldServer->setReferenceClock(universeClock);
     worldServer->initLua(this);
 
-    auto worldThread = make_shared<WorldServerThread>(worldServer, celestialWorldId);
+    auto worldThread = make_shared<WorldServerThread>(worldServer, celestialWorldId, m_assets, m_configuration);
     worldThread->setPause(m_pause);
     worldThread->start();
     worldThread->setUpdateAction([this](WorldServerThread* worldServer, WorldServer*) { return worldUpdated(worldServer); });
@@ -2417,11 +2415,11 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
 
     VisitableWorldParametersPtr worldParameters;
     if (worldType.equalsIgnoreCase("Terrestrial"))
-      worldParameters = generateTerrestrialWorldParameters(worldConfig.getString("planetType"), worldConfig.getString("planetSize"), worldSeed);
+      worldParameters = generateTerrestrialWorldParameters(m_assets, worldConfig.getString("planetType"), worldConfig.getString("planetSize"), worldSeed);
     else if (worldType.equalsIgnoreCase("Asteroids"))
-      worldParameters = generateAsteroidsWorldParameters(worldSeed);
+      worldParameters = generateAsteroidsWorldParameters(m_assets, worldSeed);
     else if (worldType.equalsIgnoreCase("FloatingDungeon"))
-      worldParameters = generateFloatingDungeonWorldParameters(worldConfig.getString("dungeonWorld"));
+      worldParameters = generateFloatingDungeonWorldParameters(m_assets, worldConfig.getString("dungeonWorld"));
     else
       throw UniverseServerException(strf("Unknown world type: '{}'\n", worldType));
 
@@ -2453,7 +2451,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
       if (File::isFile(storageFile)) {
         try {
           Logger::info("UniverseServer: Loading persistent unique instance world {}", instanceWorldId.instance);
-          worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite));
+          worldServer = make_shared<WorldServer>(File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration);
           worldExisted = true;
         } catch (std::exception const& e) {
           Logger::error("UniverseServer: Could not load persistent unique instance world {}, removing! Cause: {}",
@@ -2464,7 +2462,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
 
       if (!worldServer) {
         Logger::info("UniverseServer: Creating persistent unique instance world {}", instanceWorldId.instance);
-        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate));
+        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite | IOMode::Truncate), m_assets, m_configuration);
       }
     } else {
       String storageFile = tempWorldFile(instanceWorldId);
@@ -2475,7 +2473,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
           if (file->size() > 0) {
             Logger::info("UniverseServer: Loading temporary instance world {} from storage", instanceWorldId);
             try {
-              worldServer = make_shared<WorldServer>(file);
+              worldServer = make_shared<WorldServer>(file, m_assets, m_configuration);
               worldExisted = true;
             } catch (std::exception const& e) {
               Logger::error("UniverseServer: Could not load temporary instance world '{}', re-creating cause: {}",
@@ -2490,7 +2488,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
       if (!worldServer) {
         Logger::info("UniverseServer: Creating temporary instance world '{}' with expiry time {}", instanceWorldId, deleteTime);
 
-        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite));
+        worldServer = make_shared<WorldServer>(worldTemplate, File::open(storageFile, IOMode::ReadWrite), m_assets, m_configuration);
         m_tempWorldIndex.set(instanceWorldId, pair<uint64_t, uint64_t>(m_universeClock->milliseconds(), deleteTime));
       }
     }
@@ -2514,7 +2512,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
 
     worldServer->initLua(this);
 
-    auto worldThread = make_shared<WorldServerThread>(worldServer, instanceWorldId);
+    auto worldThread = make_shared<WorldServerThread>(worldServer, instanceWorldId, m_assets, m_configuration);
     worldThread->setPause(m_pause);
     worldThread->start();
     worldThread->setUpdateAction([this](WorldServerThread* worldServer, WorldServer*) { return worldUpdated(worldServer); });
@@ -2573,7 +2571,7 @@ void UniverseServer::worldDiedWithError(WorldId world) {
 
 SkyParameters UniverseServer::celestialSkyParameters(CelestialCoordinate const& coordinate) const {
   if (m_celestialDatabase->coordinateValid(coordinate))
-    return SkyParameters(coordinate, m_celestialDatabase);
+    return SkyParameters(coordinate, m_celestialDatabase, m_assets);
   return SkyParameters();
 }
 
@@ -2581,7 +2579,7 @@ void UniverseServer::startLuaScripts() {
   auto assets = m_assets;
   auto universeConfig = assets->json("/universe_server.config");
 
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = make_shared<LuaRoot>(m_assets);
   m_luaRoot->tuneAutoGarbageCollection(universeConfig.getFloat("luaGcPause"), universeConfig.getFloat("luaGcStepMultiplier"));
 
   for (auto& p : universeConfig.getObject("scriptContexts")) {

@@ -48,7 +48,7 @@ Particle::Particle() {
   flip = false;
 }
 
-Particle::Particle(Json const& config, String const& path) {
+Particle::Particle(Json const& config, String const& path, IAssetsConstPtr assets) {
   type = TypeNames.getLeft(config.getString("type", "variance"));
   if (type == Type::Variance) {
     size = 0.0f;
@@ -74,7 +74,7 @@ Particle::Particle(Json const& config, String const& path) {
       directives.clear();
     else
       directives = string.substr(pathEnd);
-    initializeAnimation();
+    initializeAnimation(std::move(assets));
   }
 
   if (config.contains("color"))
@@ -241,9 +241,9 @@ void Particle::destructionUpdate() {
   }
 }
 
-void Particle::initializeAnimation() {
+void Particle::initializeAnimation(IAssetsConstPtr assets) {
   if (!animation) {
-    animation = Animation(AssetPath::removeDirectives(string));
+    animation = Animation(AssetPath::removeDirectives(string), {}, std::move(assets));
     animation->setProcessing(directives);
   }
 }

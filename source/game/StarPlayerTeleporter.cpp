@@ -2,8 +2,6 @@
 #include "StarPlayer.hpp"
 #include "StarPlayerChatAndEmotes.hpp"
 #include "StarPlayerFactory.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarStatusController.hpp"
 #include "StarActorMovementController.hpp"
 #include "StarPlayerDeployment.hpp"
@@ -35,7 +33,7 @@ void PlayerTeleporter::teleportIn() {
   m_player->m_effectsAnimator->setState("teleport", m_teleportAnimationType + "In");
   m_teleportTimer = m_player->m_deployment->isDeployed() ? m_player->m_config->deployInTime : m_player->m_config->teleportInTime;
 
-  auto statusEffects = Root::singleton().assets()->json("/player.config:teleportInStatusEffects").toArray().transformed(jsonToEphemeralStatusEffect);
+  auto statusEffects = m_player->m_assets->json("/player.config:teleportInStatusEffects").toArray().transformed(jsonToEphemeralStatusEffect);
   m_player->m_statusController->addEphemeralEffects(statusEffects);
 }
 
@@ -118,4 +116,3 @@ void PlayerTeleporter::tick(float dt) {
 }
 
 }
-

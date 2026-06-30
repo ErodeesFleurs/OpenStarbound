@@ -8,6 +8,7 @@
 #include "StarScriptedEntity.hpp"
 #include "StarDrawable.hpp"
 #include "StarLuaComponents.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -20,18 +21,18 @@ class ItemDrop : public virtual Entity, public virtual ScriptedEntity {
 public:
   // Creates a drop at the given position and adds a hard-coded amount of
   // randomness to the drop position / velocity.
-  static ItemDropPtr createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal = false);
-  static ItemDropPtr createRandomizedDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal = false);
+  static ItemDropPtr createRandomizedDrop(ItemPtr const& item, Vec2F const& position, bool eternal = false, IAssetsConstPtr assets = {});
+  static ItemDropPtr createRandomizedDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, bool eternal = false, IAssetsConstPtr assets = {});
 
   // Create a drop and throw in the given direction with a hard-coded initial
   // throw velocity (unrelated to magnitude of direction, direction is
   // normalized first).  Initially intangible for 1 second.
-  static ItemDropPtr throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
-  static ItemDropPtr throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false);
+  static ItemDropPtr throwDrop(ItemPtr const& item, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false, IAssetsConstPtr assets = {});
+  static ItemDropPtr throwDrop(ItemDescriptor const& itemDescriptor, Vec2F const& position, Vec2F const& velocity, Vec2F const& direction, bool eternal = false, IAssetsConstPtr assets = {});
 
-  ItemDrop(ItemPtr item);
-  ItemDrop(Json const& diskStore);
-  ItemDrop(ByteArray netStore, NetCompatibilityRules rules = {});
+  ItemDrop(ItemPtr item, IAssetsConstPtr assets = {});
+  ItemDrop(Json const& diskStore, IAssetsConstPtr assets = {});
+  ItemDrop(ByteArray netStore, NetCompatibilityRules rules = {}, IAssetsConstPtr assets = {});
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {}) const;
@@ -99,7 +100,7 @@ private:
   enum class Mode { Intangible, Available, Taken, Dead };
   static EnumMap<Mode> const ModeNames;
 
-  ItemDrop();
+  ItemDrop(IAssetsConstPtr assets = {});
 
   // Set the movement controller's collision poly to match the
   // item drop drawables

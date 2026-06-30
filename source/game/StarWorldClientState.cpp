@@ -1,13 +1,10 @@
 #include "StarWorldClientState.hpp"
 #include "StarDataStreamExtra.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
-WorldClientState::WorldClientState() {
-  auto clientConfig = Root::singleton().assets()->json("/client.config");
-
+WorldClientState::WorldClientState(IAssetsConstPtr assets) {
+  auto clientConfig = assets->json("/client.config");
   m_windowMonitoringBorder = clientConfig.getInt("windowMonitoringBorder");
   m_presenceEntityMonitoringBorder = clientConfig.getInt("presenceEntityMonitoringBorder");
 

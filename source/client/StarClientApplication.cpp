@@ -289,7 +289,7 @@ void ClientApplication::applicationInit(ApplicationControllerPtr appController) 
   
   m_worldPainter = make_shared<WorldPainter>(assets, configuration, registerReloadListener);
   m_guiContext = make_shared<GuiContext>(m_mainMixer->mixer(), appController, GuiContextServices{assets, configuration, root->imageMetadataDatabase(), root->itemDatabase(), registerReloadListener});
-  m_input = make_shared<Input>();
+  m_input = make_shared<Input>(assets);
   m_voice = make_shared<Voice>(appController, VoiceServices{configuration});
 
   {

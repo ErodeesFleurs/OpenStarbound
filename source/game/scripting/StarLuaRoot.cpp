@@ -1,11 +1,11 @@
 #include "StarLuaRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
-LuaRoot::LuaRoot() {
+LuaRoot::LuaRoot(IAssetsConstPtr assets) {
   auto& root = Root::singleton();
-  m_scriptCache = make_shared<ScriptCache>();
+  m_assets = assets ? std::move(assets) : root.assets();
+  m_scriptCache = make_shared<ScriptCache>(m_assets);
 
   restart();
 
@@ -106,10 +106,8 @@ LuaContext LuaRoot::createContext(StringList const& scriptPaths) {
     }
   });
 
-  auto assets = Root::singleton().assets();
-
   for (auto const& scriptPath : scriptPaths) {
-    if (assets->assetExists(scriptPath))
+    if (m_assets->assetExists(scriptPath))
       cache->loadContextScript(newContext, scriptPath);
     else
       Logger::error("Script '{}' does not exist", scriptPath);
@@ -156,10 +154,11 @@ LuaEngine& LuaRoot::luaEngine() const {
   return *m_luaEngine;
 }
 
+LuaRoot::ScriptCache::ScriptCache(IAssetsConstPtr assets) : m_assets(std::move(assets)) {}
+
 void LuaRoot::ScriptCache::loadScript(LuaEngine& engine, String const& assetPath) {
-  auto assets = Root::singleton().assets();
   RecursiveMutexLocker locker(mutex);
-  scripts[assetPath] = engine.compile(*assets->bytes(assetPath), assetPath);
+  scripts[assetPath] = engine.compile(*m_assets->bytes(assetPath), assetPath);
 }
 
 bool LuaRoot::ScriptCache::scriptLoaded(String const& assetPath) const {

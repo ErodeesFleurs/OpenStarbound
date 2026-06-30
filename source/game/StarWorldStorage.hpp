@@ -235,7 +235,7 @@ private:
   static ByteArray writeEntitySector(EntitySectorStore const& store);
 
   static ByteArray tileSectorKey(Sector const& sector);
-  static TileSectorStore readTileSector(ByteArray const& data);
+  static TileSectorStore readTileSector(ByteArray const& data, IAssetsConstPtr assets);
   static ByteArray writeTileSector(TileSectorStore const& store);
 
   static ByteArray uniqueIndexKey(String const& uniqueId);

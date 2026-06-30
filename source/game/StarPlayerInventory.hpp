@@ -4,6 +4,7 @@
 #include "StarMultiArray.hpp"
 #include "StarNetElementSystem.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -51,10 +52,10 @@ using InventoryException = TypedException<StarException, InventoryExceptionTag>;
 class PlayerInventory : public NetElementSyncGroup {
 public:
   // Whether the given item is allowed to go in the given slot type
-  static bool itemAllowedInBag(ItemPtr const& item, String const& bagType);
+  bool itemAllowedInBag(ItemPtr const& item, String const& bagType) const;
   static bool itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot equipmentSlot);
 
-  PlayerInventory();
+  PlayerInventory(IAssetsConstPtr assets);
 
   ItemPtr itemsAt(InventorySlot const& slot) const;
 
@@ -206,7 +207,7 @@ public:
   // The given player pointer must be valid for the lifetime of this inventory
   void setPlayer(Player*);
 
-  static PlayerInventory const& blankInventory();
+  PlayerInventory const& blankInventory() const;
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   bool writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCompatibilityRules rules = {}) const override;
@@ -214,7 +215,7 @@ public:
 private:
   using CustomBarLink = pair<Maybe<InventorySlot>, Maybe<InventorySlot>>;
 
-  static bool checkInventoryFilter(ItemPtr const& items, String const& filterName);
+  bool checkInventoryFilter(ItemPtr const& items, String const& filterName) const;
 
   ItemPtr const& retrieve(InventorySlot const& slot) const;
   ItemPtr& retrieve(InventorySlot const& slot);
@@ -246,6 +247,7 @@ private:
   MultiArray<NetElementData<CustomBarLink>, 2> m_customBarNetState;
   NetElementData<SelectedActionBarLocation> m_selectedActionBarNetState;
 
+  IAssetsConstPtr m_assets;
   List<ItemPtr> m_inventoryLoadOverflow;
   unsigned m_equipmentVisibilityMask;
 

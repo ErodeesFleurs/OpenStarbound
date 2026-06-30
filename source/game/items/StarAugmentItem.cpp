@@ -9,10 +9,10 @@
 
 namespace Star {
 
-AugmentItem::AugmentItem(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {}
+AugmentItem::AugmentItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+  : Item(std::move(assets), config, directory, parameters) {}
 
-AugmentItem::AugmentItem(AugmentItem const& rhs) : AugmentItem(rhs.config(), rhs.directory(), rhs.parameters()) {}
+AugmentItem::AugmentItem(AugmentItem const& rhs) = default;
 
 ItemPtr AugmentItem::clone() const {
   return make_shared<AugmentItem>(*this);

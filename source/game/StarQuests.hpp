@@ -11,6 +11,7 @@
 #include "StarLuaComponents.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarWarping.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -35,9 +36,9 @@ extern EnumMap<QuestState> const QuestStateNames;
 
 class Quest {
 public:
-  Quest(QuestArcDescriptor const& questArc, size_t arcPos, Player* player);
+  Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player);
 
-  Quest(Json const& diskStore);
+  Quest(IAssetsConstPtr assets, Json const& diskStore);
   Json diskStore() const;
 
   QuestTemplatePtr getTemplate() const;
@@ -175,6 +176,7 @@ private:
 
   String m_trackedIndicator;
   String m_untrackedIndicator;
+  IAssetsConstPtr m_assets;
 
   String m_title;
   String m_text;

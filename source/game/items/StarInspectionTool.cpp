@@ -7,8 +7,8 @@
 
 namespace Star {
 
-InspectionTool::InspectionTool(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {
+InspectionTool::InspectionTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+  : Item(std::move(assets), config, directory, parameters) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_lightPosition = jsonToVec2F(instanceValue("lightPosition"));

@@ -37,8 +37,9 @@ EnumMap<WorldServerFidelity> const WorldServerFidelityNames{
   {WorldServerFidelity::High, "high"}
 };
 
-WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration) {
-  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration)
+  : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
+    m_spawner(m_assets) {
   m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
   m_materialDatabase = Root::singleton().materialDatabase();
   m_itemDatabase = Root::singleton().itemDatabase();
@@ -61,8 +62,9 @@ WorldServer::WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr stor
 WorldServer::WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets, IConfigurationPtr configuration)
   : WorldServer(make_shared<WorldTemplate>(assets ? assets : Root::singleton().assets(), size), storage, assets, configuration) {}
 
-WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, IConfigurationPtr configuration) {
-  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, IConfigurationPtr configuration)
+  : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
+    m_spawner(m_assets) {
   m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
   m_materialDatabase = Root::singleton().materialDatabase();
   m_itemDatabase = Root::singleton().itemDatabase();
@@ -82,8 +84,9 @@ WorldServer::WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets, ICo
   init(false);
 }
 
-WorldServer::WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets, IConfigurationPtr configuration) {
-  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+WorldServer::WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets, IConfigurationPtr configuration)
+  : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
+    m_spawner(m_assets) {
   m_configuration = configuration ? std::move(configuration) : Root::singleton().configuration();
   m_materialDatabase = Root::singleton().materialDatabase();
   m_itemDatabase = Root::singleton().itemDatabase();
@@ -289,7 +292,7 @@ bool WorldServer::addClient(ConnectionId clientId, SpawnTarget const& spawnTarge
 
   tracker.update(m_currentTime);
 
-  auto& clientInfo = m_clientInfo.add(clientId, make_shared<ClientInfo>(clientId, tracker));
+  auto& clientInfo = m_clientInfo.add(clientId, make_shared<ClientInfo>(m_assets, clientId, tracker));
   clientInfo->local = isLocal;
   clientInfo->admin = isAdmin;
   clientInfo->clientState.setNetCompatibilityRules(netRules);
@@ -977,7 +980,7 @@ bool WorldServer::replaceTile(Vec2I const& pos, TileModification const& modifica
       Vec2F dropPosition = centerOfTile(pos);
 
       for (auto const& drop : destroyBlock(placeMaterial->layer, pos, harvested, !tileDamageIsPenetrating(damage.damageType()), false))
-        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
+        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition, false, m_assets));
       
       return true;
     }
@@ -1322,7 +1325,7 @@ void WorldServer::setPlanetType(String const& planetType, String const& primaryB
       m_worldTemplate->setSkyParameters(newSkyParameters);
 
       auto referenceClock = m_sky->referenceClock();
-      m_sky = make_shared<Sky>(m_worldTemplate->skyParameters(), false);
+      m_sky = make_shared<Sky>(m_worldTemplate->skyParameters(), false, m_assets);
       m_sky->setReferenceClock(referenceClock);
 
       m_weather.setup(m_assets, m_worldTemplate->weathers(), m_worldTemplate->undergroundLevel(), m_geometry, [this](Vec2I const& pos) {
@@ -1441,7 +1444,7 @@ bool WorldServer::isFloatingDungeonWorld() const {
 
 void WorldServer::init(bool firstTime) {
   auto& root = Root::singleton();
-  auto assets = root.assets();
+  auto assets = m_assets;
   auto liquidsDatabase = root.liquidsDatabase();
 
   m_serverConfig = assets->json("/worldserver.config");
@@ -1457,11 +1460,11 @@ void WorldServer::init(bool firstTime) {
   m_tileGetterFunction = [&](Vec2I pos) -> ServerTile const& { return m_tileArray->tile(pos); };
   m_damageManager = make_shared<DamageManager>(this, ServerConnectionId);
   m_wireProcessor = make_shared<WireProcessor>(m_worldStorage);
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = make_shared<LuaRoot>(m_assets);
   m_luaRoot->luaEngine().setNullTerminated(false);
   m_luaRoot->tuneAutoGarbageCollection(m_serverConfig.getFloat("luaGcPause"), m_serverConfig.getFloat("luaGcStepMultiplier"));
 
-  m_sky = make_shared<Sky>(m_worldTemplate->skyParameters(), false);
+  m_sky = make_shared<Sky>(m_worldTemplate->skyParameters(), false, m_assets);
 
   m_lightIntensityCalculator.setParameters(assets->json("/lighting.config:intensity"));
 
@@ -2138,7 +2141,7 @@ void WorldServer::updateDamagedBlocks(float dt) {
     if (tile->foregroundDamage.dead()) {
       bool harvested = tile->foregroundDamage.harvested();
       for (auto const& drop : destroyBlock(TileLayer::Foreground, pos, harvested, !tileDamageIsPenetrating(tile->foregroundDamage.damageType())))
-        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
+        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition, false, m_assets));
 
     } else if (tile->foregroundDamage.damaged()) {
       if (isRealMaterial(tile->foreground)) {
@@ -2160,7 +2163,7 @@ void WorldServer::updateDamagedBlocks(float dt) {
     if (tile->backgroundDamage.dead()) {
       bool harvested = tile->backgroundDamage.harvested();
       for (auto const& drop : destroyBlock(TileLayer::Background, pos, harvested, !tileDamageIsPenetrating(tile->backgroundDamage.damageType())))
-        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition));
+        addEntity(ItemDrop::createRandomizedDrop(drop, dropPosition, false, m_assets));
 
     } else if (tile->backgroundDamage.damaged()) {
       if (isRealMaterial(tile->background)) {
@@ -2476,8 +2479,8 @@ bool WorldServer::isVisibleToPlayer(RectF const& region) const {
   return false;
 }
 
-WorldServer::ClientInfo::ClientInfo(ConnectionId clientId, InterpolationTracker const trackerInit)
-  : clientId(clientId), skyNetVersion(0), weatherNetVersion(0), pendingForward(false), started(false), local(false), admin(false), interpolationTracker(trackerInit) {}
+WorldServer::ClientInfo::ClientInfo(IAssetsConstPtr assets, ConnectionId clientId, InterpolationTracker const trackerInit)
+  : clientId(clientId), skyNetVersion(0), weatherNetVersion(0), clientState(std::move(assets)), pendingForward(false), started(false), local(false), admin(false), interpolationTracker(trackerInit) {}
 
 List<RectI> WorldServer::ClientInfo::monitoringRegions(EntityMapPtr const& entityMap) const {
   return clientState.monitoringRegions([entityMap](EntityId entityId) -> Maybe<RectI> {

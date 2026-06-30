@@ -30,7 +30,7 @@ EnumMap<EntityType> const EntityFactory::EntityStorageIdentifiers{
   {EntityType::Vehicle, "VehicleEntity"}
 };
 
-EntityFactory::EntityFactory() {
+EntityFactory::EntityFactory(IAssetsConstPtr assets) {
   auto& root = Root::singleton();
   m_playerFactory = root.playerFactory();
   m_monsterDatabase = root.monsterDatabase();
@@ -39,6 +39,7 @@ EntityFactory::EntityFactory() {
   m_npcDatabase = root.npcDatabase();
   m_vehicleDatabase = root.vehicleDatabase();
   m_versioningDatabase = root.versioningDatabase();
+  m_assets = assets ? std::move(assets) : root.assets();
 }
 
 EntityPtr EntityFactory::create(String const& entityName, Json const& extraParams) const {
@@ -110,13 +111,13 @@ EntityPtr EntityFactory::netLoadEntity(EntityType type, ByteArray const& netStor
   } else if (type == EntityType::Object) {
     return m_objectDatabase->netLoadObject(netStore, rules);
   } else if (type == EntityType::Plant) {
-    return make_shared<Plant>(netStore, rules);
+    return make_shared<Plant>(m_assets, netStore, rules);
   } else if (type == EntityType::PlantDrop) {
-    return make_shared<PlantDrop>(netStore, rules);
+    return make_shared<PlantDrop>(m_assets, netStore, rules);
   } else if (type == EntityType::Projectile) {
     return m_projectileDatabase->netLoadProjectile(netStore, rules);
   } else if (type == EntityType::ItemDrop) {
-    return make_shared<ItemDrop>(netStore, rules);
+    return make_shared<ItemDrop>(netStore, rules, m_assets);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->netLoadNpc(netStore, rules);
   } else if (type == EntityType::Stagehand) {
@@ -162,9 +163,9 @@ EntityPtr EntityFactory::diskLoadEntity(EntityType type, Json const& diskStore) 
   } else if (type == EntityType::Object) {
     return m_objectDatabase->diskLoadObject(diskStore);
   } else if (type == EntityType::Plant) {
-    return make_shared<Plant>(diskStore);
+    return make_shared<Plant>(m_assets, diskStore);
   } else if (type == EntityType::ItemDrop) {
-    return make_shared<ItemDrop>(diskStore);
+    return make_shared<ItemDrop>(diskStore, m_assets);
   } else if (type == EntityType::Npc) {
     return m_npcDatabase->diskLoadNpc(diskStore);
   } else if (type == EntityType::Stagehand) {

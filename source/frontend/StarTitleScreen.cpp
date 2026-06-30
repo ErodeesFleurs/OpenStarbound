@@ -57,7 +57,7 @@ TitleScreen::TitleScreen(PlayerStoragePtr playerStorage,
     Logger::info("Title world is {} @ CelestialWorld:{}", Text::stripEscapeCodes(*name), randomWorld);
 
   SkyParameters skyParameters(randomWorld, m_celestialDatabase);
-  m_skyBackdrop = make_shared<Sky>(skyParameters, true);
+  m_skyBackdrop = make_shared<Sky>(skyParameters, true, m_assets);
 
   m_musicTrack = make_shared<AmbientNoisesDescription>(m_assets->json("/interface/windowconfig/title.config:music").toObject(), "/");
   m_musicTrackManager.setAssets(m_assets);

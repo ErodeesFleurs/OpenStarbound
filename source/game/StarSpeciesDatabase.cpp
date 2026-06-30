@@ -26,7 +26,7 @@ SpeciesOption::SpeciesOption()
     undyColorDirectives(),
     hairColorDirectives() {}
 
-SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets) : m_luaRoot(make_shared<LuaRoot>()) {
+SpeciesDatabase::SpeciesDatabase(AssetsConstPtr assets) : m_luaRoot(make_shared<LuaRoot>(assets)) {
   if (!assets)
     throw StarException("SpeciesDatabase requires assets service");
 

@@ -2,7 +2,6 @@
 #include "StarLexicalCast.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarRandom.hpp"
 #include "StarPlantDatabase.hpp"
 #include "StarPlant.hpp"
@@ -24,11 +23,10 @@ FarmableObject::FarmableObject(ObjectConfigConstPtr config, Json const& paramete
   m_nextStageTime = 0.0;
   m_finalStage = false;
 
-  auto assets = Root::singleton().assets();
   m_minImmersion = configValue("minImmersion", 0).toFloat();
   m_maxImmersion = configValue("maxImmersion", 2).toFloat();
-  m_immersion = SlidingWindow(assets->json("/farming.config:immersionWindow").toFloat(),
-      assets->json("/farming.config:immersionResolution").toUInt(), (m_minImmersion + m_maxImmersion) / 2);
+  m_immersion = SlidingWindow(config->assets->json("/farming.config:immersionWindow").toFloat(),
+      config->assets->json("/farming.config:immersionResolution").toUInt(), (m_minImmersion + m_maxImmersion) / 2);
 
   m_consumeSoilMoisture = configValue("consumeSoilMoisture", true).toBool();
 }
@@ -72,7 +70,7 @@ InteractAction FarmableObject::interact(InteractRequest const&) {
 bool FarmableObject::harvest() {
   if (isMaster() && m_stages.get(m_stage).contains("harvestPool")) {
     for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(m_stages.get(m_stage).getString("harvestPool"), world()->threatLevel()))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets()));
 
     if (m_stages.get(m_stage).contains("resetToStage")) {
       m_nextStageTime = world()->epochTime();
@@ -95,9 +93,8 @@ void FarmableObject::enterStage(int newStage) {
   // attempt to consume water from the soil if needed
   if (m_consumeSoilMoisture && newStage > m_stage) {
     if (auto orientation = currentOrientation()) {
-      auto assets = Root::singleton().assets();
       auto materialDatabase = Root::singleton().materialDatabase();
-      auto wetToDryMods = assets->json("/farming.config:wetToDryMods");
+      auto wetToDryMods = config()->assets->json("/farming.config:wetToDryMods");
 
       // try to transform all anchor spaces, back out and reset stage time if
       // they're not wet

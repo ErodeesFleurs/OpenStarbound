@@ -7,7 +7,7 @@
 namespace Star {
 
 UnlockItem::UnlockItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& itemParameters)
-  : Item(config, directory, itemParameters), SwingableItem(config), m_assets(std::move(assets)) {
+  : Item(assets, config, directory, itemParameters), SwingableItem(config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("UnlockItem requires assets service");
 

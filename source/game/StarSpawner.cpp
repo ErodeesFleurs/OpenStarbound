@@ -3,16 +3,13 @@
 #include "StarRandom.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarMonster.hpp"
 #include "StarWeightedPool.hpp"
 #include "StarLogging.hpp"
 
 namespace Star {
 
-Spawner::Spawner() {
-  auto assets = Root::singleton().assets();
+Spawner::Spawner(IAssetsConstPtr assets) {
   auto config = assets->json("/spawning.config");
 
   m_spawnCellSize = config.getUInt("spawnCellSize");

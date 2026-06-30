@@ -1,8 +1,6 @@
 #include "StarBeamItem.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarImageProcessing.hpp"
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarRandom.hpp"
 #include "StarItem.hpp"
 #include "StarToolUserEntity.hpp"
@@ -10,8 +8,11 @@
 
 namespace Star {
 
-BeamItem::BeamItem(Json config) {
-  config = Root::singleton().assets()->json("/player.config:beamGunConfig").setAll(config.toObject());
+BeamItem::BeamItem(IAssetsConstPtr assets, Json config) {
+  if (!assets)
+    throw ItemException("BeamItem requires assets service");
+
+  config = assets->json("/player.config:beamGunConfig").setAll(config.toObject());
 
   m_image = config.get("image").toString();
   m_endImages = jsonToStringList(config.get("endImages"));

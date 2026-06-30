@@ -1,5 +1,3 @@
-#include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarCasting.hpp"
 #include "StarImage.hpp"
 #include "StarJsonExtra.hpp"
@@ -10,8 +8,7 @@ namespace Star {
 namespace Dungeon {
 
   void ImagePartReader::readAsset(String const& asset) {
-    auto assets = Root::singleton().assets();
-    m_images.emplace_back(asset, assets->image(asset));
+    m_images.emplace_back(asset, m_assets->image(asset));
   }
 
   Vec2U ImagePartReader::size() const {

@@ -47,7 +47,7 @@ DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameter
 // expanded out to different cases based on Actor specific things.
 struct ActorMovementParameters {
   // Load sensible defaults from a config file.
-  static ActorMovementParameters sensibleDefaults();
+  static ActorMovementParameters sensibleDefaults(IAssetsConstPtr assets = {});
 
   // Construct parameters from config with only those specified in the config
   // set, if any.
@@ -151,7 +151,7 @@ class ActorMovementController : public virtual MovementController {
 public:
   // Constructs an ActorMovementController with parameters loaded from sensible
   // defaults, and the given parameters (if any) applied on top of them.
-  explicit ActorMovementController(ActorMovementParameters const& parameters = ActorMovementParameters());
+  explicit ActorMovementController(ActorMovementParameters const& parameters = ActorMovementParameters(), IAssetsConstPtr assets = {});
 
   // Currently active parameters.
   ActorMovementParameters const& baseParameters() const;
@@ -265,6 +265,7 @@ private:
   void applyMCParameters(ActorMovementParameters const& parameters);
   void doSetAnchorState(Maybe<EntityAnchorState> anchorState);
 
+  IAssetsConstPtr m_assets;
   ActorMovementParameters m_baseParameters;
   ActorMovementModifiers m_baseModifiers;
 

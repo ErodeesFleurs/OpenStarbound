@@ -196,6 +196,7 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
       return celestialDatabase->scanRegionFullyLoaded(region);
     });
 
+  auto assets = client->assets();
   callbacks.registerCallback("centralBodyImages", [celestialDatabase](Json const& coords) -> List<pair<String, float>> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       return CelestialGraphics::drawSystemCentralBody(celestialDatabase, coordinate);
@@ -204,13 +205,13 @@ LuaCallbacks LuaBindings::makeCelestialCallbacks(UniverseClient* client) {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
       return CelestialGraphics::drawSystemPlanetaryObject(celestialDatabase, coordinate);
     });
-  callbacks.registerCallback("worldImages", [celestialDatabase](Json const& coords) -> List<pair<String, float>> {
+  callbacks.registerCallback("worldImages", [celestialDatabase, assets](Json const& coords) -> List<pair<String, float>> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return CelestialGraphics::drawWorld(celestialDatabase, coordinate);
+      return CelestialGraphics::drawWorld(celestialDatabase, coordinate, assets);
     });
-  callbacks.registerCallback("starImages", [celestialDatabase](Json const& coords, float twinkleTime) -> List<pair<String, float>> {
+  callbacks.registerCallback("starImages", [celestialDatabase, assets](Json const& coords, float twinkleTime) -> List<pair<String, float>> {
       CelestialCoordinate coordinate = CelestialCoordinate(coords);
-      return CelestialGraphics::drawSystemTwinkle(celestialDatabase, coordinate, twinkleTime);
+      return CelestialGraphics::drawSystemTwinkle(celestialDatabase, coordinate, twinkleTime, assets);
     });
 
   return callbacks;

@@ -40,7 +40,7 @@ struct Particle {
   Particle();
   // If particle is type Textured, then the image name is considered relative
   // to the given asset path
-  explicit Particle(Json const& config, String const& assetsPath = "/");
+  explicit Particle(Json const& config, String const& assetsPath = "/", IAssetsConstPtr assets = {});
 
   Json toJson() const;
 
@@ -64,7 +64,7 @@ struct Particle {
   // Internally called by update() / collide() / destruct()
   void destructionUpdate();
 
-  void initializeAnimation();
+  void initializeAnimation(IAssetsConstPtr assets = {});
 
   Type type;
 

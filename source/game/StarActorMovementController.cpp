@@ -8,6 +8,14 @@
 
 namespace Star {
 
+namespace {
+
+IAssetsConstPtr actorMovementAssets(IAssetsConstPtr assets) {
+  return assets ? std::move(assets) : Root::singleton().assets();
+}
+
+}
+
 ActorJumpProfile::ActorJumpProfile() {}
 
 ActorJumpProfile::ActorJumpProfile(Json const& config) {
@@ -80,8 +88,8 @@ DataStream& operator<<(DataStream& ds, ActorJumpProfile const& movementParameter
   return ds;
 }
 
-ActorMovementParameters ActorMovementParameters::sensibleDefaults() {
-  return ActorMovementParameters(Root::singleton().assets()->json("/default_actor_movement.config").toObject());
+ActorMovementParameters ActorMovementParameters::sensibleDefaults(IAssetsConstPtr assets) {
+  return ActorMovementParameters(actorMovementAssets(std::move(assets))->json("/default_actor_movement.config").toObject());
 }
 
 ActorMovementParameters::ActorMovementParameters(Json const& config) {
@@ -420,7 +428,10 @@ DataStream& operator<<(DataStream& ds, ActorMovementModifiers const& movementMod
   return ds;
 }
 
-ActorMovementController::ActorMovementController(ActorMovementParameters const& parameters) {
+ActorMovementController::ActorMovementController(ActorMovementParameters const& parameters, IAssetsConstPtr assets)
+  : MovementController(MovementParameters(), assets) {
+  m_assets = actorMovementAssets(std::move(assets));
+
   m_controlRotationRate = 0.0f;
   m_controlRun = false;
   m_controlCrouch = false;
@@ -461,7 +472,7 @@ void ActorMovementController::updateBaseParameters(ActorMovementParameters const
 }
 
 void ActorMovementController::resetBaseParameters(ActorMovementParameters const& parameters) {
-  m_baseParameters = ActorMovementParameters::sensibleDefaults().merge(parameters);
+  m_baseParameters = ActorMovementParameters::sensibleDefaults(m_assets).merge(parameters);
   applyMCParameters(m_baseParameters);
 }
 

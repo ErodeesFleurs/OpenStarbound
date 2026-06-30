@@ -8,8 +8,16 @@
 
 namespace Star {
 
-MovementParameters MovementParameters::sensibleDefaults() {
-  return MovementParameters(Root::singleton().assets()->json("/default_movement.config").toObject());
+namespace {
+
+IAssetsConstPtr movementAssets(IAssetsConstPtr assets) {
+  return assets ? std::move(assets) : Root::singleton().assets();
+}
+
+}
+
+MovementParameters MovementParameters::sensibleDefaults(IAssetsConstPtr assets) {
+  return MovementParameters(movementAssets(std::move(assets))->json("/default_movement.config").toObject());
 }
 
 MovementParameters::MovementParameters(Json const& config) {
@@ -167,7 +175,9 @@ DataStream& operator<<(DataStream& ds, MovementParameters const& movementParamet
   return ds;
 }
 
-MovementController::MovementController(MovementParameters const& parameters) {
+MovementController::MovementController(MovementParameters const& parameters, IAssetsConstPtr assets) {
+  m_assets = movementAssets(std::move(assets));
+
   m_resting = false;
 
   m_timeStep = GlobalTimestep;
@@ -212,7 +222,7 @@ MovementController::MovementController(MovementParameters const& parameters) {
   resetParameters(parameters);
 }
 
-MovementController::MovementController(MovementParameters const& parameters, World* world) : MovementController(parameters) {
+MovementController::MovementController(MovementParameters const& parameters, World* world, IAssetsConstPtr assets) : MovementController(parameters, std::move(assets)) {
   init(world);
 }
 
@@ -225,7 +235,7 @@ void MovementController::applyParameters(MovementParameters const& parameters) {
 }
 
 void MovementController::resetParameters(MovementParameters const& parameters) {
-  updateParameters(MovementParameters::sensibleDefaults().merge(parameters));
+  updateParameters(MovementParameters::sensibleDefaults(m_assets).merge(parameters));
 }
 
 Json MovementController::storeState() const {

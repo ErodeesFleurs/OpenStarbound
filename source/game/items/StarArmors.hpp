@@ -6,6 +6,7 @@
 #include "StarEffectSourceItem.hpp"
 #include "StarPreviewableItem.hpp"
 #include "StarSwingableItem.hpp"
+#include "StarIAssets.hpp"
 namespace Star {
 
 enum class ArmorType : uint8_t {
@@ -29,7 +30,7 @@ using BackArmorPtr = SharedPtr<BackArmor>;
 
 class ArmorItem : public Item, public EffectSourceItem, public SwingableItem {
 public:
-  ArmorItem(Json const& config, String const& directory, Json const& data);
+  ArmorItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
   virtual ~ArmorItem() = default;
 
   virtual List<PersistentStatusEffect> statusEffects() const override;
@@ -59,6 +60,9 @@ public:
 
   Maybe<String> const& techModule() const;
 
+protected:
+  IAssetsConstPtr m_assets;
+
 private:
   void refreshIconDrawables();
   void refreshStatusEffects();
@@ -80,7 +84,7 @@ private:
 
 class HeadArmor : public ArmorItem, public PreviewableItem {
 public:
-  HeadArmor(Json const& config, String const& directory, Json const& data);
+  HeadArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
   virtual ~HeadArmor() = default;
 
   virtual ItemPtr clone() const override;
@@ -100,7 +104,7 @@ private:
 
 class ChestArmor : public ArmorItem, public PreviewableItem {
 public:
-  ChestArmor(Json const& config, String const& directory, Json const& data);
+  ChestArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
   virtual ~ChestArmor() = default;
 
   virtual ItemPtr clone() const override;
@@ -129,7 +133,7 @@ private:
 
 class LegsArmor : public ArmorItem, public PreviewableItem {
 public:
-  LegsArmor(Json const& config, String const& directory, Json const& data);
+  LegsArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
   virtual ~LegsArmor() = default;
 
   virtual ItemPtr clone() const override;
@@ -148,7 +152,7 @@ private:
 
 class BackArmor : public ArmorItem, public PreviewableItem {
 public:
-  BackArmor(Json const& config, String const& directory, Json const& data);
+  BackArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
   virtual ~BackArmor() = default;
 
   virtual ItemPtr clone() const override;

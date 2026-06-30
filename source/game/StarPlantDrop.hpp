@@ -4,6 +4,7 @@
 #include "StarMovementController.hpp"
 #include "StarPlant.hpp"
 #include "StarAssetPath.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -12,10 +13,10 @@ class PlantDrop;
 
 class PlantDrop : public virtual Entity {
 public:
-  PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
+  PlantDrop(IAssetsConstPtr assets, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
       bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig,
       bool master, float random);
-  PlantDrop(ByteArray const& netStore, NetCompatibilityRules rules = {});
+  PlantDrop(IAssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
   ByteArray netStore(NetCompatibilityRules rules = {});
 
@@ -72,6 +73,7 @@ private:
   Json m_stemConfig;
   Json m_foliageConfig;
   Json m_saplingConfig;
+  IAssetsConstPtr m_assets;
   bool m_master;
   bool m_firstTick;
   NetElementBool m_spawnedDrops;

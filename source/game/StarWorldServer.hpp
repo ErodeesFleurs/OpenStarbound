@@ -94,7 +94,7 @@ public:
 
   void setUniverseSettings(UniverseSettingsPtr universeSettings);
   UniverseSettingsPtr universeSettings() const;
-  IAssetsConstPtr assets() const;
+  IAssetsConstPtr assets() const override;
 
   void setPause(bool pause);
   void setReferenceClock(ClockPtr clock);
@@ -316,7 +316,7 @@ public:
 
 private:
   struct ClientInfo {
-    ClientInfo(ConnectionId clientId, InterpolationTracker const trackerInit);
+    ClientInfo(IAssetsConstPtr assets, ConnectionId clientId, InterpolationTracker const trackerInit);
 
     List<RectI> monitoringRegions(EntityMapPtr const& entityMap) const;
 

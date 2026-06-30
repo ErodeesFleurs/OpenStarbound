@@ -188,10 +188,8 @@ DataStream& operator<<(DataStream& ds, HumanoidIdentity const& identity) {
 }
 
 Humanoid::HumanoidTiming::HumanoidTiming(Json config) {
-  if (config.type() != Json::Type::Object) {
-    auto assets = Root::singleton().assets();
-    config = assets->json("/humanoid.config:humanoidTiming");
-  }
+  if (config.type() != Json::Type::Object)
+    return;
 
   if (config.contains("stateCycle"))
     stateCycle = jsonToArrayF<STATESIZE>(config.get("stateCycle"));
@@ -202,6 +200,10 @@ Humanoid::HumanoidTiming::HumanoidTiming(Json config) {
     emoteCycle = jsonToArrayF<EmoteSize>(config.get("emoteCycle"));
   if (config.contains("emoteFrames"))
     emoteFrames = jsonToArrayU<EmoteSize>(config.get("emoteFrames"));
+}
+
+Humanoid::HumanoidTiming Humanoid::HumanoidTiming::sensibleDefaults(IAssetsConstPtr assets) {
+  return HumanoidTiming((assets ? std::move(assets) : Root::singleton().assets())->json("/humanoid.config:humanoidTiming"));
 }
 
 bool Humanoid::HumanoidTiming::cyclicState(State state) {
@@ -269,7 +271,8 @@ bool& Humanoid::globalHeadRotation() {
   return *s_headRotation;
 };
 
-Humanoid::Humanoid() {
+Humanoid::Humanoid(IAssetsConstPtr assets) {
+  m_assets = assets ? std::move(assets) : Root::singleton().assets();
   m_fashion = std::make_shared<Fashion>();
 
   m_twoHanded = false;
@@ -290,13 +293,13 @@ Humanoid::Humanoid() {
   m_animationTimer = m_emoteAnimationTimer = m_danceTimer = 0.0f;
 }
 
-Humanoid::Humanoid(Json const& config) : Humanoid() {
+Humanoid::Humanoid(Json const& config, IAssetsConstPtr assets) : Humanoid(std::move(assets)) {
   m_baseConfig = config;
   loadConfig(JsonObject());
   loadAnimation();
 }
 
-Humanoid::Humanoid(HumanoidIdentity const& identity, JsonObject parameters, Json config) : Humanoid() {
+Humanoid::Humanoid(HumanoidIdentity const& identity, JsonObject parameters, Json config, IAssetsConstPtr assets) : Humanoid(std::move(assets)) {
   m_identity = identity;
   m_baseConfig = (Root::singleton().speciesDatabase()->humanoidConfig(identity, parameters, config));
   loadConfig(JsonObject());
@@ -445,7 +448,7 @@ void Humanoid::loadAnimation() {
   m_portraitAnimationStates.clear();
 
   String animationPath = ("/humanoid/" + m_identity.imagePath.value(m_identity.species) + "/");
-  m_networkedAnimator = m_useAnimation ? NetworkedAnimator(*animationConfig, animationPath) : NetworkedAnimator();
+  m_networkedAnimator = m_useAnimation ? NetworkedAnimator(*animationConfig, animationPath, m_assets) : NetworkedAnimator(m_assets);
 
   if (m_useAnimation) {
     m_frontItemPart = m_baseConfig.getString("frontHandItemPart", "frontHandItem");
@@ -1697,9 +1700,9 @@ List<Drawable> Humanoid::renderSkull() const {
       Root::singleton().speciesDatabase()->species(m_identity.species)->skull(), 1.0f, true, Vec2F())};
 }
 
-HumanoidPtr Humanoid::makeDummy(Gender) {
-  auto assets = Root::singleton().assets();
-  HumanoidPtr humanoid = make_shared<Humanoid>(assets->json("/humanoid.config"));
+HumanoidPtr Humanoid::makeDummy(Gender, IAssetsConstPtr assets) {
+  assets = assets ? std::move(assets) : Root::singleton().assets();
+  HumanoidPtr humanoid = make_shared<Humanoid>(assets->json("/humanoid.config"), assets);
 
   humanoid->m_headFrameset = assets->json("/humanoid/any/dummy.config:head").toString();
   humanoid->m_bodyFrameset = assets->json("/humanoid/any/dummy.config:body").toString();
@@ -2309,10 +2312,11 @@ Json Humanoid::humanoidConfig(bool withOverrides) {
   return m_baseConfig;
 }
 
-NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config) {
+NetHumanoid::NetHumanoid(HumanoidIdentity identity, JsonObject parameters, Json config, IAssetsConstPtr assets) {
+  m_assets = assets ? std::move(assets) : Root::singleton().assets();
   m_config = config;
   m_humanoidParameters.reset(parameters);
-  m_humanoid = make_shared<Humanoid>(identity, parameters, config);
+  m_humanoid = make_shared<Humanoid>(identity, parameters, config, m_assets);
   setupNetElements();
 }
 
@@ -2334,7 +2338,7 @@ void NetHumanoid::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   ds.read(parameters);
   m_humanoidParameters.reset(parameters);
   ds.read(m_config);
-  m_humanoid = make_shared<Humanoid>(identity, parameters, m_config);
+  m_humanoid = make_shared<Humanoid>(identity, parameters, m_config, m_assets);
   setupNetElements();
   NetElementSyncGroup::netLoad(ds, rules);
 }

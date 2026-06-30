@@ -26,16 +26,16 @@ WorldTemplate::WorldTemplate(IAssetsConstPtr assets, CelestialCoordinate const& 
   if (!m_worldParameters)
     throw StarException("Cannot create WorldTemplate from non-visitable world");
 
-  m_skyParameters = SkyParameters(celestialCoordinate, celestialDatabase);
+  m_skyParameters = SkyParameters(celestialCoordinate, celestialDatabase, m_assets);
   m_seed = m_celestialParameters->seed();
   m_geometry = WorldGeometry(m_worldParameters->worldSize);
 
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(*terrestrialParameters, m_seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(m_assets, *terrestrialParameters, m_seed));
   else if (auto asteroidsParameters = as<AsteroidsWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(*asteroidsParameters, m_seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(m_assets, *asteroidsParameters, m_seed));
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(*floatingDungeonParameters, m_seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(m_assets, *floatingDungeonParameters, m_seed));
 
   determineWorldName();
 }
@@ -51,11 +51,11 @@ WorldTemplate::WorldTemplate(IAssetsConstPtr assets, VisitableWorldParametersCon
   m_geometry = WorldGeometry(m_worldParameters->worldSize);
 
   if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(*terrestrialParameters, seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildTerrestrialLayout(m_assets, *terrestrialParameters, seed));
   else if (auto asteroidsParameters = as<AsteroidsWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(*asteroidsParameters, seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildAsteroidsLayout(m_assets, *asteroidsParameters, seed));
   else if (auto floatingDungeonParameters = as<FloatingDungeonWorldParameters>(m_worldParameters))
-    m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(*floatingDungeonParameters, m_seed));
+    m_layout = make_shared<WorldLayout>(WorldLayout::buildFloatingDungeonLayout(m_assets, *floatingDungeonParameters, m_seed));
 
   determineWorldName();
 }

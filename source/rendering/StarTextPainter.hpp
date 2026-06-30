@@ -2,6 +2,8 @@
 
 #include "StarFontTextureGroup.hpp"
 #include "StarAnchorTypes.hpp"
+#include "StarAssets.hpp"
+#include "StarListener.hpp"
 #include "StarRoot.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
@@ -46,7 +48,7 @@ struct TextPositioning {
 // kerning*.
 class TextPainter {
 public:
-  TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup);
+  TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup, AssetsConstPtr assets = {}, function<void(ListenerWeakPtr)> registerReloadListener = {});
 
   RectF renderText(StringView s, TextPositioning const& position);
   RectF renderLine(StringView s, TextPositioning const& position);
@@ -88,9 +90,11 @@ private:
 
   void renderPrimitives();
   void renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize, float scale, Vec4B color, Directives const* processingDirectives = nullptr);
-  static FontPtr loadFont(String const& fontPath, Maybe<String> fontName = {});
+  FontPtr loadFont(String const& fontPath, Maybe<String> fontName = {});
 
   RendererPtr m_renderer;
+  AssetsConstPtr m_assets;
+  function<void(ListenerWeakPtr)> m_registerReloadListener;
   List<RenderPrimitive> m_shadowPrimitives;
   List<RenderPrimitive> m_backPrimitives;
   List<RenderPrimitive> m_frontPrimitives;

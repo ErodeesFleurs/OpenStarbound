@@ -1,6 +1,5 @@
 #include "StarContainerObject.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarLexicalCast.hpp"
 #include "StarTreasure.hpp"
 #include "StarItemDatabase.hpp"
@@ -69,7 +68,7 @@ void ContainerObject::update(float dt, uint64_t currentStep) {
 
   if (isMaster()) {
     for (auto const& drop : take(m_lostItems))
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position(), false, world()->assets()));
 
     if (m_crafting.get())
       tickCrafting(dt);
@@ -109,7 +108,7 @@ void ContainerObject::update(float dt, uint64_t currentStep) {
 }
 
 void ContainerObject::render(RenderCallback* renderCallback) {
-  auto assets = Root::singleton().assets();
+  auto assets = config()->assets;
 
   if (m_animationFrameCooldown <= 0) {
     if (m_opened.get() != m_currentState) {
@@ -149,7 +148,7 @@ void ContainerObject::destroy(RenderCallback* renderCallback) {
   Object::destroy(renderCallback);
   if (isMaster()) {
     for (auto const& drop : m_items->items())
-      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(drop, position(), false, world()->assets()));
   }
 }
 
@@ -204,7 +203,7 @@ InteractAction ContainerObject::interact(InteractRequest const&) {
 }
 
 Json ContainerObject::containerGuiConfig() const {
-  return Root::singleton().assets()->json(configValue("uiConfig").toString().replace("<slots>", toString(m_items->size())));
+  return config()->assets->json(configValue("uiConfig").toString().replace("<slots>", toString(m_items->size())));
 }
 
 String ContainerObject::containerDescription() const {
@@ -212,7 +211,7 @@ String ContainerObject::containerDescription() const {
 }
 
 String ContainerObject::containerSubTitle() const {
-  Json categories = Root::singleton().assets()->json("/items/categories.config:labels");
+  Json categories = config()->assets->json("/items/categories.config:labels");
   return categories.getString(Object::category(), Object::category());
 }
 
@@ -488,7 +487,7 @@ void ContainerObject::tickCrafting(float dt) {
     ItemPtr overflow =
         m_items->putItems(m_items->size() - 1, Root::singleton().itemDatabase()->item(m_goalRecipe.output));
     if (overflow)
-      world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(overflow, position(), false, world()->assets()));
     itemsUpdated();
   }
 }

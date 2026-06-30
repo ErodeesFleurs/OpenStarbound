@@ -19,7 +19,7 @@ const String CollisionOverridePropertyKey = "building.collisionOverride";
 const String BlockSwapPropertyKey = "building.blockSwap";
 
 MaterialItem::MaterialItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& settings)
-  : Item(config, directory, settings), FireableItem(config), BeamItem(config), m_assets(std::move(assets)) {
+  : Item(assets, config, directory, settings), FireableItem(config), BeamItem(assets, config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("MaterialItem requires assets service");
 

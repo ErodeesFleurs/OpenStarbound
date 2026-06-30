@@ -175,6 +175,7 @@ protected:
       RandomSource& random, List<Vec2I> const& constellationCandidates) const;
 
   GenerationInformation m_generationInformation;
+  IAssetsConstPtr m_assets;
 
   mutable RecursiveMutex m_mutex;
 

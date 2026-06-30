@@ -2,6 +2,7 @@
 
 #include "StarDrawable.hpp"
 #include "StarBiMap.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -11,7 +12,7 @@ using AnimationPtr = SharedPtr<Animation>;
 class Animation {
 public:
   // config can be either a path to a config or a literal config.
-  Animation(Json config = {}, String const& directory = {});
+  Animation(Json config = {}, String const& directory = {}, IAssetsConstPtr assets = {});
 
   void setAngle(float angle);
 

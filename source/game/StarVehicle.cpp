@@ -7,14 +7,13 @@
 #include "StarEntityRendering.hpp"
 #include "StarMovementControllerLuaBindings.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
-#include "StarAssets.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
 #include "StarPlayer.hpp"
 
 namespace Star {
 
-Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
-  : m_baseConfig(std::move(baseConfig)), m_path(std::move(path)), m_dynamicConfig(std::move(dynamicConfig)) {
+Vehicle::Vehicle(IAssetsConstPtr assets, Json baseConfig, String path, Json dynamicConfig)
+  : m_baseConfig(std::move(baseConfig)), m_path(std::move(path)), m_dynamicConfig(std::move(dynamicConfig)), m_movementController(MovementParameters(), assets), m_scriptedAnimator(assets) {
 
   m_typeName = m_baseConfig.getString("name");
 
@@ -76,7 +75,6 @@ Vehicle::Vehicle(Json baseConfig, String path, Json dynamicConfig)
     damageSourceConfig.enabled.set(pair.second.getBool("enabled", true));
   }
 
-  auto assets = Root::singleton().assets();
   auto animationConfig = assets->fetchJson(configValue("animation"), m_path);
   if (auto customConfig = configValue("animationCustom"))
     animationConfig = jsonMerge(animationConfig, customConfig);

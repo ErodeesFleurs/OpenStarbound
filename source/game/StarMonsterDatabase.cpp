@@ -213,18 +213,18 @@ MonsterPtr MonsterDatabase::createMonster(
     monsterVariant.parameters = jsonMerge(monsterVariant.parameters, monsterVariant.uniqueParameters);
     readCommonParameters(monsterVariant);
   }
-  return make_shared<Monster>(monsterVariant, level);
+  return make_shared<Monster>(m_assets, monsterVariant, level);
 }
 
 MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
   MonsterPtr monster;
   try {
-    monster = make_shared<Monster>(diskStore);
+    monster = make_shared<Monster>(m_assets, diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
-        monster = make_shared<Monster>(store);
+        monster = make_shared<Monster>(m_assets, store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -239,7 +239,7 @@ MonsterPtr MonsterDatabase::diskLoadMonster(Json const& diskStore) const {
 }
 
 MonsterPtr MonsterDatabase::netLoadMonster(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Monster>(readMonsterVariant(netStore, rules));
+  return make_shared<Monster>(m_assets, readMonsterVariant(netStore, rules));
 }
 
 List<Drawable> MonsterDatabase::monsterPortrait(MonsterVariant const& variant) const {

@@ -18,7 +18,6 @@
 #include "StarEncode.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarItemDrop.hpp"
-#include "StarAssets.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarTime.hpp"
 #include "StarArmors.hpp"
@@ -32,9 +31,11 @@
 
 namespace Star {
 
-Npc::Npc(NpcVariant const& npcVariant) {
+Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant)
+  : m_scriptedAnimator(assets) {
 
-  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json()));
+  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(npcVariant.humanoidIdentity, npcVariant.humanoidParameters, npcVariant.uniqueHumanoidConfig ? npcVariant.humanoidConfig : Json(), m_assets));
   m_disableWornArmor.set(npcVariant.disableWornArmor);
 
   m_emoteState = HumanoidEmote::Idle;
@@ -43,13 +44,11 @@ Npc::Npc(NpcVariant const& npcVariant) {
   m_statusText.set({});
   m_displayNametag.set(false);
 
-  auto assets = Root::singleton().assets();
-
-  m_emoteCooldownTimer = GameTimer(assets->json("/npcs/npc.config:emoteCooldown").toFloat());
+  m_emoteCooldownTimer = GameTimer(m_assets->json("/npcs/npc.config:emoteCooldown").toFloat());
   m_danceCooldownTimer = GameTimer(0.0f);
-  m_blinkInterval = jsonToVec2F(assets->json("/npcs/npc.config:blinkInterval"));
+  m_blinkInterval = jsonToVec2F(m_assets->json("/npcs/npc.config:blinkInterval"));
 
-  m_questIndicatorOffset = jsonToVec2F(assets->json("/quests/quests.config:defaultIndicatorOffset"));
+  m_questIndicatorOffset = jsonToVec2F(m_assets->json("/quests/quests.config:defaultIndicatorOffset"));
 
   if (npcVariant.overrides)
     m_clientEntityMode = ClientEntityModeNames.getLeft(npcVariant.overrides.getString("clientEntityMode", "ClientSlaveOnly"));
@@ -69,7 +68,7 @@ Npc::Npc(NpcVariant const& npcVariant) {
   auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), m_npcVariant.movementParameters));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"npc"});
-  m_movementController = make_shared<ActorMovementController>(movementParameters);
+  m_movementController = make_shared<ActorMovementController>(movementParameters, m_assets);
   m_identityUpdated = false;
   m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
 
@@ -81,17 +80,17 @@ Npc::Npc(NpcVariant const& npcVariant) {
   if (!m_statusController->statusProperty("effectDirectives"))
     m_statusController->setStatusProperty("effectDirectives", speciesDefinition->effectDirectives());
 
-  m_songbook = make_shared<Songbook>(assets, species());
+  m_songbook = make_shared<Songbook>(m_assets, species());
 
   m_effectEmitter = make_shared<EffectEmitter>();
 
   m_hitDamageNotificationLimiter = 0;
-  m_hitDamageNotificationLimit = assets->json("/npcs/npc.config:hitDamageNotificationLimit").toInt();
+  m_hitDamageNotificationLimit = m_assets->json("/npcs/npc.config:hitDamageNotificationLimit").toInt();
 
   m_blinkCooldownTimer = GameTimer();
 
   m_armor = make_shared<ArmorWearer>();
-  m_tools = make_shared<ToolUser>(assets, this);
+  m_tools = make_shared<ToolUser>(m_assets, this);
 
   m_aggressive.set(false);
 
@@ -101,7 +100,7 @@ Npc::Npc(NpcVariant const& npcVariant) {
   setupNetStates();
 }
 
-Npc::Npc(NpcVariant const& npcVariant, Json const& diskStore) : Npc(npcVariant) {
+Npc::Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, Json const& diskStore) : Npc(assets, npcVariant) {
   m_movementController->loadState(diskStore.get("movementController"));
   m_statusController->diskLoad(diskStore.get("statusController"));
   auto aimPosition = jsonToVec2F(diskStore.get("aimPosition"));
@@ -385,7 +384,7 @@ void Npc::destroy(RenderCallback* renderCallback) {
     auto treasureDatabase = Root::singleton().treasureDatabase();
     for (auto const& treasureItem :
         treasureDatabase->createTreasure(staticRandomFrom(m_dropPools.get(), m_npcVariant.seed), m_npcVariant.level))
-      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+      world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets()));
   }
 
   if (renderCallback && m_deathParticleBurst.get())
@@ -1449,7 +1448,7 @@ void Npc::refreshHumanoidParameters() {
     m_refreshedHumanoidParameters.trigger();
     m_scriptedAnimationParameters.clear();
     m_netHumanoid.clearNetElements();
-    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.humanoidParameters, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json()));
+    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_npcVariant.humanoidIdentity, m_npcVariant.humanoidParameters, m_npcVariant.uniqueHumanoidConfig ? m_npcVariant.humanoidConfig : Json(), m_assets));
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
   }else {
     m_npcVariant.humanoidParameters = m_netHumanoid.netElements().last()->humanoidParameters();

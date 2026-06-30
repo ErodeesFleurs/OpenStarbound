@@ -407,7 +407,7 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
   SkyParameters skyParameters = systemConfig().emptySkyParameters;
 
   if (auto coordinate = location.maybe<CelestialCoordinate>()) {
-    return SkyParameters(*coordinate, m_celestialDatabase);
+    return SkyParameters(*coordinate, m_celestialDatabase, assets());
   } else if (auto position = location.maybe<Vec2F>()) {
     for (auto planet : planets()) {
       if (abs(position->magnitude() - planetPosition(planet).magnitude()) > systemConfig().asteroidBeamDistance)
@@ -415,7 +415,7 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
 
       if (auto parameters = m_celestialDatabase->parameters(planet)) {
         if (auto asteroidsParameters = as<AsteroidsWorldParameters>(parameters->visitableParameters())) {
-          return SkyParameters(planet, m_celestialDatabase);
+          return SkyParameters(planet, m_celestialDatabase, assets());
         }
       }
     }
@@ -451,11 +451,11 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
               staticRandomFloat(seed, world.seed(), "y")
             };
             CelestialParameters parent = i > 0 ? worlds[0] : CelestialParameters();
-            skyParameters.nearbyMoons.append({CelestialGraphics::drawWorld(world, parent), pos});
+            skyParameters.nearbyMoons.append({CelestialGraphics::drawWorld(world, parent, assets()), pos});
           }
         } else {
           // put orbited horizon behind existing horizon images
-          skyParameters.horizonImages.insertAllAt(0, CelestialGraphics::worldHorizonImages(*parameters));
+          skyParameters.horizonImages.insertAllAt(0, CelestialGraphics::worldHorizonImages(*parameters, assets()));
         }
       }
     }

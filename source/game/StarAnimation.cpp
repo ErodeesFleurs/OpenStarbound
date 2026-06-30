@@ -8,7 +8,7 @@
 
 namespace Star {
 
-Animation::Animation(Json config, String const& directory) {
+Animation::Animation(Json config, String const& directory, IAssetsConstPtr assets) {
   m_directory = directory;
   if (m_directory.empty()) {
     if (config.isType(Json::Type::String))
@@ -19,7 +19,7 @@ Animation::Animation(Json config, String const& directory) {
   if (config.isNull())
     config = JsonObject();
 
-  config = Root::singleton().assets()->fetchJson(config);
+  config = (assets ? std::move(assets) : Root::singleton().assets())->fetchJson(config);
 
   m_mode = AnimationModeNames.getLeft(config.getString("mode", "endAndDisappear"));
   m_base = config.getString("frames", "");

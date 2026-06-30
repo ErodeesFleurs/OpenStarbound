@@ -8,14 +8,14 @@
 
 namespace Star {
 
-VehicleDatabase::VehicleDatabase(AssetsConstPtr assets) : m_rebuilder(make_shared<Rebuilder>(assets, "vehicle")) {
-  if (!assets)
+VehicleDatabase::VehicleDatabase(AssetsConstPtr assets) : m_assets(std::move(assets)), m_rebuilder(make_shared<Rebuilder>(m_assets, "vehicle")) {
+  if (!m_assets)
     throw VehicleDatabaseException("VehicleDatabase requires assets service");
-  auto& files = assets->scanExtension("vehicle");
-  assets->queueJsons(files);
+  auto& files = m_assets->scanExtension("vehicle");
+  m_assets->queueJsons(files);
   for (String file : files) {
     try {
-      auto config = assets->json(file);
+      auto config = m_assets->json(file);
       String name = config.getString("name");
 
       if (m_vehicles.contains(name))
@@ -32,7 +32,7 @@ VehiclePtr VehicleDatabase::create(String const& vehicleName, Json const& extraC
   auto configPair = m_vehicles.ptr(vehicleName);
   if (!configPair)
     throw VehicleDatabaseException::format("No such vehicle named '{}'", vehicleName);
-  return make_shared<Vehicle>(configPair->second, configPair->first, extraConfig);
+  return make_shared<Vehicle>(m_assets, configPair->second, configPair->first, extraConfig);
 }
 
 ByteArray VehicleDatabase::netStore(VehiclePtr const& vehicle, NetCompatibilityRules rules) const {

@@ -6,6 +6,7 @@
 #include "StarPlantDatabase.hpp"
 #include "StarInspectableEntity.hpp"
 #include "StarAssetPath.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -54,11 +55,11 @@ public:
     float zLevel;
   };
 
-  Plant(TreeVariant const& config, uint64_t seed);
-  Plant(GrassVariant const& config, uint64_t seed);
-  Plant(BushVariant const& config, uint64_t seed);
-  Plant(Json const& diskStore);
-  Plant(ByteArray const& netStore, NetCompatibilityRules rules = {});
+  Plant(IAssetsConstPtr assets, TreeVariant const& config, uint64_t seed);
+  Plant(IAssetsConstPtr assets, GrassVariant const& config, uint64_t seed);
+  Plant(IAssetsConstPtr assets, BushVariant const& config, uint64_t seed);
+  Plant(IAssetsConstPtr assets, Json const& diskStore);
+  Plant(IAssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules = {});
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {}) const;
@@ -111,7 +112,7 @@ public:
   RectF interactiveBoundBox() const override;
 
 private:
-  Plant();
+  Plant(IAssetsConstPtr assets);
 
   void breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition);
   Vec2I baseDamagePosition(List<Vec2I> const& positions) const;
@@ -163,6 +164,7 @@ private:
 
   TileDamageParameters m_tileDamageParameters;
   EntityTileDamageStatus m_tileDamageStatus;
+  IAssetsConstPtr m_assets;
   float m_tileDamageX;
   float m_tileDamageY;
   bool m_tileDamageEventTrigger;

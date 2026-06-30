@@ -15,7 +15,7 @@ using ParticleDatabaseConstPtr = SharedPtr<ParticleDatabase const>;
 
 class ParticleConfig {
 public:
-  ParticleConfig(Json const& config);
+  ParticleConfig(Json const& config, AssetsConstPtr assets);
 
   String const& kind();
   Particle instance();
@@ -42,6 +42,7 @@ public:
   Particle particle(Json const& kindOrConfig, String const& relativePath = "") const;
 
 private:
+  AssetsConstPtr m_assets;
   StringMap<ParticleConfigPtr> m_configs;
 };
 

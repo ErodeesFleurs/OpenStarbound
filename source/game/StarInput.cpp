@@ -1,5 +1,4 @@
 #include "StarInput.hpp"
-#include "StarAssets.hpp"
 #include "StarRoot.hpp"
 #include "StarJsonExtra.hpp"
 
@@ -366,9 +365,12 @@ Input& Input::singleton() {
     return *s_singleton;
 }
 
-Input::Input() {
+Input::Input(AssetsConstPtr assets)
+  : m_assets(std::move(assets)) {
   if (s_singleton)
     throw InputException("Singleton Input has been constructed twice");
+  if (!m_assets)
+    throw InputException("Input requires assets service");
 
   s_singleton = this;
 
@@ -551,10 +553,8 @@ void Input::rebuildMappings() {
 void Input::reload() {;
   m_bindCategories.clear();
 
-  auto assets = Root::singleton().assets();
-
-  for (auto& bindPath : assets->scanExtension("binds")) {
-    for (auto const& pair : assets->json(bindPath).iterateObject()) {
+  for (auto& bindPath : m_assets->scanExtension("binds")) {
+    for (auto const& pair : m_assets->json(bindPath).iterateObject()) {
       String const& categoryId = pair.first;
       Json const& categoryConfig = pair.second;
       if (!categoryConfig.isType(Json::Type::Object))

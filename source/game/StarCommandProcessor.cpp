@@ -18,7 +18,6 @@
 #include "StarStagehandDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
 #include "StarChatProcessor.hpp"
-#include "StarAssets.hpp"
 #include "StarWorldLuaBindings.hpp"
 #include "StarUniverseServerLuaBindings.hpp"
 #include "StarString.hpp"
@@ -27,12 +26,11 @@ constexpr float MaxWarpSearchRadius = 1024;
 
 namespace Star {
 
-CommandProcessor::CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot)
-  : m_universe(universe) {
-  auto assets = Root::singleton().assets();
+CommandProcessor::CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot, IAssetsConstPtr assets)
+  : m_universe(universe), m_assets(std::move(assets)) {
   m_scriptComponent.addCallbacks("universe", LuaBindings::makeUniverseServerCallbacks(m_universe));
   m_scriptComponent.addCallbacks("CommandProcessor", makeCommandCallbacks());
-  m_scriptComponent.setScripts(jsonToStringList(assets->json("/universe_server.config:commandProcessorScripts")));
+  m_scriptComponent.setScripts(jsonToStringList(m_assets->json("/universe_server.config:commandProcessorScripts")));
   luaRoot->luaEngine().setNullTerminated(false);
   m_scriptComponent.setLuaRoot(luaRoot);
   m_scriptComponent.init();
@@ -53,12 +51,11 @@ String CommandProcessor::userCommand(ConnectionId connectionId, String const& co
 String CommandProcessor::help(ConnectionId connectionId, String const& argumentString) {
   auto arguments = m_parser.tokenizeToStringList(argumentString);
 
-  auto assets = Root::singleton().assets();
-  auto basicCommands = assets->json("/help.config:basicCommands");
-  auto openSbCommands = assets->json("/help.config:openSbCommands");
-  auto adminCommands = assets->json("/help.config:adminCommands");
-  auto debugCommands = assets->json("/help.config:debugCommands");
-  auto openSbDebugCommands = assets->json("/help.config:openSbDebugCommands");
+  auto basicCommands = m_assets->json("/help.config:basicCommands");
+  auto openSbCommands = m_assets->json("/help.config:openSbCommands");
+  auto adminCommands = m_assets->json("/help.config:adminCommands");
+  auto debugCommands = m_assets->json("/help.config:debugCommands");
+  auto openSbDebugCommands = m_assets->json("/help.config:openSbDebugCommands");
 
   if (arguments.size()) {
     if (arguments.size() >= 1) {
@@ -75,23 +72,23 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
       return "/" + commandList.join(", /");
     };
 
-  String basicHelpFormat = assets->json("/help.config:basicHelpText").toString();
+  String basicHelpFormat = m_assets->json("/help.config:basicHelpText").toString();
   res.append(strf(basicHelpFormat.utf8Ptr(), commandDescriptions(basicCommands)));
 
-  String openSbHelpFormat = assets->json("/help.config:openSbHelpText").toString();
+  String openSbHelpFormat = m_assets->json("/help.config:openSbHelpText").toString();
   res.append("\n");
   res.append(strf(openSbHelpFormat.utf8Ptr(), commandDescriptions(openSbCommands)));
 
   if (!adminCheck(connectionId, "")) [[unlikely]] {
-    String adminHelpFormat = assets->json("/help.config:adminHelpText").toString();
+    String adminHelpFormat = m_assets->json("/help.config:adminHelpText").toString();
     res.append("\n");
     res.append(strf(adminHelpFormat.utf8Ptr(), commandDescriptions(adminCommands)));
 
-    String debugHelpFormat = assets->json("/help.config:debugHelpText").toString();
+    String debugHelpFormat = m_assets->json("/help.config:debugHelpText").toString();
     res.append("\n");
     res.append(strf(debugHelpFormat.utf8Ptr(), commandDescriptions(debugCommands)));
 
-    String openSbDebugHelpFormat = assets->json("/help.config:openSbDebugHelpText").toString();
+    String openSbDebugHelpFormat = m_assets->json("/help.config:openSbDebugHelpText").toString();
     res.append("\n");
     res.append(strf(openSbDebugHelpFormat.utf8Ptr(), commandDescriptions(openSbDebugCommands)));
   }
@@ -376,7 +373,7 @@ String CommandProcessor::spawnItem(ConnectionId connectionId, String const& argu
 
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
         auto itemDatabase = Root::singleton().itemDatabase();
-        world->addEntity(ItemDrop::createRandomizedDrop(itemDatabase->item(ItemDescriptor(kind, amount, parameters), level, seed, true), player->aimPosition()));
+        world->addEntity(ItemDrop::createRandomizedDrop(itemDatabase->item(ItemDescriptor(kind, amount, parameters), level, seed, true), player->aimPosition(), false, world->assets()));
       });
 
     return done ? "" : "Invalid client state";
@@ -414,7 +411,7 @@ String CommandProcessor::spawnTreasure(ConnectionId connectionId, String const& 
     bool done = m_universe->executeForClient(connectionId, [&](WorldServer* world, PlayerPtr const& player) {
         auto treasureDatabase = Root::singleton().treasureDatabase();
         for (auto const& treasureItem : treasureDatabase->createTreasure(treasurePool, level, Random::randu64()))
-          world->addEntity(ItemDrop::createRandomizedDrop(treasureItem, player->aimPosition()));
+          world->addEntity(ItemDrop::createRandomizedDrop(treasureItem, player->aimPosition(), false, world->assets()));
       });
 
     return done ? "" : "Invalid client state";
@@ -719,7 +716,6 @@ String CommandProcessor::list(ConnectionId connectionId, String const&) {
 
   StringList res;
 
-  auto assets = Root::singleton().assets();
   for (auto cid : m_universe->clientIds())
     res.append(strf("${} : {} : $${}", cid, m_universe->clientNick(cid), m_universe->uuidForClient(cid)->hex()));
 

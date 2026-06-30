@@ -23,6 +23,7 @@
 #include "StarToolUser.hpp"
 #include "StarPhysicsEntity.hpp"
 #include "StarLuaAnimationComponent.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -47,8 +48,8 @@ class Npc
     public virtual EmoteEntity {
 public:
   Npc(ByteArray const& netStore, NetCompatibilityRules rules = {});
-  Npc(NpcVariant const& npcVariant);
-  Npc(NpcVariant const& npcVariant, Json const& initialState);
+  Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant);
+  Npc(IAssetsConstPtr assets, NpcVariant const& npcVariant, Json const& initialState);
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});
@@ -246,6 +247,7 @@ private:
   void refreshHumanoidParameters();
 
   NetElementDynamicGroup<NetHumanoid> m_netHumanoid;
+  IAssetsConstPtr m_assets;
   LuaAnimationComponent<LuaUpdatableComponent<LuaWorldComponent<LuaBaseComponent>>> m_scriptedAnimator;
   NetElementHashMap<String, Json> m_scriptedAnimationParameters;
   NetworkedAnimator::DynamicTarget m_humanoidDynamicTarget;

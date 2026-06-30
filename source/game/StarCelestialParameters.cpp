@@ -11,17 +11,19 @@ namespace Star {
 
 CelestialParameters::CelestialParameters() : m_seed(0) {}
 
-CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters)
+CelestialParameters::CelestialParameters(CelestialCoordinate coordinate, uint64_t seed, String name, Json parameters, IAssetsConstPtr assets)
   : m_coordinate(std::move(coordinate)), m_seed(seed), m_name(std::move(name)), m_parameters(std::move(parameters)) {
+  assets = assets ? std::move(assets) : Root::singleton().assets();
+
   if (auto worldType = getParameter("worldType").optString()) {
     if (worldType->equalsIgnoreCase("Terrestrial")) {
       auto worldSize = getParameter("worldSize").toString();
       auto type = randomizeParameterList("terrestrialType").toString();
-      m_visitableParameters = generateTerrestrialWorldParameters(type, worldSize, m_seed);
+      m_visitableParameters = generateTerrestrialWorldParameters(assets, type, worldSize, m_seed);
     } else if (worldType->equalsIgnoreCase("Asteroids")) {
-      m_visitableParameters = generateAsteroidsWorldParameters(m_seed);
+      m_visitableParameters = generateAsteroidsWorldParameters(assets, m_seed);
     } else if (worldType->equalsIgnoreCase("FloatingDungeon")) {
-      m_visitableParameters = generateFloatingDungeonWorldParameters(getParameter("dungeonWorld").toString());
+      m_visitableParameters = generateFloatingDungeonWorldParameters(assets, getParameter("dungeonWorld").toString());
     }
   }
 }

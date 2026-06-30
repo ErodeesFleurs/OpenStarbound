@@ -171,7 +171,7 @@ void FallingBlocksWorld::moveBlock(Vec2I const& from, Vec2I const& to) {
 
   if (m_worldServer->isTileProtected(to)) {
     for (auto const& drop : m_worldServer->destroyBlock(TileLayer::Foreground, from, true, true))
-      m_worldServer->addEntity(ItemDrop::createRandomizedDrop(drop, Vec2F(to)));
+      m_worldServer->addEntity(ItemDrop::createRandomizedDrop(drop, Vec2F(to), false, m_worldServer->assets()));
   } else {
     toTile->foreground = fromTile->foreground;
     toTile->foregroundMod = NoModId;
@@ -396,7 +396,7 @@ void DungeonGeneratorWorld::placeBiomeItems(Vec2I const& pos, List<BiomeItemPlac
 }
 
 void DungeonGeneratorWorld::addDrop(Vec2F const& position, ItemDescriptor const& item) {
-  m_worldServer->addEntity(ItemDrop::createRandomizedDrop(item, position));
+  m_worldServer->addEntity(ItemDrop::createRandomizedDrop(item, position, false, m_worldServer->assets()));
 }
 
 void DungeonGeneratorWorld::spawnNpc(Vec2F const& position, Json const& parameters) {

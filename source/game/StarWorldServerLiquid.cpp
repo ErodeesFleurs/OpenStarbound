@@ -4,7 +4,6 @@
 #include "StarRoot.hpp"
 #include "StarMaterialDatabase.hpp"
 #include "StarLiquidsDatabase.hpp"
-#include "StarAssets.hpp"
 #include "StarItemDescriptor.hpp"
 #include "StarLiquidTypes.hpp"
 
@@ -56,7 +55,7 @@ void WorldServerLiquid::activateLiquidRegion(RectI const& region) {
 }
 
 ItemDescriptor WorldServerLiquid::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liquidId) {
-  float bucketSize = Root::singleton().assets()->json("/items/defaultParameters.config:liquidItems.bucketSize").toFloat();
+  float bucketSize = m_worldServer->m_assets->json("/items/defaultParameters.config:liquidItems.bucketSize").toFloat();
   unsigned drainedUnits = 0;
   float nextUnit = bucketSize;
   List<ServerTile*> maybeDrainTiles;

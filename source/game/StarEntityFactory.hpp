@@ -3,6 +3,7 @@
 #include "StarVersioningDatabase.hpp"
 #include "StarEntity.hpp"
 #include "StarIEntityFactory.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -28,7 +29,7 @@ using EntityFactoryException = TypedException<StarException, EntityFactoryExcept
 
 class EntityFactory : public IEntityFactory {
 public:
-  EntityFactory();
+  EntityFactory(IAssetsConstPtr assets = {});
 
   EntityPtr create(String const& entityName, Json const& extraParams = {}) const override;
 
@@ -59,6 +60,7 @@ private:
   NpcDatabaseConstPtr m_npcDatabase;
   VehicleDatabaseConstPtr m_vehicleDatabase;
   VersioningDatabaseConstPtr m_versioningDatabase;
+  IAssetsConstPtr m_assets;
 };
 
 }

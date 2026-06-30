@@ -4,7 +4,6 @@
 #include "StarRoot.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarItemDrop.hpp"
-#include "StarAssets.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarWorld.hpp"
 #include "StarRandom.hpp"
@@ -20,8 +19,12 @@ PlantDrop::PlantDropPiece::PlantDropPiece() {
   flip = false;
 }
 
-PlantDrop::PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
-    bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random) {
+PlantDrop::PlantDrop(IAssetsConstPtr assets, List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2F const& strikeVector, String const& description,
+    bool upsideDown, Json stemConfig, Json foliageConfig, Json saplingConfig, bool master, float random)
+  : m_movementController(MovementParameters(), assets), m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("PlantDrop requires assets service");
+
   m_netGroup.addNetElement(&m_movementController);
   m_netGroup.addNetElement(&m_spawnedDrops);
 
@@ -86,7 +89,11 @@ PlantDrop::PlantDrop(List<Plant::PlantPiece> pieces, Vec2F const& position, Vec2
     m_collisionRect = fullBounds;
 }
 
-PlantDrop::PlantDrop(ByteArray const& netStore, NetCompatibilityRules rules) {
+PlantDrop::PlantDrop(IAssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules)
+  : m_movementController(MovementParameters(), assets), m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("PlantDrop requires assets service");
+
   m_netGroup.addNetElement(&m_movementController);
   m_netGroup.addNetElement(&m_spawnedDrops);
 
@@ -228,10 +235,10 @@ void PlantDrop::update(float dt, uint64_t) {
                 + Vec2F(Random::randf(-0.2f, 0.2f), Random::randf(-0.2f, 0.2f));
             if (drop.getString("item") == "sapling")
               world()->addEntity(ItemDrop::createRandomizedDrop(
-                  ItemDescriptor("sapling", static_cast<size_t>(drop.getInt("count", 1)), m_saplingConfig), position() + pos));
+                  ItemDescriptor("sapling", static_cast<size_t>(drop.getInt("count", 1)), m_saplingConfig), position() + pos, false, world()->assets()));
             else
               world()->addEntity(ItemDrop::createRandomizedDrop(
-                  {drop.getString("item"), static_cast<size_t>(drop.getInt("count", 1))}, position() + pos));
+                  {drop.getString("item"), static_cast<size_t>(drop.getInt("count", 1))}, position() + pos, false, world()->assets()));
           }
         }
       }
@@ -293,8 +300,6 @@ void PlantDrop::particleForPlantPart(PlantDropPiece const& piece, String const& 
 }
 
 void PlantDrop::render(RenderCallback* renderCallback) {
-  auto assets = Root::singleton().assets();
-
   if (m_firstTick) {
     m_firstTick = false;
     // smoke, particles
@@ -304,7 +309,7 @@ void PlantDrop::render(RenderCallback* renderCallback) {
         JsonArray breakTreeOptions = config.get("sounds", JsonObject()).getArray("breakTree", JsonArray());
         if (breakTreeOptions.size()) {
           auto sound = Random::randFrom(breakTreeOptions);
-          auto audioInstance = make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
+          auto audioInstance = make_shared<AudioInstance>(*m_assets->audio(sound.getString("file")));
           audioInstance->setPosition(collisionRect().center() + position());
           audioInstance->setVolume(sound.getFloat("volume", 1.0f));
           renderCallback->addAudio(std::move(audioInstance));
@@ -330,7 +335,7 @@ void PlantDrop::render(RenderCallback* renderCallback) {
       JsonArray hitGroundOptions = config.get("sounds", JsonObject()).getArray("hitGround", JsonArray());
       if (hitGroundOptions.size()) {
         auto sound = Random::randFrom(hitGroundOptions);
-        auto audioInstance = make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
+        auto audioInstance = make_shared<AudioInstance>(*m_assets->audio(sound.getString("file")));
         audioInstance->setPosition(collisionRect().center() + position());
         audioInstance->setVolume(sound.getFloat("volume", 1.0f));
         renderCallback->addAudio(std::move(audioInstance));

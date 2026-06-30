@@ -10,6 +10,7 @@
 #include "StarSky.hpp"
 #include "StarUniverseConnection.hpp"
 #include "StarLuaComponents.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -53,11 +54,12 @@ using LuaRootPtr = SharedPtr<LuaRoot>;
 
 class UniverseClient {
 public:
-  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics);
+  UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, IAssetsConstPtr assets = {});
   ~UniverseClient();
 
   void setMainPlayer(PlayerPtr player);
   PlayerPtr mainPlayer() const;
+  IAssetsConstPtr assets() const;
 
   // Returns error if connection failed
   Maybe<String> connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account = "", String const& password = "", bool const& forceLegacy = false);
@@ -145,6 +147,7 @@ private:
 
   PlayerStoragePtr m_playerStorage;
   StatisticsPtr m_statistics;
+  IAssetsConstPtr m_assets;
   PlayerPtr m_mainPlayer;
 
   bool m_pause;

@@ -1,7 +1,6 @@
 #include "StarWorldLayout.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarWorldGeometry.hpp"
-#include "StarAssets.hpp"
 #include "StarBiomeDatabase.hpp"
 #include "StarTerrainDatabase.hpp"
 #include "StarParallax.hpp"
@@ -103,11 +102,12 @@ Vec2I WorldLayout::BlockNoise::apply(Vec2I const& input, Vec2U const& worldSize)
   return noisePos;
 }
 
-WorldLayout WorldLayout::buildTerrestrialLayout(TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed) {
+WorldLayout WorldLayout::buildTerrestrialLayout(IAssetsConstPtr assets, TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed) {
   auto& root = Root::singleton();
-  auto assets = root.assets();
   auto terrainDatabase = root.terrainDatabase();
   auto biomeDatabase = root.biomeDatabase();
+  bool useSecondaryEnvironmentBiomeIndex = assets->json("/terrestrial_worlds.config:useSecondaryEnvironmentBiomeIndex").toBool();
+  int playerStartSearchYRange = assets->json("/world_template.config:playerStartSearchYRange").toInt();
 
   RandomSource randSource(seed);
 
@@ -214,7 +214,9 @@ WorldLayout WorldLayout::buildTerrestrialLayout(TerrestrialWorldParameters const
         secondaryRegions,
         secondarySubRegions,
         terrestrialLayer.secondaryRegionSizeRange,
-        terrestrialLayer.subRegionSizeRange);
+        terrestrialLayer.subRegionSizeRange,
+        useSecondaryEnvironmentBiomeIndex,
+        playerStartSearchYRange);
   };
 
   addLayer(terrestrialParameters.coreLayer);
@@ -237,9 +239,7 @@ WorldLayout WorldLayout::buildTerrestrialLayout(TerrestrialWorldParameters const
   return layout;
 }
 
-WorldLayout WorldLayout::buildAsteroidsLayout(AsteroidsWorldParameters const& asteroidParameters, uint64_t seed) {
-  auto assets = Root::singleton().assets();
-
+WorldLayout WorldLayout::buildAsteroidsLayout(IAssetsConstPtr assets, AsteroidsWorldParameters const& asteroidParameters, uint64_t seed) {
   RandomSource randSource(seed);
 
   auto asteroidsConfig = assets->json("/asteroids_worlds.config");
@@ -289,8 +289,7 @@ WorldLayout WorldLayout::buildAsteroidsLayout(AsteroidsWorldParameters const& as
   return layout;
 }
 
-WorldLayout WorldLayout::buildFloatingDungeonLayout(FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed) {
-  auto assets = Root::singleton().assets();
+WorldLayout WorldLayout::buildFloatingDungeonLayout(IAssetsConstPtr, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed) {
   auto biomeDatabase = Root::singleton().biomeDatabase();
 
   RandomSource randSource(seed);
@@ -879,7 +878,8 @@ void WorldLayout::addLayer(uint64_t seed, int yStart, RegionParams regionParams)
 void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& primaryBiome,
     RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
     List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
-    Vec2F secondaryRegionSize, Vec2F subRegionSize) {
+    Vec2F secondaryRegionSize, Vec2F subRegionSize,
+    bool useSecondaryEnvironmentBiomeIndex, int playerStartSearchYRange) {
   WorldLayer layer;
   layer.yStart = yStart;
 
@@ -894,7 +894,7 @@ void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& p
   auto addRegion = [&](RegionParams const& regionParams, RegionParams const& subRegionParams, Vec2F const& regionSizeRange) {
     WorldRegionPtr region = make_shared<WorldRegion>(buildRegion(seed, regionParams));
     WorldRegionPtr subRegion = make_shared<WorldRegion>(buildRegion(seed, subRegionParams));
-    if (!Root::singleton().assets()->json("/terrestrial_worlds.config:useSecondaryEnvironmentBiomeIndex").toBool())
+    if (!useSecondaryEnvironmentBiomeIndex)
       region->environmentBiomeIndex = primaryEnvironmentBiomeIndex;
     subRegion->environmentBiomeIndex = region->environmentBiomeIndex;
 
@@ -946,13 +946,12 @@ void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& p
   }
   layer.cells.prepend(layer.cells.last());
 
-  int yRange = Root::singleton().assets()->json("/world_template.config:playerStartSearchYRange").toInt();
   size_t i = 0;
   int lastBoundary = 0;
   for (auto const& region : layer.cells) {
     int boundary = i < layer.boundaries.size() ? layer.boundaries[i] : worldWidth;
     if (spawnBiomeIndexes.contains(region->blockBiomeIndex))
-      m_playerStartSearchRegions.append(RectI(lastBoundary, std::max(0, yBase - yRange), boundary, std::min(worldHeight, yBase + yRange)));
+      m_playerStartSearchRegions.append(RectI(lastBoundary, std::max(0, yBase - playerStartSearchYRange), boundary, std::min(worldHeight, yBase + playerStartSearchYRange)));
     lastBoundary = boundary;
     i++;
   }

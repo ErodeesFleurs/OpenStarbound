@@ -6,6 +6,7 @@
 #include "StarPlant.hpp"
 #include "StarTreasure.hpp"
 #include "StarStrongTypedef.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -49,7 +50,7 @@ public:
   static Maybe<BiomeItem> createItem(Json const& itemSettings, RandomSource& rand, float biomeHueShift);
 
   BiomeItemDistribution();
-  BiomeItemDistribution(Json const& config, uint64_t seed, float biomeHueShift = 0.0f);
+  BiomeItemDistribution(IAssetsConstPtr assets, Json const& config, uint64_t seed, float biomeHueShift = 0.0f);
   BiomeItemDistribution(Json const& store);
 
   Json toJson() const;

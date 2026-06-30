@@ -501,7 +501,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("startQuest", [player](Json const& quest, Maybe<String> const& serverUuid, Maybe<String> const& worldId) {
       auto questArc = QuestArcDescriptor::fromJson(quest);
-      auto followUp = make_shared<Quest>(questArc, 0, player);
+      auto followUp = make_shared<Quest>(player->questManager()->assets(), questArc, 0, player);
       if (serverUuid)
         followUp->setServerUuid(Uuid(*serverUuid));
       if (worldId)

@@ -567,14 +567,14 @@ namespace Dungeon {
     return false;
   }
 
-  PartConstPtr parsePart(DungeonDefinition* dungeon, Json const& definition, Maybe<ImageTilesetConstPtr> tileset) {
+  PartConstPtr parsePart(DungeonDefinition* dungeon, Json const& definition, IAssetsConstPtr assets, Maybe<ImageTilesetConstPtr> tileset) {
     String kind = definition.get("def").getString(0);
     if (kind == "image") {
       if (tileset.isNothing())
         throw DungeonException("Dungeon parts designed in images require the 'tiles' key in the .dungeon file");
-      return make_shared<const Part>(dungeon, definition, make_shared<ImagePartReader>(*tileset));
+      return make_shared<const Part>(dungeon, definition, make_shared<ImagePartReader>(assets, *tileset));
     } else if (kind == "tmx")
-      return make_shared<const Part>(dungeon, definition, make_shared<TMXPartReader>());
+      return make_shared<const Part>(dungeon, definition, make_shared<TMXPartReader>(assets));
     throw DungeonException::format("Unknown dungeon part kind: {}", kind);
   }
 
@@ -1333,13 +1333,13 @@ JsonObject DungeonDefinitions::getMetadata(String const& name) const {
 
 DungeonDefinitionPtr DungeonDefinitions::readDefinition(String const& path) const {
   try {
-    return make_shared<DungeonDefinition>(m_assets->json(path).toObject(), AssetPath::directory(path));
+    return make_shared<DungeonDefinition>(m_assets, m_assets->json(path).toObject(), AssetPath::directory(path));
   } catch (std::exception const& e) {
     throw DungeonException::format("Error loading dungeon '{}': {}", path, outputException(e, false));
   }
 }
 
-DungeonDefinition::DungeonDefinition(JsonObject const& definition, String const& directory) {
+DungeonDefinition::DungeonDefinition(IAssetsConstPtr assets, JsonObject const& definition, String const& directory) {
   m_directory = directory;
   m_metadata = definition.get("metadata").toObject();
   m_name = m_metadata.get("name").toString();
@@ -1360,7 +1360,7 @@ DungeonDefinition::DungeonDefinition(JsonObject const& definition, String const&
     });
 
   for (auto const& partsDefMap : definition.get("parts").iterateArray()) {
-    Dungeon::PartConstPtr part = parsePart(this, partsDefMap, tileset);
+    Dungeon::PartConstPtr part = parsePart(this, partsDefMap, assets, tileset);
     if (m_parts.contains(part->name()))
       throw DungeonException::format("Duplicate dungeon part name: {}", part->name());
     m_parts.insert(part->name(), part);

@@ -8,10 +8,12 @@
 
 namespace Star {
 
-WorldServerThread::WorldServerThread(WorldServerPtr server, WorldId worldId)
+WorldServerThread::WorldServerThread(WorldServerPtr server, WorldId worldId, IAssetsConstPtr assets, IConfigurationPtr configuration)
   : Thread("WorldServerThread: " + printWorldId(worldId)),
     m_worldServer(std::move(server)),
     m_worldId(std::move(worldId)),
+    m_assets(assets ? std::move(assets) : (m_worldServer ? m_worldServer->assets() : Root::singleton().assets())),
+    m_configuration(configuration ? std::move(configuration) : Root::singleton().configuration()),
     m_stop(false),
     m_errorOccurred(false),
     m_shouldExpire(true) {
@@ -204,17 +206,16 @@ WorldChunks WorldServerThread::readChunks() {
 
 void WorldServerThread::run() {
   try {
-    auto& root = Root::singleton();
-    double updateMeasureWindow = root.assets()->json("/universe_server.config:updateMeasureWindow").toDouble();
-    double fidelityDecrementScore = root.assets()->json("/universe_server.config:fidelityDecrementScore").toDouble();
-    double fidelityIncrementScore = root.assets()->json("/universe_server.config:fidelityIncrementScore").toDouble();
+    double updateMeasureWindow = m_assets->json("/universe_server.config:updateMeasureWindow").toDouble();
+    double fidelityDecrementScore = m_assets->json("/universe_server.config:fidelityDecrementScore").toDouble();
+    double fidelityIncrementScore = m_assets->json("/universe_server.config:fidelityIncrementScore").toDouble();
 
-    String serverFidelityMode = root.configuration()->get("serverFidelity").toString();
+    String serverFidelityMode = m_configuration->get("serverFidelity").toString();
     Maybe<WorldServerFidelity> lockedFidelity;
     if (!serverFidelityMode.equalsIgnoreCase("automatic"))
       lockedFidelity = WorldServerFidelityNames.getLeft(serverFidelityMode);
 
-    double storageInterval = root.assets()->json("/universe_server.config:worldStorageInterval").toDouble() / 1000.0;
+    double storageInterval = m_assets->json("/universe_server.config:worldStorageInterval").toDouble() / 1000.0;
     Timer storageTimer = Timer::withTime(storageInterval);
 
     TickRateApproacher tickApproacher(1.0f / ServerGlobalTimestep, updateMeasureWindow);

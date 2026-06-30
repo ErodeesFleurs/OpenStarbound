@@ -469,7 +469,7 @@ PlayerFactoryConstPtr Root::playerFactory() {
 }
 
 EntityFactoryConstPtr Root::entityFactory() {
-  return loadMember(m_entityFactory, m_entityFactoryMutex, "EntityFactory");
+  return loadMember(m_entityFactory, m_entityFactoryMutex, "EntityFactory", assets());
 }
 
 PatternedNameGeneratorConstPtr Root::nameGenerator() {

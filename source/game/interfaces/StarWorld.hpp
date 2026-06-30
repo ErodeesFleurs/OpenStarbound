@@ -10,6 +10,7 @@
 #include "StarRpcPromise.hpp"
 #include "StarTileWorldInterface.hpp"
 #include "StarEntityWorldInterface.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -27,6 +28,7 @@ public:
   virtual ConnectionId connection() const = 0;
   virtual WorldGeometry geometry() const = 0;
   virtual uint64_t currentStep() const = 0;
+  virtual IAssetsConstPtr assets() const = 0;
 
   // Environment
   virtual float gravity(Vec2F const& pos) const = 0;

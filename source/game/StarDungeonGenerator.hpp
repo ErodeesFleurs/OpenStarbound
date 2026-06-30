@@ -646,7 +646,7 @@ namespace Dungeon {
 
 class DungeonDefinition {
 public:
-  DungeonDefinition(JsonObject const& definition, String const& directory);
+  DungeonDefinition(IAssetsConstPtr assets, JsonObject const& definition, String const& directory);
 
   JsonObject metadata() const;
   String directory() const;

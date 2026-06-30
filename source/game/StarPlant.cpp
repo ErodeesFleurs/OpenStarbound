@@ -5,7 +5,6 @@
 #include "StarObjectDatabase.hpp"
 #include "StarPlantDrop.hpp"
 #include "StarImageMetadataDatabase.hpp"
-#include "StarAssets.hpp"
 #include "StarImage.hpp"
 #include "StarEntityRendering.hpp"
 #include "StarParticleDatabase.hpp"
@@ -36,7 +35,8 @@ Plant::PlantPiece::PlantPiece() {
   flip = false;
 }
 
-Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
+Plant::Plant(IAssetsConstPtr assets, TreeVariant const& config, uint64_t seed)
+  : Plant(std::move(assets)) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_windTime = 0.0f;
@@ -79,8 +79,6 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
 
   int segment = 0;
 
-  auto assets = Root::singleton().assets();
-
   // base
   {
     JsonObject bases = config.stemSettings.get("base").toObject();
@@ -93,7 +91,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
     yOffset += attachmentSettings.get("by").toDouble() / TilePixels;
 
     String baseFile = AssetPath::relativeTo(config.stemDirectory, baseSettings.get("image").toString());
-    float baseImageHeight = assets->image(baseFile)->height();
+    float baseImageHeight = m_assets->image(baseFile)->height();
     if (config.ceiling)
       yOffset = 1.0 - baseImageHeight / TilePixels;
 
@@ -430,7 +428,8 @@ ByteArray Plant::netStore(NetCompatibilityRules rules) const {
   return ds.takeData();
 }
 
-Plant::Plant(GrassVariant const& config, uint64_t seed) : Plant() {
+Plant::Plant(IAssetsConstPtr assets, GrassVariant const& config, uint64_t seed)
+  : Plant(std::move(assets)) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -469,7 +468,8 @@ Plant::Plant(GrassVariant const& config, uint64_t seed) : Plant() {
   setupNetStates();
 }
 
-Plant::Plant(BushVariant const& config, uint64_t seed) : Plant() {
+Plant::Plant(IAssetsConstPtr assets, BushVariant const& config, uint64_t seed)
+  : Plant(std::move(assets)) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -483,11 +483,9 @@ Plant::Plant(BushVariant const& config, uint64_t seed) : Plant() {
   m_piecesUpdated = true;
 
   RandomSource rand(seed);
-  auto assets = Root::singleton().assets();
-
   auto shape = rand.randValueFrom(config.shapes);
   String shapeImageName = AssetPath::relativeTo(config.directory, shape.image);
-  float shapeImageHeight = assets->image(shapeImageName)->height();
+  float shapeImageHeight = m_assets->image(shapeImageName)->height();
   Vec2F offset = Vec2F();
   // If this is a ceiling plant, offset the image so that the [0, 0] space is
   // at the top
@@ -520,7 +518,8 @@ Plant::Plant(BushVariant const& config, uint64_t seed) : Plant() {
   setupNetStates();
 }
 
-Plant::Plant(Json const& diskStore) : Plant() {
+Plant::Plant(IAssetsConstPtr assets, Json const& diskStore)
+  : Plant(std::move(assets)) {
   m_tilePosition = jsonToVec2I(diskStore.get("tilePosition"));
   m_ceiling = diskStore.getBool("ceiling");
   m_stemDropConfig = diskStore.get("stemDropConfig");
@@ -535,7 +534,8 @@ Plant::Plant(Json const& diskStore) : Plant() {
   setupNetStates();
 }
 
-Plant::Plant(ByteArray const& netStore, NetCompatibilityRules rules) : Plant() {
+Plant::Plant(IAssetsConstPtr assets, ByteArray const& netStore, NetCompatibilityRules rules)
+  : Plant(std::move(assets)) {
   m_broken = false;
   m_tilePosition = Vec2I();
   m_ceiling = false;
@@ -563,7 +563,11 @@ Plant::Plant(ByteArray const& netStore, NetCompatibilityRules rules) : Plant() {
   setupNetStates();
 }
 
-Plant::Plant() {
+Plant::Plant(IAssetsConstPtr assets)
+  : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw PlantException("Plant requires assets service");
+
   m_ephemeral = false;
   m_piecesUpdated = true;
   m_ceiling = false;
@@ -789,8 +793,7 @@ void Plant::render(RenderCallback* renderCallback) {
       if (damageTreeSoundOptions.size()) {
         auto sound = Random::randFrom(damageTreeSoundOptions);
         Vec2F pos = position() + Vec2F(m_tileDamageX + Random::randf(), m_tileDamageY + Random::randf());
-        auto assets = Root::singleton().assets();
-        auto audioInstance = make_shared<AudioInstance>(*assets->audio(sound.getString("file")));
+        auto audioInstance = make_shared<AudioInstance>(*m_assets->audio(sound.getString("file")));
         audioInstance->setPosition(pos);
         audioInstance->setVolume(sound.getFloat("volume", 1.0f));
         renderCallback->addAudio(std::move(audioInstance));
@@ -1029,7 +1032,8 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   bool first = true;
   for (auto segIdx : segmentOrder) {
     auto segment = segments[segIdx];
-    world()->addEntity(make_shared<PlantDrop>(segment,
+    world()->addEntity(make_shared<PlantDrop>(m_assets,
+        segment,
         worldSpaceBreakPoint,
         fallVector,
         description(),

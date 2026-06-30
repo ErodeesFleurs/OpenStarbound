@@ -7,9 +7,17 @@
 
 namespace Star {
 
+namespace {
+
+AssetsConstPtr assetTextureAssets(AssetsConstPtr assets) {
+  return assets ? std::move(assets) : Root::singleton().assets();
+}
+
+}
+
 AssetTextureGroup::AssetTextureGroup(TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener)
   : m_textureGroup(std::move(textureGroup)),
-    m_assets(assets ? std::move(assets) : Root::singleton().assets()) {
+    m_assets(assetTextureAssets(std::move(assets))) {
   if (!registerReloadListener)
     registerReloadListener = [](ListenerWeakPtr reloadListener) {
       Root::singleton().registerReloadListener(std::move(reloadListener));

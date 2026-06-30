@@ -171,7 +171,7 @@ BiomePtr BiomeDatabase::createBiome(String const& biomeName, uint64_t seed, floa
 
     if (config.parameters.contains("parallax")) {
       auto parallaxFile = AssetPath::relativeTo(config.path, config.parameters.getString("parallax"));
-      biome->parallax = make_shared<Parallax>(parallaxFile, seed, verticalMidPoint, mainHueShift, biome->surfacePlaceables.firstTreeType());
+      biome->parallax = make_shared<Parallax>(m_assets, parallaxFile, seed, verticalMidPoint, mainHueShift, biome->surfacePlaceables.firstTreeType());
     }
 
     if (config.parameters.contains("musicTrack"))
@@ -215,7 +215,7 @@ BiomePlaceables BiomeDatabase::readBiomePlaceables(Json const& config, uint64_t 
   placeables.ceilingGrassModDensity = config.getFloat("ceilingGrassModDensity", 0);
 
   for (auto const& itemConfig : config.getArray("items", {}))
-    placeables.itemDistributions.append(BiomeItemDistribution(itemConfig, rand.randu64(), biomeHueShift));
+    placeables.itemDistributions.append(BiomeItemDistribution(m_assets, itemConfig, rand.randu64(), biomeHueShift));
 
   return placeables;
 }

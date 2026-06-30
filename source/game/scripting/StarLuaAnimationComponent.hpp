@@ -10,6 +10,7 @@
 #include "StarParticle.hpp"
 #include "StarRoot.hpp"
 #include "StarAssets.hpp"
+#include "StarIAssets.hpp"
 #include "StarLuaConverters.hpp"
 
 namespace Star {
@@ -22,7 +23,7 @@ using LuaAnimationComponentException = TypedException<LuaComponentException, Lua
 template <typename Base>
 class LuaAnimationComponent : public Base {
 public:
-  LuaAnimationComponent();
+  LuaAnimationComponent(IAssetsConstPtr assets = {});
 
   List<pair<Drawable, Maybe<EntityRenderLayer>>> const& drawables();
   List<LightSource> const& lightSources();
@@ -35,6 +36,8 @@ protected:
   void contextShutdown() override;
 
 private:
+  IAssetsConstPtr m_assets;
+
   List<Particle> m_pendingParticles;
   List<AudioInstancePtr> m_pendingAudios;
   List<AudioInstancePtr> m_activeAudio;
@@ -44,10 +47,12 @@ private:
 };
 
 template <typename Base>
-LuaAnimationComponent<Base>::LuaAnimationComponent() {
+LuaAnimationComponent<Base>::LuaAnimationComponent(IAssetsConstPtr assets) {
+  m_assets = assets ? std::move(assets) : Root::singleton().assets();
+
   LuaCallbacks animationCallbacks;
   animationCallbacks.registerCallback("playAudio", [this](String const& sound, Maybe<int> loops, Maybe<float> volume) {
-      auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(sound));
+      auto audio = make_shared<AudioInstance>(*m_assets->audio(sound));
       audio->setLoops(loops.value(0));
       audio->setVolume(volume.value(1.0f));
       m_pendingAudios.append(audio);

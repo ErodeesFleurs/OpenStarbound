@@ -22,7 +22,7 @@ public:
 
   using WorldServerAction = function<void(WorldServerThread*, WorldServer*)>;
 
-  WorldServerThread(WorldServerPtr server, WorldId worldId);
+  WorldServerThread(WorldServerPtr server, WorldId worldId, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
   ~WorldServerThread();
 
   WorldId worldId() const;
@@ -92,6 +92,8 @@ private:
 
   WorldServerPtr m_worldServer;
   WorldId m_worldId;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
   WorldServerAction m_updateAction;
 
   mutable RecursiveMutex m_queueMutex;

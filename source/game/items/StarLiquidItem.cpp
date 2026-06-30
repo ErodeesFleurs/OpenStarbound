@@ -7,7 +7,7 @@
 namespace Star {
 
 LiquidItem::LiquidItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& settings)
-  : Item(config, directory, settings), FireableItem(config), BeamItem(config) {
+  : Item(assets, config, directory, settings), FireableItem(config), BeamItem(assets, config) {
   if (!assets)
     throw ItemException("LiquidItem requires assets service");
 

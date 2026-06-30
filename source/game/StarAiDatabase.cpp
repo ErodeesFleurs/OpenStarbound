@@ -31,13 +31,13 @@ AiDatabase::AiDatabase(AssetsConstPtr assets) {
 
   m_animationConfig.charactersPerSecond = config.getFloat("charactersPerSecond");
   m_animationConfig.defaultAnimation = config.getString("defaultAnimation");
-  m_animationConfig.staticAnimation = Animation("/ai/ai.config:staticAnimation");
+  m_animationConfig.staticAnimation = Animation("/ai/ai.config:staticAnimation", {}, assets);
   m_animationConfig.staticOpacity = config.getFloat("staticOpacity");
-  m_animationConfig.scanlineAnimation = Animation("/ai/ai.config:scanlineAnimation");
+  m_animationConfig.scanlineAnimation = Animation("/ai/ai.config:scanlineAnimation", {}, assets);
   m_animationConfig.scanlineOpacity = config.getFloat("scanlineOpacity");
 
   for (auto const& pair : config.get("aiAnimations").iterateObject())
-    m_animationConfig.aiAnimations[pair.first] = Animation(pair.second, "/ai/");
+    m_animationConfig.aiAnimations[pair.first] = Animation(pair.second, "/ai/", assets);
 }
 
 AiMission AiDatabase::mission(String const& missionName) const {

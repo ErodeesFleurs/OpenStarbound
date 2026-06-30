@@ -4,6 +4,7 @@
 #include "StarJson.hpp"
 #include "StarListener.hpp"
 #include "StarHash.hpp"
+#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -139,7 +140,7 @@ public:
   // is not initialized.
   static Input& singleton();
 
-  Input();
+  Input(AssetsConstPtr assets);
   ~Input();
 
   Input(Input const&) = delete;
@@ -214,6 +215,7 @@ private:
   HashMap<InputVariant, List<BindRef>> m_bindMappings;
 
   ListenerPtr m_rootReloadListener;
+  AssetsConstPtr m_assets;
 
   // Per-frame input event storage for Lua.
   List<std::pair<InputEvent, bool>> m_inputEvents;

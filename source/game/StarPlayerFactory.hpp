@@ -20,7 +20,7 @@ using PlayerException = TypedException<StarException, PlayerExceptionTag>;
 // The player has a large number of shared config states, so this is a shared
 // config object to hold them.
 struct PlayerConfig {
-  PlayerConfig(JsonObject const& cfg);
+  PlayerConfig(JsonObject const& cfg, IAssetsConstPtr assets = {});
 
   HumanoidIdentity defaultIdentity;
   Humanoid::HumanoidTiming humanoidTiming;
@@ -68,6 +68,7 @@ public:
   PlayerPtr netLoadPlayer(ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
 
 private:
+  AssetsConstPtr m_assets;
   PlayerConfigPtr m_config;
 
   RebuilderPtr m_rebuilder;

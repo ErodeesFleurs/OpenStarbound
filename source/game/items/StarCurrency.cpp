@@ -4,7 +4,7 @@
 
 namespace Star {
 
-CurrencyItem::CurrencyItem(Json const& config, String const& directory) : Item(config, directory) {
+CurrencyItem::CurrencyItem(IAssetsConstPtr assets, Json const& config, String const& directory) : Item(std::move(assets), config, directory) {
   m_currency = config.getString("currency");
   m_value = config.getUInt("value");
 }

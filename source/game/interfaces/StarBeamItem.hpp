@@ -4,6 +4,7 @@
 #include "StarGameTypes.hpp"
 #include "StarNonRotatedDrawablesItem.hpp"
 #include "StarToolUserItem.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -13,7 +14,7 @@ class BeamItem : public virtual NonRotatedDrawablesItem, public virtual ToolUser
 public:
   enum class EndType { Invalid = -1, Object, Tile, TileGroup, Wire };
 
-  BeamItem(Json config);
+  BeamItem(IAssetsConstPtr assets, Json config);
   virtual ~BeamItem() = default;
 
   virtual void init(ToolUserEntity* owner, ToolHand hand) override;

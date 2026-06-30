@@ -8,13 +8,12 @@
 #include "StarItemDatabase.hpp"
 #include "StarPointableItem.hpp"
 #include "StarItemBag.hpp"
-#include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 
 namespace Star {
 
-bool PlayerInventory::itemAllowedInBag(ItemPtr const& items, String const& bagType) {
+bool PlayerInventory::itemAllowedInBag(ItemPtr const& items, String const& bagType) const {
   // any inventory type can have empty slots
   if (!items)
     return true;
@@ -39,8 +38,12 @@ bool PlayerInventory::itemAllowedAsEquipment(ItemPtr const& item, EquipmentSlot 
     return is<ArmorItem>(item);
 }
 
-PlayerInventory::PlayerInventory() {
-  auto config = Root::singleton().assets()->json("/player.config:inventory");
+PlayerInventory::PlayerInventory(IAssetsConstPtr assets)
+  : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw InventoryException("PlayerInventory requires assets service");
+
+  auto config = m_assets->json("/player.config:inventory");
 
   auto bags = config.get("itemBags");
   auto bagOrder = bags.toObject().keys().sorted([&bags](String const& a, String const& b) {
@@ -52,7 +55,7 @@ PlayerInventory::PlayerInventory() {
     m_bagsNetState[name].resize(size);
   }
 
-  auto currenciesConfig = Root::singleton().assets()->json("/currencies.config");
+  auto currenciesConfig = m_assets->json("/currencies.config");
   for (auto p : currenciesConfig.iterateObject())
     m_currencies[p.first] = 0;
 
@@ -635,7 +638,7 @@ void PlayerInventory::addCurrency(String const& currencyType, uint64_t amount) {
   uint64_t newTotal = previousTotal + amount;
   if (newTotal < previousTotal)
     newTotal = highest<uint64_t>();
-  m_currencies[currencyType] = min(Root::singleton().assets()->json("/currencies.config").get(currencyType).getUInt("playerMax", highest<uint64_t>()), newTotal);
+  m_currencies[currencyType] = min(m_assets->json("/currencies.config").get(currencyType).getUInt("playerMax", highest<uint64_t>()), newTotal);
 }
 
 bool PlayerInventory::consumeCurrency(String const& currencyType, uint64_t amount) {
@@ -967,8 +970,10 @@ void PlayerInventory::setPlayer(Player* player) {
   m_player = player;
 }
 
-PlayerInventory const& PlayerInventory::blankInventory() {
-  static thread_local auto inventory = std::make_shared<PlayerInventory>();
+PlayerInventory const& PlayerInventory::blankInventory() const {
+  static thread_local PlayerInventoryPtr inventory;
+  if (!inventory || inventory->m_assets != m_assets)
+    inventory = make_shared<PlayerInventory>(m_assets);
   return *inventory;
 }
 
@@ -987,7 +992,7 @@ bool PlayerInventory::writeNetDelta(DataStream& ds, uint64_t fromVersion, NetCom
     return NetElementSyncGroup::writeNetDelta(ds, fromVersion, rules);
 }
 
-bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& filterName) {
+bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& filterName) const {
   Json filterConfig;
 
   auto itemFilters = items->instanceValue("inventoryFilters");
@@ -998,7 +1003,7 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
   }
 
   if (!filterConfig.isType(Json::Type::Object)) {
-    auto config = Root::singleton().assets()->json("/player.config:inventoryFilters");
+    auto config = m_assets->json("/player.config:inventoryFilters");
     filterConfig = config.opt(filterName).value();
     if (!filterConfig.isType(Json::Type::Object))
       filterConfig = config.get("default");

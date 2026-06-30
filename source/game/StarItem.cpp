@@ -1,6 +1,5 @@
 #include "StarItem.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
 #include "StarLogging.hpp"
@@ -8,20 +7,23 @@
 
 namespace Star {
 
-Item::Item(Json config, String directory, Json parameters) {
+Item::Item(IAssetsConstPtr assets, Json config, String directory, Json parameters) {
+  if (!assets)
+    throw ItemException("Item requires assets service");
+
   m_config = std::move(config);
   m_directory = std::move(directory);
   m_parameters = std::move(parameters);
   m_name = m_config.getString("itemName");
   m_count = 1;
 
-  m_maxStack = instanceValue("maxStack", Root::singleton().assets()->json("/items/defaultParameters.config:defaultMaxStack").toInt()).toInt();
+  m_maxStack = instanceValue("maxStack", assets->json("/items/defaultParameters.config:defaultMaxStack").toInt()).toInt();
   m_shortDescription = instanceValue("shortdescription", "").toString();
   m_description = instanceValue("description", "").toString();
 
   m_rarity = RarityNames.getLeft(instanceValue("rarity").toString());
 
-  auto inventoryIcon = instanceValue("inventoryIcon", Root::singleton().assets()->json("/items/defaultParameters.config:missingIcon"));
+  auto inventoryIcon = instanceValue("inventoryIcon", assets->json("/items/defaultParameters.config:missingIcon"));
   if (inventoryIcon.type() == Json::Type::Array) {
     setIconDrawables(inventoryIcon.toArray().transformed([&](Json config) -> Drawable {
       if (auto image = config.optString("image"))
@@ -46,7 +48,6 @@ Item::Item(Json config, String directory, Json parameters) {
     setSecondaryIconDrawables(Maybe<List<Drawable>>());
   }
 
-  auto assets = Root::singleton().assets();
   m_twoHanded = instanceValue("twoHanded", false).toBool();
   m_price = instanceValue("price", assets->json("/items/defaultParameters.config:defaultPrice")).toInt();
   m_tooltipKind = instanceValue("tooltipKind", "").toString();
@@ -59,7 +60,7 @@ Item::Item(Json config, String directory, Json parameters) {
   if (!m_pickupSounds.size())
     m_pickupSounds = jsonToStringSet(assets->json("/items/defaultParameters.config:pickupSounds"));
 
-  m_timeToLive = instanceValue("timeToLive", Root::singleton().assets()->json("/items/defaultParameters.config:defaultTimeToLive").toFloat()).toFloat();
+  m_timeToLive = instanceValue("timeToLive", assets->json("/items/defaultParameters.config:defaultTimeToLive").toFloat()).toFloat();
 
   for (auto b : jsonToStringList(instanceValue("learnBlueprintsOnPickup", JsonArray{})))
     m_learnBlueprintsOnPickup.append(ItemDescriptor(b));
@@ -327,8 +328,8 @@ StringMap<String> Item::collectablesOnPickup() const {
   return m_collectablesOnPickup;
 }
 
-GenericItem::GenericItem(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {}
+GenericItem::GenericItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+  : Item(std::move(assets), config, directory, parameters) {}
 
 ItemPtr GenericItem::clone() const {
   return make_shared<GenericItem>(*this);

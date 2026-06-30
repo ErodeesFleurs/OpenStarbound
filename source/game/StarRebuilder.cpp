@@ -10,7 +10,7 @@ Rebuilder::Rebuilder(AssetsConstPtr assets, String const& id) {
   if (!assets)
     throw StarException("Rebuilder requires assets service");
 
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = make_shared<LuaRoot>(assets);
   m_contexts = make_shared<List<LuaContext>>();
 
   for (auto& path : assets->assetSources()) {

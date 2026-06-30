@@ -275,7 +275,7 @@ String ClientCommandProcessor::startQuest(String const& argumentsString) {
     return "You must be an admin to use this command.";
 
   auto questArc = QuestArcDescriptor::fromJson(Json::parseSequence(arguments.at(0)).get(0));
-  m_universeClient->questManager()->offer(make_shared<Quest>(questArc, 0, m_universeClient->mainPlayer().get()));
+  m_universeClient->questManager()->offer(make_shared<Quest>(m_universeClient->questManager()->assets(), questArc, 0, m_universeClient->mainPlayer().get()));
   return "Quest started";
 }
 

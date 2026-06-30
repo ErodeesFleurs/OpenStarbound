@@ -114,8 +114,8 @@ public:
   static EnumMap<State> const StateNames;
 
   Player(PlayerConfigPtr config, Uuid uuid = Uuid(), IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
-  Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules = {});
-  Player(PlayerConfigPtr config, Json const& diskStore);
+  Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules = {}, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
+  Player(PlayerConfigPtr config, Json const& diskStore, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
 
   void diskLoad(Json const& diskStore);
 

@@ -359,20 +359,20 @@ NpcVariant NpcDatabase::readNpcVariantFromJson(Json const& data) const {
 }
 
 NpcPtr NpcDatabase::createNpc(NpcVariant const& npcVariant) const {
-  return make_shared<Npc>(npcVariant);
+  return make_shared<Npc>(m_assets, npcVariant);
 }
 
 NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
   NpcPtr npc;
   try {
     NpcVariant npcVariant = readNpcVariantFromJson(diskStore.get("npcVariant"));
-    npc = make_shared<Npc>(npcVariant, diskStore);
+    npc = make_shared<Npc>(m_assets, npcVariant, diskStore);
   } catch (std::exception const& e) {
     auto exception = std::current_exception();
     bool success = m_rebuilder->rebuild(diskStore, strf("{}", outputException(e, false)), [&](Json const& store) -> String {
       try {
         NpcVariant npcVariant = readNpcVariantFromJson(store.get("npcVariant"));
-        npc = make_shared<Npc>(npcVariant, store);
+        npc = make_shared<Npc>(m_assets, npcVariant, store);
       } catch (std::exception const& e) {
         exception = std::current_exception();
         return strf("{}", outputException(e, false));
@@ -387,7 +387,7 @@ NpcPtr NpcDatabase::diskLoadNpc(Json const& diskStore) const {
 }
 
 NpcPtr NpcDatabase::netLoadNpc(ByteArray const& netStore, NetCompatibilityRules rules) const {
-  return make_shared<Npc>(readNpcVariant(netStore, rules));
+  return make_shared<Npc>(m_assets, readNpcVariant(netStore, rules));
 }
 
 List<Drawable> NpcDatabase::npcPortrait(NpcVariant const& npcVariant, PortraitMode mode) const {

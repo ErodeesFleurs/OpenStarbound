@@ -19,6 +19,7 @@
 #include "StarLuaAnimationComponent.hpp"
 #include "StarLuaActorMovementComponent.hpp"
 #include "StarActorEntity.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -42,8 +43,8 @@ public:
     String image;
   };
 
-  Monster(MonsterVariant const& variant, Maybe<float> level = {});
-  Monster(Json const& diskStore);
+  Monster(IAssetsConstPtr assets, MonsterVariant const& variant, Maybe<float> level = {});
+  Monster(IAssetsConstPtr assets, Json const& diskStore);
 
   Json diskStore() const;
   ByteArray netStore(NetCompatibilityRules rules = {});

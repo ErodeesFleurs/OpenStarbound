@@ -495,8 +495,9 @@ namespace LuaBindings {
         });
 
       callbacks.registerCallback("enqueuePlacement", [serverWorld](List<Json> distributionConfigs, Maybe<DungeonId> id) {
-          auto distributions = distributionConfigs.transformed([](Json const& config) {
-            return BiomeItemDistribution(config, Random::randu64());
+          auto assets = serverWorld->assets();
+          auto distributions = distributionConfigs.transformed([assets](Json const& config) {
+            return BiomeItemDistribution(assets, config, Random::randu64());
           });
           return serverWorld->enqueuePlacement(std::move(distributions), id);
         });
@@ -943,7 +944,7 @@ namespace LuaBindings {
         descriptor = ItemDescriptor(itemType);
       }
 
-      if (auto itemDrop = ItemDrop::createRandomizedDrop(descriptor, position)) {
+      if (auto itemDrop = ItemDrop::createRandomizedDrop(descriptor, position, false, world->assets())) {
         if (initialVelocity)
           itemDrop->setVelocity(*initialVelocity);
         if (intangibleTime)
@@ -966,7 +967,7 @@ namespace LuaBindings {
     auto treasureDatabase = Root::singleton().treasureDatabase();
     try {
       for (auto const& treasureItem : treasureDatabase->createTreasure(pool, level, seed.value(Random::randu64()))) {
-        ItemDropPtr entity = ItemDrop::createRandomizedDrop(treasureItem, position);
+        ItemDropPtr entity = ItemDrop::createRandomizedDrop(treasureItem, position, false, world->assets());
         entities.append(entity->entityId());
         world->addEntity(entity);
       }

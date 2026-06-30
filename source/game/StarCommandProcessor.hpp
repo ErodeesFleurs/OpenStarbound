@@ -4,6 +4,7 @@
 #include "StarShellParser.hpp"
 #include "StarLuaComponents.hpp"
 #include "StarLuaRoot.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -13,7 +14,7 @@ using CommandProcessorPtr = SharedPtr<CommandProcessor>;
 
 class CommandProcessor {
 public:
-  CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot);
+  CommandProcessor(UniverseServer* universe, LuaRootPtr luaRoot, IAssetsConstPtr assets);
 
   String adminCommand(String const& command, String const& argumentString);
   String userCommand(ConnectionId clientId, String const& command, String const& argumentString);
@@ -72,6 +73,7 @@ private:
   LuaCallbacks makeCommandCallbacks();
 
   UniverseServer* m_universe;
+  IAssetsConstPtr m_assets;
   ShellParser m_parser;
 
   LuaBaseComponent m_scriptComponent;

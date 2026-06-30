@@ -6,8 +6,8 @@
 
 namespace Star {
 
-ConsumableItem::ConsumableItem(Json const& config, String const& directory, Json const& data)
-  : Item(config, directory, data), SwingableItem(config) {
+ConsumableItem::ConsumableItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
+  : Item(std::move(assets), config, directory, data), SwingableItem(config) {
   setWindupTime(0);
   setCooldownTime(0.25f);
   m_requireEdgeTrigger = true;

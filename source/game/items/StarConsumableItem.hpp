@@ -3,12 +3,13 @@
 #include "StarItem.hpp"
 #include "StarGameTypes.hpp"
 #include "StarSwingableItem.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
 class ConsumableItem : public Item, public SwingableItem {
 public:
-  ConsumableItem(Json const& config, String const& directory, Json const& data);
+  ConsumableItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
 
   ItemPtr clone() const override;
 

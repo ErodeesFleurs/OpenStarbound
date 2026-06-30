@@ -61,7 +61,7 @@ void GuiContext::renderInit(RendererPtr renderer) {
   auto textureGroup = m_renderer->createTextureGroup();
   m_textureCollection = make_shared<AssetTextureGroup>(textureGroup, m_assets, m_registerReloadListener);
   m_drawablePainter = make_shared<DrawablePainter>(m_renderer, m_textureCollection);
-  m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup);
+  m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup, m_assets, m_registerReloadListener);
 }
 
 MixerPtr const& GuiContext::mixer() const {

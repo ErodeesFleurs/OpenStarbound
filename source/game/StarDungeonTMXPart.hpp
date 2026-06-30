@@ -4,6 +4,7 @@
 #include "StarDungeonGenerator.hpp"
 #include "StarTilesetDatabase.hpp"
 #include "StarLexicalCast.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -199,6 +200,8 @@ namespace Dungeon {
 
   class TMXPartReader : public PartReader {
   public:
+    explicit TMXPartReader(IAssetsConstPtr assets) : m_assets(std::move(assets)) {}
+
     virtual void readAsset(String const& asset) override;
 
     virtual Vec2U size() const override;
@@ -210,6 +213,7 @@ namespace Dungeon {
     // Return true in the callback to exit early without processing later maps
     void forEachMap(function<bool(TMXMapConstPtr const&)> func) const;
 
+    IAssetsConstPtr m_assets;
     List<pair<String, TMXMapConstPtr>> m_maps;
   };
 }

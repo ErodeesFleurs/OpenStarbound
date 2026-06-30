@@ -11,7 +11,7 @@
 namespace Star {
 
 MiningTool::MiningTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
+  : Item(assets, config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("MiningTool requires assets service");
 
@@ -143,7 +143,7 @@ void MiningTool::changeDurability(float amount) {
 }
 
 HarvestingTool::HarvestingTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), SwingableItem(config) {
+  : Item(assets, config, directory, parameters), SwingableItem(config) {
   if (!assets)
     throw ItemException("HarvestingTool requires assets service");
 
@@ -212,8 +212,8 @@ float HarvestingTool::getAngle(float aimAngle) {
   return aimAngle;
 }
 
-Flashlight::Flashlight(Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters) {
+Flashlight::Flashlight(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
+  : Item(std::move(assets), config, directory, parameters) {
   m_image = AssetPath::relativeTo(directory, instanceValue("image").toString());
   m_handPosition = jsonToVec2F(instanceValue("handPosition"));
   m_lightPosition = jsonToVec2F(instanceValue("lightPosition"));
@@ -246,7 +246,7 @@ List<LightSource> Flashlight::lightSources() const {
 }
 
 WireTool::WireTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), FireableItem(config), BeamItem(config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
+  : Item(assets, config, directory, parameters), FireableItem(config), BeamItem(assets, config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("WireTool requires assets service");
 
@@ -322,7 +322,7 @@ void WireTool::setConnector(WireConnector* connector) {
 }
 
 BeamMiningTool::BeamMiningTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), FireableItem(config), BeamItem(config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
+  : Item(assets, config, directory, parameters), FireableItem(config), BeamItem(assets, config.setAll(parameters.toObject())), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("BeamMiningTool requires assets service");
 
@@ -497,7 +497,7 @@ float BeamMiningTool::getAngle(float angle) {
 }
 
 TillingTool::TillingTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
+  : Item(assets, config, directory, parameters), SwingableItem(config), m_assets(std::move(assets)) {
   if (!m_assets)
     throw ItemException("TillingTool requires assets service");
 
@@ -594,7 +594,7 @@ float TillingTool::getAngle(float aimAngle) {
 }
 
 PaintingBeamTool::PaintingBeamTool(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters)
-  : Item(config, directory, parameters), FireableItem(config), BeamItem(config) {
+  : Item(assets, config, directory, parameters), FireableItem(config), BeamItem(assets, config) {
   if (!assets)
     throw ItemException("PaintingBeamTool requires assets service");
 

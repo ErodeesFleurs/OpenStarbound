@@ -57,7 +57,8 @@ CelestialMasterDatabase::CelestialMasterDatabase(IAssetsConstPtr assets, Maybe<S
   if (!assets)
     throw CelestialException("CelestialMasterDatabase requires assets service");
 
-  auto config = assets->json("/celestial.config");
+  m_assets = std::move(assets);
+  auto config = m_assets->json("/celestial.config");
 
   m_baseInformation.planetOrbitalLevels = config.getInt("planetOrbitalLevels");
   m_baseInformation.satelliteOrbitalLevels = config.getInt("satelliteOrbitalLevels");
@@ -119,7 +120,7 @@ CelestialMasterDatabase::CelestialMasterDatabase(IAssetsConstPtr assets, Maybe<S
     m_generationInformation.satelliteTypes[satelliteType.typeName] = satelliteType;
   }
 
-  auto namesConfig = assets->json("/celestial/names.config");
+  auto namesConfig = m_assets->json("/celestial/names.config");
   m_generationInformation.planetarySuffixes = jsonToStringList(namesConfig.get("planetarySuffixes"));
   m_generationInformation.satelliteSuffixes = jsonToStringList(namesConfig.get("satelliteSuffixes"));
 
@@ -492,7 +493,8 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
   CelestialParameters systemParameters = CelestialParameters(systemCoordinate,
       systemSeed,
       systemName,
-      jsonMerge(systemType.baseParameters, random.randValueFrom(systemType.variationParameters)));
+      jsonMerge(systemType.baseParameters, random.randValueFrom(systemType.variationParameters)),
+      m_assets);
 
   List<int> planetaryOrbits;
   for (int i = 1; i <= m_baseInformation.planetOrbitalLevels; ++i) {
@@ -518,7 +520,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
 
       CelestialPlanet planet;
       planet.planetParameters =
-          CelestialParameters(planetCoordinate, planetarySeed, planetaryName, planetaryParameters);
+          CelestialParameters(planetCoordinate, planetarySeed, planetaryName, planetaryParameters, m_assets);
 
       List<int> satelliteOrbits;
       for (int i = 1; i <= m_baseInformation.satelliteOrbitalLevels; ++i) {
@@ -542,7 +544,7 @@ Maybe<pair<CelestialParameters, HashMap<int, CelestialPlanet>>> CelestialMasterD
               strf("{} {}", planetaryName, m_generationInformation.satelliteSuffixes.at(satellitePair.second));
 
           planet.satelliteParameters[satellitePair.first] =
-              CelestialParameters(satelliteCoordinate, satelliteSeed, satelliteName, satelliteParameters);
+              CelestialParameters(satelliteCoordinate, satelliteSeed, satelliteName, satelliteParameters, m_assets);
         }
       }
 

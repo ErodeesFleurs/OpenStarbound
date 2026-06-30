@@ -15,7 +15,7 @@ QuestIndicatorPainter::QuestIndicatorPainter(UniverseClientPtr const& client, Se
 }
 
 AnimationPtr QuestIndicatorPainter::indicatorAnimation(String const& indicatorPath) const {
-  return make_shared<Animation>(m_assets->json(indicatorPath), indicatorPath);
+  return make_shared<Animation>(m_assets->json(indicatorPath), indicatorPath, m_assets);
 }
 
 void QuestIndicatorPainter::update(float dt, WorldClientPtr const& world, WorldCamera const& camera) {

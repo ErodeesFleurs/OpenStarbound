@@ -8,6 +8,14 @@
 
 namespace Star {
 
+namespace {
+
+IAssetsConstPtr worldParameterAssets() {
+  return Root::singleton().assets();
+}
+
+}
+
 EnumMap<WorldParametersType> const WorldParametersTypeNames{
     {WorldParametersType::TerrestrialWorldParameters, "TerrestrialWorldParameters"},
     {WorldParametersType::AsteroidsWorldParameters, "AsteroidsWorldParameters"},
@@ -461,8 +469,14 @@ VisitableWorldParametersPtr netLoadVisitableWorldParameters(ByteArray data) {
 }
 
 TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& typeName, String const& sizeName, uint64_t seed) {
+  return generateTerrestrialWorldParameters(worldParameterAssets(), typeName, sizeName, seed);
+}
+
+TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(IAssetsConstPtr assets, String const& typeName, String const& sizeName, uint64_t seed) {
+  if (!assets)
+    throw StarException("generateTerrestrialWorldParameters requires assets service");
+
   auto& root = Root::singleton();
-  auto assets = root.assets();
   auto liquidsDatabase = root.liquidsDatabase();
   auto biomeDatabase = root.biomeDatabase();
 
@@ -637,8 +651,12 @@ TerrestrialWorldParametersPtr generateTerrestrialWorldParameters(String const& t
 }
 
 AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed) {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
+  return generateAsteroidsWorldParameters(worldParameterAssets(), seed);
+}
+
+AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(IAssetsConstPtr assets, uint64_t seed) {
+  if (!assets)
+    throw StarException("generateAsteroidsWorldParameters requires assets service");
 
   auto parameters = make_shared<AsteroidsWorldParameters>();
 
@@ -668,8 +686,12 @@ AsteroidsWorldParametersPtr generateAsteroidsWorldParameters(uint64_t seed) {
 }
 
 FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(String const& dungeonWorldName) {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
+  return generateFloatingDungeonWorldParameters(worldParameterAssets(), dungeonWorldName);
+}
+
+FloatingDungeonWorldParametersPtr generateFloatingDungeonWorldParameters(IAssetsConstPtr assets, String const& dungeonWorldName) {
+  if (!assets)
+    throw StarException("generateFloatingDungeonWorldParameters requires assets service");
 
   auto worldConfig = assets->json("/dungeon_worlds.config:" + dungeonWorldName);
 

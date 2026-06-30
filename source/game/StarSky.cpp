@@ -4,7 +4,6 @@
 #include "StarRoot.hpp"
 #include "StarCelestialDatabase.hpp"
 #include "StarCelestialGraphics.hpp"
-#include "StarAssets.hpp"
 #include "StarTime.hpp"
 #include "StarRandomPoint.hpp"
 #include "StarMixer.hpp"
@@ -12,7 +11,16 @@
 
 namespace Star {
 
-Sky::Sky() {
+namespace {
+
+IAssetsConstPtr skyAssets(IAssetsConstPtr assets) {
+  return assets ? std::move(assets) : Root::singleton().assets();
+}
+
+}
+
+Sky::Sky(IAssetsConstPtr assets) {
+  m_assets = skyAssets(std::move(assets));
   skyParametersUpdated();
 
   m_netInit = false;
@@ -32,7 +40,7 @@ Sky::Sky() {
   m_netGroup.setNeedsStoreCallback([this]() { return writeNetStates(); });
 }
 
-Sky::Sky(SkyParameters const& skyParameters, bool inOrbit) : Sky() {
+Sky::Sky(SkyParameters const& skyParameters, bool inOrbit, IAssetsConstPtr assets) : Sky(std::move(assets)) {
   m_skyParameters = skyParameters;
   skyParametersUpdated();
 
@@ -287,8 +295,7 @@ List<AudioInstancePtr> Sky::pullSounds() {
       }
 
       if (m_flyingTimer >= triggerTime) {
-        auto assets = Root::singleton().assets();
-        auto SFX = assets->audio(m_settings.queryString("enterHyperspaceAudio"));
+        auto SFX = m_assets->audio(m_settings.queryString("enterHyperspaceAudio"));
         m_sentSFX = true;
         res.append(make_shared<AudioInstance>(*SFX));
         return res;
@@ -301,8 +308,7 @@ List<AudioInstancePtr> Sky::pullSounds() {
       }
 
       if (m_flyingTimer >= triggerTime) {
-        auto assets = Root::singleton().assets();
-        auto SFX = assets->audio(m_settings.queryString("exitHyperspaceAudio"));
+        auto SFX = m_assets->audio(m_settings.queryString("exitHyperspaceAudio"));
         m_sentSFX = true;
         res.append(make_shared<AudioInstance>(*SFX));
         return res;
@@ -310,8 +316,7 @@ List<AudioInstancePtr> Sky::pullSounds() {
     }
   } else if (m_flyingType == FlyingType::Arriving) {
     if (!m_sentSFX) {
-      auto assets = Root::singleton().assets();
-      auto SFX = assets->audio(m_settings.queryString("arrivalAudio"));
+      auto SFX = m_assets->audio(m_settings.queryString("arrivalAudio"));
       m_sentSFX = true;
       res.append(make_shared<AudioInstance>(*SFX));
       return res;
@@ -656,7 +661,7 @@ float Sky::slowdownTime() const {
 
 void Sky::skyParametersUpdated() {
   m_skyParametersUpdated = true;
-  m_settings = jsonMerge(Root::singleton().assets()->json("/sky.config"), m_skyParameters.settings);
+  m_settings = jsonMerge(m_assets->json("/sky.config"), m_skyParameters.settings);
   m_starFrames = m_settings.queryInt("stars.frames");
   m_starList = jsonToStringList(m_settings.query("stars.list"));
   m_hyperStarList = jsonToStringList(m_settings.query("stars.hyperlist"));

@@ -7,9 +7,21 @@
 
 namespace Star {
 
+namespace {
+
+AssetsConstPtr worldPainterAssets(AssetsConstPtr assets) {
+  return assets ? std::move(assets) : Root::singleton().assets();
+}
+
+IConfigurationPtr worldPainterConfiguration(IConfigurationPtr configuration) {
+  return configuration ? std::move(configuration) : Root::singleton().configuration();
+}
+
+}
+
 WorldPainter::WorldPainter(AssetsConstPtr assets, IConfigurationPtr configuration, function<void(ListenerWeakPtr)> registerReloadListener)
-  : m_assets(assets ? std::move(assets) : Root::singleton().assets()),
-    m_configuration(configuration ? std::move(configuration) : Root::singleton().configuration()),
+  : m_assets(worldPainterAssets(std::move(assets))),
+    m_configuration(worldPainterConfiguration(std::move(configuration))),
     m_registerReloadListener(std::move(registerReloadListener)) {
   if (!m_registerReloadListener)
     m_registerReloadListener = [](ListenerWeakPtr reloadListener) {
@@ -35,7 +47,7 @@ WorldPainter::WorldPainter(AssetsConstPtr assets, IConfigurationPtr configuratio
 void WorldPainter::renderInit(RendererPtr renderer) {
   m_renderer = std::move(renderer);
   auto textureGroup = m_renderer->createTextureGroup(TextureGroupSize::Large);
-  m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup);
+  m_textPainter = make_shared<TextPainter>(m_renderer, textureGroup, m_assets, m_registerReloadListener);
   m_tilePainter = make_shared<TilePainter>(m_assets, m_renderer);
   m_drawablePainter = make_shared<DrawablePainter>(m_renderer, make_shared<AssetTextureGroup>(textureGroup, m_assets, m_registerReloadListener));
   m_environmentPainter = make_shared<EnvironmentPainter>(m_renderer, m_assets, m_registerReloadListener);

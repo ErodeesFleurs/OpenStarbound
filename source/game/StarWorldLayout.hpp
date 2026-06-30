@@ -4,6 +4,7 @@
 #include "StarWeatherTypes.hpp"
 #include "StarGameTypes.hpp"
 #include "StarCelestialParameters.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -80,9 +81,9 @@ public:
     WorldRegion const* region;
   };
 
-  static WorldLayout buildTerrestrialLayout(TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed);
-  static WorldLayout buildAsteroidsLayout(AsteroidsWorldParameters const& asteroidParameters, uint64_t seed);
-  static WorldLayout buildFloatingDungeonLayout(FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed);
+  static WorldLayout buildTerrestrialLayout(IAssetsConstPtr assets, TerrestrialWorldParameters const& terrestrialParameters, uint64_t seed);
+  static WorldLayout buildAsteroidsLayout(IAssetsConstPtr assets, AsteroidsWorldParameters const& asteroidParameters, uint64_t seed);
+  static WorldLayout buildFloatingDungeonLayout(IAssetsConstPtr assets, FloatingDungeonWorldParameters const& floatingDungeonParameters, uint64_t seed);
 
   WorldLayout();
   WorldLayout(Json const& store);
@@ -144,7 +145,8 @@ private:
   void addLayer(uint64_t seed, int yStart, int yBase, String const& primaryBiome,
       RegionParams primaryRegionParams, RegionParams primarySubRegionParams,
       List<RegionParams> secondaryRegions, List<RegionParams> secondarySubRegions,
-      Vec2F secondaryRegionSize, Vec2F subRegionSize);
+      Vec2F secondaryRegionSize, Vec2F subRegionSize,
+      bool useSecondaryEnvironmentBiomeIndex, int playerStartSearchYRange);
   void finalize(Color mainSkyColor);
 
   pair<size_t, int> findContainingCell(WorldLayer const& layer, int x) const;

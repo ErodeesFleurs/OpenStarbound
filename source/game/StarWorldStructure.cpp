@@ -5,14 +5,12 @@
 #include "StarMaterialDatabase.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarImage.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
 WorldStructure::WorldStructure() {}
 
-WorldStructure::WorldStructure(String const& configPath) {
-  auto assets = Root::singleton().assets();
+WorldStructure::WorldStructure(IAssetsConstPtr assets, String const& configPath) {
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
   auto settings = assets->json(configPath);
 

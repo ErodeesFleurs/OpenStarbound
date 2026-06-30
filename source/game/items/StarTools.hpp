@@ -94,7 +94,7 @@ private:
 
 class Flashlight : public Item, public PointableItem, public ToolUserItem {
 public:
-  Flashlight(Json const& config, String const& directory, Json const& parameters = JsonObject());
+  Flashlight(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& parameters = JsonObject());
 
   ItemPtr clone() const override;
 

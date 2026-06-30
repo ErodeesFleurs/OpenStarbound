@@ -2,7 +2,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -154,7 +153,7 @@ BiomeItemDistribution::BiomeItemDistribution() {
   m_priority = 0.0f;
 }
 
-BiomeItemDistribution::BiomeItemDistribution(Json const& config, uint64_t seed, float biomeHueShift) {
+BiomeItemDistribution::BiomeItemDistribution(IAssetsConstPtr assets, Json const& config, uint64_t seed, float biomeHueShift) {
   RandomSource rand(seed);
 
   m_mode = BiomePlacementModeNames.getLeft(config.getString("mode", "floor"));
@@ -171,7 +170,6 @@ BiomeItemDistribution::BiomeItemDistribution(Json const& config, uint64_t seed, 
   // variant.
   auto distributionSettings = config.get("distribution", JsonObject());
   if (distributionSettings.type() == Json::Type::String) {
-    auto assets = Root::singleton().assets();
     distributionSettings = assets->json(distributionSettings.toString());
   }
 

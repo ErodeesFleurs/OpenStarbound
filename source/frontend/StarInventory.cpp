@@ -405,9 +405,9 @@ void InventoryPane::update(float dt) {
   }
 
   if (ItemPtr swapSlot = inventory->swapSlotItem()) {
-    if (!PlayerInventory::itemAllowedInBag(swapSlot, m_selectedTab)) {
+    if (!inventory->itemAllowedInBag(swapSlot, m_selectedTab)) {
       for (auto& pair : m_itemGrids) {
-        if (pair.first != m_selectedTab && PlayerInventory::itemAllowedInBag(swapSlot, pair.first)) {
+        if (pair.first != m_selectedTab && inventory->itemAllowedInBag(swapSlot, pair.first)) {
           selectTab(pair.first);
           break;
         }

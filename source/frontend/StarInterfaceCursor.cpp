@@ -33,7 +33,7 @@ void InterfaceCursor::setCursor(String const& configFile) {
     m_drawable = config.getString("image");
     m_size = Vec2I{m_imageMetadata->imageSize(config.getString("image"))};
   } else {
-    m_drawable = Animation(config.get("animation"), "/interface");
+    m_drawable = Animation(config.get("animation"), "/interface", m_assets);
     m_size = Vec2I(m_drawable.get<Animation>().drawable(1.0f).boundBox(false).size());
   }
 

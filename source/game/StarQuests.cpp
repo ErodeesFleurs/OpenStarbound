@@ -2,7 +2,6 @@
 #include "StarJsonExtra.hpp"
 #include "StarFile.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarTime.hpp"
 #include "StarRandom.hpp"
 #include "StarItemDatabase.hpp"
@@ -33,9 +32,13 @@ EnumMap<QuestState> const QuestStateNames {
   {QuestState::Failed, "Failed"}
 };
 
-Quest::Quest(QuestArcDescriptor const& questArc, size_t arcPos, Player* player) {
-  m_trackedIndicator = Root::singleton().assets()->json("/quests/quests.config:trackedCustomIndicator").toString();
-  m_untrackedIndicator = Root::singleton().assets()->json("/quests/quests.config:untrackedCustomIndicator").toString();
+Quest::Quest(IAssetsConstPtr assets, QuestArcDescriptor const& questArc, size_t arcPos, Player* player)
+  : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("Quest requires assets service");
+
+  m_trackedIndicator = m_assets->json("/quests/quests.config:trackedCustomIndicator").toString();
+  m_untrackedIndicator = m_assets->json("/quests/quests.config:untrackedCustomIndicator").toString();
 
   m_money = 0;
   m_unread = true;
@@ -92,9 +95,13 @@ Quest::Quest(QuestArcDescriptor const& questArc, size_t arcPos, Player* player) 
   m_inited = false;
 }
 
-Quest::Quest(Json const& spec) {
-  m_trackedIndicator = Root::singleton().assets()->json("/quests/quests.config:trackedCustomIndicator").toString();
-  m_untrackedIndicator = Root::singleton().assets()->json("/quests/quests.config:untrackedCustomIndicator").toString();
+Quest::Quest(IAssetsConstPtr assets, Json const& spec)
+  : m_assets(std::move(assets)) {
+  if (!m_assets)
+    throw StarException("Quest requires assets service");
+
+  m_trackedIndicator = m_assets->json("/quests/quests.config:trackedCustomIndicator").toString();
+  m_untrackedIndicator = m_assets->json("/quests/quests.config:untrackedCustomIndicator").toString();
 
   auto versioningDatabase = Root::singleton().versioningDatabase();
   Json diskStore = versioningDatabase->loadVersionedJson(VersionedJson::fromJson(spec), "Quest");
@@ -279,7 +286,7 @@ void Quest::complete(Maybe<size_t> followupIndex) {
   bool trackNewQuest = m_player->questManager()->isTracked(questId());
   size_t nextArcPos = followupIndex.value(questArcPosition() + 1);
   if (nextArcPos < m_arc.quests.size()) {
-    auto followUp = make_shared<Quest>(m_arc, nextArcPos, m_player);
+    auto followUp = make_shared<Quest>(m_player->questManager()->assets(), m_arc, nextArcPos, m_player);
     followUp->setWorldId(worldId());
     followUp->setLocation(location());
     followUp->setServerUuid(serverUuid());
@@ -777,7 +784,7 @@ QuestPtr createPreviewQuest(
     arcPos = 2;
   }
 
-  auto quest = make_shared<Quest>(arc, arcPos, player);
+  auto quest = make_shared<Quest>(player->questManager()->assets(), arc, arcPos, player);
   quest->setParameter("questGiver", QuestParam{QuestEntity{{}, questGiverSpecies, {}}, {"Quest Giver"}, portrait, {}});
   return quest;
 }

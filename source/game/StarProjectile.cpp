@@ -20,14 +20,16 @@
 
 namespace Star {
 
-Projectile::Projectile(ProjectileConfigPtr const& config, Json const& parameters) {
+Projectile::Projectile(IAssetsConstPtr assets, ProjectileConfigPtr const& config, Json const& parameters) {
+  m_assets = std::move(assets);
   m_config = config;
   m_parameters = parameters;
 
   setup();
 }
 
-Projectile::Projectile(ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules) {
+Projectile::Projectile(IAssetsConstPtr assets, ProjectileConfigPtr const& config, DataStreamBuffer& data, NetCompatibilityRules) {
+  m_assets = std::move(assets);
   m_config = config;
   data.read(m_parameters);
   setup();
@@ -103,7 +105,7 @@ void Projectile::init(World* world, EntityId entityId, EntityMode mode) {
     setReferenceVelocity(referenceVelocity.apply(jsonToVec2F));
 
   if (world->isClient() && !m_persistentAudioFile.empty()) {
-    m_persistentAudio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(m_persistentAudioFile));
+    m_persistentAudio = make_shared<AudioInstance>(*m_assets->audio(m_persistentAudioFile));
     m_persistentAudio->setLoops(-1);
     m_persistentAudio->setPosition(position());
     m_pendingRenderables.append(m_persistentAudio);
@@ -501,13 +503,15 @@ Maybe<PhysicsMovingCollision> Projectile::movingCollision(size_t positionIndex) 
   return collision;
 }
 
-List<Particle> Projectile::sparkBlock(World* world, Vec2I const& position, Vec2F const& damageSource) {
+List<Particle> Projectile::sparkBlock(IAssetsConstPtr assets, World* world, Vec2I const& position, Vec2F const& damageSource) {
+  if (!assets)
+    throw StarException("Projectile::sparkBlock requires assets service");
+
   auto& root = Root::singleton();
-  auto assets = root.assets();
   auto materialDatabase = root.materialDatabase();
 
-  auto blockDamageParticle = Particle(assets->json("/client.config:blockDamageParticle"));
-  auto blockDamageVariance = Particle(assets->json("/client.config:blockDamageParticleVariance"));
+  auto blockDamageParticle = Particle(assets->json("/client.config:blockDamageParticle"), "/", assets);
+  auto blockDamageVariance = Particle(assets->json("/client.config:blockDamageParticleVariance"), "/", assets);
 
   List<Particle> result;
   for (auto layer : {TileLayer::Background, TileLayer::Foreground}) {
@@ -615,7 +619,7 @@ void Projectile::processAction(Json const& action) {
     for (auto& tile : zip(openSpaces, tileDrops)) {
       auto [tilePos, tileMat] = tile;
       if (!world()->modifyTile(tilePos, PlaceMaterial{TileLayer::Foreground, tileMat, MaterialHue()}, allowEntityOverlap)) {
-        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(tileMat), static_cast<Vec2F>(tilePos));
+        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(tileMat), static_cast<Vec2F>(tilePos), false, m_assets);
         world()->addEntity(itemDrop);
       }
     }
@@ -741,7 +745,7 @@ void Projectile::processAction(Json const& action) {
     if (!m_collision || collisionMaterial == EmptyMaterialId)
       return;
 
-    for (auto& particle : sparkBlock(world(), m_collisionTile, position())) {
+    for (auto& particle : sparkBlock(m_assets, world(), m_collisionTile, position())) {
       // enable trails and such
       particle.approach += Vec2F(0.0f, 5.0f);
       particle.velocity += Vec2F(Random::randf() - 0.5f, 5.0f + Random::randf());
@@ -823,14 +827,14 @@ void Projectile::processAction(Json const& action) {
     size_t count = parameters.getInt("count", 1);
     JsonObject data = parameters.getObject("data", JsonObject{});
 
-    auto itemDrop = ItemDrop::createRandomizedDrop(ItemDescriptor(name, count, data), position());
+    auto itemDrop = ItemDrop::createRandomizedDrop(ItemDescriptor(name, count, data), position(), false, m_assets);
     world()->addEntity(itemDrop);
 
   } else if (command == "sound") {
     if (!world()->isClient())
       return;
 
-    AudioInstancePtr sound = make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
+    AudioInstancePtr sound = make_shared<AudioInstance>(*m_assets->audio(Random::randValueFrom(parameters.getArray("options")).toString()));
     sound->setPosition(position());
     sound->setVolume(parameters.getFloat("volume", 1.0f));
     sound->setPitchMultiplier(parameters.getFloat("pitch", 1.0f));
@@ -869,7 +873,7 @@ void Projectile::processAction(Json const& action) {
     }
 
   } else if (command == "config") {
-    processAction(Root::singleton().assets()->json(parameters.getString("file")));
+    processAction(m_assets->json(parameters.getString("file")));
 
   } else {
     throw StarException(strf("Unknown projectile reap command {}", command));
@@ -954,7 +958,7 @@ void Projectile::setup() {
   auto movementSettings = jsonMerge(m_config->movementSettings, m_parameters.get("movementSettings", Json()));
   if (!movementSettings.contains("physicsEffectCategories"))
     movementSettings = movementSettings.set("physicsEffectCategories", JsonArray{"projectile"});
-  m_movementController = make_shared<MovementController>(movementSettings);
+  m_movementController = make_shared<MovementController>(movementSettings, m_assets);
 
   m_effectEmitter = make_shared<EffectEmitter>();
 

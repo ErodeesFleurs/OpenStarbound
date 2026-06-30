@@ -494,11 +494,11 @@ ByteArray WorldStorage::tileSectorKey(Sector const& sector) {
   return ds.takeData();
 }
 
-WorldStorage::TileSectorStore WorldStorage::readTileSector(ByteArray const& data) {
+WorldStorage::TileSectorStore WorldStorage::readTileSector(ByteArray const& data, IAssetsConstPtr assets) {
   auto& root = Root::singleton();
   auto matDatabase = root.materialDatabase();
   auto liqDatabase = root.liquidsDatabase();
-  auto storageConfig = root.assets()->json("/worldstorage.config");
+  auto storageConfig = assets->json("/worldstorage.config");
 
   DataStreamBuffer ds(uncompressData(data));
   TileSectorStore store;
@@ -687,7 +687,7 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
 
     if (currentLoad == SectorLoadLevel::Tiles) {
       if (auto res = m_db.find(tileSectorKey(sector))) {
-        TileSectorStore sectorStore = readTileSector(*res);
+        TileSectorStore sectorStore = readTileSector(*res, m_assets);
 
         m_tileArray->loadSector(sector, std::move(sectorStore.tiles));
 

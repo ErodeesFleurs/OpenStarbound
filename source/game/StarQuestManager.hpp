@@ -23,6 +23,7 @@ public:
   Json diskStore();
 
   void setUniverseClient(UniverseClient* client);
+  IAssetsConstPtr assets() const;
 
   void init(World* world);
   void uninit();

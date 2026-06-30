@@ -4,6 +4,7 @@
 #include "StarColor.hpp"
 #include "StarPlantDatabase.hpp"
 #include "StarDirectives.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -47,7 +48,8 @@ DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer);
 // Object managing and rendering the parallax for a World
 class Parallax {
 public:
-  Parallax(String const& assetFile,
+  Parallax(IAssetsConstPtr assets,
+      String const& assetFile,
       uint64_t seed,
       float verticalOrigin,
       float hueShift,

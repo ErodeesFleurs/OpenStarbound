@@ -71,6 +71,7 @@ public:
   ConnectionId connection() const override;
   WorldGeometry geometry() const override;
   uint64_t currentStep() const override;
+  IAssetsConstPtr assets() const override;
   MaterialId material(Vec2I const& position, TileLayer layer) const override;
   std::tuple<MaterialId, ModId> materialAndMod(Vec2I const& position, TileLayer layer) const override;
   MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const override;
@@ -306,6 +307,8 @@ private:
 
   SkyPtr m_sky;
 
+  IAssetsConstPtr m_assets;
+
   CollisionGenerator m_collisionGenerator;
   HashMap<Vec2I, StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace>> m_collisionCache;
 
@@ -313,7 +316,6 @@ private:
   Maybe<ConnectionId> m_clientId;
 
   PlayerPtr m_mainPlayer;
-  IAssetsConstPtr m_assets;
   IConfigurationPtr m_configuration;
   IMaterialDatabaseConstPtr m_materialDatabase;
   IItemDatabaseConstPtr m_itemDatabase;

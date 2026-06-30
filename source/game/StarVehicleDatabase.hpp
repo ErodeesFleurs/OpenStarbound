@@ -25,6 +25,7 @@ public:
   VehiclePtr diskLoad(Json const& diskStore) const;
 
 private:
+  AssetsConstPtr m_assets;
   StringMap<pair<String, Json>> m_vehicles;
 
   mutable RecursiveMutex m_luaMutex;

@@ -9,7 +9,6 @@
 #include "StarPlayerStorage.hpp"
 #include "StarPlayer.hpp"
 #include "StarPlayerLog.hpp"
-#include "StarAssets.hpp"
 #include "StarTime.hpp"
 #include "StarNetPackets.hpp"
 #include "StarTcp.hpp"
@@ -28,12 +27,13 @@ constexpr float MaxClientGlobalTimescale = 1024.0f;
 
 namespace Star {
 
-UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics) {
+UniverseClient::UniverseClient(PlayerStoragePtr playerStorage, StatisticsPtr statistics, IAssetsConstPtr assets) {
   m_storageTriggerDeadline = 0;
   m_playerStorage = std::move(playerStorage);
   m_statistics = std::move(statistics);
+  m_assets = assets ? std::move(assets) : Root::singleton().assets();
   m_pause = false;
-  m_luaRoot = make_shared<LuaRoot>();
+  m_luaRoot = make_shared<LuaRoot>(m_assets);
   reset();
 }
 
@@ -67,9 +67,12 @@ PlayerPtr UniverseClient::mainPlayer() const {
   return m_mainPlayer;
 }
 
+IAssetsConstPtr UniverseClient::assets() const {
+  return m_assets;
+}
+
 Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowAssetsMismatch, String const& account, String const& password, bool const& forceLegacy) {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
+  auto assets = m_assets;
 
   reset();
   m_disconnectReason = {};
@@ -126,7 +129,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     }
   }
   connection.packetSocket().setNetRules(compatibilityRules);
-  auto clientConnect = make_shared<ClientConnectPacket>(Root::singleton().assets()->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
+  auto clientConnect = make_shared<ClientConnectPacket>(assets->digest(), allowAssetsMismatch, m_mainPlayer->uuid(), m_mainPlayer->name(),
       m_mainPlayer->shipSpecies(), m_playerStorage->loadShipData(m_mainPlayer->uuid()), m_mainPlayer->shipUpgrades(),
       m_mainPlayer->log()->introComplete(), account);
   clientConnect->info = JsonObject{
@@ -158,7 +161,7 @@ Maybe<String> UniverseClient::connect(UniverseConnection connection, bool allowA
     m_teamClient = make_shared<TeamClient>(assets, m_mainPlayer, m_clientContext);
     m_mainPlayer->setClientContext(m_clientContext);
     m_mainPlayer->setStatistics(m_statistics);
-    m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot);
+    m_worldClient = make_shared<WorldClient>(m_mainPlayer, m_luaRoot, m_assets);
     m_worldClient->clientState().setNetCompatibilityRules(compatibilityRules);
     m_worldClient->setAsyncLighting(true);
 
@@ -185,7 +188,7 @@ bool UniverseClient::isConnected() const {
 }
 
 void UniverseClient::disconnect() {
-  auto assets = Root::singleton().assets();
+  auto assets = m_assets;
   int timeout = assets->json("/client.config:serverDisconnectTimeout").toInt();
 
   if (isConnected()) {
@@ -220,7 +223,7 @@ SystemWorldClientPtr UniverseClient::systemWorldClient() const {
 }
 
 void UniverseClient::update(float dt) {
-  auto assets = Root::singleton().assets();
+  auto assets = m_assets;
 
   if (!isConnected())
     return;
@@ -541,7 +544,7 @@ void UniverseClient::setLuaCallbacks(String const& groupName, LuaCallbacks const
 
 void UniverseClient::restartLua() {
   m_luaRoot->restart();
-  auto clientConfig = Root::singleton().assets()->json("/client.config");
+  auto clientConfig = m_assets->json("/client.config");
   m_luaRoot->tuneAutoGarbageCollection(clientConfig.getFloat("luaGcPause"), clientConfig.getFloat("luaGcStepMultiplier"));
   auto enableImGui = Root::singleton().configuration()->getPath("safe.enableImGui");
   if (enableImGui && enableImGui.toBool())
@@ -549,7 +552,7 @@ void UniverseClient::restartLua() {
 }
 
 void UniverseClient::startLuaScripts() {
-  auto assets = Root::singleton().assets();
+  auto assets = m_assets;
   for (auto const& p : assets->json("/client.config:universeScriptContexts").iterateObject()) {
     auto scriptComponent = make_shared<ScriptComponent>();
     scriptComponent->setLuaRoot(m_luaRoot);
@@ -638,7 +641,7 @@ bool UniverseClient::switchPlayer(Uuid const& uuid) {
     return false;
   else if (auto data = m_playerStorage->maybeGetPlayerData(uuid)) {
     if (reloadPlayer(*data, uuid, true, true)) {
-      if (auto dance = Root::singleton().assets()->json("/player.config").optString("swapDance"))
+      if (auto dance = m_assets->json("/player.config").optString("swapDance"))
         m_mainPlayer->humanoid()->setDance(*dance);
       return true;
     }
@@ -810,7 +813,7 @@ void UniverseClient::reset() {
   m_warping.reset();
   m_respawning = false;
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_assets;
   m_warpDelay = GameTimer(assets->json("/client.config:playerWarpDelay").toFloat());
   m_respawnTimer = GameTimer(assets->json("/client.config:playerReviveTime").toFloat());
 

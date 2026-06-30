@@ -8,8 +8,8 @@
 
 namespace Star {
 
-ObjectItem::ObjectItem(Json const& config, String const& directory, Json const& objectParameters)
-  : Item(config, directory, objectParameters), FireableItem(config), BeamItem(config) {
+ObjectItem::ObjectItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& objectParameters)
+  : Item(assets, config, directory, objectParameters), FireableItem(config), BeamItem(std::move(assets), config) {
   setTwoHanded(config.getBool("twoHanded", true));
 
   // Make sure that all script objects that have retainObjectParametersInItem

@@ -24,7 +24,8 @@
 
 namespace Star {
 
-Object::Object(ObjectConfigConstPtr config, Json const& parameters) {
+Object::Object(ObjectConfigConstPtr config, Json const& parameters)
+  : m_scriptedAnimator(config->assets) {
   m_config = config;
   if (!parameters.isNull())
     m_parameters.reset(parameters.toObject());
@@ -504,23 +505,23 @@ void Object::destroy(RenderCallback* renderCallback) {
         auto smashDropPool = configValue("smashDropPool", "").toString();
         if (!smashDropPool.empty()) {
           for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(smashDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets()));
         } else if (!m_config->smashDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->smashDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(o, position(), false, world()->assets()));
         }
       } else {
         auto breakDropPool = configValue("breakDropPool", "").toString();
         if (!breakDropPool.empty()) {
           for (auto const& treasureItem : Root::singleton().treasureDatabase()->createTreasure(breakDropPool, world()->threatLevel()))
-            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(treasureItem, position(), false, world()->assets()));
         } else if (!m_config->breakDropOptions.empty()) {
           List<ItemDescriptor> drops;
           auto dropOption = Random::randFrom(m_config->breakDropOptions);
           for (auto o : dropOption)
-            world()->addEntity(ItemDrop::createRandomizedDrop(o, position()));
+            world()->addEntity(ItemDrop::createRandomizedDrop(o, position(), false, world()->assets()));
         } else if (m_config->hasObjectItem) {
           ItemDescriptor objectItem(m_config->name, 1);
           if (configValue("retainObjectParametersInItem", m_config->retainObjectParametersInItem).optBool().value()) {
@@ -529,7 +530,7 @@ void Object::destroy(RenderCallback* renderCallback) {
             parameters["scriptStorage"] = m_scriptComponent.getScriptStorage();
             objectItem = objectItem.applyParameters(parameters);
           }
-          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position()));
+          world()->addEntity(ItemDrop::createRandomizedDrop(objectItem, position(), false, world()->assets()));
         }
       }
     } catch (StarException const& e) {
@@ -538,7 +539,7 @@ void Object::destroy(RenderCallback* renderCallback) {
   }
 
   if (renderCallback && doSmash && !m_config->smashSoundOptions.empty()) {
-    auto audio = make_shared<AudioInstance>(*Root::singleton().assets()->audio(Random::randFrom(m_config->smashSoundOptions)));
+    auto audio = make_shared<AudioInstance>(*m_config->assets->audio(Random::randFrom(m_config->smashSoundOptions)));
     renderCallback->addAudios({std::move(audio)}, position());
   }
 
@@ -1392,9 +1393,7 @@ void Object::renderParticles(RenderCallback* renderCallback) {
 void Object::renderSounds(RenderCallback* renderCallback) {
   if (m_soundEffectEnabled.get()) {
     if (!m_config->soundEffect.empty() && (!m_soundEffect || m_soundEffect->finished())) {
-      auto& root = Root::singleton();
-
-      m_soundEffect = make_shared<AudioInstance>(*root.assets()->audio(m_config->soundEffect));
+      m_soundEffect = make_shared<AudioInstance>(*m_config->assets->audio(m_config->soundEffect));
       m_soundEffect->setLoops(-1);
       // Randomize the start position of the looping persistent audio
       m_soundEffect->seekTime(Random::randf() * m_soundEffect->totalTime());

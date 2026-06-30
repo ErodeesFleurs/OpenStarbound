@@ -8,6 +8,7 @@
 #include "StarGameTypes.hpp"
 #include "StarCollisionBlock.hpp"
 #include "StarSpawnTypeDatabase.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -43,7 +44,7 @@ public:
 
 class Spawner {
 public:
-  Spawner();
+  Spawner(IAssetsConstPtr assets);
 
   void init(SpawnerFacadePtr facade);
   // Despawns all spawned entities before shutting down

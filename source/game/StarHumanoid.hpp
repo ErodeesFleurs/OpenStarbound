@@ -6,6 +6,7 @@
 #include "StarParticle.hpp"
 #include "StarNetworkedAnimator.hpp"
 #include "StarNetElement.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -126,13 +127,14 @@ public:
 
   static bool& globalHeadRotation();
 
-  Humanoid();
-  Humanoid(Json const& config);
-  Humanoid(HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json());
+  explicit Humanoid(IAssetsConstPtr assets = {});
+  Humanoid(Json const& config, IAssetsConstPtr assets = {});
+  Humanoid(HumanoidIdentity const& identity, JsonObject parameters = JsonObject(), Json config = Json(), IAssetsConstPtr assets = {});
   Humanoid(Humanoid const&) = default;
 
   struct HumanoidTiming {
     explicit HumanoidTiming(Json config = Json());
+    static HumanoidTiming sensibleDefaults(IAssetsConstPtr assets = {});
 
     static bool cyclicState(State state);
     static bool cyclicEmoteState(HumanoidEmote state);
@@ -268,7 +270,7 @@ public:
 
   List<Drawable> renderSkull() const;
 
-  static HumanoidPtr makeDummy(Gender gender);
+  static HumanoidPtr makeDummy(Gender gender, IAssetsConstPtr assets = {});
   // Renders to centered drawables (centered on the normal image center for the
   // player graphics), (in pixels, not world space)
   List<Drawable> renderDummy(Gender gender, HeadArmor const* head = {}, ChestArmor const* chest = {},
@@ -367,6 +369,7 @@ private:
 
   Json m_baseConfig;
   Json m_mergeConfig;
+  IAssetsConstPtr m_assets;
 
   Vec2F m_globalOffset;
   Vec2F m_headRunOffset;
@@ -493,7 +496,7 @@ private:
 // therefore we need to have these in a dynamic group in players and NPCs for the sake of the networked animator not breaking the game
 class NetHumanoid : public NetElementSyncGroup {
 public:
-  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), JsonObject parameters = JsonObject(), Json config = Json());
+  NetHumanoid(HumanoidIdentity identity = HumanoidIdentity(), JsonObject parameters = JsonObject(), Json config = Json(), IAssetsConstPtr assets = {});
 
   void netStore(DataStream& ds, NetCompatibilityRules rules = {}) const override;
   void netLoad(DataStream& ds, NetCompatibilityRules rules) override;
@@ -509,6 +512,7 @@ private:
   void setupNetElements();
 
   Json m_config;
+  IAssetsConstPtr m_assets;
   NetElementHashMap<String,Json> m_humanoidParameters;
   HumanoidPtr m_humanoid;
 };

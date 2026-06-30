@@ -35,7 +35,7 @@ const std::string SECRET_BROADCAST_PREFIX = "\0Broadcast\0"s;
 
 const float WorldClient::DropDist = 6.0f;
 WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstPtr _assets, IConfigurationPtr _configuration)
-  : m_luaRoot(std::move(luaRoot)), m_mainPlayer(std::move(mainPlayer)), m_assets(_assets ? std::move(_assets) : Root::singleton().assets()), m_configuration(_configuration ? std::move(_configuration) : Root::singleton().configuration()), m_materialDatabase(Root::singleton().materialDatabase()), m_itemDatabase(Root::singleton().itemDatabase()), m_speciesDatabase(Root::singleton().speciesDatabase()), m_entityFactory(Root::singleton().entityFactory()), m_liquidsDatabase(Root::singleton().liquidsDatabase()) {
+  : m_luaRoot(std::move(luaRoot)), m_assets(_assets ? std::move(_assets) : Root::singleton().assets()), m_clientState(m_assets), m_mainPlayer(std::move(mainPlayer)), m_configuration(_configuration ? std::move(_configuration) : Root::singleton().configuration()), m_materialDatabase(Root::singleton().materialDatabase()), m_itemDatabase(Root::singleton().itemDatabase()), m_speciesDatabase(Root::singleton().speciesDatabase()), m_entityFactory(Root::singleton().entityFactory()), m_liquidsDatabase(Root::singleton().liquidsDatabase()) {
 
   m_clientConfig = m_assets->json("/client.config");
   m_lighting.m_lightingConfig = m_assets->json("/lighting.config:lighting");
@@ -76,12 +76,12 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstP
 
   m_latency = 0.0;
 
-  m_damageFX.m_blockDamageParticle = Particle(m_clientConfig.getObject("blockDamageParticle"));
-  m_damageFX.m_blockDamageParticleVariance = Particle(m_clientConfig.getObject("blockDamageParticleVariance"));
+  m_damageFX.m_blockDamageParticle = Particle(m_clientConfig.getObject("blockDamageParticle"), "/", m_assets);
+  m_damageFX.m_blockDamageParticleVariance = Particle(m_clientConfig.getObject("blockDamageParticleVariance"), "/", m_assets);
   m_damageFX.m_blockDamageParticleProbability = m_clientConfig.getFloat("blockDamageParticleProbability");
 
-  m_damageFX.m_blockDingParticle = Particle(m_clientConfig.getObject("blockDingParticle"));
-  m_damageFX.m_blockDingParticleVariance = Particle(m_clientConfig.getObject("blockDingParticleVariance"));
+  m_damageFX.m_blockDingParticle = Particle(m_clientConfig.getObject("blockDingParticle"), "/", m_assets);
+  m_damageFX.m_blockDingParticleVariance = Particle(m_clientConfig.getObject("blockDingParticleVariance"), "/", m_assets);
   m_damageFX.m_blockDingParticleProbability = m_clientConfig.getFloat("blockDingParticleProbability");
 
   m_damageFX.m_damageNotificationBatchDuration = m_clientConfig.getFloat("damageNotificationBatchDuration");
@@ -1352,6 +1352,10 @@ uint64_t WorldClient::currentStep() const {
   return m_currentStep;
 }
 
+IAssetsConstPtr WorldClient::assets() const {
+  return m_assets;
+}
+
 MaterialId WorldClient::material(Vec2I const& pos, TileLayer layer) const {
   if (!inWorld())
     return NullMaterialId;
@@ -1529,10 +1533,6 @@ void WorldClient::setTileProtection(DungeonId dungeonId, bool isProtected) {
 }
 
 void WorldClient::queueUpdatePackets(bool sendEntityUpdates) {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
-  auto entityFactory = root.entityFactory();
-
   m_outgoingPackets.append(make_shared<StepUpdatePacket>(m_currentTime));
 
   if (m_currentStep % m_clientConfig.getInt("worldClientStateUpdateDelta") == 0)
@@ -1861,7 +1861,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
 
   setupForceRegions();
 
-  m_sky = make_shared<Sky>();
+  m_sky = make_shared<Sky>(m_assets);
   m_sky->readUpdate(startPacket.skyData, m_clientState.netCompatibilityRules());
 
   m_weather.setup(m_geometry, [this](Vec2I const& pos) {
@@ -1949,7 +1949,7 @@ void WorldClient::clearWorld() {
 
 void WorldClient::tryGiveMainPlayerItem(ItemPtr item, bool silent) {
   if (auto spill = m_mainPlayer->pickupItems(item, silent))
-    addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), m_mainPlayer->position()));
+    addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), m_mainPlayer->position(), false, m_assets));
 }
 
 void WorldClient::notifyEntityCreate(EntityPtr const& entity) {

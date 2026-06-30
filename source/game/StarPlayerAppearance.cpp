@@ -3,7 +3,6 @@
 #include "StarPlayerChatAndEmotes.hpp"
 #include "StarPlayerFactory.hpp"
 #include "StarRoot.hpp"
-#include "StarAssets.hpp"
 #include "StarSpeciesDatabase.hpp"
 #include "StarArmorWearer.hpp"
 #include "StarActorMovementController.hpp"
@@ -24,7 +23,7 @@ PlayerAppearance::PlayerAppearance(Player* player)
 void PlayerAppearance::init() {
   m_identity = m_player->m_config->defaultIdentity;
   m_identityUpdated = true;
-  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
+  m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json(), m_player->m_assets));
 }
 
 String PlayerAppearance::name() const {
@@ -123,7 +122,7 @@ void PlayerAppearance::refreshHumanoidParameters() {
   if (m_player->isMaster() || !m_player->inWorld()) {
     m_refreshedHumanoidParameters.trigger();
     m_netHumanoid.clearNetElements();
-    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json()));
+    m_netHumanoid.addNetElement(make_shared<NetHumanoid>(m_identity, m_humanoidParameters, Json(), m_player->m_assets));
     m_player->m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
     m_deathParticleBurst.set(humanoid()->defaultDeathParticles());
     m_player->m_statusController->setStatusProperty("ouchNoise", speciesDef->ouchNoise(m_identity.gender));
@@ -196,8 +195,7 @@ bool PlayerAppearance::displayNametag() const {
 }
 
 Vec3B PlayerAppearance::nametagColor() const {
-  auto assets = Root::singleton().assets();
-  return jsonToVec3B(assets->json("/player.config:nametagColor"));
+  return jsonToVec3B(m_player->m_assets->json("/player.config:nametagColor"));
 }
 
 Vec2F PlayerAppearance::nametagOrigin() const {
@@ -301,4 +299,3 @@ bool& PlayerAppearance::identityUpdated() {
 }
 
 }
-

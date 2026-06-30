@@ -9,7 +9,7 @@ namespace Star {
 
 SkyParameters::SkyParameters() : seed(), skyType(SkyType::Barren), skyColoring(makeRight(Color::Black)), settings(JsonObject()) {}
 
-SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase)
+SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDatabasePtr const& celestialDatabase, IAssetsConstPtr assets)
   : SkyParameters() {
   if (!coordinate || coordinate.isSystem())
     return;
@@ -30,7 +30,7 @@ SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDat
       pos[1] = staticRandomFloat(params->seed(), planet->seed(), "y");
 
       // My parent's parent is no one.
-      nearbyPlanet = {{CelestialGraphics::drawWorld(*planet, {}), pos}};
+      nearbyPlanet = {{CelestialGraphics::drawWorld(*planet, {}, assets), pos}};
     }
   }
 
@@ -42,13 +42,13 @@ SkyParameters::SkyParameters(CelestialCoordinate const& coordinate, CelestialDat
         pos[1] = staticRandomFloat(params->seed(), satellite->seed(), "y");
 
         nearbyMoons.append(
-            {CelestialGraphics::drawWorld(*satellite, celestialDatabase->parameters(satelliteCoordinate.parent())),
+            {CelestialGraphics::drawWorld(*satellite, celestialDatabase->parameters(satelliteCoordinate.parent()), assets),
                 pos});
       }
     }
   }
 
-  horizonImages = CelestialGraphics::worldHorizonImages(*params);
+  horizonImages = CelestialGraphics::worldHorizonImages(*params, assets);
 
   readVisitableParameters(params->visitableParameters());
 

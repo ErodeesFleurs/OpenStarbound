@@ -64,7 +64,8 @@ EnumMap<Player::State> const Player::StateNames{
   {Player::State::Lounge, "lounge"}
 };
 
-Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfigurationPtr configuration) {
+Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfigurationPtr configuration)
+  : m_scriptedAnimator(assets) {
 
   m_config = config;
   m_assets = assets ? std::move(assets) : Root::singleton().assets();
@@ -102,14 +103,14 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
   auto movementParameters = ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters)));
   if (!movementParameters.physicsEffectCategories)
     movementParameters.physicsEffectCategories = StringSet({"player"});
-  m_movementController = make_shared<ActorMovementController>(movementParameters);
+  m_movementController = make_shared<ActorMovementController>(movementParameters, m_assets);
   m_zeroGMovementParameters = ActorMovementParameters(m_config->zeroGMovementParameters);
 
   m_statusController = make_shared<StatusController>(m_config->statusControllerSettings);
   m_techController = make_shared<TechController>(this, m_movementController.get(), m_statusController.get());
-  m_deployment = make_shared<PlayerDeployment>(m_config->deploymentConfig);
+  m_deployment = make_shared<PlayerDeployment>(m_config->deploymentConfig, m_assets);
 
-  m_inventory = make_shared<PlayerInventory>();
+  m_inventory = make_shared<PlayerInventory>(m_assets);
   m_inventory->setPlayer(this);
 
   m_blueprints = make_shared<PlayerBlueprints>();
@@ -210,7 +211,8 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, IAssetsConstPtr assets, IConfi
   m_netGroup.setNeedsStoreCallback([this]() { return setNetStates(); });
 }
 
-Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules) : Player(config) {
+Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibilityRules rules, IAssetsConstPtr assets, IConfigurationPtr configuration)
+  : Player(config, Uuid(), std::move(assets), std::move(configuration)) {
   DataStreamBuffer ds(netStore);
   ds.setStreamCompatibilityVersion(rules);
 
@@ -224,13 +226,14 @@ Player::Player(PlayerConfigPtr config, ByteArray const& netStore, NetCompatibili
   }
 
   m_appearance.netHumanoid().clearNetElements();
-  m_appearance.netHumanoid().addNetElement(make_shared<NetHumanoid>(m_appearance.m_identity, m_appearance.m_humanoidParameters, Json()));
+  m_appearance.netHumanoid().addNetElement(make_shared<NetHumanoid>(m_appearance.m_identity, m_appearance.m_humanoidParameters, Json(), m_assets));
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_appearance.deathParticleBurst().set(humanoid()->defaultDeathParticles());
 }
 
 
-Player::Player(PlayerConfigPtr config, Json const& diskStore) : Player(config) {
+Player::Player(PlayerConfigPtr config, Json const& diskStore, IAssetsConstPtr assets, IConfigurationPtr configuration)
+  : Player(config, Uuid(), std::move(assets), std::move(configuration)) {
   diskLoad(diskStore);
 }
 
@@ -272,7 +275,7 @@ void Player::diskLoad(Json const& diskStore) {
   m_appearance.m_humanoidParameters = diskStore.getObject("humanoidParameters", JsonObject());
 
   m_appearance.netHumanoid().clearNetElements();
-  m_appearance.netHumanoid().addNetElement(make_shared<NetHumanoid>(m_appearance.m_identity, m_appearance.m_humanoidParameters, Json()));
+  m_appearance.netHumanoid().addNetElement(make_shared<NetHumanoid>(m_appearance.m_identity, m_appearance.m_humanoidParameters, Json(), m_assets));
   m_movementController->resetBaseParameters(ActorMovementParameters(jsonMerge(humanoid()->defaultMovementParameters(), humanoid()->playerMovementParameters().value(m_config->movementParameters))));
   m_effectsAnimator->setGlobalTag("effectDirectives", speciesDef->effectDirectives());
   m_appearance.deathParticleBurst().set(humanoid()->defaultDeathParticles());
@@ -377,7 +380,7 @@ void Player::init(World* world, EntityId entityId, EntityMode mode) {
     }
 
     for (auto& p : m_inventory->pullOverflow()) {
-      world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true));
+      world->addEntity(ItemDrop::createRandomizedDrop(p, m_movementController->position(), true, m_assets));
     }
 
     setNetArmorSecrets();
@@ -754,7 +757,7 @@ void Player::dropItem() {
   for (auto& throwSlot : {m_inventory->primaryHeldSlot(), m_inventory->secondaryHeldSlot()}) {
     if (throwSlot) {
       if (auto drop = m_inventory->takeSlot(*throwSlot)) {
-        world()->addEntity(ItemDrop::throwDrop(drop, position(), velocity(), throwDirection));
+        world()->addEntity(ItemDrop::throwDrop(drop, position(), velocity(), throwDirection, false, m_assets));
         break;
       }
     }
@@ -1218,7 +1221,7 @@ ItemPtr Player::pickupItems(ItemPtr const& items, bool silent) {
 
 void Player::giveItem(ItemPtr const& item) {
   if (auto spill = pickupItems(item))
-    world()->addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), position()));
+    world()->addEntity(ItemDrop::createRandomizedDrop(spill->descriptor(), position(), false, m_assets));
 }
 
 void Player::triggerPickupEvents(ItemPtr const& item) {
@@ -1243,7 +1246,7 @@ void Player::triggerPickupEvents(ItemPtr const& item) {
 
     for (auto const& quest : item->pickupQuestTemplates()) {
       if (m_questManager->canStart(quest))
-        m_questManager->offer(make_shared<Quest>(quest, 0, this));
+        m_questManager->offer(make_shared<Quest>(m_questManager->assets(), quest, 0, this));
     }
 
     if (auto consume = item->instanceValue("consumeOnPickup", Json())) {
@@ -1284,7 +1287,7 @@ void Player::clearSwap() {
   // world.
   if (!m_inventory->clearSwap()) {
     if (auto world = worldPtr())
-      world->addEntity(ItemDrop::createRandomizedDrop(m_inventory->takeSlot(SwapSlot()), position()));
+      world->addEntity(ItemDrop::createRandomizedDrop(m_inventory->takeSlot(SwapSlot()), position(), false, m_assets));
   }
 
   // Interrupt all firing in case the item being dropped was in use.
@@ -1453,7 +1456,7 @@ void Player::interactWithEntity(InteractiveEntityPtr entity) {
 
   for (auto const& questArc : entity->offeredQuests()) {
     if (m_questManager->canStart(questArc)) {
-      auto quest = make_shared<Quest>(questArc, 0, this);
+      auto quest = make_shared<Quest>(m_questManager->assets(), questArc, 0, this);
       quest->setWorldId(clientContext()->playerWorldId());
       quest->setServerUuid(clientContext()->serverUuid());
       quest->setEntityParameter("questGiver", entity);
@@ -2488,7 +2491,7 @@ void Player::dropSelectedItems(function<bool(ItemPtr)> filter) {
 
   m_inventory->forEveryItem([&](InventorySlot const&, ItemPtr& item) {
       if (item && (!filter || filter(item)))
-        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true));
+        world()->addEntity(ItemDrop::throwDrop(take(item), position(), velocity(), Vec2F::withAngle(Random::randf(-Constants::pi, Constants::pi)), true, m_assets));
     });
 }
 

@@ -17,7 +17,9 @@ EnumMap<ArmorType> ArmorTypeNames{
   {ArmorType::Back, "Back"}
 };
 
-ArmorItem::ArmorItem(Json const& config, String const& directory, Json const& data) : Item(config, directory, data), SwingableItem(config) {
+ArmorItem::ArmorItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data) : Item(assets, config, directory, data), SwingableItem(config) {
+  m_assets = std::move(assets);
+
   refreshStatusEffects();
   m_effectSources = jsonToStringSet(instanceValue("effectSources", JsonArray()));
   m_techModule = instanceValue("techModule", "").toString();
@@ -166,8 +168,8 @@ void ArmorItem::refreshStatusEffects() {
     m_statusEffects.appendAll(augmentConfig.getArray("effects", JsonArray()).transformed(jsonToPersistentStatusEffect));
 }
 
-HeadArmor::HeadArmor(Json const& config, String const& directory, Json const& data)
-  : ArmorItem(config, directory, data) {
+HeadArmor::HeadArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
+  : ArmorItem(std::move(assets), config, directory, data) {
   m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 
@@ -199,12 +201,12 @@ Directives const& HeadArmor::maskDirectives() const {
 
 List<Drawable> HeadArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets);
   return humanoid->renderDummy(gender, this, nullptr, nullptr, nullptr);
 }
 
-ChestArmor::ChestArmor(Json const& config, String const& directory, Json const& data)
-  : ArmorItem(config, directory, data) {
+ChestArmor::ChestArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
+  : ArmorItem(std::move(assets), config, directory, data) {
   Json maleImages = config.get("maleFrames");
   m_maleBodyImage = AssetPath::relativeTo(directory, maleImages.getString("body"));
   m_maleFrontSleeveImage = AssetPath::relativeTo(directory, maleImages.getString("frontSleeve"));
@@ -247,12 +249,12 @@ String const& ChestArmor::backSleeveFrameset(Gender gender) const {
 
 List<Drawable> ChestArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets);
   return humanoid->renderDummy(gender, nullptr, this, nullptr, nullptr);
 }
 
-LegsArmor::LegsArmor(Json const& config, String const& directory, Json const& data)
-  : ArmorItem(config, directory, data) {
+LegsArmor::LegsArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
+  : ArmorItem(std::move(assets), config, directory, data) {
   m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 }
@@ -274,12 +276,12 @@ String const& LegsArmor::frameset(Gender gender) const {
 
 List<Drawable> LegsArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets);
   return humanoid->renderDummy(gender, nullptr, nullptr, this, nullptr);
 }
 
-BackArmor::BackArmor(Json const& config, String const& directory, Json const& data)
-  : ArmorItem(config, directory, data) {
+BackArmor::BackArmor(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data)
+  : ArmorItem(std::move(assets), config, directory, data) {
   m_maleImage = AssetPath::relativeTo(directory, config.getString("maleFrames"));
   m_femaleImage = AssetPath::relativeTo(directory, config.getString("femaleFrames"));
 }
@@ -301,7 +303,7 @@ String const& BackArmor::frameset(Gender gender) const {
 
 List<Drawable> BackArmor::preview(PlayerPtr const& viewer) const {
   Gender gender = viewer ? viewer->gender() : Gender::Male;
-  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender);
+  HumanoidPtr humanoid = viewer ? viewer->humanoid() : Humanoid::makeDummy(gender, m_assets);
   return humanoid->renderDummy(gender, nullptr, nullptr, nullptr, this);
 }
 

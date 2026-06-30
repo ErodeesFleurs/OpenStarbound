@@ -4,10 +4,10 @@
 
 namespace Star {
 
-ParticleConfig::ParticleConfig(Json const& config) {
+ParticleConfig::ParticleConfig(Json const& config, AssetsConstPtr assets) {
   m_kind = config.getString("kind");
-  m_particle = Particle(config.queryObject("definition"));
-  m_variance = Particle(config.queryObject("definition.variance", {}));
+  m_particle = Particle(config.queryObject("definition"), "/", assets);
+  m_variance = Particle(config.queryObject("definition.variance", {}), "/", std::move(assets));
 }
 
 String const& ParticleConfig::kind() {
@@ -23,10 +23,11 @@ Particle ParticleConfig::instance() {
 ParticleDatabase::ParticleDatabase(AssetsConstPtr assets) {
   if (!assets)
     throw StarException("ParticleDatabase requires assets service");
-  auto& files = assets->scanExtension("particle");
-  assets->queueJsons(files);
+  m_assets = std::move(assets);
+  auto& files = m_assets->scanExtension("particle");
+  m_assets->queueJsons(files);
   for (auto& file : files) {
-    auto particleConfig = make_shared<ParticleConfig>(assets->json(file));
+    auto particleConfig = make_shared<ParticleConfig>(m_assets->json(file), m_assets);
     if (m_configs.contains(particleConfig->kind()))
       throw StarException(strf("Duplicate particle asset kind Name {}. configfile {}", particleConfig->kind(), file));
     m_configs[particleConfig->kind()] = particleConfig;
@@ -45,8 +46,8 @@ ParticleVariantCreator ParticleDatabase::particleCreator(Json const& kindOrConfi
     auto pconfig = config(kindOrConfig.toString());
     return [pconfig]() { return pconfig->instance(); };
   } else {
-    Particle particle(kindOrConfig.toObject(), relativePath);
-    Particle variance(kindOrConfig.getObject("variance", {}), relativePath);
+    Particle particle(kindOrConfig.toObject(), relativePath, m_assets);
+    Particle variance(kindOrConfig.getObject("variance", {}), relativePath, m_assets);
     return makeParticleVariantCreator(std::move(particle), std::move(variance));
   }
 }

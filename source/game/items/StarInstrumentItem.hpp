@@ -7,6 +7,7 @@
 #include "StarToolUserItem.hpp"
 #include "StarActivatableItem.hpp"
 #include "StarPointableItem.hpp"
+#include "StarIAssets.hpp"
 
 namespace Star {
 
@@ -21,7 +22,7 @@ class InstrumentItem : public Item,
                        public ActivatableItem,
                        public PointableItem {
 public:
-  InstrumentItem(Json const& config, String const& directory, Json const& data);
+  InstrumentItem(IAssetsConstPtr assets, Json const& config, String const& directory, Json const& data);
 
   ItemPtr clone() const override;
 

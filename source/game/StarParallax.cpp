@@ -4,7 +4,6 @@
 #include "StarRoot.hpp"
 #include "StarImageMetadataDatabase.hpp"
 #include "StarRandom.hpp"
-#include "StarAssets.hpp"
 #include "StarDataStreamExtra.hpp"
 
 namespace Star {
@@ -130,7 +129,8 @@ DataStream& operator<<(DataStream& ds, ParallaxLayer const& parallaxLayer) {
   return ds;
 }
 
-Parallax::Parallax(String const& assetFile,
+Parallax::Parallax(IAssetsConstPtr assets,
+    String const& assetFile,
     uint64_t seed,
     float verticalOrigin,
     float hueShift,
@@ -140,8 +140,6 @@ Parallax::Parallax(String const& assetFile,
   m_parallaxTreeVariant = parallaxTreeVariant;
   m_hueShift = hueShift;
   m_imageDirectory = "/parallax/images/";
-
-  auto assets = Root::singleton().assets();
 
   Json config = assets->json(assetFile);
 
