@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(AiException, StarException);
+struct AiExceptionTag { static constexpr char const* typeName = "AiException"; };
+using AiException = TypedException<StarException, AiExceptionTag>;
 
 struct AiSpeech {
   String animation;

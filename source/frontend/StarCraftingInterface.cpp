@@ -269,7 +269,7 @@ void CraftingPane::update(float dt) {
 
   // crafters gonna craft
   while (m_crafting && m_craftTimer.wrapTick()) {
-    craft(min(m_count, (int)m_settings.getInt("craftCount", 1)));
+    craft(min(m_count, static_cast<int>(m_settings.getInt("craftCount", 1))));
   }
 
   // update crafting icon, progress and buttons
@@ -297,7 +297,7 @@ void CraftingPane::update(float dt) {
     updateCraftButtons();
   }
 
-  setLabel("lblPlayerMoney", toString((int)m_player->currency("money")));
+  setLabel("lblPlayerMoney", toString(static_cast<int>(m_player->currency("money"))));
 
   Pane::update(dt);
 }

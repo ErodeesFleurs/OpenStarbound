@@ -193,7 +193,7 @@ void ItemSlotWidget::setHighlightEnabled(bool highlight) {
 
 void ItemSlotWidget::renderImpl() {
   auto drawCooldown = [this]() {
-    int frame = (int)roundf(m_progress * 18);// TODO: Hardcoded lol
+    int frame = static_cast<int>(roundf(m_progress * 18));// TODO: Hardcoded lol
     context()->drawInterfaceQuad(String(strf("/interface/cooldown.png:{}", frame)), Vec2F(screenPosition()));
   };
   if (m_item) {

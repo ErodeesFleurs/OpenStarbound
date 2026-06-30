@@ -51,8 +51,8 @@ private:
   static const uint8_t A2S_VAC_OFF = 0x00;
   static const uint8_t A2S_VAC_ON = 0x01;
   static constexpr const char* A2S_INFO_REQUEST_STRING = "Source Engine Query";
-  static const uint16_t A2S_APPID = (uint16_t)0xfffe;
-  static const uint16_t A2S_PACKET_SIZE = (uint16_t)0x4e0;
+  static const uint16_t A2S_APPID = static_cast<uint16_t>(0xfffe);
+  static const uint16_t A2S_PACKET_SIZE = static_cast<uint16_t>(0x4e0);
   static const uint32_t A2S_HEAD_INT = 0xffffffff;
   static constexpr const char* GAME_DIR = "starbound";
   static constexpr const char* GAME_DESC = "Starbound";

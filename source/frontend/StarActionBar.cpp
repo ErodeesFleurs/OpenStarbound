@@ -138,7 +138,7 @@ bool ActionBar::sendEvent(InputEvent const& event) {
         else
           index = *cbi + EssentialItemCount;
       } else {
-        index = customBarIndexes / 2 + (int)abl.get<EssentialItem>();
+        index = customBarIndexes / 2 + static_cast<int>(abl.get<EssentialItem>());
       }
 
       if (mouseWheel->mouseWheel == MouseWheel::Down)
@@ -148,11 +148,11 @@ bool ActionBar::sendEvent(InputEvent const& event) {
     }
 
     if (index < customBarIndexes / 2)
-      abl = (CustomBarIndex)index;
+      abl = static_cast<CustomBarIndex>(index);
     else if (index < customBarIndexes / 2 + EssentialItemCount)
-      abl = (EssentialItem)(index - customBarIndexes / 2);
+      abl = static_cast<EssentialItem>(index - customBarIndexes / 2);
     else
-      abl = (CustomBarIndex)(index - EssentialItemCount);
+      abl = static_cast<CustomBarIndex>(index - EssentialItemCount);
 
     inventory->selectActionBarLocation(abl);
     context()->playAudio(RandomSource().randFrom(m_switchSounds));
@@ -165,19 +165,19 @@ bool ActionBar::sendEvent(InputEvent const& event) {
     Vec2I screenPosition = *GuiContext::singleton().mousePosition(event);
     for (uint8_t i = 0; i < customBarIndexes; ++i) {
       if (m_customBarWidgets[i].left->screenBoundRect().contains(screenPosition))
-        m_customBarHover = make_pair((CustomBarIndex)i, false);
+        m_customBarHover = make_pair(static_cast<CustomBarIndex>(i), false);
       else if (m_customBarWidgets[i].right->screenBoundRect().contains(screenPosition))
-        m_customBarHover = make_pair((CustomBarIndex)i, true);
+        m_customBarHover = make_pair(static_cast<CustomBarIndex>(i), true);
     }
   }
 
   for (auto action : context()->actions(event)) {
     if (action >= InterfaceAction::InterfaceBar1 && action <= InterfaceAction::InterfaceBar10
-      && ((int)action - (int)InterfaceAction::InterfaceBar1) < inventory->customBarIndexes())
-      inventory->selectActionBarLocation((CustomBarIndex)((int)action - (int)InterfaceAction::InterfaceBar1));
+      && (static_cast<int>(action) - static_cast<int>(InterfaceAction::InterfaceBar1)) < inventory->customBarIndexes())
+      inventory->selectActionBarLocation(static_cast<CustomBarIndex>(static_cast<int>(action) - static_cast<int>(InterfaceAction::InterfaceBar1)));
 
     if (action >= InterfaceAction::EssentialBar1 && action <= InterfaceAction::EssentialBar4)
-      inventory->selectActionBarLocation((EssentialItem)((int)action - (int)InterfaceAction::EssentialBar1));
+      inventory->selectActionBarLocation(static_cast<EssentialItem>(static_cast<int>(action) - static_cast<int>(InterfaceAction::EssentialBar1)));
 
     if (action == InterfaceAction::InterfaceDeselectHands) {
       if (auto previousSelectedLocation = inventory->selectedActionBarLocation()) {
@@ -204,7 +204,7 @@ void ActionBar::update(float) {
     m_customSelectedWidget->show();
     m_essentialSelectedWidget->hide();
   } else if (abl.is<EssentialItem>()) {
-    auto overlayLoc = m_essentialBarWidgets.at((size_t)abl.get<EssentialItem>())->position();
+    auto overlayLoc = m_essentialBarWidgets.at(static_cast<size_t>(abl.get<EssentialItem>()))->position();
     m_essentialSelectedWidget->setPosition(overlayLoc + m_actionBarSelectOffset);
     m_essentialSelectedWidget->show();
     m_customSelectedWidget->hide();
@@ -214,7 +214,7 @@ void ActionBar::update(float) {
   }
 
   for (uint8_t i = 0; i < EssentialItemCount; ++i)
-    m_essentialBarWidgets[i]->setItem(inventory->essentialItem((EssentialItem)i));
+    m_essentialBarWidgets[i]->setItem(inventory->essentialItem(static_cast<EssentialItem>(i)));
 
   for (uint8_t i = 0; i < inventory->customBarIndexes(); ++i) {
     // If there is no swap slot item being hovered over the custom bar, then
@@ -334,7 +334,7 @@ void ActionBar::customBarClickRight(uint8_t index, bool primary) {
 }
 
 void ActionBar::essentialBarClick(uint8_t index) {
-  m_player->inventory()->selectActionBarLocation((EssentialItem)index);
+  m_player->inventory()->selectActionBarLocation(static_cast<EssentialItem>(index));
 }
 
 void ActionBar::swapCustomBar() {

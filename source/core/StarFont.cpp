@@ -92,7 +92,7 @@ void Font::loadFontImpl() {
       throw FontException("Font buffer is null or empty");
 
     shared_ptr<FontImpl> fontImpl = make_shared<FontImpl>();
-    if (FT_New_Memory_Face(ftContext.library, (FT_Byte const*)m_fontBuffer->ptr(), m_fontBuffer->size(), 0, &fontImpl->face))
+    if (FT_New_Memory_Face(ftContext.library, reinterpret_cast<FT_Byte const*>(m_fontBuffer->ptr()), m_fontBuffer->size(), 0, &fontImpl->face))
       throw FontException::format("Could not load font from buffer");
 
     if (FT_Set_Pixel_Sizes(fontImpl->face, m_pixelSize, 0))

@@ -88,7 +88,7 @@ SelectedActionBarLocation jsonToSelectedActionBarLocation(Json const& json) {
   else if (json.isNull())
     return SelectedActionBarLocation();
   else
-    return (CustomBarIndex)json.toUInt();
+    return static_cast<CustomBarIndex>(json.toUInt());
 }
 
 Json jsonFromSelectedActionBarLocation(SelectedActionBarLocation const& location) {

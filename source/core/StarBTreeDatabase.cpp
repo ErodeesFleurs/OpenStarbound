@@ -901,7 +901,7 @@ void BTreeDatabase::rawReadBlock(BlockIndex blockIndex, size_t blockOffset, char
   if (auto buffer = m_uncommittedWrites.ptr(blockIndex))
     buffer->copyTo(block, blockOffset, size);
   else
-    m_device->readFullAbsolute(HeaderSize + blockIndex * (StreamOffset)m_blockSize + blockOffset, block, size);
+    m_device->readFullAbsolute(HeaderSize + blockIndex * static_cast<StreamOffset>(m_blockSize) + blockOffset, block, size);
 }
 
 void BTreeDatabase::rawWriteBlock(BlockIndex blockIndex, size_t blockOffset, char const* block, size_t size) {
@@ -911,7 +911,7 @@ void BTreeDatabase::rawWriteBlock(BlockIndex blockIndex, size_t blockOffset, cha
   if (size <= 0)
     return;
 
-  StreamOffset blockStart = HeaderSize + blockIndex * (StreamOffset)m_blockSize;
+  StreamOffset blockStart = HeaderSize + blockIndex * static_cast<StreamOffset>(m_blockSize);
   auto buffer = m_uncommittedWrites.find(blockIndex);
   if (buffer == m_uncommittedWrites.end())
     buffer = m_uncommittedWrites.emplace(blockIndex, m_device->readBytesAbsolute(blockStart, m_blockSize)).first;
@@ -1129,7 +1129,7 @@ void BTreeDatabase::doCommit() {
 
 void BTreeDatabase::commitWrites() {
   for (auto& write : m_uncommittedWrites)
-    m_device->writeFullAbsolute(HeaderSize + write.first * (StreamOffset)m_blockSize, write.second.ptr(), m_blockSize);
+    m_device->writeFullAbsolute(HeaderSize + write.first * static_cast<StreamOffset>(m_blockSize), write.second.ptr(), m_blockSize);
 
   m_device->sync();
   m_uncommittedWrites.clear();
@@ -1181,7 +1181,7 @@ bool BTreeDatabase::tryFlatten() {
   }
 
   m_availableBlocks.clear();
-  m_device->resize(m_deviceSize = HeaderSize + (StreamOffset)m_blockSize * count);
+  m_device->resize(m_deviceSize = HeaderSize + static_cast<StreamOffset>(m_blockSize) * count);
 
   m_indexCache.clear();
   commitWrites();

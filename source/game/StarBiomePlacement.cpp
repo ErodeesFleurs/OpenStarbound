@@ -271,7 +271,7 @@ Maybe<BiomeItemPlacement> BiomeItemDistribution::itemToPlace(int x, int y) const
   } else if (m_distribution == DistributionType::Periodic) {
     BiomeItem const* biomeItem = nullptr;
     if (m_densityFunction.get(x, y) > 0) {
-      if ((int)(x + m_modulusOffset + m_modulusDistortion.get(x, y)) % m_modulus == 0) {
+      if (static_cast<int>(x + m_modulusOffset + m_modulusDistortion.get(x, y)) % m_modulus == 0) {
         float maxWeight = lowest<float>();
         for (auto const& weightedItem : m_weightedItems) {
           float weight = weightedItem.second.get(x, y);

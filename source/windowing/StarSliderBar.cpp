@@ -137,7 +137,7 @@ void SliderBarWidget::update(float dt) {
   }
 
   if (m_updateJog) {
-    float percent = (float)m_val / (m_high - m_low);
+    float percent = static_cast<float>(m_val) / (m_high - m_low);
 
     float jogPos = (gridHigh - gridLow) * percent + gridLow - m_jog->size()[0] * 0.5;
 

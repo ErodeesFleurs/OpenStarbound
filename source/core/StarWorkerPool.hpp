@@ -4,7 +4,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(WorkerPoolException, StarException);
+struct WorkerPoolExceptionTag { static constexpr char const* typeName = "WorkerPoolException"; };
+using WorkerPoolException = TypedException<StarException, WorkerPoolExceptionTag>;
 
 STAR_CLASS(WorkerPool);
 

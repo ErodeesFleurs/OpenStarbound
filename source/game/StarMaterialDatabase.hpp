@@ -11,7 +11,8 @@ namespace Star {
 STAR_CLASS(ParticleConfig);
 STAR_CLASS(MaterialDatabase);
 
-STAR_EXCEPTION(MaterialException, StarException);
+struct MaterialExceptionTag { static constexpr char const* typeName = "MaterialException"; };
+using MaterialException = TypedException<StarException, MaterialExceptionTag>;
 
 struct LiquidMaterialInteraction {
   float consumeLiquid;

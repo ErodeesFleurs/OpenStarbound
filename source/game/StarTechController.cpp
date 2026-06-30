@@ -125,7 +125,7 @@ void TechController::reloadTech() {
 }
 
 bool TechController::techOverridden() const {
-  return (bool)m_overriddenTech;
+  return static_cast<bool>(m_overriddenTech);
 }
 
 void TechController::setOverrideTech(StringList const& techModules) {

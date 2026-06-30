@@ -36,11 +36,11 @@ inline float getAudioChunkLoudness(int16_t* data, size_t samples, float volume) 
 
   double rms = 0.;
   for (size_t i = 0; i != samples; ++i) {
-    float sample = ((float)data[i] / 32767.f) * volume;
-    rms += (double)(sample * sample);
+    float sample = (static_cast<float>(data[i]) / 32767.f) * volume;
+    rms += static_cast<double>(sample * sample);
   }
 
-  float fRms = sqrtf((float)(rms / samples));
+  float fRms = sqrtf(static_cast<float>(rms / samples));
 
   if (fRms > 0)
     return std::clamp<float>(20.f * log10f(fRms), -127.f, 0.f);
@@ -114,10 +114,10 @@ Json Voice::Speaker::toJson() const {
     {"speakerId",      speakerId},
     {"entityId",       entityId },
     {"name",           name     },
-    {"playing",        (bool)playing},
-    {"muted",          (bool)muted  },
-    {"decibels",       (float)decibelLevel},
-    {"smoothDecibels", (float)smoothDb    },
+    {"playing",        static_cast<bool>(playing)},
+    {"muted",          static_cast<bool>(muted)  },
+    {"decibels",       static_cast<float>(decibelLevel)},
+    {"smoothDecibels", static_cast<float>(smoothDb)    },
     {"position",       jsonFromVec2F(position)}
   };
 }
@@ -227,7 +227,7 @@ void Voice::loadJson(Json const& config, bool skipSave) {
   // don't want someone fudging their bitrate from the intended defaults and forgetting
   if (auto bitrate = config.opt("bitrate")) {
     unsigned newBitrate = bitrate->canConvert(Json::Type::Int)
-      ? clamp((unsigned)bitrate->toUInt(), 6000u, 510000u) : 0;
+      ? clamp(static_cast<unsigned>(bitrate->toUInt()), 6000u, 510000u) : 0;
     shouldResetEncoder |= change(m_bitrate, newBitrate, changed);
   }
 
@@ -409,16 +409,16 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
           int16_t* speakerData = speakerBuffer.data();
           int32_t* sharedData  = sharedBuffer.data();
           for (size_t i = 0; i != frameCount; ++i) {
-            auto leftSample  = (float)*speakerData++;
-            auto rightSample = (float)*speakerData++;
+            auto leftSample  = static_cast<float>(*speakerData++);
+            auto rightSample = static_cast<float>(*speakerData++);
             
             if (rightToLeft != 0.0f)
               leftSample  = ( leftSample + rightSample * rightToLeft) / (1.0f + rightToLeft);
             if (leftToRight != 0.0f)
               rightSample = (rightSample +  leftSample * leftToRight) / (1.0f + leftToRight);
 
-            *sharedData++ += (int32_t)leftSample  * levels[0];
-            *sharedData++ += (int32_t)rightSample * levels[1];
+            *sharedData++ += static_cast<int32_t>(leftSample)  * levels[0];
+            *sharedData++ += static_cast<int32_t>(rightSample) * levels[1];
           }
           //*/
         }
@@ -438,7 +438,7 @@ void Voice::mix(int16_t* buffer, size_t frameCount, unsigned channels) {
 
     float vol = m_outputAmplitude;
     for (size_t i = 0; i != sharedBuffer.size(); ++i)
-      finalBuffer[i] = (int16_t)clamp<int>(sharedBuffer[i] * vol, INT16_MIN, INT16_MAX);
+      finalBuffer[i] = static_cast<int16_t>(clamp<int>(sharedBuffer[i] * vol, INT16_MIN, INT16_MAX));
 
     SDL_MixAudio((Uint8*)buffer, (Uint8*)finalBuffer.data(), SDL_AUDIO_S16LE, finalBuffer.size() * sizeof(int16_t), 1.0f);
     memset(sharedBuffer.data(), 0, sharedBuffer.size() * sizeof(int32_t));
@@ -552,7 +552,7 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
       if (samples < 0)
         throw VoiceException(strf("Decoder error: {}", opus_strerror(samples)), false);
 
-      m_decodeBuffer.resize(samples * (size_t)channels);
+      m_decodeBuffer.resize(samples * static_cast<size_t>(channels));
 
       int decodedSamples = opus_decode(decoder, opusData, opusLength, m_decodeBuffer.data(), m_decodeBuffer.size() * sizeof(int16_t), 0);
       if (decodedSamples <= 0) {
@@ -563,7 +563,7 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 
       //Logger::info("Voice: decoded Opus chunk {} bytes -> {} samples", opusLength, decodedSamples * channels);
 
-      speaker->audioStream->resample(m_decodeBuffer.data(), (size_t)decodedSamples * channels, m_resampleBuffer, mono);
+      speaker->audioStream->resample(m_decodeBuffer.data(), static_cast<size_t>(decodedSamples) * channels, m_resampleBuffer, mono);
 
       {
         MutexLocker lock(speaker->audioStream->mutex);
@@ -571,7 +571,7 @@ bool Voice::receive(SpeakerPtr speaker, std::string_view view) {
 
         auto now = Time::monotonicMilliseconds();
         if (now - speaker->lastReceiveTime < 1000) {
-          auto limit = (size_t)speaker->minimumPlaySamples + 22050;
+          auto limit = static_cast<size_t>(speaker->minimumPlaySamples) + 22050;
           if (samples.size() > limit) { // skip ahead if we're getting too far
             for (size_t i = samples.size(); i >= limit; --i)
               samples.pop();
@@ -629,7 +629,7 @@ void Voice::resetEncoder() {
   int channels = encoderChannels();
   MutexLocker locker(m_threadMutex);
   m_encoder.reset(createEncoder(channels));
-  int bitrate = m_bitrate > 0 ? (int)m_bitrate : (channels == 2 ? 50000 : 24000);
+  int bitrate = m_bitrate > 0 ? static_cast<int>(m_bitrate) : (channels == 2 ? 50000 : 24000);
   opus_encoder_ctl(m_encoder.get(), OPUS_SET_BITRATE(bitrate));
 }
 
@@ -703,7 +703,7 @@ void Voice::thread() {
     {
       MutexLocker locker(m_captureMutex);
       ByteArray encoded(VOICE_MAX_PACKET_SIZE, 0);
-      size_t frameSamples = VOICE_FRAME_SIZE * (size_t)m_deviceChannels;
+      size_t frameSamples = VOICE_FRAME_SIZE * static_cast<size_t>(m_deviceChannels);
       while (m_capturedChunksFrames >= VOICE_FRAME_SIZE) {
         std::vector<opus_int16> samples;
         samples.reserve(frameSamples);

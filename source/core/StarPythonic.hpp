@@ -299,7 +299,8 @@ namespace RangeHelper {
   }
 }
 
-STAR_EXCEPTION(RangeException, StarException);
+struct RangeExceptionTag { static constexpr char const* typeName = "RangeException"; };
+using RangeException = TypedException<StarException, RangeExceptionTag>;
 
 template <typename Value, typename Diff = int>
 class RangeIterator {

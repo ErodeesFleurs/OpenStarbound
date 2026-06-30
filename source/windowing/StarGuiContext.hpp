@@ -14,7 +14,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(GuiContextException, StarException);
+struct GuiContextExceptionTag { static constexpr char const* typeName = "GuiContextException"; };
+using GuiContextException = TypedException<StarException, GuiContextExceptionTag>;
 
 class GuiContext {
 public:

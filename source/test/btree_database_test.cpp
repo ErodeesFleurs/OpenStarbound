@@ -49,7 +49,7 @@ namespace {
   void checkAll(BTreeDatabase& db, const List<uint32_t>& keys) {
     for (uint32_t k : keys) {
       auto res = db.find(toByteArray(k));
-      EXPECT_TRUE((bool)res);
+      EXPECT_TRUE(static_cast<bool>(res));
       EXPECT_TRUE(checkBlock(k, *res));
     }
 
@@ -71,7 +71,7 @@ namespace {
       EXPECT_TRUE(!old || *old == genBlock(k));
 
       if (db.remove(toByteArray(k))) {
-        EXPECT_FALSE((bool)db.find(toByteArray(k)));
+        EXPECT_FALSE(static_cast<bool>(db.find(toByteArray(k))));
         ++totalRemoved;
       }
     }
@@ -253,4 +253,3 @@ TEST(BTreeDatabaseTest, Threading) {
     }
   }
 }
-

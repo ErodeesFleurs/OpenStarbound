@@ -11,7 +11,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(LightmapException, StarException);
+struct LightmapExceptionTag { static constexpr char const* typeName = "LightmapException"; };
+using LightmapException = TypedException<StarException, LightmapExceptionTag>;
 
 class Lightmap {
 public:

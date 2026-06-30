@@ -40,11 +40,11 @@ LiquidsDatabase::LiquidsDatabase() {
       auto liquidConfig = assets->json(file);
 
       unsigned id = liquidConfig.getUInt("liquidId");
-      if (id != (LiquidId)id)
-        throw LiquidException(strf("Liquid id {} does not fall in the valid range, wrapped to {}\n", id, (LiquidId)id));
+      if (id != static_cast<LiquidId>(id))
+        throw LiquidException(strf("Liquid id {} does not fall in the valid range, wrapped to {}\n", id, static_cast<LiquidId>(id)));
 
       auto entry = make_shared<LiquidSettings>();
-      entry->id = (LiquidId)id;
+      entry->id = static_cast<LiquidId>(id);
       entry->name = liquidConfig.getString("name");
       entry->path = file;
       entry->config = liquidConfig;

@@ -196,7 +196,7 @@ CharacterCreationResult SpeciesDatabase::generateHumanoid(String speciesChoice, 
   return createHumanoid(
     Root::singleton().nameGenerator()->generateName(speciesDefinition->nameGen(chosenGender), randSource),
     speciesChoice,
-    (unsigned)chosenGender,
+    static_cast<unsigned>(chosenGender),
     randSource.randu32(),
     randSource.randu32(),
     randSource.randu32(),
@@ -287,11 +287,11 @@ String SpeciesDefinition::kind() const {
 }
 
 String SpeciesDefinition::nameGen(Gender gender) const {
-  return m_nameGen[(unsigned)gender];
+  return m_nameGen[static_cast<unsigned>(gender)];
 }
 
 String SpeciesDefinition::ouchNoise(Gender gender) const {
-  return m_ouchNoises[(unsigned)gender];
+  return m_ouchNoises[static_cast<unsigned>(gender)];
 }
 
 SpeciesOption const& SpeciesDefinition::options() const {

@@ -54,8 +54,8 @@ Vec2U objectPositionPadding(Vec2I imagePosition) {
   int pixelsY = imagePosition.y();
 
   // Unsigned modulo operation gives the padding to use (in pixels)
-  unsigned padX = (unsigned)pixelsX % TilePixels;
-  unsigned padY = (unsigned)pixelsY % TilePixels;
+  unsigned padX = static_cast<unsigned>(pixelsX) % TilePixels;
+  unsigned padY = static_cast<unsigned>(pixelsY) % TilePixels;
   return Vec2U(padX, padY);
 }
 

@@ -348,7 +348,7 @@ void ModUploader::uploadToSteam() {
     tagStrings[i] = tagList[i].utf8Ptr();
   }
 
-  SteamParamStringArray_t itemTags = {tagStrings, (int32_t)tagList.size()};
+  SteamParamStringArray_t itemTags = {tagStrings, static_cast<int32_t>(tagList.size())};
   SteamUGC()->SetItemTags(updateHandle, &itemTags);
 
   CCallResult<ModUploader, SubmitItemUpdateResult_t> callResultSubmit;

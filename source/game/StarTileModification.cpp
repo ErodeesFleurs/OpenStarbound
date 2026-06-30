@@ -8,10 +8,10 @@ DataStream& operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement) {
   ds.read(layer);
   if (layer > 1) {
     tileMaterialPlacement.layer = TileLayer::Foreground;
-    tileMaterialPlacement.collisionOverride = (TileCollisionOverride)(layer - 1);
+    tileMaterialPlacement.collisionOverride = static_cast<TileCollisionOverride>(layer - 1);
   }
   else {
-    tileMaterialPlacement.layer = (TileLayer)layer;
+    tileMaterialPlacement.layer = static_cast<TileLayer>(layer);
     tileMaterialPlacement.collisionOverride = TileCollisionOverride::None;
   }
 
@@ -24,7 +24,7 @@ DataStream& operator>>(DataStream& ds, PlaceMaterial& tileMaterialPlacement) {
 DataStream& operator<<(DataStream& ds, PlaceMaterial const& tileMaterialPlacement) {
   if (tileMaterialPlacement.collisionOverride != TileCollisionOverride::None
     && tileMaterialPlacement.layer == TileLayer::Foreground) {
-    uint8_t layer = (uint8_t)tileMaterialPlacement.collisionOverride;
+    uint8_t layer = static_cast<uint8_t>(tileMaterialPlacement.collisionOverride);
     ds.write(++layer);
   }
   else

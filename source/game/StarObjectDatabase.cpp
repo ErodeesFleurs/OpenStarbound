@@ -489,7 +489,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
         List<ItemDescriptor> group;
         for (auto dropChoiceEntry : dropChoiceGroups.iterateArray())
           group.append(
-              {dropChoiceEntry.getString(0), (size_t)dropChoiceEntry.getUInt(1), dropChoiceEntry.getObject(2)});
+              {dropChoiceEntry.getString(0), static_cast<size_t>(dropChoiceEntry.getUInt(1)), dropChoiceEntry.getObject(2)});
         objectConfig->breakDropOptions.append(group);
       }
       // If breakDropOptions is set but empty, then the object should always
@@ -546,7 +546,7 @@ ObjectConfigPtr ObjectDatabase::readConfig(String const& path) {
     if (auto lightType = config.optString("lightType"))
       objectConfig->lightType = LightTypeNames.getLeft(*lightType);
     else
-      objectConfig->lightType = (LightType)config.getBool("pointLight", false);
+      objectConfig->lightType = static_cast<LightType>(config.getBool("pointLight", false));
     objectConfig->pointBeam = config.getFloat("pointBeam", 0.0f);
     objectConfig->beamAmbience = config.getFloat("beamAmbience", 0.0f);
 

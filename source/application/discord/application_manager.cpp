@@ -21,8 +21,7 @@ void ApplicationManager::ValidateOrExit(std::function<void(Result)> callback)
         }
         (*cb)(static_cast<Result>(result));
     };
-    std::unique_ptr<std::function<void(Result)>> cb{};
-    cb.reset(new std::function<void(Result)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result)>>(std::move(callback));
     internal_->validate_or_exit(internal_, cb.release(), wrapper);
 }
 
@@ -55,8 +54,7 @@ void ApplicationManager::GetOAuth2Token(std::function<void(Result, OAuth2Token c
         }
         (*cb)(static_cast<Result>(result), *reinterpret_cast<OAuth2Token const*>(oauth2Token));
     };
-    std::unique_ptr<std::function<void(Result, OAuth2Token const&)>> cb{};
-    cb.reset(new std::function<void(Result, OAuth2Token const&)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result, OAuth2Token const&)>>(std::move(callback));
     internal_->get_oauth2_token(internal_, cb.release(), wrapper);
 }
 
@@ -70,8 +68,7 @@ void ApplicationManager::GetTicket(std::function<void(Result, char const*)> call
         }
         (*cb)(static_cast<Result>(result), static_cast<const char*>(data));
     };
-    std::unique_ptr<std::function<void(Result, char const*)>> cb{};
-    cb.reset(new std::function<void(Result, char const*)>(std::move(callback)));
+    auto cb = std::make_unique<std::function<void(Result, char const*)>>(std::move(callback));
     internal_->get_ticket(internal_, cb.release(), wrapper);
 }
 

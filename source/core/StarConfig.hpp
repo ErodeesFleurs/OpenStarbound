@@ -66,9 +66,6 @@ constexpr size_t NPos = static_cast<size_t>(-1);
 
 using StreamOffset = int64_t;
 
-// Convenient way to purposefully mark a variable as unused to avoid warning
-#define _unused(x) ((void)x)
-
 // Forward declare a class or struct, and define a lot of typedefs for
 // different pointer types all at once.
 

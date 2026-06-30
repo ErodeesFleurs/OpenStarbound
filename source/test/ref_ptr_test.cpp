@@ -77,9 +77,9 @@ TEST(IntrusivePtr, All) {
     RefPtr<Test1> p6 = as<Test1>(p1);
     RefPtr<Test2> p7 = as<Test2>(p2);
     RefPtr<Test2> p8 = as<Test2>(p1);
-    EXPECT_TRUE((bool)p6);
-    EXPECT_TRUE((bool)p7);
-    EXPECT_FALSE((bool)p8);
+    EXPECT_TRUE(static_cast<bool>(p6));
+    EXPECT_TRUE(static_cast<bool>(p7));
+    EXPECT_FALSE(static_cast<bool>(p8));
   }
 
   EXPECT_EQ(0, g_test1Count);

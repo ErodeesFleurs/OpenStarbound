@@ -9,7 +9,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(InvalidMaybeAccessException, StarException);
+struct InvalidMaybeAccessExceptionTag { static constexpr char const* typeName = "InvalidMaybeAccessException"; };
+using InvalidMaybeAccessException = TypedException<StarException, InvalidMaybeAccessExceptionTag>;
 
 template <typename T>
 class Maybe {

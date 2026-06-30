@@ -8,7 +8,8 @@ namespace Star {
 
 STAR_CLASS(Configuration);
 
-STAR_EXCEPTION(ConfigurationException, StarException);
+struct ConfigurationExceptionTag { static constexpr char const* typeName = "ConfigurationException"; };
+using ConfigurationException = TypedException<StarException, ConfigurationExceptionTag>;
 
 class Configuration {
 public:

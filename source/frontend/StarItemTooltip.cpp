@@ -92,7 +92,7 @@ void ItemTooltipBuilder::buildItemDescriptionInner(
     container->setLabel("handednessLabel", "1-Handed");
 
   container->setLabel("countLabel", toString(item->instanceValue("fuelAmount", 0).toUInt() * item->count()));
-  container->setLabel("priceLabel", toString((int)item->price()));
+  container->setLabel("priceLabel", toString(static_cast<int>(item->price())));
 
   if (auto objectItem = as<ObjectItem>(item)) {
     try {

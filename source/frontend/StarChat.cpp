@@ -188,7 +188,7 @@ ChatSendMode Chat::sendMode() const {
 
 void Chat::incrementIndex() {
   if (!m_chatHistory.empty()) {
-    m_chatPrevIndex = std::min(m_chatPrevIndex + 1, (unsigned)m_chatHistory.size());
+    m_chatPrevIndex = std::min(m_chatPrevIndex + 1, static_cast<unsigned>(m_chatHistory.size()));
     m_textBox->setText(m_chatHistory.at(m_chatPrevIndex - 1));
   }
 }
@@ -252,7 +252,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     show();
   }
 
-  if ((unsigned)m_receivedMessages.size() > m_chatHistoryLimit)
+  if (static_cast<unsigned>(m_receivedMessages.size()) > m_chatHistoryLimit)
     m_receivedMessages.resize(m_chatHistoryLimit);
 }
 
@@ -263,7 +263,7 @@ void Chat::addHistory(String const& chat) {
     return;
   else {
     m_chatHistory.prepend(chat);
-    m_chatHistory.resize(std::min((unsigned)m_chatHistory.size(), m_chatHistoryLimit));
+    m_chatHistory.resize(std::min(static_cast<unsigned>(m_chatHistory.size()), m_chatHistoryLimit));
     m_timeChatLastActive = Time::monotonicMilliseconds();
     m_client->playerStorage()->setMetadata("chatHistory", JsonArray::from(m_chatHistory));
   }
@@ -421,7 +421,7 @@ void Chat::scrollUp() {
       return (m_modeFilter.empty() || m_modeFilter.contains(msg.mode));
     });
 
-  m_historyOffset = std::max(0, std::min((int)shownMessages.size() - 1, m_historyOffset + 1));
+  m_historyOffset = std::max(0, std::min(static_cast<int>(shownMessages.size()) - 1, m_historyOffset + 1));
   m_timeChatLastActive = Time::monotonicMilliseconds();
   updateBottomButton();
 }

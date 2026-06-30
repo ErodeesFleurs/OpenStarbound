@@ -120,7 +120,7 @@ void RadioMessagePopup::updateAnchorOffset() {
 
 void RadioMessagePopup::nextPopupStage() {
   if (m_popupStage != PopupStage::Hidden)
-    enterStage((PopupStage)((int)m_popupStage + 1));
+    enterStage(static_cast<PopupStage>(static_cast<int>(m_popupStage) + 1));
 }
 
 void RadioMessagePopup::enterStage(PopupStage newStage) {

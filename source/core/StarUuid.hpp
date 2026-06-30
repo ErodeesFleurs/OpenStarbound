@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(UuidException, StarException);
+struct UuidExceptionTag { static constexpr char const* typeName = "UuidException"; };
+using UuidException = TypedException<StarException, UuidExceptionTag>;
 
 size_t const UuidSize = 16;
 

@@ -39,7 +39,7 @@ void TextBoxWidget::renderImpl() {
   else
     blueRate = 0.0f;
   
-  float cursorOffset = (float)getCursorDrawOffset() / context()->interfaceScale();
+  float cursorOffset = static_cast<float>(getCursorDrawOffset()) / context()->interfaceScale();
   Vec2F pos(screenPosition());
   if (m_hAnchor == HorizontalAnchor::HMidAnchor)
     pos[0] += size()[0] / 2.0f;
@@ -68,7 +68,7 @@ void TextBoxWidget::renderImpl() {
 
   if (hasFocus()) {
     // render cursor
-    float cc = 0.6f + 0.4f * std::sin((double)Time::monotonicMilliseconds() / 300.0);
+    float cc = 0.6f + 0.4f * std::sin(static_cast<double>(Time::monotonicMilliseconds()) / 300.0);
     Color cursorColor = Color::rgbf(cc, cc, cc);
 
     float fontSize = m_textStyle.fontSize;
@@ -110,10 +110,10 @@ int TextBoxWidget::getCursorDrawOffset() const { // horizontal only
   if (m_textHidden) {
     int width = context()->stringWidth("*");
     size_t chars = m_text.size();
-    return (int)std::ceil((width * chars) * scale - (width * (chars - m_cursorOffset)));
+    return static_cast<int>(std::ceil((width * chars) * scale - (width * (chars - m_cursorOffset))));
   } else {
-  return (int)std::ceil(context()->stringWidth(m_text) * scale
-                      - context()->stringWidth(m_text.substr(m_cursorOffset, m_text.size())));
+  return static_cast<int>(std::ceil(context()->stringWidth(m_text) * scale
+                      - context()->stringWidth(m_text.substr(m_cursorOffset, m_text.size()))));
   }
 }
 
@@ -123,7 +123,7 @@ void TextBoxWidget::update(float dt) {
     if (Time::monotonicMilliseconds() >= m_repeatKeyThreshold) {
       m_repeatKeyThreshold += 50;
       if (m_repeatCode == SpecialRepeatKeyCodes::Delete) {
-        if (m_cursorOffset < (int)m_text.size())
+        if (m_cursorOffset < static_cast<int>(m_text.size()))
           modText(m_text.substr(0, m_cursorOffset) + m_text.substr(m_cursorOffset + 1));
       } else if (m_repeatCode == SpecialRepeatKeyCodes::Backspace) {
         if (m_cursorOffset > 0) {
@@ -137,9 +137,9 @@ void TextBoxWidget::update(float dt) {
             m_cursorOffset = 0;
         }
       } else if (m_repeatCode == SpecialRepeatKeyCodes::Right) {
-        if (m_cursorOffset < (int)m_text.size()) {
+        if (m_cursorOffset < static_cast<int>(m_text.size())) {
           m_cursorOffset++;
-          if (m_cursorOffset > (int)m_text.size())
+          if (m_cursorOffset > static_cast<int>(m_text.size()))
             m_cursorOffset = m_text.size();
         }
       }
@@ -160,7 +160,7 @@ bool TextBoxWidget::setText(String const& text, bool callback, bool moveCursor) 
 
   m_text = text;
   size_t size = m_text.size();
-  if (moveCursor || (size_t)m_cursorOffset > size)
+  if (moveCursor || static_cast<size_t>(m_cursorOffset) > size)
     m_cursorOffset = size;
 
   m_repeatCode = SpecialRepeatKeyCodes::None;
@@ -182,7 +182,7 @@ int const& TextBoxWidget::getCursorPosition() const {
 }
 
 void TextBoxWidget::setCursorPosition(int cursorPosition) {
-  m_cursorOffset = clamp(cursorPosition, 0, (int)m_text.size());
+  m_cursorOffset = clamp(cursorPosition, 0, static_cast<int>(m_text.size()));
 }
 
 bool TextBoxWidget::getHidden() const {
@@ -384,7 +384,7 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       int steps = calculateSteps(true);
       m_repeatCode = SpecialRepeatKeyCodes::Delete;
       for (int i = 0; i < steps; i++) {
-        if (m_cursorOffset < (int)m_text.size())
+        if (m_cursorOffset < static_cast<int>(m_text.size()))
           modText(m_text.substr(0, m_cursorOffset) + m_text.substr(m_cursorOffset + 1));
       }
       return true;
@@ -404,7 +404,7 @@ bool TextBoxWidget::innerSendEvent(InputEvent const& event) {
       m_repeatCode = SpecialRepeatKeyCodes::Right;
       for (int i = 0; i < steps; i++) {
         m_cursorOffset++;
-        if (m_cursorOffset > (int)m_text.size())
+        if (m_cursorOffset > static_cast<int>(m_text.size()))
           m_cursorOffset = m_text.size();
       }
       return true;

@@ -619,7 +619,7 @@ public:
     m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired,
     [](void* userdata, SDL_AudioStream* stream, int len, int) {
       if (len > 0) {
-        auto sdlPlatform = ((SdlPlatform*)(userdata));
+        auto sdlPlatform = static_cast<SdlPlatform*>(userdata);
         sdlPlatform->m_audioOutputData.resize(len);
         sdlPlatform->getAudioData(sdlPlatform->m_audioOutputData.data(), len);
         SDL_PutAudioStreamData(stream, sdlPlatform->m_audioOutputData.data(), len);
@@ -680,7 +680,7 @@ public:
     m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired,
     [](void* userdata, SDL_AudioStream* stream, int len, int) {
       if (len > 0) {
-        auto sdlPlatform = ((SdlPlatform*)(userdata));
+        auto sdlPlatform = static_cast<SdlPlatform*>(userdata);
         sdlPlatform->m_audioInputData.resize(len);
         SDL_GetAudioStreamData(stream, sdlPlatform->m_audioInputData.data(), len);
         sdlPlatform->m_audioInputCallback(sdlPlatform->m_audioInputData.data(), len);
@@ -1263,23 +1263,24 @@ private:
   }
 
   bool setClipboardData(StringMap<ByteArray> data) {
-    auto heldData = new StringMap<ByteArray>(std::move(data));
+    auto heldData = make_unique<StringMap<ByteArray>>(std::move(data));
     std::vector<const char*> types;
     for (auto& entry : *heldData)
       types.push_back(entry.first.utf8Ptr());
     auto request = [](void* userdata, const char* mime_type, size_t* size) -> const void* {
-      if (auto entry = ((StringMap<ByteArray>*)userdata)->ptr(mime_type)) {
+      if (auto entry = static_cast<StringMap<ByteArray>*>(userdata)->ptr(mime_type)) {
         *size = entry->size();
         return entry->ptr();
       }
       *size = 0;
       return nullptr;
     };
-    auto cleanup = [](void* userdata) { delete ((StringMap<ByteArray>*)userdata); };
-    if (SDL_SetClipboardData(request, cleanup, heldData, types.data(), types.size()))
+    auto cleanup = [](void* userdata) { delete static_cast<StringMap<ByteArray>*>(userdata); };
+    if (SDL_SetClipboardData(request, cleanup, heldData.get(), types.data(), types.size())) {
+      heldData.release();
       return true;
+    }
 
-    cleanup(heldData);
     return false;
   }
 
@@ -1293,8 +1294,8 @@ private:
       copyDibToClipboard(converted.data(), converted.width(), converted.height());
     });
     #else
-    _unused(image);
-    _unused(path);
+    static_cast<void>(image);
+    static_cast<void>(path);
     if (png) {
       StringMap<ByteArray> clipboardData = {{"image/png", std::move(*png)}};
       return setClipboardData(std::move(clipboardData));
@@ -1309,7 +1310,7 @@ private:
       return copyFileToClipboard(path);
     });
     #else
-    _unused(path);
+    static_cast<void>(path);
     return false;
     #endif
   }

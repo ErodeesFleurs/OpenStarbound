@@ -12,7 +12,8 @@ namespace Star {
 STAR_CLASS(RenderCallback);
 STAR_CLASS(Plant);
 
-STAR_EXCEPTION(PlantException, StarException);
+struct PlantExceptionTag { static constexpr char const* typeName = "PlantException"; };
+using PlantException = TypedException<StarException, PlantExceptionTag>;
 
 class Plant : public virtual TileEntity {
 public:

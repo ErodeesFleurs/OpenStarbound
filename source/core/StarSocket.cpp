@@ -66,7 +66,7 @@ Maybe<SocketPollResult> Socket::poll(SocketPollQuery const& query, unsigned time
   }
 
 #else
-  unique_ptr<pollfd[]> pollfds(new pollfd[query.size()]);
+  auto pollfds = make_unique<pollfd[]>(query.size());
   int ret = 0;
   for (auto p : enumerateIterator(query)) {
     if (p.first.first->isOpen()) {

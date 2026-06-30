@@ -505,7 +505,7 @@ ItemPtr ItemDatabase::createItem(ItemType type, ItemConfig const& config) {
   } else if (type == ItemType::AugmentItem) {
     return make_shared<AugmentItem>(config.config, config.directory, config.parameters);
   } else {
-    throw ItemException(strf("Unknown item type {}", (int)type));
+    throw ItemException(strf("Unknown item type {}", static_cast<int>(type)));
   }
 }
 

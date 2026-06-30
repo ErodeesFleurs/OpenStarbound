@@ -94,9 +94,9 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
       if (auto presses = input.bindDown("opensb", "materialCollisionCycle")) {
         CollisionKind baseKind = Root::singleton().materialDatabase()->materialCollisionKind(m_material);
         for (size_t i = 0; i != *presses; ++i) {
-          constexpr auto limit = (uint8_t)TileCollisionOverride::Block + 1;
+          constexpr auto limit = static_cast<uint8_t>(TileCollisionOverride::Block) + 1;
           while (true) {
-            m_collisionOverride = TileCollisionOverride(((uint8_t)m_collisionOverride + 1) % limit);
+            m_collisionOverride = static_cast<TileCollisionOverride>((static_cast<uint8_t>(m_collisionOverride) + 1) % limit);
             if (collisionKindFromOverride(m_collisionOverride) != baseKind)
               break;
           }
@@ -131,7 +131,7 @@ void MaterialItem::update(float dt, FireMode fireMode, bool shifting, HashSet<Mo
 
 void MaterialItem::render(RenderCallback* renderCallback, EntityRenderLayer) {
   if (m_blockSwap || m_collisionOverride != TileCollisionOverride::None) {
-    float pulse = (float)sin(2 * Constants::pi * 4.0 * Time::monotonicTime());
+    float pulse = static_cast<float>(sin(2 * Constants::pi * 4.0 * Time::monotonicTime()));
     float pulseA = 0.85 - pulse * 0.15f;
     float pulseB = 0.85 + pulse * 0.15f;
     Color color = owner()->favoriteColor().mix(Color::White);
@@ -203,7 +203,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
       magnitude = limit;
     }
 
-    steps = (unsigned)ceil(magnitude * (Constants::pi / 2));
+    steps = static_cast<unsigned>(ceil(magnitude * (Constants::pi / 2)));
   }
 
   CollisionKind collisionKind = m_collisionOverride != TileCollisionOverride::None
@@ -235,7 +235,7 @@ void MaterialItem::fire(FireMode mode, bool shifting, bool edgeTriggered) {
   }
 
   if (total) {
-    float intensity = clamp(sqrt((float)total) / 16, 0.0f, 1.0f);
+    float intensity = clamp(sqrt(static_cast<float>(total)) / 16, 0.0f, 1.0f);
     owner()->addSound(Random::randValueFrom(m_placeSounds), 1.0f + intensity, (1.125f - intensity * 0.75f) * Random::randf(0.9f, 1.1f));
     FireableItem::fire(mode, shifting, edgeTriggered);
   }

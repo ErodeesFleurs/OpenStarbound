@@ -398,7 +398,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
             tupleCount--;
           auto duration = readDuration();
           if (duration != 1) {
-            for (int index = groupStartIndex; index < (int)result.size(); index++) {
+            for (int index = groupStartIndex; index < static_cast<int>(result.size()); index++) {
               auto& entry = result[index];
               entry.duration *= duration;
             }
@@ -413,15 +413,15 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
             int p = 0;
             int q = 0;
             int r = 0;
-            p = (int)buffer.takeFirst() - (int)'0';
+            p = static_cast<int>(buffer.takeFirst()) - static_cast<int>('0');
             if (peek() == ':') {
               buffer.takeFirst();
               if (String::isAsciiNumber(peek()))
-                q = (int)buffer.takeFirst() - (int)'0';
+                q = static_cast<int>(buffer.takeFirst()) - static_cast<int>('0');
               if (peek() == ':') {
                 buffer.takeFirst();
                 if (String::isAsciiNumber(peek()))
-                  r = (int)buffer.takeFirst() - (int)'0';
+                  r = static_cast<int>(buffer.takeFirst()) - static_cast<int>('0');
               }
             }
 
@@ -431,7 +431,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
               q = tupleMapping[p];
 
             tupleCount = p;
-            tupleDurationFactor = (float)q / (float)p;
+            tupleDurationFactor = static_cast<float>(q) / static_cast<float>(p);
           }
 
           continue;
@@ -504,7 +504,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
               break;
             }
             default:
-              throw StarException(strf("Unrecognized note {}", (char)head));
+              throw StarException(strf("Unrecognized note {}", static_cast<char>(head)));
           }
           if (note != 0) {
             bool accidentalActive = accidentalSpecified;
@@ -557,7 +557,7 @@ List<Songbook::Note> Songbook::parseABC(String const& abc) {
                   break;
                 }
                 default:
-                  throw StarException(strf("Unrecognized note {}", (char)head));
+                  throw StarException(strf("Unrecognized note {}", static_cast<char>(head)));
               }
             }
 

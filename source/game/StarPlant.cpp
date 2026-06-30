@@ -311,7 +311,7 @@ Plant::Plant(TreeVariant const& config, uint64_t seed) : Plant() {
           }
 
         } else {
-          branchYOffset += (attachmentSettings.get("h").toDouble() / TilePixels) / (float)(1 + rnd.randInt(4));
+          branchYOffset += (attachmentSettings.get("h").toDouble() / TilePixels) / static_cast<float>(1 + rnd.randInt(4));
         }
       }
       segment++;
@@ -840,7 +840,7 @@ void Plant::readPiecesFromJson(Json const& pieces) {
       res.rotationType = RotationTypeNames.getLeft(v.getString("rotationType"));
       res.rotationOffset = v.getFloat("rotationOffset");
       res.structuralSegment = v.getBool("structuralSegment");
-      res.kind = (PlantPieceKind)v.getInt("kind");
+      res.kind = static_cast<PlantPieceKind>(v.getInt("kind"));
       res.segmentIdx = v.getInt("segmentIdx");
       res.flip = v.getBool("flip");
 

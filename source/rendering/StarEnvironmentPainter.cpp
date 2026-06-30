@@ -130,7 +130,7 @@ void EnvironmentPainter::renderDebrisFields(float pixelRatio, Vec2F const& scree
       biggest = biggest.piecewiseMax(texture->size());  
     }  
   
-    float screenBuffer = ceil((float)biggest.max() * (float)Constants::sqrt2);  
+    float screenBuffer = ceil(static_cast<float>(biggest.max()) * static_cast<float>(Constants::sqrt2));  
     PolyD field = PolyD(RectD::withSize(viewMin + velocityOffset, Vec2D(viewSize)).padded(screenBuffer));  
     Vec2F debrisAngularVelocityRange = jsonToVec2F(debrisField.query("angularVelocityRange"));  
     auto debrisItems = m_debrisGenerators[i]->generate(field,  
@@ -266,11 +266,11 @@ void EnvironmentPainter::renderParallaxLayers(
     // texture offset in *screen pixel space*
     Vec2F parallaxOffset = layer.parallaxOffset * camera.pixelRatio();
     if (layer.speed[0] != 0) {
-      double drift = fmod((double)layer.speed[0] * (sky.epochTime / (double)sky.dayLength), (double)parallaxSize[0]);
+      double drift = fmod(static_cast<double>(layer.speed[0]) * (sky.epochTime / static_cast<double>(sky.dayLength)), static_cast<double>(parallaxSize[0]));
       parallaxOffset[0] = fmod(parallaxOffset[0] + drift * camera.pixelRatio(), parallaxPixels[0]);
     }
     if (layer.speed[1] != 0) {
-      double drift = fmod((double)layer.speed[1] * (sky.epochTime / (double)sky.dayLength), (double)parallaxSize[1]);
+      double drift = fmod(static_cast<double>(layer.speed[1]) * (sky.epochTime / static_cast<double>(sky.dayLength)), static_cast<double>(parallaxSize[1]));
       parallaxOffset[1] = fmod(parallaxOffset[1] + drift * camera.pixelRatio(), parallaxPixels[1]);
     }
 
@@ -330,7 +330,7 @@ void EnvironmentPainter::renderParallaxLayers(
           AssetPath withDirectives = textureImage;
           withDirectives.directives += layer.directives;
           if (layer.frameNumber > 1) {
-            float time_within_cycle = (float)fmod(sky.epochTime, (double)layer.animationCycle);
+            float time_within_cycle = static_cast<float>(fmod(sky.epochTime, static_cast<double>(layer.animationCycle)));
             float time_per_frame = layer.animationCycle / layer.frameNumber;
             float frame_number = time_within_cycle / time_per_frame;
             int frame = (layer.frameOffset + clamp<int>(frame_number, 0, layer.frameNumber - 1)) % layer.frameNumber;
@@ -392,7 +392,7 @@ void EnvironmentPainter::drawRay(float pixelRatio,
   float timeSinceSunEvent = std::min(std::abs(currentTime - SunriseTime), std::abs(currentTime - SunsetTime));
   float percentFaded = MaxFade * (1.0f - std::min(1.0f, std::pow(timeSinceSunEvent / SunFadeRate, 2.0f)));
   // Gets the current average sky color
-  color = (Vec3B)((Vec3F)color * (1 - percentFaded) + (Vec3F)sky.mainSkyColor.toRgb() * percentFaded);
+  color = static_cast<Vec3B>(static_cast<Vec3F>(color) * (1 - percentFaded) + static_cast<Vec3F>(sky.mainSkyColor.toRgb()) * percentFaded);
   // Sum is used to vary the ray intensity based on sky color
   // Rays show up more on darker backgrounds, so this scales to remove that
   float sum = std::pow((color[0] + color[1]) * RayColorDependenceScale, RayColorDependenceLevel);

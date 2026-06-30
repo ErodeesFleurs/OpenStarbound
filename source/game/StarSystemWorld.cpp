@@ -11,7 +11,7 @@ namespace Star {
 CelestialOrbit CelestialOrbit::fromJson(Json const& json) {
   return CelestialOrbit {
     CelestialCoordinate(json.get("target")),
-    (int)json.getInt("direction"),
+    static_cast<int>(json.getInt("direction")),
     json.getDouble("enterTime"),
     jsonToVec2F(json.get("enterPosition"))
   };

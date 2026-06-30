@@ -174,7 +174,7 @@ Tile TileSectorArray<Tile, SectorSize>::defaultTile() const {
 
 template <typename Tile, unsigned SectorSize>
 auto TileSectorArray<Tile, SectorSize>::sectorFor(Vec2I const& pos) const -> Sector {
-  return m_tileSectors.sectorFor((unsigned)pmod<int>(pos[0], m_worldSize[0]), (unsigned)pos[1]);
+  return m_tileSectors.sectorFor(static_cast<unsigned>(pmod<int>(pos[0], m_worldSize[0])), static_cast<unsigned>(pos[1]));
 }
 
 template <typename Tile, unsigned SectorSize>
@@ -276,22 +276,22 @@ auto TileSectorArray<Tile, SectorSize>::sectorArray(Sector sector) -> Array * {
 
 template <typename Tile, unsigned SectorSize>
 bool TileSectorArray<Tile, SectorSize>::tileLoaded(Vec2I const& pos) const {
-  if (pos[1] < 0 || pos[1] >= (int)m_worldSize[1])
+  if (pos[1] < 0 || pos[1] >= static_cast<int>(m_worldSize[1]))
     return false;
 
-  unsigned xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
-  unsigned yind = (unsigned)pos[1];
+  unsigned xind = static_cast<unsigned>(pmod<int>(pos[0], m_worldSize[0]));
+  unsigned yind = static_cast<unsigned>(pos[1]);
 
   return m_tileSectors.get(xind, yind) != nullptr;
 }
 
 template <typename Tile, unsigned SectorSize>
 Tile const& TileSectorArray<Tile, SectorSize>::tile(Vec2I const& pos) const {
-  if (pos[1] < 0 || pos[1] >= (int)m_worldSize[1])
+  if (pos[1] < 0 || pos[1] >= static_cast<int>(m_worldSize[1]))
     return m_default;
 
-  unsigned xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
-  unsigned yind = (unsigned)pos[1];
+  unsigned xind = static_cast<unsigned>(pmod<int>(pos[0], m_worldSize[0]));
+  unsigned yind = static_cast<unsigned>(pos[1]);
 
   Tile const* tile = m_tileSectors.get(xind, yind);
   if (tile)
@@ -302,11 +302,11 @@ Tile const& TileSectorArray<Tile, SectorSize>::tile(Vec2I const& pos) const {
 
 template <typename Tile, unsigned SectorSize>
 Tile* TileSectorArray<Tile, SectorSize>::modifyTile(Vec2I const& pos) {
-  if (pos[1] < 0 || pos[1] >= (int)m_worldSize[1])
+  if (pos[1] < 0 || pos[1] >= static_cast<int>(m_worldSize[1]))
     return nullptr;
 
-  unsigned xind = (unsigned)pmod<int>(pos[0], m_worldSize[0]);
-  unsigned yind = (unsigned)pos[1];
+  unsigned xind = static_cast<unsigned>(pmod<int>(pos[0], m_worldSize[0]));
+  unsigned yind = static_cast<unsigned>(pos[1]);
 
   return m_tileSectors.get(xind, yind);
 }
@@ -348,10 +348,10 @@ void TileSectorArray<Tile, SectorSize>::tileEachTo(MultiArray& results, RectI co
           size_t arrayColumnIndex = (x + split.xOffset + xArrayOffset) * results.size(1) + y + yArrayOffset;
           if (column) {
             for (size_t i = 0; i < columnSize; ++i)
-              function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), column[i]);
+              function(results.atIndex(arrayColumnIndex + i), Vec2I(static_cast<int>(x) + split.xOffset, y + i), column[i]);
           } else {
             for (size_t i = 0; i < columnSize; ++i)
-              function(results.atIndex(arrayColumnIndex + i), Vec2I((int)x + split.xOffset, y + i), m_default);
+              function(results.atIndex(arrayColumnIndex + i), Vec2I(static_cast<int>(x) + split.xOffset, y + i), m_default);
             }
           return true;
         }, true);
@@ -380,7 +380,7 @@ void TileSectorArray<Tile, SectorSize>::tileEval(RectI const& region, Function&&
       // If non-const variant, do not call function if tile not loaded (pass
       // false to evalEmpty in sector array)
       auto fwrapper = [&](unsigned x, unsigned y, Tile* tile) {
-        function(Vec2I((int)x + split.xOffset, (int)y), *tile);
+        function(Vec2I(static_cast<int>(x) + split.xOffset, static_cast<int>(y)), *tile);
         return true;
       };
       m_tileSectors.eval(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false);
@@ -392,7 +392,7 @@ template <typename Tile, unsigned SectorSize>
 template <typename Function>
 void TileSectorArray<Tile, SectorSize>::tileEachColumns(RectI const& region, Function&& function) const {
   const_cast<TileSectorArray*>(this)->tileEvalColumns(
-      region, [&](Vec2I const& pos, Tile* tiles, size_t size) { function(pos, (Tile const*)tiles, size); });
+      region, [&](Vec2I const& pos, Tile* tiles, size_t size) { function(pos, tiles, size); });
 }
 
 template <typename Tile, unsigned SectorSize>
@@ -402,7 +402,7 @@ void TileSectorArray<Tile, SectorSize>::tileEvalColumns(RectI const& region, Fun
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
       auto fwrapper = [&](size_t x, size_t y, Tile* column, size_t columnSize) {
-        function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize);
+        function(Vec2I(static_cast<int>(x) + split.xOffset, static_cast<int>(y)), column, columnSize);
         return true;
       };
       m_tileSectors.evalColumns(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false);
@@ -417,7 +417,7 @@ void TileSectorArray<Tile, SectorSize>::tileEvalColumnsParallel(RectI const& reg
     auto clampedRect = yClampRect(split.rect);
     if (!clampedRect.isEmpty()) {
       auto fwrapper = [&](size_t x, size_t y, Tile* column, size_t columnSize) {
-        function(Vec2I((int)x + split.xOffset, (int)y), column, columnSize);
+        function(Vec2I(static_cast<int>(x) + split.xOffset, static_cast<int>(y)), column, columnSize);
         return true;
       };
       m_tileSectors.evalColumnsParallel(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, false);
@@ -447,7 +447,7 @@ bool TileSectorArray<Tile, SectorSize>::tileEachAbortable(RectI const& region, F
       auto fwrapper = [&](unsigned x, unsigned y, Tile const* tile) {
         if (!tile)
           tile = &m_default;
-        return function(Vec2I((int)x + split.xOffset, y), *tile);
+        return function(Vec2I(static_cast<int>(x) + split.xOffset, y), *tile);
       };
       if (!m_tileSectors.eval(clampedRect.xMin(), clampedRect.yMin(), clampedRect.width(), clampedRect.height(), fwrapper, true))
         return false;
@@ -474,10 +474,10 @@ bool TileSectorArray<Tile, SectorSize>::tileEachAbortable(RectI const& region, F
 template <typename Tile, unsigned SectorSize>
 auto TileSectorArray<Tile, SectorSize>::splitRect(RectI rect) const -> StaticList<SplitRect, 2> {
   // TODO: Offset here does not support rects outside of -m_worldSize[0] to 2 * m_worldSize[0]!
-  starAssert(rect.xMin() >= -(int)m_worldSize[0] && rect.xMax() <= 2 * (int)m_worldSize[0]);
+  starAssert(rect.xMin() >= -static_cast<int>(m_worldSize[0]) && rect.xMax() <= 2 * static_cast<int>(m_worldSize[0]));
 
   // any rect at least the width of the world is equivalent to a rect that spans the width of the world exactly
-  if (rect.width() >= (int)m_worldSize[0])
+  if (rect.width() >= static_cast<int>(m_worldSize[0]))
     return{SplitRect{RectI(0, rect.yMin(), m_worldSize[0], rect.yMax()), 0}};
 
   if (rect.isEmpty())
@@ -489,10 +489,10 @@ auto TileSectorArray<Tile, SectorSize>::splitRect(RectI rect) const -> StaticLis
   rect.setXMin(xMin);
   rect.setXMax(xMin + width);
 
-  if (rect.xMin() < (int)m_worldSize[0] && rect.xMax() > (int)m_worldSize[0]) {
+  if (rect.xMin() < static_cast<int>(m_worldSize[0]) && rect.xMax() > static_cast<int>(m_worldSize[0])) {
     return {
       SplitRect{RectI(rect.xMin(), rect.yMin(), m_worldSize[0], rect.yMax()), xOffset},
-      SplitRect{RectI(0, rect.yMin(), rect.xMax() - m_worldSize[0], rect.yMax()), xOffset + (int)m_worldSize[0]}
+      SplitRect{RectI(0, rect.yMin(), rect.xMax() - m_worldSize[0], rect.yMax()), xOffset + static_cast<int>(m_worldSize[0])}
     };
   } else {
     return {SplitRect{rect, xOffset}};

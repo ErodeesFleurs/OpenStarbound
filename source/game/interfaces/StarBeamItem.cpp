@@ -167,7 +167,7 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
 
       String endImage = "";
       if (m_endType != EndType::Invalid) {
-        endImage = m_endImages[(unsigned)m_endType];
+        endImage = m_endImages[static_cast<unsigned>(m_endType)];
       }
 
       if (!endImage.empty()) {
@@ -196,8 +196,10 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
         innerStripe.setSaturation(innerStripe.saturation() / m_innerBrightnessScale);
         Vec4B secondStripe = innerStripe.toRgba();
 
-        for (auto i = 1; i < (int)(curveLen * m_targetSegmentRun - .5); i++) { // one less than full length
-          float pos = (float)i / (float)(int)(curveLen * m_targetSegmentRun + .5); // project the discrete steps evenly
+        int const segmentLimit = static_cast<int>(curveLen * m_targetSegmentRun - .5f); // one less than full length
+        int const segmentDivisor = static_cast<int>(curveLen * m_targetSegmentRun + .5f);
+        for (auto i = 1; i < segmentLimit; i++) {
+          float pos = static_cast<float>(i) / static_cast<float>(segmentDivisor); // project the discrete steps evenly
 
           Vec2F currentLoc =
               m_beamCurve.pointAt(pos) + Vec2F(rangeRand(m_beamJitterDev, -m_maxBeamJitter, m_maxBeamJitter),
@@ -230,9 +232,11 @@ List<Drawable> BeamItem::beamDrawables(bool canPlace) const {
         m_inRangeLastUpdate = false;
         m_particleGenerateCooldown = .25; // TODO, expose to json
         List<Particle> beamLeftovers;
-        for (auto i = 1; i < (int)(curveLen * m_targetSegmentRun * 2 - .5); i++) { // one less than full length
+        int const segmentLimit = static_cast<int>(curveLen * m_targetSegmentRun * 2 - .5f); // one less than full length
+        int const segmentDivisor = static_cast<int>(curveLen * m_targetSegmentRun * 2 + .5f);
+        for (auto i = 1; i < segmentLimit; i++) {
           float pos =
-              (float)i / (float)(int)(curveLen * m_targetSegmentRun * 2 + .5); // project the discrete steps evenly
+              static_cast<float>(i) / static_cast<float>(segmentDivisor); // project the discrete steps evenly
           float curveLoc = m_beamCurve.arcLenPara(pos);
 
           Particle beamParticle;

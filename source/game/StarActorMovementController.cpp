@@ -973,7 +973,7 @@ void ActorMovementController::tickMaster(float dt) {
       m_walking.set(!running && m_controlMove);
       m_crouching.set(m_controlCrouch && !m_controlMove);
     }
-    m_flying.set((bool)m_controlFly);
+    m_flying.set(static_cast<bool>(m_controlFly));
 
     bool falling = (yVelocity() < *activeParameters.fallStatusSpeedMin) && !m_groundMovement.get();
     m_falling.set(falling);

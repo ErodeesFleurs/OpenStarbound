@@ -44,7 +44,7 @@ ModsMenu::ModsMenu() {
   auto workshopLinkButton = fetchChild<ButtonWidget>("workshopbutton");
 
   auto& guiContext = GuiContext::singleton();
-  bool hasDesktopService = (bool)guiContext.applicationController()->desktopService();
+  bool hasDesktopService = static_cast<bool>(guiContext.applicationController()->desktopService());
 
   workshopLinkButton->setEnabled(hasDesktopService);
 

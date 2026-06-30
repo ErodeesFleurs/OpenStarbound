@@ -17,7 +17,7 @@ void ToolUserItem::uninit() {
 void ToolUserItem::update(float, FireMode, bool, HashSet<MoveControlType> const&) {}
 
 bool ToolUserItem::initialized() const {
-  return (bool)m_owner;
+  return static_cast<bool>(m_owner);
 }
 
 ToolUserEntity* ToolUserItem::owner() const {

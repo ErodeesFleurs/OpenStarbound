@@ -49,7 +49,7 @@ HumanoidEmote EmoteProcessor::detectEmotes(String const& chatter) const {
     auto p = chatter.find(option.text);
     if (p == NPos)
       continue;
-    float r = p + (float)option.text.length() * 0.01f;
+    float r = p + static_cast<float>(option.text.length()) * 0.01f;
     if (r > bestMatch) {
       bestMatch = r;
       result = option.emote;

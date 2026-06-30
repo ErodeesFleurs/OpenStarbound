@@ -7,7 +7,8 @@ namespace Star {
 STAR_CLASS(Widget);
 STAR_CLASS(Pane);
 
-STAR_EXCEPTION(WidgetParserException, StarException);
+struct WidgetParserExceptionTag { static constexpr char const* typeName = "WidgetParserException"; };
+using WidgetParserException = TypedException<StarException, WidgetParserExceptionTag>;
 
 struct WidgetConstructResult {
   WidgetConstructResult();

@@ -16,10 +16,10 @@ LuaCallbacks LuaBindings::makeVoiceCallbacks() {
   callbacks.registerCallback("mergeSettings", [voice](Json const& settings) { voice->loadJson(settings); });
   // i have an alignment addiction i'm so sorry
   callbacks.registerCallback("setSpeakerMuted",  [voice](SpeakerId speakerId, bool muted)  { voice->speaker(speakerId)->muted = muted; });
-  callbacks.registerCallback(   "speakerMuted",  [voice](SpeakerId speakerId) { return (bool)voice->speaker(speakerId)->muted;         });
+  callbacks.registerCallback(   "speakerMuted",  [voice](SpeakerId speakerId) { return static_cast<bool>(voice->speaker(speakerId)->muted);         });
   // it just looks so neat to me!!
   callbacks.registerCallback("setSpeakerVolume", [voice](SpeakerId speakerId, float volume) { voice->speaker(speakerId)->volume = volume; });
-  callbacks.registerCallback(   "speakerVolume", [voice](SpeakerId speakerId) { return (float)voice->speaker(speakerId)->volume;          });
+  callbacks.registerCallback(   "speakerVolume", [voice](SpeakerId speakerId) { return static_cast<float>(voice->speaker(speakerId)->volume);          });
 
   callbacks.registerCallback("speakerPosition", [voice](SpeakerId speakerId) { return voice->speaker(speakerId)->position; });
 

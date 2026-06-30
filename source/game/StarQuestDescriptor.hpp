@@ -23,10 +23,10 @@ struct QuestItem {
 };
 
 // An item itemTag, indicating a set of possible items
-strong_typedef(String, QuestItemTag);
+using QuestItemTag = StrongTypedef<String, struct QuestItemTagTag>;
 
 // A collection of items
-strong_typedef(List<ItemDescriptor>, QuestItemList);
+using QuestItemList = StrongTypedef<List<ItemDescriptor>, struct QuestItemListTag>;
 
 // The uniqueId of a specific entity
 struct QuestEntity {

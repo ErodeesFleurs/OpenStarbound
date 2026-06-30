@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(OptionParserException, StarException);
+struct OptionParserExceptionTag { static constexpr char const* typeName = "OptionParserException"; };
+using OptionParserException = TypedException<StarException, OptionParserExceptionTag>;
 
 // Simple command line argument parsing and help printing, only simple single
 // dash flags are supported, no flag combining is allowed and all components

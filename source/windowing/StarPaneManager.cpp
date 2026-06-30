@@ -279,7 +279,7 @@ void PaneManager::render() {
       if (panePair.first->active()) {
         if (m_prevInterfaceScale != m_context->interfaceScale())
           panePair.first->setPosition(
-              calculateNewInterfacePosition(panePair.first, (float)m_context->interfaceScale() / m_prevInterfaceScale));
+              calculateNewInterfacePosition(panePair.first, static_cast<float>(m_context->interfaceScale()) / m_prevInterfaceScale));
 
         panePair.first->setDrawingOffset(calculatePaneOffset(panePair.first));
         panePair.first->render(RectI(Vec2I(), windowSize()));
@@ -321,7 +321,7 @@ void PaneManager::update(float dt) {
     Vec2I offsetDirection = Vec2I::filled(1);
     Vec2I offsetAdjust = Vec2I();
 
-    if (m_tooltipLastMousePos[0] + m_tooltipMouseOffset[0] + m_activeTooltip->size()[0] > (int)m_context->windowWidth() / m_context->interfaceScale()) {
+    if (m_tooltipLastMousePos[0] + m_tooltipMouseOffset[0] + m_activeTooltip->size()[0] > static_cast<int>(m_context->windowWidth()) / m_context->interfaceScale()) {
       offsetDirection[0] = -1;
       offsetAdjust[0] = -m_activeTooltip->size()[0];
     }

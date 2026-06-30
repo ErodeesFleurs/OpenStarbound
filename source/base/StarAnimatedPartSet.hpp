@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(AnimatedPartSetException, StarException);
+struct AnimatedPartSetExceptionTag { static constexpr char const* typeName = "AnimatedPartSetException"; };
+using AnimatedPartSetException = TypedException<StarException, AnimatedPartSetExceptionTag>;
 
 // Defines a "animated" data set constructed in such a way that it is very
 // useful for doing generic animations with lots of additional animation data.

@@ -80,7 +80,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
   bool lightTransparent = spec.getBool("lightTransparent", false);
   profile.foregroundLightTransparent = spec.getBool("foregroundLightTransparent", lightTransparent);
   profile.backgroundLightTransparent = spec.getBool("backgroundLightTransparent", lightTransparent);
-  profile.colorVariants = spec.getBool("multiColored", false) ? spec.getUInt("colorVariants", (uint64_t)MaxMaterialColorVariant + 1) : 0;
+  profile.colorVariants = spec.getBool("multiColored", false) ? spec.getUInt("colorVariants", static_cast<uint64_t>(MaxMaterialColorVariant) + 1) : 0;
   for (auto& entry : spec.getArray("colorDirectives", JsonArray()))
     profile.colorDirectives.append(entry.toString());
   profile.occludesBehind = spec.getBool("occludesBelow", true);
@@ -102,7 +102,7 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
       } else if (type.equalsIgnoreCase("EqualsSelf")) {
         rule->entries.append({MaterialRule::RuleEqualsSelf{ruleEntry.getBool("matchHue", false)}, inverse});
       } else if (type.equalsIgnoreCase("EqualsId")) {
-        rule->entries.append({MaterialRule::RuleEqualsId{(uint16_t)ruleEntry.getUInt("id")}, inverse});
+        rule->entries.append({MaterialRule::RuleEqualsId{static_cast<uint16_t>(ruleEntry.getUInt("id"))}, inverse});
       } else if (type.equalsIgnoreCase("PropertyEquals")) {
         rule->entries.append({MaterialRule::RulePropertyEquals{ruleEntry.getString("propertyName"), ruleEntry.get("propertyValue")}, inverse});
       }

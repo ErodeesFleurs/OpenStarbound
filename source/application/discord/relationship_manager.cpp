@@ -51,8 +51,7 @@ void RelationshipManager::Filter(std::function<bool(Relationship const&)> filter
         }
         return (*cb)(*reinterpret_cast<Relationship const*>(relationship));
     };
-    std::unique_ptr<std::function<bool(Relationship const&)>> cb{};
-    cb.reset(new std::function<bool(Relationship const&)>(std::move(filter)));
+    auto cb = std::make_unique<std::function<bool(Relationship const&)>>(std::move(filter));
     internal_->filter(internal_, cb.get(), wrapper);
 }
 

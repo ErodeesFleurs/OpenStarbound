@@ -267,7 +267,7 @@ void MainInterface::togglePlainCraftingWindow() {
 }
 
 bool MainInterface::windowsOpen() const {
-  return (bool)m_paneManager.topPane({PaneLayer::Window});
+  return static_cast<bool>(m_paneManager.topPane({PaneLayer::Window}));
 }
 
 MerchantPanePtr MainInterface::activeMerchantPane() const {
@@ -396,7 +396,7 @@ bool MainInterface::handleInputEvent(InputEvent const& event) {
 }
 
 bool MainInterface::inputFocus() const {
-  return (bool)m_paneManager.keyboardCapturedWidget();
+  return static_cast<bool>(m_paneManager.keyboardCapturedWidget());
 }
 
 bool MainInterface::textInputActive() const {
@@ -1580,7 +1580,7 @@ void MainInterface::renderCursor() {
   else
     m_cursorItem->setItem({});
 
-  m_cursorItem->render(RectI::withSize({}, {(int)windowWidth(), (int)windowHeight()}));
+  m_cursorItem->render(RectI::withSize({}, {static_cast<int>(windowWidth()), static_cast<int>(windowHeight())}));
   m_guiContext->resetInterfaceScissorRect();
 }
 
@@ -1593,7 +1593,7 @@ bool MainInterface::overButton(PolyI const& buttonPoly, Vec2F const& mousePos) c
 }
 
 bool MainInterface::overlayClick(Vec2F const& mousePos, MouseButton) {
-  PolyF mainBarPoly = (PolyF)m_config->mainBarPoly;
+  PolyF mainBarPoly = static_cast<PolyF>(m_config->mainBarPoly);
   Vec2F barPos = mainBarPosition();
   mainBarPoly.translate(barPos);
   mainBarPoly.scale(interfaceScale(), Vec2F(barPos));

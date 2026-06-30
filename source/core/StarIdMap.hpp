@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(IdMapException, StarException);
+struct IdMapExceptionTag { static constexpr char const* typeName = "IdMapException"; };
+using IdMapException = TypedException<StarException, IdMapExceptionTag>;
 
 // Maps key ids to values with auto generated ids in a given id range.  Tries
 // to cycle through ids as new values are added and avoid re-using ids until
@@ -88,7 +89,7 @@ IdMapWrapper<BaseMap>::IdMapWrapper(IdType min, IdType max)
 
 template <typename BaseMap>
 auto IdMapWrapper<BaseMap>::nextId() -> IdType {
-  if ((IdType)BaseMap::size() > m_max - m_min)
+  if (static_cast<IdType>(BaseMap::size()) > m_max - m_min)
     throw IdMapException("No id space left in IdMapWrapper");
 
   IdType nextId = m_nextId;
@@ -129,7 +130,7 @@ bool IdMapWrapper<BaseMap>::operator!=(IdMapWrapper const& rhs) const {
 
 template <typename BaseMap>
 DataStream& operator>>(DataStream& ds, IdMapWrapper<BaseMap>& map) {
-  ds.readMapContainer((BaseMap&)map);
+  ds.readMapContainer(static_cast<BaseMap&>(map));
   ds.read(map.m_min);
   ds.read(map.m_max);
   ds.read(map.m_nextId);
@@ -138,7 +139,7 @@ DataStream& operator>>(DataStream& ds, IdMapWrapper<BaseMap>& map) {
 
 template <typename BaseMap>
 DataStream& operator<<(DataStream& ds, IdMapWrapper<BaseMap> const& map) {
-  ds.writeMapContainer((BaseMap const&)map);
+  ds.writeMapContainer(static_cast<BaseMap const&>(map));
   ds.write(map.m_min);
   ds.write(map.m_max);
   ds.write(map.m_nextId);

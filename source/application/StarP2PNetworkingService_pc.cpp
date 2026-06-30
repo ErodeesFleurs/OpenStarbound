@@ -127,7 +127,7 @@ void Star::PcP2PNetworkingService::setActivityData(
           activity.GetSecrets().SetJoin(joinSecret.utf8Ptr());
         }
       } else if (m_joinLocation.is<JoinRemote>()) {
-        String address = toString((HostAddressWithPort)m_joinLocation.get<JoinRemote>());
+        String address = toString(HostAddressWithPort(m_joinLocation.get<JoinRemote>()));
         String joinSecret = strf("connect:address_{}", address);
         Logger::info("Setting Discord join secret as {}", joinSecret);
         activity.GetSecrets().SetJoin(joinSecret.utf8Ptr());
@@ -310,7 +310,7 @@ auto PcP2PNetworkingService::createSteamP2PSocket(CSteamID steamId) -> unique_pt
     steamCloseSocket(oldSocket);
   }
 
-  unique_ptr<SteamP2PSocket> socket(new SteamP2PSocket);
+  auto socket = make_unique<SteamP2PSocket>();
   socket->parent = this;
   socket->steamId = steamId;
   socket->connected = true;
@@ -441,7 +441,7 @@ P2PSocketUPtr PcP2PNetworkingService::discordConnectRemote(discord::UserId remot
     discordCloseSocket(oldSocket);
   }
 
-  unique_ptr<DiscordP2PSocket> socket(new DiscordP2PSocket);
+  auto socket = make_unique<DiscordP2PSocket>();
   socket->parent = this;
   socket->mode = DiscordSocketMode::Startup;
   socket->remoteUserId = remoteUserId;
@@ -510,7 +510,7 @@ void PcP2PNetworkingService::discordOnLobbyMemberConnect(discord::LobbyId lobbyI
 
   if (m_discordServerLobby && m_discordServerLobby->first == lobbyId && userId != m_state->discordCurrentUser->GetId()) {
     if (!m_discordOpenSockets.contains(userId)) {
-      unique_ptr<DiscordP2PSocket> socket(new DiscordP2PSocket);
+      auto socket = make_unique<DiscordP2PSocket>();
       socket->parent = this;
       socket->lobbyId = lobbyId;
       socket->remoteUserId = userId;
@@ -562,7 +562,7 @@ void PcP2PNetworkingService::setJoinLocation(JoinLocation location) {
       SteamFriends()->SetRichPresence("connect", strf("+platform:connect:steamid_{}", steamId).c_str());
 
     } else if (m_joinLocation.is<JoinRemote>()) {
-      auto address = (HostAddressWithPort)location.get<JoinRemote>();
+      auto address = HostAddressWithPort(location.get<JoinRemote>());
       Logger::info("Setting Steam rich presence connection as address_{}", address);
       SteamFriends()->SetRichPresence("connect", strf("+platform:connect:address_{}", address).c_str());
     }

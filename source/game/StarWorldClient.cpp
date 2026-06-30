@@ -68,7 +68,7 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
     return m_tileArray->tile({x, y}).collision;
   });
 
-  m_modifiedTilePredictionTimeout = (int)round(m_clientConfig.getFloat("modifiedTilePredictionTimeout") / GlobalTimestep);
+  m_modifiedTilePredictionTimeout = static_cast<int>(round(m_clientConfig.getFloat("modifiedTilePredictionTimeout") / GlobalTimestep));
 
   m_latency = 0.0;
 
@@ -561,7 +561,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
           Logger::error("WorldClient: Exception caught in {}::render ({}): {}", EntityTypeNames.getRight(entity->entityType()), entity->entityId(), issue);
           auto toolUser = as<ToolUserEntity>(entity);
           String image = toolUser ? strf("/rendering/sprites/error_{}.png", DirectionNames.getRight(toolUser->facingDirection())) : "/rendering/sprites/error.png";
-          Color color = Color::rgbf(0.8f + (float)sin(m_currentTime * Constants::pi * 2.0) * 0.2f, 0.0f, 0.0f);
+          Color color = Color::rgbf(0.8f + static_cast<float>(sin(m_currentTime * Constants::pi * 2.0)) * 0.2f, 0.0f, 0.0f);
           auto drawable = Drawable::makeImage(image, 1.0f / TilePixels, true, entity->position(), color);
           drawable.fullbright = true;
           renderCallback.addDrawable(std::move(drawable), RenderLayerMiddleParticle);
@@ -636,7 +636,9 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   for (auto& pair : m_predictedTiles) {
     Vec2I tileArrayPos = m_geometry.diff(pair.first, renderData.tileMinPosition);
-    if (tileArrayPos[0] >= 0 && tileArrayPos[0] < (int)renderData.tiles.size(0) && tileArrayPos[1] >= 0 && tileArrayPos[1] < (int)renderData.tiles.size(1)) {
+    int const tileWidth = static_cast<int>(renderData.tiles.size(0));
+    int const tileHeight = static_cast<int>(renderData.tiles.size(1));
+    if (tileArrayPos[0] >= 0 && tileArrayPos[0] < tileWidth && tileArrayPos[1] >= 0 && tileArrayPos[1] < tileHeight) {
       RenderTile& renderTile = renderData.tiles(tileArrayPos[0], tileArrayPos[1]);
       PredictedTile& p = pair.second;
       if (p.liquid) {
@@ -657,7 +659,9 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   for (auto const& previewTile : m_previewTiles) {
     Vec2I tileArrayPos = m_geometry.diff(previewTile.position, renderData.tileMinPosition);
-    if (tileArrayPos[0] >= 0 && tileArrayPos[0] < (int)renderData.tiles.size(0) && tileArrayPos[1] >= 0 && tileArrayPos[1] < (int)renderData.tiles.size(1)) {
+    int const tileWidth = static_cast<int>(renderData.tiles.size(0));
+    int const tileHeight = static_cast<int>(renderData.tiles.size(1));
+    if (tileArrayPos[0] >= 0 && tileArrayPos[0] < tileWidth && tileArrayPos[1] >= 0 && tileArrayPos[1] < tileHeight) {
       RenderTile& renderTile = renderData.tiles(tileArrayPos[0], tileArrayPos[1]);
 
       auto material = previewTile.matId;
@@ -719,7 +723,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   auto functionDatabase = Root::singleton().functionDatabase();
   for (auto& layer : renderData.parallaxLayers) {
     if (!layer.timeOfDayCorrelation.empty())
-      layer.alpha *= clamp((float)functionDatabase->function(layer.timeOfDayCorrelation)->evaluate(m_sky->timeOfDay() / m_sky->dayLength()), 0.0f, 1.0f);
+      layer.alpha *= clamp(static_cast<float>(functionDatabase->function(layer.timeOfDayCorrelation)->evaluate(m_sky->timeOfDay() / m_sky->dayLength())), 0.0f, 1.0f);
   }
 
   stableSort(renderData.parallaxLayers, [](ParallaxLayer const& a, ParallaxLayer const& b) {
@@ -1127,7 +1131,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         m_latency = Time::monotonicMilliseconds() - m_pingTime.take();
 
     } else {
-      Logger::error("Improper packet type {} received by client", (int)packet->type());
+      Logger::error("Improper packet type {} received by client", static_cast<int>(packet->type()));
     }
   }
 }
@@ -1145,7 +1149,7 @@ void WorldClient::update(float dt) {
   float expireTime = min(float(m_latency + 800), 2000.f);
   auto now = Time::monotonicMilliseconds();
   eraseWhere(m_predictedTiles, [&](auto& pair) {
-    float expiry = (float)(now - pair.second.time) / expireTime;
+    float expiry = static_cast<float>(now - pair.second.time) / expireTime;
     auto center = Vec2F(pair.first) + Vec2F::filled(0.5f);
     auto size = Vec2F::filled(0.875f - expiry * 0.875f);
     auto poly = PolyF(RectF::withCenter(center, size));
@@ -1239,7 +1243,7 @@ void WorldClient::update(float dt) {
         m_requestedDrops.add(itemDrop->entityId());
         if (m_mainPlayer->itemsCanHold(itemDrop->item()) != 0) {
           m_startupHiddenEntities.erase(itemDrop->entityId());
-          itemDrop->takeBy(m_mainPlayer->entityId(), (float)m_latency / 1000);
+          itemDrop->takeBy(m_mainPlayer->entityId(), static_cast<float>(m_latency) / 1000);
           m_outgoingPackets.append(make_shared<RequestDropPacket>(itemDrop->entityId()));
         }
       }
@@ -1479,8 +1483,8 @@ bool WorldClient::waitForLighting(WorldRenderData* renderData) {
     for (auto& previewTile : m_previewTiles) {
       if (previewTile.updateLight) {
         Vec2I lightArrayPos = m_geometry.diff(previewTile.position, m_lightMinPosition);
-        if (lightArrayPos[0] >= 0 && lightArrayPos[0] < (int)m_lightMap.width()
-         && lightArrayPos[1] >= 0 && lightArrayPos[1] < (int)m_lightMap.height())
+        if (lightArrayPos[0] >= 0 && lightArrayPos[0] < static_cast<int>(m_lightMap.width())
+         && lightArrayPos[1] >= 0 && lightArrayPos[1] < static_cast<int>(m_lightMap.height()))
           m_lightMap.set(lightArrayPos[0], lightArrayPos[1], Color::v3bToFloat(previewTile.light));
       }
     }
@@ -1551,7 +1555,7 @@ void WorldClient::handleDamageNotifications() {
     return;
 
   auto renderParticle = [&](Vec2F position, float amount, String const& damageNumberParticleKind) {
-    int displayValue = (int)ceil(amount - 0.1f);
+    int displayValue = static_cast<int>(ceil(amount - 0.1f));
     if (displayValue <= 0)
       return;
     Particle particle = Root::singleton().particleDatabase()->particle(damageNumberParticleKind);

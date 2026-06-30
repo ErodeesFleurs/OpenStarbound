@@ -287,9 +287,9 @@ namespace LuaBindings {
 
     callbacks.registerCallback("size", [world]() -> Vec2I {
         if (auto serverWorld = as<WorldServer>(world))
-          return (Vec2I)serverWorld->worldTemplate()->size();
+          return Vec2I(serverWorld->worldTemplate()->size());
         else if (auto clientWorld = as<WorldClient>(world))
-          return (Vec2I)clientWorld->currentTemplate()->size();
+          return Vec2I(clientWorld->currentTemplate()->size());
         return Vec2I();
       });
 
@@ -1371,7 +1371,7 @@ namespace LuaBindings {
   }
 
   bool WorldEntityCallbacks::entityExists(World* world, EntityId entityId) {
-    return (bool)world->entity(entityId);
+    return static_cast<bool>(world->entity(entityId));
   }
 
   bool WorldEntityCallbacks::entityCanDamage(World* world, EntityId sourceId, EntityId targetId) {
@@ -2083,7 +2083,7 @@ namespace LuaBindings {
     placeMaterial.material = materialDatabase->materialId(materialName);
 
     if (arg4)
-      placeMaterial.materialHueShift = (MaterialHue)*arg4;
+      placeMaterial.materialHueShift = static_cast<MaterialHue>(*arg4);
 
     bool allowOverlap = arg5;
 
@@ -2126,7 +2126,7 @@ namespace LuaBindings {
     placeMaterial.material = materialDatabase->materialId(materialName);
 
     if (hueShift)
-      placeMaterial.materialHueShift = (MaterialHue)*hueShift;
+      placeMaterial.materialHueShift = static_cast<MaterialHue>(*hueShift);
 
     TileModificationList modifications;
     for (auto pos : tilePositions) {
@@ -2181,7 +2181,7 @@ namespace LuaBindings {
     placeMod.mod = materialDatabase->modId(modName);
 
     if (arg4)
-      placeMod.modHueShift = (MaterialHue)*arg4;
+      placeMod.modHueShift = static_cast<MaterialHue>(*arg4);
 
     bool allowOverlap = arg5;
 

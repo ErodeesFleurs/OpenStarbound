@@ -117,7 +117,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
   if (materialRenderProfile) {
     occlude = materialRenderProfile->occludesBehind;
     auto materialColorVariant = materialRenderProfile->colorVariants > 0 ? colorVariant % materialRenderProfile->colorVariants : 0;
-    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]) + offset[0], pos[1] + offset[1], (int)variantLayer.value(terrainLayer), "main");
+    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]) + offset[0], pos[1] + offset[1], static_cast<int>(variantLayer.value(terrainLayer)), "main");
     auto& drawList = drawables[materialZLevel(materialRenderProfile->zLevel, material, materialHue, materialColorVariant)];
 
     MaterialPieceResultList pieces;
@@ -138,7 +138,7 @@ bool TileDrawer::produceTerrainDrawables(Drawables& drawables,
 
   if (modRenderProfile) {
     auto modColorVariant = modRenderProfile->colorVariants > 0 ? colorVariant % modRenderProfile->colorVariants : 0;
-    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], (int)variantLayer.value(terrainLayer), "mod");
+    uint32_t variance = staticRandomU32(renderData.geometry.xwrap(pos[0]), pos[1], static_cast<int>(variantLayer.value(terrainLayer)), "mod");
     auto& drawList = drawables[modZLevel(modRenderProfile->zLevel, mod, modHue, modColorVariant)];
 
     MaterialPieceResultList pieces;
@@ -187,25 +187,25 @@ RenderTile const& TileDrawer::getRenderTile(WorldRenderData const& renderData, V
 
 TileDrawer::QuadZLevel TileDrawer::materialZLevel(uint32_t zLevel, MaterialId material, MaterialHue hue, MaterialColorVariant colorVariant) {
   QuadZLevel quadZLevel = 0;
-  quadZLevel |= (uint64_t)colorVariant;
-  quadZLevel |= (uint64_t)hue << 8;
-  quadZLevel |= (uint64_t)material << 16;
-  quadZLevel |= (uint64_t)zLevel << 32;
+  quadZLevel |= static_cast<uint64_t>(colorVariant);
+  quadZLevel |= static_cast<uint64_t>(hue) << 8;
+  quadZLevel |= static_cast<uint64_t>(material) << 16;
+  quadZLevel |= static_cast<uint64_t>(zLevel) << 32;
   return quadZLevel;
 }
 
 TileDrawer::QuadZLevel TileDrawer::modZLevel(uint32_t zLevel, ModId mod, MaterialHue hue, MaterialColorVariant colorVariant) {
   QuadZLevel quadZLevel = 0;
-  quadZLevel |= (uint64_t)colorVariant;
-  quadZLevel |= (uint64_t)hue << 8;
-  quadZLevel |= (uint64_t)mod << 16;
-  quadZLevel |= (uint64_t)zLevel << 32;
-  quadZLevel |= (uint64_t)1 << 63;
+  quadZLevel |= static_cast<uint64_t>(colorVariant);
+  quadZLevel |= static_cast<uint64_t>(hue) << 8;
+  quadZLevel |= static_cast<uint64_t>(mod) << 16;
+  quadZLevel |= static_cast<uint64_t>(zLevel) << 32;
+  quadZLevel |= static_cast<uint64_t>(1) << 63;
   return quadZLevel;
 }
 
 TileDrawer::QuadZLevel TileDrawer::damageZLevel() {
-  return (uint64_t)(-1);
+  return static_cast<uint64_t>(-1);
 }
 
 bool TileDrawer::determineMatchingPieces(MaterialPieceResultList& resultList, bool* occlude, MaterialDatabaseConstPtr const& materialDb, MaterialRenderMatchList const& matchList,

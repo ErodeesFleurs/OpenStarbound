@@ -35,8 +35,8 @@ struct hash<InstanceWorldId> {
 DataStream& operator>>(DataStream& ds, InstanceWorldId& missionWorldId);
 DataStream& operator<<(DataStream& ds, InstanceWorldId const& missionWorldId);
 
-strong_typedef(CelestialCoordinate, CelestialWorldId);
-strong_typedef(Uuid, ClientShipWorldId);
+using CelestialWorldId = StrongTypedef<CelestialCoordinate, struct CelestialWorldIdTag>;
+using ClientShipWorldId = StrongTypedef<Uuid, struct ClientShipWorldIdTag>;
 using WorldId = MVariant<CelestialWorldId, ClientShipWorldId, InstanceWorldId>;
 
 String printWorldId(WorldId const& worldId);
@@ -48,9 +48,9 @@ std::ostream& operator<<(std::ostream& os, ClientShipWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, InstanceWorldId const& worldId);
 std::ostream& operator<<(std::ostream& os, WorldId const& worldId);
 
-strong_typedef(String, SpawnTargetUniqueEntity);
-strong_typedef(Vec2F, SpawnTargetPosition);
-strong_typedef_builtin(float, SpawnTargetX);
+using SpawnTargetUniqueEntity = StrongTypedef<String, struct SpawnTargetUniqueEntityTag>;
+using SpawnTargetPosition = StrongTypedef<Vec2F, struct SpawnTargetPositionTag>;
+using SpawnTargetX = StrongTypedefBuiltin<float, struct SpawnTargetXTag>;
 using SpawnTarget = MVariant<SpawnTargetUniqueEntity, SpawnTargetPosition, SpawnTargetX>;
 
 Json spawnTargetToJson(SpawnTarget spawnTarget);
@@ -72,7 +72,7 @@ struct WarpToWorld {
   Json toJson() const;
 };
 
-strong_typedef(Uuid, WarpToPlayer);
+using WarpToPlayer = StrongTypedef<Uuid, struct WarpToPlayerTag>;
 
 enum class WarpAlias {
   Return,

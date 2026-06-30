@@ -9,7 +9,8 @@ namespace Star {
 STAR_CLASS(Plant);
 STAR_CLASS(PlantDatabase);
 
-STAR_EXCEPTION(PlantDatabaseException, StarException);
+struct PlantDatabaseExceptionTag { static constexpr char const* typeName = "PlantDatabaseException"; };
+using PlantDatabaseException = TypedException<StarException, PlantDatabaseExceptionTag>;
 
 // Configuration for a specific tree variant
 struct TreeVariant {

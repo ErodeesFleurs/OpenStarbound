@@ -10,8 +10,10 @@
 
 namespace Star {
 
-STAR_EXCEPTION(BadVariantCast, StarException);
-STAR_EXCEPTION(BadVariantType, StarException);
+struct BadVariantCastTag { static constexpr char const* typeName = "BadVariantCast"; };
+using BadVariantCast = TypedException<StarException, BadVariantCastTag>;
+struct BadVariantTypeTag { static constexpr char const* typeName = "BadVariantType"; };
+using BadVariantType = TypedException<StarException, BadVariantTypeTag>;
 
 using VariantTypeIndex = uint8_t;
 VariantTypeIndex const InvalidVariantType = 255;

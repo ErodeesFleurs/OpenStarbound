@@ -103,13 +103,13 @@ WorldId parseWorldId(String const& printedId) {
 }
 
 std::ostream& operator<<(std::ostream& os, CelestialWorldId const& worldId) {
-  os << (CelestialCoordinate)worldId;
+  os << CelestialCoordinate(worldId);
   return os;
 }
 
 
 std::ostream& operator<<(std::ostream& os, ClientShipWorldId const& worldId) {
-  os << ((Uuid)worldId).hex();
+  os << Uuid(worldId).hex();
   return os;
 }
 
@@ -172,7 +172,7 @@ bool WarpToWorld::operator==(WarpToWorld const& rhs) const {
 }
 
 WarpToWorld::operator bool() const {
-  return (bool)world;
+  return static_cast<bool>(world);
 }
 
 Json WarpToWorld::toJson() const {

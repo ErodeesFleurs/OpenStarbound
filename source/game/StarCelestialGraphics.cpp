@@ -245,7 +245,7 @@ List<pair<String, float>> CelestialGraphics::drawSystemTwinkle(CelestialDatabase
   float twinkleTime = parameters->randomizeParameterRange("twinkleTime").toFloat();
   String twinkleBackground = parameters->getParameter("twinkleBackground").toString();
 
-  String twinkleFrame = strf("{}:{}", twinkleFrameset, (int)(std::fmod<double>(time / twinkleTime, 1.0f) * twinkleFrameCount));
+  String twinkleFrame = strf("{}:{}", twinkleFrameset, static_cast<int>(std::fmod<double>(time / twinkleTime, 1.0f) * twinkleFrameCount));
 
   return {{std::move(twinkleBackground), 1.0f}, {std::move(twinkleFrame), twinkleScale}};
 }

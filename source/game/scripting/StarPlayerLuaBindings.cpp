@@ -170,7 +170,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   });
 
   callbacks.registerCallback("setActionBarGroup", [player](int group) {
-    player->inventory()->setCustomBarGroup((group - 1) % (unsigned)player->inventory()->customBarGroups());
+    player->inventory()->setCustomBarGroup((group - 1) % static_cast<unsigned>(player->inventory()->customBarGroups()));
   });
 
   callbacks.registerCallback("selectedActionBarSlot", [player](LuaEngine& engine) -> Maybe<LuaValue> {
@@ -190,7 +190,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
     if (!slot)
       inventory->selectActionBarLocation(SelectedActionBarLocation());
     else if (auto index = slot.ptr<int>()) {
-      CustomBarIndex wrapped = (*index - 1) % (unsigned)inventory->customBarIndexes();
+      CustomBarIndex wrapped = (*index - 1) % static_cast<unsigned>(inventory->customBarIndexes());
       inventory->selectActionBarLocation(SelectedActionBarLocation(wrapped));
     } else {
       EssentialItem const& item = EssentialItemNames.getLeft(slot.get<String>());
@@ -200,7 +200,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("actionBarSlotLink", [player](int slot, String const& handName) {
     auto inventory = player->inventory();
-    CustomBarIndex wrapped = (slot - 1) % (unsigned)inventory->customBarIndexes();
+    CustomBarIndex wrapped = (slot - 1) % static_cast<unsigned>(inventory->customBarIndexes());
     if (handName == "primary")
       return inventory->customBarPrimarySlot(wrapped);
     else if (handName == "alt")
@@ -211,7 +211,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("setActionBarSlotLink", [player](int slot, String const& handName, Maybe<InventorySlot> inventorySlot) {
     auto inventory = player->inventory();
-    CustomBarIndex wrapped = (slot - 1) % (unsigned)inventory->customBarIndexes();
+    CustomBarIndex wrapped = (slot - 1) % static_cast<unsigned>(inventory->customBarIndexes());
     if (inventorySlot && !inventory->slotValid(*inventorySlot))
       inventorySlot.reset();
 
@@ -225,7 +225,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
 
   callbacks.registerCallback("itemBagSize", [player](String const& bagName) -> Maybe<unsigned> {
     if (auto bag = player->inventory()->bagContents(bagName))
-      return (unsigned)bag->size();
+      return static_cast<unsigned>(bag->size());
     else
       return {};
   });
@@ -662,7 +662,7 @@ LuaCallbacks LuaBindings::makePlayerCallbacks(Player* player) {
   callbacks.registerCallback("lounge", [player](EntityId entityId, Maybe<size_t> anchorIndex) {
       return player->lounge(entityId, anchorIndex.value(0));
     });
-  callbacks.registerCallback("isLounging", [player]() { return (bool)player->loungingIn(); });
+  callbacks.registerCallback("isLounging", [player]() { return static_cast<bool>(player->loungingIn()); });
   callbacks.registerCallback("loungingIn", [player]() -> Maybe<EntityId> {
       if (auto anchorState = player->loungingIn())
         return anchorState->entityId;

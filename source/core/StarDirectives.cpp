@@ -396,7 +396,7 @@ size_t DirectivesGroup::hash() const {
   XXHash3 hasher;
   for (auto& directives : m_directives) {
     size_t hash = directives.hash();
-    hasher.push((const char*)&hash, sizeof(hash));
+    hasher.push(reinterpret_cast<char const*>(&hash), sizeof(hash));
   }
 
   return hasher.digest();

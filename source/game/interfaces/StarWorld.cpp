@@ -47,7 +47,7 @@ List<Vec2I> World::findEmptyTiles(Vec2I pos, unsigned maxDist, size_t maxAmount,
     return res;
 
   // searches manhattan distance counterclockwise from right
-  for (int distance = 1; distance <= (int)maxDist; distance++) {
+  for (int distance = 1; distance <= static_cast<int>(maxDist); distance++) {
     const int totalSpots = 4 * distance;
     int xDiff = distance;
     int yDiff = 0;

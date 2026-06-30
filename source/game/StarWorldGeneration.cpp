@@ -249,7 +249,7 @@ void DungeonGeneratorWorld::placeObject(Vec2I const& pos, String const& objectNa
   if (auto object = objectDatabase->createForPlacement(m_worldServer, objectName, pos, direction, parameters))
     m_worldServer->addEntity(object);
   else
-    Logger::warn("Failed to place dungeon object: {} direction: {} position: {}", objectName, (int)direction, pos);
+    Logger::warn("Failed to place dungeon object: {} direction: {} position: {}", objectName, static_cast<int>(direction), pos);
 }
 
 void DungeonGeneratorWorld::placeVehicle(Vec2F const& pos, String const& vehicleName, Json const& parameters) {

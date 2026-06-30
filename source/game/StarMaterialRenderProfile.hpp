@@ -10,7 +10,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(MaterialRenderProfileException, StarException);
+struct MaterialRenderProfileExceptionTag { static constexpr char const* typeName = "MaterialRenderProfileException"; };
+using MaterialRenderProfileException = TypedException<StarException, MaterialRenderProfileExceptionTag>;
 
 enum class MaterialJoinType : uint8_t { All, Any };
 extern EnumMap<MaterialJoinType> const MaterialJoinTypeNames;

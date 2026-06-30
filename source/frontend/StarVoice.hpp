@@ -20,7 +20,8 @@ namespace Star {
 
 String const VoiceBroadcastPrefix = "Voice\0"s;
 
-STAR_EXCEPTION(VoiceException, StarException);
+struct VoiceExceptionTag { static constexpr char const* typeName = "VoiceException"; };
+using VoiceException = TypedException<StarException, VoiceExceptionTag>;
 
 enum class VoiceInputMode : uint8_t { VoiceActivity, PushToTalk };
 extern EnumMap<VoiceInputMode> const VoiceInputModeNames;
@@ -147,7 +148,7 @@ public:
   // Must be called every frame with input state, expires after 1s.
   void setInput(bool input = true);
 
-  inline int encoderChannels() const { return (int)m_channelMode; }
+  inline int encoderChannels() const { return static_cast<int>(m_channelMode); }
 
   static OpusDecoder* createDecoder(int channels);
   static OpusEncoder* createEncoder(int channels);

@@ -91,27 +91,42 @@ void fatalException(std::exception const& e, bool showStackTrace);
   {}
 #endif
 
-#define STAR_EXCEPTION(ClassName, BaseName)                                                                                       \
-  class ClassName : public BaseName {                                                                                             \
-  public:                                                                                                                         \
-    template <typename... Args>                                                                                                   \
-    static ClassName format(std::string_view fmt, Args const&... args) {                                                          \
-      return ClassName(strf(fmt, args...));                                                                                       \
-    }                                                                                                                             \
-    ClassName() : BaseName(#ClassName, std::string()) {}                                                                          \
-    explicit ClassName(std::string message, bool genStackTrace = true) : BaseName(#ClassName, std::move(message), genStackTrace) {} \
-    explicit ClassName(std::exception const& cause) : BaseName(#ClassName, std::string(), cause) {}                               \
-    ClassName(std::string message, std::exception const& cause) : BaseName(#ClassName, std::move(message), cause) {}              \
-                                                                                                                                  \
-  protected:                                                                                                                      \
-    ClassName(char const* type, std::string message, bool genStackTrace = true) : BaseName(type, std::move(message), genStackTrace) {} \
-    ClassName(char const* type, std::string message, std::exception const& cause)                                                 \
-      : BaseName(type, std::move(message), cause) {}                                                                              \
+template <typename BaseName, typename Tag>
+class TypedException : public BaseName {
+public:
+  template <typename... Args>
+  static TypedException format(std::string_view fmt, Args const&... args) {
+    return TypedException(strf(fmt, args...));
   }
 
-STAR_EXCEPTION(OutOfRangeException, StarException);
-STAR_EXCEPTION(IOException, StarException);
-STAR_EXCEPTION(MemoryException, StarException);
+  TypedException()
+    : BaseName(Tag::typeName, std::string()) {}
+
+  explicit TypedException(std::string message, bool genStackTrace = true)
+    : BaseName(Tag::typeName, std::move(message), genStackTrace) {}
+
+  explicit TypedException(std::exception const& cause)
+    : BaseName(Tag::typeName, std::string(), cause) {}
+
+  TypedException(std::string message, std::exception const& cause)
+    : BaseName(Tag::typeName, std::move(message), cause) {}
+
+protected:
+  TypedException(char const* type, std::string message, bool genStackTrace = true)
+    : BaseName(type, std::move(message), genStackTrace) {}
+
+  TypedException(char const* type, std::string message, std::exception const& cause)
+    : BaseName(type, std::move(message), cause) {}
+};
+
+struct OutOfRangeExceptionTag { static constexpr char const* typeName = "OutOfRangeException"; };
+using OutOfRangeException = TypedException<StarException, OutOfRangeExceptionTag>;
+
+struct IOExceptionTag { static constexpr char const* typeName = "IOException"; };
+using IOException = TypedException<StarException, IOExceptionTag>;
+
+struct MemoryExceptionTag { static constexpr char const* typeName = "MemoryException"; };
+using MemoryException = TypedException<StarException, MemoryExceptionTag>;
 
 template <typename... Args>
 StarException StarException::format(std::string_view fmt, Args const&... args) {

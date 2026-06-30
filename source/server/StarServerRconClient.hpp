@@ -27,7 +27,8 @@ protected:
 
 private:
   static size_t const MaxPacketSize = 4096;
-  STAR_EXCEPTION(NoMoreRequests, StarException);
+  struct NoMoreRequestsTag { static constexpr char const* typeName = "NoMoreRequests"; };
+  using NoMoreRequests = TypedException<StarException, NoMoreRequestsTag>;
 
   void receive(size_t size);
   void send(uint32_t requestId, uint32_t cmd, String str = "");

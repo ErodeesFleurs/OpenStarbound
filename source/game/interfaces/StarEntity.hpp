@@ -12,7 +12,8 @@ STAR_CLASS(World);
 STAR_STRUCT(DamageNotification);
 STAR_CLASS(Entity);
 
-STAR_EXCEPTION(EntityException, StarException);
+struct EntityExceptionTag { static constexpr char const* typeName = "EntityException"; };
+using EntityException = TypedException<StarException, EntityExceptionTag>;
 
 // Specifies how the client should treat an entity created on the client,
 // whether it should always be sent to the server and be a slave on the client,

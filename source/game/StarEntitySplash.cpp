@@ -29,7 +29,7 @@ List<Particle> EntitySplashConfig::doSplash(Vec2F position, Vec2F velocity, Worl
       LiquidId liquidType;
       auto bottomLiquid = world->liquidLevel(bottom);
       auto topLiquid = world->liquidLevel(top);
-      if (bottomLiquid.level > 0 && (int)bottomLiquid.liquid)
+      if (bottomLiquid.level > 0 && static_cast<int>(bottomLiquid.liquid))
         liquidType = bottomLiquid.liquid;
       else
         liquidType = topLiquid.liquid;

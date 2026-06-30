@@ -3,11 +3,11 @@
 #include "gtest/gtest.h"
 
 struct BaseType {};
-strong_typedef(BaseType, DerivedType1);
-strong_typedef(BaseType, DerivedType2);
+using DerivedType1 = Star::StrongTypedef<BaseType, struct DerivedType1Tag>;
+using DerivedType2 = Star::StrongTypedef<BaseType, struct DerivedType2Tag>;
 void func(DerivedType1) {}
 
-strong_typedef_builtin(int, AlsoInt);
+using AlsoInt = Star::StrongTypedefBuiltin<int, struct AlsoIntTag>;
 
 TEST(StrongTypedefTest, All) {
   AlsoInt i = AlsoInt(0);
@@ -15,7 +15,7 @@ TEST(StrongTypedefTest, All) {
   i -= 5;
   EXPECT_EQ(i, -4);
 
-  func((DerivedType1)BaseType());
+  func(static_cast<DerivedType1>(BaseType()));
   func(DerivedType1());
 
   // Shouldn't compile!  Can't test this automatically!

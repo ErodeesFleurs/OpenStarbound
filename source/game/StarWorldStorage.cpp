@@ -638,9 +638,9 @@ pair<bool, size_t> WorldStorage::generateSectorToLevel(Sector const& sector, Sec
   metadata.timeToLive = randomizedSectorTTL();
 
   size_t totalGeneratedLevels = 0;
-  for (uint8_t i = (uint8_t)metadata.generationLevel + 1; i <= (uint8_t)targetGenerationLevel; ++i) {
-    SectorGenerationLevel currentGeneration = (SectorGenerationLevel)i;
-    SectorGenerationLevel stepDownGeneration = (SectorGenerationLevel)(i - 1);
+  for (uint8_t i = static_cast<uint8_t>(metadata.generationLevel) + 1; i <= static_cast<uint8_t>(targetGenerationLevel); ++i) {
+    SectorGenerationLevel currentGeneration = static_cast<SectorGenerationLevel>(i);
+    SectorGenerationLevel stepDownGeneration = static_cast<SectorGenerationLevel>(i - 1);
 
     if (stepDownGeneration != SectorGenerationLevel::None) {
       for (auto adjacentSector : adjacentSectors(sector)) {
@@ -674,9 +674,9 @@ void WorldStorage::loadSectorToLevel(Sector const& sector, SectorLoadLevel targe
 
   metadata.timeToLive = randomizedSectorTTL();
 
-  for (uint8_t i = (uint8_t)metadata.loadLevel + 1; i <= (uint8_t)targetLoadLevel; ++i) {
-    SectorLoadLevel currentLoad = (SectorLoadLevel)i;
-    SectorLoadLevel stepDownLoad = (SectorLoadLevel)(i - 1);
+  for (uint8_t i = static_cast<uint8_t>(metadata.loadLevel) + 1; i <= static_cast<uint8_t>(targetLoadLevel); ++i) {
+    SectorLoadLevel currentLoad = static_cast<SectorLoadLevel>(i);
+    SectorLoadLevel stepDownLoad = static_cast<SectorLoadLevel>(i - 1);
 
     if (stepDownLoad != SectorLoadLevel::None) {
       for (auto adjacentSector : adjacentSectors(sector))

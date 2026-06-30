@@ -14,7 +14,8 @@ STAR_CLASS(StringList);
 STAR_CLASS(String);
 STAR_CLASS(StringView);
 
-STAR_EXCEPTION(StringException, StarException);
+struct StringExceptionTag { static constexpr char const* typeName = "StringException"; };
+using StringException = TypedException<StarException, StringExceptionTag>;
 
 // A Unicode string class, which is a basic UTF-8 aware wrapper around
 // std::string.  Provides methods for accessing UTF-32 "Char" type, which

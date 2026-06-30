@@ -51,7 +51,7 @@ bool LuaBaseComponent::removeCallbacks(String const& groupName) {
 }
 
 bool LuaBaseComponent::autoReInit() const {
-  return (bool)m_reloadTracker;
+  return static_cast<bool>(m_reloadTracker);
 }
 
 void LuaBaseComponent::setAutoReInit(bool autoReInit) {

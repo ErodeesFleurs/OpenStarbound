@@ -133,10 +133,10 @@ bool ItemGridWidget::sendEvent(InputEvent const& event) {
 
 Vec2I ItemGridWidget::locOfItemSlot(unsigned slot) const {
   Vec2I loc = {
-    (int)slot % (int)m_dimensions[0] * m_rowSpacing[0] + // x contribution from row
-    (int)slot / (int)m_dimensions[0] * m_columnSpacing[0], // x contribution from column
-    (m_dimensions[0] - 1) * m_rowSpacing[1] - (int)slot % (int)m_dimensions[0] * m_rowSpacing[1] + // y contribution from row
-    (m_dimensions[1] - 1) * m_columnSpacing[1] - (int)slot / (int)m_dimensions[0] * m_columnSpacing[1] // y contribution from column
+    static_cast<int>(slot) % static_cast<int>(m_dimensions[0]) * m_rowSpacing[0] + // x contribution from row
+    static_cast<int>(slot) / static_cast<int>(m_dimensions[0]) * m_columnSpacing[0], // x contribution from column
+    (m_dimensions[0] - 1) * m_rowSpacing[1] - static_cast<int>(slot) % static_cast<int>(m_dimensions[0]) * m_rowSpacing[1] + // y contribution from row
+    (m_dimensions[1] - 1) * m_columnSpacing[1] - static_cast<int>(slot) / static_cast<int>(m_dimensions[0]) * m_columnSpacing[1] // y contribution from column
   };
   return loc;
 }
@@ -161,7 +161,7 @@ void ItemGridWidget::setItemBag(ItemBagConstPtr bag) {
 
   removeAllChildren();
   m_slots.clear();
-  for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
+  for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < static_cast<unsigned>(m_dimensions[0]) * m_dimensions[1]; ++i) {
     auto itemSlot = make_shared<ItemSlotWidget>(m_bag->at(i), m_backingImage);
     addChild(toString(i), itemSlot);
     m_slots.append(itemSlot);
@@ -180,7 +180,7 @@ void ItemGridWidget::setProgress(float progress) {
   if (!m_bag)
     return;
 
-  for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
+  for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < static_cast<unsigned>(m_dimensions[0]) * m_dimensions[1]; ++i) {
     auto itemSlot = m_slots.at(i);
     itemSlot->setProgress(m_progress);
   }
@@ -194,7 +194,7 @@ void ItemGridWidget::updateAllItemSlots() {
   if (!m_bag)
     return;
 
-  for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
+  for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < static_cast<unsigned>(m_dimensions[0]) * m_dimensions[1]; ++i) {
     auto item = m_bag->at(i + m_bagOffset);
     auto slot = m_slots.at(i);
     slot->setItem(item);
@@ -260,7 +260,7 @@ void ItemGridWidget::setBackingImageAffinity(bool full, bool empty) {
   if (!m_bag)
     return;
 
-  for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
+  for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < static_cast<unsigned>(m_dimensions[0]) * m_dimensions[1]; ++i) {
     auto itemSlot = m_slots.at(i);
     itemSlot->setBackingImageAffinity(m_drawBackingImageWhenFull, m_drawBackingImageWhenEmpty);
   }
@@ -272,7 +272,7 @@ void ItemGridWidget::showDurability(bool show) {
   if (!m_bag)
     return;
 
-  for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < (unsigned)m_dimensions[0] * m_dimensions[1]; ++i) {
+  for (size_t i = 0; i < m_bag->size() - m_bagOffset && i < static_cast<unsigned>(m_dimensions[0]) * m_dimensions[1]; ++i) {
     auto itemSlot = m_slots.at(i);
     itemSlot->showDurability(m_showDurability);
   }

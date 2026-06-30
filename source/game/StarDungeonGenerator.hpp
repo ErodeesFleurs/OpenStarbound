@@ -11,7 +11,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(DungeonException, StarException);
+struct DungeonExceptionTag { static constexpr char const* typeName = "DungeonException"; };
+using DungeonException = TypedException<StarException, DungeonExceptionTag>;
 
 STAR_CLASS(DungeonGeneratorWorldFacade);
 STAR_CLASS(DungeonDefinition);

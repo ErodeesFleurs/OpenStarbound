@@ -91,10 +91,10 @@ void CellularLightingCalculator::setParameters(Json const& config) {
 void CellularLightingCalculator::begin(RectI const& queryRegion) {
   m_queryRegion = queryRegion;
   if (m_monochrome) {
-    m_calculationRegion = RectI(queryRegion).padded((int)m_lightArray.right().borderCells());
+    m_calculationRegion = RectI(queryRegion).padded(static_cast<int>(m_lightArray.right().borderCells()));
     m_lightArray.right().begin(m_calculationRegion.width(), m_calculationRegion.height());
   } else {
-    m_calculationRegion = RectI(queryRegion).padded((int)m_lightArray.left().borderCells());
+    m_calculationRegion = RectI(queryRegion).padded(static_cast<int>(m_lightArray.left().borderCells()));
     m_lightArray.left().begin(m_calculationRegion.width(), m_calculationRegion.height());
   }
 }
@@ -200,7 +200,7 @@ void CellularLightIntensityCalculator::setParameters(Json const& config) {
 void CellularLightIntensityCalculator::begin(Vec2F const& queryPosition) {
   m_queryPosition = queryPosition;
   m_queryRegion = RectI::withSize(Vec2I::floor(queryPosition - Vec2F::filled(0.5f)), Vec2I(2, 2));
-  m_calculationRegion = RectI(m_queryRegion).padded((int)m_lightArray.borderCells());
+  m_calculationRegion = RectI(m_queryRegion).padded(static_cast<int>(m_lightArray.borderCells()));
 
   m_lightArray.begin(m_calculationRegion.width(), m_calculationRegion.height());
 }

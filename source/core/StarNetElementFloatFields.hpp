@@ -7,7 +7,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(StepStreamException, StarException);
+struct StepStreamExceptionTag { static constexpr char const* typeName = "StepStreamException"; };
+using StepStreamException = TypedException<StarException, StepStreamExceptionTag>;
 
 template <typename T>
 class NetElementFloating : public NetElement {
@@ -165,8 +166,7 @@ bool NetElementFloating<T>::writeNetDelta(DataStream& ds, uint64_t fromVersion, 
 }
 
 template <typename T>
-void NetElementFloating<T>::readNetDelta(DataStream& ds, float interpolationTime, NetCompatibilityRules rules) {
-  _unused(rules);
+void NetElementFloating<T>::readNetDelta(DataStream& ds, float interpolationTime, [[maybe_unused]] NetCompatibilityRules rules) {
   T t = readValue(ds);
 
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;

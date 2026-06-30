@@ -13,7 +13,7 @@ TcpSocketPtr TcpSocket::connectTo(HostAddressWithPort const& addressWithPort) {
 TcpSocketPtr TcpSocket::listen(HostAddressWithPort const& addressWithPort) {
   auto socket = TcpSocketPtr(new TcpSocket(addressWithPort.address().mode()));
   socket->bind(addressWithPort);
-  ((Socket&)(*socket)).listen(32);
+  static_cast<Socket&>(*socket).listen(32);
   return socket;
 }
 
@@ -26,7 +26,7 @@ TcpSocketPtr TcpSocket::accept() {
   struct sockaddr_storage sockAddr;
   socklen_t sockAddrLen = sizeof(sockAddr);
 
-  auto socketDesc = ::accept(m_impl->socketDesc, (struct sockaddr*)&sockAddr, &sockAddrLen);
+  auto socketDesc = ::accept(m_impl->socketDesc, reinterpret_cast<struct sockaddr*>(&sockAddr), &sockAddrLen);
 
   if (invalidSocketDescriptor(socketDesc)) {
     if (netErrorInterrupt())
@@ -144,7 +144,7 @@ void TcpSocket::connect(HostAddressWithPort const& addressWithPort) {
   struct sockaddr_storage sockAddr;
   socklen_t sockAddrLen;
   setNativeFromAddress(addressWithPort, &sockAddr, &sockAddrLen);
-  if (::connect(m_impl->socketDesc, (struct sockaddr*)&sockAddr, sockAddrLen) < 0)
+  if (::connect(m_impl->socketDesc, reinterpret_cast<struct sockaddr*>(&sockAddr), sockAddrLen) < 0)
     throw NetworkException(strf("cannot connect to {}: {}", addressWithPort, netErrorString()));
 
 #if defined STAR_SYSTEM_MACOS || defined STAR_SYSTEM_FREEBSD

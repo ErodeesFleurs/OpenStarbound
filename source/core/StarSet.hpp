@@ -8,7 +8,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(SetException, StarException);
+struct SetExceptionTag { static constexpr char const* typeName = "SetException"; };
+using SetException = TypedException<StarException, SetExceptionTag>;
 
 template <typename BaseSet>
 class SetMixin : public BaseSet {

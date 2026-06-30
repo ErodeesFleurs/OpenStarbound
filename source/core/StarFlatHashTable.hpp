@@ -414,7 +414,7 @@ template <typename Value, typename Key, typename GetKey, typename Hash, typename
 auto FlatHashTable<Value, Key, GetKey, Hash, Equals, Allocator>::erase(const_iterator first, const_iterator last) -> iterator {
   while (first != last)
     first = erase(first);
-  return iterator{(Bucket*)first.current};
+  return iterator{const_cast<Bucket*>(first.current)};
 }
 
 template <typename Value, typename Key, typename GetKey, typename Hash, typename Equals, typename Allocator>

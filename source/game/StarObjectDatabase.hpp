@@ -25,7 +25,8 @@ STAR_CLASS(ObjectDatabase);
 STAR_CLASS(LuaRoot);
 STAR_CLASS(Rebuilder);
 
-STAR_EXCEPTION(ObjectException, StarException);
+struct ObjectExceptionTag { static constexpr char const* typeName = "ObjectException"; };
+using ObjectException = TypedException<StarException, ObjectExceptionTag>;
 
 struct ObjectOrientation {
   struct Anchor {

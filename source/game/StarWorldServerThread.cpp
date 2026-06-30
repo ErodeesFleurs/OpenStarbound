@@ -240,13 +240,13 @@ void WorldServerThread::run() {
 
       if (fidelityScore <= fidelityDecrementScore) {
         if (automaticFidelity > WorldServerFidelity::Minimum)
-          automaticFidelity = (WorldServerFidelity)((int)automaticFidelity - 1);
+          automaticFidelity = static_cast<WorldServerFidelity>(static_cast<int>(automaticFidelity) - 1);
         fidelityScore = 0.0;
       }
 
       if (fidelityScore >= fidelityIncrementScore) {
         if (automaticFidelity < WorldServerFidelity::High)
-          automaticFidelity = (WorldServerFidelity)((int)automaticFidelity + 1);
+          automaticFidelity = static_cast<WorldServerFidelity>(static_cast<int>(automaticFidelity) + 1);
         fidelityScore = 0.0;
       }
 

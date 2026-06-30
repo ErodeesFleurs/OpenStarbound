@@ -52,9 +52,9 @@ Json ShipUpgrades::toJson() const {
 }
 
 ShipUpgrades& ShipUpgrades::apply(Json const& upgrades) {
-  shipLevel = max(shipLevel, (unsigned)upgrades.optUInt("shipLevel").value(shipLevel));
+  shipLevel = max(shipLevel, static_cast<unsigned>(upgrades.optUInt("shipLevel").value(shipLevel)));
   maxFuel = upgrades.optUInt("maxFuel").value(maxFuel);
-  crewSize = max(crewSize, (unsigned)upgrades.optUInt("crewSize").value(crewSize));
+  crewSize = max(crewSize, static_cast<unsigned>(upgrades.optUInt("crewSize").value(crewSize)));
   fuelEfficiency = upgrades.optFloat("fuelEfficiency").value(fuelEfficiency);
   shipSpeed = upgrades.optFloat("shipSpeed").value(shipSpeed);
   if (upgrades.contains("capabilities"))

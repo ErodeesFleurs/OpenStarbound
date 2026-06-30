@@ -8,7 +8,13 @@
 
 namespace Star {
 
-STAR_CLASS(PcP2PNetworkingService);
+class PcP2PNetworkingService;
+using PcP2PNetworkingServicePtr = shared_ptr<PcP2PNetworkingService>;
+using PcP2PNetworkingServiceConstPtr = shared_ptr<PcP2PNetworkingService const>;
+using PcP2PNetworkingServiceWeakPtr = weak_ptr<PcP2PNetworkingService>;
+using PcP2PNetworkingServiceConstWeakPtr = weak_ptr<PcP2PNetworkingService const>;
+using PcP2PNetworkingServiceUPtr = unique_ptr<PcP2PNetworkingService>;
+using PcP2PNetworkingServiceConstUPtr = unique_ptr<PcP2PNetworkingService const>;
 
 class PcP2PNetworkingService : public P2PNetworkingService {
 public:
@@ -31,12 +37,12 @@ public:
   void addPendingJoin(String connectionString);
 
 private:
-  strong_typedef(Empty, JoinUnavailable);
+  using JoinUnavailable = StrongTypedef<Empty, struct JoinUnavailableTag>;
   struct JoinLocal {
     bool operator==(JoinLocal const& rhs) const { return capacity == rhs.capacity; };
     uint32_t capacity;
   };
-  strong_typedef(HostAddressWithPort, JoinRemote);
+  using JoinRemote = StrongTypedef<HostAddressWithPort, struct JoinRemoteTag>;
   using JoinLocation = Variant<JoinUnavailable, JoinLocal, JoinRemote>;
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION

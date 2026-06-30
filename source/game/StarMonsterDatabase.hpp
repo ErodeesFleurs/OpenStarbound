@@ -16,7 +16,8 @@ STAR_CLASS(RandomSource);
 STAR_CLASS(Monster);
 STAR_CLASS(MonsterDatabase);
 
-STAR_EXCEPTION(MonsterException, StarException);
+struct MonsterExceptionTag { static constexpr char const* typeName = "MonsterException"; };
+using MonsterException = TypedException<StarException, MonsterExceptionTag>;
 
 struct MonsterVariant {
   String type;

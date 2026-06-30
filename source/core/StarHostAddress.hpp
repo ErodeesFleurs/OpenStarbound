@@ -5,7 +5,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(NetworkException, IOException);
+struct NetworkExceptionTag { static constexpr char const* typeName = "NetworkException"; };
+using NetworkException = TypedException<IOException, NetworkExceptionTag>;
 
 STAR_CLASS(HostAddress);
 

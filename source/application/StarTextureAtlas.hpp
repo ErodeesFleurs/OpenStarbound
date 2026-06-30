@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(TextureAtlasException, StarException);
+struct TextureAtlasExceptionTag { static constexpr char const* typeName = "TextureAtlasException"; };
+using TextureAtlasException = TypedException<StarException, TextureAtlasExceptionTag>;
 
 // Implements a set of "texture atlases" or, sets of smaller textures grouped
 // as a larger texture.
@@ -192,7 +193,7 @@ auto TextureAtlasSet<AtlasTextureHandle>::addTexture(Image const& image, bool bo
   // a new atlas
   m_atlases.append(make_shared<TextureAtlas>(TextureAtlas{
       createAtlasTexture(Vec2U::filled(m_atlasCellSize * m_atlasNumCells), PixelFormat::RGBA32),
-      unique_ptr<bool[]>(new bool[m_atlasNumCells * m_atlasNumCells]()), 0
+      make_unique<bool[]>(m_atlasNumCells * m_atlasNumCells), 0
     }));
 
   if (auto texturePtr = tryAtlas(m_atlases.last().get()))

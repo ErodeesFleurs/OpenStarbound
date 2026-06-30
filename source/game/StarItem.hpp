@@ -10,7 +10,8 @@ namespace Star {
 STAR_CLASS(Item);
 STAR_CLASS(GenericItem);
 
-STAR_EXCEPTION(ItemException, StarException);
+struct ItemExceptionTag { static constexpr char const* typeName = "ItemException"; };
+using ItemException = TypedException<StarException, ItemExceptionTag>;
 
 class Item {
 public:

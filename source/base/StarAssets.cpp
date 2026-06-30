@@ -1121,7 +1121,7 @@ bool Assets::doLoad(AssetId const& id) const {
   try {
     // loadAsset automatically manages the queue and freshens the asset
     // data.
-    return (bool)loadAsset(id);
+    return static_cast<bool>(loadAsset(id));
   } catch (std::exception const& e) {
     Logger::error("Exception caught loading asset: {}, {}", id.path, outputException(e, true));
   } catch (...) {

@@ -10,7 +10,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(FormatException, StarException);
+struct FormatExceptionTag { static constexpr char const* typeName = "FormatException"; };
+using FormatException = TypedException<StarException, FormatExceptionTag>;
 
 template <typename... T>
 std::string strf(std::string_view fmt, T&&... args) {

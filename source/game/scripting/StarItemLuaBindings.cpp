@@ -131,7 +131,7 @@ String LuaBindings::ItemCallbacks::friendlyName(Item* item) {
 //
 // @return an integer representing the rarity of the item
 int LuaBindings::ItemCallbacks::rarity(Item* item) {
-  return (int)item->rarity();
+  return static_cast<int>(item->rarity());
 }
 
 // Returns the rarity of the item as a string

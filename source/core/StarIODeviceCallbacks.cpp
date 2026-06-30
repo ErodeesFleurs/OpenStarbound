@@ -26,7 +26,7 @@ int IODeviceCallbacks::seekFunc(void* datasource, ogg_int64_t offset, int whence
 
 long int IODeviceCallbacks::tellFunc(void* datasource) {
   auto* callbacks = static_cast<IODeviceCallbacks*>(datasource);
-  return (long int)callbacks->m_device->pos();
+  return static_cast<long int>(callbacks->m_device->pos());
 }
 
 void IODeviceCallbacks::setupOggCallbacks(ov_callbacks& callbacks) {

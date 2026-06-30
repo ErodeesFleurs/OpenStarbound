@@ -586,7 +586,7 @@ void Projectile::processAction(Json const& action) {
     if (stepsDelay == 0)
       function(world());
     else
-      world()->timer((float)stepsDelay / 60.f, function);
+      world()->timer(static_cast<float>(stepsDelay) / 60.f, function);
   };
 
   if (command == "tile") {
@@ -613,7 +613,7 @@ void Projectile::processAction(Json const& action) {
     Random::shuffle(tileDrops);
     for (auto& tile : zip(openSpaces, tileDrops)) {
       if (!world()->modifyTile(std::get<0>(tile), PlaceMaterial{TileLayer::Foreground, std::get<1>(tile), MaterialHue()}, allowEntityOverlap)) {
-        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(std::get<1>(tile)), (Vec2F)std::get<0>(tile));
+        auto itemDrop = ItemDrop::createRandomizedDrop(materialDatabase->materialItemDrop(std::get<1>(tile)), static_cast<Vec2F>(std::get<0>(tile)));
         world()->addEntity(itemDrop);
       }
     }
@@ -841,7 +841,7 @@ void Projectile::processAction(Json const& action) {
     m_pendingRenderables.append(LightSource{
         position(),
         jsonToColor(parameters.get("color")).toRgbF(),
-        (LightType)parameters.getBool("pointLight", true),
+        static_cast<LightType>(parameters.getBool("pointLight", true)),
         0.0f,
         0.0f,
         0.0f
@@ -927,7 +927,7 @@ void Projectile::setup() {
       m_imageSuffix = "";
     }
     else {
-      m_imageDirectives = (String)processing.utf8().substr(begin);
+      m_imageDirectives = static_cast<String>(processing.utf8().substr(begin));
       m_imageSuffix = processing.utf8().substr(0, begin);
     }
   }

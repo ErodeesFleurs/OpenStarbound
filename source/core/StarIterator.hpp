@@ -6,7 +6,8 @@
 
 namespace Star {
 
-STAR_EXCEPTION(IteratorException, StarException);
+struct IteratorExceptionTag { static constexpr char const* typeName = "IteratorException"; };
+using IteratorException = TypedException<StarException, IteratorExceptionTag>;
 
 // Provides java style iterators for bidirectional list-like containers
 // (SIterator and SMutableIterator) and forward only map-like containers

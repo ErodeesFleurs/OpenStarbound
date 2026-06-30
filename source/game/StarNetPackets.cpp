@@ -88,11 +88,11 @@ EnumMap<NetCompressionMode> const NetCompressionModeNames {
 
 Packet::~Packet() {}
 
-void Packet::read(DataStream& ds, NetCompatibilityRules netRules) { read(ds); _unused(netRules); }
-void Packet::read(DataStream& ds) { _unused(ds); }
-void Packet::write(DataStream& ds, NetCompatibilityRules netRules) const { write(ds); _unused(netRules); }
-void Packet::write(DataStream& ds) const { _unused(ds); }
-void Packet::readJson(Json const& json) { _unused(json); }
+void Packet::read(DataStream& ds, [[maybe_unused]] NetCompatibilityRules netRules) { read(ds); }
+void Packet::read([[maybe_unused]] DataStream& ds) {}
+void Packet::write(DataStream& ds, [[maybe_unused]] NetCompatibilityRules netRules) const { write(ds); }
+void Packet::write([[maybe_unused]] DataStream& ds) const {}
+void Packet::readJson([[maybe_unused]] Json const& json) {}
 Json Packet::writeJson() const  { return JsonObject{}; }
 
 PacketCompressionMode Packet::compressionMode() const { return m_compressionMode; }
@@ -173,7 +173,7 @@ PacketPtr createPacket(PacketType type) {
     case PacketType::ReplaceTileList: return make_shared<ReplaceTileListPacket>();
     case PacketType::UpdateWorldTemplate: return make_shared<UpdateWorldTemplatePacket>();
     default:
-      throw StarPacketException(strf("Unrecognized packet type {}", (unsigned int)type));
+      throw StarPacketException(strf("Unrecognized packet type {}", static_cast<unsigned int>(type)));
   }
 }
 
@@ -1106,7 +1106,7 @@ void EntityMessagePacket::write(DataStream& ds) const {
 void EntityMessagePacket::readJson(Json const& json) {
   auto jEntityId = json.get("entityId");
   if (jEntityId.canConvert(Json::Type::Int))
-    entityId = (EntityId)jEntityId.toInt();
+    entityId = static_cast<EntityId>(jEntityId.toInt());
   else
     entityId = jEntityId.toString();
   message = json.getString("message");
@@ -1326,7 +1326,7 @@ void StepUpdatePacket::read(DataStream& ds, NetCompatibilityRules netRules) {
 
 void StepUpdatePacket::write(DataStream& ds, NetCompatibilityRules netRules) const {
   if (netRules.isLegacy()) {
-    ds.writeVlqU((uint64_t)round(remoteTime * 60.0));
+    ds.writeVlqU(static_cast<uint64_t>(round(remoteTime * 60.0)));
   } else {
     ds.write(remoteTime);
   }
