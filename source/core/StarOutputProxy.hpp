@@ -2,15 +2,17 @@
 
 #include "StarMemory.hpp"
 
-#include "fmt/format.h"
-#include "fmt/ostream.h"
+#include <sstream>
+#include <typeinfo>
 
 namespace Star {
 
 namespace OutputAnyDetail {
   template<typename T, typename CharT, typename Traits>
   std::basic_string<CharT, Traits> string(T const& t) {
-    return fmt::format("<type {} at address: {}>", typeid(T).name(), (void*)&t);
+    std::basic_ostringstream<CharT, Traits> os;
+    os << "<type " << typeid(T).name() << " at address: " << (void*)&t << ">";
+    return os.str();
   }
 
   template<typename T, typename CharT, typename Traits>
@@ -59,7 +61,3 @@ inline std::ostream& operator<<(std::ostream& os, OutputProxy const& p) {
 }
 
 }
-
-template <typename T>
-struct fmt::formatter<Star::OutputAnyDetail::Wrapper<T>> : ostream_formatter {};
-template <> struct fmt::formatter<Star::OutputProxy> : ostream_formatter {};

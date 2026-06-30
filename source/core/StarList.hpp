@@ -1135,4 +1135,19 @@ typename ListEnumerateTypes<Container>::Result enumerate(Container&& container) 
 }
 
 template <typename BaseList>
-struct fmt::formatter<Star::ListMixin<BaseList>> : ostream_formatter {};
+struct std::formatter<Star::ListMixin<BaseList>> : Star::OstreamFormatter {};
+
+template <typename Element, typename Allocator>
+struct std::formatter<Star::List<Element, Allocator>> : Star::OstreamFormatter {};
+
+template <typename Element, size_t MaxSize>
+struct std::formatter<Star::StaticList<Element, MaxSize>> : Star::OstreamFormatter {};
+
+template <typename Element, size_t MaxStackSize>
+struct std::formatter<Star::SmallList<Element, MaxStackSize>> : Star::OstreamFormatter {};
+
+template <typename Element, typename Allocator>
+struct std::formatter<Star::Deque<Element, Allocator>> : Star::OstreamFormatter {};
+
+template <typename Element, typename Allocator>
+struct std::formatter<Star::LinkedList<Element, Allocator>> : Star::OstreamFormatter {};

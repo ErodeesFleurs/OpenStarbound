@@ -863,6 +863,13 @@ std::ostream& operator<<(std::ostream& os, Vector<T, N> const& v) {
   return os;
 }
 
+}
+
+template <typename T, size_t N>
+struct std::formatter<Star::Vector<T, N>> : Star::OstreamFormatter {};
+
+namespace Star {
+
 template <typename T, size_t N>
 Vector<T, N> operator*(T s, Vector<T, N> v) {
   return v * s;

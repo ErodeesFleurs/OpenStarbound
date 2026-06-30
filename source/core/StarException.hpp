@@ -3,18 +3,35 @@
 #include "StarMemory.hpp"
 #include "StarOutputProxy.hpp"
 
+#include <format>
 #include <string>
+#include <string_view>
 #include <sstream>
 
 namespace Star {
 
 template <typename... T>
-std::string strf(fmt::format_string<T...> fmt, T&&... args);
+std::string strf(std::string_view fmt, T&&... args);
+
+struct OstreamFormatter {
+  std::formatter<std::string> formatter;
+
+  constexpr auto parse(std::format_parse_context& ctx) {
+    return formatter.parse(ctx);
+  }
+
+  template <typename Type, typename FormatContext>
+  auto format(Type const& value, FormatContext& ctx) const {
+    std::ostringstream os;
+    os << value;
+    return formatter.format(os.str(), ctx);
+  }
+};
 
 class StarException : public std::exception {
 public:
   template <typename... Args>
-  static StarException format(fmt::format_string<Args...> fmt, Args const&... args);
+  static StarException format(std::string_view fmt, Args const&... args);
 
   StarException() noexcept;
   virtual ~StarException() noexcept;
@@ -78,7 +95,7 @@ void fatalException(std::exception const& e, bool showStackTrace);
   class ClassName : public BaseName {                                                                                             \
   public:                                                                                                                         \
     template <typename... Args>                                                                                                   \
-    static ClassName format(fmt::format_string<Args...> fmt, Args const&... args) {                                               \
+    static ClassName format(std::string_view fmt, Args const&... args) {                                                          \
       return ClassName(strf(fmt, args...));                                                                                       \
     }                                                                                                                             \
     ClassName() : BaseName(#ClassName, std::string()) {}                                                                          \
@@ -97,7 +114,7 @@ STAR_EXCEPTION(IOException, StarException);
 STAR_EXCEPTION(MemoryException, StarException);
 
 template <typename... Args>
-StarException StarException::format(fmt::format_string<Args...> fmt, Args const&... args) {
+StarException StarException::format(std::string_view fmt, Args const&... args) {
   return StarException(strf(fmt, args...));
 }
 
