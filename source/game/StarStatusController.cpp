@@ -910,10 +910,9 @@ LuaCallbacks StatusController::makeUniqueEffectCallbacks(UniqueEffectInstance& u
     if (uniqueEffect.toolUsageSuppressed == suppressed)
       return;
     uniqueEffect.toolUsageSuppressed = suppressed;
-    bool anySuppressed = false;
-    for (auto& [_, effect] : m_uniqueEffects)
-      anySuppressed = anySuppressed || effect.toolUsageSuppressed;
-    m_toolUsageSuppressed.set(anySuppressed);
+    m_toolUsageSuppressed.set(any(m_uniqueEffects, [](auto const& effect) {
+      return effect.second.toolUsageSuppressed;
+    }));
   });
 
   return callbacks;

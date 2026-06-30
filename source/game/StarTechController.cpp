@@ -557,10 +557,9 @@ LuaCallbacks TechController::makeTechCallbacks(TechModule& techModule) {
     if (techModule.toolUsageSuppressed == suppressed)
       return;
     techModule.toolUsageSuppressed = suppressed;
-    bool anySuppressed = false;
-    for (auto& module : m_techModules)
-      anySuppressed = anySuppressed || module.toolUsageSuppressed;
-    m_toolUsageSuppressed.set(anySuppressed);
+    m_toolUsageSuppressed.set(any(m_techModules, [](auto const& module) {
+      return module.toolUsageSuppressed;
+    }));
   });
 
   return callbacks;

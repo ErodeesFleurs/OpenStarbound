@@ -1,9 +1,9 @@
 #pragma once
 
-#include "StarObserverPtr.hpp"
 #include "StarBlockAllocator.hpp"
 #include "StarMap.hpp"
 #include "StarMultiArray.hpp"
+#include "StarObserverPtr.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarRandom.hpp"
 #include "StarRect.hpp"
@@ -271,15 +271,9 @@ void LiquidCellEngine<LiquidId>::setup() {
     size_t limitedCellNumber = 0;
     for (auto const& pos : activeCells.values()) {
       if (m_processingLimit) {
-        bool foundInUnlimitedRegion = false;
-        for (auto const& region : m_noProcessingLimitRegions) {
-          if (region.contains(pos)) {
-            foundInUnlimitedRegion = true;
-            break;
-          }
-        }
-
-        if (!foundInUnlimitedRegion) {
+        if (!m_noProcessingLimitRegions.any([&pos](RectI const& region) {
+              return region.contains(pos);
+            })) {
           if (limitedCellNumber < *m_processingLimit)
             ++limitedCellNumber;
           else

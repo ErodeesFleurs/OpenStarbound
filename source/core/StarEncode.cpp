@@ -4,7 +4,7 @@
 
 namespace Star {
 
-uint8_t decodeHexNibble(char c) {
+static uint8_t decodeHexNibble(char c) {
   if (c >= '0' && c <= '9')
     return c - '0';
   if (c >= 'A' && c <= 'F')
@@ -209,4 +209,4 @@ static inline bool is_base64(unsigned char c) {
   return res;
 }
 
-}
+}// namespace Star

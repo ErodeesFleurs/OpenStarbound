@@ -3,7 +3,7 @@
 namespace Star {
 
 CallbackListener::CallbackListener(function<void()> callback)
-  : callback(std::move(callback)) {}
+    : callback(std::move(callback)) {}
 
 void CallbackListener::trigger() {
   if (callback)
@@ -23,7 +23,7 @@ void ListenerGroup::removeListener(ListenerWeakPtr listener) {
 void ListenerGroup::clearExpiredListeners() {
   MutexLocker locker(m_mutex);
   eraseWhere(m_listeners, mem_fn(&ListenerWeakPtr::expired));
-};
+}
 
 void ListenerGroup::clearAllListeners() {
   MutexLocker locker(m_mutex);
@@ -33,13 +33,13 @@ void ListenerGroup::clearAllListeners() {
 void ListenerGroup::trigger() {
   MutexLocker locker(m_mutex);
   filter(m_listeners, [](ListenerWeakPtr const& wl) {
-      if (auto lock = wl.lock()) {
-        lock->trigger();
-        return true;
-      } else {
-        return false;
-      }
-    });
+    if (auto lock = wl.lock()) {
+      lock->trigger();
+      return true;
+    } else {
+      return false;
+    }
+  });
 }
 
-}
+}// namespace Star
