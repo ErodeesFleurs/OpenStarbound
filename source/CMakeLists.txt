@@ -59,10 +59,6 @@ endif()
 
 option(STAR_ENABLE_STRICT_WARNINGS "Enable stricter diagnostics for OpenStarbound project sources" OFF)
 
-# Update the docstring on CMAKE_BUILD_TYPE to show what options we actually
-# allow
-# set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug RelWithAsserts RelWithDebInfo Release" FORCE)
-
 # Discover all the relevant environment / system information and place the
 # result in STAR_* cmake variables.
 
@@ -143,7 +139,6 @@ endif()
 if(STAR_COMPILER STREQUAL "gnu")
   option(STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX "Statically link libgcc and libstdc++" OFF)
   option(STAR_ENABLE_GCC_PROFILING "Enable gcc/g++ profiling via the -pg flag" OFF)
-  option(STAR_ENABLE_GLIBCXX_DEBUG "Enable _GLIBCXX_DEBUG for g++" OFF)
 endif()
 
 if(STAR_COMPILER STREQUAL "msvc")
@@ -195,10 +190,6 @@ endif()
 
 if(DEFINED STAR_ENABLE_STATIC_MSVC_RUNTIME)
   message(STATUS "Statically linking to CRT: ${STAR_ENABLE_STATIC_MSVC_RUNTIME}")
-endif()
-
-if(DEFINED STAR_ENABLE_GLIBCXX_DEBUG)
-  message(STATUS "Enabling _GLIBCXX_DEBUG: ${STAR_ENABLE_GLIBCXX_DEBUG}")
 endif()
 
 if(DEFINED STAR_USE_LLD)
