@@ -527,6 +527,11 @@
     },
     {
       "inherits": "base",
+      "name": "linux-arm-release-clang",
+      "configurePreset": "linux-arm-release-clang"
+    },
+    {
+      "inherits": "base",
       "name": "macos-release",
       "configurePreset": "macos-release"
     },

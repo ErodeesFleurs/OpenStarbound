@@ -361,7 +361,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: OpenStarbound-Linux-Clang-Server
-          path: client.tar
+          path: server.tar
 
   build_linux_arm:
     name: Build OpenStarbound Linux arm64
@@ -526,7 +526,7 @@ jobs:
           VCPKG_BINARY_SOURCES: "clear;files,${{ steps.vcpkg-cache.outputs.path }},readwrite"
         with:
           cmakeListsTxtPath: "${{ github.workspace }}/source/CMakeLists.txt"
-          testPreset: "linux-arm-release"
+          testPreset: "linux-arm-release-clang"
 
       - name: Assemble Files
         working-directory: ${{ github.workspace }}
