@@ -42,12 +42,12 @@ struct WorldRegion {
 
   Json toJson() const;
 
-  TerrainSelectorIndex terrainSelectorIndex;
-  TerrainSelectorIndex foregroundCaveSelectorIndex;
-  TerrainSelectorIndex backgroundCaveSelectorIndex;
+  TerrainSelectorIndex terrainSelectorIndex = NullTerrainSelectorIndex;
+  TerrainSelectorIndex foregroundCaveSelectorIndex = NullTerrainSelectorIndex;
+  TerrainSelectorIndex backgroundCaveSelectorIndex = NullTerrainSelectorIndex;
 
-  BiomeIndex blockBiomeIndex;
-  BiomeIndex environmentBiomeIndex;
+  BiomeIndex blockBiomeIndex = NullBiomeIndex;
+  BiomeIndex environmentBiomeIndex = NullBiomeIndex;
 
   List<TerrainSelectorIndex> subBlockSelectorIndexes;
   List<TerrainSelectorIndex> foregroundOreSelectorIndexes;

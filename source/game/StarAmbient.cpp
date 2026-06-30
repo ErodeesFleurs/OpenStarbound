@@ -78,7 +78,7 @@ AudioInstancePtr AmbientManager::updateAmbient(AmbientNoisesDescriptionPtr curre
   }
   if (!m_currentTrack) {
     m_currentTrackName = "";
-    if (tracks.size() > 0) {
+    if (!tracks.empty()) {
       while ((m_recentTracks.size() / 2) >= tracks.size())
         m_recentTracks.removeFirst();
       while (true) {

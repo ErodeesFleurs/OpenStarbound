@@ -5,7 +5,7 @@
 using namespace Star;
 
 TEST(StaticVectorTest, InsertErase) {
-  typedef StaticVector<int, 64> SV;
+  using SV = StaticVector<int, 64>;
   SV a = {1, 2, 3, 4};
   EXPECT_EQ(a.size(), 4u);
   EXPECT_EQ(a, SV({1, 2, 3, 4}));
@@ -34,7 +34,7 @@ TEST(StaticVectorTest, InsertErase) {
 }
 
 TEST(StaticVectorTest, Comparators) {
-  typedef StaticVector<int, 64> SV;
+  using SV = StaticVector<int, 64>;
 
   EXPECT_TRUE(SV({1, 2, 3, 4}) < SV({1, 2, 3, 5}));
   EXPECT_FALSE(SV({1, 2, 3, 4}) < SV({1, 2, 3, 4}));

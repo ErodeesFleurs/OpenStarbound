@@ -1,5 +1,6 @@
 #include "StarItemGridWidget.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarPythonic.hpp"
 #include "StarAssets.hpp"
 
 namespace Star {
@@ -197,11 +198,13 @@ void ItemGridWidget::updateAllItemSlots() {
 void ItemGridWidget::updateItemState() {
   updateAllItemSlots();
   auto newState = slotItemNames();
-  for (size_t i = 0; i < newState.size(); ++i) {
-    if (newState[i].empty())
-      m_changedSlots.remove(i);
-    else if (newState[i].compare(m_itemNames[i]) != 0)
-      m_changedSlots.insert(i);
+  for (auto const& itemNameAndIndex : enumerateIterator(newState)) {
+    auto const& itemName = itemNameAndIndex.first;
+    auto itemIndex = itemNameAndIndex.second;
+    if (itemName.empty())
+      m_changedSlots.remove(itemIndex);
+    else if (itemName.compare(m_itemNames[itemIndex]) != 0)
+      m_changedSlots.insert(itemIndex);
   }
   m_itemNames = newState;
 }
@@ -220,7 +223,7 @@ void ItemGridWidget::clearChangedSlots() {
 }
 
 bool ItemGridWidget::slotsChanged() {
-  return m_changedSlots.size() > 0;
+  return !m_changedSlots.empty();
 }
 
 HashSet<ItemDescriptor> ItemGridWidget::uniqueItemState() {

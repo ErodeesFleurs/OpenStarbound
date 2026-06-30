@@ -1751,7 +1751,7 @@ void UniverseServer::packetsReceived(UniverseConnectionServer*, ConnectionId cli
         if (m_secureWarps && entityMessage->message == "warp") {
           bool blocked = false;
 
-          if (entityMessage->args.size() < 1 || !entityMessage->args.get(0).canConvert(Json::Type::String)) {
+          if (entityMessage->args.empty() || !entityMessage->args.get(0).canConvert(Json::Type::String)) {
             Logger::warn("UniverseServer: Blocked warp entity message with invalid args from client {}", clientId);
             blocked = true;
           } else {

@@ -73,7 +73,7 @@ StringSet categorizeObject(String const& objectName, Vec2U imageSize, AssetsCons
   if (objectConfig->race != defaultCategories.getString("race"))
     categories.insert("objects-by-race/" + objectConfig->race);
 
-  if (categories.size() == 0)
+  if (categories.empty())
     categories.insert("objects-uncategorized");
 
   return transform<StringSet>(categories, [](String const& category) { return category.toLower(); });
@@ -165,7 +165,7 @@ void defineObjectOrientation(TilesetUpdater& updater,
 void scanObjects(TilesetUpdater& updater, AssetsConstPtr assets, ObjectDatabaseConstPtr objects) {
   for (String const& objectName : objects->allObjects()) {
     auto orientations = objects->getOrientations(objectName);
-    if (orientations.size() < 1) {
+    if (orientations.empty()) {
       Logger::warn("Object {} has no orientations and will not be exported", objectName);
       continue;
     }

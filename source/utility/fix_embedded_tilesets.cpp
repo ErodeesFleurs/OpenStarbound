@@ -1,5 +1,6 @@
 #include "StarFile.hpp"
 #include "StarLogging.hpp"
+#include "StarPythonic.hpp"
 #include "StarRootLoader.hpp"
 #include "StarTilesetDatabase.hpp"
 
@@ -7,7 +8,7 @@ using namespace Star;
 
 void removeCommonPrefix(StringList& a, StringList& b) {
   // Remove elements from a and b until there is one that differs.
-  while (a.size() > 0 && b.size() > 0 && a[0] == b[0]) {
+  while (!a.empty() && !b.empty() && a[0] == b[0]) {
     a.eraseAt(0);
     b.eraseAt(0);
   }
@@ -45,9 +46,9 @@ Maybe<Json> repairTileset(Json tileset, String const& mapPath, String const& til
 Maybe<Json> repair(Json mapJson, String const& mapPath, String const& tilesetPath) {
   JsonArray tilesets = mapJson.getArray("tilesets");
   bool changed = false;
-  for (size_t i = 0; i < tilesets.size(); ++i) {
-    if (Maybe<Json> tileset = repairTileset(tilesets[i], mapPath, tilesetPath)) {
-      tilesets[i] = *tileset;
+  for (auto tilesetAndIndex : enumerateIterator(tilesets)) {
+    if (Maybe<Json> tileset = repairTileset(tilesetAndIndex.first, mapPath, tilesetPath)) {
+      tilesets[tilesetAndIndex.second] = *tileset;
       changed = true;
     }
   }

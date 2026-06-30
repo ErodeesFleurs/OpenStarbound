@@ -13,8 +13,8 @@ struct LiquidLevel {
 
   LiquidLevel take(float amount);
 
-  LiquidId liquid;
-  float level;
+  LiquidId liquid = EmptyLiquidId;
+  float level = 0.0f;
 };
 
 struct LiquidNetUpdate {
@@ -43,8 +43,7 @@ struct LiquidStore : LiquidLevel {
   bool source{};
 };
 
-inline LiquidLevel::LiquidLevel()
-  : liquid(EmptyLiquidId), level(0.0f) {}
+inline LiquidLevel::LiquidLevel() = default;
 
 inline LiquidLevel::LiquidLevel(LiquidId liquid, float level)
   : liquid(liquid), level(level) {}

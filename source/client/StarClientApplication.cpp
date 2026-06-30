@@ -716,11 +716,11 @@ void ClientApplication::changeState(MainAppState newState) {
     m_playerStorage = make_shared<PlayerStorage>(m_root->toStoragePath("player"), m_root->configuration(), m_root->entityFactory());
     auto luaRootServices = m_root->luaRootServices();
     m_statistics = make_shared<Statistics>(
-        m_root->toStoragePath("player"),
-        m_root->versioningDatabase(),
-        m_root->statisticsDatabase(),
-        luaRootServices,
-        app->statisticsService());
+      m_root->toStoragePath("player"),
+      m_root->versioningDatabase(),
+      m_root->statisticsDatabase(),
+      luaRootServices,
+      app->statisticsService());
     m_universeClient = make_shared<UniverseClient>(m_playerStorage, m_statistics, m_root->assets(), m_root->configuration(), m_root->materialDatabase(), m_root->itemDatabase(), m_root->objectDatabase(), m_root->speciesDatabase(), m_root->entityFactory(), m_root->liquidsDatabase(), m_root->terrainDatabase(), m_root->biomeDatabase(), m_root->nameGenerator(), m_root->functionDatabase(), m_root->behaviorDatabase(), m_root->particleDatabase(), m_root->damageDatabase(), m_root->projectileDatabase(), m_root->effectSourceDatabase(), m_root->techDatabase(), m_root->statusEffectDatabase(), m_root->plantDatabase(), m_root->treasureDatabase(), m_root->imageMetadataDatabase(), m_root->dungeonDefinitions(), luaRootServices);
 
     m_universeClient->setLuaCallbacks("input", LuaBindings::makeInputCallbacks(*m_input));
@@ -1389,7 +1389,7 @@ void ClientApplication::updateRunning(float dt) {
     if (m_mainInterface->currentState() == MainInterface::ReturnToTitle)
       changeState(MainAppState::Title);
 
-  } catch (std::exception& e) {
+  } catch (std::exception const& e) {
     setError("Exception caught in client main-loop", e);
   }
 }

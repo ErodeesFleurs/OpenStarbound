@@ -30,12 +30,13 @@ public:
   void set(String const& path, Image&& image);
   ByteArray read(String const& path) override;
   ImageConstPtr image(String const& path);
+
 private:
-  typedef Variant<ByteArray, ImagePtr> FileEntry;
+  using FileEntry = Variant<ByteArray, ImagePtr>;
 
   String m_name;
   JsonObject m_metadata;
   StringMap<FileEntry> m_files;
 };
 
-}
+}// namespace Star

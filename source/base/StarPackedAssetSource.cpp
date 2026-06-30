@@ -5,6 +5,7 @@
 #include "StarDataStreamExtra.hpp"
 #include "StarSha256.hpp"
 #include "StarFile.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -50,12 +51,12 @@ void PackedAssetSource::build(DirectoryAssetSource& directorySource, String cons
       return getOrderingValue(a) < getOrderingValue(b);
     });
 
-  for (size_t i = 0; i < assetPaths.size(); ++i) {
-    String const& assetPath = assetPaths[i];
+  for (auto const& assetPathAndIndex : enumerateIterator(assetPaths)) {
+    String const& assetPath = assetPathAndIndex.first;
     ByteArray contents = directorySource.read(assetPath);
 
     if (progressCallback)
-      progressCallback(i, assetPaths.size(), directorySource.toFilesystem(assetPath), assetPath);
+      progressCallback(assetPathAndIndex.second, assetPaths.size(), directorySource.toFilesystem(assetPath), assetPath);
     index.add(assetPath, {ds.pos(), contents.size()});
     ds.writeBytes(contents);
   }

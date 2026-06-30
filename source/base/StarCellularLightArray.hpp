@@ -7,7 +7,7 @@ namespace Star {
 
 // Operations for simple scalar lighting.
 struct ScalarLightTraits {
-  typedef float Value;
+  using Value = float;
 
   static float spread(float source, float dest, float drop);
   static float subtract(float value, float drop);
@@ -23,7 +23,7 @@ struct ScalarLightTraits {
 // applied proportionally, so that color ratios stay the same, to prevent hues
 // changing as light spreads.
 struct ColoredLightTraits {
-  typedef Vec3F Value;
+  using Value = Vec3F;
 
   static Vec3F spread(Vec3F const& source, Vec3F const& dest, float drop);
   static Vec3F subtract(Vec3F value, float drop);
@@ -38,7 +38,7 @@ struct ColoredLightTraits {
 template <typename LightTraits>
 class CellularLightArray {
 public:
-  typedef typename LightTraits::Value LightValue;
+  using LightValue = typename LightTraits::Value;
 
   struct Cell {
     LightValue light;
@@ -60,7 +60,7 @@ public:
   };
 
   void setParameters(unsigned spreadPasses, float spreadMaxAir, float spreadMaxObstacle,
-      float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost, bool pointAdditive);
+                     float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost, bool pointAdditive);
 
   // The border around the target lighting array where initial lighting / light
   // source data is required.  Based on parameters.
@@ -132,8 +132,8 @@ private:
   bool m_pointAdditive;
 };
 
-typedef CellularLightArray<ColoredLightTraits> ColoredCellularLightArray;
-typedef CellularLightArray<ScalarLightTraits> ScalarCellularLightArray;
+using ColoredCellularLightArray = CellularLightArray<ColoredLightTraits>;
+using ScalarCellularLightArray = CellularLightArray<ScalarLightTraits>;
 
 inline float ScalarLightTraits::spread(float source, float dest, float drop) {
   return std::max(source - drop, dest);
@@ -166,10 +166,9 @@ inline Vec3F ColoredLightTraits::spread(Vec3F const& source, Vec3F const& dest, 
 
   drop /= maxChannel;
   return Vec3F(
-      std::max(source[0] - source[0] * drop, dest[0]),
-      std::max(source[1] - source[1] * drop, dest[1]),
-      std::max(source[2] - source[2] * drop, dest[2])
-    );
+    std::max(source[0] - source[0] * drop, dest[0]),
+    std::max(source[1] - source[1] * drop, dest[1]),
+    std::max(source[2] - source[2] * drop, dest[2]));
 }
 
 inline Vec3F ColoredLightTraits::subtract(Vec3F c, float drop) {
@@ -205,7 +204,7 @@ inline Vec3F ColoredLightTraits::max(Vec3F const& v1, Vec3F const& v2) {
 
 template <typename LightTraits>
 void CellularLightArray<LightTraits>::setParameters(unsigned spreadPasses, float spreadMaxAir, float spreadMaxObstacle,
-    float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost, bool pointAdditive) {
+                                                    float pointMaxAir, float pointMaxObstacle, float pointObstacleBoost, bool pointAdditive) {
   m_spreadPasses = spreadPasses;
   m_spreadMaxAir = spreadMaxAir;
   m_spreadMaxObstacle = spreadMaxObstacle;
@@ -230,7 +229,7 @@ void CellularLightArray<LightTraits>::begin(size_t newWidth, size_t newHeight) {
     m_width = newWidth;
     m_height = newHeight;
 
-    m_cells.reset(new Cell[m_width * m_height]());
+    m_cells = make_unique<Cell[]>(m_width * m_height);
 
   } else {
     std::fill(m_cells.get(), m_cells.get() + m_width * m_height, Cell{LightValue{}, false});
@@ -268,25 +267,25 @@ bool CellularLightArray<LightTraits>::getObstacle(size_t x, size_t y) const {
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) const -> Cell const & {
+auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) const -> Cell const& {
   starAssert(x < m_width && y < m_height);
   return m_cells[x * m_height + y];
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) -> Cell & {
+auto CellularLightArray<LightTraits>::cell(size_t x, size_t y) -> Cell& {
   starAssert(x < m_width && y < m_height);
   return m_cells[x * m_height + y];
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) const -> Cell const & {
+auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) const -> Cell const& {
   starAssert(index < m_width * m_height);
   return m_cells[index];
 }
 
 template <typename LightTraits>
-auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) -> Cell & {
+auto CellularLightArray<LightTraits>::cellAtIndex(size_t index) -> Cell& {
   starAssert(index < m_width * m_height);
   return m_cells[index];
 }
@@ -402,7 +401,7 @@ void CellularLightArray<LightTraits>::calculateLightSpread(size_t xMin, size_t y
 
 template <typename LightTraits>
 float CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F const& end,
-    float perObstacleAttenuation, float maxAttenuation) {
+                                                       float perObstacleAttenuation, float maxAttenuation) {
   // Run Xiaolin Wu's line algorithm from start to end, summing over colliding
   // blocks using perObstacleAttenuation.
   float obstacleAttenuation = 0.0;
@@ -535,4 +534,4 @@ float CellularLightArray<LightTraits>::lineAttenuation(Vec2F const& start, Vec2F
   return min(obstacleAttenuation, maxAttenuation);
 }
 
-}
+}// namespace Star

@@ -463,8 +463,10 @@ namespace LuaDetail {
   template <typename T>
   LuaVariadic<LuaValue> toWrappedReturn(LuaEngine& engine, LuaVariadic<T> const& vals) {
     LuaVariadic<LuaValue> ret(vals.size());
-    for (size_t i = 0; i < vals.size(); ++i)
-      ret[i] = engine.luaFrom(vals[i]);
+    for (auto pair : zipIterator(vals, ret)) {
+      auto [val, out] = pair;
+      out = engine.luaFrom(val);
+    }
     return ret;
   }
 
@@ -1470,8 +1472,8 @@ size_t LuaEngine::pushArgument(lua_State* state, LuaVariadic<T> const& args) {
   // argument so check the stack for the arguments in the variadic list minus
   // one.
   lua_checkstack(state, args.size() - 1);
-  for (size_t i = 0; i < args.size(); ++i)
-    pushLuaValue(state, luaFrom(args[i]));
+  for (auto const& arg : args)
+    pushLuaValue(state, luaFrom(arg));
   return args.size();
 }
 

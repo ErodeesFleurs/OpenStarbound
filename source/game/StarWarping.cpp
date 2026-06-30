@@ -69,7 +69,7 @@ WorldId parseWorldId(String const& printedId) {
 
   if (type.equalsIgnoreCase("InstanceWorld")) {
     auto rest = parts.at(1).split(":", 2);
-    if (rest.size() == 0 || rest.size() > 3)
+    if (rest.empty() || rest.size() > 3)
       throw StarException::format("Wrong number of parts in InstanceWorldId");
     auto getOptPart = [](String part) -> Maybe<String> {
       if (part.empty() || part == "-")

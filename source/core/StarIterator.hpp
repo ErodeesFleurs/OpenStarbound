@@ -42,12 +42,12 @@ public:
 
   value_ref value() const {
     if (direction == 1) {
-      if (curr != cont.end() && cont.size() != 0)
+      if (curr != cont.end() && !cont.empty())
         return *curr;
       else
         throw IteratorException("value() called on end()");
     } else if (direction == -1) {
-      if (curr != cont.begin() && cont.size() != 0) {
+      if (curr != cont.begin() && !cont.empty()) {
         iterator back = curr;
         return *(--back);
       } else {
@@ -144,13 +144,13 @@ public:
   void remove() {
     if (direction == 1) {
       direction = 0;
-      if (curr != cont.end() && cont.size() != 0)
+      if (curr != cont.end() && !cont.empty())
         curr = cont.erase(curr);
       else
         throw IteratorException("remove() called on end()");
     } else if (direction == -1) {
       direction = 0;
-      if (curr != cont.begin() && cont.size() != 0)
+      if (curr != cont.begin() && !cont.empty())
         curr = cont.erase(--curr);
       else
         throw IteratorException("remove() called on begin()");
@@ -161,12 +161,12 @@ public:
 
   value_ref value() const {
     if (direction == 1) {
-      if (curr != cont.end() && cont.size() != 0)
+      if (curr != cont.end() && !cont.empty())
         return *curr;
       else
         throw IteratorException("value() called on end()");
     } else if (direction == -1) {
-      if (curr != cont.begin() && cont.size() != 0) {
+      if (curr != cont.begin() && !cont.empty()) {
         iterator back = curr;
         return *(--back);
       } else {

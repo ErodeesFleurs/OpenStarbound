@@ -255,7 +255,7 @@ List<WorldTemplate::Dungeon> WorldTemplate::dungeons() const {
     dungeonList.append({floatingDungeonParameters->primaryDungeon, floatingDungeonParameters->dungeonBaseHeight, 0, 0, true, false});
   } else if (auto terrestrialParameters = as<TerrestrialWorldParameters>(m_worldParameters)) {
     auto addLayerDungeons = [this, &dungeonList](TerrestrialWorldParameters::TerrestrialLayer const& layer) {
-      if (layer.dungeons.size() > 0) {
+      if (!layer.dungeons.empty()) {
         int dungeonSpacing = floor(m_geometry.width() / layer.dungeons.size());
         uint32_t dungeonOffset = staticRandomU32Range(0, m_geometry.width(), m_seed, layer.layerBaseHeight);
         for (auto const& dp : enumerateIterator(layer.dungeons)) {

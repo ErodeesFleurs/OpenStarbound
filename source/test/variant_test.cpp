@@ -1,7 +1,9 @@
-#include "StarVariant.hpp"
 #include "StarMaybe.hpp"
+#include "StarVariant.hpp"
 
 #include "gtest/gtest.h"
+
+#include <optional>
 
 #ifdef STAR_COMPILER_CLANG
 #pragma clang diagnostic ignored "-Wself-assign-overloaded"
@@ -69,4 +71,29 @@ TEST(MaybeTest, All) {
   a = {};
   EXPECT_FALSE(a.isValid());
   EXPECT_EQ(intptr.use_count(), 1);
+}
+
+TEST(MaybeTest, OptionalInterop) {
+  Maybe<int> empty(std::nullopt);
+  EXPECT_FALSE(empty);
+  EXPECT_EQ(empty.optional(), std::nullopt);
+
+  std::optional<int> source = 42;
+  Maybe<int> maybe = Maybe<int>::fromOptional(source);
+  EXPECT_TRUE(maybe);
+  EXPECT_EQ(*maybe, 42);
+
+  std::optional<int> roundTrip = maybe.optional();
+  EXPECT_EQ(roundTrip, source);
+
+  maybe = std::nullopt;
+  EXPECT_FALSE(maybe);
+
+  maybe = Maybe<int>::fromOptional(std::optional<int>(7));
+  EXPECT_TRUE(maybe);
+  EXPECT_EQ(*maybe, 7);
+
+  std::optional<int> moved = std::move(maybe).optional();
+  EXPECT_EQ(moved, 7);
+  EXPECT_FALSE(maybe);
 }

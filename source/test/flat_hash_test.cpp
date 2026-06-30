@@ -63,8 +63,8 @@ TEST(FlatHashSet, Random) {
   Random::shuffle(keys);
 
   FlatHashSet<Vec2I> testSet;
-  for (size_t i = 0; i < keys.size(); ++i)
-    testSet.insert(keys[i]);
+  for (auto const& key : keys)
+    testSet.insert(key);
 
   Random::shuffle(keys);
   for (size_t i = 0; i < keys.size() / 2; ++i)

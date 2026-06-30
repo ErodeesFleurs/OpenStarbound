@@ -282,7 +282,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
     for (auto entity : m_worldClient->query<WireEntity>(bounds)) {
       for (size_t i = 0; i < entity->nodeCount(WireDirection::Input); ++i) {
         RectF inbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Input, i})) - (m_nodeSize / 2.0f), m_nodeSize);
-        if (geometry.rectContains(inbounds, pos) && entity->connectionsForNode({WireDirection::Input, i}).size() > 0) {
+        if (geometry.rectContains(inbounds, pos) && !entity->connectionsForNode({WireDirection::Input, i}).empty()) {
           if (!matchNode) {
             matchPosition = entity->tilePosition();
             matchNode = WireNode{WireDirection::Input, i};
@@ -300,7 +300,7 @@ WireConnector::SwingResult WirePane::swing(WorldGeometry const& geometry, Vec2F 
 
       for (size_t i = 0; i < entity->nodeCount(WireDirection::Output); ++i) {
         RectF outbounds = RectF::withSize(centerOfTile(entity->tilePosition() + entity->nodePosition({WireDirection::Output, i})) - (m_nodeSize / 2.0f), m_nodeSize);
-        if (geometry.rectContains(outbounds, pos) && entity->connectionsForNode({WireDirection::Output, i}).size() > 0) {
+        if (geometry.rectContains(outbounds, pos) && !entity->connectionsForNode({WireDirection::Output, i}).empty()) {
           if (!matchNode) {
             matchPosition = entity->tilePosition();
             matchNode = WireNode{WireDirection::Output, i};

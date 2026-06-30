@@ -8,19 +8,21 @@ namespace Star {
 
 class PrivateDynLib : public DynamicLib {
 public:
-  PrivateDynLib(void* handle)
-    : m_handle(handle) {}
+  explicit PrivateDynLib(void* handle, bool closeOnDestroy = true)
+      : m_handle(handle), m_closeOnDestroy(closeOnDestroy) {}
 
-  ~PrivateDynLib() {
-    FreeLibrary(static_cast<HMODULE>(m_handle));
+  ~PrivateDynLib() override {
+    if (m_closeOnDestroy)
+      FreeLibrary(static_cast<HMODULE>(m_handle));
   }
 
-  void* funcPtr(const char* name) {
+  void* funcPtr(const char* name) override {
     return reinterpret_cast<void*>(GetProcAddress(static_cast<HMODULE>(m_handle), name));
   }
 
 private:
   void* m_handle;
+  bool m_closeOnDestroy;
 };
 
 String DynamicLib::libraryExtension() {
@@ -37,7 +39,7 @@ UniquePtr<DynamicLib> DynamicLib::loadLibrary(String const& libraryName) {
 UniquePtr<DynamicLib> DynamicLib::currentExecutable() {
   void* handle = GetModuleHandle(0);
   starAssert(handle);
-  return make_unique<PrivateDynLib>(handle);
+  return make_unique<PrivateDynLib>(handle, false);
 }
 
-}
+}// namespace Star

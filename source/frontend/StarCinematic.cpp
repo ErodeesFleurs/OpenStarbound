@@ -6,6 +6,8 @@
 #include "StarGuiContext.hpp"
 #include "StarPlayer.hpp"
 
+#include <algorithm>
+
 namespace Star {
 
 const float vWidth = 960.0f;
@@ -110,10 +112,10 @@ void Cinematic::update(float) {
 }
 
 bool Cinematic::completed() const {
-  for (size_t i = 0; i < m_audioCues.size(); ++i) {
-    if (m_activeAudio[i] && !m_activeAudio[i]->finished())
-      return false;
-  }
+  if (std::any_of(m_activeAudio.begin(), m_activeAudio.end(), [](AudioInstancePtr const& audio) {
+        return audio && !audio->finished();
+      }))
+    return false;
 
   return m_timer.time() >= m_completionTime;
 }
@@ -224,19 +226,20 @@ void Cinematic::render() {
   if (m_scissor)
     renderer->setScissorRect({});
 
-  for (size_t i = 0; i < m_audioCues.size(); ++i) {
-    if (m_audioCues[i].endTimecode > 0 && m_audioCues[i].endTimecode <= currentTimecode()) {
-      if (!m_activeAudio[i])
+  for (auto audio : zipIterator(m_audioCues, m_activeAudio)) {
+    auto [cue, activeAudio] = audio;
+    if (cue.endTimecode > 0 && cue.endTimecode <= currentTimecode()) {
+      if (!activeAudio)
         continue;
-      m_activeAudio[i]->stop();
-    } else if (m_audioCues[i].timecode <= currentTimecode()) {
-      if (m_activeAudio[i])
+      activeAudio->stop();
+    } else if (cue.timecode <= currentTimecode()) {
+      if (activeAudio)
         continue;
-      AudioInstancePtr audioInstance = make_shared<AudioInstance>(*m_assets->audio(m_audioCues[i].resource));
-      audioInstance->setLoops(m_audioCues[i].loops);
+      AudioInstancePtr audioInstance = make_shared<AudioInstance>(*m_assets->audio(cue.resource));
+      audioInstance->setLoops(cue.loops);
       audioInstance->setMixerGroup(MixerGroup::Cinematic);
       mixer->play(audioInstance);
-      m_activeAudio[i] = audioInstance;
+      activeAudio = audioInstance;
     }
   }
 }
@@ -520,9 +523,9 @@ void Cinematic::stop() {
   m_completionTime = 0;
   m_timer.stop();
   m_timer.reset();
-  for (size_t i = 0; i < m_audioCues.size(); ++i) {
-    if (m_activeAudio[i])
-      m_activeAudio[i]->stop();
+  for (auto const& activeAudio : m_activeAudio) {
+    if (activeAudio)
+      activeAudio->stop();
   }
   m_audioCues.clear();
   m_activeAudio.clear();

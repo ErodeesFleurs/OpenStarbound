@@ -18,6 +18,7 @@
 #include "StarItemDatabase.hpp"
 #include "StarPlayerInventory.hpp"
 #include "StarPlayerLog.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -284,9 +285,9 @@ void CharCreationPane::changed() {
   setLabel("labelMode", modeButton->data().getString("description", "fail"));
 
   // Update the gender images for the new species
-  for (size_t i = 0; i < species.genderOptions.size(); i++)
-    if (auto button = fetchChild<ButtonWidget>(strf("gender.{}", i)))
-      button->setOverlayImage(species.genderOptions[i].image);
+  for (auto const& genderOptionAndIndex : enumerateIterator(species.genderOptions))
+    if (auto button = fetchChild<ButtonWidget>(strf("gender.{}", genderOptionAndIndex.second)))
+      button->setOverlayImage(genderOptionAndIndex.first.image);
 
   for (auto const& nameDefPair : m_speciesDatabase->allSpecies()) {
     String name;

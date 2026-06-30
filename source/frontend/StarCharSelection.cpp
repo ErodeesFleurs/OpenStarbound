@@ -97,7 +97,7 @@ void CharSelectionPane::updateCharacterPlates() {
     m_filteredList = m_playerStorage->playerUuidListByName(m_search);
     auto charSelector = fetchChild<LargeCharPlateWidget>(name);
 
-    if (m_filteredList.size() > 0 && scrollPosition < m_filteredList.size()) {
+    if (!m_filteredList.empty() && scrollPosition < m_filteredList.size()) {
       auto playerUuid = m_filteredList.get(scrollPosition);
       if (auto player = m_playerStorage->loadPlayer(playerUuid)) {
         charSelector->show();

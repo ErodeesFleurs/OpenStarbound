@@ -128,11 +128,14 @@ LuaTable LuaContext::createTable() {
 }
 
 LuaNullEnforcer::LuaNullEnforcer(LuaEngine& engine)
-  : m_engine(&engine) { ++m_engine->m_nullTerminated; };
+    : m_engine(&engine) { ++m_engine->m_nullTerminated; };
 
 LuaNullEnforcer::LuaNullEnforcer(LuaNullEnforcer&& other) { m_engine = take(other.m_engine); };
 
-LuaNullEnforcer::~LuaNullEnforcer() { if (m_engine) --m_engine->m_nullTerminated; };
+LuaNullEnforcer::~LuaNullEnforcer() {
+  if (m_engine)
+    --m_engine->m_nullTerminated;
+};
 
 LuaValue LuaConverter<Json>::from(LuaEngine& engine, Json const& v) {
   if (v.isType(Json::Type::Null)) {
@@ -207,7 +210,7 @@ Maybe<JsonArray> LuaConverter<JsonArray>::to(LuaEngine& engine, LuaValue v) {
 }
 
 LuaEnginePtr LuaEngine::create(bool safe) {
-  LuaEnginePtr self(new LuaEngine);
+  auto self = make_ref<LuaEngine>(ConstructorToken{});
 
   self->m_state = lua_newstate(allocate, nullptr);
 
@@ -245,26 +248,26 @@ LuaEnginePtr LuaEngine::create(bool safe) {
   // Create the common message handler function for pcall to print a better
   // message with a traceback
   lua_pushcfunction(self->m_state, [](lua_State* state) {
-      // Don't modify the error if it is one of the special limit errrors
-      if (lua_islightuserdata(state, 1)) {
-        void* error = lua_touserdata(state, -1);
-        if (error == &s_luaInstructionLimitExceptionKey || error == &s_luaRecursionLimitExceptionKey)
-          return 1;
-      }
+    // Don't modify the error if it is one of the special limit errrors
+    if (lua_islightuserdata(state, 1)) {
+      void* error = lua_touserdata(state, -1);
+      if (error == &s_luaInstructionLimitExceptionKey || error == &s_luaRecursionLimitExceptionKey)
+        return 1;
+    }
 
-      luaL_traceback(state, state, lua_tostring(state, 1), 0);
-      lua_remove(state, 1);
-      return 1;
-    });
+    luaL_traceback(state, state, lua_tostring(state, 1), 0);
+    lua_remove(state, 1);
+    return 1;
+  });
   self->m_pcallTracebackMessageHandlerRegistryId = luaL_ref(self->m_state, LUA_REGISTRYINDEX);
 
   // Create the common metatable for wrapped functions
   lua_newtable(self->m_state);
   lua_pushcfunction(self->m_state, [](lua_State* state) {
-      auto func = static_cast<LuaDetail::LuaWrappedFunction*>(lua_touserdata(state, 1));
-      func->~function();
-      return 0;
-    });
+    auto func = static_cast<LuaDetail::LuaWrappedFunction*>(lua_touserdata(state, 1));
+    func->~function();
+    return 0;
+  });
   LuaDetail::rawSetField(self->m_state, -2, "__gc");
   lua_pushboolean(self->m_state, 0);
   LuaDetail::rawSetField(self->m_state, -2, "__metatable");
@@ -273,10 +276,10 @@ LuaEnginePtr LuaEngine::create(bool safe) {
   // Create the common metatable for require functions
   lua_newtable(self->m_state);
   lua_pushcfunction(self->m_state, [](lua_State* state) {
-      auto func = static_cast<LuaContext::RequireFunction*>(lua_touserdata(state, 1));
-      func->~function();
-      return 0;
-    });
+    auto func = static_cast<LuaContext::RequireFunction*>(lua_touserdata(state, 1));
+    func->~function();
+    return 0;
+  });
   LuaDetail::rawSetField(self->m_state, -2, "__gc");
   lua_pushboolean(self->m_state, 0);
   LuaDetail::rawSetField(self->m_state, -2, "__metatable");
@@ -287,26 +290,26 @@ LuaEnginePtr LuaEngine::create(bool safe) {
   luaL_requiref(self->m_state, "_ENV", luaopen_base, true);
   if (safe) {
     StringSet baseWhitelist = {
-        "assert",
-        "error",
-        "getmetatable",
-        "ipairs",
-        "next",
-        "pairs",
-        "pcall",
-        "print",
-        "rawequal",
-        "rawget",
-        "rawlen",
-        "rawset",
-        "select",
-        "setmetatable",
-        "tonumber",
-        "tostring",
-        "type",
-        "unpack",
-        "_VERSION",
-        "xpcall"};
+      "assert",
+      "error",
+      "getmetatable",
+      "ipairs",
+      "next",
+      "pairs",
+      "pcall",
+      "print",
+      "rawequal",
+      "rawget",
+      "rawlen",
+      "rawset",
+      "select",
+      "setmetatable",
+      "tonumber",
+      "tostring",
+      "type",
+      "unpack",
+      "_VERSION",
+      "xpcall"};
 
     lua_pushnil(self->m_state);
     while (lua_next(self->m_state, -2) != 0) {
@@ -552,9 +555,9 @@ LuaContext LuaEngine::createContext() {
   // Add loadstring
   auto handleIndex = context.handleIndex();
   context.set("loadstring", createFunction([this, handleIndex](String const& source, Maybe<String> const& name, Maybe<LuaTable> const& env) -> LuaFunction {
-    String functionName = name ? strf("loadstring: {}", *name) : "loadstring";
-    return createFunctionFromSource(env ? env->handleIndex() : handleIndex, source.utf8Ptr(), source.utf8Size(), functionName.utf8Ptr());
-  }));
+                String functionName = name ? strf("loadstring: {}", *name) : "loadstring";
+                return createFunctionFromSource(env ? env->handleIndex() : handleIndex, source.utf8Ptr(), source.utf8Size(), functionName.utf8Ptr());
+              }));
 
   // Then set that environment as the new context environment in the registry.
   return context;
@@ -758,10 +761,10 @@ int LuaEngine::coresumeWithTraceback(lua_State* state) {
 
 void LuaEngine::propagateErrorWithTraceback(lua_State* from, lua_State* to) {
   if (const char* error = lua_tostring(from, -1)) {
-    luaL_traceback(to, from, error, 0); // error + traceback
+    luaL_traceback(to, from, error, 0);// error + traceback
     lua_pop(from, 1);
   } else {
-    lua_xmove(from, to, 1); // just error, no traceback
+    lua_xmove(from, to, 1);// just error, no traceback
   }
 }
 
@@ -1229,54 +1232,54 @@ LuaValue LuaEngine::popLuaValue(lua_State* state) {
   LuaValue result;
   starAssert(!lua_isnone(state, -1));
   switch (lua_type(state, -1)) {
-    case LUA_TNIL: {
+  case LUA_TNIL: {
+    lua_pop(state, 1);
+    break;
+  }
+  case LUA_TBOOLEAN: {
+    result = lua_toboolean(state, -1) != 0;
+    lua_pop(state, 1);
+    break;
+  }
+  case LUA_TNUMBER: {
+    if (lua_isinteger(state, -1)) {
+      result = lua_tointeger(state, -1);
       lua_pop(state, 1);
-      break;
-    }
-    case LUA_TBOOLEAN: {
-      result = lua_toboolean(state, -1) != 0;
+    } else {
+      result = lua_tonumber(state, -1);
       lua_pop(state, 1);
-      break;
     }
-    case LUA_TNUMBER: {
-      if (lua_isinteger(state, -1)) {
-        result = lua_tointeger(state, -1);
-        lua_pop(state, 1);
-      } else {
-        result = lua_tonumber(state, -1);
-        lua_pop(state, 1);
-      }
-      break;
-    }
-    case LUA_TSTRING: {
-      result = LuaString(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(state)));
-      break;
-    }
-    case LUA_TTABLE: {
-      result = LuaTable(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(state)));
-      break;
-    }
-    case LUA_TFUNCTION: {
-      result = LuaFunction(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(state)));
-      break;
-    }
-    case LUA_TTHREAD: {
-      result = LuaThread(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(state)));
-      break;
-    }
-    case LUA_TUSERDATA: {
-      if (lua_getmetatable(state, -1) == 0) {
-        lua_pop(state, 1);
-        throw LuaException("Userdata in popLuaValue missing metatable");
-      }
+    break;
+  }
+  case LUA_TSTRING: {
+    result = LuaString(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(state)));
+    break;
+  }
+  case LUA_TTABLE: {
+    result = LuaTable(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(state)));
+    break;
+  }
+  case LUA_TFUNCTION: {
+    result = LuaFunction(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(state)));
+    break;
+  }
+  case LUA_TTHREAD: {
+    result = LuaThread(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(state)));
+    break;
+  }
+  case LUA_TUSERDATA: {
+    if (lua_getmetatable(state, -1) == 0) {
       lua_pop(state, 1);
-      result = LuaUserData(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(state)));
-      break;
+      throw LuaException("Userdata in popLuaValue missing metatable");
     }
-    default: {
-      lua_pop(state, 1);
-      throw LuaException("Unsupported type in popLuaValue");
-    }
+    lua_pop(state, 1);
+    result = LuaUserData(LuaDetail::LuaHandle(RefPtr<LuaEngine>(this), popHandle(state)));
+    break;
+  }
+  default: {
+    lua_pop(state, 1);
+    throw LuaException("Unsupported type in popLuaValue");
+  }
   }
 
   return result;
@@ -1432,32 +1435,32 @@ Maybe<Json> LuaDetail::tableToJsonContainer(LuaTable const& table) {
 
   bool failedConversion = false;
   table.iterate([&](LuaValue key, LuaValue value) {
-      auto jsonValue = table.engine().luaMaybeTo<Json>(value);
-      if (!jsonValue) {
+    auto jsonValue = table.engine().luaMaybeTo<Json>(value);
+    if (!jsonValue) {
+      failedConversion = true;
+      return false;
+    }
+
+    if (auto i = asInteger(key)) {
+      intEntries[*i] = jsonValue.take();
+    } else {
+      auto stringKey = table.engine().luaMaybeTo<String>(std::move(key));
+      if (!stringKey) {
         failedConversion = true;
         return false;
       }
 
-      if (auto i = asInteger(key)) {
-        intEntries[*i] = jsonValue.take();
-      } else {
-        auto stringKey = table.engine().luaMaybeTo<String>(std::move(key));
-        if (!stringKey) {
-          failedConversion = true;
-          return false;
-        }
+      stringEntries[stringKey.take()] = jsonValue.take();
+    }
 
-        stringEntries[stringKey.take()] = jsonValue.take();
-      }
-
-      return true;
-    });
+    return true;
+  });
 
   if (failedConversion)
     return {};
 
   bool interpretAsList = stringEntries.empty()
-      && (typeHint == 1 || (typeHint != 2 && !intEntries.empty() && prev(intEntries.end())->first == intEntries.size()));
+    && (typeHint == 1 || (typeHint != 2 && !intEntries.empty() && prev(intEntries.end())->first == intEntries.size()));
   if (interpretAsList) {
     JsonArray list;
     for (auto& p : intEntries)
@@ -1495,7 +1498,6 @@ LuaTable LuaDetail::jobject(LuaEngine& engine, Maybe<LuaTable> table) {
     return jsonContainerToTable(engine, JsonObject());
   }
 }
-
 
 void LuaDetail::jcontRemove(LuaTable const& table, LuaValue const& key) {
   if (auto mt = table.getMetatable()) {
@@ -1578,4 +1580,4 @@ Maybe<LuaInt> LuaDetail::asInteger(LuaValue const& v) {
   return {};
 }
 
-}
+}// namespace Star

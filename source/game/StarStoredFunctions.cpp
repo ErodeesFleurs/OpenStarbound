@@ -1,5 +1,6 @@
 #include "StarStoredFunctions.hpp"
 #include "StarAlgorithm.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -233,8 +234,7 @@ ParametricFunction<double, double> FunctionDatabase::parametricFunctionFromConfi
 ParametricTable<int, Json> FunctionDatabase::parametricTableFromConfig(Json descriptor) {
   try {
     List<pair<int, Json>> points;
-    for (size_t i = 0; i < descriptor.size(); ++i) {
-      auto pointPair = descriptor.get(i);
+    for (auto pointPair : descriptor.iterateArray()) {
       if (pointPair.size() != 2)
         throw StoredFunctionException("Each point must be a list of size 2");
       points.append({pointPair.getInt(0), pointPair.get(1)});
@@ -257,12 +257,13 @@ MultiTable2D FunctionDatabase::multiTable2DFromConfig(Json descriptor) {
 
     auto grid = descriptor.getArray(2);
 
-    for (size_t y = 0; y < grid.size(); ++y) {
-      auto row = grid[y].toArray();
+    for (auto rowAndY : enumerateIterator(grid)) {
+      size_t y = rowAndY.second;
+      auto row = rowAndY.first.toArray();
       if (y == 0) {
-        for (size_t x = 0; x < row.size(); ++x) {
-          if (x > 0)
-            xaxis.append(row[x].toFloat());
+        for (auto headerAndX : enumerateIterator(row)) {
+          if (headerAndX.second > 0)
+            xaxis.append(headerAndX.first.toFloat());
         }
         points.resize({row.size() - 1, grid.size() - 1});
       } else {
@@ -270,8 +271,8 @@ MultiTable2D FunctionDatabase::multiTable2DFromConfig(Json descriptor) {
         auto cells = row[1].toArray();
         if (cells.size() != xaxis.size())
           throw StarException("Number of sample points doesn't match axis size.");
-        for (size_t x = 0; x < cells.size(); x++)
-          points.set({x, y - 1}, cells[x].toFloat());
+        for (auto cellAndX : enumerateIterator(cells))
+          points.set({cellAndX.second, y - 1}, cellAndX.first.toFloat());
       }
     }
 

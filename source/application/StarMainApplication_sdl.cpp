@@ -1,26 +1,26 @@
-#include "StarMainApplication.hpp"
 #include "StarAlgorithm.hpp"
 #include "StarException.hpp"
-#include "StarLogging.hpp"
-#include "StarSignalHandler.hpp"
-#include "StarTickRateMonitor.hpp"
-#include "StarRenderer_opengl.hpp"
-#include "StarTtlCache.hpp"
 #include "StarImage.hpp"
 #include "StarImageProcessing.hpp"
+#include "StarLogging.hpp"
+#include "StarMainApplication.hpp"
+#include "StarRenderer_opengl.hpp"
+#include "StarSignalHandler.hpp"
+#include "StarTickRateMonitor.hpp"
+#include "StarTtlCache.hpp"
 
 #include "SDL3/SDL.h"
 #include "StarPlatformServices_pc.hpp"
 
 #ifdef STAR_SYSTEM_WINDOWS
+#include <ShlObj_core.h>
 #include <dwmapi.h>
 #include <objidl.h>
-#include <ShlObj_core.h>
 #endif
 
 #include "imgui.h"
-#include "imgui_impl_sdl3.h"
 #include "imgui_impl_opengl3.h"
+#include "imgui_impl_sdl3.h"
 
 namespace Star {
 
@@ -36,9 +36,9 @@ static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned 
   hV5.bV5Planes = 1;
   hV5.bV5BitCount = 32;
   hV5.bV5Compression = BI_RGB;
-  hV5.bV5RedMask   = 0x00FF0000;
+  hV5.bV5RedMask = 0x00FF0000;
   hV5.bV5GreenMask = 0x0000FF00;
-  hV5.bV5BlueMask  = 0x000000FF;
+  hV5.bV5BlueMask = 0x000000FF;
   hV5.bV5AlphaMask = 0xFF000000;
   hV5.bV5CSType = LCS_WINDOWS_COLOR_SPACE;
   hV5.bV5Intent = LCS_GM_GRAPHICS;
@@ -50,9 +50,9 @@ static bool copyDibToClipboard(const uint8_t* buf, unsigned int width, unsigned 
       auto* rgba = reinterpret_cast<unsigned int*>(dst + sizeof(hV5));
       for (unsigned int x = 0; x != sizeI; ++x) {
         unsigned int c = data[x];
-        unsigned int v = c & 0xFF00FF00; // a and g
-        v |= c << 16 & 0x00FF0000;       // r
-        v |= c >> 16 & 0x000000FF;       // b
+        unsigned int v = c & 0xFF00FF00;// a and g
+        v |= c << 16 & 0x00FF0000;      // r
+        v |= c >> 16 & 0x000000FF;      // b
         rgba[x] = v;
       }
       GlobalUnlock(handle);
@@ -252,136 +252,135 @@ Maybe<Key> keyFromSdlKeyCode(SDL_Keycode sym) {
     {SDLK_SYSREQ, Key::SysReq},
     {SDLK_PAUSE, Key::Pause},
     {SDLK_MENU, Key::Menu},
-    {SDLK_POWER, Key::Power}
-  };
+    {SDLK_POWER, Key::Power}};
 
   return KeyCodeMap.maybe(sym);
 }
 
 Maybe<Key> keyFromSdlScancode(SDL_Scancode scancode) {
   static HashMap<int, Key> ScanCodeMap{
-  {SDL_SCANCODE_A, Key::A},
-  {SDL_SCANCODE_B, Key::B},
-  {SDL_SCANCODE_C, Key::C},
-  {SDL_SCANCODE_D, Key::D},
-  {SDL_SCANCODE_E, Key::E},
-  {SDL_SCANCODE_F, Key::F},
-  {SDL_SCANCODE_G, Key::G},
-  {SDL_SCANCODE_H, Key::H},
-  {SDL_SCANCODE_I, Key::I},
-  {SDL_SCANCODE_J, Key::J},
-  {SDL_SCANCODE_K, Key::K},
-  {SDL_SCANCODE_L, Key::L},
-  {SDL_SCANCODE_M, Key::M},
-  {SDL_SCANCODE_N, Key::N},
-  {SDL_SCANCODE_O, Key::O},
-  {SDL_SCANCODE_P, Key::P},
-  {SDL_SCANCODE_Q, Key::Q},
-  {SDL_SCANCODE_R, Key::R},
-  {SDL_SCANCODE_S, Key::S},
-  {SDL_SCANCODE_T, Key::T},
-  {SDL_SCANCODE_U, Key::U},
-  {SDL_SCANCODE_V, Key::V},
-  {SDL_SCANCODE_W, Key::W},
-  {SDL_SCANCODE_X, Key::X},
-  {SDL_SCANCODE_Y, Key::Y},
-  {SDL_SCANCODE_Z, Key::Z},
-  {SDL_SCANCODE_0, Key::Zero},
-  {SDL_SCANCODE_1, Key::One},
-  {SDL_SCANCODE_2, Key::Two},
-  {SDL_SCANCODE_3, Key::Three},
-  {SDL_SCANCODE_4, Key::Four},
-  {SDL_SCANCODE_5, Key::Five},
-  {SDL_SCANCODE_6, Key::Six},
-  {SDL_SCANCODE_7, Key::Seven},
-  {SDL_SCANCODE_8, Key::Eight},
-  {SDL_SCANCODE_9, Key::Nine},
-  {SDL_SCANCODE_MINUS, Key::Minus},
-  {SDL_SCANCODE_EQUALS, Key::Equals},
-  {SDL_SCANCODE_LEFTBRACKET, Key::LeftBracket},
-  {SDL_SCANCODE_RIGHTBRACKET, Key::RightBracket},
-  {SDL_SCANCODE_BACKSLASH, Key::Backslash},
-  {SDL_SCANCODE_SEMICOLON, Key::Semicolon},
-  {SDL_SCANCODE_APOSTROPHE, Key::Quote},
-  {SDL_SCANCODE_GRAVE, Key::Backquote},
-  {SDL_SCANCODE_COMMA, Key::Comma},
-  {SDL_SCANCODE_PERIOD, Key::Period},
-  {SDL_SCANCODE_SLASH, Key::Slash},
-  {SDL_SCANCODE_BACKSPACE, Key::Backspace},
-  {SDL_SCANCODE_TAB, Key::Tab},
-  {SDL_SCANCODE_RETURN, Key::Return},
-  {SDL_SCANCODE_ESCAPE, Key::Escape},
-  {SDL_SCANCODE_SPACE, Key::Space},
-  {SDL_SCANCODE_DELETE, Key::Delete},
-  {SDL_SCANCODE_INSERT, Key::Insert},
-  {SDL_SCANCODE_HOME, Key::Home},
-  {SDL_SCANCODE_END, Key::End},
-  {SDL_SCANCODE_PAGEUP, Key::PageUp},
-  {SDL_SCANCODE_PAGEDOWN, Key::PageDown},
-  {SDL_SCANCODE_UP, Key::Up},
-  {SDL_SCANCODE_DOWN, Key::Down},
-  {SDL_SCANCODE_LEFT, Key::Left},
-  {SDL_SCANCODE_RIGHT, Key::Right},
-  {SDL_SCANCODE_F1, Key::F1},
-  {SDL_SCANCODE_F2, Key::F2},
-  {SDL_SCANCODE_F3, Key::F3},
-  {SDL_SCANCODE_F4, Key::F4},
-  {SDL_SCANCODE_F5, Key::F5},
-  {SDL_SCANCODE_F6, Key::F6},
-  {SDL_SCANCODE_F7, Key::F7},
-  {SDL_SCANCODE_F8, Key::F8},
-  {SDL_SCANCODE_F9, Key::F9},
-  {SDL_SCANCODE_F10, Key::F10},
-  {SDL_SCANCODE_F11, Key::F11},
-  {SDL_SCANCODE_F12, Key::F12},
-  {SDL_SCANCODE_F13, Key::F13},
-  {SDL_SCANCODE_F14, Key::F14},
-  {SDL_SCANCODE_F15, Key::F15},
-  {SDL_SCANCODE_F16, Key::F16},
-  {SDL_SCANCODE_F17, Key::F17},
-  {SDL_SCANCODE_F18, Key::F18},
-  {SDL_SCANCODE_F19, Key::F19},
-  {SDL_SCANCODE_F20, Key::F20},
-  {SDL_SCANCODE_F21, Key::F21},
-  {SDL_SCANCODE_F22, Key::F22},
-  {SDL_SCANCODE_F23, Key::F23},
-  {SDL_SCANCODE_F24, Key::F24},
-  {SDL_SCANCODE_KP_0, Key::Keypad0},
-  {SDL_SCANCODE_KP_1, Key::Keypad1},
-  {SDL_SCANCODE_KP_2, Key::Keypad2},
-  {SDL_SCANCODE_KP_3, Key::Keypad3},
-  {SDL_SCANCODE_KP_4, Key::Keypad4},
-  {SDL_SCANCODE_KP_5, Key::Keypad5},
-  {SDL_SCANCODE_KP_6, Key::Keypad6},
-  {SDL_SCANCODE_KP_7, Key::Keypad7},
-  {SDL_SCANCODE_KP_8, Key::Keypad8},
-  {SDL_SCANCODE_KP_9, Key::Keypad9},
-  {SDL_SCANCODE_KP_PERIOD, Key::KeypadPeriod},
-  {SDL_SCANCODE_KP_DIVIDE, Key::KeypadDivide},
-  {SDL_SCANCODE_KP_MULTIPLY, Key::KeypadMultiply},
-  {SDL_SCANCODE_KP_MINUS, Key::KeypadMinus},
-  {SDL_SCANCODE_KP_PLUS, Key::KeypadPlus},
-  {SDL_SCANCODE_KP_ENTER, Key::KeypadEnter},
-  {SDL_SCANCODE_KP_EQUALS, Key::KeypadEquals},
-  {SDL_SCANCODE_LCTRL, Key::LCtrl},
-  {SDL_SCANCODE_RCTRL, Key::RCtrl},
-  {SDL_SCANCODE_LSHIFT, Key::LShift},
-  {SDL_SCANCODE_RSHIFT, Key::RShift},
-  {SDL_SCANCODE_LALT, Key::LAlt},
-  {SDL_SCANCODE_RALT, Key::RAlt},
-  {SDL_SCANCODE_LGUI, Key::LGui},
-  {SDL_SCANCODE_RGUI, Key::RGui},
-  {SDL_SCANCODE_MODE, Key::AltGr},
-  {SDL_SCANCODE_CAPSLOCK, Key::CapsLock},
-  {SDL_SCANCODE_NUMLOCKCLEAR, Key::NumLock},
-  {SDL_SCANCODE_SCROLLLOCK, Key::ScrollLock},
-  {SDL_SCANCODE_PRINTSCREEN, Key::PrintScreen},
-  {SDL_SCANCODE_PAUSE, Key::Pause},
-  {SDL_SCANCODE_MENU, Key::Menu},
-  {SDL_SCANCODE_APPLICATION, Key::Compose},
-  {SDL_SCANCODE_POWER, Key::Power},
-  {SDL_SCANCODE_HELP, Key::Help},
-  {SDL_SCANCODE_SYSREQ, Key::SysReq},
+    {SDL_SCANCODE_A, Key::A},
+    {SDL_SCANCODE_B, Key::B},
+    {SDL_SCANCODE_C, Key::C},
+    {SDL_SCANCODE_D, Key::D},
+    {SDL_SCANCODE_E, Key::E},
+    {SDL_SCANCODE_F, Key::F},
+    {SDL_SCANCODE_G, Key::G},
+    {SDL_SCANCODE_H, Key::H},
+    {SDL_SCANCODE_I, Key::I},
+    {SDL_SCANCODE_J, Key::J},
+    {SDL_SCANCODE_K, Key::K},
+    {SDL_SCANCODE_L, Key::L},
+    {SDL_SCANCODE_M, Key::M},
+    {SDL_SCANCODE_N, Key::N},
+    {SDL_SCANCODE_O, Key::O},
+    {SDL_SCANCODE_P, Key::P},
+    {SDL_SCANCODE_Q, Key::Q},
+    {SDL_SCANCODE_R, Key::R},
+    {SDL_SCANCODE_S, Key::S},
+    {SDL_SCANCODE_T, Key::T},
+    {SDL_SCANCODE_U, Key::U},
+    {SDL_SCANCODE_V, Key::V},
+    {SDL_SCANCODE_W, Key::W},
+    {SDL_SCANCODE_X, Key::X},
+    {SDL_SCANCODE_Y, Key::Y},
+    {SDL_SCANCODE_Z, Key::Z},
+    {SDL_SCANCODE_0, Key::Zero},
+    {SDL_SCANCODE_1, Key::One},
+    {SDL_SCANCODE_2, Key::Two},
+    {SDL_SCANCODE_3, Key::Three},
+    {SDL_SCANCODE_4, Key::Four},
+    {SDL_SCANCODE_5, Key::Five},
+    {SDL_SCANCODE_6, Key::Six},
+    {SDL_SCANCODE_7, Key::Seven},
+    {SDL_SCANCODE_8, Key::Eight},
+    {SDL_SCANCODE_9, Key::Nine},
+    {SDL_SCANCODE_MINUS, Key::Minus},
+    {SDL_SCANCODE_EQUALS, Key::Equals},
+    {SDL_SCANCODE_LEFTBRACKET, Key::LeftBracket},
+    {SDL_SCANCODE_RIGHTBRACKET, Key::RightBracket},
+    {SDL_SCANCODE_BACKSLASH, Key::Backslash},
+    {SDL_SCANCODE_SEMICOLON, Key::Semicolon},
+    {SDL_SCANCODE_APOSTROPHE, Key::Quote},
+    {SDL_SCANCODE_GRAVE, Key::Backquote},
+    {SDL_SCANCODE_COMMA, Key::Comma},
+    {SDL_SCANCODE_PERIOD, Key::Period},
+    {SDL_SCANCODE_SLASH, Key::Slash},
+    {SDL_SCANCODE_BACKSPACE, Key::Backspace},
+    {SDL_SCANCODE_TAB, Key::Tab},
+    {SDL_SCANCODE_RETURN, Key::Return},
+    {SDL_SCANCODE_ESCAPE, Key::Escape},
+    {SDL_SCANCODE_SPACE, Key::Space},
+    {SDL_SCANCODE_DELETE, Key::Delete},
+    {SDL_SCANCODE_INSERT, Key::Insert},
+    {SDL_SCANCODE_HOME, Key::Home},
+    {SDL_SCANCODE_END, Key::End},
+    {SDL_SCANCODE_PAGEUP, Key::PageUp},
+    {SDL_SCANCODE_PAGEDOWN, Key::PageDown},
+    {SDL_SCANCODE_UP, Key::Up},
+    {SDL_SCANCODE_DOWN, Key::Down},
+    {SDL_SCANCODE_LEFT, Key::Left},
+    {SDL_SCANCODE_RIGHT, Key::Right},
+    {SDL_SCANCODE_F1, Key::F1},
+    {SDL_SCANCODE_F2, Key::F2},
+    {SDL_SCANCODE_F3, Key::F3},
+    {SDL_SCANCODE_F4, Key::F4},
+    {SDL_SCANCODE_F5, Key::F5},
+    {SDL_SCANCODE_F6, Key::F6},
+    {SDL_SCANCODE_F7, Key::F7},
+    {SDL_SCANCODE_F8, Key::F8},
+    {SDL_SCANCODE_F9, Key::F9},
+    {SDL_SCANCODE_F10, Key::F10},
+    {SDL_SCANCODE_F11, Key::F11},
+    {SDL_SCANCODE_F12, Key::F12},
+    {SDL_SCANCODE_F13, Key::F13},
+    {SDL_SCANCODE_F14, Key::F14},
+    {SDL_SCANCODE_F15, Key::F15},
+    {SDL_SCANCODE_F16, Key::F16},
+    {SDL_SCANCODE_F17, Key::F17},
+    {SDL_SCANCODE_F18, Key::F18},
+    {SDL_SCANCODE_F19, Key::F19},
+    {SDL_SCANCODE_F20, Key::F20},
+    {SDL_SCANCODE_F21, Key::F21},
+    {SDL_SCANCODE_F22, Key::F22},
+    {SDL_SCANCODE_F23, Key::F23},
+    {SDL_SCANCODE_F24, Key::F24},
+    {SDL_SCANCODE_KP_0, Key::Keypad0},
+    {SDL_SCANCODE_KP_1, Key::Keypad1},
+    {SDL_SCANCODE_KP_2, Key::Keypad2},
+    {SDL_SCANCODE_KP_3, Key::Keypad3},
+    {SDL_SCANCODE_KP_4, Key::Keypad4},
+    {SDL_SCANCODE_KP_5, Key::Keypad5},
+    {SDL_SCANCODE_KP_6, Key::Keypad6},
+    {SDL_SCANCODE_KP_7, Key::Keypad7},
+    {SDL_SCANCODE_KP_8, Key::Keypad8},
+    {SDL_SCANCODE_KP_9, Key::Keypad9},
+    {SDL_SCANCODE_KP_PERIOD, Key::KeypadPeriod},
+    {SDL_SCANCODE_KP_DIVIDE, Key::KeypadDivide},
+    {SDL_SCANCODE_KP_MULTIPLY, Key::KeypadMultiply},
+    {SDL_SCANCODE_KP_MINUS, Key::KeypadMinus},
+    {SDL_SCANCODE_KP_PLUS, Key::KeypadPlus},
+    {SDL_SCANCODE_KP_ENTER, Key::KeypadEnter},
+    {SDL_SCANCODE_KP_EQUALS, Key::KeypadEquals},
+    {SDL_SCANCODE_LCTRL, Key::LCtrl},
+    {SDL_SCANCODE_RCTRL, Key::RCtrl},
+    {SDL_SCANCODE_LSHIFT, Key::LShift},
+    {SDL_SCANCODE_RSHIFT, Key::RShift},
+    {SDL_SCANCODE_LALT, Key::LAlt},
+    {SDL_SCANCODE_RALT, Key::RAlt},
+    {SDL_SCANCODE_LGUI, Key::LGui},
+    {SDL_SCANCODE_RGUI, Key::RGui},
+    {SDL_SCANCODE_MODE, Key::AltGr},
+    {SDL_SCANCODE_CAPSLOCK, Key::CapsLock},
+    {SDL_SCANCODE_NUMLOCKCLEAR, Key::NumLock},
+    {SDL_SCANCODE_SCROLLLOCK, Key::ScrollLock},
+    {SDL_SCANCODE_PRINTSCREEN, Key::PrintScreen},
+    {SDL_SCANCODE_PAUSE, Key::Pause},
+    {SDL_SCANCODE_MENU, Key::Menu},
+    {SDL_SCANCODE_APPLICATION, Key::Compose},
+    {SDL_SCANCODE_POWER, Key::Power},
+    {SDL_SCANCODE_HELP, Key::Help},
+    {SDL_SCANCODE_SYSREQ, Key::SysReq},
   };
 
   return ScanCodeMap.maybe(scancode);
@@ -393,50 +392,50 @@ KeyMod keyModsFromSdlKeyMods(uint16_t mod) {
 
 MouseButton mouseButtonFromSdlMouseButton(uint8_t button) {
   switch (button) {
-    case SDL_BUTTON_LEFT: return MouseButton::Left;
-    case SDL_BUTTON_MIDDLE: return MouseButton::Middle;
-    case SDL_BUTTON_RIGHT: return MouseButton::Right;
-    case SDL_BUTTON_X1: return MouseButton::FourthButton;
-    default: return MouseButton::FifthButton;
+  case SDL_BUTTON_LEFT: return MouseButton::Left;
+  case SDL_BUTTON_MIDDLE: return MouseButton::Middle;
+  case SDL_BUTTON_RIGHT: return MouseButton::Right;
+  case SDL_BUTTON_X1: return MouseButton::FourthButton;
+  default: return MouseButton::FifthButton;
   }
 }
 
 ControllerAxis controllerAxisFromSdlControllerAxis(uint8_t axis) {
   switch (axis) {
-    case SDL_GAMEPAD_AXIS_LEFTX : return ControllerAxis::LeftX;
-    case SDL_GAMEPAD_AXIS_LEFTY : return ControllerAxis::LeftY;
-    case SDL_GAMEPAD_AXIS_RIGHTX : return ControllerAxis::RightX;
-    case SDL_GAMEPAD_AXIS_RIGHTY : return ControllerAxis::RightY;
-    case SDL_GAMEPAD_AXIS_LEFT_TRIGGER : return ControllerAxis::TriggerLeft;
-    case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER : return ControllerAxis::TriggerRight;
-    default: return ControllerAxis::Invalid;
+  case SDL_GAMEPAD_AXIS_LEFTX: return ControllerAxis::LeftX;
+  case SDL_GAMEPAD_AXIS_LEFTY: return ControllerAxis::LeftY;
+  case SDL_GAMEPAD_AXIS_RIGHTX: return ControllerAxis::RightX;
+  case SDL_GAMEPAD_AXIS_RIGHTY: return ControllerAxis::RightY;
+  case SDL_GAMEPAD_AXIS_LEFT_TRIGGER: return ControllerAxis::TriggerLeft;
+  case SDL_GAMEPAD_AXIS_RIGHT_TRIGGER: return ControllerAxis::TriggerRight;
+  default: return ControllerAxis::Invalid;
   }
 }
 
 ControllerButton controllerButtonFromSdlControllerButton(uint8_t button) {
   switch (button) {
-    case SDL_GAMEPAD_BUTTON_SOUTH : return ControllerButton::A;
-    case SDL_GAMEPAD_BUTTON_EAST : return ControllerButton::B;
-    case SDL_GAMEPAD_BUTTON_WEST : return ControllerButton::X;
-    case SDL_GAMEPAD_BUTTON_NORTH : return ControllerButton::Y;
-    case SDL_GAMEPAD_BUTTON_BACK : return ControllerButton::Back;
-    case SDL_GAMEPAD_BUTTON_GUIDE : return ControllerButton::Guide;
-    case SDL_GAMEPAD_BUTTON_START : return ControllerButton::Start;
-    case SDL_GAMEPAD_BUTTON_LEFT_STICK : return ControllerButton::LeftStick;
-    case SDL_GAMEPAD_BUTTON_RIGHT_STICK : return ControllerButton::RightStick;
-    case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER : return ControllerButton::LeftShoulder;
-    case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER : return ControllerButton::RightShoulder;
-    case SDL_GAMEPAD_BUTTON_DPAD_UP : return ControllerButton::DPadUp;
-    case SDL_GAMEPAD_BUTTON_DPAD_DOWN : return ControllerButton::DPadDown;
-    case SDL_GAMEPAD_BUTTON_DPAD_LEFT : return ControllerButton::DPadLeft;
-    case SDL_GAMEPAD_BUTTON_DPAD_RIGHT : return ControllerButton::DPadRight;
-    case SDL_GAMEPAD_BUTTON_MISC1 : return ControllerButton::Misc1;
-    case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1 : return ControllerButton::Paddle1;
-    case SDL_GAMEPAD_BUTTON_LEFT_PADDLE1 : return ControllerButton::Paddle2;
-    case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2 : return ControllerButton::Paddle3;
-    case SDL_GAMEPAD_BUTTON_LEFT_PADDLE2 : return ControllerButton::Paddle4;
-    case SDL_GAMEPAD_BUTTON_TOUCHPAD : return ControllerButton::Touchpad;
-    default: return ControllerButton::Invalid;
+  case SDL_GAMEPAD_BUTTON_SOUTH: return ControllerButton::A;
+  case SDL_GAMEPAD_BUTTON_EAST: return ControllerButton::B;
+  case SDL_GAMEPAD_BUTTON_WEST: return ControllerButton::X;
+  case SDL_GAMEPAD_BUTTON_NORTH: return ControllerButton::Y;
+  case SDL_GAMEPAD_BUTTON_BACK: return ControllerButton::Back;
+  case SDL_GAMEPAD_BUTTON_GUIDE: return ControllerButton::Guide;
+  case SDL_GAMEPAD_BUTTON_START: return ControllerButton::Start;
+  case SDL_GAMEPAD_BUTTON_LEFT_STICK: return ControllerButton::LeftStick;
+  case SDL_GAMEPAD_BUTTON_RIGHT_STICK: return ControllerButton::RightStick;
+  case SDL_GAMEPAD_BUTTON_LEFT_SHOULDER: return ControllerButton::LeftShoulder;
+  case SDL_GAMEPAD_BUTTON_RIGHT_SHOULDER: return ControllerButton::RightShoulder;
+  case SDL_GAMEPAD_BUTTON_DPAD_UP: return ControllerButton::DPadUp;
+  case SDL_GAMEPAD_BUTTON_DPAD_DOWN: return ControllerButton::DPadDown;
+  case SDL_GAMEPAD_BUTTON_DPAD_LEFT: return ControllerButton::DPadLeft;
+  case SDL_GAMEPAD_BUTTON_DPAD_RIGHT: return ControllerButton::DPadRight;
+  case SDL_GAMEPAD_BUTTON_MISC1: return ControllerButton::Misc1;
+  case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE1: return ControllerButton::Paddle1;
+  case SDL_GAMEPAD_BUTTON_LEFT_PADDLE1: return ControllerButton::Paddle2;
+  case SDL_GAMEPAD_BUTTON_RIGHT_PADDLE2: return ControllerButton::Paddle3;
+  case SDL_GAMEPAD_BUTTON_LEFT_PADDLE2: return ControllerButton::Paddle4;
+  case SDL_GAMEPAD_BUTTON_TOUCHPAD: return ControllerButton::Touchpad;
+  default: return ControllerButton::Invalid;
   }
 }
 
@@ -451,12 +450,12 @@ public:
 
     StringList platformArguments;
     eraseWhere(cmdLineArgs, [&platformArguments](String& argument) {
-        if (argument.beginsWith("+platform")) {
-          platformArguments.append(std::move(argument));
-          return true;
-        }
-        return false;
-      });
+      if (argument.beginsWith("+platform")) {
+        platformArguments.append(std::move(argument));
+        return true;
+      }
+      return false;
+    });
 
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING, "OpenStarbound");
     SDL_SetAppMetadataProperty(SDL_PROP_APP_METADATA_IDENTIFIER_STRING, "io.github.openstarbound.openstarbound");
@@ -483,7 +482,7 @@ public:
 #ifdef STAR_SYSTEM_LINUX
     SDL_SetHint(SDL_HINT_VIDEO_WAYLAND_SCALE_TO_DISPLAY, "1");
 #endif
-    
+
     Logger::info("Application: Initializing SDL Video");
     if (!SDL_InitSubSystem(SDL_INIT_VIDEO))
       throw ApplicationException(strf("Couldn't initialize SDL Video: {}", SDL_GetError()));
@@ -516,11 +515,11 @@ public:
 #endif
     if (!m_sdlWindow)
       throw ApplicationException::format("Application: Could not create SDL Window: {}", SDL_GetError());
-    
+
 #ifndef STAR_SYSTEM_MACOS
     m_displayScale = SDL_GetWindowDisplayScale(m_sdlWindow);
 #endif
-    
+
 #ifdef STAR_SYSTEM_LINUX
     if (File::isFile(".icon/openstarbound.png")) {
       auto device = File::open(".icon/openstarbound.png", IOMode::Read);
@@ -530,9 +529,8 @@ public:
         Image conv = img.convert(PixelFormat::RGBA32);
 
         Image flipped = processImageOperations(
-          List<ImageOperation>{ FlipImageOperation{ FlipImageOperation::Mode::FlipY } },
-          conv
-        );
+          List<ImageOperation>{FlipImageOperation{FlipImageOperation::Mode::FlipY}},
+          conv);
 
         SDL_PixelFormat sdlFmt = static_cast<SDL_PixelFormat>(SDL_PIXELFORMAT_ABGR8888);
 
@@ -540,17 +538,17 @@ public:
         int h = static_cast<int>(flipped.height());
         int pitch = static_cast<int>(flipped.bytesPerPixel() * flipped.width());
 
-        SDL_Surface* iconSurface = SDL_CreateSurfaceFrom(
-          w,
-          h,
-          sdlFmt,
-          static_cast<void*>(flipped.data()),
-          pitch
-        );
+        std::unique_ptr<SDL_Surface, decltype(&SDL_DestroySurface)> iconSurface{
+          SDL_CreateSurfaceFrom(
+            w,
+            h,
+            sdlFmt,
+            static_cast<void*>(flipped.data()),
+            pitch),
+          SDL_DestroySurface};
 
         if (iconSurface) {
-          SDL_SetWindowIcon(m_sdlWindow, iconSurface);
-          SDL_DestroySurface(iconSurface);
+          SDL_SetWindowIcon(m_sdlWindow, iconSurface.get());
         } else {
           Logger::warn("Could not create SDL surface for icon '{}': {}", ".icon/openstarbound.png", SDL_GetError());
         }
@@ -584,7 +582,7 @@ public:
 #if defined(__APPLE__)
     // GL 3.2 Core + GLSL 150
     const char* glsl_version = "#version 150";
-    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG); // Always required on Mac
+    SDL_GL_SetAttribute(SDL_GL_CONTEXT_FLAGS, SDL_GL_CONTEXT_FORWARD_COMPATIBLE_FLAG);// Always required on Mac
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MAJOR_VERSION, 3);
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
@@ -618,15 +616,13 @@ public:
     Logger::info("Application: Opening audio device");
     m_audioOutputData.clear();
     SDL_AudioSpec desired = {SDL_AUDIO_S16, 2, 44100};
-    m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired,
-    [](void* userdata, SDL_AudioStream* stream, int len, int) {
+    m_sdlAudioOutputStream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &desired, [](void* userdata, SDL_AudioStream* stream, int len, int) {
       if (len > 0) {
         auto sdlPlatform = static_cast<SdlPlatform*>(userdata);
         sdlPlatform->m_audioOutputData.resize(len);
         sdlPlatform->getAudioData(sdlPlatform->m_audioOutputData.data(), len);
         SDL_PutAudioStreamData(stream, sdlPlatform->m_audioOutputData.data(), len);
-      }
-    }, this);
+      } }, this);
     if (!m_sdlAudioOutputStream) {
       Logger::error("Application: Could not open audio device, no sound available!");
     } else {
@@ -651,7 +647,6 @@ public:
 
     ImGui_ImplSDL3_InitForOpenGL(m_sdlWindow, m_sdlGlContext);
     ImGui_ImplOpenGL3_Init(glsl_version);
-
   }
 
   ~SdlPlatform() {
@@ -679,31 +674,28 @@ public:
     closeAudioInputDevice();
     m_audioInputCallback = requireServiceValueAs<StarException>(std::move(callback), "SdlPlatform", "audio input callback");
     SDL_AudioSpec desired = {SDL_AUDIO_S16, channels, freq};
-    m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired,
-    [](void* userdata, SDL_AudioStream* stream, int len, int) {
+    m_sdlAudioInputStream = SDL_OpenAudioDeviceStream(deviceId, &desired, [](void* userdata, SDL_AudioStream* stream, int len, int) {
       if (len > 0) {
         auto sdlPlatform = static_cast<SdlPlatform*>(userdata);
         sdlPlatform->m_audioInputData.resize(len);
         SDL_GetAudioStreamData(stream, sdlPlatform->m_audioInputData.data(), len);
         sdlPlatform->m_audioInputCallback(sdlPlatform->m_audioInputData.data(), len);
-      }
-    }, this);
+      } }, this);
 
     if (m_sdlAudioInputStream) {
-        Logger::info("Opened audio input device '{}'", SDL_GetAudioDeviceName(SDL_GetAudioStreamDevice(m_sdlAudioInputStream)));
+      Logger::info("Opened audio input device '{}'", SDL_GetAudioDeviceName(SDL_GetAudioStreamDevice(m_sdlAudioInputStream)));
       SDL_ResumeAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioInputStream));
-    }
-    else
+    } else
       Logger::info("Failed to open audio input device: {}", SDL_GetError());
 
-    return m_sdlAudioInputStream != 0;
+    return m_sdlAudioInputStream != nullptr;
   }
 
   bool closeAudioInputDevice() {
     if (m_sdlAudioInputStream) {
       Logger::info("Closing audio input device");
       SDL_CloseAudioDevice(SDL_GetAudioStreamDevice(m_sdlAudioInputStream));
-      m_sdlAudioInputStream = 0;
+      m_sdlAudioInputStream = nullptr;
       return true;
     }
     return false;
@@ -731,7 +723,6 @@ public:
       while (true) {
         cleanup();
 
-
         for (auto const& event : processEvents())
           m_application->processInput(event);
 
@@ -742,7 +733,6 @@ public:
           SDL_ShowCursor();
         else
           SDL_HideCursor();
-
 
         ImGui_ImplOpenGL3_NewFrame();
         ImGui_ImplSDL3_NewFrame();
@@ -810,7 +800,7 @@ public:
 private:
   struct Controller : public ApplicationController {
     Controller(SdlPlatform* parent)
-      : parent(parent) {}
+        : parent(parent) {}
 
     bool hasClipboard() override {
       return SDL_HasClipboardText();
@@ -941,14 +931,14 @@ private:
 
         if (auto displayMode = SDL_GetDesktopDisplayMode(SDL_GetDisplayForWindow(parent->m_sdlWindow))) {
           parent->m_windowSize = {static_cast<unsigned>(displayMode->w), static_cast<unsigned>(displayMode->h)};
-          #ifdef STAR_SYSTEM_WINDOWS
-          if (m_borderlessWorkaround) { // breaks brightness on some setups god what the fuck fuck microsoft fuck nvidia
+#ifdef STAR_SYSTEM_WINDOWS
+          if (m_borderlessWorkaround) {// breaks brightness on some setups god what the fuck fuck microsoft fuck nvidia
             auto handle = static_cast<HWND>(SDL_GetPointerProperty(SDL_GetWindowProperties(parent->m_sdlWindow), SDL_PROP_WINDOW_WIN32_HWND_POINTER, nullptr));
             SetWindowLongPtr(handle, GWL_STYLE, WS_OVERLAPPED);
             SetWindowLongPtr(handle, GWL_EXSTYLE, WS_EX_APPWINDOW);
             SetWindowPos(handle, HWND_TOP, 0, 0, displayMode->w, displayMode->h, SWP_FRAMECHANGED | SWP_NOOWNERZORDER | SWP_SHOWWINDOW);
-          } // fuck everything dude it's all so fucked. everything is so fucked
-          #endif
+          }// fuck everything dude it's all so fucked. everything is so fucked
+#endif
           SDL_SetWindowPosition(parent->m_sdlWindow, 0, 0);
           SDL_SetWindowSize(parent->m_sdlWindow, parent->m_windowSize[0], parent->m_windowSize[1]);
           parent->m_renderer->setScreenSize(parent->m_windowSize);
@@ -959,12 +949,12 @@ private:
       }
     }
 
-    #ifdef STAR_SYSTEM_WINDOWS
+#ifdef STAR_SYSTEM_WINDOWS
     bool m_borderlessWorkaround = false;
     void setBorderlessWorkaround(bool enabled) override {
       m_borderlessWorkaround = enabled;
     }
-    #endif
+#endif
 
     void setVSyncEnabled(bool vSync) override {
       if (parent->m_windowVSync != vSync) {
@@ -1012,8 +1002,7 @@ private:
         RectI& r = area->first;
         SDL_Rect rect{
           r.xMin(), static_cast<int>(parent->m_windowSize.y()) - r.yMax(),
-          r.width(), r.height()
-        };
+          r.width(), r.height()};
         SDL_SetTextInputArea(parent->m_sdlWindow, &rect, area->second);
       } else {
         SDL_SetTextInputArea(parent->m_sdlWindow, nullptr, 0);
@@ -1047,9 +1036,9 @@ private:
       return parent->m_renderRate;
     }
 
-  float getDisplayScale() const override {
-    return parent->m_displayScale;
-  }
+    float getDisplayScale() const override {
+      return parent->m_displayScale;
+    }
 
     StatisticsServicePtr statisticsService() const override {
       if (parent->m_platformServices)
@@ -1136,23 +1125,22 @@ private:
           {event.motion.x, static_cast<int>(m_windowSize[1]) - event.motion.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_DOWN && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonDownEvent{mouseButtonFromSdlMouseButton(event.button.button),
-          {event.button.x, static_cast<int>(m_windowSize[1]) - event.button.y}});
+                                           {event.button.x, static_cast<int>(m_windowSize[1]) - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_BUTTON_UP && !io.WantCaptureMouse) {
         starEvent.set(MouseButtonUpEvent{mouseButtonFromSdlMouseButton(event.button.button),
-          {event.button.x, static_cast<int>(m_windowSize[1]) - event.button.y}});
+                                         {event.button.x, static_cast<int>(m_windowSize[1]) - event.button.y}});
       } else if (event.type == SDL_EVENT_MOUSE_WHEEL && !io.WantCaptureMouse) {
         starEvent.set(MouseWheelEvent{event.wheel.y < 0 ? MouseWheel::Down : MouseWheel::Up,
-          {event.wheel.mouse_x, static_cast<int>(m_windowSize[1]) - event.wheel.mouse_y}});
+                                      {event.wheel.mouse_x, static_cast<int>(m_windowSize[1]) - event.wheel.mouse_y}});
       } else if (event.type == SDL_EVENT_GAMEPAD_AXIS_MOTION) {
         starEvent.set(ControllerAxisEvent{
           static_cast<ControllerId>(event.gaxis.which),
           controllerAxisFromSdlControllerAxis(event.gaxis.axis),
-          static_cast<float>(event.gaxis.value) / 32768.0f
-        });
+          static_cast<float>(event.gaxis.value) / 32768.0f});
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_DOWN) {
-        starEvent.set(ControllerButtonDownEvent{ static_cast<ControllerId>(event.gbutton.which), controllerButtonFromSdlControllerButton(event.gbutton.button) });
+        starEvent.set(ControllerButtonDownEvent{static_cast<ControllerId>(event.gbutton.which), controllerButtonFromSdlControllerButton(event.gbutton.button)});
       } else if (event.type == SDL_EVENT_GAMEPAD_BUTTON_UP) {
-        starEvent.set(ControllerButtonUpEvent{ static_cast<ControllerId>(event.gbutton.which), controllerButtonFromSdlControllerButton(event.gbutton.button) });
+        starEvent.set(ControllerButtonUpEvent{static_cast<ControllerId>(event.gbutton.which), controllerButtonFromSdlControllerButton(event.gbutton.button)});
       } else if (event.type == SDL_EVENT_GAMEPAD_ADDED) {
         auto insertion = m_SdlControllers.insert_or_assign(event.gdevice.which, SDLGameControllerUPtr(SDL_OpenGamepad(event.gdevice.which), SDL_CloseGamepad));
         if (SDL_Gamepad* controller = insertion.first->second.get())
@@ -1211,50 +1199,47 @@ private:
       return m_cursorVisible = false;
     }
 
-    auto& entry = m_cursorCache.get(m_currentCursor = { scale, offset, id }, [&](auto const&) {
+    auto& entry = m_cursorCache.get(m_currentCursor = {scale, offset, id}, [&](auto const&) {
       auto entry = std::make_shared<CursorEntry>();
       List<ImageOperation> operations;
       if (scale != 1)
         operations = {
-          FlipImageOperation{ FlipImageOperation::Mode::FlipY }, // SDL wants an Australian cursor.
-          BorderImageOperation{ 1, Vec4B(), Vec4B(), false, false }, // Nearest scaling fucks up and clips half off the edges, work around this with border+crop for now.
-          ScaleImageOperation{ ScaleImageOperation::Mode::Nearest, Vec2F::filled(scale) },
-          CropImageOperation{ RectI::withSize(Vec2I::filled(ceilf(static_cast<float>(scale) / 2)), Vec2I(imageSize)) }
-        };
+          FlipImageOperation{FlipImageOperation::Mode::FlipY},    // SDL wants an Australian cursor.
+          BorderImageOperation{1, Vec4B(), Vec4B(), false, false},// Nearest scaling fucks up and clips half off the edges, work around this with border+crop for now.
+          ScaleImageOperation{ScaleImageOperation::Mode::Nearest, Vec2F::filled(scale)},
+          CropImageOperation{RectI::withSize(Vec2I::filled(ceilf(static_cast<float>(scale) / 2)), Vec2I(imageSize))}};
       else
-        operations = { FlipImageOperation{ FlipImageOperation::Mode::FlipY } };
+        operations = {FlipImageOperation{FlipImageOperation::Mode::FlipY}};
 
       auto newImage = std::make_shared<Image>(processImageOperations(operations, *image));
       // Fix fully transparent pixels inverting the underlying display pixel on Windows (allowing this could be made configurable per cursor later!)
       newImage->forEachPixel([](unsigned /*x*/, unsigned /*y*/, Vec4B& pixel) { if (!pixel[3]) pixel[0] = pixel[1] = pixel[2] = 0; });
       entry->image = std::move(newImage);
 
-
       auto size = entry->image->size();
       SDL_PixelFormat pixelFormat;
       switch (entry->image->pixelFormat()) {
-        case PixelFormat::RGB24: // I know this conversion looks wrong, but it's correct. I'm confused too.
-          pixelFormat = SDL_PIXELFORMAT_XBGR8888;
-          break;
-        case PixelFormat::RGBA32:
-          pixelFormat = SDL_PIXELFORMAT_ABGR8888;
-          break;
-        case PixelFormat::BGR24:
-          pixelFormat = SDL_PIXELFORMAT_XRGB8888;
-          break;
-        case PixelFormat::BGRA32:
-          pixelFormat = SDL_PIXELFORMAT_ARGB8888;
-          break;
-        default:
-          pixelFormat = SDL_PIXELFORMAT_UNKNOWN;
+      case PixelFormat::RGB24:// I know this conversion looks wrong, but it's correct. I'm confused too.
+        pixelFormat = SDL_PIXELFORMAT_XBGR8888;
+        break;
+      case PixelFormat::RGBA32:
+        pixelFormat = SDL_PIXELFORMAT_ABGR8888;
+        break;
+      case PixelFormat::BGR24:
+        pixelFormat = SDL_PIXELFORMAT_XRGB8888;
+        break;
+      case PixelFormat::BGRA32:
+        pixelFormat = SDL_PIXELFORMAT_ARGB8888;
+        break;
+      default:
+        pixelFormat = SDL_PIXELFORMAT_UNKNOWN;
       }
 
       entry->sdlSurface.reset(SDL_CreateSurfaceFrom(
         size[0], size[1],
         pixelFormat,
         const_cast<uint8_t*>(entry->image->data()),
-        entry->image->bytesPerPixel() * size[0])
-      );
+        entry->image->bytesPerPixel() * size[0]));
       entry->sdlCursor.reset(SDL_CreateColorCursor(entry->sdlSurface.get(), offset[0] * scale, offset[1] * scale));
 
       return entry;
@@ -1287,7 +1272,7 @@ private:
   }
 
   bool setClipboardImage(Image const& image, ByteArray* png, String const* path) {
-    #ifdef STAR_SYSTEM_WINDOWS // wow, SDL3's implementation is so bad!!
+#ifdef STAR_SYSTEM_WINDOWS// wow, SDL3's implementation is so bad!!
     return duringClipboard(m_sdlWindow, [&]() {
       if (path)
         copyFileToClipboard(*path);
@@ -1295,7 +1280,7 @@ private:
       auto converted = image.convert(PixelFormat::RGBA32);
       copyDibToClipboard(converted.data(), converted.width(), converted.height());
     });
-    #else
+#else
     static_cast<void>(image);
     static_cast<void>(path);
     if (png) {
@@ -1303,18 +1288,18 @@ private:
       return setClipboardData(std::move(clipboardData));
     }
     return false;
-    #endif
+#endif
   }
 
   bool setClipboardFile(String const& path) {
-    #ifdef STAR_SYSTEM_WINDOWS
+#ifdef STAR_SYSTEM_WINDOWS
     return duringClipboard(m_sdlWindow, [&]() {
       return copyFileToClipboard(path);
     });
-    #else
+#else
     static_cast<void>(path);
     return false;
-    #endif
+#endif
   }
 
   SignalHandler m_signalHandler;
@@ -1326,8 +1311,8 @@ private:
 
   SDL_Window* m_sdlWindow = nullptr;
   SDL_GLContext m_sdlGlContext = nullptr;
-  SDL_AudioStream* m_sdlAudioOutputStream = 0;
-  SDL_AudioStream* m_sdlAudioInputStream = 0;
+  SDL_AudioStream* m_sdlAudioOutputStream = nullptr;
+  SDL_AudioStream* m_sdlAudioInputStream = nullptr;
   AudioCallback m_audioInputCallback;
   std::vector<uint8_t> m_audioInputData;
   std::vector<uint8_t> m_audioOutputData;
@@ -1387,4 +1372,4 @@ int runMainApplication(UniquePtr<Application> application, StringList cmdLineArg
   return 1;
 }
 
-}
+}// namespace Star

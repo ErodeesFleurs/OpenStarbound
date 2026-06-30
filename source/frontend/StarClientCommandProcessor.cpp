@@ -401,7 +401,7 @@ String ClientCommandProcessor::makeTechAvailable(String const& argumentsString) 
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  if (arguments.size() == 0)
+  if (arguments.empty())
     return "Not enough arguments to /maketechavailable";
 
   m_universeClient->mainPlayer()->techs()->makeAvailable(arguments.at(0));
@@ -413,7 +413,7 @@ String ClientCommandProcessor::enableTech(String const& argumentsString) {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  if (arguments.size() == 0)
+  if (arguments.empty())
     return "Not enough arguments to /enabletech";
 
   m_universeClient->mainPlayer()->techs()->makeAvailable(arguments.at(0));
@@ -426,7 +426,7 @@ String ClientCommandProcessor::upgradeShip(String const& argumentsString) {
   if (!adminCommandAllowed())
     return "You must be an admin to use this command.";
 
-  if (arguments.size() == 0)
+  if (arguments.empty())
     return "Not enough arguments to /upgradeship";
 
   auto shipUpgrades = Json::parseJson(arguments.at(0));
@@ -437,7 +437,7 @@ String ClientCommandProcessor::upgradeShip(String const& argumentsString) {
 String ClientCommandProcessor::swap(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
 
-  if (arguments.size() == 0) {
+  if (arguments.empty()) {
     m_paneManager.displayRegisteredPane(MainInterfacePanes::CharacterSwap);
     return "";
   }
@@ -452,7 +452,7 @@ String ClientCommandProcessor::respawnInWorld(String const& argumentsString) {
   auto arguments = m_parser.tokenizeToStringList(argumentsString);
   auto worldClient = m_universeClient->worldClient();
   
-  if (arguments.size() == 0)
+  if (arguments.empty())
     return strf("Respawn in this world is currently {}", worldClient->respawnInWorld() ? "true" : "false");
 
   bool respawnInWorld = Json::parse(arguments.at(0)).toBool();

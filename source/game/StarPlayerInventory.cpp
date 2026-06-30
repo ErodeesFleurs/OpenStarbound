@@ -11,6 +11,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarPlayer.hpp"
 #include "StarAlgorithm.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -1019,7 +1020,7 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
     auto whitelistedTags = filterConfig.getArray("tagWhitelist").filtered([itemTags](Json const& tag) {
         return itemTags.contains(tag.toString());
       });
-    if (whitelistedTags.size() == 0)
+    if (whitelistedTags.empty())
       return false;
   }
 
@@ -1027,7 +1028,7 @@ bool PlayerInventory::checkInventoryFilter(ItemPtr const& items, String const& f
     auto blacklistedTags = filterConfig.getArray("tagBlacklist").filtered([itemTags](Json const& tag) {
         return itemTags.contains(tag.toString());
       });
-    if (blacklistedTags.size() > 0)
+    if (!blacklistedTags.empty())
       return false;
   }
 
@@ -1101,8 +1102,8 @@ void PlayerInventory::netElementsNeedLoad(bool) {
   };
 
   auto deserializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<ItemPtr>& itemList) {
-    for (size_t i = 0; i < netStatesList.size(); ++i)
-      deserializeItem(netStatesList[i], itemList[i]);
+    for (auto [netState, item] : zipIterator(netStatesList, itemList))
+      deserializeItem(netState, item);
   };
 
   auto deserializeItemMap = [&](auto& netStatesMap, auto& itemMap) {
@@ -1140,8 +1141,8 @@ void PlayerInventory::netElementsNeedStore() {
   };
 
   auto serializeItemList = [&](List<NetElementData<ItemDescriptor>>& netStatesList, List<ItemPtr>& itemList) {
-    for (size_t i = 0; i < netStatesList.size(); ++i)
-      serializeItem(netStatesList[i], itemList[i]);
+    for (auto [netState, item] : zipIterator(netStatesList, itemList))
+      serializeItem(netState, item);
   };
 
   auto serializeItemMap = [&](auto& netStatesMap, auto& itemMap) {

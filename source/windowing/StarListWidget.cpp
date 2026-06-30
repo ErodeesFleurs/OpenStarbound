@@ -2,6 +2,7 @@
 #include "StarGuiReader.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarRandom.hpp"
+#include "StarPythonic.hpp"
 #include "StarImageWidget.hpp"
 #include "StarAssets.hpp"
 
@@ -230,14 +231,11 @@ size_t ListWidget::selectedItem() const {
 }
 
 size_t ListWidget::itemPosition(WidgetPtr item) const {
-  size_t offset = NPos;
-  for (size_t i = 0; i < m_members.size(); ++i) {
-    if (m_members[i] == item) {
-      offset = i;
-      break;
-    }
+  for (auto const& memberAndIndex : enumerateIterator(m_members)) {
+    if (memberAndIndex.first == item)
+      return memberAndIndex.second;
   }
-  return offset;
+  return NPos;
 }
 
 WidgetPtr ListWidget::itemAt(size_t n) const {

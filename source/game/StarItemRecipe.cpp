@@ -23,7 +23,7 @@ Json ItemRecipe::toJson() const {
 }
 
 bool ItemRecipe::isNull() const {
-  return currencyInputs.size() == 0 && inputs.size() == 0 && output.isNull();
+  return currencyInputs.empty() && inputs.empty() && output.isNull();
 }
 
 bool ItemRecipe::operator==(ItemRecipe const& rhs) const {

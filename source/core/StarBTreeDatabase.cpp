@@ -385,7 +385,7 @@ void BTreeDatabase::IndexNode::shiftLeft(ByteArray const& mid, IndexNode& right,
   pointers.insert(pointers.end(), right.pointers.begin(), s);
 
   right.pointers.erase(right.pointers.begin(), s);
-  if (right.pointers.size() != 0) {
+  if (!right.pointers.empty()) {
     right.beginPointer = right.pointers.at(0).pointer;
     right.pointers.eraseAt(0);
   } else {
@@ -407,7 +407,7 @@ void BTreeDatabase::IndexNode::shiftRight(ByteArray const& mid, IndexNode& left,
   pointers.insert(pointers.begin(), s, left.pointers.end());
 
   left.pointers.erase(s, left.pointers.end());
-  if (left.pointers.size() != 0) {
+  if (!left.pointers.empty()) {
     beginPointer = left.pointers.at(left.pointers.size() - 1).pointer;
     left.pointers.eraseAt(left.pointers.size() - 1);
   } else {

@@ -1,16 +1,16 @@
 #pragma once
 
 #include "StarColor.hpp"
+#include "StarDirectives.hpp"
 #include "StarFont.hpp"
 #include "StarRenderer.hpp"
-#include "StarDirectives.hpp"
 
 namespace Star {
 
 class FontTextureGroup {
 public:
   // Font* is only included for key uniqueness and should not be dereferenced
-  typedef tuple<String::Char, unsigned, size_t, Font*> GlyphDescriptor;
+  using GlyphDescriptor = tuple<String::Char, unsigned, size_t, Font*>;
 
   struct GlyphTexture {
     TexturePtr texture;
@@ -37,6 +37,7 @@ public:
   void addFont(FontPtr const& font, String const& name);
   void clearFonts();
   void setFixedFonts(String const& defaultFontName, String const& fallbackFontName, String const& emojiFontName);
+
 private:
   Font* getFontForCharacter(String::Char);
 
@@ -51,4 +52,4 @@ private:
   HashMap<GlyphDescriptor, GlyphTexture> m_glyphs;
 };
 
-}
+}// namespace Star

@@ -1,11 +1,11 @@
 #pragma once
 
-#include "StarThread.hpp"
 #include "StarApplication.hpp"
-#include "StarStatisticsService.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarUserGeneratedContentService.hpp"
 #include "StarDesktopService.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarStatisticsService.hpp"
+#include "StarThread.hpp"
+#include "StarUserGeneratedContentService.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
 #include "steam/steam_api.h"
@@ -39,7 +39,7 @@ struct PcPlatformServicesState {
   Mutex discordMutex;
 
   unique_ptr<discord::Core> discordCore;
-  
+
   Maybe<discord::User> discordCurrentUser;
   ThreadFunction<void> discordEventThread;
   atomic<bool> discordEventShutdown;
@@ -48,12 +48,15 @@ struct PcPlatformServicesState {
   bool overlayActive = false;
 };
 
-
 class PcPlatformServices {
+  struct ConstructorToken {};
+
 public:
   // Any command line arguments that start with '+platform' will be stripped
   // out and passed here
   static UniquePtr<PcPlatformServices> create(String const& path, StringList platformArguments);
+
+  explicit PcPlatformServices(ConstructorToken) {}
 
   StatisticsServicePtr statisticsService() const;
   P2PNetworkingServicePtr p2pNetworkingService() const;
@@ -68,8 +71,6 @@ public:
   void update();
 
 private:
-  PcPlatformServices() = default;
-
   PcPlatformServicesStatePtr m_state;
 
   StatisticsServicePtr m_statisticsService;
@@ -78,4 +79,4 @@ private:
   DesktopServicePtr m_desktopService;
 };
 
-}
+}// namespace Star

@@ -1475,11 +1475,11 @@ Map<Vec2I, float> WorldGenerator::determineLiquidLevel(Set<Vec2I> const& spots, 
 
   auto geometry = m_worldServer.geometry();
 
-  while (openSet.size() > 0) {
+  while (!openSet.empty()) {
     Set<Vec2I> cluster;
     Set<Vec2I> openCluster;
     openCluster.add(*(openSet.begin()));
-    while (openCluster.size() > 0) {
+    while (!openCluster.empty()) {
       Vec2I node = *(openCluster.begin());
       openCluster.remove(node);
       if (openSet.contains(node)) {

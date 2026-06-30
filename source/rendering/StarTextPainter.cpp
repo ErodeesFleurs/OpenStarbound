@@ -8,8 +8,8 @@ namespace Star {
 TextPositioning::TextPositioning() = default;
 
 TextPositioning::TextPositioning(Vec2F pos, HorizontalAnchor hAnchor, VerticalAnchor vAnchor,
-    Maybe<unsigned> wrapWidth, Maybe<unsigned> charLimit)
-  : pos(pos), hAnchor(hAnchor), vAnchor(vAnchor), wrapWidth(wrapWidth), charLimit(charLimit) {}
+                                 Maybe<unsigned> wrapWidth, Maybe<unsigned> charLimit)
+    : pos(pos), hAnchor(hAnchor), vAnchor(vAnchor), wrapWidth(wrapWidth), charLimit(charLimit) {}
 
 TextPositioning::TextPositioning(Json const& v) {
   pos = v.opt("position").apply(jsonToVec2F).value();
@@ -24,8 +24,7 @@ Json TextPositioning::toJson() const {
     {"position", jsonFromVec2F(pos)},
     {"horizontalAnchor", HorizontalAnchorNames.getRight(hAnchor)},
     {"verticalAnchor", VerticalAnchorNames.getRight(vAnchor)},
-    {"wrapWidth", jsonFromMaybe(wrapWidth)}
-  };
+    {"wrapWidth", jsonFromMaybe(wrapWidth)}};
 }
 
 TextPositioning TextPositioning::translated(Vec2F translation) const {
@@ -33,13 +32,13 @@ TextPositioning TextPositioning::translated(Vec2F translation) const {
 }
 
 TextPainter::TextPainter(RendererPtr renderer, TextureGroupPtr textureGroup, AssetsConstPtr assets, function<void(ListenerWeakPtr)> registerReloadListener)
-  : m_renderer(renderer),
-    m_assets(requireServiceValueAs<StarException>(std::move(assets), "TextPainter", "assets")),
-    m_registerReloadListener(requireServiceValueAs<StarException>(std::move(registerReloadListener), "TextPainter", "reload listener registrar")),
-    m_fontTextureGroup(textureGroup),
-    m_defaultRenderSettings(),
-    m_renderSettings(),
-    m_savedRenderSettings() {
+    : m_renderer(renderer),
+      m_assets(requireServiceValueAs<StarException>(std::move(assets), "TextPainter", "assets")),
+      m_registerReloadListener(requireServiceValueAs<StarException>(std::move(registerReloadListener), "TextPainter", "reload listener registrar")),
+      m_fontTextureGroup(textureGroup),
+      m_defaultRenderSettings(),
+      m_renderSettings(),
+      m_savedRenderSettings() {
   reloadFonts();
   m_reloadTracker = make_shared<TrackerListener>();
   m_registerReloadListener(m_reloadTracker);
@@ -145,13 +144,13 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
 
   while (iterator != end) {
     auto character = *iterator;
-    finished = false; // assume at least one character if we get here
+    finished = false;// assume at least one character if we get here
     bool noMoreCommands = commandStart != NPos && commandEnd == NPos;
     if (!noMoreCommands && Text::isEscapeCode(character)) {
       size_t index = &*iterator.base() - text.utf8Ptr();
       if (commandStart == NPos) {
         for (size_t escOrEnd = commandStart = index;
-        (escOrEnd = text.utf8().find_first_of(Text::AllEscEnd, escOrEnd + 1)) != NPos;) {
+             (escOrEnd = text.utf8().find_first_of(Text::AllEscEnd, escOrEnd + 1)) != NPos;) {
           if (text.utf8().at(escOrEnd) != Text::EndEsc)
             commandStart = escOrEnd;
           else {
@@ -213,7 +212,7 @@ bool TextPainter::processWrapText(StringView text, unsigned* wrapWidth, WrapText
           if (!textFunc(slice(lineStartIterator, iterator), lines++))
             return false;
           // include that character on the next line
-          lineStartIterator = iterator;  
+          lineStartIterator = iterator;
           linePixelWidth = characterWidth;
           finished = false;
         }
@@ -366,8 +365,8 @@ void TextPainter::applyCommands(StringView unsplitCommands) {
         c.setAlphaF(c.alphaF() * (static_cast<float>(m_savedRenderSettings.color[3])) / 255);
         m_renderSettings.color = c.toRgba();
       }
-    } catch (JsonException&) {
-    } catch (ColorException&) {
+    } catch (JsonException const&) {
+    } catch (ColorException const&) {
     }
   });
 }
@@ -398,7 +397,7 @@ RectF TextPainter::doRenderText(StringView s, TextPositioning const& position, b
 
   RectF bounds = RectF::withSize(pos, Vec2F());
   for (auto& i : lines) {
-    bounds.combine(doRenderLine(i, { pos, position.hAnchor, position.vAnchor }, reallyRender, charLimit));
+    bounds.combine(doRenderLine(i, {pos, position.hAnchor, position.vAnchor}, reallyRender, charLimit));
     pos[1] -= m_renderSettings.fontSize * m_renderSettings.lineSpacing;
 
     if (charLimit && *charLimit == 0)
@@ -415,7 +414,6 @@ RectF TextPainter::doRenderLine(StringView text, TextPositioning const& position
   if (m_reloadTracker->pullTriggered())
     reloadFonts();
   TextPositioning pos = position;
-
 
   if (pos.hAnchor == HorizontalAnchor::RightAnchor) {
     StringView trimmedString = charLimit ? text.substr(0, *charLimit) : text;
@@ -486,8 +484,7 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
       if (alphaU != 255) {
         float alpha = byteToFloat(alphaU);
         shadow[3] = floatToByte(alpha * (1.5f - 0.5f * alpha));
-      }
-      else
+      } else
         shadow[3] = alphaU;
 
       Directives const* shadowDirectives = hasBackDirectives ? &m_renderSettings.backDirectives : directives;
@@ -496,7 +493,7 @@ RectF TextPainter::doRenderGlyph(String::Char c, TextPositioning const& position
     if (hasBackDirectives)
       renderGlyph(c, pos, m_backPrimitives, m_renderSettings.fontSize, 1, m_renderSettings.color, &m_renderSettings.backDirectives);
 
-    auto& output = (hasShadow || hasBackDirectives) ? m_frontPrimitives : m_renderer->immediatePrimitives(); 
+    auto& output = (hasShadow || hasBackDirectives) ? m_frontPrimitives : m_renderer->immediatePrimitives();
     renderGlyph(c, pos, output, m_renderSettings.fontSize, 1, m_renderSettings.color, directives);
   }
 
@@ -514,7 +511,7 @@ void TextPainter::renderPrimitives() {
 }
 
 void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, List<RenderPrimitive>& out, unsigned fontSize,
-    float scale, Vec4B color, Directives const* processingDirectives) {
+                              float scale, Vec4B color, Directives const* processingDirectives) {
   if (!fontSize)
     return;
 
@@ -522,7 +519,7 @@ void TextPainter::renderGlyph(String::Char c, Vec2F const& screenPos, List<Rende
   if (glyphTexture.colored)
     color[0] = color[1] = color[2] = 255;
   out.emplace_back(std::in_place_type_t<RenderQuad>(),
-    glyphTexture.texture, Vec2F::round(screenPos + glyphTexture.offset * scale), scale, color, 0.0f);
+                   glyphTexture.texture, Vec2F::round(screenPos + glyphTexture.offset * scale), scale, color, 0.0f);
 }
 
 FontPtr TextPainter::loadFont(String const& fontPath, Maybe<String> fontName) {
@@ -537,4 +534,4 @@ FontPtr TextPainter::loadFont(String const& fontPath, Maybe<String> fontName) {
   }
   return font;
 }
-}
+}// namespace Star

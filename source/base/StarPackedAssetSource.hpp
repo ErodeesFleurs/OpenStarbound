@@ -1,14 +1,14 @@
 #pragma once
 
-#include "StarOrderedMap.hpp"
-#include "StarFile.hpp"
 #include "StarDirectoryAssetSource.hpp"
+#include "StarFile.hpp"
+#include "StarOrderedMap.hpp"
 
 namespace Star {
 
 class PackedAssetSource : public AssetSource {
 public:
-  typedef function<void(size_t, size_t, String, String)> BuildProgressCallback;
+  using BuildProgressCallback = function<void(size_t, size_t, String, String)>;
 
   // Build a packed asset file from the given DirectoryAssetSource.
   //
@@ -21,7 +21,7 @@ public:
   // If given, 'progressCallback' will be called with the total number of
   // files, the current file number, the file name, and the asset path.
   static void build(DirectoryAssetSource& directorySource, String const& targetPackedFile,
-      StringList const& extensionSorting = {}, BuildProgressCallback progressCallback = {});
+                    StringList const& extensionSorting = {}, BuildProgressCallback progressCallback = {});
 
   PackedAssetSource(String const& packedFileName);
 
@@ -37,4 +37,4 @@ private:
   OrderedHashMap<String, pair<uint64_t, uint64_t>> m_index;
 };
 
-}
+}// namespace Star

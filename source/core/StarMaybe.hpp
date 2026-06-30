@@ -5,11 +5,14 @@
 
 #include <memory>
 #include <new>
+#include <optional>
 #include <type_traits>
 
 namespace Star {
 
-struct InvalidMaybeAccessExceptionTag { static constexpr char const* typeName = "InvalidMaybeAccessException"; };
+struct InvalidMaybeAccessExceptionTag {
+  static constexpr char const* typeName = "InvalidMaybeAccessException";
+};
 using InvalidMaybeAccessException = TypedException<StarException, InvalidMaybeAccessExceptionTag>;
 
 template <typename T>
@@ -24,6 +27,7 @@ public:
 
   Maybe(T const& t);
   Maybe(T&& t);
+  Maybe(std::nullopt_t);
 
   Maybe(Maybe const& rhs);
   Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>);
@@ -34,8 +38,12 @@ public:
 
   Maybe& operator=(Maybe const& rhs);
   Maybe& operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>);
+  Maybe& operator=(std::nullopt_t);
   template <typename T2>
   Maybe& operator=(Maybe<T2> const& rhs);
+
+  [[nodiscard]] static Maybe fromOptional(std::optional<T> const& t);
+  [[nodiscard]] static Maybe fromOptional(std::optional<T>&& t);
 
   [[nodiscard]] bool isValid() const;
   [[nodiscard]] bool isNothing() const;
@@ -56,6 +64,9 @@ public:
 
   RefConstType get() const;
   RefType get();
+
+  [[nodiscard]] std::optional<T> optional() const&;
+  [[nodiscard]] std::optional<T> optional() &&;
 
   // Get either the contents of this Maybe or the given default.
   T value(T def = T()) const;
@@ -113,21 +124,25 @@ Maybe<T>::Maybe() {}
 
 template <typename T>
 Maybe<T>::Maybe(T const& t)
-  : Maybe() {
+    : Maybe() {
   std::construct_at(&m_data, t);
   m_initialized = true;
 }
 
 template <typename T>
 Maybe<T>::Maybe(T&& t)
-  : Maybe() {
+    : Maybe() {
   std::construct_at(&m_data, std::forward<T>(t));
   m_initialized = true;
 }
 
 template <typename T>
+Maybe<T>::Maybe(std::nullopt_t)
+    : Maybe() {}
+
+template <typename T>
 Maybe<T>::Maybe(Maybe const& rhs)
-  : Maybe() {
+    : Maybe() {
   if (rhs.m_initialized) {
     std::construct_at(&m_data, rhs.get());
     m_initialized = true;
@@ -135,9 +150,8 @@ Maybe<T>::Maybe(Maybe const& rhs)
 }
 
 template <typename T>
-Maybe<T>::Maybe(Maybe&& rhs)
-  noexcept(std::is_nothrow_move_constructible_v<T>)
-  : Maybe() {
+Maybe<T>::Maybe(Maybe&& rhs) noexcept(std::is_nothrow_move_constructible_v<T>)
+    : Maybe() {
   if (rhs.m_initialized) {
     std::construct_at(&m_data, std::move(*rhs.ptr()));
     m_initialized = true;
@@ -148,7 +162,7 @@ Maybe<T>::Maybe(Maybe&& rhs)
 template <typename T>
 template <typename T2>
 Maybe<T>::Maybe(Maybe<T2> const& rhs)
-  : Maybe() {
+    : Maybe() {
   if (rhs) {
     std::construct_at(&m_data, *rhs);
     m_initialized = true;
@@ -198,6 +212,26 @@ Maybe<T>& Maybe<T>::operator=(Maybe&& rhs) noexcept(std::is_nothrow_move_constru
 }
 
 template <typename T>
+Maybe<T>& Maybe<T>::operator=(std::nullopt_t) {
+  reset();
+  return *this;
+}
+
+template <typename T>
+Maybe<T> Maybe<T>::fromOptional(std::optional<T> const& t) {
+  if (t)
+    return Maybe(*t);
+  return {};
+}
+
+template <typename T>
+Maybe<T> Maybe<T>::fromOptional(std::optional<T>&& t) {
+  if (t)
+    return Maybe(std::move(*t));
+  return {};
+}
+
+template <typename T>
 bool Maybe<T>::isValid() const {
   return m_initialized;
 }
@@ -227,7 +261,7 @@ auto Maybe<T>::ptr() -> PointerType {
 }
 
 template <typename T>
-auto Maybe<T>::operator-> () const -> PointerConstType {
+auto Maybe<T>::operator->() const -> PointerConstType {
   if (!m_initialized)
     throw InvalidMaybeAccessException();
 
@@ -289,6 +323,20 @@ auto Maybe<T>::get() -> RefType {
     throw InvalidMaybeAccessException();
 
   return *ptr();
+}
+
+template <typename T>
+[[nodiscard]] std::optional<T> Maybe<T>::optional() const& {
+  if (m_initialized)
+    return *ptr();
+  return std::nullopt;
+}
+
+template <typename T>
+[[nodiscard]] std::optional<T> Maybe<T>::optional() && {
+  if (m_initialized)
+    return take();
+  return std::nullopt;
 }
 
 template <typename T>
@@ -362,7 +410,7 @@ void Maybe<T>::reset() {
 template <typename T>
 template <typename Function>
 [[nodiscard]] auto Maybe<T>::apply(Function&& function) const
-    -> Maybe<std::decay_t<decltype(function(std::declval<T>()))>> {
+  -> Maybe<std::decay_t<decltype(function(std::declval<T>()))>> {
   if (!isValid())
     return {};
   return function(get());
@@ -399,7 +447,7 @@ size_t hash<Maybe<T>>::operator()(Maybe<T> const& m) const {
     return hasher(*m);
 }
 
-}
+}// namespace Star
 
 template <typename T>
 struct std::formatter<Star::Maybe<T>> : Star::OstreamFormatter {};

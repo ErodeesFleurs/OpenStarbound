@@ -8,7 +8,9 @@ namespace Star {
 class IODevice;
 using IODevicePtr = SharedPtr<IODevice>;
 
-struct EofExceptionTag { static constexpr char const* typeName = "EofException"; };
+struct EofExceptionTag {
+  static constexpr char const* typeName = "EofException";
+};
 using EofException = TypedException<IOException, EofExceptionTag>;
 
 enum class IOMode : uint8_t {
@@ -83,8 +85,8 @@ public:
   virtual String deviceName() const;
 
   // Is the file position at the end of the file and there is no more to read?
-  // This is not the same as feof, which returns true after an unsuccesful read
-  // past the end, it should return true after succesfully reading the final
+  // This is not the same as feof, which returns true after an unsuccessful read
+  // past the end, it should return true after successfully reading the final
   // byte.  Default implementation returns pos() >= size();
   virtual bool atEnd();
 
@@ -136,4 +138,4 @@ inline bool IODevice::isWritable() const {
   return m_mode & IOMode::Write;
 }
 
-}
+}// namespace Star

@@ -16,6 +16,7 @@
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarParticleDatabase.hpp"
+#include "StarPythonic.hpp"
 #include "StarRoot.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
@@ -34,8 +35,8 @@ Object::Object(ObjectConfigConstPtr config, Json const& parameters)
   if (jOrientations && jOrientations->isType(Json::Type::Array)) {
     JsonArray base = m_config->config.get("orientations").toArray();
     auto orientations = jOrientations->toArray();
-    for (size_t i = 0; i != orientations.size(); ++i)
-      base.set(i, jsonMergeNulling(base.get(i), orientations.get(i)));
+    for (auto const& orientationAndIndex : enumerateIterator(orientations))
+      base.set(orientationAndIndex.second, jsonMergeNulling(base.get(orientationAndIndex.second), orientationAndIndex.first));
     m_orientations = ObjectDatabase::parseOrientations(m_config->assets, m_config->materialDatabase, m_config->imageMetadataDatabase, m_config->path, base, m_config->config);
   }
 
@@ -443,7 +444,7 @@ void Object::render(RenderCallback* renderCallback) {
   renderCallback->addAudios(m_networkedAnimatorDynamicTarget.pullNewAudios());
   renderCallback->addParticles(m_networkedAnimatorDynamicTarget.pullNewParticles());
 
-  if (m_networkedAnimator->constParts().size() > 0) {
+  if (!m_networkedAnimator->constParts().empty()) {
     renderCallback->addDrawables(m_networkedAnimator->drawables(position() + m_animationPosition + damageShake()), renderLayer());
   } else {
     if (m_orientationIndex != NPos)
@@ -621,9 +622,9 @@ List<Drawable> Object::cursorHintDrawables() const {
       // orientation.
       List<Drawable> result;
       auto& orientations = getOrientations();
-      for (size_t i = 0; i < orientations.size(); ++i) {
-        if (orientations[i]->directionAffinity && *orientations[i]->directionAffinity == m_direction.get()) {
-          result = orientationDrawables(i);
+      for (auto const& orientationAndIndex : enumerateIterator(orientations)) {
+        if (orientationAndIndex.first->directionAffinity && *orientationAndIndex.first->directionAffinity == m_direction.get()) {
+          result = orientationDrawables(orientationAndIndex.second);
           break;
         }
       }
@@ -708,34 +709,33 @@ void Object::readStoredData(Json const& diskStore) {
   m_scriptComponent.setScriptStorage(diskStore.getObject("scriptStorage", JsonObject()));
 
   JsonArray inputNodes = diskStore.getArray("inputWireNodes");
-  for (size_t i = 0; i < m_inputNodes.size(); ++i) {
+  for (auto [in, i] : enumerateIterator(m_inputNodes)) {
     if (i < inputNodes.size()) {
-      auto& in = m_inputNodes[i];
+      auto const& inputNode = inputNodes[i];
       List<WireConnection> connections;
-      for (auto const& conn : inputNodes[i].getArray("connections"))
+      for (auto const& conn : inputNode.getArray("connections"))
         connections.append(WireConnection{jsonToVec2I(conn.get(0)), static_cast<size_t>(conn.get(1).toUInt())});
       in.connections.set(std::move(connections));
-      in.state.set(inputNodes[i].getBool("state"));
+      in.state.set(inputNode.getBool("state"));
     }
   }
 
   JsonArray outputNodes = diskStore.getArray("outputWireNodes");
-  for (size_t i = 0; i < m_outputNodes.size(); ++i) {
+  for (auto [out, i] : enumerateIterator(m_outputNodes)) {
     if (i < outputNodes.size()) {
-      auto& in = m_outputNodes[i];
+      auto const& outputNode = outputNodes[i];
       List<WireConnection> connections;
-      for (auto const& conn : outputNodes[i].getArray("connections"))
+      for (auto const& conn : outputNode.getArray("connections"))
         connections.append(WireConnection{jsonToVec2I(conn.get(0)), static_cast<size_t>(conn.get(1).toUInt())});
-      in.connections.set(std::move(connections));
-      in.state.set(outputNodes[i].getBool("state"));
+      out.connections.set(std::move(connections));
+      out.state.set(outputNode.getBool("state"));
     }
   }
 }
 
 Json Object::writeStoredData() const {
   JsonArray inputNodes;
-  for (size_t i = 0; i < m_inputNodes.size(); ++i) {
-    auto const& in = m_inputNodes[i];
+  for (auto const& in : m_inputNodes) {
     JsonArray connections;
     for (auto const& node : in.connections.get())
       connections.append(JsonArray{jsonFromVec2I(node.entityLocation), node.nodeIndex});
@@ -746,8 +746,7 @@ Json Object::writeStoredData() const {
   }
 
   JsonArray outputNodes;
-  for (size_t i = 0; i < m_outputNodes.size(); ++i) {
-    auto const& in = m_outputNodes[i];
+  for (auto const& in : m_outputNodes) {
     JsonArray connections;
     for (auto const& node : in.connections.get())
       connections.append(JsonArray{jsonFromVec2I(node.entityLocation), node.nodeIndex});
@@ -856,8 +855,7 @@ void Object::removeNodeConnection(WireNode wireNode, WireConnection nodeConnecti
 }
 
 void Object::evaluate(WireCoordinator* coordinator) {
-  for (size_t i = 0; i < m_inputNodes.size(); ++i) {
-    auto& in = m_inputNodes[i];
+  for (auto [in, i] : enumerateIterator(m_inputNodes)) {
     bool nextState = false;
     for (auto const& connection : in.connections.get())
       nextState |= coordinator->readInputConnection(connection);
@@ -887,8 +885,7 @@ void Object::setImageKey(String const& name, String const& value) {
 void Object::resetEmissionTimers() {
   m_emissionTimers.clear();
   if (auto orientation = currentOrientation())
-    for (size_t i = 0; i < orientation->particleEmitters.size(); i++)
-      m_emissionTimers.append(GameTimer());
+    m_emissionTimers.resize(orientation->particleEmitters.size());
 }
 
 size_t Object::orientationIndex() const {

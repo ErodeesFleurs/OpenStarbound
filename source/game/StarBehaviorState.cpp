@@ -1,6 +1,7 @@
 #include "StarBehaviorState.hpp"
 #include "StarRandom.hpp"
 #include "StarLuaGameConverters.hpp"
+#include "StarPythonic.hpp"
 
 #include <cstdint>
 
@@ -337,8 +338,8 @@ NodeStatus BehaviorState::runParallel(ParallelNode const& node, NodeState& state
 
   int failed = 0;
   int succeeded = 0;
-  for (size_t i = 0; i < node.children.size(); i++) {
-    NodeStatus status = runNode(*node.children[i], *composite.children[i]);
+  for (auto [child, childState] : zipIterator(node.children, composite.children)) {
+    NodeStatus status = runNode(*child, *childState);
     if (status == NodeStatus::Success)
       succeeded++;
     else if (status == NodeStatus::Failure)

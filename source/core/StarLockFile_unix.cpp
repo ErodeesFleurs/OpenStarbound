@@ -1,24 +1,24 @@
 #include "StarLockFile.hpp"
-#include "StarTime.hpp"
 #include "StarThread.hpp"
+#include "StarTime.hpp"
 
-#include <sys/file.h>
-#include <fcntl.h>
 #include <errno.h>
+#include <fcntl.h>
+#include <sys/file.h>
 #include <unistd.h>
 
 namespace Star {
 
 int64_t const LockFile::MaximumSleepMillis;
 
-Maybe<LockFile> LockFile::acquireLock(String const& filename, int64_t lockTimeout) {
+Maybe<LockFile> LockFile::acquireLock(String filename, int64_t lockTimeout) {
   LockFile lock(std::move(filename));
   if (lock.lock(lockTimeout))
     return lock;
   return {};
 }
 
-LockFile::LockFile(String const& filename) : m_filename(std::move(filename)) {}
+LockFile::LockFile(String filename) : m_filename(std::move(filename)) {}
 
 LockFile::LockFile(LockFile&& lockFile) {
   operator=(std::move(lockFile));
@@ -91,4 +91,4 @@ bool LockFile::isLocked() const {
   return m_handle != nullptr;
 }
 
-}
+}// namespace Star

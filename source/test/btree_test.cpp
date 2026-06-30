@@ -1,9 +1,9 @@
 #include "StarBTree.hpp"
-#include "StarString.hpp"
-#include "StarMap.hpp"
-#include "StarSet.hpp"
 #include "StarLexicalCast.hpp"
+#include "StarMap.hpp"
 #include "StarRandom.hpp"
+#include "StarSet.hpp"
+#include "StarString.hpp"
 
 #include "gtest/gtest.h"
 
@@ -39,7 +39,7 @@ struct SimpleBTreeIndex {
     Key key;
     Pointer pointer;
   };
-  typedef List<Element> ElementList;
+  using ElementList = List<Element>;
 
   Pointer self;
   size_t level;
@@ -73,7 +73,7 @@ struct SimpleBTreeLeaf {
     Key key;
     Data data;
   };
-  typedef List<Element> ElementList;
+  using ElementList = List<Element>;
 
   Maybe<Pointer> next;
   Pointer self;
@@ -154,7 +154,7 @@ void SimpleBTreeIndex<Key, Pointer>::shiftLeft(Key const& mid, SimpleBTreeIndex&
   pointers.insert(pointers.end(), right.pointers.begin(), s);
 
   right.pointers.erase(right.pointers.begin(), s);
-  if (right.pointers.size() != 0) {
+  if (!right.pointers.empty()) {
     right.beginPointer = right.pointers.at(0).pointer;
     right.pointers.eraseAt(0);
   } else {
@@ -177,7 +177,7 @@ void SimpleBTreeIndex<Key, Pointer>::shiftRight(Key const& mid, SimpleBTreeIndex
   pointers.insert(pointers.begin(), s, left.pointers.end());
 
   left.pointers.erase(s, left.pointers.end());
-  if (left.pointers.size() != 0) {
+  if (!left.pointers.empty()) {
     beginPointer = left.pointers.at(left.pointers.size() - 1).pointer;
     left.pointers.eraseAt(left.pointers.size() - 1);
   } else {
@@ -279,12 +279,12 @@ void SimpleBTreeLeaf<Key, Data, Pointer>::setNextLeaf(Maybe<Pointer> n) {
 // nodes.  Used to test BTree algorithm.
 
 struct SimpleBTreeBase {
-  typedef int Key;
-  typedef String Data;
-  typedef int Pointer;
+  using Key = int;
+  using Data = String;
+  using Pointer = int;
 
-  typedef SimpleBTreeIndex<int, int> Index;
-  typedef SimpleBTreeLeaf<int, String, int> Leaf;
+  using Index = SimpleBTreeIndex<int, int>;
+  using Leaf = SimpleBTreeLeaf<int, String, int>;
 
   Pointer rootPointer() {
     return root;

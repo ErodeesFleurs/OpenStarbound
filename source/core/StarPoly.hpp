@@ -471,7 +471,7 @@ typename Polygon<DataType>::Vertex Polygon<DataType>::center() const {
 
 template <typename DataType>
 typename Polygon<DataType>::Vertex Polygon<DataType>::bottomCenter() const {
-  if (m_vertexes.size() == 0)
+  if (m_vertexes.empty())
     return Vertex();
   Polygon<DataType>::Vertex center = std::accumulate(m_vertexes.begin(), m_vertexes.end(), Vertex()) / static_cast<DataType>(m_vertexes.size());
   Polygon<DataType>::Vertex bottomLeft = *std::min_element(m_vertexes.begin(), m_vertexes.end());

@@ -1,6 +1,7 @@
 #include "StarWeather.hpp"
 #include "StarAlgorithm.hpp"
 #include "StarIterator.hpp"
+#include "StarPythonic.hpp"
 #include "StarDataStreamExtra.hpp"
 #include "StarTime.hpp"
 #include "StarProjectileDatabase.hpp"
@@ -122,16 +123,17 @@ List<ProjectilePtr> ServerWeather::pullNewProjectiles() {
 
 StringList ServerWeather::weatherList() const {
   StringList weatherList;
-  for (size_t i = 0; i < m_weatherPool.size(); ++i)
-    weatherList.append(m_weatherPool.item(i));
+  weatherList.reserve(m_weatherPool.size());
+  for (auto const& weather : m_weatherPool.items())
+    weatherList.append(weather.second);
   return weatherList;
 }
 
 void ServerWeather::setWeather(String const& weatherName, bool force) {
   size_t index = NPos;
-  for (size_t i = 0; i < m_weatherPool.size(); ++i) {
-    if (m_weatherPool.item(i) == weatherName) {
-      index = i;
+  for (auto const& weatherAndIndex : enumerateIterator(m_weatherPool.items())) {
+    if (weatherAndIndex.first.second == weatherName) {
+      index = weatherAndIndex.second;
       break;
     }
   }

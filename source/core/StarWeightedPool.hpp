@@ -1,5 +1,6 @@
 #pragma once
 
+#include "StarPythonic.hpp"
 #include "StarRandom.hpp"
 
 namespace Star {
@@ -58,8 +59,8 @@ template <typename Item>
 template <typename Container>
 WeightedPool<Item>::WeightedPool(Container container)
   : WeightedPool() {
-  for (auto const& pair : container)
-    add(get<0>(pair), get<1>(pair));
+  for (auto& pair : container)
+    add(get<0>(pair), std::move(get<1>(pair)));
 }
 
 template <typename Item>
@@ -143,6 +144,7 @@ List<Item> WeightedPool<Item>::selectUniques(size_t desiredCount, uint64_t seed)
   while (indices.size() < targetCount)
     indices.add(selectIndex(++seed));
   List<Item> result;
+  result.reserve(targetCount);
   for (size_t i : indices)
     result.append(m_items[i].second);
   return result;
@@ -178,10 +180,10 @@ size_t WeightedPool<Item>::selectIndex(double target) const {
   // improvement.
 
   double accumulatedWeight = 0.0f;
-  for (size_t i = 0; i < m_items.size(); ++i) {
-    accumulatedWeight += m_items[i].first / m_totalWeight;
+  for (auto const& itemAndIndex : enumerateIterator(m_items)) {
+    accumulatedWeight += itemAndIndex.first.first / m_totalWeight;
     if (target <= accumulatedWeight)
-      return i;
+      return itemAndIndex.second;
   }
 
   // If we haven't crossed the target, just assume floating point error has

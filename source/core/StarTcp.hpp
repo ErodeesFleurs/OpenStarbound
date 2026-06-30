@@ -12,9 +12,14 @@ class TcpServer;
 using TcpServerPtr = SharedPtr<TcpServer>;
 
 class TcpSocket : public Socket {
+  struct ConstructorToken {};
+
 public:
   static TcpSocketPtr connectTo(HostAddressWithPort const& address);
   static TcpSocketPtr listen(HostAddressWithPort const& address);
+
+  TcpSocket(ConstructorToken, NetworkMode networkMode);
+  TcpSocket(ConstructorToken, NetworkMode networkMode, SocketImplPtr impl);
 
   TcpSocketPtr accept();
 
@@ -28,9 +33,6 @@ public:
   HostAddressWithPort remoteAddress() const;
 
 private:
-  TcpSocket(NetworkMode networkMode);
-  TcpSocket(NetworkMode networkMode, SocketImplPtr impl);
-
   void connect(HostAddressWithPort const& address);
 
   HostAddressWithPort m_remoteAddress;
@@ -71,4 +73,4 @@ private:
   TcpSocketPtr m_listenSocket;
 };
 
-}
+}// namespace Star

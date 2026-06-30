@@ -98,10 +98,8 @@ public:
   // constructed with Thread::invoke, which is a shorthand.
   ThreadFunction(function<void()> function, String const& name);
 
-  // Automatically calls finish, though BEWARE that often times this is quite
-  // dangerous, and this is here mostly as a fallback.  The natural destructor
-  // order for members of a class is often wrong, and if the function throws,
-  // since this destructor calls finish it will throw.
+  // Automatically waits for the thread to finish.  Exceptions from the thread
+  // are logged and suppressed here; call finish() explicitly to observe them.
   ~ThreadFunction();
 
   ThreadFunction& operator=(ThreadFunction&&);
@@ -110,6 +108,9 @@ public:
   // does nothing.  If the function threw an exception, it will be re-thrown
   // here (on the first call to finish() only).
   void finish();
+
+  // Waits for function completion, logging any exception instead of throwing.
+  void finishNoThrow() noexcept;
 
   // Returns whether the ThreadFunction::finish method been called and the
   // ThreadFunction has stopped.  Also returns true when the ThreadFunction has
@@ -168,7 +169,8 @@ public:
   STAR_THREAD_ACQUIRE_CAPABILITY void lock();
 
   // Attempt to acquire the mutex without blocking.
-  STAR_THREAD_TRY_ACQUIRE_CAPABILITY(true) bool tryLock();
+  STAR_THREAD_TRY_ACQUIRE_CAPABILITY(true)
+  bool tryLock();
 
   STAR_THREAD_RELEASE_CAPABILITY void unlock();
 
@@ -260,13 +262,13 @@ class ReadersWriterMutex {
 public:
   ReadersWriterMutex() = default;
 
-  void readLock()       { m_mutex.lock_shared(); }
-  bool tryReadLock()    { return m_mutex.try_lock_shared(); }
-  void readUnlock()     { m_mutex.unlock_shared(); }
+  void readLock() { m_mutex.lock_shared(); }
+  bool tryReadLock() { return m_mutex.try_lock_shared(); }
+  void readUnlock() { m_mutex.unlock_shared(); }
 
-  void writeLock()      { m_mutex.lock(); }
-  bool tryWriteLock()   { return m_mutex.try_lock(); }
-  void writeUnlock()    { m_mutex.unlock(); }
+  void writeLock() { m_mutex.lock(); }
+  bool tryWriteLock() { return m_mutex.try_lock(); }
+  void writeUnlock() { m_mutex.unlock(); }
 
 private:
   std::shared_mutex m_mutex;
@@ -321,7 +323,7 @@ using SpinLocker = MLocker<SpinLock>;
 
 template <typename MutexType>
 MLocker<MutexType>::MLocker(MutexType& ref, bool l)
-  : m_mutex(ref) {
+    : m_mutex(ref) {
   if (l)
     lock();
 }
@@ -364,7 +366,7 @@ bool MLocker<MutexType>::tryLock() {
 
 template <typename Function, typename... Args>
 ThreadFunction<decltype(std::declval<Function>()(std::declval<Args>()...))> Thread::invoke(String const& name, Function&& f, Args&&... args) {
-  return {[f = std::forward<Function>(f), ...args = std::forward<Args>(args)]() mutable { return f(std::move(args)...); }, name};
+  return {[f = std::forward<Function>(f), ... args = std::forward<Args>(args)]() mutable { return f(std::move(args)...); }, name};
 }
 
 template <typename Return>
@@ -377,13 +379,14 @@ template <typename Return>
 ThreadFunction<Return>::ThreadFunction(function<Return()> function, String const& name) {
   m_return = make_shared<Maybe<Return>>();
   m_function = ThreadFunction<void>([function = std::move(function), retValue = m_return]() {
-      *retValue = function();
-    }, name);
+    *retValue = function();
+  },
+                                    name);
 }
 
 template <typename Return>
 ThreadFunction<Return>::~ThreadFunction() {
-  m_function.finish();
+  m_function.finishNoThrow();
 }
 
 template <typename Return>
@@ -432,4 +435,4 @@ inline bool SpinLock::tryLock() {
   return !m_lock.test_and_set(std::memory_order_acquire);
 }
 
-}
+}// namespace Star

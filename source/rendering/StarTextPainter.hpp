@@ -1,8 +1,8 @@
 #pragma once
 
-#include "StarFontTextureGroup.hpp"
 #include "StarAnchorTypes.hpp"
 #include "StarAssets.hpp"
+#include "StarFontTextureGroup.hpp"
 #include "StarListener.hpp"
 #include "StarStringView.hpp"
 #include "StarText.hpp"
@@ -26,10 +26,10 @@ struct TextPositioning {
   TextPositioning();
 
   TextPositioning(Vec2F pos,
-      HorizontalAnchor hAnchor = HorizontalAnchor::LeftAnchor,
-      VerticalAnchor vAnchor = VerticalAnchor::BottomAnchor,
-      Maybe<unsigned> wrapWidth = {},
-      Maybe<unsigned> charLimit = {});
+                  HorizontalAnchor hAnchor = HorizontalAnchor::LeftAnchor,
+                  VerticalAnchor vAnchor = VerticalAnchor::BottomAnchor,
+                  Maybe<unsigned> wrapWidth = {},
+                  Maybe<unsigned> charLimit = {});
 
   explicit TextPositioning(Json const& v);
   Json toJson() const;
@@ -60,8 +60,7 @@ public:
   int glyphWidth(String::Char c);
   int stringWidth(StringView s, unsigned charLimit = 0);
 
-    
-  typedef function<bool(StringView, unsigned)> WrapTextCallback;
+  using WrapTextCallback = function<bool(StringView, unsigned)>;
   bool processWrapText(StringView s, unsigned* wrapWidth, WrapTextCallback textFunc);
 
   List<StringView> wrapTextViews(StringView s, Maybe<unsigned> wrapWidth);
@@ -81,6 +80,7 @@ public:
 
   void cleanup(int64_t textureTimeout);
   void applyCommands(StringView unsplitCommands);
+
 private:
   void modifyDirectives(Directives& directives);
   RectF doRenderText(StringView s, TextPositioning const& position, bool reallyRender, unsigned* charLimit);
@@ -107,4 +107,4 @@ private:
   TrackerListenerPtr m_reloadTracker;
 };
 
-}
+}// namespace Star

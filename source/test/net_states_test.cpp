@@ -920,7 +920,7 @@ TEST(NetElements, NetElementMap) {
 }
 
 TEST(NetElements, NetElementMapInterpolated) {
-  typedef NetElementTop<NetElementMap<String, String>> TestMap;
+  using TestMap = NetElementTop<NetElementMap<String, String>>;
 
   TestMap masterMap;
 

@@ -8,163 +8,163 @@
 using namespace Star;
 
 namespace {
-  size_t const RandFactor = 0xd5a2f037;
-  size_t const MaxSize = 400;
-  uint32_t const MaxKey = 100000;
+size_t const RandFactor = 0xd5a2f037;
+size_t const MaxSize = 400;
+uint32_t const MaxKey = 100000;
 
-  ByteArray toByteArray(uint32_t k) {
-    k = toBigEndian(k);
-    return ByteArray(reinterpret_cast<char*>(&k), sizeof(k));
+ByteArray toByteArray(uint32_t k) {
+  k = toBigEndian(k);
+  return ByteArray(reinterpret_cast<char*>(&k), sizeof(k));
+}
+
+ByteArray genBlock(uint32_t k) {
+  // Make sure not empty, because we test for existence with empty()
+  size_t size = (RandFactor * k) % (MaxSize - 1) + 1;
+  uint8_t val = static_cast<uint8_t>(k % 256);
+
+  ByteArray b(size, 0);
+
+  for (size_t i = 0; i < size; ++i) {
+    b[i] = val;
+    val += 1;
   }
 
-  ByteArray genBlock(uint32_t k) {
-    // Make sure not empty, because we test for existence with empty()
-    size_t size = (RandFactor * k) % (MaxSize - 1) + 1;
-    uint8_t val = static_cast<uint8_t>(k % 256);
+  return b;
+}
 
-    ByteArray b(size, 0);
+bool checkBlock(uint32_t k, ByteArray b) {
+  return genBlock(k) == b;
+}
 
-    for (size_t i = 0; i < size; ++i) {
-      b[i] = val;
-      val += 1;
-    }
+void putAll(BTreeDatabase& db, const List<uint32_t>& keys) {
+  for (uint32_t k : keys) {
+    ByteArray val = genBlock(k);
+    (void)db.insert(toByteArray(k), val);
 
-    return b;
-  }
-
-  bool checkBlock(uint32_t k, ByteArray b) {
-    return genBlock(k) == b;
-  }
-
-  void putAll(BTreeDatabase& db, const List<uint32_t>& keys) {
-    for (uint32_t k : keys) {
-      ByteArray val = genBlock(k);
-      (void)db.insert(toByteArray(k), val);
-
-      int i = Random::randi32();
-      if (i % 23 == 0)
-        db.commit();
-    }
-  }
-
-  void checkAll(BTreeDatabase& db, const List<uint32_t>& keys) {
-    for (uint32_t k : keys) {
-      auto res = db.find(toByteArray(k));
-      EXPECT_TRUE(static_cast<bool>(res));
-      EXPECT_TRUE(checkBlock(k, *res));
-    }
-
-    // Also check that forAll works.
-
-    Set<ByteArray> keySet;
-    for (uint32_t k : keys)
-      keySet.add(toByteArray(k));
-
-    db.forAll([&keySet](ByteArray const& key, ByteArray const&) { EXPECT_TRUE(keySet.remove(key)); });
-
-    EXPECT_TRUE(keySet.empty());
-  }
-
-  size_t removeAll(BTreeDatabase& db, const List<uint32_t>& keys) {
-    size_t totalRemoved = 0;
-    for (uint32_t k : keys) {
-      auto old = db.find(toByteArray(k));
-      EXPECT_TRUE(!old || *old == genBlock(k));
-
-      if (db.remove(toByteArray(k))) {
-        EXPECT_FALSE(static_cast<bool>(db.find(toByteArray(k))));
-        ++totalRemoved;
-      }
-    }
-    return totalRemoved;
-  }
-
-  void testBTreeDatabase(size_t testCount, size_t writeRepeat, size_t randCount, size_t rollbackCount, size_t blockSize) {
-    auto tmpFile = File::temporaryFile();
-    auto finallyGuard = finally([&tmpFile]() { tmpFile->remove(); });
-
-    Set<uint32_t> keySet;
-    BTreeDatabase db("TestDB", 4);
-    db.setAutoCommit(false);
-
-    while (keySet.size() < testCount)
-      keySet.add(Random::randUInt(0, MaxKey));
-
-    List<uint32_t> keys;
-    for (uint32_t k : keySet) {
-      for (uint32_t j = 0; j < writeRepeat; ++j)
-        keys.append(k);
-    }
-
-    db.setIndexCacheSize(0);
-    db.setBlockSize(blockSize);
-    db.setIODevice(tmpFile);
-    EXPECT_TRUE(db.open());
-
-    // record writes/reads repeated writeRepeat times randomly each cycle
-    Random::shuffle(keys);
-    putAll(db, keys);
-
-    EXPECT_EQ(db.recordCount(), testCount);
-
-    Random::shuffle(keys);
-    checkAll(db, keys);
-
-    // Random reads/writes with randCount cycles...
-    for (uint32_t i = 0; i < randCount; ++i) {
-      List<uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
-
-      Random::shuffle(keysTemp);
-      removeAll(db, keysTemp);
-
-      Random::shuffle(keysTemp);
-      putAll(db, keysTemp);
-
-      Random::shuffle(keys);
-      checkAll(db, keys);
-    }
-
-    db.commit();
-
-    // Random reads/writes/rollbacks with rollbackCount cycles...
-    for (uint32_t i = 0; i < rollbackCount ; ++i) {
-      List<uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
-      Random::shuffle(keysTemp);
-
-      removeAll(db, keysTemp);
-      db.rollback();
-
-      checkAll(db, keys);
-    }
-
-    EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
-
-    // Now testing closing and reading
-
-    db.close();
-
-    // Set the wrong value, should be set to correct value in open()
-    db.setBlockSize(blockSize + 512);
-
-    EXPECT_FALSE(db.open());
-
-    // Checking values...
-
-    checkAll(db, keys);
-
-    EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
-
-    // Removing all records...
-
-    size_t totalRemoved = removeAll(db, keys);
-
-    EXPECT_EQ(totalRemoved, testCount);
-
-    EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
-
-    db.close();
+    int i = Random::randi32();
+    if (i % 23 == 0)
+      db.commit();
   }
 }
+
+void checkAll(BTreeDatabase& db, const List<uint32_t>& keys) {
+  for (uint32_t k : keys) {
+    auto res = db.find(toByteArray(k));
+    EXPECT_TRUE(static_cast<bool>(res));
+    EXPECT_TRUE(checkBlock(k, *res));
+  }
+
+  // Also check that forAll works.
+
+  Set<ByteArray> keySet;
+  for (uint32_t k : keys)
+    keySet.add(toByteArray(k));
+
+  db.forAll([&keySet](ByteArray const& key, ByteArray const&) { EXPECT_TRUE(keySet.remove(key)); });
+
+  EXPECT_TRUE(keySet.empty());
+}
+
+size_t removeAll(BTreeDatabase& db, const List<uint32_t>& keys) {
+  size_t totalRemoved = 0;
+  for (uint32_t k : keys) {
+    auto old = db.find(toByteArray(k));
+    EXPECT_TRUE(!old || *old == genBlock(k));
+
+    if (db.remove(toByteArray(k))) {
+      EXPECT_FALSE(static_cast<bool>(db.find(toByteArray(k))));
+      ++totalRemoved;
+    }
+  }
+  return totalRemoved;
+}
+
+void testBTreeDatabase(size_t testCount, size_t writeRepeat, size_t randCount, size_t rollbackCount, size_t blockSize) {
+  auto tmpFile = File::temporaryFile();
+  auto finallyGuard = finally([&tmpFile]() { tmpFile->remove(); });
+
+  Set<uint32_t> keySet;
+  BTreeDatabase db("TestDB", 4);
+  db.setAutoCommit(false);
+
+  while (keySet.size() < testCount)
+    keySet.add(Random::randUInt(0, MaxKey));
+
+  List<uint32_t> keys;
+  for (uint32_t k : keySet) {
+    for (uint32_t j = 0; j < writeRepeat; ++j)
+      keys.append(k);
+  }
+
+  db.setIndexCacheSize(0);
+  db.setBlockSize(blockSize);
+  db.setIODevice(tmpFile);
+  EXPECT_TRUE(db.open());
+
+  // record writes/reads repeated writeRepeat times randomly each cycle
+  Random::shuffle(keys);
+  putAll(db, keys);
+
+  EXPECT_EQ(db.recordCount(), testCount);
+
+  Random::shuffle(keys);
+  checkAll(db, keys);
+
+  // Random reads/writes with randCount cycles...
+  for (uint32_t i = 0; i < randCount; ++i) {
+    List<uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
+
+    Random::shuffle(keysTemp);
+    removeAll(db, keysTemp);
+
+    Random::shuffle(keysTemp);
+    putAll(db, keysTemp);
+
+    Random::shuffle(keys);
+    checkAll(db, keys);
+  }
+
+  db.commit();
+
+  // Random reads/writes/rollbacks with rollbackCount cycles...
+  for (uint32_t i = 0; i < rollbackCount; ++i) {
+    List<uint32_t> keysTemp(keys.begin(), keys.begin() + keys.size() / 2);
+    Random::shuffle(keysTemp);
+
+    removeAll(db, keysTemp);
+    db.rollback();
+
+    checkAll(db, keys);
+  }
+
+  EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
+
+  // Now testing closing and reading
+
+  db.close();
+
+  // Set the wrong value, should be set to correct value in open()
+  db.setBlockSize(blockSize + 512);
+
+  EXPECT_FALSE(db.open());
+
+  // Checking values...
+
+  checkAll(db, keys);
+
+  EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
+
+  // Removing all records...
+
+  size_t totalRemoved = removeAll(db, keys);
+
+  EXPECT_EQ(totalRemoved, testCount);
+
+  EXPECT_EQ(db.totalBlockCount(), db.freeBlockCount() + db.indexBlockCount() + db.leafBlockCount());
+
+  db.close();
+}
+}// namespace
 
 TEST(BTreeDatabaseTest, Consistency) {
   testBTreeDatabase(500, 3, 5, 5, 512);
@@ -187,7 +187,11 @@ TEST(BTreeDatabaseTest, InvalidExistingHeader) {
 
   BTreeDatabase db;
   db.setIODevice(tmpFile);
-  EXPECT_THROW(db.open(), DBException);
+  EXPECT_THROW(
+    {
+      [[maybe_unused]] auto opened = db.open();
+    },
+    DBException);
   EXPECT_FALSE(db.isOpen());
   EXPECT_EQ(tmpFile->size(), 512);
 }
@@ -215,33 +219,33 @@ TEST(BTreeDatabaseTest, Threading) {
 
   {
     auto writer = Thread::invoke("databaseTestWriter",
-        [&db, &writeKeySet]() {
-          try {
-            for (uint32_t k : writeKeySet) {
-              ByteArray val = genBlock(k);
-              (void)db.insert(toByteArray(k), val);
-              if (Random::randi32() % 23 == 0)
-                db.commit();
-            }
-          } catch (std::exception const& e) {
-            SCOPED_TRACE(outputException(e, true));
-            FAIL();
-          }
-        });
+                                 [&db, &writeKeySet]() {
+                                   try {
+                                     for (uint32_t k : writeKeySet) {
+                                       ByteArray val = genBlock(k);
+                                       (void)db.insert(toByteArray(k), val);
+                                       if (Random::randi32() % 23 == 0)
+                                         db.commit();
+                                     }
+                                   } catch (std::exception const& e) {
+                                     SCOPED_TRACE(outputException(e, true));
+                                     FAIL();
+                                   }
+                                 });
 
     auto deleter = Thread::invoke("databaseTestDeleter",
-        [&db, &deleteKeySet]() {
-          try {
-            for (uint32_t k : deleteKeySet) {
-              (void)db.remove(toByteArray(k));
-              if (Random::randi32() % 23 == 0)
-                db.commit();
-            }
-          } catch (std::exception const& e) {
-            SCOPED_TRACE(outputException(e, true));
-            FAIL();
-          }
-        });
+                                  [&db, &deleteKeySet]() {
+                                    try {
+                                      for (uint32_t k : deleteKeySet) {
+                                        (void)db.remove(toByteArray(k));
+                                        if (Random::randi32() % 23 == 0)
+                                          db.commit();
+                                      }
+                                    } catch (std::exception const& e) {
+                                      SCOPED_TRACE(outputException(e, true));
+                                      FAIL();
+                                    }
+                                  });
 
     writer.finish();
     deleter.finish();
@@ -255,19 +259,19 @@ TEST(BTreeDatabaseTest, Threading) {
     List<ThreadFunction<void>> readers;
     for (size_t i = 0; i < 5; ++i) {
       readers.append(Thread::invoke("databaseTestReader",
-          [&db, &writeKeySet, &deleteKeySet]() {
-            try {
-              for (uint32_t k : writeKeySet) {
-                if (auto res = db.find(toByteArray(k)))
-                  EXPECT_TRUE(checkBlock(k, *res));
-                else
-                  EXPECT_TRUE(deleteKeySet.contains(k));
-              }
-            } catch (std::exception const& e) {
-              SCOPED_TRACE(outputException(e, true));
-              FAIL();
-            }
-          }));
+                                    [&db, &writeKeySet, &deleteKeySet]() {
+                                      try {
+                                        for (uint32_t k : writeKeySet) {
+                                          if (auto res = db.find(toByteArray(k)))
+                                            EXPECT_TRUE(checkBlock(k, *res));
+                                          else
+                                            EXPECT_TRUE(deleteKeySet.contains(k));
+                                        }
+                                      } catch (std::exception const& e) {
+                                        SCOPED_TRACE(outputException(e, true));
+                                        FAIL();
+                                      }
+                                    }));
     }
   }
 }

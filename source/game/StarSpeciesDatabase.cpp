@@ -47,7 +47,7 @@ StringMap<SpeciesDefinitionPtr> SpeciesDatabase::allSpecies() const {
 
 Json SpeciesDatabase::humanoidConfig(HumanoidIdentity identity, JsonObject parameters, Json config) const {
   auto speciesDef = species(identity.species);
-  if (speciesDef->m_buildScripts.size() > 0) {
+  if (!speciesDef->m_buildScripts.empty()) {
     RecursiveMutexLocker locker(m_luaMutex);
     auto context = m_luaRoot->createContext(speciesDef->m_buildScripts);
     context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
@@ -82,7 +82,7 @@ CharacterCreationResult SpeciesDatabase::createHumanoid(
   CharacterCreationResult result;
 
   auto speciesDefinition = species(speciesChoice);
-  if (speciesDefinition->m_creationScripts.size() > 0) {
+  if (!speciesDefinition->m_creationScripts.empty()) {
     RecursiveMutexLocker locker(m_luaMutex);
     auto context = m_luaRoot->createContext(speciesDefinition->m_creationScripts);
     context.setCallbacks("sb", LuaBindings::makeUtilityCallbacks());
@@ -253,7 +253,7 @@ SpeciesDefinition::SpeciesDefinition(Json const& config, AssetsConstPtr assets)
   for (auto genderData : config.getArray("genders", JsonArray())) {
     SpeciesGenderOption gender;
     gender.name = genderData.getString("name", "");
-    gender.gender = species.genderOptions.size() == 0 ? Gender::Male : Gender::Female;
+    gender.gender = species.genderOptions.empty() ? Gender::Male : Gender::Female;
     gender.image = genderData.getString("image", "");
     gender.characterImage = genderData.getString("characterImage", "");
 

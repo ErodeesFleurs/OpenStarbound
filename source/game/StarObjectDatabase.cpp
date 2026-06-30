@@ -10,6 +10,7 @@
 #include "StarMaterialDatabase.hpp"
 #include "StarObject.hpp"
 #include "StarPhysicsObject.hpp"
+#include "StarPythonic.hpp"
 #include "StarRebuilder.hpp"
 #include "StarRootLuaBindings.hpp"
 #include "StarTeleporterObject.hpp"
@@ -47,7 +48,7 @@ bool ObjectOrientation::anchorsValid(World const* world, Vec2I const& position) 
   if (!world)
     return false;
 
-  if (anchors.size() == 0)
+  if (anchors.empty())
     return true;
   auto checkedMaterialDatabase = requireServiceValueAs<ObjectException>(materialDatabase, "ObjectOrientation", "material database");
 
@@ -85,19 +86,21 @@ size_t ObjectConfig::findValidOrientation(World const* world, Vec2I const& posit
   // If we are given a direction affinity, try and find an orientation with a
   // matching affinity *first*
   if (directionAffinity) {
-    for (size_t i = 0; i < orientations.size(); ++i) {
-      if (!orientations[i]->directionAffinity || *directionAffinity != *orientations[i]->directionAffinity)
+    for (auto const& orientationAndIndex : enumerateIterator(orientations)) {
+      auto const& orientation = orientationAndIndex.first;
+      if (!orientation->directionAffinity || *directionAffinity != *orientation->directionAffinity)
         continue;
 
-      if (orientations[i]->placementValid(world, position) && orientations[i]->anchorsValid(world, position))
-        return i;
+      if (orientation->placementValid(world, position) && orientation->anchorsValid(world, position))
+        return orientationAndIndex.second;
     }
   }
 
   // Then, fallback and try and find any valid affinity
-  for (size_t i = 0; i < orientations.size(); ++i) {
-    if (orientations[i]->placementValid(world, position) && orientations[i]->anchorsValid(world, position))
-      return i;
+  for (auto const& orientationAndIndex : enumerateIterator(orientations)) {
+    auto const& orientation = orientationAndIndex.first;
+    if (orientation->placementValid(world, position) && orientation->anchorsValid(world, position))
+      return orientationAndIndex.second;
   }
 
   return NPos;
@@ -628,9 +631,9 @@ List<Drawable> ObjectDatabase::cursorHintDrawables(World const* world, String co
       // matches our current direction, or if that fails just the first
       // orientation.
       List<Drawable> result;
-      for (size_t i = 0; i < config->orientations.size(); ++i) {
-        if (config->orientations[i]->directionAffinity == direction)
-          orientationIndex = i;
+      for (auto const& orientationAndIndex : enumerateIterator(config->orientations)) {
+        if (orientationAndIndex.first->directionAffinity == direction)
+          orientationIndex = orientationAndIndex.second;
       }
       if (orientationIndex == NPos)
         orientationIndex = 0;

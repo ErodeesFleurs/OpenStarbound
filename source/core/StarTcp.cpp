@@ -6,13 +6,13 @@
 namespace Star {
 
 TcpSocketPtr TcpSocket::connectTo(HostAddressWithPort const& addressWithPort) {
-  auto socket = TcpSocketPtr(new TcpSocket(addressWithPort.address().mode()));
+  auto socket = make_shared<TcpSocket>(ConstructorToken{}, addressWithPort.address().mode());
   socket->connect(addressWithPort);
   return socket;
 }
 
 TcpSocketPtr TcpSocket::listen(HostAddressWithPort const& addressWithPort) {
-  auto socket = TcpSocketPtr(new TcpSocket(addressWithPort.address().mode()));
+  auto socket = make_shared<TcpSocket>(ConstructorToken{}, addressWithPort.address().mode());
   socket->bind(addressWithPort);
   static_cast<Socket&>(*socket).listen(32);
   return socket;
@@ -44,7 +44,7 @@ TcpSocketPtr TcpSocket::accept() {
   socketImpl->setSockOpt(SOL_SOCKET, SO_NOSIGPIPE, &set, sizeof(int));
 #endif
 
-  TcpSocketPtr sockPtr(new TcpSocket(m_localAddress.address().mode(), socketImpl));
+  auto sockPtr = make_shared<TcpSocket>(ConstructorToken{}, m_localAddress.address().mode(), socketImpl);
 
   sockPtr->m_localAddress = m_localAddress;
   setAddressFromNative(sockPtr->m_remoteAddress, m_localAddress.address().mode(), &sockAddr);
@@ -131,9 +131,9 @@ HostAddressWithPort TcpSocket::remoteAddress() const {
   return m_remoteAddress;
 }
 
-TcpSocket::TcpSocket(NetworkMode networkMode) : Socket(SocketType::Tcp, networkMode) {}
+TcpSocket::TcpSocket(ConstructorToken, NetworkMode networkMode) : Socket(SocketType::Tcp, networkMode) {}
 
-TcpSocket::TcpSocket(NetworkMode networkMode, SocketImplPtr impl) : Socket(networkMode, impl, SocketMode::Connected) {}
+TcpSocket::TcpSocket(ConstructorToken, NetworkMode networkMode, SocketImplPtr impl) : Socket(networkMode, impl, SocketMode::Connected) {}
 
 void TcpSocket::connect(HostAddressWithPort const& addressWithPort) {
   WriteLocker locker(m_mutex);
@@ -196,27 +196,27 @@ void TcpServer::setAcceptCallback(AcceptCallback callback, unsigned timeout) {
   m_callback = requireDependencyValueAs<StarException>(std::move(callback), "TcpServer", "accept callback");
   if (m_listenSocket->isActive() && !m_callbackThread) {
     m_callbackThread = Thread::invoke("TcpServer::acceptCallback", [this, timeout]() {
-        try {
-          while (true) {
-            TcpSocketPtr conn;
-            try {
-              conn = accept(timeout);
-            } catch (NetworkException const& e) {
-              Logger::error("TcpServer caught exception accepting connection {}", outputException(e, false));
-            }
-
-            if (conn)
-              m_callback(conn);
-
-            if (!m_listenSocket->isActive())
-              break;
+      try {
+        while (true) {
+          TcpSocketPtr conn;
+          try {
+            conn = accept(timeout);
+          } catch (NetworkException const& e) {
+            Logger::error("TcpServer caught exception accepting connection {}", outputException(e, false));
           }
-        } catch (std::exception const& e) {
-          Logger::error("TcpServer will close, listener thread caught exception:  {}", outputException(e, true));
-          m_listenSocket->close();
+
+          if (conn)
+            m_callback(conn);
+
+          if (!m_listenSocket->isActive())
+            break;
         }
-      });
+      } catch (std::exception const& e) {
+        Logger::error("TcpServer will close, listener thread caught exception:  {}", outputException(e, true));
+        m_listenSocket->close();
+      }
+    });
   }
 }
 
-}
+}// namespace Star

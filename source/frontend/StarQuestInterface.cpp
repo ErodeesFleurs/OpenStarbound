@@ -10,7 +10,6 @@
 #include "StarItemGridWidget.hpp"
 #include "StarButtonWidget.hpp"
 #include "StarLabelWidget.hpp"
-#include "StarLabelWidget.hpp"
 #include "StarImageWidget.hpp"
 #include "StarItemDatabase.hpp"
 #include "StarRandom.hpp"
@@ -140,10 +139,11 @@ void QuestLogInterface::tick(float dt) {
     }
 
     m_rewardItems->clearItems();
-    if (quest->rewards().size() > 0) {
+    auto rewards = quest->rewards();
+    if (!rewards.empty()) {
       fetchChild<LabelWidget>("lblRewards")->setVisibility(true);
       fetchChild<ItemGridWidget>("rewardItems")->setVisibility(true);
-      for (auto const& reward : quest->rewards())
+      for (auto const& reward : rewards)
         m_rewardItems->addItems(reward->clone());
     } else {
       fetchChild<LabelWidget>("lblRewards")->setVisibility(false);
@@ -360,7 +360,7 @@ PanePtr QuestPane::createTooltip(Vec2I const& screenPosition) {
 NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr const& quest, PlayerPtr player, QuestInterfaceServices services)
   : QuestPane(quest, std::move(player), std::move(services)), m_manager(requireServiceValueAs<StarException>(manager, "NewQuestInterface", "quest manager")), m_decision(QuestDecision::Cancelled) {
   List<Drawable> objectivePortrait = m_quest->portrait("Objective").value({});
-  bool shortDialog = objectivePortrait.size() == 0;
+  bool shortDialog = objectivePortrait.empty();
 
   String configFile;
   if (shortDialog)
@@ -382,20 +382,22 @@ NewQuestInterface::NewQuestInterface(QuestManagerPtr const& manager, QuestPtr co
       Drawable::scaleAll(objectivePortrait, Vec2F(-1, 1));
       objectivePortraitImage->setDrawables(objectivePortrait);
 
+      bool hasObjectivePortrait = !objectivePortrait.empty();
       String objectivePortraitTitle = m_quest->portraitTitle("Objective").value("");
       auto portraitLabel = fetchChild<LabelWidget>("objectivePortraitTitle");
       portraitLabel->setText(objectivePortraitTitle);
-      portraitLabel->setVisibility(objectivePortrait.size() > 0);
+      portraitLabel->setVisibility(hasObjectivePortrait);
 
-      fetchChild<ImageWidget>("imgPolaroid")->setVisibility(objectivePortrait.size() > 0);
-      fetchChild<ImageWidget>("imgPolaroidBack")->setVisibility(objectivePortrait.size() > 0);
+      fetchChild<ImageWidget>("imgPolaroid")->setVisibility(hasObjectivePortrait);
+      fetchChild<ImageWidget>("imgPolaroidBack")->setVisibility(hasObjectivePortrait);
     }
   }
 
+  bool hasRewards = !m_quest->rewards().empty();
   if (auto rewardItemsWidget = fetchChild<ItemGridWidget>("rewardItems"))
-    rewardItemsWidget->setVisibility(m_quest->rewards().size() > 0);
+    rewardItemsWidget->setVisibility(hasRewards);
   if (auto rewardsLabel = fetchChild<LabelWidget>("lblRewards"))
-    rewardsLabel->setVisibility(m_quest->rewards().size() > 0);
+    rewardsLabel->setVisibility(hasRewards);
 }
 
 void NewQuestInterface::close() {

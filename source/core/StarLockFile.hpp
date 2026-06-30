@@ -7,12 +7,12 @@ namespace Star {
 
 class LockFile {
 public:
-  // Convenience function, tries to acquire a lock, and if succesfull returns an
+  // Convenience function, tries to acquire a lock, and if successful returns an
   // already locked
   // LockFile.
-  static Maybe<LockFile> acquireLock(String const& filename, int64_t lockTimeout = 1000);
+  static Maybe<LockFile> acquireLock(String filename, int64_t lockTimeout = 1000);
 
-  LockFile(String const& filename);
+  LockFile(String filename);
   LockFile(LockFile&& lockFile);
   // Automatically unlocks.
   ~LockFile();
@@ -36,4 +36,4 @@ private:
   shared_ptr<void> m_handle;
 };
 
-}
+}// namespace Star

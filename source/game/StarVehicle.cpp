@@ -9,6 +9,7 @@
 #include "StarMovementControllerLuaBindings.hpp"
 #include "StarNetworkedAnimatorLuaBindings.hpp"
 #include "StarPlayer.hpp"
+#include "StarPythonic.hpp"
 #include "StarScriptedAnimatorLuaBindings.hpp"
 
 namespace Star {
@@ -426,21 +427,17 @@ InteractAction Vehicle::interact(InteractRequest const& request) {
     return InteractAction(result.getString(0), entityId(), result.get(1));
 
   Maybe<size_t> index;
-  for (size_t i = 0; i < m_loungePositions.size(); ++i) {
-    if (!index) {
-      index = i;
-    } else {
-      auto const& thisLounge = m_loungePositions.valueAt(i);
-      if (!thisLounge.enabled.get())
-        continue;
+  float bestDistance = 0.0f;
+  for (auto const& loungeAndIndex : enumerateIterator(m_loungePositions)) {
+    auto const& lounge = loungeAndIndex.first.second;
+    if (!lounge.enabled.get())
+      continue;
 
-      Vec2F thisLoungePosition = *m_networkedAnimator.partPoint(thisLounge.part, thisLounge.partAnchor) + position();
-
-      auto const& selectedLounge = m_loungePositions.valueAt(*index);
-      Vec2F selectedLoungePosition = *m_networkedAnimator.partPoint(selectedLounge.part, selectedLounge.partAnchor) + position();
-
-      if (vmagSquared(thisLoungePosition - request.interactPosition) < vmagSquared(selectedLoungePosition - request.interactPosition))
-        index = i;
+    Vec2F loungePosition = *m_networkedAnimator.partPoint(lounge.part, lounge.partAnchor) + position();
+    float distance = vmagSquared(loungePosition - request.interactPosition);
+    if (!index || distance < bestDistance) {
+      index = loungeAndIndex.second;
+      bestDistance = distance;
     }
   }
 

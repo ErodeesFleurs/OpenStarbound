@@ -11,6 +11,7 @@
 #include "StarObject.hpp"
 #include "StarObjectDatabase.hpp"
 #include "StarObjectItem.hpp"
+#include "StarPythonic.hpp"
 #include "StarTools.hpp"
 #include "StarWorld.hpp"
 
@@ -19,10 +20,11 @@ namespace Star {
 ArmorWearer::ArmorWearer(ItemDatabaseConstPtr itemDatabase)
     : m_itemDatabase(requireServiceValueAs<StarException>(std::move(itemDatabase), "ArmorWearer", "item database")),
       m_lastNude(true) {
-  for (size_t i = 0; i != m_armors.size(); ++i) {
-    auto& armor = m_armors[i];
-    armor.isCosmetic = i >= 4;
-    if (i >= 8)
+  for (auto armorAndSlot : enumerateIterator(m_armors)) {
+    auto& armor = armorAndSlot.first;
+    size_t slot = armorAndSlot.second;
+    armor.isCosmetic = slot >= 4;
+    if (slot >= 8)
       armor.netState.setCompatibilityVersion(9);
     addNetElement(&armor.netState);
   }
@@ -43,15 +45,16 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   bool allNeedsSync = genderChanged;
   bool anyNeedsSync = allNeedsSync;
   Array<uint8_t, 4> wornCosmeticTypes;
-  for (size_t i = 0; i != m_armors.size(); ++i) {
-    auto& armor = m_armors[i];
+  for (auto armorAndSlot : enumerateIterator(m_armors)) {
+    auto& armor = armorAndSlot.first;
+    size_t slot = armorAndSlot.second;
     auto& item = armor.item;
     if (armor.needsSync)
       anyNeedsSync = true;
     else if (allNeedsSync || (item && ((dirChanged && item->flipping()) || (nudeChanged && !item->bypassNude()))))
       anyNeedsSync = armor.needsSync = true;
 
-    if (armor.visible && armor.isCosmetic && item && item->visible(i >= 8)) {
+    if (armor.visible && armor.isCosmetic && item && item->visible(slot >= 8)) {
       for (auto armorType : item->armorTypesToHide())
         ++wornCosmeticTypes[static_cast<uint8_t>(armorType)];
     }
@@ -72,11 +75,12 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
   std::exception_ptr configException;
   bool movementParametersChanged = false;
   if (anyNeedsSync) {
-    for (size_t i = 0; i != m_armors.size(); ++i) {
-      Armor& armor = m_armors[i];
+    for (auto armorAndSlot : enumerateIterator(m_armors)) {
+      Armor& armor = armorAndSlot.first;
+      size_t slot = armorAndSlot.second;
       auto& item = armor.item;
       bool allowed = true;
-      if (!armor.visible || !item || !item->visible(i >= 8) || (forceNude && !item->bypassNude())) {
+      if (!armor.visible || !item || !item->visible(slot >= 8) || (forceNude && !item->bypassNude())) {
         allowed = false;
       } else if (!armor.isCosmetic) {
         uint8_t typeIndex = static_cast<uint8_t>(armor.item->armorType());
@@ -90,22 +94,22 @@ bool ArmorWearer::setupHumanoid(Humanoid& humanoid, bool forceNude) {
         }
       }
 
-      m_armors[i].isCurrentlyVisible = allowed;
+      armor.isCurrentlyVisible = allowed;
       if (allowed) {
         addHumanoidConfig(*armor.item);
         if (armor.needsSync) {
           if (auto head = as<HeadArmor>(armor.item))
-            humanoid.setWearableFromHead(i, *head, gender);
+            humanoid.setWearableFromHead(slot, *head, gender);
           else if (auto chest = as<ChestArmor>(armor.item))
-            humanoid.setWearableFromChest(i, *chest, gender);
+            humanoid.setWearableFromChest(slot, *chest, gender);
           else if (auto legs = as<LegsArmor>(armor.item))
-            humanoid.setWearableFromLegs(i, *legs, gender);
+            humanoid.setWearableFromLegs(slot, *legs, gender);
           else if (auto back = as<BackArmor>(armor.item))
-            humanoid.setWearableFromBack(i, *back, gender);
+            humanoid.setWearableFromBack(slot, *back, gender);
           armor.needsSync = false;
         }
       } else
-        humanoid.removeWearable(i);
+        humanoid.removeWearable(slot);
     }
     try {
       movementParametersChanged = humanoid.loadConfig(humanoidConfig);
@@ -199,13 +203,15 @@ void ArmorWearer::diskLoad(Json const& diskStore) {
 List<PersistentStatusEffect> ArmorWearer::statusEffects(bool cosmeticOnly) const {
   List<PersistentStatusEffect> statusEffects;
 
-  for (size_t i = 0; i != m_armors.size(); ++i) {
-    if (!m_armors[i].item)
+  for (auto const& armorAndSlot : enumerateIterator(m_armors)) {
+    auto const& armor = armorAndSlot.first;
+    size_t slot = armorAndSlot.second;
+    if (!armor.item)
       continue;
-    if (!cosmeticOnly && ((i < 4) || m_armors[i].item->statusEffectsInCosmeticSlot()))
-      statusEffects.appendAll(m_armors[i].item->statusEffects());
-    if (m_armors[i].isCurrentlyVisible)
-      statusEffects.appendAll(m_armors[i].item->cosmeticStatusEffects());
+    if (!cosmeticOnly && ((slot < 4) || armor.item->statusEffectsInCosmeticSlot()))
+      statusEffects.appendAll(armor.item->statusEffects());
+    if (armor.isCurrentlyVisible)
+      statusEffects.appendAll(armor.item->cosmeticStatusEffects());
   }
 
   return statusEffects;

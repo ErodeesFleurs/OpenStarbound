@@ -8,16 +8,26 @@ TEST(Thread, InvokeErrors) {
   struct TestException {};
 
   auto function = Thread::invoke("test", []() {
-      throw TestException();
-    });
+    throw TestException();
+  });
 
   EXPECT_THROW(function.finish(), TestException);
 }
 
+TEST(Thread, DestructorSuppressesInvokeErrors) {
+  struct TestException {};
+
+  {
+    auto function = Thread::invoke("test", []() {
+      throw TestException();
+    });
+  }
+}
+
 TEST(Thread, InvokeReturn) {
   auto functionRet = Thread::invoke("test", []() {
-      return String("TestValue");
-    });
+    return String("TestValue");
+  });
 
   EXPECT_EQ(functionRet.finish(), String("TestValue"));
   EXPECT_THROW(functionRet.finish(), InvalidMaybeAccessException);

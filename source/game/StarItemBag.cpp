@@ -1,6 +1,7 @@
 #include "StarItemBag.hpp"
 #include "StarAlgorithm.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -99,8 +100,10 @@ ItemPtr& ItemBag::at(size_t i) {
 
 List<ItemPtr> ItemBag::takeAll() {
   List<ItemPtr> taken;
-  for (size_t i = 0; i < size(); ++i) {
-    if (auto& item = at(i))
+  for (auto& item : m_items) {
+    if (item && item->empty())
+      item = {};
+    if (item)
       taken.append(std::move(item));
   }
   return taken;
@@ -181,12 +184,13 @@ bool ItemBag::consumeItems(size_t pos, uint64_t count) {
 bool ItemBag::consumeItems(ItemDescriptor const& descriptor, bool exactMatch) {
   uint64_t countLeft = descriptor.count();
   List<std::pair<size_t, uint64_t>> consumeLocations;
-  for (size_t i = 0; i < m_items.size(); ++i) {
-    auto& storedItem = at(i);
+  for (auto const& storedItemAndIndex : enumerateIterator(m_items)) {
+    auto const& storedItem = storedItemAndIndex.first;
+    auto slot = storedItemAndIndex.second;
     if (storedItem && storedItem->matches(descriptor, exactMatch)) {
       uint64_t count = storedItem->count();
       uint64_t take = std::min(count, countLeft);
-      consumeLocations.append({i, take});
+      consumeLocations.append({slot, take});
       countLeft -= take;
       if (countLeft == 0)
         break;
@@ -332,9 +336,9 @@ void ItemBag::write(DataStream& ds) const {
   ds.writeVlqU(m_items.size());
 
   size_t setItemsSize = 0;
-  for (size_t i = 0; i < m_items.size(); ++i) {
-    if (at(i))
-      setItemsSize = i + 1;
+  for (auto const& itemAndIndex : enumerateIterator(m_items)) {
+    if (itemAndIndex.first)
+      setItemsSize = itemAndIndex.second + 1;
   }
 
   ds.writeVlqU(setItemsSize);
@@ -355,19 +359,20 @@ uint64_t ItemBag::stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from
 
 size_t ItemBag::bestSlotAvailable(ItemConstPtr const& item, bool stacksOnly, std::function<bool(size_t)> test) const {
   // First look for any slots that can stack, before empty slots.
-  for (size_t i = 0; i < m_items.size(); ++i) {
-    if (!test(i))
+  for (auto const& storedItemAndIndex : enumerateIterator(m_items)) {
+    auto const& storedItem = storedItemAndIndex.first;
+    auto slot = storedItemAndIndex.second;
+    if (!test(slot))
       continue;
-    auto const& storedItem = at(i);
     if (storedItem && stackTransfer(storedItem, item) != 0)
-      return i;
+      return slot;
   }
 
   if (!stacksOnly) {
     // Then, look for any empty slots.
-    for (size_t i = 0; i < m_items.size(); ++i) {
-      if (!at(i))
-        return i;
+    for (auto const& storedItemAndIndex : enumerateIterator(m_items)) {
+      if (!storedItemAndIndex.first)
+        return storedItemAndIndex.second;
     }
   }
 

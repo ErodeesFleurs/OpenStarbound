@@ -1,10 +1,10 @@
 #pragma once
 
-#include "StarRootBase.hpp"
-#include "StarJson.hpp"
-#include "StarLogging.hpp"
-#include "StarListener.hpp"
 #include "StarConfiguration.hpp"
+#include "StarJson.hpp"
+#include "StarListener.hpp"
+#include "StarLogging.hpp"
+#include "StarRootBase.hpp"
 
 namespace Star {
 
@@ -185,7 +185,7 @@ public:
     // Top-level storage directory under which all game data is saved
     String storageDirectory;
 
-    // Directory to store logs - if not set, uses storage directory and keeps old logs in seperate folder
+    // Directory to store logs - if not set, uses storage directory and keeps old logs in separate folder
     Maybe<String> logDirectory;
 
     // Name of the log file that should be written, if any, relative to the
@@ -440,4 +440,4 @@ private:
   Mutex m_collectionDatabaseMutex;
 };
 
-}
+}// namespace Star

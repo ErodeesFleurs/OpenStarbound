@@ -109,7 +109,7 @@ public:
 
 private:
   // If the from item can stack into the given to item, returns the amount that
-  // would be transfered.
+  // would be transferred.
   static uint64_t stackTransfer(ItemConstPtr const& to, ItemConstPtr const& from);
 
   // Returns the slot that contains the item already and has the *highest*

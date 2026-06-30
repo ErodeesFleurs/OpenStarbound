@@ -329,7 +329,7 @@ Bound4<LocType, IndexType> getBound4(LocType loc, IndexType extent, BoundMode bm
 template <typename Container, typename Pos, typename WeightOp>
 typename Container::value_type listInterpolate2(
     Container const& cont, Pos x, WeightOp weightOp, BoundMode bmode = BoundMode::Clamp) {
-  if (cont.size() == 0) {
+  if (cont.empty()) {
     return typename Container::value_type();
   } else if (cont.size() == 1) {
     return cont[0];
@@ -343,7 +343,7 @@ typename Container::value_type listInterpolate2(
 template <typename Container, typename Pos, typename WeightOp>
 typename Container::value_type listInterpolate4(
     Container const& cont, Pos x, WeightOp weightOp, BoundMode bmode = BoundMode::Clamp) {
-  if (cont.size() == 0) {
+  if (cont.empty()) {
     return typename Container::value_type();
   } else if (cont.size() == 1) {
     return cont[0];
@@ -420,7 +420,7 @@ typename YContainer::value_type parametricInterpolate2(XContainer const& xvals,
     PositionType const& position,
     WeightOp weightOp,
     BoundMode bmode) {
-  starAssert(xvals.size() != 0);
+  starAssert(!xvals.empty());
   starAssert(xvals.size() == yvals.size());
 
   if (yvals.size() == 1)
@@ -437,7 +437,7 @@ typename YContainer::value_type parametricInterpolate4(XContainer const& xvals,
     PositionType const& position,
     WeightOp weightOp,
     BoundMode bmode) {
-  starAssert(xvals.size() != 0);
+  starAssert(!xvals.empty());
   starAssert(xvals.size() == yvals.size());
 
   if (yvals.size() == 1)

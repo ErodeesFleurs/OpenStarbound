@@ -1,25 +1,27 @@
 #include "StarDynamicLib.hpp"
 
 #include <dlfcn.h>
+#include <errno.h>
 #include <pthread.h>
 #include <sys/time.h>
-#include <errno.h>
 
 namespace Star {
 
 struct PrivateDynLib : public DynamicLib {
-  PrivateDynLib(void* handle)
-    : m_handle(handle) {}
+  explicit PrivateDynLib(void* handle, bool closeOnDestroy = true)
+      : m_handle(handle), m_closeOnDestroy(closeOnDestroy) {}
 
-  ~PrivateDynLib() {
-    dlclose(m_handle);
+  ~PrivateDynLib() override {
+    if (m_closeOnDestroy)
+      dlclose(m_handle);
   }
 
-  void* funcPtr(const char* name) {
+  void* funcPtr(const char* name) override {
     return dlsym(m_handle, name);
   }
 
   void* m_handle;
+  bool m_closeOnDestroy;
 };
 
 String DynamicLib::libraryExtension() {
@@ -40,7 +42,7 @@ UniquePtr<DynamicLib> DynamicLib::loadLibrary(String const& libraryName) {
 UniquePtr<DynamicLib> DynamicLib::currentExecutable() {
   void* handle = dlopen(nullptr, 0);
   starAssert(handle);
-  return make_unique<PrivateDynLib>(handle);
+  return make_unique<PrivateDynLib>(handle, false);
 }
 
-}
+}// namespace Star

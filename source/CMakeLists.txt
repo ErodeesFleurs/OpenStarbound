@@ -47,6 +47,16 @@ option(STAR_ENABLE_FRAME_POINTERS "Keep frame pointers for profiling" OFF)
 option(STAR_ENABLE_UNITY_BUILD "Use CMake unity builds for faster clean builds" OFF)
 set(CMAKE_UNITY_BUILD ${STAR_ENABLE_UNITY_BUILD})
 
+option(STAR_ENABLE_CLANG_TIDY "Run clang-tidy while compiling C++ sources" OFF)
+if(STAR_ENABLE_CLANG_TIDY)
+  find_program(STAR_CLANG_TIDY_EXE clang-tidy)
+  if(NOT STAR_CLANG_TIDY_EXE)
+    message(FATAL_ERROR "STAR_ENABLE_CLANG_TIDY requested but clang-tidy was not found")
+  endif()
+
+  set(CMAKE_CXX_CLANG_TIDY "${STAR_CLANG_TIDY_EXE}")
+endif()
+
 # Update the docstring on CMAKE_BUILD_TYPE to show what options we actually
 # allow
 # set(CMAKE_BUILD_TYPE "${CMAKE_BUILD_TYPE}" CACHE STRING "Choose the type of build, options are: Debug RelWithAsserts RelWithDebInfo Release" FORCE)
@@ -174,6 +184,7 @@ message(STATUS "Precompiled headers: ${STAR_PRECOMPILED_HEADERS}")
 message(STATUS "LTO / IPO: ${STAR_ENABLE_LTO}")
 message(STATUS "Frame pointers: ${STAR_ENABLE_FRAME_POINTERS}")
 message(STATUS "Unity build: ${STAR_ENABLE_UNITY_BUILD}")
+message(STATUS "clang-tidy: ${STAR_ENABLE_CLANG_TIDY}")
 
 if(DEFINED STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX)
   message(STATUS "Statically linking to libgcc / libstdc++: ${STAR_ENABLE_STATIC_LIBGCC_LIBSTDCXX}")

@@ -51,7 +51,7 @@ public:
   // has no filename and will be removed on close.
   static FilePtr ephemeralFile();
 
-  // Creates a new temporary directory and reutrns the path.  Will not be
+  // Creates a new temporary directory and returns the path.  Will not be
   // removed automatically.
   static String temporaryDirectory();
 
@@ -147,4 +147,4 @@ private:
   void* m_file = nullptr;
 };
 
-}
+}// namespace Star

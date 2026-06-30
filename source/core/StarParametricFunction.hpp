@@ -1,6 +1,7 @@
 #pragma once
 
 #include "StarInterpolation.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -106,9 +107,11 @@ template <typename IndexType, typename ValueType>
 template <typename OtherIndexType, typename OtherValueType>
 ParametricTable<IndexType, ValueType>::ParametricTable(
     ParametricTable<OtherIndexType, OtherValueType> const& parametricTable) {
-  for (size_t i = 0; i < parametricTable.size(); ++i) {
-    m_indexes.push_back(parametricTable.index(i));
-    m_values.push_back(parametricTable.value(i));
+  m_indexes.reserve(parametricTable.size());
+  m_values.reserve(parametricTable.size());
+  for (auto [index, value] : zipIterator(parametricTable.indexes(), parametricTable.values())) {
+    m_indexes.push_back(index);
+    m_values.push_back(value);
   }
 }
 
@@ -123,7 +126,9 @@ ParametricTable<IndexType, ValueType>::ParametricTable(PairContainer indexValueP
         return std::get<0>(a) < std::get<0>(b);
       });
 
-  for (auto const& pair : indexValuePairs) {
+  m_indexes.reserve(indexValuePairs.size());
+  m_values.reserve(indexValuePairs.size());
+  for (auto& pair : indexValuePairs) {
     auto [idx, val] = std::move(pair);
     m_indexes.push_back(std::move(idx));
     m_values.push_back(std::move(val));
@@ -156,7 +161,7 @@ size_t ParametricTable<IndexType, ValueType>::size() const {
 
 template <typename IndexType, typename ValueType>
 bool ParametricTable<IndexType, ValueType>::empty() const {
-  return size() == 0;
+  return m_indexes.empty();
 }
 
 template <typename IndexType, typename ValueType>

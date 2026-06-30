@@ -1,11 +1,11 @@
-#include "StarLogging.hpp"
 #include "StarPlatformServices_pc.hpp"
+#include "StarLogging.hpp"
 #include "StarP2PNetworkingService_pc.hpp"
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
+#include "StarDesktopService_pc_steam.hpp"
 #include "StarStatisticsService_pc_steam.hpp"
 #include "StarUserGeneratedContentService_pc_steam.hpp"
-#include "StarDesktopService_pc_steam.hpp"
 #endif
 
 namespace Star {
@@ -16,15 +16,15 @@ uint64_t const DiscordClientId = 467102538278109224;
 
 PcPlatformServicesState::PcPlatformServicesState()
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
-  : callbackGameOverlayActivated(this, &PcPlatformServicesState::onGameOverlayActivated) {
+    : callbackGameOverlayActivated(this, &PcPlatformServicesState::onGameOverlayActivated) {
 #else
-  {
+{
 #endif
 
 #ifdef STAR_ENABLE_STEAM_INTEGRATION
   bool shouldLoadSteam = true;
 
-  #ifdef STAR_SYSTEM_LINUX
+#ifdef STAR_SYSTEM_LINUX
   // Flatpak doesn't create ~/.steam by default, which prevents
   // SteamAPI from initializing...
   //
@@ -65,7 +65,7 @@ PcPlatformServicesState::PcPlatformServicesState()
       }
     }
   }
-  #endif
+#endif
 
   if (shouldLoadSteam) {
     SteamErrMsg errMsg;
@@ -89,14 +89,14 @@ PcPlatformServicesState::PcPlatformServicesState()
     discordCore.reset(discordCorePtr);
     discordAvailable = true;
 
-    discordCore->UserManager().OnCurrentUserUpdate.Connect([this](){
-        discord::User user;
-        auto res = discordCore->UserManager().GetCurrentUser(&user);
-        if (res != discord::Result::Ok)
-          Logger::error("Could not get current Discord user. (err {})", static_cast<int>(res));
-        else
-          discordCurrentUser = user;
-      });
+    discordCore->UserManager().OnCurrentUserUpdate.Connect([this]() {
+      discord::User user;
+      auto res = discordCore->UserManager().GetCurrentUser(&user);
+      if (res != discord::Result::Ok)
+        Logger::error("Could not get current Discord user. (err {})", static_cast<int>(res));
+      else
+        discordCurrentUser = user;
+    });
 
   } else {
     Logger::error("Failed to instantiate Discord core (err {})", static_cast<int>(res));
@@ -116,15 +116,15 @@ PcPlatformServicesState::PcPlatformServicesState()
     });
     discordEventShutdown = false;
     discordEventThread = Thread::invoke("PcPlatformServices::discordEventThread", [this]() {
-        while (!discordEventShutdown) {
-          {
-            MutexLocker locker(discordMutex);
-            discordCore->RunCallbacks();
-            discordCore->LobbyManager().FlushNetwork();
-          }
-          Thread::sleep(DiscordEventSleep);
+      while (!discordEventShutdown) {
+        {
+          MutexLocker locker(discordMutex);
+          discordCore->RunCallbacks();
+          discordCore->LobbyManager().FlushNetwork();
         }
-      });
+        Thread::sleep(DiscordEventSleep);
+      }
+    });
 
     Logger::info("Initialized Discord platform services");
   } else {
@@ -149,7 +149,7 @@ void PcPlatformServicesState::onGameOverlayActivated(GameOverlayActivated_t* cal
 #endif
 
 UniquePtr<PcPlatformServices> PcPlatformServices::create([[maybe_unused]] String const& path, StringList platformArguments) {
-  auto services = UniquePtr<PcPlatformServices>(new PcPlatformServices);
+  auto services = make_unique<PcPlatformServices>(ConstructorToken{});
 
   services->m_state = make_shared<PcPlatformServicesState>();
 
@@ -222,4 +222,4 @@ void PcPlatformServices::update() {
 #endif
 }
 
-}
+}// namespace Star

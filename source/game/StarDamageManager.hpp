@@ -63,7 +63,7 @@ public:
   List<RemoteDamageNotification> pullRemoteDamageNotifications();
 
   // Pending *local* notifications.  Sum of all notifications either generated
-  // locally or recieved.
+  // locally or received.
   List<DamageNotification> pullPendingNotifications();
 
 private:
@@ -95,4 +95,4 @@ private:
   List<DamageNotification> m_pendingNotifications;
 };
 
-}
+}// namespace Star

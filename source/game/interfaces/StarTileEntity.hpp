@@ -17,7 +17,7 @@ struct MaterialSpace {
   bool operator==(MaterialSpace const& rhs) const;
 
   Vec2I space;
-  MaterialId material;
+  MaterialId material = NullMaterialId;
 };
 
 DataStream& operator<<(DataStream& ds, MaterialSpace const& materialSpace);
@@ -84,8 +84,7 @@ protected:
   float spacesLiquidFillLevel(List<Vec2I> const& relativeSpaces) const;
 };
 
-inline MaterialSpace::MaterialSpace()
-  : material(NullMaterialId) {}
+inline MaterialSpace::MaterialSpace() = default;
 
 inline MaterialSpace::MaterialSpace(Vec2I space, MaterialId material)
   : space(space), material(material) {}

@@ -256,8 +256,8 @@ inline char ByteArray::at(size_t i) const {
 
 inline size_t hash<ByteArray>::operator()(ByteArray const& b) const {
   PLHasher hash;
-  for (size_t i = 0; i < b.size(); ++i)
-    hash.put(b[i]);
+  for (auto byte : b)
+    hash.put(byte);
   return hash.hash();
 }
 

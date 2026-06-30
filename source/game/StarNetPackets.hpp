@@ -182,7 +182,7 @@ struct ProtocolRequestPacket : AutoPacket<ProtocolRequestPacket, PacketType::Pro
   ProtocolRequestPacket();
   explicit ProtocolRequestPacket(VersionNumber requestProtocolVersion);
 
-  VersionNumber requestProtocolVersion;
+  VersionNumber requestProtocolVersion = 0;
 
   static constexpr auto serializableFields() {
     return std::tuple{&ProtocolRequestPacket::requestProtocolVersion};

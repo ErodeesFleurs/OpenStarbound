@@ -186,8 +186,7 @@ PacketPtr createPacket(PacketType type, Maybe<Json> const& args) {
   return packet;
 }
 
-ProtocolRequestPacket::ProtocolRequestPacket()
-  : requestProtocolVersion(0) {}
+ProtocolRequestPacket::ProtocolRequestPacket() = default;
 
 ProtocolRequestPacket::ProtocolRequestPacket(VersionNumber requestProtocolVersion)
   : requestProtocolVersion(requestProtocolVersion) {}

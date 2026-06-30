@@ -333,7 +333,7 @@ StringList String::splitWhitespace(size_t maxSplit) const {
 
 String String::extract(String const& chars) {
   StringList l = splitAny(chars, 1);
-  if (l.size() == 0) {
+  if (l.empty()) {
     return String();
   } else if (l.size() == 1) {
     clear();

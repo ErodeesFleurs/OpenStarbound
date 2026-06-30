@@ -592,7 +592,7 @@ void OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::clear() {
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>
 [[nodiscard]] bool OrderedMapWrapper<Map, Key, Value, Allocator, MapArgs...>::empty() const {
-  return size() == 0;
+  return m_order.empty();
 }
 
 template <template <typename...> class Map, typename Key, typename Value, typename Allocator, typename... MapArgs>

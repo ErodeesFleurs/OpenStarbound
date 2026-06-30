@@ -1,11 +1,11 @@
 #pragma once
 
-#include "StarTcp.hpp"
 #include "StarAtomicSharedPtr.hpp"
-#include "StarP2PNetworkingService.hpp"
-#include "StarNetPackets.hpp"
-#include "StarZSTDCompression.hpp"
 #include "StarNetCompatibility.hpp"
+#include "StarNetPackets.hpp"
+#include "StarP2PNetworkingService.hpp"
+#include "StarTcp.hpp"
+#include "StarZSTDCompression.hpp"
 
 namespace Star {
 
@@ -89,8 +89,10 @@ public:
 
   virtual void setCompressionStreamEnabled(bool enabled);
   virtual bool compressionStreamEnabled() const;
+
 private:
   bool m_useCompressionStream = false;
+
 protected:
   CompressionStream m_compressionStream;
   DecompressionStream m_decompressionStream;
@@ -98,8 +100,13 @@ protected:
 
 // PacketSocket for local communication.
 class LocalPacketSocket : public PacketSocket {
+  struct ConstructorToken {};
+  struct Pipe;
+
 public:
   static pair<UniquePtr<LocalPacketSocket>, UniquePtr<LocalPacketSocket>> openPair();
+
+  LocalPacketSocket(ConstructorToken, shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe);
 
   bool isOpen() const override;
   void close() override;
@@ -120,16 +127,18 @@ private:
     Deque<PacketPtr> queue;
   };
 
-  LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe);
-
   AtomicSharedPtr<Pipe> m_incomingPipe;
   weak_ptr<Pipe> m_outgoingPipe;
 };
 
 // Wraps a TCP socket into a PacketSocket.
 class TcpPacketSocket : public CompressedPacketSocket {
+  struct ConstructorToken {};
+
 public:
   static UniquePtr<TcpPacketSocket> open(TcpSocketPtr socket);
+
+  TcpPacketSocket(ConstructorToken, TcpSocketPtr socket);
 
   bool isOpen() const override;
   void close() override;
@@ -144,9 +153,8 @@ public:
 
   Maybe<PacketStats> incomingStats() const override;
   Maybe<PacketStats> outgoingStats() const override;
-private:
-  TcpPacketSocket(TcpSocketPtr socket);
 
+private:
   TcpSocketPtr m_socket;
 
   PacketStatCollector m_incomingStats;
@@ -158,8 +166,12 @@ private:
 
 // Wraps a P2PSocket into a PacketSocket
 class P2PPacketSocket : public CompressedPacketSocket {
+  struct ConstructorToken {};
+
 public:
   static UniquePtr<P2PPacketSocket> open(UniquePtr<P2PSocket> socket);
+
+  P2PPacketSocket(ConstructorToken, P2PSocketPtr socket);
 
   bool isOpen() const override;
   void close() override;
@@ -176,8 +188,6 @@ public:
   Maybe<PacketStats> outgoingStats() const override;
 
 private:
-  P2PPacketSocket(P2PSocketPtr socket);
-
   P2PSocketPtr m_socket;
 
   PacketStatCollector m_incomingStats;
@@ -186,4 +196,4 @@ private:
   Deque<ByteArray> m_inputMessages;
 };
 
-}
+}// namespace Star

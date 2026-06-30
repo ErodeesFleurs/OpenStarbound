@@ -1,6 +1,6 @@
 #include "StarWorldClient.hpp"
-#include "StarAlgorithm.hpp"
 #include "StarAggressiveEntity.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarBiome.hpp"
 #include "StarCurve25519.hpp"
 #include "StarDamageDatabase.hpp"
@@ -884,7 +884,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       if (m_interpolationTracker.interpolationEnabled()) {
         entity->enableInterpolation(m_interpolationTracker.extrapolationHint());
 
-        // Delay appearance of new slaved entities to match with interplation
+        // Delay appearance of new slaved entities to match with interpolation
         // state.
         m_startupHiddenEntities.add(entityCreate->entityId);
         timer(m_interpolationTracker.interpolationLeadTime(), [this, entityId = entityCreate->entityId](World*) {
@@ -1494,7 +1494,7 @@ TileDamageResult WorldClient::damageTiles(List<Vec2I> const& pos, TileLayer laye
   auto toDamage = occupied.filtered([this](Vec2I pos) { return !isTileProtected(pos); });
   auto toDing = occupied.filtered([this](Vec2I pos) { return isTileProtected(pos); });
 
-  if (toDamage.size() + toDing.size() == 0)
+  if (toDamage.empty() && toDing.empty())
     return TileDamageResult::None;
 
   auto res = TileDamageResult::None;
@@ -1542,8 +1542,8 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
         liquid.take(nextUnit);
         nextUnit = bucketSize;
 
-        for (size_t i = 0; i < maybeDrainTiles.size(); ++i)
-          m_tilePrediction.m_predictedTiles[pos].liquid.emplace(EmptyLiquidId, 0.0f);
+        for (auto const& maybeDrainTile : maybeDrainTiles)
+          m_tilePrediction.m_predictedTiles[maybeDrainTile].liquid.emplace(EmptyLiquidId, 0.0f);
 
         maybeDrainTiles.clear();
       }

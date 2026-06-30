@@ -92,7 +92,7 @@ Image Image::readPng(IODevicePtr device) {
       channels = 3;
   }
 
-  // If the image has a transperancy set, convert it to a full alpha channel
+  // If the image has a transparency set, convert it to a full alpha channel
   if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
     png_set_tRNS_to_alpha(png_ptr);
     channels += 1;
@@ -190,7 +190,7 @@ tuple<Vec2U, PixelFormat> Image::readPngMetadata(IODevicePtr device) {
       channels = 3;
   }
 
-  // If the image has a transperancy set, convert it to a full alpha channel
+  // If the image has a transparency set, convert it to a full alpha channel
   if (png_get_valid(png_ptr, info_ptr, PNG_INFO_tRNS)) {
     png_set_tRNS_to_alpha(png_ptr);
     channels += 1;
@@ -211,13 +211,13 @@ Image Image::filled(Vec2U size, Vec4B color, PixelFormat pf) {
 }
 
 Image::Image(PixelFormat pf)
-  : m_pixelFormat(pf) {}
+    : m_pixelFormat(pf) {}
 
 Image::Image(Vec2U size, PixelFormat pf)
-  : Image(size[0], size[1], pf) {}
+    : Image(size[0], size[1], pf) {}
 
 Image::Image(unsigned width, unsigned height, PixelFormat pf)
-  : Image(pf) {
+    : Image(pf) {
   reset(width, height, pf);
 }
 
@@ -497,14 +497,14 @@ void Image::writePng(IODevicePtr device) const {
   unsigned channels = m_pixelFormat == PixelFormat::RGB24 ? 3 : 4;
 
   png_set_IHDR(png_ptr,
-      info_ptr,
-      m_width,
-      m_height,
-      8,
-      channels == 3 ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_RGBA,
-      PNG_INTERLACE_NONE,
-      PNG_COMPRESSION_TYPE_DEFAULT,
-      PNG_FILTER_TYPE_DEFAULT);
+               info_ptr,
+               m_width,
+               m_height,
+               8,
+               channels == 3 ? PNG_COLOR_TYPE_RGB : PNG_COLOR_TYPE_RGBA,
+               PNG_INTERLACE_NONE,
+               PNG_COMPRESSION_TYPE_DEFAULT,
+               PNG_FILTER_TYPE_DEFAULT);
 
   auto row_ptrs = make_unique<png_bytep[]>(m_height);
   size_t stride = m_width * 8 * channels / 8;
@@ -526,4 +526,4 @@ ImageView::ImageView(Image const& image) {
   format = image.pixelFormat();
 }
 
-}
+}// namespace Star

@@ -5,7 +5,7 @@
 using namespace Star;
 
 TEST(TileSectorArrayTest, All) {
-  typedef TileSectorArray<int, 32> TileArray;
+  using TileArray = TileSectorArray<int, 32>;
   TileArray tileSectorArray({100, 100}, -1);
 
   EXPECT_TRUE(tileSectorArray.sectorValid(TileArray::Sector(1, 1)));
@@ -32,66 +32,66 @@ TEST(TileSectorArrayTest, All) {
 
   Set<Vec2I> found;
   tileSectorArray.tileEach(RectI(-2, 0, 3, 1),
-      [&found](Vec2I const& pos, int tile) {
-        found.add(pos);
-        EXPECT_TRUE(pos[0] >= -2 && pos[0] < 3);
-        EXPECT_TRUE(pos[1] == 0);
-        EXPECT_EQ(1, tile);
-      });
+                           [&found](Vec2I const& pos, int tile) {
+                             found.add(pos);
+                             EXPECT_TRUE(pos[0] >= -2 && pos[0] < 3);
+                             EXPECT_TRUE(pos[1] == 0);
+                             EXPECT_EQ(1, tile);
+                           });
   EXPECT_TRUE(found.contains(Vec2I(0, 0)));
   EXPECT_TRUE(found.contains(Vec2I(-1, 0)));
   EXPECT_TRUE(found.contains(Vec2I(-2, 0)));
   EXPECT_TRUE(found.contains(Vec2I(1, 0)));
 
   tileSectorArray.tileEach(RectI(-10, 0, -1, 1),
-      [](Vec2I const& pos, int tile) {
-        EXPECT_TRUE(pos[0] >= -10 && pos[0] < -1);
-        EXPECT_EQ(1, tile);
-      });
+                           [](Vec2I const& pos, int tile) {
+                             EXPECT_TRUE(pos[0] >= -10 && pos[0] < -1);
+                             EXPECT_EQ(1, tile);
+                           });
 
   tileSectorArray.tileEach(RectI(-10, -1, -1, 0),
-      [](Vec2I const& pos, int tile) {
-        EXPECT_TRUE(pos[0] >= -10 && pos[0] < -1);
-        EXPECT_TRUE(pos[1] == -1);
-        EXPECT_EQ(-1, tile);
-      });
+                           [](Vec2I const& pos, int tile) {
+                             EXPECT_TRUE(pos[0] >= -10 && pos[0] < -1);
+                             EXPECT_TRUE(pos[1] == -1);
+                             EXPECT_EQ(-1, tile);
+                           });
 
   found.clear();
   tileSectorArray.tileEach(RectI(110, 101, 120, 102),
-      [&found](Vec2I const& pos, int tile) {
-        found.add(pos);
-        EXPECT_TRUE(pos[0] >= 110 && pos[0] < 120);
-        EXPECT_TRUE(pos[1] == 101);
-        EXPECT_EQ(-1, tile);
-      });
+                           [&found](Vec2I const& pos, int tile) {
+                             found.add(pos);
+                             EXPECT_TRUE(pos[0] >= 110 && pos[0] < 120);
+                             EXPECT_TRUE(pos[1] == 101);
+                             EXPECT_EQ(-1, tile);
+                           });
   EXPECT_TRUE(found.contains(Vec2I(110, 101)));
   EXPECT_TRUE(found.contains(Vec2I(119, 101)));
 
   auto res1 = tileSectorArray.tileEachResult(RectI(110, 110, 120, 120),
-      [](Vec2I const& pos, int tile) -> int {
-        return (pos[0] >= 110 && pos[0] < 120 && pos[1] >= 110 && pos[1] < 120 && tile == -1) ? 1 : 0;
-      });
+                                             [](Vec2I const& pos, int tile) -> int {
+                                               return (pos[0] >= 110 && pos[0] < 120 && pos[1] >= 110 && pos[1] < 120 && tile == -1) ? 1 : 0;
+                                             });
   MultiArray<int, 2> res1comp({10, 10}, 1);
 
   EXPECT_TRUE(res1.size() == res1comp.size());
   res1.forEach([](Array2S const&, int elem) { EXPECT_TRUE(elem == 1); });
 
   auto res2 = tileSectorArray.tileEachResult(RectI(32, 32, 64, 64),
-      [](Vec2I const& pos, int tile) -> int {
-        return (pos[0] >= 32 && pos[0] < 64 && pos[1] >= 32 && pos[1] < 64 && tile == 2) ? 1 : 0;
-      });
+                                             [](Vec2I const& pos, int tile) -> int {
+                                               return (pos[0] >= 32 && pos[0] < 64 && pos[1] >= 32 && pos[1] < 64 && tile == 2) ? 1 : 0;
+                                             });
   MultiArray<int, 2> res2comp({32, 32}, 1);
 
   EXPECT_TRUE(res2.size() == res2comp.size());
   res2.forEach([](Array2S const&, int elem) { EXPECT_TRUE(elem == 1); });
 
   auto res3 = tileSectorArray.tileEachResult(RectI(-10, -10, 1, 1),
-      [](Vec2I const& pos, int tile) -> int {
-        if (pos[1] < 0)
-          return tile == -1;
-        else
-          return tile == 1;
-      });
+                                             [](Vec2I const& pos, int tile) -> int {
+                                               if (pos[1] < 0)
+                                                 return tile == -1;
+                                               else
+                                                 return tile == 1;
+                                             });
   MultiArray<int, 2> res3comp({11, 11}, 1);
 
   EXPECT_TRUE(res3.size() == res3comp.size());

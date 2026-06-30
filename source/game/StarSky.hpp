@@ -1,11 +1,11 @@
 #pragma once
 
+#include "StarAssets.hpp"
+#include "StarCelestialParameters.hpp"
 #include "StarEither.hpp"
 #include "StarNetElementSystem.hpp"
-#include "StarCelestialParameters.hpp"
 #include "StarSkyParameters.hpp"
 #include "StarSkyRenderData.hpp"
-#include "StarAssets.hpp"
 
 namespace Star {
 
@@ -28,7 +28,7 @@ public:
 
   // Controls the space sky "flight" system
   void startFlying(bool enterHyperspace, bool startInWarp, Json settings = {});
-  // Stops flying animation copying the new pertinant sky data from the given
+  // Stops flying animation copying the new pertinent sky data from the given
   // sky, as though the sky as moved to a new world.
   void stopFlyingAt(Maybe<SkyParameters> SkyParameters);
 
@@ -36,7 +36,7 @@ public:
 
   pair<ByteArray, uint64_t> writeUpdate(uint64_t fromVersion = 0, NetCompatibilityRules rules = {});
   void readUpdate(ByteArray data, NetCompatibilityRules rules = {});
-  
+
   // handles flying and warp state transitions
   void stateUpdate();
   void update(double dt);
@@ -122,7 +122,7 @@ private:
   float slowdownTime() const;
 
   void skyParametersUpdated();
- 
+
   Json m_settings;
   AssetsConstPtr m_assets;
   SkyParameters m_skyParameters;
@@ -192,4 +192,4 @@ private:
   NetElementFloat m_flyingTimerNetState;
 };
 
-}
+}// namespace Star

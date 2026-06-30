@@ -18,6 +18,7 @@
 #include "StarPlayerInventory.hpp"
 #include "StarItemBag.hpp"
 #include "StarQuestManager.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -155,11 +156,8 @@ void MerchantPane::update(float dt) {
     dismiss();
 
   if (m_refreshTimer.wrapTick()) {
-    for (size_t i = 0; i < m_itemList.size(); ++i) {
-      auto itemConfig = m_itemList.get(i);
-      auto itemWidget = m_itemGuiList->itemAt(i);
+    for (auto [itemConfig, itemWidget] : zipIterator(m_itemList, m_itemGuiList->list()))
       setupWidget(itemWidget, itemConfig);
-    }
     updateBuyTotal();
   }
 

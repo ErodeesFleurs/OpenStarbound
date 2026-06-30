@@ -456,7 +456,7 @@ void InventoryPane::update(float dt) {
   }
 
   auto pets = m_player->companions()->getCompanions("pets");
-  if (pets.size() > 0) {
+  if (!pets.empty()) {
     auto pet = pets.first();
     auto companionImage = fetchChild<ImageWidget>("companionSlot");
     companionImage->setVisibility(true);

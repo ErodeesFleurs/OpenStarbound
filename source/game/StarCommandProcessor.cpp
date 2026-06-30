@@ -79,11 +79,9 @@ String CommandProcessor::help(ConnectionId connectionId, String const& argumentS
   auto debugCommands = m_assets->json("/help.config:debugCommands");
   auto openSbDebugCommands = m_assets->json("/help.config:openSbDebugCommands");
 
-  if (arguments.size()) {
-    if (arguments.size() >= 1) {
-      if (auto helpText = basicCommands.optString(arguments[0]).orMaybe(openSbCommands.optString(arguments[0])).orMaybe(adminCommands.optString(arguments[0])).orMaybe(debugCommands.optString(arguments[0])).orMaybe(openSbDebugCommands.optString(arguments[0])))
-        return *helpText;
-    }
+  if (!arguments.empty()) {
+    if (auto helpText = basicCommands.optString(arguments[0]).orMaybe(openSbCommands.optString(arguments[0])).orMaybe(adminCommands.optString(arguments[0])).orMaybe(debugCommands.optString(arguments[0])).orMaybe(openSbDebugCommands.optString(arguments[0])))
+      return *helpText;
   }
 
   String res = "";
@@ -337,7 +335,7 @@ String CommandProcessor::setDungeonId(ConnectionId connectionId, String const& a
   }
 
   auto arguments = m_parser.tokenizeToStringList(argumentString);
-  if (arguments.size() < 1)
+  if (arguments.empty())
     return "Not enough arguments to /setdungeonid. Use /setdungeonid <dungeonId>";
 
   try {
@@ -740,7 +738,7 @@ String CommandProcessor::clientCoordinate(ConnectionId connectionId, String cons
   String targetLabel = "Your";
   auto arguments = m_parser.tokenizeToStringList(argumentString);
   if (!adminCheck(connectionId, "find other players")) {
-    if (arguments.size() > 0) {
+    if (!arguments.empty()) {
       auto cid = playerCidFromCommand(arguments[0], m_universe);
       if (!cid)
         return strf("No user with specifier {} found.", arguments[0]);

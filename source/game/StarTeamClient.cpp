@@ -216,7 +216,7 @@ void TeamClient::invokeRemote(String const& method, Json const& args, function<v
 
 void TeamClient::handleRpcResponses() {
   List<RpcResponseHandler> stillPendingResponses;
-  while (m_pendingResponses.size() > 0) {
+  while (!m_pendingResponses.empty()) {
     auto handler = m_pendingResponses.takeLast();
     if (handler.first.finished()) {
       if (auto const& res = handler.first.result()) {

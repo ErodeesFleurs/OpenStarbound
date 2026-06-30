@@ -1,6 +1,6 @@
+#include "StarLexicalCast.hpp"
 #include "StarLua.hpp"
 #include "StarLuaConverters.hpp"
-#include "StarLexicalCast.hpp"
 
 #include "gtest/gtest.h"
 
@@ -113,7 +113,7 @@ TEST(LuaTest, CoroutineTest) {
   thread.pushFunction(func);
   EXPECT_EQ(thread.resume<double>(), 0.0);
   EXPECT_EQ(thread.resume<double>(1.0), 2.0);
-  EXPECT_THROW(thread.pushFunction(func), LuaException); // pushing function to suspended or errored thread
+  EXPECT_THROW(thread.pushFunction(func), LuaException);// pushing function to suspended or errored thread
 
   auto coroutine = luaContext.get<LuaThread>("co");
   EXPECT_EQ(coroutine.status(), LuaThread::Status::Active);
@@ -147,7 +147,7 @@ TEST(LuaTest, Converters) {
   auto luaEngine = LuaEngine::create();
   LuaContext luaContext = luaEngine->createContext();
 
-  luaContext.load( R"SCRIPT(
+  luaContext.load(R"SCRIPT(
       function makeVec()
         return {1, 2}
       end
@@ -195,14 +195,14 @@ struct LuaConverter<TestUserData1> : LuaUserDataConverter<TestUserData1> {};
 
 template <>
 struct LuaConverter<TestUserData2> : LuaUserDataConverter<TestUserData2> {};
-}
+}// namespace Star
 
 TEST(LuaTest, UserDataTest) {
   auto luaEngine = LuaEngine::create();
 
   LuaContext luaContext = luaEngine->createContext();
   luaContext.load(
-      R"SCRIPT(
+    R"SCRIPT(
         function doit(ref)
           global = ref
         end
@@ -252,7 +252,7 @@ struct LuaUserDataMethods<Vec3F> {
     return methods;
   }
 };
-}
+}// namespace Star
 
 TEST(LuaTest, UserMethodTest) {
   auto luaEngine = LuaEngine::create();
@@ -296,12 +296,12 @@ TEST(LuaTest, ArgTest) {
     )SCRIPT");
 
   luaContext.set("callback",
-      luaEngine->createFunction([](LuaFloat n, LuaString s, LuaBoolean b, LuaValue o) {
-        EXPECT_EQ(n, 2.0);
-        EXPECT_EQ(s, String("3"));
-        EXPECT_EQ(b, false);
-        EXPECT_EQ(o, LuaNil);
-      }));
+                 luaEngine->createFunction([](LuaFloat n, LuaString s, LuaBoolean b, LuaValue o) {
+                   EXPECT_EQ(n, 2.0);
+                   EXPECT_EQ(s, String("3"));
+                   EXPECT_EQ(b, false);
+                   EXPECT_EQ(o, LuaNil);
+                 }));
 
   luaContext.invokePath("test");
 }
@@ -507,10 +507,10 @@ TEST(LuaTest, MetaTable) {
 
   auto mt = luaEngine->createTable();
   mt.set("__add",
-      luaEngine->createFunction([](LuaEngine& engine, LuaTable const& a, LuaTable const& b) {
-        return engine.createArrayTable(
-            initializer_list<double>{a.get<double>(1) + b.get<double>(1), a.get<double>(2) + b.get<double>(2)});
-      }));
+         luaEngine->createFunction([](LuaEngine& engine, LuaTable const& a, LuaTable const& b) {
+           return engine.createArrayTable(
+             initializer_list<double>{a.get<double>(1) + b.get<double>(1), a.get<double>(2) + b.get<double>(2)});
+         }));
   mt.set("test", "hello");
 
   auto t1 = luaEngine->createArrayTable(initializer_list<double>{1, 2});
@@ -550,10 +550,10 @@ TEST(LuaTest, Require) {
   auto luaEngine = LuaEngine::create();
   auto context = luaEngine->createContext();
   context.setRequireFunction([](LuaContext& context, LuaString const& arg) {
-      context.set(arg, context.createFunction([arg]() {
-          return arg;
-        }));
-    });
+    context.set(arg, context.createFunction([arg]() {
+      return arg;
+    }));
+  });
 
   context.load(R"SCRIPT(
       require "a"
@@ -604,21 +604,21 @@ TEST(LuaTest, Multi) {
 
   LuaCallbacks addCallbacks;
   addCallbacks.registerCallback("func",
-      [](LuaVariadic<int> const& args) -> int {
-        int sum = 0.0;
-        for (auto arg : args)
-          sum += arg;
-        return sum;
-      });
+                                [](LuaVariadic<int> const& args) -> int {
+                                  int sum = 0.0;
+                                  for (auto arg : args)
+                                    sum += arg;
+                                  return sum;
+                                });
 
   LuaCallbacks multCallbacks;
   multCallbacks.registerCallback("func",
-      [](LuaVariadic<int> const& args) -> int {
-        int mult = 1.0;
-        for (auto arg : args)
-          mult *= arg;
-        return mult;
-      });
+                                 [](LuaVariadic<int> const& args) -> int {
+                                   int mult = 1.0;
+                                   for (auto arg : args)
+                                     mult *= arg;
+                                   return mult;
+                                 });
 
   context1.setCallbacks("callbacks", addCallbacks);
   context2.setCallbacks("callbacks", multCallbacks);
@@ -740,8 +740,8 @@ TEST(LuaTest, Errors) {
   EXPECT_EQ(luaEngine->luaMaybeTo<RectF>(context.get("val")), Maybe<RectF>());
 
   context.set("throwException", luaEngine->createFunction([]() {
-      throw StarException("lua caught the exception!");
-    }));
+    throw StarException("lua caught the exception!");
+  }));
 
   context.load(R"SCRIPT(
       function throwError()
@@ -786,12 +786,12 @@ TEST(LuaTest, VariantTest) {
   auto engine = LuaEngine::create();
   auto context = engine->createContext();
 
-  typedef Variant<int, String> IntOrString;
+  using IntOrString = Variant<int, String>;
 
   EXPECT_EQ(context.eval<IntOrString>("'foo'"), IntOrString(String("foo")));
   EXPECT_EQ(context.eval<IntOrString>("'1'"), IntOrString(1));
 
-  typedef MVariant<Maybe<int>, String> MIntOrString;
+  using MIntOrString = MVariant<Maybe<int>, String>;
 
   EXPECT_EQ(context.eval<MIntOrString>("'foo'"), MIntOrString(String("foo")));
   EXPECT_EQ(context.eval<MIntOrString>("'1'"), MIntOrString(Maybe<int>(1)));

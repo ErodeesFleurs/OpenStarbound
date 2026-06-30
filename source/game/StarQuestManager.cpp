@@ -120,7 +120,7 @@ void QuestManager::uninit() {
 }
 
 bool QuestManager::canStart(QuestArcDescriptor const& questArc) const {
-  if (questArc.quests.size() == 0)
+  if (questArc.quests.empty())
     return false;
 
   for (auto questDesc : questArc.quests) {
@@ -345,7 +345,7 @@ Maybe<QuestIndicator> QuestManager::getQuestIndicator(EntityPtr const& entity) c
 
     if (!indicatorType) {
       for (auto& questArc : questGiver->offeredQuests()) {
-        if (canStart(questArc) && questArc.quests.size() > 0) {
+        if (canStart(questArc) && !questArc.quests.empty()) {
           auto& questDesc = questArc.quests[0];
           auto questTemplate = m_questTemplateDatabase->questTemplate(questDesc.templateId);
           indicatorType = questTemplate->questGiverIndicator;
@@ -454,7 +454,7 @@ void QuestManager::startInitialQuests() {
 
 void QuestManager::setMostRecentQuestCurrent() {
   List<QuestPtr> sortedActiveQuests = listActiveQuests();
-  if (sortedActiveQuests.size() > 0)
+  if (!sortedActiveQuests.empty())
     setAsTracked(sortedActiveQuests.last()->questId());
 }
 

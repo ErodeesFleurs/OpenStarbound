@@ -1,12 +1,12 @@
-#include "StarSmallVector.hpp"
 #include "StarFormat.hpp"
+#include "StarSmallVector.hpp"
 
 #include "gtest/gtest.h"
 
 using namespace Star;
 
 TEST(SmallVectorTest, InsertErase) {
-  typedef SmallVector<int, 2> SV;
+  using SV = SmallVector<int, 2>;
   SV a = {1, 2, 3, 4};
   EXPECT_EQ(a.size(), 4u);
   EXPECT_EQ(a, SV({1, 2, 3, 4}));
@@ -35,7 +35,7 @@ TEST(SmallVectorTest, InsertErase) {
 }
 
 TEST(SmallVectorTest, Comparators) {
-  typedef SmallVector<int, 3> SV;
+  using SV = SmallVector<int, 3>;
 
   EXPECT_TRUE(SV({1, 2, 3, 4}) < SV({1, 2, 3, 5}));
   EXPECT_FALSE(SV({1, 2, 3, 4}) < SV({1, 2, 3, 4}));

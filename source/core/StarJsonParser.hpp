@@ -529,7 +529,7 @@ private:
         break;
       }
     }
-    if (buffer.size() != 0)
+    if (!buffer.empty())
       m_stream.putWhitespace(buffer.c_str(), buffer.length());
   }
 

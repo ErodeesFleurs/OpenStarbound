@@ -1,36 +1,36 @@
+#include "StarEncode.hpp"
 #include "StarFile.hpp"
 #include "StarFormat.hpp"
 #include "StarRandom.hpp"
-#include "StarEncode.hpp"
 
+#include <dirent.h>
 #include <errno.h>
-#include <string.h>
+#include <fcntl.h>
+#include <libgen.h>
 #include <limits.h>
 #include <stdlib.h>
-#include <dirent.h>
-#include <unistd.h>
-#include <libgen.h>
-#include <fcntl.h>
+#include <string.h>
 #include <sys/stat.h>
+#include <unistd.h>
 
 #ifdef STAR_SYSTEM_MACOSX
 #include <mach-o/dyld.h>
 #elif defined STAR_SYSTEM_FREEBSD
-#include <sys/types.h>
 #include <sys/sysctl.h>
+#include <sys/types.h>
 #endif
 
 namespace Star {
 
 namespace {
-  int fdFromHandle(void* ptr) {
-    return static_cast<int>(reinterpret_cast<intptr_t>(ptr));
-  }
-
-  void* handleFromFd(int handle) {
-    return reinterpret_cast<void*>(static_cast<intptr_t>(handle));
-  }
+int fdFromHandle(void* ptr) {
+  return static_cast<int>(reinterpret_cast<intptr_t>(ptr));
 }
+
+void* handleFromFd(int handle) {
+  return reinterpret_cast<void*>(static_cast<intptr_t>(handle));
+}
+}// namespace
 
 String File::convertDirSeparators(String const& path) {
   return path.replace("\\", "/");
@@ -64,15 +64,15 @@ List<pair<String, bool>> File::dirList(const String& dirName, bool skipDots) {
     String entryString = entry->d_name;
     if (!skipDots || (entryString != "." && entryString != "..")) {
       bool isDirectory = false;
-      #ifdef STAR_SYSTEM_HAIKU
+#ifdef STAR_SYSTEM_HAIKU
       isDirectory = File::isDirectory(File::relativeTo(dirName, entryString));
-      #else
+#else
       if (entry->d_type == DT_DIR) {
         isDirectory = true;
       } else if (entry->d_type == DT_LNK || entry->d_type == DT_UNKNOWN) {
         isDirectory = File::isDirectory(File::relativeTo(dirName, entryString));
       }
-      #endif
+#endif
       fileList.append({entryString, isDirectory});
     }
   }
@@ -85,11 +85,10 @@ String File::baseName(const String& fileName) {
   String ret;
 
   std::string file = fileName.utf8();
-  char* fn = new char[file.size() + 1];
-  std::copy(file.begin(), file.end(), fn);
+  auto fn = make_unique<char[]>(file.size() + 1);
+  std::copy(file.begin(), file.end(), fn.get());
   fn[file.size()] = 0;
-  ret = String(::basename(fn));
-  delete[] fn;
+  ret = String(::basename(fn.get()));
 
   return ret;
 }
@@ -98,11 +97,10 @@ String File::dirName(const String& fileName) {
   String ret;
 
   std::string file = fileName.utf8();
-  char* fn = new char[file.size() + 1];
-  std::copy(file.begin(), file.end(), fn);
+  auto fn = make_unique<char[]>(file.size() + 1);
+  std::copy(file.begin(), file.end(), fn.get());
   fn[file.size()] = 0;
-  ret = String(::dirname(fn));
-  delete[] fn;
+  ret = String(::dirname(fn.get()));
 
   return ret;
 }
@@ -296,4 +294,4 @@ void File::resize(void* f, StreamOffset size) {
     throw IOException::format("resize error: {}", strerror(errno));
 }
 
-}
+}// namespace Star

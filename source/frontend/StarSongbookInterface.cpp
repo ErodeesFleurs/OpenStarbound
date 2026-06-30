@@ -6,6 +6,7 @@
 #include "StarLabelWidget.hpp"
 #include "StarTextBoxWidget.hpp"
 #include "StarPlayer.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -77,22 +78,22 @@ void SongbookInterface::refresh(bool reloadFiles) {
     auto songList = fetchChild<ListWidget>("songs.list");
     songList->clear();
     if (search.empty()) {
-      for (size_t i = 0; i != m_files.size(); ++i) {
+      for (auto const& fileAndIndex : enumerateIterator(m_files)) {
         auto widget = songList->addItem();
-        widget->setData(i);
+        widget->setData(fileAndIndex.second);
         auto songName = widget->fetchChild<LabelWidget>("songName");
-        String const& song = m_files[i];
+        String const& song = fileAndIndex.first;
         songName->setText(song.substr(SongPathPrefix.size(), song.size() - (SongPathPrefix.size() + 4)));
         widget->show();
       }
     } else {
-      for (size_t i = 0; i != m_files.size(); ++i) {
-        StringView song = m_files[i];
+      for (auto const& fileAndIndex : enumerateIterator(m_files)) {
+        StringView song = fileAndIndex.first;
         song = song.substr(SongPathPrefix.size(), song.size() - (SongPathPrefix.size() + 4));
         auto find = song.find(search, 0, String::CaseInsensitive);
         if (find != NPos) {
           auto widget = songList->addItem();
-          widget->setData(i);
+          widget->setData(fileAndIndex.second);
           String text = "";
           size_t last = 0;
           do {

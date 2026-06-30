@@ -193,7 +193,7 @@ Vec2F SystemWorld::orbitPosition(CelestialOrbit const& orbit) const {
 float SystemWorld::clusterSize(CelestialCoordinate const& coordinate) const {
   if (coordinate.isPlanetaryBody() && m_celestialDatabase->childOrbits(coordinate.parent()).contains(coordinate.orbitNumber())) {
     auto childOrbits = m_celestialDatabase->childOrbits(coordinate).sorted();
-    if (childOrbits.size() > 0) {
+    if (!childOrbits.empty()) {
       CelestialCoordinate outer = coordinate.child(childOrbits.get(childOrbits.size() - 1));
       return (planetOrbitDistance(outer) * 2) + planetSize(outer);
     } else {
@@ -441,7 +441,7 @@ void SystemObject::serverUpdate(SystemWorldServer& system, float dt) {
     enterOrbit(CelestialCoordinate(system.location()), {0.0, 0.0}, system.time());
   } else if (m_approach && !m_approach->isNull()) {
 
-    if (system.shipsAtLocation(m_uuid).size() > 0)
+    if (!system.shipsAtLocation(m_uuid).empty())
       return;
 
     if (m_approach->isPlanetaryBody()) {
@@ -458,10 +458,10 @@ void SystemObject::serverUpdate(SystemWorldServer& system, float dt) {
   } else {
     auto planets = system.planets().filtered([&system](CelestialCoordinate const& p) {
         auto objectsAtPlanet = system.objects().filtered([p](SystemObjectPtr const& o) { return o->orbitTarget() == p; });
-        return objectsAtPlanet.size() == 0;
+        return objectsAtPlanet.empty();
       });
 
-    if (planets.size() > 0)
+    if (!planets.empty())
       m_approach = Random::randFrom(planets);
   }
 }

@@ -1,5 +1,6 @@
 #include "StarText.hpp"
 #include "StarJsonExtra.hpp"
+#include "StarPythonic.hpp"
 #include <re2/re2.h>
 
 namespace Star {
@@ -79,11 +80,11 @@ namespace Text {
     std::string result = s.utf8();
 
     size_t escapeStartIdx = 0;
-    for (size_t i = 0; i < result.size(); i++) {
-      auto& c = result[i];
+    for (auto charAndIndex : enumerateIterator(result)) {
+      auto& c = charAndIndex.first;
       if (isEscapeCode(c)) {
         escape = true;
-        escapeStartIdx = i;
+        escapeStartIdx = charAndIndex.second;
       }
       if ((c <= SpecialCharLimit) && !(c == StartEsc))
         escape = false;

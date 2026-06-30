@@ -2,6 +2,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarCasting.hpp"
 #include "StarLogging.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -842,8 +843,8 @@ void OpenGlRenderer::GlRenderBuffer::set(List<RenderPrimitive>& primitives) {
   auto finishCurrentBuffer = [&]() {
     if (currentVertexCount > 0) {
       GlVertexBuffer vb;
-      for (size_t i = 0; i < currentTextures.size(); ++i) {
-        vb.textures.append(GlVertexBufferTexture{currentTextures[i], currentTextureSizes[i]});
+      for (auto [texture, textureSize] : zipIterator(currentTextures, currentTextureSizes)) {
+        vb.textures.append(GlVertexBufferTexture{texture, textureSize});
       }
       vb.vertexCount = currentVertexCount;
       if (!oldVertexBuffers.empty()) {
@@ -1071,10 +1072,12 @@ void OpenGlRenderer::renderGlBuffer(GlRenderBuffer const& renderBuffer, Mat3F co
     glUniformMatrix3fv(m_vertexTransformUniform, 1, GL_TRUE, transformation.ptr());
 
     if (m_currentEffect->includeVBTextures) {
-      for (size_t i = 0; i < vb.textures.size(); ++i) {
-        glUniform2f(m_textureSizeUniforms[i], vb.textures[i].size[0], vb.textures[i].size[1]);
-        glActiveTexture(GL_TEXTURE0 + i);
-        glBindTexture(GL_TEXTURE_2D, vb.textures[i].texture);
+      for (auto const& textureAndUnit : enumerateIterator(vb.textures)) {
+        auto const& texture = textureAndUnit.first;
+        auto unit = textureAndUnit.second;
+        glUniform2f(m_textureSizeUniforms[unit], texture.size[0], texture.size[1]);
+        glActiveTexture(GL_TEXTURE0 + unit);
+        glBindTexture(GL_TEXTURE_2D, texture.texture);
       }
     }
 

@@ -8,6 +8,7 @@
 #include "StarEntityRendering.hpp"
 #include "StarParticleDatabase.hpp"
 #include "StarAlgorithm.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -155,7 +156,7 @@ Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataD
     JsonObject branches;
     if (hasBranches) {
       branches = config.stemSettings.get("branch").toObject();
-      if (branches.size() == 0)
+      if (branches.empty())
         hasBranches = false;
     }
 
@@ -307,7 +308,7 @@ Plant::Plant(AssetsConstPtr assets, ImageMetadataDatabaseConstPtr imageMetadataD
   // crown
   {
     JsonObject crowns = config.stemSettings.getObject("crown", {});
-    bool hasCrown = crowns.size() > 0;
+    bool hasCrown = !crowns.empty();
     if (hasCrown) {
       String crownKey = crowns.keys()[rnd.randInt(crowns.size() - 1)];
       JsonObject crownSettings = crowns[crownKey].toObject();
@@ -637,7 +638,7 @@ bool Plant::ceiling() const {
 }
 
 bool Plant::shouldDestroy() const {
-  return m_broken || m_pieces.size() == 0;
+  return m_broken || m_pieces.empty();
 }
 
 bool Plant::checkBroken() {
@@ -931,12 +932,12 @@ void Plant::breakAtPosition(Vec2I const& position, Vec2F const& sourcePosition) 
   Vec2I internalPos = geometry.diff(position, tilePosition());
   size_t idx = highest<size_t>();
   int segmentIdx = highest<int>();
-  for (size_t i = 0; i < m_pieces.size(); ++i) {
-    auto& piece = m_pieces[i];
+  for (auto pieceAndIndex : enumerateIterator(m_pieces)) {
+    auto& piece = pieceAndIndex.first;
     if (piece.structuralSegment && piece.spaces.contains(internalPos)) {
       if (piece.segmentIdx < segmentIdx) {
         segmentIdx = piece.segmentIdx;
-        idx = i;
+        idx = pieceAndIndex.second;
       }
     }
   }

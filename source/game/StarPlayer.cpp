@@ -104,9 +104,9 @@ Player::Player(PlayerConfigPtr config, Uuid uuid, AssetsConstPtr assets, Configu
   m_questManager = make_shared<QuestManager>(m_assets, *this, m_itemDatabase, m_objectDatabase, m_questTemplateDatabase, m_versioningDatabase);
   m_tools = make_shared<ToolUser>(m_assets, *this, m_itemDatabase, m_objectDatabase);
   m_armor = make_shared<ArmorWearer>(m_itemDatabase);
-  m_companions = make_shared<PlayerCompanions>(config->companionsConfig);
+  m_companions = make_shared<PlayerCompanions>(m_config->companionsConfig);
 
-  for (auto& p : config->genericScriptContexts) {
+  for (auto& p : m_config->genericScriptContexts) {
     auto scriptComponent = make_shared<GenericScriptComponent>();
     scriptComponent->setScript(p.second);
     m_genericScriptContexts.set(p.first, scriptComponent);
@@ -786,7 +786,7 @@ void Player::dropItem() {
 
 Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& message, JsonArray const& args) {
   bool localMessage = fromConnection == world()->connection();
-  if (message == "queueRadioMessage" && args.size() > 0) {
+  if (message == "queueRadioMessage" && !args.empty()) {
     float delay = 0;
     if (args.size() > 1 && args.get(1).canConvert(Json::Type::Float))
       delay = args.get(1).toFloat();
@@ -804,12 +804,12 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
     setPendingWarp(args.get(0).toString(), animation, deploy);
   } else if (message == "interruptRadioMessage") {
     m_narrativeQueue->requestInterrupt();
-  } else if (message == "playCinematic" && args.size() > 0) {
+  } else if (message == "playCinematic" && !args.empty()) {
     bool unique = false;
     if (args.size() > 1)
       unique = args.get(1).toBool();
     setPendingCinematic(args.get(0), unique);
-  } else if (message == "playAltMusic" && args.size() > 0) {
+  } else if (message == "playAltMusic" && !args.empty()) {
     float fadeTime = args.size() > 1 ? args.get(1).toFloat() : 0.f;
     int loops = args.size() > 2u ? args.get(2).toInt() : -1;
     StringList trackList;
@@ -820,7 +820,7 @@ Maybe<Json> Player::receiveMessage(ConnectionId fromConnection, String const& me
     m_narrativeQueue->setPendingAltMusic(make_pair(trackList, loops), fadeTime);
   } else if (message == "stopAltMusic") {
     float fadeTime = 0;
-    if (args.size() > 0)
+    if (!args.empty())
       fadeTime = args.get(0).toFloat();
     m_narrativeQueue->setPendingAltMusic({}, fadeTime);
   } else if (message == "recordEvent") {

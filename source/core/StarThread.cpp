@@ -1,12 +1,12 @@
 #include "StarThread.hpp"
-#include "StarTime.hpp"
-#include "StarLogging.hpp"
 #include "StarFormat.hpp"
+#include "StarLogging.hpp"
+#include "StarTime.hpp"
 
-#include <thread>
-#include <mutex>
-#include <condition_variable>
 #include <chrono>
+#include <condition_variable>
+#include <mutex>
+#include <thread>
 
 #ifndef STAR_SYSTEM_WINDOWS
 #include <cstdio>
@@ -57,7 +57,7 @@ struct ThreadImpl {
   }
 
   ThreadImpl(std::function<void()> function, String name)
-    : function(std::move(function)), name(std::move(name)) {}
+      : function(std::move(function)), name(std::move(name)) {}
 
   bool start() {
     MutexLocker mutexLocker(mutex);
@@ -99,7 +99,7 @@ struct ThreadImpl {
 
 struct ThreadFunctionImpl : ThreadImpl {
   ThreadFunctionImpl(std::function<void()> function, String name)
-    : ThreadImpl(wrapFunction(std::move(function)), std::move(name)) {}
+      : ThreadImpl(wrapFunction(std::move(function)), std::move(name)) {}
 
   std::function<void()> wrapFunction(std::function<void()> function) {
     return [function = std::move(function), this]() {
@@ -218,7 +218,7 @@ ThreadFunction<void>::ThreadFunction(function<void()> function, String const& na
 }
 
 ThreadFunction<void>::~ThreadFunction() {
-  finish();
+  finishNoThrow();
 }
 
 ThreadFunction<void>& ThreadFunction<void>::operator=(ThreadFunction&&) = default;
@@ -229,6 +229,16 @@ void ThreadFunction<void>::finish() {
 
     if (m_impl->exception)
       std::rethrow_exception(take(m_impl->exception));
+  }
+}
+
+void ThreadFunction<void>::finishNoThrow() noexcept {
+  try {
+    finish();
+  } catch (std::exception const& e) {
+    Logger::error("Exception caught while finishing ThreadFunction {}: {}", name(), outputException(e, true));
+  } catch (...) {
+    Logger::error("Unknown exception caught while finishing ThreadFunction {}", name());
   }
 }
 
@@ -254,7 +264,7 @@ String ThreadFunction<void>::name() {
 // ---- Mutex wrapper methods ----
 
 Mutex::Mutex()
-  : m_impl(make_unique<MutexImpl>()) {}
+    : m_impl(make_unique<MutexImpl>()) {}
 
 Mutex::Mutex(Mutex&&) = default;
 
@@ -277,7 +287,7 @@ void Mutex::unlock() {
 // ---- ConditionVariable wrapper methods ----
 
 ConditionVariable::ConditionVariable()
-  : m_impl(make_unique<ConditionVariableImpl>()) {}
+    : m_impl(make_unique<ConditionVariableImpl>()) {}
 
 ConditionVariable::ConditionVariable(ConditionVariable&&) = default;
 
@@ -303,7 +313,7 @@ void ConditionVariable::broadcast() {
 // ---- RecursiveMutex wrapper methods ----
 
 RecursiveMutex::RecursiveMutex()
-  : m_impl(make_unique<RecursiveMutexImpl>()) {}
+    : m_impl(make_unique<RecursiveMutexImpl>()) {}
 
 RecursiveMutex::RecursiveMutex(RecursiveMutex&&) = default;
 
@@ -412,4 +422,4 @@ bool WriteLocker::tryLock() {
   return true;
 }
 
-}
+}// namespace Star

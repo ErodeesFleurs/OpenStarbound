@@ -1,6 +1,7 @@
 #include "StarLoungeableObject.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarObjectDatabase.hpp"
+#include "StarPythonic.hpp"
 
 namespace Star {
 
@@ -28,11 +29,15 @@ InteractAction LoungeableObject::interact(InteractRequest const& request) {
   auto res = Object::interact(request);
   if (res.type == InteractActionType::None && !m_sitPositions.empty()) {
     Maybe<size_t> index;
+    float bestDistance = 0.0f;
     Vec2F interactOffset =
         direction() == Direction::Right ? position() - request.interactPosition : request.interactPosition - position();
-    for (size_t i = 0; i < m_sitPositions.size(); ++i) {
-      if (!index || vmag(m_sitPositions[i] + interactOffset) < vmag(m_sitPositions[*index] + interactOffset))
-        index = i;
+    for (auto const& positionAndIndex : enumerateIterator(m_sitPositions)) {
+      float distance = vmag(positionAndIndex.first + interactOffset);
+      if (!index || distance < bestDistance) {
+        index = positionAndIndex.second;
+        bestDistance = distance;
+      }
     }
     return InteractAction(InteractActionType::SitDown, entityId(), *index);
   } else {

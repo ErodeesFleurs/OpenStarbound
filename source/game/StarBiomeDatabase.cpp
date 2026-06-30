@@ -194,7 +194,7 @@ float BiomeDatabase::pickHueShiftFromJson(Json source, uint64_t seed, String con
   if (source.isNull())
     return 0;
   auto options = jsonToFloatList(source);
-  if (options.size() == 0)
+  if (options.empty())
     return 0;
   auto t = staticRandomU32(seed, key);
   return options.at(t % options.size());

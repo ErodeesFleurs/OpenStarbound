@@ -222,7 +222,7 @@ void SystemWorldServer::update(float dt) {
     p.second->serverUpdate(*this, dt);
 
     // don't destroy objects that still have players at them
-    if (p.second->shouldDestroy() && shipsAtLocation(p.first).size() == 0)
+    if (p.second->shouldDestroy() && shipsAtLocation(p.first).empty())
       removeObject(p.first);
   }
 
@@ -363,9 +363,9 @@ void SystemWorldServer::spawnObjects() {
       // if this is not the last object we're spawning, and it's moving, immediately put it in orbit around a planet
       auto targets = planets().filtered([this](CelestialCoordinate const& p) {
         auto objectsAtPlanet = objects().filtered([p](SystemObjectPtr const& o) { return o->orbitTarget() == p; });
-        return objectsAtPlanet.size() == 0;
+        return objectsAtPlanet.empty();
       });
-      if (targets.size() > 0) {
+      if (!targets.empty()) {
         auto target = Random::randFrom(targets);
 
         Vec2F targetPosition = planetPosition(target);

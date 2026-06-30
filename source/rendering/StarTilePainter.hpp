@@ -1,11 +1,11 @@
 #pragma once
 
-#include "StarTtlCache.hpp"
-#include "StarWorldRenderData.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarRenderer.hpp"
-#include "StarWorldCamera.hpp"
 #include "StarTileDrawer.hpp"
+#include "StarTtlCache.hpp"
+#include "StarWorldCamera.hpp"
+#include "StarWorldRenderData.hpp"
 
 namespace Star {
 
@@ -52,10 +52,12 @@ public:
   void cleanup();
 
 private:
-  typedef uint64_t QuadZLevel;
-  typedef uint64_t ChunkHash;
+  using QuadZLevel = uint64_t;
+  using ChunkHash = uint64_t;
 
-  enum class TerrainLayer { Background, Midground, Foreground };
+  enum class TerrainLayer { Background,
+                            Midground,
+                            Foreground };
 
   struct LiquidInfo {
     TexturePtr texture;
@@ -64,12 +66,12 @@ private:
     float textureMovementFactor;
   };
 
-  typedef HashMap<TerrainLayer, HashMap<QuadZLevel, RenderBufferPtr>> TerrainChunk;
-  typedef HashMap<LiquidId, RenderBufferPtr> LiquidChunk;
+  using TerrainChunk = HashMap<TerrainLayer, HashMap<QuadZLevel, RenderBufferPtr>>;
+  using LiquidChunk = HashMap<LiquidId, RenderBufferPtr>;
 
-  typedef tuple<MaterialId, MaterialRenderPieceIndex, MaterialHue, bool> MaterialPieceTextureKey;
-  typedef String AssetTextureKey;
-  typedef Variant<MaterialPieceTextureKey, AssetTextureKey> TextureKey;
+  using MaterialPieceTextureKey = tuple<MaterialId, MaterialRenderPieceIndex, MaterialHue, bool>;
+  using AssetTextureKey = String;
+  using TextureKey = Variant<MaterialPieceTextureKey, AssetTextureKey>;
 
   struct TextureKeyHash {
     size_t operator()(TextureKey const& key) const;
@@ -88,7 +90,7 @@ private:
   shared_ptr<LiquidChunk const> getLiquidChunk(WorldRenderData& renderData, Vec2I chunkIndex);
 
   bool produceTerrainPrimitives(HashMap<QuadZLevel, List<RenderPrimitive>>& primitives,
-      TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData);
+                                TerrainLayer terrainLayer, Vec2I const& pos, WorldRenderData const& renderData);
   void produceLiquidPrimitives(HashMap<LiquidId, List<RenderPrimitive>>& primitives, Vec2I const& pos, WorldRenderData const& renderData);
 
   float liquidDrawLevel(float liquidLevel) const;
@@ -111,4 +113,4 @@ private:
   Vec2F m_cameraPan;
 };
 
-}
+}// namespace Star

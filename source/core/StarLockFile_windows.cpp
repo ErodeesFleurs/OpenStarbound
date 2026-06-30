@@ -1,6 +1,6 @@
 #include "StarLockFile.hpp"
-#include "StarTime.hpp"
 #include "StarThread.hpp"
+#include "StarTime.hpp"
 
 #include "StarString_windows.hpp"
 
@@ -10,14 +10,14 @@ namespace Star {
 
 int64_t const LockFile::MaximumSleepMillis;
 
-Maybe<LockFile> LockFile::acquireLock(String const& filename, int64_t lockTimeout) {
+Maybe<LockFile> LockFile::acquireLock(String filename, int64_t lockTimeout) {
   LockFile lock(std::move(filename));
   if (lock.lock(lockTimeout))
-    return std::move(lock);
+    return lock;
   return {};
 }
 
-LockFile::LockFile(String const& filename) : m_filename(std::move(filename)) {}
+LockFile::LockFile(String filename) : m_filename(std::move(filename)) {}
 
 LockFile::LockFile(LockFile&& lockFile) {
   operator=(std::move(lockFile));
@@ -37,7 +37,7 @@ LockFile& LockFile::operator=(LockFile&& lockFile) {
 bool LockFile::lock(int64_t timeout) {
   auto doFLock = [](String const& filename) -> shared_ptr<HANDLE> {
     HANDLE handle = CreateFileW(
-        stringToUtf16(filename).get(), GENERIC_READ, 0, nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
+      stringToUtf16(filename).get(), GENERIC_READ, 0, nullptr, OPEN_ALWAYS, FILE_FLAG_DELETE_ON_CLOSE, nullptr);
     if (handle == INVALID_HANDLE_VALUE) {
       if (GetLastError() == ERROR_SHARING_VIOLATION)
         return {};
@@ -77,4 +77,4 @@ bool LockFile::isLocked() const {
   return m_handle != nullptr;
 }
 
-}
+}// namespace Star

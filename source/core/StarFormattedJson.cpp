@@ -518,7 +518,7 @@ void FormattedJsonBuilderStream::objectKey(String::Char const* s, size_t len) {
 
 void FormattedJsonBuilderStream::endObject() {
   FormattedJson value = pop();
-  if (m_stack.size() > 0)
+  if (!m_stack.empty())
     current().appendElement(ValueElement{value});
   else
     m_root = value;
@@ -531,7 +531,7 @@ void FormattedJsonBuilderStream::beginArray() {
 
 void FormattedJsonBuilderStream::endArray() {
   FormattedJson value = pop();
-  if (m_stack.size() > 0)
+  if (!m_stack.empty())
     current().appendElement(ValueElement{value});
   else
     m_root = value;
@@ -562,7 +562,7 @@ void FormattedJsonBuilderStream::putNull() {
 }
 
 void FormattedJsonBuilderStream::putWhitespace(String::Char const* s, size_t len) {
-  if (m_stack.size() > 0)
+  if (!m_stack.empty())
     current().appendElement(WhitespaceElement{String(s, len)});
 }
 
@@ -597,7 +597,7 @@ void FormattedJsonBuilderStream::putValue(Json const& value, Maybe<String> forma
   if (formatting.isValid())
     formattedValue = formattedValue.formattedAs(*formatting);
 
-  if (m_stack.size() > 0)
+  if (!m_stack.empty())
     current().appendElement(ValueElement{formattedValue});
   else {
     m_root = formattedValue;

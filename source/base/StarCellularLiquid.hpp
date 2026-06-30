@@ -1,12 +1,12 @@
 #pragma once
 
-#include "StarVariant.hpp"
-#include "StarRect.hpp"
-#include "StarMultiArray.hpp"
+#include "StarBlockAllocator.hpp"
 #include "StarMap.hpp"
+#include "StarMultiArray.hpp"
 #include "StarOrderedSet.hpp"
 #include "StarRandom.hpp"
-#include "StarBlockAllocator.hpp"
+#include "StarRect.hpp"
+#include "StarVariant.hpp"
 
 namespace Star {
 
@@ -71,7 +71,7 @@ struct LiquidCellEngineParameters {
 template <typename LiquidId>
 class LiquidCellEngine {
 public:
-  typedef shared_ptr<CellularLiquidWorld<LiquidId>> CellularLiquidWorldPtr;
+  using CellularLiquidWorldPtr = shared_ptr<CellularLiquidWorld<LiquidId>>;
 
   LiquidCellEngine(LiquidCellEngineParameters parameters, CellularLiquidWorldPtr cellWorld);
 
@@ -178,7 +178,7 @@ void CellularLiquidWorld<LiquidId>::liquidCollision(Vec2I const&, LiquidId, Vec2
 
 template <typename LiquidId>
 LiquidCellEngine<LiquidId>::LiquidCellEngine(LiquidCellEngineParameters parameters, CellularLiquidWorldPtr cellWorld)
-  : m_engineParameters(parameters), m_cellWorld(cellWorld) {}
+    : m_engineParameters(parameters), m_cellWorld(cellWorld) {}
 
 template <typename LiquidId>
 unsigned LiquidCellEngine<LiquidId>::liquidTickDelta(LiquidId liquid) {
@@ -297,8 +297,8 @@ void LiquidCellEngine<LiquidId>::setup() {
   }
 
   sort(m_currentActiveCells, [](WorkingCell* lhs, WorkingCell* rhs) {
-      return lhs->position[1] < rhs->position[1];
-    });
+    return lhs->position[1] < rhs->position[1];
+  });
 }
 
 template <typename LiquidId>
@@ -494,8 +494,7 @@ void LiquidCellEngine<LiquidId>::finish() {
         workingCellPair.second->pressure = 0.0f;
       }
 
-      m_cellWorld->setFlow(workingCellPair.second->position, CellularLiquidFlowCell<LiquidId>{
-          workingCellPair.second->liquid, workingCellPair.second->level, workingCellPair.second->pressure});
+      m_cellWorld->setFlow(workingCellPair.second->position, CellularLiquidFlowCell<LiquidId>{workingCellPair.second->liquid, workingCellPair.second->level, workingCellPair.second->pressure});
     }
   }
 
@@ -521,8 +520,8 @@ void LiquidCellEngine<LiquidId>::finish() {
   }
 
   eraseWhere(m_activeCells, [](auto const& p) {
-      return p.second.empty();
-    });
+    return p.second.empty();
+  });
 }
 
 template <typename LiquidId>
@@ -542,7 +541,7 @@ typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::wo
 
 template <typename LiquidId>
 typename LiquidCellEngine<LiquidId>::WorkingCell* LiquidCellEngine<LiquidId>::adjacentCell(
-    WorkingCell* cell, Adjacency adjacency) {
+  WorkingCell* cell, Adjacency adjacency) {
   auto getCell = [this](WorkingCell*& cellptr, Vec2I cellPos) {
     if (cellptr)
       return cellptr;
@@ -619,7 +618,7 @@ void LiquidCellEngine<LiquidId>::setLevel(float level, WorkingCell& cell) {
 
 template <typename LiquidId>
 void LiquidCellEngine<LiquidId>::transferLevel(
-    float amount, WorkingCell& source, WorkingCell& dest, bool allowReverse) {
+  float amount, WorkingCell& source, WorkingCell& dest, bool allowReverse) {
   if (amount < 0.0f && allowReverse) {
     transferLevel(-amount, dest, source, false);
 
@@ -652,4 +651,4 @@ void LiquidCellEngine<LiquidId>::transferLevel(
   }
 }
 
-}
+}// namespace Star

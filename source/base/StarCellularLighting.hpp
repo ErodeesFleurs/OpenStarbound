@@ -1,17 +1,19 @@
 #pragma once
 
-#include "StarEither.hpp"
-#include "StarRect.hpp"
-#include "StarImage.hpp"
-#include "StarJson.hpp"
-#include "StarColor.hpp"
-#include "StarInterpolation.hpp"
 #include "StarCellularLightArray.hpp"
+#include "StarColor.hpp"
+#include "StarEither.hpp"
+#include "StarImage.hpp"
+#include "StarInterpolation.hpp"
+#include "StarJson.hpp"
+#include "StarRect.hpp"
 #include "StarThread.hpp"
 
 namespace Star {
 
-struct LightmapExceptionTag { static constexpr char const* typeName = "LightmapException"; };
+struct LightmapExceptionTag {
+  static constexpr char const* typeName = "LightmapException";
+};
 using LightmapException = TypedException<StarException, LightmapExceptionTag>;
 
 class Lightmap {
@@ -20,7 +22,7 @@ public:
   Lightmap(unsigned width, unsigned height);
   Lightmap(Lightmap const& lightMap);
   Lightmap(Lightmap&& lightMap) noexcept;
-  
+
   Lightmap& operator=(Lightmap const& lightMap);
   Lightmap& operator=(Lightmap&& lightMap) noexcept;
 
@@ -86,13 +88,12 @@ inline Vec3F Lightmap::get(unsigned x, unsigned y) const {
   return Vec3F(ptr[0], ptr[1], ptr[2]);
 }
 
-
 inline bool Lightmap::empty() const {
   return m_width == 0 || m_height == 0;
 }
 
 inline Vec2U Lightmap::size() const {
-  return { m_width, m_height };
+  return {m_width, m_height};
 }
 
 inline unsigned Lightmap::width() const {
@@ -118,7 +119,7 @@ class CellularLightingCalculator {
 public:
   explicit CellularLightingCalculator(bool monochrome = false);
 
-  typedef ColoredCellularLightArray::Cell Cell;
+  using Cell = ColoredCellularLightArray::Cell;
 
   void setMonochrome(bool monochrome);
 
@@ -147,6 +148,7 @@ public:
   void calculate(Lightmap& output);
 
   void setupImage(Image& image, PixelFormat format = PixelFormat::RGB24) const;
+
 private:
   Json m_config;
   bool m_monochrome;
@@ -160,7 +162,7 @@ private:
 // uses scalar lights with no color calculation.
 class CellularLightIntensityCalculator {
 public:
-  typedef ScalarCellularLightArray::Cell Cell;
+  using Cell = ScalarCellularLightArray::Cell;
 
   void setParameters(Json const& config);
 
@@ -194,4 +196,4 @@ inline void CellularLightingCalculator::setCellIndex(size_t cellIndex, Vec3F con
     m_lightArray.left().cellAtIndex(cellIndex) = ColoredCellularLightArray::Cell{light, obstacle};
 }
 
-}
+}// namespace Star

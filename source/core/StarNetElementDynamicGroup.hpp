@@ -99,7 +99,7 @@ auto NetElementDynamicGroup<Element>::addNetElement(ElementPtr element) -> Eleme
   readyElement(element);
   auto id = m_idMap.add(std::move(element));
 
-  addChangeData(ElementAddition(id, {}));// we will write the data stream once we know the rules for the one recieving
+  addChangeData(ElementAddition(id, {}));// we will write the data stream once we know the rules for the one receiving
 
   return id;
 }
@@ -140,7 +140,7 @@ void NetElementDynamicGroup<Element>::initNetVersion(NetElementVersion const* ve
   addChangeData(ElementReset());
   for (auto& pair : m_idMap) {
     pair.second->initNetVersion(m_netVersion);
-    addChangeData(ElementAddition(pair.first, {}));// we will write the data stream once we know the rules for the one recieving
+    addChangeData(ElementAddition(pair.first, {}));// we will write the data stream once we know the rules for the one receiving
   }
 }
 

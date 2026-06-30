@@ -234,11 +234,11 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
     else
       lines = guiContext.wrapInterfaceText(message.text, wrapWidth);
 
-    for (size_t i = 0; i < lines.size(); ++i) {
+    for (auto& line : lines) {
       m_receivedMessages.prepend({
           message.context.mode,
           message.portrait,
-          std::move(lines[i])
+          std::move(line)
         });
     }
 
@@ -260,7 +260,7 @@ void Chat::addMessages(List<ChatReceivedMessage> const& messages, bool showPane)
 void Chat::addHistory(String const& chat) {
   if (m_scripted)
     m_script.invoke("addHistory", chat);
-  else if (m_chatHistory.size() > 0 && m_chatHistory.get(0).equals(chat))
+  else if (!m_chatHistory.empty() && m_chatHistory.get(0).equals(chat))
     return;
   else {
     m_chatHistory.prepend(chat);

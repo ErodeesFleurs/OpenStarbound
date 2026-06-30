@@ -73,7 +73,7 @@ bool QuestTrackerPane::sendEvent(InputEvent const& event) {
 void QuestTrackerPane::update(float dt) {
   if (m_currentQuest) {
     if (auto objectiveList = m_currentQuest->objectiveList()) {
-      if (objectiveList->size() == 0) {
+      if (objectiveList->empty()) {
         m_questObjectiveList->hide();
       } else {
         m_questObjectiveList->show();

@@ -1,12 +1,12 @@
 #pragma once
 
 #include "StarAudio.hpp"
-#include "StarThread.hpp"
 #include "StarList.hpp"
 #include "StarMap.hpp"
-#include "StarSet.hpp"
-#include "StarVector.hpp"
 #include "StarMaybe.hpp"
+#include "StarSet.hpp"
+#include "StarThread.hpp"
+#include "StarVector.hpp"
 
 namespace Star {
 
@@ -97,9 +97,9 @@ private:
 // Thread safe mixer class with basic effects support.
 class Mixer {
 public:
-  typedef function<void(int16_t* buffer, size_t frames, unsigned channels)> ExtraMixFunction;
-  typedef function<void(int16_t* buffer, size_t frames, unsigned channels)> EffectFunction;
-  typedef function<float(unsigned, Vec2F, float)> PositionalAttenuationFunction;
+  using ExtraMixFunction = function<void(int16_t* buffer, size_t frames, unsigned channels)>;
+  using EffectFunction = function<void(int16_t* buffer, size_t frames, unsigned channels)>;
+  using PositionalAttenuationFunction = function<float(unsigned, Vec2F, float)>;
 
   Mixer(unsigned sampleRate, unsigned channels);
 
@@ -169,4 +169,4 @@ private:
   atomic<float> m_speed;
 };
 
-}
+}// namespace Star

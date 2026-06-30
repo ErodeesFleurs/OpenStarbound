@@ -1,14 +1,14 @@
 #pragma once
 
-#include <typeindex>
-#include <type_traits>
 #include <lua.hpp>
+#include <type_traits>
+#include <typeindex>
 
-#include "StarLexicalCast.hpp"
-#include "StarString.hpp"
-#include "StarJson.hpp"
-#include "StarRefPtr.hpp"
 #include "StarDirectives.hpp"
+#include "StarJson.hpp"
+#include "StarLexicalCast.hpp"
+#include "StarRefPtr.hpp"
+#include "StarString.hpp"
 
 namespace Star {
 
@@ -16,28 +16,38 @@ class LuaEngine;
 using LuaEnginePtr = RefPtr<LuaEngine>;
 
 // Basic unspecified lua exception
-struct LuaExceptionTag { static constexpr char const* typeName = "LuaException"; };
+struct LuaExceptionTag {
+  static constexpr char const* typeName = "LuaException";
+};
 using LuaException = TypedException<StarException, LuaExceptionTag>;
 
 // Thrown when trying to parse an incomplete statement, useful for implementing
 // REPL loops, uses the incomplete statement marker '<eof>' as the standard lua
 // repl does.
-struct LuaIncompleteStatementExceptionTag { static constexpr char const* typeName = "LuaIncompleteStatementException"; };
+struct LuaIncompleteStatementExceptionTag {
+  static constexpr char const* typeName = "LuaIncompleteStatementException";
+};
 using LuaIncompleteStatementException = TypedException<LuaException, LuaIncompleteStatementExceptionTag>;
 
 // Thrown when the instruction limit is reached, if the instruction limit is
 // set.
-struct LuaInstructionLimitReachedTag { static constexpr char const* typeName = "LuaInstructionLimitReached"; };
+struct LuaInstructionLimitReachedTag {
+  static constexpr char const* typeName = "LuaInstructionLimitReached";
+};
 using LuaInstructionLimitReached = TypedException<LuaException, LuaInstructionLimitReachedTag>;
 
 // Thrown when the engine recursion limit is reached, if the recursion limit is
 // set.
-struct LuaRecursionLimitReachedTag { static constexpr char const* typeName = "LuaRecursionLimitReached"; };
+struct LuaRecursionLimitReachedTag {
+  static constexpr char const* typeName = "LuaRecursionLimitReached";
+};
 using LuaRecursionLimitReached = TypedException<LuaException, LuaRecursionLimitReachedTag>;
 
 // Thrown when an incorrect lua type is passed to something in C++ expecting a
 // different type.
-struct LuaConversionExceptionTag { static constexpr char const* typeName = "LuaConversionException"; };
+struct LuaConversionExceptionTag {
+  static constexpr char const* typeName = "LuaConversionException";
+};
 using LuaConversionException = TypedException<LuaException, LuaConversionExceptionTag>;
 
 using LuaNilType = Empty;
@@ -103,26 +113,26 @@ template <typename... Types>
 LuaTupleReturn<std::decay_t<Types>...> luaTupleReturn(Types&&... args);
 
 namespace LuaDetail {
-  struct LuaHandle {
-    LuaHandle(LuaEnginePtr engine, int handleIndex);
-    ~LuaHandle();
+struct LuaHandle {
+  LuaHandle(LuaEnginePtr engine, int handleIndex);
+  ~LuaHandle();
 
-    LuaHandle(LuaHandle const& other);
-    LuaHandle(LuaHandle&& other);
+  LuaHandle(LuaHandle const& other);
+  LuaHandle(LuaHandle&& other);
 
-    LuaHandle& operator=(LuaHandle const& other);
-    LuaHandle& operator=(LuaHandle&& other);
+  LuaHandle& operator=(LuaHandle const& other);
+  LuaHandle& operator=(LuaHandle&& other);
 
-    LuaEnginePtr engine;
-    int handleIndex = 0;
-  };
+  LuaEnginePtr engine;
+  int handleIndex = 0;
+};
 
-  // Not meant to be used directly, exposes a raw interface for wrapped C++
-  // functions to be wrapped with the least amount of overhead.  Arguments are
-  // passed non-const so that they can be moved into wrapped functions that
-  // take values without copying.
-  using LuaFunctionReturn = Variant<LuaValue, LuaVariadic<LuaValue>>;
-  using LuaWrappedFunction = function<LuaFunctionReturn(LuaEngine&, size_t argc, LuaValue* argv)>;
+// Not meant to be used directly, exposes a raw interface for wrapped C++
+// functions to be wrapped with the least amount of overhead.  Arguments are
+// passed non-const so that they can be moved into wrapped functions that
+// take values without copying.
+using LuaFunctionReturn = Variant<LuaValue, LuaVariadic<LuaValue>>;
+using LuaWrappedFunction = function<LuaFunctionReturn(LuaEngine&, size_t argc, LuaValue* argv)>;
 }
 
 // Prints the lua value similar to lua's print function, except it makes an
@@ -314,12 +324,12 @@ public:
 
   using LuaTable::LuaTable;
 
-  using LuaTable::get;
-  using LuaTable::set;
   using LuaTable::contains;
-  using LuaTable::remove;
   using LuaTable::engine;
+  using LuaTable::get;
   using LuaTable::handleIndex;
+  using LuaTable::remove;
+  using LuaTable::set;
 
   // Splits the path by '.' character, so can get / set values in tables inside
   // other tables.  If any table in the path is not a table but is accessed as
@@ -424,6 +434,7 @@ public:
   LuaNullEnforcer(LuaNullEnforcer const&) = delete;
   LuaNullEnforcer(LuaNullEnforcer&&);
   ~LuaNullEnforcer();
+
 private:
   LuaEngine* m_engine;
 };
@@ -475,11 +486,14 @@ struct LuaProfileEntry {
 // global environments and cannot affect each other.  Individual LuaEngines /
 // LuaContexts are not thread safe, use one LuaEngine per thread.
 class LuaEngine : public RefCounter {
+  struct ConstructorToken {};
+
 public:
   // If 'safe' is true, then creates a lua engine with all builtin lua
   // functions that can affect the real world disabled.
   static LuaEnginePtr create(bool safe = true);
 
+  explicit LuaEngine(ConstructorToken) {}
   ~LuaEngine();
 
   LuaEngine(LuaEngine const&) = delete;
@@ -631,6 +645,7 @@ public:
       return {};
     return std::static_pointer_cast<T>(m_services.get(typeid(T)));
   }
+
 private:
   friend struct LuaDetail::LuaHandle;
   friend class LuaReference;
@@ -641,8 +656,6 @@ private:
   friend class LuaUserData;
   friend class LuaContext;
   friend class LuaNullEnforcer;
-
-  LuaEngine() = default;
 
   // Get the LuaEngine* out of the lua registry magic entry.  Uses 1 stack
   // space, and does not call lua_checkstack.

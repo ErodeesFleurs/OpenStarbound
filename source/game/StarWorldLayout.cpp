@@ -4,17 +4,13 @@
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarParallax.hpp"
+#include "StarPythonic.hpp"
 #include "StarTerrainDatabase.hpp"
 #include "StarWorldGeometry.hpp"
 
 namespace Star {
 
-WorldRegion::WorldRegion()
-    : terrainSelectorIndex(NullTerrainSelectorIndex),
-      foregroundCaveSelectorIndex(NullTerrainSelectorIndex),
-      backgroundCaveSelectorIndex(NullTerrainSelectorIndex),
-      blockBiomeIndex(NullBiomeIndex),
-      environmentBiomeIndex(NullBiomeIndex) {}
+WorldRegion::WorldRegion() = default;
 
 WorldRegion::WorldRegion(Json const& store) {
   terrainSelectorIndex = store.getUInt("terrainSelectorIndex");
@@ -699,7 +695,7 @@ pair<WorldLayout::WorldLayer, List<RectI>> WorldLayout::expandRegionInLayer(Worl
 
     // Logger::info("before expansion:\ntarget cells are: {}\nother cells are: {}", printRegionCells(targetCells), printRegionCells(otherCells));
 
-    starAssert(targetCells.size() > 0);
+    starAssert(!targetCells.empty());
     starAssert(targetCells.size() < 3);
 
     // check the current width to see how much (if any) to expand
@@ -909,8 +905,8 @@ void WorldLayout::addLayer(uint64_t seed, int yStart, int yBase, String const& p
 
   // construct list of region cells and relative sizes
   addRegion(primaryRegionParams, primarySubRegionParams, Vec2F(1, 1));
-  for (size_t i = 0; i < secondaryRegions.size(); ++i)
-    addRegion(secondaryRegions[i], secondarySubRegions[i], secondaryRegionSize);
+  for (auto [secondaryRegion, secondarySubRegion] : zipIterator(secondaryRegions, secondarySubRegions))
+    addRegion(secondaryRegion, secondarySubRegion, secondaryRegionSize);
 
   int const worldWidth = static_cast<int>(m_worldSize[0]);
   int const worldHeight = static_cast<int>(m_worldSize[1]);

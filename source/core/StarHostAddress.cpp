@@ -2,6 +2,7 @@
 #include "StarLexicalCast.hpp"
 #include "StarNetImpl.hpp"
 
+#include <algorithm>
 #include <array>
 
 namespace Star {
@@ -57,12 +58,8 @@ bool HostAddress::isLocalHost() const {
     return (m_address[0] == 127 && m_address[1] == 0 && m_address[2] == 0 && m_address[3] == 1);
 
   } else {
-    for (size_t i = 0; i < 15; ++i) {
-      if (m_address[i] != 0)
-        return false;
-    }
-
-    return m_address[15] == 1;
+    return std::all_of(m_address, m_address + 15, [](uint8_t octet) { return octet == 0; })
+        && m_address[15] == 1;
   }
 }
 
@@ -71,11 +68,7 @@ bool HostAddress::isZero() const {
     return m_address[0] == 0 && m_address[1] == 0 && m_address[2] == 0 && m_address[3] == 0;
 
   if (mode() == NetworkMode::IPv6) {
-    for (size_t i = 0; i < 16; i++) {
-      if (m_address[i] != 0)
-        return false;
-    }
-    return true;
+    return std::all_of(m_address, m_address + 16, [](uint8_t octet) { return octet == 0; });
   }
 
   return false;
@@ -97,12 +90,7 @@ bool HostAddress::operator==(HostAddress const& a) const {
     return false;
 
   size_t len = a.size();
-  for (size_t i = 0; i < len; i++) {
-    if (m_address[i] != a.m_address[i])
-      return false;
-  }
-
-  return true;
+  return std::equal(m_address, m_address + len, a.m_address);
 }
 
 void HostAddress::set(String const& address) {
@@ -203,8 +191,9 @@ std::ostream& operator<<(std::ostream& os, HostAddress const& address) {
 
 size_t hash<HostAddress>::operator()(HostAddress const& address) const {
   PLHasher hash;
-  for (size_t i = 0; i < address.size(); ++i)
-    hash.put(address.octet(i));
+  std::for_each(address.bytes(), address.bytes() + address.size(), [&](uint8_t octet) {
+      hash.put(octet);
+    });
   return hash.hash();
 }
 

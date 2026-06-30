@@ -1,8 +1,8 @@
 #include "StarInput.hpp"
+#include "StarAlgorithm.hpp"
 #include "StarConfiguration.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
-#include "StarAlgorithm.hpp"
 
 namespace Star {
 
@@ -18,39 +18,50 @@ BiMap<Key, KeyMod> const KeysToMods{
   {Key::LGui, KeyMod::LGui},
   {Key::RGui, KeyMod::RGui},
   {Key::AltGr, KeyMod::AltGr},
-  {Key::ScrollLock, KeyMod::Scroll}
-};
+  {Key::ScrollLock, KeyMod::Scroll}};
 
 const KeyMod KeyModOptional = KeyMod::Num | KeyMod::Caps | KeyMod::Scroll;
 
 inline bool compareKeyModLenient(KeyMod input, KeyMod test) {
-	input |= KeyModOptional;
-	test |= KeyModOptional;
-	return (test & input) == test;
+  input |= KeyModOptional;
+  test |= KeyModOptional;
+  return (test & input) == test;
 }
 
 inline bool compareKeyMod(KeyMod input, KeyMod test) {
-	return (input | (KeyModOptional & ~test)) == (test | KeyModOptional);
+  return (input | (KeyModOptional & ~test)) == (test | KeyModOptional);
 }
 
 Json keyModsToJson(KeyMod mod) {
   JsonArray array;
   array.reserve(12);
-  
-  if (bool(mod & KeyMod::LShift)) array.emplace_back("LShift");
-  if (bool(mod & KeyMod::RShift)) array.emplace_back("RShift");
-  if (bool(mod & KeyMod::LCtrl )) array.emplace_back("LCtrl" );
-  if (bool(mod & KeyMod::RCtrl )) array.emplace_back("RCtrl" );
-  if (bool(mod & KeyMod::LAlt  )) array.emplace_back("LAlt"  );
-  if (bool(mod & KeyMod::RAlt  )) array.emplace_back("RAlt"  );
-  if (bool(mod & KeyMod::LGui  )) array.emplace_back("LGui"  );
-  if (bool(mod & KeyMod::RGui  )) array.emplace_back("RGui"  );
-  if (bool(mod & KeyMod::Num   )) array.emplace_back("Num"   );
-  if (bool(mod & KeyMod::Caps  )) array.emplace_back("Caps"  );
-  if (bool(mod & KeyMod::AltGr )) array.emplace_back("AltGr" );
-  if (bool(mod & KeyMod::Scroll)) array.emplace_back("Scroll");
 
-  return array.empty() ? Json() : std::move(array);
+  if (bool(mod & KeyMod::LShift))
+    array.emplace_back("LShift");
+  if (bool(mod & KeyMod::RShift))
+    array.emplace_back("RShift");
+  if (bool(mod & KeyMod::LCtrl))
+    array.emplace_back("LCtrl");
+  if (bool(mod & KeyMod::RCtrl))
+    array.emplace_back("RCtrl");
+  if (bool(mod & KeyMod::LAlt))
+    array.emplace_back("LAlt");
+  if (bool(mod & KeyMod::RAlt))
+    array.emplace_back("RAlt");
+  if (bool(mod & KeyMod::LGui))
+    array.emplace_back("LGui");
+  if (bool(mod & KeyMod::RGui))
+    array.emplace_back("RGui");
+  if (bool(mod & KeyMod::Num))
+    array.emplace_back("Num");
+  if (bool(mod & KeyMod::Caps))
+    array.emplace_back("Caps");
+  if (bool(mod & KeyMod::AltGr))
+    array.emplace_back("AltGr");
+  if (bool(mod & KeyMod::Scroll))
+    array.emplace_back("Scroll");
+
+  return array.empty() ? Json() : Json(std::move(array));
 }
 
 // Optional pointer argument to output calculated priority
@@ -93,37 +104,31 @@ Json Input::inputEventToJson(InputEvent const& input) {
     type = "KeyDown";
     data = JsonObject{
       {"key", KeyNames.getRight(keyDown->key)},
-      {"mods", keyModsToJson(keyDown->mods)}
-    };
+      {"mods", keyModsToJson(keyDown->mods)}};
   } else if (auto keyUp = input.ptr<KeyUpEvent>()) {
     type = "KeyUp";
     data = JsonObject{
-      {"key", KeyNames.getRight(keyUp->key)}
-    };
+      {"key", KeyNames.getRight(keyUp->key)}};
   } else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
     type = "MouseButtonDown";
     data = JsonObject{
       {"mouseButton", MouseButtonNames.getRight(mouseDown->mouseButton)},
-      {"mousePosition", jsonFromVec2F(mouseDown->mousePosition)}
-    };
+      {"mousePosition", jsonFromVec2F(mouseDown->mousePosition)}};
   } else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
     type = "MouseButtonUp";
     data = JsonObject{
       {"mouseButton", MouseButtonNames.getRight(mouseUp->mouseButton)},
-      {"mousePosition", jsonFromVec2F(mouseUp->mousePosition)}
-    };
+      {"mousePosition", jsonFromVec2F(mouseUp->mousePosition)}};
   } else if (auto mouseWheel = input.ptr<MouseWheelEvent>()) {
     type = "MouseWheel";
     data = JsonObject{
       {"mouseWheel", mouseWheel->mouseWheel == MouseWheel::Up ? 1 : -1},
-      {"mousePosition", jsonFromVec2F(mouseWheel->mousePosition)}
-    };
+      {"mousePosition", jsonFromVec2F(mouseWheel->mousePosition)}};
   } else if (auto mouseMove = input.ptr<MouseMoveEvent>()) {
     type = "MouseMove";
     data = JsonObject{
       {"mouseMove", jsonFromVec2F(mouseMove->mouseMove)},
-      {"mousePosition", jsonFromVec2F(mouseMove->mousePosition)}
-    };
+      {"mousePosition", jsonFromVec2F(mouseMove->mousePosition)}};
   } else if (auto controllerDown = input.ptr<ControllerButtonDownEvent>()) {
     type = "ControllerButtonDown";
     data = JsonObject{
@@ -145,8 +150,7 @@ Json Input::inputEventToJson(InputEvent const& input) {
   if (data) {
     return JsonObject{
       {"type", type},
-      {"data", data}
-    };
+      {"data", data}};
   }
 
   return data;
@@ -168,8 +172,7 @@ Input::Bind Input::bindFromJson(Json const& json) {
       return bind;
     keyBind.mods = keyModsFromJson(json.getArray("mods", {}), &keyBind.priority);
     bind = std::move(keyBind);
-  }
-  else if (type == "mouse") {
+  } else if (type == "mouse") {
     MouseBind mouseBind;
     if (auto button = MouseButtonNames.maybeLeft(value.toString()))
       mouseBind.button = *button;
@@ -177,8 +180,7 @@ Input::Bind Input::bindFromJson(Json const& json) {
       return bind;
     mouseBind.mods = keyModsFromJson(json.getArray("mods", {}), &mouseBind.priority);
     bind = std::move(mouseBind);
-  }
-  else if (type == "controller") {
+  } else if (type == "controller") {
     ControllerBind controllerBind;
     if (auto button = ControllerButtonNames.maybeLeft(value.toString()))
       controllerBind.button = *button;
@@ -195,27 +197,22 @@ Json Input::bindToJson(Bind const& bind) {
   if (auto keyBind = bind.ptr<KeyBind>()) {
     auto obj = JsonObject{
       {"type", "key"},
-      {"value", KeyNames.getRight(keyBind->key)}
-    }; // don't want empty mods to exist as null entry
+      {"value", KeyNames.getRight(keyBind->key)}};// don't want empty mods to exist as null entry
     if (auto mods = keyModsToJson(keyBind->mods))
       obj.emplace("mods", std::move(mods));
     return obj;
-  }
-  else if (auto mouseBind = bind.ptr<MouseBind>()) {
+  } else if (auto mouseBind = bind.ptr<MouseBind>()) {
     auto obj = JsonObject{
       {"type", "mouse"},
-      {"value", MouseButtonNames.getRight(mouseBind->button)}
-    };
+      {"value", MouseButtonNames.getRight(mouseBind->button)}};
     if (auto mods = keyModsToJson(mouseBind->mods))
       obj.emplace("mods", std::move(mods));
     return obj;
-  }
-  else if (auto controllerBind = bind.ptr<ControllerBind>()) {
+  } else if (auto controllerBind = bind.ptr<ControllerBind>()) {
     return JsonObject{
       {"type", "controller"},
       {"value", ControllerButtonNames.getRight(controllerBind->button)},
-      {"controller", controllerBind->controller}
-    };
+      {"controller", controllerBind->controller}};
   }
 
   return Json();
@@ -227,10 +224,9 @@ Input::BindEntry::BindEntry(String entryId, Json const& config, BindCategory con
   name = config.getString("name", id);
   tags = jsonToStringList(config.get("tags", JsonArray()));
   for (Json const& jBind : config.getArray("default", {})) {
-    try
-      { defaultBinds.emplace_back(bindFromJson(jBind)); }
-    catch (JsonException const& e)
-      { Logger::error("Binds: Error loading default bind in {}.{}: {}", parentCategory.id, id, e.what()); }
+    try {
+      defaultBinds.emplace_back(bindFromJson(jBind));
+    } catch (JsonException const& e) { Logger::error("Binds: Error loading default bind in {}.{}: {}", parentCategory.id, id, e.what()); }
   }
 }
 
@@ -247,11 +243,8 @@ void Input::BindEntry::updated() {
 
   String path = strf("{}.{}", InputBindingConfigRoot, category->id);
   if (!config->getPath(path).isType(Json::Type::Object)) {
-    config->setPath(path, JsonObject{
-      { id, std::move(array) }
-    });
-  }
-  else {
+    config->setPath(path, JsonObject{{id, std::move(array)}});
+  } else {
     path = strf("{}.{}", path, id);
     config->setPath(path, array);
   }
@@ -278,8 +271,8 @@ Input::BindRef::BindRef(BindEntry& bindEntry) {
 }
 
 Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig, ConfigurationPtr configuration, function<void()> rebuildMappings)
-  : configuration(requireServiceValueAs<InputException>(std::move(configuration), "BindCategory", "configuration")),
-    rebuildMappings(requireDependencyValueAs<InputException>(std::move(rebuildMappings), "BindCategory", "mapping rebuild callback")) {
+    : configuration(requireServiceValueAs<InputException>(std::move(configuration), "BindCategory", "configuration")),
+      rebuildMappings(requireDependencyValueAs<InputException>(std::move(rebuildMappings), "BindCategory", "mapping rebuild callback")) {
   id = categoryId;
   config = categoryConfig;
   name = config.getString("name", id);
@@ -296,10 +289,9 @@ Input::BindCategory::BindCategory(String categoryId, Json const& categoryConfig,
 
     if (userBindings.isType(Json::Type::Object)) {
       for (auto& jBind : userBindings.queryArray(strf("{}.{}", id, bindId), {})) {
-        try
-          { entry.customBinds.emplace_back(bindFromJson(jBind)); }
-        catch (JsonException const& e)
-          { Logger::error("Binds: Error loading user bind in {}.{}: {}", id, bindId, e.what()); }
+        try {
+          entry.customBinds.emplace_back(bindFromJson(jBind));
+        } catch (JsonException const& e) { Logger::error("Binds: Error loading user bind in {}.{}: {}", id, bindId, e.what()); }
       }
     }
 
@@ -328,7 +320,7 @@ Input::BindEntry* Input::bindEntryPtr(String const& categoryId, String const& bi
       return entry;
     }
   }
-  
+
   return nullptr;
 }
 
@@ -356,8 +348,8 @@ Input::InputState& Input::addBindState(BindEntry const& bindEntry) {
 }
 
 Input::Input(InputServices services)
-  : m_assets(requireServiceValueAs<InputException>(std::move(services.assets), "Input", "assets")),
-    m_configuration(requireServiceValueAs<InputException>(std::move(services.configuration), "Input", "configuration")) {
+    : m_assets(requireServiceValueAs<InputException>(std::move(services.assets), "Input", "assets")),
+      m_configuration(requireServiceValueAs<InputException>(std::move(services.configuration), "Input", "configuration")) {
   auto registerReloadListener = requireDependencyValueAs<InputException>(std::move(services.registerReloadListener), "Input", "reload listener registrar");
 
   m_pressedMods = KeyMod::NoMod;
@@ -377,8 +369,6 @@ List<std::pair<InputEvent, bool>> const& Input::inputEventsThisFrame() const {
   return m_inputEvents;
 }
 
-
-
 void Input::reset(bool clear) {
   m_inputEvents.clear();
   if (clear) {
@@ -393,8 +383,8 @@ void Input::reset(bool clear) {
       return !p.second.held;
     };
 
-    eraseWhere(m_keyStates,        eraseCond);
-    eraseWhere(m_mouseStates,      eraseCond);
+    eraseWhere(m_keyStates, eraseCond);
+    eraseWhere(m_mouseStates, eraseCond);
     eraseWhere(m_controllerStates, eraseCond);
     eraseWhere(m_bindStates, [&](auto& p) {
       if (p.second.held)
@@ -403,7 +393,7 @@ void Input::reset(bool clear) {
         for (auto& tag : p.first->tags) {
           auto find = m_activeTags.find(tag);
           if (find != m_activeTags.end() && !--find->second)
-              m_activeTags.erase(find);
+            m_activeTags.erase(find);
         }
         return true;
       }
@@ -428,14 +418,13 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
       if (keyToMod)
         state.mods |= *keyToMod;
       state.press();
-      
+
       if (auto binds = m_bindMappings.ptr(keyDown->key)) {
         for (auto bind : filterBindEntries(*binds, keyDown->mods))
           addBindState(*bind).press();
       }
     }
-  }
-  else if (auto keyUp = input.ptr<KeyUpEvent>()) {
+  } else if (auto keyUp = input.ptr<KeyUpEvent>()) {
     auto keyToMod = KeysToMods.rightPtr(keyUp->key);
     if (keyToMod)
       m_pressedMods &= ~*keyToMod;
@@ -453,8 +442,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
           state->release();
       }
     }
-  }
-  else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
+  } else if (auto mouseDown = input.ptr<MouseButtonDownEvent>()) {
     m_mousePosition = mouseDown->mousePosition;
     if (!gameProcessed) {
       auto& state = m_mouseStates[mouseDown->mouseButton];
@@ -466,8 +454,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
           addBindState(*bind).press();
       }
     }
-  }
-  else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
+  } else if (auto mouseUp = input.ptr<MouseButtonUpEvent>()) {
     m_mousePosition = mouseUp->mousePosition;
     if (auto state = m_mouseStates.ptr(mouseUp->mouseButton)) {
       state->releasePositions.append(mouseUp->mousePosition);
@@ -480,11 +467,9 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
           state->release();
       }
     }
-  }
-  else if (auto mouseMove = input.ptr<MouseMoveEvent>()) {
+  } else if (auto mouseMove = input.ptr<MouseMoveEvent>()) {
     m_mousePosition = mouseMove->mousePosition;
-  }
-  else if (auto controllerDown = input.ptr<ControllerButtonDownEvent>()) {
+  } else if (auto controllerDown = input.ptr<ControllerButtonDownEvent>()) {
     if (!gameProcessed) {
       auto& state = m_controllerStates[controllerDown->controllerButton];
       state.press();
@@ -494,8 +479,7 @@ bool Input::handleInput(InputEvent const& input, bool gameProcessed) {
           addBindState(*bind).press();
       }
     }
-  }
-  else if (auto controllerUp = input.ptr<ControllerButtonUpEvent>()) {
+  } else if (auto controllerUp = input.ptr<ControllerButtonUpEvent>()) {
     if (auto state = m_controllerStates.ptr(controllerUp->controllerButton))
       state->release();
 
@@ -529,12 +513,12 @@ void Input::rebuildMappings() {
   }
 
   for (auto& pair : m_bindMappings) {
-    pair.second.sort([](BindRef const& a, BindRef const& b)
-      { return a.priority > b.priority; });
+    pair.second.sort([](BindRef const& a, BindRef const& b) { return a.priority > b.priority; });
   }
 }
 
-void Input::reload() {;
+void Input::reload() {
+  ;
   m_bindCategories.clear();
 
   for (auto& bindPath : m_assets->scanExtension("binds")) {
@@ -682,8 +666,10 @@ Input::ClipboardUnlock::ClipboardUnlock(Input& input)
 
 Input::ClipboardUnlock::ClipboardUnlock(ClipboardUnlock&& other) { m_input = take(other.m_input); };
 
-Input::ClipboardUnlock::~ClipboardUnlock() { if (m_input) --m_input->m_clipboardAllowed; };
-
+Input::ClipboardUnlock::~ClipboardUnlock() {
+  if (m_input)
+    --m_input->m_clipboardAllowed;
+};
 
 Input::ClipboardUnlock Input::unlockClipboard() {
   return Input::ClipboardUnlock(*this);
@@ -693,4 +679,4 @@ bool Input::clipboardAllowed() const {
   return m_clipboardAllowed > 0 ? true : getTag("clipboard") > 0;
 }
 
-}
+}// namespace Star

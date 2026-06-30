@@ -16,10 +16,9 @@ String utf16ToString(WCHAR const* s) {
     return "";
   int sLen = wcharLen(s);
   int utf8Len = WideCharToMultiByte(CP_UTF8, 0, s, sLen + 1, nullptr, 0, nullptr, nullptr);
-  auto utf8Buffer = new char[utf8Len];
-  WideCharToMultiByte(CP_UTF8, 0, s, sLen + 1, utf8Buffer, utf8Len, nullptr, nullptr);
-  auto result = String(utf8Buffer, utf8Len - 1);
-  delete[] utf8Buffer;
+  auto utf8Buffer = make_unique<char[]>(utf8Len);
+  WideCharToMultiByte(CP_UTF8, 0, s, sLen + 1, utf8Buffer.get(), utf8Len, nullptr, nullptr);
+  auto result = String(utf8Buffer.get(), utf8Len - 1);
   return result;
 }
 
@@ -30,4 +29,4 @@ unique_ptr<WCHAR[]> stringToUtf16(String const& s) {
   return result;
 }
 
-}
+}// namespace Star

@@ -10,7 +10,7 @@ constexpr size_t PacketReceiveBufferSize = 1024;
 namespace Star {
 
 PacketStatCollector::PacketStatCollector(float calculationWindow)
-  : m_calculationWindow(calculationWindow) {}
+    : m_calculationWindow(calculationWindow) {}
 
 void PacketStatCollector::mix(size_t size) {
   calculate();
@@ -77,9 +77,8 @@ pair<UniquePtr<LocalPacketSocket>, UniquePtr<LocalPacketSocket>> LocalPacketSock
   auto rhsIncomingPipe = make_shared<Pipe>();
 
   return {
-    UniquePtr<LocalPacketSocket>(new LocalPacketSocket(lhsIncomingPipe, weak_ptr<Pipe>(rhsIncomingPipe))),
-    UniquePtr<LocalPacketSocket>(new LocalPacketSocket(rhsIncomingPipe, weak_ptr<Pipe>(lhsIncomingPipe)))
-  };
+    make_unique<LocalPacketSocket>(ConstructorToken{}, lhsIncomingPipe, weak_ptr<Pipe>(rhsIncomingPipe)),
+    make_unique<LocalPacketSocket>(ConstructorToken{}, rhsIncomingPipe, weak_ptr<Pipe>(lhsIncomingPipe))};
 }
 
 bool LocalPacketSocket::isOpen() const {
@@ -134,14 +133,14 @@ bool LocalPacketSocket::readData() {
   return false;
 }
 
-LocalPacketSocket::LocalPacketSocket(shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe)
-  : m_incomingPipe(std::move(incomingPipe)), m_outgoingPipe(std::move(outgoingPipe)) {}
+LocalPacketSocket::LocalPacketSocket(ConstructorToken, shared_ptr<Pipe> incomingPipe, weak_ptr<Pipe> outgoingPipe)
+    : m_incomingPipe(std::move(incomingPipe)), m_outgoingPipe(std::move(outgoingPipe)) {}
 
 UniquePtr<TcpPacketSocket> TcpPacketSocket::open(TcpSocketPtr socket) {
   socket = requireServiceValueAs<StarException>(std::move(socket), "TcpPacketSocket", "socket");
   socket->setNoDelay(true);
   socket->setNonBlocking(true);
-  return UniquePtr<TcpPacketSocket>(new TcpPacketSocket(std::move(socket)));
+  return make_unique<TcpPacketSocket>(ConstructorToken{}, std::move(socket));
 }
 
 bool TcpPacketSocket::isOpen() const {
@@ -178,7 +177,7 @@ void TcpPacketSocket::sendPackets(List<PacketPtr> packets) {
       while (it.hasNext()
              && it.peekNext()->type() == currentType
              && it.peekNext()->compressionMode() == currentCompressionMode) {
-          it.next()->write(packetBuffer, netRules());
+        it.next()->write(packetBuffer, netRules());
       }
 
       // Packets must read and write actual data, because this is used to
@@ -350,11 +349,11 @@ Maybe<PacketStats> TcpPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 
-TcpPacketSocket::TcpPacketSocket(TcpSocketPtr socket) : m_socket(std::move(socket)) {}
+TcpPacketSocket::TcpPacketSocket(ConstructorToken, TcpSocketPtr socket) : m_socket(std::move(socket)) {}
 
 UniquePtr<P2PPacketSocket> P2PPacketSocket::open(UniquePtr<P2PSocket> socket) {
   socket = requireServiceValueAs<StarException>(std::move(socket), "P2PPacketSocket", "socket");
-  return UniquePtr<P2PPacketSocket>(new P2PPacketSocket(std::move(socket)));
+  return make_unique<P2PPacketSocket>(ConstructorToken{}, std::move(socket));
 }
 
 bool P2PPacketSocket::isOpen() const {
@@ -392,7 +391,7 @@ void P2PPacketSocket::sendPackets(List<PacketPtr> packets) {
       while (it.hasNext()
              && it.peekNext()->type() == currentType
              && it.peekNext()->compressionMode() == currentCompressionMode) {
-          it.next()->write(packetBuffer, netRules());
+        it.next()->write(packetBuffer, netRules());
       }
 
       // Packets must read and write actual data, because this is used to
@@ -489,8 +488,8 @@ bool P2PPacketSocket::readData() {
       while (auto message = m_socket->receiveMessage()) {
         m_incomingStats.mix(message->size());
         m_inputMessages.append(compressionStreamEnabled()
-          ? m_decompressionStream.decompress(*message)
-          : *message);
+                                 ? m_decompressionStream.decompress(*message)
+                                 : *message);
         workDone = true;
       }
     } catch (StarException const& e) {
@@ -510,7 +509,7 @@ Maybe<PacketStats> P2PPacketSocket::outgoingStats() const {
   return m_outgoingStats.stats();
 }
 
-P2PPacketSocket::P2PPacketSocket(P2PSocketPtr socket)
-  : m_socket(std::move(socket)) {}
+P2PPacketSocket::P2PPacketSocket(ConstructorToken, P2PSocketPtr socket)
+    : m_socket(std::move(socket)) {}
 
-}
+}// namespace Star

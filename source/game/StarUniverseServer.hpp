@@ -65,7 +65,7 @@ struct UniverseServerExceptionTag {
 };
 using UniverseServerException = TypedException<StarException, UniverseServerExceptionTag>;
 
-// Manages all running worlds, listens for new client connections and marshalls
+// Manages all running worlds, listens for new client connections and marshals
 // between all the different worlds and all the different client connections
 // and routes packets between them.
 class UniverseServer : public Thread {

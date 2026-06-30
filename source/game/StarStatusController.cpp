@@ -625,10 +625,13 @@ Maybe<Json> StatusController::receiveMessage(String const& message, bool localMe
 
 StatusController::EffectAnimator::EffectAnimator(Maybe<String> config, AssetsConstPtr assets, ParticleDatabaseConstPtr particleDatabase, ImageMetadataDatabaseConstPtr imageMetadataDatabase) {
   animationConfig = std::move(config);
-  if (animationConfig) {
+  if (assets || particleDatabase || imageMetadataDatabase) {
     this->assets = requireServiceValueAs<StarException>(std::move(assets), "EffectAnimator", "assets");
     this->particleDatabase = requireServiceValueAs<StarException>(std::move(particleDatabase), "EffectAnimator", "particle database");
     this->imageMetadataDatabase = requireServiceValueAs<StarException>(std::move(imageMetadataDatabase), "EffectAnimator", "image metadata database");
+  }
+
+  if (animationConfig) {
     animator = NetworkedAnimator(*animationConfig, String(), this->assets, this->imageMetadataDatabase, this->particleDatabase);
   } else {
     animator = NetworkedAnimator();

@@ -1,5 +1,6 @@
 #include "StarMainInterface.hpp"
 #include "StarAlgorithm.hpp"
+#include "StarPythonic.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
 #include "StarLexicalCast.hpp"
@@ -621,7 +622,7 @@ void MainInterface::update(float dt) {
   sortByComputedValue(mouseoverEntities, [&](DamageBarEntityPtr const& a) {
       return m_client->worldClient()->geometry().diff(a->position(), cursorWorldPos).magnitude();
     });
-  if (mouseoverEntities.size() > 0) {
+  if (!mouseoverEntities.empty()) {
     newMouseOverTarget = mouseoverEntities[0]->entityId();
   } else if (m_lastMouseoverTarget == NullEntityId && player->lastDamagedTarget() != NullEntityId && player->timeSinceLastGaveDamage() < m_stickyTargetingTimer.time / 2) {
     if (auto targetEntity = as<DamageBarEntity>(m_client->worldClient()->entity(player->lastDamagedTarget()))) {
@@ -671,8 +672,8 @@ void MainInterface::update(float dt) {
         return m_client->worldClient()->geometry().diff(entity->position(), m_client->mainPlayer()->position());
       });
 
-    for (size_t i = 0; i < specialDamageTargets.size(); i++) {
-      auto id = specialDamageTargets[i]->entityId();
+    for (auto const& damageTarget : specialDamageTargets) {
+      auto id = damageTarget->entityId();
       if (!m_specialDamageBars.contains(id)) {
         m_specialDamageBars.add(id,0);
         if (m_specialDamageBars.size() >= maxBars)
@@ -1490,9 +1491,9 @@ void MainInterface::renderDebug() {
 
     m_debugTextRect = RectF::null();
 
-    for (size_t index = 0; index != formatted.size(); ++index) {
-      TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->textStyle.fontSize * interfaceScale() * index) };
-      m_guiContext.renderText(formatted[index], positioning);
+    for (auto const& textAndIndex : enumerateIterator(formatted)) {
+      TextPositioning positioning = { Vec2F(m_config->debugOffset[0], windowHeight() - m_config->debugOffset[1] - m_config->textStyle.fontSize * interfaceScale() * textAndIndex.second) };
+      m_guiContext.renderText(textAndIndex.first, positioning);
     }
   }
 

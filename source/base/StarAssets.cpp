@@ -9,6 +9,7 @@
 #include "StarJsonExtra.hpp"
 #include "StarJsonPatch.hpp"
 #include "StarIterator.hpp"
+#include "StarPythonic.hpp"
 #include "StarImageProcessing.hpp"
 #include "StarLogging.hpp"
 #include "StarRandom.hpp"
@@ -275,12 +276,12 @@ Assets::Assets(Settings settings, StringList assetSources) {
             for (auto& path : patchPair.getArray("paths")) {
               if (auto p = m_files.ptr(path.toString())) {
                 p->patchSources.reserve(p->patchSources.size() + patches.size());
-                for (size_t i = 0; i != patches.size(); ++i) {
-                  auto& patch = patches[i];
+                for (auto const& patchAndIndex : enumerateIterator(patches)) {
+                  auto& patch = patchAndIndex.first;
                   if (patch.isType(Json::Type::String))
                     p->patchSources.append({patch.toString(), source});
                   else
-                    p->patchSources.append({strf("{}:[{}].patches[{}]", filename, patchIndex, i), source});
+                    p->patchSources.append({strf("{}:[{}].patches[{}]", filename, patchIndex, patchAndIndex.second), source});
                 }
               }
             }
@@ -716,24 +717,26 @@ FramesSpecification Assets::parseFramesSpecification(Json const& frameConfig, St
       throw AssetException(strf("Image {} \"dimensions\" in frameGrid cannot be zero", framesSpecification.framesFile));
 
     if (grid.contains("names")) {
-      auto nameList = grid.get("names");
-      for (size_t y = 0; y < nameList.size(); ++y) {
+      auto nameList = grid.get("names").toArray();
+      for (auto const& rowAndY : enumerateIterator(nameList)) {
+        size_t y = rowAndY.second;
         if (y >= dimensions[1])
           throw AssetException(strf("Image {} row {} is out of bounds for y-dimension {}",
               framesSpecification.framesFile,
               y + 1,
               dimensions[1]));
-        auto rowList = nameList.get(y);
-        if (rowList.isNull())
+        if (rowAndY.first.isNull())
           continue;
-        for (unsigned x = 0; x < rowList.size(); ++x) {
+        auto rowList = rowAndY.first.toArray();
+        for (auto const& frameAndX : enumerateIterator(rowList)) {
+          size_t x = frameAndX.second;
           if (x >= dimensions[0])
             throw AssetException(strf("Image {} column {} is out of bounds for x-dimension {}",
                 framesSpecification.framesFile,
                 x + 1,
                 dimensions[0]));
 
-          auto frame = rowList.get(x);
+          auto frame = frameAndX.first;
           if (frame.isNull())
             continue;
           auto frameName = frame.toString();

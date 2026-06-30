@@ -92,7 +92,7 @@ void Statistics::update() {
       unlockAchievement(achievement);
   }
 
-  if (m_service && (m_pendingEvents.size() > 0 || m_pendingAchievementChecks.size() > 0))
+  if (m_service && (!m_pendingEvents.empty() || !m_pendingAchievementChecks.empty()))
     m_service->flush();
   m_pendingEvents = {};
   m_pendingAchievementChecks = {};
