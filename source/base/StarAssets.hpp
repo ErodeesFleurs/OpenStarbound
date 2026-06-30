@@ -3,6 +3,7 @@
 #include "StarJson.hpp"
 #include "StarOrderedMap.hpp"
 #include "StarRect.hpp"
+#include "StarIAssets.hpp"
 #include "StarBiMap.hpp"
 #include "StarThread.hpp"
 #include "StarAssetSource.hpp"
@@ -53,7 +54,7 @@ struct FramesSpecification {
 // packed asset file.
 //
 // Assets is thread safe and performs TTL caching.
-class Assets {
+class Assets : public IAssets {
 public:
   struct Settings {
     // TTL for cached assets

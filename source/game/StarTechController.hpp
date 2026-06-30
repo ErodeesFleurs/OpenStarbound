@@ -35,6 +35,8 @@ public:
 
   TechController();
 
+  TechController(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController);
+
   Json diskStore();
   void diskLoad(Json const& store);
 

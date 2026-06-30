@@ -476,11 +476,11 @@ void InventoryPane::update(float dt) {
       attackLabel->setText("");
     }
 
-    auto defenseLabel = fetchChild<LabelWidget>("companionDefenseStat");
+    auto companionDefenseLabel = fetchChild<LabelWidget>("companionDefenseStat");
     if (auto defense = pet->stat("defense")) {
-      defenseLabel->setText(strf("{:.1f}", *defense));
+      companionDefenseLabel->setText(strf("{:.1f}", *defense));
     } else {
-      defenseLabel->setText("");
+      companionDefenseLabel->setText("");
     }
 
     if (containsChild("companionHealthBar")) {

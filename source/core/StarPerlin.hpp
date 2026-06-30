@@ -526,14 +526,14 @@ template <typename Float>
 inline Float Perlin<Float>::perlin(Float x) const {
   int i;
   Float val, sum = 0;
-  Float p, scale = 1;
+  Float per, scale = 1;
 
-  p = x * m_frequency;
+  per = x * m_frequency;
   for (i = 0; i < m_octaves; i++) {
-    val = noise1(p);
+    val = noise1(per);
     sum += val / scale;
     scale *= m_alpha;
-    p *= m_beta;
+    per *= m_beta;
   }
   return sum * m_amplitude + m_bias;
 }
@@ -542,16 +542,16 @@ template <typename Float>
 inline Float Perlin<Float>::perlin(Float x, Float y) const {
   int i;
   Float val, sum = 0;
-  Float p[2], scale = 1;
+  Float per[2], scale = 1;
 
-  p[0] = x * m_frequency;
-  p[1] = y * m_frequency;
+  per[0] = x * m_frequency;
+  per[1] = y * m_frequency;
   for (i = 0; i < m_octaves; i++) {
-    val = noise2(p);
+    val = noise2(per);
     sum += val / scale;
     scale *= m_alpha;
-    p[0] *= m_beta;
-    p[1] *= m_beta;
+    per[0] *= m_beta;
+    per[1] *= m_beta;
   }
   return sum * m_amplitude + m_bias;
 }
@@ -560,18 +560,18 @@ template <typename Float>
 inline Float Perlin<Float>::perlin(Float x, Float y, Float z) const {
   int i;
   Float val, sum = 0;
-  Float p[3], scale = 1;
+  Float per[3], scale = 1;
 
-  p[0] = x * m_frequency;
-  p[1] = y * m_frequency;
-  p[2] = z * m_frequency;
+  per[0] = x * m_frequency;
+  per[1] = y * m_frequency;
+  per[2] = z * m_frequency;
   for (i = 0; i < m_octaves; i++) {
-    val = noise3(p);
+    val = noise3(per);
     sum += val / scale;
     scale *= m_alpha;
-    p[0] *= m_beta;
-    p[1] *= m_beta;
-    p[2] *= m_beta;
+    per[0] *= m_beta;
+    per[1] *= m_beta;
+    per[2] *= m_beta;
   }
 
   return sum * m_amplitude + m_bias;
@@ -604,13 +604,13 @@ inline Float Perlin<Float>::ridgedMulti(Float x) const {
 template <typename Float>
 inline Float Perlin<Float>::ridgedMulti(Float x, Float y) const {
   Float val, sum = 0;
-  Float p[2], scale = 1;
+  Float per[2], scale = 1;
   Float weight = 1.0;
 
-  p[0] = x * m_frequency;
-  p[1] = y * m_frequency;
+  per[0] = x * m_frequency;
+  per[1] = y * m_frequency;
   for (int i = 0; i < m_octaves; ++i) {
-    val = noise2(p);
+    val = noise2(per);
 
     val = m_offset - fabs(val);
     val *= val;
@@ -620,8 +620,8 @@ inline Float Perlin<Float>::ridgedMulti(Float x, Float y) const {
 
     sum += val / scale;
     scale *= m_alpha;
-    p[0] *= m_beta;
-    p[1] *= m_beta;
+    per[0] *= m_beta;
+    per[1] *= m_beta;
   }
 
   return ((sum * 1.25) - 1.0) * m_amplitude + m_bias;
@@ -630,14 +630,14 @@ inline Float Perlin<Float>::ridgedMulti(Float x, Float y) const {
 template <typename Float>
 inline Float Perlin<Float>::ridgedMulti(Float x, Float y, Float z) const {
   Float val, sum = 0;
-  Float p[3], scale = 1;
+  Float per[3], scale = 1;
   Float weight = 1.0;
 
-  p[0] = x * m_frequency;
-  p[1] = y * m_frequency;
-  p[2] = z * m_frequency;
+  per[0] = x * m_frequency;
+  per[1] = y * m_frequency;
+  per[2] = z * m_frequency;
   for (int i = 0; i < m_octaves; ++i) {
-    val = noise3(p);
+    val = noise3(per);
 
     val = m_offset - fabs(val);
     val *= val;
@@ -647,9 +647,9 @@ inline Float Perlin<Float>::ridgedMulti(Float x, Float y, Float z) const {
 
     sum += val / scale;
     scale *= m_alpha;
-    p[0] *= m_beta;
-    p[1] *= m_beta;
-    p[2] *= m_beta;
+    per[0] *= m_beta;
+    per[1] *= m_beta;
+    per[2] *= m_beta;
   }
 
   return ((sum * 1.25) - 1.0) * m_amplitude + m_bias;
@@ -658,16 +658,16 @@ inline Float Perlin<Float>::ridgedMulti(Float x, Float y, Float z) const {
 template <typename Float>
 inline Float Perlin<Float>::billow(Float x) const {
   Float val, sum = 0;
-  Float p, scale = 1;
+  Float per, scale = 1;
 
-  p = x * m_frequency;
+  per = x * m_frequency;
   for (int i = 0; i < m_octaves; i++) {
-    val = noise1(p);
+    val = noise1(per);
     val = 2.0 * fabs(val) - 1.0;
 
     sum += val / scale;
     scale *= m_alpha;
-    p *= m_beta;
+    per *= m_beta;
   }
   return (sum + 0.5) * m_amplitude + m_bias;
 }
@@ -675,18 +675,18 @@ inline Float Perlin<Float>::billow(Float x) const {
 template <typename Float>
 inline Float Perlin<Float>::billow(Float x, Float y) const {
   Float val, sum = 0;
-  Float p[2], scale = 1;
+  Float per[2], scale = 1;
 
-  p[0] = x * m_frequency;
-  p[1] = y * m_frequency;
+  per[0] = x * m_frequency;
+  per[1] = y * m_frequency;
   for (int i = 0; i < m_octaves; i++) {
-    val = noise2(p);
+    val = noise2(per);
     val = 2.0 * fabs(val) - 1.0;
 
     sum += val / scale;
     scale *= m_alpha;
-    p[0] *= m_beta;
-    p[1] *= m_beta;
+    per[0] *= m_beta;
+    per[1] *= m_beta;
   }
   return (sum + 0.5) * m_amplitude + m_bias;
 }
@@ -694,20 +694,20 @@ inline Float Perlin<Float>::billow(Float x, Float y) const {
 template <typename Float>
 inline Float Perlin<Float>::billow(Float x, Float y, Float z) const {
   Float val, sum = 0;
-  Float p[3], scale = 1;
+  Float per[3], scale = 1;
 
-  p[0] = x * m_frequency;
-  p[1] = y * m_frequency;
-  p[2] = z * m_frequency;
+  per[0] = x * m_frequency;
+  per[1] = y * m_frequency;
+  per[2] = z * m_frequency;
   for (int i = 0; i < m_octaves; i++) {
-    val = noise3(p);
+    val = noise3(per);
     val = 2.0 * fabs(val) - 1.0;
 
     sum += val / scale;
     scale *= m_alpha;
-    p[0] *= m_beta;
-    p[1] *= m_beta;
-    p[2] *= m_beta;
+    per[0] *= m_beta;
+    per[1] *= m_beta;
+    per[2] *= m_beta;
   }
 
   return (sum + 0.5) * m_amplitude + m_bias;

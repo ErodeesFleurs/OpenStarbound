@@ -132,8 +132,8 @@ MaterialRenderProfile parseMaterialRenderProfile(Json const& spec, String const&
       RectF textureRect = RectF::withSize(texturePosition + variantStride * v, textureSize);
       renderPiece->variants[i].append(flipTextureCoordinates(textureRect));
       for (MaterialColorVariant c = 0; c != profile.colorVariants; ++c) {
-        RectF textureRect = RectF::withSize(texturePosition + variantStride * v + colorStride * ++i, textureSize);
-        renderPiece->variants[i].append(flipTextureCoordinates(textureRect));
+        RectF variantTextureRect = RectF::withSize(texturePosition + variantStride * v + colorStride * ++i, textureSize);
+        renderPiece->variants[i].append(flipTextureCoordinates(variantTextureRect));
       }
     }
 

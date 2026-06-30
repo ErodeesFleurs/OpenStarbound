@@ -580,9 +580,9 @@ void SystemClientShip::serverUpdate(SystemWorld* system, float dt) {
     if (m_departTimer > 0.0f)
       return;
 
-    if (auto coordinate = m_destination.get().maybe<CelestialCoordinate>()) {
-      if (!m_orbit || m_orbit->target != *coordinate)
-        m_orbit = nearPlanetOrbit(*coordinate);
+    if (auto destCoordinate = m_destination.get().maybe<CelestialCoordinate>()) {
+      if (!m_orbit || m_orbit->target != *destCoordinate)
+        m_orbit = nearPlanetOrbit(*destCoordinate);
     } else {
       m_orbit.reset();
     }

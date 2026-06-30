@@ -16,6 +16,8 @@ class QuestManager {
 public:
   QuestManager(Player* player);
 
+  QuestManager(Player* player, World* world);
+
   void diskLoad(Json const& quests);
   Json diskStore();
 

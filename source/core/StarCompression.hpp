@@ -23,6 +23,10 @@ void uncompressData(const char* in, size_t inLen, ByteArray& out, size_t limit =
 void uncompressData(ByteArray const& in, ByteArray& out, size_t limit = 0);
 [[nodiscard]] ByteArray uncompressData(ByteArray const& in, size_t limit = 0);
 
+// std::span convenience overloads
+inline void uncompressData(std::span<char const> in, ByteArray& out, size_t limit = 0) { uncompressData(in.data(), in.size(), out, limit); }
+[[nodiscard]] inline ByteArray uncompressData(std::span<char const> in, size_t limit = 0) { return uncompressData(in.data(), in.size(), limit); }
+
 // Random access to a (potentially) compressed file.
 class CompressedFile : public IODevice {
 public:

@@ -164,14 +164,29 @@ struct PacketBase : public Packet {
   PacketType type() const override { return Type; }
 };
 
-struct ProtocolRequestPacket : PacketBase<PacketType::ProtocolRequest> {
+template <typename Derived, PacketType PT>
+struct AutoPacket : PacketBase<PT> {
+  void read(DataStream& ds) final override {
+    std::apply([&ds, this](auto... ptrs) {
+      ((ds >> (static_cast<Derived&>(*this).*ptrs)), ...);
+    }, Derived::serializableFields());
+  }
+  void write(DataStream& ds) const final override {
+    std::apply([&ds, this](auto... ptrs) {
+      ((ds << (static_cast<Derived const&>(*this).*ptrs)), ...);
+    }, Derived::serializableFields());
+  }
+};
+
+struct ProtocolRequestPacket : AutoPacket<ProtocolRequestPacket, PacketType::ProtocolRequest> {
   ProtocolRequestPacket();
   explicit ProtocolRequestPacket(VersionNumber requestProtocolVersion);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   VersionNumber requestProtocolVersion;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&ProtocolRequestPacket::requestProtocolVersion};
+  }
 };
 
 struct ProtocolResponsePacket : PacketBase<PacketType::ProtocolResponse> {
@@ -184,14 +199,15 @@ struct ProtocolResponsePacket : PacketBase<PacketType::ProtocolResponse> {
   Json info;
 };
 
-struct ServerDisconnectPacket : PacketBase<PacketType::ServerDisconnect> {
+struct ServerDisconnectPacket : AutoPacket<ServerDisconnectPacket, PacketType::ServerDisconnect> {
   ServerDisconnectPacket();
   explicit ServerDisconnectPacket(String reason);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   String reason;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&ServerDisconnectPacket::reason};
+  }
 };
 
 struct ConnectSuccessPacket : PacketBase<PacketType::ConnectSuccess> {
@@ -206,37 +222,40 @@ struct ConnectSuccessPacket : PacketBase<PacketType::ConnectSuccess> {
   CelestialBaseInformation celestialInformation;
 };
 
-struct ConnectFailurePacket : PacketBase<PacketType::ConnectFailure> {
+struct ConnectFailurePacket : AutoPacket<ConnectFailurePacket, PacketType::ConnectFailure> {
   ConnectFailurePacket();
   explicit ConnectFailurePacket(String reason);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   String reason;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&ConnectFailurePacket::reason};
+  }
 };
 
-struct HandshakeChallengePacket : PacketBase<PacketType::HandshakeChallenge> {
+struct HandshakeChallengePacket : AutoPacket<HandshakeChallengePacket, PacketType::HandshakeChallenge> {
   HandshakeChallengePacket();
   explicit HandshakeChallengePacket(ByteArray const& passwordSalt);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   ByteArray passwordSalt;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&HandshakeChallengePacket::passwordSalt};
+  }
 };
 
-struct ChatReceivePacket : PacketBase<PacketType::ChatReceive> {
+struct ChatReceivePacket : AutoPacket<ChatReceivePacket, PacketType::ChatReceive> {
   ChatReceivePacket();
   explicit ChatReceivePacket(ChatReceivedMessage receivedMessage);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
   Json writeJson() const override;
 
   ChatReceivedMessage receivedMessage;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&ChatReceivePacket::receivedMessage};
+  }
 };
 
 struct UniverseTimeUpdatePacket : PacketBase<PacketType::UniverseTimeUpdate> {
@@ -250,36 +269,39 @@ struct UniverseTimeUpdatePacket : PacketBase<PacketType::UniverseTimeUpdate> {
   float timescale;
 };
 
-struct CelestialResponsePacket : PacketBase<PacketType::CelestialResponse> {
+struct CelestialResponsePacket : AutoPacket<CelestialResponsePacket, PacketType::CelestialResponse> {
   CelestialResponsePacket();
   explicit CelestialResponsePacket(List<CelestialResponse> responses);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   List<CelestialResponse> responses;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&CelestialResponsePacket::responses};
+  }
 };
 
-struct PlayerWarpResultPacket : PacketBase<PacketType::PlayerWarpResult> {
+struct PlayerWarpResultPacket : AutoPacket<PlayerWarpResultPacket, PacketType::PlayerWarpResult> {
   PlayerWarpResultPacket();
   PlayerWarpResultPacket(bool success, WarpAction warpAction, bool warpActionInvalid);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   bool success;
   WarpAction warpAction;
   bool warpActionInvalid;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&PlayerWarpResultPacket::success, &PlayerWarpResultPacket::warpAction, &PlayerWarpResultPacket::warpActionInvalid};
+  }
 };
 
-struct PlanetTypeUpdatePacket : PacketBase<PacketType::PlanetTypeUpdate> {
+struct PlanetTypeUpdatePacket : AutoPacket<PlanetTypeUpdatePacket, PacketType::PlanetTypeUpdate> {
   PlanetTypeUpdatePacket();
   explicit PlanetTypeUpdatePacket(CelestialCoordinate coordinate);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   CelestialCoordinate coordinate;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&PlanetTypeUpdatePacket::coordinate};
+  }
 };
 
 struct PausePacket : PacketBase<PacketType::Pause> {
@@ -296,18 +318,19 @@ struct PausePacket : PacketBase<PacketType::Pause> {
   float timescale = 1.0f;
 };
 
-struct ServerInfoPacket : PacketBase<PacketType::ServerInfo> {
+struct ServerInfoPacket : AutoPacket<ServerInfoPacket, PacketType::ServerInfo> {
   ServerInfoPacket();
   ServerInfoPacket(uint16_t players, uint16_t maxPlayers);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
   Json writeJson() const override;
 
   uint16_t players;
   uint16_t maxPlayers;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&ServerInfoPacket::players, &ServerInfoPacket::maxPlayers};
+  }
 };
 
 struct ClientConnectPacket : PacketBase<PacketType::ClientConnect> {
@@ -338,25 +361,27 @@ struct ClientDisconnectRequestPacket : PacketBase<PacketType::ClientDisconnectRe
   void write(DataStream& ds) const override;
 };
 
-struct HandshakeResponsePacket : PacketBase<PacketType::HandshakeResponse> {
+struct HandshakeResponsePacket : AutoPacket<HandshakeResponsePacket, PacketType::HandshakeResponse> {
   HandshakeResponsePacket();
   explicit HandshakeResponsePacket(ByteArray const& passHash);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   ByteArray passHash;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&HandshakeResponsePacket::passHash};
+  }
 };
 
-struct PlayerWarpPacket : PacketBase<PacketType::PlayerWarp> {
+struct PlayerWarpPacket : AutoPacket<PlayerWarpPacket, PacketType::PlayerWarp> {
   PlayerWarpPacket();
   PlayerWarpPacket(WarpAction action, bool deploy);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   WarpAction action;
   bool deploy;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&PlayerWarpPacket::action, &PlayerWarpPacket::deploy};
+  }
 };
 
 struct FlyShipPacket : PacketBase<PacketType::FlyShip> {
@@ -384,32 +409,31 @@ struct ChatSendPacket : PacketBase<PacketType::ChatSend> {
   JsonObject data;
 };
 
-struct CelestialRequestPacket : PacketBase<PacketType::CelestialRequest> {
+struct CelestialRequestPacket : AutoPacket<CelestialRequestPacket, PacketType::CelestialRequest> {
   CelestialRequestPacket();
   explicit CelestialRequestPacket(List<CelestialRequest> requests);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   List<CelestialRequest> requests;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&CelestialRequestPacket::requests};
+  }
 };
 
-struct ClientContextUpdatePacket : PacketBase<PacketType::ClientContextUpdate> {
+struct ClientContextUpdatePacket : AutoPacket<ClientContextUpdatePacket, PacketType::ClientContextUpdate> {
   ClientContextUpdatePacket();
   explicit ClientContextUpdatePacket(ByteArray updateData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   ByteArray updateData;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&ClientContextUpdatePacket::updateData};
+  }
 };
 
 // Sent when a client should initialize themselves on a new world
-struct WorldStartPacket : PacketBase<PacketType::WorldStart> {
+struct WorldStartPacket : AutoPacket<WorldStartPacket, PacketType::WorldStart> {
   WorldStartPacket();
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   Json templateData;
   ByteArray skyData;
@@ -423,49 +447,62 @@ struct WorldStartPacket : PacketBase<PacketType::WorldStart> {
   Json worldProperties;
   ConnectionId clientId;
   bool localInterpolationMode;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&WorldStartPacket::templateData, &WorldStartPacket::skyData,
+      &WorldStartPacket::weatherData, &WorldStartPacket::playerStart,
+      &WorldStartPacket::playerRespawn, &WorldStartPacket::respawnInWorld,
+      &WorldStartPacket::dungeonIdGravity, &WorldStartPacket::dungeonIdBreathable,
+      &WorldStartPacket::protectedDungeonIds, &WorldStartPacket::worldProperties,
+      &WorldStartPacket::clientId, &WorldStartPacket::localInterpolationMode};
+  }
 };
 
 // Sent when a client is leaving a world
-struct WorldStopPacket : PacketBase<PacketType::WorldStop> {
+struct WorldStopPacket : AutoPacket<WorldStopPacket, PacketType::WorldStop> {
   WorldStopPacket();
   explicit WorldStopPacket(String const& reason);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   String reason;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&WorldStopPacket::reason};
+  }
 };
 
 // Sent when the region data for the client's current world changes
-struct WorldLayoutUpdatePacket : PacketBase<PacketType::WorldLayoutUpdate> {
+struct WorldLayoutUpdatePacket : AutoPacket<WorldLayoutUpdatePacket, PacketType::WorldLayoutUpdate> {
   WorldLayoutUpdatePacket();
   explicit WorldLayoutUpdatePacket(Json const& layoutData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   Json layoutData;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&WorldLayoutUpdatePacket::layoutData};
+  }
 };
 
 // Sent when the environment status effect list for the client's current world changes
-struct WorldParametersUpdatePacket : PacketBase<PacketType::WorldParametersUpdate> {
+struct WorldParametersUpdatePacket : AutoPacket<WorldParametersUpdatePacket, PacketType::WorldParametersUpdate> {
   WorldParametersUpdatePacket();
   explicit WorldParametersUpdatePacket(ByteArray const& parametersData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   ByteArray parametersData;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&WorldParametersUpdatePacket::parametersData};
+  }
 };
 
-struct CentralStructureUpdatePacket : PacketBase<PacketType::CentralStructureUpdate> {
+struct CentralStructureUpdatePacket : AutoPacket<CentralStructureUpdatePacket, PacketType::CentralStructureUpdate> {
   CentralStructureUpdatePacket();
   explicit CentralStructureUpdatePacket(Json structureData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   Json structureData;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&CentralStructureUpdatePacket::structureData};
+  }
 };
 
 struct TileArrayUpdatePacket : PacketBase<PacketType::TileArrayUpdate> {
@@ -500,17 +537,17 @@ struct TileLiquidUpdatePacket : PacketBase<PacketType::TileLiquidUpdate> {
   LiquidNetUpdate liquidUpdate;
 };
 
-struct TileDamageUpdatePacket : PacketBase<PacketType::TileDamageUpdate> {
+struct TileDamageUpdatePacket : AutoPacket<TileDamageUpdatePacket, PacketType::TileDamageUpdate> {
   TileDamageUpdatePacket();
   TileDamageUpdatePacket(Vec2I const& position, TileLayer layer, TileDamageStatus const& tileDamage);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   Vec2I position;
   TileLayer layer;
-
   TileDamageStatus tileDamage;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&TileDamageUpdatePacket::position, &TileDamageUpdatePacket::layer, &TileDamageUpdatePacket::tileDamage};
+  }
 };
 
 struct TileModificationFailurePacket : PacketBase<PacketType::TileModificationFailure> {
@@ -523,95 +560,102 @@ struct TileModificationFailurePacket : PacketBase<PacketType::TileModificationFa
   TileModificationList modifications;
 };
 
-struct GiveItemPacket : PacketBase<PacketType::GiveItem> {
+struct GiveItemPacket : AutoPacket<GiveItemPacket, PacketType::GiveItem> {
   GiveItemPacket();
   explicit GiveItemPacket(ItemDescriptor const& item);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
   Json writeJson() const override;
 
   ItemDescriptor item;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&GiveItemPacket::item};
+  }
 };
 
-struct EnvironmentUpdatePacket : PacketBase<PacketType::EnvironmentUpdate> {
+struct EnvironmentUpdatePacket : AutoPacket<EnvironmentUpdatePacket, PacketType::EnvironmentUpdate> {
   EnvironmentUpdatePacket();
   EnvironmentUpdatePacket(ByteArray skyDelta, ByteArray weatherDelta);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   ByteArray skyDelta;
   ByteArray weatherDelta;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&EnvironmentUpdatePacket::skyDelta, &EnvironmentUpdatePacket::weatherDelta};
+  }
 };
 
-struct UpdateTileProtectionPacket : PacketBase<PacketType::UpdateTileProtection> {
+struct UpdateTileProtectionPacket : AutoPacket<UpdateTileProtectionPacket, PacketType::UpdateTileProtection> {
   UpdateTileProtectionPacket();
   UpdateTileProtectionPacket(DungeonId dungeonId, bool isProtected);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
   Json writeJson() const override;
 
   DungeonId dungeonId;
   bool isProtected;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&UpdateTileProtectionPacket::dungeonId, &UpdateTileProtectionPacket::isProtected};
+  }
 };
 
-struct SetDungeonGravityPacket : PacketBase<PacketType::SetDungeonGravity> {
+struct SetDungeonGravityPacket : AutoPacket<SetDungeonGravityPacket, PacketType::SetDungeonGravity> {
   SetDungeonGravityPacket();
   SetDungeonGravityPacket(DungeonId dungeonId, Maybe<float> gravity);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
   Json writeJson() const override;
 
   DungeonId dungeonId;
   Maybe<float> gravity;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SetDungeonGravityPacket::dungeonId, &SetDungeonGravityPacket::gravity};
+  }
 };
 
-struct SetDungeonBreathablePacket : PacketBase<PacketType::SetDungeonBreathable> {
+struct SetDungeonBreathablePacket : AutoPacket<SetDungeonBreathablePacket, PacketType::SetDungeonBreathable> {
   SetDungeonBreathablePacket();
   SetDungeonBreathablePacket(DungeonId dungeonId, Maybe<bool> breathable);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
   Json writeJson() const override;
 
   DungeonId dungeonId;
   Maybe<bool> breathable;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SetDungeonBreathablePacket::dungeonId, &SetDungeonBreathablePacket::breathable};
+  }
 };
 
-struct SetPlayerStartPacket : PacketBase<PacketType::SetPlayerStart> {
+struct SetPlayerStartPacket : AutoPacket<SetPlayerStartPacket, PacketType::SetPlayerStart> {
   SetPlayerStartPacket();
   SetPlayerStartPacket(Vec2F playerStart, bool respawnInWorld);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
   Json writeJson() const override;
 
   Vec2F playerStart;
   bool respawnInWorld;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SetPlayerStartPacket::playerStart, &SetPlayerStartPacket::respawnInWorld};
+  }
 };
 
-struct FindUniqueEntityResponsePacket : PacketBase<PacketType::FindUniqueEntityResponse> {
+struct FindUniqueEntityResponsePacket : AutoPacket<FindUniqueEntityResponsePacket, PacketType::FindUniqueEntityResponse> {
   FindUniqueEntityResponsePacket();
   FindUniqueEntityResponsePacket(String uniqueEntityId, Maybe<Vec2F> entityPosition);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   String uniqueEntityId;
   Maybe<Vec2F> entityPosition;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&FindUniqueEntityResponsePacket::uniqueEntityId, &FindUniqueEntityResponsePacket::entityPosition};
+  }
 };
 
 struct PongPacket : PacketBase<PacketType::Pong> {
@@ -682,27 +726,29 @@ struct RequestDropPacket : PacketBase<PacketType::RequestDrop> {
   EntityId dropEntityId;
 };
 
-struct SpawnEntityPacket : PacketBase<PacketType::SpawnEntity> {
+struct SpawnEntityPacket : AutoPacket<SpawnEntityPacket, PacketType::SpawnEntity> {
   SpawnEntityPacket();
   SpawnEntityPacket(EntityType entityType, ByteArray storeData, ByteArray firstNetState);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   EntityType entityType;
   ByteArray storeData;
   ByteArray firstNetState;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SpawnEntityPacket::entityType, &SpawnEntityPacket::storeData, &SpawnEntityPacket::firstNetState};
+  }
 };
 
-struct ConnectWirePacket : PacketBase<PacketType::ConnectWire> {
+struct ConnectWirePacket : AutoPacket<ConnectWirePacket, PacketType::ConnectWire> {
   ConnectWirePacket();
   ConnectWirePacket(WireConnection outputConnection, WireConnection inputConnection);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   WireConnection outputConnection;
   WireConnection inputConnection;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&ConnectWirePacket::outputConnection, &ConnectWirePacket::inputConnection};
+  }
 };
 
 struct DisconnectAllWiresPacket : PacketBase<PacketType::DisconnectAllWires> {
@@ -716,24 +762,26 @@ struct DisconnectAllWiresPacket : PacketBase<PacketType::DisconnectAllWires> {
   WireNode wireNode;
 };
 
-struct WorldClientStateUpdatePacket : PacketBase<PacketType::WorldClientStateUpdate> {
+struct WorldClientStateUpdatePacket : AutoPacket<WorldClientStateUpdatePacket, PacketType::WorldClientStateUpdate> {
   WorldClientStateUpdatePacket();
   explicit WorldClientStateUpdatePacket(ByteArray const& worldClientStateDelta);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   ByteArray worldClientStateDelta;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&WorldClientStateUpdatePacket::worldClientStateDelta};
+  }
 };
 
-struct FindUniqueEntityPacket : PacketBase<PacketType::FindUniqueEntity> {
+struct FindUniqueEntityPacket : AutoPacket<FindUniqueEntityPacket, PacketType::FindUniqueEntity> {
   FindUniqueEntityPacket();
   explicit FindUniqueEntityPacket(String uniqueEntityId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   String uniqueEntityId;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&FindUniqueEntityPacket::uniqueEntityId};
+  }
 };
 
 struct WorldStartAcknowledgePacket : PacketBase<PacketType::WorldStartAcknowledge> {
@@ -793,65 +841,67 @@ struct EntityDestroyPacket : PacketBase<PacketType::EntityDestroy> {
   bool death;
 };
 
-struct EntityInteractPacket : PacketBase<PacketType::EntityInteract> {
+struct EntityInteractPacket : AutoPacket<EntityInteractPacket, PacketType::EntityInteract> {
   EntityInteractPacket();
   EntityInteractPacket(InteractRequest interactRequest, Uuid requestId);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   InteractRequest interactRequest;
   Uuid requestId;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&EntityInteractPacket::interactRequest, &EntityInteractPacket::requestId};
+  }
 };
 
-struct EntityInteractResultPacket : PacketBase<PacketType::EntityInteractResult> {
+struct EntityInteractResultPacket : AutoPacket<EntityInteractResultPacket, PacketType::EntityInteractResult> {
   EntityInteractResultPacket();
   EntityInteractResultPacket(InteractAction action, Uuid requestId, EntityId sourceEntityId);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   InteractAction action;
   Uuid requestId;
   EntityId sourceEntityId;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&EntityInteractResultPacket::action, &EntityInteractResultPacket::requestId, &EntityInteractResultPacket::sourceEntityId};
+  }
 };
 
-struct HitRequestPacket : PacketBase<PacketType::HitRequest> {
+struct HitRequestPacket : AutoPacket<HitRequestPacket, PacketType::HitRequest> {
   HitRequestPacket();
   explicit HitRequestPacket(RemoteHitRequest remoteHitRequest);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   RemoteHitRequest remoteHitRequest;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&HitRequestPacket::remoteHitRequest};
+  }
 };
 
-struct DamageRequestPacket : PacketBase<PacketType::DamageRequest> {
+struct DamageRequestPacket : AutoPacket<DamageRequestPacket, PacketType::DamageRequest> {
   DamageRequestPacket();
   explicit DamageRequestPacket(RemoteDamageRequest remoteDamageRequest);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   RemoteDamageRequest remoteDamageRequest;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&DamageRequestPacket::remoteDamageRequest};
+  }
 };
 
-struct DamageNotificationPacket : PacketBase<PacketType::DamageNotification> {
+struct DamageNotificationPacket : AutoPacket<DamageNotificationPacket, PacketType::DamageNotification> {
   DamageNotificationPacket();
   explicit DamageNotificationPacket(RemoteDamageNotification remoteDamageNotification);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   RemoteDamageNotification remoteDamageNotification;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&DamageNotificationPacket::remoteDamageNotification};
+  }
 };
 
-struct EntityMessagePacket : PacketBase<PacketType::EntityMessage> {
+struct EntityMessagePacket : AutoPacket<EntityMessagePacket, PacketType::EntityMessage> {
   EntityMessagePacket();
   EntityMessagePacket(Variant<EntityId, String> entityId, String message, JsonArray args, Uuid uuid, ConnectionId fromConnection = ServerConnectionId);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   void readJson(Json const& json) override;
   Json writeJson() const override;
@@ -861,17 +911,23 @@ struct EntityMessagePacket : PacketBase<PacketType::EntityMessage> {
   JsonArray args;
   Uuid uuid;
   ConnectionId fromConnection;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&EntityMessagePacket::entityId, &EntityMessagePacket::message,
+      &EntityMessagePacket::args, &EntityMessagePacket::uuid, &EntityMessagePacket::fromConnection};
+  }
 };
 
-struct EntityMessageResponsePacket : PacketBase<PacketType::EntityMessageResponse> {
+struct EntityMessageResponsePacket : AutoPacket<EntityMessageResponsePacket, PacketType::EntityMessageResponse> {
   EntityMessageResponsePacket();
   EntityMessageResponsePacket(Either<String, Json> response, Uuid uuid);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   Either<String, Json> response;
   Uuid uuid;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&EntityMessageResponsePacket::response, &EntityMessageResponsePacket::uuid};
+  }
 };
 
 struct UpdateWorldPropertiesPacket : PacketBase<PacketType::UpdateWorldProperties> {
@@ -897,90 +953,100 @@ struct StepUpdatePacket : PacketBase<PacketType::StepUpdate> {
   double remoteTime;
 };
 
-struct SystemWorldStartPacket : PacketBase<PacketType::SystemWorldStart> {
+struct SystemWorldStartPacket : AutoPacket<SystemWorldStartPacket, PacketType::SystemWorldStart> {
   SystemWorldStartPacket();
   SystemWorldStartPacket(Vec3I location, List<ByteArray> objectStores, List<ByteArray> shipStores, pair<Uuid, SystemLocation> clientShip);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   Vec3I location;
   List<ByteArray> objectStores;
   List<ByteArray> shipStores;
   pair<Uuid, SystemLocation> clientShip;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SystemWorldStartPacket::location, &SystemWorldStartPacket::objectStores,
+      &SystemWorldStartPacket::shipStores, &SystemWorldStartPacket::clientShip};
+  }
 };
 
-struct SystemWorldUpdatePacket : PacketBase<PacketType::SystemWorldUpdate> {
+struct SystemWorldUpdatePacket : AutoPacket<SystemWorldUpdatePacket, PacketType::SystemWorldUpdate> {
   SystemWorldUpdatePacket();
   SystemWorldUpdatePacket(HashMap<Uuid, ByteArray> objectUpdates, HashMap<Uuid, ByteArray> shipUpdates);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   HashMap<Uuid, ByteArray> objectUpdates;
   HashMap<Uuid, ByteArray> shipUpdates;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SystemWorldUpdatePacket::objectUpdates, &SystemWorldUpdatePacket::shipUpdates};
+  }
 };
 
-struct SystemObjectCreatePacket : PacketBase<PacketType::SystemObjectCreate> {
+struct SystemObjectCreatePacket : AutoPacket<SystemObjectCreatePacket, PacketType::SystemObjectCreate> {
   SystemObjectCreatePacket();
   explicit SystemObjectCreatePacket(ByteArray objectStore);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   ByteArray objectStore;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SystemObjectCreatePacket::objectStore};
+  }
 };
 
-struct SystemObjectDestroyPacket : PacketBase<PacketType::SystemObjectDestroy> {
+struct SystemObjectDestroyPacket : AutoPacket<SystemObjectDestroyPacket, PacketType::SystemObjectDestroy> {
   SystemObjectDestroyPacket();
   explicit SystemObjectDestroyPacket(Uuid objectUuid);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   Uuid objectUuid;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SystemObjectDestroyPacket::objectUuid};
+  }
 };
 
-struct SystemShipCreatePacket : PacketBase<PacketType::SystemShipCreate> {
+struct SystemShipCreatePacket : AutoPacket<SystemShipCreatePacket, PacketType::SystemShipCreate> {
   SystemShipCreatePacket();
   explicit SystemShipCreatePacket(ByteArray shipStore);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   ByteArray shipStore;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SystemShipCreatePacket::shipStore};
+  }
 };
 
-struct SystemShipDestroyPacket : PacketBase<PacketType::SystemShipDestroy> {
+struct SystemShipDestroyPacket : AutoPacket<SystemShipDestroyPacket, PacketType::SystemShipDestroy> {
   SystemShipDestroyPacket();
   explicit SystemShipDestroyPacket(Uuid shipUuid);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   Uuid shipUuid;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SystemShipDestroyPacket::shipUuid};
+  }
 };
 
-struct SystemObjectSpawnPacket : PacketBase<PacketType::SystemObjectSpawn> {
+struct SystemObjectSpawnPacket : AutoPacket<SystemObjectSpawnPacket, PacketType::SystemObjectSpawn> {
   SystemObjectSpawnPacket();
   SystemObjectSpawnPacket(String typeName, Uuid uuid, Maybe<Vec2F> position, JsonObject parameters);
-
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
 
   String typeName;
   Uuid uuid;
   Maybe<Vec2F> position;
   JsonObject parameters;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&SystemObjectSpawnPacket::typeName, &SystemObjectSpawnPacket::uuid,
+      &SystemObjectSpawnPacket::position, &SystemObjectSpawnPacket::parameters};
+  }
 };
 
-struct UpdateWorldTemplatePacket : PacketBase<PacketType::UpdateWorldTemplate> {
+struct UpdateWorldTemplatePacket : AutoPacket<UpdateWorldTemplatePacket, PacketType::UpdateWorldTemplate> {
   UpdateWorldTemplatePacket();
   explicit UpdateWorldTemplatePacket(Json templateData);
 
-  void read(DataStream& ds) override;
-  void write(DataStream& ds) const override;
-
   Json templateData;
+
+  static constexpr auto serializableFields() {
+    return std::tuple{&UpdateWorldTemplatePacket::templateData};
+  }
 };
 }

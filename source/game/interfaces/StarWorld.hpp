@@ -8,6 +8,8 @@
 #include "StarTileModification.hpp"
 #include "StarLuaRoot.hpp"
 #include "StarRpcPromise.hpp"
+#include "StarTileWorldInterface.hpp"
+#include "StarEntityWorldInterface.hpp"
 
 namespace Star {
 
@@ -17,109 +19,16 @@ class ScriptedEntity;
 
 using WorldAction = function<void(World*)>;
 
-class World {
+class World : public virtual TileWorldInterface, public virtual EntityWorldInterface {
 public:
   virtual ~World() = default;
 
-  // Will remain constant throughout the life of the world.
+  // World metadata
   virtual ConnectionId connection() const = 0;
   virtual WorldGeometry geometry() const = 0;
-
-  // Update frame counter.  Returns the frame that is *currently* being
-  // updated, not the *last* frame, so during the first call to update(), this
-  // would return 1
   virtual uint64_t currentStep() const = 0;
 
-  // All methods that take int parameters wrap around or clamp so that all int
-  // values are valid world indexes.
-
-  virtual MaterialId material(Vec2I const& position, TileLayer layer) const = 0;
-  virtual std::tuple<MaterialId, ModId> materialAndMod(Vec2I const& position, TileLayer layer) const = 0;
-  virtual MaterialHue materialHueShift(Vec2I const& position, TileLayer layer) const = 0;
-  virtual ModId mod(Vec2I const& position, TileLayer layer) const = 0;
-  virtual MaterialHue modHueShift(Vec2I const& position, TileLayer layer) const = 0;
-  virtual MaterialColorVariant colorVariant(Vec2I const& position, TileLayer layer) const = 0;
-  virtual LiquidLevel liquidLevel(Vec2I const& pos) const = 0;
-  virtual LiquidLevel liquidLevel(RectF const& region) const = 0;
-
-  // Tests a tile modification list and returns the ones that are valid.
-  virtual TileModificationList validTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) const = 0;
-  // Apply a list of tile modifications in the best order to apply as many
-  // possible, and returns the modifications that could not be applied.
-  virtual TileModificationList applyTileModifications(TileModificationList const& modificationList, bool allowEntityOverlap) = 0;
-  // Swap existing tiles for ones defined in the modification list,
-  // and returns the modifications that could not be applied.
-  virtual TileModificationList replaceTiles(TileModificationList const& modificationList, TileDamage const& tileDamage, bool applyDamage = false) = 0;
-  // If an applied damage would destroy a tile
-  virtual bool damageWouldDestroy(Vec2I const& pos, TileLayer layer, TileDamage const& tileDamage) const = 0;
-
-  virtual bool isTileProtected(Vec2I const& pos) const = 0;
-
-  virtual EntityPtr entity(EntityId entityId) const = 0;
-  // *If* the entity is initialized immediately and locally, then will use the
-  // passed in pointer directly and initialize it, and entity will have a valid
-  // id in this world and be ready for use.  This is always the case on the
-  // server, but not *always* the case on the client.
-  virtual void addEntity(EntityPtr const& entity, EntityId entityId = NullEntityId) = 0;
-
-  virtual EntityPtr closestEntity(Vec2F const& center, float radius, EntityFilter selector = {}) const = 0;
-
-  virtual void forAllEntities(EntityCallback entityCallback) const = 0;
-
-  // Query here is a fuzzy query based on metaBoundBox
-  virtual void forEachEntity(RectF const& boundBox, EntityCallback entityCallback) const = 0;
-  // Fuzzy metaBoundBox query for intersecting the given line.
-  virtual void forEachEntityLine(Vec2F const& begin, Vec2F const& end, EntityCallback entityCallback) const = 0;
-  // Performs action for all entities that occupies the given tile position
-  // (only entity types laid out in the tile grid).
-  virtual void forEachEntityAtTile(Vec2I const& pos, EntityCallbackOf<TileEntity> entityCallback) const = 0;
-
-  // Like forEachEntity, but stops scanning when entityFilter returns true, and
-  // returns the EntityPtr found, otherwise returns a null pointer.
-  virtual EntityPtr findEntity(RectF const& boundBox, EntityFilter entityFilter) const = 0;
-  virtual EntityPtr findEntityLine(Vec2F const& begin, Vec2F const& end, EntityFilter entityFilter) const = 0;
-  virtual EntityPtr findEntityAtTile(Vec2I const& pos, EntityFilterOf<TileEntity> entityFilter) const = 0;
-
-  // Is the given tile layer and position occupied by an entity or block?
-  virtual bool tileIsOccupied(Vec2I const& pos, TileLayer layer, bool includeEphemeral = false, bool checkCollision = false) const = 0;
-
-  // Returns the collision kind of a tile.
-  virtual CollisionKind tileCollisionKind(Vec2I const& pos) const = 0;
-
-  // Iterate over the collision block for each tile in the region.  Collision
-  // polys for tiles can extend to a maximum of 1 tile outside of the natural
-  // tile bounds.
-  virtual void forEachCollisionBlock(RectI const& region, function<void(CollisionBlock const&)> const& iterator) const = 0;
-
-  // Is there some connectable tile / tile based entity in this position?  If
-  // tilesOnly is true, only checks to see whether that tile is a connectable
-  // material.
-  virtual bool isTileConnectable(Vec2I const& pos, TileLayer layer, bool tilesOnly = false) const = 0;
-
-  // Returns whether or not a given point is inside any colliding tile.  If
-  // collisionSet is Dynamic or Static, then does not intersect with platforms.
-  virtual bool pointTileCollision(Vec2F const& point, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
-
-  // Returns whether line intersects with any colliding tiles.
-  virtual bool lineTileCollision(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
-  virtual Maybe<pair<Vec2F, Vec2I>> lineTileCollisionPoint(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
-
-  // Returns a list of all the collidable tiles along the given line.
-  virtual List<Vec2I> collidingTilesAlongLine(Vec2F const& begin, Vec2F const& end, CollisionSet const& collisionSet = DefaultCollisionSet, int maxSize = -1, bool includeEdges = true) const = 0;
-
-  // Returns whether the given rect contains any colliding tiles.
-  virtual bool rectTileCollision(RectI const& region, CollisionSet const& collisionSet = DefaultCollisionSet) const = 0;
-
-  // Damage multiple tiles, avoiding duplication (objects or plants that occupy
-  // more than one tile
-  // position are only damaged once)
-  virtual TileDamageResult damageTiles(List<Vec2I> const& tilePositions, TileLayer layer, Vec2F const& sourcePosition, TileDamage const& tileDamage, Maybe<EntityId> sourceEntity = {}) = 0;
-
-  virtual InteractiveEntityPtr getInteractiveInRange(Vec2F const& targetPosition, Vec2F const& sourcePosition, float maxRange) const = 0;
-  // Can the target entity be reached from the given position within the given radius?
-  virtual bool canReachEntity(Vec2F const& position, float radius, EntityId targetEntity, bool preferInteractive = true) const = 0;
-  virtual RpcPromise<InteractAction> interact(InteractRequest const& request) = 0;
-
+  // Environment
   virtual float gravity(Vec2F const& pos) const = 0;
   virtual float windLevel(Vec2F const& pos) const = 0;
   virtual float lightLevel(Vec2F const& pos) const = 0;
@@ -132,7 +41,7 @@ public:
   virtual bool disableDeathDrops() const = 0;
   virtual List<PhysicsForceRegion> forceRegions() const = 0;
 
-  // Gets / sets world-wide properties
+  // Properties / messaging
   virtual Json getProperty(String const& propertyName, Json const& def = {}) const = 0;
   virtual void setProperty(String const& propertyName, Json const& property) = 0;
 
@@ -144,14 +53,7 @@ public:
 
   virtual LuaRootPtr luaRoot() = 0;
 
-  // Locate a unique entity, if the target is local, the promise will be
-  // finished before being returned.  If the unique entity is not found, the
-  // promise will fail.
   virtual RpcPromise<Vec2F> findUniqueEntity(String const& uniqueEntityId) = 0;
-
-  // Send a message to a local or remote scripted entity.  If the target is
-  // local, the promise will be finished before being returned.  Entity id can
-  // either be EntityId or a uniqueId.
   virtual RpcPromise<Json> sendEntityMessage(Variant<EntityId, String> const& entity, String const& message, JsonArray const& args = {}) = 0;
 
   // Helper non-virtual methods.

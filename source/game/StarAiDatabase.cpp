@@ -14,8 +14,8 @@ AiDatabase::AiDatabase() {
   assets->queueJsons(missions);
 
   for (auto const& file : missions) {
-    if (auto config = assets->json(file)) {
-      auto mission = parseMission(config);
+    if (auto missionConfig = assets->json(file)) {
+      auto mission = parseMission(missionConfig);
       m_missions[mission.missionName] = mission;
     }
   }

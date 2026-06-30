@@ -37,24 +37,24 @@ LiquidNetUpdate LiquidStore::netUpdate() const {
   return LiquidNetUpdate{liquid, floatToByte(level, true)};
 }
 
-Maybe<LiquidNetUpdate> LiquidStore::update(LiquidId liquid, float level, float pressure) {
+Maybe<LiquidNetUpdate> LiquidStore::update(LiquidId newLiquid, float newLevel, float newPressure) {
   if (source) {
-    if (this->liquid != liquid)
+    if (this->liquid != newLiquid)
       return {};
-    level = max(level, this->level);
-    pressure = max(pressure, this->pressure);
+    newLevel = max(newLevel, this->level);
+    newPressure = max(newPressure, this->pressure);
   }
 
-  if (level <= 0.0f) {
-    liquid = EmptyLiquidId;
-    pressure = 0.0f;
+  if (newLevel <= 0.0f) {
+    newLiquid = EmptyLiquidId;
+    newPressure = 0.0f;
   }
 
-  bool netUpdate = this->liquid != liquid || floatToByte(this->level, true) != floatToByte(level, true);
+  bool netUpdate = this->liquid != newLiquid || floatToByte(this->level, true) != floatToByte(newLevel, true);
 
-  this->liquid = liquid;
-  this->level = level;
-  this->pressure = pressure;
+  this->liquid = newLiquid;
+  this->level = newLevel;
+  this->pressure = newPressure;
 
   if (netUpdate)
     return LiquidNetUpdate{liquid, floatToByte(level)};

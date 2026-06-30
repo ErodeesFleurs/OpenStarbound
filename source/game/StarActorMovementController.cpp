@@ -1189,8 +1189,8 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
           if (!merged) {
             // try to splice the new path onto the current path
             auto& newPathStart = path.at(0);
-            for (size_t i = m_edgeIndex; i < m_path->size(); i += 2) {
-              auto& edge = m_path->at(i);
+            for (size_t j = m_edgeIndex; j < m_path->size(); j += 2) {
+              auto& edge = m_path->at(j);
               if (edge.target.position == newPathStart.source.position) {
                 // splice the new path onto our current path up to this index
                 auto newPath = m_path->slice(0, i + 1);
@@ -1211,9 +1211,9 @@ Maybe<bool> PathController::findPath(ActorMovementController& movementController
           // merging the paths failed, and the entity has moved from the path start position
           // try to bridge the gap from the current position to the new path
           auto bridgePathFinder = make_shared<PathFinder>(m_world, movementController.position(), *m_startPosition, movementController.baseParameters(), m_parameters);
-          auto explored = bridgePathFinder->explore(movementController.baseParameters().pathExploreRate.value(100.0));
+          auto bridgeExplored = bridgePathFinder->explore(movementController.baseParameters().pathExploreRate.value(100.0));
 
-          if (explored && *explored) {
+          if (bridgeExplored && *bridgeExplored) {
             // concatenate the bridge path with the new path
             auto newPath = *bridgePathFinder->result();
             newPath.appendAll(path);

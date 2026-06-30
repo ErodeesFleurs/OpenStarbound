@@ -8,6 +8,7 @@
 #include "StarPlantDrop.hpp"
 #include "StarProjectile.hpp"
 #include "StarProjectileDatabase.hpp"
+#include "StarRandom.hpp"
 #include "StarItemDrop.hpp"
 #include "StarNpc.hpp"
 #include "StarRoot.hpp"
@@ -38,6 +39,37 @@ EntityFactory::EntityFactory() {
   m_npcDatabase = root.npcDatabase();
   m_vehicleDatabase = root.vehicleDatabase();
   m_versioningDatabase = root.versioningDatabase();
+}
+
+EntityPtr EntityFactory::create(String const& entityName, Json const& extraParams) const {
+  RecursiveMutexLocker locker(m_mutex);
+
+  switch (EntityTypeNames.getLeft(entityName)) {
+    case EntityType::Object:
+      return m_objectDatabase->createObject(extraParams.getString("name"), extraParams.get("parameters", JsonObject()));
+    case EntityType::Projectile:
+      return m_projectileDatabase->createProjectile(extraParams.getString("type"), extraParams.get("parameters", JsonObject()));
+    case EntityType::Monster: {
+      auto variant = m_monsterDatabase->monsterVariant(
+          extraParams.getString("type"),
+          extraParams.getUInt("seed", Random::randu64()),
+          extraParams.get("parameters", JsonObject()));
+      return m_monsterDatabase->createMonster(variant, extraParams.optFloat("level"));
+    }
+    case EntityType::Npc: {
+      auto variant = m_npcDatabase->generateNpcVariant(
+          extraParams.getString("species"),
+          extraParams.getString("type"),
+          extraParams.getFloat("level", 1.0f),
+          extraParams.getUInt("seed", Random::randu64()),
+          extraParams.get("overrides", JsonObject()));
+      return m_npcDatabase->createNpc(variant);
+    }
+    case EntityType::Vehicle:
+      return m_vehicleDatabase->create(extraParams.getString("name"), extraParams.get("parameters", JsonObject()));
+    default:
+      throw EntityFactoryException::format("Don't know how to create entity type '{}'", entityName);
+  }
 }
 
 ByteArray EntityFactory::netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules) const {

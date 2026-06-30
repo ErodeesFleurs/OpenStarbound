@@ -440,8 +440,8 @@ SkyParameters SystemWorldServer::locationSkyParameters(SystemLocation const& loc
           List<CelestialParameters> worlds;
           if (auto planet = m_celestialDatabase->parameters(orbitTarget))
             worlds.append(*planet);
-          for (auto coordinate : m_celestialDatabase->children(orbitTarget)) {
-            if (auto satellite = m_celestialDatabase->parameters(coordinate))
+          for (auto childCoordinate : m_celestialDatabase->children(orbitTarget)) {
+            if (auto satellite = m_celestialDatabase->parameters(childCoordinate))
               worlds.append(*satellite);
           }
 

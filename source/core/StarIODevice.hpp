@@ -41,6 +41,10 @@ public:
   virtual size_t read(char* data, size_t len) = 0;
   virtual size_t write(char const* data, size_t len) = 0;
 
+  // std::span convenience overloads (delegate to virtual methods)
+  size_t read(std::span<char> data) { return read(data.data(), data.size()); }
+  size_t write(std::span<char const> data) { return write(data.data(), data.size()); }
+
   virtual StreamOffset pos() = 0;
   virtual void seek(StreamOffset pos, IOSeek mode = IOSeek::Absolute) = 0;
 

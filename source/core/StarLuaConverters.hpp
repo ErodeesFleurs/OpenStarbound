@@ -68,10 +68,10 @@ struct LuaConverter<Vector<T, N>> {
 
     Vector<T, N> vec;
     for (size_t i = 0; i < N; ++i) {
-      auto v = engine.luaMaybeTo<T>(table->get(i + 1));
-      if (!v)
+      auto val = engine.luaMaybeTo<T>(table->get(i + 1));
+      if (!val)
         return {};
-      vec[i] = *v;
+      vec[i] = *val;
     }
     return vec;
   }

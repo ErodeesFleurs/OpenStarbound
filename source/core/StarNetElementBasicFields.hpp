@@ -222,7 +222,9 @@ void NetElementBasicField<T>::netStore(DataStream& ds, NetCompatibilityRules rul
 template <typename T>
 void NetElementBasicField<T>::netLoad(DataStream& ds, NetCompatibilityRules rules) {
   if (!checkWithRules(rules)) return;
-  readData(ds, m_value);
+  T temp;
+  readData(ds, temp);
+  m_value = std::move(temp);
   m_latestUpdateVersion = m_netVersion ? m_netVersion->current() : 0;
   updated();
   if (m_pendingInterpolatedValues)

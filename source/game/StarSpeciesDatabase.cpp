@@ -41,11 +41,19 @@ SpeciesDatabase::SpeciesDatabase() : m_luaRoot(make_shared<LuaRoot>()) {
   }
 }
 
+bool SpeciesDatabase::hasSpecies(String const& kind) const {
+  return m_species.contains(kind.toLower());
+}
+
 SpeciesDefinitionPtr SpeciesDatabase::species(String const& kind) const {
   auto k = kind.toLower();
   if (!m_species.contains(k))
     throw StarException(strf("Unknown species kind '{}'.", kind));
   return m_species.get(k);
+}
+
+StringList SpeciesDatabase::speciesNames() const {
+  return m_species.keys();
 }
 
 StringMap<SpeciesDefinitionPtr> SpeciesDatabase::allSpecies() const {

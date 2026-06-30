@@ -74,11 +74,11 @@ LuaTable Blackboard::parameters(StringMap<NodeParameter> const& parameters, uint
         LuaTable luaVector = m_luaContext.engine().createTable();
         for (int i = 0; i < 2; i++) {
           if (vector[i].isType(Json::Type::String)) {
-            auto key = vector[i].toString();
-            if (!m_vectorNumberInput.contains(key))
-              m_vectorNumberInput.add(key, {});
+            auto vecKey = vector[i].toString();
+            if (!m_vectorNumberInput.contains(vecKey))
+              m_vectorNumberInput.add(vecKey, {});
 
-            m_vectorNumberInput[key].append({i+1, luaVector});
+            m_vectorNumberInput[vecKey].append({i+1, luaVector});
             luaVector.set(i+1, get(NodeParameterType::Number, vector[i].toString()));
           } else {
             luaVector.set(i+1, m_luaContext.engine().luaFrom(vector[i]));

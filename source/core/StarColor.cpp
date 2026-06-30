@@ -565,7 +565,7 @@ Vec4B Color::hueShiftVec4B(Vec4B color, float hue) {
     auto c = uint8_t(round(v * 255));
     return Vec4B(c, c, c, color[3]);
   } else {
-    float var_h, var_i, var_1, var_2, var_3, var_r, var_g, var_b;
+    float var_h, var_i, var_1, var_2, var_3, r, g, b;
 
     var_h = h * 6.0f;
     if (var_h == 6.0f)
@@ -578,32 +578,32 @@ Vec4B Color::hueShiftVec4B(Vec4B color, float hue) {
     var_3 = v * (1.0f - s * (1.0f - (var_h - var_i)));
 
     if (var_i == 0) {
-      var_r = v;
-      var_g = var_3;
-      var_b = var_1;
+      r = v;
+      g = var_3;
+      b = var_1;
     } else if (var_i == 1) {
-      var_r = var_2;
-      var_g = v;
-      var_b = var_1;
+      r = var_2;
+      g = v;
+      b = var_1;
     } else if (var_i == 2) {
-      var_r = var_1;
-      var_g = v;
-      var_b = var_3;
+      r = var_1;
+      g = v;
+      b = var_3;
     } else if (var_i == 3) {
-      var_r = var_1;
-      var_g = var_2;
-      var_b = v;
+      r = var_1;
+      g = var_2;
+      b = v;
     } else if (var_i == 4) {
-      var_r = var_3;
-      var_g = var_1;
-      var_b = v;
+      r = var_3;
+      g = var_1;
+      b = v;
     } else {
-      var_r = v;
-      var_g = var_1;
-      var_b = var_2;
+      r = v;
+      g = var_1;
+      b = var_2;
     }
 
-    return Vec4B(uint8_t(round(var_r * 255)), uint8_t(round(var_g * 255)), uint8_t(round(var_b * 255)), color[3]);
+    return Vec4B(uint8_t(round(r * 255)), uint8_t(round(g * 255)), uint8_t(round(b * 255)), color[3]);
   }
 }
 

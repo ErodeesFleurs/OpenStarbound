@@ -68,13 +68,14 @@ GuiMessage::GuiMessage() : message(), cooldown(), springState() {}
 GuiMessage::GuiMessage(String const& message, float cooldown, float spring)
   : message(message), cooldown(cooldown), springState(spring) {}
 
-MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, CinematicPtr cinematicOverlay)
+MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, CinematicPtr cinematicOverlay, IAssetsConstPtr assets, IConfigurationPtr configuration)
   : m_guiContext(GuiContext::singletonPtr())
   , m_config(MainInterfaceConfig::loadFromAssets())
   , m_client(std::move(client))
   , m_worldPainter(std::move(painter))
   , m_cinematicOverlay(std::move(cinematicOverlay))
   , m_containerInteractor(make_shared<ContainerInteractor>())
+  , m_assets(std::move(assets)), m_configuration(configuration ? std::move(configuration) : m_configuration)
 {
   GuiReader itemSlotReader;
   m_cursorItem = convert<ItemSlotWidget>(itemSlotReader.makeSingle("cursorItemSlot", m_config->cursorItemSlot));
@@ -140,13 +141,13 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   m_questTracker = make_shared<QuestTrackerPane>();
   m_paneManager.registerPane(MainInterfacePanes::QuestTracker, PaneLayer::Hud, m_questTracker);
 
-  m_mmUpgrade = make_shared<ScriptPane>(m_client, Root::singleton().assets()->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"));
+  m_mmUpgrade = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.mmUpgrade").getString("scriptPane", "/interface/scripted/mmupgrade/mmupgradegui.config"));
   m_paneManager.registerPane(MainInterfacePanes::MmUpgrade, PaneLayer::Window, m_mmUpgrade);
 
-  m_collections = make_shared<ScriptPane>(m_client, Root::singleton().assets()->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"));
+  m_collections = make_shared<ScriptPane>(m_client, m_assets->json("/interface.config:mainBar.collections").getString("scriptPane", "/interface/scripted/collections/collectionsgui.config"));
   m_paneManager.registerPane(MainInterfacePanes::Collections, PaneLayer::Window, m_collections);
 
-  m_chat = make_shared<Chat>(m_client, Root::singleton().assets()->json("/interface/chat/chat.config"));
+  m_chat = make_shared<Chat>(m_client, m_assets->json("/interface/chat/chat.config"));
   m_paneManager.registerPane(MainInterfacePanes::Chat, PaneLayer::Hud, m_chat);
   m_clientCommandProcessor = make_shared<ClientCommandProcessor>(m_client, m_cinematicOverlay, &m_paneManager, m_config->macroCommands);
 
@@ -176,7 +177,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   auto charSelectionMenu = make_shared<CharSelectionPane>(m_client->playerStorage(), [=]() {},
     [=, this](PlayerPtr mainPlayer) {
       m_client->switchPlayer(mainPlayer->uuid());
-      auto configuration = Root::singleton().configuration();
+      auto configuration = m_configuration;
       if (configuration->get("characterSwapMovesToFront", false).toBool())
         m_client->playerStorage()->moveToFront(mainPlayer->uuid());
       if (configuration->get("characterSwapDismisses", false).toBool())
@@ -190,8 +191,7 @@ MainInterface::MainInterface(UniverseClientPtr client, WorldPainterPtr painter, 
   charSelectionMenu->setBG(backgrounds);
   charSelectionMenu->findChild("toggleDismissLabel")->setVisibility(true);
   auto toggleDismiss = charSelectionMenu->findChild<ButtonWidget>("toggleDismissCheckbox");
-  auto configuration = Root::singleton().configuration();
-  toggleDismiss->setChecked(configuration->get("characterSwapDismisses", false).toBool());
+  toggleDismiss->setChecked(m_configuration->get("characterSwapDismisses", false).toBool());
   toggleDismiss->setVisibility(true);
 
   m_paneManager.registerPane(MainInterfacePanes::CharacterSwap, PaneLayer::Window, charSelectionMenu);
@@ -253,7 +253,7 @@ void MainInterface::openMerchantWindow(Json const& config, EntityId sourceEntity
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
 
   m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
-    m_merchantWindow, Root::singleton().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
+    m_merchantWindow, m_assets->json("/interface.config:bringAdjacentWindowGap").toFloat());
 }
 
 void MainInterface::togglePlainCraftingWindow() {
@@ -404,7 +404,7 @@ bool MainInterface::textInputActive() const {
 }
 
 void MainInterface::handleInteractAction(InteractAction interactAction) {
-  auto assets = Root::singleton().assets();
+  auto const& assets = m_assets;
   auto world = m_client->worldClient();
 
   if (interactAction.type == InteractActionType::OpenContainer) {
@@ -438,7 +438,7 @@ void MainInterface::handleInteractAction(InteractAction interactAction) {
     });
 
     m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
-        m_containerPane, Root::singleton().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
+        m_containerPane, m_assets->json("/interface.config:bringAdjacentWindowGap").toFloat());
   } else if (interactAction.type == InteractActionType::SitDown) {
     m_client->mainPlayer()->lounge(interactAction.entityId, interactAction.data.toUInt());
   } else if (interactAction.type == InteractActionType::OpenCraftingInterface) {
@@ -595,7 +595,7 @@ void MainInterface::update(float dt) {
     m_lastMouseoverTarget = NullEntityId;
 
   // special damage bar entities
-  auto barConfig = Root::singleton().assets()->json("/interface.config:specialDamageBar");
+  auto barConfig = m_assets->json("/interface.config:specialDamageBar");
   size_t maxBars = barConfig.getUInt("maxCount",10);
 
   for (auto it = m_specialDamageBars.begin(); it != m_specialDamageBars.end();) {
@@ -675,7 +675,7 @@ void MainInterface::update(float dt) {
     if (worldClient->inWorld()) {
       if (auto cinematic = m_client->mainPlayer()->pullPendingCinematic()) {
         if (*cinematic)
-          m_cinematicOverlay->load(Root::singleton().assets()->fetchJson(cinematic.take()));
+          m_cinematicOverlay->load(m_assets->fetchJson(cinematic.take()));
         else
           m_cinematicOverlay->stop();
       }
@@ -1037,7 +1037,7 @@ void MainInterface::displayDefaultPanes() {
 }
 
 PanePtr MainInterface::createEscapeDialog() {
-  auto assets = Root::singleton().assets();
+  auto const& assets = m_assets;
 
   auto escapeDialog = make_shared<Pane>();
   auto escapeDialogPtr = escapeDialog.get();
@@ -1077,7 +1077,7 @@ Vec2F MainInterface::mainBarPosition() const {
 }
 
 void MainInterface::renderBreath() {
-  auto assets = Root::singleton().assets();
+  auto const& assets = m_assets;
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
 
   Vec2I breathBarSize = Vec2I(m_guiContext->textureSize("/interface/breath/empty.png")) * interfaceScale();
@@ -1113,7 +1113,7 @@ void MainInterface::renderMessages() {
 
   Vec2F totalOffset = {};
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
-  unsigned bottomOffset = Root::singleton().configuration()->getPath("inventory.bottomActionBar").optBool().value(false) ? 32 : 0;
+  unsigned bottomOffset = m_configuration->getPath("inventory.bottomActionBar").optBool().value(false) ? 32 : 0;
   for (auto& message : m_messages) {
     Vec2F hiddenOffset = Vec2F(m_config->messageHiddenOffset);
     Vec2F activeOffset = Vec2F(m_config->messageActiveOffset);
@@ -1144,7 +1144,7 @@ void MainInterface::renderMessages() {
 }
 
 void MainInterface::renderMonsterHealthBar() {
-  auto assets = Root::singleton().assets();
+  auto const& assets = m_assets;
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
   if (m_lastMouseoverTarget != NullEntityId && !m_stickyTargetingTimer.ready()) {
     auto world = m_client->worldClient();
@@ -1208,7 +1208,7 @@ void MainInterface::renderSpecialDamageBar() {
   size_t num = m_specialDamageBars.size();
   if (num == 0) return;
 
-  auto assets = Root::singleton().assets();
+  auto const& assets = m_assets;
   auto imgMetadata = Root::singleton().imageMetadataDatabase();
 
   auto barConfig = assets->json("/interface.config:specialDamageBar");
@@ -1267,7 +1267,7 @@ void MainInterface::renderMainBar() {
 
   m_cursorTooltip = {};
 
-  auto assets = Root::singleton().assets();
+  auto const& assets = m_assets;
 
   Vec2F inventoryButtonPos = barPos + Vec2F(m_config->mainBarInventoryButtonOffset) * interfaceScale();
   if (m_paneManager.registeredPaneIsDisplayed(MainInterfacePanes::Inventory)) {
@@ -1418,7 +1418,7 @@ void MainInterface::renderDebug() {
   SpatialLogger::setObserved(true);
 
   if (m_clientCommandProcessor->debugHudEnabled()) {
-    auto assets = Root::singleton().assets();
+    auto const& assets = m_assets;
     m_guiContext->setTextStyle(m_config->debugTextStyle);
     m_guiContext->setLineSpacing(0.5f);
 
@@ -1548,7 +1548,7 @@ void MainInterface::renderCursor() {
     m_guiContext->drawDrawable(cursorDrawable, Vec2F(cursorPos), cursorScale);
 
   if (m_cursorTooltip) {
-    auto assets = Root::singleton().assets();
+    auto const& assets = m_assets;
     auto imgDb = Root::singleton().imageMetadataDatabase();
 
     auto config = assets->json("/interface.config:cursorTooltip");
@@ -1556,8 +1556,8 @@ void MainInterface::renderCursor() {
     auto rawCursorOffset = jsonToVec2I(config.get("offset"));
 
     Vec2I tooltipSize = Vec2I(imgDb->imageSize(backgroundImage)) * interfaceScale();
-    Vec2I cursorOffset = (Vec2I{0, -m_cursor.size().y()} + rawCursorOffset) * cursorScale;
-    Vec2I tooltipOffset = m_cursorScreenIPos + cursorOffset;
+    Vec2I tooltipCursorOffset = (Vec2I{0, -m_cursor.size().y()} + rawCursorOffset) * cursorScale;
+    Vec2I tooltipOffset = m_cursorScreenIPos + tooltipCursorOffset;
     TextStyle textStyle = config.get("textStyle");
     size_t fontSize = config.get("fontSize").toUInt();
     Vec4B fontColor = jsonToColor(config.get("color")).toRgba();
@@ -1668,7 +1668,7 @@ void MainInterface::displayScriptPane(ScriptPanePtr& scriptPane, EntityId source
     });
     m_paneManager.displayRegisteredPane(MainInterfacePanes::Inventory);
     m_paneManager.bringPaneAdjacent(m_paneManager.registeredPane(MainInterfacePanes::Inventory),
-        scriptPane, Root::singleton().assets()->json("/interface.config:bringAdjacentWindowGap").toFloat());
+        scriptPane, m_assets->json("/interface.config:bringAdjacentWindowGap").toFloat());
   } else {
     m_paneManager.displayPane(layer, scriptPane);
   }

@@ -1,6 +1,7 @@
 #include "StarClientContext.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarDataStreamExtra.hpp"
+#include "StarLogging.hpp"
 
 namespace Star {
 

@@ -91,7 +91,7 @@ Npc::Npc(NpcVariant const& npcVariant) {
   m_blinkCooldownTimer = GameTimer();
 
   m_armor = make_shared<ArmorWearer>();
-  m_tools = make_shared<ToolUser>();
+  m_tools = make_shared<ToolUser>(this);
 
   m_aggressive.set(false);
 
@@ -176,7 +176,6 @@ void Npc::init(World* world, EntityId entityId, EntityMode mode) {
   m_movementController->init(world);
   m_movementController->setIgnorePhysicsEntities({entityId});
   m_statusController->init(this, m_movementController.get());
-  m_tools->init(this);
 
   m_armor->setupHumanoid(*humanoid(), forceNude());
 

@@ -327,19 +327,19 @@ void Mixer::read(int16_t* outBuffer, size_t frameCount, ExtraMixFunction extraMi
         }
         if (audioInstance->m_clockStop && *audioInstance->m_clockStop < sampleEndTime) {
           for (size_t s = 0; s < ramt / channels; ++s) {
-            unsigned millisecondsInBuffer = (s * 1000) / sampleRate;
-            auto sampleTime = sampleStartTime + millisecondsInBuffer;
+            unsigned samplePositionMs = (s * 1000) / sampleRate;
+            auto sampleTime = sampleStartTime + samplePositionMs;
             if (sampleTime > *audioInstance->m_clockStop) {
-              float volume = 0.0f;
+              float clockFadeVolume = 0.0f;
               if (audioInstance->m_clockStopFadeOut > 0)
-                volume = 1.0f - static_cast<float>(sampleTime - *audioInstance->m_clockStop) / static_cast<float>(audioInstance->m_clockStopFadeOut);
+                clockFadeVolume = 1.0f - static_cast<float>(sampleTime - *audioInstance->m_clockStop) / static_cast<float>(audioInstance->m_clockStopFadeOut);
 
-              if (volume <= 0) {
+              if (clockFadeVolume <= 0) {
                 for (size_t c = 0; c < channels; ++c)
                   m_mixBuffer[s * channels + c] = 0;
               } else {
                 for (size_t c = 0; c < channels; ++c)
-                  m_mixBuffer[s * channels + c] *= volume;
+                  m_mixBuffer[s * channels + c] *= clockFadeVolume;
               }
             }
           }

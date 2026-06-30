@@ -34,32 +34,32 @@ TreasureDatabase::TreasureDatabase() {
 
         ItemPool itemPool;
 
-        for (auto const& entry : config.getArray("fill", {}))
-          if (entry.contains("pool"))
-            itemPool.fill.append(entry.getString("pool"));
-          else if (entry.contains("item"))
-            itemPool.fill.append(ItemDescriptor(entry.get("item")));
+        for (auto const& fillEntry : config.getArray("fill", {}))
+          if (fillEntry.contains("pool"))
+            itemPool.fill.append(fillEntry.getString("pool"));
+          else if (fillEntry.contains("item"))
+            itemPool.fill.append(ItemDescriptor(fillEntry.get("item")));
           else
-            throw TreasureException(strf("TreasurePool entry '{}' did not specify a valid 'item' or 'pool'", entry));
+            throw TreasureException(strf("TreasurePool entry '{}' did not specify a valid 'item' or 'pool'", fillEntry));
 
-        for (auto const& entry : config.getArray("pool", {})) {
-          if (!entry.contains("weight"))
-            throw TreasureException(strf("TreasurePool entry '{}' did not specify a weight", entry));
+        for (auto const& poolEntry : config.getArray("pool", {})) {
+          if (!poolEntry.contains("weight"))
+            throw TreasureException(strf("TreasurePool entry '{}' did not specify a weight", poolEntry));
 
-          if (entry.contains("pool"))
-            itemPool.pool.add(entry.getFloat("weight"), entry.getString("pool"));
-          else if (entry.contains("item"))
-            itemPool.pool.add(entry.getFloat("weight"), ItemDescriptor(entry.get("item")));
+          if (poolEntry.contains("pool"))
+            itemPool.pool.add(poolEntry.getFloat("weight"), poolEntry.getString("pool"));
+          else if (poolEntry.contains("item"))
+            itemPool.pool.add(poolEntry.getFloat("weight"), ItemDescriptor(poolEntry.get("item")));
           else
-            throw TreasureException(strf("TreasurePool entry '{}' did not specify a valid 'item' or 'pool'", entry));
+            throw TreasureException(strf("TreasurePool entry '{}' did not specify a valid 'item' or 'pool'", poolEntry));
         }
 
         auto poolRounds = config.get("poolRounds", 1);
         if (poolRounds.canConvert(Json::Type::Float)) {
           itemPool.poolRounds = WeightedPool<int>(List<std::pair<double, int>>{{1.0, poolRounds.toFloat()}});
         } else {
-          for (auto const& pair : poolRounds.iterateArray())
-            itemPool.poolRounds.add(pair.getDouble(0), pair.getInt(1));
+          for (auto const& poolRoundPair : poolRounds.iterateArray())
+            itemPool.poolRounds.add(poolRoundPair.getDouble(0), poolRoundPair.getInt(1));
         }
 
         itemPool.levelVariance = jsonToVec2F(config.get("levelVariance", JsonArray{0, 0}));

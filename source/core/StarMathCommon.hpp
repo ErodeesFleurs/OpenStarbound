@@ -133,12 +133,12 @@ T clampMagnitude(T const& v, T2 const& mag) {
 }
 
 template <typename T>
-T clamp(T const val, T const min, T const max) {
+constexpr T clamp(T const val, T const min, T const max) {
   return std::min(std::max(val, min), max);
 }
 
 template <typename T>
-T clampDynamic(T const val, T const a, T const b) {
+constexpr T clampDynamic(T const val, T const a, T const b) {
   return std::min(std::max(val, std::min(a, b)), std::max(a, b));
 }
 

@@ -7,8 +7,8 @@ namespace Star {
 class StringView;
 class String;
 
-// This is a StringView version of Star::String
-// I literally just copy-pasted it all from there
+// A StringView version of Star::String, backed by std::string_view.
+// Shares common UTF-8 utility functions with String via StarUtf8.hpp.
 class StringView {
 public:
   using Char = String::Char;

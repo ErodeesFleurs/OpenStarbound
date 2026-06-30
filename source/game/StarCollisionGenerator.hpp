@@ -24,7 +24,10 @@ public:
   // region.
   using CollisionKindAccessor = std::function<CollisionKind(int, int)>;
 
-  void init(CollisionKindAccessor accessor);
+  CollisionGenerator() = default;
+  explicit CollisionGenerator(CollisionKindAccessor accessor) : m_accessor(std::move(accessor)) {}
+
+  void init(CollisionKindAccessor accessor) { m_accessor = std::move(accessor); }
 
   // Get collision geometry for the given block region.
   List<CollisionBlock> getBlocks(RectI const& region) const;

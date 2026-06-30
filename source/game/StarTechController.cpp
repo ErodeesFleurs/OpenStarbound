@@ -62,6 +62,10 @@ TechController::TechController() {
   m_yParentOffset.setInterpolator(lerp<float, float>);
 }
 
+TechController::TechController(Entity* parentEntity, ActorMovementController* movementController, StatusController* statusController) : TechController() {
+  init(parentEntity, movementController, statusController);
+}
+
 Json TechController::diskStore() {
   if (m_overriddenTech) {
     auto modules = JsonArray();
@@ -395,9 +399,9 @@ void TechController::TechAnimator::blankNetDelta(float interpolationTime) {
   netGroup.blankNetDelta(interpolationTime);
 }
 
-void TechController::TechAnimator::setVisible(bool visible) {
-  this->visible.set(visible);
-  if (!visible)
+void TechController::TechAnimator::setVisible(bool vis) {
+  this->visible.set(vis);
+  if (!vis)
     dynamicTarget.stopAudio();
 }
 

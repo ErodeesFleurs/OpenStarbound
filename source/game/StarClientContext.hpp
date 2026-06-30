@@ -2,6 +2,7 @@
 
 #include "StarNetElementSystem.hpp"
 #include "StarJsonRpc.hpp"
+#include "StarThread.hpp"
 #include "StarGameTypes.hpp"
 #include "StarDamageTypes.hpp"
 #include "StarCelestialCoordinate.hpp"
@@ -54,6 +55,8 @@ private:
   Uuid m_playerUuid;
   ConnectionId m_connectionId = 0;
   NetCompatibilityRules m_netCompatibilityRules;
+
+  mutable RecursiveMutex m_mutex;
 
   JsonRpcPtr m_rpc;
 

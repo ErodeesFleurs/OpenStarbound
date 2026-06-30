@@ -254,11 +254,11 @@ void AiInterface::selectMission() {
   if (m_selectedMission) {
     m_currentPage = AiPages::MissionPage;
 
-    auto mission = m_aiDatabase->mission(*m_selectedMission);
-    auto missionText = mission.speciesText.value(m_species, mission.speciesText.value("default"));
+    auto missionData = m_aiDatabase->mission(*m_selectedMission);
+    auto missionText = missionData.speciesText.value(m_species, missionData.speciesText.value("default"));
     setCurrentSpeech("missionText", missionText.selectSpeech);
     m_missionNameLabel->setText(missionText.buttonText);
-    m_missionIcon->setImage(mission.icon);
+    m_missionIcon->setImage(missionData.icon);
 
     m_itemBreadcrumbWidget->setText(m_missionDeployText);
 

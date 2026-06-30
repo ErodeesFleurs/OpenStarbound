@@ -856,15 +856,15 @@ void Projectile::processAction(Json const& action) {
 
   } else if (command == "actions") {
     JsonArray list = parameters.getArray("list");
-    for (auto const& action : list)
-      processAction(action);
+    for (auto const& listAction : list)
+      processAction(listAction);
 
   } else if (command == "loop") {
     int count = parameters.getInt("count");
     JsonArray body = parameters.getArray("body");
     while (count > 0) {
-      for (auto const& action : body)
-        processAction(action);
+      for (auto const& bodyAction : body)
+        processAction(bodyAction);
       count--;
     }
 

@@ -3,7 +3,20 @@
 #include "StarString.hpp"
 #include "StarNetCompatibility.hpp"
 
+#include <concepts>
+
 namespace Star {
+
+class DataStream;
+
+template <typename T>
+concept Streamable = requires(DataStream& ds, T& value) {
+  ds << value;
+  ds >> value;
+};
+
+template <typename T>
+concept Integral = std::is_integral_v<T>;
 
 struct DataStreamExceptionTag { static constexpr char const* typeName = "DataStreamException"; };
 using DataStreamException = TypedException<IOException, DataStreamExceptionTag>;
@@ -33,6 +46,10 @@ public:
   virtual void readData(char* data, size_t len) = 0;
   virtual void writeData(char const* data, size_t len) = 0;
   virtual bool atEnd() { return false; };
+
+  // std::span convenience overloads (delegate to virtual methods)
+  void readData(std::span<char> data) { readData(data.data(), data.size()); }
+  void writeData(std::span<char const> data) { writeData(data.data(), data.size()); }
 
   // These do not read / write sizes, they simply read / write directly.
   ByteArray readBytes(size_t len);
@@ -387,6 +404,28 @@ void DataStream::readMapContainer(Container& container) {
       ds >> key;
       ds >> mapped;
     });
+}
+
+// Serialization helpers: write/read multiple members via member pointers.
+// Eliminates field-name repetition in manual operator<< / operator>>.
+//
+// Usage:
+//   friend DataStream& operator<<(DataStream& ds, MyType const& v) {
+//     return streamWriteMembers(ds, v, &MyType::a, &MyType::b);
+//   }
+//   friend DataStream& operator>>(DataStream& ds, MyType& v) {
+//     return streamReadMembers(ds, v, &MyType::a, &MyType::b);
+//   }
+template <typename T, typename... Members>
+DataStream& streamWriteMembers(DataStream& ds, T const& obj, Members T::*... members) {
+  ((ds << (obj.*members)), ...);
+  return ds;
+}
+
+template <typename T, typename... Members>
+DataStream& streamReadMembers(DataStream& ds, T& obj, Members T::*... members) {
+  ((ds >> (obj.*members)), ...);
+  return ds;
 }
 
 }

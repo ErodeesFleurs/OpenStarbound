@@ -1,8 +1,22 @@
 #pragma once
 
 #include "StarWorld.hpp"
+#include "StarWorldServerProperties.hpp"
+#include "StarWorldServerCollision.hpp"
+#include "StarWorldServerDungeonProtection.hpp"
+#include "StarWorldServerLiquid.hpp"
+#include "StarWorldServerSpawnFinder.hpp"
 #include "StarWorldClientState.hpp"
 #include "StarCollisionGenerator.hpp"
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
+#include "StarIMaterialDatabase.hpp"
+#include "StarIItemDatabase.hpp"
+#include "StarISpeciesDatabase.hpp"
+#include "StarIEntityFactory.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarILiquidsDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
 #include "StarSpawner.hpp"
 #include "StarNetPackets.hpp"
 #include "StarCellularLighting.hpp"
@@ -65,13 +79,13 @@ public:
   using WorldPropertyListener = function<void(Json const&)>;
 
   // Create a new world with the given template, writing new storage file.
-  WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage);
+  WorldServer(WorldTemplatePtr const& worldTemplate, IODevicePtr storage, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
   // Synonym for WorldServer(make_shared<WorldTemplate>(size), storage);
-  WorldServer(Vec2U const& size, IODevicePtr storage);
+  WorldServer(Vec2U const& size, IODevicePtr storage, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
   // Load an existing world from the given storage files
-  WorldServer(IODevicePtr const& storage);
+  WorldServer(IODevicePtr const& storage, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
   // Load an existing world from the given in-memory chunks
-  WorldServer(WorldChunks const& chunks);
+  WorldServer(WorldChunks const& chunks, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
   // Load an existing world from an in-memory representation
   ~WorldServer();
 
@@ -374,14 +388,23 @@ private:
   void setupForceRegions();
 
   Json m_serverConfig;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
+  IMaterialDatabaseConstPtr m_materialDatabase;
+  IItemDatabaseConstPtr m_itemDatabase;
+  ISpeciesDatabaseConstPtr m_speciesDatabase;
+  IEntityFactoryConstPtr m_entityFactory;
+  ILiquidsDatabaseConstPtr m_liquidsDatabase;
+
+  friend class WorldServerCollision;
+  friend class WorldServerDungeonProtection;
+  friend class WorldServerLiquid;
+  friend class WorldServerSpawnFinder;
 
   WorldTemplatePtr m_worldTemplate;
   WorldStructure m_centralStructure;
-  Vec2F m_playerStart;
-  bool m_adjustPlayerStart;
-  bool m_respawnInWorld;
-  JsonObject m_worldProperties;
-  StringMap<WorldPropertyListener> m_worldPropertyListeners;
+  WorldServerSpawnFinder m_spawnFinder{this};
+  WorldServerProperties m_worldProperties;
 
   Maybe<pair<String, String>> m_newPlanetType;
 
@@ -411,9 +434,7 @@ private:
 
   ClockPtr m_referenceClock;
 
-  CollisionGenerator m_collisionGenerator;
-  HashMap<Vec2I, StaticList<CollisionBlock, CollisionGenerator::MaximumCollisionsPerSpace>> m_collisionCache;
-  List<CollisionBlock> m_workingCollisionBlocks;
+  WorldServerCollision m_collision{this};
 
   HashMap<NetCompatibilityRules, HashMap<pair<EntityId, uint64_t>, pair<ByteArray, uint64_t>>> m_netStateCache;
   OrderedHashMap<ConnectionId, shared_ptr<ClientInfo>> m_clientInfo;
@@ -421,7 +442,7 @@ private:
   GameTimer m_entityUpdateTimer;
   GameTimer m_tileEntityBreakCheckTimer;
 
-  shared_ptr<LiquidCellEngine<LiquidId>> m_liquidEngine;
+  WorldServerLiquid m_liquid{this};
   FallingBlocksAgentPtr m_fallingBlocksAgent;
   Spawner m_spawner;
 
@@ -434,11 +455,7 @@ private:
 
   bool m_needsGlobalBreakCheck;
 
-  bool m_generatingDungeon;
-  HashMap<DungeonId, float> m_dungeonIdGravity;
-  HashMap<DungeonId, bool> m_dungeonIdBreathable;
-  StableHashSet<DungeonId> m_protectedDungeonIds;
-  bool m_tileProtectionEnabled;
+  WorldServerDungeonProtection m_dungeonProtection{this};
 
   HashMap<Uuid, pair<ConnectionId, MVariant<ConnectionId, RpcPromiseKeeper<Json>>>> m_entityMessageResponses;
 

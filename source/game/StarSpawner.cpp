@@ -300,9 +300,9 @@ void Spawner::spawnInCell(Vec2I const& cell) {
           else
             level += Random::randf(spawnType.nightLevelAdjustment[0], spawnType.nightLevelAdjustment[1]);
 
-          auto spawnProfile = m_facade->spawnProfile(*position);
+          auto positionSpawnProfile = m_facade->spawnProfile(*position);
 
-          auto entity = monsterDatabase->createMonster(monsterVariant, level, spawnProfile.monsterParameters);
+          auto entity = monsterDatabase->createMonster(monsterVariant, level, positionSpawnProfile.monsterParameters);
           entity->setPosition(*position);
           entity->setKeepAlive(true);
           auto entityId = m_facade->spawnEntity(entity);

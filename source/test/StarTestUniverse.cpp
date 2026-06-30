@@ -46,14 +46,17 @@ TestUniverse::~TestUniverse() {
 bool TestUniverse::warpPlayer(WorldId worldId) {
   m_client->warpPlayer(WarpToWorld(worldId), true);
   for (unsigned i = 0; i < 1200; ++i) {
-    bool teleporting = m_mainPlayer->isTeleporting();
-    bool worldEmpty = m_client->playerWorld().empty();
-    bool hasWorldClient = static_cast<bool>(m_client->worldClient());
-    if (!teleporting && !worldEmpty && hasWorldClient)
-      break;
-
     m_client->update(0.016f);
     Thread::sleep(16);
+
+    bool teleporting = m_mainPlayer->isTeleporting();
+    bool hasWorldClient = static_cast<bool>(m_client->worldClient());
+    if (!hasWorldClient)
+      continue;
+
+    bool worldEmpty = m_client->playerWorld().empty();
+    if (!teleporting && !worldEmpty)
+      break;
   }
 
   if (m_mainPlayer->isTeleporting() || m_client->playerWorld().empty() || !m_client->worldClient()) {

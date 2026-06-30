@@ -95,16 +95,16 @@ void ButtonWidget::renderImpl() {
     drawButtonPart(m_overlayImage, position);
 
   if (!m_text.empty()) {
-    auto& guiContext = GuiContext::singleton();
-    guiContext.setTextStyle(m_textStyle);
+    auto* guiContext = context();
+    guiContext->setTextStyle(m_textStyle);
     if (m_disabled)
-      guiContext.setFontColor(m_fontColorDisabled.toRgba());
+      guiContext->setFontColor(m_fontColorDisabled.toRgba());
     else if (m_fontColorChecked && m_checked)
-      guiContext.setFontColor(m_fontColorChecked.value().toRgba());
+      guiContext->setFontColor(m_fontColorChecked.value().toRgba());
     else
-      guiContext.setFontColor(m_fontColor.toRgba());
-    guiContext.renderInterfaceText(m_text, {textPosition, m_hTextAnchor, VerticalAnchor::VMidAnchor});
-    guiContext.clearTextStyle();
+      guiContext->setFontColor(m_fontColor.toRgba());
+    guiContext->renderInterfaceText(m_text, {textPosition, m_hTextAnchor, VerticalAnchor::VMidAnchor});
+    guiContext->clearTextStyle();
   }
 }
 
@@ -385,28 +385,28 @@ RectI ButtonWidget::getScissorRect() const {
 }
 
 void ButtonWidget::drawButtonPart(String const& image, Vec2F const& position) {
-  auto& guiContext = GuiContext::singleton();
-  auto imageSize = guiContext.textureSize(image);
-  guiContext.drawInterfaceQuad(image, position + Vec2F(m_buttonBoundSize - imageSize) / 2);
+  auto* guiContext = context();
+  auto imageSize = guiContext->textureSize(image);
+  guiContext->drawInterfaceQuad(image, position + Vec2F(m_buttonBoundSize - imageSize) / 2);
 }
 
 void ButtonWidget::updateSize() {
   if (m_invisible || m_baseImage.empty())
     return;
-  auto& guiContext = GuiContext::singleton();
-  m_buttonBoundSize = guiContext.textureSize(m_baseImage);
+  auto* guiContext = context();
+  m_buttonBoundSize = guiContext->textureSize(m_baseImage);
   if (!m_hoverImage.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_hoverImage));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_hoverImage));
   if (!m_pressedImage.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_pressedImage));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_pressedImage));
   if (!m_baseImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_baseImageChecked));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_baseImageChecked));
   if (!m_hoverImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_hoverImageChecked));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_hoverImageChecked));
   if (!m_pressedImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_pressedImageChecked));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_pressedImageChecked));
   if (!m_disabledImageChecked.empty())
-    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext.textureSize(m_disabledImageChecked));
+    m_buttonBoundSize = m_buttonBoundSize.piecewiseMax(guiContext->textureSize(m_disabledImageChecked));
 
   setSize(Vec2I(m_buttonBoundSize));
 }

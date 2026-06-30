@@ -37,15 +37,15 @@ Json TerrainSelectorParameters::toJson() const {
       {"worldWidth", worldWidth}, {"baseHeight", baseHeight}, {"seed", seed}, {"commonality", commonality}};
 }
 
-TerrainSelectorParameters TerrainSelectorParameters::withSeed(uint64_t seed) const {
+TerrainSelectorParameters TerrainSelectorParameters::withSeed(uint64_t newSeed) const {
   TerrainSelectorParameters copy = *this;
-  copy.seed = seed;
+  copy.seed = newSeed;
   return copy;
 }
 
-TerrainSelectorParameters TerrainSelectorParameters::withCommonality(float commonality) const {
+TerrainSelectorParameters TerrainSelectorParameters::withCommonality(float newCommonality) const {
   TerrainSelectorParameters copy = *this;
-  copy.commonality = commonality;
+  copy.commonality = newCommonality;
   return copy;
 }
 

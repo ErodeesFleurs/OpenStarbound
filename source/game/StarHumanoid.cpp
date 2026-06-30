@@ -1276,10 +1276,10 @@ List<Drawable> Humanoid::render(bool withItems, bool withRotationAndScale) {
       if (m_useBodyHeadMask && !m_bodyHeadMaskFrameset.empty()) {
         String maskImage = strf("{}:{}",m_bodyHeadMaskFrameset,frameName);
         Directives maskDirectives = "?addmask="+maskImage+";0;0";
-        auto drawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
-        drawable.imagePart().addDirectives(bodyDirectives, true);
-        drawable.imagePart().addDirectives(maskDirectives, true);
-        addHeadDrawable(std::move(drawable), m_bodyFullbright);
+        auto maskDrawable = Drawable::makeImage(std::move(image), 1.0f / TilePixels, true, {});
+        maskDrawable.imagePart().addDirectives(bodyDirectives, true);
+        maskDrawable.imagePart().addDirectives(maskDirectives, true);
+        addHeadDrawable(std::move(maskDrawable), m_bodyFullbright);
       }
     }
 

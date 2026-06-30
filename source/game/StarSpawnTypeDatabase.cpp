@@ -21,8 +21,8 @@ SpawnParameters::SpawnParameters(Json const& config) {
     else
       areas.add(SpawnParameters::AreaNames.getLeft(*areaName));
   } else if (auto areaNames = config.optArray("areas")) {
-    for (auto areaName : *areaNames)
-      areas.add(SpawnParameters::AreaNames.getLeft(areaName.toString()));
+    for (auto singleAreaName : *areaNames)
+      areas.add(SpawnParameters::AreaNames.getLeft(singleAreaName.toString()));
   }
   region = SpawnParameters::RegionNames.getLeft(config.getString("region"));
   time = SpawnParameters::TimeNames.getLeft(config.getString("time"));

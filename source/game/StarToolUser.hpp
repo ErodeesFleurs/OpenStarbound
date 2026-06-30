@@ -24,6 +24,8 @@ class ToolUser : public NetElementSyncGroup {
 public:
   ToolUser();
 
+  explicit ToolUser(ToolUserEntity* user);
+
   Json diskStore() const;
   void diskLoad(Json const& diskStore);
 

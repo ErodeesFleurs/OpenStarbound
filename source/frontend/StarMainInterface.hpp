@@ -7,6 +7,15 @@
 #include "StarInterfaceCursor.hpp"
 #include "StarMainInterfaceTypes.hpp"
 #include "StarWarping.hpp"
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
+#include "StarIMaterialDatabase.hpp"
+#include "StarIItemDatabase.hpp"
+#include "StarISpeciesDatabase.hpp"
+#include "StarIEntityFactory.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarILiquidsDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
 
 namespace Star {
 
@@ -86,7 +95,7 @@ public:
     ReturnToTitle
   };
 
-  MainInterface(UniverseClientPtr client, WorldPainterPtr painter, CinematicPtr cinematicOverlay);
+  MainInterface(UniverseClientPtr client, WorldPainterPtr painter, CinematicPtr cinematicOverlay, IAssetsConstPtr assets, IConfigurationPtr configuration = {});
 
   ~MainInterface();
 
@@ -254,6 +263,14 @@ private:
   HashMap<EntityId, float> m_specialDamageBars;
 
   ContainerInteractorPtr m_containerInteractor;
+
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
+  IMaterialDatabaseConstPtr m_materialDatabase;
+  IItemDatabaseConstPtr m_itemDatabase;
+  ISpeciesDatabaseConstPtr m_speciesDatabase;
+  IEntityFactoryConstPtr m_entityFactory;
+  ILiquidsDatabaseConstPtr m_liquidsDatabase;
 };
 
 }

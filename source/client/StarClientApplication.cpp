@@ -43,6 +43,8 @@ extern "C" __declspec(dllexport) DWORD AmdPowerXpressRequestHighPerformance = 1;
 
 namespace Star {
 
+using namespace std::string_literals;
+
 Json const AdditionalAssetsSettings = Json::parseJson(R"JSON(
     {
       "missingImage" : "/assetmissing.png",
@@ -810,7 +812,7 @@ void ClientApplication::changeState(MainAppState newState) {
     m_titleScreen->stopMusic();
 
     m_universeClient->restartLua();
-    m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay);
+    m_mainInterface = make_shared<MainInterface>(m_universeClient, m_worldPainter, m_cinematicOverlay, Root::singleton().assets());
     m_universeClient->setLuaCallbacks("interface", LuaBindings::makeInterfaceCallbacks(m_mainInterface.get()));
     m_universeClient->setLuaCallbacks("chat", LuaBindings::makeChatCallbacks(m_mainInterface.get(), m_universeClient.get()));
     m_universeClient->setLuaCallbacks("celestial", LuaBindings::makeCelestialCallbacks(m_universeClient.get()));
@@ -1289,8 +1291,8 @@ void ClientApplication::updateRunning(float dt) {
       m_mainInterface->handleInteractAction(interactAction);
 
     if (m_universeServer) {
-      if (auto p2pNetworkingService = app->p2pNetworkingService()) {
-        for (auto& p2pClient : p2pNetworkingService->acceptP2PConnections())
+      if (auto p2pService = app->p2pNetworkingService()) {
+        for (auto& p2pClient : p2pService->acceptP2PConnections())
           m_universeServer->addClient(UniverseConnection(P2PPacketSocket::open(std::move(p2pClient))));
       }
 

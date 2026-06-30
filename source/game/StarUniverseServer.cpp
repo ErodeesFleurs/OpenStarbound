@@ -10,10 +10,13 @@
 #include "StarFile.hpp"
 #include "StarJsonExtra.hpp"
 #include "StarLogging.hpp"
+#include "StarItemDatabase.hpp"
+#include "StarMaterialDatabase.hpp"
 #include "StarRoot.hpp"
 #include "StarSecureRandom.hpp"
 #include "StarSha256.hpp"
 #include "StarSky.hpp"
+#include "StarSpeciesDatabase.hpp"
 #include "StarTcp.hpp"
 #include "StarTeamManager.hpp"
 #include "StarUniverseServerLuaBindings.hpp"
@@ -24,10 +27,17 @@ constexpr unsigned DefaultShipWorldDim = 2048;
 
 namespace Star {
 
-UniverseServer::UniverseServer(String const& storageDir)
+UniverseServer::UniverseServer(String const& storageDir, IAssetsConstPtr _assets, IConfigurationPtr _configuration)
     : Thread("UniverseServer"),
       m_workerPool("UniverseServerWorkerPool"),
       m_clients(MinClientConnectionId, MaxClientConnectionId) {
+  m_assets = _assets ? std::move(_assets) : Root::singleton().assets();
+  m_configuration = _configuration ? std::move(_configuration) : Root::singleton().configuration();
+  m_materialDatabase = Root::singleton().materialDatabase();
+  m_itemDatabase = Root::singleton().itemDatabase();
+  m_speciesDatabase = Root::singleton().speciesDatabase();
+  // m_entityFactory initialized via singleton
+  // m_liquidsDatabase initialized via singleton
   String const LockFile = "universe.lock";
 
   m_storageDirectory = storageDir;
@@ -95,7 +105,7 @@ UniverseServer::UniverseServer(String const& storageDir)
 
   m_pause = make_shared<atomic<bool>>(false);
 
-  m_secureWarps = Root::singleton().configuration()->getPath("security.secureWarps").optBool().value(true);
+  m_secureWarps = m_configuration->getPath("security.secureWarps").optBool().value(true);
 }
 
 UniverseServer::~UniverseServer() {
@@ -417,7 +427,7 @@ bool UniverseServer::unbanUuid(String const& uuidString) {
 
   bool entryFound = false;
 
-  auto config = Root::singleton().configuration();
+  auto config = m_configuration;
   auto bannedUuids = config->get("bannedUuids").toArray();
 
   eraseWhere(bannedUuids, [&](Json const& entry) {
@@ -452,7 +462,7 @@ bool UniverseServer::unbanIp(String const& addressString) {
 
     bool entryFound = false;
 
-    auto config = Root::singleton().configuration();
+    auto config = m_configuration;
     auto bannedIPs = config->get("bannedIPs").toArray();
     eraseWhere(bannedIPs, [&](Json const& entry) {
       if (entry.getString("ip") == cleanAddressString) {
@@ -549,7 +559,7 @@ bool UniverseServer::sendPacket(ConnectionId clientId, PacketPtr packet) {
 void UniverseServer::run() {
   Logger::info("UniverseServer: Starting UniverseServer with UUID: {}", m_universeSettings->uuid().hex());
 
-  int mainWakeupInterval = Root::singleton().assets()->json("/universe_server.config:mainWakeupInterval").toInt();
+  int mainWakeupInterval = m_assets->json("/universe_server.config:mainWakeupInterval").toInt();
 
   TcpServerPtr tcpServer;
 
@@ -781,7 +791,7 @@ void UniverseServer::sendClockUpdates() {
   ReadLocker clientsLocker(m_clientsLock);
 
   int64_t currentTime = Time::monotonicMilliseconds();
-  if (currentTime > m_lastClockUpdateSent + Root::singleton().assets()->json("/universe_server.config:clockUpdatePacketInterval").toInt()) {
+  if (currentTime > m_lastClockUpdateSent + m_assets->json("/universe_server.config:clockUpdatePacketInterval").toInt()) {
     auto timePacket = make_shared<UniverseTimeUpdatePacket>(m_universeClock->time());
     for (auto clientId : m_clients.keys())
       m_connectionServer->sendPackets(clientId, {timePacket});
@@ -825,7 +835,7 @@ void UniverseServer::kickErroredPlayers() {
 
 void UniverseServer::reapConnections() {
   int64_t startTime = Time::monotonicMilliseconds();
-  int64_t timeout = Root::singleton().assets()->json("/universe_server.config:connectionTimeout").toInt();
+  int64_t timeout = m_assets->json("/universe_server.config:connectionTimeout").toInt();
   {
     RecursiveMutexLocker acceptThreadsLocker(m_connectionAcceptThreadsMutex);
     eraseWhere(m_connectionAcceptThreads, [&](ThreadFunction<void>& function) {
@@ -956,9 +966,9 @@ void UniverseServer::warpPlayers() {
             m_chatProcessor->joinChannel(clientId, printWorldId(warpToWorld.world));
 
             if (warpToWorld.world.is<ClientShipWorldId>()) {
-              if (auto clientId = getClientForUuid(warpToWorld.world.get<ClientShipWorldId>())) {
-                if (auto systemWorld = m_clients.get(*clientId)->systemWorld())
-                  clientContext->setOrbitWarpAction(systemWorld->clientWarpAction(*clientId));
+              if (auto shipOwnerId = getClientForUuid(warpToWorld.world.get<ClientShipWorldId>())) {
+                if (auto systemWorld = m_clients.get(*shipOwnerId)->systemWorld())
+                  clientContext->setOrbitWarpAction(systemWorld->clientWarpAction(*shipOwnerId));
               }
             }
           } else if (auto returnWarp = clientContext->playerReturnWarp()) {
@@ -993,7 +1003,7 @@ void UniverseServer::flyShips() {
   RecursiveMutexLocker locker(m_mainLock);
   ReadLocker clientsLocker(m_clientsLock);
 
-  double queuedFlightWaitTime = Root::singleton().assets()->json("/universe_server.config:queuedFlightWaitTime").toDouble();
+  double queuedFlightWaitTime = m_assets->json("/universe_server.config:queuedFlightWaitTime").toDouble();
   for (auto clientId : m_queuedFlights.keys()) {
     if (!m_pendingFlights.contains(clientId) && !m_pendingArrivals.contains(clientId)) {
       auto& flight = m_queuedFlights.get(clientId);
@@ -1072,9 +1082,9 @@ void UniverseServer::flyShips() {
 
     clientContext->setShipCoordinate(CelestialCoordinate(system));
     clientContext->setOrbitWarpAction({});
-    for (auto clientId : clients) {
-      if (auto& clientContext = m_clients.get(clientId))
-        clientContext->setOrbitWarpAction({});
+    for (auto shipClientId : clients) {
+      if (auto& shipClientContext = m_clients.get(shipClientId))
+        shipClientContext->setOrbitWarpAction({});
     }
 
     m_pendingArrivals.set(clientId, destination);
@@ -1135,8 +1145,8 @@ void UniverseServer::arriveShips() {
       locker.lock();
 
       for (auto shipClientId : clients) {
-        if (auto& clientContext = m_clients.get(shipClientId))
-          clientContext->setOrbitWarpAction(clientSystem->clientWarpAction(clientId));
+        if (auto& shipClientCtx = m_clients.get(shipClientId))
+          shipClientCtx->setOrbitWarpAction(clientSystem->clientWarpAction(clientId));
       }
     }
     return true;
@@ -1205,7 +1215,7 @@ void UniverseServer::clearBrokenWorlds() {
       }
     });
 
-    int clearBrokenWorldsInterval = Root::singleton().assets()->json("/universe_server.config:clearBrokenWorldsInterval").toInt();
+    int clearBrokenWorldsInterval = m_assets->json("/universe_server.config:clearBrokenWorldsInterval").toInt();
     m_clearBrokenWorldsDeadline = Time::monotonicMilliseconds() + clearBrokenWorldsInterval;
   }
 }
@@ -1337,7 +1347,7 @@ void UniverseServer::doTriggeredStorage() {
 
     locker.lock();
     clientsLocker.lock();
-    int storageTriggerInterval = Root::singleton().assets()->json("/universe_server.config:universeStorageInterval").toInt();
+    int storageTriggerInterval = m_assets->json("/universe_server.config:universeStorageInterval").toInt();
     m_storageTriggerDeadline = Time::monotonicMilliseconds() + storageTriggerInterval;
 
     m_celestialDatabase->cleanupAndCommit();
@@ -1383,7 +1393,7 @@ void UniverseServer::loadSettings() {
 Maybe<CelestialCoordinate> UniverseServer::nextStarterWorld() {
   RecursiveMutexLocker locker(m_mainLock);
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_assets;
   String defaultWorldCoordinate = assets->json("/universe_server.config:defaultWorldCoordinate").toString();
   if (!defaultWorldCoordinate.empty())
     return CelestialCoordinate(defaultWorldCoordinate);
@@ -1486,10 +1496,10 @@ void UniverseServer::loadTempWorldIndex() {
   auto tempWorldFiles = m_tempWorldIndex.keys().transformed([this](InstanceWorldId const& worldId) { return tempWorldFile(worldId); });
   for (auto p : File::dirList(m_storageDirectory)) {
     if (p.second == false && p.first.endsWith(".tempworld")) {
-      String storageFile = File::relativeTo(m_storageDirectory, p.first);
-      if (!tempWorldFiles.contains(storageFile)) {
+      String tempWorldStorageFile = File::relativeTo(m_storageDirectory, p.first);
+      if (!tempWorldFiles.contains(tempWorldStorageFile)) {
         Logger::info("UniverseServer: Removing unindexed temporary world {}", p.first);
-        File::remove(storageFile);
+        File::remove(tempWorldStorageFile);
       }
     }
   }
@@ -1517,7 +1527,7 @@ String UniverseServer::tempWorldFile(InstanceWorldId const& worldId) const {
 
 Maybe<String> UniverseServer::isBannedUser(Maybe<HostAddress> hostAddress, Uuid playerUuid) const {
   RecursiveMutexLocker locker(m_mainLock);
-  auto config = Root::singleton().configuration();
+  auto config = m_configuration;
 
   if (hostAddress) {
     for (auto const& ban : m_tempBans) {
@@ -1580,7 +1590,7 @@ void UniverseServer::doPermBan(ConnectionId clientId, String const& reason, pair
     if (!clientContext->remoteAddress())
       return;
 
-    auto config = Root::singleton().configuration();
+    auto config = m_configuration;
     if (banType.first) {
       auto bannedIPs = config->get("bannedIPs").toArray();
 
@@ -1969,7 +1979,7 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
     bool useReviveWarp = true;
     if (reviveWarp.world.is<InstanceWorldId>()) {
       String instance = reviveWarp.world.get<InstanceWorldId>().instance;
-      auto worldConfig = Root::singleton().assets()->json("/instance_worlds.config").opt(instance);
+      auto worldConfig = m_assets->json("/instance_worlds.config").opt(instance);
       if (!worldConfig || !worldConfig->getBool("persistent", false))
         useReviveWarp = false;
     }
@@ -2003,8 +2013,8 @@ void UniverseServer::acceptConnection(UniverseConnection connection, Maybe<HostA
   auto clients = m_clients.keys();
   clientsReadLocker.unlock();
 
-  for (auto clientId : clients) {
-    m_connectionServer->sendPackets(clientId, {make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))});
+  for (auto existingClientId : clients) {
+    m_connectionServer->sendPackets(existingClientId, {make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))});
   }
 
   for (auto& p : m_scriptContexts)
@@ -2059,8 +2069,8 @@ WarpToWorld UniverseServer::resolveWarpAction(WarpAction warpAction, ConnectionI
         spawnTarget = returnWarp.target;
       }
     } else if (*shortcut == WarpAlias::OrbitedWorld) {
-      if (auto warpAction = clientContext->orbitWarpAction()) {
-        if (auto warpToWorld = warpAction->first.maybe<WarpToWorld>()) {
+      if (auto orbitWarp = clientContext->orbitWarpAction()) {
+        if (auto warpToWorld = orbitWarp->first.maybe<WarpToWorld>()) {
           toWorldId = warpToWorld->world;
           spawnTarget = warpToWorld->target;
         }
@@ -2172,8 +2182,8 @@ void UniverseServer::doDisconnection(ConnectionId clientId, String const& reason
     Logger::info("UniverseServer: Client {} disconnected for reason: {}", clientContext->descriptiveName(), reason);
 
     auto players = static_cast<uint16_t>(m_clients.size());
-    for (auto clientId : m_clients.keys()) {
-      m_connectionServer->sendPackets(clientId, {make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))});
+    for (auto existingClientId : m_clients.keys()) {
+      m_connectionServer->sendPackets(existingClientId, {make_shared<ServerInfoPacket>(players, static_cast<uint16_t>(m_maxPlayers))});
     }
     clientsLocker.unlock();
 
@@ -2306,7 +2316,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::shipWorldPromise(
       shipStructure = shipWorld->setCentralStructure(shipStructure);
 
       ShipUpgrades currentUpgrades = clientContext->shipUpgrades();
-      currentUpgrades.apply(Root::singleton().assets()->json("/ships/shipupgrades.config"));
+      currentUpgrades.apply(m_assets->json("/ships/shipupgrades.config"));
       currentUpgrades.apply(shipStructure.configValue("shipUpgrades"));
       clientContext->setShipUpgrades(currentUpgrades);
 
@@ -2396,7 +2406,7 @@ Maybe<WorkerPoolPromise<WorldServerThreadPtr>> UniverseServer::instanceWorldProm
   auto storageDirectory = m_storageDirectory;
   auto universeClock = m_universeClock;
   return m_workerPool.addProducer<WorldServerThreadPtr>([this, storageDirectory, instanceWorldId, universeClock]() {
-    Json worldConfig = Root::singleton().assets()->json("/instance_worlds.config").get(instanceWorldId.instance);
+    Json worldConfig = m_assets->json("/instance_worlds.config").get(instanceWorldId.instance);
     uint64_t worldSeed;
     if (worldConfig.contains("seed"))
       worldSeed = worldConfig.getUInt("seed");
@@ -2568,7 +2578,7 @@ SkyParameters UniverseServer::celestialSkyParameters(CelestialCoordinate const& 
 }
 
 void UniverseServer::startLuaScripts() {
-  auto assets = Root::singleton().assets();
+  auto assets = m_assets;
   auto universeConfig = assets->json("/universe_server.config");
 
   m_luaRoot = make_shared<LuaRoot>();

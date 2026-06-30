@@ -2,6 +2,7 @@
 #include "StarIterator.hpp"
 #include "StarLogging.hpp"
 #include "StarBiome.hpp"
+#include "StarMaterialDatabase.hpp"
 #include "StarMaterialRenderProfile.hpp"
 #include "StarLiquidTypes.hpp"
 #include "StarDamageDatabase.hpp"
@@ -17,6 +18,7 @@
 #include "StarObjectDatabase.hpp"
 #include "StarObject.hpp"
 #include "StarEntityFactory.hpp"
+#include "StarSpeciesDatabase.hpp"
 #include "StarWorldTemplate.hpp"
 #include "StarStoredFunctions.hpp"
 #include "StarInspectableEntity.hpp"
@@ -26,21 +28,22 @@ constexpr unsigned DefaultClientWindowTiles = 100;
 
 namespace Star {
 
+using namespace std::string_literals;
+
 const std::string SECRET_BROADCAST_PUBLIC_KEY = "SecretBroadcastPublicKey";
 const std::string SECRET_BROADCAST_PREFIX = "\0Broadcast\0"s;
 
 const float WorldClient::DropDist = 6.0f;
-WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
-  auto& root = Root::singleton();
-  auto assets = root.assets();
+WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstPtr _assets, IConfigurationPtr _configuration)
+  : m_mainPlayer(std::move(mainPlayer)), m_luaRoot(std::move(luaRoot)), m_assets(_assets ? std::move(_assets) : Root::singleton().assets()), m_configuration(_configuration ? std::move(_configuration) : Root::singleton().configuration()), m_materialDatabase(Root::singleton().materialDatabase()), m_itemDatabase(Root::singleton().itemDatabase()), m_speciesDatabase(Root::singleton().speciesDatabase()), m_entityFactory(Root::singleton().entityFactory()), m_liquidsDatabase(Root::singleton().liquidsDatabase()) {
 
-  m_clientConfig = assets->json("/client.config");
-  m_lightingConfig = assets->json("/lighting.config:lighting");
+  m_clientConfig = m_assets->json("/client.config");
+  m_lighting.m_lightingConfig = m_assets->json("/lighting.config:lighting");
 
   m_currentStep = 0;
   m_currentTime = 0;
-  m_fullBright = false;
-  m_asyncLighting = false;
+  m_lighting.m_fullBright = false;
+  m_lighting.m_asyncLighting = false;
   m_worldDimTimer = GameTimer(m_clientConfig.getFloat("worldDimTime"));
   m_worldDimTimer.setDone();
   m_worldDimLevel = 0.0f;
@@ -49,20 +52,16 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
   m_parallaxFadeTimer.setDone();
 
   m_collisionDebug = false;
-  m_interactivePulseAmount = assets->json("/highlights.config:interactivePulseAmount").toFloat();
-  m_interactivePulseRate = assets->json("/highlights.config:interactivePulseRate").toFloat();
-  m_inspectionFlickerAmount = assets->json("/highlights.config:inspectionFlickerAmount").toFloat();
+  m_interactivePulseAmount = m_assets->json("/highlights.config:interactivePulseAmount").toFloat();
+  m_interactivePulseRate = m_assets->json("/highlights.config:interactivePulseRate").toFloat();
+  m_inspectionFlickerAmount = m_assets->json("/highlights.config:inspectionFlickerAmount").toFloat();
   m_inWorld = false;
-
-  m_luaRoot = luaRoot;
-
-  m_mainPlayer = mainPlayer;
 
   centerClientWindowOnPlayer(Vec2U(DefaultClientWindowTiles, DefaultClientWindowTiles));
 
   m_collisionGenerator.init([this](int x, int y) {
-    if (!m_predictedTiles.empty()) {
-      if (auto p = m_predictedTiles.ptr({x, y})) {
+    if (!m_tilePrediction.m_predictedTiles.empty()) {
+      if (auto p = m_tilePrediction.m_predictedTiles.ptr({x, y})) {
         if (p->collision)
           return *p->collision;
       }
@@ -70,46 +69,46 @@ WorldClient::WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot) {
     return m_tileArray->tile({x, y}).collision;
   });
 
-  m_modifiedTilePredictionTimeout = static_cast<int>(round(m_clientConfig.getFloat("modifiedTilePredictionTimeout") / GlobalTimestep));
+  m_tilePrediction.m_modifiedTilePredictionTimeout = static_cast<int>(round(m_clientConfig.getFloat("modifiedTilePredictionTimeout") / GlobalTimestep));
 
   m_latency = 0.0;
 
-  m_blockDamageParticle = Particle(m_clientConfig.getObject("blockDamageParticle"));
-  m_blockDamageParticleVariance = Particle(m_clientConfig.getObject("blockDamageParticleVariance"));
-  m_blockDamageParticleProbability = m_clientConfig.getFloat("blockDamageParticleProbability");
+  m_damageFX.m_blockDamageParticle = Particle(m_clientConfig.getObject("blockDamageParticle"));
+  m_damageFX.m_blockDamageParticleVariance = Particle(m_clientConfig.getObject("blockDamageParticleVariance"));
+  m_damageFX.m_blockDamageParticleProbability = m_clientConfig.getFloat("blockDamageParticleProbability");
 
-  m_blockDingParticle = Particle(m_clientConfig.getObject("blockDingParticle"));
-  m_blockDingParticleVariance = Particle(m_clientConfig.getObject("blockDingParticleVariance"));
-  m_blockDingParticleProbability = m_clientConfig.getFloat("blockDingParticleProbability");
+  m_damageFX.m_blockDingParticle = Particle(m_clientConfig.getObject("blockDingParticle"));
+  m_damageFX.m_blockDingParticleVariance = Particle(m_clientConfig.getObject("blockDingParticleVariance"));
+  m_damageFX.m_blockDingParticleProbability = m_clientConfig.getFloat("blockDingParticleProbability");
 
-  m_damageNotificationBatchDuration = m_clientConfig.getFloat("damageNotificationBatchDuration");
+  m_damageFX.m_damageNotificationBatchDuration = m_clientConfig.getFloat("damageNotificationBatchDuration");
 
-  m_ambientSounds.setTrackFadeInTime(assets->json("/interface.config:ambientTrackFadeInTime").toFloat());
-  m_ambientSounds.setTrackSwitchGrace(assets->json("/interface.config:ambientTrackSwitchGrace").toFloat());
+  m_audio.m_ambientSounds.setTrackFadeInTime(m_assets->json("/interface.config:ambientTrackFadeInTime").toFloat());
+  m_audio.m_ambientSounds.setTrackSwitchGrace(m_assets->json("/interface.config:ambientTrackSwitchGrace").toFloat());
 
-  m_musicTrack.setTrackSwitchGrace(assets->json("/interface.config:musicTrackSwitchGrace").toFloat());
-  m_musicTrack.setTrackFadeInTime(assets->json("/interface.config:musicTrackFadeInTime").toFloat());
+  m_audio.m_musicTrack.setTrackSwitchGrace(m_assets->json("/interface.config:musicTrackSwitchGrace").toFloat());
+  m_audio.m_musicTrack.setTrackFadeInTime(m_assets->json("/interface.config:musicTrackFadeInTime").toFloat());
 
-  m_altMusicTrack.setTrackFadeInTime(assets->json("/interface.config:musicTrackFadeInTime").toFloat());
-  m_altMusicTrack.setTrackSwitchGrace(assets->json("/interface.config:musicTrackFadeInTime").toFloat());
-  m_altMusicTrack.setVolume(0, 0, 0);
-  m_altMusicActive = false;
+  m_audio.m_altMusicTrack.setTrackFadeInTime(m_assets->json("/interface.config:musicTrackFadeInTime").toFloat());
+  m_audio.m_altMusicTrack.setTrackSwitchGrace(m_assets->json("/interface.config:musicTrackFadeInTime").toFloat());
+  m_audio.m_altMusicTrack.setVolume(0, 0, 0);
+  m_audio.m_altMusicActive = false;
 
-  m_stopLightingThread = false;
-  m_pendingLightReady = false;
+  m_lighting.m_stopLightingThread = false;
+  m_lighting.m_pendingLightReady = false;
 
   clearWorld();
 }
 
 WorldClient::~WorldClient() {
-  if (m_lightingThread) {
-    m_stopLightingThread = true;
+  if (m_lighting.m_lightingThread) {
+    m_lighting.m_stopLightingThread = true;
     {
-      MutexLocker locker(m_lightingMutex);
-      m_lightingCond.broadcast();
+      MutexLocker locker(m_lighting.m_lightingMutex);
+      m_lighting.m_lightingCond.broadcast();
     }
 
-    m_lightingThread.finish();
+    m_lighting.m_lightingThread.finish();
   }
   clearWorld();
 }
@@ -191,7 +190,7 @@ void WorldClient::removeEntity(EntityId entityId, bool andDie) {
     }
 
     m_particles->addParticles(std::move(renderCallback.particles));
-    m_samples.appendAll(std::move(renderCallback.audios));
+    m_audio.m_samples.appendAll(std::move(renderCallback.audios));
   }
 
   if (auto version = m_masterEntitiesNetVersion.maybeTake(entity->entityId())) {
@@ -470,8 +469,8 @@ WorldClientState& WorldClient::clientState() {
 }
 
 void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
-  if (!m_lightingThread && m_asyncLighting)
-    m_lightingThread = Thread::invoke("WorldClient::lightingMain", mem_fn(&WorldClient::lightingMain), this);
+  if (!m_lighting.m_lightingThread && m_lighting.m_asyncLighting)
+    m_lighting.m_lightingThread = Thread::invoke("WorldClient::lightingMain", mem_fn(&WorldClient::lightingMain), this);
 
   renderData.clear();
   if (!inWorld())
@@ -508,7 +507,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   float inspectionFlickerMultiplier = Random::randf(1 - m_inspectionFlickerAmount, 1);
 
   EntityId playerAimInteractive = NullEntityId;
-  if (Root::singleton().configuration()->get("interactiveHighlight").toBool()) {
+  if (m_configuration->get("interactiveHighlight").toBool()) {
     if (auto entity = m_mainPlayer->bestInteractionEntity(false))
       playerAimInteractive = entity->entityId();
   }
@@ -563,7 +562,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
         ed.layers[p.first] = std::move(p.second);
       }
 
-      if (m_interactiveHighlightMode || (!inspecting && entity->entityId() == playerAimInteractive)) {
+      if (m_lighting.m_interactiveHighlightMode || (!inspecting && entity->entityId() == playerAimInteractive)) {
         if (auto interactive = as<InteractiveEntity>(entity)) {
           if (interactive->isInteractive()) {
             ed.highlightEffect.type = EntityHighlightEffectType::Interactive;
@@ -585,7 +584,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       }
 
       m_particles->addParticles(std::move(renderCallback.particles));
-      m_samples.appendAll(std::move(renderCallback.audios));
+      m_audio.m_samples.appendAll(std::move(renderCallback.audios));
       m_previewTiles.appendAll(std::move(renderCallback.previewTiles));
       renderData.overheadBars.appendAll(std::move(renderCallback.overheadBars));
 
@@ -595,17 +594,17 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
 
   renderLightSources = std::move(lightingRenderCallback.lightSources);
 
-  if (!m_fullBright) {
+  if (!m_lighting.m_fullBright) {
     {
-      MutexLocker m_prepLocker(m_lightMapPrepMutex);
-      m_pendingLights = std::move(renderLightSources);
-      m_pendingParticleLights = m_particles->lightSources();
-      m_pendingLightRange = window.padded(1);
-      m_pendingLightReady = true;
+      MutexLocker m_prepLocker(m_lighting.m_lightMapPrepMutex);
+      m_lighting.m_pendingLights = std::move(renderLightSources);
+      m_lighting.m_pendingParticleLights = m_particles->lightSources();
+      m_lighting.m_pendingLightRange = window.padded(1);
+      m_lighting.m_pendingLightReady = true;
     } //Kae: Padded by one to fix light spread issues at the edges of the frame.
 
-    if (m_asyncLighting)
-      m_lightingCond.signal();
+    if (m_lighting.m_asyncLighting)
+      m_lighting.m_lightingCond.signal();
     else
       lightingCalc();
   }
@@ -633,7 +632,7 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
       renderTile.liquidLevel = floatToByte(clientTile.liquid.level);
     });
 
-  for (auto& pair : m_predictedTiles) {
+  for (auto& pair : m_tilePrediction.m_predictedTiles) {
     Vec2I tileArrayPos = m_geometry.diff(pair.first, renderData.tileMinPosition);
     int const tileWidth = static_cast<int>(renderData.tiles.size(0));
     int const tileHeight = static_cast<int>(renderData.tiles.size(1));
@@ -738,17 +737,17 @@ void WorldClient::render(WorldRenderData& renderData, unsigned bufferTiles) {
   renderData.backgroundOverlays = m_centralStructure.backgroundOverlays().transformed(overlayToDrawable);
   renderData.foregroundOverlays = m_centralStructure.foregroundOverlays().transformed(overlayToDrawable);
 
-  renderData.isFullbright = m_fullBright;
+  renderData.isFullbright = m_lighting.m_fullBright;
   renderData.dimLevel = m_worldDimLevel;
   renderData.dimColor = m_worldDimColor;
 }
 
 List<AudioInstancePtr> WorldClient::pullPendingAudio() {
-  return take(m_samples);
+  return take(m_audio.m_samples);
 }
 
 List<AudioInstancePtr> WorldClient::pullPendingMusic() {
-  return take(m_music);
+  return take(m_audio.m_music);
 }
 
 void WorldClient::dimWorld() {
@@ -756,11 +755,11 @@ void WorldClient::dimWorld() {
 }
 
 bool WorldClient::interactiveHighlightMode() const {
-  return m_interactiveHighlightMode;
+  return m_lighting.m_interactiveHighlightMode;
 }
 
 void WorldClient::setInteractiveHighlightMode(bool enabled) {
-  m_interactiveHighlightMode = enabled;
+  m_lighting.m_interactiveHighlightMode = enabled;
 }
 
 void WorldClient::setParallax(ParallaxPtr newParallax) {
@@ -787,19 +786,19 @@ void WorldClient::resetGravity() {
 }
 
 bool WorldClient::fullBright() const {
-  return m_fullBright;
+  return m_lighting.m_fullBright;
 }
 
 void WorldClient::setFullBright(bool fullBright) {
-  m_fullBright = fullBright;
+  m_lighting.m_fullBright = fullBright;
 }
 
 bool WorldClient::asyncLighting() const {
-  return m_asyncLighting;
+  return m_lighting.m_asyncLighting;
 }
 
 void WorldClient::setAsyncLighting(bool asyncLighting) {
-  m_asyncLighting = asyncLighting;
+  m_lighting.m_asyncLighting = asyncLighting;
 }
 
 bool WorldClient::collisionDebug() const {
@@ -918,8 +917,8 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       // may be context hints with tile modifications to figure out what to do
       // with failures.
       for (auto& modification : tileModificationFailure->modifications) {
-        auto findPrediction = m_predictedTiles.find(modification.first);
-        if (findPrediction != m_predictedTiles.end()) {
+        auto findPrediction = m_tilePrediction.m_predictedTiles.find(modification.first);
+        if (findPrediction != m_tilePrediction.m_predictedTiles.end()) {
           auto& p = findPrediction->second;
           if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
             if (placeMaterial->layer == TileLayer::Foreground) {
@@ -953,7 +952,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
           }
 
           if (!p)
-            m_predictedTiles.erase(findPrediction);
+            m_tilePrediction.m_predictedTiles.erase(findPrediction);
         }
 
         if (auto placeMaterial = modification.second.ptr<PlaceMaterial>()) {
@@ -966,7 +965,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       }
 
     } else if (auto liquidUpdate = as<TileLiquidUpdatePacket>(packet)) {
-      m_predictedTiles.remove(liquidUpdate->position);
+      m_tilePrediction.m_predictedTiles.remove(liquidUpdate->position);
       if (ClientTile* tile = m_tileArray->modifyTile(liquidUpdate->position))
         tile->liquid = liquidUpdate->liquidUpdate.liquidLevel();
 
@@ -986,14 +985,14 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
     } else if (auto damage = as<DamageRequestPacket>(packet)) {
       m_damageManager->pushRemoteDamageRequest(damage->remoteDamageRequest);
 
-    } else if (auto damage = as<DamageNotificationPacket>(packet)) {
-      std::string_view view = damage->remoteDamageNotification.damageNotification.targetMaterialKind.utf8();
+    } else if (auto damageNotify = as<DamageNotificationPacket>(packet)) {
+      std::string_view view = damageNotify->remoteDamageNotification.damageNotification.targetMaterialKind.utf8();
       static const size_t FULL_SIZE = SECRET_BROADCAST_PREFIX.size() + Curve25519::SignatureSize;
       static const std::string LEGACY_VOICE_PREFIX = "data\0voice\0"s;
 
       if (view.size() >= FULL_SIZE && view.rfind(SECRET_BROADCAST_PREFIX, 0) != NPos) {
         // this is actually a secret broadcast!!
-        if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
+        if (auto player = m_entityMap->get<Player>(damageNotify->remoteDamageNotification.sourceEntityId)) {
           if (auto publicKey = player->getSecretPropertyView(SECRET_BROADCAST_PUBLIC_KEY)) {
             if (publicKey->utf8Size() == Curve25519::PublicKeySize) {
               auto signature = view.substr(SECRET_BROADCAST_PREFIX.size(), Curve25519::SignatureSize);
@@ -1014,7 +1013,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
       else if (view.size() > 75 && view.rfind(LEGACY_VOICE_PREFIX, 0) != NPos) {
         // this is a StarExtensions voice packet
         // (remove this and stop transmitting like this once most SE features are ported over)
-        if (auto player = m_entityMap->get<Player>(damage->remoteDamageNotification.sourceEntityId)) {
+        if (auto player = m_entityMap->get<Player>(damageNotify->remoteDamageNotification.sourceEntityId)) {
           if (auto publicKey = player->effectsAnimator()->globalTagPtr("\0SE_VOICE_SIGNING_KEY"s)) {
             auto raw = view.substr(75);
             if (m_broadcastCallback && Curve25519::verify(
@@ -1031,7 +1030,7 @@ void WorldClient::handleIncomingPackets(List<PacketPtr> const& packets) {
         }
       }
       else {
-        m_damageManager->pushRemoteDamageNotification(damage->remoteDamageNotification);
+        m_damageManager->pushRemoteDamageNotification(damageNotify->remoteDamageNotification);
       }
 
     } else if (auto entityMessagePacket = as<EntityMessagePacket>(packet)) {
@@ -1143,11 +1142,11 @@ void WorldClient::update(float dt) {
   if (!inWorld())
     return;
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_assets;
 
   float expireTime = min(float(m_latency + 800), 2000.f);
   auto now = Time::monotonicMilliseconds();
-  eraseWhere(m_predictedTiles, [&](auto& pair) {
+  eraseWhere(m_tilePrediction.m_predictedTiles, [&](auto& pair) {
     float expiry = static_cast<float>(now - pair.second.time) / expireTime;
     auto center = Vec2F(pair.first) + Vec2F::filled(0.5f);
     auto size = Vec2F::filled(0.875f - expiry * 0.875f);
@@ -1260,28 +1259,28 @@ void WorldClient::update(float dt) {
   m_particles->addParticles(m_weather.pullNewParticles());
   m_particles->update(dt, RectF(particleRegion), m_weather.wind());
 
-  if (auto audioSample = m_ambientSounds.updateAmbient(currentAmbientNoises(), m_sky->isDayTime()))
-    m_samples.append(audioSample);
-  if (auto audioSample = m_ambientSounds.updateWeather(currentWeatherNoises()))
-    m_samples.append(audioSample);
+  if (auto audioSample = m_audio.m_ambientSounds.updateAmbient(currentAmbientNoises(), m_sky->isDayTime()))
+    m_audio.m_samples.append(audioSample);
+  if (auto audioSample = m_audio.m_ambientSounds.updateWeather(currentWeatherNoises()))
+    m_audio.m_samples.append(audioSample);
 
   if (inSpace()) {
-    m_samples.appendAll(m_sky->pullSounds());
+    m_audio.m_samples.appendAll(m_sky->pullSounds());
 
-    if (m_spaceSound && m_spaceSound->finished()) {
-      m_spaceSound = {};
-      m_activeSpaceSound = "";
+    if (m_audio.m_spaceSound && m_audio.m_spaceSound->finished()) {
+      m_audio.m_spaceSound = {};
+      m_audio.m_activeSpaceSound = "";
     }
 
     auto skyAmbientNoise = m_sky->ambientNoise();
-    if (skyAmbientNoise != m_activeSpaceSound) {
-      if (m_spaceSound) {
-        m_spaceSound->stop(skyAmbientNoise == "" ? 3.0 : 0.0);
+    if (skyAmbientNoise != m_audio.m_activeSpaceSound) {
+      if (m_audio.m_spaceSound) {
+        m_audio.m_spaceSound->stop(skyAmbientNoise == "" ? 3.0 : 0.0);
       } else {
-        m_activeSpaceSound = skyAmbientNoise;
-        if (!m_activeSpaceSound.empty()) {
-          m_spaceSound = make_shared<AudioInstance>(*assets->audio(m_activeSpaceSound));
-          m_samples.append(m_spaceSound);
+        m_audio.m_activeSpaceSound = skyAmbientNoise;
+        if (!m_audio.m_activeSpaceSound.empty()) {
+          m_audio.m_spaceSound = make_shared<AudioInstance>(*m_assets->audio(m_audio.m_activeSpaceSound));
+          m_audio.m_samples.append(m_audio.m_spaceSound);
         }
       }
     }
@@ -1294,11 +1293,11 @@ void WorldClient::update(float dt) {
       stopAltMusic(newAltMusic->second);
   }
 
-  if (auto audioSample = m_altMusicTrack.updateAmbient(currentAltMusicTrack(), true))
-    m_music.append(audioSample);
+  if (auto audioSample = m_audio.m_altMusicTrack.updateAmbient(currentAltMusicTrack(), true))
+    m_audio.m_music.append(audioSample);
 
-  if (auto audioSample = m_musicTrack.updateAmbient(currentMusicTrack(), m_sky->isDayTime()))
-    m_music.append(audioSample);
+  if (auto audioSample = m_audio.m_musicTrack.updateAmbient(currentMusicTrack(), m_sky->isDayTime()))
+    m_audio.m_music.append(audioSample);
 
   for (EntityId entityId : toRemove)
     removeEntity(entityId, true);
@@ -1406,7 +1405,7 @@ void WorldClient::addEntity(EntityPtr const& entity, EntityId entityId) {
     m_entityMap->addEntity(entity);
     notifyEntityCreate(entity);
   } else {
-    auto entityFactory = Root::singleton().entityFactory();
+    auto entityFactory = m_entityFactory;
     auto netRules = m_clientState.netCompatibilityRules();
     m_outgoingPackets.append(make_shared<SpawnEntityPacket>(entity->entityType(), entityFactory->netStoreEntity(entity, netRules), entity->writeNetState(0, netRules).first));
   }
@@ -1452,14 +1451,14 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
   if (!inWorld())
     return;
 
-  float bucketSize = Root::singleton().assets()->json("/items/defaultParameters.config:liquidItems.bucketSize").toFloat();
+  float bucketSize = m_assets->json("/items/defaultParameters.config:liquidItems.bucketSize").toFloat();
   float nextUnit = bucketSize;
   List<Vec2I> maybeDrainTiles;
 
   for (auto& pos : tilePositions) {
     if (isTileProtected(pos))
       continue;
-    auto& p = m_predictedTiles[pos];
+    auto& p = m_tilePrediction.m_predictedTiles[pos];
     auto const& tile = m_tileArray->tile(pos);
     if ((p.liquid ? p.liquid->liquid : tile.liquid.liquid) == liquidId) {
       if (!p.liquid)
@@ -1470,7 +1469,7 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
         nextUnit = bucketSize;
 
         for (size_t i = 0; i < maybeDrainTiles.size(); ++i)
-          m_predictedTiles[pos].liquid.emplace(EmptyLiquidId, 0.0f);
+          m_tilePrediction.m_predictedTiles[pos].liquid.emplace(EmptyLiquidId, 0.0f);
 
         maybeDrainTiles.clear();
       }
@@ -1486,19 +1485,19 @@ void WorldClient::collectLiquid(List<Vec2I> const& tilePositions, LiquidId liqui
 }
 
 bool WorldClient::waitForLighting(WorldRenderData* renderData) {
-  MutexLocker prepLocker(m_lightMapPrepMutex);
-  MutexLocker lightMapLocker(m_lightMapMutex);
-  if (renderData && !m_lightMap.empty()) {
+  MutexLocker prepLocker(m_lighting.m_lightMapPrepMutex);
+  MutexLocker lightMapLocker(m_lighting.m_lightMapMutex);
+  if (renderData && !m_lighting.m_lightMap.empty()) {
     for (auto& previewTile : m_previewTiles) {
       if (previewTile.updateLight) {
-        Vec2I lightArrayPos = m_geometry.diff(previewTile.position, m_lightMinPosition);
-        if (lightArrayPos[0] >= 0 && lightArrayPos[0] < static_cast<int>(m_lightMap.width())
-         && lightArrayPos[1] >= 0 && lightArrayPos[1] < static_cast<int>(m_lightMap.height()))
-          m_lightMap.set(lightArrayPos[0], lightArrayPos[1], Color::v3bToFloat(previewTile.light));
+        Vec2I lightArrayPos = m_geometry.diff(previewTile.position, m_lighting.m_lightMinPosition);
+        if (lightArrayPos[0] >= 0 && lightArrayPos[0] < static_cast<int>(m_lighting.m_lightMap.width())
+         && lightArrayPos[1] >= 0 && lightArrayPos[1] < static_cast<int>(m_lighting.m_lightMap.height()))
+          m_lighting.m_lightMap.set(lightArrayPos[0], lightArrayPos[1], Color::v3bToFloat(previewTile.light));
       }
     }
-    renderData->lightMap = std::move(m_lightMap);
-    renderData->lightMinPosition = m_lightMinPosition;
+    renderData->lightMap = std::move(m_lighting.m_lightMap);
+    renderData->lightMinPosition = m_lighting.m_lightMinPosition;
     return true;
   }
   return false;
@@ -1573,8 +1572,8 @@ void WorldClient::handleDamageNotifications() {
     m_particles->add(particle);
   };
 
-  eraseWhere(m_damageNumbers, [&](std::pair<DamageNumberKey, DamageNumber> const& entry) -> bool {
-      if (Time::monotonicTime() - entry.second.timestamp > m_damageNotificationBatchDuration) {
+  eraseWhere(m_damageFX.m_damageNumbers, [&](std::pair<DamageNumberKey, DamageNumber> const& entry) -> bool {
+      if (Time::monotonicTime() - entry.second.timestamp > m_damageFX.m_damageNotificationBatchDuration) {
         renderParticle(entry.second.position, entry.second.amount, entry.first.damageNumberParticleKind);
         return true;
       }
@@ -1591,8 +1590,8 @@ void WorldClient::handleDamageNotifications() {
 
 
     DamageNumber number;
-    if (m_damageNumbers.contains(damageNumberKey)) {
-      number = m_damageNumbers.take(damageNumberKey);
+    if (m_damageFX.m_damageNumbers.contains(damageNumberKey)) {
+      number = m_damageFX.m_damageNumbers.take(damageNumberKey);
 
       if (damageNotification.hitType == HitType::Kill)
         renderParticle(damageNotification.position,
@@ -1608,14 +1607,14 @@ void WorldClient::handleDamageNotifications() {
     if (damageNotification.hitType != HitType::Kill) {
       number.position = damageNotification.position;
       number.amount += damageNotification.damageDealt;
-      m_damageNumbers[damageNumberKey] = number;
+      m_damageFX.m_damageNumbers[damageNumberKey] = number;
     }
 
     String material = damageNotification.targetMaterialKind;
     if (!material.empty() && damageKind.effects.contains(material)) {
       // default to normal hit
       HitType effectHitType = damageKind.effects.get(material).contains(damageNotification.hitType) ? damageNotification.hitType : HitType::Hit;
-      m_samples.appendAll(soundsFromDefinition(damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
+      m_audio.m_samples.appendAll(soundsFromDefinition(damageKind.effects.get(material).get(effectHitType).sounds, damageNotification.position));
       
       auto hitParticles = particlesFromDefinition(damageKind.effects.get(material).get(effectHitType).particles, damageNotification.position);
       
@@ -1640,7 +1639,7 @@ void WorldClient::sparkDamagedBlocks() {
   if (!inWorld())
     return;
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = m_materialDatabase;
 
   for (auto pos : m_damagedBlocks.values()) {
     if (auto tile = m_tileArray->modifyTile(pos)) {
@@ -1648,32 +1647,32 @@ void WorldClient::sparkDamagedBlocks() {
         m_damagedBlocks.remove(pos);
 
       if (isRealMaterial(tile->foreground) && tile->foregroundDamage.damageEffectPercentage() - Random::randf() > 0.0f
-          && (Random::randf() < m_blockDamageParticleProbability)) {
-        auto particle = m_blockDamageParticle;
+          && (Random::randf() < m_damageFX.m_blockDamageParticleProbability)) {
+        auto particle = m_damageFX.m_blockDamageParticle;
         particle.color = materialDatabase->materialParticleColor(tile->foreground, tile->foregroundHueShift);
 
         if (isTileProtected(pos))
-          particle = m_blockDingParticle;
+          particle = m_damageFX.m_blockDingParticle;
 
         particle.position += centerOfTile(pos);
         particle.velocity = particle.velocity.magnitude()
             * vnorm(m_geometry.diff(tile->foregroundDamage.sourcePosition(), particle.position));
-        particle.applyVariance(m_blockDamageParticleVariance);
+        particle.applyVariance(m_damageFX.m_blockDamageParticleVariance);
         m_particles->add(particle);
       }
 
       if (isRealMaterial(tile->background) && tile->backgroundDamage.damageEffectPercentage() - Random::randf() > 0.0f
-          && (Random::randf() < m_blockDamageParticleProbability)) {
-        auto particle = m_blockDamageParticle;
+          && (Random::randf() < m_damageFX.m_blockDamageParticleProbability)) {
+        auto particle = m_damageFX.m_blockDamageParticle;
         particle.color = materialDatabase->materialParticleColor(tile->background, tile->backgroundHueShift);
 
         if (isTileProtected(pos))
-          particle = m_blockDingParticle;
+          particle = m_damageFX.m_blockDingParticle;
 
         particle.position += centerOfTile(pos);
         particle.velocity = particle.velocity.magnitude()
             * vnorm(m_geometry.diff(tile->backgroundDamage.sourcePosition(), particle.position));
-        particle.applyVariance(m_blockDamageParticleVariance);
+        particle.applyVariance(m_damageFX.m_blockDamageParticleVariance);
         m_particles->add(particle);
       }
     }
@@ -1718,13 +1717,13 @@ void WorldClient::lightingTileGather() {
   int64_t start = Time::monotonicMicroseconds();
   Vec3F environmentLight = m_sky->environmentLight().toRgbF();
   float undergroundLevel = m_worldTemplate->undergroundLevel();
-  auto liquidsDatabase = Root::singleton().liquidsDatabase();
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto liquidsDatabase = m_liquidsDatabase;
+  auto materialDatabase = m_materialDatabase;
 
   // Each column in tileEvalColumns is guaranteed to be no larger than the sector size.
 
-  m_tileArray->tileEvalColumnsParallel(m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
-    size_t baseIndex = m_lightingCalculator.baseIndexFor(pos);
+  m_tileArray->tileEvalColumnsParallel(m_lighting.m_lightingCalculator.calculationRegion(), [&](Vec2I const& pos, ClientTile const* column, size_t ySize) {
+    size_t baseIndex = m_lighting.m_lightingCalculator.baseIndexFor(pos);
     for (size_t y = 0; y < ySize; ++y) {
       auto& tile = column[y];
       Vec3F light;
@@ -1739,67 +1738,67 @@ void WorldClient::lightingTileGather() {
         if (tile.backgroundLightTransparent && pos[1] + y > undergroundLevel)
           light += environmentLight;
       }
-      m_lightingCalculator.setCellIndex(baseIndex + y, light, !tile.foregroundLightTransparent);
+      m_lighting.m_lightingCalculator.setCellIndex(baseIndex + y, light, !tile.foregroundLightTransparent);
     }
   });
   LogMap::set("client_render_world_async_light_gather", strf("{:05d}\xC2\xB5s", Time::monotonicMicroseconds() - start));
 }
 
 void WorldClient::lightingCalc() {
-  MutexLocker prepLocker(m_lightMapPrepMutex);
-  if (!m_pendingLightReady.load())
+  MutexLocker prepLocker(m_lighting.m_lightMapPrepMutex);
+  if (!m_lighting.m_pendingLightReady.load())
     return;
-  m_pendingLightReady = false;
-  RectI lightRange = m_pendingLightRange;
-  List<LightSource> lights = std::move(m_pendingLights);
-  List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_pendingParticleLights);
+  m_lighting.m_pendingLightReady = false;
+  RectI lightRange = m_lighting.m_pendingLightRange;
+  List<LightSource> lights = std::move(m_lighting.m_pendingLights);
+  List<std::pair<Vec2F, Vec3F>> particleLights = std::move(m_lighting.m_pendingParticleLights);
   auto& root = Root::singleton();
   auto configuration = root.configuration();
   bool newLighting = configuration->get("newLighting").optBool().value(true);
   bool monochrome = configuration->get("monochromeLighting").toBool();
-  m_lightingCalculator.setParameters(m_lightingConfig.set("pointAdditive", newLighting));
-  m_lightingCalculator.setMonochrome(monochrome);
-  m_lightingCalculator.begin(lightRange);
+  m_lighting.m_lightingCalculator.setParameters(m_lighting.m_lightingConfig.set("pointAdditive", newLighting));
+  m_lighting.m_lightingCalculator.setMonochrome(monochrome);
+  m_lighting.m_lightingCalculator.begin(lightRange);
   lightingTileGather();
 
   prepLocker.unlock();
 
   for (auto const& light : lights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), light.position);
+    Vec2F position = m_geometry.nearestTo(Vec2F(m_lighting.m_lightingCalculator.calculationRegion().min()), light.position);
     if (light.type == LightType::Spread)
-      m_lightingCalculator.addSpreadLight(position, light.color);
+      m_lighting.m_lightingCalculator.addSpreadLight(position, light.color);
     else {
       if (light.type == LightType::PointAsSpread) {
         if (!newLighting)
-          m_lightingCalculator.addSpreadLight(position, light.color);
+          m_lighting.m_lightingCalculator.addSpreadLight(position, light.color);
         else { // hybrid (used for auto-converted object lights) - 85% spread, 15% point (* .15 is applied in the calculation code)
-          m_lightingCalculator.addSpreadLight(position, light.color * 0.85f);
-          m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
+          m_lighting.m_lightingCalculator.addSpreadLight(position, light.color * 0.85f);
+          m_lighting.m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience, true);
         }
       } else {
-        m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
+        m_lighting.m_lightingCalculator.addPointLight(position, light.color, light.pointBeam, light.beamAngle, light.beamAmbience);
       }
     }
   }
 
   for (auto const& lightPair : particleLights) {
-    Vec2F position = m_geometry.nearestTo(Vec2F(m_lightingCalculator.calculationRegion().min()), lightPair.first);
-    m_lightingCalculator.addSpreadLight(position, lightPair.second);
+    Vec2F position = m_geometry.nearestTo(Vec2F(m_lighting.m_lightingCalculator.calculationRegion().min()), lightPair.first);
+    m_lighting.m_lightingCalculator.addSpreadLight(position, lightPair.second);
   }
 
-  m_lightingCalculator.calculate(m_pendingLightMap);
+  m_lighting.m_lightingCalculator.calculate(m_lighting.m_pendingLightMap);
   {
-    MutexLocker mapLocker(m_lightMapMutex);
-    m_lightMinPosition = lightRange.min();
-    m_lightMap = std::move(m_pendingLightMap);
+    MutexLocker mapLocker(m_lighting.m_lightMapMutex);
+    m_lighting.m_lightMinPosition = lightRange.min();
+    m_lighting.m_lightMap = std::move(m_lighting.m_pendingLightMap);
   }
 }
 
 void WorldClient::lightingMain() {
-  MutexLocker condLocker(m_lightingMutex);
+  MutexLocker condLocker(m_lighting.m_lightingMutex);
   while (true) {
-    m_lightingCond.wait(m_lightingMutex);
-    if (m_stopLightingThread)
+    m_lighting.m_lightingCond.wait(m_lighting.m_lightingMutex);
+    if (m_lighting.m_stopLightingThread)
       return;
 
     int64_t start = Time::monotonicMicroseconds();
@@ -1812,7 +1811,7 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   clearWorld();
   m_outgoingPackets.append(make_shared<WorldStartAcknowledgePacket>());
 
-  auto assets = Root::singleton().assets();
+  auto assets = m_assets;
   if (startPacket.localInterpolationMode)
     m_interpolationTracker = InterpolationTracker(m_clientConfig.query("interpolationSettings.local"));
   else
@@ -1827,8 +1826,8 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
   m_entityMap = make_shared<EntityMap>(m_worldTemplate->size(), entitySpace.first, entitySpace.second);
   m_tileArray = make_shared<ClientTileSectorArray>(m_worldTemplate->size());
   m_tileGetterFunction = [&, tile = ClientTile()](Vec2I pos) mutable -> ClientTile const& {
-    if (!m_predictedTiles.empty()) {
-      if (auto p = m_predictedTiles.ptr(pos)) {
+    if (!m_tilePrediction.m_predictedTiles.empty()) {
+      if (auto p = m_tilePrediction.m_predictedTiles.ptr(pos)) {
         p->apply(tile = m_tileArray->tile(pos));
         if (p->liquid) {
           if (p->liquid->liquid == tile.liquid.liquid)
@@ -1867,9 +1866,9 @@ void WorldClient::initWorld(WorldStartPacket const& startPacket) {
     });
   m_weather.readUpdate(startPacket.weatherData, m_clientState.netCompatibilityRules());
 
-  m_lightingCalculator.setMonochrome(Root::singleton().configuration()->get("monochromeLighting").toBool());
-  m_lightingCalculator.setParameters(assets->json("/lighting.config:lighting"));
-  m_lightIntensityCalculator.setParameters(assets->json("/lighting.config:intensity"));
+  m_lighting.m_lightingCalculator.setMonochrome(m_configuration->get("monochromeLighting").toBool());
+  m_lighting.m_lightingCalculator.setParameters(m_assets->json("/lighting.config:lighting"));
+  m_lighting.m_lightIntensityCalculator.setParameters(m_assets->json("/lighting.config:intensity"));
 
   m_inWorld = true;
   
@@ -1927,16 +1926,16 @@ void WorldClient::clearWorld() {
   m_parallaxFadeTimer.setDone();
 
   m_clientState.reset();
-  m_ambientSounds.cancelAll();
-  m_musicTrack.cancelAll();
-  m_musicTrack.setVolume(1, 0, 0);
-  m_altMusicTrack.cancelAll();
-  m_altMusicTrack.setVolume(0, 0, 0);
-  m_altMusicActive = false;
+  m_audio.m_ambientSounds.cancelAll();
+  m_audio.m_musicTrack.cancelAll();
+  m_audio.m_musicTrack.setVolume(1, 0, 0);
+  m_audio.m_altMusicTrack.cancelAll();
+  m_audio.m_altMusicTrack.setVolume(0, 0, 0);
+  m_audio.m_altMusicActive = false;
 
-  if (m_spaceSound) {
-    m_spaceSound->stop();
-    m_spaceSound = {};
+  if (m_audio.m_spaceSound) {
+    m_audio.m_spaceSound->stop();
+    m_audio.m_spaceSound = {};
   }
 
   m_entityMessageResponses = {};
@@ -1999,24 +1998,24 @@ AmbientNoisesDescriptionPtr WorldClient::currentAltMusicTrack() const {
   if (!inWorld())
     return {};
 
-  return m_altMusicTrackDescription;
+  return m_audio.m_altMusicTrackDescription;
 }
 
 void WorldClient::playAltMusic(StringList const& newTracks, float fadeTime, int loops) {
   auto newTrackGroup = AmbientTrackGroup(newTracks);
-  m_altMusicTrackDescription = make_shared<AmbientNoisesDescription>(AmbientTrackGroup(newTracks), AmbientTrackGroup(), loops);
-  if (!m_altMusicActive) {
-    m_musicTrack.setVolume(0.0, 0.0, fadeTime);
-    m_altMusicTrack.setVolume(1.0, 0.0, fadeTime);
-    m_altMusicActive = true;
+  m_audio.m_altMusicTrackDescription = make_shared<AmbientNoisesDescription>(AmbientTrackGroup(newTracks), AmbientTrackGroup(), loops);
+  if (!m_audio.m_altMusicActive) {
+    m_audio.m_musicTrack.setVolume(0.0, 0.0, fadeTime);
+    m_audio.m_altMusicTrack.setVolume(1.0, 0.0, fadeTime);
+    m_audio.m_altMusicActive = true;
   }
 }
 
 void WorldClient::stopAltMusic(float fadeTime) {
-  if (m_altMusicActive) {
-    m_musicTrack.setVolume(1.0, 0.0, fadeTime);
-    m_altMusicTrack.setVolume(0.0, 0.0, fadeTime);
-    m_altMusicActive = false;
+  if (m_audio.m_altMusicActive) {
+    m_audio.m_musicTrack.setVolume(1.0, 0.0, fadeTime);
+    m_audio.m_altMusicTrack.setVolume(0.0, 0.0, fadeTime);
+    m_audio.m_altMusicActive = false;
   }
 }
 
@@ -2033,9 +2032,9 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool upd
   if (!tile)
     return false;
 
-  if (!m_predictedTiles.empty()) {
-    auto findPrediction = m_predictedTiles.find(pos);
-    if (findPrediction != m_predictedTiles.end()) {
+  if (!m_tilePrediction.m_predictedTiles.empty()) {
+    auto findPrediction = m_tilePrediction.m_predictedTiles.find(pos);
+    if (findPrediction != m_tilePrediction.m_predictedTiles.end()) {
       auto& p = findPrediction->second;
 
       if (p.collision && *p.collision == netTile.collision)
@@ -2059,7 +2058,7 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool upd
         p.backgroundModHueShift.reset();
 
       if (!p)
-        m_predictedTiles.erase(findPrediction);
+        m_tilePrediction.m_predictedTiles.erase(findPrediction);
     }
   }
 
@@ -2079,7 +2078,7 @@ bool WorldClient::readNetTile(Vec2I const& pos, NetTile const& netTile, bool upd
   tile->liquid = netTile.liquid.liquidLevel();
   tile->dungeonId = netTile.dungeonId;
 
-  auto materialDatabase = Root::singleton().materialDatabase();
+  auto materialDatabase = m_materialDatabase;
   tile->backgroundLightTransparent = materialDatabase->backgroundLightTransparent(tile->background);
   tile->foregroundLightTransparent =
       materialDatabase->foregroundLightTransparent(tile->foreground) && tile->collision != CollisionKind::Dynamic;
@@ -2105,7 +2104,7 @@ void WorldClient::freshenCollision(RectI const& region) {
 float WorldClient::lightLevel(Vec2F const& pos) const {
   if (!inWorld())
     return 0.0f;
-  return WorldImpl::lightLevel(m_tileArray, m_entityMap, m_geometry, m_worldTemplate, m_sky, m_lightIntensityCalculator, pos);
+  return WorldImpl::lightLevel(m_tileArray, m_entityMap, m_geometry, m_worldTemplate, m_sky, m_lighting.m_lightIntensityCalculator, pos);
 }
 
 bool WorldClient::breathable(Vec2F const& pos) const {
@@ -2145,9 +2144,9 @@ bool WorldClient::exposedToWeather(Vec2F const& pos) const {
     return false;
 
   if (!isUnderground(pos) && liquidLevel(Vec2I::floor(pos)).liquid == EmptyLiquidId) {
-    auto assets = Root::singleton().assets();
-    float weatherRayCheckDistance = assets->json("/weather.config:weatherRayCheckDistance").toFloat();
-    float weatherRayCheckWindInfluence = assets->json("/weather.config:weatherRayCheckWindInfluence").toFloat();
+    auto assets = m_assets;
+    float weatherRayCheckDistance = m_assets->json("/weather.config:weatherRayCheckDistance").toFloat();
+    float weatherRayCheckWindInfluence = m_assets->json("/weather.config:weatherRayCheckWindInfluence").toFloat();
 
     auto offset = Vec2F(-m_weather.wind() * weatherRayCheckWindInfluence, weatherRayCheckDistance).normalized() * weatherRayCheckDistance;
 
@@ -2350,11 +2349,6 @@ WorldStructure const& WorldClient::centralStructure() const {
   return m_centralStructure;
 }
 
-bool WorldClient::DamageNumberKey::operator<(DamageNumberKey const& other) const {
-  return tie(sourceEntityId, targetEntityId, damageNumberParticleKind)
-      < tie(other.sourceEntityId, other.targetEntityId, other.damageNumberParticleKind);
-}
-
 void WorldClient::renderCollisionDebug() {
   RectI clientWindow = m_clientState.window();
   if (clientWindow.isEmpty())
@@ -2392,11 +2386,11 @@ void WorldClient::renderCollisionDebug() {
 
 void WorldClient::informTilePrediction(Vec2I const& pos, TileModification const& modification) {
   auto now = Time::monotonicMilliseconds();
-  auto& p = m_predictedTiles[pos];
+  auto& p = m_tilePrediction.m_predictedTiles[pos];
   p.time = now;
   if (auto placeMaterial = modification.ptr<PlaceMaterial>()) {
     if (placeMaterial->layer == TileLayer::Foreground) {
-      auto materialDatabase = Root::singleton().materialDatabase();
+      auto materialDatabase = m_materialDatabase;
       if (!materialDatabase->isCascadingFallingMaterial(placeMaterial->material)
        && !materialDatabase->         isFallingMaterial(placeMaterial->material)) {
         p.foreground = placeMaterial->material;
@@ -2448,7 +2442,7 @@ void WorldClient::setupForceRegions() {
   bool addTopRegion = forceRegionType == WorldEdgeForceRegionType::Top || forceRegionType == WorldEdgeForceRegionType::TopAndBottom;
   bool addBottomRegion = forceRegionType == WorldEdgeForceRegionType::Bottom || forceRegionType == WorldEdgeForceRegionType::TopAndBottom;
 
-  auto worldServerConfig = Root::singleton().assets()->json("/worldserver.config");
+  auto worldServerConfig = m_assets->json("/worldserver.config");
 
   auto regionHeight = worldServerConfig.getFloat("worldEdgeForceRegionHeight");
   auto regionForce = worldServerConfig.getFloat("worldEdgeForceRegionForce");

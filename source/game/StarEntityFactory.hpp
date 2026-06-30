@@ -2,6 +2,7 @@
 
 #include "StarVersioningDatabase.hpp"
 #include "StarEntity.hpp"
+#include "StarIEntityFactory.hpp"
 
 namespace Star {
 
@@ -25,12 +26,14 @@ using EntityFactoryConstPtr = SharedPtr<EntityFactory const>;
 struct EntityFactoryExceptionTag { static constexpr char const* typeName = "EntityFactoryException"; };
 using EntityFactoryException = TypedException<StarException, EntityFactoryExceptionTag>;
 
-class EntityFactory {
+class EntityFactory : public IEntityFactory {
 public:
   EntityFactory();
 
-  ByteArray netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules = {}) const;
-  EntityPtr netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules = {}) const;
+  EntityPtr create(String const& entityName, Json const& extraParams = {}) const override;
+
+  ByteArray netStoreEntity(EntityPtr const& entity, NetCompatibilityRules rules = {}) const override;
+  EntityPtr netLoadEntity(EntityType type, ByteArray const& netStore, NetCompatibilityRules rules = {}) const override;
 
   Json diskStoreEntity(EntityPtr const& entity) const;
   EntityPtr diskLoadEntity(EntityType type, Json const& diskStore) const;

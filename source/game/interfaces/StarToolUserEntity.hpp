@@ -5,6 +5,7 @@
 #include "StarStatusTypes.hpp"
 #include "StarInteractionTypes.hpp"
 #include "StarActorEntity.hpp"
+#include "StarToolHandInterface.hpp"
 
 namespace Star {
 
@@ -13,28 +14,16 @@ using ItemPtr = SharedPtr<Item>;
 class ToolUserEntity;
 
 // FIXME: This interface is a complete mess.
-class ToolUserEntity : public virtual ActorEntity {
+// Tool hand methods extracted to ToolHandInterface.
+class ToolUserEntity : public virtual ActorEntity, public virtual ToolHandInterface {
 public:
-  // Translates the given arm position into it's final entity space position
-  // based on the given facing direction, and arm angle, and an offset from the
-  // rotation center of the arm.
-  virtual Vec2F armPosition(ToolHand hand, Direction facingDirection, float armAngle, Vec2F offset = {}) const = 0;
-  // The offset to give to armPosition to get the position of the hand.
-  virtual Vec2F handOffset(ToolHand hand, Direction facingDirection) const = 0;
-
-  // Gets the world position of the current aim point.
-  virtual Vec2F aimPosition() const = 0;
+  // Arm/hand methods inherited from ToolHandInterface.
 
   virtual bool isAdmin() const = 0;
   virtual Color favoriteColor() const = 0;
   virtual String species() const = 0;
 
   virtual void requestEmote(String const& emote) = 0;
-
-  // FIXME: This is effectively unusable, because since tool user items control
-  // the angle and facing direction of the owner, and this uses the facing
-  // direction and angle as input, the result will always be behind.
-  virtual Vec2F handPosition(ToolHand hand, Vec2F const& handOffset = Vec2F()) const = 0;
 
   // FIXME: This was used for an Item to get an ItemPtr to itself, which was
   // super bad and weird, but it COULD be used to get the item in the owner's
@@ -66,10 +55,6 @@ public:
   // holding an instrument, which it already knows.
   virtual bool instrumentPlaying() = 0;
   virtual void instrumentEquipped(String const& instrumentKind) = 0;
-
-  // FIXME: how is this related to the hand position and isn't it already
-  // included in the hand position and why is it necessary?
-  virtual Vec2F armAdjustment() const = 0;
 
   // FIXME: These were all fine, just need to be fixed because now we have the
   // movement controller itself and can use that directly

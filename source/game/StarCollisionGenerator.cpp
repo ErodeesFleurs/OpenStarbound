@@ -2,10 +2,6 @@
 
 namespace Star {
 
-void CollisionGenerator::init(CollisionKindAccessor accessor) {
-  m_accessor = accessor;
-}
-
 List<CollisionBlock> CollisionGenerator::getBlocks(RectI const& region) const {
   if (region.isNull())
     return {};

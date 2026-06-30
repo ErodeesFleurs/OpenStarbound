@@ -2,6 +2,7 @@
 
 #include "StarThread.hpp"
 #include "StarItemRecipe.hpp"
+#include "StarIItemDatabase.hpp"
 #include "StarItem.hpp"
 #include "StarCasting.hpp"
 #include "StarTtlCache.hpp"
@@ -50,7 +51,7 @@ enum class ItemType {
 };
 extern EnumMap<ItemType> ItemTypeNames;
 
-class ItemDatabase {
+class ItemDatabase : public IItemDatabase {
 public:
   // During item loading, the ItemDatabase takes the ItemDescriptor and
   // produces a set of things from it:

@@ -103,44 +103,44 @@ Root::Root(Settings settings) : RootBase() {
         m_reloadListeners.clearExpiredListeners();
 
         {
-          MutexLocker locker(m_objectDatabaseMutex);
+          MutexLocker objectDbLocker(m_objectDatabaseMutex);
           if (ObjectDatabasePtr objectDb = m_objectDatabase) {
-            locker.unlock();
+            objectDbLocker.unlock();
             objectDb->cleanup();
           }
         }
         {
-          MutexLocker locker(m_itemDatabaseMutex);
+          MutexLocker itemDbLocker(m_itemDatabaseMutex);
           if (ItemDatabasePtr itemDb = m_itemDatabase) {
-            locker.unlock();
+            itemDbLocker.unlock();
             itemDb->cleanup();
           }
         }
         {
-          MutexLocker locker(m_monsterDatabaseMutex);
+          MutexLocker monsterDbLocker(m_monsterDatabaseMutex);
           if (MonsterDatabasePtr monsterDb = m_monsterDatabase) {
-            locker.unlock();
+            monsterDbLocker.unlock();
             monsterDb->cleanup();
           }
         }
         {
-          MutexLocker locker(m_assetsMutex);
+          MutexLocker assetsLocker(m_assetsMutex);
           if (AssetsPtr assets = m_assets) {
-            locker.unlock();
+            assetsLocker.unlock();
             assets->cleanup();
           }
         }
         {
-          MutexLocker locker(m_tenantDatabaseMutex);
+          MutexLocker tenantDbLocker(m_tenantDatabaseMutex);
           if (TenantDatabasePtr tenantDb = m_tenantDatabase) {
-            locker.unlock();
+            tenantDbLocker.unlock();
             tenantDb->cleanup();
           }
         }
         {
-          MutexLocker locker(m_imageMetadataDatabaseMutex);
+          MutexLocker imgMetaDbLocker(m_imageMetadataDatabaseMutex);
           if (ImageMetadataDatabasePtr imgMetaDb = m_imageMetadataDatabase) {
-            locker.unlock();
+            imgMetaDbLocker.unlock();
             imgMetaDb->cleanup();
           }
         }
@@ -148,7 +148,7 @@ Root::Root(Settings settings) : RootBase() {
         Random::addEntropy();
 
         {
-          MutexLocker locker(m_configurationMutex);
+          MutexLocker configLocker(m_configurationMutex);
           writeConfig();
         }
 

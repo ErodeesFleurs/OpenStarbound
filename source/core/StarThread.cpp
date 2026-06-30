@@ -350,63 +350,9 @@ void RecursiveMutex::unlock() {
 }
 
 // ---- ReadersWriterMutex ----
+// Implementation is now inline in StarThread.hpp using std::shared_mutex
 
-ReadersWriterMutex::ReadersWriterMutex()
-  : m_readers(), m_writers(), m_readWaiters(), m_writeWaiters() {}
-
-void ReadersWriterMutex::readLock() {
-  MutexLocker locker(m_mutex);
-  if (m_writers || m_writeWaiters) {
-    m_readWaiters++;
-    while (m_writers || m_writeWaiters)
-      m_readCond.wait(m_mutex);
-    m_readWaiters--;
-  }
-  m_readers++;
-}
-
-bool ReadersWriterMutex::tryReadLock() {
-  MutexLocker locker(m_mutex);
-  if (m_writers || m_writeWaiters)
-    return false;
-  m_readers++;
-  return true;
-}
-
-void ReadersWriterMutex::readUnlock() {
-  MutexLocker locker(m_mutex);
-  m_readers--;
-  if (m_writeWaiters)
-    m_writeCond.signal();
-}
-
-void ReadersWriterMutex::writeLock() {
-  MutexLocker locker(m_mutex);
-  if (m_readers || m_writers) {
-    m_writeWaiters++;
-    while (m_readers || m_writers)
-      m_writeCond.wait(m_mutex);
-    m_writeWaiters--;
-  }
-  m_writers = 1;
-}
-
-bool ReadersWriterMutex::tryWriteLock() {
-  MutexLocker locker(m_mutex);
-  if (m_readers || m_writers)
-    return false;
-  m_writers = 1;
-  return true;
-}
-
-void ReadersWriterMutex::writeUnlock() {
-  MutexLocker locker(m_mutex);
-  m_writers = 0;
-  if (m_writeWaiters)
-    m_writeCond.signal();
-  else if (m_readWaiters)
-    m_readCond.broadcast();
-}
+// ---- ReadLocker / WriteLocker ----
 
 ReadLocker::ReadLocker(ReadersWriterMutex& rwlock, bool startLocked) : m_lock(rwlock), m_locked(false) {
   if (startLocked)

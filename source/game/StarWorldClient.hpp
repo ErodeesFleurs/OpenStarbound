@@ -1,6 +1,19 @@
 #pragma once
 
 #include "StarWorldClientState.hpp"
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
+#include "StarIMaterialDatabase.hpp"
+#include "StarIItemDatabase.hpp"
+#include "StarISpeciesDatabase.hpp"
+#include "StarIEntityFactory.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarILiquidsDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
+#include "StarWorldClientLighting.hpp"
+#include "StarWorldClientAudio.hpp"
+#include "StarWorldClientDamageFX.hpp"
+#include "StarWorldClientTilePrediction.hpp"
 #include "StarNetPackets.hpp"
 #include "StarWorldRenderData.hpp"
 #include "StarAmbient.hpp"
@@ -52,7 +65,7 @@ using WorldClientException = TypedException<StarException, WorldClientExceptionT
 
 class WorldClient : public World {
 public:
-  WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot);
+  WorldClient(PlayerPtr mainPlayer, LuaRootPtr luaRoot, IAssetsConstPtr _assets = {}, IConfigurationPtr _configuration = {});
   ~WorldClient();
 
   ConnectionId connection() const override;
@@ -217,19 +230,8 @@ private:
     List<OverheadBar> overheadBars;
   };
 
-  struct DamageNumber {
-    float amount;
-    Vec2F position;
-    double timestamp;
-  };
-
-  struct DamageNumberKey {
-    String damageNumberParticleKind;
-    EntityId sourceEntityId;
-    EntityId targetEntityId;
-
-    bool operator<(DamageNumberKey const& other) const;
-  };
+  using DamageNumber = StarWorldClientDamageFX::DamageNumber;
+  using DamageNumberKey = StarWorldClientDamageFX::DamageNumberKey;
 
   using ClientTileGetter = function<ClientTile const& (Vec2I)>;
 
@@ -274,7 +276,15 @@ private:
   void setupForceRegions();
 
   Json m_clientConfig;
-  Json m_lightingConfig;
+
+  friend class StarWorldClientLighting;
+  friend class StarWorldClientAudio;
+  friend class StarWorldClientDamageFX;
+  friend class StarWorldClientTilePrediction;
+  StarWorldClientLighting m_lighting{this};
+  StarWorldClientAudio m_audio{this};
+  StarWorldClientDamageFX m_damageFX{this};
+  StarWorldClientTilePrediction m_tilePrediction{this};
   WorldTemplatePtr m_worldTemplate;
   WorldStructure m_centralStructure;
   Vec2F m_playerStart;
@@ -290,26 +300,8 @@ private:
   WorldGeometry m_geometry;
   uint64_t m_currentStep;
   double m_currentTime;
-  bool m_fullBright;
-  bool m_asyncLighting;
-  CellularLightingCalculator m_lightingCalculator;
-  mutable CellularLightIntensityCalculator m_lightIntensityCalculator;
-  ThreadFunction<void> m_lightingThread;
-  
-  Mutex m_lightingMutex;
-  ConditionVariable m_lightingCond;
-  atomic<bool> m_stopLightingThread;
 
-  Mutex m_lightMapPrepMutex;
-  Mutex m_lightMapMutex;
 
-  Lightmap m_pendingLightMap;
-  Lightmap m_lightMap;
-  List<LightSource> m_pendingLights;
-  List<std::pair<Vec2F, Vec3F>> m_pendingParticleLights;
-  RectI m_pendingLightRange;
-  atomic<bool> m_pendingLightReady;
-  Vec2I m_lightMinPosition;
   List<PreviewTile> m_previewTiles;
 
   SkyPtr m_sky;
@@ -321,6 +313,13 @@ private:
   Maybe<ConnectionId> m_clientId;
 
   PlayerPtr m_mainPlayer;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
+  IMaterialDatabaseConstPtr m_materialDatabase;
+  IItemDatabaseConstPtr m_itemDatabase;
+  ISpeciesDatabaseConstPtr m_speciesDatabase;
+  IEntityFactoryConstPtr m_entityFactory;
+  ILiquidsDatabaseConstPtr m_liquidsDatabase;
 
   bool m_collisionDebug;
   float m_interactivePulseAmount;
@@ -336,7 +335,6 @@ private:
   float m_worldDimLevel;
   Vec3B m_worldDimColor;
 
-  bool m_interactiveHighlightMode;
 
   GameTimer m_parallaxFadeTimer;
   ParallaxPtr m_currentParallax;
@@ -371,9 +369,6 @@ private:
 
   HashSet<Vec2I> m_damagedBlocks;
 
-  AmbientManager m_ambientSounds;
-  AmbientManager m_musicTrack;
-  AmbientManager m_altMusicTrack;
 
   List<pair<float, WorldAction>> m_timers;
 

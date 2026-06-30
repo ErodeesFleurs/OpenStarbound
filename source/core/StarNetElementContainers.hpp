@@ -454,8 +454,8 @@ void NetElementMapWrapper<BaseMap>::addChangeData(ElementChange change) {
 template <typename BaseMap>
 void NetElementMapWrapper<BaseMap>::addPendingChangeData(ElementChange change, float interpolationTime) {
   if (!m_pendingChangeData.empty() && interpolationTime < m_pendingChangeData.last().first) {
-    for (auto& change : Star::take(m_pendingChangeData))
-      applyChange(std::move(change.second));
+    for (auto& pending : Star::take(m_pendingChangeData))
+      applyChange(std::move(pending.second));
   }
   m_pendingChangeData.append({interpolationTime, std::move(change)});
 }

@@ -13,8 +13,8 @@ EnumMap<Action> const ActionNames{
   {Action::Land, "Land"}
 };
 
-Node Node::withVelocity(Vec2F velocity) const {
-  return {position, velocity};
+Node Node::withVelocity(Vec2F vel) const {
+  return {position, vel};
 }
 
 }

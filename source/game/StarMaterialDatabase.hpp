@@ -5,6 +5,7 @@
 #include "StarMaterialRenderProfile.hpp"
 #include "StarTileDamage.hpp"
 #include "StarItemDescriptor.hpp"
+#include "StarIMaterialDatabase.hpp"
 
 namespace Star {
 
@@ -29,7 +30,7 @@ struct LiquidModInteraction {
   bool topOnly;
 };
 
-class MaterialDatabase {
+class MaterialDatabase : public IMaterialDatabase {
 public:
   MaterialDatabase();
 

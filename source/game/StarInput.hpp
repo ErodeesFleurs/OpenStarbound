@@ -104,10 +104,10 @@ public:
 
     // Calls the passed functions for each press and release.
     template <typename PressFunction, typename ReleaseFunction>
-    void forEach(PressFunction&& pressed, ReleaseFunction&& released) {
+    void forEach(PressFunction&& onPress, ReleaseFunction&& onRelease) {
       for (size_t i = 0; i != releases; ++i) {
-        pressed();
-        released();
+        onPress();
+        onRelease();
       }
     }
 

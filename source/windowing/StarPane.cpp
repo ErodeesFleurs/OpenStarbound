@@ -372,8 +372,8 @@ LuaCallbacks Pane::makePaneCallbacks() {
       auto audioInstance = make_shared<AudioInstance>(*assets->audio(audio));
       audioInstance->setVolume(volume.value(1.0));
       audioInstance->setLoops(loops.value(0));
-      auto& guiContext = GuiContext::singleton();
-      guiContext.playAudio(audioInstance);
+      auto* guiContext = context();
+      guiContext->playAudio(audioInstance);
       m_playingSounds.append({audio, std::move(audioInstance)});
     });
 

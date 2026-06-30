@@ -29,7 +29,7 @@ ToolUserEntity* ToolUserItem::owner() const {
 EntityMode ToolUserItem::entityMode() const {
   if (!m_owner)
     throw ToolUserItemException("Not initialized in ToolUserItem::entityMode");
-  return *m_owner->entityMode();
+  return m_owner->entityMode().value(EntityMode::Master);
 }
 
 ToolHand ToolUserItem::hand() const {

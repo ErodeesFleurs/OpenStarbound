@@ -9,6 +9,15 @@
 #include "StarWorldServerThread.hpp"
 #include "StarSystemWorldServerThread.hpp"
 #include "StarUniverseConnection.hpp"
+#include "StarIAssets.hpp"
+#include "StarIConfiguration.hpp"
+#include "StarIMaterialDatabase.hpp"
+#include "StarIItemDatabase.hpp"
+#include "StarISpeciesDatabase.hpp"
+#include "StarIEntityFactory.hpp"
+#include "StarEntityFactory.hpp"
+#include "StarILiquidsDatabase.hpp"
+#include "StarLiquidsDatabase.hpp"
 #include "StarUniverseSettings.hpp"
 
 namespace Star {
@@ -37,7 +46,7 @@ using UniverseServerException = TypedException<StarException, UniverseServerExce
 // and routes packets between them.
 class UniverseServer : public Thread {
 public:
-  UniverseServer(String const& storageDir);
+  UniverseServer(String const& storageDir, IAssetsConstPtr assets = {}, IConfigurationPtr configuration = {});
   ~UniverseServer();
 
   // If enabled, will listen on the configured server port for incoming
@@ -232,6 +241,13 @@ private:
   CelestialMasterDatabasePtr m_celestialDatabase;
   ClockPtr m_universeClock;
   UniverseSettingsPtr m_universeSettings;
+  IAssetsConstPtr m_assets;
+  IConfigurationPtr m_configuration;
+  IMaterialDatabaseConstPtr m_materialDatabase;
+  IItemDatabaseConstPtr m_itemDatabase;
+  ISpeciesDatabaseConstPtr m_speciesDatabase;
+  IEntityFactoryConstPtr m_entityFactory;
+  ILiquidsDatabaseConstPtr m_liquidsDatabase;
   WorkerPool m_workerPool;
 
   int64_t m_storageTriggerDeadline;

@@ -351,6 +351,20 @@ target_sources(star_game PRIVATE
     StarPlatformerAStar.cpp
     StarPlatformerAStarTypes.cpp
     StarPlayer.cpp
+    StarPlayerNarrativeQueue.cpp
+    StarPlayerChatAndEmotes.cpp
+    StarPlayerDamagePipeline.cpp
+    StarPlayerTeleporter.cpp
+    StarPlayerAppearance.cpp
+    StarWorldServerProperties.cpp
+    StarWorldServerCollision.cpp
+    StarWorldServerDungeonProtection.cpp
+    StarWorldServerLiquid.cpp
+    StarWorldServerSpawnFinder.cpp
+    StarWorldClientLighting.cpp
+    StarWorldClientAudio.cpp
+    StarWorldClientDamageFX.cpp
+    StarWorldClientTilePrediction.cpp
     StarPlayerBlueprints.cpp
     StarPlayerCodexes.cpp
     StarPlayerCompanions.cpp
@@ -422,6 +436,10 @@ target_sources(star_game PRIVATE
     StarWorldCamera.cpp
     StarWorldClient.cpp
     StarWorldClientState.cpp
+    StarWorldClientLighting.cpp
+    StarWorldClientAudio.cpp
+    StarWorldClientDamageFX.cpp
+    StarWorldClientTilePrediction.cpp
     StarWorldGeneration.cpp
     StarWorldLayout.cpp
     StarWorldParameters.cpp
